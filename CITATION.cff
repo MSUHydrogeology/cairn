@@ -1,0 +1,20 @@
+# CITATION.cff — skeleton stub.
+# Authorship, version, release date, and the Zenodo DOI are
+# finalized in Cairn's launch phase (implementation plan, R-J).
+cff-version: 1.2.0
+message: "If you use Cairn, please cite it. Citation metadata is finalized at the first release."
+title: "Cairn: An Adaptable Framework for Scientist-AI Research Software Teams"
+abstract: >-
+  Cairn is a methodology for scientist-led research-software teams
+  adopting AI agents: an invariant doctrine of recorded, reviewed
+  deliberation; forkable templates; a single-agent bootstrap that
+  adapts the apparatus along codebase and team dimensions; and two
+  worked case studies.
+type: software
+authors:
+  - family-names: Kendall
+    given-names: Anthony
+repository-code: "https://github.com/MSUHydrogeology/cairn-scientist-ai-teams"
+license:
+  - CC-BY-4.0
+  - MIT
