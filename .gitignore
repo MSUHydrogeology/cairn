@@ -1,0 +1,6 @@
+# macOS
+.DS_Store
+
+# Python (ahead of bootstrap/scaffold.py)
+__pycache__/
+*.pyc
