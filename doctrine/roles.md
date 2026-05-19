@@ -7,6 +7,19 @@ different times; what matters is that the role is *named* before
 substantive work, because different roles produce different
 artifacts and a silently-wrong role wastes a turn.
 
+## Roles as cognitive adapters
+
+Naming the role is not bookkeeping — it is a **cognitive adapter**.
+An AI agent reasons differently depending on the stance it holds:
+a constructive Internal-review stance and an adversarial
+External-review stance produce genuinely different readings of the
+same change. Stating the role explicitly *anchors* the agent in
+one definite stance for the turn; leaving it implicit lets the
+reasoning drift between stances mid-task, blurring whether a given
+output is help, critique, or implementation. The explicit role is
+what makes the frame reliable — it adapts the model into the mode
+the work needs, and holds it there.
+
 ## The Human Maintainer
 
 One role is not interchangeable: the **Human Maintainer**. The

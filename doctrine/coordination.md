@@ -24,6 +24,19 @@ methodology survive context loss, agent handoff, and time: the
 durable record is the source of truth, and it is reconstructible
 from version control alone.
 
+**Model-agnostic resilience.** Because the coordination channel is
+a tree of git-committed files — not a live protocol bound to one
+vendor's API — Cairn's coordination depends on no specific AI
+tool. A team can run several agent types at once, swap one vendor
+for another, or move to a locally-hosted open-weights model, and
+the `dev/` tree is unchanged: the orchestration *is* the
+filesystem and git, which every tool already speaks. This is a
+deliberate resilience property. The dominant 2025 agent protocols
+(MCP, A2A, ACP) couple a team's coordination to specific agent
+infrastructure; stigmergy does not. An adopting project is never
+locked to the model or vendor it started with — the methodology
+outlives any single one.
+
 ## The Coordination module — three tiers
 
 The deliberation record coordinates *what to build*. A second,

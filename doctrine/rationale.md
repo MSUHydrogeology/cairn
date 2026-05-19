@@ -82,7 +82,11 @@ named-but-uncommon corner of it.
   orchestration; it does not center a *durable, append-only,
   reviewable record of the reasoning*. Cairn does (`lifecycle.md`)
   — and that record is the artifact that makes everything else
-  inspectable.
+  inspectable. Its proposal-first shape is, specifically, a
+  **Registered Report**: the design and verification plan are
+  locked and reviewed before the code, which defends against
+  post-hoc *metric p-hacking* the way pre-registration defends a
+  study against it.
 
 * **The Dual-Review model.** Two-tier review — Internal to help a
   change land, External to make it prove it should — executed

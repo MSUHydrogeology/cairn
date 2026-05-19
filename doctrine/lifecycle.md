@@ -32,6 +32,27 @@ trustworthy:
   the code. It survives context loss and contributor handoff, and
   it is timestamped by the same history as the change it explains.
 
+## The lifecycle as a Registered Report
+
+Scientific publishing has a format for exactly this discipline —
+the **Registered Report**, in which a study's design and analysis
+plan are peer-reviewed and accepted *before* any data is collected
+(Stage 1), and the results are later reviewed against that
+pre-registered plan (Stage 2).
+
+Cairn's lifecycle is the same shape. The **proposal** pre-registers
+a change's design and its evidence / verification plan, and is
+reviewed *before* any code is written — Stage 1. The **plan** and
+its code review then check the implementation, and the evidence it
+produced, against that locked plan — Stage 2.
+
+What this buys is a defense against *metric p-hacking*. When the
+verification plan is committed before the implementation exists,
+the evidence is judged against a prior commitment — not chosen
+after the fact to flatter whatever the code happened to do. An
+agent (or a human) cannot quietly move the goalposts, because the
+goalposts sit in an append-only commit that predates the work.
+
 ## The proposal lifecycle
 
 A proposal is the deliberation artifact for a substantive change —
