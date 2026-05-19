@@ -53,14 +53,15 @@ What an adoption installs is sorted into three layers. This is
 what makes "the invariant core is small" an honest claim.
 
 * **The invariant kernel** — present in every adoption; what makes
-  it Cairn at all: the proposal → review → decision lifecycle; one
+  it Cairn at all: the **lifecycle** (proposal → review → decision,
+  plus the plan lifecycle for non-trivial accepted proposals); one
   designated Human Maintainer holding final Decision authority;
   append-only, commit-recorded deliberation; stigmergic
   coordination through a `dev/` tree; the baseline coordination
   tier; the session routines.
 * **Default-on modules** — installed unless a dimension removes
-  them: the plan lifecycle; the lifecycle-metrics layer; the
-  reflections channel; the write-time claim-check discipline.
+  them: the lifecycle-metrics layer; the reflections channel; the
+  write-time claim-check discipline.
 * **Team-gated modules** — activated only when the team has the
   structure to run them: the full two-tier Dual-Review apparatus
   with structural-independence floors; the domain-agent roster;

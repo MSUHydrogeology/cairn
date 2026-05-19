@@ -79,9 +79,12 @@ A sequential team runs only the baseline above.)
 
 ## Session reflections and handoff
 
-At the goodnight routine each agent writes a short, per-agent
-**reflection** — what it shipped, what went well, what went wrong
-and the lesson it leaves. The reflections are an ephemeral,
-cross-agent handoff channel: read at the next handoff, then
-pruned. A reflection is a retrospective, not a decision surface —
-a point that belongs in a proposal does not live in a reflection.
+If the `reflections` default-on module is installed (the typical
+multi-agent adoption keeps it), the goodnight routine writes a
+short, per-agent retrospective — the cross-agent handoff surface
+that lets the next session pick up each agent's experience.
+
+A solo, single-agent project may keep reflections as a personal
+log or omit the channel entirely; the cross-agent handoff function
+only earns its keep with a multi-agent team. See
+`modules/default-on/reflections.md` for the module's full content.

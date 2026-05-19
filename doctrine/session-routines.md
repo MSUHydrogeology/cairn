@@ -88,8 +88,11 @@ The routines are invariant, but their *weight* tracks the team. A
 solo, single-agent project still runs both — orientation after
 context loss and a goodnight handoff matter even with one agent —
 but the two-mode goodnight collapses (the sole agent is always the
-full-handoff owner) and the reflections channel is a single-agent
-log. A multi-agent team runs the full two-mode routine. The
-harness-specific details — what counts as a "context-loss event",
-where an agent's scratch area lives — are filled in by the
-bootstrap from the adopting team's agent tools.
+full-handoff owner), and the **reflections channel** is a
+default-on module a solo project may keep as a personal log or
+omit entirely (the cross-agent handoff function the channel exists
+for only earns its keep with a multi-agent team). A multi-agent
+team runs the full two-mode routine. The harness-specific details
+— what counts as a "context-loss event", where an agent's scratch
+area lives — are filled in by the bootstrap from the adopting
+team's agent tools.

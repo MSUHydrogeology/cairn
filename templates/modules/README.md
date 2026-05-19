@@ -33,6 +33,7 @@ instance; the module file states the tool's contract.
 |-----|--------|---------------|
 | default-on | `lifecycle-metrics` | default; removed only for the smallest adoptions |
 | default-on | `claim-check` | default |
+| default-on | `reflections` | multi-agent adoptions; a solo, single-agent project may omit (the cross-agent handoff function disappears) |
 | team-gated | `dual-review` | the team has two agent types, or multiple humans |
 | team-gated | `domain-agents` | the codebase is large *and* the agent team is multiple |
 | team-gated | `legacy-agent` | the codebase is legacy (the Age axis) |
