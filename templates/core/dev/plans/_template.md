@@ -22,6 +22,14 @@ A plan is an *execution* artifact: its status, progress markers,
 and commit hashes are updated in place. Review findings and the
 archive record are append-only.
 
+**The plan is the Stage 2 of the Registered Report.** Where the
+proposal pre-registered the design and the verification plan
+(Stage 1; see `../proposals/_template.md`), the plan and its code
+review check the implementation and the evidence it produced
+against that locked plan. This is the defense against metric
+p-hacking the proposal's Stage 1 named: judged against a prior
+commitment, not chosen after the fact.
+
 ## The plan-archive precondition
 
 **A plan never archives until a code review has occurred.** The

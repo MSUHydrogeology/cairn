@@ -29,6 +29,19 @@ Two rules are bright-line:
 * **One commit per transition.** Open, review, response, and
   decision each get their own commit.
 
+**A proposal is a Stage 1 Registered Report.** Scientific
+publishing has the same shape: a study's design and analysis plan
+are reviewed and accepted *before* any data is collected (Stage 1),
+and the results are later reviewed against that pre-registered
+plan (Stage 2). A proposal locks the change's design *and* its
+evidence / verification plan before any code is written — that is
+Stage 1. The plan and its code review (see `../plans/_template.md`)
+then check the implementation against that lock — Stage 2. The
+discipline is a defense against post-hoc *metric p-hacking*: the
+verification plan exists before the implementation, so evidence is
+judged against a commitment, not chosen after the fact to flatter
+whatever the code happened to do.
+
 ## Triage — trivial vs. non-trivial
 
 A trivial fix — a typo, a one-line bug, an obvious correction — is

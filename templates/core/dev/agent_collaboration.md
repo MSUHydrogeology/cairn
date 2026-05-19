@@ -59,6 +59,16 @@ The team coordinates **stigmergically** — through the persistent
 source of truth, and it survives context loss and contributor
 handoff.
 
+**Model-agnostic by construction.** Because the coordination
+channel is git-committed files — not a live vendor API — the
+method depends on no specific AI tool. This project can run
+several agent types at once, swap one vendor for another, or move
+to a local open-weights model, and the `dev/` tree is unchanged:
+the orchestration *is* the filesystem and git, which every tool
+already speaks. The methodology outlives any single model or
+vendor, and the project is never locked to the tool it started
+with.
+
 The baseline coordination discipline — always on — guards the
 shared surfaces:
 

@@ -20,7 +20,10 @@ recorded**. A substantive change does not land because its author
 is confident; it lands because it went through a proposal, was
 reviewed across structural independence, and the reasoning is
 committed to the durable record. The coordination space is the
-`dev/` tree:
+`dev/` tree — a tree of git-committed files, which makes the
+method **model-agnostic**: this project can mix or swap AI vendors
+(or run a local open-weights model) without changing the
+coordination layer.
 
 * [`dev/README.md`](dev/README.md) — the entry point to the `dev/`
   tree.

@@ -58,6 +58,32 @@ to build, run, or test.)
 not.)
 <!-- cairn:end modernization-opportunities -->
 
+## Human-baseline practice — the Cognitive Adapter
+
+In a retrofit, the **codebase** is not the only thing that has to
+change. The contributors' development habits — built up over the
+life of the project — are usually a stronger source of drift than
+the code itself. Naming those habits explicitly here is a
+*cognitive adapter*: it lets the team see the friction the new
+discipline will create *before* it creates it, so the adoption
+plans for it rather than discovers it.
+
+<!-- cairn:slot human-baseline-practice -->
+(Evaluate:
+* How much of today's work is ad-hoc, un-staged, or untracked
+  editing? Are commits regular and named, or rare and "wip"?
+* What tracking surfaces does the team already use — issues,
+  pull-request review, code review, none?
+* How is design currently discussed — in chat, in a doc, in
+  someone's head, in commit messages?
+* How ready is the team to adopt **peer-review gates** — the
+  Internal / External tiers, the proposal-first lifecycle? What
+  about that will feel slow, and what will feel like protection?
+* Which surfaces sit closest to human muscle memory — the parts
+  of the workflow contributors do automatically — and where will
+  Cairn's discipline most disturb them?)
+<!-- cairn:end human-baseline-practice -->
+
 ## Dimensional placement
 
 The codebase axes, scored from the above (see `dimensions/` for the
