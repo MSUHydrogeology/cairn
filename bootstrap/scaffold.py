@@ -73,15 +73,45 @@ _TOKEN_RE = re.compile(r"\{\{(\w+)\}\}")
 #: Matches the opening tag of a cairn block slot.
 _SLOT_RE = re.compile(r"<!--\s*cairn:slot\s+(\S+)\s*-->", re.IGNORECASE)
 
-#: The inline tokens the core templates currently use.  The scaffold
-#: only substitutes tokens present in this set; unknown keys from the
-#: config are silently ignored so that future tokens do not break old
-#: configs.
+#: Matches the closing tag of a cairn block slot.
+_SLOT_END_RE = re.compile(r"<!--\s*cairn:end\s+(\S+)\s*-->", re.IGNORECASE)
+
+#: The inline tokens the core and module templates currently use.  The
+#: scaffold only substitutes tokens present in this set; unknown keys
+#: from the config are silently ignored so that future tokens do not
+#: break old configs.  Documented in BOOTSTRAP.md Appendix A.
 KNOWN_TOKENS: frozenset[str] = frozenset(
     {
         "project_name",
         "test_command",
+        "claim_check_command",
+        "metrics_command",
     }
+)
+
+#: Document-author placeholders -- written as ``{{...}}`` but
+#: intentionally *kept unfilled* in installed templates, to be filled
+#: at write-time by a document author (e.g., a reviewer writing a
+#: Review section).  The scaffold does not substitute these and the
+#: post-scaffold "unfilled token" report excludes them.  Documented in
+#: BOOTSTRAP.md Appendix A and templates/README.md.
+_DOC_AUTHOR_TOKENS: frozenset[str] = frozenset(
+    {
+        "Maintainer",
+        "author",
+        "reviewer",
+        "assessor",
+    }
+)
+
+#: Default-on modules installed when the profile YAML omits a
+#: ``modules:`` key.  Matches the doctrine in BOOTSTRAP.md Act I-5
+#: step 2 ("Default-on modules (installed *unless* a dimension removes
+#: them)").
+_DEFAULT_ON_MODULES: tuple[str, ...] = (
+    "lifecycle-metrics",
+    "reflections",
+    "claim-check",
 )
 
 
@@ -95,13 +125,32 @@ def substitute_tokens(text: str, tokens: dict[str, str]) -> str:
 
 
 def find_unfilled_tokens(text: str) -> list[str]:
-    """Return token names that remain unfilled (i.e. still ``{{...}}``)."""
-    return _TOKEN_RE.findall(text)
+    """Return token names that remain unfilled, excluding document-author
+    placeholders that are intentionally kept unfilled at install time.
+    """
+    return [
+        tok for tok in _TOKEN_RE.findall(text)
+        if tok not in _DOC_AUTHOR_TOKENS
+    ]
 
 
 def find_block_slots(text: str) -> list[str]:
-    """Return slot names found in *text*."""
+    """Return slot names found in *text* (open markers only)."""
     return _SLOT_RE.findall(text)
+
+
+def find_unpaired_slots(text: str) -> list[str]:
+    """Return slot names whose ``<!-- cairn:slot NAME -->`` opener has no
+    matching ``<!-- cairn:end NAME -->`` closer, or vice versa.
+
+    Useful for catching template-author errors at scaffold time rather
+    than at customization time.
+    """
+    opens = _SLOT_RE.findall(text)
+    closes = _SLOT_END_RE.findall(text)
+    open_set = set(opens)
+    close_set = set(closes)
+    return sorted((open_set ^ close_set))
 
 
 # ---------------------------------------------------------------------------
@@ -138,8 +187,14 @@ def _minimal_yaml_parse(text: str) -> dict[str, Any]:
             key = key.strip()
             rest = rest.strip()
             if rest and not rest.startswith("#"):
-                result[key] = rest.strip('"').strip("'")
-                current_list_key = None
+                # Recognize inline empty list/dict notations so e.g.
+                # ``modules: []`` is honored as an explicit opt-out.
+                if rest in ("[]", "{}"):
+                    result[key] = []
+                    current_list_key = None
+                else:
+                    result[key] = rest.strip('"').strip("'")
+                    current_list_key = None
             else:
                 current_list_key = key
                 if key not in result:
@@ -266,6 +321,17 @@ def _install_one(
 ) -> InstallResult:
     """Copy *src* to *dst*, substituting tokens.  Returns an InstallResult."""
     text = src.read_text(encoding="utf-8")
+    # Pre-substitution: warn about template-author errors (unpaired
+    # cairn:slot markers) before the file ships.  These would manifest
+    # as a malformed installed file otherwise; cheaper to catch here.
+    unpaired = find_unpaired_slots(text)
+    if unpaired:
+        print(
+            f"  [warn] {src.name}: unpaired slot marker(s): "
+            f"{', '.join(unpaired)} (each open `cairn:slot NAME` needs "
+            f"a matching `cairn:end NAME`)",
+            file=sys.stderr,
+        )
     text = substitute_tokens(text, tokens)
     if not dry_run:
         dst.parent.mkdir(parents=True, exist_ok=True)
@@ -471,7 +537,24 @@ def main(argv: list[str] | None = None) -> int:
         for k, v in cfg.items()
         if isinstance(k, str) and k in KNOWN_TOKENS and v
     }
-    modules: list[str] = [str(m) for m in cfg.get("modules", [])]
+    # Default-on doctrine (BOOTSTRAP.md Act I-5 step 2): the three
+    # default-on modules are installed unless a dimension removes
+    # them.  When the profile YAML omits `modules:` entirely, install
+    # the default-on set and warn so the user knows to opt out
+    # explicitly rather than silently shipping a kernel-only install.
+    # An empty `modules: []` list is honored as "install no modules"
+    # (explicit opt-out).
+    if "modules" in cfg:
+        modules: list[str] = [str(m) for m in cfg.get("modules", [])]
+    else:
+        modules = list(_DEFAULT_ON_MODULES)
+        print(
+            "  [info] profile omits `modules:`; installing the "
+            f"default-on set ({', '.join(_DEFAULT_ON_MODULES)}).  Set "
+            "`modules: []` to opt out explicitly, or list a specific "
+            "selection.",
+            file=sys.stderr,
+        )
 
     if args.dry_run:
         print("[dry-run] Would install to:", target)

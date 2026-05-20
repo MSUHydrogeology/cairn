@@ -18,11 +18,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from bootstrap.scaffold import (  # noqa: E402
     KNOWN_TOKENS,
+    _DEFAULT_ON_MODULES,
+    _DOC_AUTHOR_TOKENS,
     _minimal_yaml_parse,
     build_arg_parser,
     create_dev_tree,
     find_block_slots,
     find_unfilled_tokens,
+    find_unpaired_slots,
     install_core,
     install_modules,
     load_config,
@@ -82,6 +85,56 @@ class TestFindUnfilledTokens:
     def test_multiple_tokens(self) -> None:
         text = "{{a}} and {{b}}"
         assert find_unfilled_tokens(text) == ["a", "b"]
+
+    def test_excludes_doc_author_placeholders(self) -> None:
+        """{{Maintainer}}, {{author}}, {{reviewer}}, {{assessor}} are
+        document-author placeholders the scaffold deliberately leaves
+        unfilled at install -- they should not appear in the warning."""
+        text = (
+            "## Review -- {{reviewer}} -- 2026-05-20\n"
+            "## Response -- {{author}} -- 2026-05-20\n"
+            "## Decision -- {{Maintainer}} -- 2026-05-20\n"
+            "Profile by {{assessor}}\n"
+            "But {{claim_check_command}} is genuinely unfilled.\n"
+        )
+        assert find_unfilled_tokens(text) == ["claim_check_command"]
+
+    def test_doc_author_tokens_constant(self) -> None:
+        """Sanity-check the _DOC_AUTHOR_TOKENS set against the templates
+        that use them (proposals/_template.md + phase-0/*)."""
+        assert "Maintainer" in _DOC_AUTHOR_TOKENS
+        assert "author" in _DOC_AUTHOR_TOKENS
+        assert "reviewer" in _DOC_AUTHOR_TOKENS
+        assert "assessor" in _DOC_AUTHOR_TOKENS
+
+
+# ---------------------------------------------------------------------------
+# Paired-marker detection (find_unpaired_slots)
+# ---------------------------------------------------------------------------
+
+class TestFindUnpairedSlots:
+    def test_paired_slot_returns_empty(self) -> None:
+        text = (
+            "<!-- cairn:slot project-overview -->\n"
+            "content\n"
+            "<!-- cairn:end project-overview -->"
+        )
+        assert find_unpaired_slots(text) == []
+
+    def test_missing_close_marker_flagged(self) -> None:
+        text = "<!-- cairn:slot orphan -->\ncontent (no close)"
+        assert find_unpaired_slots(text) == ["orphan"]
+
+    def test_missing_open_marker_flagged(self) -> None:
+        text = "content\n<!-- cairn:end stray -->"
+        assert find_unpaired_slots(text) == ["stray"]
+
+    def test_multiple_paired_slots(self) -> None:
+        text = (
+            "<!-- cairn:slot foo -->\n<!-- cairn:end foo -->\n"
+            "<!-- cairn:slot bar -->\n<!-- cairn:end bar -->\n"
+        )
+        assert find_unpaired_slots(text) == []
 
 
 # ---------------------------------------------------------------------------
@@ -309,3 +362,62 @@ class TestCLI:
             ]
         )
         assert rc == 1
+
+    def test_omitted_modules_installs_default_on_set(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """When the profile YAML omits `modules:`, the scaffold installs
+        the default-on set (BOOTSTRAP Act I-5 step 2 doctrine) and
+        warns explicitly."""
+        cairn_root = Path(__file__).resolve().parent.parent.parent
+        if not (cairn_root / "templates").exists():
+            pytest.skip("Cairn templates not available")
+        cfg = tmp_path / "profile.yml"
+        cfg.write_text("project_name: DefaultOnTest\ntest_command: pytest\n")
+        from bootstrap.scaffold import main
+        rc = main(
+            [
+                "--config", str(cfg),
+                "--target", str(tmp_path),
+                "--cairn-root", str(cairn_root),
+            ]
+        )
+        assert rc == 0
+        # Default-on module files should be present
+        for module_file in (
+            "lifecycle-metrics.md",
+            "reflections.md",
+            "claim-check.md",
+        ):
+            assert (tmp_path / "dev" / "modules" / module_file).exists(), (
+                f"default-on module {module_file} not installed"
+            )
+        # The info banner should appear on stderr
+        captured = capsys.readouterr()
+        assert "default-on" in captured.err.lower()
+
+    def test_empty_modules_list_installs_nothing(
+        self, tmp_path: Path
+    ) -> None:
+        """An explicit `modules: []` means "install no modules" (opt-out
+        of even the default-on set)."""
+        cairn_root = Path(__file__).resolve().parent.parent.parent
+        if not (cairn_root / "templates").exists():
+            pytest.skip("Cairn templates not available")
+        cfg = tmp_path / "profile.yml"
+        cfg.write_text(
+            "project_name: NoModulesTest\ntest_command: pytest\nmodules: []\n"
+        )
+        from bootstrap.scaffold import main
+        rc = main(
+            [
+                "--config", str(cfg),
+                "--target", str(tmp_path),
+                "--cairn-root", str(cairn_root),
+            ]
+        )
+        assert rc == 0
+        modules_dir = tmp_path / "dev" / "modules"
+        assert modules_dir.exists()
+        # No .md files installed
+        assert list(modules_dir.glob("*.md")) == []
