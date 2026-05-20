@@ -28,3 +28,27 @@ merged into `AGENTS.md`:
 The checker is a **discipline aid, not a gate** — the
 verify-before-asserting habit is the doctrine; the tool only
 shifts its cheap, mechanical part left, ahead of review.
+
+## Out of scope (deferred)
+
+A **git `pre-commit` hook wrapping `{{claim_check_command}}`** was
+floated during Phase 2 of the Cairn methodology repo construction
+and is deliberately deferred from v1:
+
+* The "discipline aid, not a gate" framing above is load-bearing —
+  a pre-commit hook would convert the checker from advisory into
+  blocking, and an honest forward-reference (a `Proposed path:`
+  citation, a count expressed as a delta) would fail the hook
+  unless the hook learned the same exemptions the doctrine carries.
+  That apparatus is its own design problem, not a one-line wrap.
+* The discipline already lands without it: the checker is invoked
+  in the goodnight routine and at proposal / plan write-time, the
+  cheap moment.  A hook would catch the rare case of an author
+  who skips both — at the cost of churn for the common case.
+
+If a future adopter wants the hook anyway, an opt-in version
+running with `--fail-on-soft` only when the user installs a
+project-side `.git/hooks/pre-commit` is the right shape; we have
+not specified the exemption protocol it would need, and the
+specification is a Cairn follow-up rather than a bootstrap-time
+choice.
