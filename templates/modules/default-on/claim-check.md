@@ -1,8 +1,9 @@
 # Module: claim-check
 
 **Selected when:** default-on.
-**Adds to:** a `scripts/`-level write-time checker, plus a note in
-`AGENTS.md`.
+**Adds to:** a note in `AGENTS.md` documenting the
+verify-before-asserting discipline. The actual checker tool is
+the adopter's to supply (see "Reference implementation" below).
 
 The claim-check module operationalizes **verify-before-asserting**:
 before a load-bearing claim about the repository — a file path, a
@@ -14,9 +15,7 @@ absolute count claims.
 
 ## Template content
 
-The module ships the checker as a `scripts/`-level tool,
-generalized from the methodology's reference instance. The note
-merged into `AGENTS.md`:
+Merged into `AGENTS.md`:
 
 > **Verify before asserting.** Before committing a proposal, plan,
 > or doc, run the claim checker (`{{claim_check_command}}`) over
@@ -25,9 +24,37 @@ merged into `AGENTS.md`:
 > before commit; a deliberate forward-reference is *marked*, not
 > left to assert.
 
+The `{{claim_check_command}}` token is filled from the adopter's
+profile YAML with whatever invocation runs their checker (e.g.
+`python scripts/claim_check.py`).
+
 The checker is a **discipline aid, not a gate** — the
 verify-before-asserting habit is the doctrine; the tool only
 shifts its cheap, mechanical part left, ahead of review.
+
+## Reference implementation
+
+Cairn ships the discipline (this module, the `{{claim_check_command}}`
+token, the `AGENTS.md` note) but does **not** yet ship a generic
+checker script. The methodology's reference implementation lives at
+[`modflow_tools/scripts/claim_check.py`](https://gitlab.msu.edu/hydrogeology/code-projects/modflow_tools)
+— roughly 200 lines of Python that hard-flags broken repo paths
+and out-of-bounds line citations, and soft-flags absolute count
+claims. Adopters have two paths:
+
+* **Copy and adapt the reference**: clone the file from the
+  modflow_tools repo into the target project's `scripts/` (or
+  `tools/`, or wherever the project keeps utility scripts) and
+  point `{{claim_check_command}}` at it. The reference is
+  vendor-neutral Python; the patterns it recognises may need
+  light editing for project-specific markdown conventions.
+* **Write your own**: a checker as small as a regex pass over
+  Markdown headings and link targets suffices for the discipline.
+  Use the reference as a behavioral spec rather than as code.
+
+A generalized, in-tree reference script that the scaffold installs
+to a target's `scripts/` directory is queued as a future Cairn
+enhancement; see Cairn's own roadmap for the follow-up.
 
 ## Out of scope (deferred)
 
