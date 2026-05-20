@@ -86,11 +86,14 @@ years old with no automated tests" is a reproducible reason;
 
 From the six-axis profile, select the module set:
 
-1. **Invariant kernel** (always): the lifecycle, one designated
-   Human Maintainer, append-only commit-recorded deliberation,
-   the stigmergic `dev/` tree, the baseline coordination tier,
-   and the session routines. These are non-negotiable — see
-   `../dimensions/README.md > The invariant kernel`.
+1. **Invariant kernel** (always): the **lifecycle** (proposal →
+   review → decision, plus the plan lifecycle for non-trivial
+   accepted proposals); one designated Human Maintainer holding
+   final Decision authority; append-only, commit-recorded
+   deliberation; stigmergic coordination through a `dev/` tree;
+   the baseline coordination tier; the session routines. These
+   are non-negotiable — see
+   `../dimensions/README.md > The three module layers`.
 
 2. **Default-on modules** (installed unless a dimension removes
    them): lifecycle-metrics, reflections, claim-check. Remove a
@@ -203,7 +206,42 @@ project's real, specific content. The slot's placeholder text
 describes what is expected. A shipped empty slot is a review
 finding.
 
-The slots most likely to require Maintainer input:
+**Two of the kernel slots are filled from installed module
+content, not authored from scratch:**
+
+* `role-roster-additions` in `dev/agent_collaboration.md`
+* `coordination-additions` in `dev/agent_collaboration.md`
+
+Each module template under `<target>/dev/modules/<name>.md`
+carries an **`Adds to:`** line near the top naming the kernel
+section (and, by implication, the slot) its content belongs in,
+plus a **`Merged into:`** block under `## Template content`
+holding the prose to splice. For each installed module:
+
+1. Read the module's `Adds to:` line — it names the kernel
+   destination.
+2. Read the module's `Merged into:` block — it contains the prose.
+3. Paste that prose between the named slot's `<!-- cairn:slot
+   ... -->` and `<!-- cairn:end ... -->` markers in the kernel
+   file, replacing the placeholder text. Preserve the markers
+   themselves.
+
+Example: `<target>/dev/modules/dual-review.md` carries "Adds to:
+the review section of `dev/agent_collaboration.md`" and a "Merged
+into `dev/agent_collaboration.md`:" block whose content fills the
+`role-roster-additions` slot. A first-pass adopter who writes a
+paragraph from scratch into `role-roster-additions` ships kernel
+doctrine that does *not* reflect the installed modules — the R-F
+gate sees the slot filled but cannot see that it was filled with
+the wrong content.
+
+**Invariant**: no installed module should leave its declared
+`Adds to:` slot unfilled. The R-F block-slot check (Step II-5)
+confirms each slot has substantive content; this invariant
+confirms the content is the *right* content.
+
+**The remaining slots require Maintainer input directly** (no
+module supplies them):
 
 * `project-overview` in `AGENTS.md` — what the project does and
   who it is for.
@@ -211,10 +249,6 @@ The slots most likely to require Maintainer input:
   development environment, high-risk surfaces, operational
   pitfalls. This is judgment work; a reasoning agent and the
   Maintainer write it together.
-* `role-roster-additions` in `dev/agent_collaboration.md` —
-  any dimension-selected roles beyond the base roster.
-* `coordination-additions` in `dev/agent_collaboration.md` —
-  higher coordination tiers if selected.
 * `team-roster` in `dev/collaboration_agreement.md` — the team
   members and their roles.
 
@@ -356,12 +390,28 @@ is, not as it was at bootstrap time.
 
 ## Appendix A — placeholder tokens in core templates
 
-The scaffold fills these inline tokens from the profile config:
+The scaffold fills these **inline tokens** from the profile config
+(mechanical substitution):
 
 | Token | File(s) | Description |
 |-------|---------|-------------|
 | `{{project_name}}` | `AGENTS.md`, `dev/README.md`, `dev/collaboration_agreement.md`, `dev/agent_collaboration.md` | The project's display name |
 | `{{test_command}}` | `AGENTS.md` | The command to run the test suite |
+| `{{claim_check_command}}` | `dev/modules/claim-check.md` (when the claim-check module is installed) | The command to run the write-time claim checker |
+| `{{metrics_command}}` | `dev/modules/lifecycle-metrics.md` (when the lifecycle-metrics module is installed) | The command to run the lifecycle-metrics extractor |
+
+**Document-author placeholders** — written as `{{...}}` but **kept**
+in the installed templates for the document author to fill at write
+time (e.g., when authoring a review or response). The scaffold does
+not substitute these and the post-scaffold report does not warn
+about them:
+
+| Token | Where it appears | Filled by |
+|-------|------------------|-----------|
+| `{{Maintainer}}` | `dev/proposals/_template.md` Decision header | The Maintainer authoring a Decision |
+| `{{author}}` | `dev/proposals/_template.md` Response header | The proposal author writing a Response |
+| `{{reviewer}}` | `dev/proposals/_template.md` Review header | The reviewer writing a Review section |
+| `{{assessor}}` | Phase-0 assessment templates | The agent filling the dimension profile |
 
 Block slots (judgment work, left for the agent and Maintainer):
 
