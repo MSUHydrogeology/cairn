@@ -321,8 +321,12 @@ _MODULE_MAPPINGS: dict[str, tuple[str, str]] = {
 }
 
 #: Result record for one installed file.
-InstallResult = tuple[Path, list[str], list[str]]
-# (target_path, unfilled_token_names, block_slot_names)
+#: ``status`` is ``"installed"`` (file written), ``"skipped-exists"``
+#: (skipped because the file already existed and ``force`` was not
+#: set), or ``"dry-run"`` (would have been written under
+#: ``--dry-run``).
+InstallResult = tuple[Path, list[str], list[str], str]
+# (target_path, unfilled_token_names, block_slot_names, status)
 
 
 def _install_one(
@@ -331,8 +335,16 @@ def _install_one(
     tokens: dict[str, str],
     *,
     dry_run: bool,
+    force: bool = False,
 ) -> InstallResult:
-    """Copy *src* to *dst*, substituting tokens.  Returns an InstallResult."""
+    """Copy *src* to *dst*, substituting tokens.  Returns an InstallResult.
+
+    Default-safe: if *dst* already exists and *force* is False, the
+    file is **not** overwritten and the result's status is
+    ``"skipped-exists"``.  Re-running the scaffold against an
+    already-installed repo therefore preserves filled block slots and
+    other customizations; pass ``--force`` to opt into overwriting.
+    """
     text = src.read_text(encoding="utf-8")
     # Pre-substitution: warn about template-author errors (unpaired
     # cairn:slot markers) before the file ships.  These would manifest
@@ -346,10 +358,27 @@ def _install_one(
             file=sys.stderr,
         )
     text = substitute_tokens(text, tokens)
-    if not dry_run:
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        dst.write_text(text, encoding="utf-8")
-    return dst, find_unfilled_tokens(text), find_block_slots(text)
+
+    if dry_run:
+        return dst, find_unfilled_tokens(text), find_block_slots(text), "dry-run"
+
+    if dst.exists() and not force:
+        print(
+            f"  [skip] {dst}: already exists -- pass --force to overwrite "
+            f"(re-running the scaffold without --force preserves any "
+            f"customizations the file already carries)",
+            file=sys.stderr,
+        )
+        return (
+            dst,
+            find_unfilled_tokens(text),
+            find_block_slots(text),
+            "skipped-exists",
+        )
+
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    dst.write_text(text, encoding="utf-8")
+    return dst, find_unfilled_tokens(text), find_block_slots(text), "installed"
 
 
 def install_core(
@@ -358,6 +387,7 @@ def install_core(
     tokens: dict[str, str],
     *,
     dry_run: bool = False,
+    force: bool = False,
 ) -> list[InstallResult]:
     """Copy core templates into *target*, substituting tokens."""
     results: list[InstallResult] = []
@@ -367,7 +397,9 @@ def install_core(
             print(f"  [warn] core template missing: {src_rel}", file=sys.stderr)
             continue
         dst = target / dst_rel
-        results.append(_install_one(src, dst, tokens, dry_run=dry_run))
+        results.append(
+            _install_one(src, dst, tokens, dry_run=dry_run, force=force)
+        )
     return results
 
 
@@ -378,6 +410,7 @@ def install_modules(
     module_names: list[str],
     *,
     dry_run: bool = False,
+    force: bool = False,
 ) -> list[InstallResult]:
     """Copy selected module templates into *target*.
 
@@ -401,7 +434,9 @@ def install_modules(
             print(f"  [warn] module template missing: {src_rel}", file=sys.stderr)
             continue
         dst = target / dst_rel
-        results.append(_install_one(src, dst, tokens, dry_run=dry_run))
+        results.append(
+            _install_one(src, dst, tokens, dry_run=dry_run, force=force)
+        )
     return results
 
 
@@ -424,26 +459,51 @@ def print_report(
     for d in dirs_created:
         print(f"  {d.relative_to(target)}/")
 
-    print(f"\nFiles installed ({len(installed)}):")
-    for dst, _unfilled, _slots in installed:
-        print(f"  {dst.relative_to(target)}")
+    written = [r for r in installed if r[3] == "installed"]
+    skipped = [r for r in installed if r[3] == "skipped-exists"]
+    dry = [r for r in installed if r[3] == "dry-run"]
 
-    # Unfilled inline tokens
+    if dry:
+        print(f"\n[dry-run] Files that would be installed ({len(dry)}):")
+        for dst, _u, _s, _st in dry:
+            print(f"  {dst.relative_to(target)}")
+    else:
+        print(f"\nFiles installed ({len(written)}):")
+        for dst, _u, _s, _st in written:
+            print(f"  {dst.relative_to(target)}")
+        if skipped:
+            print(
+                f"\nFiles skipped -- already exist, --force not set "
+                f"({len(skipped)}):"
+            )
+            for dst, _u, _s, _st in skipped:
+                print(f"  {dst.relative_to(target)}")
+            print(
+                "  -> These files already exist in the target.  The scaffold "
+                "preserved their contents by default to protect filled\n"
+                "     block slots and other customizations.  Pass --force to "
+                "overwrite (back up first if you have customizations\n"
+                "     you want to keep)."
+            )
+
+    # Unfilled inline tokens (only count files we actually wrote or
+    # would write; skipped files keep their on-disk content untouched)
+    accounted = written or dry
     all_unfilled = sorted(
-        {tok for _, unfilled, _ in installed for tok in unfilled}
+        {tok for _d, unfilled, _s, _st in accounted for tok in unfilled}
     )
     if all_unfilled:
         print(f"\n[WARN] {len(all_unfilled)} unfilled token(s) remain:")
         for tok in all_unfilled:
             print(f"  {{{{ {tok} }}}}")
         print("  -> Add these to the profile config and re-run, or fill manually.")
-    else:
+    elif accounted:
         print("\n[OK] All inline tokens substituted.")
 
-    # Block slots needing agent attention
+    # Block slots needing agent attention (only for written/dry files)
     all_slots = [
         (dst.relative_to(target), slot)
-        for dst, _, slots in installed
+        for dst, _u, slots, _st in accounted
         for slot in slots
     ]
     if all_slots:
@@ -506,6 +566,16 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--dry-run",
         action="store_true",
         help="Print what would be done without writing any files.",
+    )
+    p.add_argument(
+        "--force",
+        action="store_true",
+        help=(
+            "Overwrite existing files in the target.  Default (no --force) "
+            "skips files that already exist and prints a skip warning, so "
+            "re-running the scaffold preserves any filled block slots and "
+            "other customizations the existing files carry."
+        ),
     )
     return p
 
@@ -577,15 +647,21 @@ def main(argv: list[str] | None = None) -> int:
 
     # Create directory tree
     print(f"\nScaffolding Cairn into: {target}")
+    if args.force:
+        print("  (--force: existing files will be overwritten)")
     dirs_created = create_dev_tree(target)
 
     # Install core templates
     print("Installing core templates ...")
-    core_results = install_core(templates_root, target, tokens)
+    core_results = install_core(
+        templates_root, target, tokens, force=args.force
+    )
 
     # Install module templates
     print(f"Installing modules: {', '.join(modules) or '(none)'} ...")
-    module_results = install_modules(templates_root, target, tokens, modules)
+    module_results = install_modules(
+        templates_root, target, tokens, modules, force=args.force
+    )
 
     print_report(target, dirs_created, core_results + module_results)
     return 0

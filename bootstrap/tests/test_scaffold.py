@@ -424,6 +424,91 @@ class TestCLI:
         captured = capsys.readouterr()
         assert "default-on" in captured.err.lower()
 
+    def test_rerun_skips_existing_files_by_default(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Re-running the scaffold against an already-installed target
+        preserves the existing files (so an adopter's filled block slots
+        survive a second run).  Filed under External Review F2 from
+        Antigravity, 2026-05-20."""
+        cairn_root = Path(__file__).resolve().parent.parent.parent
+        if not (cairn_root / "templates").exists():
+            pytest.skip("Cairn templates not available")
+        cfg = tmp_path / "profile.yml"
+        cfg.write_text(
+            "project_name: SkipTest\ntest_command: pytest\nmodules: []\n"
+        )
+        # First install
+        from bootstrap.scaffold import main
+        rc1 = main(
+            [
+                "--config", str(cfg),
+                "--target", str(tmp_path),
+                "--cairn-root", str(cairn_root),
+            ]
+        )
+        assert rc1 == 0
+
+        # Customize AGENTS.md to simulate a filled block slot
+        agents_md = tmp_path / "AGENTS.md"
+        original = agents_md.read_text()
+        custom = original + "\n<!-- CUSTOMIZED CONTENT -->\n"
+        agents_md.write_text(custom)
+
+        # Second install -- should NOT clobber
+        rc2 = main(
+            [
+                "--config", str(cfg),
+                "--target", str(tmp_path),
+                "--cairn-root", str(cairn_root),
+            ]
+        )
+        assert rc2 == 0
+        assert agents_md.read_text() == custom, (
+            "Re-running the scaffold without --force clobbered customizations"
+        )
+        captured = capsys.readouterr()
+        # A skip warning should appear on stderr
+        assert "[skip]" in captured.err.lower() or "skip" in captured.err.lower()
+
+    def test_force_overwrites_existing_files(
+        self, tmp_path: Path
+    ) -> None:
+        """--force opts into overwriting existing target files."""
+        cairn_root = Path(__file__).resolve().parent.parent.parent
+        if not (cairn_root / "templates").exists():
+            pytest.skip("Cairn templates not available")
+        cfg = tmp_path / "profile.yml"
+        cfg.write_text(
+            "project_name: ForceTest\ntest_command: pytest\nmodules: []\n"
+        )
+        from bootstrap.scaffold import main
+        rc1 = main(
+            [
+                "--config", str(cfg),
+                "--target", str(tmp_path),
+                "--cairn-root", str(cairn_root),
+            ]
+        )
+        assert rc1 == 0
+        agents_md = tmp_path / "AGENTS.md"
+        agents_md.write_text("# Hand-edited content the user wants gone\n")
+
+        # --force overwrites
+        rc2 = main(
+            [
+                "--config", str(cfg),
+                "--target", str(tmp_path),
+                "--cairn-root", str(cairn_root),
+                "--force",
+            ]
+        )
+        assert rc2 == 0
+        # Content should be the template again, not the hand-edited version
+        content = agents_md.read_text()
+        assert "Hand-edited content" not in content
+        assert "ForceTest" in content  # token substitution happened
+
     def test_empty_modules_list_installs_nothing(
         self, tmp_path: Path
     ) -> None:

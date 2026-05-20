@@ -186,6 +186,24 @@ See `scaffold.py` for the config format and flags. The script does
 **not** fill block slots — those are judgment work for the agent
 and the Maintainer.
 
+**Safe-by-default re-runs.** If a target file already exists, the
+scaffold **skips** it by default and prints a skip warning rather
+than overwriting it — a re-run (e.g., to install a newly enabled
+module, or to upgrade Cairn) preserves any filled block slots and
+project-local customizations the existing file carries. Pass
+`--force` to opt into overwriting:
+
+```
+python <path/to/cairn>/bootstrap/scaffold.py \
+    --config <profile.yml> \
+    --target . \
+    --force
+```
+
+Before running `--force` against an already-customized target,
+commit your current state so git records what the overwrite would
+discard.
+
 ### II-3 Select (confirm)
 
 Review the post-scaffold report:
