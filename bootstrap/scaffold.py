@@ -171,17 +171,30 @@ def _minimal_yaml_parse(text: str) -> dict[str, Any]:
     result: dict[str, Any] = {}
     current_list_key: str | None = None
 
+    def _list_item_text(stripped: str) -> str:
+        """Strip leading ``- ``, an optional trailing ``# comment``, and
+        surrounding quotes, returning the item value."""
+        return stripped[2:].split("#")[0].strip().strip('"').strip("'")
+
     for line in text.splitlines():
         stripped = line.strip()
         if not stripped or stripped.startswith("#"):
             continue
 
         if line[:1] in (" ", "\t"):
-            # List item under current_list_key
+            # Indented continuation -- list item under current_list_key.
             if current_list_key is not None and stripped.startswith("- "):
-                item = stripped[2:].split("#")[0].strip().strip('"').strip("'")
+                item = _list_item_text(stripped)
                 if item:
                     result.setdefault(current_list_key, []).append(item)
+        elif stripped.startswith("- ") and current_list_key is not None:
+            # Unindented list item under current_list_key.  PyYAML
+            # accepts both ``key:\n  - a`` and ``key:\n- a`` shapes;
+            # the minimal parser honors the second form too so a
+            # PyYAML-free environment behaves the same way.
+            item = _list_item_text(stripped)
+            if item:
+                result.setdefault(current_list_key, []).append(item)
         elif ":" in line:
             key, _, rest = line.partition(":")
             key = key.strip()

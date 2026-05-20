@@ -182,6 +182,34 @@ class TestMinimalYamlParse:
         result = _minimal_yaml_parse(text)
         assert result["modules"] == ["lifecycle-metrics", "reflections"]
 
+    def test_unindented_list_value(self) -> None:
+        """Unindented list items under a key (PyYAML accepts this; the
+        minimal parser must honor the same shape so no-PyYAML
+        environments do not silently drop the modules list)."""
+        text = textwrap.dedent("""\
+            modules:
+            - lifecycle-metrics
+            - reflections
+            - claim-check
+        """)
+        result = _minimal_yaml_parse(text)
+        assert result["modules"] == [
+            "lifecycle-metrics",
+            "reflections",
+            "claim-check",
+        ]
+
+    def test_mixed_indent_list(self) -> None:
+        """Mixed indented and unindented items under one key -- not valid
+        YAML strictly speaking, but the minimal parser is forgiving."""
+        text = textwrap.dedent("""\
+            modules:
+              - lifecycle-metrics
+            - reflections
+        """)
+        result = _minimal_yaml_parse(text)
+        assert result["modules"] == ["lifecycle-metrics", "reflections"]
+
     def test_skips_comments(self) -> None:
         text = "# comment\nproject_name: MyProject\n"
         result = _minimal_yaml_parse(text)
