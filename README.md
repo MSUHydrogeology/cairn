@@ -27,16 +27,109 @@ The two differentiators Cairn leads with: an **append-only,
 git-committed deliberation lifecycle**, and a **Dual-Review model**
 (two-tier review across structural independence).
 
+## Who Cairn is for
+
+* A scientist or research-software team building scientific code
+  (numerical simulation, data pipelines, calibration / inversion,
+  ML for science).
+* Adopting one or more AI coding agents (any vendor; Cairn is
+  vendor-neutral throughout).
+* Wanting recorded, reviewed deliberation rather than ad-hoc
+  prompting — and willing to commit the apparatus to git.
+* Working at a graduate-research, faculty-research, or small-group
+  scale (one human plus agents, up to a small multi-human team).
+
+Cairn is **not** a project-management framework, a CI/CD tool, or a
+prompt library. It is upstream of those — the doctrine that decides
+what gets prompted, reviewed, and shipped.
+
+## How to adopt
+
+Three graduated levels (see [`on-ramp/README.md`](on-ramp/README.md)
+for the full ladder):
+
+* **Level 0 — read the doctrine.** Read [`doctrine/`](doctrine/)
+  as a handbook; let it inform how the team already works. No
+  apparatus, no `dev/` tree. The lowest-commitment entry.
+* **Level 1 — hand-copy the kernel.** Copy
+  [`templates/core/`](templates/core/) into the repository, add
+  the modules your dimensional profile selects, run the lifecycle
+  by hand.
+* **Level 2 — full bootstrap.** Run
+  [`bootstrap/scaffold.py`](bootstrap/scaffold.py) against a
+  profile YAML; the bootstrap procedure
+  ([`bootstrap/BOOTSTRAP.md`](bootstrap/BOOTSTRAP.md)) walks an
+  agent and the maintainer through assessment, install,
+  customization, and a dogfood pass.
+
+The bootstrap is intentionally single-agent: one capable reasoning
+agent running alongside the Maintainer, working from
+[`bootstrap/BOOTSTRAP.md`](bootstrap/BOOTSTRAP.md).
+
+## Repository layout
+
+| Path | What it holds |
+|------|---------------|
+| [`doctrine/`](doctrine/) | The invariant core: lifecycle, dual-review, coordination, role roster, session routines, rationale. |
+| [`dimensions/`](dimensions/) | The six adaptation axes (age, size, complexity, language, human team, agent team) and the three module layers. |
+| [`templates/`](templates/) | The forkable files: `core/` (the kernel), `modules/default-on/` and `modules/team-gated/` (the dimension-selected add-ons), and `phase-0/` (the assessment templates). |
+| [`bootstrap/`](bootstrap/) | The R-A three-act bootstrap procedure (`BOOTSTRAP.md`), the mechanical scaffold (`scaffold.py` + tests), safety rules (`SAFETY.md`, R-I), and the fidelity-check manifest spec (`fidelity-check.md`, R-H). |
+| [`case-studies/`](case-studies/) | Worked examples of the matrix applied: [`modflow_tools.md`](case-studies/modflow_tools.md) (smaller sibling) and [`lhm.md`](case-studies/lhm.md) (full apparatus). |
+| [`on-ramp/`](on-ramp/) | The graduated-adoption ladder (Level 0 / 1 / 2). |
+
 ## Status
 
-**Under construction.** Cairn is being built in five phases —
-doctrine extraction, templates, bootstrap, case studies, launch.
-This repository is not yet released; the public release will be a
-GitHub template repository carrying a Zenodo DOI and a
-`CITATION.cff`.
+Cairn is being released at **v0.1.0**.
+
+* **Phases 1–4 complete**: doctrine extraction, forkable templates,
+  bootstrap procedure + scaffold + 38 unit tests, and two case
+  studies (modflow_tools, LHM) covering opposite-leaning points on
+  the dimension matrix.
+* **Phase 5 — launch and governance — in progress.**
+* **R-H third-party correctness probe (chunk 5.3 of the plan)** is
+  outstanding: it awaits a consenting third-party scientific
+  repository that did not contribute to the doctrine. The
+  bootstrap is validated end-to-end against modflow_tools through
+  the v1 reference manifest at
+  [`case-studies/modflow_tools-fidelity-manifest.yml`](case-studies/modflow_tools-fidelity-manifest.yml).
+
+The methodology is in active use in two real projects. Cairn is
+the generalized doctrine extracted from that practice.
 
 ## License
 
-Dual-licensed: prose and templates under **CC BY 4.0**
-(`LICENSE-CC-BY.md`); scripts under the **MIT License**
-(`LICENSE-MIT.md`).
+Dual-licensed:
+
+* **Prose and templates** — doctrine, dimensions, case studies,
+  bootstrap narrative, README, template documents — are licensed
+  under **Creative Commons Attribution 4.0 International (CC BY
+  4.0)**. See [`LICENSE-CC-BY.md`](LICENSE-CC-BY.md).
+* **Scripts** — `bootstrap/scaffold.py` and its tests — are
+  licensed under the **MIT License**. See
+  [`LICENSE-MIT.md`](LICENSE-MIT.md).
+
+The boundary is by file kind: anything that is text-for-humans
+falls under CC BY; anything that is code-for-machines falls under
+MIT. The two licenses are intentionally compatible.
+
+## Citation
+
+If you use Cairn, please cite it. See [`CITATION.cff`](CITATION.cff)
+for citation metadata. The first release carries a Zenodo DOI —
+once the release is cut, the DOI lands in `CITATION.cff` and a
+release-tag note here.
+
+## Origin
+
+Cairn generalizes the apparatus developed for the
+[`modflow_tools`](https://gitlab.msu.edu/hydrogeology/code-projects/modflow_tools)
+groundwater-modeling project — the reference instance — and is
+extended through application to a second project (LHM, MSU
+Hydrology). Both case studies are in
+[`case-studies/`](case-studies/).
+
+The Cairn repository itself is built using Cairn — its
+construction is recorded as a `cairn_methodology_repo` plan in the
+modflow_tools repository's own `dev/plans/` lifecycle, with each
+phase ending in a required Internal review before the next phase
+starts. The plan is the artifact; Cairn is the deliverable.

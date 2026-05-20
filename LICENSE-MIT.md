@@ -1,9 +1,11 @@
 # MIT License
 
-*Applies to the scripts in this repository. Prose and templates are
-licensed separately under CC BY 4.0 — see `LICENSE-CC-BY.md`. The
-copyright line and the dual-license boundary are confirmed at
-Cairn's launch-phase license-choice review.*
+*Applies to the scripts in this repository — `bootstrap/scaffold.py`
+and its tests under `bootstrap/tests/`. Prose and templates are
+licensed separately under CC BY 4.0 — see
+[`LICENSE-CC-BY.md`](LICENSE-CC-BY.md). The boundary is by file
+kind: anything text-for-humans is CC BY; anything code-for-machines
+is MIT.*
 
 Copyright (c) 2026 Anthony Kendall and the Cairn contributors
 

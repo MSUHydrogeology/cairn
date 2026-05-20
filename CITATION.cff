@@ -1,20 +1,31 @@
-# CITATION.cff — skeleton stub.
-# Authorship, version, release date, and the Zenodo DOI are
-# finalized in Cairn's launch phase (implementation plan, R-J).
 cff-version: 1.2.0
-message: "If you use Cairn, please cite it. Citation metadata is finalized at the first release."
+message: "If you use Cairn, please cite it using the metadata below."
 title: "Cairn: An Adaptable Framework for Scientist-AI Research Software Teams"
 abstract: >-
   Cairn is a methodology for scientist-led research-software teams
   adopting AI agents: an invariant doctrine of recorded, reviewed
   deliberation; forkable templates; a single-agent bootstrap that
   adapts the apparatus along codebase and team dimensions; and two
-  worked case studies.
+  worked case studies (modflow_tools and LHM).
 type: software
 authors:
   - family-names: Kendall
     given-names: Anthony
+    affiliation: "Michigan State University"  # confirm department before public release
+    # orcid: "https://orcid.org/XXXX-XXXX-XXXX-XXXX"  # add before public release
+version: "0.1.0"
+date-released: "2026-05-20"
 repository-code: "https://github.com/MSUHydrogeology/cairn-scientist-ai-teams"
 license:
   - CC-BY-4.0
   - MIT
+keywords:
+  - human-AI collaboration
+  - scientific software
+  - research software engineering
+  - software methodology
+  - reproducibility
+  - open science
+# The Zenodo DOI lands here after the first GitHub release tag
+# (release-driven Zenodo deposition).  Update with the `doi:` field
+# once issued; until then, cite by version and repository URL.
