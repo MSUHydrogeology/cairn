@@ -28,10 +28,17 @@ adopter to imagine intermediate cases.
 | [`modflow_tools.md`](modflow_tools.md) | legacy · medium · complex · single · solo · concurrent-multi-type | Kernel + all default-on + two team-gated (`dual-review`, `coordination-tiers`) |
 | [`lhm.md`](lhm.md) | legacy · large · complex · multi · solo · concurrent-multi-type | Kernel + all default-on + **all five team-gated** |
 
-The pair shares the team axes (solo human, concurrent-multi-type
-agents) and the complexity axis. They diverge on size, language,
-and the depth of legacy. The divergences drive the module-set
-difference — that's the matrix doing its work.
+The pair shares three axes (complexity, human team, agent team)
+and scores `legacy` on age for both. They diverge on size and
+language, and on the case-study-level analysis of *how much
+retrofit apparatus the legacy classification earns* —
+modflow_tools' age is legacy-by-origin (methodology authored
+alongside the codebase, no Legacy Agent installed); LHM's is
+legacy-throughout (18-year MATLAB core, full retrofit apparatus
+installed). The axis score is the same; the analysis below the
+score differs, and that difference drives the module-set delta.
+See the matched-pair table in [`lhm.md`](lhm.md) for the
+side-by-side.
 
 ## Reference manifests
 
@@ -64,6 +71,19 @@ profiles, module selection, customization narrative. They do
 not contain scientific results, calibration data, source-code
 snippets, or any embargoed material. Project-specific
 operational detail lives in each project's own `dev/` tree.
+
+**Vendor-name exception.** Case studies may name the specific AI
+tools each project actually uses (e.g., "Claude", "Codex",
+"Opus", "GPT-5"). This is the **single permitted exception** to
+the otherwise-doctrine-wide R-G vendor-neutrality constraint and
+applies *only* to the `case-studies/` directory. The rationale:
+a case study is empirical — describing real toolchains is what
+makes it useful — not prescriptive. The templates, the
+bootstrap procedure, the doctrine, and the dimensions/ writings
+remain vendor-neutral; the case studies are where the abstract
+"the agent" lands on concrete vendors. A future case-study
+contributor naming their own toolchain in their case study is
+following the same exception.
 
 ## Adding a new case study
 

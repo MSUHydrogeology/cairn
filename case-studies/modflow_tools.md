@@ -83,7 +83,8 @@ omission has to be made, and it has to be visible.
 `modflow_tools` is roughly mid-five-figures of Python LOC across
 preparation, build, load, postprocess, calibration, and the CLI;
 the test suite collects ~2k tests across contract / integration
-/ workflow / unit / notebook tiers. Medium on the rubric: too
+/ workflow / unit / notebook / benchmark tiers. Medium on the
+rubric: too
 large for a one-file utility, well below the partition-by-domain
 threshold a `domain-agents` module is meant to address.
 

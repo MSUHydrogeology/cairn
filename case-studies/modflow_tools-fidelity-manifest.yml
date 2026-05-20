@@ -59,7 +59,7 @@ slots:
     status: filled
   - file: dev/agent_collaboration.md
     slot: role-roster-additions
-    status: na    # minimal team; no domain-agent additions
+    status: filled    # User Agent + Security Review; no domain-agent or Legacy-Agent additions
   - file: dev/agent_collaboration.md
     slot: coordination-additions
     status: filled    # work-intent tier doc
