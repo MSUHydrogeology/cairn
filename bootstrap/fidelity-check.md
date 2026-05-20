@@ -156,92 +156,19 @@ expected.
 
 ---
 
-## Reference manifest — modflow_tools case study
+## Reference manifests
 
-This is the fidelity manifest for the `modflow_tools` project,
-representing the Cairn installation that informed the methodology.
-It is a *descriptive* manifest — the `modflow_tools` repo predates
-the Cairn bootstrap procedure and was not installed by `scaffold.py`;
-this manifest captures the equivalent state.
+Project-specific reference manifests live alongside their case
+studies, not in `bootstrap/`.  The current reference is:
 
-**Cairn reference commit**: `d152cbb`
-(the commit at which the Phase 2 templates were finalized)
+* `modflow_tools` — see
+  [`../case-studies/modflow_tools-fidelity-manifest.yml`](../case-studies/modflow_tools-fidelity-manifest.yml).
 
-```yaml
-cairn_commit: "d152cbb"
-target_repo: "modflow_tools"
-bootstrap_date: "2026-05-19"
-
-profile:
-  age:         "legacy"
-  size:        "medium"
-  complexity:  "complex"
-  language:    "single"
-  human_team:  "solo"
-  agent_team:  "concurrent-multi-type"
-
-modules:
-  kernel:
-    - AGENTS.md
-    - dev/README.md
-    - dev/PLANNING.md
-    - dev/NEXT_SESSION.md
-    - dev/collaboration_agreement.md
-    - dev/agent_collaboration.md
-    - dev/proposals/_template.md
-    - dev/plans/_template.md
-  default_on:
-    - lifecycle-metrics    # tools/lifecycle_metrics.py; dev/strategy/ output
-    - reflections          # dev/reflections/ channel
-    - claim-check          # scripts/claim_check.py
-  team_gated:
-    - dual-review          # dev/agent_collaboration.md Internal + External tiers
-    - coordination-tiers   # dev/intents/ asynchronous work-intent tier
-
-roles:
-  - Human Maintainer   # Anthony Kendall
-  - Strategy
-  - Implementation
-  - Internal Reviewer
-  - External Reviewer
-
-slots:
-  - file: AGENTS.md
-    slot: project-overview
-    status: filled
-  - file: AGENTS.md
-    slot: project-conventions
-    status: filled
-  - file: dev/agent_collaboration.md
-    slot: role-roster-additions
-    status: na    # minimal team; no domain-agent additions
-  - file: dev/agent_collaboration.md
-    slot: coordination-additions
-    status: filled    # work-intent tier doc
-  - file: dev/collaboration_agreement.md
-    slot: team-roster
-    status: filled
-
-deferred_default_on: []
-```
-
-**Notes on the modflow_tools reference manifest**:
-
-* `claim-check` is implemented as a project-local script
-  (`scripts/claim_check.py`) rather than a copied module file; the
-  module template describes the discipline, and the working
-  implementation is in the script.  The fidelity check for
-  claim-check confirms the discipline is documented and wired into
-  the workflow, not that the module file is present verbatim.
-
-* `coordination-tiers` is the asynchronous work-intent tier;
-  the real-time tier is not yet installed (team size does not
-  warrant it).
-
-* The `dual-review` module is operative: the proposal and plan
-  lifecycles in `dev/` record both Internal and External review
-  rounds with structural independence (different agent types for
-  External tier).
+Keeping `bootstrap/` project-neutral mirrors the R-G vendor-neutral
+discipline in spirit: project-name leak is not as serious as
+vendor-name leak, but it is the same shape of structural violation.
+A fidelity manifest is a *case-study artifact*, not a bootstrap
+artifact.
 
 ---
 
