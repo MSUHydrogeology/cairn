@@ -21,6 +21,7 @@ project is doing, and why* from this tree alone.
 | `plans/` | Execution plans for non-trivial accepted proposals. |
 | `plans/_template.md` | The plan structure and the plan-archive doctrine. |
 | `plans/archive/` | Closed plans — read for what shipped and why. |
+| `modules/` | Dimension-selected add-ons — one file per installed module (see `modules/<name>.md` for each). Read each module's `Adds to:` line to find where its content merges into the kernel. |
 
 A `vision.md` (the project's north star), a `strategy/` directory
 (longer-horizon research notes), and an `upstream_issues/`
