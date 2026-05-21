@@ -135,6 +135,103 @@ and first-implementation commits may **combine**. The plan-archive
 commit still stands alone, after review. The lifecycle compresses;
 it does not collapse.
 
+## Procedural-gap inline Decisions
+
+Implementation discovers, mid-flight, that a specific procedural
+step was not pre-specified by the proposal or plan — a missing
+enumeration, an unanticipated sub-step, a clarification on how a
+pre-specified rule applies to a specific case. The unmodified
+lifecycle would route this through a new proposal cycle, which is
+over-process for a procedural detail; the under-process failure is
+symmetric — the implementer quietly makes the call, exceeding
+delegated authority and diluting the Decision-of-record principle.
+
+The Maintainer may close such a gap via a **procedural-gap inline
+Decision** — a brief Decision section appended to the live
+proposal or plan, recording the call and its reasoning — **only
+when all three of these criteria hold**:
+
+1. **Bounded mechanical gap.** The gap is a specific procedural
+   detail, not a substantive scope hole or a competing-trade-off
+   that requires deliberation.
+2. **Resolution preserves substantive scope.** The inline Decision
+   does not re-open the proposal's substance; it answers a "how"
+   question, not a "whether" question. Read alongside the
+   original Decision it *fills in*, not *amends*.
+3. **Closure preserves the implementing agent's executable
+   surface.** After the Decision lands, the implementer can
+   continue executing — the gap is closed in the sense that the
+   next step is now defined. The Decision does not introduce
+   new prerequisites that themselves require deliberation.
+
+The three criteria are co-load-bearing. Without (1) an inline
+Decision could absorb substantive scope under the cover of
+"procedural" and bypass review. Without (2) it could quietly
+change the original Decision's substance, leaving the
+append-only record misleading. Without (3) it could *introduce*
+scope rather than close it, layering new prerequisites on top
+of the gap. If a gap fails any criterion, the right response is
+not an inline Decision but a fresh proposal that amends or
+supersedes.
+
+Inline Decisions are short — a paragraph naming the gap, the
+call, and the reasoning — attached to the live artifact at the
+natural place (a "Decision clarification" subsection, dated,
+attributed to the Maintainer). They are not separate proposal
+files; they are append-only additions to the executing
+artifact. The pattern is the structural alternative to
+deliberation-by-conversation: it converts what would otherwise be
+a chat resolution into a durable Decision-of-record on the
+artifact.
+
+## Deferred-follow-up revival
+
+An accepted proposal may carry an **explicitly deferred**
+item — a sub-question or sub-scope deferred to a later proposal.
+When the time comes to revive that deferred follow-up, **the
+revival is itself proposal-worthy** under the standard trigger
+conditions: substantive scope, public-contract changes,
+cross-cutting refactor, new abstractions, scientific assumptions.
+
+A deferred follow-up does not become implementable just because
+it is revisited. The proposal that originally deferred it named
+the deferral as a recognition that the substance had not yet
+been deliberated, not as an authorization to implement it later
+without further review. Reviving the item re-enters the
+proposal lifecycle from `proposed`.
+
+This rule prevents the pattern where a deferred follow-up
+accumulates implementation detail in side conversations between
+the original Decision and its eventual revival, then lands
+without ever returning to the deliberation surface. The
+append-only record's value depends on every substantive change
+having a recorded review; the revival rule is what keeps that
+guarantee intact across the time gap a deferral introduces.
+
+## The roadmap is a current-state index, not a historical log
+
+The roadmap surface is **a current-state index**, not a record
+of completed work. Open and in-flight items live there; items
+that complete migrate **out** of the roadmap and into the
+durable record — the archived proposals and plans, the
+implementing commits, the changelog. Completed entries are
+*removed*, not crossed off or struck through.
+
+The failure mode this addresses: a roadmap that accumulates
+"completed" entries gradually becomes the primary
+where-did-this-happen surface, when in fact the archived
+artifacts are where the truth lives. The roadmap's completed
+entries are short, lossy, and out of date by definition; the
+archived artifacts are full, durable, and dated to the
+implementing commit. A reader who treats the roadmap as a
+historical log reads from the worse surface.
+
+The no-history posture forces the durable record to *be* the
+durable record, rather than being shadowed by an incomplete
+summary. It also keeps the roadmap usable: a roadmap that holds
+only what is open or in flight reads quickly and answers
+"what's live?" cleanly.
+
 ## Adaptation
 
 The lifecycle is part of the **invariant kernel** — no adaptation
