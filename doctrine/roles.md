@@ -92,3 +92,59 @@ assuming. Many requests are role-explicit by their verb ("review
 this", "implement that"); for those, the agent states the inferred
 role and proceeds. The cost of confirming is one sentence; the
 cost of guessing wrong is a turn spent in the wrong frame.
+
+## Capability floors — model selection by role and risk
+
+A role is filled by an agent of some capability. In a multi-model
+team, *which* model fills which role is not a neutral matter: an
+under-capable Reviewer misses the very findings that justify the
+Review tier, and a high-capability model filling every role wastes
+capacity and develops a context monopoly that erodes structural
+independence when it later fills a Review role.
+
+Each role has a **capability floor** — the minimum capability
+required to fill the role responsibly given the project's risk
+profile. The floor is named using **adopter-local capability tier
+labels** (high / medium / low capability); each adopting team
+maps the labels to its specific model lineup in its own
+configuration.
+
+The default mapping:
+
+* **High-stakes roles** — Strategy / Research, External Review,
+  Security Review, Maintainer scribing — require the
+  **high-capability tier** by default. The Maintainer may lower
+  the floor for a specific session or sub-domain by explicit
+  Decision; the default is high.
+* **Standard-stakes roles** — Implementation for non-trivial
+  work, Internal Review, Code Review — accept the
+  **medium-capability tier**; high-tier is permitted when
+  available but not required.
+* **Low-stakes roles** — Implementation of trivial chunks, User
+  Agent for routine workflow exercise, non-substantive doc
+  tweaks — accept the **lower-capability tier**; higher tiers
+  are not required.
+
+The floor is jointly determined by role **and** risk: the same
+role on a greenfield experimental codebase has a lower floor than
+on a high-stakes scientific codebase under regulatory review.
+Cairn's doctrine names the invariant (a floor exists, by role
+and risk); the adopter's project-specific placement on the
+complexity axis (`dimensions/complexity.md`) determines the
+numerical mapping.
+
+**Diversity within tier.** Where multiple models meet a tier's
+floor, structural independence is stronger when the Reviewer is
+a different *model architecture* than the author at the same
+tier. This strengthens the floor; it does not replace it. The
+floor is necessary; model-architecture diversity is the
+additional independence gradient.
+
+The mechanism that operationalizes the floor — a tier rubric, a
+per-role default mapping template, a worked example — lives in
+`templates/modules/team-gated/model-selection.md`, conditionally
+installed at the moderate-or-complex end of the complexity axis.
+Specific model names, vendor identities, and tier-to-model
+mappings stay in the adopter's `case-studies/` write-up; the
+doctrine names the invariant, the module instruments it, the
+case study identifies the models.
