@@ -202,13 +202,12 @@ discipline matured; the `Security Review` focused-mode was
 formalized once a periodic security-audit cadence was needed.
 Both belong to the canonical Cairn roster (`doctrine/roles.md`).
 
-The 2026-05-20 amendment added a per-role **capability-tier floor**
-(`frontier` for Strategy and Security; `standard` with escalation
-triggers for Internal Reviewer; `standard` for Implementation
-and User Agent). See the proposal
-`2026-05-19-claude-role-based-model-selection` in the project's
-archive for the doctrine. Cairn doctrine inheritance of the
-capability-tier rule is queued for Cairn Phase 4+.
+The 2026-05-20 amendment added a per-role **capability-tier
+floor**; the floor was ported into Cairn doctrine in the
+2026-05-19 → 2026-05-21 doctrine sync (see the F9 evidence
+ledger below). The adopter-local tier-to-model mapping (per
+`templates/modules/team-gated/model-selection.md`) is in §
+"Tier-to-model mapping" further down this case study.
 
 ## Customization narrative
 
@@ -272,6 +271,72 @@ Cairn reference commit `d152cbb`:
   workflow / unit / notebook / benchmark) where testing is
   absorbed into every proposal as required acceptance criteria
   rather than delegated to a Test-Agent role.
+
+## Doctrine-sync 2026-05-19 → 2026-05-21 (F9 evidence ledger)
+
+The modflow_tools project ran a discovery window between
+2026-05-19 and 2026-05-21 that surfaced nine doctrine landings,
+all of which ported into Cairn proper through the
+`cairn-doctrine-sync-may-19-21` plan. This section is the
+evidence ledger the plan's F9 requirement names: the link from
+each Cairn-doctrine surface to the modflow_tools incident, file,
+and commit that grounds it.
+
+| Cairn doctrine surface | Adopter incident / file (modflow_tools) | Source commit |
+|------------------------|------------------------------------------|---------------|
+| `doctrine/coordination.md` > "Required signal+read for coordination-surface files" | Staged-index collision on `dev/PLANNING.md` (cf2f45e) -- two agents silently edited different sections; one commit absorbed the other's unstaged work. Promoted the required-signal-read protocol on shared-comm files: `dev/PLANNING.md`, `dev/agent_collaboration.md`, `dev/NEXT_SESSION.md`, `CHANGELOG.md`. | `90cdd76` ("Sharpen work-intent doctrine: required signal+read for shared communication files") |
+| `templates/modules/team-gated/coordination-tiers.md` > "Tracked collision log" | `dev/collision_log.md` (markdown table at the repo root) — three event kinds (`true-staged-index`, `prevented-overlap`, `parallel-non-conflict`); 14-day rolling window; goodnight migration from reflections. | `be58d78` ("R2 staged-index assessment: implement + archive") + `ca16ffd` (lifecycle-metrics-layer-v2 Chunk A4 — collision-log parser + rolling-14d snapshot column) |
+| `templates/modules/team-gated/coordination-tiers.md` > "Goodnight intent-hygiene" | `dev/intents/` (untracked YAML) accreted "done" intents over weeks; prune-intents + migrate-collisions goodnight steps codified. | `ea30649` ("prune-intents goodnight step: implement + archive") |
+| `doctrine/session-routines.md` > "The next-session starting plan: written from scratch each goodnight" | `dev/NEXT_SESSION.md` accreted across ~10 sessions; readers acted on stale "pickup-next" entries that had already shipped. Rewrite-from-scratch discipline promoted. | `13f60c2` ("Doctrine: NEXT_SESSION.md is rewritten from scratch each goodnight") |
+| `doctrine/dual-review.md` > "Decision-support Round-2 review" | Two 2026-05-20 proposals had External-reviewer findings appended after the author's Response and Revised proposal; both ran into the "another revision cycle?" trap before the structural-property naming landed. | `c41962b` ("agent_collaboration: document Round-2 decision-support review + procedural-gap Decision-resolution") |
+| `doctrine/lifecycle.md` > "Procedural-gap inline Decisions" | tier-1.1 particle-tracking plan hit a procedural gap mid-implementation (a missing enumeration of a sub-package retrofit); Maintainer scribed an inline Decision-clarification on the live plan rather than open a new proposal. Three-criterion gate codified. | `c41962b` (same commit as Round-2; both patterns surfaced together) |
+| `doctrine/lifecycle.md` > "Deferred-follow-up revival" | Multiple accepted proposals carried explicitly deferred follow-up items; the revival-as-implementable failure mode was observed before the rule was named. | (cumulative across the window; codified incrementally) |
+| `doctrine/lifecycle.md` > "The roadmap is a current-state index, not a historical log" | `dev/PLANNING.md` had grown a "Completed recently" section that gradually became the primary where-did-this-happen surface, shadowing the archived plans and the changelog. No-history posture promoted. | `5e30ea4` ("Doctrine: PLANNING.md is not a historical record") |
+| `doctrine/roles.md` > "Capability floors -- model selection by role and risk" + `templates/modules/team-gated/model-selection.md` | The project runs Claude Opus 4.7, Claude Sonnet 4.6, Codex (GPT-5), and Antigravity (Gemini 2.5 Pro) in different roles; the per-role capability-floor doctrine was authored on `modflow_tools` and is the first adopter mapping. | `cf2f45e` ("implement role-based model selection doctrine") + `3ac3f3b` (sharpening of code-review findings) |
+
+The ledger is the load-bearing link from Cairn's abstract
+doctrine to the concrete adopter incidents that surfaced the
+patterns. Future Cairn doctrine syncs from other adopters will
+add their own ledger rows.
+
+## Tier-to-model mapping (per `model-selection` module)
+
+Per Cairn's `templates/modules/team-gated/model-selection.md`,
+each adopter that installs the model-selection module publishes
+its concrete tier-to-model mapping in its case study (Cairn
+doctrine names the invariant; the case study identifies the
+models). `modflow_tools` runs the following mapping; model
+names are pinned to their 2026-05-20 versions and will be
+updated as the lineup evolves.
+
+| Tier | Vendor A (Anthropic) | Vendor B (OpenAI / Codex) | Vendor C (Google / Antigravity) |
+|------|----------------------|---------------------------|---------------------------------|
+| **high-capability** | Claude Opus 4.7 (1M context) | GPT-5 (high reasoning) | Gemini 2.5 Pro (Antigravity) |
+| **medium-capability** | Claude Sonnet 4.6 | Codex (GPT-5 standard) | — |
+| **low-capability** | Claude Haiku 4 | — | — |
+
+Vendor diversity is populated at the high-capability tier (the
+External Review and Maintainer-scribing roles get the strongest
+*structural-independence* benefit from cross-vendor reviewer
+selection). The medium-capability tier has two vendors
+available; the low-capability tier currently has only Vendor A
+populated, which is acceptable because no high-stakes role
+defaults to low-capability.
+
+Default tier-by-role assignment (matching the module's default
+template):
+
+* **High-capability tier**: Strategy / Research, External
+  Review, Security Review, Maintainer scribing.
+* **Medium-capability tier**: Implementation (non-trivial),
+  Internal Review, Code Review.
+* **Low-capability tier**: Implementation (trivial chunks),
+  User Agent (routine workflow exercise), non-substantive doc
+  tweaks.
+
+The Maintainer has not lowered a high-stakes floor for any
+session or sub-domain in this project. The mapping is reviewed
+at each goodnight in the context of the day's substantive work.
 
 ## What might surprise an adopter
 
