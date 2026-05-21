@@ -64,6 +64,25 @@ short, untracked file declaring who holds which paths, with what
 intent, and a status. It is a courtesy signal, not a lock — it
 helps a second contributor *notice* an overlap before editing.
 
+**Required signal+read for coordination-surface files.** A narrow
+subset of files in any working tree exists *to coordinate across
+sessions or across agents* — handoff notes, planning indices,
+collaboration-norm documents, change logs. The courtesy framing
+under-specifies the discipline for these: two contributors
+silently editing different sections of a long shared file produce
+no working-tree conflict, git merges both patches at commit time,
+and the coordination signal each thought the other had read was
+never read at all. For this subset the protocol upgrades to
+**required**: an agent (a) declares an intent naming the file in
+its paths set, *and* (b) reads the current intent set to check
+for an active intent on the same file. An active intent on the
+same file requires deferral or explicit coordination, not
+concurrent edit. The required mode extends baseline Tier 2; it
+does not replace it. Incidental shared files keep the courtesy
+framing. Each adopting team identifies its own required-mode set
+— the structural rule is doctrine; the file list is adopter-
+local.
+
 ### Tier 3 — real-time: typed activity events
 
 For high-concurrency, domain-agent teams. A minutes-scale signal:
