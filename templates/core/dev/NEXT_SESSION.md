@@ -8,10 +8,20 @@ without the prior session's conversation.
 It complements `PLANNING.md`: `PLANNING.md` says *what* is queued;
 `NEXT_SESSION.md` says *how to actually pick it up*.
 
-`NEXT_SESSION.md` is written by the **goodnight routine** and on
-explicit maintainer instruction — it is a handoff artifact
-authored once, when the session's arc is complete, not a file
-accreted mid-session.
+`NEXT_SESSION.md` is **rewritten from scratch** by the full-
+handoff owner at each goodnight — the physical action is "open
+a blank file and write," not "edit the previous version."
+Anything in the previous goodnight's version that does not
+earn its place in the next session's orientation is dropped;
+durable claims migrate to their proper home (doctrine, the
+roadmap, a proposal) **before** the rewrite. See
+`doctrine/session-routines.md` > "The next-session starting
+plan: written from scratch each goodnight" for the load-bearing
+reasoning.
+
+The required-signal-read discipline on shared communication
+files applies (`doctrine/coordination.md` > "Required
+signal+read for coordination-surface files").
 
 ## Recommended starting point
 

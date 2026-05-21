@@ -46,11 +46,28 @@ accepted` (see `proposals/_template.md`). Review has two tiers:
 Code review — the implementation-side pass, before a plan archives
 — has its own floor: **not the implementing agent**.
 
+A **Decision-support Round-2 review** is a Review section
+appended *after* the author's Response and Revised proposal; it
+feeds the Maintainer's Decision rather than triggering another
+revision cycle (see `doctrine/dual-review.md` > "Decision-support
+Round-2 review"). The Maintainer may close a mid-flight
+**procedural gap** via an inline Decision on the live artifact,
+subject to the three-criterion gate in `doctrine/lifecycle.md` >
+"Procedural-gap inline Decisions".
+
 Reviews are **asynchronous and commit-mediated**: a review is a
 dated, attributed section appended to the artifact and committed.
 No agent writes or commits a review attributed to another agent —
 the named reviewer commits their own findings, or the maintainer
 does.
+
+**Capability floor by role and risk.** Each role has a minimum
+capability floor (see `doctrine/roles.md` > "Capability floors").
+At low complexity the floor is implicit; if this project sits at
+moderate or complex on the Complexity axis, the
+`model-selection` module is installed and the adopter-local
+tier-to-model mapping is published in the case-studies surface
+(or an adopter-local config) — never in core doctrine.
 
 ## Coordination
 
@@ -73,12 +90,18 @@ The baseline coordination discipline — always on — guards the
 shared surfaces:
 
 * **Shared communication files** (`PLANNING.md`, `NEXT_SESSION.md`,
-  and the changelog) are edited only at defined serialization
-  points, and reference proposals / plans by filename stem rather
-  than path link.
+  `agent_collaboration.md`, and the changelog) are edited only at
+  defined serialization points, and reference proposals / plans
+  by filename stem rather than path link.
 * **The staged git index is shared.** Commit with explicit paths
   (`git commit <path> ...`), never a bare `git commit`; a
   path-scoped commit cannot absorb another agent's staged work.
+
+For concurrent teams: the shared communication files above are
+the natural starting set for the **required-signal-read** mode of
+the work-intent protocol (`doctrine/coordination.md` > "Required
+signal+read for coordination-surface files"). The team extends
+the set as additional coordination-surface files emerge.
 
 <!-- cairn:slot coordination-additions -->
 (Higher coordination tiers — a pre-edit work-intent convention, a
