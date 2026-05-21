@@ -103,8 +103,8 @@ the invariant; the realization is an adopter choice.
 ### Decision-commit guard-rail (companion)
 
 A second class of files needs a parallel but distinct
-discipline: Decision-of-record artifacts (Anthropic-style
-maintainer Decisions in proposal / plan files). For these,
+discipline: Decision-of-record artifacts (proposal- or
+plan-based maintainer Decisions). For these,
 the structural rule is not "signal + read" but "the
 maintainer's commit permission must be explicit" — an
 agent does not commit a Decision section without verbatim

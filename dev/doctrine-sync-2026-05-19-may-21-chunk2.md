@@ -9,13 +9,23 @@ surfaces Chunks 6, 7, and 8 will apply:
   Decision; deferred-follow-up revival; the no-history
   posture for the roadmap surface).
 * Chunk 8 — `doctrine/roles.md` and a new
-  `templates/modules/<tier>/model-selection.md` (capability
-  floor by role and risk).
+  `templates/modules/team-gated/model-selection.md` (capability
+  floor by role and risk). The module file lives under
+  `team-gated/` per Cairn's existing convention — `team-gated/`
+  is the catch-all directory for **any conditionally-installed
+  module**, with each module's metadata header (`Selected
+  when: ...`) naming the actual gating axis. Other modules
+  whose gate is non-team (e.g., `legacy-agent` gates on
+  Age; `dual-language-tests` gates on Language) follow the
+  same pattern. (Antigravity P2 absorption.)
 
 **Module classification decision** (this draft, per Codex F2):
-the model-selection module is **dimension-gated**, on the
-complexity axis. Reasoning in §3 below; sub-decision (which
-adopter signals trigger installation) deferred to Chunk 8.
+the model-selection module is **dimension-gated by axis**
+(gated on the complexity axis via its `Selected when:`
+metadata header) and **filed under `templates/modules/
+team-gated/`** per the Cairn taxonomy above. Reasoning in §4
+below; sub-decision (which adopter signals trigger
+installation) deferred to Chunk 8.
 
 **Discipline.** Cairn-native abstractions only — no adopter-
 specific filenames, tier labels, or model names. Specific
@@ -407,8 +417,12 @@ The capability-floor invariant lives in `doctrine/roles.md`
 — it is part of how roles work. The mechanism that
 operationalizes the floor (a tier rubric, a per-role
 default mapping template, a worked example) lives in a
-new `templates/modules/<tier>/model-selection.md`. The
-doctrine names the invariant; the module instruments it.
+new `templates/modules/team-gated/model-selection.md` (the
+file lives in `team-gated/` per Cairn's catch-all
+convention for conditional modules; the actual gating —
+on the complexity axis — is named by the module's
+`Selected when:` metadata header). The doctrine names
+the invariant; the module instruments it.
 
 ---
 
@@ -416,10 +430,26 @@ doctrine names the invariant; the module instruments it.
 
 Per Codex F2, the model-selection module is **not** default-on
 — it is gated. The remaining question (named in the source
-plan, deferred from Chunk 2) is: **team-gated or
-dimension-gated?**
+plan, deferred from Chunk 2) is: **what axis gates it?**
 
-### Recommendation: **dimension-gated**, on the complexity axis
+### Recommendation: gated on the **complexity axis**
+
+Note on terminology + filing: Cairn's module taxonomy has
+two physical subdirectories — `default-on/` for modules
+installed unconditionally, and `team-gated/` for *any*
+conditionally-installed module regardless of which axis
+gates it. The actual gating axis is named in each module's
+`Selected when:` metadata header. Existing modules already
+follow this pattern: `legacy-agent` is filed under
+`team-gated/` but gates on the Age axis;
+`dual-language-tests` is filed under `team-gated/` but
+gates on the Language axis.
+
+For the new `model-selection.md` module: file location is
+`templates/modules/team-gated/model-selection.md`; the
+metadata header gates it on the complexity axis. The
+phrase "dimension-gated" below refers to the gating-by-axis
+*pattern*, not to any subdirectory name.
 
 The capability-floor question is fundamentally about
 **stakes** — about how badly a structural-independence
@@ -465,18 +495,17 @@ the standard role doctrine; capability-floor questions
 do not bite them because the stakes are low. If their
 complexity placement moves up later, the bootstrap
 re-evaluates and installs the module then. This is the
-standard Cairn dimension-gated pattern.
+standard Cairn gated-by-axis pattern.
 
 ### What Chunk 8 still decides
 
 Chunk 8 picks the **trigger threshold** on the complexity
 axis — at what complexity-score does the bootstrap
-install the module? — and the **module's installation
-location** (`templates/modules/dimension-gated/
-model-selection.md` if Cairn has a `dimension-gated/`
-subdirectory, or another path if not). The sub-decision
-is bounded; the dimension-gated classification is
-settled here.
+install the module? — and writes the exact `Selected
+when:` metadata-header text for
+`templates/modules/team-gated/model-selection.md`. The
+file location (`team-gated/`) and the gating axis
+(complexity) are settled here.
 
 ---
 
