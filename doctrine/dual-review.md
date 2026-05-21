@@ -63,6 +63,80 @@ is deliberate:
   happened in conversation and was never written down did not
   happen.
 
+## Decision-support Round-2 review
+
+Once an author has Responded and produced a revised proposal,
+the proposal is substantively ready for the Maintainer's
+Decision. But a *second* reviewer may read the revised
+proposal and surface findings — not findings the first
+reviewer missed, but findings the revision itself
+introduced or that a different reviewer's blind-spot
+profile exposes. The lifecycle as drawn (review → response
+→ revision, repeating) does not name this case, and two
+failure modes follow if it is unnamed:
+
+* **The second reviewer's findings get treated as
+  Round-1 findings** and trigger another revision cycle.
+  Author writes another Response, possibly revises again,
+  cycle restarts. With each round the proposal diverges
+  further from any one reviewer's read; the cycle no
+  longer closes.
+* **The second reviewer's findings get dropped.** The
+  author refuses to re-open the cycle; the critique lives
+  unanswered in a Review section; the Decision is taken
+  in tension with a critique the lifecycle did not
+  metabolize.
+
+The pattern Cairn names is a **Decision-support Round-2
+review** — a Review section appended *after* the author's
+Response and Revised proposal. It has three structural
+properties that distinguish it from a Round-1 review:
+
+1. **The proposal's status stays `revised`.** The Round-2
+   Review does not move status back to `reviewed`. The
+   author has already completed their part of the cycle.
+2. **Append-only against the proposal, not the cycle.**
+   The author does not write a Response section to a
+   Round-2 review; the cycle has already closed on the
+   author's side.
+3. **Feeds the Decision, not another revision.** The
+   Maintainer's Decision, when written, addresses both
+   Round-1 and Round-2 findings in one place.
+
+The load-bearing word is *Decision-support*. A Round-1
+reviewer's job is to test the idea so the author can
+revise it. A second-reviewer-after-Response is doing
+something different: providing independent perspective to
+the Maintainer, who is the only actor with authority to
+weigh competing reviews and Decide. Naming the role makes
+the structural difference visible; without the name the
+second reviewer is mis-modeled as another Round-1
+reviewer and the lifecycle breaks.
+
+**The pattern is bounded.** It is *not* "the lifecycle
+allows unlimited review rounds":
+
+* It does not permit the author to skip Responding to a
+  Round-1 review by re-labeling it Round-2. Round-1
+  reviews remain author-Response-bound until the
+  proposal reaches status `revised`.
+* It does not permit a Decision-support reviewer to demand
+  another revision. If a Round-2 reviewer believes the
+  revision is fundamentally wrong, the proper response is
+  to recommend the Maintainer reject or supersede, not to
+  require another revision.
+* It does not permit unbounded Round-2 reviews after a
+  Round-2 review. The Maintainer's Decision closes the
+  Decision-support phase; further critique becomes a new
+  proposal that amends or supersedes.
+
+The pattern extends the existing two-tier review framework
+(Internal / External, with Code review on the
+implementation side) by adding one more shape — not by
+adding a new tier. Internal-, External-, Code-, and
+domain-rotation-review floors all still apply when a
+Round-2 reviewer fills the role.
+
 ## Code review — the implementation side
 
 Proposal review tests the *idea*; code review tests the
