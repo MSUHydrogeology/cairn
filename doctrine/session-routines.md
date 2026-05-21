@@ -55,13 +55,50 @@ from "my session is ending":
   reflection (below), notes open threads, and **stops**.
 * **Designated full-handoff owner** — exactly one agent, named by
   the Maintainer, additionally scrubs the roadmap boards, verifies
-  the docs and changelog, runs the test suite, writes the next
-  session's starting plan, and lands the handoff commit.
+  the docs and changelog, runs the test suite, **rewrites the
+  next session's starting plan from scratch** (see below), and
+  lands the handoff commit.
 
 The full scrub happens once per session-day, by one owner — that
 keeps the shared communication files a single-writer surface at
 handoff time. Committing and pushing are never implied by running
 the routine; they wait on explicit Maintainer approval.
+
+### The next-session starting plan: written from scratch each goodnight
+
+The handoff document is **a single-session product, not an
+accretion across sessions**. Each goodnight the full-handoff
+owner *rewrites* it — the physical action is "open a blank file
+and write," not "edit the existing file." Anything in the
+previous goodnight's version that does not earn its place in the
+next session's orientation is dropped.
+
+This rule prevents a structural failure mode: a handoff document
+that accretes context across sessions gradually drifts from
+current truth. After several sessions it holds pointers to work
+that has shipped, instructions premised on assumptions that have
+moved, decisions that were taken and reversed, threads that
+closed. A reader cannot tell which claims are still live and
+which have aged out; the reader trusts the document, acts on a
+stale assertion, and the session begins on a wrong premise.
+Append-by-default is the path of least resistance for every
+individual session writer while the cost of staleness is paid by
+future readers — a tragedy-of-the-commons shape that
+rewrite-from-scratch breaks structurally.
+
+**Durable-claim migration is upstream of the rewrite.** Before
+writing the new handoff, the owner asks "what here should
+outlive this single handoff?" and moves durable claims to their
+proper home — doctrine, the roadmap, a proposal. The handoff
+document is then free to be one-session-shaped. The rewrite
+discipline is what *forces* migration to happen on the right
+cadence: anything kept for the next session is acknowledged as
+still-relevant; anything dropped has either landed in a durable
+surface or earned its drop.
+
+The rule applies only to the next-session handoff document.
+Per-agent reflections have their own ephemeral-and-pruned
+rhythm (below); they are not rewritten from scratch.
 
 ## The reflections channel
 
