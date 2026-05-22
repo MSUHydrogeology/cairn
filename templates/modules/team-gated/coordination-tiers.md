@@ -133,24 +133,24 @@ Merged into the coordination section:
 > **Per-session coordination identity (concurrent same-tool
 > teams).** When the team's work-intent / event log records who
 > holds a path, the holder identity is **per-session**, derived
-> from the harness's session id, not a static per-tool name:
+> from the harness's session ID, not a static per-tool name:
 >
-> * Resolve identity from the harness session id present in the
+> * Resolve identity from the harness session ID present in the
 >   session's shell environment; both the pre-edit claim and the
 >   commit-time auto-release run in that session and resolve the
 >   same value, while sibling sessions resolve different values.
-> * **Hash the whole session id, never a prefix** — time-ordered
->   ids (UUIDv7) share leading bytes across near-simultaneous
+> * **Hash the whole session ID, never a prefix** — time-ordered
+>   IDs (UUIDv7) share leading bytes across near-simultaneous
 >   sessions, exactly the ones the identity must separate.
 > * A static, machine-global identity override is an **escape
 >   hatch, not a setting** — keep it as the top-priority tier for
 >   tests / one-offs, but a global export collapses sessions to
->   one identity; warn when it shadows an available session id.
+>   one identity; warn when it shadows an available session ID.
 > * **Auto-release on commit** closes only the committing
 >   session's own claims (`identity == this session AND paths
 >   intersect`); identity-resolution failure fails soft.
 >
-> Each adopter supplies its own harnesses' session-id env-var
+> Each adopter supplies its own harnesses' session-ID env-var
 > names; the structural rule is doctrine, the var names are
 > adopter-local.
 

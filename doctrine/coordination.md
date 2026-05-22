@@ -94,8 +94,8 @@ channel, not a chat channel.
 The Tier-2 work-intent signal and the Tier-3 typed-event log are
 *purposes*, not file formats. Both can ride a single
 **append-only claim/release log**: a `claim` event records who
-holds which paths with what intent and a unique id; a matching
-`release` event (shared id) closes it; active intents are claims
+holds which paths with what intent and a unique ID; a matching
+`release` event (shared ID) closes it; active intents are claims
 without a release. A team need not maintain a directory of
 per-intent files to get Tier 2 — one append-only log, written
 through atomic small-record appends, serves both tiers and makes
@@ -121,20 +121,20 @@ The portable rules:
 
 * **Derive identity from the harness's session-scoped
   identifier**, not from a static per-tool name. Most agent
-  harnesses expose a session id in the environment of the shells
+  harnesses expose a session ID in the environment of the shells
   they spawn; it is stable across calls within a session and
   distinct across concurrent sessions. Both the pre-edit claim and
   the commit-time auto-release run inside the same session, so both
   resolve the same value — and sibling sessions resolve different
   values.
-* **Hash the *whole* session id; never take a prefix.** Session ids
-  are often time-ordered (e.g. UUIDv7), whose leading bytes are a
-  shared timestamp — exactly the part two near-simultaneous
-  sessions hold in common. A prefix-derived identity therefore
+* **Hash the *whole* session ID; never take a prefix.** Session IDs
+  are often time-ordered (e.g., UUIDv7), meaning their leading bytes
+  represent a timestamp — exactly the portion that two near-simultaneous
+  sessions share in common. A prefix-derived identity therefore
   collapses precisely the concurrent sessions this rule exists to
-  separate. Hash the full id (e.g. a short hash digest) so the
+  separate. Hash the full ID (e.g. a short hash digest) so the
   derivation is collision-safe and harness-neutral regardless of
-  the id's flavor.
+  the ID's flavor.
 * **A static, machine-global identity override is an escape hatch,
   not a setting.** An explicit override (env var, config file) is
   useful for tests and deliberate one-offs and should remain the
@@ -142,7 +142,7 @@ The portable rules:
   (shell-profile export, shared config) re-introduces the exact
   shared-identity collapse — every session on the machine resolves
   to one identity. Keep the override for one-offs; warn when it
-  shadows an available session id; never recommend it as a profile
+  shadows an available session ID; never recommend it as a profile
   setting.
 * **Auto-release closes only the committing session's own claims.**
   A post-commit hook that releases active claims whose paths

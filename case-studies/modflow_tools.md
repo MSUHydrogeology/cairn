@@ -161,20 +161,20 @@ apparatus.
   typed-event tier is not installed; team size does not warrant
   it.
 * **Per-session coordination identity.** Holder identity is
-  derived per-session from the harness session id, not a static
+  derived per-session from the harness session ID, not a static
   per-tool name — the fix for the same-tool-concurrency collapse
   (multiple parallel Claude sessions would otherwise share one
   "Claude" identity and cross-release each other's claims). The
   resolution ladder: explicit `MODFLOW_TOOLS_AGENT` override
-  (escape hatch) → harness session id → `~/.modflow_tools/agent.yml`
-  → none. Harness session-id env vars, supplied by each harness's
+  (escape hatch) → harness session ID → `~/.modflow_tools/agent.yml`
+  → none. Harness session-ID env vars, supplied by each harness's
   own reviewer: `CLAUDE_CODE_SESSION_ID` (Claude Code),
   `CODEX_THREAD_ID` (Codex), `ANTIGRAVITY_TRAJECTORY_ID`
-  (Antigravity). The id is hashed in full (sha256, 8-hex) — never
+  (Antigravity). The ID is hashed in full (sha256, 8-hex) — never
   prefix-sliced — because `CODEX_THREAD_ID` is UUIDv7-shaped
   (time-ordered leading bytes), so a prefix would collapse
   near-simultaneous sessions. `_auto_release` warns when a global
-  `MODFLOW_TOOLS_AGENT` export shadows a present session id.
+  `MODFLOW_TOOLS_AGENT` export shadows a present session ID.
 * The Maintainer ratified the work-intent system through its own
   proposal lifecycle (Codex-authored, accepted), then refined it
   through two follow-on proposals — the JSONL substrate +
