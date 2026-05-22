@@ -328,7 +328,8 @@ The five customization block slots were filled as follows.
 * **LHM reuses, rather than duplicates, prior LHM doctrine.**
   LHM already had `vision.rst`, `review_protocol.rst`,
   `style_guide.rst`, and `contributing_guidelines.rst` under
-  `docs/developer-guide/`. The Cairn adoption extended these
+  LHM's own docs/developer-guide/ tree (an LHM-repo path, not a
+  Cairn one). The Cairn adoption extended these
   in place — review tiers extending `review_protocol.rst`;
   Strategy Agent maintaining `vision.rst` — rather than creating
   `dev/` copies. Only genuinely new doctrine (the collaboration
