@@ -164,7 +164,22 @@ def scannable_lines(text: str) -> list[tuple[int, str]]:
 
 def github_slug(heading_text: str) -> str:
     """GitHub heading-anchor slug: lowercase; drop punctuation except
-    hyphen/underscore; spaces -> hyphens (no collapsing)."""
+    hyphen/underscore; spaces -> hyphens.
+
+    **Consecutive hyphens are intentionally NOT collapsed, and
+    leading/trailing hyphens are NOT stripped** -- this matches GitHub's
+    actual anchor generator, ``github-slugger``, whose core is
+    ``value.toLowerCase().replace(regex, '').replace(/ /g, '-')``
+    (Flet/github-slugger ``index.js`` line 76): it removes punctuation
+    (its ``regex`` preserves the hyphen U+002D and space), replaces
+    spaces with hyphens, and does no collapse/trim.  So a heading like
+    ``Rule 1 — No private content`` slugs to ``rule-1--no-private-content``
+    (double hyphen, from the spaces around the stripped em-dash) on
+    GitHub, and this checker must expect the same.  Collapsing/stripping
+    here would DIVERGE from GitHub and false-flag correct anchor links.
+    (Verified against the canonical source for code-review finding P2,
+    2026-05-22, which had the collapse behavior inverted.)
+    """
     s = heading_text.strip().lower()
     s = s.replace('`', '')                       # inline code ticks
     s = re.sub(r'\[([^\]]*)\]\([^)]*\)', r'\1', s)  # link -> its text
@@ -341,7 +356,10 @@ def check_tree(root: Path, files: list[Path],
     # Claimable top-level entries are tracked *content*; dot-entries
     # (``.git`` and friends) are VCS / runtime internals, so a cited
     # ``.git/hooks/pre-commit`` is a runtime artifact, not a content
-    # path claim -- exclude them.
+    # path claim -- exclude them.  Trade-off (code-review P3, 2026-05-22):
+    # a path claim into a *tracked* dotfolder (e.g. a future ``.github/``)
+    # is skipped rather than validated -- accepted to stay robust against
+    # ``.git/`` false positives; revisit if tracked-dotpath claims appear.
     top_level = (
         {p.name for p in root.iterdir() if not p.name.startswith('.')}
         if root.is_dir() else set()
