@@ -374,6 +374,34 @@ configurations are different shapes of the same doctrine.
 This is what "the methodology is the same; the configuration
 differs" looks like in practice.
 
+## Fidelity-gaps sync 2026-05-22 (gaps 3–11 evidence ledger)
+
+The LHM bootstrap proposal (`2026-05-17-claude-dev-collaboration-
+model`, accepted in the LHM repo) developed — across four review
+rounds — nine generalizable mechanisms that the thin Cairn modules
+did not yet carry. The `cairn-fidelity-gaps` plan ported them into
+Cairn proper. This ledger links each Cairn surface to the LHM
+review finding that grounds it; the LHM-specific instances (MATLAB,
+the readiness ledger, the three domains) live here, not in the
+doctrine.
+
+| Cairn doctrine surface | LHM finding that grounds it |
+|------------------------|------------------------------|
+| `team-gated/legacy-agent` > "'Ready' means more than 'has a test'" + the readiness schema | Codex R5 + the Internal rounds: for legacy *scientific* code, the three-label tier set is a trap — "has a test" is not "safe to change." LHM's readiness records carry the full per-surface field set (verification command/owner, scientific assumptions, external-data deps, allowed agent actions). |
+| `team-gated/legacy-agent` > "The readiness map is shared-state governance" | LHM Internal finding 1: the readiness map is the most collision-prone surface (every Domain Agent reads it; characterization work rewrites it). Single-writer tier column + dated tier-bump-request protocol. |
+| `team-gated/legacy-agent` > "Single file vs. many" | The decentralized-registry alternative for highly concurrent teams (per-surface records / target-file frontmatter aggregated by a script) names the tradeoff LHM's three-domain concurrency exposed. |
+| `doctrine/dual-review.md` > "Restricted verification surfaces" + `team-gated/dual-language-tests` | Codex R2: the reviewing agent cannot *execute* **MATLAB**; review of MATLAB code is weaker in practice than its tier. Generalized (Antigravity R2) to any asymmetrical execution environment; the verification-command/owner mechanism + the `verification owner = Maintainer` pre-framework fallback. MATLAB is the case-study instance of the general rule. |
+| `team-gated/domain-agents` > "Cross-Domain Proposal" | Codex R4: LHM's Strategy-writes-no-code + shared-infra-is-Strategy-framed roster orphaned code-bearing cross-domain changes; the lead + co-author Domain Agent pattern closes the hole. |
+| `team-gated/domain-agents` > "The ownership ledger" | Codex R3: LHM's deep shared helper / UI / config tree across three domains needed a seeded ownership ledger + partition-by-function, not prose ownership rules. |
+| `team-gated/security-review` | LHM Implementation finding 5: the named Security Review role needed a protocol home (LHM's subprocess solver invocation + external-data file I/O are its trust boundaries). |
+| `team-gated/issue-capture` | LHM Response M: the User Agent's "captures friction as issues" needed a capture surface (issue templates, label manifest, tracker-unavailable fallback). |
+| `bootstrap/BOOTSTRAP.md` > "Plan-migration ledger" | Codex R6: LHM's pre-existing ad-hoc planning docs carried real state (shipped phases, blocked items, issue links) a mechanical move would erase. |
+| `bootstrap/BOOTSTRAP.md` > "Two-phase de-risking" | Codex R1: LHM's bootstrap split Phase 1 (zero-risk apparatus) from Phase 2 (the RST↔MD documentation relocation touching the docs build). |
+
+Cairn states each as a general invariant; the MATLAB / three-domain
+/ RST-build specifics are LHM's, recorded here as the worked
+instance. Future adopters add their own ledger rows.
+
 ## How to read this case study
 
 Like `modflow_tools.md`, this is a walkthrough of *how the

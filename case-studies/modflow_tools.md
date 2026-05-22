@@ -322,6 +322,19 @@ doctrine to the concrete adopter incidents that surfaced the
 patterns. Future Cairn doctrine syncs from other adopters will
 add their own ledger rows.
 
+## Governance-doctrine sync 2026-05-22 (fidelity-gaps: gaps 1–2)
+
+A second sync — the `cairn-fidelity-gaps` plan — ported two
+governance landings that the project accepted on 2026-05-21 (the
+`lifecycle-metrics-layer-v2` proposal) into Cairn proper. These are
+the two rows whose *source* is modflow_tools; gaps 3–11 of the same
+plan came from the LHM adopter (see `lhm.md`).
+
+| Cairn doctrine surface | Adopter incident / file (modflow_tools) | Source |
+|------------------------|------------------------------------------|--------|
+| `templates/modules/default-on/lifecycle-metrics.md` > "The Measurement Compact" | The project's per-agent / per-tier lifecycle-metrics surfaces risked being read as agent ranking. modflow_tools adopted the five commitments + two-tier enforcement, and an **unconditional wording-ban contract test** (`tests/contract/test_measurement_compact_no_external_per_agent_metrics.py`) that scans externally-facing files for per-agent/per-tier tokens. Cairn ports the doctrine and the *idea* of the gate; the contract test is named here as **one** implementation, shaped by this project's file layout — not the canonical form. The Cairn example gate parameterizes its banned-token list rather than hardcoding identities (vendor-neutrality). | modflow_tools `AGENTS.md` > "The Measurement Compact"; `2026-05-21-claude-lifecycle-metrics-layer-v2` proposal (Chunk B1b contract test) |
+| `doctrine/rationale.md` > "How the doctrine evolves under evidence" + `doctrine/session-routines.md` > "Goodnight-time synthesis" | The project churned doctrine faster than it could be internalized until the rate-limit gate landed: no doctrine change from a single incident unless the Maintainer classifies it high-risk (security / data-loss); else recurrence or goodnight synthesis. The concrete recurrence instance is the **14-day rolling window** on `dev/collision_log.md` (one specific window length); Cairn states the gate generally and leaves the window length to the adopter. | modflow_tools `AGENTS.md` > "Adaptive-doctrine rate-limit gate"; the 2026-05-20 five-sharpenings-at-once worked example |
+
 ## Tier-to-model mapping (per `model-selection` module)
 
 Per Cairn's `templates/modules/team-gated/model-selection.md`,
