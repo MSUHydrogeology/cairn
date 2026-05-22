@@ -109,6 +109,8 @@ From the six-axis profile, select the module set:
    | `legacy-agent` | Age is legacy and a readiness map plus characterization-testing harness are needed |
    | `dual-language-tests` | Language is multi |
    | `coordination-tiers` | Agent team is concurrent-multi-type and asynchronous or real-time coordination is needed |
+   | `security-review` | The project has a non-trivial trust boundary (untrusted input meets the system: deserialization, subprocess, file/network I/O, path handling). Trust-boundary-first — complexity tunes the review cadence, not whether it installs |
+   | `issue-capture` | The team uses an issue tracker for gap / friction capture (the User Agent surface) |
 
 ### I-6 Present the profile to the Maintainer
 
@@ -203,6 +205,55 @@ python <path/to/cairn>/bootstrap/scaffold.py \
 Before running `--force` against an already-customized target,
 commit your current state so git records what the overwrite would
 discard.
+
+### II-2a Legacy & existing-docs adopters — migrate state, de-risk the reorganization
+
+> **Greenfield projects skip this step.** A new project has no
+> pre-existing planning state to preserve and no existing
+> documentation build to reorganize. Proceed to II-3.
+
+A non-greenfield adoption carries two risks a greenfield one does
+not; Act II handles both here.
+
+**Plan-migration ledger** (a project with pre-existing planning
+docs). A legacy project usually already has ad-hoc planning
+documents holding real state — shipped phases, blocked items, links
+to issues. A mechanical move into the Cairn `dev/` tree erases that
+state silently. Before relocating any existing planning material,
+build a **migration ledger** that preserves it, one row per
+migrated item:
+
+| Field | What it records |
+|-------|-----------------|
+| old path | where the planning item lived |
+| new path | its home in the Cairn `dev/` tree |
+| owning domain | who is responsible (if domain-agents is in play) |
+| status | shipped / active / blocked / deferred |
+| shipped-commit range | the commits that delivered already-done work |
+| blocked-on | the dependency, if blocked |
+| related issues | tracker links carried across |
+| retroactive-review-exemption | whether already-shipped work is exempt from the proposal → review lifecycle, since it predates adoption |
+
+The ledger is what a future agent reads to understand why
+already-shipped work has no Cairn proposal behind it.
+
+**Two-phase de-risking** (a project with an existing documentation
+build). Do not combine the apparatus install with a risky
+documentation reorganization in one undifferentiated step. Split
+adoption into two phases:
+
+* **Phase 1 — the collaboration apparatus.** The scaffold (II-2)
+  writes new files into a `dev/` tree; it touches no existing
+  build. This phase is near-zero-risk and is verified on its own
+  (II-5) *before* Phase 2 begins.
+* **Phase 2 — the risky reorganization.** Any relocation that
+  touches an existing documentation build — moving docs, rewiring a
+  docs generator, changing the build's expected layout — lands
+  *after* Phase 1 is verified. A defect in the relocation then
+  cannot obscure whether the apparatus itself works; the two
+  failure surfaces stay separated.
+
+A project with no existing documentation build runs only Phase 1.
 
 ### II-3 Select (confirm)
 
@@ -465,6 +516,8 @@ modules:
   # - legacy-agent
   # - dual-language-tests
   # - coordination-tiers
+  # - security-review
+  # - issue-capture
 ```
 
 The `--target` flag tells the script where to write the installed
