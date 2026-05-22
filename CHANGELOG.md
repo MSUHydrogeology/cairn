@@ -18,6 +18,65 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **Fidelity-gaps sync (cairn-fidelity-gaps, 2026-05-22).** Eleven
+  generalizable mechanisms ported into Cairn ahead of its first use
+  as the LHM bootstrap substrate — two governance landings from the
+  `modflow_tools` adopter, nine from the LHM bootstrap proposal —
+  each grounded by an evidence ledger in the case studies
+  ([`case-studies/modflow_tools.md`](case-studies/modflow_tools.md)
+  > "Governance-doctrine sync 2026-05-22"; and
+  [`case-studies/lhm.md`](case-studies/lhm.md) > "Fidelity-gaps sync
+  2026-05-22").
+
+  * [`doctrine/rationale.md`](doctrine/rationale.md) > "How the
+    doctrine evolves under evidence" + a goodnight-synthesis line in
+    [`doctrine/session-routines.md`](doctrine/session-routines.md) —
+    the **adaptive-doctrine rate-limit gate** (no doctrine change
+    from a single incident unless high-risk; else recurrence or
+    routine-boundary synthesis).
+  * [`templates/modules/default-on/lifecycle-metrics.md`](templates/modules/default-on/lifecycle-metrics.md)
+    > "The Measurement Compact" — five commitments + two-tier
+    enforcement, with **doctrine decoupled from enforcement** (the
+    optional wording gate parameterizes its banned-token list; no
+    hardcoded identities).
+  * [`templates/modules/team-gated/legacy-agent.md`](templates/modules/team-gated/legacy-agent.md)
+    — "Ready" redefined for legacy scientific code + a per-surface
+    **readiness schema**; the readiness map named a
+    shared-communication surface with collision semantics; a
+    single-file-registry concurrency warning.
+  * [`doctrine/dual-review.md`](doctrine/dual-review.md) >
+    "Restricted verification surfaces" — review is weaker when the
+    reviewer cannot **execute** a surface (any asymmetrical
+    execution environment, not just a second language);
+    verification command + human-gated owner + pre-framework
+    fallback. The multi-language case in
+    [`templates/modules/team-gated/dual-language-tests.md`](templates/modules/team-gated/dual-language-tests.md)
+    is one instance.
+  * [`templates/modules/team-gated/domain-agents.md`](templates/modules/team-gated/domain-agents.md)
+    — the **Cross-Domain Proposal** pattern (lead + co-author Domain
+    Agents) and an **ownership-ledger** seed + partition-by-function.
+  * NEW [`templates/modules/team-gated/security-review.md`](templates/modules/team-gated/security-review.md)
+    (trust-boundary-first gate; tool-neutral checklist) and NEW
+    [`templates/modules/team-gated/issue-capture.md`](templates/modules/team-gated/issue-capture.md)
+    (tracker-agnostic capture surface) — both wired into
+    `bootstrap/scaffold.py`'s module registry with scaffold tests
+    (42 → 47 passing) and module-selection signals in the phase-0
+    profiles.
+  * [`bootstrap/BOOTSTRAP.md`](bootstrap/BOOTSTRAP.md) — a
+    **plan-migration ledger** and **two-phase de-risking**, both
+    legacy / existing-docs-conditional with a greenfield bypass.
+  * [`templates/core/dev/proposals/_template.md`](templates/core/dev/proposals/_template.md)
+    — a doctrine-change rate-limit checklist prompt (operationalizes
+    the gate; explicitly does not re-apply to doctrine *syncs*).
+
+  Codex External Review gated the framing matrix before the doctrine
+  edits (Gate A; four findings absorbed — the load-bearing one
+  reframed Restricted Verification Surfaces off the language axis).
+  The full plan, the Gate-A review record, and per-chunk source
+  provenance live in the modflow_tools-side accepted proposal
+  `2026-05-22-claude-cairn-fidelity-gaps` and its executing plan
+  `cairn-fidelity-gaps`.
+
 - **Per-session coordination identity (ported from the
   `modflow_tools` adopter, 2026-05-21).**  New cross-tier section
   [`doctrine/coordination.md`](doctrine/coordination.md) >
