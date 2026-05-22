@@ -52,6 +52,16 @@ boundary, not specific libraries:
 A change that adds, moves, or widens any of these boundaries is a
 trigger for a Security Review pass regardless of cadence.
 
+**Automate what a tool can check.** Where the language ecosystem
+offers a static-analysis scanner for these boundary classes, wire a
+**tool-neutral linter command into the surface's `verification
+command`** (the field the readiness schema and restricted-
+verification doctrine already define — `team-gated/legacy-agent`,
+`doctrine/dual-review.md`), so the boundary is checked
+automatically on every change and the focused-mode pass spends its
+attention on what a scanner cannot judge. The module names no
+specific tool; the adopter supplies the scanner their stack offers.
+
 ### Cadence
 
 The review runs on a **periodic cadence** (a "last full review"

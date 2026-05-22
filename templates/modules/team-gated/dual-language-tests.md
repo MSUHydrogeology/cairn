@@ -50,8 +50,10 @@ general home.
 
 Concretely here:
 
-> **Cross-language seams carry a verification command and owner.**
-> The boundary where one language calls into another records the
-> command that exercises it and the contributor who can run that
-> command — so a change to the seam has a named, runnable check, or
-> an explicit Maintainer-gated fallback when no reviewer can run it.
+> **Cross-language seams carry a `verification command` and
+> `verification owner`.** The boundary where one language calls
+> into another records the command that exercises it and the
+> contributor who can run that command — the same two fields the
+> readiness schema uses (`team-gated/legacy-agent`) — so a change
+> to the seam has a named, runnable check, or an explicit
+> Maintainer-gated fallback when no reviewer can run it.
