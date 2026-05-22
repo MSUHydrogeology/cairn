@@ -151,13 +151,36 @@ apparatus.
   enable the structural-independence floor for External review
   by *agent-type* rather than only by fresh session).
 * The `coordination-tiers` team-gated module is installed at the
-  **work-intent tier** — a per-agent untracked YAML file declaring
-  who is about to touch which paths. The real-time typed-event
-  tier is not yet installed; team size does not warrant the extra
-  apparatus.
+  **work-intent tier**. The substrate is a single append-only
+  JSON-lines claim/release log (`dev/intents.jsonl`, gitignored),
+  accessed through one CLI (`python -m tools.intent
+  {claim,release,list,install-hook}`) with atomic small-record
+  appends; it replaced the original per-agent untracked-YAML-file
+  form. A post-commit hook auto-releases the committing session's
+  claims whose paths intersect the commit. The real-time
+  typed-event tier is not installed; team size does not warrant
+  it.
+* **Per-session coordination identity.** Holder identity is
+  derived per-session from the harness session id, not a static
+  per-tool name — the fix for the same-tool-concurrency collapse
+  (multiple parallel Claude sessions would otherwise share one
+  "Claude" identity and cross-release each other's claims). The
+  resolution ladder: explicit `MODFLOW_TOOLS_AGENT` override
+  (escape hatch) → harness session id → `~/.modflow_tools/agent.yml`
+  → none. Harness session-id env vars, supplied by each harness's
+  own reviewer: `CLAUDE_CODE_SESSION_ID` (Claude Code),
+  `CODEX_THREAD_ID` (Codex), `ANTIGRAVITY_TRAJECTORY_ID`
+  (Antigravity). The id is hashed in full (sha256, 8-hex) — never
+  prefix-sliced — because `CODEX_THREAD_ID` is UUIDv7-shaped
+  (time-ordered leading bytes), so a prefix would collapse
+  near-simultaneous sessions. `_auto_release` warns when a global
+  `MODFLOW_TOOLS_AGENT` export shadows a present session id.
 * The Maintainer ratified the work-intent system through its own
-  proposal lifecycle (Codex-authored, accepted) — the
-  coordination apparatus is dogfooded.
+  proposal lifecycle (Codex-authored, accepted), then refined it
+  through two follow-on proposals — the JSONL substrate +
+  goodnight prune, and the per-session identity model (Codex +
+  Antigravity reviewed, each supplying its own harness's session
+  var) — the coordination apparatus is dogfooded.
 
 ## Module selection (derived)
 

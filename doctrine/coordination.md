@@ -89,6 +89,73 @@ For high-concurrency, domain-agent teams. A minutes-scale signal:
 an append-only log of **typed activity events** — a typed event
 channel, not a chat channel.
 
+### Substrate convergence
+
+The Tier-2 work-intent signal and the Tier-3 typed-event log are
+*purposes*, not file formats. Both can ride a single
+**append-only claim/release log**: a `claim` event records who
+holds which paths with what intent and a unique id; a matching
+`release` event (shared id) closes it; active intents are claims
+without a release. A team need not maintain a directory of
+per-intent files to get Tier 2 — one append-only log, written
+through atomic small-record appends, serves both tiers and makes
+the "who is touching what right now" query a single read. The
+per-file form remains valid; the log form is the recommended
+substrate once a team has any concurrency, because it gives the
+release lifecycle and the auto-close-on-commit hook (below) a
+clean home.
+
+## Coordination identity — per-session, not per-agent
+
+A coordination mechanism that records *who* holds a path needs an
+identity for that holder. The naive choice — one identity per
+**agent** or per **tool** — silently breaks the moment a team runs
+**multiple concurrent sessions of the same tool**: every session
+resolves to the same identity, so one session's commit-time
+auto-release closes *another* session's still-active claims, and
+the pre-edit signal each session reads cannot distinguish "my own
+claim" from "a sibling session's claim." The identity must be
+**per-session**.
+
+The portable rules:
+
+* **Derive identity from the harness's session-scoped
+  identifier**, not from a static per-tool name. Most agent
+  harnesses expose a session id in the environment of the shells
+  they spawn; it is stable across calls within a session and
+  distinct across concurrent sessions. Both the pre-edit claim and
+  the commit-time auto-release run inside the same session, so both
+  resolve the same value — and sibling sessions resolve different
+  values.
+* **Hash the *whole* session id; never take a prefix.** Session ids
+  are often time-ordered (e.g. UUIDv7), whose leading bytes are a
+  shared timestamp — exactly the part two near-simultaneous
+  sessions hold in common. A prefix-derived identity therefore
+  collapses precisely the concurrent sessions this rule exists to
+  separate. Hash the full id (e.g. a short hash digest) so the
+  derivation is collision-safe and harness-neutral regardless of
+  the id's flavor.
+* **A static, machine-global identity override is an escape hatch,
+  not a setting.** An explicit override (env var, config file) is
+  useful for tests and deliberate one-offs and should remain the
+  highest-priority resolution tier. But a *global* override
+  (shell-profile export, shared config) re-introduces the exact
+  shared-identity collapse — every session on the machine resolves
+  to one identity. Keep the override for one-offs; warn when it
+  shadows an available session id; never recommend it as a profile
+  setting.
+* **Auto-release closes only the committing session's own claims.**
+  A post-commit hook that releases active claims whose paths
+  intersect the commit is safe *only* because the per-session
+  identity scopes it: it matches `claim.identity == this session
+  AND paths intersect`. Identity-resolution failure must fail soft
+  — warn and skip, never block the commit.
+
+This is a methodology contribution in its own right: it is what
+makes a release lifecycle (and its auto-close hook) correct under
+same-tool concurrency, which is the common case for AI-agent teams
+where one tool spawns many parallel sessions.
+
 ## The structural firewall
 
 A real-time channel is dangerous to the methodology: real-time

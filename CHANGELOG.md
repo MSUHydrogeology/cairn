@@ -14,6 +14,37 @@ The `Unreleased` section accumulates pending entries; when a
 release is cut, that section is renamed to the version + date
 and a new empty `Unreleased` is started above.
 
+## Unreleased
+
+### Added
+
+- **Per-session coordination identity (ported from the
+  `modflow_tools` adopter, 2026-05-21).**  New cross-tier section
+  [`doctrine/coordination.md`](doctrine/coordination.md) >
+  "Coordination identity — per-session, not per-agent": a
+  coordination mechanism that records who holds a path must derive
+  identity **per-session** (from the harness session id), not
+  per-tool, or concurrent same-tool sessions collapse to one
+  identity and one session's auto-release closes another's claims.
+  Portable rules: derive from the harness session id; hash the
+  *whole* id (time-ordered UUIDv7 ids share leading bytes); treat
+  a global identity override as an escape hatch, not a setting;
+  auto-release closes only the committing session's own claims
+  (fail-soft on resolution failure).  Companion "Substrate
+  convergence" note: Tier 2 and Tier 3 can share one append-only
+  claim/release log.  Module extension in
+  [`templates/modules/team-gated/coordination-tiers.md`](templates/modules/team-gated/coordination-tiers.md)
+  > "Extension — Per-session identity for the claim/release log";
+  adopter grounding (the JSONL substrate + the three harness
+  session-id env vars `CLAUDE_CODE_SESSION_ID` / `CODEX_THREAD_ID`
+  / `ANTIGRAVITY_TRAJECTORY_ID`, each supplied by that harness's
+  own reviewer) in
+  [`case-studies/modflow_tools.md`](case-studies/modflow_tools.md).
+  Source: the adopter's accepted + reviewed
+  `2026-05-21-claude-per-session-intent-identity` proposal (Codex
+  + Antigravity reviewed), itself a follow-on to the JSONL
+  work-intent substrate refresh.
+
 ## 0.1.1 — 2026-05-21
 
 ### Added

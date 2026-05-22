@@ -114,3 +114,47 @@ sequenced alongside the goodnight routine in
 
 A sequential team runs neither extension; a concurrent
 team that selected this module receives both.
+
+### Extension — Per-session identity for the claim/release log
+
+A team that runs **multiple concurrent sessions of the same
+agent tool** cannot identify intent-holders by tool or by
+agent-type: every session resolves to one identity, so one
+session's auto-release closes another's claims, and the
+pre-edit read cannot tell a sibling session's claim from its
+own. The fix — doctrine in
+[`doctrine/coordination.md`](../../../doctrine/coordination.md)
+> "Coordination identity — per-session, not per-agent" — is to
+derive a **per-session** identity from the harness's
+session-scoped identifier.
+
+Merged into the coordination section:
+
+> **Per-session coordination identity (concurrent same-tool
+> teams).** When the team's work-intent / event log records who
+> holds a path, the holder identity is **per-session**, derived
+> from the harness's session id, not a static per-tool name:
+>
+> * Resolve identity from the harness session id present in the
+>   session's shell environment; both the pre-edit claim and the
+>   commit-time auto-release run in that session and resolve the
+>   same value, while sibling sessions resolve different values.
+> * **Hash the whole session id, never a prefix** — time-ordered
+>   ids (UUIDv7) share leading bytes across near-simultaneous
+>   sessions, exactly the ones the identity must separate.
+> * A static, machine-global identity override is an **escape
+>   hatch, not a setting** — keep it as the top-priority tier for
+>   tests / one-offs, but a global export collapses sessions to
+>   one identity; warn when it shadows an available session id.
+> * **Auto-release on commit** closes only the committing
+>   session's own claims (`identity == this session AND paths
+>   intersect`); identity-resolution failure fails soft.
+>
+> Each adopter supplies its own harnesses' session-id env-var
+> names; the structural rule is doctrine, the var names are
+> adopter-local.
+
+This extension presupposes the log-form substrate (the
+claim/release lifecycle and the auto-close hook need a release
+event to write); a team still on the per-file form adopts it
+when it moves to the log.
