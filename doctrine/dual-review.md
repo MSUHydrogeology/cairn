@@ -147,6 +147,51 @@ Code review's floor is stricter than Internal review's: **not the
 implementing agent**, because freshly written code is hard to spot
 mistakes in for someone carrying the same reasoning patterns.
 
+## Restricted verification surfaces
+
+Every review tier above assumes the reviewer can, in principle,
+*run* what they review. When a reviewer **cannot execute** a
+surface, the review is weaker in practice than its tier suggests:
+the reviewer can read the change but cannot confirm its behavior.
+The constraint is not about a second programming language — it is
+any **asymmetrical execution environment**:
+
+* a language the reviewing agent cannot run;
+* a proprietary compiler or a licensed runtime the reviewer lacks;
+* a license server, a private network, or credentials the reviewer
+  does not hold;
+* data at a scale the reviewer cannot stage, or specialized
+  hardware the reviewer does not have.
+
+This is a **gate on the surface, not on the team's language
+count**: a single-language project with private data, a
+hardware-only workflow, or a licensed runtime has restricted
+verification surfaces and needs this discipline; a multi-language
+project is only one common instance.
+
+The mechanism:
+
+* **A `verification command`** — the exact command that checks a
+  change to the surface — is recorded *with* the surface (e.g. in
+  the readiness map, `team-gated/legacy-agent`).
+* **A `verification owner`** — *who can actually run it* — is
+  recorded alongside. A command no reviewer can run is not a
+  verification path.
+* **Pre-framework fallback.** Until an executable verification path
+  exists for a surface, a behavior change to it carries
+  `verification owner = the Maintainer` and **cannot be
+  autonomously verified** — the change waits on the human who can
+  run it. This is honest about the review tier rather than
+  pretending the structural floor was met.
+
+The multi-language instance of this discipline — each language's
+native harness, the named cross-language seams — lives in the
+`team-gated/dual-language-tests` module; the readiness schema in
+`team-gated/legacy-agent` reuses the same `verification command` /
+`verification owner` fields. Both point here for the general rule,
+so a project reaches the doctrine whether or not it selects either
+module.
+
 ## Why this is the contribution
 
 The Dual-Review model is a faithful instantiation of **scientific
