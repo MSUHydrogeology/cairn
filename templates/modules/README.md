@@ -39,6 +39,8 @@ instance; the module file states the tool's contract.
 | team-gated | `legacy-agent` | the codebase is legacy (the Age axis) |
 | team-gated | `dual-language-tests` | the codebase is multi-language |
 | team-gated | `coordination-tiers` | the agent team is concurrent, or high-concurrency |
+| team-gated | `security-review` | the project has a non-trivial trust boundary (untrusted input meets the system); trust-boundary-first, complexity tunes cadence/depth |
+| team-gated | `issue-capture` | the team uses an issue tracker for gap / friction capture (the User Agent surface) |
 
 The kernel's own review — the same agent in a fresh session — runs
 without the `dual-review` module; the module *adds* the second,

@@ -318,6 +318,14 @@ _MODULE_MAPPINGS: dict[str, tuple[str, str]] = {
         "team-gated/coordination-tiers.md",
         "dev/modules/coordination-tiers.md",
     ),
+    "security-review":     (
+        "team-gated/security-review.md",
+        "dev/modules/security-review.md",
+    ),
+    "issue-capture":       (
+        "team-gated/issue-capture.md",
+        "dev/modules/issue-capture.md",
+    ),
 }
 
 #: Result record for one installed file.

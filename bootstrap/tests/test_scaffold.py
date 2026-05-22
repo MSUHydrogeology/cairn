@@ -348,6 +348,86 @@ class TestInstallModules:
         assert "warn" in captured.err.lower() or "warn" in captured.out.lower()
 
 
+class TestNewTeamGatedModules:
+    """The two team-gated modules added by the cairn-fidelity-gaps
+    sync (security-review, issue-capture). Each must be registered in
+    _MODULE_MAPPINGS and installable when its gate selects it -- a
+    documented module file that is never selectable would satisfy the
+    docs but not the scaffold (Codex External finding 1 / Antigravity
+    R8)."""
+
+    @pytest.mark.parametrize("module_name", ["security-review", "issue-capture"])
+    def test_new_module_registered(self, module_name: str) -> None:
+        from bootstrap.scaffold import _MODULE_MAPPINGS
+
+        assert module_name in _MODULE_MAPPINGS, (
+            f"{module_name} not registered in _MODULE_MAPPINGS"
+        )
+        src_rel, dst_rel = _MODULE_MAPPINGS[module_name]
+        assert src_rel == f"team-gated/{module_name}.md"
+        assert dst_rel == f"dev/modules/{module_name}.md"
+
+    @pytest.mark.parametrize("module_name", ["security-review", "issue-capture"])
+    def test_new_module_installs_when_selected(
+        self, tmp_path: Path, module_name: str
+    ) -> None:
+        cairn_root = Path(__file__).resolve().parent.parent.parent
+        templates_root = cairn_root / "templates"
+        if not templates_root.exists():
+            pytest.skip("Cairn templates not available")
+        create_dev_tree(tmp_path)
+        results = install_modules(
+            templates_root, tmp_path, {}, [module_name]
+        )
+        installed_files = [r[0] for r in results]
+        expected = tmp_path / "dev" / "modules" / f"{module_name}.md"
+        assert expected in installed_files
+        assert expected.exists()
+
+    def test_lhm_shaped_profile_selects_both_new_modules(
+        self, tmp_path: Path
+    ) -> None:
+        """An LHM-shaped profile -- legacy + multi-language +
+        multi-agent + a trust boundary + an issue tracker -- selects
+        every team-gated module, including the two new ones. The
+        generated tree must *contain* both, not leave them as files
+        that exist but are never installed."""
+        cairn_root = Path(__file__).resolve().parent.parent.parent
+        if not (cairn_root / "templates").exists():
+            pytest.skip("Cairn templates not available")
+        cfg = tmp_path / "profile.yml"
+        cfg.write_text(
+            "project_name: LhmShaped\n"
+            "test_command: pytest\n"
+            "modules:\n"
+            "  - lifecycle-metrics\n"
+            "  - reflections\n"
+            "  - claim-check\n"
+            "  - dual-review\n"
+            "  - domain-agents\n"
+            "  - legacy-agent\n"
+            "  - dual-language-tests\n"
+            "  - coordination-tiers\n"
+            "  - security-review\n"
+            "  - issue-capture\n"
+        )
+        from bootstrap.scaffold import main
+
+        rc = main(
+            [
+                "--config", str(cfg),
+                "--target", str(tmp_path),
+                "--cairn-root", str(cairn_root),
+            ]
+        )
+        assert rc == 0
+        for module_file in ("security-review.md", "issue-capture.md"):
+            assert (tmp_path / "dev" / "modules" / module_file).exists(), (
+                f"new team-gated module {module_file} not installed for "
+                f"the LHM-shaped profile"
+            )
+
+
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------

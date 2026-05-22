@@ -37,3 +37,10 @@ rubrics):
 
 * **Human team:** {{human_position}} — {{human_reason}}
 * **Agent team:** {{agent_position}} — {{agent_reason}}
+
+### Module-selection signal
+
+* **Issue tracker?** If the current-practice baseline above shows
+  the team uses an issue tracker for gap / friction capture, select
+  the `issue-capture` module — the standing capture surface for the
+  User Agent role (see `modules/team-gated/issue-capture.md`).

@@ -93,3 +93,16 @@ rubrics):
 * **Size:** {{size_position}} — {{size_reason}}
 * **Complexity:** {{complexity_position}} — {{complexity_reason}}
 * **Language:** {{language_position}} — {{language_reason}}
+
+### Module-selection signals
+
+Beyond the axes, two conditions select team-gated modules:
+
+* **Trust boundary?** Does untrusted input meet the system
+  (deserialization, subprocess invocation, file / network I/O,
+  path handling)? If so, select the `security-review` module —
+  the gate is trust-boundary-first; complexity tunes the review
+  cadence and depth (see `modules/team-gated/security-review.md`).
+* **Issue tracker?** Does the team use an issue tracker for gap /
+  friction capture? If so, select the `issue-capture` module
+  (see `modules/team-gated/issue-capture.md`).

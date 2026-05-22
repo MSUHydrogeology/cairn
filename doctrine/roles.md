@@ -49,9 +49,15 @@ sufficiently capable agent can fill:
 * **External Reviewer** — the independent, make-it-prove-itself
   read.
 * **User Agent** — works from the user's seat: runs the software,
-  exercises the workflows, captures friction as issues.
+  exercises the workflows, captures friction as issues. When the
+  team uses an issue tracker, the capture surface (issue
+  structures, the capture-vs-fix rule, the tracker-unavailable
+  fallback) is the `team-gated/issue-capture` module.
 * **Security Review** — a focused-mode pass over the surfaces
-  where untrusted input meets the system.
+  where untrusted input meets the system. Its standing protocol —
+  the trust-boundary checklist and the review cadence — is the
+  `team-gated/security-review` module, selected when the project
+  has a non-trivial trust boundary.
 
 A role is a *frame*, not a person. One agent fills several across
 a session; switching roles within a session is fine but must be
