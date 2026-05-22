@@ -121,6 +121,50 @@ For a scientific-computing audience, the two differentiators Cairn
 leads with are the **recorded deliberation lifecycle** and the
 **Dual-Review model**. The rest of the doctrine supports them.
 
+## How the doctrine evolves under evidence
+
+Cairn is a *self-improving* methodology: observed failure modes
+become doctrine changes. That feedback loop has its own failure
+mode — a team that rewrites a rule on every incident churns its
+doctrine faster than anyone can internalize it, and the churn
+itself becomes the instability. A framework that taught adopters
+to do this would be exporting the failure, not the fix. So the
+loop runs under a **rate-limit gate**, stated as core doctrine:
+
+> **No doctrine change from a single incident** unless the
+> Maintainer explicitly classifies the incident as high-risk.
+> Otherwise the trigger requires one of:
+>
+> * **Recurrence** — the same failure shape occurs again (a small
+>   count within a rolling window; the window length is an adopter
+>   choice, recorded wherever the team tracks the recurrence).
+> * **Synthesis at a routine boundary** — the session-close routine
+>   owner aggregates the period's signal into a *single*
+>   doctrine-proposal stub, rather than one proposal per incident
+>   (see `session-routines.md` > "Goodnight-time synthesis").
+
+High-risk classification is the Maintainer's, and is itself a
+recorded decision, so the audit trail survives on either side of
+the gate. Two surfaces qualify:
+
+* a **security surface** — the change closes a vulnerability,
+  hardens an authentication path, or removes a credential-leak
+  vector;
+* a **data-loss surface** — the change prevents irrecoverable loss
+  of work that cannot be reconstructed (stronger than "data
+  quality": the bar is that the data *can't* be rebuilt).
+
+Any other "this feels urgent" framing falls outside the bypass and
+obeys the recurrence requirement.
+
+The gate composes with the measurement discipline (anchor 3) as a
+matched pair: the **metrics layer diagnoses** where the apparatus
+drifts; the **gate governs how fast the team may act** on that
+diagnosis. Metrics diagnose, doctrine adapts under rate-limit, and
+the loop closes at a routine boundary rather than
+incident-by-incident — the structural ward against
+measurement-driven over-correction.
+
 ## Where the rationale is still thin
 
 Honesty is part of the method. Two areas the anchors expose as

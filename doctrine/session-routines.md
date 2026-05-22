@@ -119,6 +119,20 @@ reflections directory. The channel is:
 A reflection is a retrospective, not a deliberation surface: a
 point that belongs in a proposal does not live in a reflection.
 
+### Goodnight-time synthesis — one stub, not one per incident
+
+The full-handoff owner reads the session-day's reflections not only
+to write the next plan but to **synthesize** the period's recurring
+signal. When several reflections or incidents point at the same
+failure shape, the owner aggregates them into a *single*
+doctrine-proposal stub — not one proposal per incident. This
+synthesis is one of the two triggers the doctrine-evolution gate
+permits (`rationale.md` > "How the doctrine evolves under
+evidence"): it is the routine boundary at which observed failure is
+allowed to become a doctrine change, on a cadence the team can
+absorb. A single incident does not earn a doctrine change here
+unless the Maintainer has classified it high-risk.
+
 ## Adaptation
 
 The routines are invariant, but their *weight* tracks the team. A
