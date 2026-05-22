@@ -90,6 +90,27 @@ What documentation, doctrine, or contract surface does this change
 touch? If none, say so explicitly — silent omission is a review
 finding.
 
+### Doctrine-change rate-limit (if this proposal changes doctrine)
+
+If this proposal **changes doctrine** — a rule, process, or
+contract every contributor follows — it must clear the
+doctrine-evolution gate (`doctrine/rationale.md` > "How the
+doctrine evolves under evidence"). Link the justification here:
+
+* the **recurrence** evidence (the same failure shape, ≥2 times in
+  a rolling window), or
+* the Maintainer's **high-risk classification** (a security or
+  data-loss surface), or
+* the **goodnight-time synthesis** that aggregated the signal into
+  this proposal.
+
+A single incident does not justify a doctrine change unless it is
+the high-risk case. *This prompt applies to a proposal that
+introduces a **new** doctrine change. A proposal that merely
+**syncs or ports already-accepted doctrine** from one place to
+another is not itself a new change — it cites the original
+accepting Decision and the gate does not re-apply.*
+
 ## Rationale
 
 Why this change, and why now — the user-facing or project-facing
