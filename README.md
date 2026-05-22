@@ -45,6 +45,11 @@ what gets prompted, reviewed, and shipped.
 
 ## How to adopt
 
+New to Cairn? [`docs/getting-started.md`](docs/getting-started.md)
+narrates one change moving through the lifecycle, and
+[`docs/workflow-role.md`](docs/workflow-role.md) explains where Cairn
+sits in the workflow — and what it deliberately does *not* do.
+
 Three graduated levels (see [`on-ramp/README.md`](on-ramp/README.md)
 for the full ladder):
 
@@ -76,6 +81,8 @@ agent running alongside the Maintainer, working from
 | [`bootstrap/`](bootstrap/) | The R-A three-act bootstrap procedure (`BOOTSTRAP.md`), the mechanical scaffold (`scaffold.py` + tests), safety rules (`SAFETY.md`, R-I), and the fidelity-check manifest spec (`fidelity-check.md`, R-H). |
 | [`case-studies/`](case-studies/) | Worked examples of the matrix applied: [`modflow_tools.md`](case-studies/modflow_tools.md) (smaller sibling) and [`lhm.md`](case-studies/lhm.md) (full apparatus). |
 | [`on-ramp/`](on-ramp/) | The graduated-adoption ladder (Level 0 / 1 / 2). |
+| [`docs/`](docs/) | Adopter orientation: Cairn's role in the workflow (`workflow-role.md`), a getting-started walkthrough (`getting-started.md`), and a curated further-reading signpost (`further-reading.md`). |
+| [`examples/`](examples/) | Worked examples; [`examples/minimal/`](examples/minimal/) traces one change through the lifecycle at the smallest scale. |
 
 ## Status
 

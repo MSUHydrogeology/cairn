@@ -18,6 +18,29 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **Self-application + adopter-orientation docs
+  (cairn-self-application-and-docs, 2026-05-22).** Cairn now passes
+  its own gate and orients a cold adopter.
+  * **A self-check** — [`scripts/check_cairn.py`](scripts/check_cairn.py):
+    a link + claim-path integrity gate over Cairn's own Markdown tree
+    (GitHub slug rules; ported from the modflow_tools `claim-check`
+    discipline). Cairn now runs the discipline it preaches; the
+    baseline is clean and the checker is wired to fail on a future
+    broken link/path.
+  * **An adopter-orientation `docs/` layer** —
+    [`docs/workflow-role.md`](docs/workflow-role.md) (where Cairn sits
+    and what it does *not* do),
+    [`docs/getting-started.md`](docs/getting-started.md) (one change
+    traced through the lifecycle), and
+    [`docs/further-reading.md`](docs/further-reading.md) (a curated
+    signpost to the SE-craft literature Cairn relies on but does not
+    re-teach).
+  * **A minimal worked example** —
+    [`examples/minimal/`](examples/minimal/): the whole lifecycle loop
+    at the smallest scale, complementing the two full case studies.
+  * Cross-linked from [`README.md`](README.md) and
+    [`on-ramp/README.md`](on-ramp/README.md). Source: the
+    modflow_tools-hosted `cairn-self-application-and-docs` arc.
 - **Fidelity-gaps sync (cairn-fidelity-gaps, 2026-05-22).** Eleven
   generalizable mechanisms ported into Cairn ahead of its first use
   as the LHM bootstrap substrate — two governance landings from the

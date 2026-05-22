@@ -42,3 +42,9 @@ Level 0 readers become Level 1 adopters; a Level 1 project runs
 the bootstrap later to formalize what it assembled by hand. The
 dimensional matrix (`dimensions/`) informs the recommendation, but
 the choice is always the adopter's.
+
+These levels describe *how much* to adopt. For *how the lifecycle
+runs* — one change traced end-to-end — see
+[`../docs/getting-started.md`](../docs/getting-started.md), and for
+where Cairn sits relative to your build/test/CI tooling,
+[`../docs/workflow-role.md`](../docs/workflow-role.md).
