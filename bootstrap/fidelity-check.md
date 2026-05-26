@@ -103,11 +103,14 @@ deferred_default_on: []
 # Each needs a reason; the token check (step 5) exempts these, so a
 # deliberate deferral does not read as a dropped substitution.
 deferred_tokens: []
-# Example:
+# Example (the `module:` key ties the token to the module that owns
+# it, for traceability — match the `deferred_default_on` pattern):
 # deferred_tokens:
 #   - token: test_command
+#     module: <owning module, or omit for a kernel-level token>
 #     reason: "Greenfield repo; no test suite yet."
 #   - token: claim_check_command
+#     module: claim-check
 #     reason: "claim-check installed; reference script not yet adopted."
 ```
 
@@ -179,10 +182,13 @@ be one of:
   the adopter has not supplied yet.
 
 Any other `{{...}}` is an unfilled-token finding. (The deferral is an
-adopter audit convention, not an automated gate: `check_cairn.py` is
-Cairn's *self*-check over template source, which contains `{{tokens}}`
-by design, so the token check is run against the *installed target*,
-not Cairn's own tree.)
+adopter audit convention, not an automated gate: neither `scaffold.py`
+nor `check_cairn.py` parses or acts on the `deferred_tokens:` block.
+`scaffold.py` installs templates and does not read the manifest;
+`check_cairn.py` is Cairn's *self*-check over template source, which
+carries `{{tokens}}` by design — so the token check is run **by the
+adopter, against the installed target**, not by Cairn's tooling over
+Cairn's own tree.)
 
 ---
 
