@@ -18,6 +18,33 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **Practice-discipline modules + a maturity ladder
+  (cairn-v0.2-p3-practice-modules, 2026-05-26).** Cairn now scaffolds the
+  practice *around* the lifecycle, not just the lifecycle. Three new
+  **team-gated** modules (doctrine, not tools — they exemplify how Cairn
+  embodies a practice and signpost the craft literature, they do not
+  re-teach it):
+  * [`testing-discipline`](templates/modules/team-gated/testing-discipline.md)
+    — the test-tier scheme (unit / contract / integration / workflow / …
+    as one coherent scheme; tier-by-location not hand-label; contract
+    tests pin stable schemas; negative tests prove the guards). The base
+    discipline that [`dual-language-tests`](templates/modules/team-gated/dual-language-tests.md)
+    specializes for the Language axis.
+  * [`doc-drift-prevention`](templates/modules/team-gated/doc-drift-prevention.md)
+    — the authoring-time drift gates (reference docs generated from a
+    schema source; snippets pulled from runnable examples; a drift +
+    link/claim gate). Doctrine-only; the generic scaffold-installed
+    tooling is a named future follow-up.
+  * [`examples-gallery`](templates/modules/team-gated/examples-gallery.md)
+    — the runnable-gallery discipline (catalog in lockstep; every example
+    run; smallest-first; disassemble/reassemble to learn).
+  * A **maturity ladder** in [`on-ramp/README.md`](on-ramp/README.md)
+    keyed to the three adoption levels — a self-locate aid, not a
+    scorecard. All three modules are **team-gated** (a P4 governance
+    preset turns them on per profile, rather than doubling the default-on
+    set); each cross-links [`docs/further-reading.md`](docs/further-reading.md)
+    for the craft Cairn points at. Source: the modflow_tools-hosted
+    `cairn-v0.2-p3-practice-modules` arc (P3 of the v0.2 milestone).
 - **Security: the four-layer agent-instruction-supply-chain model
   (cairn-v0.2-p2-security-four-layer, 2026-05-26).** Cairn now treats its
   own templates as what they are — *agent-executed instructions with a
