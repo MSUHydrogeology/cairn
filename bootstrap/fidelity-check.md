@@ -97,6 +97,18 @@ deferred_default_on: []
 # deferred_default_on:
 #   - module: reflections
 #     reason: "Solo single-agent project; no cross-agent handoff surface needed."
+
+# Deferred command-tokens: an inline {{token}} legitimately left
+# unfilled (a command whose script the adopter has not supplied yet).
+# Each needs a reason; the token check (step 5) exempts these, so a
+# deliberate deferral does not read as a dropped substitution.
+deferred_tokens: []
+# Example:
+# deferred_tokens:
+#   - token: test_command
+#     reason: "Greenfield repo; no test suite yet."
+#   - token: claim_check_command
+#     reason: "claim-check installed; reference script not yet adopted."
 ```
 
 ---
@@ -151,8 +163,21 @@ files.  Record the result (`pass` / `fail` with matches).
 
 ### 5. Token check
 
-Run `grep -r '{{' <target>/AGENTS.md <target>/dev/`.  Zero matches
-expected.
+Run `grep -r '{{' <target>/AGENTS.md <target>/dev/`.  Every match must
+be one of:
+
+* a **document-author placeholder** kept unfilled by design —
+  `{{Maintainer}}`, `{{author}}`, `{{reviewer}}` in the proposal
+  template, `{{assessor}}` in the phase-0 templates;
+* a token listed in the manifest's **`deferred_tokens:`** block (each
+  with a reason) — a legitimately deferred command-token whose script
+  the adopter has not supplied yet.
+
+Any other `{{...}}` is an unfilled-token finding. (The deferral is an
+adopter audit convention, not an automated gate: `check_cairn.py` is
+Cairn's *self*-check over template source, which contains `{{tokens}}`
+by design, so the token check is run against the *installed target*,
+not Cairn's own tree.)
 
 ---
 
