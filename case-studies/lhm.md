@@ -9,8 +9,8 @@ Python port.
 **Dimension profile**: legacy · large · complex · multi · solo ·
 concurrent-multi-type.
 
-**Module selection**: kernel + all default-on + **all five
-team-gated modules**.
+**Module selection**: kernel + all default-on + **every team-gated
+module**.
 
 This case study is the larger of the two reference walkthroughs:
 the **full-apparatus** configuration of Cairn, where every
@@ -41,17 +41,22 @@ domains:
 * **Model** — the simulation core: snow physics, ET, runoff,
   routing, and MODFLOW groundwater coupling (`lhm/groundwater/`,
   `lhm/surface/`, the controllers).
-* **Outputs** — UI, postprocessing, output controllers
-  (`frontend/ui/`, `output_controller.m`).
+* **Postprocess** — output postprocessing, optimization
+  (`frontend/optimize/`), and the real-UI surface (Panel/HoloViews,
+  `convergence_tool`); it owns the output *contract* at the
+  `output_controller.m` seam (co-authored with Model).
 
-A `frontend/helper/` directory holds cross-cutting infrastructure
-(datastore, feature, GIS, HDF5 I/O) that straddles all three
-domains.
+A `frontend/helper/` directory holds shared Python infrastructure
+(datastore, feature, GIS, HDF5 I/O), **partitioned by function** — the
+slice serving a domain belongs to it; a module used by two or more is
+cross-cutting. (Most `.m` files under `frontend/helper/` are dead
+legacy — Legacy-Agent triage, not standing infrastructure.)
 
 The model core is the legacy. The Python frontend (added ~2024)
-wraps it without changing the science; an in-flight MATLAB →
-Python port is migrating modules to Python under a
-characterization-testing discipline.
+wraps it without changing the science. A **bounded** MATLAB → Python
+port is in flight — only the legacy MATLAB UI and `frontend/import/`
+are port targets; `lhm/` and `frontend/initialize/` stay MATLAB
+(first-class), under a characterization-testing discipline.
 
 ## Scoring the six axes
 
@@ -87,15 +92,15 @@ installed. It carries:
 * A **characterization-testing** discipline: pin current behavior
   with tests before changing it, even if the behavior is odd, so
   the change is provable as behavior-preserving.
-* MATLAB → Python **port stewardship** as an owned transition,
-  not a side activity.
+* **Bounded** MATLAB → Python **port stewardship** (legacy UI +
+  `frontend/import/` only) as an owned transition, not a side activity.
 
 ### Size — large
 
-* **File count**: ~505 source files (376 MATLAB + 129 Python),
-  roughly four times modflow_tools.
+* **File count**: ~515 source files (376 `.m` source + 139 `.py`;
+  the pytest suite is 44 files), roughly four times modflow_tools.
 * **Subsystem partition**: clean three-domain split — Inputs,
-  Model, Outputs — each with non-trivial internal structure and
+  Model, Postprocess — each with non-trivial internal structure and
   domain-specific expertise required.
 
 **What follows.** The `domain-agents` team-gated module is
@@ -104,12 +109,14 @@ installed. Three Domain Agents are added to the role roster:
 * **Inputs Domain Agent** — climate ingestion, feature
   preparation, grid mapping. Python-dominant; the most
   agent-ready domain.
-* **Model Domain Agent** — the simulation core. ~100% MATLAB;
-  mostly readiness-gated and co-located with the Legacy Agent
-  until modules graduate from the readiness map's *Transitional*
-  to *Ready* status.
-* **Outputs Domain Agent** — postprocessing and UI;
-  Python-majority.
+* **Model Domain Agent** — the simulation core (~100% MATLAB) and
+  `frontend/initialize/`. MATLAB is first-class: `lhm/` is **not**
+  ported, and the Model Agent develops in MATLAB under the normal
+  lifecycle — its near-term deliverable is a MATLAB `unittest` harness
+  + Freybergesque cases. It co-works with the Legacy Agent on
+  characterization, but is not gated behind a port.
+* **Postprocess Domain Agent** — output postprocessing, optimization,
+  and the real-UI surface; Python-targeted.
 
 A Domain Agent is a **combined Planning + Implementation Agent**
 for one domain: it writes the proposal, opens the plan, and ships
@@ -119,9 +126,11 @@ handoff / coordination breakdowns as 35–57% of failures) and
 keeps deep domain context (snow physics, MODFLOW coupling,
 climate ingestion) inside one agent across the lifecycle.
 
-`frontend/helper/` is **cross-cutting** — no single Domain Agent
-owns it. Changes there are Strategy-framed or co-authored by the
-affected Domain Agents, and they require cross-domain review.
+Shared `frontend/helper/` Python infrastructure is **partitioned by
+function** — the slice serving a domain belongs to it; a module used
+by two or more is cross-cutting and goes through the **Cross-Domain
+Proposal** pattern (a lead Domain Agent + co-authors, cross-domain
+review). The MATLAB under `frontend/helper/` is dead-code triage.
 
 ### Complexity — complex
 
@@ -140,10 +149,11 @@ science, the coupling, or the calibration interface.
 
 ### Language — multi
 
-* **MATLAB**: 75% of source files (376 `.m`). The model core is
-  100% MATLAB.
-* **Python**: 25% of source files (129 `.py`). The frontend; the
-  in-flight port destination.
+* **MATLAB**: the majority of source files (376 `.m`, excluding the
+  `dev/` attics). The model core is 100% MATLAB; most `frontend/`
+  MATLAB is dead legacy.
+* **Python**: 139 `.py` — the frontend, and the **bounded** port
+  destination (legacy UI + `frontend/import/` only).
 
 **What follows.** The `dual-language-tests` team-gated module is
 installed. It carries:
@@ -175,7 +185,7 @@ Decision.
 
 The repository runs Claude and Codex in overlapping working
 trees. With three Domain Agents added to the roster (Inputs,
-Model, Outputs) plus the Legacy Agent and Strategy, concurrent
+Model, Postprocess) plus the Legacy Agent and Strategy, concurrent
 work across domains becomes routine — multiple agent sessions
 can be active in different subtrees simultaneously.
 
@@ -207,6 +217,9 @@ team-gated modules are installed.
 | Team-gated | `legacy-agent` | yes | 18-year MATLAB core with zero tests; the canonical retrofit case. |
 | Team-gated | `dual-language-tests` | yes | MATLAB + Python; the port discipline needs both. |
 | Team-gated | `coordination-tiers` | yes (work-intent; real-time as forward option) | High-concurrency domain-agent team; pre-edit signals are needed beyond commit-time discipline. |
+| Team-gated | `security-review` | yes | Real trust boundaries — HDF5 I/O, the MATLAB engine call, subprocess MODFLOW. |
+| Team-gated | `issue-capture` | yes | The User Agent captures friction to GitLab; tracker-agnostic templates + triage. |
+| Team-gated | `model-selection` | yes | The complex axis selects capability floors by role and risk. |
 
 LHM installs **every team-gated module**. That is not a
 recommendation to install everything by default — it is the
@@ -229,10 +242,12 @@ proposal:
 * **Inputs Domain Agent** — `frontend/preparation/`,
   `frontend/import/`, input-data proposals + plans +
   implementation.
-* **Model Domain Agent** — `lhm/` core, the controllers; in the
-  near term mostly co-located with the Legacy Agent.
-* **Outputs Domain Agent** — `frontend/ui/`, postprocessing,
-  `output_controller.m`.
+* **Model Domain Agent** — all of `lhm/` (core + controllers) and
+  `frontend/initialize/`; develops in MATLAB under the normal
+  lifecycle (MATLAB-first — `lhm/` is not ported).
+* **Postprocess Domain Agent** — `frontend/optimize/`, output
+  postprocessing, the real-UI surface; owns the output contract at
+  the `output_controller.m` seam (co-authored with Model).
 * **Internal / External Reviewer** — review *tiers*, not
   headcount; any agent can fill either tier.
 * **User Agent** — interactive pairing; gap capture to GitLab
@@ -246,14 +261,12 @@ failure mode. The full arc (proposal → plan → implementation)
 stays with one agent per domain, which preserves the deep
 context (snow physics, MODFLOW coupling) across the lifecycle.
 
-The 2026-05-20 capability-tier amendment that landed in
-modflow_tools (the role-based model-selection doctrine) applies
-here too once LHM adopts it: Strategy and Security Review at the
-`frontier` tier; Domain Agents and Legacy Agent at `standard`
-with the escalation triggers; Internal Reviewer at
-`standard`-default with the four escalation triggers. Cairn
-doctrine inheritance of the capability-tier rule is queued for
-Cairn Phase 4+.
+Capability floors apply by role and risk (`doctrine/roles.md` + the
+`model-selection` module): Strategy, Security Review, and External
+Review at the high-capability tier; the Domain Agents, Legacy Agent,
+and Internal Reviewer at the standard tier with escalation triggers.
+The adopter-local tier→model mapping lives in LHM's vendor addendum,
+not in Cairn doctrine.
 
 ## Customization narrative
 
@@ -274,7 +287,7 @@ The five customization block slots were filled as follows.
 
 * `role-roster-additions` in `dev/agent_collaboration.md` —
   filled with substantial content: the three Domain Agent roles
-  (Inputs, Model, Outputs), the Legacy Agent role, and the
+  (Inputs, Model, Postprocess), the Legacy Agent role, and the
   Strategy and Research Agent's LHM-specific scope. This slot
   carries the **largest customization** of any case study — the
   domain partition is the LHM-specific architecture, and its
