@@ -18,12 +18,23 @@ Two checks, both deterministic and offline by default:
    repeats with ``-1``, ``-2`` ...).  This is the one documented target
    rendering convention -- Cairn is read on GitHub.  External
    ``http(s)`` links are NOT fetched unless ``--check-external``.
-2. **Claim-path check.**  A backticked token whose first ``/``-segment
-   is a real top-level entry of the Cairn repo is resolved against the
-   tree (ported from modflow_tools' ``scripts/claim_check.py``).  Fenced
-   / indented code, HTML comments, and blockquotes are skipped;
-   ``Proposed path:`` / ``Untracked path:`` / ``External-repo path:``
-   markers (and ``~/...`` / ``$HOME`` external paths) are exempt.
+2. **Claim-path check.**  Cairn *runs the exact tool it ships*: this
+   script imports the claim-path checker from the packaged reference
+   script (``templates/modules/default-on/claim_check.py``) -- the same
+   file the scaffold installs into an adopter's ``scripts/`` -- rather
+   than carrying a second, drift-prone copy.  A backticked token whose
+   first ``/``-segment is a real top-level entry of the Cairn repo is
+   resolved against the tree; fenced / indented code, HTML comments,
+   and blockquotes are skipped; ``Proposed path:`` / ``Untracked path:``
+   / ``External-repo path:`` markers are exempt.
+
+   **Case studies describe external repos.**  ``case-studies/*.md`` write
+   up *other* projects (modflow_tools, LHM) and cite their relative
+   paths, which routinely collide with a Cairn top-level dir name
+   (``scripts/``, ``docs/``).  Those files are passed to the checker's
+   file-scoped **external-path allowance**, so their path-claims are not
+   resolved against the Cairn tree -- the generalized, durable form of
+   the per-collision patches that were applied by hand as Cairn grew.
 
 Scanned set: the whole tracked Markdown tree (``git ls-files '*.md'``).
 
@@ -37,17 +48,56 @@ Exit codes: ``0`` clean; ``1`` at least one broken link / anchor / path;
 ``2`` usage error.
 
 Source proposal / plan: the modflow_tools-hosted
-``cairn-self-application-and-docs`` arc (Chunk 1).
+``cairn-self-application-and-docs`` arc (Chunk 1) established this
+self-check; the Cairn v0.2 P1 ``reference-scripts`` arc unified its
+claim-path half onto the packaged generic checker.
 """
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import re
 import subprocess
 import sys
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
+
+# --------------------------------------------------------------------------
+# Compose the *shipped* generic claim-checker (the dogfood: Cairn runs the
+# exact claim-path tool it installs into adopters).  Imported from the
+# packaged reference script rather than re-implemented here, so there is
+# no second copy to drift.  Loading a module from a file path needs the
+# module registered in sys.modules *before* exec, or its @dataclass
+# definitions fail their cls.__module__ lookup.
+
+_CLAIM_CHECK_SRC = (
+    Path(__file__).resolve().parents[1]
+    / 'templates' / 'modules' / 'default-on' / 'claim_check.py'
+)
+
+
+def _load_claim_check():
+    if not _CLAIM_CHECK_SRC.is_file():
+        raise FileNotFoundError(
+            f'check_cairn: packaged claim-checker not found at '
+            f'{_CLAIM_CHECK_SRC} -- the Cairn tree is incomplete.'
+        )
+    spec = importlib.util.spec_from_file_location(
+        'cairn_claim_check', _CLAIM_CHECK_SRC)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module          # required before exec_module
+    spec.loader.exec_module(module)
+    return module
+
+
+claim_check = _load_claim_check()
+
+#: File globs (relative to the repo root) whose backticked path-claims
+#: describe an EXTERNAL repository and must not be resolved against the
+#: Cairn tree.  Case studies write up other projects; folding this in is
+#: ledger item E (Cairn v0.2 P1).
+_EXTERNAL_ALLOW: list[str] = ['case-studies/*.md']
 
 # --------------------------------------------------------------------------
 # Repo + file discovery
@@ -74,92 +124,15 @@ def tracked_markdown(root: Path) -> list[Path]:
 
 
 # --------------------------------------------------------------------------
-# Markdown scanning (ported from modflow_tools' claim_check.scannable_lines)
+# Link-checking (retained here; the shipped claim-checker is claim-only).
+# Markdown scanning (scannable_lines) is shared from the claim-checker so
+# the two checks see the same prose lines.
 
-_MARKER_LINE_RE = re.compile(
-    r'^\s*(?:(?:[-*+]|\d+[.)])\s+)?'
-    r'(?:proposed|untracked|external-repo)\s+paths?:',
-    re.IGNORECASE,
-)
-_BACKTICK_RE = re.compile(r'`([^`\n]+)`')
-_PLACEHOLDER_CHARS = ('<', '>', '*', '{', '}')
 # Inline links + images: optional '!', [text](target "title").
 _LINK_RE = re.compile(r'!?\[[^\]]*\]\(\s*([^)\s]+)(?:\s+"[^"]*")?\s*\)')
 # Reference definitions: [id]: target  (optionally with a title).
 _REFDEF_RE = re.compile(r'^\s*\[[^\]]+\]:\s*(\S+)')
 _HEADING_RE = re.compile(r'^(#{1,6})\s+(.*?)\s*#*\s*$')
-
-
-def _strip_html_comments(line: str, in_comment: bool) -> tuple[str, bool]:
-    out: list[str] = []
-    i, n = 0, len(line)
-    while i < n:
-        if in_comment:
-            end = line.find('-->', i)
-            if end == -1:
-                return ''.join(out), True
-            i, in_comment = end + 3, False
-        else:
-            start = line.find('<!--', i)
-            if start == -1:
-                out.append(line[i:])
-                return ''.join(out), False
-            out.append(line[i:start])
-            i, in_comment = start + 4, True
-    return ''.join(out), in_comment
-
-
-def scannable_lines(text: str) -> list[tuple[int, str]]:
-    """``(1-based line number, text)`` for prose lines only.
-
-    Fenced / indented code, HTML comments, and blockquotes are dropped
-    (conservative indented-code heuristic that never treats list content
-    as code).  Ported from modflow_tools' claim_check.
-    """
-    out: list[tuple[int, str]] = []
-    in_fence = in_html_comment = in_indent_code = list_active = False
-    prev_blank = True
-    for idx, raw in enumerate(text.split('\n'), start=1):
-        line = raw.expandtabs(4)
-        if re.match(r'^ {0,3}(```|~~~)', line):
-            in_fence = not in_fence
-            in_indent_code = False
-            prev_blank = False
-            continue
-        if in_fence:
-            in_indent_code = False
-            prev_blank = False
-            continue
-        work, in_html_comment = _strip_html_comments(line, in_html_comment)
-        indent = len(work) - len(work.lstrip(' '))
-        stripped = work.strip()
-        if stripped == '':
-            prev_blank = True
-            continue
-        if re.match(r'^ {0,3}>', work):
-            in_indent_code = False
-            prev_blank = False
-            continue
-        if re.match(r'^ *([-*+]|\d+[.)])\s', work):
-            list_active = True
-        elif indent == 0:
-            list_active = False
-        if in_indent_code:
-            if indent >= 4:
-                prev_blank = False
-                continue
-            in_indent_code = False
-        elif not list_active and indent >= 4 and prev_blank:
-            in_indent_code = True
-            prev_blank = False
-            continue
-        out.append((idx, work))
-        prev_blank = False
-    return out
-
-
-# --------------------------------------------------------------------------
-# GitHub slug + anchors
 
 
 def github_slug(heading_text: str) -> str:
@@ -177,8 +150,6 @@ def github_slug(heading_text: str) -> str:
     (double hyphen, from the spaces around the stripped em-dash) on
     GitHub, and this checker must expect the same.  Collapsing/stripping
     here would DIVERGE from GitHub and false-flag correct anchor links.
-    (Verified against the canonical source for code-review finding P2,
-    2026-05-22, which had the collapse behavior inverted.)
     """
     s = heading_text.strip().lower()
     s = s.replace('`', '')                       # inline code ticks
@@ -217,7 +188,7 @@ def file_anchors(text: str) -> set[str]:
 class Flag:
     file: Path
     line: int
-    kind: str        # 'link' | 'anchor' | 'path'
+    kind: str        # 'link' | 'anchor' | 'path' | 'line-bounds'
     message: str
 
 
@@ -226,14 +197,6 @@ class Result:
     flags: list[Flag] = field(default_factory=list)
     external_links: int = 0
     files_scanned: int = 0
-
-
-def _is_placeholder(token: str) -> bool:
-    return ' ' in token or any(c in token for c in _PLACEHOLDER_CHARS)
-
-
-def _is_external_path(token: str) -> bool:
-    return token.startswith(('~', '$HOME', '/Users/', '/home/'))
 
 
 # --------------------------------------------------------------------------
@@ -312,39 +275,19 @@ def _probe_external(md: Path, lineno: int, url: str, result: Result) -> None:
             md, lineno, 'link', f'external link failed ({exc}): {url}'))
 
 
-def _check_paths(
-    md: Path, root: Path, top_level: set[str],
-    scannable: list[tuple[int, str]], result: Result,
+def _check_claims(
+    md: Path, root: Path, result: Result, external_allow: list[str],
 ) -> None:
-    in_marker_block = False
-    prev_lineno: int | None = None
-    for lineno, line in scannable:
-        marker_line = _MARKER_LINE_RE.match(line) is not None
-        contiguous = prev_lineno is not None and lineno == prev_lineno + 1
-        marker_cont = in_marker_block and contiguous and _marker_cont(line)
-        if not (marker_line or marker_cont):
-            for m in _BACKTICK_RE.finditer(line):
-                token = m.group(1).strip()
-                if (not token or _is_placeholder(token)
-                        or _is_external_path(token)):
-                    continue
-                first = token.split('/', 1)[0]
-                if first not in top_level:
-                    continue
-                if not (root / token).exists():
-                    result.flags.append(Flag(
-                        md, lineno, 'path',
-                        f'cited path does not resolve: `{token}`'))
-        in_marker_block = marker_line or marker_cont
-        prev_lineno = lineno
+    """Run the *shipped* generic claim-path checker over one file and
+    fold its hard flags into ``result``.
 
-
-def _marker_cont(text: str) -> bool:
-    s = text.strip()
-    if not s or s.startswith('#'):
-        return False
-    return s.startswith('|') or bool(re.match(r'^([-*+]|\d+[.)])\s+', s)) \
-        or s.startswith('`')
+    Delegates to ``claim_check.check_file`` -- the exact tool the scaffold
+    installs -- including its file-scoped external-path allowance (E).
+    Soft (count) flags are advisory and not surfaced by the self-check.
+    """
+    cr = claim_check.check_file(md, root, external_allow=external_allow)
+    for f in cr.hard_flags:
+        result.flags.append(Flag(md, f.line, f.kind, f.message))
 
 
 # --------------------------------------------------------------------------
@@ -352,27 +295,18 @@ def _marker_cont(text: str) -> bool:
 
 
 def check_tree(root: Path, files: list[Path],
-               check_external: bool = False) -> Result:
-    # Claimable top-level entries are tracked *content*; dot-entries
-    # (``.git`` and friends) are VCS / runtime internals, so a cited
-    # ``.git/hooks/pre-commit`` is a runtime artifact, not a content
-    # path claim -- exclude them.  Trade-off (code-review P3, 2026-05-22):
-    # a path claim into a *tracked* dotfolder (e.g. a future ``.github/``)
-    # is skipped rather than validated -- accepted to stay robust against
-    # ``.git/`` false positives; revisit if tracked-dotpath claims appear.
-    top_level = (
-        {p.name for p in root.iterdir() if not p.name.startswith('.')}
-        if root.is_dir() else set()
-    )
+               check_external: bool = False,
+               external_allow: list[str] | None = None) -> Result:
+    allow = external_allow if external_allow is not None else _EXTERNAL_ALLOW
     anchors_by_file: dict[Path, set[str]] = {}
     result = Result()
     for md in files:
         text = md.read_text(encoding='utf-8', errors='replace')
-        scannable = scannable_lines(text)
+        scannable = claim_check.scannable_lines(text)
         result.files_scanned += 1
         _check_links(md, root, scannable, anchors_by_file, result,
                      check_external)
-        _check_paths(md, root, top_level, scannable, result)
+        _check_claims(md, root, result, allow)
     return result
 
 

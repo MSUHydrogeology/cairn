@@ -184,7 +184,11 @@ apparatus.
 
 ## Module selection (derived)
 
-External-repo paths: the "Reason" column cites modflow_tools' own repo paths (e.g. `tools/lifecycle_metrics.py`, `scripts/claim_check.py`), not Cairn paths.
+The "Reason" column cites modflow_tools' own repo paths (e.g.
+`tools/lifecycle_metrics.py`, `scripts/claim_check.py`), not Cairn paths
+-- this is a case study of an external repo, so the self-check's
+case-study external-path allowance exempts these from local resolution.
+
 | Layer | Module | Installed? | Reason |
 |-------|--------|-----------|--------|
 | Kernel | (always) | yes | The lifecycle (proposals + plans), the Maintainer authority, append-only deliberation, the `dev/` tree, the baseline coordination tier, the session routines. |

@@ -295,10 +295,21 @@ def repo_top_level(repo_root: Path) -> set[str]:
     ...).  A backticked token is a repo-path claim only when its
     first ``/``-separated segment is in this set, so the classifier
     never goes stale as the tree changes.
+
+    **Dot-entries are excluded** (``.git`` and friends).  A cited
+    ``.git/hooks/pre-commit`` is a VCS / runtime artifact, not a content
+    path claim, and every checkout carries a ``.git``; resolving against
+    it would false-flag such citations.  Trade-off: a claim into a
+    *tracked* dotfolder (e.g. a future ``.github/``) is skipped rather
+    than validated -- accepted to stay robust against ``.git/`` false
+    positives.
     """
     if not repo_root.is_dir():
         return set()
-    return {item.name for item in repo_root.iterdir()}
+    return {
+        item.name for item in repo_root.iterdir()
+        if not item.name.startswith('.')
+    }
 
 
 def _is_placeholder(token: str) -> bool:
