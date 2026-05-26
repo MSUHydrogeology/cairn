@@ -48,7 +48,7 @@ import argparse
 import re
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, NamedTuple
 
 try:
     import yaml as _yaml  # type: ignore[import]
@@ -281,52 +281,110 @@ _CORE_MAPPINGS: tuple[tuple[str, str], ...] = (
     ("core/dev/plans/_template.md",                 "dev/plans/_template.md"),
 )
 
-# Module name → (source relative to cairn/templates/modules/,
-#               target relative to repo root)
-_MODULE_MAPPINGS: dict[str, tuple[str, str]] = {
+class InstallSpec(NamedTuple):
+    """One file a module installs.
+
+    ``src`` is relative to ``cairn/templates/modules/``; ``dst`` is
+    relative to the target repo root.  ``verbatim`` marks an executable
+    script (or any non-template asset) that is copied **byte-for-byte**:
+    no ``{{token}}`` substitution runs over it, and it is not scanned for
+    unfilled tokens / block slots (a code file's f-string braces or
+    docstring would otherwise false-positive the post-scaffold report).
+    """
+
+    src: str
+    dst: str
+    verbatim: bool = False
+
+
+# Module name → list of InstallSpec (1:many).  Most modules install a
+# single substituted ``.md`` doctrine file; the two default-on
+# discipline modules also install their reference *script* verbatim
+# (Cairn v0.2 P1).  The script ``dst`` paths are the single source of
+# truth for the command-token defaults below (see
+# ``_REFERENCE_SCRIPT_TOKEN`` and ``reference_script_token_defaults``)
+# so the doc's "run it via {{...}}" line and the install destination
+# cannot desync.
+_MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
     # default-on
-    "lifecycle-metrics":   (
-        "default-on/lifecycle-metrics.md",
-        "dev/modules/lifecycle-metrics.md",
-    ),
-    "reflections":         (
-        "default-on/reflections.md",
-        "dev/modules/reflections.md",
-    ),
-    "claim-check":         (
-        "default-on/claim-check.md",
-        "dev/modules/claim-check.md",
-    ),
+    "lifecycle-metrics": [
+        InstallSpec("default-on/lifecycle-metrics.md",
+                    "dev/modules/lifecycle-metrics.md"),
+        InstallSpec("default-on/lifecycle_metrics.py",
+                    "tools/lifecycle_metrics.py", verbatim=True),
+    ],
+    "reflections": [
+        InstallSpec("default-on/reflections.md", "dev/modules/reflections.md"),
+    ],
+    "claim-check": [
+        InstallSpec("default-on/claim-check.md",
+                    "dev/modules/claim-check.md"),
+        InstallSpec("default-on/claim_check.py",
+                    "scripts/claim_check.py", verbatim=True),
+    ],
     # team-gated
-    "dual-review":         (
-        "team-gated/dual-review.md",
-        "dev/modules/dual-review.md",
-    ),
-    "domain-agents":       (
-        "team-gated/domain-agents.md",
-        "dev/modules/domain-agents.md",
-    ),
-    "legacy-agent":        (
-        "team-gated/legacy-agent.md",
-        "dev/modules/legacy-agent.md",
-    ),
-    "dual-language-tests": (
-        "team-gated/dual-language-tests.md",
-        "dev/modules/dual-language-tests.md",
-    ),
-    "coordination-tiers":  (
-        "team-gated/coordination-tiers.md",
-        "dev/modules/coordination-tiers.md",
-    ),
-    "security-review":     (
-        "team-gated/security-review.md",
-        "dev/modules/security-review.md",
-    ),
-    "issue-capture":       (
-        "team-gated/issue-capture.md",
-        "dev/modules/issue-capture.md",
-    ),
+    "dual-review": [
+        InstallSpec("team-gated/dual-review.md", "dev/modules/dual-review.md"),
+    ],
+    "domain-agents": [
+        InstallSpec("team-gated/domain-agents.md",
+                    "dev/modules/domain-agents.md"),
+    ],
+    "legacy-agent": [
+        InstallSpec("team-gated/legacy-agent.md",
+                    "dev/modules/legacy-agent.md"),
+    ],
+    "dual-language-tests": [
+        InstallSpec("team-gated/dual-language-tests.md",
+                    "dev/modules/dual-language-tests.md"),
+    ],
+    "coordination-tiers": [
+        InstallSpec("team-gated/coordination-tiers.md",
+                    "dev/modules/coordination-tiers.md"),
+    ],
+    "security-review": [
+        InstallSpec("team-gated/security-review.md",
+                    "dev/modules/security-review.md"),
+    ],
+    "issue-capture": [
+        InstallSpec("team-gated/issue-capture.md",
+                    "dev/modules/issue-capture.md"),
+    ],
 }
+
+# Module → the inline command-token whose value should default to the
+# module's installed reference script.  The default value is derived
+# from the verbatim spec's ``dst`` (below), so the token the module doc
+# resolves (``{{claim_check_command}}`` etc.) and the path the scaffold
+# installs to are one source of truth (I5).
+_REFERENCE_SCRIPT_TOKEN: dict[str, str] = {
+    "claim-check": "claim_check_command",
+    "lifecycle-metrics": "metrics_command",
+}
+
+
+def reference_script_token_defaults(module_names: list[str]) -> dict[str, str]:
+    """Default command-token values for the selected reference-script
+    modules.
+
+    For each selected module that ships a verbatim reference script, map
+    its command token (``claim_check_command`` / ``metrics_command``) to
+    ``python <dst>`` where ``<dst>`` is the exact path the scaffold
+    installs the script to.  The caller injects these into the token set
+    *without* overriding a value the profile already supplied
+    (``setdefault`` semantics), so an adopter can still point the token
+    at a custom invocation.
+    """
+    defaults: dict[str, str] = {}
+    for name in module_names:
+        token = _REFERENCE_SCRIPT_TOKEN.get(name)
+        if token is None:
+            continue
+        for spec in _MODULE_MAPPINGS.get(name, []):
+            if spec.verbatim:
+                defaults[token] = f"python {spec.dst}"
+                break
+    return defaults
 
 #: Result record for one installed file.
 #: ``status`` is ``"installed"`` (file written), ``"skipped-exists"``
@@ -344,8 +402,17 @@ def _install_one(
     *,
     dry_run: bool,
     force: bool = False,
+    verbatim: bool = False,
 ) -> InstallResult:
-    """Copy *src* to *dst*, substituting tokens.  Returns an InstallResult.
+    """Copy *src* to *dst*.  Returns an InstallResult.
+
+    Token-substituted by default.  When ``verbatim`` is True the file is
+    copied **byte-for-byte** -- no ``{{token}}`` substitution, no
+    unpaired-slot warning, and the result's unfilled-token / block-slot
+    lists are **empty** (a script's f-string braces or docstring must
+    not be scanned as template tokens / slots, else the post-scaffold
+    report false-positives on code).  This is the I4 contract for the
+    1:many script-install path.
 
     Default-safe: if *dst* already exists and *force* is False, the
     file is **not** overwritten and the result's status is
@@ -354,21 +421,30 @@ def _install_one(
     other customizations; pass ``--force`` to opt into overwriting.
     """
     text = src.read_text(encoding="utf-8")
-    # Pre-substitution: warn about template-author errors (unpaired
-    # cairn:slot markers) before the file ships.  These would manifest
-    # as a malformed installed file otherwise; cheaper to catch here.
-    unpaired = find_unpaired_slots(text)
-    if unpaired:
-        print(
-            f"  [warn] {src.name}: unpaired slot marker(s): "
-            f"{', '.join(unpaired)} (each open `cairn:slot NAME` needs "
-            f"a matching `cairn:end NAME`)",
-            file=sys.stderr,
-        )
-    text = substitute_tokens(text, tokens)
+
+    if verbatim:
+        # No substitution, no slot/token scan -- code is not a template.
+        unfilled: list[str] = []
+        slots: list[str] = []
+    else:
+        # Pre-substitution: warn about template-author errors (unpaired
+        # cairn:slot markers) before the file ships.  These would
+        # manifest as a malformed installed file otherwise; cheaper to
+        # catch here.
+        unpaired = find_unpaired_slots(text)
+        if unpaired:
+            print(
+                f"  [warn] {src.name}: unpaired slot marker(s): "
+                f"{', '.join(unpaired)} (each open `cairn:slot NAME` needs "
+                f"a matching `cairn:end NAME`)",
+                file=sys.stderr,
+            )
+        text = substitute_tokens(text, tokens)
+        unfilled = find_unfilled_tokens(text)
+        slots = find_block_slots(text)
 
     if dry_run:
-        return dst, find_unfilled_tokens(text), find_block_slots(text), "dry-run"
+        return dst, unfilled, slots, "dry-run"
 
     if dst.exists() and not force:
         print(
@@ -377,16 +453,11 @@ def _install_one(
             f"customizations the file already carries)",
             file=sys.stderr,
         )
-        return (
-            dst,
-            find_unfilled_tokens(text),
-            find_block_slots(text),
-            "skipped-exists",
-        )
+        return (dst, unfilled, slots, "skipped-exists")
 
     dst.parent.mkdir(parents=True, exist_ok=True)
     dst.write_text(text, encoding="utf-8")
-    return dst, find_unfilled_tokens(text), find_block_slots(text), "installed"
+    return dst, unfilled, slots, "installed"
 
 
 def install_core(
@@ -436,15 +507,23 @@ def install_modules(
                 file=sys.stderr,
             )
             continue
-        src_rel, dst_rel = _MODULE_MAPPINGS[name]
-        src = modules_root / src_rel
-        if not src.exists():
-            print(f"  [warn] module template missing: {src_rel}", file=sys.stderr)
-            continue
-        dst = target / dst_rel
-        results.append(
-            _install_one(src, dst, tokens, dry_run=dry_run, force=force)
-        )
+        # 1:many -- a module installs its doctrine .md and (for the two
+        # default-on discipline modules) its reference script verbatim.
+        for spec in _MODULE_MAPPINGS[name]:
+            src = modules_root / spec.src
+            if not src.exists():
+                print(
+                    f"  [warn] module template missing: {spec.src}",
+                    file=sys.stderr,
+                )
+                continue
+            dst = target / spec.dst
+            results.append(
+                _install_one(
+                    src, dst, tokens,
+                    dry_run=dry_run, force=force, verbatim=spec.verbatim,
+                )
+            )
     return results
 
 
@@ -646,6 +725,15 @@ def main(argv: list[str] | None = None) -> int:
             "selection.",
             file=sys.stderr,
         )
+
+    # Default the reference-script command tokens to the exact paths the
+    # scaffold installs the scripts to (I5), unless the profile already
+    # supplied a value.  This makes the shipped scripts immediately
+    # runnable via the documented {{claim_check_command}} /
+    # {{metrics_command}} line, and keeps the doc's invocation and the
+    # install destination from desyncing.
+    for token, value in reference_script_token_defaults(modules).items():
+        tokens.setdefault(token, value)
 
     if args.dry_run:
         print("[dry-run] Would install to:", target)

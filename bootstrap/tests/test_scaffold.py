@@ -363,9 +363,14 @@ class TestNewTeamGatedModules:
         assert module_name in _MODULE_MAPPINGS, (
             f"{module_name} not registered in _MODULE_MAPPINGS"
         )
-        src_rel, dst_rel = _MODULE_MAPPINGS[module_name]
-        assert src_rel == f"team-gated/{module_name}.md"
-        assert dst_rel == f"dev/modules/{module_name}.md"
+        # 1:many contract (Cairn v0.2 P1): each module maps to a list of
+        # InstallSpec.  These team-gated modules install a single .md.
+        specs = _MODULE_MAPPINGS[module_name]
+        assert len(specs) == 1
+        spec = specs[0]
+        assert spec.src == f"team-gated/{module_name}.md"
+        assert spec.dst == f"dev/modules/{module_name}.md"
+        assert spec.verbatim is False
 
     @pytest.mark.parametrize("module_name", ["security-review", "issue-capture"])
     def test_new_module_installs_when_selected(
