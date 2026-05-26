@@ -93,7 +93,8 @@ model — and these are real, landed controls the module's
   [`bootstrap/scaffold.py`](../../../bootstrap/scaffold.py): a
   symlink/containment guard that refuses to write through a symlink or
   outside the target on **every** write, plus a Cairn-dev Bandit gate.
-* **Layers 2/3 — content integrity.** The `content_scan.py` scanner,
+* **Layers 2/3 — content integrity.** The
+  [`scripts/content_scan.py`](../../../scripts/content_scan.py) scanner,
   run over Cairn's source prose and over scaffolded generated output by
   [`check_cairn.py`](../../../scripts/check_cairn.py) — a **tripwire
   that forces human review, not a safety proof**.
@@ -105,3 +106,33 @@ model — and these are real, landed controls the module's
 An adopter inherits this posture for *their own* repository: the same
 trust-boundary discipline applies wherever they ship agent-loaded
 instruction files.
+
+### Threat-model summary — the agent-instruction supply chain
+
+A methodology repository that distributes agent-loaded instruction files
+is a **software supply chain whose blast radius is every adopter's
+agents**. The mainstream prompt-injection literature treats injection as
+a *runtime* problem — one application's untrusted input reaching a live
+model. Cairn surfaces a **static, supply-chain variant**: the
+instructions ship as version-controlled prose and are obeyed wherever
+they are forked, so an upstream compromise propagates to every downstream
+adopter at once.
+
+* **Assets** — the integrity of the templates *as instructions agents
+  obey*; the adopter's repository and secrets a subverted instruction
+  could target; the methodology's reputation as a trustworthy source.
+* **Trust boundaries** — the fork/pull boundary (upstream → adopter); the
+  profile boundary (a profile's token values → generated agent-loaded
+  files); the human-review boundary (where obfuscation defeats a skim).
+* **Defenses** — release provenance + by-class review gates +
+  content-integrity scanning of both source and generated output, **not**
+  runtime input filtering. The four layers have distinct jobs:
+  provenance proves *origin*; the scanner + by-class review judge
+  *content* (the scanner a high-noise **witness** that forces review,
+  never a proof); the profile is **trusted input** by doctrine; the
+  scaffold writes **only inside its target**.
+
+Off-the-shelf runtime LLM-guard frameworks target a different threat
+model (a live application's I/O) and are not a Cairn dependency; they
+belong in an adopter's *application*. The lesson generalizes to any
+project that ships `AGENTS.md`-style files for others to adopt.

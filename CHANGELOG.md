@@ -18,6 +18,42 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **Security: the four-layer agent-instruction-supply-chain model
+  (cairn-v0.2-p2-security-four-layer, 2026-05-26).** Cairn now treats its
+  own templates as what they are — *agent-executed instructions with a
+  downstream blast radius* — and defends them in depth. Landed in two
+  internally-gated phases.
+  * **Layer 1 — release provenance.** New
+    [`bootstrap/PROVENANCE.md`](bootstrap/PROVENANCE.md): named releases,
+    signed tags / maintainer-approved release commits, and a **derived
+    install manifest** (`scaffold.py --manifest`, emitted from the
+    scaffold's own mappings so it cannot drift) — with adopter guidance to
+    *scaffold from releases, not branches*, backed by a tool-side
+    provenance warning (`--allow-dev` to silence).
+  * **`SAFETY.md` Rules 7-8** —
+    [`bootstrap/SAFETY.md`](bootstrap/SAFETY.md): templates are
+    agent-executed instructions (reviewed for injected/hidden/unsafe
+    content **by file class**); the bootstrap profile is
+    operationally-trusted input (committed + reviewed as code, never
+    pulled from chat at scaffold time).
+  * **Layer 4 — executable hardening.**
+    [`bootstrap/scaffold.py`](bootstrap/scaffold.py) refuses to write
+    through a symlink or outside the target on **every** write
+    (fail-closed), plus a Cairn-dev-only Bandit gate.
+  * **Layers 2/3 — content integrity.** A new
+    [`scripts/content_scan.py`](scripts/content_scan.py) — a **tripwire
+    that forces human review, not a safety proof** — composed by
+    [`scripts/check_cairn.py`](scripts/check_cairn.py) over Cairn's source
+    prose (by file class) and run over scaffolded *generated* output (the
+    layer that closes the profile-borne injection path a source-only scan
+    misses). Reviewed hits are cleared with a local, reasoned
+    `cairn-accept` marker — never whole-directory allowlists.
+  * The [`security-review`](templates/modules/team-gated/security-review.md)
+    module now points at these real controls and carries the
+    agent-instruction-supply-chain threat-model summary. A red-team
+    fixture + `bootstrap/tests` (47 → 109 across P1+P2) keep the scanner
+    honest. Source: the modflow_tools-hosted
+    `cairn-v0.2-p2-security-four-layer` arc (P2 of the v0.2 milestone).
 - **Runnable reference scripts on the default-on path
   (cairn-v0.2-p1-reference-scripts, 2026-05-26).** The two **default-on**
   discipline modules now ship as *installable, runnable tools* instead of
