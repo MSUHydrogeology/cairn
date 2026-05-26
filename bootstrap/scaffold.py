@@ -271,6 +271,11 @@ def create_dev_tree(target: Path, *, dry_run: bool = False) -> list[Path]:
 _CORE_MAPPINGS: tuple[tuple[str, str], ...] = (
     # repo root
     ("core/AGENTS.md",                              "AGENTS.md"),
+    # Thin vendor wrapper (foldback #12): installed as VENDOR.md, a
+    # vendor-neutral `@AGENTS.md` + harness-addendum template the
+    # adopter renames to their tool's file (CLAUDE.md, etc.).  Core
+    # ships no literal vendor name (R-G).
+    ("core/VENDOR.md",                              "VENDOR.md"),
     # dev/ tree
     ("core/dev/README.md",                          "dev/README.md"),
     ("core/dev/PLANNING.md",                        "dev/PLANNING.md"),

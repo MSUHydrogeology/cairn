@@ -550,6 +550,47 @@ class TestOptionalContributing:
 
 
 # ---------------------------------------------------------------------------
+# Vendor wrapper — generic, neutral VENDOR.md (foldback #12)
+# ---------------------------------------------------------------------------
+
+class TestVendorWrapper:
+    def test_vendor_md_installs_by_default(self, tmp_path: Path) -> None:
+        cairn_root = Path(__file__).resolve().parent.parent.parent
+        templates_root = cairn_root / "templates"
+        if not (templates_root / "core" / "VENDOR.md").exists():
+            pytest.skip("VENDOR.md template not available")
+        create_dev_tree(tmp_path)
+        install_core(templates_root, tmp_path, {"project_name": "Demo"})
+        assert (tmp_path / "VENDOR.md").exists()
+
+    def test_vendor_md_imports_agents_and_stays_thin(
+        self, tmp_path: Path
+    ) -> None:
+        cairn_root = Path(__file__).resolve().parent.parent.parent
+        templates_root = cairn_root / "templates"
+        if not (templates_root / "core" / "VENDOR.md").exists():
+            pytest.skip("VENDOR.md template not available")
+        create_dev_tree(tmp_path)
+        install_core(templates_root, tmp_path, {"project_name": "Demo"})
+        body = (tmp_path / "VENDOR.md").read_text(encoding="utf-8")
+        # Opens by importing the shared, neutral AGENTS.md.
+        assert "@AGENTS.md" in body
+        # Carries the drift guard, and does NOT duplicate canonical
+        # AGENTS.md operational content (e.g. the git-workflow section).
+        assert "Drift guard" in body
+        assert "## Git and commit workflow" not in body
+
+    def test_core_ships_no_literal_vendor_name(self) -> None:
+        """R-G: core templates name no specific AI tool.  The wrapper is
+        the generic VENDOR.md, never a literal CLAUDE.md/GEMINI.md."""
+        cairn_root = Path(__file__).resolve().parent.parent.parent
+        core = cairn_root / "templates" / "core"
+        assert (core / "VENDOR.md").exists()
+        assert not (core / "CLAUDE.md").exists()
+        assert not (core / "GEMINI.md").exists()
+
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 

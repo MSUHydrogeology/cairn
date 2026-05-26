@@ -188,6 +188,15 @@ Decisions name their reviewer for attribution).  Record the result
 as allowed, not findings: deliberation-artifact attribution, filename
 citations, and the `CLAUDE.md` vendor-addendum reference.
 
+**Vendor-wrapper drift note.** If the adopter installed the thin
+wrapper (`VENDOR.md`, renamed to the tool's file), confirm it stayed
+thin: it should open by importing `AGENTS.md` (`@AGENTS.md`) and carry
+*only* harness-specific habits. A wrapper that has grown to duplicate
+canonical `AGENTS.md` content — the test command, the git rules, the
+session routines, the required-reading list — has drifted into a fat
+fourth doc; flag it to fold the duplicated content back to its single
+source (`AGENTS.md` > "Vendor addendum").
+
 ### 5. Token check
 
 Run `grep -r '{{' <target>/AGENTS.md <target>/dev/`.  Every match must

@@ -177,4 +177,17 @@ project ships no `CONTRIBUTING.md`, and this section is informational.
 `AGENTS.md` is vendor-neutral — it names no specific AI agent tool.
 Doctrine specific to one agent tool (a harness path, a
 session-model habit) goes in that tool's own file, which opens by
-importing this one, so the shared content stays single-sourced.
+importing this one (`@AGENTS.md`), so the shared content stays
+single-sourced. Cairn ships the thin wrapper as `VENDOR.md`; the
+adopter renames it to their tool's auto-loaded file (`CLAUDE.md`,
+`GEMINI.md`, …).
+
+**Drift guard.** The wrapper carries *only* harness-specific habits —
+this tool's session/context model, its scratch directory, its
+command quirks. Everything an agent of a *different* tool would also
+need — the required reading, the session routines, the CLI, the
+conventions, the development environment, the test command, the git
+rules — stays canonical **here**, and the wrapper points at it. A
+wrapper that duplicates this content has drifted into a fat fourth
+doc; fold it back and leave only the pointer. (`VENDOR.md` carries the
+same guard inline; `bootstrap/fidelity-check.md` notes it as a check.)
