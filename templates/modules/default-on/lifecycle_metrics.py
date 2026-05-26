@@ -568,8 +568,15 @@ def _plan_status(text: str, sections: Sequence[Tuple[str, List[str]]]) -> str:
 
 def _proposal_slug(stem: str) -> str:
     """Drop the ``YYYY-MM-DD-<author>-`` prefix from a proposal stem,
-    leaving the slug body for best-effort plan pairing."""
-    m = re.match(r'\d{4}-\d{2}-\d{2}-[a-z]+-(.+)', stem)
+    leaving the slug body for best-effort plan pairing.
+
+    The author segment is a single dash-delimited token; it allows
+    mixed case, digits, and underscores (``Codex``, ``Alice``,
+    ``claude2``) -- not lowercase-only -- so an upper/mixed-case author
+    name does not silently defeat plan<->proposal pairing.  It stays
+    dash-free so the match stops at the first dash and the slug body is
+    captured intact (code-review P2, Antigravity 2026-05-26)."""
+    m = re.match(r'\d{4}-\d{2}-\d{2}-[A-Za-z0-9_]+-(.+)', stem)
     return m.group(1) if m else stem
 
 

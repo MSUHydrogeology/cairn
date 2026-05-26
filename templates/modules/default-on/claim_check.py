@@ -390,9 +390,12 @@ def check_line_citation(
             f'line-bounds citation to a missing file: `{token}`',
         )
     end = int(match.group('end') or match.group('start'))
-    n_lines = len(
-        target.read_text(encoding='utf-8', errors='replace').splitlines()
-    )
+    # Count lines by streaming the file rather than reading it whole --
+    # a citation may point into a large data file / log present in the
+    # repo, and only the line count is needed (code-review P3,
+    # Antigravity 2026-05-26).
+    with target.open(encoding='utf-8', errors='replace') as fh:
+        n_lines = sum(1 for _ in fh)
     if end > n_lines:
         return Flag(
             lineno, 'line-bounds', 'hard', token,

@@ -234,6 +234,69 @@ class TestGeneralizationGate:
 
 
 # ---------------------------------------------------------------------------
+# P2 (Antigravity) -- mixed/upper-case author names in slug pairing
+# ---------------------------------------------------------------------------
+
+class TestProposalSlugPairing:
+    def test_proposal_slug_strips_mixed_case_author(
+        self, tmp_path: Path
+    ) -> None:
+        """The author segment must not be lowercase-only, else a mixed /
+        upper-case author name (Codex, Alice) silently defeats the
+        plan<->proposal slug pairing (the match would fail and return the
+        whole stem)."""
+        assert _scaffold(tmp_path, ["lifecycle-metrics"]) == 0
+        lm = _load_script(
+            tmp_path / "tools" / "lifecycle_metrics.py", "slug_lifecycle")
+        for author in ("Codex", "Alice", "claude2", "claude"):
+            stem = f"2026-05-26-{author}-my-thing"
+            assert lm._proposal_slug(stem) == "my-thing", (
+                f"author={author!r}: slug not stripped (got "
+                f"{lm._proposal_slug(stem)!r})"
+            )
+
+
+# ---------------------------------------------------------------------------
+# P3 (Antigravity) -- line-bounds (path:N) negative / boundary coverage
+# ---------------------------------------------------------------------------
+
+class TestLineBoundsChecking:
+    def _cc(self, tmp_path: Path) -> ModuleType:
+        assert _scaffold(tmp_path, ["claim-check"]) == 0
+        return _load_script(
+            tmp_path / "scripts" / "claim_check.py", "lb_claim_check")
+
+    def test_valid_line_citation_resolves(self, tmp_path: Path) -> None:
+        cc = self._cc(tmp_path)
+        (tmp_path / "dev" / "sample.md").write_text("a\nb\nc\n")
+        doc = tmp_path / "doc.md"
+        doc.write_text("See `dev/sample.md:2` for the rule.\n")
+        res = cc.check_file(doc, tmp_path)
+        assert res.hard_flags == [], (
+            f"in-bounds line citation was flagged: {res.hard_flags}"
+        )
+
+    def test_out_of_bounds_line_citation_flags(self, tmp_path: Path) -> None:
+        cc = self._cc(tmp_path)
+        (tmp_path / "dev" / "sample.md").write_text("a\nb\nc\n")
+        doc = tmp_path / "doc.md"
+        doc.write_text("See `dev/sample.md:100`.\n")
+        res = cc.check_file(doc, tmp_path)
+        assert any(f.kind == "line-bounds" for f in res.hard_flags), (
+            f"out-of-bounds line citation not flagged: {res.hard_flags}"
+        )
+
+    def test_missing_file_line_citation_flags(self, tmp_path: Path) -> None:
+        cc = self._cc(tmp_path)
+        doc = tmp_path / "doc.md"
+        doc.write_text("See `dev/missing.md:1` for the rule.\n")
+        res = cc.check_file(doc, tmp_path)
+        assert any(f.kind == "line-bounds" for f in res.hard_flags), (
+            f"line citation to a missing file not flagged: {res.hard_flags}"
+        )
+
+
+# ---------------------------------------------------------------------------
 # E -- file-scoped external-path allowance
 # ---------------------------------------------------------------------------
 
