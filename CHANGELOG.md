@@ -18,6 +18,32 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **The work-intent tool, packaged for adopters
+  (cairn-v0.2-p5-intents-tool, 2026-05-26).** The `coordination-tiers`
+  module now ships a runnable tool, not just doctrine: selecting it
+  installs [`tools/intent.py`](templates/modules/team-gated/intent.py)
+  (verbatim, 1:many alongside the doctrine), a **stdlib-only** Tier-2
+  work-intent CLI — `claim` (with a live conflict-check that gives the
+  signaler immediate value), `list`, `release`, and a **folded-in**
+  `install-hook` that writes a post-commit auto-release hook. The
+  scaffold seeds `dev/intents.jsonl` into `.gitignore` (non-clobber,
+  idempotent) and **prints** the hook command — hook install is
+  **opt-in**, never an automatic scaffold side-effect. The generalized
+  artifact carries zero modflow_tools-specific behavior: a `CAIRN_AGENT`
+  override + an **adopter-extensible** harness-session registry (new
+  harnesses register via `~/.cairn/agent.json`, no tool edit) + a
+  per-session identity; the generated hook captures the install-time
+  interpreter (no bare `python -m`); and the installer **refuses without
+  modifying** a framework-managed / non-shell / non-executable existing
+  hook (chain-not-clobber for a plain one). The
+  [`coordination-tiers`](templates/modules/team-gated/coordination-tiers.md)
+  doctrine is reconciled from the intent-*directory* model to the JSONL
+  claim/release substrate the tool implements (the kernel
+  [`doctrine/coordination.md`](doctrine/coordination.md) had already
+  converged). Append atomicity is documented best-effort +
+  filesystem-dependent (networked/overlay FS called out). Source: the
+  modflow_tools-hosted `cairn-v0.2-p5-intents-tool` arc (P5 of the v0.2
+  milestone), generalized from modflow_tools' `tools/intent.py`.
 - **Practice-discipline modules + a maturity ladder
   (cairn-v0.2-p3-practice-modules, 2026-05-26).** Cairn now scaffolds the
   practice *around* the lifecycle, not just the lifecycle. Three new
