@@ -113,6 +113,16 @@ From the six-axis profile, select the module set:
    | `issue-capture` | The team uses an issue tracker for gap / friction capture (the User Agent surface) |
    | `model-selection` | Complexity is moderate or complex — instruments the capability-floor-by-role-and-risk discipline (`doctrine/roles.md`) with a tier rubric and a per-role mapping template |
 
+4. **Optional top-level templates** (gated on a dimension axis): the
+   human-facing `CONTRIBUTING.md` installs when the **human-team** axis
+   is `small-multi` or `large-multi` (a repo with human authors beyond a
+   solo maintainer) — it points to `AGENTS.md` for the shared rules
+   rather than duplicating them. The scaffold records each installed
+   optional template under `optional_templates:` in the fidelity
+   manifest so the gate is auditable (`fidelity-check.md`). A solo
+   project installs none. (The thin vendor wrapper `VENDOR.md` is *not*
+   gated — it installs by default; see Act II.)
+
 ### I-6 Present the profile to the Maintainer
 
 Write a short summary for the Maintainer before proceeding:
@@ -134,6 +144,8 @@ Module selection
   Default-on (selected): lifecycle-metrics, reflections, claim-check
   Team-gated (selected): <list, or "none">
   Team-gated (deferred): <list with reason, or "none">
+  Optional templates:    <CONTRIBUTING.md if human-team >= small-multi,
+                          else "none"; VENDOR.md always>
 
 Adoption level: Level 2 (full bootstrap)
 
@@ -177,9 +189,16 @@ python <path/to/cairn>/bootstrap/scaffold.py \
 The script:
 
 * Creates the `dev/` directory tree.
-* Copies `templates/core/` into the target.
+* Copies `templates/core/` into the target — including the thin
+  vendor wrapper `VENDOR.md` (`@AGENTS.md` + a harness-only addendum);
+  **rename it to your AI tool's auto-loaded file** (`CLAUDE.md`, …) and
+  keep it thin (see `AGENTS.md` > "Vendor addendum").
 * Copies the selected module files into the target's `dev/modules/`
   directory.
+* Installs any **optional top-level templates** the profile's axes
+  select — e.g. `CONTRIBUTING.md` at human-team `small-multi` /
+  `large-multi` (I-5 step 4) — and surfaces them for recording under
+  `optional_templates:` in the fidelity manifest.
 * Substitutes all inline `{{placeholder}}` tokens with the values
   from the profile config.
 * Writes a post-scaffold report listing every installed file and
