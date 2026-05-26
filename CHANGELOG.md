@@ -18,6 +18,28 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **Governance presets — the onboarding fast path
+  (cairn-v0.2-p4-governance-presets, 2026-05-26).** An adopter can now pick
+  a **named preset** instead of hand-deriving the module roster from the six
+  axes. Three ship — `solo-greenfield`, `collaborative-team`,
+  `high-rigor-legacy` — each a *named point in the six-axis dimension space*
+  (not a parallel config system): the BOOTSTRAP.md I-5 gate table stays the
+  single authoritative per-module rationale, and a preset is a set of axis
+  scores fed into it. **Composable, not rigid**: `preset:` sets the baseline,
+  then flat `modules_add:` / `modules_remove:` adjust on top (apply adds, then
+  removes — **remove wins** on a conflict); an adopter overrides any of the six
+  flat axis keys, and the **real team axes always win on staffability** (a
+  preset never installs coordination apparatus the team can't run — an explicit
+  `modules_add` of an unstaffable module installs with a surfaced warning, not a
+  veto). The schema is **flat and stdlib-parseable** (no PyYAML dependency);
+  `modules:` + `preset:` together is a hard error; wrong-type values and unknown
+  enums / modules are friendly hard errors. `scaffold.py --summary` prints the
+  resolved Act I-6 profile (preset + axes + roster + overrides + staffability
+  warnings) **before** installing — the durable acceptance artifact. The I-5
+  gate table also gained rows for the P3 practice modules. Slug uses US spelling
+  (`high-rigor-legacy`). The v0.2 capstone; depends on P2/P3 (the settled module
+  roster). Source: the modflow_tools-hosted `cairn-v0.2-p4-governance-presets`
+  arc.
 - **The work-intent tool, packaged for adopters
   (cairn-v0.2-p5-intents-tool, 2026-05-26).** The `coordination-tiers`
   module now ships a runnable tool, not just doctrine: selecting it
