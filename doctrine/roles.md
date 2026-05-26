@@ -49,10 +49,16 @@ sufficiently capable agent can fill:
 * **External Reviewer** — the independent, make-it-prove-itself
   read.
 * **User Agent** — works from the user's seat: runs the software,
-  exercises the workflows, captures friction as issues. When the
-  team uses an issue tracker, the capture surface (issue
-  structures, the capture-vs-fix rule, the tracker-unavailable
-  fallback) is the `team-gated/issue-capture` module.
+  exercises the workflows, captures friction as issues, and **debugs
+  from the user's seat** — reproduces and diagnoses failures from real
+  use, rather than from a synthetic test. The capture-vs-fix boundary
+  holds even mid-diagnosis: a fix past a trivial, in-scope correction
+  is *captured* (routed to the owning implementer or an issue), not
+  landed ad-hoc — diagnosing a bug from the user's seat is not
+  authorization to re-decide the owning surface's design. When the
+  team uses an issue tracker, the capture surface (issue structures,
+  the capture-vs-fix rule, the tracker-unavailable fallback) is the
+  `team-gated/issue-capture` module.
 * **Security Review** — a focused-mode pass over the surfaces
   where untrusted input meets the system. Its standing protocol —
   the trust-boundary checklist and the review cadence — is the

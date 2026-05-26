@@ -47,6 +47,14 @@ unrelated friction scatter the work and escape review; an issue
 preserves the signal for triage on its own cadence. The exception
 is the genuinely one-line, on-path fix.
 
+The rule binds the User Agent's **debug-from-the-user's-seat** mode
+especially (`roles.md` > User Agent): reproducing and diagnosing a
+failure from real use is the User Agent's job, but the *fix* — once it
+exceeds a trivial, in-scope correction — is captured and routed to the
+surface's owning implementer, not landed mid-diagnosis. A diagnosis is
+a strong issue (reproduction + root cause); it is not a licence to
+re-decide the owning surface's design.
+
 ### Tracker-unavailable fallback
 
 When the issue tracker is unreachable (auth, network, an outage),
