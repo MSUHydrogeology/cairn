@@ -112,6 +112,9 @@ From the six-axis profile, select the module set:
    | `security-review` | The project has a non-trivial trust boundary (untrusted input meets the system: deserialization, subprocess, file/network I/O, path handling). Trust-boundary-first — complexity tunes the review cadence, not whether it installs |
    | `issue-capture` | The team uses an issue tracker for gap / friction capture (the User Agent surface) |
    | `model-selection` | Complexity is moderate or complex — instruments the capability-floor-by-role-and-risk discipline (`doctrine/roles.md`) with a tier rubric and a per-role mapping template |
+   | `testing-discipline` | Complexity is moderate or complex — the project is substantial enough that the test-tier scheme earns out over ad-hoc tests |
+   | `doc-drift-prevention` | Size is medium or large, **or** Language is multi — docs proliferate and drift from code / examples at scale or across languages |
+   | `examples-gallery` | The project publishes a user-facing example gallery / is adopted by others (a non-axis condition — judged from the project profile, not a single axis) |
 
 4. **Optional top-level templates** (gated on a dimension axis): the
    human-facing `CONTRIBUTING.md` installs when the **human-team** axis
@@ -123,12 +126,41 @@ From the six-axis profile, select the module set:
    project installs none. (The thin vendor wrapper `VENDOR.md` is *not*
    gated — it installs by default; see Act II.)
 
+#### Fast path — governance presets
+
+Hand-deriving the roster from the six axes is the principled path, but it
+is also the rising friction as the module set grows. A **governance
+preset** is the fast path: a *named point in this six-axis space* that
+auto-derives a sensible roster, which the adopter then tunes. Presets do
+**not** replace the gate table above — the table stays the single
+authoritative per-module rationale; a preset is a named set of axis
+scores fed into it.
+
+| Preset | Canonical six-axis point | Baseline roster (beyond the kernel + default-on) |
+|--------|--------------------------|--------------------------------------------------|
+| `solo-greenfield` | greenfield / small / simple / single / solo / single | *(none — default-on only)* |
+| `collaborative-team` | greenfield / medium / moderate / single / small-multi / concurrent-multi-type | `dual-review`, `coordination-tiers` (agent-team gate); `model-selection`, `testing-discipline` (complexity=moderate); `doc-drift-prevention` (size=medium) |
+| `high-rigor-legacy` | legacy / large / complex / multi / large-multi / concurrent-multi-type | `dual-review`, `coordination-tiers` (agent-team gate); `legacy-agent` (age=legacy); `security-review` (trust boundary, assumed); `dual-language-tests` (language=multi); `model-selection`, `testing-discipline` (complexity=complex); `doc-drift-prevention` (size=large / language=multi) |
+
+Each baseline is exactly the gate-table rows above resolved at that
+preset's scores (the team-staffing rows — `dual-review` /
+`coordination-tiers` — are re-evaluated against the adopter's *real*
+agent-team axis, so a preset never installs apparatus the team can't
+staff). **Compose, don't bypass**: a preset sets defaults; `modules_add:`
+and `modules_remove:` adjust on top of it (apply adds, then removes —
+remove wins on a conflict). An explicit `modules_add` of a module the
+gate would not staff installs anyway, with a surfaced staffability
+warning (adopter intent is authoritative; staffability is a caution, not
+a veto). See Appendix B for the config shape.
+
 ### I-6 Present the profile to the Maintainer
 
 Write a short summary for the Maintainer before proceeding:
 
 ```
 ## Dimension profile — <project_name>
+
+Preset:       <preset name, or "(none — hand-derived / literal modules:)">
 
 Age:          <score> — <reason>
 Size:         <score> — <reason>
@@ -144,13 +176,20 @@ Module selection
   Default-on (selected): lifecycle-metrics, reflections, claim-check
   Team-gated (selected): <list, or "none">
   Team-gated (deferred): <list with reason, or "none">
+  Explicit add/remove:   <modules_add / modules_remove, or "none">
   Optional templates:    <CONTRIBUTING.md if human-team >= small-multi,
                           else "none"; VENDOR.md always>
+  Staffability warnings: <any explicit add of an unstaffable module, else "none">
 
 Adoption level: Level 2 (full bootstrap)
 
 Does this profile look right before I install anything?
 ```
+
+When a `preset:` is used, this summary is generated **before installation**
+by `python bootstrap/scaffold.py --summary --config <profile>` (it resolves
+the preset + overrides + axes and prints this block without writing any
+files) — the durable pre-install acceptance artifact.
 
 **Do not proceed to Act II until the Maintainer has accepted the
 profile.** If corrections are needed, revise and re-present.
@@ -569,7 +608,50 @@ modules:
   # - security-review
   # - issue-capture
   # - model-selection
+  # - testing-discipline
+  # - doc-drift-prevention
+  # - examples-gallery
 ```
+
+### Governance presets (the fast path)
+
+Instead of a hand-derived `modules:` list, a profile may name a
+**preset** and adjust it with flat add/remove lists:
+
+```yaml
+project_name: "MyProject"
+test_command: "pytest"
+
+preset: collaborative-team        # solo-greenfield | collaborative-team | high-rigor-legacy
+
+# Optional: override any of the preset's canonical six-axis scores.
+# An absent axis falls back to the preset's value; an unknown enum value
+# is a hard error.  The adopter's real team axes win on staffability.
+agent_team: concurrent-multi-type # age | size | complexity | language | human_team | agent_team
+
+# Optional: compose on top of the preset's baseline roster.
+modules_add:                      # always installs (a staffability warning
+  - security-review               #   fires for an unstaffable add)
+modules_remove:                   # always removes; wins on a same-module
+  - examples-gallery              #   conflict with modules_add
+```
+
+**Schema rules** (flat, stdlib-parseable — no nested mappings):
+
+* `preset:` and `modules:` are **mutually exclusive** (both present is a
+  hard error). `modules:` alone keeps the exact-list semantics above;
+  `preset:` uses the add/remove composition.
+* Merge order: preset baseline → add all `modules_add` → remove all
+  `modules_remove` (**remove wins** on conflict).
+* The six axis keys (`age`, `size`, `complexity`, `language`,
+  `human_team`, `agent_team`) take the values from the I-4 table; an
+  unknown value, or an unknown module name in add/remove, or a scalar
+  where a list is expected, is a **friendly hard error**.
+* Removing a default-on module is a permitted explicit opt-out (logged).
+
+Preview the resolved profile **without installing** with
+`python bootstrap/scaffold.py --summary --config <profile>` (the Act I-6
+acceptance artifact).
 
 The `--target` flag tells the script where to write the installed
 files. See `scaffold.py --help` for all flags.
