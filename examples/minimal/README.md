@@ -42,6 +42,16 @@ review is two-tier (Dual-Review), and non-trivial changes open a plan —
 but the shape is identical. For the narrated, step-by-step version see
 [`../../docs/getting-started.md`](../../docs/getting-started.md).
 
+> **The default-on disciplines come with tools.** This hand-copied
+> Level-1 example runs the lifecycle by hand, but an adopter who
+> bootstraps with the scaffold gets the two default-on disciplines as
+> *runnable scripts*, not just prose: `claim_check.py` (in `scripts/`)
+> and `lifecycle_metrics.py` (in `tools/`) are installed and wired to
+> the `{{claim_check_command}}` / `{{metrics_command}}` tokens. See the
+> [`claim-check`](../../templates/modules/default-on/claim-check.md) and
+> [`lifecycle-metrics`](../../templates/modules/default-on/lifecycle-metrics.md)
+> modules.
+
 ## Files in this example
 
 | File | Role in the trace |

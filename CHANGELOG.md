@@ -18,6 +18,45 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **Runnable reference scripts on the default-on path
+  (cairn-v0.2-p1-reference-scripts, 2026-05-26).** The two **default-on**
+  discipline modules now ship as *installable, runnable tools* instead of
+  doctrine pointing at a clone-and-adapt homework assignment — the single
+  largest gap between "a methodology you read" and "a methodology you
+  run", and the usability spine of the v0.2 milestone.
+  * **Two packaged scripts** —
+    [`templates/modules/default-on/claim_check.py`](templates/modules/default-on/claim_check.py)
+    (verify-before-asserting tripwire) and
+    [`templates/modules/default-on/lifecycle_metrics.py`](templates/modules/default-on/lifecycle_metrics.py)
+    (proposal/plan lifecycle extractor, v1 core). Both vendor-neutral and
+    **standard-library only**; generalized from the modflow_tools adopter
+    implementations with a `--root` override so they run against any
+    Cairn-bootstrapped tree.
+  * **The scaffold installs them.**
+    [`bootstrap/scaffold.py`](bootstrap/scaffold.py)'s module map went
+    from 1:1 to **1:many** — a module installs its `.md` doctrine *and*
+    its `.py` script — and scripts are copied **verbatim** (no token
+    substitution / slot scan over code). The `{{claim_check_command}}` /
+    `{{metrics_command}}` tokens default to the exact install paths, so
+    the doc's "run it via …" line and the file cannot desync.
+  * **Cairn runs the tool it ships.**
+    [`scripts/check_cairn.py`](scripts/check_cairn.py) now *composes* the
+    shipped claim-path checker (importing it from the packaged script)
+    and retains its own link/anchor checker — the strongest dogfood, with
+    no second copy to drift.
+  * **External-path allowance (folds in the `check_cairn` case-study
+    fix).** The claim-checker gains a file-scoped `--external-allow GLOB`:
+    files that *describe* an external repo (`case-studies/*.md`) have
+    their path-claims exempted from local resolution, generalizing the
+    per-collision hand-patches that were applied as Cairn's top-level dir
+    set grew.
+  * Module docs rewritten to point at what ships
+    ([`templates/modules/default-on/claim-check.md`](templates/modules/default-on/claim-check.md),
+    [`templates/modules/default-on/lifecycle-metrics.md`](templates/modules/default-on/lifecycle-metrics.md));
+    `bootstrap/tests` grew an install / generalization-gate / external-
+    path / stdlib-only / VCS-robustness suite (47 → 61 passing). Source:
+    the modflow_tools-hosted `cairn-v0.2-p1-reference-scripts` arc (P1 of
+    the v0.2 milestone).
 - **Self-application + adopter-orientation docs
   (cairn-self-application-and-docs, 2026-05-22).** Cairn now passes
   its own gate and orients a cold adopter.
