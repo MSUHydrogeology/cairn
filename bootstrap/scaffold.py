@@ -341,6 +341,10 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
     "coordination-tiers": [
         InstallSpec("team-gated/coordination-tiers.md",
                     "dev/modules/coordination-tiers.md"),
+        # Cairn v0.2 P5: the work-intent tool ships verbatim alongside the
+        # doctrine (1:many, the P1 claim-check/lifecycle-metrics pattern).
+        InstallSpec("team-gated/intent.py",
+                    "tools/intent.py", verbatim=True),
     ],
     "security-review": [
         InstallSpec("team-gated/security-review.md",
@@ -381,6 +385,46 @@ _REFERENCE_SCRIPT_TOKEN: dict[str, str] = {
     "claim-check": "claim_check_command",
     "lifecycle-metrics": "metrics_command",
 }
+
+#: Module → ``.gitignore`` entries the scaffold seeds when the module is
+#: selected.  Cairn v0.2 P5: the work-intent log is session-local
+#: coordination state, never a tracked artifact, so selecting
+#: ``coordination-tiers`` seeds the substrate path.  Seeding is
+#: non-clobber + idempotent (see :func:`seed_gitignore`).
+_GITIGNORE_SEEDS: dict[str, tuple[str, ...]] = {
+    "coordination-tiers": ("dev/intents.jsonl",),
+}
+
+
+def seed_gitignore(
+    target: Path,
+    entries: tuple[str, ...] | list[str],
+    *,
+    dry_run: bool = False,
+) -> list[str]:
+    """Append *entries* to ``<target>/.gitignore`` if absent.
+
+    Adopter-owned-file contract (Cairn v0.2 P5, C6): **non-clobber**
+    (existing content preserved verbatim), **idempotent** (an entry
+    already present -- exact-line match, ignoring surrounding
+    whitespace -- is never re-added, so repeated scaffolds add no
+    duplicate lines), and **``--dry-run`` aware** (returns what *would*
+    be added without writing).  Returns the entries actually added (or
+    that would be added under ``dry_run``); an empty list means the
+    file already covered everything.
+    """
+    gitignore = target / ".gitignore"
+    text = gitignore.read_text(encoding="utf-8") if gitignore.exists() else ""
+    existing = {ln.strip() for ln in text.splitlines()}
+    to_add = [e for e in entries if e not in existing]
+    if not to_add or dry_run:
+        return to_add
+    prefix = text
+    if prefix and not prefix.endswith("\n"):
+        prefix += "\n"
+    block = "\n".join(to_add) + "\n"
+    gitignore.write_text(prefix + block, encoding="utf-8")
+    return to_add
 
 
 def reference_script_token_defaults(module_names: list[str]) -> dict[str, str]:
@@ -945,6 +989,11 @@ def main(argv: list[str] | None = None) -> int:
         print("[dry-run] Would install to:", target)
         print("[dry-run] Tokens:          ", tokens)
         print("[dry-run] Modules:         ", modules)
+        for mod in modules:
+            for entry in _GITIGNORE_SEEDS.get(mod, ()):  # C6 dry-run
+                would = seed_gitignore(target, (entry,), dry_run=True)
+                if would:
+                    print(f"[dry-run] Would seed .gitignore: {entry}")
         return 0
 
     # Create directory tree
@@ -966,6 +1015,29 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     print_report(target, dirs_created, core_results + module_results)
+
+    # Seed adopter-owned .gitignore for selected modules (Cairn v0.2 P5,
+    # C6: non-clobber + idempotent), and print the OPT-IN hook command --
+    # the scaffold never mutates .git/hooks itself (C2).
+    for mod in modules:
+        entries = _GITIGNORE_SEEDS.get(mod, ())
+        if not entries:
+            continue
+        added = seed_gitignore(target, entries)
+        if added:
+            print(f"\nSeeded .gitignore ({mod}): {', '.join(added)}")
+        else:
+            print(
+                f"\n.gitignore already covers the {mod} entr"
+                f"{'y' if len(entries) == 1 else 'ies'}: "
+                f"{', '.join(entries)}"
+            )
+    if "coordination-tiers" in modules:
+        print(
+            "\nTo enable post-commit auto-release of work intents (opt-in;\n"
+            "the scaffold does NOT install git hooks for you), run:\n"
+            "  python tools/intent.py install-hook"
+        )
     return 0
 
 
