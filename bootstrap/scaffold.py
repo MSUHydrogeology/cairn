@@ -350,6 +350,10 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         InstallSpec("team-gated/issue-capture.md",
                     "dev/modules/issue-capture.md"),
     ],
+    "model-selection": [
+        InstallSpec("team-gated/model-selection.md",
+                    "dev/modules/model-selection.md"),
+    ],
 }
 
 # Module → the inline command-token whose value should default to the

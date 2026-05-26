@@ -433,6 +433,57 @@ class TestNewTeamGatedModules:
             )
 
 
+class TestModelSelectionWired:
+    """`model-selection` shipped as a team-gated module *file* but was
+    never registered in _MODULE_MAPPINGS, so a profile listing it printed
+    `unknown module` and skipped it -- the LHM bootstrap had to copy it in
+    by hand. cairn-foldbacks item 1 / ledger #1."""
+
+    def test_model_selection_registered(self) -> None:
+        from bootstrap.scaffold import _MODULE_MAPPINGS
+
+        assert "model-selection" in _MODULE_MAPPINGS, (
+            "model-selection not registered in _MODULE_MAPPINGS"
+        )
+        specs = _MODULE_MAPPINGS["model-selection"]
+        assert len(specs) == 1
+        spec = specs[0]
+        assert spec.src == "team-gated/model-selection.md"
+        assert spec.dst == "dev/modules/model-selection.md"
+        assert spec.verbatim is False
+
+    def test_model_selection_installs_when_selected(
+        self, tmp_path: Path
+    ) -> None:
+        cairn_root = Path(__file__).resolve().parent.parent.parent
+        templates_root = cairn_root / "templates"
+        if not templates_root.exists():
+            pytest.skip("Cairn templates not available")
+        create_dev_tree(tmp_path)
+        results = install_modules(
+            templates_root, tmp_path, {}, ["model-selection"]
+        )
+        installed_files = [r[0] for r in results]
+        expected = tmp_path / "dev" / "modules" / "model-selection.md"
+        assert expected in installed_files
+        assert expected.exists()
+
+    def test_model_selection_no_unknown_warning(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """The bug's signature: listing model-selection printed an
+        `unknown module` warning and skipped it. After wiring, it must
+        not."""
+        cairn_root = Path(__file__).resolve().parent.parent.parent
+        templates_root = cairn_root / "templates"
+        if not templates_root.exists():
+            pytest.skip("Cairn templates not available")
+        create_dev_tree(tmp_path)
+        install_modules(templates_root, tmp_path, {}, ["model-selection"])
+        captured = capsys.readouterr()
+        assert "unknown module" not in (captured.err + captured.out).lower()
+
+
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------

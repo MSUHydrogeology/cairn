@@ -111,6 +111,7 @@ From the six-axis profile, select the module set:
    | `coordination-tiers` | Agent team is concurrent-multi-type and asynchronous or real-time coordination is needed |
    | `security-review` | The project has a non-trivial trust boundary (untrusted input meets the system: deserialization, subprocess, file/network I/O, path handling). Trust-boundary-first — complexity tunes the review cadence, not whether it installs |
    | `issue-capture` | The team uses an issue tracker for gap / friction capture (the User Agent surface) |
+   | `model-selection` | Complexity is moderate or complex — instruments the capability-floor-by-role-and-risk discipline (`doctrine/roles.md`) with a tier rubric and a per-role mapping template |
 
 ### I-6 Present the profile to the Maintainer
 
@@ -518,6 +519,7 @@ modules:
   # - coordination-tiers
   # - security-review
   # - issue-capture
+  # - model-selection
 ```
 
 The `--target` flag tells the script where to write the installed
