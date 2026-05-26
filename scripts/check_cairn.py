@@ -9,7 +9,7 @@ a prose-integrity check, **not** a behavioral test suite (Cairn is
 methodology, not software; behavioral tests stay scoped to
 ``bootstrap/tests/``).
 
-Two checks, both deterministic and offline by default:
+Three checks, all deterministic and offline by default:
 
 1. **Link check.**  Every internal Markdown link / image and reference
    definition resolves: relative file targets exist, and intra-document
@@ -35,6 +35,14 @@ Two checks, both deterministic and offline by default:
    file-scoped **external-path allowance**, so their path-claims are not
    resolved against the Cairn tree -- the generalized, durable form of
    the per-collision patches that were applied by hand as Cairn grew.
+3. **Content-integrity check (Layer 2).**  Composes the Cairn-internal
+   ``content_scan.py`` over the prose **by file class** (templates ->
+   instruction files strictest, with URL flagging on; doctrine / docs /
+   case-study prose lighter).  A **tripwire that forces human review,
+   not a safety proof** -- it flags imperative-override / egress /
+   suspicious-URL / unicode-obfuscation / instruction-bearing-comment
+   patterns; a reviewed hit is cleared with an inline ``cairn-accept``
+   marker.  Disable with ``--no-content-scan``.
 
 Scanned set: the whole tracked Markdown tree (``git ls-files '*.md'``).
 
@@ -77,21 +85,32 @@ _CLAIM_CHECK_SRC = (
 )
 
 
-def _load_claim_check():
-    if not _CLAIM_CHECK_SRC.is_file():
+#: The content-integrity scanner (Layer 2/3), a sibling Cairn dev tool.
+_CONTENT_SCAN_SRC = Path(__file__).resolve().parent / 'content_scan.py'
+
+
+def _load_module(name: str, path: Path, what: str):
+    """Import a Cairn helper module from a file path.  Registers it in
+    sys.modules before exec so its @dataclass definitions resolve (the
+    spec_from_file_location gotcha)."""
+    if not path.is_file():
         raise FileNotFoundError(
-            f'check_cairn: packaged claim-checker not found at '
-            f'{_CLAIM_CHECK_SRC} -- the Cairn tree is incomplete.'
+            f'check_cairn: packaged {what} not found at {path} -- the '
+            f'Cairn tree is incomplete.'
         )
-    spec = importlib.util.spec_from_file_location(
-        'cairn_claim_check', _CLAIM_CHECK_SRC)
+    spec = importlib.util.spec_from_file_location(name, path)
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module          # required before exec_module
     spec.loader.exec_module(module)
     return module
 
 
-claim_check = _load_claim_check()
+# Compose the shipped claim-path checker (P1) and the content-integrity
+# scanner (P2 Layer 2/3) -- check_cairn runs the exact tools, no copies.
+claim_check = _load_module(
+    'cairn_claim_check', _CLAIM_CHECK_SRC, 'claim-checker')
+content_scan = _load_module(
+    'cairn_content_scan', _CONTENT_SCAN_SRC, 'content scanner')
 
 #: File globs (relative to the repo root) whose backticked path-claims
 #: describe an EXTERNAL repository and must not be resolved against the
@@ -290,13 +309,43 @@ def _check_claims(
         result.flags.append(Flag(md, f.line, f.kind, f.message))
 
 
+def _is_template_instruction(rel: str) -> bool:
+    """True for *source template -> instruction* files (Rule 7's
+    strictest class) -- the files that become an adopter's agent-loaded
+    ``AGENTS.md`` / ``dev/`` tree.  These are scanned with URL flagging
+    on (an executed template should carry no live egress target);
+    doctrine / docs / case-study prose is the lighter class (URLs are
+    legitimate references there)."""
+    return rel.startswith('templates/')
+
+
+def _check_content(md: Path, root: Path, result: Result) -> None:
+    """Run the content-integrity scanner (Layer 2) over one file, by
+    file class, and fold its flags into ``result``.
+
+    Composes ``content_scan`` -- the exact Cairn-internal tool -- rather
+    than re-implementing it (check_cairn stays a thin orchestrator).  A
+    flag is a tripwire that forces human review; suppress a reviewed hit
+    with an inline ``cairn-accept`` marker.
+    """
+    try:
+        rel = md.resolve().relative_to(root).as_posix()
+    except ValueError:
+        rel = md.name
+    scan_urls = _is_template_instruction(rel)
+    for f in content_scan.scan_file(md, scan_urls=scan_urls):
+        result.flags.append(
+            Flag(md, f.line, 'content', f'[{f.pattern_id}] {f.message}'))
+
+
 # --------------------------------------------------------------------------
 # Driver
 
 
 def check_tree(root: Path, files: list[Path],
                check_external: bool = False,
-               external_allow: list[str] | None = None) -> Result:
+               external_allow: list[str] | None = None,
+               content_scan_enabled: bool = True) -> Result:
     allow = external_allow if external_allow is not None else _EXTERNAL_ALLOW
     anchors_by_file: dict[Path, set[str]] = {}
     result = Result()
@@ -307,14 +356,16 @@ def check_tree(root: Path, files: list[Path],
         _check_links(md, root, scannable, anchors_by_file, result,
                      check_external)
         _check_claims(md, root, result, allow)
+        if content_scan_enabled:
+            _check_content(md, root, result)
     return result
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog='check_cairn',
-        description="Cairn self-check: link / anchor / claim-path "
-                    "integrity over Cairn's own Markdown tree.",
+        description="Cairn self-check: link / anchor / claim-path / "
+                    "content-integrity over Cairn's own Markdown tree.",
     )
     parser.add_argument('files', nargs='*', type=Path,
                         help='Specific Markdown files (default: whole tree).')
@@ -323,6 +374,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument('--check-external', action='store_true',
                         help='Also probe http(s) links (network; off by '
                              'default).')
+    parser.add_argument('--no-content-scan', action='store_true',
+                        help='Skip the Layer-2 content-integrity scan '
+                             '(link + claim-path checks only).')
     args = parser.parse_args(argv)
 
     root = args.root.resolve() if args.root else repo_root()
@@ -335,7 +389,10 @@ def main(argv: list[str] | None = None) -> int:
         print('check_cairn: no Markdown files found.', file=sys.stderr)
         return 2
 
-    result = check_tree(root, files, check_external=args.check_external)
+    result = check_tree(
+        root, files, check_external=args.check_external,
+        content_scan_enabled=not args.no_content_scan,
+    )
 
     for flag in result.flags:
         try:
