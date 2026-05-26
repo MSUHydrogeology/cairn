@@ -306,7 +306,9 @@ class TestProfileSummary:
         assert "agent_team" in text
         assert "dual-review" in text          # roster + explicit add
         assert "Explicit add" in text
-        assert "Staffability warnings" in text  # unstaffable add surfaced
+        # Unstaffable add surfaced in the SAME format as the installer path
+        # (`[warn] staffability: ...`) -- standardized per code-review P1.1.
+        assert "[warn] staffability:" in text
 
     def test_summary_cli_exits_without_installing(self, tmp_path: Path) -> None:
         cfg = tmp_path / "profile.yml"

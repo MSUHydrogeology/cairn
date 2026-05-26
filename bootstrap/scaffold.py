@@ -688,8 +688,9 @@ def expand_preset(cfg: dict[str, object]) -> tuple[list[str], dict[str, object]]
             warnings.append(
                 f"`{name}` was explicitly added but the resolved agent-team "
                 f"axis ({resolved_axes.get('agent_team')}) cannot staff it; "
-                f"installing per your explicit request -- ensure the team can "
-                f"actually run it."
+                f"installing per your explicit request -- confirm the team "
+                f"configuration can staff the module's coordination "
+                f"requirements before relying on it."
             )
     roster = set(baseline) | set(adds)
     # Removes win on conflict.
@@ -743,9 +744,12 @@ def format_profile_summary(cfg: dict[str, object]) -> str:
             f"Default-on opted out: {', '.join(s['removed_default_on'])}"  # type: ignore[arg-type]
         )
     if s["staffability_warnings"]:
-        lines.append("\n[!] Staffability warnings:")
+        lines.append("")
+        # Same per-warning line format as the installer path in main()
+        # (`[warn] staffability: ...`), so programmatic detection and the
+        # user-facing presentation are consistent across both surfaces.
         for w in s["staffability_warnings"]:  # type: ignore[union-attr]
-            lines.append(f"  - {w}")
+            lines.append(f"  [warn] staffability: {w}")
     lines.append("")
     lines.append("Does this profile look right before I install anything?")
     return "\n".join(lines) + "\n"
