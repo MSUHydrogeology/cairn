@@ -3,9 +3,9 @@
 **Selected when:** default-on — kept by every adoption except the
 smallest, where the proposal corpus is too thin to measure.
 **Adds to:** a short note in `dev/agent_collaboration.md`
-documenting the lifecycle-metrics discipline. The actual extractor
-tool is the adopter's to supply (see "Reference implementation"
-below).
+documenting the lifecycle-metrics discipline, **plus a runnable
+extractor** the scaffold installs to `tools/lifecycle_metrics.py`
+(see "Reference implementation" below).
 
 The lifecycle-metrics layer makes the team's discipline
 **measurable** rather than asserted. A small read-only extractor
@@ -111,31 +111,30 @@ scanner phrases as if they were the gate's definition.
 
 ## Reference implementation
 
-Cairn ships the discipline (this module, the `{{metrics_command}}`
-token, the `dev/agent_collaboration.md` note) but does **not** yet
-ship a generic extractor script. The methodology's reference
-implementation lives at
-[`modflow_tools/tools/lifecycle_metrics.py`](https://gitlab.msu.edu/hydrogeology/code-projects/modflow_tools)
-— a read-only walker over `dev/proposals/{,archive/}` and
-`dev/plans/{,archive/}` that emits a per-proposal / per-plan CSV
-with review rounds, revision counts, time-to-decision, and
-finding severities.
+**The scaffold installs a runnable extractor.** Enabling this module
+writes `tools/lifecycle_metrics.py` into the target repo (copied
+verbatim) and fills `{{metrics_command}}` to point at it. It is a
+read-only, **standard-library-only** walker over
+`dev/proposals/{,archive/}` and `dev/plans/{,archive/}` that emits a
+per-proposal / per-plan CSV (or markdown) with review rounds, revision
+counts, time-to-decision, and finding severities. Run it via:
 
-Adopters have two paths:
+> `{{metrics_command}}` &nbsp; (`proposals` by default; `plans` for the
+> plan corpus; `--root` targets another tree; `--format md` for a
+> human-readable table)
 
-* **Copy and adapt the reference**: clone the file from the
-  modflow_tools repo into the target project's `tools/` (or
-  `scripts/`, etc.) and point `{{metrics_command}}` at it. The
-  reference parses Markdown headers and timestamps; the
-  conventions it recognises are the lifecycle templates Cairn
-  ships, so it should run cleanly against a freshly bootstrapped
-  Cairn repo — but project-specific extensions to the proposal /
-  plan headers may need parser tweaks.
-* **Write your own**: the schema is open; what matters is that
-  the team can answer questions like "how often does the External
-  round catch something the Internal round did not" from data
-  rather than from belief.
+Nothing to clone or reimplement -- the default is a working tool. It
+parses the proposal / plan lifecycle headers the Cairn scaffold installs,
+so it runs cleanly against a freshly bootstrapped repo; project-specific
+extensions to those headers may need small parser tweaks at the top of
+the script.
 
-A generalized, in-tree reference script that the scaffold installs
-to a target's `tools/` directory is queued as a future Cairn
-enhancement; see Cairn's own roadmap for the follow-up.
+**Scope of the shipped script.** This is the **v1 core** extractor (the
+measurable spine the module promises). The modflow_tools implementation
+it was generalized from also carries a *snapshot layer* — committed,
+dated CSV snapshots; a collision-log correlation; per-doctrine
+annotations; per-tier model aggregation — that is specific to that
+project's own instrumentation and is **not** shipped here. An adoption
+that wants committed snapshots can add them on top; the v1 core is what
+makes the discipline measurable out of the box. Reading per-member or
+per-tier surfaces stays bound by **the Measurement Compact** above.

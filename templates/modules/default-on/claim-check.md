@@ -2,8 +2,9 @@
 
 **Selected when:** default-on.
 **Adds to:** a note in `AGENTS.md` documenting the
-verify-before-asserting discipline. The actual checker tool is
-the adopter's to supply (see "Reference implementation" below).
+verify-before-asserting discipline, **plus a runnable checker** the
+scaffold installs as `claim_check.py` in the target's `scripts/`
+directory (see "Reference implementation" below).
 
 The claim-check module operationalizes **verify-before-asserting**:
 before a load-bearing claim about the repository — a file path, a
@@ -34,27 +35,38 @@ shifts its cheap, mechanical part left, ahead of review.
 
 ## Reference implementation
 
-Cairn ships the discipline (this module, the `{{claim_check_command}}`
-token, the `AGENTS.md` note) but does **not** yet ship a generic
-checker script. The methodology's reference implementation lives at
-[`modflow_tools/scripts/claim_check.py`](https://gitlab.msu.edu/hydrogeology/code-projects/modflow_tools)
-— roughly 200 lines of Python that hard-flags broken repo paths
-and out-of-bounds line citations, and soft-flags absolute count
-claims. Adopters have two paths:
+**The scaffold installs a runnable checker.** Enabling this module
+writes `claim_check.py` into the target's `scripts/` directory (copied
+verbatim -- no token substitution over the code) and fills
+`{{claim_check_command}}` to point at it. The script is vendor-neutral and **standard-library
+only**: it hard-flags broken repo paths and out-of-bounds line
+citations, and soft-flags absolute count claims. Run it via the
+command the module installs:
 
-* **Copy and adapt the reference**: clone the file from the
-  modflow_tools repo into the target project's `scripts/` (or
-  `tools/`, or wherever the project keeps utility scripts) and
-  point `{{claim_check_command}}` at it. The reference is
-  vendor-neutral Python; the patterns it recognises may need
-  light editing for project-specific markdown conventions.
-* **Write your own**: a checker as small as a regex pass over
-  Markdown headings and link targets suffices for the discipline.
-  Use the reference as a behavioral spec rather than as code.
+> `{{claim_check_command}}`
 
-A generalized, in-tree reference script that the scaffold installs
-to a target's `scripts/` directory is queued as a future Cairn
-enhancement; see Cairn's own roadmap for the follow-up.
+Nothing to clone, port, or reimplement -- the default is a working tool.
+
+**Adapting for project-specific conventions.** The checker derives its
+top-level path set by listing the repo root (so it tracks your tree as
+it grows) and recognizes the marker grammar (`Proposed path:` /
+`Untracked path:` / `External-repo path:`) plus a `--root` override.
+Two knobs cover most local needs:
+
+* **External-path allowance** (`--external-allow GLOB`, repeatable):
+  some files exist to *describe other repositories* (a `case-studies/`
+  write-up) and cite that repo's relative paths, which may collide with
+  a local top-level dir name. Naming such file globs marks their
+  path-claims as external so they are not resolved against the local
+  tree -- the file-scoped sibling of the per-line `External-repo path:`
+  marker.
+* The recognized count-nouns and markdown-context rules are small,
+  readable edits at the top of the script if your conventions differ.
+
+Cairn runs this exact script on itself: `scripts/check_cairn.py` imports
+its claim-path checker (and adds link-checking on top), so the
+methodology's own gate and the tool it ships an adopter are the same
+code -- no drift between what Cairn preaches and what it hands out.
 
 ## Out of scope (deferred)
 
