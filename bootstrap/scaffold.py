@@ -1217,6 +1217,17 @@ def build_arg_parser() -> argparse.ArgumentParser:
         ),
     )
     p.add_argument(
+        "--summary",
+        action="store_true",
+        help=(
+            "Print the resolved Act I-6 dimension profile (preset + resolved "
+            "six-axis point + module roster + add/remove overrides + "
+            "staffability warnings) and exit WITHOUT installing.  The "
+            "pre-install acceptance artifact (P4); needs --config, not "
+            "--target."
+        ),
+    )
+    p.add_argument(
         "--allow-dev",
         action="store_true",
         help=(
@@ -1237,6 +1248,58 @@ def main(argv: list[str] | None = None) -> int:
     # --target (it is the published catalog of all installable files).
     if args.manifest:
         sys.stdout.write(format_manifest())
+        return 0
+
+    # --summary is the pre-install acceptance artifact (P4): resolve the
+    # profile and print it WITHOUT installing.  Needs --config, not --target.
+    if args.summary:
+        if not args.config:
+            print("error: --summary requires --config.", file=sys.stderr)
+            return 1
+        summary_config_path = Path(args.config).resolve()
+        if not summary_config_path.exists():
+            print(
+                f"error: config not found: {summary_config_path}",
+                file=sys.stderr,
+            )
+            return 1
+        try:
+            summary_cfg = load_config(summary_config_path)
+        except Exception as exc:
+            print(f"error loading config: {exc}", file=sys.stderr)
+            return 1
+        if "preset" in summary_cfg and "modules" in summary_cfg:
+            print(
+                "error: a profile may not set both `preset:` and `modules:` "
+                "-- use `preset:` with `modules_add:` / `modules_remove:`, or "
+                "`modules:` alone.",
+                file=sys.stderr,
+            )
+            return 1
+        try:
+            if summary_cfg.get("preset"):
+                sys.stdout.write(format_profile_summary(summary_cfg))
+            else:
+                # No preset: the modules: list (or the default-on set) is the
+                # literal install -- summarize it plainly.
+                mods = (
+                    _as_str_list(summary_cfg.get("modules"), "modules")
+                    if "modules" in summary_cfg
+                    else list(_DEFAULT_ON_MODULES)
+                )
+                project = str(summary_cfg.get("project_name") or "<project_name>")
+                out = [f"## Dimension profile -- {project}", "",
+                       "Preset: (none -- literal module list)", "",
+                       "Module roster (to install):"]
+                out.extend(f"  - {m}" for m in mods)
+                out.append("")
+                out.append(
+                    "Does this profile look right before I install anything?"
+                )
+                sys.stdout.write("\n".join(out) + "\n")
+        except PresetError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
         return 0
 
     if not args.config or not args.target:
@@ -1289,32 +1352,72 @@ def main(argv: list[str] | None = None) -> int:
         for k, v in cfg.items()
         if isinstance(k, str) and k in KNOWN_TOKENS and v
     }
-    # Default-on doctrine (BOOTSTRAP.md Act I-5 step 2): the three
-    # default-on modules are installed unless a dimension removes
-    # them.  When the profile YAML omits `modules:` entirely, install
-    # the default-on set and warn so the user knows to opt out
-    # explicitly rather than silently shipping a kernel-only install.
-    # An empty `modules: []` list is honored as "install no modules"
-    # (explicit opt-out).
-    if "modules" in cfg:
-        modules: list[str] = [str(m) for m in cfg.get("modules", [])]
+    # Module selection (BOOTSTRAP.md Act I-5).  Three mutually-exclusive
+    # shapes, plus the P4 preset fast path:
+    #   * `preset:` (P4) -> expand to a roster via the pinned ordered merge
+    #     (resolve axes -> gate-derived baseline -> add/remove); `resolved_axes`
+    #     is the preset point + adopter overrides.
+    #   * `modules:` alone -> today's exact-list semantics (`modules: []` opts
+    #     out of all non-core modules).
+    #   * `modules:` + `preset:` together -> a hard error (no replace-vs-merge
+    #     guessing).
+    #   * neither -> the default-on set, with an opt-out hint.
+    # `resolved_axes` is the feed for axis-driven selection below (optional
+    # templates): the preset-resolved point when a preset is used, else the
+    # raw profile.
+    resolved_axes: dict[str, object]
+    if "preset" in cfg and "modules" in cfg:
+        print(
+            "error: a profile may not set both `preset:` and `modules:` -- "
+            "use `preset:` with `modules_add:` / `modules_remove:` to "
+            "compose, or `modules:` alone for an exact list.",
+            file=sys.stderr,
+        )
+        return 1
+    if cfg.get("preset"):
+        try:
+            modules, _preset_summary = expand_preset(cfg)
+        except PresetError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+        resolved_axes = dict(_preset_summary["axes"])  # type: ignore[arg-type]
+        print(
+            f"  [info] preset `{_preset_summary['preset']}` -> modules: "
+            f"{', '.join(modules) or '(none)'}.",
+            file=sys.stderr,
+        )
+        for warn in _preset_summary["staffability_warnings"]:  # type: ignore[union-attr]
+            print(f"  [warn] staffability: {warn}", file=sys.stderr)
+        if _preset_summary["removed_default_on"]:  # type: ignore[index]
+            print(
+                "  [info] default-on opted out via modules_remove: "
+                f"{', '.join(_preset_summary['removed_default_on'])}.",  # type: ignore[arg-type]
+                file=sys.stderr,
+            )
+    elif "modules" in cfg:
+        try:
+            modules: list[str] = _as_str_list(cfg.get("modules"), "modules")
+        except PresetError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+        resolved_axes = cfg
     else:
         modules = list(_DEFAULT_ON_MODULES)
+        resolved_axes = cfg
         print(
-            "  [info] profile omits `modules:`; installing the "
+            "  [info] profile omits `modules:` and `preset:`; installing the "
             f"default-on set ({', '.join(_DEFAULT_ON_MODULES)}).  Set "
-            "`modules: []` to opt out explicitly, or list a specific "
-            "selection.",
+            "`modules: []` to opt out explicitly, pick a `preset:`, or list a "
+            "specific selection.",
             file=sys.stderr,
         )
 
     # Optional top-level templates (foldback #10): selected by the
     # dimension axes — e.g. the human-team axis selects CONTRIBUTING.md
-    # at small-multi / large-multi.  Read from the profile directly here;
-    # when a `preset:` is in play the resolved axes (preset point +
-    # overrides, via `resolve_axes` / `expand_preset`) are the right feed
-    # — swap `cfg` for the resolved-axes dict at that integration point.
-    optional = select_optional_templates(cfg)
+    # at small-multi / large-multi.  Fed the RESOLVED axes (preset point +
+    # overrides when a `preset:` is used, else the raw profile) per the
+    # seam foldback #10 left for P4.
+    optional = select_optional_templates(resolved_axes)
     if optional:
         names = ", ".join(dst for _, dst in optional)
         print(
