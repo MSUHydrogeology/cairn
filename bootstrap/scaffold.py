@@ -614,6 +614,88 @@ def print_report(
 # CLI
 # ---------------------------------------------------------------------------
 
+def install_manifest(
+    modules: list[str] | None = None,
+) -> list[tuple[str, str, bool]]:
+    """The ``(source, destination, verbatim)`` set the scaffold installs.
+
+    Core templates always; modules per *modules* (or **all** known
+    modules when ``None`` -- the published catalog).  ``source`` is
+    relative to ``templates/``; ``destination`` is relative to the
+    target repo root.  Derived from ``_CORE_MAPPINGS`` +
+    ``_MODULE_MAPPINGS`` so the published manifest (Layer 1) cannot
+    drift from what the scaffold actually writes.  Sorted by
+    destination for a stable, diffable emission.
+    """
+    entries: list[tuple[str, str, bool]] = [
+        (src_rel, dst_rel, False) for src_rel, dst_rel in _CORE_MAPPINGS
+    ]
+    names = sorted(_MODULE_MAPPINGS) if modules is None else modules
+    for name in names:
+        for spec in _MODULE_MAPPINGS.get(name, []):
+            entries.append((f"modules/{spec.src}", spec.dst, spec.verbatim))
+    entries.sort(key=lambda e: (e[1], e[0]))
+    return entries
+
+
+def format_manifest(modules: list[str] | None = None) -> str:
+    """Render the install manifest as a stable, machine-readable table:
+    one ``destination<TAB>source<TAB>{verbatim|substituted}`` line per
+    file (Layer 1; ``scaffold.py --manifest``)."""
+    lines = [
+        "# Cairn install manifest "
+        "(destination<TAB>source<TAB>verbatim|substituted)",
+    ]
+    for src, dst, verbatim in install_manifest(modules):
+        kind = "verbatim" if verbatim else "substituted"
+        lines.append(f"{dst}\t{src}\t{kind}")
+    return "\n".join(lines) + "\n"
+
+
+def git_provenance_warning(cairn_root: Path) -> str | None:
+    """Layer-1 provenance nudge: return a warning when *cairn_root* is a
+    git checkout whose ``HEAD`` is **not a tagged release commit** or has
+    **uncommitted changes**; return ``None`` when it is a clean tagged
+    release, or when git is unavailable / the path is not a checkout
+    (degrade silently -- the warning never blocks an install).
+
+    Read-only, fixed-argument ``git`` via ``subprocess`` (no shell, no
+    input interpolation).  ``git`` is local VCS, not a network call, so
+    SAFETY Rule 5 (the bootstrap does not read from the internet) is
+    untouched.
+    """
+    import subprocess
+
+    def _git(*args: str) -> subprocess.CompletedProcess[str] | None:
+        try:
+            return subprocess.run(
+                ["git", "-C", str(cairn_root), *args],
+                capture_output=True, text=True, timeout=10, check=False,
+            )
+        except (OSError, subprocess.SubprocessError):
+            return None
+
+    inside = _git("rev-parse", "--is-inside-work-tree")
+    if inside is None or inside.returncode != 0 \
+            or inside.stdout.strip() != "true":
+        return None  # not a checkout / git absent -- silent
+
+    issues: list[str] = []
+    tagged = _git("describe", "--exact-match", "--tags", "HEAD")
+    if tagged is None or tagged.returncode != 0:
+        issues.append("its HEAD is not a tagged release commit")
+    dirty = _git("status", "--porcelain")
+    if dirty is not None and dirty.stdout.strip():
+        issues.append("its source tree has uncommitted changes")
+    if not issues:
+        return None
+    return (
+        f"provenance: scaffolding from a Cairn source where "
+        f"{' and '.join(issues)} ({cairn_root}). Prefer a tagged release "
+        f"(see bootstrap/PROVENANCE.md); pass --allow-dev to silence."
+    )
+
+
 def _find_cairn_root(script_path: Path) -> Path:
     """Locate the Cairn repo root as two directories above this script.
 
@@ -630,15 +712,17 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
     p.add_argument(
         "--config",
-        required=True,
+        required=False,
         metavar="PROFILE_YAML",
-        help="Path to the profile YAML config (see Appendix B in BOOTSTRAP.md).",
+        help="Path to the profile YAML config (see Appendix B in BOOTSTRAP.md). "
+             "Required for an install; not needed with --manifest.",
     )
     p.add_argument(
         "--target",
-        required=True,
+        required=False,
         metavar="REPO_ROOT",
-        help="Path to the target repository root.",
+        help="Path to the target repository root. Required for an install; "
+             "not needed with --manifest.",
     )
     p.add_argument(
         "--cairn-root",
@@ -664,6 +748,24 @@ def build_arg_parser() -> argparse.ArgumentParser:
             "other customizations the existing files carry."
         ),
     )
+    p.add_argument(
+        "--manifest",
+        action="store_true",
+        help=(
+            "Emit the install manifest (the destination<TAB>source<TAB>kind "
+            "set the scaffold would install, all modules) and exit.  The "
+            "Layer-1 published manifest; needs no --config / --target."
+        ),
+    )
+    p.add_argument(
+        "--allow-dev",
+        action="store_true",
+        help=(
+            "Silence the Layer-1 provenance warning when scaffolding from a "
+            "non-tagged / dirty Cairn source (i.e. when developing Cairn "
+            "itself)."
+        ),
+    )
     return p
 
 
@@ -671,6 +773,20 @@ def main(argv: list[str] | None = None) -> int:
     """Entry point.  Returns an exit code (0 = success, 1 = error)."""
     parser = build_arg_parser()
     args = parser.parse_args(argv)
+
+    # --manifest is a read-only emit; it needs neither --config nor
+    # --target (it is the published catalog of all installable files).
+    if args.manifest:
+        sys.stdout.write(format_manifest())
+        return 0
+
+    if not args.config or not args.target:
+        print(
+            "error: --config and --target are required for an install "
+            "(omit them only with --manifest).",
+            file=sys.stderr,
+        )
+        return 1
 
     config_path = Path(args.config).resolve()
     target = Path(args.target).resolve()
@@ -694,6 +810,13 @@ def main(argv: list[str] | None = None) -> int:
             file=sys.stderr,
         )
         return 1
+
+    # Layer-1 provenance nudge: warn (never block) when scaffolding from a
+    # non-tagged / dirty Cairn source, unless --allow-dev.
+    if not args.allow_dev:
+        warning = git_provenance_warning(cairn_root)
+        if warning:
+            print(f"  [warn] {warning}", file=sys.stderr)
 
     # Load config
     try:
