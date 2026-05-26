@@ -374,19 +374,30 @@ complete.
       open and close markers.
 
 **Vendor-neutrality lint (R-G)**
-- [ ] No specific AI model name or vendor name appears in any
-      installed file. Run:
+- [ ] No specific AI model or vendor name appears in the **doctrine /
+      template** files. Run, scoped to exclude the deliberation record:
       ```
       grep -rni \
         'claude\|codex\|gpt-4\|gpt-3\|gemini\|llama\|anthropic\|openai\|mistral' \
-        <target>/AGENTS.md <target>/dev/
+        <target>/AGENTS.md <target>/dev/ \
+        --exclude-dir=proposals --exclude-dir=plans
       ```
-      If matches appear in content (not quoted examples): replace
-      with "the agent", the role name, or a vendor-addendum file
-      reference. A vendor-specific addendum file (e.g.,
-      `CLAUDE.md`) that imports `AGENTS.md` is the correct home
-      for tool-specific habits; it must not contaminate the shared
-      `AGENTS.md` or `dev/` files.
+      Three classes of match are **expected and allowed**, not
+      findings — which is why the lint is scoped, not blanket:
+      * **deliberation-artifact content** under `dev/proposals/` and
+        `dev/plans/` — a Review / Response / Decision *names its
+        reviewer* for attribution; that record is supposed to say who
+        said what (hence the `--exclude-dir`s above);
+      * **filename citations** — a proposal / plan stem may carry an
+        author or agent name (e.g. `…-claude-…`); a *reference* to the
+        file is not a content leak;
+      * a **vendor-addendum file reference** (`CLAUDE.md`) — the
+        sanctioned home for tool-specific habits, which imports
+        `AGENTS.md`.
+      Any *other* match in content (not a quoted example) is a finding:
+      replace with "the agent", the role name, or a vendor-addendum
+      reference. The addendum file itself must not contaminate the
+      shared `AGENTS.md` or `dev/` doctrine.
 
 **Dogfood gate (see Step II-6)**
 - [ ] At least one real change has gone through the installed

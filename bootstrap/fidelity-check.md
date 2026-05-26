@@ -158,8 +158,13 @@ For each slot listed as `na`, confirm there is an explicit
 
 ### 4. Vendor-neutrality check
 
-Run the lint from BOOTSTRAP.md Act II-5 against the installed
-files.  Record the result (`pass` / `fail` with matches).
+Run the lint from BOOTSTRAP.md Act II-5 against the installed files —
+**scoped to the doctrine / template files** (it excludes
+`dev/proposals/` and `dev/plans/`, where Reviews / Responses /
+Decisions name their reviewer for attribution).  Record the result
+(`pass` / `fail` with matches), treating the three sanctioned classes
+as allowed, not findings: deliberation-artifact attribution, filename
+citations, and the `CLAUDE.md` vendor-addendum reference.
 
 ### 5. Token check
 
