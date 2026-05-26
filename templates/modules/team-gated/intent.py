@@ -744,7 +744,10 @@ def _build_hook_block(python_exe: str, intent_path: Path) -> str:
     """
     body = (
         'COMMIT_SHA=$(git rev-parse HEAD)\n'
-        'PATHS_TMP=$(mktemp -t intent-paths.XXXXXX)\n'
+        # Portable mktemp: an explicit template path works identically on
+        # BSD (macOS) and GNU mktemp, unlike `-t` (GNU-deprecated, and
+        # BSD/GNU interpret it differently).
+        'PATHS_TMP=$(mktemp "${TMPDIR:-/tmp}/intent-paths.XXXXXX")\n'
         # --root makes the very first (parentless) commit list its files
         # too; it is a no-op for ordinary commits with a parent.
         'git diff-tree --root --no-commit-id --name-only -r -z HEAD '
