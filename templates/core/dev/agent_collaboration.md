@@ -84,6 +84,19 @@ moderate or complex on the Complexity axis, the
 tier-to-model mapping is published in the case-studies surface
 (or an adopter-local config) — never in core doctrine.
 
+## Surfacing judgment calls to the Maintainer
+
+Work usually divides into a large mechanical part and a few
+**judgment calls** that need the Maintainer's direction. Surface those
+as a structured kickoff rather than deciding silently: finish the
+mechanical ~80% first and queue the calls; surface the queue in one
+message *before* committing; give **3 options + a recommended pick +
+plain rationale**, naming what each changes on disk; then fold the
+dispositions into one commit with the work. Chat-mode preferences are
+*input* that shapes a draft, not a Decision (see `doctrine/lifecycle.md`
+> "Chat preferences are not a lifecycle Decision" and "Surfacing
+judgment calls to the Maintainer").
+
 ## Coordination
 
 The team coordinates **stigmergically** — through the persistent

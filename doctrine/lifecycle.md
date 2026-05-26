@@ -184,6 +184,69 @@ deliberation-by-conversation: it converts what would otherwise be
 a chat resolution into a durable Decision-of-record on the
 artifact.
 
+## Chat preferences are not a lifecycle Decision
+
+Maintainer chat-mode preferences during a working session ("maybe X",
+"I lean toward Y", "what if we tried Z") are **input** — useful for
+shaping a proposal's draft — not **Decisions** on proposal-worthy
+changes. A lifecycle Decision attaches to a *written* proposal another
+agent has reviewed (see "The proposal lifecycle"). When an agent
+receives chat preferences on a proposal-worthy change, the right move
+is to fold them into a proposal draft — cited as **"maintainer
+preference during drafting"** in *Rationale* or *Alternatives
+considered*, not as the Decision — open it for review, and *then* wait
+for the Maintainer's Decision.
+
+**Bounded mechanical directives** are different: "revert this commit",
+"fix this typo", "scribe the Decision on proposal X" proceed under the
+triage escape hatches (`proposals/_template.md` > "Triage"). What chat
+*cannot* do silently is convert an unreviewed, proposal-worthy design
+choice into an accepted outcome. **When it is unclear whether a
+directive authorizes action without a proposal, the triage rule is the
+arbiter.**
+
+Citing chat input keeps the source auditable without pretending chat
+was the Decision: an accepted proposal's Decision section names *what
+was decided*; the body's chat-input citations name *what shaped the
+draft*. This is the input-side complement to the procedural-gap inline
+Decision above — that rule says what the Maintainer *can* close on a
+live artifact; this one says what chat *cannot* silently become.
+
+## Surfacing judgment calls to the Maintainer
+
+Much work divides into a large mechanical part and a smaller set of
+**judgment calls** that need the Maintainer's direction — the ~20%
+where acting silently is wrong because the choice turns on priorities,
+history, or trade-offs the agent cannot see. Surface those as a
+structured kickoff, not as silent decisions buried in the work:
+
+* **Finish the mechanical part first, queue the judgment calls.**
+  Complete the clearly-mechanical ~80%, accumulating the queue as you
+  go; then stop and surface it in a single message before committing.
+  Don't bundle judgment calls into mid-work commits.
+* **Lead with what changes for the user, not the architecture.** If
+  the Maintainer is reasoning about outcomes and real workflows, answer
+  in those terms; the architectural framing follows as supporting
+  structure, not the lead.
+* **Give 3 options + a recommended pick + plain-English rationale.**
+  The Maintainer's time is the bottleneck; pre-digesting the decision
+  space with a *defensible recommendation* (not "it depends") is the
+  agent's contribution. If you genuinely cannot choose without their
+  input, say so rather than hedging.
+* **Name what each option changes on disk** — in the roadmap board,
+  the docs, the code. Concrete diffs ("this entry collapses to one
+  line", "this gate is deleted") beat abstract framings ("we'd tighten
+  the contract").
+* **Wait for direction, then fold the dispositions into one commit**
+  with the related work — not a separate "mechanical" and
+  "judgment-call" commit.
+
+The Maintainer brings framing the agent lacks (priorities, project
+history, what users do); the agent brings structural surfacing the
+Maintainer has not inspected (cross-references, doctrine implications,
+downstream effects). Surfacing well is the agent's half of that
+exchange.
+
 ## Deferred-follow-up revival
 
 An accepted proposal may carry an **explicitly deferred**

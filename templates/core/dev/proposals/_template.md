@@ -119,7 +119,11 @@ improvement it delivers.
 ## Alternatives considered
 
 The other options, and why each was not chosen — including "do
-nothing".
+nothing". If the draft incorporates the Maintainer's chat-mode
+preferences, cite them here (or in *Rationale*) as **"maintainer
+preference during drafting"** with the quote or paraphrase — chat
+input shapes the draft but is not the Decision (see `doctrine/lifecycle.md`
+> "Chat preferences are not a lifecycle Decision").
 
 ## Evidence / verification plan
 
