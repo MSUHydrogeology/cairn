@@ -105,9 +105,24 @@ roster is in `dev/agent_collaboration.md`.
   commit that touches only `dev/proposals/` files may proceed
   directly — those are append-only deliberation artifacts.
   Pushing always needs approval.
-* **Commit with explicit paths** — `git commit <path> ...`, never
-  a bare `git commit`. The staged index is shared; a path-scoped
-  commit cannot absorb another agent's staged work.
+* **Commit with explicit paths** — `git commit <path> [<path> ...]`,
+  naming exactly the files the commit should contain. **Never a bare
+  `git commit`**: it commits the *entire* staged index, so anything
+  another agent has staged rides into your commit under your message
+  and author. A path-scoped commit makes that collision *structurally
+  impossible*; the backstops below only reduce its odds.
+  * **Verify the staged set as its own step** — run `git diff --cached
+    --stat` and confirm it is *exactly* the files you intend, as a
+    *separate* step, never chained into the `git commit` (a chained
+    verify scrolls past and the commit fires regardless). Unstage
+    anything swept in (`git restore --staged <path>`) before committing.
+  * **Keep your staged window minimal** — don't leave a `git add` /
+    `git mv` sitting exposed; stage and commit promptly.
+  * **A `git mv` rename needs *both* sides named** in a path-scoped
+    commit — naming only the destination commits the "add" and leaves
+    the source-side deletion unstaged, so HEAD carries the file at both
+    paths until a fixup. Name both source and destination (or `git add`
+    the rename, then verify the `R###` line in `git diff --cached --stat`).
 * **Shared communication files** — the roadmap boards and the
   changelog — are edited only at defined serialization points (a
   lifecycle archive, the goodnight routine, explicit instruction).

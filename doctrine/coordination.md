@@ -52,8 +52,40 @@ Always on, for any version-controlled adoption. A small set of
 commit-time rules: a restricted edit cadence on the shared
 communication files (the roadmap boards, the changelog),
 path-scoped commits (commit named paths, never the whole index),
-and the staged-index collision rules. This tier alone suffices for
-a solo or sequential team.
+and the staged-index collision rules below. This tier alone
+suffices for a solo or sequential team.
+
+**The staged index is a shared surface.** `git add` and `git mv`
+stage a change *immediately* into the repo's single index; a staged
+change left sitting there while another agent is active can be
+absorbed into that agent's next `git commit` — landing under the
+wrong message and author. (Observed in practice across adopters: a
+shared-file edit and, repeatedly, plan/proposal-archive `git mv`
+renames swept into an unrelated commit — the recurrence is what
+promoted these from per-incident notes to standing doctrine.) The
+first rule is structural; the rest are backstops that only reduce
+the odds:
+
+* **Commit with explicit paths** — `git commit <path> [<path> ...]`,
+  naming exactly the files the commit should contain. **Never a bare
+  `git commit`**: it commits the *entire* staged index, so anything
+  another agent staged rides into your commit. A path-scoped commit
+  makes the collision *structurally impossible* regardless of index
+  state.
+* **Verify the staged set as its own step** — run `git diff --cached
+  --stat` and confirm it is *exactly* the files you intend, as a
+  *separate* step you can act on, never chained into the `git commit`
+  (a chained verify scrolls past and the commit fires regardless).
+  Unstage anything swept in (`git restore --staged <path>`) first.
+* **Keep your staged window minimal** — don't leave a `git add` /
+  `git mv` sitting exposed; stage and commit promptly so your change
+  isn't absorbed into another agent's commit.
+* **A `git mv` rename needs *both* sides named** in a path-scoped
+  commit — naming only the destination commits the "add" and leaves
+  the source-side deletion unstaged, so HEAD carries the file at both
+  paths until a fixup. Name both source and destination (or `git add`
+  the rename, then verify the `R###` line in `git diff --cached
+  --stat`).
 
 ### Tier 2 — asynchronous: work intents
 
