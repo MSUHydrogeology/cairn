@@ -178,6 +178,15 @@ unfilled).
 For each slot listed as `na`, confirm there is an explicit
 `N/A: <reason>` between the markers.
 
+**Optional-template slots count too.** An installed optional template
+(an `optional_templates:` entry) carries block slots like any other —
+e.g. `contributing-specifics` in `CONTRIBUTING.md`. Audit those slots
+the same way, and let the entry's `status:` reflect them: `filled`
+once the project's contributor specifics are written, `deferred` while
+the placeholder stands (a visible deferral), `na` with a reason if the
+section does not apply. An unfilled optional-template slot is a review
+finding, exactly as for a core slot.
+
 ### 4. Vendor-neutrality check
 
 Run the lint from BOOTSTRAP.md Act II-5 against the installed files —
