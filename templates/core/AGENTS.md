@@ -159,6 +159,19 @@ the project's *real* conventions here — it is not a mechanical
 fill. An empty slot at first release is a review finding.)
 <!-- cairn:end project-conventions -->
 
+## Human contributors
+
+`AGENTS.md` is the shared operational reference — it applies to human
+and AI contributors alike. When the project's profile installs the
+optional **`CONTRIBUTING.md`** (the human-team axis at `small-multi` /
+`large-multi`), that file is the human contributor's entry point: it
+carries the welcome and the project-specific onboarding and **points
+back here** for the shared rules (the development environment, the test
+command, the conventions, the commit and review workflow) rather than
+duplicating them. Keep the split single-sourced — shared / operational
+content lives here; `CONTRIBUTING.md` links to it. A solo-maintainer
+project ships no `CONTRIBUTING.md`, and this section is informational.
+
 ## Vendor addendum
 
 `AGENTS.md` is vendor-neutral — it names no specific AI agent tool.

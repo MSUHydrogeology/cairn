@@ -281,6 +281,44 @@ _CORE_MAPPINGS: tuple[tuple[str, str], ...] = (
     ("core/dev/plans/_template.md",                 "dev/plans/_template.md"),
 )
 
+# Optional top-level templates, gated on a dimension axis.  Unlike
+# modules (which land under ``dev/modules/``), these are project-root
+# files an adopter's *human* contributors read.  Each entry is
+# ``(src rel to templates/, dst rel to repo root, gate axis, selecting
+# values)``: the template installs when the *resolved* profile value for
+# that axis is in the selecting set.  An installed optional template is
+# recorded under ``optional_templates:`` in the fidelity manifest so the
+# gate is auditable (bootstrap/fidelity-check.md).
+_OPTIONAL_TEMPLATES: tuple[tuple[str, str, str, frozenset[str]], ...] = (
+    # CONTRIBUTING.md — the human-contributor entry (foldback #10),
+    # installed when the repo expects human authors beyond a solo
+    # maintainer: the human-team axis at small-multi or large-multi.
+    (
+        "optional/CONTRIBUTING.md",
+        "CONTRIBUTING.md",
+        "human_team",
+        frozenset({"small-multi", "large-multi"}),
+    ),
+)
+
+
+def select_optional_templates(axes: dict[str, object]) -> list[tuple[str, str]]:
+    """Return ``(src, dst)`` for each optional template whose dimension
+    gate the profile satisfies.
+
+    *axes* is the **resolved** dimension profile — a preset's canonical
+    point merged with the adopter's overrides (``resolve_axes``), or the
+    raw profile when no ``preset:`` is used.  A profile that omits the
+    gate axis, or sets it to a non-selecting value, gets no optional
+    template — the conservative default.
+    """
+    selected: list[tuple[str, str]] = []
+    for src, dst, axis, values in _OPTIONAL_TEMPLATES:
+        if str(axes.get(axis, "")) in values:
+            selected.append((src, dst))
+    return selected
+
+
 class InstallSpec(NamedTuple):
     """One file a module installs.
 
@@ -450,6 +488,264 @@ def reference_script_token_defaults(module_names: list[str]) -> dict[str, str]:
                 break
     return defaults
 
+
+# ---------------------------------------------------------------------------
+# Governance presets (Cairn v0.2 P4)
+# ---------------------------------------------------------------------------
+#
+# Presets are *named points in the six-axis dimension model*, not a parallel
+# config system.  An adopter picks a preset (the fast path) instead of
+# hand-deriving the module roster; the six-axis scoring + the BOOTSTRAP.md
+# I-5 gate table remain the principled backing (the gate table is the
+# canonical per-module rationale).  See BOOTSTRAP.md Act I and the
+# modflow_tools-hosted ``cairn-v0.2-p4-governance-presets`` plan.
+
+#: The six dimension axes -> allowed enum values (the BOOTSTRAP.md I-4 table).
+#: An adopter overrides a preset's canonical axis by setting a flat top-level
+#: key in the profile YAML; an unknown enum value is a hard error.
+_AXES: dict[str, tuple[str, ...]] = {
+    "age": ("greenfield", "legacy"),
+    "size": ("small", "medium", "large"),
+    "complexity": ("simple", "moderate", "complex"),
+    "language": ("single", "multi"),
+    "human_team": ("solo", "small-multi", "large-multi"),
+    "agent_team": (
+        "single", "concurrent-single-type", "concurrent-multi-type",
+    ),
+}
+
+#: Modules whose staffability is a pure function of the team axes.  These are
+#: the ONLY part of the I-5 gate evaluated as runtime code; the non-axis gate
+#: conditions (trust boundary, issue tracker, domain partitioning, legacy
+#: readiness) are baked into each preset's authored baseline below (the
+#: "gate-table encoding" split from the P4 plan).  Both gate on
+#: ``agent_team == concurrent-multi-type`` per the I-5 table.
+_TEAM_STAFFING_GATED: tuple[str, ...] = ("dual-review", "coordination-tiers")
+
+
+def _can_staff_team_modules(axes: dict[str, str]) -> bool:
+    """True when the resolved agent-team axis can staff the team-staffing
+    modules (concurrent-multi-type)."""
+    return axes.get("agent_team") == "concurrent-multi-type"
+
+
+#: Named governance presets.  Each carries a **canonical six-axis point** and
+#: a **baseline roster** of the *non-team-staffing* modules the I-5 gate table
+#: yields at that point (axis-derivable rows resolved at the canonical scores,
+#: plus the non-axis rows the preset's profile assumes).  The team-staffing
+#: modules (``dual-review`` / ``coordination-tiers``) are NOT listed here --
+#: they are added at expand time iff the *resolved* agent-team axis staffs
+#: them, so an adopter's real team is ground truth (F3).  ``_DEFAULT_ON_MODULES``
+#: is always the floor.  Derivation is documented row-by-row in BOOTSTRAP.md.
+_PRESETS: dict[str, dict[str, object]] = {
+    "solo-greenfield": {
+        "axes": {
+            "age": "greenfield", "size": "small", "complexity": "simple",
+            "language": "single", "human_team": "solo",
+            "agent_team": "single",
+        },
+        # Minimal: default-on only; no axis fires a team-gated module.
+        "baseline": (),
+    },
+    "collaborative-team": {
+        "axes": {
+            "age": "greenfield", "size": "medium", "complexity": "moderate",
+            "language": "single", "human_team": "small-multi",
+            "agent_team": "concurrent-multi-type",
+        },
+        # complexity=moderate -> model-selection + testing-discipline;
+        # size=medium -> doc-drift-prevention.  Coordination modules come
+        # from the team-staffing gate (agent_team=concurrent-multi-type).
+        "baseline": (
+            "model-selection", "testing-discipline", "doc-drift-prevention",
+        ),
+    },
+    "high-rigor-legacy": {
+        "axes": {
+            "age": "legacy", "size": "large", "complexity": "complex",
+            "language": "multi", "human_team": "large-multi",
+            "agent_team": "concurrent-multi-type",
+        },
+        # age=legacy -> legacy-agent; complexity=complex -> model-selection
+        # + testing-discipline; size=large/language=multi ->
+        # doc-drift-prevention; language=multi -> dual-language-tests;
+        # trust-boundary (non-axis, assumed for legacy/large) ->
+        # security-review.  Coordination modules from the team-staffing gate.
+        "baseline": (
+            "legacy-agent", "security-review", "dual-language-tests",
+            "model-selection", "testing-discipline", "doc-drift-prevention",
+        ),
+    },
+}
+
+
+class PresetError(ValueError):
+    """Raised on an invalid preset / override config (unknown preset, unknown
+    module, unknown axis enum, wrong-type value, or the ``modules:`` +
+    ``preset:`` conflict).  A friendly hard error, surfaced by ``main()``."""
+
+
+def _as_str_list(value: object, key: str) -> list[str]:
+    """Coerce a YAML value for a list-typed key to ``list[str]``; a scalar
+    where a list is expected is a friendly hard error (Codex P-5)."""
+    if value is None:
+        return []
+    if isinstance(value, str) or not isinstance(value, (list, tuple)):
+        raise PresetError(
+            f"`{key}` must be a YAML list (e.g. `{key}:` with `- module` "
+            f"lines), not a {type(value).__name__} ({value!r})."
+        )
+    return [str(v) for v in value]
+
+
+def _canonical_order(modules: set[str]) -> list[str]:
+    """Order a module set deterministically: default-on first (in
+    ``_DEFAULT_ON_MODULES`` order), then the rest in ``_MODULE_MAPPINGS``
+    order.  Stable, diffable output for the summary + tests."""
+    ordered: list[str] = [m for m in _DEFAULT_ON_MODULES if m in modules]
+    for name in _MODULE_MAPPINGS:
+        if name in modules and name not in ordered:
+            ordered.append(name)
+    # Any module not in the known maps (shouldn't happen post-validation)
+    # trails, sorted, so nothing is silently dropped.
+    ordered.extend(sorted(modules - set(ordered)))
+    return ordered
+
+
+def resolve_axes(preset_name: str, cfg: dict[str, object]) -> dict[str, str]:
+    """Resolve the six-axis point: the preset's canonical point overridden by
+    any flat axis key the adopter supplied.  An unknown enum value is a hard
+    error; an absent axis key falls back to the preset's value (F3 / P-2)."""
+    canonical = dict(_PRESETS[preset_name]["axes"])  # type: ignore[arg-type]
+    resolved = dict(canonical)
+    for axis, allowed in _AXES.items():
+        if axis in cfg and cfg[axis] is not None:
+            value = str(cfg[axis])
+            if value not in allowed:
+                raise PresetError(
+                    f"axis `{axis}` value {value!r} is not one of "
+                    f"{', '.join(allowed)}."
+                )
+            resolved[axis] = value
+    return resolved
+
+
+def expand_preset(cfg: dict[str, object]) -> tuple[list[str], dict[str, object]]:
+    """Expand a ``preset:``-bearing profile into a module roster + a summary.
+
+    The pinned ordered merge (P4 Decision):
+
+    1. Resolve axes = preset canonical point overridden by adopter axis keys.
+    2. Baseline = ``_DEFAULT_ON_MODULES`` (always) + the preset's authored
+       non-team-staffing roster + the team-staffing modules iff the resolved
+       agent-team axis staffs them.
+    3. Apply ``modules_add`` then ``modules_remove`` -- **remove wins** on a
+       same-module conflict; an explicit add of an unstaffable module installs
+       it with a loud staffability warning.
+    4. (Backward-compat for the no-preset cases is handled in ``main()``.)
+
+    Returns ``(ordered_modules, summary)`` where ``summary`` carries the
+    preset, resolved axes, roster, overrides, and any warnings (for the
+    ``--summary`` acceptance artifact).
+    """
+    preset_name = str(cfg.get("preset") or "").strip()
+    if preset_name not in _PRESETS:
+        raise PresetError(
+            f"unknown preset {preset_name!r}; choose one of "
+            f"{', '.join(sorted(_PRESETS))}."
+        )
+
+    resolved_axes = resolve_axes(preset_name, cfg)
+
+    # Step 2: baseline.
+    baseline: set[str] = set(_DEFAULT_ON_MODULES)
+    baseline |= set(_PRESETS[preset_name]["baseline"])  # type: ignore[arg-type]
+    staffable = _can_staff_team_modules(resolved_axes)
+    if staffable:
+        baseline |= set(_TEAM_STAFFING_GATED)
+
+    # Step 3: explicit overrides (validate names first).
+    adds = _as_str_list(cfg.get("modules_add"), "modules_add")
+    removes = _as_str_list(cfg.get("modules_remove"), "modules_remove")
+    known = set(_MODULE_MAPPINGS) | set(_DEFAULT_ON_MODULES)
+    for name in adds + removes:
+        if name not in known:
+            raise PresetError(
+                f"unknown module {name!r} in modules_add/modules_remove; "
+                f"known modules: {', '.join(sorted(known))}."
+            )
+
+    warnings: list[str] = []
+    # Adds first.  An add of a team-staffing module the resolved team can't
+    # staff installs anyway (adopter intent wins) with a loud warning (I1).
+    for name in adds:
+        if name in _TEAM_STAFFING_GATED and not staffable:
+            warnings.append(
+                f"`{name}` was explicitly added but the resolved agent-team "
+                f"axis ({resolved_axes.get('agent_team')}) cannot staff it; "
+                f"installing per your explicit request -- ensure the team can "
+                f"actually run it."
+            )
+    roster = set(baseline) | set(adds)
+    # Removes win on conflict.
+    removed_default_on: list[str] = []
+    for name in removes:
+        roster.discard(name)
+        if name in _DEFAULT_ON_MODULES:
+            removed_default_on.append(name)
+
+    ordered = _canonical_order(roster)
+    summary: dict[str, object] = {
+        "preset": preset_name,
+        "axes": resolved_axes,
+        "modules": ordered,
+        "modules_add": adds,
+        "modules_remove": removes,
+        "removed_default_on": removed_default_on,
+        "staffability_warnings": warnings,
+    }
+    return ordered, summary
+
+
+def format_profile_summary(cfg: dict[str, object]) -> str:
+    """Render the Maintainer-facing Act I-6 profile summary for a
+    ``preset:``-bearing profile (the ``--summary`` acceptance artifact, P-4).
+
+    Shows the chosen preset, the resolved six-axis point, the expanded module
+    roster, the explicit add/remove overrides, any default-on opt-outs, and
+    any staffability warnings -- so the Maintainer sees *why* the roster came
+    out this way before anything is installed."""
+    _modules, s = expand_preset(cfg)
+    lines: list[str] = []
+    project = str(cfg.get("project_name") or "<project_name>")
+    lines.append(f"## Dimension profile -- {project}")
+    lines.append("")
+    lines.append(f"Preset: {s['preset']}")
+    lines.append("")
+    lines.append("Six-axis point (resolved):")
+    for axis in _AXES:
+        lines.append(f"  {axis:12s} {s['axes'][axis]}")  # type: ignore[index]
+    lines.append("")
+    lines.append("Module roster (to install):")
+    for m in s["modules"]:  # type: ignore[union-attr]
+        lines.append(f"  - {m}")
+    if s["modules_add"]:
+        lines.append(f"\nExplicit add:    {', '.join(s['modules_add'])}")  # type: ignore[arg-type]
+    if s["modules_remove"]:
+        lines.append(f"Explicit remove: {', '.join(s['modules_remove'])}")  # type: ignore[arg-type]
+    if s["removed_default_on"]:
+        lines.append(
+            f"Default-on opted out: {', '.join(s['removed_default_on'])}"  # type: ignore[arg-type]
+        )
+    if s["staffability_warnings"]:
+        lines.append("\n[!] Staffability warnings:")
+        for w in s["staffability_warnings"]:  # type: ignore[union-attr]
+            lines.append(f"  - {w}")
+    lines.append("")
+    lines.append("Does this profile look right before I install anything?")
+    return "\n".join(lines) + "\n"
+
+
 #: Result record for one installed file.
 #: ``status`` is ``"installed"`` (file written), ``"skipped-exists"``
 #: (skipped because the file already existed and ``force`` was not
@@ -601,6 +897,37 @@ def install_core(
         src = templates_root / src_rel
         if not src.exists():
             print(f"  [warn] core template missing: {src_rel}", file=sys.stderr)
+            continue
+        dst = target / dst_rel
+        results.append(
+            _install_one(src, dst, tokens, target, dry_run=dry_run, force=force)
+        )
+    return results
+
+
+def install_optional(
+    templates_root: Path,
+    target: Path,
+    tokens: dict[str, str],
+    optional: list[tuple[str, str]],
+    *,
+    dry_run: bool = False,
+    force: bool = False,
+) -> list[InstallResult]:
+    """Copy the dimension-selected optional templates into *target*.
+
+    *optional* is the ``(src, dst)`` list from
+    ``select_optional_templates``; source paths are relative to
+    ``cairn/templates/`` (like ``_CORE_MAPPINGS``).
+    """
+    results: list[InstallResult] = []
+    for src_rel, dst_rel in optional:
+        src = templates_root / src_rel
+        if not src.exists():
+            print(
+                f"  [warn] optional template missing: {src_rel}",
+                file=sys.stderr,
+            )
             continue
         dst = target / dst_rel
         results.append(
@@ -976,6 +1303,23 @@ def main(argv: list[str] | None = None) -> int:
             file=sys.stderr,
         )
 
+    # Optional top-level templates (foldback #10): selected by the
+    # dimension axes — e.g. the human-team axis selects CONTRIBUTING.md
+    # at small-multi / large-multi.  Read from the profile directly here;
+    # when a `preset:` is in play the resolved axes (preset point +
+    # overrides, via `resolve_axes` / `expand_preset`) are the right feed
+    # — swap `cfg` for the resolved-axes dict at that integration point.
+    optional = select_optional_templates(cfg)
+    if optional:
+        names = ", ".join(dst for _, dst in optional)
+        print(
+            f"  [info] dimension profile selects optional template(s): "
+            f"{names}.  Record each under `optional_templates:` in the "
+            "fidelity manifest (bootstrap/fidelity-check.md) so the gate "
+            "is auditable.",
+            file=sys.stderr,
+        )
+
     # Default the reference-script command tokens to the exact paths the
     # scaffold installs the scripts to (I5), unless the profile already
     # supplied a value.  This makes the shipped scripts immediately
@@ -989,6 +1333,10 @@ def main(argv: list[str] | None = None) -> int:
         print("[dry-run] Would install to:", target)
         print("[dry-run] Tokens:          ", tokens)
         print("[dry-run] Modules:         ", modules)
+        print(
+            "[dry-run] Optional:        ",
+            ", ".join(dst for _, dst in optional) or "(none)",
+        )
         for mod in modules:
             for entry in _GITIGNORE_SEEDS.get(mod, ()):  # C6 dry-run
                 would = seed_gitignore(target, (entry,), dry_run=True)
@@ -1014,7 +1362,21 @@ def main(argv: list[str] | None = None) -> int:
         templates_root, target, tokens, modules, force=args.force
     )
 
-    print_report(target, dirs_created, core_results + module_results)
+    # Install dimension-selected optional templates (foldback #10).
+    optional_results: list[InstallResult] = []
+    if optional:
+        print(
+            f"Installing optional templates: "
+            f"{', '.join(dst for _, dst in optional)} ..."
+        )
+        optional_results = install_optional(
+            templates_root, target, tokens, optional, force=args.force
+        )
+
+    print_report(
+        target, dirs_created,
+        core_results + module_results + optional_results,
+    )
 
     # Seed adopter-owned .gitignore for selected modules (Cairn v0.2 P5,
     # C6: non-clobber + idempotent), and print the OPT-IN hook command --

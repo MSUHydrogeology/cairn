@@ -112,6 +112,19 @@ deferred_tokens: []
 #   - token: claim_check_command
 #     module: claim-check
 #     reason: "claim-check installed; reference script not yet adopted."
+
+# Optional top-level templates installed beyond the kernel + modules
+# (e.g. CONTRIBUTING.md), each with the dimension axis + value that
+# selected it.  Recording the gate here makes the selection auditable:
+# a reviewer can confirm the installed optional file matches the
+# profile's axes.  Empty when the profile selects none (e.g. a solo
+# maintainer installs no CONTRIBUTING.md).
+optional_templates: []
+# Example:
+# optional_templates:
+#   - file: CONTRIBUTING.md
+#     gate: "human_team in {small-multi, large-multi}"
+#     status: filled   # filled | deferred | na (same vocabulary as slots)
 ```
 
 ---
@@ -145,6 +158,12 @@ ls -1 <target>/dev/modules/
 
 All listed modules must be present.  Any module in
 `deferred_default_on` must not be present.
+
+For each entry in `optional_templates`, confirm the named top-level
+file (e.g. `CONTRIBUTING.md`) exists in the target **and** that its
+recorded `gate` matches the profile's axes — the gate is what makes the
+optional install auditable.  A profile whose axes select no optional
+template carries an empty `optional_templates: []`.
 
 ### 3. Slot status check
 

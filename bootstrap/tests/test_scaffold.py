@@ -28,7 +28,9 @@ from bootstrap.scaffold import (  # noqa: E402
     find_unpaired_slots,
     install_core,
     install_modules,
+    install_optional,
     load_config,
+    select_optional_templates,
     substitute_tokens,
 )
 
@@ -482,6 +484,69 @@ class TestModelSelectionWired:
         install_modules(templates_root, tmp_path, {}, ["model-selection"])
         captured = capsys.readouterr()
         assert "unknown module" not in (captured.err + captured.out).lower()
+
+
+# ---------------------------------------------------------------------------
+# Optional templates — human-team-gated CONTRIBUTING.md (foldback #10)
+# ---------------------------------------------------------------------------
+
+class TestOptionalContributing:
+    def test_selected_at_small_multi(self) -> None:
+        sel = select_optional_templates({"human_team": "small-multi"})
+        assert ("optional/CONTRIBUTING.md", "CONTRIBUTING.md") in sel
+
+    def test_selected_at_large_multi(self) -> None:
+        sel = select_optional_templates({"human_team": "large-multi"})
+        assert ("optional/CONTRIBUTING.md", "CONTRIBUTING.md") in sel
+
+    def test_not_selected_for_solo(self) -> None:
+        assert select_optional_templates({"human_team": "solo"}) == []
+
+    def test_not_selected_when_axis_absent(self) -> None:
+        assert select_optional_templates({}) == []
+
+    def test_small_multi_install_writes_contributing(
+        self, tmp_path: Path
+    ) -> None:
+        cairn_root = Path(__file__).resolve().parent.parent.parent
+        templates_root = cairn_root / "templates"
+        if not (templates_root / "optional" / "CONTRIBUTING.md").exists():
+            pytest.skip("optional CONTRIBUTING.md template not available")
+        create_dev_tree(tmp_path)
+        sel = select_optional_templates({"human_team": "small-multi"})
+        results = install_optional(
+            templates_root, tmp_path, {"project_name": "Demo"}, sel
+        )
+        installed = [r[0] for r in results]
+        contributing = tmp_path / "CONTRIBUTING.md"
+        assert contributing in installed
+        assert contributing.exists()
+        # Single-source check: the human entry points to AGENTS.md, it
+        # does not duplicate the operational reference.
+        body = contributing.read_text(encoding="utf-8")
+        assert "AGENTS.md" in body
+
+    def test_solo_install_writes_no_contributing(
+        self, tmp_path: Path
+    ) -> None:
+        cairn_root = Path(__file__).resolve().parent.parent.parent
+        templates_root = cairn_root / "templates"
+        create_dev_tree(tmp_path)
+        sel = select_optional_templates({"human_team": "solo"})
+        install_optional(templates_root, tmp_path, {"project_name": "Demo"}, sel)
+        assert not (tmp_path / "CONTRIBUTING.md").exists()
+
+    def test_optional_templates_recorded_in_manifest_spec(self) -> None:
+        """The blocker: the gate must be auditable — the fidelity-manifest
+        spec carries an `optional_templates:` block documenting the
+        CONTRIBUTING.md gate."""
+        cairn_root = Path(__file__).resolve().parent.parent.parent
+        spec = (cairn_root / "bootstrap" / "fidelity-check.md").read_text(
+            encoding="utf-8"
+        )
+        assert "optional_templates:" in spec
+        assert "CONTRIBUTING.md" in spec
+        assert "human_team" in spec
 
 
 # ---------------------------------------------------------------------------

@@ -35,6 +35,15 @@ tiers are filled by the agent team and the Maintainer
   contributors — can fill the External-review tier, and human
   review of agent-authored work is available where the team wants
   it.
+* **Optional `CONTRIBUTING.md`.** A multi-human team (the
+  `small-multi` / `large-multi` axis values) gets the optional
+  human-facing `CONTRIBUTING.md` — the GitLab/GitHub-surfaced
+  contributor entry that points back to `AGENTS.md` for the shared
+  rules (it does not duplicate them). The scaffold installs it for
+  these positions and records it under `optional_templates:` in the
+  fidelity manifest so the gate is auditable
+  (`../bootstrap/fidelity-check.md`). A solo project ships no
+  `CONTRIBUTING.md`.
 * A multi-human-team review module — shared decision rights, a
   formal human-review rotation — is a **named follow-up**, picked
   up only if multi-human adoption shows demand beyond the "elect
