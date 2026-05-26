@@ -9,6 +9,11 @@ A single-language project has one test framework and one test-tier
 doctrine. A multi-language project needs its test architecture to
 span languages without losing coherence.
 
+This module **extends** the base [`testing-discipline`](testing-discipline.md)
+module (the tier-home scheme) for the Language axis: it keeps that tier
+scheme and adds the cross-language seam structure below. A multi-language
+project selects both.
+
 ## Template content
 
 The module's test doctrine:

@@ -43,6 +43,25 @@ the bootstrap later to formalize what it assembled by hand. The
 dimensional matrix (`dimensions/`) informs the recommendation, but
 the choice is always the adopter's.
 
+## The maturity ladder
+
+The ladder is a **self-locate aid, not a scorecard.** It exists so an
+adopter can answer "where are we, and what is the next rung?" -- not to
+rank teams or score adoptions. (This is the Measurement Compact's
+posture: surfaces serve *system learning, not judgment*.) Each rung is
+one of the three adoption levels above; "next rung" names the next
+deliberate step, which is sometimes *deepening within* a level rather
+than jumping to the next.
+
+| Rung | You are here if... | The next rung |
+|------|--------------------|---------------|
+| **Level 0 — reading the doctrine** | the team reads `doctrine/` and lets it inform how it already works; no `dev/` tree, no templates. | **Level 1**: hand-copy the kernel and run one real change through the lifecycle (see [`../docs/getting-started.md`](../docs/getting-started.md)). |
+| **Level 1 — kernel by hand** | the `dev/` tree exists and proposals / reviews / decisions are recorded by hand; the lifecycle runs without the bootstrap script. | *Deepen within Level 1* -- turn on the practice modules the profile warrants (test tiers, the doc-drift gate, an examples gallery) -- **or** move to **Level 2** when the customization is large enough that automating it pays. |
+| **Level 2 — bootstrap + improving** | the full bootstrap installed and customized the apparatus, and the team now operates and improves it (Act III). | *Deepen within Level 2* -- adopt governance presets so the module roster is chosen by profile, broaden review tiers, and feed lessons back into the doctrine. There is no rung beyond Level 2; maturity here is depth, not a further level. |
+
+Movement is the adopter's call, informed by the dimensional matrix
+(`dimensions/`) -- the ladder shows the path, it does not push.
+
 These levels describe *how much* to adopt. For *how the lifecycle
 runs* — one change traced end-to-end — see
 [`../docs/getting-started.md`](../docs/getting-started.md), and for
