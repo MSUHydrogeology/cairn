@@ -354,6 +354,22 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         InstallSpec("team-gated/model-selection.md",
                     "dev/modules/model-selection.md"),
     ],
+    # Practice-discipline modules (Cairn v0.2 P3).  Team-gated -- a
+    # governance preset (P4) turns them on per profile rather than
+    # doubling the default-on auto-install set.  Doctrine-only (single
+    # substituted .md each; no scripts).
+    "testing-discipline": [
+        InstallSpec("team-gated/testing-discipline.md",
+                    "dev/modules/testing-discipline.md"),
+    ],
+    "doc-drift-prevention": [
+        InstallSpec("team-gated/doc-drift-prevention.md",
+                    "dev/modules/doc-drift-prevention.md"),
+    ],
+    "examples-gallery": [
+        InstallSpec("team-gated/examples-gallery.md",
+                    "dev/modules/examples-gallery.md"),
+    ],
 }
 
 # Module → the inline command-token whose value should default to the
