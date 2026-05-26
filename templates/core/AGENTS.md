@@ -129,6 +129,15 @@ roster is in `dev/agent_collaboration.md`.
   Refer to proposals and plans by filename stem, not path link.
 * Run the test suite after any substantive change:
   `{{test_command}}`.
+* **Keep commit bodies concise.** The body is a *snapshot* — what
+  shipped and how it was verified — not a restatement of the proposal,
+  plan, or changelog (those are the durable audit trail). Target 15–30
+  lines for a non-trivial implementing commit (soft cap ~50; a trivial
+  fix is often just the subject + a one-line body): a one- or
+  two-sentence opener cross-referencing the source proposal / plan, a
+  short bullet list of the substantive changes by file or surface, and
+  a one-line verification snapshot with concrete numbers. Optimize for
+  `git log --oneline` skimmability.
 
 ## Verifying claims
 
