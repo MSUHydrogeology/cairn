@@ -41,6 +41,25 @@ alone, after review.
 
 Code review's reviewer is **not the implementing agent**.
 
+## The planning handshake
+
+Before heavy implementation, the team converges on a short set of
+questions — a lightweight handshake for plan-shaped work below the
+full-proposal bar (a proposal answers these at greater depth; a plan
+draining an accepted proposal inherits most of them):
+
+* What workflow or capability are we improving?
+* What is the current pain or risk?
+* What contract or module boundary is involved?
+* What would success look like?
+* What tests, docs, or examples prove the change?
+* **What must explicitly *not* change in this pass** — the scope fence?
+
+The `## Scope` section below is where these land: it names what the
+plan executes *and* what it deliberately leaves alone. The scope fence
+is the load-bearing one — an unstated "not this pass" is how a bounded
+plan quietly grows.
+
 ---
 
 # Plan: {{short title}}
@@ -56,8 +75,10 @@ executes the decision; it does not re-litigate it.
 
 ## Scope
 
-What this plan executes — and, explicitly, what it does *not*
-(work the proposal deferred to a follow-up).
+What this plan executes — and, explicitly, what it does *not* (the
+**scope fence**: work the proposal deferred to a follow-up, and
+anything deliberately left untouched this pass). See "The planning
+handshake" above for the convergence questions this section answers.
 
 ## Sequence
 
