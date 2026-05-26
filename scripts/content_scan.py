@@ -116,9 +116,23 @@ _EGRESS_RE = re.compile(
 
 _URL_RE = re.compile(r"https?://([^/\s)\"'>]+)", re.I)
 
-# Zero-width + bidi control characters.
-_ZERO_WIDTH = {"​", "‌", "‍", "﻿"}
-_BIDI = {chr(c) for c in range(0x202A, 0x202F)} | {chr(c) for c in range(0x2066, 0x206A)}
+# Zero-width + bidi control characters.  Members are literal control
+# chars (with a naming comment each), matching the pre-existing style;
+# the per-char comment is what keeps them readable despite being
+# invisible.  Coverage expanded per code-review P3 (word joiner U+2060;
+# LRM U+200E / RLM U+200F).
+_ZERO_WIDTH = {
+    "​",  # zero-width space
+    "‌",  # zero-width non-joiner
+    "‍",  # zero-width joiner
+    "⁠",  # word joiner
+    "﻿",  # zero-width no-break space / BOM
+}
+_BIDI = (
+    {chr(c) for c in range(0x202A, 0x202F)}    # U+202A-202E embeddings/overrides
+    | {chr(c) for c in range(0x2066, 0x206A)}  # U+2066-2069 isolates
+    | {"‎", "‏"}                      # left-to-right / right-to-left marks
+)
 
 # Script ranges for the per-token homoglyph check.
 _CYRILLIC = (0x0400, 0x04FF)
