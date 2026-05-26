@@ -79,6 +79,19 @@ audience. Its defining property: it **describes current reality**
 — it neither prescribes how to build nor deliberates what to
 build.
 
+**Keeping descriptive docs in sync.** A descriptive doc that
+*mirrors* a source of truth — a schema, example configs, an API
+surface — must not be hand-maintained in parallel with that source;
+it drifts. The discipline is **generate it outward from the source**
+(or extract the snippet from a runnable example) and **guard it with
+a drift gate** that fails the build when the two diverge. Default to
+source-authoritative links; reach for snippet-sync only where inline
+readability earns the sync cost. The model says *where* a doc lives;
+this says *how* a generated/reference doc stays honest. The
+`doc-drift-prevention` team-gated module ships the mechanism
+(generators, snippet-sync, the CI drift gate); a project reaches the
+principle here whether or not it installs the module.
+
 ### The routing rule
 
 Route any documentation artifact by one question — *what is it
