@@ -395,10 +395,70 @@ InstallResult = tuple[Path, list[str], list[str], str]
 # (target_path, unfilled_token_names, block_slot_names, status)
 
 
+class ScaffoldSecurityError(Exception):
+    """Raised when an install would write through a symlink or escape the
+    target directory (Layer-4 executable hardening).  Fail-closed: the
+    scaffold refuses the write rather than following the redirect."""
+
+
+def _assert_safe_write(dst: Path, target: Path) -> None:
+    """Refuse to write through a symlink or outside *target* (Layer 4).
+
+    Runs before **every** write (fresh or ``--force``), not only
+    overwrites: ``Path.exists()`` follows symlinks and returns ``False``
+    for a *dangling* symlink, so a guard scoped to the ``--force`` path
+    would let a fresh install write through a planted symlink at ``dst``
+    -- or through a **symlinked parent directory** -- and escape
+    ``target``.  Three fail-closed checks:
+
+    1. ``dst`` itself must not be a symlink.
+    2. No existing directory **between** ``target`` and ``dst`` may be a
+       symlink (a symlinked parent redirects the write even when ``dst``
+       is a normal name).
+    3. The resolved final write path must stay within ``target`` (defense
+       in depth against an ``..`` / absolute ``dst``).
+
+    ``target`` is already ``resolve()``-d by the caller.  The containment
+    check is 3.8-safe (``try: relative_to; except ValueError``) -- it does
+    **not** use ``Path.is_relative_to`` (3.9+).
+    """
+    target_resolved = target.resolve()
+
+    # (1) dst must not itself be a symlink.
+    if dst.is_symlink():
+        raise ScaffoldSecurityError(
+            f"refusing to write through a symlinked destination: {dst}"
+        )
+
+    # (2) no existing ancestor strictly inside target may be a symlink.
+    for ancestor in dst.parents:
+        if ancestor == target_resolved:
+            break  # reached target itself; don't police above it
+        try:
+            ancestor.relative_to(target_resolved)
+        except ValueError:
+            break  # ancestor is at/above target -- stop walking
+        if ancestor.is_symlink():
+            raise ScaffoldSecurityError(
+                f"refusing to write through a symlinked parent: {ancestor}"
+            )
+
+    # (3) the resolved final path must stay within target.
+    final = dst.parent.resolve() / dst.name
+    try:
+        final.relative_to(target_resolved)
+    except ValueError:
+        raise ScaffoldSecurityError(
+            f"refusing to write outside the target directory: {final} "
+            f"is not under {target_resolved}"
+        )
+
+
 def _install_one(
     src: Path,
     dst: Path,
     tokens: dict[str, str],
+    target: Path,
     *,
     dry_run: bool,
     force: bool = False,
@@ -455,6 +515,9 @@ def _install_one(
         )
         return (dst, unfilled, slots, "skipped-exists")
 
+    # Layer-4 hardening: refuse to write through a symlink or outside
+    # target -- on every write, fresh or --force (fail-closed).
+    _assert_safe_write(dst, target)
     dst.parent.mkdir(parents=True, exist_ok=True)
     dst.write_text(text, encoding="utf-8")
     return dst, unfilled, slots, "installed"
@@ -477,7 +540,7 @@ def install_core(
             continue
         dst = target / dst_rel
         results.append(
-            _install_one(src, dst, tokens, dry_run=dry_run, force=force)
+            _install_one(src, dst, tokens, target, dry_run=dry_run, force=force)
         )
     return results
 
@@ -520,7 +583,7 @@ def install_modules(
             dst = target / spec.dst
             results.append(
                 _install_one(
-                    src, dst, tokens,
+                    src, dst, tokens, target,
                     dry_run=dry_run, force=force, verbatim=spec.verbatim,
                 )
             )
