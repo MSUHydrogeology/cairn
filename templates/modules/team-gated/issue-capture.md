@@ -70,12 +70,15 @@ a `PLANNING.md` entry, a topic doc. The promotion must carry the link
 end:
 
 * **Forward link (durable → issue).** The promoting artifact cites its
-  origin: a `Source: #N` line under a `PLANNING.md` entry's status
-  block, the issue reference in a proposal's `Related:` header, or
-  `(#N)` in a handoff-note title. A commit that advances an issue names
-  it — `Closes #N` (fully resolved), `Refs #N` (part of a multi-step
-  resolution), `Related to #N` (adjacent context). Use whatever
-  reference syntax the project's tracker recognizes.
+  origin where the template already invites it — a `Source:` line on a
+  `PLANNING.md` entry, the originating issue named in a proposal's
+  **Context** (the proposal template asks for "specific files, commits,
+  or issues"), or a reference in a handoff-note title — and the commit
+  that advances the issue names it. Use whatever reference syntax the
+  project's tracker recognizes: on a GitHub/GitLab-style tracker that is
+  `#N`, with commit keywords `Closes #N` (fully resolved), `Refs #N`
+  (one step of many), or `Related to #N` (adjacent context); other
+  trackers use their own issue-id form.
 * **Back link (issue → durable) — required.** When the issue is closed
   on promotion, its **closing comment names the durable home** (e.g.
   "Promoted to the `<proposal-stem>` proposal; closing."). This is
