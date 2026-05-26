@@ -76,3 +76,32 @@ record alongside the protocol.
 The role carries a **high-capability floor** by default
 (`roles.md` > "Capability floors") — a security pass is a
 high-stakes role.
+
+## Cairn-side controls (the agent-instruction supply chain)
+
+Cairn governs its **own** instruction supply chain with a four-layer
+model — and these are real, landed controls the module's
+"automate what a tool can check" guidance now points at concretely:
+
+* **Layer 1 — release provenance.**
+  [`bootstrap/PROVENANCE.md`](../../../bootstrap/PROVENANCE.md): named
+  releases, signed tags / maintainer-approved release commits, a
+  derived install manifest (`scaffold.py --manifest`), and "scaffold
+  from releases, not arbitrary branches" (with a tool-side provenance
+  warning).
+* **Layer 4 — executable hardening.**
+  [`bootstrap/scaffold.py`](../../../bootstrap/scaffold.py): a
+  symlink/containment guard that refuses to write through a symlink or
+  outside the target on **every** write, plus a Cairn-dev Bandit gate.
+* **Layers 2/3 — content integrity.** The `content_scan.py` scanner,
+  run over Cairn's source prose and over scaffolded generated output by
+  [`check_cairn.py`](../../../scripts/check_cairn.py) — a **tripwire
+  that forces human review, not a safety proof**.
+* **Doctrine.** [`bootstrap/SAFETY.md`](../../../bootstrap/SAFETY.md)
+  Rules 7-8 name the property: templates are agent-executed
+  instructions (reviewed by file class), and the bootstrap profile is
+  operationally-trusted input.
+
+An adopter inherits this posture for *their own* repository: the same
+trust-boundary discipline applies wherever they ship agent-loaded
+instruction files.

@@ -103,6 +103,60 @@ the addendum must:
 3. Not be confused with the shared `AGENTS.md` — it is a
    supplement, not a replacement.
 
+## Rule 7 — Templates are agent-executed instructions
+
+Cairn's templates, doctrine, and case-study prose are forked into
+adopter repositories and **auto-loaded by AI agents as governing
+instructions**.  Cairn is, in effect, a *supply chain of
+agent-executed instructions*, and an upstream compromise has an LLM
+blast radius: a hidden instruction injected into a template reaches
+**every downstream adopter's agents at once**.
+
+Therefore **template integrity is a security property**, not only a
+correctness one.  Every change to agent-loaded content is reviewed
+for *injected, hidden, or unsafe instructions* — not just for whether
+the prose is right — and must pass the content-integrity scanner (`content_scan.py`, run by
+[`check_cairn.py`](../scripts/check_cairn.py)).  The review threshold
+scales **by file class**:
+
+* **Source template → instruction file** (the core `AGENTS.md`
+  template, the `dev/` templates) — strictest: full scanner +
+  injection-review on every change.
+* **Doctrine** (`doctrine/*.md`, the module templates) — scanned;
+  injection-review on change.
+* **Docs / case-study prose** (`docs/*.md`, `case-studies/*.md`) —
+  scanned, lighter threshold.
+* **Executable scaffold code** (`bootstrap/scaffold.py`) — Layer 4
+  (Bandit + the symlink/containment hardening), not the prose scanner.
+* **Generated instruction files** (a scaffolded `AGENTS.md` / `dev/`
+  tree) — strictest overall; see Rule 8.
+
+The scanner is a **witness, not a safety proof** — a high-noise,
+incomplete tripwire that *forces* human review.  It never certifies a
+template safe; a clean scan plus a by-class human injection-review is
+the bar.
+
+## Rule 8 — The bootstrap profile is operationally-trusted input
+
+The scaffold substitutes profile token values **verbatim** into
+agent-loaded files, so a profile is itself part of the
+instruction supply chain.  Profiles are therefore treated as
+**operationally-trusted input**:
+
+1. **Committed and reviewed as code** — never pulled from a chat
+   message, email, or issue comment at scaffold time.
+2. **Diffed against the generated output** — confirm the token values
+   land where expected and inject no instruction text into the
+   generated `AGENTS.md` / `dev/` tree.
+3. **Never run from an untrusted third party** unreviewed — a hostile
+   profile can inject downstream-agent instructions through a token
+   value (a static, supply-chain variant of prompt injection).
+
+Any sample profiles Cairn ships are part of the same supply chain and
+get the same review + scan.  See
+[`PROVENANCE.md`](PROVENANCE.md) for the release-provenance controls
+(Layer 1) these rules rest on.
+
 ---
 
 ## Self-check before committing any bootstrap output
