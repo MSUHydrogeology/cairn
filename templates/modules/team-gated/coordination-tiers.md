@@ -17,11 +17,15 @@ give a *pre-edit* signal.
 Merged into the coordination section:
 
 > **Tier 2 — work intents (concurrent teams).** Before touching a
-> collision-prone surface, an agent writes a short, untracked file
-> declaring who holds which paths, with what intent and status. It
-> is a courtesy signal, not a lock. An empty intent directory
+> collision-prone surface, an agent records a **claim** in a single
+> append-only `dev/intents.jsonl` log — who holds which paths, with
+> what action — and the claim is **auto-released** when the work
+> lands (a post-commit hook closes claims whose paths the commit
+> touched). It is a courtesy signal, not a lock. An empty active set
 > means "nobody declared", never "nobody is working" —
-> version-control state stays the source of truth.
+> version-control state stays the source of truth. Cairn ships the
+> tool that implements this (`tools/intent.py`, installed with this
+> module); see "The work-intent tool" below.
 >
 > **Tier 3 — typed activity events (high-concurrency teams).** An
 > append-only log of typed events — `start`, `heads_up`, `query`,
@@ -32,6 +36,52 @@ Merged into the coordination section:
 
 A sequential team runs neither tier — only the kernel's baseline
 discipline.
+
+## The work-intent tool
+
+Selecting this module installs a runnable reference tool —
+`tools/intent.py`, a stdlib-only CLI — so the Tier-2 protocol is a
+command, not homework. (The doctrine above is the *why*; this is the
+*how*.) The scaffold also seeds `dev/intents.jsonl` into `.gitignore`
+(the log is session-local coordination state, never a tracked
+artifact).
+
+> **Running it.**
+>
+> * `python tools/intent.py claim --files <paths> --action "<summary>"`
+>   — record a claim before editing a collision-prone surface. The
+>   claim runs an immediate **conflict-check** against active claims and
+>   warns you about overlaps, so the signaler gets immediate, actionable
+>   value at the moment of signaling.
+> * `python tools/intent.py list [--conflicts-with <paths>]` — show
+>   active intents (optionally only those overlapping given paths).
+> * `python tools/intent.py release <id>` — close a claim manually
+>   (rarely needed; the hook does this automatically).
+> * `python tools/intent.py install-hook` — **opt-in**: install a
+>   post-commit hook that auto-releases the committing session's claims
+>   whose paths the commit touched. The scaffold prints this command but
+>   never runs it for you; the installer chains onto an existing
+>   `post-commit` hook and **refuses** (without modifying the file) a
+>   framework-managed (pre-commit / husky), non-shell, or non-executable
+>   hook. `--uninstall` removes it.
+
+**Per-session identity.** Identity resolves from `$CAIRN_AGENT` (an
+explicit override / escape hatch), then a **per-session** value derived
+from the harness's session env var, then a static `~/.cairn/agent.json`
+`agent` key. An adopter on a harness the built-in registry does not know
+adds a `[tool_tag, env_var]` pair under `harness_session_vars` in that
+JSON config — **no edit to the tool**. The per-session derivation (and
+why a global `$CAIRN_AGENT` export is an escape hatch, not a setting) is
+the doctrine in
+[`doctrine/coordination.md`](../../../doctrine/coordination.md) >
+"Coordination identity — per-session, not per-agent".
+
+**Atomicity is best-effort + filesystem-dependent.** The append uses a
+single small `O_APPEND` write — non-interleaving on local filesystems
+(APFS, ext4, xfs, btrfs), but **not** guaranteed on networked / overlay
+filesystems (NFS, SMB, Windows shares, container overlay FS). A team on
+such a filesystem, or at very high concurrency, should keep the `dev/`
+tree on a local checkout and treat the append as advisory.
 
 ## Extensions
 
@@ -82,8 +132,8 @@ Merged into the coordination section:
 ### Extension — Goodnight intent-hygiene
 
 Two complementary failures motivate the hygiene step. The
-work-intent directory accretes "done" intents over time,
-drowning the live signal: a reader scanning the directory
+work-intent log accretes completed claim/release pairs over
+time, drowning the live signal: a reader scanning the log
 for active intents either wastes attention on stale ones
 or treats a stale intent as live and defers unnecessarily.
 And collision events recorded in the day's reflections
@@ -98,9 +148,9 @@ sequenced alongside the goodnight routine in
 > The full-handoff owner's goodnight routine includes two
 > steps that operate on the coordination surfaces:
 >
-> * **Prune-intents** — completed work intents are
->   removed or archived; the live directory holds only
->   intents whose work is still in flight.
+> * **Prune-intents** — completed claim/release pairs are
+>   compacted out of the log past a grace window; the active
+>   set holds only intents whose work is still in flight.
 > * **Migrate-collisions** — any `true-staged-index`
 >   events from the day's reflections are appended to
 >   the collision log.
