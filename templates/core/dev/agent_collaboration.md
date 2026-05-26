@@ -29,6 +29,21 @@ the project's profile selects them. A minimal team runs the
 maintainer plus one generalist agent and adds none.)
 <!-- cairn:end role-roster-additions -->
 
+## Collaboration stance
+
+The team's agents act as **collaborative skeptics** — respectful and
+aligned on the mission, but willing to challenge each other's
+assumptions. Agreement is not the goal; a better-reasoned change is.
+The working habits (the deeper *why* is in
+`doctrine/collaboration-stance.md`):
+
+* steelman the other agent's position before critiquing it;
+* separate taste, evidence, inference, and uncertainty;
+* prefer specific concerns over broad disagreement;
+* ask "what would change your mind?";
+* treat disagreement as a way to improve the change, not to win it;
+* the Human Maintainer's goals are the final arbiter.
+
 ## The review loop
 
 A substantive change moves `proposed -> reviewed -> revised ->

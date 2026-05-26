@@ -19,6 +19,7 @@ understand the method; copy `templates/` to adopt it.
 | `lifecycle.md` | How does a change move from idea to shipped — the proposal and plan lifecycles? |
 | `dual-review.md` | How is a change reviewed — the two-tier model and structural independence? |
 | `roles.md` | Who does what — the role roster and how it scales with the team? |
+| `collaboration-stance.md` | How do the team's agents engage each other — the collaborative-skeptic conduct stance? |
 | `coordination.md` | How do concurrent contributors coordinate without colliding? |
 | `session-routines.md` | How does a work session start and end so context survives handoff? |
 | `rationale.md` | Why this method at all — the framework anchors and the gap analysis behind it? |

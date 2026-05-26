@@ -147,6 +147,54 @@ Code review's floor is stricter than Internal review's: **not the
 implementing agent**, because freshly written code is hard to spot
 mistakes in for someone carrying the same reasoning patterns.
 
+## Review expectations — the clean-pass trap
+
+A review that finds zero issues — or only minor style nits — on a
+*complex* change should be treated with skepticism, not relief. The
+clean pass is a known failure mode: a reviewer who reads to *confirm*
+the change works will find that it does. The discipline is to read as
+if a hidden bug exists and probe for it. A reviewer's standing checks:
+
+* **fail-closed guards** — validation and safety checks raise on bad
+  input rather than silently returning empty or degrading;
+* **unconditional guard coverage** — correctness checks cover *all*
+  paths and configurations, not just the declared happy edges;
+* **negative tests** — the validation gates have tests that assert the
+  *failure*, not only the success path;
+* **spec / schema / registry key alignment** — the keys a change reads
+  match the keys its source actually emits;
+* **correctness and regressions**, and **documentation / example
+  drift** introduced by the change.
+
+The domain adds its own probes — units, coordinate systems, numerical
+edges, resource resolution — so each adopter extends this list with
+the checks its high-risk surfaces demand. The collaborative-skeptic
+stance (`collaboration-stance.md`) is the posture this check operates
+in: steelman the change, then hunt for what it missed.
+
+## Briefs to reviewers — don't telegraph the lens
+
+When handing work to a reviewer — especially the cross-agent-type
+External review the independence floor calls for — brief on *facts*,
+not *judgment*. A page or so, not several.
+
+**Include**: what shipped, where (commits + file paths), the
+reviewer's deliverable, how to run the tests, and procedural
+constraints (don't commit, append findings, and so on).
+
+**Leave out**: a list of "what to push on," a list of "what's already
+known so you can skip it," a ranking of which surfaces matter most —
+anything that telegraphs what the briefing agent expects the reviewer
+to find. Spelling out the lens turns an independent read into
+hypothesis-confirmation: you are asking the reviewer to check your
+guesses rather than form their own. Brief on facts; trust the reviewer
+to bring the lens.
+
+The same applies to Internal-review handoffs and to any task brief at
+session start (an implementing agent picking up a plan): over-detailed
+framing pushes the recipient toward executing your plan instead of
+thinking independently. Short is honest.
+
 ## Restricted verification surfaces
 
 Every review tier above assumes the reviewer can, in principle,
