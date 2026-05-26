@@ -112,12 +112,21 @@ A sequential team runs only the baseline above.)
 
 ## Session reflections and handoff
 
-If the `reflections` default-on module is installed (the typical
-multi-agent adoption keeps it), the goodnight routine writes a
-short, per-agent retrospective — the cross-agent handoff surface
-that lets the next session pick up each agent's experience.
+<!-- cairn:slot reflections -->
+(Filled from the `reflections` default-on module when installed: the
+goodnight per-agent retrospective and the cross-agent handoff surface —
+paste the module's "Merged into" content (`modules/reflections.md`). A
+solo, single-agent project may keep reflections as a personal log or
+mark `N/A: reflections not installed`. An unfilled slot is a review
+finding.)
+<!-- cairn:end reflections -->
 
-A solo, single-agent project may keep reflections as a personal
-log or omit the channel entirely; the cross-agent handoff function
-only earns its keep with a multi-agent team. See
-`modules/reflections.md` for the module's full content.
+## Lifecycle metrics
+
+<!-- cairn:slot lifecycle-metrics -->
+(Filled from the `lifecycle-metrics` default-on module when installed:
+the short note on the read-only extractor over the `dev/proposals/` +
+`dev/plans/` corpus (`modules/lifecycle-metrics.md`). Mark
+`N/A: lifecycle-metrics not installed` if omitted. An unfilled slot is
+a review finding.)
+<!-- cairn:end lifecycle-metrics -->

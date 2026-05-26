@@ -115,6 +115,16 @@ roster is in `dev/agent_collaboration.md`.
 * Run the test suite after any substantive change:
   `{{test_command}}`.
 
+## Verifying claims
+
+<!-- cairn:slot claim-check -->
+(Filled from the `claim-check` default-on module when installed — the
+verify-before-asserting discipline and how to run the checker (see
+`dev/modules/claim-check.md` > "Merged into"). If claim-check is not
+installed, replace with `N/A: claim-check not installed`. An unfilled
+slot is a review finding.)
+<!-- cairn:end claim-check -->
+
 ## Project-specific conventions
 
 <!-- cairn:slot project-conventions -->

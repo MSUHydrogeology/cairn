@@ -276,11 +276,27 @@ project's real, specific content. The slot's placeholder text
 describes what is expected. A shipped empty slot is a review
 finding.
 
-**Two of the kernel slots are filled from installed module
-content, not authored from scratch:**
+**Several kernel slots are filled from installed module content, not
+authored from scratch** — every module's `Adds to:` target is
+slot-marked, so the R-F unfilled-slot check (Step II-5) *enforces* the
+merge rather than relying on this prose alone:
 
-* `role-roster-additions` in `dev/agent_collaboration.md`
-* `coordination-additions` in `dev/agent_collaboration.md`
+* `role-roster-additions` in `dev/agent_collaboration.md` — the
+  domain-agents / legacy-agent / security-review / issue-capture /
+  model-selection roles
+* `coordination-additions` in `dev/agent_collaboration.md` —
+  `coordination-tiers`
+* `claim-check` in `AGENTS.md` — the `claim-check` default-on module
+* `reflections` in `dev/agent_collaboration.md` — the `reflections`
+  default-on module
+* `lifecycle-metrics` in `dev/agent_collaboration.md` — the
+  `lifecycle-metrics` default-on module
+
+A module whose `Adds to:` target is an existing prose section rather
+than a slot (e.g. `dual-review` → the review-loop section) is merged
+into that section per its `Merged into:` block. When a *selected*
+module is not installed, mark its slot `N/A: <module> not installed`
+so the gate tells a deliberate omission from a dropped merge.
 
 Each module template under `<target>/dev/modules/<name>.md`
 carries an **`Adds to:`** line near the top naming the kernel
@@ -491,6 +507,9 @@ Block slots (judgment work, left for the agent and Maintainer):
 | `project-conventions` | `AGENTS.md` | Naming conventions, dev environment, high-risk surfaces, operational pitfalls |
 | `role-roster-additions` | `dev/agent_collaboration.md` | Dimension-selected roles beyond the base roster |
 | `coordination-additions` | `dev/agent_collaboration.md` | Higher coordination tiers if the team profile selects them |
+| `claim-check` | `AGENTS.md` | The `claim-check` module's verify-before-asserting note (or `N/A` if not installed) |
+| `reflections` | `dev/agent_collaboration.md` | The `reflections` module's per-agent handoff content (or `N/A`) |
+| `lifecycle-metrics` | `dev/agent_collaboration.md` | The `lifecycle-metrics` module's extractor note (or `N/A`) |
 | `team-roster` | `dev/collaboration_agreement.md` | The team members and their roles |
 
 ---
