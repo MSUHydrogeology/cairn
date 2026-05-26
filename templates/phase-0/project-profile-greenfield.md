@@ -4,6 +4,11 @@
 > methodology from the start. This is the *light* v1 checklist;
 > deep greenfield design facilitation is a named methodology
 > follow-up, not part of v1.
+>
+> **Fast path:** the `solo-greenfield` preset (or `collaborative-team`
+> for a concurrent multi-agent team) pre-fills the six-axis point for a
+> greenfield project — start there and adjust the axes below to the
+> project's real scores. See `README.md > Governance presets`.
 
 **Project:** {{project_name}}
 **Drafted:** {{YYYY-MM-DD}}

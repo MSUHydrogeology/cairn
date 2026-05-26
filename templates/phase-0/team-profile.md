@@ -3,6 +3,12 @@
 > Fill this for **every** adoption — greenfield or legacy. It
 > positions the team on the team axes and records the
 > current-practice baseline.
+>
+> **Fast path:** a governance preset pre-fills the team axes, but the
+> **real team axes always win on staffability** — a preset never
+> installs coordination apparatus a solo / single-agent team can't run.
+> Record the team's actual axes here. See `README.md > Governance
+> presets`.
 
 **Project:** {{project_name}}
 **Assessed:** {{YYYY-MM-DD}}

@@ -4,6 +4,11 @@
 > methodology. A bootstrapping agent completes it by inspecting
 > the repository and interviewing the Maintainer; the result is
 > presented for acceptance before Act II.
+>
+> **Fast path:** the `high-rigor-legacy` preset pre-fills the six-axis
+> point for a large, complex legacy codebase — start there and adjust
+> the axes below to the project's real scores. See
+> `README.md > Governance presets`.
 
 **Project:** {{project_name}}
 **Assessed:** {{YYYY-MM-DD}} by {{assessor}}

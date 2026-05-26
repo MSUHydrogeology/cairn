@@ -34,3 +34,31 @@ later read against; without it, "improvement" is unmeasurable.
 These templates carry `{{placeholder}}` tokens and block slots; a
 bootstrapping agent fills them by inspecting the repository and
 interviewing the Maintainer.
+
+## Governance presets — the fast path
+
+Filling both profiles and hand-deriving the module roster from the
+six axes is the principled path. The **fast path** is a *governance
+preset*: a named point in the six-axis space that pre-fills a sensible
+profile, which the adopter then adjusts. Three are shipped:
+
+* **`solo-greenfield`** — a solo maintainer on a new, small, simple
+  codebase: the default-on disciplines, no coordination machinery.
+* **`collaborative-team`** — a small concurrent multi-agent team on a
+  moderate codebase: + coordination-tiers, dual-review, and the
+  practice modules the moderate-complexity gate selects.
+* **`high-rigor-legacy`** — a large, complex, multi-language legacy
+  codebase with a full team: the broad set (legacy-agent,
+  security-review, dual-language-tests, the practice modules, +
+  coordination).
+
+A preset is **composable, not rigid**: it sets the baseline; the
+adopter overrides any individual axis (the real team axes always win on
+staffability) and adds/removes any individual module on top
+(`modules_add:` / `modules_remove:`). Start from the preset whose
+canonical point is closest to the project, then tune the axes in the
+profile templates below to the project's real scores. The per-preset
+rosters, the six-axis points, and the config shape are in
+`../../bootstrap/BOOTSTRAP.md` (Act I-5 "Fast path — governance presets"
+and Appendix B); preview a resolved profile with
+`python bootstrap/scaffold.py --summary --config <profile>`.
