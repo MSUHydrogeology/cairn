@@ -120,4 +120,4 @@ that lets the next session pick up each agent's experience.
 A solo, single-agent project may keep reflections as a personal
 log or omit the channel entirely; the cross-agent handoff function
 only earns its keep with a multi-agent team. See
-`modules/default-on/reflections.md` for the module's full content.
+`modules/reflections.md` for the module's full content.

@@ -13,7 +13,7 @@ project is doing, and why* from this tree alone.
 | `README.md` (this file) | The entry point to `dev/`. |
 | `collaboration_agreement.md` | The working norms, the review compact, and decision rights. |
 | `agent_collaboration.md` | The role roster, the review loop, and the coordination doctrine. |
-| `PLANNING.md` | The roadmap board — queued, active, and recently completed work. |
+| `PLANNING.md` | The roadmap board — queued and active work (a current-state index; completed work migrates out to archived plans, not a "completed" section). |
 | `NEXT_SESSION.md` | The cold-pickup handoff — what to start next, with enough context to begin. |
 | `proposals/` | The deliberation record — one file per substantive change, append-only. |
 | `proposals/_template.md` | The proposal structure and the full lifecycle doctrine. |
