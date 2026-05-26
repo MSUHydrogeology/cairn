@@ -61,3 +61,27 @@ local scratch surface — each with its reproduction, context, and
 proposed labels — so they can be filed when the tracker returns or
 surfaced to the Maintainer for manual filing. A captured-but-unfiled
 issue is recoverable; an uncaptured one is lost.
+
+### Promote-to-durable provenance
+
+A captured issue often graduates into a durable artifact — a proposal,
+a `PLANNING.md` entry, a topic doc. The promotion must carry the link
+**both ways**, so the capture → durable → close chain is never a dead
+end:
+
+* **Forward link (durable → issue).** The promoting artifact cites its
+  origin: a `Source: #N` line under a `PLANNING.md` entry's status
+  block, the issue reference in a proposal's `Related:` header, or
+  `(#N)` in a handoff-note title. A commit that advances an issue names
+  it — `Closes #N` (fully resolved), `Refs #N` (part of a multi-step
+  resolution), `Related to #N` (adjacent context). Use whatever
+  reference syntax the project's tracker recognizes.
+* **Back link (issue → durable) — required.** When the issue is closed
+  on promotion, its **closing comment names the durable home** (e.g.
+  "Promoted to the `<proposal-stem>` proposal; closing."). This is
+  *required, not optional*: a reader of the closed issue must be able
+  to find where the work continued without grepping the durable
+  artifacts. The closing comment **is** the back-link.
+
+The capture-vs-fix rule keeps friction *out* of mid-session work; this
+rule keeps the promoted friction *traceable* once it becomes real work.
