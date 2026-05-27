@@ -18,6 +18,19 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **Fold-back: remaining ledger doctrine + goodnight roadmap-hygiene +
+  doc-drift tooling (cairn-v0.2-foldback-remaining-ledger, 2026-05-27).**
+  The last open fold-back candidates from Cairn's reference
+  implementation, synced before the v0.2.0 cut:
+  * **(A) Why the substrate earns adoption — signal-now, benefit-later.**
+    [`doctrine/coordination.md`](doctrine/coordination.md) now states the
+    general **asymmetric-reward** principle: a coordination signal whose
+    cost is paid now but whose benefit accrues later (often to someone
+    else) decays unless the substrate repays the **signaler at signal
+    time** — the work-intent `claim` conflict-check is the worked
+    instance, and the pattern generalizes to any signal-now /
+    benefit-later protocol.
+
 - **Governance presets — the onboarding fast path
   (cairn-v0.2-p4-governance-presets, 2026-05-26).** An adopter can now pick
   a **named preset** instead of hand-deriving the module roster from the six

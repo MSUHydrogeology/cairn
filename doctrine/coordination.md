@@ -105,6 +105,25 @@ framing. Each adopting team identifies its own required-mode set
 — the structural rule is doctrine; the file list is adopter-
 local.
 
+### Why the substrate earns adoption — signal-now, benefit-later
+
+A coordination signal a contributor must emit *before* the payoff
+arrives faces an **asymmetric-reward problem**: the cost is paid
+now, by the signaler; the benefit accrues later, often to
+*someone else*. Left there, adherence decays — the rational
+individual move is to skip the signal, and a protocol that depends
+on everyone signaling anyway erodes. The structural fix is **not**
+to lower the signaling cost alone; it is to make the substrate give
+the **signaler immediate value at the moment of signaling**. A
+work-intent `claim` that runs a live conflict-check against active
+claims and warns the signaler about overlaps is the worked
+instance: the signaler is repaid *at signal time* — it learns
+whether it is about to collide — so the protocol survives without
+enforcement. The pattern generalizes to any signal-now /
+benefit-later coordination protocol: design the act of signaling so
+it returns something the signaler wants right then, and adherence
+becomes self-interested rather than altruistic.
+
 ### Tier 3 — real-time: typed activity events
 
 For high-concurrency, domain-agent teams. A minutes-scale signal:
