@@ -145,6 +145,14 @@ ALLOW_UNCLAIMED_ENV_VAR = "CAIRN_INTENT_ALLOW_UNCLAIMED"
 #: repo).  Absent / false / malformed = warn.
 INTENT_CONFIG_RELPATH = "dev/intent-config.json"
 
+#: Adopter-facing invocation hint for run-guidance strings.  The scaffold
+#: installs this tool verbatim at ``<target>/tools/intent.py`` -- there is
+#: no ``intent`` console entry point -- so every command we *suggest* an
+#: adopter type uses the installed script shape, matching the
+#: ``coordination-tiers`` doc and the session-start routine.  (Internal
+#: docstrings keep the bare ``intent <subcommand>`` man-page label.)
+INVOKE_HINT = "python tools/intent.py"
+
 
 def _session_identity(
     tool_tag: str, raw_session_id: Optional[str],
@@ -1255,7 +1263,7 @@ def _unclaimed_warning(paths: Sequence[str]) -> str:
     ]
     lines.extend(f"  - {p}" for p in paths)
     lines.append(
-        "Consider `intent claim --files <path> --action <summary>` "
+        f"Consider `{INVOKE_HINT} claim --files <path> --action <summary>` "
         "before editing,"
     )
     lines.append(
@@ -1442,7 +1450,7 @@ def _cmd_install_precommit(args) -> int:
             "intent: v1 installs only into an absent hook or one carrying "
             "the intent sentinel block. Move / inspect the existing hook, "
             "or chain the work-intent check manually:\n"
-            "  <python> <path-to>/intent.py _precommit_check\n"
+            f"  {INVOKE_HINT} _precommit_check\n"
             "intent: no changes made.\n"
         )
         return 4
@@ -1540,11 +1548,11 @@ def _cmd_hooks_status(args) -> int:
     )
     if not post:
         sys.stdout.write(
-            "  -> install post-commit: intent install-hook\n"
+            f"  -> install post-commit: {INVOKE_HINT} install-hook\n"
         )
     if not pre:
         sys.stdout.write(
-            "  -> install pre-commit:  intent install-precommit\n"
+            f"  -> install pre-commit:  {INVOKE_HINT} install-precommit\n"
         )
     return 0
 
@@ -1557,7 +1565,7 @@ def _build_parser():
     import argparse
 
     parser = argparse.ArgumentParser(
-        prog="intent",
+        prog=INVOKE_HINT,
         description=(
             "Work-intent helper: append-only JSONL substrate for pre-edit "
             "coordination signals. See the coordination-tiers module for "

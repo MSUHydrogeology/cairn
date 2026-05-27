@@ -90,12 +90,12 @@ artifact).
 >   installed. The one stable command session-start points at.
 
 **Claim before you edit.** The Tier-2 workflow is one habit: before
-touching a collision-prone surface, run `claim`; the immediate
-conflict-check tells you on the spot whether another session already
-holds it. The post-commit hook then closes your claim when the work
+touching a collision-prone surface, run `python tools/intent.py claim`; the
+immediate conflict-check tells you on the spot whether another session
+already holds it. The post-commit hook then closes your claim when the work
 lands, so the steady-state ceremony is a single `claim` per piece of
 work. The session-start routine (`doctrine/session-routines.md`) carries
-the *read* half — `intent list` before the first edit.
+the *read* half — `python tools/intent.py list` before the first edit.
 
 **The work-intent pre-commit check** is the structural *opening*
 counterpart to the post-commit auto-release. Where the post-commit hook

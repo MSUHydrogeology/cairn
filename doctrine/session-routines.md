@@ -31,8 +31,8 @@ The pass has four moves:
 3. **Note in-flight threads.** Open proposals and plans are live
    multi-agent threads; surface them. *If the `coordination-tiers`
    module is installed*, also **read the active work-intent set**
-   (`intent list`) and confirm the hooks are present
-   (`intent hooks-status`): a starting session sees who already holds
+   (`python tools/intent.py list`) and confirm the hooks are present
+   (`python tools/intent.py hooks-status`): a starting session sees who holds
    which paths before its first edit. This is the *read* half of the
    work-intent convention — the complement to claiming before you edit
    (`coordination-tiers`); skipping it is how a session collides with an

@@ -2487,9 +2487,14 @@ def main(argv: list[str] | None = None) -> int:
             )
     if "coordination-tiers" in modules:
         print(
-            "\nTo enable post-commit auto-release of work intents (opt-in;\n"
-            "the scaffold does NOT install git hooks for you), run:\n"
-            "  python tools/intent.py install-hook"
+            "\nTo enable the work-intent git hooks (opt-in; the scaffold\n"
+            "does NOT install git hooks for you), run:\n"
+            "  python tools/intent.py install-hook        "
+            "# post-commit auto-release\n"
+            "  python tools/intent.py install-precommit   "
+            "# pre-commit work-intent check (warn-only)\n"
+            "  python tools/intent.py hooks-status        "
+            "# confirm both are installed"
         )
 
     # Write the install lockfile + base-template cache: the upgrade

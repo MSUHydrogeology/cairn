@@ -650,6 +650,18 @@ class TestPrecommitInstall:
         assert "post-commit (auto-release): installed" in res.stdout
         assert "pre-commit (work-intent check): installed" in res.stdout
 
+    def test_status_suggests_installed_command_shape(self, tmp_path) -> None:
+        """Codex review P2: the suggested follow-up commands must be the
+        installed script shape (`python tools/intent.py ...`), not a bare
+        `intent` console command Cairn never installs."""
+        tool = _git_repo(tmp_path)
+        res = _run_tool(tool, ["hooks-status"], cwd=tmp_path)
+        assert "python tools/intent.py install-hook" in res.stdout
+        assert "python tools/intent.py install-precommit" in res.stdout
+        # No bare `intent <cmd>` suggestion (the non-existent entry point).
+        assert "-> install post-commit: intent " not in res.stdout
+        assert "-> install pre-commit:  intent " not in res.stdout
+
 
 class TestPrecommitCheck:
     """The classifier under the real `git diff --cached` staged set."""
