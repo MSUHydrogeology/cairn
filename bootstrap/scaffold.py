@@ -1180,6 +1180,221 @@ def _find_cairn_root(script_path: Path) -> Path:
     return script_path.resolve().parent.parent
 
 
+# ---------------------------------------------------------------------------
+# Upgrade capability -- install lockfile + scoped base-template cache
+# ---------------------------------------------------------------------------
+#
+# The install-side ancestor anchor for ``scaffold.py upgrade`` (the
+# token- + slot-aware 3-way merge).  See ``bootstrap/UPGRADE.md`` and the
+# modflow_tools-hosted ``cairn-module-upgrade-3way-merge`` plan.
+#
+#   * ``dev/cairn-lock.yml`` -- a *visible*, *tracked* machine lockfile
+#     (R2): the upgrade ancestor + the install-side provenance record.
+#   * ``dev/.cairn/base/`` -- a *tracked* cache of the **raw** upstream
+#     templates for the mergeable ``.md`` installs (R1/I4): so the merge's
+#     ``base`` is on disk under any distribution mode (no Cairn git history
+#     needed) and only the mergeable set is shadow-copied.
+
+_LOCKFILE_REL = "dev/cairn-lock.yml"        # visible + tracked (R2)
+_BASE_CACHE_REL = "dev/.cairn/base"         # tracked raw-template cache (R1/I4)
+_LOCK_SCHEMA = 1
+
+#: Token names that must never be recorded in the lockfile (R9): a
+#: substitution token bearing a secret would leak it into a tracked file.
+_SECRET_TOKEN_RE = re.compile(
+    r"(?:^|_)(password|passwd|secret|credential|token|key)(?:$|_)",
+    re.IGNORECASE,
+)
+
+
+def _sha256_hex(data: bytes) -> str:
+    import hashlib
+    return hashlib.sha256(data).hexdigest()
+
+
+def _cairn_version(cairn_root: Path) -> str:
+    """Read the Cairn version from ``CITATION.cff`` (``unknown`` if absent)."""
+    cff = cairn_root / "CITATION.cff"
+    if cff.exists():
+        for line in cff.read_text(encoding="utf-8").splitlines():
+            m = re.match(r'\s*version\s*:\s*"?([^"\s]+)"?\s*$', line)
+            if m:
+                return m.group(1)
+    return "unknown"
+
+
+def _cairn_commit(cairn_root: Path) -> str:
+    """Short HEAD commit of the Cairn source, or ``unknown`` (no git)."""
+    import subprocess
+    try:
+        r = subprocess.run(
+            ["git", "-C", str(cairn_root), "rev-parse", "--short", "HEAD"],
+            capture_output=True, text=True, timeout=10, check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return "unknown"
+    return r.stdout.strip() if r.returncode == 0 else "unknown"
+
+
+def _refuse_secret_tokens(
+    tokens: dict[str, str], allow: tuple[str, ...] = (),
+) -> None:
+    """Raise PresetError if any token name looks secret-bearing (R9)."""
+    allowed = {a.lower() for a in allow}
+    offending = sorted(
+        name for name in tokens
+        if _SECRET_TOKEN_RE.search(name) and name.lower() not in allowed
+    )
+    if offending:
+        raise PresetError(
+            "refusing to record secret-like token name(s) in the lockfile: "
+            + ", ".join(offending)
+            + " -- Cairn templates must not introduce secret-bearing "
+            "substitution tokens (bootstrap/SAFETY.md). If a token is "
+            "genuinely public, add it to the writer's allow-list."
+        )
+
+
+def _emit_lock_yaml(data: dict[str, Any]) -> str:
+    """Serialize the lockfile as deterministic JSON (valid YAML 1.2) so it
+    round-trips **stdlib-only** (no PyYAML dependency) while staying a
+    parseable ``.yml``.  Tool-owned: regenerate-only, do not hand-edit."""
+    import json
+    header = (
+        "# cairn-lock.yml -- machine-generated install lockfile "
+        "(tool-owned; regenerate-only; do not hand-edit).\n"
+        "# JSON-encoded (valid YAML 1.2) so it round-trips without a YAML "
+        "dependency.\n"
+    )
+    return header + json.dumps(data, indent=2, sort_keys=True) + "\n"
+
+
+def read_lockfile(target: Path) -> dict[str, Any] | None:
+    """Read ``<target>/dev/cairn-lock.yml`` (or None if absent/unparseable).
+
+    Strips ``#`` comment lines, then parses the JSON body (the format
+    :func:`_emit_lock_yaml` writes)."""
+    import json
+    p = target / _LOCKFILE_REL
+    if not p.exists():
+        return None
+    body = "\n".join(
+        ln for ln in p.read_text(encoding="utf-8").splitlines()
+        if not ln.lstrip().startswith("#")
+    )
+    try:
+        data = json.loads(body)
+    except ValueError:
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def _lock_file_list(
+    modules: list[str], optional: list[tuple[str, str]],
+) -> list[tuple[str, str, bool]]:
+    """The ``(src-rel-to-templates/, dst, verbatim)`` set a lockfile tracks:
+    core + selected modules (via :func:`install_manifest`) + optional
+    templates.  De-duplicated by destination, stable order."""
+    entries = list(install_manifest(modules))
+    for src_rel, dst_rel in optional:
+        entries.append((src_rel, dst_rel, False))
+    seen: set[str] = set()
+    out: list[tuple[str, str, bool]] = []
+    for src, dst, verbatim in entries:
+        if dst in seen:
+            continue
+        seen.add(dst)
+        out.append((src, dst, verbatim))
+    return out
+
+
+def write_install_lockfile(
+    target: Path,
+    cairn_root: Path,
+    templates_root: Path,
+    *,
+    tokens: dict[str, str],
+    modules: list[str],
+    optional: list[tuple[str, str]],
+    profile: dict[str, Any],
+    allow_secret_tokens: tuple[str, ...] = (),
+) -> dict[str, Any] | None:
+    """Write ``dev/cairn-lock.yml`` + the scoped base-template cache.
+
+    **Fail-closed (P-1)**: a lockfile must record a *clean* ancestor, so
+    this refuses (returns ``None``, prints guidance) if any tracked file on
+    disk differs from a clean install -- e.g. a ``skipped-exists`` file the
+    adopter customized.  On a fresh install every file matches, so the
+    lockfile + cache are written.  Token-secret guard runs first (R9).
+
+    The base cache stores the **raw** (pre-substitution) template for each
+    **non-verbatim** install only (I4: verbatim scripts use the hash policy,
+    not a cached base).
+    """
+    _refuse_secret_tokens(tokens, allow_secret_tokens)
+
+    file_records: list[dict[str, Any]] = []
+    cache_writes: list[tuple[Path, str]] = []
+    diverged: list[str] = []
+
+    for src_rel, dst_rel, verbatim in _lock_file_list(modules, optional):
+        src = templates_root / src_rel
+        if not src.exists():
+            continue
+        raw = src.read_text(encoding="utf-8")
+        would = (
+            src.read_bytes() if verbatim
+            else substitute_tokens(raw, tokens).encode("utf-8")
+        )
+        dst_abs = target / dst_rel
+        on_disk = dst_abs.read_bytes() if dst_abs.exists() else None
+        if on_disk is None or on_disk != would:
+            diverged.append(dst_rel)
+            continue
+        rec: dict[str, Any] = {
+            "src": src_rel, "dst": dst_rel, "verbatim": verbatim,
+            "hash": "sha256:" + _sha256_hex(would),
+        }
+        if not verbatim:
+            cache_rel = f"{_BASE_CACHE_REL}/{dst_rel}"
+            rec["base_cache"] = cache_rel
+            rec["base_hash"] = "sha256:" + _sha256_hex(raw.encode("utf-8"))
+            cache_writes.append((target / cache_rel, raw))
+        file_records.append(rec)
+
+    if diverged:
+        shown = ", ".join(diverged[:5]) + ("..." if len(diverged) > 5 else "")
+        print(
+            f"  [warn] {_LOCKFILE_REL} NOT written: {len(diverged)} installed "
+            f"file(s) differ from a clean install ({shown}). A lockfile must "
+            "record a clean ancestor; run `python bootstrap/scaffold.py "
+            "upgrade --init-lock --target <repo>` to synthesize one from the "
+            "current tree instead.",
+            file=sys.stderr,
+        )
+        return None
+
+    lock: dict[str, Any] = {
+        "schema": _LOCK_SCHEMA,
+        "cairn_version": _cairn_version(cairn_root),
+        "cairn_commit": _cairn_commit(cairn_root),
+        "profile": profile,
+        "modules": sorted(modules),
+        "optional_templates": sorted(dst for _, dst in optional),
+        "tokens": dict(tokens),
+        "files": file_records,
+    }
+    for cache_path, raw in cache_writes:
+        _assert_safe_write(cache_path, target)
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        cache_path.write_text(raw, encoding="utf-8")
+    lock_path = target / _LOCKFILE_REL
+    _assert_safe_write(lock_path, target)
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    lock_path.write_text(_emit_lock_yaml(lock), encoding="utf-8")
+    return lock
+
+
 def build_arg_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="scaffold.py",
@@ -1524,6 +1739,31 @@ def main(argv: list[str] | None = None) -> int:
             "\nTo enable post-commit auto-release of work intents (opt-in;\n"
             "the scaffold does NOT install git hooks for you), run:\n"
             "  python tools/intent.py install-hook"
+        )
+
+    # Write the install lockfile + base-template cache: the upgrade
+    # ancestor anchor (dev/cairn-lock.yml + dev/.cairn/base/).  Fail-closed
+    # if the tree diverges from a clean install (P-1) -- then it points the
+    # user at `upgrade --init-lock` and the install still succeeds.
+    lock_profile: dict[str, Any] = {"preset": cfg.get("preset")}
+    lock_profile["axes"] = {
+        axis: resolved_axes.get(axis)
+        for axis in _AXES
+        if isinstance(resolved_axes, dict) and resolved_axes.get(axis)
+    }
+    try:
+        lock = write_install_lockfile(
+            target, cairn_root, templates_root,
+            tokens=tokens, modules=modules, optional=optional,
+            profile=lock_profile,
+        )
+    except PresetError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    if lock is not None:
+        print(
+            f"\nWrote {_LOCKFILE_REL} (upgrade ancestor) + the base-template "
+            f"cache under {_BASE_CACHE_REL}/."
         )
     return 0
 
