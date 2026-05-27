@@ -165,6 +165,55 @@ the loop closes at a routine boundary rather than
 incident-by-incident — the structural ward against
 measurement-driven over-correction.
 
+### The reference-instance doctrine harvest
+
+The rate-limit gate governs the loop *within* an adopter: incident →
+recorded signal → doctrine change. A second loop runs the other
+direction, at framework scale. Cairn is "the generalized doctrine
+extracted from" a reference instance — but an extraction is a
+*snapshot*: the reference instance keeps accreting operating doctrine
+incident-by-incident, and core silently falls behind. The R-F fidelity
+gate cannot see this — it audits faithfulness to the manifest, so it
+certifies a faithful install of a *thin* core and is structurally
+blind to core *incompleteness*. The **doctrine harvest** is the
+standing process that closes that gap.
+
+* **A harvest run.** A periodic sweep that diffs a mature reference
+  instance's operating-doctrine prose — its `AGENTS.md` and
+  `agent_collaboration.md`, where incident-driven rules accrete —
+  against Cairn core, recording each *generalizable* gap as a
+  fold-back. The generalizable-vs-local test: a gap qualifies if a
+  differently-shaped team would hit the same failure; adopter-local
+  quirks (a project's own tools, naming, science) do not. The
+  first-adopter comparison that produced this very batch of fold-backs
+  was the harvest's first run, by hand.
+* **Which instance.** Target whichever adopter has **out-accreted**
+  core since the last harvest — the one carrying mature doctrine core
+  lacks. Name it in the run's record.
+* **Convergence — an empty sweep is success.** A harvest pays only
+  when an instance is ahead of core. Right after one lands, core ≈ that
+  instance's current doctrine, so the next sweep may legitimately find
+  **nothing** — the loop *converging*, not failing. Record it as "core
+  current as of `<date>` against `<instance>`"; never manufacture
+  marginal gaps to justify the run. This is the ward against the
+  harvest becoming ceremony.
+* **Cadence.** Run a harvest (a) before each Cairn minor release (the
+  floor), and (b) on an adopter signal — when a reference instance's
+  accreted-doctrine delta crosses a threshold the team tracks.
+* **Where findings go.** Until Cairn runs its own `dev/`, a finding
+  enters an adopter's fold-back ledger → proposal → lands in cairn (the
+  adopter-lifecycle these very items rode); once Cairn adopts its own
+  `dev/`, findings become Cairn's own proposals. Either way the finding
+  is *deliberated*, not applied raw — the harvest feeds the lifecycle,
+  it does not bypass it.
+
+A companion **core-completeness probe** — the adopter-side check that an
+install merged all its module content and captured its tacit rules in
+`AGENTS.md` — lives in `../bootstrap/fidelity-check.md`. The harvest
+keeps *core* from lagging its best adopter; the probe keeps an
+*install* from silently shipping incomplete. Both are distinct from the
+R-F fidelity gate, which proves only *faithful install*.
+
 ## Where the rationale is still thin
 
 Honesty is part of the method. Two areas the anchors expose as
