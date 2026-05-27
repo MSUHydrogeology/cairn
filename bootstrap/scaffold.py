@@ -1468,6 +1468,149 @@ def parse_slots(text: str) -> list[Slot]:
     return slots
 
 
+# ---------------------------------------------------------------------------
+# The token- + slot-aware 3-way merge engine (R4)
+# ---------------------------------------------------------------------------
+
+class MergeResult(NamedTuple):
+    """Outcome of merging one substituted ``.md`` file."""
+
+    status: str          # "clean" | "conflict" | "slot-removed" | "error"
+    merged: str          # merged text (with conflict markers if conflicted)
+    detail: str          # human-readable note (needs-value tokens, etc.)
+
+
+def _transplant_slots(target_text: str, bodies: dict[str, str]) -> str:
+    """Return *target_text* with each slot whose name is in *bodies*
+    replaced by the supplied body (R4 slot-transplant).  Slots absent from
+    *bodies* (e.g. a slot newly added upstream) are left untouched."""
+    try:
+        tslots = parse_slots(target_text)
+    except SlotError:
+        return target_text  # caller validates target separately
+    lines = target_text.splitlines(keepends=True)
+    for sl in sorted(tslots, key=lambda s: s.open_line, reverse=True):
+        if sl.name not in bodies:
+            continue
+        body = bodies[sl.name]
+        body_lines = [ln + "\n" for ln in body.split("\n")] if body else []
+        lines[sl.open_line + 1:sl.close_line] = body_lines
+    return "".join(lines)
+
+
+def _three_way_merge(
+    ours: str, base: str, theirs: str,
+) -> tuple[str, bool]:
+    """Run ``git merge-file`` (current=ours, base, other=theirs); return
+    ``(merged_text, had_conflict)``.  Conflict markers are labelled
+    ours/base/theirs.  Isolated behind this one function so a stdlib
+    ``difflib`` fallback can replace it for no-git adoptions (a named
+    follow-up).  Raises RuntimeError if git is unavailable / errors."""
+    import subprocess
+    import tempfile
+    with tempfile.TemporaryDirectory() as td:
+        tdp = Path(td)
+        (tdp / "ours").write_text(ours, encoding="utf-8")
+        (tdp / "base").write_text(base, encoding="utf-8")
+        (tdp / "theirs").write_text(theirs, encoding="utf-8")
+        try:
+            r = subprocess.run(
+                ["git", "merge-file", "-p",
+                 "-L", "ours", "-L", "base", "-L", "theirs",
+                 str(tdp / "ours"), str(tdp / "base"), str(tdp / "theirs")],
+                capture_output=True, text=True, timeout=30, check=False,
+            )
+        except (OSError, subprocess.SubprocessError) as exc:
+            raise RuntimeError(f"git merge-file unavailable: {exc}") from exc
+    if r.returncode == 255 or r.returncode < 0:
+        raise RuntimeError(
+            f"git merge-file errored (rc={r.returncode}): {r.stderr.strip()}"
+        )
+    return r.stdout, r.returncode > 0
+
+
+def merge_file(
+    base_raw: str, theirs_raw: str, ours: str, tokens: dict[str, str],
+) -> MergeResult:
+    """Token- + slot-aware 3-way merge of one substituted ``.md`` file.
+
+    * ``base`` = the recorded tokens substituted into the cached **raw**
+      base template (so it equals what was written at install).
+    * ``theirs`` = the same tokens substituted into the **new** upstream
+      template; any upstream token with no recorded value stays as a raw
+      ``{{token}}`` and is reported as *needs-value*.
+    * **Slot-transplant (R4)**: ``ours``' slot bodies are copied into the
+      same-named slots of ``base`` and ``theirs`` so all three inputs are
+      identical inside slots -> ``git merge-file`` produces zero
+      changes/conflicts there while the surrounding prose merges.
+    * A slot **removed** upstream whose ``ours`` body is non-empty is a
+      **fail-closed** flagged decision (status ``slot-removed``) -- the
+      adopter's filled content would otherwise be orphaned.
+
+    ``ours`` is parsed strictly (R8); a malformed ``ours`` raises
+    :class:`SlotError` to the caller (never silently mis-merged).
+    """
+    base = substitute_tokens(base_raw, tokens)
+    theirs = substitute_tokens(theirs_raw, tokens)
+
+    # New upstream tokens with no recorded value remain as {{token}}.
+    needs_value = sorted(set(find_unfilled_tokens(theirs)))
+
+    our_slots = parse_slots(ours)              # strict (R8); may raise
+    our_bodies = {s.name: s.body for s in our_slots}
+    their_names = {s.name for s in parse_slots(theirs)}
+
+    # Fail-closed: a slot removed upstream whose adopter body is non-empty.
+    orphaned = sorted(
+        name for name, body in our_bodies.items()
+        if name not in their_names and body.strip()
+    )
+    if orphaned:
+        return MergeResult(
+            "slot-removed", ours,
+            "upstream removed slot(s) with non-empty adopter content: "
+            + ", ".join(orphaned)
+            + " -- resolve by hand (the filled content would be orphaned).",
+        )
+
+    base_t = _transplant_slots(base, our_bodies)
+    theirs_t = _transplant_slots(theirs, our_bodies)
+    try:
+        merged, had_conflict = _three_way_merge(ours, base_t, theirs_t)
+    except RuntimeError as exc:
+        return MergeResult("error", ours, str(exc))
+    detail = ""
+    if needs_value:
+        detail = "new upstream token(s) need a value: " + ", ".join(needs_value)
+    return MergeResult(
+        "conflict" if had_conflict else "clean", merged, detail,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Verbatim-script hash policy (Part 4) -- hash check, never a text merge
+# ---------------------------------------------------------------------------
+
+def classify_verbatim(
+    ours_bytes: bytes | None, lock_hash: str, theirs_bytes: bytes,
+) -> str:
+    """Classify a verbatim script for upgrade (no text merge, hash only).
+
+    Returns: ``"missing"`` (not on disk); ``"locally-modified"`` (on-disk
+    hash != the lockfile's recorded base hash -> flag, never clobber);
+    ``"up-to-date"`` (already equals the new upstream); or ``"update"``
+    (unmodified vs base and differs from upstream -> safe to update).
+    """
+    if ours_bytes is None:
+        return "missing"
+    ours_h = "sha256:" + _sha256_hex(ours_bytes)
+    if ours_h != lock_hash:
+        return "locally-modified"
+    if ours_bytes == theirs_bytes:
+        return "up-to-date"
+    return "update"
+
+
 def build_arg_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="scaffold.py",
