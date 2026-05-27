@@ -34,7 +34,14 @@ coordination layer.
 
 This file (`AGENTS.md`) is the **operational** reference — the
 rules an agent must follow to make a correct change. The `dev/`
-docs carry the deeper *why*.
+docs carry the deeper *why*. Which file a given rule belongs in —
+and the discipline that keeps this file's operational-safety content
+a compact imperative rather than a process manual — is the
+**doc-governance** routing rule (`doctrine/doc-governance.md`):
+build-the-software and operate-safely rules live here; the
+deliberation and decision process lives in
+`dev/agent_collaboration.md`; each rule has one canonical home and
+the other file only points.
 
 ## The lifecycle
 

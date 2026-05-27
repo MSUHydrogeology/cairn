@@ -4,7 +4,12 @@ This file is the **process doctrine** for {{project_name}}'s human
 + AI team: the role roster, the review loop, and the coordination
 mechanics. `AGENTS.md` carries the operational rules and points
 here for the deeper *why*; the working norms are in
-`collaboration_agreement.md`.
+`collaboration_agreement.md`. The split between this file and
+`AGENTS.md` follows the **doc-governance** routing rule
+(`doctrine/doc-governance.md`): deliberation- and decision-process
+doctrine lives here; build + operate-safely rules live in
+`AGENTS.md`; each rule has one canonical home and the other file
+only points.
 
 ## Team roles
 
