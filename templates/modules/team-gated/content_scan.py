@@ -12,10 +12,16 @@ scanner is **Layer 2/3** of the four-layer model in
 high-noise and incomplete *by design* -- semantic, adversarial injection
 evades any fixed pattern set.  So the scanner **forces human review**
 (the composing caller fails the check on a match); it never *proves* a
-template safe.  It is a Cairn-internal dev tool, composed by
-``scripts/check_cairn.py`` over Cairn's own source prose (Layer 2) and
-run over scaffolded generated output (Layer 3); it is **not** shipped to
-adopters (Rule 8 carries the adopter-side profile-trust obligation).
+file safe.
+
+**Dual role (single-sourced).**  This one file serves two callers: Cairn
+composes it via ``scripts/check_cairn.py`` over its **own** source prose
+(Layer 2) and scaffolded generated output (Layer 3); and the
+``content-security`` module ships it **verbatim to adopters** (installed
+as ``scripts/content_scan.py``) so an adopter's agents can scan
+working-tree files / incoming PRs for these patterns before ingesting
+them.  Same code, no second copy.  (Rule 8 carries the separate
+adopter-side profile-trust obligation.)
 
 What it flags (each a ``pattern_id`` usable in a suppression marker):
 

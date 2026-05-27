@@ -51,10 +51,29 @@ def verify(target: Path) -> int:
         return 1
 
     violations: list[str] = []
+    target_resolved = target.resolve()
     for rec in files:
-        dst_rel = rec.get("dst", "<?>")
+        dst_rel = rec.get("dst")
         recorded = rec.get("hash", "")
-        dst = target / dst_rel
+        # The lockfile is itself a tamper target, so fail closed on a
+        # malformed record *before* reading anything: a record must name a
+        # contained, repo-relative dst with a well-formed sha256 hash.
+        # Without this, a `dst: ../outside` could make the check "attest" a
+        # file outside the installed tree and still print OK (Codex F1).
+        if not isinstance(dst_rel, str) or not dst_rel:
+            violations.append(f"  malformed record (no dst): {rec!r}")
+            continue
+        rel = Path(dst_rel)
+        if rel.is_absolute() or ".." in rel.parts:
+            violations.append(f"  unsafe dst (absolute / .. escape): {dst_rel}")
+            continue
+        if not (isinstance(recorded, str) and recorded.startswith("sha256:")):
+            violations.append(f"  malformed hash for {dst_rel}: {recorded!r}")
+            continue
+        dst = (target / rel).resolve()
+        if dst != target_resolved and target_resolved not in dst.parents:
+            violations.append(f"  dst escapes the target tree: {dst_rel}")
+            continue
         if not dst.is_file():
             violations.append(f"  missing: {dst_rel}")
             continue

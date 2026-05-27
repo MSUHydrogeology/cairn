@@ -45,9 +45,13 @@ downstream adopter's agents. Include a reproducer where possible.
   interpreter — **`python scripts/x.py`**, never `./scripts/x.py` — so a
   hijacked `PATH` cannot substitute a shebang interpreter in a shared CI
   environment. After pulling or upgrading, confirm the installed tree still
-  matches its recorded install with **`python bootstrap/verify_integrity.py
-  --target .`** — a fail-closed SHA-256 check of every file against
-  `dev/cairn-lock.yml` that flags any post-install modification.
+  matches its recorded install: **from a trusted Cairn checkout / release,
+  run `python <cairn>/bootstrap/verify_integrity.py --target <your-repo>`** —
+  a fail-closed SHA-256 check of every file in your tree against its
+  `dev/cairn-lock.yml`, flagging any post-install modification. (Integrity
+  verification is a Cairn-bootstrap operation run against your repo, like
+  `scaffold` / `upgrade` — the verifier ships with Cairn's bootstrap, not
+  into your tree.)
 * **A clean scanner run as proof.** A clean `check_cairn` / content scan plus
   a by-class human injection review is the bar; the scanner alone never
   certifies a template safe.
