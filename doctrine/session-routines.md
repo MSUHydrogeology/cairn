@@ -155,6 +155,23 @@ allowed to become a doctrine change, on a cadence the team can
 absorb. A single incident does not earn a doctrine change here
 unless the Maintainer has classified it high-risk.
 
+### Goodnight foldback-capture — when the fold-back-ledger module is installed
+
+A deployment running the **fold-back-ledger** module adds one more
+standing goodnight step for the full-handoff owner: scan the
+session-day's doctrine activity for **Cairn-portable** candidates —
+generalizable improvements that should fold *up* into Cairn — and
+capture each in the deployment's fold-back ledger. Capture never lapses;
+an **empty capture is success** (do not manufacture marginal
+candidates). Whether to *open a sync* upstream is the separate,
+judgment-gated decision the framework's harvest cadence governs. The
+ledger is a cross-repository export surface, so candidates carry no
+secrets, credentials, internal hostnames/IPs, local paths, or
+proprietary domain detail, and the Maintainer confirms no private
+coordinate leaks before any item becomes a public Cairn proposal. The
+mechanism is specified in `doctrine/fold-back.md`; this step is the
+capture cadence that feeds it.
+
 ## Adaptation
 
 The routines are invariant, but their *weight* tracks the team. A

@@ -112,6 +112,7 @@ _DEFAULT_ON_MODULES: tuple[str, ...] = (
     "lifecycle-metrics",
     "reflections",
     "claim-check",
+    "fold-back-ledger",
 )
 
 
@@ -364,6 +365,16 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
                     "dev/modules/claim-check.md"),
         InstallSpec("default-on/claim_check.py",
                     "scripts/claim_check.py", verbatim=True),
+    ],
+    # The deployment-side fold-back channel (doctrine: doctrine/fold-back.md).
+    # Default-on but omittable: ships the module doctrine + the forkable
+    # ledger artifact into dev/upstream/.  The ledger is a cross-repo export
+    # surface, so its template carries a [SECURITY WARNING] header.
+    "fold-back-ledger": [
+        InstallSpec("default-on/fold-back-ledger.md",
+                    "dev/modules/fold-back-ledger.md"),
+        InstallSpec("default-on/fold-back-ledger-template.md",
+                    "dev/upstream/fold-back-ledger.md"),
     ],
     # team-gated
     "dual-review": [

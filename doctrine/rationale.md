@@ -217,7 +217,11 @@ standing process that closes that gap.
   adopter-lifecycle these very items rode); once Cairn adopts its own
   `dev/`, findings become Cairn's own proposals. Either way the finding
   is *deliberated*, not applied raw — the harvest feeds the lifecycle,
-  it does not bypass it.
+  it does not bypass it. The fold-back ledger itself — the deployment-side
+  artifact, its lifecycle and status vocabulary, the nightly capture, and
+  the scrub-before-export rule — is specified in `doctrine/fold-back.md`;
+  the harvest is the framework-side *pull*, the ledger the deployment-side
+  *push*, and both record here.
 
 A companion **core-completeness probe** — the adopter-side check that an
 install merged all its module content and captured its tacit rules in

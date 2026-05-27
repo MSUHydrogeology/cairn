@@ -18,6 +18,26 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **Fold-back ledger candidates -- doc-governance boundary, reviewer
+  decision-support + a Decision-scribing guard-rail, and a formalized
+  fold-back mechanism (cairn-foldback-ledger-candidates, 2026-05-27).**
+  Three generalizable-doctrine fold-backs from the reference deployment.
+  **(A)** a new [`doctrine/doc-governance.md`](doctrine/doc-governance.md)
+  names the three-bucket routing rule for the two governing-layer docs
+  (build + operate-safely -> `AGENTS.md`; deliberation/decision process ->
+  `agent_collaboration.md`), with a one-canonical-home / thin-pointer rule
+  and a conciseness constraint on `AGENTS.md`'s operational-safety
+  minimum. **(B)** the Internal Reviewer gains post-review
+  **decision-support** ([`doctrine/roles.md`](doctrine/roles.md)), and the
+  `AGENTS.md` template gains a **Decision-commit scribing guard-rail** --
+  verbatim authorization, unambiguous-instruction-or-confirm, Decision-only
+  commit ([`doctrine/lifecycle.md`](doctrine/lifecycle.md) cross-links it).
+  **(C)** the deployment-side improvement channel is now formalized:
+  [`doctrine/fold-back.md`](doctrine/fold-back.md) specifies the fold-back
+  ledger mechanism, a default-on `fold-back-ledger` module ships a forkable
+  ledger (carrying a `[SECURITY WARNING]` export-safety header) into
+  `dev/upstream/`, and the goodnight routine gains a foldback-capture step.
+  Deliberated adopter-side; archived plan `cairn-foldback-ledger-candidates`.
 - **Module upgrade -- a token- + slot-aware 3-way merge so adopters fold
   in new doctrine without losing local customizations
   (cairn-module-upgrade-3way-merge, 2026-05-27).** Cairn installs are no
