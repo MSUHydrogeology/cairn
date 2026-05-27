@@ -18,6 +18,32 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **Module upgrade -- a token- + slot-aware 3-way merge so adopters fold
+  in new doctrine without losing local customizations
+  (cairn-module-upgrade-3way-merge, 2026-05-27).** Cairn installs are no
+  longer one-directional: a customized adopter tree can now pull new Cairn
+  doctrine forward with a **non-clobbering** merge. The install writes two
+  tracked artifacts -- a visible machine lockfile
+  [`dev/cairn-lock.yml`](bootstrap/UPGRADE.md) (the upgrade ancestor +
+  install-side provenance: version/commit, profile, per-file
+  source/hash/token-values) and a scoped base-template cache
+  (`dev/.cairn/base/`, raw templates for the mergeable `.md` only, so the
+  merge needs no Cairn git history under any distribution mode). A new
+  `scaffold.py upgrade` subcommand then offers `--plan` (read-only drift
+  inventory), `--stage` (a reviewable staged merge), and `--apply` (swap,
+  under a safety contract). The merge is **slot-aware** (your filled
+  `cairn:slot` bodies are transplanted so they never conflict and are
+  never clobbered), **token-aware** (the base re-substitutes recorded
+  token values; new upstream tokens surface as "needs a value"), and emits
+  standard conflict markers for genuine local-vs-upstream collisions -- it
+  never auto-resolves. Verbatim reference scripts use a hash policy (update
+  if unmodified; flag, never clobber, if forked). `--apply` advances the
+  lockfile only for a resolved, marker-free tree; `--init-lock` migrates a
+  pre-lockfile tree (token-substituted files become review-only since the
+  original substituted values were never recorded). New: `bootstrap/UPGRADE.md`;
+  `SAFETY.md` Rule 9 (no secret-bearing substitution tokens); the lockfile
+  is the one-way machine authority the fidelity manifest cites. Source: the
+  modflow_tools-hosted `cairn-module-upgrade-3way-merge` arc.
 - **Fold-back: remaining ledger doctrine + goodnight roadmap-hygiene +
   doc-drift tooling (cairn-v0.2-foldback-remaining-ledger, 2026-05-27).**
   The last open fold-back candidates from Cairn's reference
