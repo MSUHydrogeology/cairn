@@ -91,11 +91,17 @@ class TestLockfile:
         assert not (tmp_path / "dev" / "cairn-lock.yml").exists()
 
     def test_secret_token_guard(self) -> None:
-        with pytest.raises(s.PresetError):
-            s._refuse_secret_tokens({"api_token": "x"})
-        with pytest.raises(s.PresetError):
-            s._refuse_secret_tokens({"secret_key": "x"})
-        # benign tokens pass
+        # snake_case
+        for name in ("api_token", "secret_key", "db_password"):
+            with pytest.raises(s.PresetError):
+                s._refuse_secret_tokens({name: "x"})
+        # camelCase / flatcase must also be caught (Antigravity A2)
+        for name in ("apiKey", "secretToken", "dbPassword", "mysecret",
+                     "accessKey", "passwdstr"):
+            with pytest.raises(s.PresetError):
+                s._refuse_secret_tokens({name: "x"})
+        # allow-list overrides; benign tokens pass
+        s._refuse_secret_tokens({"apiKey": "x"}, allow=("apiKey",))
         s._refuse_secret_tokens({"project_name": "x", "test_command": "y"})
 
 
@@ -159,6 +165,27 @@ class TestMerge:
         r = s.merge_file(self.BASE, theirs, self.OURS, self.TOK)
         assert r.status == "slot-removed"
 
+    def test_empty_slot_body_transplants_faithfully(self) -> None:
+        """A3: a single-empty-line slot body must not be dropped during
+        transplant (it would desync the three inputs and spuriously
+        conflict)."""
+        base = ("# {{project_name}}\n"
+                "<!-- cairn:slot n -->\n\n<!-- cairn:end n -->\nFoot.\n")
+        ours = ("# Demo\n"
+                "<!-- cairn:slot n -->\n\n<!-- cairn:end n -->\nFoot.\n")
+        theirs = base.replace("Foot.", "New foot.")
+        r = s.merge_file(base, theirs, ours, self.TOK)
+        assert r.status == "clean", (r.status, r.merged)
+        assert "New foot." in r.merged
+        # the transplant preserved ours faithfully (round-trips to ours-shape)
+        assert s.parse_slots(r.merged)[0].body == ""
+
+    def test_needs_value_is_non_advancing(self) -> None:
+        # upstream introduces a brand-new token with no recorded value
+        theirs = self.BASE.replace("Intro.", "Owner: {{owner_email}}")
+        r = s.merge_file(self.BASE, theirs, self.OURS, self.TOK)
+        assert r.status == "needs-value"  # not "clean" -> won't stage/apply
+
 
 # ---------------------------------------------------------------------------
 # Verbatim hash policy (Part 4)
@@ -180,12 +207,16 @@ class TestVerbatim:
 
 class TestUpgradeModes:
     def _diverge_base(self, target: Path) -> None:
-        """Make the cached base look older + add an adopter-only line, so a
-        real 3-way merge happens with no conflict."""
+        """Model an *old install + adopter customization*: the cached base
+        AND the adopter's file both carry the old header (so it matches the
+        old base), while the current upstream template carries the new
+        header -> a real upstream change folds into ours, and ours' added
+        line is preserved, with no conflict."""
         base = target / "dev" / ".cairn" / "base" / "AGENTS.md"
         base.write_text(base.read_text().replace("# AGENTS.md", "# OLD", 1))
         a = target / "AGENTS.md"
-        a.write_text(a.read_text() + "\n<!-- keep me -->\n")
+        a.write_text(
+            a.read_text().replace("# AGENTS.md", "# OLD", 1) + "\n<!-- keep me -->\n")
 
     def test_plan_writes_nothing(self, tmp_path: Path) -> None:
         assert _install(tmp_path) == 0
@@ -205,8 +236,23 @@ class TestUpgradeModes:
         assert "OLD" not in staged.read_text()  # upstream header folded
         assert s.main(["upgrade", "--target", str(tmp_path), "--apply",
                        "--cairn-root", str(CAIRN_ROOT)]) == 0
-        assert "keep me" in (tmp_path / "AGENTS.md").read_text()
+        ag = tmp_path / "AGENTS.md"
+        assert "keep me" in ag.read_text() and "# OLD" not in ag.read_text()
         assert not (tmp_path / "dev" / ".cairn-upgrade").exists()  # cleaned
+        # C1/A1: apply ADVANCED the machine authority -- the lockfile hash
+        # now matches the applied file, and the base cache is the new
+        # upstream raw template (not the old "# OLD" base).
+        lock = s.read_lockfile(tmp_path)
+        rec = next(r for r in lock["files"] if r["dst"] == "AGENTS.md")
+        assert rec["hash"] == "sha256:" + s._sha256_hex(ag.read_bytes())
+        base = tmp_path / "dev" / ".cairn" / "base" / "AGENTS.md"
+        assert "# OLD" not in base.read_text()  # base advanced
+        assert rec["base_hash"] == "sha256:" + s._sha256_hex(base.read_bytes())
+        # A second upgrade on the now-current tree is a no-op (clean loop).
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        sd = tmp_path / "dev" / ".cairn-upgrade" / "files"
+        assert not (sd.exists() and any(sd.rglob("*")))  # nothing to re-stage
 
     def test_apply_rejects_stale_stage(self, tmp_path: Path) -> None:
         assert _install(tmp_path) == 0
@@ -255,6 +301,40 @@ class TestUpgradeModes:
                 "--cairn-root", str(CAIRN_ROOT)])
         out = capsys.readouterr().out
         assert "new modules available" in out
+
+    def test_slot_removed_is_not_staged(self, tmp_path: Path) -> None:
+        """C2/A4: a slot-removed (or any non-advancing) file is never staged,
+        so it can never be applied."""
+        assert _install(tmp_path) == 0
+        # ours fills a slot; the cached base has the slot; upstream (current
+        # template) for this file is forced to have the slot removed by
+        # blanking the base cache differently -> simulate via a fake file:
+        # use AGENTS.md, give ours a fabricated slot the template lacks.
+        base = tmp_path / "dev" / ".cairn" / "base" / "AGENTS.md"
+        base.write_text(base.read_text()
+                        + "\n<!-- cairn:slot zzz -->\nB\n<!-- cairn:end zzz -->\n")
+        a = tmp_path / "AGENTS.md"
+        a.write_text(a.read_text()
+                     + "\n<!-- cairn:slot zzz -->\nMINE\n<!-- cairn:end zzz -->\n")
+        # current upstream AGENTS.md has no `zzz` slot -> slot-removed.
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        staged = tmp_path / "dev" / ".cairn-upgrade" / "files" / "AGENTS.md"
+        assert not staged.exists()  # slot-removed not staged
+
+    def test_apply_rejects_corrupt_stage(self, tmp_path: Path) -> None:
+        """C3: the on-disk staged set must equal the stage manifest."""
+        assert _install(tmp_path) == 0
+        self._diverge_base(tmp_path)
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        # inject an extra file not in the manifest
+        extra = tmp_path / "dev" / ".cairn-upgrade" / "files" / "dev" / "README.md"
+        extra.parent.mkdir(parents=True, exist_ok=True)
+        extra.write_text("rogue\n")
+        rc = s.main(["upgrade", "--target", str(tmp_path), "--apply",
+                     "--cairn-root", str(CAIRN_ROOT)])
+        assert rc == 1  # exact-set mismatch -> refused
 
 
 # ---------------------------------------------------------------------------

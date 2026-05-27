@@ -1212,9 +1212,13 @@ _LOCK_SCHEMA = 1
 
 #: Token names that must never be recorded in the lockfile (R9): a
 #: substitution token bearing a secret would leak it into a tracked file.
+#: Matched as a **substring anywhere** in the token name (case-insensitive)
+#: so camelCase / flatcase keys are caught too -- `apiKey`, `secretToken`,
+#: `dbPassword`, `mysecret`, `passwdstr` all match, not only snake_case
+#: (Antigravity code-review A2; the allow-list makes false positives cheap,
+#: a silent secret leak is not).
 _SECRET_TOKEN_RE = re.compile(
-    r"(?:^|_)(password|passwd|secret|credential|token|key)(?:$|_)",
-    re.IGNORECASE,
+    r"password|passwd|secret|credential|token|key", re.IGNORECASE,
 )
 
 
@@ -1491,21 +1495,29 @@ class MergeResult(NamedTuple):
     detail: str          # human-readable note (needs-value tokens, etc.)
 
 
-def _transplant_slots(target_text: str, bodies: dict[str, str]) -> str:
-    """Return *target_text* with each slot whose name is in *bodies*
-    replaced by the supplied body (R4 slot-transplant).  Slots absent from
-    *bodies* (e.g. a slot newly added upstream) are left untouched."""
+def _transplant_slots(target_text: str, ours_text: str) -> str:
+    """Return *target_text* with each slot also present in *ours_text*
+    replaced by **ours' exact slot lines** (R4 slot-transplant).  Slots in
+    the target but absent from ours (e.g. a slot newly added upstream) are
+    left untouched.
+
+    Copies the raw line ranges (``splitlines(keepends=True)``) rather than
+    round-tripping through a joined string, so a slot whose body is a
+    single empty line -- or zero lines -- transplants its exact line count
+    and does not desync the three inputs (Antigravity code-review A3)."""
     try:
         tslots = parse_slots(target_text)
+        our_slots = {s.name: s for s in parse_slots(ours_text)}
     except SlotError:
-        return target_text  # caller validates target separately
+        return target_text  # caller validates ours separately (R8)
+    ours_lines = ours_text.splitlines(keepends=True)
     lines = target_text.splitlines(keepends=True)
     for sl in sorted(tslots, key=lambda s: s.open_line, reverse=True):
-        if sl.name not in bodies:
+        osl = our_slots.get(sl.name)
+        if osl is None:
             continue
-        body = bodies[sl.name]
-        body_lines = [ln + "\n" for ln in body.split("\n")] if body else []
-        lines[sl.open_line + 1:sl.close_line] = body_lines
+        lines[sl.open_line + 1:sl.close_line] = \
+            ours_lines[osl.open_line + 1:osl.close_line]
     return "".join(lines)
 
 
@@ -1584,18 +1596,25 @@ def merge_file(
             + " -- resolve by hand (the filled content would be orphaned).",
         )
 
-    base_t = _transplant_slots(base, our_bodies)
-    theirs_t = _transplant_slots(theirs, our_bodies)
+    base_t = _transplant_slots(base, ours)
+    theirs_t = _transplant_slots(theirs, ours)
     try:
         merged, had_conflict = _three_way_merge(ours, base_t, theirs_t)
     except RuntimeError as exc:
         return MergeResult("error", ours, str(exc))
-    detail = ""
+    if had_conflict:
+        return MergeResult("conflict", merged, "")
+    # A clean merge that still carries an unfilled NEW upstream token is
+    # NOT safe to apply (it would write a raw {{token}} into a tracked
+    # doctrine file); surface it as a non-advancing "needs-value" status so
+    # the upgrade neither stages nor applies it (Codex C4 / Antigravity A4).
     if needs_value:
-        detail = "new upstream token(s) need a value: " + ", ".join(needs_value)
-    return MergeResult(
-        "conflict" if had_conflict else "clean", merged, detail,
-    )
+        return MergeResult(
+            "needs-value", merged,
+            "new upstream token(s) need a value before this file can "
+            "advance: " + ", ".join(needs_value),
+        )
+    return MergeResult("clean", merged, "")
 
 
 # ---------------------------------------------------------------------------
@@ -1674,11 +1693,21 @@ def _theirs_bytes(
     return text.encode("utf-8") if text is not None else None
 
 
+#: Kinds that may be staged + applied (they advance the machine
+#: authority).  Every other kind is report-only and is NEVER staged, so it
+#: can never be applied (Codex C2 / Antigravity A4): slot-removed, error,
+#: review-only, needs-value, removed-upstream, verbatim-locally-modified,
+#: verbatim-missing, verbatim-up-to-date, up-to-date.
+_ADVANCING_KINDS = frozenset({"clean", "conflict", "verbatim-update"})
+
+
 class FilePlan(NamedTuple):
     dst: str
-    kind: str            # clean|conflict|slot-removed|review-only|verbatim-*|up-to-date|error
-    merged: str | None   # staged content for .md (None for verbatim/up-to-date)
+    kind: str
+    applied: str | None      # content written on --apply (advancing kinds); else None
     detail: str
+    theirs_raw: str | None    # new upstream RAW template (mergeable) -> refreshed base cache
+    base_cache: str | None    # lockfile base_cache rel path (mergeable) to refresh
 
 
 def _compute_upgrade(
@@ -1698,18 +1727,19 @@ def _compute_upgrade(
         theirs_b = _theirs_bytes(cairn_root, templates_root, src_rel, to_ref)
         if theirs_b is None:
             plans.append(FilePlan(dst, "removed-upstream", None,
-                                  "no longer in upstream templates"))
+                                  "no longer in upstream templates", None, None))
             continue
         if verbatim:
             kind = classify_verbatim(ours_bytes, rec.get("hash", ""), theirs_b)
-            plans.append(FilePlan(dst, f"verbatim-{kind}",
-                                  theirs_b.decode("utf-8", "replace")
-                                  if kind == "update" else None, ""))
+            plans.append(FilePlan(
+                dst, f"verbatim-{kind}",
+                theirs_b.decode("utf-8", "replace") if kind == "update" else None,
+                "", None, None))
             continue
         # Mergeable .md.
         if ours_bytes is None:
             plans.append(FilePlan(dst, "review-only", None,
-                                  "file missing on disk"))
+                                  "file missing on disk", None, None))
             continue
         ours = ours_bytes.decode("utf-8")
         theirs_raw = theirs_b.decode("utf-8")
@@ -1719,15 +1749,22 @@ def _compute_upgrade(
             # No recoverable base (e.g. a --init-lock migrated tree, I3) ->
             # review-only diff, never a pretended 3-way merge.
             plans.append(FilePlan(dst, "review-only", None,
-                                  "no recoverable base (review-only diff)"))
+                                  "no recoverable base (review-only diff)",
+                                  None, None))
             continue
         base_raw = base_path.read_text(encoding="utf-8")
         try:
             res = merge_file(base_raw, theirs_raw, ours, tokens)
         except SlotError as exc:
-            plans.append(FilePlan(dst, "error", None, f"malformed slots: {exc}"))
+            plans.append(FilePlan(dst, "error", None,
+                                  f"malformed slots: {exc}", None, None))
             continue
-        plans.append(FilePlan(dst, res.status, res.merged, res.detail))
+        advancing = res.status in _ADVANCING_KINDS
+        plans.append(FilePlan(
+            dst, res.status,
+            res.merged if advancing else None, res.detail,
+            theirs_raw if advancing else None,
+            cache_rel if advancing else None))
 
     # Structural reconciliation.
     lock_modules = set(lock.get("modules", []))
@@ -1796,39 +1833,60 @@ def _seed_staging_gitignore(target: Path) -> None:
 
 def _write_stage(
     target: Path, plans: list[FilePlan], lock: dict[str, Any],
-    to_ref: str | None,
+    to_ref: str | None, cairn_root: Path,
 ) -> Path:
-    """Write merged/updated results + stage metadata into the (ephemeral,
-    gitignored) staging dir; return its path."""
+    """Write the staged review surface into the ephemeral, gitignored
+    staging dir; return its path.
+
+    Stages **only advancing kinds** (clean / conflict / verbatim-update) --
+    a flagged/non-advancing file is reported but never staged, so it can
+    never be applied (Codex C2 / Antigravity A4).  Also stages the **new
+    base-template** for each advancing mergeable file (under ``new-base/``)
+    + the new version/commit in metadata, so ``--apply`` can advance the
+    lockfile + base cache without needing the Cairn source again (Codex C1
+    / Antigravity A1)."""
     import json
+    import shutil
     stage = target / _STAGING_REL
     if stage.exists():
-        import shutil
         shutil.rmtree(stage)
     stage.mkdir(parents=True, exist_ok=True)
     staged_files: list[str] = []
     ours_hashes: dict[str, str] = {}
+    kinds: dict[str, str] = {}
     for fp in plans:
-        if fp.merged is None:
+        if fp.kind not in _ADVANCING_KINDS or fp.applied is None:
+            continue
+        dst_abs = target / fp.dst
+        # Skip a genuine no-op (the applied content already on disk).
+        if dst_abs.exists() and \
+                dst_abs.read_text(encoding="utf-8") == fp.applied:
             continue
         out = stage / "files" / fp.dst
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(fp.merged, encoding="utf-8")
+        out.write_text(fp.applied, encoding="utf-8")
         staged_files.append(fp.dst)
-        # Snapshot the on-disk *ours* hash at stage time, so --apply can
-        # detect an adopter edit made *between* --stage and --apply (R7a).
-        dst_abs = target / fp.dst
+        kinds[fp.dst] = fp.kind
+        # Snapshot the on-disk *ours* hash at stage time (R7a: detect an
+        # adopter edit made between --stage and --apply).
         if dst_abs.exists():
             ours_hashes[fp.dst] = "sha256:" + _sha256_hex(dst_abs.read_bytes())
+        # Stage the new base-template content (mergeable files only).
+        if fp.theirs_raw is not None and fp.base_cache:
+            nb = stage / "new-base" / fp.dst
+            nb.parent.mkdir(parents=True, exist_ok=True)
+            nb.write_text(fp.theirs_raw, encoding="utf-8")
     meta = {
         "lock_commit": lock.get("cairn_commit"),
         "lock_version": lock.get("cairn_version"),
         "to_ref": to_ref,
         "tokens": lock.get("tokens"),
         "modules": lock.get("modules"),
+        "new_version": _cairn_version(cairn_root),
+        "new_commit": to_ref or _cairn_commit(cairn_root),
         "staged_files": sorted(staged_files),
+        "kinds": kinds,
         "ours_hashes": ours_hashes,
-        "has_conflicts": any(fp.kind == "conflict" for fp in plans),
     }
     (stage / _STAGE_META).write_text(
         json.dumps(meta, indent=2, sort_keys=True), encoding="utf-8")
@@ -1900,7 +1958,8 @@ def _cmd_init_lock(
 
 def _apply_upgrade(target: Path, lock: dict[str, Any]) -> int:
     """`--apply` (R7): consume the staged result under the safety contract,
-    then swap originals + rewrite the lockfile.  Fail-closed."""
+    swap the originals, **advance the lockfile + base cache** to the new
+    version, and clean the stage.  Fail-closed at every gate."""
     import json
     import shutil
     stage = target / _STAGING_REL
@@ -1910,50 +1969,101 @@ def _apply_upgrade(target: Path, lock: dict[str, Any]) -> int:
               file=sys.stderr)
         return 1
     meta = json.loads(meta_path.read_text(encoding="utf-8"))
-    # (a) stage produced from the current lockfile.
+    files_dir = stage / "files"
+    staged_meta = sorted(meta.get("staged_files", []))
+
+    # (a) the stage was produced from the current lockfile + tokens + roster.
     if meta.get("lock_commit") != lock.get("cairn_commit") or \
             meta.get("tokens") != lock.get("tokens") or \
             meta.get("modules") != lock.get("modules"):
         print("error: staged upgrade is stale (lockfile/tokens/roster changed "
               "since --stage); re-run `upgrade --stage`.", file=sys.stderr)
         return 1
-    # (b) no residual conflict markers (P-5: only a resolved tree applies).
-    files_dir = stage / "files"
-    for f in files_dir.rglob("*"):
-        if f.is_file() and _CONFLICT_MARKER in f.read_text(
+    # (b) staged-manifest exactness (Codex C3): the files on disk under the
+    #     stage must be EXACTLY the metadata's staged set -- no missing, no
+    #     extra (a corrupted/hand-edited stage must not apply a subset).
+    on_disk = sorted(
+        str(f.relative_to(files_dir)) for f in files_dir.rglob("*")
+        if f.is_file()
+    ) if files_dir.exists() else []
+    if on_disk != staged_meta:
+        print("error: staged file set does not match the stage manifest "
+              "(corrupted/edited stage); re-run `upgrade --stage`.\n"
+              f"  manifest: {staged_meta}\n  on disk:  {on_disk}",
+              file=sys.stderr)
+        return 1
+    # (c) every staged file is an advancing kind (Codex C2 / Antigravity A4
+    #     defense-in-depth; non-advancing kinds were never staged).
+    kinds = meta.get("kinds", {})
+    non_adv = [d for d in staged_meta if kinds.get(d) not in _ADVANCING_KINDS]
+    if non_adv:
+        print(f"error: staged non-advancing file(s) {non_adv} cannot be "
+              "applied; re-run `upgrade --stage`.", file=sys.stderr)
+        return 1
+    # (d) no residual conflict markers (P-5: only a resolved tree applies).
+    for staged in staged_meta:
+        if _CONFLICT_MARKER in (files_dir / staged).read_text(
                 encoding="utf-8", errors="replace"):
-            print(f"error: staged file {f.relative_to(files_dir)} still has "
-                  "conflict markers; resolve them, then re-run --apply.",
-                  file=sys.stderr)
+            print(f"error: staged file {staged} still has conflict markers; "
+                  "resolve them, then re-run --apply.", file=sys.stderr)
             return 1
-    # (c) the on-disk originals are unchanged *since --stage* (R7a -- detect
-    #     an adopter edit between staging and applying).  Compared against
-    #     the stage-time snapshot, NOT the lockfile clean-install hash (a
-    #     customized file differs from the latter by design).
+    # (e) the on-disk originals are unchanged *since --stage* (R7a),
+    #     compared to the stage-time snapshot (NOT the clean-install hash --
+    #     a customized file differs from that by design).
     ours_hashes = meta.get("ours_hashes", {})
-    for staged in sorted(meta.get("staged_files", [])):
+    for staged in staged_meta:
         dst_abs = target / staged
         snap = ours_hashes.get(staged)
         if snap is not None and dst_abs.exists():
-            cur = "sha256:" + _sha256_hex(dst_abs.read_bytes())
-            if cur != snap:
+            if "sha256:" + _sha256_hex(dst_abs.read_bytes()) != snap:
                 print(f"error: {staged} changed on disk since --stage; "
                       "re-run `upgrade --stage`.", file=sys.stderr)
                 return 1
+
     # Swap staged files into place.
-    applied = 0
-    for staged in sorted(meta.get("staged_files", [])):
-        src = files_dir / staged
+    for staged in staged_meta:
         dst_abs = target / staged
-        if src.exists():
-            _assert_safe_write(dst_abs, target)
-            dst_abs.parent.mkdir(parents=True, exist_ok=True)
-            dst_abs.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
-            applied += 1
+        _assert_safe_write(dst_abs, target)
+        dst_abs.parent.mkdir(parents=True, exist_ok=True)
+        dst_abs.write_text(
+            (files_dir / staged).read_text(encoding="utf-8"), encoding="utf-8")
+    # Advance the base cache to the new upstream raw templates (the next
+    # upgrade's ancestor).
+    new_base = stage / "new-base"
+    if new_base.exists():
+        for nb in new_base.rglob("*"):
+            if not nb.is_file():
+                continue
+            cache_abs = target / _BASE_CACHE_REL / nb.relative_to(new_base)
+            _assert_safe_write(cache_abs, target)
+            cache_abs.parent.mkdir(parents=True, exist_ok=True)
+            cache_abs.write_text(nb.read_text(encoding="utf-8"), encoding="utf-8")
+
+    # Advance the lockfile (Codex C1 / Antigravity A1): bump version/commit;
+    # recompute each applied file's hash from the NOW-on-disk content (so a
+    # resolved conflict is recorded correctly) + refresh the base_hash from
+    # the swapped-in base cache.  Non-applied records carry over unchanged.
+    new_lock = dict(lock)
+    new_lock["cairn_version"] = meta.get("new_version", lock.get("cairn_version"))
+    new_lock["cairn_commit"] = meta.get("new_commit", lock.get("cairn_commit"))
+    new_files: list[dict[str, Any]] = []
+    staged_set = set(staged_meta)
+    for rec in lock.get("files", []):
+        rec = dict(rec)
+        if rec["dst"] in staged_set:
+            rec["hash"] = "sha256:" + _sha256_hex((target / rec["dst"]).read_bytes())
+            if rec.get("base_cache"):
+                cache_abs = target / rec["base_cache"]
+                if cache_abs.exists():
+                    rec["base_hash"] = \
+                        "sha256:" + _sha256_hex(cache_abs.read_bytes())
+        new_files.append(rec)
+    new_lock["files"] = new_files
+    (target / _LOCKFILE_REL).write_text(_emit_lock_yaml(new_lock), encoding="utf-8")
+
     shutil.rmtree(stage)
-    print(f"Applied {applied} file(s). Re-run a clean install or "
-          "`upgrade --stage` to refresh the lockfile + base cache to the new "
-          "version.")
+    print(f"Applied {len(staged_meta)} file(s); advanced {_LOCKFILE_REL} + the "
+          f"base cache to {new_lock['cairn_commit']}.")
     return 0
 
 
@@ -2008,7 +2118,7 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
     citation = _citation_ok(target, lock)
 
     if args.stage:
-        _write_stage(target, plans, lock, args.to)
+        _write_stage(target, plans, lock, args.to, cairn_root)
         _print_upgrade_report(plans, structural, citation, mode="stage")
         print(f"\nStaged under {_STAGING_REL}/ . Resolve any conflicts, then "
               "`upgrade --apply --target <repo>`.")
