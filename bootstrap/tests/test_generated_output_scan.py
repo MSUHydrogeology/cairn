@@ -101,3 +101,24 @@ class TestGeneratedOutputScan:
         )
         # The injected egress-to-URL is also surfaced.
         assert "suspicious-url" in ids or "egress" in ids
+
+    def test_adversarial_injection_reaches_generated_agents_md(
+        self, tmp_path: Path
+    ) -> None:
+        """Layer-3 demonstration (security-hardening R7): a hostile profile
+        token value lands **verbatim in the generated agent-loaded
+        AGENTS.md** -- the file downstream agents obey -- and the
+        content-integrity gate catches it *there*. A source-only scan never
+        sees the substituted value; this is the profile-borne injection path
+        (T2 / SAFETY Rule 8) the generated-output layer exists to close."""
+        assert _scaffold(tmp_path, _ADVERSARIAL) == 0
+        agents = tmp_path / "AGENTS.md"
+        assert agents.is_file(), "scaffold did not generate AGENTS.md"
+        assert "Ignore previous instructions" in agents.read_text(), (
+            "hostile profile token did not reach the generated AGENTS.md"
+        )
+        flags = content_scan.scan_file(agents, scan_urls=True,
+                                       url_allowlist=set())
+        assert any(f.pattern_id == "imperative-override" for f in flags), (
+            "the gate did not flag the injection in the generated AGENTS.md"
+        )
