@@ -124,12 +124,17 @@ proposal. Where the proposal records *what and why*, the plan
 records *how the work was carried out, and that it was verified*.
 
 ```
-open --> executing --> review --> archived
+open --> [awaiting-plan-review] --> executing --> review --> archived
 ```
 
 * **open** — the plan-open commit creates the plan and archives
   the source proposal: the deliberation is closed and carried into
   an actionable execution artifact.
+* **awaiting-plan-review** — *(only for a review-required plan, see
+  the plan-review precondition below)* the plan is open but
+  implementation has not started: it waits for its plan-review section
+  to land. A plan marked `Plan review: not required` skips this status
+  and goes straight to `executing`.
 * **executing** — implementation commits land.
 * **review** — a code-review pass examines the implementation.
 * **archived** — after review, lasting truth migrates to durable
@@ -152,11 +157,36 @@ plan-archive commit is therefore always **distinct** from the
 implementing commits — it is the artifact of "review happened, and
 the loop is closed."
 
+### The plan-review precondition
+
+Symmetric to the plan-archive precondition, at the *entry* boundary:
+**a review-required plan does not start implementation until its
+plan-review section has landed.** The plan-archive gate guards
+*review-before-close*; this gate guards *review-before-implement*. Both
+are needed for the review system to work end-to-end — without the entry
+gate, an agent slides from plan-open straight into implementation and the
+warranted review never happens.
+
+The gate is **explicit, not remembered**: every plan (and its source
+proposal) carries a mandatory **`Plan review: required(<tier>) | not
+required(<rationale>)`** line. The author states it; the Maintainer
+ratifies; there is **no silent default** either way. When `required`, the
+plan opens in **`awaiting-plan-review`** and its plan-open and
+first-implementation commits stay **distinct** (so implementation cannot
+front-run the review); it advances to `executing` only once the review
+section lands. When `not required`, the rationale is on the record and the
+plan may combine plan-open with first implementation (fast multi-stage).
+
+The review *tier* (Internal-floor vs. an External round) follows the
+review-tier / structural-independence framing in `dual-review.md`.
+
 ### Fast multi-stage
 
 When the implementation itself fits in one commit but the work
 still touches multiple areas or carries follow-ups, the plan-open
-and first-implementation commits may **combine**. The plan-archive
+and first-implementation commits may **combine** — but only for a plan
+marked `Plan review: not required` (a review-required plan keeps them
+distinct, per the plan-review precondition above). The plan-archive
 commit still stands alone, after review. The lifecycle compresses;
 it does not collapse.
 

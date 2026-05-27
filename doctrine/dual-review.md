@@ -147,6 +147,14 @@ Code review's floor is stricter than Internal review's: **not the
 implementing agent**, because freshly written code is hard to spot
 mistakes in for someone carrying the same reasoning patterns.
 
+The *entry*-side counterpart is the **plan-review precondition**
+(`lifecycle.md`): a review-required plan does not start implementation
+until its plan-review section lands. The `Plan review: required(<tier>)`
+line names the tier, and that tier is chosen on the same
+structural-independence axis as any other review here — an Internal-floor
+read for an ordinary plan, a different-agent-type External round for a
+high-risk or contract-touching one.
+
 ## Review expectations — the clean-pass trap
 
 A review that finds zero issues — or only minor style nits — on a

@@ -60,6 +60,15 @@ archived together) or **non-trivial** (multiple commits or areas,
 multi-stage sequencing, or deferred follow-ups — it opens a plan;
 see `../plans/_template.md`).
 
+For non-trivial work, the `**Plan review**` metadata line states the
+anticipated plan-review tier — `required(<tier>)` or `not
+required(<rationale>)`, with **no silent default** — which the Maintainer
+ratifies in the Decision and which the opened plan inherits. A
+`required` plan opens in `awaiting-plan-review` and does not start
+implementation until its plan-review section lands (the
+*review-before-implement* gate; see `../plans/_template.md` > "The
+plan-review precondition").
+
 ## File moves
 
 An **accepted** proposal stays in `dev/proposals/` after the
@@ -78,6 +87,7 @@ open a new proposal that supersedes it.
 **Date opened**: {{YYYY-MM-DD}}
 **Status**: proposed
 **Touches**: {{the files / surfaces this changes}}
+**Plan review**: {{if non-trivial — required(<tier>) | not required(<rationale>); ratified at Decision}}
 
 ## Context
 

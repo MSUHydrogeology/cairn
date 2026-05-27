@@ -8,11 +8,16 @@
 ## The plan lifecycle
 
 ```
-open -> executing -> review -> archived
+open -> [awaiting-plan-review] -> executing -> review -> archived
 ```
 
 * **open** — the plan-open commit creates the plan and archives
   the source proposal.
+* **awaiting-plan-review** — *(only for a review-required plan; see the
+  plan-review precondition below)* the plan is open but implementation has
+  not started, waiting for its plan-review section to land. A plan marked
+  `Plan review: not required` skips this status and goes straight to
+  `executing`.
 * **executing** — implementation commits land.
 * **review** — a code-review pass examines the implementation.
 * **archived** — after review, lasting truth migrates to durable
@@ -42,10 +47,29 @@ commitment, not chosen after the fact.
 plan-archive commit is always distinct from the implementing
 commits — it is the artifact of "review happened, and the loop is
 closed". When the implementation fits in one commit, plan-open and
-that commit may combine; the plan-archive commit still stands
-alone, after review.
+that commit may combine — but only for a plan marked `Plan review: not
+required` (see the plan-review precondition below); the plan-archive
+commit still stands alone, after review.
 
 Code review's reviewer is **not the implementing agent**.
+
+## The plan-review precondition
+
+Symmetric to the plan-archive precondition, at the *entry* boundary:
+**a review-required plan does not start implementation until its
+plan-review section has landed.** The plan-archive gate guards
+*review-before-close*; this gate guards *review-before-implement*.
+
+The gate is **explicit, not remembered**: the `**Plan review**` metadata
+line above is mandatory — `required(<tier>)` or `not required(<rationale>)`,
+with **no silent default**. The author states it; the Maintainer ratifies.
+When `required`, the plan opens in **`awaiting-plan-review`** and its
+plan-open and first-implementation commits stay **distinct** (implementation
+cannot front-run the review); it advances to `executing` only once the
+review section lands. When `not required`, the rationale is on the record
+and the plan may combine plan-open with first implementation. The review
+*tier* follows the structural-independence framing in `dual-review.md`. See
+the lifecycle doctrine for the full statement.
 
 ## The planning handshake
 
@@ -72,6 +96,7 @@ plan quietly grows.
 
 **Source proposal**: {{link to dev/proposals/archive/...}}
 **Status**: open
+**Plan review**: {{required(<tier>) | not required(<rationale>)}}
 **Last update**: {{YYYY-MM-DD}}
 
 ## Source proposal
