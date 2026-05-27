@@ -18,6 +18,43 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **Security hardening -- SSRF guard, derived Bandit gate, supply-chain
+  tooling, and a public security contract
+  (cairn-v0.2-security-hardening, 2026-05-27).** A single hardening cut from a
+  full security review, before the v0.2.0 tag (External plan + code review:
+  Codex; Antigravity approved the code unconditionally). The shipped
+  executable surface is now defended end-to-end:
+  * **SSRF-guarded external link probe.** `link_check.py --check-external`
+    is http(s)-only with **per-hop host validation** (allow only
+    `is_global` addresses -- loopback / private / link-local / CGNAT
+    `100.64.0.0/10` / reserved / multicast refused, IPv4 + IPv6), manual
+    redirects with a hop cap, no proxy/auth/netrc handlers, and an
+    `--allow-host` opt-out; the DNS-rebind residual is documented.
+  * **The Bandit gate stopped being blind.** `test_security_lint.py` now
+    **derives** its scan set from `_MODULE_MAPPINGS` + the dev executables
+    (`scripts/*.py`, `bootstrap/*.py`) as explicit files, so a newly-shipped
+    script can't escape it (the prior hand-list missed three team-gated
+    scripts and scanned `scripts/` as a non-recursing directory). The B613
+    trojansource HIGH in `content_scan.py` was cleared (escape forms +
+    a bytes-level guard); the post-commit `intent` hook quotes its baked-in
+    paths with `shlex.quote`; `lifecycle_metrics` CSV output neutralizes
+    formula-injection; the homoglyph check covers more confusable scripts.
+  * **Adopter-facing supply-chain controls.** A new **`content-security`**
+    team-gated module ships the content-integrity scanner
+    (`content_scan.py`, single-sourced -- the same file Cairn's own
+    `check_cairn.py` composes) so adopters can scan working-tree files / PRs
+    for prompt-injection before agents ingest them; and
+    `bootstrap/verify_integrity.py` is a **fail-closed, lockfile-backed**
+    SHA-256 install-integrity check (path-contained against a tampered
+    lockfile) that detects post-install file modification.
+  * **Release + doctrine surface.** `bootstrap/security_check.py` is a
+    fail-closed **release** gate (fails, never skips, when Bandit is absent);
+    `SAFETY.md` Rule 7 enumerates the full executable surface + documented
+    residual risks; and a public [`SECURITY.md`](SECURITY.md) states the
+    threat model, supported versions, vuln reporting, and the release
+    checklist. Source: the modflow_tools-hosted `cairn-v0.2-security-hardening`
+    arc.
+
 - **Fold-back ledger candidates -- doc-governance boundary, reviewer
   decision-support + a Decision-scribing guard-rail, and a formalized
   fold-back mechanism (cairn-foldback-ledger-candidates, 2026-05-27).**
