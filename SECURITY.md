@@ -44,7 +44,10 @@ downstream adopter's agents. Include a reproducer where possible.
 * **An unverified shipped script.** Run the shipped tools through a trusted
   interpreter — **`python scripts/x.py`**, never `./scripts/x.py` — so a
   hijacked `PATH` cannot substitute a shebang interpreter in a shared CI
-  environment.
+  environment. After pulling or upgrading, confirm the installed tree still
+  matches its recorded install with **`python bootstrap/verify_integrity.py
+  --target .`** — a fail-closed SHA-256 check of every file against
+  `dev/cairn-lock.yml` that flags any post-install modification.
 * **A clean scanner run as proof.** A clean `check_cairn` / content scan plus
   a by-class human injection review is the bar; the scanner alone never
   certifies a template safe.

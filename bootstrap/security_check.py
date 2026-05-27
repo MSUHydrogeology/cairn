@@ -57,15 +57,20 @@ def scan_targets() -> list[str]:
     adopters) + Cairn's own dev executables (``scripts/*.py`` + the
     scaffold), as explicit files. A newly-shipped script is covered
     automatically; there is no hand-maintained list to drift."""
-    targets: set[str] = {"bootstrap/scaffold.py"}
+    targets: set[str] = set()
     for specs in _MODULE_MAPPINGS.values():
         for spec in specs:
             if spec.verbatim and spec.src.endswith(".py"):
                 targets.add(f"templates/modules/{spec.src}")
-    targets.update(
-        str(p.relative_to(CAIRN_ROOT))
-        for p in (CAIRN_ROOT / "scripts").glob("*.py")
-    )
+    # Cairn's own dev executables: scripts/*.py + the top-level bootstrap/
+    # tools (scaffold, security_check, verify_integrity). Non-recursive, so
+    # bootstrap/tests/ -- which carry intentional attack fixtures -- are not
+    # scanned.
+    for sub in ("scripts", "bootstrap"):
+        targets.update(
+            str(p.relative_to(CAIRN_ROOT))
+            for p in (CAIRN_ROOT / sub).glob("*.py")
+        )
     return sorted(targets)
 
 
