@@ -65,6 +65,7 @@ import datetime
 import hashlib
 import json
 import os
+import shlex
 import subprocess
 import sys
 from pathlib import Path, PurePosixPath
@@ -741,7 +742,15 @@ def _build_hook_block(python_exe: str, intent_path: Path) -> str:
     shell word-splitting of paths with spaces / newlines), then invokes
     this tool's ``_auto_release`` by **file path** under the captured
     interpreter (no ``python -m`` PATH/package assumption).
+
+    The baked-in interpreter and script paths are emitted with
+    ``shlex.quote`` (single-quoted), so a path containing a space, a
+    double-quote, or shell metacharacters (``$(...)`` / backticks) cannot
+    break the hook or be evaluated by ``/bin/sh`` -- double-quoting would
+    still expand ``$`` and command substitution (security-hardening R13).
     """
+    py_q = shlex.quote(python_exe)
+    path_q = shlex.quote(str(intent_path))
     body = (
         'COMMIT_SHA=$(git rev-parse HEAD)\n'
         # Portable mktemp: an explicit template path works identically on
@@ -752,7 +761,7 @@ def _build_hook_block(python_exe: str, intent_path: Path) -> str:
         # too; it is a no-op for ordinary commits with a parent.
         'git diff-tree --root --no-commit-id --name-only -r -z HEAD '
         '> "${PATHS_TMP}"\n'
-        f'"{python_exe}" "{intent_path}" _auto_release '
+        f'{py_q} {path_q} _auto_release '
         '--commit "${COMMIT_SHA}" --paths-from-file "${PATHS_TMP}" || true\n'
         'rm -f "${PATHS_TMP}"'
     )

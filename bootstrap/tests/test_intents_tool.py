@@ -319,6 +319,23 @@ class TestHookDiversity:
         text = hook.read_text()
         assert "cairn/intent/post-commit BEGIN" in text
 
+    def test_hook_block_shlex_quotes_metachar_paths(self) -> None:
+        """The baked-in interpreter / script paths are single-quoted via
+        shlex.quote, so a path with a space, a double-quote, or a shell
+        substitution can't break the hook or be evaluated by /bin/sh
+        (security-hardening R13)."""
+        import shlex as _shlex
+        mod = _load_tool(TOOL_TEMPLATE, name="p5_hookquote")
+        evil = Path("/x/$(touch pwned)/intent.py")
+        block = mod._build_hook_block("/usr/bin/python3", evil)
+        # The dangerous path appears only inside its shlex-quoted (single-
+        # quoted) form -- never double-quoted (which /bin/sh would expand).
+        assert _shlex.quote(str(evil)) in block
+        assert '"/x/$(touch pwned)/intent.py"' not in block
+        # A space-bearing interpreter path is also quoted.
+        block2 = mod._build_hook_block("/opt/my python/bin/python3", evil)
+        assert _shlex.quote("/opt/my python/bin/python3") in block2
+
     def test_chain_preserves_existing_plain_hook(self, tmp_path) -> None:
         tool = _git_repo(tmp_path)
         hook = self._hook(tmp_path)
