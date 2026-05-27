@@ -117,21 +117,21 @@ _EGRESS_RE = re.compile(
 _URL_RE = re.compile(r"https?://([^/\s)\"'>]+)", re.I)
 
 # Zero-width + bidi control characters.  Members are literal control
-# chars (with a naming comment each), matching the pre-existing style;
-# the per-char comment is what keeps them readable despite being
-# invisible.  Coverage expanded per code-review P3 (word joiner U+2060;
-# LRM U+200E / RLM U+200F).
+# chars (with a naming comment each), as **escape forms** (\uXXXX), never raw characters, so this scanner
+# carries none of the invisible code points it detects (trojansource-safe,
+# bandit B613); the per-char comment names each.  Coverage expanded per
+# code-review P3 (word joiner U+2060; LRM U+200E / RLM U+200F).
 _ZERO_WIDTH = {
-    "​",  # zero-width space
-    "‌",  # zero-width non-joiner
-    "‍",  # zero-width joiner
-    "⁠",  # word joiner
-    "﻿",  # zero-width no-break space / BOM
+    "\u200b",  # zero-width space
+    "\u200c",  # zero-width non-joiner
+    "\u200d",  # zero-width joiner
+    "\u2060",  # word joiner
+    "\ufeff",  # zero-width no-break space / BOM
 }
 _BIDI = (
     {chr(c) for c in range(0x202A, 0x202F)}    # U+202A-202E embeddings/overrides
     | {chr(c) for c in range(0x2066, 0x206A)}  # U+2066-2069 isolates
-    | {"‎", "‏"}                      # left-to-right / right-to-left marks
+    | {"\u200e", "\u200f"}                    # LRM / RLM marks
 )
 
 # Script ranges for the per-token homoglyph check.
@@ -257,7 +257,7 @@ def _scan_unicode(lines: list[str], leading_bom: bool):
             if ch in _ZERO_WIDTH:
                 # A leading U+FEFF at the very start of the file (line 1,
                 # col 0) is a benign BOM -- ignore it there only.
-                if ch == "﻿" and i == 1 and idx == 0 and leading_bom:
+                if ch == "\ufeff" and i == 1 and idx == 0 and leading_bom:
                     continue
                 yield i, f"zero-width character U+{ord(ch):04X}"
                 break
@@ -316,7 +316,7 @@ def scan_text(
     overrides the default allowlist file.
     """
     allowlist = url_allowlist if url_allowlist is not None else load_url_allowlist()
-    leading_bom = text[:1] == "﻿"
+    leading_bom = text[:1] == "\ufeff"
     lines = text.split("\n")
     suppressed = _parse_suppressions(lines)
 

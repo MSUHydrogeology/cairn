@@ -32,9 +32,38 @@ from scripts.content_scan import (  # noqa: E402
 
 REDTEAM = Path(__file__).resolve().parent / "fixtures" / "redteam"
 
+CONTENT_SCAN_SRC = (
+    Path(__file__).resolve().parent.parent.parent / "scripts" / "content_scan.py"
+)
+
+#: The invisible code points the scanner detects -- and must NOT itself
+#: carry as raw characters (trojansource / bandit B613 hygiene).
+_BANNED_CODEPOINTS = (
+    {0x200B, 0x200C, 0x200D, 0x200E, 0x200F, 0x2060, 0xFEFF}
+    | set(range(0x202A, 0x202F))
+    | set(range(0x2066, 0x206A))
+)
+
 
 def _ids(flags: list[Flag]) -> set[str]:
     return {f.pattern_id for f in flags}
+
+
+class TestSourceCarriesNoRawInvisibles:
+    """Security-hardening R5: the scanner must carry its detection set as
+    escape forms, never raw characters, so it does not smuggle the very
+    code points it exists to catch."""
+
+    def test_no_raw_banned_codepoints_in_source(self) -> None:
+        text = CONTENT_SCAN_SRC.read_text(encoding="utf-8")
+        hits = sorted({hex(ord(c)) for c in text if ord(c) in _BANNED_CODEPOINTS})
+        assert hits == [], f"raw banned code points in content_scan.py: {hits}"
+
+    def test_scanner_still_detects_after_escaping(self) -> None:
+        # Escaping the source must not change behavior at runtime.
+        assert "unicode-bidi" in _ids(scan_text("legit\u202etext"))
+        assert "unicode-zero-width" in _ids(scan_text("legit\u200bword"))
+        assert "unicode-zero-width" in _ids(scan_text("a\u2060b"))  # word joiner
 
 
 # ---------------------------------------------------------------------------
