@@ -43,6 +43,15 @@ deliberation and decision process lives in
 `dev/agent_collaboration.md`; each rule has one canonical home and
 the other file only points.
 
+**Where `doctrine/…` references resolve.** Throughout this file and the
+`dev/` tree, a reference to `doctrine/<name>.md` points to **Cairn's
+published methodology doctrine** — the repository you adopted from — **not
+a file in your own tree**. The bootstrap installs your `AGENTS.md` + `dev/`
+tree and the modules you selected, *not* Cairn's `doctrine/` directory; the
+doctrine is the shared methodology you consult in the Cairn repository (or
+its docs). So a `doctrine/…` reference is a citation, never a broken local
+link.
+
 ## The lifecycle
 
 A substantive change — a new abstraction, a cross-cutting

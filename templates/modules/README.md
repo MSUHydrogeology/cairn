@@ -34,6 +34,7 @@ instance; the module file states the tool's contract.
 | default-on | `lifecycle-metrics` | default; removed only for the smallest adoptions |
 | default-on | `claim-check` | default |
 | default-on | `reflections` | multi-agent adoptions; a solo, single-agent project may omit (the cross-agent handoff function disappears) |
+| default-on | `fold-back-ledger` | default; the deployment-side improvement channel back to Cairn — a solo, single-deployment adopter that will never fold doctrine up may omit |
 | team-gated | `dual-review` | the team has two agent types, or multiple humans |
 | team-gated | `domain-agents` | the codebase is large *and* the agent team is multiple |
 | team-gated | `legacy-agent` | the codebase is legacy (the Age axis) |
