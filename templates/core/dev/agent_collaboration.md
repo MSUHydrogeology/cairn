@@ -129,7 +129,12 @@ For concurrent teams: the shared communication files above are
 the natural starting set for the **required-signal-read** mode of
 the work-intent protocol (`doctrine/coordination.md` > "Required
 signal+read for coordination-surface files"). The team extends
-the set as additional coordination-surface files emerge.
+the set as additional coordination-surface files emerge. The
+*broader* Tier-2 work-intent obligation a concurrent team takes on
+— covering edits beyond the coordination surfaces — is **not** part
+of this always-on baseline; it arrives with the work-intent
+convention filled into the slot below, so a solo or sequential team
+is never held to it.
 
 <!-- cairn:slot coordination-additions -->
 (Higher coordination tiers — a pre-edit work-intent convention, a

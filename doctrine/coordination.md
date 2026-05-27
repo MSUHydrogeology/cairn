@@ -105,6 +105,31 @@ framing. Each adopting team identifies its own required-mode set
 — the structural rule is doctrine; the file list is adopter-
 local.
 
+**Required `claim` for every nontrivial edit (Tier-2-enabled
+teams).** The required-signal-read mode above is the *narrow*
+obligation — the coordination-surface subset, where **both** halves
+are required: a contributor declares an intent *and* reads the
+active set. A concurrent team that has enabled Tier 2 takes on a
+**broader** one: a `claim` is required before **every nontrivial
+edit**, not only on coordination-surface files. "Nontrivial" means
+any change that touches tracked files, alters behavior / doctrine /
+tests / docs, or plausibly overlaps another contributor's work;
+trivial read-only checks and one-line mechanical follow-ups with no
+collision surface are exempt. The two obligations **compose**:
+every nontrivial edit needs the `claim` (the pre-edit signal), and
+the coordination-surface subset *additionally* needs the `list`
+read (because a silent concurrent edit there merges cleanly yet
+loses the signal each side assumed the other had seen).
+
+This broad requirement is the **Tier-2-enabled posture** — it earns
+its keep only at concurrency, which is exactly where Tier 2 is
+gated. A solo or sequential team running only the Tier-1 baseline
+keeps the courtesy framing and is **not** forced to claim an intent
+for routine edits; the weight tracks the team. And note that even
+required, a `claim` remains a **courtesy signal, not a lock**: it
+does not block the edit or reserve the path, it makes an impending
+overlap *visible* before the edit lands.
+
 ### Why the substrate earns adoption — signal-now, benefit-later
 
 A coordination signal a contributor must emit *before* the payoff

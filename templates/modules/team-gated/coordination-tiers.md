@@ -27,6 +27,22 @@ Merged into the coordination section:
 > tool that implements this (`tools/intent.py`, installed with this
 > module); see "The work-intent tool" below.
 >
+> **Required scope (this concurrent team).** A `claim` is
+> **required before every nontrivial edit** — any change that
+> touches tracked files, alters behavior / doctrine / tests / docs,
+> or plausibly overlaps another contributor's work. Trivial
+> read-only checks and one-line mechanical follow-ups with no
+> collision surface are exempt. The **coordination-surface** subset
+> — the roadmap boards, the changelog, handoff and collaboration-norm
+> docs — additionally requires the **`list`** read before editing
+> (both halves: signal *and* read), because a silent concurrent edit
+> there merges cleanly yet loses the coordination signal. Even
+> required, the claim stays a **courtesy signal, not a lock**: it
+> surfaces an overlap before the edit lands, it does not block the
+> edit or reserve the path. (A solo or sequential team runs none of
+> this — the broad requirement is the *Tier-2* posture, gated to
+> concurrency.)
+>
 > **Tier 3 — typed activity events (high-concurrency teams).** An
 > append-only log of typed events — `start`, `heads_up`, `query`,
 > `handoff`, `ack`, `release` — a typed channel, not a chat

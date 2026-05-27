@@ -52,6 +52,23 @@ and a new empty `Unreleased` is started above.
     [`doctrine/session-routines.md`](doctrine/session-routines.md) gains
     the goodnight **staleness sweep** (adopter-tunable windows; sweep
     cross-cutting backlogs nightly; file-readable via the date markers).
+  * **(C) broad work-intents, Tier-2-gated.** A `claim` is now
+    **required before every nontrivial edit** (not only on
+    coordination-surface files) — the *Tier-2-enabled* posture, gated to
+    concurrency. The coordination-surface subset additionally requires
+    the `list` read; a solo / sequential team keeps the courtesy framing;
+    and even required, the claim stays a **courtesy signal, not a lock**.
+    The obligation lands in
+    [`doctrine/coordination.md`](doctrine/coordination.md) and the
+    team-gated
+    [`coordination-tiers`](templates/modules/team-gated/coordination-tiers.md)
+    module — **not** the always-on
+    [`agent_collaboration.md`](templates/core/dev/agent_collaboration.md)
+    baseline (Internal I1 / External R1), which keeps only the narrow
+    required-signal-read pointer. A generated-output regression
+    (`bootstrap/tests/test_coordination_broad_intent.py`) pins the
+    boundary: the broad obligation is absent from a minimal install and
+    present in a coordination-tiers install.
 
 - **Governance presets — the onboarding fast path
   (cairn-v0.2-p4-governance-presets, 2026-05-26).** An adopter can now pick
