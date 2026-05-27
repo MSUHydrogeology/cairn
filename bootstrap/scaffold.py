@@ -1611,6 +1611,403 @@ def classify_verbatim(
     return "update"
 
 
+# ---------------------------------------------------------------------------
+# The `upgrade` subcommand (Chunk 5/6): --plan / --stage / --apply / --init-lock
+# ---------------------------------------------------------------------------
+
+_STAGING_REL = "dev/.cairn-upgrade"          # ephemeral, gitignored (R3)
+_STAGE_META = "stage-metadata.json"
+_CONFLICT_MARKER = "<<<<<<< ours"
+
+
+def _cairn_is_git(cairn_root: Path) -> bool:
+    import subprocess
+    try:
+        r = subprocess.run(
+            ["git", "-C", str(cairn_root), "rev-parse", "--is-inside-work-tree"],
+            capture_output=True, text=True, timeout=10, check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return r.returncode == 0 and r.stdout.strip() == "true"
+
+
+def _theirs_text(
+    cairn_root: Path, templates_root: Path, src_rel: str, to_ref: str | None,
+) -> str | None:
+    """The upstream template for *src_rel* at the target version: the
+    currently-running tree (``to_ref is None``) or, **git-checkout-only**
+    (P-4), ``git show <to_ref>:templates/<src_rel>``.  None if absent."""
+    if to_ref is None:
+        p = templates_root / src_rel
+        return p.read_text(encoding="utf-8") if p.exists() else None
+    import subprocess
+    try:
+        r = subprocess.run(
+            ["git", "-C", str(cairn_root), "show",
+             f"{to_ref}:templates/{src_rel}"],
+            capture_output=True, text=True, timeout=30, check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return r.stdout if r.returncode == 0 else None
+
+
+def _theirs_bytes(
+    cairn_root: Path, templates_root: Path, src_rel: str, to_ref: str | None,
+) -> bytes | None:
+    if to_ref is None:
+        p = templates_root / src_rel
+        return p.read_bytes() if p.exists() else None
+    text = _theirs_text(cairn_root, templates_root, src_rel, to_ref)
+    return text.encode("utf-8") if text is not None else None
+
+
+class FilePlan(NamedTuple):
+    dst: str
+    kind: str            # clean|conflict|slot-removed|review-only|verbatim-*|up-to-date|error
+    merged: str | None   # staged content for .md (None for verbatim/up-to-date)
+    detail: str
+
+
+def _compute_upgrade(
+    target: Path, cairn_root: Path, templates_root: Path,
+    lock: dict[str, Any], to_ref: str | None,
+) -> tuple[list[FilePlan], dict[str, Any]]:
+    """Classify every lockfile-tracked file for upgrade + the structural
+    drift.  Pure read-only -- no writes."""
+    tokens = {str(k): str(v) for k, v in (lock.get("tokens") or {}).items()}
+    plans: list[FilePlan] = []
+    for rec in lock.get("files", []):
+        dst = rec["dst"]
+        verbatim = bool(rec.get("verbatim"))
+        src_rel = rec["src"]
+        dst_abs = target / dst
+        ours_bytes = dst_abs.read_bytes() if dst_abs.exists() else None
+        theirs_b = _theirs_bytes(cairn_root, templates_root, src_rel, to_ref)
+        if theirs_b is None:
+            plans.append(FilePlan(dst, "removed-upstream", None,
+                                  "no longer in upstream templates"))
+            continue
+        if verbatim:
+            kind = classify_verbatim(ours_bytes, rec.get("hash", ""), theirs_b)
+            plans.append(FilePlan(dst, f"verbatim-{kind}",
+                                  theirs_b.decode("utf-8", "replace")
+                                  if kind == "update" else None, ""))
+            continue
+        # Mergeable .md.
+        if ours_bytes is None:
+            plans.append(FilePlan(dst, "review-only", None,
+                                  "file missing on disk"))
+            continue
+        ours = ours_bytes.decode("utf-8")
+        theirs_raw = theirs_b.decode("utf-8")
+        cache_rel = rec.get("base_cache")
+        base_path = (target / cache_rel) if cache_rel else None
+        if base_path is None or not base_path.exists():
+            # No recoverable base (e.g. a --init-lock migrated tree, I3) ->
+            # review-only diff, never a pretended 3-way merge.
+            plans.append(FilePlan(dst, "review-only", None,
+                                  "no recoverable base (review-only diff)"))
+            continue
+        base_raw = base_path.read_text(encoding="utf-8")
+        try:
+            res = merge_file(base_raw, theirs_raw, ours, tokens)
+        except SlotError as exc:
+            plans.append(FilePlan(dst, "error", None, f"malformed slots: {exc}"))
+            continue
+        plans.append(FilePlan(dst, res.status, res.merged, res.detail))
+
+    # Structural reconciliation.
+    lock_modules = set(lock.get("modules", []))
+    current_modules = set(_MODULE_MAPPINGS)
+    structural = {
+        "new_modules": sorted(current_modules - lock_modules),
+        "removed_modules": sorted(lock_modules - current_modules),
+    }
+    return plans, structural
+
+
+def _citation_ok(target: Path, lock: dict[str, Any]) -> bool | None:
+    """R10: if the target carries a fidelity manifest, does it cite the
+    current lockfile version/commit?  None if no manifest to check."""
+    candidates = list((target / "dev" / "strategy").glob("*fidelity*"))
+    candidates += list((target / "dev" / "strategy").glob("*manifest*"))
+    manifest = next((c for c in candidates if c.is_file()), None)
+    if manifest is None:
+        return None
+    text = manifest.read_text(encoding="utf-8", errors="replace")
+    commit = str(lock.get("cairn_commit", ""))
+    version = str(lock.get("cairn_version", ""))
+    return (commit and commit in text) or (version and version in text)
+
+
+def _print_upgrade_report(
+    plans: list[FilePlan], structural: dict[str, Any],
+    citation: bool | None, *, mode: str,
+) -> None:
+    import collections
+    by_kind: dict[str, list[str]] = collections.defaultdict(list)
+    for fp in plans:
+        by_kind[fp.kind].append(fp.dst)
+    print(f"\nCairn upgrade -- {mode}\n" + "=" * 40)
+    order = ["clean", "conflict", "slot-removed", "review-only",
+             "verbatim-update", "verbatim-locally-modified",
+             "verbatim-up-to-date", "verbatim-missing", "up-to-date",
+             "removed-upstream", "error"]
+    for kind in order + [k for k in by_kind if k not in order]:
+        if kind in by_kind:
+            print(f"  {kind:26s} {len(by_kind[kind])}: "
+                  f"{', '.join(by_kind[kind][:6])}"
+                  f"{'...' if len(by_kind[kind]) > 6 else ''}")
+    if structural["new_modules"]:
+        print(f"\n  new modules available (opt-in): "
+              f"{', '.join(structural['new_modules'])}")
+    if structural["removed_modules"]:
+        print(f"  modules removed upstream (flagged): "
+              f"{', '.join(structural['removed_modules'])}")
+    if citation is False:
+        print("\n  [warn] the fidelity manifest does NOT cite the current "
+              "lockfile version/commit (R10) -- update its citation.")
+    conflicts = [fp.dst for fp in plans if fp.kind == "conflict"]
+    flags = [fp for fp in plans if fp.kind in
+             ("slot-removed", "verbatim-locally-modified", "error")]
+    if conflicts:
+        print(f"\n  {len(conflicts)} file(s) need conflict resolution before "
+              "--apply.")
+    for fp in flags:
+        print(f"  [flag] {fp.dst}: {fp.detail}")
+
+
+def _seed_staging_gitignore(target: Path) -> None:
+    seed_gitignore(target, (_STAGING_REL + "/",))
+
+
+def _write_stage(
+    target: Path, plans: list[FilePlan], lock: dict[str, Any],
+    to_ref: str | None,
+) -> Path:
+    """Write merged/updated results + stage metadata into the (ephemeral,
+    gitignored) staging dir; return its path."""
+    import json
+    stage = target / _STAGING_REL
+    if stage.exists():
+        import shutil
+        shutil.rmtree(stage)
+    stage.mkdir(parents=True, exist_ok=True)
+    staged_files: list[str] = []
+    ours_hashes: dict[str, str] = {}
+    for fp in plans:
+        if fp.merged is None:
+            continue
+        out = stage / "files" / fp.dst
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(fp.merged, encoding="utf-8")
+        staged_files.append(fp.dst)
+        # Snapshot the on-disk *ours* hash at stage time, so --apply can
+        # detect an adopter edit made *between* --stage and --apply (R7a).
+        dst_abs = target / fp.dst
+        if dst_abs.exists():
+            ours_hashes[fp.dst] = "sha256:" + _sha256_hex(dst_abs.read_bytes())
+    meta = {
+        "lock_commit": lock.get("cairn_commit"),
+        "lock_version": lock.get("cairn_version"),
+        "to_ref": to_ref,
+        "tokens": lock.get("tokens"),
+        "modules": lock.get("modules"),
+        "staged_files": sorted(staged_files),
+        "ours_hashes": ours_hashes,
+        "has_conflicts": any(fp.kind == "conflict" for fp in plans),
+    }
+    (stage / _STAGE_META).write_text(
+        json.dumps(meta, indent=2, sort_keys=True), encoding="utf-8")
+    _seed_staging_gitignore(target)
+    return stage
+
+
+def _cmd_init_lock(
+    target: Path, cairn_root: Path, templates_root: Path,
+) -> int:
+    """`upgrade --init-lock` (R6/I3): synthesize a lockfile for a
+    pre-lockfile tree from on-disk content + the fidelity manifest.
+
+    Token-substituted files have **no recoverable token values** (the
+    manifest records names, not values, I3) -> classified
+    *unrecoverable-base* and handled review-only on later upgrades, never a
+    pretended 3-way merge.  Verbatim scripts record their on-disk hash."""
+    if read_lockfile(target) is not None:
+        print(f"  [info] {_LOCKFILE_REL} already exists; nothing to migrate.",
+              file=sys.stderr)
+        return 0
+    # Best-effort cairn_commit from a fidelity manifest, if present.
+    commit = "unknown"
+    for c in list((target / "dev" / "strategy").glob("*")):
+        if c.is_file():
+            for line in c.read_text(encoding="utf-8", errors="replace").splitlines():
+                m = re.match(r'\s*cairn_commit\s*:\s*"?([0-9a-f]{7,40})"?', line)
+                if m:
+                    commit = m.group(1)
+                    break
+    records: list[dict[str, Any]] = []
+    classification: dict[str, list[str]] = {"verbatim": [], "unrecoverable-base": []}
+    for src_rel, dst_rel, verbatim in _lock_file_list(list(_MODULE_MAPPINGS), []):
+        dst_abs = target / dst_rel
+        if not dst_abs.exists():
+            continue
+        h = "sha256:" + _sha256_hex(dst_abs.read_bytes())
+        rec: dict[str, Any] = {"src": src_rel, "dst": dst_rel,
+                               "verbatim": verbatim, "hash": h}
+        if verbatim:
+            classification["verbatim"].append(dst_rel)
+        else:
+            # No token values -> base not reconstructable (I3); no base_cache.
+            rec["unrecoverable_base"] = True
+            classification["unrecoverable-base"].append(dst_rel)
+        records.append(rec)
+    lock = {
+        "schema": _LOCK_SCHEMA, "migrated": True,
+        "cairn_version": _cairn_version(cairn_root), "cairn_commit": commit,
+        "profile": {}, "modules": sorted(
+            m for m in _MODULE_MAPPINGS
+            if (target / "dev" / "modules" / f"{m}.md").exists()),
+        "optional_templates": [], "tokens": {}, "files": records,
+    }
+    lock_path = target / _LOCKFILE_REL
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    lock_path.write_text(_emit_lock_yaml(lock), encoding="utf-8")
+    print(f"Wrote migrated {_LOCKFILE_REL} ({len(records)} files).")
+    print(f"  verbatim scripts (hash-tracked): "
+          f"{len(classification['verbatim'])}")
+    print(f"  token-substituted files (no recoverable base -> review-only "
+          f"on upgrade, per I3): {len(classification['unrecoverable-base'])}")
+    print("  NOTE: a migrated lockfile cannot 3-way-merge token-substituted "
+          "files (the install token values were never recorded); those "
+          "upgrade as a review-only diff. Re-install from an "
+          "upgrade-capable Cairn for clean merges.")
+    return 0
+
+
+def _apply_upgrade(target: Path, lock: dict[str, Any]) -> int:
+    """`--apply` (R7): consume the staged result under the safety contract,
+    then swap originals + rewrite the lockfile.  Fail-closed."""
+    import json
+    import shutil
+    stage = target / _STAGING_REL
+    meta_path = stage / _STAGE_META
+    if not meta_path.exists():
+        print("error: no staged upgrade found; run `upgrade --stage` first.",
+              file=sys.stderr)
+        return 1
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    # (a) stage produced from the current lockfile.
+    if meta.get("lock_commit") != lock.get("cairn_commit") or \
+            meta.get("tokens") != lock.get("tokens") or \
+            meta.get("modules") != lock.get("modules"):
+        print("error: staged upgrade is stale (lockfile/tokens/roster changed "
+              "since --stage); re-run `upgrade --stage`.", file=sys.stderr)
+        return 1
+    # (b) no residual conflict markers (P-5: only a resolved tree applies).
+    files_dir = stage / "files"
+    for f in files_dir.rglob("*"):
+        if f.is_file() and _CONFLICT_MARKER in f.read_text(
+                encoding="utf-8", errors="replace"):
+            print(f"error: staged file {f.relative_to(files_dir)} still has "
+                  "conflict markers; resolve them, then re-run --apply.",
+                  file=sys.stderr)
+            return 1
+    # (c) the on-disk originals are unchanged *since --stage* (R7a -- detect
+    #     an adopter edit between staging and applying).  Compared against
+    #     the stage-time snapshot, NOT the lockfile clean-install hash (a
+    #     customized file differs from the latter by design).
+    ours_hashes = meta.get("ours_hashes", {})
+    for staged in sorted(meta.get("staged_files", [])):
+        dst_abs = target / staged
+        snap = ours_hashes.get(staged)
+        if snap is not None and dst_abs.exists():
+            cur = "sha256:" + _sha256_hex(dst_abs.read_bytes())
+            if cur != snap:
+                print(f"error: {staged} changed on disk since --stage; "
+                      "re-run `upgrade --stage`.", file=sys.stderr)
+                return 1
+    # Swap staged files into place.
+    applied = 0
+    for staged in sorted(meta.get("staged_files", [])):
+        src = files_dir / staged
+        dst_abs = target / staged
+        if src.exists():
+            _assert_safe_write(dst_abs, target)
+            dst_abs.parent.mkdir(parents=True, exist_ok=True)
+            dst_abs.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+            applied += 1
+    shutil.rmtree(stage)
+    print(f"Applied {applied} file(s). Re-run a clean install or "
+          "`upgrade --stage` to refresh the lockfile + base cache to the new "
+          "version.")
+    return 0
+
+
+def cmd_upgrade(argv: list[str] | None = None) -> int:
+    """`scaffold.py upgrade` -- the adopter upgrade path (Chunk 5/6)."""
+    import argparse
+    p = argparse.ArgumentParser(prog="scaffold.py upgrade")
+    p.add_argument("--target", required=True)
+    p.add_argument("--to", default=None,
+                   help="Upgrade to this Cairn git ref (git-checkout source "
+                        "only); default = the currently-running tree.")
+    p.add_argument("--cairn-root", default=None)
+    p.add_argument("--init-lock", action="store_true",
+                   help="Synthesize a lockfile for a pre-lockfile tree (R6).")
+    p.add_argument("--plan", action="store_true",
+                   help="Read-only: classify drift, write nothing (default).")
+    p.add_argument("--stage", action="store_true",
+                   help="Write the staged review surface (no swap).")
+    p.add_argument("--apply", action="store_true",
+                   help="Apply a previously-staged, resolved upgrade.")
+    args = p.parse_args(argv)
+
+    target = Path(args.target).resolve()
+    if not target.exists():
+        print(f"error: target not found: {target}", file=sys.stderr)
+        return 1
+    cairn_root = (Path(args.cairn_root).resolve() if args.cairn_root
+                  else _find_cairn_root(Path(__file__)))
+    templates_root = cairn_root / "templates"
+
+    if args.init_lock:
+        return _cmd_init_lock(target, cairn_root, templates_root)
+
+    lock = read_lockfile(target)
+    if lock is None:
+        print(f"error: no {_LOCKFILE_REL} in the target. Run "
+              "`upgrade --init-lock --target <repo>` to migrate a "
+              "pre-lockfile tree first.", file=sys.stderr)
+        return 1
+
+    if args.to is not None and not _cairn_is_git(cairn_root):
+        print("error: --to <ref> needs a git-checkout Cairn source; a "
+              "packaged release can upgrade only to the currently-running "
+              "tree (omit --to).", file=sys.stderr)
+        return 1
+
+    if args.apply:
+        return _apply_upgrade(target, lock)
+
+    plans, structural = _compute_upgrade(
+        target, cairn_root, templates_root, lock, args.to)
+    citation = _citation_ok(target, lock)
+
+    if args.stage:
+        _write_stage(target, plans, lock, args.to)
+        _print_upgrade_report(plans, structural, citation, mode="stage")
+        print(f"\nStaged under {_STAGING_REL}/ . Resolve any conflicts, then "
+              "`upgrade --apply --target <repo>`.")
+        return 0
+
+    # Default: --plan (strictly read-only).
+    _print_upgrade_report(plans, structural, citation, mode="plan (read-only)")
+    return 0
+
+
 def build_arg_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="scaffold.py",
@@ -1689,6 +2086,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     """Entry point.  Returns an exit code (0 = success, 1 = error)."""
+    raw = sys.argv[1:] if argv is None else argv
+    # `scaffold.py upgrade ...` routes to the adopter upgrade path, which has
+    # its own argument parser (isolated from the install CLI).
+    if raw and raw[0] == "upgrade":
+        return cmd_upgrade(raw[1:])
+
     parser = build_arg_parser()
     args = parser.parse_args(argv)
 
