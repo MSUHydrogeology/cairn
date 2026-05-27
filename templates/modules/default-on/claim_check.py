@@ -106,8 +106,7 @@ Exit codes: ``0`` clean (or only soft flags without
 under ``--fail-on-soft``); ``2`` usage error (file not found).
 
 Reference implementation for Cairn's ``claim-check`` default-on
-module.  Generalized from the modflow_tools ``scripts/claim_check.py``
-adopter implementation; see Cairn's CHANGELOG (v0.2) for provenance.
+module.
 """
 from __future__ import annotations
 
@@ -150,8 +149,8 @@ _PLACEHOLDER_CHARS = ('<', '>', '*', '{', '}')
 #   * ``Untracked path:`` cites a git-ignored path a fresh checkout will
 #     not carry.
 #   * ``External-repo path:`` cites a path that resolves in a sibling
-#     repository (e.g., a Cairn-side path in modflow_tools' tree, or an
-#     LHM path).  Added 2026-05-21 per the accepted cairn-doctrine-sync-
+#     repository (e.g., a path in another repo checked out alongside
+#     this one).  Added 2026-05-21 per the accepted cairn-doctrine-sync-
 #     may-19-21 plan's Chunk 0 (plan-design choice resolving the F4
 #     residual claim_check problem).
 # Any keyword -- singular or plural, any case, optionally as a list
@@ -392,8 +391,7 @@ def check_line_citation(
     end = int(match.group('end') or match.group('start'))
     # Count lines by streaming the file rather than reading it whole --
     # a citation may point into a large data file / log present in the
-    # repo, and only the line count is needed (code-review P3,
-    # Antigravity 2026-05-26).
+    # repo, and only the line count is needed.
     with target.open(encoding='utf-8', errors='replace') as fh:
         n_lines = sum(1 for _ in fh)
     if end > n_lines:

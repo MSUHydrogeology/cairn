@@ -59,7 +59,7 @@ def verify(target: Path) -> int:
         # malformed record *before* reading anything: a record must name a
         # contained, repo-relative dst with a well-formed sha256 hash.
         # Without this, a `dst: ../outside` could make the check "attest" a
-        # file outside the installed tree and still print OK (Codex F1).
+        # file outside the installed tree and still print OK.
         if not isinstance(dst_rel, str) or not dst_rel:
             violations.append(f"  malformed record (no dst): {rec!r}")
             continue

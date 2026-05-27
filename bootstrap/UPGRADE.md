@@ -52,6 +52,14 @@ python bootstrap/scaffold.py upgrade --target <repo> --apply    # 3. apply
   `.gitignore`) along with stage metadata. Originals are untouched.
   Open the staged files, resolve any `<<<<<<< ours … >>>>>>> theirs`
   conflict markers by hand.
+
+  **What's in the staging directory** — review and edit only the first:
+  * `files/` — **the merged result** (your customizations + the upstream
+    changes). This is what you review, resolve conflicts in, and apply.
+  * `new-base/` — the upstream templates that will become the **next
+    base-cache** after `--apply`. Reference only; do **not** edit these.
+  * `stage-metadata.json` — the stage record `--apply` checks against the
+    safety contract. Machine-owned; do not edit.
 * **`--apply`** swaps the resolved staged files into place and cleans the
   staging directory — but only under a **safety contract**: the stage must
   have been produced from the current lockfile (same tokens + roster), the

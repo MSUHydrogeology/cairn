@@ -130,7 +130,7 @@ extensions to those headers may need small parser tweaks at the top of
 the script.
 
 **Scope of the shipped script.** This is the **v1 core** extractor (the
-measurable spine the module promises). The modflow_tools implementation
+measurable spine the module promises). The reference implementation
 it was generalized from also carries a *snapshot layer* — committed,
 dated CSV snapshots; a collision-log correlation; per-doctrine
 annotations; per-tier model aggregation — that is specific to that

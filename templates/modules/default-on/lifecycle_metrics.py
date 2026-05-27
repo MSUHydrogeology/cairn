@@ -24,8 +24,7 @@ corpus; the optional ``--out`` flag writes only the derived report file
 derived artifact -- regenerable from the repo at any commit -- and is
 therefore not committed.
 
-**Generalized from modflow_tools' ``tools/lifecycle_metrics.py``.**
-This is the **v1 core** extractor.  The modflow_tools implementation
+This is the **v1 core** extractor.  The reference implementation
 also carries a *snapshot layer* (committed dated CSV snapshots, a
 collision-log parser, a metrics-annotations reader, a ``Goodnight:``
 commit backfill, per-tier model aggregation) that is specific to that
@@ -575,7 +574,7 @@ def _proposal_slug(stem: str) -> str:
     ``claude2``) -- not lowercase-only -- so an upper/mixed-case author
     name does not silently defeat plan<->proposal pairing.  It stays
     dash-free so the match stops at the first dash and the slug body is
-    captured intact (code-review P2, Antigravity 2026-05-26)."""
+    captured intact."""
     m = re.match(r'\d{4}-\d{2}-\d{2}-[A-Za-z0-9_]+-(.+)', stem)
     return m.group(1) if m else stem
 

@@ -29,7 +29,7 @@ Three checks, all deterministic and offline by default:
    / ``External-repo path:`` markers are exempt.
 
    **Case studies describe external repos.**  ``case-studies/*.md`` write
-   up *other* projects (modflow_tools, LHM) and cite their relative
+   up *other* projects and cite their relative
    paths, which routinely collide with a Cairn top-level dir name
    (``scripts/``, ``docs/``).  Those files are passed to the checker's
    file-scoped **external-path allowance**, so their path-claims are not
@@ -55,7 +55,7 @@ Usage::
 Exit codes: ``0`` clean; ``1`` at least one broken link / anchor / path;
 ``2`` usage error.
 
-Source proposal / plan: the modflow_tools-hosted
+Source proposal / plan: the
 ``cairn-self-application-and-docs`` arc (Chunk 1) established this
 self-check; the Cairn v0.2 P1 ``reference-scripts`` arc unified its
 claim-path half onto the packaged generic checker.

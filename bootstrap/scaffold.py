@@ -538,7 +538,7 @@ def reference_script_token_defaults(module_names: list[str]) -> dict[str, str]:
 # hand-deriving the module roster; the six-axis scoring + the BOOTSTRAP.md
 # I-5 gate table remain the principled backing (the gate table is the
 # canonical per-module rationale).  See BOOTSTRAP.md Act I and the
-# modflow_tools-hosted ``cairn-v0.2-p4-governance-presets`` plan.
+# the source ``cairn-v0.2-p4-governance-presets`` plan.
 
 #: The six dimension axes -> allowed enum values (the BOOTSTRAP.md I-4 table).
 #: An adopter overrides a preset's canonical axis by setting a flat top-level
@@ -627,7 +627,7 @@ class PresetError(ValueError):
 
 def _as_str_list(value: object, key: str) -> list[str]:
     """Coerce a YAML value for a list-typed key to ``list[str]``; a scalar
-    where a list is expected is a friendly hard error (Codex P-5)."""
+    where a list is expected is a friendly hard error."""
     if value is None:
         return []
     if isinstance(value, str) or not isinstance(value, (list, tuple)):
@@ -1208,7 +1208,7 @@ def _find_cairn_root(script_path: Path) -> Path:
 #
 # The install-side ancestor anchor for ``scaffold.py upgrade`` (the
 # token- + slot-aware 3-way merge).  See ``bootstrap/UPGRADE.md`` and the
-# modflow_tools-hosted ``cairn-module-upgrade-3way-merge`` plan.
+# the source ``cairn-module-upgrade-3way-merge`` plan.
 #
 #   * ``dev/cairn-lock.yml`` -- a *visible*, *tracked* machine lockfile
 #     (R2): the upgrade ancestor + the install-side provenance record.
@@ -1225,9 +1225,8 @@ _LOCK_SCHEMA = 1
 #: substitution token bearing a secret would leak it into a tracked file.
 #: Matched as a **substring anywhere** in the token name (case-insensitive)
 #: so camelCase / flatcase keys are caught too -- `apiKey`, `secretToken`,
-#: `dbPassword`, `mysecret`, `passwdstr` all match, not only snake_case
-#: (Antigravity code-review A2; the allow-list makes false positives cheap,
-#: a silent secret leak is not).
+#: `dbPassword`, `mysecret`, `passwdstr` all match, not only snake_case.
+#: The allow-list makes false positives cheap; a silent secret leak is not.
 _SECRET_TOKEN_RE = re.compile(
     r"password|passwd|secret|credential|token|key", re.IGNORECASE,
 )
@@ -1515,7 +1514,7 @@ def _transplant_slots(target_text: str, ours_text: str) -> str:
     Copies the raw line ranges (``splitlines(keepends=True)``) rather than
     round-tripping through a joined string, so a slot whose body is a
     single empty line -- or zero lines -- transplants its exact line count
-    and does not desync the three inputs (Antigravity code-review A3)."""
+    and does not desync the three inputs."""
     try:
         tslots = parse_slots(target_text)
         our_slots = {s.name: s for s in parse_slots(ours_text)}
@@ -1618,7 +1617,7 @@ def merge_file(
     # A clean merge that still carries an unfilled NEW upstream token is
     # NOT safe to apply (it would write a raw {{token}} into a tracked
     # doctrine file); surface it as a non-advancing "needs-value" status so
-    # the upgrade neither stages nor applies it (Codex C4 / Antigravity A4).
+    # the upgrade neither stages nor applies it.
     if needs_value:
         return MergeResult(
             "needs-value", merged,
@@ -1706,7 +1705,7 @@ def _theirs_bytes(
 
 #: Kinds that may be staged + applied (they advance the machine
 #: authority).  Every other kind is report-only and is NEVER staged, so it
-#: can never be applied (Codex C2 / Antigravity A4): slot-removed, error,
+#: can never be applied: slot-removed, error,
 #: review-only, needs-value, removed-upstream, verbatim-locally-modified,
 #: verbatim-missing, verbatim-up-to-date, up-to-date.
 _ADVANCING_KINDS = frozenset({"clean", "conflict", "verbatim-update"})
@@ -1851,11 +1850,10 @@ def _write_stage(
 
     Stages **only advancing kinds** (clean / conflict / verbatim-update) --
     a flagged/non-advancing file is reported but never staged, so it can
-    never be applied (Codex C2 / Antigravity A4).  Also stages the **new
+    never be applied.  Also stages the **new
     base-template** for each advancing mergeable file (under ``new-base/``)
     + the new version/commit in metadata, so ``--apply`` can advance the
-    lockfile + base cache without needing the Cairn source again (Codex C1
-    / Antigravity A1)."""
+    lockfile + base cache without needing the Cairn source again."""
     import json
     import shutil
     stage = target / _STAGING_REL
@@ -1990,7 +1988,7 @@ def _apply_upgrade(target: Path, lock: dict[str, Any]) -> int:
         print("error: staged upgrade is stale (lockfile/tokens/roster changed "
               "since --stage); re-run `upgrade --stage`.", file=sys.stderr)
         return 1
-    # (b) staged-manifest exactness (Codex C3): the files on disk under the
+    # (b) staged-manifest exactness: the files on disk under the
     #     stage must be EXACTLY the metadata's staged set -- no missing, no
     #     extra (a corrupted/hand-edited stage must not apply a subset).
     on_disk = sorted(
@@ -2003,8 +2001,8 @@ def _apply_upgrade(target: Path, lock: dict[str, Any]) -> int:
               f"  manifest: {staged_meta}\n  on disk:  {on_disk}",
               file=sys.stderr)
         return 1
-    # (c) every staged file is an advancing kind (Codex C2 / Antigravity A4
-    #     defense-in-depth; non-advancing kinds were never staged).
+    # (c) every staged file is an advancing kind (defense-in-depth;
+    #     non-advancing kinds were never staged).
     kinds = meta.get("kinds", {})
     non_adv = [d for d in staged_meta if kinds.get(d) not in _ADVANCING_KINDS]
     if non_adv:
@@ -2050,7 +2048,7 @@ def _apply_upgrade(target: Path, lock: dict[str, Any]) -> int:
             cache_abs.parent.mkdir(parents=True, exist_ok=True)
             cache_abs.write_text(nb.read_text(encoding="utf-8"), encoding="utf-8")
 
-    # Advance the lockfile (Codex C1 / Antigravity A1): bump version/commit;
+    # Advance the lockfile: bump version/commit;
     # recompute each applied file's hash from the NOW-on-disk content (so a
     # resolved conflict is recorded correctly) + refresh the base_hash from
     # the swapped-in base cache.  Non-applied records carry over unchanged.
