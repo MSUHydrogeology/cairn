@@ -412,6 +412,19 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
     "doc-drift-prevention": [
         InstallSpec("team-gated/doc-drift-prevention.md",
                     "dev/modules/doc-drift-prevention.md"),
+        # Cairn v0.2 foldback: the module flips from doctrine-only to
+        # doctrine + stack-neutral runnable tooling (1:many, the P1
+        # claim-check pattern).  Two verbatim stdlib-only scripts -- the
+        # link half and the snippet-sync.  The claim half is NOT shipped
+        # here: the default-on claim-check module already installs
+        # scripts/claim_check.py, so the doc-drift gate composes with it
+        # rather than duplicating a second checker.  The schema-doc
+        # generator is deferred (an adopter slot/hook) -- it cannot ship
+        # stack-neutrally.
+        InstallSpec("team-gated/link_check.py",
+                    "scripts/link_check.py", verbatim=True),
+        InstallSpec("team-gated/sync_doc_snippets.py",
+                    "scripts/sync_doc_snippets.py", verbatim=True),
     ],
     "examples-gallery": [
         InstallSpec("team-gated/examples-gallery.md",

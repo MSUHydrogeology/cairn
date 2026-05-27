@@ -64,10 +64,8 @@ from __future__ import annotations
 
 import argparse
 import importlib.util
-import re
 import subprocess
 import sys
-from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -87,6 +85,15 @@ _CLAIM_CHECK_SRC = (
 
 #: The content-integrity scanner (Layer 2/3), a sibling Cairn dev tool.
 _CONTENT_SCAN_SRC = Path(__file__).resolve().parent / 'content_scan.py'
+
+#: The shipped generic link-checker (the doc-drift-prevention module's
+#: link half).  Imported from the packaged tool the scaffold installs --
+#: the same dogfood discipline used for claim_check below -- so Cairn runs
+#: the exact link-checker it hands an adopter and there is no second copy.
+_LINK_CHECK_SRC = (
+    Path(__file__).resolve().parents[1]
+    / 'templates' / 'modules' / 'team-gated' / 'link_check.py'
+)
 
 
 def _load_module(name: str, path: Path, what: str):
@@ -111,6 +118,8 @@ claim_check = _load_module(
     'cairn_claim_check', _CLAIM_CHECK_SRC, 'claim-checker')
 content_scan = _load_module(
     'cairn_content_scan', _CONTENT_SCAN_SRC, 'content scanner')
+link_check = _load_module(
+    'cairn_link_check', _LINK_CHECK_SRC, 'link-checker')
 
 #: File globs (relative to the repo root) whose backticked path-claims
 #: describe an EXTERNAL repository and must not be resolved against the
@@ -143,61 +152,10 @@ def tracked_markdown(root: Path) -> list[Path]:
 
 
 # --------------------------------------------------------------------------
-# Link-checking (retained here; the shipped claim-checker is claim-only).
-# Markdown scanning (scannable_lines) is shared from the claim-checker so
-# the two checks see the same prose lines.
-
-# Inline links + images: optional '!', [text](target "title").
-_LINK_RE = re.compile(r'!?\[[^\]]*\]\(\s*([^)\s]+)(?:\s+"[^"]*")?\s*\)')
-# Reference definitions: [id]: target  (optionally with a title).
-_REFDEF_RE = re.compile(r'^\s*\[[^\]]+\]:\s*(\S+)')
-_HEADING_RE = re.compile(r'^(#{1,6})\s+(.*?)\s*#*\s*$')
-
-
-def github_slug(heading_text: str) -> str:
-    """GitHub heading-anchor slug: lowercase; drop punctuation except
-    hyphen/underscore; spaces -> hyphens.
-
-    **Consecutive hyphens are intentionally NOT collapsed, and
-    leading/trailing hyphens are NOT stripped** -- this matches GitHub's
-    actual anchor generator, ``github-slugger``, whose core is
-    ``value.toLowerCase().replace(regex, '').replace(/ /g, '-')``
-    (Flet/github-slugger ``index.js`` line 76): it removes punctuation
-    (its ``regex`` preserves the hyphen U+002D and space), replaces
-    spaces with hyphens, and does no collapse/trim.  So a heading like
-    ``Rule 1 — No private content`` slugs to ``rule-1--no-private-content``
-    (double hyphen, from the spaces around the stripped em-dash) on
-    GitHub, and this checker must expect the same.  Collapsing/stripping
-    here would DIVERGE from GitHub and false-flag correct anchor links.
-    """
-    s = heading_text.strip().lower()
-    s = s.replace('`', '')                       # inline code ticks
-    s = re.sub(r'\[([^\]]*)\]\([^)]*\)', r'\1', s)  # link -> its text
-    s = re.sub(r'[^\w\s-]', '', s)               # drop other punctuation
-    s = s.replace(' ', '-')
-    return s
-
-
-def file_anchors(text: str) -> set[str]:
-    """Heading anchors for a file, with GitHub's repeat-dedupe (-1, -2)."""
-    counts: Counter[str] = Counter()
-    anchors: set[str] = set()
-    in_fence = False
-    for raw in text.split('\n'):
-        if re.match(r'^ {0,3}(```|~~~)', raw):
-            in_fence = not in_fence
-            continue
-        if in_fence:
-            continue
-        m = _HEADING_RE.match(raw)
-        if not m:
-            continue
-        base = github_slug(m.group(2))
-        n = counts[base]
-        counts[base] += 1
-        anchors.add(base if n == 0 else f'{base}-{n}')
-    return anchors
-
+# Link-checking is delegated to the shipped generic ``link_check`` tool
+# (composed above), so Cairn runs the exact link-checker it installs into
+# an adopter.  ``check_cairn`` passes its own ``scannable_lines`` (from the
+# claim-checker) so the link and claim checks see the same prose lines.
 
 # --------------------------------------------------------------------------
 # Flags
@@ -227,71 +185,17 @@ def _check_links(
     anchors_by_file: dict[Path, set[str]], result: Result,
     check_external: bool,
 ) -> None:
-    targets: list[tuple[int, str]] = []
-    for lineno, line in scannable:
-        for m in _LINK_RE.finditer(line):
-            targets.append((lineno, m.group(1)))
-        rd = _REFDEF_RE.match(line)
-        if rd:
-            targets.append((lineno, rd.group(1)))
+    """Delegate link / anchor checking to the shipped ``link_check`` tool
+    and fold its flags + external-link count into ``result``.
 
-    for lineno, target in targets:
-        target = target.strip()
-        if target.startswith('#'):           # same-file anchor
-            path_part, anchor = '', target[1:]
-        elif '#' in target and not target.startswith(('http', 'mailto')):
-            path_part, anchor = target.split('#', 1)
-        else:
-            path_part, anchor = target, ''
-
-        low = target.lower()
-        if low.startswith(('http://', 'https://')):
-            result.external_links += 1
-            if check_external:
-                _probe_external(md, lineno, target, result)
-            continue
-        if low.startswith(('mailto:', 'tel:')) or target.startswith('<'):
-            continue
-
-        # Resolve the file part (if any).
-        if path_part:
-            if path_part.startswith('/'):
-                tgt = root / path_part.lstrip('/')
-            else:
-                tgt = (md.parent / path_part)
-            try:
-                tgt = tgt.resolve()
-            except OSError:
-                tgt = None
-            if tgt is None or not tgt.exists():
-                result.flags.append(Flag(
-                    md, lineno, 'link',
-                    f'broken link target: `{target}`'))
-                continue
-            anchor_file = tgt if tgt.is_file() else None
-        else:
-            anchor_file = md  # pure same-file anchor
-
-        # Resolve the anchor (if any) against the target file's headings.
-        if anchor and anchor_file is not None and anchor_file.suffix == '.md':
-            if anchor_file not in anchors_by_file:
-                anchors_by_file[anchor_file] = file_anchors(
-                    anchor_file.read_text(encoding='utf-8', errors='replace'))
-            if anchor not in anchors_by_file[anchor_file]:
-                result.flags.append(Flag(
-                    md, lineno, 'anchor',
-                    f'unresolved heading anchor: `{target}`'))
-
-
-def _probe_external(md: Path, lineno: int, url: str, result: Result) -> None:
-    import urllib.request
-    req = urllib.request.Request(url, method='HEAD',
-                                 headers={'User-Agent': 'cairn-check'})
-    try:
-        urllib.request.urlopen(req, timeout=10)  # noqa: S310 (opt-in only)
-    except Exception as exc:  # noqa: BLE001 -- report any failure
-        result.flags.append(Flag(
-            md, lineno, 'link', f'external link failed ({exc}): {url}'))
+    Passing ``check_cairn``'s own ``scannable`` lines keeps the link and
+    claim checks aligned to the same prose; importing the checker (rather
+    than re-implementing it) keeps a single link-check implementation."""
+    flags, n_external = link_check.check_links(
+        md, root, scannable, anchors_by_file, check_external=check_external)
+    for f in flags:
+        result.flags.append(Flag(md, f.line, f.kind, f.message))
+    result.external_links += n_external
 
 
 def _check_claims(

@@ -69,6 +69,25 @@ and a new empty `Unreleased` is started above.
     (`bootstrap/tests/test_coordination_broad_intent.py`) pins the
     boundary: the broad obligation is absent from a minimal install and
     present in a coordination-tiers install.
+  * **(D) doc-drift-prevention flips from doctrine-only to doctrine +
+    stack-neutral tooling.** The
+    [`doc-drift-prevention`](templates/modules/team-gated/doc-drift-prevention.md)
+    module now scaffold-installs two stdlib-only, vendor-neutral scripts:
+    [`link_check.py`](templates/modules/team-gated/link_check.py) (the
+    link / anchor half — internal links and GitHub-slug anchors resolve)
+    and
+    [`sync_doc_snippets.py`](templates/modules/team-gated/sync_doc_snippets.py)
+    (the snippet half — fenced doc blocks mirror a named source region via
+    language-neutral `snippet-start:` / `snippet-end:` markers; `--check`
+    is the drift gate, `--sync` rewrites only the directive-bearing doc,
+    and absolute / `..`-escaping source paths are refused). The **claim
+    half is composed, not duplicated** — the default-on `claim-check`
+    module already ships `claim_check.py`, and
+    [`scripts/check_cairn.py`](scripts/check_cairn.py) now imports the
+    *shipped* `link_check.py` so Cairn runs the exact tool it hands an
+    adopter (single source, the dogfood pattern). The **schema-doc
+    generator is deferred** — it cannot ship stack-neutrally, so it is an
+    adopter slot/hook, not a default install (External R2 / Internal I4).
 
 - **Governance presets — the onboarding fast path
   (cairn-v0.2-p4-governance-presets, 2026-05-26).** An adopter can now pick

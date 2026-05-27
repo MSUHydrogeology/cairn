@@ -52,11 +52,20 @@ class TestClassification:
     def test_registered_team_gated(self, module: str) -> None:
         assert module in _MODULE_MAPPINGS, f"{module} not registered"
         specs = _MODULE_MAPPINGS[module]
-        assert len(specs) == 1, "practice modules are doctrine-only (one .md)"
-        spec = specs[0]
-        assert spec.src == f"team-gated/{module}.md"
-        assert spec.dst == f"dev/modules/{module}.md"
-        assert spec.verbatim is False
+        # Every practice module installs its doctrine .md first.
+        doctrine = specs[0]
+        assert doctrine.src == f"team-gated/{module}.md"
+        assert doctrine.dst == f"dev/modules/{module}.md"
+        assert doctrine.verbatim is False
+        if module == "doc-drift-prevention":
+            # Cairn v0.2 foldback: this module flipped from doctrine-only
+            # to doctrine + two verbatim stack-neutral tools.
+            tools = {s.dst: s for s in specs[1:]}
+            assert tools["scripts/link_check.py"].verbatim is True
+            assert tools["scripts/sync_doc_snippets.py"].verbatim is True
+            assert len(specs) == 3
+        else:
+            assert len(specs) == 1, "this practice module is doctrine-only"
 
     @pytest.mark.parametrize("module", _PRACTICE_MODULES)
     def test_not_default_on(self, module: str) -> None:
