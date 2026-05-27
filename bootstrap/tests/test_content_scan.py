@@ -66,6 +66,20 @@ class TestSourceCarriesNoRawInvisibles:
         assert "unicode-zero-width" in _ids(scan_text("a\u2060b"))  # word joiner
 
 
+class TestHomoglyphExpandedScripts:
+    """The homoglyph check flags Latin mixed with the expanded confusable
+    scripts, not only Cyrillic / Greek (security-hardening Chunk 10).
+    Escape forms keep the confusables visible in the source."""
+
+    def test_expanded_confusable_scripts_flagged(self) -> None:
+        assert "homoglyph" in _ids(scan_text("A\u0561bc"))  # Latin + Armenian
+        assert "homoglyph" in _ids(scan_text("A\u13a0bc"))  # Latin + Cherokee
+        assert "homoglyph" in _ids(scan_text("A\u2c80bc"))  # Latin + Coptic
+        assert "homoglyph" in _ids(scan_text("A\u0430bc"))  # Latin + Cyrillic
+        # A pure-Latin token is not flagged.
+        assert "homoglyph" not in _ids(scan_text("Abc"))
+
+
 # ---------------------------------------------------------------------------
 # Must-catch: the red-team fixture + each vector
 # ---------------------------------------------------------------------------

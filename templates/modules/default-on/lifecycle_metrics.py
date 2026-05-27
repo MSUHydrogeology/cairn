@@ -651,15 +651,34 @@ def plan_rows(root: Path) -> List[Dict[str, object]]:
 # --------------------------------------------------------------- formatting
 
 
+def _csv_safe(value: object) -> str:
+    """Neutralize spreadsheet formula-injection.
+
+    A cell whose text begins with a formula trigger (``= + - @`` or a
+    leading tab / carriage-return) is prefixed with a single quote so a
+    spreadsheet treats it as literal text, not a formula. The metrics
+    corpus is the team's own committed proposals, but in an adopter repo a
+    proposal *title* (which flows into a cell) can carry untrusted
+    contributor text, so the emitter neutralizes defensively
+    (security-hardening, Chunk 9 / informational)."""
+    s = '' if value is None else str(value)
+    if s[:1] in ('=', '+', '-', '@', '\t', '\r'):
+        return "'" + s
+    return s
+
+
 def format_csv(
     rows: Sequence[Dict[str, object]], columns: Sequence[str],
 ) -> str:
-    """Render rows as CSV text (the default, machine-readable form)."""
+    """Render rows as CSV text (the default, machine-readable form).
+
+    Data cells are passed through :func:`_csv_safe` to neutralize
+    formula-injection; column headers are Cairn-defined and emitted as-is."""
     buf = io.StringIO()
     writer = csv.writer(buf)
     writer.writerow(columns)
     for row in rows:
-        writer.writerow([row.get(c, '') for c in columns])
+        writer.writerow([_csv_safe(row.get(c, '')) for c in columns])
     return buf.getvalue()
 
 

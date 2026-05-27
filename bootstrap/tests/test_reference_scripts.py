@@ -422,3 +422,17 @@ class TestVcsRobustness:
             tmp_path / "tools" / "lifecycle_metrics.py", "f4b_lifecycle")
         rows = lm.proposal_rows(tmp_path)  # must not raise
         assert any(r["stem"] == "2026-05-01-alice-thing" for r in rows)
+
+
+def test_lifecycle_metrics_csv_neutralizes_formula_injection() -> None:
+    """format_csv prefixes a formula-leading cell (= + - @, tab, CR) with a
+    single quote so a spreadsheet treats it as literal text, not a formula
+    (security-hardening Chunk 9)."""
+    lm = _load_script(
+        TEMPLATES_ROOT / "modules" / "default-on" / "lifecycle_metrics.py",
+        "lm_csvsafe")
+    out = lm.format_csv([{"title": "=cmd|'/calc'!A1", "n": 3}], ["title", "n"])
+    assert "'=cmd" in out, "formula-leading cell was not neutralized"
+    # A benign cell is untouched (no spurious leading quote).
+    benign = lm.format_csv([{"title": "ok title", "n": 3}], ["title", "n"])
+    assert "'ok title" not in benign

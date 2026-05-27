@@ -134,9 +134,22 @@ _BIDI = (
     | {"\u200e", "\u200f"}                    # LRM / RLM marks
 )
 
-# Script ranges for the per-token homoglyph check.
-_CYRILLIC = (0x0400, 0x04FF)
-_GREEK = (0x0370, 0x03FF)
+# Script ranges for the per-token homoglyph check. Mixing any two of these
+# (or any of them with Latin) inside one token is a classic homoglyph
+# vector. Curated, **not** exhaustive -- the scanner is a witness, not a
+# proof; a hit is cleared with a `cairn-accept` marker. Expanded beyond the
+# original Latin/Cyrillic/Greek per security-hardening Chunk 10 to cover the
+# other common Latin-confusable scripts.
+_SCRIPT_RANGES: tuple[tuple[str, int, int], ...] = (
+    ("cyrillic", 0x0400, 0x052F),     # Cyrillic + Cyrillic Supplement
+    ("greek", 0x0370, 0x03FF),        # Greek and Coptic block
+    ("greek", 0x1F00, 0x1FFF),        # Greek Extended
+    ("armenian", 0x0531, 0x058F),
+    ("cherokee", 0x13A0, 0x13FF),
+    ("cherokee", 0xAB70, 0xABBF),     # Cherokee Supplement
+    ("coptic", 0x2C80, 0x2CFF),
+    ("fullwidth-latin", 0xFF21, 0xFF5A),  # fullwidth A-Z / a-z
+)
 _TOKEN_RE = re.compile(r"[^\W_]+", re.UNICODE)  # contiguous alphanumeric run
 
 # HTML comment + the recognized Cairn marker grammar (exempt).
@@ -274,10 +287,11 @@ def _token_scripts(token: str) -> set[str]:
         if (("a" <= ch <= "z") or ("A" <= ch <= "Z")
                 or (0x00C0 <= o <= 0x024F)):  # Latin + Latin Extended
             scripts.add("latin")
-        elif _CYRILLIC[0] <= o <= _CYRILLIC[1]:
-            scripts.add("cyrillic")
-        elif _GREEK[0] <= o <= _GREEK[1]:
-            scripts.add("greek")
+            continue
+        for name, lo, hi in _SCRIPT_RANGES:
+            if lo <= o <= hi:
+                scripts.add(name)
+                break
     return scripts
 
 
