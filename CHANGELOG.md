@@ -16,6 +16,10 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+*(nothing yet)*
+
+## 0.2.0 — 2026-05-27
+
 ### Added
 
 - **Security hardening -- SSRF guard, derived Bandit gate, supply-chain

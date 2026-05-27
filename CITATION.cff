@@ -13,8 +13,8 @@ authors:
     given-names: Anthony
     affiliation: "Department of Earth and Environmental Sciences, Michigan State University"
     orcid: "https://orcid.org/0000-0003-3914-9964"
-version: "0.1.1"
-date-released: "2026-05-21"
+version: "0.2.0"
+date-released: "2026-05-27"
 repository-code: "https://github.com/MSUHydrogeology/cairn-scientist-ai-teams"
 license:
   - CC-BY-4.0
