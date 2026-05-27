@@ -32,53 +32,16 @@ CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(CAIRN_ROOT))
 
 from bootstrap.scaffold import _MODULE_MAPPINGS  # noqa: E402
-
-
-def _scan_targets() -> list[str]:
-    """Derive the executable surface Bandit must scan from Cairn's own
-    source of truth, so a newly-added shipped script cannot silently
-    escape the gate (security-hardening Chunk 2 / R2).
-
-    This replaces a hand-maintained list that had drifted two ways: it
-    omitted the team-gated reference scripts (``intent.py`` /
-    ``link_check.py`` / ``sync_doc_snippets.py``), and it passed
-    ``scripts/`` as a *directory* with no ``-r`` -- so Bandit scanned
-    nothing there (``check_cairn.py`` / ``content_scan.py`` went
-    unscanned, which is how ``link_check.py``'s SSRF finding hid).
-
-    The derived set: every **verbatim ``.py``** reference script in
-    ``_MODULE_MAPPINGS`` (the artifacts shipped to adopters) + Cairn's own
-    dev executables (``scripts/*.py`` + the scaffold). Explicit files, so
-    the no-recurse footgun cannot return."""
-    targets: set[str] = {"bootstrap/scaffold.py"}
-    for specs in _MODULE_MAPPINGS.values():
-        for spec in specs:
-            if spec.verbatim and spec.src.endswith(".py"):
-                targets.add(f"templates/modules/{spec.src}")
-    targets.update(
-        str(p.relative_to(CAIRN_ROOT))
-        for p in (CAIRN_ROOT / "scripts").glob("*.py")
-    )
-    return sorted(targets)
+# The derived scan-target set and the Bandit allowlist are single-sourced in
+# the release command (bootstrap/security_check.py); the dev gate imports
+# them so the two never drift (security-hardening Chunk 2 / R2 + Chunk 7).
+from bootstrap.security_check import (  # noqa: E402
+    ALLOWLIST as _ALLOWLIST,
+    scan_targets as _scan_targets,
+)
 
 _SEVERITY_RANK = {"LOW": 0, "MEDIUM": 1, "HIGH": 2}
 _BLOCKING_RANK = _SEVERITY_RANK["MEDIUM"]
-
-# Triaged-acceptable findings, keyed by (relative file, bandit test_id),
-# each with a mandatory rationale.  Kept deliberately small; the
-# executable surface is otherwise clean (the subprocess calls are all
-# LOW severity -- fixed-arg, no shell -- and fall below the block
-# threshold without an entry).
-_ALLOWLIST: dict[tuple[str, str], str] = {
-    ("templates/modules/team-gated/link_check.py", "B310"): (
-        "urllib.request.urlopen in link_check._probe_external is the OPT-IN "
-        "external-link probe (off unless --check-external) and is SSRF-guarded: "
-        "http(s)-only, manual redirects with per-hop host validation (is_global "
-        "allowlist; non-public IPs refused), and no proxy/auth/netrc handlers. "
-        "Cairn's own check_cairn composes this shipped tool, so the finding "
-        "lives here (it moved out of check_cairn.py in the doc-drift foldback)."
-    ),
-}
 
 
 def _in_ci() -> bool:

@@ -126,8 +126,15 @@ scales **by file class**:
   injection-review on change.
 * **Docs / case-study prose** (`docs/*.md`, `case-studies/*.md`) —
   scanned, lighter threshold.
-* **Executable scaffold code** (`bootstrap/scaffold.py`) — Layer 4
-  (Bandit + the symlink/containment hardening), not the prose scanner.
+* **Executable code** — Layer 4 (Bandit + the symlink/containment
+  hardening), not the prose scanner. This class is the **whole shipped
+  Python surface**, not only the scaffold: `bootstrap/scaffold.py` *and*
+  every verbatim reference script the scaffold installs into an adopter
+  (`claim_check.py`, `lifecycle_metrics.py`, `intent.py`, `link_check.py`,
+  `sync_doc_snippets.py`) *and* Cairn's own dev tools (`check_cairn.py`,
+  `content_scan.py`). The Bandit gate derives its scan set from
+  `_MODULE_MAPPINGS` so a newly-shipped script is covered automatically;
+  a reviewer must know a change ships **as code** (Layer 4), not prose.
 * **Generated instruction files** (a scaffolded `AGENTS.md` / `dev/`
   tree) — strictest overall; see Rule 8.
 
@@ -135,6 +142,15 @@ The scanner is a **witness, not a safety proof** — a high-noise,
 incomplete tripwire that *forces* human review.  It never certifies a
 template safe; a clean scan plus a by-class human injection-review is
 the bar.
+
+**Documented residual risks (Layer 4).** Two findings are *consciously
+accepted* under the stated threat model (no concurrent filesystem
+attacker; no untrusted code path), recorded here so a future reviewer can
+tell "known and accepted" from "missed": (1) a small TOCTOU window between
+`scaffold.py`'s `_assert_safe_write` containment check and the write; and
+(2) `check_cairn.py`'s `importlib.exec_module` of sibling tools from
+**fixed, script-relative** paths (a deliberate dogfood composition, not a
+dynamic-exec vector). See `../SECURITY.md` for the public statement.
 
 ## Rule 8 — The bootstrap profile is operationally-trusted input
 
