@@ -80,6 +80,42 @@ artifact).
 >   `post-commit` hook and **refuses** (without modifying the file) a
 >   framework-managed (pre-commit / husky), non-shell, or non-executable
 >   hook. `--uninstall` removes it.
+> * `python tools/intent.py install-precommit` — **opt-in**: install the
+>   **work-intent pre-commit check** (below). Narrower than `install-hook`:
+>   it installs only into an absent `pre-commit` hook or one already
+>   carrying the intent sentinel, and **refuses** (without modifying the
+>   file) any foreign / framework-managed hook. `--uninstall` removes it.
+> * `python tools/intent.py hooks-status` — report whether each of the
+>   two hooks (post-commit auto-release, pre-commit work-intent check) is
+>   installed. The one stable command session-start points at.
+
+**Claim before you edit.** The Tier-2 workflow is one habit: before
+touching a collision-prone surface, run `claim`; the immediate
+conflict-check tells you on the spot whether another session already
+holds it. The post-commit hook then closes your claim when the work
+lands, so the steady-state ceremony is a single `claim` per piece of
+work. The session-start routine (`doctrine/session-routines.md`) carries
+the *read* half — `intent list` before the first edit.
+
+**The work-intent pre-commit check** is the structural *opening*
+counterpart to the post-commit auto-release. Where the post-commit hook
+*closes* a claim cheaply (no action required of a well-behaved author),
+the pre-commit check *catches a missed claim at the moment it matters
+most* — it reads the commit's staged set (`git diff --cached`, never
+unstaged files) and **warns** (never blocks; warn-by-default) when a
+staged path carries no active claim or is **held by another session**.
+This closes the asymmetric-reward gap `doctrine/coordination.md` names:
+releasing is automatic, so claiming must be the one deliberate act, and
+the pre-commit check is what makes forgetting it visible rather than
+silent.
+
+> **Suppressing the self-directed warnings.** A solo or
+> intentional-unclaimed commit silences the *self-directed* warnings (a
+> staged path with no claim; an unresolvable identity) with a per-commit
+> `CAIRN_INTENT_ALLOW_UNCLAIMED=1` env override, or repo-wide with a
+> tracked `dev/intent-config.json` carrying `{"solo_mode": true}`. An
+> **other-session-overlap** warning is **never** suppressed — that is the
+> coordination payoff, and it must always surface.
 
 **Per-session identity.** Identity resolves from `$CAIRN_AGENT` (an
 explicit override / escape hatch), then a **per-session** value derived

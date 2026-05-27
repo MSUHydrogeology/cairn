@@ -29,7 +29,14 @@ The pass has four moves:
 2. **Catch up on what landed.** Read the commit log back to the
    last handoff; note commits from other contributors.
 3. **Note in-flight threads.** Open proposals and plans are live
-   multi-agent threads; surface them.
+   multi-agent threads; surface them. *If the `coordination-tiers`
+   module is installed*, also **read the active work-intent set**
+   (`intent list`) and confirm the hooks are present
+   (`intent hooks-status`): a starting session sees who already holds
+   which paths before its first edit. This is the *read* half of the
+   work-intent convention — the complement to claiming before you edit
+   (`coordination-tiers`); skipping it is how a session collides with an
+   active claim it never saw.
 4. **Confirm role and starting point** (`roles.md`) before
    committing to substantive work.
 

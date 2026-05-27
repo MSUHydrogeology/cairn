@@ -533,3 +533,276 @@ class TestDependencyGate:
         """C3: the dropped YAML config tier leaves no `yaml` reference --
         the tool never fails when PyYAML is absent."""
         assert "yaml" not in TOOL_TEMPLATE.read_text()
+
+
+# ---------------------------------------------------------------------------
+# Work-intent pre-commit check (foldback-hardening Chunk C)
+# ---------------------------------------------------------------------------
+
+def _precommit_hook(repo: Path) -> Path:
+    """Resolve the repo's pre-commit hook path (hooksPath-aware)."""
+    out = subprocess.run(
+        ["git", "rev-parse", "--git-path", "hooks"],
+        cwd=repo, capture_output=True, text=True, check=True,
+        env=_clean_env(),
+    ).stdout.strip()
+    hooks = Path(out)
+    if not hooks.is_absolute():
+        hooks = repo / hooks
+    return hooks / "pre-commit"
+
+
+def _stage(repo: Path, env: dict, relpath: str, content: str = "x\n") -> None:
+    (repo / relpath).parent.mkdir(parents=True, exist_ok=True)
+    (repo / relpath).write_text(content)
+    subprocess.run(["git", "add", relpath], cwd=repo, check=True, env=env)
+
+
+class TestPrecommitInstall:
+    def test_install_absent_then_status(self, tmp_path) -> None:
+        tool = _git_repo(tmp_path)
+        res = _run_tool(tool, ["install-precommit"], cwd=tmp_path)
+        assert res.returncode == 0, res.stderr
+        hook = _precommit_hook(tmp_path)
+        assert hook.is_file() and os.access(str(hook), os.X_OK)
+        text = hook.read_text()
+        assert "cairn/intent/pre-commit BEGIN" in text
+        # The interpreter is baked in; no bare `python -m`.
+        assert sys.executable in text
+        assert "python -m" not in text
+        st = _run_tool(tool, ["hooks-status"], cwd=tmp_path)
+        assert "pre-commit (work-intent check): installed" in st.stdout
+        assert "post-commit (auto-release): not-installed" in st.stdout
+
+    def test_install_metachar_path_is_shlex_quoted(self) -> None:
+        """The baked-in interpreter / script paths are single-quoted via
+        shlex.quote, so a shell-substitution path can't be evaluated."""
+        import shlex as _shlex
+        mod = _load_tool(TOOL_TEMPLATE, name="p5_precommitquote")
+        evil = Path("/x/$(touch pwned)/intent.py")
+        block = mod._precommit_hook_block("/usr/bin/python3", evil)
+        assert _shlex.quote(str(evil)) in block
+        assert '"/x/$(touch pwned)/intent.py"' not in block
+
+    def test_uninstall_residue_free(self, tmp_path) -> None:
+        tool = _git_repo(tmp_path)
+        _run_tool(tool, ["install-precommit"], cwd=tmp_path)
+        res = _run_tool(
+            tool, ["install-precommit", "--uninstall"], cwd=tmp_path,
+        )
+        assert res.returncode == 0
+        assert not _precommit_hook(tmp_path).exists()
+
+    def test_uninstall_preserves_other_content(self, tmp_path) -> None:
+        """Sentinel-scoped strip: a hand-added line survives --uninstall."""
+        tool = _git_repo(tmp_path)
+        _run_tool(tool, ["install-precommit"], cwd=tmp_path)
+        hook = _precommit_hook(tmp_path)
+        text = hook.read_text()
+        # Splice a custom line ahead of the sentinel block.
+        text = text.replace(
+            "# >>> cairn/intent/pre-commit BEGIN",
+            'echo keep-me\n# >>> cairn/intent/pre-commit BEGIN',
+            1,
+        )
+        hook.write_text(text)
+        hook.chmod(0o755)
+        _run_tool(tool, ["install-precommit", "--uninstall"], cwd=tmp_path)
+        remaining = hook.read_text()
+        assert "keep-me" in remaining
+        assert "cairn/intent/pre-commit BEGIN" not in remaining
+
+    def test_idempotent_reinstall_single_block(self, tmp_path) -> None:
+        tool = _git_repo(tmp_path)
+        _run_tool(tool, ["install-precommit"], cwd=tmp_path)
+        _run_tool(tool, ["install-precommit"], cwd=tmp_path)
+        text = _precommit_hook(tmp_path).read_text()
+        assert text.count("cairn/intent/pre-commit BEGIN") == 1
+
+    def test_refuse_foreign_without_mutation(self, tmp_path) -> None:
+        tool = _git_repo(tmp_path)
+        hook = _precommit_hook(tmp_path)
+        hook.parent.mkdir(parents=True, exist_ok=True)
+        hook.write_text("#!/bin/sh\necho mine\n")
+        hook.chmod(0o755)
+        before_bytes = hook.read_bytes()
+        before_mode = stat.S_IMODE(hook.stat().st_mode)
+        res = _run_tool(tool, ["install-precommit"], cwd=tmp_path)
+        assert res.returncode == 4, res.stderr
+        assert "REFUSING" in res.stderr
+        assert hook.read_bytes() == before_bytes
+        assert stat.S_IMODE(hook.stat().st_mode) == before_mode
+
+    def test_no_git_target_clear_diagnostic(self, tmp_path) -> None:
+        (tmp_path / "tools").mkdir()
+        tool = tmp_path / "tools" / "intent.py"
+        tool.write_bytes(TOOL_TEMPLATE.read_bytes())
+        res = _run_tool(tool, ["install-precommit"], cwd=tmp_path)
+        assert res.returncode == 1
+        assert "not inside a git working tree" in res.stderr
+        assert "Traceback" not in res.stderr
+
+    def test_hooks_status_reports_both(self, tmp_path) -> None:
+        tool = _git_repo(tmp_path)
+        _run_tool(tool, ["install-hook"], cwd=tmp_path)
+        _run_tool(tool, ["install-precommit"], cwd=tmp_path)
+        res = _run_tool(tool, ["hooks-status"], cwd=tmp_path)
+        assert "post-commit (auto-release): installed" in res.stdout
+        assert "pre-commit (work-intent check): installed" in res.stdout
+
+
+class TestPrecommitCheck:
+    """The classifier under the real `git diff --cached` staged set."""
+
+    def _log(self, repo: Path) -> Path:
+        return repo / "dev" / "intents.jsonl"
+
+    def test_unclaimed_warns(self, tmp_path) -> None:
+        tool = _git_repo(tmp_path)
+        env = _clean_env(CAIRN_AGENT="alice")
+        _stage(tmp_path, env, "dev/a.md")
+        res = _run_tool(
+            tool, ["--log-path", str(self._log(tmp_path)), "_precommit_check"],
+            cwd=tmp_path, env=env,
+        )
+        assert res.returncode == 0
+        assert "no active claim" in res.stderr
+        assert "dev/a.md" in res.stderr
+
+    def test_claimed_by_this_session_silent(self, tmp_path) -> None:
+        tool = _git_repo(tmp_path)
+        env = _clean_env(CAIRN_AGENT="alice")
+        log = str(self._log(tmp_path))
+        _stage(tmp_path, env, "dev/a.md")
+        _run_tool(
+            tool, ["--log-path", log, "claim", "--files", "dev/a.md",
+                   "--action", "edit"], cwd=tmp_path, env=env,
+        )
+        res = _run_tool(
+            tool, ["--log-path", log, "_precommit_check"],
+            cwd=tmp_path, env=env,
+        )
+        assert res.returncode == 0
+        assert res.stderr.strip() == ""
+
+    def test_other_session_warns_even_with_own_claim(self, tmp_path) -> None:
+        tool = _git_repo(tmp_path)
+        log = str(self._log(tmp_path))
+        _run_tool(
+            tool, ["--log-path", log, "claim", "--files", "dev/a.md",
+                   "--action", "bob-edit"],
+            cwd=tmp_path, env=_clean_env(CAIRN_AGENT="bob"),
+        )
+        env = _clean_env(CAIRN_AGENT="alice")
+        _run_tool(
+            tool, ["--log-path", log, "claim", "--files", "dev/a.md",
+                   "--action", "alice-edit"], cwd=tmp_path, env=env,
+        )
+        _stage(tmp_path, env, "dev/a.md")
+        res = _run_tool(
+            tool, ["--log-path", log, "_precommit_check"],
+            cwd=tmp_path, env=env,
+        )
+        assert "HELD BY ANOTHER" in res.stderr
+        assert "bob" in res.stderr
+        assert "no active claim" not in res.stderr  # own claim => not unclaimed
+
+    def test_env_override_suppresses_self_not_other(self, tmp_path) -> None:
+        tool = _git_repo(tmp_path)
+        log = str(self._log(tmp_path))
+        _run_tool(
+            tool, ["--log-path", log, "claim", "--files", "dev/b.md",
+                   "--action", "bob"],
+            cwd=tmp_path, env=_clean_env(CAIRN_AGENT="bob"),
+        )
+        env = _clean_env(CAIRN_AGENT="alice", CAIRN_INTENT_ALLOW_UNCLAIMED="1")
+        _stage(tmp_path, env, "dev/a.md")  # unclaimed by alice
+        _stage(tmp_path, env, "dev/b.md")  # held by bob
+        res = _run_tool(
+            tool, ["--log-path", log, "_precommit_check"],
+            cwd=tmp_path, env=env,
+        )
+        assert "no active claim" not in res.stderr  # self-nag suppressed
+        assert "HELD BY ANOTHER" in res.stderr       # other-session surfaces
+        assert "dev/b.md" in res.stderr
+
+    def test_solo_mode_suppresses_self_not_other(self, tmp_path) -> None:
+        tool = _git_repo(tmp_path)
+        log = str(self._log(tmp_path))
+        _run_tool(
+            tool, ["--log-path", log, "claim", "--files", "dev/b.md",
+                   "--action", "bob"],
+            cwd=tmp_path, env=_clean_env(CAIRN_AGENT="bob"),
+        )
+        (tmp_path / "dev" / "intent-config.json").write_text(
+            '{"solo_mode": true}\n'
+        )
+        env = _clean_env(CAIRN_AGENT="alice")
+        _stage(tmp_path, env, "dev/a.md")
+        _stage(tmp_path, env, "dev/b.md")
+        res = _run_tool(
+            tool, ["--log-path", log, "_precommit_check"],
+            cwd=tmp_path, env=env,
+        )
+        assert "no active claim" not in res.stderr
+        assert "HELD BY ANOTHER" in res.stderr
+
+    def test_unknown_identity_failsoft(self, tmp_path) -> None:
+        tool = _git_repo(tmp_path)
+        env = _clean_env()  # no identity vars resolvable
+        _stage(tmp_path, env, "dev/a.md")
+        res = _run_tool(
+            tool, ["--log-path", str(self._log(tmp_path)), "_precommit_check"],
+            cwd=tmp_path, env=env,
+        )
+        assert res.returncode == 0
+        assert "UNKNOWN IDENTITY" in res.stderr
+        assert "Traceback" not in res.stderr
+
+    def test_identity_agrees_with_autorelease(self, tmp_path) -> None:
+        """The pre-commit check resolves the SAME identity the post-commit
+        auto-release uses, so a claim made in-session is recognized as own
+        and then auto-released on commit."""
+        tool = _git_repo(tmp_path)
+        env = _clean_env(CAIRN_AGENT="agreed")
+        log = str(self._log(tmp_path))
+        _run_tool(tool, ["install-hook"], cwd=tmp_path, env=env)
+        _stage(tmp_path, env, "dev/a.md")
+        _run_tool(
+            tool, ["--log-path", log, "claim", "--files", "dev/a.md",
+                   "--action", "x"], cwd=tmp_path, env=env,
+        )
+        # pre-commit: own claim => silent
+        chk = _run_tool(
+            tool, ["--log-path", log, "_precommit_check"],
+            cwd=tmp_path, env=env,
+        )
+        assert chk.stderr.strip() == ""
+        # commit (default-log post-commit hook) auto-releases the claim
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "c"], cwd=tmp_path, check=True,
+            env=env,
+        )
+        after = _run_tool(tool, ["list"], cwd=tmp_path, env=env)
+        assert "no active intents" in after.stdout
+
+    def test_path_scoped_commit_sees_only_committed_path(self, tmp_path) -> None:
+        """Path-scoped-commit regression: the hook fires against the
+        partial temp index `git commit <path>` builds, so it sees only the
+        committed path even when another path is also staged."""
+        tool = _git_repo(tmp_path)
+        env = _clean_env(CAIRN_AGENT="alice")
+        _run_tool(tool, ["install-precommit"], cwd=tmp_path, env=env)
+        (tmp_path / "dev" / "a.md").write_text("a\n")
+        (tmp_path / "dev" / "b.md").write_text("b\n")
+        subprocess.run(
+            ["git", "add", "dev/a.md", "dev/b.md"], cwd=tmp_path, check=True,
+            env=env,
+        )
+        res = subprocess.run(
+            ["git", "commit", "-m", "c", "dev/a.md"],
+            cwd=tmp_path, capture_output=True, text=True, env=env,
+        )
+        assert res.returncode == 0  # warn-by-default never blocks
+        assert "dev/a.md" in res.stderr
+        assert "dev/b.md" not in res.stderr  # not in the path-scoped index

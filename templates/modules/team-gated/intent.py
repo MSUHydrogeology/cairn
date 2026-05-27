@@ -10,9 +10,11 @@ one stdlib-only file:
 * path normalization,
 * a best-effort atomic append,
 * the read-side helpers (active intents, conflict check),
-* per-session agent-identity resolution, and
+* per-session agent-identity resolution,
 * a **folded-in** ``install-hook`` that writes a post-commit
-  auto-release hook (no separate shell installer to ship).
+  auto-release hook (no separate shell installer to ship), and
+* an opt-in **``install-precommit``** work-intent check (warn-by-
+  default) plus a ``hooks-status`` reporter for both hooks.
 
 It is **stdlib-only** (``argparse``, ``dataclasses``, ``datetime``,
 ``hashlib``, ``json``, ``os``, ``subprocess``, ``sys``, ``pathlib``,
@@ -123,6 +125,25 @@ HARNESS_SESSION_VARS: Tuple[Tuple[str, str], ...] = (
 #: project-specific naming leaks into an adopter's hook.
 SENTINEL_BEGIN = "# >>> cairn/intent/post-commit BEGIN"
 SENTINEL_END = "# <<< cairn/intent/post-commit END"
+
+#: Sentinel markers wrapping the opt-in **pre-commit** work-intent-check
+#: block.  Mirror the post-commit grammar so ``--uninstall`` and
+#: ``hooks-status`` find / strip exactly the helper-managed lines.
+PRECOMMIT_SENTINEL_BEGIN = "# >>> cairn/intent/pre-commit BEGIN"
+PRECOMMIT_SENTINEL_END = "# <<< cairn/intent/pre-commit END"
+
+#: Per-commit env override: when set non-empty, the pre-commit
+#: work-intent check suppresses the *self-directed* warnings (no-claim +
+#: unknown-identity) for this one commit.  An **other-session overlap**
+#: warning is NEVER suppressed -- coordination is the payoff that must
+#: always surface.  Deterministic exemption: no semantic auto-exemption.
+ALLOW_UNCLAIMED_ENV_VAR = "CAIRN_INTENT_ALLOW_UNCLAIMED"
+
+#: Optional tracked repo-local solo-mode config, read relative to the
+#: repo root.  ``{"solo_mode": true}`` suppresses the self-directed
+#: warnings repo-wide (a deliberate, tracked opt-out for a solo-agent
+#: repo).  Absent / false / malformed = warn.
+INTENT_CONFIG_RELPATH = "dev/intent-config.json"
 
 
 def _session_identity(
@@ -1076,6 +1097,459 @@ def _cmd_auto_release(args) -> int:
 
 
 # ---------------------------------------------------------------------------
+# Pre-commit work-intent check (opt-in; warn-by-default)
+#
+# The opt-in pre-commit hook warns (never blocks -- block-mode is a
+# deferred follow-up) when a commit's staged paths are unclaimed or held
+# by another session.  Three pieces ship here:
+#
+#   * install-precommit -- the installer (narrow v1 composition: install
+#                          only into an absent hook or one carrying our
+#                          sentinel; refuse any foreign / framework hook).
+#   * _precommit_check  -- the hook body's worker; reads the commit's
+#                          staged set, classifies each path, warns.
+#   * hooks-status      -- reports install state of BOTH hooks, so
+#                          session-start points at one stable command.
+
+
+def _git_toplevel() -> Optional[Path]:
+    """Return the git working-tree root, or ``None`` outside a tree."""
+    top = _git_path("rev-parse", "--show-toplevel")
+    return Path(top) if top else None
+
+
+def _resolve_hooks_dir() -> Optional[Path]:
+    """Resolve the git hooks directory (worktree- and hooksPath-aware).
+
+    Mirrors the post-commit installer's resolution so a custom
+    ``core.hooksPath`` or a linked worktree lands the pre-commit hook in
+    the same directory git actually consults.
+    """
+    toplevel = _git_path("rev-parse", "--show-toplevel")
+    if toplevel is None:
+        return None
+    hooks_rel = _git_path("rev-parse", "--git-path", "hooks")
+    if hooks_rel is None:
+        return None
+    return (
+        Path(hooks_rel)
+        if Path(hooks_rel).is_absolute()
+        else Path(toplevel) / hooks_rel
+    )
+
+
+def _read_solo_mode(repo_root: Path) -> bool:
+    """Read the tracked solo-mode flag from ``dev/intent-config.json``.
+
+    Returns ``True`` only when the file exists, parses as a JSON object,
+    and carries ``"solo_mode": true``.  Absent / malformed / false all
+    return ``False`` (warn).  A deterministic exemption -- no semantic
+    auto-exemption.
+    """
+    cfg = repo_root / INTENT_CONFIG_RELPATH
+    if not cfg.exists():
+        return False
+    try:
+        data = json.loads(cfg.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    return isinstance(data, dict) and data.get("solo_mode") is True
+
+
+def _precommit_shebang_is_shell(first_line: str) -> bool:
+    """True when ``first_line`` is a shebang naming a POSIX shell.
+
+    The pre-commit installer's narrow-composition guard: a hook whose
+    shebang is not a shell (e.g. ``#!/usr/bin/env python``) is foreign
+    and refused.  (Distinct from :func:`_first_shebang_is_shell`, which
+    governs the post-commit *append* path and treats a missing shebang
+    as shell.)
+    """
+    line = first_line.strip()
+    if not line.startswith("#!"):
+        return False
+    return any(sh in line for sh in ("sh", "bash", "zsh", "dash"))
+
+
+def _classify_existing_precommit(hook_file: Path) -> str:
+    """Classify an existing ``pre-commit`` hook for install safety.
+
+    Returns ``'absent'``, ``'sentinel'`` (carries our block -- safe to
+    replace), ``'framework'`` (pre-commit.com / husky), ``'non-shell'``,
+    ``'non-executable'``, or ``'foreign'``.  Only ``'absent'`` and
+    ``'sentinel'`` are install targets; everything else is refused
+    without mutation (narrow v1 composition).
+    """
+    if not hook_file.exists():
+        return "absent"
+    try:
+        text = hook_file.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return "foreign"
+    if PRECOMMIT_SENTINEL_BEGIN in text:
+        return "sentinel"
+    framework_markers = (
+        "generated by pre-commit",
+        "pre-commit.com",
+        "INSTALL_PYTHON",
+        "husky.sh",
+        "_/husky",
+    )
+    if any(marker in text for marker in framework_markers):
+        return "framework"
+    lines = text.splitlines()
+    first = lines[0] if lines else ""
+    if not _precommit_shebang_is_shell(first):
+        return "non-shell"
+    if not (hook_file.stat().st_mode & 0o111):
+        return "non-executable"
+    return "foreign"
+
+
+def _precommit_hook_block(python_exe: str, intent_path: Path) -> str:
+    """Build the sentinel-wrapped pre-commit hook block.
+
+    The body writes the commit's staged set NUL-delimited to a temp file
+    (``git diff --cached --name-only -z`` -- the **commit** surface, NOT
+    ``git status`` / unstaged files) and hands it to ``_precommit_check``.
+    Like the post-commit block, the interpreter + script paths are baked
+    in via ``shlex.quote`` (no ``python -m`` PATH/package assumption, no
+    shell expansion of a metacharacter-bearing path).  ``|| true`` keeps
+    the hook non-blocking (warn-by-default; block-mode deferred).
+    """
+    py_q = shlex.quote(python_exe)
+    path_q = shlex.quote(str(intent_path))
+    body = (
+        # Portable mktemp template path (BSD/macOS + GNU identical),
+        # matching the post-commit installer.
+        'PATHS_TMP=$(mktemp "${TMPDIR:-/tmp}/intent-staged.XXXXXX")\n'
+        'git diff --cached --name-only -z > "${PATHS_TMP}"\n'
+        f'{py_q} {path_q} _precommit_check '
+        '--paths-from-file "${PATHS_TMP}" || true\n'
+        'rm -f "${PATHS_TMP}"'
+    )
+    return f"{PRECOMMIT_SENTINEL_BEGIN}\n{body}\n{PRECOMMIT_SENTINEL_END}"
+
+
+def _strip_precommit_block(text: str) -> str:
+    """Return ``text`` with the pre-commit sentinel block removed
+    (inclusive of the BEGIN/END marker lines)."""
+    out: List[str] = []
+    skip = False
+    for line in text.splitlines():
+        if line.strip() == PRECOMMIT_SENTINEL_BEGIN:
+            skip = True
+            continue
+        if line.strip() == PRECOMMIT_SENTINEL_END:
+            skip = False
+            continue
+        if not skip:
+            out.append(line)
+    return "\n".join(out)
+
+
+def _unclaimed_warning(paths: Sequence[str]) -> str:
+    """Self-directed warning: staged path(s) with no active claim."""
+    lines = [
+        "intent: PRE-COMMIT CHECK -- staged path(s) with no active claim:"
+    ]
+    lines.extend(f"  - {p}" for p in paths)
+    lines.append(
+        "Consider `intent claim --files <path> --action <summary>` "
+        "before editing,"
+    )
+    lines.append(
+        f"or set {ALLOW_UNCLAIMED_ENV_VAR}=1 for an intentional unclaimed "
+        f'commit (or "solo_mode": true in {INTENT_CONFIG_RELPATH}).'
+    )
+    return "\n".join(lines) + "\n"
+
+
+def _other_session_warning(
+    overlaps: Dict[str, List[Dict[str, object]]],
+) -> str:
+    """Coordination warning: staged path(s) held by another active
+    claim.  ALWAYS surfaced -- never suppressed by an exemption."""
+    lines = [
+        "intent: PRE-COMMIT CHECK -- staged path(s) HELD BY ANOTHER "
+        "active claim:"
+    ]
+    for path in sorted(overlaps):
+        for claim in overlaps[path]:
+            lines.append(
+                f"  - {path}  (claim {claim.get('id')!r} by "
+                f"{claim.get('agent')!r}: {claim.get('action')!r})"
+            )
+    lines.append(
+        "Another session has an active claim covering these paths; "
+        "coordinate before committing."
+    )
+    return "\n".join(lines) + "\n"
+
+
+def _unknown_identity_warning() -> str:
+    """Self-directed warning: this session's agent identity is
+    unresolvable, so a same-session claim cannot be proven."""
+    return (
+        "intent: PRE-COMMIT CHECK -- UNKNOWN IDENTITY: cannot resolve "
+        "this session's agent identity\n"
+        f"  ({AGENT_ENV_VAR} unset, no harness session var, and "
+        "~/.cairn/agent.json missing or unreadable).\n"
+        "  Cannot verify whether you hold claims on the staged paths; "
+        "any active-claim overlaps are shown below.\n"
+    )
+
+
+def classify_precommit_warnings(
+    staged_set: set,
+    actives: List[Dict[str, object]],
+    identity: Optional[str],
+    *,
+    exempt: bool,
+    repo_root: Optional[Path] = None,
+) -> List[str]:
+    """Classify a commit's staged set into ordered warning strings.
+
+    Warning precedence:
+
+    * **Other-session overlap** -- a staged path covered by an active
+      claim held by a *different* identity (or, under unknown identity,
+      *any* covering claim, since own / other cannot be distinguished).
+      ALWAYS surfaced -- never suppressed by ``exempt``.  This is the
+      coordination payoff.
+    * **Unclaimed** -- identity known, staged path covered by no claim at
+      all.  Suppressed when ``exempt``.
+    * **Unknown identity** -- identity unresolved.  Emits the loud
+      unknown-identity warning **plus** any visible overlaps.  The
+      identity line is suppressed when ``exempt`` (both unclaimed +
+      unknown-identity are *self-directed* signals a solo / intentional
+      committer opts out of); the overlap warning still fires.
+    """
+    identity_known = bool(identity) and identity != "unknown-agent"
+    # path -> list of claims covering it
+    overlaps: Dict[str, List[Dict[str, object]]] = {}
+    for claim in actives:
+        claim_files = claim.get("files") or []
+        if not isinstance(claim_files, list):
+            continue
+        claim_set = {
+            normalize_path(str(f), repo_root=repo_root) for f in claim_files
+        }
+        for path in claim_set & staged_set:
+            overlaps.setdefault(path, []).append(claim)
+
+    warnings: List[str] = []
+    if not identity_known:
+        if not exempt:
+            warnings.append(_unknown_identity_warning())
+        if overlaps:
+            warnings.append(_other_session_warning(overlaps))
+        return warnings
+
+    # Known identity: split overlaps into other-session vs own.
+    other_overlaps: Dict[str, List[Dict[str, object]]] = {}
+    for path, claims in overlaps.items():
+        others = [c for c in claims if c.get("agent") != identity]
+        if others:
+            other_overlaps[path] = others
+    if other_overlaps:
+        warnings.append(_other_session_warning(other_overlaps))
+    # Unclaimed = staged paths covered by no claim at all.
+    unclaimed = sorted(p for p in staged_set if p not in overlaps)
+    if unclaimed and not exempt:
+        warnings.append(_unclaimed_warning(unclaimed))
+    return warnings
+
+
+def _staged_paths_via_git(repo_root: Path) -> List[str]:
+    """Fallback path discovery: read the commit's staged set directly via
+    ``git diff --cached --name-only -z`` (used when the hook did not pass
+    ``--paths-from-file``).  The commit surface, not ``git status``."""
+    try:
+        out = subprocess.run(
+            ["git", "diff", "--cached", "--name-only", "-z"],
+            cwd=str(repo_root), capture_output=True, check=False,
+        )
+    except OSError:
+        return []
+    if out.returncode != 0 or not out.stdout:
+        return []
+    parts = out.stdout.split(b"\x00")
+    if parts and parts[-1] == b"":
+        parts = parts[:-1]
+    return [b.decode("utf-8", errors="replace") for b in parts]
+
+
+def _cmd_install_precommit(args) -> int:
+    """``intent install-precommit`` -- install / uninstall the opt-in
+    pre-commit work-intent check.
+
+    Narrow v1 composition: install only into an absent hook or one
+    already carrying our sentinel block; refuse (without mutation) any
+    framework-managed / non-shell / non-executable / foreign existing
+    hook.  ``--uninstall`` removes only the sentinel block (and the file
+    when nothing else remains)."""
+    hooks_dir = _resolve_hooks_dir()
+    if hooks_dir is None:
+        sys.stderr.write(
+            "intent: not inside a git working tree; cannot install the "
+            "pre-commit hook.\n"
+        )
+        return 1
+    hook_file = hooks_dir / "pre-commit"
+
+    if args.uninstall:
+        if not hook_file.exists():
+            sys.stdout.write(
+                f"intent: no hook at {hook_file}; nothing to uninstall.\n"
+            )
+            return 0
+        text = hook_file.read_text(encoding="utf-8", errors="replace")
+        if PRECOMMIT_SENTINEL_BEGIN not in text:
+            sys.stdout.write(
+                f"intent: {hook_file} carries no intent pre-commit sentinel "
+                "block; leaving it untouched.\n"
+            )
+            return 0
+        stripped = _strip_precommit_block(text)
+        meaningful = [
+            ln for ln in stripped.splitlines()
+            if ln.strip() and not ln.strip().startswith("#!")
+        ]
+        if not meaningful:
+            hook_file.unlink()
+            sys.stdout.write(
+                f"intent: removed sentinel block (and now-empty hook) at "
+                f"{hook_file}.\n"
+            )
+        else:
+            hook_file.write_text(
+                stripped.rstrip("\n") + "\n", encoding="utf-8",
+            )
+            hook_file.chmod(0o755)
+            sys.stdout.write(
+                f"intent: removed sentinel block from {hook_file}; other "
+                "content preserved.\n"
+            )
+        return 0
+
+    # Install path.
+    klass = _classify_existing_precommit(hook_file)
+    if klass not in ("absent", "sentinel"):
+        sys.stderr.write(
+            f"intent: REFUSING to modify {hook_file} -- existing pre-commit "
+            f"hook looks {klass}.\n"
+            "intent: v1 installs only into an absent hook or one carrying "
+            "the intent sentinel block. Move / inspect the existing hook, "
+            "or chain the work-intent check manually:\n"
+            "  <python> <path-to>/intent.py _precommit_check\n"
+            "intent: no changes made.\n"
+        )
+        return 4
+
+    python_exe = _resolve_hook_interpreter(args.python)
+    intent_path = Path(__file__).resolve()
+    block = _precommit_hook_block(python_exe, intent_path)
+    if klass == "absent":
+        content = "#!/usr/bin/env bash\n" + block + "\n"
+    else:  # sentinel -- replace the block, preserve other content
+        stripped = _strip_precommit_block(
+            hook_file.read_text(encoding="utf-8", errors="replace"),
+        )
+        lines = stripped.splitlines()
+        if not (lines and lines[0].startswith("#!")):
+            lines.insert(0, "#!/usr/bin/env bash")
+        while lines and not lines[-1].strip():
+            lines.pop()
+        content = "\n".join(lines) + "\n" + block + "\n"
+    hook_file.parent.mkdir(parents=True, exist_ok=True)
+    hook_file.write_text(content, encoding="utf-8")
+    hook_file.chmod(0o755)
+    verb = "installed" if klass == "absent" else "updated"
+    sys.stdout.write(
+        f"intent: {verb} pre-commit work-intent check at {hook_file}.\n"
+    )
+    return 0
+
+
+def _cmd_precommit_check(args) -> int:
+    """``intent _precommit_check`` -- the pre-commit hook's worker.
+
+    Reads the commit's staged set (``--paths-from-file`` NUL-delimited,
+    written by the hook; or a direct ``git diff --cached`` fallback),
+    resolves the current agent identity, and emits classified warnings to
+    stderr.  Always exits 0 (warn-by-default; the commit is never blocked
+    in v1)."""
+    log_path = (
+        Path(args.log_path) if args.log_path is not None else INTENTS_LOG_PATH
+    )
+    top = _git_toplevel() or _REPO_ROOT
+    if args.paths_from_file:
+        staged = _read_nul_delimited_paths(args.paths_from_file)
+    else:
+        staged = _staged_paths_via_git(top)
+    if not staged:
+        return 0
+    staged_set = {normalize_path(p, repo_root=top) for p in staged}
+    identity = resolve_agent_identity()
+    exempt = bool(
+        (os.environ.get(ALLOW_UNCLAIMED_ENV_VAR) or "").strip()
+    ) or _read_solo_mode(top)
+    actives = active_intents(log_path=log_path)
+    for warning in classify_precommit_warnings(
+        staged_set, actives, identity, exempt=exempt, repo_root=top,
+    ):
+        sys.stderr.write(warning)
+    return 0
+
+
+def _hook_installed(hook_file: Path, sentinel_begin: str) -> bool:
+    """True when ``hook_file`` exists and carries ``sentinel_begin``."""
+    if not hook_file.exists():
+        return False
+    try:
+        return sentinel_begin in hook_file.read_text(
+            encoding="utf-8", errors="replace",
+        )
+    except OSError:
+        return False
+
+
+def _cmd_hooks_status(args) -> int:
+    """``intent hooks-status`` -- report install state of BOTH the
+    post-commit auto-release hook and the pre-commit work-intent check.
+
+    Human-readable + parseable: each hook prints on its own line with a
+    stable ``installed`` / ``not-installed`` token, so session-start (and
+    any script) can point at one stable command."""
+    hooks_dir = _resolve_hooks_dir()
+    if hooks_dir is None:
+        sys.stderr.write(
+            "intent: not inside a git working tree; cannot report hook "
+            "status.\n"
+        )
+        return 1
+    post = _hook_installed(hooks_dir / "post-commit", SENTINEL_BEGIN)
+    pre = _hook_installed(hooks_dir / "pre-commit", PRECOMMIT_SENTINEL_BEGIN)
+    post_tok = "installed" if post else "not-installed"
+    pre_tok = "installed" if pre else "not-installed"
+    sys.stdout.write(
+        "intent hooks-status:\n"
+        f"  post-commit (auto-release): {post_tok}\n"
+        f"  pre-commit (work-intent check): {pre_tok}\n"
+    )
+    if not post:
+        sys.stdout.write(
+            "  -> install post-commit: intent install-hook\n"
+        )
+    if not pre:
+        sys.stdout.write(
+            "  -> install pre-commit:  intent install-precommit\n"
+        )
+    return 0
+
+
+# ---------------------------------------------------------------------------
 # Argument parser
 
 
@@ -1180,6 +1654,45 @@ def _build_parser():
         ),
     )
     p_install.set_defaults(func=_cmd_install_hook)
+
+    p_install_pre = sub.add_parser(
+        "install-precommit",
+        help=(
+            "Install (or uninstall) the opt-in pre-commit work-intent "
+            "check (warn-by-default). The scaffold never runs this for you."
+        ),
+    )
+    p_install_pre.add_argument(
+        "--uninstall", action="store_true",
+        help="Remove the previously-installed sentinel block.",
+    )
+    p_install_pre.add_argument(
+        "--python", default=None,
+        help=(
+            "Interpreter to bake into the generated hook (default: "
+            "$CAIRN_PYTHON or this run's interpreter). Never a bare 'python'."
+        ),
+    )
+    p_install_pre.set_defaults(func=_cmd_install_precommit)
+
+    p_status = sub.add_parser(
+        "hooks-status",
+        help=(
+            "Report install state of BOTH the post-commit auto-release "
+            "and the pre-commit work-intent-check hooks."
+        ),
+    )
+    p_status.set_defaults(func=_cmd_hooks_status)
+
+    p_precheck = sub.add_parser(
+        "_precommit_check",
+        help="Internal: called by the pre-commit work-intent-check hook.",
+    )
+    p_precheck.add_argument(
+        "--paths-from-file", default=None,
+        help="Path to a NUL-delimited file listing the staged paths.",
+    )
+    p_precheck.set_defaults(func=_cmd_precommit_check)
 
     p_auto = sub.add_parser(
         "_auto_release", help="Internal: called by the post-commit hook.",
