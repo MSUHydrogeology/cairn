@@ -254,3 +254,62 @@ class TestSnippetSync:
         # The body equals the region, so a correct parser sees no drift.
         assert snippets.main(
             ["--root", str(tmp_path), "--check", str(doc)]) == 0
+
+
+# ---------------------------------------------------------------------------
+# link_check --check-external SSRF guard (security-hardening Chunk 1)
+# ---------------------------------------------------------------------------
+
+class TestLinkCheckSSRF:
+    """The external-link probe must refuse non-public destinations and
+    validate every redirect hop (no live network: literal IPs resolve via
+    getaddrinfo without DNS, and refused hosts never reach the opener)."""
+
+    def test_host_public_classification(self) -> None:
+        # Non-public literals -> blocked.
+        for ip in ("127.0.0.1", "10.0.0.1", "192.168.1.1",
+                   "169.254.169.254", "::1", "fe80::1"):
+            assert link_check._host_is_public(ip) is False, ip
+        # A public literal -> allowed (no DNS needed).
+        assert link_check._host_is_public("93.184.216.34") is True
+        # Unresolvable / empty -> fail-closed.
+        assert link_check._host_is_public("") is False
+
+    def test_allow_host_bypass(self) -> None:
+        # An explicitly allow-listed internal host passes without a public
+        # classification; everything else still requires public.
+        assert link_check._host_allowed("127.0.0.1", {"127.0.0.1"}) is True
+        assert link_check._host_allowed("127.0.0.1", set()) is False
+
+    def test_probe_refuses_non_public_host(self, tmp_path: Path) -> None:
+        flags: list = []
+        link_check._probe_external(
+            tmp_path / "x.md", 1, "http://169.254.169.254/latest/meta-data/",
+            flags, allow_hosts=set())
+        assert any("SSRF guard" in f.message for f in flags), flags
+
+    def test_probe_refuses_non_http_scheme(self, tmp_path: Path) -> None:
+        flags: list = []
+        link_check._probe_external(
+            tmp_path / "x.md", 1, "ftp://example.com/x", flags,
+            allow_hosts=set())
+        assert any("non-http(s) scheme" in f.message for f in flags), flags
+
+    def test_redirect_hop_to_private_is_refused(self, tmp_path, monkeypatch):
+        """A public first hop that 302-redirects to a link-local address is
+        refused at the second hop (manual, validated redirects)."""
+        class _FakeOpener:
+            def open(self, req, timeout=None):
+                raise link_check.urllib.error.HTTPError(
+                    req.full_url, 302, "Found",
+                    {"Location": "http://169.254.169.254/"}, None)
+
+        monkeypatch.setattr(link_check.urllib.request, "build_opener",
+                            lambda *a, **k: _FakeOpener())
+        flags: list = []
+        # First hop is a public literal IP (passes), then the redirect target
+        # is link-local (must be refused before contact).
+        link_check._probe_external(
+            tmp_path / "x.md", 1, "http://93.184.216.34/", flags,
+            allow_hosts=set())
+        assert any("SSRF guard" in f.message for f in flags), flags

@@ -30,12 +30,17 @@ Vendor-neutral and standard-library only -- nothing to clone or port.
 from __future__ import annotations
 
 import argparse
+import ipaddress
 import re
+import socket
 import subprocess
 import sys
+import urllib.error
+import urllib.request
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
+from urllib.parse import urljoin, urlsplit
 
 # Inline links + images: optional '!', [text](target "title").
 _LINK_RE = re.compile(r'!?\[[^\]]*\]\(\s*([^)\s]+)(?:\s+"[^"]*")?\s*\)')
@@ -131,20 +136,125 @@ def file_anchors(text: str) -> set[str]:
     return anchors
 
 
-def _probe_external(md: Path, lineno: int, url: str, flags: list[Flag]) -> None:
-    import urllib.request
-    req = urllib.request.Request(url, method='HEAD',
-                                 headers={'User-Agent': 'link-check'})
+_MAX_REDIRECTS = 5
+
+
+class _NoFollowRedirect(urllib.request.HTTPRedirectHandler):
+    """Disable urllib's automatic redirect-following so each hop can be
+    host-validated before we choose to follow it (SSRF defense)."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: D401
+        return None
+
+
+def _addr_blocked(addr: ipaddress._BaseAddress) -> bool:
+    """True if *addr* is not a public, routable destination -- the SSRF
+    block set: loopback / private / link-local / reserved / multicast /
+    unspecified, for both IPv4 and IPv6."""
+    return (
+        addr.is_loopback or addr.is_private or addr.is_link_local
+        or addr.is_reserved or addr.is_multicast or addr.is_unspecified
+    )
+
+
+def _host_is_public(host: str) -> bool:
+    """True iff *host* resolves and **every** address it resolves to is a
+    public destination. Unresolvable or any non-public address -> False
+    (fail-closed). This is checked per hop, so a redirect to an internal
+    address is refused even if the first hop was public."""
+    if not host:
+        return False
     try:
-        urllib.request.urlopen(req, timeout=10)  # noqa: S310 (opt-in only)
-    except Exception as exc:  # noqa: BLE001 -- report any failure
-        flags.append(Flag(md, lineno, 'link',
-                          f'external link failed ({exc}): {url}'))
+        infos = socket.getaddrinfo(host, None)
+    except OSError:
+        return False
+    if not infos:
+        return False
+    for info in infos:
+        ip = info[4][0]
+        # Strip an IPv6 scope-id (e.g. fe80::1%eth0) before parsing.
+        ip = ip.split('%', 1)[0]
+        try:
+            addr = ipaddress.ip_address(ip)
+        except ValueError:
+            return False
+        if _addr_blocked(addr):
+            return False
+    return True
+
+
+def _host_allowed(host: str, allow_hosts: set[str] | None) -> bool:
+    """A host passes if it is explicitly allow-listed (an adopter's known
+    internal docs host) or resolves entirely to public addresses."""
+    if allow_hosts and host in allow_hosts:
+        return True
+    return _host_is_public(host)
+
+
+def _probe_external(md: Path, lineno: int, url: str, flags: list[Flag],
+                    *, allow_hosts: set[str] | None = None) -> None:
+    """HEAD-probe an external link, default-safe against SSRF.
+
+    Contract: http(s) only; manual redirect handling with a hop cap; every
+    hop's host validated (resolves entirely to public addresses, or is
+    ``--allow-host``-listed) before it is contacted; no proxy / auth / netrc
+    handlers and a minimal header set (no ambient credentials). Residual: a
+    DNS-rebind TOCTOU remains between the resolution check and urllib's own
+    connect; documented on the flag.
+    """
+    opener = urllib.request.build_opener(
+        urllib.request.ProxyHandler({}),   # no system/env proxy + no proxy auth
+        _NoFollowRedirect(),               # manual, validated redirects only
+    )
+    current = url
+    hops = 0
+    while True:
+        parts = urlsplit(current)
+        if parts.scheme not in ('http', 'https'):
+            flags.append(Flag(md, lineno, 'link',
+                f'refused non-http(s) scheme in external probe: `{current}`'))
+            return
+        host = parts.hostname or ''
+        if not _host_allowed(host, allow_hosts):
+            flags.append(Flag(md, lineno, 'link',
+                f'external link host refused by SSRF guard (non-public IP; '
+                f'use --allow-host to permit a known internal host): `{current}`'))
+            return
+        req = urllib.request.Request(
+            current, method='HEAD', headers={'User-Agent': 'link-check'})
+        try:
+            resp = opener.open(req, timeout=10)  # noqa: S310 (guarded, opt-in)
+        except urllib.error.HTTPError as exc:
+            if exc.code in (301, 302, 303, 307, 308):
+                loc = exc.headers.get('Location')
+                if not loc:
+                    return  # redirect with no target; treat as resolved
+                hops += 1
+                if hops > _MAX_REDIRECTS:
+                    flags.append(Flag(md, lineno, 'link',
+                        f'external link exceeded {_MAX_REDIRECTS} redirects: '
+                        f'`{url}`'))
+                    return
+                current = urljoin(current, loc)
+                continue
+            # A non-redirect HTTP status means the server answered -> the link
+            # resolves; a 4xx/5xx is reported as a broken external link.
+            flags.append(Flag(md, lineno, 'link',
+                f'external link failed (HTTP {exc.code}): `{url}`'))
+            return
+        except Exception as exc:  # noqa: BLE001 -- report any failure
+            flags.append(Flag(md, lineno, 'link',
+                f'external link failed ({exc}): `{url}`'))
+            return
+        else:
+            resp.close()
+            return
 
 
 def check_links(
     md: Path, root: Path, scannable: list[tuple[int, str]],
     anchors_by_file: dict[Path, set[str]], *, check_external: bool = False,
+    allow_hosts: set[str] | None = None,
 ) -> tuple[list[Flag], int]:
     """Check one file's links / anchors against *scannable* lines.
 
@@ -177,7 +287,8 @@ def check_links(
         if low.startswith(('http://', 'https://')):
             n_external += 1
             if check_external:
-                _probe_external(md, lineno, target, flags)
+                _probe_external(md, lineno, target, flags,
+                                allow_hosts=allow_hosts)
             continue
         if low.startswith(('mailto:', 'tel:')) or target.startswith('<'):
             continue
@@ -240,7 +351,8 @@ def tracked_markdown(root: Path) -> list[Path]:
 
 
 def check_tree(root: Path, files: list[Path],
-               *, check_external: bool = False) -> Result:
+               *, check_external: bool = False,
+               allow_hosts: set[str] | None = None) -> Result:
     anchors_by_file: dict[Path, set[str]] = {}
     result = Result()
     for md in files:
@@ -248,7 +360,7 @@ def check_tree(root: Path, files: list[Path],
         result.files_scanned += 1
         flags, n_ext = check_links(
             md, root, scannable_lines(text), anchors_by_file,
-            check_external=check_external)
+            check_external=check_external, allow_hosts=allow_hosts)
         result.flags.extend(flags)
         result.external_links += n_ext
     return result
@@ -265,7 +377,17 @@ def main(argv: list[str] | None = None) -> int:
                         help='Repo root (default: git toplevel).')
     parser.add_argument('--check-external', action='store_true',
                         help='Also probe http(s) links (network; off by '
-                             'default).')
+                             'default). The probe is SSRF-guarded: http(s) '
+                             'only, redirects validated per hop, and hosts '
+                             'resolving to non-public IPs are refused. A '
+                             'DNS-rebind race remains as a documented '
+                             'residual.')
+    parser.add_argument('--allow-host', action='append', dest='allow_hosts',
+                        metavar='HOST', default=None,
+                        help='Permit a specific internal hostname under '
+                             '--check-external (repeatable). Reviewable '
+                             'opt-out for a known internal docs host; there '
+                             'is no blanket private-space allowance.')
     args = parser.parse_args(argv)
 
     root = args.root.resolve() if args.root else repo_root()
@@ -278,7 +400,8 @@ def main(argv: list[str] | None = None) -> int:
         print('link_check: no Markdown files found.', file=sys.stderr)
         return 2
 
-    result = check_tree(root, files, check_external=args.check_external)
+    result = check_tree(root, files, check_external=args.check_external,
+                        allow_hosts=set(args.allow_hosts or []))
 
     for flag in result.flags:
         try:

@@ -183,16 +183,18 @@ class Result:
 def _check_links(
     md: Path, root: Path, scannable: list[tuple[int, str]],
     anchors_by_file: dict[Path, set[str]], result: Result,
-    check_external: bool,
+    check_external: bool, allow_hosts: set[str] | None = None,
 ) -> None:
     """Delegate link / anchor checking to the shipped ``link_check`` tool
     and fold its flags + external-link count into ``result``.
 
     Passing ``check_cairn``'s own ``scannable`` lines keeps the link and
     claim checks aligned to the same prose; importing the checker (rather
-    than re-implementing it) keeps a single link-check implementation."""
+    than re-implementing it) keeps a single link-check implementation --
+    including its SSRF-guarded ``--check-external`` probe."""
     flags, n_external = link_check.check_links(
-        md, root, scannable, anchors_by_file, check_external=check_external)
+        md, root, scannable, anchors_by_file, check_external=check_external,
+        allow_hosts=allow_hosts)
     for f in flags:
         result.flags.append(Flag(md, f.line, f.kind, f.message))
     result.external_links += n_external
@@ -249,7 +251,8 @@ def _check_content(md: Path, root: Path, result: Result) -> None:
 def check_tree(root: Path, files: list[Path],
                check_external: bool = False,
                external_allow: list[str] | None = None,
-               content_scan_enabled: bool = True) -> Result:
+               content_scan_enabled: bool = True,
+               allow_hosts: set[str] | None = None) -> Result:
     allow = external_allow if external_allow is not None else _EXTERNAL_ALLOW
     anchors_by_file: dict[Path, set[str]] = {}
     result = Result()
@@ -258,7 +261,7 @@ def check_tree(root: Path, files: list[Path],
         scannable = claim_check.scannable_lines(text)
         result.files_scanned += 1
         _check_links(md, root, scannable, anchors_by_file, result,
-                     check_external)
+                     check_external, allow_hosts)
         _check_claims(md, root, result, allow)
         if content_scan_enabled:
             _check_content(md, root, result)
@@ -277,7 +280,13 @@ def main(argv: list[str] | None = None) -> int:
                         help='Repo root (default: git toplevel).')
     parser.add_argument('--check-external', action='store_true',
                         help='Also probe http(s) links (network; off by '
-                             'default).')
+                             'default). SSRF-guarded via the shipped '
+                             'link_check (http(s) only, per-hop host '
+                             'validation, non-public IPs refused).')
+    parser.add_argument('--allow-host', action='append', dest='allow_hosts',
+                        metavar='HOST', default=None,
+                        help='Permit a specific internal hostname under '
+                             '--check-external (repeatable).')
     parser.add_argument('--no-content-scan', action='store_true',
                         help='Skip the Layer-2 content-integrity scan '
                              '(link + claim-path checks only).')
@@ -296,6 +305,7 @@ def main(argv: list[str] | None = None) -> int:
     result = check_tree(
         root, files, check_external=args.check_external,
         content_scan_enabled=not args.no_content_scan,
+        allow_hosts=set(args.allow_hosts or []),
     )
 
     for flag in result.flags:
