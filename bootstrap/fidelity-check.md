@@ -227,6 +227,45 @@ carries `{{tokens}}` by design — so the token check is run **by the
 adopter, against the installed target**, not by Cairn's tooling over
 Cairn's own tree.)
 
+### 6. Core-completeness probe
+
+Steps 1–5 prove a **faithful install** — what was installed matches the
+manifest. This step asks the question the fidelity gate is structurally
+blind to: is the install **doctrine-complete**? It is bounded — **by
+hard constraint** — to **exactly two** checks, and is **never a code
+audit**: it does not evaluate the project's codebase quality, science,
+test coverage as software health, performance, or maturity. If a check
+here drifts toward the *software*, it is out of scope by construction.
+
+**6a — Module-merge completeness (a faithfulness backstop).** For each
+installed module, confirm its `Adds to:` content is actually present in
+the target. The default-on merge targets are `cairn:slot`-marked, so
+step 3 and the R-F unfilled-slot gate already cover them; this check's
+**residual** is the **team-gated** modules, which merge their `Adds to:`
+content into **prose** sections — `dual-review` into the review-loop
+prose, `issue-capture` into the User Agent role note, `coordination-tiers`
+into the coordination section — *not* into slots, so nothing else
+verifies they landed. For each installed team-gated module, read its
+`Adds to:` line and confirm the named content is present. A
+declared-but-absent merge is a finding. (This is faithfulness, not
+completeness — it strengthens the gate; 6b is the novel axis.)
+
+**6b — Tacit-rule capture (the completeness probe proper).** The novel
+check: are operating rules the team follows *in practice* written into
+`AGENTS.md`, or left tacit? Read `AGENTS.md` against how the team
+actually works and flag operating doctrine that is lived but unwritten —
+a commit habit everyone follows, a review step taken but not stated, a
+coordination rule held only informally. This is a **doctrine-completeness**
+judgment — capture of *rules*, never an audit of the *code*. A lived
+rule absent from `AGENTS.md` is a finding; its fix is to write it down,
+and if it generalizes, to carry it upstream as a fold-back.
+
+Record the result (`pass` / findings). This adopter-side probe pairs
+with the framework-side **doctrine harvest**
+(`../doctrine/rationale.md` > "The reference-instance doctrine
+harvest"): the harvest keeps *core* from lagging its best adopter;
+this probe keeps an *install* from silently shipping incomplete.
+
 ---
 
 ## Reference manifests
