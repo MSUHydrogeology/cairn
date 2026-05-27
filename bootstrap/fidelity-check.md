@@ -12,6 +12,28 @@ The fidelity-check is reproducible — given the same manifest, the
 same Cairn commit, and the same target state, it always produces the
 same result.
 
+## Relationship to the machine lockfile (`dev/cairn-lock.yml`)
+
+Once a tree is installed (or upgraded) with an upgrade-capable Cairn, it
+also carries a **machine lockfile**, `dev/cairn-lock.yml` (see
+[`UPGRADE.md`](UPGRADE.md)). The two are **one-way**, not two competing
+sources of truth:
+
+* The **lockfile is the machine authority** for *what is installed* — the
+  per-file source / destination / hash, the module roster, and the
+  substituted token values. It is tool-owned (regenerate-only) and is the
+  ancestor the `upgrade` 3-way merge reads.
+* This **fidelity manifest is the human audit narrative** — the
+  reproducible, reviewer-facing record of profile + slots + deferrals. It
+  **cites** the lockfile's `cairn_version` / `cairn_commit` rather than
+  re-listing the file/module inventory the lockfile already owns.
+
+So the manifest does not need to carry merge state, and the two cannot
+drift into disagreement over a second parsed inventory. The `upgrade`
+command validates that the manifest's citation matches the current
+lockfile and warns if it is stale. (A pre-lockfile tree has only this
+manifest until `upgrade --init-lock` synthesizes a lockfile.)
+
 ---
 
 ## The manifest format

@@ -159,6 +159,24 @@ get the same review + scan.  See
 
 ---
 
+## Rule 9 — No secret-bearing substitution tokens
+
+The install lockfile (`dev/cairn-lock.yml`; see [`UPGRADE.md`](UPGRADE.md))
+records the **token values** substituted at install into a **tracked**
+file — so a substitution token that carried a secret would leak it into
+version control.  Therefore: **Cairn templates must not introduce
+secret-bearing substitution tokens** (passwords, API keys, access tokens,
+credentials).  A token is for benign, reviewable configuration
+(`project_name`, `test_command`, a command path), not for a secret.
+
+The lockfile writer enforces this mechanically: it **refuses** to record a
+token whose name looks secret-bearing (`password`, `passwd`, `secret`,
+`credential`, `token`, `key`) unless that name is explicitly allow-listed.
+This is the same coordination-files-carry-no-secrets posture as Rules 1-2,
+applied to the substitution surface.
+
+---
+
 ## Self-check before committing any bootstrap output
 
 Before committing bootstrap-generated or bootstrap-customized

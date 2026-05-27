@@ -68,3 +68,16 @@ These controls are coupled to the release-cut mechanics (tagging the
 release, recording the version, minting the archival DOI). The cut
 itself is a separate, maintainer-run step; this document states the
 provenance posture the cut is expected to satisfy.
+
+## Install-side provenance — the lockfile
+
+Provenance has two sides. **Source-side** is the above: *which Cairn to
+trust* (a named, tagged release). **Install-side** is the machine
+lockfile `dev/cairn-lock.yml` (see [`UPGRADE.md`](UPGRADE.md)) that the
+scaffold writes *into the adopter's tree*: *which Cairn this tree actually
+got* — the exact `cairn_version` + `cairn_commit`, the resolved profile,
+and the per-file source / hash. It makes "which Cairn is this tree?"
+answerable from the tree itself, not from a human-maintained manifest that
+can lag, and it is the ancestor anchor the `upgrade` 3-way merge reads. A
+clean install from a tagged release (source-side) pinned by a lockfile
+(install-side) is the fully-provenanced state.
