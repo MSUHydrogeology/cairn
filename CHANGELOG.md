@@ -233,7 +233,7 @@ and a new empty `Unreleased` is started above.
     through a symlink or outside the target on **every** write
     (fail-closed), plus a Cairn-dev-only Bandit gate.
   * **Layers 2/3 — content integrity.** A new
-    [`scripts/content_scan.py`](scripts/content_scan.py) — a **tripwire
+    [`content_scan.py`](templates/modules/team-gated/content_scan.py) — a **tripwire
     that forces human review, not a safety proof** — composed by
     [`scripts/check_cairn.py`](scripts/check_cairn.py) over Cairn's source
     prose (by file class) and run over scaffolded *generated* output (the

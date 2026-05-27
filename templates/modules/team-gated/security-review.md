@@ -94,7 +94,7 @@ model — and these are real, landed controls the module's
   symlink/containment guard that refuses to write through a symlink or
   outside the target on **every** write, plus a Cairn-dev Bandit gate.
 * **Layers 2/3 — content integrity.** The
-  [`scripts/content_scan.py`](../../../scripts/content_scan.py) scanner,
+  [`content_scan.py`](content_scan.py) scanner,
   run over Cairn's source prose and over scaffolded generated output by
   [`check_cairn.py`](../../../scripts/check_cairn.py) — a **tripwire
   that forces human review, not a safety proof**.

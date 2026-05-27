@@ -25,7 +25,8 @@ import pytest
 CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
 sys.path.insert(0, str(CAIRN_ROOT))
-sys.path.insert(0, str(CAIRN_ROOT / "scripts"))
+# content_scan is single-sourced as the content-security module script.
+sys.path.insert(0, str(CAIRN_ROOT / "templates" / "modules" / "team-gated"))
 
 from bootstrap.scaffold import main  # noqa: E402
 import content_scan  # noqa: E402

@@ -16,25 +16,32 @@ Run from the cairn repo root:
 
 from __future__ import annotations
 
+import importlib.util
 import sys
 from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(CAIRN_ROOT))
 
-from scripts.content_scan import (  # noqa: E402
-    Flag,
-    load_url_allowlist,
-    scan_file,
-    scan_text,
+# content_scan is single-sourced as the shipped content-security module
+# script (templates/modules/team-gated/content_scan.py); load it from there
+# (security-hardening Chunk 11). check_cairn.py composes the same file.
+CONTENT_SCAN_SRC = (
+    CAIRN_ROOT / "templates" / "modules" / "team-gated" / "content_scan.py"
 )
+_spec = importlib.util.spec_from_file_location("cairn_content_scan_test",
+                                               CONTENT_SCAN_SRC)
+_content_scan = importlib.util.module_from_spec(_spec)
+sys.modules[_spec.name] = _content_scan
+_spec.loader.exec_module(_content_scan)
+Flag = _content_scan.Flag
+load_url_allowlist = _content_scan.load_url_allowlist
+scan_file = _content_scan.scan_file
+scan_text = _content_scan.scan_text
 
 REDTEAM = Path(__file__).resolve().parent / "fixtures" / "redteam"
-
-CONTENT_SCAN_SRC = (
-    Path(__file__).resolve().parent.parent.parent / "scripts" / "content_scan.py"
-)
 
 #: The invisible code points the scanner detects -- and must NOT itself
 #: carry as raw characters (trojansource / bandit B613 hygiene).
@@ -78,6 +85,26 @@ class TestHomoglyphExpandedScripts:
         assert "homoglyph" in _ids(scan_text("A\u0430bc"))  # Latin + Cyrillic
         # A pure-Latin token is not flagged.
         assert "homoglyph" not in _ids(scan_text("Abc"))
+
+
+def test_content_security_module_installs_scanner_verbatim(tmp_path: Path) -> None:
+    """The content-security module ships content_scan.py verbatim to an
+    adopter's scripts/ + its doctrine doc, single-sourced from the same file
+    Cairn's own check_cairn composes (security-hardening Chunk 11 / R9)."""
+    from bootstrap.scaffold import _MODULE_MAPPINGS, main
+    dsts = {s.dst: s for s in _MODULE_MAPPINGS["content-security"]}
+    assert dsts["scripts/content_scan.py"].verbatim is True
+    assert "dev/modules/content-security.md" in dsts
+    cfg = tmp_path / "profile.yml"
+    cfg.write_text(
+        "project_name: CS\ntest_command: pytest\nmodules:\n  - content-security\n")
+    rc = main(["--config", str(cfg), "--target", str(tmp_path),
+               "--cairn-root", str(CAIRN_ROOT), "--allow-dev"])
+    assert rc == 0
+    installed = tmp_path / "scripts" / "content_scan.py"
+    assert installed.is_file(), "scanner not installed"
+    assert installed.read_bytes() == CONTENT_SCAN_SRC.read_bytes(), "not verbatim"
+    assert (tmp_path / "dev" / "modules" / "content-security.md").is_file()
 
 
 # ---------------------------------------------------------------------------

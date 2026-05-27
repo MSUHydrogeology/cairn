@@ -84,7 +84,10 @@ _CLAIM_CHECK_SRC = (
 
 
 #: The content-integrity scanner (Layer 2/3), a sibling Cairn dev tool.
-_CONTENT_SCAN_SRC = Path(__file__).resolve().parent / 'content_scan.py'
+_CONTENT_SCAN_SRC = (
+    Path(__file__).resolve().parents[1]
+    / 'templates' / 'modules' / 'team-gated' / 'content_scan.py'
+)
 
 #: The shipped generic link-checker (the doc-drift-prevention module's
 #: link half).  Imported from the packaged tool the scaffold installs --

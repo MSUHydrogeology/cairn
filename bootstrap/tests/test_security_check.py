@@ -29,7 +29,8 @@ def test_scan_targets_are_explicit_files_covering_shipped_surface() -> None:
     targets = set(security_check.scan_targets())
     assert "bootstrap/scaffold.py" in targets
     assert "templates/modules/team-gated/link_check.py" in targets
-    assert "scripts/content_scan.py" in targets
+    # content_scan is single-sourced as the content-security module script.
+    assert "templates/modules/team-gated/content_scan.py" in targets
     # Explicit files only -- no bare directory (the no-`-r` footgun).
     assert all(t.endswith(".py") for t in targets), targets
 

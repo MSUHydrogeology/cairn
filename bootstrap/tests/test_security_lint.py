@@ -148,7 +148,9 @@ def test_scan_targets_cover_all_shipped_scripts() -> None:
     missing = shipped - targets
     assert not missing, f"shipped scripts not scanned: {sorted(missing)}"
     for dev in ("bootstrap/scaffold.py", "scripts/check_cairn.py",
-                "scripts/content_scan.py"):
+                # content_scan moved to the content-security module (single
+                # source); it is now covered via the verbatim derivation.
+                "templates/modules/team-gated/content_scan.py"):
         assert dev in targets, dev
     # No bare directory target (the no-`-r` footgun) -- every target is a file.
     for t in _scan_targets():

@@ -441,6 +441,17 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         InstallSpec("team-gated/examples-gallery.md",
                     "dev/modules/examples-gallery.md"),
     ],
+    # Cairn v0.2 security-hardening (R9): the content-integrity scanner,
+    # shipped to adopters so their agents can scan working-tree files /
+    # incoming PRs for prompt-injection patterns before ingesting them. The
+    # verbatim script is single-sourced here (Cairn's own check_cairn composes
+    # the same file), the 1:many claim-check pattern.
+    "content-security": [
+        InstallSpec("team-gated/content-security.md",
+                    "dev/modules/content-security.md"),
+        InstallSpec("team-gated/content_scan.py",
+                    "scripts/content_scan.py", verbatim=True),
+    ],
 }
 
 # Module → the inline command-token whose value should default to the
