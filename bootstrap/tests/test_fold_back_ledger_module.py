@@ -119,3 +119,24 @@ class TestLedgerContent:
         assert "Removal rule" in text
         assert "Open candidates" in text
         assert "Already synced" in text
+
+
+class TestDoctrineReferenceIsCairnSource:
+    """Code-review P2: the scaffold does not install Cairn's `doctrine/`
+    into adopters, so any `doctrine/fold-back.md` reference in the
+    *installed* fold-back files must be explicitly qualified as a Cairn
+    source reference -- never a bare adopter-local path that dangles at
+    the cold-start surface."""
+
+    def test_installed_docs_qualify_doctrine_ref(self, tmp_path: Path) -> None:
+        assert _scaffold(tmp_path, [MODULE]) == 0
+        for dst in (MODULE_DOC_DST, LEDGER_DST):
+            text = (tmp_path / dst).read_text(encoding="utf-8")
+            for line in text.splitlines():
+                if "doctrine/fold-back.md" in line:
+                    assert "Cairn" in line, (
+                        f"{dst}: bare adopter-local reference to "
+                        f"doctrine/fold-back.md (doctrine/ is not installed "
+                        f"into adopters); qualify it as a Cairn-source "
+                        f"reference. Offending line: {line!r}"
+                    )

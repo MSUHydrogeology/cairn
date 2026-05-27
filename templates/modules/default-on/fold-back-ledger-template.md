@@ -3,8 +3,12 @@
 The holding pen for **Cairn-bound candidates**: generalizable
 improvements proven here that should fold *up* into the Cairn
 methodology so every adopter gets the proven version. This is the
-deployment-side push; see `doctrine/fold-back.md` for the full mechanism
-(lifecycle, the harvest relationship, the export boundary).
+deployment-side push. This file is self-contained for day-to-day use
+(the status vocabulary, removal rule, and export-safety warning are all
+below); the full rationale — lifecycle, the harvest relationship, the
+export boundary — lives in Cairn's published methodology doctrine
+(`doctrine/fold-back.md` in the **Cairn** repository, not a file in this
+repo).
 
 > **[SECURITY WARNING]** This ledger is a **cross-repository export
 > surface** — its candidates are destined for *public* Cairn. Ledger

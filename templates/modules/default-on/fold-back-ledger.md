@@ -13,10 +13,13 @@ in the session-routines / goodnight doctrine.
 The fold-back ledger is the **deployment-side improvement channel**: the
 standing mechanism by which this deployment feeds generalizable doctrine
 *up* into Cairn, so every adopter benefits from what was proven here. It
-is the push that complements Cairn's framework-side harvest pull. The
-full mechanism — lifecycle, status vocabulary, removal rule, the export
-boundary — is doctrine in `doctrine/fold-back.md`; this module ships the
-working artifact and wires the capture cadence.
+is the push that complements Cairn's framework-side harvest pull. This
+module ships a **self-contained** working artifact (the installed ledger
+carries the status vocabulary, removal rule, and export-safety warning)
+and wires the capture cadence. The full *rationale* — lifecycle, the
+harvest relationship, the export boundary — lives in Cairn's published
+methodology doctrine (`doctrine/fold-back.md` in the **Cairn**
+repository, not a file in this adopter repo).
 
 ## What the module installs
 
