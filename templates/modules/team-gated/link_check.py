@@ -148,13 +148,16 @@ class _NoFollowRedirect(urllib.request.HTTPRedirectHandler):
 
 
 def _addr_blocked(addr: ipaddress._BaseAddress) -> bool:
-    """True if *addr* is not a public, routable destination -- the SSRF
-    block set: loopback / private / link-local / reserved / multicast /
-    unspecified, for both IPv4 and IPv6."""
-    return (
-        addr.is_loopback or addr.is_private or addr.is_link_local
-        or addr.is_reserved or addr.is_multicast or addr.is_unspecified
-    )
+    """True if *addr* is not a public, routable destination.
+
+    The contract is **allow only globally-routable addresses** -- the
+    literal ``not addr.is_global``. A denylist of individual flags
+    (loopback / private / link-local / reserved / multicast) is *not*
+    equivalent: it misses ranges that are non-global yet carry none of
+    those flags, e.g. CGNAT shared space ``100.64.0.0/10`` -- a real SSRF
+    target an allow-listed denylist would wave through (Codex plan-review
+    finding 1). ``is_global`` covers IPv4 and IPv6 uniformly."""
+    return not addr.is_global
 
 
 def _host_is_public(host: str) -> bool:

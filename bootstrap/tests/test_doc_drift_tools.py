@@ -266,9 +266,15 @@ class TestLinkCheckSSRF:
     getaddrinfo without DNS, and refused hosts never reach the opener)."""
 
     def test_host_public_classification(self) -> None:
-        # Non-public literals -> blocked.
+        # Non-public literals -> blocked. Includes ranges that are
+        # non-global but carry no single denylist flag, so only the
+        # `not is_global` contract catches them (Codex finding 1):
+        #   100.64.0.1  -> CGNAT shared space (100.64.0.0/10)
+        #   2001:db8::1 -> IPv6 documentation range (non-global)
+        #   fc00::1     -> IPv6 unique-local
         for ip in ("127.0.0.1", "10.0.0.1", "192.168.1.1",
-                   "169.254.169.254", "::1", "fe80::1"):
+                   "169.254.169.254", "100.64.0.1",
+                   "::1", "fe80::1", "fc00::1", "2001:db8::1"):
             assert link_check._host_is_public(ip) is False, ip
         # A public literal -> allowed (no DNS needed).
         assert link_check._host_is_public("93.184.216.34") is True
