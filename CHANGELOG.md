@@ -55,6 +55,40 @@ and a new empty `Unreleased` is started above.
     checklist. Source: the modflow_tools-hosted `cairn-v0.2-security-hardening`
     arc.
 
+- **Fold-back: process hardening -- claim-marker carve-out, a
+  plan-review entry gate, and work-intent adherence triggers
+  (cairn-foldback-process-hardening, 2026-05-27).** The last three proven
+  process-hardening fold-backs from the reference deployment, synced before
+  the v0.2.0 cut (External proposal review: Codex).
+  * **(A) Claim-marker maintenance is not authoring a review.**
+    [`doctrine/lifecycle.md`](doctrine/lifecycle.md) (and both core
+    proposal/plan templates) now carve out a bounded exception to
+    append-only: inserting a `claim_check` marker line adjacent to a path
+    token -- to clear a forward-reference / sibling-repo flag -- is
+    mechanical maintenance, permitted even in another agent's section,
+    bounded by four properties (additive-only / mechanical / auditable +
+    unbundled / typo-guard). The `claim-check` module notes the distinction
+    from its own deferred Markdown-content-gate hook.
+  * **(B) A plan-review entry gate.** Symmetric to the plan-archive
+    (review-before-close) precondition,
+    [`doctrine/lifecycle.md`](doctrine/lifecycle.md) adds a
+    *review-before-implement* precondition: the plan status taxonomy gains
+    `awaiting-plan-review`, and every plan (and its source proposal) carries
+    a mandatory **`Plan review: required(<tier>) | not required(<rationale>)`**
+    line with no silent default. A `required` plan keeps its plan-open and
+    first-implementation commits distinct; the tier follows the
+    structural-independence framing
+    ([`doctrine/dual-review.md`](doctrine/dual-review.md)).
+  * **(C) Work-intent adherence triggers.** The `coordination-tiers`
+    intent tool gains an opt-in **work-intent pre-commit check**
+    (`install-precommit` + `hooks-status`; the post-commit `install-hook`
+    is unchanged) that warns -- never blocks -- when a commit's staged set
+    (`git diff --cached`) carries an unclaimed path or one held by another
+    session. A per-commit `CAIRN_INTENT_ALLOW_UNCLAIMED` / tracked
+    `dev/intent-config.json` `solo_mode` suppresses the self-directed
+    warnings but never an other-session overlap. The session-start routine
+    gains the *read* half (`intent list`). Source: the modflow_tools-hosted
+    `cairn-foldback-process-hardening` arc.
 - **Fold-back ledger candidates -- doc-governance boundary, reviewer
   decision-support + a Decision-scribing guard-rail, and a formalized
   fold-back mechanism (cairn-foldback-ledger-candidates, 2026-05-27).**
