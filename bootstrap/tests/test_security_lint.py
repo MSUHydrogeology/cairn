@@ -29,16 +29,37 @@ from pathlib import Path
 import pytest
 
 CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(CAIRN_ROOT))
 
-# Scan the executable surface: the scaffold + everything under scripts/
-# (check_cairn.py now; content_scan.py once Phase 2 lands) + the two
-# packaged reference scripts (shipped verbatim -- keep them clean too).
-_SCAN_TARGETS = [
-    "bootstrap/scaffold.py",
-    "scripts/",
-    "templates/modules/default-on/claim_check.py",
-    "templates/modules/default-on/lifecycle_metrics.py",
-]
+from bootstrap.scaffold import _MODULE_MAPPINGS  # noqa: E402
+
+
+def _scan_targets() -> list[str]:
+    """Derive the executable surface Bandit must scan from Cairn's own
+    source of truth, so a newly-added shipped script cannot silently
+    escape the gate (security-hardening Chunk 2 / R2).
+
+    This replaces a hand-maintained list that had drifted two ways: it
+    omitted the team-gated reference scripts (``intent.py`` /
+    ``link_check.py`` / ``sync_doc_snippets.py``), and it passed
+    ``scripts/`` as a *directory* with no ``-r`` -- so Bandit scanned
+    nothing there (``check_cairn.py`` / ``content_scan.py`` went
+    unscanned, which is how ``link_check.py``'s SSRF finding hid).
+
+    The derived set: every **verbatim ``.py``** reference script in
+    ``_MODULE_MAPPINGS`` (the artifacts shipped to adopters) + Cairn's own
+    dev executables (``scripts/*.py`` + the scaffold). Explicit files, so
+    the no-recurse footgun cannot return."""
+    targets: set[str] = {"bootstrap/scaffold.py"}
+    for specs in _MODULE_MAPPINGS.values():
+        for spec in specs:
+            if spec.verbatim and spec.src.endswith(".py"):
+                targets.add(f"templates/modules/{spec.src}")
+    targets.update(
+        str(p.relative_to(CAIRN_ROOT))
+        for p in (CAIRN_ROOT / "scripts").glob("*.py")
+    )
+    return sorted(targets)
 
 _SEVERITY_RANK = {"LOW": 0, "MEDIUM": 1, "HIGH": 2}
 _BLOCKING_RANK = _SEVERITY_RANK["MEDIUM"]
@@ -49,12 +70,13 @@ _BLOCKING_RANK = _SEVERITY_RANK["MEDIUM"]
 # LOW severity -- fixed-arg, no shell -- and fall below the block
 # threshold without an entry).
 _ALLOWLIST: dict[tuple[str, str], str] = {
-    ("scripts/check_cairn.py", "B310"): (
-        "urllib.request.urlopen in _probe_external is the OPT-IN external "
-        "link probe (off unless --check-external). The URL is a Markdown "
-        "link target from Cairn's own tracked tree being verified, not "
-        "untrusted runtime input; the call carries a noqa S310 and a HEAD "
-        "request only. Not reachable in the default (offline) self-check."
+    ("templates/modules/team-gated/link_check.py", "B310"): (
+        "urllib.request.urlopen in link_check._probe_external is the OPT-IN "
+        "external-link probe (off unless --check-external) and is SSRF-guarded: "
+        "http(s)-only, manual redirects with per-hop host validation (is_global "
+        "allowlist; non-public IPs refused), and no proxy/auth/netrc handlers. "
+        "Cairn's own check_cairn composes this shipped tool, so the finding "
+        "lives here (it moved out of check_cairn.py in the doc-drift foldback)."
     ),
 }
 
@@ -66,7 +88,7 @@ def _in_ci() -> bool:
 def _run_bandit() -> tuple[int, str, str]:
     cmd = [
         sys.executable, "-m", "bandit", "-q", "-f", "json",
-        *[str(CAIRN_ROOT / t) for t in _SCAN_TARGETS],
+        *[str(CAIRN_ROOT / t) for t in _scan_targets()],
     ]
     proc = subprocess.run(
         cmd, capture_output=True, text=True, cwd=str(CAIRN_ROOT), check=False,
@@ -144,3 +166,27 @@ def test_allowlist_entries_have_rationale() -> None:
     suppression without a reason is how the discipline rots."""
     for key, rationale in _ALLOWLIST.items():
         assert rationale.strip(), f"empty rationale for {key}"
+
+
+def test_scan_targets_cover_all_shipped_scripts() -> None:
+    """Coverage is derived from the source of truth, not a hand list: every
+    verbatim .py shipped via _MODULE_MAPPINGS is in the scanned set (so a
+    9th reference script is auto-covered), and Cairn's dev executables are
+    covered too. This is the anti-drift assertion (R2) -- the previous miss
+    was a stale inventory + a non-recursing directory target."""
+    targets = set(_scan_targets())
+    shipped = {
+        f"templates/modules/{spec.src}"
+        for specs in _MODULE_MAPPINGS.values()
+        for spec in specs
+        if spec.verbatim and spec.src.endswith(".py")
+    }
+    assert shipped, "expected at least one verbatim .py reference script"
+    missing = shipped - targets
+    assert not missing, f"shipped scripts not scanned: {sorted(missing)}"
+    for dev in ("bootstrap/scaffold.py", "scripts/check_cairn.py",
+                "scripts/content_scan.py"):
+        assert dev in targets, dev
+    # No bare directory target (the no-`-r` footgun) -- every target is a file.
+    for t in _scan_targets():
+        assert t.endswith(".py"), f"non-file scan target: {t}"
