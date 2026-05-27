@@ -39,6 +39,19 @@ and a new empty `Unreleased` is started above.
     does, so a behavioral claim needs an empirical probe or the library's
     contract. A one-line pointer threads it from
     [`dimensions/complexity.md`](dimensions/complexity.md).
+  * **(E) goodnight roadmap-hygiene sub-mechanisms.**
+    [`doctrine/lifecycle.md`](doctrine/lifecycle.md) gains an **archive
+    precondition** (every deferred follow-up has a durable home outside
+    the archived file; the migration record lives in a durable, auditable
+    location per the team's workflow — commit body, PR description, or
+    plan metadata) and **removal preconditions** (the three gates a
+    roadmap item clears before deletion). The
+    [`PLANNING.md`](templates/core/dev/PLANNING.md) template ports a
+    Cairn-portable **Status taxonomy** + the archive / removal
+    preconditions + a **date-marker convention** (`(Mon YYYY)`), and
+    [`doctrine/session-routines.md`](doctrine/session-routines.md) gains
+    the goodnight **staleness sweep** (adopter-tunable windows; sweep
+    cross-cutting backlogs nightly; file-readable via the date markers).
 
 - **Governance presets — the onboarding fast path
   (cairn-v0.2-p4-governance-presets, 2026-05-26).** An adopter can now pick

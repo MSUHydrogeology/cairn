@@ -64,6 +64,28 @@ keeps the shared communication files a single-writer surface at
 handoff time. Committing and pushing are never implied by running
 the routine; they wait on explicit Maintainer approval.
 
+### The staleness sweep — keep the roadmap honest
+
+Part of the full-handoff owner's roadmap scrub is a **staleness
+sweep**: flag board items that have aged out by their date-markers.
+The reference windows are **adopter-tunable defaults, not hard
+constants** — `queued` / `deferred` items older than ~2 months, and
+`active` / `blocked` items with no update for ~1 month. For each
+flagged item, do one of four things: **reaffirm** it (refresh its
+date-marker), **reframe** it, **defer** it with explicit revival
+conditions, or **remove** it (clearing the removal preconditions
+first). When in doubt, surface it to the Maintainer rather than
+scrubbing silently.
+
+Two things make the sweep cheap and honest. First, the **date-marker
+convention** on board items (`doctrine/lifecycle.md` and the roadmap
+template) lets the owner perform the sweep by *reading the file*
+rather than running `git blame` or trusting memory. Second, **sweep
+any cross-cutting follow-up backlogs every session-day**, not only at
+the staleness windows: their items go stale fastest, because the
+parent decision has already shipped and the ship-time context fades
+the longer they sit unrevisited.
+
 ### The next-session starting plan: written from scratch each goodnight
 
 The handoff document is **a single-session product, not an

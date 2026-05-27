@@ -295,6 +295,47 @@ summary. It also keeps the roadmap usable: a roadmap that holds
 only what is open or in flight reads quickly and answers
 "what's live?" cleanly.
 
+## Archive precondition — every deferred follow-up has a durable home
+
+The plan-archive precondition above guards *that review happened*.
+A second precondition guards *that nothing was silently dropped*:
+before a proposal **or** a plan archives, every explicitly-deferred
+follow-up it carries must have a **durable home outside the file** —
+a roadmap item, a topic doc's "Future work" section, or its own
+queued follow-up proposal. The archived artifact is closed; a
+follow-up that lived only inside it would vanish from the live
+surfaces the moment it moved to `archive/`.
+
+The migration must be **auditable**. Record where each follow-up
+went in a durable location the team's workflow already preserves —
+the archive commit body, the pull-request description, or the plan's
+closing metadata — as an explicit `Follow-ups migrated to: …` block.
+The *where* is adopter-local (a squash-merge team may keep the audit
+in the PR description rather than a commit body); the requirement is
+that a cold reader can reconstruct, from the durable record alone,
+that every deferral found a home.
+
+## Removal preconditions for a roadmap item
+
+"The roadmap is a current-state index" (above) says a completed item
+is *removed*, not crossed off. **Removal has preconditions.** Before
+an item is deleted from the roadmap it must clear three gates:
+
+1. **The accepted proposal / plan is archived** — its deliberation
+   and execution records are in `archive/`.
+2. **Lasting truth has migrated** to durable homes — doctrine, topic
+   docs, the changelog — per the archive precondition above.
+3. **Cold-start answerability** — "what was tried here, and why?" is
+   answerable from the archives plus the commit log *without* the
+   roadmap entry.
+
+If any gate is unmet, finish that migration first, then delete.
+Cairn states that completed items "migrate out"; these gates are
+what make the migration safe rather than lossy. They are the
+roadmap-side complement to the archive precondition: one guards the
+artifact leaving the board, the other guards the board entry
+leaving the roadmap.
+
 ## Adaptation
 
 The lifecycle is part of the **invariant kernel** — no adaptation

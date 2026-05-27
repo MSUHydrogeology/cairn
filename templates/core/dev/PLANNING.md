@@ -47,3 +47,57 @@ changelog. There is no "completed recently" section on this
 board by design.
 
 *(Empty at adoption.)*
+
+---
+
+## Status taxonomy
+
+A board item carries one status. These are the inline reference
+for any agent editing the board (the full *why* is in
+`doctrine/lifecycle.md`):
+
+* `queued` — accepted or anticipated, not yet in flight.
+* `active` — in flight: an open plan, an executing sub-track.
+* `blocked` — in flight but waiting on an external dependency or a
+  Decision; name the blocker so it is actionable cold.
+* `deferred` — consciously parked, **with revival conditions** (what
+  must become true for it to return to `queued`).
+* `completed` — **transient**: held only between finishing the work
+  and the next goodnight scrub, then *removed*. The board keeps no
+  completion history — a finished item's permanent home is the
+  archived proposal / plan, the implementing commits, and the
+  changelog.
+
+**Date-marker convention.** Each item — or its parent section —
+carries a `(Mon YYYY)` marker recording when it was added or last
+reaffirmed (e.g. `(May 2026)`). The marker makes the staleness sweep
+(below) performable by **reading the file**, not by `git blame` or
+memory. Refresh the marker whenever the item is reaffirmed at a
+goodnight scrub.
+
+## Archive preconditions (proposals and plans)
+
+Before a proposal or plan moves to `archive/`, every
+**explicitly-deferred follow-up** it carries must have a durable home
+*outside* the file — a board item here, a topic doc's "Future work"
+section, or its own queued follow-up proposal. Record where each went
+in a durable, auditable location the team's workflow preserves (the
+archive commit body, the PR description, or the plan's closing
+metadata) as a `Follow-ups migrated to: …` block, so the migration is
+reconstructible from the durable record alone. See
+`doctrine/lifecycle.md` > "Archive precondition — every deferred
+follow-up has a durable home".
+
+## Removal preconditions
+
+A `completed` item is **removed**, not crossed off — but removal has
+gates. Before deleting a board entry, confirm all three:
+
+1. the accepted proposal / plan is archived;
+2. its lasting truth has migrated to durable homes (doctrine, topic
+   docs, the changelog);
+3. the cold-start "what was tried, and why?" is answerable from the
+   archives + commit log **without** this board entry.
+
+If a gate is unmet, finish that migration first, then delete. See
+`doctrine/lifecycle.md` > "Removal preconditions for a roadmap item".
