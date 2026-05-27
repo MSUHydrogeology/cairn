@@ -30,6 +30,15 @@ and a new empty `Unreleased` is started above.
     time** — the work-intent `claim` conflict-check is the worked
     instance, and the pattern generalizes to any signal-now /
     benefit-later protocol.
+  * **(B) verify-before-asserting: what a call *does* vs. what a thing
+    *is*.** The [`claim-check`](templates/modules/default-on/claim-check.md)
+    module now names the costlier class of claim — runtime behavior
+    (side-effects, ordering, atomicity, argument escaping, the artifact a
+    call emits) — and states plainly that the installed checker **cannot**
+    verify it: a signature read confirms what a thing is, not what a call
+    does, so a behavioral claim needs an empirical probe or the library's
+    contract. A one-line pointer threads it from
+    [`dimensions/complexity.md`](dimensions/complexity.md).
 
 - **Governance presets — the onboarding fast path
   (cairn-v0.2-p4-governance-presets, 2026-05-26).** An adopter can now pick

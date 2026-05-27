@@ -39,7 +39,12 @@ weight and verification depth.
   correctness.
 * The full **verify-before-asserting** discipline applies — claims
   about the tree, the data, or the result are checked, not
-  asserted from memory.
+  asserted from memory. The costliest claims are about *what a call
+  does at run time* (side-effects, ordering, atomicity, the artifact
+  it emits), which no scanner can confirm — see the A-vs-E
+  distinction in the `claim-check` module: a runtime-behavior claim
+  needs an empirical probe or the library's contract, not a
+  signature read.
 * The proposal template's "signals the change is wrong"
   subsection earns its keep, and a **Security Review** focused
   mode is available for the untrusted-input surfaces.

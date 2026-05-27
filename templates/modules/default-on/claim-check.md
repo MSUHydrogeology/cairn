@@ -14,6 +14,32 @@ it scans a Markdown proposal / plan / doc and hard-flags broken
 repository paths and out-of-bounds line citations, and soft-flags
 absolute count claims.
 
+## What the checker covers — and the costlier kind it cannot
+
+Most check-before-you-assert claims are about *what a thing **is***
+— does this attribute exist, what does this function return, what
+does this file contain — and a quick read or a grep settles them.
+That is the mechanically-checkable subset, and it is exactly what
+the installed checker covers: paths, line citations, counts.
+
+A distinct, **costlier** class is about *what a call **does** at run
+time*: its side-effects, ordering, atomicity or concurrency
+guarantees, argument escaping, or the artifact / filename it
+actually emits. A signature read confirms a method exists and its
+return type; it does **not** confirm a runtime behavioral
+guarantee. For a load-bearing behavioral claim, run a **small
+empirical probe** — invoke the call in a scratch shell and observe —
+or read the library's behavioral contract; never infer runtime
+behavior from the API name or an adjacent call site.
+
+**This second class is outside any scanner's reach, including this
+one.** The installed checker does not — and cannot — verify a
+runtime-behavior claim: it has no way to know what a call *does*,
+only that a path or citation resolves. Treat the tool as covering
+the first kind and the *discipline* (the empirical probe) as
+covering the second; do not let the checker's clean exit stand in
+for having verified a behavioral claim it never inspected.
+
 ## Template content
 
 Merged into `AGENTS.md`:
