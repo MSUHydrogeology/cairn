@@ -199,11 +199,15 @@ for the Maintainer's Decision.
 
 **Bounded mechanical directives** are different: "revert this commit",
 "fix this typo", "scribe the Decision on proposal X" proceed under the
-triage escape hatches (`proposals/_template.md` > "Triage"). What chat
-*cannot* do silently is convert an unreviewed, proposal-worthy design
-choice into an accepted outcome. **When it is unclear whether a
-directive authorizes action without a proposal, the triage rule is the
-arbiter.**
+triage escape hatches (`proposals/_template.md` > "Triage"). When an
+agent scribes a Decision at the Maintainer's instruction, it is bound by
+the **Decision-commit scribing guard-rail** (`AGENTS.md` > "Git and
+commit workflow"): the authorization is quoted verbatim, the instruction
+must be unambiguous or confirmed, and the commit carries the Decision
+only. What chat *cannot* do silently is convert an unreviewed,
+proposal-worthy design choice into an accepted outcome. **When it is
+unclear whether a directive authorizes action without a proposal, the
+triage rule is the arbiter.**
 
 Citing chat input keeps the source auditable without pretending chat
 was the Decision: an accepted proposal's Decision section names *what

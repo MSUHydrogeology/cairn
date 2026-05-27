@@ -112,6 +112,27 @@ roster is in `dev/agent_collaboration.md`.
   commit that touches only `dev/proposals/` files may proceed
   directly — those are append-only deliberation artifacts.
   Pushing always needs approval.
+* **Scribing a Decision — the guard-rail.** The Maintainer's Decision
+  (accept / reject / supersede) is theirs to land; an
+  explicitly-instructed agent may *scribe and commit* it, bounded by
+  three rules:
+  * **Attribution — quote the authorization verbatim.** Quote the
+    Maintainer's authorizing phrase(s) **verbatim and visually
+    isolated** in both the `## Decision` block and the commit body. Do
+    **not** paraphrase the authorization itself — paraphrase admits
+    semantic drift, condition-softening, or a hallucinated approval.
+    Surrounding explanatory prose is allowed, but clearly separated
+    from the quoted words, so a reader can tell exactly what was
+    authorized.
+  * **Unambiguous instruction, or confirm.** Act only on an instruction
+    unambiguous on *both* the disposition and the commit; if either is
+    unclear, confirm with the Maintainer before scribing.
+  * **Decision-only commit.** Flip the status and append the Decision
+    section, and nothing else — no implementation, plan-open, archive,
+    or roadmap work rides in a scribed Decision commit.
+
+  Absent an explicit, unambiguous (or confirmed) instruction, no agent
+  lands a Decision commit.
 * **Commit with explicit paths** — `git commit <path> [<path> ...]`,
   naming exactly the files the commit should contain. **Never a bare
   `git commit`**: it commits the *entire* staged index, so anything

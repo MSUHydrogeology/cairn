@@ -45,7 +45,12 @@ sufficiently capable agent can fill:
 * **Implementation** — carries an accepted proposal through its
   plan: the code, the tests, the docs.
 * **Internal Reviewer** — the constructive second read
-  (`dual-review.md`).
+  (`dual-review.md`). Also carries **post-review decision-support**: a
+  *neutral briefing* that lays out the decision space for the
+  Maintainer — the trade-offs, what each option changes on disk, and a
+  defensible recommendation — **without steering** the Decision. It
+  supports the Maintainer's call; it does not pre-empt it, and the
+  Decision authority stays the Maintainer's.
 * **External Reviewer** — the independent, make-it-prove-itself
   read.
 * **User Agent** — works from the user's seat: runs the software,
