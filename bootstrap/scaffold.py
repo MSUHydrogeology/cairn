@@ -1395,6 +1395,79 @@ def write_install_lockfile(
     return lock
 
 
+# ---------------------------------------------------------------------------
+# Fail-closed slot parsing (R8) -- the merge engine relies on slots being
+# well-formed before it transplants adopter-owned bodies.  Stricter than the
+# set-level ``find_unpaired_slots`` (which only computes open ^ close and is
+# blind to ordering / nesting / duplicates).
+# ---------------------------------------------------------------------------
+
+class SlotError(ValueError):
+    """Raised on a malformed ``cairn:slot`` structure (R8, fail-closed)."""
+
+
+class Slot(NamedTuple):
+    """A parsed, marker-anchored slot region (line indices, 0-based)."""
+
+    name: str
+    open_line: int   # index of the `cairn:slot NAME` marker line
+    close_line: int  # index of the `cairn:end NAME` marker line
+    body: str        # text strictly between the markers (exclusive)
+
+
+def parse_slots(text: str) -> list[Slot]:
+    """Strictly parse ``cairn:slot`` / ``cairn:end`` regions; **fail closed**.
+
+    Raises :class:`SlotError` on any malformation a merge must not silently
+    mis-handle (R8): a **nested** opener (a second slot opened before the
+    current one closes), a **duplicate** slot name in one file, a
+    ``cairn:end`` **before any** opener (end-before-start), a **mismatched**
+    closer name, or an **unclosed** opener.  On success returns the slots in
+    document order with their bodies (the lines strictly between markers).
+    """
+    lines = text.splitlines()
+    slots: list[Slot] = []
+    open_name: str | None = None
+    open_idx: int | None = None
+    seen: set[str] = set()
+    for i, line in enumerate(lines):
+        m_open = _SLOT_RE.search(line)
+        m_close = _SLOT_END_RE.search(line)
+        if m_open:
+            name = m_open.group(1)
+            if open_name is not None:
+                raise SlotError(
+                    f"nested slot: '{name}' opened inside still-open "
+                    f"'{open_name}' (line {i + 1})"
+                )
+            if name in seen:
+                raise SlotError(
+                    f"duplicate slot name '{name}' in one file (line {i + 1})"
+                )
+            open_name, open_idx = name, i
+        elif m_close:
+            cname = m_close.group(1)
+            if open_name is None:
+                raise SlotError(
+                    f"cairn:end '{cname}' before any cairn:slot (line {i + 1})"
+                )
+            if cname != open_name:
+                raise SlotError(
+                    f"mismatched closer: cairn:end '{cname}' closes "
+                    f"cairn:slot '{open_name}' (line {i + 1})"
+                )
+            assert open_idx is not None
+            body = "\n".join(lines[open_idx + 1:i])
+            slots.append(Slot(open_name, open_idx, i, body))
+            seen.add(open_name)
+            open_name, open_idx = None, None
+    if open_name is not None:
+        raise SlotError(
+            f"unclosed slot '{open_name}' (opened line {(open_idx or 0) + 1})"
+        )
+    return slots
+
+
 def build_arg_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="scaffold.py",
