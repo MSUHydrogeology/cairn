@@ -25,7 +25,12 @@ proposed -> reviewed -> revised -> accepted / rejected / superseded
 Two rules are bright-line:
 
 * **Append-only.** Never edit a prior section — append a revising
-  one. `Status:` is the one mutable field.
+  one. `Status:` is the one mutable field. *(One bounded exception:
+  inserting a `claim_check` marker line — `Proposed/Untracked/External-repo
+  paths:` — adjacent to a path token is **mechanical maintenance, not
+  authoring a review** (additive-only, mechanical, its own labeled
+  `claim-marker maintenance:` commit, typo-guarded). See
+  `dev/agent_collaboration.md` / the lifecycle doctrine.)*
 * **One commit per transition.** Open, review, response, and
   decision each get their own commit.
 

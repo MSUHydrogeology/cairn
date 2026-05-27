@@ -117,3 +117,21 @@ project-side `.git/hooks/pre-commit` is the right shape; we have
 not specified the exemption protocol it would need, and the
 specification is a Cairn follow-up rather than a bootstrap-time
 choice.
+
+**Not to be confused with the work-intent pre-commit check.** The
+deferred hook above is the **Markdown content gate** — a `pre-commit`
+wrapping *this* checker (`{{claim_check_command}}`), which scans
+proposals / plans / docs for broken path claims and out-of-bounds line
+citations. It is **distinct** from the **work-intent pre-commit check**
+shipped (opt-in) by the team-gated `coordination-tiers` module, which
+warns when an about-to-be-committed edit touches a collision-prone path
+with no active work-intent claim. Different surface (Markdown content vs.
+coordination claims), different tool (`claim_check` vs. the intent tool);
+one being deferred here does not contradict the other being shipped there.
+
+**Clearing the flags this checker raises.** A `claim_check` hard flag on a
+genuine forward-reference or sibling-repo path is cleared by inserting a
+marker line (`Proposed/Untracked/External-repo paths:`) adjacent to the
+token. Doing so inside an append-only proposal/plan section is the
+sanctioned **claim-marker maintenance** carve-out (mechanical, additive-only,
+its own labeled commit, typo-guarded) — see the lifecycle doctrine.

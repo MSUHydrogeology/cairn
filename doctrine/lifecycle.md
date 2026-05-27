@@ -83,6 +83,31 @@ new proposal that amends or supersedes it; that keeps the
 amendment itself open to review, which is the whole point of the
 system.
 
+**Claim-marker maintenance is not authoring a review.** One bounded
+exception to append-only: inserting a `claim_check` marker line (a
+`Proposed paths:` / `Untracked paths:` / `External-repo paths:` line)
+adjacent to a path token — to clear a forward-reference or sibling-repo
+path flag the checker raises — is **mechanical maintenance, not authoring
+or editing the review**: attribution and substance are untouched. It is
+permitted even inside an append-only proposal/plan section, including
+another agent's Review/Response/Decision section, bounded by four
+properties:
+
+* **additive-only** — insert a marker line; never modify existing tokens,
+  prose, or attribution;
+* **mechanical** — solely to clear a `claim_check` path / line-citation
+  flag (re-wording a finding remains forbidden);
+* **auditable + unbundled** — its own labeled `claim-marker maintenance:`
+  commit (additions only), so the diff carries its own proof;
+* **typo guard** — before marking, confirm the flagged path is not a typo
+  of a real local path; if it is, fix it (in your own draft) or surface it
+  (in another agent's section — you may not edit their content), never
+  silence it.
+
+In plans, an ordinary task-checkbox / status update is mutable workflow,
+not this carve-out; the carve-out governs only the append-only
+review-finding sections.
+
 ### Trivial vs. non-trivial
 
 Not every change needs the full apparatus. A **trivial** change —

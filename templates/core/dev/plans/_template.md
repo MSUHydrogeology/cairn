@@ -20,7 +20,13 @@ open -> executing -> review -> archived
 
 A plan is an *execution* artifact: its status, progress markers,
 and commit hashes are updated in place. Review findings and the
-archive record are append-only.
+archive record are append-only. *(One bounded exception to those
+append-only sections: inserting a `claim_check` marker line —
+`Proposed/Untracked/External-repo paths:` — adjacent to a path token is
+**mechanical maintenance, not authoring a review** (additive-only, its own
+labeled `claim-marker maintenance:` commit, typo-guarded). A task-checkbox
+/ status update is ordinary mutable workflow, not this carve-out. See the
+lifecycle doctrine.)*
 
 **The plan is the Stage 2 of the Registered Report.** Where the
 proposal pre-registered the design and the verification plan
