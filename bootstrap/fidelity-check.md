@@ -245,10 +245,20 @@ step 3 and the R-F unfilled-slot gate already cover them; this check's
 content into **prose** sections — `dual-review` into the review-loop
 prose, `issue-capture` into the User Agent role note, `coordination-tiers`
 into the coordination section — *not* into slots, so nothing else
-verifies they landed. For each installed team-gated module, read its
-`Adds to:` line and confirm the named content is present. A
-declared-but-absent merge is a finding. (This is faithfulness, not
-completeness — it strengthens the gate; 6b is the novel axis.)
+verifies they landed. For each installed team-gated module: (1) read
+its `Adds to:` line to **resolve the destination** — it names a target
+*file* and a *location* within it (a section, a role-roster entry, a
+note); the phrasings differ across modules (`dual-review` →
+"the review section of `dev/agent_collaboration.md`";
+`dual-language-tests` → "a `tests/` guide in the adopting repository"),
+so resolve to the concrete file + place rather than matching a fixed
+string; (2) confirm the module's **distinctive content** is present
+there — the role's responsibilities, the rule the module adds — not
+merely that the section exists. A declared-but-absent merge is a
+finding. (This is faithfulness, not completeness — it strengthens the
+gate; 6b is the novel axis.) *Follow-up:* standardizing every module's
+`Adds to:` line to a `<file> > <section>` shape would make 6a
+mechanizable — itself a fair harvest/fold-back candidate.
 
 **6b — Tacit-rule capture (the completeness probe proper).** The novel
 check: are operating rules the team follows *in practice* written into

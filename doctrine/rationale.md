@@ -193,13 +193,25 @@ standing process that closes that gap.
 * **Convergence — an empty sweep is success.** A harvest pays only
   when an instance is ahead of core. Right after one lands, core ≈ that
   instance's current doctrine, so the next sweep may legitimately find
-  **nothing** — the loop *converging*, not failing. Record it as "core
-  current as of `<date>` against `<instance>`"; never manufacture
+  **nothing** — the loop *converging*, not failing. Never manufacture
   marginal gaps to justify the run. This is the ward against the
   harvest becoming ceremony.
+* **Where the run is recorded.** Each harvest — findings *and* empty
+  sweeps — is logged where the harvesting party already tracks fold-backs:
+  the adopter's `dev/upstream/<framework>.md` ledger today (a one-line
+  "harvest <date> vs `<instance>`: N items / core current" entry), or a
+  Cairn-side log once Cairn runs its own `dev/`. An empty sweep recorded
+  as "core current as of `<date>` against `<instance>`" is the visible
+  proof the cadence ran and converged — not a missing run.
 * **Cadence.** Run a harvest (a) before each Cairn minor release (the
-  floor), and (b) on an adopter signal — when a reference instance's
-  accreted-doctrine delta crosses a threshold the team tracks.
+  floor), and (b) on an adopter signal. The signal is a **counted**
+  trigger, not a vibe: a harvest fires when the reference instance has
+  landed *k* operating-doctrine additions to its `AGENTS.md` /
+  `agent_collaboration.md` since the last harvest (commits touching
+  those files are a cheap proxy). Like the rate-limit gate's
+  recurrence window above, *k* is the harvesting party's choice,
+  **recorded with the cadence** — the doctrine fixes that a count
+  governs, not the specific number.
 * **Where findings go.** Until Cairn runs its own `dev/`, a finding
   enters an adopter's fold-back ledger → proposal → lands in cairn (the
   adopter-lifecycle these very items rode); once Cairn adopts its own
