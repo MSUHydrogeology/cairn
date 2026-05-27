@@ -142,6 +142,21 @@ class TestLinkCheck:
         assert res.flags == [], "external link must not be probed by default"
         assert res.external_links == 1
 
+    def test_escaping_relative_link_flagged(self, tmp_path: Path) -> None:
+        """A relative link to a real file *outside* the repo root is a flag,
+        not a silent pass (Codex code-review finding 1)."""
+        root = tmp_path / "repo"
+        root.mkdir()
+        (tmp_path / "outside.md").write_text("# Outside\n")  # exists, outside
+        doc = root / "doc.md"
+        doc.write_text("# Doc\n\n[escape](../outside.md)\n")
+        res = link_check.check_tree(root, [doc])
+        assert [f.kind for f in res.flags] == ["link"], (
+            "escaping relative link should be flagged, got "
+            f"{[(f.kind, f.message) for f in res.flags]}"
+        )
+        assert "escapes the repo root" in res.flags[0].message
+
 
 # ---------------------------------------------------------------------------
 # sync_doc_snippets behavioral fixtures
@@ -211,3 +226,31 @@ class TestSnippetSync:
             "# Doc\n\n<!-- snippet: src.py#absent -->\n```\nx\n```\n")
         assert snippets.main(
             ["--root", str(tmp_path), "--check", str(doc)]) == 1
+
+    def test_outside_doc_rejected(self, tmp_path: Path) -> None:
+        """--sync must refuse a directive-bearing doc outside the repo root,
+        without rewriting it (Codex code-review finding 2)."""
+        root = tmp_path / "repo"
+        root.mkdir()
+        (root / "src.py").write_text(
+            "# snippet-start: demo\nnew\n# snippet-end: demo\n")
+        doc = tmp_path / "outside.md"
+        before = ("<!-- snippet: src.py#demo -->\n~~~\nold\n~~~\n")
+        doc.write_text(before)
+        rc = snippets.main(["--root", str(root), "--sync", str(doc)])
+        assert rc == 1, "an outside doc must be refused"
+        assert doc.read_text() == before, "the outside doc must not be rewritten"
+
+    def test_longer_fence_wraps_shorter(self, tmp_path: Path) -> None:
+        """A 4-fence block that contains a shorter same-char fence in its
+        body is one block, not closed early (Codex code-review finding 3)."""
+        (tmp_path / "src.py").write_text(
+            "# snippet-start: fenced\na\n~~~\nb\n# snippet-end: fenced\n")
+        doc = tmp_path / "d.md"
+        # 4-tilde fences wrapping a body that contains a 3-tilde literal.
+        doc.write_text(
+            "# Doc\n\n<!-- snippet: src.py#fenced -->\n"
+            "~~~~\na\n~~~\nb\n~~~~\n")
+        # The body equals the region, so a correct parser sees no drift.
+        assert snippets.main(
+            ["--root", str(tmp_path), "--check", str(doc)]) == 0

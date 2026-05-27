@@ -124,7 +124,12 @@ def _parse_directives(doc: Path, lines: list[str]) -> list[Directive]:
         k = body_start
         while k < n:
             cm = _FENCE_RE.match(lines[k])
-            if cm and cm.group(2)[0] == marker[0]:
+            # A CommonMark closing fence is the same character and at
+            # least as long as the opener -- so a shorter same-character
+            # fence appearing *inside* the body (a 3-tick literal within a
+            # 4-tick block) is content, not the close.
+            if (cm and cm.group(2)[0] == marker[0]
+                    and len(cm.group(2)) >= len(marker)):
                 break
             k += 1
         if k >= n:
@@ -194,6 +199,16 @@ class DocResult:
 
 
 def _process_doc(doc: Path, root: Path, *, sync: bool) -> DocResult:
+    # Containment: never read -- and in --sync never *rewrite* -- a
+    # directive-bearing document outside the repo root. The source path
+    # is contained separately (_safe_source_path); this guards the write
+    # target itself against a stray absolute / escaping doc argument.
+    doc_resolved = doc.resolve()
+    root_resolved = root.resolve()
+    if doc_resolved != root_resolved and root_resolved not in doc_resolved.parents:
+        raise SnippetError(
+            f'{doc}: document is outside the repo root '
+            f'(refusing to read/rewrite it)')
     text = doc.read_text(encoding='utf-8', errors='replace')
     lines = text.split('\n')
     directives = _parse_directives(doc, lines)

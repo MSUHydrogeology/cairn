@@ -155,6 +155,7 @@ def check_links(
     """
     flags: list[Flag] = []
     n_external = 0
+    root_resolved = root.resolve()
     targets: list[tuple[int, str]] = []
     for lineno, line in scannable:
         for m in _LINK_RE.finditer(line):
@@ -193,6 +194,16 @@ def check_links(
             if tgt is None or not tgt.exists():
                 flags.append(Flag(md, lineno, 'link',
                                   f'broken link target: `{target}`'))
+                continue
+            # Containment: an "internal" link must stay under the repo
+            # root. A relative target that resolves to a real file
+            # *outside* the tree (e.g. `../outside.md`) would otherwise
+            # pass and make a delivered tree look self-contained when it
+            # is not.
+            if tgt != root_resolved and root_resolved not in tgt.parents:
+                flags.append(Flag(md, lineno, 'link',
+                                  f'link target escapes the repo root: '
+                                  f'`{target}`'))
                 continue
             anchor_file = tgt if tgt.is_file() else None
         else:
