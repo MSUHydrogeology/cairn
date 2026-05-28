@@ -31,6 +31,13 @@ substantial enough that automating it pays.
 
 ## Choosing a level
 
+Filling [`../templates/codebase-readiness-report.md`](../templates/codebase-readiness-report.md)
+first sharpens the self-locate -- recommended for legacy codebases.
+The eleven-section assessment surfaces hidden state, scientific
+assumptions, and security boundaries, then maps your G/M/P scores
+to a recommended level (≥8 G → Level 2 cleanly; mostly Mixed with
+1–2 Poor → Level 1 first; ≥3 Poor → Level 0 while you fix gaps).
+
 | The project is... | Start at |
 |-------------------|----------|
 | exploring the ideas, not yet committed | Level 0 |

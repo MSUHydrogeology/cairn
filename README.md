@@ -77,6 +77,14 @@ The bootstrap is intentionally single-agent: one capable reasoning
 agent running alongside the Maintainer, working from
 [`bootstrap/BOOTSTRAP.md`](bootstrap/BOOTSTRAP.md).
 
+**Bringing a legacy scientific codebase to Cairn?** Fill
+[`templates/codebase-readiness-report.md`](templates/codebase-readiness-report.md)
+first. The eleven-section assessment (tests, hidden state, data I/O,
+reproducibility, security boundaries, scientific assumptions, and
+more) surfaces the load-bearing questions *before* you pick a level,
+and the profile-mapping appendix translates your G/M/P scores into a
+recommended Cairn level + module roster.
+
 ## Repository layout
 
 | Path | What it holds |

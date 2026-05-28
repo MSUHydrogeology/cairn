@@ -46,6 +46,21 @@ and a new empty `Unreleased` is started above.
   step. `bootstrap/BOOTSTRAP.md` carries a pointer paragraph near
   the top for readers who arrive there first.
 
+- **`templates/codebase-readiness-report.md` -- eleven-section
+  readiness template for legacy scientific codebases.** Adopter-friction
+  package item 4 (Chunk 5). Covers tests, hidden state, scripts,
+  notebooks, data I/O, generated outputs, public APIs, build/run,
+  reproducibility, security boundaries, and scientific assumptions;
+  G/M/P self-score table; profile-mapping appendix with
+  scaffold-block recommendations for section 10 (security) and
+  section 11 (scientific assumptions). **Default check-in posture is
+  safer** (per Codex P2-B): fill locally, then commit only a
+  **redacted summary** or a **scores-and-follow-ups decision** to
+  `dev/`; full report check-in is an explicit opt-in gated on a
+  Maintainer affirmation in the commit body that the artifact
+  contains no secrets, private paths, or proprietary detail. README
+  and on-ramp pointers added.
+
 - **`docs/quickstart.md` -- copy-paste recipe for one human + one AI
   agent on a disposable repo; 2-layer regression test in
   `bootstrap/tests/test_quickstart_sequence.py` (Layer A shell +
