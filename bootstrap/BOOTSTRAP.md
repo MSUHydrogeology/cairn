@@ -16,6 +16,16 @@ agent" — any capable reasoning agent. The installed files inherit
 the same constraint; run the vendor-neutrality lint (Step II-5)
 before declaring the installation complete.
 
+> **If you want a smaller first step** — one human, one agent, one
+> repo, and you would rather have the agent score the six axes and
+> propose a profile than fill the Act I templates by hand — start at
+> [`prompts/bootstrap-lite.md`](prompts/bootstrap-lite.md) instead.
+> bootstrap-lite collapses Act I's assessment + profile-acceptance
+> loop into a one-shot agent prompt and hands off to the same
+> `scaffold.py` install command this document drives. Acts II–III
+> below still apply once your team and codebase grow; bootstrap-lite
+> is the on-ramp, not the replacement.
+
 ---
 
 ## Act I — Understand

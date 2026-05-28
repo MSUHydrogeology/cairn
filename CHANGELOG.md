@@ -33,6 +33,19 @@ and a new empty `Unreleased` is started above.
   `scaffold.py --summary --config <yaml>` invocation prints the
   preset's axes and the expected roster without writing files.
 
+- **`bootstrap/prompts/bootstrap-lite.md` -- the short first-contact
+  agent prompt for one-human + one-agent adopters.** Adopter-friction
+  package item 3 (Chunk 2). Sits between the throwaway-repo quickstart
+  (`docs/quickstart.md`) and the full Level 2 procedure
+  (`bootstrap/BOOTSTRAP.md`): the agent reads `AGENTS.md` + the six
+  dimension docs, surveys the target repo, scores the axes,
+  recommends one of the three named presets, and proposes a
+  profile.yml -- then **stops** for the Maintainer's acceptance
+  before the scaffold runs. Preserves the load-bearing
+  profile-acceptance gate; collapses only the manual axis-scoring
+  step. `bootstrap/BOOTSTRAP.md` carries a pointer paragraph near
+  the top for readers who arrive there first.
+
 ## 0.2.0 — 2026-05-27
 
 ### Added
