@@ -2,6 +2,10 @@
      Authored under plan 2026-05-28-claude-cairn-progressive-onboarding
      (Chunk P1.1 ships this as a placeholder; Chunk P1.4 fills the
      full task list + active-surfacing prompt content). -->
+<!-- claim-check-allow: docs/dev-tour.md -->
+<!-- The dev-tour.md reference below is a forward-link that resolves
+     when Chunk P1.4 ships `cairn/docs/dev-tour.md`.  Per the plan,
+     P1.4 replaces this placeholder with full content. -->
 
 # Onboarding tasks -- solo-greenfield
 

@@ -252,6 +252,13 @@ _DEV_DIRS: tuple[str, ...] = (
     # file here so the activation helper can discover deferred tasks
     # at goodnight.  The directory exists from install time onward.
     "dev/modules/onboarding",
+    # Progressive-onboarding state-file directory (Chunk P1.2 per
+    # Codex P2-5 disposition: tracked, parallel to dev/intents.jsonl).
+    # The scaffold creates this dir + writes an empty activation log
+    # (`onboarding-activated.jsonl`) at install time so the helper
+    # never has to mkdir; the tracked state means multi-team profiles
+    # share activation history through git.
+    "dev/.cairn",
 )
 
 
@@ -1121,6 +1128,30 @@ def _substitute_slot(
     return text[:body_start] + new_body + text[c:], True
 
 
+#: The activation helper script Cairn ships to every adopter (Chunk
+#: P1.2 -- ALWAYS installed alongside any progressive-onboarding
+#: deployment).  The source lives under templates/modules/default-on/
+#: parallel to the foldback_suggest.py + claim_check.py precedent;
+#: the destination is the adopter's scripts/ tree, invoked at
+#: goodnight per doctrine/onboarding.md.
+_ONBOARDING_HELPER_SRC_REL = "modules/default-on/onboarding_activate.py"
+_ONBOARDING_HELPER_DST_REL = "scripts/onboarding_activate.py"
+
+#: The activation log path the helper appends to (Chunk P1.2 per
+#: Codex P2-5: tracked, parallel to dev/intents.jsonl).
+_ONBOARDING_LOG_REL = "dev/.cairn/onboarding-activated.jsonl"
+
+#: The header comment the scaffold writes into a freshly-seeded
+#: activation log so a cold reader knows what it is + the schema.
+_ONBOARDING_LOG_HEADER = (
+    "# dev/.cairn/onboarding-activated.jsonl -- progressive-onboarding\n"
+    "# activation log; one JSONL line per activation; append-only.\n"
+    "# Schema: {task-id, activated-at, by-agent, source-preset, trigger}.\n"
+    "# Managed by scripts/onboarding_activate.py at goodnight;\n"
+    "# see doctrine/onboarding.md for the mechanism.\n"
+)
+
+
 def install_onboarding(
     templates_root: Path,
     target: Path,
@@ -1129,32 +1160,87 @@ def install_onboarding(
     dry_run: bool = False,
     force: bool = False,
 ) -> list[InstallResult]:
-    """Install the preset-keyed progressive-onboarding content.
+    """Install the progressive-onboarding artifacts (Chunk P1.1 +
+    P1.2).
 
-    Two writes, conditional on *preset_name* being one of the three
-    named presets (an adopter without a ``preset:`` selection -- e.g.
-    explicit ``modules:`` list only -- gets no onboarding install).
+    Three categories of writes:
 
-    1. **Inline seed tasks + preset metadata into the slot** in
-       ``dev/PLANNING.md``.  ONLY seed tasks ``[seed; id: ...]`` are
-       rendered into the slot, plus a ``<!-- preset: <name> -->``
-       metadata comment.  Deferred tasks (``[trigger: X; id: ...]``)
-       stay in the installed source file (write 2).
-    2. **Copy the full source file** ``templates/onboarding/<name>.md``
-       to ``<target>/dev/modules/onboarding/<name>.md`` byte-for-byte
-       (no token substitution -- the preset file is curated content,
-       not a template).  This is the authoritative reference the
-       goodnight activation helper reads to discover deferred tasks.
+    **Always (regardless of preset selection)** -- per Chunk P1.2:
 
-    Returns the list of InstallResults for the two writes (or fewer
-    if the preset is not selected / files are missing).  Each result
-    follows the same shape as ``_install_one``'s for consistency
-    with the post-scaffold report.
+    A. Install the activation helper script to
+       ``<target>/scripts/onboarding_activate.py`` (verbatim copy).
+    B. Seed an empty activation log at
+       ``<target>/dev/.cairn/onboarding-activated.jsonl`` (header-
+       comment-only; the helper appends to it at goodnight).
 
-    Per plan 2026-05-28-claude-cairn-progressive-onboarding Chunk
-    P1.1 + Codex External Review P1-1 / P2-4 dispositions.
+    **Only when a named preset is selected** -- per Chunk P1.1:
+
+    C. Inline seed tasks + the ``<!-- preset: <name> -->`` metadata
+       comment into ``dev/PLANNING.md``'s ``onboarding-tasks`` slot.
+       ONLY ``[seed; id: ...]`` items render into the slot; deferred
+       tasks (``[trigger: X; id: ...]``) stay in the installed source
+       file (write D).
+    D. Copy the full preset source file
+       ``templates/onboarding/<name>.md`` to
+       ``<target>/dev/modules/onboarding/<name>.md`` byte-for-byte.
+       This is the authoritative reference the goodnight activation
+       helper reads to discover deferred tasks (Codex External
+       Review P1-1).
+
+    Returns the list of InstallResults for each write (the
+    always-writes always present; the preset-conditional writes only
+    when ``preset_name`` is one of the three named presets).
+
+    Per plan 2026-05-28-claude-cairn-progressive-onboarding Chunks
+    P1.1 (slot subst + preset source copy) + P1.2 (helper script
+    install + activation log seed) + Codex External Review P1-1 /
+    P2-4 / P2-5 dispositions.
     """
     results: list[InstallResult] = []
+
+    # ----- Always: install the activation helper script (A) -------------
+    helper_src = templates_root / _ONBOARDING_HELPER_SRC_REL
+    helper_dst = target / _ONBOARDING_HELPER_DST_REL
+    if helper_src.exists():
+        if dry_run:
+            results.append((helper_dst, [], [], "dry-run"))
+        elif helper_dst.exists() and not force:
+            print(
+                f"  [skip] {helper_dst}: already exists -- pass --force "
+                f"to overwrite",
+                file=sys.stderr,
+            )
+            results.append((helper_dst, [], [], "skipped-exists"))
+        else:
+            _assert_safe_write(helper_dst, target)
+            helper_dst.parent.mkdir(parents=True, exist_ok=True)
+            helper_dst.write_bytes(helper_src.read_bytes())
+            results.append((helper_dst, [], [], "installed"))
+    else:
+        print(
+            f"  [warn] onboarding helper source missing: "
+            f"templates/{_ONBOARDING_HELPER_SRC_REL}",
+            file=sys.stderr,
+        )
+
+    # ----- Always: seed an empty activation log (B) ---------------------
+    log_dst = target / _ONBOARDING_LOG_REL
+    if dry_run:
+        results.append((log_dst, [], [], "dry-run"))
+    elif log_dst.exists() and not force:
+        print(
+            f"  [skip] {log_dst}: already exists -- pass --force to "
+            f"overwrite",
+            file=sys.stderr,
+        )
+        results.append((log_dst, [], [], "skipped-exists"))
+    else:
+        _assert_safe_write(log_dst, target)
+        log_dst.parent.mkdir(parents=True, exist_ok=True)
+        log_dst.write_text(_ONBOARDING_LOG_HEADER, encoding="utf-8")
+        results.append((log_dst, [], [], "installed"))
+
+    # ----- Preset-conditional: slot subst + source copy (C + D) ---------
     if not preset_name or preset_name not in _ONBOARDING_PRESETS:
         return results
 
@@ -1171,7 +1257,7 @@ def install_onboarding(
     seed_blocks = _extract_seed_tasks(preset_text)
     rendered = _render_onboarding_slot(preset_name, seed_blocks)
 
-    # Write 1: substitute into installed PLANNING.md's slot.
+    # Write C: substitute into installed PLANNING.md's slot.
     planning_dst = target / "dev" / "PLANNING.md"
     if not planning_dst.exists():
         print(
@@ -1198,7 +1284,7 @@ def install_onboarding(
                 planning_dst.write_text(new_text, encoding="utf-8")
                 results.append((planning_dst, [], [], "installed"))
 
-    # Write 2: copy source file verbatim to installed-source path.
+    # Write D: copy source file verbatim to installed-source path.
     source_dst = target / "dev" / "modules" / "onboarding" / f"{preset_name}.md"
     if dry_run:
         results.append((source_dst, [], [], "dry-run"))
@@ -2768,20 +2854,22 @@ def main(argv: list[str] | None = None) -> int:
         templates_root, target, tokens, force=args.force
     )
 
-    # Install progressive-onboarding content (preset-keyed).  Must run
-    # AFTER install_core because it edits the just-installed
-    # dev/PLANNING.md's `onboarding-tasks` slot.  Per plan
-    # 2026-05-28-claude-cairn-progressive-onboarding Chunk P1.1:
-    # seed-only slot render + full-source-file install to
-    # dev/modules/onboarding/<preset>.md.  Adopters without a preset:
-    # selection get no onboarding install (the function no-ops).
+    # Install progressive-onboarding content.  Must run AFTER
+    # install_core because it edits the just-installed
+    # dev/PLANNING.md's `onboarding-tasks` slot.  Always installs the
+    # helper script + seeds the activation log (Chunk P1.2); only
+    # populates the slot + copies the preset source file when a
+    # `preset:` is selected (Chunk P1.1).
     preset_name = str(cfg.get("preset") or "").strip() or None
-    onboarding_results: list[InstallResult] = []
-    if preset_name:
-        print(f"Installing progressive onboarding ({preset_name}) ...")
-        onboarding_results = install_onboarding(
-            templates_root, target, preset_name, force=args.force
-        )
+    label = (
+        f"progressive onboarding ({preset_name})"
+        if preset_name
+        else "progressive onboarding (helper + log only; no preset)"
+    )
+    print(f"Installing {label} ...")
+    onboarding_results = install_onboarding(
+        templates_root, target, preset_name, force=args.force
+    )
 
     # Install module templates
     print(f"Installing modules: {', '.join(modules) or '(none)'} ...")
