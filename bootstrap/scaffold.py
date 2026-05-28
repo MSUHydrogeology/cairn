@@ -484,6 +484,14 @@ _REFERENCE_SCRIPT_TOKEN: dict[str, str] = {
 #: non-clobber + idempotent (see :func:`seed_gitignore`).
 _GITIGNORE_SEEDS: dict[str, tuple[str, ...]] = {
     "coordination-tiers": ("dev/intents.jsonl",),
+    # Foldback active-surfacing (2026-05-28 arc): the protocol's Scrub
+    # step writes the drafted issue / PR body to a gitignored temp
+    # file pattern under `dev/upstream/` before invoking the scanner.
+    # The draft file is intentionally never committed -- the durable
+    # record is the filed Cairn issue / PR + the ledger row's
+    # status transition.  Seeded by default so an adopter does not
+    # have to remember the pattern themselves.
+    "fold-back-ledger": ("dev/upstream/.foldback-draft-*.md",),
 }
 
 

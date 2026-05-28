@@ -8,6 +8,11 @@ the `cairn-foldback-active-surfacing` arc.  The capture-side merge
 the surfacing-side merge (`Goodnight foldback-surfacing`) is the new
 load-bearing addition.
 
+Also covers the .gitignore-seed registry entry (Chunk 7): the
+fold-back-ledger module seeds `dev/upstream/.foldback-draft-*.md`
+into the adopter's `.gitignore` so the active-surfacing protocol's
+drafted-body temp files are never accidentally committed.
+
 These tests treat the module file as a textual artifact (read it,
 assert sub-strings are present).  Behavioral coverage of the merged
 session-routines doctrine is out of scope here -- the merge is a
@@ -15,6 +20,7 @@ human-and-agent-read prose surface, not an executable contract.
 """
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import pytest
@@ -23,6 +29,10 @@ CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
 MODULE_PATH = (
     CAIRN_ROOT / "templates" / "modules" / "default-on" / "fold-back-ledger.md"
 )
+
+# Allow the bootstrap scaffold module to import for the gitignore-seed test.
+sys.path.insert(0, str(CAIRN_ROOT))
+from bootstrap.scaffold import _GITIGNORE_SEEDS  # noqa: E402
 
 pytestmark = pytest.mark.skipif(
     not MODULE_PATH.exists(),
@@ -116,4 +126,24 @@ class TestTemplateContentMergeBlocks:
         assert "by hand" in module_text or "agent never" in module_text, (
             "Surfacing merge block must carry the bright-line: the "
             "maintainer submits, the agent does not"
+        )
+
+
+class TestGitignoreSeed:
+    """The active-surfacing protocol writes drafted bodies to a
+    gitignored temp file pattern; the scaffold's _GITIGNORE_SEEDS
+    registry seeds that pattern when the fold-back-ledger module is
+    selected, so adopters get the protection by default.
+    """
+
+    def test_foldback_ledger_seeds_draft_pattern(self):
+        assert "fold-back-ledger" in _GITIGNORE_SEEDS, (
+            "fold-back-ledger module missing from _GITIGNORE_SEEDS "
+            "registry; the active-surfacing protocol's drafted-body "
+            "temp file pattern is not seeded into adopters' .gitignore"
+        )
+        seeds = _GITIGNORE_SEEDS["fold-back-ledger"]
+        assert "dev/upstream/.foldback-draft-*.md" in seeds, (
+            f"foldback-draft pattern missing from fold-back-ledger "
+            f"gitignore seeds: {seeds}"
         )
