@@ -671,6 +671,123 @@ def evaluate_triggers(
 
 
 # ---------------------------------------------------------------------------
+# Active-surfacing prompts (Chunks P1.10a mechanisms + P1.10b content)
+# ---------------------------------------------------------------------------
+#
+# The four named active-surfacing rows, in priority order (the
+# activation helper emits at most one per goodnight, picking the
+# highest-priority unmuted row).
+
+#: Priority-ordered list of active-surfacing row names.  Index 0 is
+#: highest priority; ties are broken by list order.  The mapping
+#: between rows and their firing triggers is also encoded here so the
+#: helper can resolve "which row goes with which fired trigger" in
+#: one place.
+_ACTIVE_SURFACING_ROWS: tuple[tuple[str, str], ...] = (
+    # (row-name, firing-trigger)
+    ("collab-agreement-signing", "collab-agreement-signing"),
+    ("Level-1-to-2-graduation", "level-1-to-2"),
+    ("second-agent-type", "second-agent-type"),
+    ("upstream-PR-issue-walkthrough", "first-foldback-candidate"),
+)
+
+#: UX caps per goodnight.  Per the plan: <=1 active prompt;
+#: <=3 newly-inserted PLANNING tasks.
+MAX_ACTIVE_PROMPTS_PER_GOODNIGHT = 1
+MAX_NEW_TASKS_PER_GOODNIGHT = 3
+
+#: Per-preset prompt-content section anchor.  The preset file's
+#: active-surfacing prompt content lives under markdown headings
+#: matching this pattern, with the row-name embedded.  Tolerant to
+#: small wording variations between presets (the regex captures the
+#: row keyword, not the exact heading text).
+_PROMPT_HEADING_RE_CACHE: dict[str, re.Pattern[str]] = {}
+
+
+def _prompt_heading_re(row_name: str) -> re.Pattern[str]:
+    """Build (cached) a regex that matches the markdown heading
+    introducing the prompt content for *row_name* in a preset file.
+    Tolerant to wording variations: the preset's prompt heading need
+    only contain the row-name keyword (case-insensitive)."""
+    if row_name not in _PROMPT_HEADING_RE_CACHE:
+        slug = row_name.lower()
+        _PROMPT_HEADING_RE_CACHE[row_name] = re.compile(
+            r"^###\s+.*" + re.escape(slug) + r".*$",
+            re.IGNORECASE,
+        )
+    return _PROMPT_HEADING_RE_CACHE[row_name]
+
+
+def render_active_surfacing_prompt(
+    preset_text: str, row_name: str,
+) -> str | None:
+    """Extract the prompt content for *row_name* from a preset
+    source file.
+
+    Looks for the markdown heading whose name contains *row_name*
+    (case-insensitive) inside the "Active-surfacing prompt content"
+    section, and returns the body until the next heading at the same
+    level (`###`) or end of file.
+
+    Returns the body text, or ``None`` if the row's heading is not
+    found.
+    """
+    heading_re = _prompt_heading_re(row_name)
+    lines = preset_text.splitlines()
+    body_start: int | None = None
+    for i, line in enumerate(lines):
+        if heading_re.match(line):
+            body_start = i + 1
+            break
+    if body_start is None:
+        return None
+    body_end = len(lines)
+    for j in range(body_start, len(lines)):
+        if lines[j].startswith("### ") or lines[j].startswith("## "):
+            body_end = j
+            break
+    return "\n".join(lines[body_start:body_end]).strip("\n").strip() or None
+
+
+def select_active_prompt_to_fire(
+    fired_triggers: set[str], log_records: list[ActivationRecord],
+) -> str | None:
+    """Pick the highest-priority unmuted active-surfacing row whose
+    firing trigger is in *fired_triggers* AND whose row-name does
+    not appear in the log (idempotency -- once an active prompt has
+    been emitted, it does not re-fire on subsequent goodnights).
+
+    Returns the row-name (an `_ACTIVE_SURFACING_ROWS` first-column
+    string) or ``None`` if no row qualifies.
+    """
+    already_emitted = {
+        rec.task_id for rec in log_records
+        if rec.task_id.startswith("active-surface:")
+    }
+    for row_name, trigger in _ACTIVE_SURFACING_ROWS:
+        if trigger not in fired_triggers:
+            continue
+        marker_id = f"active-surface:{row_name}"
+        if marker_id in already_emitted:
+            continue
+        return row_name
+    return None
+
+
+def render_outcome_with_active_prompt(
+    preset_text: str, row_name: str,
+) -> tuple[str, str]:
+    """Return ``(heading, body)`` for the active-surfacing prompt
+    terminal output.  *heading* is the short row label; *body* is the
+    per-preset prompt content extracted from the preset file."""
+    body = render_active_surfacing_prompt(preset_text, row_name) or (
+        f"(prompt content for {row_name!r} not found in preset; "
+        "see doctrine/onboarding.md.)"
+    )
+    return row_name, body
+
+
+# ---------------------------------------------------------------------------
 # Activation computation + writing
 # ---------------------------------------------------------------------------
 
@@ -771,12 +888,28 @@ def utc_now_iso() -> str:
 
 @dataclass(frozen=True)
 class ActivationOutcome:
-    """Result of one ``activate(...)`` run."""
+    """Result of one ``activate(...)`` run.
+
+    Extended in P1.10a with active-surfacing prompt outputs:
+
+    * ``active_prompt_row`` -- the active-surfacing row name that
+      fired this goodnight (or ``None`` if no row qualifies under
+      UX caps + priority).
+    * ``active_prompt_body`` -- the prompt content the helper
+      would emit to the terminal (the per-preset content extracted
+      from the installed source file).
+    * ``deferred_over_cap`` -- pending activations beyond the
+      ``MAX_NEW_TASKS_PER_GOODNIGHT`` UX cap; they re-emerge at
+      the next goodnight.
+    """
 
     preset: str | None
     pending: list[PendingActivation]
     planning_updated: bool
     log_records: list[ActivationRecord]
+    active_prompt_row: str | None = None
+    active_prompt_body: str | None = None
+    deferred_over_cap: tuple[PendingActivation, ...] = ()
 
 
 class OnboardingError(Exception):
@@ -856,18 +989,34 @@ def activate(
     else:
         fired = fired_triggers_override
 
-    pending = compute_activations(deferred, fired, already)
-    if not pending:
+    pending_all = compute_activations(deferred, fired, already)
+
+    # UX cap: at most MAX_NEW_TASKS_PER_GOODNIGHT new tasks per
+    # goodnight; overflow defers to the next goodnight (the
+    # held-tasks derived state re-surfaces them).
+    pending = pending_all[:MAX_NEW_TASKS_PER_GOODNIGHT]
+    deferred_over_cap = tuple(pending_all[MAX_NEW_TASKS_PER_GOODNIGHT:])
+
+    # Select at most MAX_ACTIVE_PROMPTS_PER_GOODNIGHT active-surfacing
+    # row (the cap is 1; the select function returns the highest-
+    # priority unmuted row).
+    active_row = select_active_prompt_to_fire(fired, existing_records)
+    active_body: str | None = None
+    if active_row is not None:
+        active_body = render_active_surfacing_prompt(source_text, active_row)
+
+    if not pending and active_row is None:
         return ActivationOutcome(
             preset=preset,
             pending=[],
             planning_updated=False,
             log_records=[],
+            deferred_over_cap=deferred_over_cap,
         )
 
     agent_id = by_agent or default_agent_identity()
     ts = utc_now_iso()
-    new_records = [
+    new_records: list[ActivationRecord] = [
         ActivationRecord(
             task_id=p.task.task_id,
             activated_at=ts,
@@ -877,6 +1026,18 @@ def activate(
         )
         for p in pending
     ]
+    if active_row is not None:
+        # Record the active-surfacing emission with a marker prefix
+        # so idempotency (don't re-fire the prompt) carries forward.
+        new_records.append(
+            ActivationRecord(
+                task_id=f"active-surface:{active_row}",
+                activated_at=ts,
+                by_agent=agent_id,
+                source_preset=preset,
+                trigger=f"active-surface:{active_row}",
+            )
+        )
 
     if dry_run:
         return ActivationOutcome(
@@ -884,30 +1045,36 @@ def activate(
             pending=pending,
             planning_updated=False,
             log_records=new_records,
+            active_prompt_row=active_row,
+            active_prompt_body=active_body,
+            deferred_over_cap=deferred_over_cap,
         )
 
-    # Persist: PLANNING slot first, then append log.  Slot update is
-    # idempotent under re-read (the log is the dedup key on the next
-    # run); log-only ordering would risk re-activating on PLANNING
-    # write failure, but a log entry without a PLANNING entry is
-    # recoverable (operator re-runs activate; pending is empty
-    # because the log already records the id).
-    _, _, current_body = found
-    new_body = render_appended_slot_body(current_body, pending)
-    new_planning = update_planning_slot(planning_text, new_body)
-    if new_planning is None:
-        raise OnboardingError(
-            f"PLANNING.md slot disappeared between read + write -- "
-            f"concurrent edit?  Re-run after coordinating."
-        )
-    planning_path.write_text(new_planning, encoding="utf-8")
+    # Persist: PLANNING slot first (if there are pending tasks), then
+    # append log.  Active-surfacing prompts are emitted via the
+    # outcome (no PLANNING write -- the prompt is terminal output).
+    planning_updated = False
+    if pending:
+        _, _, current_body = found
+        new_body = render_appended_slot_body(current_body, pending)
+        new_planning = update_planning_slot(planning_text, new_body)
+        if new_planning is None:
+            raise OnboardingError(
+                f"PLANNING.md slot disappeared between read + write -- "
+                f"concurrent edit?  Re-run after coordinating."
+            )
+        planning_path.write_text(new_planning, encoding="utf-8")
+        planning_updated = True
     append_activation_log(log_path, new_records)
 
     return ActivationOutcome(
         preset=preset,
         pending=pending,
-        planning_updated=True,
+        planning_updated=planning_updated,
         log_records=new_records,
+        active_prompt_row=active_row,
+        active_prompt_body=active_body,
+        deferred_over_cap=deferred_over_cap,
     )
 
 
@@ -955,20 +1122,35 @@ def derive_completed_task_ids(
 
 
 def _format_outcome_summary(outcome: ActivationOutcome) -> str:
-    if not outcome.pending:
+    if not outcome.pending and outcome.active_prompt_row is None:
         return (
-            f"onboarding_activate: no eligible activations (preset="
-            f"{outcome.preset!r}; trigger evaluation P1.9 not yet "
-            f"shipped, so the stub returns no fired triggers)."
+            f"onboarding_activate: no eligible activations or "
+            f"prompts (preset={outcome.preset!r})."
         )
-    lines = [
-        f"onboarding_activate: {len(outcome.pending)} activation(s) "
-        f"(preset={outcome.preset!r}):"
-    ]
-    for p in outcome.pending:
+    lines: list[str] = []
+    if outcome.pending:
         lines.append(
-            f"  * id={p.task.task_id}  trigger={p.trigger}"
+            f"onboarding_activate: {len(outcome.pending)} task "
+            f"activation(s) (preset={outcome.preset!r}):"
         )
+        for p in outcome.pending:
+            lines.append(
+                f"  * id={p.task.task_id}  trigger={p.trigger}"
+            )
+    if outcome.deferred_over_cap:
+        lines.append(
+            f"  ({len(outcome.deferred_over_cap)} additional "
+            f"activation(s) deferred to the next goodnight per UX cap "
+            f"of {MAX_NEW_TASKS_PER_GOODNIGHT}/goodnight)."
+        )
+    if outcome.active_prompt_row is not None:
+        lines.append("")
+        lines.append(
+            f"--- Active-surfacing prompt: {outcome.active_prompt_row} ---"
+        )
+        body = outcome.active_prompt_body or "(no content)"
+        lines.append(body)
+        lines.append("--- end prompt ---")
     lines.append(
         f"PLANNING updated: {outcome.planning_updated}; log appended: "
         f"{len(outcome.log_records)} line(s)."
