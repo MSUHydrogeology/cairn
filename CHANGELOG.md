@@ -1,3 +1,11 @@
+<!-- claim-check-allow: scripts/onboarding_activate.py -->
+<!-- The adopter-install path is cited verbatim in the
+     progressive-onboarding entry; from Cairn's own checkout the path
+     does not resolve (the source-of-truth lives at
+     templates/modules/default-on/onboarding_activate.py).  Same
+     pattern as the fold-back-active-surfacing entry's claim-check
+     exemptions. -->
+
 # Changelog
 
 Notable changes to Cairn.
@@ -17,6 +25,77 @@ and a new empty `Unreleased` is started above.
 ## Unreleased
 
 ### Added
+
+- **Progressive onboarding: PLANNING-as-onramp + maturity/action
+  trigger system + active-surfacing at relationship-changing
+  transitions.**  Ships the post-install counterpart to the
+  static entry-surface artifacts (quickstart + bootstrap-lite +
+  profile examples + readiness-report); supersedes Goal 6 of
+  the modflow_tools-side 0.3 roadmap.  Per the adopter
+  proposal + plan at
+  `dev/plans/archive/2026-05-28-claude-cairn-progressive-onboarding.md`
+  (modflow_tools side).  L3 scope: three preset onboarding
+  files + full trigger matrix + all four active-surfacing
+  prompts + both tour docs.
+
+  **Mechanism summary**:
+  * **Preset-keyed PLANNING slot**
+    (`templates/core/dev/PLANNING.md` +
+    `bootstrap/scaffold.py`): new
+    `<!-- cairn:slot onboarding-tasks -->` block between
+    `## Where the project stands` and `## Queued`.  Scaffold
+    inlines ONLY the preset's seed tasks + a
+    `<!-- preset: <name> -->` metadata comment; deferred tasks
+    stay in the installed source file at
+    `dev/modules/onboarding/<preset>.md` (the authoritative
+    reference the activation helper reads at goodnight).
+  * **Three preset onboarding files** in
+    `templates/onboarding/`: `solo-greenfield.md` (1 human + 1
+    AI agent), `collaborative-team.md` (2-4 humans + 1-2 agent
+    types), `high-rigor-legacy.md` (5+ humans + multi-agent +
+    legacy + multi-language + security boundaries).  Each
+    carries seed tasks + deferred tasks (with `[trigger: X;
+    id: Y]` syntax) + four active-surfacing prompt content
+    blocks (one per active-surfacing row, calibrated per
+    preset).
+  * **State file + activation helper**
+    (`templates/modules/default-on/onboarding_activate.py` ->
+    adopter `scripts/onboarding_activate.py`).  Activates
+    deferred tasks into PLANNING + emits at most one
+    active-surfacing prompt at goodnight; reads
+    `<!-- preset: <name> -->` slot metadata to resolve the
+    source file; appends one record per activation to the
+    tracked `dev/.cairn/onboarding-activated.jsonl` log
+    (parallel to `dev/intents.jsonl`'s atomic-append
+    precedent).  Default mode + `--dry-run` + `--seed`
+    (existing-adopter manual opt-in).
+  * **Trigger matrix** (`evaluate_maturity_triggers` +
+    `evaluate_action_triggers`).  Four maturity-ladder
+    (`level-0-to-1`, `level-1-to-2`, `level-1-deepen`,
+    `level-2-deepen`) + eight action triggers
+    (proposal/plan/changelog firsts + `second-agent-type`
+    (roster-based) + `first-cross-type-review` (file-content
+    scan) + `first-foldback-candidate` (ledger scan) +
+    `collab-agreement-signing` (roster-unfilled + prior
+    proposal-archive precondition)).  Triggers observe
+    EXPLICIT deployment state per the Codex External Review
+    P2-3 disposition; no git archaeology for active prompts.
+  * **Active-surfacing emission** with UX caps (<=1 prompt
+    per goodnight; <=3 newly-inserted tasks per goodnight)
+    and priority order (collab-agreement > Level-1->2 >
+    second-agent-type > foldback-walkthrough); overflow
+    defers to next goodnight via the derived held-task store.
+  * **Doctrine doc** (`doctrine/onboarding.md`): full
+    mechanism + state-file schema + trigger matrix + UX caps
+    + priority order + existing-adopter manual-opt-in 4-step
+    recipe + v1.x capability-pull-from-adopter follow-ups.
+  * **Session-routines extension**
+    (`doctrine/session-routines.md`): new subsection naming
+    the activation helper as a standing goodnight step paired
+    with foldback-capture.
+  * **Tour docs** (`docs/dev-tour.md` day-one-accessible +
+    `docs/agent-team-onboarding.md` second-agent spin-up
+    checklist).
 
 - **Fold-back active-surfacing: deployment-side machinery for
   issue/PR suggestions to Cairn.**  Ships the *active half* of the
