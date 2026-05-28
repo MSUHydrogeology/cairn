@@ -4,8 +4,20 @@
 Stdlib-only.  Reads the deployment's fold-back ledger (a Markdown
 file under ``dev/upstream/<framework>.md``), parses the "Open
 candidates" table, and emits a structured listing of the
-``candidate``-status rows that are eligible for active surfacing at
-the current goodnight cadence.
+``candidate``-status rows that are eligible for active surfacing.
+
+**Scope**: this helper is a ``candidate``-status + ``deferred-until``
+filter.  It does NOT enforce the grace-period (default seven-day)
+contract the doctrine names (``cairn/doctrine/fold-back.md`` >
+"Active surfacing" > "Trigger -- standing").  The grace period is a
+**maintainer judgment** that reads each row's Source field for its
+captured date and decides per-row whether the candidate is fresh
+enough to skip surfacing.  Adding a machine-enforced grace period
+would require a ``captured: <ISO-date>`` field on every ledger row;
+that schema extension is out of scope for this helper and would be a
+separate doctrine-and-implementation arc.  Existing ledgers carry
+the captured date in prose form within the Source field, which the
+maintainer reads at surfacing time.
 
 A row is eligible when:
 

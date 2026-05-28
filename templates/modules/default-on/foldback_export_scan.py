@@ -89,8 +89,29 @@ class Finding:
     line: int
     detector: str    # 'credentials' | 'private-path' | 'ip-address'
                      # | 'internal-hostname' | 'proprietary-token'
+                     # | 'foldback-accept-empty-rationale'
     snippet: str     # the matched substring (truncated to ~80 chars)
     message: str
+    severity: str = "fail"   # 'fail' (counts toward non-zero exit) |
+                              # 'info' (reported but does not fail;
+                              # used for accepted-suppression audit
+                              # lines so the maintainer sees what was
+                              # waived).
+
+
+# The foldback-accept marker -- per-line documented false-positive
+# escape hatch.  Each accepted line carries:
+#   <!-- foldback-accept: <reason> -->      (Markdown body)
+#   # foldback-accept: <reason>             (code file)
+#   /* foldback-accept: <reason> */         (block-comment language)
+# The regex matches the substring anywhere on the line; the
+# surrounding context (`<!-- -->`, `#`, etc.) is the comment-shape
+# the language uses.  Rationale is REQUIRED (non-empty) -- empty
+# rationale is itself a finding.
+_FOLDBACK_ACCEPT_RE = re.compile(
+    r"foldback-accept\s*:\s*(?P<reason>.*?)(?=\s*-->|\s*\*/|\s*$)",
+    re.IGNORECASE,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -325,17 +346,74 @@ def load_denylist(path: Path) -> list[str]:
 # ---------------------------------------------------------------------------
 
 
+def _parse_accept_marker(line: str) -> tuple[bool, str]:
+    """Detect a ``foldback-accept: <reason>`` marker on *line*.
+
+    Returns ``(has_marker, reason)``.  When ``has_marker`` is True
+    but ``reason`` is empty, the caller emits an
+    ``foldback-accept-empty-rationale`` finding -- empty rationales
+    are forbidden (the marker exists for *documented* dispositions,
+    not silent waivers).
+    """
+    m = _FOLDBACK_ACCEPT_RE.search(line)
+    if m is None:
+        return False, ""
+    return True, m.group("reason").strip()
+
+
 def scan_text(text: str, denylist: list[str]) -> list[Finding]:
-    """Run all five detectors over *text* line-by-line.  Returns the
-    concatenated findings ordered by (line, detector-class).
+    """Run all five detectors over *text* line-by-line.
+
+    A ``foldback-accept: <reason>`` marker on a line suppresses every
+    finding on that line (per the protocol's documented false-
+    positive escape hatch).  Suppressed findings are reported as
+    info-severity audit lines so the maintainer sees exactly what was
+    waived; they do not contribute to the non-zero exit.  An empty
+    rationale (``foldback-accept:`` with no text) is itself a
+    fail-severity finding -- the marker exists for *documented*
+    dispositions, not silent waivers.
+
+    Returns the concatenated findings (fail + info), ordered by
+    (line, detector-class).
     """
     findings: list[Finding] = []
     for lineno, line in enumerate(text.split("\n"), start=1):
-        findings.extend(_detect_credentials(line, lineno))
-        findings.extend(_detect_private_paths(line, lineno))
-        findings.extend(_detect_ip_addresses(line, lineno))
-        findings.extend(_detect_internal_hostnames(line, lineno))
-        findings.extend(_detect_proprietary_tokens(line, lineno, denylist))
+        has_marker, reason = _parse_accept_marker(line)
+        # Reject an empty rationale before doing anything else --
+        # silent waivers are not allowed.
+        if has_marker and not reason:
+            findings.append(Finding(
+                line=lineno, detector="foldback-accept-empty-rationale",
+                snippet="foldback-accept:",
+                message=(
+                    "foldback-accept marker has empty rationale; the "
+                    "marker requires a documented reason for the "
+                    "false-positive disposition (silent waivers are "
+                    "not allowed)"
+                ),
+            ))
+            # Fall through to run detectors -- the marker is malformed,
+            # so it does not suppress anything.
+            has_marker = False
+
+        line_findings: list[Finding] = []
+        line_findings.extend(_detect_credentials(line, lineno))
+        line_findings.extend(_detect_private_paths(line, lineno))
+        line_findings.extend(_detect_ip_addresses(line, lineno))
+        line_findings.extend(_detect_internal_hostnames(line, lineno))
+        line_findings.extend(_detect_proprietary_tokens(line, lineno, denylist))
+
+        if has_marker:
+            # Convert every fail-severity finding on this line to
+            # info-severity so the maintainer sees the audit but the
+            # gate does not block.
+            for f in line_findings:
+                f.severity = "info"
+                f.message = (
+                    f"[suppressed by foldback-accept: {reason!r}] "
+                    f"{f.message}"
+                )
+        findings.extend(line_findings)
     findings.sort(key=lambda f: (f.line, f.detector))
     return findings
 
@@ -355,12 +433,22 @@ def main(argv: list[str] | None = None) -> int:
         description=(
             "Export-scrub scanner for the fold-back active-surfacing "
             "protocol.  Five mechanical detector classes; non-zero exit "
-            "on any finding (fail-closed)."
+            "on any fail-severity finding (fail-closed).  Info-severity "
+            "findings (suppressed by `foldback-accept:` markers) are "
+            "reported for audit but do not contribute to the exit code."
         ),
     )
     parser.add_argument(
-        "file", type=Path,
-        help="Markdown file (the drafted issue / PR body) to scan.",
+        "files", type=Path, nargs="+",
+        help=(
+            "Markdown file(s) to scan.  The active-surfacing protocol's "
+            "Step 4 (Scrub) typically passes the drafted issue / PR body; "
+            "a PR-shape filing also passes every changed file in the diff "
+            "(per the PR template's affirmation -- one invocation per "
+            "file OR a single multi-file invocation, both supported).  "
+            "Fail-closed on the FIRST file with fail-severity findings; "
+            "remaining files are still scanned + reported."
+        ),
     )
     parser.add_argument(
         "--allowlist", type=Path, default=DEFAULT_DENYLIST_PATH,
@@ -373,30 +461,56 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    if not args.file.is_file():
-        print(
-            f"foldback_export_scan: not a file: {args.file}",
-            file=sys.stderr,
-        )
-        return 2
+    # Validate all paths first; usage errors short-circuit BEFORE any
+    # scanning runs (no half-scanned output).
+    for path in args.files:
+        if not path.is_file():
+            print(
+                f"foldback_export_scan: not a file: {path}",
+                file=sys.stderr,
+            )
+            return 2
 
     denylist = load_denylist(args.allowlist)
-    findings = scan_file(args.file, denylist)
-
-    if not findings:
-        print(f"foldback_export_scan: {args.file} -- OK; no findings.")
-        return 0
-
-    print(
-        f"foldback_export_scan: {args.file} -- {len(findings)} finding(s):",
-        file=sys.stderr,
-    )
-    for f in findings:
-        print(
-            f"  {args.file}:{f.line}: [{f.detector}] {f.message}",
-            file=sys.stderr,
-        )
-    return 1
+    any_fail = False
+    for path in args.files:
+        findings = scan_file(path, denylist)
+        fails = [f for f in findings if f.severity == "fail"]
+        infos = [f for f in findings if f.severity == "info"]
+        if fails:
+            any_fail = True
+            print(
+                f"foldback_export_scan: {path} -- "
+                f"{len(fails)} finding(s)"
+                + (f", {len(infos)} suppressed" if infos else "")
+                + ":",
+                file=sys.stderr,
+            )
+            for f in fails:
+                print(
+                    f"  {path}:{f.line}: [{f.detector}] {f.message}",
+                    file=sys.stderr,
+                )
+            # Also surface the info-severity suppressions for the audit
+            # trail (the maintainer needs to see what was waived even on
+            # a failing run).
+            for f in infos:
+                print(
+                    f"  {path}:{f.line}: [info/{f.detector}] {f.message}",
+                    file=sys.stderr,
+                )
+        elif infos:
+            print(
+                f"foldback_export_scan: {path} -- OK; "
+                f"{len(infos)} finding(s) suppressed by foldback-accept:"
+            )
+            for f in infos:
+                print(
+                    f"  {path}:{f.line}: [info/{f.detector}] {f.message}"
+                )
+        else:
+            print(f"foldback_export_scan: {path} -- OK; no findings.")
+    return 1 if any_fail else 0
 
 
 if __name__ == "__main__":  # pragma: no cover

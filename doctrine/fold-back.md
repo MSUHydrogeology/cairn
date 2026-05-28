@@ -143,16 +143,27 @@ its own contributor pipeline through every deployment that adopts it.
 
 **Trigger — standing**: at goodnight, the foldback-capture step
 extends into a foldback-surfacing step (see `session-routines.md` +
-the `fold-back-ledger` module's merge). For each open `candidate`-
-status row older than a maintainer-tunable grace period (default
-seven days; floors very-fresh candidates against churn) AND not
-currently snoozed via `deferred-until`, the surfacing prompt fires.
+the `fold-back-ledger` module's merge). The goodnight owner reviews
+each open `candidate`-status row that is not currently snoozed via
+`deferred-until`, and applies a **grace-period judgment** -- the
+default convention is seven days (floors very-fresh candidates
+against churn); the maintainer reads each row's Source field for its
+captured date and decides per-row whether to surface or skip.  The
+grace period is intentionally a **maintainer judgment**, not a
+machine-enforced gate: ledger rows do not currently carry a
+structured `captured: <ISO-date>` field, and adding one would be a
+separate schema-and-doctrine arc.  The current ledger schema records
+the capture date inline within the Source field; the maintainer
+reads it at surfacing time.
 
 **Trigger — on-demand**: a deployment-installed helper
 (`scripts/foldback_suggest.py`, if the deployment installs Cairn's
 optional helper module) lists all open candidates with their detail
 entries, callable any time the maintainer wants to review the funnel
-state.
+state.  The helper is a `candidate`-status + `deferred-until` filter
+only -- it does not enforce the grace-period judgment (see above);
+the maintainer applies that judgment by reading each surfaced row's
+Source field.
 
 ### Protocol
 

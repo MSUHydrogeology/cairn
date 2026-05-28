@@ -134,11 +134,34 @@ maintainer may rewrite sections; iterate as needed.
 ### Step 4 -- Scrub (fail-closed machine gate)
 
 Once the maintainer is happy with the draft, run the export-scrub
-scanner against it:
+scanner against the body:
 
 ```
 python scripts/foldback_export_scan.py <draft-path>
 ```
+
+**PR-shape filings: ALSO scan every changed file in the diff.**
+A PR contributes actual deployment files into public Cairn -- the
+highest-risk export shape.  The PR template's export-safety
+affirmation explicitly covers BOTH the body AND every changed file.
+For a PR filing, enumerate the changed-file set with:
+
+```
+git diff --name-only <base>..HEAD
+```
+
+(or `gh pr diff --name-only` if the PR is already pushed but not
+yet filed).  Then scan the body + the full file set in one
+invocation (the scanner accepts multiple files):
+
+```
+python scripts/foldback_export_scan.py <draft-path> <file1> <file2> ...
+```
+
+The gate fails closed on ANY fail-severity finding in ANY file --
+the maintainer cannot sign the PR template's affirmation honestly
+otherwise.  **Issue-shape filings scan only the body; there are
+no changed files to enumerate.**
 
 The scanner exits 0 clean OR non-zero with per-finding output.
 
@@ -146,15 +169,21 @@ The scanner exits 0 clean OR non-zero with per-finding output.
   the manual affirmation (still within Step 4).
 * **Exit non-zero**: **fail-closed**.  Surface the findings to the
   maintainer with the suggested dispositions:
-  - Edit the draft to resolve the finding.
-  - Mark the finding as an explicit, documented false positive
-    inside the draft (add a comment on the line; the
-    `cairn-accept`-style marker convention is documented in
-    `cairn/templates/modules/default-on/foldback_export_scan.md`).
-  - Abort the filing entirely.
+  - **Edit** the draft / changed file to resolve the finding.
+  - **Mark** the finding as an explicit, documented false positive
+    by inserting a `foldback-accept: <reason>` marker on the
+    flagged line (HTML comment in Markdown bodies; language-native
+    comment in code files).  The rationale is **required** -- an
+    empty `foldback-accept:` is itself a finding (silent waivers
+    are forbidden).  The marker suppresses every finding on its
+    line and reports each as an info-severity audit entry so the
+    maintainer's disposition stays visible.
+  - **Abort** the filing entirely.
 
   You do NOT decide which path; the maintainer dispositions each
-  finding.  Re-run the scanner after edits until it exits 0.
+  finding.  Re-run the scanner after edits until it exits 0
+  (fail-severity findings absent).  Info-severity suppressions
+  remain visible in the output but do not block.
 
 **Manual affirmation**: once the scanner clears, ask the maintainer
 to explicitly affirm the two manual-only no-export classes:

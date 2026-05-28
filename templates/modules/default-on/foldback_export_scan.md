@@ -88,10 +88,42 @@ from the deployment-repo root:
     python scripts/foldback_export_scan.py <draft-path>
     python scripts/foldback_export_scan.py <draft-path> --allowlist <denylist-path>
 
+**Multi-file invocation** (the PR-shape filing case -- scan body +
+every changed file in the diff together):
+
+    python scripts/foldback_export_scan.py <draft-path> <file1> <file2> ...
+
 The active-surfacing protocol invokes this as Step 4 (Scrub).  Exit 0
-clean; exit 1 on any finding (fail-closed -- the maintainer
-dispositions findings before re-running or aborting); exit 2 on
-usage error (file not found).
+clean; exit 1 on any fail-severity finding in any file (fail-closed --
+the maintainer dispositions findings before re-running or aborting);
+exit 2 on usage error (file not found).  Info-severity findings
+(see "Documented false-positive escape hatch" below) are reported but
+do not contribute to the exit code.
+
+## Documented false-positive escape hatch
+
+A drafted body or changed file can carry a per-line marker that
+suppresses every finding on that line:
+
+    <token leak> <!-- foldback-accept: <rationale> -->   (Markdown)
+    <token leak> # foldback-accept: <rationale>          (Python / shell)
+    <token leak> /* foldback-accept: <rationale> */      (C / Java / etc.)
+
+**Rationale is required** -- an empty `foldback-accept:` (with no
+text after the colon) is itself a fail-severity finding.  Silent
+waivers are not allowed; the marker exists for *documented*
+dispositions where the maintainer has affirmatively reviewed and
+accepted that the flagged token is a false positive.
+
+When the marker fires, the scanner emits **info-severity** entries
+naming each suppressed finding + the rationale, so the maintainer's
+disposition stays visible in the run output.  A file with ONLY
+info-severity findings (every flagged token suppressed) exits 0.
+A file with any fail-severity finding remaining exits non-zero.
+
+The marker is **line-scoped** -- a marker on line N suppresses only
+findings on line N.  A marker on the line above a flagged token does
+not extend; one marker per line of flagged content.
 
 ## Why this scanner exists (and how it differs from `content_scan`)
 

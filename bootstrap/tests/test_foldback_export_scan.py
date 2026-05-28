@@ -251,6 +251,175 @@ class TestSmokes:
         assert rc == 2
 
 
+class TestFoldbackAcceptMarker:
+    """The ``foldback-accept: <reason>`` per-line marker -- documented
+    false-positive escape hatch.  Code-review N1 (Codex 2026-05-28)
+    surfaced that the agent prompt + module docs promised this
+    mechanism but the scanner had no parser; this class pins one
+    suppression case per detector + the empty-rationale failure path
+    + a no-match smoke test for the marker shape itself.
+    """
+
+    def test_marker_suppresses_credential_finding(self, fes, tmp_path):
+        d = _write_draft(
+            tmp_path,
+            'password = "super-secret-token" '
+            '<!-- foldback-accept: example value for the credential '
+            'detector test -->\n',
+        )
+        findings = fes.scan_file(d, denylist=[])
+        # Credential finding is now info-severity, not fail.
+        creds = [f for f in findings if f.detector == "credentials"]
+        assert len(creds) == 1
+        assert creds[0].severity == "info"
+        # Suppression rationale appears in the message.
+        assert "suppressed by foldback-accept" in creds[0].message
+
+    def test_marker_suppresses_private_path_finding(self, fes, tmp_path):
+        d = _write_draft(
+            tmp_path,
+            'See /Users/alice/projects/file.md '
+            '# foldback-accept: doc example of a path shape\n',
+        )
+        findings = fes.scan_file(d, denylist=[])
+        paths = [f for f in findings if f.detector == "private-path"]
+        assert len(paths) == 1
+        assert paths[0].severity == "info"
+
+    def test_marker_suppresses_ip_address_finding(self, fes, tmp_path):
+        d = _write_draft(
+            tmp_path,
+            'Example internal address 10.0.0.5 '
+            '<!-- foldback-accept: documented false positive approved '
+            'by maintainer -->\n',
+        )
+        findings = fes.scan_file(d, denylist=[])
+        ips = [f for f in findings if f.detector == "ip-address"]
+        assert len(ips) == 1
+        assert ips[0].severity == "info"
+
+    def test_marker_suppresses_internal_hostname_finding(self, fes, tmp_path):
+        d = _write_draft(
+            tmp_path,
+            'Service at api.internal '
+            '<!-- foldback-accept: docs example for the hostname '
+            'detector -->\n',
+        )
+        findings = fes.scan_file(d, denylist=[])
+        hosts = [f for f in findings if f.detector == "internal-hostname"]
+        assert len(hosts) == 1
+        assert hosts[0].severity == "info"
+
+    def test_marker_suppresses_proprietary_token_finding(self, fes, tmp_path):
+        d = _write_draft(
+            tmp_path,
+            'Reference: AcmeCorp '
+            '<!-- foldback-accept: the project name appears legitimately '
+            'in this case -->\n',
+        )
+        findings = fes.scan_file(d, denylist=["AcmeCorp"])
+        proprietary = [
+            f for f in findings if f.detector == "proprietary-token"
+        ]
+        assert len(proprietary) == 1
+        assert proprietary[0].severity == "info"
+
+    def test_empty_rationale_is_itself_a_finding(self, fes, tmp_path):
+        # Silent waivers forbidden; an empty rationale is a fail.
+        d = _write_draft(
+            tmp_path,
+            'Example 10.0.0.5 <!-- foldback-accept: -->\n',
+        )
+        findings = fes.scan_file(d, denylist=[])
+        # The empty-rationale finding is fail-severity.
+        empties = [
+            f for f in findings
+            if f.detector == "foldback-accept-empty-rationale"
+        ]
+        assert len(empties) == 1
+        assert empties[0].severity == "fail"
+        # AND the underlying IP finding still fires (the malformed
+        # marker doesn't suppress anything).
+        ips = [f for f in findings if f.detector == "ip-address"]
+        assert len(ips) == 1
+        assert ips[0].severity == "fail"
+
+    def test_marker_only_suppresses_its_own_line(self, fes, tmp_path):
+        # A marker on line 1 does NOT suppress a finding on line 2.
+        d = _write_draft(
+            tmp_path,
+            'Example 10.0.0.5 <!-- foldback-accept: line 1 ok -->\n'
+            'Another address 10.0.0.6 -- this one is NOT covered\n',
+        )
+        findings = fes.scan_file(d, denylist=[])
+        ips = [f for f in findings if f.detector == "ip-address"]
+        assert len(ips) == 2
+        # Line 1 is suppressed (info); line 2 is a fail.
+        by_line = {f.line: f.severity for f in ips}
+        assert by_line[1] == "info"
+        assert by_line[2] == "fail"
+
+    def test_main_exit_zero_when_only_suppressed(self, fes, tmp_path):
+        # A file with ONLY suppressed findings exits 0 (no
+        # fail-severity).
+        d = _write_draft(
+            tmp_path,
+            '10.0.0.5 <!-- foldback-accept: ok -->\n',
+        )
+        empty_allow = tmp_path / "empty_allowlist.txt"
+        empty_allow.write_text("")
+        rc = fes.main([str(d), "--allowlist", str(empty_allow)])
+        assert rc == 0
+
+    def test_main_exit_one_when_empty_rationale(self, fes, tmp_path):
+        # Empty rationale is a fail; exit non-zero.
+        d = _write_draft(
+            tmp_path,
+            '10.0.0.5 <!-- foldback-accept: -->\n',
+        )
+        empty_allow = tmp_path / "empty_allowlist.txt"
+        empty_allow.write_text("")
+        rc = fes.main([str(d), "--allowlist", str(empty_allow)])
+        assert rc == 1
+
+
+class TestMultiFileInvocation:
+    """The scanner accepts multiple file paths in a single
+    invocation (per code-review N2: the PR-shape filing path needs
+    to scan the PR body AND every changed file in the diff).
+    """
+
+    def test_two_files_one_clean_one_dirty_exits_nonzero(
+        self, fes, tmp_path,
+    ):
+        clean = _write_draft(tmp_path, "# Clean body\n", name="clean.md")
+        dirty = _write_draft(
+            tmp_path, 'password = "leaked"\n', name="dirty.md",
+        )
+        empty_allow = tmp_path / "empty_allowlist.txt"
+        empty_allow.write_text("")
+        rc = fes.main([str(clean), str(dirty),
+                       "--allowlist", str(empty_allow)])
+        assert rc == 1, "any fail-severity finding in any file -> exit 1"
+
+    def test_two_files_both_clean_exits_zero(self, fes, tmp_path):
+        a = _write_draft(tmp_path, "# Clean A\n", name="a.md")
+        b = _write_draft(tmp_path, "# Clean B\n", name="b.md")
+        empty_allow = tmp_path / "empty_allowlist.txt"
+        empty_allow.write_text("")
+        rc = fes.main([str(a), str(b),
+                       "--allowlist", str(empty_allow)])
+        assert rc == 0
+
+    def test_missing_file_in_set_returns_2(self, fes, tmp_path):
+        # Pre-flight validation: ANY missing file exits 2 BEFORE any
+        # scanning happens.
+        a = _write_draft(tmp_path, "# Clean A\n", name="a.md")
+        missing = tmp_path / "does-not-exist.md"
+        rc = fes.main([str(a), str(missing)])
+        assert rc == 2
+
+
 class TestDenylistFileHandling:
     def test_missing_denylist_silent_other_detectors_run(
         self, fes, tmp_path,

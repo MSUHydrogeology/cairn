@@ -199,6 +199,72 @@ class TestInvocationPatterns:
 # ---------------------------------------------------------------------------
 
 
+class TestPRChangedFileScanning:
+    """Code-review N2 (Codex 2026-05-28): the PR template's
+    affirmation covers BOTH the body AND every changed file in the
+    diff.  The prompt's Step 4 must instruct the agent + maintainer
+    to scan both -- otherwise the PR affirmation is a false
+    security claim.
+    """
+
+    def test_prompt_names_pr_only_changed_file_scanning(self, prompt_text):
+        # The Step 4 PR branch must explicitly enumerate changed files
+        # via git diff and pass them to the scanner.
+        assert "PR-shape" in prompt_text or "PR shape" in prompt_text, (
+            "prompt does not call out the PR-shape filing branch"
+        )
+        assert "git diff --name-only" in prompt_text or \
+               "gh pr diff --name-only" in prompt_text, (
+            "prompt does not name a changed-file enumeration command"
+        )
+
+    def test_prompt_names_multi_file_scanner_invocation(self, prompt_text):
+        # The scanner accepts multiple files; the prompt must show
+        # the multi-arg form so the agent runs body + files in one
+        # invocation.
+        assert "<file1>" in prompt_text or "<file2>" in prompt_text \
+               or "<file" in prompt_text, (
+            "prompt does not show the multi-file invocation pattern "
+            "(scanner accepts multiple positional args)"
+        )
+
+    def test_prompt_states_pr_fails_closed_on_any_file(self, prompt_text):
+        # The bright-line: any fail-severity in ANY file fails the
+        # gate for the whole filing.
+        assert (
+            "ANY fail-severity finding in ANY file" in prompt_text
+            or "fail-severity finding in ANY file" in prompt_text
+            or "any fail-severity" in prompt_text.lower()
+        ), (
+            "prompt does not state the any-file-fails-closed contract"
+        )
+
+
+class TestFoldbackAcceptMarkerDocumented:
+    """Code-review N1: the prompt's documented-false-positive
+    disposition must point at the actual `foldback-accept:` marker
+    grammar the scanner implements -- not at the abandoned
+    `cairn-accept`-style placeholder.
+    """
+
+    def test_prompt_names_foldback_accept_marker(self, prompt_text):
+        assert "foldback-accept" in prompt_text, (
+            "prompt does not name the foldback-accept marker"
+        )
+
+    def test_prompt_requires_marker_rationale(self, prompt_text):
+        # The rationale is required (empty rationale is itself a
+        # finding).  The prompt must communicate this.
+        assert "rationale" in prompt_text.lower() \
+               and "required" in prompt_text.lower(), (
+            "prompt does not state the marker rationale is required"
+        )
+        assert "silent waivers" in prompt_text.lower() \
+               or "empty" in prompt_text.lower(), (
+            "prompt does not state empty rationales are forbidden"
+        )
+
+
 class TestExportBoundaryBrightLines:
     def test_prompt_states_agent_does_not_submit(self, prompt_text):
         # The export-boundary structural guard.  Multiple phrasings
