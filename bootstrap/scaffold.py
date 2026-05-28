@@ -786,12 +786,22 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
     # discipline (entry / governing / deliberation / descriptive).
     # Ships the module doctrine + a forkable DOCUMENTATION_PLAN.md the
     # adopter customizes for their own file inventory + tier vocabulary.
-    # The module also fills three slots via cairn:merge-target directives
-    # (documentation-discipline in core AGENTS.md;
-    # documentation-tier-home in proposals and plans _template.md).
-    # The forkable's worked examples are adopter-relative; Cairn's own
-    # self-hosted instance at cairn/docs/DOCUMENTATION_PLAN.md uses
-    # cairn-prefixed paths and is the methodology source-of-truth.
+    # Three slot anchors land via the core templates --
+    # `documentation-discipline` in AGENTS.md plus
+    # `documentation-tier-home` in proposals + plans `_template.md` --
+    # and are filled by **manual paste** from the module's
+    # `Merged into:` Blocks 1/2/3 (the adopter copies the block matching
+    # each target slot at install time, parallel to the existing
+    # claim-check / lifecycle-metrics / reflections module pattern).
+    # Mechanical merge via Proposal B's `cairn:merge-target` directives
+    # is *deferred* pending the merge-pass / install-lockfile interaction
+    # fix (the merge pass mutates files post-install, which the
+    # lockfile's clean-install divergence guard rejects); see
+    # `dev/PLANNING.md` (modflow_tools-side) > "Cairn-side merge-helper
+    # / install-lockfile interaction fix".  The forkable's worked
+    # examples are adopter-relative; Cairn's own self-hosted instance at
+    # cairn/docs/DOCUMENTATION_PLAN.md uses cairn-prefixed paths and is
+    # the methodology source-of-truth.
     "documentation-plan": [
         InstallSpec("default-on/documentation-plan.md",
                     "dev/modules/documentation-plan.md"),
