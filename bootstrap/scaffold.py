@@ -386,6 +386,8 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
                     "dev/modules/foldback_export_scan.md"),
         InstallSpec("default-on/foldback_export_scan.py",
                     "scripts/foldback_export_scan.py", verbatim=True),
+        InstallSpec("default-on/fold-back-active-prompt.md",
+                    "dev/modules/fold-back-active-prompt.md"),
     ],
     # team-gated
     "dual-review": [
