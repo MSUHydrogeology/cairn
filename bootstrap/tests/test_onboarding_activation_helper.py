@@ -156,6 +156,59 @@ class TestAtomicAppend:
         after = log.read_text(encoding="utf-8")
         assert before == after
 
+    def test_concurrent_appenders_do_not_corrupt_lines(
+        self, helper: ModuleType, tmp_path: Path,
+    ) -> None:
+        """Bite-test for the ``os.open(O_APPEND)`` + ``os.write``
+        atomicity contract (Claude External code review P2-1 +
+        Antigravity confirmation).  Spawns 10 threads, each
+        appending one record; reads back the log and asserts (a)
+        all 10 records present, (b) every line is a well-formed
+        JSON object (no partial-write line corruption)."""
+        import concurrent.futures
+        import json as _json
+
+        log = tmp_path / "log.jsonl"
+        log.write_text("# header\n", encoding="utf-8")
+
+        records = [
+            helper.ActivationRecord(
+                task_id=f"t-{i:02d}",
+                activated_at=f"2026-05-29T00:00:{i:02d}Z",
+                by_agent=f"agent-{i}",
+                source_preset="solo-greenfield",
+                trigger=f"trig-{i}",
+            )
+            for i in range(10)
+        ]
+
+        def _one_writer(rec: "helper.ActivationRecord") -> None:
+            helper.append_activation_log(log, [rec])
+
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=10,
+        ) as pool:
+            list(pool.map(_one_writer, records))
+
+        # Re-read and assert no corruption.
+        text = log.read_text(encoding="utf-8")
+        data_lines = [
+            ln for ln in text.splitlines()
+            if ln and not ln.startswith("#")
+        ]
+        assert len(data_lines) == 10, (
+            f"expected 10 records under concurrent append, got "
+            f"{len(data_lines)}: {data_lines!r}"
+        )
+        # Every line is a parseable JSON object with the expected
+        # schema keys (no torn-write fragments).
+        for ln in data_lines:
+            obj = _json.loads(ln)
+            assert set(obj.keys()) >= {
+                "task-id", "activated-at", "by-agent",
+                "source-preset", "trigger",
+            }
+
 
 # ---------------------------------------------------------------------------
 # Preset metadata resolution

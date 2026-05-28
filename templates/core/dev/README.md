@@ -30,11 +30,13 @@ external-project issue drafts, and cross-repo dependency tracking) are
 added when the project needs them — they are not part of the invariant
 core. The project's **vision** / charter belongs in the descriptive
 layer rather than the deliberation tree — see Cairn's own
-[doctrine/doc-governance.md](../../../doctrine/doc-governance.md) >
-"Common homes for project vision / charter material" for the choices.
-(The link points into Cairn's own repository for adopters using a
-local Cairn checkout; the target does not exist in the adopter's own
-tree.)
+`doctrine/doc-governance.md` > "Common homes for project vision /
+charter material" for the choices. (The doctrine reference is
+intentionally path-less: it points to Cairn's own doctrine, not a
+file in the adopter's tree; adopters with a local Cairn checkout
+find it at `<cairn-checkout>/doctrine/doc-governance.md`, and
+adopters reading the published doctrine find it on the Cairn
+repository.)
 
 ## How to use it
 

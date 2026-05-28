@@ -61,8 +61,13 @@ from typing import Iterable
 
 #: Default location of the tracked activation log inside the adopter's
 #: deliberation tree.  Per Codex P2-5: tracked, parallel to
-#: dev/intents.jsonl; the scaffold seeds it as empty at install time
-#: so adopters never see lazy-mkdir behavior.
+#: dev/intents.jsonl.  The scaffold SEEDS the file empty at install
+#: time (the canonical path); the helper also carries a lazy-mkdir
+#: backstop on ``append_activation_log`` for callers that bypass the
+#: scaffold (existing-adopter --seed paths run against a
+#: scaffold-less tree, etc.).  Per Claude External code review P3-1:
+#: scaffold-seeds is the primary contract; lazy-mkdir is the
+#: backstop, not the primary mechanism.
 DEFAULT_LOG_REL = "dev/.cairn/onboarding-activated.jsonl"
 
 #: Default location of PLANNING.md.
@@ -372,9 +377,14 @@ def evaluate_maturity_triggers(target: Path) -> set[str]:
     Each trigger observes filesystem state (Codex P2-3 explicit-state
     contract):
 
-    * ``level-0-to-1`` -- ``dev/proposals/_template.md`` present
-      (canonical Level 1 signal: adopter graduated from "read the
-      doctrine" to "hand-copy the kernel").
+    * ``level-0-to-1`` -- the adopter has shipped at least one
+      proposal through archive (>= 1 file in ``dev/proposals/
+      archive/``).  Per Claude External code review P2-3 +
+      Antigravity confirmation: the earlier "_template.md present"
+      check fired at install time for every adopter and carried no
+      signal value; the real transition is "the adopter has begun
+      using the lifecycle," for which the archived-proposal count
+      is a stronger explicit-state signal.
     * ``level-1-to-2`` -- ``dev/cairn-lock.yml`` present (canonical
       Level 2 signal per ``bootstrap/UPGRADE.md`` doctrine).
     * ``level-1-deepen`` -- ``level-1-to-2`` NOT fired AND archived
@@ -386,15 +396,15 @@ def evaluate_maturity_triggers(target: Path) -> set[str]:
     """
     out: set[str] = set()
 
-    level_0_to_1 = (target / "dev" / "proposals" / "_template.md").is_file()
-    if level_0_to_1:
+    archived_proposals_pre = _count_archived_proposals(target)
+    if archived_proposals_pre >= 1:
         out.add("level-0-to-1")
 
     level_1_to_2 = (target / "dev" / "cairn-lock.yml").is_file()
     if level_1_to_2:
         out.add("level-1-to-2")
 
-    archived_proposals = _count_archived_proposals(target)
+    archived_proposals = archived_proposals_pre
     archived_plans = _count_archived_plans(target)
     if (
         not level_1_to_2
@@ -412,13 +422,29 @@ def evaluate_maturity_triggers(target: Path) -> set[str]:
     return out
 
 
-# Known AI-agent vendor / model substrings used by the cross-type-
-# review detector + the second-agent-type roster scan.  Conservative:
-# the patterns are case-insensitive substring matches, common enough
-# to detect real attributions while infrequent enough in plain prose
-# to keep false-positives bounded.
+# Known AI-agent vendor / model / tool substrings used by the
+# cross-type-review detector + the second-agent-type roster scan.
+# Conservative: the patterns are case-insensitive substring matches,
+# common enough to detect real attributions while infrequent enough
+# in plain prose to keep false-positives bounded.  Per Claude
+# External-functioning code review P2 + Antigravity confirmation:
+# the foldback active-surfacing proposal's I-8 disposition already
+# converged on a broader enumeration; this list reflects that
+# convergence + a documented update doctrine (the goodnight harvest
+# checks for new vendor names entering the literature; adopters who
+# encounter false-negatives can add patterns via a v1.x
+# capability-pull-from-adopter follow-up).
 _AGENT_VENDOR_PATTERNS: tuple[str, ...] = (
-    "claude", "codex", "gpt", "antigravity", "gemini", "copilot",
+    # vendors / labs
+    "claude", "anthropic",
+    "codex", "gpt", "openai",
+    "antigravity", "gemini", "google", "deepmind",
+    "copilot", "microsoft",
+    "mistral",
+    "llama", "meta",
+    "deepseek",
+    # agent-tooling brands
+    "cline", "aider", "continue", "devin",
 )
 
 # Patterns that explicitly mark a roster line as the human Maintainer
@@ -467,12 +493,21 @@ def _unreleased_changelog_has_content(target: Path) -> bool:
             break
     if start_idx is None:
         return False
-    # Walk until the next `## ` heading (next release).
+    # Walk until the next `## ` heading (next release).  Per
+    # Antigravity External code review P2: skip HTML comment lines
+    # (`<!-- ... -->`) since template scaffolds often carry header
+    # comments under `## Unreleased` that should NOT trigger.
     for line in lines[start_idx:]:
         if line.startswith("## "):
             break
-        if line.strip() and not line.strip().startswith("#"):
-            return True
+        stripped = line.strip()
+        if not stripped:
+            continue
+        if stripped.startswith("#"):
+            continue
+        if stripped.startswith("<!--"):
+            continue
+        return True
     return False
 
 
@@ -560,9 +595,14 @@ def _has_cross_type_review_in_file(text: str) -> bool:
     if author is None:
         return False
     lines = text.splitlines()
-    # Find each "## Review" heading.
+    # Find each review-shape heading.  Per Antigravity External code
+    # review P1-A: extend match from `## Review\b` (which missed
+    # `## Plan review` and `## Code review` shapes) to also accept
+    # `Plan ` / `Code ` qualifiers in the canonical convention.
     for i, line in enumerate(lines):
-        m = re.match(r"^##\s+Review\b", line, re.IGNORECASE)
+        m = re.match(
+            r"^##\s+(?:Plan\s+|Code\s+)?Review\b", line, re.IGNORECASE,
+        )
         if m is None:
             continue
         # Scan the heading line itself (which often carries the
@@ -741,12 +781,19 @@ _PROMPT_HEADING_RE_CACHE: dict[str, re.Pattern[str]] = {}
 def _prompt_heading_re(row_name: str) -> re.Pattern[str]:
     """Build (cached) a regex that matches the markdown heading
     introducing the prompt content for *row_name* in a preset file.
-    Tolerant to wording variations: the preset's prompt heading need
-    only contain the row-name keyword (case-insensitive)."""
+
+    Per Claude External code review P3-3: tightened from the
+    earlier overly-permissive ``^###\\s+.*<row>.*$`` (which would
+    match `### Notes on collab-agreement-signing` as well as the
+    real prompt heading).  The convention the three preset files
+    use is `### Row N -- <row-keyword> ...`; the regex requires the
+    row keyword to follow a `Row N -- ` shape so off-pattern
+    headings don't false-match.
+    """
     if row_name not in _PROMPT_HEADING_RE_CACHE:
         slug = row_name.lower()
         _PROMPT_HEADING_RE_CACHE[row_name] = re.compile(
-            r"^###\s+.*" + re.escape(slug) + r".*$",
+            r"^###\s+Row\s+\d+\s+--\s+.*" + re.escape(slug) + r".*$",
             re.IGNORECASE,
         )
     return _PROMPT_HEADING_RE_CACHE[row_name]
@@ -889,16 +936,39 @@ def update_planning_slot(planning_text: str, new_body: str) -> str | None:
 def append_activation_log(
     log_path: Path, records: list[ActivationRecord],
 ) -> None:
-    """Atomic-append each record's JSONL line to the log.  Matches
-    the ``dev/intents.jsonl`` precedent: open the file in append
-    mode with line-buffering so concurrent appends don't collide.
+    """Atomic-append each record's JSONL line to the log.
+
+    Matches the ``modflow_tools/tools/intent.py`` precedent for true
+    POSIX-atomic append per Claude External code review P2-1 +
+    Antigravity confirmation: ``os.open`` with
+    ``O_WRONLY|O_APPEND|O_CREAT`` + a single ``os.write(fd, bytes)``
+    per record.  This guarantees the kernel performs the seek-to-end
+    + write atomically (single line is shorter than ``PIPE_BUF``);
+    Python-level line-buffered ``open(... 'a', buffering=1)`` does
+    NOT make this contract.  Partial-write detection raises so a
+    silent truncation surfaces loudly.
     """
     if not records:
         return
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(log_path, "a", encoding="utf-8", buffering=1) as fh:
+    fd = os.open(
+        str(log_path),
+        os.O_WRONLY | os.O_APPEND | os.O_CREAT,
+        0o644,
+    )
+    try:
         for rec in records:
-            fh.write(rec.to_jsonl() + "\n")
+            payload = (rec.to_jsonl() + "\n").encode("utf-8")
+            written = os.write(fd, payload)
+            if written != len(payload):
+                raise IOError(
+                    f"partial write to {log_path}: wrote {written} "
+                    f"of {len(payload)} bytes (load-bearing atomicity "
+                    f"contract broken; investigate filesystem / "
+                    f"platform interaction)"
+                )
+    finally:
+        os.close(fd)
 
 
 # ---------------------------------------------------------------------------

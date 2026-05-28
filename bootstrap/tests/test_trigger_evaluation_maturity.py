@@ -5,7 +5,8 @@ Plan: 2026-05-28-claude-cairn-progressive-onboarding.
 Each maturity-ladder trigger gets positive + negative fixture
 tests against synthetic adopter-tree state.  The four triggers:
 
-* ``level-0-to-1`` -- ``dev/proposals/_template.md`` exists.
+* ``level-0-to-1`` -- adopter has shipped at least one proposal
+  through archive (``>= 1`` file in ``dev/proposals/archive/``).
 * ``level-1-to-2`` -- ``dev/cairn-lock.yml`` exists.
 * ``level-1-deepen`` -- archived-proposal + archived-plan count
   thresholds met AND ``level-1-to-2`` NOT yet fired.
@@ -86,18 +87,31 @@ def _archive_plans(tmp_path: Path, count: int) -> None:
 
 
 class TestLevel0to1:
-    def test_fires_when_proposals_template_present(
+    """Per Claude External code review P2-3 + Antigravity
+    confirmation: `level-0-to-1` was previously fired by the
+    presence of `dev/proposals/_template.md` (shipped by the
+    scaffold to every adopter; the trigger therefore carried no
+    signal value).  Reframed to fire on the real maturity
+    transition -- the adopter has shipped at least one proposal
+    through archive.
+    """
+
+    def test_fires_after_first_archived_proposal(
         self, helper: ModuleType, tmp_path: Path,
     ) -> None:
         _make_empty_tree(tmp_path)
-        (tmp_path / "dev" / "proposals" / "_template.md").write_text("# t\n")
+        _archive_proposals(tmp_path, 1)
         fired = helper.evaluate_maturity_triggers(tmp_path)
         assert "level-0-to-1" in fired
 
-    def test_does_not_fire_without_proposals_template(
+    def test_does_not_fire_with_no_archived_proposals(
         self, helper: ModuleType, tmp_path: Path,
     ) -> None:
         _make_empty_tree(tmp_path)
+        # Even with the proposals/_template.md present (which used
+        # to fire the trigger), `level-0-to-1` now requires a real
+        # archived proposal.
+        (tmp_path / "dev" / "proposals" / "_template.md").write_text("# t\n")
         fired = helper.evaluate_maturity_triggers(tmp_path)
         assert "level-0-to-1" not in fired
 

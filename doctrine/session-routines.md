@@ -194,11 +194,12 @@ python scripts/onboarding_activate.py --dry-run   # show plan, no writes
 
 The helper scans the deployment for fired triggers (maturity-ladder
 transitions + action signals — the trigger matrix is enumerated in
-the progressive-onboarding doctrine), activates the corresponding
+[`doctrine/onboarding.md`](onboarding.md)), activates the corresponding
 deferred onboarding tasks into `dev/PLANNING.md`'s `onboarding-tasks`
 slot, emits at most one active-surfacing prompt per goodnight (the UX
-caps the doctrine specifies), and appends one line per activation to
-the tracked log at `dev/.cairn/onboarding-activated.jsonl`. The run
+caps [`onboarding.md`](onboarding.md) specifies), and appends one line
+per activation to the tracked log at
+`dev/.cairn/onboarding-activated.jsonl`. The run
 is **idempotent**: re-running on unchanged deployment state is a
 no-op, so a goodnight owner who fired the helper earlier in the day
 loses nothing by firing it again at handoff.
