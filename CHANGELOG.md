@@ -71,6 +71,67 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **`documentation-plan` default-on module: placement-decision
+  procedure + four-layer doc/doctrine vision + forkable
+  `docs/DOCUMENTATION_PLAN.md`** (Proposal D, fast-tracked per
+  maintainer 2026-05-28).  Ports modflow_tools' reference-deployment
+  `docs/DOCUMENTATION_PLAN.md` doctrine to Cairn as a default-on
+  module.  Ships:
+  * **Module doctrine** at
+    `templates/modules/default-on/documentation-plan.md` -- the
+    `Selected when:` / `Adds to:` shape parallel to incident-trackers,
+    with three explicit `Merged into:` blocks (Block 1 for AGENTS.md,
+    Blocks 2-3 for the proposal + plan templates) carrying the
+    paste-into-slot content.  Mechanical merge via Proposal B's
+    `cairn:merge-target` directives is **deferred** for this module
+    pending resolution of the merge-pass / install-lockfile
+    interaction (the merge pass mutates files post-install, which
+    currently makes the lockfile's clean-install divergence guard
+    refuse to write -- tracked as a separate Cairn follow-up).
+  * **Forkable template** at
+    `templates/modules/default-on/documentation_plan_template.md`
+    -- installs at adopter `docs/DOCUMENTATION_PLAN.md`; carries the
+    four-layer vision (entry / governing / deliberation / descriptive),
+    the decision procedure ("what is this artifact *doing*?"), voice
+    rules, naming conventions, the `AGENTS.md` ↔
+    `agent_collaboration.md` boundary doctrine, and a customizable
+    descriptive-tier table.  All worked examples use adopter-relative
+    paths (no `cairn/` prefix).
+  * **Cairn self-hosted** at `docs/DOCUMENTATION_PLAN.md` -- Cairn's
+    own dogfood instance, with cairn-prefixed worked examples
+    discussing Cairn's actual file inventory (doctrine essays under
+    `cairn/doctrine/`, the template-shipped `cairn/templates/core/`,
+    the Goal-1 `cairn/dev/` substrate).
+  * **Slot anchors** in three core templates:
+    `templates/core/AGENTS.md` gains a `## Documentation discipline`
+    section with the `documentation-discipline` slot;
+    `templates/core/dev/proposals/_template.md` gains the
+    `documentation-tier-home` slot inside its existing `###
+    Documentation / doctrine surface` section;
+    `templates/core/dev/plans/_template.md` gains a new `###
+    Documentation / doctrine surface` subsection under `## Scope`
+    with the same slot name.
+  * **Bootstrap install**: `_DEFAULT_ON_MODULES` gains
+    `"documentation-plan"`; `_MODULE_MAPPINGS` gains the entry
+    installing the module doctrine to `dev/modules/` and the forkable
+    directly to `docs/DOCUMENTATION_PLAN.md`.
+
+  Three Antigravity findings dispositioned in the proposal Response:
+  P1 broken adopter-template references -> all worked examples are
+  adopter-relative (no `cairn/` prefix); P2-a worked-examples leakage
+  -> two-artifact split (Cairn-self-hosted dogfood + adopter forkable);
+  P2-b optional-adoption dead links -> module packaging (no hardcoded
+  cross-reference; opt out via `modules: [-documentation-plan]`
+  cleanly drops the slot fills); P3 link-check coverage ->
+  `scripts/check_cairn.py`'s existing link check covers the new
+  cross-reference automatically via Cairn's dogfood install.  The
+  larger "programmatic placement-decision enforcement" follow-up
+  (Antigravity P3's stretch suggestion) is deferred to
+  modflow_tools-side PLANNING for after the procedure stabilizes
+  through adopter use.
+
+  Tests: `bootstrap/tests/test_documentation_plan_module.py`.
+
 - **`incident-trackers` default-on module: forkable tracker
   template + goodnight migration sub-step; parse target for the
   adaptive-doctrine rate-limit gate** (Proposal C).  Ships:

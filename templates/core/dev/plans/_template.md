@@ -180,6 +180,23 @@ What this plan executes — and, explicitly, what it does *not* (the
 anything deliberately left untouched this pass). See "The planning
 handshake" above for the convergence questions this section answers.
 
+### Documentation / doctrine surface
+
+What documentation, doctrine, or contract surface does this plan
+touch? If none, say so explicitly — silent omission is a code-review
+finding (the plan must name what doc state is mutated, not surface
+it at review time).
+
+<!-- cairn:slot documentation-tier-home -->
+(Filled from the `documentation-plan` default-on module when installed
+— paste content from `dev/modules/documentation-plan.md` > "Merged
+into" > Block 3: dev/plans/_template.md. The merged content names
+the per-layer routing rule for doc + doctrine changes, pointing at
+`docs/DOCUMENTATION_PLAN.md`. If documentation-plan is not installed,
+replace with `N/A: documentation-plan not installed`. An unfilled
+slot is a review finding.)
+<!-- cairn:end documentation-tier-home -->
+
 ## Sequence
 
 The commit-by-commit execution order. For larger plans, break each

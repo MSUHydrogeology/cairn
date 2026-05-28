@@ -209,14 +209,15 @@ class TestLayerAStepsOneThroughThree:
             assert (repo / relative).exists(), (
                 f"quickstart Step 3 should install {relative}; not present after run"
             )
-        # Step 3 says 12 block slots (bumped from 11 by plan
-        # 2026-05-28-claude-cairn-progressive-onboarding Chunk P1.1's
-        # addition of `cairn:slot onboarding-tasks` to PLANNING.md).
+        # Step 3 says 15 block slots (bumped from 12 by Proposal D:
+        # documentation-plan default-on module added `documentation-
+        # discipline` to core AGENTS.md plus `documentation-tier-home`
+        # to both the proposal and plan templates -- 3 new slots).
         # Verify the count matches what the scaffold actually emitted
         # -- a drift between the prose and runtime is exactly what
         # this test exists to catch.
-        assert "Block slots requiring agent attention (12)" in result.stdout, (
-            "Step 3 prose says '12 unfilled block slots' -- count drifted; "
+        assert "Block slots requiring agent attention (15)" in result.stdout, (
+            "Step 3 prose says '15 unfilled block slots' -- count drifted; "
             "update the quickstart prose to match scaffold output:\n"
             f"{result.stdout}"
         )

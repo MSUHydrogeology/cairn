@@ -493,6 +493,7 @@ _DEFAULT_ON_MODULES: tuple[str, ...] = (
     "claim-check",
     "fold-back-ledger",
     "incident-trackers",
+    "documentation-plan",
 )
 
 
@@ -779,6 +780,23 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
                     "dev/modules/incident-trackers.md"),
         InstallSpec("default-on/incident_log_template.md",
                     "dev/modules/incident_log_template.md"),
+    ],
+    # The placement-decision procedure for documentation and doctrine.
+    # Default-on: every adopter benefits from a four-layer routing
+    # discipline (entry / governing / deliberation / descriptive).
+    # Ships the module doctrine + a forkable DOCUMENTATION_PLAN.md the
+    # adopter customizes for their own file inventory + tier vocabulary.
+    # The module also fills three slots via cairn:merge-target directives
+    # (documentation-discipline in core AGENTS.md;
+    # documentation-tier-home in proposals and plans _template.md).
+    # The forkable's worked examples are adopter-relative; Cairn's own
+    # self-hosted instance at cairn/docs/DOCUMENTATION_PLAN.md uses
+    # cairn-prefixed paths and is the methodology source-of-truth.
+    "documentation-plan": [
+        InstallSpec("default-on/documentation-plan.md",
+                    "dev/modules/documentation-plan.md"),
+        InstallSpec("default-on/documentation_plan_template.md",
+                    "docs/DOCUMENTATION_PLAN.md"),
     ],
     # The deployment-side fold-back channel (doctrine: doctrine/fold-back.md).
     # Default-on but omittable: ships the module doctrine + the forkable

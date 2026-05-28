@@ -264,6 +264,20 @@ installed, replace with `N/A: claim-check not installed`. An unfilled
 slot is a review finding.)
 <!-- cairn:end claim-check -->
 
+## Documentation discipline
+
+<!-- cairn:slot documentation-discipline -->
+(Filled from the `documentation-plan` default-on module when installed
+— paste content from `dev/modules/documentation-plan.md` > "Merged
+into" > Block 1: AGENTS.md. The merged content names the placement-
+decision procedure for documentation and doctrine, the four-layer
+vision (entry / governing / deliberation / descriptive), and the
+cross-reference to `docs/DOCUMENTATION_PLAN.md`. If
+documentation-plan is not installed, replace with `N/A:
+documentation-plan not installed`. An unfilled slot is a review
+finding.)
+<!-- cairn:end documentation-discipline -->
+
 ## Project-specific conventions
 
 <!-- cairn:slot project-conventions -->

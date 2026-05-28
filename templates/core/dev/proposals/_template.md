@@ -174,6 +174,16 @@ What documentation, doctrine, or contract surface does this change
 touch? If none, say so explicitly — silent omission is a review
 finding.
 
+<!-- cairn:slot documentation-tier-home -->
+(Filled from the `documentation-plan` default-on module when installed
+— paste content from `dev/modules/documentation-plan.md` > "Merged
+into" > Block 2: dev/proposals/_template.md. The merged content names
+the per-layer routing rule for doc + doctrine changes, pointing at
+`docs/DOCUMENTATION_PLAN.md`. If documentation-plan is not installed,
+replace with `N/A: documentation-plan not installed`. An unfilled
+slot is a review finding.)
+<!-- cairn:end documentation-tier-home -->
+
 ### Doctrine-change rate-limit (if this proposal changes doctrine)
 
 If this proposal **changes doctrine** — a rule, process, or
