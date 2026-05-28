@@ -320,6 +320,35 @@ class TestInstallCore:
         content = dev_readme.read_text()
         assert "AwesomeRepo" in content
 
+    def test_installed_templates_carry_plan_review_line(
+        self, tmp_path: Path
+    ) -> None:
+        """D-2: the installed `dev/proposals/_template.md` and
+        `dev/plans/_template.md` must carry the mandatory
+        ``**Plan review**:`` metadata line.  Pins the templates against
+        silent regression of the plan-review-gate doctrine (the
+        Plan-review precondition needs this line to be load-bearing,
+        not optional).
+        """
+        cairn_root = Path(__file__).resolve().parent.parent.parent
+        templates_root = cairn_root / "templates"
+        if not templates_root.exists():
+            pytest.skip("Cairn templates not available")
+        tokens = {"project_name": "TestProject", "test_command": "pytest"}
+        create_dev_tree(tmp_path)
+        install_core(templates_root, tmp_path, tokens)
+        for rel in ("dev/proposals/_template.md", "dev/plans/_template.md"):
+            installed = tmp_path / rel
+            assert installed.is_file(), (
+                f"{rel} was not installed by install_core"
+            )
+            content = installed.read_text()
+            assert "**Plan review**:" in content, (
+                f"{rel} is missing the mandatory `**Plan review**:` "
+                f"metadata line -- silent regression of the plan-review "
+                f"entry-gate doctrine"
+            )
+
 
 class TestInstallModules:
     def test_installs_selected_module(self, tmp_path: Path) -> None:

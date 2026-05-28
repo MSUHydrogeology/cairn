@@ -282,6 +282,96 @@ class TestUpgradeModes:
                      "--cairn-root", str(CAIRN_ROOT)])
         assert rc == 1
 
+    # ---- B-C-1: clean-vs-locally-modified split in the upgrade summary
+    # `--plan` previously lumped every clean merge into one `clean` row,
+    # hiding from the adopter whether their customizations rode through.
+    # The split distinguishes `clean (untouched)` from
+    # `locally-modified (merged clean)` so the adopter sees the merge
+    # preserved their edits.
+
+    def test_locally_modified_merged_clean_classified_distinctly(
+        self, tmp_path: Path
+    ) -> None:
+        """B-C-1: ``_compute_upgrade`` flips a clean merge to
+        ``clean-locally-modified`` when the adopter's on-disk file
+        differs from the saved base -- i.e., they customized it locally
+        and the customization merged cleanly with the new upstream.
+        """
+        assert _install(tmp_path) == 0
+        self._diverge_base(tmp_path)  # ours has `<!-- keep me -->`; base lacks it
+        lock = s.read_lockfile(tmp_path)
+        plans, _structural = s._compute_upgrade(
+            tmp_path, CAIRN_ROOT, TEMPLATES_ROOT, lock, to_ref=None,
+        )
+        ag_plan = next(p for p in plans if p.dst == "AGENTS.md")
+        assert ag_plan.kind == "clean-locally-modified", (
+            f"AGENTS.md should classify as clean-locally-modified "
+            f"(ours != base + clean merge); got {ag_plan.kind!r}"
+        )
+        # And it remains advancing -- stages + applies identically to clean.
+        assert ag_plan.kind in s._ADVANCING_KINDS
+
+    def test_clean_untouched_when_ours_equals_base(
+        self, tmp_path: Path
+    ) -> None:
+        """The contrast case: when the adopter has NOT touched the file
+        since install (``ours`` matches the token-substituted base) but
+        the upstream has advanced, the classification stays plain
+        ``clean`` (the untouched flavor).
+
+        Models the scenario consistently with ``_diverge_base``: at
+        install time both base AND ours were at the old version; the
+        adopter then did NOT customize the file; upstream has since
+        advanced.  Per the install-time invariant, ours = ``substitute_
+        tokens(base, tokens)`` after a fresh install.
+        """
+        assert _install(tmp_path) == 0
+        base = tmp_path / "dev" / ".cairn" / "base" / "AGENTS.md"
+        ours_path = tmp_path / "AGENTS.md"
+        # Edit BOTH base AND ours to model "install was at the OLD
+        # version, then upstream advanced."  Critically: do NOT add any
+        # local-customization marker -- this is the untouched flavor.
+        base.write_text(
+            base.read_text().replace("# AGENTS.md", "# OLD", 1)
+        )
+        ours_path.write_text(
+            ours_path.read_text().replace("# AGENTS.md", "# OLD", 1)
+        )
+        # Now ours matches the token-substituted base; upstream still
+        # carries "# AGENTS.md" (the new header).  A pure upstream
+        # advance with no adopter customization.
+        lock = s.read_lockfile(tmp_path)
+        plans, _structural = s._compute_upgrade(
+            tmp_path, CAIRN_ROOT, TEMPLATES_ROOT, lock, to_ref=None,
+        )
+        ag_plan = next(p for p in plans if p.dst == "AGENTS.md")
+        assert ag_plan.kind == "clean", (
+            f"AGENTS.md should classify as clean (ours matches "
+            f"substituted base, upstream advanced); got {ag_plan.kind!r}"
+        )
+
+    def test_plan_summary_shows_distinct_labels(
+        self, tmp_path: Path, capsys
+    ) -> None:
+        """The `--plan` report uses the adopter-facing display labels:
+        `clean (untouched)` and `locally-modified (merged clean)` --
+        not the internal kind strings.
+        """
+        assert _install(tmp_path) == 0
+        self._diverge_base(tmp_path)
+        rc = s.main(["upgrade", "--target", str(tmp_path), "--plan",
+                     "--cairn-root", str(CAIRN_ROOT)])
+        assert rc == 0
+        out = capsys.readouterr().out
+        # The adopter-facing label, not the internal kind:
+        assert "locally-modified (merged clean)" in out, (
+            f"adopter-facing label missing from --plan summary; got:\n{out}"
+        )
+        # The internal kind string must NOT leak through the label layer.
+        assert "clean-locally-modified " not in out, (
+            "internal kind string leaked into adopter-facing summary"
+        )
+
     def test_to_ref_requires_git_source(self, tmp_path: Path, monkeypatch) -> None:
         assert _install(tmp_path) == 0
         monkeypatch.setattr(s, "_cairn_is_git", lambda root: False)

@@ -16,6 +16,29 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+### Changed
+
+- **`upgrade --plan` / `--stage` summary distinguishes untouched
+  files from locally-modified-but-merged-clean files.**  The
+  `clean` summary row previously lumped together two situations
+  with very different adopter meaning: files the adopter never
+  touched (a pure upstream advance) and files the adopter
+  customized that merged cleanly with the new upstream (their
+  customizations rode through).  The summary now reports them
+  separately as **`clean (untouched)`** and **`locally-modified
+  (merged clean)`** so the adopter sees their customizations were
+  preserved.  Internal kind name: `clean-locally-modified`
+  (advances identically to `clean`; staged + applied the same
+  way).  Source proposal:
+  `2026-05-28-claude-cairn-0.2.x-sweep-and-ledger-followups`
+  Chunk 3 (B-C-1 sweep nit).  Comparison uses
+  `substitute_tokens(base_raw, tokens)` so a normally-installed
+  file (where ours has `Demo` for `{{project_name}}`) is not
+  flagged as locally-modified by virtue of the token substitution
+  alone.  Tests: `bootstrap/tests/test_upgrade.py::TestUpgradeModes`
+  gains 3 tests covering the locally-modified, untouched, and
+  display-label paths.
+
 ### Added
 
 - **`claim_check.py` document-scoped exemption directives -- the

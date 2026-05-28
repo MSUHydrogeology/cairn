@@ -1708,7 +1708,23 @@ def _theirs_bytes(
 #: can never be applied: slot-removed, error,
 #: review-only, needs-value, removed-upstream, verbatim-locally-modified,
 #: verbatim-missing, verbatim-up-to-date, up-to-date.
-_ADVANCING_KINDS = frozenset({"clean", "conflict", "verbatim-update"})
+#:
+#: ``clean-locally-modified`` is the B-C-1 sub-classification of a clean
+#: 3-way merge result: the adopter had customized the file locally
+#: (``ours != base``) and the customization merged cleanly with the new
+#: upstream.  Advances identically to ``clean``; reported separately so
+#: the adopter sees their customizations were preserved across the merge
+#: (vs. ``clean`` which means the file was untouched).
+_ADVANCING_KINDS = frozenset(
+    {"clean", "clean-locally-modified", "conflict", "verbatim-update"}
+)
+
+#: Display labels for the upgrade report.  Maps the internal kind to the
+#: adopter-facing label; kinds not in this map render verbatim.
+_KIND_DISPLAY_LABEL = {
+    "clean": "clean (untouched)",
+    "clean-locally-modified": "locally-modified (merged clean)",
+}
 
 
 class FilePlan(NamedTuple):
@@ -1769,9 +1785,23 @@ def _compute_upgrade(
             plans.append(FilePlan(dst, "error", None,
                                   f"malformed slots: {exc}", None, None))
             continue
-        advancing = res.status in _ADVANCING_KINDS
+        # B-C-1: split `clean` into `clean (untouched)` vs.
+        # `locally-modified (merged clean)` so the adopter sees their
+        # customizations were preserved across the merge.  When the
+        # merge resolved cleanly AND the on-disk file differs from the
+        # *token-substituted* base, the adopter had customized this
+        # file beyond the install-time substitution, and those
+        # customizations rode through the merge.  The substituted
+        # comparison is critical -- a plain ``ours != base_raw`` check
+        # would flag every normally-installed file (where ours has
+        # ``Demo`` for ``{{project_name}}`` but base_raw still has the
+        # token) as "locally modified," which is the wrong signal.
+        kind = res.status
+        if kind == "clean" and ours != substitute_tokens(base_raw, tokens):
+            kind = "clean-locally-modified"
+        advancing = kind in _ADVANCING_KINDS
         plans.append(FilePlan(
-            dst, res.status,
+            dst, kind,
             res.merged if advancing else None, res.detail,
             theirs_raw if advancing else None,
             cache_rel if advancing else None))
@@ -1809,13 +1839,18 @@ def _print_upgrade_report(
     for fp in plans:
         by_kind[fp.kind].append(fp.dst)
     print(f"\nCairn upgrade -- {mode}\n" + "=" * 40)
-    order = ["clean", "conflict", "slot-removed", "review-only",
+    order = ["clean", "clean-locally-modified",
+             "conflict", "slot-removed", "review-only",
              "verbatim-update", "verbatim-locally-modified",
              "verbatim-up-to-date", "verbatim-missing", "up-to-date",
              "removed-upstream", "error"]
+    # Column width sized for the longest display label ("locally-modified
+    # (merged clean)" = 31 chars) plus a 2-space pad.
+    label_width = max(len(_KIND_DISPLAY_LABEL.get(k, k)) for k in order) + 2
     for kind in order + [k for k in by_kind if k not in order]:
         if kind in by_kind:
-            print(f"  {kind:26s} {len(by_kind[kind])}: "
+            label = _KIND_DISPLAY_LABEL.get(kind, kind)
+            print(f"  {label:{label_width}s} {len(by_kind[kind])}: "
                   f"{', '.join(by_kind[kind][:6])}"
                   f"{'...' if len(by_kind[kind]) > 6 else ''}")
     if structural["new_modules"]:
