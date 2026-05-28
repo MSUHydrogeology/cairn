@@ -106,9 +106,38 @@ From the six-axis profile, select the module set:
    `../dimensions/README.md > The three module layers`.
 
 2. **Default-on modules** (installed unless a dimension removes
-   them): lifecycle-metrics, reflections, claim-check. Remove a
-   default-on module only when the dimensional profile gives a
-   specific reason — record the reason.
+   them): lifecycle-metrics, reflections, claim-check,
+   fold-back-ledger, incident-trackers. Remove a default-on
+   module only when the dimensional profile gives a specific
+   reason — record the reason.
+
+   **Module-merge mechanics (Proposal B / audit gap #3).** Modules
+   ship `<!-- cairn:merge-target: <dst> > <slot> -->` directives
+   paired with `<!-- cairn:merge-content-start -->` /
+   `<!-- cairn:merge-content-end -->` block delimiters that drive
+   a **mechanical merge** at install time.  After modules are
+   installed, the scaffold runs a merge pass:
+
+   * **Empty slot** → inserts the module's contributed prose.
+   * **Already current** → skips (re-running the bootstrap is safe).
+   * **Customized slot** (carries `<!-- cairn:customized -->`) →
+     preserves the existing content; the fidelity check skips
+     substring-match for it.
+   * **Conflict** (slot non-empty + differs + not customized) →
+     defers to a `<target>.cairn-merge-pending` side-file the
+     adopter resolves before the next install.  Non-interactive
+     mode (`--non-interactive` or non-TTY stdin) always defers;
+     interactive prompting is reserved for a future chunk.
+
+   **Slot-name uniqueness invariant.**  Each `<!-- cairn:slot
+   <name> -->` anchor must be unique within its template file.
+   Module authors who need multiple slots for related content
+   use distinct names (e.g.,
+   `goodnight-step-1-tracker-migration`,
+   `goodnight-step-2-other`).  The merge helper's parse phase
+   validates uniqueness + raises `DuplicateSlotError` naming the
+   template path + both line numbers before any merge is
+   attempted.
 
 3. **Team-gated modules** (add when the team can staff them):
 
@@ -393,6 +422,29 @@ the wrong content.
 `Adds to:` slot unfilled. The R-F block-slot check (Step II-5)
 confirms each slot has substantive content; this invariant
 confirms the content is the *right* content.
+
+**Slot-content fidelity check** (Proposal B / audit gap #3).
+The bootstrap's merge pass (Step I-5 step 2) sets up the
+fidelity-check inputs as a side effect: every module that
+declares `cairn:merge-target` directives lands an expected-content
+record.  At II-5, each declared slot is checked against the
+module's contributed text:
+
+* `slot-content-empty` warning — slot still empty (the original
+  audit-gap-#3 failure mode the unfilled-slot check caught).
+* `slot-content-stale-or-partial` warning — slot non-empty +
+  non-customized but doesn't contain the expected content
+  (covers wrong-slot / partial-paste / stale-paste failure modes
+  the original check missed).
+* `slot-content-missing-slot` / `-missing-target` warning —
+  structural mismatch between module directives and target
+  templates; usually an authoring error in the module's
+  directive.
+
+Slots carrying `<!-- cairn:customized -->` are reported as
+`customized` in the install summary (under a separate counter
+line) and skip the fidelity substring-match per the
+intentional-customization contract.
 
 **The remaining slots require Maintainer input directly** (no
 module supplies them):

@@ -26,6 +26,28 @@ and a new empty `Unreleased` is started above.
 
 ### Changed
 
+- **Module install now performs mechanical merge with conflict-
+  prompt fallback** (Proposal B / audit gap #3).  Modules ship
+  structured `<!-- cairn:merge-target: <dst> > <slot> -->`
+  directives paired with `<!-- cairn:merge-content-start/end -->`
+  block delimiters; `bootstrap/scaffold.py` runs a merge pass after
+  module install that handles four cases: empty-slot insert,
+  already-current skip, customized-marker preserve, and
+  conflict-defer to `<target>.cairn-merge-pending` side-file.
+  Adds a `--non-interactive` CLI flag (auto-detected from non-TTY
+  stdin per Antigravity P1) that forces deferral; a
+  `<!-- cairn:customized -->` slot marker (Antigravity P2) for
+  intentionally-customized slots that the fidelity check skips; and
+  parse-phase uniqueness validation (Antigravity P3) that raises
+  `DuplicateSlotError` with line numbers if a target template
+  carries two `cairn:slot` anchors of the same name.  Adds a
+  `slot-content fidelity check` to BOOTSTRAP.md Step II-5 that
+  catches the wrong-slot / partial-paste / stale-paste failure
+  modes the original unfilled-slot check missed.  Existing modules
+  without directives are silently skipped (transitional period).
+  Tests: `bootstrap/tests/test_module_merge.py` (13 tests across
+  6 classes).
+
 - **Commit-permission exception extended to plan- and strategy-doc
   lifecycle commits** (Proposal A Bite 1).  `templates/core/AGENTS.md`'s
   `## Git and commit workflow` section: the "may proceed without
