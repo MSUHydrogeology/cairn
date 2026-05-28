@@ -284,24 +284,120 @@ def activated_task_ids(records: Iterable[ActivationRecord]) -> set[str]:
 
 
 # ---------------------------------------------------------------------------
-# Trigger evaluation (stub for P1.2; P1.9a/b ship the real engine)
+# Trigger evaluation
 # ---------------------------------------------------------------------------
+#
+# Per plan 2026-05-28-claude-cairn-progressive-onboarding (Codex
+# External Review P2-3): triggers evaluate against EXPLICIT
+# deployment state (filesystem + roster + ledger) wherever possible,
+# NOT git archaeology.  The collab-agreement-signing trigger evaluator
+# uses a "first-proposal-archived has fired" precondition recorded in
+# the activation log -- the log IS the explicit state for prior
+# trigger fires.
+#
+# The trigger matrix lives in two families:
+# * Maturity-ladder triggers (P1.9a, this section): level-0-to-1,
+#   level-1-to-2, level-1-deepen, level-2-deepen.
+# * Action triggers (P1.9b, next section): first-proposal-opened,
+#   first-proposal-archived, first-plan-opened, first-plan-archived,
+#   first-changelog-entry, second-agent-type, first-cross-type-review,
+#   first-foldback-candidate, collab-agreement-signing.
+
+
+# Deepen-within-level thresholds (named here so doctrine + tests
+# share the same constants).
+LEVEL_1_DEEPEN_PROPOSALS_THRESHOLD = 5
+LEVEL_1_DEEPEN_PLANS_THRESHOLD = 3
+LEVEL_2_DEEPEN_PROPOSALS_THRESHOLD = 15
+LEVEL_2_DEEPEN_PLANS_THRESHOLD = 10
+
+
+def _count_archived_proposals(target: Path) -> int:
+    archive = target / "dev" / "proposals" / "archive"
+    if not archive.is_dir():
+        return 0
+    return sum(
+        1 for p in archive.glob("*.md")
+        if p.is_file() and p.name != "_template.md"
+    )
+
+
+def _count_archived_plans(target: Path) -> int:
+    archive = target / "dev" / "plans" / "archive"
+    if not archive.is_dir():
+        return 0
+    return sum(
+        1 for p in archive.glob("*.md")
+        if p.is_file() and p.name != "_template.md"
+    )
+
+
+def evaluate_maturity_triggers(target: Path) -> set[str]:
+    """Maturity-ladder trigger evaluators (Chunk P1.9a).
+
+    Each trigger observes filesystem state (Codex P2-3 explicit-state
+    contract):
+
+    * ``level-0-to-1`` -- ``dev/proposals/_template.md`` present
+      (canonical Level 1 signal: adopter graduated from "read the
+      doctrine" to "hand-copy the kernel").
+    * ``level-1-to-2`` -- ``dev/cairn-lock.yml`` present (canonical
+      Level 2 signal per ``bootstrap/UPGRADE.md`` doctrine).
+    * ``level-1-deepen`` -- ``level-1-to-2`` NOT fired AND archived
+      proposals >= LEVEL_1_DEEPEN_PROPOSALS_THRESHOLD AND archived
+      plans >= LEVEL_1_DEEPEN_PLANS_THRESHOLD.
+    * ``level-2-deepen`` -- ``level-1-to-2`` IS fired AND archived
+      proposals >= LEVEL_2_DEEPEN_PROPOSALS_THRESHOLD AND archived
+      plans >= LEVEL_2_DEEPEN_PLANS_THRESHOLD.
+    """
+    out: set[str] = set()
+
+    level_0_to_1 = (target / "dev" / "proposals" / "_template.md").is_file()
+    if level_0_to_1:
+        out.add("level-0-to-1")
+
+    level_1_to_2 = (target / "dev" / "cairn-lock.yml").is_file()
+    if level_1_to_2:
+        out.add("level-1-to-2")
+
+    archived_proposals = _count_archived_proposals(target)
+    archived_plans = _count_archived_plans(target)
+    if (
+        not level_1_to_2
+        and archived_proposals >= LEVEL_1_DEEPEN_PROPOSALS_THRESHOLD
+        and archived_plans >= LEVEL_1_DEEPEN_PLANS_THRESHOLD
+    ):
+        out.add("level-1-deepen")
+    if (
+        level_1_to_2
+        and archived_proposals >= LEVEL_2_DEEPEN_PROPOSALS_THRESHOLD
+        and archived_plans >= LEVEL_2_DEEPEN_PLANS_THRESHOLD
+    ):
+        out.add("level-2-deepen")
+
+    return out
+
+
+def evaluate_action_triggers(target: Path) -> set[str]:
+    """Action-trigger evaluator stub (Chunk P1.9b replaces).
+
+    P1.9a ships only the maturity-ladder triggers; P1.9b implements
+    the full action-trigger matrix (first-proposal-opened, etc.).
+    Until then this returns the empty set so the helper's overall
+    activation flow is still operational on maturity-ladder signals
+    alone.
+    """
+    return set()
 
 
 def evaluate_triggers(target: Path) -> set[str]:
-    """Return the set of trigger names currently fired against the
-    deployment at *target*.
+    """Union of maturity-ladder + action trigger evaluators.
 
-    **P1.2 stub**: returns the empty set.  P1.9a (maturity-ladder
-    triggers) + P1.9b (action triggers) replace this with the real
-    evaluation engine.  The contract is stable: the helper passes
-    *target* to this function and uses the returned set to drive
-    activation.
-
-    Test helpers in ``bootstrap/tests/`` monkeypatch this function
-    to inject specific fired-trigger sets for fixture-based testing.
+    The two-family split lets tests fixture each family independently
+    and keeps the plan's P1.9a / P1.9b sub-chunking visible at the
+    code surface.
     """
-    return set()
+    return evaluate_maturity_triggers(target) | evaluate_action_triggers(target)
 
 
 # ---------------------------------------------------------------------------
