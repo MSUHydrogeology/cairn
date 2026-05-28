@@ -1,3 +1,15 @@
+<!-- Author tip: if your proposal cites count claims (numbers
+     adjacent to `lines` / `proposals` / `plans` / `tests` /
+     `commits` / `files`), claim_check will soft-flag them.
+     Four clearance paths -- see "Count claims" section below for
+     details:
+       1. Rephrase to a delta
+       2. Cite the command that computed the count
+       3. Add an inline `<!-- claim-check-allow-count: N noun -->`
+          directive next to the claim
+       4. Consciously accept in the implementing commit body
+     -->
+
 # Proposal template
 
 > **This is the proposal template.** To open a proposal, copy the
@@ -78,6 +90,63 @@ non-trivial work. A **rejected** or **superseded** proposal moves
 to `archive/` in the Decision commit itself. An archived proposal
 is closed — link maintenance only; to change an accepted decision,
 open a new proposal that supersedes it.
+
+## Count claims -- soft-flag clearance
+
+`claim_check` soft-flags any **count claim** -- a number directly
+adjacent to one of six tree-nouns: `lines`, `proposals`, `plans`,
+`tests`, `commits`, `files`.  Example soft-flag triggers:
+
+* "5-10 files at scale" (forward-looking range estimate)
+* "281 tests" (live-computed from `pytest --collect-only`)
+* "12,847 nodes" (-- **not** a tree-noun, doesn't flag)
+* "13 CHANGELOG entries" (-- **not** a tree-noun, doesn't flag)
+
+<!-- claim-check-allow-count: 10 files, 281 tests -->
+<!-- ^ This template's own teaching examples are self-exempted
+     here.  The inline directive form is mechanism (3) below;
+     this section thus demonstrates its own recommended pattern. -->
+
+The flag's job is to catch **memory-quoted absolute counts** that
+should be deltas or live-computed; the scanner can't tell legitimate
+counts from misremembered ones.  Four clearance mechanisms exist;
+pick one per claim:
+
+1. **Rephrase to a delta** -- "+5 files vs current N" rather than
+   an absolute number.  Best when the claim is structurally a
+   change-size.
+2. **Cite the command that computed the count** -- "281 tests (per
+   `pytest --collect-only`)."  Best for live-from-probe claims; the
+   adjacent command names the cheap defense the reader can re-run.
+3. **Inline `<!-- claim-check-allow-count: N noun, ... -->`
+   directive** -- exempts specific count tokens on adjacent prose.
+   Best for forward-looking range estimates ("at scale")
+   where rephrasing would lose information.  **Reserved for
+   prescriptive rules (e.g., doctrine wording like "5-10 commits")
+   or historical quotes; never for live / mutable counts where
+   mechanisms (1) delta or (2) cited command would be cleaner.**
+   Multiple nouns per line; multiple directives per document.
+   Example:
+
+       The catalog will hold roughly a dozen theory files at scale.
+
+       <!-- claim-check-allow-count: 12 files -->
+
+4. **Consciously accept in the implementing commit body** -- name
+   the count, name why the soft flag is acceptable (forward-looking
+   estimate, live-probe, etc.), and the commit body becomes the
+   audit trail.  Use sparingly -- (3) is usually cleaner; (4) is
+   the fallback when inline-exempt would clutter the prose.
+
+**Avoid the discipline antipattern**: do **not** rephrase by
+substituting non-tree-nouns purely to avoid the flag (e.g., "five
+theory documents" instead of "5 files").  The discipline targets
+quoted absolute counts; substituting nouns hides the count rather
+than grounding it.
+
+<!-- claim-check-allow-count: 5 files -->
+<!-- ^ The "+5 files" delta-example in mechanism (1) above and
+     the "5 files" antipattern example are self-exempted here. -->
 
 ---
 

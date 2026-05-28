@@ -116,10 +116,44 @@ roster is in `dev/agent_collaboration.md`.
 ## Git and commit workflow
 
 * **Never commit or push without explicit maintainer approval.**
-  Show what changed first. *Exception:* a proposal-lifecycle
-  commit that touches only `dev/proposals/` files may proceed
-  directly — those are append-only deliberation artifacts.
-  Pushing always needs approval.
+  Show what changed first.  Pushing always needs approval.
+
+  **Exception: proposal-, plan-, and strategy-doc-lifecycle
+  commits may proceed without per-commit approval.**  Commits that
+  touch ONLY files under `dev/proposals/`, `dev/plans/`, or
+  `dev/strategy/` (and any combination of the three) are
+  deliberation / planning / strategy artifacts.  Covered actions:
+
+  * **`dev/proposals/`** — opening a proposal, appending a
+    Review, appending a Response, flipping status fields
+    (`proposed` → `reviewed` → `revised` → `accepted` /
+    `rejected` / `superseded`).
+  * **`dev/plans/`** — opening a plan, appending plan-reviews /
+    responses / sharpening notes, archiving a plan.  **Not
+    covered**: chunk-implementing commits that ship code — those
+    bundle with non-lifecycle files and the bundling-loses-
+    exception rule below catches them automatically.
+  * **`dev/strategy/`** — opening a strategy doc, iterative
+    revisions, archiving a strategy doc when adopted /
+    superseded / retired.
+
+  These artifacts don't ship code; their integrity comes from
+  the friendly-adversary review system (proposals + plans) or
+  the iterative-revision review cycle (strategy docs).  Three
+  guard-rails on the exception:
+
+  * **Pushing still requires explicit approval.**  The
+    exception covers `git commit` only.
+  * **The Decision commit is the Maintainer's** — see the
+    scribing rules below; absent explicit unambiguous (or
+    confirmed) Maintainer instruction, no agent lands a
+    Decision commit.
+  * **Bundling with non-lifecycle work loses the exception.**
+    A commit that touches a covered lifecycle file AND a file
+    outside the three covered directories (code, `docs/`,
+    `CHANGELOG.md`, `dev/PLANNING.md`, `dev/NEXT_SESSION.md`,
+    `AGENTS.md`, etc.) falls back to the default "explicit
+    maintainer approval" rule.
 * **Scribing a Decision — the guard-rail.** The Maintainer's Decision
   (accept / reject / supersede) is theirs to land; an
   explicitly-instructed agent may *scribe and commit* it, bounded by
@@ -159,6 +193,49 @@ roster is in `dev/agent_collaboration.md`.
     the source-side deletion unstaged, so HEAD carries the file at both
     paths until a fixup. Name both source and destination (or `git add`
     the rename, then verify the `R###` line in `git diff --cached --stat`).
+* **Untracked lifecycle artifacts are the third commit-discipline
+  hazard.**  A failure mode in the same family as the shared-comm-
+  files arc and the staged-index arc: an agent writes a
+  lifecycle-opening artifact (a plan, proposal, or strategy doc)
+  with the *intent* of shipping it as the corresponding
+  lifecycle-opening commit, but never commits it.  The file sits
+  untracked under `dev/proposals/`, `dev/plans/`, or `dev/strategy/`
+  for another agent to inherit cold.  Empirically anchored at the
+  reference deployment by repeated incidents within a single day.
+
+  **Doctrine bite.**  If you write a lifecycle-opening artifact
+  with the intent to ship it as the corresponding lifecycle-
+  opening commit, commit that commit in the same turn.  Do not
+  leave the artifact untracked for another agent to inherit.
+
+  **Two corollaries.**
+
+  * **The lifecycle-opening commit is atomic by intent.**  Write
+    + `git mv` + `git commit` together; the partial state (file
+    written, not committed) is the failure surface.
+  * **If you can't commit this turn, don't write the artifact
+    yet.**  Draft in chat or in the harness scratch surface
+    (`.claude/notes/` or equivalent) until you can ship the
+    artifact + the commit atomically.
+
+  **Cold-start recovery.**  An agent starting a session checks
+  for untracked lifecycle drafts in `dev/proposals/`,
+  `dev/plans/`, and `dev/strategy/` as part of the orientation
+  pass.  For each untracked draft: if it carries the agent's own
+  active intent claim (per the work-intent system the
+  `coordination-tiers` module ships), commit it now; if another
+  agent's intent claim covers it, treat it as that agent's open
+  thread (don't touch); if no intent claim resolves the
+  ownership, surface it to the maintainer rather than committing
+  or deleting unilaterally.
+
+  The substrate for tracking recurrences of this hazard (and the
+  staged-index + shared-comm hazards) is the `incident-trackers`
+  module (default-on; ships the forkable tracker template +
+  goodnight migration sub-step).  Heavier structural wards
+  (session-start / goodnight check; mechanical gate; intent-
+  system integration) stay reserve options the deployment can
+  adopt under capability-pull.
 * **Shared communication files** — the roadmap boards, the
   changelog, and (when the `progressive-onboarding` mechanism is
   installed) `dev/.cairn/onboarding-activated.jsonl` — are edited

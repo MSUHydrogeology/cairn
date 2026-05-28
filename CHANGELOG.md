@@ -24,7 +24,46 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+### Changed
+
+- **Commit-permission exception extended to plan- and strategy-doc
+  lifecycle commits** (Proposal A Bite 1).  `templates/core/AGENTS.md`'s
+  `## Git and commit workflow` section: the "may proceed without
+  per-commit approval" carve-out now covers `dev/proposals/` +
+  `dev/plans/` + `dev/strategy/` (and any combination), with the
+  three guard-rails preserved (push still needs approval; Decision
+  commits stay Maintainer-only / Maintainer-scribed; bundling with
+  non-lifecycle files loses the exception).  Ports the doctrine
+  bite from the modflow_tools reference deployment commit `246ad13`.
+
+- **"Untracked lifecycle artifacts" sub-section added to
+  `templates/core/AGENTS.md`** (Proposal A Bite 3).  Names the third
+  commit-discipline hazard in the family alongside the
+  shared-comm-files arc + staged-index arc: writing a lifecycle-
+  opening artifact without committing it the same turn.  Ships the
+  doctrine bite + two corollaries + a cold-start recovery procedure
+  (an agent starting cold checks for untracked lifecycle drafts +
+  resolves ownership via the work-intent system rather than acting
+  unilaterally).  Cross-references the `incident-trackers` module
+  (lands in this release window) as the substrate.
+
 ### Added
+
+- **"Count claims -- soft-flag clearance" template guidance added
+  to both `templates/core/dev/proposals/_template.md` and
+  `templates/core/dev/plans/_template.md`** (Proposal A Bite 2).
+  Two additions per template: a 10-line `<!-- Author tip: -->`
+  HTML comment block at file head summarizing the four clearance
+  mechanisms, and a `## Count claims -- soft-flag clearance`
+  section in the doctrine reference area carrying the six
+  tree-nouns + four clearance mechanisms + the discipline
+  antipattern warning + worked-example self-exemptions.
+  Mechanism (3)'s description sharpened per Antigravity finding:
+  "Reserved for prescriptive rules or historical quotes; never
+  for live / mutable counts where mechanisms (1) delta or
+  (2) cited command would be cleaner."  The mechanism (the
+  `claim-check-allow-count` directive) already ships in
+  `claim_check.py`; this lands the teaching that makes it usable.
 
 - **Progressive onboarding: PLANNING-as-onramp + maturity/action
   trigger system + active-surfacing at relationship-changing
