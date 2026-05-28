@@ -49,6 +49,12 @@ _SCRIPT_MODULES = {
     "lifecycle-metrics": (
         "default-on/lifecycle_metrics.py", "tools/lifecycle_metrics.py",
     ),
+    # Active-surfacing scanner (ships alongside fold-back-ledger; see
+    # 2026-05-28-claude-cairn-foldback-active-surfacing > Chunk 4).
+    "fold-back-ledger": (
+        "default-on/foldback_export_scan.py",
+        "scripts/foldback_export_scan.py",
+    ),
 }
 
 pytestmark = pytest.mark.skipif(

@@ -368,13 +368,24 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
     ],
     # The deployment-side fold-back channel (doctrine: doctrine/fold-back.md).
     # Default-on but omittable: ships the module doctrine + the forkable
-    # ledger artifact into dev/upstream/.  The ledger is a cross-repo export
-    # surface, so its template carries a [SECURITY WARNING] header.
+    # ledger artifact into dev/upstream/, the active-surfacing prompt asset
+    # into dev/modules/, the export-scrub scanner doc into dev/modules/, and
+    # the scanner itself verbatim into scripts/.  The ledger is a cross-repo
+    # export surface, so its template carries a [SECURITY WARNING] header;
+    # the scanner is the machine half of the active-surfacing protocol's
+    # two-gate export boundary (the manual half is the maintainer-signed
+    # affirmation field in the Cairn issue / PR template).
     "fold-back-ledger": [
         InstallSpec("default-on/fold-back-ledger.md",
                     "dev/modules/fold-back-ledger.md"),
         InstallSpec("default-on/fold-back-ledger-template.md",
                     "dev/upstream/fold-back-ledger.md"),
+        # Active-surfacing additions (Chunks 4-6 of
+        # 2026-05-28-claude-cairn-foldback-active-surfacing).
+        InstallSpec("default-on/foldback_export_scan.md",
+                    "dev/modules/foldback_export_scan.md"),
+        InstallSpec("default-on/foldback_export_scan.py",
+                    "scripts/foldback_export_scan.py", verbatim=True),
     ],
     # team-gated
     "dual-review": [
