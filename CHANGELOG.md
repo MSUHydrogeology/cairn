@@ -18,68 +18,75 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
-- **`doctrine/doc-governance.md` -- style-conventions-location
-  paragraph + coherence-pass rewrite of the opening taxonomy.**
-  Closes the four-section build from Chunks 2 + 3 + 7 into one
-  coherent documentation-governance doctrine: the file now opens
-  with an explicit two-half framing (governing-file routing
-  `AGENTS.md` / `agent_collaboration.md`, then descriptive-layer
-  recognition `docs/` + format-neutrality + common-homes-for-vision
-  + common-homes-for-style), with sub-heading levels demoted to
-  reflect the structure.  New style-conventions section
-  enumerates four typical homes (`docs/developer/style.md`,
-  `docs/style.md`, project-specific equivalents, `STYLE_GUIDE.md`
-  at root) without recommending among them, per the M2 chat-
-  preference clarification: style is project-specific
-  descriptive content, not universal governing doctrine.  Source
-  proposal: `2026-05-28-claude-cairn-docs-architecture-cleanup`;
-  implementing plan > Chunks 7 + 8.  Tests extended to 27 cases
-  in `bootstrap/tests/test_doc_governance.py`.
+- **Docs architecture cleanup: `doctrine/doc-governance.md`
+  expanded into a coherent two-half documentation-governance
+  doctrine + team-gated module disambiguation.** Source proposal:
+  `2026-05-28-claude-cairn-docs-architecture-cleanup` (deliberated
+  modflow_tools-side because Cairn does not yet self-host
+  `dev/proposals/`; accepted Anthony 2026-05-28). Implementing
+  plan: `2026-05-28-claude-cairn-docs-architecture-cleanup`. Cairn
+  commits: `42b4d73`, `7545f8f`, `86c266f`, `9d5ad4a`, `868834b`
+  (Chunks 2, 3, 7, 8 + Antigravity-2/3 sharpening).
 
-- **`doctrine/doc-governance.md` -- adopter-`docs/`
-  format-neutrality + team-gated module disambiguation.**
-  Companion to the descriptive-layer tier recognition (above).
-  The new format-neutrality section explicitly disclaims any
-  Cairn assumption about the adopter's docs format
-  (Markdown / reStructuredText / Asciidoc / Quarto -- adopter
-  picks); Cairn's `.md` references point INTO Cairn, not into
-  the adopter's tree.  The three team-gated modules that
-  reference `cairn/docs/further-reading.md`
-  (`examples-gallery`, `doc-drift-prevention`,
-  `testing-discipline`) now carry the `Cairn's own
-  [`cairn/docs/further-reading.md`]` link-text disambiguation
-  (Antigravity-3 option i; no URL hardcoding); installed-module
-  scaffold-rendered tests assert the adopter-facing surface
-  carries the prefix.  Source proposal:
-  `2026-05-28-claude-cairn-docs-architecture-cleanup`;
-  implementing plan > Chunk 3.  Tests added to
-  `bootstrap/tests/test_doc_governance.py` (15 new cases: 3
-  format-neutrality + 6 module-source + 6 installed-adopter).
+  * **`doctrine/doc-governance.md` opens with a two-half framing.**
+    Governing-file routing (`AGENTS.md` vs `agent_collaboration.md`,
+    the original scope) + descriptive-layer recognition (`docs/`,
+    the new scope from this package).  Sub-heading levels demoted
+    to reflect the structure; a reader scanning the table of
+    contents now sees the two halves clearly.
 
-- **`doctrine/doc-governance.md` -- descriptive-layer tier
-  recognition + common-homes for project vision / charter
-  material.** Adopter-friction follow-up surfaced by
-  LHM-adoption-of-Cairn 2026-05-28: `docs/developer/` is now
-  recognized as a first-class descriptive-layer tier (alongside
-  Quickstart / User Guide / Theory-Reference); the doctrine names
-  four common homes for vision / charter material
-  (`docs/developer/vision.md`, `README.md`, `docs/`-root vision
-  page, `dev/vision.md`) without recommending among them, per the
-  maintainer's layer-prescriptiveness gradient (tier-RECOGNITION
-  holds; tier-LEGISLATION drops).  The
-  `templates/core/dev/README.md` template no longer mentions
-  `vision.md` as an optional `dev/` addition -- the doctrine's
-  common-homes section carries the dialogue surface (eventually
-  wired into the interactive-onboarding `0.3` goal).  Source
-  proposal:
-  `2026-05-28-claude-cairn-docs-architecture-cleanup`
-  (deliberated modflow_tools-side; accepted 2026-05-28).
-  Implementing plan:
-  `2026-05-28-claude-cairn-docs-architecture-cleanup` > Chunk 2.
-  Doctrine-presence tests:
-  `bootstrap/tests/test_doc_governance.py`
-  (8 cases pinning the tier-recognition and common-homes
-  sections + the dev/README.md template's vision.md drop).
+  * **Tier recognition + common homes for vision** (Chunk 2).  The
+    descriptive layer is recognized as conventionally tiered by
+    audience (Quickstart / User Guide / Theory-Reference /
+    Developer); the doctrine enumerates four typical homes for a
+    project's vision / charter (`docs/developer/vision.md`,
+    `README.md`, `docs/`-root vision page, `dev/vision.md`) without
+    recommending among them.  Per the maintainer's M1 layer-
+    prescriptiveness gradient: tier-RECOGNITION holds;
+    tier-LEGISLATION drops.  The `templates/core/dev/README.md`
+    template drops its `vision.md` mention -- the doctrine's
+    common-homes section carries the dialogue surface (eventually
+    wired into the interactive-onboarding `0.3` goal).
+
+  * **Format-neutrality + module disambiguation** (Chunk 3).  An
+    adopter's `docs/` format is the adopter's choice (Markdown /
+    reStructuredText / Asciidoc / Quarto); Cairn's `.md`
+    cross-references point INTO Cairn, not into the adopter's
+    tree.  The three team-gated modules that reference Cairn's
+    `further-reading` (`examples-gallery`, `doc-drift-prevention`,
+    `testing-discipline`) carry the link-text disambiguation
+    `Cairn's own [cairn/docs/further-reading.md](...)` so the
+    target is unambiguously Cairn-owned and an adopter using a
+    non-Markdown docs format is not implicitly steered toward
+    `.md`.  Per Antigravity-3 plan-review finding option (i):
+    link-text disambiguation, no URL hardcoding.
+
+  * **Common homes for style conventions** (Chunk 7).  Style
+    conventions are project-specific descriptive content rather
+    than universal governing doctrine.  Four typical homes
+    enumerated (`docs/developer/style.md`, `docs/style.md`,
+    project-specific equivalent, `STYLE_GUIDE.md` at root) without
+    recommending among them.  Per the maintainer's M2 chat-
+    preference clarification.
+
+  * **Coherence pass** (Chunk 8).  Opening intro rewritten to make
+    the two-half structure explicit (governing-file routing +
+    descriptive-layer recognition); subsection headings demoted;
+    cross-references between the new sections + the pre-existing
+    governing-file-routing content confirmed intact.
+
+  * **Tests** -- `bootstrap/tests/test_doc_governance.py` (new
+    file): 27 doctrine-presence cases covering tier-recognition,
+    common-homes-for-vision, format-neutrality, module
+    disambiguation, scaffold-rendered installed-adopter wording
+    (Codex-3 of the proposal review), style-conventions location.
+
+  * **Sharpening commits** addressing the External Code Review
+    (Antigravity, 2026-05-28; 4 findings, all accepted):
+    `868834b` (Cairn-side findings 2 + 3): `templates/core/dev/README.md`
+    doc-governance link relative-depth fix + "Cairn's own"
+    disambiguation; 6 team-gated module backtick-in-link-text
+    removals per the style-guide rule.
 
 ### Changed
 
