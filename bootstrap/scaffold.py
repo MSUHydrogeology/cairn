@@ -245,6 +245,13 @@ _DEV_DIRS: tuple[str, ...] = (
     "dev/plans",
     "dev/plans/archive",
     "dev/modules",
+    # Progressive-onboarding module's installed-source-file home.
+    # Per plan 2026-05-28-claude-cairn-progressive-onboarding (Chunk
+    # P1.1, Codex P1-1 disposition): scaffold inlines a preset's seed
+    # tasks into `dev/PLANNING.md` and ALSO copies the full source
+    # file here so the activation helper can discover deferred tasks
+    # at goodnight.  The directory exists from install time onward.
+    "dev/modules/onboarding",
 )
 
 
@@ -1008,6 +1015,210 @@ def install_optional(
     return results
 
 
+# ---------------------------------------------------------------------------
+# Progressive onboarding -- preset-keyed slot substitution
+# ---------------------------------------------------------------------------
+
+#: Three named preset onboarding files (under
+#: ``templates/onboarding/<name>.md``).  An adopter's chosen preset
+#: maps 1:1 to one of these files; the scaffold inlines the file's
+#: seed tasks into ``dev/PLANNING.md``'s ``onboarding-tasks`` slot and
+#: copies the full source file to ``dev/modules/onboarding/<name>.md``
+#: as the authoritative reference for deferred-task discovery at
+#: goodnight (Codex P1-1 / P2-4 disposition: seed-only PLANNING render
+#: + tracked installed source).
+_ONBOARDING_PRESETS: frozenset[str] = frozenset(
+    {"solo-greenfield", "collaborative-team", "high-rigor-legacy"}
+)
+
+#: Matches ``* [seed; id: <name>]`` task lines in a preset onboarding
+#: file.  The bracket payload syntax also accepts other ``key: value``
+#: pairs (extension point); the parser keeps the whole bracketed
+#: payload + task body together when rendering into the slot.
+_ONBOARDING_SEED_RE = re.compile(
+    r"^\*\s+\[seed;\s*id:\s*\S+[^\]]*\]\s*$",
+)
+
+
+def _extract_seed_tasks(preset_text: str) -> list[str]:
+    """Extract seed-task entries from a preset onboarding file.
+
+    Each seed task is a multi-line markdown list item:
+
+        * [seed; id: read-lifecycle-doctrine]
+          Read `doctrine/lifecycle.md` ...
+
+    Returns the rendered list-item blocks (each block preserving the
+    `[seed; ...]` header line + any indented continuation lines until
+    the next top-level item or non-indented blank line).  Deferred
+    tasks (``[trigger: ...]``) and non-task content (prose, doctrine
+    headers, metadata blocks) are excluded by construction.
+    """
+    blocks: list[str] = []
+    current: list[str] = []
+    in_seed = False
+    for line in preset_text.splitlines():
+        if _ONBOARDING_SEED_RE.match(line):
+            if current:
+                blocks.append("\n".join(current).rstrip())
+                current = []
+            current.append(line)
+            in_seed = True
+            continue
+        if not in_seed:
+            continue
+        # Continuation if indented (>= 2 spaces); otherwise close the
+        # current seed block on first non-indented non-empty line.
+        if line.startswith("  ") or line.startswith("\t"):
+            current.append(line)
+        elif line.strip() == "":
+            current.append(line)
+        else:
+            blocks.append("\n".join(current).rstrip())
+            current = []
+            in_seed = False
+    if current:
+        blocks.append("\n".join(current).rstrip())
+    return blocks
+
+
+def _render_onboarding_slot(preset_name: str, seed_blocks: list[str]) -> str:
+    """Build the slot content for ``dev/PLANNING.md``'s
+    ``onboarding-tasks`` slot from the preset name + extracted seeds.
+
+    The first line is the ``<!-- preset: <name> -->`` metadata
+    comment the goodnight activation helper reads to resolve which
+    installed source file
+    (``<target>/dev/modules/onboarding/<name>.md``) carries the
+    deferred tasks (Codex P2-4 disposition: the metadata-comment
+    contract is established here at scaffold time so the helper's
+    contract is uniform).
+    """
+    parts = [f"<!-- preset: {preset_name} -->", ""]
+    parts.extend(seed_blocks)
+    return "\n".join(parts).rstrip() + "\n"
+
+
+def _substitute_slot(
+    text: str, slot_name: str, replacement: str,
+) -> tuple[str, bool]:
+    """Replace the body BETWEEN ``<!-- cairn:slot NAME -->`` and
+    ``<!-- cairn:end NAME -->`` markers with *replacement*.
+
+    Returns ``(new_text, did_substitute)``.  If the slot is not
+    found, returns ``(text, False)`` so the caller can warn.
+    """
+    open_marker = f"<!-- cairn:slot {slot_name} -->"
+    close_marker = f"<!-- cairn:end {slot_name} -->"
+    o = text.find(open_marker)
+    if o < 0:
+        return text, False
+    c = text.find(close_marker, o + len(open_marker))
+    if c < 0:
+        return text, False
+    body_start = o + len(open_marker)
+    new_body = "\n" + replacement.strip("\n") + "\n"
+    return text[:body_start] + new_body + text[c:], True
+
+
+def install_onboarding(
+    templates_root: Path,
+    target: Path,
+    preset_name: str | None,
+    *,
+    dry_run: bool = False,
+    force: bool = False,
+) -> list[InstallResult]:
+    """Install the preset-keyed progressive-onboarding content.
+
+    Two writes, conditional on *preset_name* being one of the three
+    named presets (an adopter without a ``preset:`` selection -- e.g.
+    explicit ``modules:`` list only -- gets no onboarding install).
+
+    1. **Inline seed tasks + preset metadata into the slot** in
+       ``dev/PLANNING.md``.  ONLY seed tasks ``[seed; id: ...]`` are
+       rendered into the slot, plus a ``<!-- preset: <name> -->``
+       metadata comment.  Deferred tasks (``[trigger: X; id: ...]``)
+       stay in the installed source file (write 2).
+    2. **Copy the full source file** ``templates/onboarding/<name>.md``
+       to ``<target>/dev/modules/onboarding/<name>.md`` byte-for-byte
+       (no token substitution -- the preset file is curated content,
+       not a template).  This is the authoritative reference the
+       goodnight activation helper reads to discover deferred tasks.
+
+    Returns the list of InstallResults for the two writes (or fewer
+    if the preset is not selected / files are missing).  Each result
+    follows the same shape as ``_install_one``'s for consistency
+    with the post-scaffold report.
+
+    Per plan 2026-05-28-claude-cairn-progressive-onboarding Chunk
+    P1.1 + Codex External Review P1-1 / P2-4 dispositions.
+    """
+    results: list[InstallResult] = []
+    if not preset_name or preset_name not in _ONBOARDING_PRESETS:
+        return results
+
+    src = templates_root / "onboarding" / f"{preset_name}.md"
+    if not src.exists():
+        print(
+            f"  [warn] onboarding preset source missing: "
+            f"templates/onboarding/{preset_name}.md",
+            file=sys.stderr,
+        )
+        return results
+
+    preset_text = src.read_text(encoding="utf-8")
+    seed_blocks = _extract_seed_tasks(preset_text)
+    rendered = _render_onboarding_slot(preset_name, seed_blocks)
+
+    # Write 1: substitute into installed PLANNING.md's slot.
+    planning_dst = target / "dev" / "PLANNING.md"
+    if not planning_dst.exists():
+        print(
+            f"  [warn] onboarding: dev/PLANNING.md not yet installed -- "
+            f"slot substitution skipped (run after install_core)",
+            file=sys.stderr,
+        )
+    else:
+        planning_text = planning_dst.read_text(encoding="utf-8")
+        new_text, ok = _substitute_slot(
+            planning_text, "onboarding-tasks", rendered,
+        )
+        if not ok:
+            print(
+                f"  [warn] onboarding: `onboarding-tasks` slot not found "
+                f"in dev/PLANNING.md -- preset content not injected",
+                file=sys.stderr,
+            )
+        elif new_text != planning_text:
+            if dry_run:
+                results.append((planning_dst, [], [], "dry-run"))
+            else:
+                _assert_safe_write(planning_dst, target)
+                planning_dst.write_text(new_text, encoding="utf-8")
+                results.append((planning_dst, [], [], "installed"))
+
+    # Write 2: copy source file verbatim to installed-source path.
+    source_dst = target / "dev" / "modules" / "onboarding" / f"{preset_name}.md"
+    if dry_run:
+        results.append((source_dst, [], [], "dry-run"))
+    else:
+        if source_dst.exists() and not force:
+            print(
+                f"  [skip] {source_dst}: already exists -- pass --force to "
+                f"overwrite",
+                file=sys.stderr,
+            )
+            results.append((source_dst, [], [], "skipped-exists"))
+        else:
+            _assert_safe_write(source_dst, target)
+            source_dst.parent.mkdir(parents=True, exist_ok=True)
+            source_dst.write_text(preset_text, encoding="utf-8")
+            results.append((source_dst, [], [], "installed"))
+
+    return results
+
+
 def install_modules(
     templates_root: Path,
     target: Path,
@@ -1371,6 +1582,7 @@ def write_install_lockfile(
     optional: list[tuple[str, str]],
     profile: dict[str, Any],
     allow_secret_tokens: tuple[str, ...] = (),
+    onboarding_preset: str | None = None,
 ) -> dict[str, Any] | None:
     """Write ``dev/cairn-lock.yml`` + the scoped base-template cache.
 
@@ -1383,6 +1595,13 @@ def write_install_lockfile(
     The base cache stores the **raw** (pre-substitution) template for each
     **non-verbatim** install only (I4: verbatim scripts use the hash policy,
     not a cached base).
+
+    ``onboarding_preset`` (per plan 2026-05-28-claude-cairn-progressive-
+    onboarding Chunk P1.1): when set, the lockfile's "clean install"
+    computation for ``dev/PLANNING.md`` includes the post-install
+    onboarding-slot substitution + preset metadata write, so the file's
+    on-disk content matches the expected ``would`` despite
+    ``install_onboarding`` having modified it after ``install_core``.
     """
     _refuse_secret_tokens(tokens, allow_secret_tokens)
 
@@ -1390,15 +1609,48 @@ def write_install_lockfile(
     cache_writes: list[tuple[Path, str]] = []
     diverged: list[str] = []
 
+    # Pre-compute the onboarding overlay for PLANNING.md so the
+    # `would` calculation in the loop below can apply the same slot
+    # substitution `install_onboarding` did at install time.  If no
+    # preset is selected, the overlay is empty and PLANNING.md is
+    # checked against the token-substituted raw template (the
+    # baseline behavior).
+    onboarding_overlay: str | None = None
+    if (
+        onboarding_preset
+        and onboarding_preset in _ONBOARDING_PRESETS
+    ):
+        preset_src = (
+            templates_root / "onboarding" / f"{onboarding_preset}.md"
+        )
+        if preset_src.exists():
+            seed_blocks = _extract_seed_tasks(
+                preset_src.read_text(encoding="utf-8")
+            )
+            onboarding_overlay = _render_onboarding_slot(
+                onboarding_preset, seed_blocks,
+            )
+
     for src_rel, dst_rel, verbatim in _lock_file_list(modules, optional):
         src = templates_root / src_rel
         if not src.exists():
             continue
         raw = src.read_text(encoding="utf-8")
-        would = (
-            src.read_bytes() if verbatim
-            else substitute_tokens(raw, tokens).encode("utf-8")
-        )
+        if verbatim:
+            would = src.read_bytes()
+        else:
+            substituted = substitute_tokens(raw, tokens)
+            if (
+                dst_rel == "dev/PLANNING.md"
+                and onboarding_overlay is not None
+            ):
+                # Apply the same slot substitution `install_onboarding`
+                # did so the lockfile sees a clean install.
+                with_overlay, ok = _substitute_slot(
+                    substituted, "onboarding-tasks", onboarding_overlay,
+                )
+                substituted = with_overlay if ok else substituted
+            would = substituted.encode("utf-8")
         dst_abs = target / dst_rel
         on_disk = dst_abs.read_bytes() if dst_abs.exists() else None
         if on_disk is None or on_disk != would:
@@ -2489,6 +2741,14 @@ def main(argv: list[str] | None = None) -> int:
             "[dry-run] Optional:        ",
             ", ".join(dst for _, dst in optional) or "(none)",
         )
+        dry_preset = str(cfg.get("preset") or "").strip()
+        if dry_preset and dry_preset in _ONBOARDING_PRESETS:
+            print(
+                f"[dry-run] Onboarding:      "
+                f"templates/onboarding/{dry_preset}.md (seeds -> "
+                f"dev/PLANNING.md slot; full source -> "
+                f"dev/modules/onboarding/{dry_preset}.md)"
+            )
         for mod in modules:
             for entry in _GITIGNORE_SEEDS.get(mod, ()):  # C6 dry-run
                 would = seed_gitignore(target, (entry,), dry_run=True)
@@ -2507,6 +2767,21 @@ def main(argv: list[str] | None = None) -> int:
     core_results = install_core(
         templates_root, target, tokens, force=args.force
     )
+
+    # Install progressive-onboarding content (preset-keyed).  Must run
+    # AFTER install_core because it edits the just-installed
+    # dev/PLANNING.md's `onboarding-tasks` slot.  Per plan
+    # 2026-05-28-claude-cairn-progressive-onboarding Chunk P1.1:
+    # seed-only slot render + full-source-file install to
+    # dev/modules/onboarding/<preset>.md.  Adopters without a preset:
+    # selection get no onboarding install (the function no-ops).
+    preset_name = str(cfg.get("preset") or "").strip() or None
+    onboarding_results: list[InstallResult] = []
+    if preset_name:
+        print(f"Installing progressive onboarding ({preset_name}) ...")
+        onboarding_results = install_onboarding(
+            templates_root, target, preset_name, force=args.force
+        )
 
     # Install module templates
     print(f"Installing modules: {', '.join(modules) or '(none)'} ...")
@@ -2527,7 +2802,7 @@ def main(argv: list[str] | None = None) -> int:
 
     print_report(
         target, dirs_created,
-        core_results + module_results + optional_results,
+        core_results + onboarding_results + module_results + optional_results,
     )
 
     # Seed adopter-owned .gitignore for selected modules (Cairn v0.2 P5,
@@ -2573,6 +2848,7 @@ def main(argv: list[str] | None = None) -> int:
             target, cairn_root, templates_root,
             tokens=tokens, modules=modules, optional=optional,
             profile=lock_profile,
+            onboarding_preset=preset_name,
         )
     except PresetError as exc:
         print(f"error: {exc}", file=sys.stderr)

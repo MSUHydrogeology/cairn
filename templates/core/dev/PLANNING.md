@@ -27,6 +27,24 @@ quickly. The bootstrap seeds this from the Project Profile; it is
 refreshed at the goodnight scrub.)
 <!-- cairn:end project-status -->
 
+## Onboarding
+
+Progressive onboarding tasks live here. The bootstrap fills this
+section from the chosen profile preset (`solo-greenfield`,
+`collaborative-team`, or `high-rigor-legacy`) with the preset's
+day-one seed tasks plus a preset-metadata comment that the
+goodnight activation helper reads to discover the preset's
+deferred tasks (held in `dev/modules/onboarding/`'s installed
+preset file until their named trigger fires). The progressive-
+onboarding doctrine is the source of the mechanism; this section
+is its surface in PLANNING.
+
+<!-- cairn:slot onboarding-tasks -->
+(Empty at adoption unless the bootstrap fills it from a profile
+preset. Existing adopters can opt in via the activation helper's
+seed mode.)
+<!-- cairn:end onboarding-tasks -->
+
 ## Queued
 
 The forward-looking board: substantive work that is accepted or
