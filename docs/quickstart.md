@@ -21,10 +21,12 @@ shape.
 * A POSIX shell (macOS / Linux / WSL).
 * Python 3.10+.
 * `git`.
+<!-- vendor-ok-begin: illustrative list of adopter-side tools the recipe is compatible with -- not a vendor endorsement; the line itself says "vendor-neutral" -->
 * One AI coding agent connected to a repo of your choice -- Claude
   Code, Codex CLI, Cursor, Aider, or anything else that can read
   and write files in a working tree.  Cairn is vendor-neutral; the
   recipe uses prompts the agent reads, not API calls Cairn makes.
+<!-- vendor-ok-end -->
 * About 15 minutes.
 
 ## What you will end up with
@@ -182,6 +184,7 @@ git add AGENTS.md VENDOR.md dev/ tools/ scripts/ && \
 
 Time: ~2 minutes.
 
+<!-- vendor-ok-begin: editor-name list -- illustrative options for adopters; not a vendor endorsement -->
 > **Tip -- open the disposable repo in your editor now.** The
 > next two steps ask your agent to read `AGENTS.md` and write a
 > proposal under `dev/proposals/`; you will be following along
@@ -189,6 +192,7 @@ Time: ~2 minutes.
 > view (VS Code, Cursor, or your editor of choice) makes the
 > lifecycle visible as it happens, instead of relying on
 > `cat` + `git log` between steps.
+<!-- vendor-ok-end -->
 
 ## Step 4 -- the first prompt to your AI agent
 

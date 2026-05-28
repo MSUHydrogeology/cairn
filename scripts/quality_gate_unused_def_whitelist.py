@@ -55,6 +55,17 @@ WHITELIST: frozenset[str] = frozenset({
     # names that conftest plugins / pytest discovers by attribute name.
     "pytest_collection_modifyitems",
     "pytest_addoption",
+    # Public-API exports in shipped modules.  Adopter code calls
+    # these by name; static analysis from inside Cairn's own tree
+    # sees no reference because the call site is in the adopter
+    # tree, not Cairn.
+    "iter_log",  # templates/modules/team-gated/intent.py -- public
+                 # iterator over the intent log for adopter tooling.
+    "check_text",  # templates/modules/default-on/claim_check.py --
+                   # public API for adopters wanting to scan
+                   # pre-loaded text without a file path; Cairn's own
+                   # callers prefer check_file (which delegates to
+                   # check_text via _scan).
     # Dataclass / NamedTuple field "constructors" -- when a NamedTuple
     # is declared and unpacked elsewhere, the type itself may appear
     # unreferenced in some scans.  Keep the door open.

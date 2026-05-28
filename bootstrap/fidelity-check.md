@@ -1,9 +1,11 @@
 # fidelity-check.md — bootstrap verification design (R-H)
 
+<!-- vendor-ok-begin: this doc documents the fidelity-check practice with modflow_tools as the named case-study reference; the cites are legitimate doctrine, not vendor leak -->
 This document specifies the **fidelity-check**: the machine-readable
 manifest contract that verifies a bootstrap installation is correct
 and complete, and a reference manifest for the `modflow_tools` case
 study at a pinned commit.
+<!-- vendor-ok-end -->
 
 The fidelity-check answers: "Is what was installed what the profile
 said should be installed?"  It is distinct from the R-F acceptance
@@ -302,11 +304,13 @@ this probe keeps an *install* from silently shipping incomplete.
 
 ## Reference manifests
 
+<!-- vendor-ok-begin: case-study reference list; the modflow_tools cite is legitimate doctrine -->
 Project-specific reference manifests live alongside their case
 studies, not in `bootstrap/`.  The current reference is:
 
 * `modflow_tools` — see
   [`../case-studies/modflow_tools-fidelity-manifest.yml`](../case-studies/modflow_tools-fidelity-manifest.yml).
+<!-- vendor-ok-end -->
 
 Keeping `bootstrap/` project-neutral mirrors the R-G vendor-neutral
 discipline in spirit: project-name leak is not as serious as

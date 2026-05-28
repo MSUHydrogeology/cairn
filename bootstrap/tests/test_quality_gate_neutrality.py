@@ -242,6 +242,35 @@ class TestTemplatesDirectiveForbidden:
         assert fs == [], [f.message for f in fs]
 
 
+class TestDirectiveShownInProseNotParsed:
+    """Documentation that *shows* an exemption directive (inside
+    backticks, or mid-prose) must not be parsed as a live directive --
+    mirrors the existing claim_check.py rule.  Block + file markers
+    require the line to be a directive-only HTML comment.
+    """
+
+    def test_block_marker_in_backticks_not_parsed(self, qg, tmp_path):
+        (tmp_path / "doctrine").mkdir()
+        (tmp_path / "doctrine" / "howto.md").write_text(
+            "# Documenting the syntax\n\n"
+            "Wrap a block in `<!-- vendor-ok-begin: ... -->` and "
+            "`<!-- vendor-ok-end -->` -- shown here in backticks\n"
+            "so the gate does not treat it as a live marker.\n"
+        )
+        fs = _failures(_run(qg, tmp_path))
+        assert fs == [], [f.message for f in fs]
+
+    def test_case_study_marker_in_backticks_not_parsed(self, qg, tmp_path):
+        (tmp_path / "docs").mkdir()
+        (tmp_path / "docs" / "howto.md").write_text(
+            "# Documenting the syntax\n\n"
+            "A `<!-- case-study -->` marker at the file head exempts the\n"
+            "whole file under cairn/case-studies/.\n"
+        )
+        fs = _failures(_run(qg, tmp_path))
+        assert fs == [], [f.message for f in fs]
+
+
 class TestExemptionReporting:
     def test_exemption_rationale_appears_in_report(self, qg, tmp_path):
         (tmp_path / "doctrine").mkdir()

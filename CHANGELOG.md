@@ -41,6 +41,48 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **`scripts/quality_gate.py` -- consolidated pre-cut quality-gate
+  suite.**  Three stdlib-only sub-gates unified under one CLI:
+
+  * **order-independence** (D-3) -- pytest invocation wrapper with a
+    deterministic seed contract (`--seed`, `--seed-count`,
+    `--seed-list`; default seed=[0]; every run echoes the seed; a
+    failure surfaces with its seed for reproducibility).  Uses a
+    stdlib `random.Random` shuffle hook in
+    `bootstrap/tests/conftest.py` -- no pytest-randomly dependency.
+  * **neutrality** (E-4) -- mechanized R-G vendor/project-token lint
+    scoped to doctrine + dimensions + on-ramp + docs + examples +
+    bootstrap `.md` files.  Three sanctioned-exception directives:
+    `<!-- vendor-ok: reason -->` (line / next-line);
+    `<!-- vendor-ok-begin: reason -->` / `<!-- vendor-ok-end -->`
+    (block); `<!-- case-study -->` (whole-file, only valid under
+    `cairn/case-studies/`).  ANY directive inside `cairn/templates/`
+    fails the gate (templates ship to adopters; a leak there would
+    propagate).  Rationale required on every directive; report
+    exposes every applied exemption.
+  * **redundancy** (G R1 + R6) -- R1 shingle/Jaccard overlap on the
+    `.md` corpus (default 5-word shingles, Jaccard >= 0.75; tunable
+    via `--shingle-size` / `--jaccard-threshold`); R6 stdlib AST
+    unreferenced-def detector on production `.py` files with a
+    sibling whitelist file (`scripts/quality_gate_unused_def_whitelist.py`)
+    for static-dispatch callbacks (argparse `_cmd_*`, public-API
+    exports).  R7 (capability necessity) and the R1 layer-contract
+    filter stay manual -- checklist + dogfood disposition log in
+    `doctrine/consolidation-review.md`.
+
+  CLI: `--sub <name>` (repeatable; default all); `--report`
+  (TAB-separated machine-readable); `--root <dir>`; exit codes
+  ``0`` clean / ``1`` fail / ``2`` usage error.  Source proposal:
+  `2026-05-28-claude-cairn-0.2.x-sweep-and-ledger-followups`
+  Component A.  Tests: 48 new under `bootstrap/tests/test_quality_gate_*.py`.
+  BOOTSTRAP.md Act II-5 R-G recipe now points at this sub-gate as
+  the mechanized form.  First dogfood pass against Cairn `master`
+  surfaced 8 neutrality + 1 redundancy real findings (all
+  dispositioned in `doctrine/consolidation-review.md` > Dogfood
+  disposition log) + ~60 R6 pytest-discovery false positives (fixed
+  in-Chunk by scoping R6 out of `bootstrap/tests/` and skipping
+  `Test*` / `test_*` names defensively).
+
 - **`claim_check.py` document-scoped exemption directives -- the
   full allow-directive family.** Two new HTML-comment directives
   let an author exempt specific would-be-flags without disabling

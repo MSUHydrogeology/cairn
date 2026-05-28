@@ -467,6 +467,16 @@ complete.
       reference. The addendum file itself must not contaminate the
       shared `AGENTS.md` or `dev/` doctrine.
 
+      **Mechanized**: from a Cairn checkout, run
+      `python scripts/quality_gate.py --sub neutrality` -- the
+      consolidated lint covers the full denylist + the three sanctioned
+      exceptions via `<!-- vendor-ok: <reason> -->` (line),
+      `<!-- vendor-ok-begin: <reason> -->` / `<!-- vendor-ok-end -->`
+      (block), and `<!-- case-study -->` (whole-file, under
+      `cairn/case-studies/` only).  The grep recipe above stays as the
+      conceptual reference for adopter-side ad-hoc checks; the
+      `quality_gate.py` sub-gate is the durable pre-cut gate.
+
 **Dogfood gate (see Step II-6)**
 - [ ] At least one real change has gone through the installed
       lifecycle — a proposal was written, reviewed, and a Decision

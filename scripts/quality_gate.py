@@ -259,9 +259,12 @@ def _scan_neutrality_file(
 
     # Rule: <!-- case-study --> outside cairn/case-studies/ fails
     # (cannot silence prose elsewhere via a misplaced marker).
+    # A case-study mention inside prose (backticks / mid-sentence) is
+    # documentation of the syntax, not a live marker -- require the
+    # whole line to be a directive-only HTML comment.
     case_study_exempt = False
     for lineno, line in enumerate(lines, start=1):
-        if _CASE_STUDY_RE.search(line):
+        if _CASE_STUDY_RE.search(line) and _is_directive_only_line(line):
             if rel.startswith("case-studies/"):
                 case_study_exempt = True
             else:
@@ -279,16 +282,24 @@ def _scan_neutrality_file(
         return findings
 
     # Block-exemption + line-exemption + denylist scan.
+    #
+    # Block markers (vendor-ok-begin / vendor-ok-end) require the line
+    # to be a directive-only HTML comment.  A vendor-ok-begin shown
+    # mid-prose (inside backticks in a how-to doc) is documentation of
+    # the syntax, not a live marker -- consistent with the
+    # "shown-in-prose-not-parsed" rule the existing claim_check.py
+    # directive surfaces apply.
     block_active = False
     block_reason = ""
     block_open_line = 0
     for lineno, line in enumerate(lines, start=1):
+        directive_only = _is_directive_only_line(line)
         # Block-begin / block-end management (handle same-line edge
         # case too, though unusual: vendor-ok-begin and
         # vendor-ok-end on the same line collapse to a zero-width
         # block, exempting only that single line).
-        m_begin = _VENDOR_OK_BEGIN_RE.search(line)
-        m_end = _VENDOR_OK_END_RE.search(line)
+        m_begin = _VENDOR_OK_BEGIN_RE.search(line) if directive_only else None
+        m_end = _VENDOR_OK_END_RE.search(line) if directive_only else None
         if m_begin and m_end:
             reason = m_begin.group("reason").strip()
             if not reason:
@@ -455,9 +466,17 @@ def _run_neutrality(repo_root: Path) -> list[Finding]:
 _DEFAULT_SHINGLE_SIZE = 5
 _DEFAULT_JACCARD_THRESHOLD = 0.75
 _R1_SCAN_ROOTS = ("doctrine", "dimensions", "on-ramp", "docs")
+#: R6 scans production code under these roots only.  ``bootstrap/tests/``
+#: is excluded because pytest discovers test classes / functions by
+#: name pattern (``Test*`` / ``test_*``), not by static reference --
+#: scanning it would generate a wall of false positives on every
+#: test class.  When code-review work surfaces an additional R6
+#: false-positive class, add to ``_UNUSED_DEF_WHITELIST`` rather than
+#: expanding this list.
 _R6_SCAN_ROOTS = (
     "scripts", "bootstrap", "templates/modules",
 )
+_R6_EXCLUDE_DIRS = ("bootstrap/tests",)
 
 
 def _word_shingles(text: str, size: int) -> set[tuple[str, ...]]:
@@ -563,7 +582,12 @@ def _run_r6_redundancy(repo_root: Path) -> list[Finding]:
         d = repo_root / root
         if not d.is_dir():
             continue
-        files.extend(sorted(d.rglob("*.py")))
+        for p in sorted(d.rglob("*.py")):
+            rel = p.relative_to(repo_root).as_posix()
+            if any(rel.startswith(ex + "/") or rel == ex
+                   for ex in _R6_EXCLUDE_DIRS):
+                continue
+            files.append(p)
     all_defs: list[tuple[Path, str, int]] = []
     all_refs: set[str] = set()
     for path in files:
@@ -579,6 +603,12 @@ def _run_r6_redundancy(repo_root: Path) -> list[Finding]:
             continue
         # Dunder methods on a class are referenced implicitly; skip.
         if name.startswith("__") and name.endswith("__"):
+            continue
+        # Pytest-discovery patterns (defense-in-depth -- the scan
+        # excludes bootstrap/tests/ already, but a misplaced test file
+        # under scripts/ or bootstrap/ outside tests/ would otherwise
+        # trip on these patterns).
+        if name.startswith("Test") or name.startswith("test_"):
             continue
         # Private helpers can be referenced in tests we don't scan
         # here; surface as info, not fail, so this stays informative

@@ -64,12 +64,22 @@ ask:
 
 Each dogfood pass of `quality_gate.py` appends a dated table row
 naming the per-finding disposition.  This is the **durable audit
-trail** Codex's plan-review finding #4 called for: commit bodies
-summarize totals, this log carries the per-finding rationale.
+trail**: commit bodies summarize totals, this log carries the
+per-finding rationale (the gate will surface false-positives + noise
+between true findings; without the log, the next reader cannot tell
+which the prior pass dispositioned as which).
 
+<!-- vendor-ok-begin: dispositions log -- the "Token / Candidate" column legitimately quotes the tokens that the gate surfaced; not a vendor leak in framework doctrine but a literal audit of what was reviewed and how -->
 | Date | Sub-gate | File:line | Token / Candidate | Disposition | Rationale |
 |---|---|---|---|---|---|
-| -- | -- | -- | -- | -- | -- |
+| 2026-05-28 | neutrality | `bootstrap/fidelity-check.md:5,308,309` | `modflow_tools` (3x) | accepted-exemption-added | Doc names modflow_tools as the case-study reference for fidelity-check practice; legitimate doctrine.  Wrapped both occurrences in `<!-- vendor-ok-begin: ... -->` blocks. |
+| 2026-05-28 | neutrality | `docs/quickstart.md:24-26` | `Claude`, `Codex`, `Cursor` | accepted-exemption-added | Illustrative list of adopter-side tools; the surrounding prose explicitly says "Cairn is vendor-neutral".  Wrapped in `<!-- vendor-ok-begin: ... -->`. |
+| 2026-05-28 | neutrality | `docs/quickstart.md:189` | `Cursor` | accepted-exemption-added | Editor-name list (VS Code, Cursor) -- illustrative options for adopters opening their disposable repo.  Wrapped in `<!-- vendor-ok-begin: ... -->`. |
+| 2026-05-28 | neutrality | `doctrine/consolidation-review.md:67` (this file) | `Codex` | fixed | The phrasing cited the reviewer-attribution rather than the substance.  Rewrote inline to drop the cross-agent name (doctrine doc should not carry session-specific reviewer cites). |
+| 2026-05-28 | redundancy / R6 | `templates/modules/default-on/claim_check.py:670` | def `check_text` | accepted-exemption-added | Public-API export for adopters wanting to scan pre-loaded text directly; Cairn's own callers use `check_file`.  Added to `scripts/quality_gate_unused_def_whitelist.py` with rationale comment. |
+| 2026-05-28 | redundancy / R6 | `templates/modules/team-gated/intent.py:456` | def `iter_log` | accepted-exemption-added | Public-API iterator over the intent log for adopter tooling; unreferenced from within Cairn's own tree.  Added to `_UNUSED_DEF_WHITELIST` at first-dogfood time. |
+| 2026-05-28 | redundancy / R6 | `bootstrap/tests/**` | ~60 `Test*` class defs | fixed | Pytest discovers test classes by `Test*` name pattern, not by static reference.  R6's first dogfood pass surfaced ~60 such false positives.  Fixed in this Chunk 8 commit by scoping R6 out of `bootstrap/tests/` (new `_R6_EXCLUDE_DIRS` tuple) AND skipping `Test*` / `test_*` names defensively in `_run_r6_redundancy` (so a misplaced test file under `scripts/` or `bootstrap/<not-tests>/` would not trip either). |
+<!-- vendor-ok-end -->
 
 Disposition vocabulary:
 
