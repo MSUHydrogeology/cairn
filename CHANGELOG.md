@@ -5,6 +5,14 @@
      templates/modules/default-on/onboarding_activate.py).  Same
      pattern as the fold-back-active-surfacing entry's claim-check
      exemptions. -->
+<!-- claim-check-allow: docs/developer/vision.md, docs/developer/style.md, docs/style.md -->
+<!-- The doc-governance Chunk 2 + Chunk 7 entries quote example
+     paths for vision + style conventions an adopter MIGHT use; these
+     are the doctrine's enumeration of "common homes" without
+     prescribing one.  None resolve in Cairn's own tree because
+     Cairn itself doesn't host these documents at those locations --
+     they're adopter examples per the M1 layer-prescriptiveness
+     gradient (tier-RECOGNITION holds; tier-LEGISLATION drops). -->
 
 # Changelog
 
@@ -68,6 +76,53 @@ and a new empty `Unreleased` is started above.
   resolves ownership via the work-intent system rather than acting
   unilaterally).  Cross-references the `incident-trackers` module
   (lands in this release window) as the substrate.
+
+### Security
+
+- **Containment guards landed in the onboarding-activate helper**
+  (plan
+  `2026-05-28-claude-cairn-security-hardening-post-v0.2-followup`;
+  Antigravity proposal-review I-3 + P1 + plan-review P2/P3).
+  `templates/modules/default-on/onboarding_activate.py` now carries
+  the same three-check fail-closed pattern that the scaffold's
+  `_assert_safe_write` (in `bootstrap/scaffold.py`) established for
+  the scaffold
+  (`ScaffoldSecurityError` -> `OnboardingSecurityError`):
+  every target-derived write site (`planning_path.write_text` in
+  both `activate()` and `seed_existing_adopter()`; the
+  `os.open(O_WRONLY|O_APPEND|O_CREAT)` log-append site with the
+  `mkdir → assert` ordering per Antigravity plan-review P2-1) and
+  read site (planning + source + log + changelog + collaboration-
+  agreement + fold-back ledger) runs `_assert_safe_write` or
+  `_assert_safe_read`.  Glob-loop sites in
+  `_count_archived_proposals`, `_count_archived_plans`,
+  `_list_proposal_files`, `_list_plan_files`, and
+  `_has_cross_type_review_anywhere` use the parent-once +
+  per-leaf `is_symlink()` pattern from Antigravity plan-review P2-2
+  (security-equivalent to per-leaf `_assert_safe_read` at much
+  lower cost on large archives).  Preset-name validation
+  defense-in-depth: `_PRESET_META_RE`'s capture group is
+  restricted to `[a-zA-Z0-9_-]+` (so traversal sequences are
+  refused at the regex level), `extract_preset_from_slot`
+  re-validates the captured name through the strict
+  `_PRESET_NAME_RE`, and `seed_existing_adopter` validates the
+  `--preset` CLI flag through `_PRESET_NAME_RE` BEFORE the
+  `VALID_PRESETS` allowlist check so an attacker-controlled
+  `--preset ../etc/passwd` surfaces a security error (exit code 2
+  per Antigravity plan-review P3-1) rather than the operational
+  "unknown preset" exit 1.  Tests:
+  `bootstrap/tests/test_onboarding_activation_helper.py`
+  (`TestContainmentGuards` 6 cases + `TestPresetNameValidation` 3
+  cases) and `bootstrap/tests/test_hardening.py`
+  (`TestCrossHelperContainment` 1 case asserting both helpers
+  refuse the same planted-symlink tree).  Implementing commits:
+  `3f78c0b` (P1.1 helper guard infrastructure + exit-code branch),
+  `0294493` (P1.2 guards wired at every target-derived call site),
+  `0c433cd` (P1.3 containment-guard tests + cross-helper
+  integration).  Note (Internal-P3-#5): commit-subject prefixes
+  use the plan-chunk identifier (`P1.1`, `P1.2`, `P1.3`) to
+  disambiguate from earlier progressive-onboarding plan chunks
+  that share the same `P1.<n>` numbering.
 
 ### Added
 
@@ -333,9 +388,10 @@ and a new empty `Unreleased` is started above.
     tree.  The three team-gated modules that reference Cairn's
     `further-reading` (`examples-gallery`, `doc-drift-prevention`,
     `testing-discipline`) carry the link-text disambiguation
-    `Cairn's own [cairn/docs/further-reading.md](...)` so the
-    target is unambiguously Cairn-owned and an adopter using a
-    non-Markdown docs format is not implicitly steered toward
+    `Cairn's own cairn/docs/further-reading.md` (so the bracketed
+    label inside any Markdown link reads as a Cairn-owned path)
+    and the target is unambiguously Cairn-owned -- an adopter using
+    a non-Markdown docs format is not implicitly steered toward
     `.md`.  Per Antigravity-3 plan-review finding option (i):
     link-text disambiguation, no URL hardcoding.
 
