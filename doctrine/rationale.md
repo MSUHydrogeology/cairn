@@ -165,6 +165,16 @@ the loop closes at a routine boundary rather than
 incident-by-incident — the structural ward against
 measurement-driven over-correction.
 
+The substrate is shipped by the default-on
+[`incident-trackers`](../templates/modules/default-on/incident-trackers.md)
+module, which installs a forkable tracker template + the goodnight
+migration sub-step. Adopters fork the template to taste — one
+tracker, two trackers, or several class-specific trackers — and
+the rate-limit gate evaluates against whichever instance(s) the
+deployment maintains. The gate counts `Impact = occurred` rows
+within the rolling-window boundary the adopter pinned in the
+tracker's "What counts" sub-section.
+
 ### The reference-instance doctrine harvest
 
 The rate-limit gate governs the loop *within* an adopter: incident →

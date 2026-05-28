@@ -113,6 +113,7 @@ _DEFAULT_ON_MODULES: tuple[str, ...] = (
     "reflections",
     "claim-check",
     "fold-back-ledger",
+    "incident-trackers",
 )
 
 
@@ -379,6 +380,20 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
                     "dev/modules/claim-check.md"),
         InstallSpec("default-on/claim_check.py",
                     "scripts/claim_check.py", verbatim=True),
+    ],
+    # The deployment-side measurement substrate the adaptive-doctrine
+    # rate-limit gate (doctrine/rationale.md) evaluates against.
+    # Ships the module doctrine + a forkable tracker template; adopters
+    # fork the template to one or many live trackers (e.g.,
+    # dev/incident_log.md or class-specific files), then the goodnight
+    # migration sub-step feeds incident entries from reflections into
+    # the trackers.  The canonical 7-column semantic-field schema is
+    # the contract the eventual Goal 7 cross-adopter harvest reads.
+    "incident-trackers": [
+        InstallSpec("default-on/incident-trackers.md",
+                    "dev/modules/incident-trackers.md"),
+        InstallSpec("default-on/incident_log_template.md",
+                    "dev/modules/incident_log_template.md"),
     ],
     # The deployment-side fold-back channel (doctrine: doctrine/fold-back.md).
     # Default-on but omittable: ships the module doctrine + the forkable

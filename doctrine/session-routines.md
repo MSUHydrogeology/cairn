@@ -211,6 +211,36 @@ doctrine carries the full mechanism (trigger matrix + active-surfacing
 shape + UX caps + state-file schema); this section names only the
 when (goodnight) and the who (full-handoff owner).
 
+### Goodnight incident-tracker migration — when the incident-trackers module is installed
+
+A deployment running the **incident-trackers** module adds one more
+standing goodnight step for the full-handoff owner: read the day's
+reflections for incidents matching an event class defined in a
+tracker the deployment maintains
+(`dev/incident_log.md`, `dev/coordination_log.md`, etc. — per the
+deployment's `incident-trackers` module instantiation), and migrate
+a one-line dated entry to the matching tracker table.
+
+The migrated entry MUST populate the `Impact` column
+(`occurred` / `prevented` / `non-conflict`) and SHOULD populate
+`Resolved By` if the resolution is already known; an unresolved
+`occurred` entry uses `pending` in `Resolved By`, which is the
+signal the [adaptive-doctrine rate-limit gate](rationale.md) looks
+for when it bites on accumulated unresolved recurrences.
+**Prevented incidents** (caught before propagating) and
+**non-conflicts** (looked like the failure mode but structurally
+weren't) are logged for base-rate visibility but do NOT count
+against the rate-limit gate's trigger — only `Impact = occurred`
+rows count.
+
+The trackers feed the rate-limit gate; the
+[`lifecycle-metrics`](../templates/modules/default-on/lifecycle-metrics.md)
+module's eventual cross-adopter harvest correlates across them.
+The trackers' canonical 7-column semantic-field schema is the
+contract that harvest reads against; adopters with existing
+trackers may ship a per-tracker `tracker_schema.yml` mapping the
+adopter's columns onto the canonical fields.
+
 ## Adaptation
 
 The routines are invariant, but their *weight* tracks the team. A

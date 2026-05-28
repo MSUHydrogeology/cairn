@@ -49,6 +49,27 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **`incident-trackers` default-on module: forkable tracker
+  template + goodnight migration sub-step; parse target for the
+  adaptive-doctrine rate-limit gate** (Proposal C).  Ships:
+  module doctrine at `templates/modules/default-on/incident-trackers.md`;
+  forkable tracker template at
+  `templates/modules/default-on/incident_log_template.md` carrying
+  the canonical 7-column semantic-field schema
+  (`Date | Event Class | Description | Recurrence-Window Match |
+  Impact | Migrated From Reflection | Resolved By`); goodnight
+  migration sub-step in `doctrine/session-routines.md`;
+  cross-reference paragraph in `doctrine/rationale.md` naming the
+  module as the rate-limit gate's substrate; `_DEFAULT_ON_MODULES`
+  + `_MODULE_MAPPINGS` entries in `bootstrap/scaffold.py`.  Three
+  Antigravity findings dispositioned in the proposal Response:
+  P1 schema-divergence threat to Goal 7 → 7-column semantic-field
+  contract (operates on field semantics, not column-header text);
+  P2 missing audit-trail closure → `Resolved By` column accepting
+  proposal stem / commit SHA / `pending`; P2 prevented incidents
+  counted as occurrences → `Impact` column with three values
+  (`occurred` / `prevented` / `non-conflict`).
+
 - **"Count claims -- soft-flag clearance" template guidance added
   to both `templates/core/dev/proposals/_template.md` and
   `templates/core/dev/plans/_template.md`** (Proposal A Bite 2).
