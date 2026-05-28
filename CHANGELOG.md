@@ -18,6 +18,62 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **Fold-back active-surfacing: deployment-side machinery for
+  issue/PR suggestions to Cairn.**  Ships the *active half* of the
+  fold-back loop -- the bridge between existing passive-capture
+  machinery and the eventual Cairn-side filing.  Five components
+  (A doctrine extension + B GitHub templates + C agent prompt + D
+  module merge + E optional helper) plus a plan-added scanner.
+
+  **Mechanism summary**:
+  * **Doctrine** (`doctrine/fold-back.md`): new "Active surfacing"
+    section with the six-step protocol (Recap / Choose / Compose /
+    Scrub / Submit / Record), the 5-machine-gated + 2-manual-
+    affirmation no-export class taxonomy (IP addresses get the
+    bright-line "BOTH deployment-internal AND remote-repo"
+    treatment per maintainer directive), and the extended status
+    vocabulary (`filed -> <#>` / `pr -> <#>` / `deferred-until`
+    schema; migration rule guarantees existing ledgers stay valid).
+  * **GitHub templates** (`.github/ISSUE_TEMPLATE/foldback.md` +
+    `.github/PULL_REQUEST_TEMPLATE/foldback.md`): structured
+    pre-fill with explicit maintainer-signed export-safety
+    affirmation field.  Created Cairn's `.github/` directory.
+  * **Agent prompt** (`templates/modules/default-on/fold-back-active-prompt.md`):
+    vendor-neutral; carries the six-step protocol + 5+2 no-export
+    checklist + fail-closed scrub-gate invocation +
+    `--body-file <draft.md>` `gh` pattern + status-transition
+    contract.
+  * **Module merge** (`templates/modules/default-on/fold-back-ledger.md`):
+    adds the goodnight foldback-surfacing step adjacent to the
+    existing foldback-capture step.
+  * **Export-scrub scanner** (`templates/modules/default-on/foldback_export_scan.py`):
+    stdlib-only, 5 mechanical detector classes (credentials,
+    private paths, IPs with RFC 5737/3849 documentation allowlist,
+    internal hostnames, adopter-configurable proprietary tokens).
+    Ships verbatim into adopter `scripts/`.  Replaces a plan-open
+    assumption (`content_scan.py` would do this work) verified
+    false at plan-review time.
+  * **Optional surfacing helper** (`templates/modules/default-on/foldback_suggest.py`):
+    stdlib-only ledger parser; lists open `candidate`-status rows
+    eligible for surfacing (skips snoozed-via-`deferred-until` rows).
+  * **`.gitignore` seed**: `_GITIGNORE_SEEDS` adds
+    `dev/upstream/.foldback-draft-*.md` so the protocol's drafted-
+    body temp file pattern is never accidentally committed.
+
+  Source proposal:
+  `2026-05-28-claude-cairn-foldback-active-surfacing` (deliberated
+  modflow_tools-side; accepted 2026-05-28).  Implementing plan:
+  `2026-05-28-claude-cairn-foldback-active-surfacing` > Chunks 1-10.
+  Cross-type Codex External plan-review landed + sharpened
+  (5 findings: 2 P1 + 2 P2 + 1 P3; the load-bearing P1 N1 caused the
+  Chunk 4 pivot from a `content_scan.py` wrapper to a new dedicated
+  scanner).  ~60 new tests across `bootstrap/tests/test_foldback_*.py`
+  + extensions.  Dogfood at Chunk 9 verified the protocol's machine
+  half end-to-end against modflow_tools' current open candidates;
+  binary outcome (per Codex plan-review P4): the existing ledger
+  schema IS sufficient to draft a complete issue body via the
+  protocol -- no schema-enrichment follow-up needed.
+
 - **Docs architecture cleanup: `doctrine/doc-governance.md`
   expanded into a coherent two-half documentation-governance
   doctrine + team-gated module disambiguation.** Source proposal:

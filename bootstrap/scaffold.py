@@ -388,6 +388,13 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
                     "scripts/foldback_export_scan.py", verbatim=True),
         InstallSpec("default-on/fold-back-active-prompt.md",
                     "dev/modules/fold-back-active-prompt.md"),
+        # Optional helper (Chunk 8): lists open `candidate`-status
+        # rows from the ledger eligible for active surfacing.  Ships
+        # verbatim into adopter scripts/; invocation in the agent
+        # prompt is `python scripts/foldback_suggest.py [--ledger
+        # <path>] [--all]`.
+        InstallSpec("default-on/foldback_suggest.py",
+                    "scripts/foldback_suggest.py", verbatim=True),
     ],
     # team-gated
     "dual-review": [

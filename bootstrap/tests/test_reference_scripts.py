@@ -55,6 +55,32 @@ _SCRIPT_MODULES = {
         "default-on/foldback_export_scan.py",
         "scripts/foldback_export_scan.py",
     ),
+    # Active-surfacing helper (Chunk 8 of the same arc).  Optional
+    # helper, but ships alongside the scanner via the same
+    # fold-back-ledger module.  Note: this dict allows only one
+    # (src,dst) tuple per module name, so the test parametrize
+    # iterates over what's here; the second script under the same
+    # module is covered by direct assertion in TestInstallPath /
+    # TestGeneralizationGate where they verify both scripts install.
+    # (The pattern lifecycle-metrics + coordination-tiers establish
+    # is one mapping-entry per script; we deviate here only because
+    # the fold-back-ledger module ships 2 verbatim scripts.  The
+    # _SCRIPT_MODULES dict's parametrize-shape was designed for the
+    # 1:1 case; for the 2-scripts-per-module case the test gains a
+    # separate assertion below.)
+}
+
+
+# Multi-script modules: modules that ship more than one verbatim
+# script.  Verified by an explicit test below (not by the
+# _SCRIPT_MODULES parametrize machinery, which assumes 1:1).
+_MULTI_SCRIPT_MODULES: dict[str, list[tuple[str, str]]] = {
+    "fold-back-ledger": [
+        ("default-on/foldback_export_scan.py",
+         "scripts/foldback_export_scan.py"),
+        ("default-on/foldback_suggest.py",
+         "scripts/foldback_suggest.py"),
+    ],
 }
 
 pytestmark = pytest.mark.skipif(
@@ -104,6 +130,36 @@ _SAMPLE_PROPOSAL = (
     "## Decision -- Carol -- 2026-05-03\n\n"
     "Accept.\n"
 )
+
+
+# ---------------------------------------------------------------------------
+# Multi-script-module install assertion
+# ---------------------------------------------------------------------------
+
+
+class TestMultiScriptModules:
+    """A module that ships more than one verbatim script needs the
+    scaffold to install ALL of them.  The standard parametrize over
+    `_SCRIPT_MODULES` covers the 1:1 case only; this test covers
+    fold-back-ledger's 2-script case (export_scan + suggest).
+    """
+
+    @pytest.mark.parametrize(
+        "module_name", sorted(_MULTI_SCRIPT_MODULES)
+    )
+    def test_multi_script_module_installs_all_scripts(
+        self, tmp_path: Path, module_name: str,
+    ) -> None:
+        assert _scaffold(tmp_path, [module_name]) == 0
+        for src_rel, dst_rel in _MULTI_SCRIPT_MODULES[module_name]:
+            installed = tmp_path / dst_rel
+            source = TEMPLATES_ROOT / "modules" / src_rel
+            assert installed.is_file(), (
+                f"{dst_rel} not installed (module={module_name})"
+            )
+            assert installed.read_bytes() == source.read_bytes(), (
+                f"{dst_rel} differs from template source -- not verbatim"
+            )
 
 
 # ---------------------------------------------------------------------------

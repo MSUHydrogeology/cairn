@@ -1,3 +1,11 @@
+<!-- claim-check-allow: scripts/foldback_export_scan.py -->
+<!-- The cited path refers to the adopter-install location -- the
+     module's scaffold mapping copies foldback_export_scan.py verbatim
+     into the adopter's `<target>/scripts/`.  From Cairn's own checkout
+     the path does not resolve (the source-of-truth lives at
+     templates/modules/default-on/foldback_export_scan.py); exempted so
+     the adopter-facing cite stays correct. -->
+
 # Module: foldback-export-scan
 
 **Selected when:** default-on (alongside the `fold-back-ledger`
@@ -104,7 +112,7 @@ surfacing protocol if defense-in-depth is wanted, but
 `foldback_export_scan` is the scanner the protocol's bright-line gate
 binds to.
 
-See [`doctrine/fold-back.md`](../../doctrine/fold-back.md) >
+See Cairn's [`doctrine/fold-back.md`](../../../doctrine/fold-back.md) >
 "The export boundary -- scrub before anything goes up" for the
 underlying doctrine, and `doctrine/fold-back.md` > "Active surfacing"
 for the protocol that invokes this scanner.
