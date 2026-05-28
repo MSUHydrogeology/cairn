@@ -153,8 +153,10 @@ notebooks duplicate code that should be in the library?
 
 **Prompt**: Where does input data come from?  Where do outputs go?
 Is the I/O code separated from the science, or interleaved?  Are
-input file formats documented?  Are output file formats stable
-enough that downstream consumers can rely on them?
+input file formats documented?  Are external raw data sources (e.g.,
+USGS databases, GIS layers) cited with download URLs or provenance?
+Are output file formats stable enough that downstream consumers can
+rely on them?
 
 * **Good**: I/O is concentrated in named modules; input / output
   formats are documented (a schema doc, a `docs/io.md`, or
@@ -276,7 +278,8 @@ before you scaffold.
 
 **Prompt**: What scientific assumptions does the codebase carry
 that a maintainer might miss?  Sign conventions, unit conventions,
-default parameter values, calibration weights, simplifications,
+default parameter values, calibration weights/parameters (e.g., parameter
+bounds, covariance matrices, regularization setup), simplifications,
 known-unknown caveats.  If a new contributor changed a default,
 would the science silently degrade?
 
