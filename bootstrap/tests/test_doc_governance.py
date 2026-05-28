@@ -243,9 +243,12 @@ class TestModuleDisambiguation:
             / f"{module}.md"
         )
         text = path.read_text(encoding="utf-8")
-        assert "`cairn/docs/further-reading.md`" in text, (
-            f"{module}.md must use the `cairn/docs/further-reading.md` "
-            f"form in link text (not bare `docs/further-reading.md`)"
+        assert "[cairn/docs/further-reading.md]" in text, (
+            f"{module}.md must use the [cairn/docs/further-reading.md] "
+            f"form in link text (not bare [docs/further-reading.md]).  "
+            f"Backticks around the link text removed per the style-guide "
+            f"rule prohibiting backticks in link labels (Antigravity "
+            f"code-review P2)."
         )
 
 
@@ -313,9 +316,11 @@ class TestInstalledAdopterWording:
         # text (without the cairn/ prefix) is what Antigravity-3
         # was trying to remove.  After Chunk 3's disambiguation,
         # the link text uses `cairn/docs/further-reading.md`.
-        assert "`cairn/docs/further-reading.md`" in text, (
-            f"installed {module}.md must use the cairn/-prefixed form "
-            f"in link text (not bare `docs/...`)"
+        assert "[cairn/docs/further-reading.md]" in text, (
+            f"installed {module}.md must use the [cairn/docs/further-"
+            f"reading.md] form in link text (cairn/-prefixed; not "
+            f"backticked, per the style-guide rule prohibiting "
+            f"backticks in link labels -- Antigravity code-review P2)."
         )
 
 
