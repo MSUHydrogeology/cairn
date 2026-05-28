@@ -1,0 +1,42 @@
+# Cairn profile -- high-rigor-legacy
+#
+# Dimensional profile (per cairn/dimensions/ rubrics):
+#
+#   axis            | value                       | reason
+#   ----------------|-----------------------------|---------------------
+#   age             | legacy                      | existing codebase with history
+#   size            | large                       | many modules / packages
+#   complexity      | complex                     | multi-domain logic + integrations
+#   language        | multi                       | more than one language
+#   human_team      | large-multi                 | 5+ contributors
+#   agent_team      | concurrent-multi-type       | multiple AI agents
+#
+# Resulting module roster (from `preset: high-rigor-legacy` expansion):
+#
+#   Default-on (always): lifecycle-metrics, reflections, claim-check,
+#     fold-back-ledger.
+#   Team-gated baseline: legacy-agent, security-review,
+#     dual-language-tests, model-selection, testing-discipline,
+#     doc-drift-prevention (axis-driven), plus the coordination
+#     modules (dual-review, coordination-tiers) through the
+#     team-staffing gate.
+#
+# Recommended pre-pass: fill cairn/templates/codebase-readiness-report.md
+# before running the bootstrap -- the eleven-section assessment
+# surfaces the hidden state, scientific assumptions, and security
+# boundaries that legacy codebases carry and that drive whether
+# Level 2 is the right adoption level at all (vs. Level 0 / Level 1).
+#
+# On-ramp recommendation: Level 2 with readiness-report pre-pass
+# (cairn/on-ramp/README.md > "Choosing a level").  Most adopters land
+# here when their legacy code has tests, documented data I/O, and
+# clear scientific assumptions; if the readiness report flags
+# section 10 (security boundaries) or section 11 (scientific
+# assumptions) as Poor, defer scaffolding until the gap is fixed.
+
+# Inline token values (mechanical substitution into installed templates).
+project_name: "High-Rigor-Legacy-Project"
+test_command: "pytest"
+
+# Module selection: reference the named governance preset.
+preset: high-rigor-legacy

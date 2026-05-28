@@ -1,0 +1,34 @@
+# Cairn profile -- collaborative-team
+#
+# Dimensional profile (per cairn/dimensions/ rubrics):
+#
+#   axis            | value                       | reason
+#   ----------------|-----------------------------|---------------------
+#   age             | greenfield                  | new or recent codebase
+#   size            | medium                      | multi-module repo
+#   complexity      | moderate                    | real domain logic
+#   language        | single                      | one language across tree
+#   human_team      | small-multi                 | 2-4 human contributors
+#   agent_team      | concurrent-multi-type       | 1-2 agent types in use
+#
+# Resulting module roster (from `preset: collaborative-team` expansion):
+#
+#   Default-on (always): lifecycle-metrics, reflections, claim-check,
+#     fold-back-ledger.
+#   Team-gated baseline: model-selection, testing-discipline,
+#     doc-drift-prevention (axis-driven), plus the coordination
+#     modules (dual-review, coordination-tiers) added through the
+#     team-staffing gate when the agent team can staff them.
+#
+# On-ramp recommendation: Level 2 (run the full bootstrap with this
+# profile; the agent + maintainer scaffold via cairn/bootstrap/BOOTSTRAP.md).
+# Default-on modules are installed alongside the axis-driven team-gated
+# set; the team-staffing gate determines whether dual-review +
+# coordination-tiers land in the baseline or stay opt-in.
+
+# Inline token values (mechanical substitution into installed templates).
+project_name: "Collaborative-Team-Project"
+test_command: "pytest"
+
+# Module selection: reference the named governance preset.
+preset: collaborative-team

@@ -16,7 +16,22 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
-*(nothing yet)*
+### Added
+
+- **`bootstrap/profiles/` -- three copyable governance-preset profile
+  YAMLs (`solo-greenfield`, `collaborative-team`, `high-rigor-legacy`)
+  with `test_profiles_smoke.py`.** Adopter-friction package item 2
+  (modflow_tools plan stem: `2026-05-28-claude-cairn-adopter-friction-package`,
+  Chunk 1). Each YAML carries an in-file comment header naming the
+  six-axis profile it expresses and references the matching named
+  preset via `preset:` — so the YAML is a thin, copyable, documented
+  surface that delegates module-roster selection to `_PRESETS` in
+  `scaffold.py`. The smoke test (15 cases) verifies each YAML parses
+  under Cairn's own minimal parser, the named preset resolves, the
+  expansion contains the default-on set plus the preset's baseline
+  plus any team-staffing-gate additions, and the literal
+  `scaffold.py --summary --config <yaml>` invocation prints the
+  preset's axes and the expected roster without writing files.
 
 ## 0.2.0 — 2026-05-27
 

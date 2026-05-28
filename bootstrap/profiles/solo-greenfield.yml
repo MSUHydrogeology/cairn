@@ -1,0 +1,34 @@
+# Cairn profile -- solo-greenfield
+#
+# Dimensional profile (per cairn/dimensions/ rubrics):
+#
+#   axis            | value           | reason
+#   ----------------|-----------------|---------------------------------
+#   age             | greenfield      | new or near-new codebase
+#   size            | small           | one repo, one team
+#   complexity      | simple          | single concern, well-scoped
+#   language        | single          | one language across the tree
+#   human_team      | solo            | one human contributor
+#   agent_team      | single          | one AI agent
+#
+# Resulting module roster (from `preset: solo-greenfield` expansion in
+# bootstrap/scaffold.py's _PRESETS):
+#
+#   Default-on (always): lifecycle-metrics, reflections, claim-check,
+#     fold-back-ledger.
+#   Team-gated baseline: (none -- no axis fires a team-gated module).
+#
+# On-ramp recommendation: Level 1 (hand-copy the kernel + default-on
+# modules; defer Level 2 bootstrap until team or codebase complexity
+# grows).  See cairn/on-ramp/README.md.
+#
+# Quickstart adopters: copy this file as `profile.yml` in your target
+# repo; see cairn/docs/quickstart.md for the literal command sequence.
+
+# Inline token values (mechanical substitution into installed templates).
+project_name: "Quickstart"
+test_command: "pytest"
+
+# Module selection: reference the named governance preset.  Scaffold
+# expands it to the default-on set + the (empty) team-gated baseline.
+preset: solo-greenfield
