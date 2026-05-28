@@ -159,10 +159,12 @@ roster is in `dev/agent_collaboration.md`.
     the source-side deletion unstaged, so HEAD carries the file at both
     paths until a fixup. Name both source and destination (or `git add`
     the rename, then verify the `R###` line in `git diff --cached --stat`).
-* **Shared communication files** — the roadmap boards and the
-  changelog — are edited only at defined serialization points (a
-  lifecycle archive, the goodnight routine, explicit instruction).
-  Refer to proposals and plans by filename stem, not path link.
+* **Shared communication files** — the roadmap boards, the
+  changelog, and (when the `progressive-onboarding` mechanism is
+  installed) `dev/.cairn/onboarding-activated.jsonl` — are edited
+  only at defined serialization points (a lifecycle archive, the
+  goodnight routine, explicit instruction).  Refer to proposals
+  and plans by filename stem, not path link.
 * Run the test suite after any substantive change:
   `{{test_command}}`.
 * **Keep commit bodies concise.** The body is a *snapshot* — what

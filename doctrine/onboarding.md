@@ -177,9 +177,22 @@ at first helper run.
 * `source-preset` -- which preset the task originated from.
 * `trigger` -- which trigger fired the activation.
 
-**Idempotency**: a task-id already in the log does not re-fire.
-The log is the authoritative dedup key. The helper's `dry-run`
-mode shows what would be appended without writing.
+**Idempotency** (eventual no-op contract; calibrated by the
+dogfood pilots): a task-id already in the log does not re-fire,
+and an active-surfacing row already emitted (`active-surface:<row>`
+in the log) does not re-emit. The log is the authoritative dedup
+key. **The cap is per-invocation**: each helper run drains at
+most one active-surfacing prompt from the priority queue, so
+consecutive runs against the same deployment state can each
+emit one prompt (next-priority) until the queue is drained,
+after which subsequent runs are strict no-ops. The dogfood
+pilots all confirmed this "eventual no-op" semantics: 3 runs
+drained the queue for solo-greenfield / collaborative-team /
+high-rigor-legacy fixtures; the 4th run was a strict no-op.
+For a goodnight owner who fires the helper once per goodnight
+(the recommended pattern), each goodnight emits one prompt at
+most. The helper's `dry-run` mode shows what would be appended
+without writing.
 
 **Held + completed are derived** (not persisted):
 
