@@ -23,12 +23,15 @@ project is doing, and why* from this tree alone.
 | `plans/archive/` | Closed plans — read for what shipped and why. |
 | `modules/` | Dimension-selected add-ons — one file per installed module (see `modules/<name>.md` for each). Read each module's `Adds to:` line to find where its content merges into the kernel. |
 
-A `vision.md` (the project's north star), a `strategy/` directory
-(longer-horizon research notes), and an `upstream/` directory (the
-general upstream-coordination surface — fold-back ledgers for an
-upstream framework or dependency, external-project issue drafts, and
-cross-repo dependency tracking) are added when the project needs them
-— they are not part of the invariant core.
+A `strategy/` directory (longer-horizon research notes) and an
+`upstream/` directory (the general upstream-coordination surface —
+fold-back ledgers for an upstream framework or dependency,
+external-project issue drafts, and cross-repo dependency tracking) are
+added when the project needs them — they are not part of the invariant
+core. The project's **vision** / charter belongs in the descriptive
+layer rather than the deliberation tree — see
+[`../../doctrine/doc-governance.md > Common homes for project vision /
+charter material`](../../doctrine/doc-governance.md) for the choices.
 
 ## How to use it
 

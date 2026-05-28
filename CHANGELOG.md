@@ -16,6 +16,33 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+### Added
+
+- **`doctrine/doc-governance.md` -- descriptive-layer tier
+  recognition + common-homes for project vision / charter
+  material.** Adopter-friction follow-up surfaced by
+  LHM-adoption-of-Cairn 2026-05-28: `docs/developer/` is now
+  recognized as a first-class descriptive-layer tier (alongside
+  Quickstart / User Guide / Theory-Reference); the doctrine names
+  four common homes for vision / charter material
+  (`docs/developer/vision.md`, `README.md`, `docs/`-root vision
+  page, `dev/vision.md`) without recommending among them, per the
+  maintainer's layer-prescriptiveness gradient (tier-RECOGNITION
+  holds; tier-LEGISLATION drops).  The
+  `templates/core/dev/README.md` template no longer mentions
+  `vision.md` as an optional `dev/` addition -- the doctrine's
+  common-homes section carries the dialogue surface (eventually
+  wired into the interactive-onboarding `0.3` goal).  Source
+  proposal:
+  `2026-05-28-claude-cairn-docs-architecture-cleanup`
+  (deliberated modflow_tools-side; accepted 2026-05-28).
+  Implementing plan:
+  `2026-05-28-claude-cairn-docs-architecture-cleanup` > Chunk 2.
+  Doctrine-presence tests:
+  `bootstrap/tests/test_doc_governance.py`
+  (8 cases pinning the tier-recognition and common-homes
+  sections + the dev/README.md template's vision.md drop).
+
 ### Changed
 
 - **`upgrade --plan` / `--stage` summary distinguishes untouched

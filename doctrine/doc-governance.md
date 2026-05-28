@@ -1,3 +1,8 @@
+<!-- claim-check-allow: docs/developer/, docs/developer/vision.md, docs/vision.md -->
+<!-- ^ illustrative adopter-tree paths in the tier-recognition and
+     common-homes-for-vision sections; these are adopter-side
+     conceptual paths, not Cairn-tree paths. -->
+
 # Doc governance — where content lives
 
 A Cairn project keeps its governing instructions in two files, and a
@@ -70,3 +75,54 @@ one-home rule to keep the two governing files from diverging. Both
 files are part of every Cairn adoption; this rule governs how their
 content is split from the first commit, so the duplication never has a
 chance to accrete.
+
+## The descriptive layer (`docs/`) — tier recognition
+
+Cairn recognizes the **descriptive layer** (`docs/`) as conventionally
+tiered by audience: **Quickstart** (first-time users), **User Guide**
+(regular use), **Theory / Reference** (theoretical grounding and the
+API contract), and **Developer** (contributors maintaining or
+extending the codebase — "how is this organized; how do I add a
+thing"). An adopter's `docs/` chooses which tiers fit; not every
+project needs all of them, and some projects use entirely different
+conventions (Sphinx-shaped, MkDocs-shaped, Quarto-shaped, etc.).
+
+Developer-facing content — architecture notes, contributing guides,
+build / test / release procedures, code-organization notes — **commonly
+lives in** `docs/developer/` when an adopter uses that tier; some
+projects do not separate it out, and that is fine. `dev/` (the
+deliberation layer) and `docs/developer/` (the descriptive developer
+surface) carry different content kinds: `dev/` records *what is being
+decided*, `docs/developer/` describes *how the codebase is*. Cairn
+names the distinction but does not legislate the boundary's exact
+location.
+
+## Common homes for project vision / charter material
+
+A project's vision or charter — the north-star description of what the
+project is, who it serves, and what success looks like — is upstream
+of deliberation. Cairn does not prescribe a single home for it; common
+choices include:
+
+* **`docs/developer/vision.md`** when the project has a Developer tier
+  and the charter is read alongside architecture / contributing / etc.
+  This is where a first-contact developer-onboarding reader naturally
+  looks; it places the charter in the descriptive layer where it sits
+  alongside other "how the project is" content.
+* **`README.md`** when the charter is short enough to live at the
+  entry surface a first-contact reader encounters before clicking
+  through to `docs/`. Best for small or single-purpose projects.
+* **A `docs/`-root vision page** (`docs/vision.md` or equivalent) when
+  the project wants the charter as a top-level descriptive surface
+  outside any specific tier — useful for projects whose audience is
+  not primarily developer-focused.
+* **`dev/vision.md`** when the project treats the charter as a
+  deliberation artifact — what the project *should become* rather than
+  what it is — and keeps it alongside proposals / plans / strategy.
+  This places the charter in the deliberation layer; the trade-off is
+  reduced discoverability for first-contact readers.
+
+The adopter picks. Cairn's interactive-onboarding mechanism
+(forthcoming as a `0.3` goal) eventually carries the dialogue surface
+that helps adopters choose; today the choice is made by reading this
+section and matching the project's audience.
