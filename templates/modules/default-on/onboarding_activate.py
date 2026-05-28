@@ -249,6 +249,40 @@ def parse_deferred_tasks(preset_text: str) -> list[DeferredTask]:
     return out
 
 
+def extract_seed_task_blocks(preset_text: str) -> list[str]:
+    """Extract seed-task entries as multi-line markdown blocks.
+
+    Parallel to ``bootstrap.scaffold._extract_seed_tasks`` (helper-
+    side copy so --seed works without a Cairn checkout).  Each block
+    preserves the `* [seed; id: ...]` header line + any indented
+    continuation lines until the next top-level item or blank line.
+    """
+    blocks: list[str] = []
+    current: list[str] = []
+    in_seed = False
+    for line in preset_text.splitlines():
+        if _SEED_TASK_RE.match(line):
+            if current:
+                blocks.append("\n".join(current).rstrip())
+                current = []
+            current.append(line)
+            in_seed = True
+            continue
+        if not in_seed:
+            continue
+        if line.startswith("  ") or line.startswith("\t"):
+            current.append(line)
+        elif line.strip() == "":
+            current.append(line)
+        else:
+            blocks.append("\n".join(current).rstrip())
+            current = []
+            in_seed = False
+    if current:
+        blocks.append("\n".join(current).rstrip())
+    return blocks
+
+
 def parse_seed_task_ids(preset_text: str) -> list[str]:
     """Extract the task ids of `[seed; id: Y]` items.  Used by
     derived-state helpers to enumerate the full task set declared in
@@ -1117,6 +1151,156 @@ def derive_completed_task_ids(
 
 
 # ---------------------------------------------------------------------------
+# --seed mode (existing-adopter opt-in; Chunk P1.11)
+# ---------------------------------------------------------------------------
+
+
+VALID_PRESETS = ("solo-greenfield", "collaborative-team", "high-rigor-legacy")
+
+
+def seed_existing_adopter(
+    target: Path,
+    *,
+    preset_name: str | None,
+    interactive: bool = True,
+    dry_run: bool = False,
+) -> str:
+    """Existing-adopter opt-in path (Chunk P1.11).
+
+    Performs the `--seed` flow:
+
+    1. Resolve preset: from *preset_name* if provided; else
+       interactive prompt (when *interactive* is True); else error.
+    2. Read the preset source file -- the adopter MUST have
+       installed it at ``<target>/dev/modules/onboarding/<preset>.md``
+       before invoking --seed (per the manual recipe in
+       ``doctrine/onboarding.md``).  Recoverable error if absent.
+    3. Locate the ``cairn:slot onboarding-tasks`` block in
+       PLANNING.md.  Recoverable error if not present (the adopter
+       needs to paste the slot block first).
+    4. Render the slot body (``<!-- preset: <name> -->`` metadata
+       comment + seed tasks extracted from the source file).
+    5. Write the new PLANNING.md.
+
+    Idempotent: re-running --seed against a slot that already
+    carries the preset metadata is a no-op (returns "already
+    seeded" + makes no changes).
+
+    Returns a one-line summary string for the CLI to print.
+    """
+    if preset_name is None:
+        if not interactive:
+            raise OnboardingError(
+                "--seed requires --preset <name> when run non-"
+                "interactively.  Valid presets: "
+                + ", ".join(VALID_PRESETS)
+            )
+        preset_name = _interactive_preset_prompt()
+    if preset_name not in VALID_PRESETS:
+        raise OnboardingError(
+            f"unknown preset {preset_name!r}; valid: "
+            + ", ".join(VALID_PRESETS)
+        )
+
+    # Step 2: read PLANNING + locate slot (do this BEFORE checking
+    # the source file so the idempotency no-op fires even if the
+    # source file isn't present yet).
+    planning_path = target / DEFAULT_PLANNING_REL
+    if not planning_path.is_file():
+        raise OnboardingError(
+            f"PLANNING.md not found at {planning_path}; this command "
+            f"expects an adopter tree with a `dev/PLANNING.md`."
+        )
+    planning_text = planning_path.read_text(encoding="utf-8")
+    found = find_slot_body(planning_text)
+    if found is None:
+        raise OnboardingError(
+            f"`cairn:slot {SLOT_NAME}` not found in {planning_path}.  "
+            f"Paste the slot block into your PLANNING.md first (per "
+            f"doctrine/onboarding.md > Existing-adopter manual opt-in "
+            f"path, Step 1)."
+        )
+
+    # Idempotency: if slot already has preset metadata, no-op.
+    existing_preset = extract_preset_from_slot(planning_text)
+    if existing_preset is not None:
+        return (
+            f"--seed: slot already carries preset metadata "
+            f"({existing_preset!r}); no-op."
+        )
+
+    # Step 3: read preset source from the adopter's installed copy.
+    source_path = (
+        target / DEFAULT_MODULES_ONBOARDING_REL / f"{preset_name}.md"
+    )
+    if not source_path.is_file():
+        raise OnboardingError(
+            f"installed preset source not found at {source_path}.  "
+            f"Copy `cairn/templates/onboarding/{preset_name}.md` to "
+            f"that path first (per doctrine/onboarding.md > "
+            f"Existing-adopter manual opt-in path)."
+        )
+    source_text = source_path.read_text(encoding="utf-8")
+
+    # Step 4: render the new slot body.
+    seed_blocks = extract_seed_task_blocks(source_text)
+    new_body = _render_onboarding_slot_seed(preset_name, seed_blocks)
+
+    # Step 5: write the new PLANNING.
+    new_text = _substitute_slot_body(planning_text, found, new_body)
+    if dry_run:
+        return (
+            f"--seed [dry-run]: would write preset={preset_name!r} "
+            f"metadata + {len(seed_blocks)} seed task(s) into "
+            f"{planning_path}."
+        )
+    planning_path.write_text(new_text, encoding="utf-8")
+    return (
+        f"--seed: wrote preset={preset_name!r} metadata + "
+        f"{len(seed_blocks)} seed task(s) into {planning_path}."
+    )
+
+
+def _interactive_preset_prompt() -> str:
+    """Prompt the user to pick a preset (TTY input).  Returns the
+    chosen preset name (one of VALID_PRESETS)."""
+    print("Choose a preset:")
+    for i, p in enumerate(VALID_PRESETS, 1):
+        print(f"  {i}. {p}")
+    raw = input("Enter 1-3 or preset name: ").strip()
+    if raw in VALID_PRESETS:
+        return raw
+    if raw.isdigit() and 1 <= int(raw) <= len(VALID_PRESETS):
+        return VALID_PRESETS[int(raw) - 1]
+    raise OnboardingError(f"invalid preset selection: {raw!r}")
+
+
+def _render_onboarding_slot_seed(
+    preset_name: str, seed_blocks: list[str],
+) -> str:
+    """Render the slot body for --seed: identical shape to the
+    scaffold-path render (`<!-- preset: <name> -->` + seed blocks),
+    preserving the uniformity contract per Codex P2-4."""
+    parts = [f"<!-- preset: {preset_name} -->", ""]
+    parts.extend(seed_blocks)
+    return "\n".join(parts).rstrip() + "\n"
+
+
+def _substitute_slot_body(
+    planning_text: str, found: tuple[int, int, str], new_body: str,
+) -> str:
+    """Replace the slot body with *new_body*."""
+    body_start, body_end, _ = found
+    return (
+        planning_text[:body_start]
+        + "\n"
+        + new_body.strip("\n")
+        + "\n"
+        + planning_text[body_end:]
+    )
+
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
@@ -1194,15 +1378,21 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    if args.seed:
-        print(
-            "error: --seed mode lands in plan Chunk P1.11; in P1.2 "
-            "only default mode + --dry-run are implemented.",
-            file=sys.stderr,
-        )
-        return 2
-
     target = Path(args.target).resolve()
+    if args.seed:
+        try:
+            summary = seed_existing_adopter(
+                target,
+                preset_name=args.preset,
+                interactive=sys.stdin.isatty(),
+                dry_run=args.dry_run,
+            )
+        except OnboardingError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+        print(summary)
+        return 0
+
     try:
         outcome = activate(target, dry_run=args.dry_run)
     except OnboardingError as exc:

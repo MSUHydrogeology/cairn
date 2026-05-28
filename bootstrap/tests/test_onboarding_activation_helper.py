@@ -319,6 +319,119 @@ class TestScaffoldSeedsAlways:
             tmp_path / "dev" / ".cairn" / "onboarding-activated.jsonl"
         ).is_file()
 
+    def test_seed_existing_adopter_flow(
+        self, helper: ModuleType, tmp_path: Path,
+    ) -> None:
+        """Existing-adopter --seed flow (Chunk P1.11):
+        adopter has manually pasted the slot block + manually copied
+        the preset source file; --seed --preset solo-greenfield
+        substitutes the slot."""
+        # Set up an existing-adopter tree (PLANNING with empty slot,
+        # source file pre-copied).
+        (tmp_path / "dev").mkdir()
+        (tmp_path / "dev" / "PLANNING.md").write_text(
+            "# Roadmap\n"
+            "\n"
+            "## Onboarding\n"
+            "\n"
+            "<!-- cairn:slot onboarding-tasks -->\n"
+            "(empty placeholder)\n"
+            "<!-- cairn:end onboarding-tasks -->\n"
+        )
+        (tmp_path / "dev" / "modules" / "onboarding").mkdir(parents=True)
+        # Copy the real Cairn source into the adopter tree (the
+        # manual-recipe Step 2).
+        cairn_src = (
+            CAIRN_ROOT
+            / "templates"
+            / "onboarding"
+            / "solo-greenfield.md"
+        )
+        (tmp_path / "dev" / "modules" / "onboarding" / "solo-greenfield.md"
+         ).write_text(cairn_src.read_text(encoding="utf-8"))
+
+        summary = helper.seed_existing_adopter(
+            tmp_path,
+            preset_name="solo-greenfield",
+            interactive=False,
+        )
+        assert "wrote preset" in summary
+        # Slot now has the preset metadata + seed tasks.
+        planning = (tmp_path / "dev" / "PLANNING.md").read_text(
+            encoding="utf-8",
+        )
+        assert "<!-- preset: solo-greenfield -->" in planning
+        assert "[seed;" in planning
+
+    def test_seed_idempotent_on_already_seeded(
+        self, helper: ModuleType, tmp_path: Path,
+    ) -> None:
+        """--seed against a slot that already carries preset metadata
+        is a no-op."""
+        (tmp_path / "dev").mkdir()
+        (tmp_path / "dev" / "PLANNING.md").write_text(
+            "## Onboarding\n"
+            "\n"
+            "<!-- cairn:slot onboarding-tasks -->\n"
+            "<!-- preset: solo-greenfield -->\n"
+            "\n"
+            "* [seed; id: x]\n"
+            "<!-- cairn:end onboarding-tasks -->\n"
+        )
+        summary = helper.seed_existing_adopter(
+            tmp_path,
+            preset_name="solo-greenfield",
+            interactive=False,
+        )
+        assert "no-op" in summary
+
+    def test_seed_errors_on_missing_source(
+        self, helper: ModuleType, tmp_path: Path,
+    ) -> None:
+        """--seed errors with a recoverable message naming the
+        manual-recipe location when the preset source isn't installed."""
+        (tmp_path / "dev").mkdir()
+        (tmp_path / "dev" / "PLANNING.md").write_text(
+            "## Onboarding\n"
+            "\n"
+            "<!-- cairn:slot onboarding-tasks -->\n"
+            "(empty placeholder)\n"
+            "<!-- cairn:end onboarding-tasks -->\n"
+        )
+        with pytest.raises(helper.OnboardingError) as excinfo:
+            helper.seed_existing_adopter(
+                tmp_path,
+                preset_name="solo-greenfield",
+                interactive=False,
+            )
+        assert "doctrine/onboarding.md" in str(excinfo.value)
+
+    def test_seed_errors_on_missing_slot(
+        self, helper: ModuleType, tmp_path: Path,
+    ) -> None:
+        """--seed errors when the slot block is missing from
+        PLANNING.md (the adopter forgot Step 1)."""
+        (tmp_path / "dev").mkdir()
+        (tmp_path / "dev" / "PLANNING.md").write_text(
+            "# Roadmap\n"
+            "\n"
+            "## Queued\n"
+            "(no onboarding slot here)\n"
+        )
+        (tmp_path / "dev" / "modules" / "onboarding").mkdir(parents=True)
+        (tmp_path / "dev" / "modules" / "onboarding"
+         / "solo-greenfield.md").write_text("* [seed; id: x]\n  body\n")
+        with pytest.raises(helper.OnboardingError) as excinfo:
+            helper.seed_existing_adopter(
+                tmp_path,
+                preset_name="solo-greenfield",
+                interactive=False,
+            )
+        msg = str(excinfo.value)
+        assert "Step 1" in msg or "Paste the slot block" in msg
+
+
+class TestScaffoldSeedsAlways_seeded_log:
     def test_seeded_log_is_header_only(self, tmp_path: Path) -> None:
         """The seeded log carries only the header comment -- no
         activation records on a fresh install."""
