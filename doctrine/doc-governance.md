@@ -126,3 +126,20 @@ The adopter picks. Cairn's interactive-onboarding mechanism
 (forthcoming as a `0.3` goal) eventually carries the dialogue surface
 that helps adopters choose; today the choice is made by reading this
 section and matching the project's audience.
+
+## Adopter `docs/` format-neutrality
+
+An adopter's `docs/` format is the **adopter's choice**. Cairn assumes
+nothing about Markdown vs. reStructuredText vs. Asciidoc vs. Quarto.
+Cairn's own canonical docs are `.md`; cross-references from Cairn-
+shipped modules into Cairn's own docs use `.md` filenames because that
+is where Cairn's docs live. Those references point **into the Cairn
+repository**, not the adopter's tree. The adopter's `docs/` -- whatever
+format -- is not constrained by Cairn's template format.
+
+This is why Cairn-shipped team-gated modules disambiguate further-
+reading references with the "Cairn's own" prefix: a Cairn module's
+`See Cairn's own [\`cairn/docs/further-reading.md\`][rel-link]`
+attribution makes the target unambiguously Cairn-owned, so an adopter
+using Sphinx + reStructuredText is not steered toward `.md` by a
+relative link the module ships.

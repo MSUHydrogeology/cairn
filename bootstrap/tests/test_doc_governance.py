@@ -151,3 +151,162 @@ class TestDevReadmeTemplate:
             "templates/core/dev/README.md must point at "
             "doctrine/doc-governance.md for the vision-home decision"
         )
+
+
+class TestFormatNeutrality:
+    """Chunk 3 of the docs-architecture-cleanup plan adds the format-
+    neutrality statement (proposal Change c.1)."""
+
+    def test_format_neutrality_section_present(self, doc_text: str) -> None:
+        assert "Adopter `docs/` format-neutrality" in doc_text, (
+            "doc-governance.md must declare the format-neutrality "
+            "section"
+        )
+
+    def test_names_multiple_doc_formats(self, doc_text: str) -> None:
+        """The section must explicitly name multiple non-Markdown
+        formats so an adopter using e.g. reStructuredText is not
+        steered toward `.md`."""
+        for fmt in ("Markdown", "reStructuredText", "Asciidoc", "Quarto"):
+            assert fmt in doc_text, (
+                f"format-neutrality section must name {fmt!r} so "
+                f"adopters know Cairn assumes nothing about format"
+            )
+
+    def test_disclaims_adopter_tree_assumptions(self, doc_text: str) -> None:
+        """The section must explicitly state that Cairn's `.md`
+        references point INTO Cairn, not into the adopter's tree."""
+        import re
+        normalized = re.sub(r"\s+", " ", doc_text)
+        normalized = normalized.replace("**", "").replace("*", "")
+        assert "point into the Cairn repository" in normalized, (
+            "format-neutrality section must explicitly state that "
+            "Cairn-shipped references point into the Cairn repo, "
+            "not the adopter's tree"
+        )
+
+
+class TestModuleDisambiguation:
+    """Chunk 3 also disambiguates further-reading cross-references in
+    every team-gated module that ships one, per Antigravity-3 option
+    (i) link-text disambiguation."""
+
+    MODULES_WITH_FURTHER_READING = (
+        "examples-gallery",
+        "doc-drift-prevention",
+        "testing-discipline",
+    )
+
+    @pytest.mark.parametrize("module", MODULES_WITH_FURTHER_READING)
+    def test_module_uses_cairns_own_prefix(self, module: str) -> None:
+        """Every team-gated module that references further-reading
+        must carry the 'Cairn's own' link-text prefix so the
+        reference target is unambiguously Cairn-owned."""
+        path = (
+            CAIRN_ROOT
+            / "templates"
+            / "modules"
+            / "team-gated"
+            / f"{module}.md"
+        )
+        text = path.read_text(encoding="utf-8")
+        assert "further-reading" in text, (
+            f"{module}.md must reference further-reading (sanity)"
+        )
+        # Every further-reading reference must carry the prefix.
+        for line in text.splitlines():
+            if "further-reading" in line and "](" in line:
+                assert "Cairn's own" in line, (
+                    f"{module}.md line containing a further-reading "
+                    f"link must carry the 'Cairn's own' prefix:\n"
+                    f"  {line}"
+                )
+
+    @pytest.mark.parametrize("module", MODULES_WITH_FURTHER_READING)
+    def test_module_uses_cairn_prefixed_path(self, module: str) -> None:
+        """Every team-gated module that references further-reading
+        must use the `cairn/docs/further-reading.md` form in link
+        text (not bare `docs/further-reading.md`) so the path itself
+        carries the Cairn-tree origin."""
+        path = (
+            CAIRN_ROOT
+            / "templates"
+            / "modules"
+            / "team-gated"
+            / f"{module}.md"
+        )
+        text = path.read_text(encoding="utf-8")
+        assert "`cairn/docs/further-reading.md`" in text, (
+            f"{module}.md must use the `cairn/docs/further-reading.md` "
+            f"form in link text (not bare `docs/further-reading.md`)"
+        )
+
+
+class TestInstalledAdopterWording:
+    """Per Codex-3 of the proposal review: the test must read the
+    **installed** team-gated module text (post-scaffold), not just
+    the template source.  This guards against the adopter-facing
+    surface drifting from the source via a substitution bug.
+    """
+
+    @pytest.fixture
+    def scaffolded_target(self, tmp_path) -> Path:
+        """Install the three team-gated modules into a fresh fixture
+        tree using the same install path the scaffold uses."""
+        import sys
+        sys.path.insert(0, str(CAIRN_ROOT))
+        from bootstrap.scaffold import (  # noqa: E402
+            create_dev_tree,
+            install_modules,
+        )
+        templates_root = CAIRN_ROOT / "templates"
+        create_dev_tree(tmp_path)
+        for module in TestModuleDisambiguation.MODULES_WITH_FURTHER_READING:
+            install_modules(templates_root, tmp_path, {}, [module])
+        return tmp_path
+
+    @pytest.mark.parametrize(
+        "module", TestModuleDisambiguation.MODULES_WITH_FURTHER_READING
+    )
+    def test_installed_module_carries_cairns_own_prefix(
+        self, scaffolded_target: Path, module: str
+    ) -> None:
+        """The rendered installed module under
+        ``dev/modules/<name>.md`` must carry the 'Cairn's own'
+        prefix on every further-reading reference -- the adopter-
+        facing surface, not just the source."""
+        installed = scaffolded_target / "dev" / "modules" / f"{module}.md"
+        assert installed.is_file(), (
+            f"{module}.md must install to dev/modules/ on scaffold"
+        )
+        text = installed.read_text(encoding="utf-8")
+        for line in text.splitlines():
+            if "further-reading" in line and "](" in line:
+                assert "Cairn's own" in line, (
+                    f"installed {module}.md line containing a further-"
+                    f"reading link must carry the 'Cairn's own' "
+                    f"prefix (post-scaffold):\n  {line}"
+                )
+
+    @pytest.mark.parametrize(
+        "module", TestModuleDisambiguation.MODULES_WITH_FURTHER_READING
+    )
+    def test_installed_module_does_not_assume_adopter_markdown(
+        self, scaffolded_target: Path, module: str
+    ) -> None:
+        """The rendered installed module must NOT imply the
+        adopter's `docs/` is Markdown.  Specifically: a bare
+        `docs/further-reading.md` token (without the `cairn/`
+        prefix in the link text) would suggest the adopter has
+        such a file; with the disambiguation, the reference is
+        explicitly Cairn-owned."""
+        installed = scaffolded_target / "dev" / "modules" / f"{module}.md"
+        text = installed.read_text(encoding="utf-8")
+        # The presence of bare `docs/further-reading.md` in link
+        # text (without the cairn/ prefix) is what Antigravity-3
+        # was trying to remove.  After Chunk 3's disambiguation,
+        # the link text uses `cairn/docs/further-reading.md`.
+        assert "`cairn/docs/further-reading.md`" in text, (
+            f"installed {module}.md must use the cairn/-prefixed form "
+            f"in link text (not bare `docs/...`)"
+        )

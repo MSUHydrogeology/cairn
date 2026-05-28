@@ -18,6 +18,26 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **`doctrine/doc-governance.md` -- adopter-`docs/`
+  format-neutrality + team-gated module disambiguation.**
+  Companion to the descriptive-layer tier recognition (above).
+  The new format-neutrality section explicitly disclaims any
+  Cairn assumption about the adopter's docs format
+  (Markdown / reStructuredText / Asciidoc / Quarto -- adopter
+  picks); Cairn's `.md` references point INTO Cairn, not into
+  the adopter's tree.  The three team-gated modules that
+  reference `cairn/docs/further-reading.md`
+  (`examples-gallery`, `doc-drift-prevention`,
+  `testing-discipline`) now carry the `Cairn's own
+  [`cairn/docs/further-reading.md`]` link-text disambiguation
+  (Antigravity-3 option i; no URL hardcoding); installed-module
+  scaffold-rendered tests assert the adopter-facing surface
+  carries the prefix.  Source proposal:
+  `2026-05-28-claude-cairn-docs-architecture-cleanup`;
+  implementing plan > Chunk 3.  Tests added to
+  `bootstrap/tests/test_doc_governance.py` (15 new cases: 3
+  format-neutrality + 6 module-source + 6 installed-adopter).
+
 - **`doctrine/doc-governance.md` -- descriptive-layer tier
   recognition + common-homes for project vision / charter
   material.** Adopter-friction follow-up surfaced by
