@@ -44,6 +44,26 @@ equivalent), gated on this module being installed:
 > internal hostnames/IPs, local paths, or proprietary domain detail, and
 > the Maintainer confirms no private coordinate leaks before any item
 > becomes a public Cairn proposal.
+>
+> **Goodnight foldback-surfacing.** Adjacent to foldback-capture above,
+> after the day's candidates are captured the goodnight full-handoff
+> owner reviews open `candidate`-status rows older than a maintainer-
+> tunable grace period (default **7 days**; configurable per
+> deployment) AND not currently snoozed via a `deferred-until` ISO
+> date or condition string.  For each, the agent runs the
+> **active-surfacing protocol** (see
+> [`doctrine/fold-back.md`](../../doctrine/fold-back.md) >
+> "Active surfacing"): Recap / Choose / Compose / Scrub / Submit /
+> Record.  The Scrub step is a **fail-closed machine gate** --
+> `python scripts/foldback_export_scan.py <draft-path>` (the export
+> scanner; this module installs it alongside the ledger) must exit 0
+> before the maintainer submits; non-zero fails closed.  The
+> maintainer submits any filing **by hand** via
+> `gh issue create --body-file <draft.md>` (or the GitHub UI) -- the
+> agent never submits autonomously.  On submission, the row's status
+> flips from `candidate` to `filed -> <issue-#>` or `pr -> <pr-#>`.
+> Surfacing never lapses; an empty open-candidate set is success
+> (mirroring the capture-side rule).
 
 A solo, single-deployment adopter may omit this module; the upstream
 improvement loop only earns its keep when the deployment intends to
