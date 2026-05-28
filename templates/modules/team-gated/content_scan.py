@@ -169,6 +169,10 @@ _CAIRN_MARKER_RE = re.compile(
     # instruction-bearing-HTML-comment heuristic.
     r"|vendor-ok(?:-begin|-end)?"
     r"|case-study"
+    # The claim_check.py document-scoped exemption family (ported into
+    # Cairn 2026-05-28 from modflow_tools).  Same shape: Cairn-owned
+    # directive syntax parsed by the default-on claim_check module.
+    r"|claim-check-allow(?:-count)?"
     r")\b",
     re.I,
 )

@@ -1,3 +1,13 @@
+<!-- claim-check-allow: scripts/foldback_export_scan.py, scripts/foldback_suggest.py -->
+<!-- Both paths refer to the adopter-install location -- the
+     foldback_export_scan + foldback_suggest modules verbatim-install
+     into `<target>/scripts/` (parallel to claim_check + lifecycle_metrics).
+     The doctrine cites them by adopter-install path because that is the
+     invocation context the protocol asks the adopter for.  From
+     Cairn's own checkout these paths do not resolve (the source-of-truth
+     templates live at `templates/modules/default-on/`); exempted so the
+     adopter-facing cite stays correct. -->
+
 # The fold-back ledger — how a deployment improves Cairn
 
 Cairn is extracted from a reference instance, but improvement is not
@@ -53,19 +63,45 @@ Each candidate moves through four states:
 
 * `candidate` — captured; not yet committed to a sync.
 * `queued` — selected for the next sync.
+* `filed → <issue-#>` — a Cairn issue has been filed (via the
+  active-surfacing protocol below); the candidate is now in
+  Cairn's triage / discussion surface, **not yet accepted into a
+  tracked proposal**. Transient pre-acceptance state.
+* `pr → <pr-#>` — a Cairn PR has been opened (active-surfacing
+  protocol with deployment-side working code to contribute);
+  same pre-acceptance position as `filed`.
 * `scoped → <proposal/milestone>` — a tracked Cairn proposal has taken
-  it over.
+  it over. (A `filed` or `pr` row transitions to `scoped` only when
+  a Cairn-side maintainer Decision creates the tracked surface.)
 * `synced` — shipped into Cairn (transient; the row then moves to the
   already-synced record or is deleted).
 * `dropped` — decided not to port, with a one-line reason.
+
+A row carrying an optional `deferred-until <ISO-date | condition>`
+field is snoozed: the active-surfacing protocol skips that row until
+the date elapses (the maintainer evaluates the condition string at
+surfacing time -- the string is a memo, not machine-parsed).
+
+**Migration rule** — existing ledger entries using older vocabulary
+(without `filed` / `pr` / `deferred-until`) remain valid. The new
+states are **additive**; the surfacing protocol only modifies the row
+it files, never rewriting other rows. An adopter with an existing
+ledger does not need to retroactively re-status rows when this
+doctrine update lands. Tooling that reads the ledger (e.g.
+`foldback_suggest.py`) handles both vocabularies gracefully — only
+`candidate` status surfaces, regardless of which other states are
+present.
 
 ### Removal rule
 
 A row is deleted once its change is `synced` **and** the archived Cairn
 proposal carries the durable record; a `dropped` row is deleted with its
-reason captured in the commit. The *open-candidate* set is the ledger's
-load-bearing content; the already-synced record is a terse cadence log,
-so it never becomes a second, less-governed roadmap.
+reason captured in the commit. **A `filed` or `pr` row remains in the
+open-candidate set** until it transitions to `scoped`, `synced`, or
+`dropped` — it is a pre-acceptance pending state, not a sync. The
+*open-candidate* set is the ledger's load-bearing content; the
+already-synced record is a terse cadence log, so it never becomes a
+second, less-governed roadmap.
 
 ## Capture cadence — the nightly goodnight check
 
@@ -79,23 +115,150 @@ manufacture marginal candidates to justify the step. Whether to *open a
 sync* is the separate, judgment-gated decision the harvest cadence
 governs — capture is standing, the sync is judged.
 
+## Active surfacing — from capture to suggested filing
+
+**Active surfacing is the bridge between capture and sync.** The
+capture cadence (above) reliably records candidates; the harvest
+cadence and the maintainer judge when to *open a sync*. Between those,
+a candidate sits in the ledger — *captured but unfiled*. The active-
+surfacing step closes that gap: each `candidate`-status row is, at
+standing cadence, surfaced to the deployment maintainer with concrete
+filing options — file as a Cairn issue (for a well-shaped idea that
+wants Cairn-side discussion), draft as a Cairn PR (for an idea the
+deployment is ready to ship), defer (with a `deferred-until` value),
+or drop.
+
+**Why this is part of Cairn's methodology, not just adopter
+convenience.** Cairn improves through community contribution. The
+dominant barrier to OSS contribution in the literature is the
+**"where do I start?"** friction Steinmacher et al. 2016 documented
+(FLOSScoach, ICSE 2016); the Nakakoji et al. 2002 onion model
+("Evolution patterns of open-source software systems and communities,"
+IWPSE 2002) names the outer-to-inner transition — passive user /
+deployment maintainer → active contributor — as the bottleneck. An
+agent that has *already read the deployment's ledger entries* is a
+personalized in-context FLOSScoach. The active-surfacing step is
+therefore not a UX nicety; it is the mechanism by which Cairn builds
+its own contributor pipeline through every deployment that adopts it.
+
+**Trigger — standing**: at goodnight, the foldback-capture step
+extends into a foldback-surfacing step (see `session-routines.md` +
+the `fold-back-ledger` module's merge). For each open `candidate`-
+status row older than a maintainer-tunable grace period (default
+seven days; floors very-fresh candidates against churn) AND not
+currently snoozed via `deferred-until`, the surfacing prompt fires.
+
+**Trigger — on-demand**: a deployment-installed helper
+(`scripts/foldback_suggest.py`, if the deployment installs Cairn's
+optional helper module) lists all open candidates with their detail
+entries, callable any time the maintainer wants to review the funnel
+state.
+
+### Protocol
+
+The agent reads the row's detail entry and walks the maintainer
+through six steps:
+
+1. **Recap**: state the candidate, why it is generalizable, and
+   cite the deployment commit(s) that prove it.
+2. **Choose a filing path**: issue (most common; discussion-shape),
+   PR (when the deployment has working code to contribute), defer
+   (record a `deferred-until` ISO date or condition string), or
+   drop (with one-line reason).
+3. **Compose**: for issue / PR, the agent drafts the body from the
+   row + the Cairn issue / PR template; the maintainer reviews +
+   edits.
+4. **Scrub** — *fail-closed machine gate*. The agent writes the
+   drafted body to a local **gitignored** temp file (working
+   convention: `dev/upstream/.foldback-draft-<timestamp>.md`), then
+   invokes the export-scrub scanner:
+
+       python scripts/foldback_export_scan.py <draft-path>
+
+   The scanner exits 0 clean or non-zero with per-finding output.
+   **Non-zero exit fails closed** — the maintainer dispositions the
+   findings (edit the draft to resolve; mark a documented false
+   positive in the draft; or abort the filing).  The agent does not
+   negotiate the gate.  In addition, the agent asks the maintainer
+   to explicitly **affirm the two manual-only no-export classes**
+   (unpublished data hints; proprietary domain detail in long-form
+   prose) — the affirmation is recorded in the issue/PR template's
+   signed checkbox.
+5. **Submit**: the maintainer submits the issue / PR **by hand** via
+   `gh issue create --body-file <draft.md>` (or the GitHub UI).
+   **The agent does not submit autonomously.** Bright-line: only the
+   maintainer crosses the export boundary.
+6. **Record**: on submission, the row's status flips from `candidate`
+   to `filed → <cairn-issue-#>` or `pr → <cairn-pr-#>`. Existing
+   lifecycle handles the rest (the row stays in the open-candidate
+   set until a Cairn-side Decision transitions it to `scoped`,
+   `synced`, or `dropped`).
+
+### Anti-patterns
+
+* **Filing every `candidate` automatically** — the maintainer judges
+  per-row; surfacing is the *prompt*, not the action.
+* **Bypassing the scrub gate at the agent's discretion** — the gate
+  is unconditional and fail-closed; the agent does not negotiate it,
+  and the maintainer's disposition of a finding is documented in the
+  draft body, not silent.
+* **Aggregating multiple candidates into one filing** — one filing
+  per candidate (a Cairn maintainer reviews one idea at a time).
+* **The agent submitting the filing directly** — only the maintainer
+  submits.  This is the structural guard on the export boundary.
+* **Surfacing a snoozed row** — rows with a `deferred-until` value
+  in the future are skipped until the deferral expires.
+
 ## The export boundary — scrub before anything goes up
 
 A fold-back ledger is a **cross-repository export surface**: content
 flows from a deployment's own repository — which may be private or
 proprietary — *up* to public Cairn. That makes it a privacy surface, and
 the same rule applies as to any coordination artifact (`coordination.md`
-> "Privacy"): **ledger candidates carry no secrets, credentials, internal
-hostnames or IP addresses, local machine paths, or proprietary domain
-detail.** Two controls:
+> "Privacy"). **The no-export class enumeration is structured into
+two tiers** — machine-gated (regex-detectable) + manual-affirmation
+(human-judgment), matching the actual structure of the boundary:
+
+**Machine-gated classes (5; detected by `scripts/foldback_export_scan.py`,
+fail-closed during the active-surfacing scrub step)**:
+
+* **Credentials / secrets** — assignment-pattern detectable
+  (`password = ...`, `api_key = ...`, `secret = ...`, `token = ...`).
+* **Private filesystem paths** — `/Users/<name>/`, `/home/<name>/`,
+  `C:\Users\<name>\`, `/private/`, `/var/folders/`, and similar
+  user-scoped absolute paths.
+* **IP addresses (deployment-internal AND remote-repo)** — IPv4 +
+  IPv6, with an RFC 5737 documentation-IP allowlist (192.0.2.0/24,
+  198.51.100.0/24, 203.0.113.0/24) so doc examples don't trigger.
+  Both deployment-internal IPs *and* IPs the deployment's remote
+  repo would expose qualify.
+* **Internal hostnames** — `.local`, `.internal`, `.lan`, plus
+  RFC 1918 ranges covered via the IP detector.
+* **Adopter-configurable proprietary tokens** — a deployment-side
+  allowlist file enumerating project codenames, client names, and
+  domain-specific terms the adopter does not want exported.
+
+**Manual-affirmation classes (2; maintainer-signed in the issue/PR
+template's affirmation field)**:
+
+* **Unpublished data hints** — long-form prose context that no
+  regex can reliably distinguish from generic phrasing (e.g.,
+  "the client's marina sediment data" versus generic "sediment
+  data").
+* **Proprietary domain detail** — descriptive prose about
+  client / project specifics that the deployment maintainer
+  recognizes as private but a scanner cannot.
+
+Two controls:
 
 * The ledger template carries a prominent **`[SECURITY WARNING]`** stating
   the no-leak rule, so the constraint is visible at the point of capture.
-* Before any ledger item becomes a public Cairn proposal, the
-  **Maintainer confirms** no private coordinate leaks — a
-  scrub-and-verify gate at the upstream-submission step. The
-  export boundary is where the gate bites, not local capture; an item
-  captured locally is scrubbed before it crosses to public Cairn.
+* Before any ledger item becomes a public Cairn issue / PR / proposal,
+  **two gates fire together**: the machine-gated scrub (above) runs
+  fail-closed against the drafted body, AND the maintainer signs the
+  manual-affirmation field. The export boundary is where both gates
+  bite, not local capture; an item captured locally is scrubbed before
+  it crosses to public Cairn.
 
 ## Adaptation
 
