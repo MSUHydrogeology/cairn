@@ -18,6 +18,24 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **`doctrine/doc-governance.md` -- style-conventions-location
+  paragraph + coherence-pass rewrite of the opening taxonomy.**
+  Closes the four-section build from Chunks 2 + 3 + 7 into one
+  coherent documentation-governance doctrine: the file now opens
+  with an explicit two-half framing (governing-file routing
+  `AGENTS.md` / `agent_collaboration.md`, then descriptive-layer
+  recognition `docs/` + format-neutrality + common-homes-for-vision
+  + common-homes-for-style), with sub-heading levels demoted to
+  reflect the structure.  New style-conventions section
+  enumerates four typical homes (`docs/developer/style.md`,
+  `docs/style.md`, project-specific equivalents, `STYLE_GUIDE.md`
+  at root) without recommending among them, per the M2 chat-
+  preference clarification: style is project-specific
+  descriptive content, not universal governing doctrine.  Source
+  proposal: `2026-05-28-claude-cairn-docs-architecture-cleanup`;
+  implementing plan > Chunks 7 + 8.  Tests extended to 27 cases
+  in `bootstrap/tests/test_doc_governance.py`.
+
 - **`doctrine/doc-governance.md` -- adopter-`docs/`
   format-neutrality + team-gated module disambiguation.**
   Companion to the descriptive-layer tier recognition (above).
