@@ -4,6 +4,15 @@ Adopting Cairn is **not** all-or-nothing. There are three levels,
 and a project picks the one that fits — the bootstrap recommends a
 level from the dimensional profile, but the adopter chooses.
 
+> **Honest framing.** Cairn is **slower for the first few changes**
+> at any level: writing decisions down, reviewing them, and
+> committing the trail adds friction *before* code. The payback is
+> later — fewer repeated decisions, fewer forgotten assumptions,
+> fewer agent collisions, and less rework after unreviewed
+> scientific choices. Keep the apparatus only as heavy as your
+> codebase and team earn; the three levels below are the self-locate
+> aid for that calibration.
+
 ## Level 0 — read the doctrine
 
 Adopt nothing mechanically. Read `doctrine/` as a handbook and let

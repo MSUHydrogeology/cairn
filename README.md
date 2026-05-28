@@ -27,6 +27,51 @@ The two differentiators Cairn leads with: an **append-only,
 git-committed deliberation lifecycle**, and a **Dual-Review model**
 (two-tier review across structural independence).
 
+## What the agent sees, and what it must not exfiltrate
+
+Cairn asks an AI coding agent to read your repository in order to do
+work. That trust is bounded:
+
+* **What the agent reads to do its job**: the repo and the profile
+  YAML you accept. The agent reads code, doctrine, and
+  proposal / plan deliberation — the same things a new human
+  contributor would read.
+* **What must NOT enter Cairn-shipped artifacts** (the `dev/` tree,
+  proposals, plans, CHANGELOG entries): secrets, credentials, API
+  keys, private paths, embargoed datasets, unpublished results, or
+  any other content the maintainer is not prepared to commit to a
+  tracked repo. The Codebase Readiness Report's section 10
+  ([`templates/codebase-readiness-report.md`](templates/codebase-readiness-report.md))
+  is the place to think through the privacy boundary *before* the
+  first scaffold.
+* **What Cairn-shipped files are scanned for**: vendor-neutrality
+  ([`bootstrap/scaffold.py`](bootstrap/scaffold.py) + lint), private
+  paths and credentials patterns
+  ([`templates/modules/team-gated/content_scan.py`](templates/modules/team-gated/content_scan.py),
+  shipped with the `content-security` module), and broken /
+  forward-reference links + path claims
+  ([`templates/modules/team-gated/link_check.py`](templates/modules/team-gated/link_check.py),
+  [`templates/modules/default-on/claim_check.py`](templates/modules/default-on/claim_check.py)).
+* **What the agent does *not* do**: it does not exfiltrate the repo
+  to a third party, it does not rewrite files outside the working
+  tree it has been given access to, and it does not bypass the
+  Maintainer-Decision gate. Those constraints come from Cairn's
+  doctrine and from the agent's own operating posture — and they
+  are reinforced by the scanners above on every release-facing
+  commit.
+
+For the full security contract, see
+[`SECURITY.md`](SECURITY.md).
+
+## Honest framing
+
+Cairn is **slower for the first few changes**. Its speed comes
+later: fewer repeated decisions, fewer forgotten assumptions, fewer
+agent collisions, and less rework after unreviewed scientific
+choices. Keep the apparatus only as heavy as your codebase and team
+earn — the [on-ramp](on-ramp/README.md) is the self-locate aid for
+that calibration.
+
 ## Who Cairn is for
 
 * A scientist or research-software team building scientific code

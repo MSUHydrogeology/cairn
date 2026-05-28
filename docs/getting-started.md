@@ -11,6 +11,15 @@ this narrative, open [`../examples/minimal/`](../examples/minimal/) —
 it carries the actual proposal, code, and test for the change traced
 below.
 
+> **Honest framing.** The five steps below add friction *before*
+> code: you write the decision down first, review it, accept it,
+> *then* implement. That is the design. The payback is fewer
+> forgotten assumptions, fewer collisions, less rework — but only
+> on changes substantive enough to warrant a proposal. The
+> [quickstart](quickstart.md)'s "trivial accept" path collapses
+> three of these steps into a single implement-and-archive commit
+> for the smallest end of that scale.
+
 ## The five steps
 
 A substantive change moves through

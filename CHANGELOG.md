@@ -46,6 +46,28 @@ and a new empty `Unreleased` is started above.
   step. `bootstrap/BOOTSTRAP.md` carries a pointer paragraph near
   the top for readers who arrive there first.
 
+### Changed
+
+- **`README.md` -- added trust box ("What the agent sees, and what
+  it must not exfiltrate") + honest-framing callout; speed-language
+  across `README.md` / `on-ramp/README.md` / `docs/getting-started.md`
+  reframed from a missing-faster-claim implication to an explicit
+  "Cairn is slower for the first few changes; it pays back later"
+  curve.** Adopter-friction package items 6 + 7 (Chunk 7).  The
+  trust box names what an AI agent reads (the repo + the profile
+  YAML), what must NOT enter Cairn-shipped artifacts (secrets,
+  credentials, private paths, embargoed datasets), what scanners
+  run on Cairn-shipped files (vendor-neutrality,
+  `content_scan.py`, `link_check.py`, `claim_check.py`), and what
+  the agent does *not* do (no exfiltration, no rewrites of
+  unconsented files), with a cross-ref to `SECURITY.md`.  Speed-
+  language audit found no bare "faster" marketing claims to
+  rewrite -- the docs were already careful -- so the honest-framing
+  edits are ADDITIVE callouts in each file's voice, not
+  in-place rewrites.  Three short paragraphs total.
+
+### Added
+
 - **`templates/codebase-readiness-report.md` -- eleven-section
   readiness template for legacy scientific codebases.** Adopter-friction
   package item 4 (Chunk 5). Covers tests, hidden state, scripts,
