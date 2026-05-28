@@ -44,11 +44,15 @@ shakedown.
 
 ## Step 1 -- clone Cairn and create a disposable target
 
+<!-- cairn-accept: suspicious-url reason="Literal Cairn clone URL the adopter needs to copy" reviewer="Claude" date=2026-05-28 -->
 ```bash
 # Anywhere you keep code:
 git clone https://github.com/MSUHydrogeology/cairn-scientist-ai-teams.git cairn
 cd cairn
+```
+<!-- cairn-accept-end: suspicious-url -->
 
+```bash
 # Create the disposable target repo somewhere else:
 mkdir -p /tmp/cairn-quickstart && cd /tmp/cairn-quickstart
 git init -q
@@ -124,9 +128,10 @@ python /path/to/cairn/bootstrap/scaffold.py \
 ```
 
 The scaffold prints what it installed.  For the `solo-greenfield`
-profile you will see roughly 15--17 files across the kernel +
-module + tool directories (the exact count shifts slightly across
-Cairn releases):
+profile you will see a kernel-and-default-on file set across the
+top level, `dev/`, `tools/`, and `scripts/` -- the scaffold output
+itself is the authoritative tally for *this* release.  The named
+files you should recognise:
 
 * `AGENTS.md` -- the kernel doctrine file every agent reads.
 * `VENDOR.md` -- the vendor addendum template (Cairn is vendor-
