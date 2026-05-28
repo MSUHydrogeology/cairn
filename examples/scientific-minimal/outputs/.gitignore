@@ -1,0 +1,8 @@
+# The example's run artifacts (residuals.csv etc.) land here; they
+# are reproducible from data/ + water_budget.py, so they do not
+# belong in the tracked tree.  The directory itself is kept (via
+# .gitkeep) so the README's path references resolve on a fresh
+# clone.
+*
+!.gitkeep
+!.gitignore

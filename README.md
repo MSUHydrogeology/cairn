@@ -27,6 +27,10 @@ The two differentiators Cairn leads with: an **append-only,
 git-committed deliberation lifecycle**, and a **Dual-Review model**
 (two-tier review across structural independence).
 
+> **The adoption promise.**  Start small.  Use Cairn to make one
+> AI-assisted change with a recorded decision and test.  Keep the
+> apparatus only as heavy as your codebase and team earn.
+
 ## What the agent sees, and what it must not exfiltrate
 
 Cairn asks an AI coding agent to read your repository in order to do
@@ -83,6 +87,15 @@ that calibration.
   prompting — and willing to commit the apparatus to git.
 * Working at a graduate-research, faculty-research, or small-group
   scale (one human plus agents, up to a small multi-human team).
+
+**Cairn works with one agent.**  Many scientists start with one
+human + one AI agent, before the team can staff a second reviewer.
+At that scale, the Maintainer's own review (or a fresh-session
+review from the same agent type) covers the Dual-Review tier; the
+stronger structural-independence floor (different agent type, or a
+second human reviewer) lands once the team can staff it.  The
+on-ramp's Level 1 is built around this case; see
+[`on-ramp/README.md`](on-ramp/README.md) for the graduated path.
 
 Cairn is **not** a project-management framework, a CI/CD tool, or a
 prompt library. It is upstream of those — the doctrine that decides

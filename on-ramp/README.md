@@ -30,6 +30,15 @@ decisions, keep the `dev/` tree. No bootstrap script — the adopter
 fills the placeholders themselves. Best for a small, simple
 project that wants the discipline without the machinery.
 
+**Level 1 is the natural home for solo + one-agent adopters.** Many
+scientists begin with one human + one AI agent, where staffing a
+second independent reviewer is not yet realistic. Level 1 is built
+for that case: the Maintainer's own review (or a fresh-session
+review from the same agent type) covers the Dual-Review tier, and
+the stronger structural-independence floor (different agent type,
+or a second human reviewer) is added when the team can staff it.
+The doctrine is sized to the work, not the other way around.
+
 ## Level 2 — run the bootstrap
 
 Run the full bootstrap (`bootstrap/`): an agent assesses the
