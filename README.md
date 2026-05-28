@@ -45,6 +45,12 @@ what gets prompted, reviewed, and shipped.
 
 ## How to adopt
 
+Want to see the apparatus in 15–25 minutes before committing to a
+level? Follow [`docs/quickstart.md`](docs/quickstart.md) on a
+disposable repo — one human + one AI agent, one trivial change
+through the full lifecycle. The on-ramp below is the path *after*
+the quickstart, when you have a real project in mind.
+
 New to Cairn? [`docs/getting-started.md`](docs/getting-started.md)
 narrates one change moving through the lifecycle, and
 [`docs/workflow-role.md`](docs/workflow-role.md) explains where Cairn

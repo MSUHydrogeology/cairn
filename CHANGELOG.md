@@ -46,6 +46,27 @@ and a new empty `Unreleased` is started above.
   step. `bootstrap/BOOTSTRAP.md` carries a pointer paragraph near
   the top for readers who arrive there first.
 
+- **`docs/quickstart.md` -- copy-paste recipe for one human + one AI
+  agent on a disposable repo; 2-layer regression test in
+  `bootstrap/tests/test_quickstart_sequence.py` (Layer A shell +
+  Layer B lifecycle-shape); README pointer added.** Adopter-friction
+  package item 1 (Chunk 3). Seven steps from `git init` through
+  teardown; copies `bootstrap/profiles/solo-greenfield.yml`
+  literally; Step 3 splits into preview-then-install (no more
+  `--summary`-only confusion); Step 6 documents five
+  lifecycle-boundary commits.  The 2-layer regression test
+  protects against drift: **Layer A** drives the literal shell
+  commands in Steps 1-3 and asserts the post-step file tree (the
+  shell + scaffold portion adopter behaviour faithfully mirrors);
+  **Layer B** uses a scripted surrogate for Steps 4-6 file
+  operations (programmatic proposal-open, Decision append,
+  `git mv` to archive, CHANGELOG line), explicitly **not** a
+  literal AI-agent execution (sentinel constant
+  `LAYER_B_IS_LIFECYCLE_SHAPE_ONLY = True` documents the boundary).
+  The human self-pilot (modflow_tools plan Chunk 4) is the only
+  evidence the prompt-mediated path works for an adopter; the test
+  is the regression gate against drift between releases.
+
 ## 0.2.0 — 2026-05-27
 
 ### Added
