@@ -1,18 +1,48 @@
-<!-- claim-check-allow: docs/developer/, docs/developer/vision.md, docs/vision.md -->
+<!-- claim-check-allow: docs/developer/, docs/developer/vision.md, docs/vision.md, docs/developer/style.md, docs/style.md, STYLE_GUIDE.md -->
 <!-- ^ illustrative adopter-tree paths in the tier-recognition and
      common-homes-for-vision sections; these are adopter-side
      conceptual paths, not Cairn-tree paths. -->
 
 # Doc governance — where content lives
 
+This document routes Cairn's documentation and doctrine content into
+two areas: the **governing layer** (`AGENTS.md`,
+`agent_collaboration.md`) carrying *prescription* — how to build, how
+to decide, how to coordinate — and the **descriptive layer** (`docs/`)
+carrying *description* — what the project is, what its conventions
+are, where common content lives. Each area has its own routing rules
+and its own way of resisting drift.
+
+The doctrine is organized into two halves:
+
+* **Governing-file routing** (the first four sections below) tells a
+  Cairn adopter where in the two-file governing layer
+  (`AGENTS.md` vs `agent_collaboration.md`) a given rule belongs, so
+  the two files do not blur or re-accrete each other's content over
+  time.
+* **Descriptive-layer recognition** (the remaining four sections)
+  recognizes the conventional tiers of `docs/` (Quickstart / User
+  Guide / Theory-Reference / Developer), states Cairn's
+  format-neutrality with respect to the adopter's docs format, and
+  enumerates the common homes for two often-misplaced descriptive
+  artifacts (project vision and project-specific style conventions)
+  *without* legislating any one location.
+
+The two halves share a common method — **name the distinction, don't
+legislate the boundary** — and both resist the same failure mode:
+content slowly migrating into the wrong layer because the boundary
+was never stated.
+
+## Governing-file routing — `AGENTS.md` vs `agent_collaboration.md`
+
 A Cairn project keeps its governing instructions in two files, and a
 reader — human or agent — must be able to predict which one holds a
 given rule without searching both. `AGENTS.md` is the **operational**
-reference; `agent_collaboration.md` is the **process** doctrine. This
-document is the routing rule that keeps the two from blurring and, over
-time, from re-accreting each other's content.
+reference; `agent_collaboration.md` is the **process** doctrine. The
+four subsections below are the routing rule that keeps the two from
+blurring.
 
-## The three buckets
+### The three buckets
 
 Sort every piece of governing content into one of three buckets; the
 bucket decides its home.
@@ -41,7 +71,7 @@ have loaded to act correctly *right now*; `agent_collaboration.md`
 holds bucket 3 because deliberation doctrine is read when reasoning
 about *how to change the system*, not in the middle of a routine edit.
 
-## One canonical home, thin pointers
+### One canonical home, thin pointers
 
 Each rule lives in **exactly one** of the two files. The other file may
 *point* to it — a one-line cross-reference — but never restates it. The
@@ -50,7 +80,7 @@ into both files, later edited in one, and now silently contradictory.
 When you find content that belongs in the other bucket, **move it and
 leave a pointer**; do not copy it.
 
-## The operational-safety minimum stays minimal
+### The operational-safety minimum stays minimal
 
 Bucket 2 is the one most prone to bloat. Every incident tempts a new
 "operational" paragraph, and `AGENTS.md` slowly becomes a process
@@ -66,7 +96,7 @@ points to them. A rule earns a place in `AGENTS.md` only if an agent
 must follow it to make a correct change *and* it is terse enough not to
 crowd out the rest.
 
-## Adaptation
+### Adaptation
 
 The routing rule is team-size-neutral. A solo project still benefits
 from knowing which file a rule belongs in — it keeps `AGENTS.md`
@@ -76,7 +106,18 @@ files are part of every Cairn adoption; this rule governs how their
 content is split from the first commit, so the duplication never has a
 chance to accrete.
 
-## The descriptive layer (`docs/`) — tier recognition
+## Descriptive-layer recognition — `docs/` and what lives in it
+
+The second half of the doctrine recognizes the conventional tiering of
+the adopter's descriptive layer, states Cairn's format-neutrality
+toward the adopter's format choice, and enumerates the common homes
+for two often-misplaced descriptive artifacts (project vision and
+project-specific style conventions). Cairn **names** these
+distinctions; it does **not** legislate any one location -- the
+adopter picks, per the layer-prescriptiveness gradient (recognition
+holds, legislation drops at the descriptive layer).
+
+### Tier recognition
 
 Cairn recognizes the **descriptive layer** (`docs/`) as conventionally
 tiered by audience: **Quickstart** (first-time users), **User Guide**
@@ -97,7 +138,7 @@ decided*, `docs/developer/` describes *how the codebase is*. Cairn
 names the distinction but does not legislate the boundary's exact
 location.
 
-## Common homes for project vision / charter material
+### Common homes for project vision / charter material
 
 A project's vision or charter — the north-star description of what the
 project is, who it serves, and what success looks like — is upstream
@@ -127,7 +168,7 @@ The adopter picks. Cairn's interactive-onboarding mechanism
 that helps adopters choose; today the choice is made by reading this
 section and matching the project's audience.
 
-## Adopter `docs/` format-neutrality
+### Adopter `docs/` format-neutrality
 
 An adopter's `docs/` format is the **adopter's choice**. Cairn assumes
 nothing about Markdown vs. reStructuredText vs. Asciidoc vs. Quarto.
@@ -143,3 +184,49 @@ reading references with the "Cairn's own" prefix: a Cairn module's
 attribution makes the target unambiguously Cairn-owned, so an adopter
 using Sphinx + reStructuredText is not steered toward `.md` by a
 relative link the module ships.
+
+### Common homes for project-specific style conventions
+
+A project's **style conventions** — naming patterns, type prefixes,
+language-specific idioms the codebase has standardized on — are
+project-specific descriptive content rather than universal governing
+doctrine. Code style varies per codebase (camelCase function args
+in one project, snake_case in another; xarray-everywhere in a
+scientific project, pandas-everywhere in an analytics shop), so the
+**descriptive layer is the right home** for them. Cairn does not
+prescribe one location; common choices include:
+
+* **`docs/developer/style.md`** when the project has a Developer
+  tier and the style guide is read alongside architecture /
+  contributing / extending. A new contributor browsing the developer
+  tier finds the conventions where the *how is the codebase
+  organized* answer lives.
+* **`docs/style.md`** when the project wants the style guide as a
+  top-level descriptive surface outside the Developer tier — useful
+  for projects whose contributor audience is not primarily
+  developer-focused.
+* **A project-specific equivalent** when the project uses a
+  different `docs/` shape entirely (Sphinx-style, MkDocs-style,
+  Quarto-style, etc.). The principle is *descriptive layer*;
+  the exact filename and location follow the adopter's `docs/`
+  convention.
+* **At root (`STYLE_GUIDE.md`)** when the project wants
+  external-tooling visibility from the repo entrance. The
+  trade-off is that root files mix with governing-layer entries
+  (`AGENTS.md`, `CHANGELOG.md`) and the reader has to disambiguate
+  prescriptive code style from operational instructions. Cold-start
+  agent discoverability for the agent-critical conventions can be
+  preserved by direct `AGENTS.md` pointers wherever the style guide
+  lives.
+
+The adopter picks. Cairn's interactive-onboarding mechanism
+(forthcoming as a `0.3` goal) eventually carries the dialogue
+surface; today the choice is made by reading this section and
+matching the project's audience.
+
+Style guides are project-specific descriptive content because the
+**choices** they encode (camelCase vs snake_case, type prefixes,
+preferred libraries, line-length conventions) belong to the project,
+not to Cairn. The methodology's bias is to **describe** where style
+content commonly lives (here), not to legislate its specific
+location.

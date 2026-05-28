@@ -39,9 +39,16 @@ class TestTierRecognition:
     recognition for the descriptive layer."""
 
     def test_descriptive_layer_section_present(self, doc_text: str) -> None:
-        assert "The descriptive layer (`docs/`)" in doc_text, (
+        # Post-coherence-pass (Chunk 8), the descriptive-layer
+        # recognition lives under a top-level "Descriptive-layer
+        # recognition" heading with a "Tier recognition" subsection.
+        assert "Descriptive-layer recognition" in doc_text, (
             "doc-governance.md must declare the descriptive-layer "
-            "tier-recognition section"
+            "recognition section"
+        )
+        assert "Tier recognition" in doc_text, (
+            "doc-governance.md must declare the Tier recognition "
+            "subsection under descriptive-layer recognition"
         )
 
     def test_names_the_four_conventional_tiers(self, doc_text: str) -> None:
@@ -309,4 +316,50 @@ class TestInstalledAdopterWording:
         assert "`cairn/docs/further-reading.md`" in text, (
             f"installed {module}.md must use the cairn/-prefixed form "
             f"in link text (not bare `docs/...`)"
+        )
+
+
+class TestStyleConventionsLocation:
+    """Chunk 7 of the docs-architecture-cleanup plan adds the style-
+    conventions-location paragraph (parallel to common-homes-for-
+    vision)."""
+
+    def test_style_conventions_section_present(self, doc_text: str) -> None:
+        assert (
+            "Common homes for project-specific style conventions" in doc_text
+        ), (
+            "doc-governance.md must declare the style-conventions-"
+            "location section"
+        )
+
+    def test_names_descriptive_layer_as_principle(self, doc_text: str) -> None:
+        """The section must explicitly state that style is
+        descriptive-layer content, not governing doctrine."""
+        import re
+        normalized = re.sub(r"\s+", " ", doc_text)
+        normalized = normalized.replace("**", "").replace("*", "")
+        assert "descriptive layer is the right home" in normalized, (
+            "style-conventions section must explicitly state the "
+            "descriptive layer is the right home for style conventions"
+        )
+
+    def test_names_multiple_style_homes(self, doc_text: str) -> None:
+        """The section enumerates multiple typical homes for style
+        guides per the M2 chat-preference clarification."""
+        for home in (
+            "`docs/developer/style.md`",
+            "`docs/style.md`",
+            "`STYLE_GUIDE.md`",
+        ):
+            assert home in doc_text, (
+                f"style-conventions section must name {home} as a "
+                f"typical style-guide home"
+            )
+
+    def test_is_non_prescriptive(self, doc_text: str) -> None:
+        """The section must defer to the adopter, parallel to the
+        common-homes-for-vision section."""
+        assert "adopter picks" in doc_text.lower(), (
+            "style-conventions section must explicitly defer to the "
+            "adopter (parallel to common-homes-for-vision)"
         )
