@@ -218,6 +218,42 @@ class TestMergeConflictDeferred:
         assert "Existing body differs" in text
         assert "Module-contributed body." not in text
 
+    def test_per_slot_side_file_avoids_clobber(self, tmp_path: Path) -> None:
+        """Antigravity B-P1: two conflicts on the same target file
+        must write to distinct side-files (one per slot)."""
+        dst = tmp_path / "two_slots.md"
+        dst.write_text(
+            "# Two-slot target\n"
+            "<!-- cairn:slot slot-one -->\n"
+            "Existing body for slot one.\n"
+            "<!-- cairn:end slot-one -->\n"
+            "<!-- cairn:slot slot-two -->\n"
+            "Existing body for slot two.\n"
+            "<!-- cairn:end slot-two -->\n",
+            encoding="utf-8",
+        )
+        r1 = merge_module_into_slot(
+            tmp_path, "two_slots.md", "slot-one",
+            "Module body for slot one.",
+            non_interactive=True,
+        )
+        r2 = merge_module_into_slot(
+            tmp_path, "two_slots.md", "slot-two",
+            "Module body for slot two.",
+            non_interactive=True,
+        )
+        assert r1.status == "conflict-deferred"
+        assert r2.status == "conflict-deferred"
+        # The two side-files are distinct, slot-name-segmented.
+        assert r1.side_file != r2.side_file
+        assert Path(r1.side_file).is_file()
+        assert Path(r2.side_file).is_file()
+        # Each side-file carries its own slot's contributed prose.
+        assert "Module body for slot one." in Path(
+            r1.side_file).read_text(encoding="utf-8")
+        assert "Module body for slot two." in Path(
+            r2.side_file).read_text(encoding="utf-8")
+
 
 # ---------------------------------------------------------------------------
 # Fidelity check
@@ -261,3 +297,33 @@ class TestFidelityCheck:
             [("core.md", "test-slot", "expected content")],
         )
         assert warnings == []
+
+    def test_indented_slot_does_not_false_positive(
+        self, tmp_path: Path,
+    ) -> None:
+        """Antigravity B-P2: a slot nested in a list item or
+        blockquote carries leading indentation; the fidelity check
+        must normalize away leading whitespace before comparison.
+        """
+        dst = tmp_path / "nested.md"
+        dst.write_text(
+            "# Nested target\n"
+            "* List item context.\n"
+            "  <!-- cairn:slot nested-slot -->\n"
+            "  > Quoted line one (indented)\n"
+            "  > Quoted line two (indented)\n"
+            "  <!-- cairn:end nested-slot -->\n",
+            encoding="utf-8",
+        )
+        # Module content as it appears in the source (no indent).
+        content = (
+            "> Quoted line one (indented)\n"
+            "> Quoted line two (indented)"
+        )
+        warnings = check_slot_fidelity(
+            tmp_path,
+            [("nested.md", "nested-slot", content)],
+        )
+        assert warnings == [], (
+            f"unexpected fidelity warning on indented slot: {warnings}"
+        )

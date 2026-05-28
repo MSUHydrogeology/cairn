@@ -64,6 +64,7 @@ from __future__ import annotations
 
 import argparse
 import importlib.util
+import re
 import subprocess
 import sys
 from dataclasses import dataclass, field
@@ -228,6 +229,89 @@ def _is_template_instruction(rel: str) -> bool:
     return rel.startswith('templates/')
 
 
+#: Canonical incident-tracker schema (per the incident-trackers
+#: module, Cairn commit 4998abd).  An incident-tracker file's
+#: Markdown table header MUST carry these column names (in any
+#: order) for the cross-adopter harvest to parse it.  Per
+#: Antigravity External code review C-P2: validate Cairn-side
+#: tracker artifacts at check_cairn time so schema drift surfaces
+#: locally rather than at upstream-harvest time.
+_INCIDENT_TRACKER_CANONICAL_COLUMNS: tuple[str, ...] = (
+    "Date",
+    "Event Class",
+    "Description",
+    "Recurrence-Window Match",
+    "Impact",
+    "Migrated From Reflection",
+    "Resolved By",
+)
+
+#: A file looks like an incident tracker if it cross-references
+#: the rate-limit gate AND carries a Markdown table header line.
+_TRACKER_SIGNAL_RE = re.compile(
+    r"rate-limit\s+gate|adaptive-doctrine\s+rate-limit",
+    re.IGNORECASE,
+)
+
+
+def _check_incident_tracker_schema(
+    md: Path, root: Path, result: Result,
+) -> None:
+    """Per Antigravity C-P2: validate any file that looks like an
+    incident tracker carries the canonical 7-column semantic-field
+    schema.
+
+    Detection (conservative): the file body references the
+    rate-limit gate AND carries at least one Markdown table whose
+    header includes "Date" or "Event Class".  Validation: every
+    canonical column name must appear in the table's first header
+    row (substring match; the canonical set is the contract).
+    Adopters may append columns to the right of the canonical
+    set; appended columns don't trigger flags.
+
+    Files that don't match the tracker shape are silently skipped
+    (no false positives on unrelated tables).
+    """
+    text = md.read_text(encoding="utf-8", errors="replace")
+    if _TRACKER_SIGNAL_RE.search(text) is None:
+        return
+    # Find table header lines (the first `|`-separated line).
+    in_table = False
+    header_line: str | None = None
+    header_lineno = 0
+    for i, line in enumerate(text.splitlines(), start=1):
+        stripped = line.strip()
+        if not stripped.startswith("|") or not stripped.endswith("|"):
+            in_table = False
+            continue
+        if not in_table:
+            # First `|...|` line of a table is the header.
+            header_line = stripped
+            header_lineno = i
+            in_table = True
+            break
+    if header_line is None:
+        return
+    # Cheap "table looks like an incident tracker" check.
+    if "Date" not in header_line and "Event Class" not in header_line:
+        return
+    # Validate canonical columns are present.
+    missing = [
+        col for col in _INCIDENT_TRACKER_CANONICAL_COLUMNS
+        if col not in header_line
+    ]
+    if missing:
+        result.flags.append(
+            Flag(
+                md, header_lineno, "content",
+                "[incident-tracker-schema] table header is missing "
+                "canonical column(s): " + ", ".join(missing)
+                + " (see templates/modules/default-on/"
+                + "incident-trackers.md for the canonical schema)",
+            )
+        )
+
+
 def _check_content(md: Path, root: Path, result: Result) -> None:
     """Run the content-integrity scanner (Layer 2) over one file, by
     file class, and fold its flags into ``result``.
@@ -268,6 +352,7 @@ def check_tree(root: Path, files: list[Path],
         _check_claims(md, root, result, allow)
         if content_scan_enabled:
             _check_content(md, root, result)
+        _check_incident_tracker_schema(md, root, result)
     return result
 
 

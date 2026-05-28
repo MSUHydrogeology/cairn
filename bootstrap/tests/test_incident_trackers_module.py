@@ -85,6 +85,18 @@ class TestInstallPath:
         assert (tmp_path / MODULE_DOC_DST).is_file()
         assert (tmp_path / TRACKER_TEMPLATE_DST).is_file()
 
+    def test_default_install_scaffolds_strategy_dirs(
+        self, tmp_path: Path,
+    ) -> None:
+        """Antigravity A-P3 (commit 96b7fba sharpening): the
+        extended commit-permission exception covers
+        `dev/strategy/`; the scaffold should create the directory
+        by default so adopters who use the exception don't have
+        to mkdir manually."""
+        assert _scaffold(tmp_path, None) == 0
+        assert (tmp_path / "dev" / "strategy").is_dir()
+        assert (tmp_path / "dev" / "strategy" / "archive").is_dir()
+
     def test_omission_path(self, tmp_path: Path) -> None:
         """A pinned `modules:` list without incident-trackers leaves
         it uninstalled."""

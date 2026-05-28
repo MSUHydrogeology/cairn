@@ -249,9 +249,16 @@ def _slot_is_customized(body: str) -> bool:
 
 def _normalize_for_compare(text: str) -> str:
     """Whitespace-collapsed + line-ending-normalized form for the
-    ``already-current`` comparison.  Tolerates trailing-space drift
-    + LF/CRLF mix without false-positives."""
-    return "\n".join(line.rstrip() for line in text.splitlines()).strip()
+    ``already-current`` comparison.  Per Antigravity External code
+    review B-P2: BOTH leading and trailing whitespace are stripped
+    per-line so a slot nested inside a list item or blockquote
+    (adopter file carries leading indentation; module's
+    contributed text does not) doesn't false-positive as
+    `stale-or-partial`.  Blank lines + LF/CRLF mix also tolerated.
+    """
+    return "\n".join(
+        line.strip() for line in text.splitlines() if line.strip()
+    )
 
 
 def _write_slot_body(
@@ -304,14 +311,20 @@ def merge_module_into_slot(
     * Slot body empty: insert + status ``inserted``.
     * Slot body matches *content* under whitespace-collapse:
       status ``already-current``.
-    * Slot body differs: in non-interactive mode (or when stdin
-      is not a TTY), write the conflict to
-      ``<target>.cairn-merge-pending`` and return
-      ``conflict-deferred`` (Antigravity P1).
+    * Slot body differs: write the conflict to a per-slot side-file
+      ``<target>.<slot-name>.cairn-merge-pending`` (Antigravity B-P1:
+      per-slot path so two slots on the same target don't clobber
+      each other) and return ``conflict-deferred``.
 
-    The interactive prompt path (a/b/c) is reserved for a later
-    chunk; non-interactive defer is the default safe behavior.
+    The ``non_interactive`` parameter is reserved for the future
+    interactive prompt branch (per the original Proposal B's
+    a/b/c three-option prompt).  The current implementation always
+    defers to a side-file (the safer default per the original
+    Antigravity P1 disposition); the parameter is plumbed through
+    so the interactive branch can be added without an API change
+    (Antigravity B-P3 documentation note).
     """
+    del non_interactive  # reserved for future interactive prompt branch
     dst = target_root / target_rel
     if not dst.is_file():
         return ModuleMergeResult(target_rel, slot_name, "missing-target")
@@ -339,7 +352,12 @@ def merge_module_into_slot(
     # (non-interactive is the safe default per Antigravity P1's
     # author-modification: never silently keep, since that loses
     # the module's contributed prose without recording it).
-    side_path = dst.with_name(dst.name + ".cairn-merge-pending")
+    # Side-file path includes the slot name per Antigravity B-P1:
+    # two conflicting slots on the same target file would otherwise
+    # clobber the side-file when written sequentially.
+    side_path = dst.with_name(
+        f"{dst.name}.{slot_name}.cairn-merge-pending",
+    )
     if not dry_run:
         side_path.write_text(
             "<<<<<<< Cairn (module contribution)\n"
@@ -606,6 +624,12 @@ _DEV_DIRS: tuple[str, ...] = (
     "dev/proposals/archive",
     "dev/plans",
     "dev/plans/archive",
+    # The strategy-doc lifecycle directory (Antigravity External
+    # code review A-P3 on commit 96b7fba): scaffolded by default so
+    # adopters who use the commit-permission exception extension's
+    # `dev/strategy/` coverage don't have to `mkdir` manually.
+    "dev/strategy",
+    "dev/strategy/archive",
     "dev/modules",
     # Progressive-onboarding module's installed-source-file home.
     # Per plan 2026-05-28-claude-cairn-progressive-onboarding (Chunk
