@@ -18,109 +18,102 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
-- **`bootstrap/profiles/` -- three copyable governance-preset profile
-  YAMLs (`solo-greenfield`, `collaborative-team`, `high-rigor-legacy`)
-  with `test_profiles_smoke.py`.** Adopter-friction package item 2
-  (modflow_tools plan stem: `2026-05-28-claude-cairn-adopter-friction-package`,
-  Chunk 1). Each YAML carries an in-file comment header naming the
-  six-axis profile it expresses and references the matching named
-  preset via `preset:` — so the YAML is a thin, copyable, documented
-  surface that delegates module-roster selection to `_PRESETS` in
-  `scaffold.py`. The smoke test (15 cases) verifies each YAML parses
-  under Cairn's own minimal parser, the named preset resolves, the
-  expansion contains the default-on set plus the preset's baseline
-  plus any team-staffing-gate additions, and the literal
-  `scaffold.py --summary --config <yaml>` invocation prints the
-  preset's axes and the expected roster without writing files.
+- **Adopter-friction package: seven entry-surface artifacts + a
+  Cairn-side regression suite.** Source proposal:
+  `2026-05-27-claude-cairn-adopter-friction-package` (deliberated
+  modflow_tools-side because Cairn does not yet self-host
+  `dev/proposals/`; accepted by Anthony 2026-05-28). Implementing
+  plan: `2026-05-28-claude-cairn-adopter-friction-package`. Cairn
+  commits: `867c321..<tip>` (Chunks 1, 2, 3, 5, 7, 8 + gate /
+  pilot sharpenings). The seven items, by Cairn surface:
 
-- **`bootstrap/prompts/bootstrap-lite.md` -- the short first-contact
-  agent prompt for one-human + one-agent adopters.** Adopter-friction
-  package item 3 (Chunk 2). Sits between the throwaway-repo quickstart
-  (`docs/quickstart.md`) and the full Level 2 procedure
-  (`bootstrap/BOOTSTRAP.md`): the agent reads `AGENTS.md` + the six
-  dimension docs, surveys the target repo, scores the axes,
-  recommends one of the three named presets, and proposes a
-  profile.yml -- then **stops** for the Maintainer's acceptance
-  before the scaffold runs. Preserves the load-bearing
-  profile-acceptance gate; collapses only the manual axis-scoring
-  step. `bootstrap/BOOTSTRAP.md` carries a pointer paragraph near
-  the top for readers who arrive there first.
+  * **`docs/quickstart.md`** -- copy-paste recipe for one human +
+    one AI agent on a disposable repo, 15--25 minutes (pilot
+    measured 12 minutes active / 40 minutes wall-clock).  Seven
+    steps from `git init` through teardown; copies
+    `bootstrap/profiles/solo-greenfield.yml` literally; Step 3
+    splits preview-then-install; Step 6 documents five
+    lifecycle-boundary commits.  Carries a six-axes glossary, an
+    editor-orientation tip before Step 4, and a "where the agent
+    will write" overview of `dev/proposals/` shape -- all surfaced
+    by the literal pilot.  README pointer added at the top of
+    "How to adopt".
 
-### Changed
+  * **`bootstrap/profiles/`** -- three copyable governance-preset
+    YAMLs (`solo-greenfield`, `collaborative-team`,
+    `high-rigor-legacy`); each carries an in-file comment header
+    naming the six-axis dimensional profile it expresses and
+    references the matching named preset via `preset:`, so module-
+    roster selection stays in `_PRESETS` (`bootstrap/scaffold.py`)
+    rather than being duplicated in the YAML.
 
-- **`README.md` -- added trust box ("What the agent sees, and what
-  it must not exfiltrate") + honest-framing callout; speed-language
-  across `README.md` / `on-ramp/README.md` / `docs/getting-started.md`
-  reframed from a missing-faster-claim implication to an explicit
-  "Cairn is slower for the first few changes; it pays back later"
-  curve.** Adopter-friction package items 6 + 7 (Chunk 7).  The
-  trust box names what an AI agent reads (the repo + the profile
-  YAML), what must NOT enter Cairn-shipped artifacts (secrets,
-  credentials, private paths, embargoed datasets), what scanners
-  run on Cairn-shipped files (vendor-neutrality,
-  `content_scan.py`, `link_check.py`, `claim_check.py`), and what
-  the agent does *not* do (no exfiltration, no rewrites of
-  unconsented files), with a cross-ref to `SECURITY.md`.  Speed-
-  language audit found no bare "faster" marketing claims to
-  rewrite -- the docs were already careful -- so the honest-framing
-  edits are ADDITIVE callouts in each file's voice, not
-  in-place rewrites.  Three short paragraphs total.
+  * **`bootstrap/prompts/bootstrap-lite.md`** -- the short first-
+    contact agent prompt for one-human + one-agent adopters who
+    have a real repo.  Sits between the throwaway-repo quickstart
+    and the full Level 2 procedure: the agent surveys the target
+    repo, scores the six axes with reproducible reasons,
+    recommends one of the three named presets, proposes a
+    profile.yml, then **stops** for the Maintainer's acceptance.
+    Preserves the load-bearing profile-acceptance gate; collapses
+    only the manual axis-scoring step.  `bootstrap/BOOTSTRAP.md`
+    carries a pointer paragraph near the top for readers who
+    arrive there first.
 
-### Added
+  * **`templates/codebase-readiness-report.md`** -- eleven-section
+    readiness template for legacy scientific codebases (Tests,
+    Hidden state, Scripts, Notebooks, Data I/O, Generated outputs,
+    Public APIs, Build/run commands, Reproducibility, Security
+    boundaries, Scientific assumptions).  G/M/P self-score table;
+    profile-mapping appendix with scaffold-block-recommendations
+    for sections 10 (security) and 11 (scientific assumptions).
+    **Default check-in posture is safer**: fill locally, then
+    commit only a redacted summary or a scores-and-follow-ups
+    decision to `dev/`; full report check-in is an explicit
+    opt-in gated on a Maintainer affirmation in the commit body
+    that the artifact contains no secrets, private paths, or
+    proprietary detail.  Sections 5 and 11 sharpened by the pilot
+    (external dataset provenance / calibration-parameter prompts).
+    README + on-ramp pointers added.
 
-- **`examples/scientific-minimal/` -- parallel to
-  `examples/minimal/` with a CSV-in / mass-balance-invariant-tested
-  / residual-table-out scientific workflow; lifecycle traced
-  through one trivial-accept proposal.** Adopter-friction package
-  item 5 (Chunk 8).  The toy science is a monthly water-budget
-  reconciler -- `precip - et - runoff - recharge = dS_storage` with
-  the residual tested as a mass-balance invariant
-  (`max(|residual|) < RESIDUAL_TOL_MM`).  No third-party
-  dependencies (just `csv` + `pathlib`); runs anywhere Python 3.10+
-  runs.  The example's `dev/proposals/archive/0001-add-mass-balance-invariant-test.md`
-  is the trivial-accept proposal that introduced the invariant
-  test; it makes the scientific assumption (sign convention, units,
-  tolerance) explicit and testable -- the discipline the
-  codebase-readiness-report template's section 11 asks for in
-  legacy scientific code.  Test module (6 cases, including two
-  parametrized falsification sentinels) is collected by Cairn's
-  default pytest discovery alongside `examples/minimal/test_greet.py`.
+  * **`examples/scientific-minimal/`** -- parallel to
+    `examples/minimal/` with a CSV-in / mass-balance-invariant-
+    tested / residual-table-out scientific workflow.  The toy
+    science is a monthly water-budget reconciler
+    (`precip - et - runoff - recharge = dS_storage`); the residual
+    is tested as a mass-balance invariant
+    (`max(|residual|) < RESIDUAL_TOL_MM`) with two parametrized
+    falsification sentinels.  No third-party dependencies (`csv`
+    + `pathlib`); runs anywhere Python 3.10+ runs; both
+    repo-root-relative and example-dir-relative invocations
+    documented and tested.  The example's
+    `dev/proposals/archive/0001-add-mass-balance-invariant-test.md`
+    traces the trivial-accept lifecycle on a scientific workflow.
 
-- **`templates/codebase-readiness-report.md` -- eleven-section
-  readiness template for legacy scientific codebases.** Adopter-friction
-  package item 4 (Chunk 5). Covers tests, hidden state, scripts,
-  notebooks, data I/O, generated outputs, public APIs, build/run,
-  reproducibility, security boundaries, and scientific assumptions;
-  G/M/P self-score table; profile-mapping appendix with
-  scaffold-block recommendations for section 10 (security) and
-  section 11 (scientific assumptions). **Default check-in posture is
-  safer** (per Codex P2-B): fill locally, then commit only a
-  **redacted summary** or a **scores-and-follow-ups decision** to
-  `dev/`; full report check-in is an explicit opt-in gated on a
-  Maintainer affirmation in the commit body that the artifact
-  contains no secrets, private paths, or proprietary detail. README
-  and on-ramp pointers added.
+  * **`README.md` trust box** (above "Who Cairn is for") -- ~200
+    words: what the AI agent reads (the repo + the profile YAML),
+    what must NOT enter Cairn-shipped artifacts (secrets,
+    credentials, private paths, embargoed datasets), what
+    scanners run on Cairn-shipped files (vendor-neutrality,
+    `content_scan.py`, `link_check.py`, `claim_check.py`), and
+    what the agent does *not* do (no exfiltration, no rewrites of
+    unconsented files), with a cross-ref to `SECURITY.md`.
 
-- **`docs/quickstart.md` -- copy-paste recipe for one human + one AI
-  agent on a disposable repo; 2-layer regression test in
-  `bootstrap/tests/test_quickstart_sequence.py` (Layer A shell +
-  Layer B lifecycle-shape); README pointer added.** Adopter-friction
-  package item 1 (Chunk 3). Seven steps from `git init` through
-  teardown; copies `bootstrap/profiles/solo-greenfield.yml`
-  literally; Step 3 splits into preview-then-install (no more
-  `--summary`-only confusion); Step 6 documents five
-  lifecycle-boundary commits.  The 2-layer regression test
-  protects against drift: **Layer A** drives the literal shell
-  commands in Steps 1-3 and asserts the post-step file tree (the
-  shell + scaffold portion adopter behaviour faithfully mirrors);
-  **Layer B** uses a scripted surrogate for Steps 4-6 file
-  operations (programmatic proposal-open, Decision append,
-  `git mv` to archive, CHANGELOG line), explicitly **not** a
-  literal AI-agent execution (sentinel constant
-  `LAYER_B_IS_LIFECYCLE_SHAPE_ONLY = True` documents the boundary).
-  The human self-pilot (modflow_tools plan Chunk 4) is the only
-  evidence the prompt-mediated path works for an adopter; the test
-  is the regression gate against drift between releases.
+  * **Honest-framing callouts in `README.md`, `on-ramp/README.md`,
+    and `docs/getting-started.md`** -- "Cairn is slower for the
+    first few changes; it pays back later" stated explicitly in
+    each file's voice, with a pointer to the on-ramp ladder as
+    the self-locate aid.  Audit found no bare "faster" marketing
+    claims to *rewrite* (the docs were already careful); the
+    edits are ADDITIVE callouts, not in-place rewrites.
+
+- **`bootstrap/tests/test_profiles_smoke.py`** (15 cases) +
+  **`bootstrap/tests/test_quickstart_sequence.py`** (8 cases,
+  Layer A shell + Layer B scripted-surrogate lifecycle-shape with
+  sentinel `LAYER_B_IS_LIFECYCLE_SHAPE_ONLY = True`) +
+  **scientific-minimal-example invariant test** (6 cases) -- the
+  Cairn-side smoke suite the adopter-friction package committed
+  to (per the proposal's Codex P2-A finding). 29 new test cases
+  total; pytest count 285 → 314.
 
 ## 0.2.0 — 2026-05-27
 

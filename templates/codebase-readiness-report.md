@@ -158,10 +158,11 @@ USGS databases, GIS layers) cited with download URLs or provenance?
 Are output file formats stable enough that downstream consumers can
 rely on them?
 
+External-repo paths: `docs/io.md`
 * **Good**: I/O is concentrated in named modules; input / output
-  formats are documented (a schema doc, a `docs/io.md`, or
-  docstrings on the loaders); downstream consumers know what to
-  expect.
+  formats are documented (a schema doc, a docs/io.md file or
+  equivalent, or docstrings on the loaders); downstream consumers
+  know what to expect.
 * **Poor**: I/O is scattered through analysis code; formats are
   inferred by reading the loader; changing a column name silently
   breaks downstream code.
@@ -286,6 +287,7 @@ would the science silently degrade?
 This is the question Cairn is most differentiated on.  Most
 software-engineering frameworks do not ask it.
 
+External-repo paths: `docs/assumptions.md`
 * **Good**: A `docs/assumptions.md` (or equivalent) names the
   load-bearing scientific choices; defaults are commented in code
   with rationale; the maintainer can list the assumptions that
@@ -349,10 +351,11 @@ judgment overrides it; the dimensional matrix in
   [`bootstrap/SAFETY.md`](../bootstrap/SAFETY.md)).  An AI
   agent reading a tree where the maintainer cannot say what
   is sensitive is a risk multiplier.
+External-repo paths: `docs/assumptions.md`
 * **Section 11 (Scientific assumptions) is Poor regardless
   of others**: still scaffold-able, but **the first proposal
   the new Cairn instance should accept is a
-  `docs/assumptions.md` -- write down the load-bearing
+  docs/assumptions.md file -- write down the load-bearing
   scientific choices before any AI agent edits them.**
 
 ---

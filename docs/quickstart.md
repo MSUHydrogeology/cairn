@@ -119,6 +119,18 @@ For the `solo-greenfield` profile you should see four modules
 listed (the default-on floor): `lifecycle-metrics`, `reflections`,
 `claim-check`, `fold-back-ledger`.
 
+> **What the six axes mean.** Cairn adapts the apparatus along
+> six dimensions: **age** (greenfield / legacy), **size** (small /
+> medium / large), **complexity** (simple / moderate / complex),
+> **language** (single / multi), **human_team** (solo /
+> small-multi / large-multi), and **agent_team** (single /
+> concurrent-single-type / concurrent-multi-type). The
+> `solo-greenfield` profile picks the smallest value on each
+> axis -- minimum apparatus. Larger projects pick larger values
+> and get more modules; see
+> [`dimensions/README.md`](../dimensions/README.md) for the full
+> rubric.
+
 **Then install** (drop `--summary`):
 
 ```bash
@@ -148,8 +160,9 @@ files you should recognise:
   -- the default-on module docs.
 * `dev/upstream/fold-back-ledger.md` -- the upstream fold-back
   ledger (you can ignore this for the quickstart).
-* `tools/lifecycle_metrics.py`, `scripts/claim_check.py` -- the
-  default-on tool scripts.
+* External-repo paths: `tools/lifecycle_metrics.py`, `scripts/claim_check.py` -- the
+  default-on tool scripts (installed *into the target repo*; they
+  do not exist as Cairn-tree paths).
 * `dev/cairn-lock.yml` plus the `dev/.cairn/base/` snapshot -- the
   upgrade-safety anchor; you do not need to read these.
 
@@ -169,7 +182,26 @@ git add AGENTS.md VENDOR.md dev/ tools/ scripts/ && \
 
 Time: ~2 minutes.
 
+> **Tip -- open the disposable repo in your editor now.** The
+> next two steps ask your agent to read `AGENTS.md` and write a
+> proposal under `dev/proposals/`; you will be following along
+> by reading those files as they land. A side-by-side editor
+> view (VS Code, Cursor, or your editor of choice) makes the
+> lifecycle visible as it happens, instead of relying on
+> `cat` + `git log` between steps.
+
 ## Step 4 -- the first prompt to your AI agent
+
+> **Where the agent will write.** Cairn's lifecycle artifacts
+> live under `dev/`. A proposal is a Markdown file like
+> `dev/proposals/2026-XX-XX-<slug>.md` with a header
+> (`Status: proposed`, `Author:`, `Touches:`), a `## Context`
+> section, a `## Proposal` section, and -- after review and
+> decision -- a `## Review` and `## Decision` section appended
+> in order. The whole file is the audit trail.
+> See [`dev/proposals/_template.md`](../templates/core/dev/proposals/_template.md)
+> for the full shape; the trivial proposal below uses a small
+> subset.
 
 Paste this into your agent (verbatim is fine -- the prompt is
 intentionally short; Cairn's `AGENTS.md` carries the doctrine):
@@ -280,20 +312,38 @@ Time: ~30 seconds.
 
 ## What to do next
 
+The quickstart deliberately uses a trivial tagline change so the
+*shape* of the lifecycle is visible without the lifecycle's
+overhead getting in the way.  The next step is to run the same
+shape on a **real, non-trivial** change -- one that has multiple
+files, a review worth writing down, and a plan worth sequencing --
+because that is where the apparatus actually pays back.
+
+In order:
+
 * **Pick a real project to assess** -- use the
   [Codebase Readiness Report template](../templates/codebase-readiness-report.md)
-  to surface the questions before you pick a level.
+  to surface the questions before you pick a level.  Fill it
+  locally first; the template's "What to check in" section names
+  the safer default check-in posture.
 * **Hand the assessment to your agent (one-shot)** -- use the
   [bootstrap-lite prompt](../bootstrap/prompts/bootstrap-lite.md) if
   you would rather have the agent score the six axes and recommend
-  a profile than fill the Act I templates yourself by hand.
+  a profile than fill the Act I templates yourself by hand.  The
+  bootstrap-lite prompt is also the natural follow-on when you
+  want to drive a *real* (non-trivial) proposal next: it preserves
+  the Maintainer-acceptance gate the quickstart preserved, just
+  scaled up to the work your repo actually does.
 * **Pick an adoption level** -- the [on-ramp](../on-ramp/README.md)
   describes Level 0 (read the doctrine), Level 1 (hand-copy the
   kernel), and Level 2 (full bootstrap).  Most teams start at
   Level 1.
 * **Read the doctrine** -- [`doctrine/`](../doctrine/) is the
   invariant core; it explains *why* the lifecycle works the way it
-  does.
+  does.  The
+  [`dual-review`](../doctrine/dual-review.md) and
+  [`lifecycle`](../doctrine/lifecycle.md) docs are the first two to
+  read once you have a non-trivial change in flight.
 
 ## Honest framing
 

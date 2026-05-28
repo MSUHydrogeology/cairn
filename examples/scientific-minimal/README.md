@@ -73,14 +73,31 @@ but the shape is identical.
 
 The workflow has **no third-party dependencies** (only `csv`,
 `pathlib`, and `sys` from the standard library), so it runs anywhere
-Python 3.10+ runs. From the project root:
+Python 3.10+ runs. Either form works -- pick whichever is more
+convenient.
+
+**From this example's directory** (`cairn/examples/scientific-minimal/`):
 
 ```bash
+cd /path/to/cairn/examples/scientific-minimal
+
 # Run the workflow (writes outputs/residuals.csv):
 python water_budget.py
 
 # Run the invariant test:
 python -m pytest test_water_budget.py
+```
+
+**From the Cairn repo root** (the form Cairn's own pytest uses):
+
+```bash
+cd /path/to/cairn
+
+# Run the workflow (writes outputs/residuals.csv beside the input):
+python examples/scientific-minimal/water_budget.py
+
+# Run the invariant test:
+python -m pytest examples/scientific-minimal/test_water_budget.py
 ```
 
 The CLI exits 0 when the mass-balance invariant holds; it exits 2
@@ -103,9 +120,11 @@ The lifecycle record (already in this tree):
 
 ## Scientific assumptions made explicit
 
-The example's `docs/assumptions.md` analogue lives in the proposal's
-**Context** section and the docstring of `compute_residual`. The
-load-bearing ones:
+External-repo paths: `docs/assumptions.md`
+The example's docs/assumptions.md analogue (the adopter's repo's
+equivalent of that file) lives in the proposal's **Context**
+section and the docstring of `compute_residual`. The load-bearing
+ones:
 
 * **Sign convention**: precipitation is a positive inflow;
   evapotranspiration, runoff, and recharge are positive outflows;
