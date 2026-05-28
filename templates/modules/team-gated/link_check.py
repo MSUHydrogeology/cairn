@@ -155,8 +155,8 @@ def _addr_blocked(addr: ipaddress._BaseAddress) -> bool:
     (loopback / private / link-local / reserved / multicast) is *not*
     equivalent: it misses ranges that are non-global yet carry none of
     those flags, e.g. CGNAT shared space ``100.64.0.0/10`` -- a real SSRF
-    target an allow-listed denylist would wave through (Codex plan-review
-    finding 1). ``is_global`` covers IPv4 and IPv6 uniformly."""
+    target an allow-listed denylist would wave through (caught in
+    review, finding 1). ``is_global`` covers IPv4 and IPv6 uniformly."""
     return not addr.is_global
 
 

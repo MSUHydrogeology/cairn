@@ -160,7 +160,18 @@ _TOKEN_RE = re.compile(r"[^\W_]+", re.UNICODE)  # contiguous alphanumeric run
 
 # HTML comment + the recognized Cairn marker grammar (exempt).
 _HTML_COMMENT_RE = re.compile(r"<!--(.*?)-->", re.S)
-_CAIRN_MARKER_RE = re.compile(r"^\s*cairn(:slot|:end|-accept)\b", re.I)
+_CAIRN_MARKER_RE = re.compile(
+    r"^\s*(?:"
+    r"cairn(?::slot|:end|-accept)"
+    # The quality_gate.py neutrality-lint exemption family.  All are
+    # Cairn-owned directive syntax intended to live in prose; they are
+    # parsed by scripts/quality_gate.py and must not trip the
+    # instruction-bearing-HTML-comment heuristic.
+    r"|vendor-ok(?:-begin|-end)?"
+    r"|case-study"
+    r")\b",
+    re.I,
+)
 _IMPERATIVE_IN_COMMENT_RE = re.compile(
     r"\b(ignore|disregard|send|email|upload|post|exfiltrate|execute|run|"
     r"delete|overwrite|reveal|leak|do\s+not\s+tell)\b",

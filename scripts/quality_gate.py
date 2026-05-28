@@ -247,14 +247,32 @@ def _scan_neutrality_file(
 
     # Rule: ANY exemption directive inside cairn/templates/ fails the
     # gate (those files ship to adopters and would propagate leaks).
+    # AFTER the directive check, continue scanning for vendor / project
+    # tokens -- since exemption directives are forbidden in templates,
+    # any vendor token there is itself a fail (there's no honest way to
+    # exempt it).  Returning early after the directive check would
+    # silently let a token leak through unexamined (P1 code-review
+    # finding, 2026-05-28).
     if rel.startswith("templates/"):
         for lineno, line in enumerate(lines, start=1):
-            if _ANY_DIRECTIVE_RE.search(line):
+            if _ANY_DIRECTIVE_RE.search(line) and _is_directive_only_line(line):
                 findings.append(Finding(
                     "neutrality", "fail", rel, lineno,
                     "exemption directive forbidden inside cairn/templates/ "
                     "(templates ship to adopters; a leak would propagate)",
                 ))
+            # Scan the line for vendor / project tokens -- no exemption
+            # path applies in templates, so any token is a fail.
+            if _is_directive_only_line(line):
+                continue  # directive lines carry no prose tokens
+            for token in sorted(_ALL_NEUTRALITY_TOKENS):
+                if re.search(rf"\b{re.escape(token)}\b", line):
+                    findings.append(Finding(
+                        "neutrality", "fail", rel, lineno,
+                        f"unsanctioned vendor/project token `{token}` in "
+                        f"cairn/templates/ (no exemption path; templates "
+                        f"must stay clean by construction)",
+                    ))
         return findings
 
     # Rule: <!-- case-study --> outside cairn/case-studies/ fails
@@ -719,9 +737,17 @@ def _print_report(
     tooling.
     """
     if machine:
+        # Machine-mode contract: one finding per line, TAB-separated
+        # (sub_gate, severity, file, line, message).  Multi-line
+        # messages (e.g. order-independence failure echoes the first
+        # 40 lines of pytest stderr) are flattened with `\\n` escapes
+        # so downstream line-oriented tooling can parse cleanly.  A
+        # consumer that wants the original line shape can replace
+        # `\\n` -> newline.  P2 code-review finding 2026-05-28.
         for f in report.findings:
+            flat = f.message.replace("\\", "\\\\").replace("\n", "\\n")
             print(
-                f"{f.sub_gate}\t{f.severity}\t{f.file}\t{f.line}\t{f.message}"
+                f"{f.sub_gate}\t{f.severity}\t{f.file}\t{f.line}\t{flat}"
             )
         return
     by = report.by_sub()

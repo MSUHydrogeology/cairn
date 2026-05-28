@@ -82,9 +82,9 @@ and a new empty `Unreleased` is started above.
   `substitute_tokens(base_raw, tokens)` so a normally-installed
   file (where ours has `Demo` for `{{project_name}}`) is not
   flagged as locally-modified by virtue of the token substitution
-  alone.  Tests: `bootstrap/tests/test_upgrade.py::TestUpgradeModes`
-  gains 3 tests covering the locally-modified, untouched, and
-  display-label paths.
+  alone.  Tests: the `TestUpgradeModes` class in
+  `bootstrap/tests/test_upgrade.py` gains 3 tests covering the
+  locally-modified, untouched, and display-label paths.
 
 ### Added
 
@@ -128,7 +128,18 @@ and a new empty `Unreleased` is started above.
   dispositioned in `doctrine/consolidation-review.md` > Dogfood
   disposition log) + ~60 R6 pytest-discovery false positives (fixed
   in-Chunk by scoping R6 out of `bootstrap/tests/` and skipping
-  `Test*` / `test_*` names defensively).
+  `Test*` / `test_*` names defensively).  Code-review sharpening
+  (2026-05-28): the gate previously short-circuited template-file
+  scans after the directive-forbidden check, silently letting
+  vendor-token leaks through; the sharpening continues the token scan
+  in templates (no exemption path applies), surfacing 4 pre-existing
+  template-leak findings in `lifecycle_metrics.py` + `link_check.py`
+  rephrased in this same arc.  `content_scan.py`'s
+  instruction-bearing-HTML-comment heuristic now recognizes the
+  `vendor-ok` / `vendor-ok-begin` / `vendor-ok-end` / `case-study`
+  family as legitimate Cairn-owned directive syntax.  `--report`
+  machine mode now escapes embedded newlines so multi-line failure
+  messages stay one-finding-per-line.
 
 - **`claim_check.py` document-scoped exemption directives -- the
   full allow-directive family.** Two new HTML-comment directives
@@ -156,10 +167,10 @@ and a new empty `Unreleased` is started above.
     is no wildcard form.  Each suppressed token is reported.
 
   Diff-driven port from modflow_tools' adopter-customized
-  `scripts/claim_check.py` (`10751d6`); the structural unit is the
-  allow-directive family because modflow_tools had built both
-  directives as siblings sharing the `_scan` exemption surface and
-  the CLI report block.  Source proposal:
+  reference-deployment `claim_check.py` (commit `10751d6`); the
+  structural unit is the allow-directive family because modflow_tools
+  had built both directives as siblings sharing the `_scan` exemption
+  surface and the CLI report block.  Source proposal:
   `2026-05-28-claude-cairn-0.2.x-sweep-and-ledger-followups`
   (deliberated modflow_tools-side; accepted 2026-05-28).
   Implementing plan: `2026-05-28-claude-cairn-0.2.x-sweep-and-ledger-followups`

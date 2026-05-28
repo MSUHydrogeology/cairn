@@ -126,6 +126,53 @@ class TestReport:
         assert "(no findings)" in out
 
 
+class TestReportFlattenNewlines:
+    """P2 code-review regression: machine-mode `--report` promises
+    one-finding-per-line TAB-separated output, but a multi-line finding
+    message (e.g. order-independence echoes pytest stderr) used to
+    break that contract by emitting raw newlines.  Now newlines are
+    `\\n`-escaped in machine mode; the regression test drives a
+    failing order-independence fixture through `main(... --report)`
+    and asserts every output line begins with a sub-gate token.
+    """
+
+    def _write_failing_fixture_suite(self, target: Path) -> None:
+        (target / "_fixture_tests").mkdir()
+        (target / "_fixture_tests" / "conftest.py").write_text(
+            "def pytest_addoption(parser):\n"
+            "    parser.addoption('--quality-gate-shuffle-seed',\n"
+            "                     action='store', default=None, type=int)\n"
+            "\n"
+            "def pytest_collection_modifyitems(config, items):\n"
+            "    import random\n"
+            "    seed = config.getoption('--quality-gate-shuffle-seed')\n"
+            "    if seed is None: return\n"
+            "    random.Random(seed).shuffle(items)\n"
+        )
+        (target / "_fixture_tests" / "test_fail.py").write_text(
+            "def test_a(): assert False, 'multi\\nline\\nfailure'\n"
+        )
+
+    def test_report_flattens_multiline_failure_message(
+        self, qg, tmp_path, capsys,
+    ):
+        self._write_failing_fixture_suite(tmp_path)
+        rc = qg.main([
+            "--root", str(tmp_path), "--sub", "order-independence",
+            "--seed", "0", "--test-dir", "_fixture_tests", "--report",
+        ])
+        assert rc == 1  # failure propagates
+        out = capsys.readouterr().out
+        sub_gate_tokens = {"order-independence", "neutrality", "redundancy"}
+        # Every emitted line must begin with a sub-gate token; no
+        # mid-message newlines may leak through to break parsing.
+        for line in out.strip().split("\n"):
+            assert line == "" or line.split("\t", 1)[0] in sub_gate_tokens, (
+                f"machine-mode --report emitted a non-finding line "
+                f"(likely a leaked newline in a message): {line!r}"
+            )
+
+
 class TestSubSelection:
     def test_sub_neutrality_only_runs_neutrality(self, qg, tmp_path, capsys):
         (tmp_path / "doctrine").mkdir()

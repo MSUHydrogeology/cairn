@@ -241,6 +241,40 @@ class TestTemplatesDirectiveForbidden:
         fs = _failures(_run(qg, tmp_path))
         assert fs == [], [f.message for f in fs]
 
+    def test_vendor_token_in_template_without_directive_fails(self, qg, tmp_path):
+        """P1 code-review regression (2026-05-28): a vendor / project
+        token inside `templates/` must fail even when no exemption
+        directive is present.  Previously, the early-return after the
+        directive-forbidden check silently let template token leaks
+        through unscanned.
+
+        Templates ship to adopter repos; a leaked vendor / project
+        token in a template propagates downstream to every adopter,
+        which is the worst-case impact for the neutrality lint.
+        """
+        (tmp_path / "templates" / "core").mkdir(parents=True)
+        (tmp_path / "templates" / "core" / "AGENTS.md").write_text(
+            "Claude should not ship in adopter template prose.\n"
+        )
+        fs = _failures(_run(qg, tmp_path))
+        assert any(
+            "Claude" in f.message and "templates/" in f.message for f in fs
+        ), [f.message for f in fs]
+
+    def test_project_token_in_template_without_directive_fails(self, qg, tmp_path):
+        """Companion to the vendor-token regression: project tokens
+        (`modflow_tools`, `LHM`) also propagate to adopters if leaked
+        in a template, so they must fail there too.
+        """
+        (tmp_path / "templates" / "modules").mkdir(parents=True)
+        (tmp_path / "templates" / "modules" / "leak.md").write_text(
+            "Borrowed from modflow_tools' equivalent module.\n"
+        )
+        fs = _failures(_run(qg, tmp_path))
+        assert any(
+            "modflow_tools" in f.message for f in fs
+        ), [f.message for f in fs]
+
 
 class TestDirectiveShownInProseNotParsed:
     """Documentation that *shows* an exemption directive (inside

@@ -136,9 +136,9 @@ _FINDING_BULLET_RE = re.compile(r'^\s*\*\s+\*\*\[')
 _BRACKET_INTERIOR_RE = re.compile(r'\*\*\[([^\]]*)\]')
 # A ``### ... code review`` / ``### ... plan review`` review-round
 # subsection heading.  An optional single reviewer-name token before
-# the phrase covers older headings (``### Codex code review -- DATE``);
-# two tokens before the phrase (``### Response to code review``) is a
-# response, not a round, and is correctly excluded.  A trailing ISO
+# the phrase covers older headings (``### <reviewer> code review --
+# DATE``); two tokens before the phrase (``### Response to code
+# review``) is a response, not a round, and is correctly excluded.  A trailing ISO
 # date is still required at the call site, so chunk labels and the
 # literal ``YYYY-MM-DD`` placeholder do not count.
 _CODE_REVIEW_HEADING_RE = re.compile(r'### (?:[a-z]+ )?code review\b', re.I)
@@ -184,7 +184,7 @@ def _header_field(text: str, name: str) -> str:
 
 
 def _strip_role(author: str) -> str:
-    """``Claude (Strategy)`` -> ``Claude``; strip the role parenthetical
+    """``Alice (Strategy)`` -> ``Alice``; strip the role parenthetical
     so the author column carries the agent identity only."""
     return re.split(r'\s*\(', author, maxsplit=1)[0].strip()
 
@@ -570,9 +570,9 @@ def _proposal_slug(stem: str) -> str:
     leaving the slug body for best-effort plan pairing.
 
     The author segment is a single dash-delimited token; it allows
-    mixed case, digits, and underscores (``Codex``, ``Alice``,
-    ``claude2``) -- not lowercase-only -- so an upper/mixed-case author
-    name does not silently defeat plan<->proposal pairing.  It stays
+    mixed case, digits, and underscores (``Alice``, ``Bob42``,
+    ``mixedCase_2``) -- not lowercase-only -- so an upper/mixed-case
+    author name does not silently defeat plan<->proposal pairing.  It stays
     dash-free so the match stops at the first dash and the slug body is
     captured intact."""
     m = re.match(r'\d{4}-\d{2}-\d{2}-[A-Za-z0-9_]+-(.+)', stem)
