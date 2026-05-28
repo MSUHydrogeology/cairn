@@ -497,3 +497,166 @@ class TestScaffoldSeedsAlways_seeded_log:
             assert line == "" or line.startswith("#"), (
                 f"non-comment line in freshly-seeded log: {line!r}"
             )
+
+
+# ---------------------------------------------------------------------------
+# Containment guards (Chunk P1.3)
+# ---------------------------------------------------------------------------
+#
+# The Cairn proposal ``2026-05-28-claude-cairn-security-hardening-
+# post-v0.2-followup`` (Antigravity proposal-review I-3 + P1) calls
+# for symlink-traversal + path-escape refusals in the activation
+# helper, ported from ``bootstrap/scaffold.py`` 's
+# ``_assert_safe_write`` pattern.
+#
+# Each test exercises one fail-closed branch:
+#
+#  1. write through symlinked destination -> refused
+#  2. write through symlinked parent ancestor -> refused
+#  3. write outside target (via absolute path) -> refused
+#  4. read through symlinked source -> refused
+#  5. read outside target -> refused
+#  6. glob through symlinked parent -> refused
+#
+# All raise ``OnboardingSecurityError`` (subclass of
+# ``OnboardingError``); CLI ``main()`` returns exit code 2 for the
+# security class vs 1 for the generic class.
+
+
+@pytest.fixture
+def target(tmp_path: Path) -> Path:
+    """A minimal adopter target tree.  Containment guards resolve
+    relative to this directory; tests construct deliberately
+    escaping paths against it."""
+    (tmp_path / "dev").mkdir()
+    return tmp_path
+
+
+class TestContainmentGuards:
+    """Six-case fail-closed sweep of the three guard primitives."""
+
+    def test_write_through_symlinked_dst_refused(
+        self, helper: ModuleType, target: Path, tmp_path: Path,
+    ) -> None:
+        """A symlinked write destination must be refused (no
+        write-through-symlink, even when the symlink lands inside
+        target)."""
+        outside = tmp_path.parent / "outside-target"
+        outside.mkdir(exist_ok=True)
+        outside_file = outside / "spoof.md"
+        outside_file.write_text("victim\n", encoding="utf-8")
+        dst = target / "dev" / "PLANNING.md"
+        dst.symlink_to(outside_file)
+        with pytest.raises(helper.OnboardingSecurityError):
+            helper._assert_safe_write(dst, target)
+
+    def test_write_through_symlinked_parent_refused(
+        self, helper: ModuleType, target: Path, tmp_path: Path,
+    ) -> None:
+        """A symlinked ancestor directory must be refused even when
+        the leaf name itself is not a symlink (the symlink redirects
+        the write)."""
+        outside = tmp_path.parent / "outside-parent"
+        outside.mkdir(exist_ok=True)
+        symlinked_parent = target / "dev" / "shadow"
+        symlinked_parent.symlink_to(outside, target_is_directory=True)
+        dst = symlinked_parent / "loot.md"
+        with pytest.raises(helper.OnboardingSecurityError):
+            helper._assert_safe_write(dst, target)
+
+    def test_write_outside_target_refused(
+        self, helper: ModuleType, target: Path, tmp_path: Path,
+    ) -> None:
+        """An absolute write path outside target must be refused
+        even when no symlinks are involved."""
+        elsewhere = tmp_path.parent / "elsewhere"
+        elsewhere.mkdir(exist_ok=True)
+        dst = elsewhere / "escapes.md"
+        with pytest.raises(helper.OnboardingSecurityError):
+            helper._assert_safe_write(dst, target)
+
+    def test_read_through_symlinked_src_refused(
+        self, helper: ModuleType, target: Path, tmp_path: Path,
+    ) -> None:
+        """A symlinked source path must be refused for reads."""
+        outside = tmp_path.parent / "outside-read"
+        outside.mkdir(exist_ok=True)
+        secret = outside / "secret.md"
+        secret.write_text("private\n", encoding="utf-8")
+        src = target / "dev" / "PLANNING.md"
+        src.symlink_to(secret)
+        with pytest.raises(helper.OnboardingSecurityError):
+            helper._assert_safe_read(src, target)
+
+    def test_read_outside_target_refused(
+        self, helper: ModuleType, target: Path, tmp_path: Path,
+    ) -> None:
+        """An absolute read path outside target must be refused."""
+        elsewhere = tmp_path.parent / "elsewhere-read"
+        elsewhere.mkdir(exist_ok=True)
+        external = elsewhere / "external.md"
+        external.write_text("nope\n", encoding="utf-8")
+        with pytest.raises(helper.OnboardingSecurityError):
+            helper._assert_safe_read(external, target)
+
+    def test_glob_through_symlinked_parent_refused(
+        self, helper: ModuleType, target: Path, tmp_path: Path,
+    ) -> None:
+        """A symlinked glob parent must be refused -- the parent-once
+        guard catches it before any leaf is iterated, so the loop
+        body's cheap ``is_symlink()`` check is reached only on
+        validated parents (Antigravity plan-review P2-2)."""
+        outside = tmp_path.parent / "outside-glob"
+        outside.mkdir(exist_ok=True)
+        glob_root = target / "dev" / "proposals" / "archive"
+        glob_root.parent.mkdir(parents=True, exist_ok=True)
+        glob_root.symlink_to(outside, target_is_directory=True)
+        with pytest.raises(helper.OnboardingSecurityError):
+            helper._assert_safe_dir_for_glob(glob_root, target)
+
+
+# ---------------------------------------------------------------------------
+# Preset-name validation (Chunk P1.3 -- complements the six guard cases)
+# ---------------------------------------------------------------------------
+
+
+class TestPresetNameValidation:
+    """``extract_preset_from_slot`` + ``seed_existing_adopter`` both
+    enforce ``_PRESET_NAME_RE`` defense-in-depth."""
+
+    def test_extract_preset_normal_name_passes(
+        self, helper: ModuleType,
+    ) -> None:
+        slot = (
+            "<!-- cairn:slot onboarding-tasks -->\n"
+            "<!-- preset: solo-greenfield -->\n"
+            "<!-- cairn:end onboarding-tasks -->\n"
+        )
+        assert helper.extract_preset_from_slot(slot) == "solo-greenfield"
+
+    def test_extract_preset_missing_returns_none(
+        self, helper: ModuleType,
+    ) -> None:
+        slot = (
+            "<!-- cairn:slot onboarding-tasks -->\n"
+            "* [seed; id: foo] hello\n"
+            "<!-- cairn:end onboarding-tasks -->\n"
+        )
+        assert helper.extract_preset_from_slot(slot) is None
+
+    def test_seed_cli_refuses_traversal_preset(
+        self, helper: ModuleType, target: Path,
+    ) -> None:
+        """``--preset ../etc/passwd`` -> OnboardingSecurityError,
+        BEFORE any path concatenation."""
+        # Provide a minimal PLANNING.md so we get past the early
+        # file-existence check; the validation should fire first.
+        (target / "dev" / "PLANNING.md").write_text(
+            "<!-- cairn:slot onboarding-tasks -->\n"
+            "<!-- cairn:end onboarding-tasks -->\n",
+            encoding="utf-8",
+        )
+        with pytest.raises(helper.OnboardingSecurityError):
+            helper.seed_existing_adopter(
+                target, preset_name="../etc/passwd", interactive=False,
+            )

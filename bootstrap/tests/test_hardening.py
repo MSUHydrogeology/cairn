@@ -99,3 +99,70 @@ class TestGuardWiredIntoInstall:
             install_core(TEMPLATES_ROOT, target, tokens, force=force)
         # The write was refused -- nothing landed through the symlink.
         assert not evil.exists(), "install wrote through the planted symlink"
+
+
+# ---------------------------------------------------------------------------
+# Cross-helper integration: scaffold + onboarding-activate helper share the
+# same fail-closed posture (proposal
+# 2026-05-28-claude-cairn-security-hardening-post-v0.2-followup,
+# Chunk P1.3).  Both define their own containment exception classes
+# (``ScaffoldSecurityError`` + ``OnboardingSecurityError``); a single
+# adopter tree containing a planted symlink must be rejected at BOTH
+# layers, not just one.
+# ---------------------------------------------------------------------------
+
+
+class TestCrossHelperContainment:
+    """One symlinked target tree, two helpers, two refusals."""
+
+    @pytest.mark.skipif(
+        not TEMPLATES_ROOT.exists(), reason="Cairn templates not available"
+    )
+    def test_planted_symlink_refused_by_both_helpers(
+        self, tmp_path: Path,
+    ) -> None:
+        import importlib.util
+
+        # Adopter tree with a planted symlinked dev/ directory pointing
+        # outside the target.
+        target = tmp_path / "tgt"
+        target.mkdir()
+        outside_dev = tmp_path / "evil_dev"
+        outside_dev.mkdir()
+        (target / "dev").symlink_to(outside_dev, target_is_directory=True)
+
+        # Layer 1: scaffold's _assert_safe_write refuses a write that
+        # would traverse the symlinked dev/.
+        with pytest.raises(ScaffoldSecurityError):
+            _assert_safe_write(target / "dev" / "PLANNING.md", target)
+
+        # Layer 2: onboarding-activate helper's _assert_safe_write +
+        # _assert_safe_read refuse the same path through their own
+        # exception class.  Both share the three-check pattern, so a
+        # tree that fools one would fool the other -- this test
+        # documents that they share posture, not just shape.
+        helper_src = (
+            CAIRN_ROOT
+            / "templates"
+            / "modules"
+            / "default-on"
+            / "onboarding_activate.py"
+        )
+        mod_name = "_onboarding_activate_cross_check"
+        spec = importlib.util.spec_from_file_location(mod_name, helper_src)
+        assert spec is not None and spec.loader is not None
+        helper = importlib.util.module_from_spec(spec)
+        # Register in sys.modules BEFORE exec_module so the helper's
+        # @dataclass decorators can resolve their owning module
+        # (Python 3.12 strict-name lookup).
+        sys.modules[mod_name] = helper
+        spec.loader.exec_module(helper)
+
+        with pytest.raises(helper.OnboardingSecurityError):
+            helper._assert_safe_write(
+                target / "dev" / "PLANNING.md", target,
+            )
+        with pytest.raises(helper.OnboardingSecurityError):
+            helper._assert_safe_read(
+                target / "dev" / "PLANNING.md", target,
+            )
