@@ -1,0 +1,7 @@
+# Output directory for the water_budget workflow.
+#
+# A clean run of `python water_budget.py` writes `residuals.csv`
+# here.  The directory itself is tracked (this .gitkeep is the
+# anchor) so the example tree mirrors what an adopter would see;
+# `residuals.csv` itself is regenerated on demand and would be
+# .gitignore'd in a real project.

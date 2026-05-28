@@ -68,6 +68,24 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **`examples/scientific-minimal/` -- parallel to
+  `examples/minimal/` with a CSV-in / mass-balance-invariant-tested
+  / residual-table-out scientific workflow; lifecycle traced
+  through one trivial-accept proposal.** Adopter-friction package
+  item 5 (Chunk 8).  The toy science is a monthly water-budget
+  reconciler -- `precip - et - runoff - recharge = dS_storage` with
+  the residual tested as a mass-balance invariant
+  (`max(|residual|) < RESIDUAL_TOL_MM`).  No third-party
+  dependencies (just `csv` + `pathlib`); runs anywhere Python 3.10+
+  runs.  The example's `dev/proposals/archive/0001-add-mass-balance-invariant-test.md`
+  is the trivial-accept proposal that introduced the invariant
+  test; it makes the scientific assumption (sign convention, units,
+  tolerance) explicit and testable -- the discipline the
+  codebase-readiness-report template's section 11 asks for in
+  legacy scientific code.  Test module (6 cases, including two
+  parametrized falsification sentinels) is collected by Cairn's
+  default pytest discovery alongside `examples/minimal/test_greet.py`.
+
 - **`templates/codebase-readiness-report.md` -- eleven-section
   readiness template for legacy scientific codebases.** Adopter-friction
   package item 4 (Chunk 5). Covers tests, hidden state, scripts,
