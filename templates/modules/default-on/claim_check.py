@@ -93,6 +93,41 @@ class of files (``case-studies/*.md``) that are external by nature.
 Link-checking and count soft-flags are unaffected -- only the
 hard repo-path / line-bounds resolution is skipped for matched files.
 
+**Document-scoped exemption directives.**  Two HTML-comment directives
+let a single file's author suppress specific would-be-flags without
+disabling the heuristic across the rest of the document:
+
+* ``<!-- claim-check-allow: <glob>[, <glob>...] -->`` -- a
+  standalone HTML-comment line declares one or more **path-globs** as
+  consciously accepted, suppressing the hard path / line-bounds flag
+  on any backticked token whose path part matches one of the globs.
+  The directive applies to the whole document.  Globs must be
+  *specific* (R1): fully literal, or have at least two literal path
+  segments before any wildcard, AND the final segment must carry a
+  literal filename stem (no ``dir/sub/*`` or ``dir/sub/*.md`` -- those
+  would silently exempt an entire subtree).  A too-broad glob is
+  itself a hard flag and exempts nothing.  The directive exempts only
+  **unresolved-path** flags (R2): a glob match on a path that
+  *does* exist in the tree is ignored, so an out-of-range
+  line-bounds citation into a real file still hard-flags.  Each
+  suppressed token is reported in the run output for audit.
+* ``<!-- claim-check-allow-count: <count>[, <count>...] -->`` -- the
+  count sibling: comma-separated count tokens (e.g.
+  ``728 tests, 30 lines``) are declared consciously accepted,
+  suppressing their soft flag document-wide.  Each accepted token
+  must be named *exactly* (number + tree-noun) so the acceptance
+  stays specific and auditable; there is no wildcard form.  Each
+  suppressed token is reported in the run output.
+
+Both directives are line-scoped: an HTML-comment line that *shows*
+the directive (e.g. inside a paragraph quoting an example) but does
+not stand alone is not parsed as live.  Use the directives for the
+two legitimate false-positive classes the heuristic cannot tell from
+genuine drift: an authored forward-reference the marker-line
+mechanism does not cover (e.g., a single cross-document path
+citation), and a prescriptive guidance number or deliberately-quoted
+historical mistake.
+
 Usage::
 
     python scripts/claim_check.py <file>                  # check one file
@@ -164,13 +199,41 @@ _MARKER_LINE_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Document-scoped path-exemption directive.  A standalone HTML-comment
+# line `<!-- claim-check-allow: <glob>[, <glob>...] -->` declares one
+# or more globs as consciously accepted; any backticked token whose
+# path part matches one is exempt from the hard path / line-bounds
+# checks.  The directive must stand alone on its line -- comment lines
+# that merely *show* the syntax are not parsed as live directives.
+_ALLOW_DIRECTIVE_RE = re.compile(
+    r'^<!--\s*claim-check-allow:\s*(?P<globs>.*?)\s*-->$'
+)
+_GLOB_WILDCARD_CHARS = ('*', '?', '[')
+
+# Document-scoped count-exemption directive.  A standalone HTML-comment
+# line `<!-- claim-check-allow-count: <count>[, <count>...] -->` declares
+# specific count tokens (e.g. `728 tests`, `30 lines`) as consciously
+# accepted, suppressing their soft flag document-wide.  The sibling of
+# `claim-check-allow` for the count (category-D) heuristic, for the two
+# legitimate false-positive classes the heuristic cannot tell from a
+# memory-quoted fact: prescriptive guidance numbers (`15-30 lines`) and
+# deliberately-quoted historical mistakes (an instance-log row citing
+# the wrong count it is teaching against).  Each accepted token must
+# be named *exactly* (number + tree-noun), so the acceptance stays
+# specific and auditable -- there is no wildcard form.  Like the path
+# directive it is a standalone comment line and every suppressed token
+# is reported.
+_ALLOW_COUNT_DIRECTIVE_RE = re.compile(
+    r'^<!--\s*claim-check-allow-count:\s*(?P<counts>.*?)\s*-->$'
+)
+
 
 @dataclass
 class Flag:
     """One claim-check finding."""
 
     line: int
-    kind: str        # 'path' | 'line-bounds' | 'count'
+    kind: str        # 'path' | 'line-bounds' | 'count' | 'directive'
     severity: str    # 'hard' | 'soft'
     token: str
     message: str
@@ -183,6 +246,13 @@ class CheckResult:
     path: Path
     hard_flags: list[Flag] = field(default_factory=list)
     soft_flags: list[Flag] = field(default_factory=list)
+    #: ``(token, glob)`` for each would-be-hard path / line-bounds flag
+    #: suppressed by a valid ``claim-check-allow`` directive glob.
+    exempted: list[tuple[str, str]] = field(default_factory=list)
+    #: ``(token, accepted)`` for each count soft flag suppressed by a
+    #: ``claim-check-allow-count`` directive (the normalized accepted
+    #: token it matched).
+    exempted_counts: list[tuple[str, str]] = field(default_factory=list)
 
 
 def _strip_html_comments(line: str, in_comment: bool) -> tuple[str, bool]:
@@ -416,31 +486,136 @@ def find_count_flags(lineno: int, text: str) -> list[Flag]:
     return flags
 
 
-def check_text(
+def parse_allow_directives(text: str) -> list[tuple[int, str]]:
+    """Return ``(lineno, glob)`` for every glob declared in a
+    document-scoped ``<!-- claim-check-allow: <glob>[, ...] -->``
+    directive.  Globs are comma-separated; empty entries are skipped.
+    """
+    out: list[tuple[int, str]] = []
+    for lineno, line in enumerate(text.split('\n'), start=1):
+        m = _ALLOW_DIRECTIVE_RE.match(line.strip())
+        if m is None:
+            continue
+        for raw in m.group('globs').split(','):
+            glob = raw.strip().strip('`').strip()
+            if glob:
+                out.append((lineno, glob))
+    return out
+
+
+def _normalize_count(token: str) -> str:
+    """Normalize a count token for matching: lowercase, single-spaced,
+    backticks/whitespace stripped (`` `728  tests` `` -> ``728 tests``)."""
+    return ' '.join(token.strip().strip('`').split()).lower()
+
+
+def parse_allow_count_directives(text: str) -> list[tuple[int, str]]:
+    """Return ``(lineno, normalized-count)`` for every count declared in a
+    document-scoped ``<!-- claim-check-allow-count: <count>[, ...] -->``
+    directive.  Counts are comma-separated and normalized via
+    :func:`_normalize_count`; empty entries are skipped.
+    """
+    out: list[tuple[int, str]] = []
+    for lineno, line in enumerate(text.split('\n'), start=1):
+        m = _ALLOW_COUNT_DIRECTIVE_RE.match(line.strip())
+        if m is None:
+            continue
+        for raw in m.group('counts').split(','):
+            tok = _normalize_count(raw)
+            if tok:
+                out.append((lineno, tok))
+    return out
+
+
+def allow_glob_error(glob: str) -> str | None:
+    """Reject a too-broad ``claim-check-allow`` glob (R1).
+
+    Acceptable when the glob is **fully literal** (no wildcard) or has
+    **>= 2 literal path segments before its first wildcard** -- so it
+    cannot exempt a whole top-level directory (``dev/*``, ``scripts/*``)
+    or everything (``*``).  Returns an error message, or ``None`` when
+    the glob is acceptable.  (Note: a "N literal chars before a
+    wildcard" rule would NOT reject ``dev/*``; the segment rule does.)
+
+    Additional rule: the **final path segment must carry a literal
+    filename stem** -- a wildcard-leading final segment (``.../*``,
+    ``.../**``, ``.../*.md``) would exempt every broken path in that
+    subtree even though it clears the >= 2-segment rule.
+    """
+    first_wild = next(
+        (i for i, ch in enumerate(glob) if ch in _GLOB_WILDCARD_CHARS),
+        None,
+    )
+    if first_wild is None:
+        return None  # fully literal -- specific by construction
+    literal_prefix = glob[:first_wild]
+    segments = [s for s in literal_prefix.split('/') if s]
+    if len(segments) < 2:
+        return (
+            f'claim-check-allow glob `{glob}` is too broad: a wildcard '
+            f'must be preceded by at least two literal path segments '
+            f'(or the glob must be a fully-literal path), so it cannot '
+            f'exempt a whole top-level directory'
+        )
+    final_segment = glob.split('/')[-1]
+    if not final_segment or final_segment[:1] in _GLOB_WILDCARD_CHARS:
+        return (
+            f'claim-check-allow glob `{glob}` is too broad: its final path '
+            f'segment is a bare wildcard, so it would exempt a whole '
+            f'directory; give a literal filename stem '
+            f'(e.g. `dir/sub/name*.ext`) or a fully-literal path'
+        )
+    return None
+
+
+def _token_path_part(token: str) -> str:
+    """The path portion of a token, dropping a ``:N`` / ``:N-M``
+    line-bounds suffix, for glob matching."""
+    m = _LINE_CITATION_RE.match(token)
+    return m.group('path') if m else token
+
+
+def _scan(
     text: str, repo_root: Path, *, external_allowed: bool = False,
-) -> tuple[list[Flag], list[Flag]]:
-    """Scan *text* and return ``(hard_flags, soft_flags)``.
+) -> tuple[list[Flag], list[Flag], list[tuple[str, str]],
+           list[tuple[str, str]]]:
+    """Core scan -- returns ``(hard, soft, exempted, exempted_counts)``.
 
-    Raises ``NotADirectoryError`` when *repo_root* is not a
-    directory.  An unresolvable root yields an empty top-level set,
-    which makes every backticked repo path read as "not a claim" --
-    the scan would silently no-op and report a false clean result.
-    The checker fails closed instead.
+    A would-be-hard path / line-bounds flag whose token matches a valid
+    ``claim-check-allow`` glob (and whose path does NOT resolve locally)
+    is suppressed and recorded in ``exempted`` as ``(token, glob)``.  A
+    *too-broad* glob is itself a hard flag and exempts nothing.
 
-    ``external_allowed`` (the file-scoped external-path allowance, set
-    by the caller from ``--external-allow`` globs): when True, the hard
-    repo-path / line-bounds resolution is skipped for this file -- it
-    describes an external repo whose relative paths must not be resolved
-    against the local tree.  Count soft-flags still run (they are
-    advisory).
+    A count soft flag whose normalized token is named exactly by a
+    ``claim-check-allow-count`` directive is suppressed and recorded in
+    ``exempted_counts`` as ``(token, accepted)``.
+
+    Raises ``NotADirectoryError`` when *repo_root* is not a directory --
+    fail-closed, since an unresolvable root would read every repo path
+    as "not a claim" and silently report a false clean result.
     """
     if not repo_root.is_dir():
         raise NotADirectoryError(
             f'claim_check: repo root is not a directory: {repo_root}'
         )
     top_level = repo_top_level(repo_root)
+
+    # Document-scoped exemption globs (validated; bad ones hard-flag).
+    allow_globs: list[str] = []
     hard: list[Flag] = []
+    for lineno, glob in parse_allow_directives(text):
+        err = allow_glob_error(glob)
+        if err is not None:
+            hard.append(Flag(lineno, 'directive', 'hard', glob, err))
+        else:
+            allow_globs.append(glob)
+
+    # Document-scoped count acceptances (exact normalized tokens).
+    allow_counts = {tok for _ln, tok in parse_allow_count_directives(text)}
+
     soft: list[Flag] = []
+    exempted: list[tuple[str, str]] = []
+    exempted_counts: list[tuple[str, str]] = []
     in_marker_block = False
     prev_lineno: int | None = None
     for lineno, line in scannable_lines(text):
@@ -463,10 +638,61 @@ def check_text(
                     flag = check_path_token(
                         token, lineno, repo_root, top_level)
                 if flag is not None:
-                    hard.append(flag)
-        soft.extend(find_count_flags(lineno, line))
+                    path_part = _token_path_part(token)
+                    matched = next(
+                        (g for g in allow_globs
+                         if fnmatch.fnmatchcase(path_part, g)),
+                        None,
+                    )
+                    # The document-scoped directive exempts only
+                    # *unresolved-path* flags (the external / proposed
+                    # case it exists for).  It must NOT silence a failure
+                    # on a path that exists locally -- e.g. an out-of-range
+                    # line-bounds citation into a real file, which is
+                    # exactly the stale-anchor class claim_check is meant
+                    # to catch.
+                    resolves = (repo_root / path_part).exists()
+                    if matched is not None and not resolves:
+                        exempted.append((token, matched))
+                    else:
+                        hard.append(flag)
+        for cflag in find_count_flags(lineno, line):
+            norm = _normalize_count(cflag.token)
+            if norm in allow_counts:
+                exempted_counts.append((cflag.token, norm))
+            else:
+                soft.append(cflag)
         in_marker_block = marker_line or marker_continuation
         prev_lineno = lineno
+    return hard, soft, exempted, exempted_counts
+
+
+def check_text(
+    text: str, repo_root: Path, *, external_allowed: bool = False,
+) -> tuple[list[Flag], list[Flag]]:
+    """Scan *text* and return ``(hard_flags, soft_flags)``.
+
+    A thin wrapper over :func:`_scan` preserving the historical
+    two-tuple contract.  The document-scoped ``claim-check-allow``
+    exemptions (and the report of which tokens they cleared) are
+    surfaced through :class:`CheckResult` via :func:`check_file`.
+
+    Raises ``NotADirectoryError`` when *repo_root* is not a
+    directory.  An unresolvable root yields an empty top-level set,
+    which makes every backticked repo path read as "not a claim" --
+    the scan would silently no-op and report a false clean result.
+    The checker fails closed instead.
+
+    ``external_allowed`` (the file-scoped external-path allowance, set
+    by the caller from ``--external-allow`` globs): when True, the hard
+    repo-path / line-bounds resolution is skipped for this file -- it
+    describes an external repo whose relative paths must not be resolved
+    against the local tree.  Count soft-flags still run (they are
+    advisory).
+    """
+    hard, soft, _exempted, _exempted_counts = _scan(
+        text, repo_root, external_allowed=external_allowed,
+    )
     return hard, soft
 
 
@@ -501,11 +727,21 @@ def check_file(
     ``external_allow`` is the list of file globs whose path-claims
     describe external repos (see ``check_text``); when *path* matches
     one, the hard repo-path / line-bounds resolution is skipped.
+
+    The result also carries any path or count tokens suppressed by the
+    document-scoped ``claim-check-allow`` / ``claim-check-allow-count``
+    directives (``exempted`` / ``exempted_counts``), so the run can
+    report exactly which would-be-flags were waived for audit.
     """
     external = file_is_external(path, repo_root, external_allow or [])
     text = path.read_text(encoding='utf-8', errors='replace')
-    hard, soft = check_text(text, repo_root, external_allowed=external)
-    return CheckResult(path=path, hard_flags=hard, soft_flags=soft)
+    hard, soft, exempted, exempted_counts = _scan(
+        text, repo_root, external_allowed=external,
+    )
+    return CheckResult(
+        path=path, hard_flags=hard, soft_flags=soft, exempted=exempted,
+        exempted_counts=exempted_counts,
+    )
 
 
 def _format_flag(rel: Path, flag: Flag) -> str:
@@ -575,6 +811,30 @@ def main(argv: list[str] | None = None) -> int:
         )
         for flag in result.soft_flags:
             print(_format_flag(rel, flag))
+    if result.exempted:
+        # Name the exact exempted tokens (not just a count) on STDOUT --
+        # the primary success artifact -- so an exemption stays auditable
+        # even in tooling that captures only stdout on an otherwise-clean
+        # (exit 0) run.
+        print(
+            f'claim_check: {rel} -- {len(result.exempted)} path(s) '
+            f'exempted by claim-check-allow:'
+        )
+        for token, glob in result.exempted:
+            print(
+                f'  {rel}: exempted `{token}` via claim-check-allow '
+                f'glob `{glob}`'
+            )
+    if result.exempted_counts:
+        print(
+            f'claim_check: {rel} -- {len(result.exempted_counts)} count(s) '
+            f'exempted by claim-check-allow-count:'
+        )
+        for token, accepted in result.exempted_counts:
+            print(
+                f'  {rel}: exempted count `{token}` via '
+                f'claim-check-allow-count `{accepted}`'
+            )
     if not result.hard_flags and not result.soft_flags:
         print(f'claim_check: {rel} -- OK, no claim-check flags.')
 

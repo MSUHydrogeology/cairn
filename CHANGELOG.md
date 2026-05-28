@@ -18,6 +18,45 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **`claim_check.py` document-scoped exemption directives -- the
+  full allow-directive family.** Two new HTML-comment directives
+  let an author exempt specific would-be-flags without disabling
+  the heuristic across the rest of the document, complementing the
+  existing per-line marker-line mechanism and the file-scoped
+  `--external-allow` CLI flag:
+
+  * **`<!-- claim-check-allow: <glob>[, <glob>...] -->`** -- a
+    standalone HTML-comment declares one or more path-globs as
+    consciously accepted; backticked tokens whose path part matches
+    one are exempt from the hard path / line-bounds checks.  Globs
+    must be specific (>= 2 literal path segments before any wildcard
+    AND a literal filename stem in the final segment); a too-broad
+    glob is itself a hard flag.  The directive exempts only
+    *unresolved-path* flags: a glob match on a path that exists in
+    the tree is ignored, so an out-of-range line-bounds citation
+    into a real file still hard-flags.  Each suppressed token is
+    reported in the run output for audit.
+  * **`<!-- claim-check-allow-count: <count>[, <count>...] -->`** --
+    the sibling for category-D count claims: comma-separated count
+    tokens (e.g. `728 tests, 30 lines`) are declared consciously
+    accepted, suppressing their soft flag document-wide.  Each
+    accepted token must be named exactly (number + tree-noun); there
+    is no wildcard form.  Each suppressed token is reported.
+
+  Diff-driven port from modflow_tools' adopter-customized
+  `scripts/claim_check.py` (`10751d6`); the structural unit is the
+  allow-directive family because modflow_tools had built both
+  directives as siblings sharing the `_scan` exemption surface and
+  the CLI report block.  Source proposal:
+  `2026-05-28-claude-cairn-0.2.x-sweep-and-ledger-followups`
+  (deliberated modflow_tools-side; accepted 2026-05-28).
+  Implementing plan: `2026-05-28-claude-cairn-0.2.x-sweep-and-ledger-followups`
+  > Chunk 1.  Tests: `bootstrap/tests/test_claim_check_module.py`
+  (25 new tests across glob-validation, path-directive, and
+  count-directive surfaces).  Full Cairn suite stays green (331 passed
+  post-port vs 306 pre-port).  Closes the only Open candidate in
+  `dev/upstream/cairn_ledger.md` going into the 0.2.x sweep window.
+
 - **Adopter-friction package: seven entry-surface artifacts + a
   Cairn-side regression suite.** Source proposal:
   `2026-05-27-claude-cairn-adopter-friction-package` (deliberated
