@@ -210,13 +210,29 @@ def extract_preset_from_slot(planning_text: str) -> str | None:
     """Read the ``<!-- preset: <name> -->`` metadata comment from
     inside the ``onboarding-tasks`` slot body.  Returns the preset
     name, or ``None`` if no metadata is present.
+
+    Defense-in-depth: although ``_PRESET_META_RE`` already restricts
+    the capture group to ``[a-zA-Z0-9_-]+``, the extracted name is
+    re-validated through ``_PRESET_NAME_RE`` before return.  Any
+    mismatch raises ``OnboardingSecurityError`` so a future
+    accidental loosening of the regex cannot silently propagate
+    attacker-controlled path components into ``dev/modules/
+    onboarding/<preset>.md``.
     """
     found = find_slot_body(planning_text)
     if found is None:
         return None
     _, _, body = found
     m = _PRESET_META_RE.search(body)
-    return m.group(1) if m else None
+    if m is None:
+        return None
+    name = m.group(1)
+    if not _PRESET_NAME_RE.match(name):
+        raise OnboardingSecurityError(
+            f"refusing to use preset name with disallowed characters: "
+            f"{name!r} (must match {_PRESET_NAME_RE.pattern})"
+        )
+    return name
 
 
 def parse_deferred_tasks(preset_text: str) -> list[DeferredTask]:
@@ -311,13 +327,24 @@ def parse_seed_task_ids(preset_text: str) -> list[str]:
     return ids
 
 
-def read_activation_log(log_path: Path) -> list[ActivationRecord]:
+def read_activation_log(
+    log_path: Path, target: Path | None = None,
+) -> list[ActivationRecord]:
     """Read all records from the JSONL log.  A missing file is
     treated as an empty log (the scaffold creates an empty file at
     install time, so missing-file means an adopter who never ran the
-    scaffold against this tree)."""
+    scaffold against this tree).
+
+    Optional ``target`` enables the containment guard: when supplied,
+    ``_assert_safe_read(log_path, target)`` runs before the read so a
+    symlinked log path is refused.  Production call sites in
+    ``activate()`` always pass ``target``; test fixtures may omit it
+    when exercising controlled paths.
+    """
     if not log_path.is_file():
         return []
+    if target is not None:
+        _assert_safe_read(log_path, target)
     out: list[ActivationRecord] = []
     for line in log_path.read_text(encoding="utf-8").splitlines():
         rec = ActivationRecord.from_jsonl_line(line)
@@ -365,9 +392,10 @@ def _count_archived_proposals(target: Path) -> int:
     archive = target / "dev" / "proposals" / "archive"
     if not archive.is_dir():
         return 0
+    _assert_safe_dir_for_glob(archive, target)
     return sum(
         1 for p in archive.glob("*.md")
-        if p.is_file() and p.name != "_template.md"
+        if p.is_file() and not p.is_symlink() and p.name != "_template.md"
     )
 
 
@@ -375,9 +403,10 @@ def _count_archived_plans(target: Path) -> int:
     archive = target / "dev" / "plans" / "archive"
     if not archive.is_dir():
         return 0
+    _assert_safe_dir_for_glob(archive, target)
     return sum(
         1 for p in archive.glob("*.md")
-        if p.is_file() and p.name != "_template.md"
+        if p.is_file() and not p.is_symlink() and p.name != "_template.md"
     )
 
 
@@ -469,9 +498,14 @@ def _list_proposal_files(target: Path, *, archived: bool) -> list[Path]:
     root = target / "dev" / "proposals" / sub if sub else target / "dev" / "proposals"
     if not root.is_dir():
         return []
+    # Parent-once containment validation (Antigravity plan-review
+    # P2-2): one full three-check on the glob parent; per-leaf
+    # ``is_symlink()`` filters out symlinked leaves cheaply.  Equivalent
+    # to per-leaf ``_assert_safe_read`` at lower cost.
+    _assert_safe_dir_for_glob(root, target)
     return [
         p for p in root.glob("*.md")
-        if p.is_file() and p.name != "_template.md"
+        if p.is_file() and not p.is_symlink() and p.name != "_template.md"
     ]
 
 
@@ -480,9 +514,10 @@ def _list_plan_files(target: Path, *, archived: bool) -> list[Path]:
     root = target / "dev" / "plans" / sub if sub else target / "dev" / "plans"
     if not root.is_dir():
         return []
+    _assert_safe_dir_for_glob(root, target)
     return [
         p for p in root.glob("*.md")
-        if p.is_file() and p.name != "_template.md"
+        if p.is_file() and not p.is_symlink() and p.name != "_template.md"
     ]
 
 
@@ -493,6 +528,7 @@ def _unreleased_changelog_has_content(target: Path) -> bool:
     changelog = target / "CHANGELOG.md"
     if not changelog.is_file():
         return False
+    _assert_safe_read(changelog, target)
     text = changelog.read_text(encoding="utf-8")
     lines = text.splitlines()
     # Find the Unreleased heading line.
@@ -530,6 +566,7 @@ def _read_team_roster_body(target: Path) -> str | None:
     coll = target / "dev" / "collaboration_agreement.md"
     if not coll.is_file():
         return None
+    _assert_safe_read(coll, target)
     text = coll.read_text(encoding="utf-8")
     open_marker = "<!-- cairn:slot team-roster -->"
     close_marker = "<!-- cairn:end team-roster -->"
@@ -630,6 +667,14 @@ def _has_cross_type_review_in_file(text: str) -> bool:
 def _has_cross_type_review_anywhere(target: Path) -> bool:
     """File-content scan: any proposal or plan with a cross-type
     Review section fires the trigger.
+
+    Per Antigravity plan-review P2-2 disposition: the glob roots are
+    already containment-validated inside ``_list_proposal_files`` +
+    ``_list_plan_files`` (one-shot ``_assert_safe_dir_for_glob`` per
+    root), and the lister filters symlinked leaves with
+    ``not p.is_symlink()``.  The combination is security-equivalent
+    to per-leaf ``_assert_safe_read`` at much lower cost on large
+    archives.
     """
     files = (
         _list_proposal_files(target, archived=False)
@@ -638,6 +683,12 @@ def _has_cross_type_review_anywhere(target: Path) -> bool:
         + _list_plan_files(target, archived=True)
     )
     for f in files:
+        # Defense in depth: even though the lister already filters
+        # symlinked leaves, a TOCTOU race could swap a regular file
+        # for a symlink between glob and read.  Re-check at the
+        # read site for fail-closed semantics.
+        if f.is_symlink():
+            continue
         try:
             text = f.read_text(encoding="utf-8")
         except OSError:
@@ -655,6 +706,7 @@ def _foldback_has_open_candidate(target: Path) -> bool:
     ledger = target / "dev" / "upstream" / "fold-back-ledger.md"
     if not ledger.is_file():
         return False
+    _assert_safe_read(ledger, target)
     text = ledger.read_text(encoding="utf-8")
     # Match a markdown table row whose status column is `candidate`
     # (the ledger doctrine fixes the column names; the canonical
@@ -944,7 +996,9 @@ def update_planning_slot(planning_text: str, new_body: str) -> str | None:
 
 
 def append_activation_log(
-    log_path: Path, records: list[ActivationRecord],
+    log_path: Path,
+    records: list[ActivationRecord],
+    target: Path | None = None,
 ) -> None:
     """Atomic-append each record's JSONL line to the log.
 
@@ -957,10 +1011,23 @@ def append_activation_log(
     Python-level line-buffered ``open(... 'a', buffering=1)`` does
     NOT make this contract.  Partial-write detection raises so a
     silent truncation surfaces loudly.
+
+    Optional ``target`` enables the containment guard.  When supplied
+    the ordering is ``mkdir → assert``: the parent directory is
+    created first, then ``_assert_safe_write(log_path, target)``
+    runs so ``resolve()`` operates on an existing parent (Antigravity
+    plan-review P2-1 disposition).  Production call sites in
+    ``activate()`` always pass ``target``; test fixtures may omit it
+    when exercising controlled paths.
     """
     if not records:
         return
     log_path.parent.mkdir(parents=True, exist_ok=True)
+    if target is not None:
+        # mkdir → assert ordering: parent now exists, so resolve() in
+        # the guard operates on a real directory rather than a
+        # non-existent path (Antigravity plan-review P2-1).
+        _assert_safe_write(log_path, target)
     fd = os.open(
         str(log_path),
         os.O_WRONLY | os.O_APPEND | os.O_CREAT,
@@ -1239,6 +1306,7 @@ def activate(
             f"PLANNING.md not found at {planning_path}; this command "
             f"expects an adopter tree scaffolded by Cairn's bootstrap."
         )
+    _assert_safe_read(planning_path, target)
     planning_text = planning_path.read_text(encoding="utf-8")
 
     found = find_slot_body(planning_text)
@@ -1249,6 +1317,11 @@ def activate(
             f"plan-2026-05-28 progressive-onboarding update?"
         )
 
+    # ``extract_preset_from_slot`` validates the captured name
+    # through ``_PRESET_NAME_RE`` and raises ``OnboardingSecurityError``
+    # if it fails — defense-in-depth against any future regex
+    # loosening that would otherwise pass attacker-controlled
+    # characters into the ``{preset}.md`` path concatenation below.
     preset = extract_preset_from_slot(planning_text)
     if preset is None:
         raise OnboardingError(
@@ -1267,11 +1340,12 @@ def activate(
             f"{source_path}; was the scaffold run with `preset: "
             f"{preset}`?"
         )
+    _assert_safe_read(source_path, target)
     source_text = source_path.read_text(encoding="utf-8")
 
     deferred = parse_deferred_tasks(source_text)
     log_path = target / DEFAULT_LOG_REL
-    existing_records = read_activation_log(log_path)
+    existing_records = read_activation_log(log_path, target=target)
     already = activated_task_ids(existing_records)
 
     if fired_triggers_override is None:
@@ -1353,9 +1427,13 @@ def activate(
                 f"PLANNING.md slot disappeared between read + write -- "
                 f"concurrent edit?  Re-run after coordinating."
             )
+        # planning_path.parent is the adopter's ``dev/`` directory and
+        # is guaranteed to exist (we already read PLANNING.md from it
+        # above), so no mkdir is required here.
+        _assert_safe_write(planning_path, target)
         planning_path.write_text(new_planning, encoding="utf-8")
         planning_updated = True
-    append_activation_log(log_path, new_records)
+    append_activation_log(log_path, new_records, target=target)
 
     return ActivationOutcome(
         preset=preset,
@@ -1452,6 +1530,16 @@ def seed_existing_adopter(
                 + ", ".join(VALID_PRESETS)
             )
         preset_name = _interactive_preset_prompt()
+    # Format validation FIRST (before the allowlist) so an attacker-
+    # supplied ``--preset ../etc/passwd`` raises a clear security
+    # error rather than an "unknown preset" message.  The allowlist
+    # also catches it, but the security error code (exit 2) is more
+    # diagnostic for automation wrappers.
+    if not _PRESET_NAME_RE.match(preset_name):
+        raise OnboardingSecurityError(
+            f"refusing preset name with disallowed characters: "
+            f"{preset_name!r} (must match {_PRESET_NAME_RE.pattern})"
+        )
     if preset_name not in VALID_PRESETS:
         raise OnboardingError(
             f"unknown preset {preset_name!r}; valid: "
@@ -1467,6 +1555,7 @@ def seed_existing_adopter(
             f"PLANNING.md not found at {planning_path}; this command "
             f"expects an adopter tree with a `dev/PLANNING.md`."
         )
+    _assert_safe_read(planning_path, target)
     planning_text = planning_path.read_text(encoding="utf-8")
     found = find_slot_body(planning_text)
     if found is None:
@@ -1496,6 +1585,7 @@ def seed_existing_adopter(
             f"that path first (per doctrine/onboarding.md > "
             f"Existing-adopter manual opt-in path)."
         )
+    _assert_safe_read(source_path, target)
     source_text = source_path.read_text(encoding="utf-8")
 
     # Step 4: render the new slot body.
@@ -1510,6 +1600,10 @@ def seed_existing_adopter(
             f"metadata + {len(seed_blocks)} seed task(s) into "
             f"{planning_path}."
         )
+    # ``planning_path.parent`` is the adopter's ``dev/`` directory and
+    # was confirmed present by the ``is_file()`` check above.  No mkdir
+    # required; guard runs immediately before the write.
+    _assert_safe_write(planning_path, target)
     planning_path.write_text(new_text, encoding="utf-8")
     return (
         f"--seed: wrote preset={preset_name!r} metadata + "
