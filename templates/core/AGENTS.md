@@ -141,10 +141,13 @@ roster is in `dev/agent_collaboration.md`.
     superseded / retired.
   * **the upstream fold-back ledger** in `dev/.cairn/` (e.g.
     `dev/.cairn/cairn_foldback.md`) — adding entries, updating
-    entry status, removing landed entries.  Scoped to the ledger
-    file(s): `dev/.cairn/` also holds auto-managed machinery state
-    (e.g. the onboarding-activation log), which is not a
-    deliberation surface and is not covered here.
+    entry status, removing landed entries.  An **agent-maintained
+    coordination log** — written by agents and the fold-back tooling,
+    *not* a human-deliberation surface; it earns the carve-in because
+    agents maintain it and its integrity is the current-state-index
+    hygiene rule, not review.  Scoped to the ledger file(s): the rest
+    of `dev/.cairn/` is auto-managed machinery state (e.g. the
+    onboarding-activation log), not covered here.
   * **The one-line `dev/PLANNING.md` row movement** that is the
     natural serialization point of a lifecycle-transition commit
     (proposal-open, plan-open, proposal-supersession, plan-archive)
