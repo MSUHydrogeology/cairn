@@ -118,13 +118,14 @@ roster is in `dev/agent_collaboration.md`.
 * **Never commit or push without explicit maintainer approval.**
   Show what changed first.  Pushing always needs approval.
 
-  **Exception: proposal-, plan-, strategy-doc-, and goodnight-
-  handoff commits may proceed without per-commit approval.**
-  Commits that touch ONLY files under `dev/proposals/`,
-  `dev/plans/`, or `dev/strategy/` (and any combination of the
-  three) are deliberation / planning / strategy artifacts.  The
-  goodnight handoff commit is a fourth covered shape, bundling
-  the routine's end-of-session artifacts.  Covered actions:
+  **Exception: proposal-, plan-, strategy-doc-, upstream-ledger-,
+  and goodnight-handoff commits may proceed without per-commit
+  approval.**  Commits that touch ONLY files under `dev/proposals/`,
+  `dev/plans/`, `dev/strategy/`, or `dev/upstream/` (and any
+  combination) are deliberation / planning / strategy /
+  upstream-coordination artifacts.  The goodnight handoff commit is
+  a fifth covered shape, bundling the routine's end-of-session
+  artifacts.  Covered actions:
 
   * **`dev/proposals/`** — opening a proposal, appending a
     Review, appending a Response, flipping status fields
@@ -138,6 +139,16 @@ roster is in `dev/agent_collaboration.md`.
   * **`dev/strategy/`** — opening a strategy doc, iterative
     revisions, archiving a strategy doc when adopted /
     superseded / retired.
+  * **`dev/upstream/`** — upstream coordination ledgers: adding
+    entries, updating entry status, removing landed entries.  The
+    shape generalizes across Markdown-table ledgers and any future
+    YAML or other-format upstream manifests.
+  * **The one-line `dev/PLANNING.md` row movement** that is the
+    natural serialization point of a lifecycle-transition commit
+    (proposal-open, plan-open, proposal-supersession, plan-archive)
+    — a bounded carve-in to the bundling-loses-exception guard-rail
+    below: the single row-move rides with its transition without
+    re-triggering the gate.
   * **The goodnight handoff commit** — the full-handoff owner's
     end-of-session commit, bundling the routine artifacts:
     rewrite of `dev/NEXT_SESSION.md`, end-of-day scrub of
@@ -165,7 +176,10 @@ roster is in `dev/agent_collaboration.md`.
     etc.) falls back to the default "explicit maintainer
     approval" rule.  The goodnight-handoff bullet above lists the
     files that bundle is allowed to touch — anything beyond that
-    set re-triggers the gate.
+    set re-triggers the gate.  The sole standing carve-in is the
+    one-line `dev/PLANNING.md` row movement named above, which
+    rides with its lifecycle transition; `dev/PLANNING.md` edits
+    *beyond* that single row movement re-trigger the gate.
 * **Scribing a Decision — the guard-rail.** The Maintainer's Decision
   (accept / reject / supersede) is theirs to land; an
   explicitly-instructed agent may *scribe and commit* it, bounded by
