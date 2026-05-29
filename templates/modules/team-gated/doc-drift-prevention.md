@@ -21,7 +21,7 @@ latent surprise.
 Cairn **embodies** this discipline -- its own `check_cairn` self-check
 runs over its tree, and Cairn's reference content is kept in lockstep with
 its source -- and **points** at the reproducibility craft
-(Cairn's own `cairn/docs/further-reading.md`, the
+(Cairn's own [cairn/docs/further-reading.md], the
 Turing Way entry); it does **not** teach documentation writing.
 
 ## Template content
@@ -96,6 +96,6 @@ enhancement; it is intentionally **not** in the default install set.
 
 ## Learn it deeply
 
-See Cairn's own `cairn/docs/further-reading.md` >
+See Cairn's own [cairn/docs/further-reading.md] >
 "Reproducible, ethical, collaborative practice" for the reproducibility
 craft Cairn points at rather than re-teaching.
