@@ -59,8 +59,11 @@ sufficiently capable agent can fill:
   use, rather than from a synthetic test. The capture-vs-fix boundary
   holds even mid-diagnosis: a fix past a trivial, in-scope correction
   is *captured* (routed to the owning implementer or an issue), not
-  landed ad-hoc — diagnosing a bug from the user's seat is not
-  authorization to re-decide the owning surface's design. When the
+  landed ad-hoc — **scope, not size, is the bar**: diagnosing a bug
+  from the user's seat is not authorization to re-decide the owning
+  surface's design, so a one-line change that re-decides that design is
+  captured, while a larger fix squarely within the bug's own contract
+  may land. When the
   team uses an issue tracker, the capture surface (issue structures,
   the capture-vs-fix rule, the tracker-unavailable fallback) is the
   `team-gated/issue-capture` module.
