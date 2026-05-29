@@ -56,7 +56,7 @@ trigger for a Security Review pass regardless of cadence.
 offers a static-analysis scanner for these boundary classes, wire a
 **tool-neutral linter command into the surface's `verification
 command`** (the field the readiness schema and restricted-
-verification doctrine already define — `team-gated/legacy-agent`,
+verification doctrine already define — `templates/modules/team-gated/legacy-agent.md`,
 `doctrine/dual-review.md`), so the boundary is checked
 automatically on every change and the focused-mode pass spends its
 attention on what a scanner cannot judge. The module names no
@@ -84,21 +84,21 @@ model — and these are real, landed controls the module's
 "automate what a tool can check" guidance now points at concretely:
 
 * **Layer 1 — release provenance.**
-  [`bootstrap/PROVENANCE.md`](../../../bootstrap/PROVENANCE.md): named
+  `cairn/bootstrap/PROVENANCE.md`: named
   releases, signed tags / maintainer-approved release commits, a
   derived install manifest (`scaffold.py --manifest`), and "scaffold
   from releases, not arbitrary branches" (with a tool-side provenance
   warning).
 * **Layer 4 — executable hardening.**
-  [`bootstrap/scaffold.py`](../../../bootstrap/scaffold.py): a
+  `cairn/bootstrap/scaffold.py`: a
   symlink/containment guard that refuses to write through a symlink or
   outside the target on **every** write, plus a Cairn-dev Bandit gate.
 * **Layers 2/3 — content integrity.** The
   [`content_scan.py`](content_scan.py) scanner,
   run over Cairn's source prose and over scaffolded generated output by
-  [`check_cairn.py`](../../../scripts/check_cairn.py) — a **tripwire
+  `cairn/scripts/check_cairn.py` — a **tripwire
   that forces human review, not a safety proof**.
-* **Doctrine.** [`bootstrap/SAFETY.md`](../../../bootstrap/SAFETY.md)
+* **Doctrine.** `cairn/bootstrap/SAFETY.md`
   Rules 7-8 name the property: templates are agent-executed
   instructions (reviewed by file class), and the bootstrap profile is
   operationally-trusted input.

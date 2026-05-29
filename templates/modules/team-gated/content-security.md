@@ -49,7 +49,7 @@ it forces human review and never certifies a file safe.
 ## Single-sourced with Cairn's own self-check
 
 Cairn runs this **exact** scanner on its own tree:
-[`scripts/check_cairn.py`](../../../scripts/check_cairn.py) composes
+`cairn/scripts/check_cairn.py` composes
 `content_scan.py` from this same module file, so the methodology's own
 content gate and the tool it hands an adopter are one source — no drift
 between what Cairn preaches and what it ships.
@@ -57,6 +57,6 @@ between what Cairn preaches and what it ships.
 ## Learn it deeply
 
 See the four-layer agent-instruction supply-chain model in
-[`bootstrap/SAFETY.md`](../../../bootstrap/SAFETY.md) (Rules 7–8) and the
-public [`SECURITY.md`](../../../SECURITY.md) for the threat model this
+`cairn/bootstrap/SAFETY.md` (Rules 7–8) and the
+public `cairn/SECURITY.md` for the threat model this
 scanner is one layer of.

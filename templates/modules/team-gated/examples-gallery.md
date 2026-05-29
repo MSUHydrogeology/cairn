@@ -15,10 +15,10 @@ the same drift `doc-drift-prevention` guards against: an example that is
 not run rots into a confidently-wrong artifact. This module names the
 discipline that keeps a gallery honest and makes it a learning surface.
 
-Cairn **embodies** this -- its own [`examples/minimal/`](../../../examples/minimal/)
+Cairn **embodies** this -- its own `cairn/examples/minimal/`
 traces one change end-to-end at the smallest scale -- and **points** at
 the software-quality craft
-(Cairn's own [cairn/docs/further-reading.md](../../../docs/further-reading.md)); it does
+(Cairn's own `cairn/docs/further-reading.md`); it does
 **not** teach example *authoring*.
 
 ## Template content
@@ -51,5 +51,5 @@ Merged into the project's examples guide:
 
 The gallery *discipline* is Cairn's; building good examples and teaching
 materials is craft Cairn points at, not re-teaches. See
-Cairn's own [cairn/docs/further-reading.md](../../../docs/further-reading.md) >
+Cairn's own `cairn/docs/further-reading.md` >
 "Software quality for scientists".

@@ -16,7 +16,7 @@ integration run. This module gives the suite a shape.
 
 Cairn **embodies** this discipline (its own `bootstrap/tests/` are
 tiered) and **points** at where to learn testing craft
-(Cairn's own [cairn/docs/further-reading.md](../../../docs/further-reading.md), the
+(Cairn's own `cairn/docs/further-reading.md`, the
 software-quality entry); it does **not** teach how to write a test.
 
 ## Template content
@@ -64,6 +64,6 @@ vs. cross-language seams -- so a multi-language project selects **both**:
 ## Learn it deeply
 
 The tiering *scheme* is Cairn's; the craft of writing good tests is not.
-See Cairn's own [cairn/docs/further-reading.md](../../../docs/further-reading.md) >
+See Cairn's own `cairn/docs/further-reading.md` >
 "Software quality for scientists" for the pointer Cairn relies on rather
 than re-teaching.

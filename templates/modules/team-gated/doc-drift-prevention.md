@@ -21,7 +21,7 @@ latent surprise.
 Cairn **embodies** this discipline -- its own `check_cairn` self-check
 runs over its tree, and Cairn's reference content is kept in lockstep with
 its source -- and **points** at the reproducibility craft
-(Cairn's own [cairn/docs/further-reading.md](../../../docs/further-reading.md), the
+(Cairn's own `cairn/docs/further-reading.md`, the
 Turing Way entry); it does **not** teach documentation writing.
 
 ## Template content
@@ -80,7 +80,7 @@ than bundling a second copy: the full authoring-time check runs
 `claim_check.py` (claims) + `link_check.py` (links) +
 `sync_doc_snippets.py --check` (snippet drift). One source per check, no
 duplication. Cairn itself runs this composition —
-[`scripts/check_cairn.py`](../../../scripts/check_cairn.py) imports the
+`cairn/scripts/check_cairn.py` imports the
 *shipped* `link_check.py` and `claim_check.py`, so the methodology's own
 gate and the tools it hands an adopter are the same code.
 
@@ -96,6 +96,6 @@ enhancement; it is intentionally **not** in the default install set.
 
 ## Learn it deeply
 
-See Cairn's own [cairn/docs/further-reading.md](../../../docs/further-reading.md) >
+See Cairn's own `cairn/docs/further-reading.md` >
 "Reproducible, ethical, collaborative practice" for the reproducibility
 craft Cairn points at rather than re-teaching.

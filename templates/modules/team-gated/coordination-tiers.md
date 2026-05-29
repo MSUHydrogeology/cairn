@@ -125,7 +125,7 @@ adds a `[tool_tag, env_var]` pair under `harness_session_vars` in that
 JSON config — **no edit to the tool**. The per-session derivation (and
 why a global `$CAIRN_AGENT` export is an escape hatch, not a setting) is
 the doctrine in
-[`doctrine/coordination.md`](../../../doctrine/coordination.md) >
+`cairn/doctrine/coordination.md` >
 "Coordination identity — per-session, not per-agent".
 
 **Atomicity is best-effort + filesystem-dependent.** The append uses a
@@ -225,7 +225,7 @@ agent-type: every session resolves to one identity, so one
 session's auto-release closes another's claims, and the
 pre-edit read cannot tell a sibling session's claim from its
 own. The fix — doctrine in
-[`doctrine/coordination.md`](../../../doctrine/coordination.md)
+`cairn/doctrine/coordination.md`
 > "Coordination identity — per-session, not per-agent" — is to
 derive a **per-session** identity from the harness's
 session-scoped identifier.

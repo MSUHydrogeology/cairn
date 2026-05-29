@@ -144,7 +144,7 @@ surfacing protocol if defense-in-depth is wanted, but
 `foldback_export_scan` is the scanner the protocol's bright-line gate
 binds to.
 
-See Cairn's [`doctrine/fold-back.md`](../../../doctrine/fold-back.md) >
+See Cairn's `cairn/doctrine/fold-back.md` >
 "The export boundary -- scrub before anything goes up" for the
 underlying doctrine, and `doctrine/fold-back.md` > "Active surfacing"
 for the protocol that invokes this scanner.

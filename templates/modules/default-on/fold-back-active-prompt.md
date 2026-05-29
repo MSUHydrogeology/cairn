@@ -8,7 +8,7 @@
 > review-and-submit.  The agent does NOT submit autonomously.
 
 This prompt operationalizes the **active-surfacing protocol** from
-Cairn's [`doctrine/fold-back.md`](../../../doctrine/fold-back.md) >
+Cairn's `cairn/doctrine/fold-back.md` >
 "Active surfacing".  Sized to fit a single agent context window; the
 agent reads it once, then walks through the six steps below with
 the maintainer.
@@ -111,14 +111,14 @@ For issue / PR, continue to Step 3.
 ### Step 3 -- Compose
 
 For an **issue**: draft the body using
-[`cairn/.github/ISSUE_TEMPLATE/foldback.md`](../../../.github/ISSUE_TEMPLATE/foldback.md)
+`cairn/.github/ISSUE_TEMPLATE/foldback.md`
 as the structure.  Fill the sections from the ledger entry + the
 candidate's detail.  Leave the **Export-safety affirmation**
 checkboxes UNCHECKED at this step -- the maintainer signs them at
 Step 5.
 
 For a **PR**: draft the body using
-[`cairn/.github/PULL_REQUEST_TEMPLATE/foldback.md`](../../../.github/PULL_REQUEST_TEMPLATE/foldback.md)
+`cairn/.github/PULL_REQUEST_TEMPLATE/foldback.md`
 as the structure.  The PR diff itself is the implementation; this
 body summarizes per-surface inventory + the deployment-side
 cross-link.  Leave the affirmation UNCHECKED.
