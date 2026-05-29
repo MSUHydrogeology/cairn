@@ -22,6 +22,12 @@ Config YAML format
     project_name: "MyProject"
     test_command: "pytest"
 
+    # Issue forge (optional). When set and the issue-capture module is
+    # installed, the scaffold copies that forge's issue-template +
+    # labels.yml starter into the adopter root (non-clobber). Omit, or
+    # use an unknown value, to keep the reference a manual-copy starter.
+    forge: gitlab        # gitlab | github
+
     # Module selection
     modules:
       # Default-on (remove only with a documented reason):
