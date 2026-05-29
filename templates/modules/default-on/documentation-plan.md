@@ -1,3 +1,8 @@
+<!-- claim-check-allow: docs/developer/ -->
+<!-- `docs/developer/` below is an illustrative example doc-tier (where an
+     adopter might fold style guidance), not a claim about this tree —
+     exempted from claim_check path resolution. -->
+
 # Module: documentation-plan
 
 **Selected when:** default-on — kept by every deployment that may want
