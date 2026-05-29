@@ -36,6 +36,31 @@ command validates that the manifest's citation matches the current
 lockfile and warns if it is stale. (A pre-lockfile tree has only this
 manifest until `upgrade --init-lock` synthesizes a lockfile.)
 
+### Scaffolded-script re-sync cadence (fold-back #35)
+
+A shipped **verbatim script** (`claim_check.py`, `intent.py`,
+`lifecycle_metrics.py`, `link_check.py`) drifts silently when upstream
+evolves and the adopter never re-checks — an adopter pulls a scaffolded
+script forward only when it happens to look. (Observed: an adopter's
+`claim_check.py` forked well behind upstream's exemption-directive support
+and was only noticed when a cross-type review referenced the newer API.)
+
+The detection **mechanism already exists** — it does **not** need building:
+the lockfile hash-tracks every verbatim script, and `upgrade` flags a
+drifted/forked one and does **not** clobber it (see
+[`UPGRADE.md`](UPGRADE.md) > "Verbatim scripts use a hash check"). What was
+missing is the **cadence**: run `upgrade` on a recurring schedule —
+paralleling the doctrine-harvest cadence (`doctrine/rationale.md`) — so
+script drift surfaces before it compounds. A natural moment is a periodic
+goodnight or a release-prep pass; a pre-lockfile tree runs
+`upgrade --init-lock` once first.
+
+The benefit is gated on the adopter actually carrying the upgrade
+machinery: a tree bootstrapped before upgrade support (no lockfile) gets
+nothing from the hash-check until it runs `--init-lock` or re-installs from
+an upgrade-capable Cairn. So for such a tree, adopting the upgrade
+apparatus *is* the fix for #35, not a step alongside it.
+
 ---
 
 ## The manifest format
