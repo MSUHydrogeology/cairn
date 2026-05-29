@@ -32,7 +32,12 @@ proposed -> reviewed -> revised -> accepted / rejected / superseded
 * **revised** — the author appends a `## Response` and, where
   needed, a `## Revised proposal`. Review and revision may repeat.
 * **accepted / rejected / superseded** — the Maintainer appends
-  the `## Decision`.
+  the `## Decision`. **The Decision commit does not archive an
+  *accepted* proposal**: it stays in `dev/proposals/` and moves to
+  `archive/` later — at the plan-open commit (non-trivial work) or
+  the trivial-implementing commit. Only a *rejected* or *superseded*
+  proposal archives in the Decision commit itself. See "File moves"
+  below for the full rule.
 
 Two rules are bright-line:
 

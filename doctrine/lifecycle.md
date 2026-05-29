@@ -75,7 +75,12 @@ proposed --> reviewed --> revised --> accepted
 * **accepted / rejected / superseded** — the Human Maintainer
   appends the Decision. Acceptance is a *decision*, not an
   instruction to a particular contributor; implementation follows
-  as separate, tracked work.
+  as separate, tracked work. **The Decision commit does not archive
+  an *accepted* proposal**: it stays in `dev/proposals/` and moves
+  to `archive/` later — at the plan-open commit (non-trivial work;
+  see "The plan lifecycle" below) or the trivial-implementing commit
+  (see "Trivial vs. non-trivial"). Only a *rejected* or *superseded*
+  proposal archives in the Decision commit itself.
 
 A proposal file is **append-only**: never edit a prior section —
 append a revising one. An accepted proposal is changed only by a
