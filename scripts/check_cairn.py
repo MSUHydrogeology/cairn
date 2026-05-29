@@ -378,14 +378,25 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument('--no-content-scan', action='store_true',
                         help='Skip the Layer-2 content-integrity scan '
                              '(link + claim-path checks only).')
+    parser.add_argument('--include-archives', action='store_true',
+                        help='Also scan sources under dev/**/archive/ and '
+                             'dev/reflections/ (skipped by default -- '
+                             'archived links rot by design). Mirrors the '
+                             'shipped link_check default; ignored when '
+                             'explicit files are named.')
     args = parser.parse_args(argv)
 
     root = args.root.resolve() if args.root else repo_root()
     if not root.is_dir():
         print(f'check_cairn: root is not a directory: {root}', file=sys.stderr)
         return 2
-    files = [f.resolve() for f in args.files] if args.files \
-        else tracked_markdown(root)
+    if args.files:
+        files = [f.resolve() for f in args.files]
+    else:
+        files = link_check.filter_sources(
+            tracked_markdown(root), root,
+            include_archives=args.include_archives,
+        )
     if not files:
         print('check_cairn: no Markdown files found.', file=sys.stderr)
         return 2

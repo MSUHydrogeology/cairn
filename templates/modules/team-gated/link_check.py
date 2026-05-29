@@ -353,6 +353,49 @@ def tracked_markdown(root: Path) -> list[Path]:
     return [root / line for line in out.stdout.splitlines() if line.strip()]
 
 
+#: Ephemeral source directories skipped by default (re-included with
+#: ``--include-archives``).  ``dev/**/archive/`` is handled by the
+#: path-segment rule in ``filter_sources`` directly, not this tuple.
+EPHEMERAL_SOURCE_DIRS = (Path('dev') / 'reflections',)
+
+
+def filter_sources(files: list[Path], root: Path, *,
+                   include_archives: bool = False) -> list[Path]:
+    """Drop archive / ephemeral SOURCES from the whole-tree scan set.
+
+    Unless ``include_archives`` is set, skip sources under any
+    ``dev/**/archive/`` directory (historical records -- links rot by
+    design) and under ``dev/reflections/`` (ephemeral, gitignored,
+    pruned).  The exclusion filters *sources* only: a live doc linking
+    *to* an archived file is still validated by ``check_links``.
+
+    Anchored to ``dev/`` as the first path segment so ``docs/`` stays
+    fully link-gated, and matches an ``archive`` segment at any depth so
+    nested archive subdirs (e.g. ``dev/plans/archive/<program>/``) are
+    covered too.  Mirrors modflow_tools' ``verify_doc_links`` (the
+    reference deployment) so a Cairn deployment and its checker behave
+    identically.
+    """
+    if include_archives:
+        return files
+
+    def _excluded(source: Path) -> bool:
+        try:
+            rel = source.relative_to(root)
+        except ValueError:
+            return False
+        parent_parts = rel.parent.parts
+        if parent_parts and parent_parts[0] == 'dev' and 'archive' in parent_parts:
+            return True
+        rel_parent = rel.parent
+        return any(
+            rel_parent == d or d in rel_parent.parents
+            for d in EPHEMERAL_SOURCE_DIRS
+        )
+
+    return [s for s in files if not _excluded(s)]
+
+
 def check_tree(root: Path, files: list[Path],
                *, check_external: bool = False,
                allow_hosts: set[str] | None = None) -> Result:
@@ -391,14 +434,25 @@ def main(argv: list[str] | None = None) -> int:
                              '--check-external (repeatable). Reviewable '
                              'opt-out for a known internal docs host; there '
                              'is no blanket private-space allowance.')
+    parser.add_argument('--include-archives', action='store_true',
+                        help='Also scan sources under dev/**/archive/ '
+                             '(historical records) and dev/reflections/ '
+                             '(ephemeral, gitignored). Off by default: '
+                             'archived links rot by design. Ignored when '
+                             'explicit files are named.')
     args = parser.parse_args(argv)
 
     root = args.root.resolve() if args.root else repo_root()
     if not root.is_dir():
         print(f'link_check: root is not a directory: {root}', file=sys.stderr)
         return 2
-    files = [f.resolve() for f in args.files] if args.files \
-        else tracked_markdown(root)
+    if args.files:
+        files = [f.resolve() for f in args.files]
+    else:
+        files = filter_sources(
+            tracked_markdown(root), root,
+            include_archives=args.include_archives,
+        )
     if not files:
         print('link_check: no Markdown files found.', file=sys.stderr)
         return 2

@@ -100,6 +100,50 @@ class TestInstallPath:
 # link_check behavioral fixtures
 # ---------------------------------------------------------------------------
 
+class TestFilterSources:
+    """Archive / ephemeral SOURCE exclusion -- parity with modflow_tools'
+    verify_doc_links (the reference deployment).  Filters sources only:
+    a live doc linking TO an archived file is still validated."""
+
+    def _paths(self, root: Path) -> list[Path]:
+        return [
+            root / "AGENTS.md",
+            root / "docs" / "guide.md",
+            root / "docs" / "archive" / "old.md",          # docs/ stays gated
+            root / "dev" / "proposals" / "live.md",
+            root / "dev" / "proposals" / "archive" / "old.md",
+            root / "dev" / "plans" / "archive" / "prog" / "deep.md",  # nested
+            root / "dev" / "reflections" / "2026-05-29-x.md",
+        ]
+
+    def test_excludes_dev_archive_and_reflections(self, tmp_path: Path) -> None:
+        kept = link_check.filter_sources(self._paths(tmp_path), tmp_path)
+        rel = sorted(str(p.relative_to(tmp_path)) for p in kept)
+        # docs/archive/ is KEPT: the rule is anchored to dev/ as the first
+        # segment so docs/ stays fully link-gated.
+        assert rel == sorted([
+            "AGENTS.md",
+            "docs/guide.md",
+            "docs/archive/old.md",
+            "dev/proposals/live.md",
+        ]), rel
+
+    def test_include_archives_returns_all(self, tmp_path: Path) -> None:
+        allp = self._paths(tmp_path)
+        assert link_check.filter_sources(
+            allp, tmp_path, include_archives=True) == allp
+
+    def test_link_to_archived_file_still_validated(self, tmp_path: Path) -> None:
+        """Excluding archive sources does not stop a live doc's link to an
+        archived file from being checked (SOURCES-only semantics)."""
+        (tmp_path / "dev" / "archive").mkdir(parents=True)
+        (tmp_path / "live.md").write_text(
+            "# Live\n\n[gone](dev/archive/missing.md)\n")
+        res = link_check.check_tree(tmp_path, [tmp_path / "live.md"])
+        assert any(f.kind == "link" for f in res.flags), (
+            "a broken link into dev/archive/ should still flag")
+
+
 class TestLinkCheck:
     def _tree(self, root: Path) -> None:
         (root / "b.md").write_text("# B\n\n## target\n\nbody\n")

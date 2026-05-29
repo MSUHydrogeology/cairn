@@ -34,6 +34,18 @@ and a new empty `Unreleased` is started above.
 
 ### Changed
 
+- **`link_check` / `check_cairn` skip archive + ephemeral sources by
+  default.**  The shipped `link_check.py` gains `filter_sources()` and a
+  `--include-archives` flag: whole-tree scans now skip sources under any
+  `dev/**/archive/` directory (historical records -- links rot by design)
+  and under `dev/reflections/` (ephemeral, gitignored), unless
+  `--include-archives` is passed.  The rule is anchored to `dev/` as the
+  first path segment so `docs/` stays fully link-gated, and matches an
+  `archive` segment at any depth (nested archive subdirs covered).  Filters
+  *sources* only -- a live doc linking *to* an archived file is still
+  validated.  `check_cairn` reuses the same filter for Cairn's self-check.
+  Folds back modflow_tools' `verify_doc_links` posture (the reference
+  deployment).  Explicit-file invocations are unaffected.
 - **Module install now performs mechanical merge with conflict-
   prompt fallback** (Proposal B / audit gap #3).  Modules ship
   structured `<!-- cairn:merge-target: <dst> > <slot> -->`
