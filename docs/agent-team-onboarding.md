@@ -123,11 +123,11 @@ the first's claim and coordinates rather than colliding.
 
 ## Where to next
 
-* If you haven't yet, walk `docs/dev-tour.md` together so the new
-  agent gets the same dev-tree orientation the rest of the team
-  has.
+* If you haven't yet, walk `dev/modules/onboarding/dev-tour.md`
+  together so the new agent gets the same dev-tree orientation the
+  rest of the team has.
 * When your fold-back ledger acquires its first open candidate,
   the foldback active-surfacing protocol
-  (`doctrine/fold-back.md > Active surfacing`) is the next
+  (*doctrine/fold-back.md > Active surfacing*) is the next
   capability to exercise -- cross-type review is the
   prerequisite for that surface working at its intended rigor.

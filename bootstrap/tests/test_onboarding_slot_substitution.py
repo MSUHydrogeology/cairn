@@ -259,6 +259,62 @@ class TestInstallPath:
         )
 
 
+class TestOnboardingDocDelivery:
+    """Write E (fold-back onboarding-doc-delivery): a preset install
+    ships the two shared reference docs from ``cairn/docs/`` into the
+    adopter's ``dev/modules/onboarding/`` so the presets' "walk this
+    doc" refs resolve on first run instead of pointing at never-shipped
+    ``docs/`` paths."""
+
+    DOC_NAMES = ("agent-team-onboarding.md", "dev-tour.md")
+
+    @pytest.mark.parametrize("preset", PRESETS)
+    def test_preset_install_ships_both_docs(
+        self, tmp_path: Path, preset: str,
+    ) -> None:
+        assert _scaffold(tmp_path, preset) == 0
+        onboarding = tmp_path / "dev" / "modules" / "onboarding"
+        for name in self.DOC_NAMES:
+            installed = onboarding / name
+            source = CAIRN_ROOT / "docs" / name
+            assert installed.is_file(), (
+                f"onboarding doc {name} not shipped for preset={preset}"
+            )
+            assert (
+                installed.read_text(encoding="utf-8")
+                == source.read_text(encoding="utf-8")
+            ), f"shipped {name} differs from cairn/docs source"
+
+    @pytest.mark.parametrize("preset", PRESETS)
+    def test_preset_walk_refs_resolve_post_ship(
+        self, tmp_path: Path, preset: str,
+    ) -> None:
+        """Every ``dev/modules/onboarding/<doc>`` ref the installed
+        preset source names points at a file that now exists -- the
+        delivery's whole point (no dead "walk this doc" links)."""
+        assert _scaffold(tmp_path, preset) == 0
+        preset_src = (
+            tmp_path / "dev" / "modules" / "onboarding" / f"{preset}.md"
+        ).read_text(encoding="utf-8")
+        for name in self.DOC_NAMES:
+            ref = f"dev/modules/onboarding/{name}"
+            if ref in preset_src:
+                assert (tmp_path / ref).is_file(), (
+                    f"preset {preset} references {ref} but it was not "
+                    f"shipped"
+                )
+
+    def test_no_preset_ships_no_docs(self, tmp_path: Path) -> None:
+        """Explicit-modules path (no preset) ships neither doc -- Write E
+        is gated behind a named-preset selection."""
+        assert _scaffold(tmp_path, None) == 0
+        onboarding = tmp_path / "dev" / "modules" / "onboarding"
+        for name in self.DOC_NAMES:
+            assert not (onboarding / name).exists(), (
+                f"onboarding doc {name} shipped under explicit-modules path"
+            )
+
+
 class TestNoPresetPath:
     def test_explicit_modules_install_leaves_slot_empty(
         self, tmp_path: Path,

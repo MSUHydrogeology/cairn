@@ -2,9 +2,6 @@
      Authored under plan 2026-05-28-claude-cairn-progressive-onboarding
      (Chunk P1.4 fills the full task list + active-surfacing prompt
      content; P1.1 shipped a placeholder ahead of this). -->
-<!-- claim-check-allow: docs/agent-team-onboarding.md -->
-<!-- The agent-team-onboarding.md reference resolves when Chunk
-     P1.7 ships `cairn/docs/agent-team-onboarding.md`. -->
 
 # Onboarding tasks -- solo-greenfield
 
@@ -42,8 +39,8 @@ no multi-agent coordination, no legacy-tree pre-pass.
   you can defer the deeper read until that day comes.
 
 * [seed; id: walk-dev-tour]
-  Walk the `dev/`-tree tour at `docs/dev-tour.md`. It carries
-  one paragraph per `dev/` subdirectory plus a worked example
+  Walk the `dev/`-tree tour at `dev/modules/onboarding/dev-tour.md`.
+  It carries one paragraph per `dev/` subdirectory plus a worked example
   showing a single trivial change through the full
   proposal -> review -> decision -> archive lifecycle.
 
@@ -71,7 +68,7 @@ no multi-agent coordination, no legacy-tree pre-pass.
   You're at the point where a second agent type meaningfully
   strengthens Dual-Review's External tier (currently filled by
   fresh-session same-vendor review). Walk
-  `docs/agent-team-onboarding.md` for the spin-up checklist.
+  `dev/modules/onboarding/agent-team-onboarding.md` for the spin-up checklist.
 
 * [trigger: first-foldback-candidate; id: walk-foldback-protocol]
   Your fold-back ledger has its first open candidate ready to
@@ -110,7 +107,7 @@ working; Level 2 just automates what's now repeated work.
 Your solo deployment has matured to a point where a second agent
 type would meaningfully strengthen Dual-Review's External tier
 (currently filled by fresh-session same-vendor review). Walk
-`docs/agent-team-onboarding.md` for the spin-up checklist; the
+`dev/modules/onboarding/agent-team-onboarding.md` for the spin-up checklist; the
 second agent's capability tier should match the work the
 External tier carries.
 

@@ -2,9 +2,6 @@
      Authored under plan 2026-05-28-claude-cairn-progressive-onboarding
      (Chunk P1.5 fills the full multi-agent + multi-human task list;
      P1.1 shipped a placeholder ahead of this). -->
-<!-- claim-check-allow: docs/agent-team-onboarding.md, docs/dev-tour.md -->
-<!-- The agent-team-onboarding.md reference resolves when Chunk
-     P1.7 ships it; dev-tour.md ships with Chunk P1.4. -->
 
 # Onboarding tasks -- collaborative-team
 
@@ -58,12 +55,12 @@ loop earns its keep early.
   the start.
 
 * [seed; id: walk-dev-tour]
-  Walk the `dev/`-tree tour at `docs/dev-tour.md` together. It
-  carries one paragraph per `dev/` subdirectory plus a worked
-  example showing one change through the full lifecycle.
+  Walk the `dev/`-tree tour at `dev/modules/onboarding/dev-tour.md`
+  together. It carries one paragraph per `dev/` subdirectory plus a
+  worked example showing one change through the full lifecycle.
 
 * [seed; id: agent-team-onboarding]
-  Walk `docs/agent-team-onboarding.md` to align on capability
+  Walk `dev/modules/onboarding/agent-team-onboarding.md` to align on capability
   tiers + the `Co-Authored-By:` trailer convention for each
   agent in the roster. Multi-agent is this preset's defining
   shape; the agent-team-onboarding doc carries the
@@ -131,7 +128,7 @@ before running.
 Your collaborative-team profile expects multi-agent operation;
 the second agent type fills the External-review tier with
 structural independence the same-vendor lens cannot. Walk
-`docs/agent-team-onboarding.md`; the team's existing roster +
+`dev/modules/onboarding/agent-team-onboarding.md`; the team's existing roster +
 intent-claim discipline already cover the coordination
 preconditions, so spin-up is faster than a fresh start.
 

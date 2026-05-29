@@ -1585,6 +1585,15 @@ _ONBOARDING_LOG_HEADER = (
     "# see doctrine/onboarding.md for the mechanism.\n"
 )
 
+#: The shared onboarding reference docs Cairn ships into an adopter when
+#: a preset is selected (fold-back: onboarding-doc-delivery).  Sourced
+#: from ``cairn/docs/`` (``templates_root.parent / "docs"``) and installed
+#: under ``dev/modules/onboarding/``.  The presets' "walk this doc" task
+#: refs point at the *installed* copies; without this write those refs
+#: were dead links on first run (the bug this delivery fixes).
+_ONBOARDING_DOC_NAMES = ("agent-team-onboarding.md", "dev-tour.md")
+_ONBOARDING_DOC_DST_DIR_REL = "dev/modules/onboarding"
+
 
 def install_onboarding(
     templates_root: Path,
@@ -1620,6 +1629,13 @@ def install_onboarding(
        This is the authoritative reference the goodnight activation
        helper reads to discover deferred tasks (Codex External
        Review P1-1).
+    E. Copy the shared onboarding reference docs
+       (``docs/agent-team-onboarding.md`` + ``docs/dev-tour.md``) to
+       ``<target>/dev/modules/onboarding/`` so the presets' "walk this
+       doc" task refs resolve in the adopter (fold-back:
+       onboarding-doc-delivery; without this they were dead links on
+       first run).  Shared across presets -- shipped on any preset
+       selection.
 
     Returns the list of InstallResults for each write (the
     always-writes always present; the preset-conditional writes only
@@ -1735,6 +1751,39 @@ def install_onboarding(
             source_dst.parent.mkdir(parents=True, exist_ok=True)
             source_dst.write_text(preset_text, encoding="utf-8")
             results.append((source_dst, [], [], "installed"))
+
+    # Write E: ship the shared onboarding reference docs into the
+    # installed-source dir so the presets' "walk this doc" refs resolve
+    # in the adopter (fold-back: onboarding-doc-delivery).  Sourced from
+    # cairn/docs/; same skip-unless-force guard as Write D.  Shared across
+    # presets, so a preset selection ships both regardless of which one.
+    docs_root = templates_root.parent / "docs"
+    for doc_name in _ONBOARDING_DOC_NAMES:
+        doc_src = docs_root / doc_name
+        doc_dst = target / _ONBOARDING_DOC_DST_DIR_REL / doc_name
+        if not doc_src.exists():
+            print(
+                f"  [warn] onboarding doc source missing: docs/{doc_name}",
+                file=sys.stderr,
+            )
+            continue
+        if dry_run:
+            results.append((doc_dst, [], [], "dry-run"))
+            continue
+        if doc_dst.exists() and not force:
+            print(
+                f"  [skip] {doc_dst}: already exists -- pass --force to "
+                f"overwrite",
+                file=sys.stderr,
+            )
+            results.append((doc_dst, [], [], "skipped-exists"))
+            continue
+        _assert_safe_write(doc_dst, target)
+        doc_dst.parent.mkdir(parents=True, exist_ok=True)
+        doc_dst.write_text(
+            doc_src.read_text(encoding="utf-8"), encoding="utf-8"
+        )
+        results.append((doc_dst, [], [], "installed"))
 
     return results
 

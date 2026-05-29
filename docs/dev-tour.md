@@ -5,7 +5,7 @@ change is deliberated**: a proposal, then a review, then a
 decision, then a plan, then implementing commits, then an archive.
 This tour walks the five subdirectories with one paragraph each,
 then runs a single trivial change through the full lifecycle as a
-worked example. Best read after `doctrine/lifecycle.md` (which
+worked example. Best read after *doctrine/lifecycle.md* (which
 carries the *why*; this is the *where*).
 
 ## The five subdirectories
@@ -69,7 +69,7 @@ just yours -- and the goodnight foldback-capture step keeps the
 ledger populated. The ledger's job is to bridge the gap between
 "noticed something generalizable" and "filed a Cairn upstream
 issue or PR"; the foldback active-surfacing protocol
-(`doctrine/fold-back.md > Active surfacing`) walks you through
+(*doctrine/fold-back.md > Active surfacing*) walks you through
 the filing when a candidate is ready.
 
 ## Worked example -- one trivial change end-to-end
@@ -122,9 +122,9 @@ scales; the artifact tree is the same shape.
 * Try the worked example above on a real change in your tree. A
   one-line README typo fix is a fine first run.
 * When you're ready to coordinate across two or more agents, read
-  `doctrine/coordination.md` -- it carries the work-intent
+  *doctrine/coordination.md* -- it carries the work-intent
   mechanism that prevents collision.
 * When your deployment's fold-back ledger has its first open
   candidate, the foldback active-surfacing protocol
-  (`doctrine/fold-back.md > Active surfacing`) is the natural
+  (*doctrine/fold-back.md > Active surfacing*) is the natural
   next read.

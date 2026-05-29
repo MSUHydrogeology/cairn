@@ -3,9 +3,6 @@
      (Chunk P1.6 fills the full legacy-pre-pass + security-review +
      dual-language-tests task list; P1.1 shipped a placeholder
      ahead of this). -->
-<!-- claim-check-allow: docs/agent-team-onboarding.md, docs/dev-tour.md -->
-<!-- The agent-team-onboarding.md reference resolves when Chunk
-     P1.7 ships it; dev-tour.md ships with Chunk P1.4. -->
 
 # Onboarding tasks -- high-rigor-legacy
 
@@ -81,13 +78,13 @@ goes live.
   on the record.
 
 * [seed; id: agent-team-onboarding-legacy]
-  Walk `docs/agent-team-onboarding.md` together. The
+  Walk `dev/modules/onboarding/agent-team-onboarding.md` together. The
   high-rigor-legacy profile expects multi-agent staffing; the
   second agent type's capability tier should be calibrated
   against the security-review module's bar from day one.
 
 * [seed; id: walk-dev-tour]
-  Walk `docs/dev-tour.md` as a final pre-engagement read; it
+  Walk `dev/modules/onboarding/dev-tour.md` as a final pre-engagement read; it
   carries the `dev/`-tree taxonomy + a worked example. After
   reading it, the team is ready to open the first proposal.
 
@@ -138,7 +135,7 @@ integrity surface you currently lack.
 ### Row 3 -- second-agent-type spin-up prompt
 
 Your high-rigor-legacy profile's review rigor depends on
-multi-agent staffing. Walk `docs/agent-team-onboarding.md`; the
+multi-agent staffing. Walk `dev/modules/onboarding/agent-team-onboarding.md`; the
 second agent type's capability tier should be calibrated against
 your security-review module's bar -- a strong second agent
 strengthens the External-tier review's structural independence
