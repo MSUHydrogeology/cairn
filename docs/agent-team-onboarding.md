@@ -46,14 +46,22 @@ fire on the next goodnight.
 ## Step 2 -- set up the agent's `Co-Authored-By:` trailer
 
 Each agent commits with a trailer naming itself, so the commit
-log is the audit trail for who wrote what. The trailer convention:
+log is the audit trail for who wrote what. The trailer convention
+is a **pattern**, not a version frozen in this doc -- each agent
+stamps its own *current* model identifier, so a model bump never
+requires an edit here:
 
 ```
 Co-Authored-By: <Agent Display Name> <noreply@<vendor-domain>>
 ```
 
-Examples:
-* `Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>`
+Fill `<Agent Display Name>` with the agent's current model as its
+harness reports it. Stamping the running model (rather than a
+pinned version) keeps every trailer accurate with no doc
+maintenance, and leaves git history attributing each commit to the
+model that produced it. The examples below are illustrative
+snapshots -- substitute whatever model you are currently running:
+* `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>`
 * `Co-Authored-By: Codex GPT-5 <noreply@openai.com>`
 * `Co-Authored-By: Antigravity GPT-5 <noreply@google.com>`
 
