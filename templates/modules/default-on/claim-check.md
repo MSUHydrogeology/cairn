@@ -49,7 +49,13 @@ Merged into `AGENTS.md`:
 > it: it hard-flags broken repo paths and out-of-bounds line
 > citations and soft-flags count claims. A hard flag is resolved
 > before commit; a deliberate forward-reference is *marked*, not
-> left to assert.
+> left to assert. A count that is a deliberate point-in-time
+> snapshot — a verification count, a line count — is *consciously
+> accepted* document-wide with a `claim-check-allow-count` directive
+> (`<!-- claim-check-allow-count: <count>, <count> -->`, each token
+> named exactly as number + tree-noun); it is the count sibling of
+> the path markers, and a `claim-check-allow` directive is the
+> file-scoped path equivalent.
 
 The `{{claim_check_command}}` token is filled from the adopter's
 profile YAML with whatever invocation runs their checker (e.g.
@@ -77,7 +83,7 @@ Nothing to clone, port, or reimplement -- the default is a working tool.
 top-level path set by listing the repo root (so it tracks your tree as
 it grows) and recognizes the marker grammar (`Proposed path:` /
 `Untracked path:` / `External-repo path:`) plus a `--root` override.
-Two knobs cover most local needs:
+Three knobs cover most local needs:
 
 * **External-path allowance** (`--external-allow GLOB`, repeatable):
   some files exist to *describe other repositories* (a `case-studies/`
@@ -85,7 +91,18 @@ Two knobs cover most local needs:
   a local top-level dir name. Naming such file globs marks their
   path-claims as external so they are not resolved against the local
   tree -- the file-scoped sibling of the per-line `External-repo path:`
-  marker.
+  marker. Its in-document equivalent is the `claim-check-allow`
+  directive (`<!-- claim-check-allow: GLOB, GLOB -->`), which exempts
+  the named path globs document-wide.
+* **Conscious count acceptance** (`<!-- claim-check-allow-count:
+  <count>, <count> -->`): a deliberate point-in-time count -- a
+  verification snapshot, a line count -- is named in this
+  document-scoped directive (each token exactly: number + tree-noun) so
+  its soft flag is suppressed and recorded for audit. It is the count
+  sibling of the path-marker grammar; a `claim-check-allow` directive is
+  the path equivalent. *(Known limitation: a count written with a
+  thousands-separator comma cannot yet be named, since the directive's
+  comma is its list delimiter.)*
 * The recognized count-nouns and markdown-context rules are small,
   readable edits at the top of the script if your conventions differ.
 
