@@ -208,7 +208,7 @@ standing process that closes that gap.
   harvest becoming ceremony.
 * **Where the run is recorded.** Each harvest — findings *and* empty
   sweeps — is logged where the harvesting party already tracks fold-backs:
-  the adopter's `dev/upstream/<framework>.md` ledger today (a one-line
+  the adopter's `dev/.cairn/<framework>.md` ledger today (a one-line
   "harvest <date> vs `<instance>`: N items / core current" entry), or a
   Cairn-side log once Cairn runs its own `dev/`. An empty sweep recorded
   as "core current as of `<date>` against `<instance>`" is the visible

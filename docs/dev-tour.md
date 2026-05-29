@@ -60,9 +60,9 @@ strategy/, to PLANNING). The reflection channel exists because
 multi-agent and across-session-handoff coordination is friction
 that compounds without the channel.
 
-### `dev/upstream/` -- the fold-back channel
+### `dev/.cairn/` -- the fold-back channel
 
-The fold-back ledger lives at `dev/upstream/fold-back-ledger.md`.
+The fold-back ledger lives at `dev/.cairn/fold-back-ledger.md`.
 A deployment captures Cairn-portable doctrine improvements here
 -- changes that would help any differently-shaped team, not
 just yours -- and the goodnight foldback-capture step keeps the

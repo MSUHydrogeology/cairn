@@ -121,7 +121,7 @@ roster is in `dev/agent_collaboration.md`.
   **Exception: proposal-, plan-, strategy-doc-, upstream-ledger-,
   and goodnight-handoff commits may proceed without per-commit
   approval.**  Commits that touch ONLY files under `dev/proposals/`,
-  `dev/plans/`, `dev/strategy/`, or `dev/upstream/` (and any
+  `dev/plans/`, `dev/strategy/`, or `dev/.cairn/` (and any
   combination) are deliberation / planning / strategy /
   upstream-coordination artifacts.  The goodnight handoff commit is
   a fifth covered shape, bundling the routine's end-of-session
@@ -139,10 +139,12 @@ roster is in `dev/agent_collaboration.md`.
   * **`dev/strategy/`** — opening a strategy doc, iterative
     revisions, archiving a strategy doc when adopted /
     superseded / retired.
-  * **`dev/upstream/`** — upstream coordination ledgers: adding
-    entries, updating entry status, removing landed entries.  The
-    shape generalizes across Markdown-table ledgers and any future
-    YAML or other-format upstream manifests.
+  * **the upstream fold-back ledger** in `dev/.cairn/` (e.g.
+    `dev/.cairn/fold-back-ledger.md`) — adding entries, updating
+    entry status, removing landed entries.  Scoped to the ledger
+    file(s): `dev/.cairn/` also holds auto-managed machinery state
+    (e.g. the onboarding-activation log), which is not a
+    deliberation surface and is not covered here.
   * **The one-line `dev/PLANNING.md` row movement** that is the
     natural serialization point of a lifecycle-transition commit
     (proposal-open, plan-open, proposal-supersession, plan-archive)

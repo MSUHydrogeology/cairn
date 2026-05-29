@@ -18,7 +18,7 @@ the maintainer.
 You are the personalized in-context FLOSScoach (Steinmacher et al.
 2016) that converts a *captured* fold-back ledger candidate into a
 *filed* Cairn issue or PR.  The candidate sits in
-`dev/upstream/<framework>.md`'s open-candidate table -- captured
+`dev/.cairn/<framework>.md`'s open-candidate table -- captured
 but unfiled.  The maintainer has decided this row is ready to
 surface upstream.  Your job is to walk the maintainer through the
 six-step protocol below.
@@ -61,7 +61,7 @@ content upstream.  Two tiers:
 4. **Internal hostnames** -- `.local` / `.internal` / `.lan` / `.corp`
    / `.home` TLD-suffix conventions.
 5. **Adopter-configurable proprietary tokens** -- the deployment-side
-   denylist file (default: `dev/upstream/foldback_export_denylist.txt`)
+   denylist file (default: `dev/.cairn/foldback_export_denylist.txt`)
    enumerating project codenames, client names, domain-specific terms.
 
 ### Manual-affirmation (2 classes; maintainer-signed in the template)
@@ -80,7 +80,7 @@ steps in order.  Do not skip steps -- each is load-bearing.
 ### Step 1 -- Recap
 
 Read the candidate's detail entry from the ledger
-(`dev/upstream/<framework>.md`).  State, in 2-3 sentences, to the
+(`dev/.cairn/<framework>.md`).  State, in 2-3 sentences, to the
 maintainer:
 
 * What is the candidate?
@@ -124,9 +124,9 @@ body summarizes per-surface inventory + the deployment-side
 cross-link.  Leave the affirmation UNCHECKED.
 
 Write the drafted body to a **gitignored** temporary file -- the
-established convention is `dev/upstream/.foldback-draft-<timestamp>.md`.
+established convention is `dev/.cairn/.foldback-draft-<timestamp>.md`.
 The file MUST NOT be committed; the adopter's `.gitignore` carries
-the `dev/upstream/.foldback-draft-*.md` pattern.
+the `dev/.cairn/.foldback-draft-*.md` pattern.
 
 Surface the draft to the maintainer for review + edits.  The
 maintainer may rewrite sections; iterate as needed.
@@ -221,7 +221,7 @@ submission output for Step 6.
 
 ### Step 6 -- Record
 
-Update the ledger row in `dev/upstream/<framework>.md`:
+Update the ledger row in `dev/.cairn/<framework>.md`:
 
 * If filed as an **issue**: change `Status: candidate` to
   `Status: filed -> <#issue-number>`.
@@ -236,7 +236,7 @@ milestone), at which point the row transitions to
 Commit the ledger update with a clear message referencing the
 Cairn issue/PR number.
 
-The drafted body file (`dev/upstream/.foldback-draft-*.md`) can be
+The drafted body file (`dev/.cairn/.foldback-draft-*.md`) can be
 deleted at this point -- the durable record is the Cairn issue/PR.
 
 ## After the filing

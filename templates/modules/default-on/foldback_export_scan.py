@@ -38,7 +38,7 @@ The five mechanical detector classes:
   detector (they would qualify as internal hostnames if expressed as
   names instead of numbers).
 * **proprietary-token** -- adopter-configurable denylist file
-  (default: ``dev/upstream/foldback_export_denylist.txt``;
+  (default: ``dev/.cairn/foldback_export_denylist.txt``;
   ``--allowlist <path>`` overrides).  One token per line; blank
   lines and ``#``-comments skipped.  Case-sensitive substring match
   -- the deployment maintainer enumerates the project codenames /
@@ -424,7 +424,7 @@ def scan_file(path: Path, denylist: list[str]) -> list[Finding]:
     return scan_text(text, denylist)
 
 
-DEFAULT_DENYLIST_PATH = Path("dev/upstream/foldback_export_denylist.txt")
+DEFAULT_DENYLIST_PATH = Path("dev/.cairn/foldback_export_denylist.txt")
 
 
 def main(argv: list[str] | None = None) -> int:

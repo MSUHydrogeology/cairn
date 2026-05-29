@@ -334,7 +334,7 @@ and a new empty `Unreleased` is started above.
     stdlib-only ledger parser; lists open `candidate`-status rows
     eligible for surfacing (skips snoozed-via-`deferred-until` rows).
   * **`.gitignore` seed**: `_GITIGNORE_SEEDS` adds
-    `dev/upstream/.foldback-draft-*.md` so the protocol's drafted-
+    `dev/.cairn/.foldback-draft-*.md` so the protocol's drafted-
     body temp file pattern is never accidentally committed.
 
   Source proposal:
@@ -537,7 +537,7 @@ and a new empty `Unreleased` is started above.
   (25 new tests across glob-validation, path-directive, and
   count-directive surfaces).  Full Cairn suite stays green (331 passed
   post-port vs 306 pre-port).  Closes the only Open candidate in
-  `dev/upstream/cairn_ledger.md` going into the 0.2.x sweep window.
+  `dev/.cairn/cairn_ledger.md` going into the 0.2.x sweep window.
 
 - **Adopter-friction package: seven entry-surface artifacts + a
   Cairn-side regression suite.** Source proposal:
@@ -729,7 +729,7 @@ and a new empty `Unreleased` is started above.
   [`doctrine/fold-back.md`](doctrine/fold-back.md) specifies the fold-back
   ledger mechanism, a default-on `fold-back-ledger` module ships a forkable
   ledger (carrying a `[SECURITY WARNING]` export-safety header) into
-  `dev/upstream/`, and the goodnight routine gains a foldback-capture step.
+  `dev/.cairn/`, and the goodnight routine gains a foldback-capture step.
   Deliberated adopter-side; archived plan `cairn-foldback-ledger-candidates`.
 - **Module upgrade -- a token- + slot-aware 3-way merge so adopters fold
   in new doctrine without losing local customizations

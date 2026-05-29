@@ -72,7 +72,7 @@ the case-study file is written.
 
 If the bootstrap or a bootstrapped agent drafts an issue for an
 external project (e.g., an upstream library bug report in
-`dev/upstream/`), the Maintainer must review and approve
+`dev/.cairn/`), the Maintainer must review and approve
 the draft before it is posted externally.  The bootstrap does not
 post anything to external systems.
 

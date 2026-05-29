@@ -30,7 +30,7 @@ harvest's recording surface as well.
 ## The ledger artifact
 
 A deployment keeps a fold-back ledger — a single tracked file (the
-default install puts it under the deployment's `dev/upstream/`) — listing
+default install puts it under the deployment's `dev/.cairn/`) — listing
 candidates bound for Cairn. A candidate is a generalizable improvement
 noticed *here* that should be ported *up*. The ledger is the holding pen
 between the moment a candidate is noticed and the moment a Cairn proposal
@@ -181,7 +181,7 @@ through six steps:
    edits.
 4. **Scrub** — *fail-closed machine gate*. The agent writes the
    drafted body to a local **gitignored** temp file (working
-   convention: `dev/upstream/.foldback-draft-<timestamp>.md`), then
+   convention: `dev/.cairn/.foldback-draft-<timestamp>.md`), then
    invokes the export-scrub scanner:
 
        python scripts/foldback_export_scan.py <draft-path>

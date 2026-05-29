@@ -9,7 +9,7 @@ the surfacing-side merge (`Goodnight foldback-surfacing`) is the new
 load-bearing addition.
 
 Also covers the .gitignore-seed registry entry (Chunk 7): the
-fold-back-ledger module seeds `dev/upstream/.foldback-draft-*.md`
+fold-back-ledger module seeds `dev/.cairn/.foldback-draft-*.md`
 into the adopter's `.gitignore` so the active-surfacing protocol's
 drafted-body temp files are never accidentally committed.
 
@@ -143,7 +143,7 @@ class TestGitignoreSeed:
             "temp file pattern is not seeded into adopters' .gitignore"
         )
         seeds = _GITIGNORE_SEEDS["fold-back-ledger"]
-        assert "dev/upstream/.foldback-draft-*.md" in seeds, (
+        assert "dev/.cairn/.foldback-draft-*.md" in seeds, (
             f"foldback-draft pattern missing from fold-back-ledger "
             f"gitignore seeds: {seeds}"
         )

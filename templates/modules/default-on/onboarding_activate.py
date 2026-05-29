@@ -701,7 +701,7 @@ def _has_cross_type_review_anywhere(target: Path) -> bool:
 def _foldback_has_open_candidate(target: Path) -> bool:
     """The fold-back ledger has at least one row whose status is
     ``candidate``.  Returns True if the canonical ledger
-    (``dev/upstream/fold-back-ledger.md``) carries one.
+    (``dev/.cairn/fold-back-ledger.md``) carries one.
     """
     ledger = target / "dev" / "upstream" / "fold-back-ledger.md"
     if not ledger.is_file():

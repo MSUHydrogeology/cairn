@@ -6,7 +6,7 @@ single-deployment adopter that will never fold improvements up may omit
 it; the cost of keeping it is one mostly-empty file and a cheap nightly
 glance, and the payoff is that a generalizable improvement is never
 silently lost.
-**Adds to:** a tracked fold-back ledger at `dev/upstream/` (installed
+**Adds to:** a tracked fold-back ledger at `dev/.cairn/` (installed
 from this module's template), plus a goodnight **foldback-capture** step
 in the session-routines / goodnight doctrine.
 
@@ -23,7 +23,7 @@ repository, not a file in this adopter repo).
 
 ## What the module installs
 
-* The forkable **ledger** itself, at `dev/upstream/` — a starter file
+* The forkable **ledger** itself, at `dev/.cairn/` — a starter file
   carrying the `[SECURITY WARNING]` export-safety header, the status
   vocabulary, the removal rule, and the open-candidate / already-synced
   split.

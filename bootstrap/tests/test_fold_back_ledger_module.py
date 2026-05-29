@@ -4,7 +4,7 @@ Chunk C).
 
 Covers:
 * install-path: the module doctrine lands in dev/modules/; the forkable
-  ledger lands in dev/upstream/.
+  ledger lands in dev/.cairn/.
 * default-on: the module is in _DEFAULT_ON_MODULES and a default install
   (no `modules:` key) includes it.
 * omission path: a `modules:` list that omits it leaves the ledger
@@ -40,7 +40,7 @@ TEMPLATES_ROOT = CAIRN_ROOT / "templates"
 
 MODULE = "fold-back-ledger"
 MODULE_DOC_DST = "dev/modules/fold-back-ledger.md"
-LEDGER_DST = "dev/upstream/fold-back-ledger.md"
+LEDGER_DST = "dev/.cairn/fold-back-ledger.md"
 
 # The literal export-safety phrase the ledger template must carry
 # verbatim (Plan-review P2#3).

@@ -2,7 +2,7 @@
 """Foldback-surfacing helper -- list open candidates ready to surface.
 
 Stdlib-only.  Reads the deployment's fold-back ledger (a Markdown
-file under ``dev/upstream/<framework>.md``), parses the "Open
+file under ``dev/.cairn/<framework>.md``), parses the "Open
 candidates" table, and emits a structured listing of the
 ``candidate``-status rows that are eligible for active surfacing.
 
@@ -46,7 +46,7 @@ maintainer reviewing the funnel state runs::
     python scripts/foldback_suggest.py [--ledger <path>] [--all]
 
 to see the surfaceable rows + their detail-entry pointers.  The
-default ledger path is ``dev/upstream/cairn_ledger.md`` (the
+default ledger path is ``dev/.cairn/cairn_ledger.md`` (the
 modflow_tools / reference-deployment convention); the
 ``--ledger <path>`` flag overrides for adopters whose ledger lives
 elsewhere.  ``--all`` includes snoozed rows in the output (still
@@ -75,7 +75,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 
-DEFAULT_LEDGER_PATH = Path("dev/upstream/cairn_ledger.md")
+DEFAULT_LEDGER_PATH = Path("dev/.cairn/cairn_ledger.md")
 
 
 # ---------------------------------------------------------------------------

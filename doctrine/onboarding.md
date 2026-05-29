@@ -93,7 +93,7 @@ doctrine (`on-ramp/README.md`):
   explicit-state observation (the file content IS the explicit
   state; not git archaeology of trailers).
 * `first-foldback-candidate` -- the fold-back ledger
-  (`dev/upstream/fold-back-ledger.md`) has at least one open
+  (`dev/.cairn/fold-back-ledger.md`) has at least one open
   `candidate`-status row.
 * `collab-agreement-signing` -- the team-roster slot in
   `dev/collaboration_agreement.md` is unfilled (template default

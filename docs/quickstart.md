@@ -160,7 +160,7 @@ files you should recognise:
 * `dev/modules/lifecycle-metrics.md`, `dev/modules/reflections.md`,
   `dev/modules/claim-check.md`, `dev/modules/fold-back-ledger.md`
   -- the default-on module docs.
-* `dev/upstream/fold-back-ledger.md` -- the upstream fold-back
+* `dev/.cairn/fold-back-ledger.md` -- the upstream fold-back
   ledger (you can ignore this for the quickstart).
 * External-repo paths: `tools/lifecycle_metrics.py`, `scripts/claim_check.py` -- the
   default-on tool scripts (installed *into the target repo*; they

@@ -54,7 +54,7 @@ Five mechanical detector classes; each detector emits findings as
   numeric IPs are covered by the `ip-address` detector if the same
   host is named numerically.
 * **`proprietary-token`** -- **adopter-configurable** denylist.
-  Default file: `dev/upstream/foldback_export_denylist.txt` (one
+  Default file: `dev/.cairn/foldback_export_denylist.txt` (one
   token per line; blank lines and `#`-comments skipped); override
   via `--allowlist <path>`.  Case-sensitive word-boundary substring
   match.  The deployment maintainer enumerates the project

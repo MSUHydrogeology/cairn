@@ -816,7 +816,7 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
     ],
     # The deployment-side fold-back channel (doctrine: doctrine/fold-back.md).
     # Default-on but omittable: ships the module doctrine + the forkable
-    # ledger artifact into dev/upstream/, the active-surfacing prompt asset
+    # ledger artifact into dev/.cairn/, the active-surfacing prompt asset
     # into dev/modules/, the export-scrub scanner doc into dev/modules/, and
     # the scanner itself verbatim into scripts/.  The ledger is a cross-repo
     # export surface, so its template carries a [SECURITY WARNING] header;
@@ -827,7 +827,7 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         InstallSpec("default-on/fold-back-ledger.md",
                     "dev/modules/fold-back-ledger.md"),
         InstallSpec("default-on/fold-back-ledger-template.md",
-                    "dev/upstream/fold-back-ledger.md"),
+                    "dev/.cairn/fold-back-ledger.md"),
         # Active-surfacing additions (Chunks 4-6 of
         # 2026-05-28-claude-cairn-foldback-active-surfacing).
         InstallSpec("default-on/foldback_export_scan.md",
@@ -941,12 +941,12 @@ _GITIGNORE_SEEDS: dict[str, tuple[str, ...]] = {
     "coordination-tiers": ("dev/intents.jsonl",),
     # Foldback active-surfacing (2026-05-28 arc): the protocol's Scrub
     # step writes the drafted issue / PR body to a gitignored temp
-    # file pattern under `dev/upstream/` before invoking the scanner.
+    # file pattern under `dev/.cairn/` before invoking the scanner.
     # The draft file is intentionally never committed -- the durable
     # record is the filed Cairn issue / PR + the ledger row's
     # status transition.  Seeded by default so an adopter does not
     # have to remember the pattern themselves.
-    "fold-back-ledger": ("dev/upstream/.foldback-draft-*.md",),
+    "fold-back-ledger": ("dev/.cairn/.foldback-draft-*.md",),
 }
 
 
