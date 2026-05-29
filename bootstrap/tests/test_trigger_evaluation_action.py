@@ -265,8 +265,8 @@ class TestFoldbackCandidateTrigger:
         self, helper: ModuleType, tmp_path: Path,
     ) -> None:
         _empty_dev_tree(tmp_path)
-        (tmp_path / "dev" / "upstream").mkdir()
-        (tmp_path / "dev" / "upstream" / "fold-back-ledger.md").write_text(
+        (tmp_path / "dev" / ".cairn").mkdir()
+        (tmp_path / "dev" / ".cairn" / "cairn_foldback.md").write_text(
             "# Fold-back ledger\n"
             "\n"
             "| ID | Title | Status |\n"
@@ -280,8 +280,8 @@ class TestFoldbackCandidateTrigger:
         self, helper: ModuleType, tmp_path: Path,
     ) -> None:
         _empty_dev_tree(tmp_path)
-        (tmp_path / "dev" / "upstream").mkdir()
-        (tmp_path / "dev" / "upstream" / "fold-back-ledger.md").write_text(
+        (tmp_path / "dev" / ".cairn").mkdir()
+        (tmp_path / "dev" / ".cairn" / "cairn_foldback.md").write_text(
             "# Fold-back ledger\n"
             "\n"
             "| ID | Title | Status |\n"
@@ -389,8 +389,8 @@ class TestMixedAction:
         (tmp_path / "CHANGELOG.md").write_text(
             "# Changelog\n\n## [Unreleased]\n\n* Something.\n"
         )
-        (tmp_path / "dev" / "upstream").mkdir()
-        (tmp_path / "dev" / "upstream" / "fold-back-ledger.md").write_text(
+        (tmp_path / "dev" / ".cairn").mkdir()
+        (tmp_path / "dev" / ".cairn" / "cairn_foldback.md").write_text(
             "| ID | T | Status |\n|--|--|--|\n| F1 | x | candidate |\n"
         )
         fired = helper.evaluate_action_triggers(tmp_path, log_records=[])

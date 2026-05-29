@@ -140,7 +140,7 @@ roster is in `dev/agent_collaboration.md`.
     revisions, archiving a strategy doc when adopted /
     superseded / retired.
   * **the upstream fold-back ledger** in `dev/.cairn/` (e.g.
-    `dev/.cairn/fold-back-ledger.md`) — adding entries, updating
+    `dev/.cairn/cairn_foldback.md`) — adding entries, updating
     entry status, removing landed entries.  Scoped to the ledger
     file(s): `dev/.cairn/` also holds auto-managed machinery state
     (e.g. the onboarding-activation log), which is not a

@@ -537,7 +537,7 @@ and a new empty `Unreleased` is started above.
   (25 new tests across glob-validation, path-directive, and
   count-directive surfaces).  Full Cairn suite stays green (331 passed
   post-port vs 306 pre-port).  Closes the only Open candidate in
-  `dev/.cairn/cairn_ledger.md` going into the 0.2.x sweep window.
+  `dev/.cairn/cairn_foldback.md` going into the 0.2.x sweep window.
 
 - **Adopter-friction package: seven entry-surface artifacts + a
   Cairn-side regression suite.** Source proposal:

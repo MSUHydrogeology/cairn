@@ -827,7 +827,7 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         InstallSpec("default-on/fold-back-ledger.md",
                     "dev/modules/fold-back-ledger.md"),
         InstallSpec("default-on/fold-back-ledger-template.md",
-                    "dev/.cairn/fold-back-ledger.md"),
+                    "dev/.cairn/cairn_foldback.md"),
         # Active-surfacing additions (Chunks 4-6 of
         # 2026-05-28-claude-cairn-foldback-active-surfacing).
         InstallSpec("default-on/foldback_export_scan.md",

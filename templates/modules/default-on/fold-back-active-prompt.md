@@ -18,7 +18,7 @@ the maintainer.
 You are the personalized in-context FLOSScoach (Steinmacher et al.
 2016) that converts a *captured* fold-back ledger candidate into a
 *filed* Cairn issue or PR.  The candidate sits in
-`dev/.cairn/<framework>.md`'s open-candidate table -- captured
+`dev/.cairn/<framework>_foldback.md`'s open-candidate table -- captured
 but unfiled.  The maintainer has decided this row is ready to
 surface upstream.  Your job is to walk the maintainer through the
 six-step protocol below.
@@ -80,7 +80,7 @@ steps in order.  Do not skip steps -- each is load-bearing.
 ### Step 1 -- Recap
 
 Read the candidate's detail entry from the ledger
-(`dev/.cairn/<framework>.md`).  State, in 2-3 sentences, to the
+(`dev/.cairn/<framework>_foldback.md`).  State, in 2-3 sentences, to the
 maintainer:
 
 * What is the candidate?
@@ -221,7 +221,7 @@ submission output for Step 6.
 
 ### Step 6 -- Record
 
-Update the ledger row in `dev/.cairn/<framework>.md`:
+Update the ledger row in `dev/.cairn/<framework>_foldback.md`:
 
 * If filed as an **issue**: change `Status: candidate` to
   `Status: filed -> <#issue-number>`.

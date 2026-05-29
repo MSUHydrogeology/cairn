@@ -62,7 +62,7 @@ that compounds without the channel.
 
 ### `dev/.cairn/` -- the fold-back channel
 
-The fold-back ledger lives at `dev/.cairn/fold-back-ledger.md`.
+The fold-back ledger lives at `dev/.cairn/cairn_foldback.md`.
 A deployment captures Cairn-portable doctrine improvements here
 -- changes that would help any differently-shaped team, not
 just yours -- and the goodnight foldback-capture step keeps the

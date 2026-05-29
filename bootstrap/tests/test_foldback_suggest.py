@@ -190,7 +190,7 @@ class TestLiveLedgerSmoke:
         # ledger if findable.
         candidates = [
             CAIRN_ROOT.parent / "modflow_tools"
-            / "dev" / "upstream" / "cairn_ledger.md",
+            / "dev" / ".cairn" / "cairn_foldback.md",
         ]
         for p in candidates:
             if p.is_file():

@@ -40,7 +40,7 @@ TEMPLATES_ROOT = CAIRN_ROOT / "templates"
 
 MODULE = "fold-back-ledger"
 MODULE_DOC_DST = "dev/modules/fold-back-ledger.md"
-LEDGER_DST = "dev/.cairn/fold-back-ledger.md"
+LEDGER_DST = "dev/.cairn/cairn_foldback.md"
 
 # The literal export-safety phrase the ledger template must carry
 # verbatim (Plan-review P2#3).
