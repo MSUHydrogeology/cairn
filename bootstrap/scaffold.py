@@ -1030,19 +1030,37 @@ _AXES: dict[str, tuple[str, ...]] = {
     ),
 }
 
-#: Modules whose staffability is a pure function of the team axes.  These are
-#: the ONLY part of the I-5 gate evaluated as runtime code; the non-axis gate
-#: conditions (trust boundary, issue tracker, domain partitioning, legacy
-#: readiness) are baked into each preset's authored baseline below (the
-#: "gate-table encoding" split from the P4 plan).  Both gate on
-#: ``agent_team == concurrent-multi-type`` per the I-5 table.
-_TEAM_STAFFING_GATED: tuple[str, ...] = ("dual-review", "coordination-tiers")
+#: Per-module team-staffing gate: the ``agent_team`` axis values that staff
+#: each module.  These are the ONLY part of the I-5 gate evaluated as runtime
+#: code; the non-axis gate conditions (trust boundary, issue tracker, domain
+#: partitioning, legacy readiness) are baked into each preset's authored
+#: baseline below (the "gate-table encoding" split from the P4 plan).
+#:
+#: The two modules gate **differently** (fold-back #40): ``coordination-tiers``
+#: serves any *concurrent* team -- multiple same-type agents collide on shared
+#: files exactly as a multi-type team does, and the work-intent mechanism is
+#: what prevents it -- so it staffs both ``concurrent-multi-type`` and
+#: ``concurrent-single-type``.  ``dual-review`` needs a second agent *type* to
+#: fill its External tier with structural independence, which a same-type team
+#: lacks, so it stays ``concurrent-multi-type`` only.
+_TEAM_STAFFING_GATES: dict[str, frozenset[str]] = {
+    "dual-review": frozenset({"concurrent-multi-type"}),
+    "coordination-tiers": frozenset(
+        {"concurrent-multi-type", "concurrent-single-type"}
+    ),
+}
+
+#: All team-staffing-gated module names (membership tests; staffability is
+#: per-module via :func:`_can_staff_module`).
+_TEAM_STAFFING_GATED: tuple[str, ...] = tuple(_TEAM_STAFFING_GATES)
 
 
-def _can_staff_team_modules(axes: dict[str, str]) -> bool:
-    """True when the resolved agent-team axis can staff the team-staffing
-    modules (concurrent-multi-type)."""
-    return axes.get("agent_team") == "concurrent-multi-type"
+def _can_staff_module(name: str, axes: dict[str, str]) -> bool:
+    """True when the resolved agent-team axis staffs the given team-staffing
+    module, per the per-module gate (fold-back #40)."""
+    return axes.get("agent_team", "") in _TEAM_STAFFING_GATES.get(
+        name, frozenset()
+    )
 
 
 #: Named governance presets.  Each carries a **canonical six-axis point** and
@@ -1176,9 +1194,9 @@ def expand_preset(cfg: dict[str, object]) -> tuple[list[str], dict[str, object]]
     # Step 2: baseline.
     baseline: set[str] = set(_DEFAULT_ON_MODULES)
     baseline |= set(_PRESETS[preset_name]["baseline"])  # type: ignore[arg-type]
-    staffable = _can_staff_team_modules(resolved_axes)
-    if staffable:
-        baseline |= set(_TEAM_STAFFING_GATED)
+    for mod in _TEAM_STAFFING_GATED:
+        if _can_staff_module(mod, resolved_axes):
+            baseline.add(mod)
 
     # Step 3: explicit overrides (validate names first).
     adds = _as_str_list(cfg.get("modules_add"), "modules_add")
@@ -1195,7 +1213,9 @@ def expand_preset(cfg: dict[str, object]) -> tuple[list[str], dict[str, object]]
     # Adds first.  An add of a team-staffing module the resolved team can't
     # staff installs anyway (adopter intent wins) with a loud warning (I1).
     for name in adds:
-        if name in _TEAM_STAFFING_GATED and not staffable:
+        if name in _TEAM_STAFFING_GATED and not _can_staff_module(
+            name, resolved_axes
+        ):
             warnings.append(
                 f"`{name}` was explicitly added but the resolved agent-team "
                 f"axis ({resolved_axes.get('agent_team')}) cannot staff it; "
