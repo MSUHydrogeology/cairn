@@ -69,6 +69,17 @@ goes live.
   with existing operational dependencies -- a different
   discipline than greenfield development.
 
+* [seed; id: install-work-intent-hooks]
+  Install the work-intent git hooks, or record that you are skipping
+  them. This preset is concurrent, so the scaffold *recommended* the
+  hooks at install time but does **not** install them for you (it
+  never mutates `.git/hooks`). Run `python tools/intent.py
+  install-hook` + `install-precommit`, then `hooks-status` to confirm.
+  Without them, `dev/intents.jsonl` stays empty and the coordination
+  signal never fires. To opt out (now or later), re-run either command
+  with `--uninstall`; note the choice here so the team's preference is
+  on the record.
+
 * [seed; id: agent-team-onboarding-legacy]
   Walk `docs/agent-team-onboarding.md` together. The
   high-rigor-legacy profile expects multi-agent staffing; the

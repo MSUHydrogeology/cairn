@@ -40,6 +40,17 @@ loop earns its keep early.
   tree; multi-agent teams need this from day one, not as a
   later upgrade.
 
+* [seed; id: install-work-intent-hooks]
+  Install the work-intent git hooks, or record that you are skipping
+  them. This preset is concurrent, so the scaffold *recommended* the
+  hooks at install time but does **not** install them for you (it
+  never mutates `.git/hooks`). Run `python tools/intent.py
+  install-hook` + `install-precommit`, then `hooks-status` to confirm.
+  Without them, `dev/intents.jsonl` stays empty and the coordination
+  signal never fires. To opt out (now or later), re-run either command
+  with `--uninstall`; note the choice here so the team's preference is
+  on the record.
+
 * [seed; id: read-dual-review-module]
   Read `dev/modules/dual-review.md`. The collaborative-team
   preset installs the dual-review module by default; the

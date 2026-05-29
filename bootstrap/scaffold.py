@@ -3380,14 +3380,19 @@ def main(argv: list[str] | None = None) -> int:
             )
     if "coordination-tiers" in modules:
         print(
-            "\nTo enable the work-intent git hooks (opt-in; the scaffold\n"
-            "does NOT install git hooks for you), run:\n"
+            "\nRECOMMENDED (concurrent team) -- enable the work-intent git\n"
+            "hooks. They are opt-in: the scaffold never mutates .git/hooks,\n"
+            "so this is a one-time Day-1 step you run. Without them,\n"
+            "dev/intents.jsonl stays empty even on a concurrent team -- the\n"
+            "coordination signal this module exists for. Run:\n"
             "  python tools/intent.py install-hook        "
             "# post-commit auto-release\n"
             "  python tools/intent.py install-precommit   "
             "# pre-commit work-intent check (warn-only)\n"
             "  python tools/intent.py hooks-status        "
-            "# confirm both are installed"
+            "# confirm both are installed\n"
+            "Opt out (now or later): re-run either install command with\n"
+            "--uninstall. Your onboarding tasks include this step."
         )
 
     # Write the install lockfile + base-template cache: the upgrade
