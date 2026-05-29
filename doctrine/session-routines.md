@@ -68,8 +68,13 @@ from "my session is ending":
 
 The full scrub happens once per session-day, by one owner — that
 keeps the shared communication files a single-writer surface at
-handoff time. Committing and pushing are never implied by running
-the routine; they wait on explicit Maintainer approval.
+handoff time. **The handoff commit is part of the routine** — the
+full-handoff owner lands it without per-commit Maintainer approval
+(covered by the deliberation-commit carve-in in
+`templates/core/AGENTS.md` > *Git and commit workflow*; path-scoped,
+listing the routine artifacts). **Pushing always waits on explicit
+Maintainer approval** — the commit makes the handoff durable for the
+next session; the push is the Maintainer's call on cadence.
 
 ### The staleness sweep — keep the roadmap honest
 

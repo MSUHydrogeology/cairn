@@ -118,11 +118,13 @@ roster is in `dev/agent_collaboration.md`.
 * **Never commit or push without explicit maintainer approval.**
   Show what changed first.  Pushing always needs approval.
 
-  **Exception: proposal-, plan-, and strategy-doc-lifecycle
-  commits may proceed without per-commit approval.**  Commits that
-  touch ONLY files under `dev/proposals/`, `dev/plans/`, or
-  `dev/strategy/` (and any combination of the three) are
-  deliberation / planning / strategy artifacts.  Covered actions:
+  **Exception: proposal-, plan-, strategy-doc-, and goodnight-
+  handoff commits may proceed without per-commit approval.**
+  Commits that touch ONLY files under `dev/proposals/`,
+  `dev/plans/`, or `dev/strategy/` (and any combination of the
+  three) are deliberation / planning / strategy artifacts.  The
+  goodnight handoff commit is a fourth covered shape, bundling
+  the routine's end-of-session artifacts.  Covered actions:
 
   * **`dev/proposals/`** — opening a proposal, appending a
     Review, appending a Response, flipping status fields
@@ -136,11 +138,20 @@ roster is in `dev/agent_collaboration.md`.
   * **`dev/strategy/`** — opening a strategy doc, iterative
     revisions, archiving a strategy doc when adopted /
     superseded / retired.
+  * **The goodnight handoff commit** — the full-handoff owner's
+    end-of-session commit, bundling the routine artifacts:
+    rewrite of `dev/NEXT_SESSION.md`, end-of-day scrub of
+    `dev/PLANNING.md`, `CHANGELOG.md` additions per significant
+    commit landed today, and intent-hygiene pruning of any
+    intent-ledger file.  Lands as one "End-of-day handoff + doc
+    refresh" commit per `doctrine/session-routines.md` >
+    *Goodnight*.
 
   These artifacts don't ship code; their integrity comes from
-  the friendly-adversary review system (proposals + plans) or
-  the iterative-revision review cycle (strategy docs).  Three
-  guard-rails on the exception:
+  the friendly-adversary review system (proposals + plans), the
+  iterative-revision review cycle (strategy docs), or the
+  single-writer + once-per-day shape of the goodnight handoff.
+  Three guard-rails on the exception:
 
   * **Pushing still requires explicit approval.**  The
     exception covers `git commit` only.
@@ -150,10 +161,11 @@ roster is in `dev/agent_collaboration.md`.
     Decision commit.
   * **Bundling with non-lifecycle work loses the exception.**
     A commit that touches a covered lifecycle file AND a file
-    outside the three covered directories (code, `docs/`,
-    `CHANGELOG.md`, `dev/PLANNING.md`, `dev/NEXT_SESSION.md`,
-    `AGENTS.md`, etc.) falls back to the default "explicit
-    maintainer approval" rule.
+    outside the covered directories (code, `docs/`, `AGENTS.md`,
+    etc.) falls back to the default "explicit maintainer
+    approval" rule.  The goodnight-handoff bullet above lists the
+    files that bundle is allowed to touch — anything beyond that
+    set re-triggers the gate.
 * **Scribing a Decision — the guard-rail.** The Maintainer's Decision
   (accept / reject / supersede) is theirs to land; an
   explicitly-instructed agent may *scribe and commit* it, bounded by
