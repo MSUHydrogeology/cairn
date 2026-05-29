@@ -134,6 +134,38 @@ The rule applies only to the next-session handoff document.
 Per-agent reflections have their own ephemeral-and-pruned
 rhythm (below); they are not rewritten from scratch.
 
+### The shape of a next-session entry
+
+Rewrite-from-scratch keeps the handoff *current*; this names what a
+recommended-next-task entry should *contain* so a cold reader can act
+without the prior session's conversation. Five elements — make them
+structural, not discretionary:
+
+1. **Task + current state.** What the next task is, and the state it
+   resumes from: what just landed, what is blocked (and on what), what
+   a prior step just *un*blocked. The reader should not have to
+   reconstruct "where are we" from the commit log.
+2. **Roles to instantiate.** Draw from the project's role roster —
+   and name the roles explicitly *not* needed for this task, with the
+   reason. "No code touched" is **not** the same as "no domain
+   involvement": a domain agent is a doctrine stakeholder on a
+   doc-only change that touches its surface, and a role left silent by
+   omission reads as an oversight rather than a decision.
+3. **Agent-dispatch tier.** Whether the next step wants a same-agent-type
+   read or a cross-agent-type one — aligned with any review tier the
+   task carries (a `required(External)` plan-review wants a
+   cross-type dispatch; an internal pass can be same-type-fresh-session).
+4. **Reading order.** The two or three artifacts to read first, in
+   order, *after* the session-start re-anchor — the durable surfaces
+   that carry the load-bearing context, not an exhaustive list.
+5. **First three concrete steps.** The literal opening moves
+   (commands, files to open, the first commit's shape) so the next
+   session converts orientation into action without a planning gap.
+
+These compose with the rewrite discipline: each goodnight the entry is
+rewritten, and the rewrite fills these five slots for the new
+recommended task.
+
 ## The reflections channel
 
 Each agent, at goodnight, writes a short **reflection** — what it

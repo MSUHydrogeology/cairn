@@ -29,7 +29,11 @@ signal+read for coordination-surface files").
 (The goodnight routine writes the one task the next session should
 start with, and why that one — a recommendation that survives
 context loss when the conversational reasoning does not. Empty
-until the first goodnight handoff.)
+until the first goodnight handoff. Fill the five elements from
+`doctrine/session-routines.md` > "The shape of a next-session entry":
+(1) task + current state; (2) roles to instantiate — including roles
+explicitly *not* needed; (3) agent-dispatch tier; (4) reading order;
+(5) first three concrete steps.)
 <!-- cairn:end next-start -->
 
 ## Other candidates
