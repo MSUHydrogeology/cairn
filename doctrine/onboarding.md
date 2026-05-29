@@ -306,15 +306,46 @@ schedule. The named candidate gaps:
 V1 stays at L3 indefinitely until a v1.x candidate's gap
 becomes load-bearing. Evidence-gated, not schedule-gated.
 
+## Dispatching an agent session
+
+The apparatus assumes you can hand a *fresh* agent session the context it
+needs to act in the right frame. That hand-off is vendor-neutral doctrine:
+
+* **Name the role first.** Open the session by stating its role (Strategy, a
+  Domain, Legacy, a Reviewer tier -- see `doctrine/roles.md` > "When to
+  dispatch which role"). The role determines the artifact; an unframed
+  session defaults to whatever the prompt's verb implies, which is often the
+  wrong frame.
+* **Hand it the orientation, not the whole history.** Point the session at
+  the `dev/` tree (the deliberation surfaces it will read and write) and at
+  the one artifact this task turns on -- the proposal it implements, the plan
+  it reviews, the issue it diagnoses -- rather than replaying the prior
+  session. The durable record *is* the context; that is what it is for.
+* **State the task and its boundary.** What this session should produce, and
+  explicitly what it should *not* touch (the scope fence). A session given a
+  clear "not this pass" stays bounded.
+
+**Vendor boundary (load-bearing).** *How* you literally start a session -- the
+command, the IDE action, the API call for a given agent harness -- is **not**
+Cairn doctrine and is deliberately absent here: it is per-vendor and changes
+faster than the methodology. Those mechanics live in your **vendor wrapper**
+(the agent-specific file that imports the kernel `AGENTS.md` -- a
+`CLAUDE.md`-style doc), which is where a harness-specific habit belongs. Cairn
+stays vendor-neutral; the wrapper carries the spawn recipe.
+
 ## Cross-references
 
 * `doctrine/lifecycle.md` -- the proposal-lifecycle the seed
   tasks introduce.
+* `doctrine/roles.md` -- the role roster + the "When to dispatch which role"
+  heuristics a fresh session is framed by.
 * `doctrine/coordination.md` -- the work-intent mechanism the
   multi-agent presets exercise from day one.
 * `doctrine/fold-back.md` -- the active-surfacing 6-step
   protocol Component 3 Row 4 invokes.
 * `doctrine/session-routines.md` -- the goodnight step the
   activation helper runs at.
+* `docs/tool-usage.md` -- worked invocations of the shipped tools
+  (`claim_check`, `intent.py`, `lifecycle_metrics`, `link_check`).
 * `on-ramp/README.md` -- the maturity ladder the
   maturity-ladder triggers observe.

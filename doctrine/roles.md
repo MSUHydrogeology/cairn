@@ -113,6 +113,42 @@ this", "implement that"); for those, the agent states the inferred
 role and proceeds. The cost of confirming is one sentence; the
 cost of guessing wrong is a turn spent in the wrong frame.
 
+## When to dispatch which role
+
+Naming the role is upstream of a prior question the Maintainer faces
+every session: *which* role does this piece of work want? A few
+heuristics, by the kind of work:
+
+* **Strategy / Research** — when the work is *framing*, not building: a
+  problem-space characterization, an audit of an emerging concern, a
+  multi-year direction, or a decision that needs options weighed before
+  any code. If you cannot yet name the files a change touches, you are
+  in Strategy, not Implementation.
+* **A Domain role** (the partitions your profile defines — e.g. by
+  subsystem) — when the work needs *judgment about a specific area's
+  contracts and invariants*. Reach for the domain even when **no code is
+  touched**: a proposal that only moves docs or renames a config still
+  changes a domain's contract, and "no code touched ≠ no domain
+  involvement" — a doc that misstates a subsystem's behavior is a domain
+  defect. Route a change *through* the domain that owns the surface, not
+  around it.
+* **Legacy** — when the change lands in an undocumented or untested part
+  of the tree, where the safe move is to characterize current behavior
+  before altering it. Legacy is a *precondition discipline*, not a
+  separate task: it gates the Implementation that follows.
+* **A Reviewer tier** — when a substantive change is ready to *prove it
+  should land*. Internal (a fresh session of the same agent) for the
+  constructive second read; External (a different agent type or a human,
+  where the dual-review module is installed) when the change needs
+  structural independence — a contract change, a security surface, a
+  high-judgment call. Pick the tier from the change's risk, not its
+  size.
+
+The dispatch is a frame, not a person: one capable agent fills many of
+these across a week. The point is to enter each piece of work in the
+*right frame*, because the frame determines the artifact — and the
+wrong frame produces a confident artifact of the wrong kind.
+
 ## Capability floors — model selection by role and risk
 
 A role is filled by an agent of some capability. In a multi-model
