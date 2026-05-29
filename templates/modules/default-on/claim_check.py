@@ -420,6 +420,17 @@ def _is_marker_block_continuation(text: str) -> bool:
     return stripped.startswith('`')
 
 
+#: Standard framework runtime paths that are *gitignored by design* -- they
+#: are created at run time (not committed), so they are legitimately absent
+#: from a clean checkout / fresh scaffold and must never hard-flag, even
+#: though their first segment (``dev``) is a real top-level dir.  Docs across
+#: the tree reference them (the work-intent log appears in the onboarding doc,
+#: the concurrent presets, and the rendered PLANNING slot), so a per-document
+#: exemption directive would not scale and would break on every fresh clone
+#: (fold-back #42).  Kept deliberately minimal.
+_DEFAULT_EXEMPT_PATHS: frozenset[str] = frozenset({"dev/intents.jsonl"})
+
+
 def check_path_token(
     token: str, lineno: int, repo_root: Path, top_level: set[str],
 ) -> Flag | None:
@@ -427,11 +438,14 @@ def check_path_token(
 
     Returns a hard flag when the token's first segment is a real
     top-level entry but the full path does not resolve; ``None`` when
-    the token is not a repo-path claim or resolves cleanly.
+    the token is not a repo-path claim, is a default-exempt runtime
+    path, or resolves cleanly.
     """
     first = token.split('/', 1)[0]
     if first not in top_level:
         return None  # not a repo-path claim -- nothing to check
+    if token in _DEFAULT_EXEMPT_PATHS:
+        return None  # gitignored framework runtime path; legitimately absent
     if (repo_root / token).exists():
         return None
     return Flag(

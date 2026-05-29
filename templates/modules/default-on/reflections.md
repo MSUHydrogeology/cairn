@@ -4,8 +4,9 @@
 adoption. A solo, single-agent project may omit it; without a
 second agent to hand off *to*, the cross-agent function the
 channel exists for is absent (a reflection becomes a personal log).
-**Adds to:** a section in `dev/agent_collaboration.md`, plus an
-untracked `dev/reflections/` directory.
+**Adds to:** a section in `dev/agent_collaboration.md`, plus a
+`dev/reflections/` directory with a tracked `README.md` guide (the
+per-agent reflection entries themselves stay untracked).
 
 The reflections channel is the **cross-agent handoff surface**: at
 the goodnight routine each agent writes a short, per-agent
@@ -26,7 +27,8 @@ process-doctrine file):
 >
 > * **per-agent** — each agent writes its own; no agent writes or
 >   edits another's;
-> * **ephemeral** — files are untracked and periodically pruned;
+> * **ephemeral** — reflection files are untracked and periodically
+>   pruned (only the directory's tracked `README.md` guide persists);
 >   durable observations migrate to doctrine or the roadmap;
 > * **a cross-agent handoff surface** — the goodnight owner reads
 >   the day's reflections to understand each agent's experience

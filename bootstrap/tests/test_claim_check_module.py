@@ -264,6 +264,20 @@ class TestClaimCheckAllowDirective:
         assert hard == []
         assert cc.parse_allow_directives(text) == []
 
+    def test_default_exempt_runtime_path_does_not_hard_flag(
+        self, cc, tmp_path
+    ):
+        # fold-back #42: dev/intents.jsonl is a gitignored framework runtime
+        # path (created on first work-intent claim), so it is legitimately
+        # absent from a clean tree and must never hard-flag -- even though
+        # `dev` IS a real top-level dir here -- with no per-document
+        # directive needed.
+        _make_repo(tmp_path)
+        assert not (tmp_path / "dev" / "intents.jsonl").exists()
+        text = "the work-intent log lives at `dev/intents.jsonl`."
+        hard, _soft = cc.check_text(text, tmp_path)
+        assert hard == []
+
 
 # ---------------------------------------------------------------------------
 # ``claim-check-allow-count`` -- document-scoped count exemption.

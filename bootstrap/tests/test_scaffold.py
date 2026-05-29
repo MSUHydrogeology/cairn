@@ -362,6 +362,12 @@ class TestInstallModules:
         )
         installed_files = [r[0] for r in results]
         assert (tmp_path / "dev" / "modules" / "reflections.md") in installed_files
+        # fold-back #42: reflections also installs a tracked directory guide
+        # so dev/reflections/ materializes on a fresh scaffold (the entries
+        # themselves stay untracked via the .gitignore seed).
+        assert (
+            tmp_path / "dev" / "reflections" / "README.md"
+        ) in installed_files
 
     def test_unknown_module_skipped(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str]

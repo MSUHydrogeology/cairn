@@ -766,6 +766,11 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
     ],
     "reflections": [
         InstallSpec("default-on/reflections.md", "dev/modules/reflections.md"),
+        # A tracked directory guide so dev/reflections/ materializes on a
+        # fresh scaffold (the reflection entries themselves stay untracked
+        # via the .gitignore seed below) -- fold-back #42.
+        InstallSpec("default-on/reflections-README.md",
+                    "dev/reflections/README.md", verbatim=True),
     ],
     "claim-check": [
         InstallSpec("default-on/claim-check.md",
@@ -947,6 +952,11 @@ _GITIGNORE_SEEDS: dict[str, tuple[str, ...]] = {
     # status transition.  Seeded by default so an adopter does not
     # have to remember the pattern themselves.
     "fold-back-ledger": ("dev/.cairn/.foldback-draft-*.md",),
+    # Reflections are per-agent + ephemeral (gitignored); only the tracked
+    # README.md guide survives, so the dir materializes on a fresh scaffold
+    # without committing reflection content (fold-back #42).  Order matters:
+    # ignore-all then un-ignore the README.
+    "reflections": ("dev/reflections/*", "!dev/reflections/README.md"),
 }
 
 
