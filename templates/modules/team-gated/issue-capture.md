@@ -16,6 +16,19 @@ surface — issue structures, a capture-vs-fix rule, and a fallback
 for when the tracker is unreachable — **without naming a specific
 tracker.**
 
+**Forge-specific reference starters.** The doctrine below stays
+tracker-agnostic, but the module ships concrete starters for the two
+common forges under `issue-capture/reference/` — `reference/.gitlab/`
+(issue templates GitLab's web UI auto-discovers, plus a `labels.yml`
+manifest) and `reference/.github/` (`ISSUE_TEMPLATE/` forms whose YAML
+frontmatter carries the labels, plus a `labels.yml`). Each ships the
+Bug / Gap / Friction / Wish forms and the standing label set. **Copy
+the tree for your forge into your repo root** and extend `labels.yml`
+with project-specific routing (e.g. a `domain::<area>` set). The
+scaffold does not yet auto-copy these — gating that on the adopter's
+forge needs a forge axis in the profile, a separate change; until
+then the copy is manual. See `issue-capture/reference/README.md`.
+
 ## Template content
 
 ### Issue structures (tracker-agnostic)

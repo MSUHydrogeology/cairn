@@ -1,0 +1,19 @@
+# Issue-label manifest — Cairn issue-capture reference starter (GitLab).
+#
+# The standing label set the issue-capture triage doctrine assumes.
+# Copy into your repo's .gitlab/ and apply via a bootstrap script
+# (idempotent). The sibling issue_templates/ dir IS auto-discovered by
+# GitLab's web UI; this manifest is NOT — it is applied by the script.
+# Extend with project-specific routing labels (e.g. domain::<area>).
+
+# --- Standing set (kind / triage / priority / meta) ---
+- {name: bug,                     color: '#d73a4a', description: 'Something is broken.'}
+- {name: enhancement,             color: '#a2eeef', description: 'Capability missing, friction, or wish.'}
+- {name: 'enhancement::gap',      color: '#84b6eb', description: 'Capability missing for current workflow.'}
+- {name: 'enhancement::friction', color: '#84b6eb', description: 'Workflow rough edge / UX issue.'}
+- {name: 'enhancement::wish',     color: '#84b6eb', description: 'Nice-to-have, not blocking.'}
+- {name: needs-triage,            color: '#fbca04', description: 'New issue, not yet triaged.'}
+- {name: triaged,                 color: '#0e8a16', description: 'Reviewed; durable home assigned.'}
+- {name: 'priority::urgent',      color: '#b60205', description: 'Blocks active maintainer work.'}
+- {name: wontfix,                 color: '#cfd3d7', description: 'Not actually a gap; closed without action.'}
+- {name: meta,                    color: '#cfd3d7', description: 'Tooling smoke-test or operational issue.'}
