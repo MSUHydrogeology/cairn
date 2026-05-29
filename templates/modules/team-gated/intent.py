@@ -1315,6 +1315,7 @@ def classify_precommit_warnings(
     *,
     exempt: bool,
     repo_root: Optional[Path] = None,
+    rename_map: Optional[Dict[str, str]] = None,
 ) -> List[str]:
     """Classify a commit's staged set into ordered warning strings.
 
@@ -1336,6 +1337,7 @@ def classify_precommit_warnings(
     identity_known = bool(identity) and identity != "unknown-agent"
     # path -> list of claims covering it
     overlaps: Dict[str, List[Dict[str, object]]] = {}
+    renames = rename_map or {}
     for claim in actives:
         claim_files = claim.get("files") or []
         if not isinstance(claim_files, list):
@@ -1343,8 +1345,16 @@ def classify_precommit_warnings(
         claim_set = {
             normalize_path(str(f), repo_root=repo_root) for f in claim_files
         }
-        for path in claim_set & staged_set:
-            overlaps.setdefault(path, []).append(claim)
+        # Rename-aware: a staged destination is covered when the claim
+        # covers the destination OR its rename source -- a `git mv` of a
+        # claimed file is the claimed edit (the claim sits on the source).
+        # This credits an own-claim across the move AND keeps the
+        # other-session overlap signal (a rename of a path another session
+        # claims still credits their claim to the destination).
+        for path in staged_set:
+            source = renames.get(path)
+            if path in claim_set or (source is not None and source in claim_set):
+                overlaps.setdefault(path, []).append(claim)
 
     warnings: List[str] = []
     if not identity_known:
@@ -1386,6 +1396,47 @@ def _staged_paths_via_git(repo_root: Path) -> List[str]:
     if parts and parts[-1] == b"":
         parts = parts[:-1]
     return [b.decode("utf-8", errors="replace") for b in parts]
+
+
+def _rename_map_via_git(repo_root: Path) -> Dict[str, str]:
+    """Return ``{normalized_destination: normalized_source}`` for staged
+    renames (``git diff --cached --name-status -M -z``).
+
+    Lets the pre-commit check credit a claim on a rename's *source* to its
+    staged *destination*, so a ``git mv`` of a claimed file is not flagged
+    unclaimed (the claim sits on the source). ``-M`` detects renames (not
+    ``-C`` copies). Both sides are normalized with the same
+    ``normalize_path`` the claim/staged sets use, so they match. Empty on
+    any git error -- rename-awareness degrades to the prior behavior."""
+    try:
+        out = subprocess.run(
+            ["git", "diff", "--cached", "--name-status", "-M", "-z"],
+            cwd=str(repo_root), capture_output=True, check=False,
+        )
+    except OSError:
+        return {}
+    if out.returncode != 0 or not out.stdout:
+        return {}
+    tokens = out.stdout.split(b"\x00")
+    if tokens and tokens[-1] == b"":
+        tokens = tokens[:-1]
+    rename_map: Dict[str, str] = {}
+    i = 0
+    while i < len(tokens):
+        status = tokens[i].decode("utf-8", errors="replace")
+        if status[:1] == "R":
+            # name-status -z renames: ``R<score>\0<source>\0<dest>``.
+            if i + 2 < len(tokens):
+                source = tokens[i + 1].decode("utf-8", errors="replace")
+                dest = tokens[i + 2].decode("utf-8", errors="replace")
+                rename_map[normalize_path(dest, repo_root=repo_root)] = (
+                    normalize_path(source, repo_root=repo_root)
+                )
+            i += 3
+        else:
+            # ``<status>\0<path>`` for A / M / D / T.
+            i += 2
+    return rename_map
 
 
 def _cmd_install_precommit(args) -> int:
@@ -1499,6 +1550,10 @@ def _cmd_precommit_check(args) -> int:
     if not staged:
         return 0
     staged_set = {normalize_path(p, repo_root=top) for p in staged}
+    # Self-derive the rename map regardless of how the staged set arrived
+    # (hook --paths-from-file or the fallback) -- the hook body stays
+    # --name-only, so the rename info comes from this dedicated call.
+    rename_map = _rename_map_via_git(top)
     identity = resolve_agent_identity()
     exempt = bool(
         (os.environ.get(ALLOW_UNCLAIMED_ENV_VAR) or "").strip()
@@ -1506,6 +1561,7 @@ def _cmd_precommit_check(args) -> int:
     actives = active_intents(log_path=log_path)
     for warning in classify_precommit_warnings(
         staged_set, actives, identity, exempt=exempt, repo_root=top,
+        rename_map=rename_map,
     ):
         sys.stderr.write(warning)
     return 0
