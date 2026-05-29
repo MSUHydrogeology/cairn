@@ -100,9 +100,9 @@ Three knobs cover most local needs:
   document-scoped directive (each token exactly: number + tree-noun) so
   its soft flag is suppressed and recorded for audit. It is the count
   sibling of the path-marker grammar; a `claim-check-allow` directive is
-  the path equivalent. *(Known limitation: a count written with a
-  thousands-separator comma cannot yet be named, since the directive's
-  comma is its list delimiter.)*
+  the path equivalent. Counts are extracted from the directive with the
+  same detector the body scan uses, so the separator is irrelevant and a
+  thousands-grouped count (`1,294 lines`) is named as one token.
 * The recognized count-nouns and markdown-context rules are small,
   readable edits at the top of the script if your conventions differ.
 

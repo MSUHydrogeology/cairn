@@ -328,6 +328,26 @@ class TestClaimCheckAllowCountDirective:
         )
         assert [c for _, c in out] == ["30 lines", "728 tests"]
 
+    def test_thousands_grouped_count_can_be_named(self, cc, tmp_path):
+        # fold-back #36: counts are extracted with the same detector the
+        # body scan uses, so a thousands-grouped count is one token -- the
+        # comma is part of the number, not the directive's list delimiter.
+        _make_repo(tmp_path)
+        text = (
+            "<!-- claim-check-allow-count: 1,294 lines -->\n"
+            'the "1,294 lines" total was a point-in-time snapshot.'
+        )
+        _hard, soft = cc.check_text(text, tmp_path)
+        assert soft == []
+
+    def test_count_directive_is_separator_agnostic(self, cc):
+        # comma, semicolon, or whitespace between tokens are all just
+        # non-matching gaps; a grouped count survives intact (#36).
+        out = cc.parse_allow_count_directives(
+            "<!-- claim-check-allow-count: 1,294 lines; 5 commits, 30 lines -->"
+        )
+        assert [c for _, c in out] == ["1,294 lines", "5 commits", "30 lines"]
+
     def test_main_reports_exempted_count_on_stdout(
         self, cc, tmp_path, capsys
     ):

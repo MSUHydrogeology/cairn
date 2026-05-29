@@ -516,16 +516,25 @@ def _normalize_count(token: str) -> str:
 def parse_allow_count_directives(text: str) -> list[tuple[int, str]]:
     """Return ``(lineno, normalized-count)`` for every count declared in a
     document-scoped ``<!-- claim-check-allow-count: <count>[, ...] -->``
-    directive.  Counts are comma-separated and normalized via
-    :func:`_normalize_count`; empty entries are skipped.
+    directive.
+
+    Counts are extracted from the directive payload with the **same**
+    ``_COUNT_RE`` the body scan uses (via :func:`re.finditer`), then
+    normalized via :func:`_normalize_count` exactly as
+    :func:`find_count_flags` builds its tokens.  Extracting rather than
+    splitting makes the directive **separator-agnostic** (comma,
+    semicolon, or whitespace between tokens are all just non-matching
+    gaps) and lets a thousands-grouped count (``1,294 lines``) be named
+    as a single token -- the comma inside it is part of the count, not a
+    list delimiter (fold-back #36).
     """
     out: list[tuple[int, str]] = []
     for lineno, line in enumerate(text.split('\n'), start=1):
         m = _ALLOW_COUNT_DIRECTIVE_RE.match(line.strip())
         if m is None:
             continue
-        for raw in m.group('counts').split(','):
-            tok = _normalize_count(raw)
+        for cm in _COUNT_RE.finditer(m.group('counts')):
+            tok = _normalize_count(f'{cm.group(1)} {cm.group(2)}')
             if tok:
                 out.append((lineno, tok))
     return out
