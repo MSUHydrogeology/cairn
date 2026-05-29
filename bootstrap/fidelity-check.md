@@ -280,9 +280,29 @@ string; (2) confirm the module's **distinctive content** is present
 there — the role's responsibilities, the rule the module adds — not
 merely that the section exists. A declared-but-absent merge is a
 finding. (This is faithfulness, not completeness — it strengthens the
-gate; 6b is the novel axis.) *Follow-up:* standardizing every module's
-`Adds to:` line to a `<file> > <section>` shape would make 6a
-mechanizable — itself a fair harvest/fold-back candidate.
+gate; 6b is the novel axis.)
+
+**Body-coverage dimension (the stub-subsets-the-body trap).** When a
+module's stem matches an upstream `doctrine/<stem>.md`, the module file
+is a kernel-merge *subset* of that doctrine body — so the "distinctive
+content" to confirm is the **doctrine body's** load-bearing topics
+reaching the adopter's live surfaces, **not** merely the module's own
+short `Adds to:` stub. A stub that silently dropped a doctrine-body
+topic (as happened with `dual-review`'s clean-pass-trap,
+briefs-don't-telegraph, and restricted-verification content) otherwise
+passes 6a unnoticed — the check is blind to body content the stub
+never carried. For a module with **no** same-stem `doctrine/` file,
+this dimension is skipped with an informational note. This sharpens
+*what* "distinctive content" means; it is **not** a third step — the
+two-check hard constraint holds.
+
+*Follow-up:* standardizing every module's `Adds to:` line to a
+`<file> > <section>` shape would make 6a mechanizable; a working
+reference implementation of the body-coverage dimension exists
+adopter-side (`check_module_body_coverage.py` — stdlib-only, same-stem
+matching, a loose-substring heading-name proxy, graceful-fail on a
+missing source) and is a candidate to generalize into `bootstrap/` and
+wire here. Both are fair harvest/fold-back candidates.
 
 **6b — Tacit-rule capture (the completeness probe proper).** The novel
 check: are operating rules the team follows *in practice* written into
