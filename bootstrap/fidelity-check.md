@@ -296,13 +296,22 @@ this dimension is skipped with an informational note. This sharpens
 *what* "distinctive content" means; it is **not** a third step — the
 two-check hard constraint holds.
 
+**Mechanized.** The body-coverage dimension ships as
+`bootstrap/check_module_body_coverage.py` (stdlib-only; same-stem
+matching; a loose-substring heading-name proxy; graceful-fail on a
+missing source). Run it from the adopter tree against a Cairn checkout:
+
+    python <cairn>/bootstrap/check_module_body_coverage.py --target .
+
+It flags, per installed module with a same-stem `doctrine/<stem>.md`,
+the doctrine-body headings absent from the module file and the
+kernel-fold target — the 6a body-coverage check, automated. It is a
+**heading-name proxy, not semantic coverage** (it catches "topic named
+upstream, absent from the adopter"; a paraphrased fold can false-flag),
+so treat its output as a prompt for the 6a judgment, not a gate.
 *Follow-up:* standardizing every module's `Adds to:` line to a
-`<file> > <section>` shape would make 6a mechanizable; a working
-reference implementation of the body-coverage dimension exists
-adopter-side (`check_module_body_coverage.py` — stdlib-only, same-stem
-matching, a loose-substring heading-name proxy, graceful-fail on a
-missing source) and is a candidate to generalize into `bootstrap/` and
-wire here. Both are fair harvest/fold-back candidates.
+`<file> > <section>` shape would let the same mechanization cover the
+merge-completeness dimension too — a fair harvest/fold-back candidate.
 
 **6b — Tacit-rule capture (the completeness probe proper).** The novel
 check: are operating rules the team follows *in practice* written into
