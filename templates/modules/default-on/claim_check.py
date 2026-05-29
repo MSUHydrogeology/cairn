@@ -166,9 +166,13 @@ _LINE_CITATION_RE = re.compile(
 )
 
 # A count claim: a number directly followed by a tree-noun
-# ("40 proposals", "1,294 lines", "1823 tests").
+# ("40 proposals", "1,294 lines", "1823 tests").  The number alternation
+# is `\d{1,3}(?:,\d{3})+|\d+` -- a comma is admitted only as a genuine
+# thousands separator (inter-digit, grouping by threes), never trailing.
+# A bare `\d[\d,]*` swallowed a prose comma, so "chunk 4, commits" and
+# "row 24, files" mis-read as count claims; this form does not.
 _COUNT_RE = re.compile(
-    r'\b(\d[\d,]*)\s+(' + '|'.join(_COUNT_NOUNS) + r')\b',
+    r'\b(\d{1,3}(?:,\d{3})+|\d+)\s+(' + '|'.join(_COUNT_NOUNS) + r')\b',
     re.IGNORECASE,
 )
 
