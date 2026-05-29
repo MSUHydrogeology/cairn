@@ -168,6 +168,27 @@ than grounding it.
 What problem is being solved? What is the felt pain that triggered
 this? Cite specific files, commits, or issues.
 
+## Proposed paths
+
+*(Optional. Populate as forward-reference paths accrue — files this
+proposal would create, surfaces it would touch into existence — so
+they don't trigger `claim_check` while the proposal is being authored.
+Each entry is the path **and** a one-line note on what it is / when it
+materializes. Remove the section if empty. Once a path resolves on
+disk, drop its line.*
+
+*Three structural rules for the marker to work: (a) the literal
+`Proposed paths:` line below is the marker `claim_check` matches —
+don't drop it while bullets remain; (b) **no blank line between
+the marker line and the first bullet** — `claim_check`'s
+continuation check uses original line numbers, so a gap breaks
+adjacency; (c) **keep each bullet on a single physical line** —
+wrapped/indented bullet continuations close the marker block and
+re-expose subsequent paths to hard-check.)*
+
+Proposed paths:
+- `path/to/proposed/file.md` — what it is; when it lands.
+
 ## Proposal
 
 The change, concretely — name files, signatures, contracts. What
