@@ -1778,6 +1778,54 @@ def install_modules(
     return results
 
 
+#: Forge name -> adopter-root reference directory (fold-back #38).  The
+#: issue-capture module ships starter issue templates + a labels.yml per
+#: forge under reference/<dir>/; when a forge is named in the profile and
+#: issue-capture installs, that dir is copied into the adopter root.
+_FORGE_REFERENCE_DIRS: dict[str, str] = {"gitlab": ".gitlab", "github": ".github"}
+
+
+def install_issue_capture_reference(
+    templates_root: Path,
+    target: Path,
+    forge: str,
+    *,
+    dry_run: bool = False,
+    force: bool = False,
+) -> list[InstallResult]:
+    """Copy the issue-capture forge reference starter into *target*.
+
+    For ``forge`` in ``_FORGE_REFERENCE_DIRS`` (gitlab/github), copies every
+    file under ``templates/modules/team-gated/issue-capture/reference/<dir>/``
+    to the matching adopter-root path (``.gitlab/...`` / ``.github/...``),
+    verbatim (starter content; no token substitution).  Non-clobber:
+    ``_install_one`` skips an existing file unless ``force`` -- so a
+    Maintainer's customized templates survive a re-scaffold.  Fold-back #38.
+    """
+    forge_dir = _FORGE_REFERENCE_DIRS[forge]
+    ref_root = (
+        templates_root / "modules" / "team-gated"
+        / "issue-capture" / "reference" / forge_dir
+    )
+    results: list[InstallResult] = []
+    if not ref_root.is_dir():
+        print(
+            f"  [warn] issue-capture reference missing: {ref_root}",
+            file=sys.stderr,
+        )
+        return results
+    for src in sorted(p for p in ref_root.rglob("*") if p.is_file()):
+        rel = src.relative_to(ref_root)
+        dst = target / forge_dir / rel
+        results.append(
+            _install_one(
+                src, dst, {}, target,
+                dry_run=dry_run, force=force, verbatim=True,
+            )
+        )
+    return results
+
+
 # ---------------------------------------------------------------------------
 # Post-scaffold report
 # ---------------------------------------------------------------------------
@@ -3315,6 +3363,27 @@ def main(argv: list[str] | None = None) -> int:
         templates_root, target, tokens, modules, force=args.force
     )
 
+    # Issue-capture forge reference (fold-back #38): when issue-capture
+    # installs and the profile names a forge, copy that forge's reference
+    # starter (.gitlab/ or .github/) into the adopter root.  Non-clobber
+    # (skip-unless --force).  Absent/unknown forge -> skipped; the
+    # reference then stays a manual-copy starter under the module.
+    reference_results: list[InstallResult] = []
+    forge = str(cfg.get("forge") or "").strip().lower() or None
+    if forge and forge not in _FORGE_REFERENCE_DIRS:
+        print(
+            f"  [warn] unknown forge '{forge}' (known: "
+            f"{', '.join(sorted(_FORGE_REFERENCE_DIRS))}); issue-capture "
+            f"reference not auto-copied.",
+            file=sys.stderr,
+        )
+        forge = None
+    if forge and "issue-capture" in modules:
+        print(f"Installing issue-capture {forge} reference ...")
+        reference_results = install_issue_capture_reference(
+            templates_root, target, forge, force=args.force
+        )
+
     # Install dimension-selected optional templates (foldback #10).
     optional_results: list[InstallResult] = []
     if optional:
@@ -3328,7 +3397,8 @@ def main(argv: list[str] | None = None) -> int:
 
     print_report(
         target, dirs_created,
-        core_results + onboarding_results + module_results + optional_results,
+        core_results + onboarding_results + module_results
+        + reference_results + optional_results,
     )
 
     # Module-merge pass (Proposal B / audit gap #3).  Each installed

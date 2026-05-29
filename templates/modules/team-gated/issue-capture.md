@@ -22,12 +22,13 @@ common forges under `issue-capture/reference/` — `reference/.gitlab/`
 (issue templates GitLab's web UI auto-discovers, plus a `labels.yml`
 manifest) and `reference/.github/` (`ISSUE_TEMPLATE/` forms whose YAML
 frontmatter carries the labels, plus a `labels.yml`). Each ships the
-Bug / Gap / Friction / Wish forms and the standing label set. **Copy
-the tree for your forge into your repo root** and extend `labels.yml`
-with project-specific routing (e.g. a `domain::<area>` set). The
-scaffold does not yet auto-copy these — gating that on the adopter's
-forge needs a forge axis in the profile, a separate change; until
-then the copy is manual. See `issue-capture/reference/README.md`.
+Bug / Gap / Friction / Wish forms and the standing label set. When the
+profile names a `forge:` (`gitlab` / `github`), the scaffold
+**auto-copies** that forge's reference tree into the adopter's repo
+root (non-clobber — a re-scaffold preserves any customizations you've
+made). Without a `forge:`, copy the tree for your forge in by hand.
+Either way, extend `labels.yml` with project-specific routing (e.g. a
+`domain::<area>` set). See `issue-capture/reference/README.md`.
 
 ## Template content
 
