@@ -459,3 +459,74 @@ class TestInitLock:
                 "--cairn-root", str(CAIRN_ROOT)])
         out = capsys.readouterr().out
         assert "review-only" in out  # I3: no pretended 3-way merge
+
+
+# ---------------------------------------------------------------------------
+# #44 (cairn-upgrade-flow-hardening): review-only files owe a by-hand merge.
+# The flow must surface them per-file, stage a theirs/ours review pair OUTSIDE
+# files/, and fail-close --apply until they are reconciled.
+# ---------------------------------------------------------------------------
+
+class TestReviewOnlyMerge:
+    def _init_locked(self, target: Path) -> None:
+        """Install, then synthesize a migrated lockfile -- so every
+        token-substituted file is unrecoverable-base -> review-only."""
+        assert _install(target) == 0
+        (target / "dev" / "cairn-lock.yml").unlink()
+        import shutil
+        shutil.rmtree(target / "dev" / ".cairn")
+        assert s.main(["upgrade", "--target", str(target), "--init-lock",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+
+    def _review_only_dst(self, target: Path) -> str:
+        """A nested, non-verbatim (token-substituted) tracked file -> review-only
+        after --init-lock.  Nested ('/') to exercise the parent-mkdir path (S2)."""
+        lock = s.read_lockfile(target)
+        nested = [r["dst"] for r in lock["files"]
+                  if not r["verbatim"] and "/" in r["dst"]]
+        assert nested, "expected a nested token-substituted file in the lockfile"
+        return nested[0]
+
+    def test_review_only_surfaced_per_file(self, tmp_path: Path, capsys) -> None:
+        self._init_locked(tmp_path)
+        dst = self._review_only_dst(tmp_path)
+        capsys.readouterr()
+        s.main(["upgrade", "--target", str(tmp_path), "--plan",
+                "--cairn-root", str(CAIRN_ROOT)])
+        out = capsys.readouterr().out
+        assert "manual merge owed" in out      # the header, not just a count
+        assert dst in out                       # surfaced PER FILE
+        assert "--ack-review-only" in out       # the concrete next-step pointer
+
+    def test_stage_writes_review_only_pair(self, tmp_path: Path) -> None:
+        self._init_locked(tmp_path)
+        dst = self._review_only_dst(tmp_path)
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        ro = tmp_path / "dev" / ".cairn-upgrade" / "review-only"
+        assert (ro / (dst + ".theirs")).exists()   # new upstream
+        assert (ro / (dst + ".ours")).exists()      # current on-disk copy
+        # B1: the pair lives OUTSIDE files/ so it cannot trip apply's exactness.
+        files_dir = tmp_path / "dev" / ".cairn-upgrade" / "files"
+        staged = ({str(p.relative_to(files_dir)) for p in files_dir.rglob("*")
+                   if p.is_file()} if files_dir.exists() else set())
+        assert dst not in staged
+
+    def test_stage_review_only_file_missing_only_theirs(self, tmp_path: Path) -> None:
+        """LHM's actual incident shape: a tracked file missing on disk (a
+        default-on module slot that never installed).  Only ``.theirs`` is
+        written -- there is no on-disk ``.ours`` to pair (Antigravity S2 /
+        second-read Finding 4)."""
+        self._init_locked(tmp_path)
+        dst = self._review_only_dst(tmp_path)
+        (tmp_path / dst).unlink()                   # gone before --stage
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        ro = tmp_path / "dev" / ".cairn-upgrade" / "review-only"
+        assert (ro / (dst + ".theirs")).exists()
+        assert not (ro / (dst + ".ours")).exists()  # nothing on disk to pair
+        lock = s.read_lockfile(tmp_path)
+        plans, _ = s._compute_upgrade(tmp_path, CAIRN_ROOT, TEMPLATES_ROOT,
+                                      lock, to_ref=None)
+        fp = next(p for p in plans if p.dst == dst)
+        assert fp.kind == "review-only" and "missing on disk" in fp.detail

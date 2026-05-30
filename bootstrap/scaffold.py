@@ -2691,8 +2691,13 @@ def _compute_upgrade(
             continue
         # Mergeable .md.
         if ours_bytes is None:
+            # File missing on disk (e.g. a default-on module slot that never
+            # installed).  Carry theirs_raw so --stage can write the upstream
+            # version into the review-only surface (there is no .ours to pair
+            # it with -- nothing is on disk).
             plans.append(FilePlan(dst, "review-only", None,
-                                  "file missing on disk", None, None))
+                                  "file missing on disk",
+                                  theirs_b.decode("utf-8"), None))
             continue
         ours = ours_bytes.decode("utf-8")
         theirs_raw = theirs_b.decode("utf-8")
@@ -2700,10 +2705,12 @@ def _compute_upgrade(
         base_path = (target / cache_rel) if cache_rel else None
         if base_path is None or not base_path.exists():
             # No recoverable base (e.g. a --init-lock migrated tree, I3) ->
-            # review-only diff, never a pretended 3-way merge.
+            # review-only diff, never a pretended 3-way merge.  Carry
+            # theirs_raw so --stage can write the upstream version alongside
+            # the on-disk copy for a by-hand merge.
             plans.append(FilePlan(dst, "review-only", None,
                                   "no recoverable base (review-only diff)",
-                                  None, None))
+                                  theirs_raw, None))
             continue
         base_raw = base_path.read_text(encoding="utf-8")
         try:
@@ -2797,6 +2804,21 @@ def _print_upgrade_report(
               "--apply.")
     for fp in flags:
         print(f"  [flag] {fp.dst}: {fp.detail}")
+    # Review-only files owe a by-hand merge: the upgrade is NOT complete until
+    # each is reconciled against the new upstream.  Surface them per-file with
+    # the reason (not just the summary count) + the concrete next step, so an
+    # adopter cannot read "review-only: N" as "done".
+    review_only = [fp for fp in plans if fp.kind == "review-only"]
+    if review_only:
+        print("\n  ⚠ manual merge owed -- the upgrade is NOT complete "
+              "until these are reconciled against the new upstream:")
+        for fp in review_only:
+            print(f"      {fp.dst}: {fp.detail}")
+        print(f"  next step: `upgrade --stage` writes each file's upstream "
+              f"version (+ your current copy) under "
+              f"{_STAGING_REL}/review-only/ for a by-hand merge; `--apply` "
+              f"fail-closes until they are reconciled "
+              f"(override: --ack-review-only).")
 
 
 def _seed_staging_gitignore(target: Path) -> None:
@@ -2847,6 +2869,27 @@ def _write_stage(
             nb = stage / "new-base" / fp.dst
             nb.parent.mkdir(parents=True, exist_ok=True)
             nb.write_text(fp.theirs_raw, encoding="utf-8")
+    # Review-only files (no recoverable base / missing on disk) get a by-hand
+    # review pair in a SIBLING ``review-only/`` dir -- deliberately NOT under
+    # ``files/``, which ``--apply`` swaps onto disk + checks for exactness
+    # (placing side-files there would trip that safety gate).  ``.theirs`` is
+    # the new upstream; ``.ours`` is the current on-disk copy, omitted when
+    # the file is missing on disk (nothing to pair).  ``--apply`` never
+    # advances these; the whole stage (incl. ``review-only/``) is rmtree'd on
+    # apply.
+    for fp in plans:
+        if fp.kind != "review-only":
+            continue
+        if fp.theirs_raw is not None:
+            theirs_out = stage / "review-only" / (fp.dst + ".theirs")
+            theirs_out.parent.mkdir(parents=True, exist_ok=True)
+            theirs_out.write_text(fp.theirs_raw, encoding="utf-8")
+        dst_abs = target / fp.dst
+        if dst_abs.exists():
+            ours_out = stage / "review-only" / (fp.dst + ".ours")
+            ours_out.parent.mkdir(parents=True, exist_ok=True)
+            ours_out.write_text(
+                dst_abs.read_text(encoding="utf-8"), encoding="utf-8")
     meta = {
         "lock_commit": lock.get("cairn_commit"),
         "lock_version": lock.get("cairn_version"),
