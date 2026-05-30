@@ -530,3 +530,50 @@ class TestReviewOnlyMerge:
                                       lock, to_ref=None)
         fp = next(p for p in plans if p.dst == dst)
         assert fp.kind == "review-only" and "missing on disk" in fp.detail
+
+    def test_apply_fail_closes_on_review_only(self, tmp_path: Path, capsys) -> None:
+        """The #44 completion gate: --apply refuses to advance the lockfile
+        while files still owe a by-hand merge (the exact LHM failure mode)."""
+        self._init_locked(tmp_path)
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        capsys.readouterr()
+        rc = s.main(["upgrade", "--target", str(tmp_path), "--apply",
+                     "--cairn-root", str(CAIRN_ROOT)])
+        assert rc == 1
+        err = capsys.readouterr().err
+        assert "not complete" in err and "--ack-review-only" in err
+        # fail-closed: the stage is NOT consumed and the lockfile is untouched.
+        assert (tmp_path / "dev" / ".cairn-upgrade").exists()
+
+    def test_apply_ack_review_only_overrides_and_cleans(self, tmp_path: Path) -> None:
+        """--ack-review-only is the explicit override: --apply proceeds and
+        rmtree cleans the whole stage incl. review-only/ (B1)."""
+        self._init_locked(tmp_path)
+        ro_dst = self._review_only_dst(tmp_path)
+        lock_before = s.read_lockfile(tmp_path)
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        assert (tmp_path / "dev" / ".cairn-upgrade" / "review-only").exists()
+        rc = s.main(["upgrade", "--target", str(tmp_path), "--apply",
+                     "--ack-review-only", "--cairn-root", str(CAIRN_ROOT)])
+        assert rc == 0
+        assert not (tmp_path / "dev" / ".cairn-upgrade").exists()  # incl. review-only/
+        # the review-only file never advanced: its lockfile record is unchanged
+        # (only advancing kinds recompute their hash on --apply).
+        lock_after = s.read_lockfile(tmp_path)
+        rec_before = next(r for r in lock_before["files"] if r["dst"] == ro_dst)
+        rec_after = next(r for r in lock_after["files"] if r["dst"] == ro_dst)
+        assert rec_after["hash"] == rec_before["hash"]
+
+    def test_review_only_never_in_advancing_set(self, tmp_path: Path) -> None:
+        """A review-only dst is recorded in the stage's review_only list but
+        never in staged_files (the advancing set --apply swaps)."""
+        self._init_locked(tmp_path)
+        ro_dst = self._review_only_dst(tmp_path)
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        meta = json.loads(
+            (tmp_path / "dev" / ".cairn-upgrade" / s._STAGE_META).read_text())
+        assert ro_dst in meta["review_only"]
+        assert ro_dst not in meta["staged_files"]

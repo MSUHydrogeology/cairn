@@ -2877,9 +2877,11 @@ def _write_stage(
     # the file is missing on disk (nothing to pair).  ``--apply`` never
     # advances these; the whole stage (incl. ``review-only/``) is rmtree'd on
     # apply.
+    review_only_dsts: list[str] = []
     for fp in plans:
         if fp.kind != "review-only":
             continue
+        review_only_dsts.append(fp.dst)
         if fp.theirs_raw is not None:
             theirs_out = stage / "review-only" / (fp.dst + ".theirs")
             theirs_out.parent.mkdir(parents=True, exist_ok=True)
@@ -2901,6 +2903,9 @@ def _write_stage(
         "staged_files": sorted(staged_files),
         "kinds": kinds,
         "ours_hashes": ours_hashes,
+        # Outstanding by-hand merges: --apply fail-closes on a non-empty list
+        # unless --ack-review-only is passed (#44 completion gate).
+        "review_only": sorted(review_only_dsts),
     }
     (stage / _STAGE_META).write_text(
         json.dumps(meta, indent=2, sort_keys=True), encoding="utf-8")
@@ -2970,10 +2975,17 @@ def _cmd_init_lock(
     return 0
 
 
-def _apply_upgrade(target: Path, lock: dict[str, Any]) -> int:
+def _apply_upgrade(
+    target: Path, lock: dict[str, Any], *, ack_review_only: bool = False,
+) -> int:
     """`--apply` (R7): consume the staged result under the safety contract,
     swap the originals, **advance the lockfile + base cache** to the new
-    version, and clean the stage.  Fail-closed at every gate."""
+    version, and clean the stage.  Fail-closed at every gate.
+
+    ``ack_review_only`` (the ``--ack-review-only`` flag) is the explicit
+    override for the #44 completion gate: ``--apply`` refuses to advance the
+    lockfile while files still owe a by-hand merge unless the adopter
+    acknowledges them."""
     import json
     import shutil
     stage = target / _STAGING_REL
@@ -3021,6 +3033,20 @@ def _apply_upgrade(target: Path, lock: dict[str, Any]) -> int:
             print(f"error: staged file {staged} still has conflict markers; "
                   "resolve them, then re-run --apply.", file=sys.stderr)
             return 1
+    # (d2) #44 completion gate: outstanding review-only files owe a by-hand
+    #      merge.  Fail-closed (mirrors the conflict-marker gate) unless the
+    #      adopter explicitly acknowledges with --ack-review-only -- so a
+    #      --stage -> --apply cannot advance the lockfile to the new version
+    #      while customized doctrine silently never landed (the LHM failure).
+    review_only = meta.get("review_only", [])
+    if review_only and not ack_review_only:
+        print("error: the upgrade is not complete -- "
+              f"{len(review_only)} file(s) owe a by-hand merge and were not "
+              "reconciled:\n  " + "\n  ".join(review_only) +
+              f"\n  review the .theirs/.ours pair under {_STAGING_REL}/"
+              "review-only/, merge by hand into the original, then re-run "
+              "`--apply --ack-review-only` to acknowledge.", file=sys.stderr)
+        return 1
     # (e) the on-disk originals are unchanged *since --stage* (R7a),
     #     compared to the stage-time snapshot (NOT the clean-install hash --
     #     a customized file differs from that by design).
@@ -3098,6 +3124,10 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
                    help="Write the staged review surface (no swap).")
     p.add_argument("--apply", action="store_true",
                    help="Apply a previously-staged, resolved upgrade.")
+    p.add_argument("--ack-review-only", action="store_true",
+                   help="Acknowledge outstanding review-only files so --apply "
+                        "proceeds (the #44 completion gate is fail-closed "
+                        "without this).")
     args = p.parse_args(argv)
 
     target = Path(args.target).resolve()
@@ -3125,7 +3155,8 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
         return 1
 
     if args.apply:
-        return _apply_upgrade(target, lock)
+        return _apply_upgrade(target, lock,
+                              ack_review_only=args.ack_review_only)
 
     plans, structural = _compute_upgrade(
         target, cairn_root, templates_root, lock, args.to)
