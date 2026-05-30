@@ -694,6 +694,15 @@ _CORE_MAPPINGS: tuple[tuple[str, str], ...] = (
     ("core/dev/plans/_template.md",                 "dev/plans/_template.md"),
 )
 
+#: Common filenames an adopter renames the thin vendor wrapper
+#: (``core/VENDOR.md``) to -- their AI tool's instruction file.  Used by
+#: ``--init-lock`` to follow that rename so the wrapper stays tracked + 3-way
+#: merges on later upgrades (foldback #45).  Distinctly vendor-specific names
+#: only (``AGENTS.md`` is the shared file, deliberately excluded).
+_KNOWN_VENDOR_WRAPPERS: tuple[str, ...] = (
+    "CLAUDE.md", "GEMINI.md", "CODEX.md", "CURSOR.md", "COPILOT.md", "QWEN.md",
+)
+
 # Optional top-level templates, gated on a dimension axis.  Unlike
 # modules (which land under ``dev/modules/``), these are project-root
 # files an adopter's *human* contributors read.  Each entry is
@@ -2913,6 +2922,41 @@ def _write_stage(
     return stage
 
 
+def _resolve_vendor_wrapper(
+    target: Path, mapped_dsts: set[str],
+) -> str | None:
+    """Resolve the adopter's renamed vendor wrapper (foldback #45).
+
+    Cairn installs the thin wrapper as ``VENDOR.md`` and the adopter renames it
+    to their tool's file (``CLAUDE.md`` etc.), so on a renamed tree the install
+    dst ``VENDOR.md`` is missing and the wrapper would drop to untracked.  Two-
+    tier resolution (plan-review S1), first hit wins:
+
+    * **Tier 1 (name):** a repo-root file named in ``_KNOWN_VENDOR_WRAPPERS``
+      that is not already a mapped core/module dst -> resolved, with **no
+      content check** (a heavily customized wrapper may have dropped the
+      ``@AGENTS.md`` import line, and the name alone is a strong signal).
+    * **Tier 2 (content):** else a repo-root ``*.md`` (not already mapped)
+      whose first few lines carry the ``@AGENTS.md`` import -> resolved (a
+      custom-named wrapper).
+
+    Returns the repo-root-relative dst, or ``None`` (the caller warns rather
+    than silently skipping or recording a wrong file).  The not-already-mapped
+    guard (both tiers) is the false-positive backstop."""
+    # Tier 1: a known vendor filename at repo root.
+    for name in _KNOWN_VENDOR_WRAPPERS:
+        if name not in mapped_dsts and (target / name).is_file():
+            return name
+    # Tier 2: a custom-named root .md importing @AGENTS.md near the top.
+    for md in sorted(target.glob("*.md")):
+        if md.name in mapped_dsts or not md.is_file():
+            continue
+        head = md.read_text(encoding="utf-8", errors="replace").splitlines()[:5]
+        if any("@AGENTS.md" in line for line in head):
+            return md.name
+    return None
+
+
 def _cmd_init_lock(
     target: Path, cairn_root: Path, templates_root: Path,
 ) -> int:
@@ -2938,10 +2982,29 @@ def _cmd_init_lock(
                     break
     records: list[dict[str, Any]] = []
     classification: dict[str, list[str]] = {"verbatim": [], "unrecoverable-base": []}
-    for src_rel, dst_rel, verbatim in _lock_file_list(list(_MODULE_MAPPINGS), []):
+    entries = _lock_file_list(list(_MODULE_MAPPINGS), [])
+    mapped_dsts = {dst for _src, dst, _vb in entries}
+    for src_rel, dst_rel, verbatim in entries:
         dst_abs = target / dst_rel
         if not dst_abs.exists():
-            continue
+            # The vendor wrapper installs as VENDOR.md but the adopter renames
+            # it to their tool's file (#45).  Follow the rename so it stays
+            # tracked + 3-way merges later, instead of dropping it to untracked.
+            if src_rel == "core/VENDOR.md":
+                resolved = _resolve_vendor_wrapper(target, mapped_dsts)
+                if resolved is None:
+                    print(f"  [warn] vendor wrapper {dst_rel} installed but no "
+                          "renamed wrapper found at repo root (a known vendor "
+                          f"filename {', '.join(_KNOWN_VENDOR_WRAPPERS)}, or a "
+                          "root *.md importing @AGENTS.md) -- it will be "
+                          "untracked. Rename it to a known vendor filename or "
+                          "re-install from an upgrade-capable Cairn.",
+                          file=sys.stderr)
+                    continue
+                dst_rel = resolved
+                dst_abs = target / dst_rel
+            else:
+                continue
         h = "sha256:" + _sha256_hex(dst_abs.read_bytes())
         rec: dict[str, Any] = {"src": src_rel, "dst": dst_rel,
                                "verbatim": verbatim, "hash": h}

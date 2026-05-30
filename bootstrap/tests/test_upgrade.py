@@ -460,6 +460,41 @@ class TestInitLock:
         out = capsys.readouterr().out
         assert "review-only" in out  # I3: no pretended 3-way merge
 
+    def test_init_lock_follows_vendor_rename(self, tmp_path: Path) -> None:
+        """#45: a renamed vendor wrapper (VENDOR.md -> CLAUDE.md) is resolved
+        and tracked under its real dst, not dropped to untracked."""
+        assert _install(tmp_path) == 0
+        (tmp_path / "VENDOR.md").rename(tmp_path / "CLAUDE.md")  # adopter rename
+        (tmp_path / "dev" / "cairn-lock.yml").unlink()
+        import shutil
+        shutil.rmtree(tmp_path / "dev" / ".cairn")
+        assert s.main(["upgrade", "--target", str(tmp_path), "--init-lock",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        lock = s.read_lockfile(tmp_path)
+        dsts = {r["dst"] for r in lock["files"]}
+        assert "CLAUDE.md" in dsts and "VENDOR.md" not in dsts
+        rec = next(r for r in lock["files"] if r["dst"] == "CLAUDE.md")
+        assert rec["src"] == "core/VENDOR.md" and rec.get("unrecoverable_base")
+
+    def test_init_lock_warns_on_unresolvable_wrapper(
+        self, tmp_path: Path, capsys
+    ) -> None:
+        """#45: with no resolvable wrapper, warn (do not silently skip) and
+        never record a wrong file."""
+        assert _install(tmp_path) == 0
+        (tmp_path / "VENDOR.md").unlink()  # gone; no rename, no known wrapper
+        (tmp_path / "dev" / "cairn-lock.yml").unlink()
+        import shutil
+        shutil.rmtree(tmp_path / "dev" / ".cairn")
+        capsys.readouterr()
+        assert s.main(["upgrade", "--target", str(tmp_path), "--init-lock",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        err = capsys.readouterr().err
+        assert "vendor wrapper" in err and "untracked" in err
+        dsts = {r["dst"] for r in s.read_lockfile(tmp_path)["files"]}
+        assert "VENDOR.md" not in dsts
+        assert not (dsts & set(s._KNOWN_VENDOR_WRAPPERS))  # no wrong-file record
+
 
 # ---------------------------------------------------------------------------
 # #44 (cairn-upgrade-flow-hardening): review-only files owe a by-hand merge.
