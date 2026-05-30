@@ -34,6 +34,21 @@ and a new empty `Unreleased` is started above.
 
 ### Changed
 
+- **Upgrade flow surfaces + enforces the customized-file merge, and
+  `init-lock` follows the vendor-wrapper rename** (fold-backs #44/#45 from
+  the LHM reference deployment).  `review-only` files (a customized file with
+  no recoverable base, or one missing on disk) now surface **per file** under
+  a "manual merge owed" header and stage a `.theirs`/`.ours` review pair in a
+  sibling `review-only/` dir (never under `files/`, so apply's exactness gate
+  is untouched); `upgrade --apply` **fail-closes** on outstanding review-only
+  files unless `--ack-review-only`, so a `--stage` → `--apply` can no longer
+  silently advance the lockfile while customized doctrine never landed.
+  `upgrade --init-lock` now resolves a renamed vendor wrapper (known-vendor-
+  name set → `@AGENTS.md`-import content match → warn) and records it under
+  its real dst (`CLAUDE.md`, …) instead of dropping it to untracked.
+  `UPGRADE.md` documents the completion gate.  Drains the LHM plan
+  `cairn-upgrade-flow-hardening`; +8 upgrade tests (incl. the file-missing
+  review-only branch), suite 683 pass / `check_cairn` 0 issues.
 - **`link_check` / `check_cairn` skip archive + ephemeral sources by
   default.**  The shipped `link_check.py` gains `filter_sources()` and a
   `--include-archives` flag: whole-tree scans now skip sources under any
