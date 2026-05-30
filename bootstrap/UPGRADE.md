@@ -56,6 +56,13 @@ python bootstrap/scaffold.py upgrade --target <repo> --apply    # 3. apply
   **What's in the staging directory** — review and edit only the first:
   * `files/` — **the merged result** (your customizations + the upstream
     changes). This is what you review, resolve conflicts in, and apply.
+  * `review-only/` — for each **review-only** file (a customized file with
+    no recoverable base — e.g. an `--init-lock` migrated tree — or a tracked
+    file missing on disk), the upstream version (`<dst>.theirs`) alongside
+    your current copy (`<dst>.ours`, omitted when the file is missing) so you
+    can merge the change **by hand** into the original. These never merge
+    automatically and `--apply` never swaps them; they record the work you
+    still owe.
   * `new-base/` — the upstream templates that will become the **next
     base-cache** after `--apply`. Reference only; do **not** edit these.
   * `stage-metadata.json` — the stage record `--apply` checks against the
@@ -63,11 +70,23 @@ python bootstrap/scaffold.py upgrade --target <repo> --apply    # 3. apply
 * **`--apply`** swaps the resolved staged files into place and cleans the
   staging directory — but only under a **safety contract**: the stage must
   have been produced from the current lockfile (same tokens + roster), the
-  originals must be unchanged since `--stage`, and **no conflict markers
-  may remain** (a tree with markers is never applied — only a resolved,
-  marker-free tree advances the lockfile). After applying, re-run a clean
-  install (or `--stage`) to refresh the lockfile + base cache to the new
-  version.
+  originals must be unchanged since `--stage`, **no conflict markers
+  may remain**, and **no review-only file may be left unreconciled**. A tree
+  with markers, or with outstanding review-only files, is never applied —
+  only a resolved tree advances the lockfile.
+
+  **The completion gate.** An upgrade is **not complete** until every
+  review-only / customized file has been reconciled against the new upstream.
+  `--apply` enforces this: it **fail-closes** (mirroring the conflict-marker
+  gate) when review-only files remain, so a `--stage` → `--apply` cannot
+  silently advance the lockfile to the new version while your customized
+  doctrine never landed. Once you have merged each `review-only/` pair into
+  its original by hand, re-run `--apply --ack-review-only` to acknowledge them
+  and apply. (Without that flag the gate holds — there is no way to advance
+  the version past an unreconciled customized file by accident.)
+
+  After applying, re-run a clean install (or `--stage`) to refresh the
+  lockfile + base cache to the new version.
 
 `--to <ref>` upgrades to a specific Cairn git ref **only when your Cairn
 source is a git checkout** carrying that ref; a packaged release (tarball
