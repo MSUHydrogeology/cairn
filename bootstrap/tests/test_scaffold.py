@@ -470,6 +470,47 @@ class TestNewTeamGatedModules:
             )
 
 
+class TestArchitectureReviewModule:
+    """architecture-review (modflow_tools doctrine-parity fold) ships a
+    *2-spec* contract -- the module doctrine plus a forkable rubric frame
+    -- unlike the single-.md team-gated modules above. Both must be
+    registered in _MODULE_MAPPINGS and install when the gate selects it,
+    so a documented-but-uninstallable module cannot slip through."""
+
+    def test_registered_with_two_specs(self) -> None:
+        from bootstrap.scaffold import _MODULE_MAPPINGS
+
+        assert "architecture-review" in _MODULE_MAPPINGS, (
+            "architecture-review not registered in _MODULE_MAPPINGS"
+        )
+        specs = _MODULE_MAPPINGS["architecture-review"]
+        assert len(specs) == 2
+        by_dst = {s.dst: s for s in specs}
+        doctrine = by_dst["dev/modules/architecture-review.md"]
+        frame = by_dst["dev/architecture_review.md"]
+        assert doctrine.src == "team-gated/architecture-review.md"
+        assert frame.src == "team-gated/architecture_review_template.md"
+        # Both are substituted forkable templates, not verbatim scripts.
+        assert doctrine.verbatim is False
+        assert frame.verbatim is False
+
+    def test_installs_both_files_when_selected(self, tmp_path: Path) -> None:
+        cairn_root = Path(__file__).resolve().parent.parent.parent
+        templates_root = cairn_root / "templates"
+        if not templates_root.exists():
+            pytest.skip("Cairn templates not available")
+        create_dev_tree(tmp_path)
+        results = install_modules(
+            templates_root, tmp_path, {}, ["architecture-review"]
+        )
+        installed_files = [r[0] for r in results]
+        for rel in ("dev/modules/architecture-review.md",
+                    "dev/architecture_review.md"):
+            expected = tmp_path / rel
+            assert expected in installed_files, f"{rel} not installed"
+            assert expected.exists()
+
+
 class TestModelSelectionWired:
     """`model-selection` shipped as a team-gated module *file* but was
     never registered in _MODULE_MAPPINGS, so a profile listing it printed

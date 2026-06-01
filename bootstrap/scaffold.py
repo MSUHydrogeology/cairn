@@ -934,6 +934,19 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         InstallSpec("team-gated/content_scan.py",
                     "scripts/content_scan.py", verbatim=True),
     ],
+    # Architecture-review (modflow_tools doctrine-parity fold, 2026-06-01):
+    # a triggered remediation / on-ramp module for an adopter whose
+    # architecture accreted rather than was deliberately designed.  Ships
+    # the module doctrine + a forkable rubric frame the adopter fills
+    # (the incident-trackers / documentation-plan 2-spec pattern, both
+    # substituted not verbatim).  Team-gated, opt-in -- not in any
+    # default-on set or governance preset.
+    "architecture-review": [
+        InstallSpec("team-gated/architecture-review.md",
+                    "dev/modules/architecture-review.md"),
+        InstallSpec("team-gated/architecture_review_template.md",
+                    "dev/architecture_review.md"),
+    ],
 }
 
 # Module → the inline command-token whose value should default to the
