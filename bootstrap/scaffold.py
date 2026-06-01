@@ -1565,6 +1565,192 @@ def write_local_env(
     return (dst, [], [], "installed")
 
 
+def load_vendor_targets(templates_root: Path) -> list[dict[str, Any]]:
+    """Load the data-driven vendor fan-out table (``skills/_data/
+    vendor_targets.yml``).  JSON-encoded (valid YAML 1.2) so it parses
+    stdlib-only, like the lockfile.  A vendor refresh is a row edit here."""
+    import json
+
+    path = templates_root / "skills" / "_data" / "vendor_targets.yml"
+    if not path.is_file():
+        return []
+    data = json.loads(path.read_text(encoding="utf-8"))
+    return list(data.get("targets", []))
+
+
+def _symlinks_available(target: Path) -> bool:
+    """Probe whether ``os.symlink`` works in *target* (False on Windows without
+    Developer Mode / Administrator -- the copy-fallback trigger, R2)."""
+    import os
+
+    probe = target / ".cairn-symlink-probe"
+    try:
+        if probe.is_symlink() or probe.exists():
+            probe.unlink()
+        os.symlink(".", probe)
+        ok = probe.is_symlink()
+        probe.unlink()
+        return ok
+    except (OSError, NotImplementedError):
+        return False
+
+
+def _assert_fanout_contained(dst: Path, target: Path) -> None:
+    """Containment for a fan-out destination (S3).
+
+    Like :func:`_assert_safe_write` but permits ``dst`` *itself* to be a symlink
+    (the symlink we are about to (re)create): it still refuses a **symlinked
+    parent** and any path resolving **outside** *target*."""
+    tr = target.resolve()
+    for ancestor in dst.parents:
+        if ancestor == tr:
+            break
+        try:
+            ancestor.relative_to(tr)
+        except ValueError:
+            break
+        if ancestor.is_symlink():
+            raise ScaffoldSecurityError(
+                f"refusing fan-out through a symlinked parent: {ancestor}"
+            )
+    final = dst.parent.resolve() / dst.name
+    try:
+        final.relative_to(tr)
+    except ValueError:
+        raise ScaffoldSecurityError(
+            f"refusing fan-out outside the target directory: {final}"
+        )
+
+
+def _emit_skill_symlink(dst: Path, canonical: Path) -> str:
+    """Create / verify a relative symlink ``dst`` -> the canonical skills dir."""
+    import os
+
+    rel = os.path.relpath(canonical, dst.parent)
+    if dst.is_symlink():
+        if os.readlink(dst) == rel:
+            return "linked"  # idempotent
+        dst.unlink()
+    elif dst.exists():
+        print(
+            f"  [warn] {dst} exists as a non-symlink; leaving it untouched "
+            "(remove it to enable the skills symlink).",
+            file=sys.stderr,
+        )
+        return "exists-nonsymlink"
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    os.symlink(rel, dst, target_is_directory=True)
+    return "linked"
+
+
+def _emit_skill_copy_fallback(
+    dst: Path, canonical: Path, target: Path, *, force: bool,
+) -> str:
+    """Regenerate gitignored copies of the canonical skills under *dst*, with a
+    divergence guard (R1/EP3): a copy whose content differs from the **local
+    canonical** source is **warned, never silently clobbered** -- so an adopter
+    edit made in the wrong place (the copy) is surfaced before regeneration."""
+    import shutil
+
+    diverged: list[str] = []
+    for src_file in sorted(canonical.rglob("*")):
+        if not src_file.is_file():
+            continue
+        rel = src_file.relative_to(canonical)
+        out = dst / rel
+        _assert_fanout_contained(out, target)
+        if out.is_file() and out.read_bytes() != src_file.read_bytes() \
+                and not force:
+            diverged.append(str(rel))
+            continue
+        out.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(src_file, out)
+    if diverged:
+        print(
+            f"  [warn] copy-fallback divergence under {dst}: "
+            f"{', '.join(diverged)} differ from the canonical .agents/skills/ "
+            "source and were NOT overwritten -- edit the canonical source, not "
+            "the generated copy.",
+            file=sys.stderr,
+        )
+        return "diverged-preserved"
+    return "copied"
+
+
+def fan_out_skills(
+    templates_root: Path,
+    target: Path,
+    *,
+    dry_run: bool = False,
+    force: bool = False,
+    targets: list[dict[str, Any]] | None = None,
+    allow_symlinks: bool | None = None,
+) -> list[tuple[str, str, str]]:
+    """Fan the canonical ``.agents/skills/`` source out to each vendor target by
+    tier (Decision 4, revised).  Returns ``(target, tier_used, status)`` rows.
+
+    * **alias** -- the harness reads ``.agents/skills/`` directly; nothing emitted.
+    * **symlink** -- same SKILL.md format at a different path: a *verified*
+      relative symlink to the canonical dir, emitted only when the vendor's
+      parent dir already exists (a light "is this harness in use?" detection, so
+      a fresh repo is not littered with empty vendor dirs).  Where symlinks are
+      unavailable (Windows without Developer Mode) it degrades to the
+      **gitignored generated copy** + divergence guard.
+    * **manual** -- a different-format target (compiled artifact / documented
+      manual fallback); never a symlink to incompatible files.
+
+    Every destination is containment-checked **before** any write (S3); the
+    divergence guard runs only after containment validates the target.
+    """
+    canonical = target / ".agents" / "skills"
+    rows = targets if targets is not None else load_vendor_targets(templates_root)
+    can_symlink = (
+        _symlinks_available(target) if allow_symlinks is None else allow_symlinks
+    )
+    results: list[tuple[str, str, str]] = []
+    advisory = False
+    for row in rows:
+        name = str(row.get("target", "?"))
+        tier = row.get("tier")
+        if tier == "alias":
+            results.append((name, "alias", "noop"))
+            continue
+        if tier == "manual":
+            results.append((name, "manual", "manual-fallback"))
+            continue
+        if tier != "symlink":
+            results.append((name, str(tier), "unknown-tier"))
+            continue
+        path = str(row.get("path", ""))
+        if not path or path.startswith("/") or ".." in Path(path).parts:
+            raise ScaffoldSecurityError(
+                f"vendor target {name!r}: unsafe fan-out path {path!r}"
+            )
+        dst = target / path
+        if not dst.parent.exists():
+            results.append((name, "symlink", "skipped-vendor-absent"))
+            continue
+        _assert_fanout_contained(dst, target)
+        if dry_run:
+            results.append((name, "symlink" if can_symlink else "copy", "dry-run"))
+            continue
+        if can_symlink:
+            results.append((name, "symlink", _emit_skill_symlink(dst, canonical)))
+        else:
+            advisory = True
+            status = _emit_skill_copy_fallback(dst, canonical, target, force=force)
+            seed_gitignore(target, (path.rstrip("/") + "/",))
+            results.append((name, "copy", status))
+    if advisory:
+        print(
+            "  [advisory] symlinks unavailable (Windows without Developer "
+            "Mode?) -- skills fanned out as gitignored generated copies. "
+            "Enable Developer Mode for symlinked vendor targets.",
+            file=sys.stderr,
+        )
+    return results
+
+
 def install_optional(
     templates_root: Path,
     target: Path,
@@ -3679,6 +3865,12 @@ def main(argv: list[str] | None = None) -> int:
     env_result = write_local_env(target, force=args.force)
     if env_result[3] == "installed":
         print(f"  Wrote interpreter binding: {env_result[0]} (untracked)")
+    # Fan the canonical skills out to in-use vendor read-paths (symlink, or a
+    # gitignored generated copy where symlinks are unavailable).
+    fanout = fan_out_skills(templates_root, target, force=args.force)
+    for name, tier, status in fanout:
+        if status not in ("noop", "skipped-vendor-absent"):
+            print(f"  Skills fan-out [{tier}] {name}: {status}")
 
     # Install progressive-onboarding content.  Must run AFTER
     # install_core because it edits the just-installed

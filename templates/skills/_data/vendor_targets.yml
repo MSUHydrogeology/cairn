@@ -1,0 +1,29 @@
+{
+  "_doc": "Data-driven vendor fan-out table for the lifecycle skills. The canonical source is .agents/skills/; this table maps each harness to how that canonical source reaches its read-path. A vendor refresh is a row edit here, never a redesign (Decision 5). JSON-encoded so it round-trips stdlib-only (valid YAML 1.2), like cairn-lock.yml. Levels are CLAIMED-pending-fixture (II3): a target moves to native-tested only when Chunk 7's fixture harness proves it. tier: alias (reads .agents/skills directly -> nothing emitted) | symlink (same SKILL.md format, different path -> verified symlink to canonical, copy-fallback where symlinks are unavailable) | manual (different format -> documented manual/compiled fallback, never a symlink to incompatible files). auto_suppress: native-tested (honors a suppress flag) | mitigated (anti-semantic description only) | cli-backstop-only (relies on the Layer-2 CLI fail-safe).",
+  "targets": [
+    {
+      "target": "agents-native",
+      "tier": "alias",
+      "path": ".agents/skills",
+      "format": "skill-md",
+      "level": "native-claimed-unverified",
+      "auto_suppress": "native-tested"
+    },
+    {
+      "target": "claude-code",
+      "tier": "symlink",
+      "path": ".claude/skills",
+      "format": "skill-md",
+      "level": "native-claimed-unverified",
+      "auto_suppress": "native-tested"
+    },
+    {
+      "target": "cursor",
+      "tier": "manual",
+      "path": ".cursor/rules",
+      "format": "mdc",
+      "level": "manual-fallback",
+      "auto_suppress": "mitigated"
+    }
+  ]
+}
