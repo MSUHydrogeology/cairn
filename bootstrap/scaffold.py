@@ -694,6 +694,29 @@ _CORE_MAPPINGS: tuple[tuple[str, str], ...] = (
     ("core/dev/plans/_template.md",                 "dev/plans/_template.md"),
 )
 
+#: Lifecycle-routine skills install **unconditionally, like core/** -- the
+#: session routines are invariant kernel (every adoption runs them), so they
+#: are not a conditional ``templates/modules/*`` module.  ``(src relative to
+#: templates/, dst relative to the repo root, verbatim)``.  The CLI is a script
+#: -> ``verbatim`` (byte-for-byte, hash-only upgrade policy); the ``SKILL.md``
+#: sources are markdown -> substituted (so they get a base-template cache entry
+#: and a token-/slot-aware 3-way merge on upgrade, exactly like ``core/`` docs).
+_SKILLS_MAPPINGS: tuple[tuple[str, str, bool], ...] = (
+    ("skills/_lib/lifecycle.py",        "tools/lifecycle.py",                       True),
+    ("skills/session-start/SKILL.md",   ".agents/skills/session-start/SKILL.md",    False),
+    ("skills/session-end/SKILL.md",     ".agents/skills/session-end/SKILL.md",      False),
+)
+
+#: Machine-local lifecycle state the skills write into ``dev/.cairn/`` -- the
+#: untracked interpreter binding (resolve-don't-bake, Decision 6) and the
+#: full-handoff lock.  Seeded into ``.gitignore`` unconditionally (the skills
+#: always install).  ``dev/.cairn/base/`` itself stays tracked (the lockfile
+#: base cache); only these machine-state members are ignored.
+_SKILLS_GITIGNORE: tuple[str, ...] = (
+    "dev/.cairn/local-env.json",
+    "dev/.cairn/handoff.lock",
+)
+
 #: Common filenames an adopter renames the thin vendor wrapper
 #: (``core/VENDOR.md``) to -- their AI tool's instruction file.  Used by
 #: ``--init-lock`` to follow that rename so the wrapper stays tracked + 3-way
@@ -1477,6 +1500,71 @@ def install_core(
     return results
 
 
+def install_skills(
+    templates_root: Path,
+    target: Path,
+    tokens: dict[str, str],
+    *,
+    dry_run: bool = False,
+    force: bool = False,
+) -> list[InstallResult]:
+    """Install the lifecycle-routine skills **unconditionally** (like core).
+
+    A sibling to :func:`install_core` (kept separate rather than folded into
+    it): the skills install to distinct destinations (``.agents/skills/`` +
+    ``tools/lifecycle.py``) and carry per-file verbatim/substituted rules that
+    differ from core docs, so a dedicated installer keeps each surface's rules
+    legible.  Because the routines are invariant kernel they are not a
+    conditional module.  ``verbatim`` is read per spec from
+    :data:`_SKILLS_MAPPINGS` (the CLI script is byte-for-byte; the SKILL.md
+    sources are substituted so they ride the base-cache + 3-way-merge path).
+    """
+    results: list[InstallResult] = []
+    for src_rel, dst_rel, verbatim in _SKILLS_MAPPINGS:
+        src = templates_root / src_rel
+        if not src.exists():
+            print(f"  [warn] skill template missing: {src_rel}", file=sys.stderr)
+            continue
+        dst = target / dst_rel
+        results.append(
+            _install_one(
+                src, dst, tokens, target,
+                dry_run=dry_run, force=force, verbatim=verbatim,
+            )
+        )
+    return results
+
+
+def write_local_env(
+    target: Path, *, dry_run: bool = False, force: bool = False,
+) -> InstallResult:
+    """Write the untracked ``dev/.cairn/local-env.json`` interpreter binding.
+
+    Resolve-don't-bake (Decision 6 / R3): record the bootstrap interpreter's
+    **fully-resolved** absolute path (``Path.resolve()`` dereferences every
+    symlink component, so the strict tamper-aware schema the lifecycle CLI
+    enforces is satisfied) so the wrapper invokes it directly instead of relying
+    on shell-level conda activation.  The file is **gitignored**, so an absolute
+    path here never enters a commit -- it is forbidden only in tracked
+    artifacts.  Non-clobber: an existing adopter binding is preserved unless
+    ``force``.
+    """
+    import json
+
+    dst = target / "dev" / ".cairn" / "local-env.json"
+    if dst.exists() and not force:
+        return (dst, [], [], "skipped-exists")
+    if dry_run:
+        return (dst, [], [], "dry-run")
+    interpreter = str(Path(sys.executable).resolve())
+    _assert_safe_write(dst, target)
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    dst.write_text(
+        json.dumps({"interpreter": interpreter}) + "\n", encoding="utf-8"
+    )
+    return (dst, [], [], "installed")
+
+
 def install_optional(
     templates_root: Path,
     target: Path,
@@ -2036,6 +2124,8 @@ def install_manifest(
     entries: list[tuple[str, str, bool]] = [
         (src_rel, dst_rel, False) for src_rel, dst_rel in _CORE_MAPPINGS
     ]
+    # Skills install unconditionally (like core); always in the manifest.
+    entries.extend(_SKILLS_MAPPINGS)
     names = sorted(_MODULE_MAPPINGS) if modules is None else modules
     for name in names:
         for spec in _MODULE_MAPPINGS.get(name, []):
@@ -3556,6 +3646,11 @@ def main(argv: list[str] | None = None) -> int:
                 f"dev/PLANNING.md slot; full source -> "
                 f"dev/modules/onboarding/{dry_preset}.md)"
             )
+        print(
+            "[dry-run] Skills:          "
+            "tools/lifecycle.py + .agents/skills/{session-start,session-end}/"
+            "SKILL.md (+ untracked dev/.cairn/local-env.json)"
+        )
         for mod in modules:
             for entry in _GITIGNORE_SEEDS.get(mod, ()):  # C6 dry-run
                 would = seed_gitignore(target, (entry,), dry_run=True)
@@ -3574,6 +3669,16 @@ def main(argv: list[str] | None = None) -> int:
     core_results = install_core(
         templates_root, target, tokens, force=args.force
     )
+
+    # Install lifecycle-routine skills (unconditional, like core) + write the
+    # untracked interpreter binding (resolve-don't-bake).
+    print("Installing lifecycle skills ...")
+    skills_results = install_skills(
+        templates_root, target, tokens, force=args.force
+    )
+    env_result = write_local_env(target, force=args.force)
+    if env_result[3] == "installed":
+        print(f"  Wrote interpreter binding: {env_result[0]} (untracked)")
 
     # Install progressive-onboarding content.  Must run AFTER
     # install_core because it edits the just-installed
@@ -3632,7 +3737,7 @@ def main(argv: list[str] | None = None) -> int:
 
     print_report(
         target, dirs_created,
-        core_results + onboarding_results + module_results
+        core_results + skills_results + onboarding_results + module_results
         + reference_results + optional_results,
     )
 
@@ -3666,6 +3771,13 @@ def main(argv: list[str] | None = None) -> int:
                 f"  [slot-content-{reason}] {target_rel} > {slot_name} "
                 f"(fidelity check)"
             )
+
+    # Seed the lifecycle skills' machine-state .gitignore entries
+    # (unconditional -- the skills always install): the untracked interpreter
+    # binding + the full-handoff lock.
+    skills_ignored = seed_gitignore(target, _SKILLS_GITIGNORE)
+    if skills_ignored:
+        print(f"\nSeeded .gitignore (skills): {', '.join(skills_ignored)}")
 
     # Seed adopter-owned .gitignore for selected modules (Cairn v0.2 P5,
     # C6: non-clobber + idempotent), and print the OPT-IN hook command --
