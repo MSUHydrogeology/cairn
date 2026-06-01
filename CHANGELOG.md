@@ -32,7 +32,42 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+### Added
+
+- **`architecture-review` team-gated module** — a triggered remediation /
+  on-ramp frame for an adopter whose architecture *accreted rather than
+  was deliberately designed* (inherited legacy, merged prototypes,
+  vibe-coded growth).  Ships the module doctrine
+  (`templates/modules/team-gated/architecture-review.md`) plus a forkable
+  rubric frame (`templates/modules/team-gated/architecture_review_template.md`
+  → `dev/architecture_review.md`): five review lenses (Workflow Coherence,
+  Data Contracts, Correctness / Provenance Trust, Extensibility,
+  Operational Maturity), a "Biases to Challenge" meta-section, and program
+  governance.  Opt-in — in no default-on set or governance preset;
+  composes with `codebase-readiness-report` (the report says *whether* you
+  carry architectural debt, the frame is *how* you examine it).
+  Generalizes modflow_tools' `dev/architecture_review.md`; folded via the
+  LHM reference deployment's `modflow-tools-doctrine-parity` plan.  +1 test
+  class (`TestArchitectureReviewModule`, the 2-spec install contract).
+
 ### Changed
+
+- **Review + collaboration doctrine sharpenings** (LHM
+  `modflow-tools-doctrine-parity` plan, Stream 2).  `dual-review` now
+  requires a clean code review to *show its work* — a four-part
+  **falsification ledger** (probed edge cases / failure modes tested /
+  verification run-or-consciously-not / residual risks) **or** a second
+  independent different-agent-type pass; a bare "unconditional approval"
+  clears no gate (synced from modflow_tools' accepted
+  `clean-pass-code-review-gate`, 2026-05-27).  `core/dev/agent_collaboration.md`
+  names the **bimodal AI surface** (agent-side roles vs inline-tier editing
+  tooling — no role / attribution / decision rights) and a standard
+  **session handoff format** (Shipped / Verified / Open Threads /
+  Recommended Next Step).  `core/AGENTS.md` states the explicit
+  **no-cross-attribution** review rule (the named reviewer commits their
+  own findings).  `codebase-readiness-report.md` gains a `Status:` field
+  (`draft` / `completed-baseline` / `archived-baseline`) so a filled report
+  reads as a snapshot, not a live roadmap plan.
 
 - **Upgrade flow surfaces + enforces the customized-file merge, and
   `init-lock` follows the vendor-wrapper rename** (fold-backs #44/#45 from
