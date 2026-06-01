@@ -186,16 +186,17 @@ def test_session_end_does_not_clobber_existing_reflection(repo, monkeypatch, cap
     assert "leaving it untouched" in capsys.readouterr().out
 
 
-def test_session_end_handoff_refuses(repo, monkeypatch, capsys):
+def test_session_end_handoff_refuses_without_marker(repo, monkeypatch, capsys):
+    # Full matrix lives in test_lifecycle_failsafe.py; this pins the headline
+    # safety property: --handoff without the designation marker refuses
+    # (non-interactively) before any destructive step.
+    monkeypatch.delenv("CAIRN_HANDOFF_OWNER", raising=False)
     monkeypatch.chdir(repo)
 
     rc = lifecycle.main(["session-end", "--handoff"])
 
     assert rc == 1
-    err = capsys.readouterr().err
-    assert "full-handoff path is not available yet" in err
-    # And it wrote nothing.
-    assert not (repo / "dev" / "reflections").exists()
+    assert "no maintainer-designation marker" in capsys.readouterr().err
 
 
 # --- loud failure ------------------------------------------------------------
