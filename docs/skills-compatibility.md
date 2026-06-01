@@ -8,6 +8,6 @@
 
 | Target | Tier | Format | Install/invoke level | Auto-suppress |
 |--------|------|--------|----------------------|---------------|
-| agents-native | alias | skill-md | native-claimed-unverified | native-tested |
-| claude-code | symlink | skill-md | native-claimed-unverified | native-tested |
+| agents-native | alias | skill-md | native-claimed-unverified | declared-flag |
+| claude-code | symlink | skill-md | native-claimed-unverified | declared-flag |
 | cursor | manual | mdc | manual-fallback | mitigated |

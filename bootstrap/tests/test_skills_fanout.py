@@ -98,19 +98,27 @@ def test_copy_fallback_when_symlinks_unavailable(repo):
     assert ".claude/skills/" in (repo / ".gitignore").read_text(encoding="utf-8")
 
 
-def test_copy_fallback_divergence_guard_warns_not_clobbers(repo, capsys):
+def test_copy_fallback_divergence_quarantines_and_regenerates(repo, capsys):
+    # The generated copy is a vendor-read supply-chain artifact, not author-
+    # owned: a diverged copy must not stay the active read-path (Codex P1#1).
     (repo / ".claude").mkdir()
     s.fan_out_skills(TEMPLATES_ROOT, repo, targets=[SYMLINK_ROW], allow_symlinks=False)
-    # Adopter edits the COPY (the wrong place).
     edited = repo / ".claude" / "skills" / "session-start" / "SKILL.md"
-    edited.write_text("LOCALLY EDITED COPY", encoding="utf-8")
+    canonical = (repo / ".agents" / "skills" / "session-start" / "SKILL.md").read_text(
+        encoding="utf-8"
+    )
+    edited.write_text("MALICIOUS / STALE COPY", encoding="utf-8")
     capsys.readouterr()
 
     res = s.fan_out_skills(TEMPLATES_ROOT, repo, targets=[SYMLINK_ROW],
                            allow_symlinks=False)
 
-    assert res[0][2] == "diverged-preserved"
-    assert edited.read_text(encoding="utf-8") == "LOCALLY EDITED COPY"  # not clobbered
+    assert res[0][2] == "diverged-quarantined"
+    # The active vendor-read path carries the safe canonical bytes again ...
+    assert edited.read_text(encoding="utf-8") == canonical
+    # ... and the stray bytes are preserved (not destroyed) in the quarantine.
+    bak = edited.with_name("SKILL.md.diverged.bak")
+    assert bak.read_text(encoding="utf-8") == "MALICIOUS / STALE COPY"
     assert "divergence" in capsys.readouterr().err
 
 

@@ -97,6 +97,35 @@ def test_local_env_binding_written_and_gitignored(scaffolded: Path):
     assert "dev/.cairn/handoff.lock" in gitignore
 
 
+def test_failed_fanout_leaves_local_env_gitignored_and_exits_nonzero(tmp_path):
+    # Codex P1#2: a containment failure during fan-out (a symlinked vendor
+    # parent) must not leave an UNIGNORED local-env.json carrying a local
+    # absolute path -- the ignore entry is seeded before the file is written,
+    # and main() returns a crisp non-zero, not a traceback.
+    import os
+    target = tmp_path.resolve()
+    cfg = target / "profile.yml"
+    cfg.write_text(
+        "project_name: FailTest\ntest_command: pytest\nmodules: []\n",
+        encoding="utf-8",
+    )
+    outside = target.parent / (target.name + "-outside")
+    outside.mkdir()
+    os.symlink(outside, target / ".claude", target_is_directory=True)
+
+    rc = main([
+        "--config", str(cfg), "--target", str(target),
+        "--cairn-root", str(CAIRN_ROOT), "--allow-dev",
+    ])
+
+    assert rc != 0  # crisp non-zero, not a traceback
+    env = target / "dev" / ".cairn" / "local-env.json"
+    assert env.is_file()
+    assert "dev/.cairn/local-env.json" in (
+        target / ".gitignore"
+    ).read_text(encoding="utf-8")
+
+
 def test_installed_cli_runs_read_only(scaffolded: Path):
     # session-start needs a git repo to gather state.
     subprocess.run(["git", "init", "-q"], cwd=scaffolded, check=True)

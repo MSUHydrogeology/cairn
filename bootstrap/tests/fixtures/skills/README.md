@@ -24,9 +24,11 @@ CI cannot drive a proprietary external harness (Claude Code, Cursor, ...), so:
 
 ## v1 cut (II4b)
 
-* **Claude Code** ships first as the intended `native-tested` target (it honors
-  `disable-model-invocation`, so its auto-suppress is `native-tested`); it reads
-  the symlinked `.claude/skills/` -> canonical.
+* **Claude Code** ships first as the intended `native-tested` target (it
+  **declares** `disable-model-invocation`, so its auto-suppress is
+  `declared-flag` until a fixture/transcript proves the harness actually
+  suppresses model-invocation -- only then does it become `native-tested`,
+  Codex P2#3); it reads the symlinked `.claude/skills/` -> canonical.
 * Other SKILL.md-native targets ship `native-claimed-unverified` until their
   fixture lands.
 * Different-format targets (e.g. Cursor `.mdc`) ship `manual-fallback` with a

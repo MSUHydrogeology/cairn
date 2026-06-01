@@ -39,7 +39,9 @@ pytestmark = pytest.mark.skipif(
 _VALID_LEVELS = {
     "native-tested", "native-claimed-unverified", "manual-fallback", "unsupported",
 }
-_VALID_SUPPRESS = {"native-tested", "mitigated", "cli-backstop-only"}
+_VALID_SUPPRESS = {
+    "native-tested", "declared-flag", "mitigated", "cli-backstop-only",
+}
 
 
 def test_committed_matrix_matches_generator():

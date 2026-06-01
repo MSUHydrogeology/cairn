@@ -1556,6 +1556,11 @@ def write_local_env(
         return (dst, [], [], "skipped-exists")
     if dry_run:
         return (dst, [], [], "dry-run")
+    # Seed the ignore entries FIRST (Codex P1#2): otherwise a failure between
+    # this write and the later unconditional gitignore seed would leave an
+    # unignored local-env.json carrying a local absolute path, exposed to a
+    # broad `git add`. Seeding first makes it ignored the instant it exists.
+    seed_gitignore(target, _SKILLS_GITIGNORE)
     interpreter = str(Path(sys.executable).resolve())
     _assert_safe_write(dst, target)
     dst.parent.mkdir(parents=True, exist_ok=True)
@@ -1674,36 +1679,53 @@ def _emit_skill_symlink(dst: Path, canonical: Path) -> str:
 
 
 def _emit_skill_copy_fallback(
-    dst: Path, canonical: Path, target: Path, *, force: bool,
+    dst: Path, canonical: Path, target: Path,
 ) -> str:
-    """Regenerate gitignored copies of the canonical skills under *dst*, with a
-    divergence guard (R1/EP3): a copy whose content differs from the **local
-    canonical** source is **warned, never silently clobbered** -- so an adopter
-    edit made in the wrong place (the copy) is surfaced before regeneration."""
+    """Regenerate gitignored copies of the canonical skills under *dst*.
+
+    The generated copy is a **vendor-read supply-chain artifact**, not an
+    author-owned file (the canonical ``.agents/skills/`` source is the single
+    editable copy).  So a diverged copy must NOT stay the active read-path
+    (Codex code review P1#1, refining EP3's "never clobber", which applied to
+    author-owned files, not this generated tier): the vendor harness would
+    otherwise ingest stale / locally-edited / tampered instructions while the
+    install reports success and the lockfile/security tests describe only the
+    canonical bytes.
+
+    Fail-safe-for-the-supply-chain: a diverged copy is **quarantined** (moved
+    aside to ``<file>.diverged.bak`` -- the stray bytes are preserved for
+    recovery, never silently destroyed) and then **regenerated from canonical**,
+    so the active vendor-read path always carries the safe, already-scanned
+    canonical bytes.  The divergence is still surfaced loudly."""
     import shutil
 
-    diverged: list[str] = []
+    quarantined: list[str] = []
     for src_file in sorted(canonical.rglob("*")):
         if not src_file.is_file():
             continue
         rel = src_file.relative_to(canonical)
         out = dst / rel
         _assert_fanout_contained(out, target)
-        if out.is_file() and out.read_bytes() != src_file.read_bytes() \
-                and not force:
-            diverged.append(str(rel))
-            continue
+        if out.is_file() and out.read_bytes() != src_file.read_bytes():
+            # Quarantine the stray bytes (preserve, don't destroy), then
+            # regenerate the canonical bytes as the active read-path.
+            bak = out.with_name(out.name + ".diverged.bak")
+            _assert_fanout_contained(bak, target)
+            shutil.move(str(out), str(bak))
+            quarantined.append(str(rel))
         out.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(src_file, out)
-    if diverged:
+    if quarantined:
         print(
             f"  [warn] copy-fallback divergence under {dst}: "
-            f"{', '.join(diverged)} differ from the canonical .agents/skills/ "
-            "source and were NOT overwritten -- edit the canonical source, not "
-            "the generated copy.",
+            f"{', '.join(quarantined)} differed from the canonical "
+            ".agents/skills/ source. Each was quarantined to "
+            "*.diverged.bak and the canonical bytes regenerated as the active "
+            "vendor-read path -- edit the canonical source, not the generated "
+            "copy. Recover any intended change from the .bak.",
             file=sys.stderr,
         )
-        return "diverged-preserved"
+        return "diverged-quarantined"
     return "copied"
 
 
@@ -1768,7 +1790,7 @@ def fan_out_skills(
             results.append((name, "symlink", _emit_skill_symlink(dst, canonical)))
         else:
             advisory = True
-            status = _emit_skill_copy_fallback(dst, canonical, target, force=force)
+            status = _emit_skill_copy_fallback(dst, canonical, target)
             seed_gitignore(target, (path.rstrip("/") + "/",))
             results.append((name, "copy", status))
     if advisory:
@@ -3903,8 +3925,15 @@ def main(argv: list[str] | None = None) -> int:
     if env_result[3] == "installed":
         print(f"  Wrote interpreter binding: {env_result[0]} (untracked)")
     # Fan the canonical skills out to in-use vendor read-paths (symlink, or a
-    # gitignored generated copy where symlinks are unavailable).
-    fanout = fan_out_skills(templates_root, target, force=args.force)
+    # gitignored generated copy where symlinks are unavailable).  A containment
+    # violation here is reported as a crisp non-zero exit, not a traceback
+    # (Codex P1#2); local-env.json is already gitignored by this point.
+    try:
+        fanout = fan_out_skills(templates_root, target, force=args.force)
+    except ScaffoldSecurityError as exc:
+        print(f"error: skills fan-out refused (containment): {exc}",
+              file=sys.stderr)
+        return 2
     for name, tier, status in fanout:
         if status not in ("noop", "skipped-vendor-absent"):
             print(f"  Skills fan-out [{tier}] {name}: {status}")
