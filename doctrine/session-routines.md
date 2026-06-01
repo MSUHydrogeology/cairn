@@ -170,17 +170,24 @@ recommended task.
 
 Each agent, at goodnight, writes a short **reflection** — what it
 shipped, what went well, what went wrong and the lesson, what
-threads remain open — to a per-agent file in an untracked
+threads remain open — to a per-session file in an untracked
 reflections directory. The channel is:
 
-* **per-agent** — each agent writes its own; no agent writes or
-  edits another's;
+* **per-agent, per-session** — each agent writes its own, and each
+  *session* writes a **distinct** file (`<date>-<agent>-<session>.md`)
+  so concurrent same-agent sessions never share a path and cannot
+  clobber one another. `<session>` is the harness session id where the
+  tool exposes one, else a short **random** token fixed at session start
+  (≥4 hex chars from random bytes, or a hash of the session id) — **never
+  a minute-resolution timestamp**, which re-collides under concurrent
+  start. No agent writes or edits another's;
 * **ephemeral** — reflections are untracked and periodically
   pruned; durable observations migrate out into doctrine or the
   roadmap;
 * **a cross-agent handoff surface** — the full-handoff owner reads
-  the session-day's reflections to understand every agent's
-  experience before writing the next plan.
+  the session-day's reflections — glob `dev/reflections/<date>-*.md`,
+  which gathers *every* session, not just the last writer's — to
+  understand every agent's experience before writing the next plan.
 
 A reflection is a retrospective, not a deliberation surface: a
 point that belongs in a proposal does not live in a reflection.

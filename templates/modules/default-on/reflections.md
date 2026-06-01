@@ -22,17 +22,23 @@ process-doctrine file):
 
 > **Reflections.** At the goodnight routine each agent writes a
 > short, per-agent reflection — what it shipped, what went well,
-> what went wrong and the lesson it leaves — to a per-agent file
+> what went wrong and the lesson it leaves — to a per-session file
 > in an untracked `dev/reflections/` directory. Reflections are:
 >
-> * **per-agent** — each agent writes its own; no agent writes or
->   edits another's;
+> * **per-agent, per-session** — each agent writes its own, and each
+>   *session* writes a distinct file (`<date>-<agent>-<session>.md`) so
+>   concurrent same-agent sessions never share a path and cannot clobber
+>   one another. `<session>` is the harness session id where exposed,
+>   else a short **random** token fixed at session start (≥4 hex chars —
+>   never a minute-resolution timestamp). No agent writes or edits
+>   another's;
 > * **ephemeral** — reflection files are untracked and periodically
 >   pruned (only the directory's tracked `README.md` guide persists);
 >   durable observations migrate to doctrine or the roadmap;
 > * **a cross-agent handoff surface** — the goodnight owner reads
->   the day's reflections to understand each agent's experience
->   before writing the next session's plan.
+>   the day's reflections (glob `dev/reflections/<date>-*.md`, every
+>   session) to understand each agent's experience before writing the
+>   next session's plan.
 >
 > A reflection is a retrospective, not a decision surface — a
 > point that belongs in a proposal does not live in a reflection.
