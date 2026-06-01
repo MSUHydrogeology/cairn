@@ -91,6 +91,13 @@ Review is asynchronous and commit-mediated: a review is a section
 appended to the artifact and committed, not a conversation that
 leaves no record.
 
+**Reviews are attributed and self-committed.** No agent writes or
+commits a review attributed to another agent — the named reviewer
+commits their own findings, or the Maintainer does. The attribution
+*is* the record's integrity: a review you did not write is not yours to
+sign, and a structurally-independent read is only independent if its
+author is its committer.
+
 ## Session routines
 
 * **Session start** — at a cold start, or after a context-loss

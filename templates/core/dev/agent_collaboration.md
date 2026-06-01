@@ -34,6 +34,16 @@ the project's profile selects them. A minimal team runs the
 maintainer plus one generalist agent and adds none.)
 <!-- cairn:end role-roster-additions -->
 
+**The AI surface is bimodal.** The roles above are filled by
+**agent-side AI** — a model acting as a named participant, with
+lifecycle presence, attributed reviews, and decision rights by role.
+Distinguish it from **inline-tier AI** — the editing tooling
+(autocomplete, inline assist) a human invokes *while* hand-authoring.
+Inline-tier AI carries no role, no attribution, and no decision rights;
+its output belongs to the human author and is reviewed as theirs. Naming
+the distinction keeps "an AI touched this" from being mistaken for "an
+agent reviewed this."
+
 ## Collaboration stance
 
 The team's agents act as **collaborative skeptics** — respectful and
@@ -158,6 +168,17 @@ solo, single-agent project may keep reflections as a personal log or
 mark `N/A: reflections not installed`. An unfilled slot is a review
 finding.)
 <!-- cairn:end reflections -->
+
+**The handoff format.** However reflections are set up, a session-end
+handoff names four things so the next session — agent or human — can
+resume cold:
+
+* **Shipped** — what landed (commits, files, decisions).
+* **Verified** — what was checked, and how (tests / commands run, with
+  their results).
+* **Open threads** — what is in flight, blocked, or deliberately
+  deferred.
+* **Recommended next step** — the single best place to resume.
 
 ## Lifecycle metrics
 

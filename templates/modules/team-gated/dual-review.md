@@ -29,6 +29,27 @@ Merged into `dev/agent_collaboration.md`:
 > archives — takes the same independence floor: not the
 > implementing agent, and, for contract-touching work, a
 > different agent type.
+>
+> **A clean code review must show its work.** A pre-archive code
+> review that approves does not clear the gate by *asserting*
+> approval — a bare "unconditional approval" clears nothing. It
+> either carries a **falsification ledger** or is confirmed by a
+> second independent different-agent-type pass. The ledger is a
+> lightweight four-part record:
+>
+> * **Probed edge cases** — the boundary / empty / out-of-range
+>   inputs actually tried.
+> * **Failure modes tested** — what was checked to fail *closed*
+>   (explicit errors, validation gates), not only the happy path.
+> * **Verification run (or consciously not)** — the commands run,
+>   with results; or an explicit statement of what was *not* run
+>   and why.
+> * **Residual risks** — what remains unverified (integration
+>   paths, platform-dependent behavior, deferred follow-ups).
+>
+> The ledger is what makes a clean pass *legible*: a reviewer who
+> tried to break the change and reports honestly that they could
+> not has cleared the gate; a reviewer who merely read it has not.
 
 Without this module a project still reviews — at the kernel's
 single tier; the module is what makes review *two-tier and

@@ -14,6 +14,10 @@
 **Codebase**: `<name>`
 **Maintainer filling this**: `<name>`
 **Date filled**: `<YYYY-MM-DD>`
+**Status**: `draft` / `completed-baseline` / `archived-baseline` — this
+is a point-in-time diagnostic snapshot, **not** a live roadmap plan.
+Mark it `archived-baseline` once filled, so a reader never mistakes it
+for active, tracked work.
 **Time investment**: 30-90 minutes, depending on codebase size.
 
 ---
