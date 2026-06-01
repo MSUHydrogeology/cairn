@@ -42,6 +42,7 @@ import argparse
 import datetime as _dt
 import json
 import os
+import re
 import socket
 import subprocess
 import sys
@@ -168,11 +169,16 @@ def _git(args: List[str], root: Path) -> str:
 def _resolve_agent() -> str:
     """Resolve the agent identifier used in the reflection filename.
 
-    Chunk-1 scope: honor an explicit ``CAIRN_AGENT`` override, else fall back to
-    a neutral default.  (The richer harness-session identity resolution lives in
-    the optional `intent.py`; the reflection filename does not need it.)
+    Honors an explicit ``CAIRN_AGENT`` override, else a neutral default.  The
+    value becomes part of a filename, so it is **sanitized to a safe slug**
+    (`[A-Za-z0-9._-]` only): an unsanitized environment value such as
+    ``../../etc/x`` must not be able to redirect the reflection write outside
+    ``dev/reflections/`` (path-containment, S3).  An empty / fully-stripped
+    value falls back to ``agent``.
     """
-    return os.environ.get("CAIRN_AGENT", "agent").strip() or "agent"
+    raw = os.environ.get("CAIRN_AGENT", "agent").strip()
+    slug = re.sub(r"[^A-Za-z0-9._-]", "-", raw).strip(".-")
+    return slug or "agent"
 
 
 def _today() -> str:
@@ -194,6 +200,22 @@ def _sibling_tool(name: str) -> Optional[Path]:
 
 def _state_dir(root: Path) -> Path:
     return root.joinpath(*_CAIRN_STATE_DIR)
+
+
+def _assert_within(path: Path, base: Path) -> None:
+    """Fail closed if `path` would resolve outside `base` (path-containment, S3).
+
+    Defense in depth behind the agent-slug sanitization: every reflection /
+    handoff write the CLI performs must land inside its declared surface, so a
+    crafted input can never redirect a write elsewhere in (or out of) the repo.
+    """
+    resolved = (path.parent.resolve() / path.name)
+    try:
+        resolved.relative_to(base.resolve())
+    except ValueError:
+        raise LifecycleError(
+            f"refusing to write outside {base}: {path}"
+        )
 
 
 def _has_symlink_component(path: Path) -> bool:
@@ -629,6 +651,7 @@ def _do_reflection(root: Path, dry_run: bool) -> None:
     refl_dir = _reflections_dir(root)
     agent = _resolve_agent()
     target = refl_dir / f"{_today()}-{agent}.md"
+    _assert_within(target, refl_dir)  # S3: never write outside dev/reflections/
 
     _emit_section("reflection scaffold")
     if target.exists():
