@@ -108,10 +108,19 @@ source is a git checkout** carrying that ref; a packaged release (tarball
   *needs a value*.
 * **Verbatim scripts use a hash check, not a text merge.** A shipped
   reference script (`claim_check.py`, `intent.py`, `lifecycle_metrics.py`,
-  `link_check.py`, `sync_doc_snippets.py`) is meant to be byte-for-byte.
-  If yours is unmodified it updates to the new upstream; if you forked it,
-  the upgrade **flags it and does not clobber** — a forked tool may break
-  against new doctrine, so that is a real decision for you to make.
+  `lifecycle.py`, `link_check.py`, `sync_doc_snippets.py`) is meant to be
+  byte-for-byte. If yours is unmodified it updates to the new upstream; if
+  you forked it, the upgrade **flags it and does not clobber** — a forked
+  tool may break against new doctrine, so that is a real decision for you to
+  make.
+* **The lifecycle skills participate exactly like `core/`.** The canonical
+  `.agents/skills/*/SKILL.md` files ride the token-/slot-aware 3-way merge
+  (base cache + provenance), and `tools/lifecycle.py` follows the verbatim
+  hash policy above. The gitignored vendor fan-out copies (where symlinks
+  are unavailable) are **regenerated** from the canonical source on upgrade,
+  with a divergence guard that **warns rather than clobbers** a copy you
+  edited in place — the canonical `.agents/skills/` source is the one to
+  edit.
 
 ## Migrating a tree installed before upgrade support
 

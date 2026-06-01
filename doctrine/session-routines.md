@@ -166,6 +166,31 @@ These compose with the rewrite discipline: each goodnight the entry is
 rewritten, and the rewrite fills these five slots for the new
 recommended task.
 
+## Invoking the routines — the lifecycle skills
+
+The routines above are also **invokable skills**, installed at scaffold time as
+the agentskills.io `SKILL.md` pair under `.agents/skills/` (`session-start` /
+`/good-morning` and `session-end` / `/goodnight`), backed by a deterministic CLI
+(`tools/lifecycle.py`). The skill bodies orchestrate the *mechanizable* steps
+(gather git state, scaffold the reflection, prune, surface intents); this
+doctrine stays the single source of *what* each routine is and *why*, and the
+*judgment* steps remain the agent's.
+
+Two invariants are load-bearing and structural, not stylistic:
+
+* **Manual-only.** A routine fires only on an explicit operator request, never
+  from conversational chatter — "goodnight, talk tomorrow" must not scrub a
+  roadmap. The skill carries a best-effort suppress flag, but the **portable**
+  guarantee is the CLI's reflection-only default: `session-end` does only
+  non-destructive work unless an explicit `--handoff` is given.
+* **Single-owner full handoff.** The destructive full handoff runs only behind
+  `--handoff` **plus** a maintainer-designation marker **and** a fail-closed
+  concurrent-handoff lock, so the "once per session-day, by one owner" rule
+  above is enforced mechanically, not merely remembered: a second concurrent
+  handoff fails closed rather than producing a double scrub. The marker is an
+  **anti-accidental-run gate, not an authorization control** (it is trivially
+  self-set); it stops an *unbidden* run, not a malicious local actor.
+
 ## The reflections channel
 
 Each agent, at goodnight, writes a short **reflection** — what it

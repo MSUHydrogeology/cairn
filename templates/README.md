@@ -16,6 +16,13 @@ method and `dimensions/` describes how an adoption is *adapted*,
   and the **team-gated** set (installed only when the team has the
   structure to run them). Which modules an adoption installs is
   decided from its dimensional profile — see `dimensions/`.
+* **`skills/`** — the **lifecycle-routine skills**: the agentskills.io
+  `SKILL.md` pair (`session-start`, `session-end`) plus the deterministic
+  CLI they orchestrate (`_lib/lifecycle.py`) and the data-driven vendor
+  fan-out table (`_data/vendor_targets.yml`). Because the session routines
+  are invariant kernel, the skills install **unconditionally, like `core/`**
+  (to the canonical `.agents/skills/` + `tools/lifecycle.py`), not
+  conditionally like a module.
 
 ## The `{{placeholder}}` convention
 
