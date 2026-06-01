@@ -34,6 +34,28 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **Vendor-neutral lifecycle-routine skills** — the session-start /
+  session-end routines are now **invokable skills** (the agentskills.io
+  `SKILL.md` pair under `.agents/skills/`, with friendly aliases
+  `/good-morning` / `/goodnight`), backed by a stdlib-only deterministic CLI
+  (`tools/lifecycle.py`).  The skill bodies orchestrate the mechanizable steps
+  (gather git state, scaffold the reflection, prune, surface intents); the
+  doctrine stays the source of truth.  **Manual-only** with a portable Layer-2
+  fail-safe (`session-end` is reflection-only unless an explicit `--handoff`),
+  and the destructive full handoff runs only behind a maintainer-designation
+  marker **and** a fail-closed concurrent-handoff lock (the single-owner scrub
+  invariant, enforced not just remembered).  Installs unconditionally like
+  `core/` (the routines are invariant kernel); the canonical `.agents/skills/`
+  rides the lockfile + base-cache 3-way-merge upgrade path, fanning out to each
+  harness's read-path by tier (alias / verified-symlink / documented manual
+  fallback) from a data-driven table.  Cross-vendor support is published by
+  **matrix level** (`docs/skills-compatibility.md`), claimed-pending-fixture —
+  not a flat "works everywhere" claim.  Security is a first-class gate
+  (content-scan over rendered artifacts, no-network, path-containment,
+  per-artifact integrity, generated-output leak test).  Source proposal +
+  plan: `2026-06-01-claude-cairn-vendor-neutral-skills` (External cross-type
+  plan-review + External Security Review + cross-type code review); Cairn
+  commits `87078a8..9c5ae1d`.
 - **`architecture-review` team-gated module** — a triggered remediation /
   on-ramp frame for an adopter whose architecture *accreted rather than
   was deliberately designed* (inherited legacy, merged prototypes,
