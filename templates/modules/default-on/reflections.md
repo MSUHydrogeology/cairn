@@ -28,10 +28,17 @@ process-doctrine file):
 > * **per-agent, per-session** — each agent writes its own, and each
 >   *session* writes a distinct file (`<date>-<agent>-<session>.md`) so
 >   concurrent same-agent sessions never share a path and cannot clobber
->   one another. `<session>` is the harness session id where exposed,
->   else a short **random** token fixed at session start (≥4 hex chars —
->   never a minute-resolution timestamp). No agent writes or edits
->   another's;
+>   one another. The `<agent>-<session>` tail is the filename's last
+>   component so it reads as one identity string. `<session>` is, in
+>   resolution order: **(1)** the per-session token of the
+>   coordination/intent identity *when that module is installed* — `python
+>   tools/intent.py whoami --session-token` (the 8-hex `sha256` of the
+>   harness session id), so the `<agent>-<session>` tail reconstructs the
+>   intent log's `agent` field and a reflection links to its session's
+>   `dev/intents.jsonl` entries; **(2)** else the raw harness session id
+>   where exposed; **(3)** else a short **random** token fixed at session
+>   start (≥4 hex chars — never a minute-resolution timestamp, which
+>   re-collides under concurrent start). No agent writes or edits another's;
 > * **ephemeral** — reflection files are untracked and periodically
 >   pruned (only the directory's tracked `README.md` guide persists);
 >   durable observations migrate to doctrine or the roadmap;

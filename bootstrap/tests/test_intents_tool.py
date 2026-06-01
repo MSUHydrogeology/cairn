@@ -294,6 +294,76 @@ class TestIdentity:
 
 
 # ---------------------------------------------------------------------------
+# Session-token link: reflections <session> <-> intent log `agent`
+# ---------------------------------------------------------------------------
+
+class TestSessionTokenLink:
+    """`resolve_session_token` / `intent whoami` expose the *token* portion
+    of the harness-derived identity so a per-session surface outside the
+    intent log (the reflections channel's `<session>`) reuses the same
+    session id. The invariant the link rests on: a harness-derived identity
+    is exactly `<tool_tag>-<token>`."""
+
+    @pytest.fixture()
+    def tool(self, tmp_path: Path) -> ModuleType:
+        return _load_tool(TOOL_TEMPLATE, name=f"p5_tok_{tmp_path.name}")
+
+    def _clear(self, monkeypatch) -> None:
+        for var in _IDENTITY_VARS:
+            monkeypatch.delenv(var, raising=False)
+
+    def test_token_is_identity_suffix(
+        self, tool, monkeypatch, tmp_path
+    ) -> None:
+        self._clear(monkeypatch)
+        monkeypatch.setenv("CLAUDE_CODE_SESSION_ID", "sess-XYZ")
+        cfg = tmp_path / "agent.json"
+        token = tool.resolve_session_token(config_path=cfg)
+        identity = tool.resolve_agent_identity(config_path=cfg)
+        assert token is not None
+        assert len(token) == 8 and all(c in "0123456789abcdef" for c in token)
+        # The link invariant: <agent>-<session> reconstructs the identity.
+        assert identity == f"claude-{token}"
+        # Whole-id hash, never a prefix slice of the raw session id.
+        assert "sess-XYZ" not in token
+
+    def test_token_none_without_harness_session(
+        self, tool, monkeypatch, tmp_path
+    ) -> None:
+        """A static (non-session) identity still resolves, but yields NO
+        token -- it is not per-session, so it cannot supply a collision-safe
+        `<session>` (the caller falls back to a random token)."""
+        self._clear(monkeypatch)
+        cfg = tmp_path / "agent.json"
+        cfg.write_text(json.dumps({"agent": "carol"}))
+        assert tool.resolve_agent_identity(config_path=cfg) == "carol"
+        assert tool.resolve_session_token(config_path=cfg) is None
+
+    def test_whoami_links_identity_and_token(self, tmp_path) -> None:
+        """End to end: `whoami` prints the identity, `whoami
+        --session-token` prints the token, and the two compose."""
+        tool = _git_repo(tmp_path)
+        env = _clean_env(CLAUDE_CODE_SESSION_ID="sess-XYZ")
+        ident = _run_tool(tool, ["whoami"], cwd=tmp_path, env=env)
+        token = _run_tool(
+            tool, ["whoami", "--session-token"], cwd=tmp_path, env=env,
+        )
+        assert ident.returncode == 0 and token.returncode == 0
+        assert ident.stdout.strip() == f"claude-{token.stdout.strip()}"
+
+    def test_whoami_session_token_exits_nonzero_without_session(
+        self, tmp_path
+    ) -> None:
+        tool = _git_repo(tmp_path)
+        res = _run_tool(
+            tool, ["whoami", "--session-token"], cwd=tmp_path,
+            env=_clean_env(),
+        )
+        assert res.returncode == 1
+        assert res.stdout.strip() == ""
+
+
+# ---------------------------------------------------------------------------
 # Hook diversity + refusal-before-mutation (I4, P-5)
 # ---------------------------------------------------------------------------
 

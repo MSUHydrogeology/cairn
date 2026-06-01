@@ -10,7 +10,9 @@ one stdlib-only file:
 * path normalization,
 * a best-effort atomic append,
 * the read-side helpers (active intents, conflict check),
-* per-session agent-identity resolution,
+* per-session agent-identity resolution (and a ``whoami`` command
+  that prints it -- the link anchor for other per-session surfaces
+  such as the reflections channel's ``<session>`` token),
 * a **folded-in** ``install-hook`` that writes a post-commit
   auto-release hook (no separate shell installer to ship), and
 * an opt-in **``install-precommit``** work-intent check (warn-by-
@@ -154,6 +156,33 @@ INTENT_CONFIG_RELPATH = "dev/intent-config.json"
 INVOKE_HINT = "python tools/intent.py"
 
 
+def _session_digest(raw_session_id: Optional[str]) -> Optional[str]:
+    """The per-session token: the 8-hex ``sha256`` slice of a raw harness
+    session id, or ``None`` when the raw id is missing / empty /
+    whitespace-only.
+
+    The id is **hashed in full**, never prefix-sliced: harness session
+    ids may be time-ordered (e.g. UUIDv7, whose leading bytes are a
+    timestamp shared by near-simultaneous sessions), so a prefix would
+    collapse exactly the concurrent same-tool sessions this identity
+    model exists to separate.  Hashing the whole id is harness-neutral
+    and keeps the written token safe + bounded regardless of the raw
+    id's shape.
+
+    This token is the single per-session value the rest of the system
+    keys on: :func:`_session_identity` tags it (``<tool_tag>-<token>``)
+    for the intent log's ``agent`` field, and :func:`resolve_session_token`
+    exposes it bare for any other per-session surface that wants to link
+    back to the same session (e.g. the reflections channel's
+    ``<session>`` filename token).
+    """
+    if not raw_session_id or not raw_session_id.strip():
+        return None
+    return hashlib.sha256(
+        raw_session_id.strip().encode("utf-8"),
+    ).hexdigest()[:8]
+
+
 def _session_identity(
     tool_tag: str, raw_session_id: Optional[str],
 ) -> Optional[str]:
@@ -161,22 +190,12 @@ def _session_identity(
 
     Returns ``None`` when ``raw_session_id`` is missing / empty /
     whitespace-only, so the caller falls through to the next resolution
-    tier.
-
-    Otherwise returns ``<tool_tag>-<8 hex of sha256(raw_session_id)>``.
-    The id is **hashed in full**, never prefix-sliced: harness session
-    ids may be time-ordered (e.g. UUIDv7, whose leading bytes are a
-    timestamp shared by near-simultaneous sessions), so a prefix would
-    collapse exactly the concurrent same-tool sessions this identity
-    model exists to separate.  Hashing the whole id is harness-neutral
-    and keeps the written identity string safe + bounded regardless of
-    the raw id's shape.
+    tier.  Otherwise returns ``<tool_tag>-<token>``, where ``<token>`` is
+    the :func:`_session_digest` per-session hash.
     """
-    if not raw_session_id or not raw_session_id.strip():
+    digest = _session_digest(raw_session_id)
+    if digest is None:
         return None
-    digest = hashlib.sha256(
-        raw_session_id.strip().encode("utf-8"),
-    ).hexdigest()[:8]
     return f"{tool_tag}-{digest}"
 
 
@@ -569,6 +588,35 @@ def resolve_agent_identity(
     return None
 
 
+def resolve_session_token(
+    *, config_path: Optional[Path] = None,
+) -> Optional[str]:
+    """Resolve the bare per-session token -- the :func:`_session_digest`
+    hash of the harness session id -- or ``None`` when no harness session
+    var is exposed.
+
+    This is the **token portion** of a harness-derived agent identity
+    (``<tool_tag>-<token>``); :func:`resolve_agent_identity` returns the
+    full identity.  Exposing the token lets a per-session surface *outside*
+    the intent log reuse the same session identity: a reflections filename
+    whose ``<agent>-<session>`` tail is ``<tool_tag>-<token>`` reconstructs
+    the intent log's ``agent`` field exactly, so the two surfaces link.
+
+    Resolves **only** the harness-session tier -- deliberately *not*
+    ``$CAIRN_AGENT`` or the static config ``agent``.  Neither of those is
+    per-session (both yield one identity shared across concurrent sessions,
+    the very collision a per-session token exists to avoid), so neither
+    can supply a collision-safe token; the caller falls back to a random
+    token instead.
+    """
+    config = _load_config(config_path)
+    for _tool_tag, session_var in effective_harness_vars(config):
+        digest = _session_digest(os.environ.get(session_var))
+        if digest is not None:
+            return digest
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Conflict-warning formatting (the live signaler value)
 
@@ -726,6 +774,43 @@ def _cmd_list(args) -> int:
         )
         if active.get("stem"):
             sys.stdout.write(f"  stem={active.get('stem')!r}\n")
+    return 0
+
+
+def _cmd_whoami(args) -> int:
+    """``intent whoami`` -- print the resolved per-session agent identity.
+
+    The default output is exactly the ``agent`` field stamped on every
+    claim/release record in ``dev/intents.jsonl`` -- so it is the link
+    anchor between the intent log and any other per-session surface.
+
+    ``--session-token`` prints just the per-session token (the 8-hex
+    ``sha256`` slice of the harness session id) -- the value a per-session
+    surface outside the intent log reuses to link back to the same
+    session.  Concretely, the reflections channel's filename
+    ``<date>-<agent>-<session>.md`` sets ``<session>`` to this token, so
+    its ``<agent>-<session>`` tail reconstructs this command's default
+    output.  Exits non-zero with no stdout when no harness session id is
+    exposed, signalling the caller to fall back to a random token.
+    """
+    if args.session_token:
+        token = resolve_session_token()
+        if token is None:
+            sys.stderr.write(
+                "intent whoami: no harness session id exposed -- no "
+                "per-session token (fall back to a random token).\n"
+            )
+            return 1
+        sys.stdout.write(token + "\n")
+        return 0
+    identity = resolve_agent_identity()
+    if identity is None:
+        sys.stderr.write(
+            "intent whoami: agent identity unresolved (no $CAIRN_AGENT, "
+            "harness session id, or config 'agent').\n"
+        )
+        return 1
+    sys.stdout.write(identity + "\n")
     return 0
 
 
@@ -1698,6 +1783,25 @@ def _build_parser():
         ),
     )
     p_list.set_defaults(func=_cmd_list)
+
+    p_whoami = sub.add_parser(
+        "whoami",
+        help=(
+            "Print the resolved per-session agent identity (the intent "
+            "log's `agent` field). --session-token prints just the "
+            "per-session hash token, the value the reflections channel "
+            "reuses as <session> so the two surfaces link."
+        ),
+    )
+    p_whoami.add_argument(
+        "--session-token", action="store_true",
+        help=(
+            "Print only the per-session token (8-hex sha256 of the harness "
+            "session id), not the full <tool_tag>-<token> identity. Exits "
+            "non-zero with no output when no harness session id is exposed."
+        ),
+    )
+    p_whoami.set_defaults(func=_cmd_whoami)
 
     p_install = sub.add_parser(
         "install-hook",

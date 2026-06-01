@@ -52,6 +52,20 @@ and a new empty `Unreleased` is started above.
 
 ### Changed
 
+- **Reflections `<session>` and the intent log now share one session
+  identity.**  `tools/intent.py` gains a `whoami` command — `whoami` prints
+  the resolved per-session identity (the intent log's `agent` field);
+  `whoami --session-token` prints just the per-session token (the 8-hex
+  `sha256` of the harness session id, refactored into a shared
+  `_session_digest` / exposed via `resolve_session_token`).  The
+  `reflections` module redefines the filename `<date>-<agent>-<session>.md`
+  so `<session>` reuses that token when the coordination/intent module is
+  installed — making the `<agent>-<session>` tail reconstruct the intent
+  log's `agent` field, so a reflection links to its session's
+  `dev/intents.jsonl` entries (raw harness id, then a random token, remain
+  the fallbacks; the default-on `reflections` module keeps working without
+  the team-gated intent tool).  +4 tests (`TestSessionTokenLink`).
+
 - **Review + collaboration doctrine sharpenings** (LHM
   `modflow-tools-doctrine-parity` plan, Stream 2).  `dual-review` now
   requires a clean code review to *show its work* — a four-part
