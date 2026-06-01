@@ -21,11 +21,13 @@ Two safety properties are load-bearing and are *not* negotiable defaults:
   handoff files, and (optionally) the intents log -- nothing else.
 * **Reflection-only by default.**  `session-end` performs only non-destructive
   work (it *creates* a reflection scaffold and *reads* the board); the
-  destructive full-handoff path (roadmap scrub, prune, metrics) is gated behind
-  an explicit `--handoff` plus a designation marker and a concurrent-handoff
-  lock.  In this chunk that gated path is not yet wired -- `--handoff` refuses
-  -- so the tool can never run an unguarded destructive step.  (The fail-safe,
-  the lock, and the interpreter-resolution binding land in the next chunk.)
+  destructive full-handoff path (prune reflections, run metrics, surface
+  intents) is gated behind an explicit `--handoff` plus a maintainer-designation
+  marker and a fail-closed concurrent-handoff lock.  Without the marker
+  `--handoff` refuses non-interactively; `--handoff --dry-run` prints a mutation
+  manifest and changes nothing.  So even if a harness ignores
+  `disable-model-invocation` and auto-fires `session-end`, the worst case is a
+  stray reflection file, never a roadmap scrub.
 
 Every side-effecting subcommand honors `--dry-run`: it prints the planned
 writes and exits writing nothing.
@@ -240,18 +242,23 @@ def _resolve_interpreter(root: Path) -> Tuple[str, str]:
             '{{"interpreter": "/abs/path/to/python"}}.'
         ) from exc
 
-    if not isinstance(data, dict) or "interpreter" not in data:
+    # Strict single-key schema: a tamper-aware trust root should not silently
+    # accept extra attacker-controlled fields (review-crispness, finding 4).
+    if not isinstance(data, dict) or set(data) != {"interpreter"}:
         raise LifecycleError(
-            f'{cfg} must be a JSON object with a single "interpreter" key.'
+            f'{cfg} must be a JSON object with exactly one key, "interpreter".'
         )
     value = data["interpreter"]
     if not isinstance(value, str) or not value.strip():
         raise LifecycleError(f'{cfg}: "interpreter" must be a non-empty string.')
-    # No arguments / shell interpolation: a bare path only.
-    if any(ch in value for ch in (" ", "\t", ";", "&", "|", "$", "`", "\n")):
+    # Reject NUL / control characters only.  We invoke as an explicit argv list
+    # (never a shell), so shell metacharacters in a path are inert, and spaces
+    # are legitimate in real filesystem paths (`My Drive`, OneDrive, profile
+    # dirs).  An appended-argument string like "/usr/bin/python -c ..." is
+    # caught by the is_file() check below, not by banning spaces (finding 1).
+    if any(ord(ch) < 0x20 or ch == "\x7f" for ch in value):
         raise LifecycleError(
-            f'{cfg}: "interpreter" must be a bare absolute path with no '
-            "arguments or shell metacharacters."
+            f'{cfg}: "interpreter" must not contain control characters.'
         )
     interp = Path(value)
     if not interp.is_absolute():
@@ -351,32 +358,7 @@ def cmd_session_start(args: argparse.Namespace) -> int:
     # local-env.json refuses here, before any sub-tool runs (S2).
     interpreter, interp_source = _resolve_interpreter(root)
 
-    _emit_section("active work-intents")
-    intent_tool = _sibling_tool("intent.py")
-    if intent_tool is None:
-        _warn(
-            "intent.py (coordination-tiers) not installed -- skipping the "
-            "active-intent read; if your team uses work-intents, install it."
-        )
-    else:
-        # Surface the active claims read-only so the starting session sees who
-        # holds which paths before its first edit (the read half of the
-        # work-intent convention).  Invoked as an explicit argv list under the
-        # resolved interpreter -- never a shell string (S2/S5).
-        try:
-            proc = subprocess.run(
-                [interpreter, str(intent_tool), "list"],
-                cwd=str(root),
-                capture_output=True,
-                text=True,
-                check=False,
-                env=_git_env(),
-            )
-            sys.stdout.write(proc.stdout)
-            if proc.returncode != 0 and proc.stderr:
-                _warn(f"intent list reported: {proc.stderr.strip()}")
-        except OSError as exc:
-            _warn(f"could not run intent.py list: {exc}")
+    _surface_intents(root, interpreter)
 
     # S2: make the (otherwise hidden) interpreter trust root visible.
     _emit_section("resolved project interpreter")
@@ -562,6 +544,40 @@ def _prune_reflections(root: Path, days: int, *, dry_run: bool) -> List[Path]:
     return pruned
 
 
+def _surface_intents(root: Path, interpreter: str) -> None:
+    """Read-only surface of active work-intents, if intent.py is installed.
+
+    Used by both `session-start` (who holds which paths before the first edit)
+    and the full handoff (a coordination-safety check: whether another session
+    still has claimed work).  Skip-with-note when the optional coordination
+    tool is absent -- the default-on skill never hard-requires it.  Invoked as
+    an explicit argv list under the resolved interpreter, never a shell string
+    (S2/S5).
+    """
+    _emit_section("active work-intents")
+    intent_tool = _sibling_tool("intent.py")
+    if intent_tool is None:
+        _warn(
+            "intent.py (coordination-tiers) not installed -- skipping the "
+            "active-intent read; if your team uses work-intents, install it."
+        )
+        return
+    try:
+        proc = subprocess.run(
+            [interpreter, str(intent_tool), "list"],
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+            check=False,
+            env=_git_env(),
+        )
+        sys.stdout.write(proc.stdout)
+        if proc.returncode != 0 and proc.stderr:
+            _warn(f"intent list reported: {proc.stderr.strip()}")
+    except OSError as exc:
+        _warn(f"could not run intent.py list: {exc}")
+
+
 def _run_lifecycle_metrics(root: Path, interpreter: str) -> None:
     """Run the optional lifecycle-metrics tool read-only, if installed."""
     tool = _sibling_tool("lifecycle_metrics.py")
@@ -721,6 +737,10 @@ def _do_full_handoff(root: Path, args: argparse.Namespace) -> int:
         _run_lifecycle_metrics(root, interpreter)
         lock.heartbeat()
 
+        # Coordination-safety check: whether another session still holds claimed
+        # work (read-only).  Mirrors the manifest line above (finding 2).
+        _surface_intents(root, interpreter)
+
     _emit(
         "full-handoff mechanizable steps complete.  The roadmap scrub, "
         "NEXT_SESSION rewrite, and handoff commit are your judgment steps."
@@ -764,8 +784,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_end = sub.add_parser(
         "session-end",
-        help="Goodnight.  Reflection-only by default; full handoff is gated "
-             "behind --handoff (not yet wired).",
+        help="Goodnight.  Reflection-only by default; the full handoff is "
+             "gated behind --handoff + a designation marker + a "
+             "concurrent-handoff lock.",
     )
     p_end.add_argument(
         "--handoff",

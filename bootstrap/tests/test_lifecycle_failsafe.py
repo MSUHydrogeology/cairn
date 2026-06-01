@@ -239,9 +239,9 @@ def test_absent_local_env_uses_fallback_with_guidance(repo, capsys):
 
 @pytest.mark.parametrize("bad", [
     {"interpreter": "relative/python"},          # not absolute
-    {"interpreter": "/usr/bin/python --foo"},     # arguments
+    {"interpreter": "/usr/bin/python --foo"},     # arguments (string is not a file)
     {"interpreter": "/no/such/python"},           # not an executable file
-    {"nope": "/usr/bin/python"},                  # wrong schema
+    {"nope": "/usr/bin/python"},                  # wrong schema (no interpreter key)
 ])
 def test_tampered_local_env_refuses(repo, bad):
     sd = lifecycle._state_dir(repo)
@@ -250,3 +250,58 @@ def test_tampered_local_env_refuses(repo, bad):
     # Refuses before running anything (S2): session-start resolves eagerly.
     rc = lifecycle.main(["session-start"])
     assert rc == 1
+
+
+def _make_exe(path: Path, body: str = "#!/bin/sh\nexit 0\n") -> Path:
+    import stat
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(body, encoding="utf-8")
+    path.chmod(path.stat().st_mode | stat.S_IXUSR)
+    return path
+
+
+def test_space_in_interpreter_path_accepted(repo):
+    # Finding 1: a space is legitimate in a real path (`My Drive`, OneDrive).
+    # argv-based invocation makes it harmless; the file check guards args.
+    exe = _make_exe(repo / "env with space" / "python")
+    sd = lifecycle._state_dir(repo)
+    sd.mkdir(parents=True)
+    (sd / "local-env.json").write_text(
+        json.dumps({"interpreter": str(exe)}), encoding="utf-8")
+
+    interp, source = lifecycle._resolve_interpreter(repo)
+
+    assert source == "local-env.json"
+    assert interp == str(exe)
+
+
+def test_extra_key_in_local_env_refused(repo):
+    # Finding 4: the single-key contract is enforced, not just documented.
+    exe = _make_exe(repo / "bin" / "python")
+    sd = lifecycle._state_dir(repo)
+    sd.mkdir(parents=True)
+    (sd / "local-env.json").write_text(
+        json.dumps({"interpreter": str(exe), "evil": "x"}), encoding="utf-8")
+
+    with pytest.raises(lifecycle.LifecycleError):
+        lifecycle._resolve_interpreter(repo)
+
+
+def test_full_handoff_surfaces_intents(repo, tmp_path, monkeypatch, capsys):
+    # Finding 2: the real (non-dry-run) handoff actually runs the active-intent
+    # read its manifest promises -- not just session-start.
+    fake_intent = _make_exe(
+        tmp_path / "fake_intent.py",
+        body="import sys; print('INTENT-LIST-RAN', ' '.join(sys.argv[1:]))\n",
+    )
+    monkeypatch.setattr(
+        lifecycle, "_sibling_tool",
+        lambda name: fake_intent if name == "intent.py" else None,
+    )
+    monkeypatch.setenv("CAIRN_HANDOFF_OWNER", "1")
+
+    rc = lifecycle.main(["session-end", "--handoff"])
+
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "INTENT-LIST-RAN list" in out  # invoked as [interp, intent, "list"]
