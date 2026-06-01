@@ -29,6 +29,12 @@ goes live.
 
 ## Tasks
 
+* [seed; id: try-session-start-skill]
+  Try the `session-start` skill (`/good-morning`): run
+  `python tools/lifecycle.py session-start` to orient at the top of a
+  session. The lifecycle routines are now invokable skills installed under
+  `.agents/skills/`; the canonical doctrine is `doctrine/session-routines.md`.
+
 * [seed; id: fill-readiness-report]
   Fill `templates/codebase-readiness-report.md` for your legacy
   tree BEFORE engaging the team apparatus. The eleven-section

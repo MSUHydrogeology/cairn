@@ -3892,6 +3892,13 @@ def main(argv: list[str] | None = None) -> int:
     skills_results = install_skills(
         templates_root, target, tokens, force=args.force
     )
+    _n_skills = sum(
+        1 for _s, d, _v in _SKILLS_MAPPINGS if d.startswith(".agents/skills/")
+    )
+    print(
+        f"  Installed {_n_skills} lifecycle skill(s) -> .agents/skills/ "
+        f"(+ the tools/lifecycle.py CLI). Try `session-start` (/good-morning)."
+    )
     env_result = write_local_env(target, force=args.force)
     if env_result[3] == "installed":
         print(f"  Wrote interpreter binding: {env_result[0]} (untracked)")
