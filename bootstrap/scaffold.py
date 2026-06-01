@@ -1578,6 +1578,36 @@ def load_vendor_targets(templates_root: Path) -> list[dict[str, Any]]:
     return list(data.get("targets", []))
 
 
+def render_compatibility_matrix(templates_root: Path) -> str:
+    """Render the skills compatibility matrix from the vendor-targets table.
+
+    Generated, never hand-authored (II3 / Decision 8): the published level for
+    each target is the table's, and the table's levels are claimed-pending-
+    fixture until Chunk 7's harness proves a target into ``native-tested``.  The
+    ``auto_suppress`` column makes the R4 gap visible per target rather than
+    buried in prose.  Deterministic (sorted by target) so the drift gate is
+    stable."""
+    rows = sorted(load_vendor_targets(templates_root), key=lambda r: r["target"])
+    out = [
+        "# Skills compatibility matrix",
+        "",
+        "<!-- GENERATED from templates/skills/_data/vendor_targets.yml by",
+        "     bootstrap.scaffold.render_compatibility_matrix -- do not",
+        "     hand-edit; re-run the generator.  Levels are",
+        "     CLAIMED-pending-fixture (II3): a target reads `native-tested`",
+        "     only once a fixture proves install + invoke on it. -->",
+        "",
+        "| Target | Tier | Format | Install/invoke level | Auto-suppress |",
+        "|--------|------|--------|----------------------|---------------|",
+    ]
+    for r in rows:
+        out.append(
+            f"| {r['target']} | {r['tier']} | {r.get('format', '-')} "
+            f"| {r.get('level', '-')} | {r.get('auto_suppress', '-')} |"
+        )
+    return "\n".join(out) + "\n"
+
+
 def _symlinks_available(target: Path) -> bool:
     """Probe whether ``os.symlink`` works in *target* (False on Windows without
     Developer Mode / Administrator -- the copy-fallback trigger, R2)."""
