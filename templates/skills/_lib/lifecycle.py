@@ -43,6 +43,7 @@ import datetime as _dt
 import json
 import os
 import re
+import secrets
 import socket
 import subprocess
 import sys
@@ -179,6 +180,52 @@ def _resolve_agent() -> str:
     raw = os.environ.get("CAIRN_AGENT", "agent").strip()
     slug = re.sub(r"[^A-Za-z0-9._-]", "-", raw).strip(".-")
     return slug or "agent"
+
+
+def _resolve_session(root: Path) -> str:
+    """Resolve the per-session token in the reflection filename (fold-back #46).
+
+    Without a session-distinct segment, two concurrent same-agent sessions
+    scaffold the *same* ``<date>-<agent>.md`` and clobber each other -- the
+    collision #46 fixed in the reflections doctrine but that this CLI had not
+    yet honored (#50).  Resolution order, per the reflections doctrine:
+
+    1. an explicit ``CAIRN_SESSION`` override (parallels ``CAIRN_AGENT``);
+    2. else the coordination/intent per-session token -- ``intent.py whoami
+       --session-token`` (the 8-hex digest of the harness session id) when that
+       tool is installed, so the ``<agent>-<session>`` tail reconstructs the
+       intent log's ``agent`` field;
+    3. else a short **random** token.
+
+    The fallback is random -- never a shared or persisted value -- so two
+    concurrent same-agent sessions never resolve the same token (a persisted
+    per-checkout token would re-introduce the very collision).  The trade is
+    that re-running in one session may scaffold a *second* reflection rather
+    than re-opening the first; a new file is recoverable, a clobber is not.
+    Sanitized to a filename-safe slug (path-containment, S3).
+    """
+    raw = os.environ.get("CAIRN_SESSION", "").strip()
+    if not raw:
+        intent_tool = _sibling_tool("intent.py")
+        if intent_tool is not None:
+            try:
+                interpreter, _ = _resolve_interpreter(root)
+            except LifecycleError:
+                interpreter = sys.executable
+            try:
+                proc = subprocess.run(
+                    [interpreter, str(intent_tool), "whoami", "--session-token"],
+                    cwd=str(root), capture_output=True, text=True,
+                    check=False, env=_git_env(),
+                )
+                if proc.returncode == 0:
+                    raw = proc.stdout.strip()
+            except OSError:
+                pass  # intent tool unusable -> fall through to the random token
+    if not raw:
+        raw = secrets.token_hex(4)
+    slug = re.sub(r"[^A-Za-z0-9._-]", "-", raw).strip(".-")
+    return slug or secrets.token_hex(4)
 
 
 def _today() -> str:
@@ -626,7 +673,7 @@ def _run_lifecycle_metrics(root: Path, interpreter: str) -> None:
 # --- subcommand: session-end -------------------------------------------------
 
 _REFLECTION_SKELETON = """\
-# Session reflection -- {agent} -- {date}
+# Session reflection -- {agent} -- {date} (session {session})
 
 <!-- Per-agent, ephemeral, pruned.  Migrate durable observations out into
      doctrine or the roadmap before they are pruned.  See
@@ -647,10 +694,14 @@ def _reflections_dir(root: Path) -> Path:
 
 
 def _do_reflection(root: Path, dry_run: bool) -> None:
-    """Scaffold the per-agent reflection file (non-destructive; both modes)."""
+    """Scaffold the per-session reflection file (non-destructive; both modes)."""
     refl_dir = _reflections_dir(root)
     agent = _resolve_agent()
-    target = refl_dir / f"{_today()}-{agent}.md"
+    session = _resolve_session(root)
+    # <date>-<agent>-<session>.md (#46/#50): the <session> segment keeps
+    # concurrent same-agent sessions from clobbering one reflection; the
+    # goodnight reader globs <date>-*.md to gather every session.
+    target = refl_dir / f"{_today()}-{agent}-{session}.md"
     _assert_within(target, refl_dir)  # S3: never write outside dev/reflections/
 
     _emit_section("reflection scaffold")
@@ -670,7 +721,8 @@ def _do_reflection(root: Path, dry_run: bool) -> None:
             _warn(f"created missing reflections directory: "
                   f"{refl_dir.relative_to(root)}")
         target.write_text(
-            _REFLECTION_SKELETON.format(agent=agent, date=_today()),
+            _REFLECTION_SKELETON.format(
+                agent=agent, date=_today(), session=session),
             encoding="utf-8",
         )
         _emit(f"wrote reflection scaffold: {target.relative_to(root)} "

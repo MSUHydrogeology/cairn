@@ -1729,6 +1729,47 @@ def _emit_skill_copy_fallback(
     return "copied"
 
 
+_WORKFLOW_SHIM = """\
+# {skill}
+
+<!-- GENERATED from .agents/skills/{skill}/SKILL.md by Cairn's skills fan-out
+     (workflow tier). Do not edit here -- edit the canonical SKILL.md. -->
+
+Run the Cairn {skill} routine:
+
+```
+python tools/lifecycle.py {skill}
+```
+
+The full routine, its arguments (e.g. `--handoff` for session-end), and the
+judgment steps live in `.agents/skills/{skill}/SKILL.md` -- the canonical
+source. This workflow is a generated invocation shim so `/{skill}` works on a
+harness whose explicit-command primitive is a workflow rather than a skill.
+"""
+
+
+def _emit_workflow_shims(workflow_dir: Path, canonical: Path) -> list[str]:
+    """Emit one workflow shim per canonical skill (the ``workflow`` tier).
+
+    A harness whose explicit ``/name`` primitive is a *workflow* (Antigravity)
+    cannot invoke a skill by ``/name`` directly, so for each ``.agents/skills/
+    <name>/SKILL.md`` we generate ``<workflow_dir>/<name>.md`` -- a thin shim
+    that runs ``python tools/lifecycle.py <name>``.  The canonical ``SKILL.md``
+    stays the single source of truth; the shim is generated (and gitignored by
+    the caller), so it cannot drift -- it is re-emitted from canonical on every
+    fan-out."""
+    workflow_dir.mkdir(parents=True, exist_ok=True)
+    emitted: list[str] = []
+    for skill_dir in sorted(canonical.iterdir()):
+        if not (skill_dir / "SKILL.md").is_file():
+            continue
+        name = skill_dir.name
+        (workflow_dir / f"{name}.md").write_text(
+            _WORKFLOW_SHIM.format(skill=name), encoding="utf-8")
+        emitted.append(name)
+    return emitted
+
+
 def fan_out_skills(
     templates_root: Path,
     target: Path,
@@ -1769,6 +1810,38 @@ def fan_out_skills(
             continue
         if tier == "manual":
             results.append((name, "manual", "manual-fallback"))
+            continue
+        if tier == "workflow":
+            spath = str(row.get("path", ""))
+            wpath = str(row.get("workflow_path", ""))
+            for p in (spath, wpath):
+                if not p or p.startswith("/") or ".." in Path(p).parts:
+                    raise ScaffoldSecurityError(
+                        f"vendor target {name!r}: unsafe fan-out path {p!r}")
+            skills_dst = target / spath
+            workflow_dst = target / wpath
+            # "is this harness in use?" -- emit only when the vendor root exists
+            # (don't litter a fresh repo with empty vendor dirs).
+            if not skills_dst.parent.exists():
+                results.append((name, "workflow", "skipped-vendor-absent"))
+                continue
+            _assert_fanout_contained(skills_dst, target)
+            _assert_fanout_contained(workflow_dst, target)
+            if dry_run:
+                results.append((name, "workflow", "dry-run"))
+                continue
+            # (1) the implicit-path skills source (symlink, or copy fallback).
+            if can_symlink:
+                _emit_skill_symlink(skills_dst, canonical)
+            else:
+                advisory = True
+                _emit_skill_copy_fallback(skills_dst, canonical, target)
+                seed_gitignore(target, (spath.rstrip("/") + "/",))
+            # (2) the explicit-command workflow shims that invoke the CLI.
+            shims = _emit_workflow_shims(workflow_dst, canonical)
+            seed_gitignore(target, (wpath.rstrip("/") + "/",))
+            results.append(
+                (name, "workflow", f"shims:{'+'.join(shims) or 'none'}"))
             continue
         if tier != "symlink":
             results.append((name, str(tier), "unknown-tier"))

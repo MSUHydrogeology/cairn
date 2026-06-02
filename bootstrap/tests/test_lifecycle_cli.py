@@ -22,6 +22,7 @@ Run from the cairn repo root:
 from __future__ import annotations
 
 import importlib.util
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -147,13 +148,14 @@ def test_session_start_skips_absent_intent_tool(repo, monkeypatch, capsys):
 
 def test_session_end_writes_reflection_scaffold(repo, monkeypatch, capsys):
     monkeypatch.setenv("CAIRN_AGENT", "tester")
+    monkeypatch.setenv("CAIRN_SESSION", "sess01")  # deterministic <session> (#50)
     monkeypatch.chdir(repo)
 
     rc = lifecycle.main(["session-end"])
 
     assert rc == 0
     refl_dir = repo / "dev" / "reflections"
-    written = list(refl_dir.glob("*-tester.md"))
+    written = list(refl_dir.glob("*-tester-sess01.md"))  # <date>-<agent>-<session>
     assert len(written) == 1
     body = written[0].read_text(encoding="utf-8")
     assert "Session reflection -- tester" in body
@@ -168,15 +170,16 @@ def test_session_end_dry_run_writes_nothing(repo, monkeypatch, capsys):
 
     assert rc == 0
     refl_dir = repo / "dev" / "reflections"
-    assert not refl_dir.exists() or not list(refl_dir.glob("*-tester.md"))
+    assert not refl_dir.exists() or not list(refl_dir.glob("*-tester-*.md"))
     assert "[dry-run] would create" in capsys.readouterr().out
 
 
 def test_session_end_does_not_clobber_existing_reflection(repo, monkeypatch, capsys):
     monkeypatch.setenv("CAIRN_AGENT", "tester")
+    monkeypatch.setenv("CAIRN_SESSION", "sess01")  # same session -> same path (#50)
     refl_dir = repo / "dev" / "reflections"
     refl_dir.mkdir(parents=True)
-    existing = refl_dir / f"{lifecycle._today()}-tester.md"
+    existing = refl_dir / f"{lifecycle._today()}-tester-sess01.md"
     existing.write_text("MY HAND-WRITTEN REFLECTION", encoding="utf-8")
     monkeypatch.chdir(repo)
 
@@ -209,3 +212,29 @@ def test_outside_git_repo_fails_actionably(tmp_path, monkeypatch, capsys):
 
     assert rc == 1
     assert "not inside a git repository" in capsys.readouterr().err
+
+
+# --- reflection naming: per-session token (#50 / fold-back #46) ---------------
+
+
+def test_reflection_filename_is_session_distinct(repo, monkeypatch, capsys):
+    # The reflection filename must carry a <session> segment so two concurrent
+    # same-agent sessions never scaffold the SAME path and clobber each other.
+    monkeypatch.chdir(repo)
+    monkeypatch.setenv("CAIRN_AGENT", "claude")
+    monkeypatch.delenv("CAIRN_SESSION", raising=False)  # -> random per-run token
+
+    lifecycle.main(["session-end"])
+    out1 = capsys.readouterr().out
+    lifecycle.main(["session-end"])
+    out2 = capsys.readouterr().out
+
+    pat = re.compile(r"dev/reflections/(\d{4}-\d{2}-\d{2}-claude-[A-Za-z0-9._-]+)\.md")
+    m1, m2 = pat.search(out1), pat.search(out2)
+    assert m1 and m2, "reflection path must be <date>-<agent>-<session>.md"
+    assert m1.group(1) != m2.group(1), "two runs must resolve distinct sessions"
+
+
+def test_resolve_session_honors_explicit_override(repo, monkeypatch):
+    monkeypatch.setenv("CAIRN_SESSION", "deadbeef")
+    assert lifecycle._resolve_session(repo) == "deadbeef"

@@ -12,36 +12,34 @@ conversation ("goodnight, talk tomorrow" is not an instruction to scrub a
 roadmap). The canonical doctrine for *what* this routine is and *why* lives in
 **`doctrine/session-routines.md`**; this skill only orchestrates it.
 
-## 1. Reflection-only (every agent -- the safe default)
+## 1. Run the mechanizable step
 
 ```
-python tools/lifecycle.py session-end
+python tools/lifecycle.py session-end $ARGUMENTS
 ```
 
-Scaffolds your per-agent reflection file and surfaces open threads; it writes
-nothing destructive. Then **fill in the reflection** (judgment): what shipped,
-what went well, what went wrong and the lesson, what threads stay open. Migrate
-any durable observation out to doctrine or the roadmap before it is pruned.
+`$ARGUMENTS` is whatever follows the command (e.g. `/session-end --handoff`):
 
-## 2. Full handoff (the designated owner only)
+* **(no arguments) -- reflection-only, the safe default every agent runs.**
+  Scaffolds your per-session reflection file and surfaces open threads; writes
+  nothing destructive.
+* **`--handoff` -- the full handoff, the designated full-handoff owner only.**
+  Preview first (changes nothing): `python tools/lifecycle.py session-end
+  --handoff --dry-run`. Then run it with the owner marker:
 
-Only the single agent the maintainer designates as full-handoff owner runs the
-guarded path. Preview it first -- this changes nothing:
+  ```
+  CAIRN_HANDOFF_OWNER=1 python tools/lifecycle.py session-end --handoff
+  ```
 
-```
-python tools/lifecycle.py session-end --handoff --dry-run
-```
+  The marker is an **anti-accidental-run gate, not an authorization control**;
+  a fail-closed lock prevents two concurrent owners from a double roadmap-scrub.
+  The CLI runs only the mechanizable steps (prune reflections, metrics, intent
+  surface).
 
-Then, as the designated owner:
+## 2. Judgment steps (yours, not the tool's)
 
-```
-CAIRN_HANDOFF_OWNER=1 python tools/lifecycle.py session-end --handoff
-```
-
-The marker is an **anti-accidental-run gate, not an authorization control**; a
-fail-closed lock prevents two concurrent owners from a double roadmap-scrub. The
-CLI runs the mechanizable steps (prune reflections, metrics, intent surface).
-The roadmap scrub, the from-scratch next-session rewrite, and the handoff commit
-remain **your** judgment steps.
-
-Friendly alias: `/goodnight`.
+**Fill in the reflection** -- what shipped, what went well, what went wrong and
+the lesson, what threads stay open -- and migrate any durable observation out to
+doctrine or the roadmap before it is pruned. For a full handoff the **roadmap
+scrub, the from-scratch next-session rewrite, and the handoff commit** are also
+yours.

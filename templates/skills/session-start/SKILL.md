@@ -31,5 +31,3 @@ resolved project interpreter.
   resumes from.
 - Confirm your role for the session before substantive work (see the roles
   doctrine) and name it explicitly.
-
-Friendly alias: `/good-morning`.

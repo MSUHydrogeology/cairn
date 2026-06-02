@@ -95,3 +95,23 @@ def test_skill_contract(skill: Path):
     desc = meta["description"].lower()
     assert "manual" in desc
     assert "not a conversational helper" in desc
+
+
+@pytest.mark.parametrize("skill", sorted(_skill_files()), ids=lambda p: p.parent.name)
+def test_no_dead_alias_prose(skill: Path):
+    # #51: a "Friendly alias: /goodnight" line is non-functional prose -- only
+    # the skill's directory name registers a command. It misleads operators into
+    # typing a command that does not exist, so it must not ship.
+    _meta, body = _split_frontmatter(skill.read_text(encoding="utf-8"))
+    assert "Friendly alias" not in body, (
+        f"{skill.parent.name}: ships a non-functional '/...' alias in prose")
+
+
+def test_session_end_plumbs_arguments():
+    # #51: $ARGUMENTS in the body routes flags (e.g. /session-end --handoff) to
+    # the CLI deterministically; without it, the flag is silently dropped.
+    _meta, body = _split_frontmatter(
+        (SKILLS_ROOT / "session-end" / "SKILL.md").read_text(encoding="utf-8"))
+    assert "$ARGUMENTS" in body, (
+        "session-end must $ARGUMENTS-plumb so /session-end --handoff routes "
+        "the flag to tools/lifecycle.py")

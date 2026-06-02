@@ -137,3 +137,35 @@ def test_symlinked_parent_fails_closed(repo, tmp_path):
     row = {"target": "x", "tier": "symlink", "path": ".evil/skills"}
     with pytest.raises(s.ScaffoldSecurityError):
         s.fan_out_skills(TEMPLATES_ROOT, repo, targets=[row], allow_symlinks=True)
+
+
+WORKFLOW_ROW = {
+    "target": "antigravity", "tier": "workflow",
+    "path": ".agent/skills", "workflow_path": ".agent/workflows",
+}
+
+
+def test_workflow_tier_emits_shims_and_skills_source(repo):
+    # Antigravity uses .agent/ (singular); the vendor root must exist to emit.
+    (repo / ".agent").mkdir()
+    res = s.fan_out_skills(TEMPLATES_ROOT, repo, targets=[WORKFLOW_ROW],
+                           allow_symlinks=True)
+    assert res == [("antigravity", "workflow", "shims:session-start")]
+    # (1) the implicit-path skills source at .agent/skills (symlink to canonical).
+    assert (repo / ".agent" / "skills" / "session-start" / "SKILL.md").is_file()
+    # (2) an explicit-command workflow shim per canonical skill, invoking the CLI.
+    shim = repo / ".agent" / "workflows" / "session-start.md"
+    assert shim.is_file()
+    body = shim.read_text(encoding="utf-8")
+    assert "python tools/lifecycle.py session-start" in body
+    assert ".agents/skills/session-start/SKILL.md" in body  # points at canonical
+    # The generated workflow dir is gitignored (a regenerated artifact).
+    assert ".agent/workflows/" in (repo / ".gitignore").read_text(encoding="utf-8")
+
+
+def test_workflow_tier_skipped_when_vendor_absent(repo):
+    # No .agent/ dir -> skipped (don't litter a fresh repo with empty dirs).
+    res = s.fan_out_skills(TEMPLATES_ROOT, repo, targets=[WORKFLOW_ROW],
+                           allow_symlinks=True)
+    assert res == [("antigravity", "workflow", "skipped-vendor-absent")]
+    assert not (repo / ".agent").exists()
