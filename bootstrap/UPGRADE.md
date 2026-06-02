@@ -120,7 +120,30 @@ source is a git checkout** carrying that ref; a packaged release (tarball
   are unavailable) are **regenerated** from the canonical source on upgrade,
   with a divergence guard that **warns rather than clobbers** a copy you
   edited in place — the canonical `.agents/skills/` source is the one to
-  edit.
+  edit. (The bullet above is the *already-tracked* case; if your lockfile
+  predates the skills, see the next section — they are acquired, not skipped.)
+
+## New core-like files (and skills) added upstream
+
+`core/` files and the lifecycle skills install **unconditionally** — they are
+not opt-in modules. When Cairn adds a file to that tier *after* you installed
+(the lifecycle skills are the first such case — an adopter who bootstrapped
+before they existed), `upgrade` **brings it in** rather than silently omitting
+it. `--plan` / `--stage` list these under **`new core/skills (added)`**, and
+`--apply`:
+
+* writes the file (a mergeable `SKILL.md` is token-substituted + base-cached
+  like any `core/` doc; a verbatim CLI such as `tools/lifecycle.py` is
+  hash-tracked),
+* **records it in the lockfile** so the next upgrade tracks it, and
+* fans the skills out to your in-use vendor read-paths (e.g. `.claude/skills`)
+  and seeds their `.gitignore` entries — exactly as a fresh install does.
+
+Detection keys on the **source template**, not the destination, so a file you
+installed under a renamed destination (the vendor wrapper `VENDOR.md` →
+`CLAUDE.md`) is recognized as already-present and never re-added. Only the
+unconditional core/skills tier auto-adds; **new modules stay opt-in** (listed
+under "new modules available (opt-in)", adopted deliberately).
 
 ## Migrating a tree installed before upgrade support
 

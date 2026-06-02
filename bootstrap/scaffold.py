@@ -2917,14 +2917,21 @@ def classify_verbatim(
     hash != the lockfile's recorded base hash -> flag, never clobber);
     ``"up-to-date"`` (already equals the new upstream); or ``"update"``
     (unmodified vs base and differs from upstream -> safe to update).
+
+    The ``ours == theirs`` check runs **first** (fold-back #48): a file an
+    adopter hand-synced to *exactly* the new upstream before upgrading is
+    ``up-to-date``, not a fork -- even when the lockfile hash is stale (it was
+    recorded against an older Cairn). Were the stale-hash check first, such a
+    file would be flagged a fork on every future upgrade. ``--apply`` heals the
+    stale lock hash (see ``_write_stage``/``_apply_upgrade``: ``verbatim_rehash``).
     """
     if ours_bytes is None:
         return "missing"
+    if ours_bytes == theirs_bytes:
+        return "up-to-date"
     ours_h = "sha256:" + _sha256_hex(ours_bytes)
     if ours_h != lock_hash:
         return "locally-modified"
-    if ours_bytes == theirs_bytes:
-        return "up-to-date"
     return "update"
 
 
@@ -2993,7 +3000,8 @@ def _theirs_bytes(
 #: the adopter sees their customizations were preserved across the merge
 #: (vs. ``clean`` which means the file was untouched).
 _ADVANCING_KINDS = frozenset(
-    {"clean", "clean-locally-modified", "conflict", "verbatim-update"}
+    {"clean", "clean-locally-modified", "conflict", "verbatim-update",
+     "new-core"}
 )
 
 #: Display labels for the upgrade report.  Maps the internal kind to the
@@ -3001,6 +3009,7 @@ _ADVANCING_KINDS = frozenset(
 _KIND_DISPLAY_LABEL = {
     "clean": "clean (untouched)",
     "clean-locally-modified": "locally-modified (merged clean)",
+    "new-core": "new core/skills (added)",
 }
 
 
@@ -3011,6 +3020,8 @@ class FilePlan(NamedTuple):
     detail: str
     theirs_raw: str | None    # new upstream RAW template (mergeable) -> refreshed base cache
     base_cache: str | None    # lockfile base_cache rel path (mergeable) to refresh
+    src: str | None = None    # new-core: source template rel-to-templates/ (to build the lockfile entry)
+    verbatim: bool = False    # new-core: verbatim flag for the new lockfile entry
 
 
 def _compute_upgrade(
@@ -3090,6 +3101,39 @@ def _compute_upgrade(
             theirs_raw if advancing else None,
             cache_rel if advancing else None))
 
+    # New core-like files (#47): core + skills install unconditionally, so a
+    # core/skills file present upstream but absent from the lockfile (an
+    # adopter whose lockfile predates it -- e.g. the lifecycle skills, added
+    # after a pre-skills install) is brought in, not silently omitted. Modules
+    # stay opt-in (the new_modules flow below); only the unconditional tier
+    # auto-adds. Restricting to the known core/skills mapping set keeps --apply
+    # from ever writing a path outside it (plan-review safety note).
+    # Key on the *source* template, not the dst: an adopter may have installed a
+    # core file under a renamed dst (the vendor wrapper VENDOR.md -> CLAUDE.md,
+    # #45), so a src already tracked under any dst is NOT new -- keying on dst
+    # would spuriously re-add VENDOR.md alongside the renamed CLAUDE.md.
+    lock_srcs = {rec.get("src") for rec in lock.get("files", [])}
+    core_like = [(s, d, False) for s, d in _CORE_MAPPINGS] + list(_SKILLS_MAPPINGS)
+    seen_new: set[str] = set()
+    for src_rel, dst_rel, verbatim in core_like:
+        if src_rel in lock_srcs or dst_rel in seen_new:
+            continue
+        theirs_b = _theirs_bytes(cairn_root, templates_root, src_rel, to_ref)
+        if theirs_b is None:
+            continue
+        seen_new.add(dst_rel)
+        if verbatim:
+            plans.append(FilePlan(
+                dst_rel, "new-core", theirs_b.decode("utf-8", "replace"),
+                "new core-like file (added)", None, None,
+                src=src_rel, verbatim=True))
+        else:
+            theirs_raw = theirs_b.decode("utf-8")
+            plans.append(FilePlan(
+                dst_rel, "new-core", substitute_tokens(theirs_raw, tokens),
+                "new core-like file (added)", theirs_raw,
+                f"{_BASE_CACHE_REL}/{dst_rel}", src=src_rel, verbatim=False))
+
     # Structural reconciliation.
     lock_modules = set(lock.get("modules", []))
     current_modules = set(_MODULE_MAPPINGS)
@@ -3123,7 +3167,7 @@ def _print_upgrade_report(
     for fp in plans:
         by_kind[fp.kind].append(fp.dst)
     print(f"\nCairn upgrade -- {mode}\n" + "=" * 40)
-    order = ["clean", "clean-locally-modified",
+    order = ["clean", "clean-locally-modified", "new-core",
              "conflict", "slot-removed", "review-only",
              "verbatim-update", "verbatim-locally-modified",
              "verbatim-up-to-date", "verbatim-missing", "up-to-date",
@@ -3197,6 +3241,10 @@ def _write_stage(
     staged_files: list[str] = []
     ours_hashes: dict[str, str] = {}
     kinds: dict[str, str] = {}
+    # #47: per-file provenance for files NOT already in the lockfile (new-core),
+    # so --apply can append correct lockfile records (refs only -- no file
+    # bodies -- keeping stage-metadata.json lightweight, plan-review rec 4b).
+    new_entries: dict[str, dict[str, Any]] = {}
     for fp in plans:
         if fp.kind not in _ADVANCING_KINDS or fp.applied is None:
             continue
@@ -3210,6 +3258,11 @@ def _write_stage(
         out.write_text(fp.applied, encoding="utf-8")
         staged_files.append(fp.dst)
         kinds[fp.dst] = fp.kind
+        if fp.kind == "new-core":
+            new_entries[fp.dst] = {
+                "src": fp.src, "verbatim": fp.verbatim,
+                "base_cache": fp.base_cache,
+            }
         # Snapshot the on-disk *ours* hash at stage time (R7a: detect an
         # adopter edit made between --stage and --apply).
         if dst_abs.exists():
@@ -3242,6 +3295,22 @@ def _write_stage(
             ours_out.parent.mkdir(parents=True, exist_ok=True)
             ours_out.write_text(
                 dst_abs.read_text(encoding="utf-8"), encoding="utf-8")
+    # #48: a verbatim file already byte-identical to the new upstream
+    # (verbatim-up-to-date) but whose lockfile hash is stale -- the adopter
+    # hand-synced it to a later Cairn before upgrading. Record it so --apply
+    # heals the lock hash (no content swap; the file is already correct on
+    # disk, so it never enters staged_files / the exactness gate).
+    lock_by_dst = {r["dst"]: r for r in lock.get("files", [])}
+    verbatim_rehash: list[str] = []
+    for fp in plans:
+        if fp.kind != "verbatim-up-to-date":
+            continue
+        rec = lock_by_dst.get(fp.dst)
+        dst_abs = target / fp.dst
+        if rec is None or not dst_abs.exists():
+            continue
+        if "sha256:" + _sha256_hex(dst_abs.read_bytes()) != rec.get("hash"):
+            verbatim_rehash.append(fp.dst)
     meta = {
         "lock_commit": lock.get("cairn_commit"),
         "lock_version": lock.get("cairn_version"),
@@ -3256,6 +3325,10 @@ def _write_stage(
         # Outstanding by-hand merges: --apply fail-closes on a non-empty list
         # unless --ack-review-only is passed (#44 completion gate).
         "review_only": sorted(review_only_dsts),
+        # #47 new core-like files to record in the lockfile on apply (refs only).
+        "new_entries": new_entries,
+        # #48 verbatim files whose stale lock hash --apply should heal.
+        "verbatim_rehash": sorted(verbatim_rehash),
     }
     (stage / _STAGE_META).write_text(
         json.dumps(meta, indent=2, sort_keys=True), encoding="utf-8")
@@ -3380,7 +3453,8 @@ def _cmd_init_lock(
 
 
 def _apply_upgrade(
-    target: Path, lock: dict[str, Any], *, ack_review_only: bool = False,
+    target: Path, lock: dict[str, Any], cairn_root: Path, templates_root: Path,
+    *, ack_review_only: bool = False,
 ) -> int:
     """`--apply` (R7): consume the staged result under the safety contract,
     swap the originals, **advance the lockfile + base cache** to the new
@@ -3492,6 +3566,7 @@ def _apply_upgrade(
     new_lock["cairn_commit"] = meta.get("new_commit", lock.get("cairn_commit"))
     new_files: list[dict[str, Any]] = []
     staged_set = set(staged_meta)
+    rehash_set = set(meta.get("verbatim_rehash", []))
     for rec in lock.get("files", []):
         rec = dict(rec)
         if rec["dst"] in staged_set:
@@ -3501,13 +3576,47 @@ def _apply_upgrade(
                 if cache_abs.exists():
                     rec["base_hash"] = \
                         "sha256:" + _sha256_hex(cache_abs.read_bytes())
+        elif rec["dst"] in rehash_set and (target / rec["dst"]).exists():
+            # #48: heal a stale verbatim hash whose on-disk content already
+            # equals the new upstream (no content swap -- recompute on disk).
+            rec["hash"] = "sha256:" + _sha256_hex((target / rec["dst"]).read_bytes())
+        new_files.append(rec)
+    # #47: append lockfile records for new core-like files added this upgrade
+    # (auto-added; src/verbatim/base_cache carried through stage metadata).
+    new_entries = meta.get("new_entries", {})
+    added_dsts = [d for d in sorted(new_entries) if d in staged_set]
+    for dst in added_dsts:
+        info = new_entries[dst]
+        rec = {"src": info["src"], "dst": dst,
+               "verbatim": bool(info.get("verbatim")),
+               "hash": "sha256:" + _sha256_hex((target / dst).read_bytes())}
+        if info.get("base_cache"):
+            rec["base_cache"] = info["base_cache"]
+            cache_abs = target / info["base_cache"]
+            if cache_abs.exists():
+                rec["base_hash"] = "sha256:" + _sha256_hex(cache_abs.read_bytes())
         new_files.append(rec)
     new_lock["files"] = new_files
     (target / _LOCKFILE_REL).write_text(_emit_lock_yaml(new_lock), encoding="utf-8")
 
+    # #47: a newly-added skill needs its vendor fan-out (e.g. .claude/skills ->
+    # the canonical .agents/skills) + its machine-state .gitignore seeds, just
+    # as a fresh install does. Fan-out is best-effort: a containment refusal
+    # warns rather than aborting the already-applied upgrade.
+    added_skills = [d for d in added_dsts if d.startswith(".agents/skills/")]
+    if added_skills:
+        try:
+            fan_out_skills(templates_root, target)
+        except Exception as exc:  # noqa: BLE001 -- containment/vendor edge
+            print(f"  [warn] skills fan-out skipped: {exc}", file=sys.stderr)
+        seeded = seed_gitignore(target, _SKILLS_GITIGNORE)
+        if seeded:
+            print(f"  Seeded .gitignore (skills): {', '.join(seeded)}")
+
     shutil.rmtree(stage)
-    print(f"Applied {len(staged_meta)} file(s); advanced {_LOCKFILE_REL} + the "
-          f"base cache to {new_lock['cairn_commit']}.")
+    added_note = f" (+{len(added_dsts)} new core-like)" if added_dsts else ""
+    print(f"Applied {len(staged_meta)} file(s){added_note}; advanced "
+          f"{_LOCKFILE_REL} + the base cache to {new_lock['cairn_commit']}.")
     return 0
 
 
@@ -3559,7 +3668,7 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
         return 1
 
     if args.apply:
-        return _apply_upgrade(target, lock,
+        return _apply_upgrade(target, lock, cairn_root, templates_root,
                               ack_review_only=args.ack_review_only)
 
     plans, structural = _compute_upgrade(
