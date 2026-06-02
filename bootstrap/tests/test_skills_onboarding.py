@@ -55,7 +55,7 @@ def test_passive_session_start_pointer_seeded_once(tmp_path, preset, capsys):
     # Exactly one passive session-start pointer landed in PLANNING's slot.
     planning = (target / "dev" / "PLANNING.md").read_text(encoding="utf-8")
     assert planning.count("try-session-start-skill") == 1
-    assert "/good-morning" in planning
+    assert "/session-start" in planning
 
 
 def test_pointer_is_passive_not_active_surfacing(tmp_path):
