@@ -167,17 +167,65 @@ def _git(args: List[str], root: Path) -> str:
     return out.stdout
 
 
-def _resolve_agent() -> str:
+def _intent_whoami(root: Path, *, session_token: bool = False) -> Optional[str]:
+    """Return ``intent.py whoami`` output, or ``None`` if unavailable.
+
+    The coordination/intent tool is **optional** (team-gated): a missing or
+    unusable tool is a clean ``None``, never a crash -- the default-on lifecycle
+    skill must not hard-require it.  With ``session_token=True`` the bare
+    per-session digest is returned (``whoami --session-token``); otherwise the
+    full ``<tool_tag>-<digest>`` identity.
+    """
+    intent_tool = _sibling_tool("intent.py")
+    if intent_tool is None:
+        return None
+    try:
+        interpreter, _ = _resolve_interpreter(root)
+    except LifecycleError:
+        interpreter = sys.executable
+    cmd = [interpreter, str(intent_tool), "whoami"]
+    if session_token:
+        cmd.append("--session-token")
+    try:
+        proc = subprocess.run(
+            cmd, cwd=str(root), capture_output=True, text=True,
+            check=False, env=_git_env(),
+        )
+    except OSError:
+        return None  # intent tool unusable -> caller falls back
+    if proc.returncode != 0:
+        return None
+    return proc.stdout.strip() or None
+
+
+def _resolve_agent(root: Path) -> str:
     """Resolve the agent identifier used in the reflection filename.
 
-    Honors an explicit ``CAIRN_AGENT`` override, else a neutral default.  The
-    value becomes part of a filename, so it is **sanitized to a safe slug**
-    (`[A-Za-z0-9._-]` only): an unsanitized environment value such as
-    ``../../etc/x`` must not be able to redirect the reflection write outside
-    ``dev/reflections/`` (path-containment, S3).  An empty / fully-stripped
-    value falls back to ``agent``.
+    Resolution order, parallel to ``_resolve_session`` so the
+    ``<agent>-<session>`` tail reconstructs the intent log's identity:
+
+    1. an explicit ``CAIRN_AGENT`` override;
+    2. else the coordination/intent identity -- ``intent.py whoami`` -- with its
+       trailing ``-<session_digest>`` stripped to leave the tool tag (so e.g.
+       ``claude-e84b19df`` -> ``claude``), when that tool is installed;
+    3. else the neutral default ``agent``.
+
+    The value becomes part of a filename, so it is **sanitized to a safe slug**
+    (`[A-Za-z0-9._-]` only): an unsanitized value such as ``../../etc/x`` must
+    not be able to redirect the reflection write outside ``dev/reflections/``
+    (path-containment, S3).  An empty / fully-stripped value falls back to
+    ``agent``.
     """
-    raw = os.environ.get("CAIRN_AGENT", "agent").strip()
+    raw = os.environ.get("CAIRN_AGENT", "").strip()
+    if not raw:
+        identity = _intent_whoami(root)
+        if identity:
+            # intent identity is "<tool_tag>-<8-hex digest>"; strip a genuine
+            # digest suffix so <agent> is the tool tag and <agent>-<session>
+            # reconstructs the identity.  Strip only an exact 8-hex tail, so a
+            # hyphenated tool tag or a digest-less identity is left intact.
+            head, _, tail = identity.rpartition("-")
+            raw = head if head and re.fullmatch(r"[0-9a-f]{8}", tail) else identity
     slug = re.sub(r"[^A-Za-z0-9._-]", "-", raw).strip(".-")
     return slug or "agent"
 
@@ -206,22 +254,9 @@ def _resolve_session(root: Path) -> str:
     """
     raw = os.environ.get("CAIRN_SESSION", "").strip()
     if not raw:
-        intent_tool = _sibling_tool("intent.py")
-        if intent_tool is not None:
-            try:
-                interpreter, _ = _resolve_interpreter(root)
-            except LifecycleError:
-                interpreter = sys.executable
-            try:
-                proc = subprocess.run(
-                    [interpreter, str(intent_tool), "whoami", "--session-token"],
-                    cwd=str(root), capture_output=True, text=True,
-                    check=False, env=_git_env(),
-                )
-                if proc.returncode == 0:
-                    raw = proc.stdout.strip()
-            except OSError:
-                pass  # intent tool unusable -> fall through to the random token
+        token = _intent_whoami(root, session_token=True)
+        if token:
+            raw = token
     if not raw:
         raw = secrets.token_hex(4)
     slug = re.sub(r"[^A-Za-z0-9._-]", "-", raw).strip(".-")
@@ -696,7 +731,7 @@ def _reflections_dir(root: Path) -> Path:
 def _do_reflection(root: Path, dry_run: bool) -> None:
     """Scaffold the per-session reflection file (non-destructive; both modes)."""
     refl_dir = _reflections_dir(root)
-    agent = _resolve_agent()
+    agent = _resolve_agent(root)
     session = _resolve_session(root)
     # <date>-<agent>-<session>.md (#46/#50): the <session> segment keeps
     # concurrent same-agent sessions from clobbering one reflection; the
@@ -802,7 +837,7 @@ def _do_full_handoff(root: Path, args: argparse.Namespace) -> int:
 
     # II2/S1: fail-closed concurrent-handoff lock; released on clean exit AND
     # exception (the context manager's __exit__, EP1).
-    with HandoffLock(root, _resolve_agent()) as lock:
+    with HandoffLock(root, _resolve_agent(root)) as lock:
         _emit_section("pruning reflections")
         pruned = _prune_reflections(root, grace, dry_run=False)
         _emit(f"pruned {len(pruned)} reflection(s) older than {grace}d.")

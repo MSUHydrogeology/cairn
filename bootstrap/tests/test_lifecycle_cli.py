@@ -238,3 +238,38 @@ def test_reflection_filename_is_session_distinct(repo, monkeypatch, capsys):
 def test_resolve_session_honors_explicit_override(repo, monkeypatch):
     monkeypatch.setenv("CAIRN_SESSION", "deadbeef")
     assert lifecycle._resolve_session(repo) == "deadbeef"
+
+
+# --- reflection naming: <agent> tag resolves via the intent identity ----------
+
+
+def test_resolve_agent_honors_explicit_override(repo, monkeypatch):
+    monkeypatch.setenv("CAIRN_AGENT", "tester")
+    assert lifecycle._resolve_agent(repo) == "tester"
+
+
+def test_resolve_agent_falls_back_to_intent_identity(repo, monkeypatch):
+    # With CAIRN_AGENT unset, the <agent> tag is the intent identity's tool tag:
+    # intent.py whoami -> "claude-e84b19df", digest stripped -> "claude", so the
+    # <agent>-<session> tail reconstructs the full identity.
+    monkeypatch.delenv("CAIRN_AGENT", raising=False)
+    monkeypatch.setattr(lifecycle, "_intent_whoami",
+                        lambda root, **kw: "claude-e84b19df")
+    assert lifecycle._resolve_agent(repo) == "claude"
+
+
+def test_resolve_agent_keeps_identity_without_digest_suffix(repo, monkeypatch):
+    # Only a genuine 8-hex digest tail is stripped; a hyphenated tool tag (or a
+    # digest-less identity) is left intact.
+    monkeypatch.delenv("CAIRN_AGENT", raising=False)
+    monkeypatch.setattr(lifecycle, "_intent_whoami",
+                        lambda root, **kw: "claude-code")
+    assert lifecycle._resolve_agent(repo) == "claude-code"
+
+
+def test_resolve_agent_defaults_to_agent_without_identity(repo, monkeypatch):
+    # No override and no intent tool -> the neutral default, never a crash (the
+    # default-on skill must not hard-require the team-gated coordination tool).
+    monkeypatch.delenv("CAIRN_AGENT", raising=False)
+    monkeypatch.setattr(lifecycle, "_intent_whoami", lambda root, **kw: None)
+    assert lifecycle._resolve_agent(repo) == "agent"
