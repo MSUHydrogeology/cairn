@@ -1,5 +1,5 @@
 {
-  "_doc": "Data-driven vendor fan-out table for the lifecycle skills. The canonical source is .agents/skills/; this table maps each harness to how that canonical source reaches its read-path. A vendor refresh is a row edit here, never a redesign (Decision 5). JSON-encoded so it round-trips stdlib-only (valid YAML 1.2), like cairn-lock.yml. Levels are CLAIMED-pending-fixture (II3): a target moves to native-tested only when a fixture proves it. tier: alias (reads .agents/skills directly -> nothing emitted) | symlink (same SKILL.md format, different path -> verified symlink to canonical, copy-fallback where symlinks are unavailable) | workflow (an explicit-command harness whose /name primitive is a workflow, not a skill -> emit a workflow shim that invokes the CLI, PLUS a skills symlink for the implicit path) | manual (different format -> documented manual/compiled fallback, never a symlink to incompatible files). auto_suppress: native-tested (a fixture PROVES the harness suppresses model-invocation) | declared-flag (the harness DECLARES a suppress flag, not yet fixture-proven) | mitigated (anti-semantic description only) | cli-backstop-only (relies on the Layer-2 reflection-only-safe CLI fail-safe). NOTE: .agents/skills/ (plural) is read DIRECTLY by Codex, GitHub Copilot, Cursor, and Windsurf -> they are alias (free); only Claude Code (.claude/skills symlink) and Antigravity (.agent/skills singular + .agent/workflows shim) need fan-out. Gemini CLI / Cline / OpenCode are documented future data-row adds.",
+  "_doc": "Data-driven vendor fan-out table for the lifecycle skills. The canonical source is .agents/skills/; this table maps each harness to how that canonical source reaches its read-path. A vendor refresh is a row edit here, never a redesign (Decision 5). JSON-encoded so it round-trips stdlib-only (valid YAML 1.2), like cairn-lock.yml. Levels are CLAIMED-pending-fixture (II3): a target moves to native-tested only when a fixture proves it. tier: alias (reads .agents/skills directly -> nothing emitted) | symlink (same SKILL.md format, different path -> verified symlink to canonical, copy-fallback where symlinks are unavailable) | manual (different format -> documented manual/compiled fallback, never a symlink to incompatible files). auto_suppress: native-tested (a fixture PROVES the harness suppresses model-invocation) | declared-flag (the harness DECLARES a suppress flag, not yet fixture-proven) | mitigated (anti-semantic description only) | cli-backstop-only (relies on the Layer-2 reflection-only-safe CLI fail-safe). NOTE: .agents/skills/ (plural) is read DIRECTLY by Codex, GitHub Copilot, Cursor, Windsurf, and Antigravity -> they are alias (free); only Claude Code (.claude/skills symlink) needs fan-out. (Antigravity was confirmed empirically 2026-06-02 to read .agents/skills/ directly and invoke /session-end by name -- the mid-2026 .agent/-singular + workflow-only research it was first modelled on was point-in-time wrong, so the workflow tier it required was removed as consumerless.) Gemini CLI / Cline / OpenCode are documented future data-row adds.",
   "targets": [
     {
       "target": "agents-native",
@@ -51,9 +51,8 @@
     },
     {
       "target": "antigravity",
-      "tier": "workflow",
-      "path": ".agent/skills",
-      "workflow_path": ".agent/workflows",
+      "tier": "alias",
+      "path": ".agents/skills",
       "format": "skill-md",
       "level": "native-claimed-unverified",
       "auto_suppress": "cli-backstop-only"

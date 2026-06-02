@@ -117,14 +117,11 @@ source is a git checkout** carrying that ref; a packaged release (tarball
   `.agents/skills/*/SKILL.md` files ride the token-/slot-aware 3-way merge
   (base cache + provenance), and `tools/lifecycle.py` follows the verbatim
   hash policy above. The gitignored vendor fan-out copies (where symlinks
-  are unavailable) **and the `workflow`-tier shims** (for a harness whose
-  explicit-command primitive is a workflow, not a skill — e.g. Antigravity's
-  `.agent/workflows/session-*.md`) are **regenerated** from the canonical
-  source on upgrade, with a divergence guard that **warns rather than
-  clobbers** a copy you edited in place — the canonical `.agents/skills/`
-  source is the one to edit. (The bullet above is the *already-tracked* case;
-  if your lockfile predates the skills, see the next section — they are
-  acquired, not skipped.)
+  are unavailable) are **regenerated** from the canonical source on upgrade,
+  with a divergence guard that **warns rather than clobbers** a copy you
+  edited in place — the canonical `.agents/skills/` source is the one to
+  edit. (The bullet above is the *already-tracked* case; if your lockfile
+  predates the skills, see the next section — they are acquired, not skipped.)
 
 ## New core-like files (and skills) added upstream
 

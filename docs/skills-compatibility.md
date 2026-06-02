@@ -9,7 +9,7 @@
 | Target | Tier | Format | Install/invoke level | Auto-suppress |
 |--------|------|--------|----------------------|---------------|
 | agents-native | alias | skill-md | native-claimed-unverified | declared-flag |
-| antigravity | workflow | skill-md | native-claimed-unverified | cli-backstop-only |
+| antigravity | alias | skill-md | native-claimed-unverified | cli-backstop-only |
 | claude-code | symlink | skill-md | native-claimed-unverified | declared-flag |
 | codex | alias | skill-md | native-claimed-unverified | cli-backstop-only |
 | cursor | alias | skill-md | native-claimed-unverified | cli-backstop-only |
