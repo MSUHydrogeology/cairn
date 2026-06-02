@@ -3452,6 +3452,84 @@ def _cmd_init_lock(
     return 0
 
 
+def _cmd_adopt_module(
+    target: Path, name: str, cairn_root: Path, templates_root: Path,
+) -> int:
+    """`upgrade --adopt-module <name>` (#49): record an already-on-disk opt-in
+    module into the lockfile so it 3-way-merges on later upgrades.
+
+    Explicit, never automatic (modules are a deliberate choice -- the opt-in
+    contrast to #47's auto-add of the unconditional core/skills tier). For each
+    of the module's ``InstallSpec``s it records a lockfile ``files`` entry
+    exactly as ``init`` would (``src``/``dst``/``verbatim``, on-disk ``hash``;
+    non-verbatim -> ``base_cache`` raw template + ``base_hash``), installing a
+    spec's ``dst`` from the template first only if it is missing on disk. Adds
+    the module to ``modules`` and seeds its ``.gitignore`` entries. Fail-closed
+    on an unknown name; a no-op if the module is already locked."""
+    lock = read_lockfile(target)
+    if lock is None:
+        print(f"error: no {_LOCKFILE_REL} in the target; run "
+              "`upgrade --init-lock` (or a clean install) first.",
+              file=sys.stderr)
+        return 1
+    if name not in _MODULE_MAPPINGS:
+        print(f"error: unknown module {name!r}. Known modules: "
+              f"{', '.join(sorted(_MODULE_MAPPINGS))}.", file=sys.stderr)
+        return 1
+    if name in lock.get("modules", []):
+        print(f"  [info] module {name!r} is already recorded in "
+              f"{_LOCKFILE_REL}; nothing to adopt.", file=sys.stderr)
+        return 0
+
+    tokens = {str(k): str(v) for k, v in (lock.get("tokens") or {}).items()}
+    lock_dsts = {rec["dst"] for rec in lock.get("files", [])}
+    new_files = [dict(rec) for rec in lock.get("files", [])]
+    added: list[str] = []
+    for spec in _MODULE_MAPPINGS[name]:
+        src_rel = f"modules/{spec.src}"        # lockfile src convention
+        dst_rel = spec.dst
+        if dst_rel in lock_dsts:
+            continue  # already tracked under another roster entry; skip the file
+        theirs_b = _theirs_bytes(cairn_root, templates_root, src_rel, None)
+        if theirs_b is None:
+            print(f"error: upstream template {src_rel!r} for module {name!r} "
+                  "not found.", file=sys.stderr)
+            return 1
+        dst_abs = target / dst_rel
+        if not dst_abs.exists():
+            # Adoption is for an already-present module; install a missing spec
+            # dst from the template (substituted for mergeable, raw for verbatim)
+            # exactly as `init` would, so a partially-placed module completes.
+            _assert_safe_write(dst_abs, target)
+            dst_abs.parent.mkdir(parents=True, exist_ok=True)
+            content = (theirs_b.decode("utf-8", "replace") if spec.verbatim
+                       else substitute_tokens(theirs_b.decode("utf-8"), tokens))
+            dst_abs.write_text(content, encoding="utf-8")
+        rec: dict[str, Any] = {
+            "src": src_rel, "dst": dst_rel, "verbatim": bool(spec.verbatim),
+            "hash": "sha256:" + _sha256_hex(dst_abs.read_bytes()),
+        }
+        if not spec.verbatim:
+            base_rel = f"{_BASE_CACHE_REL}/{dst_rel}"
+            base_abs = target / base_rel
+            _assert_safe_write(base_abs, target)
+            base_abs.parent.mkdir(parents=True, exist_ok=True)
+            base_abs.write_bytes(theirs_b)     # raw template (pre-substitution)
+            rec["base_cache"] = base_rel
+            rec["base_hash"] = "sha256:" + _sha256_hex(theirs_b)
+        new_files.append(rec)
+        added.append(dst_rel)
+
+    lock["files"] = new_files
+    lock["modules"] = sorted(set(lock.get("modules", [])) | {name})
+    (target / _LOCKFILE_REL).write_text(_emit_lock_yaml(lock), encoding="utf-8")
+    seeded = seed_gitignore(target, _GITIGNORE_SEEDS.get(name, ()))
+    note = f"; seeded .gitignore: {', '.join(seeded)}" if seeded else ""
+    print(f"Adopted module {name!r}: recorded {len(added)} file(s) in "
+          f"{_LOCKFILE_REL}{note}.")
+    return 0
+
+
 def _apply_upgrade(
     target: Path, lock: dict[str, Any], cairn_root: Path, templates_root: Path,
     *, ack_review_only: bool = False,
@@ -3641,6 +3719,11 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
                    help="Acknowledge outstanding review-only files so --apply "
                         "proceeds (the #44 completion gate is fail-closed "
                         "without this).")
+    p.add_argument("--adopt-module", default=None, metavar="NAME",
+                   help="Record an already-on-disk opt-in module NAME into the "
+                        "lockfile so it 3-way-merges on later upgrades (#49). "
+                        "Explicit, never automatic -- a module is a deliberate "
+                        "choice.")
     args = p.parse_args(argv)
 
     target = Path(args.target).resolve()
@@ -3653,6 +3736,10 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
 
     if args.init_lock:
         return _cmd_init_lock(target, cairn_root, templates_root)
+
+    if args.adopt_module:
+        return _cmd_adopt_module(
+            target, args.adopt_module, cairn_root, templates_root)
 
     lock = read_lockfile(target)
     if lock is None:

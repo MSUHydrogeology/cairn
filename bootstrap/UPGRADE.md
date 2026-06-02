@@ -143,7 +143,29 @@ Detection keys on the **source template**, not the destination, so a file you
 installed under a renamed destination (the vendor wrapper `VENDOR.md` →
 `CLAUDE.md`) is recognized as already-present and never re-added. Only the
 unconditional core/skills tier auto-adds; **new modules stay opt-in** (listed
-under "new modules available (opt-in)", adopted deliberately).
+under "new modules available (opt-in)", adopted deliberately — see below).
+
+## Adopting a hand-placed module
+
+A module is **opt-in**, so it is never auto-added on upgrade. If you hand-placed
+a module's files (or filled its forkable template) without recording it in the
+lockfile, adopt it explicitly:
+
+```
+python bootstrap/scaffold.py upgrade --target <repo> --adopt-module <name>
+```
+
+This records each of the module's files in the lockfile (`src` / `dst` /
+`verbatim` / on-disk `hash`; a mergeable file also gets a `base_cache` of the
+raw upstream template + `base_hash`) and adds `<name>` to the roster, so the
+module **3-way-merges on later upgrades** instead of staying an untracked fork.
+It records your **on-disk** content as the hash (a filled forkable stays your
+content; the base cache is the raw template, so the fill reads as a local
+modification, not a fork). A spec whose `dst` is missing is installed from the
+template first. Adoption fails closed on an unknown module name and is a no-op
+if the module is already recorded. (`init` would also record it, but its
+lockfile writer fail-closes on a customized tree — `--adopt-module` is the path
+for an existing adopter.)
 
 ## Migrating a tree installed before upgrade support
 

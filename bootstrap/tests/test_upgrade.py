@@ -612,3 +612,75 @@ class TestReviewOnlyMerge:
             (tmp_path / "dev" / ".cairn-upgrade" / s._STAGE_META).read_text())
         assert ro_dst in meta["review_only"]
         assert ro_dst not in meta["staged_files"]
+
+
+class TestAdoptModule:
+    """`upgrade --adopt-module <name>` (#49): record an already-on-disk opt-in
+    module into the lockfile so it 3-way-merges on later upgrades."""
+
+    NAME = "architecture-review"  # team-gated, opt-in; not in solo-greenfield
+
+    def test_adopt_installs_missing_and_records(self, tmp_path: Path) -> None:
+        target = tmp_path.resolve()
+        _install(target)
+        assert self.NAME not in s.read_lockfile(target)["modules"]
+
+        rc = s.main(["upgrade", "--target", str(target),
+                     "--cairn-root", str(CAIRN_ROOT), "--adopt-module", self.NAME])
+        assert rc == 0
+        lock = s.read_lockfile(target)
+        assert self.NAME in lock["modules"]
+        dsts = {sp.dst for sp in s._MODULE_MAPPINGS[self.NAME]}
+        recorded = {r["dst"]: r for r in lock["files"]}
+        assert dsts <= set(recorded)
+        for d in dsts:
+            assert (target / d).is_file()           # installed from template
+            rec = recorded[d]
+            if not rec["verbatim"]:                 # mergeable -> base cache
+                assert rec.get("base_cache")
+                assert (target / rec["base_cache"]).is_file()
+                assert rec.get("base_hash")
+
+    def test_adopt_records_on_disk_content_not_template(self, tmp_path: Path) -> None:
+        # The LHM scenario: the module's files are already on disk + customized.
+        target = tmp_path.resolve()
+        _install(target)
+        s.main(["upgrade", "--target", str(target),
+                "--cairn-root", str(CAIRN_ROOT), "--adopt-module", self.NAME])
+        # Strip it back out (files stay on disk), then fill a file in place.
+        lock = s.read_lockfile(target)
+        dsts = {sp.dst for sp in s._MODULE_MAPPINGS[self.NAME]}
+        lock["modules"] = [m for m in lock["modules"] if m != self.NAME]
+        lock["files"] = [r for r in lock["files"] if r["dst"] not in dsts]
+        (target / "dev" / "cairn-lock.yml").write_text(
+            s._emit_lock_yaml(lock), encoding="utf-8")
+        victim = sorted(dsts)[0]
+        (target / victim).write_text("ADOPTER-FILLED\n", encoding="utf-8")
+
+        rc = s.main(["upgrade", "--target", str(target),
+                     "--cairn-root", str(CAIRN_ROOT), "--adopt-module", self.NAME])
+        assert rc == 0
+        rec = next(r for r in s.read_lockfile(target)["files"]
+                   if r["dst"] == victim)
+        on_disk = "sha256:" + s._sha256_hex((target / victim).read_bytes())
+        assert rec["hash"] == on_disk             # records the on-disk (filled) content
+        # base cache is the RAW upstream template -- distinct from the fill, so a
+        # 3-way merge later treats the fill as a local modification, not a fork.
+        assert (target / rec["base_cache"]).read_text() != "ADOPTER-FILLED\n"
+
+    def test_adopt_idempotent(self, tmp_path: Path) -> None:
+        target = tmp_path.resolve()
+        _install(target)
+        for _ in range(2):
+            rc = s.main(["upgrade", "--target", str(target),
+                         "--cairn-root", str(CAIRN_ROOT),
+                         "--adopt-module", self.NAME])
+            assert rc == 0  # second run: already-recorded no-op
+        assert s.read_lockfile(target)["modules"].count(self.NAME) == 1
+
+    def test_adopt_unknown_module_fails_closed(self, tmp_path: Path) -> None:
+        target = tmp_path.resolve()
+        _install(target)
+        rc = s.main(["upgrade", "--target", str(target), "--cairn-root",
+                     str(CAIRN_ROOT), "--adopt-module", "no-such-module"])
+        assert rc == 1
