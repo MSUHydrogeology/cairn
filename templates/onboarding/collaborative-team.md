@@ -27,7 +27,7 @@ loop earns its keep early.
 ## Tasks
 
 * [seed; id: try-session-start-skill]
-  Try the `session-start` skill (`/good-morning`): run
+  Try the `session-start` skill (`/session-start`): run
   `python tools/lifecycle.py session-start` to orient at the top of a
   session. The lifecycle routines are now invokable skills installed under
   `.agents/skills/`; the canonical doctrine is `doctrine/session-routines.md`.

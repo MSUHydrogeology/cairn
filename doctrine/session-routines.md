@@ -169,8 +169,9 @@ recommended task.
 ## Invoking the routines — the lifecycle skills
 
 The routines above are also **invokable skills**, installed at scaffold time as
-the agentskills.io `SKILL.md` pair under `.agents/skills/` (`session-start` /
-`/good-morning` and `session-end` / `/goodnight`), backed by a deterministic CLI
+the agentskills.io `SKILL.md` pair under `.agents/skills/` (`session-start` and
+`session-end`, invoked as `/session-start` / `/session-end`), backed by a
+deterministic CLI
 (`tools/lifecycle.py`). The skill bodies orchestrate the *mechanizable* steps
 (gather git state, scaffold the reflection, prune, surface intents); this
 doctrine stays the single source of *what* each routine is and *why*, and the

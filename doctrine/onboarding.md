@@ -53,7 +53,7 @@ installs to `<target>/dev/modules/onboarding/<preset>.md` for the
 activation helper to read at goodnight.
 
 Every preset also seeds **one low-key passive pointer** to the
-**lifecycle skills**: a day-one "try `session-start` (`/good-morning`)"
+**lifecycle skills**: a day-one "try `session-start` (`/session-start`)"
 task. The scaffold installs those skills unconditionally (the routines
 are invariant kernel) and reports the count at bootstrap; the seed is a
 passive PLANNING entry, deliberately *not* an active-surfacing row — the
