@@ -684,3 +684,45 @@ class TestAdoptModule:
         rc = s.main(["upgrade", "--target", str(target), "--cairn-root",
                      str(CAIRN_ROOT), "--adopt-module", "no-such-module"])
         assert rc == 1
+
+
+# ---------------------------------------------------------------------------
+# RULES.md never surfaces in the upgrade path (the project-owned rules file
+# Cairn never templates).  End-to-end complement to test_scaffold.py's
+# mapping-table + full-install absence tests: this exercises the actual
+# `upgrade --plan` classification + CLI, with a RULES.md present on disk in
+# the adopter target.
+# ---------------------------------------------------------------------------
+
+class TestRulesMdAbsentFromUpgradePlan:
+    def test_upgrade_plan_never_lists_rules_md(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        target = tmp_path.resolve()
+        assert _install(target) == 0
+        # The adopter keeps a project-owned RULES.md at the repo root.
+        (target / "RULES.md").write_text(
+            "# RULES\nProject bright-line rules.\n", encoding="utf-8"
+        )
+        lock = s.read_lockfile(target)
+        assert lock is not None
+
+        # 1. The lockfile never tracks it.
+        lock_dsts = {rec["dst"] for rec in lock["files"]}
+        assert "RULES.md" not in lock_dsts
+
+        # 2. The upgrade-plan classification emits no plan row for it.
+        plans, _structural = s._compute_upgrade(
+            target, CAIRN_ROOT, TEMPLATES_ROOT, lock, None
+        )
+        offenders = [p for p in plans if Path(p.dst).name == "RULES.md"]
+        assert not offenders, f"RULES.md surfaced in upgrade plan: {offenders}"
+
+        # 3. The actual `upgrade --plan` CLI output never names it.
+        capsys.readouterr()  # drop install chatter
+        rc = s.main([
+            "upgrade", "--target", str(target),
+            "--cairn-root", str(CAIRN_ROOT), "--plan",
+        ])
+        assert rc == 0
+        assert "RULES.md" not in capsys.readouterr().out
