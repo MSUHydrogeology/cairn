@@ -626,6 +626,67 @@ class TestOptionalContributing:
 
 
 # ---------------------------------------------------------------------------
+# RULES.md convention — project-owned, never templated / tracked
+# ---------------------------------------------------------------------------
+
+class TestRulesMdNeverTemplated:
+    """``RULES.md`` is the project-owned rules file Cairn never templates.
+
+    The structural guarantee (``doctrine/doc-governance.md`` >
+    "Project-owned rules — the ``RULES.md`` convention"): because Cairn
+    ships no mapping for ``RULES.md``, it never enters ``_lock_file_list``
+    and ``scaffold.py upgrade`` can never merge or clobber it.
+    """
+
+    def _all_install_dsts(self) -> set[str]:
+        import bootstrap.scaffold as scaffold
+
+        dsts: set[str] = set()
+        for _src, dst in scaffold._CORE_MAPPINGS:
+            dsts.add(dst)
+        for entry in scaffold._SKILLS_MAPPINGS:
+            dsts.add(entry[1])
+        for entry in scaffold._OPTIONAL_TEMPLATES:
+            dsts.add(entry[1])
+        for specs in scaffold._MODULE_MAPPINGS.values():
+            for spec in specs:
+                dst = getattr(spec, "dst", None)
+                if dst is None and isinstance(spec, (tuple, list)) and len(spec) >= 2:
+                    dst = spec[1]
+                if dst is not None:
+                    dsts.add(str(dst))
+        return dsts
+
+    def test_rules_md_absent_from_every_mapping(self) -> None:
+        """No install-mapping table targets RULES.md (so it never locks)."""
+        offenders = {
+            p for p in self._all_install_dsts()
+            if p == "RULES.md" or Path(p).name == "RULES.md"
+        }
+        assert not offenders, (
+            f"RULES.md must be in no Cairn install mapping; found: {offenders}"
+        )
+
+    def test_full_install_writes_no_rules_md(self, tmp_path: Path) -> None:
+        """A full install (core + every default-on module + optional)
+        never creates a RULES.md at the target root."""
+        cairn_root = Path(__file__).resolve().parent.parent.parent
+        templates_root = cairn_root / "templates"
+        if not templates_root.exists():
+            pytest.skip("Cairn templates not available")
+        tokens = {"project_name": "RulesDemo", "test_command": "pytest"}
+        create_dev_tree(tmp_path)
+        install_core(templates_root, tmp_path, tokens)
+        for module in _DEFAULT_ON_MODULES:
+            install_modules(templates_root, tmp_path, tokens, [module])
+        sel = select_optional_templates({"human_team": "large-multi"})
+        install_optional(templates_root, tmp_path, tokens, sel)
+        assert not (tmp_path / "RULES.md").exists(), (
+            "a Cairn install must never create RULES.md"
+        )
+
+
+# ---------------------------------------------------------------------------
 # Vendor wrapper — generic, neutral VENDOR.md (foldback #12)
 # ---------------------------------------------------------------------------
 

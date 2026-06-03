@@ -101,9 +101,12 @@ author is its committer.
 ## Session routines
 
 * **Session start** — at a cold start, or after a context-loss
-  event, run a short orientation pass: re-anchor on the `dev/`
-  tree, read the commit log since the last handoff, note in-flight
-  proposals, and confirm your role before substantive work.
+  event, run a short orientation pass: if the project keeps a
+  `RULES.md` (tracked, project-owned agent rules — Cairn never
+  templates it; see `doctrine/doc-governance.md`), read it *first*;
+  then re-anchor on the `dev/` tree, read the commit log since the
+  last handoff, note in-flight proposals, and confirm your role
+  before substantive work.
 * **Goodnight** — at the end of a session, leave a clean handoff:
   a status summary, a per-agent reflection, and (for the
   designated owner) a scrub of the roadmap boards. Committing and

@@ -106,6 +106,52 @@ files are part of every Cairn adoption; this rule governs how their
 content is split from the first commit, so the duplication never has a
 chance to accrete.
 
+## Project-owned rules — the `RULES.md` convention
+
+Some project doctrine is genuinely *not* Cairn doctrine: a project's
+own bright-line rules — its development environment, its naming and
+domain conventions, the safety rails specific to its problem domain.
+Cairn's governing template (`AGENTS.md`) exposes a small budget of
+**slots** (`project-overview`, `project-conventions`) for the *stable
+identity* of such content, but a heavily-customized project's rule
+corpus can exceed what slots hold, and rules placed in the
+Cairn-tracked body *outside* a slot conflict on every upgrade that
+touches that region.
+
+`RULES.md` is the clean structural answer: an optional, repo-root,
+**project-owned** rules file that Cairn **never templates and never
+tracks**. It is absent from the install mappings (`_CORE_MAPPINGS`,
+the skills mappings, the optional templates, and every module's install
+specs), so the lockfile never records it and `scaffold.py upgrade`
+never writes a base-cache entry for it — it is *structurally incapable*
+of conflicting on upgrade. A one-line pointer in the core `AGENTS.md`
+template (under **Session routines → Session start**) is the only
+Cairn-side trace: it tells every adopter's agents to read `RULES.md`
+first *if the project keeps one*. The file is otherwise the adopter's
+to own end to end.
+
+**Cairn declines *merge* opinion on `RULES.md`; the adopter keeps
+*integrity* opinion on it.** "Untracked by Cairn" is not "unreviewed":
+the file is tracked in the adopter's own git repo and covered by the
+adopter's local quality gates (link checks, claim checks, and — if the
+project loads it on every turn — its always-on token budget). An
+adopter-side contract test should assert Cairn's lockfile / upgrade
+output never tracks it.
+
+**One home per rule (the boundary).** Each rule lives in exactly one
+of three tiers, never duplicated verbatim across them:
+
+| Tier | Holds | Tracked by | Load |
+|------|-------|-----------|------|
+| Cairn `AGENTS.md` slots (`project-overview` / `project-conventions`) | stable project *identity* + one-line high-risk pointers | Cairn lockfile (upgradeable) | always-on |
+| `RULES.md` (project router) | the project's *bright-line rules* + a routing table | adopter repo (never by Cairn) | always-on, deliberately small |
+| project `docs/` | bulky elaboration, domain references, incident logs | adopter repo | on-demand |
+
+`RULES.md` is a **router, not a doctrine dump**: it carries only the
+few rules that must apply every turn plus pointers to the on-demand
+docs; the bulk stays in `docs/`. Keeping it small is what makes it a
+token *win* rather than a relocation of the bloat.
+
 ## Descriptive-layer recognition — `docs/` and what lives in it
 
 The second half of the doctrine recognizes the conventional tiering of
