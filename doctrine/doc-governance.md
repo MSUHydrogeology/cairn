@@ -152,6 +152,30 @@ few rules that must apply every turn plus pointers to the on-demand
 docs; the bulk stays in `docs/`. Keeping it small is what makes it a
 token *win* rather than a relocation of the bloat.
 
+**When does a rule belong in `RULES.md`?** A rule earns an always-on
+slot only when **all** of these hold; otherwise it routes to a doc:
+
+* **Every-turn.** An agent could get a routine action wrong *without it
+  loaded on every turn* — the environment to run in, a naming/domain
+  convention, a safety rail, a commit constraint. Reference an agent
+  consults only *sometimes* (a how-to, a decision table, a dated
+  incident log) is on-demand: it routes to a doc, with at most a pointer
+  here. *A log of past instances never belongs in always-on context.*
+* **Project-owned, not Cairn doctrine.** If the rule generalizes beyond
+  this project, it is a **fold-back candidate** (it belongs *up* in
+  Cairn), not a `RULES.md` entry.
+* **Bright-line, not bulky.** State the rule in a line or two and route
+  the elaboration. If it needs a table or multiple paragraphs to land,
+  the *elaboration* is on-demand; only the bright-line summary stays.
+
+This is a **growth-governance** question, not a one-time fill: a
+deployment running the session routines re-scans for `RULES.md` drift in
+both directions every goodnight (promote a new bright-line rule in;
+demote bloat out) — see
+[`doctrine/session-routines.md`](session-routines.md) > "Goodnight
+`RULES.md` maintenance". The scan is what keeps `RULES.md` from slowly
+re-bloating into a second always-on magnet.
+
 ## Descriptive-layer recognition — `docs/` and what lives in it
 
 The second half of the doctrine recognizes the conventional tiering of

@@ -249,6 +249,33 @@ coordinate leaks before any item becomes a public Cairn proposal. The
 mechanism is specified in `doctrine/fold-back.md`; this step is the
 capture cadence that feeds it.
 
+### Goodnight RULES.md maintenance — when the project keeps a RULES.md
+
+A deployment that keeps a project-owned **`RULES.md`** (the
+project-local rules file Cairn never templates — see
+[`doctrine/doc-governance.md`](doc-governance.md) > "Project-owned rules")
+adds one standing goodnight step for the full-handoff owner: scan the
+session-day's work for **`RULES.md` drift**, in both directions.
+
+* **Promote in.** Did a new project *bright-line rule* surface — one that
+  must apply on every turn (an environment requirement, a naming/domain
+  convention, a safety rail, a commit constraint) and is **project-owned,
+  not Cairn doctrine**? If so, add a concise statement to `RULES.md` (and
+  route its detail to an on-demand doc). The trigger is "an agent would
+  get this wrong without it being always-on," not "it was mentioned."
+* **Demote out.** Has `RULES.md` *bloated* past a small router — accreting
+  bulk, tables, logs, or a rule that is really on-demand reference? Move
+  that content to an on-demand `docs/` / `dev/` file and leave a pointer.
+  `RULES.md` is a **router, not a doctrine dump**; a dated instance log or
+  a long rationale tail belongs in a doc, never in every-call context.
+* **Route, don't duplicate.** A rule lives in exactly one tier (slot /
+  `RULES.md` / docs — the one-home table in `doc-governance.md`); the scan
+  also catches a rule that drifted into two places.
+
+Capture never lapses but an **empty scan is success** — most goodnights
+add nothing. A genuinely *general* (non-project) rule that surfaces here
+is a fold-back candidate (the step above), not a `RULES.md` addition.
+
 ### Goodnight onboarding-trigger evaluation — when progressive onboarding is installed
 
 A deployment scaffolded from any of the three named profile presets
