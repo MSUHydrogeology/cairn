@@ -11,6 +11,15 @@ doctrine lives here; build + operate-safely rules live in
 `AGENTS.md`; each rule has one canonical home and the other file
 only points.
 
+**Where `doctrine/` references resolve.** A reference to a
+`doctrine/<name>.md` file (here and across the `dev/` tree) points to
+**Cairn's published methodology doctrine** — the repository you adopted
+from — **not a file in your own tree**. The bootstrap installs your
+`dev/` tree and the modules you selected, *not* Cairn's `doctrine/`
+directory; the doctrine is the shared methodology you consult in the
+Cairn repository (or its docs). Such a reference is a citation, never a
+broken local link.
+
 ## Team roles
 
 A **role** is a frame — a stance and a kind of output — not a
