@@ -152,6 +152,15 @@ few rules that must apply every turn plus pointers to the on-demand
 docs; the bulk stays in `docs/`. Keeping it small is what makes it a
 token *win* rather than a relocation of the bloat.
 
+**Where the routed elaboration lives is the project's choice** — Cairn
+names the distinction, it does not legislate the location. Descriptive
+detail (naming, domain references) belongs in the project's `docs/` per
+the descriptive-layer routing below; *project-owned agent-discipline*
+detail with no existing doc home may sit in a dedicated folder (e.g. a
+`dev/rules/`-style directory beside the coordination docs) so it does not
+clutter the top-level coordination space. Either way the rule has **one
+home** and `RULES.md` only points.
+
 **When does a rule belong in `RULES.md`?** A rule earns an always-on
 slot only when **all** of these hold; otherwise it routes to a doc:
 
