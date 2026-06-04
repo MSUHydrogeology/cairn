@@ -381,6 +381,93 @@ class TestUpgradeModes:
             "resolves to CLAUDE.md"
         )
 
+    def test_finalize_makes_customized_install_verifiable(
+        self, tmp_path: Path
+    ) -> None:
+        """Codex final-review P1 #1: a *customized* install -- a filled slot /
+        edited doc plus the ``VENDOR.md -> CLAUDE.md`` wrapper rename -- fails
+        ``verify_integrity`` because the lockfile records the clean-install
+        hashes (and the absent VENDOR.md).  ``upgrade --finalize`` advances each
+        record's ``hash`` to the committed on-disk content and resolves the
+        wrapper dst, so the verifier attests the tree the adopter actually
+        ships.  The upgrade ancestor (``base_cache`` / ``base_hash``) is left
+        intact."""
+        from bootstrap.verify_integrity import verify
+
+        assert _install(tmp_path) == 0
+        ag = tmp_path / "AGENTS.md"
+        ag.write_text(ag.read_text() + "\n<!-- adopter customization -->\n")
+        (tmp_path / "VENDOR.md").rename(tmp_path / "CLAUDE.md")  # adopter rename
+        # Before finalize: integrity fails (edited hash + missing VENDOR.md).
+        assert verify(tmp_path) == 1
+        assert s.main(["upgrade", "--finalize", "--target", str(tmp_path),
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        # After finalize: integrity attests the customized tree.
+        assert verify(tmp_path) == 0
+        lock = s.read_lockfile(tmp_path)
+        dsts = {r["dst"] for r in lock["files"]}
+        assert "CLAUDE.md" in dsts and "VENDOR.md" not in dsts
+        # The wrapper's hash advanced to the on-disk (renamed) file.
+        wrapper = next(r for r in lock["files"] if r["src"] == "core/VENDOR.md")
+        assert wrapper["hash"] == "sha256:" + s._sha256_hex(
+            (tmp_path / "CLAUDE.md").read_bytes())
+        # Idempotent: a second finalize changes nothing and still verifies.
+        assert s.main(["upgrade", "--finalize", "--target", str(tmp_path),
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        assert verify(tmp_path) == 0
+
+    def test_finalize_preserves_verbatim_fork_detection(
+        self, tmp_path: Path
+    ) -> None:
+        """Codex final-review P1 #1 (companion): finalize advances a forked
+        verbatim script's ``hash`` to the fork but preserves the as-shipped
+        ``base_hash``, so ``classify_verbatim`` still sees a fork (a subsequent
+        upgrade classifies it ``verbatim-locally-modified``, not a clean
+        ``update`` that would clobber the project-owned fork)."""
+        assert _install(tmp_path) == 0
+        lock = s.read_lockfile(tmp_path)
+        vrec = next(r for r in lock["files"] if r.get("verbatim"))
+        forked = tmp_path / vrec["dst"]
+        forked.write_text(forked.read_text() + "\n# adopter fork\n")
+        assert s.main(["upgrade", "--finalize", "--target", str(tmp_path),
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        lock2 = s.read_lockfile(tmp_path)
+        vrec2 = next(r for r in lock2["files"] if r["dst"] == vrec["dst"])
+        # hash advanced to the fork; base_hash still the as-shipped baseline.
+        assert vrec2["hash"] == "sha256:" + s._sha256_hex(forked.read_bytes())
+        assert vrec2.get("base_hash") and vrec2["base_hash"] != vrec2["hash"]
+        # Fork detection survives: the next upgrade sees a local modification.
+        plans, _ = s._compute_upgrade(
+            tmp_path, CAIRN_ROOT, TEMPLATES_ROOT, lock2, to_ref=None)
+        p = next(x for x in plans if x.dst == vrec["dst"])
+        assert p.kind == "verbatim-locally-modified", (
+            f"forked verbatim script should stay locally-modified; got {p.kind!r}"
+        )
+
+    def test_renamed_wrapper_apply_advances_to_resolved_dst(
+        self, tmp_path: Path
+    ) -> None:
+        """Codex final-review P1 #2: a renamed-wrapper adopter
+        (``VENDOR.md -> CLAUDE.md``) that stages and applies an upgrade must
+        have its wrapper record advanced to the real on-disk dst (CLAUDE.md),
+        not left dangling at VENDOR.md.  Without the apply-time heal,
+        ``verify_integrity`` after ``--apply`` fails on the missing VENDOR.md."""
+        from bootstrap.verify_integrity import verify
+
+        assert _install(tmp_path) == 0
+        (tmp_path / "VENDOR.md").rename(tmp_path / "CLAUDE.md")  # adopter rename
+        self._diverge_base(tmp_path)  # give the upgrade something to stage
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        assert s.main(["upgrade", "--target", str(tmp_path), "--apply",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        lock = s.read_lockfile(tmp_path)
+        dsts = {r["dst"] for r in lock["files"]}
+        assert "CLAUDE.md" in dsts and "VENDOR.md" not in dsts, (
+            "apply should resolve the wrapper record to its on-disk dst"
+        )
+        assert verify(tmp_path) == 0
+
     def test_plan_summary_shows_distinct_labels(
         self, tmp_path: Path, capsys
     ) -> None:

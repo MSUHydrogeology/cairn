@@ -2667,6 +2667,13 @@ def write_install_lockfile(
             rec["base_cache"] = cache_rel
             rec["base_hash"] = "sha256:" + _sha256_hex(raw.encode("utf-8"))
             cache_writes.append((target / cache_rel, raw))
+        else:
+            # The as-shipped baseline for a verbatim file, kept distinct from
+            # ``hash`` so ``hash`` can be advanced to the adopter's committed
+            # on-disk content (``upgrade --finalize``) for integrity while
+            # ``classify_verbatim`` still detects an adopter fork against the
+            # upstream baseline.  At fresh install ``hash == base_hash``.
+            rec["base_hash"] = "sha256:" + _sha256_hex(would)
         file_records.append(rec)
 
     if diverged:
@@ -3065,7 +3072,12 @@ def _compute_upgrade(
                                   "no longer in upstream templates", None, None))
             continue
         if verbatim:
-            kind = classify_verbatim(ours_bytes, rec.get("hash", ""), theirs_b)
+            # Use the as-shipped baseline (``base_hash``) for fork detection,
+            # not ``hash`` (which ``--finalize`` advances to the adopter's
+            # committed on-disk content). Fall back to ``hash`` for lockfiles
+            # written before verbatim records carried ``base_hash``.
+            kind = classify_verbatim(
+                ours_bytes, rec.get("base_hash") or rec.get("hash", ""), theirs_b)
             plans.append(FilePlan(
                 dst, f"verbatim-{kind}",
                 theirs_b.decode("utf-8", "replace") if kind == "update" else None,
@@ -3553,6 +3565,63 @@ def _cmd_adopt_module(
     return 0
 
 
+def _cmd_finalize_lockfile(target: Path, lock: dict[str, Any]) -> int:
+    """`upgrade --finalize`: advance each record's ``hash`` to the adopter's
+    *committed on-disk* content, so ``verify_integrity`` attests the customized
+    tree the adopter actually ships -- filled slots, the ``VENDOR.md ->
+    CLAUDE.md`` wrapper rename, project-owned forks -- rather than the pristine
+    clean-install state no real adopter keeps.  This is the step that makes a
+    *customized* install verifiable (R10): without it, every slot fill and
+    wrapper rename reads as integrity tampering.
+
+    The upgrade ancestor is left untouched: ``base_cache`` / ``base_hash`` (the
+    clean-install baseline the 3-way merge + ``classify_verbatim`` fork
+    detection use) are preserved.  For a verbatim record predating ``base_hash``,
+    the current ``hash`` (the as-shipped baseline) is copied into ``base_hash``
+    *before* ``hash`` is advanced, so fork detection survives.  A renamed vendor
+    wrapper's record ``dst`` is resolved to the on-disk wrapper (#45) so
+    integrity checks the real file, not the absent ``VENDOR.md``.  Idempotent.
+    Fail-closed: a tracked file missing on disk aborts (never silently drop a
+    file from the integrity set)."""
+    files = lock.get("files") or []
+    mapped = {r.get("dst") for r in files}
+    changed = 0
+    missing: list[str] = []
+    for rec in files:
+        dst_rel = rec.get("dst")
+        if not isinstance(dst_rel, str) or not dst_rel:
+            continue
+        # Resolve a renamed vendor wrapper: the lockfile records VENDOR.md but
+        # the adopter renamed it (CLAUDE.md, ...).
+        if rec.get("src") == "core/VENDOR.md" and not (target / dst_rel).is_file():
+            resolved = _resolve_vendor_wrapper(target, mapped)
+            if resolved is not None:
+                rec["dst"] = dst_rel = resolved
+        dst_abs = target / dst_rel
+        if not dst_abs.is_file():
+            missing.append(dst_rel)
+            continue
+        # Preserve the as-shipped baseline before advancing hash, for verbatim
+        # records that predate base_hash.
+        if rec.get("verbatim") and not rec.get("base_hash"):
+            rec["base_hash"] = rec.get("hash", "")
+        new_hash = "sha256:" + _sha256_hex(dst_abs.read_bytes())
+        if new_hash != rec.get("hash"):
+            changed += 1
+        rec["hash"] = new_hash
+    if missing:
+        print(f"error: {len(missing)} tracked file(s) missing on disk -- cannot "
+              f"finalize (fix or re-install first):\n  " + "\n  ".join(missing),
+              file=sys.stderr)
+        return 1
+    (target / _LOCKFILE_REL).parent.mkdir(parents=True, exist_ok=True)
+    (target / _LOCKFILE_REL).write_text(_emit_lock_yaml(lock), encoding="utf-8")
+    print(f"Finalized {_LOCKFILE_REL}: advanced {changed} hash(es) to the "
+          f"committed on-disk content. `verify_integrity` now attests this tree "
+          f"(the base cache / upgrade ancestor is unchanged).")
+    return 0
+
+
 def _apply_upgrade(
     target: Path, lock: dict[str, Any], cairn_root: Path, templates_root: Path,
     *, ack_review_only: bool = False,
@@ -3670,6 +3739,17 @@ def _apply_upgrade(
     rehash_set = set(meta.get("verbatim_rehash", []))
     for rec in lock.get("files", []):
         rec = dict(rec)
+        # Renamed vendor wrapper (#45): _compute_upgrade staged the *resolved*
+        # wrapper (e.g. CLAUDE.md), but this record still names the canonical
+        # VENDOR.md. Rewrite the dst to the on-disk wrapper so the advanced
+        # lockfile points at the file that exists -- otherwise --apply leaves a
+        # dangling VENDOR.md record and verify_integrity fails.
+        if rec.get("src") == "core/VENDOR.md" and rec["dst"] not in staged_set \
+                and not (target / rec["dst"]).is_file():
+            resolved = _resolve_vendor_wrapper(
+                target, {r["dst"] for r in lock.get("files", [])})
+            if resolved is not None:
+                rec["dst"] = resolved
         if rec["dst"] in staged_set:
             rec["hash"] = "sha256:" + _sha256_hex((target / rec["dst"]).read_bytes())
             if rec.get("base_cache"):
@@ -3733,6 +3813,11 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
     p.add_argument("--cairn-root", default=None)
     p.add_argument("--init-lock", action="store_true",
                    help="Synthesize a lockfile for a pre-lockfile tree (R6).")
+    p.add_argument("--finalize", action="store_true",
+                   help="Advance each record's hash to the committed on-disk "
+                        "content so verify_integrity attests a *customized* "
+                        "install (filled slots, wrapper rename, forks). The "
+                        "base cache / upgrade ancestor is left unchanged.")
     p.add_argument("--plan", action="store_true",
                    help="Read-only: classify drift, write nothing (default).")
     p.add_argument("--stage", action="store_true",
@@ -3771,6 +3856,9 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
               "`upgrade --init-lock --target <repo>` to migrate a "
               "pre-lockfile tree first.", file=sys.stderr)
         return 1
+
+    if args.finalize:
+        return _cmd_finalize_lockfile(target, lock)
 
     if args.to is not None and not _cairn_is_git(cairn_root):
         print("error: --to <ref> needs a git-checkout Cairn source; a "

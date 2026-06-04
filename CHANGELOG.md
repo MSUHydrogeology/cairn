@@ -34,6 +34,28 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **`scaffold.py upgrade --finalize` makes a *customized* install verifiable.**
+  `verify_integrity` checks on-disk bytes against the lockfile `hash`, but
+  `write_install_lockfile` records the *clean-install* hash — so every slot an
+  adopter fills, every `VENDOR.md → CLAUDE.md` wrapper rename, and every
+  project-owned fork read as integrity tampering (the modflow_tools adopter saw
+  19 spurious mismatches establishing its lockfile).  `--finalize` advances
+  each record's `hash` to the committed on-disk content so the verifier attests
+  the tree the adopter actually ships, while leaving the upgrade ancestor
+  (`base_cache` / `base_hash`) untouched.  Verbatim records now carry a distinct
+  **`base_hash`** (the as-shipped baseline) separate from `hash`, so
+  `classify_verbatim` fork detection survives the `hash` advance — a forked
+  verbatim script still classifies `verbatim-locally-modified`, never a clean
+  `update` that would clobber the fork (finalize backfills `base_hash` from the
+  old `hash` for records that predate the field).  `--apply` and `--finalize`
+  both resolve a renamed wrapper's record `dst` to the real on-disk file so
+  integrity checks `CLAUDE.md`, not the absent `VENDOR.md`.  Idempotent,
+  fail-closed on a tracked file missing on disk.  Surfaced + validated by the
+  modflow_tools adopter (the hardest-adopter test) during its Cairn-adoption
+  Phase-2 lockfile establishment; Codex final-review findings P1 #1 / P1 #2.
+  +3 regression tests (`test_finalize_makes_customized_install_verifiable`,
+  `test_finalize_preserves_verbatim_fork_detection`,
+  `test_renamed_wrapper_apply_advances_to_resolved_dst`).
 - **Richer lifecycle templates, folded up from the modflow_tools adopter** —
   `templates/core/dev/proposals/_template.md` and
   `templates/core/dev/plans/_template.md` gained the generally-useful
