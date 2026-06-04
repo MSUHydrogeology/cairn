@@ -116,6 +116,20 @@ and a new empty `Unreleased` is started above.
 
 ### Changed
 
+- **The forkable incident-log template no longer reads as `needs-value` on
+  every adopter upgrade.**  `templates/modules/default-on/incident_log_template.md`
+  is a *fork-on-demand* template (the default-on `incident-trackers` module
+  ships it mostly-empty; adopters fork it to a live tracker), but its fill-me
+  placeholders used the `{{token}}` install-substitution grammar.  `scaffold.py
+  upgrade --plan` therefore flagged the file `needs-value` for *every* adopter
+  of the module — raw template variables the upgrade treats as non-advancing,
+  reading as "this adopter is not a clean upgrade target" when the file is
+  working exactly as designed.  Switched the ten placeholders to the `<...>`
+  angle-bracket grammar the other forkable `_template.md` files already use (the
+  token resolver ignores it), so the template installs and upgrades cleanly and
+  a forked tracker's filled rows are unaffected.  Surfaced by the modflow_tools
+  adopter (Codex final-review P1 #3); no behavior change to the
+  collision-log parser, which reads filled tracker instances, not the template.
 - **Lockfile + adopter profile relocated to `dev/.cairn/` (machinery, not
   docs).**  The install lockfile moved `dev/cairn-lock.yml` →
   `dev/.cairn/cairn-lock.yml` (`_LOCKFILE_REL`), joining the base cache,

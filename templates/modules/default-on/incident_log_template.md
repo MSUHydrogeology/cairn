@@ -1,8 +1,8 @@
-# {{tracker_name}} -- incident log
+# <tracker_name> -- incident log
 
-**Purpose**: {{describe what event class(es) this tracker records, e.g.,
+**Purpose**: <describe what event class(es) this tracker records, e.g.,
 "staged-index collisions in the modflow_tools dev tree" or "all
-coordination + commit-discipline incidents."}}
+coordination + commit-discipline incidents.">
 
 **Rate-limit gate connection**: this tracker is the parse target for
 the **adaptive-doctrine rate-limit gate** specified at
@@ -10,7 +10,7 @@ the **adaptive-doctrine rate-limit gate** specified at
 gate's "≥2 incidents of the same shape in a rolling window" trigger
 operates on this table's `Impact = occurred` rows.
 
-**Rolling window**: {{14 days | adopter-chosen value}}.
+**Rolling window**: <14 days | adopter-chosen value>.
 
 ## What counts
 
@@ -21,7 +21,7 @@ Define the event class(es) this tracker records. Each class needs:
   `untracked-lifecycle-artifact`, `work-intent-claim-conflict`).
 * **Criteria for "same shape" recurrence** -- the equivalence
   relation the rate-limit gate uses to count recurrences. Two
-  incidents are the "same shape" if {{adopter defines}}.
+  incidents are the "same shape" if <adopter defines>.
 * **What does NOT count** -- adjacent incidents that look like
   the failure mode but aren't (the `Impact = non-conflict` column
   carries these for base-rate visibility but doesn't count
@@ -31,7 +31,7 @@ Define the event class(es) this tracker records. Each class needs:
 
 | Date | Event Class | Description | Recurrence-Window Match | Impact | Migrated From Reflection | Resolved By |
 |------|-------------|-------------|------------------------|--------|-------------------------|-------------|
-| {{YYYY-MM-DD}} | {{event-class}} | {{one-line description}} | {{none / list of prior dated entries within window}} | {{occurred / prevented / non-conflict}} | {{YYYY-MM-DD / agent-id}} or `direct` | {{proposal stem / commit SHA prefix / `pending`}} |
+| <YYYY-MM-DD> | <event-class> | <one-line description> | <none / list of prior dated entries within window> | <occurred / prevented / non-conflict> | <YYYY-MM-DD / agent-id> or `direct` | <proposal stem / commit SHA prefix / `pending`> |
 
 **Column contract** (the canonical 7-column semantic-field schema
 the Goal 7 cross-adopter harvest reads against):
