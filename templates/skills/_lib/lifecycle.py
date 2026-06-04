@@ -509,10 +509,16 @@ def _seed_skill_gitignore(root: Path, entry: str) -> None:
     """Append *entry* to ``<root>/.gitignore`` if absent (idempotent,
     non-clobber).  Copy-mode fan-out copies are generated, gitignored
     supply-chain artifacts -- the canonical ``.agents/skills/`` is the only
-    tracked, editable copy."""
+    tracked, editable copy.
+
+    A **directory** ignore is matched ignoring a trailing slash, so an existing
+    ``.claude/skills`` and a seeded ``.claude/skills/`` are the same entry -- a
+    repo that already ignores the path (either spelling) is left byte-for-byte
+    untouched, so session-start never dirties a tree it just reported clean."""
     gitignore = root / ".gitignore"
     text = gitignore.read_text(encoding="utf-8") if gitignore.exists() else ""
-    if entry in {ln.strip() for ln in text.splitlines()}:
+    norm = entry.rstrip("/")
+    if norm in {ln.strip().rstrip("/") for ln in text.splitlines()}:
         return
     prefix = text if (not text or text.endswith("\n")) else text + "\n"
     gitignore.write_text(prefix + entry + "\n", encoding="utf-8")
@@ -636,6 +642,27 @@ def cmd_session_start(args: argparse.Namespace) -> int:
     marker = args.handoff_marker
     fallback_n = args.fallback_commits
 
+    # Skills fan-out self-heal FIRST -- the one write the routine performs.
+    # Ensure every eligible, in-use symlink-tier read-path (e.g. .claude/skills)
+    # points at the canonical .agents/skills/ source.  Idempotent + fail-soft (a
+    # containment refusal warns and continues; it never aborts the gather).  It
+    # runs *before* the working-tree status below so a copy-mode .gitignore seed
+    # is reflected in the reported state -- the routine never dirties a tree it
+    # has already reported clean (Codex code review P2 #1).
+    _emit_section("skills fan-out self-heal")
+    try:
+        healed = _heal_skills_fanout(root)
+    except LifecycleError as exc:
+        _warn(f"skills self-heal refused: {exc}")
+        healed = []
+    if not healed:
+        _emit("no symlink-tier harness in use here (nothing to fan out).")
+    elif all(st in ("already-linked", "current") for _n, _t, st in healed):
+        _emit("symlink-tier skills read-paths already current (no change).")
+    else:
+        for name, tier, st in healed:
+            _emit(f"{name}: {tier} -> {st}")
+
     _emit_section(f"commits since last '{marker}' handoff")
     last_handoff = _git(
         ["log", f"--grep=^{marker}", "--format=%H", "-n", "1"], root
@@ -681,24 +708,6 @@ def cmd_session_start(args: argparse.Namespace) -> int:
             "bootstrap normally writes this binding so the routine resolves it "
             "directly instead of relying on shell activation."
         )
-
-    # Skills fan-out self-heal: the one write the routine performs.  Ensure
-    # every eligible, in-use symlink-tier read-path (e.g. .claude/skills) points
-    # at the canonical .agents/skills/ source.  Idempotent + fail-soft -- a
-    # containment refusal warns and continues; it never aborts the gather.
-    _emit_section("skills fan-out self-heal")
-    try:
-        healed = _heal_skills_fanout(root)
-    except LifecycleError as exc:
-        _warn(f"skills self-heal refused: {exc}")
-        healed = []
-    if not healed:
-        _emit("no symlink-tier harness in use here (nothing to fan out).")
-    elif all(status in ("already-linked", "current") for _n, _t, status in healed):
-        _emit("symlink-tier skills read-paths already current (no change).")
-    else:
-        for name, tier, status in healed:
-            _emit(f"{name}: {tier} -> {status}")
 
     _emit("session-start gather complete.")
     return 0

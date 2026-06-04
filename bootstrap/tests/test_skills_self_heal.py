@@ -141,6 +141,18 @@ def test_copy_fallback_when_symlinks_unavailable(tmp_path, monkeypatch):
     assert ".claude/skills/" in (root / ".gitignore").read_text()
 
 
+def test_copy_seed_does_not_duplicate_an_existing_dir_ignore(tmp_path, monkeypatch):
+    """Codex code review P2 #1: a repo that already ignores the path (without a
+    trailing slash) must not get a duplicate ``.claude/skills/`` appended -- the
+    routine must never dirty a tree it just reported clean."""
+    root = _adopter_tree(tmp_path.resolve())
+    (root / ".claude").mkdir()
+    (root / ".gitignore").write_text(".claude/skills\n", encoding="utf-8")
+    monkeypatch.setattr(lifecycle, "_skill_symlinks_available", lambda _r: False)
+    lifecycle._heal_skills_fanout(root)
+    assert (root / ".gitignore").read_text() == ".claude/skills\n"  # byte-for-byte
+
+
 def test_copy_rerun_is_current_noop(tmp_path, monkeypatch):
     root = _adopter_tree(tmp_path.resolve())
     (root / ".claude").mkdir()
