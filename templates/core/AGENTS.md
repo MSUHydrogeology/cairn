@@ -279,7 +279,7 @@ roster is in `dev/agent_collaboration.md`.
   adopt under capability-pull.
 * **Shared communication files** — the roadmap boards, the
   changelog, and (when the `progressive-onboarding` mechanism is
-  installed) `dev/.cairn/onboarding-activated.jsonl` — are edited
+  installed) its activation log — are edited
   only at defined serialization points (a lifecycle archive, the
   goodnight routine, explicit instruction).  Refer to proposals
   and plans by filename stem, not path link.
