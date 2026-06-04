@@ -845,3 +845,64 @@ class TestRulesMdAbsentFromUpgradePlan:
         ])
         assert rc == 0
         assert "RULES.md" not in capsys.readouterr().out
+
+
+class TestLivingStatePartition:
+    """`verify_integrity` excludes adopter-authored *living-state* files (a
+    living roadmap, the per-goodnight handoff, the fold-back ledger, the signed
+    agreement) from the tamper check -- they are tracked for upgrade but their
+    constant churn must not red the supply-chain check on the shipped
+    apparatus. Captured by the modflow_tools reference adopter (finalize-cadence
+    fold-up)."""
+
+    def test_install_flags_living_state_records(self, tmp_path: Path) -> None:
+        assert _install(tmp_path) == 0
+        lock = s.read_lockfile(tmp_path)
+        flagged = {r["dst"] for r in lock["files"] if r.get("living_state")}
+        # PLANNING.md + NEXT_SESSION.md are core -> always present + flagged.
+        assert "dev/PLANNING.md" in flagged
+        assert "dev/NEXT_SESSION.md" in flagged
+        # Apparatus is never flagged.
+        assert "AGENTS.md" not in flagged
+        # Every flagged dst is in the authoritative policy set.
+        assert flagged <= set(s._LIVING_STATE_DSTS)
+
+    def test_editing_living_state_does_not_fail_integrity(
+        self, tmp_path: Path
+    ) -> None:
+        from bootstrap.verify_integrity import verify
+
+        assert _install(tmp_path) == 0
+        assert verify(tmp_path) == 0
+        # A routine edit to a living-state file stays clean (excluded).
+        p = tmp_path / "dev" / "PLANNING.md"
+        p.write_text(p.read_text() + "\n<!-- a routine roadmap edit -->\n")
+        assert verify(tmp_path) == 0
+        # But tampering with shipped apparatus still fails closed.
+        ag = tmp_path / "AGENTS.md"
+        ag.write_text(ag.read_text() + "\n<!-- tampered apparatus -->\n")
+        assert verify(tmp_path) == 1
+
+    def test_finalize_migrates_pre_living_state_lockfile(
+        self, tmp_path: Path
+    ) -> None:
+        """An older lockfile (no ``living_state`` flags) is migrated by
+        ``--finalize``: the flag is stamped from the policy set, so a churned
+        living-state file stops tripping the verifier."""
+        from bootstrap.verify_integrity import verify
+
+        assert _install(tmp_path) == 0
+        lock = s.read_lockfile(tmp_path)
+        for r in lock["files"]:
+            r.pop("living_state", None)  # simulate a pre-partition lockfile
+        (tmp_path / s._LOCKFILE_REL).write_text(
+            s._emit_lock_yaml(lock), encoding="utf-8")
+        p = tmp_path / "dev" / "PLANNING.md"
+        p.write_text(p.read_text() + "\n<!-- edit -->\n")
+        assert verify(tmp_path) == 1  # stale recorded hash trips pre-migration
+        assert s.main(["upgrade", "--finalize", "--target", str(tmp_path),
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        lock2 = s.read_lockfile(tmp_path)
+        rec = next(r for r in lock2["files"] if r["dst"] == "dev/PLANNING.md")
+        assert rec.get("living_state") is True
+        assert verify(tmp_path) == 0

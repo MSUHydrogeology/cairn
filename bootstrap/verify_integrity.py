@@ -51,10 +51,19 @@ def verify(target: Path) -> int:
         return 1
 
     violations: list[str] = []
+    skipped = 0
     target_resolved = target.resolve()
     for rec in files:
         dst_rel = rec.get("dst")
         recorded = rec.get("hash", "")
+        # Adopter-authored project state (a living roadmap, the per-goodnight
+        # handoff, the fold-back ledger, the signed agreement) is tracked for
+        # upgrade but excluded from the integrity check: it is not shipped
+        # apparatus, and its constant churn would red this check on every edit
+        # while saying nothing about whether the scripts are trustworthy.
+        if rec.get("living_state"):
+            skipped += 1
+            continue
         # The lockfile is itself a tamper target, so fail closed on a
         # malformed record *before* reading anything: a record must name a
         # contained, repo-relative dst with a well-formed sha256 hash.
@@ -88,8 +97,11 @@ def verify(target: Path) -> int:
               "Do not trust the shipped scripts until this is resolved.",
               file=sys.stderr)
         return 1
-    print(f"verify_integrity: OK -- {len(files)} recorded file(s) match "
-          f"{_LOCKFILE_REL}.")
+    checked = len(files) - skipped
+    extra = (f" ({skipped} adopter-authored living-state file(s) tracked for "
+             f"upgrade but excluded from the tamper check)" if skipped else "")
+    print(f"verify_integrity: OK -- {checked} recorded file(s) match "
+          f"{_LOCKFILE_REL}{extra}.")
     return 0
 
 

@@ -116,6 +116,27 @@ and a new empty `Unreleased` is started above.
 
 ### Changed
 
+- **`verify_integrity` excludes adopter-authored living-state docs from the
+  tamper check (the finalize-cadence fix).**  `verify_integrity` exists to
+  attest the *shipped Cairn apparatus* (scripts, module/core doctrine,
+  templates) was not swapped — a supply-chain check.  But the lockfile also
+  tracks four **adopter-authored** files whose content is project state, not
+  apparatus: `dev/PLANNING.md` (a living roadmap), `dev/NEXT_SESSION.md` (the
+  per-goodnight handoff), `dev/.cairn/cairn_foldback.md` (the fold-back ledger),
+  and `dev/collaboration_agreement.md` (the signed agreement).  These are the
+  highest-churn files in a mature adopter, so the strict integrity check went
+  **red on every routine edit** until a re-finalize — friction that says nothing
+  about whether the scripts are trustworthy (surfaced immediately by the
+  modflow_tools reference adopter the moment its own archive commit edited
+  three of them).  Their lockfile records now carry `living_state: true`: they
+  keep `base_cache` / `base_hash` so `upgrade` still 3-way-merges a Cairn
+  template change into the adopter's customization, but `verify_integrity` skips
+  them (and reports the count).  `write_install_lockfile` stamps the flag at
+  install; `upgrade --finalize` stamps it too, migrating pre-`living_state`
+  lockfiles.  Deliberately **not** paired with a goodnight auto-`--finalize`:
+  blessing whatever is on disk on a schedule would *launder* a real apparatus
+  swap — the very thing the check defends — so `--finalize` stays an explicit,
+  deliberate re-attestation.  +3 regression tests (`TestLivingStatePartition`).
 - **The forkable incident-log template no longer reads as `needs-value` on
   every adopter upgrade.**  `templates/modules/default-on/incident_log_template.md`
   is a *fork-on-demand* template (the default-on `incident-trackers` module

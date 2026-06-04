@@ -2462,6 +2462,30 @@ _LOCKFILE_REL = "dev/.cairn/cairn-lock.yml"        # tracked machinery (in .cair
 _BASE_CACHE_REL = "dev/.cairn/base"         # tracked raw-template cache (R1/I4)
 _LOCK_SCHEMA = 1
 
+#: Lockfile records for these dsts carry ``living_state: true`` and are
+#: **tracked for upgrade but excluded from the ``verify_integrity`` hash
+#: check**.  Rationale: ``verify_integrity`` exists so a cold adopter can
+#: attest the *shipped Cairn apparatus* (scripts, module/core doctrine,
+#: templates) was not swapped -- a supply-chain check.  These four files are
+#: not apparatus: their content is **adopter-authored project state** (a living
+#: roadmap, the per-goodnight handoff, the fold-back ledger, the signed
+#: collaboration agreement) that merely starts from a thin Cairn template.
+#: They are the highest-churn files in a mature adopter, so including them in
+#: the strict integrity set means every routine edit reds the verifier until a
+#: re-finalize -- friction that says nothing about whether the *scripts* are
+#: trustworthy.  They keep ``base_cache`` / ``base_hash`` so ``upgrade`` still
+#: 3-way-merges a Cairn template change into the adopter's customization; only
+#: the tamper check skips them.  (Note this is deliberately NOT paired with a
+#: goodnight auto-``--finalize``: blessing whatever is on disk on a schedule
+#: would *launder* a real apparatus swap -- the very thing the check defends --
+#: so ``--finalize`` stays an explicit, deliberate re-attestation.)
+_LIVING_STATE_DSTS: frozenset[str] = frozenset({
+    "dev/PLANNING.md",
+    "dev/NEXT_SESSION.md",
+    "dev/.cairn/cairn_foldback.md",
+    "dev/collaboration_agreement.md",
+})
+
 #: Token names that must never be recorded in the lockfile (R9): a
 #: substitution token bearing a secret would leak it into a tracked file.
 #: Matched as a **substring anywhere** in the token name (case-insensitive)
@@ -2662,6 +2686,10 @@ def write_install_lockfile(
             "src": src_rel, "dst": dst_rel, "verbatim": verbatim,
             "hash": "sha256:" + _sha256_hex(would),
         }
+        if dst_rel in _LIVING_STATE_DSTS:
+            # Adopter-authored project state: tracked for upgrade, excluded
+            # from the verify_integrity tamper check (see _LIVING_STATE_DSTS).
+            rec["living_state"] = True
         if not verbatim:
             cache_rel = f"{_BASE_CACHE_REL}/{dst_rel}"
             rec["base_cache"] = cache_rel
@@ -3600,6 +3628,13 @@ def _cmd_finalize_lockfile(target: Path, lock: dict[str, Any]) -> int:
         dst_abs = target / dst_rel
         if not dst_abs.is_file():
             missing.append(dst_rel)
+            continue
+        if dst_rel in _LIVING_STATE_DSTS:
+            # Adopter-authored project state: tracked for upgrade but excluded
+            # from the verify_integrity tamper check. Stamp the flag (this
+            # migrates pre-living_state lockfiles) and skip the hash advance --
+            # the hash is unused for these records, so don't churn it.
+            rec["living_state"] = True
             continue
         # Preserve the as-shipped baseline before advancing hash, for verbatim
         # records that predate base_hash.
