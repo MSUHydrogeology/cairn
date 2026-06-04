@@ -136,7 +136,14 @@ and a new empty `Unreleased` is started above.
   lockfiles.  Deliberately **not** paired with a goodnight auto-`--finalize`:
   blessing whatever is on disk on a schedule would *launder* a real apparatus
   swap — the very thing the check defends — so `--finalize` stays an explicit,
-  deliberate re-attestation.  +3 regression tests (`TestLivingStatePartition`).
+  deliberate re-attestation.  The opt-out is a **verifier policy, not a
+  self-asserted lockfile escape hatch** (Codex review P1): `verify_integrity`
+  honors `living_state` *only* for a `dst` in the authoritative
+  `_LIVING_STATE_DSTS` set and **fails closed** on any other record that asserts
+  it — so a modified script cannot hide from the tamper check by flipping one
+  lockfile field (the boundary is enforced by the verifier, which validates
+  dst-safety + hash-shape *before* honoring the flag).  +4 regression tests
+  (`TestLivingStatePartition`, incl. the illegal-opt-out reproducer).
 - **The forkable incident-log template no longer reads as `needs-value` on
   every adopter upgrade.**  `templates/modules/default-on/incident_log_template.md`
   is a *fork-on-demand* template (the default-on `incident-trackers` module

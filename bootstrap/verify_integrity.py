@@ -34,7 +34,11 @@ from pathlib import Path
 CAIRN_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(CAIRN_ROOT))
 
-from bootstrap.scaffold import _LOCKFILE_REL, read_lockfile  # noqa: E402
+from bootstrap.scaffold import (  # noqa: E402
+    _LIVING_STATE_DSTS,
+    _LOCKFILE_REL,
+    read_lockfile,
+)
 
 
 def verify(target: Path) -> int:
@@ -56,19 +60,11 @@ def verify(target: Path) -> int:
     for rec in files:
         dst_rel = rec.get("dst")
         recorded = rec.get("hash", "")
-        # Adopter-authored project state (a living roadmap, the per-goodnight
-        # handoff, the fold-back ledger, the signed agreement) is tracked for
-        # upgrade but excluded from the integrity check: it is not shipped
-        # apparatus, and its constant churn would red this check on every edit
-        # while saying nothing about whether the scripts are trustworthy.
-        if rec.get("living_state"):
-            skipped += 1
-            continue
         # The lockfile is itself a tamper target, so fail closed on a
-        # malformed record *before* reading anything: a record must name a
-        # contained, repo-relative dst with a well-formed sha256 hash.
-        # Without this, a `dst: ../outside` could make the check "attest" a
-        # file outside the installed tree and still print OK.
+        # malformed record *before* reading anything OR honoring any opt-out: a
+        # record must name a contained, repo-relative dst with a well-formed
+        # sha256 hash.  Without this, a `dst: ../outside` could make the check
+        # "attest" a file outside the installed tree and still print OK.
         if not isinstance(dst_rel, str) or not dst_rel:
             violations.append(f"  malformed record (no dst): {rec!r}")
             continue
@@ -82,6 +78,27 @@ def verify(target: Path) -> int:
         dst = (target / rel).resolve()
         if dst != target_resolved and target_resolved not in dst.parents:
             violations.append(f"  dst escapes the target tree: {dst_rel}")
+            continue
+        # Living-state opt-out is a *verifier policy*, not a self-asserted
+        # lockfile escape hatch.  Adopter-authored project state (a living
+        # roadmap, the per-goodnight handoff, the fold-back ledger, the signed
+        # agreement) is tracked for upgrade but excluded from the tamper check:
+        # it is not shipped apparatus, and its churn would red this check on
+        # every edit while saying nothing about whether the scripts are
+        # trustworthy.  But the flag is honored ONLY for the authoritative set:
+        # a record outside it that carries ``living_state: true`` is a tamper
+        # attempt (mark a modified script living-state to hide it) and fails
+        # closed -- the integrity boundary is enforced here, not trusted from
+        # the (itself-tamperable) lockfile.
+        if rec.get("living_state"):
+            if dst_rel in _LIVING_STATE_DSTS:
+                skipped += 1
+                continue
+            violations.append(
+                f"  illegal living_state opt-out: {dst_rel} is not an "
+                f"authoritative living-state path -- only "
+                f"{sorted(_LIVING_STATE_DSTS)} may set living_state "
+                f"(tamper / malformed lockfile)")
             continue
         if not dst.is_file():
             violations.append(f"  missing: {dst_rel}")

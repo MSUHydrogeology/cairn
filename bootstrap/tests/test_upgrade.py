@@ -906,3 +906,31 @@ class TestLivingStatePartition:
         rec = next(r for r in lock2["files"] if r["dst"] == "dev/PLANNING.md")
         assert rec.get("living_state") is True
         assert verify(tmp_path) == 0
+
+    def test_living_state_flag_rejected_outside_authoritative_set(
+        self, tmp_path: Path
+    ) -> None:
+        """Codex review P1: the living-state opt-out is a *verifier policy*, not
+        a self-asserted lockfile escape hatch.  A record whose ``dst`` is not in
+        ``_LIVING_STATE_DSTS`` may not exclude itself from the tamper check by
+        setting ``living_state: true`` -- otherwise a modified script could be
+        hidden from ``verify_integrity`` by flipping one lockfile field."""
+        from bootstrap.verify_integrity import verify
+
+        assert _install(tmp_path) == 0
+        assert verify(tmp_path) == 0
+        lock = s.read_lockfile(tmp_path)
+        vrec = next(r for r in lock["files"]
+                    if r.get("verbatim") and r["dst"].endswith(".py"))
+        # Tamper the script on disk -> caught (no flag).
+        f = tmp_path / vrec["dst"]
+        f.write_text(f.read_text() + "\n# tampered\n")
+        assert verify(tmp_path) == 1
+        # Attempt the bypass: mark the *script* record living_state.
+        for r in lock["files"]:
+            if r["dst"] == vrec["dst"]:
+                r["living_state"] = True
+        (tmp_path / s._LOCKFILE_REL).write_text(
+            s._emit_lock_yaml(lock), encoding="utf-8")
+        # Still fails closed -- the flag is honored only for the policy set.
+        assert verify(tmp_path) == 1
