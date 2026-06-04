@@ -54,8 +54,8 @@ and a new empty `Unreleased` is started above.
   decision-time signature — opt-in, not a default). The fifth candidate
   ("briefs to other agents") was already present (`doctrine/dual-review.md` >
   "Briefs to reviewers — don't telegraph the lens"). Source: modflow_tools
-  `dev/plans/archive/2026-06-04-claude-cairn-foldback-drain-7-candidates.md` +
-  its drain plan.
+  `dev/proposals/archive/2026-06-04-claude-cairn-foldback-drain-7-candidates.md` +
+  its drain plan (`dev/plans/2026-06-04-claude-cairn-foldback-drain.md`).
 
 - **`scaffold.py upgrade --finalize` makes a *customized* install verifiable.**
   `verify_integrity` checks on-disk bytes against the lockfile `hash`, but

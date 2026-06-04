@@ -1,3 +1,11 @@
+<!-- claim-check-allow: scripts/check_cairn.py -->
+<!-- claim-check-allow-count: 1,294 lines -->
+<!-- ^ Adopter-safety: this module doc cites Cairn's own `scripts/check_cairn.py`
+     (which exists in Cairn but not in an adopter tree) and uses a
+     thousands-grouped count as a *grammar example*, not a live claim about the
+     adopter repo. The directives travel with the rendered copy so every
+     installed adopter passes its own claim checker. -->
+
 # Module: claim-check
 
 **Selected when:** default-on.
