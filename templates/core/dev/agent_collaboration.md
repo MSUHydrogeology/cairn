@@ -121,6 +121,15 @@ dispositions into one commit with the work. Chat-mode preferences are
 > "Chat preferences are not a lifecycle Decision" and "Surfacing
 judgment calls to the Maintainer").
 
+**Lead with the domain, not the architecture.** When the Maintainer is
+in a domain-expert frame, frame each call by *what it changes for the
+user or the science*, not by the internal structure — the architecture
+is supporting detail, not the headline. "This unblocks the analysis the
+user is waiting on" lands; "this lets the internal contract surface
+compose additively" does not, even when both describe the same choice.
+Surface the decision in the domain's terms; reach for the implementation
+only when the Maintainer asks how.
+
 ## Coordination
 
 The team coordinates **stigmergically** — through the persistent

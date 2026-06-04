@@ -40,6 +40,42 @@ the first kind and the *discipline* (the empirical probe) as
 covering the second; do not let the checker's clean exit stand in
 for having verified a behavioral claim it never inspected.
 
+## The verify-before-asserting typology (A–E)
+
+The discipline covers more than the checker's mechanical subset. Naming
+the **categories of load-bearing claim** makes the right verification
+obvious at write-time — each category has a different cheapest check, and
+only one (E) is outside any scanner's reach:
+
+* **A — code-shape.** Does this attribute / method / signature exist as
+  written? *Check:* read the definition or `grep` it — never quote a
+  signature from memory.
+* **B — file-existence.** Does this path / file exist where cited? *Check:*
+  the installed path checker (or `ls`); this is what the scanner hard-flags.
+* **C — tree-history.** Did this commit / change land; is this the right
+  SHA or range? *Check:* `git log` / `git show` — not recollection of what
+  you committed.
+* **D — counts.** How many tests / files / lines / call-sites? *Check:*
+  compute it **live** (or cite a delta); a count from memory is the soft
+  flag, and "consciously accept a point-in-time snapshot" is the only
+  honest shortcut.
+* **E — API-behavior-under-invocation.** What does this call *do* at run
+  time — side-effects, ordering, atomicity, escaping, the artifact it
+  emits? *Check:* a **small empirical probe** (invoke it in a scratch
+  shell) or the library's behavioral contract — never infer from the API
+  name or an adjacent call site. This is the costlier class above; **no
+  scanner reaches it.**
+
+Cutting across all five: the **self-contradiction cross-check** — before
+asserting, confirm the claim does not contradict something else in the
+same artifact (a count stated two ways, a path named differently above, a
+"done" that an earlier line calls "deferred"). Self-contradiction is the
+cheapest tell that a claim was asserted, not checked.
+
+The framing is **write-time, not review-time**: verify each category as
+you write the claim (the cheap moment), so the claim enters the record
+already true — not as something the reviewer has to catch.
+
 ## Template content
 
 Merged into `AGENTS.md`:

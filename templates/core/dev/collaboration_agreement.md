@@ -46,3 +46,23 @@ Refreshed when the team changes.)
 This agreement changes only through the proposal lifecycle — the
 same discipline it asks of every other substantive change. A
 proposal to amend it is reviewed and decided like any other.
+
+**Optional: a signature log.** A team that wants "we agreed to these
+norms" to be *auditable* rather than asserted can add a signature ritual —
+opt-in, not a default (a solo project needs none):
+
+* **Signature log.** Each participant signs the specific version they
+  agreed to, with a short substantive sign-off comment — not just a name.
+* **Re-signature on amendment.** Every accepted amendment re-opens the log;
+  participants re-sign the new version, so a signature always attests the
+  *current* text, never a superseded one.
+* **Revision history.** Each amendment row ties the change to its
+  triggering proposal / Decision.
+* **Decision-time signature.** The Maintainer's Decision *is* the
+  acceptance point; the amendment is in force from that row, and the log
+  records the date it took effect.
+
+This makes the agreement's authority traceable to who signed what, when —
+the agreement analogue of the durable-record discipline Cairn already
+prizes. Adopt it when the team is large enough that "everyone agreed" is
+worth proving; skip it otherwise.

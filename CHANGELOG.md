@@ -34,6 +34,29 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **Doctrine folded up from the modflow_tools reference adopter** (the
+  fold-back-ledger drain). Four candidates the adopter proved out, lifted into
+  the framework so every adopter inherits them: (1) a **worked-example
+  case-study** in `doctrine/dual-review.md` — the different-agent-type floor
+  repeatedly catching what the same-vendor pass missed (incl. the author's
+  shared blind spot), across proposal / plan / code-review stages, with the
+  portable lesson that *green unit tests don't clear the floor — exercise the
+  integration path*; (2) the **verify-before-asserting A–E typology** in the
+  `claim-check` module (code-shape / file-existence / tree-history / counts /
+  API-behavior-under-invocation + the self-contradiction cross-check, framed
+  write-time-not-review-time) — the single source of truth, the module that
+  already ships the checker; (3) a **"lead with the domain, not the
+  architecture"** line in `templates/core/dev/agent_collaboration.md`'s
+  "Surfacing judgment calls" (frame a call by what it changes for the user /
+  science when the Maintainer is in a domain-expert frame); (4) an **opt-in
+  signature-log** Amending pattern in `templates/core/dev/collaboration_agreement.md`
+  (signature log + re-signature-on-amendment + revision history +
+  decision-time signature — opt-in, not a default). The fifth candidate
+  ("briefs to other agents") was already present (`doctrine/dual-review.md` >
+  "Briefs to reviewers — don't telegraph the lens"). Source: modflow_tools
+  `dev/plans/archive/2026-06-04-claude-cairn-foldback-drain-7-candidates.md` +
+  its drain plan.
+
 - **`scaffold.py upgrade --finalize` makes a *customized* install verifiable.**
   `verify_integrity` checks on-disk bytes against the lockfile `hash`, but
   `write_install_lockfile` records the *clean-install* hash — so every slot an

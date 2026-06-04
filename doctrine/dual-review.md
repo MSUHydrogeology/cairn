@@ -48,6 +48,37 @@ The floors: **Internal review** accepts same-agent-fresh-session;
 Code review — the implementation-side pass — has its own floor:
 **not the implementing agent**.
 
+### Worked example — the floor pays its way
+
+The different-agent-type floor is not a formality; in the reference
+deployment it repeatedly caught what the same-vendor pass missed,
+*including the blind spots the same-vendor reviewer shared with the
+author*. A few representative findings across one development window
+(all on Claude-authored work, caught by a cross-type External read):
+
+* A **preset-name path traversal** in a security-hardening proposal; a
+  **null-default interior hole** and a **partial-dict regression** in an
+  override-validation change — both critical, both surfaced by the
+  cross-type reviewers, and the partial-dict one was a blind spot the
+  same-vendor pass *shared with the author*.
+* At the implementation stage: a **diverged generated copy preserved as
+  the active read-path**, and **state written before its `.gitignore`
+  seed** — two supply-chain edge bugs the author's green test suite
+  passed straight over.
+* The single largest catch: a core integrity anchor whose facts **were
+  never extracted in production** — dormant in every real build despite a
+  fully green unit suite, because no unit test exercised the real call
+  chain.
+
+The cumulative signal is the point: across a run of consecutive
+cross-type reviews, **each caught at least one real integrity-surface
+bug**, spanning the proposal, plan, *and* code-review stages — a rate a
+same-vendor reviewer (sharing the author's architecture, and often the
+author's blind spot) does not match. The recurring lesson is also
+portable: **green unit tests do not clear the floor** — exercise the
+integration path (the real call chain, real config), not just the unit
+contracts the author already trusted.
+
 ## Asynchronous and commit-mediated
 
 A review is not a live conversation. It is a **section appended to
