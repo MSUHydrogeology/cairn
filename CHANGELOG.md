@@ -34,6 +34,22 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **Session-start skills fan-out self-heal.** The `session-start` lifecycle
+  backend (`tools/lifecycle.py`) now re-ensures every eligible, in-use
+  symlink-tier skills read-path (today only Claude Code's `.claude/skills`)
+  points at the canonical `.agents/skills/` source — so an adopter established
+  by lockfile-copy, or whose harness was absent at install, self-heals on first
+  run instead of silently having no skills in that harness. It is a faithful
+  stdlib-only port of the installer's symlink-tier fan-out contract
+  (path-containment, copy fallback + `.gitignore` seed where symlinks are
+  unavailable, refuse-or-quarantine that never clobbers a divergent target),
+  driven by the now-**installed** `_data/vendor_targets.yml` table so the
+  runtime never needs a sibling Cairn checkout to know its targets. New
+  `bootstrap/tests/test_skills_self_heal.py` exercises the real backend (the
+  full `session-start` entry + a no-Cairn-checkout fixture). Source:
+  modflow_tools `dev/proposals/archive/2026-06-04-claude-cairn-foldback-drain-7-candidates.md`
+  (Chunk B1) + its drain plan.
+
 - **Doctrine folded up from the modflow_tools reference adopter** (the
   fold-back-ledger drain). Four candidates the adopter proved out, lifted into
   the framework so every adopter inherits them: (1) a **worked-example

@@ -12,16 +12,24 @@ canonical doctrine for *what* this routine is and *why* lives in
 **`doctrine/session-routines.md`**; this skill only orchestrates it, so it never
 restates that rationale here.
 
-## 1. Run the mechanizable gather (read-only)
+## 1. Run the mechanizable gather + skills self-heal
 
 ```
 python tools/lifecycle.py session-start
 ```
 
-It reports, without changing anything: commits since the last handoff (with a
-graceful fallback on a fresh repo), working-tree state, open proposals/plans,
-the active work-intents (if the coordination tool is installed), and the
-resolved project interpreter.
+It **reports** (read-only): commits since the last handoff (with a graceful
+fallback on a fresh repo), working-tree state, open proposals/plans, the active
+work-intents (if the coordination tool is installed), and the resolved project
+interpreter.
+
+It then performs **one idempotent write** -- the *skills fan-out self-heal*:
+it ensures every eligible, in-use symlink-tier read-path (today only Claude
+Code's `.claude/skills`) points at the canonical `.agents/skills/` source, so
+an adopter established by lockfile-copy -- or whose harness was absent at
+install -- gets working skills with no manual step. It is a no-op when already
+linked, and never clobbers a divergent target (it refuses or quarantines). The
+mechanics live in `tools/lifecycle.py`; this skill never reimplements them.
 
 ## 2. Judgment steps (yours, not the tool's)
 

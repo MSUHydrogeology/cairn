@@ -67,6 +67,18 @@ _HANDOFF_LEASE_SECONDS = 900
 #: deployment's machine-state home.
 _CAIRN_STATE_DIR = ("dev", ".cairn")
 
+#: The canonical lifecycle-skills source (read directly by the alias-tier
+#: harnesses).  Symlink-tier harnesses (today only Claude Code, ``.claude/
+#: skills``) fan out to this dir; the session-start self-heal keeps those
+#: read-paths in sync.
+_AGENTS_SKILLS_DIR = (".agents", "skills")
+
+#: The installed vendor fan-out table the self-heal reads at runtime (the
+#: single source of which harness paths are eligible) -- propagated to adopters
+#: alongside the canonical skills, so the routine never needs a sibling Cairn
+#: checkout to know its targets.  A vendor refresh is a row edit there.
+_VENDOR_TARGETS_REL = (".agents", "skills", "_data", "vendor_targets.yml")
+
 # --- structured output -------------------------------------------------------
 #
 # Every line the agent's skill body relays is prefixed so the orchestrating
@@ -414,15 +426,211 @@ def _in_flight(root: Path) -> List[str]:
     return lines
 
 
+# --- session-start skills fan-out self-heal ---------------------------------
+#
+# The canonical lifecycle skills live in ``.agents/skills/`` (read directly by
+# the alias-tier harnesses).  A symlink-tier harness -- today only Claude Code,
+# which reads ``.claude/skills`` -- needs that read-path fanned out to the
+# canonical source.  The install-time fan-out (``scaffold.fan_out_skills``)
+# runs only during a full ``scaffold.py`` install, so an adopter established by
+# lockfile-copy, or whose symlink-tier harness was not present at install,
+# silently has no skills in that harness.  This is the runtime self-heal: on
+# session-start, ensure every eligible, in-use symlink-tier read-path exists --
+# idempotently, and under the same writer-safety contract as the installer
+# (path-containment, symlink->copy fallback, ``.gitignore`` seed for copy-mode,
+# and refuse / quarantine -- never clobber -- a divergent existing target).
+#
+# It is a faithful stdlib-only port of the symlink-tier path of
+# ``scaffold.fan_out_skills`` (the adopter has no ``bootstrap.scaffold``); the
+# installed ``vendor_targets.yml`` table is the single source of which harness
+# paths are eligible, so a vendor refresh is a data-row edit, never code here.
+
+
+def _load_vendor_targets(root: Path) -> List[dict]:
+    """Read the installed vendor fan-out table.  JSON-encoded (valid YAML 1.2)
+    so it parses stdlib-only, like the lockfile.  Absent / unreadable / wrong
+    shape -> ``[]`` (the self-heal simply does nothing -- it never crashes the
+    orientation gather)."""
+    path = root.joinpath(*_VENDOR_TARGETS_REL)
+    if not path.is_file():
+        return []
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return []
+    targets = data.get("targets") if isinstance(data, dict) else None
+    return [r for r in targets if isinstance(r, dict)] if isinstance(targets, list) else []
+
+
+def _skill_symlinks_available(root: Path) -> bool:
+    """Probe whether ``os.symlink`` works under *root* (False on Windows
+    without Developer Mode / Administrator -- the copy-fallback trigger)."""
+    probe = root / ".cairn-skill-symlink-probe"
+    try:
+        if probe.is_symlink() or probe.exists():
+            probe.unlink()
+        os.symlink(".", probe)
+        ok = probe.is_symlink()
+        probe.unlink()
+        return ok
+    except (OSError, NotImplementedError):
+        try:
+            if probe.is_symlink() or probe.exists():
+                probe.unlink()
+        except OSError:
+            pass
+        return False
+
+
+def _assert_fanout_contained(dst: Path, target: Path) -> None:
+    """Refuse a fan-out destination reached through a **symlinked parent** or
+    resolving **outside** *target* (S3).  ``dst`` itself may be the symlink we
+    are about to (re)create, so only its parents are symlink-checked."""
+    tr = target.resolve()
+    for ancestor in dst.parents:
+        if ancestor == tr:
+            break
+        try:
+            ancestor.relative_to(tr)
+        except ValueError:
+            break
+        if ancestor.is_symlink():
+            raise LifecycleError(
+                f"refusing skills fan-out through a symlinked parent: {ancestor}"
+            )
+    final = dst.parent.resolve() / dst.name
+    try:
+        final.relative_to(tr)
+    except ValueError:
+        raise LifecycleError(f"refusing skills fan-out outside the repo: {final}")
+
+
+def _seed_skill_gitignore(root: Path, entry: str) -> None:
+    """Append *entry* to ``<root>/.gitignore`` if absent (idempotent,
+    non-clobber).  Copy-mode fan-out copies are generated, gitignored
+    supply-chain artifacts -- the canonical ``.agents/skills/`` is the only
+    tracked, editable copy."""
+    gitignore = root / ".gitignore"
+    text = gitignore.read_text(encoding="utf-8") if gitignore.exists() else ""
+    if entry in {ln.strip() for ln in text.splitlines()}:
+        return
+    prefix = text if (not text or text.endswith("\n")) else text + "\n"
+    gitignore.write_text(prefix + entry + "\n", encoding="utf-8")
+
+
+def _heal_skill_symlink(dst: Path, canonical: Path) -> str:
+    """Create / verify a relative symlink ``dst`` -> the canonical skills dir.
+    Idempotent (``already-linked``); a wrong symlink is re-pointed
+    (``relinked``); a non-symlink existing target is left untouched
+    (``exists-nonsymlink``) -- never clobbered."""
+    rel = os.path.relpath(canonical, dst.parent)
+    if dst.is_symlink():
+        if os.readlink(dst) == rel:
+            return "already-linked"
+        dst.unlink()
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        os.symlink(rel, dst, target_is_directory=True)
+        return "relinked"
+    if dst.exists():
+        _warn(
+            f"{dst} exists as a non-symlink; leaving it untouched "
+            "(remove it to enable the skills symlink)."
+        )
+        return "exists-nonsymlink"
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    os.symlink(rel, dst, target_is_directory=True)
+    return "linked"
+
+
+def _heal_skill_copy(dst: Path, canonical: Path, target: Path) -> str:
+    """Regenerate gitignored copies of the canonical skills under *dst* (used
+    where symlinks are unavailable).  Idempotent: a copy already byte-equal to
+    canonical is left alone; a **divergent** copy is quarantined to
+    ``*.diverged.bak`` (preserved, never destroyed) and regenerated, so the
+    active vendor-read path always carries the canonical, already-scanned
+    bytes.  Returns ``current`` / ``copied`` / ``diverged-quarantined``."""
+    import shutil
+
+    quarantined: List[str] = []
+    copied = 0
+    for src_file in sorted(canonical.rglob("*")):
+        if not src_file.is_file():
+            continue
+        rel = src_file.relative_to(canonical)
+        out = dst / rel
+        _assert_fanout_contained(out, target)
+        if out.is_file():
+            if out.read_bytes() == src_file.read_bytes():
+                continue  # already current -- idempotent, no rewrite
+            bak = out.with_name(out.name + ".diverged.bak")
+            _assert_fanout_contained(bak, target)
+            shutil.move(str(out), str(bak))
+            quarantined.append(str(rel))
+        out.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(src_file, out)
+        copied += 1
+    if quarantined:
+        _warn(
+            f"copy-fallback divergence under {dst}: {', '.join(quarantined)} "
+            "differed from the canonical .agents/skills/ source; each was "
+            "quarantined to *.diverged.bak and the canonical bytes regenerated. "
+            "Edit the canonical source, not the generated copy."
+        )
+        return "diverged-quarantined"
+    return "copied" if copied else "current"
+
+
+def _heal_skills_fanout(root: Path) -> List[Tuple[str, str, str]]:
+    """Ensure every eligible, in-use symlink-tier skills read-path exists.
+
+    Returns ``(target, tier_used, status)`` rows (empty when there is nothing
+    to do).  Mirrors the symlink-tier path of ``scaffold.fan_out_skills``: an
+    *alias*-tier harness reads ``.agents/skills/`` directly (skipped here); a
+    *symlink*-tier harness gets a verified relative symlink (or, where symlinks
+    are unavailable, a gitignored generated copy), emitted only when that
+    harness's parent dir already exists -- the same light "is this harness in
+    use?" gate the installer uses, so a repo is never littered with empty
+    vendor dirs.  Every destination is containment-checked before any write."""
+    canonical = root.joinpath(*_AGENTS_SKILLS_DIR)
+    if not canonical.is_dir():
+        return []  # no canonical source to fan out from -- not a skills adopter
+    can_symlink = _skill_symlinks_available(root)
+    results: List[Tuple[str, str, str]] = []
+    for row in _load_vendor_targets(root):
+        if row.get("tier") != "symlink":
+            continue  # alias tier reads .agents/skills directly; manual is documented
+        name = str(row.get("target", "?"))
+        path = str(row.get("path", ""))
+        if not path or path.startswith("/") or ".." in Path(path).parts:
+            _warn(f"skills self-heal: unsafe vendor path for {name!r}: {path!r}; skipped.")
+            continue
+        dst = root / path
+        if not dst.parent.exists():
+            continue  # harness not in use here -- light detection, no empty dirs
+        _assert_fanout_contained(dst, root)
+        if can_symlink:
+            results.append((name, "symlink", _heal_skill_symlink(dst, canonical)))
+        else:
+            status = _heal_skill_copy(dst, canonical, root)
+            _seed_skill_gitignore(root, path.rstrip("/") + "/")
+            results.append((name, "copy", status))
+    return results
+
+
 # --- subcommand: session-start ----------------------------------------------
 
 
 def cmd_session_start(args: argparse.Namespace) -> int:
-    """Read-only orientation gather: commits, tree state, threads, intents.
+    """Orientation gather (read-only) + idempotent skills fan-out self-heal.
 
-    Purely informational -- writes nothing.  The skill body relays this output
-    and then performs the judgment steps (role confirmation, deciding which
-    thread to pick up) that a tool cannot make.
+    The gather is purely informational -- commits, tree state, threads,
+    intents, resolved interpreter.  The one write the routine performs is the
+    **skills fan-out self-heal**: it ensures every eligible, in-use
+    symlink-tier read-path (e.g. Claude Code's ``.claude/skills``) points at
+    the canonical ``.agents/skills/`` source, idempotently and under the
+    installer's writer-safety contract (a no-op when already linked; never
+    clobbers a divergent target).  The skill body then performs the judgment
+    steps (role confirmation, deciding which thread to pick up).
     """
     root = _repo_root()
     marker = args.handoff_marker
@@ -474,7 +682,25 @@ def cmd_session_start(args: argparse.Namespace) -> int:
             "directly instead of relying on shell activation."
         )
 
-    _emit("session-start gather complete (read-only).")
+    # Skills fan-out self-heal: the one write the routine performs.  Ensure
+    # every eligible, in-use symlink-tier read-path (e.g. .claude/skills) points
+    # at the canonical .agents/skills/ source.  Idempotent + fail-soft -- a
+    # containment refusal warns and continues; it never aborts the gather.
+    _emit_section("skills fan-out self-heal")
+    try:
+        healed = _heal_skills_fanout(root)
+    except LifecycleError as exc:
+        _warn(f"skills self-heal refused: {exc}")
+        healed = []
+    if not healed:
+        _emit("no symlink-tier harness in use here (nothing to fan out).")
+    elif all(status in ("already-linked", "current") for _n, _t, status in healed):
+        _emit("symlink-tier skills read-paths already current (no change).")
+    else:
+        for name, tier, status in healed:
+            _emit(f"{name}: {tier} -> {status}")
+
+    _emit("session-start gather complete.")
     return 0
 
 

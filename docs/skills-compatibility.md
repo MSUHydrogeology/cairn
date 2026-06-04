@@ -15,3 +15,17 @@
 | cursor | alias | skill-md | native-claimed-unverified | cli-backstop-only |
 | github-copilot | alias | skill-md | native-claimed-unverified | cli-backstop-only |
 | windsurf | alias | skill-md | native-claimed-unverified | cli-backstop-only |
+
+## Runtime self-heal
+
+A **symlink**-tier target's read-path is fanned out from the canonical
+`.agents/skills/` source at install time. It is *also* re-ensured at
+**session-start** by the lifecycle backend (`tools/lifecycle.py
+session-start`), so an adopter established by lockfile-copy -- or whose
+symlink-tier harness was not present at install -- self-heals on first
+run instead of silently having no skills in that harness. The self-heal
+is idempotent and carries the installer's writer-safety contract:
+path-containment, a copy fallback where symlinks are unavailable (with a
+`.gitignore` seed), and a refuse-or-quarantine guard that never clobbers
+a divergent existing target. **alias**-tier targets read `.agents/skills/`
+directly and need no fan-out (nothing is emitted for them).

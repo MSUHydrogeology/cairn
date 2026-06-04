@@ -703,6 +703,7 @@ _CORE_MAPPINGS: tuple[tuple[str, str], ...] = (
 #: and a token-/slot-aware 3-way merge on upgrade, exactly like ``core/`` docs).
 _SKILLS_MAPPINGS: tuple[tuple[str, str, bool], ...] = (
     ("skills/_lib/lifecycle.py",        "tools/lifecycle.py",                       True),
+    ("skills/_data/vendor_targets.yml", ".agents/skills/_data/vendor_targets.yml",  True),
     ("skills/session-start/SKILL.md",   ".agents/skills/session-start/SKILL.md",    False),
     ("skills/session-end/SKILL.md",     ".agents/skills/session-end/SKILL.md",      False),
 )
@@ -1610,6 +1611,22 @@ def render_compatibility_matrix(templates_root: Path) -> str:
             f"| {r['target']} | {r['tier']} | {r.get('format', '-')} "
             f"| {r.get('level', '-')} | {r.get('auto_suppress', '-')} |"
         )
+    out += [
+        "",
+        "## Runtime self-heal",
+        "",
+        "A **symlink**-tier target's read-path is fanned out from the canonical",
+        "`.agents/skills/` source at install time. It is *also* re-ensured at",
+        "**session-start** by the lifecycle backend (`tools/lifecycle.py",
+        "session-start`), so an adopter established by lockfile-copy -- or whose",
+        "symlink-tier harness was not present at install -- self-heals on first",
+        "run instead of silently having no skills in that harness. The self-heal",
+        "is idempotent and carries the installer's writer-safety contract:",
+        "path-containment, a copy fallback where symlinks are unavailable (with a",
+        "`.gitignore` seed), and a refuse-or-quarantine guard that never clobbers",
+        "a divergent existing target. **alias**-tier targets read `.agents/skills/`",
+        "directly and need no fan-out (nothing is emitted for them).",
+    ]
     return "\n".join(out) + "\n"
 
 
@@ -4269,7 +4286,7 @@ def main(argv: list[str] | None = None) -> int:
         templates_root, target, tokens, force=args.force
     )
     _n_skills = sum(
-        1 for _s, d, _v in _SKILLS_MAPPINGS if d.startswith(".agents/skills/")
+        1 for _s, d, _v in _SKILLS_MAPPINGS if d.endswith("/SKILL.md")
     )
     print(
         f"  Installed {_n_skills} lifecycle skill(s) -> .agents/skills/ "
