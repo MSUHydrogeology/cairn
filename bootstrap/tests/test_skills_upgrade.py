@@ -122,7 +122,8 @@ def _make_pre_skills(target: Path) -> None:
 
     lock = s.read_lockfile(target)
     lock["files"] = [r for r in lock["files"] if r["dst"] not in _SKILL_DSTS]
-    (target / "dev" / "cairn-lock.yml").write_text(
+    (target / "dev" / ".cairn").mkdir(parents=True, exist_ok=True)
+    (target / "dev" / ".cairn" / "cairn-lock.yml").write_text(
         s._emit_lock_yaml(lock), encoding="utf-8")
     for rel in (".agents", LIFECYCLE, "dev/.cairn/base/.agents"):
         p = target / rel
@@ -236,7 +237,8 @@ def test_verbatim_stale_hash_heals_on_apply(tmp_path: Path):
     for r in lock["files"]:
         if r["dst"] == LIFECYCLE:
             r["hash"] = stale
-    (target / "dev" / "cairn-lock.yml").write_text(
+    (target / "dev" / ".cairn").mkdir(parents=True, exist_ok=True)
+    (target / "dev" / ".cairn" / "cairn-lock.yml").write_text(
         s._emit_lock_yaml(lock), encoding="utf-8")
 
     base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]

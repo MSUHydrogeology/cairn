@@ -264,6 +264,11 @@ python <path/to/cairn>/bootstrap/scaffold.py \
     --target .
 ```
 
+> **Where the profile lives.** `<profile.yml>` is install machinery, not a
+> human document — keep the committed copy under `dev/.cairn/profile.yml`
+> (with the lockfile + base cache) and pass that path to `--config`. Cairn
+> reads it only through `scaffold.py`.
+
 The script:
 
 * Creates the `dev/` directory tree.

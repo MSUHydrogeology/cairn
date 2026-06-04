@@ -18,7 +18,7 @@ your own review lifecycle.
 Installing (or upgrading) writes two **tracked** artifacts into your
 target's `dev/`:
 
-* **`dev/cairn-lock.yml`** — a machine lockfile (the *upgrade ancestor* +
+* **`dev/.cairn/cairn-lock.yml`** — a machine lockfile (the *upgrade ancestor* +
   the install-side provenance record). It pins the Cairn version + commit,
   the resolved profile, the module roster, and **per file**: source,
   destination, the `verbatim` flag, the content hash as written, and the
@@ -176,7 +176,7 @@ lockfile. Create one:
 python bootstrap/scaffold.py upgrade --target <repo> --init-lock
 ```
 
-This synthesizes `dev/cairn-lock.yml` from your on-disk content and your
+This synthesizes `dev/.cairn/cairn-lock.yml` from your on-disk content and your
 fidelity manifest's `cairn_commit`. **Important limitation:** the fidelity
 manifest records token *names*, not the *values* substituted at install,
 so for token-substituted files the install-time base **cannot** be

@@ -203,7 +203,7 @@ class TestLayerAStepsOneThroughThree:
             "dev/modules/fold-back-ledger.md",
             "tools/lifecycle_metrics.py",
             "scripts/claim_check.py",
-            "dev/cairn-lock.yml",
+            "dev/.cairn/cairn-lock.yml",
         ]
         for relative in expected_paths:
             assert (repo / relative).exists(), (

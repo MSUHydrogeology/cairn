@@ -70,7 +70,7 @@ doctrine (`on-ramp/README.md`):
 * `level-0-to-1` -- `dev/proposals/_template.md` is present
   (the canonical Level 1 signal: the adopter graduated from
   "read the doctrine" to "hand-copy the kernel").
-* `level-1-to-2` -- `dev/cairn-lock.yml` is present (the
+* `level-1-to-2` -- `dev/.cairn/cairn-lock.yml` is present (the
   canonical Level 2 signal: the adopter ran the full bootstrap).
 * `level-1-deepen` / `level-2-deepen` -- in-level action-count
   thresholds (e.g., five archived proposals + three archived

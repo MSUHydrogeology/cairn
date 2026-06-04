@@ -36,7 +36,7 @@ def _install(target: Path) -> int:
 
 def test_clean_install_verifies(tmp_path: Path) -> None:
     assert _install(tmp_path) == 0
-    assert (tmp_path / "dev" / "cairn-lock.yml").is_file()
+    assert (tmp_path / "dev" / ".cairn" / "cairn-lock.yml").is_file()
     assert verify_integrity.verify(tmp_path) == 0
 
 
@@ -64,7 +64,8 @@ def test_absent_lockfile_fails_closed(tmp_path: Path) -> None:
 
 def _write_lock(target: Path, files: list) -> None:
     (target / "dev").mkdir(parents=True, exist_ok=True)
-    (target / "dev" / "cairn-lock.yml").write_text(
+    (target / "dev" / ".cairn").mkdir(parents=True, exist_ok=True)
+    (target / "dev" / ".cairn" / "cairn-lock.yml").write_text(
         json.dumps({"files": files}), encoding="utf-8")
 
 

@@ -94,6 +94,19 @@ and a new empty `Unreleased` is started above.
 
 ### Changed
 
+- **Lockfile + adopter profile relocated to `dev/.cairn/` (machinery, not
+  docs).**  The install lockfile moved `dev/cairn-lock.yml` →
+  `dev/.cairn/cairn-lock.yml` (`_LOCKFILE_REL`), joining the base cache,
+  `local-env.json`, the foldback ledger, and onboarding state under
+  `dev/.cairn/`.  Reverses the original R2 "visible at the `dev/` root"
+  placement: the file is tool-owned (only `scaffold.py` reads/writes it), so a
+  `.cairn/` dotfolder is the honest home — it does not hide the file from
+  agents, and it keeps the human-meaningful `dev/` listing uncluttered.  The
+  committed adopter `profile.yml` similarly belongs under
+  `dev/.cairn/profile.yml` (documented in `BOOTSTRAP.md`; `--config` accepts any
+  path).  Install / `--init-lock` / `--adopt-module` now `mkdir` the
+  `dev/.cairn/` parent before writing.  Existing adopters move the file in
+  lockstep.  Full bootstrap suite green.
 - **Renamed vendor wrappers now upgrade cleanly (#45 follow-up).**  An
   adopter that renames the thin `VENDOR.md` wrapper to their tool's file
   (`CLAUDE.md`, `GEMINI.md`, …) and removes `VENDOR.md` previously saw a

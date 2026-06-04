@@ -48,7 +48,7 @@ downstream adopter's agents. Include a reproducer where possible.
   matches its recorded install: **from a trusted Cairn checkout / release,
   run `python <cairn>/bootstrap/verify_integrity.py --target <your-repo>`** —
   a fail-closed SHA-256 check of every file in your tree against its
-  `dev/cairn-lock.yml`, flagging any post-install modification. (Integrity
+  `dev/.cairn/cairn-lock.yml`, flagging any post-install modification. (Integrity
   verification is a Cairn-bootstrap operation run against your repo, like
   `scaffold` / `upgrade` — the verifier ships with Cairn's bootstrap, not
   into your tree.)

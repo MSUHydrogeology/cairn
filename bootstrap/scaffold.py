@@ -2446,14 +2446,19 @@ def _find_cairn_root(script_path: Path) -> Path:
 # token- + slot-aware 3-way merge).  See ``bootstrap/UPGRADE.md`` and the
 # the source ``cairn-module-upgrade-3way-merge`` plan.
 #
-#   * ``dev/cairn-lock.yml`` -- a *visible*, *tracked* machine lockfile
-#     (R2): the upgrade ancestor + the install-side provenance record.
+#   * ``dev/.cairn/cairn-lock.yml`` -- a *tracked* machine lockfile: the upgrade
+#     ancestor + the install-side provenance record.  Tool-owned (only
+#     ``scaffold.py`` reads/writes it), not a human-readable document, so it
+#     lives with the other Cairn machinery under ``dev/.cairn/`` rather than at
+#     the ``dev/`` root.  (Reverses the original R2 "visible at dev/ root"
+#     placement: a ``.cairn/`` dotfolder does not hide the file from agents, and
+#     keeping it out of the ``dev/`` listing leaves that listing human-meaningful.)
 #   * ``dev/.cairn/base/`` -- a *tracked* cache of the **raw** upstream
 #     templates for the mergeable ``.md`` installs (R1/I4): so the merge's
 #     ``base`` is on disk under any distribution mode (no Cairn git history
 #     needed) and only the mergeable set is shadow-copied.
 
-_LOCKFILE_REL = "dev/cairn-lock.yml"        # visible + tracked (R2)
+_LOCKFILE_REL = "dev/.cairn/cairn-lock.yml"        # tracked machinery (in .cairn/ with its kin)
 _BASE_CACHE_REL = "dev/.cairn/base"         # tracked raw-template cache (R1/I4)
 _LOCK_SCHEMA = 1
 
@@ -2531,7 +2536,7 @@ def _emit_lock_yaml(data: dict[str, Any]) -> str:
 
 
 def read_lockfile(target: Path) -> dict[str, Any] | None:
-    """Read ``<target>/dev/cairn-lock.yml`` (or None if absent/unparseable).
+    """Read ``<target>/dev/.cairn/cairn-lock.yml`` (or None if absent/unparseable).
 
     Strips ``#`` comment lines, then parses the JSON body (the format
     :func:`_emit_lock_yaml` writes)."""
@@ -2581,7 +2586,7 @@ def write_install_lockfile(
     allow_secret_tokens: tuple[str, ...] = (),
     onboarding_preset: str | None = None,
 ) -> dict[str, Any] | None:
-    """Write ``dev/cairn-lock.yml`` + the scoped base-template cache.
+    """Write ``dev/.cairn/cairn-lock.yml`` + the scoped base-template cache.
 
     **Fail-closed (P-1)**: a lockfile must record a *clean* ancestor, so
     this refuses (returns ``None``, prints guidance) if any tracked file on
@@ -2691,6 +2696,7 @@ def write_install_lockfile(
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         cache_path.write_text(raw, encoding="utf-8")
     lock_path = target / _LOCKFILE_REL
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
     _assert_safe_write(lock_path, target)
     lock_path.parent.mkdir(parents=True, exist_ok=True)
     lock_path.write_text(_emit_lock_yaml(lock), encoding="utf-8")
@@ -3454,6 +3460,7 @@ def _cmd_init_lock(
     }
     lock_path = target / _LOCKFILE_REL
     lock_path.parent.mkdir(parents=True, exist_ok=True)
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
     lock_path.write_text(_emit_lock_yaml(lock), encoding="utf-8")
     print(f"Wrote migrated {_LOCKFILE_REL} ({len(records)} files).")
     print(f"  verbatim scripts (hash-tracked): "
@@ -3537,6 +3544,7 @@ def _cmd_adopt_module(
 
     lock["files"] = new_files
     lock["modules"] = sorted(set(lock.get("modules", [])) | {name})
+    (target / _LOCKFILE_REL).parent.mkdir(parents=True, exist_ok=True)
     (target / _LOCKFILE_REL).write_text(_emit_lock_yaml(lock), encoding="utf-8")
     seeded = seed_gitignore(target, _GITIGNORE_SEEDS.get(name, ()))
     note = f"; seeded .gitignore: {', '.join(seeded)}" if seeded else ""
@@ -3690,6 +3698,7 @@ def _apply_upgrade(
                 rec["base_hash"] = "sha256:" + _sha256_hex(cache_abs.read_bytes())
         new_files.append(rec)
     new_lock["files"] = new_files
+    (target / _LOCKFILE_REL).parent.mkdir(parents=True, exist_ok=True)
     (target / _LOCKFILE_REL).write_text(_emit_lock_yaml(new_lock), encoding="utf-8")
 
     # #47: a newly-added skill needs its vendor fan-out (e.g. .claude/skills ->
@@ -4282,7 +4291,7 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     # Write the install lockfile + base-template cache: the upgrade
-    # ancestor anchor (dev/cairn-lock.yml + dev/.cairn/base/).  Fail-closed
+    # ancestor anchor (dev/.cairn/cairn-lock.yml + dev/.cairn/base/).  Fail-closed
     # if the tree diverges from a clean install (P-1) -- then it points the
     # user at `upgrade --init-lock` and the install still succeeds.
     lock_profile: dict[str, Any] = {"preset": cfg.get("preset")}

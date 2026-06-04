@@ -7,7 +7,7 @@ tests against synthetic adopter-tree state.  The four triggers:
 
 * ``level-0-to-1`` -- adopter has shipped at least one proposal
   through archive (``>= 1`` file in ``dev/proposals/archive/``).
-* ``level-1-to-2`` -- ``dev/cairn-lock.yml`` exists.
+* ``level-1-to-2`` -- ``dev/.cairn/cairn-lock.yml`` exists.
 * ``level-1-deepen`` -- archived-proposal + archived-plan count
   thresholds met AND ``level-1-to-2`` NOT yet fired.
 * ``level-2-deepen`` -- archived-proposal + archived-plan count
@@ -126,7 +126,8 @@ class TestLevel1to2:
         self, helper: ModuleType, tmp_path: Path,
     ) -> None:
         _make_empty_tree(tmp_path)
-        (tmp_path / "dev" / "cairn-lock.yml").write_text("schema: 1\n")
+        (tmp_path / "dev" / ".cairn").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "dev" / ".cairn" / "cairn-lock.yml").write_text("schema: 1\n")
         fired = helper.evaluate_maturity_triggers(tmp_path)
         assert "level-1-to-2" in fired
 
@@ -159,7 +160,8 @@ class TestLevel1Deepen:
         self, helper: ModuleType, tmp_path: Path,
     ) -> None:
         _make_empty_tree(tmp_path)
-        (tmp_path / "dev" / "cairn-lock.yml").write_text("schema: 1\n")
+        (tmp_path / "dev" / ".cairn").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "dev" / ".cairn" / "cairn-lock.yml").write_text("schema: 1\n")
         _archive_proposals(
             tmp_path, helper.LEVEL_1_DEEPEN_PROPOSALS_THRESHOLD,
         )
@@ -190,7 +192,8 @@ class TestLevel2Deepen:
         self, helper: ModuleType, tmp_path: Path,
     ) -> None:
         _make_empty_tree(tmp_path)
-        (tmp_path / "dev" / "cairn-lock.yml").write_text("schema: 1\n")
+        (tmp_path / "dev" / ".cairn").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "dev" / ".cairn" / "cairn-lock.yml").write_text("schema: 1\n")
         _archive_proposals(
             tmp_path, helper.LEVEL_2_DEEPEN_PROPOSALS_THRESHOLD,
         )
@@ -214,7 +217,8 @@ class TestLevel2Deepen:
         self, helper: ModuleType, tmp_path: Path,
     ) -> None:
         _make_empty_tree(tmp_path)
-        (tmp_path / "dev" / "cairn-lock.yml").write_text("schema: 1\n")
+        (tmp_path / "dev" / ".cairn").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "dev" / ".cairn" / "cairn-lock.yml").write_text("schema: 1\n")
         # Only Level 1 deepen threshold met; not Level 2 deepen.
         _archive_proposals(
             tmp_path, helper.LEVEL_1_DEEPEN_PROPOSALS_THRESHOLD,

@@ -424,7 +424,7 @@ def evaluate_maturity_triggers(target: Path) -> set[str]:
       signal value; the real transition is "the adopter has begun
       using the lifecycle," for which the archived-proposal count
       is a stronger explicit-state signal.
-    * ``level-1-to-2`` -- ``dev/cairn-lock.yml`` present (canonical
+    * ``level-1-to-2`` -- ``dev/.cairn/cairn-lock.yml`` present (canonical
       Level 2 signal per ``bootstrap/UPGRADE.md`` doctrine).
     * ``level-1-deepen`` -- ``level-1-to-2`` NOT fired AND archived
       proposals >= LEVEL_1_DEEPEN_PROPOSALS_THRESHOLD AND archived
@@ -439,7 +439,7 @@ def evaluate_maturity_triggers(target: Path) -> set[str]:
     if archived_proposals_pre >= 1:
         out.add("level-0-to-1")
 
-    level_1_to_2 = (target / "dev" / "cairn-lock.yml").is_file()
+    level_1_to_2 = (target / "dev" / ".cairn" / "cairn-lock.yml").is_file()
     if level_1_to_2:
         out.add("level-1-to-2")
 

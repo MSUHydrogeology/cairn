@@ -2,7 +2,7 @@
 """Cairn install-integrity check -- on-disk files vs. the lockfile (R10).
 
 A Cairn install records every written file's SHA-256 in
-``dev/cairn-lock.yml`` (the module-upgrade arc owns that schema). This
+``dev/.cairn/cairn-lock.yml`` (the module-upgrade arc owns that schema). This
 command **verifies** an installed tree against it: it recomputes each
 recorded file's hash and reports any **mismatch** (a file modified after
 install -- e.g. a tampered shipped script) or **missing** file. It is a

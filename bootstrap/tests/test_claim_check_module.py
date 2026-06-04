@@ -122,7 +122,7 @@ class TestAllowGlobValidation:
         assert cc.allow_glob_error("dev/.cairn/base*") is None
 
     def test_fully_literal_path_allowed(self, cc):
-        assert cc.allow_glob_error("dev/cairn-lock.yml") is None
+        assert cc.allow_glob_error("dev/.cairn/cairn-lock.yml") is None
 
     def test_parse_multiple_globs_in_one_directive(self, cc):
         out = cc.parse_allow_directives(
@@ -145,8 +145,8 @@ class TestClaimCheckAllowDirective:
     def test_directive_exempts_matching_token(self, cc, tmp_path):
         _make_repo(tmp_path)
         text = (
-            "<!-- claim-check-allow: dev/cairn-lock.yml -->\n"
-            "see `dev/cairn-lock.yml` here"
+            "<!-- claim-check-allow: dev/.cairn/cairn-lock.yml -->\n"
+            "see `dev/.cairn/cairn-lock.yml` here"
         )
         hard, _ = cc.check_text(text, tmp_path)
         assert hard == []
@@ -156,13 +156,13 @@ class TestClaimCheckAllowDirective:
         _make_repo(tmp_path)
         doc = tmp_path / "d.md"
         doc.write_text(
-            "<!-- claim-check-allow: dev/cairn-lock.yml -->\n"
-            "see `dev/cairn-lock.yml`"
+            "<!-- claim-check-allow: dev/.cairn/cairn-lock.yml -->\n"
+            "see `dev/.cairn/cairn-lock.yml`"
         )
         result = cc.check_file(doc, tmp_path)
         assert result.hard_flags == []
         assert result.exempted == [
-            ("dev/cairn-lock.yml", "dev/cairn-lock.yml")
+            ("dev/.cairn/cairn-lock.yml", "dev/.cairn/cairn-lock.yml")
         ]
 
     def test_filename_stem_glob_exempts_matching_token(self, cc, tmp_path):
@@ -193,7 +193,7 @@ class TestClaimCheckAllowDirective:
         _make_repo(tmp_path)
         text = (
             "<!-- claim-check-allow: dev/* -->\n"
-            "see `dev/cairn-lock.yml`"
+            "see `dev/.cairn/cairn-lock.yml`"
         )
         hard, _ = cc.check_text(text, tmp_path)
         kinds = sorted(f.kind for f in hard)
@@ -206,20 +206,20 @@ class TestClaimCheckAllowDirective:
         _make_repo(tmp_path)
         doc = tmp_path / "d.md"
         doc.write_text(
-            "<!-- claim-check-allow: dev/cairn-lock.yml -->\n"
-            "see `dev/cairn-lock.yml`"
+            "<!-- claim-check-allow: dev/.cairn/cairn-lock.yml -->\n"
+            "see `dev/.cairn/cairn-lock.yml`"
         )
         rc = cc.main([str(doc), "--root", str(tmp_path)])
         assert rc == 0  # exemptions are not flags
         # The exemption report is on STDOUT (the primary success
         # artifact), not stderr.
         out = capsys.readouterr().out
-        assert "dev/cairn-lock.yml" in out
+        assert "dev/.cairn/cairn-lock.yml" in out
         assert "exempted" in out
 
     def test_no_directive_behaviour_unchanged(self, cc, tmp_path):
         _make_repo(tmp_path)
-        hard, _ = cc.check_text("see `dev/cairn-lock.yml`", tmp_path)
+        hard, _ = cc.check_text("see `dev/.cairn/cairn-lock.yml`", tmp_path)
         assert len(hard) == 1
         assert hard[0].kind == "path"
 

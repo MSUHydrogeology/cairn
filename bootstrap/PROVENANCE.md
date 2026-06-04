@@ -73,7 +73,7 @@ provenance posture the cut is expected to satisfy.
 
 Provenance has two sides. **Source-side** is the above: *which Cairn to
 trust* (a named, tagged release). **Install-side** is the machine
-lockfile `dev/cairn-lock.yml` (see [`UPGRADE.md`](UPGRADE.md)) that the
+lockfile `dev/.cairn/cairn-lock.yml` (see [`UPGRADE.md`](UPGRADE.md)) that the
 scaffold writes *into the adopter's tree*: *which Cairn this tree actually
 got* — the exact `cairn_version` + `cairn_commit`, the resolved profile,
 and the per-file source / hash. It makes "which Cairn is this tree?"

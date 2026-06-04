@@ -14,10 +14,10 @@ The fidelity-check is reproducible — given the same manifest, the
 same Cairn commit, and the same target state, it always produces the
 same result.
 
-## Relationship to the machine lockfile (`dev/cairn-lock.yml`)
+## Relationship to the machine lockfile (`dev/.cairn/cairn-lock.yml`)
 
 Once a tree is installed (or upgraded) with an upgrade-capable Cairn, it
-also carries a **machine lockfile**, `dev/cairn-lock.yml` (see
+also carries a **machine lockfile**, `dev/.cairn/cairn-lock.yml` (see
 [`UPGRADE.md`](UPGRADE.md)). The two are **one-way**, not two competing
 sources of truth:
 

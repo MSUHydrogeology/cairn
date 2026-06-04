@@ -85,10 +85,10 @@ class TestLockfile:
         assert _install(tmp_path) == 0
         (tmp_path / "AGENTS.md").write_text(
             (tmp_path / "AGENTS.md").read_text() + "\n<!-- local -->\n")
-        (tmp_path / "dev" / "cairn-lock.yml").unlink()
+        (tmp_path / "dev" / ".cairn" / "cairn-lock.yml").unlink()
         # re-run install (skips existing); lockfile must NOT be written
         assert _install(tmp_path) == 0
-        assert not (tmp_path / "dev" / "cairn-lock.yml").exists()
+        assert not (tmp_path / "dev" / ".cairn" / "cairn-lock.yml").exists()
 
     def test_secret_token_guard(self) -> None:
         # snake_case
@@ -466,7 +466,7 @@ class TestInitLock:
     def test_migrates_and_marks_unrecoverable(self, tmp_path: Path) -> None:
         assert _install(tmp_path) == 0
         # simulate a pre-lockfile tree
-        (tmp_path / "dev" / "cairn-lock.yml").unlink()
+        (tmp_path / "dev" / ".cairn" / "cairn-lock.yml").unlink()
         import shutil
         shutil.rmtree(tmp_path / "dev" / ".cairn")
         rc = s.main(["upgrade", "--target", str(tmp_path), "--init-lock",
@@ -480,7 +480,7 @@ class TestInitLock:
 
     def test_init_lock_then_plan_is_review_only(self, tmp_path: Path, capsys) -> None:
         assert _install(tmp_path) == 0
-        (tmp_path / "dev" / "cairn-lock.yml").unlink()
+        (tmp_path / "dev" / ".cairn" / "cairn-lock.yml").unlink()
         import shutil
         shutil.rmtree(tmp_path / "dev" / ".cairn")
         s.main(["upgrade", "--target", str(tmp_path), "--init-lock",
@@ -496,7 +496,7 @@ class TestInitLock:
         and tracked under its real dst, not dropped to untracked."""
         assert _install(tmp_path) == 0
         (tmp_path / "VENDOR.md").rename(tmp_path / "CLAUDE.md")  # adopter rename
-        (tmp_path / "dev" / "cairn-lock.yml").unlink()
+        (tmp_path / "dev" / ".cairn" / "cairn-lock.yml").unlink()
         import shutil
         shutil.rmtree(tmp_path / "dev" / ".cairn")
         assert s.main(["upgrade", "--target", str(tmp_path), "--init-lock",
@@ -514,7 +514,7 @@ class TestInitLock:
         never record a wrong file."""
         assert _install(tmp_path) == 0
         (tmp_path / "VENDOR.md").unlink()  # gone; no rename, no known wrapper
-        (tmp_path / "dev" / "cairn-lock.yml").unlink()
+        (tmp_path / "dev" / ".cairn" / "cairn-lock.yml").unlink()
         import shutil
         shutil.rmtree(tmp_path / "dev" / ".cairn")
         capsys.readouterr()
@@ -538,7 +538,7 @@ class TestReviewOnlyMerge:
         """Install, then synthesize a migrated lockfile -- so every
         token-substituted file is unrecoverable-base -> review-only."""
         assert _install(target) == 0
-        (target / "dev" / "cairn-lock.yml").unlink()
+        (target / "dev" / ".cairn" / "cairn-lock.yml").unlink()
         import shutil
         shutil.rmtree(target / "dev" / ".cairn")
         assert s.main(["upgrade", "--target", str(target), "--init-lock",
@@ -683,7 +683,8 @@ class TestAdoptModule:
         dsts = {sp.dst for sp in s._MODULE_MAPPINGS[self.NAME]}
         lock["modules"] = [m for m in lock["modules"] if m != self.NAME]
         lock["files"] = [r for r in lock["files"] if r["dst"] not in dsts]
-        (target / "dev" / "cairn-lock.yml").write_text(
+        (target / "dev" / ".cairn").mkdir(parents=True, exist_ok=True)
+        (target / "dev" / ".cairn" / "cairn-lock.yml").write_text(
             s._emit_lock_yaml(lock), encoding="utf-8")
         victim = sorted(dsts)[0]
         (target / victim).write_text("ADOPTER-FILLED\n", encoding="utf-8")

@@ -165,7 +165,7 @@ files you should recognise:
 * External-repo paths: `tools/lifecycle_metrics.py`, `scripts/claim_check.py` -- the
   default-on tool scripts (installed *into the target repo*; they
   do not exist as Cairn-tree paths).
-* `dev/cairn-lock.yml` plus the `dev/.cairn/base/` snapshot -- the
+* `dev/.cairn/cairn-lock.yml` plus the `dev/.cairn/base/` snapshot -- the
   upgrade-safety anchor; you do not need to read these.
 
 The scaffold also reports **20 unfilled block slots** -- placeholders

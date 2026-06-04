@@ -177,7 +177,7 @@ get the same review + scan.  See
 
 ## Rule 9 — No secret-bearing substitution tokens
 
-The install lockfile (`dev/cairn-lock.yml`; see [`UPGRADE.md`](UPGRADE.md))
+The install lockfile (`dev/.cairn/cairn-lock.yml`; see [`UPGRADE.md`](UPGRADE.md))
 records the **token values** substituted at install into a **tracked**
 file — so a substitution token that carried a secret would leak it into
 version control.  Therefore: **Cairn templates must not introduce

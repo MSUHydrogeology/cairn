@@ -6,7 +6,7 @@ A real scaffold of a scratch adopter repo must:
 * install both ``SKILL.md`` sources to ``.agents/skills/<name>/`` and the CLI to
   ``tools/lifecycle.py`` -- unconditionally, with no module selected (Decision
   5: skills install like core);
-* record each canonical skill artifact in ``dev/cairn-lock.yml`` -- the two
+* record each canonical skill artifact in ``dev/.cairn/cairn-lock.yml`` -- the two
   ``SKILL.md`` files non-verbatim (with a ``base_cache`` + ``base_hash`` -> the
   3-way-merge upgrade path) and ``tools/lifecycle.py`` verbatim (hash-only, no
   base cache) (Decision 4 / EP3);

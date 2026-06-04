@@ -13,7 +13,7 @@ trusted activation `description`), so security is a first-class acceptance gate:
 * **S3 path-containment** -- a crafted ``CAIRN_AGENT`` cannot redirect the
   reflection write outside ``dev/reflections/``.
 * **per-artifact integrity** -- each installed skill artifact's on-disk hash
-  matches the ``dev/cairn-lock.yml`` record (so an upgrade tells an adopter edit
+  matches the ``dev/.cairn/cairn-lock.yml`` record (so an upgrade tells an adopter edit
   from tampering).
 * **generated-output leak test (D6)** -- the tracked / installed artifacts carry
   no local path, IP, token, or maintainer alias.
