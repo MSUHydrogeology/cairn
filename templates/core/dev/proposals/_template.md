@@ -157,7 +157,7 @@ adversary review process scrutinize the amendment, which is the
 whole point of the system). Don't quietly edit the archived
 deliberation.
 
-## Triage — trivial vs. non-trivial
+## Triage: trivial vs. non-trivial
 
 A trivial fix — a typo, a one-line bug, an obvious correction — is
 just made; it needs no proposal. Open a proposal (rather than just
