@@ -34,6 +34,26 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **Richer lifecycle templates, folded up from the modflow_tools adopter** —
+  `templates/core/dev/proposals/_template.md` and
+  `templates/core/dev/plans/_template.md` gained the generally-useful
+  doctrine the modflow_tools deployment had developed inline: the
+  `Proposed paths:` forward-reference marker doctrine; archive preconditions
+  (every deferred follow-up needs a durable home + an auditable
+  `Follow-ups migrated to:` commit body); the file-move / append-only /
+  one-commit-per-transition detail; the plan triage rule + fast-multi-stage
+  sub-pattern; the plan mutability rule; the full optional pre-implementation
+  `## Plan review` apparatus (Format with LOAD-BEARING / important / nit
+  labels, Sharpening, multi-round); the code-review falsification ledger; the
+  lasting-truth evidence ledger; and the two disposition grammars. Cairn's own
+  newer sections (Registered-Report framing, the count-claims mechanism-(3)
+  guard, the doctrine-change rate-limit, the planning-handshake scope-fence)
+  are preserved. Project-specific bits became five new adopter slots
+  (`triage-extra-triggers`, `tests-tier-home`, `examples-smoke-home`,
+  `acceptance-doc-tooling`, `verification-commands`); the post-scaffold
+  block-slot count rose 15 -> 20 (`docs/quickstart.md` + the
+  quickstart-sequence test updated to match). Folded up during the
+  modflow_tools Cairn-adoption Phase-2 template reconciliation.
 - **Vendor-neutral lifecycle-routine skills** — the session-start /
   session-end routines are now **invokable skills** (the agentskills.io
   `SKILL.md` pair under `.agents/skills/`, with friendly aliases

@@ -209,15 +209,18 @@ class TestLayerAStepsOneThroughThree:
             assert (repo / relative).exists(), (
                 f"quickstart Step 3 should install {relative}; not present after run"
             )
-        # Step 3 says 15 block slots (bumped from 12 by Proposal D:
-        # documentation-plan default-on module added `documentation-
-        # discipline` to core AGENTS.md plus `documentation-tier-home`
-        # to both the proposal and plan templates -- 3 new slots).
+        # Step 3 says 20 block slots (bumped from 15 by the
+        # lifecycle-template fold-up: the proposal template gained
+        # `triage-extra-triggers`, `tests-tier-home`, and
+        # `examples-smoke-home`; the plan template gained
+        # `acceptance-doc-tooling` and `verification-commands` -- 5
+        # new adopter slots carrying the project-specific bits of the
+        # richer lifecycle doctrine folded up from modflow_tools).
         # Verify the count matches what the scaffold actually emitted
         # -- a drift between the prose and runtime is exactly what
         # this test exists to catch.
-        assert "Block slots requiring agent attention (15)" in result.stdout, (
-            "Step 3 prose says '15 unfilled block slots' -- count drifted; "
+        assert "Block slots requiring agent attention (20)" in result.stdout, (
+            "Step 3 prose says '20 unfilled block slots' -- count drifted; "
             "update the quickstart prose to match scaffold output:\n"
             f"{result.stdout}"
         )

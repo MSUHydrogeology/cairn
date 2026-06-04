@@ -168,7 +168,7 @@ files you should recognise:
 * `dev/cairn-lock.yml` plus the `dev/.cairn/base/` snapshot -- the
   upgrade-safety anchor; you do not need to read these.
 
-The scaffold also reports **15 unfilled block slots** -- placeholders
+The scaffold also reports **20 unfilled block slots** -- placeholders
 your agent will fill during dogfood.  See
 [`bootstrap/BOOTSTRAP.md`](../bootstrap/BOOTSTRAP.md) Act II-4 for the
 full filling pass.  For this quickstart we leave them; the trivial
