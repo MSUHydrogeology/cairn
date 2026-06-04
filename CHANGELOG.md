@@ -94,6 +94,19 @@ and a new empty `Unreleased` is started above.
 
 ### Changed
 
+- **Renamed vendor wrappers now upgrade cleanly (#45 follow-up).**  An
+  adopter that renames the thin `VENDOR.md` wrapper to their tool's file
+  (`CLAUDE.md`, `GEMINI.md`, …) and removes `VENDOR.md` previously saw a
+  spurious `review-only` "file missing on disk" for `VENDOR.md` on every
+  `scaffold.py upgrade`: `write_install_lockfile` records the wrapper under
+  its canonical `VENDOR.md` dst, and `_compute_upgrade` did not resolve the
+  rename for that existing lockfile entry (resolution existed only on the
+  `--init-lock` / new-core-file paths).  `_compute_upgrade` now reuses
+  `_resolve_vendor_wrapper` so the wrapper classifies under its real on-disk
+  name and 3-way-merges cleanly (the base cache stays keyed on `VENDOR.md`).
+  Surfaced by the modflow_tools adopter (the hardest-adopter test) during its
+  lockfile establishment.  Regression test:
+  `test_renamed_vendor_wrapper_resolves_on_standard_upgrade`.
 - **Reflections `<session>` and the intent log now share one session
   identity.**  `tools/intent.py` gains a `whoami` command — `whoami` prints
   the resolved per-session identity (the intent log's `agent` field);

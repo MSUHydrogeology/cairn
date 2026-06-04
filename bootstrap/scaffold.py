@@ -3036,6 +3036,21 @@ def _compute_upgrade(
         dst = rec["dst"]
         verbatim = bool(rec.get("verbatim"))
         src_rel = rec["src"]
+        # Renamed vendor wrapper (#45): the lockfile records the thin
+        # wrapper under its canonical dst ``VENDOR.md`` (``write_install_
+        # lockfile`` does not resolve the rename), but an adopter renames it
+        # to their tool's file (``CLAUDE.md`` etc.).  If ``VENDOR.md`` is
+        # absent on disk but a known wrapper is present, classify THAT file
+        # -- the base cache stays keyed on VENDOR.md (``rec["base_cache"]``),
+        # so the 3-way merge still recovers the clean ancestor.  Without this,
+        # a renamed-wrapper adopter sees a spurious ``review-only`` "file
+        # missing on disk" for VENDOR.md on every upgrade.
+        if src_rel == "core/VENDOR.md" and not (target / dst).exists():
+            resolved = _resolve_vendor_wrapper(
+                target, {r["dst"] for r in lock.get("files", [])},
+            )
+            if resolved is not None:
+                dst = resolved
         dst_abs = target / dst
         ours_bytes = dst_abs.read_bytes() if dst_abs.exists() else None
         theirs_b = _theirs_bytes(cairn_root, templates_root, src_rel, to_ref)

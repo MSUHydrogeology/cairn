@@ -350,6 +350,37 @@ class TestUpgradeModes:
             f"substituted base, upstream advanced); got {ag_plan.kind!r}"
         )
 
+    def test_renamed_vendor_wrapper_resolves_on_standard_upgrade(
+        self, tmp_path: Path
+    ) -> None:
+        """#45: on the *standard* upgrade path (an existing lockfile, not
+        ``--init-lock``), a wrapper the adopter renamed ``VENDOR.md ->
+        CLAUDE.md`` is classified under its real on-disk name (CLAUDE.md),
+        not flagged ``review-only`` "file missing on disk" for the absent
+        VENDOR.md.  Without the resolution, a renamed-wrapper adopter (e.g.
+        modflow_tools, which uses CLAUDE.md) would see a spurious
+        review-only entry on every upgrade -- never a clean adopter.
+        ``write_install_lockfile`` records the wrapper under its canonical
+        VENDOR.md dst, so the fix lives in ``_compute_upgrade``.
+        """
+        assert _install(tmp_path) == 0
+        (tmp_path / "VENDOR.md").rename(tmp_path / "CLAUDE.md")  # adopter rename
+        lock = s.read_lockfile(tmp_path)
+        plans, _structural = s._compute_upgrade(
+            tmp_path, CAIRN_ROOT, TEMPLATES_ROOT, lock, to_ref=None,
+        )
+        claude_plan = next((p for p in plans if p.dst == "CLAUDE.md"), None)
+        assert claude_plan is not None, (
+            "the renamed wrapper was not resolved to CLAUDE.md"
+        )
+        assert claude_plan.kind not in ("review-only", "error"), (
+            f"renamed wrapper should classify clean; got {claude_plan.kind!r}"
+        )
+        assert not any(p.dst == "VENDOR.md" for p in plans), (
+            "no plan should reference the absent VENDOR.md once the rename "
+            "resolves to CLAUDE.md"
+        )
+
     def test_plan_summary_shows_distinct_labels(
         self, tmp_path: Path, capsys
     ) -> None:
