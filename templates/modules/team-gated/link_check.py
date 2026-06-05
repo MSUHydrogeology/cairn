@@ -293,6 +293,14 @@ def check_links(
                 _probe_external(md, lineno, target, flags,
                                 allow_hosts=allow_hosts)
             continue
+        if low.startswith('file://'):
+            # Machine-specific absolute target (e.g. a reviewer's
+            # `[text](file:///Users/.../x.py)` link). Not portably checkable --
+            # it resolves only against the author's local filesystem and would
+            # fail on CI -- so skip it, symmetric to the http(s) skip above.
+            # *Relative* links in the same docs cite real repo paths and stay
+            # checked; only the unportable absolute file:// scheme is skipped.
+            continue
         if low.startswith(('mailto:', 'tel:')) or target.startswith('<'):
             continue
 
@@ -360,21 +368,37 @@ EPHEMERAL_SOURCE_DIRS = (Path('dev') / 'reflections',)
 
 
 def filter_sources(files: list[Path], root: Path, *,
-                   include_archives: bool = False) -> list[Path]:
-    """Drop archive / ephemeral SOURCES from the whole-tree scan set.
+                   include_archives: bool = False,
+                   include_modules: bool = False,
+                   include_cairn: bool = False) -> list[Path]:
+    """Drop not-adopter-authored SOURCES from the whole-tree scan set.
 
-    Unless ``include_archives`` is set, skip sources under any
-    ``dev/**/archive/`` directory (historical records -- links rot by
-    design) and under ``dev/reflections/`` (ephemeral, gitignored,
-    pruned).  The exclusion filters *sources* only: a live doc linking
-    *to* an archived file is still validated by ``check_links``.
+    Four classes of source are skipped by default (each independently
+    re-includable), because their links are *not* adopter-authored content the
+    gate should hold green:
 
-    Anchored to ``dev/`` as the first path segment so ``docs/`` stays
-    fully link-gated, and matches an ``archive`` segment at any depth so
-    nested archive subdirs (e.g. ``dev/plans/archive/<program>/``) are
-    covered too.  Mirrors modflow_tools' ``verify_doc_links`` (the
-    reference deployment) so a Cairn deployment and its checker behave
-    identically.
+    * ``dev/**/archive/`` -- historical records; links rot by design
+      (``--include-archives``).
+    * ``dev/modules/`` -- **vendored** Cairn module docs whose internal links
+      target the *Cairn-install layout* (``doctrine/…``, the module's own
+      tooling), so they always false-positive in an adopter tree
+      (``--include-modules``).
+    * ``dev/.cairn/`` -- **tool-owned** machinery, including the ``base/``
+      upgrade-ancestor cache of tracked templates (``--include-cairn``).
+    * ``dev/reflections/`` -- ephemeral, gitignored, pruned.
+
+    The exclusion filters *sources* only: a live doc linking *to* an archived /
+    module / ``.cairn`` file is still validated by ``check_links``.
+
+    Each rule is **root-anchored**: ``dev/modules`` and ``dev/.cairn`` match the
+    first two path segments (``rel.parent.parts[:2]``), so a user dir named
+    ``modules`` nested elsewhere (e.g. ``<package>/modules/``) is never
+    over-excluded; ``archive`` matches the segment at any depth under ``dev/``
+    so nested archive subdirs are covered.
+
+    ``--include-archives`` is the **completeness escape hatch** (scan absolutely
+    everything, the pre-existing behavior); ``--include-modules`` /
+    ``--include-cairn`` re-include just their own class.
     """
     if include_archives:
         return files
@@ -386,6 +410,10 @@ def filter_sources(files: list[Path], root: Path, *,
             return False
         parent_parts = rel.parent.parts
         if parent_parts and parent_parts[0] == 'dev' and 'archive' in parent_parts:
+            return True
+        if not include_modules and parent_parts[:2] == ('dev', 'modules'):
+            return True
+        if not include_cairn and parent_parts[:2] == ('dev', '.cairn'):
             return True
         rel_parent = rel.parent
         return any(
@@ -440,6 +468,14 @@ def main(argv: list[str] | None = None) -> int:
                              '(ephemeral, gitignored). Off by default: '
                              'archived links rot by design. Ignored when '
                              'explicit files are named.')
+    parser.add_argument('--include-modules', action='store_true',
+                        help='Also scan vendored module docs under dev/modules/ '
+                             '(whose links target the Cairn-install layout). '
+                             'Off by default. Ignored when explicit files are named.')
+    parser.add_argument('--include-cairn', action='store_true',
+                        help='Also scan tool-owned dev/.cairn/ (machinery + the '
+                             'base/ upgrade-ancestor template cache). Off by '
+                             'default. Ignored when explicit files are named.')
     args = parser.parse_args(argv)
 
     root = args.root.resolve() if args.root else repo_root()
@@ -452,6 +488,8 @@ def main(argv: list[str] | None = None) -> int:
         files = filter_sources(
             tracked_markdown(root), root,
             include_archives=args.include_archives,
+            include_modules=args.include_modules,
+            include_cairn=args.include_cairn,
         )
     if not files:
         print('link_check: no Markdown files found.', file=sys.stderr)

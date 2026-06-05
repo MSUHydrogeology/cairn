@@ -61,8 +61,17 @@ verbatim-install pattern). Two stdlib-only scripts land in the target's
 * **`link_check.py`** -- the link / anchor half of the gate. Confirms
   every internal Markdown link, image, and reference definition resolves
   (relative targets exist; heading anchors resolve under GitHub slug
-  rules). Vendor-neutral; external links are skipped unless
-  `--check-external`.
+  rules). Vendor-neutral; `http(s)` external links and `file://`
+  (machine-specific, unportable) targets are skipped (the former probed
+  only under `--check-external`). The whole-tree scan excludes
+  not-adopter-authored **sources** by default -- `dev/**/archive/`
+  (historical), vendored `dev/modules/` (links target the Cairn-install
+  layout), tool-owned `dev/.cairn/` (machinery + the `base/`
+  upgrade-ancestor cache), and `dev/reflections/` (ephemeral) -- each
+  re-includable (`--include-archives` / `--include-modules` /
+  `--include-cairn`); the exclusions are **root-anchored** so a user dir
+  named `modules` nested elsewhere is never over-excluded, and a live doc
+  linking *to* an excluded file is still validated.
 * **`sync_doc_snippets.py`** -- the snippet half. A fenced doc block is
   mirrored from a named region of a runnable source file
   (`<!-- snippet: src#region -->` in the doc; `snippet-start: region` /

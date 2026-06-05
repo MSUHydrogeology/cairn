@@ -34,6 +34,21 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **`link_check.py`: skip `file://` targets + exclude vendored/tool-owned
+  sources by default.** Three behavior changes folded up from the modflow_tools
+  retire-`verify_doc_links` arc so every adopter's whole-tree doc-link gate is
+  adoption-clean: (1) `file://`-scheme link targets are **skipped** (machine-
+  specific reviewer links, not portably checkable — symmetric to the `http(s)`
+  skip), so a reviewed proposal carrying `[text](file:///…)` links no longer
+  reds the gate; (2) `dev/modules/` (vendored module docs whose links target the
+  Cairn-install layout) and (3) `dev/.cairn/` (tool-owned machinery + the
+  `base/` upgrade-ancestor template cache) are **excluded** by default — both
+  **root-anchored** (first two path segments) so a `modules/` dir nested
+  elsewhere is never over-excluded — with `--include-modules` / `--include-cairn`
+  opt-ins. New `bootstrap/tests/test_link_check_exclusions.py`. Source:
+  modflow_tools `dev/plans/archive/2026-06-04-claude-retire-verify-doc-links.md`
+  (Part A) + the ER1/P2 plan-review.
+
 - **Token-efficiency Phase 1 — measure + cap (A1) + the core-template router cut
   (A2.1).** `scripts/token_budget.py` measures the **always-on load manifest**
   (the files a harness auto-loads every turn — not invoked-on-demand skills),
