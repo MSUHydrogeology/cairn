@@ -692,6 +692,10 @@ _CORE_MAPPINGS: tuple[tuple[str, str], ...] = (
     ("core/dev/agent_collaboration.md",             "dev/agent_collaboration.md"),
     ("core/dev/proposals/_template.md",             "dev/proposals/_template.md"),
     ("core/dev/plans/_template.md",                 "dev/plans/_template.md"),
+    # Self-instrumentation home (measurement-folder standard): a core dir
+    # carried by its README, which states the membership rule.  Same shape as
+    # proposals/ + plans/ (a core dir installed via its content file).
+    ("core/dev/measurement/README.md",              "dev/measurement/README.md"),
 )
 
 #: Lifecycle-routine skills install **unconditionally, like core/** -- the
