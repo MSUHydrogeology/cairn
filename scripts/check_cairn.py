@@ -357,11 +357,22 @@ _MD_LINK_TARGET_RE = re.compile(r'\]\(([^)\s]+)\)')
 
 
 def _parse_allow_spec(spec: str) -> set[str]:
-    """Path-like tokens (containing ``/``) listed before an optional
-    ``reason=`` in a ``cairn-internal-ref`` marker."""
-    spec = spec.split('reason=')[0]
-    return {t.rstrip('.,;:') for t in re.split(r'[\s,]+', spec)
-            if t.strip() and '/' in t}
+    """Path tokens listed before an optional ``reason=`` in a
+    ``cairn-internal-ref`` marker. A token needs a path separator
+    (``doctrine/dual-review.md``, or the bare prefix ``doctrine/``); a stray
+    prose word is ignored. **R1:** a bare directory name that *matches a known
+    internal prefix* (e.g. ``doctrine``) is normalized to ``doctrine/`` so an
+    operator who omits the trailing slash is not silently dropped."""
+    out: set[str] = set()
+    for raw in re.split(r'[\s,]+', spec.split('reason=')[0]):
+        tok = raw.strip().rstrip('.,;:')
+        if not tok:
+            continue
+        if '/' in tok:
+            out.add(tok)
+        elif any(prefix == tok + '/' for prefix in _CAIRN_INTERNAL_PREFIXES):
+            out.add(tok + '/')
+    return out
 
 
 def _ref_is_internal(tok: str) -> str | None:

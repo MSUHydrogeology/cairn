@@ -98,6 +98,17 @@ class TestDanglingRefGate:
         assert len(flags) == 1, "only the unlisted doctrine/lifecycle.md flags"
         assert "doctrine/lifecycle.md" in flags[0].message
 
+    def test_bare_prefix_marker_normalizes(self, tmp_path: Path) -> None:
+        """R1: a bare directory token matching a known internal prefix
+        (``doctrine``, no trailing slash) is normalized to ``doctrine/`` and
+        exempts, rather than being silently dropped."""
+        body = (
+            "<!-- cairn-internal-ref-allow: doctrine reason=blanket -->\n"
+            "See `doctrine/dual-review.md` and `doctrine/lifecycle.md`.\n"
+        )
+        md = _tmpl(tmp_path, body)
+        assert not _loop_flags(check_cairn.check_tree(tmp_path, [md]))
+
     def test_check_cairn_exits_nonzero_on_dangling_ref(self, tmp_path: Path) -> None:
         """End-to-end fail-closed: the CLI returns non-zero (1) when an
         adopter-facing surface carries an un-exempted dangling reference."""
