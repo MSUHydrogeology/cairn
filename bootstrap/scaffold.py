@@ -2481,7 +2481,15 @@ def _find_cairn_root(script_path: Path) -> Path:
 
 _LOCKFILE_REL = "dev/.cairn/cairn-lock.yml"        # tracked machinery (in .cairn/ with its kin)
 _BASE_CACHE_REL = "dev/.cairn/base"         # tracked raw-template cache (R1/I4)
+_PROFILE_REL = "dev/.cairn/profile.yml"     # canonical committed install-config (BOOTSTRAP.md)
 _LOCK_SCHEMA = 1
+
+#: Directories searched (in order) for an adopter's fidelity manifest when
+#: recovering ``cairn_commit`` / checking the citation.  ``dev/.cairn/`` is the
+#: canonical home (the adoption-state-home convention); ``dev/strategy/`` is the
+#: legacy home, kept indefinitely for un-migrated adopters with a migration
+#: advisory at the call site.
+_MANIFEST_SEARCH_DIRS = ("dev/.cairn", "dev/strategy")
 
 #: Lockfile records for these dsts carry ``living_state: true`` and are
 #: **tracked for upgrade but excluded from the ``verify_integrity`` hash
@@ -3499,6 +3507,135 @@ def _resolve_vendor_wrapper(
     return None
 
 
+def _find_manifest_path(target: Path) -> tuple[Path, bool] | None:
+    """Locate the adopter's fidelity manifest, searching `dev/.cairn/` first
+    (the canonical adoption-state home), then the legacy `dev/strategy/`. Returns
+    ``(path, is_legacy)`` or ``None``."""
+    for idx, rel in enumerate(_MANIFEST_SEARCH_DIRS):
+        d = target / rel
+        if not d.is_dir():
+            continue
+        for c in sorted(d.glob("*manifest*")):
+            if c.is_file():
+                return c, idx > 0
+    return None
+
+
+def _manifest_cairn_commit(target: Path) -> str:
+    """Best-effort ``cairn_commit`` recovered from the fidelity manifest, or
+    ``"unknown"`` (B1: `dev/.cairn/` first, legacy `dev/strategy/` fallback with
+    a migration advisory)."""
+    found = _find_manifest_path(target)
+    if found is None:
+        return "unknown"
+    path, is_legacy = found
+    if is_legacy:
+        print(f"  [advisory] fidelity manifest found in the legacy "
+              f"`dev/strategy/` home ({path.name}); move it to `dev/.cairn/` "
+              "(the adoption-state home).", file=sys.stderr)
+    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        m = re.match(r'\s*cairn_commit\s*:\s*"?([0-9a-f]{7,40})"?', line)
+        if m:
+            return m.group(1)
+    return "unknown"
+
+
+def _infer_init_lock_axes(target: Path) -> dict[str, str]:
+    """Structurally-inferable axis prefill for `init-lock` (R3 + S1): the axes a
+    tree's installed modules / files determine. `size` / `complexity` are human
+    judgments, left as placeholders."""
+    def _mod(name: str) -> bool:
+        return (target / "dev" / "modules" / f"{name}.md").is_file()
+    axes: dict[str, str] = {}
+    if _mod("dual-review"):
+        axes["agent_team"] = "concurrent-multi-type"
+    elif _mod("coordination-tiers"):
+        axes["agent_team"] = "concurrent-single-type"
+    else:
+        axes["agent_team"] = "single"
+    axes["human_team"] = (
+        "small-multi" if (target / "CONTRIBUTING.md").is_file() else "solo")
+    axes["language"] = "multi" if _mod("dual-language-tests") else "single"
+    axes["age"] = "legacy" if _mod("legacy-agent") else "greenfield"
+    return axes
+
+
+#: Axes `init-lock` cannot structurally infer -- the operator fills these between
+#: the two runs (R2). Each placeholder names its allowed values.
+_AXIS_PLACEHOLDERS: dict[str, str] = {
+    "size": "<small|medium|large>",
+    "complexity": "<simple|moderate|complex>",
+}
+_INIT_LOCK_TOKEN_PLACEHOLDERS: dict[str, str] = {
+    "project_name": "<your project name>",
+    "test_command": "<your test command, e.g. pytest>",
+}
+
+
+def _resolve_lock_profile_fields(
+    cfg: dict[str, Any],
+) -> tuple[dict[str, Any], dict[str, str], list[str], dict[str, str]]:
+    """From a parsed profile config, build the lockfile ``profile`` block + token
+    map, and report *missing* / *invalid* axes (validated against ``_AXES`` --
+    S2). Mirrors the install path so a `init-lock`'d lockfile matches a
+    `--config` one. Raises ``PresetError`` on an unknown preset."""
+    tokens = {k: str(v) for k, v in cfg.items()
+              if isinstance(k, str) and k in KNOWN_TOKENS and v}
+    if cfg.get("preset"):
+        resolved: dict[str, Any] = dict(resolve_axes(str(cfg["preset"]), cfg))
+    else:
+        resolved = {a: cfg.get(a) for a in _AXES if cfg.get(a) is not None}
+    missing = [a for a in _AXES if not resolved.get(a)]
+    invalid = {a: str(resolved[a]) for a in _AXES
+               if resolved.get(a) is not None and str(resolved[a]) not in _AXES[a]}
+    lock_profile: dict[str, Any] = {
+        "preset": cfg.get("preset"),
+        "axes": {a: resolved[a] for a in _AXES if resolved.get(a) is not None},
+    }
+    return lock_profile, tokens, missing, invalid
+
+
+def _write_init_lock_profile_template(target: Path) -> int:
+    """First `init-lock` run with no committed config: write a
+    ``dev/.cairn/profile.yml`` prefilled with the structurally-inferable axes +
+    placeholders for the rest, then **fail loud** (exit non-zero, no lockfile) so
+    the operator completes it and re-runs (R2 step 1)."""
+    profile_path = target / _PROFILE_REL
+    inferred = _infer_init_lock_axes(target)
+    modules = sorted(m for m in _MODULE_MAPPINGS
+                     if (target / "dev" / "modules" / f"{m}.md").is_file())
+    lines = [
+        "# Cairn install-config (profile.yml).",
+        "# Materialized by `upgrade --init-lock`: structurally-inferable axes are",
+        "# prefilled; replace every <...> placeholder with a real value, then",
+        "# re-run `upgrade --init-lock` to write the lockfile.",
+        "",
+        f'project_name: "{_INIT_LOCK_TOKEN_PLACEHOLDERS["project_name"]}"',
+        f'test_command: "{_INIT_LOCK_TOKEN_PLACEHOLDERS["test_command"]}"',
+        "",
+        "# Six-axis dimension profile (all required):",
+    ]
+    for a in _AXES:
+        if a in inferred:
+            lines.append(f"{a}: {inferred[a]}")
+        else:
+            lines.append(f"{a}: {_AXIS_PLACEHOLDERS[a]}")
+    lines += ["", "# Installed modules (inferred from dev/modules/):", "modules:"]
+    lines += [f"  - {m}" for m in modules]
+    profile_path.parent.mkdir(parents=True, exist_ok=True)
+    profile_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    n_ph = len(_AXIS_PLACEHOLDERS) + len(_INIT_LOCK_TOKEN_PLACEHOLDERS)
+    print(
+        f"Wrote {_PROFILE_REL}: {len(inferred)} axis(es) inferred, {n_ph} "
+        "placeholder(s) to fill (project_name, test_command, "
+        f"{', '.join(_AXIS_PLACEHOLDERS)}).\n"
+        "  Replace every <...> value, then re-run `upgrade --init-lock`. "
+        "No lockfile was written (fail-with-template).",
+        file=sys.stderr,
+    )
+    return 2
+
+
 def _cmd_init_lock(
     target: Path, cairn_root: Path, templates_root: Path,
 ) -> int:
@@ -3513,15 +3650,42 @@ def _cmd_init_lock(
         print(f"  [info] {_LOCKFILE_REL} already exists; nothing to migrate.",
               file=sys.stderr)
         return 0
-    # Best-effort cairn_commit from a fidelity manifest, if present.
-    commit = "unknown"
-    for c in list((target / "dev" / "strategy").glob("*")):
-        if c.is_file():
-            for line in c.read_text(encoding="utf-8", errors="replace").splitlines():
-                m = re.match(r'\s*cairn_commit\s*:\s*"?([0-9a-f]{7,40})"?', line)
-                if m:
-                    commit = m.group(1)
-                    break
+    # Arm A (init-lock-full-profile): resolve the full six-axis profile + tokens
+    # so the synthesized lockfile is never a gating-only stub. With no committed
+    # config, fail-with-template (R2); with one, validate it (S2) before use.
+    profile_path = target / _PROFILE_REL
+    if not profile_path.is_file():
+        return _write_init_lock_profile_template(target)
+    try:
+        cfg = load_config(profile_path)
+    except Exception as exc:  # noqa: BLE001 -- surface any YAML/read error
+        print(f"error loading {_PROFILE_REL}: {exc}", file=sys.stderr)
+        return 1
+    try:
+        lock_profile, tokens, missing, invalid = _resolve_lock_profile_fields(cfg)
+    except PresetError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    placeholder_tokens = sorted(
+        k for k, v in tokens.items()
+        if v.strip().startswith("<") and v.strip().endswith(">"))
+    if missing or invalid or placeholder_tokens:
+        parts: list[str] = []
+        if missing:
+            parts.append(f"missing axis(es): {', '.join(missing)}")
+        if invalid:
+            parts.append("invalid axis value(s): " + ", ".join(
+                f"{a}={v!r} (allowed: {'/'.join(_AXES[a])})"
+                for a, v in invalid.items()))
+        if placeholder_tokens:
+            parts.append(
+                f"unfilled placeholder(s): {', '.join(placeholder_tokens)}")
+        print(f"error: {_PROFILE_REL} is incomplete -- " + "; ".join(parts) +
+              ".\n  Fill every value (axes validated against their allowed "
+              "values), then re-run `upgrade --init-lock`.", file=sys.stderr)
+        return 1
+    # cairn_commit recovery (B1: dev/.cairn/ first, legacy dev/strategy/ fallback).
+    commit = _manifest_cairn_commit(target)
     records: list[dict[str, Any]] = []
     classification: dict[str, list[str]] = {"verbatim": [], "unrecoverable-base": []}
     entries = _lock_file_list(list(_MODULE_MAPPINGS), [])
@@ -3560,10 +3724,10 @@ def _cmd_init_lock(
     lock = {
         "schema": _LOCK_SCHEMA, "migrated": True,
         "cairn_version": _cairn_version(cairn_root), "cairn_commit": commit,
-        "profile": {}, "modules": sorted(
+        "profile": lock_profile, "modules": sorted(
             m for m in _MODULE_MAPPINGS
             if (target / "dev" / "modules" / f"{m}.md").exists()),
-        "optional_templates": [], "tokens": {}, "files": records,
+        "optional_templates": [], "tokens": dict(tokens), "files": records,
     }
     lock_path = target / _LOCKFILE_REL
     lock_path.parent.mkdir(parents=True, exist_ok=True)

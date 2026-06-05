@@ -51,6 +51,20 @@ def _install(target: Path, preset: str = "solo-greenfield") -> int:
     ])
 
 
+def _seed_profile(target: Path, **overrides: str) -> Path:
+    """Write a complete six-axis dev/.cairn/profile.yml so `init-lock` can run
+    (init-lock now requires a committed install-config)."""
+    axes = {"age": "greenfield", "size": "small", "complexity": "simple",
+            "language": "single", "human_team": "solo", "agent_team": "single"}
+    axes.update(overrides)
+    lines = ['project_name: "Demo"', 'test_command: "pytest"']
+    lines += [f"{k}: {v}" for k, v in axes.items()]
+    p = target / "dev" / ".cairn" / "profile.yml"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return p
+
+
 # ---------------------------------------------------------------------------
 # Lockfile + base cache (Ch1; P-1/P-6/R9)
 # ---------------------------------------------------------------------------
@@ -556,6 +570,7 @@ class TestInitLock:
         (tmp_path / "dev" / ".cairn" / "cairn-lock.yml").unlink()
         import shutil
         shutil.rmtree(tmp_path / "dev" / ".cairn")
+        _seed_profile(tmp_path)
         rc = s.main(["upgrade", "--target", str(tmp_path), "--init-lock",
                      "--cairn-root", str(CAIRN_ROOT)])
         assert rc == 0
@@ -570,6 +585,7 @@ class TestInitLock:
         (tmp_path / "dev" / ".cairn" / "cairn-lock.yml").unlink()
         import shutil
         shutil.rmtree(tmp_path / "dev" / ".cairn")
+        _seed_profile(tmp_path)
         s.main(["upgrade", "--target", str(tmp_path), "--init-lock",
                 "--cairn-root", str(CAIRN_ROOT)])
         capsys.readouterr()
@@ -586,6 +602,7 @@ class TestInitLock:
         (tmp_path / "dev" / ".cairn" / "cairn-lock.yml").unlink()
         import shutil
         shutil.rmtree(tmp_path / "dev" / ".cairn")
+        _seed_profile(tmp_path)
         assert s.main(["upgrade", "--target", str(tmp_path), "--init-lock",
                        "--cairn-root", str(CAIRN_ROOT)]) == 0
         lock = s.read_lockfile(tmp_path)
@@ -604,6 +621,7 @@ class TestInitLock:
         (tmp_path / "dev" / ".cairn" / "cairn-lock.yml").unlink()
         import shutil
         shutil.rmtree(tmp_path / "dev" / ".cairn")
+        _seed_profile(tmp_path)
         capsys.readouterr()
         assert s.main(["upgrade", "--target", str(tmp_path), "--init-lock",
                        "--cairn-root", str(CAIRN_ROOT)]) == 0
@@ -612,6 +630,95 @@ class TestInitLock:
         dsts = {r["dst"] for r in s.read_lockfile(tmp_path)["files"]}
         assert "VENDOR.md" not in dsts
         assert not (dsts & set(s._KNOWN_VENDOR_WRAPPERS))  # no wrong-file record
+
+
+class TestInitLockFullProfile:
+    """init-lock-full-profile (Arm A) + B1: init-lock embeds the **full six-axis**
+    profile (fail-with-template when no config; validate axes against `_AXES`) and
+    recovers `cairn_commit` from the `dev/.cairn/` manifest home (legacy
+    `dev/strategy/` fallback)."""
+
+    def _prelock(self, tmp_path: Path) -> None:
+        assert _install(tmp_path) == 0
+        import shutil
+        shutil.rmtree(tmp_path / "dev" / ".cairn")  # simulate a pre-lockfile tree
+
+    def test_no_config_writes_template_and_fails(self, tmp_path: Path) -> None:
+        """(R2 step 1) No committed config -> prefill template + fail loud, no
+        lockfile."""
+        self._prelock(tmp_path)
+        rc = s.main(["upgrade", "--target", str(tmp_path), "--init-lock",
+                     "--cairn-root", str(CAIRN_ROOT)])
+        assert rc != 0
+        assert s.read_lockfile(tmp_path) is None  # no lockfile written
+        prof = (tmp_path / "dev" / ".cairn" / "profile.yml").read_text()
+        assert "<small|medium|large>" in prof       # size placeholder surfaced
+        assert "age: greenfield" in prof            # S1: inferred (no legacy-agent.md)
+        assert "agent_team: single" in prof         # R3: inferred
+
+    def test_with_config_embeds_full_profile(self, tmp_path: Path) -> None:
+        """(R2 steps 2-3) A complete config -> all six axes + tokens embedded."""
+        self._prelock(tmp_path)
+        _seed_profile(tmp_path, size="large", complexity="complex")
+        assert s.main(["upgrade", "--target", str(tmp_path), "--init-lock",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        lock = s.read_lockfile(tmp_path)
+        axes = lock["profile"]["axes"]
+        assert set(axes) == set(s._AXES)            # all six, never a stub
+        assert axes["size"] == "large" and axes["complexity"] == "complex"
+        assert lock["tokens"]["project_name"] == "Demo"  # tokens recovered
+
+    def test_incomplete_config_fails(self, tmp_path: Path, capsys) -> None:
+        self._prelock(tmp_path)
+        (tmp_path / "dev" / ".cairn").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "dev" / ".cairn" / "profile.yml").write_text(
+            'project_name: "Demo"\ntest_command: "pytest"\nage: greenfield\n')
+        rc = s.main(["upgrade", "--target", str(tmp_path), "--init-lock",
+                     "--cairn-root", str(CAIRN_ROOT)])
+        assert rc == 1 and s.read_lockfile(tmp_path) is None
+        assert "missing axis" in capsys.readouterr().err
+
+    def test_invalid_axis_value_fails(self, tmp_path: Path, capsys) -> None:
+        """(S2) A value outside `_AXES` is rejected, not just a placeholder."""
+        self._prelock(tmp_path)
+        _seed_profile(tmp_path, size="enormous")    # not in _AXES["size"]
+        rc = s.main(["upgrade", "--target", str(tmp_path), "--init-lock",
+                     "--cairn-root", str(CAIRN_ROOT)])
+        assert rc == 1 and s.read_lockfile(tmp_path) is None
+        assert "invalid axis" in capsys.readouterr().err
+
+    def test_unfilled_placeholder_token_fails(self, tmp_path: Path, capsys) -> None:
+        self._prelock(tmp_path)
+        p = _seed_profile(tmp_path)
+        p.write_text(p.read_text().replace('"Demo"', '"<your project name>"'))
+        rc = s.main(["upgrade", "--target", str(tmp_path), "--init-lock",
+                     "--cairn-root", str(CAIRN_ROOT)])
+        assert rc == 1 and "placeholder" in capsys.readouterr().err
+
+    def test_cairn_commit_from_cairn_home(self, tmp_path: Path) -> None:
+        """(B1) cairn_commit recovered from a `dev/.cairn/` manifest."""
+        self._prelock(tmp_path)
+        _seed_profile(tmp_path)
+        (tmp_path / "dev" / ".cairn" / "demo-fidelity-manifest.yml").write_text(
+            'cairn_commit: "abc1234"\n')
+        assert s.main(["upgrade", "--target", str(tmp_path), "--init-lock",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        assert s.read_lockfile(tmp_path)["cairn_commit"] == "abc1234"
+
+    def test_cairn_commit_legacy_strategy_fallback(
+        self, tmp_path: Path, capsys
+    ) -> None:
+        """(B1) Legacy `dev/strategy/` manifest still works, with a migration
+        advisory."""
+        self._prelock(tmp_path)
+        _seed_profile(tmp_path)
+        (tmp_path / "dev" / "strategy").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "dev" / "strategy" / "demo-fidelity-manifest.yml").write_text(
+            'cairn_commit: "def5678"\n')
+        assert s.main(["upgrade", "--target", str(tmp_path), "--init-lock",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        assert s.read_lockfile(tmp_path)["cairn_commit"] == "def5678"
+        assert "legacy" in capsys.readouterr().err
 
 
 # ---------------------------------------------------------------------------
@@ -628,6 +735,7 @@ class TestReviewOnlyMerge:
         (target / "dev" / ".cairn" / "cairn-lock.yml").unlink()
         import shutil
         shutil.rmtree(target / "dev" / ".cairn")
+        _seed_profile(target)
         assert s.main(["upgrade", "--target", str(target), "--init-lock",
                        "--cairn-root", str(CAIRN_ROOT)]) == 0
 
