@@ -18,8 +18,8 @@
   "Assign:_ADVANCING_KINDS": {
     "digest": "8411ac6496243e6e",
     "span": [
-      3116,
-      3119
+      3129,
+      3132
     ],
     "type": "Assign"
   },
@@ -34,24 +34,24 @@
   "Assign:_AXIS_PLACEHOLDERS": {
     "digest": "5f0cb797523dc4d3",
     "span": [
-      3578,
-      3581
+      3591,
+      3594
     ],
     "type": "AnnAssign"
   },
   "Assign:_BASE_CACHE_REL": {
     "digest": "15d41ac87af131a3",
     "span": [
-      2483,
-      2483
+      2496,
+      2496
     ],
     "type": "Assign"
   },
   "Assign:_CONFLICT_MARKER": {
     "digest": "cf7204aa0ceba525",
     "span": [
-      3058,
-      3058
+      3071,
+      3071
     ],
     "type": "Assign"
   },
@@ -114,16 +114,16 @@
   "Assign:_INIT_LOCK_TOKEN_PLACEHOLDERS": {
     "digest": "0a8b8fff0aa6972b",
     "span": [
-      3582,
-      3585
+      3595,
+      3598
     ],
     "type": "AnnAssign"
   },
   "Assign:_KIND_DISPLAY_LABEL": {
     "digest": "816c83e92e25cac6",
     "span": [
-      3123,
-      3127
+      3136,
+      3140
     ],
     "type": "Assign"
   },
@@ -138,32 +138,32 @@
   "Assign:_LIVING_STATE_DSTS": {
     "digest": "f0c9f31bd29a13b5",
     "span": [
-      2522,
-      2527
+      2535,
+      2540
     ],
     "type": "AnnAssign"
   },
   "Assign:_LOCKFILE_REL": {
     "digest": "b9e21cc27cb7f0a8",
     "span": [
-      2482,
-      2482
+      2495,
+      2495
     ],
     "type": "Assign"
   },
   "Assign:_LOCK_SCHEMA": {
     "digest": "3f0724ddcc11a084",
     "span": [
-      2485,
-      2485
+      2498,
+      2498
     ],
     "type": "Assign"
   },
   "Assign:_MANIFEST_SEARCH_DIRS": {
     "digest": "7d95d14f4f3ba80b",
     "span": [
-      2492,
-      2492
+      2505,
+      2505
     ],
     "type": "Assign"
   },
@@ -282,8 +282,8 @@
   "Assign:_PROFILE_REL": {
     "digest": "703a4ea48ef04f6a",
     "span": [
-      2484,
-      2484
+      2497,
+      2497
     ],
     "type": "Assign"
   },
@@ -298,8 +298,8 @@
   "Assign:_SECRET_TOKEN_RE": {
     "digest": "56960715a57c80c6",
     "span": [
-      2535,
-      2537
+      2548,
+      2550
     ],
     "type": "Assign"
   },
@@ -338,16 +338,16 @@
   "Assign:_STAGE_META": {
     "digest": "323d4523d05ed7d9",
     "span": [
-      3057,
-      3057
+      3070,
+      3070
     ],
     "type": "Assign"
   },
   "Assign:_STAGING_REL": {
     "digest": "1acb04a9cd20e428",
     "span": [
-      3056,
-      3056
+      3069,
+      3069
     ],
     "type": "Assign"
   },
@@ -386,8 +386,8 @@
   "ClassDef:FilePlan": {
     "digest": "ecfdd94640c33f0e",
     "span": [
-      3130,
-      3138
+      3143,
+      3151
     ],
     "type": "ClassDef"
   },
@@ -402,8 +402,8 @@
   "ClassDef:MergeResult": {
     "digest": "5e414c793851dbf5",
     "span": [
-      2891,
-      2896
+      2904,
+      2909
     ],
     "type": "ClassDef"
   },
@@ -442,16 +442,16 @@
   "ClassDef:Slot": {
     "digest": "e3640038ace03a02",
     "span": [
-      2825,
-      2831
+      2838,
+      2844
     ],
     "type": "ClassDef"
   },
   "ClassDef:SlotError": {
     "digest": "6d031bd6bbe64e88",
     "span": [
-      2821,
-      2822
+      2834,
+      2835
     ],
     "type": "ClassDef"
   },
@@ -466,8 +466,8 @@
   "FunctionDef:_apply_upgrade": {
     "digest": "e129a624e4f6e5cb",
     "span": [
-      3968,
-      4165
+      3981,
+      4178
     ],
     "type": "FunctionDef"
   },
@@ -498,32 +498,40 @@
   "FunctionDef:_behind_by_n": {
     "digest": "b7b934cd5fe772d8",
     "span": [
-      2569,
-      2599
+      2582,
+      2612
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:_cairn_commit": {
     "digest": "04818be9f8de9b08",
     "span": [
-      2556,
-      2566
+      2569,
+      2579
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:_cairn_is_git": {
     "digest": "165ac500752e613b",
     "span": [
-      3061,
-      3070
+      3074,
+      3083
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_cairn_root": {
+    "digest": "298c43728ebead5c",
+    "span": [
+      2454,
+      2465
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:_cairn_version": {
     "digest": "99341e3ef15fd093",
     "span": [
-      2545,
-      2553
+      2558,
+      2566
     ],
     "type": "FunctionDef"
   },
@@ -546,56 +554,56 @@
   "FunctionDef:_citation_ok": {
     "digest": "a7efe3aed600c27c",
     "span": [
-      3281,
-      3295
+      3294,
+      3308
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:_cmd_adopt_module": {
     "digest": "307c8b824dedae55",
     "span": [
-      3761,
-      3837
+      3774,
+      3850
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:_cmd_finalize_lockfile": {
     "digest": "a1d5b3bea718cc4b",
     "span": [
-      3840,
-      3901
+      3853,
+      3914
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:_cmd_init_lock": {
     "digest": "58a093660555a6f9",
     "span": [
-      3652,
-      3758
+      3665,
+      3771
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:_compute_upgrade": {
     "digest": "4bd926c120a86725",
     "span": [
-      3141,
-      3278
+      3154,
+      3291
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:_dirty_tracked_paths": {
     "digest": "af3a11ba21593ba9",
     "span": [
-      3904,
-      3952
+      3917,
+      3965
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:_emit_lock_yaml": {
     "digest": "7169c38cf30e1de9",
     "span": [
-      2621,
-      2632
+      2634,
+      2645
     ],
     "type": "FunctionDef"
   },
@@ -624,26 +632,26 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_find_cairn_root": {
-    "digest": "074434b0034fec55",
+    "digest": "e152982c8e915292",
     "span": [
-      2454,
-      2459
+      2468,
+      2472
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:_find_manifest_path": {
     "digest": "51f1e69f79a01173",
     "span": [
-      3513,
-      3528
+      3526,
+      3541
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:_infer_init_lock_axes": {
     "digest": "6c715c17b8d18504",
     "span": [
-      3556,
-      3573
+      3569,
+      3586
     ],
     "type": "FunctionDef"
   },
@@ -658,16 +666,16 @@
   "FunctionDef:_lock_file_list": {
     "digest": "7af5c076cbf34b46",
     "span": [
-      2655,
-      2671
+      2668,
+      2684
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:_manifest_cairn_commit": {
     "digest": "fe7199f89ac91256",
     "span": [
-      3539,
-      3553
+      3552,
+      3566
     ],
     "type": "FunctionDef"
   },
@@ -690,16 +698,16 @@
   "FunctionDef:_print_upgrade_report": {
     "digest": "c5fa412ed4b51efd",
     "span": [
-      3298,
-      3354
+      3311,
+      3367
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:_refuse_secret_tokens": {
     "digest": "72ef404c4bc7745c",
     "span": [
-      2602,
-      2618
+      2615,
+      2631
     ],
     "type": "FunctionDef"
   },
@@ -714,40 +722,40 @@
   "FunctionDef:_resolve_lock_profile_fields": {
     "digest": "220c5bdab5352bee",
     "span": [
-      3588,
-      3608
+      3601,
+      3621
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:_resolve_vendor_wrapper": {
     "digest": "eee3c8f38b52b59f",
     "span": [
-      3478,
-      3510
+      3491,
+      3523
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:_seed_staging_gitignore": {
     "digest": "a2aeb9e2a1ebc7a6",
     "span": [
-      3357,
-      3358
+      3370,
+      3371
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:_self_heal_profile_config": {
     "digest": "023b796b5601a6e3",
     "span": [
-      4175,
-      4219
+      4188,
+      4232
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:_sha256_hex": {
     "digest": "481fbb9ba1d05bea",
     "span": [
-      2540,
-      2542
+      2553,
+      2555
     ],
     "type": "FunctionDef"
   },
@@ -794,48 +802,48 @@
   "FunctionDef:_theirs_bytes": {
     "digest": "5d48c1b6b8891417",
     "span": [
-      3094,
-      3101
+      3107,
+      3114
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:_theirs_text": {
     "digest": "198cc60aca432ed0",
     "span": [
-      3073,
-      3091
+      3086,
+      3104
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:_three_way_merge": {
     "digest": "e1b866f0bb1d1778",
     "span": [
-      2925,
-      2953
+      2938,
+      2966
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:_transplant_slots": {
     "digest": "e91d604ece4e4750",
     "span": [
-      2899,
-      2922
+      2912,
+      2935
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:_warn_legacy_manifest_home": {
     "digest": "9e7d4063ee98b5e5",
     "span": [
-      3531,
-      3536
+      3544,
+      3549
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:_write_init_lock_profile_template": {
     "digest": "e40c25694b625748",
     "span": [
-      3611,
-      3649
+      3624,
+      3662
     ],
     "type": "FunctionDef"
   },
@@ -850,32 +858,32 @@
   "FunctionDef:_write_stage": {
     "digest": "f2ded5b9225411f2",
     "span": [
-      3361,
-      3475
+      3374,
+      3488
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:_writeset_dirty_collisions": {
     "digest": "cced7b25e05b9c3b",
     "span": [
-      3955,
-      3965
+      3968,
+      3978
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:_yaml_sq": {
     "digest": "25787f122e275e88",
     "span": [
-      4168,
-      4172
+      4181,
+      4185
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:build_arg_parser": {
     "digest": "adf0273b29611c06",
     "span": [
-      4344,
-      4427
+      4357,
+      4440
     ],
     "type": "FunctionDef"
   },
@@ -890,16 +898,16 @@
   "FunctionDef:classify_verbatim": {
     "digest": "c4e1789f6cc4389a",
     "span": [
-      3025,
-      3049
+      3038,
+      3062
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:cmd_upgrade": {
-    "digest": "55ed5f45458a9bf3",
+    "digest": "cee23cd52cdd44b7",
     "span": [
-      4222,
-      4341
+      4235,
+      4354
     ],
     "type": "FunctionDef"
   },
@@ -1048,18 +1056,18 @@
     "type": "FunctionDef"
   },
   "FunctionDef:main": {
-    "digest": "c65f01a87644a6e4",
+    "digest": "ea726c5f8be4e00a",
     "span": [
-      4430,
-      4861
+      4443,
+      4874
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:merge_file": {
     "digest": "514f0e8206745729",
     "span": [
-      2956,
-      3018
+      2969,
+      3031
     ],
     "type": "FunctionDef"
   },
@@ -1082,8 +1090,8 @@
   "FunctionDef:parse_slots": {
     "digest": "2c9f816f50c5d41d",
     "span": [
-      2834,
-      2884
+      2847,
+      2897
     ],
     "type": "FunctionDef"
   },
@@ -1098,8 +1106,8 @@
   "FunctionDef:read_lockfile": {
     "digest": "c534d42a43cc0d9b",
     "span": [
-      2635,
-      2652
+      2648,
+      2665
     ],
     "type": "FunctionDef"
   },
@@ -1170,8 +1178,8 @@
   "FunctionDef:write_install_lockfile": {
     "digest": "0d7150fc6d4e162a",
     "span": [
-      2674,
-      2811
+      2687,
+      2824
     ],
     "type": "FunctionDef"
   },
@@ -1186,8 +1194,8 @@
   "If": {
     "digest": "ccadb48a0e9e8f52",
     "span": [
-      4864,
-      4865
+      4877,
+      4878
     ],
     "type": "If"
   },
