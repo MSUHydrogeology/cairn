@@ -934,3 +934,127 @@ class TestLivingStatePartition:
             s._emit_lock_yaml(lock), encoding="utf-8")
         # Still fails closed -- the flag is honored only for the policy set.
         assert verify(tmp_path) == 1
+
+
+# ---------------------------------------------------------------------------
+# Layer 3 (#56): the upgrade dirty-tree guard
+# ---------------------------------------------------------------------------
+#
+# `upgrade --apply` must not silently overwrite a tracked file the adopter has
+# uncommitted edits in (a concurrent session's in-flight work).  --apply
+# refuses on a dirty *tracked* intersection (--force overrides); --stage only
+# advises and completes (R1); benign untracked/gitignored dirt never trips it.
+
+import shutil  # noqa: E402
+
+
+@pytest.mark.skipif(shutil.which("git") is None, reason="git not available")
+class TestDirtyTreeGuard:
+    def _git(self, target: Path, *argv: str) -> None:
+        import subprocess
+        subprocess.run(["git", "-C", str(target), *argv],
+                       check=True, capture_output=True, text=True)
+
+    def _init_committed(self, target: Path) -> None:
+        """Install, then commit the whole pristine install -> a clean tree."""
+        assert _install(target) == 0
+        self._git(target, "init", "-q")
+        self._git(target, "config", "user.email", "t@example.com")
+        self._git(target, "config", "user.name", "Test")
+        self._git(target, "add", "-A")
+        self._git(target, "commit", "-q", "-m", "install")
+
+    def _stage_agents_change(self, target: Path) -> None:
+        """Diverge AGENTS.md (now uncommitted-dirty vs HEAD) and stage the
+        upgrade -- staged_files includes AGENTS.md, the write-set/dirt overlap."""
+        TestUpgradeModes()._diverge_base(target)
+        assert s.main(["upgrade", "--target", str(target), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+
+    def test_apply_refuses_on_dirty_tracked_intersection(
+        self, tmp_path: Path, capsys
+    ) -> None:
+        """(v) --apply refuses when the write-set overlaps a tracked,
+        uncommitted path -- it would clobber in-flight work."""
+        self._init_committed(tmp_path)
+        self._stage_agents_change(tmp_path)  # AGENTS.md dirty + staged
+        rc = s.main(["upgrade", "--target", str(tmp_path), "--apply",
+                     "--cairn-root", str(CAIRN_ROOT)])
+        assert rc == 1
+        err = capsys.readouterr().err
+        assert "refusing --apply" in err and "AGENTS.md" in err
+        # Not swapped: the diverged ("# OLD") content is untouched on disk.
+        assert "# OLD" in (tmp_path / "AGENTS.md").read_text()
+        # Stage not cleaned -- the upgrade did not proceed.
+        assert (tmp_path / "dev" / ".cairn-upgrade").exists()
+
+    def test_force_overrides_dirty_guard(self, tmp_path: Path) -> None:
+        """--force overrides the guard: --apply proceeds and swaps."""
+        self._init_committed(tmp_path)
+        self._stage_agents_change(tmp_path)
+        rc = s.main(["upgrade", "--target", str(tmp_path), "--apply",
+                     "--force", "--cairn-root", str(CAIRN_ROOT)])
+        assert rc == 0
+        ag = (tmp_path / "AGENTS.md").read_text()
+        assert "keep me" in ag and "# OLD" not in ag  # upstream header folded
+        assert not (tmp_path / "dev" / ".cairn-upgrade").exists()  # cleaned
+
+    def test_stage_advises_but_completes_on_dirty(
+        self, tmp_path: Path, capsys
+    ) -> None:
+        """(vi/R1) --stage writes only the gitignored review surface: it
+        completes on a dirty tree but advises about the overlap."""
+        self._init_committed(tmp_path)
+        TestUpgradeModes()._diverge_base(tmp_path)  # AGENTS.md dirty
+        rc = s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                     "--cairn-root", str(CAIRN_ROOT)])
+        assert rc == 0  # completes
+        err = capsys.readouterr().err
+        assert "advisory" in err and "AGENTS.md" in err
+        assert (tmp_path / "dev" / ".cairn-upgrade" / "files" /
+                "AGENTS.md").exists()
+
+    def test_benign_untracked_dirt_does_not_trip(
+        self, tmp_path: Path
+    ) -> None:
+        """(vii) Untracked scratch is not a tracked uncommitted change -- the
+        guard ignores it and --apply proceeds."""
+        # Install + diverge, then commit the diverged state -> clean tree whose
+        # committed base still differs from upstream, so AGENTS.md still stages.
+        assert _install(tmp_path) == 0
+        TestUpgradeModes()._diverge_base(tmp_path)
+        self._git(tmp_path, "init", "-q")
+        self._git(tmp_path, "config", "user.email", "t@example.com")
+        self._git(tmp_path, "config", "user.name", "Test")
+        self._git(tmp_path, "add", "-A")
+        self._git(tmp_path, "commit", "-q", "-m", "install+diverge")
+        # Benign dirt: an untracked scratch file, disjoint from the write-set.
+        (tmp_path / "scratch-notes.md").write_text("local scratch\n")
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        rc = s.main(["upgrade", "--target", str(tmp_path), "--apply",
+                     "--cairn-root", str(CAIRN_ROOT)])
+        assert rc == 0  # untracked dirt did not trip the guard
+        ag = (tmp_path / "AGENTS.md").read_text()
+        assert "keep me" in ag and "# OLD" not in ag
+
+    def test_disjoint_tracked_dirt_does_not_trip(
+        self, tmp_path: Path
+    ) -> None:
+        """A tracked file with uncommitted edits that is *not* in the write-set
+        does not trip the guard (the intersection, not mere dirtiness, gates)."""
+        assert _install(tmp_path) == 0
+        TestUpgradeModes()._diverge_base(tmp_path)
+        self._git(tmp_path, "init", "-q")
+        self._git(tmp_path, "config", "user.email", "t@example.com")
+        self._git(tmp_path, "config", "user.name", "Test")
+        self._git(tmp_path, "add", "-A")
+        self._git(tmp_path, "commit", "-q", "-m", "install+diverge")
+        # Dirty a tracked file outside the write-set (profile.yml is committed
+        # but never part of an upgrade stage).
+        (tmp_path / "profile.yml").write_text("project_name: Edited\n")
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        rc = s.main(["upgrade", "--target", str(tmp_path), "--apply",
+                     "--cairn-root", str(CAIRN_ROOT)])
+        assert rc == 0  # disjoint tracked dirt did not trip the guard

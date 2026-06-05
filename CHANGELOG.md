@@ -46,6 +46,28 @@ and a new empty `Unreleased` is started above.
   --short`; untracked content via `git diff --no-index`) are baked in. Drained
   from the LHM `cairn-concurrent-session-coordination` plan (fold-back #53/#56;
   supersedes modflow_tools' concurrent-staging-discipline).
+- **Intent enforce mode + own-claim matching (concurrent-session coordination,
+  Layer 2; #53).** The `coordination-tiers` work-intent pre-commit check
+  (`tools/intent.py`) gains a configurable `"enforce"` key in
+  `dev/intent-config.json`: `warn` (default, surfaces only) / `confirm` (proceed
+  on explicit acknowledgement; degrades to `block` with no controlling terminal)
+  / `block` (refuse a commit touching a *different* active session's claimed
+  path). The cry-wolf fix: the check recognizes the committer's **own** claims by
+  the per-session token (`resolve_session_token()`) and warns only about
+  genuinely different sessions — and, decisively, own-claim suppression is
+  **gated on a resolvable token**, so two concurrent same-type sessions with no
+  harness token never false-suppress each other (they stay on the warn path).
+  `CAIRN_INTENT_ALLOW_UNCLAIMED=1` remains the per-commit bypass. Documented in
+  `doctrine/coordination.md` > "Enforcing the coordination check".
+- **Upgrade dirty-tree guard (concurrent-session coordination, Layer 3; #56).**
+  `scaffold.py upgrade --apply` now **refuses** when its write-set would
+  overwrite a **tracked** file the adopter has uncommitted edits in (a concurrent
+  session's in-flight work), naming the colliding paths; `--force` overrides.
+  Scoped to tracked paths, so benign untracked / gitignored dirt never trips it.
+  `--apply` is the only refusing mode — `--stage` writes only the gitignored
+  review surface, so it **completes** but emits an advisory when the staged set
+  overlaps an uncommitted tracked path. Drained from the LHM
+  `cairn-concurrent-session-coordination` plan (fold-back #53/#56).
 
 ### Added
 

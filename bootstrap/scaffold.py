@@ -3724,9 +3724,73 @@ def _cmd_finalize_lockfile(target: Path, lock: dict[str, Any]) -> int:
     return 0
 
 
+def _dirty_tracked_paths(target: Path) -> set[str] | None:
+    """The set of **tracked, uncommitted** paths in ``target`` (repo-root
+    relative), or ``None`` when ``target`` is not a git work tree / git is
+    absent (fail-soft: no guard when the tree cannot be read).
+
+    Untracked (``??``) and ignored (``!!``) entries are **excluded** -- the
+    Layer-3 dirty-tree guard (#56) is keyed on the upgrade write-set, and a
+    guard that tripped on scratch or gitignored files would false-positive
+    (the proposal's "signals wrong"). Both sides of a rename
+    (``R  old -> new``) are reported -- either colliding with the write-set
+    is a real overwrite hazard.
+    """
+    import subprocess
+
+    def _git(*args: str) -> subprocess.CompletedProcess[str] | None:
+        try:
+            return subprocess.run(
+                ["git", "-C", str(target), *args],
+                capture_output=True, text=True, timeout=10, check=False,
+            )
+        except (OSError, subprocess.SubprocessError):
+            return None
+
+    inside = _git("rev-parse", "--is-inside-work-tree")
+    if inside is None or inside.returncode != 0 \
+            or inside.stdout.strip() != "true":
+        return None  # not a checkout / git absent -- no guard
+    status = _git("status", "--porcelain")
+    if status is None or status.returncode != 0:
+        return None
+
+    def _unquote(p: str) -> str:
+        return p[1:-1] if len(p) >= 2 and p[0] == '"' and p[-1] == '"' else p
+
+    dirty: set[str] = set()
+    for line in status.stdout.splitlines():
+        if len(line) < 4:
+            continue
+        code = line[:2]
+        if code in ("??", "!!"):
+            continue  # untracked / ignored -- benign dirt
+        path = line[3:]
+        if " -> " in path:  # rename / copy: both sides count
+            old, new = path.split(" -> ", 1)
+            dirty.add(_unquote(old))
+            dirty.add(_unquote(new))
+        else:
+            dirty.add(_unquote(path))
+    return dirty
+
+
+def _writeset_dirty_collisions(
+    target: Path, staged_files: list[str],
+) -> list[str]:
+    """The sorted intersection of the upgrade write-set (``staged_files``) with
+    the target's tracked-uncommitted paths. Empty when the tree is clean, the
+    write-set is disjoint from the dirt, or the tree is unreadable
+    (fail-soft)."""
+    dirty = _dirty_tracked_paths(target)
+    if not dirty:
+        return []
+    return sorted(set(staged_files) & dirty)
+
+
 def _apply_upgrade(
     target: Path, lock: dict[str, Any], cairn_root: Path, templates_root: Path,
-    *, ack_review_only: bool = False,
+    *, ack_review_only: bool = False, force: bool = False,
 ) -> int:
     """`--apply` (R7): consume the staged result under the safety contract,
     swap the originals, **advance the lockfile + base cache** to the new
@@ -3735,7 +3799,12 @@ def _apply_upgrade(
     ``ack_review_only`` (the ``--ack-review-only`` flag) is the explicit
     override for the #44 completion gate: ``--apply`` refuses to advance the
     lockfile while files still owe a by-hand merge unless the adopter
-    acknowledges them."""
+    acknowledges them.
+
+    ``force`` (the ``--force`` flag) overrides the Layer-3 dirty-tree guard
+    (#56): ``--apply`` refuses when its write-set would overwrite a tracked
+    file the adopter has uncommitted edits in (a concurrent session's
+    in-flight work)."""
     import json
     import shutil
     stage = target / _STAGING_REL
@@ -3809,6 +3878,21 @@ def _apply_upgrade(
                 print(f"error: {staged} changed on disk since --stage; "
                       "re-run `upgrade --stage`.", file=sys.stderr)
                 return 1
+
+    # (f) Layer-3 dirty-tree guard (#56): refuse to overwrite a tracked path
+    #     the adopter has uncommitted edits in -- applying would clobber a
+    #     concurrent session's in-flight work. Scoped to tracked paths (benign
+    #     untracked / gitignored dirt does not trip it); --force overrides.
+    if not force:
+        collide = _writeset_dirty_collisions(target, staged_meta)
+        if collide:
+            print(
+                f"error: refusing --apply: it would overwrite {len(collide)} "
+                "tracked file(s) with uncommitted changes:\n  "
+                + "\n  ".join(collide) +
+                "\n  commit or stash them first, or re-run `--apply --force` "
+                "to overwrite.", file=sys.stderr)
+            return 1
 
     # Swap staged files into place.
     for staged in staged_meta:
@@ -3930,6 +4014,10 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
                    help="Acknowledge outstanding review-only files so --apply "
                         "proceeds (the #44 completion gate is fail-closed "
                         "without this).")
+    p.add_argument("--force", action="store_true",
+                   help="Override the Layer-3 dirty-tree guard (#56): apply "
+                        "even when the write-set overlaps tracked files with "
+                        "uncommitted changes (they will be overwritten).")
     p.add_argument("--adopt-module", default=None, metavar="NAME",
                    help="Record an already-on-disk opt-in module NAME into the "
                         "lockfile so it 3-way-merges on later upgrades (#49). "
@@ -3970,7 +4058,8 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
 
     if args.apply:
         return _apply_upgrade(target, lock, cairn_root, templates_root,
-                              ack_review_only=args.ack_review_only)
+                              ack_review_only=args.ack_review_only,
+                              force=args.force)
 
     plans, structural = _compute_upgrade(
         target, cairn_root, templates_root, lock, args.to)
@@ -3981,9 +4070,27 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
         args.to or _cairn_commit(cairn_root))
 
     if args.stage:
-        _write_stage(target, plans, lock, args.to, cairn_root)
+        stage = _write_stage(target, plans, lock, args.to, cairn_root)
         _print_upgrade_report(plans, structural, citation, mode="stage",
                               drift=drift)
+        # (R1) --stage writes only the gitignored review surface, so it
+        # *completes* even on a dirty tree -- but advise when the write-set
+        # overlaps a tracked uncommitted path so the eventual --apply refusal
+        # is no surprise.
+        try:
+            import json as _json
+            _meta = _json.loads(
+                (stage / _STAGE_META).read_text(encoding="utf-8"))
+            _collide = _writeset_dirty_collisions(
+                target, _meta.get("staged_files", []))
+        except (OSError, ValueError):
+            _collide = []
+        if _collide:
+            print(
+                f"\n  [advisory] {len(_collide)} staged file(s) overlap "
+                "tracked uncommitted changes; --apply will refuse until they "
+                "are committed/stashed (or pass --force):\n    "
+                + "\n    ".join(_collide), file=sys.stderr)
         print(f"\nStaged under {_STAGING_REL}/ . Resolve any conflicts, then "
               "`upgrade --apply --target <repo>`.")
         return 0
