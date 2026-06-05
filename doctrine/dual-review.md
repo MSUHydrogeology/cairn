@@ -277,6 +277,59 @@ the checks its high-risk surfaces demand. The collaborative-skeptic
 stance (`collaboration-stance.md`) is the posture the sweep operates
 in: steelman the change, then hunt for what it missed.
 
+## Recommend-and-decide — the second independent pass
+
+The review sweep is the *one* pass that always runs. What it cannot
+decide on its own is whether a **second, structurally-independent
+(cross-type) pass** is worth its cost — that is the Maintainer's call,
+and the first reviewer's job is to *inform* it, not pre-empt it. So
+every first-pass review **ends with two things**.
+
+**1. A two-part coverage line.** Not a verdict — a map of what the pass
+did and did not cover:
+
+* **Covered** — the lenses swept, each with its falsifiable citation
+  (the file / test-node / line / command that backs it).
+* **Not covered / low confidence** — the negative space: "did not
+  exercise the scientific math", "could not run the sibling-repo test",
+  "same-type reviewer — no cross-type independence on this pass." A
+  covered-only line manufactures false comfort; the *negative* space is
+  what the Maintainer most needs, and it is the evidence behind the
+  recommendation.
+
+**2. An explicit second-round recommendation.** *Recommended* or *not
+recommended*, with reasons, grounded in that coverage line. The factors
+that might once have fired an automatic second review — high blast
+radius, a novel framework or abstraction, a scientific-correctness or
+security / trust-boundary surface, weak coverage in the negative-space
+line — are **inputs to this recommendation**, not a gate that fires by
+itself.
+
+**The decision is the Maintainer's, never an automatic default.** A
+second independent round is neither default-on for the "risky" triggers
+nor default-off for the routine; the reviewer recommends, the Maintainer
+decides per change. This is the same authority structure as the
+**Decision-support Round-2 review** (above): a later pass provides
+independent perspective *to the Maintainer*, who is the only actor with
+authority to weigh competing reads and Decide.
+
+**A declared-`required` tier stays a floor.** Recommend-and-decide
+governs only the *optional escalation beyond* what the lifecycle already
+declared. A `Plan review: required(External cross-type)` line still runs
+regardless of any recommendation — "don't default to a second round"
+never downgrades a tier the proposal or plan declared `required`.
+
+Why this shape: the cost of a reviewer-pass is real, and most redundant
+later passes only re-caught *lens-coverage* misses the sweep now folds
+into pass one. But some later passes catch what a *different prior*
+genuinely sees first — irreducible independence the sweep cannot
+substitute for. The record cannot size those two shares in advance, so
+the safe instrument is not an automatic rule (which would trade away an
+unknown amount of independence) but a human deciding per change, with
+the coverage line as evidence. Whether the trade actually pays is
+measured, not asserted — see the late-blocker bundle in
+`lifecycle-metrics.md`.
+
 ## Briefs to reviewers — don't telegraph the lens
 
 When handing work to a reviewer — especially the cross-agent-type

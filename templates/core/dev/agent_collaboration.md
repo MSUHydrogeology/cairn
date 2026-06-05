@@ -85,6 +85,17 @@ accepted` (see `proposals/_template.md`). Review has two tiers:
 Code review — the implementation-side pass, before a plan archives
 — has its own floor: **not the implementing agent**.
 
+Every first-pass review — Internal or External — works through the
+shared **review sweep** (a generic, change-agnostic lens roster) and
+ends with a **two-part coverage line** (Covered, with falsifiable
+citations + Not-covered / low-confidence) and an explicit
+**second-round recommendation**. Whether to spend a second
+structurally-independent (cross-type) pass is then the **Maintainer's
+call**, informed by that recommendation — never an automatic default,
+and never a downgrade of a tier the lifecycle already declared
+`required` (see `doctrine/dual-review.md` > "Review expectations — the
+clean-pass trap" and "Recommend-and-decide").
+
 A **Decision-support Round-2 review** is a Review section
 appended *after* the author's Response and Revised proposal; it
 feeds the Maintainer's Decision rather than triggering another
