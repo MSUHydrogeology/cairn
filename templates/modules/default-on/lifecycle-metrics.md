@@ -109,6 +109,42 @@ case study — but it is *one* instance shaped by that project's own
 file layout and roster, **not the canonical form.** Do not copy its
 scanner phrases as if they were the gate's definition.
 
+### Late-blocker reduction — measuring the review sweep
+
+When an adoption runs a structured **review sweep** and a
+**recommend-and-decide** second pass (`doctrine/dual-review.md`), the
+question worth measuring is not first-round *volume* — a reviewer can
+inflate that with low-value findings — but whether the sweep moves
+findings *earlier*. The bundle:
+
+* **Accepted / actionable first-pass findings** — that the first pass is
+  doing real work, not padding.
+* **Late P1 / P2 findings after the first pass** — the cost the sweep is
+  meant to reduce; the headline number, watched *down*.
+* **Review rounds by risk tier** — so a routine change and a
+  contract-touching one are read against their own baselines, not pooled.
+* **Recurrence of a missed category** — the same lens-coverage miss
+  recurring is the signal to tighten that lens.
+
+**Size the irreducible share prospectively.** The one experiment that
+separates *lens-coverage* misses (reducible by the sweep) from genuine
+*structural-independence* value (not reducible): run the strong sweep as
+pass one, then *still* run an independent cross-type pass on a sample,
+and count the residual **cross-type-only** findings the swept first pass
+did not produce. That residual is the independence value, measured — the
+honest check on whether the sweep captures what it hopes, and whether
+recommend-and-decide trades away independence it should not.
+
+**Home.** These records belong in the project's **`dev/measurement/`**
+surface — the standard home for records the project keeps *for
+measurement* (metrics, the collision log, signature logs), distinct from
+historical reference — in a structured, parseable form rather than
+decaying prose, so a metrics tool can aggregate them. That surface is its
+own Cairn-standard folder; this module *consumes* it as the home and does
+not define it. All of it is **subject to the Measurement Compact** above:
+system learning, no per-member read-out, Tier-1 gating on any external
+publication.
+
 ## Reference implementation
 
 **The scaffold installs a runnable extractor.** Enabling this module

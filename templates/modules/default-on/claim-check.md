@@ -80,6 +80,17 @@ same artifact (a count stated two ways, a path named differently above, a
 "done" that an earlier line calls "deferred"). Self-contradiction is the
 cheapest tell that a claim was asserted, not checked.
 
+Also cutting across all five: a **forward / future-tense claim is probed
+exactly like a present-tense one.** "Will exist", "the translator will
+support X", "the fixture will be created", "the write will be atomic" — the
+future tense is not a license to skip the check; it is the most common
+*disguise* for an unverified A / B / E claim. Resolve it against the
+**current** tree: if what the claim depends on exists now, probe it now; if
+it genuinely does not exist yet, the claim is a **forward reference** and is
+*marked as such* (e.g. the checker's forward-reference marker), never asserted
+as present fact. A reviewer's claims-lens applies the same rule — a
+"will work" gets the same probe as a "works."
+
 The framing is **write-time, not review-time**: verify each category as
 you write the claim (the cheap moment), so the claim enters the record
 already true — not as something the reviewer has to catch.

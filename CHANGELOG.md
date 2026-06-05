@@ -34,6 +34,24 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **Reviewer doctrine: the structured review sweep + recommend-and-decide.**
+  `doctrine/dual-review.md` grows the clean-pass-trap standing checks into a
+  generic, change-agnostic **9-lens review sweep** every reviewer works through
+  and reports coverage on (probe forward/artifact claims like present-tense
+  ones; the two true gaps — cross-document consistency and lifecycle/process
+  placement — are named lenses), with falsifiable coverage, staged satisfiers,
+  and a floor-not-ceiling / never-downgrade-a-required-tier rule. Each
+  first-pass review closes with a **two-part coverage line** (Covered +
+  Not-covered/low-confidence) and an explicit **second-round recommendation** —
+  a second structurally-independent pass is a Maintainer decision, never an
+  automatic default (composing with Decision-support Round-2). The core
+  proposal/plan templates gain a **triage-gated author-accounting** block
+  (invariants / failure modes / edge-case inventory / public-path→test mapping
+  via relative links / known-omissions), reviewed as evidence not as a filled
+  form. `claim-check.md` sharpens forward/future-tense claim probing;
+  `lifecycle-metrics.md`'s Measurement Compact adds the **late-blocker
+  reduction** bundle (homed in `dev/measurement/`). A standing sweep-going-ritual
+  falsifier guards against hollow coverage.
 - **`link_check.py`: skip `file://` targets + exclude vendored/tool-owned
   sources by default.** Three behavior changes folded up from the modflow_tools
   retire-`verify_doc_links` arc so every adopter's whole-tree doc-link gate is
