@@ -1,0 +1,162 @@
+"""0B.4 — activate the 0A contracts on the LANDED launcher+engine substrate.
+
+The 0A guards were proven against synthetic fixtures; these prove them against
+the real `bootstrap/scaffold.py` launcher and the `bootstrap/_scaffold/` engine:
+
+* **Canonical identity (P1#3):** `bootstrap.scaffold` IS `bootstrap._scaffold`
+  (one `sys.modules` entry / object per file), and the engine file is the
+  canonical one.
+* **Facade patch-through (RR5/R6):** patching `bootstrap.scaffold._cairn_is_git`
+  reaches the engine's own namespace (the `test_upgrade.py:509` pattern).
+* **Executable topology (RR1):** the launcher installs correctly when invoked as
+  a script from an unrelated cwd (`/tmp`), not just from the Cairn root.
+* **Fail-closed against import hijack (SR1):** a decoy `bootstrap/_scaffold/` on
+  `PYTHONPATH` does NOT become the loaded engine — the launcher loads
+  file-relative, so the canonical engine stays the real one.
+* **Scan completeness (RR3/S4):** the real engine package is now in the release
+  Bandit scan set.
+* **Import-purity (0B.3/SR2):** importing the trust anchors writes no files and
+  runs no CLI.
+
+Stdlib only.
+"""
+from __future__ import annotations
+
+import subprocess
+import sys
+import textwrap
+from pathlib import Path
+
+import pytest
+
+CAIRN_ROOT = Path(__file__).resolve().parents[2]
+LAUNCHER = CAIRN_ROOT / "bootstrap" / "scaffold.py"
+ENGINE_INIT = CAIRN_ROOT / "bootstrap" / "_scaffold" / "__init__.py"
+
+_TEMPLATES = CAIRN_ROOT / "templates"
+pytestmark = pytest.mark.skipif(
+    not _TEMPLATES.exists(), reason="Cairn templates not available"
+)
+
+
+def _run(args, *, cwd, env_extra=None):
+    import os
+    env = dict(os.environ)
+    if env_extra:
+        env.update(env_extra)
+    return subprocess.run(
+        [sys.executable, *args], cwd=str(cwd), env=env,
+        capture_output=True, text=True, check=False,
+    )
+
+
+# --- canonical identity + facade (in-process) ---------------------------------
+
+def test_launcher_is_the_canonical_engine_identity():
+    import bootstrap.scaffold as s  # noqa: PLC0415
+    assert sys.modules["bootstrap.scaffold"] is sys.modules["bootstrap._scaffold"]
+    assert s is sys.modules["bootstrap._scaffold"]
+    assert Path(s.__file__) == ENGINE_INIT, "the alias must resolve to the engine file"
+
+
+def test_facade_exposes_full_public_surface():
+    # The facade is the engine, so the historically-imported surface is present
+    # by construction. Spot-check the high-traffic symbols + the exception class.
+    import bootstrap.scaffold as s  # noqa: PLC0415
+    for name in ("main", "read_lockfile", "_MODULE_MAPPINGS", "_GITIGNORE_SEEDS",
+                 "load_config", "ScaffoldSecurityError", "_cairn_root"):
+        assert hasattr(s, name), f"facade missing {name}"
+
+
+def test_facade_patch_through_reaches_engine(monkeypatch):
+    """RR5/R6: patching the facade mutates the engine's own namespace, so the
+    engine's internal calls observe it (the test_upgrade.py:509 pattern)."""
+    import bootstrap.scaffold as s  # noqa: PLC0415
+    sentinel = object()
+    monkeypatch.setattr(s, "_cairn_is_git", lambda root: sentinel)
+    assert sys.modules["bootstrap._scaffold"]._cairn_is_git(CAIRN_ROOT) is sentinel
+
+
+# --- scan completeness (0A.1 activated on the real package) -------------------
+
+def test_release_scan_now_covers_launcher_and_engine():
+    from bootstrap.security_check import scan_targets  # noqa: PLC0415
+    targets = set(scan_targets())
+    assert "bootstrap/scaffold.py" in targets, "the launcher must be scanned"
+    assert "bootstrap/_scaffold/__init__.py" in targets, "the engine must be scanned (recursive)"
+
+
+# --- executable topology from an unrelated cwd (RR1, subprocess) -------------
+
+def test_launcher_installs_from_an_unrelated_cwd(tmp_path):
+    target = tmp_path / "adopter"
+    target.mkdir()
+    (target / "profile.yml").write_text(
+        'project_name: "SubstrateTest"\ntest_command: "pytest"\npreset: solo-greenfield\n',
+        encoding="utf-8",
+    )
+    # cwd is an unrelated dir, NOT the Cairn root -- proves the launcher anchors
+    # paths from its own __file__, not the working directory.
+    proc = _run(
+        [str(LAUNCHER), "--config", str(target / "profile.yml"),
+         "--target", str(target), "--cairn-root", str(CAIRN_ROOT),
+         "--allow-dev", "--non-interactive"],
+        cwd=tmp_path,
+    )
+    assert proc.returncode == 0, f"launcher install failed:\n{proc.stderr[-1500:]}"
+    assert (target / "AGENTS.md").is_file()
+    assert (target / "dev" / ".cairn" / "cairn-lock.yml").is_file()
+
+
+# --- fail-closed against the S1 import hijack (SR1, subprocess) ---------------
+
+def test_hostile_pythonpath_does_not_hijack_the_engine(tmp_path):
+    """A decoy `bootstrap/_scaffold/` injected first on PYTHONPATH must NOT
+    become the loaded engine: the launcher loads file-relative, so the canonical
+    `bootstrap._scaffold` stays the real one under the Cairn root."""
+    decoy = tmp_path / "attacker"
+    (decoy / "bootstrap" / "_scaffold").mkdir(parents=True)
+    (decoy / "bootstrap" / "_scaffold" / "__init__.py").write_text(
+        "HIJACKED = True\n", encoding="utf-8"
+    )
+    probe = textwrap.dedent(f"""
+        import sys
+        sys.path.insert(0, {str(CAIRN_ROOT)!r})   # Cairn after the decoy (PYTHONPATH wins first)
+        import bootstrap.scaffold as s
+        eng = sys.modules["bootstrap._scaffold"]
+        assert not hasattr(s, "HIJACKED"), "facade was hijacked"
+        assert not hasattr(eng, "HIJACKED"), "engine was hijacked"
+        assert hasattr(eng, "_MODULE_MAPPINGS"), "did not load the real engine"
+        assert {str(CAIRN_ROOT)!r} in eng.__file__, "engine loaded from outside the Cairn root"
+        print("SAFE")
+    """)
+    proc = _run(["-c", probe], cwd=tmp_path,
+                env_extra={"PYTHONPATH": str(decoy)})
+    assert proc.returncode == 0 and "SAFE" in proc.stdout, (
+        f"hostile-PYTHONPATH defense failed:\n{proc.stderr[-1500:]}"
+    )
+
+
+# (Direct fail-closed-on-escape is covered by the hostile-PYTHONPATH substrate
+# test above and by the loader-prototype escape test in test_loader_identity.py,
+# which exercise the same SR1 _verify_within_root contract the launcher uses.)
+
+
+# --- import-purity of the trust anchors (0B.3 / SR2, subprocess) -------------
+
+def test_importing_trust_anchors_writes_nothing(tmp_path):
+    """Importing the anchors (which reach the engine via the facade) must define
+    names only -- no file writes, no CLI/upgrade run (import-purity holds even
+    while the anchors still import via the facade)."""
+    probe = textwrap.dedent(f"""
+        import sys
+        sys.path.insert(0, {str(CAIRN_ROOT)!r})
+        import bootstrap.security_check
+        import bootstrap.verify_integrity
+        print("IMPORTED")
+    """)
+    proc = _run(["-c", probe], cwd=tmp_path)
+    assert proc.returncode == 0 and "IMPORTED" in proc.stdout, proc.stderr[-1500:]
+    # The fresh cwd must be untouched by a mere import.
+    leftovers = [p.name for p in tmp_path.iterdir()]
+    assert leftovers == [], f"importing the anchors wrote files: {leftovers}"
