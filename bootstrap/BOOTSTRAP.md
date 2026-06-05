@@ -264,10 +264,26 @@ python <path/to/cairn>/bootstrap/scaffold.py \
     --target .
 ```
 
-> **Where the profile lives.** `<profile.yml>` is install machinery, not a
-> human document — keep the committed copy under `dev/.cairn/profile.yml`
-> (with the lockfile + base cache) and pass that path to `--config`. Cairn
-> reads it only through `scaffold.py`.
+> **Where the profile lives — the representation model.** The profile exists in
+> up to three forms; know which one you edit:
+>
+> * **`dev/.cairn/profile.yml`** — the **authoritative committed install-config**
+>   (install machinery, not a human document; kept beside the lockfile + base
+>   cache). *This is the file you edit to change the profile*, then regenerate the
+>   lockfile. Cairn reads it only through `scaffold.py` (via `--config`, or
+>   `upgrade --init-lock`).
+> * **the lockfile-embedded `profile`** (`dev/.cairn/cairn-lock.yml`) — the
+>   tool-owned copy the machinery reads, **regenerated from** the config; never
+>   hand-edited as a source.
+> * **the human accepted-profile record** — your adoption deliberation (the
+>   *why*), wherever the project keeps such records; upstream of both, not
+>   machine-read.
+>
+> **Reconciliation, stated once: edit the config → regenerate the lockfile.**
+> Editing the human record or the lockfile copy does not change what the
+> machinery installs. The model names *roles* — map your project's own files to
+> them. An adopter `init-lock`'d before this convention self-heals a missing
+> `dev/.cairn/profile.yml` from the lockfile on the next `upgrade`.
 
 The script:
 

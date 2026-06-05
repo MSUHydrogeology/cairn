@@ -34,6 +34,30 @@ and a new empty `Unreleased` is started above.
 
 ### Changed
 
+- **All Cairn adoption state lives in `dev/.cairn/` (the fidelity manifest moves
+  out of `dev/strategy/`).** The fidelity manifest is install bookkeeping — a
+  record of *what is installed* — not a human-AI deliberation surface, so it
+  joins the lockfile, base cache, profile, and fold-back ledger in `dev/.cairn/`;
+  `dev/strategy/` stays for genuine project-strategy deliberation. Both scaffold
+  `dev/strategy/` lookups (`_citation_ok`'s R10 citation check **and**
+  `_cmd_init_lock`'s `cairn_commit` recovery) now search `dev/.cairn/` first with
+  an indefinite legacy `dev/strategy/` fallback + migration advisory; the
+  placement docs (`fidelity-check.md`, `UPGRADE.md`, `SAFETY.md`) move with it.
+  Strategic *notes* (security-decision / profile-audit notes) stay in
+  `dev/strategy/`. Drained from the LHM `cairn-adoption-state-home` proposal.
+- **`init-lock` captures the full six-axis profile + the profile-representation
+  model is documented.** `upgrade --init-lock` no longer synthesizes a
+  gating-only stub: with no committed `dev/.cairn/profile.yml` it prefills the
+  structurally-inferable axes (from installed modules / `CONTRIBUTING.md` /
+  `legacy-agent.md`) and **fails with a template** the operator completes
+  (validated against `_AXES`), then embeds the full profile + tokens in the
+  lockfile. `upgrade` **self-heals** an already-`init-lock`'d adopter by
+  materializing `dev/.cairn/profile.yml` from the lockfile (merging `tokens` +
+  `profile`) when absent — composing with the #56 dirty-tree guard.
+  `BOOTSTRAP.md` now documents the three-representation model (authoritative
+  config → regenerated lockfile copy → human record) and the *edit-the-config →
+  regenerate-the-lockfile* reconciliation. Drains fold-back #55 (the last
+  candidate). Drained from the LHM `cairn-init-lock-full-profile` proposal.
 - **Windowless-commit Tier-1 discipline (concurrent-session coordination, Layer
   1).** `doctrine/coordination.md` Tier 1 + the `templates/core/AGENTS.md`
   git-workflow checklist now make the **windowless commit** primary: for tracked

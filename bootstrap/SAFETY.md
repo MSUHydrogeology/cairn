@@ -20,8 +20,9 @@ proprietary, or under embargo.
 
 **What the bootstrap may do**: read target-repo files during Act I
 to fill out the assessment profiles (the Project Profile and Team
-Profile).  Those profiles are written into `dev/strategy/` *in the
-target repo*, not into Cairn.
+Profile).  Those profiles are written into `dev/.cairn/` *in the
+target repo* (the adoption-state home, beside the lockfile + install
+config), not into Cairn.
 
 **What the bootstrap must not do**: copy architecture diagrams,
 scientific data, source code snippets, or any other target-repo

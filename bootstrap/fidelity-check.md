@@ -48,7 +48,10 @@ sources of truth:
 * This **fidelity manifest is the human audit narrative** — the
   reproducible, reviewer-facing record of profile + slots + deferrals. It
   **cites** the lockfile's `cairn_version` / `cairn_commit` rather than
-  re-listing the file/module inventory the lockfile already owns.
+  re-listing the file/module inventory the lockfile already owns. It lives in
+  **`dev/.cairn/`** beside the lockfile: both are Cairn adoption state (the
+  lockfile machine-owned, the manifest human-readable), so they co-locate in the
+  adoption-state home rather than scattering across `dev/`.
 
 So the manifest does not need to carry merge state, and the two cannot
 drift into disagreement over a second parsed inventory. The `upgrade`
@@ -89,8 +92,8 @@ A fidelity manifest is a YAML file with the following structure:
 
 ```yaml
 # fidelity-manifest.yml
-# Generated at bootstrap time; committed to dev/strategy/ in the
-# target repo alongside the accepted dimension profile.
+# Generated at bootstrap time; committed to dev/.cairn/ in the target
+# repo alongside the lockfile + the accepted dimension profile.
 
 cairn_commit: "<7-char cairn commit hash>"
 target_repo: "<repo name or slug>"
@@ -396,7 +399,7 @@ artifact.
 
 ## When to update the manifest
 
-Update the manifest (and commit it to `dev/strategy/` in the target
+Update the manifest (and commit it to `dev/.cairn/` in the target
 repo) when:
 
 * A new module is installed.

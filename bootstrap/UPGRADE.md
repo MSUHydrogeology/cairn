@@ -190,7 +190,7 @@ lockfile + base cache is written.
 
 The lockfile is the **machine authority** for what is installed (files,
 modules, tokens, hashes). The human **fidelity manifest**
-(`dev/strategy/…`, see `fidelity-check.md`) is the audit *narrative*; it
+(`dev/.cairn/…`, see `fidelity-check.md`) is the audit *narrative*; it
 **cites** the lockfile's version/commit rather than re-listing the
 inventory. `upgrade` warns if the manifest's citation is stale. Keep the
 two one-way: regenerate the lockfile with the tool; update the manifest's
