@@ -112,6 +112,17 @@ def test_failed_load_leaves_no_half_initialized_entry(tmp_path, clean_modules):
     assert name not in sys.modules
 
 
+def test_submodule_without_parent_fails_closed(tmp_path, clean_modules):
+    """Code review C1: loading a submodule before its parent package is
+    initialized must fail closed with a clear error, not exec a module whose
+    package-relative imports would raise an opaque parent-module error."""
+    pkg = _make_engine(tmp_path)
+    base = "bootstrap._scaffold_t_noparent"
+    assert base not in sys.modules
+    with pytest.raises(L.ScaffoldLoaderError, match="not initialized"):
+        L.load_submodule("config", pkg, tmp_path, canonical_name=base)
+
+
 def test_submodule_shares_canonical_namespace(tmp_path, clean_modules):
     pkg = _make_engine(tmp_path)
     base = "bootstrap._scaffold_t_sub"

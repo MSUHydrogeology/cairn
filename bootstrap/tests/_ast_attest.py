@@ -21,7 +21,16 @@ identity tests are the behavioral guards (plan Verification).
 Workflow
 --------
 
-1. **Baseline** (Stage 0A, re-pinned at 0B just before extraction)::
+**Interpreter pinning (code review C2).** ``ast.dump`` output and the AST node
+structure vary across Python *minor* versions (e.g. 3.12 vs 3.13). The baseline
+artifact and every ``verify`` run **must** use the project's canonical
+interpreter (the ``lhm`` env, Python 3.13) — generating the baseline on one
+minor and verifying on another causes spurious digest mismatches that look like
+a logic change. ``test_committed_baseline_matches_live_scaffold`` says so in its
+failure message.
+
+1. **Baseline** (Stage 0A, re-pinned at 0B just before extraction; run under the
+   canonical interpreter — see "Interpreter pinning" above)::
 
        python bootstrap/tests/_ast_attest.py baseline bootstrap/scaffold.py \
            > bootstrap/tests/fixtures/scaffold_ast_baseline.json
@@ -115,6 +124,14 @@ def verify(baseline_path: str | Path, module_paths: list[str | Path]) -> int:
     problems: list[str] = []
 
     for key, info in baseline.items():
+        if info.get("type") in ("Import", "ImportFrom"):
+            # Imports are per-module necessities, not single-source "moved
+            # symbols" (code review C3): the same ``import sys`` legitimately
+            # recurs across many split modules (would false-DUPLICATE), and an
+            # import dropped/relocated by a split is not a lost symbol (would
+            # false-MISSING). Exclude them from the pure-motion pass/fail logic;
+            # functions/classes/constants remain strictly single-sourced.
+            continue
         hits = merged.get(key, [])
         if not hits:
             problems.append(f"MISSING   {key}  (baselined, absent from the current module set)")

@@ -56,7 +56,10 @@ def test_committed_baseline_matches_live_scaffold():
     live_digests = {k: v["digest"] for k, v in live.items()}
     base_digests = {k: v["digest"] for k, v in baseline.items()}
     assert base_digests == live_digests, (
-        "AST baseline is stale vs scaffold.py -- regenerate it before extraction"
+        "AST baseline is stale vs scaffold.py -- regenerate it before extraction "
+        "UNDER THE CANONICAL INTERPRETER (lhm env, Python 3.13): ast.dump structure "
+        "varies across Python minor versions, so a baseline pinned on one minor and "
+        "verified on another mismatches spuriously (code review C2)."
     )
 
 
@@ -82,6 +85,27 @@ def test_duplicate_symbol_fails(tmp_path):
     (tmp_path / "base.json").write_text(json.dumps(base), encoding="utf-8")
     m1 = _write(tmp_path, "m1.py", "def f(x):\n    return x\n")
     m2 = _write(tmp_path, "m2.py", "def f(x):\n    return x\n")  # same symbol in two files
+    assert A.verify(tmp_path / "base.json", [m1, m2]) == 1
+
+
+def test_shared_imports_across_modules_do_not_fail(tmp_path):
+    # Code review C3: the same import recurring across split modules is a
+    # per-module necessity, NOT a single-source violation -- it must not
+    # DUPLICATE-fail the pure-motion gate. Functions still must move exactly once.
+    src = "import sys\nimport os\n\ndef f(x):\n    return x\n"
+    base = A.digest_module(_write(tmp_path, "mono.py", src))
+    (tmp_path / "base.json").write_text(json.dumps(base), encoding="utf-8")
+    m1 = _write(tmp_path, "m1.py", "import sys\nimport os\n\ndef f(x):\n    return x\n")
+    m2 = _write(tmp_path, "m2.py", "import sys\nimport os\n")  # imports recur; no symbol
+    assert A.verify(tmp_path / "base.json", [m1, m2]) == 0
+
+
+def test_function_still_duplicate_fails_even_with_shared_imports(tmp_path):
+    # The C3 carve-out is imports-only: a real symbol duplicated still fails.
+    base = A.digest_module(_write(tmp_path, "mono.py", "import sys\n\ndef f(x):\n    return x\n"))
+    (tmp_path / "base.json").write_text(json.dumps(base), encoding="utf-8")
+    m1 = _write(tmp_path, "m1.py", "import sys\n\ndef f(x):\n    return x\n")
+    m2 = _write(tmp_path, "m2.py", "import sys\n\ndef f(x):\n    return x\n")  # f in two files
     assert A.verify(tmp_path / "base.json", [m1, m2]) == 1
 
 

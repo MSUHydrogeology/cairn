@@ -119,6 +119,17 @@ def load_submodule(
     if cached is not None:
         return cached
 
+    # Fail closed if the parent package is not yet initialized (code review C1):
+    # a submodule's package-relative imports (``from . import config``) resolve
+    # against the registered parent in sys.modules, so exec'ing it first would
+    # raise an opaque import-time error. Require load_engine() first.
+    if canonical_name not in sys.modules:
+        raise ScaffoldLoaderError(
+            f"cannot load submodule {full!r}: parent package {canonical_name!r} "
+            f"is not initialized -- call load_engine() first (a submodule's "
+            f"package-relative imports resolve against the registered parent)"
+        )
+
     path = _verify_within_root(Path(package_dir) / f"{submodule}.py", cairn_root)
     if not path.is_file():
         raise ScaffoldLoaderError(f"engine submodule not found: {path}")
