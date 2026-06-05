@@ -1,4 +1,4 @@
-<!-- cairn-internal-ref-allow: doctrine/dual-review.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
+<!-- cairn-internal-ref-allow: doctrine/dual-review.md doctrine/lifecycle.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- Author tip: if your plan cites count claims (numbers
      adjacent to `lines` / `proposals` / `plans` / `tests` /
      `commits` / `files` -- common in chunk tables like
@@ -806,5 +806,16 @@ ledger**:
 
 This prevents the archive commit from accidentally turning "deferred"
 evidence into "shipped" evidence by implication.
+
+The migration note must also carry the **loop-fidelity sign-off** (the
+Decision→implementation checkpoint; see `doctrine/lifecycle.md` >
+"Loop-fidelity verification"):
+
+* **Fidelity sign-off** — confirm the **landed implementation commit(s)
+  match the accepted Revised section**, and **name which Revised section
+  governs**. Make it falsifiable: cite the commit sha(s) and the governing
+  section, not a bare "matches." A missing sign-off line is a code-review
+  finding (like an unfilled slot). For an upstreamed (Cairn-side) change,
+  cite the landed Cairn commit.
 
 This section is append-only once written.

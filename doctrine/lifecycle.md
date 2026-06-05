@@ -195,6 +195,44 @@ distinct, per the plan-review precondition above). The plan-archive
 commit still stands alone, after review. The lifecycle compresses;
 it does not collapse.
 
+## Loop-fidelity verification
+
+The fold-back loop's **capture** and **decide** halves are rigorous: a
+discovery becomes a ledger row, a row becomes a proposal, a proposal is
+reviewed and decided. Its **verification** half — *did the decided change land
+**and work**, faithfully, all the way to adoption?* — is the property this
+section names. An upstreamed change is not **closed** until it is verified
+faithful at all three checkpoints of the loop:
+
+1. **Decision → implementation (#52) — the fidelity sign-off.** At plan-archive,
+   the migration note confirms the **landed implementation commit matches the
+   accepted Revised section**, and **names which Revised section governs**.
+   Append-only deliberation keeps superseded designs beside the chosen one, so
+   "which section governs" is a real ambiguity (a reader once mistook an
+   abandoned design for the accepted one); naming it removes the ambiguity. The
+   sign-off rides the coverage-line discipline — it is *falsifiable* (cite the
+   commit + the section), not a bare "matches." It fails *open* if an
+   implementer skips it, so a missing sign-off line is a code-review finding,
+   like an unfilled slot.
+2. **Implementation → adoption (#58) — the dangling-reference gate.** The
+   `check_cairn` self-check **fails closed** when an adopter-facing `templates/`
+   surface references a Cairn-internal-only path (`doctrine/*`) that is neither
+   transplanted into the install set nor marked a deliberate citation — a
+   reference that resolves in the Cairn source but **dangles once installed**.
+   This is the automatable flagship; its mechanics live in
+   [`../bootstrap/fidelity-check.md`](../bootstrap/fidelity-check.md) >
+   "The loop-fidelity gate".
+3. **Adoption → canonical (#54) — drift surfacing.** A session-start / goodnight
+   check **surfaces** (informational; never blocks) when an adopter's installed
+   tree is behind canonical, so the per-change loop is confirmed closed
+   *continuously*, not only on the periodic harvest cadence. See
+   [`session-routines.md`](session-routines.md) > "Adoption drift surfacing".
+
+The three are one **property** with three checkpoints, not three unrelated
+checks — hence one home here. Their *delivery* is independent: the #58 gate is
+automatable and ships on its own merit; #52 and #54 are discipline/cadence
+companions that may land or evolve separately.
+
 ## Procedural-gap inline Decisions
 
 Implementation discovers, mid-flight, that a specific procedural

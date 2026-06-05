@@ -2558,6 +2558,39 @@ def _cairn_commit(cairn_root: Path) -> str:
     return r.stdout.strip() if r.returncode == 0 else "unknown"
 
 
+def _behind_by_n(cairn_root: Path, lock_commit: str | None,
+                 new_commit: str | None) -> str:
+    """#54 adoption->canonical drift surfacing: a one-line message for how far
+    the adopter's installed Cairn ref (*lock_commit*) is behind canonical
+    (*new_commit*).
+
+    **Degrades gracefully (R1).** If either ref is missing or the ``unknown``
+    sentinel (a non-git / packaged-release source, per ``_cairn_commit``), or
+    git is unavailable, it returns an explicit *unavailable* message rather
+    than running a git compare on a bad ref. Informational only -- the caller
+    surfaces it; it never blocks."""
+    import subprocess
+    if (not lock_commit or not new_commit
+            or "unknown" in (lock_commit, new_commit)):
+        return ("adoption drift: behind-by-N check unavailable "
+                "(git metadata missing)")
+    if lock_commit == new_commit:
+        return "adoption drift: installed tree is current with canonical"
+    try:
+        r = subprocess.run(
+            ["git", "-C", str(cairn_root), "rev-list", "--count",
+             f"{lock_commit}..{new_commit}"],
+            capture_output=True, text=True, timeout=10, check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return "adoption drift: behind-by-N check unavailable (git error)"
+    if r.returncode != 0:
+        return ("adoption drift: behind-by-N check unavailable "
+                "(refs not comparable)")
+    return ("adoption drift: installed tree is behind canonical by "
+            f"{r.stdout.strip()} commit(s)")
+
+
 def _refuse_secret_tokens(
     tokens: dict[str, str], allow: tuple[str, ...] = (),
 ) -> None:
@@ -3253,13 +3286,15 @@ def _citation_ok(target: Path, lock: dict[str, Any]) -> bool | None:
 
 def _print_upgrade_report(
     plans: list[FilePlan], structural: dict[str, Any],
-    citation: bool | None, *, mode: str,
+    citation: bool | None, *, mode: str, drift: str | None = None,
 ) -> None:
     import collections
     by_kind: dict[str, list[str]] = collections.defaultdict(list)
     for fp in plans:
         by_kind[fp.kind].append(fp.dst)
     print(f"\nCairn upgrade -- {mode}\n" + "=" * 40)
+    if drift:
+        print(f"  {drift}")
     order = ["clean", "clean-locally-modified", "new-core",
              "conflict", "slot-removed", "review-only",
              "verbatim-update", "verbatim-locally-modified",
@@ -3940,16 +3975,22 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
     plans, structural = _compute_upgrade(
         target, cairn_root, templates_root, lock, args.to)
     citation = _citation_ok(target, lock)
+    # #54 adoption->canonical drift surfacing (informational; never blocks).
+    drift = _behind_by_n(
+        cairn_root, lock.get("cairn_commit"),
+        args.to or _cairn_commit(cairn_root))
 
     if args.stage:
         _write_stage(target, plans, lock, args.to, cairn_root)
-        _print_upgrade_report(plans, structural, citation, mode="stage")
+        _print_upgrade_report(plans, structural, citation, mode="stage",
+                              drift=drift)
         print(f"\nStaged under {_STAGING_REL}/ . Resolve any conflicts, then "
               "`upgrade --apply --target <repo>`.")
         return 0
 
     # Default: --plan (strictly read-only).
-    _print_upgrade_report(plans, structural, citation, mode="plan (read-only)")
+    _print_upgrade_report(plans, structural, citation,
+                          mode="plan (read-only)", drift=drift)
     return 0
 
 

@@ -392,6 +392,20 @@ contract that harvest reads against; adopters with existing
 trackers may ship a per-tracker `tracker_schema.yml` mapping the
 adopter's columns onto the canonical fields.
 
+### Adoption drift surfacing — when the upgrade tooling is installed
+
+The adoption→canonical checkpoint of loop-fidelity (see `lifecycle.md` >
+"Loop-fidelity verification") is surfaced, not enforced: `upgrade --plan`
+reports a one-line **adoption-drift** message — how far the adopter's installed
+Cairn ref is behind canonical (the `cairn-lock.yml` commit vs the source HEAD).
+A session-start or goodnight pass that runs `upgrade --plan` therefore sees, at
+a glance, whether the per-change fold-back loop is closed *continuously* rather
+than only on the periodic harvest cadence. It is **informational and
+fail-open** — it surfaces drift, never blocks work, and **degrades gracefully**:
+when the git metadata is missing or the Cairn source is a packaged release (no
+git), it prints an explicit "unavailable" line rather than failing. Acting on
+the drift (running the upgrade) stays a deliberate, separately-approved step.
+
 ## Adaptation
 
 The routines are invariant, but their *weight* tracks the team. A
