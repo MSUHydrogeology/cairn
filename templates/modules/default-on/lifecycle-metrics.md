@@ -1,3 +1,8 @@
+<!-- claim-check-allow: dev/measurement/ -->
+<!-- ^ `dev/measurement/` is a forward reference until the measurement-folder
+     standard is adopted (it is the structured home for the late-blocker
+     metrics named below); marked, not asserted. -->
+
 # Module: lifecycle-metrics
 
 **Selected when:** default-on — kept by every adoption except the
