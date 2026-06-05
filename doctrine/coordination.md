@@ -63,19 +63,42 @@ wrong message and author. (Observed in practice across adopters: a
 shared-file edit and, repeatedly, plan/proposal-archive `git mv`
 renames swept into an unrelated commit — the recurrence is what
 promoted these from per-incident notes to standing doctrine.) The
-discipline is one structural rule and three backstops:
+discipline is one structural rule and a **windowless** commit habit:
 
 * **structural** — commit with explicit paths, never a bare `git
   commit`, so another agent's staged work cannot ride into yours;
-* **backstops** — verify the staged set as its own step, keep your
-  staged window minimal, and name *both* sides of a `git mv` rename.
+* **windowless** — for tracked files, `git commit <paths>` stages
+  *and* commits atomically: there is **no separate `git add`**, so no
+  staged window is ever left exposed. **Verify via the working tree**
+  (`git status --short`, `git diff <paths>`) — index-independent, and
+  it does not show *other* agents' staged work — **not** via the
+  shared `git diff --cached`, which both *manufactures* the window
+  (it needs a prior `git add`) and reads back *everyone's* staged
+  index.
 
-The structural rule makes the collision *impossible* regardless of
-index state; the backstops only reduce its odds. The command-level
-checklist — the exact `git diff --cached --stat` verify step,
-`git restore --staged` recovery, and the `git mv` both-paths rule —
-is single-sourced in `AGENTS.md` > "Git and commit workflow" (the
-operational reference); this section is the systemic *why*.
+This inverts the older "stage, then verify `--cached`, then commit"
+backstop: in a shared index that verify step is self-defeating — it
+opens the very window it is meant to police, and surfaces concurrent
+sessions' staged work. The structural rule still makes the collision
+*impossible* regardless of index state; the windowless habit removes
+the window the backstops merely narrowed. Three residual cases:
+
+* **failed atomic commit** — if a `git add <paths> && git commit
+  <paths>` chain (needed for *new/untracked* files) aborts on a
+  pre-commit/intent check, the files are left staged; immediately
+  `git restore --staged <paths>` so a failed commit leaves no
+  residue.
+* **rename** — verify a `git mv` via `git status --short` (the `R
+  source -> destination` line), not `git diff --cached`; still name
+  *both* sides in the path-scoped commit.
+* **untracked content** — inspect it directly or with `git diff
+  --no-index /dev/null <path>` (a plain `git diff <path>` shows
+  nothing for an untracked file).
+
+The command-level checklist is single-sourced in `AGENTS.md` > "Git
+and commit workflow" (the operational reference); this section is the
+systemic *why*. **Bright line:** never leave a `git add` exposed
+across tool calls, verification, or other work.
 
 ### Tier 2 — asynchronous: work intents
 

@@ -32,6 +32,21 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+### Changed
+
+- **Windowless-commit Tier-1 discipline (concurrent-session coordination, Layer
+  1).** `doctrine/coordination.md` Tier 1 + the `templates/core/AGENTS.md`
+  git-workflow checklist now make the **windowless commit** primary: for tracked
+  files, `git commit <paths>` stages *and* commits atomically (no separate `git
+  add`), and the staged set is **verified via the working tree** (`git status
+  --short`, `git diff <paths>`) rather than the shared `git diff --cached` — which
+  both manufactured the exposure window and read back other sessions' staged
+  index. The structural path-scoped-commit rule is unchanged; the C1/C2/C3
+  residual cases (failed-atomic-commit `restore`; rename via `git status
+  --short`; untracked content via `git diff --no-index`) are baked in. Drained
+  from the LHM `cairn-concurrent-session-coordination` plan (fold-back #53/#56;
+  supersedes modflow_tools' concurrent-staging-discipline).
+
 ### Added
 
 - **Loop-fidelity gate (#58) — fail-closed dangling-reference check in

@@ -171,19 +171,28 @@ roster is in `dev/agent_collaboration.md`.
   `git commit`**: it commits the *entire* staged index, so anything
   another agent has staged rides into your commit under your message
   and author. A path-scoped commit makes that collision *structurally
-  impossible*; the backstops below only reduce its odds.
-  * **Verify the staged set as its own step** — run `git diff --cached
-    --stat` and confirm it is *exactly* the files you intend, as a
-    *separate* step, never chained into the `git commit` (a chained
-    verify scrolls past and the commit fires regardless). Unstage
-    anything swept in (`git restore --staged <path>`) before committing.
-  * **Keep your staged window minimal** — don't leave a `git add` /
-    `git mv` sitting exposed; stage and commit promptly.
+  impossible*; the windowless habit below removes the staged window the
+  old backstops only narrowed.
+  * **Prefer the windowless commit** — for *tracked* files, `git commit
+    <paths>` stages *and* commits atomically: **no separate `git add`**,
+    so no staged window is ever exposed. **Verify via the working tree**
+    (`git status --short`, `git diff <paths>`) as its own step —
+    index-independent, and it does **not** show other agents' staged
+    work; do **not** verify with `git diff --cached`, which both
+    *manufactures* the window (it needs a prior `git add`) and reads back
+    *everyone's* staged index.
+  * **New / untracked files** — `git add <paths> && git commit <paths>`
+    in one invocation. If the chain aborts on a pre-commit / intent
+    check, the files are left staged — immediately `git restore --staged
+    <paths>` so a failed commit leaves no residue.
   * **A `git mv` rename needs *both* sides named** in a path-scoped
     commit — naming only the destination commits the "add" and leaves
     the source-side deletion unstaged, so HEAD carries the file at both
-    paths until a fixup. Name both source and destination (or `git add`
-    the rename, then verify the `R###` line in `git diff --cached --stat`).
+    paths until a fixup. Name both source and destination, and verify via
+    `git status --short` (the `R  source -> destination` line), not
+    `git diff --cached`.
+  * **Bright line** — never leave a `git add` / `git mv` sitting exposed
+    across tool calls, verification, or other work.
 * **Untracked lifecycle artifacts — commit atomically.** If you write a
   lifecycle-opening artifact (plan, proposal, strategy doc) meaning to ship it,
   commit it the *same turn* — write + `git mv` + `git commit` together; never
