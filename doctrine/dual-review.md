@@ -192,23 +192,89 @@ A review that finds zero issues — or only minor style nits — on a
 *complex* change should be treated with skepticism, not relief. The
 clean pass is a known failure mode: a reviewer who reads to *confirm*
 the change works will find that it does. The discipline is to read as
-if a hidden bug exists and probe for it. A reviewer's standing checks:
+if a hidden bug exists and probe for it.
 
-* **fail-closed guards** — validation and safety checks raise on bad
-  input rather than silently returning empty or degrading;
-* **unconditional guard coverage** — correctness checks cover *all*
-  paths and configurations, not just the declared happy edges;
-* **negative tests** — the validation gates have tests that assert the
-  *failure*, not only the success path;
-* **spec / schema / registry key alignment** — the keys a change reads
-  match the keys its source actually emits;
-* **correctness and regressions**, and **documentation / example
-  drift** introduced by the change.
+The standing form of that discipline is the **review sweep** — a fixed
+roster of lenses every reviewer works through and **reports coverage
+on**. It exists because the most common first-pass miss is not a wrong
+judgment but an *unswept category*: the reviewer applied a narrow lens
+and never looked at a whole class of failure, and a later reviewer
+catches it not by being smarter but by sweeping a category the first
+skipped. A shared roster makes the breadth explicit and lets one pass
+cover it — so an independent later pass is spent on genuine
+independence (a different prior), not on a category the first simply
+did not look at.
+
+**The sweep is generic and change-agnostic** — the same roster every
+time, never a change-specific list of "what to push on." That
+distinction is exactly what keeps it compatible with *don't telegraph
+the lens* (below): a standing set of perspectives is not a hint about
+where this change's bug lives.
+
+**The lenses:**
+
+1. **Claims** — probe every load-bearing claim against the *current*
+   tree: "exists / works / is available / is atomic / fails closed /
+   will use X." A **forward** claim ("will exist", "the translator will
+   support") gets the *same* probe as a present-tense one — run the
+   check (load it, call it, inspect the bytes), never accept it on
+   assertion. This is the probe-reducible miss a pure checklist never
+   catches.
+2. **Production path exercised by tests** — the public entry point is
+   tested *through*, not just a helper or a stub of the very thing that
+   breaks.
+3. **Design completeness** — preconditions, invariants, edge cases
+   (empty / None / zero / single / N≫1 / mismatched units or CRS), and
+   failure modes are stated, not left implicit for a new mechanism.
+4. **Silent failure / fail-closed** — guards raise loudly rather than
+   degrading or returning empty; they cover all configs and stages, not
+   only the declared edges; any fail-open path is intentional, not
+   accidental.
+5. **Cross-document consistency** — scan the governing docs, the
+   roadmap, and code/tests/doctrine for references to what is changing:
+   an orphaned reference to the old or deferred behavior, or an existing
+   tool / path / constraint the change should use or update.
+6. **Drift** — docs, examples, changelog, and commit claims match the
+   behavior that actually shipped.
+7. **Lifecycle / process placement** — for a doctrine or process
+   change: *who* runs this, *when*, in *which* ceremony or serialization
+   point; the change has a home in the lifecycle, not just a rule.
+8. **Domain / scientific validity & scope** — methods are grounded and
+   documented; scope has not quietly expanded; each new abstraction
+   earns its existence.
+9. **Name the satisfier** — every finding states the test / guard /
+   doc / scope-cut / explicit `wontfix` that would close it. A finding
+   with no satisfier is an observation, not yet a finding.
+
+**Falsifiable coverage, not "checked."** A swept lens is credible only
+if its claim is *falsifiable* — it cites the file path, test node,
+line, or command output that backs it ("#2: `tests/contract/foo.py::test_bar`
+calls the public entry"). A bare "#2: checked" is an *incomplete*
+review, not a pass. This is the guard against the sweep becoming a
+self-certification ritual.
+
+**The evidence bar is staged.** The same lens demands different
+evidence at different maturity levels — the sweep must not over-demand
+code-level proof at proposal time, nor under-demand it at code review.
+For lens #2 (production path), for example:
+
+* **Proposal review** — is the public-path evidence *promised and
+  scoped* in the verification plan?
+* **Plan review** — is it *sequenced into a chunk* and protected by
+  acceptance criteria?
+* **Code review** — does the landed test *actually call the public
+  path* today?
+
+**The sweep is a floor, not a ceiling**, and it **never silently
+downgrades a declared-`required` review tier.** It names the minimum
+breadth to cover and report; it can recommend *upward* escalation when
+coverage is weak (see *recommend-and-decide*, below), but a tier the
+lifecycle declared `required` still runs regardless.
 
 The domain adds its own probes — units, coordinate systems, numerical
-edges, resource resolution — so each adopter extends this list with
+edges, resource resolution — so each adopter extends the roster with
 the checks its high-risk surfaces demand. The collaborative-skeptic
-stance (`collaboration-stance.md`) is the posture this check operates
+stance (`collaboration-stance.md`) is the posture the sweep operates
 in: steelman the change, then hunt for what it missed.
 
 ## Briefs to reviewers — don't telegraph the lens
@@ -228,6 +294,20 @@ to find. Spelling out the lens turns an independent read into
 hypothesis-confirmation: you are asking the reviewer to check your
 guesses rather than form their own. Brief on facts; trust the reviewer
 to bring the lens.
+
+**The review sweep is not telegraphing.** The standing review sweep
+(above) might look like it contradicts this — it hands the reviewer a
+list of lenses. It does not, and the distinction is exact: the sweep is
+a **generic, change-agnostic** roster of perspectives every reviewer
+applies to *every* change and reports coverage on. Telegraphing is
+supplying **change-specific judgment** — "the bug is probably in the
+override path", "focus on the CRS handling here" — which seeds the
+answer for *this* change. A standing lens roster is the former; a hint
+about where this change fails is the latter. The reviewer reporting
+*which generic lenses they swept* (the coverage line) is the opposite
+of a briefing agent seeding *what to find*. Keep the brief on facts;
+the sweep is the reviewer's own standing instrument, not a lens you
+handed them.
 
 The same applies to Internal-review handoffs and to any task brief at
 session start (an implementing agent picking up a plan): over-detailed
