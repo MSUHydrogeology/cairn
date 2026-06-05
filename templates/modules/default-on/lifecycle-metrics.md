@@ -1,8 +1,3 @@
-<!-- claim-check-allow: dev/measurement/ -->
-<!-- ^ `dev/measurement/` is a forward reference until the measurement-folder
-     standard is adopted (it is the structured home for the late-blocker
-     metrics named below); marked, not asserted. -->
-
 # Module: lifecycle-metrics
 
 **Selected when:** default-on — kept by every adoption except the
@@ -144,11 +139,15 @@ recommend-and-decide trades away independence it should not.
 surface — the standard home for records the project keeps *for
 measurement* (metrics, the collision log, signature logs), distinct from
 historical reference — in a structured, parseable form rather than
-decaying prose, so a metrics tool can aggregate them. That surface is its
-own Cairn-standard folder; this module *consumes* it as the home and does
-not define it. All of it is **subject to the Measurement Compact** above:
-system learning, no per-member read-out, Tier-1 gating on any external
-publication.
+decaying prose, so a metrics tool can aggregate them. Late-blocker
+metrics live in that folder's **canonical structured metrics store**,
+with dated CSV exports under its **`snapshots/`** subdirectory; the
+store's filename and format are this module's tooling concern, while the
+*home* and its membership rule are the `dev/measurement/` standard (see
+that folder's `README.md`). This module *consumes* the standard folder as
+the home and does not define it. All of it is **subject to the
+Measurement Compact** above: system learning, no per-member read-out,
+Tier-1 gating on any external publication.
 
 ## Reference implementation
 

@@ -34,6 +34,19 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **`dev/measurement/` — a standard self-instrumentation folder.** A new core
+  scaffold dir (`templates/core/dev/measurement/`, carried by a `README.md` and
+  registered in `_CORE_MAPPINGS`) gives every adoption a predictable home for the
+  records it keeps to **measure its own process health** — aggregate lifecycle
+  metrics + the operational ledgers that feed them (the collision log, the
+  handoff-hazard log, the forthcoming signature log). The README states a
+  two-sided **membership rule** (not an archive → `dev/**/archive/`; not
+  framework-adopter state → `dev/.cairn/`) with concrete excluded examples (the
+  work-intent log = active coordination state; `dev/reflections/` = ephemeral),
+  and reserves a **structured metrics-store slot** + a `snapshots/` subdir (the
+  store's name/format owned by the metrics tooling). The `lifecycle-metrics` and
+  `incident-trackers` default-on modules now point at `dev/measurement/` as the
+  home for the metrics store and live incident trackers.
 - **Reviewer doctrine: the structured review sweep + recommend-and-decide.**
   `doctrine/dual-review.md` grows the clean-pass-trap standing checks into a
   generic, change-agnostic **9-lens review sweep** every reviewer works through

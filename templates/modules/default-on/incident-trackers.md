@@ -8,7 +8,7 @@ nightly migration step; the payoff is that the rate-limit gate's
 **parse target** instead of vibes.
 **Adds to:** a forkable incident-tracker template at `dev/modules/`
 (installed from this module's template, fork-on-demand to a live
-location like `dev/incident_log.md`), plus a goodnight **incident-
+location like `dev/measurement/incident_log.md`), plus a goodnight **incident-
 tracker migration** step in the session-routines / goodnight doctrine.
 
 The incident-trackers module is the **deployment-side measurement
@@ -29,10 +29,13 @@ ships:
 
 * The **forkable tracker template** at
   `dev/modules/incident_log_template.md`. Adopters fork to one or
-  more live tracker locations (e.g., `dev/incident_log.md` for a
+  more live tracker locations (e.g., `dev/measurement/incident_log.md` for a
   single combined tracker, or class-specific trackers like
-  `dev/collision_log.md` + `dev/coordination_incidents.md` for
-  multi-class deployments).
+  `dev/measurement/collision_log.md` + `dev/measurement/coordination_incidents.md`
+  for multi-class deployments). Live trackers home under **`dev/measurement/`**
+  (the self-instrumentation standard — they are measurement that feeds the
+  Compact's collision-log correlation); only the forkable *template* stays in
+  `dev/modules/`.
 * The **canonical 7-column semantic-field schema** the template
   carries — the contract Goal 7's eventual cross-adopter harvest
   reads against.
@@ -56,8 +59,8 @@ goodnight-incident-tracker-migration` slot anchor).
 
 > **Migrate incident-tracker entries.**  If a reflection reports an
 > incident matching an event class defined in a tracker the
-> deployment maintains (`dev/incident_log.md`,
-> `dev/coordination_log.md`, etc. — per the deployment's
+> deployment maintains (`dev/measurement/incident_log.md`,
+> `dev/measurement/coordination_log.md`, etc. — per the deployment's
 > `incident-trackers` module instantiation), migrate a one-line
 > dated entry to the matching tracker table.
 >
@@ -104,12 +107,13 @@ Adopters fork **one or many** instances of
 class structure the deployment uses:
 
 * **Single combined tracker** — copy the template once to
-  `dev/incident_log.md`, define multiple event classes in the
+  `dev/measurement/incident_log.md`, define multiple event classes in the
   "What counts" section, log all incidents to one table.
 * **Class-specific trackers** — copy the template multiple times
-  to class-specific filenames (e.g., `dev/collision_log.md` for
-  staged-index incidents, `dev/coordination_log.md` for work-
-  intent collisions). Each carries its own "What counts" + table.
+  to class-specific filenames under `dev/measurement/` (e.g.,
+  `dev/measurement/collision_log.md` for staged-index incidents,
+  `dev/measurement/coordination_log.md` for work-intent collisions).
+  Each carries its own "What counts" + table.
 
 The reference deployment (modflow_tools) runs class-specific
 trackers; a smaller team typically runs one combined; a larger
