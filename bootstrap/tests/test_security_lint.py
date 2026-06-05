@@ -155,3 +155,27 @@ def test_scan_targets_cover_all_shipped_scripts() -> None:
     # No bare directory target (the no-`-r` footgun) -- every target is a file.
     for t in _scan_targets():
         assert t.endswith(".py"), f"non-file scan target: {t}"
+
+
+def test_scan_targets_recurses_the_scaffold_engine_package(tmp_path, monkeypatch) -> None:
+    """RR3/S4 (scaffold-split 0A.1): when the post-split engine package exists,
+    EVERY .py under bootstrap/_scaffold/ is scanned recursively (the engine's
+    guts can't fall out of the release Bandit gate), while bootstrap/tests/
+    (intentional attack fixtures) stays excluded. A no-op until Stage 0B creates
+    the package; this exercises the capability now against a throwaway tree."""
+    import bootstrap.security_check as sc
+
+    (tmp_path / "scripts").mkdir()
+    (tmp_path / "bootstrap" / "_scaffold" / "sub").mkdir(parents=True)
+    (tmp_path / "bootstrap" / "scaffold.py").write_text("x = 1\n", encoding="utf-8")
+    (tmp_path / "bootstrap" / "_scaffold" / "engine.py").write_text("y = 1\n", encoding="utf-8")
+    (tmp_path / "bootstrap" / "_scaffold" / "sub" / "deep.py").write_text("z = 1\n", encoding="utf-8")
+    (tmp_path / "bootstrap" / "tests").mkdir()
+    (tmp_path / "bootstrap" / "tests" / "attack_fixture.py").write_text("evil = 1\n", encoding="utf-8")
+    monkeypatch.setattr(sc, "CAIRN_ROOT", tmp_path)
+
+    targets = set(sc.scan_targets())
+    assert "bootstrap/_scaffold/engine.py" in targets
+    assert "bootstrap/_scaffold/sub/deep.py" in targets, "recursion must reach nested modules"
+    assert "bootstrap/scaffold.py" in targets
+    assert "bootstrap/tests/attack_fixture.py" not in targets, "attack fixtures must stay excluded"

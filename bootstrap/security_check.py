@@ -71,6 +71,19 @@ def scan_targets() -> list[str]:
             str(p.relative_to(CAIRN_ROOT))
             for p in (CAIRN_ROOT / sub).glob("*.py")
         )
+    # The scaffold engine package (post-split; plan 2026-06-05-scaffold-split,
+    # RR3/S4): RECURSE it -- every module under bootstrap/_scaffold/ is
+    # privileged implementation, equal in authority to the old monolith, so the
+    # non-recursive bootstrap/*.py glob above would leave the engine's guts
+    # unscanned after the split. bootstrap/tests/ (intentional attack fixtures)
+    # stays excluded. A no-op until the package exists (Stage 0B), so the Bandit
+    # surface is unchanged today.
+    engine_pkg = CAIRN_ROOT / "bootstrap" / "_scaffold"
+    if engine_pkg.is_dir():
+        targets.update(
+            str(p.relative_to(CAIRN_ROOT))
+            for p in engine_pkg.rglob("*.py")
+        )
     return sorted(targets)
 
 
