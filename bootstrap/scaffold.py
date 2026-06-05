@@ -3280,10 +3280,20 @@ def _compute_upgrade(
 
 def _citation_ok(target: Path, lock: dict[str, Any]) -> bool | None:
     """R10: if the target carries a fidelity manifest, does it cite the
-    current lockfile version/commit?  None if no manifest to check."""
-    candidates = list((target / "dev" / "strategy").glob("*fidelity*"))
-    candidates += list((target / "dev" / "strategy").glob("*manifest*"))
-    manifest = next((c for c in candidates if c.is_file()), None)
+    current lockfile version/commit?  None if no manifest to check.  Searches
+    `dev/.cairn/` first (the adoption-state home), then the legacy
+    `dev/strategy/` (kept for un-migrated adopters)."""
+    manifest = None
+    for rel in _MANIFEST_SEARCH_DIRS:
+        d = target / rel
+        if not d.is_dir():
+            continue
+        cands = sorted(
+            {c for c in list(d.glob("*fidelity*")) + list(d.glob("*manifest*"))
+             if c.is_file()})
+        if cands:
+            manifest = cands[0]
+            break
     if manifest is None:
         return None
     text = manifest.read_text(encoding="utf-8", errors="replace")
@@ -4152,6 +4162,59 @@ def _apply_upgrade(
     return 0
 
 
+def _yaml_sq(v: str) -> str:
+    """A YAML single-quoted scalar (doubling any embedded single quote) --
+    always valid, and safe for values carrying double quotes / shell syntax
+    (e.g. a `test_command`)."""
+    return "'" + str(v).replace("'", "''") + "'"
+
+
+def _self_heal_profile_config(target: Path, lock: dict[str, Any]) -> bool:
+    """R1: if `dev/.cairn/profile.yml` is absent but the lockfile carries a
+    non-empty profile, materialize the committed config from the lockfile --
+    **merging the lockfile `tokens` (project_name, test_command, ...) with the
+    `profile` axes/preset (B1)** so the written config is complete and
+    re-loadable. Only-when-absent (never clobbers an existing config). Returns
+    True iff it wrote one.
+
+    The materialized file is a single new path outside the upgrade's staged
+    write-set, so the #56 dirty-tree guard never refuses it."""
+    profile_path = target / _PROFILE_REL
+    if profile_path.exists():
+        return False
+    profile = lock.get("profile") or {}
+    axes = profile.get("axes") or {}
+    if not axes:
+        return False  # gating-only / empty lockfile profile -- nothing to heal
+    tokens = lock.get("tokens") or {}
+    lines = [
+        "# Cairn install-config (profile.yml).",
+        "# Self-healed by `upgrade` from the lockfile profile: this adopter was",
+        "# init-lock'd before profile.yml was materialized. Edit THIS file to",
+        "# change the profile, then regenerate the lockfile.",
+        "",
+    ]
+    for key in ("project_name", "test_command", "claim_check_command",
+                "metrics_command"):
+        if tokens.get(key):
+            lines.append(f"{key}: {_yaml_sq(tokens[key])}")
+    lines.append("")
+    if profile.get("preset"):
+        lines.append(f"preset: {profile['preset']}")
+    for a in _AXES:
+        if axes.get(a):
+            lines.append(f"{a}: {axes[a]}")
+    modules = lock.get("modules") or []
+    if modules:
+        lines += ["", "modules:"] + [f"  - {m}" for m in modules]
+    profile_path.parent.mkdir(parents=True, exist_ok=True)
+    profile_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"  [self-heal] materialized {_PROFILE_REL} from the lockfile profile "
+          "(this adopter predates the committed config; edit it to change the "
+          "profile, then regenerate the lockfile).", file=sys.stderr)
+    return True
+
+
 def cmd_upgrade(argv: list[str] | None = None) -> int:
     """`scaffold.py upgrade` -- the adopter upgrade path (Chunk 5/6)."""
     import argparse
@@ -4219,6 +4282,13 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
               "packaged release can upgrade only to the currently-running "
               "tree (omit --to).", file=sys.stderr)
         return 1
+
+    # R1 self-heal (write modes only -- never on the read-only --plan): an
+    # already-init-lock'd adopter may carry a populated lockfile profile but no
+    # committed dev/.cairn/profile.yml. Materialize it from the lockfile so the
+    # config you edit exists. Only-when-absent; composes with the #56 guard.
+    if args.apply or args.stage:
+        _self_heal_profile_config(target, lock)
 
     if args.apply:
         return _apply_upgrade(target, lock, cairn_root, templates_root,

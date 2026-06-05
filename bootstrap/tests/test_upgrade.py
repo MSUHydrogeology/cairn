@@ -1166,3 +1166,80 @@ class TestDirtyTreeGuard:
         rc = s.main(["upgrade", "--target", str(tmp_path), "--apply",
                      "--cairn-root", str(CAIRN_ROOT)])
         assert rc == 0  # disjoint tracked dirt did not trip the guard
+
+
+class TestManifestHomeAndSelfHeal:
+    """Chunk 2: the R10 citation check finds the manifest in `dev/.cairn/` first
+    (legacy `dev/strategy/` fallback); R1 self-heals a missing `profile.yml`
+    from the lockfile (merging tokens + profile, B1), composing with the #56
+    dirty-tree guard."""
+
+    def test_r10_finds_manifest_in_cairn_home(self, tmp_path: Path) -> None:
+        assert _install(tmp_path) == 0
+        lock = s.read_lockfile(tmp_path)
+        man = tmp_path / "dev" / ".cairn" / "x-fidelity-manifest.yml"
+        man.write_text(f'cairn_commit: "{lock["cairn_commit"]}"\n')
+        assert s._citation_ok(tmp_path, lock) is True
+        man.write_text('cairn_commit: "0000000"\n')          # stale citation
+        assert s._citation_ok(tmp_path, lock) is False
+
+    def test_r10_legacy_strategy_fallback(self, tmp_path: Path) -> None:
+        assert _install(tmp_path) == 0
+        lock = s.read_lockfile(tmp_path)
+        d = tmp_path / "dev" / "strategy"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "x-fidelity-manifest.yml").write_text(
+            f'cairn_commit: "{lock["cairn_commit"]}"\n')
+        assert s._citation_ok(tmp_path, lock) is True
+
+    def test_r10_prefers_cairn_over_legacy(self, tmp_path: Path) -> None:
+        assert _install(tmp_path) == 0
+        lock = s.read_lockfile(tmp_path)
+        d = tmp_path / "dev" / "strategy"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "x-fidelity-manifest.yml").write_text('cairn_commit: "0000000"\n')
+        (tmp_path / "dev" / ".cairn" / "x-fidelity-manifest.yml").write_text(
+            f'cairn_commit: "{lock["cairn_commit"]}"\n')
+        assert s._citation_ok(tmp_path, lock) is True  # canonical home wins
+
+    def test_self_heal_materializes_when_absent(self, tmp_path: Path) -> None:
+        assert _install(tmp_path) == 0
+        prof = tmp_path / "dev" / ".cairn" / "profile.yml"
+        assert not prof.exists()  # install does not write the config there
+        assert s._self_heal_profile_config(tmp_path, s.read_lockfile(tmp_path))
+        assert prof.exists()
+        cfg = s.load_config(prof)                  # complete + re-loadable
+        assert cfg["project_name"] == "Demo"
+        assert all(cfg.get(a) for a in s._AXES)    # all six axes (B1 + profile)
+
+    def test_self_heal_noop_when_present(self, tmp_path: Path) -> None:
+        assert _install(tmp_path) == 0
+        prof = _seed_profile(tmp_path, size="large")
+        before = prof.read_text()
+        assert s._self_heal_profile_config(tmp_path, s.read_lockfile(tmp_path)) is False
+        assert prof.read_text() == before          # never clobber
+
+    def test_self_heal_noop_on_empty_lockfile_profile(self, tmp_path: Path) -> None:
+        assert _install(tmp_path) == 0
+        (tmp_path / "dev" / ".cairn" / "profile.yml").unlink(missing_ok=True)
+        lock = s.read_lockfile(tmp_path)
+        lock["profile"] = {}                        # a gating-only / stub profile
+        assert s._self_heal_profile_config(tmp_path, lock) is False
+        assert not (tmp_path / "dev" / ".cairn" / "profile.yml").exists()
+
+    @pytest.mark.skipif(shutil.which("git") is None, reason="git not available")
+    def test_self_heal_composes_with_dirty_tree_guard(self, tmp_path: Path) -> None:
+        """(invariant vi) The self-healed profile.yml is untracked, so the #56
+        tracked-only dirty-tree guard does not see it as a collision."""
+        import subprocess
+        assert _install(tmp_path) == 0
+        for c in (["init", "-q"], ["config", "user.email", "t@t"],
+                  ["config", "user.name", "t"], ["add", "-A"],
+                  ["commit", "-q", "-m", "install"]):
+            subprocess.run(["git", "-C", str(tmp_path), *c],
+                           check=True, capture_output=True, text=True)
+        # self-heal now writes an untracked profile.yml on a clean committed tree
+        assert s._self_heal_profile_config(tmp_path, s.read_lockfile(tmp_path))
+        dirty = s._dirty_tracked_paths(tmp_path)
+        assert dirty is not None
+        assert "dev/.cairn/profile.yml" not in dirty   # untracked -> excluded
