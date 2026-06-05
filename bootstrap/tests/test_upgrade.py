@@ -1227,6 +1227,23 @@ class TestManifestHomeAndSelfHeal:
         assert s._self_heal_profile_config(tmp_path, lock) is False
         assert not (tmp_path / "dev" / ".cairn" / "profile.yml").exists()
 
+    def test_self_heal_through_apply_not_stage(self, tmp_path: Path) -> None:
+        """(T-1) self-heal is wired through `cmd_upgrade --apply`; (S-1) `--stage`
+        is a non-mutating preview and must NOT materialize the config."""
+        assert _install(tmp_path) == 0
+        prof = tmp_path / "dev" / ".cairn" / "profile.yml"
+        assert not prof.exists()  # install does not write the config there
+        # --stage is a preview: it must not self-heal (S-1).
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        assert not prof.exists()
+        # --apply self-heals through the public entry point (T-1).
+        assert s.main(["upgrade", "--target", str(tmp_path), "--apply",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        assert prof.exists()
+        cfg = s.load_config(prof)
+        assert cfg["project_name"] == "Demo" and all(cfg.get(a) for a in s._AXES)
+
     @pytest.mark.skipif(shutil.which("git") is None, reason="git not available")
     def test_self_heal_composes_with_dirty_tree_guard(self, tmp_path: Path) -> None:
         """(invariant vi) The self-healed profile.yml is untracked, so the #56

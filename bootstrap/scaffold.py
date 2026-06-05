@@ -3280,22 +3280,15 @@ def _compute_upgrade(
 
 def _citation_ok(target: Path, lock: dict[str, Any]) -> bool | None:
     """R10: if the target carries a fidelity manifest, does it cite the
-    current lockfile version/commit?  None if no manifest to check.  Searches
-    `dev/.cairn/` first (the adoption-state home), then the legacy
-    `dev/strategy/` (kept for un-migrated adopters)."""
-    manifest = None
-    for rel in _MANIFEST_SEARCH_DIRS:
-        d = target / rel
-        if not d.is_dir():
-            continue
-        cands = sorted(
-            {c for c in list(d.glob("*fidelity*")) + list(d.glob("*manifest*"))
-             if c.is_file()})
-        if cands:
-            manifest = cands[0]
-            break
-    if manifest is None:
+    current lockfile version/commit?  None if no manifest to check.  Uses the
+    shared `_find_manifest_path` (dev/.cairn/ first, legacy dev/strategy/
+    fallback) and emits the same migration advisory `init-lock` does."""
+    found = _find_manifest_path(target)
+    if found is None:
         return None
+    manifest, is_legacy = found
+    if is_legacy:
+        _warn_legacy_manifest_home(manifest)
     text = manifest.read_text(encoding="utf-8", errors="replace")
     commit = str(lock.get("cairn_commit", ""))
     version = str(lock.get("cairn_version", ""))
@@ -3520,15 +3513,27 @@ def _resolve_vendor_wrapper(
 def _find_manifest_path(target: Path) -> tuple[Path, bool] | None:
     """Locate the adopter's fidelity manifest, searching `dev/.cairn/` first
     (the canonical adoption-state home), then the legacy `dev/strategy/`. Returns
-    ``(path, is_legacy)`` or ``None``."""
+    ``(path, is_legacy)`` or ``None``. The single manifest-finder shared by the
+    `cairn_commit` recovery (B1) and the R10 citation check, so the two cannot
+    diverge on which file is the manifest."""
     for idx, rel in enumerate(_MANIFEST_SEARCH_DIRS):
         d = target / rel
         if not d.is_dir():
             continue
-        for c in sorted(d.glob("*manifest*")):
-            if c.is_file():
-                return c, idx > 0
+        cands = sorted(
+            {c for c in list(d.glob("*fidelity*")) + list(d.glob("*manifest*"))
+             if c.is_file()})
+        if cands:
+            return cands[0], idx > 0
     return None
+
+
+def _warn_legacy_manifest_home(manifest: Path) -> None:
+    """The shared migration advisory emitted whenever a manifest is found in the
+    legacy `dev/strategy/` home (by either the citation check or `init-lock`)."""
+    print(f"  [advisory] fidelity manifest found in the legacy `dev/strategy/` "
+          f"home ({manifest.name}); move it to `dev/.cairn/` (the adoption-state "
+          "home).", file=sys.stderr)
 
 
 def _manifest_cairn_commit(target: Path) -> str:
@@ -3540,9 +3545,7 @@ def _manifest_cairn_commit(target: Path) -> str:
         return "unknown"
     path, is_legacy = found
     if is_legacy:
-        print(f"  [advisory] fidelity manifest found in the legacy "
-              f"`dev/strategy/` home ({path.name}); move it to `dev/.cairn/` "
-              "(the adoption-state home).", file=sys.stderr)
+        _warn_legacy_manifest_home(path)
     for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
         m = re.match(r'\s*cairn_commit\s*:\s*"?([0-9a-f]{7,40})"?', line)
         if m:
@@ -4177,6 +4180,7 @@ def _self_heal_profile_config(target: Path, lock: dict[str, Any]) -> bool:
     re-loadable. Only-when-absent (never clobbers an existing config). Returns
     True iff it wrote one.
 
+    Called on ``--apply`` only -- never ``--stage`` (a non-mutating preview).
     The materialized file is a single new path outside the upgrade's staged
     write-set, so the #56 dirty-tree guard never refuses it."""
     profile_path = target / _PROFILE_REL
@@ -4283,11 +4287,13 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
               "tree (omit --to).", file=sys.stderr)
         return 1
 
-    # R1 self-heal (write modes only -- never on the read-only --plan): an
-    # already-init-lock'd adopter may carry a populated lockfile profile but no
-    # committed dev/.cairn/profile.yml. Materialize it from the lockfile so the
-    # config you edit exists. Only-when-absent; composes with the #56 guard.
-    if args.apply or args.stage:
+    # R1 self-heal (--apply only -- NOT --stage, which is a non-mutating preview
+    # that writes solely to the gitignored review surface; and never on the
+    # read-only --plan): an already-init-lock'd adopter may carry a populated
+    # lockfile profile but no committed dev/.cairn/profile.yml. Materialize it
+    # from the lockfile so the config you edit exists. Only-when-absent;
+    # composes with the #56 guard.
+    if args.apply:
         _self_heal_profile_config(target, lock)
 
     if args.apply:
