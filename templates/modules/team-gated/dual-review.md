@@ -25,15 +25,63 @@ Merged into `dev/agent_collaboration.md`:
 > for the reason the change should not land, and report honestly
 > when there is none.
 >
-> Both tiers work through the shared **review sweep** (the generic,
-> change-agnostic lens roster in `doctrine/dual-review.md` >
-> "Review expectations — the clean-pass trap") and close with the
-> **two-part coverage line** + an explicit second-round
-> recommendation. The External tier layers its independence stance
-> *on top* of that shared base — the *make-it-prove-itself* read is
-> what a different agent type brings that the sweep alone cannot — and
-> its coverage line names the cross-type independence this pass did
-> (or did not) supply.
+> Both tiers work through the shared **review sweep** — the generic,
+> change-agnostic lens roster below — and close with the **two-part
+> coverage line** + an explicit second-round recommendation. The
+> External tier layers its independence stance *on top* of that shared
+> base — the *make-it-prove-itself* read is what a different agent type
+> brings that the sweep alone cannot — and its coverage line names the
+> cross-type independence this pass did (or did not) supply.
+>
+> **The review sweep — the lenses.** A review that finds zero issues on
+> a *complex* change is treated with skepticism, not relief: read as if
+> a hidden bug exists and probe for it. The standing discipline is a
+> **fixed, change-agnostic roster** every reviewer works through and
+> **reports coverage on** — the most common first-pass miss is not a
+> wrong judgment but an *unswept category*. The lenses:
+>
+> 1. **Claims** — probe every load-bearing claim against the *current*
+>    tree ("exists / works / is available / is atomic / fails closed").
+>    A **forward** claim ("will exist / will support") gets the *same*
+>    probe as a present-tense one — run the check, never accept on
+>    assertion.
+> 2. **Production path exercised by tests** — the public entry point is
+>    tested *through*, not just a helper or a stub of the thing that
+>    breaks.
+> 3. **Design completeness** — preconditions, invariants, edge cases
+>    (empty / None / zero / single / N≫1 / mismatched units or CRS), and
+>    failure modes are stated, not left implicit.
+> 4. **Silent failure / fail-closed** — guards raise loudly rather than
+>    degrading or returning empty; they cover all configs and stages;
+>    any fail-open path is intentional, not accidental.
+> 5. **Cross-document consistency** — scan governing docs, the roadmap,
+>    and code/tests/doctrine for orphaned references to old or deferred
+>    behavior, or an existing tool/path the change should use or update.
+> 6. **Drift** — docs, examples, changelog, and commit claims match the
+>    behavior that actually shipped.
+> 7. **Lifecycle / process placement** — for a doctrine/process change:
+>    *who* runs this, *when*, in *which* ceremony or serialization point;
+>    the change has a home in the lifecycle, not just a rule.
+> 8. **Domain / scientific validity & scope** — methods are grounded and
+>    documented; scope has not quietly expanded; each new abstraction
+>    earns its existence.
+> 9. **Name the satisfier** — every finding states the test / guard /
+>    doc / scope-cut / explicit `wontfix` that would close it. A finding
+>    with no satisfier is an observation, not yet a finding.
+>
+> **Falsifiable coverage, not "checked."** A swept lens is credible only
+> if its claim is *falsifiable* — it cites the file path, test node,
+> line, or command output that backs it ("#2: `tests/foo.py::test_bar`
+> calls the public entry"). A bare "#2: checked" is an *incomplete*
+> review, not a pass.
+>
+> *(Canonical source + the fuller rationale — the staged evidence bar,
+> the ritual-going signal, don't-telegraph-the-lens — live in Cairn's
+> `doctrine/dual-review.md` > "Review expectations — the clean-pass
+> trap".)* <!-- cairn-internal-ref: doctrine/dual-review.md reason=deeper-why pointer; the operative lens roster is transplanted above into the installed body -->
+>
+> The External tier's independence stance layers on top of this shared
+> sweep.
 >
 > **Code review** — the implementation-side pass before a plan
 > archives — takes the same independence floor: not the

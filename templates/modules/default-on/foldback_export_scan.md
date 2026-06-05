@@ -1,3 +1,4 @@
+<!-- cairn-internal-ref-allow: doctrine/fold-back.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- claim-check-allow: scripts/foldback_export_scan.py -->
 <!-- The cited path refers to the adopter-install location -- the
      module's scaffold mapping copies foldback_export_scan.py verbatim

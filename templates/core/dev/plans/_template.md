@@ -1,3 +1,4 @@
+<!-- cairn-internal-ref-allow: doctrine/dual-review.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- Author tip: if your plan cites count claims (numbers
      adjacent to `lines` / `proposals` / `plans` / `tests` /
      `commits` / `files` -- common in chunk tables like

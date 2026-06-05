@@ -1,3 +1,4 @@
+<!-- cairn-internal-ref-allow: doctrine/ reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 # Codebase Readiness Report
 
 > **Use this template before picking a Cairn level.**  Fill it for

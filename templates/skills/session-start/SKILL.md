@@ -3,6 +3,7 @@ name: session-start
 description: Manual lifecycle routine -- session-start (good-morning) orientation. Invoke only on an explicit operator request to orient / catch up; not a conversational helper and not a response to chatter. Mechanics live in tools/lifecycle.py; the canonical doctrine is doctrine/session-routines.md.
 disable-model-invocation: true
 ---
+<!-- cairn-internal-ref-allow: doctrine/session-routines.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 
 # Session-start (good-morning)
 

@@ -1,3 +1,4 @@
+<!-- cairn-internal-ref-allow: doctrine/dual-review.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 # Module: security-review
 
 **Selected when:** the project has a non-trivial **trust boundary**

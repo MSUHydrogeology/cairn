@@ -131,6 +131,16 @@ link_check = _load_module(
 #: ledger item E (Cairn v0.2 P1).
 _EXTERNAL_ALLOW: list[str] = ['case-studies/*.md']
 
+#: #58 loop-fidelity gate -- Cairn-internal-only path prefixes: directories
+#: shipped in the Cairn source tree but NOT copied into an adopter's install
+#: set, so an adopter-facing surface that references them dangles once
+#: installed (the implementation->adoption failure: #57's session-routine
+#: doctrine, the 9-lens review roster). ``doctrine/`` is the flagship and only
+#: v1 member -- every observed failure referenced un-transplanted doctrine;
+#: the set is intentionally narrow to hold down false positives. Extend only
+#: with a verified not-installed prefix.
+_CAIRN_INTERNAL_PREFIXES: tuple[str, ...] = ('doctrine/',)
+
 # --------------------------------------------------------------------------
 # Repo + file discovery
 
@@ -332,6 +342,78 @@ def _check_content(md: Path, root: Path, result: Result) -> None:
 
 
 # --------------------------------------------------------------------------
+# #58 loop-fidelity gate: dangling Cairn-internal references
+
+#: Exemption markers (parallel to ``claim-check-allow`` / ``cairn-accept``):
+#: assert a reference to a Cairn-internal path is a deliberate deeper-why
+#: *citation*, not adopter-load-bearing content the install set must carry.
+#: File-level ``cairn-internal-ref-allow: <paths…> reason=…`` exempts the
+#: named paths for the whole file (like ``claim-check-allow``); inline
+#: same-line ``cairn-internal-ref: <paths…> reason=…`` exempts that line.
+_INTERNAL_REF_FILE_ALLOW_RE = re.compile(r'cairn-internal-ref-allow:\s*([^\n]*)')
+_INTERNAL_REF_INLINE_RE = re.compile(r'(?<!-)cairn-internal-ref:\s*([^\n]*)')
+_BACKTICK_PATH_RE = re.compile(r'`([^`\n]+)`')
+_MD_LINK_TARGET_RE = re.compile(r'\]\(([^)\s]+)\)')
+
+
+def _parse_allow_spec(spec: str) -> set[str]:
+    """Path-like tokens (containing ``/``) listed before an optional
+    ``reason=`` in a ``cairn-internal-ref`` marker."""
+    spec = spec.split('reason=')[0]
+    return {t.rstrip('.,;:') for t in re.split(r'[\s,]+', spec)
+            if t.strip() and '/' in t}
+
+
+def _ref_is_internal(tok: str) -> str | None:
+    """The Cairn-internal path a backtick token / link target names (with a
+    trailing anchor and leading ``./`` / ``../`` stripped), or None."""
+    path = tok.split('#', 1)[0].strip().rstrip('.,;:)')
+    norm = re.sub(r'^(?:\./|\.\./)+', '', path)
+    if any(norm.startswith(p) for p in _CAIRN_INTERNAL_PREFIXES):
+        return norm
+    return None
+
+
+def _check_dangling_internal_refs(md: Path, root: Path, result: Result) -> None:
+    """#58 loop-fidelity gate. In an adopter-facing template surface, flag a
+    reference to a Cairn-internal-only path (``doctrine/*``) that would dangle
+    once installed in an adopter tree (the path is not in the install set).
+
+    Scans BOTH backticked path tokens and raw Markdown link targets (N1: a
+    relative ``[x](doctrine/..)`` link resolves in the Cairn source so
+    ``link_check`` passes it, then breaks on adoption). Fail-closed. Exempt a
+    deliberate deeper-why citation with a ``cairn-internal-ref-allow:
+    <paths…> reason=…`` directive (parallel to ``claim-check-allow``) or a
+    ``cairn-internal-ref: <paths…> reason=…`` marker. Both forms are collected
+    **file-wide** and exempt the *named* paths anywhere in the file (robust to
+    wrapped prose). Listing the **specific** paths (not a bare ``doctrine/``
+    prefix) keeps the gate sharp -- a new reference to an unlisted internal
+    path still fails closed."""
+    text = md.read_text(encoding='utf-8', errors='replace')
+    allowed: set[str] = set()
+    for rx in (_INTERNAL_REF_FILE_ALLOW_RE, _INTERNAL_REF_INLINE_RE):
+        for m in rx.finditer(text):
+            allowed |= _parse_allow_spec(m.group(1))
+    for i, line in enumerate(text.splitlines(), start=1):
+        for rx in (_BACKTICK_PATH_RE, _MD_LINK_TARGET_RE):
+            for m in rx.finditer(line):
+                path = _ref_is_internal(m.group(1))
+                if path is None:
+                    continue
+                if any(path == a or path.startswith(a) for a in allowed):
+                    continue
+                result.flags.append(Flag(
+                    md, i, 'path',
+                    f'[loop-fidelity] adopter-facing surface references '
+                    f'Cairn-internal-only path `{path}` -- it dangles once '
+                    f'installed (not in the adopter install set). Transplant '
+                    f'the content into the install set, or mark a deliberate '
+                    f'citation: file-level `cairn-internal-ref-allow: {path} '
+                    f'reason=…` or inline `cairn-internal-ref: {path} '
+                    f'reason=…`.'))
+
+
+# --------------------------------------------------------------------------
 # Driver
 
 
@@ -353,6 +435,12 @@ def check_tree(root: Path, files: list[Path],
         if content_scan_enabled:
             _check_content(md, root, result)
         _check_incident_tracker_schema(md, root, result)
+        try:
+            rel = md.resolve().relative_to(root).as_posix()
+        except ValueError:
+            rel = md.name
+        if _is_template_instruction(rel):
+            _check_dangling_internal_refs(md, root, result)
     return result
 
 

@@ -1,3 +1,4 @@
+<!-- cairn-internal-ref-allow: doctrine/fold-back.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 # Fold-back ledger — {{project_name}} → Cairn
 
 The holding pen for **Cairn-bound candidates**: generalizable

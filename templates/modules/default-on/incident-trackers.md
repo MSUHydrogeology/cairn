@@ -1,3 +1,4 @@
+<!-- cairn-internal-ref-allow: doctrine/rationale.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 # Module: incident-trackers
 
 **Selected when:** default-on — kept by every deployment that may want

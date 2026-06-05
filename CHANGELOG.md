@@ -34,6 +34,19 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **Loop-fidelity gate (#58) — fail-closed dangling-reference check in
+  `check_cairn`.** A new lens scans **only adopter-facing `templates/` surfaces**
+  for references to Cairn-internal-only paths (`doctrine/*`) that would dangle
+  once installed in an adopter (they resolve in the Cairn source, so `link_check`
+  passes them, but break on adoption — the failure behind fold-back #57 and the
+  un-shipped 9-lens review roster). Scans both backticked tokens and raw Markdown
+  link targets; a deliberate citation is exempted with a path-specific
+  `cairn-internal-ref-allow:` / `cairn-internal-ref:` marker (a *new* unlisted
+  ref still fails closed). Companion content fix (#58a): the **9-lens review
+  sweep roster is transplanted into the `dual-review` module body** so adopters
+  carry the standard they're asked to run. The flagship of the loop-fidelity
+  verification arc (fold-back #52/#54/#58); drained from the LHM
+  `cairn-loop-fidelity-verification` plan.
 - **Project-owned session-routine customization — the `custom_session_routines.md`
   convention.** The two lifecycle skills (`session-start` / `session-end`) now
   carry a **generic pointer** to a project-owned `dev/rules/custom_session_routines.md`

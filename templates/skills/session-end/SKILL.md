@@ -3,6 +3,7 @@ name: session-end
 description: Manual lifecycle routine -- session-end (goodnight). Invoke only on an explicit operator request to wrap up; reflection-only by default. Not a conversational helper and not a response to chatter such as "goodnight". Mechanics live in tools/lifecycle.py; the canonical doctrine is doctrine/session-routines.md.
 disable-model-invocation: true
 ---
+<!-- cairn-internal-ref-allow: doctrine/session-routines.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 
 # Session-end (goodnight)
 

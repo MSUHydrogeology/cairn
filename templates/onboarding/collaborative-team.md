@@ -1,3 +1,4 @@
+<!-- cairn-internal-ref-allow: doctrine/coordination.md doctrine/fold-back.md doctrine/lifecycle.md doctrine/session-routines.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- Cairn progressive-onboarding task list: collaborative-team preset.
      Authored under plan 2026-05-28-claude-cairn-progressive-onboarding
      (Chunk P1.5 fills the full multi-agent + multi-human task list;

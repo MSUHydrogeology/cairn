@@ -14,6 +14,26 @@ The fidelity-check is reproducible — given the same manifest, the
 same Cairn commit, and the same target state, it always produces the
 same result.
 
+## The loop-fidelity gate (implementation→adoption)
+
+A second, *pre-ship* fidelity check guards the **implementation→adoption**
+checkpoint of the fold-back loop: the `check_cairn` self-check fails closed when
+an **adopter-facing surface** (a `templates/` file the bootstrap install set
+copies) references a **Cairn-internal-only path** (`doctrine/*`) that is neither
+transplanted into the install set nor marked a deliberate citation. Such a
+reference resolves in the Cairn source tree (so the generic `link_check` passes
+it) but **dangles once installed** in an adopter — the failure that produced
+fold-back #57 and the un-shipped 9-lens review roster. The lens scans both
+backticked path tokens and raw Markdown link targets; a deliberate
+deeper-why citation is exempted with a `cairn-internal-ref-allow: <paths…>` (or
+`cairn-internal-ref: <paths…>`) marker that names the specific path, so a *new*
+unlisted reference still fails closed. This is the automatable flagship of the
+loop-fidelity discipline whose doctrine home is
+[`doctrine/lifecycle.md`](../doctrine/lifecycle.md) > "Loop-fidelity
+verification". <!-- cairn-internal-ref: doctrine/lifecycle.md reason=deeper-why pointer; fidelity-check.md is bootstrap-internal, not an installed adopter surface -->
+
+
+
 ## Relationship to the machine lockfile (`dev/.cairn/cairn-lock.yml`)
 
 Once a tree is installed (or upgraded) with an upgrade-capable Cairn, it
