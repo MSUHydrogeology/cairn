@@ -1,0 +1,1258 @@
+{
+  "Assign:InstallResult": {
+    "digest": "37d0575bbd6fb561",
+    "span": [
+      1354,
+      1354
+    ],
+    "type": "Assign"
+  },
+  "Assign:KNOWN_TOKENS": {
+    "digest": "5cc5b0998d857ed6",
+    "span": [
+      468,
+      475
+    ],
+    "type": "AnnAssign"
+  },
+  "Assign:_ADVANCING_KINDS": {
+    "digest": "8411ac6496243e6e",
+    "span": [
+      3116,
+      3119
+    ],
+    "type": "Assign"
+  },
+  "Assign:_AXES": {
+    "digest": "300686444eb835e8",
+    "span": [
+      1082,
+      1091
+    ],
+    "type": "AnnAssign"
+  },
+  "Assign:_AXIS_PLACEHOLDERS": {
+    "digest": "5f0cb797523dc4d3",
+    "span": [
+      3578,
+      3581
+    ],
+    "type": "AnnAssign"
+  },
+  "Assign:_BASE_CACHE_REL": {
+    "digest": "15d41ac87af131a3",
+    "span": [
+      2483,
+      2483
+    ],
+    "type": "Assign"
+  },
+  "Assign:_CONFLICT_MARKER": {
+    "digest": "cf7204aa0ceba525",
+    "span": [
+      3058,
+      3058
+    ],
+    "type": "Assign"
+  },
+  "Assign:_CORE_MAPPINGS": {
+    "digest": "31dac593a81bc760",
+    "span": [
+      679,
+      699
+    ],
+    "type": "AnnAssign"
+  },
+  "Assign:_CUSTOMIZED_MARKER_RE": {
+    "digest": "72872b2ae9f660e5",
+    "span": [
+      128,
+      130
+    ],
+    "type": "Assign"
+  },
+  "Assign:_DEFAULT_ON_MODULES": {
+    "digest": "2c8ef688f6865487",
+    "span": [
+      496,
+      503
+    ],
+    "type": "AnnAssign"
+  },
+  "Assign:_DEV_DIRS": {
+    "digest": "081e16237ac17777",
+    "span": [
+      628,
+      655
+    ],
+    "type": "AnnAssign"
+  },
+  "Assign:_DOC_AUTHOR_TOKENS": {
+    "digest": "eea3db6b901009cb",
+    "span": [
+      483,
+      490
+    ],
+    "type": "AnnAssign"
+  },
+  "Assign:_FORGE_REFERENCE_DIRS": {
+    "digest": "311803c4e5e93925",
+    "span": [
+      2239,
+      2239
+    ],
+    "type": "AnnAssign"
+  },
+  "Assign:_GITIGNORE_SEEDS": {
+    "digest": "942686e63b257643",
+    "span": [
+      995,
+      1010
+    ],
+    "type": "AnnAssign"
+  },
+  "Assign:_INIT_LOCK_TOKEN_PLACEHOLDERS": {
+    "digest": "0a8b8fff0aa6972b",
+    "span": [
+      3582,
+      3585
+    ],
+    "type": "AnnAssign"
+  },
+  "Assign:_KIND_DISPLAY_LABEL": {
+    "digest": "816c83e92e25cac6",
+    "span": [
+      3123,
+      3127
+    ],
+    "type": "Assign"
+  },
+  "Assign:_KNOWN_VENDOR_WRAPPERS": {
+    "digest": "1d3006e1264920ae",
+    "span": [
+      730,
+      732
+    ],
+    "type": "AnnAssign"
+  },
+  "Assign:_LIVING_STATE_DSTS": {
+    "digest": "f0c9f31bd29a13b5",
+    "span": [
+      2522,
+      2527
+    ],
+    "type": "AnnAssign"
+  },
+  "Assign:_LOCKFILE_REL": {
+    "digest": "b9e21cc27cb7f0a8",
+    "span": [
+      2482,
+      2482
+    ],
+    "type": "Assign"
+  },
+  "Assign:_LOCK_SCHEMA": {
+    "digest": "3f0724ddcc11a084",
+    "span": [
+      2485,
+      2485
+    ],
+    "type": "Assign"
+  },
+  "Assign:_MANIFEST_SEARCH_DIRS": {
+    "digest": "7d95d14f4f3ba80b",
+    "span": [
+      2492,
+      2492
+    ],
+    "type": "Assign"
+  },
+  "Assign:_MERGE_CONTENT_END_RE": {
+    "digest": "17954b78ff696b94",
+    "span": [
+      121,
+      123
+    ],
+    "type": "Assign"
+  },
+  "Assign:_MERGE_CONTENT_START_RE": {
+    "digest": "5b9cbf456eea9864",
+    "span": [
+      118,
+      120
+    ],
+    "type": "Assign"
+  },
+  "Assign:_MERGE_TARGET_RE": {
+    "digest": "fd26883bc9f8d529",
+    "span": [
+      112,
+      115
+    ],
+    "type": "Assign"
+  },
+  "Assign:_MODULE_MAPPINGS": {
+    "digest": "6fd29d6bdab7fa20",
+    "span": [
+      796,
+      978
+    ],
+    "type": "AnnAssign"
+  },
+  "Assign:_ONBOARDING_DOC_DST_DIR_REL": {
+    "digest": "3f3564783e529f84",
+    "span": [
+      1994,
+      1994
+    ],
+    "type": "Assign"
+  },
+  "Assign:_ONBOARDING_DOC_NAMES": {
+    "digest": "bef7e1623bfafa3c",
+    "span": [
+      1993,
+      1993
+    ],
+    "type": "Assign"
+  },
+  "Assign:_ONBOARDING_HELPER_DST_REL": {
+    "digest": "37e6235a189f9fd2",
+    "span": [
+      1971,
+      1971
+    ],
+    "type": "Assign"
+  },
+  "Assign:_ONBOARDING_HELPER_SRC_REL": {
+    "digest": "2470e945219cbb67",
+    "span": [
+      1970,
+      1970
+    ],
+    "type": "Assign"
+  },
+  "Assign:_ONBOARDING_LOG_HEADER": {
+    "digest": "733521829d3cffe6",
+    "span": [
+      1979,
+      1985
+    ],
+    "type": "Assign"
+  },
+  "Assign:_ONBOARDING_LOG_REL": {
+    "digest": "5179a5be4f19e422",
+    "span": [
+      1975,
+      1975
+    ],
+    "type": "Assign"
+  },
+  "Assign:_ONBOARDING_PRESETS": {
+    "digest": "a3ea55a933e9c3c6",
+    "span": [
+      1870,
+      1872
+    ],
+    "type": "AnnAssign"
+  },
+  "Assign:_ONBOARDING_SEED_RE": {
+    "digest": "f89d078a7f39aa16",
+    "span": [
+      1878,
+      1880
+    ],
+    "type": "Assign"
+  },
+  "Assign:_OPTIONAL_TEMPLATES": {
+    "digest": "95f176022e0a9132",
+    "span": [
+      742,
+      752
+    ],
+    "type": "AnnAssign"
+  },
+  "Assign:_PRESETS": {
+    "digest": "d52052da53163672",
+    "span": [
+      1134,
+      1173
+    ],
+    "type": "AnnAssign"
+  },
+  "Assign:_PROFILE_REL": {
+    "digest": "703a4ea48ef04f6a",
+    "span": [
+      2484,
+      2484
+    ],
+    "type": "Assign"
+  },
+  "Assign:_REFERENCE_SCRIPT_TOKEN": {
+    "digest": "a408cfd0bf4974d5",
+    "span": [
+      985,
+      988
+    ],
+    "type": "AnnAssign"
+  },
+  "Assign:_SECRET_TOKEN_RE": {
+    "digest": "56960715a57c80c6",
+    "span": [
+      2535,
+      2537
+    ],
+    "type": "Assign"
+  },
+  "Assign:_SKILLS_GITIGNORE": {
+    "digest": "ea3b4fcaf19220bc",
+    "span": [
+      720,
+      723
+    ],
+    "type": "AnnAssign"
+  },
+  "Assign:_SKILLS_MAPPINGS": {
+    "digest": "48159a6a85d33a6d",
+    "span": [
+      708,
+      713
+    ],
+    "type": "AnnAssign"
+  },
+  "Assign:_SLOT_END_RE": {
+    "digest": "2cac8de0cf7a4b5d",
+    "span": [
+      84,
+      84
+    ],
+    "type": "Assign"
+  },
+  "Assign:_SLOT_RE": {
+    "digest": "f38a071bdef1207c",
+    "span": [
+      81,
+      81
+    ],
+    "type": "Assign"
+  },
+  "Assign:_STAGE_META": {
+    "digest": "323d4523d05ed7d9",
+    "span": [
+      3057,
+      3057
+    ],
+    "type": "Assign"
+  },
+  "Assign:_STAGING_REL": {
+    "digest": "1acb04a9cd20e428",
+    "span": [
+      3056,
+      3056
+    ],
+    "type": "Assign"
+  },
+  "Assign:_TEAM_STAFFING_GATED": {
+    "digest": "68a5bc1f31219926",
+    "span": [
+      1115,
+      1115
+    ],
+    "type": "AnnAssign"
+  },
+  "Assign:_TEAM_STAFFING_GATES": {
+    "digest": "8aa8880785e3d7c9",
+    "span": [
+      1106,
+      1111
+    ],
+    "type": "AnnAssign"
+  },
+  "Assign:_TOKEN_RE": {
+    "digest": "cdd54ea09779eaa5",
+    "span": [
+      78,
+      78
+    ],
+    "type": "Assign"
+  },
+  "ClassDef:DuplicateSlotError": {
+    "digest": "39092d82958a112a",
+    "span": [
+      139,
+      142
+    ],
+    "type": "ClassDef"
+  },
+  "ClassDef:FilePlan": {
+    "digest": "ecfdd94640c33f0e",
+    "span": [
+      3130,
+      3138
+    ],
+    "type": "ClassDef"
+  },
+  "ClassDef:InstallSpec": {
+    "digest": "c842b250d32fca8b",
+    "span": [
+      772,
+      785
+    ],
+    "type": "ClassDef"
+  },
+  "ClassDef:MergeResult": {
+    "digest": "5e414c793851dbf5",
+    "span": [
+      2891,
+      2896
+    ],
+    "type": "ClassDef"
+  },
+  "ClassDef:ModuleMergeError": {
+    "digest": "153b2410d3a0a94b",
+    "span": [
+      133,
+      136
+    ],
+    "type": "ClassDef"
+  },
+  "ClassDef:ModuleMergeResult": {
+    "digest": "20658d9ecc537483",
+    "span": [
+      289,
+      296
+    ],
+    "type": "ClassDef"
+  },
+  "ClassDef:PresetError": {
+    "digest": "50b5f2addf86481f",
+    "span": [
+      1176,
+      1179
+    ],
+    "type": "ClassDef"
+  },
+  "ClassDef:ScaffoldSecurityError": {
+    "digest": "b8f2da6c62cfaea4",
+    "span": [
+      1358,
+      1361
+    ],
+    "type": "ClassDef"
+  },
+  "ClassDef:Slot": {
+    "digest": "e3640038ace03a02",
+    "span": [
+      2825,
+      2831
+    ],
+    "type": "ClassDef"
+  },
+  "ClassDef:SlotError": {
+    "digest": "6d031bd6bbe64e88",
+    "span": [
+      2821,
+      2822
+    ],
+    "type": "ClassDef"
+  },
+  "Expr": {
+    "digest": "f6ea324d69877a58",
+    "span": [
+      2,
+      49
+    ],
+    "type": "Expr"
+  },
+  "FunctionDef:_apply_upgrade": {
+    "digest": "e129a624e4f6e5cb",
+    "span": [
+      3968,
+      4165
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_as_str_list": {
+    "digest": "dc6ed189fad1f31d",
+    "span": [
+      1182,
+      1192
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_assert_fanout_contained": {
+    "digest": "ff9bda965392bd42",
+    "span": [
+      1654,
+      1678
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_assert_safe_write": {
+    "digest": "887ab12191b00ac8",
+    "span": [
+      1364,
+      1414
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_behind_by_n": {
+    "digest": "b7b934cd5fe772d8",
+    "span": [
+      2569,
+      2599
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_cairn_commit": {
+    "digest": "04818be9f8de9b08",
+    "span": [
+      2556,
+      2566
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_cairn_is_git": {
+    "digest": "165ac500752e613b",
+    "span": [
+      3061,
+      3070
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_cairn_version": {
+    "digest": "99341e3ef15fd093",
+    "span": [
+      2545,
+      2553
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_can_staff_module": {
+    "digest": "82855ef60cca05e0",
+    "span": [
+      1118,
+      1123
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_canonical_order": {
+    "digest": "f22669b17b44e315",
+    "span": [
+      1195,
+      1206
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_citation_ok": {
+    "digest": "a7efe3aed600c27c",
+    "span": [
+      3281,
+      3295
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_cmd_adopt_module": {
+    "digest": "307c8b824dedae55",
+    "span": [
+      3761,
+      3837
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_cmd_finalize_lockfile": {
+    "digest": "a1d5b3bea718cc4b",
+    "span": [
+      3840,
+      3901
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_cmd_init_lock": {
+    "digest": "58a093660555a6f9",
+    "span": [
+      3652,
+      3758
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_compute_upgrade": {
+    "digest": "4bd926c120a86725",
+    "span": [
+      3141,
+      3278
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_dirty_tracked_paths": {
+    "digest": "af3a11ba21593ba9",
+    "span": [
+      3904,
+      3952
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_emit_lock_yaml": {
+    "digest": "7169c38cf30e1de9",
+    "span": [
+      2621,
+      2632
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_emit_skill_copy_fallback": {
+    "digest": "dafd11130ce6f652",
+    "span": [
+      1702,
+      1750
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_emit_skill_symlink": {
+    "digest": "76154af6416da909",
+    "span": [
+      1681,
+      1699
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_extract_seed_tasks": {
+    "digest": "8dc7f968cb9eaa16",
+    "span": [
+      1883,
+      1922
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_find_cairn_root": {
+    "digest": "074434b0034fec55",
+    "span": [
+      2454,
+      2459
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_find_manifest_path": {
+    "digest": "51f1e69f79a01173",
+    "span": [
+      3513,
+      3528
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_infer_init_lock_axes": {
+    "digest": "6c715c17b8d18504",
+    "span": [
+      3556,
+      3573
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_install_one": {
+    "digest": "2986df69f7e95e70",
+    "span": [
+      1417,
+      1483
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_lock_file_list": {
+    "digest": "7af5c076cbf34b46",
+    "span": [
+      2655,
+      2671
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_manifest_cairn_commit": {
+    "digest": "fe7199f89ac91256",
+    "span": [
+      3539,
+      3553
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_minimal_yaml_parse": {
+    "digest": "752c30f3f1220eda",
+    "span": [
+      548,
+      604
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_normalize_for_compare": {
+    "digest": "1318faa9eed2c934",
+    "span": [
+      256,
+      267
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_print_upgrade_report": {
+    "digest": "c5fa412ed4b51efd",
+    "span": [
+      3298,
+      3354
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_refuse_secret_tokens": {
+    "digest": "72ef404c4bc7745c",
+    "span": [
+      2602,
+      2618
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_render_onboarding_slot": {
+    "digest": "b96b1635128618d9",
+    "span": [
+      1925,
+      1939
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_resolve_lock_profile_fields": {
+    "digest": "220c5bdab5352bee",
+    "span": [
+      3588,
+      3608
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_resolve_vendor_wrapper": {
+    "digest": "eee3c8f38b52b59f",
+    "span": [
+      3478,
+      3510
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_seed_staging_gitignore": {
+    "digest": "a2aeb9e2a1ebc7a6",
+    "span": [
+      3357,
+      3358
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_self_heal_profile_config": {
+    "digest": "023b796b5601a6e3",
+    "span": [
+      4175,
+      4219
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_sha256_hex": {
+    "digest": "481fbb9ba1d05bea",
+    "span": [
+      2540,
+      2542
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_slot_body_in_text": {
+    "digest": "30d89f7290ece755",
+    "span": [
+      221,
+      237
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_slot_is_customized": {
+    "digest": "49494a746bf83182",
+    "span": [
+      247,
+      253
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_slot_is_empty": {
+    "digest": "83c59bce008f85c1",
+    "span": [
+      240,
+      244
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_substitute_slot": {
+    "digest": "a8010e20950f9f91",
+    "span": [
+      1942,
+      1961
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_symlinks_available": {
+    "digest": "0221d4e067b7954b",
+    "span": [
+      1637,
+      1651
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_theirs_bytes": {
+    "digest": "5d48c1b6b8891417",
+    "span": [
+      3094,
+      3101
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_theirs_text": {
+    "digest": "198cc60aca432ed0",
+    "span": [
+      3073,
+      3091
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_three_way_merge": {
+    "digest": "e1b866f0bb1d1778",
+    "span": [
+      2925,
+      2953
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_transplant_slots": {
+    "digest": "e91d604ece4e4750",
+    "span": [
+      2899,
+      2922
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_warn_legacy_manifest_home": {
+    "digest": "9e7d4063ee98b5e5",
+    "span": [
+      3531,
+      3536
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_write_init_lock_profile_template": {
+    "digest": "e40c25694b625748",
+    "span": [
+      3611,
+      3649
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_write_slot_body": {
+    "digest": "4fb741fcb588334d",
+    "span": [
+      270,
+      285
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_write_stage": {
+    "digest": "f2ded5b9225411f2",
+    "span": [
+      3361,
+      3475
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_writeset_dirty_collisions": {
+    "digest": "cced7b25e05b9c3b",
+    "span": [
+      3955,
+      3965
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_yaml_sq": {
+    "digest": "25787f122e275e88",
+    "span": [
+      4168,
+      4172
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:build_arg_parser": {
+    "digest": "adf0273b29611c06",
+    "span": [
+      4344,
+      4427
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:check_slot_fidelity": {
+    "digest": "b9e979c82d76bc56",
+    "span": [
+      382,
+      421
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:classify_verbatim": {
+    "digest": "c4e1789f6cc4389a",
+    "span": [
+      3025,
+      3049
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:cmd_upgrade": {
+    "digest": "55ed5f45458a9bf3",
+    "span": [
+      4222,
+      4341
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:create_dev_tree": {
+    "digest": "0e8c4e4f41b5bcb8",
+    "span": [
+      658,
+      670
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:expand_preset": {
+    "digest": "6bd2e6caa83f4017",
+    "span": [
+      1227,
+      1304
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:fan_out_skills": {
+    "digest": "3c55b56268340a69",
+    "span": [
+      1753,
+      1824
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:find_block_slots": {
+    "digest": "09702dccc4be1904",
+    "span": [
+      525,
+      527
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:find_unfilled_tokens": {
+    "digest": "4112565dfa7bc7b1",
+    "span": [
+      515,
+      522
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:find_unpaired_slots": {
+    "digest": "87a90ca61a6ed3ec",
+    "span": [
+      530,
+      541
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:format_manifest": {
+    "digest": "33ae5bb7c841d54a",
+    "span": [
+      2396,
+      2407
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:format_profile_summary": {
+    "digest": "830aac8b7c3d1bde",
+    "span": [
+      1307,
+      1346
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:git_provenance_warning": {
+    "digest": "75284f75fe656a39",
+    "span": [
+      2410,
+      2451
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:install_core": {
+    "digest": "4d600e16e0627b7a",
+    "span": [
+      1486,
+      1505
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:install_issue_capture_reference": {
+    "digest": "7679aef974eb2fe6",
+    "span": [
+      2242,
+      2280
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:install_manifest": {
+    "digest": "860c4494ea6c8c4f",
+    "span": [
+      2370,
+      2393
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:install_modules": {
+    "digest": "1e885a75234c7e37",
+    "span": [
+      2190,
+      2232
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:install_onboarding": {
+    "digest": "921d0beb7720818e",
+    "span": [
+      1997,
+      2187
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:install_optional": {
+    "digest": "f8c9a20f6a08a6e9",
+    "span": [
+      1827,
+      1855
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:install_skills": {
+    "digest": "f7d7abfb688693b0",
+    "span": [
+      1508,
+      1540
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:load_config": {
+    "digest": "18c69e0ea95a7a7e",
+    "span": [
+      611,
+      620
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:load_vendor_targets": {
+    "digest": "b436795d070082ad",
+    "span": [
+      1578,
+      1588
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:main": {
+    "digest": "c65f01a87644a6e4",
+    "span": [
+      4430,
+      4861
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:merge_file": {
+    "digest": "514f0e8206745729",
+    "span": [
+      2956,
+      3018
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:merge_module_into_slot": {
+    "digest": "2a56b62922e00eb1",
+    "span": [
+      299,
+      379
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:parse_module_merge_directives": {
+    "digest": "a5e49c7faf1d4b64",
+    "span": [
+      145,
+      191
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:parse_slots": {
+    "digest": "2c9f816f50c5d41d",
+    "span": [
+      2834,
+      2884
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:print_report": {
+    "digest": "c3fb06e59f7297d0",
+    "span": [
+      2287,
+      2363
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:read_lockfile": {
+    "digest": "c534d42a43cc0d9b",
+    "span": [
+      2635,
+      2652
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:reference_script_token_defaults": {
+    "digest": "a006a2b4a6529ace",
+    "span": [
+      1044,
+      1065
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:render_compatibility_matrix": {
+    "digest": "70c004535b201c67",
+    "span": [
+      1591,
+      1634
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:resolve_axes": {
+    "digest": "b06ab9b286a8266c",
+    "span": [
+      1209,
+      1224
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:run_module_merge_pass": {
+    "digest": "9957a011e2b9f892",
+    "span": [
+      424,
+      462
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:seed_gitignore": {
+    "digest": "b35664967de207f9",
+    "span": [
+      1013,
+      1041
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:select_optional_templates": {
+    "digest": "65d03c931625ad21",
+    "span": [
+      755,
+      769
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:substitute_tokens": {
+    "digest": "1627ad11ff312802",
+    "span": [
+      506,
+      512
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:validate_unique_slot_names": {
+    "digest": "ec7a170f072ec7a0",
+    "span": [
+      194,
+      218
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:write_install_lockfile": {
+    "digest": "0d7150fc6d4e162a",
+    "span": [
+      2674,
+      2811
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:write_local_env": {
+    "digest": "3a0f3f41ab0b5b9f",
+    "span": [
+      1543,
+      1575
+    ],
+    "type": "FunctionDef"
+  },
+  "If": {
+    "digest": "ccadb48a0e9e8f52",
+    "span": [
+      4864,
+      4865
+    ],
+    "type": "If"
+  },
+  "Import:321ed2ed3afc": {
+    "digest": "321ed2ed3afceb74",
+    "span": [
+      56,
+      56
+    ],
+    "type": "ImportFrom"
+  },
+  "Import:356e6775028b": {
+    "digest": "356e6775028bc09e",
+    "span": [
+      53,
+      53
+    ],
+    "type": "Import"
+  },
+  "Import:59051b17634c": {
+    "digest": "59051b17634cdcb5",
+    "span": [
+      57,
+      57
+    ],
+    "type": "ImportFrom"
+  },
+  "Import:6b81b4ca19c8": {
+    "digest": "6b81b4ca19c88ec5",
+    "span": [
+      54,
+      54
+    ],
+    "type": "Import"
+  },
+  "Import:890bede51751": {
+    "digest": "890bede517510aea",
+    "span": [
+      51,
+      51
+    ],
+    "type": "ImportFrom"
+  },
+  "Import:f24c54a1d24f": {
+    "digest": "f24c54a1d24f7ee3",
+    "span": [
+      58,
+      58
+    ],
+    "type": "ImportFrom"
+  },
+  "Import:f7252e3c1dbe": {
+    "digest": "f7252e3c1dbe1d5e",
+    "span": [
+      55,
+      55
+    ],
+    "type": "Import"
+  },
+  "Try": {
+    "digest": "078bb9f665a0f257",
+    "span": [
+      60,
+      70
+    ],
+    "type": "Try"
+  }
+}
