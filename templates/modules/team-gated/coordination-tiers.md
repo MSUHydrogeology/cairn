@@ -90,6 +90,17 @@ artifact).
 >   two hooks (post-commit auto-release, pre-commit work-intent check) is
 >   installed. The one stable command session-start points at.
 
+**Enforce mode (optional).** The pre-commit check is `warn`-only by default —
+it surfaces another session's overlapping claim but never blocks. Set
+`"enforce"` in `dev/intent-config.json` to bind it: `confirm` (proceed only on
+explicit acknowledgement; degrades to `block` with no controlling terminal) or
+`block` (refuse a commit touching a *different* active session's claimed path).
+A `concurrent-*` team should default to `confirm`; `single` teams stay `warn`.
+The check recognizes the committer's *own* claims by the per-session token and
+warns only about genuinely different sessions; the `CAIRN_INTENT_ALLOW_UNCLAIMED`
+bypass overrides the block for a deliberate one-off. (Doctrine: Cairn's
+`doctrine/coordination.md` > "Enforcing the coordination check".)
+
 **Claim before you edit.** The Tier-2 workflow is one habit: before
 touching a collision-prone surface, run `python tools/intent.py claim`; the
 immediate conflict-check tells you on the spot whether another session

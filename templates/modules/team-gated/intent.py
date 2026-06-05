@@ -1249,6 +1249,31 @@ def _read_solo_mode(repo_root: Path) -> bool:
     return isinstance(data, dict) and data.get("solo_mode") is True
 
 
+#: Enforce modes for the pre-commit coordination check (concurrent-session
+#: coordination Layer 2 / #53). ``warn`` = current behavior (surface, exit 0);
+#: ``confirm`` = prompt, proceed on acknowledgement, degrade to ``block`` with
+#: no TTY (R2); ``block`` = refuse (non-zero exit) a commit touching a
+#: *different* active session's claimed path.
+ENFORCE_MODES = ("warn", "confirm", "block")
+
+
+def _read_enforce_mode(repo_root: Path) -> str:
+    """Read ``"enforce"`` from ``dev/intent-config.json`` -- ``warn`` /
+    ``confirm`` / ``block``. Absent / malformed / unrecognized → ``warn``
+    (the safe default; fail-open). Parallel to :func:`_read_solo_mode`."""
+    cfg = repo_root / INTENT_CONFIG_RELPATH
+    if not cfg.exists():
+        return "warn"
+    try:
+        data = json.loads(cfg.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return "warn"
+    if not isinstance(data, dict):
+        return "warn"
+    mode = data.get("enforce")
+    return mode if mode in ENFORCE_MODES else "warn"
+
+
 def _precommit_shebang_is_shell(first_line: str) -> bool:
     """True when ``first_line`` is a shebang naming a POSIX shell.
 
@@ -1307,8 +1332,13 @@ def _precommit_hook_block(python_exe: str, intent_path: Path) -> str:
     ``git status`` / unstaged files) and hands it to ``_precommit_check``.
     Like the post-commit block, the interpreter + script paths are baked
     in via ``shlex.quote`` (no ``python -m`` PATH/package assumption, no
-    shell expansion of a metacharacter-bearing path).  ``|| true`` keeps
-    the hook non-blocking (warn-by-default; block-mode deferred).
+    shell expansion of a metacharacter-bearing path).  The check's exit code
+    **propagates** (no ``|| true``) so ``confirm`` / ``block`` enforce modes
+    can refuse the commit; the check is fail-open by construction (an
+    internal error returns 0), and ``warn`` mode always exits 0, so the
+    default stays non-blocking. The temp file is removed before the exit
+    code is honored, and a clean (0) result falls through to any composed
+    later hook content.
     """
     py_q = shlex.quote(python_exe)
     path_q = shlex.quote(str(intent_path))
@@ -1318,8 +1348,10 @@ def _precommit_hook_block(python_exe: str, intent_path: Path) -> str:
         'PATHS_TMP=$(mktemp "${TMPDIR:-/tmp}/intent-staged.XXXXXX")\n'
         'git diff --cached --name-only -z > "${PATHS_TMP}"\n'
         f'{py_q} {path_q} _precommit_check '
-        '--paths-from-file "${PATHS_TMP}" || true\n'
-        'rm -f "${PATHS_TMP}"'
+        '--paths-from-file "${PATHS_TMP}"\n'
+        'INTENT_RC=$?\n'
+        'rm -f "${PATHS_TMP}"\n'
+        '[ "${INTENT_RC}" -eq 0 ] || exit "${INTENT_RC}"'
     )
     return f"{PRECOMMIT_SENTINEL_BEGIN}\n{body}\n{PRECOMMIT_SENTINEL_END}"
 
@@ -1393,34 +1425,15 @@ def _unknown_identity_warning() -> str:
     )
 
 
-def classify_precommit_warnings(
+def _compute_overlaps(
     staged_set: set,
     actives: List[Dict[str, object]],
-    identity: Optional[str],
-    *,
-    exempt: bool,
-    repo_root: Optional[Path] = None,
-    rename_map: Optional[Dict[str, str]] = None,
-) -> List[str]:
-    """Classify a commit's staged set into ordered warning strings.
-
-    Warning precedence:
-
-    * **Other-session overlap** -- a staged path covered by an active
-      claim held by a *different* identity (or, under unknown identity,
-      *any* covering claim, since own / other cannot be distinguished).
-      ALWAYS surfaced -- never suppressed by ``exempt``.  This is the
-      coordination payoff.
-    * **Unclaimed** -- identity known, staged path covered by no claim at
-      all.  Suppressed when ``exempt``.
-    * **Unknown identity** -- identity unresolved.  Emits the loud
-      unknown-identity warning **plus** any visible overlaps.  The
-      identity line is suppressed when ``exempt`` (both unclaimed +
-      unknown-identity are *self-directed* signals a solo / intentional
-      committer opts out of); the overlap warning still fires.
-    """
-    identity_known = bool(identity) and identity != "unknown-agent"
-    # path -> list of claims covering it
+    repo_root: Optional[Path],
+    rename_map: Optional[Dict[str, str]],
+) -> Dict[str, List[Dict[str, object]]]:
+    """Map each staged path to the active claims covering it (rename-aware:
+    a staged destination is covered when a claim covers the destination OR
+    its rename source -- a `git mv` of a claimed file is the claimed edit)."""
     overlaps: Dict[str, List[Dict[str, object]]] = {}
     renames = rename_map or {}
     for claim in actives:
@@ -1430,16 +1443,67 @@ def classify_precommit_warnings(
         claim_set = {
             normalize_path(str(f), repo_root=repo_root) for f in claim_files
         }
-        # Rename-aware: a staged destination is covered when the claim
-        # covers the destination OR its rename source -- a `git mv` of a
-        # claimed file is the claimed edit (the claim sits on the source).
-        # This credits an own-claim across the move AND keeps the
-        # other-session overlap signal (a rename of a path another session
-        # claims still credits their claim to the destination).
         for path in staged_set:
             source = renames.get(path)
             if path in claim_set or (source is not None and source in claim_set):
                 overlaps.setdefault(path, []).append(claim)
+    return overlaps
+
+
+def other_session_overlaps(
+    overlaps: Dict[str, List[Dict[str, object]]],
+    identity: Optional[str],
+    token_resolved: bool,
+) -> Dict[str, List[Dict[str, object]]]:
+    """The subset of *overlaps* held by a **different active session**.
+
+    **N1 (the cry-wolf / false-suppress fix):** own-claim suppression runs
+    **only** when the committer has a resolvable per-session token
+    (*token_resolved*) AND a known identity. Without a token, the identity is
+    the bare agent name (shared by every concurrent same-type session), so
+    matching on it would *false-suppress* a genuinely different session's
+    claim -- a silent coordination miss. In that case every overlap is treated
+    as other-session (fail-safe: over-warn, never silently drop)."""
+    own_match = (
+        token_resolved and bool(identity) and identity != "unknown-agent"
+    )
+    if not own_match:
+        return dict(overlaps)
+    out: Dict[str, List[Dict[str, object]]] = {}
+    for path, claims in overlaps.items():
+        others = [c for c in claims if c.get("agent") != identity]
+        if others:
+            out[path] = others
+    return out
+
+
+def classify_precommit_warnings(
+    staged_set: set,
+    actives: List[Dict[str, object]],
+    identity: Optional[str],
+    *,
+    exempt: bool,
+    repo_root: Optional[Path] = None,
+    rename_map: Optional[Dict[str, str]] = None,
+    token_resolved: bool = True,
+) -> List[str]:
+    """Classify a commit's staged set into ordered warning strings.
+
+    Warning precedence:
+
+    * **Other-session overlap** -- a staged path covered by a *different*
+      active session's claim. ALWAYS surfaced -- never suppressed by
+      ``exempt``. This is the coordination payoff. Own vs other is gated on
+      ``token_resolved`` (N1): no per-session token → every overlap is
+      other-session (own cannot be proven without a token).
+    * **Unclaimed** -- identity known, staged path covered by no claim at
+      all.  Suppressed when ``exempt``.
+    * **Unknown identity** -- identity unresolved.  Emits the loud
+      unknown-identity warning **plus** any visible overlaps (suppressed
+      identity line when ``exempt``).
+    """
+    identity_known = bool(identity) and identity != "unknown-agent"
+    overlaps = _compute_overlaps(staged_set, actives, repo_root, rename_map)
 
     warnings: List[str] = []
     if not identity_known:
@@ -1449,12 +1513,7 @@ def classify_precommit_warnings(
             warnings.append(_other_session_warning(overlaps))
         return warnings
 
-    # Known identity: split overlaps into other-session vs own.
-    other_overlaps: Dict[str, List[Dict[str, object]]] = {}
-    for path, claims in overlaps.items():
-        others = [c for c in claims if c.get("agent") != identity]
-        if others:
-            other_overlaps[path] = others
+    other_overlaps = other_session_overlaps(overlaps, identity, token_resolved)
     if other_overlaps:
         warnings.append(_other_session_warning(other_overlaps))
     # Unclaimed = staged paths covered by no claim at all.
@@ -1616,14 +1675,63 @@ def _cmd_install_precommit(args) -> int:
     return 0
 
 
+def _confirm_tty():
+    """An open ``r+`` handle to the controlling terminal, or ``None``.
+
+    ``confirm`` mode prompts here -- not via ``sys.stdin``, which a git hook
+    redirects to ``/dev/null``. No controlling terminal (a headless / CI
+    agent) → ``None`` → ``confirm`` degrades to ``block`` (R2). Factored for
+    test injection."""
+    try:
+        return open("/dev/tty", "r+")  # noqa: SIM115
+    except OSError:
+        return None
+
+
+def _confirm_proceed() -> bool:
+    """Prompt the controlling terminal for explicit acknowledgement.
+    No TTY → ``False`` (caller degrades to ``block``, R2)."""
+    tty = _confirm_tty()
+    if tty is None:
+        return False
+    try:
+        tty.write(
+            "intent: a DIFFERENT active session claims a staged path. "
+            "Proceed with this commit? [y/N] "
+        )
+        tty.flush()
+        ans = (tty.readline() or "").strip().lower()
+    except OSError:
+        return False
+    finally:
+        try:
+            tty.close()
+        except OSError:
+            pass
+    return ans in ("y", "yes")
+
+
 def _cmd_precommit_check(args) -> int:
     """``intent _precommit_check`` -- the pre-commit hook's worker.
 
-    Reads the commit's staged set (``--paths-from-file`` NUL-delimited,
-    written by the hook; or a direct ``git diff --cached`` fallback),
-    resolves the current agent identity, and emits classified warnings to
-    stderr.  Always exits 0 (warn-by-default; the commit is never blocked
-    in v1)."""
+    Emits classified warnings to stderr, then applies the configured enforce
+    mode (#53): ``warn`` (exit 0; the default), ``confirm`` (prompt; proceed
+    on ack, else degrade to ``block`` with no TTY -- R2), ``block`` (exit
+    non-zero) -- but only when a *different active session* claims a staged
+    path. The bypass env var / solo mode always exempts. **Fail-open by
+    construction:** any internal error returns 0 (the hook no longer carries
+    ``|| true``, so a crash must not wedge commits)."""
+    try:
+        return _precommit_check_impl(args)
+    except Exception as exc:  # noqa: BLE001 -- fail-open is the contract
+        sys.stderr.write(
+            f"intent: pre-commit check errored ({exc!r}); allowing the "
+            "commit (fail-open).\n"
+        )
+        return 0
+
+
+def _precommit_check_impl(args) -> int:
     log_path = (
         Path(args.log_path) if args.log_path is not None else INTENTS_LOG_PATH
     )
@@ -1640,16 +1748,42 @@ def _cmd_precommit_check(args) -> int:
     # --name-only, so the rename info comes from this dedicated call.
     rename_map = _rename_map_via_git(top)
     identity = resolve_agent_identity()
+    # N1: own-claim suppression requires a real per-session token, not the
+    # static agent-name fallback (which collides across same-type sessions).
+    token_resolved = resolve_session_token() is not None
     exempt = bool(
         (os.environ.get(ALLOW_UNCLAIMED_ENV_VAR) or "").strip()
     ) or _read_solo_mode(top)
     actives = active_intents(log_path=log_path)
     for warning in classify_precommit_warnings(
         staged_set, actives, identity, exempt=exempt, repo_root=top,
-        rename_map=rename_map,
+        rename_map=rename_map, token_resolved=token_resolved,
     ):
         sys.stderr.write(warning)
-    return 0
+
+    # Enforce decision (Layer 2 / #53). Only a *different active session's*
+    # claim can block; warn-mode and any bypass always proceed.
+    mode = _read_enforce_mode(top)
+    if mode == "warn" or exempt:
+        return 0
+    overlaps = _compute_overlaps(staged_set, actives, top, rename_map)
+    if not other_session_overlaps(overlaps, identity, token_resolved):
+        return 0  # no different-session claim -> nothing to enforce
+    if mode == "block":
+        sys.stderr.write(
+            "intent: enforce=block -- refusing this commit (a different "
+            f"active session claims a staged path). Override: set "
+            f"{ALLOW_UNCLAIMED_ENV_VAR}=1 to commit anyway.\n"
+        )
+        return 1
+    # confirm: proceed only on explicit acknowledgement; no TTY -> block (R2).
+    if _confirm_proceed():
+        return 0
+    sys.stderr.write(
+        "intent: enforce=confirm -- not acknowledged (or no TTY); refusing "
+        f"(degraded to block). Override: set {ALLOW_UNCLAIMED_ENV_VAR}=1.\n"
+    )
+    return 1
 
 
 def _hook_installed(hook_file: Path, sentinel_begin: str) -> bool:

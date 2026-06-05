@@ -245,6 +245,44 @@ makes a release lifecycle (and its auto-close hook) correct under
 same-tool concurrency, which is the common case for AI-agent teams
 where one tool spawns many parallel sessions.
 
+### Enforcing the coordination check — bind, don't just warn
+
+The pre-commit work-intent check is *advisory* by default: it surfaces, on
+stderr, when a staged path is held by another active session's claim. A
+warn-only guard that fires on every commit — and especially one that
+**cry-wolfs** (warns on the committer's *own* claim) — trains agents to ignore
+it. Two rules keep the guard precise enough to heed and let it *bind* where a
+team wants it to:
+
+* **Own-claim recognition keys on the per-session token, never the agent
+  name.** The check distinguishes the committer's *own* active claims from a
+  *different* session's and warns only about the latter. The match is gated on
+  a **resolvable per-session token** (the harness-session identity above): with
+  a token, only claims carrying *that same token* are "own"; **without** a
+  token the identity is the static agent name — shared by every concurrent
+  same-type session — so own-claim suppression is **disabled** and every
+  overlap is treated as other-session. The failure mode this rules out is the
+  dangerous one: a static name matching another session's claim and
+  *false-suppressing* it (a silent coordination miss). The safe direction is to
+  over-warn, never to silently drop.
+* **A configurable enforce mode** (read from the project's
+  `dev/intent-config.json`): `warn` (surface, never block — the safe default) /
+  `confirm` (proceed only on explicit acknowledgement) / `block` (refuse a
+  commit that touches a *different* active session's claimed path). `confirm`
+  with **no controlling terminal degrades to `block`** (fail-closed — a
+  headless agent never hangs on a prompt). The bypass env var that exempts the
+  unclaimed-path warning also overrides the enforce block (a deliberate
+  one-off). The profile's team posture sets the default: a `single` team stays
+  `warn`; a `concurrent-*` team defaults to `confirm` (raising awareness
+  without wedging a session); `block` is opt-in. The check is **fail-open by
+  construction** — an internal error allows the commit — so binding the guard
+  never risks wedging all commits on a tool bug.
+
+These bind **within a shared working tree / shared local intents log** — the
+one-machine-many-sessions reality. They do **not** coordinate across
+disconnected clones (separate machines do not see each other's local claims);
+that needs a committed or server-side substrate, out of scope here.
+
 ## The structural firewall
 
 A real-time channel is dangerous to the methodology: real-time

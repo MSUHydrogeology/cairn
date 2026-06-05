@@ -752,8 +752,11 @@ class TestPrecommitCheck:
         assert "dev/a.md" in res.stderr
 
     def test_claimed_by_this_session_silent(self, tmp_path) -> None:
+        # N1: own-claim suppression requires a per-session token (a harness
+        # session var) -- a static agent name collides across same-type
+        # sessions and cannot prove "own".
         tool = _git_repo(tmp_path)
-        env = _clean_env(CAIRN_AGENT="alice")
+        env = _clean_env(CLAUDE_CODE_SESSION_ID="sess-own")
         log = str(self._log(tmp_path))
         _stage(tmp_path, env, "dev/a.md")
         _run_tool(
@@ -846,7 +849,9 @@ class TestPrecommitCheck:
         auto-release uses, so a claim made in-session is recognized as own
         and then auto-released on commit."""
         tool = _git_repo(tmp_path)
-        env = _clean_env(CAIRN_AGENT="agreed")
+        # N1: a token-bearing identity (harness session var) so the
+        # in-session claim is recognized as own (not the static-name path).
+        env = _clean_env(CLAUDE_CODE_SESSION_ID="sess-own")
         log = str(self._log(tmp_path))
         _run_tool(tool, ["install-hook"], cwd=tmp_path, env=env)
         _stage(tmp_path, env, "dev/a.md")
@@ -888,3 +893,90 @@ class TestPrecommitCheck:
         assert res.returncode == 0  # warn-by-default never blocks
         assert "dev/a.md" in res.stderr
         assert "dev/b.md" not in res.stderr  # not in the path-scoped index
+
+
+class TestEnforceModeAndN1:
+    """Layer-2 enforce modes (#53) + the N1 token-gated own-claim match
+    (cairn-concurrent-session-coordination)."""
+
+    def _log(self, repo: Path) -> Path:
+        return repo / "dev" / "intents.jsonl"
+
+    def _set_enforce(self, repo: Path, mode: str) -> None:
+        cfg = repo / "dev" / "intent-config.json"
+        cfg.parent.mkdir(parents=True, exist_ok=True)
+        cfg.write_text(json.dumps({"enforce": mode}), encoding="utf-8")
+
+    def _claim_other_session(self, tool: Path, repo: Path, path: str) -> None:
+        """File a claim under a DIFFERENT session token (sess-OTHER)."""
+        env = _clean_env(CLAUDE_CODE_SESSION_ID="sess-OTHER")
+        _run_tool(
+            tool, ["--log-path", str(self._log(repo)), "claim", "--files",
+                   path, "--action", "other-work"], cwd=repo, env=env,
+        )
+
+    def test_block_refuses_other_session(self, tmp_path) -> None:
+        tool = _git_repo(tmp_path)
+        self._claim_other_session(tool, tmp_path, "dev/a.md")
+        self._set_enforce(tmp_path, "block")
+        env = _clean_env(CLAUDE_CODE_SESSION_ID="sess-MINE")
+        _stage(tmp_path, env, "dev/a.md")
+        res = _run_tool(
+            tool, ["--log-path", str(self._log(tmp_path)), "_precommit_check"],
+            cwd=tmp_path, env=env,
+        )
+        assert res.returncode != 0
+        assert "enforce=block" in res.stderr
+
+    def test_warn_default_never_blocks_but_surfaces(self, tmp_path) -> None:
+        tool = _git_repo(tmp_path)
+        self._claim_other_session(tool, tmp_path, "dev/a.md")
+        # no enforce config -> warn (the safe default)
+        env = _clean_env(CLAUDE_CODE_SESSION_ID="sess-MINE")
+        _stage(tmp_path, env, "dev/a.md")
+        res = _run_tool(
+            tool, ["--log-path", str(self._log(tmp_path)), "_precommit_check"],
+            cwd=tmp_path, env=env,
+        )
+        assert res.returncode == 0
+        assert "HELD BY ANOTHER" in res.stderr  # still surfaced
+
+    def test_bypass_env_overrides_block(self, tmp_path) -> None:
+        tool = _git_repo(tmp_path)
+        self._claim_other_session(tool, tmp_path, "dev/a.md")
+        self._set_enforce(tmp_path, "block")
+        env = _clean_env(CLAUDE_CODE_SESSION_ID="sess-MINE")
+        env["CAIRN_INTENT_ALLOW_UNCLAIMED"] = "1"
+        _stage(tmp_path, env, "dev/a.md")
+        res = _run_tool(
+            tool, ["--log-path", str(self._log(tmp_path)), "_precommit_check"],
+            cwd=tmp_path, env=env,
+        )
+        assert res.returncode == 0
+
+    def test_static_identity_does_not_suppress_own(self, tmp_path) -> None:
+        """N1: a no-token (static agent name) committer cannot prove own, so
+        even its own claim surfaces as other-session -- fail-safe over-warn,
+        never a silent coordination miss (two same-type sessions would
+        otherwise share the static identity and false-suppress)."""
+        tool = _git_repo(tmp_path)
+        env = _clean_env(CAIRN_AGENT="alice")  # static name, NO session token
+        _stage(tmp_path, env, "dev/a.md")
+        _run_tool(
+            tool, ["--log-path", str(self._log(tmp_path)), "claim", "--files",
+                   "dev/a.md", "--action", "mine"], cwd=tmp_path, env=env,
+        )
+        res = _run_tool(
+            tool, ["--log-path", str(self._log(tmp_path)), "_precommit_check"],
+            cwd=tmp_path, env=env,
+        )
+        assert res.returncode == 0  # warn default
+        assert "HELD BY ANOTHER" in res.stderr  # NOT suppressed (no token)
+
+    def test_confirm_no_tty_degrades_to_block(self, tmp_path, monkeypatch) -> None:
+        """F4/R2: confirm with no controlling terminal -> block."""
+        src = (Path(__file__).resolve().parents[2] / "templates" / "modules"
+               / "team-gated" / "intent.py")
+        mod = _load_tool(src, name="intent_confirm_unit")
+        monkeypatch.setattr(mod, "_confirm_tty", lambda: None)
+        assert mod._confirm_proceed() is False
