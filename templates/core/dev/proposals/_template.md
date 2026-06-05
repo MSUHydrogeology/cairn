@@ -595,7 +595,8 @@ to "check this claim":
   link** to the test file — target relative to this document, e.g. a link
   whose target is `../../tests/contract/<your_test>.py` — so the link checker
   verifies the cited test exists. (Shown as a bare path here so this template
-  itself stays link-clean; in a real proposal it is an actual `[…](…)` link.)
+  itself stays link-clean; in a real proposal, write it as an actual relative
+  markdown link to that test file.)
 * **Known omissions / intentionally untested edges** — the one line that
   keeps this honest: what you did *not* cover, and why.
 
