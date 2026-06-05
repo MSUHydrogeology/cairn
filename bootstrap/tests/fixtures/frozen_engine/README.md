@@ -1,3 +1,6 @@
+<!-- claim-check-allow: bootstrap/_scaffold/ -->
+<!-- Forward reference: bootstrap/_scaffold/ is created at Stage 0B. Drop once it resolves. -->
+
 # Frozen pre-split engine snapshot (scaffold-split 0A.3 / P2#5)
 
 `scaffold_frozen.py` is a **byte-for-byte copy of `bootstrap/scaffold.py` as it

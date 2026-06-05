@@ -91,9 +91,13 @@ model — and these are real, landed controls the module's
   from releases, not arbitrary branches" (with a tool-side provenance
   warning).
 * **Layer 4 — executable hardening.**
-  `cairn/bootstrap/scaffold.py`: a
-  symlink/containment guard that refuses to write through a symlink or
-  outside the target on **every** write, plus a Cairn-dev Bandit gate.
+  The scaffold engine — `cairn/bootstrap/scaffold.py`, being refactored into
+  a thin launcher + facade over a private _scaffold/ engine package added
+  under `cairn/bootstrap/` during the split (loaded **file-relative and
+  fail-closed** against import hijack): a symlink/containment guard that
+  refuses to write through a symlink or outside the target on **every** write,
+  plus a Cairn-dev Bandit gate that scans the **whole engine package
+  recursively**.
 * **Layers 2/3 — content integrity.** The
   [`content_scan.py`](content_scan.py) scanner,
   run over Cairn's source prose and over scaffolded generated output by

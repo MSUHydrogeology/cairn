@@ -127,15 +127,27 @@ scales **by file class**:
   injection-review on change.
 * **Docs / case-study prose** (`docs/*.md`, `case-studies/*.md`) —
   scanned, lighter threshold.
+<!-- claim-check-allow: bootstrap/_scaffold/, bootstrap/_scaffold/security.py -->
+<!-- Transitional forward reference (scaffold-split plan 2026-06-05, P2#6): the
+     bootstrap/_scaffold/ engine package is created at Stage 0B; this doc names
+     it now so the Layer-4 description is never knowingly false during 0B–8.
+     Drop this allow once the package resolves. -->
 * **Executable code** — Layer 4 (Bandit + the symlink/containment
   hardening), not the prose scanner. This class is the **whole shipped
-  Python surface**, not only the scaffold: `bootstrap/scaffold.py` *and*
-  every verbatim reference script the scaffold installs into an adopter
-  (`claim_check.py`, `lifecycle_metrics.py`, `intent.py`, `link_check.py`,
-  `sync_doc_snippets.py`) *and* Cairn's own dev tools (`check_cairn.py`,
-  `content_scan.py`). The Bandit gate derives its scan set from
-  `_MODULE_MAPPINGS` so a newly-shipped script is covered automatically;
-  a reviewer must know a change ships **as code** (Layer 4), not prose.
+  Python surface**, not only the scaffold: the scaffold engine —
+  `bootstrap/scaffold.py` (being refactored from a monolith into a thin
+  **launcher + facade** over the private `bootstrap/_scaffold/` **engine
+  package**; *every module under that package is Layer-4 code*, scanned
+  **recursively**) — *and* every verbatim reference script the scaffold
+  installs into an adopter (`claim_check.py`, `lifecycle_metrics.py`,
+  `intent.py`, `link_check.py`, `sync_doc_snippets.py`) *and* Cairn's own
+  dev tools (`check_cairn.py`, `content_scan.py`, `security_check.py`,
+  `verify_integrity.py`). The Bandit gate derives its scan set from
+  `_MODULE_MAPPINGS` (verbatim scripts) plus `scripts/` + `bootstrap/`, and
+  **recurses the `bootstrap/_scaffold/` engine package** (excluding the
+  `bootstrap/tests/` attack fixtures), so a newly-shipped script *or a
+  newly-extracted engine module* is covered automatically; a reviewer must
+  know a change ships **as code** (Layer 4), not prose.
 * **Generated instruction files** (a scaffolded `AGENTS.md` / `dev/`
   tree) — strictest overall; see Rule 8.
 
@@ -148,7 +160,9 @@ the bar.
 accepted* under the stated threat model (no concurrent filesystem
 attacker; no untrusted code path), recorded here so a future reviewer can
 tell "known and accepted" from "missed": (1) a small TOCTOU window between
-`scaffold.py`'s `_assert_safe_write` containment check and the write; and
+the scaffold engine's `_assert_safe_write` containment check and the write
+(the check moves intact into `bootstrap/_scaffold/security.py` during the
+split, its single-source identity preserved); and
 (2) `check_cairn.py`'s `importlib.exec_module` of sibling tools from
 **fixed, script-relative** paths (a deliberate dogfood composition, not a
 dynamic-exec vector). See `../SECURITY.md` for the public statement.
