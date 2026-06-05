@@ -69,7 +69,7 @@ Merged into the adopter's role/configuration documentation:
 > model names are vendor-specific and change cadence is
 > independent of Cairn doctrine.
 
-## Template content — orchestrated work (the fan-out)
+## Orchestrated work — tiering the fan-out (template content)
 
 The role→tier table above governs the **human-role roster**. Orchestrated
 sub-agents — the fan-out a single call can spawn — are tiered by **task type**,

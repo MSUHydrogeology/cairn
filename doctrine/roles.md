@@ -215,9 +215,11 @@ architecturally diverse (same-model fresh-session independence is
 *time* independence, not capability headroom), acceptance criteria
 are pre-declared, the output is falsifiable without trusting the
 author, and a failed review escalates rather than retrying at the
-cheap tier. Bright-line work — Security Review, the high-risk trust
-boundaries, novel design — never downshifts; and **no downshift
-crosses a data-governance boundary** (proprietary code, collaborator
-data, unpublished work) regardless of cost. The task-type→tier
-rubric that operationalizes this lives in the `model-selection`
-module.
+cheap tier. Bright-line work never downshifts, and **no downshift
+crosses a data-governance boundary**, regardless of cost. The
+`model-selection` module holds the authoritative lists — the
+bright-line set (Security Review, the high-risk trust boundaries,
+adversarial premise-checking, novel design) and the
+data-governance / tool-parity gate (proprietary code, collaborator
+data, unpublished work, the security-review surface) — alongside the
+task-type→tier rubric that operationalizes all of this.
