@@ -34,6 +34,21 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **Model-tier fan-out doctrine (model-selection module + roles).** The
+  `model-selection` module gains an *Orchestrated work — the fan-out* section
+  extending the role→tier table into a **task→tier** discipline: a fan-out leaf
+  takes its floor from its own task (never inheriting the orchestrator's frontier
+  tier — the largest model-cost multiplier), verification tiers by **claim-stakes**
+  not post-hoc "decisiveness," an independent reviewer may lower a *generative*
+  step's floor only under four conditions (reviewer strictly-more-capable **and**
+  architecturally diverse; pre-declared criteria; falsifiable output;
+  failed-review-escalates), bright-line tasks never downshift, **no downshift
+  crosses a data-governance boundary**, and tier→model mappings bind to measured
+  capability via a dated mapping-record schema (no model names in doctrine).
+  `doctrine/roles.md`'s capability-floors section gains the matching doctrine
+  hook. Source: LHM `dev/proposals/archive/2026-06-03-claude-cairn-model-tier-efficiency.md`
+  + the `cairn-efficiency-rollout` plan (B1).
+
 - **Session-start skills fan-out self-heal.** The `session-start` lifecycle
   backend (`tools/lifecycle.py`) now re-ensures every eligible, in-use
   symlink-tier skills read-path (today only Claude Code's `.claude/skills`)

@@ -204,3 +204,20 @@ Specific model names, vendor identities, and tier-to-model
 mappings stay in the adopter's `case-studies/` write-up; the
 doctrine names the invariant, the module instruments it, the
 case study identifies the models.
+
+**Orchestrated work — the fan-out.** The floor binds not only the
+human-role roster but **orchestrated sub-agents**: a fan-out leaf
+takes its floor from its own task, never by inheriting the
+orchestrator's tier — the place the model-cost multiplier is
+largest. An independent reviewer can lower a *generative* step's
+floor only when the reviewer is strictly more capable **and**
+architecturally diverse (same-model fresh-session independence is
+*time* independence, not capability headroom), acceptance criteria
+are pre-declared, the output is falsifiable without trusting the
+author, and a failed review escalates rather than retrying at the
+cheap tier. Bright-line work — Security Review, the high-risk trust
+boundaries, novel design — never downshifts; and **no downshift
+crosses a data-governance boundary** (proprietary code, collaborator
+data, unpublished work) regardless of cost. The task-type→tier
+rubric that operationalizes this lives in the `model-selection`
+module.

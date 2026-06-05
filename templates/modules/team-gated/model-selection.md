@@ -69,6 +69,93 @@ Merged into the adopter's role/configuration documentation:
 > model names are vendor-specific and change cadence is
 > independent of Cairn doctrine.
 
+## Template content — orchestrated work (the fan-out)
+
+The role→tier table above governs the **human-role roster**. Orchestrated
+sub-agents — the fan-out a single call can spawn — are tiered by **task type**,
+not by inheriting the orchestrator's tier. This is where the largest
+model-cost multiplier lives: one orchestration call can spawn many sub-agent
+calls, and by most tooling defaults each silently inherits the orchestrator's
+(frontier) tier.
+
+> **Tier the fan-out by task type, not by inheritance.** A sub-agent gets its
+> capability floor from *its own task* and does not silently inherit the
+> orchestrator's tier. Bounded leaves default to **low or medium**; the
+> **high** floor is reserved for where judgment concentrates — the
+> orchestration/synthesis **root**, and verification of **high-stakes claims**.
+>
+> | Task type (fan-out leaf) | Default floor |
+> |---|---|
+> | Single search / retrieval | low |
+> | Single-source extraction / parsing | low |
+> | Mechanical transform / formatting / scribing | low |
+> | Routine verification of a bounded claim | medium |
+> | Generative authoring (non-trivial, reviewed) | medium |
+> | Synthesis / orchestration root | high |
+> | Verification of a bright-line / high-stakes claim | high |
+> | Bright-line task (see below) | high — never downshift |
+>
+> **Verification tier follows claim-stakes, not "decisiveness."** Which
+> verification vote turns out decisive is unknowable until after it runs, so
+> tier by the **stakes of the claim being verified**: bright-line / high-stakes
+> claims get all-high verification; bounded / low-stakes claims may be medium.
+> Do not try to downshift only the "non-decisive" votes — you cannot identify
+> them a priori, and you may downshift the one that would have caught the
+> refutation.
+>
+> **Route bounded work into sub-agents so it can be tiered — with a
+> minimum-usefulness gate.** Pushing bounded / parallel / mechanical work into
+> sub-agents lets you tier it while keeping the frontier main loop for
+> irreducible judgment. But prefer inline work unless the fan-out has clear task
+> independence, a narrow context packet, and a merge/review path — otherwise the
+> context-packaging cost exceeds the saving.
+>
+> **An independent reviewer can lower the *generative* step's floor — under four
+> conditions, all required.** Because substantive change is gated behind
+> independent review, a cheaper author is safe *only when*: (a) the reviewer is
+> at a tier **strictly above** the downshifted author **and** architecturally
+> diverse (a different model family) — never same-tier or same-model, because
+> same-model fresh-session independence is *time* independence, not capability
+> headroom; (b) acceptance criteria are pre-declared; (c) the output is
+> falsifiable without trusting the author (compact, fully inspectable, backed by
+> a checkable artifact); (d) a failed review **escalates** the next attempt,
+> never retries indefinitely at the cheap tier. This does **not** apply to
+> scientific assumptions, security-sensitive changes, architecture decisions,
+> irreversible migrations, or large / diffuse edits a reviewer would have to
+> re-derive to check — those are bright-line.
+>
+> **Bright-line tasks never downshift — even as a fan-out leaf.** Security
+> Review, the high-risk trust boundaries, adversarial premise-checking, and
+> genuinely novel design stay at the high floor regardless of orchestration
+> context. One missed subtle failure there dwarfs a session of token savings.
+>
+> **Data-governance / tool-parity is a hard gate.** Never downshift across a
+> data-governance boundary: proprietary code, collaborator data, unpublished
+> work, and the security-review surface are never routed to a cheaper or
+> different model / vendor *because* it is cheaper. And no downshift unless the
+> candidate model's data-retention policy, tool access, and execution
+> environment are at least as acceptable as the original tier's for that
+> specific repository and task. Capability and price are not the only axes —
+> this is a trust boundary.
+>
+> **Measure accuracy-per-dollar before hard-coding a downshift.** A lowered
+> floor on a non-bright-line task is justified by a cheap A/B on representative
+> tasks, not by assumption; tiering by task *type* is preferred over dynamic
+> cost cascades, whose escalation overhead can exceed the saving.
+
+> **Mapping-record schema — bind to measured capability, dated.** Tier *labels*
+> are only a capability proxy: product-line names (Pro / Flash / mini) track
+> capability within a *co-released* lineup, not across release generations or
+> vendors — a newer mid-line model routinely out-benchmarks an older flagship
+> until that flagship's next release flips it back. So bind each tier to the
+> *currently top-benchmarking* model per vendor by **measurement, not name**,
+> and record it in the adopter-local mapping (the case study), never in this
+> doctrine. Each mapping row carries: `model`, `tier`, `date-verified`,
+> `task-family`, `source/benchmark`, `accepted-quality-threshold`, `price-basis`,
+> `re-verification-trigger`. Re-rank on a low-frequency housekeeping pass
+> surfaced by an existing routine — the `date-verified` stamp makes staleness
+> visible; no bespoke vendor-release watcher is needed.
+
 ## Notes on the gating
 
 This module is **conditionally installed** based on the
