@@ -46,6 +46,14 @@ model. A compaction summary is lossy by design — re-anchoring on
 the durable artifacts is cheaper than rediscovering them through a
 wrong assertion.
 
+The mirror failure mode is treating orientation as a mandate to
+*act*: session start is orientation, not execution. Surface the
+candidate next steps, name your role, and **await the operator's
+direction** — which may already be in their opening message —
+before beginning substantive work (implementing, editing, staging,
+or committing). The only write the routine itself makes is the
+tool's idempotent skills self-heal, not the agent's.
+
 ## Goodnight — leave a clean handoff
 
 At the end of a working session, or before a planned context

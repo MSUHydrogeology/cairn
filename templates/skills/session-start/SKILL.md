@@ -35,7 +35,12 @@ mechanics live in `tools/lifecycle.py`; this skill never reimplements them.
 
 - Re-anchor on the governing doctrine and the deliberation record the gather
   surfaced -- read the load-bearing artifacts, not everything.
-- Decide which in-flight thread, if any, you are picking up, and the state it
-  resumes from.
+- Identify candidate next steps, threads in flight, and their resumption state.
 - Confirm your role for the session before substantive work (see the roles
   doctrine) and name it explicitly.
+- **Do not act autonomously.** Session-start is orientation, not execution:
+  present the orientation summary, name the candidate pickups and your role,
+  then **stop** -- do not begin substantive work (implementing, editing doctrine
+  or code, staging, or committing) until the operator has given a direction,
+  which may already be in their opening message. (The tool's one self-heal write
+  in step 1 is the only exception -- and it is the tool's, not yours.)
