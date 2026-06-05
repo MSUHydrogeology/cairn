@@ -38,6 +38,9 @@ mechanics live in `tools/lifecycle.py`; this skill never reimplements them.
 - Identify candidate next steps, threads in flight, and their resumption state.
 - Confirm your role for the session before substantive work (see the roles
   doctrine) and name it explicitly.
+- Run any project-specific orientation steps recorded in
+  `dev/rules/custom_session_routines.md` (the `## Session start` section), if
+  present. A missing file or a missing section means no custom steps.
 - **Do not act autonomously.** Session-start is orientation, not execution:
   present the orientation summary, name the candidate pickups and your role,
   then **stop** -- do not begin substantive work (implementing, editing doctrine

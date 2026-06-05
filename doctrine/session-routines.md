@@ -200,6 +200,52 @@ Two invariants are load-bearing and structural, not stylistic:
   **anti-accidental-run gate, not an authorization control** (it is trivially
   self-set); it stops an *unbidden* run, not a malicious local actor.
 
+### Project-owned routine customization — `custom_session_routines.md`
+
+The skills + `tools/lifecycle.py` carry the *universal* routine — the
+invocation, the mechanizable gather/scaffold/prune, and the judgment steps every
+adopter runs. The *tail* — a project's **concrete** steps (which doc-build
+command, which test environment, the changelog cadence, a foldback-capture
+protocol) — is **project-owned**, and lives in a single adopter file:
+
+```
+dev/rules/custom_session_routines.md
+```
+
+with two headed sections, `## Session start` and `## Goodnight`. The two shipped
+skills carry a **generic pointer** to it — an identical string for every adopter,
+so it ships from Cairn cleanly while the file's *contents* stay the adopter's.
+The file is **Cairn-never-templated**, exactly like `RULES.md`: Cairn ships the
+pointer, never the content; an adopter creates and fills it (or doesn't).
+
+This is what lets an adopter **slim its always-loaded `AGENTS.md` routine
+section** to a pointer rather than carrying the full procedure in every-session
+context (the token-efficiency payoff — procedures load on-demand, not always-on).
+It also resolves a contract gap: the shipped skills can point at a real,
+installable, project-owned convention file instead of this Cairn-internal
+doctrine (which is **not** in the adopter install set, so a direct reference to
+it dangles in every adopter).
+
+Three rules make the convention safe:
+
+* **No bare pointer.** When an adopter slims its `AGENTS.md` routine section, it
+  **MUST** retain a one-line inline routine summary *beside* the pointer — never
+  a bare link. Routines are agent-followed, not mechanically enforced; a bare
+  pointer is too easy to skip, which would silently drop the adopter's steps. The
+  one-line summary keeps the routine legible in always-loaded context even if the
+  pointer is missed.
+* **Absent file or section = no custom steps.** If `custom_session_routines.md`
+  is absent, *or* present but missing the section for the routine being run, the
+  agent treats it as "no project-specific steps" — the same graceful no-op. The
+  generic pointer reads "if present" precisely so an adopter that never creates
+  the file loses nothing.
+* **One file, two sections — with a documented fallback.** A single file with
+  two headed sections is the default (one project-owned surface, parallel to
+  `RULES.md`; the headers disambiguate start- vs end-specific steps). A project
+  whose start/end routines diverge enough to warrant it MAY instead split into
+  `dev/rules/custom_session_start.md` / `dev/rules/custom_session_end.md`; the
+  single-file form is the recommended starting point.
+
 ## The reflections channel
 
 Each agent, at goodnight, writes a short **reflection** — what it

@@ -83,6 +83,15 @@ def test_skill_contract(skill: Path):
     # Canonical doctrine pointer (orchestrates, does not restate).
     assert "doctrine/session-routines.md" in body
 
+    # Project-owned routine-customization pointer (the custom_session_routines.md
+    # convention). A literal-string well-formedness contract for THIS pointer:
+    # catches a typo'd path that an installed==template integrity check would pass
+    # consistently -- the failure class the convention itself was created to fix.
+    assert "dev/rules/custom_session_routines.md" in body, (
+        f"{skill.parent.name} must carry the project-owned routine-customization "
+        "pointer 'dev/rules/custom_session_routines.md'"
+    )
+
     # Body under threshold (the enforceable half of the no-restate drift-guard).
     body_lines = len(body.splitlines())
     assert body_lines < BODY_LINE_THRESHOLD, (

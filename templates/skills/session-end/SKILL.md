@@ -43,3 +43,9 @@ the lesson, what threads stay open -- and migrate any durable observation out to
 doctrine or the roadmap before it is pruned. For a full handoff the **roadmap
 scrub, the from-scratch next-session rewrite, and the handoff commit** are also
 yours.
+
+**Run any project-specific close-out steps** recorded in
+`dev/rules/custom_session_routines.md` (the `## Goodnight` section), if present
+-- the adopter's concrete routine (doc builds, changelog cadence, test
+invocations, foldback capture) lives there, not in this generic skill. A missing
+file or a missing section means no custom steps.

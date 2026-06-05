@@ -34,6 +34,19 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **Project-owned session-routine customization — the `custom_session_routines.md`
+  convention.** The two lifecycle skills (`session-start` / `session-end`) now
+  carry a **generic pointer** to a project-owned `dev/rules/custom_session_routines.md`
+  (a single file with `## Session start` / `## Goodnight` headed sections,
+  Cairn-never-templated like `RULES.md`); `doctrine/session-routines.md` documents
+  the convention (no-bare-pointer, absent-file/section = no-op, the two-file
+  fallback). This gives an adopter a real, installable home for its concrete
+  routine steps so it can **slim its always-loaded `AGENTS.md` routine section to a
+  pointer** (token-efficiency: procedures load on-demand), and replaces a
+  reference that dangled in every adopter (the un-installed Cairn-internal
+  `doctrine/session-routines.md`). A `test_skill_contract` assertion pins the
+  pointer string. Drained from the LHM `cairn-session-routine-custom-home` plan
+  (fold-back #57).
 - **`dev/measurement/` — a standard self-instrumentation folder.** A new core
   scaffold dir (`templates/core/dev/measurement/`, carried by a `README.md` and
   registered in `_CORE_MAPPINGS`) gives every adoption a predictable home for the
