@@ -34,6 +34,21 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **Token-efficiency Phase 1 — measure + cap (A1) + the core-template router cut
+  (A2.1).** `scripts/token_budget.py` measures the **always-on load manifest**
+  (the files a harness auto-loads every turn — not invoked-on-demand skills),
+  token-denominated via a real tokenizer when present (`tiktoken`) else a
+  *labelled* `chars/4` proxy, with a soft cap (warn-not-block; `--strict` to
+  gate). `doctrine/doc-governance.md` gains the **cache-stable load-order**
+  convention (stable doctrine first, volatile boards out of the auto-loaded
+  prefix; scoped to the adopter-controlled surface). The core
+  `templates/core/AGENTS.md` Git-workflow section is **router-cut** — the verbose
+  deliberation-commit-exception enumeration + untracked-artifact prose compressed
+  to bright-line + pointer, every safety-critical rule kept operative-inline
+  (template 363→281 lines, ~22% lighter). Source: LHM
+  `dev/proposals/archive/2026-06-03-claude-cairn-doctrine-token-efficiency.md`
+  + the `cairn-efficiency-rollout` plan (A1/A2.1).
+
 - **Model-tier fan-out doctrine (model-selection module + roles).** The
   `model-selection` module gains an *Orchestrated work — the fan-out* section
   extending the role→tier table into a **task→tier** discipline: a fan-out leaf

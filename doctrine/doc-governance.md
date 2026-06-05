@@ -309,3 +309,26 @@ preferred libraries, line-length conventions) belong to the project,
 not to Cairn. The methodology's bias is to **describe** where style
 content commonly lives (here), not to legislate its specific
 location.
+
+## Cache-stable load order
+
+Prompt caching only helps up to the first point the loaded context
+changes; volatile content placed *before* stable doctrine busts the
+cache for everything after it. So order the agent-loaded surface
+**stable doctrine first (the cacheable prefix), volatile session-state
+last.** This is scoped to what the **adopter controls**:
+
+* Keep volatile boards — `dev/NEXT_SESSION.md`, `dev/PLANNING.md`, the
+  current date/time — **out of the always-loaded files** (`AGENTS.md`
+  and the vendor wrapper); load them on demand at session-start, not as
+  part of the auto-loaded prefix.
+* When a skill or routine loads several files within a session, read the
+  **stable** ones (doctrine, conventions) before the **volatile** ones
+  (today's boards, the handoff).
+
+It does **not** promise cache savings on the harness-injected prefix:
+for some agent tools the position of the auto-loaded `AGENTS.md` /
+wrapper and the volatile date reminder relative to the doctrine prefix
+is harness-determined, not doctrine-determined. The convention governs
+the adopter-controlled surface; name which targets' load order is
+actually controllable rather than claim a universal win.
