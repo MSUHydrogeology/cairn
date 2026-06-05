@@ -253,6 +253,15 @@ calls the public entry"). A bare "#2: checked" is an *incomplete*
 review, not a pass. This is the guard against the sweep becoming a
 self-certification ritual.
 
+**Signal the sweep is going ritual.** A coverage line that converges on
+a uniform "all lenses swept, clean" *across* changes — with no
+difference in finding density between a trivial change and a complex one
+— is the sweep going hollow, not the changes getting cleaner. When that
+pattern shows, the sweep has become a box-tick: tighten the lenses or
+trim the roster. The negative-space half of the coverage line
+(*Not covered / low confidence*, below) is the early antidote — it
+forces naming what was *not* covered, which a hollow all-clear cannot.
+
 **The evidence bar is staged.** The same lens demands different
 evidence at different maturity levels — the sweep must not over-demand
 code-level proof at proposal time, nor under-demand it at code review.

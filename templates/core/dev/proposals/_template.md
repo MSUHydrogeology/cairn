@@ -571,6 +571,42 @@ the **docs** it delivers (named earlier under `## Proposal >
 Documentation / doctrine surface`). Name each, or give an explicit
 "**N/A**: <reason>" — silent omission is a review finding.
 
+### Author-accounting — invariants, failure modes, edge cases
+
+<!-- Triage-gated. Fill this for a HIGH-STAKES change — a scientific /
+modeling-assumption change, a public-API or config-contract change, a
+protected-schema change, or a new abstraction. For a routine or mechanical
+change, a one-line "N/A: no new contract / invariant / public path" is the
+correct entry, not an empty table. -->
+
+For a high-stakes change, account up front for what a reviewer would
+otherwise have to *discover* — collapsing the review from "find the absence"
+to "check this claim":
+
+* **Invariants** — what must stay true (e.g. "the manifest's `schema_version`
+  is always a known value"), and what *enforces* each (a validator, a test).
+* **Failure modes** — how it fails, and whether each failure is *closed*
+  (raises) or *open* (degrades) — and whether the open ones are intentional.
+* **Edge-case inventory** — empty / None / zero / single / N≫1 / mismatched
+  units or CRS: which are handled, which are out of scope.
+* **Public-path → test mapping** — each public entry point this change adds
+  or touches, mapped to the test that exercises it *through its public path*
+  (not via a helper or a stub). Cite the test as a **relative markdown link**
+  (e.g. `[test_build.py](../../tests/contract/test_build.py)`) so the link
+  checker verifies it exists.
+* **Known omissions / intentionally untested edges** — the one line that
+  keeps this honest: what you did *not* cover, and why.
+
+This block is **reviewed as evidence, not accepted as a filled form**: the
+reviewer challenges at least one row (or names the row they sampled and
+verified) — "which invariant has no enforcer? which public path has no
+through-test?" — never "the table is present." An empty in-scope block is
+itself a finding.
+
+**Prospective only.** This accounting — and the review sweep that checks it
+(`doctrine/dual-review.md`) — applies to active and future artifacts; an
+archived proposal or plan is immutable and is never retro-fitted with it.
+
 ### Tests required
 
 <!-- cairn:slot tests-tier-home -->
@@ -639,6 +675,19 @@ concerns, questions, and steelmans don't fit in a diff.
 * **[R1]** ...
 * **[R2]** ...
 * **[R3]** ...
+
+**End with the coverage line + a second-round recommendation** (see
+`doctrine/dual-review.md` > "Recommend-and-decide"). Two parts, then a call:
+
+* **Covered** — the review-sweep lenses you swept, each with a falsifiable
+  citation (file / test-node / line / command), not a bare "checked."
+* **Not covered / low confidence** — the negative space: a lens you could not
+  exercise, "same-type reviewer — no cross-type independence on this pass."
+
+Then state an explicit **second-round recommendation** (recommended / not, with
+reasons grounded in the negative space). Whether a second structurally-independent
+pass runs is the Maintainer's call; a declared-`required` tier still runs
+regardless.
 
 ## Response -- {{author}} -- {{YYYY-MM-DD}}
 

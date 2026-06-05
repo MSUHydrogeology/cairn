@@ -528,6 +528,20 @@ name each, or give an explicit "**N/A**: <reason>".
   not path link (per `AGENTS.md > Shared communication files`), so they
   need no update on an archive-move.
 
+### Author-accounting — invariants, failure modes, edge cases
+
+<!-- Triage-gated (high-stakes changes only; a one-line "N/A: no new
+contract / invariant / public path" for routine) — same discipline as the
+proposal template's author-accounting. At PLAN stage the satisfier is
+*sequencing*: each invariant has an enforcing test sequenced into a chunk,
+and each public entry point this plan touches is mapped, in its acceptance
+criteria, to the test that exercises it through its public path. Cite tests
+as relative markdown links so the link checker verifies they exist. Include a
+known-omissions line. Reviewed as evidence — the reviewer challenges a row or
+names the one they sampled, never "table present." Prospective only: an
+archived plan is never retro-fitted. See `doctrine/dual-review.md` >
+"Review expectations — the clean-pass trap". -->
+
 ## Verification
 
 The concrete commands the implementation must pass.
@@ -625,6 +639,16 @@ sufficient because <reason>).
 
 1. <action>
 2. <action>
+
+**Coverage + second-round recommendation** (see `doctrine/dual-review.md` >
+"Recommend-and-decide"):
+
+* **Covered** -- <review-sweep lenses swept, each with a falsifiable citation>
+* **Not covered / low confidence** -- <the negative space>
+
+Recommendation: <recommended / not recommended a second cross-type pass, with
+reasons grounded in the negative space>. (A declared-`required` tier runs
+regardless.)
 ```
 
 Priority labels:
@@ -713,6 +737,14 @@ confirming second different-agent-type pass. Minimal ledger shape:
 * **Negative / edge-case attempt** — at least one, when applicable.
 * **Verification** — the checks run (or consciously not run, with why).
 * **Residual risk** — what remains unverified.
+
+**End with the coverage line + recommendation** (`doctrine/dual-review.md` >
+"Recommend-and-decide"): **Covered** (the review-sweep lenses swept, with
+citations) / **Not covered / low confidence** (the negative space), then a
+recommendation on whether a further independent pass is warranted. For a clean
+final pre-archive review this composes with the falsification ledger above —
+the ledger *is* the "Covered" evidence, and the negative space is what a
+second pass would target.
 
 **Reviewer identity** (per the structural-independence tier rule, see
 `dev/collaboration_agreement.md` > "External Review Norms" and

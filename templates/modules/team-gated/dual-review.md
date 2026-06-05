@@ -25,6 +25,16 @@ Merged into `dev/agent_collaboration.md`:
 > for the reason the change should not land, and report honestly
 > when there is none.
 >
+> Both tiers work through the shared **review sweep** (the generic,
+> change-agnostic lens roster in `doctrine/dual-review.md` >
+> "Review expectations — the clean-pass trap") and close with the
+> **two-part coverage line** + an explicit second-round
+> recommendation. The External tier layers its independence stance
+> *on top* of that shared base — the *make-it-prove-itself* read is
+> what a different agent type brings that the sweep alone cannot — and
+> its coverage line names the cross-type independence this pass did
+> (or did not) supply.
+>
 > **Code review** — the implementation-side pass before a plan
 > archives — takes the same independence floor: not the
 > implementing agent, and, for contract-touching work, a
