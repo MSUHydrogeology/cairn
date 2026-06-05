@@ -591,9 +591,11 @@ to "check this claim":
   units or CRS: which are handled, which are out of scope.
 * **Public-path → test mapping** — each public entry point this change adds
   or touches, mapped to the test that exercises it *through its public path*
-  (not via a helper or a stub). Cite the test as a **relative markdown link**
-  (e.g. `[test_build.py](../../tests/contract/test_build.py)`) so the link
-  checker verifies it exists.
+  (not via a helper or a stub). Write the mapping as a **relative markdown
+  link** to the test file — target relative to this document, e.g. a link
+  whose target is `../../tests/contract/<your_test>.py` — so the link checker
+  verifies the cited test exists. (Shown as a bare path here so this template
+  itself stays link-clean; in a real proposal it is an actual `[…](…)` link.)
 * **Known omissions / intentionally untested edges** — the one line that
   keeps this honest: what you did *not* cover, and why.
 
