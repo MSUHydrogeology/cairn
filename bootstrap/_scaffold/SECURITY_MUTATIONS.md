@@ -15,9 +15,10 @@ Both raise the single **`ScaffoldSecurityError`** identity, caught once at the
 CLI top level (exit 2).
 
 This inventory was taken **before** the Stage-1 motion and is **regression-pinned**
-by `bootstrap/tests/test_security_leaf.py::test_guarded_write_functions_still_call_a_containment_guard`,
-which AST-scans the engine package and fails if any listed function stops calling
-a guard — so an extraction stage cannot silently drop one.
+by the `bootstrap/tests/test_security_leaf.py` regression
+`test_guarded_write_functions_still_call_a_containment_guard`, which AST-scans the
+engine package and fails if any listed function stops calling a guard — so an
+extraction stage cannot silently drop one.
 
 ## Class A — guarded adopter-tree writes (the pinned set)
 
