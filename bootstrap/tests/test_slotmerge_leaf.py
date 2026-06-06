@@ -82,14 +82,15 @@ def test_run_module_merge_pass_stays_in_the_engine_not_the_leaf():
             for n in ast.walk(tree)
         )
 
-    assert _defines(pkg / "__init__.py", "run_module_merge_pass"), (
-        "run_module_merge_pass must stay defined in the engine __init__"
-    )
     assert not _defines(pkg / "slotmerge.py", "run_module_merge_pass"), (
-        "run_module_merge_pass leaked into the leaf — but it couples to "
-        "_MODULE_MAPPINGS / InstallSpec (resolve that before moving it)"
+        "run_module_merge_pass leaked into the leaf — it is the install-time "
+        "orchestrator coupling to _MODULE_MAPPINGS / InstallSpec"
     )
-    # and the engine still exposes a working callable
+    # It is the install-time orchestrator; at Stage 6 it landed in install.py
+    # (not the slotmerge leaf). The engine still exposes a working callable.
+    assert _defines(pkg / "install.py", "run_module_merge_pass"), (
+        "run_module_merge_pass should be owned by the install module (Stage 6)"
+    )
     import bootstrap._scaffold as engine  # noqa: PLC0415
     assert callable(engine.run_module_merge_pass)
 
