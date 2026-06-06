@@ -30,18 +30,22 @@ proof**.
 
 Aggregate exit table (P1 #3 -- a DISTINCT space; never collides with a
 component's 0/1/2/3 or 127). Each component's raw outcome is printed
-separately; the aggregate is the worst tier, precedence degraded > findings >
-clean:
+separately; the aggregate is the worst tier, precedence
+degraded > findings > incomplete > clean:
 
 * ``0``  -- clean: every applicable pass ran and found nothing blocking
   (content-scan *advisory* findings may be present; they are printed and do
   NOT fail the aggregate).
-* ``10`` -- FINDINGS: bandit or pip-audit found issues, or the adopted-
-  executable gate flagged a file. Blocking.
+* ``5``  -- INCOMPLETE COVERAGE: no findings, but a selected pass did not run --
+  content-security not installed (injection NOT APPLICABLE), or pip-audit
+  network egress off (lookup UNAVAILABLE). Distinct from clean so automation
+  cannot read "a pass did not run" as "scan ran clean"; enable the pass (or
+  narrow scope) for a clean 0. Dominates clean.
+* ``10`` -- FINDINGS: bandit or pip-audit found issues. Dominates incomplete.
 * ``20`` -- DEGRADED / UNAVAILABLE / TAMPER: a pass could not be trusted to
   run -- integrity preflight failed, ``python_package`` is missing/invalid, a
   selected content-scan returned scan-failure (2) or stale (3), a required
-  tool was absent, or pip-audit was required but unavailable. Dominates 10.
+  tool was absent, or pip-audit hit a tool/network error. Dominates findings.
 
 The injection pass being NOT-APPLICABLE (content-security not installed) is
 printed loudly as its own line; it never silently reads as a clean scan.
@@ -51,10 +55,11 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+import os
 import shutil
 import subprocess
 import sys
-import time
+import tempfile
 from pathlib import Path
 
 _HERE = Path(__file__).resolve().parent
@@ -62,22 +67,31 @@ _REPO_ROOT = _HERE.parent
 _LOCKFILE = _REPO_ROOT / "dev" / ".cairn" / "cairn-lock.yml"
 _RUNNER = _HERE / "content_scan_runner.py"
 
-# Aggregate exit tiers (distinct from component 0/1/2/3 / 127).
+# Aggregate exit tiers -- a DISTINCT space (never collides with a component's
+# 0/1/2/3 or 127). Precedence: degraded > findings > incomplete > clean.
 _AGG_CLEAN = 0
+_AGG_INCOMPLETE = 5     # ran, no findings, but a selected pass did not fully run
 _AGG_FINDINGS = 10
 _AGG_DEGRADED = 20
 
-# The apparatus + policy files whose lockfile-integrity the SR-1 preflight
-# checks (relative to the repo root). Only those actually recorded in the
-# lockfile are checked; a recorded-but-mismatched file fails closed.
-_APPARATUS_DSTS = (
-    "scripts/content_scan.py",
-    "scripts/content_scan_runner.py",
-    "scripts/content_scan_roots.txt",
-    "scripts/content_scan_residuals.txt",
-    "scripts/content_scan_allowlist.txt",
-    "scripts/run_security_audit.py",
-)
+# The apparatus + policy files each installed security module ships (relative to
+# the repo root). The SR-1 preflight derives the REQUIRED set from the installed
+# module roster (P1 #2): every file an installed module ships must be
+# lockfile-recorded AND present AND hash-matched -- a missing record is a
+# failure, not a skip (else a surviving clean record would let an unrecorded,
+# tampered sibling load).
+_MODULE_APPARATUS = {
+    "content-security": (
+        "scripts/content_scan.py",
+        "scripts/content_scan_runner.py",
+        "scripts/content_scan_roots.txt",
+        "scripts/content_scan_residuals.txt",
+        "scripts/content_scan_allowlist.txt",
+    ),
+    "python-security": (
+        "scripts/run_security_audit.py",
+    ),
+}
 
 
 class AuditDegraded(Exception):
@@ -118,27 +132,51 @@ def _sha256_hex(data: bytes) -> str:
 # SR-1 -- integrity preflight over the apparatus + policy inputs
 # --------------------------------------------------------------------------
 
-def integrity_preflight(repo_root: Path, lock: dict) -> None:
-    """Verify the apparatus + policy files against their lockfile hashes.
+def required_apparatus_dsts(lock: dict) -> list[str]:
+    """The complete apparatus file set the INSTALLED security modules require
+    (P1 #2). Derived from the lockfile module roster, not from whichever
+    records happen to exist -- so a dropped record cannot shrink the checked
+    set."""
+    modules = set(lock.get("modules", []))
+    required: list[str] = []
+    for module, dsts in _MODULE_APPARATUS.items():
+        if module in modules:
+            required.extend(dsts)
+    return required
 
-    This is the standalone, stdlib reimplementation of the lockfile-integrity
-    check scoped to the security apparatus (Cairn's own ``verify_integrity`` is
-    an engine tool, not shipped to adopters). Any apparatus file that is
-    present but whose on-disk hash does not match its lockfile record -- or a
-    recorded file missing on disk -- fails closed (DEGRADED): a self-audit must
-    not run from a tampered apparatus and report results.
+
+def integrity_preflight(repo_root: Path, lock: dict) -> None:
+    """Verify the COMPLETE apparatus + policy file set the installed security
+    modules require, against the lockfile (P1 #2 / SR-1).
+
+    Standalone stdlib reimplementation of the lockfile-integrity check scoped
+    to the security apparatus (Cairn's ``verify_integrity`` is an engine tool,
+    not shipped to adopters). For every file an installed security module ships,
+    a lockfile record MUST exist and the on-disk file MUST be present, a regular
+    file, and hash-match. A **missing record fails closed** (it is not skipped):
+    otherwise a surviving clean record would let an unrecorded, tampered sibling
+    (e.g. content_scan_runner.py) load. Any failure -> DEGRADED; a self-audit
+    must not run from an unverified apparatus.
     """
     by_dst = {rec.get("dst"): rec for rec in lock.get("files", [])}
-    checked = 0
-    for dst in _APPARATUS_DSTS:
+    required = required_apparatus_dsts(lock)
+    if not required:
+        raise AuditDegraded(
+            "no security modules are recorded as installed; cannot run a "
+            "verified self-audit (is this an installed Cairn tree with "
+            "content-security / python-security?)")
+    for dst in required:
         rec = by_dst.get(dst)
         if rec is None:
-            continue  # not part of this install (e.g. content-security absent)
+            raise AuditDegraded(
+                f"required apparatus file {dst!r} for an installed module has "
+                "no lockfile record (incomplete / tampered apparatus); "
+                "refusing to self-audit")
         abs_p = repo_root / dst
         if abs_p.is_symlink() or not abs_p.is_file():
             raise AuditDegraded(
-                f"apparatus file {dst!r} is recorded in the lockfile but "
-                "missing / not a regular file on disk (tamper)")
+                f"required apparatus file {dst!r} is recorded but missing / "
+                "not a regular file on disk (tamper)")
         want = str(rec.get("hash", ""))
         got = "sha256:" + _sha256_hex(abs_p.read_bytes())
         if want != got:
@@ -146,11 +184,6 @@ def integrity_preflight(repo_root: Path, lock: dict) -> None:
                 f"apparatus file {dst!r} does not match its lockfile hash "
                 "(tamper / drift); refusing to self-audit from an unverified "
                 "apparatus")
-        checked += 1
-    if not checked:
-        raise AuditDegraded(
-            "no security-apparatus files are lockfile-recorded; cannot run a "
-            "verified self-audit (is this an installed Cairn tree?)")
 
 
 # --------------------------------------------------------------------------
@@ -213,16 +246,33 @@ def _safe_target_args(paths: list[Path]) -> list[str]:
     return args
 
 
-def _run_tool(argv: list[str], *, label: str, cwd: Path) -> tuple[int, str]:
-    """Run a tool with a trusted boundary: ``shell=False``, a fixed argument
-    vector, a neutral working directory off the candidate import path, and
-    ``capture_output``. Returns ``(exit, status)``; a missing tool is 127
-    (loud). The interpreter / cwd are recorded as audit evidence."""
+#: Python import-environment variables sanitized out of the child env (P1 #1):
+#: even with ``-I``, we strip these belt-and-suspenders so a candidate cannot
+#: redirect imports through the environment.
+_IMPORT_ENV_VARS = ("PYTHONPATH", "PYTHONHOME", "PYTHONSTARTUP", "PYTHONCASEOK")
+
+
+def _run_tool(argv: list[str], *, label: str) -> tuple[int, str]:
+    """Run a security tool with a trusted boundary (P1 #1 / Crit #2):
+
+    * ``shell=False`` + a fixed argument vector (no shell, no word-splitting);
+    * the child interpreter runs in **isolated mode** (``python -I``: no cwd /
+      no ``PYTHONPATH`` / no user-site on ``sys.path``) so a repo-local
+      ``bandit/`` or ``pip_audit/`` package cannot shadow the real tool;
+    * a **neutral temporary working directory** off the candidate tree (so the
+      cwd that ``-m`` would otherwise add is empty), and
+    * a **sanitized environment** (import-env vars stripped).
+
+    Target paths are passed by the caller as resolved + contained absolutes, so
+    a neutral cwd does not lose them. Returns ``(exit, status)``; a missing tool
+    is 127 (loud). ``argv`` MUST begin ``[sys.executable, "-I", "-m", ...]``."""
+    env = {k: v for k, v in os.environ.items() if k not in _IMPORT_ENV_VARS}
     try:
-        proc = subprocess.run(  # noqa: S603 -- fixed argv, shell=False, no input
-            argv, cwd=str(cwd), shell=False,
-            capture_output=True, text=True,
-        )
+        with tempfile.TemporaryDirectory(prefix="cairn-audit-") as neutral:
+            proc = subprocess.run(  # noqa: S603 -- fixed argv, shell=False, no input
+                argv, cwd=neutral, shell=False, env=env,
+                capture_output=True, text=True,
+            )
     except FileNotFoundError:
         print(f"[{label}] NOT INSTALLED in the active interpreter "
               f"({sys.executable}); cannot run this pass.", file=sys.stderr)
@@ -255,10 +305,13 @@ def run_injection_pass(repo_root: Path, lock: dict) -> tuple[str, int]:
     present -> the runner's 0/1/2/3 mapped to a tier (advisory findings (1)
     contribute 0; scan-failure (2) / stale (3) contribute DEGRADED)."""
     if "content-security" not in lock.get("modules", []):
+        # SR-4 / P1 #3: a not-applicable injection pass is INCOMPLETE coverage,
+        # a distinct non-clean tier -- automation must not read it as a scan
+        # that ran clean.
         print("\n[injection] NOT APPLICABLE -- content-security is not an "
-              "installed module; the injection pass did NOT run (this is not a "
-              "clean scan).")
-        return "not-applicable", _AGG_CLEAN
+              "installed module; the injection pass did NOT run (incomplete "
+              "coverage, not a clean scan).")
+        return "not-applicable", _AGG_INCOMPLETE
     if not _RUNNER.is_file():
         print("\n[injection] content-security is selected but "
               "content_scan_runner.py is missing -- FAILING closed.",
@@ -279,16 +332,16 @@ def run_bandit_pass(pkg: Path, repo_root: Path) -> tuple[str, int]:
         print("\n[bandit] NOT INSTALLED -- cannot run the static-analysis pass.",
               file=sys.stderr)
         return "tool-absent", _AGG_DEGRADED
-    argv = [sys.executable, "-m", "bandit", "-r", "-q",
+    argv = [sys.executable, "-I", "-m", "bandit", "-r", "-q",
             *_safe_target_args([pkg])]
-    code, status = _run_tool(argv, label="bandit", cwd=repo_root)
+    code, status = _run_tool(argv, label="bandit")
     if status == "tool-absent":
         return "tool-absent", _AGG_DEGRADED
     if code == 0:
         return "bandit:clean", _AGG_CLEAN
     if code == 1:
         return "bandit:findings", _AGG_FINDINGS
-    return "bandit:error", _AGG_DEGRADED
+    return "bandit:error", _AGG_DEGRADED  # usage/parse error -> degraded
 
 
 def run_adopted_executable_gate(repo_root: Path, lock: dict) -> tuple[str, int]:
@@ -339,24 +392,32 @@ def run_pip_audit_pass(repo_root: Path, *, allow_egress: bool) -> tuple[str, int
     locked-but-not-installed deps are documented blind spots; findings are
     advisory."""
     if not allow_egress:
+        # SR-5 / P1 #3: the lookup did not run -> UNAVAILABLE, not clean. The
+        # pass is part of the python-security posture, so an unconfigured run is
+        # INCOMPLETE coverage (a distinct non-clean tier), not a clean 0.
         print("\n[pip-audit] network egress OFF (default). Re-run with "
               "--allow-network to enable the remote CVE lookup; package names "
               "+ versions (only) would then be sent to pip-audit's "
-              "vulnerability service. Skipping the remote lookup -- reporting "
-              "UNAVAILABLE, not clean.", file=sys.stderr)
-        return "egress-off-unavailable", _AGG_CLEAN
+              "vulnerability service. The lookup did NOT run -- reporting "
+              "UNAVAILABLE (incomplete coverage), not clean.", file=sys.stderr)
+        return "egress-off-unavailable", _AGG_INCOMPLETE
     if shutil.which("pip-audit") is None and \
             importlib.util.find_spec("pip_audit") is None:
         print("\n[pip-audit] NOT INSTALLED -- dependency CVE pass unavailable.",
               file=sys.stderr)
         return "tool-absent", _AGG_DEGRADED
-    argv = [sys.executable, "-m", "pip_audit"]
-    code, status = _run_tool(argv, label="pip-audit", cwd=repo_root)
+    argv = [sys.executable, "-I", "-m", "pip_audit"]
+    code, status = _run_tool(argv, label="pip-audit")
     if status == "tool-absent":
         return "tool-absent", _AGG_DEGRADED
     if code == 0:
         return "pip-audit:clean", _AGG_CLEAN
-    return "pip-audit:findings", _AGG_FINDINGS
+    if code == 1:
+        # P2 #7: ONLY exit 1 is a valid vulnerability report (findings); any
+        # other non-zero (usage / malformed-env / network/service error) is a
+        # tool failure -> DEGRADED, never reported as vulnerabilities.
+        return "pip-audit:findings", _AGG_FINDINGS
+    return "pip-audit:error", _AGG_DEGRADED
 
 
 # --------------------------------------------------------------------------
@@ -414,6 +475,9 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  {label:14s} {status}")
     aggregate = max([_AGG_CLEAN, *tiers])
     tier_name = {_AGG_CLEAN: "CLEAN (tripwire, not proof)",
+                 _AGG_INCOMPLETE: "INCOMPLETE COVERAGE -- no findings, but a "
+                                  "selected pass did not run (enable it or "
+                                  "narrow scope for a clean 0)",
                  _AGG_FINDINGS: "FINDINGS (blocking)",
                  _AGG_DEGRADED: "DEGRADED / UNAVAILABLE / TAMPER"}[aggregate]
     print(f"\naggregate exit {aggregate}: {tier_name}")

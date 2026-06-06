@@ -72,19 +72,25 @@ It composes the adopter's self-audit passes in order:
 The orchestrator's aggregate exit uses a **distinct space** that never collides
 with a component's own `0/1/2/3` (or a `127` missing-tool code); each
 component's raw outcome is printed separately. Precedence is
-degraded > findings > clean:
+degraded > findings > incomplete > clean:
 
-* **`0`** — clean: every applicable pass ran and found nothing blocking
+* **`0`** — clean: **every applicable pass ran** and found nothing blocking
   (content-scan *advisory* findings may be present; they are printed and do not
   fail the aggregate).
-* **`10`** — FINDINGS: bandit or pip-audit found issues. Blocking.
+* **`5`** — INCOMPLETE COVERAGE: no findings, but a **selected pass did not
+  run** — content-security not installed (injection NOT APPLICABLE), or
+  pip-audit network egress off (lookup UNAVAILABLE). Distinct from clean so
+  automation cannot read "a pass did not run" as "scan ran clean"; install /
+  enable the pass (or deliberately narrow scope) for a clean `0`.
+* **`10`** — FINDINGS: bandit or pip-audit found issues. Dominates incomplete.
 * **`20`** — DEGRADED / UNAVAILABLE / TAMPER: a pass could not be trusted to
   run — the integrity preflight failed, `python_package` is missing/invalid, a
   selected content-scan returned scan-failure or stale, an adopted source was
-  tampered, or a required tool was absent. Dominates findings.
+  tampered, or a tool hit a missing/usage/network error. Dominates findings.
 
-A `NOT APPLICABLE` injection pass (content-security not installed) is printed as
-its own line and never silently reads as a clean scan.
+A `NOT APPLICABLE` injection pass (content-security not installed) and an
+egress-off `UNAVAILABLE` pip-audit are printed as their own lines and map to
+`5` (incomplete) — never a silent clean `0`.
 
 ### `python_package` — single contained package (v1)
 
@@ -103,8 +109,9 @@ spots, and its findings are advisory. **Network egress is off by default**: an
 unconfigured run does not contact a remote service. Re-run with
 `--allow-network` to enable the remote CVE lookup — only then are package
 **names + versions** (never source, data, or credentials) sent to pip-audit's
-vulnerability service. A denied / offline / failed lookup is reported
-**unavailable, not clean**.
+vulnerability service. An egress-off run reports the pass **UNAVAILABLE
+(incomplete coverage → aggregate `5`), not clean**; a tool / usage / network
+error with egress on is **degraded** (`20`), never reported as vulnerabilities.
 
 ### Composition with content-security
 

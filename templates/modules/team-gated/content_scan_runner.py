@@ -94,15 +94,18 @@ _ROOTS_SENTINEL_RE = re.compile(r"^#\s*content-scan-roots\s+v(\d+)\s*$")
 
 
 def load_audit_roots(manifest_path: Path = _ROOTS_MANIFEST,
-                     repo_root: Path = _REPO_ROOT) -> list[str]:
-    """Parse the audited-roots manifest -> repo-relative root strings.
+                     repo_root: Path = _REPO_ROOT) -> list[tuple[str, bool]]:
+    """Parse the audited-roots manifest -> ``(repo-relative root, required)``.
 
-    Each non-comment line is one repo-relative path (a file or a directory).
-    Validated fail-closed: the canonical sentinel must head the file; a root
-    must not be absolute, must not contain a ``..`` segment, and must resolve
-    *inside* the repo root (no symlink escape). A missing / sentinel-less /
-    empty / containment-violating manifest raises :class:`AuditError` (the
-    caller maps it to exit 2). Returns the roots in file order.
+    Each non-comment line is one repo-relative path (a file or a directory). A
+    leading ``!`` marks the root **required** (P1 #5): a required root that is
+    absent or contributes no tracked text is a coverage gap that fails the scan
+    (enforced in :func:`audited_text_files`); an unmarked root is optional
+    (scanned when present, silently absent otherwise). Validated fail-closed:
+    the canonical sentinel must head the file; a root must not be absolute, must
+    not contain a ``..`` segment, and must resolve *inside* the repo (no symlink
+    escape). A missing / sentinel-less / empty / containment-violating manifest
+    raises :class:`AuditError` (exit 2). Returns entries in file order.
     """
     try:
         text = manifest_path.read_text(encoding="utf-8")
@@ -125,12 +128,16 @@ def load_audit_roots(manifest_path: Path = _ROOTS_MANIFEST,
             f"(first non-blank line must be exactly {_ROOTS_SENTINEL!r})")
 
     repo_resolved = repo_root.resolve()
-    roots: list[str] = []
+    roots: list[tuple[str, bool]] = []
     for raw in text.splitlines():
         line = raw.strip()
         if not line or line.startswith("#"):
             continue
-        rel = line.split("#", 1)[0].strip()
+        entry = line.split("#", 1)[0].strip()
+        if not entry:
+            continue
+        required = entry.startswith("!")
+        rel = entry[1:].strip() if required else entry
         if not rel:
             continue
         p = Path(rel)
@@ -145,7 +152,7 @@ def load_audit_roots(manifest_path: Path = _ROOTS_MANIFEST,
             raise AuditError(
                 f"audited root {rel!r} resolves outside the repo root "
                 f"({resolved}) -- refusing (symlink / escape)")
-        roots.append(rel)
+        roots.append((rel, required))
     if not roots:
         raise AuditError(
             "audited-roots manifest declares no roots (an empty audited set "
@@ -178,7 +185,9 @@ def audited_text_files(repo_root: Path = _REPO_ROOT,
     byte budget. Raises :class:`AuditError` (exit 2) on any untrustworthy
     condition, including a resolved-empty set.
     """
-    roots = load_audit_roots(manifest_path, repo_root)
+    root_entries = load_audit_roots(manifest_path, repo_root)
+    roots = [rel for rel, _req in root_entries]
+    required_roots = [rel for rel, req in root_entries if req]
     repo_resolved = repo_root.resolve()
 
     def _passes_filters(rel: str) -> bool:
@@ -195,6 +204,19 @@ def audited_text_files(repo_root: Path = _REPO_ROOT,
     # the declared surface -> fail closed (exit 2). This is checked BEFORE the
     # manifest self-add, so manifest-self-inclusion cannot mask empty roots.
     root_rels = {rel for rel in _git_tracked(repo_root, roots) if _passes_filters(rel)}
+
+    # P1 #5: every REQUIRED root must be present AND contribute >= 1 tracked
+    # text file. A missing or empty required root silently shrinks coverage --
+    # fail closed, naming the gap. (A file-root contributes itself; a dir-root
+    # contributes anything beneath it.)
+    for req in required_roots:
+        prefix = req.rstrip("/") + "/"
+        if not any(r == req or r.startswith(prefix) for r in root_rels):
+            raise AuditError(
+                f"required audited root {req!r} is absent or contributes no "
+                "tracked .md/.txt file -- refusing (a missing required root "
+                "silently reduces coverage; fix the tree or the manifest)")
+
     if not root_rels:
         raise AuditError(
             "the audited roots resolved to zero tracked text files -- an empty "
@@ -347,26 +369,38 @@ def run_content_scan(files: list[Path], repo_root: Path = _REPO_ROOT,
     Returns ``(exit, all_flags, new_flags, stale)`` -- ``0`` clean / ``1``
     advisory findings / ``2`` scan failure or baseline unavailable / ``3``
     STALE baseline authority. ``deadline`` is an absolute ``time.monotonic``
-    ceiling; exceeding it is a resource-budget failure (exit 2)."""
+    ceiling, checked **before and after each file** -- a COOPERATIVE budget
+    (P2 #6): it cannot interrupt a single pathological file mid-scan (that would
+    need a killable subprocess; out of v1 scope), but a one-file overrun is
+    caught on the post-file check and fails closed (exit 2) rather than
+    completing and reporting clean. Exceeding it is a resource-budget failure."""
     baseline_ok, baseline, why = load_residual_baseline_checked(baseline_path)
     if not baseline_ok:
         print(f"content_scan: BASELINE UNAVAILABLE -- {why}. Failing the audit "
               "rather than treating every flag as advisory-NEW.", file=sys.stderr)
         return 2, [], [], []
+
+    def _over_budget() -> bool:
+        if deadline is not None and time.monotonic() > deadline:
+            print("content_scan: WALL-CLOCK BUDGET EXCEEDED -- refusing "
+                  "(cooperative resource budget); a partial / overrun scan must "
+                  "not read clean.", file=sys.stderr)
+            return True
+        return False
+
     try:
         cs = _load_content_scan()
         allow = cs.load_url_allowlist()
         all_flags = []
         for p in files:
-            if deadline is not None and time.monotonic() > deadline:
-                print("content_scan: WALL-CLOCK BUDGET EXCEEDED -- refusing "
-                      "(resource budget); a partial scan must not read clean.",
-                      file=sys.stderr)
+            if _over_budget():                       # before the file
                 return 2, [], [], []
             rel = str(p.relative_to(repo_root))
             for fl in cs.scan_file(p, scan_urls=True, url_allowlist=allow):
                 fp = _flag_fingerprint(repo_root, rel, fl.line, fl.pattern_id)
                 all_flags.append((rel, fl, fp))
+            if _over_budget():                       # after the file (P2 #6)
+                return 2, [], [], []
     except Exception as exc:  # noqa: BLE001 -- ANY scan error is a failure
         print(f"content_scan: SCAN FAILED ({exc!r}) -- treating as a scanner "
               "failure (exit 2).", file=sys.stderr)

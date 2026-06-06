@@ -330,9 +330,10 @@ def _seed_apparatus(root: Path) -> None:
 
 class TestAuditRootsManifest:
     def test_valid_roots_parse(self, csr, tmp_path):
+        # P1 #5: load_audit_roots returns (rel, required) tuples; `!` => required.
         m = tmp_path / "roots.txt"
-        m.write_text("# content-scan-roots v1\ndev\ndocs\n", encoding="utf-8")
-        assert csr.load_audit_roots(m, tmp_path) == ["dev", "docs"]
+        m.write_text("# content-scan-roots v1\n!dev\ndocs\n", encoding="utf-8")
+        assert csr.load_audit_roots(m, tmp_path) == [("dev", True), ("docs", False)]
 
     def test_escape_dotdot_refused(self, csr, tmp_path):
         m = tmp_path / "roots.txt"
@@ -485,6 +486,40 @@ class TestRunnerExitContract:
         assert code == 1
         assert any(fl.pattern_id == "suspicious-url" for _r, fl, _fp in all_flags)
 
+    def test_missing_required_root_fails_even_with_a_healthy_root(self, csr, tmp_path):
+        # P1 #5: a manifest with a required root that is absent must FAIL even
+        # when an optional/healthy root contributes files (a missing required
+        # root silently shrinks coverage otherwise).
+        _git_repo(tmp_path); _seed_apparatus(tmp_path)
+        (tmp_path / "scripts" / "content_scan_roots.txt").write_text(
+            "# content-scan-roots v1\ndev\n!MISSING_REQUIRED.md\n",
+            encoding="utf-8")
+        _git_commit_all(tmp_path)
+        code, *_ = self._run(csr, tmp_path)
+        assert code == 2
+
+    def test_required_root_present_passes(self, csr, tmp_path):
+        # The healthy counterpart: a required root that exists + contributes.
+        _git_repo(tmp_path); _seed_apparatus(tmp_path)
+        (tmp_path / "scripts" / "content_scan_roots.txt").write_text(
+            "# content-scan-roots v1\n!dev\n", encoding="utf-8")
+        _git_commit_all(tmp_path)
+        code, *_ = self._run(csr, tmp_path)
+        assert code == 0
+
+    def test_wall_clock_overrun_fails_closed(self, csr, tmp_path):
+        # P2 #6: an exceeded wall-clock deadline fails closed (exit 2) -- a
+        # partial / overrun scan must never read clean.
+        import time  # noqa: PLC0415
+        _git_repo(tmp_path); _seed_apparatus(tmp_path); _git_commit_all(tmp_path)
+        files = csr.audited_text_files(
+            tmp_path, tmp_path / "scripts" / "content_scan_roots.txt")
+        code, *_ = csr.run_content_scan(
+            files, tmp_path,
+            tmp_path / "scripts" / "content_scan_residuals.txt",
+            deadline=time.monotonic() - 1.0)
+        assert code == 2
+
 
 # ---------------------------------------------------------------------------
 # Chunk C -- python-security: the orchestrator (run_security_audit.py).
@@ -563,8 +598,9 @@ class TestOrchestrator:
         with pytest.raises(orch.AuditDegraded):
             orch._safe_target_args([tmp_path / "--evil"])
 
-    def test_injection_not_applicable_when_content_security_absent(self, orch, tmp_path):
-        # python-security only -> injection pass is NOT APPLICABLE, contributes 0.
+    def test_injection_not_applicable_is_incomplete_not_clean(self, orch, tmp_path):
+        # P1 #3 / SR-4: content-security not installed -> injection NOT
+        # APPLICABLE -> a DISTINCT incomplete tier, never a clean contribution.
         _git_repo(tmp_path)
         (tmp_path / "mypkg").mkdir()
         (tmp_path / "mypkg" / "__init__.py").write_text("x=1\n", encoding="utf-8")
@@ -573,7 +609,8 @@ class TestOrchestrator:
         _git_commit_all(tmp_path)
         lock = _read_lock(tmp_path)
         status, tier = orch.run_injection_pass(tmp_path, lock)
-        assert status == "not-applicable" and tier == orch._AGG_CLEAN
+        assert status == "not-applicable"
+        assert tier == orch._AGG_INCOMPLETE and tier != orch._AGG_CLEAN
 
     def test_adopted_executable_gate_detects_tamper(self, orch, tmp_path):
         root, lock = self._adopter(tmp_path)
@@ -586,10 +623,56 @@ class TestOrchestrator:
         status, tier = orch.run_adopted_executable_gate(root, lock)
         assert tier == orch._AGG_DEGRADED and "tamper" in status
 
-    def test_pip_audit_egress_off_by_default(self, orch, tmp_path):
+    def test_pip_audit_egress_off_is_incomplete_not_clean(self, orch, tmp_path):
+        # P1 #3 / SR-5: egress off (default) -> the lookup did not run ->
+        # UNAVAILABLE -> incomplete, never a clean contribution.
         root, _ = self._adopter(tmp_path)
         status, tier = orch.run_pip_audit_pass(root, allow_egress=False)
-        assert tier == orch._AGG_CLEAN and "unavailable" in status
+        assert "unavailable" in status
+        assert tier == orch._AGG_INCOMPLETE and tier != orch._AGG_CLEAN
+
+    def test_pip_audit_tool_error_is_degraded_not_findings(self, orch, tmp_path,
+                                                           monkeypatch):
+        # P2 #7: only pip-audit exit 1 is a vuln report; any other non-zero
+        # (usage / env / network error) is degraded, never reported as findings.
+        # Force "tool present" so the classification (not the absent branch) runs.
+        monkeypatch.setattr(orch.shutil, "which", lambda _n: "/usr/bin/pip-audit")
+        monkeypatch.setattr(orch, "_run_tool",
+                            lambda argv, *, label: (2, "ran"))  # error exit
+        status, tier = orch.run_pip_audit_pass(tmp_path, allow_egress=True)
+        assert tier == orch._AGG_DEGRADED and "error" in status
+        monkeypatch.setattr(orch, "_run_tool",
+                            lambda argv, *, label: (1, "ran"))  # real vulns
+        status2, tier2 = orch.run_pip_audit_pass(tmp_path, allow_egress=True)
+        assert tier2 == orch._AGG_FINDINGS
+
+    def test_subprocess_runs_isolated_not_repo_shadow(self, orch, tmp_path):
+        # P1 #1: a repo-local bandit/ shadow must NOT execute. _run_tool runs
+        # `python -I` from a neutral cwd with a sanitized env, so the shadow is
+        # invisible. Assert bandit over a clean pkg is CLEAN despite the shadow.
+        root, lock = self._adopter(tmp_path)
+        shadow = root / "bandit"
+        shadow.mkdir()
+        (shadow / "__main__.py").write_text(
+            'print("SHADOWED_REPO_BANDIT"); raise SystemExit(0)\n',
+            encoding="utf-8")
+        pkg = orch.validate_python_package(root, lock)
+        status, tier = orch.run_bandit_pass(pkg, root)
+        # If the shadow had run, bandit would not have actually scanned -> the
+        # real bandit (isolated) runs instead and reports clean over mypkg.
+        assert status == "bandit:clean" and tier == orch._AGG_CLEAN
+
+    def test_preflight_requires_complete_apparatus_for_installed_module(self, orch, tmp_path):
+        # P1 #2: a lockfile that records python-security + content-security but
+        # OMITS the content_scan_runner record, with a tampered unrecorded
+        # runner on disk, must FAIL the preflight (not skip the missing record).
+        root, lock = self._adopter(tmp_path)
+        lock["files"] = [r for r in lock["files"]
+                         if r["dst"] != "scripts/content_scan_runner.py"]
+        (root / "scripts" / "content_scan_runner.py").write_text(
+            "x = 1  # tampered, unrecorded\n", encoding="utf-8")
+        with pytest.raises(orch.AuditDegraded):
+            orch.integrity_preflight(root, lock)
 
     def test_end_to_end_clean_then_tamper(self, orch, tmp_path):
         root, _ = self._adopter(tmp_path)
@@ -597,8 +680,16 @@ class TestOrchestrator:
         r = subprocess.run(
             [sys.executable, "scripts/run_security_audit.py"],
             cwd=str(root), capture_output=True, text=True, env=env)
-        assert r.returncode == 0, r.stdout + r.stderr  # clean (egress off)
-        # Tamper an apparatus file -> preflight DEGRADED (exit 20).
+        # A default both-modules run with bandit present is INCOMPLETE (5):
+        # pip-audit egress is off, so its pass is unavailable. (No findings, no
+        # tamper.) Gate on bandit so the base suite never silently requires it
+        # (P2 #8): without bandit the bandit pass is degraded -> 20.
+        bandit_ok = (shutil.which("bandit") is not None
+                     or importlib.util.find_spec("bandit") is not None)
+        expected = 5 if bandit_ok else 20
+        assert r.returncode == expected, r.stdout + r.stderr
+        # Tamper an apparatus file -> preflight DEGRADED (exit 20), no bandit
+        # needed (the preflight short-circuits before any pass).
         (root / "scripts" / "content_scan_runner.py").write_text(
             "x=1\n", encoding="utf-8")
         r2 = subprocess.run(

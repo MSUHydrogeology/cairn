@@ -4,12 +4,16 @@
 #
 # One repo-relative root per line (`#` comments + blanks ignored). A root is
 # a file or a directory; `content_scan_runner.py` scans the git-tracked
-# `.md` / `.txt` under each root. The manifest is read fail-closed:
+# `.md` / `.txt` under each root. A leading `!` marks a root REQUIRED: it must
+# exist and contribute at least one tracked text file, or the scan FAILS (a
+# missing required root silently reduces coverage). An unmarked root is
+# OPTIONAL: scanned when present, silently absent otherwise. The manifest is
+# read fail-closed:
 #   * paths MUST be repo-relative (no leading `/`, no `..` segment);
 #   * a root that resolves outside the repo (symlink / escape) is refused;
-#   * a missing / sentinel-less / empty manifest, or an audited set that
-#     resolves to zero files, FAILS the scan (exit 2) -- "did not scan" must
-#     never read as "clean".
+#   * a missing / sentinel-less / empty manifest, an audited set that resolves
+#     to zero files, OR a missing/empty REQUIRED root FAILS the scan (exit 2) --
+#     "did not scan" must never read as "clean".
 # This manifest is ITSELF in the audited set: a hostile edit to it is scanned.
 #
 # It names the surface explicitly -- it makes NO profile-derived-completeness
@@ -18,16 +22,19 @@
 # covers them. The runner excludes only the vendored `dev/.cairn/base/` cache
 # (scanned upstream in Cairn) and frozen `*/archive/*` records.
 
-# --- Required Cairn defaults (the always-installed agent-loaded surface) ---
-AGENTS.md
-.agents/skills
-dev
-docs
+# --- Required Cairn defaults (`!` = must exist + contribute; core-guaranteed) ---
+# AGENTS.md, the lifecycle skills, and the dev/ tree install with every Cairn
+# adoption, so their absence means a broken / incomplete tree -> fail closed.
+!AGENTS.md
+!.agents/skills
+!dev
 
-# --- Recommended (kept when present; renamed/added per adopter) ---
-# The thin vendor wrapper, renamed to your tool's file (CLAUDE.md, etc.), and
-# a project-local always-loaded rules file if you keep one. A listed root that
-# does not exist contributes nothing; add the ones your repo actually uses.
+# --- Recommended / optional (scanned when present; silently absent otherwise) ---
+# docs/ exists only when a docs-shipping module is installed; the thin vendor
+# wrapper is renamed to your tool's file (CLAUDE.md, etc.); a project-local
+# always-loaded rules file if you keep one. Mark any of these `!` (required) if
+# your repo guarantees them. Optional roots never fail the scan when absent.
+docs
 RULES.md
 CLAUDE.md
 VENDOR.md

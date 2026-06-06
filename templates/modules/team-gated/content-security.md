@@ -96,12 +96,16 @@ explicit, adopter-owned manifest, never
 a shell glob or a profile-derived guess. The manifest is read fail-closed:
 paths must be repo-relative (no leading `/`, no `..`), a root that resolves
 outside the repo (symlink / escape) is refused, and a missing / sentinel-less
-manifest or a zero-file result fails the scan. The manifest is **itself in the
-audited set** — a hostile edit to it is scanned. It ships with the required
-Cairn defaults (`AGENTS.md`, `.agents/skills`, `dev`, `docs`) plus a section
-for your own extensions; **if you add agent-loaded instruction files outside
-those roots, add their root here** so the scan covers them. The runner makes
-no completeness claim — it scans exactly what the manifest names.
+manifest or a zero-file result fails the scan. A leading **`!` marks a root
+required**: a required root that is absent or contributes no tracked text
+**fails the scan** (a missing required root silently shrinks coverage); an
+unmarked root is optional (scanned when present). The manifest is **itself in
+the audited set** — a hostile edit to it is scanned. It ships with the
+core-guaranteed surface required (`!AGENTS.md`, `!.agents/skills`, `!dev`) and
+`docs` + the vendor wrapper optional, plus a section for your own extensions;
+**if you add agent-loaded instruction files outside those roots, add their root
+here** (mark it `!` if your repo guarantees it). The runner makes no
+completeness claim — it scans exactly what the manifest names.
 
 ### Reviewed-residual baseline (`content_scan_residuals.txt`)
 

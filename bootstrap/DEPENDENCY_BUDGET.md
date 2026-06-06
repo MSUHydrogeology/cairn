@@ -63,23 +63,33 @@ and a neutral working directory. The audit is only as trustworthy as the
 interpreter/tool environment it ran in, so that environment is part of the
 record.
 
-## Posture-change visibility (a high-signal review surface)
+## Posture-change visibility — a human-review surface (v1 scope)
 
 The security apparatus's **policy inputs** — the URL allowlist, the
 reviewed-residual baseline, the audited-roots manifest, and the lockfile
-records of every apparatus file — plus **module removal** are high-signal
-review surfaces. A change that weakens the posture (removing a security module,
-narrowing the audited roots, blessing a new residual) must be **visible**, not
-silently normalized:
+records of every apparatus file — plus **module removal** are **high-signal
+review surfaces**. A change that weakens the posture (removing a security
+module, narrowing the audited roots, blessing a new residual) is a deliberate
+posture change that must be **reviewed by a human** — it is not a routine edit.
 
-* The orchestrator's **integrity preflight** verifies every apparatus + policy
-  file against its lockfile record before any pass runs. An edit to a policy
-  input that has not been deliberately re-recorded (via `upgrade --finalize`)
-  makes the preflight **fail closed** — a weakened apparatus cannot quietly
-  self-audit and report results.
-* Treat any diff to these files, or any module-removal, as a deliberate
-  posture change requiring review and explicit re-authorization — not a routine
-  edit. The integrity machinery surfaces it; the human ratifies it.
+**Scope honesty (v1).** v1 does **not** implement an automated posture-change
+gate. The control is **detective + human**, not preventive-automated:
+
+* The orchestrator's **integrity preflight** catches an **un-finalized** edit
+  to any apparatus / policy file (its on-disk hash no longer matches the
+  lockfile record) and **fails closed** — a tampered-but-not-re-recorded
+  apparatus cannot self-audit. That is its guarantee.
+* But once `upgrade --finalize` re-records the lockfile, the preflight accepts
+  the new (possibly weaker) state — finalize advances the recorded hashes. The
+  integrity preflight is therefore **not** posture-change detection: it does
+  not compare against a prior authorized posture.
+* So a **finalized** weakening (a removed module, a narrowed manifest, a newly
+  blessed residual) is caught by **human review of the `upgrade --finalize`
+  diff and the security-policy-file diffs**, not by an automated gate. Treat
+  every such diff as requiring explicit review. *(An automated durable
+  prior-posture / re-authorization comparison is a deliberate non-goal at v1 —
+  it belongs to a later "untrusted-apparatus-change" capability, outside the v1
+  self-audit-on-a-trusted-tree scope.)*
 
 ## Out of scope (this record)
 
