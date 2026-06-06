@@ -332,3 +332,63 @@ wrapper and the volatile date reminder relative to the doctrine prefix
 is harness-determined, not doctrine-determined. The convention governs
 the adopter-controlled surface; name which targets' load order is
 actually controllable rather than claim a universal win.
+
+## Profile-sized assembly — right-sizing the always-on surface
+
+`AGENTS.md` is always-loaded, so every token it carries is a cost paid
+on every turn. The **profile-sized assembly** mechanism lets a
+template author shrink that cost for profiles that genuinely do not
+need a section — without splitting the template or maintaining
+per-profile forks.
+
+**The `cairn:if` directive.** A template section may be wrapped with
+
+```
+<!-- cairn:if AXIS in val1,val2 -->
+…content…
+<!-- cairn:endif -->
+```
+
+where `AXIS` is one of the six profile dimensions and `val1,val2` is a
+comma-separated membership set. Semantics:
+
+* **keep-on-match** — axis value in the set → content kept, marker
+  lines dropped.
+* **remove-otherwise** — axis present, value not in the set → entire
+  region dropped.
+* **keep-on-missing-axis** — axis absent from the profile → content
+  kept (the safe/conservative default for an always-on file; the
+  opposite of `select_optional_templates`, which omits on missing).
+* **raise-on-unbalanced** — unclosed `cairn:if`, stray `cairn:endif`,
+  or nested directives → error.
+
+No nesting is supported; the grammar is intentionally minimal.
+
+**The never-gate-a-bright-line rule.** A `cairn:if` region may wrap
+only profile-**optional** content — informational sections whose
+absence leaves the operational rules intact. **No bright-line / safety
+rule may ever be gated**: the inline-rule inventory (Git workflow, the
+lifecycle, review, verifying claims, session routines, roles) must be
+present for *every* profile, including the most restrictive. The
+currently gated section in the core `AGENTS.md` template is `##
+Human contributors`, gated on `human_team in small-multi,large-multi`
+— informational to a solo maintainer who ships no `CONTRIBUTING.md`.
+The test suite asserts that no IR1–IR13 rule is ever gated.
+
+**Consistency at every materialization point.** The strip runs at
+every point the template becomes an installed file — install,
+lockfile expected hash, and the 3-way merge ancestor and `theirs`
+sides — so the installed file, the cached expected-clean-install
+hash, and the merge base all agree for a given profile. The base
+cache stores the **raw, unsized** template; the strip is
+reconstruction-time only, so a later profile change can still
+re-include a previously-stripped section. `verify_integrity` is
+unchanged: it compares the on-disk file against the lockfile hash,
+and since the lockfile hash is now the hash of the *stripped* install,
+the check stays consistent.
+
+The implementation lives in
+`bootstrap/_scaffold/config.py` (`strip_conditional_regions`), at the
+DAG root beside `resolve_axes`. The tests (dedicated
+profile-sized-assembly suite) assert both the grammar semantics and
+the never-gate constraint.

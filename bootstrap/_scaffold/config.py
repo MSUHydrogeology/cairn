@@ -25,6 +25,7 @@ is confirmed within the Cairn root before it executes.
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any, NamedTuple
 
@@ -670,6 +671,130 @@ def resolve_axes(preset_name: str, cfg: dict[str, object]) -> dict[str, str]:
                 )
             resolved[axis] = value
     return resolved
+
+
+#: Matches a ``cairn:if`` open-marker or a ``cairn:endif`` close-marker.
+#: Group 1 = AXIS, Group 2 = comma-separated value list (open-marker only).
+_IF_RE = re.compile(
+    r"^[ \t]*<!--\s+cairn:(?:"
+    r"if\s+(\w+)\s+in\s+([^\-].*?)(?:\s*-->)"
+    r"|"
+    r"endif"
+    r"\s*-->"
+    r")\s*$",
+    re.MULTILINE,
+)
+
+
+def strip_conditional_regions(text: str, axes: dict[str, object]) -> str:
+    """Remove or keep ``<!-- cairn:if AXIS in val1,val2 --> ... <!-- cairn:endif -->``
+    regions according to the resolved dimension profile.
+
+    **Five load-bearing semantics** (implement exactly):
+
+    1. **keep-on-match** — if ``str(axes.get(AXIS, ""))`` is in the
+       directive's value set, remove only the two marker comment lines
+       (and each marker's own trailing newline), leaving the inner content
+       in place with no blank-line artifact.
+
+    2. **remove-otherwise** — if AXIS is present in *axes* but its value is
+       NOT in the directive's value set, remove the entire region (both
+       markers AND the content between them, including the trailing newline
+       of the closing marker), leaving no blank-line residue.
+
+    3. **keep-on-missing-axis** — if AXIS is **absent** from *axes*,
+       keep the inner content (conservative safety default: never silently
+       drop a section because the profile was incomplete).  This is the
+       OPPOSITE of ``select_optional_templates``, which omits on missing;
+       stripping from an always-on file must default to keep.
+
+    4. **raise-on-unbalanced** — an open ``cairn:if`` with no matching
+       ``cairn:endif``, a stray ``cairn:endif``, or a nested ``cairn:if``
+       (a second open before the first closes) → ``ValueError`` with a
+       clear message.
+
+    5. **identity** — text with no ``cairn:if`` directive is returned
+       byte-identical (the common case; no global state, no side-effects).
+
+    Pure function; deterministic: same ``(text, axes)`` → byte-identical
+    output every call.
+    """
+    # Fast path: nothing to process (checks both markers so a stray
+    # cairn:endif with no cairn:if still goes through the validator).
+    if "cairn:if" not in text and "cairn:endif" not in text:
+        return text
+
+    # Walk lines, collecting regions using a simple state machine.
+    # We re-scan with splitlines(keepends=True) so we can reconstruct
+    # the output exactly.
+    lines = text.splitlines(keepends=True)
+    out: list[str] = []
+    # State: None = top-level, or dict with region info once inside a block.
+    region: dict[str, object] | None = None
+
+    for lineno, line in enumerate(lines, start=1):
+        # Try to match either an open or close marker on this line.
+        # The marker must occupy the whole line (anchored by MULTILINE ^ $).
+        m = _IF_RE.match(line.rstrip("\n"))
+        if m is None:
+            if region is None:
+                out.append(line)
+            else:
+                # Accumulate content inside an open region.
+                region["body_lines"].append(line)  # type: ignore[union-attr]
+            continue
+
+        axis_grp = m.group(1)   # None for endif
+        vals_grp = m.group(2)   # None for endif
+
+        if axis_grp is not None:
+            # Open marker.
+            if region is not None:
+                raise ValueError(
+                    f"cairn:if directive at line {lineno} is nested inside "
+                    f"another open cairn:if (axis={region['axis']!r}); "
+                    "nesting is not supported."
+                )
+            values = frozenset(v.strip() for v in vals_grp.split(","))
+            region = {
+                "axis": axis_grp,
+                "values": values,
+                "open_lineno": lineno,
+                "body_lines": [],
+            }
+        else:
+            # Close marker (endif).
+            if region is None:
+                raise ValueError(
+                    f"Stray cairn:endif at line {lineno} with no matching "
+                    "cairn:if open."
+                )
+            axis = region["axis"]
+            values = region["values"]  # type: ignore[assignment]
+            body: list[str] = region["body_lines"]  # type: ignore[assignment]
+
+            if axis not in axes:
+                # Semantic 3: missing axis → keep content.
+                out.extend(body)
+            else:
+                current_value = str(axes[axis])
+                if current_value in values:
+                    # Semantic 1: keep-on-match → keep body, strip both markers.
+                    out.extend(body)
+                else:
+                    # Semantic 2: remove-otherwise → discard markers + body.
+                    pass  # nothing appended; blank-line residue is avoided
+                    # because we also don't append the close marker below.
+
+            region = None  # region closed
+
+    if region is not None:
+        raise ValueError(
+            f"Unclosed cairn:if at line {region['open_lineno']} "
+            f"(axis={region['axis']!r}): no matching cairn:endif found."
+        )
+
+    return "".join(out)
 
 
 def expand_preset(cfg: dict[str, object]) -> tuple[list[str], dict[str, object]]:

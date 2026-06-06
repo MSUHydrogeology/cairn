@@ -36,6 +36,7 @@ from .config import (
     _SKILLS_MAPPINGS,
     load_config,
     resolve_axes,
+    strip_conditional_regions,
 )
 from .security import _assert_safe_write
 from .merge import SlotError, merge_file
@@ -178,6 +179,46 @@ class FilePlan(NamedTuple):
     verbatim: bool = False    # new-core: verbatim flag for the new lockfile entry
 
 
+def _embedded_axes(profile: dict[str, Any] | None) -> dict[str, str]:
+    """The six-axis strip key from a lockfile/profile block (string values)."""
+    return {k: str(v) for k, v in ((profile or {}).get("axes") or {}).items()}
+
+
+def _resolve_current_profile(
+    target: Path, lock: dict[str, Any],
+) -> tuple[dict[str, Any], dict[str, str]]:
+    """The adopter's CURRENT profile for upgrade-time materialization (S1).
+
+    Returns ``(profile_block, axes)``.  Reads the committed
+    ``dev/.cairn/profile.yml`` -- the adopter may have changed their profile
+    since install (solo -> multi or back) -- and resolves it exactly as install
+    / init-lock do.  **Falls back to the pre-upgrade lockfile's embedded
+    profile** when ``profile.yml`` is absent, unparseable, or incomplete, so the
+    overwhelmingly-common no-change case is byte-for-byte a same-profile upgrade
+    (``theirs`` sized identically to ``base``).  A profile *change* makes
+    ``theirs`` materialize under the new profile, so the 3-way merge sees a
+    newly-selected section as a clean ADD and a newly-dropped one as a clean
+    DELETE -- never a spurious conflict, and slot-transplant still preserves
+    every filled adopter slot (F3)."""
+    lock_profile = lock.get("profile") or {}
+    lock_axes = _embedded_axes(lock_profile)
+    profile_path = target / _PROFILE_REL
+    if not profile_path.is_file():
+        return lock_profile, lock_axes
+    try:
+        cfg = load_config(profile_path)
+        block, _tokens, missing, invalid = _resolve_lock_profile_fields(cfg)
+    except Exception:  # noqa: BLE001 -- a malformed profile.yml falls back
+        return lock_profile, lock_axes
+    axes = _embedded_axes(block)
+    if missing or invalid or not axes:
+        # An incomplete/invalid current profile is not a safe basis to re-strip
+        # the upgrade ancestor: fall back to the lockfile profile (a no-op vs.
+        # the install-time sizing) rather than risk dropping a section.
+        return lock_profile, lock_axes
+    return block, axes
+
+
 def _compute_upgrade(
     target: Path, cairn_root: Path, templates_root: Path,
     lock: dict[str, Any], to_ref: str | None,
@@ -185,6 +226,12 @@ def _compute_upgrade(
     """Classify every lockfile-tracked file for upgrade + the structural
     drift.  Pure read-only -- no writes."""
     tokens = {str(k): str(v) for k, v in (lock.get("tokens") or {}).items()}
+    # Profile-sized assembly (cairn-profile-sized-assembly P3 / S1): materialize
+    # the merge ancestor `base` under the OLD embedded profile and `theirs` under
+    # the adopter's CURRENT profile.  `ours` (on disk) is already old-profile-
+    # sized and is left untouched.
+    old_axes = _embedded_axes(lock.get("profile"))
+    _new_profile, new_axes = _resolve_current_profile(target, lock)
     plans: list[FilePlan] = []
     for rec in lock.get("files", []):
         dst = rec["dst"]
@@ -248,8 +295,19 @@ def _compute_upgrade(
                                   theirs_raw, None))
             continue
         base_raw = base_path.read_text(encoding="utf-8")
+        # Size the ancestor sides for the merge view only: base under the OLD
+        # profile, theirs under the NEW profile.  The cached `base_raw` and the
+        # FilePlan's `theirs_raw` (the next ancestor) stay FULL/unsized -- the
+        # strip is a reconstruction-time view, never baked into the cache, so a
+        # later profile change can still re-include a stripped section.  strip on
+        # the raw template commutes with token substitution (a `cairn:if` marker
+        # carries no token), so stripping here matches an install-time strip.
+        base_sized = (strip_conditional_regions(base_raw, old_axes)
+                      if old_axes else base_raw)
+        theirs_sized = (strip_conditional_regions(theirs_raw, new_axes)
+                        if new_axes else theirs_raw)
         try:
-            res = merge_file(base_raw, theirs_raw, ours, tokens)
+            res = merge_file(base_sized, theirs_sized, ours, tokens)
         except SlotError as exc:
             plans.append(FilePlan(dst, "error", None,
                                   f"malformed slots: {exc}", None, None))
@@ -266,7 +324,7 @@ def _compute_upgrade(
         # ``Demo`` for ``{{project_name}}`` but base_raw still has the
         # token) as "locally modified," which is the wrong signal.
         kind = res.status
-        if kind == "clean" and ours != substitute_tokens(base_raw, tokens):
+        if kind == "clean" and ours != substitute_tokens(base_sized, tokens):
             kind = "clean-locally-modified"
         advancing = kind in _ADVANCING_KINDS
         plans.append(FilePlan(
@@ -303,8 +361,13 @@ def _compute_upgrade(
                 src=src_rel, verbatim=True))
         else:
             theirs_raw = theirs_b.decode("utf-8")
+            # Profile-size a newly-added core-like file too (P3); base cache
+            # (5th field) keeps the full/unsized raw template.
+            applied = substitute_tokens(theirs_raw, tokens)
+            if new_axes:
+                applied = strip_conditional_regions(applied, new_axes)
             plans.append(FilePlan(
-                dst_rel, "new-core", substitute_tokens(theirs_raw, tokens),
+                dst_rel, "new-core", applied,
                 "new core-like file (added)", theirs_raw,
                 f"{_BASE_CACHE_REL}/{dst_rel}", src=src_rel, verbatim=False))
 
@@ -401,6 +464,7 @@ def _seed_staging_gitignore(target: Path) -> None:
 def _write_stage(
     target: Path, plans: list[FilePlan], lock: dict[str, Any],
     to_ref: str | None, cairn_root: Path,
+    new_profile: dict[str, Any] | None = None,
 ) -> Path:
     """Write the staged review surface into the ephemeral, gitignored
     staging dir; return its path.
@@ -508,6 +572,10 @@ def _write_stage(
         "new_entries": new_entries,
         # #48 verbatim files whose stale lock hash --apply should heal.
         "verbatim_rehash": sorted(verbatim_rehash),
+        # S1: the adopter's CURRENT resolved profile, so --apply re-embeds it in
+        # the advanced lockfile when the profile changed since install (keeps the
+        # embedded profile consistent with the now-resized on-disk files).
+        "new_profile": new_profile,
     }
     (stage / _STAGE_META).write_text(
         json.dumps(meta, indent=2, sort_keys=True), encoding="utf-8")
@@ -1137,6 +1205,12 @@ def _apply_upgrade(
     new_lock = dict(lock)
     new_lock["cairn_version"] = meta.get("new_version", lock.get("cairn_version"))
     new_lock["cairn_commit"] = meta.get("new_commit", lock.get("cairn_commit"))
+    # S1: if the adopter's profile changed since install, re-embed the current
+    # resolved profile so the advanced lockfile matches the now-resized on-disk
+    # files (the staged content was already sized under this profile).
+    new_profile = meta.get("new_profile")
+    if new_profile:
+        new_lock["profile"] = new_profile
     new_files: list[dict[str, Any]] = []
     staged_set = set(staged_meta)
     rehash_set = set(meta.get("verbatim_rehash", []))
@@ -1350,7 +1424,9 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
         args.to or _cairn_commit(cairn_root))
 
     if args.stage:
-        stage = _write_stage(target, plans, lock, args.to, cairn_root)
+        _new_profile, _new_axes = _resolve_current_profile(target, lock)
+        stage = _write_stage(target, plans, lock, args.to, cairn_root,
+                             new_profile=_new_profile)
         _print_upgrade_report(plans, structural, citation, mode="stage",
                               drift=drift)
         # (R1) --stage writes only the gitignored review surface, so it

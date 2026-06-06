@@ -496,7 +496,7 @@
     "type": "Expr"
   },
   "FunctionDef:_apply_upgrade": {
-    "digest": "e129a624e4f6e5cb",
+    "digest": "14a86f57c71ebacb",
     "span": [
       4007,
       4204
@@ -616,7 +616,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_compute_upgrade": {
-    "digest": "4bd926c120a86725",
+    "digest": "8ce2cda2546f9ecd",
     "span": [
       3180,
       3317
@@ -688,7 +688,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_install_one": {
-    "digest": "2986df69f7e95e70",
+    "digest": "2d862f813afa6764",
     "span": [
       1443,
       1509
@@ -888,7 +888,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_write_stage": {
-    "digest": "f2ded5b9225411f2",
+    "digest": "dd5e786f1e92f189",
     "span": [
       3400,
       3514
@@ -936,7 +936,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:cmd_upgrade": {
-    "digest": "cee23cd52cdd44b7",
+    "digest": "14a071e50761bca7",
     "span": [
       4261,
       4380
@@ -1016,7 +1016,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:install_core": {
-    "digest": "4d600e16e0627b7a",
+    "digest": "6f199c9a56befc8c",
     "span": [
       1512,
       1531
@@ -1088,7 +1088,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:main": {
-    "digest": "ea726c5f8be4e00a",
+    "digest": "37d3a49dbbf9b590",
     "span": [
       4469,
       4900
@@ -1208,7 +1208,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:write_install_lockfile": {
-    "digest": "0d7150fc6d4e162a",
+    "digest": "31906bfae4bff43d",
     "span": [
       2713,
       2850

@@ -419,10 +419,23 @@ def main(argv: list[str] | None = None) -> int:
         print("  (--force: existing files will be overwritten)")
     dirs_created = create_dev_tree(target)
 
+    # The embedded six-axis profile used to strip `cairn:if` regions from the
+    # always-on surface (cairn-profile-sized-assembly).  Computed ONCE here so
+    # the install, the lockfile's expected-clean-install `would`, verify, and the
+    # 3-way merge all key off byte-identical axes -- the lockfile divergence
+    # check (install == cached) demands the install-strip and the `would`-strip
+    # see the same point.  This is exactly the axes block embedded in the
+    # lockfile `profile` below.
+    embedded_axes: dict[str, Any] = {
+        axis: resolved_axes.get(axis)
+        for axis in _AXES
+        if isinstance(resolved_axes, dict) and resolved_axes.get(axis)
+    }
+
     # Install core templates
     print("Installing core templates ...")
     core_results = install_core(
-        templates_root, target, tokens, force=args.force
+        templates_root, target, tokens, axes=embedded_axes, force=args.force
     )
 
     # Install lifecycle-routine skills (unconditional, like core) + write the
@@ -592,11 +605,7 @@ def main(argv: list[str] | None = None) -> int:
     # if the tree diverges from a clean install (P-1) -- then it points the
     # user at `upgrade --init-lock` and the install still succeeds.
     lock_profile: dict[str, Any] = {"preset": cfg.get("preset")}
-    lock_profile["axes"] = {
-        axis: resolved_axes.get(axis)
-        for axis in _AXES
-        if isinstance(resolved_axes, dict) and resolved_axes.get(axis)
-    }
+    lock_profile["axes"] = embedded_axes
     try:
         lock = write_install_lockfile(
             target, cairn_root, templates_root,

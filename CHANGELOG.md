@@ -138,6 +138,28 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **Profile-sized `AGENTS.md` assembly via `cairn:if` conditional regions.**
+  A new `<!-- cairn:if AXIS in val1,val2 -->` … `<!-- cairn:endif -->` directive
+  (single-axis, comma-separated set-membership, no nesting) lets a template
+  section be included only for profiles whose dimension axis matches. Semantics:
+  keep-on-match; remove-otherwise; **keep-on-missing-axis** (safe default for the
+  always-on file — the opposite of `select_optional_templates`); raise-on-unbalanced.
+  **The never-gate-a-bright-line rule**: a `cairn:if` region may wrap only
+  profile-optional content — no IR1–IR13 safety rule may ever be gated (the
+  test suite asserts this). Currently the only gated section in the core
+  `AGENTS.md` template is `## Human contributors` (`human_team in
+  small-multi,large-multi`). The strip runs consistently at every
+  template-materialization point — install, lockfile expected hash, and the
+  3-way merge ancestor + `theirs` sides — so installed == cached == merged for a
+  given profile; the base cache stays raw so a later profile change can
+  re-include a stripped section. `verify_integrity` is unchanged (it compares
+  on-disk against the now-stripped lockfile hash, so the check stays clean).
+  Implementation: `bootstrap/_scaffold/config.py` (`strip_conditional_regions`);
+  threading into install/lockfile/upgrade in `_scaffold/install.py` and
+  `_scaffold/upgrade.py`. `doctrine/doc-governance.md` carries the right-size
+  rule and the never-gate constraint. Source: LHM
+  `dev/plans/cairn-profile-sized-assembly.md` (P1–P5).
+
 - **`scripts/verify_counts.py` + `scripts/measurements.py` — the live-invariant
   leg of the three-kind numeric-claim discipline (Cairn-maintainer-only).** When
   `claim_check` retired its category-D count soft-flag, *decision-irrelevant* and

@@ -23,6 +23,7 @@ Run from the cairn repo root:
 from __future__ import annotations
 
 import json
+import shutil
 import sys
 from pathlib import Path
 
@@ -31,6 +32,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from bootstrap import scaffold as s  # noqa: E402
+from bootstrap import verify_integrity  # noqa: E402
 
 CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
@@ -117,6 +119,215 @@ class TestLockfile:
         # allow-list overrides; benign tokens pass
         s._refuse_secret_tokens({"apiKey": "x"}, allow=("apiKey",))
         s._refuse_secret_tokens({"project_name": "x", "test_command": "y"})
+
+
+# ---------------------------------------------------------------------------
+# Profile-sized assembly (cairn-profile-sized-assembly P2): the lockfile's
+# expected-clean-install `would` is stripped with the SAME embedded profile the
+# install stripped the on-disk file with, so a profile-stripped install writes a
+# clean lockfile (would == on-disk) and verifies clean -- while base_cache keeps
+# the RAW (with-directive) template for the 3-way merge to reconstruct + restrip.
+# ---------------------------------------------------------------------------
+
+class TestProfileSizedAssembly:
+    # A genuinely profile-optional region: kept only for multi-human teams.
+    # The sentinel is deliberately unique so it cannot collide with real
+    # template prose (the real AGENTS.md already discusses human contributors).
+    _SENTINEL = "PROFILE_SIZED_ASSEMBLY_GATED_SENTINEL"
+    _REGION = (
+        "\n<!-- cairn:if human_team in small-multi,large-multi -->\n"
+        f"## {_SENTINEL}\n"
+        "Team-coordination prose only multi-human adopters carry.\n"
+        "<!-- cairn:endif -->\n"
+    )
+
+    def _cairn_with_directive(self, tmp_path: Path) -> Path:
+        """Copy the real templates tree into a tmp cairn-root and append a
+        cairn:if region to core/AGENTS.md (P4 has not yet gated the real
+        template, so we inject one to exercise the strip end-to-end)."""
+        croot = tmp_path / "cairn"
+        shutil.copytree(TEMPLATES_ROOT, croot / "templates")
+        cff = CAIRN_ROOT / "CITATION.cff"
+        if cff.exists():
+            shutil.copy2(cff, croot / "CITATION.cff")
+        agents = croot / "templates" / "core" / "AGENTS.md"
+        agents.write_text(
+            agents.read_text(encoding="utf-8") + self._REGION, encoding="utf-8")
+        return croot
+
+    @staticmethod
+    def _install_from(target: Path, croot: Path, preset: str) -> int:
+        target.mkdir(parents=True, exist_ok=True)
+        cfg = target / "profile.yml"
+        cfg.write_text(
+            f"project_name: Demo\ntest_command: pytest\npreset: {preset}\n")
+        return s.main([
+            "--config", str(cfg), "--target", str(target),
+            "--cairn-root", str(croot), "--allow-dev",
+        ])
+
+    def test_solo_strips_region_lockfile_and_verify_clean(
+        self, tmp_path: Path
+    ) -> None:
+        croot = self._cairn_with_directive(tmp_path)
+        target = tmp_path / "solo"
+        assert self._install_from(target, croot, "solo-greenfield") == 0
+        agents = (target / "AGENTS.md").read_text(encoding="utf-8")
+        # the gated region is stripped from the solo install, markers and all
+        assert self._SENTINEL not in agents
+        assert "cairn:if" not in agents and "cairn:endif" not in agents
+        # would == on-disk: the lockfile is written (not fail-closed-diverged)
+        lock = s.read_lockfile(target)
+        assert lock is not None
+        rec = next(r for r in lock["files"] if r["dst"] == "AGENTS.md")
+        on_disk = (target / "AGENTS.md").read_bytes()
+        assert rec["hash"] == "sha256:" + s._sha256_hex(on_disk)
+        # base_cache keeps the RAW (with-directive) template -- strip is a
+        # reconstruction-time concern, not baked into the cache (P3 restrips it)
+        cache = (target / rec["base_cache"]).read_text(encoding="utf-8")
+        assert "cairn:if human_team" in cache
+        # the tamper check attests the stripped install clean
+        assert verify_integrity.verify(target) == 0
+
+    def test_multi_keeps_region_lockfile_and_verify_clean(
+        self, tmp_path: Path
+    ) -> None:
+        croot = self._cairn_with_directive(tmp_path)
+        target = tmp_path / "multi"
+        # collaborative-team resolves human_team=small-multi -> region kept
+        assert self._install_from(target, croot, "collaborative-team") == 0
+        agents = (target / "AGENTS.md").read_text(encoding="utf-8")
+        assert self._SENTINEL in agents              # kept for the team
+        assert "cairn:if" not in agents and "cairn:endif" not in agents
+        lock = s.read_lockfile(target)
+        assert lock is not None
+        rec = next(r for r in lock["files"] if r["dst"] == "AGENTS.md")
+        on_disk = (target / "AGENTS.md").read_bytes()
+        assert rec["hash"] == "sha256:" + s._sha256_hex(on_disk)
+        assert verify_integrity.verify(target) == 0
+
+    def test_same_profile_upgrade_is_a_clean_noop(self, tmp_path: Path) -> None:
+        """The previously-49-failing surface: a profile-stripped (solo) install
+        upgrades against the same upstream + same profile with NOTHING to
+        re-stage -- base, theirs and ours all agree on the stripped region, so
+        the merge is a clean no-op (no spurious conflict / locally-modified)."""
+        croot = self._cairn_with_directive(tmp_path)
+        target = tmp_path / "solo"
+        assert self._install_from(target, croot, "solo-greenfield") == 0
+        assert s.main(["upgrade", "--target", str(target), "--stage",
+                       "--cairn-root", str(croot)]) == 0
+        staged = target / "dev" / ".cairn-upgrade" / "files"
+        # AGENTS.md is not re-staged: the stripped ancestor matches the install
+        assert not (staged / "AGENTS.md").exists()
+        assert verify_integrity.verify(target) == 0
+
+    def test_profile_change_solo_to_multi_reincludes_region(
+        self, tmp_path: Path
+    ) -> None:
+        """S1 / F3: an adopter who flips solo -> multi and upgrades gets the
+        gated region cleanly RE-INCLUDED (a clean ADD relative to the
+        old-profile base), with a local customization preserved, the lockfile
+        profile re-embedded to the new profile, and verify clean -- no clobber."""
+        croot = self._cairn_with_directive(tmp_path)
+        target = tmp_path / "adopter"
+        assert self._install_from(target, croot, "solo-greenfield") == 0
+        agents_path = target / "AGENTS.md"
+        assert self._SENTINEL not in agents_path.read_text(encoding="utf-8")
+        # the adopter customizes a line NEAR THE TOP (far from the end-appended
+        # gated region, so the two changes land in different merge hunks) ...
+        lines = agents_path.read_text(encoding="utf-8").splitlines(keepends=True)
+        lines.insert(1, "<!-- LOCAL CUSTOMIZATION: keep me -->\n")
+        agents_path.write_text("".join(lines), encoding="utf-8")
+        # ... and flips their committed profile from solo to multi-human.
+        prof = target / "dev" / ".cairn" / "profile.yml"
+        prof.parent.mkdir(parents=True, exist_ok=True)
+        prof.write_text(
+            "project_name: Demo\ntest_command: pytest\n"
+            "age: greenfield\nsize: small\ncomplexity: simple\n"
+            "language: single\nhuman_team: small-multi\nagent_team: single\n",
+            encoding="utf-8")
+        assert s.main(["upgrade", "--target", str(target), "--stage",
+                       "--cairn-root", str(croot)]) == 0
+        assert s.main(["upgrade", "--target", str(target), "--apply",
+                       "--cairn-root", str(croot)]) == 0
+        merged = agents_path.read_text(encoding="utf-8")
+        assert self._SENTINEL in merged                       # region re-included
+        assert "LOCAL CUSTOMIZATION: keep me" in merged       # customization kept
+        # the advanced lockfile re-embeds the NEW profile + verify attests clean
+        lock2 = s.read_lockfile(target)
+        assert lock2["profile"]["axes"]["human_team"] == "small-multi"
+        rec = next(r for r in lock2["files"] if r["dst"] == "AGENTS.md")
+        assert rec["hash"] == "sha256:" + s._sha256_hex(agents_path.read_bytes())
+        assert verify_integrity.verify(target) == 0
+
+
+# ---------------------------------------------------------------------------
+# Template gating safety (cairn-profile-sized-assembly P4 / F1): the real
+# templates/core/AGENTS.md gates ONLY the profile-optional `## Human
+# contributors` section -- never a bright-line (IR1-IR13). The most-restrictive
+# profile keeps every operative rule.
+# ---------------------------------------------------------------------------
+
+class TestTemplateGatingSafety:
+    # Section headings carrying the IR1-IR13 bright-lines: NONE may sit inside a
+    # cairn:if region, and ALL must survive the most-restrictive (solo) strip.
+    _BRIGHTLINE_HEADINGS = [
+        "## The lifecycle",            # IR7
+        "## Review",                   # IR8
+        "## Git and commit workflow",  # IR1-IR6, IR9, IR10
+        "## Verifying claims",         # IR11
+        "## Session routines",         # IR12
+        "## Roles",                    # IR13
+    ]
+
+    def _template(self) -> str:
+        return (TEMPLATES_ROOT / "core" / "AGENTS.md").read_text(
+            encoding="utf-8")
+
+    def test_only_the_human_team_axis_is_gated(self) -> None:
+        """Every cairn:if in the core template gates on `human_team` only -- the
+        single approved profile-optional axis -- and the parse is balanced +
+        deterministic (F4) over the real template for both solo and multi."""
+        import re
+        from bootstrap._scaffold.config import strip_conditional_regions  # noqa: PLC0415,E501
+        text = self._template()
+        gates = re.findall(r"<!--\s*cairn:if\s+(\w+)\s+in\b", text)
+        assert gates, "expected at least one cairn:if region in the template"
+        assert set(gates) == {"human_team"}, gates
+        for axes in ({"human_team": "solo"}, {"human_team": "small-multi"}):
+            once = strip_conditional_regions(text, axes)
+            assert once == strip_conditional_regions(text, axes)  # F4
+
+    def test_no_brightline_section_is_inside_a_gated_region(self) -> None:
+        """The safety crux: no IR1-IR13 bright-line section heading sits within a
+        cairn:if region (gating one would drop an operative rule for solo)."""
+        import re
+        regions = re.findall(
+            r"<!--\s*cairn:if\b.*?-->(.*?)<!--\s*cairn:endif\s*-->",
+            self._template(), flags=re.DOTALL)
+        joined = "\n".join(regions)
+        for heading in self._BRIGHTLINE_HEADINGS:
+            assert heading not in joined, f"{heading!r} must never be gated"
+
+    def test_solo_keeps_all_brightlines_drops_human_contributors(
+        self, tmp_path: Path
+    ) -> None:
+        assert _install(tmp_path, "solo-greenfield") == 0
+        agents = (tmp_path / "AGENTS.md").read_text(encoding="utf-8")
+        assert "## Human contributors" not in agents       # gated out for solo
+        for heading in self._BRIGHTLINE_HEADINGS:
+            assert heading in agents, f"solo lost bright-line section {heading!r}"
+        assert "cairn:if" not in agents and "cairn:endif" not in agents
+        assert verify_integrity.verify(tmp_path) == 0
+
+    def test_multi_keeps_human_contributors(self, tmp_path: Path) -> None:
+        assert _install(tmp_path, "collaborative-team") == 0
+        agents = (tmp_path / "AGENTS.md").read_text(encoding="utf-8")
+        assert "## Human contributors" in agents
+        for heading in self._BRIGHTLINE_HEADINGS:
+            assert heading in agents, heading
+        assert "cairn:if" not in agents and "cairn:endif" not in agents
+        assert verify_integrity.verify(tmp_path) == 0
 
 
 # ---------------------------------------------------------------------------

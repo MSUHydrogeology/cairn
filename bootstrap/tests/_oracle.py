@@ -206,11 +206,40 @@ def _git_init_commit(target: Path) -> None:
             )
 
 
+# Profile-conditional assembly (cairn-profile-sized-assembly) is a POST-split
+# feature: the current engine resolves `cairn:if`/`cairn:endif` regions per the
+# adopter's profile, while the frozen PRE-split engine predates the directive and
+# would emit the raw markers verbatim -- a divergence that is a deliberate feature,
+# NOT a behavioral regression. So this differential gate neutralizes the directive
+# markers in the templates BOTH engines read (an enumerated, documented exclusion
+# like `_LOCATION_DEPENDENT`); the feature itself is covered by the dedicated
+# profile-sized-assembly tests (test_upgrade.py::TestProfileSizedAssembly /
+# TestTemplateGatingSafety), not this pre-split parity check.
+_PROFILE_IF_MARKER_RE = re.compile(
+    r"(?m)^[ \t]*<!--\s*cairn:(?:if\b[^\n]*|endif)\s*-->\n")
+
+
+def _neutralize_profile_directives(cairn_root: Path) -> None:
+    """Strip `cairn:if`/`cairn:endif` MARKER lines (keeping the gated content) from
+    every template under *cairn_root*, so both engines install a byte-identical,
+    directive-free tree (see the note above)."""
+    tdir = cairn_root / "templates"
+    if not tdir.is_dir():
+        return
+    for md in tdir.rglob("*.md"):
+        text = md.read_text(encoding="utf-8")
+        if "cairn:if" in text:
+            md.write_text(_PROFILE_IF_MARKER_RE.sub("", text), encoding="utf-8")
+
+
 def _copy_cairn(dst: Path) -> None:
     """An editable copy of the Cairn tree (templates included) so an upstream
-    template delta can be introduced for upgrade scenarios. .git is excluded."""
+    template delta can be introduced for upgrade scenarios. .git is excluded.
+    Profile-conditional directives are neutralized so the pre/post-split engines
+    install byte-identically (the feature is covered by its own tests)."""
     shutil.copytree(CAIRN_ROOT, dst,
                     ignore=shutil.ignore_patterns(".git", "__pycache__", "*.pyc"))
+    _neutralize_profile_directives(dst)
 
 
 def _refusal_signature(stderr: str) -> str:
@@ -361,12 +390,18 @@ def run_oracle(workdir: Path, include_privileged: bool = True,
                allow_skips: bool = False) -> dict:
     if not FROZEN_ENGINE.is_file():
         raise OracleError(f"frozen engine snapshot missing: {FROZEN_ENGINE}")
+    # Both engines read templates from one neutralized copy (profile-conditional
+    # directives stripped) so the pre/post-split parity check is not tripped by a
+    # deliberate post-split feature the frozen engine predates (see
+    # `_neutralize_profile_directives`).
+    cairn_neutral = workdir / "_cairn_neutralized"
+    _copy_cairn(cairn_neutral)
     fixtures_report: list[dict] = []
     for fx in FIXTURES:
         froot = workdir / fx["name"] / "frozen"
         croot = workdir / fx["name"] / "current"
-        _run_engine(FROZEN_ENGINE, froot, fx["preset"])
-        _run_engine(CURRENT_ENGINE, croot, fx["preset"])
+        _run_engine(FROZEN_ENGINE, froot, fx["preset"], cairn_root=cairn_neutral)
+        _run_engine(CURRENT_ENGINE, croot, fx["preset"], cairn_root=cairn_neutral)
         fsnap, csnap = _snapshot(froot), _snapshot(croot)
         diffs = _compare(fsnap, csnap)
         fixtures_report.append({
@@ -392,6 +427,10 @@ def run_oracle(workdir: Path, include_privileged: bool = True,
         "current_engine": str(CURRENT_ENGINE.relative_to(CAIRN_ROOT)),
         "normalized_provenance_fields": list(_PROVENANCE_KEYS),
         "location_dependent_excluded": sorted(_LOCATION_DEPENDENT),
+        # Profile-conditional `cairn:if` regions are neutralized in the templates
+        # both engines read (the frozen pre-split engine predates the feature);
+        # covered by the dedicated profile-sized-assembly tests, not this gate.
+        "profile_conditional_neutralized": True,
         "fixtures": fixtures_report,
         "privileged": privileged,
         "non_differential_coverage": _NON_DIFFERENTIAL,

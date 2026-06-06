@@ -257,6 +257,7 @@ the project's *real* conventions here — it is not a mechanical
 fill. An empty slot at first release is a review finding.)
 <!-- cairn:end project-conventions -->
 
+<!-- cairn:if human_team in small-multi,large-multi -->
 ## Human contributors
 
 `AGENTS.md` is the shared operational reference — it applies to human
@@ -270,6 +271,7 @@ duplicating them. Keep the split single-sourced — shared / operational
 content lives here; `CONTRIBUTING.md` links to it. A solo-maintainer
 project ships no `CONTRIBUTING.md`, and this section is informational.
 
+<!-- cairn:endif -->
 ## Vendor addendum
 
 `AGENTS.md` is vendor-neutral — it names no specific AI agent tool.

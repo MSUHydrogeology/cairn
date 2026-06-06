@@ -103,3 +103,152 @@ def test_yaml_fallback_and_preset_resolution_smoke():
 
     summary = C.format_profile_summary({"preset": "solo-greenfield"})
     assert "Does this profile look right" in summary
+
+
+# ---------------------------------------------------------------------------
+# strip_conditional_regions
+# ---------------------------------------------------------------------------
+
+def test_strip_conditional_keep_on_match():
+    """Semantic 1: value in set → keep body, strip both marker lines."""
+    from bootstrap._scaffold.config import strip_conditional_regions  # noqa: PLC0415
+
+    text = (
+        "preamble\n"
+        "<!-- cairn:if agent_team in concurrent-multi-type,single -->\n"
+        "kept body\n"
+        "<!-- cairn:endif -->\n"
+        "postamble\n"
+    )
+    result = strip_conditional_regions(text, {"agent_team": "single"})
+    assert result == "preamble\nkept body\npostamble\n"
+
+
+def test_strip_conditional_remove_otherwise():
+    """Semantic 2: axis present, value NOT in set → remove markers + body."""
+    from bootstrap._scaffold.config import strip_conditional_regions  # noqa: PLC0415
+
+    text = (
+        "before\n"
+        "<!-- cairn:if agent_team in concurrent-multi-type -->\n"
+        "removed body\n"
+        "<!-- cairn:endif -->\n"
+        "after\n"
+    )
+    result = strip_conditional_regions(text, {"agent_team": "single"})
+    assert result == "before\nafter\n"
+
+
+def test_strip_conditional_keep_on_missing_axis():
+    """Semantic 3: axis absent from axes dict → keep body (safe default)."""
+    from bootstrap._scaffold.config import strip_conditional_regions  # noqa: PLC0415
+
+    text = (
+        "<!-- cairn:if size in large -->\n"
+        "large-only content\n"
+        "<!-- cairn:endif -->\n"
+    )
+    # axis 'size' is missing entirely → keep
+    result = strip_conditional_regions(text, {})
+    assert result == "large-only content\n"
+
+
+def test_strip_conditional_raise_on_unclosed():
+    """Semantic 4a: open cairn:if with no cairn:endif → ValueError."""
+    from bootstrap._scaffold.config import strip_conditional_regions  # noqa: PLC0415
+    import pytest  # noqa: PLC0415
+
+    text = (
+        "<!-- cairn:if agent_team in single -->\n"
+        "content with no close\n"
+    )
+    with pytest.raises(ValueError, match="Unclosed cairn:if"):
+        strip_conditional_regions(text, {"agent_team": "single"})
+
+
+def test_strip_conditional_raise_on_stray_endif():
+    """Semantic 4b: stray cairn:endif with no open → ValueError."""
+    from bootstrap._scaffold.config import strip_conditional_regions  # noqa: PLC0415
+    import pytest  # noqa: PLC0415
+
+    text = "<!-- cairn:endif -->\n"
+    with pytest.raises(ValueError, match="Stray cairn:endif"):
+        strip_conditional_regions(text, {})
+
+
+def test_strip_conditional_raise_on_nesting():
+    """Semantic 4c: a second cairn:if before the first closes → ValueError."""
+    from bootstrap._scaffold.config import strip_conditional_regions  # noqa: PLC0415
+    import pytest  # noqa: PLC0415
+
+    text = (
+        "<!-- cairn:if agent_team in single -->\n"
+        "<!-- cairn:if size in small -->\n"
+        "nested body\n"
+        "<!-- cairn:endif -->\n"
+        "<!-- cairn:endif -->\n"
+    )
+    with pytest.raises(ValueError, match="nested"):
+        strip_conditional_regions(text, {"agent_team": "single", "size": "small"})
+
+
+def test_strip_conditional_identity_no_directives():
+    """Semantic 5: text with no cairn:if returns byte-identical."""
+    from bootstrap._scaffold.config import strip_conditional_regions  # noqa: PLC0415
+
+    text = "# Just a normal doc\n\nNo directives here.\n"
+    result = strip_conditional_regions(text, {"agent_team": "single"})
+    assert result is not text or result == text  # identity by value
+    assert result == text
+
+
+def test_strip_conditional_determinism():
+    """Semantic F4: same (text, axes) → byte-identical output every call."""
+    from bootstrap._scaffold.config import strip_conditional_regions  # noqa: PLC0415
+
+    text = (
+        "header\n"
+        "<!-- cairn:if human_team in small-multi,large-multi -->\n"
+        "team content\n"
+        "<!-- cairn:endif -->\n"
+        "footer\n"
+    )
+    axes = {"human_team": "small-multi"}
+    r1 = strip_conditional_regions(text, axes)
+    r2 = strip_conditional_regions(text, axes)
+    assert r1 == r2
+
+
+def test_strip_conditional_multiple_regions():
+    """Multiple non-nested regions in one text are processed independently."""
+    from bootstrap._scaffold.config import strip_conditional_regions  # noqa: PLC0415
+
+    text = (
+        "intro\n"
+        "<!-- cairn:if agent_team in single -->\n"
+        "keep-single\n"
+        "<!-- cairn:endif -->\n"
+        "middle\n"
+        "<!-- cairn:if size in large -->\n"
+        "remove-large\n"
+        "<!-- cairn:endif -->\n"
+        "end\n"
+    )
+    result = strip_conditional_regions(text, {"agent_team": "single", "size": "small"})
+    assert result == "intro\nkeep-single\nmiddle\nend\n"
+
+
+def test_strip_conditional_no_spurious_blank_lines():
+    """Removing a region must not leave a residue blank line."""
+    from bootstrap._scaffold.config import strip_conditional_regions  # noqa: PLC0415
+
+    text = (
+        "line-before\n"
+        "<!-- cairn:if size in large -->\n"
+        "dropped\n"
+        "<!-- cairn:endif -->\n"
+        "line-after\n"
+    )
+    result = strip_conditional_regions(text, {"size": "small"})
+    assert result == "line-before\nline-after\n"
+    assert "\n\n" not in result

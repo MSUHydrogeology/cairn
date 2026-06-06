@@ -30,6 +30,7 @@ from .config import (
     _MODULE_MAPPINGS,
     _SKILLS_GITIGNORE,
     _SKILLS_MAPPINGS,
+    strip_conditional_regions,
 )
 from .security import (
     ScaffoldSecurityError,
@@ -199,6 +200,7 @@ def _install_one(
     dry_run: bool,
     force: bool = False,
     verbatim: bool = False,
+    axes: dict[str, object] | None = None,
 ) -> InstallResult:
     """Copy *src* to *dst*.  Returns an InstallResult.
 
@@ -236,6 +238,8 @@ def _install_one(
                 file=sys.stderr,
             )
         text = substitute_tokens(text, tokens)
+        if axes is not None:
+            text = strip_conditional_regions(text, axes)
         unfilled = find_unfilled_tokens(text)
         slots = find_block_slots(text)
 
@@ -266,6 +270,7 @@ def install_core(
     *,
     dry_run: bool = False,
     force: bool = False,
+    axes: dict[str, object] | None = None,
 ) -> list[InstallResult]:
     """Copy core templates into *target*, substituting tokens."""
     results: list[InstallResult] = []
@@ -276,7 +281,10 @@ def install_core(
             continue
         dst = target / dst_rel
         results.append(
-            _install_one(src, dst, tokens, target, dry_run=dry_run, force=force)
+            _install_one(
+                src, dst, tokens, target,
+                dry_run=dry_run, force=force, axes=axes,
+            )
         )
     return results
 
@@ -1287,6 +1295,16 @@ def write_install_lockfile(
             would = src.read_bytes()
         else:
             substituted = substitute_tokens(raw, tokens)
+            # Profile-size the always-on surface (cairn-profile-sized-assembly
+            # P2): strip `cairn:if` regions the embedded profile does not select,
+            # keyed off the SAME `profile["axes"]` `install_core` stripped the
+            # on-disk file with -- so this expected-clean-install `would` matches
+            # the stripped install and the divergence check below stays clean for
+            # every profile.  No-op on a template carrying no directive (the
+            # common case) and on an empty axes map (keep-on-missing-axis).
+            substituted = strip_conditional_regions(
+                substituted, profile.get("axes") or {}
+            )
             if (
                 dst_rel == "dev/PLANNING.md"
                 and onboarding_overlay is not None

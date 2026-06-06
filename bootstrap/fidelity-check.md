@@ -219,6 +219,31 @@ customized the file (filled slots, added conventions), the comparison
 is to the template structure and placeholder locations, not verbatim
 content.
 
+**Profile-conditional regions (`cairn:if`).** The core `AGENTS.md`
+template (and any future core template) may carry
+`<!-- cairn:if AXIS in val1,val2 -->` … `<!-- cairn:endif -->`
+regions that are resolved by the installer using the lockfile's
+embedded `profile.axes`.  An auditor comparing the raw template
+against the installed file will see sections absent from the install
+— this is correct and expected, not a gap.  To reproduce the
+expected installed content, apply the strip with the profile's axes
+(the `strip_conditional_regions` function in
+`bootstrap/_scaffold/config.py`).  The strip runs consistently at
+**every** materialization point (install, lockfile expected hash, and
+the 3-way merge ancestor/`theirs` sides), so the lockfile's recorded
+hash matches the *stripped* installed file for any given profile —
+meaning `verify_integrity` stays consistent without code change.
+
+The gated set is conservative and auditable: the **never-gate-a-bright-line
+rule** holds that no IR1–IR13 safety rule (Git workflow, lifecycle,
+review, verifying claims, session routines, roles) may ever be wrapped
+in a `cairn:if` region.  Currently the only gated section in the core
+`AGENTS.md` template is `## Human contributors` (`human_team in
+small-multi,large-multi`), which is informational to a solo maintainer
+who ships no `CONTRIBUTING.md`.  The test suite asserts this constraint
+so an auditor can trust that a stripped install never omits a
+bright-line rule.
+
 ### 2. Module presence check
 
 For each entry in `modules.default_on` and `modules.team_gated`,
