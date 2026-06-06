@@ -22,6 +22,7 @@ Stdlib only.
 """
 from __future__ import annotations
 
+import shutil
 import subprocess
 import sys
 import textwrap
@@ -160,3 +161,90 @@ def test_importing_trust_anchors_writes_nothing(tmp_path):
     # The fresh cwd must be untouched by a mere import.
     leftovers = [p.name for p in tmp_path.iterdir()]
     assert leftovers == [], f"importing the anchors wrote files: {leftovers}"
+
+
+# --- substrate Security Review regressions (F1, F2, F4) ----------------------
+#
+# F2/F4 exercise the launcher's submodule finder + failed-load cleanup, which the
+# real engine cannot trigger yet (it has no submodules until Stage 1). They run a
+# COPY of the production launcher over a synthetic engine tree, so the contract
+# is pinned BEFORE security.py is extracted.
+
+def _fake_engine_tree(tmp_path):
+    """A throwaway fake Cairn root ``<tmp>/cairn/bootstrap/{scaffold.py(copy),
+    _scaffold/}`` so the production launcher loads a controllable engine. The
+    fake root is ``boot.parent``; put escape targets OUTSIDE it (e.g. under
+    ``tmp_path`` directly). Returns the bootstrap dir."""
+    boot = tmp_path / "cairn" / "bootstrap"
+    (boot / "_scaffold").mkdir(parents=True)
+    shutil.copy(LAUNCHER, boot / "scaffold.py")
+    return boot
+
+
+def test_F1_sitecustomize_canonical_preload_is_refused(tmp_path):
+    """F1: a hostile sitecustomize that preloads `bootstrap._scaffold` before the
+    launcher runs must NOT satisfy the canonical name — the REAL launcher refuses
+    the cache entry whose __file__ is not the expected engine."""
+    decoy = tmp_path / "attacker"
+    (decoy / "bootstrap" / "_scaffold").mkdir(parents=True)
+    (decoy / "bootstrap" / "_scaffold" / "__init__.py").write_text(
+        'HIJACKED = True\ndef main(): print("PWNED"); return 0\n', encoding="utf-8"
+    )
+    (decoy / "sitecustomize.py").write_text("import bootstrap._scaffold\n", encoding="utf-8")
+    proc = _run([str(LAUNCHER)], cwd=tmp_path, env_extra={"PYTHONPATH": str(decoy)})
+    assert "PWNED" not in proc.stdout, "attacker main() executed -- preload bypass"
+    assert proc.returncode != 0
+    assert "preload hijack" in proc.stderr or "ScaffoldLoaderError" in proc.stderr
+
+
+def test_F2_submodule_symlink_escape_is_refused(tmp_path):
+    """F2: a `_scaffold` submodule symlinked outside the Cairn root must be
+    refused BEFORE execution (the finder verifies the real source first)."""
+    boot = _fake_engine_tree(tmp_path)
+    outside = tmp_path / "outside"   # sibling of the fake Cairn root (boot.parent)
+    outside.mkdir()
+    (outside / "security.py").write_text("PWNED = True\n", encoding="utf-8")
+    (boot / "_scaffold" / "__init__.py").write_text(
+        "from . import security\ndef main(): return 0\n", encoding="utf-8"
+    )
+    (boot / "_scaffold" / "security.py").symlink_to(outside / "security.py")
+    probe = "import bootstrap.scaffold as s; print('LOADED', s.security.__file__)"
+    proc = _run(["-c", probe], cwd=tmp_path, env_extra={"PYTHONPATH": str(boot.parent)})
+    assert "LOADED" not in proc.stdout, "symlinked-out submodule executed -- escape"
+    assert proc.returncode != 0
+    assert "escapes the Cairn root" in proc.stderr
+
+
+def test_F4_failed_load_leaves_clean_namespace_and_retry_is_clean(tmp_path):
+    """F4: an engine init that imports a child then fails must leave NO residue —
+    neither the parent nor the child — and a retry must start clean."""
+    boot = _fake_engine_tree(tmp_path)
+    (boot / "_scaffold" / "security.py").write_text("PWNED = 1\n", encoding="utf-8")
+    (boot / "_scaffold" / "__init__.py").write_text(
+        'from . import security\nraise RuntimeError("boom")\n', encoding="utf-8"
+    )
+    probe = textwrap.dedent("""
+        import sys
+        def attempt():
+            try:
+                import bootstrap.scaffold  # noqa: F401
+            except RuntimeError:
+                return "raised"
+            return "no-error"
+        first = attempt()
+        # both the parent and the child must be gone after the failure
+        residue = [k for k in sys.modules if k.startswith("bootstrap._scaffold")]
+        # a retry must not reuse stale child state (still fails cleanly)
+        second = attempt()
+        residue2 = [k for k in sys.modules if k.startswith("bootstrap._scaffold")]
+        print("FIRST", first)
+        print("RESIDUE", residue)
+        print("SECOND", second)
+        print("RESIDUE2", residue2)
+    """)
+    proc = _run(["-c", probe], cwd=tmp_path, env_extra={"PYTHONPATH": str(boot.parent)})
+    assert proc.returncode == 0, proc.stderr[-1500:]
+    out = proc.stdout
+    assert "FIRST raised" in out and "SECOND raised" in out
+    assert "RESIDUE []" in out, f"failed load left residue:\n{out}"
+    assert "RESIDUE2 []" in out, f"retry left residue:\n{out}"
