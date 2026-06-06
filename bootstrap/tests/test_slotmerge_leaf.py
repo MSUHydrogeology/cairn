@@ -2,9 +2,13 @@
 
 Contracts:
 
-* **Pure stdlib leaf (SR5 pattern)** — `slotmerge` imports only the stdlib; it
-  must never import back into the engine package (install / upgrade / the 3-way
-  merge engine depend on it, never the reverse).
+* **Near-leaf (SR5 pattern)** — `slotmerge` imports only the stdlib plus the
+  `security` containment leaf (for `_assert_safe_write`, the module-merge write
+  guard); it must never import any higher engine module (install / upgrade / the
+  3-way merge engine depend on it, never the reverse).
+* **Containment (final Security Review P1 #1)** — module-merge writes are routed
+  through the containment guard, so a module-controlled merge-target path cannot
+  escape the adopter root.
 * **Single identity** — every moved public symbol resolves to the one leaf object
   across the engine (`bootstrap._scaffold`) and the `bootstrap.scaffold` facade.
 * **Boundary pin** — `run_module_merge_pass` is the install-time orchestrator and
@@ -21,6 +25,8 @@ from __future__ import annotations
 
 import ast
 from pathlib import Path
+
+import pytest
 
 #: Public templating symbols that moved to the leaf at Stage 2.
 _MOVED_SYMBOLS = (
@@ -42,15 +48,20 @@ _MOVED_SYMBOLS = (
 )
 
 
-def test_slotmerge_is_a_pure_stdlib_leaf():
+def test_slotmerge_imports_only_stdlib_and_the_security_leaf():
+    # slotmerge is a near-leaf: stdlib + the security containment leaf only (for
+    # _assert_safe_write, the module-merge write guard -- final Security Review
+    # P1 #1). A downward edge to the lowest leaf; no cycle.
     from bootstrap._scaffold import slotmerge as SM  # noqa: PLC0415
 
     tree = ast.parse(Path(SM.__file__).read_text(encoding="utf-8"))
     for node in ast.walk(tree):
         if isinstance(node, ast.ImportFrom):
             mod = node.module or ""
-            assert not mod.startswith("bootstrap"), f"leaf imports engine module {mod!r}"
-            assert node.level == 0, "leaf must not use package-relative imports"
+            if node.level > 0:
+                assert mod == "security", f"slotmerge imports sideways/up: .{mod}"
+            else:
+                assert not mod.startswith("bootstrap"), f"leaf imports engine module {mod!r}"
         if isinstance(node, ast.Import):
             for a in node.names:
                 assert not a.name.startswith("bootstrap"), f"leaf imports {a.name!r}"
@@ -130,3 +141,41 @@ def test_module_into_slot_roundtrip_smoke(tmp_path):
     )
     assert r3.status == "conflict-deferred"
     assert r3.side_file is not None and Path(r3.side_file).is_file()
+
+
+def test_module_merge_refuses_writes_outside_the_adopter_root(tmp_path):
+    """Final Security Review P1 #1: a module-controlled merge-target path must not
+    escape the adopter root. All four escape shapes are refused with the one
+    ScaffoldSecurityError, and the outside file is never written."""
+    from bootstrap._scaffold import slotmerge as SM  # noqa: PLC0415
+    from bootstrap._scaffold.security import ScaffoldSecurityError  # noqa: PLC0415
+
+    target = tmp_path / "adopter"
+    target.mkdir()
+    outside = tmp_path / "outside.md"
+    outside.write_text("<!-- cairn:slot x -->\n\n<!-- cairn:end x -->\n", encoding="utf-8")
+    outside_sentinel = outside.read_text(encoding="utf-8")
+
+    # (1) ``..`` escape and (2) absolute target -> refused, outside untouched.
+    for target_rel in ("../outside.md", str(outside)):
+        with pytest.raises(ScaffoldSecurityError):
+            SM.merge_module_into_slot(target, target_rel, "x", "ESCAPED", non_interactive=True)
+        assert outside.read_text(encoding="utf-8") == outside_sentinel
+
+    # (3) a symlinked target inside the adopter that points outside -> refused.
+    trap = target / "AGENTS.md"
+    trap.symlink_to(outside)
+    with pytest.raises(ScaffoldSecurityError):
+        SM.merge_module_into_slot(target, "AGENTS.md", "x", "ESCAPED", non_interactive=True)
+    assert outside.read_text(encoding="utf-8") == outside_sentinel
+
+    # (4) a symlinked conflict side-file -> refused before the side-file write.
+    real = target / "DOC.md"
+    real.write_text(
+        "<!-- cairn:slot x -->\nexisting\n<!-- cairn:end x -->\n", encoding="utf-8",
+    )
+    side = real.with_name("DOC.md.x.cairn-merge-pending")
+    side.symlink_to(outside)  # plant a symlinked side-file pointing outside
+    with pytest.raises(ScaffoldSecurityError):
+        SM.merge_module_into_slot(target, "DOC.md", "x", "diverging", non_interactive=True)
+    assert outside.read_text(encoding="utf-8") == outside_sentinel

@@ -35,6 +35,7 @@ destination before any `mkdir` / `write_*` / `shutil` write:
 | `fan_out_skills` | `_assert_fanout_contained` | vendor fan-out destination |
 | `_cmd_adopt_module` | `_assert_safe_write` | a single added module's files |
 | `_apply_upgrade` | `_assert_safe_write` | the swapped-in upgraded files |
+| `merge_module_into_slot` | `_assert_safe_write` | a module-merge slot write + its conflict side-file (final Security Review P1 #1) |
 
 ## Class B — guarded-by-equivalent-invariant (no direct guard, contained by construction)
 

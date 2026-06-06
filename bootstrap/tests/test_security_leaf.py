@@ -34,6 +34,9 @@ _GUARDED_WRITE_FUNCS = {
     "fan_out_skills",
     "_cmd_adopt_module",
     "_apply_upgrade",
+    # Added by the final Security Review (P1 #1): module-merge destinations are
+    # module-template-controlled, so this write must be guarded too.
+    "merge_module_into_slot",
 }
 
 

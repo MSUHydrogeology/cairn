@@ -1104,10 +1104,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:merge_module_into_slot": {
-    "digest": "2a56b62922e00eb1",
+    "digest": "815551a4e7d805b3",
     "span": [
-      325,
-      405
+      258,
+      345
     ],
     "type": "FunctionDef"
   },

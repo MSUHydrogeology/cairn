@@ -2,9 +2,14 @@
 
 The pure templating mechanics: ``{{token}}`` substitution, ``cairn:slot`` block
 parsing, and the module-into-slot merge helpers (Proposal B: scaffold-merge UX).
-A **leaf** -- it imports only the stdlib; install / upgrade / the 3-way merge
-engine depend on it, never the reverse. Pure motion from the pre-split monolith
-(Stage 2): the symbols are unchanged; only their home moved.
+A near-leaf -- it imports only the stdlib plus the ``security`` containment leaf
+(``_assert_safe_write``, used by ``merge_module_into_slot`` to refuse a write that
+escapes the adopter root -- final Security Review P1 #1); a downward edge, no
+cycle. install / upgrade / the 3-way merge engine depend on it, never the reverse.
+The templating symbols are pure motion from the pre-split monolith (Stage 2);
+``merge_module_into_slot`` gained its containment guards as an explicit post-motion
+security hardening (its AST baseline entry was deliberately re-pinned for that one
+change; the other 163 symbols remain unchanged).
 
 The install-time orchestrator ``run_module_merge_pass`` is *not* here -- it stays
 in the engine because it walks ``_MODULE_MAPPINGS`` / ``InstallSpec`` (config
@@ -20,6 +25,8 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from pathlib import Path
+
+from .security import _assert_safe_write  # containment guard for module-merge writes (P1 #1)
 
 
 # ---------------------------------------------------------------------------
@@ -284,6 +291,12 @@ def merge_module_into_slot(
     """
     del non_interactive  # reserved for future interactive prompt branch
     dst = target_root / target_rel
+    # Containment (SR6, final Security Review P1 #1): a module's merge-target
+    # path is module-template-controlled, so an absolute / ``..`` / symlinked
+    # target_rel could redirect the read or the write outside the adopter root.
+    # Guard the destination before touching disk -- refuses a symlinked dst, a
+    # symlinked parent, or any path resolving outside target_root.
+    _assert_safe_write(dst, target_root)
     if not dst.is_file():
         return ModuleMergeResult(target_rel, slot_name, "missing-target")
     text = dst.read_text(encoding="utf-8")
@@ -316,6 +329,7 @@ def merge_module_into_slot(
     side_path = dst.with_name(
         f"{dst.name}.{slot_name}.cairn-merge-pending",
     )
+    _assert_safe_write(side_path, target_root)  # the conflict side-file is a write too (P1 #1)
     if not dry_run:
         side_path.write_text(
             "<<<<<<< Cairn (module contribution)\n"
