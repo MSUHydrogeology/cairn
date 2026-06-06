@@ -82,7 +82,10 @@ def test_single_identity_across_consumers():
         assert getattr(facade, name) is obj, f"facade.{name} is not the merge object"
 
 
-def test_classify_verbatim_stays_in_the_engine_not_merge():
+def test_classify_verbatim_is_not_in_merge():
+    # classify_verbatim is the verbatim hash policy -- never a text merge. It must
+    # not live in merge.py. (It moved to the lockfile module at Stage 5, where its
+    # _sha256_hex coupling is owned.)
     pkg = Path(__file__).resolve().parents[1] / "_scaffold"
 
     def _defines(py: Path, fn: str) -> bool:
@@ -91,10 +94,11 @@ def test_classify_verbatim_stays_in_the_engine_not_merge():
             for n in ast.walk(ast.parse(py.read_text(encoding="utf-8")))
         )
 
-    assert _defines(pkg / "__init__.py", "classify_verbatim")
     assert not _defines(pkg / "merge.py", "classify_verbatim"), (
-        "classify_verbatim leaked into merge -- it is a hash policy, not a text "
-        "merge, and couples to _sha256_hex (lockfile cluster, Stage 5)"
+        "classify_verbatim leaked into merge -- it is a hash policy, not a text merge"
+    )
+    assert _defines(pkg / "lockfile.py", "classify_verbatim"), (
+        "classify_verbatim should be owned by the lockfile module (Stage 5)"
     )
 
 

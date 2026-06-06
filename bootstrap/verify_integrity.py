@@ -34,7 +34,7 @@ from pathlib import Path
 CAIRN_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(CAIRN_ROOT))
 
-from bootstrap.scaffold import (  # noqa: E402
+from bootstrap._scaffold.lockfile import (  # noqa: E402  (trust anchor: narrowest owner, plan 0B.3 / Stage 5)
     _LIVING_STATE_DSTS,
     _LOCKFILE_REL,
     read_lockfile,
