@@ -134,7 +134,12 @@ and a new empty `Unreleased` is started above.
   into adopters; it dogfoods on Cairn's own docs (seed invariant: the `claim_check`
   watch-file size). New `bootstrap/tests/test_verify_counts.py` (29 tests, incl.
   symlink-escape red-team). Adopter deliberation: modflow_tools
-  `2026-06-05-claude-numeric-claim-verification` (Arm 3).
+  `2026-06-05-claude-numeric-claim-verification` (Arm 3). **Wired into
+  `check_cairn`** (a `_check_counts` lens): the self-check now re-measures every
+  registered invariant on Cairn's docs, so a drifted annotated count or an
+  unregistered key fails the gate (a visible absent-root skip never blocks a
+  partial checkout). `check_cairn` is itself Cairn-only, so the verifier stays
+  out of every adopter tree. New `bootstrap/tests/test_check_cairn_counts.py`.
 - **Loop-fidelity gate (#58) — fail-closed dangling-reference check in
   `check_cairn`.** A new lens scans **only adopter-facing `templates/` surfaces**
   for references to Cairn-internal-only paths (`doctrine/*`) that would dangle

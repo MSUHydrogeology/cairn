@@ -99,6 +99,16 @@ _LINK_CHECK_SRC = (
     / 'templates' / 'modules' / 'team-gated' / 'link_check.py'
 )
 
+#: The live-invariant count verifier + its registry (Cairn-maintainer-only
+#: dev tools, siblings of this script in ``scripts/``).  check_cairn runs
+#: ``verify_counts`` over its own docs so a registered drift-prone count
+#: (a doc number annotated ``<!-- verify: <key> -->``) is re-measured on
+#: every self-check.  Both are deliberately NOT installed into adopters
+#: (not in ``_CORE_MAPPINGS``), and check_cairn is itself Cairn-only, so
+#: wiring them here keeps the verifier out of every adopter tree.
+_VERIFY_COUNTS_SRC = Path(__file__).resolve().parents[1] / 'scripts' / 'verify_counts.py'
+_MEASUREMENTS_SRC = Path(__file__).resolve().parents[1] / 'scripts' / 'measurements.py'
+
 
 def _load_module(name: str, path: Path, what: str):
     """Import a Cairn helper module from a file path.  Registers it in
@@ -124,6 +134,13 @@ content_scan = _load_module(
     'cairn_content_scan', _CONTENT_SCAN_SRC, 'content scanner')
 link_check = _load_module(
     'cairn_link_check', _LINK_CHECK_SRC, 'link-checker')
+# Loaded as a pair: verify_counts.verify_text does isinstance() against
+# measurements.Snapshot, so the registry and the verifier must share one
+# measurements module object.
+measurements = _load_module(
+    'cairn_measurements', _MEASUREMENTS_SRC, 'measurement registry')
+verify_counts = _load_module(
+    'cairn_verify_counts', _VERIFY_COUNTS_SRC, 'count verifier')
 
 #: File globs (relative to the repo root) whose backticked path-claims
 #: describe an EXTERNAL repository and must not be resolved against the
@@ -227,6 +244,30 @@ def _check_claims(
     cr = claim_check.check_file(md, root, external_allow=external_allow)
     for f in cr.hard_flags:
         result.flags.append(Flag(md, f.line, f.kind, f.message))
+
+
+def _check_counts(md: Path, text: str, result: Result) -> None:
+    """Re-measure registered live-invariant counts annotated in one file.
+
+    Delegates to the shipped ``verify_counts`` verifier over the code-side
+    ``measurements.REGISTRY``: a doc that annotates a number with
+    ``<!-- verify: <key> -->`` is checked against today's measurement (an
+    ``Invariant``) or its frozen value (a ``Snapshot``).  A file with no
+    annotations is a no-op.
+
+    Only *failures* — drift, an unregistered-key refusal, or a measurement
+    error — become check_cairn flags.  A visible *skip* (an ``Invariant``
+    whose sibling root is absent, RR2) is printed but does **not** fail the
+    gate, so a contributor lacking a registered sibling checkout is not
+    blocked; the seed registry's roots are local to the Cairn tree, so a
+    skip is not normally reached here.
+    """
+    for r in verify_counts.verify_text(text, md, measurements.REGISTRY,
+                                       measurements):
+        if r.status in ('drift', 'refused', 'error'):
+            result.flags.append(Flag(md, r.line, f'count-{r.status}', r.message))
+        elif r.status == 'skipped':
+            print(f'  {md}:{r.line}: [count-skip] {r.message}', file=sys.stderr)
 
 
 def _is_template_instruction(rel: str) -> bool:
@@ -443,6 +484,7 @@ def check_tree(root: Path, files: list[Path],
         _check_links(md, root, scannable, anchors_by_file, result,
                      check_external, allow_hosts)
         _check_claims(md, root, result, allow)
+        _check_counts(md, text, result)
         if content_scan_enabled:
             _check_content(md, root, result)
         _check_incident_tracker_schema(md, root, result)
@@ -459,7 +501,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog='check_cairn',
         description="Cairn self-check: link / anchor / claim-path / "
-                    "content-integrity over Cairn's own Markdown tree.",
+                    "content-integrity / live-count-verify over Cairn's "
+                    "own Markdown tree.",
     )
     parser.add_argument('files', nargs='*', type=Path,
                         help='Specific Markdown files (default: whole tree).')
