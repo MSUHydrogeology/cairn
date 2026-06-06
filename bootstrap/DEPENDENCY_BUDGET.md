@@ -51,7 +51,10 @@ and constrained:
   **unavailable, not clean**.
 * **Scope / blind spots.** pip-audit audits the **active interpreter's
   pip-visible distributions only**; conda-managed and locked-but-not-installed
-  dependencies are documented blind spots, and its findings are advisory.
+  dependencies are documented blind spots.
+* **Finding policy.** A pip-audit vulnerability finding is **blocking** — it
+  fails the orchestrator aggregate at the FINDINGS tier (`10`), like a bandit
+  finding. (Only the content-scan injection pass is advisory; a CVE is not.)
 
 ### Audit-evidence contract (tool environment)
 

@@ -105,7 +105,9 @@ documented **v2** limitation, not silently mis-scanned.
 
 pip-audit audits the **active interpreter's pip-visible distributions only**;
 conda-managed and locked-but-not-installed dependencies are documented blind
-spots, and its findings are advisory. **Network egress is off by default**: an
+spots. A pip-audit vulnerability finding is **blocking** — it fails the
+aggregate at the FINDINGS tier (`10`), like a bandit finding; only the
+**content-scan** pass is advisory. **Network egress is off by default**: an
 unconfigured run does not contact a remote service. Re-run with
 `--allow-network` to enable the remote CVE lookup — only then are package
 **names + versions** (never source, data, or credentials) sent to pip-audit's

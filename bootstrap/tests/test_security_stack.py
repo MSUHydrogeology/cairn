@@ -273,6 +273,10 @@ _RUNNER_SRC = _TEAM_GATED / "content_scan_runner.py"
 _SCAN_SRC = _TEAM_GATED / "content_scan.py"
 
 _HAS_GIT = shutil.which("git") is not None
+#: Bandit availability -- real-tool tests gate on this so Cairn's base suite
+#: never silently requires Bandit (re-review P2 #1).
+_HAS_BANDIT = (shutil.which("bandit") is not None
+               or importlib.util.find_spec("bandit") is not None)
 
 
 def _load(name: str, path: Path):
@@ -646,6 +650,8 @@ class TestOrchestrator:
         status2, tier2 = orch.run_pip_audit_pass(tmp_path, allow_egress=True)
         assert tier2 == orch._AGG_FINDINGS
 
+    @pytest.mark.skipif(not _HAS_BANDIT,
+                        reason="real bandit needed to prove the shadow did not run")
     def test_subprocess_runs_isolated_not_repo_shadow(self, orch, tmp_path):
         # P1 #1: a repo-local bandit/ shadow must NOT execute. _run_tool runs
         # `python -I` from a neutral cwd with a sanitized env, so the shadow is
@@ -684,9 +690,7 @@ class TestOrchestrator:
         # pip-audit egress is off, so its pass is unavailable. (No findings, no
         # tamper.) Gate on bandit so the base suite never silently requires it
         # (P2 #8): without bandit the bandit pass is degraded -> 20.
-        bandit_ok = (shutil.which("bandit") is not None
-                     or importlib.util.find_spec("bandit") is not None)
-        expected = 5 if bandit_ok else 20
+        expected = 5 if _HAS_BANDIT else 20
         assert r.returncode == expected, r.stdout + r.stderr
         # Tamper an apparatus file -> preflight DEGRADED (exit 20), no bandit
         # needed (the preflight short-circuits before any pass).
