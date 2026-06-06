@@ -68,6 +68,7 @@ from .config import (
     expand_preset,
     format_profile_summary,
     load_config,
+    missing_required_tokens,
     reference_script_token_defaults,
     select_optional_templates,
 )
@@ -384,6 +385,38 @@ def main(argv: list[str] | None = None) -> int:
     # install destination from desyncing.
     for token, value in reference_script_token_defaults(modules).items():
         tokens.setdefault(token, value)
+
+    # Selected-module required-token preflight (security-apparatus-enrichment
+    # B0 / Codex External plan review P1 #1).  A selected module may declare
+    # inline tokens that have no safe default (e.g. python-security's
+    # {{python_package}}); rendering its files with the token unfilled would
+    # leave a partially-installed, lockfile-recorded security stack containing
+    # the literal placeholder.  Resolve every required token for every selected
+    # module BEFORE any target-tree or lockfile write, and FAIL CLOSED (no
+    # files, no lockfile / module-state mutation) on the first unfilled one.
+    # Runs ahead of the --dry-run report too, so a dry run surfaces the gap
+    # rather than printing a falsely-clean plan.
+    required_gaps = missing_required_tokens(modules, tokens)
+    if required_gaps:
+        by_module: dict[str, list[str]] = {}
+        for module, token in required_gaps:
+            by_module.setdefault(module, []).append(token)
+        print(
+            "error: required token(s) for selected module(s) are unfilled; "
+            "refusing to install (no files written):",
+            file=sys.stderr,
+        )
+        for module in sorted(by_module):
+            print(
+                f"  - {module}: {', '.join(sorted(by_module[module]))}",
+                file=sys.stderr,
+            )
+        print(
+            "Fill the token(s) in the profile (or deselect the module) and "
+            "re-run.",
+            file=sys.stderr,
+        )
+        return 2
 
     if args.dry_run:
         print("[dry-run] Would install to:", target)

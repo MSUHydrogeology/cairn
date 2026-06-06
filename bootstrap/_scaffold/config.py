@@ -53,6 +53,12 @@ KNOWN_TOKENS: frozenset[str] = frozenset(
         "test_command",
         "claim_check_command",
         "metrics_command",
+        # The repo-relative Python package a python-security adopter scans
+        # (security-apparatus-enrichment Chunk B0 / C; RV2).  A *required*
+        # token for that module -- see ``_MODULE_REQUIRED_TOKENS`` and the
+        # selected-module required-token preflight that fails closed before
+        # any write when a selected module's required token is unfilled.
+        "python_package",
     }
 )
 
@@ -442,6 +448,23 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         InstallSpec("team-gated/content_scan.py",
                     "scripts/content_scan.py", verbatim=True),
     ],
+    # The Python security gate stack (security-apparatus-enrichment, RV1
+    # surface 3).  Team-gated + opt-in -- never default-on, and never
+    # installed for a non-Python adopter.  v1 self-audit scope only (a
+    # drift / content-injection tripwire on the adopter's *own trusted
+    # tree*), explicitly NOT a reviewer for untrusted PRs that can modify
+    # the apparatus itself.  Chunk B0 lands the module doctrine stub + its
+    # required-token registration (``python_package``, below); Chunk C adds
+    # the orchestrator (``run_security_audit.py``), the templated bandit
+    # gate, and the adopted-executable source gate.  ``python_package`` has
+    # no safe default, so it is a required token (the selected-module
+    # required-token preflight refuses a fresh install / adopt / upgrade
+    # that selects this module without a filled value -- fail closed before
+    # any write).
+    "python-security": [
+        InstallSpec("team-gated/python-security.md",
+                    "dev/modules/python-security.md"),
+    ],
     # Architecture-review (modflow_tools doctrine-parity fold, 2026-06-01):
     # a triggered remediation / on-ramp module for an adopter whose
     # architecture accreted rather than was deliberately designed.  Ships
@@ -512,6 +535,68 @@ def reference_script_token_defaults(module_names: list[str]) -> dict[str, str]:
                 defaults[token] = f"python {spec.dst}"
                 break
     return defaults
+
+
+# ---------------------------------------------------------------------------
+# Selected-module required-token preflight (security-apparatus-enrichment B0)
+# ---------------------------------------------------------------------------
+#
+# A few modules carry inline tokens that have **no safe default** -- the
+# scaffold cannot render the module's files without a real adopter-supplied
+# value.  ``python-security`` is the first: its gate scans the adopter's own
+# ``{{python_package}}`` directory, so an unfilled token would install a
+# partially-rendered, lockfile-recorded security stack still containing the
+# literal ``{{python_package}}`` (Codex External plan review, P1 #1).
+#
+# Adding such a token to ``KNOWN_TOKENS`` is **not** enough: the scaffold
+# installs rendered files first and only *warns* about leftover inline tokens
+# afterward.  So selecting a module whose required token is unfilled must
+# **fail closed before any target-tree or lockfile write**.  The map below
+# declares, per module, the tokens that must resolve to a real value; the
+# install / adopt-module / upgrade paths run :func:`missing_required_tokens`
+# as a pre-write gate (see ``cli.main`` and ``upgrade``).  This is generic --
+# any future module declares its required tokens here and inherits the gate.
+_MODULE_REQUIRED_TOKENS: dict[str, tuple[str, ...]] = {
+    # python-security's bandit/source gate scans {{python_package}} (RV2);
+    # there is no safe default for an adopter's own package directory.
+    "python-security": ("python_package",),
+}
+
+#: An inline token whose *value* is still an unfilled ``{{placeholder}}`` --
+#: a token resolved to another token is as unfilled as an absent one.
+_UNFILLED_TOKEN_VALUE = re.compile(r"\{\{\s*[\w.-]+\s*\}\}")
+
+
+def missing_required_tokens(
+    modules: list[str], tokens: dict[str, str],
+) -> list[tuple[str, str]]:
+    """Return ``(module, token)`` pairs for every required token of every
+    *selected* module that is **not** filled with a real value.
+
+    A required token counts as unfilled when it is absent from *tokens*, is
+    empty / whitespace-only, or still carries a ``{{placeholder}}`` value.
+    The caller turns a non-empty result into a fail-closed refusal **before
+    any write** (no target-tree files, no lockfile / module-state mutation).
+    This function is pure: it reads no filesystem and mutates nothing, so it
+    is safe to call from every install path's pre-write gate.
+
+    The check is deliberately generic -- token *presence + fill*, not
+    module-specific *value validity* (e.g. python-security's containment +
+    is-a-directory checks on ``python_package`` live in that module's own
+    gate, Chunk C).  B0 only guarantees a required token reaches the renderer
+    with a real value; the module validates what that value means.
+    """
+    missing: list[tuple[str, str]] = []
+    for module in modules:
+        for token in _MODULE_REQUIRED_TOKENS.get(module, ()):
+            value = tokens.get(token)
+            if (
+                value is None
+                or not str(value).strip()
+                or _UNFILLED_TOKEN_VALUE.fullmatch(str(value).strip())
+            ):
+                missing.append((module, token))
+    return missing
 
 
 # ---------------------------------------------------------------------------

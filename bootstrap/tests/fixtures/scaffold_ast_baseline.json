@@ -8,7 +8,7 @@
     "type": "Assign"
   },
   "Assign:KNOWN_TOKENS": {
-    "digest": "5cc5b0998d857ed6",
+    "digest": "c20bdc11922bc33e",
     "span": [
       494,
       501
@@ -216,7 +216,7 @@
     "type": "Assign"
   },
   "Assign:_MODULE_MAPPINGS": {
-    "digest": "6fd29d6bdab7fa20",
+    "digest": "d83655a6746857cc",
     "span": [
       822,
       1004
@@ -592,7 +592,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_cmd_adopt_module": {
-    "digest": "307c8b824dedae55",
+    "digest": "658a2a4f97ac04b5",
     "span": [
       3800,
       3876
@@ -936,7 +936,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:cmd_upgrade": {
-    "digest": "14a071e50761bca7",
+    "digest": "2df960789d7c3d7b",
     "span": [
       4261,
       4380
@@ -1088,7 +1088,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:main": {
-    "digest": "37d3a49dbbf9b590",
+    "digest": "847702ae6f3e0139",
     "span": [
       4469,
       4900

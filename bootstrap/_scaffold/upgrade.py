@@ -35,6 +35,7 @@ from .config import (
     _SKILLS_GITIGNORE,
     _SKILLS_MAPPINGS,
     load_config,
+    missing_required_tokens,
     resolve_axes,
     strip_conditional_regions,
 )
@@ -896,6 +897,22 @@ def _cmd_adopt_module(
         return 0
 
     tokens = {str(k): str(v) for k, v in (lock.get("tokens") or {}).items()}
+
+    # Required-token preflight (security-apparatus-enrichment B0): adopting a
+    # module whose required token is unfilled in the lockfile would install a
+    # placeholder-bearing file and record it.  Fail closed BEFORE any write or
+    # lockfile mutation.
+    gaps = missing_required_tokens([name], tokens)
+    if gaps:
+        print(
+            f"error: module {name!r} requires token(s) "
+            f"{', '.join(sorted(t for _m, t in gaps))} but the lockfile has no "
+            "filled value; refusing to adopt (no files written, lockfile "
+            "unchanged). Fill the token (upgrade --init-lock) and retry.",
+            file=sys.stderr,
+        )
+        return 2
+
     lock_dsts = {rec["dst"] for rec in lock.get("files", [])}
     new_files = [dict(rec) for rec in lock.get("files", [])]
     added: list[str] = []
@@ -1400,6 +1417,33 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
               "packaged release can upgrade only to the currently-running "
               "tree (omit --to).", file=sys.stderr)
         return 1
+
+    # Required-token preflight (security-apparatus-enrichment B0): the writing
+    # upgrade paths (--stage materializes the review surface, --apply swaps the
+    # tree) re-render token-substituted files from the lockfile's token map. If
+    # an installed module's required token is unfilled in the lockfile, re-render
+    # would propagate the placeholder. Fail closed BEFORE either write path. The
+    # read-only --plan is left available so an adopter can diagnose the gap.
+    if args.apply or args.stage:
+        gaps = missing_required_tokens(
+            list(lock.get("modules", [])),
+            {str(k): str(v) for k, v in (lock.get("tokens") or {}).items()},
+        )
+        if gaps:
+            by_module: dict[str, list[str]] = {}
+            for module, token in gaps:
+                by_module.setdefault(module, []).append(token)
+            print(
+                "error: installed module(s) have unfilled required token(s) in "
+                f"{_LOCKFILE_REL}; refusing to upgrade (no files written):",
+                file=sys.stderr,
+            )
+            for module in sorted(by_module):
+                print(f"  - {module}: {', '.join(sorted(by_module[module]))}",
+                      file=sys.stderr)
+            print("Fill the token(s) (upgrade --init-lock) and retry.",
+                  file=sys.stderr)
+            return 2
 
     # R1 self-heal (--apply only -- NOT --stage, which is a non-mutating preview
     # that writes solely to the gitignored review surface; and never on the

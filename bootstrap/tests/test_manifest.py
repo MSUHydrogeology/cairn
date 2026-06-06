@@ -70,8 +70,12 @@ class TestInstallManifest:
         destinations -- the no-drift guarantee."""
         all_modules = sorted(_MODULE_MAPPINGS)
         cfg = tmp_path / "profile.yml"
+        # python-security declares a required token (python_package); installing
+        # the full module set must supply it or the selected-module required-token
+        # preflight (B0) fails the install closed before any write.
         cfg.write_text(
-            "project_name: ManifestTest\ntest_command: pytest\nmodules:\n"
+            "project_name: ManifestTest\ntest_command: pytest\n"
+            "python_package: manifest_pkg\nmodules:\n"
             + "".join(f"  - {m}\n" for m in all_modules)
         )
         rc = main([
