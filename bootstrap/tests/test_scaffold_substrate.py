@@ -156,9 +156,9 @@ def test_hostile_pythonpath_does_not_hijack_the_engine(tmp_path):
 # --- import-purity of the trust anchors (0B.3 / SR2, subprocess) -------------
 
 def test_importing_trust_anchors_writes_nothing(tmp_path):
-    """Importing the anchors (which reach the engine via the facade) must define
-    names only -- no file writes, no CLI/upgrade run (import-purity holds even
-    while the anchors still import via the facade)."""
+    """Importing the anchors must define names only -- **no file writes, no CLI /
+    upgrade *execution*** (no ``main`` runs, no plan/apply fires). This is the
+    import-purity property the trust anchors actually guarantee."""
     probe = textwrap.dedent(f"""
         import sys
         sys.path.insert(0, {str(CAIRN_ROOT)!r})
@@ -171,6 +171,45 @@ def test_importing_trust_anchors_writes_nothing(tmp_path):
     # The fresh cwd must be untouched by a mere import.
     leftovers = [p.name for p in tmp_path.iterdir()]
     assert leftovers == [], f"importing the anchors wrote files: {leftovers}"
+
+
+def test_trust_anchor_imports_are_owner_specific_not_runtime_isolated(tmp_path):
+    """Final Security Review P1 #2 disposition (maintainer: revise the claim).
+
+    The trust anchors import their owned symbol from the *narrowest owning module*
+    (``security_check`` -> ``_scaffold.config``; ``verify_integrity`` ->
+    ``_scaffold.lockfile``) -- that establishes **ownership identity**. It does NOT
+    establish a narrow *runtime loading* boundary: Python runs
+    ``bootstrap._scaffold.__init__`` (the re-export facade) before any child
+    import, and that facade eagerly imports every owner. So importing a trust
+    anchor loads the **whole engine package** (guard + all eight modules), not just
+    the requested closure.
+
+    This test pins that AS-BUILT reality (rather than asserting a runtime isolation
+    that does not exist), so a future move to a lazy facade would change it
+    deliberately. The security property that matters -- import writes nothing and
+    runs no CLI/upgrade -- is covered by the sibling test above; everything loaded
+    here is Cairn's own Bandit-scanned Layer-4 engine code."""
+    probe = textwrap.dedent(f"""
+        import sys
+        sys.path.insert(0, {str(CAIRN_ROOT)!r})
+        import bootstrap.security_check  # imports from bootstrap._scaffold.config
+        loaded = sorted(
+            n.split(".")[-1] for n in sys.modules
+            if n.startswith("bootstrap._scaffold.")
+        )
+        print(",".join(loaded))
+    """)
+    proc = _run(["-c", probe], cwd=tmp_path)
+    assert proc.returncode == 0, proc.stderr[-1500:]
+    loaded = set(proc.stdout.strip().split(","))
+    # Ownership/identity is real: the owner (config) and the guard are loaded.
+    assert {"_guard", "config"} <= loaded
+    # Honest as-built boundary: the full engine, including the top layers, loads.
+    assert {"install", "upgrade", "cli"} <= loaded, (
+        "the facade no longer eager-loads the engine -- if this was made lazy, "
+        "update the SR2 wording + this regression deliberately"
+    )
 
 
 # --- substrate Security Review regressions (F1, F2, F4) ----------------------
