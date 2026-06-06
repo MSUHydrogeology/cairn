@@ -9,8 +9,10 @@ Contracts:
   across the engine and the `bootstrap.scaffold` facade, and the launcher path
   (`_engine.main()`) reaches it.
 * **`--help` text preserved** — `build_arg_parser`'s ``description=__doc__`` uses
-  cli's module docstring, which is a byte-for-byte copy of the engine docstring, so
-  the CLI help description is unchanged by the split.
+  cli's module docstring, which carries the original scaffold help text, so the CLI
+  help description is unchanged by the split. (The engine __init__ docstring was
+  retitled to an engine-package description at Stage 9, so the two are now
+  intentionally distinct.)
 * **Engine is a pure facade** — after Stage 8 the engine __init__ defines no
   functions/classes of its own; it is a prologue + re-export surface.
 
@@ -69,13 +71,21 @@ def test_single_identity_and_launcher_reach():
     assert callable(engine.main)
 
 
-def test_help_description_is_byte_preserved():
+def test_help_description_is_preserved():
     from bootstrap._scaffold import cli as CLI  # noqa: PLC0415
     import bootstrap._scaffold as engine  # noqa: PLC0415
 
-    assert CLI.__doc__ == engine.__doc__, "cli docstring must copy the engine docstring"
+    # The parser description is cli's own module docstring (description=__doc__) ...
     parser = CLI.build_arg_parser()
-    assert parser.description == engine.__doc__, "--help description drifted from __doc__"
+    assert parser.description == CLI.__doc__, "--help description drifted from cli.__doc__"
+    # ... and that docstring carries the original scaffold help text (unchanged by
+    # the split), not the engine-package description the facade now exposes.
+    assert "Cairn bootstrap mechanical scaffold" in CLI.__doc__
+    assert "Config YAML format" in CLI.__doc__
+    assert CLI.__doc__ != engine.__doc__, (
+        "cli help text and the engine-package docstring are intentionally distinct "
+        "after the Stage-9 retitle"
+    )
 
 
 def test_engine_init_is_a_pure_facade():

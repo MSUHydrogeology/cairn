@@ -1,51 +1,37 @@
 #!/usr/bin/env python3
-"""
-scaffold.py — Cairn bootstrap mechanical scaffold.
+"""Cairn bootstrap scaffold engine — the private ``bootstrap/_scaffold`` package.
 
-Creates the ``dev/`` directory tree in a target repository, copies
-the core Cairn templates and the selected module files, and
-substitutes inline ``{{placeholder}}`` tokens.  Block slots
-(``<!-- cairn:slot ... -->`` regions) are left in place for a
-reasoning agent and the Maintainer to fill.
+This is the install/upgrade engine that ``bootstrap/scaffold.py`` (the thin,
+fail-closed launcher + facade) loads under the single canonical identity
+``bootstrap._scaffold``. It is **not** a public import surface: adopters and
+tooling reach it only through ``bootstrap/scaffold.py`` (``python
+bootstrap/scaffold.py --help`` for the CLI; that command's help text is the
+docstring of the ``cli`` submodule, which owns ``main`` / ``build_arg_parser``).
 
-Usage
------
-::
+Topology (scaffold-split, 2026-06): the former single-file monolith is split into
+eight owned modules in an acyclic, downward dependency DAG, plus the verifying
+loader:
 
-    python bootstrap/scaffold.py --config profile.yml --target /path/to/repo
+* ``_guard``      — the engine import boundary (``EngineFinder`` + path checks),
+                    installed by this ``__init__`` as its first action so every
+                    ``bootstrap._scaffold.*`` import is mediated and fail-closed.
+* ``security``    — the containment leaf (``ScaffoldSecurityError`` +
+                    ``_assert_safe_write`` / ``_assert_fanout_contained``).
+* ``slotmerge``   — token / slot / module-merge templating helpers.
+* ``merge``       — the token- + slot-aware 3-way text merge.
+* ``config``      — config / token / profile resolution; owns the
+                    ``_MODULE_MAPPINGS`` trust anchor (read by ``security_check``).
+* ``lockfile``    — lockfile data / read / emit / classify; owns ``read_lockfile``
+                    + the lock constants (read by ``verify_integrity``).
+* ``install``     — the fresh-install subsystem (templates, skills/onboarding
+                    fan-out, manifest, install-time lockfile writer).
+* ``upgrade``     — plan / stage / apply + lock subcommands; owns ``_cairn_root``.
+* ``cli``         — ``argparse`` + ``main`` (the top layer).
 
-Config YAML format
-------------------
-::
-
-    # Inline token values (mechanical substitution)
-    project_name: "MyProject"
-    test_command: "pytest"
-
-    # Issue forge (optional). When set and the issue-capture module is
-    # installed, the scaffold copies that forge's issue-template +
-    # labels.yml starter into the adopter root (non-clobber). Omit, or
-    # use an unknown value, to keep the reference a manual-copy starter.
-    forge: gitlab        # gitlab | github
-
-    # Module selection
-    modules:
-      # Default-on (remove only with a documented reason):
-      - lifecycle-metrics
-      - reflections
-      - claim-check
-      # Team-gated (add as the dimensional profile warrants):
-      # - dual-review
-      # - domain-agents
-      # - legacy-agent
-      # - dual-language-tests
-      # - coordination-tiers
-
-The ``--cairn-root`` flag overrides the auto-detected Cairn repo
-root (defaults to the directory two levels above this script's
-location: ``bootstrap/scaffold.py`` → ``bootstrap/`` → ``cairn/``).
-
-The ``--dry-run`` flag prints the plan without writing any files.
+This module is a thin prologue + verifying loader + **pure re-export facade**: it
+defines no functions or classes of its own; it installs ``_guard`` and re-exports
+each submodule's public surface so ``from bootstrap.scaffold import X`` and every
+historical internal reference are unchanged.
 """
 
 from __future__ import annotations

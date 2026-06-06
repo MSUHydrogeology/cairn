@@ -34,6 +34,30 @@ and a new empty `Unreleased` is started above.
 
 ### Changed
 
+- **The 4865-line `scaffold.py` install/upgrade monolith is split into a thin
+  fail-closed launcher + facade over a private `bootstrap/_scaffold/` engine
+  package of eight owned modules** (`security`, `slotmerge`, `merge`, `config`,
+  `lockfile`, `install`, `upgrade`, `cli`) plus the verifying loader `_guard.py`,
+  arranged as an acyclic downward dependency DAG. Behavior-preserving, leaf-first,
+  one gated commit per stage. The public surface is unchanged: the launcher
+  `bootstrap/scaffold.py` reassigns `sys.modules[__name__]` to the engine, so
+  `bootstrap.scaffold` **is** the engine object and `from bootstrap.scaffold
+  import X` keeps working; the two release-trust anchors tighten their imports to
+  the narrowest owner (`security_check` → `_scaffold.config._MODULE_MAPPINGS`,
+  `verify_integrity` → `_scaffold.lockfile.read_lockfile`). Each extraction was
+  gated by a four-part acceptance check committed alongside it — an AST
+  source-motion attestation (every one of 164 baselined top-level symbols present
+  exactly once, structurally unchanged, across the module set), the full bootstrap
+  suite + `security_check` (Bandit recurses the new package) + `check_cairn`, a
+  frozen-vs-current **differential oracle** (3 fresh installs + 3 privileged
+  upgrade/refusal workflows, exact-byte equal modulo enumerated provenance), and a
+  circular-import-clean check. One behavioral note for adopters who monkeypatch in
+  tests: a symbol extracted into a submodule must be patched at its owning module
+  (`bootstrap._scaffold.<m>`) for that module's internal callers to observe it —
+  patching the `bootstrap.scaffold` facade re-export mutates only the engine
+  namespace. Lands across `bootstrap/scaffold.py` + `bootstrap/_scaffold/*`;
+  deliberation in the adopter plan `2026-06-05-claude-scaffold-split.md`.
+
 - **The `claim_check` category-D count soft-flag is retired; numeric drift is now
   governed by a three-kind precision / `as_of` discipline.** The count soft-flag
   (a number adjacent to `lines`/`tests`/`commits`/…) and its
