@@ -113,7 +113,7 @@ def test_oracle_matrix_behavior_preserved(tmp_path):
     At 0A this is a tautology (the engines are byte-identical) whose value is
     proving the harness itself is sound -- it installs cleanly and the exclusion
     set is complete. Its teeth bite at Stages 1-8 when the engines diverge."""
-    report = O.run_oracle(tmp_path)
+    report = O.run_oracle(tmp_path, include_privileged=False)
     assert report["schema"] == O.REPORT_SCHEMA
     assert report["normalized_provenance_fields"] == list(O._PROVENANCE_KEYS)
     assert report["ok"] is True, report
@@ -121,6 +121,25 @@ def test_oracle_matrix_behavior_preserved(tmp_path):
         assert fx["status"] == "match", fx
         assert fx["frozen_file_count"] > 20, "expected a substantive install, not an empty tree"
         assert fx["frozen_file_count"] == fx["current_file_count"]
+
+
+@pytest.mark.skipif(
+    not (CAIRN_ROOT / "templates" / "skills").exists(),
+    reason="templates/skills not available",
+)
+def test_oracle_privileged_workflows_preserved(tmp_path):
+    """F3 (substrate Security Review): the privileged workflows — upgrade
+    stage/apply, containment refusal, dirty-tree refusal — are behaviorally
+    identical between the frozen pre-split engine and the current launcher+engine.
+    Runs the real subprocess scenarios (slower); skips the git-dependent ones if
+    git is unavailable rather than dropping them silently."""
+    results = O.run_privileged(tmp_path)
+    assert len(results) == len(O._PRIVILEGED_SCENARIOS)
+    for r in results:
+        assert r["status"] in ("match", "skipped"), r
+    # containment refusal needs no git, so it must actually run AND match here.
+    contain = [r for r in results if r.get("name") == "containment_refusal"]
+    assert contain and contain[0]["status"] == "match", contain
 
 
 def test_frozen_engine_snapshot_present():
