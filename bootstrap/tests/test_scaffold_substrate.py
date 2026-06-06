@@ -332,3 +332,52 @@ def test_R1_direct_child_symlink_escape_is_refused_end_to_end(tmp_path):
                 env_extra={"PYTHONPATH": str(root)})
     assert proc.returncode != 0, "direct symlinked-child import was not refused"
     assert "escapes the Cairn root" in proc.stderr
+
+
+# --- re-review-2: the guard's own bootstrap + an unverifiable cached child -----
+
+def _real_engine_with_symlinked_guard(tmp_path):
+    """A tree using the REAL launcher + REAL engine __init__ (which verifies
+    _guard.py before importing it), but with _guard.py symlinked outside."""
+    boot = tmp_path / "cairn" / "bootstrap"
+    (boot / "_scaffold").mkdir(parents=True)
+    shutil.copy(LAUNCHER, boot / "scaffold.py")
+    shutil.copy(ENGINE_INIT, boot / "_scaffold" / "__init__.py")
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "_guard.py").write_text(
+        "def install(*a, **k): print('PWNED_GUARD')\n", encoding="utf-8")
+    (boot / "_scaffold" / "_guard.py").symlink_to(outside / "_guard.py")
+    return boot
+
+
+def test_RR2_symlinked_guard_refused_via_launcher(tmp_path):
+    """Finding 1: the engine __init__ verifies _guard.py before importing it, so
+    a symlinked-out guard cannot execute on the launcher path."""
+    boot = _real_engine_with_symlinked_guard(tmp_path)
+    proc = _run([str(boot / "scaffold.py"), "--help"], cwd=tmp_path,
+                env_extra={"PYTHONPATH": str(boot.parent)})
+    assert "PWNED_GUARD" not in proc.stdout, "symlinked guard executed (launcher)"
+    assert proc.returncode != 0
+    assert "failed path verification" in proc.stderr
+
+
+def test_RR2_symlinked_guard_refused_via_direct_import(tmp_path):
+    """Finding 1: same defense on the direct `import bootstrap._scaffold` path."""
+    boot = _real_engine_with_symlinked_guard(tmp_path)
+    proc = _run(["-c", "import bootstrap._scaffold"], cwd=tmp_path,
+                env_extra={"PYTHONPATH": str(boot.parent)})
+    assert "PWNED_GUARD" not in proc.stdout, "symlinked guard executed (direct import)"
+    assert proc.returncode != 0
+    assert "failed path verification" in proc.stderr
+
+
+def test_RR2_cached_child_without_file_is_rejected(monkeypatch):
+    """Finding 2: a synthetic cached child with no __file__ cannot satisfy source
+    verification -- it must be refused, not trusted by omission."""
+    import types  # noqa: PLC0415
+    from bootstrap._scaffold import _guard as G  # noqa: PLC0415
+    evil = types.ModuleType("bootstrap._scaffold.evil_nofile")   # deliberately no __file__
+    monkeypatch.setitem(sys.modules, "bootstrap._scaffold.evil_nofile", evil)
+    with pytest.raises(G.ScaffoldLoaderError, match="no source path"):
+        G.install(ENGINE_INIT.parent, CAIRN_ROOT)

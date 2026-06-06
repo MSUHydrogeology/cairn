@@ -90,7 +90,13 @@ def _reject_polluted_children(engine_dir: Path) -> None:
             continue
         f = getattr(mod, "__file__", None)
         if f is None:
-            continue
+            # Absence of a source path cannot satisfy source verification
+            # (re-review-2 finding 2): a synthetic types.ModuleType injected
+            # under the canonical name has no __file__ and must NOT be trusted.
+            raise ScaffoldLoaderError(
+                f"cached engine child {name!r} has no source path — cannot verify; "
+                f"refusing (synthetic/polluted module, SR1)"
+            )
         real = Path(f).resolve()
         if real != engine_dir and engine_dir not in real.parents:
             raise ScaffoldLoaderError(

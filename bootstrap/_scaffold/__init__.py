@@ -64,12 +64,24 @@ from typing import Any, NamedTuple
 # whether the launcher loaded us or a caller imported a child directly. It
 # rejects a preloaded polluted child and installs a finder that verifies every
 # future child's real source is within the Cairn root before execution.
+_ENGINE_DIR = Path(__file__).resolve().parent        # <cairn>/bootstrap/_scaffold
+_CAIRN_ROOT = Path(__file__).resolve().parents[2]     # <cairn>
+
+# `_guard` is itself the one engine child resolved BEFORE the finder exists, so
+# it must be verified inline first (re-review-2 finding 1): a symlinked /
+# out-of-tree _guard.py would otherwise execute unverified on both the launcher
+# and direct-import paths. Refuse any symlink, non-file, or escape.
+_GUARD_PATH = _ENGINE_DIR / "_guard.py"
+if (_GUARD_PATH.is_symlink() or not _GUARD_PATH.is_file()
+        or _CAIRN_ROOT not in _GUARD_PATH.resolve().parents):
+    raise RuntimeError(
+        f"scaffold engine guard {_GUARD_PATH} failed path verification "
+        f"(symlinked, missing, or outside the Cairn root) -- refusing (SR1)"
+    )
+
 from ._guard import install as _install_engine_guard
 
-_install_engine_guard(
-    Path(__file__).resolve().parent,        # <cairn>/bootstrap/_scaffold
-    Path(__file__).resolve().parents[2],    # <cairn>
-)
+_install_engine_guard(_ENGINE_DIR, _CAIRN_ROOT)
 
 try:
     import yaml as _yaml  # type: ignore[import]

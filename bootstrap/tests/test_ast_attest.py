@@ -66,6 +66,35 @@ def test_committed_baseline_matches_live_scaffold():
     )
 
 
+def test_ast_gate_passes_over_the_full_scaffold_module_set():
+    """The EXACT command run between extraction stages: the baseline verified
+    against the COMPLETE current ``_scaffold`` module set, not only ``__init__.py``
+    (re-review-2 finding 3). Module docstrings recur across modules and must not
+    trip single-source; this test fails if the real multi-module gate rots (e.g.
+    a new module's docstring re-introducing a DUPLICATE)."""
+    modules = sorted(_SCAFFOLD.parent.glob("*.py"))
+    assert len(modules) >= 2, f"expected __init__.py + _guard.py at least, got {modules}"
+    assert A.verify(_BASELINE, modules) == 0
+
+
+def test_module_docstrings_do_not_trip_single_source(tmp_path):
+    base = A.digest_module(_write(tmp_path, "mono.py", '"""mod."""\ndef f():\n    return 1\n'))
+    (tmp_path / "base.json").write_text(json.dumps(base), encoding="utf-8")
+    m1 = _write(tmp_path, "m1.py", '"""m1 doc."""\ndef f():\n    return 1\n')
+    m2 = _write(tmp_path, "m2.py", '"""m2 doc -- different text."""\n')  # docstring only
+    assert A.verify(tmp_path / "base.json", [m1, m2]) == 0
+
+
+def test_executable_top_level_expression_is_still_single_sourced(tmp_path):
+    # The carve-out is docstring-only: a real top-level call duplicated across
+    # modules still fails (executable logic, not a docstring).
+    base = A.digest_module(_write(tmp_path, "mono.py", "import os\nos.getcwd()\n"))
+    (tmp_path / "base.json").write_text(json.dumps(base), encoding="utf-8")
+    m1 = _write(tmp_path, "m1.py", "import os\nos.getcwd()\n")
+    m2 = _write(tmp_path, "m2.py", "import os\nos.getcwd()\n")  # same exec expr, two files
+    assert A.verify(tmp_path / "base.json", [m1, m2]) == 1
+
+
 def test_pure_motion_across_modules_verifies(tmp_path):
     src = "A = 1\n\ndef f(x):\n    return x\n\nclass C:\n    pass\n"
     base = A.digest_module(_write(tmp_path, "mono.py", src))

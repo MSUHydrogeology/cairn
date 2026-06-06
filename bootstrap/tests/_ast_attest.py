@@ -81,6 +81,12 @@ def _node_key(node: ast.AST) -> str:
         # imports are keyed by their full structural content (no name to track)
         return "Import:" + hashlib.sha256(
             ast.dump(node, include_attributes=False).encode()).hexdigest()[:12]
+    if (isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant)
+            and isinstance(node.value.value, str)):
+        # A bare string expression -- a module docstring. Every split module has
+        # one, so it must NOT be single-sourced (re-review-2 finding 3). Keyed
+        # distinctly from executable top-level expressions, which stay enforced.
+        return "Docstring"
     return f"{type(node).__name__}"
 
 
@@ -124,12 +130,12 @@ def verify(baseline_path: str | Path, module_paths: list[str | Path]) -> int:
     problems: list[str] = []
 
     for key, info in baseline.items():
-        if info.get("type") in ("Import", "ImportFrom"):
-            # Imports are per-module necessities, not single-source "moved
-            # symbols" (code review C3): the same ``import sys`` legitimately
-            # recurs across many split modules (would false-DUPLICATE), and an
-            # import dropped/relocated by a split is not a lost symbol (would
-            # false-MISSING). Exclude them from the pure-motion pass/fail logic;
+        if info.get("type") in ("Import", "ImportFrom") or key.split("#", 1)[0] == "Docstring":
+            # Per-module necessities, not single-source "moved symbols":
+            # - imports (code review C3): the same ``import sys`` recurs across
+            #   split modules (false-DUPLICATE); a relocated import is not lost.
+            # - module docstrings (re-review-2 finding 3): every split module
+            #   carries one. Executable top-level expressions stay enforced.
             # functions/classes/constants remain strictly single-sourced.
             continue
         hits = merged.get(key, [])
