@@ -12,11 +12,12 @@ Covers:
   validation (the ``allow_glob_error`` rules), R2 exact-token reporting,
   matching vs. non-matching behavior, the "local-line-bounds not
   silenced" boundary, prose-shown-not-parsed.
-* ``claim-check-allow-count`` count-exemption directive -- exact-token
-  matching, normalization, multi-token directives, prose-shown-not-
-  parsed, ``--fail-on-soft`` clean when exempted.
-* The corresponding ``CheckResult.exempted`` / ``exempted_counts``
-  fields and the stdout-side audit lines from ``main``.
+* The ``CheckResult.exempted`` field and the stdout-side audit lines
+  from ``main``.
+* The **retirement** of the category-D count soft-flag and its
+  ``claim-check-allow-count`` directive (2026-06-05): counts never
+  soft-flag, the directive parser is gone, and a stray directive is
+  silently ignored.
 
 The tests load the source module via the same ``_load_script`` import
 helper the install-side tests use (see ``test_reference_scripts.py``);
@@ -280,136 +281,68 @@ class TestClaimCheckAllowDirective:
 
 
 # ---------------------------------------------------------------------------
-# ``claim-check-allow-count`` -- document-scoped count exemption.
+# Category-D count soft-flag retired 2026-06-05 (0 catches across the
+# verify-before-asserting instance log; the nag generated the
+# ``claim-check-allow-count`` header bloat it was meant to silence).  The
+# count detector, ``find_count_flags``, and the ``claim-check-allow-count``
+# directive parser are gone; numeric drift is governed by the three-kind
+# precision / ``as_of`` discipline + the code-side ``verify_counts``
+# registry.  These tests pin the retirement: counts never soft-flag, and a
+# stray directive left in an archived doc is silently ignored.
 # ---------------------------------------------------------------------------
 
 
-class TestClaimCheckAllowCountDirective:
-    """Suppresses a count soft flag whose normalized token is named
-    exactly -- the sibling of ``claim-check-allow`` for the
-    category-D heuristic (prescriptive guidance numbers + deliberately-
-    quoted historical mistakes the heuristic cannot tell from a
-    memory-quoted fact).
-    """
+class TestCountSoftFlagRetired:
+    """The category-D count soft-flag and its directive are gone."""
 
-    def test_directive_suppresses_matching_count(self, cc, tmp_path):
+    def test_count_no_longer_soft_flags(self, cc, tmp_path):
+        # What once produced a category-D soft flag now produces nothing.
         _make_repo(tmp_path)
-        text = (
-            "<!-- claim-check-allow-count: 728 tests -->\n"
-            'the "728 tests" baseline was wrong.'
-        )
-        _hard, soft = cc.check_text(text, tmp_path)
+        _hard, soft = cc.check_text("the repo has 728 tests.", tmp_path)
         assert soft == []
 
-    def test_records_exact_exemption(self, cc, tmp_path):
+    def test_thousands_grouped_count_no_longer_flags(self, cc, tmp_path):
         _make_repo(tmp_path)
-        doc = tmp_path / "d.md"
-        doc.write_text(
-            "<!-- claim-check-allow-count: 728 tests -->\n"
-            'the "728 tests" baseline.'
-        )
-        result = cc.check_file(doc, tmp_path)
-        assert result.soft_flags == []
-        assert result.exempted_counts == [("728 tests", "728 tests")]
+        _hard, soft = cc.check_text("the engine is 1,294 lines.", tmp_path)
+        assert soft == []
 
-    def test_non_matching_count_still_soft_flags(self, cc, tmp_path):
-        _make_repo(tmp_path)
-        text = (
-            "<!-- claim-check-allow-count: 728 tests -->\n"
-            "but the repo has 999 commits today."
-        )
-        _hard, soft = cc.check_text(text, tmp_path)
-        assert len(soft) == 1
-        assert soft[0].token == "999 commits"
-
-    def test_normalization_matches_extra_space_and_case(
+    def test_stray_allow_count_comment_is_silently_ignored(
         self, cc, tmp_path
     ):
-        # The accepted token normalizes (single-spaced, lowercased),
-        # so a declaration with odd spacing still matches the flagged
-        # claim.
+        # An archived doc may still carry an inert
+        # ``claim-check-allow-count`` comment.  It must never hard-flag
+        # (it is an HTML comment, stripped) and there is no count flag to
+        # suppress -- it is simply a no-op now.
         _make_repo(tmp_path)
         text = (
-            "<!-- claim-check-allow-count:  40   Proposals -->\n"
-            'the "40 proposals" miscount.'
-        )
-        _hard, soft = cc.check_text(text, tmp_path)
-        assert soft == []
-
-    def test_multiple_counts_in_one_directive(self, cc):
-        out = cc.parse_allow_count_directives(
-            "<!-- claim-check-allow-count: 30 lines, 728 tests -->"
-        )
-        assert [c for _, c in out] == ["30 lines", "728 tests"]
-
-    def test_thousands_grouped_count_can_be_named(self, cc, tmp_path):
-        # fold-back #36: counts are extracted with the same detector the
-        # body scan uses, so a thousands-grouped count is one token -- the
-        # comma is part of the number, not the directive's list delimiter.
-        _make_repo(tmp_path)
-        text = (
-            "<!-- claim-check-allow-count: 1,294 lines -->\n"
-            'the "1,294 lines" total was a point-in-time snapshot.'
-        )
-        _hard, soft = cc.check_text(text, tmp_path)
-        assert soft == []
-
-    def test_count_directive_is_separator_agnostic(self, cc):
-        # comma, semicolon, or whitespace between tokens are all just
-        # non-matching gaps; a grouped count survives intact (#36).
-        out = cc.parse_allow_count_directives(
-            "<!-- claim-check-allow-count: 1,294 lines; 5 commits, 30 lines -->"
-        )
-        assert [c for _, c in out] == ["1,294 lines", "5 commits", "30 lines"]
-
-    def test_main_reports_exempted_count_on_stdout(
-        self, cc, tmp_path, capsys
-    ):
-        _make_repo(tmp_path)
-        doc = tmp_path / "d.md"
-        doc.write_text(
             "<!-- claim-check-allow-count: 728 tests -->\n"
             'the "728 tests" baseline.'
         )
+        hard, soft = cc.check_text(text, tmp_path)
+        assert hard == []
+        assert soft == []
+
+    def test_count_directive_parser_is_removed(self, cc):
+        # The retired directive parser and count detector are gone from
+        # the public surface.
+        assert not hasattr(cc, "parse_allow_count_directives")
+        assert not hasattr(cc, "find_count_flags")
+
+    def test_check_result_has_no_exempted_counts_field(self, cc, tmp_path):
+        # The ``exempted_counts`` CheckResult field was removed with the
+        # directive; the two-tuple ``check_text`` contract is preserved.
+        _make_repo(tmp_path)
+        doc = tmp_path / "d.md"
+        doc.write_text("the repo has 728 tests.")
+        result = cc.check_file(doc, tmp_path)
+        assert not hasattr(result, "exempted_counts")
+        assert result.soft_flags == []
+
+    def test_main_clean_on_former_count_doc(self, cc, tmp_path, capsys):
+        # A doc that once tripped the count soft-flag now reports clean.
+        _make_repo(tmp_path)
+        doc = tmp_path / "d.md"
+        doc.write_text("the repo has 728 tests.")
         rc = cc.main([str(doc), "--root", str(tmp_path)])
         assert rc == 0
-        out = capsys.readouterr().out
-        assert "728 tests" in out
-        assert "exempted count" in out
-
-    def test_directive_shown_in_prose_is_not_parsed(self, cc, tmp_path):
-        # A non-standalone mention (inside backticks) is not a live
-        # directive, so the count it names is NOT suppressed.
-        _make_repo(tmp_path)
-        text = (
-            "docs: write "
-            "`<!-- claim-check-allow-count: 728 tests -->`; "
-            "the repo had 728 tests then."
-        )
-        _hard, soft = cc.check_text(text, tmp_path)
-        assert any(f.token == "728 tests" for f in soft)
-        assert cc.parse_allow_count_directives(text) == []
-
-    def test_no_directive_behaviour_unchanged(self, cc, tmp_path):
-        _make_repo(tmp_path)
-        _hard, soft = cc.check_text(
-            "the repo has 728 tests.", tmp_path
-        )
-        assert len(soft) == 1
-        assert soft[0].token == "728 tests"
-
-    def test_fail_on_soft_clean_when_count_exempted(
-        self, cc, tmp_path
-    ):
-        # --fail-on-soft exits non-zero on a live count flag, but an
-        # exempted count must not trip it.
-        _make_repo(tmp_path)
-        doc = tmp_path / "d.md"
-        doc.write_text(
-            "<!-- claim-check-allow-count: 728 tests -->\n"
-            'the "728 tests" baseline.'
-        )
-        rc = cc.main(
-            [str(doc), "--root", str(tmp_path), "--fail-on-soft"]
-        )
-        assert rc == 0
+        assert "OK, no claim-check flags" in capsys.readouterr().out

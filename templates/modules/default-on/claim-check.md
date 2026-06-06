@@ -1,10 +1,8 @@
 <!-- claim-check-allow: scripts/check_cairn.py -->
-<!-- claim-check-allow-count: 1,294 lines -->
 <!-- ^ Adopter-safety: this module doc cites Cairn's own `scripts/check_cairn.py`
-     (which exists in Cairn but not in an adopter tree) and uses a
-     thousands-grouped count as a *grammar example*, not a live claim about the
-     adopter repo. The directives travel with the rendered copy so every
-     installed adopter passes its own claim checker. -->
+     (which exists in Cairn but not in an adopter tree). The directive travels
+     with the rendered copy so every installed adopter passes its own claim
+     checker. -->
 
 # Module: claim-check
 
@@ -16,11 +14,10 @@ directory (see "Reference implementation" below).
 
 The claim-check module operationalizes **verify-before-asserting**:
 before a load-bearing claim about the repository — a file path, a
-line citation, a count — an author checks it rather than asserting
-it from memory. The checker does the mechanically-checkable subset:
-it scans a Markdown proposal / plan / doc and hard-flags broken
-repository paths and out-of-bounds line citations, and soft-flags
-absolute count claims.
+line citation — an author checks it rather than asserting it from
+memory. The checker does the mechanically-checkable subset: it scans
+a Markdown proposal / plan / doc and hard-flags broken repository
+paths and out-of-bounds line citations.
 
 ## What the checker covers — and the costlier kind it cannot
 
@@ -28,7 +25,7 @@ Most check-before-you-assert claims are about *what a thing **is***
 — does this attribute exist, what does this function return, what
 does this file contain — and a quick read or a grep settles them.
 That is the mechanically-checkable subset, and it is exactly what
-the installed checker covers: paths, line citations, counts.
+the installed checker covers: paths and line citations.
 
 A distinct, **costlier** class is about *what a call **does** at run
 time*: its side-effects, ordering, atomicity or concurrency
@@ -64,9 +61,13 @@ only one (E) is outside any scanner's reach:
   SHA or range? *Check:* `git log` / `git show` — not recollection of what
   you committed.
 * **D — counts.** How many tests / files / lines / call-sites? *Check:*
-  compute it **live** (or cite a delta); a count from memory is the soft
-  flag, and "consciously accept a point-in-time snapshot" is the only
-  honest shortcut.
+  pick the count's **kind** — *approximate* a decision-irrelevant count
+  (`~4900 lines`), *date* a snapshot (`N, as_of YYYY-MM-DD`, never
+  re-measured), and reserve an *exact* live count for a registered
+  invariant; never quote one from memory. (The write-time count
+  soft-flag was retired 2026-06-05 — 0 catches across the instance log;
+  the kind discipline and a code-side registry verifier replace the
+  nag. The checker no longer flags counts.)
 * **E — API-behavior-under-invocation.** What does this call *do* at run
   time — side-effects, ordering, atomicity, escaping, the artifact it
   emits? *Check:* a **small empirical probe** (invoke it in a scratch
@@ -102,15 +103,14 @@ Merged into `AGENTS.md`:
 > **Verify before asserting.** Before committing a proposal, plan,
 > or doc, run the claim checker (`{{claim_check_command}}`) over
 > it: it hard-flags broken repo paths and out-of-bounds line
-> citations and soft-flags count claims. A hard flag is resolved
-> before commit; a deliberate forward-reference is *marked*, not
-> left to assert. A count that is a deliberate point-in-time
-> snapshot — a verification count, a line count — is *consciously
-> accepted* document-wide with a `claim-check-allow-count` directive
-> (`<!-- claim-check-allow-count: <count>, <count> -->`, each token
-> named exactly as number + tree-noun); it is the count sibling of
-> the path markers, and a `claim-check-allow` directive is the
-> file-scoped path equivalent.
+> citations. A hard flag is resolved before commit; a deliberate
+> forward-reference is *marked*, not left to assert, and a
+> `claim-check-allow` directive
+> (`<!-- claim-check-allow: <glob>, <glob> -->`) is the file-scoped
+> path equivalent. Numeric claims follow the three-kind precision /
+> `as_of` discipline — approximate a decision-irrelevant count, date a
+> snapshot, register a live invariant — rather than a write-time count
+> flag (retired 2026-06-05).
 
 The `{{claim_check_command}}` token is filled from the adopter's
 profile YAML with whatever invocation runs their checker (e.g.
@@ -127,8 +127,7 @@ writes `claim_check.py` into the target's `scripts/` directory (copied
 verbatim -- no token substitution over the code) and fills
 `{{claim_check_command}}` to point at it. The script is vendor-neutral and **standard-library
 only**: it hard-flags broken repo paths and out-of-bounds line
-citations, and soft-flags absolute count claims. Run it via the
-command the module installs:
+citations. Run it via the command the module installs:
 
 > `{{claim_check_command}}`
 
@@ -149,17 +148,14 @@ Three knobs cover most local needs:
   marker. Its in-document equivalent is the `claim-check-allow`
   directive (`<!-- claim-check-allow: GLOB, GLOB -->`), which exempts
   the named path globs document-wide.
-* **Conscious count acceptance** (`<!-- claim-check-allow-count:
-  <count>, <count> -->`): a deliberate point-in-time count -- a
-  verification snapshot, a line count -- is named in this
-  document-scoped directive (each token exactly: number + tree-noun) so
-  its soft flag is suppressed and recorded for audit. It is the count
-  sibling of the path-marker grammar; a `claim-check-allow` directive is
-  the path equivalent. Counts are extracted from the directive with the
-  same detector the body scan uses, so the separator is irrelevant and a
-  thousands-grouped count (`1,294 lines`) is named as one token.
-* The recognized count-nouns and markdown-context rules are small,
-  readable edits at the top of the script if your conventions differ.
+* **Document-scoped path exemption** (`<!-- claim-check-allow: <glob>,
+  <glob> -->`): a deliberate forward-reference the marker grammar does
+  not cover (e.g. a single cross-document path citation) is named in
+  this document-scoped directive and recorded for audit. Globs must be
+  specific (at least two literal path segments before any wildcard, and
+  a literal final filename stem) so they cannot exempt a whole subtree.
+* The markdown-context rules are small, readable edits at the top of
+  the script if your conventions differ.
 
 Cairn runs this exact script on itself: `scripts/check_cairn.py` imports
 its claim-path checker (and adds link-checking on top), so the

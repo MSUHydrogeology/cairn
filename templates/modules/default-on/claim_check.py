@@ -12,7 +12,7 @@ It scans a Markdown proposal / plan / doc an author is about to commit
 and reports verify-before-asserting risks *before* they reach review:
 the verify-before-asserting discipline is a *prompt* -- it tells an
 author what to check; this checker *does* the mechanically-checkable
-subset (broken repo paths, out-of-bounds line citations, count claims).
+subset (broken repo paths, out-of-bounds line citations).
 
 **Hard checks** -- deterministic; a failure exits non-zero:
 
@@ -30,12 +30,19 @@ subset (broken repo paths, out-of-bounds line citations, count claims).
   contain the rule or API being claimed.
 
 **Soft flags** -- advisory; printed but exit 0 unless
-``--fail-on-soft``:
-
-* **Count claims.**  A number adjacent to a tree-noun (``lines``,
-  ``proposals``, ``plans``, ``tests``, ``commits``, ``files``) is
-  flagged: compute it live or cite a delta; do not quote an absolute
-  count from memory.
+``--fail-on-soft``.  The checker has **no active soft-flag producer**:
+the category-D **count** soft-flag (a number adjacent to a tree-noun)
+was **retired 2026-06-05** -- 0 catches across the verify-before-
+asserting instance log, and the nag generated the ``claim-check-allow-
+count`` header bloat it was meant to silence.  Numeric drift is now
+governed by the three-kind precision / ``as_of`` discipline (approximate
+a decision-irrelevant count, date a snapshot, register a live invariant)
+and the code-side ``verify_counts`` registry, not by a write-time nag.
+The ``soft_flags`` channel, the two-tuple :func:`check_text` contract,
+and ``--fail-on-soft`` are retained (no behavior change for callers; the
+channel simply has no producer today).  A stray
+``claim-check-allow-count`` comment left in an archived doc is silently
+ignored -- it matches no live directive.
 
 **Out of scope** -- these stay reactive, caught in review:
 
@@ -67,8 +74,8 @@ tokens as deliberately unresolvable:
   ``Proposed path:`` without forcing absolute-path rewrites that
   break the "backticked tokens are repo-relative" convention.
 
-Tokens on a marker line are exempt from the hard checks; count
-claims on the line still soft-flag.  When a marker line is followed
+Tokens on a marker line are exempt from the hard checks.  When a
+marker line is followed
 immediately by a compact structured block -- Markdown table rows,
 list rows, or bare backticked path-list rows -- those continuation
 rows are exempt too until the next blank line, heading, or ordinary
@@ -90,12 +97,12 @@ tree**.  This is the file-scoped sibling of the per-line
 ``External-repo path:`` marker: use the marker for a stray external
 path in an otherwise-local file; use ``--external-allow`` for a whole
 class of files (``case-studies/*.md``) that are external by nature.
-Link-checking and count soft-flags are unaffected -- only the
-hard repo-path / line-bounds resolution is skipped for matched files.
+Link-checking is unaffected -- only the hard repo-path / line-bounds
+resolution is skipped for matched files.
 
-**Document-scoped exemption directives.**  Two HTML-comment directives
-let a single file's author suppress specific would-be-flags without
-disabling the heuristic across the rest of the document:
+**Document-scoped exemption directive.**  An HTML-comment directive
+lets a single file's author suppress specific would-be path flags
+without disabling the heuristic across the rest of the document:
 
 * ``<!-- claim-check-allow: <glob>[, <glob>...] -->`` -- a
   standalone HTML-comment line declares one or more **path-globs** as
@@ -111,22 +118,18 @@ disabling the heuristic across the rest of the document:
   *does* exist in the tree is ignored, so an out-of-range
   line-bounds citation into a real file still hard-flags.  Each
   suppressed token is reported in the run output for audit.
-* ``<!-- claim-check-allow-count: <count>[, <count>...] -->`` -- the
-  count sibling: comma-separated count tokens (e.g.
-  ``728 tests, 30 lines``) are declared consciously accepted,
-  suppressing their soft flag document-wide.  Each accepted token
-  must be named *exactly* (number + tree-noun) so the acceptance
-  stays specific and auditable; there is no wildcard form.  Each
-  suppressed token is reported in the run output.
 
-Both directives are line-scoped: an HTML-comment line that *shows*
+The directive is line-scoped: an HTML-comment line that *shows*
 the directive (e.g. inside a paragraph quoting an example) but does
-not stand alone is not parsed as live.  Use the directives for the
-two legitimate false-positive classes the heuristic cannot tell from
-genuine drift: an authored forward-reference the marker-line
-mechanism does not cover (e.g., a single cross-document path
-citation), and a prescriptive guidance number or deliberately-quoted
-historical mistake.
+not stand alone is not parsed as live.  Use it for the legitimate
+false-positive class the heuristic cannot tell from genuine drift: an
+authored forward-reference the marker-line mechanism does not cover
+(e.g., a single cross-document path citation).
+
+(A retired sibling, ``<!-- claim-check-allow-count: ... -->``, once
+suppressed the category-D count soft-flag.  The count soft-flag was
+retired 2026-06-05; a stray ``claim-check-allow-count`` comment is now
+silently ignored.)
 
 Usage::
 
@@ -154,26 +157,12 @@ from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 
-# Tree-nouns that make an adjacent number a count claim (category D).
-_COUNT_NOUNS = ('lines', 'proposals', 'plans', 'tests', 'commits', 'files')
-
 # A backticked span.  Group 1 is the token text.
 _BACKTICK_RE = re.compile(r'`([^`\n]+)`')
 
 # A line-bounds citation: ``path:N`` or ``path:N-M``.
 _LINE_CITATION_RE = re.compile(
     r'^(?P<path>[^:\s]+):(?P<start>\d+)(?:-(?P<end>\d+))?$'
-)
-
-# A count claim: a number directly followed by a tree-noun
-# ("40 proposals", "1,294 lines", "1823 tests").  The number alternation
-# is `\d{1,3}(?:,\d{3})+|\d+` -- a comma is admitted only as a genuine
-# thousands separator (inter-digit, grouping by threes), never trailing.
-# A bare `\d[\d,]*` swallowed a prose comma, so "chunk 4, commits" and
-# "row 24, files" mis-read as count claims; this form does not.
-_COUNT_RE = re.compile(
-    r'\b(\d{1,3}(?:,\d{3})+|\d+)\s+(' + '|'.join(_COUNT_NOUNS) + r')\b',
-    re.IGNORECASE,
 )
 
 # Placeholder / glob characters: a token carrying any of these is
@@ -194,7 +183,7 @@ _PLACEHOLDER_CHARS = ('<', '>', '*', '{', '}')
 #     residual claim_check problem).
 # Any keyword -- singular or plural, any case, optionally as a list
 # item -- exempts the line's path / line-bounds tokens from the hard
-# checks (count claims still soft-flag).  This is R8 of the work-
+# checks.  This is R8 of the work-
 # intents proposal (``2026-05-19-codex-local-claim-system``) plus the
 # 2026-05-21 External-repo paths extension.
 _MARKER_LINE_RE = re.compile(
@@ -214,22 +203,12 @@ _ALLOW_DIRECTIVE_RE = re.compile(
 )
 _GLOB_WILDCARD_CHARS = ('*', '?', '[')
 
-# Document-scoped count-exemption directive.  A standalone HTML-comment
-# line `<!-- claim-check-allow-count: <count>[, <count>...] -->` declares
-# specific count tokens (e.g. `728 tests`, `30 lines`) as consciously
-# accepted, suppressing their soft flag document-wide.  The sibling of
-# `claim-check-allow` for the count (category-D) heuristic, for the two
-# legitimate false-positive classes the heuristic cannot tell from a
-# memory-quoted fact: prescriptive guidance numbers (`15-30 lines`) and
-# deliberately-quoted historical mistakes (an instance-log row citing
-# the wrong count it is teaching against).  Each accepted token must
-# be named *exactly* (number + tree-noun), so the acceptance stays
-# specific and auditable -- there is no wildcard form.  Like the path
-# directive it is a standalone comment line and every suppressed token
-# is reported.
-_ALLOW_COUNT_DIRECTIVE_RE = re.compile(
-    r'^<!--\s*claim-check-allow-count:\s*(?P<counts>.*?)\s*-->$'
-)
+# Note: the category-D count soft-flag and its sibling document-scoped
+# `claim-check-allow-count` directive were retired 2026-06-05 (0 catches
+# across the verify-before-asserting instance log; the nag generated the
+# header bloat it was meant to silence).  No `_ALLOW_COUNT_DIRECTIVE_RE`
+# remains, so a stray `claim-check-allow-count` comment matches no live
+# directive and is silently ignored.
 
 
 @dataclass
@@ -237,7 +216,7 @@ class Flag:
     """One claim-check finding."""
 
     line: int
-    kind: str        # 'path' | 'line-bounds' | 'count' | 'directive'
+    kind: str        # 'path' | 'line-bounds' | 'directive'
     severity: str    # 'hard' | 'soft'
     token: str
     message: str
@@ -249,14 +228,13 @@ class CheckResult:
 
     path: Path
     hard_flags: list[Flag] = field(default_factory=list)
+    #: Retained for the historical two-tuple contract; the only soft-flag
+    #: producer (the category-D count flag) was retired 2026-06-05, so
+    #: this list is currently always empty.
     soft_flags: list[Flag] = field(default_factory=list)
     #: ``(token, glob)`` for each would-be-hard path / line-bounds flag
     #: suppressed by a valid ``claim-check-allow`` directive glob.
     exempted: list[tuple[str, str]] = field(default_factory=list)
-    #: ``(token, accepted)`` for each count soft flag suppressed by a
-    #: ``claim-check-allow-count`` directive (the normalized accepted
-    #: token it matched).
-    exempted_counts: list[tuple[str, str]] = field(default_factory=list)
 
 
 def _strip_html_comments(line: str, in_comment: bool) -> tuple[str, bool]:
@@ -395,9 +373,8 @@ def _is_marker_line(text: str) -> bool:
 
     A marker line's backticked repo-path and line-bounds tokens are
     deliberate forward / out-of-tree references -- exempt from the
-    hard checks.  Count claims on the line still soft-flag.  See
-    ``_MARKER_LINE_RE`` and the module docstring's "Marker lines"
-    paragraph.
+    hard checks.  See ``_MARKER_LINE_RE`` and the module docstring's
+    "Marker lines" paragraph.
     """
     return _MARKER_LINE_RE.match(text) is not None
 
@@ -491,19 +468,6 @@ def check_line_citation(
     return None
 
 
-def find_count_flags(lineno: int, text: str) -> list[Flag]:
-    """Soft-flag every count claim (a number adjacent to a tree-noun)."""
-    flags: list[Flag] = []
-    for match in _COUNT_RE.finditer(text):
-        claim = f'{match.group(1)} {match.group(2)}'
-        flags.append(Flag(
-            lineno, 'count', 'soft', claim,
-            f'count claim `{claim}` -- compute it live or cite a '
-            f'delta; do not quote an absolute count from memory',
-        ))
-    return flags
-
-
 def parse_allow_directives(text: str) -> list[tuple[int, str]]:
     """Return ``(lineno, glob)`` for every glob declared in a
     document-scoped ``<!-- claim-check-allow: <glob>[, ...] -->``
@@ -518,39 +482,6 @@ def parse_allow_directives(text: str) -> list[tuple[int, str]]:
             glob = raw.strip().strip('`').strip()
             if glob:
                 out.append((lineno, glob))
-    return out
-
-
-def _normalize_count(token: str) -> str:
-    """Normalize a count token for matching: lowercase, single-spaced,
-    backticks/whitespace stripped (`` `728  tests` `` -> ``728 tests``)."""
-    return ' '.join(token.strip().strip('`').split()).lower()
-
-
-def parse_allow_count_directives(text: str) -> list[tuple[int, str]]:
-    """Return ``(lineno, normalized-count)`` for every count declared in a
-    document-scoped ``<!-- claim-check-allow-count: <count>[, ...] -->``
-    directive.
-
-    Counts are extracted from the directive payload with the **same**
-    ``_COUNT_RE`` the body scan uses (via :func:`re.finditer`), then
-    normalized via :func:`_normalize_count` exactly as
-    :func:`find_count_flags` builds its tokens.  Extracting rather than
-    splitting makes the directive **separator-agnostic** (comma,
-    semicolon, or whitespace between tokens are all just non-matching
-    gaps) and lets a thousands-grouped count (``1,294 lines``) be named
-    as a single token -- the comma inside it is part of the count, not a
-    list delimiter (fold-back #36).
-    """
-    out: list[tuple[int, str]] = []
-    for lineno, line in enumerate(text.split('\n'), start=1):
-        m = _ALLOW_COUNT_DIRECTIVE_RE.match(line.strip())
-        if m is None:
-            continue
-        for cm in _COUNT_RE.finditer(m.group('counts')):
-            tok = _normalize_count(f'{cm.group(1)} {cm.group(2)}')
-            if tok:
-                out.append((lineno, tok))
     return out
 
 
@@ -604,18 +535,17 @@ def _token_path_part(token: str) -> str:
 
 def _scan(
     text: str, repo_root: Path, *, external_allowed: bool = False,
-) -> tuple[list[Flag], list[Flag], list[tuple[str, str]],
-           list[tuple[str, str]]]:
-    """Core scan -- returns ``(hard, soft, exempted, exempted_counts)``.
+) -> tuple[list[Flag], list[Flag], list[tuple[str, str]]]:
+    """Core scan -- returns ``(hard, soft, exempted)``.
 
     A would-be-hard path / line-bounds flag whose token matches a valid
     ``claim-check-allow`` glob (and whose path does NOT resolve locally)
     is suppressed and recorded in ``exempted`` as ``(token, glob)``.  A
     *too-broad* glob is itself a hard flag and exempts nothing.
 
-    A count soft flag whose normalized token is named exactly by a
-    ``claim-check-allow-count`` directive is suppressed and recorded in
-    ``exempted_counts`` as ``(token, accepted)``.
+    ``soft`` is always empty: the only soft-flag producer (the category-D
+    count flag) was retired 2026-06-05.  The list is kept so the
+    historical two-tuple :func:`check_text` contract is unchanged.
 
     Raises ``NotADirectoryError`` when *repo_root* is not a directory --
     fail-closed, since an unresolvable root would read every repo path
@@ -637,12 +567,10 @@ def _scan(
         else:
             allow_globs.append(glob)
 
-    # Document-scoped count acceptances (exact normalized tokens).
-    allow_counts = {tok for _ln, tok in parse_allow_count_directives(text)}
-
+    # ``soft`` has no producer since the category-D count flag was
+    # retired; kept for the historical two-tuple ``check_text`` contract.
     soft: list[Flag] = []
     exempted: list[tuple[str, str]] = []
-    exempted_counts: list[tuple[str, str]] = []
     in_marker_block = False
     prev_lineno: int | None = None
     for lineno, line in scannable_lines(text):
@@ -683,15 +611,9 @@ def _scan(
                         exempted.append((token, matched))
                     else:
                         hard.append(flag)
-        for cflag in find_count_flags(lineno, line):
-            norm = _normalize_count(cflag.token)
-            if norm in allow_counts:
-                exempted_counts.append((cflag.token, norm))
-            else:
-                soft.append(cflag)
         in_marker_block = marker_line or marker_continuation
         prev_lineno = lineno
-    return hard, soft, exempted, exempted_counts
+    return hard, soft, exempted
 
 
 def check_text(
@@ -714,10 +636,9 @@ def check_text(
     by the caller from ``--external-allow`` globs): when True, the hard
     repo-path / line-bounds resolution is skipped for this file -- it
     describes an external repo whose relative paths must not be resolved
-    against the local tree.  Count soft-flags still run (they are
-    advisory).
+    against the local tree.
     """
-    hard, soft, _exempted, _exempted_counts = _scan(
+    hard, soft, _exempted = _scan(
         text, repo_root, external_allowed=external_allowed,
     )
     return hard, soft
@@ -755,19 +676,17 @@ def check_file(
     describe external repos (see ``check_text``); when *path* matches
     one, the hard repo-path / line-bounds resolution is skipped.
 
-    The result also carries any path or count tokens suppressed by the
-    document-scoped ``claim-check-allow`` / ``claim-check-allow-count``
-    directives (``exempted`` / ``exempted_counts``), so the run can
-    report exactly which would-be-flags were waived for audit.
+    The result also carries any path tokens suppressed by the
+    document-scoped ``claim-check-allow`` directive (``exempted``), so
+    the run can report exactly which would-be-flags were waived for audit.
     """
     external = file_is_external(path, repo_root, external_allow or [])
     text = path.read_text(encoding='utf-8', errors='replace')
-    hard, soft, exempted, exempted_counts = _scan(
+    hard, soft, exempted = _scan(
         text, repo_root, external_allowed=external,
     )
     return CheckResult(
         path=path, hard_flags=hard, soft_flags=soft, exempted=exempted,
-        exempted_counts=exempted_counts,
     )
 
 
@@ -781,7 +700,7 @@ def main(argv: list[str] | None = None) -> int:
         description=(
             'Write-time verify-before-asserting claim checker.  '
             'Hard-flags broken repo paths and out-of-bounds line '
-            'citations; soft-flags count claims.'
+            'citations.'
         ),
     )
     parser.add_argument(
@@ -792,8 +711,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         '--fail-on-soft', action='store_true',
-        help='Exit non-zero on soft (count) flags too -- author / '
-             'pre-commit use.',
+        help='Exit non-zero on soft flags too -- author / pre-commit '
+             'use.  (Retained for contract stability; there is no active '
+             'soft-flag producer since the count flag was retired.)',
     )
     parser.add_argument(
         '--external-allow', action='append', default=None, metavar='GLOB',
@@ -851,16 +771,6 @@ def main(argv: list[str] | None = None) -> int:
             print(
                 f'  {rel}: exempted `{token}` via claim-check-allow '
                 f'glob `{glob}`'
-            )
-    if result.exempted_counts:
-        print(
-            f'claim_check: {rel} -- {len(result.exempted_counts)} count(s) '
-            f'exempted by claim-check-allow-count:'
-        )
-        for token, accepted in result.exempted_counts:
-            print(
-                f'  {rel}: exempted count `{token}` via '
-                f'claim-check-allow-count `{accepted}`'
             )
     if not result.hard_flags and not result.soft_flags:
         print(f'claim_check: {rel} -- OK, no claim-check flags.')

@@ -1,16 +1,13 @@
 <!-- cairn-internal-ref-allow: doctrine/dual-review.md doctrine/lifecycle.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- Author tip: if your plan cites count claims (numbers
-     adjacent to `lines` / `proposals` / `plans` / `tests` /
-     `commits` / `files` -- common in chunk tables like
-     "ships in 2-3 commits"), claim_check will soft-flag them.
-     Four clearance paths -- see "Count claims" section below for
-     details:
-       1. Rephrase to a delta
-       2. Cite the command that computed the count
-       3. Add an inline `<!-- claim-check-allow-count: N noun -->`
-          directive next to the claim (the common case for plans)
-       4. Consciously accept in the implementing commit body
-     -->
+<!-- Author tip: numeric claims follow the three-kind precision /
+     `as_of` discipline -- approximate a decision-irrelevant count
+     (`~4900 lines`), date a snapshot (`N, as_of YYYY-MM-DD`, never
+     re-measured), register a live invariant; never quote one from
+     memory.  Chunk-size estimates ("ships in 2-3 commits") are
+     decision-irrelevant -- approximate them.  See the "Count claims"
+     section below.  (The old `claim_check` count soft-flag +
+     `claim-check-allow-count` directive were retired 2026-06-05 --
+     claim_check no longer flags counts.) -->
 
 # Plan template
 
@@ -62,8 +59,6 @@ implementation commits, code-review, sharpening, plan-archive); the
 review records inline with the sharpening commit). Trivial accepts
 collapse implementation + proposal-archive into a single commit —
 they have no plan, so the plan preconditions do not apply.
-
-<!-- claim-check-allow-count: 5 commits, 10 commits, 4 commits -->
 
 ### Release-gated plans (an expected parked state)
 
@@ -311,9 +306,9 @@ Two clean ways to handle it, in preference order:
   repository this project depends on, or an upstream framework
   checkout, rather than in this tree.
 
-All three markers exempt only the tokens on the marker line itself;
-count claims still soft-flag. See `claim_check`'s module docstring
-(the "Marker lines" subsection) for the full mechanism documentation.
+All three markers exempt only the tokens on the marker line itself.
+See `claim_check`'s module docstring (the "Marker lines" subsection)
+for the full mechanism documentation.
 
 **Applies to a plan's append-only finding sections too.** Under the
 `AGENTS.md` claim-marker-maintenance exception, inserting a marker line
@@ -331,68 +326,40 @@ the target row so it does not over-exempt later rows; for many
 sibling-repo paths, prefer the file-level
 `<!-- claim-check-allow: <glob> -->` directive (narrow globs only).
 
-## Count claims -- soft-flag clearance
+## Count claims -- the three-kind precision / `as_of` discipline
 
-`claim_check` soft-flags any **count claim** -- a number directly
-adjacent to one of six tree-nouns: `lines`, `proposals`, `plans`,
-`tests`, `commits`, `files`.  Example soft-flag triggers:
+A count is not one thing.  Before writing a number into a durable
+artifact, decide which of **three kinds** it is -- each wants a
+different treatment, and getting the kind right is what removes the
+need for exact counts (and the stale-count drift they invite) at the
+source:
 
-* "5-10 files at scale" (forward-looking range estimate)
-* "281 tests" (live-computed from `pytest --collect-only`)
-* "Plan ships across approximately 7 commits" (plan-shape estimate)
-* "12,847 nodes" (-- **not** a tree-noun, doesn't flag)
+* **Decision-irrelevant** -- the number is colour, not the point ("the
+  largest file by far", "ships in a few commits").  **Approximate it**
+  (`~4900 lines`, "2-3 commits").  Chunk-table commit estimates are
+  almost always this kind.  An exact count here is a maintenance
+  liability with no upside: it drifts, and nothing depended on its
+  precision.
+* **Dated snapshot** -- a measurement true *at a moment* the artifact
+  records as evidence ("the suite had N tests when this plan opened").
+  **Date it** (`N tests, as_of YYYY-MM-DD`) and **never re-measure
+  it** -- re-running *erases* the evidence the snapshot is.
+* **Live invariant** -- a current size cited as present fact, prone to
+  drift.  This is the one number worth an exact value *and* worth
+  machine verification: register it and re-measure it (the code-side
+  `verify_counts` registry, where the project ships one).
 
-<!-- claim-check-allow-count: 10 files, 281 tests, 7 commits -->
-<!-- ^ This template's own teaching examples are self-exempted
-     here.  The inline directive form is mechanism (3) below;
-     this section thus demonstrates its own recommended pattern. -->
+"The safest stale count is the one prose did not need."  Most numbers
+are decision-irrelevant; approximating them is the cheapest and most
+durable fix.  Reserve exact counts for snapshots (dated) and invariants
+(registered).
 
-The flag's job is to catch **memory-quoted absolute counts** that
-should be deltas or live-computed; the scanner can't tell legitimate
-counts from misremembered ones.  Four clearance mechanisms exist;
-pick one per claim:
-
-1. **Rephrase to a delta** -- "+5 files vs current N" rather than
-   an absolute number.  Best when the claim is structurally a
-   change-size.
-2. **Cite the command that computed the count** -- "281 tests (per
-   `pytest --collect-only`)."  Best for live-from-probe claims; the
-   adjacent command names the cheap defense the reader can re-run.
-3. **Inline `<!-- claim-check-allow-count: N noun, ... -->`
-   directive** -- exempts specific count tokens on adjacent prose.
-   Best for forward-looking range estimates ("plan ships across
-   ~7 commits") where rephrasing would lose information.  **Reserved
-   for prescriptive rules (e.g., doctrine wording like "5-10 commits")
-   or historical quotes; never for live / mutable counts where
-   mechanisms (1) delta or (2) cited command would be cleaner.**
-   Multiple nouns per line; multiple directives per document.
-   Example:
-
-       The plan will ship across approximately 7 commits.
-
-       <!-- claim-check-allow-count: 7 commits -->
-
-4. **Consciously accept in the implementing commit body** -- name
-   the count, name why the soft flag is acceptable (forward-looking
-   estimate, live-probe, etc.), and the commit body becomes the
-   audit trail.  Use sparingly -- (3) is usually cleaner; (4) is
-   the fallback when inline-exempt would clutter the prose.
-
-**Plan-specific note**: chunk tables (`Chunk A -- <name>`) commonly
-cite per-chunk commit counts ("ships in 2-3 commits").  These are
-forward-looking range estimates -- option (3) is the natural
-clearance mechanism.
-
-**Avoid the discipline antipattern**: do **not** rephrase by
-substituting non-tree-nouns purely to avoid the flag (e.g., "five
-test cases" instead of "5 tests").  The discipline targets quoted
-absolute counts; substituting nouns hides the count rather than
-grounding it.
-
-<!-- claim-check-allow-count: 5 files, 3 commits, 5 tests -->
-<!-- ^ The "+5 files" delta-example in mechanism (1), the "2-3
-     commits" plan-specific-note example, and the "5 tests"
-     antipattern example are self-exempted here. -->
+The write-time count soft-flag and its `claim-check-allow-count`
+directive were **retired 2026-06-05** (0 catches across the
+verify-before-asserting instance log; the nag generated header bloat).
+`claim_check` no longer flags counts -- a stray
+`claim-check-allow-count` comment in an archived artifact is silently
+ignored.
 
 ---
 

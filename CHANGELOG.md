@@ -34,6 +34,25 @@ and a new empty `Unreleased` is started above.
 
 ### Changed
 
+- **The `claim_check` category-D count soft-flag is retired; numeric drift is now
+  governed by a three-kind precision / `as_of` discipline.** The count soft-flag
+  (a number adjacent to `lines`/`tests`/`commits`/…) and its
+  `claim-check-allow-count` document directive are removed from `claim_check.py`:
+  0 catches across the verify-before-asserting instance log, while the directive
+  accreted multi-KB enumerated-count headers across the deliberation tree (the
+  header bloat the nag itself generated). The checker keeps **all** hard checks
+  (broken repo paths, out-of-bounds line citations) and the `claim-check-allow`
+  *path* directive; the two-tuple `check_text` contract and `--fail-on-soft` are
+  retained (the soft channel simply has no producer now), and a stray
+  `claim-check-allow-count` comment in an archived doc is silently ignored.
+  Doctrine replaces the nag: pick a count's **kind** — *approximate* a
+  decision-irrelevant count, *date* a snapshot (`N, as_of YYYY-MM-DD`, never
+  re-measured), *register* a live invariant (a code-side `verify_counts`
+  registry, where the project ships one). Lands in the `claim-check` module
+  (`claim_check.py`, `claim-check.md`), the core proposal + plan templates'
+  "Count claims" sections + author tips, and `docs/tool-usage.md`. Adopter
+  deliberation: modflow_tools `2026-06-05-claude-numeric-claim-verification`
+  (Arm 1 + Arm 2).
 - **All Cairn adoption state lives in `dev/.cairn/` (the fidelity manifest moves
   out of `dev/strategy/`).** The fidelity manifest is install bookkeeping — a
   record of *what is installed* — not a human-AI deliberation surface, so it

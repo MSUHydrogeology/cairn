@@ -10,11 +10,14 @@ Install paths below are the adopter-side defaults; substitute your own if your
 profile placed them elsewhere. Tools marked *(team-gated)* install only when
 their module is selected.
 
-## claim_check — verify path / line / count claims
+## claim_check — verify path / line claims
 
 **What it does.** Scans a Markdown proposal/plan/doc and hard-flags broken
-repo paths and out-of-bounds line citations, and soft-flags absolute count
-claims. Run it at write-time and before committing a deliberation artifact.
+repo paths and out-of-bounds line citations. Run it at write-time and before
+committing a deliberation artifact. (The category-D count soft-flag was
+retired 2026-06-05 — 0 catches across the instance log; numeric drift is now
+governed by the three-kind precision / `as_of` discipline and a code-side
+registry verifier, not a write-time nag.)
 
 ```bash
 python scripts/claim_check.py dev/proposals/2026-06-01-me-new-thing.md
@@ -31,15 +34,12 @@ A file with problems (exit code 1):
 ```
 claim_check: ... -- 1 hard flag(s):
   ...:42: [path] cited path does not resolve: `frontend/helpre/util.py`
-... -- 1 soft flag(s) (must resolve or consciously accept):
-  ...:7: [count] count claim `937 tests` -- compute it live or cite a delta
 ```
 
 **What to do.** Fix a hard flag before committing (a real broken path, or a
 forward-reference you must *mark* with a `Proposed/Untracked/External-repo
-paths:` line). For a soft count flag, either recompute it live, cite a delta,
-or — if it is a deliberate point-in-time snapshot — accept it with a
-`<!-- claim-check-allow-count: 937 tests -->` directive.
+paths:` line, or — for a single cross-document citation — a document-scoped
+`<!-- claim-check-allow: <glob> -->` directive).
 
 ## tools/intent.py — claim work before editing *(team-gated: coordination-tiers)*
 
@@ -80,8 +80,8 @@ python tools/lifecycle_metrics.py proposals --out metrics.csv
 
 **What to do.** Read it as a health signal, not a target: a proposal that took
 many review rounds is a candidate for a retrospective, not a number to
-optimize. Regenerate it rather than quoting a stale figure from memory (that is
-exactly the count-claim `claim_check` soft-flags).
+optimize. Regenerate it rather than quoting a stale figure from memory (exactly
+the numeric-drift the three-kind precision / `as_of` discipline guards against).
 
 ## scripts/link_check.py — check cross-references resolve *(team-gated: doc-drift-prevention)*
 
