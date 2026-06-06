@@ -1,0 +1,789 @@
+"""Scaffold engine -- configuration / tokens / profile resolution (scaffold-split Stage 4).
+
+The static install schema and configuration-resolution surface: the YAML config
+loader (with the no-PyYAML minimal fallback), the inline-token vocabulary, the
+template/skills/module mapping registries (including the trust anchor
+``_MODULE_MAPPINGS`` the release-security scanner reads), and the governance
+preset / six-axis resolution that derives a module roster + profile summary.
+
+A **pure stdlib leaf**: it imports only the standard library and holds no
+adopter-tree writes (the dev-tree / gitignore / fan-out writers stay in the
+engine; they consume this module's data). Importing it defines names only -- no
+file writes, no CLI/upgrade load (import-purity, SR2). install / upgrade depend
+on it, never the reverse.
+
+Pure motion from the pre-split monolith (Stage 4): the symbols are unchanged;
+only their home moved. ``_MODULE_MAPPINGS`` migrates here as its owning module
+(plan 0B.3); ``bootstrap/security_check.py`` imports the trust anchor from this
+narrow owner. Loaded via the engine's verifying finder, so this file's real path
+is confirmed within the Cairn root before it executes.
+"""
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any, NamedTuple
+
+
+try:
+    import yaml as _yaml  # type: ignore[import]
+
+    def _yaml_load(text: str) -> Any:
+        return _yaml.safe_load(text)
+
+except ImportError:  # pragma: no cover
+    _yaml = None  # type: ignore[assignment]
+
+    def _yaml_load(text: str) -> Any:
+        return _minimal_yaml_parse(text)
+
+
+#: The inline tokens the core and module templates currently use.  The
+#: scaffold only substitutes tokens present in this set; unknown keys
+#: from the config are silently ignored so that future tokens do not
+#: break old configs.  Documented in BOOTSTRAP.md Appendix A.
+KNOWN_TOKENS: frozenset[str] = frozenset(
+    {
+        "project_name",
+        "test_command",
+        "claim_check_command",
+        "metrics_command",
+    }
+)
+
+
+#: Default-on modules installed when the profile YAML omits a
+#: ``modules:`` key.  Matches the doctrine in BOOTSTRAP.md Act I-5
+#: step 2 ("Default-on modules (installed *unless* a dimension removes
+#: them)").
+_DEFAULT_ON_MODULES: tuple[str, ...] = (
+    "lifecycle-metrics",
+    "reflections",
+    "claim-check",
+    "fold-back-ledger",
+    "incident-trackers",
+    "documentation-plan",
+)
+
+
+# ---------------------------------------------------------------------------
+# Minimal YAML fallback (no dependency on PyYAML)
+# ---------------------------------------------------------------------------
+
+def _minimal_yaml_parse(text: str) -> dict[str, Any]:
+    """Very small YAML parser covering the subset scaffold.py needs.
+
+    Handles::
+
+        key: value
+        key:
+          - item
+
+    Not a full YAML parser.  PyYAML is used when available.
+    """
+    result: dict[str, Any] = {}
+    current_list_key: str | None = None
+
+    def _list_item_text(stripped: str) -> str:
+        """Strip leading ``- ``, an optional trailing ``# comment``, and
+        surrounding quotes, returning the item value."""
+        return stripped[2:].split("#")[0].strip().strip('"').strip("'")
+
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+
+        if line[:1] in (" ", "\t"):
+            # Indented continuation -- list item under current_list_key.
+            if current_list_key is not None and stripped.startswith("- "):
+                item = _list_item_text(stripped)
+                if item:
+                    result.setdefault(current_list_key, []).append(item)
+        elif stripped.startswith("- ") and current_list_key is not None:
+            # Unindented list item under current_list_key.  PyYAML
+            # accepts both ``key:\n  - a`` and ``key:\n- a`` shapes;
+            # the minimal parser honors the second form too so a
+            # PyYAML-free environment behaves the same way.
+            item = _list_item_text(stripped)
+            if item:
+                result.setdefault(current_list_key, []).append(item)
+        elif ":" in line:
+            key, _, rest = line.partition(":")
+            key = key.strip()
+            rest = rest.strip()
+            if rest and not rest.startswith("#"):
+                # Recognize inline empty list/dict notations so e.g.
+                # ``modules: []`` is honored as an explicit opt-out.
+                if rest in ("[]", "{}"):
+                    result[key] = []
+                    current_list_key = None
+                else:
+                    result[key] = rest.strip('"').strip("'")
+                    current_list_key = None
+            else:
+                current_list_key = key
+                if key not in result:
+                    result[key] = []
+
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Config loading
+# ---------------------------------------------------------------------------
+
+def load_config(config_path: Path) -> dict[str, Any]:
+    """Load a profile YAML config file."""
+    text = config_path.read_text(encoding="utf-8")
+    cfg = _yaml_load(text)
+    if not isinstance(cfg, dict):
+        raise ValueError(
+            f"{config_path}: expected a YAML mapping at the top level, "
+            f"got {type(cfg).__name__}"
+        )
+    return cfg
+
+
+# ---------------------------------------------------------------------------
+# Template installation
+# ---------------------------------------------------------------------------
+
+# Each entry is (source path relative to cairn/templates/, target path
+# relative to repo root).
+_CORE_MAPPINGS: tuple[tuple[str, str], ...] = (
+    # repo root
+    ("core/AGENTS.md",                              "AGENTS.md"),
+    # Thin vendor wrapper (foldback #12): installed as VENDOR.md, a
+    # vendor-neutral `@AGENTS.md` + harness-addendum template the
+    # adopter renames to their tool's file (CLAUDE.md, etc.).  Core
+    # ships no literal vendor name (R-G).
+    ("core/VENDOR.md",                              "VENDOR.md"),
+    # dev/ tree
+    ("core/dev/README.md",                          "dev/README.md"),
+    ("core/dev/PLANNING.md",                        "dev/PLANNING.md"),
+    ("core/dev/NEXT_SESSION.md",                    "dev/NEXT_SESSION.md"),
+    ("core/dev/collaboration_agreement.md",         "dev/collaboration_agreement.md"),
+    ("core/dev/agent_collaboration.md",             "dev/agent_collaboration.md"),
+    ("core/dev/proposals/_template.md",             "dev/proposals/_template.md"),
+    ("core/dev/plans/_template.md",                 "dev/plans/_template.md"),
+    # Self-instrumentation home (measurement-folder standard): a core dir
+    # carried by its README, which states the membership rule.  Same shape as
+    # proposals/ + plans/ (a core dir installed via its content file).
+    ("core/dev/measurement/README.md",              "dev/measurement/README.md"),
+)
+
+#: Lifecycle-routine skills install **unconditionally, like core/** -- the
+#: session routines are invariant kernel (every adoption runs them), so they
+#: are not a conditional ``templates/modules/*`` module.  ``(src relative to
+#: templates/, dst relative to the repo root, verbatim)``.  The CLI is a script
+#: -> ``verbatim`` (byte-for-byte, hash-only upgrade policy); the ``SKILL.md``
+#: sources are markdown -> substituted (so they get a base-template cache entry
+#: and a token-/slot-aware 3-way merge on upgrade, exactly like ``core/`` docs).
+_SKILLS_MAPPINGS: tuple[tuple[str, str, bool], ...] = (
+    ("skills/_lib/lifecycle.py",        "tools/lifecycle.py",                       True),
+    ("skills/_data/vendor_targets.yml", ".agents/skills/_data/vendor_targets.yml",  True),
+    ("skills/session-start/SKILL.md",   ".agents/skills/session-start/SKILL.md",    False),
+    ("skills/session-end/SKILL.md",     ".agents/skills/session-end/SKILL.md",      False),
+)
+
+#: Machine-local lifecycle state the skills write into ``dev/.cairn/`` -- the
+#: untracked interpreter binding (resolve-don't-bake, Decision 6) and the
+#: full-handoff lock.  Seeded into ``.gitignore`` unconditionally (the skills
+#: always install).  ``dev/.cairn/base/`` itself stays tracked (the lockfile
+#: base cache); only these machine-state members are ignored.
+_SKILLS_GITIGNORE: tuple[str, ...] = (
+    "dev/.cairn/local-env.json",
+    "dev/.cairn/handoff.lock",
+)
+
+#: Common filenames an adopter renames the thin vendor wrapper
+#: (``core/VENDOR.md``) to -- their AI tool's instruction file.  Used by
+#: ``--init-lock`` to follow that rename so the wrapper stays tracked + 3-way
+#: merges on later upgrades (foldback #45).  Distinctly vendor-specific names
+#: only (``AGENTS.md`` is the shared file, deliberately excluded).
+_KNOWN_VENDOR_WRAPPERS: tuple[str, ...] = (
+    "CLAUDE.md", "GEMINI.md", "CODEX.md", "CURSOR.md", "COPILOT.md", "QWEN.md",
+)
+
+# Optional top-level templates, gated on a dimension axis.  Unlike
+# modules (which land under ``dev/modules/``), these are project-root
+# files an adopter's *human* contributors read.  Each entry is
+# ``(src rel to templates/, dst rel to repo root, gate axis, selecting
+# values)``: the template installs when the *resolved* profile value for
+# that axis is in the selecting set.  An installed optional template is
+# recorded under ``optional_templates:`` in the fidelity manifest so the
+# gate is auditable (bootstrap/fidelity-check.md).
+_OPTIONAL_TEMPLATES: tuple[tuple[str, str, str, frozenset[str]], ...] = (
+    # CONTRIBUTING.md — the human-contributor entry (foldback #10),
+    # installed when the repo expects human authors beyond a solo
+    # maintainer: the human-team axis at small-multi or large-multi.
+    (
+        "optional/CONTRIBUTING.md",
+        "CONTRIBUTING.md",
+        "human_team",
+        frozenset({"small-multi", "large-multi"}),
+    ),
+)
+
+
+def select_optional_templates(axes: dict[str, object]) -> list[tuple[str, str]]:
+    """Return ``(src, dst)`` for each optional template whose dimension
+    gate the profile satisfies.
+
+    *axes* is the **resolved** dimension profile — a preset's canonical
+    point merged with the adopter's overrides (``resolve_axes``), or the
+    raw profile when no ``preset:`` is used.  A profile that omits the
+    gate axis, or sets it to a non-selecting value, gets no optional
+    template — the conservative default.
+    """
+    selected: list[tuple[str, str]] = []
+    for src, dst, axis, values in _OPTIONAL_TEMPLATES:
+        if str(axes.get(axis, "")) in values:
+            selected.append((src, dst))
+    return selected
+
+
+class InstallSpec(NamedTuple):
+    """One file a module installs.
+
+    ``src`` is relative to ``cairn/templates/modules/``; ``dst`` is
+    relative to the target repo root.  ``verbatim`` marks an executable
+    script (or any non-template asset) that is copied **byte-for-byte**:
+    no ``{{token}}`` substitution runs over it, and it is not scanned for
+    unfilled tokens / block slots (a code file's f-string braces or
+    docstring would otherwise false-positive the post-scaffold report).
+    """
+
+    src: str
+    dst: str
+    verbatim: bool = False
+
+
+# Module name → list of InstallSpec (1:many).  Most modules install a
+# single substituted ``.md`` doctrine file; the two default-on
+# discipline modules also install their reference *script* verbatim
+# (Cairn v0.2 P1).  The script ``dst`` paths are the single source of
+# truth for the command-token defaults below (see
+# ``_REFERENCE_SCRIPT_TOKEN`` and ``reference_script_token_defaults``)
+# so the doc's "run it via {{...}}" line and the install destination
+# cannot desync.
+_MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
+    # default-on
+    "lifecycle-metrics": [
+        InstallSpec("default-on/lifecycle-metrics.md",
+                    "dev/modules/lifecycle-metrics.md"),
+        InstallSpec("default-on/lifecycle_metrics.py",
+                    "tools/lifecycle_metrics.py", verbatim=True),
+    ],
+    "reflections": [
+        InstallSpec("default-on/reflections.md", "dev/modules/reflections.md"),
+        # A tracked directory guide so dev/reflections/ materializes on a
+        # fresh scaffold (the reflection entries themselves stay untracked
+        # via the .gitignore seed below) -- fold-back #42.
+        InstallSpec("default-on/reflections-README.md",
+                    "dev/reflections/README.md", verbatim=True),
+    ],
+    "claim-check": [
+        InstallSpec("default-on/claim-check.md",
+                    "dev/modules/claim-check.md"),
+        InstallSpec("default-on/claim_check.py",
+                    "scripts/claim_check.py", verbatim=True),
+    ],
+    # The deployment-side measurement substrate the adaptive-doctrine
+    # rate-limit gate (doctrine/rationale.md) evaluates against.
+    # Ships the module doctrine + a forkable tracker template; adopters
+    # fork the template to one or many live trackers (e.g.,
+    # dev/incident_log.md or class-specific files), then the goodnight
+    # migration sub-step feeds incident entries from reflections into
+    # the trackers.  The canonical 7-column semantic-field schema is
+    # the contract the eventual Goal 7 cross-adopter harvest reads.
+    "incident-trackers": [
+        InstallSpec("default-on/incident-trackers.md",
+                    "dev/modules/incident-trackers.md"),
+        InstallSpec("default-on/incident_log_template.md",
+                    "dev/modules/incident_log_template.md"),
+    ],
+    # The placement-decision procedure for documentation and doctrine.
+    # Default-on: every adopter benefits from a four-layer routing
+    # discipline (entry / governing / deliberation / descriptive).
+    # Ships the module doctrine + a forkable DOCUMENTATION_PLAN.md the
+    # adopter customizes for their own file inventory + tier vocabulary.
+    # Three slot anchors land via the core templates --
+    # `documentation-discipline` in AGENTS.md plus
+    # `documentation-tier-home` in proposals + plans `_template.md` --
+    # and are filled by **manual paste** from the module's
+    # `Merged into:` Blocks 1/2/3 (the adopter copies the block matching
+    # each target slot at install time, parallel to the existing
+    # claim-check / lifecycle-metrics / reflections module pattern).
+    # Mechanical merge via Proposal B's `cairn:merge-target` directives
+    # is *deferred* pending the merge-pass / install-lockfile interaction
+    # fix (the merge pass mutates files post-install, which the
+    # lockfile's clean-install divergence guard rejects); see
+    # `dev/PLANNING.md` (modflow_tools-side) > "Cairn-side merge-helper
+    # / install-lockfile interaction fix".  The forkable's worked
+    # examples are adopter-relative; Cairn's own self-hosted instance at
+    # cairn/docs/DOCUMENTATION_PLAN.md uses cairn-prefixed paths and is
+    # the methodology source-of-truth.
+    "documentation-plan": [
+        InstallSpec("default-on/documentation-plan.md",
+                    "dev/modules/documentation-plan.md"),
+        InstallSpec("default-on/documentation_plan_template.md",
+                    "docs/DOCUMENTATION_PLAN.md"),
+    ],
+    # The deployment-side fold-back channel (doctrine: doctrine/fold-back.md).
+    # Default-on but omittable: ships the module doctrine + the forkable
+    # ledger artifact into dev/.cairn/, the active-surfacing prompt asset
+    # into dev/modules/, the export-scrub scanner doc into dev/modules/, and
+    # the scanner itself verbatim into scripts/.  The ledger is a cross-repo
+    # export surface, so its template carries a [SECURITY WARNING] header;
+    # the scanner is the machine half of the active-surfacing protocol's
+    # two-gate export boundary (the manual half is the maintainer-signed
+    # affirmation field in the Cairn issue / PR template).
+    "fold-back-ledger": [
+        InstallSpec("default-on/fold-back-ledger.md",
+                    "dev/modules/fold-back-ledger.md"),
+        InstallSpec("default-on/fold-back-ledger-template.md",
+                    "dev/.cairn/cairn_foldback.md"),
+        # Active-surfacing additions (Chunks 4-6 of
+        # 2026-05-28-claude-cairn-foldback-active-surfacing).
+        InstallSpec("default-on/foldback_export_scan.md",
+                    "dev/modules/foldback_export_scan.md"),
+        InstallSpec("default-on/foldback_export_scan.py",
+                    "scripts/foldback_export_scan.py", verbatim=True),
+        InstallSpec("default-on/fold-back-active-prompt.md",
+                    "dev/modules/fold-back-active-prompt.md"),
+        # Optional helper (Chunk 8): lists open `candidate`-status
+        # rows from the ledger eligible for active surfacing.  Ships
+        # verbatim into adopter scripts/; invocation in the agent
+        # prompt is `python scripts/foldback_suggest.py [--ledger
+        # <path>] [--all]`.
+        InstallSpec("default-on/foldback_suggest.py",
+                    "scripts/foldback_suggest.py", verbatim=True),
+    ],
+    # team-gated
+    "dual-review": [
+        InstallSpec("team-gated/dual-review.md", "dev/modules/dual-review.md"),
+    ],
+    "domain-agents": [
+        InstallSpec("team-gated/domain-agents.md",
+                    "dev/modules/domain-agents.md"),
+    ],
+    "legacy-agent": [
+        InstallSpec("team-gated/legacy-agent.md",
+                    "dev/modules/legacy-agent.md"),
+    ],
+    "dual-language-tests": [
+        InstallSpec("team-gated/dual-language-tests.md",
+                    "dev/modules/dual-language-tests.md"),
+    ],
+    "coordination-tiers": [
+        InstallSpec("team-gated/coordination-tiers.md",
+                    "dev/modules/coordination-tiers.md"),
+        # Cairn v0.2 P5: the work-intent tool ships verbatim alongside the
+        # doctrine (1:many, the P1 claim-check/lifecycle-metrics pattern).
+        InstallSpec("team-gated/intent.py",
+                    "tools/intent.py", verbatim=True),
+    ],
+    "security-review": [
+        InstallSpec("team-gated/security-review.md",
+                    "dev/modules/security-review.md"),
+    ],
+    "issue-capture": [
+        InstallSpec("team-gated/issue-capture.md",
+                    "dev/modules/issue-capture.md"),
+    ],
+    "model-selection": [
+        InstallSpec("team-gated/model-selection.md",
+                    "dev/modules/model-selection.md"),
+    ],
+    # Practice-discipline modules (Cairn v0.2 P3).  Team-gated -- a
+    # governance preset (P4) turns them on per profile rather than
+    # doubling the default-on auto-install set.  Doctrine-only (single
+    # substituted .md each; no scripts).
+    "testing-discipline": [
+        InstallSpec("team-gated/testing-discipline.md",
+                    "dev/modules/testing-discipline.md"),
+    ],
+    "doc-drift-prevention": [
+        InstallSpec("team-gated/doc-drift-prevention.md",
+                    "dev/modules/doc-drift-prevention.md"),
+        # Cairn v0.2 foldback: the module flips from doctrine-only to
+        # doctrine + stack-neutral runnable tooling (1:many, the P1
+        # claim-check pattern).  Two verbatim stdlib-only scripts -- the
+        # link half and the snippet-sync.  The claim half is NOT shipped
+        # here: the default-on claim-check module already installs
+        # scripts/claim_check.py, so the doc-drift gate composes with it
+        # rather than duplicating a second checker.  The schema-doc
+        # generator is deferred (an adopter slot/hook) -- it cannot ship
+        # stack-neutrally.
+        InstallSpec("team-gated/link_check.py",
+                    "scripts/link_check.py", verbatim=True),
+        InstallSpec("team-gated/sync_doc_snippets.py",
+                    "scripts/sync_doc_snippets.py", verbatim=True),
+    ],
+    "examples-gallery": [
+        InstallSpec("team-gated/examples-gallery.md",
+                    "dev/modules/examples-gallery.md"),
+    ],
+    # Cairn v0.2 security-hardening (R9): the content-integrity scanner,
+    # shipped to adopters so their agents can scan working-tree files /
+    # incoming PRs for prompt-injection patterns before ingesting them. The
+    # verbatim script is single-sourced here (Cairn's own check_cairn composes
+    # the same file), the 1:many claim-check pattern.
+    "content-security": [
+        InstallSpec("team-gated/content-security.md",
+                    "dev/modules/content-security.md"),
+        InstallSpec("team-gated/content_scan.py",
+                    "scripts/content_scan.py", verbatim=True),
+    ],
+    # Architecture-review (modflow_tools doctrine-parity fold, 2026-06-01):
+    # a triggered remediation / on-ramp module for an adopter whose
+    # architecture accreted rather than was deliberately designed.  Ships
+    # the module doctrine + a forkable rubric frame the adopter fills
+    # (the incident-trackers / documentation-plan 2-spec pattern, both
+    # substituted not verbatim).  Team-gated, opt-in -- not in any
+    # default-on set or governance preset.
+    "architecture-review": [
+        InstallSpec("team-gated/architecture-review.md",
+                    "dev/modules/architecture-review.md"),
+        InstallSpec("team-gated/architecture_review_template.md",
+                    "dev/architecture_review.md"),
+    ],
+}
+
+# Module → the inline command-token whose value should default to the
+# module's installed reference script.  The default value is derived
+# from the verbatim spec's ``dst`` (below), so the token the module doc
+# resolves (``{{claim_check_command}}`` etc.) and the path the scaffold
+# installs to are one source of truth (I5).
+_REFERENCE_SCRIPT_TOKEN: dict[str, str] = {
+    "claim-check": "claim_check_command",
+    "lifecycle-metrics": "metrics_command",
+}
+
+#: Module → ``.gitignore`` entries the scaffold seeds when the module is
+#: selected.  Cairn v0.2 P5: the work-intent log is session-local
+#: coordination state, never a tracked artifact, so selecting
+#: ``coordination-tiers`` seeds the substrate path.  Seeding is
+#: non-clobber + idempotent (see :func:`seed_gitignore`).
+_GITIGNORE_SEEDS: dict[str, tuple[str, ...]] = {
+    "coordination-tiers": ("dev/intents.jsonl",),
+    # Foldback active-surfacing (2026-05-28 arc): the protocol's Scrub
+    # step writes the drafted issue / PR body to a gitignored temp
+    # file pattern under `dev/.cairn/` before invoking the scanner.
+    # The draft file is intentionally never committed -- the durable
+    # record is the filed Cairn issue / PR + the ledger row's
+    # status transition.  Seeded by default so an adopter does not
+    # have to remember the pattern themselves.
+    "fold-back-ledger": ("dev/.cairn/.foldback-draft-*.md",),
+    # Reflections are per-agent + ephemeral (gitignored); only the tracked
+    # README.md guide survives, so the dir materializes on a fresh scaffold
+    # without committing reflection content (fold-back #42).  Order matters:
+    # ignore-all then un-ignore the README.
+    "reflections": ("dev/reflections/*", "!dev/reflections/README.md"),
+}
+
+
+def reference_script_token_defaults(module_names: list[str]) -> dict[str, str]:
+    """Default command-token values for the selected reference-script
+    modules.
+
+    For each selected module that ships a verbatim reference script, map
+    its command token (``claim_check_command`` / ``metrics_command``) to
+    ``python <dst>`` where ``<dst>`` is the exact path the scaffold
+    installs the script to.  The caller injects these into the token set
+    *without* overriding a value the profile already supplied
+    (``setdefault`` semantics), so an adopter can still point the token
+    at a custom invocation.
+    """
+    defaults: dict[str, str] = {}
+    for name in module_names:
+        token = _REFERENCE_SCRIPT_TOKEN.get(name)
+        if token is None:
+            continue
+        for spec in _MODULE_MAPPINGS.get(name, []):
+            if spec.verbatim:
+                defaults[token] = f"python {spec.dst}"
+                break
+    return defaults
+
+
+# ---------------------------------------------------------------------------
+# Governance presets (Cairn v0.2 P4)
+# ---------------------------------------------------------------------------
+#
+# Presets are *named points in the six-axis dimension model*, not a parallel
+# config system.  An adopter picks a preset (the fast path) instead of
+# hand-deriving the module roster; the six-axis scoring + the BOOTSTRAP.md
+# I-5 gate table remain the principled backing (the gate table is the
+# canonical per-module rationale).  See BOOTSTRAP.md Act I and the
+# the source ``cairn-v0.2-p4-governance-presets`` plan.
+
+#: The six dimension axes -> allowed enum values (the BOOTSTRAP.md I-4 table).
+#: An adopter overrides a preset's canonical axis by setting a flat top-level
+#: key in the profile YAML; an unknown enum value is a hard error.
+_AXES: dict[str, tuple[str, ...]] = {
+    "age": ("greenfield", "legacy"),
+    "size": ("small", "medium", "large"),
+    "complexity": ("simple", "moderate", "complex"),
+    "language": ("single", "multi"),
+    "human_team": ("solo", "small-multi", "large-multi"),
+    "agent_team": (
+        "single", "concurrent-single-type", "concurrent-multi-type",
+    ),
+}
+
+#: Per-module team-staffing gate: the ``agent_team`` axis values that staff
+#: each module.  These are the ONLY part of the I-5 gate evaluated as runtime
+#: code; the non-axis gate conditions (trust boundary, issue tracker, domain
+#: partitioning, legacy readiness) are baked into each preset's authored
+#: baseline below (the "gate-table encoding" split from the P4 plan).
+#:
+#: The two modules gate **differently** (fold-back #40): ``coordination-tiers``
+#: serves any *concurrent* team -- multiple same-type agents collide on shared
+#: files exactly as a multi-type team does, and the work-intent mechanism is
+#: what prevents it -- so it staffs both ``concurrent-multi-type`` and
+#: ``concurrent-single-type``.  ``dual-review`` needs a second agent *type* to
+#: fill its External tier with structural independence, which a same-type team
+#: lacks, so it stays ``concurrent-multi-type`` only.
+_TEAM_STAFFING_GATES: dict[str, frozenset[str]] = {
+    "dual-review": frozenset({"concurrent-multi-type"}),
+    "coordination-tiers": frozenset(
+        {"concurrent-multi-type", "concurrent-single-type"}
+    ),
+}
+
+#: All team-staffing-gated module names (membership tests; staffability is
+#: per-module via :func:`_can_staff_module`).
+_TEAM_STAFFING_GATED: tuple[str, ...] = tuple(_TEAM_STAFFING_GATES)
+
+
+def _can_staff_module(name: str, axes: dict[str, str]) -> bool:
+    """True when the resolved agent-team axis staffs the given team-staffing
+    module, per the per-module gate (fold-back #40)."""
+    return axes.get("agent_team", "") in _TEAM_STAFFING_GATES.get(
+        name, frozenset()
+    )
+
+
+#: Named governance presets.  Each carries a **canonical six-axis point** and
+#: a **baseline roster** of the *non-team-staffing* modules the I-5 gate table
+#: yields at that point (axis-derivable rows resolved at the canonical scores,
+#: plus the non-axis rows the preset's profile assumes).  The team-staffing
+#: modules (``dual-review`` / ``coordination-tiers``) are NOT listed here --
+#: they are added at expand time iff the *resolved* agent-team axis staffs
+#: them, so an adopter's real team is ground truth (F3).  ``_DEFAULT_ON_MODULES``
+#: is always the floor.  Derivation is documented row-by-row in BOOTSTRAP.md.
+_PRESETS: dict[str, dict[str, object]] = {
+    "solo-greenfield": {
+        "axes": {
+            "age": "greenfield", "size": "small", "complexity": "simple",
+            "language": "single", "human_team": "solo",
+            "agent_team": "single",
+        },
+        # Minimal: default-on only; no axis fires a team-gated module.
+        "baseline": (),
+    },
+    "collaborative-team": {
+        "axes": {
+            "age": "greenfield", "size": "medium", "complexity": "moderate",
+            "language": "single", "human_team": "small-multi",
+            "agent_team": "concurrent-multi-type",
+        },
+        # complexity=moderate -> model-selection + testing-discipline;
+        # size=medium -> doc-drift-prevention.  Coordination modules come
+        # from the team-staffing gate (agent_team=concurrent-multi-type).
+        "baseline": (
+            "model-selection", "testing-discipline", "doc-drift-prevention",
+        ),
+    },
+    "high-rigor-legacy": {
+        "axes": {
+            "age": "legacy", "size": "large", "complexity": "complex",
+            "language": "multi", "human_team": "large-multi",
+            "agent_team": "concurrent-multi-type",
+        },
+        # age=legacy -> legacy-agent; complexity=complex -> model-selection
+        # + testing-discipline; size=large/language=multi ->
+        # doc-drift-prevention; language=multi -> dual-language-tests;
+        # trust-boundary (non-axis, assumed for legacy/large) ->
+        # security-review.  Coordination modules from the team-staffing gate.
+        "baseline": (
+            "legacy-agent", "security-review", "dual-language-tests",
+            "model-selection", "testing-discipline", "doc-drift-prevention",
+        ),
+    },
+}
+
+
+class PresetError(ValueError):
+    """Raised on an invalid preset / override config (unknown preset, unknown
+    module, unknown axis enum, wrong-type value, or the ``modules:`` +
+    ``preset:`` conflict).  A friendly hard error, surfaced by ``main()``."""
+
+
+def _as_str_list(value: object, key: str) -> list[str]:
+    """Coerce a YAML value for a list-typed key to ``list[str]``; a scalar
+    where a list is expected is a friendly hard error."""
+    if value is None:
+        return []
+    if isinstance(value, str) or not isinstance(value, (list, tuple)):
+        raise PresetError(
+            f"`{key}` must be a YAML list (e.g. `{key}:` with `- module` "
+            f"lines), not a {type(value).__name__} ({value!r})."
+        )
+    return [str(v) for v in value]
+
+
+def _canonical_order(modules: set[str]) -> list[str]:
+    """Order a module set deterministically: default-on first (in
+    ``_DEFAULT_ON_MODULES`` order), then the rest in ``_MODULE_MAPPINGS``
+    order.  Stable, diffable output for the summary + tests."""
+    ordered: list[str] = [m for m in _DEFAULT_ON_MODULES if m in modules]
+    for name in _MODULE_MAPPINGS:
+        if name in modules and name not in ordered:
+            ordered.append(name)
+    # Any module not in the known maps (shouldn't happen post-validation)
+    # trails, sorted, so nothing is silently dropped.
+    ordered.extend(sorted(modules - set(ordered)))
+    return ordered
+
+
+def resolve_axes(preset_name: str, cfg: dict[str, object]) -> dict[str, str]:
+    """Resolve the six-axis point: the preset's canonical point overridden by
+    any flat axis key the adopter supplied.  An unknown enum value is a hard
+    error; an absent axis key falls back to the preset's value (F3 / P-2)."""
+    canonical = dict(_PRESETS[preset_name]["axes"])  # type: ignore[arg-type]
+    resolved = dict(canonical)
+    for axis, allowed in _AXES.items():
+        if axis in cfg and cfg[axis] is not None:
+            value = str(cfg[axis])
+            if value not in allowed:
+                raise PresetError(
+                    f"axis `{axis}` value {value!r} is not one of "
+                    f"{', '.join(allowed)}."
+                )
+            resolved[axis] = value
+    return resolved
+
+
+def expand_preset(cfg: dict[str, object]) -> tuple[list[str], dict[str, object]]:
+    """Expand a ``preset:``-bearing profile into a module roster + a summary.
+
+    The pinned ordered merge (P4 Decision):
+
+    1. Resolve axes = preset canonical point overridden by adopter axis keys.
+    2. Baseline = ``_DEFAULT_ON_MODULES`` (always) + the preset's authored
+       non-team-staffing roster + the team-staffing modules iff the resolved
+       agent-team axis staffs them.
+    3. Apply ``modules_add`` then ``modules_remove`` -- **remove wins** on a
+       same-module conflict; an explicit add of an unstaffable module installs
+       it with a loud staffability warning.
+    4. (Backward-compat for the no-preset cases is handled in ``main()``.)
+
+    Returns ``(ordered_modules, summary)`` where ``summary`` carries the
+    preset, resolved axes, roster, overrides, and any warnings (for the
+    ``--summary`` acceptance artifact).
+    """
+    preset_name = str(cfg.get("preset") or "").strip()
+    if preset_name not in _PRESETS:
+        raise PresetError(
+            f"unknown preset {preset_name!r}; choose one of "
+            f"{', '.join(sorted(_PRESETS))}."
+        )
+
+    resolved_axes = resolve_axes(preset_name, cfg)
+
+    # Step 2: baseline.
+    baseline: set[str] = set(_DEFAULT_ON_MODULES)
+    baseline |= set(_PRESETS[preset_name]["baseline"])  # type: ignore[arg-type]
+    for mod in _TEAM_STAFFING_GATED:
+        if _can_staff_module(mod, resolved_axes):
+            baseline.add(mod)
+
+    # Step 3: explicit overrides (validate names first).
+    adds = _as_str_list(cfg.get("modules_add"), "modules_add")
+    removes = _as_str_list(cfg.get("modules_remove"), "modules_remove")
+    known = set(_MODULE_MAPPINGS) | set(_DEFAULT_ON_MODULES)
+    for name in adds + removes:
+        if name not in known:
+            raise PresetError(
+                f"unknown module {name!r} in modules_add/modules_remove; "
+                f"known modules: {', '.join(sorted(known))}."
+            )
+
+    warnings: list[str] = []
+    # Adds first.  An add of a team-staffing module the resolved team can't
+    # staff installs anyway (adopter intent wins) with a loud warning (I1).
+    for name in adds:
+        if name in _TEAM_STAFFING_GATED and not _can_staff_module(
+            name, resolved_axes
+        ):
+            warnings.append(
+                f"`{name}` was explicitly added but the resolved agent-team "
+                f"axis ({resolved_axes.get('agent_team')}) cannot staff it; "
+                f"installing per your explicit request -- confirm the team "
+                f"configuration can staff the module's coordination "
+                f"requirements before relying on it."
+            )
+    roster = set(baseline) | set(adds)
+    # Removes win on conflict.
+    removed_default_on: list[str] = []
+    for name in removes:
+        roster.discard(name)
+        if name in _DEFAULT_ON_MODULES:
+            removed_default_on.append(name)
+
+    ordered = _canonical_order(roster)
+    summary: dict[str, object] = {
+        "preset": preset_name,
+        "axes": resolved_axes,
+        "modules": ordered,
+        "modules_add": adds,
+        "modules_remove": removes,
+        "removed_default_on": removed_default_on,
+        "staffability_warnings": warnings,
+    }
+    return ordered, summary
+
+
+def format_profile_summary(cfg: dict[str, object]) -> str:
+    """Render the Maintainer-facing Act I-6 profile summary for a
+    ``preset:``-bearing profile (the ``--summary`` acceptance artifact, P-4).
+
+    Shows the chosen preset, the resolved six-axis point, the expanded module
+    roster, the explicit add/remove overrides, any default-on opt-outs, and
+    any staffability warnings -- so the Maintainer sees *why* the roster came
+    out this way before anything is installed."""
+    _modules, s = expand_preset(cfg)
+    lines: list[str] = []
+    project = str(cfg.get("project_name") or "<project_name>")
+    lines.append(f"## Dimension profile -- {project}")
+    lines.append("")
+    lines.append(f"Preset: {s['preset']}")
+    lines.append("")
+    lines.append("Six-axis point (resolved):")
+    for axis in _AXES:
+        lines.append(f"  {axis:12s} {s['axes'][axis]}")  # type: ignore[index]
+    lines.append("")
+    lines.append("Module roster (to install):")
+    for m in s["modules"]:  # type: ignore[union-attr]
+        lines.append(f"  - {m}")
+    if s["modules_add"]:
+        lines.append(f"\nExplicit add:    {', '.join(s['modules_add'])}")  # type: ignore[arg-type]
+    if s["modules_remove"]:
+        lines.append(f"Explicit remove: {', '.join(s['modules_remove'])}")  # type: ignore[arg-type]
+    if s["removed_default_on"]:
+        lines.append(
+            f"Default-on opted out: {', '.join(s['removed_default_on'])}"  # type: ignore[arg-type]
+        )
+    if s["staffability_warnings"]:
+        lines.append("")
+        # Same per-warning line format as the installer path in main()
+        # (`[warn] staffability: ...`), so programmatic detection and the
+        # user-facing presentation are consistent across both surfaces.
+        for w in s["staffability_warnings"]:  # type: ignore[union-attr]
+            lines.append(f"  [warn] staffability: {w}")
+    lines.append("")
+    lines.append("Does this profile look right before I install anything?")
+    return "\n".join(lines) + "\n"
