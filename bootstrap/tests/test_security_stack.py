@@ -605,3 +605,66 @@ class TestOrchestrator:
             [sys.executable, "scripts/run_security_audit.py"],
             cwd=str(root), capture_output=True, text=True, env=env)
         assert r2.returncode == 20, r2.stdout + r2.stderr
+
+
+# ---------------------------------------------------------------------------
+# Chunk D -- scaffold wiring + the three-combination install matrix (D2/RV7).
+# The wiring (registration, python_package token, required-token gate,
+# team-gated placement) landed in B0/B/C; this pins the matrix: each module
+# combination installs the right surface, python-security is never auto-on for
+# a non-Python adopter, src-layout works, and upgrade proceeds with a filled
+# token.
+# ---------------------------------------------------------------------------
+
+@pytest.mark.skipif(not _HAS_GIT, reason="git not available")
+class TestModuleMatrix:
+    def test_content_security_alone_no_orchestrator(self, tmp_path):
+        # content-security alone: the stdlib runner installs; the python
+        # orchestrator does NOT (it is python-security's).
+        assert _install_modules(tmp_path, ["content-security"],
+                                python_package=None) == 0
+        assert (tmp_path / "scripts" / "content_scan_runner.py").is_file()
+        assert (tmp_path / "scripts" / "content_scan_roots.txt").is_file()
+        assert not (tmp_path / "scripts" / "run_security_audit.py").exists()
+
+    def test_python_security_alone_installs_orchestrator_not_runner(self, tmp_path):
+        (tmp_path / "mypkg").mkdir()
+        assert _install_modules(tmp_path, ["python-security"],
+                                python_package="mypkg") == 0
+        assert (tmp_path / "scripts" / "run_security_audit.py").is_file()
+        # content-security not selected -> its runner is absent.
+        assert not (tmp_path / "scripts" / "content_scan_runner.py").exists()
+
+    def test_python_security_not_in_any_default_or_preset(self):
+        # Capability-gated: never default-on, never in a preset baseline.
+        from bootstrap._scaffold.config import _DEFAULT_ON_MODULES, _PRESETS  # noqa: PLC0415
+        assert "python-security" not in _DEFAULT_ON_MODULES
+        for name, spec in _PRESETS.items():
+            roster = spec.get("modules_add", []) if isinstance(spec, dict) else []
+            assert "python-security" not in roster, f"preset {name} adds python-security"
+
+    def test_src_layout_python_package(self, tmp_path):
+        # A nested src-layout package path validates + scans.
+        (tmp_path / "src" / "mypkg").mkdir(parents=True)
+        (tmp_path / "src" / "mypkg" / "__init__.py").write_text("x=1\n",
+                                                                encoding="utf-8")
+        assert _install_modules(tmp_path, ["python-security"],
+                                python_package="src/mypkg") == 0
+        _git_repo_if_needed = None  # install does not require git
+        orch_mod = _load("run_security_audit_src", _ORCH_SRC)
+        lock = _read_lock(tmp_path)
+        pkg = orch_mod.validate_python_package(tmp_path, lock)
+        assert pkg.name == "mypkg" and pkg.parent.name == "src"
+
+    def test_upgrade_proceeds_with_filled_token(self, tmp_path):
+        # The B0 upgrade preflight blocks an unfilled required token; with a
+        # filled python_package, --plan proceeds.
+        _git_repo(tmp_path)
+        (tmp_path / "mypkg").mkdir()
+        (tmp_path / "mypkg" / "__init__.py").write_text("x=1\n", encoding="utf-8")
+        assert _install_modules(tmp_path, ["content-security", "python-security"],
+                                python_package="mypkg") == 0
+        _git_commit_all(tmp_path)
+        rc = s.main(["upgrade", "--target", str(tmp_path), "--plan",
+                     "--cairn-root", str(CAIRN_ROOT)])
+        assert rc == 0
