@@ -94,6 +94,36 @@ gate. The control is **detective + human**, not preventive-automated:
   it belongs to a later "untrusted-apparatus-change" capability, outside the v1
   self-audit-on-a-trusted-tree scope.)*
 
+## Exception 2 — `vermin`: floor CI check (dev/test-only)
+
+* **Scope:** **dev/test-only**. `vermin` is never in the adopter runtime path,
+  never installed by the scaffold, and never a dependency of the scaffold
+  engine itself. It runs only in Cairn's own CI (`bootstrap/tests/test_python_floor.py`)
+  to assert that the engine's detected Python minimum does not exceed the
+  declared floor.
+* **Why the exception is justified:** accurately detecting a codebase's Python
+  minimum version requires semantic analysis of the AST — not just syntax
+  parsing — to identify stdlib APIs, type annotation forms, and language
+  features by version. A stdlib-only equivalent would reproduce a large portion
+  of `vermin`'s scope; `vermin` is a mature, well-maintained tool for exactly
+  this purpose.
+* **Why it is materially lighter than Exception 1:**
+  * **No adopter impact.** Exception 1's tools (`bandit`, `pip-audit`) are
+    opt-in but still recommended for Python adopters and installed into the
+    adopter's `scripts/`. `vermin` is never installed into an adopter repo and
+    never surfaces in adopter workflows.
+  * **No runtime path.** Exception 1's tools run inside the scaffold's security
+    orchestrator at audit time. `vermin` runs only in Cairn's own test suite.
+  * **No network egress.** `vermin` is purely local static analysis; it sends
+    nothing over the network.
+* **Dev dependency home:** `bootstrap/requirements-dev.txt`. Install with
+  `pip install -r bootstrap/requirements-dev.txt` to enable the floor check.
+  The test skips gracefully when `vermin` is absent (using `pytest.mark.skipif`),
+  so the main test suite runs cleanly without it.
+* **Capability gate:** `vermin` is a dev tool; its absence does not degrade any
+  adopter-facing capability. Absence causes the floor check test to be skipped
+  and is reported as such.
+
 ## Out of scope (this record)
 
 Third-party **binary** provenance (downloaded solver / compiler executables and

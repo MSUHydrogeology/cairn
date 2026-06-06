@@ -19,7 +19,7 @@ shape.
 ## What you need
 
 * A POSIX shell (macOS / Linux / WSL).
-* Python 3.10+.
+* Python 3.8+.
 * `git`.
 <!-- vendor-ok-begin: illustrative list of adopter-side tools the recipe is compatible with -- not a vendor endorsement; the line itself says "vendor-neutral" -->
 * One AI coding agent connected to a repo of your choice -- Claude

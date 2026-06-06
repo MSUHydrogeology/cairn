@@ -1,0 +1,17 @@
+# Development and test-only dependencies for Cairn's bootstrap engine.
+#
+# These are NEVER part of the runtime path and are NEVER packaged for
+# adopters. They are dev-only tools that gate the CI floor checks and
+# support development workflows.
+#
+# Install with:
+#   pip install -r bootstrap/requirements-dev.txt
+#
+# See bootstrap/DEPENDENCY_BUDGET.md for the dependency-budget ledger.
+# See doctrine/runtime-contract.md for the runtime contract and floor
+# CI check details.
+
+# vermin: Python minimum-version detector used by the floor CI check
+# (bootstrap/tests/test_python_floor.py). Dev/test-only; never in the
+# adopter runtime path. See DEPENDENCY_BUDGET.md Exception 2.
+vermin>=1.8.0
