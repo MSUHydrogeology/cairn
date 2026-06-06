@@ -306,6 +306,13 @@ def _git_commit_all(root: Path) -> None:
                    capture_output=True)
 
 
+def _read_lock(root: Path) -> dict:
+    """Parse an installed adopter lockfile (JSON after its comment header)."""
+    import json
+    text = (root / "dev" / ".cairn" / "cairn-lock.yml").read_text(encoding="utf-8")
+    return json.loads(text[text.find("{"):])
+
+
 def _seed_apparatus(root: Path) -> None:
     """A minimal scanned repo: the apparatus under scripts/, a manifest naming
     dev/, a sentinel-bearing empty baseline, and one tracked dev/*.md file."""
@@ -477,3 +484,124 @@ class TestRunnerExitContract:
         code, _files, all_flags, _new, _stale = self._run(csr, tmp_path)
         assert code == 1
         assert any(fl.pattern_id == "suspicious-url" for _r, fl, _fp in all_flags)
+
+
+# ---------------------------------------------------------------------------
+# Chunk C -- python-security: the orchestrator (run_security_audit.py).
+# SR-1 integrity preflight, P1 #4 authoritative installed-state, P2 #5
+# single-package validation, Crit #2/SR-3 trusted subprocess boundary, Imp #5
+# egress-off-by-default, the P1 #3 distinct-space exit table.
+# ---------------------------------------------------------------------------
+
+_ORCH_SRC = _TEAM_GATED / "run_security_audit.py"
+
+
+@pytest.fixture(scope="module")
+def orch():
+    return _load("run_security_audit", _ORCH_SRC)
+
+
+def _install_modules(target: Path, modules: list[str], *, python_package: str | None):
+    cfg = target / "profile.yml"
+    lines = ["project_name: T", "test_command: pytest"]
+    if python_package is not None:
+        lines.append(f"python_package: {python_package}")
+    lines += ["modules:"] + [f"  - {m}" for m in modules]
+    cfg.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return s.main([
+        "--config", str(cfg), "--target", str(target),
+        "--cairn-root", str(CAIRN_ROOT), "--allow-dev",
+    ])
+
+
+@pytest.mark.skipif(not _HAS_GIT, reason="git not available")
+class TestOrchestrator:
+    def _adopter(self, tmp_path) -> tuple[Path, dict]:
+        _git_repo(tmp_path)
+        (tmp_path / "mypkg").mkdir()
+        (tmp_path / "mypkg" / "__init__.py").write_text("x = 1\n", encoding="utf-8")
+        rc = _install_modules(tmp_path, ["content-security", "python-security"],
+                              python_package="mypkg")
+        assert rc == 0
+        _git_commit_all(tmp_path)
+        return tmp_path, _read_lock(tmp_path)
+
+    def test_load_lockfile_parses_json_with_comment_header(self, orch, tmp_path):
+        root, _ = self._adopter(tmp_path)
+        lock = orch.load_lockfile(root / "dev" / ".cairn" / "cairn-lock.yml")
+        assert "files" in lock and "python-security" in lock.get("modules", [])
+
+    def test_integrity_preflight_ok_then_tamper_fails(self, orch, tmp_path):
+        root, lock = self._adopter(tmp_path)
+        orch.integrity_preflight(root, lock)  # clean -> no raise
+        # Tamper a recorded apparatus file -> fail closed.
+        (root / "scripts" / "content_scan.py").write_text("x=1\n", encoding="utf-8")
+        with pytest.raises(orch.AuditDegraded):
+            orch.integrity_preflight(root, lock)
+
+    def test_python_package_validation(self, orch, tmp_path):
+        root, lock = self._adopter(tmp_path)
+        assert orch.validate_python_package(root, lock).name == "mypkg"
+        # repo root '.' refused
+        with pytest.raises(orch.AuditDegraded):
+            orch.validate_python_package(root, {"tokens": {"python_package": "."}})
+        # absent dir refused
+        with pytest.raises(orch.AuditDegraded):
+            orch.validate_python_package(root, {"tokens": {"python_package": "nope"}})
+        # escape refused
+        with pytest.raises(orch.AuditDegraded):
+            orch.validate_python_package(root, {"tokens": {"python_package": "../x"}})
+        # unfilled refused
+        with pytest.raises(orch.AuditDegraded):
+            orch.validate_python_package(root, {"tokens": {}})
+
+    def test_safe_target_args_blocks_option_shaped(self, orch, tmp_path):
+        # SR-3: a path whose name starts with '-' is refused (argv injection);
+        # a normal path is prefixed with the '--' terminator.
+        ok = orch._safe_target_args([tmp_path / "pkg"])
+        assert ok[0] == "--"
+        with pytest.raises(orch.AuditDegraded):
+            orch._safe_target_args([tmp_path / "--evil"])
+
+    def test_injection_not_applicable_when_content_security_absent(self, orch, tmp_path):
+        # python-security only -> injection pass is NOT APPLICABLE, contributes 0.
+        _git_repo(tmp_path)
+        (tmp_path / "mypkg").mkdir()
+        (tmp_path / "mypkg" / "__init__.py").write_text("x=1\n", encoding="utf-8")
+        assert _install_modules(tmp_path, ["python-security"],
+                                python_package="mypkg") == 0
+        _git_commit_all(tmp_path)
+        lock = _read_lock(tmp_path)
+        status, tier = orch.run_injection_pass(tmp_path, lock)
+        assert status == "not-applicable" and tier == orch._AGG_CLEAN
+
+    def test_adopted_executable_gate_detects_tamper(self, orch, tmp_path):
+        root, lock = self._adopter(tmp_path)
+        # tamper a NON-apparatus adopted .py (tools/lifecycle.py) -> the source
+        # gate flags it (the apparatus subset is caught by the preflight).
+        lifecycle = root / "tools" / "lifecycle.py"
+        assert lifecycle.is_file()
+        lifecycle.write_text(lifecycle.read_text(encoding="utf-8") + "\n# x\n",
+                             encoding="utf-8")
+        status, tier = orch.run_adopted_executable_gate(root, lock)
+        assert tier == orch._AGG_DEGRADED and "tamper" in status
+
+    def test_pip_audit_egress_off_by_default(self, orch, tmp_path):
+        root, _ = self._adopter(tmp_path)
+        status, tier = orch.run_pip_audit_pass(root, allow_egress=False)
+        assert tier == orch._AGG_CLEAN and "unavailable" in status
+
+    def test_end_to_end_clean_then_tamper(self, orch, tmp_path):
+        root, _ = self._adopter(tmp_path)
+        env = {**__import__("os").environ, "PYTHONPATH": ""}
+        r = subprocess.run(
+            [sys.executable, "scripts/run_security_audit.py"],
+            cwd=str(root), capture_output=True, text=True, env=env)
+        assert r.returncode == 0, r.stdout + r.stderr  # clean (egress off)
+        # Tamper an apparatus file -> preflight DEGRADED (exit 20).
+        (root / "scripts" / "content_scan_runner.py").write_text(
+            "x=1\n", encoding="utf-8")
+        r2 = subprocess.run(
+            [sys.executable, "scripts/run_security_audit.py"],
+            cwd=str(root), capture_output=True, text=True, env=env)
+        assert r2.returncode == 20, r2.stdout + r2.stderr

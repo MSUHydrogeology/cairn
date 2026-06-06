@@ -10,14 +10,6 @@ non-Python adopter.
 Python gate stack the module installs. The gate scans the adopter's own
 package, named by the required `python_package` token (see below).
 
-> **Stub note (Cairn-internal, removed before the module is complete).** This
-> doctrine file is the Chunk-B0 stub of the security-apparatus-enrichment
-> arc: it registers the module and its required `python_package` token so the
-> selected-module required-token preflight has a real module to gate. The
-> runnable gate stack — the `run_security_audit` orchestrator, the templated
-> `bandit` contract gate, and the adopted-executable source gate — lands in a
-> later chunk. Until then this module installs doctrine only.
-
 ## What this module is — and is not (v1 scope)
 
 **v1 is a self-audit drift tripwire on a *trusted* tree**, not a reviewer for
@@ -49,12 +41,73 @@ package — so selecting `python-security` without supplying `python_package`
 **fails the install closed before any file is written**. Supply it in the
 profile alongside the module selection.
 
-## Reference implementation
+## The orchestrator (`run_security_audit.py`)
 
-Enabling this module installs the Python gate stack into the adopter tree
-(vendor-neutral; the gates run against the package named by `python_package`).
-The stack composes the dependency-vulnerability check and the static-analysis
-contract with the content-injection pass **only when the `content-security`
-module is also installed** — and reports that pass as *absent*, never as
-silently clean, when it is not. The gate details and their exact pass/fail
-contract are documented with the runnable stack.
+Enabling this module installs a standalone, **standard-library-only**
+orchestrator. Run it with no arguments — no pytest, no dev dependency required
+to invoke it:
+
+> `python scripts/run_security_audit.py`
+
+It composes the adopter's self-audit passes in order:
+
+1. **Integrity preflight (SR-1).** Before any pass, it verifies its own
+   apparatus and policy inputs against the install lockfile. A run from a tree
+   whose scanner / runner / allowlist / baseline / roots-manifest / gate
+   scripts are not lockfile-clean **refuses** rather than runs — the one guard
+   that makes "self-audit of a trusted tree" enforceable, not just claimed.
+2. **Content-scan** — the content-security runner, **only when content-security
+   is an installed module** (consulted from the lockfile roster, not a
+   filesystem guess). Not installed → a loud **NOT APPLICABLE** line, never a
+   silent clean. Selected but missing/tampered → fail closed.
+3. **bandit** over the adopter's `python_package`.
+4. **Adopted-executable source gate** — verifies every `.py` this install
+   adopted is byte-for-byte its vetted, lockfile-recorded source (an integrity
+   gate, not a re-lint of Cairn's already-gated scripts). Binary provenance
+   (downloaded solver / compiler executables) is **out of scope**.
+5. **pip-audit** — dependency CVE check; see the egress note below.
+
+### Exit contract
+
+The orchestrator's aggregate exit uses a **distinct space** that never collides
+with a component's own `0/1/2/3` (or a `127` missing-tool code); each
+component's raw outcome is printed separately. Precedence is
+degraded > findings > clean:
+
+* **`0`** — clean: every applicable pass ran and found nothing blocking
+  (content-scan *advisory* findings may be present; they are printed and do not
+  fail the aggregate).
+* **`10`** — FINDINGS: bandit or pip-audit found issues. Blocking.
+* **`20`** — DEGRADED / UNAVAILABLE / TAMPER: a pass could not be trusted to
+  run — the integrity preflight failed, `python_package` is missing/invalid, a
+  selected content-scan returned scan-failure or stale, an adopted source was
+  tampered, or a required tool was absent. Dominates findings.
+
+A `NOT APPLICABLE` injection pass (content-security not installed) is printed as
+its own line and never silently reads as a clean scan.
+
+### `python_package` — single contained package (v1)
+
+`python_package` is **one repo-relative package directory**. The orchestrator
+validates it fail-closed: present, repo-relative (no `..` / absolute), **not the
+repo root**, an existing directory, symlink-contained within the repo. Selecting
+this module without a filled `python_package` **fails the install closed before
+any write** (the required-token preflight). Multi-package layouts are a
+documented **v2** limitation, not silently mis-scanned.
+
+### pip-audit — network egress is opt-in
+
+pip-audit audits the **active interpreter's pip-visible distributions only**;
+conda-managed and locked-but-not-installed dependencies are documented blind
+spots, and its findings are advisory. **Network egress is off by default**: an
+unconfigured run does not contact a remote service. Re-run with
+`--allow-network` to enable the remote CVE lookup — only then are package
+**names + versions** (never source, data, or credentials) sent to pip-audit's
+vulnerability service. A denied / offline / failed lookup is reported
+**unavailable, not clean**.
+
+### Composition with content-security
+
+The content-injection pass runs **only when the `content-security` module is
+also installed**, and reports as *absent* (NOT APPLICABLE), never silently
+clean, when it is not. Install both modules for the full stack.

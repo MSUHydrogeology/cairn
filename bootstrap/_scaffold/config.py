@@ -477,6 +477,13 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
     "python-security": [
         InstallSpec("team-gated/python-security.md",
                     "dev/modules/python-security.md"),
+        # The standalone orchestrator (Chunk C): SR-1 integrity preflight +
+        # content-scan (when content-security installed) + bandit over
+        # {{python_package}} + the adopted-executable source gate + pip-audit
+        # (egress opt-in).  Verbatim -- code, no token substitution; it reads
+        # python_package + the installed roster from the lockfile at runtime.
+        InstallSpec("team-gated/run_security_audit.py",
+                    "scripts/run_security_audit.py", verbatim=True),
     ],
     # Architecture-review (modflow_tools doctrine-parity fold, 2026-06-01):
     # a triggered remediation / on-ramp module for an adopter whose
