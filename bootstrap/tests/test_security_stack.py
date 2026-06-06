@@ -24,6 +24,9 @@ Run from the cairn repo root:
 """
 from __future__ import annotations
 
+import importlib.util
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -255,3 +258,222 @@ class TestSecurityReviewDoctrine:
         for leaked in ("FloPy", "PEST++", "pestpp", "nwisweb", "GDAL", "rasterio",
                        "ModelStateStore"):
             assert leaked not in text, f"tool-specific name leaked into Cairn doctrine: {leaked!r}"
+
+
+# ---------------------------------------------------------------------------
+# Chunk B -- content-security: the atomic stdlib-only injection apparatus.
+# The content_scan_runner contract: audited-roots manifest (P1 #2), per-file
+# symlink/special-file containment (Imp #3), resource budgets (Imp #4), the
+# 0/1/2/3 exit contract, multiset NEW/STALE, sentinel/version validation,
+# RV4 host-still-flagged, RV5 narrow homoglyph allowance, tripwire output.
+# ---------------------------------------------------------------------------
+
+_TEAM_GATED = TEMPLATES_ROOT / "modules" / "team-gated"
+_RUNNER_SRC = _TEAM_GATED / "content_scan_runner.py"
+_SCAN_SRC = _TEAM_GATED / "content_scan.py"
+
+_HAS_GIT = shutil.which("git") is not None
+
+
+def _load(name: str, path: Path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+@pytest.fixture(scope="module")
+def csr():
+    return _load("content_scan_runner", _RUNNER_SRC)
+
+
+@pytest.fixture(scope="module")
+def cscan():
+    return _load("content_scan", _SCAN_SRC)
+
+
+def _git_repo(root: Path) -> None:
+    subprocess.run(["git", "-C", str(root), "init", "-q", "-b", "main"], check=True)
+    subprocess.run(["git", "-C", str(root), "config", "user.email", "t@t.t"], check=True)
+    subprocess.run(["git", "-C", str(root), "config", "user.name", "t"], check=True)
+
+
+def _git_commit_all(root: Path) -> None:
+    subprocess.run(["git", "-C", str(root), "add", "-A"], check=True,
+                   capture_output=True)
+    subprocess.run(["git", "-C", str(root), "commit", "-qm", "x"], check=True,
+                   capture_output=True)
+
+
+def _seed_apparatus(root: Path) -> None:
+    """A minimal scanned repo: the apparatus under scripts/, a manifest naming
+    dev/, a sentinel-bearing empty baseline, and one tracked dev/*.md file."""
+    (root / "scripts").mkdir(parents=True, exist_ok=True)
+    (root / "dev").mkdir(parents=True, exist_ok=True)
+    shutil.copy(_SCAN_SRC, root / "scripts" / "content_scan.py")
+    shutil.copy(_TEAM_GATED / "content_scan_allowlist.txt",
+                root / "scripts" / "content_scan_allowlist.txt")
+    (root / "scripts" / "content_scan_roots.txt").write_text(
+        "# content-scan-roots v1\ndev\n", encoding="utf-8")
+    (root / "scripts" / "content_scan_residuals.txt").write_text(
+        "# content-scan-residual-baseline v1\n", encoding="utf-8")
+    (root / "dev" / "doc.md").write_text("# A clean doc\n", encoding="utf-8")
+
+
+class TestAuditRootsManifest:
+    def test_valid_roots_parse(self, csr, tmp_path):
+        m = tmp_path / "roots.txt"
+        m.write_text("# content-scan-roots v1\ndev\ndocs\n", encoding="utf-8")
+        assert csr.load_audit_roots(m, tmp_path) == ["dev", "docs"]
+
+    def test_escape_dotdot_refused(self, csr, tmp_path):
+        m = tmp_path / "roots.txt"
+        m.write_text("# content-scan-roots v1\n../outside\n", encoding="utf-8")
+        with pytest.raises(csr.AuditError):
+            csr.load_audit_roots(m, tmp_path)
+
+    def test_absolute_path_refused(self, csr, tmp_path):
+        m = tmp_path / "roots.txt"
+        m.write_text("# content-scan-roots v1\n/etc\n", encoding="utf-8")
+        with pytest.raises(csr.AuditError):
+            csr.load_audit_roots(m, tmp_path)
+
+    def test_missing_sentinel_refused(self, csr, tmp_path):
+        m = tmp_path / "roots.txt"
+        m.write_text("dev\n", encoding="utf-8")
+        with pytest.raises(csr.AuditError):
+            csr.load_audit_roots(m, tmp_path)
+
+    def test_empty_roots_refused(self, csr, tmp_path):
+        m = tmp_path / "roots.txt"
+        m.write_text("# content-scan-roots v1\n", encoding="utf-8")
+        with pytest.raises(csr.AuditError):
+            csr.load_audit_roots(m, tmp_path)
+
+    def test_missing_manifest_refused(self, csr, tmp_path):
+        with pytest.raises(csr.AuditError):
+            csr.load_audit_roots(tmp_path / "nope.txt", tmp_path)
+
+
+class TestResidualBaselineSentinel:
+    def test_v1_empty_sentinel_ok(self, csr, tmp_path):
+        b = tmp_path / "res.txt"
+        b.write_text("# content-scan-residual-baseline v1\n", encoding="utf-8")
+        ok, counts, _why = csr.load_residual_baseline_checked(b)
+        assert ok and len(counts) == 0
+
+    def test_unsupported_version_refused(self, csr, tmp_path):
+        b = tmp_path / "res.txt"
+        b.write_text("# content-scan-residual-baseline v2\n", encoding="utf-8")
+        ok, _c, why = csr.load_residual_baseline_checked(b)
+        assert not ok and "unsupported" in why
+
+    def test_zero_byte_refused(self, csr, tmp_path):
+        b = tmp_path / "res.txt"
+        b.write_text("", encoding="utf-8")
+        ok, _c, _why = csr.load_residual_baseline_checked(b)
+        assert not ok
+
+    def test_missing_refused(self, csr, tmp_path):
+        ok, _c, _why = csr.load_residual_baseline_checked(tmp_path / "nope.txt")
+        assert not ok
+
+
+class TestHomoglyphAllowanceRV5:
+    def test_scientific_units_cleared(self, cscan):
+        assert cscan._is_scientific_unit("µs")      # MICRO SIGN + s
+        assert cscan._is_scientific_unit("μmol")    # GREEK MU + mol
+        assert cscan._is_scientific_unit("kΩ")      # k + OMEGA
+
+    def test_credential_homoglyph_still_flags(self, cscan):
+        # Latin + Cyrillic spoof ('pаypal' has a Cyrillic 'а') is NOT a unit.
+        assert not cscan._is_scientific_unit("pаypal")
+        # an over-long micro-prefixed token is not a unit either.
+        assert not cscan._is_scientific_unit("µsecretword")
+
+    def test_unit_not_flagged_credential_flagged_in_scan(self, cscan):
+        flags = list(cscan.scan_text("a µs reading and a pаypal token\n"))
+        homoglyph = [f for f in flags if f.pattern_id == "homoglyph"]
+        # Exactly one homoglyph flag (the Cyrillic-spoofed credential), and the
+        # µs scientific unit is NOT among the flagged tokens (RV5 cleared it).
+        assert len(homoglyph) == 1
+        assert "ypal" in homoglyph[0].message  # the credential token (Latin tail)
+        assert not any("µs" in f.message for f in homoglyph)
+
+
+@pytest.mark.skipif(not _HAS_GIT, reason="git not available")
+class TestRunnerExitContract:
+    def _run(self, csr, root):
+        return csr.audit(
+            root,
+            root / "scripts" / "content_scan_roots.txt",
+            root / "scripts" / "content_scan_residuals.txt",
+        )
+
+    def test_clean_is_zero(self, csr, tmp_path):
+        _git_repo(tmp_path); _seed_apparatus(tmp_path); _git_commit_all(tmp_path)
+        code, files, *_ = self._run(csr, tmp_path)
+        assert code == 0
+        # P1 #2: the manifest itself is in the audited set.
+        rels = {str(p.relative_to(tmp_path)) for p in files}
+        assert "scripts/content_scan_roots.txt" in rels
+
+    def test_finding_is_advisory_one(self, csr, tmp_path):
+        _git_repo(tmp_path); _seed_apparatus(tmp_path)
+        (tmp_path / "dev" / "bad.md").write_text(
+            "token pаypal\n", encoding="utf-8")
+        _git_commit_all(tmp_path)
+        code, _files, all_flags, new_flags, _stale = self._run(csr, tmp_path)
+        assert code == 1 and new_flags
+
+    def test_empty_set_is_failure_two(self, csr, tmp_path):
+        # A manifest root with no tracked text -> zero files -> exit 2.
+        _git_repo(tmp_path)
+        (tmp_path / "scripts").mkdir()
+        shutil.copy(_SCAN_SRC, tmp_path / "scripts" / "content_scan.py")
+        (tmp_path / "scripts" / "content_scan_roots.txt").write_text(
+            "# content-scan-roots v1\ndocs\n", encoding="utf-8")  # docs/ absent
+        (tmp_path / "scripts" / "content_scan_residuals.txt").write_text(
+            "# content-scan-residual-baseline v1\n", encoding="utf-8")
+        _git_commit_all(tmp_path)
+        code, *_ = self._run(csr, tmp_path)
+        assert code == 2
+
+    def test_symlink_is_refused_two(self, csr, tmp_path):
+        _git_repo(tmp_path); _seed_apparatus(tmp_path)
+        outside = tmp_path.parent / "secret.txt"
+        outside.write_text("secret\n", encoding="utf-8")
+        (tmp_path / "dev" / "evil.md").symlink_to(outside)
+        _git_commit_all(tmp_path)
+        code, *_ = self._run(csr, tmp_path)
+        assert code == 2
+
+    def test_per_file_budget_is_refused_two(self, csr, tmp_path, monkeypatch):
+        _git_repo(tmp_path); _seed_apparatus(tmp_path)
+        (tmp_path / "dev" / "big.md").write_text("x" * 4096, encoding="utf-8")
+        _git_commit_all(tmp_path)
+        monkeypatch.setattr(csr, "_MAX_FILE_BYTES", 1024)
+        code, *_ = self._run(csr, tmp_path)
+        assert code == 2
+
+    def test_stale_baseline_is_three(self, csr, tmp_path):
+        _git_repo(tmp_path); _seed_apparatus(tmp_path)
+        # A reviewed entry for content that does not exist -> STALE -> exit 3.
+        (tmp_path / "scripts" / "content_scan_residuals.txt").write_text(
+            "# content-scan-residual-baseline v1\n"
+            "dev/gone.md:homoglyph:0123456789ab  # [sci-unit] not present\n",
+            encoding="utf-8")
+        _git_commit_all(tmp_path)
+        code, _files, _all, _new, stale = self._run(csr, tmp_path)
+        assert code == 3 and stale
+
+    def test_rv4_multitenant_host_still_flags(self, csr, tmp_path):
+        _git_repo(tmp_path); _seed_apparatus(tmp_path)
+        # A multi-tenant code host is NOT allowlisted -> stays a finding.
+        (tmp_path / "dev" / "urls.md").write_text(
+            "see https://github.com/evil/x for details\n", encoding="utf-8")
+        _git_commit_all(tmp_path)
+        code, _files, all_flags, _new, _stale = self._run(csr, tmp_path)
+        assert code == 1
+        assert any(fl.pattern_id == "suspicious-url" for _r, fl, _fp in all_flags)

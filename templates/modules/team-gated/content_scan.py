@@ -43,6 +43,10 @@ What it flags (each a ``pattern_id`` usable in a suppression marker):
 * ``homoglyph`` -- a single token that mixes scripts (e.g. Latin +
   Cyrillic/Greek).  Evaluated **per contiguous alphanumeric token**, not
   per line, so a Latin word beside a Cyrillic word does not false-flag.
+  A narrow, exact-token **scientific-unit allowance** (RV5) clears the
+  micro / ohm unit shapes (``µs``, ``µmol``, ``kΩ``, ...) that are
+  structurally mixed-script in scientific prose; a mixed-script
+  *credential* token still flags.
 * ``instruction-html-comment`` -- an HTML comment carrying an imperative
   verb.  Cairn's own ``<!-- cairn:slot ... -->`` / ``cairn:end`` and the
   ``cairn-accept`` markers are recognized and exempt; the rest flag.
@@ -301,6 +305,31 @@ def _scan_unicode(lines: list[str], leading_bom: bool):
                 break
 
 
+# RV5 -- narrow scientific-unit homoglyph allowance. A Greek micro sign
+# (U+00B5 MICRO SIGN or U+03BC GREEK SMALL LETTER MU) prefixing a short Latin
+# SI unit (µs, µm, µg, µL, µmol, ...) and a Latin-prefixed ohm (Ω, kΩ, MΩ)
+# are structurally-unavoidable mixed-script tokens in scientific prose. The
+# allowance is EXACT-TOKEN and tightly bounded: only a micro-prefixed short
+# Latin run or an ohm-unit shape is cleared, so a mixed-script *credential*
+# token (e.g. a Cyrillic-spoofed 'pаssword' -- Latin+Cyrillic) still flags.
+# A clearing here is a fold-up of the modflow_tools accepted-residual class
+# [sci-unit]; it does not weaken the detector for any non-unit token.
+_MICRO_SIGNS = "µμ"          # MICRO SIGN, GREEK SMALL LETTER MU
+_OHM_SIGNS = "ΩΩ"            # GREEK CAPITAL OMEGA, OHM SIGN
+_SCI_UNIT_RE = re.compile(
+    r"^(?:"
+    r"[" + _MICRO_SIGNS + r"][A-Za-z]{1,4}"      # µs, µmol, µL, ...
+    r"|[kKMGTmnpfu]?[" + _OHM_SIGNS + r"]"        # Ω, kΩ, MΩ
+    r")$"
+)
+
+
+def _is_scientific_unit(token: str) -> bool:
+    """RV5: True for the curated micro / ohm scientific-unit token shapes that
+    are cleared from the homoglyph check. Exact-token, deliberately narrow."""
+    return bool(_SCI_UNIT_RE.match(token))
+
+
 def _token_scripts(token: str) -> set[str]:
     scripts: set[str] = set()
     for ch in token:
@@ -319,8 +348,11 @@ def _token_scripts(token: str) -> set[str]:
 def _scan_homoglyph(lines: list[str]):
     for i, line in enumerate(lines, start=1):
         for m in _TOKEN_RE.finditer(line):
-            if len(_token_scripts(m.group(0))) > 1:
-                yield i, f"mixed-script token (possible homoglyph): {m.group(0)!r}"
+            token = m.group(0)
+            if _is_scientific_unit(token):
+                continue  # RV5: curated scientific-unit allowance
+            if len(_token_scripts(token)) > 1:
+                yield i, f"mixed-script token (possible homoglyph): {token!r}"
                 break
 
 

@@ -447,6 +447,19 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
                     "dev/modules/content-security.md"),
         InstallSpec("team-gated/content_scan.py",
                     "scripts/content_scan.py", verbatim=True),
+        # Security-apparatus-enrichment Chunk B: the decomposed stdlib-only
+        # advisory runner + its policy inputs (audited-roots manifest,
+        # reviewed-residual baseline, URL allowlist).  All verbatim -- code +
+        # policy data, not token-substituted templates.  The runner resolves
+        # its policy siblings from its own scripts/ directory.
+        InstallSpec("team-gated/content_scan_runner.py",
+                    "scripts/content_scan_runner.py", verbatim=True),
+        InstallSpec("team-gated/content_scan_roots.txt",
+                    "scripts/content_scan_roots.txt", verbatim=True),
+        InstallSpec("team-gated/content_scan_residuals.txt",
+                    "scripts/content_scan_residuals.txt", verbatim=True),
+        InstallSpec("team-gated/content_scan_allowlist.txt",
+                    "scripts/content_scan_allowlist.txt", verbatim=True),
     ],
     # The Python security gate stack (security-apparatus-enrichment, RV1
     # surface 3).  Team-gated + opt-in -- never default-on, and never

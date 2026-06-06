@@ -1,0 +1,36 @@
+# content-scan-roots v1
+# content_scan audited-roots manifest -- the agent-loaded text surface this
+# project's self-audit scans (security-apparatus-enrichment, P1 #2).
+#
+# One repo-relative root per line (`#` comments + blanks ignored). A root is
+# a file or a directory; `content_scan_runner.py` scans the git-tracked
+# `.md` / `.txt` under each root. The manifest is read fail-closed:
+#   * paths MUST be repo-relative (no leading `/`, no `..` segment);
+#   * a root that resolves outside the repo (symlink / escape) is refused;
+#   * a missing / sentinel-less / empty manifest, or an audited set that
+#     resolves to zero files, FAILS the scan (exit 2) -- "did not scan" must
+#     never read as "clean".
+# This manifest is ITSELF in the audited set: a hostile edit to it is scanned.
+#
+# It names the surface explicitly -- it makes NO profile-derived-completeness
+# claim. If you add agent-loaded instruction files outside these roots (a new
+# rules file, a vendored instruction doc), ADD their root here so the scan
+# covers them. The runner excludes only the vendored `dev/.cairn/base/` cache
+# (scanned upstream in Cairn) and frozen `*/archive/*` records.
+
+# --- Required Cairn defaults (the always-installed agent-loaded surface) ---
+AGENTS.md
+.agents/skills
+dev
+docs
+
+# --- Recommended (kept when present; renamed/added per adopter) ---
+# The thin vendor wrapper, renamed to your tool's file (CLAUDE.md, etc.), and
+# a project-local always-loaded rules file if you keep one. A listed root that
+# does not exist contributes nothing; add the ones your repo actually uses.
+RULES.md
+CLAUDE.md
+VENDOR.md
+
+# --- Project extensions ---
+# Add your own agent-loaded instruction roots below.
