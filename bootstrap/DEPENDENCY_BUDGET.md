@@ -19,8 +19,8 @@ declared exception — that the doctrine will codify around.
 * **Module:** `python-security` (team-gated, opt-in; never default-on, never
   installed for a non-Python adopter).
 * **Executable dependencies:** `bandit` (static analysis) and `pip-audit`
-  (dependency CVE check) — invoked as subprocesses by
-  `scripts/run_security_audit.py`.
+  (dependency CVE check) — invoked as subprocesses by the orchestrator
+  `run_security_audit.py` (installed in the adopter's `scripts/`).
 * **Why the exception is justified:** a Python static-analysis gate and a
   dependency-CVE check cannot be reimplemented stdlib-only without rebuilding
   two mature tools. The value (a real Python self-audit gate) requires them.
