@@ -41,6 +41,51 @@ forward-reference you must *mark* with a `Proposed/Untracked/External-repo
 paths:` line, or — for a single cross-document citation — a document-scoped
 `<!-- claim-check-allow: <glob> -->` directive).
 
+## scripts/verify_counts.py — re-measure registered live-invariant counts *(Cairn-maintainer-only)*
+
+**What it does.** The **live-invariant** leg of the three-kind numeric-claim
+discipline. When `claim_check` retired its category-D count soft-flag, the
+*decision-irrelevant* and *snapshot* kinds were handled by doctrine (approximate;
+date) — but a count cited as **present fact** and prone to drift (a headline
+file size re-quoted across docs as it changes) is registered in a code-side
+registry (`scripts/measurements.py`) and re-measured here. **Not installed into
+adopters** (not in `_CORE_MAPPINGS`); it dogfoods on Cairn's own docs.
+
+A doc annotates the number with `<!-- verify: <key> -->` **immediately after the
+number it verifies** (RR1 — the verifier reads the number directly preceding the
+annotation on that line; for a `Snapshot`, put the `as_of` date before the number
+or after the annotation, not between them). The annotation carries **only a
+registry key** — never a path, never a command — so there is no document-supplied
+path and no shell surface (every measurement is root-contained; `git` runs
+`shell=False`).
+
+```bash
+python scripts/verify_counts.py docs/tool-usage.md
+```
+
+Two kinds dispatch from the registry: an **`Invariant`** is re-measured today and
+the annotated number compared to it (a mismatch is **drift**); a **`Snapshot`** is
+**never re-measured** — only its value-equality and the presence of the ISO
+`as_of` date on the line are checked (re-running would erase the evidence the
+snapshot is). An `Invariant` whose `root` is an **absent** sibling checkout
+degrades to a **visible** `SKIPPED (root absent: …)` (a distinct non-clean exit
+status), never a silent pass; an **unregistered** key is **refused**.
+
+Worked example (the number and its annotation share one physical line, per RR1):
+
+> Cairn's `claim_check` watch file is currently 786 lines `<!-- verify: claim_check_watch_file_lines -->`.
+
+The count-soft-flag retirement shrank it from ~876; `verify_counts` re-measures it
+and flags that line if the two ever diverge.
+
+**What to do.** Keep the registry **small** (soft cap ~10 keys) and each
+measurement cheap (a bounded stdlib scan or `git log` range) — there is no cache
+by design. If the verifier ever runs slowly or the registry churns more than the
+docs drift, that is the **curation-tax kill-signal**: shrink or freeze the
+registry, do not accelerate it. Most numbers are decision-irrelevant — approximate
+them; reserve a registered invariant for the few that are cited as live fact and
+genuinely drift.
+
 ## tools/intent.py — claim work before editing *(team-gated: coordination-tiers)*
 
 **What it does.** On a concurrent team, you claim a set of files before

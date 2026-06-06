@@ -114,6 +114,27 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **`scripts/verify_counts.py` + `scripts/measurements.py` — the live-invariant
+  leg of the three-kind numeric-claim discipline (Cairn-maintainer-only).** When
+  `claim_check` retired its category-D count soft-flag, *decision-irrelevant* and
+  *snapshot* counts moved to doctrine (approximate; date) — but a count cited as
+  present fact and prone to drift is now **registered** in a code-side registry
+  (`measurements.py`: `Invariant(root, fn, target)` / `Snapshot(value, as_of)`,
+  `fn` from a closed allowlist `count_lines`/`count_files`/`count_defs`/
+  `git_commits_in_range`) and **re-measured** by `verify_counts.py`. A doc
+  annotates the number with `<!-- verify: <key> -->` immediately after it (RR1
+  same-line window); an `Invariant` re-measures and flags drift, a `Snapshot` is
+  never re-measured (value + ISO `as_of` only). **Security by construction**: the
+  annotation carries only a registry key (no path, no command); every path
+  measurement is root-contained (`resolve()` + `is_relative_to`, refusing a
+  symlink/glob escape — IR3); `git` runs `shell=False` with a validated rev-range.
+  An absent sibling root → a **visible** `SKIPPED` (RR2, distinct exit), never
+  silent; an unregistered key is refused. No cache; ≤~10-key soft-cap registry
+  (RR3 curation-tax kill-switch). **Not** in `_CORE_MAPPINGS` — never installed
+  into adopters; it dogfoods on Cairn's own docs (seed invariant: the `claim_check`
+  watch-file size). New `bootstrap/tests/test_verify_counts.py` (29 tests, incl.
+  symlink-escape red-team). Adopter deliberation: modflow_tools
+  `2026-06-05-claude-numeric-claim-verification` (Arm 3).
 - **Loop-fidelity gate (#58) — fail-closed dangling-reference check in
   `check_cairn`.** A new lens scans **only adopter-facing `templates/` surfaces**
   for references to Cairn-internal-only paths (`doctrine/*`) that would dangle
