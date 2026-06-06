@@ -133,13 +133,26 @@ def test_oracle_privileged_workflows_preserved(tmp_path):
     identical between the frozen pre-split engine and the current launcher+engine.
     Runs the real subprocess scenarios (slower); skips the git-dependent ones if
     git is unavailable rather than dropping them silently."""
-    results = O.run_privileged(tmp_path)
+    if not O._git_available():
+        pytest.skip("git unavailable; privileged upgrade/dirty scenarios need it")
+    results = O.run_privileged(tmp_path)   # gate mode (require_git=True)
     assert len(results) == len(O._PRIVILEGED_SCENARIOS)
     for r in results:
-        assert r["status"] in ("match", "skipped"), r
-    # containment refusal needs no git, so it must actually run AND match here.
-    contain = [r for r in results if r.get("name") == "containment_refusal"]
-    assert contain and contain[0]["status"] == "match", contain
+        assert r["status"] == "match", r   # gate mode: every required scenario MATCH
+
+
+def test_oracle_gate_does_not_silently_skip_required_scenarios(tmp_path, monkeypatch):
+    """R2: with git unavailable the gate must FAIL closed (a required scenario
+    becomes `error`), not pass after running only containment. An explicit
+    exploratory caller may record `skipped` instead."""
+    monkeypatch.setattr(O, "_git_available", lambda: False)
+    gate = O.run_privileged(tmp_path / "gate", require_git=True)
+    assert any(r["status"] == "error" for r in gate), "gate must error, not skip, without git"
+    # containment needs no git -- it still runs and matches in both modes.
+    assert any(r.get("name") == "containment_refusal" and r["status"] == "match" for r in gate)
+    explore = O.run_privileged(tmp_path / "explore", require_git=False)
+    assert any(r["status"] == "skipped" for r in explore)
+    assert not any(r["status"] == "error" for r in explore)
 
 
 def test_frozen_engine_snapshot_present():

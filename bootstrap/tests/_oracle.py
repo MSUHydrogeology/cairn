@@ -194,10 +194,16 @@ def _git(target: Path, *args: str):
 
 
 def _git_init_commit(target: Path) -> None:
-    _git(target, "init", "-q")
-    _git(target, "add", "-A")
-    _git(target, "-c", "user.email=oracle@test", "-c", "user.name=oracle",
-         "commit", "-q", "-m", "init")
+    """Init + commit; raise (don't let a git setup failure flow silently into the
+    later scenario, re-review R2)."""
+    for args in (("init", "-q"), ("add", "-A"),
+                 ("-c", "user.email=oracle@test", "-c", "user.name=oracle",
+                  "commit", "-q", "-m", "init")):
+        p = _git(target, *args)
+        if p.returncode != 0:
+            raise OracleError(
+                f"git {args[0]} failed in {target} (rc={p.returncode}): {p.stderr[-400:]}"
+            )
 
 
 def _copy_cairn(dst: Path) -> None:
@@ -324,22 +330,28 @@ _NON_DIFFERENTIAL = {
 }
 
 
-def run_privileged(workdir: Path) -> list[dict]:
-    """Run the privileged-workflow differential scenarios. If git is unavailable
-    the upgrade/dirty scenarios are reported `skipped` (not silently dropped)."""
+def run_privileged(workdir: Path, *, require_git: bool = True) -> list[dict]:
+    """Run the privileged-workflow differential scenarios. A git-dependent
+    scenario that cannot run is an **error** in gate mode (``require_git=True``,
+    re-review R2 — a visible skip is still not a passing gate); only an explicit
+    exploratory caller (``require_git=False``) records it as ``skipped``."""
     results: list[dict] = []
     git_ok = _git_available()
     for scn in _PRIVILEGED_SCENARIOS:
         needs_git = scn is not _containment_refusal_scenario
         if needs_git and not git_ok:
-            results.append({"name": scn.__name__, "status": "skipped",
-                            "detail": "git not available"})
+            results.append({
+                "name": scn.__name__,
+                "status": "error" if require_git else "skipped",
+                "detail": "git unavailable — required privileged scenario could not run",
+            })
             continue
         results.append(scn(workdir / scn.__name__))
     return results
 
 
-def run_oracle(workdir: Path, include_privileged: bool = True) -> dict:
+def run_oracle(workdir: Path, include_privileged: bool = True,
+               allow_skips: bool = False) -> dict:
     if not FROZEN_ENGINE.is_file():
         raise OracleError(f"frozen engine snapshot missing: {FROZEN_ENGINE}")
     fixtures_report: list[dict] = []
@@ -358,9 +370,15 @@ def run_oracle(workdir: Path, include_privileged: bool = True) -> dict:
             "current_file_count": len(csnap),
             "diffs": diffs,
         })
-    privileged = run_privileged(workdir / "privileged") if include_privileged else []
+    privileged = (run_privileged(workdir / "privileged", require_git=not allow_skips)
+                  if include_privileged else [])
     fixtures_ok = all(f["status"] == "match" for f in fixtures_report)
-    privileged_ok = all(p["status"] in ("match", "skipped") for p in privileged)
+    # Gate mode (allow_skips=False): every required scenario must MATCH -- a skip
+    # or error fails the gate closed (R2). Exploratory mode tolerates skips.
+    if allow_skips:
+        privileged_ok = all(p["status"] in ("match", "skipped") for p in privileged)
+    else:
+        privileged_ok = all(p["status"] == "match" for p in privileged)
     return {
         "schema": REPORT_SCHEMA,
         "frozen_engine": str(FROZEN_ENGINE.relative_to(CAIRN_ROOT)),
@@ -383,13 +401,16 @@ def main(argv: list[str] | None = None) -> int:
     r = sub.add_parser("run", help="run the differential oracle over the fixture matrix")
     r.add_argument("--report", default=None, help="write the machine-readable JSON report here")
     r.add_argument("--workdir", default=None, help="reuse a directory instead of a fresh tempdir")
+    r.add_argument("--allow-skips", action="store_true",
+                   help="EXPLORATORY mode: tolerate a missing-git skip of a required "
+                        "scenario. NOT a gate -- the default run fails closed on any skip.")
     args = parser.parse_args(argv)
 
     if args.workdir:
-        report = run_oracle(Path(args.workdir))
+        report = run_oracle(Path(args.workdir), allow_skips=args.allow_skips)
     else:
         with tempfile.TemporaryDirectory(prefix="cairn-oracle-") as td:
-            report = run_oracle(Path(td))
+            report = run_oracle(Path(td), allow_skips=args.allow_skips)
 
     if args.report:
         Path(args.report).write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")

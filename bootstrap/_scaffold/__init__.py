@@ -57,6 +57,20 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, NamedTuple
 
+# Engine import boundary (substrate Security re-review R1): install BEFORE any
+# `from . import <child>` below (Stages 1-8) and before any direct
+# `import bootstrap._scaffold.<m>` can resolve a child -- the engine __init__ is
+# the one place that necessarily runs first for every engine submodule import,
+# whether the launcher loaded us or a caller imported a child directly. It
+# rejects a preloaded polluted child and installs a finder that verifies every
+# future child's real source is within the Cairn root before execution.
+from ._guard import install as _install_engine_guard
+
+_install_engine_guard(
+    Path(__file__).resolve().parent,        # <cairn>/bootstrap/_scaffold
+    Path(__file__).resolve().parents[2],    # <cairn>
+)
+
 try:
     import yaml as _yaml  # type: ignore[import]
 
