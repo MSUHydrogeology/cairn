@@ -78,6 +78,86 @@ The role carries a **high-capability floor** by default
 (`roles.md` > "Capability floors") — a security pass is a
 high-stakes role.
 
+### Injection-review procedure — review by input class
+
+The trust-boundary checklist above names *kinds of boundary*; this
+procedure is the **cold-start method** a focused-mode reviewer
+follows so they do not have to re-derive the taxonomy each pass. It
+generalizes a battle-tested scientific-computing protocol to
+**tool-agnostic input classes**; an adopter extends the taxonomy
+with their own stack's specifics (their serialization formats,
+their solver binaries, their data libraries).
+
+**Trusted-input vs user-controlled — the load-bearing triage.**
+Every audited call site classifies one of two ways, and the
+classification, not the API alone, decides whether it is a finding:
+
+* **trusted-input** — paths and bytes under repo control: shipped
+  fixtures, artifacts this project's own prior runs produced,
+  configs round-tripped through the project's own writers.
+* **user-controlled** — paths and bytes whose source the maintainer
+  did not author: a collaborator's bundle, a downloaded archive, an
+  externally-supplied data file, an incoming PR's contents.
+
+An unsafe-by-default operation (object deserialization, shelling
+out, dynamic evaluation) on a **trusted-input** site is acceptable
+with a documented rationale; the **same** operation on a
+**user-controlled** site needs a code-level fix or an explicit
+decision that the threat model does not apply.
+
+**Sensitive-input taxonomy (tool-agnostic, priority-ordered).**
+The external-party inputs a reviewer walks first — each adopter
+maps these classes onto their own formats:
+
+1. **Structured config files** — the project's primary input
+   format (YAML/TOML/JSON). Does the loader construct arbitrary
+   objects? Is input size / alias expansion bounded (the
+   "billion laughs" class)?
+2. **Pickled state stores** — serialized in-memory state the
+   project saves and reloads. Safe **only** when the project's own
+   runs produced them; a third-party copy is arbitrary-code-on-load.
+3. **Standard tabular / spatial data files** — CSVs, rasters,
+   vector features parsed by ecosystem libraries. The library's
+   parser surface (out-of-bounds reads, decompression bombs) is
+   transitively part of the threat model.
+4. **External simulator / tool binaries and their outputs** —
+   downloaded executables the project shells out to, and the result
+   files it parses back. Binary *provenance* (hashes / behavior) is
+   a separate capability (see the scope fence); this pass covers how
+   the project *invokes* them and parses their output.
+5. **Data-fetch network calls** — remote data the project pulls.
+   Is transport verified (no disabled TLS)? Is the host constrained
+   and the response size bounded?
+
+A focused-mode reviewer reports each risky call site with
+file:line, its trust-class, a one-line attack scenario, and a
+suggested remediation, in severity tiers (critical / important /
+informational). Per the External Review Norms, the reviewer
+surfaces the list; the author decides what to act on.
+
+### v1 scope — a self-audit gate, not an untrusted-PR reviewer
+
+The runnable stack this methodology installs (the content-injection
+scanner and, for Python adopters, the gate orchestrator) is a
+**self-audit drift tripwire on the adopter's own *trusted* tree**.
+It runs in the adopter's **own** CI / dev loop over their **own**
+committed tree to catch accidental drift and content-injection that
+slipped past human review. The apparatus *and its policy inputs* —
+the scanner, any allowlist or reviewed-residual baseline, the
+audited-roots manifest, the lockfile records — are **trusted
+input**: committed, reviewed-as-code, integrity-covered.
+
+It is **explicitly not** a containment boundary or reviewer for
+*untrusted code that can modify the apparatus itself* — a hostile
+pull request that swaps the scanner, blesses a finding, or narrows
+what is scanned and then reports success. **Operational guidance:
+do not wire the audit stack into untrusted-PR / fork CI.** A gate
+run from an attacker's checkout executes the attacker's version of
+the gate; that trusted-runner-against-untrusted-candidate mode is
+out of v1 scope. Reviewing genuinely untrusted incoming content
+stays human-review work — scan it explicitly *before* an agent
+ingests it, and read a clean result as **a tripwire, not a proof**.
+
 ## Cairn-side controls (the agent-instruction supply chain)
 
 Cairn governs its **own** instruction supply chain with a four-layer

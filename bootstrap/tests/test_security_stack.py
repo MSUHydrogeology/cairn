@@ -213,3 +213,45 @@ class TestUpgradePreflight:
             "--cairn-root", str(CAIRN_ROOT),
         ])
         assert rc == 2
+
+
+# ---------------------------------------------------------------------------
+# Chunk A -- security-review doctrine: generalized injection-review procedure
+# (S1/IR-B) + the v1 self-audit trust-model statement.  A doctrine-presence
+# contract so the load-bearing wording cannot silently regress, and a
+# generalization guard so the modflow_tools-specific tool names do not leak up.
+# ---------------------------------------------------------------------------
+
+class TestSecurityReviewDoctrine:
+    _DOC = TEMPLATES_ROOT / "modules" / "team-gated" / "security-review.md"
+
+    def _text(self) -> str:
+        return self._DOC.read_text(encoding="utf-8")
+
+    def test_injection_review_by_class_procedure_present(self):
+        text = self._text()
+        assert "Injection-review procedure — review by input class" in text
+        # the load-bearing triage + the generalized, tool-agnostic input classes
+        assert "trusted-input" in text and "user-controlled" in text
+        for klass in (
+            "Pickled state stores",
+            "External simulator",
+            "Data-fetch network calls",
+        ):
+            assert klass in text, f"missing generalized input class: {klass!r}"
+
+    def test_v1_self_audit_scope_statement_present(self):
+        text = self._text()
+        assert "self-audit" in text
+        # the Critical #1 operational guard, adopter-facing (not just a claim)
+        assert "do not wire the audit stack into untrusted-PR / fork CI" in text.lower() \
+            or "do not wire the audit stack into untrusted-pr / fork ci" in text.lower()
+        assert "tripwire, not a proof" in text
+
+    def test_no_modflow_tools_specific_tool_names_leaked(self):
+        # The generalization is the whole point (S1/IR-B): the FloPy / PEST++ /
+        # GDAL / nwisweb specifics stay modflow_tools-local, never folded up.
+        text = self._text()
+        for leaked in ("FloPy", "PEST++", "pestpp", "nwisweb", "GDAL", "rasterio",
+                       "ModelStateStore"):
+            assert leaked not in text, f"tool-specific name leaked into Cairn doctrine: {leaked!r}"
