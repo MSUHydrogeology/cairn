@@ -13,9 +13,13 @@ A near-leaf: it imports only the stdlib plus the ``config`` leaf (for
 cycle. It reads/serializes lockfile data and computes hashes but performs no
 adopter-tree writes (the install-time WRITER ``write_install_lockfile`` stays in
 the engine -- it couples to onboarding/install symbols -- and joins install.py at
-Stage 6; ``_lock_file_list`` likewise couples to the manifest). Importing this
-module defines names only (import-purity, SR2). install / upgrade /
-verify_integrity depend on it, never the reverse.
+Stage 6; ``_lock_file_list`` likewise couples to the manifest). **This module**
+owns no writes and no CLI/upgrade execution; importing it defines names only
+(import-purity, SR2). That is an *ownership* property, not a runtime-loading
+boundary: importing ``bootstrap._scaffold.lockfile`` runs the eager package facade
+first, which loads the whole engine (see the
+``test_trust_anchor_imports_are_owner_specific_not_runtime_isolated`` regression).
+install / upgrade / verify_integrity depend on it, never the reverse.
 
 Pure motion from the pre-split monolith (Stage 5): the symbols are unchanged; only
 their home moved. ``read_lockfile`` + the lock constants migrate here as their

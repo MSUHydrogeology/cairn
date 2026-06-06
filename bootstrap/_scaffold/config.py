@@ -8,9 +8,14 @@ preset / six-axis resolution that derives a module roster + profile summary.
 
 A **pure stdlib leaf**: it imports only the standard library and holds no
 adopter-tree writes (the dev-tree / gitignore / fan-out writers stay in the
-engine; they consume this module's data). Importing it defines names only -- no
-file writes, no CLI/upgrade load (import-purity, SR2). install / upgrade depend
-on it, never the reverse.
+engine; they consume this module's data). **This module** owns no file writes and
+no CLI/upgrade execution; importing it defines names only (import-purity, SR2).
+Note this is an *ownership* property, not a runtime-loading boundary: importing
+``bootstrap._scaffold.config`` runs the eager package facade
+(``bootstrap._scaffold.__init__``) first, which loads the whole engine
+(install / upgrade / cli included) -- see the ``test_trust_anchor_imports_are_
+owner_specific_not_runtime_isolated`` regression. install / upgrade depend on it,
+never the reverse.
 
 Pure motion from the pre-split monolith (Stage 4): the symbols are unchanged;
 only their home moved. ``_MODULE_MAPPINGS`` migrates here as its owning module
