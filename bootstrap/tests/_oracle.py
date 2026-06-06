@@ -220,7 +220,14 @@ def _refusal_signature(stderr: str) -> str:
     lines = [ln for ln in stderr.strip().splitlines() if ln.strip()]
     if not lines:
         return ""
-    last = lines[-1].replace("bootstrap._scaffold.", "")
+    # Collapse any dotted module qualifier on the exception class to the bare
+    # name: the frozen pre-split engine raises `ScaffoldSecurityError` (from
+    # __main__), while the current engine raises it from whatever module owns it
+    # -- `bootstrap._scaffold` pre-split, `bootstrap._scaffold.security` once the
+    # containment leaf is extracted (Stage 1). The class identity + message +
+    # exit are unchanged; only the traceback's module path moved.
+    last = re.sub(r"[\w.]*ScaffoldSecurityError", "ScaffoldSecurityError", lines[-1])
+    last = last.replace("bootstrap._scaffold.", "")
     return re.sub(r"(:\s)(/\S+)$", r"\1<path>", last)
 
 

@@ -48,21 +48,26 @@ def test_digest_detects_a_default_or_decorator_change(tmp_path):
         A.digest_module(b)["FunctionDef:f"]["digest"]
 
 
-def test_committed_baseline_matches_live_scaffold():
-    # Staleness guard: the baseline must reflect the CURRENT scaffold.py. If this
-    # fails, scaffold.py changed -- regenerate before extraction:
-    #   python bootstrap/tests/_ast_attest.py baseline bootstrap/scaffold.py \
-    #       > bootstrap/tests/fixtures/scaffold_ast_baseline.json
+def test_committed_baseline_accounted_for_across_the_engine_package():
+    # The pre-split baseline is the FIXED reference for the whole split: every
+    # baselined symbol must remain present, exactly once, with an unchanged
+    # digest, across the engine module set as extraction proceeds (symbols leave
+    # __init__ and land in security.py / etc. -- pure motion). Before any
+    # extraction this is just __init__.py; mid-extraction it is the union. Do NOT
+    # re-pin the baseline during extraction -- that would erase the motion
+    # reference. Re-pin only deliberately at Stage 0B (already done).
+    #
+    # If this fails with CHANGED, a symbol's logic changed (regenerate only if
+    # intentional, under the canonical interpreter -- lhm / Python 3.13 -- since
+    # ast.dump structure varies across minors, C2). MISSING/DUPLICATE => a symbol
+    # was dropped or single-source was broken by an extraction.
     assert _BASELINE.is_file(), "the pre-split AST baseline artifact is missing"
-    baseline = json.loads(_BASELINE.read_text(encoding="utf-8"))
-    live = A.digest_module(_SCAFFOLD)
-    live_digests = {k: v["digest"] for k, v in live.items()}
-    base_digests = {k: v["digest"] for k, v in baseline.items()}
-    assert base_digests == live_digests, (
-        "AST baseline is stale vs scaffold.py -- regenerate it before extraction "
-        "UNDER THE CANONICAL INTERPRETER (lhm env, Python 3.13): ast.dump structure "
-        "varies across Python minor versions, so a baseline pinned on one minor and "
-        "verified on another mismatches spuriously (code review C2)."
+    modules = sorted(_SCAFFOLD.parent.glob("*.py"))
+    assert A.verify(_BASELINE, modules) == 0, (
+        "AST baseline not accounted for across the engine package -- a "
+        "non-pure-motion change (CHANGED/MISSING/DUPLICATE) rode an extraction, "
+        "or the baseline drifted (regenerate only intentionally, under the "
+        "canonical interpreter: lhm env, Python 3.13)."
     )
 
 

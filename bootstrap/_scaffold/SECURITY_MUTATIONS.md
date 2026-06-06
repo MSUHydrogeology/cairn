@@ -1,0 +1,63 @@
+<!-- claim-check-allow: bootstrap/_scaffold/, bootstrap/_scaffold/security.py, bootstrap/_scaffold/__init__.py -->
+
+# SR6 — adopter-tree mutation inventory (scaffold-split Stage 1)
+
+Every write/removal the scaffold engine performs **into an adopter's target
+tree** must route its destination through a containment guard before touching
+disk. The guards are the Stage-1 leaf `bootstrap/_scaffold/security.py`:
+
+- **`_assert_safe_write(dst, target)`** — ordinary writes; refuses a symlinked
+  destination, a symlinked parent, or a path resolving outside `target`.
+- **`_assert_fanout_contained(dst, target)`** — the skills fan-out; like the
+  above but permits `dst` itself to be the (re)created symlink.
+
+Both raise the single **`ScaffoldSecurityError`** identity, caught once at the
+CLI top level (exit 2).
+
+This inventory was taken **before** the Stage-1 motion and is **regression-pinned**
+by `bootstrap/tests/test_security_leaf.py::test_guarded_write_functions_still_call_a_containment_guard`,
+which AST-scans the engine package and fails if any listed function stops calling
+a guard — so an extraction stage cannot silently drop one.
+
+## Class A — guarded adopter-tree writes (the pinned set)
+
+Each function calls `_assert_safe_write` / `_assert_fanout_contained` on the
+destination before any `mkdir` / `write_*` / `shutil` write:
+
+| Function | Guard | Writes |
+|---|---|---|
+| `_install_one` | `_assert_safe_write` | each installed template file |
+| `write_local_env` | `_assert_safe_write` | `dev/.cairn/local-env.json` |
+| `install_onboarding` | `_assert_safe_write` | helper script, activation log, PLANNING slot, preset source, onboarding docs |
+| `write_install_lockfile` | `_assert_safe_write` | base-template cache, `cairn-lock.yml` |
+| `_emit_skill_copy_fallback` | `_assert_fanout_contained` | regenerated canonical skill copy, diverged-copy quarantine |
+| `fan_out_skills` | `_assert_fanout_contained` | vendor fan-out destination |
+| `_cmd_adopt_module` | `_assert_safe_write` | a single added module's files |
+| `_apply_upgrade` | `_assert_safe_write` | the swapped-in upgraded files |
+
+## Class B — guarded-by-equivalent-invariant (no direct guard, contained by construction)
+
+- **Upgrade staging** (`apply_adopter_merge` / `_write_stage`): writes go to the
+  internal `dev/.cairn-upgrade/` staging subtree, an already-contained directory
+  *inside* `target`; the apply swap into the live tree goes through the Class-A
+  paths. The stage root is rmtree'd/recreated within `target`.
+- **`_emit_skill_symlink`**: its destination is guarded by
+  `_assert_fanout_contained` at the `fan_out_skills` call site before it runs.
+- **`_symlinks_available`**: writes/removes only a probe symlink it creates and
+  immediately unlinks; fail-soft, no caller-controlled path.
+- **`seed_gitignore`**: read-then-append on the fixed `target/.gitignore`.
+
+## Class C — documented follow-up gaps (the deferred single-write-capability redesign, RR6/SR6)
+
+The `upgrade`-family CLI commands that write profile / lockfile / base-cache
+files compute destinations from the lockfile and the resolved `target` but do
+**not** currently call `_assert_safe_write`: `cmd_update_profile`,
+`cmd_init_lock`, `cmd_rebase`, `cmd_verify`, `cmd_drift`, `cmd_complete_merge`.
+These are operationally-trusted post-install maintenance paths (the adopter runs
+them in their own tree); routing **all** adopter-tree writes through one audited
+write capability is a **behavioral** change, deliberately scoped to a **separate
+follow-on proposal** (RR6/SR6), not this pure-motion split. This split only
+*inventories* them; it does not re-route them.
+
+**This classification is the SR6 deliverable; Class A is the pinned regression
+surface. Re-take the inventory if a future stage adds an adopter-tree write.**
