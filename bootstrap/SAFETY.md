@@ -137,7 +137,9 @@ scales **by file class**:
   under that package is Layer-4 code*, scanned **recursively**) — *and*
   every verbatim reference script the scaffold
   installs into an adopter (`claim_check.py`, `lifecycle_metrics.py`,
-  `intent.py`, `link_check.py`, `sync_doc_snippets.py`) *and* Cairn's own
+  `intent.py`, `link_check.py`, `sync_doc_snippets.py`, and the
+  `content-security` / `python-security` apparatus —
+  `content_scan_runner.py`, `run_security_audit.py`) *and* Cairn's own
   dev tools (`check_cairn.py`, `content_scan.py`, `security_check.py`,
   `verify_integrity.py`). The Bandit gate derives its scan set from
   `_MODULE_MAPPINGS` (verbatim scripts) plus `scripts/` + `bootstrap/`, and

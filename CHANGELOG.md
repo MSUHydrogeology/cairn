@@ -32,6 +32,31 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+### Added
+
+- **An adopter-facing security stack — folded up from a battle-tested
+  reference implementation as a three-surface split.** `security-review`
+  (doctrine) gains a generalized, tool-agnostic by-input-class injection-review
+  procedure plus the v1 self-audit trust-model statement. `content-security`
+  expands from "scanner only" to a complete, **standard-library-only**
+  self-audit apparatus: `content_scan_runner.py` (an audited-roots manifest, a
+  reviewed-residual multiset baseline, per-file symlink/special-file
+  containment, resource budgets, and a `0/1/2/3` fail-closed exit contract with
+  tripwire-not-proof output), plus the shipped roots manifest, residual
+  baseline, and URL allowlist, and an RV5 narrow scientific-unit homoglyph
+  allowance in `content_scan.py`. A new **`python-security`** module (team-gated,
+  Python-only, opt-in) ships `run_security_audit.py` — a standalone orchestrator
+  that runs an integrity preflight over its own apparatus, then composes the
+  content-scan (when installed), bandit, an adopted-executable source gate, and
+  pip-audit (network egress opt-in) under a distinct-space aggregate exit table.
+  The scaffold gains a **selected-module required-token preflight** that fails an
+  install/adopt/upgrade closed before any write when a selected module's
+  required token (e.g. `python-security`'s `python_package`) is unfilled.
+  `bootstrap/DEPENDENCY_BUDGET.md` records `bandit` + `pip-audit` as the first
+  declared executable-dependency exception. The stack is a **self-audit gate on
+  a trusted tree** — explicitly not a reviewer for untrusted PRs that can modify
+  the apparatus; a clean result is a tripwire, not a proof.
+
 ### Changed
 
 - **The 4865-line `scaffold.py` install/upgrade monolith is split into a thin
