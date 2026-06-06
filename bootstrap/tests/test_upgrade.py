@@ -506,7 +506,15 @@ class TestUpgradeModes:
 
     def test_to_ref_requires_git_source(self, tmp_path: Path, monkeypatch) -> None:
         assert _install(tmp_path) == 0
-        monkeypatch.setattr(s, "_cairn_is_git", lambda root: False)
+        # _cairn_is_git is owned by the upgrade submodule (scaffold-split Stage 7);
+        # cmd_upgrade reads it from there, so patch it at its owning module object --
+        # the facade re-export is a separate binding that the internal caller no
+        # longer observes once the symbol has been extracted out of the engine
+        # __init__. (Patch the module object, not a dotted string: the launcher
+        # aliases bootstrap.scaffold, so `bootstrap._scaffold` is not a plain
+        # attribute of `bootstrap` for pytest's string-path walk.)
+        from bootstrap._scaffold import upgrade as _up  # noqa: PLC0415
+        monkeypatch.setattr(_up, "_cairn_is_git", lambda root: False)
         rc = s.main(["upgrade", "--target", str(tmp_path), "--plan",
                      "--to", "v0.1.0", "--cairn-root", str(CAIRN_ROOT)])
         assert rc == 1  # packaged source can't --to a ref

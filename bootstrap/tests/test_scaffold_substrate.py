@@ -70,8 +70,18 @@ def test_facade_exposes_full_public_surface():
 
 
 def test_facade_patch_through_reaches_engine(monkeypatch):
-    """RR5/R6: patching the facade mutates the engine's own namespace, so the
-    engine's internal calls observe it (the test_upgrade.py:509 pattern)."""
+    """RR5/R6: the facade IS the engine, so patching the facade mutates the
+    engine's own namespace (a single object identity).
+
+    Scope note (post scaffold-split): this guarantees facade==engine identity, NOT
+    that a facade patch reaches a symbol's *internal* callers once that symbol has
+    been extracted into a submodule. A symbol owned by ``bootstrap._scaffold.<m>``
+    is referenced by that submodule's own functions via its own module global, so
+    to influence those callers a test must patch the OWNING module (see
+    ``test_upgrade.py::test_to_ref_requires_git_source``, which patches
+    ``bootstrap._scaffold.upgrade._cairn_is_git``). ``_cairn_is_git`` now lives in
+    the upgrade submodule; the facade still re-exports it, and patching the facade
+    still mutates the engine namespace, which is what this test pins."""
     import bootstrap.scaffold as s  # noqa: PLC0415
     sentinel = object()
     monkeypatch.setattr(s, "_cairn_is_git", lambda root: sentinel)
