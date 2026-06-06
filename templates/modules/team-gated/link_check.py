@@ -47,6 +47,11 @@ _LINK_RE = re.compile(r'!?\[[^\]]*\]\(\s*([^)\s]+)(?:\s+"[^"]*")?\s*\)')
 # Reference definitions: [id]: target  (optionally with a title).
 _REFDEF_RE = re.compile(r'^\s*\[[^\]]+\]:\s*(\S+)')
 _HEADING_RE = re.compile(r'^(#{1,6})\s+(.*?)\s*#*\s*$')
+# Explicit Pandoc/kramdown-style anchor attribute at the end of a heading:
+# ``{#some-id}``.  Group 1 is the id text (no leading #).  The pattern
+# allows arbitrary whitespace before the ``{`` so ``### Title {#id}`` and
+# ``### Title{#id}`` both match.
+_EXPLICIT_ANCHOR_RE = re.compile(r'\s*\{#([^}]+)\}\s*$')
 
 
 @dataclass
@@ -116,7 +121,21 @@ def scannable_lines(text: str) -> list[tuple[int, str]]:
 
 
 def file_anchors(text: str) -> set[str]:
-    """Heading anchors for a file, with GitHub's repeat-dedupe (-1, -2)."""
+    """Heading anchors for a file, with GitHub's repeat-dedupe (-1, -2).
+
+    Recognises explicit Pandoc/kramdown-style anchor attributes
+    (``{#custom-id}`` at the end of the heading text): when present, the
+    **literal id** (stripped of leading ``#`` and surrounding whitespace)
+    is registered directly, **and** the auto-slug of the heading text
+    *without* the ``{#…}`` attribute is also registered (so both forms of
+    reference resolve).  Without an explicit anchor the original GitHub-
+    slug behaviour is unchanged.
+
+    This prevents the double-slug bug where a heading ``### T {#t}``
+    would previously be fed into ``github_slug`` as ``T {#t}``, producing
+    ``t-t`` (the braces content got mixed in), while the intended anchor
+    ``#t`` silently resolved to nothing.
+    """
     counts: Counter[str] = Counter()
     anchors: set[str] = set()
     in_fence = False
@@ -129,10 +148,26 @@ def file_anchors(text: str) -> set[str]:
         m = _HEADING_RE.match(raw)
         if not m:
             continue
-        base = github_slug(m.group(2))
-        n = counts[base]
-        counts[base] += 1
-        anchors.add(base if n == 0 else f'{base}-{n}')
+        heading_text = m.group(2)
+        explicit_m = _EXPLICIT_ANCHOR_RE.search(heading_text)
+        if explicit_m:
+            explicit_id = explicit_m.group(1).strip()
+            # Also register the auto-slug of the text *without* the
+            # ``{#…}`` attribute so ``[link](#auto-slug)`` still resolves
+            # even when the author added an explicit id.
+            text_without_attr = heading_text[:explicit_m.start()]
+            auto_base = github_slug(text_without_attr)
+            if explicit_id:
+                anchors.add(explicit_id)
+            if auto_base:
+                n = counts[auto_base]
+                counts[auto_base] += 1
+                anchors.add(auto_base if n == 0 else f'{auto_base}-{n}')
+        else:
+            base = github_slug(heading_text)
+            n = counts[base]
+            counts[base] += 1
+            anchors.add(base if n == 0 else f'{base}-{n}')
     return anchors
 
 

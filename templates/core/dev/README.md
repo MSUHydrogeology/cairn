@@ -37,6 +37,15 @@ find it at `<cairn-checkout>/doctrine/doc-governance.md`, and
 adopters reading the published doctrine find it on the Cairn
 repository.)
 
+## How this relates to other docs
+
+<!-- cairn:slot cross-layer-doc-pointers -->
+*(Empty at adoption — wire the project's cross-layer pointers here: links
+from this `dev/` entry point to the repo's documentation map, test plan,
+vision, or descriptive-layer references a cold-starting agent or contributor
+should reach in one hop. Replace this placeholder when filling.)*
+<!-- cairn:end cross-layer-doc-pointers -->
+
 ## How to use it
 
 * **Read it on entry.** The session-start orientation pass (see

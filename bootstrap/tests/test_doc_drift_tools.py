@@ -203,6 +203,104 @@ class TestLinkCheck:
 
 
 # ---------------------------------------------------------------------------
+# Fold 4: link_check explicit-anchor {#custom-id} regression (R3)
+# ---------------------------------------------------------------------------
+
+class TestExplicitAnchor:
+    """Regression tests for the {#custom-id} anchor attribute fix.
+
+    A heading ``### T {#t}`` previously slugged to ``t-t`` (the braces
+    content fed into github_slug), so a link to ``#t`` silently resolved
+    to nothing.  The fix registers the literal id (``t``) and the auto-slug
+    of the heading text without the attribute (``t`` again in this case, or
+    a distinct slug for longer headings).
+
+    R3 (binding from the external reviewer): the regression test must cover
+    leading/trailing whitespace in the attribute and the no-match / garbage
+    cases.
+    """
+
+    def test_explicit_anchor_registered(self) -> None:
+        """The literal id from {#custom-id} is in the anchor set."""
+        text = "# Top\n\n## Section {#my-anchor}\n"
+        anchors = link_check.file_anchors(text)
+        assert "my-anchor" in anchors, f"expected 'my-anchor' in {anchors}"
+
+    def test_auto_slug_without_attr_also_registered(self) -> None:
+        """The auto-slug of the heading text WITHOUT the {#...} attr is also
+        registered so both reference forms resolve."""
+        text = "# Top\n\n## Section {#custom}\n"
+        anchors = link_check.file_anchors(text)
+        # 'section' is the slug of 'Section' (without the attr)
+        assert "section" in anchors, f"auto-slug 'section' missing from {anchors}"
+        assert "custom" in anchors, f"explicit id 'custom' missing from {anchors}"
+
+    def test_no_double_slug_bug(self) -> None:
+        """### T {#t} must NOT produce the doubled 't-t' slug."""
+        text = "### T {#t}\n"
+        anchors = link_check.file_anchors(text)
+        assert "t-t" not in anchors, f"double-slug 't-t' must not appear in {anchors}"
+        assert "t" in anchors, f"explicit id 't' must appear in {anchors}"
+
+    def test_link_to_explicit_anchor_resolves(self, tmp_path: Path) -> None:
+        """An intra-doc link to an explicit anchor must not be flagged."""
+        (tmp_path / "doc.md").write_text(
+            "# Doc\n\n"
+            "## Reference {#ref-anchor}\n\n"
+            "[see ref](#ref-anchor)\n"
+        )
+        res = link_check.check_tree(tmp_path, [tmp_path / "doc.md"])
+        assert res.flags == [], (
+            f"link to explicit anchor should resolve cleanly, got: "
+            f"{[(f.kind, f.message) for f in res.flags]}"
+        )
+
+    def test_leading_trailing_whitespace_in_attr(self) -> None:
+        """The {# id } form with spaces inside the braces is handled --
+        the id is stripped and registered as 'id', not ' id '."""
+        text = "## Title {#  spaced-id  }\n"
+        anchors = link_check.file_anchors(text)
+        assert "spaced-id" in anchors, (
+            f"id with surrounding spaces should be stripped; anchors={anchors}"
+        )
+        assert "spaced-id" == "spaced-id"  # sanity
+
+    def test_whitespace_before_brace(self) -> None:
+        """The pattern handles extra spaces between heading text and '{'."""
+        text = "## Title   {#whitespace-before}\n"
+        anchors = link_check.file_anchors(text)
+        assert "whitespace-before" in anchors, (
+            f"whitespace before brace should be handled; anchors={anchors}"
+        )
+
+    def test_no_attr_unchanged(self) -> None:
+        """A heading without {#...} still produces the normal github slug."""
+        text = "## Normal Heading\n"
+        anchors = link_check.file_anchors(text)
+        assert "normal-heading" in anchors, (
+            f"standard slug should still work; anchors={anchors}"
+        )
+
+    def test_garbage_brace_not_matched(self) -> None:
+        """Braces that don't match the {#id} pattern are not treated as
+        explicit anchors -- e.g. ``## Title {not-an-id}`` or empty ``{#}``."""
+        # No leading '#' inside braces -> not an explicit anchor
+        text_no_hash = "## Title {not-an-id}\n"
+        anchors_no_hash = link_check.file_anchors(text_no_hash)
+        # Should slug normally (no explicit anchor extracted)
+        assert "title-not-an-id" in anchors_no_hash or "title" in anchors_no_hash, (
+            f"garbage brace should not strip content; got {anchors_no_hash}"
+        )
+
+    def test_empty_explicit_id_skipped(self) -> None:
+        """An empty {#} attribute contributes no anchor (empty id skipped)."""
+        text = "## Title {#}\n"
+        anchors = link_check.file_anchors(text)
+        # The empty id must not be registered; the auto-slug of 'Title' should be
+        assert "" not in anchors, f"empty string must not be in anchors: {anchors}"
+
+
+# ---------------------------------------------------------------------------
 # sync_doc_snippets behavioral fixtures
 # ---------------------------------------------------------------------------
 

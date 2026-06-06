@@ -310,12 +310,27 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         # via the .gitignore seed below) -- fold-back #42.
         InstallSpec("default-on/reflections-README.md",
                     "dev/reflections/README.md", verbatim=True),
+        # Fold 2 (foldback-drain-tooling): explicit prune tool the reflections
+        # module doctrine prescribes.  Complements the simpler date-cutoff prune
+        # inside tools/lifecycle.py session-end (which runs at full-handoff);
+        # this standalone script allows independent invocation and offers a
+        # keep-by-distinct-date window rather than a wall-clock cutoff.
+        InstallSpec("default-on/prune_reflections.py",
+                    "tools/prune_reflections.py", verbatim=True),
     ],
     "claim-check": [
         InstallSpec("default-on/claim-check.md",
                     "dev/modules/claim-check.md"),
         InstallSpec("default-on/claim_check.py",
                     "scripts/claim_check.py", verbatim=True),
+        # Fold 1 (foldback-drain-tooling): stem-resolution checker.
+        # Complements claim_check.py (repo-path/line-bounds) and link_check.py
+        # (markdown links) -- verifies that every backticked date-prefixed stem
+        # in PLANNING.md / NEXT_SESSION.md resolves to one proposal or plan.
+        # Default-on with the claim-check module family because both are
+        # lifecycle-hygiene checkers.
+        InstallSpec("default-on/verify_stems.py",
+                    "scripts/verify_stems.py", verbatim=True),
     ],
     # The deployment-side measurement substrate the adaptive-doctrine
     # rate-limit gate (doctrine/rationale.md) evaluates against.
@@ -411,6 +426,12 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         # doctrine (1:many, the P1 claim-check/lifecycle-metrics pattern).
         InstallSpec("team-gated/intent.py",
                     "tools/intent.py", verbatim=True),
+        # Fold 2 (foldback-drain-tooling): the prune-intents goodnight compaction
+        # tool.  Ships with coordination-tiers because the goodnight intent-hygiene
+        # extension (coordination-tiers module doc) prescribes the prune-intents step.
+        # Self-contained (no import from tools.intent); reads dev/intents.jsonl directly.
+        InstallSpec("team-gated/prune_intents.py",
+                    "tools/prune_intents.py", verbatim=True),
     ],
     "security-review": [
         InstallSpec("team-gated/security-review.md",
@@ -419,10 +440,43 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
     "issue-capture": [
         InstallSpec("team-gated/issue-capture.md",
                     "dev/modules/issue-capture.md"),
+        # Fold 3 (foldback-drain-tooling): label-bootstrap helpers, one per
+        # forge (GitLab + GitHub).  Generalise the per-adopter scripts into a
+        # single Cairn-generic tool shipped with the module that prescribes
+        # label-axis doctrine.  The additive-only flag absorbs the LHM
+        # divergence (legacy-label note); no project-specific references.
+        # Auth R2: both scripts emit a clear "set GITLAB_PRIVATE_TOKEN /
+        # GITHUB_TOKEN" error when no credential is found.
+        InstallSpec(
+            "team-gated/issue-capture/bootstrap_gitlab_labels.py",
+            "scripts/bootstrap_gitlab_labels.py",
+            verbatim=True,
+        ),
+        InstallSpec(
+            "team-gated/issue-capture/bootstrap_github_labels.py",
+            "scripts/bootstrap_github_labels.py",
+            verbatim=True,
+        ),
     ],
     "model-selection": [
         InstallSpec("team-gated/model-selection.md",
                     "dev/modules/model-selection.md"),
+        # Fold 5 (foldback-drain-tooling): stub mapping file + fidelity checker.
+        # The stub is seeded at install time with no "FILL ME" placeholder so a
+        # fresh scaffold passes the gate; the gate fires only when an adopter
+        # explicitly marks rows "FILL ME" to track in-progress work (seed-vs-gate
+        # sequencing: install is clean; gate flags an unfinished fill).
+        # The checker is installed verbatim so adopters can invoke it directly
+        # (`python scripts/check_model_selection.py`) or wire it into their CI.
+        InstallSpec(
+            "team-gated/model_selection_mapping_stub.yml",
+            "dev/.cairn/model-selection-mapping.yml",
+        ),
+        InstallSpec(
+            "team-gated/check_model_selection.py",
+            "scripts/check_model_selection.py",
+            verbatim=True,
+        ),
     ],
     # Practice-discipline modules (Cairn v0.2 P3).  Team-gated -- a
     # governance preset (P4) turns them on per profile rather than

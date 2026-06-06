@@ -160,10 +160,10 @@
     "type": "AnnAssign"
   },
   "Assign:_LIVING_STATE_DSTS": {
-    "digest": "f0c9f31bd29a13b5",
+    "digest": "dc478efb072ed310",
     "span": [
-      2561,
-      2566
+      73,
+      84
     ],
     "type": "AnnAssign"
   },
@@ -216,10 +216,10 @@
     "type": "Assign"
   },
   "Assign:_MODULE_MAPPINGS": {
-    "digest": "5f7a2b1f19753fff",
+    "digest": "f025fc5213edac12",
     "span": [
-      822,
-      1004
+      298,
+      571
     ],
     "type": "AnnAssign"
   },

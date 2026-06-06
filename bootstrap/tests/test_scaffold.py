@@ -320,6 +320,43 @@ class TestInstallCore:
         content = dev_readme.read_text()
         assert "AwesomeRepo" in content
 
+    def test_dev_readme_has_cross_layer_doc_slot(self, tmp_path: Path) -> None:
+        """Fold 6: dev/README.md carries the cross-layer-doc-pointers cairn:slot.
+
+        The slot gives adopters a wiring point for cross-layer doc pointers
+        (doc-map, test-plan, vision links) that survive template overwrites on
+        upgrade.  It must appear AFTER the tree-table rows (the 'How this
+        relates to other docs' heading, then the slot, then 'How to use it').
+        """
+        cairn_root = Path(__file__).resolve().parent.parent.parent
+        templates_root = cairn_root / "templates"
+        if not templates_root.exists():
+            pytest.skip("Cairn templates not available")
+        tokens = {"project_name": "SlotTest", "test_command": "pytest"}
+        create_dev_tree(tmp_path)
+        install_core(templates_root, tmp_path, tokens)
+        dev_readme = tmp_path / "dev" / "README.md"
+        assert dev_readme.exists()
+        content = dev_readme.read_text()
+        # The slot pair must be present.
+        assert "cairn:slot cross-layer-doc-pointers" in content, (
+            "dev/README.md is missing the cross-layer-doc-pointers cairn:slot opener"
+        )
+        assert "cairn:end cross-layer-doc-pointers" in content, (
+            "dev/README.md is missing the cross-layer-doc-pointers cairn:end marker"
+        )
+        # The slot must come AFTER the tree-table section and BEFORE 'How to use it'.
+        slot_pos = content.index("cairn:slot cross-layer-doc-pointers")
+        how_to_use_pos = content.index("## How to use it")
+        assert slot_pos < how_to_use_pos, (
+            "cross-layer-doc-pointers slot must appear before '## How to use it'"
+        )
+        # The tree-table rows from Phase 1 must appear before the slot.
+        tree_table_pos = content.index("| `README.md` (this file)")
+        assert tree_table_pos < slot_pos, (
+            "The tree-table rows must appear before the cross-layer-doc-pointers slot"
+        )
+
     def test_installed_templates_carry_plan_review_line(
         self, tmp_path: Path
     ) -> None:
@@ -393,21 +430,41 @@ class TestNewTeamGatedModules:
     docs but not the scaffold (Codex External finding 1 / Antigravity
     R8)."""
 
-    @pytest.mark.parametrize("module_name", ["security-review", "issue-capture"])
-    def test_new_module_registered(self, module_name: str) -> None:
+    def test_new_module_registered_security_review(self) -> None:
         from bootstrap.scaffold import _MODULE_MAPPINGS
 
+        module_name = "security-review"
         assert module_name in _MODULE_MAPPINGS, (
             f"{module_name} not registered in _MODULE_MAPPINGS"
         )
-        # 1:many contract (Cairn v0.2 P1): each module maps to a list of
-        # InstallSpec.  These team-gated modules install a single .md.
+        # security-review installs a single .md (unchanged).
         specs = _MODULE_MAPPINGS[module_name]
         assert len(specs) == 1
         spec = specs[0]
         assert spec.src == f"team-gated/{module_name}.md"
         assert spec.dst == f"dev/modules/{module_name}.md"
         assert spec.verbatim is False
+
+    def test_new_module_registered_issue_capture(self) -> None:
+        from bootstrap.scaffold import _MODULE_MAPPINGS
+
+        module_name = "issue-capture"
+        assert module_name in _MODULE_MAPPINGS, (
+            f"{module_name} not registered in _MODULE_MAPPINGS"
+        )
+        # issue-capture ships a 3-spec contract: module doc + two forge scripts.
+        specs = _MODULE_MAPPINGS[module_name]
+        assert len(specs) == 3
+        by_dst = {s.dst: s for s in specs}
+        doc = by_dst["dev/modules/issue-capture.md"]
+        assert doc.src == "team-gated/issue-capture.md"
+        assert doc.verbatim is False
+        gitlab = by_dst["scripts/bootstrap_gitlab_labels.py"]
+        assert gitlab.src == "team-gated/issue-capture/bootstrap_gitlab_labels.py"
+        assert gitlab.verbatim is True
+        github = by_dst["scripts/bootstrap_github_labels.py"]
+        assert github.src == "team-gated/issue-capture/bootstrap_github_labels.py"
+        assert github.verbatim is True
 
     @pytest.mark.parametrize("module_name", ["security-review", "issue-capture"])
     def test_new_module_installs_when_selected(
@@ -523,12 +580,20 @@ class TestModelSelectionWired:
         assert "model-selection" in _MODULE_MAPPINGS, (
             "model-selection not registered in _MODULE_MAPPINGS"
         )
+        # model-selection now ships a 3-spec contract: module doc + mapping stub
+        # + fidelity checker (Fold 5, foldback-drain-tooling).
         specs = _MODULE_MAPPINGS["model-selection"]
-        assert len(specs) == 1
-        spec = specs[0]
-        assert spec.src == "team-gated/model-selection.md"
-        assert spec.dst == "dev/modules/model-selection.md"
-        assert spec.verbatim is False
+        assert len(specs) == 3
+        by_dst = {s.dst: s for s in specs}
+        doc = by_dst["dev/modules/model-selection.md"]
+        assert doc.src == "team-gated/model-selection.md"
+        assert doc.verbatim is False
+        stub = by_dst["dev/.cairn/model-selection-mapping.yml"]
+        assert stub.src == "team-gated/model_selection_mapping_stub.yml"
+        assert stub.verbatim is False
+        checker = by_dst["scripts/check_model_selection.py"]
+        assert checker.src == "team-gated/check_model_selection.py"
+        assert checker.verbatim is True
 
     def test_model_selection_installs_when_selected(
         self, tmp_path: Path

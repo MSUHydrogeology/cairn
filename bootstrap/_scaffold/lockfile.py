@@ -75,6 +75,12 @@ _LIVING_STATE_DSTS: frozenset[str] = frozenset({
     "dev/NEXT_SESSION.md",
     "dev/.cairn/cairn_foldback.md",
     "dev/collaboration_agreement.md",
+    # Fold 5 (foldback-drain-tooling): the model-selection mapping is
+    # adopter-local configuration that the adopter fills and re-fills as
+    # their model lineup evolves.  Marking it living-state means
+    # verify_integrity never flags an adopter edit as tampering, and the
+    # lockfile divergence check does not prevent writing on first-fill.
+    "dev/.cairn/model-selection-mapping.yml",
 })
 
 

@@ -209,18 +209,18 @@ class TestLayerAStepsOneThroughThree:
             assert (repo / relative).exists(), (
                 f"quickstart Step 3 should install {relative}; not present after run"
             )
-        # Step 3 says 20 block slots (bumped from 15 by the
-        # lifecycle-template fold-up: the proposal template gained
-        # `triage-extra-triggers`, `tests-tier-home`, and
-        # `examples-smoke-home`; the plan template gained
-        # `acceptance-doc-tooling` and `verification-commands` -- 5
-        # new adopter slots carrying the project-specific bits of the
-        # richer lifecycle doctrine folded up from modflow_tools).
+        # Step 3 says 21 block slots (bumped from 20 by Fold 6 of the
+        # foldback-drain-tooling proposal: dev/README.md gained the
+        # `cross-layer-doc-pointers` cairn:slot for cross-layer doc
+        # pointers; previously bumped from 15 by the lifecycle-template
+        # fold-up: the proposal template gained `triage-extra-triggers`,
+        # `tests-tier-home`, and `examples-smoke-home`; the plan template
+        # gained `acceptance-doc-tooling` and `verification-commands`).
         # Verify the count matches what the scaffold actually emitted
         # -- a drift between the prose and runtime is exactly what
         # this test exists to catch.
-        assert "Block slots requiring agent attention (20)" in result.stdout, (
-            "Step 3 prose says '20 unfilled block slots' -- count drifted; "
+        assert "Block slots requiring agent attention (21)" in result.stdout, (
+            "Step 3 prose says '21 unfilled block slots' -- count drifted; "
             "update the quickstart prose to match scaffold output:\n"
             f"{result.stdout}"
         )

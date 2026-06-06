@@ -832,12 +832,19 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         # via the .gitignore seed below) -- fold-back #42.
         InstallSpec("default-on/reflections-README.md",
                     "dev/reflections/README.md", verbatim=True),
+        # Fold 2 (foldback-drain-tooling): explicit prune tool the reflections
+        # module doctrine prescribes.
+        InstallSpec("default-on/prune_reflections.py",
+                    "tools/prune_reflections.py", verbatim=True),
     ],
     "claim-check": [
         InstallSpec("default-on/claim-check.md",
                     "dev/modules/claim-check.md"),
         InstallSpec("default-on/claim_check.py",
                     "scripts/claim_check.py", verbatim=True),
+        # Fold 1 (foldback-drain-tooling): stem-resolution checker.
+        InstallSpec("default-on/verify_stems.py",
+                    "scripts/verify_stems.py", verbatim=True),
     ],
     # The deployment-side measurement substrate the adaptive-doctrine
     # rate-limit gate (doctrine/rationale.md) evaluates against.
@@ -933,6 +940,9 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         # doctrine (1:many, the P1 claim-check/lifecycle-metrics pattern).
         InstallSpec("team-gated/intent.py",
                     "tools/intent.py", verbatim=True),
+        # Fold 2 (foldback-drain-tooling): the prune-intents goodnight compaction tool.
+        InstallSpec("team-gated/prune_intents.py",
+                    "tools/prune_intents.py", verbatim=True),
     ],
     "security-review": [
         InstallSpec("team-gated/security-review.md",
@@ -941,10 +951,29 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
     "issue-capture": [
         InstallSpec("team-gated/issue-capture.md",
                     "dev/modules/issue-capture.md"),
+        InstallSpec(
+            "team-gated/issue-capture/bootstrap_gitlab_labels.py",
+            "scripts/bootstrap_gitlab_labels.py",
+            verbatim=True,
+        ),
+        InstallSpec(
+            "team-gated/issue-capture/bootstrap_github_labels.py",
+            "scripts/bootstrap_github_labels.py",
+            verbatim=True,
+        ),
     ],
     "model-selection": [
         InstallSpec("team-gated/model-selection.md",
                     "dev/modules/model-selection.md"),
+        InstallSpec(
+            "team-gated/model_selection_mapping_stub.yml",
+            "dev/.cairn/model-selection-mapping.yml",
+        ),
+        InstallSpec(
+            "team-gated/check_model_selection.py",
+            "scripts/check_model_selection.py",
+            verbatim=True,
+        ),
     ],
     # Practice-discipline modules (Cairn v0.2 P3).  Team-gated -- a
     # governance preset (P4) turns them on per profile rather than
@@ -2548,6 +2577,12 @@ _LIVING_STATE_DSTS: frozenset[str] = frozenset({
     "dev/NEXT_SESSION.md",
     "dev/.cairn/cairn_foldback.md",
     "dev/collaboration_agreement.md",
+    # Fold 5 (foldback-drain-tooling): the model-selection mapping is
+    # adopter-local configuration that the adopter fills and re-fills as
+    # their model lineup evolves.  Marking it living-state means
+    # verify_integrity never flags an adopter edit as tampering, and the
+    # lockfile divergence check does not prevent writing on first-fill.
+    "dev/.cairn/model-selection-mapping.yml",
 })
 
 #: Token names that must never be recorded in the lockfile (R9): a
