@@ -14,6 +14,28 @@ The fidelity-check is reproducible — given the same manifest, the
 same Cairn commit, and the same target state, it always produces the
 same result.
 
+## Core folder set (upstream/, rules/, strategy/)
+
+As of the `core-dev-folder-set` proposal, three additional folders ship
+default-on in every fresh scaffold: `dev/upstream/` (external-dep issue
+drafts), `dev/rules/` (project-owned agent-discipline detail), and
+`dev/strategy/` (Stage-0 exploration notes). Each carries a `README.md`
+as the single source of lifecycle truth; `upstream/` and `strategy/` also
+carry a `_template.md` and a tracked `archive/` (the `.gitkeep` in
+`upstream/archive/` materializes the dir at adoption). These are
+**customization-expected** files — a 3-way merge on upgrade — but they are
+**tamper-detectable**: an adopter edit is surfaced by `verify_integrity` until
+`upgrade --finalize` advances the hash, the same mechanism as `AGENTS.md` (they
+are **not** living-state like `dev/PLANNING.md`, which is exempt from the check). A
+fidelity check for the core folder set: confirm these files exist in the
+installed target:
+
+```
+ls dev/upstream/README.md dev/upstream/_template.md dev/upstream/archive/
+ls dev/rules/README.md
+ls dev/strategy/README.md dev/strategy/_template.md dev/strategy/archive/
+```
+
 ## The loop-fidelity gate (implementation→adoption)
 
 A second, *pre-ship* fidelity check guards the **implementation→adoption**

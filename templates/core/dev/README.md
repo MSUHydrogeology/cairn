@@ -23,13 +23,11 @@ project is doing, and why* from this tree alone.
 | `plans/_template.md` | The plan structure and the plan-archive doctrine. |
 | `plans/archive/` | Closed plans — read for what shipped and why. |
 | `modules/` | Dimension-selected add-ons — one file per installed module (see `modules/<name>.md` for each). Read each module's `Adds to:` line to find where its content merges into the kernel. |
+| `upstream/` | Draft issue reports for external OSS dependencies — bugs and capability gaps to file upstream. See `upstream/README.md`. Distinct from the methodology fold-back channel (`dev/.cairn/cairn_foldback.md`). |
+| `rules/` | Project-owned agent-discipline detail routed from `RULES.md`. The folder ships from Cairn; the rule files inside are entirely the adopter's own. Empty at adoption. |
+| `strategy/` | Stage-0 exploration notes — comparative research, tool analysis, product strategy — written before a commitment is ready to propose. See `strategy/README.md`. |
 
-A `strategy/` directory (longer-horizon research notes) and an
-`upstream/` directory (the general upstream-coordination surface —
-fold-back ledgers for an upstream framework or dependency,
-external-project issue drafts, and cross-repo dependency tracking) are
-added when the project needs them — they are not part of the invariant
-core. The project's **vision** / charter belongs in the descriptive
+The project's **vision** / charter belongs in the descriptive
 layer rather than the deliberation tree — see Cairn's own
 `doctrine/doc-governance.md` > "Common homes for project vision /
 charter material" for the choices. (The doctrine reference is

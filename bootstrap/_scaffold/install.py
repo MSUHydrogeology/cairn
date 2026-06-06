@@ -118,6 +118,14 @@ _DEV_DIRS: tuple[str, ...] = (
     # `dev/strategy/` coverage don't have to `mkdir` manually.
     "dev/strategy",
     "dev/strategy/archive",
+    # External-dependency upstream issue drafts (core-dev-folder-set).
+    # archive/ is tracked via the .gitkeep installed by _CORE_MAPPINGS;
+    # the dir itself must exist before the installer writes it.
+    "dev/upstream",
+    "dev/upstream/archive",
+    # Project-owned agent-discipline detail (core-dev-folder-set).
+    # Ships empty at adoption; the README is installed by _CORE_MAPPINGS.
+    "dev/rules",
     "dev/modules",
     # Progressive-onboarding module's installed-source-file home.
     # Per plan 2026-05-28-claude-cairn-progressive-onboarding (Chunk

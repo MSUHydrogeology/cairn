@@ -495,6 +495,10 @@ complete.
 - [ ] Each selected module file is present under `dev/modules/`.
 - [ ] `dev/proposals/`, `dev/proposals/archive/`, `dev/plans/`,
       and `dev/plans/archive/` directories exist.
+- [ ] Core folder set is present: `dev/upstream/` (with `_template.md`
+      and `archive/`), `dev/rules/`, `dev/strategy/` (with `_template.md`
+      and `archive/`). These ship default-on from the core; each folder's
+      `README.md` is the single source of truth for its own lifecycle.
 
 **Token checks**
 - [ ] No `{{...}}` inline token remains unfilled in any installed

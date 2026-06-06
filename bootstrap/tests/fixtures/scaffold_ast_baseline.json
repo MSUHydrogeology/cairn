@@ -64,10 +64,10 @@
     "type": "Assign"
   },
   "Assign:_CORE_MAPPINGS": {
-    "digest": "31dac593a81bc760",
+    "digest": "c2998d8898af007d",
     "span": [
-      705,
-      725
+      165,
+      201
     ],
     "type": "AnnAssign"
   },
@@ -88,10 +88,10 @@
     "type": "AnnAssign"
   },
   "Assign:_DEV_DIRS": {
-    "digest": "081e16237ac17777",
+    "digest": "6d9345c52f68aea2",
     "span": [
-      654,
-      681
+      109,
+      144
     ],
     "type": "AnnAssign"
   },

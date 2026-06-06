@@ -637,6 +637,14 @@ _DEV_DIRS: tuple[str, ...] = (
     # `dev/strategy/` coverage don't have to `mkdir` manually.
     "dev/strategy",
     "dev/strategy/archive",
+    # External-dependency upstream issue drafts (core-dev-folder-set).
+    # archive/ is tracked via the .gitkeep installed by _CORE_MAPPINGS;
+    # the dir itself must exist before the installer writes it.
+    "dev/upstream",
+    "dev/upstream/archive",
+    # Project-owned agent-discipline detail (core-dev-folder-set).
+    # Ships empty at adoption; the README is installed by _CORE_MAPPINGS.
+    "dev/rules",
     "dev/modules",
     # Progressive-onboarding module's installed-source-file home.
     # Per plan 2026-05-28-claude-cairn-progressive-onboarding (Chunk
@@ -696,6 +704,22 @@ _CORE_MAPPINGS: tuple[tuple[str, str], ...] = (
     # carried by its README, which states the membership rule.  Same shape as
     # proposals/ + plans/ (a core dir installed via its content file).
     ("core/dev/measurement/README.md",              "dev/measurement/README.md"),
+    # External-dependency upstream channel (core-dev-folder-set proposal):
+    # draft issue reports for external OSS deps, distinct from the
+    # methodology fold-back ledger (dev/.cairn/cairn_foldback.md).
+    # archive/.gitkeep is verbatim (an empty placeholder, not a template).
+    ("core/dev/upstream/README.md",                 "dev/upstream/README.md"),
+    ("core/dev/upstream/_template.md",              "dev/upstream/_template.md"),
+    ("core/dev/upstream/archive/.gitkeep",          "dev/upstream/archive/.gitkeep"),
+    # Project-owned agent-discipline detail folder: the folder + README
+    # ship from Cairn; the rule files inside are entirely the adopter's own
+    # (Cairn never templates them).  Empty at adoption by design.
+    ("core/dev/rules/README.md",                    "dev/rules/README.md"),
+    # Stage-0 strategy space: the README (lifecycle + status vocabulary)
+    # and the note template.  Shipped default-on; the strategy/ dir and
+    # archive/ placeholder are created by create_dev_tree (see install.py).
+    ("core/dev/strategy/README.md",                 "dev/strategy/README.md"),
+    ("core/dev/strategy/_template.md",              "dev/strategy/_template.md"),
 )
 
 #: Lifecycle-routine skills install **unconditionally, like core/** -- the
