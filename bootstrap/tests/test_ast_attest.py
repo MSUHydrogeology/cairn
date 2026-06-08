@@ -343,3 +343,19 @@ def test_update_symbol_refuses_duplicated_allowed_key(tmp_path):
     assert A.update_symbol(bp, "_MODULE_MAPPINGS", base[_MM]["digest"], [m1, m2],
                            known_new={"FunctionDef:facade": [d]}) == 4
     assert bp.read_text(encoding="utf-8") == before
+
+
+def test_update_symbol_refuses_deleted_known_new_key(tmp_path, capsys):
+    # Codex final confirmation: a pinned known-new symbol DELETED from the live module set
+    # (a removed security-relevant facade symbol) must refuse — complete-set equality.
+    bp, base = _canon_baseline(tmp_path, _SRC_V1)
+    # legit mapping delta; helper present; but 'install' (pinned known-new) is absent entirely
+    live = _write(tmp_path, "live.py",
+                  "_MODULE_MAPPINGS = {'a': 1, 'b': 2}\n"
+                  "_SKILLS_MAPPINGS = (('x', 'y', True),)\n"
+                  "def helper():\n    return 1\n")
+    before = bp.read_text(encoding="utf-8")
+    assert A.update_symbol(bp, "_MODULE_MAPPINGS", base[_MM]["digest"], [live],
+                           known_new={"FunctionDef:install": ["0" * 16]}) == 4
+    assert bp.read_text(encoding="utf-8") == before
+    assert "MISSING-KNOWN-NEW" in capsys.readouterr().err

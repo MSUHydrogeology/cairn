@@ -221,10 +221,12 @@ def update_symbol(
       mapping and introduces NO new top-level node, so the only tolerated NEW keys
       are the original split's facade re-exports. ``known_new`` maps
       ``{key: [digest, …]}`` (the sorted digest multiset per key — see
-      ``fixtures/scaffold_ast_known_new.json``); a live NEW key absent from the
-      manifest, with a changed digest (an altered body behind an allowed name), or
-      with a changed occurrence count (a duplicated allowed key) is refused.
-      Omitted ``known_new`` means **strict**: any new symbol refuses;
+      ``fixtures/scaffold_ast_known_new.json``). Enforced as **complete-set
+      equality**: a live NEW key absent from the manifest, with a changed digest
+      (an altered body behind an allowed name), with a changed occurrence count (a
+      duplicated allowed key), **or a pinned key deleted from the live set** (a
+      removed security-relevant facade symbol) is refused. Omitted ``known_new``
+      means **strict**: any new symbol refuses;
     * a before/after attestation is emitted for the audit trail; and
     * only that one key's ``digest`` field is rewritten — every other baselined
       symbol is left byte-for-byte (the file stays canonical JSON).
@@ -285,6 +287,13 @@ def update_symbol(
             new_problems.append(f"NEW {k}  (known-new digest/multiplicity mismatch — live "
                                 f"{live_digests} != pinned {sorted(allowed_new[k])}: an altered "
                                 f"body or a duplicated key behind an allowed name)")
+    # Complete-set equality (Codex final confirmation): a pinned known-new key that is DELETED
+    # from the live set is absent from the loop above and is NOT a baseline MISSING (known-new
+    # keys are absent from the baseline by definition). Refuse it, so a security-relevant facade
+    # symbol cannot be silently removed under cover of a mapping update.
+    for k in sorted(set(allowed_new) - set(new)):
+        new_problems.append(f"MISSING-KNOWN-NEW {k}  (a pinned known-new symbol was deleted from "
+                            f"the live module set)")
     if new_problems:
         print(f"[update-symbol] REFUSED — {len(new_problems)} new-symbol violation(s) alongside "
               f"the mapping change; a surgical re-baseline must NOT bless injected or altered "

@@ -14,7 +14,7 @@
     }
   },
   "collection": {
-    "node_count": 1193,
+    "node_count": 1194,
     "node_ids": [
       "bootstrap/tests/test_active_surfacing_mechanism.py::TestActivatePromptEmission::test_active_prompt_in_outcome",
       "bootstrap/tests/test_active_surfacing_mechanism.py::TestActivatePromptEmission::test_active_prompt_not_re_emitted_on_second_run",
@@ -59,6 +59,7 @@
       "bootstrap/tests/test_ast_attest.py::test_update_symbol_cli_path",
       "bootstrap/tests/test_ast_attest.py::test_update_symbol_dry_run_writes_nothing",
       "bootstrap/tests/test_ast_attest.py::test_update_symbol_refuses_changed_body_behind_allowed_key",
+      "bootstrap/tests/test_ast_attest.py::test_update_symbol_refuses_deleted_known_new_key",
       "bootstrap/tests/test_ast_attest.py::test_update_symbol_refuses_duplicated_allowed_key",
       "bootstrap/tests/test_ast_attest.py::test_update_symbol_refuses_injected_new_symbol_strict",
       "bootstrap/tests/test_ast_attest.py::test_update_symbol_refuses_new_outside_known_new",
@@ -2107,7 +2108,7 @@
     "bootstrap/scaffold.py": "6751a79939b1f049699d6d75432d2e5fd497049c581b992d38a76ea0c4a23a72",
     "bootstrap/security_check.py": "7f568d50b9b0dc91e0f29fdd78417bb630c6ee2ff5c473db17c68a53258efb16",
     "bootstrap/tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "bootstrap/tests/_ast_attest.py": "77500eea3b7282216a8aa2e6f572d5945893ae7137d91b0299be346095d55421",
+    "bootstrap/tests/_ast_attest.py": "32380b283f8b297cebbd0182f6c54235dc41c257740f9abd881fea7217ce5a5a",
     "bootstrap/tests/_gate_manifest.py": "413906946f097c3b17b11444d6e37100f7e53922420e694a2a57a781518accb2",
     "bootstrap/tests/_loader_proto.py": "bfd7abf5eb9d44a6894a373af737df6a39c10738efca81dd42f59c6e51c07e97",
     "bootstrap/tests/_oracle.py": "f054994e35d3843ae6b5fec3bfd684184d108c24ee6a0bde332f35e35b1cbe1b",
@@ -2118,7 +2119,7 @@
     "bootstrap/tests/fixtures/skills/README.md": "d2cccbe5b15e3fb6b7723da35a9c821104e3e637148d435d321b3e5514b4adad",
     "bootstrap/tests/test_active_surfacing_mechanism.py": "0ef2d4d09134c83827b63e41b9fb04605e8780ea2571cd17b31740c309064f7f",
     "bootstrap/tests/test_active_surfacing_render.py": "00506b6272f891c44e6d4635e626718b9ccfec51674c34ffc93b10b1b152677b",
-    "bootstrap/tests/test_ast_attest.py": "282d77a123e092007a49ffec99abb1d67cec47d841dff1485d6958ab4e8cf080",
+    "bootstrap/tests/test_ast_attest.py": "04bb1fb644a644ceea4f9e2aa015acfaa5d3c17a18d2952cab25f070b658aa49",
     "bootstrap/tests/test_cairn_prefix_links.py": "0078b1332009c3960e8730a6f1dbc15681b8731e6edb53d5076d02580c256927",
     "bootstrap/tests/test_check_cairn_content.py": "c253ed6c376ae1565d78ec4bafb410cbcd79eb4d6b249764d1f0b1e01a1da158",
     "bootstrap/tests/test_check_cairn_counts.py": "1c5b3937a50eb1f150d5aedc59af76fb29091864094cb7513b866548dbf69dbf",
