@@ -128,7 +128,7 @@ in cairn/docs/quickstart.md.
 * You have cloned Cairn next to your target repo
   <!-- cairn-accept: suspicious-url reason="Literal Cairn clone URL the adopter needs to copy" reviewer="Claude" date=2026-05-28 -->
   (`git clone https://github.com/MSUHydrogeology/cairn-scientist-ai-teams.git cairn`).
-* You have a working Python 3.8+ environment for
+* You have a working Python 3.11+ environment for
   `bootstrap/scaffold.py`.
 * You have one AI coding agent connected to your target repo
   with read + write access to its working tree.

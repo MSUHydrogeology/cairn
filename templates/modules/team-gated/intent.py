@@ -20,7 +20,8 @@ one stdlib-only file:
 
 It is **stdlib-only** (``argparse``, ``dataclasses``, ``datetime``,
 ``hashlib``, ``json``, ``os``, ``subprocess``, ``sys``, ``pathlib``,
-``typing``) and **Python 3.8-safe**, matching Cairn's bootstrap floor.
+``typing``) and uses only **3.8-era syntax** — comfortably within Cairn's
+declared ``>=3.11`` supported floor (``doctrine/runtime-contract.md``).
 
 ## Substrate
 

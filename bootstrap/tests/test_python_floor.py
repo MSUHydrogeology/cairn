@@ -2,19 +2,20 @@
 
 Verifies that the scaffold engine (``bootstrap/_scaffold/``) does not
 require a Python version **higher** than the declared supported minimum
-(>=3.8).
+(>=3.11).
 
 The measured syntactic floor via ``vermin 1.8.0`` is 3.7; the declared
-supported minimum is 3.8 (3.7 is EOL).  This test asserts that the
-detected minimum does not *exceed* 3.8 — a regression guard that fires
-if a future engine change inadvertently raises the floor.
+supported minimum is 3.11 (3.7–3.9 are all EOL; 3.8 reached end-of-life
+2024-10, 3.9 in 2025-10).  This test asserts that the detected minimum does
+not *exceed* 3.11 — a regression guard that fires if a future engine change
+inadvertently raises the floor above the declared support line.
 
 The check skips gracefully when ``vermin`` is not importable or not
 on PATH; vermin is a dev/test-only dependency (install via
 ``pip install -r bootstrap/requirements-dev.txt``).
 
 A container-pinned compile check (compiling the engine inside a
-container pinned to exactly Python 3.8) is a noted future enhancement
+container pinned to exactly Python 3.11) is a noted future enhancement
 that provides deeper assurance; the vermin-based check is the v1
 mechanism and is sufficient as a regression guard.
 
@@ -37,9 +38,11 @@ import pytest
 CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
 ENGINE_DIR = CAIRN_ROOT / "bootstrap" / "_scaffold"
 
-# The declared supported minimum floor — >=3.8.
-# This is the assertion bound: the detected minimum must be <= this.
-DECLARED_FLOOR = (3, 8)
+# The declared supported minimum floor — >=3.11: the earliest non-EOL Python
+# with meaningful runway (3.8 EOL 2024-10, 3.9 EOL 2025-10, 3.10 EOL ~2026-10).
+# The single source of this number is doctrine/runtime-contract.md; keep them
+# in lockstep. This is the assertion bound: the detected minimum must be <= this.
+DECLARED_FLOOR = (3, 11)
 
 
 # ---------------------------------------------------------------------------
@@ -154,14 +157,14 @@ def _run_vermin(target: Path) -> tuple[int, int] | None:
 class TestPythonFloor:
     @pytest.mark.skipif(not _vermin_available(), reason=_SKIP_REASON)
     def test_engine_floor_does_not_exceed_declared_minimum(self) -> None:
-        """The scaffold engine's detected Python floor must not exceed 3.8.
+        """The scaffold engine's detected Python floor must not exceed 3.11.
 
         This is a regression guard: if a future change raises the engine's
-        minimum requirement above the declared >=3.8 floor, this test fails
+        minimum requirement above the declared >=3.11 floor, this test fails
         and the floor declaration in ``doctrine/runtime-contract.md`` must
         be updated intentionally.
 
-        Pass condition: detected_floor <= DECLARED_FLOOR (i.e., <=3.8).
+        Pass condition: detected_floor <= DECLARED_FLOOR (i.e., <=3.11).
         """
         assert ENGINE_DIR.is_dir(), (
             f"Engine directory not found at {ENGINE_DIR}; "

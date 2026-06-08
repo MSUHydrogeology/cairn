@@ -8,26 +8,32 @@ matrix. It supersedes any other claim in the repository.
 
 ## Python floor
 
-**`requires-python = ">=3.8"`**
+**`requires-python = ">=3.11"`**
 
 The engine (`bootstrap/_scaffold/`, ~6,044 lines across eight owned
 modules plus the verifying loader `_guard`) was measured with `vermin`
 (see `bootstrap/tests/`) against
 the post-scaffold-split topology. The measured **syntactic** minimum
-is **Python 3.7**. The declared **supported** minimum is **Python
-3.8** — 3.7 reached end-of-life in June 2023 and is not tested or
-supported; 3.8 is the earliest non-EOL floor.
+is **Python 3.7** — the engine is written conservatively and uses no
+syntax newer than 3.7. The declared **supported** minimum, however, is
+**Python 3.11**: it is a *support / test* policy, not a syntactic
+requirement, and is set to the **earliest non-EOL Python with meaningful
+runway**. 3.7 (EOL Jun 2023), 3.8 (EOL Oct 2024), and 3.9 (EOL Oct 2025)
+are all past end-of-life; 3.10 reaches EOL ~Oct 2026, so 3.11 (EOL Oct
+2027) is the first floor that does not force an immediate re-bump. We do
+not test or support an EOL Python even though the syntax still runs on it.
 
 Cairn is not a pip-installable package and carries no `pyproject.toml`,
 so this document is the **authoritative** floor declaration (the floor is
 not machine-enforced at install time). If Cairn ever gains a
-`pyproject.toml`, it should carry `requires-python = ">=3.8"`.
+`pyproject.toml`, it should carry `requires-python = ">=3.11"`.
 
 The previous claim of "Python 3.10+" in `bootstrap/prompts/bootstrap-lite.md`
 and an implicit "scaffold.py syntax is 3.10+" are **refuted** by
-measurement. `templates/modules/team-gated/intent.py`'s claim of
-"Python 3.8-safe, matching Cairn's bootstrap floor" is **confirmed
-correct**.
+measurement — the engine is syntactically 3.7-clean, comfortably within the
+declared `>=3.11` support line. (`templates/modules/team-gated/intent.py`'s
+"3.8-era syntax" note describes that same conservatism; the *supported*
+floor is the 3.11 policy, not the syntactic floor.)
 
 **Engine topology (post-scaffold-split, 2026-06).** The scaffold
 engine is split across two surfaces:
@@ -49,12 +55,12 @@ is the practical non-Python adoption path.
 
 | Version | Status |
 |---------|--------|
-| 3.8     | Supported minimum (non-EOL) |
-| 3.9     | Supported |
-| 3.10    | Supported |
-| 3.11    | Supported |
-| 3.12    | Supported (primary development version) |
-| 3.7     | Measured syntactic floor; not supported (EOL) |
+| 3.11    | Supported minimum (earliest non-EOL with runway) |
+| 3.12    | Supported |
+| 3.13    | Supported (canonical interpreter; gates run here) |
+| 3.10    | Below floor; EOL ~Oct 2026; not supported |
+| 3.8–3.9 | EOL (Oct 2024 / Oct 2025); not supported |
+| 3.7     | Measured syntactic floor; not supported (EOL Jun 2023) |
 | < 3.7   | Not supported |
 
 ### Launcher resolution
@@ -184,7 +190,7 @@ the budget ledger but do not affect the stdlib-only runtime contract.
 
 A test in `bootstrap/tests/test_python_floor.py` runs `vermin` over
 the engine (`bootstrap/_scaffold/`) and asserts that the detected
-minimum does not **exceed** the declared floor (>=3.8). The check
+minimum does not **exceed** the declared floor (>=3.11). The check
 skips gracefully if `vermin` is not importable or on PATH. Install
 dev dependencies to run it:
 
@@ -195,5 +201,5 @@ python3 -m pytest bootstrap/tests/test_python_floor.py -v
 
 The vermin-based check is the v1 mechanism. A container-pinned compile
 check (compiling the engine inside a container pinned to exactly
-Python 3.8) provides deeper assurance and is a noted future
+Python 3.11) provides deeper assurance and is a noted future
 enhancement; the vermin check is sufficient for v1.
