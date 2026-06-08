@@ -48,7 +48,8 @@ and a new empty `Unreleased` is started above.
   immutable git object. Built so a minimally-supervised multi-step batch is
   *risk-bounded by mechanism*, not instruction. Hardened after an external
   confirmation pass: `update-symbol` refuses a mapping change that smuggles a new
-  top-level symbol (beyond a pinned base set); the frozen set covers the shipped
+  top-level symbol — or an altered body / duplicate behind an allowed name —
+  beyond a base set pinned by structural digest + multiplicity; the frozen set covers the shipped
   `templates/modules` scanner implementations; and the verifier takes an explicit
   `--target-repo` (trusted code, batch target) with a mandatory-anchor mode.
 

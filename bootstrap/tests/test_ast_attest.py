@@ -285,24 +285,61 @@ def test_update_symbol_refuses_injected_new_symbol_strict(tmp_path, capsys):
     # strict (no known_new): the injected function refuses, no write
     assert A.update_symbol(bp, "_MODULE_MAPPINGS", old, [live]) == 4
     assert bp.read_text(encoding="utf-8") == before
-    assert "new top-level symbol" in capsys.readouterr().err
+    assert "new-symbol violation" in capsys.readouterr().err
 
 
-def test_update_symbol_allows_only_pinned_known_new(tmp_path):
-    # The real cascade carries pre-existing facade re-exports; a known-new allowlist
-    # that contains exactly those lets the one-mapping update proceed, while an
-    # UNPINNED new symbol still refuses.
+def test_update_symbol_allows_pinned_known_new_by_digest(tmp_path):
+    # The real cascade carries pre-existing facade re-exports; a known-new manifest that
+    # pins each by its exact digest lets the one-mapping update proceed.
     bp, base = _canon_baseline(tmp_path, _SRC_V1)
     old = base[_MM]["digest"]
-    # (a) the injected symbol IS in known_new -> allowed, writes
-    live_a = _write(tmp_path, "a.py", _SRC_INJECT)
-    assert A.update_symbol(bp, "_MODULE_MAPPINGS", old, [live_a],
-                           known_new={"FunctionDef:injected_gate_bypass"}) == 0
-    assert json.loads(bp.read_text())[_MM]["digest"] == A.digest_module(live_a)[_MM]["digest"]
-    # (b) a DIFFERENT new symbol, not in known_new -> refuses, no write
-    bp2, base2 = _canon_baseline(tmp_path, _SRC_V1, bname="base2.json")
-    live_b = _write(tmp_path, "b.py", _SRC_INJECT)
-    before2 = bp2.read_text(encoding="utf-8")
-    assert A.update_symbol(bp2, "_MODULE_MAPPINGS", base2[_MM]["digest"], [live_b],
-                           known_new={"FunctionDef:some_other_reexport"}) == 4
-    assert bp2.read_text(encoding="utf-8") == before2
+    live = _write(tmp_path, "a.py", _SRC_INJECT)
+    d = A.digest_module(live)["FunctionDef:injected_gate_bypass"]["digest"]
+    assert A.update_symbol(bp, "_MODULE_MAPPINGS", old, [live],
+                           known_new={"FunctionDef:injected_gate_bypass": [d]}) == 0
+    assert json.loads(bp.read_text())[_MM]["digest"] == A.digest_module(live)[_MM]["digest"]
+
+
+def test_update_symbol_refuses_new_outside_known_new(tmp_path):
+    bp, base = _canon_baseline(tmp_path, _SRC_V1)
+    live = _write(tmp_path, "b.py", _SRC_INJECT)
+    before = bp.read_text(encoding="utf-8")
+    # a DIFFERENT key is pinned; the injected one is absent -> refuse, no write
+    assert A.update_symbol(bp, "_MODULE_MAPPINGS", base[_MM]["digest"], [live],
+                           known_new={"FunctionDef:some_other_reexport": ["0" * 16]}) == 4
+    assert bp.read_text(encoding="utf-8") == before
+
+
+def test_update_symbol_refuses_changed_body_behind_allowed_key(tmp_path, capsys):
+    # Codex recheck: an ALLOWED name whose body changed (different digest) must refuse —
+    # a name allowlist is insufficient.
+    bp, base = _canon_baseline(tmp_path, _SRC_V1)
+    live = _write(tmp_path, "live.py",
+                  "_MODULE_MAPPINGS = {'a': 1, 'b': 2}\n"
+                  "_SKILLS_MAPPINGS = (('x', 'y', True),)\n"
+                  "def helper():\n    return 1\n"
+                  "def install():\n    return 'changed-unreviewed-behavior'\n")
+    before = bp.read_text(encoding="utf-8")
+    # pin 'install' to a DIFFERENT digest than the live body -> mismatch -> refuse
+    assert A.update_symbol(bp, "_MODULE_MAPPINGS", base[_MM]["digest"], [live],
+                           known_new={"FunctionDef:install": ["0" * 16]}) == 4
+    assert bp.read_text(encoding="utf-8") == before
+    assert "digest/multiplicity mismatch" in capsys.readouterr().err
+
+
+def test_update_symbol_refuses_duplicated_allowed_key(tmp_path):
+    # Codex recheck: an ALLOWED key duplicated across files (multiplicity 2 vs pinned 1)
+    # must refuse.
+    bp, base = _canon_baseline(tmp_path, _SRC_V1)
+    m1 = _write(tmp_path, "m1.py",
+                "_MODULE_MAPPINGS = {'a': 1, 'b': 2}\n"
+                "_SKILLS_MAPPINGS = (('x', 'y', True),)\n"
+                "def helper():\n    return 1\n"
+                "def facade():\n    return 0\n")
+    m2 = _write(tmp_path, "m2.py", "def facade():\n    return 0\n")
+    d = A.digest_module(m1)["FunctionDef:facade"]["digest"]
+    before = bp.read_text(encoding="utf-8")
+    # facade is pinned once; live has it twice -> multiplicity mismatch -> refuse
+    assert A.update_symbol(bp, "_MODULE_MAPPINGS", base[_MM]["digest"], [m1, m2],
+                           known_new={"FunctionDef:facade": [d]}) == 4
+    assert bp.read_text(encoding="utf-8") == before
