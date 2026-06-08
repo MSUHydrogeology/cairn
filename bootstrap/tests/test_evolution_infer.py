@@ -122,6 +122,11 @@ class TestGateEval:
         assert ei.parse_rolling_window("**Rolling window**: 7 days") == 7
         assert ei.parse_rolling_window("**Rolling window**: 21") == 21
 
+    def test_nonpositive_window_is_fail_closed(self, ei) -> None:
+        # Zero and negative windows fail closed (no silent positive coercion).
+        assert ei.parse_rolling_window("**Rolling window**: 0 days") is None
+        assert ei.parse_rolling_window("**Rolling window**: -3 days") is None
+
     def test_unparseable_window_is_fail_closed(self, ei) -> None:
         assert ei.parse_rolling_window("no window here") is None
         text = _tracker("(no window line)",

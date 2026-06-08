@@ -124,8 +124,13 @@ def parse_rolling_window(text: str) -> int | None:
     m = _ROLLING_WINDOW_RE.search(text)
     if m is None:
         return None
-    dm = _DURATION_RE.search(m.group(1).strip())
+    value = m.group(1).strip()
+    dm = _DURATION_RE.search(value)
     if dm is None:
+        return None
+    # Fail-closed on a negative window (a leading '-' the digit-only capture
+    # would otherwise drop, e.g. "-3 days" -> 3).
+    if dm.start() > 0 and value[dm.start() - 1] == "-":
         return None
     try:
         n = int(dm.group(1))

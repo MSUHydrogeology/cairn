@@ -67,6 +67,15 @@ goodnight, not computed in the fail-safe commit hot path).
   `prevented`; a **knowingly-overridden** one (`enforce=confirm` acknowledged)
   → `occurred`. A *no-token* committer's overlap is **not** recorded — ownership
   is unprovable, and tagging it would over-count the gate.
+* **Scope (a conscious decision):** under the shipped `block` default the
+  auto-writer records `prevented` (the common case) and `occurred` (only a
+  confirm-ack override). It does **not** auto-record an incident in plain
+  `enforce=warn` mode or under an `ALLOW_UNCLAIMED` / `solo_mode` bypass — the
+  adopter has opted out of enforcement there, so those overlaps are surfaced as
+  warnings but left to the goodnight migration, not auto-counted. This is a
+  strict improvement over the all-hand-migration baseline (no regression for
+  warn-mode adopters), with a known follow-up to also auto-record `occurred`
+  for a warn-mode proceed past a provably-different live session's claim.
 * **Best-effort & fail-safe (R1):** the append never blocks, slows, or fails a
   commit; on any error it warns visibly and skips (the commit is unaffected). It
   only ever *appends a row* — never a `git reset` or index mutation.
