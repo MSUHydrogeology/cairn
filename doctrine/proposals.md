@@ -466,5 +466,21 @@ For each numbered critique, write one disposition token from the
 grammar above plus a one-sentence rationale. No silent dropping.
 Brief is fine; precision matters more than length.
 
+**Worked example — proposal Response** (no implementing commit yet):
+
+* **[R1]** accept — will incorporate in the next revision.
+* **[R2]** accept with modification — author-specified change named
+  inline (the spirit is preserved but the exact text differs).
+* **[R3]** reject — the assumption holds for the documented case; see
+  the relevant module / section.
+* **[R4]** defer — depends on a default only the Maintainer can settle.
+
+**Worked example — code-review Response** (implementing commits exist,
+so a `<sha>` is referenceable):
+
+* **[F1]** accept (merged at `<sha>`) — …
+* **[F2]** accept (rewrote inline) — …
+* **[F3]** accept (followup commit `<sha>`) — …
+
 If accepted critiques substantially change the proposal, write a short
 "## Revised proposal" section and update `Status:` to `revised`.
