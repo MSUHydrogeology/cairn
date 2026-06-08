@@ -124,11 +124,29 @@ def _merge_current(paths: list[str | Path]) -> tuple[dict[str, list[tuple[str, s
     return merged, []
 
 
-def verify(baseline_path: str | Path, module_paths: list[str | Path]) -> int:
-    baseline: dict[str, dict] = json.loads(Path(baseline_path).read_text(encoding="utf-8"))
-    merged, _ = _merge_current(module_paths)
-    problems: list[str] = []
+# Mapping symbols whose digest the surgical ``update-symbol`` path may rewrite
+# (Antigravity R1 / Codex S2). Restricted to the registry mapping symbols a
+# package/skill/core-file install legitimately mutates — NOT functions, classes,
+# or any other top-level symbol. Keyed by the bare name; the baseline key is
+# ``Assign:<name>`` (both plain ``Assign`` and ``AnnAssign`` collapse to that
+# key via ``_node_key``). Hard-coded, never derived from input.
+_UPDATE_ALLOWLIST = frozenset({"_MODULE_MAPPINGS", "_SKILLS_MAPPINGS", "_CORE_MAPPINGS"})
 
+
+def _classify(baseline: dict[str, dict], merged: dict[str, list[tuple[str, str]]]):
+    """Compare a baseline against merged live digests.
+
+    Returns ``(problems, changed, missing, duplicate, new)`` where ``problems``
+    is the human-readable line list ``verify`` emits, ``changed`` maps
+    ``key -> (baseline_digest, live_digest, file)``, ``missing``/``duplicate``
+    are key lists, and ``new`` is the sorted set of live keys absent from the
+    baseline. The skip rule (imports + module docstrings are per-module
+    necessities, not single-source moved symbols) is applied here so ``verify``
+    and ``update_symbol`` share one enforcement definition."""
+    problems: list[str] = []
+    changed: dict[str, tuple[str, str, str]] = {}
+    missing: list[str] = []
+    duplicate: list[str] = []
     for key, info in baseline.items():
         if info.get("type") in ("Import", "ImportFrom") or key.split("#", 1)[0] == "Docstring":
             # Per-module necessities, not single-source "moved symbols":
@@ -140,18 +158,28 @@ def verify(baseline_path: str | Path, module_paths: list[str | Path]) -> int:
             continue
         hits = merged.get(key, [])
         if not hits:
+            missing.append(key)
             problems.append(f"MISSING   {key}  (baselined, absent from the current module set)")
         elif len(hits) > 1:
             files = ", ".join(f for _d, f in hits)
+            duplicate.append(key)
             problems.append(f"DUPLICATE {key}  (defined in {len(hits)} files: {files} — single-source broken)")
         else:
             digest, where = hits[0]
             if digest != info["digest"]:
+                changed[key] = (info["digest"], digest, where)
                 problems.append(f"CHANGED   {key}  in {where}  (baseline {info['digest']} != {digest} — NOT pure motion)")
+    new = sorted(set(merged) - set(baseline))
+    return problems, changed, missing, duplicate, new
+
+
+def verify(baseline_path: str | Path, module_paths: list[str | Path]) -> int:
+    baseline: dict[str, dict] = json.loads(Path(baseline_path).read_text(encoding="utf-8"))
+    merged, _ = _merge_current(module_paths)
+    problems, _changed, _missing, _duplicate, new = _classify(baseline, merged)
 
     # New top-level symbols are allowed (compat shims, __init__ facade re-exports),
     # but report them so a reviewer sees what an extraction commit introduced.
-    new = sorted(set(merged) - set(baseline))
     for key in new:
         where = ", ".join(f for _d, f in merged[key])
         print(f"note: NEW {key}  ({where})", file=sys.stderr)
@@ -165,6 +193,102 @@ def verify(baseline_path: str | Path, module_paths: list[str | Path]) -> int:
     return 0
 
 
+def update_symbol(
+    baseline_path: str | Path,
+    symbol: str,
+    expect_old: str,
+    module_paths: list[str | Path],
+    *,
+    dry_run: bool = False,
+    out=None,
+) -> int:
+    """Surgically rewrite ONE allowlisted mapping symbol's digest in the baseline.
+
+    The single legitimate baseline mutation during the six-proposal cascade: a
+    package/skill/core install adds an ``InstallSpec`` to ``_MODULE_MAPPINGS`` /
+    ``_SKILLS_MAPPINGS`` / ``_CORE_MAPPINGS``, changing exactly that symbol's
+    structural digest. Hardened so a one-key rewrite cannot bless an unintended
+    mutation (Codex S2):
+
+    * the symbol must be in :data:`_UPDATE_ALLOWLIST` (registry mappings only);
+    * ``--expect-old`` must equal the symbol's current baseline digest;
+    * the live module set must show the target as the **only** CHANGED symbol,
+      with **no** MISSING / DUPLICATE drift — any unrelated discrepancy refuses;
+    * a before/after attestation is emitted for the audit trail; and
+    * only that one key's ``digest`` field is rewritten — every other baselined
+      symbol is left byte-for-byte (the file stays canonical JSON).
+
+    Exit codes: 0 written/dry-run-ok; 2 usage/allowlist/absent-key; 3
+    expect-old mismatch; 4 no-change or unrelated drift (refused, no write)."""
+    # Resolve the stream at call time (a ``sys.stderr`` default would bind the
+    # pre-capture stream at import, breaking capsys-style redirection).
+    if out is None:
+        out = sys.stderr
+    norm = symbol[len("Assign:"):] if symbol.startswith("Assign:") else symbol
+    full = f"Assign:{norm}"
+    if norm not in _UPDATE_ALLOWLIST:
+        print(f"[update-symbol] REFUSED — '{symbol}' is not an allowlisted mapping "
+              f"symbol ({', '.join(sorted(_UPDATE_ALLOWLIST))})", file=out)
+        return 2
+
+    baseline_path = Path(baseline_path)
+    baseline: dict[str, dict] = json.loads(baseline_path.read_text(encoding="utf-8"))
+    if full not in baseline:
+        print(f"[update-symbol] REFUSED — '{full}' is not present in the baseline", file=out)
+        return 2
+
+    baseline_old = baseline[full]["digest"]
+    if baseline_old != expect_old:
+        print(f"[update-symbol] REFUSED — expect-old mismatch for {full}: baseline carries "
+              f"{baseline_old!r}, --expect-old said {expect_old!r}. No write.", file=out)
+        return 3
+
+    merged, _ = _merge_current(module_paths)
+    problems, changed, _missing, _duplicate, new = _classify(baseline, merged)
+
+    if full not in changed:
+        print(f"[update-symbol] REFUSED — {full} is NOT changed vs the baseline in the given "
+              f"module set; there is nothing to update (live digest already matches). No write.",
+              file=out)
+        return 4
+
+    unexpected = [p for p in problems if not p.startswith(f"CHANGED   {full}  ")]
+    if unexpected:
+        print(f"[update-symbol] REFUSED — unrelated drift present; will not rewrite {full} while "
+              f"other baselined symbols differ (one-symbol delta violated):", file=out)
+        for p in unexpected:
+            print(f"  {p}", file=out)
+        return 4
+
+    old_d, new_d, where = changed[full]
+    n_other = sum(
+        1 for k, i in baseline.items()
+        if i.get("type") not in ("Import", "ImportFrom")
+        and k.split("#", 1)[0] != "Docstring" and k != full
+    )
+    print("[update-symbol] AST baseline single-symbol update", file=out)
+    print(f"  baseline file : {baseline_path}", file=out)
+    print(f"  symbol        : {full}  (allowlisted)", file=out)
+    print(f"  expect-old    : {expect_old}", file=out)
+    print(f"  baseline-old  : {old_d}  [MATCH]", file=out)
+    print(f"  live-new      : {new_d}  in {where}", file=out)
+    print(f"  unrelated     : none — 0 CHANGED / 0 MISSING / 0 DUPLICATE across "
+          f"{n_other} other enforced symbols", file=out)
+    print(f"  new top-level : {', '.join(new) if new else 'none'}", file=out)
+
+    if dry_run:
+        print("  action        : DRY-RUN — no write", file=out)
+        return 0
+
+    baseline[full]["digest"] = new_d
+    text = json.dumps(baseline, indent=2, sort_keys=True) + "\n"
+    tmp = baseline_path.with_name(baseline_path.name + ".tmp")
+    tmp.write_text(text, encoding="utf-8")
+    tmp.replace(baseline_path)
+    print(f"  action        : WROTE {baseline_path}", file=out)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="ast_attest", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -174,11 +298,26 @@ def main(argv: list[str] | None = None) -> int:
     v = sub.add_parser("verify", help="verify a stage's module set against a baseline")
     v.add_argument("baseline")
     v.add_argument("modules", nargs="+")
+    u = sub.add_parser(
+        "update-symbol",
+        help="surgically rewrite ONE allowlisted mapping symbol's digest in the baseline",
+    )
+    u.add_argument("symbol", help="mapping symbol name (_MODULE_MAPPINGS / _SKILLS_MAPPINGS / _CORE_MAPPINGS)")
+    u.add_argument("--baseline", required=True, help="path to the baseline JSON to rewrite")
+    u.add_argument("--expect-old", required=True, dest="expect_old",
+                   help="the symbol's current baseline digest (refuses on mismatch)")
+    u.add_argument("--dry-run", action="store_true", help="attest the change but write nothing")
+    u.add_argument("modules", nargs="+", help="the live module set (same set 'verify' uses)")
     args = parser.parse_args(argv)
     if args.cmd == "baseline":
         json.dump(digest_module(args.module), sys.stdout, indent=2, sort_keys=True)
         sys.stdout.write("\n")
         return 0
+    if args.cmd == "update-symbol":
+        return update_symbol(
+            args.baseline, args.symbol, args.expect_old, args.modules,
+            dry_run=args.dry_run, out=sys.stderr,
+        )
     return verify(args.baseline, args.modules)
 
 

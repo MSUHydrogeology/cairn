@@ -34,6 +34,20 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **Gate-control tooling for unattended registry-cascade batches.**
+  `bootstrap/tests/_ast_attest.py` gains a hardened `update-symbol` subcommand that
+  surgically re-baselines exactly one allowlisted registry-mapping digest
+  (`_MODULE_MAPPINGS` / `_SKILLS_MAPPINGS` / `_CORE_MAPPINGS`) — guarded by
+  `--expect-old`, refuse-on-unrelated-drift, and a before/after attestation, so a
+  one-key rebaseline cannot bless an unintended mutation. New
+  `bootstrap/tests/_gate_manifest.py` freezes a pre-run gate-integrity manifest —
+  byte hashes of every test / scanner / security-gate / oracle file (including the
+  top-level `security_check.py` / `verify_integrity.py` gate modules), the pytest
+  collection node-IDs plus skip/xfail identities, and the cascade-mutable set — with
+  a verifier that HOLDs on any gate weakening and is externally anchored to an
+  immutable git object. Built so a minimally-supervised multi-step batch is
+  *risk-bounded by mechanism*, not instruction.
+
 - **An adopter-facing security stack — folded up from a battle-tested
   reference implementation as a three-surface split.** `security-review`
   (doctrine) gains a generalized, tool-agnostic by-input-class injection-review

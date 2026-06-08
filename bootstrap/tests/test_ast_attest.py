@@ -151,3 +151,117 @@ def test_missing_symbol_fails(tmp_path):
     (tmp_path / "base.json").write_text(json.dumps(base), encoding="utf-8")
     partial = _write(tmp_path, "m1.py", "def f(x):\n    return x\n")  # g dropped
     assert A.verify(tmp_path / "base.json", [partial]) == 1
+
+
+# --- update-symbol: the hardened single-symbol cascade baseline rewrite ----------
+# (scaffold six-proposal superplan, pre-run gate-control prerequisite; Antigravity
+# R1 + Codex S2). The ONLY legitimate baseline mutation during the cascade is a
+# registry mapping symbol gaining an InstallSpec, changing exactly that symbol's
+# digest. These pin: rewrites exactly one allowlisted key (others byte-for-byte),
+# and every refusal path (non-allowlist, expect-old mismatch, unrelated drift,
+# no-change, dry-run) writes nothing.
+
+_MM = "Assign:_MODULE_MAPPINGS"
+_SRC_V1 = (
+    "_MODULE_MAPPINGS = {'a': 1}\n"
+    "_SKILLS_MAPPINGS = (('x', 'y', True),)\n"
+    "def helper():\n    return 1\n"
+)
+_SRC_V2 = (  # only _MODULE_MAPPINGS changed (an InstallSpec added) — the legit cascade delta
+    "_MODULE_MAPPINGS = {'a': 1, 'b': 2}\n"
+    "_SKILLS_MAPPINGS = (('x', 'y', True),)\n"
+    "def helper():\n    return 1\n"
+)
+_SRC_V3 = (  # _MODULE_MAPPINGS AND helper changed — unrelated drift, must refuse
+    "_MODULE_MAPPINGS = {'a': 1, 'b': 2}\n"
+    "_SKILLS_MAPPINGS = (('x', 'y', True),)\n"
+    "def helper():\n    return 999\n"
+)
+
+
+def _canon_baseline(tmp_path, src, fname="mono.py", bname="base.json"):
+    """Write a baseline in the SAME canonical form the committed baseline uses
+    (indent=2, sort_keys, trailing newline) so byte-for-byte assertions are real."""
+    base = A.digest_module(_write(tmp_path, fname, src))
+    bp = tmp_path / bname
+    bp.write_text(json.dumps(base, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return bp, base
+
+
+def test_update_symbol_rewrites_exactly_one_key(tmp_path, capsys):
+    bp, base = _canon_baseline(tmp_path, _SRC_V1)
+    live = _write(tmp_path, "live.py", _SRC_V2)
+    old = base[_MM]["digest"]
+    new_expected = A.digest_module(live)[_MM]["digest"]
+    assert new_expected != old
+    before = json.loads(bp.read_text(encoding="utf-8"))
+
+    assert A.update_symbol(bp, "_MODULE_MAPPINGS", old, [live]) == 0
+
+    after = json.loads(bp.read_text(encoding="utf-8"))
+    assert set(before) == set(after), "no key added or dropped"
+    for k in before:
+        if k == _MM:
+            assert after[k]["digest"] == new_expected
+            assert after[k]["digest"] != before[k]["digest"]
+        else:
+            assert after[k] == before[k], f"unrelated key {k} must be untouched"
+    # the file stays canonical — only the one digest moved
+    assert bp.read_text(encoding="utf-8") == json.dumps(after, indent=2, sort_keys=True) + "\n"
+    err = capsys.readouterr().err
+    assert "single-symbol update" in err and "WROTE" in err
+
+
+def test_update_symbol_refuses_non_allowlisted_key(tmp_path):
+    bp, base = _canon_baseline(tmp_path, _SRC_V1)
+    live = _write(tmp_path, "live.py", _SRC_V3)
+    before = bp.read_text(encoding="utf-8")
+    assert A.update_symbol(bp, "helper", "whatever", [live]) == 2
+    assert bp.read_text(encoding="utf-8") == before  # no write
+
+
+def test_update_symbol_refuses_on_expect_old_mismatch(tmp_path):
+    bp, base = _canon_baseline(tmp_path, _SRC_V1)
+    live = _write(tmp_path, "live.py", _SRC_V2)
+    before = bp.read_text(encoding="utf-8")
+    assert A.update_symbol(bp, "_MODULE_MAPPINGS", "deadbeefdeadbeef", [live]) == 3
+    assert bp.read_text(encoding="utf-8") == before  # no write
+
+
+def test_update_symbol_refuses_on_unrelated_drift(tmp_path):
+    bp, base = _canon_baseline(tmp_path, _SRC_V1)
+    live = _write(tmp_path, "live.py", _SRC_V3)  # mapping + helper both changed
+    old = base[_MM]["digest"]
+    before = bp.read_text(encoding="utf-8")
+    assert A.update_symbol(bp, "_MODULE_MAPPINGS", old, [live]) == 4
+    assert bp.read_text(encoding="utf-8") == before  # no write
+
+
+def test_update_symbol_refuses_when_unchanged(tmp_path):
+    bp, base = _canon_baseline(tmp_path, _SRC_V1)
+    live = _write(tmp_path, "live.py", _SRC_V1)  # identical — nothing to update
+    old = base[_MM]["digest"]
+    before = bp.read_text(encoding="utf-8")
+    assert A.update_symbol(bp, "_MODULE_MAPPINGS", old, [live]) == 4
+    assert bp.read_text(encoding="utf-8") == before  # no write
+
+
+def test_update_symbol_dry_run_writes_nothing(tmp_path, capsys):
+    bp, base = _canon_baseline(tmp_path, _SRC_V1)
+    live = _write(tmp_path, "live.py", _SRC_V2)
+    old = base[_MM]["digest"]
+    before = bp.read_text(encoding="utf-8")
+    assert A.update_symbol(bp, "_MODULE_MAPPINGS", old, [live], dry_run=True) == 0
+    assert bp.read_text(encoding="utf-8") == before  # no write
+    assert "DRY-RUN" in capsys.readouterr().err
+
+
+def test_update_symbol_cli_path(tmp_path):
+    bp, base = _canon_baseline(tmp_path, _SRC_V1)
+    live = _write(tmp_path, "live.py", _SRC_V2)
+    old = base[_MM]["digest"]
+    rc = A.main(["update-symbol", "_MODULE_MAPPINGS", "--baseline", str(bp),
+                 "--expect-old", old, str(live)])
+    assert rc == 0
+    after = json.loads(bp.read_text(encoding="utf-8"))
+    assert after[_MM]["digest"] == A.digest_module(live)[_MM]["digest"]
