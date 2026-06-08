@@ -2109,7 +2109,7 @@
     "bootstrap/security_check.py": "7f568d50b9b0dc91e0f29fdd78417bb630c6ee2ff5c473db17c68a53258efb16",
     "bootstrap/tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "bootstrap/tests/_ast_attest.py": "32380b283f8b297cebbd0182f6c54235dc41c257740f9abd881fea7217ce5a5a",
-    "bootstrap/tests/_gate_manifest.py": "413906946f097c3b17b11444d6e37100f7e53922420e694a2a57a781518accb2",
+    "bootstrap/tests/_gate_manifest.py": "9e48b075eab61332aac9584b2580b20a1247ea5f40da9568e7a452103f5ec6eb",
     "bootstrap/tests/_loader_proto.py": "bfd7abf5eb9d44a6894a373af737df6a39c10738efca81dd42f59c6e51c07e97",
     "bootstrap/tests/_oracle.py": "f054994e35d3843ae6b5fec3bfd684184d108c24ee6a0bde332f35e35b1cbe1b",
     "bootstrap/tests/conftest.py": "59ab1f5413837e30055bde7d836556a31f3220c4c09917279d16f6e51c5d1210",
@@ -2145,7 +2145,6 @@
     "bootstrap/tests/test_hardening.py": "fa4aeb136cc62d04cdbb59a8d8968c8d2f4d8e43ea6d23d0870d2116a8719a8a",
     "bootstrap/tests/test_incident_trackers_module.py": "ea5479968cc1cdb28d852e5d1a1b6149c0fdd7992fc50e8b710d9612a4cd478b",
     "bootstrap/tests/test_install_module.py": "4109794203ff972891d0cc419035da7897a7efd1fef816c16a018c321138cf23",
-    "bootstrap/tests/test_intents_tool.py": "9128e4275a85f25674c555af431710128e3ca7e6889208b464fa7f67897b25d6",
     "bootstrap/tests/test_issue_capture_bootstrap.py": "1883065250b6b11be61fd203c19a0f2ce57b27a70d9558ace9c6ae58b005b6f7",
     "bootstrap/tests/test_lifecycle_cli.py": "1418984ce41b4882e2959107cfde6b641ef17a7d675cbd672ef4ed75fcf268ae",
     "bootstrap/tests/test_lifecycle_failsafe.py": "3b76c4722216cdb49aae0bbebcfe5a0cd5b0fbd73648dec036630c5b19607184",
@@ -2290,6 +2289,10 @@
     }
   },
   "phase_mutable": {
+    "bootstrap/tests/test_intents_tool.py": {
+      "governed_by": "phase A intent-split TEST FIXTURE \u2014 _git_repo (+ inline copies) stage the _intent/ package beside the copied facade so the git-hook subprocess tests find the engine; ASSERTIONS UNCHANGED. Governed by collection identity (node-IDs / skip-xfail) + green suite + External-stance review, not a byte hash. Supervised re-anchor, Maintainer-authorized.",
+      "pre_run_sha256": "9128e4275a85f25674c555af431710128e3ca7e6889208b464fa7f67897b25d6"
+    },
     "templates/modules/default-on/lifecycle_metrics.py": {
       "governed_by": "phase C metrics fold-up \u2014 per-phase AST attestation + External-stance review",
       "pre_run_sha256": "13b5ad8d59f165b0abf5534413c42ccbb56533886cc1a0008893f8465dacc59a"

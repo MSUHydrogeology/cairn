@@ -82,12 +82,24 @@ CASCADE_MUTABLE: dict[str, str] = {
         "differential oracle — frozen-engine _MODULE_MAPPINGS lockstep",
 }
 
-# Module-template files a refactor phase legitimately rewrites (facade splits) —
-# EXCLUDED from frozen hashing, governed by each phase's AST source-motion attestation
-# + External-stance review, NOT a byte hash. Reported as notes by the verifier. Every
-# OTHER templates/modules/**/*.py (the shipped scanner / security-gate implementations:
-# content_scan*, run_security_audit, link_check, …) IS frozen — the batch does not edit
-# them, and weakening a deployed scanner must HOLD (Codex confirmation R2-2 Finding 2).
+# Module-template files a refactor phase legitimately rewrites (facade splits) — plus the
+# per-phase test fixtures those splits require — EXCLUDED from frozen hashing, governed by
+# each phase's AST source-motion attestation + collection-identity (node-IDs / skip-xfail)
+# + green suite + External-stance review, NOT a byte hash. Reported as notes by the verifier.
+# Every OTHER templates/modules/**/*.py (the shipped scanner / security-gate implementations:
+# content_scan*, run_security_audit, link_check, …) and every OTHER bootstrap/tests/**/*.py
+# IS frozen — the batch does not edit them, and weakening a deployed scanner or a gate test
+# must HOLD (Codex confirmation R2-2 Finding 2).
+#
+# Re-anchor 2026-06-08 (g-series, supervised + Maintainer-authorized, option-(a)): added
+# test_intents_tool.py. The intent-split facade loads its `_intent/` package as a runtime
+# sibling; ~50 of this file's tests exercise git-hook install by copying ONLY the facade into
+# a throwaway repo (`_git_repo`, + two inline copies) and running it as a subprocess, so they
+# must also stage `_intent/` beside the copied facade. That edits this gate file → the
+# pre-run manifest froze it → a hard-stop the run cannot self-certify. The edit is a
+# non-weakening FIXTURE change (no assertion touched); collection identity + the green suite
+# + the External-stance review remain the behavioural gate. Scope is A-specific (B/C load
+# their helpers in-process from the in-tree location; no fixture edit).
 PHASE_SPLIT_TARGETS: dict[str, str] = {
     "templates/modules/team-gated/intent.py":
         "phase A intent-split facade — per-phase AST source-motion attestation + External-stance review",
@@ -95,6 +107,11 @@ PHASE_SPLIT_TARGETS: dict[str, str] = {
         "phase B onboarding-split facade — per-phase AST attestation + External-stance review",
     "templates/modules/default-on/lifecycle_metrics.py":
         "phase C metrics fold-up — per-phase AST attestation + External-stance review",
+    "bootstrap/tests/test_intents_tool.py":
+        "phase A intent-split TEST FIXTURE — _git_repo (+ inline copies) stage the _intent/ "
+        "package beside the copied facade so the git-hook subprocess tests find the engine; "
+        "ASSERTIONS UNCHANGED. Governed by collection identity (node-IDs / skip-xfail) + green "
+        "suite + External-stance review, not a byte hash. Supervised re-anchor, Maintainer-authorized.",
 }
 
 # Which phases may legitimately change each registry mapping symbol's digest.
