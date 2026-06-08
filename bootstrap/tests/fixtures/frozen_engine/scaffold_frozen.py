@@ -859,6 +859,11 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
                     "dev/modules/incident-trackers.md"),
         InstallSpec("default-on/incident_log_template.md",
                     "dev/modules/incident_log_template.md"),
+        # The deterministic, zero-token rate-limit-gate evaluator +
+        # fold-up-backlog checker (self-evolution-loop Part B). Reads the
+        # trackers + the fold-back ledger and emits suggestions only.
+        InstallSpec("default-on/evolution_infer.py",
+                    "tools/evolution_infer.py", verbatim=True),
     ],
     # The placement-decision procedure for documentation and doctrine.
     # Default-on: every adopter benefits from a four-layer routing

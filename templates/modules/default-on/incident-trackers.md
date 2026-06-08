@@ -132,6 +132,20 @@ the doctrine the trackers are the substrate for. The gate's
 rolling-window boundary the adopter chose (typically 14 days; the
 tracker's "What counts" sub-section pins the per-tracker boundary).
 
+The gate is **machine-evaluable**, not normative-only: the
+deterministic, zero-token `tools/evolution_infer.py` (installed with
+this module; self-evolution-loop Part B) reads each tracker, sources
+the rolling window from the tracker's `**Rolling window**:` line, counts
+`Impact = occurred` rows of each event class within it, and **suggests**
+a doctrine proposal when the count meets the recurrence threshold
+(default `>=2`). It is **fail-closed**: a tracker whose rolling window
+is unparseable is reported and not silently defaulted (the gate cannot
+be evaluated until the adopter sets it). The tool **only suggests** —
+the decision to open a proposal stays human. It also flags a **fold-up
+backlog** from the fold-back ledger's open-candidate count. The full
+handoff runs it read-only; run it any time with
+`python tools/evolution_infer.py`.
+
 ## Forking the template
 
 Adopters fork **one or many** instances of

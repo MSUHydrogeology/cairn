@@ -216,10 +216,10 @@
     "type": "Assign"
   },
   "Assign:_MODULE_MAPPINGS": {
-    "digest": "f025fc5213edac12",
+    "digest": "48f0a27f02f59636",
     "span": [
       298,
-      571
+      576
     ],
     "type": "AnnAssign"
   },

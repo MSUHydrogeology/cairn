@@ -951,6 +951,39 @@ def _run_lifecycle_metrics(root: Path, interpreter: str) -> None:
         _warn(f"could not run lifecycle_metrics.py: {exc}")
 
 
+def _run_evolution_infer(root: Path, interpreter: str) -> None:
+    """Run the deterministic rate-limit-gate / fold-up-backlog checker
+    (``evolution_infer.py``) read-only, if installed.
+
+    Zero-token, deterministic decision-support (self-evolution-loop Part B):
+    surfaces rate-limit suggestions + a fold-up-backlog alarm. Skip-with-note
+    when absent; never fails the handoff. The checker emits suggestions only --
+    it mutates nothing. A non-zero exit (a fail-closed tracker) is surfaced as a
+    note, not a failure."""
+    tool = _sibling_tool("evolution_infer.py")
+    if tool is None:
+        _warn(
+            "evolution_infer.py not installed -- skipping the rate-limit-gate "
+            "/ backlog check."
+        )
+        return
+    try:
+        proc = subprocess.run(
+            [interpreter, str(tool)],
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+            check=False,
+            env=_git_env(),
+        )
+        if proc.stdout:
+            sys.stdout.write(proc.stdout)
+        if proc.returncode != 0 and proc.stderr:
+            _warn(f"evolution_infer reported: {proc.stderr.strip()}")
+    except OSError as exc:
+        _warn(f"could not run evolution_infer.py: {exc}")
+
+
 def _surface_foldback_candidates(root: Path, interpreter: str) -> None:
     """Surface aging fold-back candidates via foldback_suggest.py, if installed.
 
@@ -1100,6 +1133,7 @@ def _do_full_handoff(root: Path, args: argparse.Namespace) -> int:
     _emit("would run lifecycle-metrics (read-only) if installed")
     _emit("would surface active intents (read-only) if installed")
     _emit("would surface aging fold-back candidates (read-only) if installed")
+    _emit("would run the rate-limit-gate / backlog check (read-only) if installed")
 
     if args.dry_run:
         _emit("[dry-run] manifest only -- nothing mutated, no marker required.")
@@ -1147,6 +1181,11 @@ def _do_full_handoff(root: Path, args: argparse.Namespace) -> int:
             "candidates? (capture stays judgment -- an empty capture is "
             "success; never manufacture marginal candidates)"
         )
+
+        # Rate-limit-gate + fold-up-backlog check -- deterministic, zero-token,
+        # read-only decision-support (it emits suggestions only, mutates nothing).
+        _emit_section("rate-limit gate + fold-up backlog")
+        _run_evolution_infer(root, interpreter)
 
     _emit(
         "full-handoff mechanizable steps complete.  The roadmap scrub, "
