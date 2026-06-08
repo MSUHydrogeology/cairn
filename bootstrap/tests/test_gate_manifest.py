@@ -61,6 +61,16 @@ def test_frozen_set_boundary(produced):
     assert "bootstrap/tests/fixtures/frozen_engine/scaffold_frozen.py" not in frozen
     assert "bootstrap/_scaffold/config.py" not in frozen
     assert G._MANIFEST_REL not in frozen
+    # shipped scanner / security-gate implementations ARE frozen (Codex confirmation Finding 2)
+    assert "templates/modules/team-gated/content_scan.py" in frozen
+    assert "templates/modules/team-gated/content_scan_runner.py" in frozen
+    assert "templates/modules/team-gated/run_security_audit.py" in frozen
+    assert "templates/modules/team-gated/link_check.py" in frozen
+    # the three phase-split facade targets are NOT frozen — they are phase_mutable
+    assert "templates/modules/team-gated/intent.py" not in frozen
+    assert "templates/modules/default-on/onboarding_activate.py" not in frozen
+    assert "templates/modules/default-on/lifecycle_metrics.py" not in frozen
+    assert set(produced["phase_mutable"]) == set(G.PHASE_SPLIT_TARGETS)
 
 
 def test_verify_clean_tree_is_ok(produced, tmp_path, capsys):
@@ -118,13 +128,52 @@ def test_verify_allows_added_test(produced, tmp_path, capsys, monkeypatch):
 
 
 def test_verify_holds_when_anchor_object_absent(produced, tmp_path, capsys):
-    # HEAD does not (yet) carry the manifest at the fixtures path -> git show fails -> HOLD.
+    # A ref that does not carry the manifest at the fixtures path -> git show fails -> HOLD.
+    # Use a synthetic non-existent object (stable: post-commit, HEAD now DOES carry it —
+    # Codex confirmation Finding 4).
     mp = _write_manifest(tmp_path, produced)
-    assert G.verify(mp, anchor_ref="HEAD", repo=_REPO) == 1
+    assert G.verify(mp, anchor_ref="0" * 40, repo=_REPO, do_collect=False) == 1
     assert "ANCHOR" in capsys.readouterr().err
 
 
 def test_anchor_skipped_note_when_no_ref(produced, tmp_path, capsys):
     mp = _write_manifest(tmp_path, produced)
-    G.verify(mp, anchor_ref=None, repo=_REPO)
+    G.verify(mp, anchor_ref=None, repo=_REPO, do_collect=False)
     assert "ANCHOR: skipped" in capsys.readouterr().err
+
+
+def test_require_anchor_holds_without_ref(produced, tmp_path, capsys):
+    # Unattended verification mode: a missing anchor is a HOLD (Codex confirmation Finding 3).
+    mp = _write_manifest(tmp_path, produced)
+    assert G.verify(mp, anchor_ref=None, repo=_REPO, require_anchor=True, do_collect=False) == 1
+    assert "ANCHOR: required" in capsys.readouterr().err
+
+
+def test_trusted_verifier_detects_tamper_in_separate_target_tree(produced, tmp_path):
+    # Codex confirmation Finding 3 + 4-positive: trusted verifier CODE (this process) targets
+    # a SEPARATE worktree via repo=, with a real committed anchor. Clean -> OK; a frozen-file
+    # tamper in the target -> HOLD. Static-only (do_collect=False) to avoid a full test tree.
+    import os
+    import shutil
+    import subprocess
+    target = tmp_path / "target"
+    for rel in produced["frozen_files"]:
+        dst = target / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(_REPO / rel, dst)
+    man = target / G._MANIFEST_REL
+    man.parent.mkdir(parents=True, exist_ok=True)
+    man.write_text(json.dumps(produced, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    env = dict(os.environ, GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@t",
+               GIT_COMMITTER_NAME="t", GIT_COMMITTER_EMAIL="t@t")
+    subprocess.run(["git", "init", "-q"], cwd=target, check=True, env=env)
+    subprocess.run(["git", "add", "-A"], cwd=target, check=True, env=env)
+    subprocess.run(["git", "commit", "-q", "-m", "seed"], cwd=target, check=True, env=env)
+    sha = subprocess.run(["git", "rev-parse", "HEAD"], cwd=target, capture_output=True,
+                         text=True, env=env).stdout.strip()
+    # clean target, anchor matches -> OK
+    assert G.verify(man, anchor_ref=sha, repo=target, require_anchor=True, do_collect=False) == 0
+    # tamper a frozen gate file in the target tree -> trusted code HOLDs
+    victim = target / "bootstrap/security_check.py"
+    victim.write_text(victim.read_text(encoding="utf-8") + "\n# tamper\n", encoding="utf-8")
+    assert G.verify(man, anchor_ref=sha, repo=target, require_anchor=True, do_collect=False) == 1

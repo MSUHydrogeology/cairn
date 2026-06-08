@@ -82,6 +82,21 @@ CASCADE_MUTABLE: dict[str, str] = {
         "differential oracle — frozen-engine _MODULE_MAPPINGS lockstep",
 }
 
+# Module-template files a refactor phase legitimately rewrites (facade splits) —
+# EXCLUDED from frozen hashing, governed by each phase's AST source-motion attestation
+# + External-stance review, NOT a byte hash. Reported as notes by the verifier. Every
+# OTHER templates/modules/**/*.py (the shipped scanner / security-gate implementations:
+# content_scan*, run_security_audit, link_check, …) IS frozen — the batch does not edit
+# them, and weakening a deployed scanner must HOLD (Codex confirmation R2-2 Finding 2).
+PHASE_SPLIT_TARGETS: dict[str, str] = {
+    "templates/modules/team-gated/intent.py":
+        "phase A intent-split facade — per-phase AST source-motion attestation + External-stance review",
+    "templates/modules/default-on/onboarding_activate.py":
+        "phase B onboarding-split facade — per-phase AST attestation + External-stance review",
+    "templates/modules/default-on/lifecycle_metrics.py":
+        "phase C metrics fold-up — per-phase AST attestation + External-stance review",
+}
+
 # Which phases may legitimately change each registry mapping symbol's digest.
 MAPPING_SYMBOLS_PHASES: dict[str, list[str]] = {
     "_MODULE_MAPPINGS": ["A intent-split", "B onboarding-split", "C metrics fold-up"],
@@ -120,7 +135,7 @@ def _sha256(path: str | Path) -> str:
 def _frozen_files(repo: Path = _REPO) -> list[str]:
     """Discover the frozen gate surface by glob, minus cascade-mutable files and
     the manifest artifact itself."""
-    exclude = set(CASCADE_MUTABLE) | {_MANIFEST_REL}
+    exclude = set(CASCADE_MUTABLE) | set(PHASE_SPLIT_TARGETS) | {_MANIFEST_REL}
     found: set[str] = set()
     # ``bootstrap/*.py`` (top-level, NON-recursive) freezes the gate-defining engine
     # modules — security_check.py (the single source of the Bandit ALLOWLIST +
@@ -128,8 +143,12 @@ def _frozen_files(repo: Path = _REPO) -> list[str]:
     # scaffold.py launcher — which the in-suite security/integrity gates import. The
     # cascade edits ``bootstrap/_scaffold/config.py`` (a subdir, not matched here),
     # so these stay frozen; a launcher change during the batch is a deliberate HOLD.
+    # ``templates/modules/**/*.py`` freezes the shipped scanner / security-gate
+    # implementations (content_scan*, run_security_audit, link_check, …); the three
+    # phase-split facade targets are excluded above (PHASE_SPLIT_TARGETS).
     for pattern in ("bootstrap/*.py", "bootstrap/tests/**/*.py",
-                    "bootstrap/tests/fixtures/**/*", "scripts/*.py"):
+                    "bootstrap/tests/fixtures/**/*", "scripts/*.py",
+                    "templates/modules/**/*.py"):
         for p in repo.glob(pattern):
             if not p.is_file() or "__pycache__" in p.parts:
                 continue
@@ -197,6 +216,11 @@ def produce(repo: Path = _REPO) -> dict:
         for rel, why in sorted(CASCADE_MUTABLE.items())
         if (repo / rel).is_file()
     }
+    phase_mutable = {
+        rel: {"pre_run_sha256": _sha256(repo / rel), "governed_by": why}
+        for rel, why in sorted(PHASE_SPLIT_TARGETS.items())
+        if (repo / rel).is_file()
+    }
     baseline = json.loads((repo / "bootstrap/tests/fixtures/scaffold_ast_baseline.json")
                           .read_text(encoding="utf-8"))
     mappings = {}
@@ -220,14 +244,23 @@ def produce(repo: Path = _REPO) -> dict:
         },
         "frozen_files": frozen,
         "cascade_mutable": cascade,
+        "phase_mutable": phase_mutable,
         "mapping_symbols": mappings,
     }
 
 
 def verify(manifest_path: str | Path, *, anchor_ref: str | None = None,
-           repo: Path = _REPO, out=None) -> int:
+           repo: Path = _REPO, require_anchor: bool = False,
+           do_collect: bool = True, out=None) -> int:
     """Verify gate integrity against a manifest. 0 = intact (additions allowed),
-    1 = HOLD (a gate-integrity violation)."""
+    1 = HOLD (a gate-integrity violation).
+
+    ``repo`` is the **target** tree being verified (the batch worktree in the
+    unattended mode) — distinct from where this trusted verifier *code* runs
+    (Codex confirmation R2-2 Finding 3): run the tool from the trusted ``master``
+    checkout and point ``repo`` / ``--target-repo`` at the batch worktree.
+    ``require_anchor=True`` makes a missing anchor a HOLD (the unattended mode).
+    ``do_collect=False`` skips the pytest collection check (static-only)."""
     if out is None:
         out = sys.stderr
     manifest_path = Path(manifest_path)
@@ -246,6 +279,9 @@ def verify(manifest_path: str | Path, *, anchor_ref: str | None = None,
         elif r.stdout != live_text:
             holds.append(f"ANCHOR: working-tree manifest differs from the immutable "
                          f"{anchor_ref} object — the manifest itself was altered")
+    elif require_anchor:
+        holds.append("ANCHOR: required but no --anchor-ref supplied (unattended verification "
+                     "mode demands the immutable anchor)")
     else:
         notes.append("ANCHOR: skipped (no --anchor-ref; REQUIRED for the unattended batch)")
 
@@ -271,24 +307,31 @@ def verify(manifest_path: str | Path, *, anchor_ref: str | None = None,
         notes.append(f"FROZEN-NEW: {rel} (new gate/test file — allowed, recorded)")
 
     # 4) Collection identity — dropped node or new skip/xfail HOLDs; added recorded.
-    collected, marked, rc = _collect(repo)
-    if rc != 0:
-        holds.append(f"COLLECTION: pytest collection failed (rc={rc})")
     pinned_ids = set(manifest["collection"]["node_ids"])
-    cur_ids = set(collected)
-    for nid in sorted(pinned_ids - cur_ids):
-        holds.append(f"COLLECTION-DROPPED: {nid} (reduced test collection)")
-    pinned_marked = set(manifest["collection"]["skip_xfail_marked"])
-    for nid in sorted(set(marked) - pinned_marked):
-        holds.append(f"SKIP-XFAIL-NEW: {nid} (a test gained a skip/xfail marker)")
-    for nid in sorted(cur_ids - pinned_ids):
-        notes.append(f"COLLECTION-ADDED: {nid} (new test — allowed, recorded)")
+    if do_collect:
+        collected, marked, rc = _collect(repo)
+        if rc != 0:
+            holds.append(f"COLLECTION: pytest collection failed (rc={rc})")
+        cur_ids = set(collected)
+        for nid in sorted(pinned_ids - cur_ids):
+            holds.append(f"COLLECTION-DROPPED: {nid} (reduced test collection)")
+        pinned_marked = set(manifest["collection"]["skip_xfail_marked"])
+        for nid in sorted(set(marked) - pinned_marked):
+            holds.append(f"SKIP-XFAIL-NEW: {nid} (a test gained a skip/xfail marker)")
+        for nid in sorted(cur_ids - pinned_ids):
+            notes.append(f"COLLECTION-ADDED: {nid} (new test — allowed, recorded)")
+    else:
+        notes.append("COLLECTION: skipped (static-only verification, --no-collect)")
 
-    # 5) Cascade-mutable + mapping digests — report deltas, never HOLD.
+    # 5) Cascade-mutable + phase-mutable + mapping digests — report deltas, never HOLD.
     for rel, info in manifest["cascade_mutable"].items():
         cur = _sha256(repo / rel) if (repo / rel).is_file() else "<absent>"
         if cur != info["pre_run_sha256"]:
             notes.append(f"CASCADE-CHANGED: {rel} (governed by: {info['governed_by']})")
+    for rel, info in manifest.get("phase_mutable", {}).items():
+        cur = _sha256(repo / rel) if (repo / rel).is_file() else "<absent>"
+        if cur != info["pre_run_sha256"]:
+            notes.append(f"PHASE-CHANGED: {rel} (governed by: {info['governed_by']})")
     baseline_p = repo / "bootstrap/tests/fixtures/scaffold_ast_baseline.json"
     if baseline_p.is_file():
         baseline = json.loads(baseline_p.read_text(encoding="utf-8"))
@@ -317,15 +360,26 @@ def main(argv: list[str] | None = None) -> int:
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("produce", help="emit the gate-integrity manifest JSON to stdout")
     v = sub.add_parser("verify", help="verify gate integrity against a manifest")
-    v.add_argument("--manifest", default=str(_REPO / _MANIFEST_REL))
+    v.add_argument("--target-repo", default=None,
+                   help="the tree to verify (the batch worktree); this trusted tool's CODE "
+                        "still runs from wherever it is invoked. Defaults to this checkout.")
+    v.add_argument("--manifest", default=None,
+                   help="manifest path (defaults to <target-repo>/" + _MANIFEST_REL + ")")
     v.add_argument("--anchor-ref", default=None,
-                   help="git ref/sha holding the immutable manifest (the prerequisite commit)")
+                   help="FULL git sha holding the immutable manifest (the prerequisite commit)")
+    v.add_argument("--require-anchor", action="store_true",
+                   help="HOLD if no --anchor-ref is supplied (unattended verification mode)")
+    v.add_argument("--no-collect", action="store_true",
+                   help="skip the pytest collection check (static-only)")
     args = ap.parse_args(argv)
     if args.cmd == "produce":
         json.dump(produce(), sys.stdout, indent=2, sort_keys=True)
         sys.stdout.write("\n")
         return 0
-    return verify(args.manifest, anchor_ref=args.anchor_ref)
+    target = Path(args.target_repo) if args.target_repo else _REPO
+    manifest = args.manifest if args.manifest else str(target / _MANIFEST_REL)
+    return verify(manifest, anchor_ref=args.anchor_ref, repo=target,
+                  require_anchor=args.require_anchor, do_collect=not args.no_collect)
 
 
 if __name__ == "__main__":

@@ -199,6 +199,7 @@ def update_symbol(
     expect_old: str,
     module_paths: list[str | Path],
     *,
+    known_new: set[str] | None = None,
     dry_run: bool = False,
     out=None,
 ) -> int:
@@ -214,6 +215,14 @@ def update_symbol(
     * ``--expect-old`` must equal the symbol's current baseline digest;
     * the live module set must show the target as the **only** CHANGED symbol,
       with **no** MISSING / DUPLICATE drift — any unrelated discrepancy refuses;
+    * **no NEW top-level symbol may appear beyond the pinned ``known_new`` set**
+      (Codex confirmation R2-2 Finding 1): the legitimate cascade adds an
+      ``InstallSpec`` to an existing mapping and introduces NO new top-level
+      node, so a mapping update carrying a brand-new function/class/assignment
+      (e.g. an injected gate-bypass) is refused. ``known_new`` is the committed
+      base NEW set (the original split's facade re-exports — see
+      ``fixtures/scaffold_ast_known_new.json``); omitted ``known_new`` means
+      **strict**: any new symbol refuses;
     * a before/after attestation is emitted for the audit trail; and
     * only that one key's ``digest`` field is rewritten — every other baselined
       symbol is left byte-for-byte (the file stays canonical JSON).
@@ -258,6 +267,21 @@ def update_symbol(
               f"other baselined symbols differ (one-symbol delta violated):", file=out)
         for p in unexpected:
             print(f"  {p}", file=out)
+        return 4
+
+    # No NEW top-level symbol may ride in on the surgical mapping update beyond the
+    # pinned base set (Codex confirmation R2-2 Finding 1). The cascade only mutates an
+    # existing mapping's value; a new function/class/assignment alongside it (an injected
+    # gate-bypass) is a HOLD. ``known_new`` omitted ⇒ strict (any new refuses).
+    allowed_new = known_new if known_new is not None else set()
+    unexpected_new = [k for k in new if k not in allowed_new]
+    if unexpected_new:
+        print(f"[update-symbol] REFUSED — {len(unexpected_new)} new top-level symbol(s) appeared "
+              f"alongside the mapping change, not in the pinned known-new set; a surgical "
+              f"re-baseline must NOT bless injected top-level logic. HOLD (review + regenerate "
+              f"via a reviewed path):", file=out)
+        for k in unexpected_new:
+            print(f"  NEW {k}", file=out)
         return 4
 
     old_d, new_d, where = changed[full]
@@ -306,6 +330,9 @@ def main(argv: list[str] | None = None) -> int:
     u.add_argument("--baseline", required=True, help="path to the baseline JSON to rewrite")
     u.add_argument("--expect-old", required=True, dest="expect_old",
                    help="the symbol's current baseline digest (refuses on mismatch)")
+    u.add_argument("--known-new", default=None, dest="known_new",
+                   help="path to a JSON list of allowed pre-existing NEW keys (the base "
+                        "facade re-exports); omit for strict (any new symbol refuses)")
     u.add_argument("--dry-run", action="store_true", help="attest the change but write nothing")
     u.add_argument("modules", nargs="+", help="the live module set (same set 'verify' uses)")
     args = parser.parse_args(argv)
@@ -314,9 +341,12 @@ def main(argv: list[str] | None = None) -> int:
         sys.stdout.write("\n")
         return 0
     if args.cmd == "update-symbol":
+        known_new = None
+        if args.known_new:
+            known_new = set(json.loads(Path(args.known_new).read_text(encoding="utf-8")))
         return update_symbol(
             args.baseline, args.symbol, args.expect_old, args.modules,
-            dry_run=args.dry_run, out=sys.stderr,
+            known_new=known_new, dry_run=args.dry_run, out=sys.stderr,
         )
     return verify(args.baseline, args.modules)
 

@@ -265,3 +265,44 @@ def test_update_symbol_cli_path(tmp_path):
     assert rc == 0
     after = json.loads(bp.read_text(encoding="utf-8"))
     assert after[_MM]["digest"] == A.digest_module(live)[_MM]["digest"]
+
+
+# Codex confirmation R2-2 Finding 1: a mapping update must NOT bless a brand-new
+# top-level symbol (an injected gate-bypass) riding alongside the legit mapping change.
+_SRC_INJECT = (  # _MODULE_MAPPINGS changed PLUS a new top-level function
+    "_MODULE_MAPPINGS = {'a': 1, 'b': 2}\n"
+    "_SKILLS_MAPPINGS = (('x', 'y', True),)\n"
+    "def helper():\n    return 1\n"
+    "def injected_gate_bypass():\n    return True\n"
+)
+
+
+def test_update_symbol_refuses_injected_new_symbol_strict(tmp_path, capsys):
+    bp, base = _canon_baseline(tmp_path, _SRC_V1)
+    live = _write(tmp_path, "live.py", _SRC_INJECT)
+    old = base[_MM]["digest"]
+    before = bp.read_text(encoding="utf-8")
+    # strict (no known_new): the injected function refuses, no write
+    assert A.update_symbol(bp, "_MODULE_MAPPINGS", old, [live]) == 4
+    assert bp.read_text(encoding="utf-8") == before
+    assert "new top-level symbol" in capsys.readouterr().err
+
+
+def test_update_symbol_allows_only_pinned_known_new(tmp_path):
+    # The real cascade carries pre-existing facade re-exports; a known-new allowlist
+    # that contains exactly those lets the one-mapping update proceed, while an
+    # UNPINNED new symbol still refuses.
+    bp, base = _canon_baseline(tmp_path, _SRC_V1)
+    old = base[_MM]["digest"]
+    # (a) the injected symbol IS in known_new -> allowed, writes
+    live_a = _write(tmp_path, "a.py", _SRC_INJECT)
+    assert A.update_symbol(bp, "_MODULE_MAPPINGS", old, [live_a],
+                           known_new={"FunctionDef:injected_gate_bypass"}) == 0
+    assert json.loads(bp.read_text())[_MM]["digest"] == A.digest_module(live_a)[_MM]["digest"]
+    # (b) a DIFFERENT new symbol, not in known_new -> refuses, no write
+    bp2, base2 = _canon_baseline(tmp_path, _SRC_V1, bname="base2.json")
+    live_b = _write(tmp_path, "b.py", _SRC_INJECT)
+    before2 = bp2.read_text(encoding="utf-8")
+    assert A.update_symbol(bp2, "_MODULE_MAPPINGS", base2[_MM]["digest"], [live_b],
+                           known_new={"FunctionDef:some_other_reexport"}) == 4
+    assert bp2.read_text(encoding="utf-8") == before2

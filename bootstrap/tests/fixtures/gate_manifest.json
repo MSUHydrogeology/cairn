@@ -14,7 +14,7 @@
     }
   },
   "collection": {
-    "node_count": 1186,
+    "node_count": 1190,
     "node_ids": [
       "bootstrap/tests/test_active_surfacing_mechanism.py::TestActivatePromptEmission::test_active_prompt_in_outcome",
       "bootstrap/tests/test_active_surfacing_mechanism.py::TestActivatePromptEmission::test_active_prompt_not_re_emitted_on_second_run",
@@ -55,8 +55,10 @@
       "bootstrap/tests/test_ast_attest.py::test_module_docstrings_do_not_trip_single_source",
       "bootstrap/tests/test_ast_attest.py::test_pure_motion_across_modules_verifies",
       "bootstrap/tests/test_ast_attest.py::test_shared_imports_across_modules_do_not_fail",
+      "bootstrap/tests/test_ast_attest.py::test_update_symbol_allows_only_pinned_known_new",
       "bootstrap/tests/test_ast_attest.py::test_update_symbol_cli_path",
       "bootstrap/tests/test_ast_attest.py::test_update_symbol_dry_run_writes_nothing",
+      "bootstrap/tests/test_ast_attest.py::test_update_symbol_refuses_injected_new_symbol_strict",
       "bootstrap/tests/test_ast_attest.py::test_update_symbol_refuses_non_allowlisted_key",
       "bootstrap/tests/test_ast_attest.py::test_update_symbol_refuses_on_expect_old_mismatch",
       "bootstrap/tests/test_ast_attest.py::test_update_symbol_refuses_on_unrelated_drift",
@@ -354,6 +356,8 @@
       "bootstrap/tests/test_gate_manifest.py::test_anchor_skipped_note_when_no_ref",
       "bootstrap/tests/test_gate_manifest.py::test_frozen_set_boundary",
       "bootstrap/tests/test_gate_manifest.py::test_produce_has_the_expected_shape",
+      "bootstrap/tests/test_gate_manifest.py::test_require_anchor_holds_without_ref",
+      "bootstrap/tests/test_gate_manifest.py::test_trusted_verifier_detects_tamper_in_separate_target_tree",
       "bootstrap/tests/test_gate_manifest.py::test_verify_allows_added_test",
       "bootstrap/tests/test_gate_manifest.py::test_verify_clean_tree_is_ok",
       "bootstrap/tests/test_gate_manifest.py::test_verify_holds_on_dropped_node",
@@ -2100,17 +2104,18 @@
     "bootstrap/scaffold.py": "6751a79939b1f049699d6d75432d2e5fd497049c581b992d38a76ea0c4a23a72",
     "bootstrap/security_check.py": "7f568d50b9b0dc91e0f29fdd78417bb630c6ee2ff5c473db17c68a53258efb16",
     "bootstrap/tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "bootstrap/tests/_ast_attest.py": "202b3c8dfc1163d0f95e20c903b1f72e2569e00ef01848b817221155086d99ee",
-    "bootstrap/tests/_gate_manifest.py": "5c21f7dcd90e923923c7d8f60651c66103f626d754338f63fc1b5ebb7bd69bd3",
+    "bootstrap/tests/_ast_attest.py": "132c963c44b72907cfe572ad7d219f7099232784670e47cd9dd1ad284e668383",
+    "bootstrap/tests/_gate_manifest.py": "413906946f097c3b17b11444d6e37100f7e53922420e694a2a57a781518accb2",
     "bootstrap/tests/_loader_proto.py": "bfd7abf5eb9d44a6894a373af737df6a39c10738efca81dd42f59c6e51c07e97",
     "bootstrap/tests/_oracle.py": "f054994e35d3843ae6b5fec3bfd684184d108c24ee6a0bde332f35e35b1cbe1b",
     "bootstrap/tests/conftest.py": "59ab1f5413837e30055bde7d836556a31f3220c4c09917279d16f6e51c5d1210",
     "bootstrap/tests/fixtures/frozen_engine/README.md": "f9f94dfb60da5b1adf43d8509b46275942af63a44322ef0b9aef1883d0e3d628",
     "bootstrap/tests/fixtures/redteam/malicious.txt": "305eae06b09ac1b106b853954976fc2a21805225cb05e9ea4514d2f44c1e9624",
+    "bootstrap/tests/fixtures/scaffold_ast_known_new.json": "3ec013526ac466f164384cead68b2f193c13339c7ad7d85a1521344f0ea08cf1",
     "bootstrap/tests/fixtures/skills/README.md": "d2cccbe5b15e3fb6b7723da35a9c821104e3e637148d435d321b3e5514b4adad",
     "bootstrap/tests/test_active_surfacing_mechanism.py": "0ef2d4d09134c83827b63e41b9fb04605e8780ea2571cd17b31740c309064f7f",
     "bootstrap/tests/test_active_surfacing_render.py": "00506b6272f891c44e6d4635e626718b9ccfec51674c34ffc93b10b1b152677b",
-    "bootstrap/tests/test_ast_attest.py": "7c16f5f2d81e7886ab093b926da416f3ff5adf0be787ba386691b2bd26a9832b",
+    "bootstrap/tests/test_ast_attest.py": "0e4b4e80f943a99f7d89dde949ea53541c82385ada8f38e8f104899204f1f9b7",
     "bootstrap/tests/test_cairn_prefix_links.py": "0078b1332009c3960e8730a6f1dbc15681b8731e6edb53d5076d02580c256927",
     "bootstrap/tests/test_check_cairn_content.py": "c253ed6c376ae1565d78ec4bafb410cbcd79eb4d6b249764d1f0b1e01a1da158",
     "bootstrap/tests/test_check_cairn_counts.py": "1c5b3937a50eb1f150d5aedc59af76fb29091864094cb7513b866548dbf69dbf",
@@ -2131,7 +2136,7 @@
     "bootstrap/tests/test_foldback_export_scan.py": "66fdc4e45b1c9ab04fb221dbe3f278e3e3cdae842d4b48309a40291b51ad15e7",
     "bootstrap/tests/test_foldback_ledger_module.py": "595d5273823f1f7cf2754d29e9fbf0bda205386325b54dcadb169f9146e77679",
     "bootstrap/tests/test_foldback_suggest.py": "a646e948242fa7b037bbdf04e9800242484e9fac05008f7aca2fbc831ec84d9c",
-    "bootstrap/tests/test_gate_manifest.py": "14e5ffa69df6d91857fb6da2d12e033c8470d1bf16b1a64a7cfe2c295d2941c3",
+    "bootstrap/tests/test_gate_manifest.py": "a79215fd315e8fe9a7e58628b6718bef9d88ab25fbafec4c4b2b24b97f019a16",
     "bootstrap/tests/test_generated_output_scan.py": "26f51811408f45aaba23d0b3978ab893eb55951b3533a8f987ed59497d893329",
     "bootstrap/tests/test_hardening.py": "fa4aeb136cc62d04cdbb59a8d8968c8d2f4d8e43ea6d23d0870d2116a8719a8a",
     "bootstrap/tests/test_incident_trackers_module.py": "ea5479968cc1cdb28d852e5d1a1b6149c0fdd7992fc50e8b710d9612a4cd478b",
@@ -2190,7 +2195,22 @@
     "scripts/quality_gate.py": "bbfaa02a7f241303b4104ff0fe45fb5700914de4aa1fcd438579ec3dd02d0654",
     "scripts/quality_gate_unused_def_whitelist.py": "77e88f1510c19bec532ece565ddfe201536ccfb769c26fe9b95346ba2df16318",
     "scripts/token_budget.py": "cf40678dc36c3419126fe2119f54e5452a02791ea3b9906350e3b8c928a2ffd6",
-    "scripts/verify_counts.py": "4fce4377915e690b96ec819920eb9d013eedf9811859471f7078bbea17e39574"
+    "scripts/verify_counts.py": "4fce4377915e690b96ec819920eb9d013eedf9811859471f7078bbea17e39574",
+    "templates/modules/default-on/claim_check.py": "6fcef29017b3ad71b3984f24fbc179c00b84d4742218e6e01cab2a854f71304c",
+    "templates/modules/default-on/evolution_infer.py": "a72f4dbd36414ac6db9b65adaaf4358c831fbc4b20895310c5e92b8f2f74826b",
+    "templates/modules/default-on/foldback_export_scan.py": "d241fb5c9c7733de355cf21b4608fbc5f9de69fe07a001af71b36fd6899adbb3",
+    "templates/modules/default-on/foldback_suggest.py": "b5f75d55813ff9a328a26594a6deac9119fa95d80b877d86de351e7df026ad1c",
+    "templates/modules/default-on/prune_reflections.py": "79e7c30f0ac0cdb57ff20c9b6602fb9e3a89833711712cdc0fdfff85ed12a4fa",
+    "templates/modules/default-on/verify_stems.py": "515c4102216a6c8eeef039862a23bb6b1328e5edda178423e8af9aaf51850e3b",
+    "templates/modules/team-gated/check_model_selection.py": "9abea20fa52acd6aa99d155d4c3ff1efb4d501e7cae26f9cdcc1dfbb22749445",
+    "templates/modules/team-gated/content_scan.py": "eb98e4bf99d458fbb2e537e5564c5fa18204e9ed3922cb38d35641a266509889",
+    "templates/modules/team-gated/content_scan_runner.py": "7a9416ee3a5b24bd445040e992e7eaff32318428d519eef80d155e0596bdde4c",
+    "templates/modules/team-gated/issue-capture/bootstrap_github_labels.py": "d8b2c72e1457c40d25e96988d2876aa4491885380482fdba3060b7a3d8ae83d0",
+    "templates/modules/team-gated/issue-capture/bootstrap_gitlab_labels.py": "0d8afd095109dc40a6f9098213b54266bb7f4d2dea1ac45a7224fc0ee28ae0df",
+    "templates/modules/team-gated/link_check.py": "5fadbfbd6557e87efc7d489e5568caa08f5ad061938fbdc98b00ccd17f5812e9",
+    "templates/modules/team-gated/prune_intents.py": "6219eeffa6043d8ef10b4773d43aee92815bad255dc1620b52f9599b5a712708",
+    "templates/modules/team-gated/run_security_audit.py": "0bdf8a5357aa47eb7351cd6654161e3bbd24525c6bff075d29b9cf0050e0d294",
+    "templates/modules/team-gated/sync_doc_snippets.py": "4efb33413e8d17b3900c01863a722e66d36292a3520ad2fc647db21c6bb45bb1"
   },
   "gate_commands": [
     {
@@ -2263,6 +2283,20 @@
       "may_change_in_phases": [
         "E mechanization skill register"
       ]
+    }
+  },
+  "phase_mutable": {
+    "templates/modules/default-on/lifecycle_metrics.py": {
+      "governed_by": "phase C metrics fold-up \u2014 per-phase AST attestation + External-stance review",
+      "pre_run_sha256": "13b5ad8d59f165b0abf5534413c42ccbb56533886cc1a0008893f8465dacc59a"
+    },
+    "templates/modules/default-on/onboarding_activate.py": {
+      "governed_by": "phase B onboarding-split facade \u2014 per-phase AST attestation + External-stance review",
+      "pre_run_sha256": "5f30f15b30b406f27f8ccc0bd2214f7df39f7801456005a3d0d602eb2d060b79"
+    },
+    "templates/modules/team-gated/intent.py": {
+      "governed_by": "phase A intent-split facade \u2014 per-phase AST source-motion attestation + External-stance review",
+      "pre_run_sha256": "5a0bb34f60b3915cbaff48d4542988946a8ef1e133fc8e378e27120fe55378ad"
     }
   },
   "schema": "cairn-gate-manifest/v1"

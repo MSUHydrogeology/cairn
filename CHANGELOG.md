@@ -46,7 +46,11 @@ and a new empty `Unreleased` is started above.
   collection node-IDs plus skip/xfail identities, and the cascade-mutable set — with
   a verifier that HOLDs on any gate weakening and is externally anchored to an
   immutable git object. Built so a minimally-supervised multi-step batch is
-  *risk-bounded by mechanism*, not instruction.
+  *risk-bounded by mechanism*, not instruction. Hardened after an external
+  confirmation pass: `update-symbol` refuses a mapping change that smuggles a new
+  top-level symbol (beyond a pinned base set); the frozen set covers the shipped
+  `templates/modules` scanner implementations; and the verifier takes an explicit
+  `--target-repo` (trusted code, batch target) with a mandatory-anchor mode.
 
 - **An adopter-facing security stack — folded up from a battle-tested
   reference implementation as a three-surface split.** `security-review`
