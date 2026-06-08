@@ -29,6 +29,26 @@ repository, not a file in this adopter repo).
   vocabulary, the removal rule, and the open-candidate / already-synced
   split.
 
+## Open-candidates row schema
+
+The "Open candidates" table carries five standard columns: **Candidate**
+/ **Type** / **Size** / **Status** / **Source**.
+
+The **Source** cell accepts an optional `captured: <ISO-date>` field
+(e.g. `captured: 2026-06-01`) conventionally written in the Source cell
+prose. `foldback_suggest.py` reads this field to compute the standing
+**7-day surfacing grace**: a row captured within the last 7 days is
+suppressed from active surfacing so newly-filed candidates are not
+nagged immediately. Once the grace elapses the row surfaces normally.
+The grace window is adopter-tunable via `--grace-days`.
+
+Legacy rows without an explicit `captured:` field fall back to a
+prose-date scan: `foldback_suggest.py` looks for the first bare ISO
+date (`YYYY-MM-DD`) anywhere in the Source cell and applies the same
+grace using it as a proxy for the capture date. Rows with no
+parseable date at all are treated as surfaceable (conservative: never
+suppress a row we cannot prove is fresh).
+
 ## Template content
 
 Merged into the session-routines / goodnight doctrine (or its

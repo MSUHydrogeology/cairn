@@ -6,18 +6,30 @@ file under ``dev/.cairn/<framework>_foldback.md``), parses the "Open
 candidates" table, and emits a structured listing of the
 ``candidate``-status rows that are eligible for active surfacing.
 
-**Scope**: this helper is a ``candidate``-status + ``deferred-until``
-filter.  It does NOT enforce the grace-period (default seven-day)
-contract the doctrine names (``cairn/doctrine/fold-back.md`` >
-"Active surfacing" > "Trigger -- standing").  The grace period is a
-**maintainer judgment** that reads each row's Source field for its
-captured date and decides per-row whether the candidate is fresh
-enough to skip surfacing.  Adding a machine-enforced grace period
-would require a ``captured: <ISO-date>`` field on every ledger row;
-that schema extension is out of scope for this helper and would be a
-separate doctrine-and-implementation arc.  Existing ledgers carry
-the captured date in prose form within the Source field, which the
-maintainer reads at surfacing time.
+**Grace period**: this helper enforces the standing **7-day capture
+grace** the doctrine names (``cairn/doctrine/fold-back.md`` > "Active
+surfacing" > "Trigger -- standing").  A row freshly captured within
+the last 7 days is suppressed from surfacing; once the grace elapses
+the row surfaces normally.  The ``--grace-days`` flag overrides the
+default per deployment.
+
+The grace period is computed from an optional **``captured:
+<ISO-date>``** field (conventionally written in the row's Source
+cell prose).  Two resolution strategies are tried in order:
+
+1. **Explicit ``captured:`` field**: if the row text contains
+   ``captured: YYYY-MM-DD`` or ``captured YYYY-MM-DD`` the date is
+   parsed directly and the grace is applied.
+2. **Legacy prose-date fallback**: if no explicit ``captured:`` is
+   found, the helper scans the Source cell for the *first* ISO date
+   (``YYYY-MM-DD``) anywhere in the prose.  If found, the same
+   7-day grace is applied using it as a proxy for the capture date.
+3. **No parseable date**: if neither strategy yields a date, the row
+   is treated as surfaceable (conservative: never suppress a row we
+   cannot prove is fresh).  This matches the pre-grace behavior and
+   means legacy rows with no date in Source behave as before.
+
+Malformed or absent date values never crash the helper.
 
 A row is eligible when:
 
@@ -51,7 +63,8 @@ modflow_tools / reference-deployment convention); the
 ``--ledger <path>`` flag overrides for adopters whose ledger lives
 elsewhere.  ``--all`` includes snoozed rows in the output (still
 flagged as snoozed), useful for the maintainer reviewing the
-funnel's full state.
+funnel's full state.  ``--grace-days`` overrides the default 7-day
+capture grace.
 
 Usage::
 
@@ -59,6 +72,7 @@ Usage::
     python scripts/foldback_suggest.py --ledger <path>
     python scripts/foldback_suggest.py --all          # incl. snoozed
     python scripts/foldback_suggest.py --json         # machine-readable
+    python scripts/foldback_suggest.py --grace-days 14  # custom grace
 
 Exit codes: ``0`` always (this is a read-only listing helper; it
 does not gate anything); ``2`` only on a usage error (ledger not
@@ -95,6 +109,9 @@ class Candidate:
     deferred_until: str = ""   # Parsed from the candidate / source
                                # field if present (free-form
                                # ``deferred-until: <date|condition>``).
+    captured: str = ""         # Parsed ``captured: <ISO-date>`` value
+                               # (empty if absent).  Used to apply the
+                               # standing 7-day capture grace.
     surfaceable: bool = False  # Computed by classify_rows().
     skip_reason: str = ""      # When NOT surfaceable, the human-
                                # readable reason.
@@ -129,6 +146,17 @@ _DEFERRED_UNTIL_RE = re.compile(
     re.IGNORECASE,
 )
 
+#: Matches ``captured: YYYY-MM-DD`` or ``captured YYYY-MM-DD`` anywhere
+#: in the row text.  Both ``captured:`` and ``captured `` syntaxes are
+#: accepted (mirrors the ``deferred-until`` pattern).
+_CAPTURED_RE = re.compile(
+    r"\bcaptured\s*:?\s*(\d{4}-\d{2}-\d{2})\b",
+    re.IGNORECASE,
+)
+
+#: Fallback: the first bare ISO date anywhere in a string.
+_FIRST_ISO_DATE_RE = re.compile(r"\b(\d{4}-\d{2}-\d{2})\b")
+
 
 def _parse_deferred_until(row_text: str) -> str:
     """Find a ``deferred-until <ISO-date | condition>`` substring in
@@ -140,6 +168,26 @@ def _parse_deferred_until(row_text: str) -> str:
     if m is None:
         return ""
     return m.group(1).strip()
+
+
+def _parse_captured(row_text: str) -> str:
+    """Find an explicit ``captured: YYYY-MM-DD`` substring in a row's
+    content.  Returns the ISO date string, or "" if absent.  Never
+    raises; returns "" on any parse failure.
+    """
+    m = _CAPTURED_RE.search(row_text)
+    if m is None:
+        return ""
+    return m.group(1).strip()
+
+
+def _first_iso_date_in(text: str) -> str:
+    """Return the first ``YYYY-MM-DD`` ISO date found anywhere in
+    *text*, or "" if none is present.  Used as the legacy fallback
+    when no explicit ``captured:`` field is present.
+    """
+    m = _FIRST_ISO_DATE_RE.search(text)
+    return m.group(1) if m else ""
 
 
 def _is_table_row(line: str) -> bool:
@@ -199,6 +247,8 @@ def parse_open_candidates(text: str) -> list[Candidate]:
             # deferred-until can appear in any cell; scan the whole
             # row text for it.
             cand.deferred_until = _parse_deferred_until(line)
+            # captured: can appear in any cell; scan the whole row.
+            cand.captured = _parse_captured(line)
             candidates.append(cand)
         else:
             # Separator line (|---|---|...) -- not a header reset; the
@@ -224,6 +274,7 @@ def _is_iso_date(s: str) -> bool:
 def classify_rows(
     candidates: list[Candidate], *,
     today: datetime.date | None = None,
+    grace_days: int = 7,
 ) -> list[Candidate]:
     """Classify each row's surfaceability per the doctrine.
 
@@ -231,7 +282,16 @@ def classify_rows(
       * status == ``candidate`` (case-insensitive, exact match),
       * AND ``deferred-until`` is absent OR has elapsed (ISO date in
         the past or today; a non-date condition string is treated
-        as "still snoozed" since the helper cannot evaluate it).
+        as "still snoozed" since the helper cannot evaluate it),
+      * AND the capture grace has elapsed (default 7 days from the
+        captured date; see module docstring for the two-strategy
+        resolution and the legacy prose-date fallback).
+
+    Args:
+        candidates:  rows to classify.
+        today:       override "today" for deterministic testing.
+        grace_days:  the standing capture-grace window in days.
+                     Default 7; adopters can tune per deployment.
     """
     today = today or datetime.date.today()
     classified: list[Candidate] = []
@@ -264,6 +324,35 @@ def classify_rows(
                 )
                 classified.append(c)
                 continue
+        # Capture-grace check -- only applied to rows that have
+        # passed the status + deferred-until filters above.
+        #
+        # Strategy 1: explicit ``captured: YYYY-MM-DD`` field.
+        # Strategy 2 (legacy fallback): first ISO date in Source prose.
+        # No parseable date -> surfaceable (conservative; matches
+        # pre-grace behavior for rows with no date at all).
+        captured_date: datetime.date | None = None
+        try:
+            if c.captured and _is_iso_date(c.captured):
+                captured_date = datetime.date.fromisoformat(c.captured)
+            else:
+                # Legacy fallback: scan Source cell for the first ISO date.
+                fallback = _first_iso_date_in(c.source)
+                if fallback and _is_iso_date(fallback):
+                    captured_date = datetime.date.fromisoformat(fallback)
+                # No date found -> captured_date stays None -> surfaceable.
+        except Exception:  # noqa: BLE001 -- defensive; never crash
+            captured_date = None
+
+        if captured_date is not None:
+            age = (today - captured_date).days
+            if age < grace_days:
+                c.skip_reason = (
+                    f"in {grace_days}-day capture grace "
+                    f"(captured {captured_date.isoformat()})"
+                )
+                classified.append(c)
+                continue
         c.surfaceable = True
         classified.append(c)
     return classified
@@ -286,6 +375,8 @@ def _format_human(rows: list[Candidate], show_all: bool) -> str:
     for r in surfaceable:
         lines.append(f"  - {r.candidate}")
         lines.append(f"    type={r.type_} size={r.size}")
+        if r.captured:
+            lines.append(f"    captured={r.captured}")
         lines.append(f"    source={r.source[:120]}{'...' if len(r.source) > 120 else ''}")
     if show_all and skipped:
         lines.append(f"\nSkipped rows: {len(skipped)}")
@@ -307,6 +398,7 @@ def _format_json(rows: list[Candidate], show_all: bool) -> str:
             "status": r.status,
             "source": r.source,
             "deferred_until": r.deferred_until,
+            "captured": r.captured,
             "surfaceable": r.surfaceable,
             "skip_reason": r.skip_reason,
         })
@@ -342,6 +434,14 @@ def main(argv: list[str] | None = None) -> int:
         "--json", action="store_true",
         help="Emit machine-readable JSON instead of human-readable.",
     )
+    parser.add_argument(
+        "--grace-days", type=int, default=7,
+        help=(
+            "Standing capture-grace window in days.  A row captured "
+            "within this many days of today is suppressed from "
+            "surfacing.  Default: 7."
+        ),
+    )
     args = parser.parse_args(argv)
 
     if not args.ledger.is_file():
@@ -353,7 +453,7 @@ def main(argv: list[str] | None = None) -> int:
 
     text = args.ledger.read_text(encoding="utf-8", errors="replace")
     candidates = parse_open_candidates(text)
-    classified = classify_rows(candidates)
+    classified = classify_rows(candidates, grace_days=args.grace_days)
 
     out = (
         _format_json(classified, args.all)

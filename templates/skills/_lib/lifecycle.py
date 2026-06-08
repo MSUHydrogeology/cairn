@@ -940,6 +940,42 @@ def _run_lifecycle_metrics(root: Path, interpreter: str) -> None:
         _warn(f"could not run lifecycle_metrics.py: {exc}")
 
 
+def _surface_foldback_candidates(root: Path, interpreter: str) -> None:
+    """Surface aging fold-back candidates via foldback_suggest.py, if installed.
+
+    Read-only: installed at ``scripts/foldback_suggest.py`` (the module
+    installs into ``scripts/``, not ``tools/``).  Skip-with-note when absent
+    so the full-handoff path is never blocked by an optional module.  Never
+    crashes the handoff: both a missing tool and a nonzero exit code are
+    surfaced as notes, not failures.
+    """
+    _emit_section("aging fold-back candidates")
+    tool = root / "scripts" / "foldback_suggest.py"
+    if not tool.is_file():
+        _warn(
+            "scripts/foldback_suggest.py not installed -- skipping the "
+            "fold-back surfacing pass; install the fold-back-ledger module "
+            "to enable it."
+        )
+        return
+    try:
+        proc = subprocess.run(
+            [interpreter, str(tool)],
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+            check=False,
+            env=_git_env(),
+        )
+        sys.stdout.write(proc.stdout)
+        if proc.returncode != 0 and proc.stderr:
+            _warn(
+                f"foldback_suggest reported: {proc.stderr.strip()}"
+            )
+    except OSError as exc:
+        _warn(f"could not run scripts/foldback_suggest.py: {exc}")
+
+
 # --- subcommand: session-end -------------------------------------------------
 
 _REFLECTION_SKELETON = """\
@@ -1052,6 +1088,7 @@ def _do_full_handoff(root: Path, args: argparse.Namespace) -> int:
           f"{names}")
     _emit("would run lifecycle-metrics (read-only) if installed")
     _emit("would surface active intents (read-only) if installed")
+    _emit("would surface aging fold-back candidates (read-only) if installed")
 
     if args.dry_run:
         _emit("[dry-run] manifest only -- nothing mutated, no marker required.")
@@ -1085,6 +1122,20 @@ def _do_full_handoff(root: Path, args: argparse.Namespace) -> int:
         # Coordination-safety check: whether another session still holds claimed
         # work (read-only).  Mirrors the manifest line above (finding 2).
         _surface_intents(root, interpreter)
+        lock.heartbeat()
+
+        # Fold-back surfacing -- gated behind --handoff (F5 binding): fires
+        # only in the full-handoff path, never in the reflection-only goodnight.
+        _surface_foldback_candidates(root, interpreter)
+        lock.heartbeat()
+
+        # Standing capture prompt (F5): invite the owner to scan today's
+        # doctrine activity for Cairn-portable fold-back candidates.
+        _emit(
+            "scan today's doctrine activity for Cairn-portable fold-back "
+            "candidates? (capture stays judgment -- an empty capture is "
+            "success; never manufacture marginal candidates)"
+        )
 
     _emit(
         "full-handoff mechanizable steps complete.  The roadmap scrub, "

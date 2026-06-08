@@ -60,6 +60,103 @@ def _ledger_with_table(rows: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Capture-grace cases (Part A self-evolution-loop spec)
+# ---------------------------------------------------------------------------
+
+
+class TestCaptureGrace:
+    """Five grace-period cases per the Part A spec (a)-(e)."""
+
+    def _row(self, source: str) -> str:
+        return f"| **Cand** | tooling | small | candidate | {source} |\n"
+
+    def test_explicit_captured_within_grace_NOT_surfaceable(self, fs):
+        # (a) row with captured: within 7 days is NOT surfaceable.
+        today = datetime.date(2026, 6, 8)
+        recent = datetime.date(2026, 6, 5).isoformat()  # 3 days ago
+        rows = self._row(f"captured: {recent}; some context")
+        candidates = fs.parse_open_candidates(_ledger_with_table(rows))
+        classified = fs.classify_rows(candidates, today=today)
+        assert len(classified) == 1
+        assert classified[0].surfaceable is False
+        assert "capture grace" in classified[0].skip_reason
+
+    def test_explicit_captured_past_grace_IS_surfaceable(self, fs):
+        # (b) row captured >7 days ago IS surfaceable.
+        today = datetime.date(2026, 6, 8)
+        old = datetime.date(2026, 5, 25).isoformat()  # 14 days ago
+        rows = self._row(f"captured: {old}; some context")
+        candidates = fs.parse_open_candidates(_ledger_with_table(rows))
+        classified = fs.classify_rows(candidates, today=today)
+        assert len(classified) == 1
+        assert classified[0].surfaceable is True, classified[0].skip_reason
+
+    def test_legacy_prose_date_within_grace_NOT_surfaceable(self, fs):
+        # (c) legacy row -- no captured: field, but an ISO date in Source --
+        # the fallback picks it up and applies the grace.
+        today = datetime.date(2026, 6, 8)
+        recent = datetime.date(2026, 6, 6).isoformat()  # 2 days ago
+        # No "captured:" prefix; just a date somewhere in the source prose.
+        rows = self._row(f"observed during session on {recent}; candidate noted")
+        candidates = fs.parse_open_candidates(_ledger_with_table(rows))
+        classified = fs.classify_rows(candidates, today=today)
+        assert len(classified) == 1
+        assert classified[0].surfaceable is False
+        assert "capture grace" in classified[0].skip_reason
+
+    def test_legacy_no_parseable_date_IS_surfaceable(self, fs):
+        # (d) row with no parseable date at all is surfaceable (conservative).
+        today = datetime.date(2026, 6, 8)
+        rows = self._row("no date anywhere in this source text")
+        candidates = fs.parse_open_candidates(_ledger_with_table(rows))
+        classified = fs.classify_rows(candidates, today=today)
+        assert len(classified) == 1
+        assert classified[0].surfaceable is True
+        # Must not crash (confirmed by the test completing).
+
+    def test_malformed_captured_does_not_crash(self, fs):
+        # (e) malformed captured: value does not crash; treated as no date
+        # -> surfaceable (conservative).
+        today = datetime.date(2026, 6, 8)
+        # The captured: regex only matches YYYY-MM-DD patterns; a garbled
+        # value will not match -> falls to legacy fallback, which also
+        # finds no ISO date -> surfaceable.
+        rows = self._row("captured: not-a-date; some other text")
+        candidates = fs.parse_open_candidates(_ledger_with_table(rows))
+        classified = fs.classify_rows(candidates, today=today)
+        assert len(classified) == 1
+        # Should not raise; result is surfaceable (no parseable date found).
+        assert classified[0].surfaceable is True
+
+    def test_grace_boundary_exactly_grace_days_IS_surfaceable(self, fs):
+        # Edge case: captured exactly grace_days ago -> age == grace_days
+        # -> NOT in grace (age < grace_days is False) -> surfaceable.
+        today = datetime.date(2026, 6, 8)
+        seven_days_ago = datetime.date(2026, 6, 1).isoformat()
+        rows = self._row(f"captured: {seven_days_ago}")
+        candidates = fs.parse_open_candidates(_ledger_with_table(rows))
+        classified = fs.classify_rows(candidates, today=today, grace_days=7)
+        assert len(classified) == 1
+        assert classified[0].surfaceable is True, classified[0].skip_reason
+
+    def test_json_output_includes_captured_field(self, fs, tmp_path, capsys):
+        import json as _json
+        today = datetime.date(2026, 6, 8)
+        old = datetime.date(2026, 5, 20).isoformat()  # well past grace
+        ledger = tmp_path / "ledger.md"
+        ledger.write_text(
+            _ledger_with_table(f"| **X** | tooling | small | candidate | captured: {old} |\n"),
+            encoding="utf-8",
+        )
+        rc = fs.main(["--ledger", str(ledger), "--json"])
+        assert rc == 0
+        payload = _json.loads(capsys.readouterr().out)
+        assert len(payload) == 1
+        assert payload[0]["captured"] == old
+        assert payload[0]["surfaceable"] is True
+
+
+# ---------------------------------------------------------------------------
 # Four deferred-until cases (per plan-review N3 + N4 acceptance)
 # ---------------------------------------------------------------------------
 

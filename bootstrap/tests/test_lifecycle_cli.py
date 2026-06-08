@@ -273,3 +273,101 @@ def test_resolve_agent_defaults_to_agent_without_identity(repo, monkeypatch):
     monkeypatch.delenv("CAIRN_AGENT", raising=False)
     monkeypatch.setattr(lifecycle, "_intent_whoami", lambda root, **kw: None)
     assert lifecycle._resolve_agent(repo) == "agent"
+
+
+# --- fold-back surfacing gate (F5: --handoff only) ---------------------------
+
+#: A minimal foldback_suggest.py stub that prints one aging candidate line.
+_FOLDBACK_SUGGEST_STUB = """\
+#!/usr/bin/env python3
+import sys
+print("Surfaceable candidates: 1")
+print("  - MyAgingCandidate")
+sys.exit(0)
+"""
+
+#: A minimal ledger with one candidate well past the 7-day grace.
+_AGING_LEDGER = (
+    "## Open candidates\\n\\n"
+    "| Candidate | Type | Size | Status | Source |\\n"
+    "|---|---|---|---|---|\\n"
+    "| **AgingCandidate** | doctrine | small | candidate |"
+    " captured: 2020-01-01 |\\n"
+    "\\n## Already synced\\n\\n(empty)\\n"
+)
+
+
+@pytest.fixture()
+def repo_with_foldback(tmp_path: Path) -> Path:
+    """A scratch git repo with a seeded scripts/foldback_suggest.py stub
+    and a fold-back ledger carrying one aging candidate."""
+    root = tmp_path.resolve()
+    _init_repo(root)
+    _commit(root, "initial commit")
+
+    # Seed the scripts/ directory with the stub.
+    scripts = root / "scripts"
+    scripts.mkdir()
+    stub = scripts / "foldback_suggest.py"
+    stub.write_text(_FOLDBACK_SUGGEST_STUB, encoding="utf-8")
+    stub.chmod(0o755)
+
+    # Seed the fold-back ledger (not required by the lifecycle CLI itself,
+    # but makes the fixture realistic; the stub ignores it).
+    cairn_dir = root / "dev" / ".cairn"
+    cairn_dir.mkdir(parents=True)
+    (cairn_dir / "cairn_foldback.md").write_text(
+        _AGING_LEDGER, encoding="utf-8"
+    )
+
+    return root
+
+
+def test_handoff_surfaces_foldback_candidates(
+    repo_with_foldback, monkeypatch, capsys
+):
+    """(f) session-end --handoff surfaces aging fold-back candidates."""
+    root = repo_with_foldback
+    monkeypatch.setenv("CAIRN_HANDOFF_OWNER", "1")
+    monkeypatch.setenv("CAIRN_AGENT", "tester")
+    monkeypatch.setenv("CAIRN_SESSION", "sessF")
+    monkeypatch.chdir(root)
+
+    rc = lifecycle.main(["session-end", "--handoff"])
+
+    out, err = capsys.readouterr()
+    assert rc == 0, f"rc={rc}\nstdout={out}\nstderr={err}"
+    # The stub emits "Surfaceable candidates: 1"; it must appear in output.
+    assert "Surfaceable candidates" in out or "MyAgingCandidate" in out, (
+        f"fold-back surfacing output not found in:\n{out}"
+    )
+    # The standing capture prompt must appear.
+    assert "scan today's doctrine activity" in out, (
+        f"capture prompt not found in:\n{out}"
+    )
+    # The manifest line must appear (emitted before the marker check).
+    assert "aging fold-back candidates" in out, (
+        f"manifest line not found in:\n{out}"
+    )
+
+
+def test_session_end_without_handoff_does_NOT_surface_foldback(
+    repo_with_foldback, monkeypatch, capsys
+):
+    """(g) session-end WITHOUT --handoff does NOT surface fold-back candidates
+    and does NOT emit the capture prompt (the F5 gate).
+    """
+    root = repo_with_foldback
+    monkeypatch.setenv("CAIRN_AGENT", "tester")
+    monkeypatch.setenv("CAIRN_SESSION", "sessG")
+    monkeypatch.chdir(root)
+
+    rc = lifecycle.main(["session-end"])  # no --handoff
+
+    out, _err = capsys.readouterr()
+    assert rc == 0
+    # Must NOT surface fold-back candidates in the reflection-only path.
+    assert "MyAgingCandidate" not in out
+    assert "Surfaceable candidates" not in out
+    # Must NOT emit the capture prompt.
+    assert "scan today's doctrine activity" not in out
