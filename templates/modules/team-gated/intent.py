@@ -18,11 +18,11 @@ because the harness's ``_load_tool`` returns the original (pre-swap) module
 object, which a swap would leave empty. No ``import _intent`` statement appears
 here, so the stdlib-only AST gate sees only stdlib imports.
 
-Root resolution (bound contract 3): ``_REPO_ROOT`` / ``INTENTS_LOG_PATH`` and the
-launcher path the git hooks must invoke are re-derived from *this* file's install
-location (``<repo>/tools/intent.py``) — identical to the pre-split single-file
-tool, since the facade sits where the monolith used to — and threaded into the
-engine, whose own ``__file__`` is one directory deeper.
+Root resolution (bound contract 3): the engine's ``shared`` leaf computes
+``_REPO_ROOT`` / ``INTENTS_LOG_PATH`` from its own location (``parents[2]`` of
+``_intent/shared.py`` resolves to the repo root, identical to the pre-split
+single-file tool's ``parents[1]`` from ``tools/intent.py``); the launcher path
+the git hooks must invoke is threaded to the engine as ``_FACADE_FILE``.
 """
 from __future__ import annotations
 
@@ -33,9 +33,6 @@ from pathlib import Path
 
 _CANONICAL = "tools._intent"
 _TOOL_PATH = Path(__file__).resolve()
-#: Repo root: this facade installs to ``<repo>/tools/intent.py``, so the repo root
-#: is one directory above ``tools/`` — identical to the pre-split single-file tool.
-_REPO_ROOT = _TOOL_PATH.parents[1]
 
 
 def _load_engine():
@@ -57,11 +54,6 @@ def _load_engine():
     engine.__dict__["_FACADE_FILE"] = str(_TOOL_PATH)
     sys.modules[_CANONICAL] = engine
     spec.loader.exec_module(engine)
-    # Re-anchor the repo-root-derived constants to THIS install path (the engine
-    # computed them from _intent/__init__.py, one directory too deep). Identical
-    # values to the pre-split tool, since the facade sits where the monolith was.
-    engine._REPO_ROOT = _REPO_ROOT
-    engine.INTENTS_LOG_PATH = _REPO_ROOT / "dev" / "intents.jsonl"
     return engine
 
 
@@ -73,27 +65,41 @@ _engine = _load_engine()
 globals().update({k: v for k, v in vars(_engine).items() if not k.startswith("__")})
 
 
+def _engine_modules():
+    """The engine package + every loaded ``tools._intent.<sub>`` submodule."""
+    prefix = _CANONICAL + "."
+    return [m for name, m in list(sys.modules.items())
+            if m is not None and (name == _CANONICAL or name.startswith(prefix))]
+
+
 class _IntentFacade(types.ModuleType):
     """Facade module type that **forwards attribute writes/deletes to the engine**.
 
     The pre-split tool was a single module, so the adopter suite monkeypatches a
     private at the module it loads (``monkeypatch.setattr(mod, "_confirm_proceed",
     ...)``) and relies on an *engine-internal* caller (``_precommit_check_impl``)
-    seeing it. Post-split, those callers resolve names in the engine module's
-    namespace, so a copy-on-the-facade alone would not reach them. Forwarding the
-    write to ``_engine`` restores that single-module monkeypatch contract while the
-    engine keeps its own canonical identity (``tools._intent``, bound contract 2).
+    seeing it. Post-split those callers resolve names in their **own** engine
+    submodule's namespace, so a copy on the facade alone would not reach them.
+    Forwarding each write to every engine submodule that already binds the name
+    restores the single-module monkeypatch contract while each submodule keeps its
+    own canonical identity (``tools._intent[.<sub>]``, bound contract 2).
     """
 
     def __setattr__(self, name, value):
         super().__setattr__(name, value)
-        if not name.startswith("__"):
-            setattr(_engine, name, value)
+        if name.startswith("__"):
+            return
+        for mod in _engine_modules():
+            if hasattr(mod, name):
+                setattr(mod, name, value)
 
     def __delattr__(self, name):
         super().__delattr__(name)
-        if not name.startswith("__") and hasattr(_engine, name):
-            delattr(_engine, name)
+        if name.startswith("__"):
+            return
+        for mod in _engine_modules():
+            if hasattr(mod, name):
+                delattr(mod, name)
 
 
 sys.modules[__name__].__class__ = _IntentFacade
