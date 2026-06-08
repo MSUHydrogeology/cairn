@@ -34,6 +34,22 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **Lifecycle template thinning — accreted teaching routed to two new doctrine pages.**
+  `templates/core/dev/proposals/_template.md` and `templates/core/dev/plans/_template.md`
+  are thinned from ~800-line manuals to form-skeletons: section headings, `cairn:slot`
+  markers (byte-for-byte preserved), fill-prompts, and one backticked-citation pointer
+  per section to its doctrine home. The routed teaching now lives in two new type-specific
+  pages — `doctrine/proposals.md` (proposal lifecycle, append-only rule, one-commit-per-
+  transition, triage, forward-reference-path marker doctrine, file moves, archive
+  preconditions, count claims, Response grammars) and `doctrine/plans.md` (plan lifecycle,
+  archive precondition, plan-review precondition, triage rule, mutability rule, planning
+  handshake, forward-reference-path marker doctrine, count claims, plan-review format,
+  code-review doctrine, lasting-truth migration doctrine). Shared concepts remain in
+  `doctrine/lifecycle.md`. All backticked pointers are text citations (never relative
+  Markdown links), so they are not flagged by `link_check` on the adopter side, which
+  does not vendor `doctrine/`. Deliberation in
+  `dev/proposals/archive/2026-06-08-claude-cairn-lifecycle-template-thinning.md`.
+
 - **Gate-control tooling for unattended registry-cascade batches.**
   `bootstrap/tests/_ast_attest.py` gains a hardened `update-symbol` subcommand that
   surgically re-baselines exactly one allowlisted registry-mapping digest

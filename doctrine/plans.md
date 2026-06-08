@@ -1,0 +1,638 @@
+<!-- cairn-internal-ref-allow: doctrine/lifecycle.md doctrine/dual-review.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
+
+# Plans — type-specific lifecycle doctrine
+
+This page covers the doctrine specific to **plan artifacts**
+(`dev/plans/<slug>.md`).  Shared lifecycle concepts — the Registered
+Report analogy, why the record exists, the claim-marker maintenance
+exception, deferred-follow-up revival, roadmap management, and
+archive preconditions — live in `doctrine/lifecycle.md`.
+Review-tier and structural-independence doctrine lives in
+`doctrine/dual-review.md`.  Proposal-lifecycle doctrine (triage,
+file moves, Response grammars) lives in `doctrine/proposals.md`.
+
+---
+
+## The plan lifecycle
+
+```
+open -> [awaiting-plan-review] -> executing -> review -> archived
+```
+
+* **open** — the plan-open commit creates the plan and archives
+  the source proposal.
+* **awaiting-plan-review** — *(only for a review-required plan; see
+  the plan-review precondition below)* the plan is open but
+  implementation has not started, waiting for its plan-review section
+  to land. A plan marked `Plan review: not required` skips this
+  status and goes straight to `executing`.
+* **executing** — implementation commits land.
+* **review** — a code-review pass examines the implementation.
+* **archived** — after review, lasting truth migrates to durable
+  homes and the plan moves to `dev/plans/archive/`.
+
+A plan is an *execution* artifact: its status, progress markers,
+and commit hashes are updated in place. Review findings and the
+archive record are append-only. *(One bounded exception to those
+append-only sections: inserting a `claim_check` marker line —
+`Proposed/Untracked/External-repo paths:` — adjacent to a path token is
+**mechanical maintenance, not authoring a review** (additive-only, its own
+labeled `claim-marker maintenance:` commit, typo-guarded). A task-checkbox
+/ status update is ordinary mutable workflow, not this carve-out. See
+the Mutability rule below and `doctrine/lifecycle.md` > "The proposal
+lifecycle".)*
+
+**The plan is the Stage 2 of the Registered Report.** Where the
+proposal pre-registered the design and the verification plan
+(Stage 1; see `doctrine/proposals.md`), the plan and its code
+review check the implementation and the evidence it produced
+against that locked plan. This is the defense against metric
+p-hacking the proposal's Stage 1 named: judged against a prior
+commitment, not chosen after the fact.
+
+A non-trivial accepted proposal typically spans **5-10 commits**
+across the full lifecycle (`accepted` Decision, plan-open,
+implementation commits, code-review, sharpening, plan-archive); the
+**minimum is 4** (plan-open + first implementation combine, and code
+review records inline with the sharpening commit). Trivial accepts
+collapse implementation + proposal-archive into a single commit —
+they have no plan, so the plan preconditions do not apply.
+
+### Release-gated plans (an expected parked state)
+
+A plan may be explicitly **release-gated** — a phase that cannot fire
+until a release boundary has elapsed (e.g. a removal step that waits
+on a deprecation clock). Such a plan may remain `executing` in
+`dev/plans/` **indefinitely**, parked between its pre-release and
+post-release phases. This is the plan's *designed* lifecycle state —
+not clutter, not a hygiene problem; do not "clear" it.
+
+---
+
+## The plan-archive precondition
+
+**A plan never archives until a code review has occurred.** This is
+the bright-line rule that makes the review system work end-to-end on
+the implementation side — parallel to the proposal-review pass that
+makes it work on the deliberation side. Without this rule, fast
+implementations escape independent review because the archive commit
+closes the loop before any independent eye sees the code.
+
+Concretely, an accepted non-trivial proposal flows through:
+
+```
+plan-open (+ optional first implementation)   <- can be ONE commit
+implementation (one or more commits)
+code-review pass (findings appended in plan; sharpening fixes if needed)
+plan-archive (lasting-truth migration; this is what closes the loop)
+```
+
+The plan-open and first-implementation commits MAY combine when the
+work is tractable in one commit — but only for a plan marked
+`Plan review: not required` (see the plan-review precondition below).
+The **plan-archive commit, however, is always distinct** from the
+implementing commit(s); it is the artifact of "review happened and
+the loop is closed." Bundling plan-archive into the implementing
+commit hides whether code review actually occurred.
+
+Code review's reviewer is **not the implementing agent**. Trivial
+accepts skip the plan entirely (per the triage rule below) and
+therefore do not encounter this precondition.
+
+---
+
+## The plan-review precondition
+
+Symmetric to the plan-archive precondition, at the *entry* boundary:
+**a review-required plan does not start implementation until its
+plan-review section has landed.** The plan-archive gate guards
+*review-before-close*; this gate guards *review-before-implement*.
+
+The gate is **explicit, not remembered**: the `**Plan review**` metadata
+line above is mandatory — `required(<tier>)` or `not required(<rationale>)`,
+with **no silent default**. The author states it; the Maintainer ratifies.
+When `required`, the plan opens in **`awaiting-plan-review`** and reaches
+`executing` only after a dated `## Plan review` section lands: the review
+**and**, when it raised findings, a dated `### Sharpening` subsection
+dispositioning them. Its plan-open and first-implementation commits stay
+**distinct** (implementation cannot front-run the review). When
+`not required`, the rationale is on the record and the plan may combine
+plan-open with first implementation.
+
+```
+open --> awaiting-plan-review --> executing --> review --> archived   (review required)
+open ------------------------->   executing --> review --> archived   (review not required)
+```
+
+Like the plan-archive precondition, this converts a *remembered* norm
+into a *structural* one: the gate is a status the plan **carries**, not
+an agent's memory (the recurring plan-review-skip failure mode). The
+plan header's `Plan review:` line makes the gate legible to a cold
+reader; a static plan-review lint is the mechanical backstop (a
+`required` plan past `open` must carry a dated review subsection). The
+review *tier* follows the structural-independence framing in
+`doctrine/dual-review.md`. See `doctrine/lifecycle.md` for the full
+cross-type statement.
+
+---
+
+## Plan triage rule
+
+**Open a plan when an accepted proposal's implementation:**
+
+* Will land across multiple commits.
+* Touches multiple files / areas (code + tests + docs).
+* Has multi-stage sequencing (e.g., infrastructure first, then
+  per-target rollouts).
+* Carries deferred follow-ups that need durable homes before
+  archiving.
+
+**Skip the plan when:**
+
+* The implementation is a single commit.
+* The change is single-file or single-area.
+* No follow-ups need a durable home (the proposal's "what's next" is
+  fully captured in the implementing commit message).
+
+When in doubt, open the plan. The cost is low (one file in
+`dev/plans/`); the benefit is durable execution context for any agent
+who picks up the work mid-flight.
+
+### Fast multi-stage (a sub-pattern of non-trivial)
+
+The triage bullets above are OR-conditions: a plan is warranted when
+ANY of the four hold. The common sub-pattern where the first bullet
+is FALSE (the implementation itself fits in one commit) but at least
+one of the others holds (touches multiple files / areas, has
+multi-stage sequencing, or carries deferred follow-ups) is called
+**fast multi-stage**.
+
+Fast multi-stage compresses the implementation phase into a single
+commit but does **not** collapse the lifecycle. Plan-open + first
+implementation may combine in one commit (per the plan-archive
+precondition above); plan-archive remains distinct. The minimum
+lifecycle is **three commits past the implementing combined commit**:
+
+```
+commit N:    plan-open + implementation       (status: review)
+commit N+1:  code review + sharpening
+commit N+2:  plan-archive + lasting truth
+```
+
+Ordinary multi-commit plans are not fast multi-stage, but they use
+the same review-before-archive guardrail.
+
+---
+
+## Mutability rule
+
+Plans are **execution artifacts**, not deliberation artifacts; they
+need ordinary status tracking as work proceeds without the
+bright-line append-only contract that proposals carry. Two classes
+of edit:
+
+**Mutable in place** (status updates as work proceeds):
+
+* `Status` field (`open` / `executing` / `review` / `archived`) plus
+  the "last update" date.
+* Checkboxes / progress indicators in the Sequence section.
+* Commit hashes filled in as commits land.
+* Verification notes (test counts, runtime, tooling output).
+* Link targets when referenced files move.
+* **Chunk-table cell text — pre-implementation only** (plan status
+  `open`; no commits in flight against the chunks being edited).
+  Inline edits driven by accepted plan-review findings land here,
+  with the Sharpening subsection naming which cells changed and why.
+  Once status flips to `executing`, chunk-table edits follow the
+  append-only rule below.
+
+**Append-only** (history of decisions):
+
+* Scope changes (add a new sub-section if scope materially shifts;
+  don't rewrite the original Scope paragraph).
+* Material sequence changes (add a "Sequence revision" note; don't
+  edit prior Sequence entries that are already in flight).
+* Review findings — both `## Plan review` and `## Code review`
+  sections are append-only once a reviewer has added findings;
+  Sharpening subsections under either are also append-only. Mirrors
+  the proposal Review section's append-only contract.
+* Archive decisions (Lasting-truth migration entries are append-only
+  once written).
+
+**Distinct from discovery-driven inline revisions.** When the
+implementing agent (or the plan author) revises the plan mid-flight
+in response to *implementation discovery* — not in response to a
+review pass — inline chunk-table edits are also permitted while
+status is `open`, but no `## Plan review` section is required. The
+audit trail lives in the revision commit's message + the git diff.
+Add a `## Plan review` section only when an actual review pass
+occurred.
+
+Once the plan archives to `dev/plans/archive/`, the file is
+**closed** — only link maintenance permitted (parallel rule to
+archived proposals).
+
+---
+
+## The planning handshake
+
+Before heavy implementation, the team converges on a short set of
+questions — a lightweight handshake for plan-shaped work below the
+full-proposal bar (a proposal answers these at greater depth; a plan
+draining an accepted proposal inherits most of them):
+
+* What workflow or capability are we improving?
+* What is the current pain or risk?
+* What contract or module boundary is involved?
+* What would success look like?
+* What tests, docs, or examples prove the change?
+* **What must explicitly *not* change in this pass** — the scope fence?
+
+The `## Scope` section in the plan template is where these land: it
+names what the plan executes *and* what it deliberately leaves alone.
+The scope fence is the load-bearing one — an unstated "not this pass"
+is how a bounded plan quietly grows.
+
+---
+
+## Forward-reference paths — `Proposed paths:` marker doctrine
+
+A plan typically cites paths it *plans to create* during chunk
+execution (new modules, new test files, new docs). At plan-open time
+those paths do not resolve, so `claim_check` hard-flags them. The
+escape hatch is `claim_check`'s marker-line mechanism: a line that
+begins with `Proposed paths:` (case-insensitive; optional list-item
+prefix) exempts the backticked path tokens **on that same line** from
+the hard path check.
+
+Use the marker when:
+
+* The plan opens with paths it plans to create at chunk commits.
+* The plan cites future test files, fixture files, or documentation
+  files in chunk tables.
+* The plan moves a file — the future archive path is forward-reference
+  until the move happens.
+
+Marker shape (preferred): one or more `Proposed paths:` lines near the
+top of the plan (after `## Plan triage rule`, before `## Scope`), each
+listing a batch of related tokens. Multiple tokens per line are fine;
+a marker line also exempts any **contiguous structured block
+immediately beneath it** (table rows, list rows, or bare backticked
+path-list rows) until the next blank line, heading, or ordinary prose
+line.
+
+Example:
+
+```
+Proposed paths: `path/to/new_tool.py`, `path/to/new_dir/`,
+`path/to/new_doc.md`.
+
+Proposed paths: `path/to/tests/test_new_thing.py`,
+`path/to/tests/test_new_contract.py`.
+```
+
+**The marker is line- and block-scoped**: it does NOT exempt a path
+where the same token recurs in ordinary prose (a chunk description, an
+acceptance-criterion sentence). Such an occurrence still hard-flags.
+Two clean ways to handle it, in preference order:
+
+* **Cite the existing parent directory + the bare new filename.**
+  `claim_check` treats a backticked token as a repo-path claim only
+  when its first segment is a real top-level directory; a bare
+  filename (no `/`) is not a claim. Write a new file as a bare name
+  beside its directory — e.g. `new_tool.py` next to the existing
+  `path/to/dir/` — so the directory token resolves, the bare name is
+  ignored, and the full slashed path stays declared once in the
+  marker. No flag, no residue.
+* **Conscious-accept**, documented in the plan-open commit body — the
+  fallback when the full slashed path must appear in prose; it clears
+  at the implementing chunk commit where the path is created.
+
+**Two other marker keywords** parallel `Proposed paths:`:
+
+* `Untracked paths:` — for git-ignored paths a fresh checkout will not
+  carry.
+* `External-repo paths:` — for paths that resolve in a sibling
+  repository this project depends on, or an upstream framework
+  checkout, rather than in this tree.
+
+All three markers exempt only the tokens on the marker line itself.
+See `claim_check`'s module docstring (the "Marker lines" subsection)
+for the full mechanism documentation.
+
+**Applies to a plan's append-only finding sections too.** Under the
+`AGENTS.md` claim-marker-maintenance exception, inserting a marker line
+to clear a forward-reference / sibling-repo path flag is permitted even
+inside an append-only `## Plan review` / `## Code review` section (and a
+reviewer's findings) — additive marker line only, in its own
+`claim-marker maintenance:` commit, with no change to the finding's
+text. A plan's **task checkboxes / status** are ordinary mutable
+workflow, distinct from these append-only finding sections. Before
+marking, confirm the flagged path is not a typo of a real local path.
+**Placement safety**: an inline marker is *block-scoped* (it exempts
+contiguous rows beneath it until a blank line / heading) — place it
+immediately adjacent to the target token and leave a blank line after
+the target row so it does not over-exempt later rows; for many
+sibling-repo paths, prefer the file-level
+`<!-- claim-check-allow: <glob> -->` directive (narrow globs only).
+
+---
+
+## Count claims — the three-kind precision / `as_of` discipline
+
+A count is not one thing.  Before writing a number into a durable
+artifact, decide which of **three kinds** it is — each wants a
+different treatment, and getting the kind right is what removes the
+need for exact counts (and the stale-count drift they invite) at the
+source:
+
+* **Decision-irrelevant** — the number is colour, not the point ("the
+  largest file by far", "ships in a few commits").  **Approximate it**
+  (`~4900 lines`, "2-3 commits").  Chunk-table commit estimates are
+  almost always this kind.  An exact count here is a maintenance
+  liability with no upside: it drifts, and nothing depended on its
+  precision.
+* **Dated snapshot** — a measurement true *at a moment* the artifact
+  records as evidence ("the suite had N tests when this plan opened").
+  **Date it** (`N tests, as_of YYYY-MM-DD`) and **never re-measure
+  it** — re-running *erases* the evidence the snapshot is.
+* **Live invariant** — a current size cited as present fact, prone to
+  drift.  This is the one number worth an exact value *and* worth
+  machine verification: register it and re-measure it (the code-side
+  `verify_counts` registry, where the project ships one).
+
+"The safest stale count is the one prose did not need."  Most numbers
+are decision-irrelevant; approximating them is the cheapest and most
+durable fix.  Reserve exact counts for snapshots (dated) and invariants
+(registered).
+
+The write-time count soft-flag and its `claim-check-allow-count`
+directive were **retired 2026-06-05** (0 catches across the
+verify-before-asserting instance log; the nag generated header bloat).
+`claim_check` no longer flags counts — a stray
+`claim-check-allow-count` comment in an archived artifact is silently
+ignored.
+
+---
+
+## Plan review — doctrine and format
+
+*An Internal review pass on the plan itself, before implementation
+commits land.  Mirrors the proposal Review/Response cycle but adapted
+to the plan's execution-artifact nature: **findings are append-only;
+chunk-table cell edits that accepted findings motivate are inline,
+with a documenting Sharpening subsection.** See the Mutability rule
+above for the full inline-vs-append split.*
+
+### When to use it
+
+* **Maintainer-requested** ("I'd like a review or two before this moves
+  forward").
+* **Plan revised mid-flight** — when a discovery-driven revision
+  materially expands scope or adds chunks, an Internal review pass on
+  the revised plan is worth running before chunks land.
+* **Scope is large or load-bearing** — many chunks, multiple modules,
+  scientific / architectural risk that the proposal review didn't fully
+  resolve.
+* **Plan author wants a second eye** — always defensible; the cost is
+  low and the failure mode it prevents (implementing against a flawed
+  spec) is expensive.
+
+Skip plan review when the plan is small, derived directly from a
+proposal that itself went through Internal review, and the implementing
+chunks are straightforward. Trivial accepts that skip the plan entirely
+(per the Plan triage rule above) also skip plan review.
+
+### Reviewer identity
+
+**Internal-review floor** — same-agent-fresh-session is sufficient. The
+plan is a deliberation artifact (parallel to the proposal Review
+section's tier), not implementing code. The stricter cross-agent-type
+floor in Code review below applies to *implementation* review, not here.
+
+Escalate to the External-review tier (different agent type or human)
+when the plan carries scientific or architectural risk not fully
+resolved during proposal review.
+
+### Format
+
+Each review pass gets its own dated subsection:
+
+```
+### Plan review -- <reviewer> -- YYYY-MM-DD
+
+**Model**: <model or tier when known; "unknown" if not>
+
+<one-paragraph orientation: who asked, what triggered the pass>
+
+**Structural-independence stance.**  Author / revision-author /
+reviewer identities; tier choice (Internal-review floor
+sufficient because <reason>).
+
+**Verification done before drafting:**
+
+* <bullet -- file:line reads, empirical reproducers, grep counts>
+* <bullet>
+
+**Steelman:**
+
+* <bullet -- what the plan got right; what should not be
+  contested unless the reviewer can show otherwise>
+* <bullet>
+
+**Findings:**
+
+* **[N1] (LOAD-BEARING) -- <one-line title>.**  <body with
+  file:line citations + empirical evidence where applicable>
+  - **(a)** <alternative one>
+  - **(b)** <alternative two>
+  **Lean: (a)**.  <rationale>
+* **[N2] (important) -- <title>.**  <body>
+* **[N3] (nit) -- <title>.**  <body>
+
+**Suggested sharpening before implementation:**
+
+1. <action>
+2. <action>
+
+**Coverage + second-round recommendation** (see `doctrine/dual-review.md` >
+"Recommend-and-decide"):
+
+* **Covered** -- <review-sweep lenses swept, each with a falsifiable citation>
+* **Not covered / low confidence** -- <the negative space>
+
+Recommendation: <recommended / not recommended a second cross-type pass, with
+reasons grounded in the negative space>. (A declared-`required` tier runs
+regardless.)
+```
+
+Priority labels:
+
+* `(LOAD-BEARING)` — plan-as-written will not achieve its acceptance
+  criteria; blocker for implementation.
+* `(important)` — design / scope concern; deserves resolution but not
+  strictly a blocker.
+* `(nit)` — clarity / polish; defer-OK.
+
+### Sharpening (response to findings)
+
+When findings are addressed, append a Sharpening subsection under the
+same `## Plan review` heading:
+
+```
+### Sharpening -- <author> -- YYYY-MM-DD
+
+Dispositions on the review's findings, per maintainer
+directive ("<quoted directive>"):
+
+* **[N1] accept (rewrote chunk 1.1 in place)** -- <what changed
+  inline; what guidance the new cell text gives>
+* **[N2] accept (added chunk 1.7)** -- <what was added>
+* **[N3] defer (will land at archive time)** -- <why>
+* **[N4] wontfix** -- <rationale>
+
+Verification post-sharpening:
+
+* <doc-link gate> -- clean.
+* Plan re-reads coherently end-to-end.
+```
+
+**Chunk-table cells are edited inline** when sharpening accepts a
+finding; the Sharpening subsection NAMES which cells changed and why.
+This combines audit-trail integrity (append-only Sharpening doc) with
+execution-spec correctness (the implementer reads the corrected chunk,
+not the obsolete one). Permitted only while plan status is `open`;
+once status flips to `executing`, follow the append-only
+Sequence-revision rule (see Mutability rule above).
+
+### Multi-round review
+
+Each subsequent review pass gets its own dated subsection with a round
+suffix:
+
+```
+### Plan review -- <reviewer> -- YYYY-MM-DD (round 2)
+...
+### Sharpening -- <author> -- YYYY-MM-DD (round 2)
+...
+```
+
+Finding numbering restarts per round (`N1`, `N2`, ... in each round);
+cross-round disposition citations reference the round explicitly
+(`N1.r2 accept`).
+
+### Distinct from discovery-driven plan revision
+
+Inline plan revisions driven by *implementation discovery* — e.g., the
+implementing agent realizes the original plan's chunk shape was
+incomplete — do NOT require a `## Plan review` section. No review
+happened; the audit trail lives in the revision commit's message + the
+git diff. Use this section only when an actual Internal review pass
+occurred.
+
+---
+
+## Code review — doctrine
+
+*Filled in after implementation commits land.* Begin with
+`**Model**: <model or tier when known>` immediately below the section
+header (or below a `### Code review -- <reviewer> -- YYYY-MM-DD`
+sub-heading if used). The reviewer is typically NOT the implementing
+agent (Internal Reviewer or External Reviewer norms apply, same as
+the proposal Review section). Findings as a numbered list with
+`accept (commit <sha>)` / `defer` / `wontfix` dispositions.
+Sharpening fixes land as follow-up commits before the plan archives.
+
+**A clean code review carries a falsification ledger.** Per
+`dev/agent_collaboration.md` > "Review Expectations", a **final
+pre-archive** code review with **no P1/P2 findings** clears the
+plan-archive precondition only with a falsification ledger **or** a
+confirming second different-agent-type pass. Minimal ledger shape:
+
+* **Surfaces probed** — what was actively examined / tried-to-break.
+* **Negative / edge-case attempt** — at least one, when applicable.
+* **Verification** — the checks run (or consciously not run, with why).
+* **Residual risk** — what remains unverified.
+
+**End with the coverage line + recommendation** (`doctrine/dual-review.md` >
+"Recommend-and-decide"): **Covered** (the review-sweep lenses swept, with
+citations) / **Not covered / low confidence** (the negative space), then a
+recommendation on whether a further independent pass is warranted. For a clean
+final pre-archive review this composes with the falsification ledger above —
+the ledger *is* the "Covered" evidence, and the negative space is what a
+second pass would target.
+
+**Reviewer identity** (per the structural-independence tier rule, see
+`dev/collaboration_agreement.md` > "External Review Norms" and
+`dev/agent_collaboration.md` > "Stage-to-role matrix"): the "not the
+implementing agent" default is the FLOOR for code review — stricter
+than the Internal-review tier's same-agent-fresh-session allowance.
+Rationale: proposal review surfaces intellectual flaws in ideas; code
+review surfaces implementation regression risk where the implementer's
+just-written code is harder to spot mistakes in cold by someone with
+the same underlying reasoning patterns. Escalate to the External-review
+tier (different agent type or human) when the implementation carries
+scientific or architectural risk not fully resolved during proposal
+review.
+
+This section is append-only once a reviewer has added findings.
+
+---
+
+## Lasting-truth migration doctrine
+
+*Filled in at archive time.* Per the archive preconditions rule in
+`doctrine/lifecycle.md` > "Archive precondition", plans archive only
+after every deferred follow-up has a durable home outside the plan.
+Acceptable homes:
+
+* `dev/PLANNING.md` — a tier item, a follow-up backlog, or a new
+  dedicated subsection.
+* A topic doc's "Future work" section.
+* `CHANGELOG.md > Unreleased` — the user-visible release-facing
+  summary.
+* Its own queued follow-up proposal at
+  `dev/proposals/<date>-<author>-<short-title>.md`.
+
+`dev/NEXT_SESSION.md` is not an archive-time home — it is edited only
+at the goodnight routine and on explicit user instruction. A small,
+pickable-cold follow-up goes to `dev/PLANNING.md` here; the goodnight
+scrub then surfaces it into `NEXT_SESSION.md`.
+
+The archive commit body must name where each item went, in the form:
+
+```
+Follow-ups migrated to:
+* <item> -> dev/PLANNING.md > <section>
+* <item> -> CHANGELOG.md > Unreleased > Added
+* <item> -> docs/<topic>.md > Future work
+```
+
+This makes the migration auditable from `git log` alone.
+
+The archive-time migration note must also include an **evidence
+ledger**:
+
+* **Evidence shipped** — tests, docs, examples, or workflow checks that
+  actually landed in the implementation / sharpening commits.
+* **Evidence deferred** — planned checks or workflow smokes that did
+  not land in this plan.
+* **Deferred evidence home** — where each deferred item is now tracked
+  (`dev/PLANNING.md`, a topic doc's "Future work" section, or a queued
+  follow-up proposal).
+
+This prevents the archive commit from accidentally turning "deferred"
+evidence into "shipped" evidence by implication.
+
+The migration note must also carry the **loop-fidelity sign-off** (the
+Decision→implementation checkpoint; see `doctrine/lifecycle.md` >
+"Loop-fidelity verification"):
+
+* **Fidelity sign-off** — confirm the **landed implementation commit(s)
+  match the accepted Revised section**, and **name which Revised section
+  governs**. Make it falsifiable: cite the commit sha(s) and the governing
+  section, not a bare "matches." A missing sign-off line is a code-review
+  finding (like an unfilled slot). For an upstreamed (Cairn-side) change,
+  cite the landed Cairn commit.
+
+This section is append-only once written.
