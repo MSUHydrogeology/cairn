@@ -918,14 +918,21 @@ def _surface_intents(root: Path, interpreter: str) -> None:
 
 
 def _run_lifecycle_metrics(root: Path, interpreter: str) -> None:
-    """Run the optional lifecycle-metrics tool read-only, if installed."""
+    """Run the optional lifecycle-metrics tool with ``--snapshot``, if installed.
+
+    Passes ``--snapshot`` so each full-handoff persists a dated CSV snapshot
+    to ``dev/measurement/snapshots/<YYYY-MM-DD>-proposals.csv``.  Only runs
+    in the ``--handoff`` full-handoff path (the caller in ``_do_full_handoff``
+    gates it).  Skip-with-note when the tool is absent; never fails the
+    handoff on a non-zero exit.
+    """
     tool = _sibling_tool("lifecycle_metrics.py")
     if tool is None:
         _warn("lifecycle_metrics.py not installed -- skipping the metrics pass.")
         return
     try:
         proc = subprocess.run(
-            [interpreter, str(tool)],
+            [interpreter, str(tool), "proposals", "--snapshot"],
             cwd=str(root),
             capture_output=True,
             text=True,
@@ -933,7 +940,11 @@ def _run_lifecycle_metrics(root: Path, interpreter: str) -> None:
             env=_git_env(),
         )
         if proc.returncode == 0:
-            _emit("lifecycle-metrics: ran (read-only).")
+            snap_note = (proc.stderr or "").strip()
+            _emit(
+                f"lifecycle-metrics: ran with --snapshot."
+                + (f"  {snap_note}" if snap_note else "")
+            )
         else:
             _warn(f"lifecycle_metrics reported: {(proc.stderr or '').strip()}")
     except OSError as exc:

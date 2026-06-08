@@ -24,13 +24,13 @@ corpus; the optional ``--out`` flag writes only the derived report file
 derived artifact -- regenerable from the repo at any commit -- and is
 therefore not committed.
 
-This is the **v1 core** extractor.  The reference implementation
-also carries a *snapshot layer* (committed dated CSV snapshots, a
-collision-log parser, a metrics-annotations reader, a ``Goodnight:``
-commit backfill, per-tier model aggregation) that is specific to that
-project's own instrumentation and is deliberately **not** shipped here.
-An adopter who wants committed snapshots can add them; the v1 core is
-the measurable spine the module promises.
+This is the **v1 core** extractor plus the **v2 snapshot layer** (the
+``--snapshot`` flag).  When ``--snapshot`` is set the tool persists a
+dated CSV to ``<root>/dev/measurement/snapshots/<YYYY-MM-DD>-<kind>.csv``
+(creating the directory on first use) and prints the path to stderr.
+A same-day re-run overwrites idempotently.  The snapshot is always CSV
+regardless of ``--format``; the normal stdout / ``--out`` emission is
+unaffected (snapshot is additive).
 
 Usage::
 
@@ -39,6 +39,8 @@ Usage::
     python tools/lifecycle_metrics.py proposals --out m.csv
     python tools/lifecycle_metrics.py proposals --format md
     python tools/lifecycle_metrics.py proposals --root /path/to/repo
+    python tools/lifecycle_metrics.py proposals --snapshot
+    python tools/lifecycle_metrics.py plans --snapshot
 
 Reliability tiers (the source corpus is prose-structured, not
 schema-structured):
@@ -699,6 +701,36 @@ def format_md(
     return '\n'.join(lines) + '\n'
 
 
+# -------------------------------------------------------------- snapshot layer
+
+
+def write_snapshot(
+    rows: Sequence[Dict[str, object]],
+    columns: Sequence[str],
+    root: Path,
+    kind: str,
+    *,
+    today: Optional[datetime.date] = None,
+) -> Path:
+    """Persist a dated CSV snapshot to ``<root>/dev/measurement/snapshots/``.
+
+    The snapshot file is ``<YYYY-MM-DD>-<kind>.csv`` where the date is
+    *today* (injectable for deterministic testing via the ``today`` kwarg).
+    A same-day re-run overwrites the file (idempotent per calendar day).
+    The directory is created on first use.  Returns the written ``Path``.
+
+    Content is always CSV (``format_csv``), regardless of the caller's
+    ``--format`` choice -- the snapshot is a machine-readable longitudinal
+    record, not a human-facing report.
+    """
+    date_str = (today or datetime.date.today()).isoformat()
+    snap_dir = root / 'dev' / 'measurement' / 'snapshots'
+    snap_dir.mkdir(parents=True, exist_ok=True)
+    snap_path = snap_dir / f'{date_str}-{kind}.csv'
+    snap_path.write_text(format_csv(rows, columns), encoding='utf-8')
+    return snap_path
+
+
 # -------------------------------------------------------------- entry point
 
 
@@ -727,6 +759,15 @@ def main(argv: Optional[List[str]] = None) -> int:
         '--format', choices=['csv', 'md'], default='csv',
         help='Output format. Default: csv.',
     )
+    parser.add_argument(
+        '--snapshot', action='store_true',
+        help=(
+            'Persist a dated CSV snapshot to '
+            '<root>/dev/measurement/snapshots/<YYYY-MM-DD>-<kind>.csv '
+            '(additive: the normal stdout/--out emission still happens). '
+            'A same-day re-run overwrites the snapshot (idempotent per day).'
+        ),
+    )
     args = parser.parse_args(argv)
 
     if not args.root.is_dir():
@@ -742,6 +783,13 @@ def main(argv: Optional[List[str]] = None) -> int:
     else:
         rows = plan_rows(args.root)
         columns = PLAN_COLUMNS
+
+    if args.snapshot:
+        snap_path = write_snapshot(rows, columns, args.root, args.kind)
+        print(
+            f'lifecycle_metrics: snapshot written to {snap_path}',
+            file=sys.stderr,
+        )
 
     text = (
         format_csv(rows, columns)
