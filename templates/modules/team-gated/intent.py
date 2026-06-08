@@ -154,6 +154,17 @@ INTENT_CONFIG_RELPATH = "dev/intent-config.json"
 #: R1's). Configurable via ``dev/intent-config.json`` ``"claim_ttl_hours"``.
 DEFAULT_CLAIM_TTL_HOURS = 4.0
 
+#: Sensing write-path (self-evolution-loop Part B): where the pre-commit hook
+#: records a work-intent collision as an ``incident-trackers`` row, and the
+#: adopter-defined event-class name for it. Both overridable in
+#: ``dev/intent-config.json`` (``"incident_log_path"`` / ``"incident_event_class"``).
+#: The default tracker is the staged-index / coordination collision log (the
+#: D-IR3-cited surface). Recording is **best-effort & fail-safe**: it never
+#: blocks, slows, or fails a commit (R1), and only ever *appends a row* -- never
+#: a ``git reset`` or index mutation (N4).
+INCIDENT_LOG_RELPATH_DEFAULT = "dev/measurement/collision_log.md"
+INCIDENT_EVENT_CLASS_DEFAULT = "work-intent-claim-conflict"
+
 #: Adopter-facing invocation hint for run-guidance strings.  The scaffold
 #: installs this tool verbatim at ``<target>/tools/intent.py`` -- there is
 #: no ``intent`` console entry point -- so every command we *suggest* an
@@ -1377,6 +1388,134 @@ def _drop_stale_claims(
     ]
 
 
+# ---------------------------------------------------------------------------
+# Sensing write-path -- record a work-intent collision as an incident row
+# (self-evolution-loop Part B). Everything here is **best-effort & fail-safe**:
+# a failure NEVER blocks, slows, or fails the commit (R1); the tool only ever
+# *appends a markdown row* -- never a ``git reset`` / index mutation (N4).
+
+
+def _read_incident_config(repo_root: Path) -> Tuple[str, str]:
+    """``(incident_log_path, event_class)`` from ``dev/intent-config.json``.
+
+    Fail-safe: absent / malformed / non-string values fall back to
+    :data:`INCIDENT_LOG_RELPATH_DEFAULT` / :data:`INCIDENT_EVENT_CLASS_DEFAULT`.
+    """
+    log_path = INCIDENT_LOG_RELPATH_DEFAULT
+    event_class = INCIDENT_EVENT_CLASS_DEFAULT
+    cfg = repo_root / INTENT_CONFIG_RELPATH
+    try:
+        if cfg.exists():
+            data = json.loads(cfg.read_text(encoding="utf-8"))
+            if isinstance(data, dict):
+                lp = data.get("incident_log_path")
+                ec = data.get("incident_event_class")
+                if isinstance(lp, str) and lp.strip():
+                    log_path = lp.strip()
+                if isinstance(ec, str) and ec.strip():
+                    event_class = ec.strip()
+    except (OSError, ValueError):
+        pass
+    return log_path, event_class
+
+
+def _describe_collision(other: Dict[str, List[Dict[str, object]]]) -> str:
+    """A one-line, pipe-safe description of an other-session overlap."""
+    paths = sorted(other.keys())
+    agents = sorted({
+        str(c.get("agent", "?"))
+        for claims in other.values() for c in claims
+    })
+    return (
+        f"work-intent collision: staged path(s) {', '.join(paths[:5])} "
+        f"held by another session ({', '.join(agents[:5])})"
+    )
+
+
+def _incident_tracker_skeleton(event_class: str) -> str:
+    """A minimal but machine-evaluable incident tracker (created when the
+    configured log is absent -- the 'closed' failure mode: create the log,
+    do not silently drop the incident)."""
+    return (
+        "# Coordination incident log (auto-created by the work-intent hook)\n\n"
+        "**Rolling window**: 14 days.\n\n"
+        "## What counts\n\n"
+        f"* **Class name** -- `{event_class}` (auto-recorded by the "
+        "work-intent pre-commit hook).\n"
+        "* **Criteria for \"same shape\" recurrence** -- <define>; until you "
+        "do, the rate-limit gate counts by event-class match within the "
+        "rolling window.\n"
+        "* **What does NOT count** -- `Impact = prevented` / `non-conflict` "
+        "rows (base-rate visibility only).\n\n"
+        "## Incidents\n\n"
+        "| Date | Event Class | Description | Recurrence-Window Match "
+        "| Impact | Migrated From Reflection | Resolved By |\n"
+        "|------|-------------|-------------|------------------------"
+        "|--------|-------------------------|-------------|\n"
+    )
+
+
+def _insert_incident_row(path: Path, row: str) -> None:
+    """Insert *row* after the last data row of the ``## Incidents`` markdown
+    table, atomically (write a temp file + ``os.replace``). Falls back to an
+    EOF append if the table cannot be located -- the row is never dropped."""
+    text = path.read_text(encoding="utf-8")
+    lines = text.splitlines(keepends=True)
+    insert_at: Optional[int] = None
+    in_incidents = False
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith("## ") and stripped[3:].strip().lower().startswith(
+            "incidents"
+        ):
+            in_incidents = True
+            continue
+        if in_incidents:
+            if stripped.startswith("## "):
+                break  # next section -- the table ended above
+            if stripped.startswith("|"):
+                insert_at = i + 1  # just after this table row
+    if insert_at is None:
+        new_text = text + ("" if text.endswith("\n") else "\n") + row
+    else:
+        new_text = "".join(lines[:insert_at]) + row + "".join(lines[insert_at:])
+    tmp = path.with_name(path.name + ".intent-incident.tmp")
+    tmp.write_text(new_text, encoding="utf-8")
+    os.replace(tmp, path)
+
+
+def _record_incident(
+    repo_root: Path, *, impact: str, description: str,
+) -> None:
+    """Append one incident row to the configured tracker -- **best-effort,
+    fail-safe, non-blocking** (R1). Creates a minimal tracker if absent
+    ('closed': create, don't drop). On ANY error, writes a *visible* skip note
+    to stderr (F4) and returns -- it never raises and never affects the
+    commit's exit code. Only ever appends a row (N4)."""
+    try:
+        log_path, event_class = _read_incident_config(repo_root)
+        today = datetime.datetime.now().astimezone().date().isoformat()
+        desc = description.replace("|", r"\|").replace("\n", " ").strip()[:200]
+        # ``direct`` = logged without passing through a reflection; ``pending``
+        # = no resolution yet; ``auto`` = recurrence to be evaluated by the
+        # inference tool, not computed in the fail-safe hot path.
+        row = (
+            f"| {today} | {event_class} | {desc} | auto | {impact} "
+            "| direct | pending |\n"
+        )
+        path = repo_root / log_path
+        if not path.exists():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(_incident_tracker_skeleton(event_class), encoding="utf-8")
+        _insert_incident_row(path, row)
+    except Exception as exc:  # noqa: BLE001 -- fail-safe; never wedge a commit
+        sys.stderr.write(
+            f"intent: could not record the coordination incident "
+            f"({exc!r}); the commit is unaffected. Record it by hand if your "
+            "team tracks recurrence.\n"
+        )
+
+
 def _precommit_shebang_is_shell(first_line: str) -> bool:
     """True when ``first_line`` is a shebang naming a POSIX shell.
 
@@ -1880,7 +2019,8 @@ def _precommit_check_impl(args) -> int:
     ttl_hours = _read_claim_ttl_hours(top)
     fresh_actives = _drop_stale_claims(actives, ttl_hours)
     overlaps = _compute_overlaps(staged_set, fresh_actives, top, rename_map)
-    if not other_session_overlaps(overlaps, identity, token_resolved):
+    other = other_session_overlaps(overlaps, identity, token_resolved)
+    if not other:
         return 0  # no different-session live claim -> nothing to enforce
     # A no-token committer cannot establish "a *different* live session" (N1:
     # a static identity is shared across same-type sessions, so ownership of an
@@ -1900,21 +2040,36 @@ def _precommit_check_impl(args) -> int:
             "warned above but not enforced; provide a session token, or use "
             "per-agent worktree isolation (the durable cure).\n"
         )
+        # No-token ownership is unprovable -> not classifiable as a different
+        # session's collision, so we record NO incident (tagging it would
+        # over-count the rate-limit gate -- the named mis-tag failure).
         return 0
+    # A provably-different live session's fresh claim overlaps a staged path
+    # (S4: the incident's Impact bakes in the enforce decision under P4's
+    # block-default). The recording is best-effort & fail-safe (R1) -- it never
+    # changes the return value below.
+    incident_desc = _describe_collision(other)
     if mode == "block":
         sys.stderr.write(
             "intent: enforce=block -- refusing this commit (a different "
             f"active session claims a staged path). Override: set "
             f"{ALLOW_UNCLAIMED_ENV_VAR}=1 to commit anyway.\n"
         )
+        # Blocked -> the collision was *prevented* by the structural gate.
+        _record_incident(top, impact="prevented", description=incident_desc)
         return 1
     # confirm: proceed only on explicit acknowledgement; no TTY -> block (R2).
     if _confirm_proceed():
+        # Proceeded past a confirmed different-session claim -> *occurred*
+        # (a knowing override; the signal the rate-limit gate counts).
+        _record_incident(top, impact="occurred", description=incident_desc)
         return 0
     sys.stderr.write(
         "intent: enforce=confirm -- not acknowledged (or no TTY); refusing "
         f"(degraded to block). Override: set {ALLOW_UNCLAIMED_ENV_VAR}=1.\n"
     )
+    # Degraded to block -> *prevented*.
+    _record_incident(top, impact="prevented", description=incident_desc)
     return 1
 
 

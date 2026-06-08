@@ -1179,3 +1179,142 @@ class TestClaimTTL:
             capture_output=True, text=True, env=env_mine,
         )
         assert "sweep" not in log.stdout     # the commit did not land
+
+
+# ---------------------------------------------------------------------------
+# Sensing write-path (self-evolution-loop Part B) -- the pre-commit hook
+# records a work-intent collision as an incident-trackers row. Best-effort &
+# fail-safe (R1); the test drives a REAL git commit through the hook (F2);
+# tagging mirrors P4's Design 2 (S4): blocked -> prevented, override ->
+# occurred, no-token -> NO incident (unprovable -> would over-count the gate).
+# ---------------------------------------------------------------------------
+
+class TestSensingWritePath:
+    def _log(self, repo: Path) -> Path:
+        return repo / "dev" / "intents.jsonl"
+
+    def _claim_other(self, tool: Path, repo: Path, path: str) -> None:
+        env = _clean_env(CLAUDE_CODE_SESSION_ID="sess-OTHER")
+        _run_tool(
+            tool, ["--log-path", str(self._log(repo)), "claim", "--files",
+                   path, "--action", "other"], cwd=repo, env=env,
+        )
+
+    def _tracker(self, repo: Path) -> Path:
+        return repo / "dev" / "measurement" / "collision_log.md"
+
+    def test_block_records_prevented_real_commit(self, tmp_path) -> None:
+        """F2: a real `git commit` blocked by the default-block hook records a
+        `prevented` incident row (the collision was caught by the gate)."""
+        tool = _git_repo(tmp_path)
+        env_mine = _clean_env(CLAUDE_CODE_SESSION_ID="sess-MINE")
+        _run_tool(tool, ["install-precommit"], cwd=tmp_path, env=env_mine)
+        self._claim_other(tool, tmp_path, "dev/shared.md")
+        (tmp_path / "dev" / "shared.md").write_text("mine\n")
+        subprocess.run(["git", "add", "dev/shared.md"], cwd=tmp_path,
+                       check=True, env=env_mine)
+        res = subprocess.run(
+            ["git", "commit", "-m", "sweep"], cwd=tmp_path,
+            capture_output=True, text=True, env=env_mine,
+        )
+        assert res.returncode != 0  # blocked
+        tracker = self._tracker(tmp_path)
+        assert tracker.is_file(), "incident tracker should be auto-created"
+        txt = tracker.read_text()
+        assert "| prevented |" in txt
+        assert "work-intent-claim-conflict" in txt
+        assert "dev/shared.md" in txt
+        assert "| direct | pending |" in txt   # auto-write provenance
+
+    def test_no_token_collision_records_no_incident(self, tmp_path) -> None:
+        """A no-token committer's overlap is unprovable -> WITHHELD, and NO
+        incident is recorded (tagging it would over-count the gate)."""
+        tool = _git_repo(tmp_path)
+        env = _clean_env(CAIRN_AGENT="alice")  # static name, no session token
+        _run_tool(tool, ["install-precommit"], cwd=tmp_path, env=env)
+        self._claim_other(tool, tmp_path, "dev/shared.md")
+        (tmp_path / "dev" / "shared.md").write_text("mine\n")
+        subprocess.run(["git", "add", "dev/shared.md"], cwd=tmp_path,
+                       check=True, env=env)
+        res = subprocess.run(
+            ["git", "commit", "-m", "c"], cwd=tmp_path,
+            capture_output=True, text=True, env=env,
+        )
+        assert res.returncode == 0          # no-token -> warn-only, proceeds
+        assert "WITHHELD" in res.stderr
+        assert not self._tracker(tmp_path).exists()  # NO incident recorded
+
+    def test_clean_commit_records_no_incident(self, tmp_path) -> None:
+        tool = _git_repo(tmp_path)
+        env = _clean_env(CLAUDE_CODE_SESSION_ID="sess-MINE")
+        _run_tool(tool, ["install-precommit"], cwd=tmp_path, env=env)
+        (tmp_path / "dev" / "a.md").write_text("x\n")
+        subprocess.run(["git", "add", "dev/a.md"], cwd=tmp_path, check=True,
+                       env=env)
+        res = subprocess.run(
+            ["git", "commit", "-m", "c"], cwd=tmp_path,
+            capture_output=True, text=True, env=env,
+        )
+        assert res.returncode == 0
+        assert not self._tracker(tmp_path).exists()
+
+    def test_record_failure_does_not_break_the_block(self, tmp_path) -> None:
+        """R1: a recording failure (unwritable log path) must NOT change the
+        enforce decision and must NOT crash the hook -- it warns visibly (F4)
+        and the commit is still blocked."""
+        tool = _git_repo(tmp_path)
+        env_mine = _clean_env(CLAUDE_CODE_SESSION_ID="sess-MINE")
+        _run_tool(tool, ["install-precommit"], cwd=tmp_path, env=env_mine)
+        # A file where a directory is needed -> tracker create/insert fails.
+        (tmp_path / "dev" / "blocker").write_text("x")
+        (tmp_path / "dev" / "intent-config.json").write_text(
+            '{"incident_log_path": "dev/blocker/nope.md"}'
+        )
+        self._claim_other(tool, tmp_path, "dev/shared.md")
+        (tmp_path / "dev" / "shared.md").write_text("mine\n")
+        subprocess.run(["git", "add", "dev/shared.md"], cwd=tmp_path,
+                       check=True, env=env_mine)
+        res = subprocess.run(
+            ["git", "commit", "-m", "x"], cwd=tmp_path,
+            capture_output=True, text=True, env=env_mine,
+        )
+        assert res.returncode != 0              # block still fires
+        assert "Traceback" not in res.stderr    # never crashes
+        assert "could not record" in res.stderr  # F4: visible skip
+
+    def test_confirm_ack_records_occurred(self, tmp_path, monkeypatch) -> None:
+        """A confirm-acknowledged proceed past a different live session's claim
+        records an `occurred` incident (the override the gate counts)."""
+        tool = _git_repo(tmp_path)
+        self._claim_other(tool, tmp_path, "dev/a.md")
+        (tmp_path / "dev" / "intent-config.json").write_text('{"enforce":"confirm"}')
+        env_mine = _clean_env(CLAUDE_CODE_SESSION_ID="sess-MINE")
+        (tmp_path / "dev" / "a.md").write_text("x\n")
+        subprocess.run(["git", "add", "dev/a.md"], cwd=tmp_path, check=True,
+                       env=env_mine)
+        mod = _load_tool(tool, name="intent_occurred_unit")
+        monkeypatch.setattr(mod, "_confirm_proceed", lambda: True)
+        for v in _IDENTITY_VARS:
+            monkeypatch.delenv(v, raising=False)
+        monkeypatch.setenv("CLAUDE_CODE_SESSION_ID", "sess-MINE")
+        monkeypatch.chdir(tmp_path)
+
+        class _Args:
+            log_path = str(tmp_path / "dev" / "intents.jsonl")
+            paths_from_file = None
+
+        rc = mod._precommit_check_impl(_Args())
+        assert rc == 0  # confirm-ack proceeds
+        tracker = self._tracker(tmp_path)
+        assert tracker.is_file()
+        assert "| occurred |" in tracker.read_text()
+
+    def test_two_incidents_both_land_in_the_table(self, tmp_path) -> None:
+        """Table insertion stays inside the `## Incidents` table across writes;
+        the header is not duplicated and trailing content is not displaced."""
+        mod = _load_tool(TOOL_TEMPLATE, name="intent_tableunit")
+        mod._record_incident(tmp_path, impact="prevented", description="first")
+        mod._record_incident(tmp_path, impact="occurred", description="second")
+        txt = self._tracker(tmp_path).read_text()
+        assert txt.count("| direct | pending |") == 2
+        assert txt.count("| Date | Event Class |") == 1  # header once

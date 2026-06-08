@@ -50,6 +50,37 @@ define their own **event classes** in the "What counts" section of
 each tracker. The module ships the **pattern + schema contract**;
 the event taxonomy is per-deployment.
 
+## Sensing write-path (automatic detector → recorder)
+
+The goodnight migration is **no longer the only writer.** When the
+`coordination-tiers` work-intent **pre-commit hook** (`tools/intent.py`)
+detects a *provably-different live session's* claim on a staged path, it
+**auto-appends an incident row** to the configured tracker — connecting the
+detector to the recorder without a hand-migration step (the gap the
+`self-evolution-loop` proposal closed). The row carries `Migrated From
+Reflection = direct`, `Resolved By = pending`, and a `Recurrence-Window Match
+= auto` placeholder (the recurrence is evaluated by the inference tool /
+goodnight, not computed in the fail-safe commit hot path).
+
+* **Impact tagging** mirrors the enforce decision (it bakes in the
+  `coordination-tiers` enforce default): a **blocked** cross-claim →
+  `prevented`; a **knowingly-overridden** one (`enforce=confirm` acknowledged)
+  → `occurred`. A *no-token* committer's overlap is **not** recorded — ownership
+  is unprovable, and tagging it would over-count the gate.
+* **Best-effort & fail-safe (R1):** the append never blocks, slows, or fails a
+  commit; on any error it warns visibly and skips (the commit is unaffected). It
+  only ever *appends a row* — never a `git reset` or index mutation.
+* **The tracker is auto-created** if absent (with a default `**Rolling window**:
+  14 days` + a placeholder `## What counts`), so an incident is never silently
+  dropped; the adopter then refines the `What counts` policy.
+* **Configurable** via `dev/intent-config.json`: `incident_log_path` (default
+  `dev/measurement/collision_log.md`) and `incident_event_class` (default
+  `work-intent-claim-conflict`).
+
+The goodnight migration remains the path for **reflection-sourced** incidents
+and for **curating** auto-rows (filling `Resolved By`, reconciling
+`Recurrence-Window Match`); the two are complementary.
+
 ## Adds to
 
 The goodnight section of `dev/agent_collaboration.md > Goodnight
