@@ -90,15 +90,24 @@ artifact).
 >   two hooks (post-commit auto-release, pre-commit work-intent check) is
 >   installed. The one stable command session-start points at.
 
-**Enforce mode (optional).** The pre-commit check is `warn`-only by default —
-it surfaces another session's overlapping claim but never blocks. Set
-`"enforce"` in `dev/intent-config.json` to bind it: `confirm` (proceed only on
-explicit acknowledgement; degrades to `block` with no controlling terminal) or
-`block` (refuse a commit touching a *different* active session's claimed path).
-A `concurrent-*` team should default to `confirm`; `single` teams stay `warn`.
-The check recognizes the committer's *own* claims by the per-session token and
-warns only about genuinely different sessions; the `CAIRN_INTENT_ALLOW_UNCLAIMED`
-bypass overrides the block for a deliberate one-off. (Doctrine: Cairn's
+**Enforce mode.** The pre-commit check **blocks by default** — absent or
+malformed `dev/intent-config.json`, it refuses a commit whose staged path is
+held by a **different live session's** claim, while an unclaimed path only
+*warns* (warn-on-unclaimed + block-on-cross-claim). Set `"enforce"` in
+`dev/intent-config.json` to change it: `warn` (surface only, never block — opt
+back into the old advisory-only behavior), `confirm` (proceed only on explicit
+acknowledgement; degrades to `block` with no controlling terminal), or `block`
+(the default; setting it explicitly is equivalent). The block fires only on a
+**provably different live session**: the check recognizes the committer's *own*
+claims by the per-session token and never blocks them, and a committer with **no
+resolvable session token degrades to warn-only** (a static identity is shared
+across same-type sessions, so ownership cannot be proven — the warning still
+surfaces, but the strong action is withheld rather than misfiring on a possibly
+own claim). A **stale** claim — older than the claim TTL (default **4h**,
+configurable via `"claim_ttl_hours"`) — still warns but never blocks, so a
+crashed or abandoned session cannot wedge a live committer. The
+`CAIRN_INTENT_ALLOW_UNCLAIMED` bypass (or a tracked `{"solo_mode": true}`)
+overrides the block for a deliberate one-off. (Doctrine: Cairn's
 `doctrine/coordination.md` > "Enforcing the coordination check".)
 
 **Claim before you edit.** The Tier-2 workflow is one habit: before
@@ -114,12 +123,14 @@ counterpart to the post-commit auto-release. Where the post-commit hook
 *closes* a claim cheaply (no action required of a well-behaved author),
 the pre-commit check *catches a missed claim at the moment it matters
 most* — it reads the commit's staged set (`git diff --cached`, never
-unstaged files) and **warns** (never blocks; warn-by-default) when a
-staged path carries no active claim or is **held by another session**.
-This closes the asymmetric-reward gap `doctrine/coordination.md` names:
-releasing is automatic, so claiming must be the one deliberate act, and
-the pre-commit check is what makes forgetting it visible rather than
-silent.
+unstaged files) and **warns** when a staged path carries no active claim,
+and (by default) **blocks** when a staged path is **held by a different
+live session** (the shipped enforce-mode default is `block`; see *Enforce
+mode* below). This closes the asymmetric-reward gap
+`doctrine/coordination.md` names: releasing is automatic, so claiming must
+be the one deliberate act, and the pre-commit check is what makes
+forgetting it visible — and, for a genuine cross-session collision,
+blocking — rather than silent.
 
 > **Suppressing the self-directed warnings.** A solo or
 > intentional-unclaimed commit silences the *self-directed* warnings (a
@@ -128,6 +139,31 @@ silent.
 > tracked `dev/intent-config.json` carrying `{"solo_mode": true}`. An
 > **other-session-overlap** warning is **never** suppressed — that is the
 > coordination payoff, and it must always surface.
+
+**Shared-tree commit hygiene.** The pre-commit block is a *mitigation*, not a
+cure. In a shared working tree (two agents, one git index), a bare `git commit`
+with no pathspec commits the *whole* staged index — sweeping another session's
+staged-but-uncommitted work into the wrong commit, under the wrong author. Three
+habits, in increasing strength:
+
+* **Verify the staged set before every commit** — `git status --short` (or a
+  working-tree diff over the paths you mean to commit), so you see exactly what
+  will land.
+* **Scope commits explicitly in a shared tree** — `git commit -- <paths>`,
+  naming the files the commit should contain. (Pathspec-commit takes
+  *working-tree* content for those paths, so it is incompatible with
+  `git add -p` partial staging — pick one.)
+* **The root-cause cure is per-agent worktree isolation** — separate worktrees
+  share no index, so there is no staged set to collide on. Pathspec-scoping and
+  the fail-closed pre-commit hook are mitigations for the shared-tree case
+  adopters will still hit; worktree isolation removes the hazard.
+
+Recurrence of the event this guards against — one session's commit sweeping
+another's staged work — is recorded as a `true-staged-index` entry in the
+tracked **collision log** (`dev/measurement/collision_log.md`; see *Extension —
+Tracked collision log* below). More than one such event on a shared-coordination
+file within the team's rolling window re-opens the coordination-architecture
+question.
 
 **Per-session identity.** Identity resolves from `$CAIRN_AGENT` (an
 explicit override / escape hatch), then a **per-session** value derived

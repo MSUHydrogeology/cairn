@@ -890,7 +890,9 @@ class TestPrecommitCheck:
             ["git", "commit", "-m", "c", "dev/a.md"],
             cwd=tmp_path, capture_output=True, text=True, env=env,
         )
-        assert res.returncode == 0  # warn-by-default never blocks
+        # No claims exist (nothing was claimed) + no token, so the
+        # block-by-default has nothing to enforce -> the commit proceeds.
+        assert res.returncode == 0
         assert "dev/a.md" in res.stderr
         assert "dev/b.md" not in res.stderr  # not in the path-scoped index
 
@@ -928,10 +930,29 @@ class TestEnforceModeAndN1:
         assert res.returncode != 0
         assert "enforce=block" in res.stderr
 
-    def test_warn_default_never_blocks_but_surfaces(self, tmp_path) -> None:
+    def test_no_config_blocks_cross_claim_by_default(self, tmp_path) -> None:
+        """foldback-drain Fold A / R2: the shipped default flipped warn→block.
+        With NO ``dev/intent-config.json``, a token-bearing committer facing a
+        *different* live session's claim is now refused (not merely warned)."""
         tool = _git_repo(tmp_path)
         self._claim_other_session(tool, tmp_path, "dev/a.md")
-        # no enforce config -> warn (the safe default)
+        # no enforce config at all -> block-on-cross-claim is the default
+        env = _clean_env(CLAUDE_CODE_SESSION_ID="sess-MINE")
+        _stage(tmp_path, env, "dev/a.md")
+        res = _run_tool(
+            tool, ["--log-path", str(self._log(tmp_path)), "_precommit_check"],
+            cwd=tmp_path, env=env,
+        )
+        assert res.returncode != 0          # default now BLOCKS the cross-claim
+        assert "enforce=block" in res.stderr
+        assert "HELD BY ANOTHER" in res.stderr  # the warning still surfaces
+
+    def test_explicit_warn_never_blocks_but_surfaces(self, tmp_path) -> None:
+        """An adopter opts back into advisory-only with explicit
+        ``{"enforce":"warn"}`` -- it surfaces the overlap but never blocks."""
+        tool = _git_repo(tmp_path)
+        self._claim_other_session(tool, tmp_path, "dev/a.md")
+        self._set_enforce(tmp_path, "warn")
         env = _clean_env(CLAUDE_CODE_SESSION_ID="sess-MINE")
         _stage(tmp_path, env, "dev/a.md")
         res = _run_tool(
@@ -970,8 +991,15 @@ class TestEnforceModeAndN1:
             tool, ["--log-path", str(self._log(tmp_path)), "_precommit_check"],
             cwd=tmp_path, env=env,
         )
-        assert res.returncode == 0  # warn default
+        # Under the block-by-default flip (Fold A), a no-token committer still
+        # does NOT block: ownership is unprovable (static identity is shared),
+        # so the block is withheld and the overlap only warns -- the
+        # misfire-avoidance the proposal names. The warning still surfaces, and
+        # the hook emits the explicit "block WITHHELD" downgrade note -- which
+        # is what proves the token-gate (not some other path) is why exit is 0.
+        assert res.returncode == 0  # no token -> warn-only (not blocked)
         assert "HELD BY ANOTHER" in res.stderr  # NOT suppressed (no token)
+        assert "WITHHELD" in res.stderr  # block downgraded, not silently absent
 
     def test_confirm_no_tty_degrades_to_block(self, tmp_path, monkeypatch) -> None:
         """F4/R2: confirm with no controlling terminal -> block."""
@@ -980,3 +1008,174 @@ class TestEnforceModeAndN1:
         mod = _load_tool(src, name="intent_confirm_unit")
         monkeypatch.setattr(mod, "_confirm_tty", lambda: None)
         assert mod._confirm_proceed() is False
+
+
+# ---------------------------------------------------------------------------
+# Claim TTL (foldback-drain Fold A / R1) + the N3 offset-aware / fail-safe
+# parse contract
+# ---------------------------------------------------------------------------
+
+def _rewrite_claim_ts(log_path: Path, value: str) -> None:
+    """Set every claim record's ``ts`` in *log_path* to *value* (release
+    records untouched). Used to age a claim past the TTL or to inject a
+    malformed / naive timestamp that exercises the fail-safe parse path."""
+    out: list[str] = []
+    for line in log_path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        rec = json.loads(line)
+        if rec.get("event") == "claim":
+            rec["ts"] = value
+        out.append(json.dumps(rec))
+    log_path.write_text("\n".join(out) + "\n", encoding="utf-8")
+
+
+def _age_claims(log_path: Path, *, hours: float) -> None:
+    """Age every claim record's ``ts`` to *hours* ago (offset-aware ISO)."""
+    import datetime as _dt
+    aged = _dt.datetime.now().astimezone() - _dt.timedelta(hours=hours)
+    _rewrite_claim_ts(log_path, aged.isoformat())
+
+
+class TestClaimTTL:
+    """The net-new claim TTL (R1) + N3 offset-aware / fail-safe contract.
+
+    A *stale* (past-TTL) cross-claim still WARNS but never blocks (a crashed /
+    abandoned session must not wedge a live committer); a malformed / naive
+    timestamp never crashes the hook -- it degrades to non-blocking."""
+
+    def _log(self, repo: Path) -> Path:
+        return repo / "dev" / "intents.jsonl"
+
+    def _set_config(self, repo: Path, **kw: object) -> None:
+        cfg = repo / "dev" / "intent-config.json"
+        cfg.parent.mkdir(parents=True, exist_ok=True)
+        cfg.write_text(json.dumps(kw), encoding="utf-8")
+
+    def _claim_other_session(self, tool: Path, repo: Path, path: str) -> None:
+        env = _clean_env(CLAUDE_CODE_SESSION_ID="sess-OTHER")
+        _run_tool(
+            tool, ["--log-path", str(self._log(repo)), "claim", "--files",
+                   path, "--action", "other-work"], cwd=repo, env=env,
+        )
+
+    def test_stale_cross_claim_warns_but_does_not_block(self, tmp_path) -> None:
+        tool = _git_repo(tmp_path)
+        self._claim_other_session(tool, tmp_path, "dev/a.md")
+        _age_claims(self._log(tmp_path), hours=5)  # past the 4h default TTL
+        # default enforce=block (no config) -- a stale claim must NOT block
+        env = _clean_env(CLAUDE_CODE_SESSION_ID="sess-MINE")
+        _stage(tmp_path, env, "dev/a.md")
+        res = _run_tool(
+            tool, ["--log-path", str(self._log(tmp_path)), "_precommit_check"],
+            cwd=tmp_path, env=env,
+        )
+        assert res.returncode == 0           # stale -> not blocked (anti-wedge)
+        assert "HELD BY ANOTHER" in res.stderr   # still surfaced as a warning
+
+    def test_fresh_cross_claim_still_blocks(self, tmp_path) -> None:
+        """Control: a within-TTL cross-claim DOES block under the default, so
+        the stale pass is the TTL working -- not a silently broken block."""
+        tool = _git_repo(tmp_path)
+        self._claim_other_session(tool, tmp_path, "dev/a.md")
+        _age_claims(self._log(tmp_path), hours=1)  # within the 4h TTL
+        env = _clean_env(CLAUDE_CODE_SESSION_ID="sess-MINE")
+        _stage(tmp_path, env, "dev/a.md")
+        res = _run_tool(
+            tool, ["--log-path", str(self._log(tmp_path)), "_precommit_check"],
+            cwd=tmp_path, env=env,
+        )
+        assert res.returncode != 0
+        assert "enforce=block" in res.stderr
+
+    def test_configurable_ttl_window(self, tmp_path) -> None:
+        """``claim_ttl_hours`` is honored: a 2h-old claim blocks under an 8h
+        window but only warns under a 1h window."""
+        tool = _git_repo(tmp_path)
+        self._claim_other_session(tool, tmp_path, "dev/a.md")
+        _age_claims(self._log(tmp_path), hours=2)
+        env = _clean_env(CLAUDE_CODE_SESSION_ID="sess-MINE")
+        _stage(tmp_path, env, "dev/a.md")
+        # wide window -> 2h claim is fresh -> blocks
+        self._set_config(tmp_path, enforce="block", claim_ttl_hours=8)
+        res_wide = _run_tool(
+            tool, ["--log-path", str(self._log(tmp_path)), "_precommit_check"],
+            cwd=tmp_path, env=env,
+        )
+        assert res_wide.returncode != 0
+        # narrow window -> 2h claim is stale -> warns only
+        self._set_config(tmp_path, enforce="block", claim_ttl_hours=1)
+        res_narrow = _run_tool(
+            tool, ["--log-path", str(self._log(tmp_path)), "_precommit_check"],
+            cwd=tmp_path, env=env,
+        )
+        assert res_narrow.returncode == 0
+        assert "HELD BY ANOTHER" in res_narrow.stderr
+
+    def test_malformed_ts_does_not_crash_or_block(self, tmp_path) -> None:
+        """N3 fail-safe: a malformed (unparseable) ``ts`` degrades to
+        non-blocking and never crashes the hook (no traceback)."""
+        tool = _git_repo(tmp_path)
+        self._claim_other_session(tool, tmp_path, "dev/a.md")
+        _rewrite_claim_ts(self._log(tmp_path), "not-a-timestamp")
+        env = _clean_env(CLAUDE_CODE_SESSION_ID="sess-MINE")
+        _stage(tmp_path, env, "dev/a.md")
+        res = _run_tool(
+            tool, ["--log-path", str(self._log(tmp_path)), "_precommit_check"],
+            cwd=tmp_path, env=env,
+        )
+        assert res.returncode == 0           # fail-safe: do not block
+        assert "Traceback" not in res.stderr  # and never crash the hook
+
+    def test_naive_offset_ts_does_not_crash(self, tmp_path) -> None:
+        """N3: a naive (offset-less) old ``ts`` -- the aware/naive mismatch
+        that would raise TypeError -- is handled without crashing; an old
+        naive ts is treated as stale -> non-blocking."""
+        import datetime as _dt
+        tool = _git_repo(tmp_path)
+        self._claim_other_session(tool, tmp_path, "dev/a.md")
+        naive_old = (_dt.datetime.now() - _dt.timedelta(hours=9)).replace(
+            tzinfo=None
+        )
+        _rewrite_claim_ts(self._log(tmp_path), naive_old.isoformat())
+        env = _clean_env(CLAUDE_CODE_SESSION_ID="sess-MINE")
+        _stage(tmp_path, env, "dev/a.md")
+        res = _run_tool(
+            tool, ["--log-path", str(self._log(tmp_path)), "_precommit_check"],
+            cwd=tmp_path, env=env,
+        )
+        assert "Traceback" not in res.stderr
+        assert res.returncode == 0           # old naive ts -> stale -> no block
+
+    def test_real_two_session_shared_index_sweep_is_blocked(
+        self, tmp_path
+    ) -> None:
+        """The proposal's FIRST verification step: a real ``git commit`` in a
+        shared index, with a *different* live session holding the staged path,
+        is refused by the default-block pre-commit hook (no config needed)."""
+        tool = _git_repo(tmp_path)
+        env_mine = _clean_env(CLAUDE_CODE_SESSION_ID="sess-MINE")
+        _run_tool(tool, ["install-precommit"], cwd=tmp_path, env=env_mine)
+        # a DIFFERENT live session claims the shared file (default log path,
+        # which is exactly what the installed hook reads)
+        env_other = _clean_env(CLAUDE_CODE_SESSION_ID="sess-OTHER")
+        _run_tool(
+            tool, ["claim", "--files", "dev/shared.md", "--action", "other"],
+            cwd=tmp_path, env=env_other,
+        )
+        # MINE stages + commits the claimed path -> the hook must refuse it
+        (tmp_path / "dev" / "shared.md").write_text("mine\n")
+        subprocess.run(
+            ["git", "add", "dev/shared.md"], cwd=tmp_path, check=True,
+            env=env_mine,
+        )
+        res = subprocess.run(
+            ["git", "commit", "-m", "sweep"],
+            cwd=tmp_path, capture_output=True, text=True, env=env_mine,
+        )
+        assert res.returncode != 0, "default-block hook must refuse the sweep"
+        log = subprocess.run(
+            ["git", "log", "--oneline"], cwd=tmp_path,
+            capture_output=True, text=True, env=env_mine,
+        )
+        assert "sweep" not in log.stdout     # the commit did not land

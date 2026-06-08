@@ -147,6 +147,13 @@ ALLOW_UNCLAIMED_ENV_VAR = "CAIRN_INTENT_ALLOW_UNCLAIMED"
 #: repo).  Absent / false / malformed = warn.
 INTENT_CONFIG_RELPATH = "dev/intent-config.json"
 
+#: Default claim TTL (hours) for the pre-commit block decision. A claim
+#: older than this is **stale**: it still WARNS, but a stale cross-claim
+#: never *blocks* a commit -- a crashed / abandoned session must not wedge a
+#: live committer (foldback-drain Fold A / R1; the 4h value is Antigravity
+#: R1's). Configurable via ``dev/intent-config.json`` ``"claim_ttl_hours"``.
+DEFAULT_CLAIM_TTL_HOURS = 4.0
+
 #: Adopter-facing invocation hint for run-guidance strings.  The scaffold
 #: installs this tool verbatim at ``<target>/tools/intent.py`` -- there is
 #: no ``intent`` console entry point -- so every command we *suggest* an
@@ -1250,28 +1257,124 @@ def _read_solo_mode(repo_root: Path) -> bool:
 
 
 #: Enforce modes for the pre-commit coordination check (concurrent-session
-#: coordination Layer 2 / #53). ``warn`` = current behavior (surface, exit 0);
+#: coordination Layer 2 / #53). ``warn`` = surface, exit 0 (never blocks);
 #: ``confirm`` = prompt, proceed on acknowledgement, degrade to ``block`` with
 #: no TTY (R2); ``block`` = refuse (non-zero exit) a commit touching a
-#: *different* active session's claimed path.
+#: *different* active session's claimed path. **The shipped default (absent /
+#: malformed / unrecognized config) is ``block``** -- warn-on-unclaimed +
+#: block-on-cross-claim (foldback-drain Fold A / R2). An adopter opts back
+#: into never-block with an explicit ``"enforce": "warn"``.
 ENFORCE_MODES = ("warn", "confirm", "block")
 
 
 def _read_enforce_mode(repo_root: Path) -> str:
     """Read ``"enforce"`` from ``dev/intent-config.json`` -- ``warn`` /
-    ``confirm`` / ``block``. Absent / malformed / unrecognized → ``warn``
-    (the safe default; fail-open). Parallel to :func:`_read_solo_mode`."""
+    ``confirm`` / ``block``. **Absent / malformed / unrecognized → ``block``**
+    -- the shipped default: warn-on-unclaimed + block-on-cross-claim
+    (foldback-drain Fold A / R2). An adopter opts back into never-block with an
+    explicit ``"enforce": "warn"``. Parallel to :func:`_read_solo_mode`.
+
+    Note: ``block`` is the *enforce-mode* default; it only refuses a commit
+    when a **different live session** holds a **fresh** (within-TTL) claim on a
+    staged path *and* the committer has a per-session token (see
+    :func:`_precommit_check_impl`). An unclaimed staged path still only warns."""
     cfg = repo_root / INTENT_CONFIG_RELPATH
     if not cfg.exists():
-        return "warn"
+        return "block"
     try:
         data = json.loads(cfg.read_text(encoding="utf-8"))
     except (OSError, ValueError):
-        return "warn"
+        return "block"
     if not isinstance(data, dict):
-        return "warn"
+        return "block"
     mode = data.get("enforce")
-    return mode if mode in ENFORCE_MODES else "warn"
+    return mode if mode in ENFORCE_MODES else "block"
+
+
+def _read_claim_ttl_hours(repo_root: Path) -> float:
+    """Read ``"claim_ttl_hours"`` from ``dev/intent-config.json``.
+
+    Returns the configured positive float, or :data:`DEFAULT_CLAIM_TTL_HOURS`
+    (4.0) when absent / malformed / non-numeric / non-positive. **Fail-safe:**
+    any read or parse error degrades to the default rather than raising -- this
+    feeds the pre-commit hook, which must never crash (R1)."""
+    cfg = repo_root / INTENT_CONFIG_RELPATH
+    if not cfg.exists():
+        return DEFAULT_CLAIM_TTL_HOURS
+    try:
+        data = json.loads(cfg.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return DEFAULT_CLAIM_TTL_HOURS
+    if not isinstance(data, dict):
+        return DEFAULT_CLAIM_TTL_HOURS
+    raw = data.get("claim_ttl_hours")
+    if raw is None:
+        return DEFAULT_CLAIM_TTL_HOURS
+    try:
+        ttl = float(raw)
+    except (TypeError, ValueError):
+        return DEFAULT_CLAIM_TTL_HOURS
+    if ttl <= 0:
+        return DEFAULT_CLAIM_TTL_HOURS
+    return ttl
+
+
+def _claim_is_stale(
+    claim: Dict[str, object],
+    ttl_hours: float,
+    *,
+    now: Optional[datetime.datetime] = None,
+) -> bool:
+    """True when *claim*'s timestamp is older than *ttl_hours*.
+
+    **N3 (BINDING -- a real pre-commit crash class).** Claims stamp an
+    **offset-aware** ISO timestamp (``datetime.now().astimezone()``,
+    :func:`write_claim`). This parses ``ts`` offset-aware
+    (``datetime.fromisoformat``) and compares against an offset-aware *now*, so
+    the subtraction never raises the ``TypeError`` an aware/naive mismatch
+    would -- the failure mode that would otherwise wedge the git pre-commit
+    hook. **Fail-safe:** any missing / non-string / unparseable /
+    non-comparable ``ts`` returns ``True`` (treat as stale → excluded from the
+    block decision, i.e. *do not block*) and NEVER raises -- a degraded
+    timestamp must not wedge the commit (composes with the hook's never-wedge
+    invariant, R1). A naive ``ts`` (no offset -- only from a hand-edited or
+    foreign-writer log) is localized via ``astimezone()`` so the compare stays
+    offset-aware-safe."""
+    if now is None:
+        now = datetime.datetime.now().astimezone()
+    ts_raw = claim.get("ts")
+    if not isinstance(ts_raw, str):
+        return True
+    try:
+        claimed = datetime.datetime.fromisoformat(ts_raw)
+        if claimed.tzinfo is None:
+            # Naive ts: localize so the subtraction is aware-minus-aware.
+            claimed = claimed.astimezone()
+        return (now - claimed) > datetime.timedelta(hours=ttl_hours)
+    except (ValueError, TypeError, OverflowError, OSError):
+        # Fail-safe: an unparseable ts must not block (and must not crash).
+        return True
+
+
+def _drop_stale_claims(
+    claims: List[Dict[str, object]],
+    ttl_hours: float,
+    *,
+    now: Optional[datetime.datetime] = None,
+) -> List[Dict[str, object]]:
+    """The subset of *claims* still within *ttl_hours* (fresh enough to block).
+
+    Stale claims are dropped from the **enforcement** set only -- they still
+    surface as warnings (the warning path reads the full active set, so a stale
+    cross-claim is *seen* but does not *block*). A non-positive *ttl_hours* is
+    normalized to the default by :func:`_read_claim_ttl_hours`, so the filter
+    always applies a real window."""
+    if now is None:
+        now = datetime.datetime.now().astimezone()
+    return [
+        claim for claim in claims
+        if not _claim_is_stale(claim, ttl_hours, now=now)
+    ]
 
 
 def _precommit_shebang_is_shell(first_line: str) -> bool:
@@ -1333,12 +1436,14 @@ def _precommit_hook_block(python_exe: str, intent_path: Path) -> str:
     Like the post-commit block, the interpreter + script paths are baked
     in via ``shlex.quote`` (no ``python -m`` PATH/package assumption, no
     shell expansion of a metacharacter-bearing path).  The check's exit code
-    **propagates** (no ``|| true``) so ``confirm`` / ``block`` enforce modes
-    can refuse the commit; the check is fail-open by construction (an
-    internal error returns 0), and ``warn`` mode always exits 0, so the
-    default stays non-blocking. The temp file is removed before the exit
-    code is honored, and a clean (0) result falls through to any composed
-    later hook content.
+    **propagates** (no ``|| true``) so the ``confirm`` / ``block`` enforce
+    modes can refuse the commit; the check is fail-open by construction (an
+    internal error returns 0). The shipped default is now ``block``-on-
+    cross-claim (foldback-drain Fold A), so a forgotten claim on a path a
+    *different live session* holds is refused; ``warn`` mode (opt-in), an
+    exempt/no-token committer, and any clean (0) result exit 0 and fall
+    through to any composed later hook content. The temp file is removed
+    before the exit code is honored.
     """
     py_q = shlex.quote(python_exe)
     path_q = shlex.quote(str(intent_path))
@@ -1715,10 +1820,12 @@ def _cmd_precommit_check(args) -> int:
     """``intent _precommit_check`` -- the pre-commit hook's worker.
 
     Emits classified warnings to stderr, then applies the configured enforce
-    mode (#53): ``warn`` (exit 0; the default), ``confirm`` (prompt; proceed
-    on ack, else degrade to ``block`` with no TTY -- R2), ``block`` (exit
-    non-zero) -- but only when a *different active session* claims a staged
-    path. The bypass env var / solo mode always exempts. **Fail-open by
+    mode (#53): ``warn`` (exit 0), ``confirm`` (prompt; proceed on ack, else
+    degrade to ``block`` with no TTY -- R2), ``block`` (exit non-zero; **the
+    shipped default** -- foldback-drain Fold A) -- but a block only fires when a
+    *different live session* holds a **fresh** (within-TTL) claim on a staged
+    path **and** the committer has a per-session token. An unclaimed path still
+    only warns; the bypass env var / solo mode always exempts. **Fail-open by
     construction:** any internal error returns 0 (the hook no longer carries
     ``|| true``, so a crash must not wedge commits)."""
     try:
@@ -1761,14 +1868,39 @@ def _precommit_check_impl(args) -> int:
     ):
         sys.stderr.write(warning)
 
-    # Enforce decision (Layer 2 / #53). Only a *different active session's*
-    # claim can block; warn-mode and any bypass always proceed.
+    # Enforce decision (Layer 2 / #53). Only a *different live session's*
+    # fresh (within-TTL) claim can block; warn-mode and any bypass always
+    # proceed. The shipped default is now ``block`` (foldback-drain Fold A).
     mode = _read_enforce_mode(top)
     if mode == "warn" or exempt:
         return 0
-    overlaps = _compute_overlaps(staged_set, actives, top, rename_map)
+    # Stale-claim safety (R1 / N3): a claim past the TTL still WARNS (above)
+    # but cannot block -- a crashed / abandoned session must not wedge a live
+    # committer. The TTL parse/compare is fail-safe (never crashes the hook).
+    ttl_hours = _read_claim_ttl_hours(top)
+    fresh_actives = _drop_stale_claims(actives, ttl_hours)
+    overlaps = _compute_overlaps(staged_set, fresh_actives, top, rename_map)
     if not other_session_overlaps(overlaps, identity, token_resolved):
-        return 0  # no different-session claim -> nothing to enforce
+        return 0  # no different-session live claim -> nothing to enforce
+    # A no-token committer cannot establish "a *different* live session" (N1:
+    # a static identity is shared across same-type sessions, so ownership of an
+    # overlapping claim cannot be proven). We do NOT escalate an
+    # unprovable-ownership overlap to a block -- the warning already surfaced
+    # above (R2 keys the block on a different *live session*; blocking a
+    # possibly-own claim is the misfire the proposal's risk section names). But
+    # we emit a one-line note so a no-token team sees enforcement was
+    # *downgraded*, not that nothing was held -- the proposal's "warn-only with
+    # a louder signal" fallback. The real cure (worktree isolation) is in the
+    # commit-hygiene doctrine note.
+    if not token_resolved:
+        sys.stderr.write(
+            "intent: cross-claim block WITHHELD -- no per-session token, so "
+            "ownership of the overlapping claim cannot be proven (a static "
+            "identity is shared across same-type sessions). The overlap is "
+            "warned above but not enforced; provide a session token, or use "
+            "per-agent worktree isolation (the durable cure).\n"
+        )
+        return 0
     if mode == "block":
         sys.stderr.write(
             "intent: enforce=block -- refusing this commit (a different "
