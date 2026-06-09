@@ -1,3 +1,4 @@
+<!-- claim-check-allow: scripts/_onboarding/ -->
 # SAFETY.md — bootstrap safety constraints (R-I)
 
 This document states the safety rules that govern every Cairn
@@ -141,7 +142,16 @@ scales **by file class**:
   **git-hook installer `_intent/hooks.py` writes executable hooks into
   `.git/hooks/`**; each of the seven `_intent/*.py` engine files is Layer-4
   code, covered automatically because all seven are verbatim
-  `_MODULE_MAPPINGS` install specs — `link_check.py`, `sync_doc_snippets.py`, and the
+  `_MODULE_MAPPINGS` install specs; `onboarding_activate.py` — likewise now a
+  thin facade over the owned `_onboarding/` package (seven engine files) whose
+  **write-containment guards** (`_assert_safe_write` / `_assert_safe_read` /
+  `_assert_safe_dir_for_glob` + the `OnboardingError` / `OnboardingSecurityError`
+  taxonomy) live **single-source** in `_onboarding/security.py`; unlike the
+  others it installs via the engine function `install_onboarding()` (not
+  `_MODULE_MAPPINGS`), which fans the package out verbatim into
+  `scripts/_onboarding/` through `_assert_safe_write`, so all seven files are
+  Layer-4 code reached by the recursive `scripts/` + `bootstrap/` scan; plus
+  `link_check.py`, `sync_doc_snippets.py`, and the
   `content-security` / `python-security` apparatus —
   `content_scan_runner.py`, `run_security_audit.py`) *and* Cairn's own
   dev tools (`check_cairn.py`, `content_scan.py`, `security_check.py`,
@@ -165,7 +175,10 @@ attacker; no untrusted code path), recorded here so a future reviewer can
 tell "known and accepted" from "missed": (1) a small TOCTOU window between
 the scaffold engine's `_assert_safe_write` containment check and the write
 (the check lives in `bootstrap/_scaffold/security.py`, its single-source
-identity preserved across the split); and
+identity preserved across the split; the onboarding helper's own
+`_assert_safe_write` / `_assert_safe_read` / `_assert_safe_dir_for_glob` guards,
+now single-sourced in `_onboarding/security.py` after the onboarding-split,
+share the same consciously-accepted window under the same threat model); and
 (2) `check_cairn.py`'s `importlib.exec_module` of sibling tools from
 **fixed, script-relative** paths (a deliberate dogfood composition, not a
 dynamic-exec vector). See `../SECURITY.md` for the public statement.

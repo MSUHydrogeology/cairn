@@ -1,4 +1,4 @@
-<!-- claim-check-allow: scripts/onboarding_activate.py -->
+<!-- claim-check-allow: scripts/onboarding_activate.py, scripts/_onboarding/ -->
 <!-- The adopter-install path is cited verbatim in the
      progressive-onboarding entry; from Cairn's own checkout the path
      does not resolve (the source-of-truth lives at
@@ -121,6 +121,41 @@ and a new empty `Unreleased` is started above.
   as `scaffold.py` does. Lands across `templates/modules/team-gated/intent.py` +
   `_intent/*` + `bootstrap/_scaffold/config.py`; deliberation in the adopter
   proposal `2026-06-08-claude-cairn-intent-split.md`.
+
+- **The 1767-line `onboarding_activate.py` progressive-onboarding monolith is
+  split into a thin launcher + facade over an owned
+  `templates/modules/default-on/_onboarding/` engine package of seven subsystems**
+  (`security`, `shared`, `prompts`, `slotparse`, `triggers`, `activation`, `cli`),
+  arranged as an acyclic downward dependency DAG. The third monolith-split, reusing
+  the discipline — leaf-first, one gated commit per stage, a per-stage AST
+  source-motion attestation (every top-level symbol byte-identical, present once
+  across the package) + full bootstrap suite + the onboarding helper suite +
+  `check_cairn` at every stage. The public surface is unchanged: the facade
+  `scripts/onboarding_activate.py` is an `importlib.util` dynamic spec-loader that
+  registers the engine under the canonical `scripts._onboarding` and re-exports its
+  complete namespace. **The facade is simpler than the intent-split's:** the
+  onboarding helper suite does **zero** cross-function monkeypatching and loads its
+  helper **in-process from the in-tree location**, so the facade needs neither the
+  `__setattr__`/`__delattr__` forwarder nor a `__file__`/hook-path dependency — just
+  `globals().update(...)` plus the same fail-closed symlink/within-root guard on the
+  loaded package directory. **The write-containment surface is preserved verbatim:**
+  the `OnboardingError`/`OnboardingSecurityError` taxonomy and the
+  `_assert_safe_write`/`_assert_safe_read`/`_assert_safe_dir_for_glob` guards are
+  isolated in the `security` leaf, byte-identical to the pre-split monolith, so the
+  single `OnboardingSecurityError` identity holds and every reader/writer/globber
+  still routes through a guard (the suite's symlink/escape-refusal negative tests
+  stay green). Unlike the intent-split, onboarding installs via the engine function
+  `install_onboarding()` (not `_MODULE_MAPPINGS`); it now **fans out the
+  `_onboarding/` package to `scripts/_onboarding/`** beside the installed launcher,
+  each file copied verbatim through `_assert_safe_write`. That single-symbol engine
+  change rode a **supervised gate-tooling extension** (anchor re-based g1 → g2): the
+  `update-symbol` allowlist — formerly the three registry mappings only — was widened
+  to admit the `install_onboarding` function with its node-kind, all existing guards
+  (`--expect-old`, sole-CHANGED-delta, strict known-new) unchanged, and the AST
+  baseline + frozen-engine differential-oracle copy updated in lockstep. Lands across
+  `templates/modules/default-on/onboarding_activate.py` + `_onboarding/*` +
+  `bootstrap/_scaffold/install.py` + `bootstrap/tests/_ast_attest.py`; deliberation
+  in the adopter proposal `2026-06-08-claude-cairn-onboarding-activate-split.md`.
 
 - **The 4865-line `scaffold.py` install/upgrade monolith is split into a thin
   fail-closed launcher + facade over a private `bootstrap/_scaffold/` engine
