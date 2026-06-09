@@ -34,6 +34,24 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **Lifecycle mechanization — a state-machine contract + a read-only checker/planner.**
+  New `doctrine/lifecycle-contract.md` renders the proposal/plan lifecycle as an
+  executable contract (legal states, transitions, the *authority* each requires, and
+  the machine-verifiable precondition each must satisfy), with the **authority
+  contract** as the safety boundary: a tool mechanizes assembly/gates/formatting,
+  never the judgment — it attests *structure and presence*, never authenticity. The
+  read-only arm ships as `tools/lifecycle_planner.py` (a sibling to `lifecycle.py`,
+  stdlib-only, default-on): `next <artifact>` reports state + legal transitions +
+  unmet preconditions, `next --to <state>` emits a proposed house-format scaffold +
+  mutation manifest, `scan` runs structural conformance over the `dev/` corpus (also
+  the adopter fidelity scan), and `guard` is an advisory pre-commit pass. It **never
+  mutates and never commits** (proven by test); a generated review scaffold carries
+  no reviewer attribution and a Decision scaffold emits an empty
+  verbatim-authorization blockquote it cannot certify. An extensible, config-driven
+  AI-vs-human identity model keeps the human Maintainer the residual. Any
+  typed-mutation/commit arm is deferred behind a dogfood study + its own Security
+  Review. See `doctrine/lifecycle-contract.md` and
+  `bootstrap/tests/test_lifecycle_contract.py`.
 - **Lifecycle template thinning — accreted teaching routed to two new doctrine pages.**
   `templates/core/dev/proposals/_template.md` and `templates/core/dev/plans/_template.md`
   are thinned from ~800-line manuals to form-skeletons: section headings, `cairn:slot`

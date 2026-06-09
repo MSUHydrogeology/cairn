@@ -1,8 +1,4 @@
 <!-- cairn-internal-ref-allow: doctrine/lifecycle.md doctrine/proposals.md doctrine/plans.md doctrine/dual-review.md doctrine/session-routines.md doctrine/roles.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- claim-check-allow: templates/skills/_lib/lifecycle_planner.py, bootstrap/tests/test_lifecycle_contract.py -->
-<!-- ^ the read-only checker/planner and its conformance test are this phase's
-     companion artifacts (Phase 5 E steps E2/E3); they are net-new and land in
-     the same effort as this contract, so the references resolve once they do. -->
 # The lifecycle contract
 
 This document is the **executable formalization** of the lifecycle —
