@@ -431,6 +431,24 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         # doctrine (1:many, the P1 claim-check/lifecycle-metrics pattern).
         InstallSpec("team-gated/intent.py",
                     "tools/intent.py", verbatim=True),
+        # intent-split (phase A, 2026-06): intent.py is now a thin launcher/facade
+        # over an owned `_intent/` engine package; the seven package files install
+        # verbatim beside the facade so `python tools/intent.py` (the CLI + the git
+        # hooks) resolves its sibling engine at runtime.  Each is byte-for-byte code.
+        InstallSpec("team-gated/_intent/__init__.py",
+                    "tools/_intent/__init__.py", verbatim=True),
+        InstallSpec("team-gated/_intent/shared.py",
+                    "tools/_intent/shared.py", verbatim=True),
+        InstallSpec("team-gated/_intent/record_io.py",
+                    "tools/_intent/record_io.py", verbatim=True),
+        InstallSpec("team-gated/_intent/identity.py",
+                    "tools/_intent/identity.py", verbatim=True),
+        InstallSpec("team-gated/_intent/conflict.py",
+                    "tools/_intent/conflict.py", verbatim=True),
+        InstallSpec("team-gated/_intent/hooks.py",
+                    "tools/_intent/hooks.py", verbatim=True),
+        InstallSpec("team-gated/_intent/cli.py",
+                    "tools/_intent/cli.py", verbatim=True),
         # Fold 2 (foldback-drain-tooling): the prune-intents goodnight compaction
         # tool.  Ships with coordination-tiers because the goodnight intent-hygiene
         # extension (coordination-tiers module doc) prescribes the prune-intents step.
