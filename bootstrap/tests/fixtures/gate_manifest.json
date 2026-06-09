@@ -2108,7 +2108,7 @@
     "bootstrap/scaffold.py": "6751a79939b1f049699d6d75432d2e5fd497049c581b992d38a76ea0c4a23a72",
     "bootstrap/security_check.py": "7f568d50b9b0dc91e0f29fdd78417bb630c6ee2ff5c473db17c68a53258efb16",
     "bootstrap/tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "bootstrap/tests/_ast_attest.py": "32380b283f8b297cebbd0182f6c54235dc41c257740f9abd881fea7217ce5a5a",
+    "bootstrap/tests/_ast_attest.py": "bef561436d187930fda76c3d4196f422f3c55d895266e5f80eb34dd569586079",
     "bootstrap/tests/_gate_manifest.py": "9e48b075eab61332aac9584b2580b20a1247ea5f40da9568e7a452103f5ec6eb",
     "bootstrap/tests/_loader_proto.py": "bfd7abf5eb9d44a6894a373af737df6a39c10738efca81dd42f59c6e51c07e97",
     "bootstrap/tests/_oracle.py": "f054994e35d3843ae6b5fec3bfd684184d108c24ee6a0bde332f35e35b1cbe1b",
