@@ -61,6 +61,37 @@ _DEFAULT_CONFIG: Dict[str, object] = {
 _CONFIG_RELPATH = ('dev', '.cairn', 'metrics-config.json')
 
 
+def _safe_int(value: object, default: int) -> int:
+    """Coerce a config scalar to ``int``, falling back to *default* on a
+    wrong type or unparseable value -- the load path must never raise on a
+    malformed config."""
+    try:
+        return int(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return default
+
+
+def _safe_rel(root: Path, value: object, default: str) -> Path:
+    """Resolve a config-supplied, repo-root-relative path under *root*,
+    falling back to the built-in *default* when the value would escape the
+    repo (an absolute path or a ``..`` traversal).  Containment keeps the
+    tool's only write surface -- the snapshots dir -- and, for consistency,
+    its read paths inside the repo even under a hostile or careless
+    ``metrics-config.json``, preserving the module's "writes stay under
+    ``dev/measurement/``" invariant.  Never raises (the forgiving load
+    contract); an in-bounds value returns the exact ``root / value`` join
+    unchanged, so the default (no-config) behaviour is byte-identical."""
+    candidate = root / Path(str(value))
+    try:
+        root_res = root.resolve()
+        cand_res = candidate.resolve()
+    except OSError:
+        return root / Path(default)
+    if cand_res == root_res or root_res in cand_res.parents:
+        return candidate
+    return root / Path(default)
+
+
 class MetricsConfig:
     """Resolved, project-agnostic configuration for one repo root.
 
@@ -102,6 +133,13 @@ def load_config(root: Path) -> MetricsConfig:
     ``model_tiers`` list -- the one field a project is expected to set
     explicitly, since tier vocabulary is inherently vendor-specific --
     falls back to :data:`_DEFAULT_MODEL_TIERS` when absent or malformed.
+
+    Wrong-typed scalar values fall back to their defaults rather than
+    raising (e.g. a non-numeric ``collision_window_days``), and
+    config-supplied paths that would escape the repo root (absolute or
+    ``..``-traversing) fall back to the built-in repo-relative default, so
+    the tool's write surface stays contained -- see :func:`_safe_int` and
+    :func:`_safe_rel`.
     """
     data = dict(_DEFAULT_CONFIG)
     cfg_path = root.joinpath(*_CONFIG_RELPATH)
@@ -125,11 +163,16 @@ def load_config(root: Path) -> MetricsConfig:
 
     return MetricsConfig(
         root=root,
-        annotations_dir=root / Path(str(data['annotations_dir'])),
-        collision_log=root / Path(str(data['collision_log'])),
-        collision_window_days=int(data['collision_window_days']),
+        annotations_dir=_safe_rel(
+            root, data['annotations_dir'], str(_DEFAULT_CONFIG['annotations_dir'])),
+        collision_log=_safe_rel(
+            root, data['collision_log'], str(_DEFAULT_CONFIG['collision_log'])),
+        collision_window_days=_safe_int(
+            data['collision_window_days'], int(_DEFAULT_CONFIG['collision_window_days'])),
         collision_counted_kind=str(data['collision_counted_kind']),
-        snapshots_dir=root / Path(str(data['snapshots_dir'])),
-        backfill_max_days=int(data['backfill_max_days']),
+        snapshots_dir=_safe_rel(
+            root, data['snapshots_dir'], str(_DEFAULT_CONFIG['snapshots_dir'])),
+        backfill_max_days=_safe_int(
+            data['backfill_max_days'], int(_DEFAULT_CONFIG['backfill_max_days'])),
         model_tiers=tiers,
     )
