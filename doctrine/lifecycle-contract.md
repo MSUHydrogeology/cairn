@@ -67,16 +67,28 @@ authored by a reviewer (an AI agent or a human), but a **Decision** is a
 * The author token is parsed generically from the section header
   (`## Review -- <name> (<role>) -- <date>`), preserving the real
   identity (`Codex`, `Claude`, `Antigravity`, `Gemini`, a future agent).
-* An **allowlist/registry of AI agent identities** classifies a token as
-  an AI agent; the **human Maintainer is the residual** (a token not on
-  the AI registry, matching the project's Maintainer identity). New
-  vendors join the registry by configuration, never a code edit — the
-  same open posture as the model-tier list in `lifecycle_metrics`.
+* Classification is **three-way and positive**, never a denylist
+  residual: an identity is **known-AI** (on an allowlist/registry of AI
+  agent identities), **known-human-Maintainer** (on a *project-owned
+  Maintainer allowlist*), or **unknown**. Both lists are extended by
+  configuration, never a code edit — the same open posture as the
+  model-tier list in `lifecycle_metrics`.
+* **Humanity must be proved, never assumed.** A denylist alone cannot
+  establish human authority — a novel, renamed, or local agent identity
+  would launder into a "residual human." So a terminal **Decision**
+  authored by an **unknown** identity is a *structural violation* (the
+  project has not declared that Maintainer), **not** a silent human
+  pass. The AI registry stays fail-*safe* (a missing entry never
+  reclassifies a known AI as human); the Maintainer allowlist is its
+  deliberate inverse, fail-*closed* (no configured Maintainer ⇒ no byline
+  can be confirmed human).
 
-This forecloses the failure mode where a non-Codex/non-Claude agent
-(e.g. Antigravity) is misread as the human Maintainer, which would
-corrupt both authorship checks and the human/AI split the Decision
-authority depends on.
+This forecloses the failure mode where any non-allowlisted agent
+(`Antigravity`, `Sage`, a future or renamed identity) is misread as the
+human Maintainer, which would corrupt both authorship checks and the
+human/AI split the Decision authority depends on. None of this
+authenticates the quoted authorization — the tool attests *structure*;
+the committing operator guarantees the quote.
 
 ## The proposal state machine
 

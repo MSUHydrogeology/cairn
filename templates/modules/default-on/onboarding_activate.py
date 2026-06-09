@@ -47,6 +47,14 @@ def _load_engine():
             f"onboarding engine package at {engine_dir} is a symlink or resolves "
             f"outside {tool_dir} — refusing to load (fail-closed)"
         )
+    # Idempotent + poison-free (Codex cross-phase F#4): reuse a FULLY-LOADED
+    # cached canonical package, and on ANY exec failure remove the parent + every
+    # canonical child this load registered, so a later retry rebuilds a clean
+    # module graph instead of reusing a stale submodule (the mixed-graph the
+    # repository's loader prototype already forecloses).
+    cached = sys.modules.get(_CANONICAL)
+    if cached is not None and getattr(cached, "__cairn_loaded__", False):
+        return cached
     spec = importlib.util.spec_from_file_location(
         _CANONICAL, engine_init, submodule_search_locations=[str(engine_dir)],
     )
@@ -54,7 +62,14 @@ def _load_engine():
         raise RuntimeError(f"could not build an import spec for {engine_init}")
     engine = importlib.util.module_from_spec(spec)
     sys.modules[_CANONICAL] = engine
-    spec.loader.exec_module(engine)
+    try:
+        spec.loader.exec_module(engine)
+    except BaseException:
+        for _name in [n for n in sys.modules
+                      if n == _CANONICAL or n.startswith(_CANONICAL + ".")]:
+            sys.modules.pop(_name, None)
+        raise
+    engine.__cairn_loaded__ = True
     return engine
 
 

@@ -65,16 +65,33 @@ if [ -n "$BRANCH" ]; then
   ok "verify-ref refuses a mutable branch ref ('$BRANCH')"
 fi
 
-# --- 2. build two SOURCE trees (A, B) with a controlled template change in B
-note "staging source trees A and B under $WORK"
+# --- 2. materialize two SOURCE trees (A, B) FROM THE VERIFIED COMMIT OBJECT
+note "materializing source trees A and B from commit $COMMIT under $WORK"
 rm -rf "$WORK"; mkdir -p "$WORK"
+
+# Negative: a dirty / untracked build surface must be REFUSED (Codex F#2), so the
+# emitted commit label can never mislabel uncommitted bytes. Probe a scratch repo.
+DR="$WORK/dirty-probe"; mkdir -p "$DR"
+( cd "$DR" && git init -q && git config user.email a@b.c && git config user.name t \
+  && mkdir -p bootstrap/_scaffold templates && echo x > bootstrap/scaffold.py \
+  && echo 'version: "0.0.0"' > CITATION.cff && echo y > bootstrap/_scaffold/__init__.py \
+  && git add -A && git commit -q -m base )
+"$SCRIPT_DIR/verify-ref.sh" "$DR" >/dev/null 2>&1 || fail "verify-ref refused a CLEAN build surface"
+echo "tampered" >> "$DR/bootstrap/scaffold.py"
+"$SCRIPT_DIR/verify-ref.sh" "$DR" >/dev/null 2>&1 && fail "verify-ref accepted a tracked-DIRTY build surface"
+git -C "$DR" checkout -- bootstrap/scaffold.py
+echo "evil" > "$DR/bootstrap/_scaffold/injected.py"   # untracked, inside the build surface
+"$SCRIPT_DIR/verify-ref.sh" "$DR" >/dev/null 2>&1 && fail "verify-ref accepted an UNTRACKED build-surface file"
+ok "verify-ref refuses a dirty / untracked build surface (clean accepted)"
+
+# The build context is the COMMIT OBJECT (not the working tree): `git archive`
+# extracts exactly the recipe's COPY set at $COMMIT, so the image bytes provably
+# match the emitted org.cairn.commit label.
 for V in A B; do
-  S="$WORK/src-$V"
-  mkdir -p "$S/bootstrap"
-  cp "$REPO/bootstrap/scaffold.py" "$S/bootstrap/scaffold.py"
-  cp -R "$REPO/bootstrap/_scaffold" "$S/bootstrap/_scaffold"
-  cp -R "$REPO/templates" "$S/templates"
-  cp "$REPO/CITATION.cff" "$S/CITATION.cff"
+  S="$WORK/src-$V"; mkdir -p "$S"
+  git -C "$REPO" archive --format=tar "$COMMIT" \
+    bootstrap/scaffold.py bootstrap/_scaffold templates CITATION.cff \
+    | tar -x -C "$S" || fail "git archive of the build surface failed for $V"
 done
 # Release B is a GENUINE newer release: bump its version (CITATION.cff is the
 # engine's version source) AND carry a uniquely-identifiable upstream-only line

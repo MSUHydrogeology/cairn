@@ -178,10 +178,16 @@ def _today() -> str:
 #
 # Several preconditions turn on *who* authored a section: a review is
 # authored by a reviewer (an AI agent or a human), but a Decision is a
-# *human Maintainer* authority.  The model is **extensible and
-# vendor-neutral, never a closed enum** -- new vendors join by
-# configuration, never a code edit.  The human Maintainer is the
-# **residual**: a token not on the AI-agent registry.
+# *human Maintainer* authority.  The model is **three-way and positive**,
+# never a denylist residual (Codex cross-phase finding): an identity is
+# **known-AI** (on the AI-agent registry), **known-human-Maintainer** (on a
+# project-owned allowlist), or **unknown**.  A denylist alone cannot prove
+# humanity -- a novel/renamed agent would launder into the human residual --
+# so a terminal Decision authored by an **unknown** identity is a structural
+# violation (configure the project's Maintainer allowlist), NOT a silent
+# human.  Both lists are config-extensible (``dev/.cairn/agent-identities.json``),
+# never a code edit.  None of this authenticates the quoted authorization --
+# the tool attests *structure*, the committing operator guarantees the quote.
 
 #: The built-in AI-agent identity registry (normalized, lower-cased first
 #: token of the author name).  Extended -- never replaced -- by an
@@ -246,7 +252,7 @@ def _ai_candidate_tokens(name: str) -> List[str]:
 
 
 def _is_ai_agent(name: str, registry: frozenset) -> bool:
-    """True if `name` classifies as a known AI agent (else: human residual).
+    """True if `name` matches a known AI agent (the AI leg of `IdentityModel`).
 
     A registry token matched as a **prefix** of any name token classifies
     the name as AI, so version/build suffixes (``claude35``, ``gpt4o``,
@@ -260,6 +266,56 @@ def _is_ai_agent(name: str, registry: frozenset) -> bool:
         if any(tok.startswith(agent) for agent in registry):
             return True
     return False
+
+
+def _load_human_maintainers(root: Path) -> frozenset:
+    """Return the project's POSITIVE human-Maintainer allowlist (normalized
+    tokens) from ``dev/.cairn/agent-identities.json`` (a ``human_maintainers``
+    list). Absent / unreadable / wrong-shape -> empty (fail-closed: with no
+    configured Maintainer identity, NO byline can be confirmed human, so every
+    terminal Decision surfaces as an unrecognized-identity violation until the
+    project configures its Maintainer). This is the deliberate inverse of the
+    AI registry's fail-safe: humanity must be *proved*, never assumed."""
+    path = root.joinpath(*_AGENT_IDENTITIES_REL)
+    if not path.is_file():
+        return frozenset()
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return frozenset()
+    lst = data.get("human_maintainers") if isinstance(data, dict) else None
+    if not isinstance(lst, list):
+        return frozenset()
+    return frozenset(
+        re.sub(r"[^a-z0-9]", "", str(t).strip().lower())
+        for t in lst if str(t).strip()
+    )
+
+
+class IdentityModel:
+    """Three-way author classification: known-AI / known-human / unknown.
+
+    A denylist alone cannot prove humanity (a novel or renamed agent would
+    launder into the human residual), so the human Maintainer is a **positive
+    allowlist**, never the residual. ``classify`` returns ``"ai"`` /
+    ``"human"`` / ``"unknown"``; the conformance check treats ``unknown`` at a
+    terminal Decision as a structural violation, not a silent human."""
+
+    def __init__(self, ai_registry: frozenset, human: frozenset) -> None:
+        self.ai_registry = ai_registry
+        self.human = human
+
+    def classify(self, name: str) -> str:
+        if _is_ai_agent(name, self.ai_registry):
+            return "ai"
+        if set(_ai_candidate_tokens(name)) & self.human:
+            return "human"
+        return "unknown"
+
+
+def _load_identity_model(root: Path) -> IdentityModel:
+    """Load the three-way identity model from the project config."""
+    return IdentityModel(_load_ai_registry(root), _load_human_maintainers(root))
 
 
 # --- artifact parsing --------------------------------------------------------
@@ -502,7 +558,7 @@ def _has_kind(art: Artifact, prefix: str) -> bool:
 # the tool never asserts authenticity, R1).
 
 
-def _conformance_violations(art: Artifact, registry: frozenset) -> List[str]:
+def _conformance_violations(art: Artifact, identity: "IdentityModel") -> List[str]:
     v: List[str] = []
     s = art.status
     if art.kind == "proposal":
@@ -551,12 +607,26 @@ def _conformance_violations(art: Artifact, registry: frozenset) -> List[str]:
                         "authorization blockquote (the verbatim authorization is "
                         "structurally absent)."
                     )
-                if d.name and _is_ai_agent(d.name, registry):
+                cls = identity.classify(d.name) if d.name else "unknown"
+                if cls == "ai":
                     v.append(
                         f"'## Decision' at line {d.line_no} appears authored by "
                         f"an AI agent ({d.name!r}); a Decision is a human "
                         "Maintainer authority."
                     )
+                elif cls == "unknown":
+                    v.append(
+                        f"'## Decision' at line {d.line_no} is authored by an "
+                        f"UNRECOGNIZED identity ({d.name!r}); a terminal Decision "
+                        "requires a KNOWN human Maintainer. Configure the project's "
+                        "Maintainer identity in dev/.cairn/agent-identities.json "
+                        "('human_maintainers') -- an unrecognized author cannot be "
+                        "confirmed human (the tool attests structure, never "
+                        "authenticity)."
+                    )
+                # cls == "human": the byline is a recognized Maintainer. The tool
+                # still does not authenticate the quoted authorization itself --
+                # that remains the committing operator's guarantee (R1).
     else:  # plan
         if s and s not in _PLAN_STATES:
             v.append(f"unknown plan status {s!r}")
@@ -601,7 +671,7 @@ def _conformance_violations(art: Artifact, registry: frozenset) -> List[str]:
 
 
 def _gating_preconditions(art: Artifact, target: str,
-                          registry: frozenset) -> List[Tuple[bool, str]]:
+                          identity: "IdentityModel") -> List[Tuple[bool, str]]:
     """Return (met, description) gates for a forward transition to `target`."""
     gates: List[Tuple[bool, str]] = []
     revs = _reviewers(art)
@@ -823,14 +893,14 @@ def cmd_next(args: argparse.Namespace) -> int:
     if not path.is_absolute():
         path = (Path.cwd() / path)
     art = _read_artifact(path)
-    registry = _load_ai_registry(root)
+    identity = _load_identity_model(root)
     date = args.date or _today()
 
     _emit_section(f"{art.kind}: {art.path.name}")
     _emit(f"current state: {art.status or '(no status line)'}")
 
     # Surface any current-state structural violations up front (R1 honesty).
-    violations = _conformance_violations(art, registry)
+    violations = _conformance_violations(art, identity)
     if violations:
         _emit_section("structural conformance (current state)")
         for msg in violations:
@@ -848,7 +918,7 @@ def cmd_next(args: argparse.Namespace) -> int:
             return 0
         for target in legal:
             _emit(f"-> {target}")
-            for met, desc in _gating_preconditions(art, target, registry):
+            for met, desc in _gating_preconditions(art, target, identity):
                 mark = "ok " if met else "MISSING"
                 _emit(f"     [{mark}] {desc}")
         _emit("")
@@ -864,7 +934,7 @@ def cmd_next(args: argparse.Namespace) -> int:
         _emit(f"legal targets: {', '.join(legal) if legal else '(none)'}")
         return 1
 
-    gates = _gating_preconditions(art, target, registry)
+    gates = _gating_preconditions(art, target, identity)
     unmet = [desc for met, desc in gates if not met]
     _emit_section(f"transition -> {target}: gating preconditions")
     for met, desc in gates:
@@ -901,7 +971,7 @@ def cmd_scan(args: argparse.Namespace) -> int:
     when any violation is found, so an adopter test wrapper can assert a
     clean corpus."""
     root = _repo_root()
-    registry = _load_ai_registry(root)
+    identity = _load_identity_model(root)
     total = 0
     flagged = 0
     bases = []
@@ -924,7 +994,7 @@ def cmd_scan(args: argparse.Namespace) -> int:
                 flagged += 1
                 _emit(f"{path.relative_to(root)}: UNREADABLE -- {exc}")
                 continue
-            violations = _conformance_violations(art, registry)
+            violations = _conformance_violations(art, identity)
             if violations:
                 flagged += 1
                 rel = path.relative_to(root)

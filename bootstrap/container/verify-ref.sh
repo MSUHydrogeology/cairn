@@ -52,9 +52,20 @@ else
   exit 1
 fi
 
-# Advisory (never blocks — mirrors the engine's own provenance warning): a dirty
-# tree means the baked bytes are not exactly $COMMIT.
-if ! git -C "$REPO" diff --quiet 2>/dev/null || ! git -C "$REPO" diff --cached --quiet 2>/dev/null; then
-  echo "verify-ref: NOTE — working tree has uncommitted changes; a built image will" >&2
-  echo "            not byte-match $COMMIT (a development build, not a release pin)." >&2
+# REFUSE a dirty build surface (Codex cross-phase F#2). The recipe materializes
+# the build context from the COMMIT OBJECT (acceptance.sh uses `git archive
+# <commit>`), so the baked bytes match the emitted commit label by construction —
+# but a tracked-dirty OR untracked build surface still means the operator is
+# building something other than the pinned commit, so we **fail closed** rather
+# than emit a misleading "commit pin" identity. The build surface is exactly the
+# recipe's COPY set (Dockerfile): scaffold.py + _scaffold/ + templates/ + CITATION.cff.
+BUILD_SURFACE="bootstrap/scaffold.py bootstrap/_scaffold templates CITATION.cff"
+# shellcheck disable=SC2086  # word-splitting is intentional: multiple pathspecs
+DIRTY="$(git -C "$REPO" status --porcelain -- $BUILD_SURFACE 2>/dev/null || true)"
+if [ -n "$DIRTY" ]; then
+  echo "verify-ref: REFUSED — the build surface has uncommitted or untracked changes;" >&2
+  echo "            a built image would NOT match the pin $COMMIT. Commit or stash them," >&2
+  echo "            or build from a clean checkout of the pinned ref. Offending paths:" >&2
+  printf '%s\n' "$DIRTY" | sed 's/^/              /' >&2
+  exit 1
 fi

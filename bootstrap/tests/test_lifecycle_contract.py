@@ -16,8 +16,9 @@ It asserts:
   transition as ready.
 * **The state machine** -- legal transitions match the contract's tables
   for both proposals and plans.
-* **The extensible AI-vs-human identity model (R5)** -- a vendor-neutral
-  parse + a config-extensible registry, human as the residual.
+* **The three-way AI-vs-human identity model (R5 + Codex cross-phase)** --
+  a vendor-neutral parse classifying known-AI / known-human-Maintainer
+  (positive allowlist) / unknown; an unknown Decision author fails closed.
 * **Structural conformance** -- the ``scan`` arm flags a corpus whose
   status is not supported by its documentary attestations.
 
@@ -459,3 +460,68 @@ def test_blockquote_inside_code_fence_does_not_count(tmp_path, monkeypatch, caps
     out = capsys.readouterr().out
     assert rc == 1
     assert "no isolated" in out
+
+
+# --- Codex cross-phase finding #3: fail-OPEN identity (unknown -> human) ------
+
+
+def _write_identity_config(repo, ai=None, humans=None):
+    import json as _json
+    cfg = repo / "dev" / ".cairn"
+    cfg.mkdir(parents=True, exist_ok=True)
+    body = {}
+    if ai is not None:
+        body["ai_agents"] = ai
+    if humans is not None:
+        body["human_maintainers"] = humans
+    (cfg / "agent-identities.json").write_text(_json.dumps(body), encoding="utf-8")
+
+
+def test_identity_model_is_three_way_positive_human(tmp_path):
+    """Known-AI / known-human (positive allowlist) / unknown -- never a residual."""
+    repo = _make_repo(tmp_path)
+    _write_identity_config(repo, humans=["Anthony"])
+    im = planner._load_identity_model(repo)
+    assert im.classify("Gemini (Maintainer)") == "ai"
+    assert im.classify("Claude-3.5") == "ai"
+    assert im.classify("Anthony (Maintainer)") == "human"   # on the allowlist
+    assert im.classify("Sage (Maintainer)") == "unknown"    # novel agent, NOT human
+    # No config at all -> no human can be confirmed (fail-closed): all non-AI unknown.
+    bare_root = tmp_path / "bare"; bare_root.mkdir()
+    bare = planner._load_identity_model(bare_root)
+    assert bare.classify("Anthony") == "unknown"
+    assert bare.classify("Gemini") == "ai"
+
+
+def test_decision_by_unknown_identity_is_flagged_fail_closed(tmp_path, monkeypatch, capsys):
+    """The Codex reproducer: an accepted proposal with a quoted Decision by a
+    NOVEL identity ('Sage') and NO configured Maintainer must NOT pass as human."""
+    repo = _make_repo(tmp_path)
+    _write_proposal(repo, "p.md", status="accepted", author="Claude", body=(
+        "## Review -- Codex (External Reviewer) -- 2026-05-02\n\nx\n\n"
+        "## Decision -- Sage (Maintainer) -- 2026-05-03\n\n"
+        "Accepted.\n\n> a quoted authorization\n"
+    ))
+    monkeypatch.chdir(repo)
+    rc = planner.main(["scan"])
+    out = capsys.readouterr().out
+    assert rc == 1
+    assert "UNRECOGNIZED identity" in out and "'Sage'" in out
+
+
+def test_decision_by_configured_human_maintainer_is_accepted(tmp_path, monkeypatch, capsys):
+    """A Decision authored by a CONFIGURED human Maintainer is structurally sound
+    (the tool still does not authenticate the quote -- that is the operator's)."""
+    repo = _make_repo(tmp_path)
+    _write_identity_config(repo, humans=["Anthony"])
+    _write_proposal(repo, "p.md", status="accepted", author="Claude", body=(
+        "## Review -- Codex (External Reviewer) -- 2026-05-02\n\nx\n\n"
+        "## Decision -- Anthony (Maintainer) -- 2026-05-03\n\n"
+        "Accepted.\n\n> a quoted authorization\n"
+    ))
+    monkeypatch.chdir(repo)
+    rc = planner.main(["scan"])
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "structurally sound" in out
+    assert "UNRECOGNIZED" not in out
