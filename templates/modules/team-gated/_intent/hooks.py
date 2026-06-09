@@ -25,23 +25,14 @@ from .conflict import (
 )
 
 
-#: Split A2 (intent-split): this module is the *engine* loaded by the
-#: ``intent.py`` facade (a runtime sibling). The facade re-derives
-#: ``_REPO_ROOT`` / ``INTENTS_LOG_PATH`` from its own install path and threads
-#: ``_FACADE_FILE`` (the launcher path the git hooks must invoke), overriding the
-#: load-time values computed just above — which are one directory too deep when
-#: measured from this submodule rather than from the facade. See ``intent.py``.
 def _intent_tool_path() -> Path:
     """Filesystem path of the installed launcher/facade (``tools/intent.py``).
 
     The post-commit / pre-commit hooks must invoke the *facade*, not this engine
-    submodule, so an installed hook keeps calling ``python tools/intent.py``. The
-    facade threads its own path as ``_FACADE_FILE`` at load; absent that (e.g. a
-    direct engine import), fall back to the sibling ``intent.py``.
+    submodule, so an installed hook keeps calling ``python tools/intent.py``.
+    Resolved file-relative: this module installs at ``<repo>/tools/_intent/hooks.py``,
+    so the facade is two parents up (``parent.parent / "intent.py"``).
     """
-    facade = globals().get("_FACADE_FILE")
-    if facade:
-        return Path(facade).resolve()
     return Path(__file__).resolve().parent.parent / "intent.py"
 
 

@@ -22,7 +22,11 @@ Root resolution (bound contract 3): the engine's ``shared`` leaf computes
 ``_REPO_ROOT`` / ``INTENTS_LOG_PATH`` from its own location (``parents[2]`` of
 ``_intent/shared.py`` resolves to the repo root, identical to the pre-split
 single-file tool's ``parents[1]`` from ``tools/intent.py``); the launcher path
-the git hooks must invoke is threaded to the engine as ``_FACADE_FILE``.
+the git hooks must invoke is computed file-relative by the engine
+(``_intent/hooks.py`` ``_intent_tool_path``). The engine package is loaded
+**fail-closed**: it must be a real directory inside this file's own directory,
+never a symlink or out-of-tree path (parity with ``bootstrap/scaffold.py``'s
+launcher; the loader never trusts ``sys.path``).
 """
 from __future__ import annotations
 
@@ -36,12 +40,23 @@ _TOOL_PATH = Path(__file__).resolve()
 
 
 def _load_engine():
-    engine_dir = _TOOL_PATH.parent / "_intent"
+    tool_dir = _TOOL_PATH.parent
+    engine_dir = tool_dir / "_intent"
     engine_init = engine_dir / "__init__.py"
     if not engine_init.is_file():
         raise RuntimeError(
             f"intent engine package not found at {engine_dir} — refusing to run "
             f"(the _intent/ package must be installed beside intent.py)"
+        )
+    # Fail-closed containment (parity with bootstrap/scaffold.py's launcher): the
+    # engine must be a REAL directory inside this file's own directory — refuse a
+    # symlinked or out-of-tree _intent/, so the loader never executes code from
+    # outside the installed tool dir and never trusts sys.path.
+    if (engine_dir.is_symlink() or engine_init.is_symlink()
+            or engine_dir.resolve().parent != tool_dir.resolve()):
+        raise RuntimeError(
+            f"intent engine package at {engine_dir} is a symlink or resolves "
+            f"outside {tool_dir} — refusing to load (fail-closed)"
         )
     spec = importlib.util.spec_from_file_location(
         _CANONICAL, engine_init, submodule_search_locations=[str(engine_dir)],
@@ -49,9 +64,6 @@ def _load_engine():
     if spec is None or spec.loader is None:
         raise RuntimeError(f"could not build an import spec for {engine_init}")
     engine = importlib.util.module_from_spec(spec)
-    # Thread the facade's identity BEFORE exec so the engine resolves the launcher
-    # path the git hooks must invoke (read as _FACADE_FILE; see _intent_tool_path).
-    engine.__dict__["_FACADE_FILE"] = str(_TOOL_PATH)
     sys.modules[_CANONICAL] = engine
     spec.loader.exec_module(engine)
     return engine
