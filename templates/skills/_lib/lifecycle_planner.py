@@ -228,9 +228,38 @@ def _identity_token(name: str) -> str:
     return re.sub(r"[^a-z0-9]", "", first.lower())
 
 
+def _ai_candidate_tokens(name: str) -> List[str]:
+    """All classification candidates from a display name: every whitespace
+    token, lower-cased and reduced to its alphanumeric run.
+
+    Scanning *every* token (not just the first) and matching a registry
+    entry as a **prefix** keeps a versioned or punctuated agent byline from
+    slipping through -- ``Claude-3.5`` -> ``claude35``, ``gpt-4o`` ->
+    ``gpt4o``, ``\U0001f916 Claude`` -> ``claude`` -- the exact evasions a
+    first-token exact-match would miss."""
+    out: List[str] = []
+    for raw in name.strip().split():
+        tok = re.sub(r"[^a-z0-9]", "", raw.lower())
+        if tok:
+            out.append(tok)
+    return out
+
+
 def _is_ai_agent(name: str, registry: frozenset) -> bool:
-    """True if `name` classifies as a known AI agent (else: human residual)."""
-    return _identity_token(name) in registry
+    """True if `name` classifies as a known AI agent (else: human residual).
+
+    A registry token matched as a **prefix** of any name token classifies
+    the name as AI, so version/build suffixes (``claude35``, ``gpt4o``,
+    ``claudebot``) still resolve to their agent.  The match deliberately
+    **errs toward flagging**: a human whose token happens to begin with an
+    agent name is over-flagged (a spurious, human-reviewable violation --
+    the SAFE direction for a fidelity scan), but a versioned agent byline
+    is never laundered into the human residual (the unsafe direction that
+    would let an AI author a Maintainer Decision unflagged)."""
+    for tok in _ai_candidate_tokens(name):
+        if any(tok.startswith(agent) for agent in registry):
+            return True
+    return False
 
 
 # --- artifact parsing --------------------------------------------------------
@@ -365,15 +394,24 @@ def _has_isolated_blockquote(body: str) -> bool:
     """True if `body` contains a visually-isolated ``>`` blockquote.
 
     Visual isolation = at least one ``>`` line with a blank line (or the
-    start of the body) immediately before it.  This is a **structural**
-    check -- presence and isolation -- never a judgment about whether the
-    quoted text is an authentic authorization (R1)."""
-    lines = body.splitlines()
-    for k, line in enumerate(lines):
-        if line.lstrip().startswith(">") and line.strip() != ">":
-            prev = lines[k - 1].strip() if k > 0 else ""
-            if prev == "":
+    start of the body) immediately before it, **outside any fenced code
+    block** -- a ``>`` inside ```` ``` ````/``~~~`` fences is a shell prompt,
+    a diff, or a markdown example, not an authorization quote, and must not
+    count.  This is a **structural** check -- presence and isolation --
+    never a judgment about whether the quoted text is an authentic
+    authorization (R1)."""
+    in_fence = False
+    prev_blank = True  # start-of-body counts as a preceding blank line
+    for line in body.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            in_fence = not in_fence
+            prev_blank = False
+            continue
+        if not in_fence and line.lstrip().startswith(">") and stripped != ">":
+            if prev_blank:
                 return True
+        prev_blank = stripped == ""
     return False
 
 
@@ -468,7 +506,18 @@ def _conformance_violations(art: Artifact, registry: frozenset) -> List[str]:
     v: List[str] = []
     s = art.status
     if art.kind == "proposal":
-        if s and s not in _PROPOSAL_STATES:
+        if not s:
+            # A proposal MUST carry a Status line. Without this floor a
+            # status-less proposal short-circuits every check below and a real
+            # violation (an AI-authored Decision, a missing blockquote) is
+            # silently laundered -- a scan false-negative. Mirrors the
+            # unconditional '**Plan review**:' floor plans carry.
+            v.append(
+                "no '**Status**:' line -- a proposal must carry a Status "
+                "(proposed/reviewed/revised/accepted/rejected/superseded); a "
+                "missing status hides every downstream conformance check."
+            )
+        elif s not in _PROPOSAL_STATES:
             v.append(f"unknown proposal status {s!r}")
         if s in ("reviewed", "revised", "accepted", "rejected", "superseded"):
             revs = _reviewers(art)

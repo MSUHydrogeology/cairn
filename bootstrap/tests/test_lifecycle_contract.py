@@ -397,3 +397,65 @@ def test_decision_authored_by_ai_agent_is_flagged(tmp_path, monkeypatch, capsys)
     out = capsys.readouterr().out
     assert rc == 1
     assert "AI agent" in out and "human Maintainer authority" in out
+
+
+# --- Sharpening regressions (External review P2/P3) --------------------------
+
+
+def test_decision_by_versioned_ai_name_is_flagged(tmp_path, monkeypatch, capsys):
+    """P2: a versioned/punctuated AI byline (Claude-3.5) must not launder into
+    the human residual and pass the Decision human-authority check."""
+    repo = _make_repo(tmp_path)
+    _write_proposal(repo, "p.md", status="accepted", author="Claude", body=(
+        "## Review -- Codex (External Reviewer) -- 2026-05-02\n\nx\n\n"
+        "## Decision -- Claude-3.5 (Maintainer) -- 2026-05-03\n\n"
+        "Accepted.\n\n> some authorization\n"
+    ))
+    monkeypatch.chdir(repo)
+    rc = planner.main(["scan"])
+    out = capsys.readouterr().out
+    assert rc == 1
+    assert "AI agent" in out
+    # And the identity helper itself classifies the versioned bylines as AI.
+    reg = planner._AI_AGENT_REGISTRY
+    assert planner._is_ai_agent("Claude-3.5 (Maintainer)", reg)
+    assert planner._is_ai_agent("gpt-4o", reg)
+    assert planner._is_ai_agent("\U0001f916 Claude", reg)
+    assert not planner._is_ai_agent("Anthony", reg)  # human still residual
+
+
+def test_scan_flags_proposal_with_missing_status(tmp_path, monkeypatch, capsys):
+    """P2: a proposal whose Status line is absent must itself be a violation,
+    not a silent pass that hides every downstream check."""
+    repo = _make_repo(tmp_path)
+    # No Status line at all, but a hostile Decision (AI author, no blockquote).
+    (repo / "dev" / "proposals" / "p.md").write_text(
+        "# p\n\n**Author**: Claude (Strategy)\n**Date opened**: 2026-05-01\n\n"
+        "## Decision -- Gemini (Maintainer) -- 2026-05-03\n\nAccepted, no quote.\n",
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(repo)
+    rc = planner.main(["scan"])
+    out = capsys.readouterr().out
+    assert rc == 1
+    assert "no '**Status**:' line" in out
+
+
+def test_blockquote_inside_code_fence_does_not_count(tmp_path, monkeypatch, capsys):
+    """P3: a '>' inside a fenced code block is not an isolated authorization
+    blockquote -- a Decision whose only '>' is fenced must be flagged."""
+    # Unit-level: the structural helper rejects a fenced quote, accepts a real one.
+    assert not planner._has_isolated_blockquote("```\n\n> looks isolated\n```\n")
+    assert planner._has_isolated_blockquote("Accepted.\n\n> real authorization\n")
+    # Integration: a Decision carrying only a fenced '>' is flagged by scan.
+    repo = _make_repo(tmp_path)
+    _write_proposal(repo, "p.md", status="accepted", author="Claude", body=(
+        "## Review -- Codex (External Reviewer) -- 2026-05-02\n\nx\n\n"
+        "## Decision -- Anthony (Maintainer) -- 2026-05-03\n\n"
+        "Accepted.\n\n```\n\n> fenced, not a real quote\n```\n"
+    ))
+    monkeypatch.chdir(repo)
+    rc = planner.main(["scan"])
+    out = capsys.readouterr().out
+    assert rc == 1
+    assert "no isolated" in out
