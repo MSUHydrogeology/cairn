@@ -302,6 +302,29 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
                     "dev/modules/lifecycle-metrics.md"),
         InstallSpec("default-on/lifecycle_metrics.py",
                     "tools/lifecycle_metrics.py", verbatim=True),
+        # lifecycle-metrics fold-up (phase C, 2026-06): lifecycle_metrics.py is
+        # now a thin launcher/facade over an owned `_lifecycle_metrics/` engine
+        # package; the nine package files install verbatim beside the facade so
+        # `python tools/lifecycle_metrics.py` resolves its sibling engine at
+        # runtime (parity with the _intent/ + _onboarding/ splits).  Byte-for-byte code.
+        InstallSpec("default-on/_lifecycle_metrics/__init__.py",
+                    "tools/_lifecycle_metrics/__init__.py", verbatim=True),
+        InstallSpec("default-on/_lifecycle_metrics/config.py",
+                    "tools/_lifecycle_metrics/config.py", verbatim=True),
+        InstallSpec("default-on/_lifecycle_metrics/parse.py",
+                    "tools/_lifecycle_metrics/parse.py", verbatim=True),
+        InstallSpec("default-on/_lifecycle_metrics/gitmeta.py",
+                    "tools/_lifecycle_metrics/gitmeta.py", verbatim=True),
+        InstallSpec("default-on/_lifecycle_metrics/report.py",
+                    "tools/_lifecycle_metrics/report.py", verbatim=True),
+        InstallSpec("default-on/_lifecycle_metrics/subsystems.py",
+                    "tools/_lifecycle_metrics/subsystems.py", verbatim=True),
+        InstallSpec("default-on/_lifecycle_metrics/extract.py",
+                    "tools/_lifecycle_metrics/extract.py", verbatim=True),
+        InstallSpec("default-on/_lifecycle_metrics/snapshot.py",
+                    "tools/_lifecycle_metrics/snapshot.py", verbatim=True),
+        InstallSpec("default-on/_lifecycle_metrics/cli.py",
+                    "tools/_lifecycle_metrics/cli.py", verbatim=True),
     ],
     "reflections": [
         InstallSpec("default-on/reflections.md", "dev/modules/reflections.md"),
