@@ -4,6 +4,36 @@
 The claim-ledger record schema (claim/release dataclasses), the best-effort
 atomic JSONL append, and the read-side helpers (active intents, conflict check,
 log iteration). Depends only on the shared-core leaf.
+
+## Substrate
+
+The active intent log is a single JSON-lines file at ``dev/intents.jsonl``
+(gitignored; the scaffold seeds the entry). Each line is one record; two event
+types: ``claim`` (``event``, ``id``, ``ts``, ``agent``, ``files``, ``action``,
+optional ``stem``) and ``release`` (``event``, ``id``, ``ts``, optional
+``commit``). Active intents = claims without a matching release event (matched by
+shared ``id``).
+
+## Atomicity -- best-effort, filesystem-dependent
+
+Concurrent appenders rely on the **implementation shape**, NOT on a POSIX
+guarantee:
+
+* ``os.open(path, O_WRONLY | O_APPEND | O_CREAT)`` -- the kernel positions every
+  write at current EOF.
+* A single ``os.write(fd, bytes)`` call per record, payload < 512 bytes (a
+  conservative small-write floor).
+* No buffered-writer layer (text-mode ``open(..., 'a')`` would emit multiple
+  ``write(2)`` calls and break the atomicity).
+
+This is **best-effort and filesystem-dependent**. POSIX specifies atomic appends
+for pipes/FIFOs under ``PIPE_BUF``, *not* for regular files; the small
+single-``write`` shape is non-interleaving on the **local** filesystems this
+tooling is exercised on (APFS, ext4, xfs, btrfs). It is **not** guaranteed on
+**networked or overlay** filesystems -- NFS, SMB/CIFS, Windows network shares,
+and container overlay FS can interleave or reorder appends. A team running the
+intent log on such a filesystem, or at very high concurrency, should treat the
+append as advisory and prefer a local checkout for the ``dev/`` tree.
 """
 from __future__ import annotations
 
