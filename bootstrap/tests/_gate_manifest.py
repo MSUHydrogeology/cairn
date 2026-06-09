@@ -266,9 +266,54 @@ def produce(repo: Path = _REPO) -> dict:
     }
 
 
+def _check_anchor(anchor_ref: str, live_text: str, *, repo: Path,
+                  trusted_repo: str | Path | None,
+                  trusted_ref: str) -> tuple[list[str], list[str]]:
+    """The git-anchor check: the working-tree manifest must equal an IMMUTABLE
+    object holding the expected manifest. Returns (holds, notes).
+
+    Codex cross-phase finding #1: when ``trusted_repo`` is given, the expected
+    manifest object is resolved from THAT repo (never the ``--target-repo``), and
+    the anchor must be **reachable from a trusted ref** there — so a target that
+    can edit itself cannot mint its own self-consistent replacement anchor. Without
+    ``trusted_repo`` the object is read from the target and the check only proves
+    the working tree matches a *target-owned* object (a loud note, not full
+    external anchoring)."""
+    holds: list[str] = []
+    notes: list[str] = []
+    if trusted_repo:
+        src = Path(trusted_repo)
+        reach = subprocess.run(
+            ["git", "merge-base", "--is-ancestor", anchor_ref, trusted_ref],
+            cwd=str(src), capture_output=True, text=True)
+        if reach.returncode != 0:
+            holds.append(
+                f"ANCHOR: {anchor_ref} is NOT reachable from the trusted ref "
+                f"'{trusted_ref}' in {src} — refusing a target-supplied anchor")
+            return holds, notes
+    else:
+        src = repo
+        notes.append(
+            "ANCHOR: resolved from the TARGET repo (no --trusted-repo) — this proves "
+            "the working-tree manifest matches a target-owned object, NOT an "
+            "externally anchored one; pass --trusted-repo + --trusted-ref for full "
+            "external anchoring")
+    r = subprocess.run(["git", "show", f"{anchor_ref}:{_MANIFEST_REL}"],
+                       cwd=str(src), capture_output=True, text=True)
+    if r.returncode != 0:
+        holds.append(f"ANCHOR: cannot read the manifest from {anchor_ref} in {src}: "
+                     f"{r.stderr.strip() or 'git show failed'}")
+    elif r.stdout != live_text:
+        holds.append(f"ANCHOR: working-tree manifest differs from the immutable "
+                     f"{anchor_ref} object — the manifest itself was altered")
+    return holds, notes
+
+
 def verify(manifest_path: str | Path, *, anchor_ref: str | None = None,
            repo: Path = _REPO, require_anchor: bool = False,
-           do_collect: bool = True, out=None) -> int:
+           do_collect: bool = True, out=None,
+           trusted_repo: str | Path | None = None,
+           trusted_ref: str = "HEAD") -> int:
     """Verify gate integrity against a manifest. 0 = intact (additions allowed),
     1 = HOLD (a gate-integrity violation).
 
@@ -286,16 +331,14 @@ def verify(manifest_path: str | Path, *, anchor_ref: str | None = None,
     holds: list[str] = []
     notes: list[str] = []
 
-    # 1) External git anchor — the working-tree manifest must equal the immutable object.
+    # 1) External git anchor — the working-tree manifest must equal an immutable,
+    # externally-trusted object (resolved from --trusted-repo when given).
     if anchor_ref:
-        r = subprocess.run(["git", "show", f"{anchor_ref}:{_MANIFEST_REL}"],
-                           cwd=str(repo), capture_output=True, text=True)
-        if r.returncode != 0:
-            holds.append(f"ANCHOR: cannot read the manifest from {anchor_ref}: "
-                         f"{r.stderr.strip() or 'git show failed'}")
-        elif r.stdout != live_text:
-            holds.append(f"ANCHOR: working-tree manifest differs from the immutable "
-                         f"{anchor_ref} object — the manifest itself was altered")
+        a_holds, a_notes = _check_anchor(
+            anchor_ref, live_text, repo=repo,
+            trusted_repo=trusted_repo, trusted_ref=trusted_ref)
+        holds.extend(a_holds)
+        notes.extend(a_notes)
     elif require_anchor:
         holds.append("ANCHOR: required but no --anchor-ref supplied (unattended verification "
                      "mode demands the immutable anchor)")
@@ -386,6 +429,13 @@ def main(argv: list[str] | None = None) -> int:
                    help="FULL git sha holding the immutable manifest (the prerequisite commit)")
     v.add_argument("--require-anchor", action="store_true",
                    help="HOLD if no --anchor-ref is supplied (unattended verification mode)")
+    v.add_argument("--trusted-repo", default=None,
+                   help="resolve the anchor manifest object from THIS repo (not the "
+                        "target) and require --anchor-ref reachable from --trusted-ref "
+                        "here — the external anchor (Codex cross-phase #1).")
+    v.add_argument("--trusted-ref", default="HEAD",
+                   help="the trusted ref --anchor-ref must be reachable from in "
+                        "--trusted-repo (default: HEAD).")
     v.add_argument("--no-collect", action="store_true",
                    help="skip the pytest collection check (static-only)")
     args = ap.parse_args(argv)
@@ -396,7 +446,8 @@ def main(argv: list[str] | None = None) -> int:
     target = Path(args.target_repo) if args.target_repo else _REPO
     manifest = args.manifest if args.manifest else str(target / _MANIFEST_REL)
     return verify(manifest, anchor_ref=args.anchor_ref, repo=target,
-                  require_anchor=args.require_anchor, do_collect=not args.no_collect)
+                  require_anchor=args.require_anchor, do_collect=not args.no_collect,
+                  trusted_repo=args.trusted_repo, trusted_ref=args.trusted_ref)
 
 
 if __name__ == "__main__":
