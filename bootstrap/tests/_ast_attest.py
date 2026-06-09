@@ -124,13 +124,26 @@ def _merge_current(paths: list[str | Path]) -> tuple[dict[str, list[tuple[str, s
     return merged, []
 
 
-# Mapping symbols whose digest the surgical ``update-symbol`` path may rewrite
-# (Antigravity R1 / Codex S2). Restricted to the registry mapping symbols a
-# package/skill/core-file install legitimately mutates — NOT functions, classes,
-# or any other top-level symbol. Keyed by the bare name; the baseline key is
-# ``Assign:<name>`` (both plain ``Assign`` and ``AnnAssign`` collapse to that
-# key via ``_node_key``). Hard-coded, never derived from input.
-_UPDATE_ALLOWLIST = frozenset({"_MODULE_MAPPINGS", "_SKILLS_MAPPINGS", "_CORE_MAPPINGS"})
+# Symbols whose digest the surgical ``update-symbol`` path may rewrite
+# (Antigravity R1 / Codex S2). Each maps the bare symbol name to its baseline
+# node-kind, so the path resolves the exact baseline key ``<kind>:<name>`` rather
+# than assuming ``Assign:``. Restricted to:
+#   * the three registry mapping symbols a package/skill/core-file install
+#     legitimately mutates (an ``InstallSpec`` added to a dict/tuple value); and
+#   * the ``install_onboarding`` engine function (onboarding-split phase B): that
+#     split makes ``onboarding_activate.py`` a thin launcher over a sibling
+#     ``_onboarding/`` package, so ``install_onboarding`` gains a verbatim package
+#     fan-out beside the single-file helper copy — a single-symbol *body* change
+#     that introduces NO new top-level symbol. It stays fully guarded below
+#     (``--expect-old`` + sole-CHANGED-delta + strict known-new), so widening the
+#     allowlist by this one named function cannot bless an unrelated mutation.
+# Hard-coded, never derived from input.
+_UPDATE_ALLOWLIST: dict[str, str] = {
+    "_MODULE_MAPPINGS": "Assign",
+    "_SKILLS_MAPPINGS": "Assign",
+    "_CORE_MAPPINGS": "Assign",
+    "install_onboarding": "FunctionDef",
+}
 
 
 def _classify(baseline: dict[str, dict], merged: dict[str, list[tuple[str, str]]]):
@@ -203,15 +216,18 @@ def update_symbol(
     dry_run: bool = False,
     out=None,
 ) -> int:
-    """Surgically rewrite ONE allowlisted mapping symbol's digest in the baseline.
+    """Surgically rewrite ONE allowlisted symbol's digest in the baseline.
 
-    The single legitimate baseline mutation during the six-proposal cascade: a
+    The legitimate baseline mutations during the six-proposal cascade: a
     package/skill/core install adds an ``InstallSpec`` to ``_MODULE_MAPPINGS`` /
-    ``_SKILLS_MAPPINGS`` / ``_CORE_MAPPINGS``, changing exactly that symbol's
-    structural digest. Hardened so a one-key rewrite cannot bless an unintended
-    mutation (Codex S2):
+    ``_SKILLS_MAPPINGS`` / ``_CORE_MAPPINGS`` (changing that mapping symbol's
+    digest), and — onboarding-split phase B — the ``install_onboarding`` engine
+    function gains a verbatim ``_onboarding/`` package fan-out beside the helper
+    copy (a single-symbol body change, NO new top-level symbol). Hardened so a
+    one-key rewrite cannot bless an unintended mutation (Codex S2):
 
-    * the symbol must be in :data:`_UPDATE_ALLOWLIST` (registry mappings only);
+    * the symbol must be in :data:`_UPDATE_ALLOWLIST` (the 3 registry mappings +
+      the ``install_onboarding`` engine function), which also supplies its kind;
     * ``--expect-old`` must equal the symbol's current baseline digest;
     * the live module set must show the target as the **only** CHANGED symbol,
       with **no** MISSING / DUPLICATE drift — any unrelated discrepancy refuses;
@@ -237,12 +253,15 @@ def update_symbol(
     # pre-capture stream at import, breaking capsys-style redirection).
     if out is None:
         out = sys.stderr
-    norm = symbol[len("Assign:"):] if symbol.startswith("Assign:") else symbol
-    full = f"Assign:{norm}"
+    # Accept either the bare name (``install_onboarding``) or a fully-qualified
+    # ``<kind>:<name>`` baseline key; the allowlist supplies the authoritative
+    # kind, so the resolved key is ``<kind>:<name>`` (not assumed ``Assign:``).
+    norm = symbol.split(":", 1)[1] if ":" in symbol else symbol
     if norm not in _UPDATE_ALLOWLIST:
-        print(f"[update-symbol] REFUSED — '{symbol}' is not an allowlisted mapping "
+        print(f"[update-symbol] REFUSED — '{symbol}' is not an allowlisted "
               f"symbol ({', '.join(sorted(_UPDATE_ALLOWLIST))})", file=out)
         return 2
+    full = f"{_UPDATE_ALLOWLIST[norm]}:{norm}"
 
     baseline_path = Path(baseline_path)
     baseline: dict[str, dict] = json.loads(baseline_path.read_text(encoding="utf-8"))
