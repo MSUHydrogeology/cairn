@@ -208,8 +208,9 @@ _CORE_MAPPINGS: tuple[tuple[str, str], ...] = (
 #: sources are markdown -> substituted (so they get a base-template cache entry
 #: and a token-/slot-aware 3-way merge on upgrade, exactly like ``core/`` docs).
 _SKILLS_MAPPINGS: tuple[tuple[str, str, bool], ...] = (
-    ("skills/_lib/lifecycle.py",        "tools/lifecycle.py",                       True),
-    ("skills/_data/vendor_targets.yml", ".agents/skills/_data/vendor_targets.yml",  True),
+    ("skills/_lib/lifecycle.py",         "tools/lifecycle.py",                       True),
+    ("skills/_lib/lifecycle_planner.py", "tools/lifecycle_planner.py",               True),
+    ("skills/_data/vendor_targets.yml",  ".agents/skills/_data/vendor_targets.yml",  True),
     ("skills/session-start/SKILL.md",   ".agents/skills/session-start/SKILL.md",    False),
     ("skills/session-end/SKILL.md",     ".agents/skills/session-end/SKILL.md",      False),
 )
@@ -302,6 +303,29 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
                     "dev/modules/lifecycle-metrics.md"),
         InstallSpec("default-on/lifecycle_metrics.py",
                     "tools/lifecycle_metrics.py", verbatim=True),
+        # lifecycle-metrics fold-up (phase C, 2026-06): lifecycle_metrics.py is
+        # now a thin launcher/facade over an owned `_lifecycle_metrics/` engine
+        # package; the nine package files install verbatim beside the facade so
+        # `python tools/lifecycle_metrics.py` resolves its sibling engine at
+        # runtime (parity with the _intent/ + _onboarding/ splits).  Byte-for-byte code.
+        InstallSpec("default-on/_lifecycle_metrics/__init__.py",
+                    "tools/_lifecycle_metrics/__init__.py", verbatim=True),
+        InstallSpec("default-on/_lifecycle_metrics/config.py",
+                    "tools/_lifecycle_metrics/config.py", verbatim=True),
+        InstallSpec("default-on/_lifecycle_metrics/parse.py",
+                    "tools/_lifecycle_metrics/parse.py", verbatim=True),
+        InstallSpec("default-on/_lifecycle_metrics/gitmeta.py",
+                    "tools/_lifecycle_metrics/gitmeta.py", verbatim=True),
+        InstallSpec("default-on/_lifecycle_metrics/report.py",
+                    "tools/_lifecycle_metrics/report.py", verbatim=True),
+        InstallSpec("default-on/_lifecycle_metrics/subsystems.py",
+                    "tools/_lifecycle_metrics/subsystems.py", verbatim=True),
+        InstallSpec("default-on/_lifecycle_metrics/extract.py",
+                    "tools/_lifecycle_metrics/extract.py", verbatim=True),
+        InstallSpec("default-on/_lifecycle_metrics/snapshot.py",
+                    "tools/_lifecycle_metrics/snapshot.py", verbatim=True),
+        InstallSpec("default-on/_lifecycle_metrics/cli.py",
+                    "tools/_lifecycle_metrics/cli.py", verbatim=True),
     ],
     "reflections": [
         InstallSpec("default-on/reflections.md", "dev/modules/reflections.md"),
@@ -431,6 +455,24 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         # doctrine (1:many, the P1 claim-check/lifecycle-metrics pattern).
         InstallSpec("team-gated/intent.py",
                     "tools/intent.py", verbatim=True),
+        # intent-split (phase A, 2026-06): intent.py is now a thin launcher/facade
+        # over an owned `_intent/` engine package; the seven package files install
+        # verbatim beside the facade so `python tools/intent.py` (the CLI + the git
+        # hooks) resolves its sibling engine at runtime.  Each is byte-for-byte code.
+        InstallSpec("team-gated/_intent/__init__.py",
+                    "tools/_intent/__init__.py", verbatim=True),
+        InstallSpec("team-gated/_intent/shared.py",
+                    "tools/_intent/shared.py", verbatim=True),
+        InstallSpec("team-gated/_intent/record_io.py",
+                    "tools/_intent/record_io.py", verbatim=True),
+        InstallSpec("team-gated/_intent/identity.py",
+                    "tools/_intent/identity.py", verbatim=True),
+        InstallSpec("team-gated/_intent/conflict.py",
+                    "tools/_intent/conflict.py", verbatim=True),
+        InstallSpec("team-gated/_intent/hooks.py",
+                    "tools/_intent/hooks.py", verbatim=True),
+        InstallSpec("team-gated/_intent/cli.py",
+                    "tools/_intent/cli.py", verbatim=True),
         # Fold 2 (foldback-drain-tooling): the prune-intents goodnight compaction
         # tool.  Ships with coordination-tiers because the goodnight intent-hygiene
         # extension (coordination-tiers module doc) prescribes the prune-intents step.

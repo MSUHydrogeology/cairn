@@ -28,10 +28,11 @@ The `{{metrics_command}}` token is filled from the adopter's
 profile YAML with whatever invocation runs their extractor (e.g.
 `python tools/lifecycle_metrics.py`).
 
-The emitted metrics file is a **derived** artifact — regenerable
+The default metrics table is a **derived** artifact — regenerable
 from the repository at any commit — and is therefore deliberately
-not committed; a dated, citable snapshot is a project's own later
-choice.
+not committed; when a project wants a dated, citable record it runs
+`--snapshot`, which persists an indexed CSV under
+`dev/measurement/snapshots/` (the snapshot layer described below).
 
 A measured baseline is the gating artifact for any claim the
 project makes about its own method — run the extractor before
@@ -170,12 +171,22 @@ so it runs cleanly against a freshly bootstrapped repo; project-specific
 extensions to those headers may need small parser tweaks at the top of
 the script.
 
-**Scope of the shipped script.** This is the **v1 core** extractor (the
-measurable spine the module promises). The reference implementation
-it was generalized from also carries a *snapshot layer* — committed,
-dated CSV snapshots; a collision-log correlation; per-doctrine
-annotations; per-tier model aggregation — that is specific to that
-project's own instrumentation and is **not** shipped here. An adoption
-that wants committed snapshots can add them on top; the v1 core is what
-makes the discipline measurable out of the box. Reading per-member or
+**Scope of the shipped script.** The shipped extractor is the **v1
+core** spine (the measurable lifecycle table) **plus the full
+measurement layer** generalized from the reference implementation: a
+longitudinal *snapshot layer* (indexed, dated CSV snapshots of the
+unified proposal+plan schema under
+`dev/measurement/snapshots/<YYYY-MM-DD>-<N>.csv`, carrying
+`corpus_commit` / `snapshot_event` / `snapshot_timestamp_utc`
+provenance, with same-day runs coalescing by index and a bounded
+`--backfill-from`); a rolling-window collision-log correlation;
+per-doctrine annotation counts; and per-role × per-tier model
+aggregation. Every project-specific value — the model-tier vocabulary,
+the annotation / collision-log locations, the snapshot directory, the
+window tunables — is read from `dev/.cairn/metrics-config.json` (the
+`dev/.cairn/` machine-config convention), falling back to vendor-neutral
+built-in defaults when the file is absent, so the tool runs unconfigured
+out of the box and the model-tier list stays an **open** `[substring,
+label]` map — never a closed enum. The snapshot is the only write
+surface — additive and regenerable. Producing or reading per-member or
 per-tier surfaces stays bound by **the Measurement Compact** above.

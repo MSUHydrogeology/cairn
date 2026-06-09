@@ -1,4 +1,4 @@
-<!-- claim-check-allow: scripts/onboarding_activate.py -->
+<!-- claim-check-allow: scripts/onboarding_activate.py, scripts/_onboarding/ -->
 <!-- The adopter-install path is cited verbatim in the
      progressive-onboarding entry; from Cairn's own checkout the path
      does not resolve (the source-of-truth lives at
@@ -33,6 +33,59 @@ and a new empty `Unreleased` is started above.
 ## Unreleased
 
 ### Added
+
+- **Stack-neutrality — a contained-kernel container recipe (run Cairn with no host Python).**
+  A team whose application stack is not Python can now run the stdlib-only engine
+  **only at the install/upgrade boundary**, in a throwaway, contained container,
+  with no host-installed Python and no Python in the application's build/test CI.
+  Net-new under `bootstrap/container/`: a digest-pinned two-stage `Dockerfile`
+  (a stdlib-only shipped `engine` image + a separate floor/dev stage), a
+  `verify-ref.sh` provenance gate (refuses a mutable branch ref; accepts a tag or
+  commit pin), a `floor-gate.sh` release floor check (`vermin` + a runtime
+  conformance slice at the 3.11 floor; raised-syntax probe fails closed), and a
+  falsifiable two-version `acceptance.sh` (install release A → upgrade release B
+  against a zero-Python adopter; asserts host ownership with no chown, no
+  credential residue, refusal of out-of-target writes, and a network-disabled
+  mutation phase). The mutation phase runs offline with capabilities dropped and a
+  read-only root FS — a narrowed trust boundary, not a Python carrier. The honesty
+  is adopter-facing: v1 is **containerized Python (a convenience), not extrication**;
+  a native port is future work via the documented extrication seam (the deferred
+  Move 5). `doctrine/runtime-contract.md` carries the recipe pointer, the
+  maturity-asymmetry note, and the recorded Move-6 launcher deferral. See
+  `bootstrap/container/recipe.md`.
+- **Lifecycle mechanization — a state-machine contract + a read-only checker/planner.**
+  New `doctrine/lifecycle-contract.md` renders the proposal/plan lifecycle as an
+  executable contract (legal states, transitions, the *authority* each requires, and
+  the machine-verifiable precondition each must satisfy), with the **authority
+  contract** as the safety boundary: a tool mechanizes assembly/gates/formatting,
+  never the judgment — it attests *structure and presence*, never authenticity. The
+  read-only arm ships as `tools/lifecycle_planner.py` (a sibling to `lifecycle.py`,
+  stdlib-only, default-on): `next <artifact>` reports state + legal transitions +
+  unmet preconditions, `next --to <state>` emits a proposed house-format scaffold +
+  mutation manifest, `scan` runs structural conformance over the `dev/` corpus (also
+  the adopter fidelity scan), and `guard` is an advisory pre-commit pass. It **never
+  mutates and never commits** (proven by test); a generated review scaffold carries
+  no reviewer attribution and a Decision scaffold emits an empty
+  verbatim-authorization blockquote it cannot certify. An extensible, config-driven
+  AI-vs-human identity model keeps the human Maintainer the residual. Any
+  typed-mutation/commit arm is deferred behind a dogfood study + its own Security
+  Review. See `doctrine/lifecycle-contract.md` and
+  `bootstrap/tests/test_lifecycle_contract.py`.
+- **Lifecycle template thinning — accreted teaching routed to two new doctrine pages.**
+  `templates/core/dev/proposals/_template.md` and `templates/core/dev/plans/_template.md`
+  are thinned from ~800-line manuals to form-skeletons: section headings, `cairn:slot`
+  markers (byte-for-byte preserved), fill-prompts, and one backticked-citation pointer
+  per section to its doctrine home. The routed teaching now lives in two new type-specific
+  pages — `doctrine/proposals.md` (proposal lifecycle, append-only rule, one-commit-per-
+  transition, triage, forward-reference-path marker doctrine, file moves, archive
+  preconditions, count claims, Response grammars) and `doctrine/plans.md` (plan lifecycle,
+  archive precondition, plan-review precondition, triage rule, mutability rule, planning
+  handshake, forward-reference-path marker doctrine, count claims, plan-review format,
+  code-review doctrine, lasting-truth migration doctrine). Shared concepts remain in
+  `doctrine/lifecycle.md`. All backticked pointers are text citations (never relative
+  Markdown links), so they are not flagged by `link_check` on the adopter side, which
+  does not vendor `doctrine/`. Deliberation in
+  `dev/proposals/archive/2026-06-08-claude-cairn-lifecycle-template-thinning.md`.
 
 - **Gate-control tooling for unattended registry-cascade batches.**
   `bootstrap/tests/_ast_attest.py` gains a hardened `update-symbol` subcommand that
@@ -78,6 +131,111 @@ and a new empty `Unreleased` is started above.
   the apparatus; a clean result is a tripwire, not a proof.
 
 ### Changed
+
+- **The ~2300-line `intent.py` work-intent monolith is split into a thin
+  launcher + facade over an owned `templates/modules/team-gated/_intent/` engine
+  package of five subsystems** (`shared`, `record_io`, `identity`, `conflict`,
+  `hooks`, `cli`), arranged as an acyclic downward dependency DAG. The second
+  monolith-split after `scaffold.py`, reusing that discipline — leaf-first, one
+  gated commit per stage, full bootstrap suite + recursive `security_check` +
+  `check_cairn` + circular-import-clean at every stage. The public surface is
+  unchanged: the facade `tools/intent.py` is an `importlib.util` dynamic
+  spec-loader that registers the engine under the canonical `tools._intent` and
+  re-exports its complete namespace. **The facade mechanism differs from the
+  scaffold-split's `sys.modules[__name__] = engine` swap** (wrong here: the adopter
+  test-suite loads the tool by file path via `importlib`, and a swap would leave
+  the returned module object empty): instead it copies the namespace with
+  `globals().update(vars(engine))` **plus** a facade-module
+  `__setattr__`/`__delattr__` that forwards writes to every loaded
+  `tools._intent[.<sub>]` submodule, so the single-module monkeypatch contract the
+  adopter tests rely on (`monkeypatch.setattr(mod, "_confirm_proceed", …)` reaching
+  an engine-internal caller) is preserved. The **git-hook installer**
+  (`_intent/hooks.py`, the trust surface that writes executable hooks into
+  `.git/hooks/`) keeps installing hooks that invoke the facade `tools/intent.py`,
+  not a submodule. Installing the package edits `_MODULE_MAPPINGS` (seven new
+  verbatim install specs), which rode the engine cascade — surgical one-symbol AST
+  source-motion attestation + frozen-engine differential-oracle lockstep — exactly
+  as `scaffold.py` does. Lands across `templates/modules/team-gated/intent.py` +
+  `_intent/*` + `bootstrap/_scaffold/config.py`; deliberation in the adopter
+  proposal `2026-06-08-claude-cairn-intent-split.md`.
+
+- **The 1767-line `onboarding_activate.py` progressive-onboarding monolith is
+  split into a thin launcher + facade over an owned
+  `templates/modules/default-on/_onboarding/` engine package of seven subsystems**
+  (`security`, `shared`, `prompts`, `slotparse`, `triggers`, `activation`, `cli`),
+  arranged as an acyclic downward dependency DAG. The third monolith-split, reusing
+  the discipline — leaf-first, one gated commit per stage, a per-stage AST
+  source-motion attestation (every top-level symbol byte-identical, present once
+  across the package) + full bootstrap suite + the onboarding helper suite +
+  `check_cairn` at every stage. The public surface is unchanged: the facade
+  `scripts/onboarding_activate.py` is an `importlib.util` dynamic spec-loader that
+  registers the engine under the canonical `scripts._onboarding` and re-exports its
+  complete namespace. **The facade is simpler than the intent-split's:** the
+  onboarding helper suite does **zero** cross-function monkeypatching and loads its
+  helper **in-process from the in-tree location**, so the facade needs neither the
+  `__setattr__`/`__delattr__` forwarder nor a `__file__`/hook-path dependency — just
+  `globals().update(...)` plus the same fail-closed symlink/within-root guard on the
+  loaded package directory. **The write-containment surface is preserved verbatim:**
+  the `OnboardingError`/`OnboardingSecurityError` taxonomy and the
+  `_assert_safe_write`/`_assert_safe_read`/`_assert_safe_dir_for_glob` guards are
+  isolated in the `security` leaf, byte-identical to the pre-split monolith, so the
+  single `OnboardingSecurityError` identity holds and every reader/writer/globber
+  still routes through a guard (the suite's symlink/escape-refusal negative tests
+  stay green). Unlike the intent-split, onboarding installs via the engine function
+  `install_onboarding()` (not `_MODULE_MAPPINGS`); it now **fans out the
+  `_onboarding/` package to `scripts/_onboarding/`** beside the installed launcher,
+  each file copied verbatim through `_assert_safe_write`. That single-symbol engine
+  change rode a **supervised gate-tooling extension** (anchor re-based g1 → g2): the
+  `update-symbol` allowlist — formerly the three registry mappings only — was widened
+  to admit the `install_onboarding` function with its node-kind, all existing guards
+  (`--expect-old`, sole-CHANGED-delta, strict known-new) unchanged, and the AST
+  baseline + frozen-engine differential-oracle copy updated in lockstep. Lands across
+  `templates/modules/default-on/onboarding_activate.py` + `_onboarding/*` +
+  `bootstrap/_scaffold/install.py` + `bootstrap/tests/_ast_attest.py`; deliberation
+  in the adopter proposal `2026-06-08-claude-cairn-onboarding-activate-split.md`.
+
+- **The `lifecycle-metrics` extractor folds up the adopter fork's measurement
+  layer and is split into a thin launcher + facade over an owned
+  `templates/modules/default-on/_lifecycle_metrics/` engine package of eight
+  subsystems** (`config`, `parse`, `gitmeta`, `report`, `subsystems`, `extract`,
+  `snapshot`, `cli`), arranged as an acyclic downward dependency DAG. Unlike the
+  intent/onboarding splits — which re-shaped one monolith in place — this is a
+  three-way reconciliation: the adopter's 2035-line fork had drifted ahead of
+  Cairn's newer 814-line base on the *measurement subsystems* while the base had
+  drifted ahead on the *shared ETL*. The merge takes **Cairn's base** (its
+  vendor-neutral `_agent_of` reviewer parser, the `_csv_safe` injection
+  neutralization, root-threading) and folds the fork's **value** onto it — the
+  annotation-count, rolling-window collision-log, review-yield / model-tier /
+  disposition, and output-manifest subsystems, plus the fork's richer snapshot
+  design — while **dropping the fork's regressions**: a hardcoded three-name
+  `_agent_of` that misread every other agent identity as human, and a duplicate
+  snapshot writer. Every project-specific value (the open `[substring, label]`
+  model-tier vocabulary, the annotation / collision-log paths, the snapshot
+  directory, the window tunables) is decoupled into `dev/.cairn/metrics-config.json`
+  with vendor-neutral built-in defaults, so the tool runs unconfigured. **Snapshot
+  behavior change:** `--snapshot` now writes an indexed, unified
+  `dev/measurement/snapshots/<YYYY-MM-DD>-<N>.csv` (proposals + plans, with
+  `corpus_commit` / `snapshot_event` / `snapshot_timestamp_utc` /
+  `corpus_collision_count_14d` provenance columns; same-day runs coalesce by index
+  rather than overwriting; audit-trail retention) plus a bounded `--backfill-from`,
+  replacing the prior per-day `<date>-proposals.csv` overwrite. The facade is the
+  onboarding-split's simpler shape — an `importlib.util` spec-loader registering the
+  engine under the canonical `tools._lifecycle_metrics` behind a fail-closed
+  within-root/symlink containment guard, `globals().update(...)` re-export, no
+  `__file__`/hook-path dependency. Installing the package adds nine verbatim install
+  specs to `_MODULE_MAPPINGS`, which rode the engine cascade (surgical one-symbol
+  AST source-motion attestation + frozen-engine differential-oracle lockstep). The
+  snapshot-contract change updated three gate-frozen CLI tests to the new
+  `emit_snapshot` behavior, which rode a **supervised gate re-anchor (g2 → g3)** —
+  the gate manifest's frozen-test hash re-pinned and the two renamed node-IDs
+  swapped, leaving the new package recorded as `FROZEN-NEW` (no broad pre-sha reset).
+  Behavior-preservation against the originating adopter corpus was verified in a
+  read-only, network-off container: only the two documented diff classes (the
+  `_csv_safe` neutralizations and the corrected reviewer identities) differ from the
+  fork. Lands across `templates/modules/default-on/lifecycle_metrics.py` +
+  `_lifecycle_metrics/*` + `bootstrap/_scaffold/config.py` +
+  `bootstrap/tests/test_lifecycle_cli.py` + the gate manifest; deliberation in the
+  adopter proposal `2026-06-08-claude-cairn-lifecycle-metrics-fold-up.md`.
 
 - **The 4865-line `scaffold.py` install/upgrade monolith is split into a thin
   fail-closed launcher + facade over a private `bootstrap/_scaffold/` engine

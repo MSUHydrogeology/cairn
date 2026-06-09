@@ -216,7 +216,7 @@
     "type": "Assign"
   },
   "Assign:_MODULE_MAPPINGS": {
-    "digest": "48f0a27f02f59636",
+    "digest": "26957a8924042a0a",
     "span": [
       298,
       576
@@ -336,7 +336,7 @@
     "type": "AnnAssign"
   },
   "Assign:_SKILLS_MAPPINGS": {
-    "digest": "48159a6a85d33a6d",
+    "digest": "8ec105a84b5e65bf",
     "span": [
       734,
       739
@@ -1048,7 +1048,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:install_onboarding": {
-    "digest": "921d0beb7720818e",
+    "digest": "e6d174a281328fee",
     "span": [
       2023,
       2213

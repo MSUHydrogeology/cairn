@@ -97,6 +97,26 @@ def _load_tool(path: Path, name: str = "p5_intent") -> ModuleType:
     return module
 
 
+def _stage_tool(tools_dir: Path) -> Path:
+    """Install the intent facade + its sibling ``_intent/`` engine package into
+    *tools_dir*.
+
+    Intent-split (phase A): ``intent.py`` is a thin facade that loads ``_intent/``
+    as a runtime sibling, so a faithful copy of the tool must stage **both** — the
+    scaffold install mapping does the same. (Pre-split this was a single
+    ``intent.py`` write; the assertions exercised below are unchanged.)
+    """
+    import shutil
+    tools_dir.mkdir(parents=True, exist_ok=True)
+    facade = tools_dir / "intent.py"
+    facade.write_bytes(TOOL_TEMPLATE.read_bytes())
+    pkg_dst = tools_dir / "_intent"
+    if pkg_dst.exists():
+        shutil.rmtree(pkg_dst)
+    shutil.copytree(TOOL_TEMPLATE.parent / "_intent", pkg_dst)
+    return facade
+
+
 def _clean_env(**overrides: str) -> dict:
     """A subprocess env with identity vars cleared, then *overrides*."""
     env = dict(os.environ)
@@ -121,10 +141,8 @@ def _git_repo(tmp_path: Path, *, branch: str = "master") -> Path:
                    check=True, env=_clean_env())
     subprocess.run(["git", "config", "user.name", "t"], cwd=tmp_path,
                    check=True, env=_clean_env())
-    (tmp_path / "tools").mkdir(exist_ok=True)
     (tmp_path / "dev").mkdir(exist_ok=True)
-    (tmp_path / "tools" / "intent.py").write_bytes(TOOL_TEMPLATE.read_bytes())
-    return tmp_path / "tools" / "intent.py"
+    return _stage_tool(tmp_path / "tools")
 
 
 def _run_tool(tool: Path, args: list[str], *, cwd: Path,
@@ -474,9 +492,7 @@ class TestHookDiversity:
 
 class TestVcsRobustness:
     def test_no_git_target_clear_diagnostic(self, tmp_path) -> None:
-        (tmp_path / "tools").mkdir()
-        tool = tmp_path / "tools" / "intent.py"
-        tool.write_bytes(TOOL_TEMPLATE.read_bytes())
+        tool = _stage_tool(tmp_path / "tools")
         res = _run_tool(tool, ["install-hook"], cwd=tmp_path)
         assert res.returncode == 1
         assert "not inside a git working tree" in res.stderr
@@ -704,9 +720,7 @@ class TestPrecommitInstall:
         assert stat.S_IMODE(hook.stat().st_mode) == before_mode
 
     def test_no_git_target_clear_diagnostic(self, tmp_path) -> None:
-        (tmp_path / "tools").mkdir()
-        tool = tmp_path / "tools" / "intent.py"
-        tool.write_bytes(TOOL_TEMPLATE.read_bytes())
+        tool = _stage_tool(tmp_path / "tools")
         res = _run_tool(tool, ["install-precommit"], cwd=tmp_path)
         assert res.returncode == 1
         assert "not inside a git working tree" in res.stderr

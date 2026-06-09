@@ -36,7 +36,16 @@ The pass has four moves:
    which paths before its first edit. This is the *read* half of the
    work-intent convention — the complement to claiming before you edit
    (`coordination-tiers`); skipping it is how a session collides with an
-   active claim it never saw.
+   active claim it never saw. *If the lifecycle checker/planner is
+   installed* (`tools/lifecycle_planner.py`, the read-only arm of
+   [`lifecycle-contract.md`](lifecycle-contract.md)), `python
+   tools/lifecycle_planner.py scan` reports any open artifact whose
+   status is not structurally supported by its documentary attestations
+   (it doubles as the **adopter fidelity scan**), and `lifecycle_planner.py
+   next <artifact>` reports one artifact's state, legal transitions, and
+   unmet preconditions. It is an **optional orientation aid**: it attests
+   structure, never authenticity, and it **mutates nothing** — never a
+   mandate to act.
 4. **Confirm role and starting point** (`roles.md`) before
    committing to substantive work.
 

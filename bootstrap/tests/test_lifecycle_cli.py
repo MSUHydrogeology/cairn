@@ -416,77 +416,78 @@ def lm_repo(tmp_path: Path) -> Path:
 
 
 @pytest.mark.skipif(_lm is None, reason="lifecycle_metrics.py template not available")
-def test_write_snapshot_creates_dated_csv(lm_repo: Path) -> None:
-    """write_snapshot() persists <date>-proposals.csv under
-    dev/measurement/snapshots/ with the expected CSV content.
-    The injected ``today=`` makes it deterministic."""
+def test_emit_snapshot_creates_indexed_csv(lm_repo: Path) -> None:
+    """emit_snapshot() persists an indexed ``<date>-1.csv`` under
+    dev/measurement/snapshots/ carrying the unified ``kind,...`` snapshot
+    schema.  The injected ``timestamp_utc=`` makes the path deterministic."""
     import datetime
 
-    rows = _lm.proposal_rows(lm_repo)
-    fixed_date = datetime.date(2026, 6, 1)
-    snap_path = _lm.write_snapshot(
-        rows, _lm.PROPOSAL_COLUMNS, lm_repo, "proposals", today=fixed_date
+    snap_path, row_count = _lm.emit_snapshot(
+        root=lm_repo, timestamp_utc=datetime.datetime(2026, 6, 1)
     )
 
-    assert snap_path == lm_repo / "dev" / "measurement" / "snapshots" / "2026-06-01-proposals.csv"
+    assert snap_path == (
+        lm_repo / "dev" / "measurement" / "snapshots" / "2026-06-01-1.csv"
+    )
     assert snap_path.exists(), "snapshot file was not created"
+    assert row_count == 1, "the one sample proposal should yield one row"
 
     content = snap_path.read_text(encoding="utf-8")
-    # Must be valid CSV with the correct header.
-    assert content.startswith(",".join(_lm.PROPOSAL_COLUMNS[:3])), (
-        f"unexpected CSV header: {content.splitlines()[0]!r}"
-    )
+    header = content.splitlines()[0]
+    # Unified snapshot schema: a leading ``kind`` column plus the snapshot
+    # meta-columns appended after the proposal/plan columns.
+    assert header.startswith("kind,"), f"unexpected CSV header: {header!r}"
+    assert "snapshot_event" in header
     # The sample proposal row must appear.
     assert "2026-05-01-alice-thing" in content
 
 
 @pytest.mark.skipif(_lm is None, reason="lifecycle_metrics.py template not available")
-def test_write_snapshot_same_day_overwrites(lm_repo: Path) -> None:
-    """A same-day re-run replaces the snapshot (idempotent per calendar day)."""
+def test_emit_snapshot_same_day_coalesces_by_index(lm_repo: Path) -> None:
+    """A same-day re-run does NOT overwrite: it coalesces into the next
+    monotonic index (``<date>-2.csv``), preserving the audit trail."""
     import datetime
 
-    rows = _lm.proposal_rows(lm_repo)
-    fixed_date = datetime.date(2026, 6, 1)
-    snap_path = _lm.write_snapshot(
-        rows, _lm.PROPOSAL_COLUMNS, lm_repo, "proposals", today=fixed_date
-    )
-    snap_path.write_text("stale content", encoding="utf-8")  # simulate stale
+    fixed = datetime.datetime(2026, 6, 1)
+    snap_path, _ = _lm.emit_snapshot(root=lm_repo, timestamp_utc=fixed)
+    assert snap_path.name == "2026-06-01-1.csv"
+    snap_path.write_text("stale content", encoding="utf-8")  # sentinel
 
-    snap_path2 = _lm.write_snapshot(
-        rows, _lm.PROPOSAL_COLUMNS, lm_repo, "proposals", today=fixed_date
-    )
-    assert snap_path2 == snap_path
-    assert snap_path.read_text(encoding="utf-8") != "stale content", (
-        "same-day re-run did not overwrite the snapshot"
+    snap_path2, _ = _lm.emit_snapshot(root=lm_repo, timestamp_utc=fixed)
+    assert snap_path2 != snap_path, "same-day re-run must not reuse the path"
+    assert snap_path2.name == "2026-06-01-2.csv"
+    assert snap_path2.exists()
+    # The first snapshot is left untouched (audit-trail retention).
+    assert snap_path.read_text(encoding="utf-8") == "stale content", (
+        "same-day re-run must not overwrite the prior snapshot"
     )
 
 
 @pytest.mark.skipif(_lm is None, reason="lifecycle_metrics.py template not available")
 def test_snapshot_flag_via_main(lm_repo: Path, capsys) -> None:
-    """main([..., '--snapshot']) writes the snapshot file and the normal
-    stdout emission is also produced (additive behavior)."""
+    """main([..., '--snapshot']) writes an indexed snapshot file under
+    dev/measurement/snapshots/ and reports the write on stderr.  The
+    snapshot is the only write surface on this path -- no report CSV is
+    emitted to stdout."""
     import datetime
 
-    # Use the injected-today path by calling write_snapshot directly rather
-    # than via main (main uses datetime.date.today() internally); we just
-    # verify that main with --snapshot creates *a* dated snapshot file and
-    # still writes to stdout.
     rc = _lm.main(["proposals", "--root", str(lm_repo), "--snapshot"])
     assert rc == 0
 
     out, err = capsys.readouterr()
-    # Normal stdout emission must still happen.
-    assert "stem" in out, "CSV header row missing from stdout"
-    assert "2026-05-01-alice-thing" in out
+    # The --snapshot path is snapshot-only: nothing is written to stdout.
+    assert out == "", f"unexpected stdout on --snapshot path: {out!r}"
+    # The write is reported on stderr (row count + default event label).
+    assert "wrote" in err and "rows to" in err
+    assert "event='manual'" in err
 
-    # Snapshot file must have been written (today's date).
-    today_str = datetime.date.today().isoformat()
+    # An indexed snapshot file must have been written for today's UTC date
+    # (emit_snapshot stamps the path from datetime.now(UTC)).
+    today_str = datetime.datetime.now(datetime.timezone.utc).date().isoformat()
     snap_path = (
         lm_repo / "dev" / "measurement" / "snapshots"
-        / f"{today_str}-proposals.csv"
+        / f"{today_str}-1.csv"
     )
     assert snap_path.exists(), (
         f"snapshot file not found at {snap_path}"
     )
-    # Confirmation must appear on stderr.
-    assert "snapshot written to" in err

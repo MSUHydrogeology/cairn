@@ -920,9 +920,11 @@ def _surface_intents(root: Path, interpreter: str) -> None:
 def _run_lifecycle_metrics(root: Path, interpreter: str) -> None:
     """Run the optional lifecycle-metrics tool with ``--snapshot``, if installed.
 
-    Passes ``--snapshot`` so each full-handoff persists a dated CSV snapshot
-    to ``dev/measurement/snapshots/<YYYY-MM-DD>-proposals.csv``.  Only runs
-    in the ``--handoff`` full-handoff path (the caller in ``_do_full_handoff``
+    Passes ``--snapshot`` so each full-handoff persists an indexed CSV
+    snapshot to ``dev/measurement/snapshots/<YYYY-MM-DD>-<N>.csv`` (the
+    unified proposal+plan schema; same-day runs coalesce by ``N`` rather
+    than overwriting, preserving the audit trail).  Only runs in the
+    ``--handoff`` full-handoff path (the caller in ``_do_full_handoff``
     gates it).  Skip-with-note when the tool is absent; never fails the
     handoff on a non-zero exit.
     """

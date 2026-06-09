@@ -837,6 +837,33 @@ def install_onboarding(
             file=sys.stderr,
         )
 
+    # ----- Always: fan out the activation engine package (A2) -----------
+    # Onboarding-split (phase B): onboarding_activate.py is now a thin
+    # launcher/facade over a private ``_onboarding/`` engine package that
+    # must install BESIDE it at ``scripts/_onboarding/`` for the facade to
+    # import (parity with the team-gated ``tools/_intent/`` package install).
+    # Sourced from the sibling ``_onboarding/`` dir next to the helper
+    # source; each ``*.py`` copied verbatim through the containment guard.
+    engine_src_dir = helper_src.parent / "_onboarding"
+    engine_dst_dir = helper_dst.parent / "_onboarding"
+    if engine_src_dir.is_dir():
+        for engine_src in sorted(engine_src_dir.glob("*.py")):
+            engine_dst = engine_dst_dir / engine_src.name
+            if dry_run:
+                results.append((engine_dst, [], [], "dry-run"))
+            elif engine_dst.exists() and not force:
+                print(
+                    f"  [skip] {engine_dst}: already exists -- pass --force "
+                    f"to overwrite",
+                    file=sys.stderr,
+                )
+                results.append((engine_dst, [], [], "skipped-exists"))
+            else:
+                _assert_safe_write(engine_dst, target)
+                engine_dst.parent.mkdir(parents=True, exist_ok=True)
+                engine_dst.write_bytes(engine_src.read_bytes())
+                results.append((engine_dst, [], [], "installed"))
+
     # ----- Always: seed an empty activation log (B) ---------------------
     log_dst = target / _ONBOARDING_LOG_REL
     if dry_run:

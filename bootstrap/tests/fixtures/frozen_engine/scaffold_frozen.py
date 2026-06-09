@@ -730,8 +730,9 @@ _CORE_MAPPINGS: tuple[tuple[str, str], ...] = (
 #: sources are markdown -> substituted (so they get a base-template cache entry
 #: and a token-/slot-aware 3-way merge on upgrade, exactly like ``core/`` docs).
 _SKILLS_MAPPINGS: tuple[tuple[str, str, bool], ...] = (
-    ("skills/_lib/lifecycle.py",        "tools/lifecycle.py",                       True),
-    ("skills/_data/vendor_targets.yml", ".agents/skills/_data/vendor_targets.yml",  True),
+    ("skills/_lib/lifecycle.py",         "tools/lifecycle.py",                       True),
+    ("skills/_lib/lifecycle_planner.py", "tools/lifecycle_planner.py",               True),
+    ("skills/_data/vendor_targets.yml",  ".agents/skills/_data/vendor_targets.yml",  True),
     ("skills/session-start/SKILL.md",   ".agents/skills/session-start/SKILL.md",    False),
     ("skills/session-end/SKILL.md",     ".agents/skills/session-end/SKILL.md",      False),
 )
@@ -824,6 +825,29 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
                     "dev/modules/lifecycle-metrics.md"),
         InstallSpec("default-on/lifecycle_metrics.py",
                     "tools/lifecycle_metrics.py", verbatim=True),
+        # lifecycle-metrics fold-up (phase C, 2026-06): lifecycle_metrics.py is
+        # now a thin launcher/facade over an owned `_lifecycle_metrics/` engine
+        # package; the nine package files install verbatim beside the facade so
+        # `python tools/lifecycle_metrics.py` resolves its sibling engine at
+        # runtime (parity with the _intent/ + _onboarding/ splits).  Byte-for-byte code.
+        InstallSpec("default-on/_lifecycle_metrics/__init__.py",
+                    "tools/_lifecycle_metrics/__init__.py", verbatim=True),
+        InstallSpec("default-on/_lifecycle_metrics/config.py",
+                    "tools/_lifecycle_metrics/config.py", verbatim=True),
+        InstallSpec("default-on/_lifecycle_metrics/parse.py",
+                    "tools/_lifecycle_metrics/parse.py", verbatim=True),
+        InstallSpec("default-on/_lifecycle_metrics/gitmeta.py",
+                    "tools/_lifecycle_metrics/gitmeta.py", verbatim=True),
+        InstallSpec("default-on/_lifecycle_metrics/report.py",
+                    "tools/_lifecycle_metrics/report.py", verbatim=True),
+        InstallSpec("default-on/_lifecycle_metrics/subsystems.py",
+                    "tools/_lifecycle_metrics/subsystems.py", verbatim=True),
+        InstallSpec("default-on/_lifecycle_metrics/extract.py",
+                    "tools/_lifecycle_metrics/extract.py", verbatim=True),
+        InstallSpec("default-on/_lifecycle_metrics/snapshot.py",
+                    "tools/_lifecycle_metrics/snapshot.py", verbatim=True),
+        InstallSpec("default-on/_lifecycle_metrics/cli.py",
+                    "tools/_lifecycle_metrics/cli.py", verbatim=True),
     ],
     "reflections": [
         InstallSpec("default-on/reflections.md", "dev/modules/reflections.md"),
@@ -945,6 +969,22 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         # doctrine (1:many, the P1 claim-check/lifecycle-metrics pattern).
         InstallSpec("team-gated/intent.py",
                     "tools/intent.py", verbatim=True),
+        # intent-split (phase A, 2026-06): intent.py is a thin facade over an owned
+        # `_intent/` engine package; the seven package files install verbatim beside it.
+        InstallSpec("team-gated/_intent/__init__.py",
+                    "tools/_intent/__init__.py", verbatim=True),
+        InstallSpec("team-gated/_intent/shared.py",
+                    "tools/_intent/shared.py", verbatim=True),
+        InstallSpec("team-gated/_intent/record_io.py",
+                    "tools/_intent/record_io.py", verbatim=True),
+        InstallSpec("team-gated/_intent/identity.py",
+                    "tools/_intent/identity.py", verbatim=True),
+        InstallSpec("team-gated/_intent/conflict.py",
+                    "tools/_intent/conflict.py", verbatim=True),
+        InstallSpec("team-gated/_intent/hooks.py",
+                    "tools/_intent/hooks.py", verbatim=True),
+        InstallSpec("team-gated/_intent/cli.py",
+                    "tools/_intent/cli.py", verbatim=True),
         # Fold 2 (foldback-drain-tooling): the prune-intents goodnight compaction tool.
         InstallSpec("team-gated/prune_intents.py",
                     "tools/prune_intents.py", verbatim=True),
@@ -2129,6 +2169,33 @@ def install_onboarding(
             f"templates/{_ONBOARDING_HELPER_SRC_REL}",
             file=sys.stderr,
         )
+
+    # ----- Always: fan out the activation engine package (A2) -----------
+    # Onboarding-split (phase B): onboarding_activate.py is now a thin
+    # launcher/facade over a private ``_onboarding/`` engine package that
+    # must install BESIDE it at ``scripts/_onboarding/`` for the facade to
+    # import (parity with the team-gated ``tools/_intent/`` package install).
+    # Sourced from the sibling ``_onboarding/`` dir next to the helper
+    # source; each ``*.py`` copied verbatim through the containment guard.
+    engine_src_dir = helper_src.parent / "_onboarding"
+    engine_dst_dir = helper_dst.parent / "_onboarding"
+    if engine_src_dir.is_dir():
+        for engine_src in sorted(engine_src_dir.glob("*.py")):
+            engine_dst = engine_dst_dir / engine_src.name
+            if dry_run:
+                results.append((engine_dst, [], [], "dry-run"))
+            elif engine_dst.exists() and not force:
+                print(
+                    f"  [skip] {engine_dst}: already exists -- pass --force "
+                    f"to overwrite",
+                    file=sys.stderr,
+                )
+                results.append((engine_dst, [], [], "skipped-exists"))
+            else:
+                _assert_safe_write(engine_dst, target)
+                engine_dst.parent.mkdir(parents=True, exist_ok=True)
+                engine_dst.write_bytes(engine_src.read_bytes())
+                results.append((engine_dst, [], [], "installed"))
 
     # ----- Always: seed an empty activation log (B) ---------------------
     log_dst = target / _ONBOARDING_LOG_REL

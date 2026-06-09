@@ -177,3 +177,58 @@ def test_trusted_verifier_detects_tamper_in_separate_target_tree(produced, tmp_p
     victim = target / "bootstrap/security_check.py"
     victim.write_text(victim.read_text(encoding="utf-8") + "\n# tamper\n", encoding="utf-8")
     assert G.verify(man, anchor_ref=sha, repo=target, require_anchor=True, do_collect=False) == 1
+
+
+# --- Codex cross-phase finding #1: the anchor must be EXTERNALLY trusted --------
+
+
+def _init_repo_with_manifest(root: Path, manifest_text: str) -> str:
+    """Init a git repo carrying gate_manifest.json at _MANIFEST_REL; return HEAD sha."""
+    import subprocess
+    root.mkdir(parents=True, exist_ok=True)
+
+    def _sub(*a):
+        return subprocess.run(["git", *a], cwd=str(root), check=True,
+                              capture_output=True, text=True)
+
+    _sub("init", "-q"); _sub("config", "user.email", "a@b.c"); _sub("config", "user.name", "t")
+    mpath = root / G._MANIFEST_REL
+    mpath.parent.mkdir(parents=True, exist_ok=True)
+    mpath.write_text(manifest_text, encoding="utf-8")
+    _sub("add", "-A"); _sub("commit", "-q", "-m", "manifest")
+    return subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(root),
+                          capture_output=True, text=True).stdout.strip()
+
+
+def test_anchor_from_trusted_repo_refuses_target_owned_forge(tmp_path):
+    """A target that can edit itself must NOT be able to mint its own anchor: with
+    --trusted-repo, the expected manifest comes from the trusted repo and the
+    anchor must be reachable from a trusted ref there (Codex cross-phase #1)."""
+    real = '{"gate": "real"}\n'
+    forged = '{"gate": "FORGED-by-target"}\n'
+    trusted = tmp_path / "trusted"
+    target = tmp_path / "target"
+    trusted_anchor = _init_repo_with_manifest(trusted, real)
+    target_anchor = _init_repo_with_manifest(target, forged)
+
+    # 1. A target-only anchor is NOT reachable from the trusted ref -> HOLD.
+    holds, _ = G._check_anchor(target_anchor, forged, repo=target,
+                               trusted_repo=trusted, trusted_ref="HEAD")
+    assert holds and any("not reachable" in h.lower() for h in holds)
+
+    # 2. The trusted anchor is honored, but a forged working-tree manifest differs
+    #    from the immutable trusted object -> HOLD.
+    holds, _ = G._check_anchor(trusted_anchor, forged, repo=target,
+                               trusted_repo=trusted, trusted_ref="HEAD")
+    assert holds and any("differs from the immutable" in h for h in holds)
+
+    # 3. Legit: the trusted anchor + a matching manifest -> no holds.
+    holds, _ = G._check_anchor(trusted_anchor, real, repo=target,
+                               trusted_repo=trusted, trusted_ref="HEAD")
+    assert holds == []
+
+    # 4. No --trusted-repo: falls back to the target with a loud NOTE (documented
+    #    residual: a target-owned object comparison, not external anchoring).
+    holds, notes = G._check_anchor(target_anchor, forged, repo=target,
+                                   trusted_repo=None, trusted_ref="HEAD")
+    assert holds == [] and any("TARGET repo" in n for n in notes)
