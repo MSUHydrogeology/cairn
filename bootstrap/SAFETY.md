@@ -137,7 +137,11 @@ scales **by file class**:
   under that package is Layer-4 code*, scanned **recursively**) — *and*
   every verbatim reference script the scaffold
   installs into an adopter (`claim_check.py`, `lifecycle_metrics.py`,
-  `intent.py`, `link_check.py`, `sync_doc_snippets.py`, and the
+  `intent.py` — now a thin facade over the owned `_intent/` package whose
+  **git-hook installer `_intent/hooks.py` writes executable hooks into
+  `.git/hooks/`**; each of the seven `_intent/*.py` engine files is Layer-4
+  code, covered automatically because all seven are verbatim
+  `_MODULE_MAPPINGS` install specs — `link_check.py`, `sync_doc_snippets.py`, and the
   `content-security` / `python-security` apparatus —
   `content_scan_runner.py`, `run_security_audit.py`) *and* Cairn's own
   dev tools (`check_cairn.py`, `content_scan.py`, `security_check.py`,

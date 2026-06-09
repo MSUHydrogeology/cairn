@@ -95,6 +95,33 @@ and a new empty `Unreleased` is started above.
 
 ### Changed
 
+- **The ~2300-line `intent.py` work-intent monolith is split into a thin
+  launcher + facade over an owned `templates/modules/team-gated/_intent/` engine
+  package of five subsystems** (`shared`, `record_io`, `identity`, `conflict`,
+  `hooks`, `cli`), arranged as an acyclic downward dependency DAG. The second
+  monolith-split after `scaffold.py`, reusing that discipline — leaf-first, one
+  gated commit per stage, full bootstrap suite + recursive `security_check` +
+  `check_cairn` + circular-import-clean at every stage. The public surface is
+  unchanged: the facade `tools/intent.py` is an `importlib.util` dynamic
+  spec-loader that registers the engine under the canonical `tools._intent` and
+  re-exports its complete namespace. **The facade mechanism differs from the
+  scaffold-split's `sys.modules[__name__] = engine` swap** (wrong here: the adopter
+  test-suite loads the tool by file path via `importlib`, and a swap would leave
+  the returned module object empty): instead it copies the namespace with
+  `globals().update(vars(engine))` **plus** a facade-module
+  `__setattr__`/`__delattr__` that forwards writes to every loaded
+  `tools._intent[.<sub>]` submodule, so the single-module monkeypatch contract the
+  adopter tests rely on (`monkeypatch.setattr(mod, "_confirm_proceed", …)` reaching
+  an engine-internal caller) is preserved. The **git-hook installer**
+  (`_intent/hooks.py`, the trust surface that writes executable hooks into
+  `.git/hooks/`) keeps installing hooks that invoke the facade `tools/intent.py`,
+  not a submodule. Installing the package edits `_MODULE_MAPPINGS` (seven new
+  verbatim install specs), which rode the engine cascade — surgical one-symbol AST
+  source-motion attestation + frozen-engine differential-oracle lockstep — exactly
+  as `scaffold.py` does. Lands across `templates/modules/team-gated/intent.py` +
+  `_intent/*` + `bootstrap/_scaffold/config.py`; deliberation in the adopter
+  proposal `2026-06-08-claude-cairn-intent-split.md`.
+
 - **The 4865-line `scaffold.py` install/upgrade monolith is split into a thin
   fail-closed launcher + facade over a private `bootstrap/_scaffold/` engine
   package of eight owned modules** (`security`, `slotmerge`, `merge`, `config`,
