@@ -157,6 +157,49 @@ and a new empty `Unreleased` is started above.
   `bootstrap/_scaffold/install.py` + `bootstrap/tests/_ast_attest.py`; deliberation
   in the adopter proposal `2026-06-08-claude-cairn-onboarding-activate-split.md`.
 
+- **The `lifecycle-metrics` extractor folds up the adopter fork's measurement
+  layer and is split into a thin launcher + facade over an owned
+  `templates/modules/default-on/_lifecycle_metrics/` engine package of eight
+  subsystems** (`config`, `parse`, `gitmeta`, `report`, `subsystems`, `extract`,
+  `snapshot`, `cli`), arranged as an acyclic downward dependency DAG. Unlike the
+  intent/onboarding splits — which re-shaped one monolith in place — this is a
+  three-way reconciliation: the adopter's 2035-line fork had drifted ahead of
+  Cairn's newer 814-line base on the *measurement subsystems* while the base had
+  drifted ahead on the *shared ETL*. The merge takes **Cairn's base** (its
+  vendor-neutral `_agent_of` reviewer parser, the `_csv_safe` injection
+  neutralization, root-threading) and folds the fork's **value** onto it — the
+  annotation-count, rolling-window collision-log, review-yield / model-tier /
+  disposition, and output-manifest subsystems, plus the fork's richer snapshot
+  design — while **dropping the fork's regressions**: a hardcoded three-name
+  `_agent_of` that misread every other agent identity as human, and a duplicate
+  snapshot writer. Every project-specific value (the open `[substring, label]`
+  model-tier vocabulary, the annotation / collision-log paths, the snapshot
+  directory, the window tunables) is decoupled into `dev/.cairn/metrics-config.json`
+  with vendor-neutral built-in defaults, so the tool runs unconfigured. **Snapshot
+  behavior change:** `--snapshot` now writes an indexed, unified
+  `dev/measurement/snapshots/<YYYY-MM-DD>-<N>.csv` (proposals + plans, with
+  `corpus_commit` / `snapshot_event` / `snapshot_timestamp_utc` /
+  `corpus_collision_count_14d` provenance columns; same-day runs coalesce by index
+  rather than overwriting; audit-trail retention) plus a bounded `--backfill-from`,
+  replacing the prior per-day `<date>-proposals.csv` overwrite. The facade is the
+  onboarding-split's simpler shape — an `importlib.util` spec-loader registering the
+  engine under the canonical `tools._lifecycle_metrics` behind a fail-closed
+  within-root/symlink containment guard, `globals().update(...)` re-export, no
+  `__file__`/hook-path dependency. Installing the package adds nine verbatim install
+  specs to `_MODULE_MAPPINGS`, which rode the engine cascade (surgical one-symbol
+  AST source-motion attestation + frozen-engine differential-oracle lockstep). The
+  snapshot-contract change updated three gate-frozen CLI tests to the new
+  `emit_snapshot` behavior, which rode a **supervised gate re-anchor (g2 → g3)** —
+  the gate manifest's frozen-test hash re-pinned and the two renamed node-IDs
+  swapped, leaving the new package recorded as `FROZEN-NEW` (no broad pre-sha reset).
+  Behavior-preservation against the originating adopter corpus was verified in a
+  read-only, network-off container: only the two documented diff classes (the
+  `_csv_safe` neutralizations and the corrected reviewer identities) differ from the
+  fork. Lands across `templates/modules/default-on/lifecycle_metrics.py` +
+  `_lifecycle_metrics/*` + `bootstrap/_scaffold/config.py` +
+  `bootstrap/tests/test_lifecycle_cli.py` + the gate manifest; deliberation in the
+  adopter proposal `2026-06-08-claude-cairn-lifecycle-metrics-fold-up.md`.
+
 - **The 4865-line `scaffold.py` install/upgrade monolith is split into a thin
   fail-closed launcher + facade over a private `bootstrap/_scaffold/` engine
   package of eight owned modules** (`security`, `slotmerge`, `merge`, `config`,
