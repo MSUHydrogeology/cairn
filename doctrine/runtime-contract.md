@@ -199,7 +199,49 @@ pip install -r bootstrap/requirements-dev.txt
 python3 -m pytest bootstrap/tests/test_python_floor.py -v
 ```
 
-The vermin-based check is the v1 mechanism. A container-pinned compile
-check (compiling the engine inside a container pinned to exactly
-Python 3.11) provides deeper assurance and is a noted future
-enhancement; the vermin check is sufficient for v1.
+The `vermin` syntactic check is the unit-suite mechanism. The
+**release floor gate** is stronger (`bootstrap/container/floor-gate.sh`):
+it runs `vermin` **plus** a runtime conformance slice (CLI help, a clean
+install, and a controlled upgrade) in a floor/compat image pinned to the
+declared floor (3.11), so a **runtime-only** incompatibility fails too,
+not just raised syntax — and a deliberately-raised (3.12-only) syntax
+probe must fail closed. In the release gate, an unresolvable `vermin` is
+an explicit **FAILURE**, never a silent skip-as-pass (the unit suite's
+graceful skip is for the ordinary test run only).
+
+## The contained-kernel recipe — running Cairn without host Python
+
+The engine is **stdlib-only Python**; a team whose application stack is
+**not** Python runs it **only at the install/upgrade boundary**, in a
+throwaway, contained container, via the reference recipe at
+[`bootstrap/container/recipe.md`](../bootstrap/container/recipe.md)
+(a digest-pinned `Dockerfile`, a `verify-ref.sh` provenance gate, the
+`floor-gate.sh` floor check, and the `acceptance.sh` two-version
+conformance test). The mutation phase runs **offline** (`--network=none`),
+with **no credentials**, only the target repo writable, capabilities
+dropped, and a read-only root FS — a narrowed trust boundary, not just a
+Python carrier.
+
+**The maturity asymmetry — stated plainly.** Vendor-neutrality (any AI
+harness) is **enforced and free**: the doctrine is plain Markdown, the
+skills fan out to every harness. Stack-neutrality is **less mature**: the
+contained-kernel recipe is **containerized Python — a convenience**, not
+extrication. A Python interpreter in an OCI image is still part of the
+adopter's trusted computing base, and Docker/Podman is a new runtime
+dependency; the honest promise is *"no host-installed Python and no Python
+in the application's build/test CI,"* not *"no Python anywhere."* A native,
+non-Python re-implementation is **future work**, reachable through the
+**extrication seam** the recipe documents (the deferred Move 5 conformance
+fixtures + golden vectors); Cairn ships the Python reference, never the
+port.
+
+## The packaged launcher — recorded deferral (Move 6)
+
+A packaged launcher (a wrapper that resolves and runs the engine without
+the adopter managing the container invocation by hand) is **deliberately
+not built**. It is pulled forward **only on evidence-based triggers** —
+repeated failed or inconsistent installs, or version-mismatch incidents in
+the contained-kernel path — and, when triggered, is **launcher-first, not
+a rewrite** (a thin wrapper over the existing engine, not a re-port). This
+record keeps the deferral tracked, not lost; when a trigger fires, the
+launcher earns its own proposal and review.

@@ -34,6 +34,25 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **Stack-neutrality — a contained-kernel container recipe (run Cairn with no host Python).**
+  A team whose application stack is not Python can now run the stdlib-only engine
+  **only at the install/upgrade boundary**, in a throwaway, contained container,
+  with no host-installed Python and no Python in the application's build/test CI.
+  Net-new under `bootstrap/container/`: a digest-pinned two-stage `Dockerfile`
+  (a stdlib-only shipped `engine` image + a separate floor/dev stage), a
+  `verify-ref.sh` provenance gate (refuses a mutable branch ref; accepts a tag or
+  commit pin), a `floor-gate.sh` release floor check (`vermin` + a runtime
+  conformance slice at the 3.11 floor; raised-syntax probe fails closed), and a
+  falsifiable two-version `acceptance.sh` (install release A → upgrade release B
+  against a zero-Python adopter; asserts host ownership with no chown, no
+  credential residue, refusal of out-of-target writes, and a network-disabled
+  mutation phase). The mutation phase runs offline with capabilities dropped and a
+  read-only root FS — a narrowed trust boundary, not a Python carrier. The honesty
+  is adopter-facing: v1 is **containerized Python (a convenience), not extrication**;
+  a native port is future work via the documented extrication seam (the deferred
+  Move 5). `doctrine/runtime-contract.md` carries the recipe pointer, the
+  maturity-asymmetry note, and the recorded Move-6 launcher deferral. See
+  `bootstrap/container/recipe.md`.
 - **Lifecycle mechanization — a state-machine contract + a read-only checker/planner.**
   New `doctrine/lifecycle-contract.md` renders the proposal/plan lifecycle as an
   executable contract (legal states, transitions, the *authority* each requires, and
