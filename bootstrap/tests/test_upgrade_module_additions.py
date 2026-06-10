@@ -374,6 +374,31 @@ def test_malformed_module_destination_is_refused_at_stage(tmp_path: Path, monkey
     assert not escaped.exists()
 
 
+def test_symlinked_dev_parent_does_not_escape_at_stage(tmp_path: Path):
+    # F1 round 2: the stage ROOT mutation (rmtree/mkdir) must be containment-
+    # guarded BEFORE it runs -- a symlinked ``target/dev`` parent must not let
+    # --stage delete/recreate an EXTERNAL directory.
+    target = tmp_path.resolve()
+    _install(target)
+    _make_pre_split(target)
+    # Move dev/ outside the target, symlink target/dev -> it, and seed an
+    # external staging dir with a sentinel that must survive.
+    external_dev = tmp_path / "external_dev"
+    (target / "dev").rename(external_dev)
+    (target / "dev").symlink_to(external_dev, target_is_directory=True)
+    ext_stage = external_dev / ".cairn-upgrade"
+    ext_stage.mkdir(parents=True, exist_ok=True)
+    sentinel = ext_stage / "sentinel.txt"
+    sentinel.write_text("survive me\n", encoding="utf-8")
+
+    rc = s.main(["upgrade", "--target", str(target),
+                 "--cairn-root", str(CAIRN_ROOT), "--stage"])
+    # Refuses (containment exit 2) AND the external staging dir is untouched.
+    assert rc != 0
+    assert ext_stage.exists(), "external stage dir was deleted (containment escape)"
+    assert sentinel.read_text() == "survive me\n"
+
+
 # ---------------------------------------------------------------------------
 # F4 -- global destination-ownership preflight (across core / skills / modules,
 #       independent of lock / source state)

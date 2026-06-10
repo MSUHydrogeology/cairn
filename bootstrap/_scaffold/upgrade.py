@@ -590,6 +590,13 @@ def _write_stage(
     import json
     import shutil
     stage = target / _STAGING_REL
+    # F1 round 2 (External Security review): guard the STAGE ROOT itself BEFORE
+    # the first rmtree / mkdir. If ``target/dev`` is a symlink to an external
+    # directory, ``shutil.rmtree(stage)`` / ``stage.mkdir(...)`` would FOLLOW it
+    # and delete/recreate that external dir -- a containment escape the per-plan
+    # guard below catches only AFTER the damage. ``_assert_safe_write`` refuses a
+    # symlinked parent (``target/dev``) here, before any mutation.
+    _assert_safe_write(stage, target)
     if stage.exists():
         shutil.rmtree(stage)
     stage.mkdir(parents=True, exist_ok=True)
