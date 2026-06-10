@@ -167,7 +167,8 @@ _KIND_DISPLAY_LABEL = {
     "clean-locally-modified": "locally-modified (merged clean)",
     "new-core": "new core/skills (added)",
     "new-module": "new module file (added)",
-    "new-module-blocked": "new module file (BLOCKED — reconcile, then re-stage)",
+    "new-module-blocked": "new module file (BLOCKED — adopt-as-fork or reconcile, then re-stage)",
+    "new-module-lockconflict": "new module file (BLOCKED — destination owned by another source; resolve by hand)",
 }
 
 
@@ -455,17 +456,35 @@ def _compute_upgrade(
                     "(binary module files are out of scope)", None, None))
                 continue
             # F2 (External Security review): a genuinely-new spec whose
-            # destination already exists OUTSIDE the lockfile is an occupied-
-            # destination collision -- a HARD BLOCK in its own kind that the
-            # generic ``--ack-review-only`` switch CANNOT bypass. A plain
-            # review-only item would let apply advance the lock + install the
-            # siblings while leaving this file importable but unattested.
-            if (target / dst_rel).exists() or dst_rel in lock_dsts:
+            # destination already exists OUTSIDE the lockfile is a HARD BLOCK in
+            # its own kind that the generic ``--ack-review-only`` switch CANNOT
+            # bypass. A plain review-only item would let apply advance the lock +
+            # install the siblings while leaving this file importable but
+            # unattested. Two distinct provenance states (R3/R5 -- not the same):
+            # a destination already tracked under ANOTHER lockfile source is an
+            # ownership conflict adoption never clears (its own kind); an
+            # occupied-UNLOCKED regular file is an adoptable fork
+            # (`upgrade --adopt-collisions`) -- it carries src+verbatim so the
+            # adopt path can record it (and re-verifies regular+contained).
+            dst_abs_collide = target / dst_rel
+            if dst_rel in lock_dsts:
+                plans.append(FilePlan(
+                    dst_rel, "new-module-lockconflict", None,
+                    "module-internal addition's destination is already tracked "
+                    "under another lockfile source (provenance conflict); resolve "
+                    "by hand", theirs_text, None))
+                continue
+            if dst_abs_collide.exists():
+                adoptable = (dst_abs_collide.is_file()
+                             and not dst_abs_collide.is_symlink())
                 plans.append(FilePlan(
                     dst_rel, "new-module-blocked", None,
                     "module-internal addition collides with an existing unlocked "
-                    "destination; reconcile by hand (remove or merge it), then "
-                    "re-stage", theirs_text, None))
+                    "destination; keep it as a tracked fork "
+                    "(`upgrade --adopt-collisions`) or reconcile by hand, then "
+                    "re-stage", theirs_text, None,
+                    src=(canonical_src if adoptable else None),
+                    verbatim=spec.verbatim))
                 continue
             # Absent destination -> a clean module-internal add. Verbatim vs
             # mergeable mirrors the new-core branch above.
@@ -681,8 +700,9 @@ def _write_stage(
     # ``--ack-review-only`` override cannot bypass them. Stage the .theirs/.ours
     # pair (when content is available) so the adopter can reconcile by hand.
     module_blocked_dsts: list[str] = []
+    collision_adopt: dict[str, dict[str, Any]] = {}
     for fp in plans:
-        if fp.kind != "new-module-blocked":
+        if fp.kind not in ("new-module-blocked", "new-module-lockconflict"):
             continue
         module_blocked_dsts.append(fp.dst)
         if fp.theirs_raw is not None:
@@ -695,6 +715,16 @@ def _write_stage(
             ours_out.parent.mkdir(parents=True, exist_ok=True)
             ours_out.write_text(
                 dst_abs.read_text(encoding="utf-8"), encoding="utf-8")
+        # Adoptable-collision manifest (R2): bind a later `--adopt-collisions` to
+        # exactly this dst + the bytes --stage observed. Only an occupied-UNLOCKED
+        # `new-module-blocked` that carries a canonical src AND is a present
+        # regular (non-symlink) file is adoptable; a lock-conflict never is.
+        if (fp.kind == "new-module-blocked" and fp.src
+                and dst_abs.is_file() and not dst_abs.is_symlink()):
+            collision_adopt[fp.dst] = {
+                "src": fp.src, "verbatim": bool(fp.verbatim),
+                "observed_hash": "sha256:" + _sha256_hex(dst_abs.read_bytes()),
+            }
     # #48: a verbatim file already byte-identical to the new upstream
     # (verbatim-up-to-date) but whose lockfile hash is stale -- the adopter
     # hand-synced it to a later Cairn before upgrading. Record it so --apply
@@ -731,6 +761,10 @@ def _write_stage(
         # F2/F3: occupied-collision / pending-under-`--to` module additions --
         # --apply fails closed UNCONDITIONALLY (no --ack-review-only bypass).
         "module_blocked": sorted(module_blocked_dsts),
+        # Adoptable occupied-unlocked collisions -> {dst: {src, verbatim,
+        # observed_hash}}, bound so `--adopt-collisions` records exactly the
+        # reviewed set + bytes (R2). A lock-conflict block is NOT listed here.
+        "collision_adopt": collision_adopt,
         # #47 new core-like files to record in the lockfile on apply (refs only).
         "new_entries": new_entries,
         # #48 verbatim files whose stale lock hash --apply should heal.
@@ -1029,6 +1063,75 @@ def _cmd_init_lock(
     return 0
 
 
+def _record_fork_entry(
+    target: Path, src_rel: str, dst_rel: str, verbatim: bool,
+    upstream_bytes: bytes,
+) -> tuple[dict[str, Any], tuple[Path, bytes] | None]:
+    """Build a lockfile ``files`` record for an **on-disk** file tracked as an
+    adopter fork, plus any base-cache write it needs (returned, NOT performed --
+    the caller batches an all-or-nothing preflight + atomic commit).
+
+    Records ``hash`` from the on-disk bytes (integrity) **and** ``base_hash``
+    from the upstream-at-record bytes (fork detection) for BOTH verbatim and
+    mergeable specs -- so ``classify_verbatim`` / the 3-way merge see the
+    adopter's divergence as ``locally-modified``, never ``update``
+    (safe-to-overwrite). This is the External Security review R1 fix:
+    recording only the on-disk ``hash`` for a verbatim fork makes its own hash
+    the comparison baseline, so a later upstream change classifies ``update``
+    and the fork is silently overwritten. A mergeable spec also caches the raw
+    upstream template at ``base_cache`` (the merge ancestor); a verbatim spec
+    records ``base_hash`` only (the hash policy, no cached file -- parity with
+    ``write_install_lockfile``). The destination must already exist on disk."""
+    dst_abs = target / dst_rel
+    rec: dict[str, Any] = {
+        "src": src_rel, "dst": dst_rel, "verbatim": bool(verbatim),
+        "hash": "sha256:" + _sha256_hex(dst_abs.read_bytes()),
+        "base_hash": "sha256:" + _sha256_hex(upstream_bytes),
+    }
+    if verbatim:
+        return rec, None
+    base_rel = f"{_BASE_CACHE_REL}/{dst_rel}"
+    rec["base_cache"] = base_rel
+    return rec, (target / base_rel, upstream_bytes)
+
+
+def _commit_lock_and_caches(
+    target: Path, lock: dict[str, Any],
+    cache_writes: list[tuple[Path, bytes]],
+) -> None:
+    """All-or-nothing commit of a set of base-cache writes + the lockfile
+    authority (External Security review R4). **Preflight** containment of every
+    write path (``_assert_safe_write`` -- including the lockfile itself, which
+    ``_cmd_adopt_module`` previously wrote unguarded), then stage every write to
+    a temp path, and only then **replace** the caches and -- LAST -- the
+    lockfile via an atomic ``os.replace``. A failure during preflight or temp
+    staging leaves the authoritative lockfile (and the prior caches) unchanged;
+    the lockfile is the integrity authority and is swapped last."""
+    import os
+    lock_path = target / _LOCKFILE_REL
+    # Preflight: containment of every destination BEFORE any write.
+    for cache_path, _raw in cache_writes:
+        _assert_safe_write(cache_path, target)
+    _assert_safe_write(lock_path, target)
+    # Stage every write to a temp sibling first -- no live file touched yet, so a
+    # failure here leaves everything unchanged (nothing has been replaced).
+    pending: list[tuple[Path, Path]] = []
+    for cache_path, raw in cache_writes:
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = cache_path.with_name(cache_path.name + ".tmp")
+        _assert_safe_write(tmp, target)
+        tmp.write_bytes(raw)
+        pending.append((tmp, cache_path))
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    lock_tmp = lock_path.with_name(lock_path.name + ".tmp")
+    _assert_safe_write(lock_tmp, target)
+    lock_tmp.write_text(_emit_lock_yaml(lock), encoding="utf-8")
+    # Commit: replace the caches, then the lockfile LAST (each os.replace atomic).
+    for tmp, final in pending:
+        os.replace(tmp, final)
+    os.replace(lock_tmp, lock_path)
+
+
 def _cmd_adopt_module(
     target: Path, name: str, cairn_root: Path, templates_root: Path,
 ) -> int:
@@ -1077,6 +1180,7 @@ def _cmd_adopt_module(
 
     lock_dsts = {rec["dst"] for rec in lock.get("files", [])}
     new_files = [dict(rec) for rec in lock.get("files", [])]
+    cache_writes: list[tuple[Path, bytes]] = []
     added: list[str] = []
     for spec in _MODULE_MAPPINGS[name]:
         src_rel = f"modules/{spec.src}"        # lockfile src convention
@@ -1098,29 +1202,120 @@ def _cmd_adopt_module(
             content = (theirs_b.decode("utf-8", "replace") if spec.verbatim
                        else substitute_tokens(theirs_b.decode("utf-8"), tokens))
             dst_abs.write_text(content, encoding="utf-8")
-        rec: dict[str, Any] = {
-            "src": src_rel, "dst": dst_rel, "verbatim": bool(spec.verbatim),
-            "hash": "sha256:" + _sha256_hex(dst_abs.read_bytes()),
-        }
-        if not spec.verbatim:
-            base_rel = f"{_BASE_CACHE_REL}/{dst_rel}"
-            base_abs = target / base_rel
-            _assert_safe_write(base_abs, target)
-            base_abs.parent.mkdir(parents=True, exist_ok=True)
-            base_abs.write_bytes(theirs_b)     # raw template (pre-substitution)
-            rec["base_cache"] = base_rel
-            rec["base_hash"] = "sha256:" + _sha256_hex(theirs_b)
+        # Record via the shared fork primitive: base_hash = upstream for BOTH
+        # verbatim and mergeable (R1 -- a verbatim adopt previously recorded no
+        # base_hash, so a later upstream change classified `update` and
+        # overwrote the adopter's file). The base-cache + lockfile writes are
+        # committed once, atomically, after the loop (R4).
+        rec, cache_write = _record_fork_entry(
+            target, src_rel, dst_rel, bool(spec.verbatim), theirs_b)
+        if cache_write is not None:
+            cache_writes.append(cache_write)
         new_files.append(rec)
         added.append(dst_rel)
 
     lock["files"] = new_files
     lock["modules"] = sorted(set(lock.get("modules", [])) | {name})
-    (target / _LOCKFILE_REL).parent.mkdir(parents=True, exist_ok=True)
-    (target / _LOCKFILE_REL).write_text(_emit_lock_yaml(lock), encoding="utf-8")
+    _commit_lock_and_caches(target, lock, cache_writes)
     seeded = seed_gitignore(target, _GITIGNORE_SEEDS.get(name, ()))
     note = f"; seeded .gitignore: {', '.join(seeded)}" if seeded else ""
     print(f"Adopted module {name!r}: recorded {len(added)} file(s) in "
           f"{_LOCKFILE_REL}{note}.")
+    return 0
+
+
+def _cmd_adopt_collisions(
+    target: Path, cairn_root: Path, templates_root: Path, lock: dict[str, Any],
+) -> int:
+    """`upgrade --adopt-collisions`: record each occupied-destination collision
+    a prior `--stage` surfaced as a tracked adopter **fork**, so the upgrade is
+    no longer blocked on it and ``verify_integrity`` attests it. The adopter
+    keeps their divergent file unchanged; the upstream template becomes its
+    merge base (``base_hash``), so a later upgrade classifies it
+    ``locally-modified`` -- surfaced, never silently overwritten.
+
+    Bound to the staged set + bytes (R2): adoption requires a prior ``--stage``
+    and refuses a collision that appeared or changed since. Eligibility (R3):
+    canonical src absent from the lockfile, dst absent from lock records, a
+    present regular contained on-disk file -- a lock-conflict block is never
+    adoptable. All-or-nothing (R4): the FULL selected set is preflighted
+    (containment, staged-hash, eligibility, upstream availability) before any
+    mutation; then the base caches + lockfile are written guarded + atomic
+    (lockfile last). It never writes the adopter's destination."""
+    import json
+    stage = target / _STAGING_REL
+    meta_path = stage / _STAGE_META
+    if not meta_path.exists():
+        print("error: no staged upgrade found; run `upgrade --stage` first, "
+              f"review the collisions under {_STAGING_REL}/review-only/, then "
+              "`upgrade --adopt-collisions`.", file=sys.stderr)
+        return 1
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    # Same staleness contract as --apply: the stage must reflect the current lock.
+    if meta.get("lock_commit") != lock.get("cairn_commit") or \
+            meta.get("tokens") != lock.get("tokens") or \
+            meta.get("modules") != lock.get("modules"):
+        print("error: staged upgrade is stale (lockfile/tokens/roster changed "
+              "since --stage); re-run `upgrade --stage`.", file=sys.stderr)
+        return 1
+    collisions: dict[str, dict[str, Any]] = meta.get("collision_adopt", {})
+    if not collisions:
+        print("  [info] no adoptable collisions in the current stage; nothing "
+              "to adopt.", file=sys.stderr)
+        return 0
+    lock_srcs = {rec.get("src") for rec in lock.get("files", [])}
+    lock_dsts = {rec.get("dst") for rec in lock.get("files", [])}
+    # --- Preflight the FULL selected set BEFORE any mutation (R4). ---
+    planned: list[tuple[dict[str, Any], tuple[Path, bytes] | None]] = []
+    for dst_rel in sorted(collisions):
+        info = collisions[dst_rel]
+        src_rel = info["src"]
+        dst_abs = target / dst_rel
+        # Eligibility (R3): src genuinely new, dst not already owned by another.
+        if src_rel in lock_srcs:
+            print(f"error: {dst_rel}: source {src_rel} is already tracked; "
+                  "re-run `upgrade --stage`.", file=sys.stderr)
+            return 1
+        if dst_rel in lock_dsts:
+            print(f"error: {dst_rel}: already tracked under another source "
+                  "(provenance conflict); not adoptable.", file=sys.stderr)
+            return 1
+        # Present, regular, contained on-disk file (re-verified at adopt time).
+        if not (dst_abs.is_file() and not dst_abs.is_symlink()):
+            print(f"error: {dst_rel}: not a present regular file; refusing to "
+                  "adopt (re-run `upgrade --stage`).", file=sys.stderr)
+            return 1
+        _assert_safe_write(dst_abs, target)   # containment of the dst path
+        # Hash-bound (R2): bytes must be EXACTLY what --stage observed.
+        observed = "sha256:" + _sha256_hex(dst_abs.read_bytes())
+        if observed != info.get("observed_hash"):
+            print(f"error: {dst_rel}: changed on disk since --stage; refusing "
+                  "to adopt (re-run `upgrade --stage`).", file=sys.stderr)
+            return 1
+        # Re-fetch the upstream template (running-tree adoption -> to_ref=None).
+        theirs_b = _theirs_bytes(cairn_root, templates_root, src_rel, None)
+        if theirs_b is None:
+            print(f"error: upstream template {src_rel!r} not found.",
+                  file=sys.stderr)
+            return 1
+        rec, cache_write = _record_fork_entry(
+            target, src_rel, dst_rel, bool(info.get("verbatim")), theirs_b)
+        planned.append((rec, cache_write))
+    # --- Commit: guarded, atomic, lockfile last (R4). ---
+    new_files = [dict(rec) for rec in lock.get("files", [])]
+    cache_writes: list[tuple[Path, bytes]] = []
+    adopted: list[str] = []
+    for rec, cache_write in planned:
+        new_files.append(rec)
+        if cache_write is not None:
+            cache_writes.append(cache_write)
+        adopted.append(rec["dst"])
+    lock["files"] = new_files
+    _commit_lock_and_caches(target, lock, cache_writes)
+    print(f"Adopted {len(adopted)} collision(s) as tracked fork(s) in "
+          f"{_LOCKFILE_REL}:\n  " + "\n  ".join(adopted) +
+          "\n  These now classify as locally-modified forks (upstream recorded "
+          "as the merge base). Re-run `upgrade --stage`, then `upgrade --apply`.")
     return 0
 
 
@@ -1577,7 +1772,32 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
                         "lockfile so it 3-way-merges on later upgrades (#49). "
                         "Explicit, never automatic -- a module is a deliberate "
                         "choice.")
+    p.add_argument("--adopt-collisions", action="store_true",
+                   help="Record occupied-destination collisions surfaced by a "
+                        "prior --stage as tracked adopter forks (keep-mine), so "
+                        "the upgrade is no longer blocked on them. Bound to the "
+                        "staged set + bytes; explicit, never automatic.")
     args = p.parse_args(argv)
+
+    # R5 (External Security review): the upgrade ACTIONS are mutually exclusive.
+    # argparse parses them independently and the dispatch is first-match, so a
+    # mixed invocation (e.g. `--adopt-collisions --apply`) would silently run
+    # only one branch while reading as "adopt, then apply". Reject before any
+    # work. (--to / --ack-review-only / --force / --cairn-root are modifiers,
+    # not actions; --plan is the default action and composes with none of these.)
+    actions = [name for name, on in (
+        ("--init-lock", args.init_lock),
+        ("--finalize", args.finalize),
+        ("--stage", args.stage),
+        ("--apply", args.apply),
+        ("--adopt-collisions", args.adopt_collisions),
+    ) if on]
+    if args.adopt_module:
+        actions.append("--adopt-module")
+    if len(actions) > 1:
+        print(f"error: {', '.join(sorted(actions))} are mutually exclusive; "
+              "run one upgrade action at a time.", file=sys.stderr)
+        return 2
 
     target = Path(args.target).resolve()
     if not target.exists():
@@ -1603,6 +1823,19 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
 
     if args.finalize:
         return _cmd_finalize_lockfile(target, lock)
+
+    if args.adopt_collisions:
+        if args.to is not None:
+            print("error: --adopt-collisions runs against the running target "
+                  "tree; --to is not supported (run scaffold from the target "
+                  "tree).", file=sys.stderr)
+            return 2
+        try:
+            return _cmd_adopt_collisions(target, cairn_root, templates_root, lock)
+        except ScaffoldSecurityError as exc:
+            print("error: upgrade --adopt-collisions refused (containment): "
+                  f"{exc}", file=sys.stderr)
+            return 2
 
     if args.to is not None and not _cairn_is_git(cairn_root):
         print("error: --to <ref> needs a git-checkout Cairn source; a "

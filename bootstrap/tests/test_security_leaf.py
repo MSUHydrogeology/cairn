@@ -37,6 +37,10 @@ _GUARDED_WRITE_FUNCS = {
     # Added by the final Security Review (P1 #1): module-merge destinations are
     # module-template-controlled, so this write must be guarded too.
     "merge_module_into_slot",
+    # Adopt-as-fork (External Security review R4): the collision-adoption write
+    # path + the shared guarded/atomic lock-and-cache committer.
+    "_cmd_adopt_collisions",
+    "_commit_lock_and_caches",
 }
 
 

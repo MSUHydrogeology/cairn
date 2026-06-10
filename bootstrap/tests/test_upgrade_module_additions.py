@@ -443,3 +443,183 @@ def test_duplicate_with_absent_first_source_is_refused(tmp_path: Path, monkeypat
 
     with pytest.raises(ValueError, match="mapping ownership conflict"):
         s._compute_upgrade(target, CAIRN_ROOT, TEMPLATES_ROOT, lock, to_ref=None)
+
+
+# ===========================================================================
+# adopt-as-fork: `upgrade --adopt-collisions` (plan
+# `2026-06-10-claude-cairn-upgrade-collision-adopt-as-fork`, Revised proposal)
+# ===========================================================================
+
+def _staged_collision(target: Path, *collides: str) -> list[str]:
+    """Install, drop the package, leave `collides` on disk as adopter forks, and
+    `--stage`. Returns the base CLI argv. Each collide gets distinct fork bytes."""
+    _install(target)
+    _make_pre_split(target, keep_on_disk=collides)
+    for c in collides:
+        (target / c).write_text(f"# adopter fork of {c}\n", encoding="utf-8")
+    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
+    assert s.main(base + ["--stage"]) == 0
+    return base
+
+
+def test_adopt_collisions_records_fork_and_unblocks(tmp_path: Path):
+    target = tmp_path.resolve()
+    collide = _PKG_DSTS[1]
+    base = _staged_collision(target, collide)
+    fork_bytes = (target / collide).read_bytes()
+
+    # Adopt: records the on-disk fork; never writes the dst.
+    assert s.main(base + ["--adopt-collisions"]) == 0
+    assert (target / collide).read_bytes() == fork_bytes   # fork preserved
+
+    # Attestation closure: tracked, with hash=on-disk fork and base_hash=upstream
+    # (the two DIFFER -> a fork, never classified safe-to-overwrite).
+    lock = s.read_lockfile(target)
+    rec = next(r for r in lock["files"] if r["dst"] == collide)
+    assert rec["src"] == _src_for(collide)
+    assert rec["verbatim"] is True
+    assert rec["hash"] == "sha256:" + s._sha256_hex(fork_bytes)
+    assert rec.get("base_hash") and rec["base_hash"] != rec["hash"]
+
+    # Re-stage: the adopted collide is now a verbatim-locally-modified fork
+    # (flagged + kept, never clobbered) and the sibling package files add as
+    # new-module; the hard block is gone, so --apply completes directly.
+    assert s.main(base + ["--stage"]) == 0
+    assert s.main(base + ["--apply"]) == 0
+    assert (target / collide).read_bytes() == fork_bytes  # still the fork
+    for d in _PKG_DSTS:
+        assert (target / d).exists()                      # siblings landed
+    after = s.read_lockfile(target)
+    assert all(any(r["dst"] == d for r in after["files"]) for d in _PKG_DSTS)
+
+
+def test_adopt_collisions_verbatim_fork_survives_two_upstream_versions(tmp_path):
+    # R1: a verbatim fork must record base_hash=upstream, NOT only its own hash,
+    # or a later upstream change classifies `update` and overwrites the fork.
+    target = tmp_path.resolve()
+    collide = _PKG_DSTS[1]
+    base = _staged_collision(target, collide)
+    assert s.main(base + ["--adopt-collisions"]) == 0
+
+    import bootstrap._scaffold.upgrade as UP  # noqa: PLC0415
+    fork_bytes = (target / collide).read_bytes()
+    rec = next(r for r in s.read_lockfile(target)["files"] if r["dst"] == collide)
+    later_upstream = b"# a brand-new upstream launcher v2\n"
+
+    # With the recorded base_hash (=upstream): the fork stays locally-modified.
+    assert UP.classify_verbatim(
+        fork_bytes, rec["base_hash"], later_upstream) == "locally-modified"
+    # Proof of the bug the fix closes: had we recorded only `hash` (=the fork),
+    # the SAME later upstream would classify `update` -> overwrite the fork.
+    assert UP.classify_verbatim(
+        fork_bytes, rec["hash"], later_upstream) == "update"
+
+
+def test_adopt_collisions_refuses_if_a_collision_changed_since_stage(tmp_path):
+    # R2 (+ R4 all-or-nothing): bind adoption to the staged bytes. Stage two
+    # collisions, mutate one after --stage, adopt -> refuse, NEITHER recorded.
+    target = tmp_path.resolve()
+    c1, c2 = _PKG_DSTS[1], _PKG_DSTS[2]
+    base = _staged_collision(target, c1, c2)
+    (target / c1).write_text("# changed after stage\n", encoding="utf-8")
+
+    assert s.main(base + ["--adopt-collisions"]) != 0
+    lock = s.read_lockfile(target)
+    assert not any(r["dst"] in (c1, c2) for r in lock["files"])  # all-or-nothing
+
+
+def test_adopt_collisions_is_bound_to_the_staged_set_not_a_recompute(tmp_path):
+    # R2: a collision appearing AFTER --stage is not in the staged manifest, so
+    # adoption never blesses it (it stays untracked -> a fresh --stage blocks).
+    target = tmp_path.resolve()
+    c1, c2 = _PKG_DSTS[1], _PKG_DSTS[2]
+    base = _staged_collision(target, c1)            # only c1 staged
+    (target / c2).write_text("# appeared after stage\n", encoding="utf-8")
+
+    assert s.main(base + ["--adopt-collisions"]) == 0
+    lock = s.read_lockfile(target)
+    assert any(r["dst"] == c1 for r in lock["files"])      # staged one adopted
+    assert not any(r["dst"] == c2 for r in lock["files"])  # appeared one is NOT
+
+
+def test_lockconflict_destination_is_distinct_and_not_adoptable(tmp_path: Path):
+    # R3/R5: a new-upstream spec whose dst is already tracked under ANOTHER
+    # source is a provenance conflict, not an adoptable fork.
+    target = tmp_path.resolve()
+    _install(target)
+    collide = _PKG_DSTS[1]
+    _make_pre_split(target, keep_on_disk=(collide,))
+    (target / collide).write_text("# adopter fork\n", encoding="utf-8")
+    # Record the dst under a BOGUS source so dst in lock_dsts but canonical_src
+    # is not -> the lock-conflict branch, not the adoptable branch.
+    lock = s.read_lockfile(target)
+    lock["files"].append({"src": "modules/bogus/elsewhere.py", "dst": collide,
+                          "verbatim": True,
+                          "hash": "sha256:" + s._sha256_hex(b"x")})
+    _write_lock(target, lock)
+
+    lock = s.read_lockfile(target)
+    plans = {p.dst: p for p in s._compute_upgrade(
+        target, CAIRN_ROOT, TEMPLATES_ROOT, lock, to_ref=None)[0]}
+    assert plans[collide].kind == "new-module-lockconflict"
+    assert plans[collide].kind not in s._ADVANCING_KINDS
+
+    # It is not offered to --adopt-collisions (absent from the staged manifest).
+    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
+    assert s.main(base + ["--stage"]) == 0
+    import json  # noqa: PLC0415
+    meta = json.loads((target / s._STAGING_REL / s._STAGE_META).read_text())
+    assert collide not in meta.get("collision_adopt", {})
+
+
+def test_adopt_collisions_refuses_symlinked_lockfile(tmp_path: Path):
+    # R4: the lockfile authority write is guarded; a symlinked lockfile is
+    # refused (containment), exit 2, with no mutation.
+    target = tmp_path.resolve()
+    collide = _PKG_DSTS[1]
+    base = _staged_collision(target, collide)
+    lockf = target / s._LOCKFILE_REL
+    real = lockf.parent / "real-lock.yml"
+    real.write_bytes(lockf.read_bytes())
+    lockf.unlink()
+    lockf.symlink_to(real.name)
+
+    assert s.main(base + ["--adopt-collisions"]) == 2
+    assert not any(r["dst"] == collide for r in s.read_lockfile(target)["files"])
+
+
+def test_adopt_collisions_mutually_exclusive_with_apply(tmp_path: Path):
+    # R5: a mixed-action invocation is rejected before any work.
+    target = tmp_path.resolve()
+    collide = _PKG_DSTS[1]
+    base = _staged_collision(target, collide)
+    assert s.main(base + ["--adopt-collisions", "--apply"]) == 2
+    # nothing recorded, nothing applied
+    assert not any(r["dst"] == collide for r in s.read_lockfile(target)["files"])
+    assert not (target / _PKG_DSTS[0]).exists()
+
+
+def test_adopt_collisions_refuses_to_ref(tmp_path: Path):
+    target = tmp_path.resolve()
+    collide = _PKG_DSTS[1]
+    base = _staged_collision(target, collide)
+    assert s.main(base + ["--adopt-collisions", "--to", "HEAD"]) == 2
+
+
+def test_adopt_collisions_requires_a_prior_stage(tmp_path: Path):
+    target = tmp_path.resolve()
+    _install(target)
+    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
+    assert s.main(base + ["--adopt-collisions"]) != 0   # no stage -> refuse
+
+
+def test_adopt_collisions_no_collisions_is_a_noop(tmp_path: Path):
+    # A clean staged upgrade (no collisions) -> adopt records nothing.
+    target = tmp_path.resolve()
+    _install(target)
+    _make_pre_split(target)              # package absent -> clean new-module adds
+    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
+    assert s.main(base + ["--stage"]) == 0
+    before = s.read_lockfile(target)["files"]
+    assert s.main(base + ["--adopt-collisions"]) == 0
+    assert s.read_lockfile(target)["files"] == before   # unchanged

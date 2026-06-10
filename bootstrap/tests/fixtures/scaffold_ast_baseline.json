@@ -144,10 +144,10 @@
     "type": "AnnAssign"
   },
   "Assign:_KIND_DISPLAY_LABEL": {
-    "digest": "789bf37b8d36a4a2",
+    "digest": "d374d942e833904a",
     "span": [
-      3162,
-      3166
+      165,
+      172
     ],
     "type": "Assign"
   },
@@ -592,10 +592,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_cmd_adopt_module": {
-    "digest": "658a2a4f97ac04b5",
+    "digest": "e89215a2bb04ea2f",
     "span": [
-      3800,
-      3876
+      1135,
+      1224
     ],
     "type": "FunctionDef"
   },
@@ -616,10 +616,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_compute_upgrade": {
-    "digest": "c62b27bf91b0ec0b",
+    "digest": "0acf96d794ea5808",
     "span": [
-      3180,
-      3317
+      250,
+      512
     ],
     "type": "FunctionDef"
   },
@@ -888,10 +888,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_write_stage": {
-    "digest": "af53451ccbb0de1b",
+    "digest": "2f94450d8874c499",
     "span": [
-      3400,
-      3514
+      595,
+      780
     ],
     "type": "FunctionDef"
   },
@@ -936,10 +936,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:cmd_upgrade": {
-    "digest": "fff28d645b83a04a",
+    "digest": "e6c6359656c0bae1",
     "span": [
-      4261,
-      4380
+      1740,
+      1936
     ],
     "type": "FunctionDef"
   },

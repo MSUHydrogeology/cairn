@@ -52,6 +52,25 @@ and a new empty `Unreleased` is started above.
   `--stage` and fails closed (even under `--force`) if a new-add destination appeared
   since — a data-loss guard that also covers the pre-existing `new-core` path.
 
+- **`scaffold.py upgrade --adopt-collisions` — keep a customized module file as a tracked fork.**
+  When a new upstream module file collides with a destination an adopter has
+  **intentionally diverged** (the occupied-destination collision above), the only prior
+  resolution was remove-or-merge-by-hand — and the block stopped the whole `--apply`,
+  leaving the divergent file untracked and unattested. The new `--adopt-collisions`
+  subcommand records each collision surfaced by a prior `--stage` as a tracked fork
+  (the adopter's bytes kept; the upstream template recorded as the `base_hash` merge
+  base), so the upgrade is no longer blocked and `verify_integrity` attests it. It is
+  **explicit and narrowly authorized**: bound to the staged set + the bytes `--stage`
+  observed (a file that appeared or changed since is refused); eligible only for an
+  occupied **unlocked** regular file (a destination owned by another lockfile source is
+  a distinct, non-adoptable provenance conflict); the full set is preflighted before any
+  mutation, then base caches + the lockfile are written guarded + atomically (lockfile
+  replaced last). Verbatim forks now record an upstream `base_hash` so a later upstream
+  change classifies them `locally-modified`, never overwrite — a latent data-loss bug
+  the shared recording primitive also fixes for `--adopt-module`. The upgrade actions
+  are now mutually exclusive. (Deliberated + reviewed adopter-side at the
+  modflow_tools origin deployment.)
+
 - **Stack-neutrality — a contained-kernel container recipe (run Cairn with no host Python).**
   A team whose application stack is not Python can now run the stdlib-only engine
   **only at the install/upgrade boundary**, in a throwaway, contained container,

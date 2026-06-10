@@ -33,7 +33,9 @@ destination before any `mkdir` / `write_*` / `shutil` write:
 | `write_install_lockfile` | `_assert_safe_write` | base-template cache, `cairn-lock.yml` |
 | `_emit_skill_copy_fallback` | `_assert_fanout_contained` | regenerated canonical skill copy, diverged-copy quarantine |
 | `fan_out_skills` | `_assert_fanout_contained` | vendor fan-out destination |
-| `_cmd_adopt_module` | `_assert_safe_write` | a single added module's files |
+| `_cmd_adopt_module` | `_assert_safe_write` | a single added module's files (missing-dst install); the base-cache + lockfile writes route through `_commit_lock_and_caches` |
+| `_cmd_adopt_collisions` | `_assert_safe_write` | the adopted collision's destination (containment re-check; never written); the base-cache + lockfile writes route through `_commit_lock_and_caches` |
+| `_commit_lock_and_caches` | `_assert_safe_write` | the base-template caches **and** `cairn-lock.yml` itself — preflighted for ALL writes, then temp-staged + atomically replaced, lockfile last (adopt-as-fork R4: the lockfile authority write was previously unguarded in `_cmd_adopt_module`) |
 | `_apply_upgrade` | `_assert_safe_write` | the swapped-in upgraded files (incl. `new-core` / `new-module` additions, which share the swap loop) |
 | `merge_module_into_slot` | `_assert_safe_write` | a module-merge slot write + its conflict side-file (final Security Review P1 #1) |
 | `_write_stage` | `_assert_safe_write` | every staged-file / new-base / review-only destination, validated up-front for ALL plans (External Security review F1) |
