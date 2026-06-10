@@ -592,10 +592,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_cmd_adopt_module": {
-    "digest": "e89215a2bb04ea2f",
+    "digest": "329e083a615d58f8",
     "span": [
-      1135,
-      1224
+      1159,
+      1250
     ],
     "type": "FunctionDef"
   },
@@ -888,10 +888,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_write_stage": {
-    "digest": "2f94450d8874c499",
+    "digest": "1173f0ad79076074",
     "span": [
       595,
-      780
+      786
     ],
     "type": "FunctionDef"
   },
@@ -936,10 +936,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:cmd_upgrade": {
-    "digest": "e6c6359656c0bae1",
+    "digest": "5208b11295a14ad5",
     "span": [
-      1740,
-      1936
+      1801,
+      1998
     ],
     "type": "FunctionDef"
   },

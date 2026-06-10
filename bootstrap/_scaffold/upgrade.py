@@ -721,10 +721,16 @@ def _write_stage(
         # regular (non-symlink) file is adoptable; a lock-conflict never is.
         if (fp.kind == "new-module-blocked" and fp.src
                 and dst_abs.is_file() and not dst_abs.is_symlink()):
-            collision_adopt[fp.dst] = {
+            entry: dict[str, Any] = {
                 "src": fp.src, "verbatim": bool(fp.verbatim),
                 "observed_hash": "sha256:" + _sha256_hex(dst_abs.read_bytes()),
             }
+            # F5: record the reviewed upstream-base hash so adoption can refuse
+            # if the upstream changed between --stage and --adopt-collisions.
+            if fp.theirs_raw is not None:
+                entry["upstream_hash"] = (
+                    "sha256:" + _sha256_hex(fp.theirs_raw.encode("utf-8")))
+            collision_adopt[fp.dst] = entry
     # #48: a verbatim file already byte-identical to the new upstream
     # (verbatim-up-to-date) but whose lockfile hash is stale -- the adopter
     # hand-synced it to a later Cairn before upgrading. Record it so --apply
@@ -1065,27 +1071,30 @@ def _cmd_init_lock(
 
 def _record_fork_entry(
     target: Path, src_rel: str, dst_rel: str, verbatim: bool,
-    upstream_bytes: bytes,
+    upstream_bytes: bytes, dst_bytes: bytes,
 ) -> tuple[dict[str, Any], tuple[Path, bytes] | None]:
-    """Build a lockfile ``files`` record for an **on-disk** file tracked as an
-    adopter fork, plus any base-cache write it needs (returned, NOT performed --
-    the caller batches an all-or-nothing preflight + atomic commit).
+    """Build a lockfile ``files`` record for a file tracked as an adopter fork,
+    plus any base-cache write it needs (returned, NOT performed -- the caller
+    batches an all-or-nothing preflight + atomic commit).
 
-    Records ``hash`` from the on-disk bytes (integrity) **and** ``base_hash``
-    from the upstream-at-record bytes (fork detection) for BOTH verbatim and
-    mergeable specs -- so ``classify_verbatim`` / the 3-way merge see the
-    adopter's divergence as ``locally-modified``, never ``update``
-    (safe-to-overwrite). This is the External Security review R1 fix:
-    recording only the on-disk ``hash`` for a verbatim fork makes its own hash
-    the comparison baseline, so a later upstream change classifies ``update``
-    and the fork is silently overwritten. A mergeable spec also caches the raw
-    upstream template at ``base_cache`` (the merge ancestor); a verbatim spec
-    records ``base_hash`` only (the hash policy, no cached file -- parity with
-    ``write_install_lockfile``). The destination must already exist on disk."""
-    dst_abs = target / dst_rel
+    Records ``hash`` from ``dst_bytes`` (integrity) **and** ``base_hash`` from
+    ``upstream_bytes`` (fork detection) for BOTH verbatim and mergeable specs --
+    so ``classify_verbatim`` / the 3-way merge see the adopter's divergence as
+    ``locally-modified``, never ``update`` (safe-to-overwrite). This is the
+    External Security review R1 fix: recording only the on-disk ``hash`` for a
+    verbatim fork makes its own hash the comparison baseline, so a later upstream
+    change classifies ``update`` and the fork is silently overwritten. A
+    mergeable spec also caches the raw upstream template at ``base_cache`` (the
+    merge ancestor); a verbatim spec records ``base_hash`` only (the hash policy,
+    no cached file -- parity with ``write_install_lockfile``).
+
+    Takes ``dst_bytes`` as an already-read buffer and does **not** touch the
+    destination itself (code-review F2): the caller reads the destination once,
+    verifies that exact buffer against the authorized staged hash, and passes it
+    here -- a re-read could otherwise bless bytes that changed after the check."""
     rec: dict[str, Any] = {
         "src": src_rel, "dst": dst_rel, "verbatim": bool(verbatim),
-        "hash": "sha256:" + _sha256_hex(dst_abs.read_bytes()),
+        "hash": "sha256:" + _sha256_hex(dst_bytes),
         "base_hash": "sha256:" + _sha256_hex(upstream_bytes),
     }
     if verbatim:
@@ -1099,21 +1108,44 @@ def _commit_lock_and_caches(
     target: Path, lock: dict[str, Any],
     cache_writes: list[tuple[Path, bytes]],
 ) -> None:
-    """All-or-nothing commit of a set of base-cache writes + the lockfile
-    authority (External Security review R4). **Preflight** containment of every
-    write path (``_assert_safe_write`` -- including the lockfile itself, which
-    ``_cmd_adopt_module`` previously wrote unguarded), then stage every write to
-    a temp path, and only then **replace** the caches and -- LAST -- the
-    lockfile via an atomic ``os.replace``. A failure during preflight or temp
-    staging leaves the authoritative lockfile (and the prior caches) unchanged;
-    the lockfile is the integrity authority and is swapped last."""
+    """All-or-nothing commit of base-cache writes + the lockfile authority
+    (External Security review R4; code-review F3 hardening).
+
+    The fork-adoption callers only ever record a **new** destination, so every
+    base cache is a path the *current* lockfile does not reference. Enforce that
+    invariant — refuse a cache path that is a **live** (currently-lock-referenced)
+    merge ancestor — then write the new caches and replace the lockfile **last**
+    via an atomic ``os.replace``. Because no live cache is ever replaced, an
+    interrupted commit leaves the prior authority fully coherent: the old
+    lockfile is unchanged, and any new cache already written is an orphan the old
+    lock does not point at (harmless). A *stale* on-disk cache file for an
+    untracked destination is fine to overwrite (the old lock never references it).
+    Containment of every write path is preflighted (``_assert_safe_write`` —
+    including the lockfile, which ``_cmd_adopt_module`` previously wrote
+    unguarded)."""
     import os
     lock_path = target / _LOCKFILE_REL
-    # Preflight: containment of every destination BEFORE any write.
+    # The currently-LIVE base caches: those referenced by the on-disk lockfile
+    # (re-read pre-commit -- the in-memory `lock` already carries the new
+    # entries). Replacing one of these before the lockfile swap would break
+    # all-or-nothing; the fork-adoption callers only record NEW dsts, so their
+    # caches are never live.
+    live_caches: set[Path] = set()
+    on_disk = read_lockfile(target)
+    if on_disk:
+        live_caches = {target / r["base_cache"]
+                       for r in on_disk.get("files", []) if r.get("base_cache")}
+    # Preflight BEFORE any write: containment of every destination + the
+    # no-live-cache-replacement invariant.
     for cache_path, _raw in cache_writes:
         _assert_safe_write(cache_path, target)
+        if cache_path in live_caches:
+            raise ScaffoldSecurityError(
+                f"base cache {cache_path} is a live merge ancestor; refusing "
+                "(replacing it before the lockfile swap would break the "
+                "all-or-nothing commit's coherence)")
     _assert_safe_write(lock_path, target)
-    # Stage every write to a temp sibling first -- no live file touched yet, so a
+    # Stage every write to a temp sibling first -- nothing live touched yet, so a
     # failure here leaves everything unchanged (nothing has been replaced).
     pending: list[tuple[Path, Path]] = []
     for cache_path, raw in cache_writes:
@@ -1126,7 +1158,9 @@ def _commit_lock_and_caches(
     lock_tmp = lock_path.with_name(lock_path.name + ".tmp")
     _assert_safe_write(lock_tmp, target)
     lock_tmp.write_text(_emit_lock_yaml(lock), encoding="utf-8")
-    # Commit: replace the caches, then the lockfile LAST (each os.replace atomic).
+    # Commit: create the new caches (none replaces a live ancestor), then the
+    # lockfile LAST (atomic). A failure on the lockfile swap leaves only orphan
+    # new caches + the unchanged old lockfile -> coherent prior authority.
     for tmp, final in pending:
         os.replace(tmp, final)
     os.replace(lock_tmp, lock_path)
@@ -1205,10 +1239,12 @@ def _cmd_adopt_module(
         # Record via the shared fork primitive: base_hash = upstream for BOTH
         # verbatim and mergeable (R1 -- a verbatim adopt previously recorded no
         # base_hash, so a later upstream change classified `update` and
-        # overwrote the adopter's file). The base-cache + lockfile writes are
-        # committed once, atomically, after the loop (R4).
+        # overwrote the adopter's file). The destination is read ONCE and the
+        # buffer passed in (F2). The base-cache + lockfile writes are committed
+        # once, atomically, after the loop (R4).
         rec, cache_write = _record_fork_entry(
-            target, src_rel, dst_rel, bool(spec.verbatim), theirs_b)
+            target, src_rel, dst_rel, bool(spec.verbatim), theirs_b,
+            dst_abs.read_bytes())
         if cache_write is not None:
             cache_writes.append(cache_write)
         new_files.append(rec)
@@ -1234,13 +1270,19 @@ def _cmd_adopt_collisions(
     merge base (``base_hash``), so a later upgrade classifies it
     ``locally-modified`` -- surfaced, never silently overwritten.
 
-    Bound to the staged set + bytes (R2): adoption requires a prior ``--stage``
-    and refuses a collision that appeared or changed since. Eligibility (R3):
-    canonical src absent from the lockfile, dst absent from lock records, a
-    present regular contained on-disk file -- a lock-conflict block is never
-    adoptable. All-or-nothing (R4): the FULL selected set is preflighted
-    (containment, staged-hash, eligibility, upstream availability) before any
-    mutation; then the base caches + lockfile are written guarded + atomic
+    The stage is a **review surface, not a trust anchor** (code-review F1): the
+    gitignored stage metadata is mutable, so eligibility -- which destination
+    maps to which canonical source + verbatim policy -- is **recomputed from the
+    live ``_MODULE_MAPPINGS`` at adoption time**, and the staged manifest can
+    only CONFIRM (by the operator-reviewed hashes) the recomputed collisions,
+    never expand or redefine them. Bound to the reviewed bytes (R2 / F2): the
+    destination is read ONCE and that exact buffer is verified against the
+    staged hash and passed to the recorder (no re-read). The upstream merge base
+    is bound to the bytes ``--stage`` reviewed (F5): adoption refuses if the
+    upstream changed since. Eligibility (R3): src genuinely new, dst not already
+    owned, a present regular contained file -- a lock-conflict block is never
+    adoptable. All-or-nothing (R4): the FULL set is preflighted before any
+    mutation; then base caches + the lockfile are written guarded + atomic
     (lockfile last). It never writes the adopter's destination."""
     import json
     stage = target / _STAGING_REL
@@ -1258,48 +1300,77 @@ def _cmd_adopt_collisions(
         print("error: staged upgrade is stale (lockfile/tokens/roster changed "
               "since --stage); re-run `upgrade --stage`.", file=sys.stderr)
         return 1
-    collisions: dict[str, dict[str, Any]] = meta.get("collision_adopt", {})
-    if not collisions:
+    staged: dict[str, dict[str, Any]] = meta.get("collision_adopt", {})
+    # F1: recompute the adoptable-collision plan from the LIVE mapping -- the
+    # authority for dst -> canonical src -> verbatim. The mutable manifest cannot
+    # define eligibility; it can only confirm a recomputed collision by hash.
+    plans, _structural = _compute_upgrade(
+        target, cairn_root, templates_root, lock, None)
+    adoptable = {fp.dst: fp for fp in plans
+                 if fp.kind == "new-module-blocked" and fp.src}
+    # Exact agreement: the staged selection must match the recomputed adoptable
+    # set EXACTLY -- an extra, missing, or redefined manifest entry refuses
+    # (a tampered manifest can never redefine what is eligible).
+    if set(staged) != set(adoptable):
+        print("error: the staged collision set no longer matches the live "
+              "adoptable collisions (stage stale or tampered); re-run "
+              "`upgrade --stage`.\n"
+              f"  staged:    {sorted(staged)}\n"
+              f"  adoptable: {sorted(adoptable)}", file=sys.stderr)
+        return 1
+    if not adoptable:
         print("  [info] no adoptable collisions in the current stage; nothing "
               "to adopt.", file=sys.stderr)
         return 0
     lock_srcs = {rec.get("src") for rec in lock.get("files", [])}
     lock_dsts = {rec.get("dst") for rec in lock.get("files", [])}
-    # --- Preflight the FULL selected set BEFORE any mutation (R4). ---
+    # --- Preflight the FULL set BEFORE any mutation (R4). ---
     planned: list[tuple[dict[str, Any], tuple[Path, bytes] | None]] = []
-    for dst_rel in sorted(collisions):
-        info = collisions[dst_rel]
-        src_rel = info["src"]
-        dst_abs = target / dst_rel
-        # Eligibility (R3): src genuinely new, dst not already owned by another.
-        if src_rel in lock_srcs:
-            print(f"error: {dst_rel}: source {src_rel} is already tracked; "
-                  "re-run `upgrade --stage`.", file=sys.stderr)
+    for dst_rel in sorted(adoptable):
+        fp = adoptable[dst_rel]
+        src_rel = fp.src               # AUTHORITY: the live module mapping
+        verbatim = bool(fp.verbatim)
+        info = staged[dst_rel]
+        # The manifest must AGREE with the live mapping (a tampered src/verbatim
+        # is caught -- it cannot point a real src at an arbitrary file).
+        if info.get("src") != src_rel or bool(info.get("verbatim")) != verbatim:
+            print(f"error: {dst_rel}: staged src/verbatim disagrees with the "
+                  "live module mapping (stage tampered); re-run "
+                  "`upgrade --stage`.", file=sys.stderr)
             return 1
-        if dst_rel in lock_dsts:
-            print(f"error: {dst_rel}: already tracked under another source "
-                  "(provenance conflict); not adoptable.", file=sys.stderr)
+        # Eligibility (R3): src genuinely new, dst not already owned by another.
+        if src_rel in lock_srcs or dst_rel in lock_dsts:
+            print(f"error: {dst_rel}: no longer an adoptable new collision "
+                  "(now tracked); re-run `upgrade --stage`.", file=sys.stderr)
             return 1
         # Present, regular, contained on-disk file (re-verified at adopt time).
+        dst_abs = target / dst_rel
         if not (dst_abs.is_file() and not dst_abs.is_symlink()):
             print(f"error: {dst_rel}: not a present regular file; refusing to "
                   "adopt (re-run `upgrade --stage`).", file=sys.stderr)
             return 1
         _assert_safe_write(dst_abs, target)   # containment of the dst path
-        # Hash-bound (R2): bytes must be EXACTLY what --stage observed.
-        observed = "sha256:" + _sha256_hex(dst_abs.read_bytes())
-        if observed != info.get("observed_hash"):
+        # F2: read the destination ONCE; verify THAT buffer against the reviewed
+        # staged hash; pass it to the recorder (which never re-reads).
+        dst_bytes = dst_abs.read_bytes()
+        if "sha256:" + _sha256_hex(dst_bytes) != info.get("observed_hash"):
             print(f"error: {dst_rel}: changed on disk since --stage; refusing "
                   "to adopt (re-run `upgrade --stage`).", file=sys.stderr)
             return 1
-        # Re-fetch the upstream template (running-tree adoption -> to_ref=None).
-        theirs_b = _theirs_bytes(cairn_root, templates_root, src_rel, None)
-        if theirs_b is None:
-            print(f"error: upstream template {src_rel!r} not found.",
-                  file=sys.stderr)
+        # F5: bind the upstream merge base to the bytes --stage reviewed. The
+        # recompute's theirs_raw IS the current upstream text; refuse if it
+        # differs from the staged upstream hash.
+        if fp.theirs_raw is None:
+            print(f"error: {dst_rel}: no upstream content to anchor the fork "
+                  "base; re-run `upgrade --stage`.", file=sys.stderr)
+            return 1
+        upstream_bytes = fp.theirs_raw.encode("utf-8")
+        if "sha256:" + _sha256_hex(upstream_bytes) != info.get("upstream_hash"):
+            print(f"error: {dst_rel}: upstream changed since --stage; refusing "
+                  "to adopt (re-run `upgrade --stage`).", file=sys.stderr)
             return 1
         rec, cache_write = _record_fork_entry(
-            target, src_rel, dst_rel, bool(info.get("verbatim")), theirs_b)
+            target, src_rel, dst_rel, verbatim, upstream_bytes, dst_bytes)
         planned.append((rec, cache_write))
     # --- Commit: guarded, atomic, lockfile last (R4). ---
     new_files = [dict(rec) for rec in lock.get("files", [])]
@@ -1786,6 +1857,7 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
     # work. (--to / --ack-review-only / --force / --cairn-root are modifiers,
     # not actions; --plan is the default action and composes with none of these.)
     actions = [name for name, on in (
+        ("--plan", args.plan),
         ("--init-lock", args.init_lock),
         ("--finalize", args.finalize),
         ("--stage", args.stage),

@@ -528,18 +528,126 @@ def test_adopt_collisions_refuses_if_a_collision_changed_since_stage(tmp_path):
     assert not any(r["dst"] in (c1, c2) for r in lock["files"])  # all-or-nothing
 
 
-def test_adopt_collisions_is_bound_to_the_staged_set_not_a_recompute(tmp_path):
-    # R2: a collision appearing AFTER --stage is not in the staged manifest, so
-    # adoption never blesses it (it stays untracked -> a fresh --stage blocks).
+def test_adopt_collisions_refuses_when_a_collision_appeared_after_stage(tmp_path):
+    # F1: eligibility is recomputed from the live mapping at adopt time, so a
+    # collision appearing AFTER --stage makes the staged set disagree with the
+    # live adoptable set -> refuse (re-stage required); NOTHING is adopted (never
+    # a silent subset).
     target = tmp_path.resolve()
     c1, c2 = _PKG_DSTS[1], _PKG_DSTS[2]
     base = _staged_collision(target, c1)            # only c1 staged
     (target / c2).write_text("# appeared after stage\n", encoding="utf-8")
 
-    assert s.main(base + ["--adopt-collisions"]) == 0
+    assert s.main(base + ["--adopt-collisions"]) != 0
     lock = s.read_lockfile(target)
-    assert any(r["dst"] == c1 for r in lock["files"])      # staged one adopted
-    assert not any(r["dst"] == c2 for r in lock["files"])  # appeared one is NOT
+    assert not any(r["dst"] in (c1, c2) for r in lock["files"])
+
+
+def test_adopt_collisions_manifest_cannot_bless_an_arbitrary_file(tmp_path):
+    # F1 (the load-bearing one): the gitignored stage manifest is a review
+    # surface, not a trust anchor. Tampering it to point a real canonical source
+    # at a planted file must REFUSE, never record -- eligibility is recomputed
+    # from the live _MODULE_MAPPINGS, which the manifest cannot expand.
+    import json  # noqa: PLC0415
+    target = tmp_path.resolve()
+    collide = _PKG_DSTS[1]
+    base = _staged_collision(target, collide)
+    # Plant an unreviewed file and rewrite collision_adopt to bless it under the
+    # legitimate lifecycle-metrics source (the review's exact reproducer).
+    planted = "unreviewed.py"
+    (target / planted).write_text("# planted, never reviewed\n", encoding="utf-8")
+    meta_path = target / s._STAGING_REL / s._STAGE_META
+    meta = json.loads(meta_path.read_text())
+    meta["collision_adopt"] = {planted: {
+        "src": _src_for(collide), "verbatim": True,
+        "observed_hash": "sha256:" + s._sha256_hex((target / planted).read_bytes()),
+        "upstream_hash": "sha256:deadbeef",
+    }}
+    meta_path.write_text(json.dumps(meta), encoding="utf-8")
+
+    assert s.main(base + ["--adopt-collisions"]) != 0
+    lock = s.read_lockfile(target)
+    assert not any(r["dst"] == planted for r in lock["files"])
+    assert not any(r["src"] == _src_for(collide) and r["dst"] == planted
+                   for r in lock["files"])
+
+
+def test_adopt_collisions_records_only_the_verified_bytes(tmp_path: Path):
+    # F2: the destination is read once and that exact buffer is recorded, so the
+    # lock hash always equals the operator-reviewed staged observed_hash.
+    import json  # noqa: PLC0415
+    target = tmp_path.resolve()
+    collide = _PKG_DSTS[1]
+    base = _staged_collision(target, collide)
+    meta = json.loads((target / s._STAGING_REL / s._STAGE_META).read_text())
+    staged_hash = meta["collision_adopt"][collide]["observed_hash"]
+
+    assert s.main(base + ["--adopt-collisions"]) == 0
+    rec = next(r for r in s.read_lockfile(target)["files"] if r["dst"] == collide)
+    assert rec["hash"] == staged_hash
+
+
+def test_adopt_collisions_refuses_if_upstream_changed_since_stage(tmp_path: Path):
+    # F5: the upstream merge base is bound to the bytes --stage reviewed; if the
+    # staged upstream hash no longer matches the live upstream, refuse.
+    import json  # noqa: PLC0415
+    target = tmp_path.resolve()
+    collide = _PKG_DSTS[1]
+    base = _staged_collision(target, collide)
+    meta_path = target / s._STAGING_REL / s._STAGE_META
+    meta = json.loads(meta_path.read_text())
+    meta["collision_adopt"][collide]["upstream_hash"] = "sha256:0badf00d"
+    meta_path.write_text(json.dumps(meta), encoding="utf-8")
+
+    assert s.main(base + ["--adopt-collisions"]) != 0
+    assert not any(r["dst"] == collide for r in s.read_lockfile(target)["files"])
+
+
+@pytest.mark.parametrize("combo", [
+    ["--plan", "--adopt-collisions"],
+    ["--stage", "--adopt-collisions"],
+    ["--apply", "--adopt-collisions"],
+    ["--adopt-collisions", "--finalize"],
+    ["--plan", "--apply"],
+    ["--stage", "--apply"],
+])
+def test_upgrade_actions_are_mutually_exclusive(tmp_path: Path, combo):
+    # F4: every mixed-action invocation refuses before any mutation -- in
+    # particular `--plan --adopt-collisions` (a "read-only" combo) must not adopt.
+    target = tmp_path.resolve()
+    collide = _PKG_DSTS[1]
+    base = _staged_collision(target, collide)
+    assert s.main(base + combo) == 2
+    assert not any(r["dst"] == collide for r in s.read_lockfile(target)["files"])
+
+
+def test_commit_lock_and_caches_is_atomic_on_lockfile_failure(tmp_path, monkeypatch):
+    # F3: an interrupted multi-file commit leaves the prior authority coherent --
+    # the old lockfile is unchanged and no live cache was replaced.
+    import os  # noqa: PLC0415
+    import bootstrap._scaffold.upgrade as UP  # noqa: PLC0415
+    target = tmp_path.resolve()
+    _install(target)
+    lock = s.read_lockfile(target)
+    before = (target / s._LOCKFILE_REL).read_bytes()
+    new_cache = target / "dev/.cairn/base/tools/_fork/x.py"   # a NEW cache path
+    real_replace = os.replace
+
+    def boom(src, dst):
+        if str(dst) == str(target / s._LOCKFILE_REL):
+            raise OSError("injected lockfile replace failure")
+        return real_replace(src, dst)
+
+    monkeypatch.setattr(os, "replace", boom)
+    lock2 = dict(lock); lock2["files"] = list(lock["files"]) + [
+        {"src": "modules/x/x.py", "dst": "tools/_fork/x.py", "verbatim": False,
+         "hash": "sha256:" + s._sha256_hex(b"fork"), "base_hash": "sha256:00",
+         "base_cache": "dev/.cairn/base/tools/_fork/x.py"}]
+    with pytest.raises(OSError):
+        UP._commit_lock_and_caches(target, lock2, [(new_cache, b"upstream")])
+    # Old lockfile authority unchanged; the orphan new cache (if written) is
+    # harmless because the old lock never references it.
+    assert (target / s._LOCKFILE_REL).read_bytes() == before
 
 
 def test_lockconflict_destination_is_distinct_and_not_adoptable(tmp_path: Path):
