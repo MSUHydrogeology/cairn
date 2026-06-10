@@ -588,31 +588,26 @@ def _print_upgrade_report(
               f"(override: --ack-review-only).")
 
 
-def _print_collision_adopt_hints(plans: list[FilePlan], target: Path) -> None:
-    """Print the ready-to-paste ``--adopt-collisions`` authorization for each
-    adoptable occupied-unlocked collision (code-review re-review R2). The
-    operator reviews the collision (its ``.ours``/``.theirs`` pair after
-    ``--stage``), then copies the printed ``dst@observed@upstream`` triple -- the
-    authorization channel an actor who changes the bytes cannot also rewrite (the
-    mutable stage metadata is never the authority)."""
-    triples: list[str] = []
-    for fp in sorted((f for f in plans
-                      if f.kind == "new-module-blocked" and f.src),
-                     key=lambda f: f.dst):
-        dst_abs = target / fp.dst
-        if not (dst_abs.is_file() and not dst_abs.is_symlink()):
-            continue
-        obs = _sha256_hex(dst_abs.read_bytes())
-        up = _sha256_hex((fp.theirs_raw or "").encode("utf-8"))
-        triples.append(f"{fp.dst}@{obs}@{up}")
+def _count_adoptable_collisions(plans: list[FilePlan]) -> int:
+    return sum(1 for f in plans if f.kind == "new-module-blocked" and f.src)
+
+
+def _print_adopt_command(triples: list[str]) -> None:
+    """Print the ready-to-paste ``--adopt-collisions`` command for the operator
+    authorization triples ``--stage`` minted from the exact ``.ours`` review
+    buffers (code-review round-2 P1) -- the channel an actor who changes the live
+    bytes after staging cannot rewrite. Only the ``--stage`` path has these;
+    ``--plan`` (read-only) points the operator at ``--stage`` instead of handing
+    out a live-read digest that need not match the bytes they review."""
     if not triples:
         return
     print("\n  To KEEP your version of an occupied-destination collision as a "
-          "tracked fork, review it (the `.ours`/`.theirs` pair under "
-          f"{_STAGING_REL}/review-only/ after `--stage`), then run:")
+          "tracked fork, review its `.ours`/`.theirs` pair under "
+          f"{_STAGING_REL}/review-only/, then run (the digests authorize the "
+          "EXACT bytes you reviewed):")
     print("    upgrade --adopt-collisions \\\n      " + " \\\n      ".join(triples))
-    print("  (The digests authorize the EXACT bytes you reviewed; adoption "
-          "refuses if the destination or the upstream changed.)")
+    print("  (Adoption refuses if the destination or upstream changed since you "
+          "staged.)")
 
 
 def _seed_staging_gitignore(target: Path) -> None:
@@ -623,9 +618,11 @@ def _write_stage(
     target: Path, plans: list[FilePlan], lock: dict[str, Any],
     to_ref: str | None, cairn_root: Path,
     new_profile: dict[str, Any] | None = None,
-) -> Path:
+) -> tuple[Path, list[str]]:
     """Write the staged review surface into the ephemeral, gitignored
-    staging dir; return its path.
+    staging dir; return ``(stage_path, adopt_hints)`` -- the second is the
+    operator ``--adopt-collisions`` authorization triples for adoptable
+    collisions, minted from the exact ``.ours`` review buffers (round-2 P1).
 
     Stages **only advancing kinds** (clean / conflict / verbatim-update) --
     a flagged/non-advancing file is reported but never staged, so it can
@@ -727,6 +724,11 @@ def _write_stage(
     # ``--ack-review-only`` override cannot bypass them. Stage the .theirs/.ours
     # pair (when content is available) so the adopter can reconcile by hand.
     module_blocked_dsts: list[str] = []
+    # Operator authorization triples (dst@observed@upstream) for adoptable
+    # collisions, minted from the EXACT bytes written as the `.ours` / `.theirs`
+    # review pair (code-review round-2 P1) -- NEVER a later live re-read, which
+    # could differ from what the operator is told to review.
+    adopt_hints: list[str] = []
     for fp in plans:
         if fp.kind not in ("new-module-blocked", "new-module-lockconflict"):
             continue
@@ -736,11 +738,20 @@ def _write_stage(
             theirs_out.parent.mkdir(parents=True, exist_ok=True)
             theirs_out.write_text(fp.theirs_raw, encoding="utf-8")
         dst_abs = target / fp.dst
-        if dst_abs.exists():
-            ours_out = stage / "review-only" / (fp.dst + ".ours")
-            ours_out.parent.mkdir(parents=True, exist_ok=True)
-            ours_out.write_text(
-                dst_abs.read_text(encoding="utf-8"), encoding="utf-8")
+        if not dst_abs.exists():
+            continue
+        # Read the collision's on-disk bytes ONCE; write `.ours` from that exact
+        # buffer (byte-exact) and mint the adopt triple from the SAME buffer.
+        ours_bytes = dst_abs.read_bytes()
+        ours_out = stage / "review-only" / (fp.dst + ".ours")
+        ours_out.parent.mkdir(parents=True, exist_ok=True)
+        ours_out.write_bytes(ours_bytes)
+        if (fp.kind == "new-module-blocked" and fp.src
+                and dst_abs.is_file() and not dst_abs.is_symlink()
+                and fp.theirs_raw is not None):
+            adopt_hints.append(
+                f"{fp.dst}@{_sha256_hex(ours_bytes)}"
+                f"@{_sha256_hex(fp.theirs_raw.encode('utf-8'))}")
     # #48: a verbatim file already byte-identical to the new upstream
     # (verbatim-up-to-date) but whose lockfile hash is stale -- the adopter
     # hand-synced it to a later Cairn before upgrading. Record it so --apply
@@ -789,7 +800,7 @@ def _write_stage(
     (stage / _STAGE_META).write_text(
         json.dumps(meta, indent=2, sort_keys=True), encoding="utf-8")
     _seed_staging_gitignore(target)
-    return stage
+    return stage, adopt_hints
 
 
 def _resolve_vendor_wrapper(
@@ -1995,15 +2006,16 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
     if args.stage:
         _new_profile, _new_axes = _resolve_current_profile(target, lock)
         try:
-            stage = _write_stage(target, plans, lock, args.to, cairn_root,
-                                 new_profile=_new_profile)
+            stage, adopt_hints = _write_stage(
+                target, plans, lock, args.to, cairn_root,
+                new_profile=_new_profile)
         except ScaffoldSecurityError as exc:
             print(f"error: upgrade --stage refused (containment): {exc}",
                   file=sys.stderr)
             return 2
         _print_upgrade_report(plans, structural, citation, mode="stage",
                               drift=drift)
-        _print_collision_adopt_hints(plans, target)
+        _print_adopt_command(adopt_hints)
         # (R1) --stage writes only the gitignored review surface, so it
         # *completes* even on a dirty tree -- but advise when the write-set
         # overlaps a tracked uncommitted path so the eventual --apply refusal
@@ -2029,5 +2041,11 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
     # Default: --plan (strictly read-only).
     _print_upgrade_report(plans, structural, citation,
                           mode="plan (read-only)", drift=drift)
-    _print_collision_adopt_hints(plans, target)
+    n_adopt = _count_adoptable_collisions(plans)
+    if n_adopt:
+        print(f"\n  {n_adopt} occupied-destination collision(s) can be KEPT as "
+              "tracked forks. Run `upgrade --stage` to review each (its "
+              f"`.ours`/`.theirs` pair under {_STAGING_REL}/review-only/) and "
+              "get the ready-to-paste `--adopt-collisions` authorization bound to "
+              "the exact bytes you review.")
     return 0

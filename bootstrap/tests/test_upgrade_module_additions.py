@@ -726,9 +726,37 @@ def test_adopt_collisions_refuses_to_ref(tmp_path: Path):
     assert s.main(base + ["--adopt-collisions", _DUMMY_AUTH, "--to", "HEAD"]) == 2
 
 
-def test_plan_prints_paste_ready_adopt_authorization(tmp_path, capsys):
-    # UX: `--plan` prints the exact `--adopt-collisions dst@obs@up` the operator
-    # copies -- the authorization channel, computed at review time.
+def _printed_triple_for(out: str, collide: str) -> str | None:
+    for tok in out.split():
+        if tok.startswith(collide + "@"):
+            return tok
+    return None
+
+
+def test_stage_prints_paste_ready_adopt_authorization(tmp_path, capsys):
+    # UX + binding: `--stage` prints the exact `--adopt-collisions dst@obs@up`
+    # the operator copies, with the observed digest minted from the `.ours`
+    # review artifact (the reviewed bytes).
+    target = tmp_path.resolve()
+    collide = _PKG_DSTS[1]
+    _install(target)
+    _make_pre_split(target, keep_on_disk=(collide,))
+    reviewed = b"# the bytes i review\n"
+    (target / collide).write_bytes(reviewed)
+    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
+    assert s.main(base + ["--stage"]) == 0
+    out = capsys.readouterr().out
+    triple = _printed_triple_for(out, collide)
+    assert triple is not None and "--adopt-collisions" in out
+    _dst, obs, _up = triple.split("@")
+    assert obs == s._sha256_hex(reviewed)          # bound to the reviewed bytes
+    # And the printed triple adopts cleanly (the dst is unchanged).
+    assert s.main(base + ["--adopt-collisions", triple]) == 0
+
+
+def test_plan_points_to_stage_without_a_live_digest(tmp_path, capsys):
+    # `--plan` (read-only) must NOT hand out a live-read digest -- it points the
+    # operator at `--stage` (whose digest binds to the reviewed artifact).
     target = tmp_path.resolve()
     collide = _PKG_DSTS[1]
     _install(target)
@@ -737,6 +765,25 @@ def test_plan_prints_paste_ready_adopt_authorization(tmp_path, capsys):
     base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
     assert s.main(base + ["--plan"]) == 0
     out = capsys.readouterr().out
-    triple = _adopt_args(target, collide)[0]
-    assert "--adopt-collisions" in out
-    assert triple in out
+    assert "upgrade --stage" in out
+    assert _printed_triple_for(out, collide) is None      # no copyable triple
+
+
+def test_stage_authorization_binds_to_reviewed_bytes_not_a_live_change(tmp_path, capsys):
+    # round-2 P1 reproducer: the --stage authorization is minted from the exact
+    # `.ours` review buffer, NOT a later live read. An actor who swaps the live
+    # destination AFTER staging cannot get the changed bytes adopted with the
+    # printed (reviewed-byte) triple.
+    target = tmp_path.resolve()
+    collide = _PKG_DSTS[1]
+    _install(target)
+    _make_pre_split(target, keep_on_disk=(collide,))
+    (target / collide).write_bytes(b"# reviewed bytes\n")
+    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
+    assert s.main(base + ["--stage"]) == 0
+    triple = _printed_triple_for(capsys.readouterr().out, collide)
+    assert triple is not None
+    # An actor swaps the live destination after the review pair was written.
+    (target / collide).write_bytes(b"# swapped by an actor after staging\n")
+    assert s.main(base + ["--adopt-collisions", triple]) != 0
+    assert not any(r["dst"] == collide for r in s.read_lockfile(target)["files"])
