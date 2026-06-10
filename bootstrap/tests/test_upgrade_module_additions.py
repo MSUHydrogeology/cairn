@@ -152,7 +152,7 @@ def test_deleted_tracked_module_file_is_not_re_added(tmp_path: Path):
 # R3 -- occupied-destination collision is a non-advancing review-only block
 # ---------------------------------------------------------------------------
 
-def test_occupied_unlocked_destination_is_review_only_collision(tmp_path: Path):
+def test_occupied_destination_is_hard_blocked_not_ack_bypassable(tmp_path: Path):
     target = tmp_path.resolve()
     _install(target)
     # Drop the package from the lockfile but leave ONE package file on disk
@@ -167,17 +167,25 @@ def test_occupied_unlocked_destination_is_review_only_collision(tmp_path: Path):
         target, CAIRN_ROOT, TEMPLATES_ROOT, lock, to_ref=None)
     by_dst = {p.dst: p for p in plans}
 
-    # The collision is review-only (non-advancing); the rest add as new-module.
-    assert by_dst[collide].kind == "review-only"
+    # The collision is a DISTINCT hard-blocking kind (NOT ordinary review-only),
+    # so generic --ack-review-only cannot bypass it; the rest add as new-module.
+    assert by_dst[collide].kind == "new-module-blocked"
     assert by_dst[collide].kind not in s._ADVANCING_KINDS
     assert all(by_dst[d].kind == "new-module" for d in _PKG_DSTS if d != collide)
 
-    # A normal --apply fails closed (the collision owes a by-hand merge); the
-    # local content is never overwritten.
     base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
     assert s.main(base + ["--stage"]) == 0
+    # Neither plain --apply, NOR --ack-review-only, NOR --force may advance.
     assert s.main(base + ["--apply"]) != 0
+    assert s.main(base + ["--apply", "--ack-review-only"]) != 0
+    assert s.main(base + ["--apply", "--ack-review-only", "--force"]) != 0
+    # The adopter-local content is untouched; the lock did NOT advance to record
+    # the collided file (it must never be left importable-but-unattested); and
+    # the sibling adds did not land either (the whole apply failed closed).
     assert (target / collide).read_text() == "# adopter-local content\n"
+    lock_after = s.read_lockfile(target)
+    assert not any(r["dst"] == collide for r in lock_after["files"])
+    assert not (target / _PKG_DSTS[0]).exists()
 
 
 # ---------------------------------------------------------------------------
@@ -248,17 +256,29 @@ def test_not_adopted_module_files_are_not_auto_added(tmp_path: Path):
 # R5 -- structural module additions are skipped under an explicit --to <ref>
 # ---------------------------------------------------------------------------
 
-def test_module_additions_skipped_under_explicit_to_ref(tmp_path: Path):
+def test_module_additions_under_explicit_to_are_hard_blocked(tmp_path: Path):
     target = tmp_path.resolve()
     _install(target)
     _make_pre_split(target)
 
     lock = s.read_lockfile(target)
-    # Any non-None to_ref: structural additions are enumerated from the running
-    # engine's registry, which need not match the target ref, so they are skipped.
+    # Under an explicit --to, structural additions are enumerated from the
+    # running registry (which need not match the ref) -> NOT silently skipped,
+    # but a hard block, so a facade cannot advance without its package.
     plans, _ = s._compute_upgrade(
         target, CAIRN_ROOT, TEMPLATES_ROOT, lock, to_ref="HEAD")
-    assert [p for p in plans if p.kind == "new-module"] == []
+    assert [p for p in plans if p.kind == "new-module"] == []   # no silent add
+    blocked = [p for p in plans if p.kind == "new-module-blocked"]
+    assert len(blocked) == len(_PKG_DSTS), f"expected all blocked, got {len(blocked)}"
+    assert all(p.kind not in s._ADVANCING_KINDS for p in blocked)
+
+    # Public path: a --to upgrade with pending additions fails closed at apply
+    # (nothing advances), proving the facade cannot move without its package.
+    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT),
+            "--to", "HEAD"]
+    assert s.main(base + ["--stage"]) == 0
+    assert s.main(base + ["--apply"]) != 0
+    assert s.main(base + ["--apply", "--ack-review-only", "--force"]) != 0
 
 
 # ---------------------------------------------------------------------------
@@ -322,3 +342,79 @@ def test_non_text_module_addition_fails_crisply(tmp_path: Path, monkeypatch):
     assert by_dst[bin_dst].kind == "error"
     assert "UTF-8" in by_dst[bin_dst].detail
     assert by_dst[bin_dst].kind not in s._ADVANCING_KINDS
+
+
+# ---------------------------------------------------------------------------
+# F1 -- a malformed (traversing) destination is refused before any stage write
+# ---------------------------------------------------------------------------
+
+def test_malformed_module_destination_is_refused_at_stage(tmp_path: Path, monkeypatch):
+    target = tmp_path.resolve()
+    _install(target)
+    _make_pre_split(target)
+    escaped = tmp_path / "escaped.txt"   # OUTSIDE the adopter target
+    assert not escaped.exists()
+
+    # Inject a hypothetical malformed hard-coded InstallSpec.dst with traversal
+    # (a real src so the template resolves; the dst escapes the target).
+    import bootstrap._scaffold.upgrade as UP  # noqa: PLC0415
+    lock = s.read_lockfile(target)
+    patched = dict(UP._MODULE_MAPPINGS)
+    adopted = next(m for m in lock.get("modules", []) if m in patched)
+    patched[adopted] = list(patched[adopted]) + [
+        InstallSpec("default-on/_lifecycle_metrics/__init__.py",
+                    "../../../../escaped.txt", verbatim=True)]
+    monkeypatch.setattr(UP, "_MODULE_MAPPINGS", patched)
+
+    # --stage fails closed (ScaffoldSecurityError -> CLI exit 2) and writes
+    # NOTHING outside the target.
+    rc = s.main(["upgrade", "--target", str(target),
+                 "--cairn-root", str(CAIRN_ROOT), "--stage"])
+    assert rc != 0
+    assert not escaped.exists()
+
+
+# ---------------------------------------------------------------------------
+# F4 -- global destination-ownership preflight (across core / skills / modules,
+#       independent of lock / source state)
+# ---------------------------------------------------------------------------
+
+def test_module_destination_colliding_with_core_is_refused(tmp_path: Path, monkeypatch):
+    target = tmp_path.resolve()
+    _install(target)
+
+    import bootstrap._scaffold.upgrade as UP  # noqa: PLC0415
+    core_dst = UP._CORE_MAPPINGS[0][1]   # an existing core destination
+    lock = s.read_lockfile(target)
+    patched = dict(UP._MODULE_MAPPINGS)
+    adopted = next(m for m in lock.get("modules", []) if m in patched)
+    patched[adopted] = list(patched[adopted]) + [
+        InstallSpec("default-on/_lifecycle_metrics/__init__.py", core_dst,
+                    verbatim=True)]
+    monkeypatch.setattr(UP, "_MODULE_MAPPINGS", patched)
+
+    with pytest.raises(ValueError, match="mapping ownership conflict"):
+        s._compute_upgrade(target, CAIRN_ROOT, TEMPLATES_ROOT, lock, to_ref=None)
+
+
+def test_duplicate_with_absent_first_source_is_refused(tmp_path: Path, monkeypatch):
+    target = tmp_path.resolve()
+    _install(target)
+
+    import bootstrap._scaffold.upgrade as UP  # noqa: PLC0415
+    lock = s.read_lockfile(target)
+    patched = dict(UP._MODULE_MAPPINGS)
+    adopted = next(m for m in lock.get("modules", []) if m in patched)
+    dup_dst = "tools/_lifecycle_metrics/dup_target.py"
+    # Two specs claim the same NEW dst; the FIRST points at a non-existent
+    # template. The source-state-blind preflight still refuses (a per-file
+    # check could skip the first on source absence and miss the duplicate).
+    patched[adopted] = list(patched[adopted]) + [
+        InstallSpec("default-on/_lifecycle_metrics/does_not_exist.py", dup_dst,
+                    verbatim=True),
+        InstallSpec("default-on/_lifecycle_metrics/__init__.py", dup_dst,
+                    verbatim=True)]
+    monkeypatch.setattr(UP, "_MODULE_MAPPINGS", patched)
+
+    with pytest.raises(ValueError, match="mapping ownership conflict"):
+        s._compute_upgrade(target, CAIRN_ROOT, TEMPLATES_ROOT, lock, to_ref=None)

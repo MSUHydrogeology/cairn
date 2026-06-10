@@ -36,13 +36,17 @@ destination before any `mkdir` / `write_*` / `shutil` write:
 | `_cmd_adopt_module` | `_assert_safe_write` | a single added module's files |
 | `_apply_upgrade` | `_assert_safe_write` | the swapped-in upgraded files (incl. `new-core` / `new-module` additions, which share the swap loop) |
 | `merge_module_into_slot` | `_assert_safe_write` | a module-merge slot write + its conflict side-file (final Security Review P1 #1) |
+| `_write_stage` | `_assert_safe_write` | every staged-file / new-base / review-only destination, validated up-front for ALL plans (External Security review F1) |
 
 ## Class B — guarded-by-equivalent-invariant (no direct guard, contained by construction)
 
-- **Upgrade staging** (`apply_adopter_merge` / `_write_stage`): writes go to the
-  internal `dev/.cairn-upgrade/` staging subtree, an already-contained directory
-  *inside* `target`; the apply swap into the live tree goes through the Class-A
-  paths. The stage root is rmtree'd/recreated within `target`.
+- **Upgrade staging** (`apply_adopter_merge`): writes go to the internal
+  `dev/.cairn-upgrade/` staging subtree, an already-contained directory *inside*
+  `target`; the apply swap into the live tree goes through the Class-A paths. The
+  stage root is rmtree'd/recreated within `target`. (`_write_stage` itself now
+  carries a **direct** Class-A guard — External Security review F1 — since a
+  malformed/`..`-traversing `InstallSpec.dst` could otherwise escape the staging
+  subtree and the adopter root during `--stage`, before the apply-time guard.)
 - **`_emit_skill_symlink`**: its destination is guarded by
   `_assert_fanout_contained` at the `fan_out_skills` call site before it runs.
 - **`_symlinks_available`**: writes/removes only a probe symlink it creates and
