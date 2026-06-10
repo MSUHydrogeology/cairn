@@ -38,6 +38,20 @@ load-bearing contrast with proposals, and the easy mistake to avoid:
 > opposite record discipline — don't carry append-only habits onto a strategy
 > note.
 
+### The review mechanic (the three steps)
+
+A review on a strategy note is **transient by design** — the principle above
+("fold in and remove") works only if the steps are explicit:
+
+1. **Reviewer appends** a `## Review` section and flags it as temporary.
+2. **Author revises the doc inline**, folding in what they accept — no
+   finding-tags, no "the draft said…" residue.
+3. **Author deletes the review section.** The arc survives in `git log`, not
+   the doc.
+
+The reviewer does not retain or re-append; the **author owns the delete**. (A
+proposal is the mirror image — append and keep.)
+
 ## Status vocabulary
 
 One vocabulary, replacing the ad-hoc forms the folder accreted:
