@@ -157,7 +157,7 @@ def _theirs_bytes(
 #: (vs. ``clean`` which means the file was untouched).
 _ADVANCING_KINDS = frozenset(
     {"clean", "clean-locally-modified", "conflict", "verbatim-update",
-     "new-core"}
+     "new-core", "new-module"}
 )
 
 #: Display labels for the upgrade report.  Maps the internal kind to the
@@ -166,6 +166,7 @@ _KIND_DISPLAY_LABEL = {
     "clean": "clean (untouched)",
     "clean-locally-modified": "locally-modified (merged clean)",
     "new-core": "new core/skills (added)",
+    "new-module": "new module file (added)",
 }
 
 
@@ -372,8 +373,90 @@ def _compute_upgrade(
                 "new core-like file (added)", theirs_raw,
                 f"{_BASE_CACHE_REL}/{dst_rel}", src=src_rel, verbatim=False))
 
-    # Structural reconciliation.
+    # New module-internal files: a module the adopter has ALREADY adopted
+    # (``M in lock["modules"]``) may have GAINED files upstream since install --
+    # the facade+package split case (a single tracked tool file became a thin
+    # facade beside a sibling engine package). Unlike a brand-new module (the
+    # opt-in ``new_modules`` structural flow below), the adopter already chose
+    # ``M``, so it is owed ``M``'s new files. The write-set stays bounded to
+    # ``_MODULE_MAPPINGS[M]`` (a hard-coded mapping set) -- the same safety the
+    # core/skills restriction guarantees, extended to already-adopted modules.
+    #
+    # ``--to <ref>`` contract: structural additions are enumerated from the
+    # *running* engine's ``_MODULE_MAPPINGS``, which need not match a different
+    # ``to_ref``'s registry. So module additions are computed ONLY when upgrading
+    # to the running tree (``to_ref is None``); under an explicit ``--to`` they
+    # are skipped rather than emit invisible/spurious adds -- run scaffold from a
+    # checkout of the target ref to carry them.
     lock_modules = set(lock.get("modules", []))
+    if to_ref is None:
+        lock_dsts = {rec["dst"] for rec in lock.get("files", [])}
+        for mod in sorted(lock_modules):
+            for spec in _MODULE_MAPPINGS.get(mod, []):
+                # Canonical lockfile source key (matches install's
+                # ``f"modules/{spec.src}"`` -- the lockfile namespace, NOT the
+                # module-relative ``InstallSpec.src``): used for BOTH the
+                # new-upstream test and the recorded lockfile entry.
+                canonical_src = f"modules/{spec.src}"
+                if canonical_src in lock_srcs:
+                    continue  # already tracked -> not a new-upstream addition
+                dst_rel = spec.dst
+                # Mapping ownership: a destination claimed by more than one of
+                # {core, skills, adopted-module} specs is REFUSED, never
+                # silently de-duplicated (the current mappings have none).
+                if dst_rel in seen_new:
+                    raise ValueError(
+                        "mapping ownership conflict: destination "
+                        f"{dst_rel!r} is claimed by more than one "
+                        "core/skills/module InstallSpec")
+                theirs_b = _theirs_bytes(
+                    cairn_root, templates_root, canonical_src, to_ref)
+                if theirs_b is None:
+                    continue
+                # Text-only contract: a non-UTF-8 module InstallSpec fails
+                # crisply rather than being decoded with U+FFFD replacement
+                # characters (binary module files are out of scope).
+                try:
+                    theirs_text = theirs_b.decode("utf-8")
+                except UnicodeDecodeError:
+                    seen_new.add(dst_rel)
+                    plans.append(FilePlan(
+                        dst_rel, "error", None,
+                        "module-internal addition is not UTF-8 text "
+                        "(binary module files are out of scope)", None, None))
+                    continue
+                seen_new.add(dst_rel)
+                # A genuinely-new spec whose destination already exists OUTSIDE
+                # the lockfile is an occupied-destination collision -- NOT
+                # silently skipped (which could let a facade import unreviewed
+                # adopter-local code, or leave a package member missing).
+                # Classify as a non-advancing review-only item so a normal
+                # ``--apply`` fails closed until it is resolved by hand.
+                if (target / dst_rel).exists() or dst_rel in lock_dsts:
+                    plans.append(FilePlan(
+                        dst_rel, "review-only", None,
+                        "module-internal addition collides with an existing "
+                        "unlocked destination (resolve by hand, then "
+                        "--apply --ack-review-only)", theirs_text, None))
+                    continue
+                # Absent destination -> a clean module-internal add. Verbatim vs
+                # mergeable mirrors the new-core branch above.
+                if spec.verbatim:
+                    plans.append(FilePlan(
+                        dst_rel, "new-module", theirs_text,
+                        "new module-internal file (added)", None, None,
+                        src=canonical_src, verbatim=True))
+                else:
+                    applied = substitute_tokens(theirs_text, tokens)
+                    if new_axes:
+                        applied = strip_conditional_regions(applied, new_axes)
+                    plans.append(FilePlan(
+                        dst_rel, "new-module", applied,
+                        "new module-internal file (added)", theirs_text,
+                        f"{_BASE_CACHE_REL}/{dst_rel}",
+                        src=canonical_src, verbatim=False))
+
+    # Structural reconciliation.
     current_modules = set(_MODULE_MAPPINGS)
     structural = {
         "new_modules": sorted(current_modules - lock_modules),
@@ -484,6 +567,7 @@ def _write_stage(
     stage.mkdir(parents=True, exist_ok=True)
     staged_files: list[str] = []
     ours_hashes: dict[str, str] = {}
+    expected_absent: set[str] = set()
     kinds: dict[str, str] = {}
     # #47: per-file provenance for files NOT already in the lockfile (new-core),
     # so --apply can append correct lockfile records (refs only -- no file
@@ -502,7 +586,7 @@ def _write_stage(
         out.write_text(fp.applied, encoding="utf-8")
         staged_files.append(fp.dst)
         kinds[fp.dst] = fp.kind
-        if fp.kind == "new-core":
+        if fp.kind in ("new-core", "new-module"):
             new_entries[fp.dst] = {
                 "src": fp.src, "verbatim": fp.verbatim,
                 "base_cache": fp.base_cache,
@@ -511,6 +595,12 @@ def _write_stage(
         # adopter edit made between --stage and --apply).
         if dst_abs.exists():
             ours_hashes[fp.dst] = "sha256:" + _sha256_hex(dst_abs.read_bytes())
+        else:
+            # A new add (new-core / new-module): its destination was absent at
+            # --stage, so it carries no ours_hashes snapshot. Record it so
+            # --apply fails closed if the destination APPEARED since (the data-
+            # loss guard, hardening the shared new-file path).
+            expected_absent.add(fp.dst)
         # Stage the new base-template content (mergeable files only).
         if fp.theirs_raw is not None and fp.base_cache:
             nb = stage / "new-base" / fp.dst
@@ -566,6 +656,9 @@ def _write_stage(
         "staged_files": sorted(staged_files),
         "kinds": kinds,
         "ours_hashes": ours_hashes,
+        # New-add destinations that were ABSENT at --stage; --apply fails closed
+        # if any reappeared since (data-loss guard for new-core / new-module).
+        "expected_absent": sorted(expected_absent),
         # Outstanding by-hand merges: --apply fail-closes on a non-empty list
         # unless --ack-review-only is passed (#44 completion gate).
         "review_only": sorted(review_only_dsts),
@@ -1180,6 +1273,19 @@ def _apply_upgrade(
                 print(f"error: {staged} changed on disk since --stage; "
                       "re-run `upgrade --stage`.", file=sys.stderr)
                 return 1
+    # (e2) Expected-absence guard (R2): a new add (new-core / new-module)
+    #      carried no ours_hashes snapshot because its destination was absent at
+    #      --stage. If it APPEARED since -- another process/agent created it, or
+    #      it is now a symlink -- applying would silently overwrite that content.
+    #      Fail closed. --force does NOT override this (it overrides only the
+    #      dirty-tree guard on tracked files).
+    for dst in meta.get("expected_absent", []):
+        dst_abs = target / dst
+        if dst_abs.is_symlink() or dst_abs.exists():
+            print(f"error: {dst} was absent at --stage but exists now; refusing "
+                  "--apply (it would overwrite content created since --stage). "
+                  "Re-run `upgrade --stage`.", file=sys.stderr)
+            return 1
 
     # (f) Layer-3 dirty-tree guard (#56): refuse to overwrite a tracked path
     #     the adopter has uncommitted edits in -- applying would clobber a

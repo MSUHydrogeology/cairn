@@ -34,6 +34,24 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **`scaffold.py upgrade` carries module-internal file additions to already-adopted modules.**
+  Upgrade previously auto-added new `core/` / `skills/` files but never new files
+  belonging to a module the adopter had **already adopted** — so a module that split
+  a single tool into a facade + a sibling package upstream (e.g. `lifecycle_metrics.py`
+  → `_lifecycle_metrics/`) could not be consumed via upgrade (a plain `--apply`
+  swapped the facade over the adopter's fork with no package behind it). A new
+  `new-module` add path — scoped to modules already in the lockfile, bounded to their
+  `_MODULE_MAPPINGS` specs, keyed on the canonical `modules/<src>` lockfile namespace,
+  and routed through the existing `_assert_safe_write` containment guard — now carries
+  those files. A genuinely-new spec whose destination already exists outside the
+  lockfile is a non-advancing **review-only collision** (never a silent overwrite);
+  duplicate destinations across core/skills/modules are refused. Module additions are
+  computed only when upgrading to the running tree (skipped under an explicit
+  `--to <ref>`, whose registry may differ); non-UTF-8 module files fail crisply.
+  **Hardens the shared new-file path:** `--apply` records an expected-absence set at
+  `--stage` and fails closed (even under `--force`) if a new-add destination appeared
+  since — a data-loss guard that also covers the pre-existing `new-core` path.
+
 - **Stack-neutrality — a contained-kernel container recipe (run Cairn with no host Python).**
   A team whose application stack is not Python can now run the stdlib-only engine
   **only at the install/upgrade boundary**, in a throwaway, contained container,
