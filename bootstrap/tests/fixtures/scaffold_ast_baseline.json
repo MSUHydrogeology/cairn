@@ -888,10 +888,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_write_stage": {
-    "digest": "1173f0ad79076074",
+    "digest": "9eefc6ba8c9438af",
     "span": [
-      595,
-      786
+      622,
+      792
     ],
     "type": "FunctionDef"
   },
@@ -936,10 +936,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:cmd_upgrade": {
-    "digest": "5208b11295a14ad5",
+    "digest": "fd6165bb4ec1f944",
     "span": [
-      1801,
-      1998
+      1829,
+      2033
     ],
     "type": "FunctionDef"
   },

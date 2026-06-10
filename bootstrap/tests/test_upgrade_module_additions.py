@@ -462,33 +462,51 @@ def _staged_collision(target: Path, *collides: str) -> list[str]:
     return base
 
 
+def _adopt_args(target: Path, *collides: str) -> list[str]:
+    """The operator-supplied `dst@observed@upstream` triples for the given
+    adoptable collisions -- exactly what `upgrade --plan` prints for the operator
+    to review and copy (the authorization channel an actor cannot rewrite)."""
+    lock = s.read_lockfile(target)
+    plans, _ = s._compute_upgrade(target, CAIRN_ROOT, TEMPLATES_ROOT, lock, None)
+    by_dst = {fp.dst: fp for fp in plans
+              if fp.kind == "new-module-blocked" and fp.src}
+    out = []
+    for c in collides:
+        fp = by_dst[c]
+        obs = s._sha256_hex((target / c).read_bytes())
+        up = s._sha256_hex((fp.theirs_raw or "").encode("utf-8"))
+        out.append(f"{c}@{obs}@{up}")
+    return out
+
+
+_DUMMY_AUTH = "x.py@" + "0" * 64 + "@" + "0" * 64
+
+
 def test_adopt_collisions_records_fork_and_unblocks(tmp_path: Path):
     target = tmp_path.resolve()
     collide = _PKG_DSTS[1]
     base = _staged_collision(target, collide)
+    auth = _adopt_args(target, collide)
     fork_bytes = (target / collide).read_bytes()
 
     # Adopt: records the on-disk fork; never writes the dst.
-    assert s.main(base + ["--adopt-collisions"]) == 0
+    assert s.main(base + ["--adopt-collisions"] + auth) == 0
     assert (target / collide).read_bytes() == fork_bytes   # fork preserved
 
-    # Attestation closure: tracked, with hash=on-disk fork and base_hash=upstream
-    # (the two DIFFER -> a fork, never classified safe-to-overwrite).
-    lock = s.read_lockfile(target)
-    rec = next(r for r in lock["files"] if r["dst"] == collide)
+    # Attestation closure: tracked, hash=on-disk fork, base_hash=upstream (differ).
+    rec = next(r for r in s.read_lockfile(target)["files"] if r["dst"] == collide)
     assert rec["src"] == _src_for(collide)
     assert rec["verbatim"] is True
     assert rec["hash"] == "sha256:" + s._sha256_hex(fork_bytes)
     assert rec.get("base_hash") and rec["base_hash"] != rec["hash"]
 
-    # Re-stage: the adopted collide is now a verbatim-locally-modified fork
-    # (flagged + kept, never clobbered) and the sibling package files add as
-    # new-module; the hard block is gone, so --apply completes directly.
+    # Re-stage -> adopted collide is a verbatim-locally-modified fork (kept), the
+    # siblings add as new-module, hard block gone -> --apply completes directly.
     assert s.main(base + ["--stage"]) == 0
     assert s.main(base + ["--apply"]) == 0
-    assert (target / collide).read_bytes() == fork_bytes  # still the fork
+    assert (target / collide).read_bytes() == fork_bytes
     for d in _PKG_DSTS:
-        assert (target / d).exists()                      # siblings landed
+        assert (target / d).exists()
     after = s.read_lockfile(target)
     assert all(any(r["dst"] == d for r in after["files"]) for d in _PKG_DSTS)
 
@@ -499,115 +517,115 @@ def test_adopt_collisions_verbatim_fork_survives_two_upstream_versions(tmp_path)
     target = tmp_path.resolve()
     collide = _PKG_DSTS[1]
     base = _staged_collision(target, collide)
-    assert s.main(base + ["--adopt-collisions"]) == 0
+    assert s.main(base + ["--adopt-collisions"] + _adopt_args(target, collide)) == 0
 
     import bootstrap._scaffold.upgrade as UP  # noqa: PLC0415
     fork_bytes = (target / collide).read_bytes()
     rec = next(r for r in s.read_lockfile(target)["files"] if r["dst"] == collide)
     later_upstream = b"# a brand-new upstream launcher v2\n"
-
-    # With the recorded base_hash (=upstream): the fork stays locally-modified.
     assert UP.classify_verbatim(
         fork_bytes, rec["base_hash"], later_upstream) == "locally-modified"
-    # Proof of the bug the fix closes: had we recorded only `hash` (=the fork),
-    # the SAME later upstream would classify `update` -> overwrite the fork.
+    # Proof of the closed bug: with only `hash` (=the fork) it would be `update`.
     assert UP.classify_verbatim(
         fork_bytes, rec["hash"], later_upstream) == "update"
 
 
-def test_adopt_collisions_refuses_if_a_collision_changed_since_stage(tmp_path):
-    # R2 (+ R4 all-or-nothing): bind adoption to the staged bytes. Stage two
-    # collisions, mutate one after --stage, adopt -> refuse, NEITHER recorded.
+def test_adopt_collisions_works_without_a_prior_stage(tmp_path: Path):
+    # Authorization is the operator's typed digests (from `--plan`), so adoption
+    # does not depend on the mutable stage existing at all.
     target = tmp_path.resolve()
-    c1, c2 = _PKG_DSTS[1], _PKG_DSTS[2]
-    base = _staged_collision(target, c1, c2)
-    (target / c1).write_text("# changed after stage\n", encoding="utf-8")
-
-    assert s.main(base + ["--adopt-collisions"]) != 0
-    lock = s.read_lockfile(target)
-    assert not any(r["dst"] in (c1, c2) for r in lock["files"])  # all-or-nothing
-
-
-def test_adopt_collisions_refuses_when_a_collision_appeared_after_stage(tmp_path):
-    # F1: eligibility is recomputed from the live mapping at adopt time, so a
-    # collision appearing AFTER --stage makes the staged set disagree with the
-    # live adoptable set -> refuse (re-stage required); NOTHING is adopted (never
-    # a silent subset).
-    target = tmp_path.resolve()
-    c1, c2 = _PKG_DSTS[1], _PKG_DSTS[2]
-    base = _staged_collision(target, c1)            # only c1 staged
-    (target / c2).write_text("# appeared after stage\n", encoding="utf-8")
-
-    assert s.main(base + ["--adopt-collisions"]) != 0
-    lock = s.read_lockfile(target)
-    assert not any(r["dst"] in (c1, c2) for r in lock["files"])
+    collide = _PKG_DSTS[1]
+    _install(target)
+    _make_pre_split(target, keep_on_disk=(collide,))
+    (target / collide).write_text("# adopter fork\n", encoding="utf-8")
+    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
+    auth = _adopt_args(target, collide)            # what `--plan` would print
+    assert s.main(base + ["--adopt-collisions"] + auth) == 0
+    assert any(r["dst"] == collide for r in s.read_lockfile(target)["files"])
 
 
-def test_adopt_collisions_manifest_cannot_bless_an_arbitrary_file(tmp_path):
-    # F1 (the load-bearing one): the gitignored stage manifest is a review
-    # surface, not a trust anchor. Tampering it to point a real canonical source
-    # at a planted file must REFUSE, never record -- eligibility is recomputed
-    # from the live _MODULE_MAPPINGS, which the manifest cannot expand.
+def test_adopt_collisions_refuses_changed_bytes_despite_rewritten_stage(tmp_path):
+    # Remaining-P1: authorization is the operator's typed digest, NOT the mutable
+    # stage. An actor who changes the candidate bytes AND rewrites the stage
+    # metadata still cannot get the changed bytes adopted -- the operator's
+    # reviewed digest no longer matches the on-disk bytes.
     import json  # noqa: PLC0415
     target = tmp_path.resolve()
     collide = _PKG_DSTS[1]
     base = _staged_collision(target, collide)
-    # Plant an unreviewed file and rewrite collision_adopt to bless it under the
-    # legitimate lifecycle-metrics source (the review's exact reproducer).
-    planted = "unreviewed.py"
-    (target / planted).write_text("# planted, never reviewed\n", encoding="utf-8")
+    auth = _adopt_args(target, collide)            # the operator's REVIEWED triple
+    # An actor swaps the bytes after review and rewrites the (now-irrelevant) stage.
+    (target / collide).write_text("# swapped by an actor after review\n",
+                                  encoding="utf-8")
     meta_path = target / s._STAGING_REL / s._STAGE_META
-    meta = json.loads(meta_path.read_text())
-    meta["collision_adopt"] = {planted: {
-        "src": _src_for(collide), "verbatim": True,
-        "observed_hash": "sha256:" + s._sha256_hex((target / planted).read_bytes()),
-        "upstream_hash": "sha256:deadbeef",
-    }}
-    meta_path.write_text(json.dumps(meta), encoding="utf-8")
+    if meta_path.exists():
+        meta = json.loads(meta_path.read_text())
+        meta["collision_adopt"] = {}      # whatever an attacker writes is ignored
+        meta_path.write_text(json.dumps(meta), encoding="utf-8")
 
-    assert s.main(base + ["--adopt-collisions"]) != 0
-    lock = s.read_lockfile(target)
-    assert not any(r["dst"] == planted for r in lock["files"])
-    assert not any(r["src"] == _src_for(collide) and r["dst"] == planted
-                   for r in lock["files"])
-
-
-def test_adopt_collisions_records_only_the_verified_bytes(tmp_path: Path):
-    # F2: the destination is read once and that exact buffer is recorded, so the
-    # lock hash always equals the operator-reviewed staged observed_hash.
-    import json  # noqa: PLC0415
-    target = tmp_path.resolve()
-    collide = _PKG_DSTS[1]
-    base = _staged_collision(target, collide)
-    meta = json.loads((target / s._STAGING_REL / s._STAGE_META).read_text())
-    staged_hash = meta["collision_adopt"][collide]["observed_hash"]
-
-    assert s.main(base + ["--adopt-collisions"]) == 0
-    rec = next(r for r in s.read_lockfile(target)["files"] if r["dst"] == collide)
-    assert rec["hash"] == staged_hash
-
-
-def test_adopt_collisions_refuses_if_upstream_changed_since_stage(tmp_path: Path):
-    # F5: the upstream merge base is bound to the bytes --stage reviewed; if the
-    # staged upstream hash no longer matches the live upstream, refuse.
-    import json  # noqa: PLC0415
-    target = tmp_path.resolve()
-    collide = _PKG_DSTS[1]
-    base = _staged_collision(target, collide)
-    meta_path = target / s._STAGING_REL / s._STAGE_META
-    meta = json.loads(meta_path.read_text())
-    meta["collision_adopt"][collide]["upstream_hash"] = "sha256:0badf00d"
-    meta_path.write_text(json.dumps(meta), encoding="utf-8")
-
-    assert s.main(base + ["--adopt-collisions"]) != 0
+    assert s.main(base + ["--adopt-collisions"] + auth) != 0
     assert not any(r["dst"] == collide for r in s.read_lockfile(target)["files"])
 
 
+def test_adopt_collisions_refuses_a_wrong_upstream_authorization(tmp_path: Path):
+    # Remaining-P1 (upstream variant): the upstream merge base is bound to the
+    # operator's typed upstream digest; if it does not match the live upstream
+    # (a swapped source), refuse.
+    target = tmp_path.resolve()
+    collide = _PKG_DSTS[1]
+    base = _staged_collision(target, collide)
+    good = _adopt_args(target, collide)[0]
+    dst, obs, _up = good.split("@")
+    bad = f"{dst}@{obs}@" + "b" * 64            # correct bytes, wrong upstream
+    assert s.main(base + ["--adopt-collisions", bad]) != 0
+    assert not any(r["dst"] == collide for r in s.read_lockfile(target)["files"])
+
+
+def test_adopt_collisions_records_only_the_authorized_bytes(tmp_path: Path):
+    # F2: the destination is read once and that buffer is recorded, so the lock
+    # hash equals the operator's authorized observed digest.
+    target = tmp_path.resolve()
+    collide = _PKG_DSTS[1]
+    base = _staged_collision(target, collide)
+    auth = _adopt_args(target, collide)
+    _dst, obs, _up = auth[0].split("@")
+    assert s.main(base + ["--adopt-collisions"] + auth) == 0
+    rec = next(r for r in s.read_lockfile(target)["files"] if r["dst"] == collide)
+    assert rec["hash"] == "sha256:" + obs
+
+
+def test_adopt_collisions_refuses_authorizing_a_nonadoptable_file(tmp_path):
+    # F1 / remaining-P1: the operator cannot authorize a path that is not a live
+    # adoptable collision -- eligibility is recomputed from _MODULE_MAPPINGS, so
+    # an arbitrary planted file refuses (exact-set disagreement).
+    target = tmp_path.resolve()
+    collide = _PKG_DSTS[1]
+    base = _staged_collision(target, collide)
+    planted = "unreviewed.py"
+    (target / planted).write_text("# planted, never adoptable\n", encoding="utf-8")
+    obs = s._sha256_hex((target / planted).read_bytes())
+    forged = f"{planted}@{obs}@" + "0" * 64
+    assert s.main(base + ["--adopt-collisions", forged]) != 0
+    assert not any(r["dst"] == planted for r in s.read_lockfile(target)["files"])
+
+
+def test_adopt_collisions_refuses_when_a_collision_appeared_after_authorization(tmp_path):
+    # F1: a collision appearing after the operator authorized makes the authorized
+    # set disagree with the live adoptable set -> refuse; NOTHING adopted.
+    target = tmp_path.resolve()
+    c1, c2 = _PKG_DSTS[1], _PKG_DSTS[2]
+    base = _staged_collision(target, c1)
+    auth = _adopt_args(target, c1)              # only c1 authorized
+    (target / c2).write_text("# appeared after authorization\n", encoding="utf-8")
+    assert s.main(base + ["--adopt-collisions"] + auth) != 0
+    assert not any(r["dst"] in (c1, c2) for r in s.read_lockfile(target)["files"])
+
+
 @pytest.mark.parametrize("combo", [
-    ["--plan", "--adopt-collisions"],
-    ["--stage", "--adopt-collisions"],
-    ["--apply", "--adopt-collisions"],
-    ["--adopt-collisions", "--finalize"],
+    ["--plan", "--adopt-collisions", _DUMMY_AUTH],
+    ["--stage", "--adopt-collisions", _DUMMY_AUTH],
+    ["--apply", "--adopt-collisions", _DUMMY_AUTH],
+    ["--adopt-collisions", _DUMMY_AUTH, "--finalize"],
     ["--plan", "--apply"],
     ["--stage", "--apply"],
 ])
@@ -619,6 +637,16 @@ def test_upgrade_actions_are_mutually_exclusive(tmp_path: Path, combo):
     base = _staged_collision(target, collide)
     assert s.main(base + combo) == 2
     assert not any(r["dst"] == collide for r in s.read_lockfile(target)["files"])
+
+
+def test_adopt_collisions_requires_explicit_authorization(tmp_path: Path):
+    # The action takes >=1 explicit triple (argparse nargs="+"); bare
+    # `--adopt-collisions` is rejected, never a no-arg adopt.
+    target = tmp_path.resolve()
+    collide = _PKG_DSTS[1]
+    base = _staged_collision(target, collide)
+    with pytest.raises(SystemExit):       # argparse: expected at least one argument
+        s.main(base + ["--adopt-collisions"])
 
 
 def test_commit_lock_and_caches_is_atomic_on_lockfile_failure(tmp_path, monkeypatch):
@@ -639,27 +667,24 @@ def test_commit_lock_and_caches_is_atomic_on_lockfile_failure(tmp_path, monkeypa
         return real_replace(src, dst)
 
     monkeypatch.setattr(os, "replace", boom)
-    lock2 = dict(lock); lock2["files"] = list(lock["files"]) + [
+    lock2 = dict(lock)
+    lock2["files"] = list(lock["files"]) + [
         {"src": "modules/x/x.py", "dst": "tools/_fork/x.py", "verbatim": False,
          "hash": "sha256:" + s._sha256_hex(b"fork"), "base_hash": "sha256:00",
          "base_cache": "dev/.cairn/base/tools/_fork/x.py"}]
     with pytest.raises(OSError):
         UP._commit_lock_and_caches(target, lock2, [(new_cache, b"upstream")])
-    # Old lockfile authority unchanged; the orphan new cache (if written) is
-    # harmless because the old lock never references it.
     assert (target / s._LOCKFILE_REL).read_bytes() == before
 
 
 def test_lockconflict_destination_is_distinct_and_not_adoptable(tmp_path: Path):
-    # R3/R5: a new-upstream spec whose dst is already tracked under ANOTHER
-    # source is a provenance conflict, not an adoptable fork.
+    # R3/R5: a new-upstream spec whose dst is already tracked under ANOTHER source
+    # is a provenance conflict, never an adoptable fork.
     target = tmp_path.resolve()
     _install(target)
     collide = _PKG_DSTS[1]
     _make_pre_split(target, keep_on_disk=(collide,))
     (target / collide).write_text("# adopter fork\n", encoding="utf-8")
-    # Record the dst under a BOGUS source so dst in lock_dsts but canonical_src
-    # is not -> the lock-conflict branch, not the adoptable branch.
     lock = s.read_lockfile(target)
     lock["files"].append({"src": "modules/bogus/elsewhere.py", "dst": collide,
                           "verbatim": True,
@@ -671,63 +696,47 @@ def test_lockconflict_destination_is_distinct_and_not_adoptable(tmp_path: Path):
         target, CAIRN_ROOT, TEMPLATES_ROOT, lock, to_ref=None)[0]}
     assert plans[collide].kind == "new-module-lockconflict"
     assert plans[collide].kind not in s._ADVANCING_KINDS
-
-    # It is not offered to --adopt-collisions (absent from the staged manifest).
+    # Authorizing it refuses (it is not in the live adoptable set).
     base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
-    assert s.main(base + ["--stage"]) == 0
-    import json  # noqa: PLC0415
-    meta = json.loads((target / s._STAGING_REL / s._STAGE_META).read_text())
-    assert collide not in meta.get("collision_adopt", {})
+    obs = s._sha256_hex((target / collide).read_bytes())
+    assert s.main(base + ["--adopt-collisions", f"{collide}@{obs}@" + "0" * 64]) != 0
 
 
 def test_adopt_collisions_refuses_symlinked_lockfile(tmp_path: Path):
-    # R4: the lockfile authority write is guarded; a symlinked lockfile is
-    # refused (containment), exit 2, with no mutation.
+    # R4: the lockfile authority write is guarded; a symlinked lockfile is refused
+    # (containment), exit 2, with no mutation.
     target = tmp_path.resolve()
     collide = _PKG_DSTS[1]
     base = _staged_collision(target, collide)
+    auth = _adopt_args(target, collide)
     lockf = target / s._LOCKFILE_REL
     real = lockf.parent / "real-lock.yml"
     real.write_bytes(lockf.read_bytes())
     lockf.unlink()
     lockf.symlink_to(real.name)
 
-    assert s.main(base + ["--adopt-collisions"]) == 2
+    assert s.main(base + ["--adopt-collisions"] + auth) == 2
     assert not any(r["dst"] == collide for r in s.read_lockfile(target)["files"])
-
-
-def test_adopt_collisions_mutually_exclusive_with_apply(tmp_path: Path):
-    # R5: a mixed-action invocation is rejected before any work.
-    target = tmp_path.resolve()
-    collide = _PKG_DSTS[1]
-    base = _staged_collision(target, collide)
-    assert s.main(base + ["--adopt-collisions", "--apply"]) == 2
-    # nothing recorded, nothing applied
-    assert not any(r["dst"] == collide for r in s.read_lockfile(target)["files"])
-    assert not (target / _PKG_DSTS[0]).exists()
 
 
 def test_adopt_collisions_refuses_to_ref(tmp_path: Path):
     target = tmp_path.resolve()
     collide = _PKG_DSTS[1]
     base = _staged_collision(target, collide)
-    assert s.main(base + ["--adopt-collisions", "--to", "HEAD"]) == 2
+    assert s.main(base + ["--adopt-collisions", _DUMMY_AUTH, "--to", "HEAD"]) == 2
 
 
-def test_adopt_collisions_requires_a_prior_stage(tmp_path: Path):
+def test_plan_prints_paste_ready_adopt_authorization(tmp_path, capsys):
+    # UX: `--plan` prints the exact `--adopt-collisions dst@obs@up` the operator
+    # copies -- the authorization channel, computed at review time.
     target = tmp_path.resolve()
+    collide = _PKG_DSTS[1]
     _install(target)
+    _make_pre_split(target, keep_on_disk=(collide,))
+    (target / collide).write_text("# adopter fork\n", encoding="utf-8")
     base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
-    assert s.main(base + ["--adopt-collisions"]) != 0   # no stage -> refuse
-
-
-def test_adopt_collisions_no_collisions_is_a_noop(tmp_path: Path):
-    # A clean staged upgrade (no collisions) -> adopt records nothing.
-    target = tmp_path.resolve()
-    _install(target)
-    _make_pre_split(target)              # package absent -> clean new-module adds
-    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
-    assert s.main(base + ["--stage"]) == 0
-    before = s.read_lockfile(target)["files"]
-    assert s.main(base + ["--adopt-collisions"]) == 0
-    assert s.read_lockfile(target)["files"] == before   # unchanged
+    assert s.main(base + ["--plan"]) == 0
+    out = capsys.readouterr().out
+    triple = _adopt_args(target, collide)[0]
+    assert "--adopt-collisions" in out
+    assert triple in out

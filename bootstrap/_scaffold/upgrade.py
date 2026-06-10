@@ -588,6 +588,33 @@ def _print_upgrade_report(
               f"(override: --ack-review-only).")
 
 
+def _print_collision_adopt_hints(plans: list[FilePlan], target: Path) -> None:
+    """Print the ready-to-paste ``--adopt-collisions`` authorization for each
+    adoptable occupied-unlocked collision (code-review re-review R2). The
+    operator reviews the collision (its ``.ours``/``.theirs`` pair after
+    ``--stage``), then copies the printed ``dst@observed@upstream`` triple -- the
+    authorization channel an actor who changes the bytes cannot also rewrite (the
+    mutable stage metadata is never the authority)."""
+    triples: list[str] = []
+    for fp in sorted((f for f in plans
+                      if f.kind == "new-module-blocked" and f.src),
+                     key=lambda f: f.dst):
+        dst_abs = target / fp.dst
+        if not (dst_abs.is_file() and not dst_abs.is_symlink()):
+            continue
+        obs = _sha256_hex(dst_abs.read_bytes())
+        up = _sha256_hex((fp.theirs_raw or "").encode("utf-8"))
+        triples.append(f"{fp.dst}@{obs}@{up}")
+    if not triples:
+        return
+    print("\n  To KEEP your version of an occupied-destination collision as a "
+          "tracked fork, review it (the `.ours`/`.theirs` pair under "
+          f"{_STAGING_REL}/review-only/ after `--stage`), then run:")
+    print("    upgrade --adopt-collisions \\\n      " + " \\\n      ".join(triples))
+    print("  (The digests authorize the EXACT bytes you reviewed; adoption "
+          "refuses if the destination or the upstream changed.)")
+
+
 def _seed_staging_gitignore(target: Path) -> None:
     seed_gitignore(target, (_STAGING_REL + "/",))
 
@@ -700,7 +727,6 @@ def _write_stage(
     # ``--ack-review-only`` override cannot bypass them. Stage the .theirs/.ours
     # pair (when content is available) so the adopter can reconcile by hand.
     module_blocked_dsts: list[str] = []
-    collision_adopt: dict[str, dict[str, Any]] = {}
     for fp in plans:
         if fp.kind not in ("new-module-blocked", "new-module-lockconflict"):
             continue
@@ -715,22 +741,6 @@ def _write_stage(
             ours_out.parent.mkdir(parents=True, exist_ok=True)
             ours_out.write_text(
                 dst_abs.read_text(encoding="utf-8"), encoding="utf-8")
-        # Adoptable-collision manifest (R2): bind a later `--adopt-collisions` to
-        # exactly this dst + the bytes --stage observed. Only an occupied-UNLOCKED
-        # `new-module-blocked` that carries a canonical src AND is a present
-        # regular (non-symlink) file is adoptable; a lock-conflict never is.
-        if (fp.kind == "new-module-blocked" and fp.src
-                and dst_abs.is_file() and not dst_abs.is_symlink()):
-            entry: dict[str, Any] = {
-                "src": fp.src, "verbatim": bool(fp.verbatim),
-                "observed_hash": "sha256:" + _sha256_hex(dst_abs.read_bytes()),
-            }
-            # F5: record the reviewed upstream-base hash so adoption can refuse
-            # if the upstream changed between --stage and --adopt-collisions.
-            if fp.theirs_raw is not None:
-                entry["upstream_hash"] = (
-                    "sha256:" + _sha256_hex(fp.theirs_raw.encode("utf-8")))
-            collision_adopt[fp.dst] = entry
     # #48: a verbatim file already byte-identical to the new upstream
     # (verbatim-up-to-date) but whose lockfile hash is stale -- the adopter
     # hand-synced it to a later Cairn before upgrading. Record it so --apply
@@ -767,10 +777,6 @@ def _write_stage(
         # F2/F3: occupied-collision / pending-under-`--to` module additions --
         # --apply fails closed UNCONDITIONALLY (no --ack-review-only bypass).
         "module_blocked": sorted(module_blocked_dsts),
-        # Adoptable occupied-unlocked collisions -> {dst: {src, verbatim,
-        # observed_hash}}, bound so `--adopt-collisions` records exactly the
-        # reviewed set + bytes (R2). A lock-conflict block is NOT listed here.
-        "collision_adopt": collision_adopt,
         # #47 new core-like files to record in the lockfile on apply (refs only).
         "new_entries": new_entries,
         # #48 verbatim files whose stale lock hash --apply should heal.
@@ -1260,67 +1266,84 @@ def _cmd_adopt_module(
     return 0
 
 
+def _parse_collision_auth(tok: str) -> tuple[str, str, str] | None:
+    """Parse one operator authorization ``DST@OBSERVED_SHA256@UPSTREAM_SHA256``
+    into ``(dst, "sha256:<observed>", "sha256:<upstream>")``; None if malformed.
+    Each digest is a bare 64-hex string the operator copies from the
+    ``--plan`` / ``--stage`` output."""
+    parts = tok.split("@")
+    if len(parts) != 3:
+        return None
+    dst_rel, obs, up = parts
+    if not dst_rel:
+        return None
+    for h in (obs, up):
+        if len(h) != 64 or any(c not in "0123456789abcdefABCDEF" for c in h):
+            return None
+    return dst_rel, "sha256:" + obs.lower(), "sha256:" + up.lower()
+
+
 def _cmd_adopt_collisions(
     target: Path, cairn_root: Path, templates_root: Path, lock: dict[str, Any],
+    authorizations: list[str],
 ) -> int:
-    """`upgrade --adopt-collisions`: record each occupied-destination collision
-    a prior `--stage` surfaced as a tracked adopter **fork**, so the upgrade is
-    no longer blocked on it and ``verify_integrity`` attests it. The adopter
-    keeps their divergent file unchanged; the upstream template becomes its
-    merge base (``base_hash``), so a later upgrade classifies it
+    """`upgrade --adopt-collisions <DST@OBSERVED_SHA256@UPSTREAM_SHA256> ...`:
+    record each occupied-destination collision as a tracked adopter **fork**, so
+    the upgrade is no longer blocked on it and ``verify_integrity`` attests it.
+    The adopter keeps their divergent file unchanged; the upstream template
+    becomes its merge base (``base_hash``), so a later upgrade classifies it
     ``locally-modified`` -- surfaced, never silently overwritten.
 
-    The stage is a **review surface, not a trust anchor** (code-review F1): the
-    gitignored stage metadata is mutable, so eligibility -- which destination
-    maps to which canonical source + verbatim policy -- is **recomputed from the
-    live ``_MODULE_MAPPINGS`` at adoption time**, and the staged manifest can
-    only CONFIRM (by the operator-reviewed hashes) the recomputed collisions,
-    never expand or redefine them. Bound to the reviewed bytes (R2 / F2): the
-    destination is read ONCE and that exact buffer is verified against the
-    staged hash and passed to the recorder (no re-read). The upstream merge base
-    is bound to the bytes ``--stage`` reviewed (F5): adoption refuses if the
-    upstream changed since. Eligibility (R3): src genuinely new, dst not already
-    owned, a present regular contained file -- a lock-conflict block is never
-    adoptable. All-or-nothing (R4): the FULL set is preflighted before any
-    mutation; then base caches + the lockfile are written guarded + atomic
-    (lockfile last). It never writes the adopter's destination."""
-    import json
-    stage = target / _STAGING_REL
-    meta_path = stage / _STAGE_META
-    if not meta_path.exists():
-        print("error: no staged upgrade found; run `upgrade --stage` first, "
-              f"review the collisions under {_STAGING_REL}/review-only/, then "
-              "`upgrade --adopt-collisions`.", file=sys.stderr)
-        return 1
-    meta = json.loads(meta_path.read_text(encoding="utf-8"))
-    # Same staleness contract as --apply: the stage must reflect the current lock.
-    if meta.get("lock_commit") != lock.get("cairn_commit") or \
-            meta.get("tokens") != lock.get("tokens") or \
-            meta.get("modules") != lock.get("modules"):
-        print("error: staged upgrade is stale (lockfile/tokens/roster changed "
-              "since --stage); re-run `upgrade --stage`.", file=sys.stderr)
-        return 1
-    staged: dict[str, dict[str, Any]] = meta.get("collision_adopt", {})
+    **Authorization comes from the operator, not the mutable stage** (code-review
+    re-review R2). An actor able to change the candidate bytes can also rewrite
+    the gitignored stage metadata's hashes alongside them, so adoption must NOT
+    trust stored hashes. The operator reviews ``upgrade --plan`` / ``--stage``
+    (which prints, per adoptable collision, the ``dst@observed@upstream`` triple
+    + the ready-to-paste command) and passes those triples explicitly here -- an
+    attacker who changes the destination bytes (or swaps the upstream source)
+    cannot also change the operator's typed digest, so adoption refuses. The
+    operator must authorize **exactly** the live adoptable set.
+
+    Eligibility (which dst maps to which canonical src + verbatim) is recomputed
+    from the live ``_MODULE_MAPPINGS`` at adoption time (F1); the operator triples
+    bind the reviewed destination bytes (R2/F2 -- read once, compared to the
+    typed digest) and the reviewed upstream merge base (F5). Eligibility (R3): src
+    genuinely new, dst not already owned, a present regular contained file -- a
+    lock-conflict block is never adoptable. All-or-nothing (R4): the FULL set is
+    preflighted before any mutation; then base caches + the lockfile are written
+    guarded + atomic (lockfile last). It never writes the adopter's destination."""
+    # Parse the operator authorizations.
+    authorized: dict[str, tuple[str, str]] = {}
+    for tok in authorizations:
+        parsed = _parse_collision_auth(tok)
+        if parsed is None:
+            print(f"error: malformed authorization {tok!r}; expected "
+                  "DST@OBSERVED_SHA256@UPSTREAM_SHA256 (each a 64-hex digest, "
+                  "copied from `upgrade --plan`).", file=sys.stderr)
+            return 2
+        dst_rel, obs_auth, up_auth = parsed
+        if dst_rel in authorized:
+            print(f"error: duplicate authorization for {dst_rel}.",
+                  file=sys.stderr)
+            return 2
+        authorized[dst_rel] = (obs_auth, up_auth)
     # F1: recompute the adoptable-collision plan from the LIVE mapping -- the
-    # authority for dst -> canonical src -> verbatim. The mutable manifest cannot
-    # define eligibility; it can only confirm a recomputed collision by hash.
+    # authority for which dst -> canonical src -> verbatim is adoptable. The
+    # operator cannot authorize a non-adoptable destination.
     plans, _structural = _compute_upgrade(
         target, cairn_root, templates_root, lock, None)
     adoptable = {fp.dst: fp for fp in plans
                  if fp.kind == "new-module-blocked" and fp.src}
-    # Exact agreement: the staged selection must match the recomputed adoptable
-    # set EXACTLY -- an extra, missing, or redefined manifest entry refuses
-    # (a tampered manifest can never redefine what is eligible).
-    if set(staged) != set(adoptable):
-        print("error: the staged collision set no longer matches the live "
-              "adoptable collisions (stage stale or tampered); re-run "
-              "`upgrade --stage`.\n"
-              f"  staged:    {sorted(staged)}\n"
-              f"  adoptable: {sorted(adoptable)}", file=sys.stderr)
+    if set(authorized) != set(adoptable):
+        print("error: the authorized set must be EXACTLY the live adoptable "
+              "collisions -- review `upgrade --plan` and authorize each "
+              "(extra, missing, or non-adoptable entries refuse).\n"
+              f"  authorized: {sorted(authorized)}\n"
+              f"  adoptable:  {sorted(adoptable)}", file=sys.stderr)
         return 1
     if not adoptable:
-        print("  [info] no adoptable collisions in the current stage; nothing "
-              "to adopt.", file=sys.stderr)
+        print("  [info] no adoptable collisions; nothing to adopt.",
+              file=sys.stderr)
         return 0
     lock_srcs = {rec.get("src") for rec in lock.get("files", [])}
     lock_dsts = {rec.get("dst") for rec in lock.get("files", [])}
@@ -1330,44 +1353,39 @@ def _cmd_adopt_collisions(
         fp = adoptable[dst_rel]
         src_rel = fp.src               # AUTHORITY: the live module mapping
         verbatim = bool(fp.verbatim)
-        info = staged[dst_rel]
-        # The manifest must AGREE with the live mapping (a tampered src/verbatim
-        # is caught -- it cannot point a real src at an arbitrary file).
-        if info.get("src") != src_rel or bool(info.get("verbatim")) != verbatim:
-            print(f"error: {dst_rel}: staged src/verbatim disagrees with the "
-                  "live module mapping (stage tampered); re-run "
-                  "`upgrade --stage`.", file=sys.stderr)
-            return 1
+        obs_auth, up_auth = authorized[dst_rel]
         # Eligibility (R3): src genuinely new, dst not already owned by another.
         if src_rel in lock_srcs or dst_rel in lock_dsts:
             print(f"error: {dst_rel}: no longer an adoptable new collision "
-                  "(now tracked); re-run `upgrade --stage`.", file=sys.stderr)
+                  "(now tracked); re-run `upgrade --plan`.", file=sys.stderr)
             return 1
         # Present, regular, contained on-disk file (re-verified at adopt time).
         dst_abs = target / dst_rel
         if not (dst_abs.is_file() and not dst_abs.is_symlink()):
             print(f"error: {dst_rel}: not a present regular file; refusing to "
-                  "adopt (re-run `upgrade --stage`).", file=sys.stderr)
+                  "adopt (re-run `upgrade --plan`).", file=sys.stderr)
             return 1
         _assert_safe_write(dst_abs, target)   # containment of the dst path
-        # F2: read the destination ONCE; verify THAT buffer against the reviewed
-        # staged hash; pass it to the recorder (which never re-reads).
+        # F2 + R2: read the destination ONCE; the bytes must match the OPERATOR's
+        # authorized digest (not any mutable stored value) -- changed bytes, even
+        # with a rewritten stage manifest, refuse.
         dst_bytes = dst_abs.read_bytes()
-        if "sha256:" + _sha256_hex(dst_bytes) != info.get("observed_hash"):
-            print(f"error: {dst_rel}: changed on disk since --stage; refusing "
-                  "to adopt (re-run `upgrade --stage`).", file=sys.stderr)
+        if "sha256:" + _sha256_hex(dst_bytes) != obs_auth:
+            print(f"error: {dst_rel}: on-disk bytes do not match the authorized "
+                  "observed hash; refusing (re-review `upgrade --plan`).",
+                  file=sys.stderr)
             return 1
-        # F5: bind the upstream merge base to the bytes --stage reviewed. The
-        # recompute's theirs_raw IS the current upstream text; refuse if it
-        # differs from the staged upstream hash.
+        # F5 + R2: the upstream merge base must match the OPERATOR's authorized
+        # upstream digest, so a swapped upstream source refuses.
         if fp.theirs_raw is None:
             print(f"error: {dst_rel}: no upstream content to anchor the fork "
-                  "base; re-run `upgrade --stage`.", file=sys.stderr)
+                  "base.", file=sys.stderr)
             return 1
         upstream_bytes = fp.theirs_raw.encode("utf-8")
-        if "sha256:" + _sha256_hex(upstream_bytes) != info.get("upstream_hash"):
-            print(f"error: {dst_rel}: upstream changed since --stage; refusing "
-                  "to adopt (re-run `upgrade --stage`).", file=sys.stderr)
+        if "sha256:" + _sha256_hex(upstream_bytes) != up_auth:
+            print(f"error: {dst_rel}: upstream does not match the authorized "
+                  "upstream hash; refusing (re-review `upgrade --plan`).",
+                  file=sys.stderr)
             return 1
         rec, cache_write = _record_fork_entry(
             target, src_rel, dst_rel, verbatim, upstream_bytes, dst_bytes)
@@ -1843,11 +1861,15 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
                         "lockfile so it 3-way-merges on later upgrades (#49). "
                         "Explicit, never automatic -- a module is a deliberate "
                         "choice.")
-    p.add_argument("--adopt-collisions", action="store_true",
-                   help="Record occupied-destination collisions surfaced by a "
-                        "prior --stage as tracked adopter forks (keep-mine), so "
-                        "the upgrade is no longer blocked on them. Bound to the "
-                        "staged set + bytes; explicit, never automatic.")
+    p.add_argument("--adopt-collisions", nargs="+", default=None,
+                   metavar="DST@OBSERVED_SHA256@UPSTREAM_SHA256",
+                   help="Record occupied-destination collisions as tracked "
+                        "adopter forks (keep-mine), so the upgrade is no longer "
+                        "blocked on them. Pass one explicit "
+                        "DST@OBSERVED_SHA256@UPSTREAM_SHA256 per adoptable "
+                        "collision -- copy the ready-to-paste command from "
+                        "`upgrade --plan`. Authorization is the operator's typed "
+                        "digests, never the mutable stage metadata.")
     args = p.parse_args(argv)
 
     # R5 (External Security review): the upgrade ACTIONS are mutually exclusive.
@@ -1903,7 +1925,8 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
                   "tree).", file=sys.stderr)
             return 2
         try:
-            return _cmd_adopt_collisions(target, cairn_root, templates_root, lock)
+            return _cmd_adopt_collisions(
+                target, cairn_root, templates_root, lock, args.adopt_collisions)
         except ScaffoldSecurityError as exc:
             print("error: upgrade --adopt-collisions refused (containment): "
                   f"{exc}", file=sys.stderr)
@@ -1980,6 +2003,7 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
             return 2
         _print_upgrade_report(plans, structural, citation, mode="stage",
                               drift=drift)
+        _print_collision_adopt_hints(plans, target)
         # (R1) --stage writes only the gitignored review surface, so it
         # *completes* even on a dirty tree -- but advise when the write-set
         # overlaps a tracked uncommitted path so the eventual --apply refusal
@@ -2005,4 +2029,5 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
     # Default: --plan (strictly read-only).
     _print_upgrade_report(plans, structural, citation,
                           mode="plan (read-only)", drift=drift)
+    _print_collision_adopt_hints(plans, target)
     return 0
