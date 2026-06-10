@@ -35,6 +35,7 @@ from .config import (
     _MODULE_MAPPINGS,
     _SKILLS_GITIGNORE,
     _SKILLS_MAPPINGS,
+    duplicate_destinations,
     load_config,
     missing_required_tokens,
     resolve_axes,
@@ -144,6 +145,21 @@ def _theirs_bytes(
     return text.encode("utf-8") if text is not None else None
 
 
+def _always_on_group_complete(
+    cairn_root: Path, templates_root: Path, to_ref: str | None,
+) -> bool:
+    """True iff EVERY always-on launcher+engine source resolves at *to_ref* -- the
+    R4 completeness-group precondition. When False, no always-on member may
+    advance OR be adopted: ANY lockfile-authority mutation touching the group is
+    fail-closed, so a facade never lands without its engine (External-Security
+    review P1#1 -- the precondition the upgrade post-pass AND ``--adopt-collisions``
+    both consult, not just the advancing path)."""
+    return all(
+        _theirs_bytes(cairn_root, templates_root, f"modules/{spec.src}", to_ref)
+        is not None
+        for spec in _ALWAYS_ON_MAPPINGS)
+
+
 #: Kinds that may be staged + applied (they advance the machine
 #: authority).  Every other kind is report-only and is NEVER staged, so it
 #: can never be applied: slot-removed, error,
@@ -233,20 +249,20 @@ def _assert_mapping_ownership(lock_modules: set[str]) -> None:
     skills, and adopted-module mapping sets -- is a mapping bug. Refuse it (never
     silently let one spec shadow another), independent of lock / source state, so
     a duplicate hidden by source-absence or processing order cannot slip through.
-    Current Cairn mappings have none; this preserves that as an enforced invariant."""
-    owners: dict[str, list[str]] = {}
-    for src, dst in _CORE_MAPPINGS:
-        owners.setdefault(dst, []).append(f"core:{src}")
-    for src, dst, _verbatim in _SKILLS_MAPPINGS:
-        owners.setdefault(dst, []).append(f"skills:{src}")
-    # Always-on executable helpers share the destination namespace (R4: unique
-    # destination ownership across core / skills / always-on / adopted modules).
-    for spec in _ALWAYS_ON_MAPPINGS:
-        owners.setdefault(spec.dst, []).append(f"always-on:{spec.src}")
-    for mod in sorted(lock_modules):
-        for spec in _MODULE_MAPPINGS.get(mod, []):
-            owners.setdefault(spec.dst, []).append(f"module[{mod}]:{spec.src}")
-    dupes = {dst: who for dst, who in owners.items() if len(who) > 1}
+    Current Cairn mappings have none; this preserves that as an enforced
+    invariant.  Shares the ``duplicate_destinations`` preflight with the install
+    paths (External-Security review P1#2) -- one detector, three callers
+    (install_onboarding / install_manifest / here), each choosing its failure."""
+    entries = (
+        [(f"core:{src}", dst) for src, dst in _CORE_MAPPINGS]
+        + [(f"skills:{src}", dst) for src, dst, _v in _SKILLS_MAPPINGS]
+        # Always-on executable helpers share the destination namespace (R4).
+        + [(f"always-on:{spec.src}", spec.dst) for spec in _ALWAYS_ON_MAPPINGS]
+        + [(f"module[{mod}]:{spec.src}", spec.dst)
+           for mod in sorted(lock_modules)
+           for spec in _MODULE_MAPPINGS.get(mod, [])]
+    )
+    dupes = duplicate_destinations(entries)
     if dupes:
         detail = "; ".join(
             f"{dst} <- {', '.join(who)}" for dst, who in sorted(dupes.items()))
@@ -557,29 +573,34 @@ def _compute_upgrade(
                     f"{_BASE_CACHE_REL}/{dst_rel}",
                     src=canonical_src, verbatim=False))
 
-    # R4: always-on completeness-group enforcement (the upgrade-advancement guard).
-    # The launcher + engine advance through TWO paths -- a tracked launcher via the
-    # clean/verbatim classification above, a not-yet-tracked member via new-core --
-    # so a per-loop check cannot see the whole group. Resolve every group source
-    # ONCE; if ANY is missing upstream (a corrupted checkout / misregistered spec),
-    # NO group member may advance: convert each advancing/new group plan to a hard
-    # block, so a facade never advances over an absent engine member (the latent
-    # facade-without-engine breakage this change closes). A no-op on the
-    # overwhelmingly-common complete-group case.
+    # R4: always-on completeness-group enforcement (the upgrade-authority guard).
+    # The launcher + engine reach lockfile authority through THREE paths -- a
+    # tracked launcher advancing via the clean/verbatim classification above, a
+    # not-yet-tracked member adding via new-core, and an occupied-unlocked launcher
+    # ADOPTED via `--adopt-collisions` (`new-core-blocked`) -- so a per-loop check
+    # cannot see the whole group. Resolve every group source ONCE; if ANY is
+    # missing upstream (a corrupted checkout / misregistered spec), NO group member
+    # may advance OR be adopted: convert EVERY pending group plan -- advancing AND
+    # blocked-addition (incl. the adoptable `new-core-blocked`) -- to the hard
+    # block, so a facade never lands without its engine. Converting the adoptable
+    # kinds too is the External-Security review P1#1 fix: a non-advancing
+    # `new-core-blocked` was left adoptable, so `--adopt-collisions` could record a
+    # partial-group fork into the lockfile. Since `_cmd_adopt_collisions` discovers
+    # its adoptable set by re-running `_compute_upgrade`, this conversion removes
+    # the always-on collisions from that set too. A no-op on the overwhelmingly-
+    # common complete-group case. Report-only kinds (up-to-date, verbatim-up-to-
+    # date) carry no authority mutation and are left untouched.
+    _mutating_group_kinds = _ADVANCING_KINDS | set(_BLOCKED_ADDITION_KINDS)
     always_on_dsts = {spec.dst for spec in _ALWAYS_ON_MAPPINGS}
-    group_complete = all(
-        _theirs_bytes(cairn_root, templates_root, f"modules/{spec.src}", to_ref)
-        is not None
-        for spec in _ALWAYS_ON_MAPPINGS)
-    if not group_complete:
+    if not _always_on_group_complete(cairn_root, templates_root, to_ref):
         plans = [
             FilePlan(
                 fp.dst, "new-core-incomplete-group", None,
                 "always-on onboarding completeness group is incomplete (a "
                 "launcher/engine member's source is missing upstream); refusing "
-                "to advance any member until it is restored", None, None)
+                "to advance or adopt any member until it is restored", None, None)
             if (fp.dst in always_on_dsts
-                and fp.kind in _ADVANCING_KINDS)
+                and fp.kind in _mutating_group_kinds)
             else fp
             for fp in plans
         ]
@@ -1452,6 +1473,21 @@ def _cmd_adopt_collisions(
         target, cairn_root, templates_root, lock, None)
     adoptable = {fp.dst: fp for fp in plans
                  if fp.kind in _ADOPTABLE_BLOCKED_KINDS and fp.src}
+    always_on_dsts = {spec.dst for spec in _ALWAYS_ON_MAPPINGS}
+    # External-Security review P1#1 (defense in depth): adopting an always-on
+    # collision into the lockfile IS an authority advancement, so it must fail
+    # closed on a partial completeness group. The post-pass above already removes
+    # always-on members from `adoptable` when the group is incomplete (so the
+    # exactness check below would refuse anyway); this explicit guard makes the
+    # invariant local to the authority-write site and survives a future change to
+    # the post-pass. Refuse outright rather than silently dropping members.
+    if any(d in always_on_dsts for d in adoptable) and not \
+            _always_on_group_complete(cairn_root, templates_root, None):
+        print("error: refusing to adopt an always-on launcher/engine collision "
+              "while the completeness group is incomplete (a member source is "
+              "missing upstream); restore it first, then re-run `upgrade --plan`.",
+              file=sys.stderr)
+        return 1
     if set(authorized) != set(adoptable):
         print("error: the authorized set must be EXACTLY the live adoptable "
               "collisions -- review `upgrade --plan` and authorize each "

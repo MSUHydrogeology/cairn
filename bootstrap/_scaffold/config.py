@@ -332,6 +332,24 @@ _ALWAYS_ON_MAPPINGS: tuple[InstallSpec, ...] = (
 )
 
 
+def duplicate_destinations(
+    entries: list[tuple[str, str]],
+) -> dict[str, list[str]]:
+    """Map each destination claimed by **more than one** owner to its owner
+    labels; empty dict means every destination is uniquely owned.
+
+    The shared destination-ownership preflight (External-Security review P1#2): a
+    duplicate destination means one ``InstallSpec`` silently shadows another on a
+    ``--force`` install, or the published manifest emits two rows for one path.
+    Each entry is ``(owner_label, dst)``.  Pure leaf logic; the callers choose the
+    failure (``install_onboarding`` / ``assert_always_on_complete`` and the
+    upgrade planner fail closed before any write; ``install_manifest`` refuses)."""
+    owners: dict[str, list[str]] = {}
+    for label, dst in entries:
+        owners.setdefault(dst, []).append(label)
+    return {dst: who for dst, who in owners.items() if len(who) > 1}
+
+
 # Module name → list of InstallSpec (1:many).  Most modules install a
 # single substituted ``.md`` doctrine file; the two default-on
 # discipline modules also install their reference *script* verbatim

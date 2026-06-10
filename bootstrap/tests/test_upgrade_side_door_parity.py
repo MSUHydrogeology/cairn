@@ -381,3 +381,65 @@ def test_upgrade_fails_closed_when_a_group_source_is_missing(tmp_path: Path):
     assert "new-core" not in {kinds[d] for d in _ALWAYS_ON_DSTS if d in kinds}
     # the incomplete-group block is a hard block (non-advancing)
     assert "new-core-incomplete-group" not in s._ADVANCING_KINDS
+
+
+def test_adopt_collisions_refuses_a_partial_group(tmp_path: Path):
+    # External-Security review P1#1: an occupied-unlocked launcher must NOT be
+    # adoptable while an engine source is missing -- adopting it would advance the
+    # lockfile authority for a partial group. The post-pass converts the occupied
+    # launcher to the incomplete-group hard block (no longer adoptable), so
+    # `_cmd_adopt_collisions` records nothing and the lockfile is unchanged.
+    import bootstrap._scaffold.upgrade as UP  # noqa: PLC0415
+    target = tmp_path.resolve()
+    _install(target)
+    _make_pre_parity(target, keep_on_disk=(_LAUNCHER,))
+    (target / _LAUNCHER).write_text("# my launcher fork\n", encoding="utf-8")
+    tpl2 = _doctored_templates(tmp_path, "modules/default-on/_onboarding/triggers.py")
+
+    lock = s.read_lockfile(target)
+    plans = {p.dst: p for p in s._compute_upgrade(
+        target, CAIRN_ROOT, tpl2, lock, to_ref=None)[0]}
+    # the occupied launcher is the incomplete-group hard block, NOT adoptable
+    assert plans[_LAUNCHER].kind == "new-core-incomplete-group"
+
+    before = (target / s._LOCKFILE_REL).read_bytes()
+    obs = s._sha256_hex((target / _LAUNCHER).read_bytes())
+    rc = UP._cmd_adopt_collisions(
+        target, CAIRN_ROOT, tpl2, lock, [f"{_LAUNCHER}@{obs}@" + "0" * 64])
+    assert rc != 0                                           # adoption refused
+    assert (target / s._LOCKFILE_REL).read_bytes() == before  # lock UNCHANGED
+    assert not any(r["dst"] == _LAUNCHER
+                   for r in s.read_lockfile(target)["files"])
+
+
+def test_install_onboarding_refuses_a_duplicate_destination(tmp_path: Path, monkeypatch):
+    # External-Security review P1#2: two always-on specs claiming one destination
+    # must fail closed BEFORE any write -- otherwise `--force` writes both in
+    # sequence and silently shadows the launcher. Destination ownership is checked
+    # alongside source completeness in `assert_always_on_complete`.
+    import bootstrap._scaffold.install as inst  # noqa: PLC0415
+    from bootstrap._scaffold.config import InstallSpec  # noqa: PLC0415
+    target = tmp_path / "adopter"
+    (target / "scripts").mkdir(parents=True)
+    (target / _LAUNCHER).write_text("# the original launcher\n", encoding="utf-8")
+    dup = inst._ALWAYS_ON_MAPPINGS + (
+        InstallSpec("default-on/_onboarding/triggers.py", _LAUNCHER, True),)
+    monkeypatch.setattr(inst, "_ALWAYS_ON_MAPPINGS", dup)
+
+    with pytest.raises(ScaffoldSecurityError):
+        inst.install_onboarding(TEMPLATES_ROOT, target, None, force=True)
+    # refused before any write -> the original launcher is untouched
+    assert (target / _LAUNCHER).read_text(encoding="utf-8") \
+        == "# the original launcher\n"
+
+
+def test_install_manifest_refuses_a_duplicate_destination(monkeypatch):
+    # External-Security review P1#2: the published manifest -- and the lockfile
+    # derived from it -- must refuse two rows for one destination.
+    import bootstrap._scaffold.install as inst  # noqa: PLC0415
+    from bootstrap._scaffold.config import InstallSpec  # noqa: PLC0415
+    dup = inst._ALWAYS_ON_MAPPINGS + (
+        InstallSpec("default-on/_onboarding/triggers.py", _LAUNCHER, True),)
+    monkeypatch.setattr(inst, "_ALWAYS_ON_MAPPINGS", dup)
+    with pytest.raises(ValueError, match="destination-ownership conflict"):
+        inst.install_manifest()

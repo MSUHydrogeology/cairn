@@ -2,7 +2,7 @@
   "cascade_mutable": {
     "bootstrap/_scaffold/config.py": {
       "governed_by": "AST source-motion attest \u2014 one predeclared mapping-symbol delta only (A/B/C/E)",
-      "pre_run_sha256": "16681e3b5685a33c40bb485917d54c82d1cd498bc03af9643f4044f9fd9bbebc"
+      "pre_run_sha256": "012c37603b86c1bb0cedd0706f690d76f57d2a43224045c13242aaf792eddec0"
     },
     "bootstrap/tests/fixtures/frozen_engine/scaffold_frozen.py": {
       "governed_by": "differential oracle \u2014 frozen-engine _MODULE_MAPPINGS lockstep",
@@ -10,11 +10,11 @@
     },
     "bootstrap/tests/fixtures/scaffold_ast_baseline.json": {
       "governed_by": "_ast_attest.py update-symbol \u2014 one allowlisted baseline key, --expect-old guarded",
-      "pre_run_sha256": "a055a650570495934f5721618e90ffcdba22b9dcf425dfb9653d3715df14ef6b"
+      "pre_run_sha256": "674741e7b396ea9ca871bd9089633b0817c26f0c83d9035a60e63d138c7500d5"
     }
   },
   "collection": {
-    "node_count": 1287,
+    "node_count": 1290,
     "node_ids": [
       "bootstrap/tests/test_active_surfacing_mechanism.py::TestActivatePromptEmission::test_active_prompt_in_outcome",
       "bootstrap/tests/test_active_surfacing_mechanism.py::TestActivatePromptEmission::test_active_prompt_not_re_emitted_on_second_run",
@@ -1241,10 +1241,13 @@
       "bootstrap/tests/test_upgrade_module_additions.py::test_upgrade_actions_are_mutually_exclusive[combo5]",
       "bootstrap/tests/test_upgrade_side_door_parity.py::test_absent_but_locked_launcher_is_not_a_new_core_collision",
       "bootstrap/tests/test_upgrade_side_door_parity.py::test_accept_upstream_via_remove_and_restage",
+      "bootstrap/tests/test_upgrade_side_door_parity.py::test_adopt_collisions_refuses_a_partial_group",
       "bootstrap/tests/test_upgrade_side_door_parity.py::test_always_on_executables_are_release_scan_targets",
       "bootstrap/tests/test_upgrade_side_door_parity.py::test_fresh_install_tracks_launcher_and_engine",
+      "bootstrap/tests/test_upgrade_side_door_parity.py::test_install_manifest_refuses_a_duplicate_destination",
       "bootstrap/tests/test_upgrade_side_door_parity.py::test_install_onboarding_fails_closed_on_missing_engine_member",
       "bootstrap/tests/test_upgrade_side_door_parity.py::test_install_onboarding_fails_closed_on_missing_launcher",
+      "bootstrap/tests/test_upgrade_side_door_parity.py::test_install_onboarding_refuses_a_duplicate_destination",
       "bootstrap/tests/test_upgrade_side_door_parity.py::test_keep_mine_launcher_fork_via_adopt_collisions",
       "bootstrap/tests/test_upgrade_side_door_parity.py::test_launcher_fork_survives_two_upstream_versions",
       "bootstrap/tests/test_upgrade_side_door_parity.py::test_present_and_locked_under_another_source_is_a_distinct_conflict",
@@ -2181,10 +2184,13 @@
       "bootstrap/tests/test_upgrade_module_additions.py::test_upgrade_actions_are_mutually_exclusive[combo5]",
       "bootstrap/tests/test_upgrade_side_door_parity.py::test_absent_but_locked_launcher_is_not_a_new_core_collision",
       "bootstrap/tests/test_upgrade_side_door_parity.py::test_accept_upstream_via_remove_and_restage",
+      "bootstrap/tests/test_upgrade_side_door_parity.py::test_adopt_collisions_refuses_a_partial_group",
       "bootstrap/tests/test_upgrade_side_door_parity.py::test_always_on_executables_are_release_scan_targets",
       "bootstrap/tests/test_upgrade_side_door_parity.py::test_fresh_install_tracks_launcher_and_engine",
+      "bootstrap/tests/test_upgrade_side_door_parity.py::test_install_manifest_refuses_a_duplicate_destination",
       "bootstrap/tests/test_upgrade_side_door_parity.py::test_install_onboarding_fails_closed_on_missing_engine_member",
       "bootstrap/tests/test_upgrade_side_door_parity.py::test_install_onboarding_fails_closed_on_missing_launcher",
+      "bootstrap/tests/test_upgrade_side_door_parity.py::test_install_onboarding_refuses_a_duplicate_destination",
       "bootstrap/tests/test_upgrade_side_door_parity.py::test_keep_mine_launcher_fork_via_adopt_collisions",
       "bootstrap/tests/test_upgrade_side_door_parity.py::test_launcher_fork_survives_two_upstream_versions",
       "bootstrap/tests/test_upgrade_side_door_parity.py::test_present_and_locked_under_another_source_is_a_distinct_conflict",
@@ -2335,7 +2341,7 @@
     "bootstrap/tests/test_upgrade.py": "caf4c67bdc565949d7365992bd3e8b5cd0fef11ec0c5cf4145ae03a72b376555",
     "bootstrap/tests/test_upgrade_module.py": "af04daeeeec9f268a884f3dc4184197716d8d90a9ec9875f8ec9ab3d9557fb43",
     "bootstrap/tests/test_upgrade_module_additions.py": "53ac29d204b32b89a5aedb12c420cf18aebc3d16a6e64692ccb6fcf079432128",
-    "bootstrap/tests/test_upgrade_side_door_parity.py": "395c735494cab623e179be17f800596e62536bd6155dc3fb728d0dc323f1b4b9",
+    "bootstrap/tests/test_upgrade_side_door_parity.py": "a5bcb44890b7bfb6f52f49b14c7818d9b5a6ff6ef3be44bbffd99136ab73bfd9",
     "bootstrap/tests/test_verify_counts.py": "afc6923fdf49a4a1eadd605dcb21f5d26292a0f7b5d554329ee3d794bc61bc5d",
     "bootstrap/tests/test_verify_integrity.py": "eb14f8082021e0addfb9cfcf294e31344462d6f64657cdf9278f22a2dc5eb2a4",
     "bootstrap/tests/test_verify_stems.py": "2b196ed9bd6490f7beeccc24c6be484c2a4c83596875491354c56a839ecf3797",

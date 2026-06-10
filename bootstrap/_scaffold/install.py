@@ -31,6 +31,7 @@ from .config import (
     _MODULE_MAPPINGS,
     _SKILLS_GITIGNORE,
     _SKILLS_MAPPINGS,
+    duplicate_destinations,
     strip_conditional_regions,
 )
 from .security import (
@@ -778,12 +779,22 @@ def missing_always_on_sources(templates_root: Path) -> list[str]:
 
 
 def assert_always_on_complete(templates_root: Path) -> None:
-    """Fail closed unless every always-on launcher+engine source resolves (R4).
+    """Fail closed unless the always-on launcher+engine group is **well-formed**
+    before any install -- source-complete AND uniquely-owned destinations (R4 /
+    External-Security review P1#2).
 
-    Raises :class:`ScaffoldSecurityError` on a partial group -- a corrupted Cairn
-    checkout or a misregistered spec -- so the installer refuses BEFORE any
-    facade/engine write rather than ship a launcher without its engine.  The CLI
-    converts the raise to a crisp non-zero exit (no traceback)."""
+    Two fail-closed checks, both raising :class:`ScaffoldSecurityError` (the CLI
+    converts the raise to a crisp non-zero exit) BEFORE any facade/engine write:
+
+    1. **Source completeness** -- every launcher+engine source resolves; a partial
+       group (corrupted checkout / misregistered spec) never ships a launcher
+       without its engine.
+    2. **Destination ownership** -- no always-on destination is claimed by a
+       second always-on spec OR by a ``core``/``skills`` destination.  Without
+       this, two specs mapping one ``dst`` let ``--force`` write both in
+       sequence, silently replacing the launcher with another source and
+       returning success (the reproduced P1#2 install path).  ``install_manifest``
+       carries the global (all-tier) refusal for the manifest/lockfile path."""
     missing = missing_always_on_sources(templates_root)
     if missing:
         raise ScaffoldSecurityError(
@@ -791,6 +802,24 @@ def assert_always_on_complete(templates_root: Path) -> None:
             f"source(s): {', '.join(missing)}. Refusing to install/track a "
             "partial launcher+engine group (a facade must never ship without "
             "its engine).")
+    owned = (
+        [(f"core:{src}", dst) for src, dst in _CORE_MAPPINGS]
+        + [(f"skills:{src}", dst) for src, dst, _v in _SKILLS_MAPPINGS]
+        + [(f"always-on:{spec.src}", spec.dst) for spec in _ALWAYS_ON_MAPPINGS]
+    )
+    dupes = duplicate_destinations(owned)
+    # Only a collision that INVOLVES an always-on destination is this installer's
+    # to refuse (a hypothetical core-vs-skills dup is install_manifest's global
+    # check); scope to the always-on destination set.
+    always_on_dsts = {spec.dst for spec in _ALWAYS_ON_MAPPINGS}
+    relevant = {dst: who for dst, who in dupes.items() if dst in always_on_dsts}
+    if relevant:
+        detail = "; ".join(
+            f"{dst} <- {', '.join(who)}" for dst, who in sorted(relevant.items()))
+        raise ScaffoldSecurityError(
+            "always-on destination ownership conflict (a destination is claimed "
+            f"by more than one source): {detail}. Refusing to install -- one spec "
+            "would silently shadow another.")
 
 
 def install_onboarding(
@@ -1215,6 +1244,16 @@ def install_manifest(
     for name in names:
         for spec in _MODULE_MAPPINGS.get(name, []):
             entries.append((f"modules/{spec.src}", spec.dst, spec.verbatim))
+    # Destination-ownership refusal (External-Security review P1#2): the published
+    # manifest -- and the lockfile derived from it -- must not emit two rows for
+    # one destination (one source would silently shadow another). Refuse a
+    # malformed mapping before it propagates. No-op on well-formed Cairn.
+    dupes = duplicate_destinations([(src, dst) for src, dst, _v in entries])
+    if dupes:
+        detail = "; ".join(
+            f"{dst} <- {', '.join(who)}" for dst, who in sorted(dupes.items()))
+        raise ValueError(
+            f"install manifest destination-ownership conflict: {detail}")
     entries.sort(key=lambda e: (e[1], e[0]))
     return entries
 
