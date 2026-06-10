@@ -16,7 +16,7 @@
     "type": "AnnAssign"
   },
   "Assign:_ADVANCING_KINDS": {
-    "digest": "8411ac6496243e6e",
+    "digest": "4cd6fdd75b852e6b",
     "span": [
       3155,
       3158
@@ -144,7 +144,7 @@
     "type": "AnnAssign"
   },
   "Assign:_KIND_DISPLAY_LABEL": {
-    "digest": "816c83e92e25cac6",
+    "digest": "789bf37b8d36a4a2",
     "span": [
       3162,
       3166
@@ -496,7 +496,7 @@
     "type": "Expr"
   },
   "FunctionDef:_apply_upgrade": {
-    "digest": "14a86f57c71ebacb",
+    "digest": "a8c38e5ef64e4e0a",
     "span": [
       4007,
       4204
@@ -616,7 +616,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_compute_upgrade": {
-    "digest": "8ce2cda2546f9ecd",
+    "digest": "c62b27bf91b0ec0b",
     "span": [
       3180,
       3317
@@ -888,7 +888,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_write_stage": {
-    "digest": "dd5e786f1e92f189",
+    "digest": "af53451ccbb0de1b",
     "span": [
       3400,
       3514
@@ -936,7 +936,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:cmd_upgrade": {
-    "digest": "2df960789d7c3d7b",
+    "digest": "fff28d645b83a04a",
     "span": [
       4261,
       4380

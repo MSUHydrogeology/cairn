@@ -39,7 +39,7 @@ from .config import (
     resolve_axes,
     strip_conditional_regions,
 )
-from .security import _assert_safe_write
+from .security import _assert_safe_write, ScaffoldSecurityError
 from .merge import SlotError, merge_file
 from .slotmerge import substitute_tokens
 from .lockfile import (
@@ -157,7 +157,7 @@ def _theirs_bytes(
 #: (vs. ``clean`` which means the file was untouched).
 _ADVANCING_KINDS = frozenset(
     {"clean", "clean-locally-modified", "conflict", "verbatim-update",
-     "new-core"}
+     "new-core", "new-module"}
 )
 
 #: Display labels for the upgrade report.  Maps the internal kind to the
@@ -166,6 +166,8 @@ _KIND_DISPLAY_LABEL = {
     "clean": "clean (untouched)",
     "clean-locally-modified": "locally-modified (merged clean)",
     "new-core": "new core/skills (added)",
+    "new-module": "new module file (added)",
+    "new-module-blocked": "new module file (BLOCKED — reconcile, then re-stage)",
 }
 
 
@@ -218,6 +220,30 @@ def _resolve_current_profile(
         # the install-time sizing) rather than risk dropping a section.
         return lock_profile, lock_axes
     return block, axes
+
+
+def _assert_mapping_ownership(lock_modules: set[str]) -> None:
+    """Global destination-ownership invariant (External Security review F4): a
+    destination claimed by more than one selected InstallSpec -- across the core,
+    skills, and adopted-module mapping sets -- is a mapping bug. Refuse it (never
+    silently let one spec shadow another), independent of lock / source state, so
+    a duplicate hidden by source-absence or processing order cannot slip through.
+    Current Cairn mappings have none; this preserves that as an enforced invariant."""
+    owners: dict[str, list[str]] = {}
+    for src, dst in _CORE_MAPPINGS:
+        owners.setdefault(dst, []).append(f"core:{src}")
+    for src, dst, _verbatim in _SKILLS_MAPPINGS:
+        owners.setdefault(dst, []).append(f"skills:{src}")
+    for mod in sorted(lock_modules):
+        for spec in _MODULE_MAPPINGS.get(mod, []):
+            owners.setdefault(spec.dst, []).append(f"module[{mod}]:{spec.src}")
+    dupes = {dst: who for dst, who in owners.items() if len(who) > 1}
+    if dupes:
+        detail = "; ".join(
+            f"{dst} <- {', '.join(who)}" for dst, who in sorted(dupes.items()))
+        raise ValueError(
+            "mapping ownership conflict: destination(s) claimed by multiple "
+            f"InstallSpecs: {detail}")
 
 
 def _compute_upgrade(
@@ -372,8 +398,93 @@ def _compute_upgrade(
                 "new core-like file (added)", theirs_raw,
                 f"{_BASE_CACHE_REL}/{dst_rel}", src=src_rel, verbatim=False))
 
-    # Structural reconciliation.
+    # New module-internal files: a module the adopter has ALREADY adopted
+    # (``M in lock["modules"]``) may have GAINED files upstream since install --
+    # the facade+package split case (a single tracked tool file became a thin
+    # facade beside a sibling engine package). Unlike a brand-new module (the
+    # opt-in ``new_modules`` structural flow below), the adopter already chose
+    # ``M``, so it is owed ``M``'s new files. The write-set stays bounded to
+    # ``_MODULE_MAPPINGS[M]`` (a hard-coded mapping set) -- the same safety the
+    # core/skills restriction guarantees, extended to already-adopted modules.
     lock_modules = set(lock.get("modules", []))
+    # F4 (External Security review): a destination claimed by more than one of
+    # the selected core / skills / adopted-module InstallSpecs is a mapping bug
+    # -- refuse it globally, before any per-file detection, independent of
+    # lock/source state (so a duplicate hidden by source-absence or processing
+    # order cannot slip through).
+    _assert_mapping_ownership(lock_modules)
+    lock_dsts = {rec["dst"] for rec in lock.get("files", [])}
+    for mod in sorted(lock_modules):
+        for spec in _MODULE_MAPPINGS.get(mod, []):
+            # Canonical lockfile source key (matches install's
+            # ``f"modules/{spec.src}"`` -- the lockfile namespace, NOT the
+            # module-relative ``InstallSpec.src``): used for BOTH the
+            # new-upstream test and the recorded lockfile entry.
+            canonical_src = f"modules/{spec.src}"
+            if canonical_src in lock_srcs:
+                continue  # already tracked -> not a new-upstream addition
+            dst_rel = spec.dst
+            theirs_b = _theirs_bytes(
+                cairn_root, templates_root, canonical_src, to_ref)
+            if theirs_b is None:
+                continue
+            seen_new.add(dst_rel)
+            # F3 (External Security review): under an explicit ``--to <ref>``,
+            # structural additions are enumerated from the *running* engine's
+            # registry, which need not match ``to_ref``. A pending addition is a
+            # HARD BLOCK, never a silent skip -- otherwise an explicit-ref upgrade
+            # could advance an already-tracked facade while omitting the package
+            # it imports (the exact broken state this change exists to close).
+            # Run scaffold from the target tree (``to_ref is None``) to carry them.
+            if to_ref is not None:
+                plans.append(FilePlan(
+                    dst_rel, "new-module-blocked", None,
+                    f"module-internal addition for {mod!r} cannot be carried "
+                    f"under --to {to_ref!r}; run scaffold from the target tree",
+                    None, None))
+                continue
+            # Text-only contract: a non-UTF-8 module InstallSpec fails crisply
+            # rather than being decoded with U+FFFD replacement characters
+            # (binary module files are out of scope).
+            try:
+                theirs_text = theirs_b.decode("utf-8")
+            except UnicodeDecodeError:
+                plans.append(FilePlan(
+                    dst_rel, "error", None,
+                    "module-internal addition is not UTF-8 text "
+                    "(binary module files are out of scope)", None, None))
+                continue
+            # F2 (External Security review): a genuinely-new spec whose
+            # destination already exists OUTSIDE the lockfile is an occupied-
+            # destination collision -- a HARD BLOCK in its own kind that the
+            # generic ``--ack-review-only`` switch CANNOT bypass. A plain
+            # review-only item would let apply advance the lock + install the
+            # siblings while leaving this file importable but unattested.
+            if (target / dst_rel).exists() or dst_rel in lock_dsts:
+                plans.append(FilePlan(
+                    dst_rel, "new-module-blocked", None,
+                    "module-internal addition collides with an existing unlocked "
+                    "destination; reconcile by hand (remove or merge it), then "
+                    "re-stage", theirs_text, None))
+                continue
+            # Absent destination -> a clean module-internal add. Verbatim vs
+            # mergeable mirrors the new-core branch above.
+            if spec.verbatim:
+                plans.append(FilePlan(
+                    dst_rel, "new-module", theirs_text,
+                    "new module-internal file (added)", None, None,
+                    src=canonical_src, verbatim=True))
+            else:
+                applied = substitute_tokens(theirs_text, tokens)
+                if new_axes:
+                    applied = strip_conditional_regions(applied, new_axes)
+                plans.append(FilePlan(
+                    dst_rel, "new-module", applied,
+                    "new module-internal file (added)", theirs_text,
+                    f"{_BASE_CACHE_REL}/{dst_rel}",
+                    src=canonical_src, verbatim=False))
+
+    # Structural reconciliation.
     current_modules = set(_MODULE_MAPPINGS)
     structural = {
         "new_modules": sorted(current_modules - lock_modules),
@@ -479,11 +590,29 @@ def _write_stage(
     import json
     import shutil
     stage = target / _STAGING_REL
+    # F1 round 2 (External Security review): guard the STAGE ROOT itself BEFORE
+    # the first rmtree / mkdir. If ``target/dev`` is a symlink to an external
+    # directory, ``shutil.rmtree(stage)`` / ``stage.mkdir(...)`` would FOLLOW it
+    # and delete/recreate that external dir -- a containment escape the per-plan
+    # guard below catches only AFTER the damage. ``_assert_safe_write`` refuses a
+    # symlinked parent (``target/dev``) here, before any mutation.
+    _assert_safe_write(stage, target)
     if stage.exists():
         shutil.rmtree(stage)
     stage.mkdir(parents=True, exist_ok=True)
+    # F1 (External Security review): validate EVERY planned destination is a
+    # contained relative path BEFORE any stage / new-base / review-only write.
+    # The stage write paths derive from ``fp.dst``; a malformed (absolute or
+    # ``..``-traversing) hard-coded InstallSpec.dst would otherwise escape the
+    # staging tree AND the adopter root during --stage, before the apply-time
+    # swap guard can help. ``_assert_safe_write`` refuses absolute paths,
+    # traversal, and symlink-parent escapes (ScaffoldSecurityError, caught at the
+    # CLI top level, exit 2).
+    for fp in plans:
+        _assert_safe_write(target / fp.dst, target)
     staged_files: list[str] = []
     ours_hashes: dict[str, str] = {}
+    expected_absent: set[str] = set()
     kinds: dict[str, str] = {}
     # #47: per-file provenance for files NOT already in the lockfile (new-core),
     # so --apply can append correct lockfile records (refs only -- no file
@@ -502,7 +631,7 @@ def _write_stage(
         out.write_text(fp.applied, encoding="utf-8")
         staged_files.append(fp.dst)
         kinds[fp.dst] = fp.kind
-        if fp.kind == "new-core":
+        if fp.kind in ("new-core", "new-module"):
             new_entries[fp.dst] = {
                 "src": fp.src, "verbatim": fp.verbatim,
                 "base_cache": fp.base_cache,
@@ -511,6 +640,12 @@ def _write_stage(
         # adopter edit made between --stage and --apply).
         if dst_abs.exists():
             ours_hashes[fp.dst] = "sha256:" + _sha256_hex(dst_abs.read_bytes())
+        else:
+            # A new add (new-core / new-module): its destination was absent at
+            # --stage, so it carries no ours_hashes snapshot. Record it so
+            # --apply fails closed if the destination APPEARED since (the data-
+            # loss guard, hardening the shared new-file path).
+            expected_absent.add(fp.dst)
         # Stage the new base-template content (mergeable files only).
         if fp.theirs_raw is not None and fp.base_cache:
             nb = stage / "new-base" / fp.dst
@@ -529,6 +664,27 @@ def _write_stage(
         if fp.kind != "review-only":
             continue
         review_only_dsts.append(fp.dst)
+        if fp.theirs_raw is not None:
+            theirs_out = stage / "review-only" / (fp.dst + ".theirs")
+            theirs_out.parent.mkdir(parents=True, exist_ok=True)
+            theirs_out.write_text(fp.theirs_raw, encoding="utf-8")
+        dst_abs = target / fp.dst
+        if dst_abs.exists():
+            ours_out = stage / "review-only" / (fp.dst + ".ours")
+            ours_out.parent.mkdir(parents=True, exist_ok=True)
+            ours_out.write_text(
+                dst_abs.read_text(encoding="utf-8"), encoding="utf-8")
+    # F2 / F3 (External Security review): new-module-blocked items -- an occupied
+    # destination collision, or a structural addition pending under an explicit
+    # ``--to`` -- are HARD blocks. They are recorded DISTINCTLY (not folded into
+    # review_only) so --apply fails closed UNCONDITIONALLY: the generic
+    # ``--ack-review-only`` override cannot bypass them. Stage the .theirs/.ours
+    # pair (when content is available) so the adopter can reconcile by hand.
+    module_blocked_dsts: list[str] = []
+    for fp in plans:
+        if fp.kind != "new-module-blocked":
+            continue
+        module_blocked_dsts.append(fp.dst)
         if fp.theirs_raw is not None:
             theirs_out = stage / "review-only" / (fp.dst + ".theirs")
             theirs_out.parent.mkdir(parents=True, exist_ok=True)
@@ -566,9 +722,15 @@ def _write_stage(
         "staged_files": sorted(staged_files),
         "kinds": kinds,
         "ours_hashes": ours_hashes,
+        # New-add destinations that were ABSENT at --stage; --apply fails closed
+        # if any reappeared since (data-loss guard for new-core / new-module).
+        "expected_absent": sorted(expected_absent),
         # Outstanding by-hand merges: --apply fail-closes on a non-empty list
         # unless --ack-review-only is passed (#44 completion gate).
         "review_only": sorted(review_only_dsts),
+        # F2/F3: occupied-collision / pending-under-`--to` module additions --
+        # --apply fails closed UNCONDITIONALLY (no --ack-review-only bypass).
+        "module_blocked": sorted(module_blocked_dsts),
         # #47 new core-like files to record in the lockfile on apply (refs only).
         "new_entries": new_entries,
         # #48 verbatim files whose stale lock hash --apply should heal.
@@ -1168,6 +1330,23 @@ def _apply_upgrade(
               "review-only/, merge by hand into the original, then re-run "
               "`--apply --ack-review-only` to acknowledge.", file=sys.stderr)
         return 1
+    # (d3) Module-addition HARD block (External Security review F2/F3): an
+    #      occupied-destination collision, or a structural addition pending under
+    #      an explicit --to, fails closed UNCONDITIONALLY -- neither
+    #      --ack-review-only NOR --force bypasses it. Without this, apply could
+    #      advance the lock + install the package siblings while leaving the
+    #      collided/omitted module file importable but absent from the lockfile's
+    #      integrity record (the facade-plus-incomplete-package risk this change
+    #      exists to close).
+    module_blocked = meta.get("module_blocked", [])
+    if module_blocked:
+        print("error: the upgrade cannot complete -- "
+              f"{len(module_blocked)} module-internal addition(s) are blocked "
+              "(occupied destination, or pending under --to) and must be "
+              "reconciled first:\n  " + "\n  ".join(module_blocked) +
+              "\n  remove/merge the on-disk file (or re-run from the target tree "
+              "without --to), then re-run `upgrade --stage`.", file=sys.stderr)
+        return 1
     # (e) the on-disk originals are unchanged *since --stage* (R7a),
     #     compared to the stage-time snapshot (NOT the clean-install hash --
     #     a customized file differs from that by design).
@@ -1180,6 +1359,19 @@ def _apply_upgrade(
                 print(f"error: {staged} changed on disk since --stage; "
                       "re-run `upgrade --stage`.", file=sys.stderr)
                 return 1
+    # (e2) Expected-absence guard (R2): a new add (new-core / new-module)
+    #      carried no ours_hashes snapshot because its destination was absent at
+    #      --stage. If it APPEARED since -- another process/agent created it, or
+    #      it is now a symlink -- applying would silently overwrite that content.
+    #      Fail closed. --force does NOT override this (it overrides only the
+    #      dirty-tree guard on tracked files).
+    for dst in meta.get("expected_absent", []):
+        dst_abs = target / dst
+        if dst_abs.is_symlink() or dst_abs.exists():
+            print(f"error: {dst} was absent at --stage but exists now; refusing "
+                  "--apply (it would overwrite content created since --stage). "
+                  "Re-run `upgrade --stage`.", file=sys.stderr)
+            return 1
 
     # (f) Layer-3 dirty-tree guard (#56): refuse to overwrite a tracked path
     #     the adopter has uncommitted edits in -- applying would clobber a
@@ -1455,9 +1647,14 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
         _self_heal_profile_config(target, lock)
 
     if args.apply:
-        return _apply_upgrade(target, lock, cairn_root, templates_root,
-                              ack_review_only=args.ack_review_only,
-                              force=args.force)
+        try:
+            return _apply_upgrade(target, lock, cairn_root, templates_root,
+                                  ack_review_only=args.ack_review_only,
+                                  force=args.force)
+        except ScaffoldSecurityError as exc:
+            print(f"error: upgrade --apply refused (containment): {exc}",
+                  file=sys.stderr)
+            return 2
 
     plans, structural = _compute_upgrade(
         target, cairn_root, templates_root, lock, args.to)
@@ -1469,8 +1666,13 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
 
     if args.stage:
         _new_profile, _new_axes = _resolve_current_profile(target, lock)
-        stage = _write_stage(target, plans, lock, args.to, cairn_root,
-                             new_profile=_new_profile)
+        try:
+            stage = _write_stage(target, plans, lock, args.to, cairn_root,
+                                 new_profile=_new_profile)
+        except ScaffoldSecurityError as exc:
+            print(f"error: upgrade --stage refused (containment): {exc}",
+                  file=sys.stderr)
+            return 2
         _print_upgrade_report(plans, structural, citation, mode="stage",
                               drift=drift)
         # (R1) --stage writes only the gitignored review surface, so it
