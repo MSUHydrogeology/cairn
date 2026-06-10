@@ -144,7 +144,7 @@
     "type": "AnnAssign"
   },
   "Assign:_KIND_DISPLAY_LABEL": {
-    "digest": "d374d942e833904a",
+    "digest": "db5814c837edd305",
     "span": [
       165,
       172
@@ -496,7 +496,7 @@
     "type": "Expr"
   },
   "FunctionDef:_apply_upgrade": {
-    "digest": "a8c38e5ef64e4e0a",
+    "digest": "0b30b00e58a4887f",
     "span": [
       4007,
       4204
@@ -616,7 +616,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_compute_upgrade": {
-    "digest": "0acf96d794ea5808",
+    "digest": "9e59aa23839bc4ad",
     "span": [
       250,
       512
@@ -728,7 +728,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_print_upgrade_report": {
-    "digest": "c5fa412ed4b51efd",
+    "digest": "5371f0b39845052c",
     "span": [
       3337,
       3393
@@ -888,7 +888,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_write_stage": {
-    "digest": "2ffac319d6c2ae85",
+    "digest": "f0696207cc7e26d8",
     "span": [
       617,
       803
@@ -1032,7 +1032,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:install_manifest": {
-    "digest": "860c4494ea6c8c4f",
+    "digest": "7106e35cbfdcf502",
     "span": [
       2396,
       2419
@@ -1048,7 +1048,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:install_onboarding": {
-    "digest": "e6d174a281328fee",
+    "digest": "cec6f103797053c5",
     "span": [
       2023,
       2213
@@ -1088,7 +1088,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:main": {
-    "digest": "847702ae6f3e0139",
+    "digest": "34a09c88fc25f6c7",
     "span": [
       4469,
       4900
@@ -1208,7 +1208,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:write_install_lockfile": {
-    "digest": "31906bfae4bff43d",
+    "digest": "488f65b3193b958f",
     "span": [
       2713,
       2850

@@ -810,6 +810,35 @@ class InstallSpec(NamedTuple):
     verbatim: bool = False
 
 
+#: Always-on EXECUTABLE helper deliveries (onboarding launcher + _onboarding/
+#: engine).  Differential-oracle CASCADE for the install.py side-door-parity
+#: change: the current engine promotes these to first-class always-on manifest
+#: entries (config._ALWAYS_ON_MAPPINGS) so write_install_lockfile tracks them; the
+#: frozen monolith must mirror that so its lockfile stays byte-identical.  The
+#: frozen install_onboarding already fans the files out via glob (Stage B4
+#: cascade); this only adds them to the tracked set.
+_ALWAYS_ON_MAPPINGS: tuple[InstallSpec, ...] = (
+    InstallSpec("default-on/onboarding_activate.py",
+                "scripts/onboarding_activate.py", True),
+    InstallSpec("default-on/_onboarding/__init__.py",
+                "scripts/_onboarding/__init__.py", True),
+    InstallSpec("default-on/_onboarding/activation.py",
+                "scripts/_onboarding/activation.py", True),
+    InstallSpec("default-on/_onboarding/cli.py",
+                "scripts/_onboarding/cli.py", True),
+    InstallSpec("default-on/_onboarding/prompts.py",
+                "scripts/_onboarding/prompts.py", True),
+    InstallSpec("default-on/_onboarding/security.py",
+                "scripts/_onboarding/security.py", True),
+    InstallSpec("default-on/_onboarding/shared.py",
+                "scripts/_onboarding/shared.py", True),
+    InstallSpec("default-on/_onboarding/slotparse.py",
+                "scripts/_onboarding/slotparse.py", True),
+    InstallSpec("default-on/_onboarding/triggers.py",
+                "scripts/_onboarding/triggers.py", True),
+)
+
+
 # Module name → list of InstallSpec (1:many).  Most modules install a
 # single substituted ``.md`` doctrine file; the two default-on
 # discipline modules also install their reference *script* verbatim
@@ -2510,6 +2539,11 @@ def install_manifest(
     ]
     # Skills install unconditionally (like core); always in the manifest.
     entries.extend(_SKILLS_MAPPINGS)
+    # Always-on executable helpers (onboarding launcher + engine): oracle cascade
+    # for the side-door-parity change -- track them so the lockfile matches the
+    # current engine.
+    for spec in _ALWAYS_ON_MAPPINGS:
+        entries.append((f"modules/{spec.src}", spec.dst, spec.verbatim))
     names = sorted(_MODULE_MAPPINGS) if modules is None else modules
     for name in names:
         for spec in _MODULE_MAPPINGS.get(name, []):

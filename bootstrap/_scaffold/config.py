@@ -288,6 +288,50 @@ class InstallSpec(NamedTuple):
     verbatim: bool = False
 
 
+#: Always-on **executable** helper deliveries -- the progressive-onboarding
+#: launcher + its private ``_onboarding/`` engine package.  Historically
+#: ``install_onboarding`` fanned these out UNCONDITIONALLY but OUTSIDE the
+#: manifest / lockfile (a side door): ``write_install_lockfile`` never recorded
+#: them, so ``upgrade`` could not enumerate / refresh / attest them, and
+#: ``security_check.scan_targets()`` (which derives shipped-code coverage from
+#: ``_MODULE_MAPPINGS`` only) never release-scanned them.  Promoted here as
+#: first-class always-on ``InstallSpec``s so the **same** declaration is consumed
+#: by all three authorities: ``install_onboarding`` (delivery),
+#: ``install_manifest`` / ``write_install_lockfile`` (tracking + attestation),
+#: and ``scan_targets()`` (release Bandit).  ``src`` is relative to
+#: ``templates/modules/`` (the ``_MODULE_MAPPINGS`` convention), so every consumer
+#: reuses the same ``modules/{src}`` join.  ``verbatim=True`` -- byte-for-byte
+#: executables on the hash-only upgrade policy.
+#:
+#: The launcher + the eight engine members are a **required completeness group**
+#: (``install.assert_always_on_complete`` / the new-core advancement guard): a
+#: partial group -- a present launcher with a missing/absent engine member --
+#: fails closed BEFORE any facade/engine write or lock advancement, never
+#: advancing a facade over an absent engine.  These are **always-on** structural
+#: helpers (onboarding installs unconditionally); this is NOT an opt-in
+#: ``_MODULE_MAPPINGS`` module, and the opt-in boundary is untouched.
+_ALWAYS_ON_MAPPINGS: tuple[InstallSpec, ...] = (
+    InstallSpec("default-on/onboarding_activate.py",
+                "scripts/onboarding_activate.py", True),
+    InstallSpec("default-on/_onboarding/__init__.py",
+                "scripts/_onboarding/__init__.py", True),
+    InstallSpec("default-on/_onboarding/activation.py",
+                "scripts/_onboarding/activation.py", True),
+    InstallSpec("default-on/_onboarding/cli.py",
+                "scripts/_onboarding/cli.py", True),
+    InstallSpec("default-on/_onboarding/prompts.py",
+                "scripts/_onboarding/prompts.py", True),
+    InstallSpec("default-on/_onboarding/security.py",
+                "scripts/_onboarding/security.py", True),
+    InstallSpec("default-on/_onboarding/shared.py",
+                "scripts/_onboarding/shared.py", True),
+    InstallSpec("default-on/_onboarding/slotparse.py",
+                "scripts/_onboarding/slotparse.py", True),
+    InstallSpec("default-on/_onboarding/triggers.py",
+                "scripts/_onboarding/triggers.py", True),
+)
+
+
 # Module name → list of InstallSpec (1:many).  Most modules install a
 # single substituted ``.md`` doctrine file; the two default-on
 # discipline modules also install their reference *script* verbatim

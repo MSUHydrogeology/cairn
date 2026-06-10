@@ -71,6 +71,31 @@ and a new empty `Unreleased` is started above.
   are now mutually exclusive. (Deliberated + reviewed adopter-side at the
   modflow_tools origin deployment.)
 
+- **`scaffold.py upgrade` brings install-time always-on helper deliveries under the lockfile (onboarding launcher + engine).**
+  `install_onboarding` historically fanned the progressive-onboarding launcher
+  (`scripts/onboarding_activate.py`) and its `scripts/_onboarding/` engine package
+  out **unconditionally but outside the manifest/lockfile** — a side door: the lockfile
+  never recorded them, so `upgrade` could not enumerate/refresh/attest them, and the
+  release Bandit scan (`security_check.scan_targets()`, derived from `_MODULE_MAPPINGS`)
+  never covered them. They are now first-class **always-on** manifest entries
+  (`_ALWAYS_ON_MAPPINGS`) consumed by one source of truth across install,
+  `install_manifest` / `write_install_lockfile`, **and** `scan_targets()` — so a fresh
+  install tracks them from birth, `upgrade` carries/refreshes them, `verify_integrity`
+  attests them, and the launcher + all eight engine members now enter the release scan
+  (closing a pre-existing blind spot). The launcher + engine are a **required
+  completeness group**: install, lockfile write, and upgrade advancement each fail closed
+  on a partial group (a facade is never shipped/advanced over an absent engine member).
+  **Closes a `new-core` data-loss surface this exposed:** the new-core enumeration now
+  mirrors the new-module occupied-destination split — a genuinely-new core/always-on add
+  over an occupied **unlocked** destination is a hard block (resolvable via
+  `--adopt-collisions` to keep a fork, or remove-and-re-stage to accept upstream), never
+  a silent overwrite; a destination owned by another lockfile source is a distinct,
+  non-adoptable provenance conflict. The existing-adopter migration composes with the
+  sibling `--adopt-collisions` + remove-and-re-stage (no new backfill command); the
+  non-executable side-door surfaces (activation log, preset docs, forge starters) are a
+  named follow-up. (Deliberated + reviewed adopter-side at the modflow_tools origin
+  deployment.)
+
 - **Stack-neutrality — a contained-kernel container recipe (run Cairn with no host Python).**
   A team whose application stack is not Python can now run the stdlib-only engine
   **only at the install/upgrade boundary**, in a throwaway, contained container,

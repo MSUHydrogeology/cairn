@@ -34,6 +34,15 @@ def test_scan_targets_are_explicit_files_covering_shipped_surface() -> None:
     assert "templates/modules/team-gated/link_check.py" in targets
     # content_scan is single-sourced as the content-security module script.
     assert "templates/modules/team-gated/content_scan.py" in targets
+    # Always-on executable helpers (onboarding launcher + every engine member)
+    # are release-scanned -- they ship verbatim outside _MODULE_MAPPINGS, so the
+    # side-door-parity change (security_check consumes _ALWAYS_ON_MAPPINGS too)
+    # must cover them. A regression here re-opens the pre-existing scan blind spot.
+    from bootstrap._scaffold.config import _ALWAYS_ON_MAPPINGS
+    assert "templates/modules/default-on/onboarding_activate.py" in targets
+    for spec in _ALWAYS_ON_MAPPINGS:
+        if spec.verbatim and spec.src.endswith(".py"):
+            assert f"templates/modules/{spec.src}" in targets, spec.src
     # Explicit files only -- no bare directory (the no-`-r` footgun).
     assert all(t.endswith(".py") for t in targets), targets
 

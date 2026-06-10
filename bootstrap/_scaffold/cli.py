@@ -514,9 +514,16 @@ def main(argv: list[str] | None = None) -> int:
         else "progressive onboarding (helper + log only; no preset)"
     )
     print(f"Installing {label} ...")
-    onboarding_results = install_onboarding(
-        templates_root, target, preset_name, force=args.force
-    )
+    # R4: install_onboarding fails closed (ScaffoldSecurityError) on an incomplete
+    # always-on launcher+engine completeness group BEFORE any write. Convert that
+    # to a crisp non-zero exit (no traceback), mirroring the skills-fanout guard.
+    try:
+        onboarding_results = install_onboarding(
+            templates_root, target, preset_name, force=args.force
+        )
+    except ScaffoldSecurityError as exc:
+        print(f"error: onboarding install refused: {exc}", file=sys.stderr)
+        return 2
 
     # Install module templates
     print(f"Installing modules: {', '.join(modules) or '(none)'} ...")

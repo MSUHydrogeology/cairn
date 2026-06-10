@@ -32,7 +32,10 @@ from pathlib import Path
 CAIRN_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(CAIRN_ROOT))
 
-from bootstrap._scaffold.config import _MODULE_MAPPINGS  # noqa: E402  (trust anchor: narrowest owner, plan 0B.3 / Stage 4)
+from bootstrap._scaffold.config import (  # noqa: E402  (trust anchor: narrowest owner, plan 0B.3 / Stage 4)
+    _ALWAYS_ON_MAPPINGS,
+    _MODULE_MAPPINGS,
+)
 
 _BLOCKING_SEVERITIES = {"MEDIUM", "HIGH"}
 
@@ -62,6 +65,15 @@ def scan_targets() -> list[str]:
         for spec in specs:
             if spec.verbatim and spec.src.endswith(".py"):
                 targets.add(f"templates/modules/{spec.src}")
+    # Always-on EXECUTABLE helpers (onboarding launcher + _onboarding/ engine):
+    # the same shipped-verbatim-.py class as a module script, but delivered
+    # unconditionally OUTSIDE _MODULE_MAPPINGS (install._ALWAYS_ON_MAPPINGS). They
+    # were release-unscanned while side-door-delivered; including them here closes
+    # that PRE-EXISTING Bandit blind spot, not just a new one (R1 / side-door
+    # parity). Same `templates/modules/{src}` join as the module loop above.
+    for spec in _ALWAYS_ON_MAPPINGS:
+        if spec.verbatim and spec.src.endswith(".py"):
+            targets.add(f"templates/modules/{spec.src}")
     # Cairn's own dev executables: scripts/*.py + the top-level bootstrap/
     # tools (scaffold, security_check, verify_integrity). Non-recursive, so
     # bootstrap/tests/ -- which carry intentional attack fixtures -- are not

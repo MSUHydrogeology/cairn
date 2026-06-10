@@ -27,6 +27,7 @@ from typing import Any, NamedTuple
 from .config import (
     KNOWN_TOKENS,
     PresetError,
+    _ALWAYS_ON_MAPPINGS,
     _AXES,
     _CORE_MAPPINGS,
     _GITIGNORE_SEEDS,
@@ -169,6 +170,9 @@ _KIND_DISPLAY_LABEL = {
     "new-module": "new module file (added)",
     "new-module-blocked": "new module file (BLOCKED — adopt-as-fork or reconcile, then re-stage)",
     "new-module-lockconflict": "new module file (BLOCKED — destination owned by another source; resolve by hand)",
+    "new-core-blocked": "new core/always-on file (BLOCKED — adopt-as-fork or reconcile, then re-stage)",
+    "new-core-lockconflict": "new core/always-on file (BLOCKED — destination owned by another source; resolve by hand)",
+    "new-core-incomplete-group": "always-on file (BLOCKED — completeness group incomplete; restore the missing launcher/engine source)",
 }
 
 
@@ -235,6 +239,10 @@ def _assert_mapping_ownership(lock_modules: set[str]) -> None:
         owners.setdefault(dst, []).append(f"core:{src}")
     for src, dst, _verbatim in _SKILLS_MAPPINGS:
         owners.setdefault(dst, []).append(f"skills:{src}")
+    # Always-on executable helpers share the destination namespace (R4: unique
+    # destination ownership across core / skills / always-on / adopted modules).
+    for spec in _ALWAYS_ON_MAPPINGS:
+        owners.setdefault(spec.dst, []).append(f"always-on:{spec.src}")
     for mod in sorted(lock_modules):
         for spec in _MODULE_MAPPINGS.get(mod, []):
             owners.setdefault(spec.dst, []).append(f"module[{mod}]:{spec.src}")
@@ -373,7 +381,15 @@ def _compute_upgrade(
     # #45), so a src already tracked under any dst is NOT new -- keying on dst
     # would spuriously re-add VENDOR.md alongside the renamed CLAUDE.md.
     lock_srcs = {rec.get("src") for rec in lock.get("files", [])}
-    core_like = [(s, d, False) for s, d in _CORE_MAPPINGS] + list(_SKILLS_MAPPINGS)
+    lock_dsts = {rec["dst"] for rec in lock.get("files", [])}
+    # Always-on EXECUTABLE helpers (onboarding launcher + engine) ride this same
+    # unconditional path (side-door parity): declared once in _ALWAYS_ON_MAPPINGS,
+    # they classify / carry / attest through the core machinery, with the same
+    # ``modules/{src}`` lockfile-source convention install_manifest uses.
+    core_like = ([(s, d, False) for s, d in _CORE_MAPPINGS]
+                 + list(_SKILLS_MAPPINGS)
+                 + [(f"modules/{spec.src}", spec.dst, spec.verbatim)
+                    for spec in _ALWAYS_ON_MAPPINGS])
     seen_new: set[str] = set()
     for src_rel, dst_rel, verbatim in core_like:
         if src_rel in lock_srcs or dst_rel in seen_new:
@@ -382,6 +398,44 @@ def _compute_upgrade(
         if theirs_b is None:
             continue
         seen_new.add(dst_rel)
+        # R5 (side-door parity): mirror the new-module occupied-destination split
+        # onto new-core. The prior new-core path NEVER checked whether the
+        # destination already existed, so a genuinely-new core-like add over an
+        # occupied UNLOCKED file would SILENTLY OVERWRITE it -- a latent data-loss
+        # surface independent of onboarding, reachable the moment any always-on
+        # helper is registered as tracked. Two distinct provenance states (as the
+        # new-module split, R3/R5): a dst already tracked under ANOTHER source is a
+        # provenance conflict adoption never clears; an occupied-UNLOCKED regular
+        # file is an adoptable fork (`upgrade --adopt-collisions`, the SAME
+        # adoptable class the sibling resolves) -- or remove-and-re-stage to accept
+        # upstream. Decode strictly here: the adopt path re-encodes theirs_raw as
+        # the merge base, so a lossy decode would corrupt base_hash; a non-UTF-8
+        # collision is NOT adoptable (binary out of scope) but STILL hard-blocks
+        # (no silent overwrite).
+        dst_abs_collide = target / dst_rel
+        if dst_rel in lock_dsts or dst_abs_collide.exists():
+            try:
+                theirs_text: str | None = theirs_b.decode("utf-8")
+                decode_ok = True
+            except UnicodeDecodeError:
+                theirs_text, decode_ok = None, False
+            if dst_rel in lock_dsts:
+                plans.append(FilePlan(
+                    dst_rel, "new-core-lockconflict", None,
+                    "new core-like file's destination is already tracked under "
+                    "another lockfile source (provenance conflict); resolve by "
+                    "hand", theirs_text, None))
+                continue
+            adoptable = (decode_ok and dst_abs_collide.is_file()
+                         and not dst_abs_collide.is_symlink())
+            plans.append(FilePlan(
+                dst_rel, "new-core-blocked", None,
+                "new core-like file collides with an existing unlocked "
+                "destination; keep it as a tracked fork "
+                "(`upgrade --adopt-collisions`) or reconcile by hand, then "
+                "re-stage", theirs_text, None,
+                src=(src_rel if adoptable else None), verbatim=verbatim))
+            continue
         if verbatim:
             plans.append(FilePlan(
                 dst_rel, "new-core", theirs_b.decode("utf-8", "replace"),
@@ -414,7 +468,7 @@ def _compute_upgrade(
     # lock/source state (so a duplicate hidden by source-absence or processing
     # order cannot slip through).
     _assert_mapping_ownership(lock_modules)
-    lock_dsts = {rec["dst"] for rec in lock.get("files", [])}
+    # lock_dsts computed once above (hoisted for the new-core collision split).
     for mod in sorted(lock_modules):
         for spec in _MODULE_MAPPINGS.get(mod, []):
             # Canonical lockfile source key (matches install's
@@ -503,6 +557,33 @@ def _compute_upgrade(
                     f"{_BASE_CACHE_REL}/{dst_rel}",
                     src=canonical_src, verbatim=False))
 
+    # R4: always-on completeness-group enforcement (the upgrade-advancement guard).
+    # The launcher + engine advance through TWO paths -- a tracked launcher via the
+    # clean/verbatim classification above, a not-yet-tracked member via new-core --
+    # so a per-loop check cannot see the whole group. Resolve every group source
+    # ONCE; if ANY is missing upstream (a corrupted checkout / misregistered spec),
+    # NO group member may advance: convert each advancing/new group plan to a hard
+    # block, so a facade never advances over an absent engine member (the latent
+    # facade-without-engine breakage this change closes). A no-op on the
+    # overwhelmingly-common complete-group case.
+    always_on_dsts = {spec.dst for spec in _ALWAYS_ON_MAPPINGS}
+    group_complete = all(
+        _theirs_bytes(cairn_root, templates_root, f"modules/{spec.src}", to_ref)
+        is not None
+        for spec in _ALWAYS_ON_MAPPINGS)
+    if not group_complete:
+        plans = [
+            FilePlan(
+                fp.dst, "new-core-incomplete-group", None,
+                "always-on onboarding completeness group is incomplete (a "
+                "launcher/engine member's source is missing upstream); refusing "
+                "to advance any member until it is restored", None, None)
+            if (fp.dst in always_on_dsts
+                and fp.kind in _ADVANCING_KINDS)
+            else fp
+            for fp in plans
+        ]
+
     # Structural reconciliation.
     current_modules = set(_MODULE_MAPPINGS)
     structural = {
@@ -541,6 +622,8 @@ def _print_upgrade_report(
     if drift:
         print(f"  {drift}")
     order = ["clean", "clean-locally-modified", "new-core",
+             "new-core-blocked", "new-core-lockconflict",
+             "new-module", "new-module-blocked", "new-module-lockconflict",
              "conflict", "slot-removed", "review-only",
              "verbatim-update", "verbatim-locally-modified",
              "verbatim-up-to-date", "verbatim-missing", "up-to-date",
@@ -588,8 +671,27 @@ def _print_upgrade_report(
               f"(override: --ack-review-only).")
 
 
+#: The two adoptable occupied-destination collision kinds an operator can keep as
+#: a tracked fork via ``upgrade --adopt-collisions`` (module-internal + core/
+#: always-on, R5). Both carry ``src`` (canonical) + ``theirs_raw`` (merge base)
+#: when adoptable; a lock-conflict block (``*-lockconflict``) never is.
+_ADOPTABLE_BLOCKED_KINDS = ("new-module-blocked", "new-core-blocked")
+
+#: Every hard-blocked addition kind: ``--apply`` fails closed UNCONDITIONALLY on
+#: any of these (no ``--ack-review-only`` / ``--force`` bypass).  The
+#: ``incomplete-group`` kind is the R4 completeness-group fail-closed (a facade
+#: must never advance over an absent engine member); it is hard-blocked but NOT
+#: adoptable (the fix is to restore the source, not keep a fork).
+_BLOCKED_ADDITION_KINDS = (
+    "new-module-blocked", "new-module-lockconflict",
+    "new-core-blocked", "new-core-lockconflict",
+    "new-core-incomplete-group",
+)
+
+
 def _count_adoptable_collisions(plans: list[FilePlan]) -> int:
-    return sum(1 for f in plans if f.kind == "new-module-blocked" and f.src)
+    return sum(1 for f in plans
+               if f.kind in _ADOPTABLE_BLOCKED_KINDS and f.src)
 
 
 def _print_adopt_command(triples: list[str]) -> None:
@@ -717,22 +819,25 @@ def _write_stage(
             ours_out.parent.mkdir(parents=True, exist_ok=True)
             ours_out.write_text(
                 dst_abs.read_text(encoding="utf-8"), encoding="utf-8")
-    # F2 / F3 (External Security review): new-module-blocked items -- an occupied
-    # destination collision, or a structural addition pending under an explicit
-    # ``--to`` -- are HARD blocks. They are recorded DISTINCTLY (not folded into
-    # review_only) so --apply fails closed UNCONDITIONALLY: the generic
-    # ``--ack-review-only`` override cannot bypass them. Stage the .theirs/.ours
-    # pair (when content is available) so the adopter can reconcile by hand.
-    module_blocked_dsts: list[str] = []
+    # F2 / F3 (External Security review) + R5 (side-door parity): blocked
+    # additions -- an occupied-destination collision or a lock-ownership conflict,
+    # in EITHER the module-internal OR the core/always-on tier, or a structural
+    # addition pending under an explicit ``--to`` -- are HARD blocks. They are
+    # recorded DISTINCTLY (not folded into review_only) so --apply fails closed
+    # UNCONDITIONALLY: the generic ``--ack-review-only`` override cannot bypass
+    # them. Stage the .theirs/.ours pair (when content is available) so the
+    # adopter can reconcile by hand. ``blocked_dsts`` covers both tiers (the meta
+    # key stays ``module_blocked`` for stage/apply compatibility).
+    blocked_dsts: list[str] = []
     # Operator authorization triples (dst@observed@upstream) for adoptable
     # collisions, minted from the EXACT bytes written as the `.ours` / `.theirs`
     # review pair (code-review round-2 P1) -- NEVER a later live re-read, which
     # could differ from what the operator is told to review.
     adopt_hints: list[str] = []
     for fp in plans:
-        if fp.kind not in ("new-module-blocked", "new-module-lockconflict"):
+        if fp.kind not in _BLOCKED_ADDITION_KINDS:
             continue
-        module_blocked_dsts.append(fp.dst)
+        blocked_dsts.append(fp.dst)
         if fp.theirs_raw is not None:
             theirs_out = stage / "review-only" / (fp.dst + ".theirs")
             theirs_out.parent.mkdir(parents=True, exist_ok=True)
@@ -746,7 +851,7 @@ def _write_stage(
         ours_out = stage / "review-only" / (fp.dst + ".ours")
         ours_out.parent.mkdir(parents=True, exist_ok=True)
         ours_out.write_bytes(ours_bytes)
-        if (fp.kind == "new-module-blocked" and fp.src
+        if (fp.kind in _ADOPTABLE_BLOCKED_KINDS and fp.src
                 and dst_abs.is_file() and not dst_abs.is_symlink()
                 and fp.theirs_raw is not None):
             adopt_hints.append(
@@ -785,9 +890,11 @@ def _write_stage(
         # Outstanding by-hand merges: --apply fail-closes on a non-empty list
         # unless --ack-review-only is passed (#44 completion gate).
         "review_only": sorted(review_only_dsts),
-        # F2/F3: occupied-collision / pending-under-`--to` module additions --
-        # --apply fails closed UNCONDITIONALLY (no --ack-review-only bypass).
-        "module_blocked": sorted(module_blocked_dsts),
+        # F2/F3 + R5: occupied-collision / lock-conflict / pending-under-`--to`
+        # blocked additions, in EITHER tier (module-internal + core/always-on) --
+        # --apply fails closed UNCONDITIONALLY (no --ack-review-only / --force
+        # bypass). Key name kept ``module_blocked`` for stage/apply compatibility.
+        "module_blocked": sorted(blocked_dsts),
         # #47 new core-like files to record in the lockfile on apply (refs only).
         "new_entries": new_entries,
         # #48 verbatim files whose stale lock hash --apply should heal.
@@ -1344,7 +1451,7 @@ def _cmd_adopt_collisions(
     plans, _structural = _compute_upgrade(
         target, cairn_root, templates_root, lock, None)
     adoptable = {fp.dst: fp for fp in plans
-                 if fp.kind == "new-module-blocked" and fp.src}
+                 if fp.kind in _ADOPTABLE_BLOCKED_KINDS and fp.src}
     if set(authorized) != set(adoptable):
         print("error: the authorized set must be EXACTLY the live adoptable "
               "collisions -- review `upgrade --plan` and authorize each "
@@ -1625,21 +1732,24 @@ def _apply_upgrade(
               "review-only/, merge by hand into the original, then re-run "
               "`--apply --ack-review-only` to acknowledge.", file=sys.stderr)
         return 1
-    # (d3) Module-addition HARD block (External Security review F2/F3): an
-    #      occupied-destination collision, or a structural addition pending under
-    #      an explicit --to, fails closed UNCONDITIONALLY -- neither
-    #      --ack-review-only NOR --force bypasses it. Without this, apply could
-    #      advance the lock + install the package siblings while leaving the
-    #      collided/omitted module file importable but absent from the lockfile's
+    # (d3) Blocked-addition HARD block (External Security review F2/F3 + R5): an
+    #      occupied-destination collision or a lock-ownership conflict -- in EITHER
+    #      the module-internal OR the core/always-on tier -- or a structural
+    #      addition pending under an explicit --to, fails closed UNCONDITIONALLY --
+    #      neither --ack-review-only NOR --force bypasses it. Without this, apply
+    #      could advance the lock + install the siblings while leaving the
+    #      collided/omitted file importable but absent from the lockfile's
     #      integrity record (the facade-plus-incomplete-package risk this change
-    #      exists to close).
+    #      exists to close). (Meta key kept ``module_blocked`` for compatibility.)
     module_blocked = meta.get("module_blocked", [])
     if module_blocked:
         print("error: the upgrade cannot complete -- "
-              f"{len(module_blocked)} module-internal addition(s) are blocked "
-              "(occupied destination, or pending under --to) and must be "
-              "reconciled first:\n  " + "\n  ".join(module_blocked) +
-              "\n  remove/merge the on-disk file (or re-run from the target tree "
+              f"{len(module_blocked)} addition(s) are blocked "
+              "(occupied destination, lock-ownership conflict, or pending under "
+              "--to) and must be reconciled first:\n  "
+              + "\n  ".join(module_blocked) +
+              "\n  keep yours as a tracked fork (`upgrade --adopt-collisions`), "
+              "remove/merge the on-disk file (or re-run from the target tree "
               "without --to), then re-run `upgrade --stage`.", file=sys.stderr)
         return 1
     # (e) the on-disk originals are unchanged *since --stage* (R7a),

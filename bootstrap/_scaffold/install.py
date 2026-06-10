@@ -26,6 +26,7 @@ from pathlib import Path
 from typing import Any
 
 from .config import (
+    _ALWAYS_ON_MAPPINGS,
     _CORE_MAPPINGS,
     _MODULE_MAPPINGS,
     _SKILLS_GITIGNORE,
@@ -759,6 +760,39 @@ _ONBOARDING_DOC_NAMES = ("agent-team-onboarding.md", "dev-tour.md")
 _ONBOARDING_DOC_DST_DIR_REL = "dev/modules/onboarding"
 
 
+def missing_always_on_sources(templates_root: Path) -> list[str]:
+    """The always-on completeness-group source members absent under
+    ``templates/modules/`` (R4) -- empty list means a complete group.
+
+    The onboarding launcher + its ``_onboarding/`` engine are a REQUIRED
+    completeness group: a present launcher delivered/tracked over an absent
+    engine member is the facade-without-engine breakage the side-door-parity
+    change exists to close.  This is the cheap source-presence check the
+    fail-closed guards (``assert_always_on_complete`` for install,
+    ``write_install_lockfile`` for the lockfile) consult BEFORE any write."""
+    missing: list[str] = []
+    for spec in _ALWAYS_ON_MAPPINGS:
+        if not (templates_root / "modules" / spec.src).is_file():
+            missing.append(f"modules/{spec.src}")
+    return missing
+
+
+def assert_always_on_complete(templates_root: Path) -> None:
+    """Fail closed unless every always-on launcher+engine source resolves (R4).
+
+    Raises :class:`ScaffoldSecurityError` on a partial group -- a corrupted Cairn
+    checkout or a misregistered spec -- so the installer refuses BEFORE any
+    facade/engine write rather than ship a launcher without its engine.  The CLI
+    converts the raise to a crisp non-zero exit (no traceback)."""
+    missing = missing_always_on_sources(templates_root)
+    if missing:
+        raise ScaffoldSecurityError(
+            "always-on onboarding completeness group is incomplete -- missing "
+            f"source(s): {', '.join(missing)}. Refusing to install/track a "
+            "partial launcher+engine group (a facade must never ship without "
+            "its engine).")
+
+
 def install_onboarding(
     templates_root: Path,
     target: Path,
@@ -812,10 +846,37 @@ def install_onboarding(
     """
     results: list[InstallResult] = []
 
-    # ----- Always: install the activation helper script (A) -------------
-    helper_src = templates_root / _ONBOARDING_HELPER_SRC_REL
-    helper_dst = target / _ONBOARDING_HELPER_DST_REL
-    if helper_src.exists():
+    # R4: fail closed BEFORE any facade/engine write unless the FULL always-on
+    # launcher+engine source set resolves -- a partial group must never ship a
+    # facade over an absent engine member. Raises ScaffoldSecurityError (the CLI
+    # converts it to a crisp non-zero exit); the per-member warn below is then
+    # unreachable defense-in-depth.
+    assert_always_on_complete(templates_root)
+
+    # ----- Always: install the launcher + engine completeness group (A) --
+    # The onboarding launcher (a thin facade) + its private ``_onboarding/``
+    # engine package are the always-on EXECUTABLE deliveries.  They are now
+    # declared once in ``_ALWAYS_ON_MAPPINGS`` and installed FROM it -- the SAME
+    # declaration ``install_manifest`` tracks and ``security_check.scan_targets()``
+    # scans -- so the installer and the manifest/lockfile/scanner can no longer
+    # desync on what onboarding ships (the side-door parity fix).  The engine must
+    # install BESIDE the launcher at ``scripts/_onboarding/`` for the facade to
+    # import (parity with the team-gated ``tools/_intent/`` package install).  Each
+    # member is copied byte-for-byte through the containment guard.  The group's
+    # source-completeness is enforced fail-closed by the caller via
+    # ``assert_always_on_complete`` BEFORE this runs (R4), so a present launcher is
+    # never installed over an absent engine member; the per-member ``[warn]`` below
+    # is unreachable defense-in-depth.
+    for spec in _ALWAYS_ON_MAPPINGS:
+        helper_src = templates_root / "modules" / spec.src
+        helper_dst = target / spec.dst
+        if not helper_src.exists():
+            print(
+                f"  [warn] always-on helper source missing: "
+                f"templates/modules/{spec.src}",
+                file=sys.stderr,
+            )
+            continue
         if dry_run:
             results.append((helper_dst, [], [], "dry-run"))
         elif helper_dst.exists() and not force:
@@ -830,39 +891,6 @@ def install_onboarding(
             helper_dst.parent.mkdir(parents=True, exist_ok=True)
             helper_dst.write_bytes(helper_src.read_bytes())
             results.append((helper_dst, [], [], "installed"))
-    else:
-        print(
-            f"  [warn] onboarding helper source missing: "
-            f"templates/{_ONBOARDING_HELPER_SRC_REL}",
-            file=sys.stderr,
-        )
-
-    # ----- Always: fan out the activation engine package (A2) -----------
-    # Onboarding-split (phase B): onboarding_activate.py is now a thin
-    # launcher/facade over a private ``_onboarding/`` engine package that
-    # must install BESIDE it at ``scripts/_onboarding/`` for the facade to
-    # import (parity with the team-gated ``tools/_intent/`` package install).
-    # Sourced from the sibling ``_onboarding/`` dir next to the helper
-    # source; each ``*.py`` copied verbatim through the containment guard.
-    engine_src_dir = helper_src.parent / "_onboarding"
-    engine_dst_dir = helper_dst.parent / "_onboarding"
-    if engine_src_dir.is_dir():
-        for engine_src in sorted(engine_src_dir.glob("*.py")):
-            engine_dst = engine_dst_dir / engine_src.name
-            if dry_run:
-                results.append((engine_dst, [], [], "dry-run"))
-            elif engine_dst.exists() and not force:
-                print(
-                    f"  [skip] {engine_dst}: already exists -- pass --force "
-                    f"to overwrite",
-                    file=sys.stderr,
-                )
-                results.append((engine_dst, [], [], "skipped-exists"))
-            else:
-                _assert_safe_write(engine_dst, target)
-                engine_dst.parent.mkdir(parents=True, exist_ok=True)
-                engine_dst.write_bytes(engine_src.read_bytes())
-                results.append((engine_dst, [], [], "installed"))
 
     # ----- Always: seed an empty activation log (B) ---------------------
     log_dst = target / _ONBOARDING_LOG_REL
@@ -1168,15 +1196,21 @@ def install_manifest(
     modules when ``None`` -- the published catalog).  ``source`` is
     relative to ``templates/``; ``destination`` is relative to the
     target repo root.  Derived from ``_CORE_MAPPINGS`` +
-    ``_MODULE_MAPPINGS`` so the published manifest (Layer 1) cannot
-    drift from what the scaffold actually writes.  Sorted by
-    destination for a stable, diffable emission.
+    ``_SKILLS_MAPPINGS`` + ``_ALWAYS_ON_MAPPINGS`` + ``_MODULE_MAPPINGS``
+    so the published manifest (Layer 1) cannot drift from what the
+    scaffold actually writes.  Sorted by destination for a stable,
+    diffable emission.
     """
     entries: list[tuple[str, str, bool]] = [
         (src_rel, dst_rel, False) for src_rel, dst_rel in _CORE_MAPPINGS
     ]
     # Skills install unconditionally (like core); always in the manifest.
     entries.extend(_SKILLS_MAPPINGS)
+    # Always-on executable helpers (onboarding launcher + engine) install
+    # unconditionally too -- record them so write_install_lockfile tracks them
+    # and upgrade carries / attests them (closing the install.py side door).
+    for spec in _ALWAYS_ON_MAPPINGS:
+        entries.append((f"modules/{spec.src}", spec.dst, spec.verbatim))
     names = sorted(_MODULE_MAPPINGS) if modules is None else modules
     for name in names:
         for spec in _MODULE_MAPPINGS.get(name, []):
@@ -1294,6 +1328,23 @@ def write_install_lockfile(
     ``install_onboarding`` having modified it after ``install_core``.
     """
     _refuse_secret_tokens(tokens, allow_secret_tokens)
+
+    # R4: refuse to record a PARTIAL always-on completeness group. The file loop
+    # below silently skips a missing source (`if not src.exists(): continue`), so
+    # without this an incomplete launcher+engine would yield a lockfile that
+    # tracks only the members present -- the side-door blind spot, re-expressed in
+    # the lockfile. Fail closed (return None, the writer's refuse signal) so no
+    # partial-group lockfile is ever written.
+    missing_group = missing_always_on_sources(templates_root)
+    if missing_group:
+        print(
+            f"  [warn] {_LOCKFILE_REL} NOT written: the always-on onboarding "
+            f"completeness group is incomplete -- missing source(s): "
+            f"{', '.join(missing_group)}. Restore the launcher+engine sources "
+            "and re-run.",
+            file=sys.stderr,
+        )
+        return None
 
     file_records: list[dict[str, Any]] = []
     cache_writes: list[tuple[Path, str]] = []
