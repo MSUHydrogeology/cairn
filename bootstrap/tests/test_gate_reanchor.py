@@ -90,11 +90,11 @@ def _fake_oracle(candidate_sha, *, ok=True, scenarios=REQUIRED):
 
 
 def _run(bundle, tmp_path, *, oracle=None, reanchor=None, manifest=None,
-         trusted=None, ledger=None):
+         trusted=None, ledger=None, postcondition=None):
     calls = []
     def _default_reanchor(sha):
         calls.append(sha)
-    return R.run_reanchor_gate(
+    return R._run_reanchor_gate(
         trusted_repo=tmp_path / "trusted_checkout",      # distinct from target
         target_repo=bundle["repo"], candidate_ref="HEAD",
         prior_anchor=bundle["prior"],
@@ -104,6 +104,7 @@ def _run(bundle, tmp_path, *, oracle=None, reanchor=None, manifest=None,
         nonce_ledger_dir=ledger or bundle["ledger"],
         oracle_workdir=tmp_path / "wd",
         reanchor_fn=reanchor or _default_reanchor,
+        postcondition_fn=postcondition,
         baseline_ref=bundle["prior"], trusted_ref="refs/heads/main",
         run_oracle_fn=oracle or _fake_oracle(bundle["candidate"])), calls
 
@@ -147,7 +148,7 @@ def test_oracle_measured_other_candidate_refuses(tmp_path):
     b = _candidate_repo(tmp_path)
     res, calls = _run(b, tmp_path, oracle=_fake_oracle("0" * 40))
     assert not res.ok and not res.controls["oracle"]
-    assert any("!= candidate" in r for r in res.refusals) and calls == []
+    assert any("missing/mismatch refused" in r for r in res.refusals) and calls == []
 
 
 def test_promotion_failure_refuses_without_burning_nonce(tmp_path):
@@ -204,3 +205,103 @@ def test_concurrent_preclaim_refuses(tmp_path):
     res, calls = _run(b, tmp_path)
     assert not res.ok and not res.reanchored and not res.nonce_claimed
     assert any("replay refused" in r for r in res.refusals) and calls == []
+
+
+# --- round-3 Finding 2: candidate binding is unconditional -----------------------
+
+def _oracle_no_candidate(scenarios=REQUIRED):
+    def _f(workdir, *, baseline_ref, trusted_ref, repo, target_root, gate):
+        return {"status": "ran", "ok": True,           # NOTE: no candidate_sha key
+                "fixtures": [{"name": s, "status": "match"} for s in scenarios],
+                "privileged": []}
+    return _f
+
+
+def test_oracle_report_missing_candidate_sha_refuses(tmp_path):
+    """Round-3 F2: a report that OMITS candidate_sha must refuse — the prior
+    `and report.get(...)` made the binding conditional, so a candidate-less report
+    passed. It must not."""
+    b = _candidate_repo(tmp_path)
+    res, calls = _run(b, tmp_path, oracle=_oracle_no_candidate())
+    assert not res.ok and not res.controls["oracle"]
+    assert any("missing/mismatch refused" in r for r in res.refusals)
+    assert calls == [] and not G.nonce_used(b["ledger"], "promo-nonce-1")
+
+
+# --- round-3 Finding 1/4: the post-write postcondition gates success -------------
+
+def test_noop_writer_fails_postcondition(tmp_path):
+    """A writer that returns normally but did NOT land the manifest cannot be
+    reported as a successful re-anchor — the postcondition catches it."""
+    b = _candidate_repo(tmp_path)
+    res, calls = _run(b, tmp_path,
+                      reanchor=lambda _sha: None,        # no-op writer
+                      postcondition=lambda _sha: False)  # verification fails
+    assert not res.ok and not res.reanchored
+    assert res.nonce_claimed and res.controls.get("postcondition") is False
+    assert any("post-write verification failed" in r for r in res.refusals)
+
+
+def test_postcondition_pass_reanchors(tmp_path):
+    b = _candidate_repo(tmp_path)
+    res, calls = _run(b, tmp_path, postcondition=lambda _sha: True)
+    assert res.ok and res.reanchored and res.controls.get("postcondition") is True
+
+
+def test_postcondition_raising_spends_authority_safely(tmp_path):
+    b = _candidate_repo(tmp_path)
+    def _boom(_sha):
+        raise RuntimeError("verify crashed")
+    res, calls = _run(b, tmp_path, postcondition=_boom)
+    assert not res.ok and not res.reanchored and res.nonce_claimed
+    assert any("post-write verification raised" in r for r in res.refusals)
+
+
+# --- round-3 Finding 3: the production command OWNS exactly one ledger ------------
+
+def test_derive_ledger_is_pure_and_contained(tmp_path):
+    """The ledger is a pure function of (trusted_repo, prior_anchor) and lives
+    UNDER the trusted repo — so an authority has exactly one ledger (no
+    alternate-ledger replay), and it cannot be redirected by a caller."""
+    trusted = tmp_path / "trusted"
+    l1 = R._derive_ledger(trusted, "a" * 40)
+    l2 = R._derive_ledger(trusted, "a" * 40)
+    l3 = R._derive_ledger(trusted, "b" * 40)
+    assert l1 == l2 and l1 != l3                       # deterministic; keyed by anchor
+    assert str(l1).startswith(str(trusted))            # contained under the trusted repo
+
+
+def test_promote_is_not_dependency_injectable():
+    """Round-3 F1/F3: the production command exposes no oracle / writer / ledger
+    seam — its path cannot be substituted with a permissive oracle or no-op
+    writer, and the ledger is derived, not passed."""
+    import inspect
+    params = set(inspect.signature(R.promote).parameters)
+    for forbidden in ("run_oracle_fn", "reanchor_fn", "postcondition_fn", "nonce_ledger_dir"):
+        assert forbidden not in params, forbidden
+
+
+def test_promote_refuses_without_confirmation(tmp_path):
+    b = _candidate_repo(tmp_path)
+    # write minimal manifest/activation files to parse
+    mpath = tmp_path / "promo.yml"
+    mpath.write_text("nonce: x\nprior_anchor: " + "a" * 40 + "\ncandidate_sha: " + "b" * 40 +
+                     "\nchecker_hash: sha256:x\nfiles:\n  bootstrap/tests/_oracle.py: sha256:y\n")
+    apath = tmp_path / "trusted_act.yml"
+    apath.write_text(_activation_yaml(b["trusted"]))
+    res = R.promote(trusted_repo=tmp_path / "trusted", target_repo=b["repo"],
+                    prior_anchor=b["prior"], promotion_manifest_path=mpath,
+                    trusted_activation_path=apath, confirm=False)
+    assert not res.ok and any("supervised confirmation" in r for r in res.refusals)
+
+
+# --- round-3 Finding 4: the real writer is atomic -------------------------------
+
+def test_atomic_write_replaces_whole_file(tmp_path):
+    dest = tmp_path / "sub" / "f.json"
+    R._atomic_write(dest, b"first\n")
+    assert dest.read_bytes() == b"first\n"
+    R._atomic_write(dest, b"second\n")                 # replace
+    assert dest.read_bytes() == b"second\n"
+    # no leftover temp files in the dir
+    assert [p.name for p in dest.parent.iterdir()] == ["f.json"]
