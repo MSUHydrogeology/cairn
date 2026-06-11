@@ -25,7 +25,9 @@ consumes the trusted expectation as an input — it never self-authorizes.
 """
 from __future__ import annotations
 
+import subprocess
 from dataclasses import dataclass, field
+from pathlib import Path
 
 # Exact paths/globs (a trailing "/" is a directory prefix). Roster ADDITIONS are
 # themselves gate-control changes and require the same external authorization.
@@ -192,3 +194,48 @@ def acceptance_check(
         if not covers(trusted_expectation.scope, p):
             holds.append(f"sensitive change not covered by the authorized scope: {p}")
     return (not holds), holds
+
+
+def _changed_sensitive(repo: Path, prior_anchor: str, candidate: str,
+                       is_sensitive_fn=is_sensitive,
+                       roster: tuple[str, ...] = SENSITIVE_ROSTER) -> list[str]:
+    """**Independently** derive the changed sensitive files (P1.1): the acceptance
+    command discovers the diff itself rather than trusting a caller-supplied set."""
+    out = subprocess.run(
+        ["git", "-C", str(repo), "diff", "--name-only", f"{prior_anchor}..{candidate}"],
+        capture_output=True, text=True, check=False)
+    if out.returncode != 0:
+        raise ActivationError(f"git diff {prior_anchor[:12]}..{candidate} failed: {out.stderr.strip()}")
+    return sorted(f for f in out.stdout.splitlines()
+                  if f.strip() and is_sensitive_fn(f.strip(), roster))
+
+
+def run_acceptance(
+    repo: Path,
+    prior_anchor: str,
+    candidate: str,
+    *,
+    trusted_expectation: Activation | None,
+    evaluated_activation_path: Path | str,
+    is_sensitive_fn=is_sensitive,
+    roster: tuple[str, ...] = SENSITIVE_ROSTER,
+    exemptions: list[Exemption] | None = None,
+) -> tuple[bool, list[str], list[str]]:
+    """**The authoritative acceptance command** (code-review P1.1). It is the
+    production caller of :func:`acceptance_check` — the gate an uncovered sensitive
+    change must fail. It (1) **independently discovers** the changed sensitive set
+    from ``prior_anchor..candidate``, (2) loads the **evaluated** activation
+    artifact from the target (``None`` if absent/deleted), and (3) HOLDs via
+    :func:`acceptance_check` against the externally supplied ``trusted_expectation``
+    on deletion / field-mismatch / uncovered change / missing-or-empty scenarios.
+
+    Returns ``(ok, holds, changed_sensitive)``.
+    """
+    changed = _changed_sensitive(repo, prior_anchor, candidate, is_sensitive_fn, roster)
+    evaluated: Activation | None = None
+    p = Path(evaluated_activation_path)
+    if p.is_file():
+        evaluated = parse_activation(p.read_text(encoding="utf-8"))
+    ok, holds = acceptance_check(changed, evaluated, trusted_expectation,
+                                 exemptions=exemptions, roster=roster)
+    return ok, holds, changed

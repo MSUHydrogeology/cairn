@@ -153,3 +153,66 @@ def test_expired_exemption_does_not_clear():
     ok, holds = A.acceptance_check(
         ["bootstrap/_scaffold/upgrade.py"], None, None, exemptions=[ex])
     assert not ok
+
+
+# --- P1.1: the authoritative acceptance COMMAND (end-to-end) -------------------
+import subprocess
+
+
+def _git_acc(repo, *args):
+    return subprocess.run(["git", "-C", str(repo), *args],
+                          capture_output=True, text=True, check=True)
+
+
+def _repo_with_change(tmp_path, change_path, activation_yaml=None):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git_acc(repo, "init", "-q", "-b", "main")
+    _git_acc(repo, "config", "user.email", "t@t")
+    _git_acc(repo, "config", "user.name", "t")
+    (repo / "README.md").write_text("base\n")
+    _git_acc(repo, "add", "-A")
+    _git_acc(repo, "commit", "-q", "-m", "prior")
+    prior = _git_acc(repo, "rev-parse", "HEAD").stdout.strip()
+    tgt = repo / change_path
+    tgt.parent.mkdir(parents=True, exist_ok=True)
+    tgt.write_text("changed\n")
+    if activation_yaml is not None:
+        art = repo / "dev" / ".cairn" / "active-refactor.yml"
+        art.parent.mkdir(parents=True, exist_ok=True)
+        art.write_text(activation_yaml)
+    _git_acc(repo, "add", "-A")
+    _git_acc(repo, "commit", "-q", "-m", "candidate")
+    return repo, prior
+
+
+def test_acceptance_command_holds_uncovered_sensitive_edit(tmp_path):
+    """END-TO-END (P1.1): an uncovered sensitive edit makes the ACTUAL acceptance
+    command fail — there is no live activation artifact."""
+    repo, prior = _repo_with_change(tmp_path, "bootstrap/_scaffold/foo.py")
+    ok, holds, changed = A.run_acceptance(
+        repo, prior, "HEAD", trusted_expectation=None,
+        evaluated_activation_path=repo / "dev" / ".cairn" / "active-refactor.yml")
+    assert "bootstrap/_scaffold/foo.py" in changed
+    assert not ok and "HOLD-by-default" in holds[0]
+
+
+def test_acceptance_command_ok_when_authorized(tmp_path):
+    trusted = A.Activation(baseline_sha="s", trusted_ref="t", nonce="n",
+                           scope=["bootstrap/_scaffold/"], required_scenarios=["solo-greenfield"])
+    yaml = ("baseline_sha: s\ntrusted_ref: t\nnonce: n\n"
+            "scope:\n  - bootstrap/_scaffold/\n"
+            "required_scenarios:\n  - solo-greenfield\n")
+    repo, prior = _repo_with_change(tmp_path, "bootstrap/_scaffold/foo.py", activation_yaml=yaml)
+    ok, holds, changed = A.run_acceptance(
+        repo, prior, "HEAD", trusted_expectation=trusted,
+        evaluated_activation_path=repo / "dev" / ".cairn" / "active-refactor.yml")
+    assert ok and holds == [], holds
+
+
+def test_acceptance_command_ignores_nonsensitive(tmp_path):
+    repo, prior = _repo_with_change(tmp_path, "docs/x.md")
+    ok, holds, changed = A.run_acceptance(
+        repo, prior, "HEAD", trusted_expectation=None,
+        evaluated_activation_path=repo / "none.yml")
+    assert ok and changed == []
