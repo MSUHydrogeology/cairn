@@ -14,17 +14,19 @@
   (The explanatory diagrams under docs/assets/ are CC BY 4.0; see README > License.)
 
   Theme-adaptive: a prefers-color-scheme media query flips both the stone
-  fills and a foreground --ink custom property (wordmark + tagline + stone
+  fills and a foreground ink custom property (wordmark + tagline + stone
   outlines), so the mark is legible on GitHub light and dark.  currentColor
-  is avoided: it does not adapt in GitHub's <img>-embedded SVG rendering.
+  is avoided: it does not adapt in GitHub's img-embedded SVG rendering.
 -->
 <svg viewBox="0 0 600 140" xmlns="http://www.w3.org/2000/svg"
      role="img" aria-label="Cairn — stacked stones trail-marker logo with tagline">
   <style>
-    /* Foreground "ink" — GitHub renders README SVGs in an <img> context where
-       currentColor does NOT adapt to dark mode (it falls back to black).  A
-       prefers-color-scheme custom property DOES fire, so route text + stroke
-       through --ink. */
+    /* Foreground "ink": GitHub renders README SVGs in an img/embed context
+       where currentColor does NOT adapt to dark mode (it falls back to black).
+       A prefers-color-scheme custom property DOES fire, so route text + stroke
+       through --ink.
+       (No literal angle-bracket tags in this style block — SVG style content
+       is not CDATA-protected, so a stray one would break XML parsing.) */
     svg { --ink: #1f2328; }
     .stone-fill-base { fill: #8a9bb0; }
     .stone-fill-mid  { fill: #6e7f94; }

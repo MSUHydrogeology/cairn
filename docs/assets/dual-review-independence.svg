@@ -14,17 +14,19 @@
   See LICENSE-CC-BY.md.
 
   Theme-adaptive: a prefers-color-scheme media query flips both the box fills
-  and a foreground --ink custom property (labels, arrows, dividers), so the
+  and a foreground ink custom property (labels, arrows, dividers), so the
   diagram stays legible on GitHub light and dark.  currentColor is avoided:
-  it does not adapt in GitHub's <img>-embedded SVG rendering.
+  it does not adapt in GitHub's img-embedded SVG rendering.
 -->
 <svg viewBox="0 0 640 260" xmlns="http://www.w3.org/2000/svg"
      role="img" aria-label="Dual-Review independence diagram: author submits a proposal; Internal review (same agent type, fresh session) helps it land; External review (different agent type or human) makes it prove it should land.">
   <style>
-    /* Foreground "ink" — GitHub renders README SVGs in an <img> context where
-       currentColor does NOT inherit the page text color (it falls back to
-       black and never adapts to dark mode).  A prefers-color-scheme custom
-       property DOES fire, so route every text/stroke through --ink. */
+    /* Foreground "ink": GitHub renders README SVGs in an img/embed context
+       where currentColor does NOT inherit the page text color (it falls back
+       to black and never adapts to dark mode).  A prefers-color-scheme custom
+       property DOES fire, so route every text/stroke through --ink.
+       (No literal angle-bracket tags in this style block — SVG style content
+       is not CDATA-protected, so a stray one would break XML parsing.) */
     svg { --ink: #1f2328; }
     .box-author   { fill: #dbeafe; stroke: #3b82f6; stroke-width: 1.5; rx: 7; }
     .box-internal { fill: #dcfce7; stroke: #22c55e; stroke-width: 1.5; }
