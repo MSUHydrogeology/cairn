@@ -13,25 +13,32 @@
   Deed: https://creativecommons.org/licenses/by-nd/4.0/
   (The explanatory diagrams under docs/assets/ are CC BY 4.0; see README > License.)
 
-  Theme-adaptive: uses currentColor for text and stroke; fills draw from
-  a prefers-color-scheme media query (stone fills shift between light and
-  dark themes so the graphic is legible on both GitHub light and dark).
+  Theme-adaptive: a prefers-color-scheme media query flips both the stone
+  fills and a foreground --ink custom property (wordmark + tagline + stone
+  outlines), so the mark is legible on GitHub light and dark.  currentColor
+  is avoided: it does not adapt in GitHub's <img>-embedded SVG rendering.
 -->
 <svg viewBox="0 0 600 140" xmlns="http://www.w3.org/2000/svg"
      role="img" aria-label="Cairn — stacked stones trail-marker logo with tagline">
   <style>
+    /* Foreground "ink" — GitHub renders README SVGs in an <img> context where
+       currentColor does NOT adapt to dark mode (it falls back to black).  A
+       prefers-color-scheme custom property DOES fire, so route text + stroke
+       through --ink. */
+    svg { --ink: #1f2328; }
     .stone-fill-base { fill: #8a9bb0; }
     .stone-fill-mid  { fill: #6e7f94; }
     .stone-fill-top  { fill: #5a6e82; }
-    .stone-stroke    { stroke: currentColor; stroke-opacity: 0.18; fill: none; }
+    .stone-stroke    { stroke: var(--ink); stroke-opacity: 0.18; fill: none; }
     .label-main      { font-family: ui-monospace, "SFMono-Regular", Menlo,
                        Consolas, "Liberation Mono", monospace;
                        font-size: 36px; font-weight: 700;
-                       fill: currentColor; letter-spacing: -1px; }
+                       fill: var(--ink); letter-spacing: -1px; }
     .label-tag       { font-family: ui-sans-serif, system-ui, -apple-system,
                        BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-                       font-size: 13.5px; fill: currentColor; opacity: 0.65; }
+                       font-size: 13.5px; fill: var(--ink); opacity: 0.65; }
     @media (prefers-color-scheme: dark) {
+      svg { --ink: #e6edf3; }
       .stone-fill-base { fill: #4a5568; }
       .stone-fill-mid  { fill: #68778d; }
       .stone-fill-top  { fill: #8a99ae; }

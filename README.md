@@ -251,12 +251,12 @@ recommended Cairn level + module roster.
 
 ## Status
 
-Cairn is being released at **v0.1.0**.
+Cairn is released at **v0.2.0** (2026-05-27).
 
 - **Phases 1–4 complete**: doctrine extraction, forkable templates,
-  bootstrap procedure + scaffold + 38 unit tests, and two case
-  studies (modflow_tools, LHM) covering opposite-leaning points on
-  the dimension matrix.
+  bootstrap procedure + scaffold + a full bootstrap and gate test
+  suite, and two case studies (modflow_tools, LHM) covering
+  opposite-leaning points on the dimension matrix.
 - **Phase 5 — launch and governance — in progress.**
 - **R-H third-party correctness probe (chunk 5.3 of the plan)** is
   outstanding: it awaits a consenting third-party scientific
@@ -304,9 +304,10 @@ intentionally compatible.
 ## Citation
 
 If you use Cairn, please cite it.  See [`CITATION.cff`](CITATION.cff)
-for citation metadata.  The first release carries a Zenodo DOI —
-once the release is cut, the DOI lands in `CITATION.cff` and a
-release-tag note here.
+for citation metadata.  Until a GitHub release is published and a
+Zenodo DOI is issued, cite by version (**v0.2.0**) and the
+repository URL; the DOI lands in `CITATION.cff` and a release-tag
+note here once minted.
 
 ---
 
