@@ -61,7 +61,8 @@ _MANIFEST_REL = "bootstrap/tests/fixtures/gate_manifest.json"
 _ACTIVATION_REL = "dev/.cairn/active-refactor.yml"               # evaluated, in the candidate tree
 _AUTHZ_REL = "dev/.cairn/promotion-authorization.yml"           # authority bundle @ A
 _TRUSTED_ACT_REL = "dev/.cairn/trusted-activation.yml"          # authority bundle @ A
-_DESIGNATED_REF = "refs/cairn/gate-anchor"                      # the one designated trusted ref
+_DESIGNATED_REF = "refs/cairn/gate-anchor"                      # the ONE designated gate ref (fixed by trusted code)
+_AUTHORIZATION_REF = "refs/cairn/gate-authorization"           # the ONE authorization ref A is resolved from
 
 # Fixed authoring identity + dates so the constructed anchor N is deterministic.
 _REANCHOR_ENV = {
@@ -123,6 +124,57 @@ def _scrubbed_environ():
     finally:
         os.environ.clear()
         os.environ.update(saved)
+
+
+# --------------------------------------------------- trust-root authenticity (R5)
+
+def _authority_code_files():
+    """The modules whose executing code makes the promotion decision, mapped to
+    their canonical repo-relative paths. Hashing the ACTUAL imported files (their
+    ``__file__``) and comparing to P's pinned trusted hashes proves Stage B runs
+    trusted verifier code, not whatever happens to be in the invoking checkout."""
+    import sys as _sys
+    mods = [_sys.modules[__name__], G, A, M, O, _trust]
+    return [("bootstrap/tests/" + Path(m.__file__).name, m.__file__) for m in mods]
+
+
+def _verify_executing_authority_code(trusted_repo: Path, prior_sha: str) -> tuple[bool, list[str]]:
+    """Pin the EXECUTING authority code against the immutable trusted gate manifest
+    at the prior gate state ``P`` (re-review round-5 Finding 1b). Refuses if a
+    verifier module is unpinned or its running bytes differ from P's frozen hash."""
+    raw = _git_show_bytes(trusted_repo, prior_sha, _MANIFEST_REL)
+    if raw is None:
+        return False, [f"prior gate manifest absent at P {prior_sha[:12]} — cannot pin authority code"]
+    try:
+        frozen = json.loads(raw).get("frozen_files", {})
+    except json.JSONDecodeError:
+        return False, ["prior gate manifest at P is unparseable — cannot pin authority code"]
+    refusals: list[str] = []
+    for rel, path in _authority_code_files():
+        pinned = frozen.get(rel)
+        if pinned is None:
+            refusals.append(f"authority code {rel} is not pinned in P's trusted gate manifest")
+            continue
+        actual = hashlib.sha256(Path(path).read_bytes()).hexdigest()      # P frozen hashes are bare hex
+        if actual != pinned:
+            refusals.append(f"executing authority code {rel} differs from P's pinned hash "
+                            f"(untrusted verifier code in the invoking checkout)")
+    return (not refusals), refusals
+
+
+def _static_verify_anchor(trusted_repo: Path, n_sha: str, prospective_bytes: str) -> bool:
+    """Run the EXISTING trusted gate verifier statically against the immutable
+    anchor ``N`` (re-review round-5 Finding 3): the prospective manifest must be
+    accepted by ``_gate_manifest.verify`` with ``N`` as the immutable anchor — not
+    merely byte-identical. Data-only (``do_collect=False``); executes no candidate."""
+    with tempfile.TemporaryDirectory(prefix="cairn-anchor-verify-") as td:
+        mpath = Path(td) / "gate_manifest.json"
+        mpath.write_text(prospective_bytes, encoding="utf-8")
+        with open(os.devnull, "w") as devnull:
+            rc = M.verify(mpath, anchor_ref=n_sha, repo=Path(trusted_repo),
+                          do_collect=False, out=devnull,
+                          trusted_repo=Path(trusted_repo), trusted_ref=n_sha)
+    return rc == 0
 
 
 # --------------------------------------------------------------------- Stage A
@@ -275,6 +327,7 @@ def promote_data_only(
     manifest_rel: str = _MANIFEST_REL,
     activation_rel: str = _ACTIVATION_REL,
     is_sensitive=A.is_sensitive,
+    verify_anchor_fn=None,
 ) -> PromotionResult:
     """**Stage B.** Data-only, authoritative promotion. Resolves the authorization
     from the git object at ``A``, verifies it binds the evidence + candidate
@@ -326,8 +379,30 @@ def promote_data_only(
     checks["required_scenarios_matched"] = all(
         evidence.scenario_results.get(s) == "match" for s in trusted_act.required_scenarios) \
         and bool(trusted_act.required_scenarios)
+
+    # (2a) Authority-anchor AUTHENTICITY (round-5 F1a): A must be a one-parent
+    #      authorization commit on P whose diff from P is ONLY the bounded
+    #      authorization artifacts — so an attacker cannot mint a self-consistent A
+    #      that also smuggles candidate content. (The fixed authorization ref that A
+    #      is resolved from is enforced by `promote`, the production entry point.)
+    rl = subprocess.run(["git", "-C", str(trusted_repo), "rev-list", "--parents", "-n", "1", A_sha],
+                        capture_output=True, text=True, check=False)
+    a_parents = rl.stdout.split()[1:] if rl.returncode == 0 else []
+    checks["authority_anchor_parent"] = (len(a_parents) == 1 and a_parents[0] == P)
+    a_diff = _diff_name_only(trusted_repo, P, A_sha) if checks["gate_ref_at_prior"] else ["<prior-unknown>"]
+    checks["authority_bounded_diff"] = (bool(a_diff) and set(a_diff) <= {authz_rel, trusted_act_rel})
+
+    # (2b) Authority-CODE pin (round-5 F1b): the executing verifier code must match
+    #      P's trusted gate manifest — reading authority DATA from A is not enough.
+    code_ok, code_holds = _verify_executing_authority_code(trusted_repo, P) \
+        if checks["gate_ref_at_prior"] else (False, ["prior gate state unknown — cannot pin authority code"])
+    checks["authority_code_pinned"] = code_ok
+
     for name, ok in (("gate_ref_at_prior", f"designated ref {designated_ref} is not at the "
                       f"manifest's prior gate state (stale/wrong prior)"),
+                     ("authority_anchor_parent", "authority anchor A is not a one-parent commit on P"),
+                     ("authority_bounded_diff", "authority anchor A changes more than the bounded "
+                      "authorization artifacts (diff P..A not limited to the authz bundle)"),
                      ("binds_candidate", "authorization candidate_sha != C/evidence"),
                      ("binds_evidence_hash", "authorization evidence_hash != Stage-A bundle digest"),
                      ("binds_prospective_manifest", "authorization prospective_manifest_hash != evidence"),
@@ -335,6 +410,7 @@ def promote_data_only(
                      ("required_scenarios_matched", "a required scenario is not matched in the evidence")):
         if not checks[name]:
             refusals.append(ok)
+    refusals.extend(f"authority-code: {h}" for h in code_holds)
 
     # (3) Data-only candidate-byte validation (git objects only; never executes C).
     ok_files, holds = G.check_promotion(
@@ -372,6 +448,19 @@ def promote_data_only(
                                refusals=[f"constructed anchor N changes more than the manifest: {changed}"],
                                checks=checks)
 
+    # (4b) Completion proof (round-5 F3): the EXISTING trusted gate verifier must
+    #      accept N as the immutable anchor — not merely byte-identity. Run it
+    #      statically (data-only) BEFORE the CAS, so a malformed-but-byte-identical
+    #      prospective manifest refuses without spending authority.
+    verify_anchor_fn = verify_anchor_fn or _static_verify_anchor
+    checks["anchor_static_verified"] = bool(
+        verify_anchor_fn(trusted_repo, n_sha, evidence.prospective_manifest_bytes))
+    if not checks["anchor_static_verified"]:
+        return PromotionResult(ok=False, candidate_sha=candidate_sha, new_anchor=n_sha,
+                               refusals=["static gate verification of N failed (the existing gate "
+                                         "verifier does not accept the prospective manifest at N)"],
+                               checks=checks)
+
     # (5) Authority: advance the ONE designated ref A -> N via expected-old CAS.
     #     This is the supervised act — guarded by `confirm`.
     if not confirm:
@@ -407,23 +496,27 @@ def promote(
     *,
     trusted_repo: Path,
     candidate_ref: str,
-    anchor_ref: str,
     workdir: Path | None = None,
     baseline_ref: str | None = None,
     trusted_ref: str | None = None,
-    designated_ref: str = _DESIGNATED_REF,
     confirm: bool = False,
 ) -> PromotionResult:
     """Run Stage A (evidence) then Stage B (data-only promotion). The production
-    path is not dependency-injectable; the designated-ref advance is gated by
-    *confirm* (the Maintainer's supervised act)."""
+    path is **not** dependency-injectable, and both authority refs are **fixed by
+    trusted code** (round-5 F1a/F2): the prior gate state ``P`` is the current head
+    of the fixed designated ref, and the authority anchor ``A`` is resolved from the
+    fixed authorization ref — neither is a caller-supplied SHA or ref. The
+    designated-ref advance is gated by *confirm* (the Maintainer's supervised act)."""
+    trusted_repo = Path(trusted_repo)
+    P = _resolve_sha(trusted_repo, _DESIGNATED_REF)            # fixed gate ref → prior state P
+    A_sha = _resolve_sha(trusted_repo, _AUTHORIZATION_REF)     # fixed authorization ref → A
     wd = Path(workdir) if workdir else Path(tempfile.mkdtemp(prefix="cairn-promote-"))
     evidence = gather_evidence(
-        trusted_repo=trusted_repo, candidate_ref=candidate_ref, prior_anchor=anchor_ref,
+        trusted_repo=trusted_repo, candidate_ref=candidate_ref, prior_anchor=P,
         workdir=wd, baseline_ref=baseline_ref, trusted_ref=trusted_ref)
     return promote_data_only(
-        trusted_repo=trusted_repo, anchor_ref=anchor_ref, evidence=evidence,
-        designated_ref=designated_ref, confirm=confirm)
+        trusted_repo=trusted_repo, anchor_ref=A_sha, evidence=evidence,
+        designated_ref=_DESIGNATED_REF, confirm=confirm)
 
 
 # --------------------------------------------------------------------------- CLI
@@ -437,18 +530,18 @@ def main(argv: list[str] | None = None) -> int:
         p = sub.add_parser(name, help=helptext)
         p.add_argument("--repo", required=True, help="the TRUSTED checkout (authority + verifier)")
         p.add_argument("--candidate-ref", default="HEAD", help="candidate C ref in the trusted repo")
-        p.add_argument("--anchor-ref", required=True, help="the immutable prior anchor A")
         p.add_argument("--baseline-ref", default=None, help="the oracle's pre-refactor baseline ref")
         p.add_argument("--trusted-ref", default=None, help="the oracle's out-of-band trusted ref")
-        p.add_argument("--designated-ref", default=_DESIGNATED_REF, help="the one designated trusted gate ref")
+        # The authority refs are FIXED by trusted code (round-5 F1a/F2): A is resolved
+        # from refs/cairn/gate-authorization and P from refs/cairn/gate-anchor — neither
+        # is a CLI override, so the caller cannot redirect the authority or the one gate ref.
         if name == "promote":
             p.add_argument("--confirm-supervised-reanchor", action="store_true",
                            help="REQUIRED: confirm the Maintainer's supervised ref advance")
     args = ap.parse_args(argv)
     res = promote(
         trusted_repo=Path(args.repo), candidate_ref=args.candidate_ref,
-        anchor_ref=args.anchor_ref, baseline_ref=args.baseline_ref,
-        trusted_ref=args.trusted_ref, designated_ref=args.designated_ref,
+        baseline_ref=args.baseline_ref, trusted_ref=args.trusted_ref,
         confirm=(args.cmd == "promote" and bool(args.confirm_supervised_reanchor)))
     print(f"[reanchor] candidate {(res.candidate_sha or '?')[:12]}  N={(res.new_anchor or '-')[:12]}  "
           f"ref_advanced={res.ref_advanced}  reanchored={res.reanchored}")

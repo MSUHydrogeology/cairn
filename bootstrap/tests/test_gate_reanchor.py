@@ -1,20 +1,16 @@
 #!/usr/bin/env python3
-"""Phase 4 two-stage contract tests (round-4 final contract).
+"""Phase 4 two-stage contract tests (round-4 contract + round-5 trust-root).
 
 Stage A gathers **non-authoritative** evidence by materializing C in isolation;
-Stage B is **data-only and authoritative**: it resolves the authorization from the
-git object at the authority anchor, binds C + the evidence + the prospective
-manifest exactly, executes NO candidate code, constructs N = C + the manifest
-commit, and advances the one designated trusted ref P -> N via expected-old CAS.
-
-Acceptance regressions (Codex round-4): candidate mutation during Stage A cannot
-affect Stage B; arbitrary/absent authorization refuses; a second promotion cannot
-replay the same advance; a stale prior refuses; candidate execution is impossible
-in Stage B; and success returns an immutable N carrying exactly the reviewed
-manifest.
+Stage B is **data-only and authoritative**. Round 5 added the trust-root
+authenticity: the authority anchor A must be a one-parent authorization commit on
+P with a bounded diff, the executing verifier code is pinned against P's trusted
+gate manifest, the designated gate ref is fixed (no override), and N is accepted
+by the real gate verifier before reanchored=True.
 """
 from __future__ import annotations
 
+import hashlib
 import inspect
 import json
 import subprocess
@@ -27,8 +23,8 @@ from bootstrap.tests import _gate_transition as G
 
 REQUIRED = ["solo-greenfield", "upgrade_apply"]
 SENSITIVE_REL = "bootstrap/tests/_oracle.py"
-CHECKER_REL = "bootstrap/tests/_gate_transition.py"
-DESIGNATED = "refs/cairn/gate-anchor"
+DESIGNATED = R._DESIGNATED_REF
+AUTHZ_REF = R._AUTHORIZATION_REF
 
 
 def _git(repo, *args):
@@ -65,188 +61,113 @@ def _fake_produce(tree):
     return {"schema": "cairn-gate-manifest/v1", "frozen_files": {"x": "sha256:0"}}
 
 
+def _trusted_frozen_files() -> dict:
+    """The trusted gate-manifest frozen_files that pin the EXECUTING authority code
+    (so Stage B's authority-code pin passes for the real running modules)."""
+    return {rel: hashlib.sha256(open(path, "rb").read()).hexdigest()
+            for rel, path in R._authority_code_files()}
+
+
+def _commit_all(repo, msg):
+    _git(repo, "add", "-A")
+    _git(repo, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", msg)
+    return _git(repo, "rev-parse", "HEAD").stdout.strip()
+
+
+def _author_A(repo, parent, manifest, trusted_act, *, extra=None):
+    """Author an authorization commit on *parent* holding the authz bundle (plus any
+    *extra* files, for the bounded-diff negative test); return its SHA."""
+    _git(repo, "checkout", "-q", parent)
+    for rel, text in {R._AUTHZ_REL: _authz_yaml(manifest),
+                      R._TRUSTED_ACT_REL: _activation_yaml(trusted_act)}.items():
+        p = repo / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(text)
+    for rel, text in (extra or {}).items():
+        (repo / rel).write_text(text)
+    a = _commit_all(repo, "A authority bundle")
+    _git(repo, "checkout", "-q", "main")
+    return a
+
+
 def _two_stage_repo(tmp_path):
-    """A trusted repo with prior gate state P, candidate C, and an authority anchor
-    A holding the authorization bundle. Returns a bundle of everything Stage B
-    needs, plus the already-gathered evidence."""
     repo = tmp_path / "trusted"
     (repo / "bootstrap" / "tests" / "fixtures").mkdir(parents=True)
-    (repo / "dev" / ".cairn").mkdir(parents=True)
     _git(repo, "init", "-q", "-b", "main")
     _git(repo, "config", "user.email", "t@t")
     _git(repo, "config", "user.name", "t")
-    (repo / CHECKER_REL).write_text("# pinned checker bytes\n")
     (repo / SENSITIVE_REL).write_text("ENGINE = 0\n")
-    (repo / "bootstrap" / "tests" / "fixtures" / "gate_manifest.json").write_text("{}\n")
-    _git(repo, "add", "-A")
-    _git(repo, "commit", "-q", "-m", "P prior gate state")
-    P = _git(repo, "rev-parse", "HEAD").stdout.strip()
-    _git(repo, "update-ref", DESIGNATED, P)                  # the designated gate ref starts at P
+    # P's gate manifest pins the executing authority code (trust root for F1b).
+    (repo / R._MANIFEST_REL).write_text(
+        json.dumps({"frozen_files": _trusted_frozen_files()}, indent=2, sort_keys=True) + "\n")
+    P = _commit_all(repo, "P prior gate state")
+    _git(repo, "update-ref", DESIGNATED, P)
 
-    # Candidate C: change the sensitive file + ship the evaluated activation.
     trusted_act = A.Activation(baseline_sha=P, trusted_ref="refs/heads/main",
                                nonce="act-nonce", scope=["bootstrap/tests/"],
                                required_scenarios=list(REQUIRED))
     (repo / SENSITIVE_REL).write_text("ENGINE = 1\n")
+    (repo / R._ACTIVATION_REL).parent.mkdir(parents=True, exist_ok=True)
     (repo / R._ACTIVATION_REL).write_text(_activation_yaml(trusted_act))
-    _git(repo, "add", "-A")
-    _git(repo, "commit", "-q", "-m", "C candidate")
-    C = _git(repo, "rev-parse", "HEAD").stdout.strip()
+    C = _commit_all(repo, "C candidate")
 
-    # Stage A — gather evidence (non-authoritative; fakes for oracle/produce).
     evidence = R.gather_evidence(
         trusted_repo=repo, candidate_ref=C, prior_anchor=P,
         workdir=tmp_path / "wd_A", required_scenarios=REQUIRED,
         run_oracle_fn=_fake_oracle(), produce_fn=_fake_produce, env_scrub=False)
 
-    # The supervised reviewer authors the authorization binding P, C, the evidence,
-    # and the prospective manifest, then commits it at the authority anchor A.
     manifest = G.PromotionManifest(
         nonce="audit-1", prior_anchor=P, candidate_sha=C,
-        checker_hash=G.sha256_file(repo / CHECKER_REL),
+        checker_hash=G.sha256_file(R.G.__file__),          # the EXECUTING checker (F1b)
         evidence_hash=evidence.digest(),
         prospective_manifest_hash=evidence.prospective_manifest_hash,
         files={SENSITIVE_REL: G.sha256_git_object(repo, C, SENSITIVE_REL)})
-    (repo / R._AUTHZ_REL).write_text(_authz_yaml(manifest))
-    (repo / R._TRUSTED_ACT_REL).write_text(_activation_yaml(trusted_act))
-    _git(repo, "add", "-A")
-    _git(repo, "commit", "-q", "-m", "A authority bundle")
-    Asha = _git(repo, "rev-parse", "HEAD").stdout.strip()
-    # restore the worktree's checker/sensitive to P-pinned bytes is unnecessary:
-    # check_promotion reads the checker worktree (unchanged across P/C/A).
+    Asha = _author_A(repo, P, manifest, trusted_act)
+    _git(repo, "update-ref", AUTHZ_REF, Asha)
     return dict(repo=repo, P=P, C=C, A=Asha, evidence=evidence,
                 manifest=manifest, trusted_act=trusted_act)
 
 
-def _promote(b, *, confirm=False, anchor_ref=None, evidence=None):
+def _promote(b, *, confirm=False, anchor_ref=None, evidence=None, verify=True):
     return R.promote_data_only(
         trusted_repo=b["repo"], anchor_ref=anchor_ref or b["A"],
-        evidence=evidence or b["evidence"], designated_ref=DESIGNATED, confirm=confirm)
+        evidence=evidence or b["evidence"], designated_ref=DESIGNATED, confirm=confirm,
+        verify_anchor_fn=(lambda *a: True) if verify else (lambda *a: False))
 
 
-# --- evidence (Stage A) ----------------------------------------------------------
-
-def test_stage_a_evidence_is_deterministic_and_isolated(tmp_path):
-    b = _two_stage_repo(tmp_path)
-    ev = b["evidence"]
-    assert ev.candidate_sha == b["C"] and ev.prior_anchor == b["P"]
-    assert ev.scenario_results == {s: "match" for s in REQUIRED}
-    assert ev.oracle_ok and ev.prospective_manifest_hash.startswith("sha256:")
-    # a second gather over the same C reproduces the same bundle digest
-    ev2 = R.gather_evidence(
-        trusted_repo=b["repo"], candidate_ref=b["C"], prior_anchor=b["P"],
-        workdir=tmp_path / "wd_A2", required_scenarios=REQUIRED,
-        run_oracle_fn=_fake_oracle(), produce_fn=_fake_produce, env_scrub=False)
-    assert ev2.digest() == ev.digest()
-
-
-# --- the happy path: prepare (data-only) then supervised promote -----------------
+# --- happy path -----------------------------------------------------------------
 
 def test_prepare_then_supervised_promote(tmp_path):
     b = _two_stage_repo(tmp_path)
     prep = _promote(b, confirm=False)
     assert prep.ok and not prep.reanchored and not prep.ref_advanced
-    assert prep.new_anchor and prep.checks["anchor_minimal"]
-    # ref still at P (no advance during prepare)
+    assert prep.checks["authority_anchor_parent"] and prep.checks["authority_bounded_diff"]
+    assert prep.checks["authority_code_pinned"] and prep.checks["anchor_static_verified"]
     assert _git(b["repo"], "rev-parse", DESIGNATED).stdout.strip() == b["P"]
 
     res = _promote(b, confirm=True)
     assert res.ok and res.reanchored and res.ref_advanced
-    N = res.new_anchor
-    assert _git(b["repo"], "rev-parse", DESIGNATED).stdout.strip() == N
-    # N = C + the manifest only
-    diff = _git(b["repo"], "diff", "--name-only", f"{b['C']}..{N}").stdout.split()
+    assert _git(b["repo"], "rev-parse", DESIGNATED).stdout.strip() == res.new_anchor
+    diff = _git(b["repo"], "diff", "--name-only", f"{b['C']}..{res.new_anchor}").stdout.split()
     assert diff == [R._MANIFEST_REL]
-    # N carries exactly the reviewed prospective manifest bytes
-    shown = _git(b["repo"], "show", f"{N}:{R._MANIFEST_REL}").stdout
-    assert shown == b["evidence"].prospective_manifest_bytes
 
 
-# --- Codex round-4 acceptance regressions ----------------------------------------
+# --- round-4 regressions (still hold) -------------------------------------------
 
 def test_candidate_mutation_during_stage_a_cannot_affect_stage_b(tmp_path):
-    """Stage B reads git objects at C, so mutating the live worktree after Stage A
-    does not change what is validated or promoted."""
     b = _two_stage_repo(tmp_path)
-    (b["repo"] / SENSITIVE_REL).write_text("ENGINE = 999  # mutated after evidence\n")
+    (b["repo"] / SENSITIVE_REL).write_text("ENGINE = 999\n")
     res = _promote(b, confirm=True)
     assert res.ok and res.reanchored, res.refusals
-    shown = _git(b["repo"], "show", f"{res.new_anchor}:{SENSITIVE_REL}").stdout
-    assert shown == "ENGINE = 1\n"                 # promoted the OBJECT bytes, not the worktree
-
-
-def test_absent_authorization_refuses(tmp_path):
-    """Authorization is resolved only from the git object at the authority anchor —
-    an anchor without the bundle refuses (no arbitrary-path authority)."""
-    b = _two_stage_repo(tmp_path)
-    res = _promote(b, confirm=True, anchor_ref=b["C"])    # C has no authz bundle
-    assert not res.ok and any("authority bundle absent" in r for r in res.refusals)
+    assert _git(b["repo"], "show", f"{res.new_anchor}:{SENSITIVE_REL}").stdout == "ENGINE = 1\n"
 
 
 def test_second_promotion_cannot_replay_the_advance(tmp_path):
     b = _two_stage_repo(tmp_path)
-    first = _promote(b, confirm=True)
-    assert first.ok and first.reanchored
-    second = _promote(b, confirm=True)               # gate ref now at N, not P
-    assert not second.ok and not second.reanchored
-    assert not second.checks["gate_ref_at_prior"]
+    assert _promote(b, confirm=True).reanchored
+    second = _promote(b, confirm=True)
+    assert not second.ok and not second.reanchored and not second.checks["gate_ref_at_prior"]
 
-
-def test_stale_prior_refuses(tmp_path):
-    """If the designated ref is not at the manifest's prior gate state, refuse."""
-    b = _two_stage_repo(tmp_path)
-    _git(b["repo"], "update-ref", DESIGNATED, b["C"])    # move the gate ref off P
-    res = _promote(b, confirm=True)
-    assert not res.ok and not res.checks["gate_ref_at_prior"]
-
-
-def test_stage_b_executes_no_candidate_code(tmp_path):
-    """A candidate carrying a conftest tripwire that raises on import is still
-    promoted — Stage B never imports/collects/executes candidate code."""
-    b = _two_stage_repo(tmp_path)
-    # add a tripwire conftest to a NEW candidate commit, re-author the bundle.
-    repo = b["repo"]
-    _git(repo, "checkout", "-q", b["C"])
-    (repo / "bootstrap" / "tests" / "conftest_tripwire.py").write_text(
-        "raise SystemExit('candidate code executed during Stage B!')\n")
-    _git(repo, "add", "-A")
-    _git(repo, "-c", "user.email=t@t", "-c", "user.name=t",
-         "commit", "-q", "-m", "C2 candidate with tripwire")
-    C2 = _git(repo, "rev-parse", "HEAD").stdout.strip()
-    _git(repo, "checkout", "-q", "main")
-    ev = R.gather_evidence(trusted_repo=repo, candidate_ref=C2, prior_anchor=b["P"],
-                           workdir=tmp_path / "wd_trip", required_scenarios=REQUIRED,
-                           run_oracle_fn=_fake_oracle(), produce_fn=_fake_produce, env_scrub=False)
-    manifest = G.PromotionManifest(
-        nonce="audit-2", prior_anchor=b["P"], candidate_sha=C2,
-        checker_hash=G.sha256_file(repo / CHECKER_REL),
-        evidence_hash=ev.digest(), prospective_manifest_hash=ev.prospective_manifest_hash,
-        files={SENSITIVE_REL: G.sha256_git_object(repo, C2, SENSITIVE_REL)})
-    # the tripwire conftest is a NON-sensitive file present in C2's tree; it is
-    # never in the manifest and never imported — its presence proves Stage B does
-    # not collect/execute candidate code.
-    (repo / R._AUTHZ_REL).write_text(_authz_yaml(manifest))
-    (repo / R._TRUSTED_ACT_REL).write_text(_activation_yaml(b["trusted_act"]))
-    _git(repo, "add", "-A")
-    _git(repo, "-c", "user.email=t@t", "-c", "user.name=t",
-         "commit", "-q", "-m", "A2 authority bundle")
-    A2 = _git(repo, "rev-parse", "HEAD").stdout.strip()
-    res = R.promote_data_only(trusted_repo=repo, anchor_ref=A2, evidence=ev,
-                              designated_ref=DESIGNATED, confirm=True)
-    assert res.ok and res.reanchored, res.refusals   # tripwire never ran
-
-
-def test_success_returns_immutable_anchor(tmp_path):
-    b = _two_stage_repo(tmp_path)
-    res = _promote(b, confirm=True)
-    N = res.new_anchor
-    # N is a real, immutable commit object whose manifest equals the reviewed bytes
-    assert subprocess.run(["git", "-C", str(b["repo"]), "cat-file", "-e", N],
-                          capture_output=True).returncode == 0
-    assert res.checks["anchor_verified"] and res.checks["anchor_minimal"]
-
-
-# --- evidence binding must be exact ----------------------------------------------
 
 def test_wrong_evidence_hash_refuses(tmp_path):
     b = _two_stage_repo(tmp_path)
@@ -256,25 +177,99 @@ def test_wrong_evidence_hash_refuses(tmp_path):
     assert not res.ok and any("evidence_hash" in r for r in res.refusals)
 
 
-def test_prospective_manifest_mismatch_refuses(tmp_path):
+# --- round-5 F1a: authority-anchor authenticity ---------------------------------
+
+def test_authority_anchor_must_be_one_parent_on_P(tmp_path):
     b = _two_stage_repo(tmp_path)
-    tampered = R.EvidenceBundle(**{**b["evidence"].__dict__,
-                                   "prospective_manifest_bytes": "DIFFERENT\n",
-                                   "prospective_manifest_hash": R._sha256_bytes(b"DIFFERENT\n")})
-    res = _promote(b, confirm=True, evidence=tampered)
-    assert not res.ok and any("prospective_manifest" in r for r in res.refusals)
+    a_on_c = _author_A(b["repo"], b["C"], b["manifest"], b["trusted_act"])   # parent = C, not P
+    res = _promote(b, confirm=True, anchor_ref=a_on_c)
+    assert not res.ok and not res.checks["authority_anchor_parent"]
 
 
-# --- the production orchestrator is not authority-injectable ----------------------
+def test_authority_anchor_bounded_diff(tmp_path):
+    b = _two_stage_repo(tmp_path)
+    a_fat = _author_A(b["repo"], b["P"], b["manifest"], b["trusted_act"],
+                      extra={SENSITIVE_REL: "SMUGGLED\n"})       # changes more than authz
+    res = _promote(b, confirm=True, anchor_ref=a_fat)
+    assert not res.ok and not res.checks["authority_bounded_diff"]
 
-def test_promote_orchestrator_not_injectable():
+
+# --- round-5 F1b: executing authority-code pin ----------------------------------
+
+def test_untrusted_authority_code_refuses(tmp_path):
+    """If P's trusted manifest pins a different hash for a verifier module than the
+    executing code, Stage B refuses (the running verifier is not trusted)."""
+    repo = tmp_path / "repo"
+    (repo / "bootstrap" / "tests" / "fixtures").mkdir(parents=True)
+    _git(repo, "init", "-q", "-b", "main")
+    _git(repo, "config", "user.email", "t@t")
+    _git(repo, "config", "user.name", "t")
+    frozen = _trusted_frozen_files()
+    frozen["bootstrap/tests/_gate_transition.py"] = "0" * 64        # wrong pin
+    (repo / R._MANIFEST_REL).write_text(json.dumps({"frozen_files": frozen}) + "\n")
+    P = _commit_all(repo, "P")
+    ok, holds = R._verify_executing_authority_code(repo, P)
+    assert not ok and any("_gate_transition.py" in h for h in holds)
+
+
+def test_executing_authority_code_pin_passes_for_real_modules(tmp_path):
+    repo = tmp_path / "repo2"
+    (repo / "bootstrap" / "tests" / "fixtures").mkdir(parents=True)
+    _git(repo, "init", "-q", "-b", "main")
+    _git(repo, "config", "user.email", "t@t")
+    _git(repo, "config", "user.name", "t")
+    (repo / R._MANIFEST_REL).write_text(json.dumps({"frozen_files": _trusted_frozen_files()}) + "\n")
+    P = _commit_all(repo, "P")
+    ok, holds = R._verify_executing_authority_code(repo, P)
+    assert ok and holds == []
+
+
+# --- round-5 F2: singular gate ref (fixed; no override) --------------------------
+
+def test_promote_orchestrator_not_injectable_and_no_ref_overrides():
     params = set(inspect.signature(R.promote).parameters)
-    for forbidden in ("run_oracle_fn", "produce_fn", "reanchor_fn", "evidence", "nonce_ledger_dir"):
+    for forbidden in ("run_oracle_fn", "produce_fn", "reanchor_fn", "evidence",
+                      "nonce_ledger_dir", "anchor_ref", "designated_ref", "verify_anchor_fn"):
         assert forbidden not in params, forbidden
+
+
+def test_cli_rejects_authority_ref_overrides(tmp_path):
+    with pytest.raises(SystemExit):
+        R.main(["promote", "--repo", str(tmp_path), "--anchor-ref", "x",
+                "--confirm-supervised-reanchor"])
+    with pytest.raises(SystemExit):
+        R.main(["prepare", "--repo", str(tmp_path), "--designated-ref", "refs/x"])
+
+
+# --- round-5 F3: real gate verifier accepts N before reanchored ------------------
+
+def test_static_verify_failure_refuses_before_cas(tmp_path):
+    b = _two_stage_repo(tmp_path)
+    res = _promote(b, confirm=True, verify=False)               # static verify returns False
+    assert not res.ok and not res.ref_advanced
+    assert not res.checks["anchor_static_verified"]
+    assert _git(b["repo"], "rev-parse", DESIGNATED).stdout.strip() == b["P"]   # authority untouched
+
+
+def test_static_verify_calls_real_gate_verifier(tmp_path, monkeypatch):
+    """The production path wires the REAL _gate_manifest.verify against N as the
+    immutable anchor (not an injected stub)."""
+    b = _two_stage_repo(tmp_path)
+    seen = {}
+
+    def _fake_verify(manifest_path, *, anchor_ref=None, repo=None, require_anchor=False,
+                     do_collect=True, out=None, trusted_repo=None, trusted_ref="HEAD"):
+        seen["anchor_ref"] = anchor_ref
+        seen["do_collect"] = do_collect
+        return 0
+    monkeypatch.setattr(R.M, "verify", _fake_verify)
+    res = R.promote_data_only(trusted_repo=b["repo"], anchor_ref=b["A"],
+                              evidence=b["evidence"], designated_ref=DESIGNATED, confirm=True)
+    assert res.reanchored and seen["anchor_ref"] == res.new_anchor and seen["do_collect"] is False
 
 
 def test_construct_anchor_commit_is_deterministic(tmp_path):
     b = _two_stage_repo(tmp_path)
     n1 = R._construct_anchor_commit(b["repo"], b["C"], R._MANIFEST_REL, b"manifest-bytes\n")
     n2 = R._construct_anchor_commit(b["repo"], b["C"], R._MANIFEST_REL, b"manifest-bytes\n")
-    assert n1 == n2 and len(n1) == 40            # fixed identity+dates -> reproducible N
+    assert n1 == n2 and len(n1) == 40

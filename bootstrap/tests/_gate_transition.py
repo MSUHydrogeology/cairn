@@ -170,9 +170,11 @@ def check_promotion(
     repo = Path(repo)
     holds: list[str] = []
 
-    # 1. The checker itself must be the pinned one (a candidate cannot alter it).
-    if sha256_file(repo / checker_path) != manifest.checker_hash:
-        return False, ["transition checker has been altered (candidate may not modify the checker)"]
+    # 1. The checker itself must be the pinned one — hashed from the EXECUTING module
+    #    file (re-review round-5 F1b), not the mutable target worktree, so the running
+    #    verifier code is what is pinned (a candidate cannot alter the deciding code).
+    if sha256_file(Path(__file__)) != manifest.checker_hash:
+        return False, ["transition checker (executing code) does not match the pinned checker hash"]
 
     # 2. The candidate ref must resolve to the manifest's PINNED immutable SHA
     #    (a moving ref, or a manifest aimed at a different candidate, refuses).

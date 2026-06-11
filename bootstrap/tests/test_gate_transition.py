@@ -55,7 +55,7 @@ def _setup(tmp_path):
     gate_paths = ["bootstrap/tests/_oracle.py", "bootstrap/tests/test_oracle.py"]
     manifest = G.PromotionManifest(
         nonce="n1", prior_anchor=prior, candidate_sha=candidate,
-        checker_hash=G.sha256_file(checker),
+        checker_hash=G.sha256_file(G.__file__),        # the EXECUTING checker (round-5 F1b)
         files={p: G.sha256_git_object(repo, candidate, p) for p in gate_paths},
     )
     return repo, prior, candidate, manifest
@@ -102,10 +102,12 @@ def test_dirty_worktree_does_not_alter_validation(tmp_path):
 
 
 def test_altered_checker_rejected(tmp_path):
+    """Round-5 F1b: the checker pin is on the EXECUTING module; an authorization
+    whose checker_hash does not match the running checker code refuses."""
     repo, prior, candidate, m = _setup(tmp_path)
-    (repo / "bootstrap" / "tests" / "_gate_transition.py").write_text("# candidate altered me\n")
+    m.checker_hash = "sha256:" + "0" * 64
     ok, holds = _call(repo, prior, m)
-    assert not ok and "altered" in holds[0]
+    assert not ok and "checker" in holds[0]
 
 
 def test_prior_anchor_mismatch_rejected(tmp_path):
