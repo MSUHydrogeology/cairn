@@ -13,6 +13,15 @@ elaboration elsewhere. This folder holds that **on-demand elaboration**
 for rules whose full detail is *project-owned agent discipline* — the
 "tail" of the head/tail split that keeps `RULES.md` compact.
 
+**Registering a project rule never edits shared doctrine.** Add its file
+here and index it from `RULES.md`'s routing table — *not* by adding a
+pointer to `AGENTS.md` or `dev/agent_collaboration.md`. Because `RULES.md`
+is always-loaded (read first at session-start), routing through it lets a
+project add or retire its own rules without ever touching methodology Cairn
+owns — the entire reason a project-owned rules surface exists. (A rule that
+*generalizes* past this project is the exception: it folds *up* to Cairn,
+not into shared doctrine in place — see below.)
+
 * **Project-owned agent-discipline doctrine** — writing-time / review-time
   discipline, with any project evidence logs, that `RULES.md` routes to
   but that should not ride in every-call context.
