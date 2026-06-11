@@ -235,3 +235,90 @@ class TestFidelityCheck:
         assert rc == 0
         err = capsys.readouterr().err
         assert err == ""
+
+
+# ---------------------------------------------------------------------------
+# Structural validity (rollup #3b / External R2): yaml.safe_load + graceful
+# degradation when PyYAML is absent.
+# ---------------------------------------------------------------------------
+
+class TestStructuralValidity:
+    @pytest.fixture(scope="class")
+    def checker(self) -> ModuleType:
+        return _load_checker()
+
+    def test_valid_filled_passes_structural(
+        self, tmp_path: Path, checker
+    ) -> None:
+        """A filled, structurally valid mapping passes (the structural check
+        runs and is satisfied)."""
+        mapping = tmp_path / "model-selection-mapping.yml"
+        mapping.write_text(
+            "mapping:\n"
+            "  - tier: high\n"
+            "    model: vendor-a/flagship\n"
+            "    source: benchmark\n"
+        )
+        assert checker.check_mapping(mapping, quiet=True) == 0
+
+    def test_malformed_yaml_filled_fails_3(
+        self, tmp_path: Path, checker
+    ) -> None:
+        """A filled (no FILL ME) but malformed-YAML mapping passes the sentinel
+        scan yet fails the structural check -- exit 3, not a silent pass that
+        crashes the loader later."""
+        mapping = tmp_path / "model-selection-mapping.yml"
+        # Unbalanced flow sequence -> yaml.safe_load raises YAMLError. No
+        # "FILL ME" present, so it clears the sentinel scan.
+        mapping.write_text("mapping: [unclosed\n  - tier: high\n")
+        rc = checker.check_mapping(mapping, quiet=True)
+        assert rc == 3, f"Malformed YAML should exit 3, got {rc}"
+
+    def test_non_mapping_top_level_fails_3(
+        self, tmp_path: Path, checker
+    ) -> None:
+        """A filled file that parses but is not a top-level mapping (e.g. a bare
+        list) fails structurally -- the loader expects a mapping."""
+        mapping = tmp_path / "model-selection-mapping.yml"
+        mapping.write_text("- tier: high\n- tier: low\n")
+        rc = checker.check_mapping(mapping, quiet=True)
+        assert rc == 3, f"Non-mapping top level should exit 3, got {rc}"
+
+    def test_malformed_message_is_clean(
+        self, tmp_path: Path, checker, capsys
+    ) -> None:
+        mapping = tmp_path / "model-selection-mapping.yml"
+        mapping.write_text("mapping: [unclosed\n")
+        rc = checker.main(["--mapping", str(mapping)])
+        assert rc == 3
+        err = capsys.readouterr().err
+        assert "not valid YAML" in err
+        assert "Traceback" not in err
+
+    def test_pyyaml_absent_degrades_gracefully(
+        self, tmp_path: Path, checker, capsys, monkeypatch
+    ) -> None:
+        """With PyYAML unavailable, structural validation is skipped (a clean
+        note, not a ModuleNotFoundError traceback) and the sentinel-only result
+        stands -- the gate never crashes a dependency-bare CI (R2)."""
+        import builtins
+
+        real_import = builtins.__import__
+
+        def _no_yaml(name, *args, **kwargs):
+            if name == "yaml":
+                raise ImportError("simulated: PyYAML not installed")
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "__import__", _no_yaml)
+
+        mapping = tmp_path / "model-selection-mapping.yml"
+        # A filled mapping that is ALSO malformed YAML: with PyYAML absent the
+        # structural check is skipped, so this still PASSES (sentinel-only) --
+        # proving the dependency is genuinely optional, not silently enforced.
+        mapping.write_text("mapping: [unclosed\n")
+        rc = checker.check_mapping(mapping, quiet=False)
+        assert rc == 0, "PyYAML-absent must degrade to sentinel-only pass"
+        err = capsys.readouterr().err
+        assert "structural validation skipped" in err
+        assert "PyYAML not installed" in err
