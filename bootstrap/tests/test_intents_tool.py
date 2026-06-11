@@ -846,6 +846,64 @@ class TestPrecommitCheck:
         assert "no active claim" not in res.stderr
         assert "HELD BY ANOTHER" in res.stderr
 
+    def test_solo_mode_read_from_canonical_cairn_path(self, tmp_path) -> None:
+        """The intent config is read from the canonical ``dev/.cairn/`` location
+        (the ``dev/.cairn/`` holds-config convention), not only legacy
+        ``dev/intent-config.json`` (rollup #2)."""
+        tool = _git_repo(tmp_path)
+        log = str(self._log(tmp_path))
+        (tmp_path / "dev" / ".cairn").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "dev" / ".cairn" / "intent-config.json").write_text(
+            '{"solo_mode": true}\n'
+        )
+        env = _clean_env(CAIRN_AGENT="alice")
+        _stage(tmp_path, env, "dev/a.md")  # unclaimed by alice
+        res = _run_tool(
+            tool, ["--log-path", log, "_precommit_check"],
+            cwd=tmp_path, env=env,
+        )
+        assert "no active claim" not in res.stderr  # canonical solo_mode read
+
+    def test_intent_config_prefers_canonical_over_legacy(self, tmp_path) -> None:
+        """When both files exist, the canonical ``dev/.cairn/`` value wins
+        (prefer-new), so an adopter can migrate without deleting the old file
+        (rollup #2)."""
+        tool = _git_repo(tmp_path)
+        log = str(self._log(tmp_path))
+        # Legacy says NOT solo; canonical says solo -> canonical must win.
+        (tmp_path / "dev" / "intent-config.json").write_text(
+            '{"solo_mode": false}\n'
+        )
+        (tmp_path / "dev" / ".cairn").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "dev" / ".cairn" / "intent-config.json").write_text(
+            '{"solo_mode": true}\n'
+        )
+        env = _clean_env(CAIRN_AGENT="alice")
+        _stage(tmp_path, env, "dev/a.md")
+        res = _run_tool(
+            tool, ["--log-path", log, "_precommit_check"],
+            cwd=tmp_path, env=env,
+        )
+        assert "no active claim" not in res.stderr  # canonical (true) preferred
+
+    def test_intent_config_legacy_fallback_when_no_canonical(
+        self, tmp_path
+    ) -> None:
+        """With no canonical file, the legacy ``dev/intent-config.json`` is the
+        transitional fallback -- an existing adopter is not broken (rollup #2)."""
+        tool = _git_repo(tmp_path)
+        log = str(self._log(tmp_path))
+        (tmp_path / "dev" / "intent-config.json").write_text(
+            '{"solo_mode": true}\n'
+        )
+        env = _clean_env(CAIRN_AGENT="alice")
+        _stage(tmp_path, env, "dev/a.md")
+        res = _run_tool(
+            tool, ["--log-path", log, "_precommit_check"],
+            cwd=tmp_path, env=env,
+        )
+        assert "no active claim" not in res.stderr  # legacy fallback read
+
     def test_unknown_identity_failsoft(self, tmp_path) -> None:
         tool = _git_repo(tmp_path)
         env = _clean_env()  # no identity vars resolvable

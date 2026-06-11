@@ -61,6 +61,14 @@ ALLOW_UNCLAIMED_ENV_VAR = "CAIRN_INTENT_ALLOW_UNCLAIMED"
 INTENT_CONFIG_RELPATH = "dev/intent-config.json"
 
 
+#: Canonical config location going forward: the ``dev/.cairn/`` convention the
+#: ``lifecycle-metrics`` module states ("``dev/.cairn/`` holds config").  Reads
+#: prefer this; ``INTENT_CONFIG_RELPATH`` above stays a **transitional
+#: fallback** so an existing adopter is not broken (no flag-day).  Resolution
+#: lives in :func:`_resolve_intent_config`.
+INTENT_CONFIG_RELPATH_CANONICAL = "dev/.cairn/intent-config.json"
+
+
 #: Default claim TTL (hours) for the pre-commit block decision. A claim
 #: older than this is **stale**: it still WARNS, but a stale cross-claim
 #: never *blocks* a commit -- a crashed / abandoned session must not wedge a
@@ -186,15 +194,37 @@ def _git_toplevel() -> Optional[Path]:
     return Path(top) if top else None
 
 
+def _resolve_intent_config(repo_root: Path) -> Path:
+    """Resolve the intent-config path, preferring the canonical ``dev/.cairn/``
+    location with a transitional fallback to the legacy ``dev/intent-config.json``.
+
+    Prefer the canonical path when it exists; fall back to the legacy path when
+    only it exists; otherwise return the canonical path -- the location a new
+    adopter should use.  A non-existent target reads as "absent", which every
+    caller already handles as the warn / default case, so returning the
+    canonical path when neither exists changes no behavior for a config-less
+    adopter.  Prefer-new (both present) lets an adopter migrate by writing the
+    new file without first deleting the old one.
+    """
+    canonical = repo_root / INTENT_CONFIG_RELPATH_CANONICAL
+    if canonical.exists():
+        return canonical
+    legacy = repo_root / INTENT_CONFIG_RELPATH
+    if legacy.exists():
+        return legacy
+    return canonical
+
+
 def _read_solo_mode(repo_root: Path) -> bool:
-    """Read the tracked solo-mode flag from ``dev/intent-config.json``.
+    """Read the tracked solo-mode flag from the intent-config (``dev/.cairn/``
+    canonical, ``dev/intent-config.json`` legacy fallback).
 
     Returns ``True`` only when the file exists, parses as a JSON object,
     and carries ``"solo_mode": true``.  Absent / malformed / false all
     return ``False`` (warn).  A deterministic exemption -- no semantic
     auto-exemption.
     """
-    cfg = repo_root / INTENT_CONFIG_RELPATH
+    cfg = _resolve_intent_config(repo_root)
     if not cfg.exists():
         return False
     try:
@@ -226,7 +256,7 @@ def _read_enforce_mode(repo_root: Path) -> str:
     when a **different live session** holds a **fresh** (within-TTL) claim on a
     staged path *and* the committer has a per-session token (see
     :func:`_precommit_check_impl`). An unclaimed staged path still only warns."""
-    cfg = repo_root / INTENT_CONFIG_RELPATH
+    cfg = _resolve_intent_config(repo_root)
     if not cfg.exists():
         return "block"
     try:
@@ -246,7 +276,7 @@ def _read_claim_ttl_hours(repo_root: Path) -> float:
     (4.0) when absent / malformed / non-numeric / non-positive. **Fail-safe:**
     any read or parse error degrades to the default rather than raising -- this
     feeds the pre-commit hook, which must never crash (R1)."""
-    cfg = repo_root / INTENT_CONFIG_RELPATH
+    cfg = _resolve_intent_config(repo_root)
     if not cfg.exists():
         return DEFAULT_CLAIM_TTL_HOURS
     try:
@@ -333,7 +363,7 @@ def _read_incident_config(repo_root: Path) -> Tuple[str, str]:
     """
     log_path = INCIDENT_LOG_RELPATH_DEFAULT
     event_class = INCIDENT_EVENT_CLASS_DEFAULT
-    cfg = repo_root / INTENT_CONFIG_RELPATH
+    cfg = _resolve_intent_config(repo_root)
     try:
         if cfg.exists():
             data = json.loads(cfg.read_text(encoding="utf-8"))
@@ -559,7 +589,7 @@ def _unclaimed_warning(paths: Sequence[str]) -> str:
     )
     lines.append(
         f"or set {ALLOW_UNCLAIMED_ENV_VAR}=1 for an intentional unclaimed "
-        f'commit (or "solo_mode": true in {INTENT_CONFIG_RELPATH}).'
+        f'commit (or "solo_mode": true in {INTENT_CONFIG_RELPATH_CANONICAL}).'
     )
     return "\n".join(lines) + "\n"
 
