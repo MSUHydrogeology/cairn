@@ -712,6 +712,34 @@ _GITIGNORE_SEEDS: dict[str, tuple[str, ...]] = {
 }
 
 
+#: Module → repo-relative **pre-module local surfaces** the module supersedes.
+#: When an adopter adopts a module that now owns a concern, an older local doc /
+#: config the adopter wrote *before* the module existed is left in place by the
+#: install (the install writes only the module's own files).  The adopter is
+#: then left with two canonical-looking sources per concern and must notice +
+#: reconcile by hand -- the silent post-sync drift this flag turns into an
+#: advisory (foldback rollup #1).  Listed names are Cairn's own pre-module
+#: conventions (the most likely predecessor forms); the flag is **advisory** --
+#: it never deletes or edits the local form, the adopter reconciles or retires.
+_MODULE_SUPERSEDES: dict[str, tuple[str, ...]] = {
+    "security-review": ("dev/security_review_protocols.md",),
+    "model-selection": ("dev/model_tier_mapping.md",),
+    "architecture-review": ("dev/architecture_review.md",),
+}
+
+
+def superseded_local_surfaces(module_name: str, target_root: Path) -> list[str]:
+    """Repo-relative pre-module local surfaces *module_name* supersedes that
+    actually exist under *target_root* -- the set worth flagging for the adopter
+    to reconcile or retire.  Empty when the module declares no supersession or
+    none of the declared surfaces are present (no false note)."""
+    return [
+        rel
+        for rel in _MODULE_SUPERSEDES.get(module_name, ())
+        if (target_root / rel).exists()
+    ]
+
+
 def reference_script_token_defaults(module_names: list[str]) -> dict[str, str]:
     """Default command-token values for the selected reference-script
     modules.

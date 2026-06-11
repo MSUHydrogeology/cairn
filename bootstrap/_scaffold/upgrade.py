@@ -40,6 +40,7 @@ from .config import (
     missing_required_tokens,
     resolve_axes,
     strip_conditional_regions,
+    superseded_local_surfaces,
 )
 from .security import _assert_safe_write, ScaffoldSecurityError
 from .merge import SlotError, merge_file
@@ -1311,6 +1312,27 @@ def _commit_lock_and_caches(
     os.replace(lock_tmp, lock_path)
 
 
+def _superseded_surface_note(target: Path, name: str) -> str | None:
+    """Advisory note for a just-adopted module's superseded pre-module local
+    surfaces present on disk (foldback rollup #1).
+
+    Returns ``None`` when the module declares no supersession or none of the
+    declared surfaces exist -- no false note.  **Advisory only:** it flags the
+    drift; it never deletes, edits, or blocks (the adopter reconciles or
+    retires).  Wired at ``--adopt-module`` (the explicit adoption point); a
+    config/folder-convention-move trigger is a future extension."""
+    present = superseded_local_surfaces(name, target)
+    if not present:
+        return None
+    lines = [
+        f"  [note] module {name!r} now owns this concern, but these local "
+        "surface(s) predate it -- reconcile or retire (advisory; nothing was "
+        "changed):",
+    ]
+    lines.extend(f"    - {rel}" for rel in present)
+    return "\n".join(lines)
+
+
 def _cmd_adopt_module(
     target: Path, name: str, cairn_root: Path, templates_root: Path,
 ) -> int:
@@ -1402,6 +1424,9 @@ def _cmd_adopt_module(
     note = f"; seeded .gitignore: {', '.join(seeded)}" if seeded else ""
     print(f"Adopted module {name!r}: recorded {len(added)} file(s) in "
           f"{_LOCKFILE_REL}{note}.")
+    sup_note = _superseded_surface_note(target, name)
+    if sup_note:
+        print(sup_note, file=sys.stderr)
     return 0
 
 

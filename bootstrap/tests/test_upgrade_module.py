@@ -97,3 +97,49 @@ def test_cross_module_patch_reaches_cmd_upgrade(monkeypatch):
     sentinel = object()
     monkeypatch.setattr(UP, "_cairn_is_git", lambda root: sentinel)
     assert UP.cmd_upgrade.__globals__["_cairn_is_git"](_CAIRN_ROOT) is sentinel
+
+
+# ---------------------------------------------------------------------------
+# Superseded-surface advisory flag (foldback rollup #1)
+# ---------------------------------------------------------------------------
+
+def test_superseded_local_surfaces_lists_present(tmp_path):
+    from bootstrap._scaffold import config as CFG  # noqa: PLC0415
+
+    (tmp_path / "dev").mkdir()
+    (tmp_path / "dev" / "model_tier_mapping.md").write_text("x", encoding="utf-8")
+    assert CFG.superseded_local_surfaces("model-selection", tmp_path) == [
+        "dev/model_tier_mapping.md"
+    ]
+
+
+def test_superseded_local_surfaces_empty_when_absent_or_unknown(tmp_path):
+    from bootstrap._scaffold import config as CFG  # noqa: PLC0415
+
+    # Declared surface, but not present on disk -> no false flag.
+    assert CFG.superseded_local_surfaces("model-selection", tmp_path) == []
+    # A module with no declared supersession -> empty.
+    assert CFG.superseded_local_surfaces("coordination-tiers", tmp_path) == []
+    # Unknown module name -> empty (never raises).
+    assert CFG.superseded_local_surfaces("no-such-module", tmp_path) == []
+
+
+def test_superseded_surface_note_present_is_advisory(tmp_path):
+    from bootstrap._scaffold import upgrade as UP  # noqa: PLC0415
+
+    (tmp_path / "dev").mkdir()
+    (tmp_path / "dev" / "security_review_protocols.md").write_text(
+        "x", encoding="utf-8"
+    )
+    note = UP._superseded_surface_note(tmp_path, "security-review")
+    assert note is not None
+    assert "dev/security_review_protocols.md" in note
+    assert "reconcile or retire" in note
+    assert "advisory" in note  # never deletes/blocks
+
+
+def test_superseded_surface_note_none_when_nothing_present(tmp_path):
+    from bootstrap._scaffold import upgrade as UP  # noqa: PLC0415
+
+    assert UP._superseded_surface_note(tmp_path, "security-review") is None
+    assert UP._superseded_surface_note(tmp_path, "model-selection") is None
