@@ -16,6 +16,7 @@ supervised Phase 0/4 steps — this module is only the verification logic they r
 from __future__ import annotations
 
 import hashlib
+import os
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -29,12 +30,36 @@ class PromotionError(ValueError):
 class PromotionManifest:
     nonce: str                                   # single-use; replay is refused
     prior_anchor: str                            # the trusted prior SHA this builds on
+    candidate_sha: str                           # the IMMUTABLE candidate commit promoted
     checker_hash: str                            # expected sha256 of THIS checker file
     files: dict[str, str] = field(default_factory=dict)   # path -> expected new sha256
 
 
 def sha256_file(path: Path) -> str:
     return "sha256:" + hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def _resolve_sha(repo: Path, ref: str) -> str:
+    """Resolve *ref* to a full 40-hex commit SHA in *repo*; raise on failure."""
+    p = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "--verify", "--end-of-options", f"{ref}^{{commit}}"],
+        capture_output=True, text=True, check=False)
+    sha = (p.stdout or "").strip()
+    if p.returncode != 0 or len(sha) != 40 or any(c not in "0123456789abcdef" for c in sha):
+        raise PromotionError(f"ref does not resolve to a commit: {ref!r} ({p.stderr.strip()})")
+    return sha
+
+
+def sha256_git_object(repo: Path, sha: str, rel: str) -> str | None:
+    """The sha256 of *rel* as it exists in the **immutable git object** at *sha*
+    (``git show <sha>:<rel>``), NOT the mutable worktree (re-review Finding 3 —
+    a dirty/raced worktree cannot alter what is validated). ``None`` if absent."""
+    p = subprocess.run(
+        ["git", "-C", str(repo), "show", f"{sha}:{rel}"],
+        capture_output=True, check=False)
+    if p.returncode != 0:
+        return None
+    return "sha256:" + hashlib.sha256(p.stdout).hexdigest()
 
 
 def parse_promotion(text: str) -> PromotionManifest:
@@ -63,6 +88,7 @@ def parse_promotion(text: str) -> PromotionManifest:
     try:
         return PromotionManifest(
             nonce=scalars["nonce"], prior_anchor=scalars["prior_anchor"],
+            candidate_sha=scalars["candidate_sha"],
             checker_hash=scalars["checker_hash"], files=files,
         )
     except KeyError as e:
@@ -81,16 +107,34 @@ def derive_changed_gate_files(repo: Path, prior_anchor: str, candidate: str, is_
     return sorted(f for f in out.stdout.splitlines() if f.strip() and is_sensitive(f.strip()))
 
 
-def nonce_used(nonce_ledger: Path, nonce: str) -> bool:
-    p = Path(nonce_ledger)
-    return p.is_file() and nonce in p.read_text(encoding="utf-8").split()
+def _nonce_slot(nonce_ledger_dir: Path, nonce: str) -> Path:
+    """The one-file-per-nonce slot in the ledger DIRECTORY (the name is the nonce's
+    digest so an arbitrary nonce string is a safe filename)."""
+    digest = hashlib.sha256(nonce.encode("utf-8")).hexdigest()
+    return Path(nonce_ledger_dir) / f"{digest}.used"
 
 
-def _consume_nonce(nonce_ledger: Path, nonce: str) -> None:
-    p = Path(nonce_ledger)
-    p.parent.mkdir(parents=True, exist_ok=True)
-    with p.open("a", encoding="utf-8") as f:         # append-only single-use ledger
+def nonce_used(nonce_ledger_dir: Path, nonce: str) -> bool:
+    """Read-only: has *nonce* already been claimed in this ledger directory?"""
+    return _nonce_slot(nonce_ledger_dir, nonce).exists()
+
+
+def claim_nonce(nonce_ledger_dir: Path, nonce: str) -> bool:
+    """**Atomically** claim *nonce* (re-review Finding 3). Returns ``True`` if this
+    call won the claim, ``False`` if it was already used — the win is decided by an
+    ``O_CREAT | O_EXCL`` create, which is atomic on POSIX, so two concurrent
+    claimants cannot both succeed. The authoritative single-use enforcement; the
+    ledger directory is owned by the supervised composing command, never a
+    caller-arbitrary path per validation call."""
+    slot = _nonce_slot(nonce_ledger_dir, nonce)
+    slot.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        fd = os.open(str(slot), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+    except FileExistsError:
+        return False
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
         f.write(nonce + "\n")
+    return True
 
 
 def check_promotion(
@@ -100,18 +144,21 @@ def check_promotion(
     prior_anchor_actual: str,
     candidate: str,
     is_sensitive,
-    nonce_ledger: Path,
     checker_path: str = "bootstrap/tests/_gate_transition.py",
 ) -> tuple[bool, list[str]]:
-    """**Data-only** validation that the candidate's gate-control bytes EXACTLY
-    match the externally-authored *manifest*. The candidate is **never executed**.
+    """**Data-only, pure** validation that the candidate's gate-control bytes
+    EXACTLY match the externally-authored *manifest*, **bound to one immutable
+    candidate SHA**. The candidate is **never executed**, and this function is
+    **side-effect free** — it does NOT claim the nonce (the supervised composing
+    command claims it atomically *after* validation, so a failed validation never
+    consumes authority; re-review Finding 3).
 
-    HOLDs on: a candidate that altered the transition checker; replay against a
-    different prior anchor **or a consumed nonce**; an **independently-derived**
-    changed gate/sensitive file omitted from (or a file in the manifest not
-    actually changed); a permitted-path file whose current bytes differ from its
-    reviewed hash (the decisive regression). On a clean pass the nonce is
-    **consumed** (single-use)."""
+    HOLDs on: a candidate that altered the transition checker; a *candidate* ref
+    whose resolved SHA differs from the manifest's pinned ``candidate_sha`` (a
+    moving ref / wrong candidate); replay against a different prior anchor; an
+    **independently-derived** changed gate/sensitive file omitted from (or a file
+    in the manifest not actually changed); a permitted-path file whose bytes **in
+    the immutable candidate object** differ from its reviewed hash."""
     repo = Path(repo)
     holds: list[str] = []
 
@@ -119,35 +166,36 @@ def check_promotion(
     if sha256_file(repo / checker_path) != manifest.checker_hash:
         return False, ["transition checker has been altered (candidate may not modify the checker)"]
 
-    # 2. Replay / wrong-base: the promotion must build on the expected prior anchor.
+    # 2. The candidate ref must resolve to the manifest's PINNED immutable SHA
+    #    (a moving ref, or a manifest aimed at a different candidate, refuses).
+    candidate_sha = _resolve_sha(repo, candidate)
+    if candidate_sha != manifest.candidate_sha:
+        return False, [f"candidate SHA mismatch (moving-ref/wrong-candidate refused): "
+                       f"manifest {manifest.candidate_sha[:12]} vs resolved {candidate_sha[:12]}"]
+
+    # 3. Replay / wrong-base: the promotion must build on the expected prior anchor.
     if manifest.prior_anchor != prior_anchor_actual:
         return False, [f"prior-anchor mismatch (replay refused): manifest "
                        f"{manifest.prior_anchor[:12]} vs actual {prior_anchor_actual[:12]}"]
 
-    # 3. Single-use nonce: a consumed nonce is a replay.
-    if nonce_used(nonce_ledger, manifest.nonce):
-        return False, [f"nonce {manifest.nonce!r} already consumed (replay refused)"]
-
-    # 4. INDEPENDENT changed-file derivation — exact equality with the manifest set
-    #    (an omitted changed file OR an unmanifested gate file both refuse).
-    changed = set(derive_changed_gate_files(repo, prior_anchor_actual, candidate, is_sensitive))
+    # 4. INDEPENDENT changed-file derivation against the IMMUTABLE candidate SHA —
+    #    exact equality with the manifest set (omitted changed file OR unmanifested
+    #    gate file both refuse).
+    changed = set(derive_changed_gate_files(repo, prior_anchor_actual, candidate_sha, is_sensitive))
     declared = set(manifest.files)
     for rel in sorted(changed - declared):
         holds.append(f"changed gate/sensitive file is NOT in the promotion manifest: {rel}")
     for rel in sorted(declared - changed):
         holds.append(f"manifest authorizes a file that is not an actual changed gate/sensitive file: {rel}")
 
-    # 5. Each manifest file's current bytes must match its reviewed new hash exactly.
+    # 5. Each manifest file's bytes IN THE CANDIDATE OBJECT must match its reviewed
+    #    new hash exactly (read from the git object, not the mutable worktree).
     for rel, expected in manifest.files.items():
-        p = repo / rel
-        if not p.is_file():
-            holds.append(f"authorized gate file missing on disk: {rel}")
-            continue
-        if sha256_file(p) != expected:
-            holds.append(f"gate file changed after its reviewed hash was recorded: {rel} "
-                         f"(decisive: bytes != promotion manifest)")
+        actual = sha256_git_object(repo, candidate_sha, rel)
+        if actual is None:
+            holds.append(f"authorized gate file absent in candidate object: {rel}")
+        elif actual != expected:
+            holds.append(f"gate file in candidate differs from its reviewed hash: {rel} "
+                         f"(decisive: object bytes != promotion manifest)")
 
-    ok = not holds
-    if ok:
-        _consume_nonce(nonce_ledger, manifest.nonce)     # atomically consume on success
-    return ok, holds
+    return (not holds), holds
