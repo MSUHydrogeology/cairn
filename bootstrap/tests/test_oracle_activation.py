@@ -53,8 +53,9 @@ def test_parse_activation_missing_field():
 
 
 # ------------------------------------------------------------ acceptance gate
-def _act(scope, nonce="n1", sha="s1"):
-    return A.Activation(baseline_sha=sha, trusted_ref="t", nonce=nonce, scope=scope)
+def _act(scope, nonce="n1", sha="s1", trusted_ref="t", scenarios=("solo-greenfield",)):
+    return A.Activation(baseline_sha=sha, trusted_ref=trusted_ref, nonce=nonce,
+                        scope=scope, required_scenarios=list(scenarios))
 
 
 def test_nonsensitive_change_is_ok_without_activation():
@@ -90,12 +91,39 @@ def test_authorized_covered_change_ok():
 
 
 def test_scope_narrowing_holds():
-    """The evaluated artifact narrows scope below the trusted expectation — the
-    uncovered sensitive path HOLDs."""
+    """The evaluated artifact narrows scope below the trusted expectation — exact
+    equality refuses it as a field mismatch (P1.4: no weakening of authority)."""
     trusted = _act(["bootstrap/_scaffold/", "bootstrap/scaffold.py"])
     evaluated = _act(["bootstrap/_scaffold/"])            # narrowed: drops scaffold.py
     ok, holds = A.acceptance_check(["bootstrap/scaffold.py"], evaluated, trusted)
-    assert not ok and any("not covered" in h for h in holds)
+    assert not ok and "self-labelling" in holds[0] and "scope" in holds[0]
+
+
+def test_trusted_ref_redirect_refused():
+    """P1.4 probe: an evaluated artifact that redirects trusted_ref + empties the
+    required scenarios must REFUSE (it weakens authority)."""
+    trusted = _act(["bootstrap/_scaffold/"], trusted_ref="TRUSTED", scenarios=("upgrade_apply",))
+    evaluated = _act(["bootstrap/_scaffold/"], trusted_ref="ATTACKER", scenarios=())
+    ok, holds = A.acceptance_check(["bootstrap/_scaffold/upgrade.py"], evaluated, trusted)
+    assert not ok and "self-labelling" in holds[0]
+
+
+def test_required_scenarios_must_match():
+    trusted = _act(["bootstrap/_scaffold/"], scenarios=("a", "b"))
+    evaluated = _act(["bootstrap/_scaffold/"], scenarios=("a",))      # dropped one
+    ok, holds = A.acceptance_check(["bootstrap/_scaffold/upgrade.py"], evaluated, trusted)
+    assert not ok and "required_scenarios" in holds[0]
+
+
+def test_empty_required_scenarios_holds():
+    act = _act(["bootstrap/_scaffold/"], scenarios=())
+    ok, holds = A.acceptance_check(["bootstrap/_scaffold/upgrade.py"], act, act)
+    assert not ok and "no required scenarios" in holds[0]
+
+
+def test_unknown_field_rejected():
+    with pytest.raises(A.ActivationError):
+        A.parse_activation("baseline_sha: x\ntrusted_ref: y\nnonce: z\nattacker_field: 1\n")
 
 
 def test_uncovered_sensitive_change_holds():

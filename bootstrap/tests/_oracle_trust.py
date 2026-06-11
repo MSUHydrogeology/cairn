@@ -162,13 +162,33 @@ def extract_ref_tree(ref: str, dest: Path, repo: Path) -> Path:
     files, duplicate normalized paths, and file↔directory collisions; enforces the
     fixed v1 budgets (raw archive / member count / per-file / total expanded).
     """
-    proc = subprocess.run(
+    # Stream stdout with a HARD pre-buffer cap (P2.5): abort the moment the raw
+    # archive exceeds RAW_ARCHIVE_MAX, before the whole thing is buffered.
+    proc = subprocess.Popen(
         ["git", "-C", str(repo), "archive", "--format=tar", ref],
-        capture_output=True, check=False,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
     )
-    if proc.returncode != 0:
-        raise ExtractionError(f"git archive failed for {ref!r}: {proc.stderr.decode('utf-8', 'replace')[:400]}")
-    return _validate_and_extract(proc.stdout, Path(dest))
+    chunks: list[bytes] = []
+    total = 0
+    try:
+        while True:
+            chunk = proc.stdout.read(256 * 1024)
+            if not chunk:
+                break
+            total += len(chunk)
+            if total > RAW_ARCHIVE_MAX:
+                proc.kill()
+                raise ExtractionError(
+                    f"raw archive exceeds cap {RAW_ARCHIVE_MAX} (streaming abort, pre-buffer)")
+            chunks.append(chunk)
+    finally:
+        proc.stdout.close()
+        err = proc.stderr.read()
+        proc.stderr.close()
+        rc = proc.wait()
+    if rc != 0:
+        raise ExtractionError(f"git archive failed for {ref!r}: {err.decode('utf-8', 'replace')[:400]}")
+    return _validate_and_extract(b"".join(chunks), Path(dest))
 
 
 def _validate_and_extract(raw: bytes, dest: Path) -> Path:

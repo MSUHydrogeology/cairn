@@ -114,6 +114,10 @@ def parse_activation(text: str) -> Activation:
         else:
             scalars[key] = val
             cur = None
+    known = {"baseline_sha", "trusted_ref", "nonce", "scope", "required_scenarios"}
+    unknown = (set(scalars) | set(lists)) - known
+    if unknown:                                       # P1.4: reject injected fields
+        raise ActivationError(f"activation has unknown field(s): {sorted(unknown)}")
     try:
         return Activation(
             baseline_sha=scalars["baseline_sha"],
@@ -168,13 +172,23 @@ def acceptance_check(
     if activation is None:
         holds.append("activation artifact absent/deleted while a refactor is authorized (HOLD)")
         return False, holds
-    if (activation.nonce != trusted_expectation.nonce
-            or activation.baseline_sha != trusted_expectation.baseline_sha):
-        holds.append("activation does not match the trusted expectation (self-labelling refused)")
+    # EVERY authority-bearing field must match the trusted expectation exactly
+    # (P1.4): not just nonce + baseline_sha, but trusted_ref, scope, AND
+    # required_scenarios — and ordered (a reordered/missing/extra scenario or a
+    # redirected trusted_ref must refuse). Activation is a dataclass, so `!=`
+    # compares all fields; there are no mutable result/report fields.
+    if activation != trusted_expectation:
+        diff = [f for f in ("baseline_sha", "trusted_ref", "nonce", "scope", "required_scenarios")
+                if getattr(activation, f) != getattr(trusted_expectation, f)]
+        holds.append(f"activation does not match the trusted expectation "
+                     f"(self-labelling refused; differing fields: {diff})")
         return False, holds
-    # Scope-narrowing: the evaluated artifact may not authorize beyond the trusted
-    # expectation; a path must be covered by BOTH.
+    if not trusted_expectation.required_scenarios:
+        holds.append("authorized activation declares no required scenarios (HOLD)")
+        return False, holds
+    # In-scope: every unexempted sensitive change must be covered by the (now
+    # exactly-matched) authorized scope.
     for p in unexempted:
-        if not (covers(activation.scope, p) and covers(trusted_expectation.scope, p)):
+        if not covers(trusted_expectation.scope, p):
             holds.append(f"sensitive change not covered by the authorized scope: {p}")
     return (not holds), holds
