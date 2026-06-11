@@ -37,6 +37,8 @@ sys.path.insert(0, str(CAIRN_ROOT))
 from bootstrap._scaffold.lockfile import (  # noqa: E402  (trust anchor: narrowest owner, plan 0B.3 / Stage 5)
     _LIVING_STATE_DSTS,
     _LOCKFILE_REL,
+    format_forked_facade_warning,
+    forked_facade_findings,
     read_lockfile,
 )
 
@@ -106,6 +108,17 @@ def verify(target: Path) -> int:
         actual = "sha256:" + hashlib.sha256(dst.read_bytes()).hexdigest()
         if actual != recorded:
             violations.append(f"  modified (hash mismatch): {dst_rel}")
+
+    # Advisory (rollup #4): a verbatim facade forked from upstream whose engine
+    # package is installed-but-dormant passes the hash check above (on-disk ==
+    # the finalized hash) yet runs an un-maintained fork. Surface it -- but
+    # honor the per-record fork_acknowledged opt-out at verify time so a
+    # deliberate long-term fork does not re-warn on every pre-commit / CI run.
+    # Advisory only: it never adds a violation or changes the exit code.
+    for finding in forked_facade_findings(target, lock):
+        if not finding["acknowledged"]:
+            print(format_forked_facade_warning(finding, at_upgrade=False),
+                  file=sys.stderr, end="")
 
     if violations:
         print(f"verify_integrity: {len(violations)} integrity violation(s) "

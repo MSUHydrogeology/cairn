@@ -57,6 +57,8 @@ from .lockfile import (
     _emit_lock_yaml,
     _sha256_hex,
     classify_verbatim,
+    format_forked_facade_warning,
+    forked_facade_findings,
     read_lockfile,
 )
 from .install import (
@@ -2096,6 +2098,15 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
               "`upgrade --init-lock --target <repo>` to migrate a "
               "pre-lockfile tree first.", file=sys.stderr)
         return 1
+
+    # Advisory (rollup #4): surface any forked verbatim facade whose engine
+    # package is installed-but-dormant.  Unconditional at upgrade time -- this
+    # is the active decision point, so the per-record fork_acknowledged opt-out
+    # (which silences verify_integrity) does NOT silence it here.  Advisory
+    # only: it never blocks the upgrade.
+    for _ff in forked_facade_findings(target, lock):
+        print(format_forked_facade_warning(_ff, at_upgrade=True),
+              file=sys.stderr, end="")
 
     if args.finalize:
         return _cmd_finalize_lockfile(target, lock)

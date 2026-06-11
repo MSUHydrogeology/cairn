@@ -239,3 +239,85 @@ def classify_verbatim(
     if ours_h != lock_hash:
         return "locally-modified"
     return "update"
+
+
+# ---------------------------------------------------------------------------
+# Forked-facade / dormant-engine detector (foldback rollup #4)
+# ---------------------------------------------------------------------------
+
+def _facade_engine_dir(dst_rel: str) -> str | None:
+    """The engine-package dir a facade ``<dir>/<name>.py`` launches:
+    ``<dir>/_<name>`` -- the documented facade↔engine convention (e.g.
+    ``tools/intent.py`` -> ``tools/_intent``).  ``None`` for a non-``.py`` dst."""
+    p = Path(dst_rel)
+    if p.suffix != ".py":
+        return None
+    return p.with_name("_" + p.stem).as_posix()
+
+
+def forked_facade_findings(
+    target: Path, lock: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """Find ``verbatim`` facades that have **forked** from upstream
+    (``hash != base_hash``) while their engine package ``_<name>/`` sits
+    **installed** under *target* -- a live-but-stale launcher running an
+    un-maintained fork while the maintained engine is dormant (rollup #4).
+
+    ``verify_integrity`` reports such a tree OK (on-disk == the finalized
+    ``hash``), so the silent fork (``hash != base_hash``) is invisible without
+    this correlation.  Each finding: ``{"dst", "engine", "acknowledged"}`` where
+    ``acknowledged`` mirrors the record's ``fork_acknowledged`` flag (the
+    verify-time opt-out; ``upgrade`` warns regardless).  **Detection only** --
+    it reads, never mutates, never deletes.
+    """
+    findings: list[dict[str, Any]] = []
+    for rec in lock.get("files") or []:
+        if not rec.get("verbatim"):
+            continue
+        h = rec.get("hash")
+        base = rec.get("base_hash")
+        # A fork = a verbatim entry whose on-disk/recorded hash diverges from
+        # the upstream base.  No base_hash (or equal) -> not a fork.
+        if not (isinstance(h, str) and isinstance(base, str) and h != base):
+            continue
+        dst_rel = rec.get("dst")
+        if not isinstance(dst_rel, str) or not dst_rel:
+            continue
+        engine_rel = _facade_engine_dir(dst_rel)
+        if engine_rel is None:
+            continue
+        engine_dir = target / engine_rel
+        # An installed engine = a present package dir carrying ≥1 .py module.
+        if not engine_dir.is_dir() or not any(engine_dir.glob("*.py")):
+            continue
+        findings.append({
+            "dst": dst_rel,
+            "engine": engine_rel,
+            "acknowledged": rec.get("fork_acknowledged") is True,
+        })
+    return findings
+
+
+def format_forked_facade_warning(
+    finding: dict[str, Any], *, at_upgrade: bool,
+) -> str:
+    """One advisory block for a forked-facade finding.  **Advisory only** -- it
+    never blocks or mutates; the adopter completes the swap (adopt the thin
+    launcher) or removes the dormant engine, or sets ``fork_acknowledged`` to
+    silence it at ``verify`` time (``upgrade`` always re-surfaces it)."""
+    where = "upgrade" if at_upgrade else "verify_integrity"
+    ack_hint = (
+        "" if at_upgrade else
+        '  Set "fork_acknowledged": true on its lockfile record to silence '
+        "this at verify time (upgrade still re-surfaces it).\n"
+    )
+    return (
+        f"{where}: NOTE -- facade {finding['dst']!r} is forked from upstream "
+        "(hash != base_hash) but its engine package "
+        f"{finding['engine']!r} is installed.\n"
+        "  You are running an un-maintained fork of the launcher while the "
+        "maintained engine sits dormant; upstream engine fixes will not take "
+        "effect.\n"
+        "  Complete the swap (adopt the thin launcher) or remove the dormant "
+        f"engine package.\n{ack_hint}"
+    )

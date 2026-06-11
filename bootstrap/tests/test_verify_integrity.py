@@ -100,3 +100,91 @@ def test_main_documented_invocation(tmp_path: Path) -> None:
     (Codex F3 smoke -- protects the invocation SECURITY.md publishes)."""
     assert _install(tmp_path) == 0
     assert verify_integrity.main(["--target", str(tmp_path)]) == 0
+
+
+# ---------------------------------------------------------------------------
+# Forked-facade / dormant-engine advisory (foldback rollup #4)
+# ---------------------------------------------------------------------------
+
+from bootstrap._scaffold.lockfile import (  # noqa: E402
+    forked_facade_findings,
+    format_forked_facade_warning,
+)
+
+
+def _facade_entry(
+    target: Path, dst_rel: str, *, forked: bool, engine: bool,
+    acknowledged: bool = False,
+) -> dict:
+    """Write a verbatim facade file (+ optionally its engine package) under
+    *target* and return its lockfile record.  ``forked`` => base_hash != hash."""
+    f = target / dst_rel
+    f.parent.mkdir(parents=True, exist_ok=True)
+    f.write_text("# facade launcher\n", encoding="utf-8")
+    h = "sha256:" + hashlib.sha256(f.read_bytes()).hexdigest()
+    if engine:
+        eng = target / Path(dst_rel).with_name("_" + Path(dst_rel).stem)
+        eng.mkdir(parents=True, exist_ok=True)
+        (eng / "__init__.py").write_text("", encoding="utf-8")
+    rec = {
+        "dst": dst_rel, "hash": h, "verbatim": True,
+        "base_hash": ("sha256:" + "a" * 64) if forked else h,
+    }
+    if acknowledged:
+        rec["fork_acknowledged"] = True
+    return rec
+
+
+def test_forked_facade_with_dormant_engine_warns(tmp_path, capsys) -> None:
+    target = tmp_path / "repo"
+    rec = _facade_entry(target, "tools/intent.py", forked=True, engine=True)
+    _write_lock(target, [rec])
+    assert verify_integrity.verify(target) == 0  # advisory only, never fails
+    err = capsys.readouterr().err
+    assert "forked from upstream" in err
+    assert "tools/_intent" in err
+    assert "fork_acknowledged" in err  # the verify-time opt-out is offered
+
+
+def test_forked_facade_acknowledged_is_silent_at_verify(tmp_path, capsys) -> None:
+    target = tmp_path / "repo"
+    rec = _facade_entry(target, "tools/intent.py", forked=True, engine=True,
+                        acknowledged=True)
+    _write_lock(target, [rec])
+    assert verify_integrity.verify(target) == 0
+    err = capsys.readouterr().err
+    assert "forked from upstream" not in err  # acknowledged -> silenced
+
+
+def test_clean_facade_no_warning(tmp_path, capsys) -> None:
+    target = tmp_path / "repo"
+    rec = _facade_entry(target, "tools/intent.py", forked=False, engine=True)
+    _write_lock(target, [rec])
+    assert verify_integrity.verify(target) == 0
+    assert "forked from upstream" not in capsys.readouterr().err
+
+
+def test_forked_facade_without_engine_no_warning(tmp_path, capsys) -> None:
+    target = tmp_path / "repo"
+    rec = _facade_entry(target, "tools/intent.py", forked=True, engine=False)
+    _write_lock(target, [rec])
+    assert verify_integrity.verify(target) == 0
+    assert "forked from upstream" not in capsys.readouterr().err
+
+
+def test_findings_skip_non_verbatim_and_format_upgrade_branch(tmp_path) -> None:
+    target = tmp_path / "repo"
+    # A forked non-verbatim entry (mergeable) is not a facade fork -> skipped.
+    rec = _facade_entry(target, "tools/intent.py", forked=True, engine=True)
+    rec["verbatim"] = False
+    _write_lock(target, [rec])
+    lock = read_lockfile(target)
+    assert forked_facade_findings(target, lock) == []
+    # The upgrade-time formatting omits the verify-only fork_acknowledged hint.
+    msg = format_forked_facade_warning(
+        {"dst": "tools/intent.py", "engine": "tools/_intent",
+         "acknowledged": False},
+        at_upgrade=True,
+    )
+    assert "upgrade:" in msg
+    assert "fork_acknowledged" not in msg
