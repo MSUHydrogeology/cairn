@@ -34,6 +34,25 @@ and a new empty `Unreleased` is started above.
 
 ### Changed
 
+- **Upgrade/verify tooling foldback roll-up (four adopter-robustness fixes).**
+  (1) **`--adopt-module` flags a superseded pre-module local surface** — a new
+  `_MODULE_SUPERSEDES` registry (`config.py`) lets adoption emit an *advisory*
+  "module X now owns this concern; your local Y predates it — reconcile or
+  retire" note (never deletes/blocks), turning silent post-sync drift into a
+  flagged one. (2) **Intent tooling reads `dev/.cairn/intent-config.json`** (the
+  `dev/.cairn/`-holds-config convention) with a transitional fallback to the
+  legacy `dev/intent-config.json` (prefer-new; no flag-day). (3)
+  **`check_model_selection.py` adds a `yaml.safe_load` structural check** (new
+  exit 3 on a filled-but-malformed mapping) that **degrades gracefully** when
+  PyYAML is absent — keeping the gate's zero-hard-dependency property. (4)
+  **`verify_integrity` / `upgrade` detect a forked `verbatim` facade with a
+  dormant installed engine** (`hash != base_hash` ∧ `_<name>/` present) — a
+  live-but-stale launcher running an un-maintained fork; advisory, split by
+  altitude (unconditional at `upgrade`; at `verify` only when the record is not
+  `fork_acknowledged`, a new optional lockfile field). Surfaced by the
+  modflow_tools post-sync reconcile + retire-forked-monoliths work; folded up
+  Cairn-first. (Adopter-side interactive model-mapping capture deferred as a
+  follow-up.)
 - **`doctrine/rationale.md` — Foundation + four-cluster reorg; harvested Anchors
   13, 11, 16, 12 from the reference adopter's guide-star.** The six existing
   anchors are regrouped (not renumbered, not rewritten) into a Foundation
