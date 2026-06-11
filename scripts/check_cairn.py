@@ -212,20 +212,30 @@ class Result:
 
 
 def _check_links(
-    md: Path, root: Path, scannable: list[tuple[int, str]],
+    md: Path, root: Path, text: str,
     anchors_by_file: dict[Path, set[str]], result: Result,
     check_external: bool, allow_hosts: set[str] | None = None,
 ) -> None:
     """Delegate link / anchor checking to the shipped ``link_check`` tool
     and fold its flags + external-link count into ``result``.
 
-    Passing ``check_cairn``'s own ``scannable`` lines keeps the link and
-    claim checks aligned to the same prose; importing the checker (rather
-    than re-implementing it) keeps a single link-check implementation --
-    including its SSRF-guarded ``--check-external`` probe."""
+    The link check honors ``link_check``'s two exemptions so a ``check_cairn``
+    run treats quoted + cross-repo links the same as the standalone tool: each
+    scannable line has its **balanced inline code spans stripped**
+    (``strip_code_spans``), and the file-level ``link-check-allow`` directive is
+    parsed + applied. It keeps ``check_cairn``'s own prose extraction
+    (``claim_check.scannable_lines`` -- which drops blockquotes / fenced / indented
+    code so *illustrative* links in quoted examples are not live-checked), so this
+    wiring adds the exemptions without changing which lines count as prose.
+    Importing the checker (rather than re-implementing it) keeps a single
+    link-check implementation -- including its SSRF-guarded ``--check-external``
+    probe."""
+    scannable = [(lineno, link_check.strip_code_spans(line))
+                 for lineno, line in claim_check.scannable_lines(text)]
+    link_allow = link_check.parse_link_allow_directives(text)
     flags, n_external = link_check.check_links(
         md, root, scannable, anchors_by_file, check_external=check_external,
-        allow_hosts=allow_hosts)
+        allow_hosts=allow_hosts, link_allow=link_allow)
     for f in flags:
         result.flags.append(Flag(md, f.line, f.kind, f.message))
     result.external_links += n_external
@@ -479,9 +489,8 @@ def check_tree(root: Path, files: list[Path],
     result = Result()
     for md in files:
         text = md.read_text(encoding='utf-8', errors='replace')
-        scannable = claim_check.scannable_lines(text)
         result.files_scanned += 1
-        _check_links(md, root, scannable, anchors_by_file, result,
+        _check_links(md, root, text, anchors_by_file, result,
                      check_external, allow_hosts)
         _check_claims(md, root, result, allow)
         _check_counts(md, text, result)
