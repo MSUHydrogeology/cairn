@@ -41,12 +41,14 @@ def _strip_role(author: str) -> str:
 def _agent_of(header: str) -> str:
     """Read the reviewer / author identity token from a section header.
 
-    Header shape: ``## Review -- <Name> (<role>) -- <date>``.  Strips the
-    ``## <Word>`` prefix and a leading ``--`` / em-dash separator, then
-    takes the identity up to the next separator or parenthetical.
-    Vendor-neutral -- no hardcoded agent names; empty / unparseable
-    headers map to ``''``."""
+    Header shape: ``## Review -- <Name> (<role>) -- <date>``, or with a
+    round suffix ``## Review (Round N) -- <Name> (<role>) -- <date>``.
+    Strips the ``## <Word>`` prefix, a leading ``(Round N)`` annotation,
+    and a leading ``--`` / em-dash separator, then takes the identity up
+    to the next separator or parenthetical.  Vendor-neutral -- no
+    hardcoded agent names; empty / unparseable headers map to ``''``."""
     body = re.sub(r'^#+\s*\w+\b', '', header)          # drop '## Review'
+    body = re.sub(r'^\s*\([^)]*\)', '', body)          # drop a leading '(Round N)' annotation
     body = re.sub(r'^\s*(?:--|—)\s*', '', body)        # drop leading sep
     body = re.split(r'\s*(?:--|—|\()', body, maxsplit=1)[0].strip()
     return body
