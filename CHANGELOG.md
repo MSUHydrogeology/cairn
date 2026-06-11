@@ -49,6 +49,19 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **`link_check` parity with `claim_check`: inline code-span exemption + file-level `link-check-allow` directive.**
+  Two exemptions that `claim_check` already had are now in `link_check` as well.
+  (1) A Markdown file-link inside a *balanced* inline code span (backtick-delimited)
+  is literal text and is no longer checked -- only balanced spans are stripped
+  (a backreference `\1` match) so an unmatched backtick leaves the rest of the line
+  intact and still checked (safety contract R2).
+  Fenced code blocks were already skipped; this closes the inline-span gap.
+  (2) A new file-level `<!-- link-check-allow: path/one.md, path/two.md -->`
+  directive (its own namespace -- no dependency on `claim-check-allow`) exempts
+  explicitly-listed link targets from the broken-link check in that file; an
+  unlisted broken link in the same file is still flagged.
+  Deliberated + reviewed adopter-side at the modflow_tools origin deployment.
+
 - **`scaffold.py upgrade` carries module-internal file additions to already-adopted modules.**
   Upgrade previously auto-added new `core/` / `skills/` files but never new files
   belonging to a module the adopter had **already adopted** — so a module that split

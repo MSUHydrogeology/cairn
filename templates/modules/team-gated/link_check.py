@@ -16,6 +16,31 @@ punctuation except hyphen / underscore; spaces -> hyphens; **no**
 hyphen collapse or trim; repeated headings dedupe with ``-1``, ``-2``.
 External ``http(s)`` links are NOT fetched unless ``--check-external``.
 
+**Inline code-span exemption.**  A Markdown file-link that appears
+inside a *balanced* inline code span (backtick-delimited) is literal
+text, not a live link -- it must not be checked.  Fenced code blocks
+are already skipped by ``scannable_lines``; this checker additionally
+strips balanced inline code spans from each scannable line *before*
+link extraction.  Only *balanced* spans are stripped: the closing
+backtick run must exactly match the opening run.  An unmatched backtick
+leaves the rest of the line intact and still checked (safety contract R2
+-- a greedy/naive strip could silently eat a real link).
+
+**File-level ``link-check-allow`` directive.**  An HTML-comment
+directive lets a file's author exempt specific link targets from the
+broken-link check::
+
+    <!-- link-check-allow: relative/path/one.md, relative/path/two.md -->
+
+Listed targets (comma-separated, resolved relative to the file being
+checked) are exempted from the ``broken link target`` check in that
+file.  The directive is its own namespace (``link-check-allow``), with
+no dependency on the sibling ``claim-check-allow`` directive -- an
+adopter who disables claim_check but keeps link_check will not
+accidentally inherit a claim_check-named directive.  Only
+*explicitly-listed* targets are exempted; a genuinely-broken link that
+is not listed is still flagged.
+
 Usage::
 
     python scripts/link_check.py                  # whole tracked tree
@@ -52,6 +77,62 @@ _HEADING_RE = re.compile(r'^(#{1,6})\s+(.*?)\s*#*\s*$')
 # allows arbitrary whitespace before the ``{`` so ``### Title {#id}`` and
 # ``### Title{#id}`` both match.
 _EXPLICIT_ANCHOR_RE = re.compile(r'\s*\{#([^}]+)\}\s*$')
+
+# Balanced inline code span: a run of one or more backticks, followed by
+# any text (non-newline), closed by exactly the same backtick run.
+# The backreference \1 ensures only BALANCED spans are stripped -- an
+# unmatched backtick leaves the rest of the line intact and still
+# checked (safety contract R2).  No re.DOTALL: we operate per-line so
+# the content between backticks never spans lines.
+_BALANCED_CODE_SPAN_RE = re.compile(r'(`+)(.*?)\1')
+
+# File-level link-check-allow directive.  A standalone HTML-comment line
+# ``<!-- link-check-allow: target1, target2 -->`` lists link targets that
+# are consciously exempted from the broken-link check in this file.  The
+# directive must stand alone on its line -- a comment line that *shows*
+# the directive (e.g. inside a paragraph quoting an example) is not
+# parsed as live.  This is its own namespace: it has NO dependency on the
+# sibling ``claim-check-allow`` directive.
+_LINK_ALLOW_DIRECTIVE_RE = re.compile(
+    r'^<!--\s*link-check-allow:\s*(?P<targets>.*?)\s*-->$'
+)
+
+
+def strip_code_spans(line: str) -> str:
+    """Strip balanced inline code spans from *line* before link extraction.
+
+    Only *balanced* spans are removed: the closing backtick run must
+    exactly match the opening run length.  An unmatched backtick (or a
+    span whose closing run has a different length) leaves the rest of
+    the line intact and still checked -- this is the safety contract R2,
+    preventing a greedy/naive strip from silently eating a real link.
+
+    Fenced code blocks are already skipped by ``scannable_lines``; this
+    function handles the INLINE-span case only.
+    """
+    return _BALANCED_CODE_SPAN_RE.sub('', line)
+
+
+def parse_link_allow_directives(text: str) -> set[str]:
+    """Return the set of link targets declared exempt by
+    ``<!-- link-check-allow: ... -->`` directives in *text*.
+
+    Targets are comma-separated.  Each is stripped of surrounding
+    whitespace.  Empty entries are skipped.  The directive must stand
+    alone on its line (matching the ``claim-check-allow`` convention).
+    This is its own namespace -- there is no dependency on, or
+    inheritance from, the ``claim-check-allow`` directive.
+    """
+    exempt: set[str] = set()
+    for raw_line in text.split('\n'):
+        m = _LINK_ALLOW_DIRECTIVE_RE.match(raw_line.strip())
+        if m is None:
+            continue
+        for raw in m.group('targets').split(','):
+            target = raw.strip()
+            if target:
+                exempt.add(target)
+    return exempt
 
 
 @dataclass
@@ -116,7 +197,7 @@ def scannable_lines(text: str) -> list[tuple[int, str]]:
         if '<!--' in line:
             line = line.split('<!--', 1)[0]
             in_comment = True
-        out.append((i, line))
+        out.append((i, strip_code_spans(line)))
     return out
 
 
@@ -293,6 +374,7 @@ def check_links(
     md: Path, root: Path, scannable: list[tuple[int, str]],
     anchors_by_file: dict[Path, set[str]], *, check_external: bool = False,
     allow_hosts: set[str] | None = None,
+    link_allow: set[str] | None = None,
 ) -> tuple[list[Flag], int]:
     """Check one file's links / anchors against *scannable* lines.
 
@@ -300,10 +382,16 @@ def check_links(
     shared across a tree scan so each target file's headings are parsed
     once. This is the composable core: ``check_cairn.py`` calls it with
     its own scannable lines so Cairn runs the exact shipped tool.
+
+    *link_allow* is the set of link target strings declared exempt by
+    the file's ``<!-- link-check-allow: ... -->`` directive(s).  Only
+    the ``broken link target`` check is suppressed for listed targets;
+    anchor checks and containment checks are unaffected.
     """
     flags: list[Flag] = []
     n_external = 0
     root_resolved = root.resolve()
+    _link_allow: set[str] = link_allow or set()
     targets: list[tuple[int, str]] = []
     for lineno, line in scannable:
         for m in _LINK_RE.finditer(line):
@@ -349,6 +437,8 @@ def check_links(
             except OSError:
                 tgt = None
             if tgt is None or not tgt.exists():
+                if path_part in _link_allow:
+                    continue  # consciously exempted via link-check-allow
                 flags.append(Flag(md, lineno, 'link',
                                   f'broken link target: `{target}`'))
                 continue
@@ -467,9 +557,11 @@ def check_tree(root: Path, files: list[Path],
     for md in files:
         text = md.read_text(encoding='utf-8', errors='replace')
         result.files_scanned += 1
+        link_allow = parse_link_allow_directives(text)
         flags, n_ext = check_links(
             md, root, scannable_lines(text), anchors_by_file,
-            check_external=check_external, allow_hosts=allow_hosts)
+            check_external=check_external, allow_hosts=allow_hosts,
+            link_allow=link_allow)
         result.flags.extend(flags)
         result.external_links += n_ext
     return result
