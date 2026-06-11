@@ -14,6 +14,7 @@ import hashlib
 import inspect
 import json
 import subprocess
+from pathlib import Path
 
 import pytest
 
@@ -251,21 +252,29 @@ def test_static_verify_failure_refuses_before_cas(tmp_path):
     assert _git(b["repo"], "rev-parse", DESIGNATED).stdout.strip() == b["P"]   # authority untouched
 
 
-def test_static_verify_calls_real_gate_verifier(tmp_path, monkeypatch):
-    """The production path wires the REAL _gate_manifest.verify against N as the
-    immutable anchor (not an injected stub)."""
+def test_static_verify_runs_against_materialized_N_not_checkout(tmp_path, monkeypatch):
+    """Round-6 F2: the production path wires the REAL _gate_manifest.verify against
+    N AS THE IMMUTABLE ANCHOR, checking frozen-file state from a MATERIALIZED N tree
+    (repo=<N>), not the invoking checkout — even when the trusted worktree differs."""
     b = _two_stage_repo(tmp_path)
+    # make the trusted working-tree manifest DIFFER from N, to prove we follow N.
+    (b["repo"] / R._MANIFEST_REL).write_text("{}  # divergent worktree\n")
     seen = {}
 
     def _fake_verify(manifest_path, *, anchor_ref=None, repo=None, require_anchor=False,
                      do_collect=True, out=None, trusted_repo=None, trusted_ref="HEAD"):
         seen["anchor_ref"] = anchor_ref
         seen["do_collect"] = do_collect
+        seen["repo"] = Path(repo)
+        seen["manifest_in_repo"] = (Path(repo) / R._MANIFEST_REL).read_text(encoding="utf-8")
         return 0
     monkeypatch.setattr(R.M, "verify", _fake_verify)
     res = R.promote_data_only(trusted_repo=b["repo"], anchor_ref=b["A"],
                               evidence=b["evidence"], designated_ref=DESIGNATED, confirm=True)
     assert res.reanchored and seen["anchor_ref"] == res.new_anchor and seen["do_collect"] is False
+    # verifier ran against the materialized N tree, NOT the (divergent) trusted checkout
+    assert seen["repo"] != b["repo"]
+    assert seen["manifest_in_repo"] == b["evidence"].prospective_manifest_bytes
 
 
 def test_construct_anchor_commit_is_deterministic(tmp_path):

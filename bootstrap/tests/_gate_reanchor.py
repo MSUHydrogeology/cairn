@@ -164,16 +164,23 @@ def _verify_executing_authority_code(trusted_repo: Path, prior_sha: str) -> tupl
 
 def _static_verify_anchor(trusted_repo: Path, n_sha: str, prospective_bytes: str) -> bool:
     """Run the EXISTING trusted gate verifier statically against the immutable
-    anchor ``N`` (re-review round-5 Finding 3): the prospective manifest must be
-    accepted by ``_gate_manifest.verify`` with ``N`` as the immutable anchor — not
-    merely byte-identical. Data-only (``do_collect=False``); executes no candidate."""
+    anchor ``N`` (round-5 F3, corrected round-6 F2): **materialize ``N`` into a temp
+    tree and check the frozen-file / mapping state against THAT tree** (``repo=<N>``)
+    — not the invoking working tree — so verification follows ``N`` regardless of
+    whatever happens to be checked out. The verifier code and the anchor object are
+    still resolved from the trusted checkout (``trusted_repo``); the candidate is
+    never executed (``do_collect=False``)."""
+    trusted_repo = Path(trusted_repo)
     with tempfile.TemporaryDirectory(prefix="cairn-anchor-verify-") as td:
-        mpath = Path(td) / "gate_manifest.json"
-        mpath.write_text(prospective_bytes, encoding="utf-8")
+        n_tree = Path(td) / "N"
+        _trust.extract_ref_tree(n_sha, n_tree, trusted_repo)        # N's tree, as data
+        manifest_in_n = n_tree / _MANIFEST_REL
+        if not manifest_in_n.is_file() or manifest_in_n.read_text(encoding="utf-8") != prospective_bytes:
+            return False                                            # N must carry the reviewed manifest
         with open(os.devnull, "w") as devnull:
-            rc = M.verify(mpath, anchor_ref=n_sha, repo=Path(trusted_repo),
+            rc = M.verify(manifest_in_n, anchor_ref=n_sha, repo=n_tree,
                           do_collect=False, out=devnull,
-                          trusted_repo=Path(trusted_repo), trusted_ref=n_sha)
+                          trusted_repo=trusted_repo, trusted_ref=n_sha)
     return rc == 0
 
 
