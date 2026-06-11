@@ -1,12 +1,16 @@
 # MIT License
 
-*Applies to the scripts in this repository — `bootstrap/scaffold.py`
-and its tests under `bootstrap/tests/`. The repository is licensed by
-file kind across three families: prose, templates, and explanatory
-visuals are CC BY 4.0 (see [`LICENSE-CC-BY.md`](LICENSE-CC-BY.md));
-project-identity graphics (`docs/assets/cairn-banner.svg`) are CC BY-ND
-4.0 (see [`LICENSE-CC-BY-ND.md`](LICENSE-CC-BY-ND.md)); code-for-machines
-(scripts) is MIT (this file).*
+*Applies to **all source code in this repository, wherever it lives** —
+`bootstrap/scaffold.py` and its tests under `bootstrap/tests/`, and the
+shipped Python tools under `templates/` (e.g. the scanners and checkers
+such as `templates/modules/team-gated/link_check.py`) and `scripts/`.
+**Source code takes precedence over the document license:** a code file
+is MIT even when delivered inside the otherwise-CC-BY `templates/` tree.
+The other two families are documents, not code — prose, document
+templates, and explanatory visuals are CC BY 4.0 (see
+[`LICENSE-CC-BY.md`](LICENSE-CC-BY.md)); the project-identity brand mark
+alone (`docs/assets/cairn-banner.svg`) is CC BY-ND 4.0 (see
+[`LICENSE-CC-BY-ND.md`](LICENSE-CC-BY-ND.md)).*
 
 Copyright (c) 2026 Anthony Kendall and the Cairn contributors
 

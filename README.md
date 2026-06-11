@@ -272,27 +272,32 @@ the generalized doctrine extracted from that practice.
 
 ## License
 
-Licensed by file kind (three families):
+Licensed by file kind, with **source code taking precedence** — a code
+file is MIT wherever it lives, even inside the otherwise-CC-BY templates:
 
-- **Prose, templates, and explanatory visuals** — doctrine,
-  dimensions, case studies, bootstrap narrative, README, template
-  documents, and the explanatory diagrams in `docs/assets/` — are
-  licensed under **Creative Commons Attribution 4.0 International
-  (CC BY 4.0)**.  See [`LICENSE-CC-BY.md`](LICENSE-CC-BY.md).
-- **Project-identity graphics** — the Cairn banner / brand mark
-  (`docs/assets/cairn-banner.svg`) — are licensed under **Creative
-  Commons Attribution-NoDerivatives 4.0 International (CC BY-ND 4.0)**:
-  share with attribution, but no modified versions, so the identity
-  mark stays canonical.  See the deed at
-  https://creativecommons.org/licenses/by-nd/4.0/.
-- **Scripts** — `bootstrap/scaffold.py` and its tests — are
+- **Source code — MIT.** Every `.py` and other source-code file,
+  *wherever it lives* — `bootstrap/scaffold.py` and its tests, and the
+  shipped tools under `templates/` (e.g.
+  `templates/modules/team-gated/link_check.py`) and `scripts/` — is
   licensed under the **MIT License**.  See
   [`LICENSE-MIT.md`](LICENSE-MIT.md).
+- **Prose, document templates, and explanatory visuals — CC BY 4.0.**
+  The doctrine, dimensions, case studies, bootstrap narrative, README,
+  the *document* templates (the Markdown under `templates/`), and the
+  explanatory diagrams in `docs/assets/` are licensed under **Creative
+  Commons Attribution 4.0 International (CC BY 4.0)**.  See
+  [`LICENSE-CC-BY.md`](LICENSE-CC-BY.md).
+- **Project-identity graphics — CC BY-ND 4.0.** The Cairn banner /
+  brand mark (`docs/assets/cairn-banner.svg`) alone is licensed under
+  **Creative Commons Attribution-NoDerivatives 4.0 International
+  (CC BY-ND 4.0)**: share with attribution, but no modified versions,
+  so the identity mark stays canonical.  See
+  [`LICENSE-CC-BY-ND.md`](LICENSE-CC-BY-ND.md).
 
-The boundary is by file kind: text-for-humans and explanatory
-visuals fall under CC BY; project-identity graphics under CC BY-ND
-(reuse with attribution, no derivatives); code-for-machines under
-MIT.  The licenses are intentionally compatible.
+The three families never overlap: source code is MIT (even when shipped
+under `templates/`); human-readable documents and explanatory visuals
+are CC BY; the brand mark alone is CC BY-ND.  The licenses are
+intentionally compatible.
 
 ---
 

@@ -5,13 +5,20 @@ Copyright (c) 2026 Anthony Kendall and the Cairn contributors.
 The **prose, templates, and explanatory visuals** in this repository —
 the doctrine (`doctrine/`), the dimensions (`dimensions/`), the case
 studies (`case-studies/`), the bootstrap narrative (`bootstrap/*.md`),
-the forkable templates (`templates/`), the on-ramp (`on-ramp/`), this
-repository's documentation (`README.md`, `CITATION.cff`), and the
-**explanatory diagrams** under `docs/assets/` (e.g.
-`dual-review-independence.svg`) — are licensed under the **Creative
-Commons Attribution 4.0 International License (CC BY 4.0)**.
+the forkable **document templates** — the Markdown (`.md`) files under
+`templates/` — the on-ramp (`on-ramp/`), this repository's documentation
+(`README.md`, `CITATION.cff`), and the **explanatory diagrams** under
+`docs/assets/` (e.g. `dual-review-independence.svg`) — are licensed under
+the **Creative Commons Attribution 4.0 International License (CC BY 4.0)**.
 
-**Exception — project-identity graphics.** The Cairn brand mark
+**Exception 1 — source code takes precedence.** Any source-code file
+(`.py` or other code) is **MIT, wherever it lives** — including the shipped
+Python tools delivered *inside* the `templates/` tree (e.g.
+`templates/modules/team-gated/link_check.py`) and anything under `scripts/`.
+A code file is never CC BY, even when it sits beside CC-BY documents. See
+[`LICENSE-MIT.md`](LICENSE-MIT.md).
+
+**Exception 2 — project-identity graphics.** The Cairn brand mark
 (`docs/assets/cairn-banner.svg`) is *not* CC BY; it is licensed under
 **CC BY-ND 4.0** (Attribution-NoDerivatives) so the identity mark stays
 canonical. See [`LICENSE-CC-BY-ND.md`](LICENSE-CC-BY-ND.md).
@@ -19,9 +26,10 @@ canonical. See [`LICENSE-CC-BY-ND.md`](LICENSE-CC-BY-ND.md).
 * Full legal text: <https://creativecommons.org/licenses/by/4.0/legalcode>
 * Human-readable summary: <https://creativecommons.org/licenses/by/4.0/>
 
-The **scripts** in this repository — `bootstrap/scaffold.py` and
-its tests under `bootstrap/tests/` — are licensed separately under
-the MIT License. See [`LICENSE-MIT.md`](LICENSE-MIT.md).
+All **source code** in this repository — `bootstrap/scaffold.py` and its
+tests, the shipped Python tools under `templates/` and `scripts/`, and any
+other code file — is licensed separately under the MIT License, which takes
+precedence over this document license. See [`LICENSE-MIT.md`](LICENSE-MIT.md).
 
 ## What CC BY 4.0 grants
 
