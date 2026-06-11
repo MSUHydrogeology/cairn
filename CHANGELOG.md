@@ -32,6 +32,21 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+### Changed
+
+- **Differential oracle: git-ref baseline; the maintained `scaffold_frozen.py`
+  fixture is retired.** The behavioral guard's "before" engine is now materialized
+  from a **trusted git ref** at run time (verify reachability from an out-of-band
+  trusted ref → two-pass bounded `git archive` extraction → run the extracted old
+  engine from its own tree), replacing the 5030-line checked-in frozen monolith and
+  its per-feature mapping-mirror tax. The oracle is **refactor-scoped** (dormant /
+  not-applicable between refactors) rather than a permanent gate, with an
+  externally-anchored, fail-closed **activation gate** (a sensitive-roster change
+  cannot turn the oracle off or self-label) and a **data-only gate-transition
+  checker** (promotion binds to the exact reviewed candidate bytes, never executes
+  the candidate). *(Cairn-internal test/gate infrastructure; no adopter-facing
+  change.)*
+
 ### Added
 
 - **`scaffold.py upgrade` carries module-internal file additions to already-adopted modules.**

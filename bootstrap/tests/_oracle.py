@@ -1,21 +1,29 @@
 #!/usr/bin/env python3
-"""Differential-oracle harness — scaffold-split 0A.3 (P2#5 / P2#7 / RR4).
+"""Differential-oracle harness — **git-ref baseline** (refactor-scoped).
 
-The scaffold-split refactor claims each extraction stage preserves *behavior*.
-"Tests green" is not a sufficient security gate for a large code-motion refactor
-(SR3): a semantic change can hide in thousands of moved lines while every unit
-test still passes. This harness is the **behavioral** guard (the AST attestation
-in ``_ast_attest.py`` is the *source-motion* guard; both are required).
+An engine refactor claims it preserves *behavior*. "Tests green" is not a
+sufficient security gate for a large code-motion refactor: a semantic change can
+hide in thousands of moved lines while every unit test still passes. This harness
+is the **behavioral** guard (the AST attestation in ``_ast_attest.py`` is the
+*source-motion* guard; both are required).
+
+It is a **change-time** tool, not a permanent gate. The "before" engine is the
+engine **immediately before the refactor**, materialized from a **trusted git
+ref** at run time (``_oracle_trust``: verify trust → two-pass bounded extraction →
+run the extracted old engine from its OWN tree) — not a checked-in frozen file.
+Between refactors no baseline is configured and the oracle is **not applicable**.
 
 What it does
 ------------
-For each fixture in a **fixed, recorded matrix**, it:
+With a baseline ref + an **out-of-band trusted ref** configured, for each fixture
+in a **fixed, recorded matrix**, it:
 
-1. runs a **frozen pre-split engine** (``fixtures/frozen_engine/scaffold_frozen.py``,
-   a byte-copy of the pre-extraction monolith) and the **current** engine
-   (``bootstrap/scaffold.py`` — the launcher+package once 0B lands), each as a
-   subprocess installing into its own cloned adopter tree, with **identical
-   templates** (same ``--cairn-root``) and the **same profile**;
+1. materializes the **baseline** engine from the trusted ref (refused before any
+   extraction or execution if the baseline is not reachable from the trusted ref)
+   and runs it alongside the **current** engine (``bootstrap/scaffold.py``), each
+   as a subprocess installing into its own cloned adopter tree — the baseline
+   runs from its extracted tree (old code) with **identical templates** (same
+   ``--cairn-root``) and the **same profile**;
 2. **byte-compares** every installed file between the two trees;
 3. **normalizes only the enumerated provenance fields** (``cairn_version`` /
    ``cairn_commit`` in the lockfile) so a commit/version advancing *between* the
@@ -39,12 +47,13 @@ refusal signature for the guards). ``verify_integrity`` hard-imports
 the report's ``non_differential_coverage`` enumerates exactly what is NOT in the
 differential gate, so the gate is honest rather than over-claimed.
 
-At Stage 0A the current engine *is* the frozen engine, so the oracle is a
-tautology that proves the harness itself is sound; its teeth bite at Stages 1–8.
+Soundness: with the baseline = current HEAD the run is a tautology that proves
+the harness itself is sound; its teeth bite when baseline and current diverge
+across a refactor (the baseline runs the OLD extracted code, never the current).
 
 Run::
 
-    python bootstrap/tests/_oracle.py run --report /tmp/oracle.json
+    python bootstrap/tests/_oracle.py run --baseline-ref <sha> --trusted-ref <ref> --report /tmp/oracle.json
 """
 from __future__ import annotations
 

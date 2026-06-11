@@ -58,8 +58,10 @@ def test_frozen_set_boundary(produced):
     assert "bootstrap/check_module_body_coverage.py" in frozen
     # cascade-mutable files + the manifest artifact are NOT frozen-hashed
     assert "bootstrap/tests/fixtures/scaffold_ast_baseline.json" not in frozen
-    assert "bootstrap/tests/fixtures/frozen_engine/scaffold_frozen.py" not in frozen
     assert "bootstrap/_scaffold/config.py" not in frozen
+    # the differential oracle's frozen-engine fixture is RETIRED (git-ref baseline)
+    assert not any("scaffold_frozen" in f for f in frozen)
+    assert "bootstrap/tests/fixtures/frozen_engine/scaffold_frozen.py" not in G.CASCADE_MUTABLE
     assert G._MANIFEST_REL not in frozen
     # shipped scanner / security-gate implementations ARE frozen (Codex confirmation Finding 2)
     assert "templates/modules/team-gated/content_scan.py" in frozen

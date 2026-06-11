@@ -16,15 +16,16 @@ Two file classes
   by default**; *adding* a new test file is allowed and recorded. The unattended
   run must NOT decide that an edit to an existing gate is merely "strengthening."
 
-* **Cascade-mutable set** — ``config.py``, ``scaffold_ast_baseline.json``, and the
-  frozen-engine ``scaffold_frozen.py`` legitimately change as A/B/C/E add an
-  ``InstallSpec`` to a registry mapping symbol. These are **excluded from frozen
-  hashing**; their integrity is governed by the AST source-motion attest (one
-  symbol delta), the hardened ``_ast_attest.py update-symbol`` (one allowlisted
-  baseline key, ``--expect-old`` guarded), and the differential oracle (frozen
-  engine lockstep). The manifest records their pre-run hashes + the three pinned
-  mapping-symbol digests so the end reviewer sees the before-state and the
-  per-phase deltas — but the verifier does not HOLD on their change.
+* **Cascade-mutable set** — ``config.py`` and ``scaffold_ast_baseline.json``
+  legitimately change as A/B/C/E add an ``InstallSpec`` to a registry mapping
+  symbol. These are **excluded from frozen hashing**; their integrity is governed
+  by the AST source-motion attest (one symbol delta) + the hardened
+  ``_ast_attest.py update-symbol`` (one allowlisted baseline key, ``--expect-old``
+  guarded). The manifest records their pre-run hashes + the pinned mapping-symbol
+  digests so the end reviewer sees the before-state and the per-phase deltas — but
+  the verifier does not HOLD on their change. (The differential oracle's baseline
+  is now a **trusted git ref**, not a checked-in ``scaffold_frozen.py`` — the
+  frozen-engine fixture is retired.)
 
 Collection identity
 -------------------
@@ -78,8 +79,6 @@ CASCADE_MUTABLE: dict[str, str] = {
         "AST source-motion attest — one predeclared mapping-symbol delta only (A/B/C/E)",
     "bootstrap/tests/fixtures/scaffold_ast_baseline.json":
         "_ast_attest.py update-symbol — one allowlisted baseline key, --expect-old guarded",
-    "bootstrap/tests/fixtures/frozen_engine/scaffold_frozen.py":
-        "differential oracle — frozen-engine _MODULE_MAPPINGS lockstep",
 }
 
 # Module-template files a refactor phase legitimately rewrites (facade splits) — plus the
