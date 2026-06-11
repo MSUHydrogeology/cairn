@@ -173,17 +173,19 @@ what gets prompted, reviewed, and shipped.
 
 ## Trust and safety
 
-> **Cairn agents execute arbitrary commands and run local code.**
-> Never run them with access to sensitive credentials (cloud keys,
-> VCS tokens, API secrets) or on untrusted inputs outside a sandbox.
-> The deliberation tree, proposals, and plans **must never contain**
-> secrets, private paths, embargoed datasets, or unpublished results
-> — anything the maintainer is not prepared to commit to a tracked
-> repository.
+> **What stays on your machine — and what doesn't.** Cairn's own
+> tools never phone home: they read and write only inside your
+> repository and never act around your approval.  But the AI agents
+> you run **do** send everything they read to their model provider —
+> that's how they work — so the tree, proposals, and plans **must
+> never contain** secrets, credentials, private paths, embargoed
+> datasets, or unpublished results.
 >
-> See [`SECURITY.md`](SECURITY.md) for the full security contract:
-> what the agent reads, what it must not exfiltrate, what the shipped
-> scanners check, and the documented residual risks.
+> Cairn agents also **run commands and execute local code**, so point
+> them only at inputs you trust and keep credentials out of the
+> environment.  See [`SECURITY.md`](SECURITY.md) for the full
+> contract: what the agent reads, what the scanners check, and the
+> residual risks.
 
 ---
 
