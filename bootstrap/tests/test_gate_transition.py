@@ -149,6 +149,8 @@ def test_parse_promotion_roundtrip():
         "prior_anchor: " + "C" * 40 + "\n"
         "candidate_sha: " + "D" * 40 + "\n"
         "checker_hash: sha256:abc\n"
+        "evidence_hash: sha256:ev\n"
+        "prospective_manifest_hash: sha256:pm\n"
         "files:\n"
         "  bootstrap/tests/_oracle.py: sha256:111\n"
         "  bootstrap/tests/test_oracle.py: sha256:222\n"
@@ -156,6 +158,7 @@ def test_parse_promotion_roundtrip():
     m = G.parse_promotion(text)
     assert m.nonce == "nnn" and m.prior_anchor == "C" * 40
     assert m.candidate_sha == "D" * 40
+    assert m.evidence_hash == "sha256:ev" and m.prospective_manifest_hash == "sha256:pm"
     assert m.files["bootstrap/tests/_oracle.py"] == "sha256:111"
 
 

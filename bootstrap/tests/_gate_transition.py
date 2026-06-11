@@ -28,10 +28,15 @@ class PromotionError(ValueError):
 
 @dataclass
 class PromotionManifest:
-    nonce: str                                   # single-use; replay is refused
-    prior_anchor: str                            # the trusted prior SHA this builds on
-    candidate_sha: str                           # the IMMUTABLE candidate commit promoted
+    nonce: str                                   # audit id (the trusted-ref CAS is the replay guard)
+    prior_anchor: str                            # the trusted prior SHA this builds on (A)
+    candidate_sha: str                           # the IMMUTABLE candidate commit promoted (C)
     checker_hash: str                            # expected sha256 of THIS checker file
+    # The two-stage contract (re-review round 4): the reviewed authorization also
+    # binds the Stage-A evidence bundle and the prospective manifest bytes, so the
+    # data-only Stage B promotes EXACTLY the reviewed evidence — never a substitute.
+    evidence_hash: str = ""                      # expected sha256 of the Stage-A evidence bundle
+    prospective_manifest_hash: str = ""          # expected sha256 of the prospective gate manifest
     files: dict[str, str] = field(default_factory=dict)   # path -> expected new sha256
 
 
@@ -89,7 +94,10 @@ def parse_promotion(text: str) -> PromotionManifest:
         return PromotionManifest(
             nonce=scalars["nonce"], prior_anchor=scalars["prior_anchor"],
             candidate_sha=scalars["candidate_sha"],
-            checker_hash=scalars["checker_hash"], files=files,
+            checker_hash=scalars["checker_hash"],
+            evidence_hash=scalars["evidence_hash"],
+            prospective_manifest_hash=scalars["prospective_manifest_hash"],
+            files=files,
         )
     except KeyError as e:
         raise PromotionError(f"promotion manifest missing field: {e}") from e

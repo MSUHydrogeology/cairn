@@ -1,21 +1,22 @@
 #!/usr/bin/env python3
-"""Phase 4 end-to-end tests — the single authoritative composing re-anchor gate.
+"""Phase 4 two-stage contract tests (round-4 final contract).
 
-The re-review's load-bearing demand (Finding 1): the ACTUAL re-anchor command —
-not a unit-level library — must refuse unless activation acceptance, the oracle
-over every required scenario, AND promotion validation all pass against one
-immutable candidate SHA; and (Finding 3) it must claim a single-use nonce
-atomically and re-anchor as one transaction, failing without consuming authority.
+Stage A gathers **non-authoritative** evidence by materializing C in isolation;
+Stage B is **data-only and authoritative**: it resolves the authorization from the
+git object at the authority anchor, binds C + the evidence + the prospective
+manifest exactly, executes NO candidate code, constructs N = C + the manifest
+commit, and advances the one designated trusted ref P -> N via expected-old CAS.
 
-These drive ``run_reanchor_gate`` over a synthetic candidate repo with an injected
-fake oracle (so the full install matrix is not re-run here — that is covered by
-``test_oracle.py``), flipping ONE control at a time and asserting the transaction
-properties: a refused control never burns the nonce and never writes; a passing
-sweep claims the nonce once and writes once; replay (same ledger, concurrent
-pre-claim) refuses; a write failure after the claim reports authority spent.
+Acceptance regressions (Codex round-4): candidate mutation during Stage A cannot
+affect Stage B; arbitrary/absent authorization refuses; a second promotion cannot
+replay the same advance; a stale prior refuses; candidate execution is impossible
+in Stage B; and success returns an immutable N carrying exactly the reviewed
+manifest.
 """
 from __future__ import annotations
 
+import inspect
+import json
 import subprocess
 
 import pytest
@@ -25,7 +26,9 @@ from bootstrap.tests import _oracle_activation as A
 from bootstrap.tests import _gate_transition as G
 
 REQUIRED = ["solo-greenfield", "upgrade_apply"]
-SENSITIVE_REL = "bootstrap/tests/_oracle.py"          # in the real sensitive roster
+SENSITIVE_REL = "bootstrap/tests/_oracle.py"
+CHECKER_REL = "bootstrap/tests/_gate_transition.py"
+DESIGNATED = "refs/cairn/gate-anchor"
 
 
 def _git(repo, *args):
@@ -41,267 +44,237 @@ def _activation_yaml(act: A.Activation) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _candidate_repo(tmp_path):
-    """A repo with a prior commit and a candidate commit that changes one sensitive
-    gate file and ships a matching activation artifact. Returns a bundle of
-    everything ``run_reanchor_gate`` needs for a PASSING sweep."""
-    repo = tmp_path / "target"
-    (repo / "bootstrap" / "tests").mkdir(parents=True)
+def _authz_yaml(m: G.PromotionManifest) -> str:
+    lines = [f"nonce: {m.nonce}", f"prior_anchor: {m.prior_anchor}",
+             f"candidate_sha: {m.candidate_sha}", f"checker_hash: {m.checker_hash}",
+             f"evidence_hash: {m.evidence_hash}",
+             f"prospective_manifest_hash: {m.prospective_manifest_hash}", "files:"]
+    lines += [f"  {k}: {v}" for k, v in m.files.items()]
+    return "\n".join(lines) + "\n"
+
+
+def _fake_oracle(scenarios=REQUIRED, ok=True):
+    def _f(workdir, *, baseline_ref, trusted_ref, repo, target_root, gate=False):
+        return {"status": "ran", "ok": ok,
+                "fixtures": [{"name": s, "status": "match"} for s in scenarios],
+                "privileged": []}
+    return _f
+
+
+def _fake_produce(tree):
+    return {"schema": "cairn-gate-manifest/v1", "frozen_files": {"x": "sha256:0"}}
+
+
+def _two_stage_repo(tmp_path):
+    """A trusted repo with prior gate state P, candidate C, and an authority anchor
+    A holding the authorization bundle. Returns a bundle of everything Stage B
+    needs, plus the already-gathered evidence."""
+    repo = tmp_path / "trusted"
+    (repo / "bootstrap" / "tests" / "fixtures").mkdir(parents=True)
     (repo / "dev" / ".cairn").mkdir(parents=True)
     _git(repo, "init", "-q", "-b", "main")
     _git(repo, "config", "user.email", "t@t")
     _git(repo, "config", "user.name", "t")
-    checker = repo / "bootstrap" / "tests" / "_gate_transition.py"
-    checker.write_text("# pinned checker bytes\n")
-    sens = repo / SENSITIVE_REL
-    sens.write_text("ENGINE = 0\n")
+    (repo / CHECKER_REL).write_text("# pinned checker bytes\n")
+    (repo / SENSITIVE_REL).write_text("ENGINE = 0\n")
+    (repo / "bootstrap" / "tests" / "fixtures" / "gate_manifest.json").write_text("{}\n")
     _git(repo, "add", "-A")
-    _git(repo, "commit", "-q", "-m", "prior")
-    prior = _git(repo, "rev-parse", "HEAD").stdout.strip()
+    _git(repo, "commit", "-q", "-m", "P prior gate state")
+    P = _git(repo, "rev-parse", "HEAD").stdout.strip()
+    _git(repo, "update-ref", DESIGNATED, P)                  # the designated gate ref starts at P
 
-    # candidate: change the sensitive file + ship the activation artifact.
-    sens.write_text("ENGINE = 1\n")
-    trusted = A.Activation(baseline_sha=prior, trusted_ref="refs/heads/main",
-                           nonce="activation-nonce", scope=["bootstrap/tests/"],
-                           required_scenarios=list(REQUIRED))
-    act_path = repo / "dev" / ".cairn" / "active-refactor.yml"
-    act_path.write_text(_activation_yaml(trusted))
+    # Candidate C: change the sensitive file + ship the evaluated activation.
+    trusted_act = A.Activation(baseline_sha=P, trusted_ref="refs/heads/main",
+                               nonce="act-nonce", scope=["bootstrap/tests/"],
+                               required_scenarios=list(REQUIRED))
+    (repo / SENSITIVE_REL).write_text("ENGINE = 1\n")
+    (repo / R._ACTIVATION_REL).write_text(_activation_yaml(trusted_act))
     _git(repo, "add", "-A")
-    _git(repo, "commit", "-q", "-m", "candidate")
-    candidate = _git(repo, "rev-parse", "HEAD").stdout.strip()
+    _git(repo, "commit", "-q", "-m", "C candidate")
+    C = _git(repo, "rev-parse", "HEAD").stdout.strip()
 
+    # Stage A — gather evidence (non-authoritative; fakes for oracle/produce).
+    evidence = R.gather_evidence(
+        trusted_repo=repo, candidate_ref=C, prior_anchor=P,
+        workdir=tmp_path / "wd_A", required_scenarios=REQUIRED,
+        run_oracle_fn=_fake_oracle(), produce_fn=_fake_produce, env_scrub=False)
+
+    # The supervised reviewer authors the authorization binding P, C, the evidence,
+    # and the prospective manifest, then commits it at the authority anchor A.
     manifest = G.PromotionManifest(
-        nonce="promo-nonce-1", prior_anchor=prior, candidate_sha=candidate,
-        checker_hash=G.sha256_file(checker),
-        files={SENSITIVE_REL: G.sha256_git_object(repo, candidate, SENSITIVE_REL)})
-
-    ledger = tmp_path / "ledger"            # the ONE externally-anchored ledger
-    return dict(repo=repo, prior=prior, candidate=candidate, trusted=trusted,
-                act_path=act_path, manifest=manifest, ledger=ledger)
-
-
-def _fake_oracle(candidate_sha, *, ok=True, scenarios=REQUIRED):
-    def _f(workdir, *, baseline_ref, trusted_ref, repo, target_root, gate):
-        return {"status": "ran" if ok else "ran", "ok": ok,
-                "candidate_sha": candidate_sha,
-                "fixtures": [{"name": s, "status": "match"} for s in scenarios],
-                "privileged": []}
-    return _f
+        nonce="audit-1", prior_anchor=P, candidate_sha=C,
+        checker_hash=G.sha256_file(repo / CHECKER_REL),
+        evidence_hash=evidence.digest(),
+        prospective_manifest_hash=evidence.prospective_manifest_hash,
+        files={SENSITIVE_REL: G.sha256_git_object(repo, C, SENSITIVE_REL)})
+    (repo / R._AUTHZ_REL).write_text(_authz_yaml(manifest))
+    (repo / R._TRUSTED_ACT_REL).write_text(_activation_yaml(trusted_act))
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "A authority bundle")
+    Asha = _git(repo, "rev-parse", "HEAD").stdout.strip()
+    # restore the worktree's checker/sensitive to P-pinned bytes is unnecessary:
+    # check_promotion reads the checker worktree (unchanged across P/C/A).
+    return dict(repo=repo, P=P, C=C, A=Asha, evidence=evidence,
+                manifest=manifest, trusted_act=trusted_act)
 
 
-def _run(bundle, tmp_path, *, oracle=None, reanchor=None, manifest=None,
-         trusted=None, ledger=None, postcondition=None):
-    calls = []
-    def _default_reanchor(sha):
-        calls.append(sha)
-    return R._run_reanchor_gate(
-        trusted_repo=tmp_path / "trusted_checkout",      # distinct from target
-        target_repo=bundle["repo"], candidate_ref="HEAD",
-        prior_anchor=bundle["prior"],
-        promotion_manifest=manifest or bundle["manifest"],
-        trusted_expectation=trusted or bundle["trusted"],
-        evaluated_activation_path=bundle["act_path"],
-        nonce_ledger_dir=ledger or bundle["ledger"],
-        oracle_workdir=tmp_path / "wd",
-        reanchor_fn=reanchor or _default_reanchor,
-        postcondition_fn=postcondition,
-        baseline_ref=bundle["prior"], trusted_ref="refs/heads/main",
-        run_oracle_fn=oracle or _fake_oracle(bundle["candidate"])), calls
+def _promote(b, *, confirm=False, anchor_ref=None, evidence=None):
+    return R.promote_data_only(
+        trusted_repo=b["repo"], anchor_ref=anchor_ref or b["A"],
+        evidence=evidence or b["evidence"], designated_ref=DESIGNATED, confirm=confirm)
 
 
-def test_full_pass_claims_nonce_and_reanchors_once(tmp_path):
-    b = _candidate_repo(tmp_path)
-    res, calls = _run(b, tmp_path)
-    assert res.ok and res.reanchored and res.nonce_claimed
-    assert res.candidate_sha == b["candidate"]
-    assert all(res.controls.values()), res.controls
-    assert calls == [b["candidate"]]                 # wrote exactly once, the candidate
-    assert G.nonce_used(b["ledger"], "promo-nonce-1")
+# --- evidence (Stage A) ----------------------------------------------------------
+
+def test_stage_a_evidence_is_deterministic_and_isolated(tmp_path):
+    b = _two_stage_repo(tmp_path)
+    ev = b["evidence"]
+    assert ev.candidate_sha == b["C"] and ev.prior_anchor == b["P"]
+    assert ev.scenario_results == {s: "match" for s in REQUIRED}
+    assert ev.oracle_ok and ev.prospective_manifest_hash.startswith("sha256:")
+    # a second gather over the same C reproduces the same bundle digest
+    ev2 = R.gather_evidence(
+        trusted_repo=b["repo"], candidate_ref=b["C"], prior_anchor=b["P"],
+        workdir=tmp_path / "wd_A2", required_scenarios=REQUIRED,
+        run_oracle_fn=_fake_oracle(), produce_fn=_fake_produce, env_scrub=False)
+    assert ev2.digest() == ev.digest()
 
 
-def test_activation_failure_refuses_without_burning_nonce(tmp_path):
-    b = _candidate_repo(tmp_path)
-    bad_trusted = A.Activation(**{**b["trusted"].__dict__, "nonce": "DIFFERENT"})
-    res, calls = _run(b, tmp_path, trusted=bad_trusted)
-    assert not res.ok and not res.reanchored and not res.nonce_claimed
-    assert not res.controls["activation"]
-    assert calls == [] and not G.nonce_used(b["ledger"], "promo-nonce-1")
+# --- the happy path: prepare (data-only) then supervised promote -----------------
+
+def test_prepare_then_supervised_promote(tmp_path):
+    b = _two_stage_repo(tmp_path)
+    prep = _promote(b, confirm=False)
+    assert prep.ok and not prep.reanchored and not prep.ref_advanced
+    assert prep.new_anchor and prep.checks["anchor_minimal"]
+    # ref still at P (no advance during prepare)
+    assert _git(b["repo"], "rev-parse", DESIGNATED).stdout.strip() == b["P"]
+
+    res = _promote(b, confirm=True)
+    assert res.ok and res.reanchored and res.ref_advanced
+    N = res.new_anchor
+    assert _git(b["repo"], "rev-parse", DESIGNATED).stdout.strip() == N
+    # N = C + the manifest only
+    diff = _git(b["repo"], "diff", "--name-only", f"{b['C']}..{N}").stdout.split()
+    assert diff == [R._MANIFEST_REL]
+    # N carries exactly the reviewed prospective manifest bytes
+    shown = _git(b["repo"], "show", f"{N}:{R._MANIFEST_REL}").stdout
+    assert shown == b["evidence"].prospective_manifest_bytes
 
 
-def test_missing_required_oracle_scenario_refuses(tmp_path):
-    b = _candidate_repo(tmp_path)
-    short = _fake_oracle(b["candidate"], scenarios=["solo-greenfield"])  # drops upgrade_apply
-    res, calls = _run(b, tmp_path, oracle=short)
-    assert not res.ok and not res.controls["oracle"]
-    assert any("upgrade_apply" in r for r in res.refusals)
-    assert calls == [] and not G.nonce_used(b["ledger"], "promo-nonce-1")
+# --- Codex round-4 acceptance regressions ----------------------------------------
+
+def test_candidate_mutation_during_stage_a_cannot_affect_stage_b(tmp_path):
+    """Stage B reads git objects at C, so mutating the live worktree after Stage A
+    does not change what is validated or promoted."""
+    b = _two_stage_repo(tmp_path)
+    (b["repo"] / SENSITIVE_REL).write_text("ENGINE = 999  # mutated after evidence\n")
+    res = _promote(b, confirm=True)
+    assert res.ok and res.reanchored, res.refusals
+    shown = _git(b["repo"], "show", f"{res.new_anchor}:{SENSITIVE_REL}").stdout
+    assert shown == "ENGINE = 1\n"                 # promoted the OBJECT bytes, not the worktree
 
 
-def test_failing_oracle_refuses(tmp_path):
-    b = _candidate_repo(tmp_path)
-    res, calls = _run(b, tmp_path, oracle=_fake_oracle(b["candidate"], ok=False))
-    assert not res.ok and not res.controls["oracle"] and calls == []
+def test_absent_authorization_refuses(tmp_path):
+    """Authorization is resolved only from the git object at the authority anchor —
+    an anchor without the bundle refuses (no arbitrary-path authority)."""
+    b = _two_stage_repo(tmp_path)
+    res = _promote(b, confirm=True, anchor_ref=b["C"])    # C has no authz bundle
+    assert not res.ok and any("authority bundle absent" in r for r in res.refusals)
 
 
-def test_oracle_measured_other_candidate_refuses(tmp_path):
-    """The oracle must have measured THIS candidate SHA, not some other tree."""
-    b = _candidate_repo(tmp_path)
-    res, calls = _run(b, tmp_path, oracle=_fake_oracle("0" * 40))
-    assert not res.ok and not res.controls["oracle"]
-    assert any("missing/mismatch refused" in r for r in res.refusals) and calls == []
+def test_second_promotion_cannot_replay_the_advance(tmp_path):
+    b = _two_stage_repo(tmp_path)
+    first = _promote(b, confirm=True)
+    assert first.ok and first.reanchored
+    second = _promote(b, confirm=True)               # gate ref now at N, not P
+    assert not second.ok and not second.reanchored
+    assert not second.checks["gate_ref_at_prior"]
 
 
-def test_promotion_failure_refuses_without_burning_nonce(tmp_path):
-    b = _candidate_repo(tmp_path)
-    b["manifest"].files[SENSITIVE_REL] = "sha256:" + "0" * 64     # wrong reviewed hash
-    res, calls = _run(b, tmp_path)
-    assert not res.ok and not res.controls["promotion"]
-    assert calls == [] and not G.nonce_used(b["ledger"], "promo-nonce-1")
+def test_stale_prior_refuses(tmp_path):
+    """If the designated ref is not at the manifest's prior gate state, refuse."""
+    b = _two_stage_repo(tmp_path)
+    _git(b["repo"], "update-ref", DESIGNATED, b["C"])    # move the gate ref off P
+    res = _promote(b, confirm=True)
+    assert not res.ok and not res.checks["gate_ref_at_prior"]
 
 
-def test_wrong_candidate_sha_in_manifest_refuses(tmp_path):
-    b = _candidate_repo(tmp_path)
-    b["manifest"].candidate_sha = "0" * 40
-    res, calls = _run(b, tmp_path)
-    assert not res.ok and not res.controls["promotion"] and calls == []
+def test_stage_b_executes_no_candidate_code(tmp_path):
+    """A candidate carrying a conftest tripwire that raises on import is still
+    promoted — Stage B never imports/collects/executes candidate code."""
+    b = _two_stage_repo(tmp_path)
+    # add a tripwire conftest to a NEW candidate commit, re-author the bundle.
+    repo = b["repo"]
+    _git(repo, "checkout", "-q", b["C"])
+    (repo / "bootstrap" / "tests" / "conftest_tripwire.py").write_text(
+        "raise SystemExit('candidate code executed during Stage B!')\n")
+    _git(repo, "add", "-A")
+    _git(repo, "-c", "user.email=t@t", "-c", "user.name=t",
+         "commit", "-q", "-m", "C2 candidate with tripwire")
+    C2 = _git(repo, "rev-parse", "HEAD").stdout.strip()
+    _git(repo, "checkout", "-q", "main")
+    ev = R.gather_evidence(trusted_repo=repo, candidate_ref=C2, prior_anchor=b["P"],
+                           workdir=tmp_path / "wd_trip", required_scenarios=REQUIRED,
+                           run_oracle_fn=_fake_oracle(), produce_fn=_fake_produce, env_scrub=False)
+    manifest = G.PromotionManifest(
+        nonce="audit-2", prior_anchor=b["P"], candidate_sha=C2,
+        checker_hash=G.sha256_file(repo / CHECKER_REL),
+        evidence_hash=ev.digest(), prospective_manifest_hash=ev.prospective_manifest_hash,
+        files={SENSITIVE_REL: G.sha256_git_object(repo, C2, SENSITIVE_REL)})
+    # the tripwire conftest is a NON-sensitive file present in C2's tree; it is
+    # never in the manifest and never imported — its presence proves Stage B does
+    # not collect/execute candidate code.
+    (repo / R._AUTHZ_REL).write_text(_authz_yaml(manifest))
+    (repo / R._TRUSTED_ACT_REL).write_text(_activation_yaml(b["trusted_act"]))
+    _git(repo, "add", "-A")
+    _git(repo, "-c", "user.email=t@t", "-c", "user.name=t",
+         "commit", "-q", "-m", "A2 authority bundle")
+    A2 = _git(repo, "rev-parse", "HEAD").stdout.strip()
+    res = R.promote_data_only(trusted_repo=repo, anchor_ref=A2, evidence=ev,
+                              designated_ref=DESIGNATED, confirm=True)
+    assert res.ok and res.reanchored, res.refusals   # tripwire never ran
 
 
-def test_dirty_worktree_refuses(tmp_path):
-    b = _candidate_repo(tmp_path)
-    (b["repo"] / SENSITIVE_REL).write_text("ENGINE = 999  # dirtied after commit\n")
-    res, calls = _run(b, tmp_path)
-    assert not res.ok and not res.controls["clean_worktree"]
-    assert any("dirty" in r for r in res.refusals)
-    assert calls == [] and not G.nonce_used(b["ledger"], "promo-nonce-1")
+def test_success_returns_immutable_anchor(tmp_path):
+    b = _two_stage_repo(tmp_path)
+    res = _promote(b, confirm=True)
+    N = res.new_anchor
+    # N is a real, immutable commit object whose manifest equals the reviewed bytes
+    assert subprocess.run(["git", "-C", str(b["repo"]), "cat-file", "-e", N],
+                          capture_output=True).returncode == 0
+    assert res.checks["anchor_verified"] and res.checks["anchor_minimal"]
 
 
-def test_injected_reanchor_failure_reports_authority_spent(tmp_path):
-    b = _candidate_repo(tmp_path)
-    def _boom(_sha):
-        raise RuntimeError("disk full")
-    res, calls = _run(b, tmp_path, reanchor=_boom)
-    assert not res.ok and not res.reanchored
-    assert res.nonce_claimed                          # authority WAS spent (safe direction)
-    assert any("authority spent" in r for r in res.refusals)
-    assert G.nonce_used(b["ledger"], "promo-nonce-1")  # cannot be replayed with this nonce
+# --- evidence binding must be exact ----------------------------------------------
+
+def test_wrong_evidence_hash_refuses(tmp_path):
+    b = _two_stage_repo(tmp_path)
+    tampered = R.EvidenceBundle(**{**b["evidence"].__dict__,
+                                   "scenario_results": {"solo-greenfield": "match"}})
+    res = _promote(b, confirm=True, evidence=tampered)
+    assert not res.ok and any("evidence_hash" in r for r in res.refusals)
 
 
-def test_same_ledger_replay_refused(tmp_path):
-    """Codex's alternate-ledger probe, closed: the command owns ONE ledger, so a
-    second promotion of the same nonce against it refuses (no fresh-path bypass)."""
-    b = _candidate_repo(tmp_path)
-    res1, calls1 = _run(b, tmp_path)
-    assert res1.ok and calls1 == [b["candidate"]]
-    res2, calls2 = _run(b, tmp_path)                  # same nonce, same ledger
-    assert not res2.ok and not res2.reanchored
-    assert any("replay refused" in r for r in res2.refusals) and calls2 == []
+def test_prospective_manifest_mismatch_refuses(tmp_path):
+    b = _two_stage_repo(tmp_path)
+    tampered = R.EvidenceBundle(**{**b["evidence"].__dict__,
+                                   "prospective_manifest_bytes": "DIFFERENT\n",
+                                   "prospective_manifest_hash": R._sha256_bytes(b"DIFFERENT\n")})
+    res = _promote(b, confirm=True, evidence=tampered)
+    assert not res.ok and any("prospective_manifest" in r for r in res.refusals)
 
 
-def test_concurrent_preclaim_refuses(tmp_path):
-    """A concurrent claimant that wins the atomic claim first makes this run lose
-    it — modeled by pre-claiming the nonce. The gate refuses and does not write."""
-    b = _candidate_repo(tmp_path)
-    assert G.claim_nonce(b["ledger"], "promo-nonce-1") is True   # the 'other' run wins
-    res, calls = _run(b, tmp_path)
-    assert not res.ok and not res.reanchored and not res.nonce_claimed
-    assert any("replay refused" in r for r in res.refusals) and calls == []
+# --- the production orchestrator is not authority-injectable ----------------------
 
-
-# --- round-3 Finding 2: candidate binding is unconditional -----------------------
-
-def _oracle_no_candidate(scenarios=REQUIRED):
-    def _f(workdir, *, baseline_ref, trusted_ref, repo, target_root, gate):
-        return {"status": "ran", "ok": True,           # NOTE: no candidate_sha key
-                "fixtures": [{"name": s, "status": "match"} for s in scenarios],
-                "privileged": []}
-    return _f
-
-
-def test_oracle_report_missing_candidate_sha_refuses(tmp_path):
-    """Round-3 F2: a report that OMITS candidate_sha must refuse — the prior
-    `and report.get(...)` made the binding conditional, so a candidate-less report
-    passed. It must not."""
-    b = _candidate_repo(tmp_path)
-    res, calls = _run(b, tmp_path, oracle=_oracle_no_candidate())
-    assert not res.ok and not res.controls["oracle"]
-    assert any("missing/mismatch refused" in r for r in res.refusals)
-    assert calls == [] and not G.nonce_used(b["ledger"], "promo-nonce-1")
-
-
-# --- round-3 Finding 1/4: the post-write postcondition gates success -------------
-
-def test_noop_writer_fails_postcondition(tmp_path):
-    """A writer that returns normally but did NOT land the manifest cannot be
-    reported as a successful re-anchor — the postcondition catches it."""
-    b = _candidate_repo(tmp_path)
-    res, calls = _run(b, tmp_path,
-                      reanchor=lambda _sha: None,        # no-op writer
-                      postcondition=lambda _sha: False)  # verification fails
-    assert not res.ok and not res.reanchored
-    assert res.nonce_claimed and res.controls.get("postcondition") is False
-    assert any("post-write verification failed" in r for r in res.refusals)
-
-
-def test_postcondition_pass_reanchors(tmp_path):
-    b = _candidate_repo(tmp_path)
-    res, calls = _run(b, tmp_path, postcondition=lambda _sha: True)
-    assert res.ok and res.reanchored and res.controls.get("postcondition") is True
-
-
-def test_postcondition_raising_spends_authority_safely(tmp_path):
-    b = _candidate_repo(tmp_path)
-    def _boom(_sha):
-        raise RuntimeError("verify crashed")
-    res, calls = _run(b, tmp_path, postcondition=_boom)
-    assert not res.ok and not res.reanchored and res.nonce_claimed
-    assert any("post-write verification raised" in r for r in res.refusals)
-
-
-# --- round-3 Finding 3: the production command OWNS exactly one ledger ------------
-
-def test_derive_ledger_is_pure_and_contained(tmp_path):
-    """The ledger is a pure function of (trusted_repo, prior_anchor) and lives
-    UNDER the trusted repo — so an authority has exactly one ledger (no
-    alternate-ledger replay), and it cannot be redirected by a caller."""
-    trusted = tmp_path / "trusted"
-    l1 = R._derive_ledger(trusted, "a" * 40)
-    l2 = R._derive_ledger(trusted, "a" * 40)
-    l3 = R._derive_ledger(trusted, "b" * 40)
-    assert l1 == l2 and l1 != l3                       # deterministic; keyed by anchor
-    assert str(l1).startswith(str(trusted))            # contained under the trusted repo
-
-
-def test_promote_is_not_dependency_injectable():
-    """Round-3 F1/F3: the production command exposes no oracle / writer / ledger
-    seam — its path cannot be substituted with a permissive oracle or no-op
-    writer, and the ledger is derived, not passed."""
-    import inspect
+def test_promote_orchestrator_not_injectable():
     params = set(inspect.signature(R.promote).parameters)
-    for forbidden in ("run_oracle_fn", "reanchor_fn", "postcondition_fn", "nonce_ledger_dir"):
+    for forbidden in ("run_oracle_fn", "produce_fn", "reanchor_fn", "evidence", "nonce_ledger_dir"):
         assert forbidden not in params, forbidden
 
 
-def test_promote_refuses_without_confirmation(tmp_path):
-    b = _candidate_repo(tmp_path)
-    # write minimal manifest/activation files to parse
-    mpath = tmp_path / "promo.yml"
-    mpath.write_text("nonce: x\nprior_anchor: " + "a" * 40 + "\ncandidate_sha: " + "b" * 40 +
-                     "\nchecker_hash: sha256:x\nfiles:\n  bootstrap/tests/_oracle.py: sha256:y\n")
-    apath = tmp_path / "trusted_act.yml"
-    apath.write_text(_activation_yaml(b["trusted"]))
-    res = R.promote(trusted_repo=tmp_path / "trusted", target_repo=b["repo"],
-                    prior_anchor=b["prior"], promotion_manifest_path=mpath,
-                    trusted_activation_path=apath, confirm=False)
-    assert not res.ok and any("supervised confirmation" in r for r in res.refusals)
-
-
-# --- round-3 Finding 4: the real writer is atomic -------------------------------
-
-def test_atomic_write_replaces_whole_file(tmp_path):
-    dest = tmp_path / "sub" / "f.json"
-    R._atomic_write(dest, b"first\n")
-    assert dest.read_bytes() == b"first\n"
-    R._atomic_write(dest, b"second\n")                 # replace
-    assert dest.read_bytes() == b"second\n"
-    # no leftover temp files in the dir
-    assert [p.name for p in dest.parent.iterdir()] == ["f.json"]
+def test_construct_anchor_commit_is_deterministic(tmp_path):
+    b = _two_stage_repo(tmp_path)
+    n1 = R._construct_anchor_commit(b["repo"], b["C"], R._MANIFEST_REL, b"manifest-bytes\n")
+    n2 = R._construct_anchor_commit(b["repo"], b["C"], R._MANIFEST_REL, b"manifest-bytes\n")
+    assert n1 == n2 and len(n1) == 40            # fixed identity+dates -> reproducible N
