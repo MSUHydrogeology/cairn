@@ -225,6 +225,33 @@ def test_executing_authority_code_pin_passes_for_real_modules(tmp_path):
     assert ok and holds == []
 
 
+def test_pretransition_manifest_refuses_until_supervised_bootstrap(tmp_path):
+    """Round-6 F1 (production-shaped): the REAL pre-transition manifest shape does
+    NOT pin the Stage-B authority modules (they read FROZEN-NEW). Against such a P
+    the authority-code pin refuses — so the production command cannot pass until the
+    supervised Phase-0 bootstrap (gate-manifest pre-pin) establishes the trust root.
+    After the pre-pin (manifest regenerated to include the modules) it passes."""
+    repo = tmp_path / "pretrans"
+    (repo / "bootstrap" / "tests" / "fixtures").mkdir(parents=True)
+    _git(repo, "init", "-q", "-b", "main")
+    _git(repo, "config", "user.email", "t@t")
+    _git(repo, "config", "user.name", "t")
+    # pre-transition shape: pins some unrelated test file, NOT the Stage-B modules.
+    pre = {"frozen_files": {"bootstrap/tests/test_upgrade.py": "0" * 64}}
+    (repo / R._MANIFEST_REL).write_text(json.dumps(pre) + "\n")
+    P_old = _commit_all(repo, "P (pre-transition; Stage-B modules unpinned)")
+    ok, holds = R._verify_executing_authority_code(repo, P_old)
+    assert not ok
+    assert any("_gate_reanchor.py" in h and "not pinned" in h for h in holds)
+
+    # supervised pre-pin: the new manifest pins the executing Stage-B modules.
+    (repo / R._MANIFEST_REL).write_text(
+        json.dumps({"frozen_files": _trusted_frozen_files()}) + "\n")
+    P_new = _commit_all(repo, "P (post-bootstrap; Stage-B modules pinned)")
+    ok2, holds2 = R._verify_executing_authority_code(repo, P_new)
+    assert ok2 and holds2 == []
+
+
 # --- round-5 F2: singular gate ref (fixed; no override) --------------------------
 
 def test_promote_orchestrator_not_injectable_and_no_ref_overrides():
