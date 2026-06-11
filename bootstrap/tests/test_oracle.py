@@ -104,23 +104,53 @@ def test_location_dependent_file_excluded_from_bytes_but_presence_required():
 
 # --- soundness: a full run is OK at 0A (frozen == current) ---------------------
 
+def _engines(tmp_path):
+    """The (baseline, current) engine pair from the trusted git ref HEAD — the
+    baseline materialized into its own extracted tree."""
+    base_engine, base_root = O.materialize_baseline("HEAD", "HEAD", tmp_path)
+    return [("baseline", base_engine, base_root), ("current", O.CURRENT_ENGINE, O.CAIRN_ROOT)]
+
+
 @pytest.mark.skipif(
     not (CAIRN_ROOT / "templates" / "skills").exists(),
     reason="templates/skills not available",
 )
 def test_oracle_matrix_behavior_preserved(tmp_path):
-    """End-to-end: install all fixtures under both engines and prove parity.
-    At 0A this is a tautology (the engines are byte-identical) whose value is
-    proving the harness itself is sound -- it installs cleanly and the exclusion
-    set is complete. Its teeth bite at Stages 1-8 when the engines diverge."""
-    report = O.run_oracle(tmp_path, include_privileged=False)
+    """End-to-end soundness: with baseline = current HEAD, a full run over the
+    fixture matrix reports OK with substantive counts — proving the harness is
+    sound (git-ref materialization installs cleanly, the exclusion set is
+    complete). Its teeth bite when baseline and current diverge across a refactor."""
+    report = O.run_oracle(tmp_path, baseline_ref="HEAD", trusted_ref="HEAD",
+                          include_privileged=False)
     assert report["schema"] == O.REPORT_SCHEMA
-    assert report["normalized_provenance_fields"] == list(O._PROVENANCE_KEYS)
+    assert report["status"] == "ran"
     assert report["ok"] is True, report
     for fx in report["fixtures"]:
         assert fx["status"] == "match", fx
-        assert fx["frozen_file_count"] > 20, "expected a substantive install, not an empty tree"
-        assert fx["frozen_file_count"] == fx["current_file_count"]
+        assert fx["baseline_file_count"] > 20, "expected a substantive install, not an empty tree"
+        assert fx["baseline_file_count"] == fx["current_file_count"]
+
+
+def test_oracle_baseline_runs_from_extracted_tree(tmp_path):
+    """Isolation (plan 1.1): the baseline engine is materialized under the run's
+    own tree, NOT CAIRN_ROOT — so it imports its own (old) `_scaffold`."""
+    base_engine, _ = O.materialize_baseline("HEAD", "HEAD", tmp_path)
+    assert str(base_engine).startswith(str(tmp_path))
+    assert base_engine.is_file() and base_engine.name == "scaffold.py"
+
+
+def test_oracle_dormant_without_baseline(tmp_path):
+    """Refactor-scoped: with no baseline configured the oracle is not applicable
+    and reports a clean skip — a change-time tool, not a permanent gate."""
+    report = O.run_oracle(tmp_path)
+    assert report["status"] == "not_applicable" and report["ok"] is True
+
+
+def test_oracle_fails_closed_on_untrusted_baseline(tmp_path):
+    """A configured baseline with no out-of-band trusted ref fails closed (never
+    a silent skip)."""
+    with pytest.raises(O.OracleError):
+        O.run_oracle(tmp_path, baseline_ref="HEAD")   # trusted_ref omitted
 
 
 @pytest.mark.skipif(
@@ -128,34 +158,25 @@ def test_oracle_matrix_behavior_preserved(tmp_path):
     reason="templates/skills not available",
 )
 def test_oracle_privileged_workflows_preserved(tmp_path):
-    """F3 (substrate Security Review): the privileged workflows — upgrade
-    stage/apply, containment refusal, dirty-tree refusal — are behaviorally
-    identical between the frozen pre-split engine and the current launcher+engine.
-    Runs the real subprocess scenarios (slower); skips the git-dependent ones if
-    git is unavailable rather than dropping them silently."""
+    """F3: the privileged workflows — upgrade stage/apply, containment refusal,
+    dirty-tree refusal — are behaviorally identical between the materialized
+    baseline engine and the current launcher+engine."""
     if not O._git_available():
         pytest.skip("git unavailable; privileged upgrade/dirty scenarios need it")
-    results = O.run_privileged(tmp_path)   # gate mode (require_git=True)
+    results = O.run_privileged(tmp_path / "p", _engines(tmp_path))   # gate mode
     assert len(results) == len(O._PRIVILEGED_SCENARIOS)
     for r in results:
-        assert r["status"] == "match", r   # gate mode: every required scenario MATCH
+        assert r["status"] == "match", r
 
 
 def test_oracle_gate_does_not_silently_skip_required_scenarios(tmp_path, monkeypatch):
     """R2: with git unavailable the gate must FAIL closed (a required scenario
-    becomes `error`), not pass after running only containment. An explicit
-    exploratory caller may record `skipped` instead."""
+    becomes `error`), not pass after running only containment."""
+    engines = _engines(tmp_path)
     monkeypatch.setattr(O, "_git_available", lambda: False)
-    gate = O.run_privileged(tmp_path / "gate", require_git=True)
+    gate = O.run_privileged(tmp_path / "gate", engines, require_git=True)
     assert any(r["status"] == "error" for r in gate), "gate must error, not skip, without git"
-    # containment needs no git -- it still runs and matches in both modes.
     assert any(r.get("name") == "containment_refusal" and r["status"] == "match" for r in gate)
-    explore = O.run_privileged(tmp_path / "explore", require_git=False)
+    explore = O.run_privileged(tmp_path / "explore", engines, require_git=False)
     assert any(r["status"] == "skipped" for r in explore)
     assert not any(r["status"] == "error" for r in explore)
-
-
-def test_frozen_engine_snapshot_present():
-    assert O.FROZEN_ENGINE.is_file(), (
-        "the frozen pre-split engine snapshot is missing -- the oracle has no reference"
-    )
