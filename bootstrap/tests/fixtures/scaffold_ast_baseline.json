@@ -223,6 +223,14 @@
     ],
     "type": "AnnAssign"
   },
+  "Assign:_MODULE_SUPERSEDES": {
+    "digest": "bfb00c5ae3c92bd5",
+    "span": [
+      724,
+      728
+    ],
+    "type": "AnnAssign"
+  },
   "Assign:_ONBOARDING_DOC_DST_DIR_REL": {
     "digest": "3f3564783e529f84",
     "span": [
@@ -592,10 +600,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_cmd_adopt_module": {
-    "digest": "329e083a615d58f8",
+    "digest": "81a91762d82268ba",
     "span": [
-      1159,
-      1250
+      1338,
+      1432
     ],
     "type": "FunctionDef"
   },
@@ -660,6 +668,14 @@
     "span": [
       1909,
       1948
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:_facade_engine_dir": {
+    "digest": "e995707a5fa9c52d",
+    "span": [
+      248,
+      255
     ],
     "type": "FunctionDef"
   },
@@ -823,6 +839,14 @@
     ],
     "type": "FunctionDef"
   },
+  "FunctionDef:_superseded_surface_note": {
+    "digest": "183df5ea0106c0c1",
+    "span": [
+      1317,
+      1335
+    ],
+    "type": "FunctionDef"
+  },
   "FunctionDef:_symlinks_available": {
     "digest": "0221d4e067b7954b",
     "span": [
@@ -936,10 +960,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:cmd_upgrade": {
-    "digest": "8870f6b079ade59d",
+    "digest": "9e28ad92db3c24cd",
     "span": [
-      1840,
-      2051
+      2013,
+      2233
     ],
     "type": "FunctionDef"
   },
@@ -988,6 +1012,22 @@
     "span": [
       556,
       567
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:forked_facade_findings": {
+    "digest": "a5dc15b9723d502a",
+    "span": [
+      258,
+      298
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:format_forked_facade_warning": {
+    "digest": "0689eab2a9a1d03e",
+    "span": [
+      301,
+      323
     ],
     "type": "FunctionDef"
   },
@@ -1196,6 +1236,14 @@
     "span": [
       532,
       538
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:superseded_local_surfaces": {
+    "digest": "24d101caa8ec68d3",
+    "span": [
+      731,
+      740
     ],
     "type": "FunctionDef"
   },
