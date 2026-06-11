@@ -16,6 +16,7 @@ Stdlib only.
 """
 from __future__ import annotations
 
+import shutil
 from pathlib import Path
 
 import pytest
@@ -180,3 +181,58 @@ def test_oracle_gate_does_not_silently_skip_required_scenarios(tmp_path, monkeyp
     explore = O.run_privileged(tmp_path / "explore", engines, require_git=False)
     assert any(r["status"] == "skipped" for r in explore)
     assert not any(r["status"] == "error" for r in explore)
+
+
+# --- P1.2: trusted verifier measures the TARGET, not itself --------------------
+
+def _copy_target(dst: Path) -> Path:
+    shutil.copytree(O.CAIRN_ROOT, dst,
+                    ignore=shutil.ignore_patterns(".git", "__pycache__", "*.pyc"))
+    return dst
+
+
+@pytest.mark.skipif(
+    not (CAIRN_ROOT / "templates" / "skills").exists(),
+    reason="templates/skills not available",
+)
+def test_oracle_measures_target_not_verifier(tmp_path):
+    """The CURRENT engine + templates come from target_root (the evaluated tree),
+    not where the verifier code runs. target = copy of HEAD still matches the
+    HEAD baseline, and the report names the target as current."""
+    target = _copy_target(tmp_path / "target")
+    report = O.run_oracle(tmp_path / "wd", baseline_ref="HEAD", trusted_ref="HEAD",
+                          repo=O.CAIRN_ROOT, target_root=target, include_privileged=False)
+    assert report["status"] == "ran" and report["ok"] is True, report
+    assert report["target_root"] == str(target)
+    assert str(target) in report["current_engine"]
+
+
+@pytest.mark.skipif(
+    not (CAIRN_ROOT / "templates" / "skills").exists(),
+    reason="templates/skills not available",
+)
+def test_oracle_teeth_target_engine_diverges(tmp_path):
+    """Teeth (P1.2): the target's current engine is behaviorally changed (writes a
+    sentinel into every install) while the trusted baseline is unchanged — the
+    trusted-checkout invocation must report a diff."""
+    target = _copy_target(tmp_path / "target")
+    launcher = target / "bootstrap" / "scaffold.py"
+    inject = (
+        "\nimport sys as _sys\nfrom pathlib import Path as _P\n"
+        "_orig_main = _engine.main\n"
+        "def _teeth(*a, **k):\n"
+        "    rc = _orig_main(*a, **k)\n"
+        "    av = _sys.argv[1:]\n"
+        "    if '--target' in av:\n"
+        "        _P(av[av.index('--target') + 1], 'TEETH_SENTINEL').write_text('diverged\\n')\n"
+        "    return rc\n"
+        "_engine.main = _teeth\n"
+    )
+    text = launcher.read_text()
+    text = text.replace("_engine = _load_engine()", "_engine = _load_engine()" + inject, 1)
+    launcher.write_text(text)
+    report = O.run_oracle(tmp_path / "wd", baseline_ref="HEAD", trusted_ref="HEAD",
+                          repo=O.CAIRN_ROOT, target_root=target, include_privileged=False)
+    assert report["ok"] is False, "a behaviorally-changed target engine must diff"
+    paths = {d["path"] for fx in report["fixtures"] for d in fx.get("diffs", [])}
+    assert any("TEETH_SENTINEL" in p for p in paths), report

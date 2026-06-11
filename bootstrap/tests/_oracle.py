@@ -267,12 +267,12 @@ def _neutralize_profile_directives(cairn_root: Path) -> None:
             md.write_text(_PROFILE_IF_MARKER_RE.sub("", text), encoding="utf-8")
 
 
-def _copy_cairn(dst: Path) -> None:
-    """An editable copy of the Cairn tree (templates included) so an upstream
-    template delta can be introduced for upgrade scenarios. .git is excluded.
-    Profile-conditional directives are neutralized so the pre/post-split engines
-    install byte-identically (the feature is covered by its own tests)."""
-    shutil.copytree(CAIRN_ROOT, dst,
+def _copy_cairn(dst: Path, src: Path = CAIRN_ROOT) -> None:
+    """An editable copy of a Cairn tree (templates included) so an upstream
+    template delta can be introduced for upgrade scenarios. *src* is the
+    **evaluated target** root (P1.2), not necessarily where the verifier code runs.
+    .git is excluded; profile-conditional directives are neutralized."""
+    shutil.copytree(src, dst,
                     ignore=shutil.ignore_patterns(".git", "__pycache__", "*.pyc"))
     _neutralize_profile_directives(dst)
 
@@ -303,13 +303,14 @@ def _error_block(stderr: str) -> str:
     return block.replace("bootstrap._scaffold.", "").strip()
 
 
-def _upgrade_apply_scenario(workdir: Path, engines) -> dict:
+def _upgrade_apply_scenario(workdir: Path, engines, target_root: Path = CAIRN_ROOT) -> dict:
     """Install both trees, introduce a real upstream template delta, then
     `upgrade --stage` + `--apply` each with its own engine; byte-compare the
     resulting trees. ``engines`` = ``[(label, engine, run_root), ...]`` with
-    ``engines[0]`` the baseline and ``engines[1]`` the current."""
+    ``engines[0]`` the baseline and ``engines[1]`` the current; templates come
+    from the evaluated ``target_root`` (P1.2)."""
     cairn_copy = workdir / "cc_apply"
-    _copy_cairn(cairn_copy)
+    _copy_cairn(cairn_copy, target_root)
     trees: dict[str, Path] = {}
     for label, engine, root in engines:
         tgt = workdir / f"apply_{label}"
@@ -334,7 +335,7 @@ def _upgrade_apply_scenario(workdir: Path, engines) -> dict:
             "diffs": diffs}
 
 
-def _containment_refusal_scenario(workdir: Path, engines) -> dict:
+def _containment_refusal_scenario(workdir: Path, engines, target_root: Path = CAIRN_ROOT) -> dict:
     """Plant a symlink trap at an install write target; both engines must refuse
     (exit 1) with the same normalized `ScaffoldSecurityError` signature."""
     sig: dict[str, tuple[int, str]] = {}
@@ -344,7 +345,7 @@ def _containment_refusal_scenario(workdir: Path, engines) -> dict:
         (tgt / "profile.yml").write_text(_profile_text("solo-greenfield"), encoding="utf-8")
         (tgt / "AGENTS.md").symlink_to(workdir / "contain_outside_target")
         p = _engine(engine, ["--config", str(tgt / "profile.yml"), "--target", str(tgt),
-                             "--cairn-root", str(CAIRN_ROOT), "--allow-dev", "--non-interactive"],
+                             "--cairn-root", str(target_root), "--allow-dev", "--non-interactive"],
                     run_root=root)
         sig[label] = (p.returncode, _refusal_signature(p.stderr))
     base, cur = engines[0][0], engines[1][0]
@@ -355,12 +356,12 @@ def _containment_refusal_scenario(workdir: Path, engines) -> dict:
             "detail": {base: sig[base], cur: sig[cur]}}
 
 
-def _dirty_tree_refusal_scenario(workdir: Path, engines) -> dict:
+def _dirty_tree_refusal_scenario(workdir: Path, engines, target_root: Path = CAIRN_ROOT) -> dict:
     """Install + commit, dirty a tracked write-set file, introduce an upstream
     delta, `--stage` then `--apply`; both engines must refuse the apply (exit 1)
     with the same dirty-tree message."""
     cairn_copy = workdir / "cc_dirty"
-    _copy_cairn(cairn_copy)
+    _copy_cairn(cairn_copy, target_root)
     sig: dict[str, tuple] = {}
     for label, engine, root in engines:
         tgt = workdir / f"dirty_{label}"
@@ -404,11 +405,13 @@ _NON_DIFFERENTIAL = {
 }
 
 
-def run_privileged(workdir: Path, engines, *, require_git: bool = True) -> list[dict]:
+def run_privileged(workdir: Path, engines, target_root: Path = CAIRN_ROOT,
+                   *, require_git: bool = True) -> list[dict]:
     """Run the privileged-workflow differential scenarios over ``engines``
-    (baseline + current). A git-dependent scenario that cannot run is an
-    **error** in gate mode (``require_git=True``); only an explicit exploratory
-    caller (``require_git=False``) records it as ``skipped``."""
+    (baseline + current), reading the evaluated ``target_root``'s templates. A
+    git-dependent scenario that cannot run is an **error** in gate mode
+    (``require_git=True``); only an explicit exploratory caller
+    (``require_git=False``) records it as ``skipped``."""
     results: list[dict] = []
     git_ok = _git_available()
     for scn in _PRIVILEGED_SCENARIOS:
@@ -420,20 +423,22 @@ def run_privileged(workdir: Path, engines, *, require_git: bool = True) -> list[
                 "detail": "git unavailable — required privileged scenario could not run",
             })
             continue
-        results.append(scn(workdir / scn.__name__, engines))
+        results.append(scn(workdir / scn.__name__, engines, target_root))
     return results
 
 
 def run_oracle(workdir: Path, baseline_ref: str | None = None,
-               trusted_ref: str | None = None, repo: Path = CAIRN_ROOT, *,
+               trusted_ref: str | None = None, repo: Path = CAIRN_ROOT,
+               target_root: Path = CAIRN_ROOT, *,
                allow_fetch: bool = False, trusted_remote: str | None = None,
                include_privileged: bool = True, allow_skips: bool = False) -> dict:
-    """**Refactor-scoped** differential run. It executes only when a baseline ref
-    *and* an out-of-band trusted ref are configured (an active refactor): with no
-    baseline configured the oracle is **not applicable** and reports a clean skip
-    (it is a change-time tool, not a permanent gate). A baseline that is
-    configured but cannot be trust-verified **fails closed** (``materialize``
-    raises before any extraction or execution)."""
+    """**Refactor-scoped** differential run. *repo* is the **trusted checkout**
+    that supplies the verifier logic + baseline authority; *target_root* is the
+    **evaluated target** that supplies the *current* engine + templates being
+    measured (P1.2 — they may differ; the verifier never measures itself). It
+    runs only when a baseline ref *and* an out-of-band trusted ref are configured;
+    no baseline → **not applicable**; a baseline that cannot be trust-verified
+    **fails closed** (``materialize`` raises before any extraction or execution)."""
     if not baseline_ref:
         return {"schema": REPORT_SCHEMA, "status": "not_applicable", "ok": True,
                 "reason": "no baseline ref configured — oracle dormant between refactors",
@@ -448,18 +453,20 @@ def run_oracle(workdir: Path, baseline_ref: str | None = None,
         return {"schema": REPORT_SCHEMA, "status": "baseline_not_runnable", "ok": False,
                 "reason": "baseline engine does not run under the current environment",
                 "fixtures": [], "privileged": []}
-    engines = [("baseline", base_engine, base_root), ("current", CURRENT_ENGINE, CAIRN_ROOT)]
+    current_engine = Path(target_root) / "bootstrap" / "scaffold.py"   # the EVALUATED current engine
+    engines = [("baseline", base_engine, base_root), ("current", current_engine, target_root)]
 
-    # Both engines read templates from ONE neutralized copy (profile-conditional
-    # directives stripped) so a deliberate post-baseline feature is not a diff.
+    # Both engines read templates from ONE neutralized copy of the evaluated
+    # TARGET (profile-conditional directives stripped) — old code vs current code,
+    # same templates.
     cairn_neutral = workdir / "_cairn_neutralized"
-    _copy_cairn(cairn_neutral)
+    _copy_cairn(cairn_neutral, target_root)
     fixtures_report: list[dict] = []
     for fx in FIXTURES:
         broot = workdir / fx["name"] / "baseline"
         croot = workdir / fx["name"] / "current"
         _run_engine(base_engine, broot, fx["preset"], cairn_root=cairn_neutral, run_root=base_root)
-        _run_engine(CURRENT_ENGINE, croot, fx["preset"], cairn_root=cairn_neutral)
+        _run_engine(current_engine, croot, fx["preset"], cairn_root=cairn_neutral, run_root=target_root)
         bsnap, csnap = _snapshot(broot), _snapshot(croot)
         diffs = _compare(bsnap, csnap)
         fixtures_report.append({
@@ -468,7 +475,7 @@ def run_oracle(workdir: Path, baseline_ref: str | None = None,
             "baseline_file_count": len(bsnap), "current_file_count": len(csnap),
             "diffs": diffs,
         })
-    privileged = (run_privileged(workdir / "privileged", engines, require_git=not allow_skips)
+    privileged = (run_privileged(workdir / "privileged", engines, target_root, require_git=not allow_skips)
                   if include_privileged else [])
     fixtures_ok = all(f["status"] == "match" for f in fixtures_report)
     if allow_skips:
@@ -478,7 +485,7 @@ def run_oracle(workdir: Path, baseline_ref: str | None = None,
     return {
         "schema": REPORT_SCHEMA, "status": "ran",
         "baseline_ref": baseline_ref, "trusted_ref": trusted_ref,
-        "current_engine": str(CURRENT_ENGINE.relative_to(CAIRN_ROOT)),
+        "target_root": str(target_root), "current_engine": str(current_engine),
         "normalized_provenance_fields": list(_PROVENANCE_KEYS),
         "location_dependent_excluded": sorted(_LOCATION_DEPENDENT),
         "profile_conditional_neutralized": True,
