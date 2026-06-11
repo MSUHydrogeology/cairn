@@ -1,0 +1,111 @@
+<!--
+  dual-review-independence.svg — Conceptual diagram: Cairn's Dual-Review
+  model, illustrating structural independence between author and reviewer.
+
+  Two tiers shown:
+    Internal review: same agent type, fresh session (helps a change land)
+    External review: different agent type or human (makes it prove it should)
+
+  Provenance: hand-authored SVG; produced for the Cairn README landing-page
+  enhancement (proposal 2026-06-08-claude-cairn-readme-landing-page, accepted
+  2026-06-09). Faithfully depicts doctrine/dual-review.md.
+
+  License: Creative Commons Attribution 4.0 International (CC BY 4.0).
+  See LICENSE-CC-BY.md.
+
+  Theme-adaptive: uses currentColor for borders and labels; box fills use
+  a prefers-color-scheme media query for light/dark GitHub legibility.
+-->
+<svg viewBox="0 0 640 260" xmlns="http://www.w3.org/2000/svg"
+     role="img" aria-label="Dual-Review independence diagram: author submits a proposal; Internal review (same agent type, fresh session) helps it land; External review (different agent type or human) makes it prove it should land.">
+  <style>
+    .box-author   { fill: #dbeafe; stroke: #3b82f6; stroke-width: 1.5; rx: 7; }
+    .box-internal { fill: #dcfce7; stroke: #22c55e; stroke-width: 1.5; }
+    .box-external { fill: #fef9c3; stroke: #eab308; stroke-width: 1.5; }
+    .box-decision { fill: #f3e8ff; stroke: #a855f7; stroke-width: 1.5; }
+    .lbl-head  { font-family: ui-sans-serif, system-ui, -apple-system,
+                 BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                 font-size: 12.5px; font-weight: 700; fill: currentColor; }
+    .lbl-body  { font-family: ui-sans-serif, system-ui, -apple-system,
+                 BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                 font-size: 11px; fill: currentColor; opacity: 0.75; }
+    .lbl-tag   { font-family: ui-sans-serif, system-ui, -apple-system,
+                 BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                 font-size: 10.5px; font-style: italic;
+                 fill: currentColor; opacity: 0.6; }
+    .arrow     { stroke: currentColor; stroke-width: 1.6;
+                 stroke-opacity: 0.5; fill: none;
+                 marker-end: url(#arr); }
+    .title     { font-family: ui-sans-serif, system-ui, -apple-system,
+                 BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                 font-size: 13.5px; font-weight: 700;
+                 fill: currentColor; }
+    @media (prefers-color-scheme: dark) {
+      .box-author   { fill: #1e3a5f; stroke: #60a5fa; }
+      .box-internal { fill: #14391f; stroke: #4ade80; }
+      .box-external { fill: #3b2f07; stroke: #fbbf24; }
+      .box-decision { fill: #2e1a47; stroke: #c084fc; }
+    }
+  </style>
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="8"
+            refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.5"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="320" y="22" text-anchor="middle" class="title">
+    Dual-Review — structural independence
+  </text>
+
+  <!-- Author box -->
+  <rect x="20" y="42" width="140" height="70" rx="7"
+        class="box-author" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="90" y="64" text-anchor="middle" class="lbl-head">Author</text>
+  <text x="90" y="80" text-anchor="middle" class="lbl-body">opens proposal</text>
+  <text x="90" y="95" text-anchor="middle" class="lbl-body">with evidence plan</text>
+
+  <!-- Arrow: Author → Internal -->
+  <path d="M160,77 L230,77" class="arrow"/>
+
+  <!-- Internal review box -->
+  <rect x="230" y="42" width="160" height="88" rx="7"
+        class="box-internal" fill="#dcfce7" stroke="#22c55e" stroke-width="1.5"/>
+  <text x="310" y="64" text-anchor="middle" class="lbl-head">Internal review</text>
+  <text x="310" y="80" text-anchor="middle" class="lbl-body">same agent type</text>
+  <text x="310" y="95" text-anchor="middle" class="lbl-body">fresh session</text>
+  <text x="310" y="114" text-anchor="middle" class="lbl-tag">helps a change land</text>
+
+  <!-- Arrow: Internal → External -->
+  <path d="M390,77 L450,77" class="arrow"/>
+
+  <!-- External review box -->
+  <rect x="450" y="42" width="170" height="88" rx="7"
+        class="box-external" fill="#fef9c3" stroke="#eab308" stroke-width="1.5"/>
+  <text x="535" y="64" text-anchor="middle" class="lbl-head">External review</text>
+  <text x="535" y="80" text-anchor="middle" class="lbl-body">different agent type</text>
+  <text x="535" y="95" text-anchor="middle" class="lbl-body">or human reviewer</text>
+  <text x="535" y="114" text-anchor="middle" class="lbl-tag">makes it prove it should</text>
+
+  <!-- Divider -->
+  <line x1="20" y1="158" x2="620" y2="158"
+        stroke="currentColor" stroke-opacity="0.12" stroke-width="1"/>
+
+  <!-- Independence note row -->
+  <text x="320" y="180" text-anchor="middle" class="lbl-head">
+    Why structural independence matters
+  </text>
+  <text x="320" y="198" text-anchor="middle" class="lbl-body">
+    A different model architecture is a more enforceable conflict-of-interest
+  </text>
+  <text x="320" y="214" text-anchor="middle" class="lbl-body">
+    criterion than institutional independence — the reviewer cannot share the
+  </text>
+  <text x="320" y="230" text-anchor="middle" class="lbl-body">
+    author's training-time blind spot.  Solo team?  Fresh-session Internal
+  </text>
+  <text x="320" y="246" text-anchor="middle" class="lbl-body">
+    review is the floor; External lands when a second agent type is available.
+  </text>
+</svg>
