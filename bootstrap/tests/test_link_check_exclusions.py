@@ -220,6 +220,25 @@ def test_genuinely_broken_local_link_still_flags(tmp_path):
     assert "nonexistent-local.md" in flags[0].message
 
 
+def test_two_balanced_spans_flanking_link_lock_non_greedy_strip(tmp_path):
+    """Locks the NON-greedy property (External-stance review gap): two same-length
+    balanced spans with a real broken link between them. The non-greedy backreference
+    strips each span independently, leaving the link checked -> it flags. A GREEDY
+    regex would strip from the first backtick to the last, swallowing the link -> this
+    test would fail. It is the only case that distinguishes greedy from non-greedy."""
+    md = tmp_path / "doc.md"
+    md.write_text(
+        "Spans `one` and [broken](ghost.md) and `two` on one line.\n",
+        encoding="utf-8",
+    )
+    flags = _check(md, tmp_path)
+    assert len(flags) == 1, (
+        "Two balanced spans must not let a greedy strip swallow the link between them; "
+        f"got flags: {flags}"
+    )
+    assert "ghost.md" in flags[0].message
+
+
 # (d) An UNMATCHED-backtick line followed by a real broken link STILL flags
 #     (the balanced-strip safety -- an unmatched backtick must leave the
 #     rest of the line intact, not silently eat the real link).
