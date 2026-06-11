@@ -427,22 +427,52 @@ def run_privileged(workdir: Path, engines, target_root: Path = CAIRN_ROOT,
     return results
 
 
+def _resolve_head_sha(root: Path) -> str | None:
+    """The immutable candidate SHA of an evaluated *root* (its ``HEAD``), or
+    ``None`` if *root* is not a resolvable git checkout."""
+    p = subprocess.run(["git", "-C", str(root), "rev-parse", "--verify", "HEAD"],
+                       capture_output=True, text=True, check=False)
+    sha = (p.stdout or "").strip()
+    return sha if p.returncode == 0 and len(sha) == 40 else None
+
+
 def run_oracle(workdir: Path, baseline_ref: str | None = None,
                trusted_ref: str | None = None, repo: Path = CAIRN_ROOT,
                target_root: Path = CAIRN_ROOT, *,
                allow_fetch: bool = False, trusted_remote: str | None = None,
-               include_privileged: bool = True, allow_skips: bool = False) -> dict:
+               include_privileged: bool = True, allow_skips: bool = False,
+               gate: bool = False) -> dict:
     """**Refactor-scoped** differential run. *repo* is the **trusted checkout**
     that supplies the verifier logic + baseline authority; *target_root* is the
     **evaluated target** that supplies the *current* engine + templates being
     measured (P1.2 — they may differ; the verifier never measures itself). It
     runs only when a baseline ref *and* an out-of-band trusted ref are configured;
     no baseline → **not applicable**; a baseline that cannot be trust-verified
-    **fails closed** (``materialize`` raises before any extraction or execution)."""
+    **fails closed** (``materialize`` raises before any extraction or execution).
+
+    *gate* is the authoritative-invocation mode (code-review re-review Finding 2):
+    it **requires** an evaluated *target_root* distinct from the trusted *repo*
+    (refusing self-measurement — the default-self target a trusted-checkout caller
+    would otherwise silently get), resolves the target's **immutable candidate
+    SHA**, and records it in the report. Without *gate* the soundness/teeth callers
+    may legitimately point both at one tree."""
+    if gate:
+        if Path(target_root).resolve() == Path(repo).resolve():
+            raise OracleError(
+                "gate mode requires an evaluated target distinct from the trusted "
+                "checkout — refusing self-measurement (the verifier must not measure "
+                "the tree that supplies its own logic)")
+        candidate_sha = _resolve_head_sha(Path(target_root))
+        if not candidate_sha:
+            raise OracleError(
+                f"gate mode: evaluated target {target_root} is not a resolvable git "
+                f"checkout — cannot pin an immutable candidate SHA (fail closed)")
+    else:
+        candidate_sha = None
     if not baseline_ref:
         return {"schema": REPORT_SCHEMA, "status": "not_applicable", "ok": True,
                 "reason": "no baseline ref configured — oracle dormant between refactors",
-                "fixtures": [], "privileged": []}
+                "candidate_sha": candidate_sha, "fixtures": [], "privileged": []}
     if not trusted_ref:
         raise OracleError("baseline_ref set but no out-of-band trusted_ref — refusing (fail closed)")
 
@@ -485,6 +515,7 @@ def run_oracle(workdir: Path, baseline_ref: str | None = None,
     return {
         "schema": REPORT_SCHEMA, "status": "ran",
         "baseline_ref": baseline_ref, "trusted_ref": trusted_ref,
+        "candidate_sha": candidate_sha,
         "target_root": str(target_root), "current_engine": str(current_engine),
         "normalized_provenance_fields": list(_PROVENANCE_KEYS),
         "location_dependent_excluded": sorted(_LOCATION_DEPENDENT),
@@ -514,15 +545,36 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--allow-skips", action="store_true",
                    help="EXPLORATORY mode: tolerate a missing-git skip of a required "
                         "scenario. NOT a gate -- the default run fails closed on any skip.")
+    r.add_argument("--repo", default=None,
+                   help="the TRUSTED checkout supplying the verifier logic + baseline "
+                        "authority (defaults to this checkout). Run the gate from here.")
+    r.add_argument("--target-root", default=None,
+                   help="the EVALUATED target supplying the *current* engine + templates "
+                        "being measured (the candidate tree, as data). REQUIRED in --gate.")
+    r.add_argument("--gate", action="store_true",
+                   help="authoritative gate mode: require an evaluated --target-root "
+                        "distinct from --repo (refuse self-measurement) and pin + report "
+                        "the target's immutable candidate SHA.")
     args = parser.parse_args(argv)
 
+    if args.gate and not args.target_root:
+        parser.error("--gate requires an explicit --target-root (the evaluated candidate tree)")
+
     kw = dict(baseline_ref=args.baseline_ref, trusted_ref=args.trusted_ref,
-              allow_skips=args.allow_skips)
+              allow_skips=args.allow_skips, gate=args.gate)
+    if args.repo:
+        kw["repo"] = Path(args.repo)
+    if args.target_root:
+        kw["target_root"] = Path(args.target_root)
     if args.workdir:
         report = run_oracle(Path(args.workdir), **kw)
     else:
         with tempfile.TemporaryDirectory(prefix="cairn-oracle-") as td:
             report = run_oracle(Path(td), **kw)
+
+    if report.get("candidate_sha"):
+        print(f"oracle: evaluated candidate SHA {report['candidate_sha'][:12]} "
+              f"(target {report.get('target_root')})")
 
     if args.report:
         Path(args.report).write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")

@@ -17,6 +17,7 @@ Stdlib only.
 from __future__ import annotations
 
 import shutil
+import sys
 from pathlib import Path
 
 import pytest
@@ -234,5 +235,84 @@ def test_oracle_teeth_target_engine_diverges(tmp_path):
     report = O.run_oracle(tmp_path / "wd", baseline_ref="HEAD", trusted_ref="HEAD",
                           repo=O.CAIRN_ROOT, target_root=target, include_privileged=False)
     assert report["ok"] is False, "a behaviorally-changed target engine must diff"
+    paths = {d["path"] for fx in report["fixtures"] for d in fx.get("diffs", [])}
+    assert any("TEETH_SENTINEL" in p for p in paths), report
+
+
+# --- F2 (re-review): the shipped CLI gates a TARGET, never itself -----------------
+
+def _git_init_target(root: Path) -> str:
+    """Make ``root`` a one-commit git checkout so gate mode can pin its candidate
+    SHA; return that SHA."""
+    import subprocess
+    for args in (("init", "-q"), ("add", "-A"),
+                 ("-c", "user.email=o@t", "-c", "user.name=o", "commit", "-q", "-m", "c")):
+        subprocess.run(["git", "-C", str(root), *args], check=True,
+                       capture_output=True, text=True)
+    return subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"],
+                          capture_output=True, text=True, check=True).stdout.strip()
+
+
+def test_oracle_cli_gate_refuses_self_target(tmp_path):
+    """F2: the shipped CLI in --gate mode refuses target == trusted checkout — the
+    default-self self-measurement a trusted-checkout caller would otherwise get."""
+    import subprocess
+    proc = subprocess.run(
+        [sys.executable, str(O.CAIRN_ROOT / "bootstrap" / "tests" / "_oracle.py"),
+         "run", "--gate", "--repo", str(O.CAIRN_ROOT), "--target-root", str(O.CAIRN_ROOT),
+         "--baseline-ref", "HEAD", "--trusted-ref", "HEAD", "--workdir", str(tmp_path / "wd")],
+        capture_output=True, text=True)
+    assert proc.returncode != 0, proc.stdout
+    assert "self-measurement" in (proc.stdout + proc.stderr)
+
+
+def test_oracle_cli_gate_requires_target_root(tmp_path):
+    """F2: --gate without an explicit --target-root is a usage error (no silent
+    default-self)."""
+    import subprocess
+    proc = subprocess.run(
+        [sys.executable, str(O.CAIRN_ROOT / "bootstrap" / "tests" / "_oracle.py"),
+         "run", "--gate", "--baseline-ref", "HEAD", "--trusted-ref", "HEAD"],
+        capture_output=True, text=True)
+    assert proc.returncode != 0
+    assert "--target-root" in (proc.stdout + proc.stderr)
+
+
+@pytest.mark.skipif(
+    not (CAIRN_ROOT / "templates" / "skills").exists(),
+    reason="templates/skills not available",
+)
+def test_oracle_cli_gate_teeth_subprocess(tmp_path):
+    """Teeth via the SHIPPED CLI (F2, not only the in-process function): a
+    behaviorally-changed evaluated target, gated from a trusted checkout, makes the
+    CLI exit non-zero and pins the target's candidate SHA in the report."""
+    import json as _json
+    import subprocess
+    target = _copy_target(tmp_path / "target")
+    launcher = target / "bootstrap" / "scaffold.py"
+    text = launcher.read_text().replace(
+        "_engine = _load_engine()",
+        "_engine = _load_engine()\nimport sys as _s\nfrom pathlib import Path as _P\n"
+        "_om = _engine.main\n"
+        "def _t(*a, **k):\n"
+        "    rc = _om(*a, **k)\n"
+        "    _av = _s.argv[1:]\n"
+        "    if '--target' in _av:\n"
+        "        _P(_av[_av.index('--target')+1], 'TEETH_SENTINEL').write_text('x\\n')\n"
+        "    return rc\n"
+        "_engine.main = _t\n", 1)
+    launcher.write_text(text)
+    candidate = _git_init_target(target)
+    report_path = tmp_path / "report.json"
+    proc = subprocess.run(
+        [sys.executable, str(O.CAIRN_ROOT / "bootstrap" / "tests" / "_oracle.py"),
+         "run", "--gate", "--repo", str(O.CAIRN_ROOT), "--target-root", str(target),
+         "--baseline-ref", "HEAD", "--trusted-ref", "HEAD",
+         "--workdir", str(tmp_path / "wd"), "--report", str(report_path)],
+        capture_output=True, text=True)
+    assert proc.returncode == 1, proc.stdout + proc.stderr
+    report = _json.loads(report_path.read_text())
+    assert report["candidate_sha"] == candidate
+    assert str(target) in report["current_engine"]
     paths = {d["path"] for fx in report["fixtures"] for d in fx.get("diffs", [])}
     assert any("TEETH_SENTINEL" in p for p in paths), report
