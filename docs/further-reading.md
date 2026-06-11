@@ -67,6 +67,27 @@ honest:
   but does not teach what good tests or structure look like — this
   fills that gap.
 
+## Verification and reproducibility for scientific computing
+
+* **Sandve et al. (2013), "Ten Simple Rules for Reproducible
+  Computational Research"** (PLOS Computational Biology 9(10):e1003285;
+  doi:10.1371/journal.pcbi.1003285) *(last checked 2026-06-11)*.
+  Ten concrete rules for reproducible results: avoid manual data-
+  manipulation steps, record exact versions, record all intermediate
+  results, connect results to statements in papers, and provide scripts
+  for results that rely on statistical tests. For the deeper V&V
+  framework (verification vs. validation vs. uncertainty quantification
+  as distinct activities), see Oberkampf & Roy (2010), *Verification
+  and Validation in Scientific Computing* (Cambridge UP,
+  ISBN 9780521113601), and the W3C PROV-DM provenance data model (2013).
+  *Why it matters:* Cairn's Dual-Review and the verify-before-asserting
+  discipline guard against structural and factual errors in the
+  deliberation record. Catching *scientific* error — a wrong physical
+  result that looks structurally correct — is the open gap named in
+  `doctrine/rationale.md` > "Where the rationale is still thin." These
+  resources define what a deeper scientific-correctness interlock would
+  need to satisfy; Cairn does not yet ship one.
+
 ---
 
 *Maintainers:* keep this page to the format above (one line + one

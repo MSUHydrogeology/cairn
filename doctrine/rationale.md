@@ -5,7 +5,7 @@ to a body of research on how software is built with AI agents, how
 multi-agent systems are organized, how trust in AI is calibrated,
 how scientific software earns rigor, how agents coordinate, and how
 scientific peer review works. This document records that grounding
-— the **six framework anchors** — and then states, honestly, where
+— the **framework anchors** — and then states, honestly, where
 Cairn *follows* the literature and where it deliberately *diverges*
 from it.
 
@@ -13,7 +13,76 @@ A reader adopting Cairn does not need to read the sources. But the
 methodology should be able to show its work: every practice in
 `doctrine/` traces to a reason here.
 
-## The six framework anchors
+## Organizing structure
+
+The anchors fall into a **Foundation plus four thematic clusters**.
+The Foundation — Anchor 13, the narrow-waist coordination layer —
+is the open-science substrate the four clusters all rest on. It is
+not a peer cluster but the layer beneath them: the same thin-stable-
+interface principle whether the interface is a data format, a science
+protocol, or Cairn's `dev/` tree. The four clusters organize
+the anchors by concern: AI and multi-agent collaboration (I), trust
+and governance (II), scientific-software rigor and validation (III),
+and the community and sustainability horizon (IV).
+
+**Numbering is canonical and append-only.** Each anchor keeps its
+integer from the guide-star. The existing six (1–6) are regrouped
+into clusters — not renumbered or rewritten. New anchors take the
+next integer.
+
+| Cluster | # | Theme |
+|---|---|---|
+| **0 · Foundation** | 13 | Durable neutral coordination layer (hourglass / narrow-waist) |
+| **I · AI & multi-agent** | 1 | Interaction taxonomy |
+| | 2 | Multi-agent SDLC role design |
+| | 5 | Inter-agent communication patterns |
+| | 11 | AI-productivity value curve |
+| | 12 | Agentic context efficiency |
+| **II · Trust & governance** | 3 | Trust and governance maturity |
+| | 16 | Comprehension floor |
+| **III · Scientific-software rigor** | 4 | Scientific-software rigor |
+| | 6 | Scientific peer review as a process model |
+| **IV · Community & sustainability** | 7–9 | Community-maintained scientific software (horizon) |
+| | 10 | Trustworthy operation |
+
+---
+
+## Foundation (Anchor 13) — the durable neutral coordination layer
+
+**13. The hourglass / narrow-waist model.** Beck, M. (2019), *On
+the Hourglass Model*, Communications of the ACM 62(7):48–57
+([doi:10.1145/3274770](https://dl.acm.org/doi/10.1145/3274770));
+Akhshabi, S., & Dovrolis, C. (2011), *The Evolution of Layered
+Protocol Stacks Leads to an Hourglass-Shaped Architecture*, ACM
+SIGCOMM 2011, 206–217
+([doi:10.1145/2018436.2018460](https://dl.acm.org/doi/10.1145/2018436.2018460)).
+
+Cairn's "no vendor lock-in" and "vendor-neutrality" are usually
+stated as *features*. They are better understood as one
+**architectural principle**: a deliberately minimal, stable
+interface layer — a "waist" — between two layers that change at
+very different rates. Below the waist: the adopter's project stack
+(Fortran, R, Rust, JavaScript, Python). Above it: the AI tooling
+acting on the deliberation record (Claude, Codex, Cursor). The
+waist itself — plain markdown in a git history — is the durable
+asset, kept deliberately minimal so neither the tool layer above
+nor the language layer below can capture it. Beck's contribution
+is the design rule: a waist works *because* it is kept **minimal
+and weak** — only what is strictly necessary — which is exactly
+what lets it be implemented on almost any substrate. Akhshabi and
+Dovrolis supply the empirical half: a successful waist **ossifies
+and survives** for decades precisely because so much comes to
+depend on it.
+
+*That minimalism is the single source of both neutralities* —
+vendor-neutrality and stack-neutrality are not two features but one
+principle seen from two sides. This also explains why the Python
+tooling sits *above* the waist (and is therefore independently
+replaceable) while the methodology substrate is the waist itself.
+
+---
+
+## Cluster I — AI and multi-agent collaboration
 
 **1. Interaction taxonomy.** Treude & Gerosa (2025), *How
 Developers Interact with AI* (FORGE 2025; arXiv:2501.08774), maps
@@ -29,25 +98,6 @@ systems assign roles across the lifecycle. Cairn's roster is
 positioned against it — including one deliberate divergence
 (below).
 
-**3. Trust and governance maturity.** Steinmetz et al. (2025), the
-*Trust Calibration Maturity Model* (SAND2025-00999O;
-arXiv:2503.15511), gives five dimensions for characterizing AI
-trustworthiness — performance characterization, bias & robustness,
-transparency, safety & security, usability. It anchors Cairn's
-insistence that claims about the team's own discipline be
-*measurable*, not merely asserted.
-
-**4. Scientific-software rigor.** Bridgeford et al. (2025), *Ten
-Simple Rules for AI-Assisted Coding in Science*
-(arXiv:2510.22254), with the risk-side companion in *Nature
-Computational Science* (2025), *Threats to scientific software
-from over-reliance on AI code assistants*
-(doi:10.1038/s43588-025-00845-2). Together they anchor the
-discipline that scientific software carries stakes ordinary
-software does not — a wrong result that *looks* right is the
-failure mode — so testing, validation, and review are not
-optional.
-
 **5. Inter-agent communication patterns.** Two literatures.
 *Cognitive stigmergy* — Ricci et al. (2007), *Cognitive Stigmergy*
 (LNAI 4389); Crowston on stigmergic coordination in software
@@ -62,6 +112,140 @@ describes agents debating to consensus. Cairn's coordination
 (`coordination.md`) sits in the stigmergy lineage and treats the
 others as a measured, firewalled escalation.
 
+**11. AI-productivity value curve.** Two sources ground Cairn's
+"slower first, faster later" claim.
+
+*Raw AI speed is partly illusory.* METR (2025), *Measuring the
+Impact of Early-2025 AI on Experienced Open-Source Developer
+Productivity* (arXiv:2507.09089), found experienced developers
+working on their own mature repositories were **19% slower** with
+early-2025 AI tools, while believing they were ~20% *faster*.
+Closing that perception-vs-reality gap with a recorded, reviewed
+process is exactly the friction Cairn front-loads.
+
+*The expensive errors are the late ones.* The cost-of-change
+literature — Boehm, B. (1981), *Software Engineering Economics*,
+Prentice Hall; Boehm, B. & Basili, V. (2001), *Software Defect
+Reduction Top 10 List*, IEEE Computer — holds that defects cost
+more the later they are caught. The magnitude is contested (the
+classic 100:1 multiplier is weakly evidenced and nearer 5:1 for
+small, noncritical systems), so Cairn leans on the *direction*:
+catch it in review, not in production.
+
+Together, Anchor 11 is the evidence-based grounding under the
+adoption promise — *keep the apparatus only as heavy as your
+codebase and team earn* — and under the proposition that Cairn's
+front-loaded friction pays back in less rework and fewer
+unreviewed scientific changes.
+
+**12. Agentic context efficiency.** Cairn's own `AGENTS.md` and
+`RULES.md` are read into every agent session. That always-loaded
+surface has a correctness cost, not only a token cost:
+*Context Length Alone Hurts LLM Performance Despite Perfect
+Retrieval* (EMNLP 2025; arXiv:2510.05381) found accuracy degrades
+as input length grows **even at 100% exact-match retrieval**. The
+corroborating pattern — position-dependent degradation — is
+documented in Liu et al. (2024), *Lost in the Middle: How Language
+Models Use Long Contexts*, Transactions of the ACL 12
+(arXiv:2307.03172).
+
+This anchor grounds three repository-structure choices:
+
+* **Archive inactive proposals and plans.** Keeping
+  `dev/proposals/` and `dev/plans/` lean — moving inactive
+  artifacts to `archive/` subdirectories — reduces the
+  always-loaded index surface and keeps the checkout's working
+  context to live work.
+* **Keep `AGENTS.md` compact.** The doctrine's insistence that
+  `AGENTS.md` stay thin (pointers, not prose) is a correctness
+  property, not only a style preference: a bloated always-loaded
+  prefix degrades the agent's accuracy.
+* **`RULES.md` as a lookup cache.** The bright-line rules file is
+  a compact router — load it always, load the full doctrine
+  on-demand. This is progressive disclosure, sized so the
+  always-loaded signal is sufficient to route reliably.
+
+The scope of this anchor in Cairn is **repository-structure
+grounding only**. Cairn does not ship a context-compiler,
+progressive-disclosure automation, or token-budget enforcement
+tool; those remain future work.
+
+---
+
+## Cluster II — Trust and governance
+
+**3. Trust and governance maturity.** Steinmetz et al. (2025), the
+*Trust Calibration Maturity Model* (SAND2025-00999O;
+arXiv:2503.15511), gives five dimensions for characterizing AI
+trustworthiness — performance characterization, bias & robustness,
+transparency, safety & security, usability. It anchors Cairn's
+insistence that claims about the team's own discipline be
+*measurable*, not merely asserted.
+
+**16. The comprehension floor.** Review is Cairn's whole engine.
+Opaque language quietly switches it off: you cannot review what
+you cannot penetrate, so "review and decide" collapses into
+"approve." Comprehension is therefore not a courtesy the agent
+extends to the human — it is a **precondition of the human's
+authority**. A Maintainer who does not understand a change cannot
+legitimately decide on it; they can only rubber-stamp it.
+
+Four converging literatures ground the principle:
+
+* **Recipient-designed explanation** — Miller (2019), *Explanation
+  in artificial intelligence: insights from the social sciences*
+  (Artificial Intelligence 267:1–38;
+  doi:10.1016/j.artint.2018.07.007): human explanation is
+  selective and tailored to the listener, not exhaustive. An agent
+  that dumps everything it knows is transcribing, not explaining.
+* **The right level depends on expertise** — Kalyuga (2007),
+  *Expertise Reversal Effect and Its Implications for
+  Learner-Tailored Instruction* (Educational Psychology Review
+  19:509–539): instructional support that helps a novice actively
+  *harms* an expert (redundant detail becomes cognitive-load
+  cost). There is no one-size explanation.
+* **Comprehension is built and verified, not assumed** — Clark &
+  Brennan (1991), *Grounding in communication* (in *Perspectives
+  on Socially Shared Cognition*, 127–149): mutual understanding is
+  grounded turn by turn; the agent owns the grounding — it checks
+  the human is still with it, rather than reading silence after a
+  wall of jargon as assent.
+* **When this fails, the human over-relies** — the
+  appropriate-reliance literature (e.g. arXiv:2301.11333;
+  arXiv:2305.07722): fluent explanations can *increase*
+  over-reliance and manufacture an *illusion of understanding*;
+  genuine complementary performance needs **verifiability**, not a
+  plausible-sounding story.
+
+Cairn's contribution is to make the comprehension floor a
+**reviewable property of the lifecycle** — the same move that
+turned reviewer independence into a structural, checkable tier.
+"Did the human actually understand what they decided?" is a
+first-class question, not an afterthought.
+
+The operative norm: lead plain, keep precision beneath, and treat
+*"I don't understand this yet"* as a **mandatory pause** — a
+decision surface the Maintainer cannot follow is not decidable.
+This anchor is scoped to that **universal norm**. The further
+dimension — calibrating communication by the recipient's domain
+and software proximity — is observed in the guide-star but is not
+yet harvested here; it remains in the reference instance.
+
+---
+
+## Cluster III — Scientific-software rigor and validation
+
+**4. Scientific-software rigor.** Bridgeford et al. (2025), *Ten
+Simple Rules for AI-Assisted Coding in Science*
+(arXiv:2510.22254), with the risk-side companion in *Nature
+Computational Science* (2025), *Threats to scientific software
+from over-reliance on AI code assistants*
+(doi:10.1038/s43588-025-00845-2). Together they anchor the
+discipline that scientific software carries stakes ordinary
+software does not — a wrong result that *looks* right is the
+failure mode — so testing, validation, and review are not
+optional.
+
 **6. Scientific peer review as a process model.** Cairn's review
 system's closest real-world analog is not multi-agent debate but
 **scientific peer review** itself — the author / editor / reviewer
@@ -70,6 +254,8 @@ the Council of Science Editors), and the open-peer-review taxonomy
 of Ross-Hellauer (2017), *What is open peer review?*
 (*F1000Research* 6:588). This is the anchor Cairn instantiates
 most directly (`dual-review.md`).
+
+---
 
 ## What Cairn contributes
 
@@ -243,14 +429,20 @@ R-F fidelity gate, which proves only *faithful install*.
 ## Where the rationale is still thin
 
 Honesty is part of the method. Two areas the anchors expose as
-under-built — carried as named follow-ups, not hidden:
+under-built — carried as named open problems, not hidden:
 
 * **Measurement.** Anchor 3 asks for *measurable* trust. Cairn
   ships the infrastructure for a lifecycle-metrics layer and a
   baseline, but a single baseline is not yet a trend; the
-  longitudinal evidence is future work.
+  lifecycle-metrics v2 snapshot/trend layer has begun turning that
+  baseline into trend infrastructure, but a single baseline is not
+  yet a long trend. The longitudinal evidence remains future work.
 * **Scientific-correctness interlock.** Anchor 4's failure mode —
   a wrong result that looks right — is only partly addressed by
-  structural review. Catching *scientific*, as opposed to
+  structural review. The V&V canon (Oberkampf & Roy 2010,
+  *Verification and Validation in Scientific Computing*; Sandve
+  et al. 2013, *Ten Simple Rules for Reproducible Computational
+  Research*) provides the citation frame for what a deeper interlock
+  would look like, but catching *scientific*, as opposed to
   *structural*, error without the Maintainer in the loop is an
   open problem Cairn names but does not yet solve.

@@ -34,6 +34,29 @@ and a new empty `Unreleased` is started above.
 
 ### Changed
 
+- **`doctrine/rationale.md` — Foundation + four-cluster reorg; harvested Anchors
+  13, 11, 16, 12 from the reference adopter's guide-star.** The six existing
+  anchors are regrouped (not renumbered, not rewritten) into a Foundation
+  (Anchor 13, the hourglass / narrow-waist coordination layer) plus four
+  thematic clusters (I: AI & multi-agent; II: Trust & governance; III:
+  Scientific-software rigor; IV: Community & sustainability). Four anchors are
+  harvested from the guide-star: **Anchor 13** (Beck 2019; Akhshabi & Dovrolis
+  2011 — vendor-neutrality + stack-neutrality as one architectural principle);
+  **Anchor 11** (METR 2025; Boehm 1981/2001 — the evidence-based grounding for
+  "slower first, faster later"); **Anchor 16** (Miller 2019; Kalyuga 2007; Clark
+  & Brennan 1991; appropriate-reliance literature — the comprehension floor as a
+  lifecycle precondition, scoped to the universal norm only, not the G17
+  language-calibration dimension); **Anchor 12** (EMNLP 2025; Liu et al. 2024 —
+  agentic context efficiency, scoped to repository-structure grounding only:
+  archive-to-keep-lean, compact `AGENTS.md`, `RULES.md` as a lookup cache; no
+  context-compiler or automation). "Where the rationale is still thin" is
+  refreshed: Measurement cites the v2 snapshot/trend layer while noting it is
+  not yet a long trend; Scientific-correctness interlock now cites the V&V canon
+  (Oberkampf & Roy 2010; Sandve 2013) as the frame for what a deeper interlock
+  would need, and remains an open problem. **`docs/further-reading.md`** gains
+  one V&V slot (Sandve et al. 2013, primary; Oberkampf & Roy 2010 + PROV-DM
+  inline) for the scientific-correctness interlock gap. FAIR4RS is not added.
+
 - **Differential oracle: git-ref baseline; the maintained `scaffold_frozen.py`
   fixture is retired.** The behavioral guard's "before" engine is now materialized
   from a **trusted git ref** at run time (verify reachability from an out-of-band
