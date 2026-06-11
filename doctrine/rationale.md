@@ -26,9 +26,12 @@ and governance (II), scientific-software rigor and validation (III),
 and the community and sustainability horizon (IV).
 
 **Numbering is canonical and append-only.** Each anchor keeps its
-integer from the guide-star. The existing six (1–6) are regrouped
-into clusters — not renumbered or rewritten. New anchors take the
-next integer.
+integer from the guide-star, so the harvested set reads non-sequentially
+(11, 12, 13, 16) by design — a *harvested* anchor retains its guide-star
+identifier rather than being renumbered into sequence. The existing six
+(1–6) are regrouped into clusters — not renumbered or rewritten. A newly
+*authored* Cairn anchor (one with no guide-star origin) takes the next
+unused integer.
 
 | Cluster | # | Theme |
 |---|---|---|

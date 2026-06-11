@@ -277,6 +277,22 @@ def test_unmatched_backtick_mismatched_run_does_not_suppress(tmp_path):
     )
 
 
+def test_longer_closing_backtick_run_does_not_suppress(tmp_path):
+    """Codex cross-type review (P2): a closing run LONGER than the opening run is
+    NOT a balanced span -- the backreference must not match a prefix of a longer
+    closing run. ``2-open ... 3-close`` (and the reverse) must leave the real link
+    checked. This is the false-negative the original ``(`+)(.*?)\\1`` permitted."""
+    md = tmp_path / "doc.md"
+    md.write_text(
+        "Two then three ``[broken](missing.md)``` should still flag.\n"
+        "Three then two ```[gone](vanished.md)`` should still flag.\n",
+        encoding="utf-8",
+    )
+    messages = [f.message for f in _check(md, tmp_path)]
+    assert any("missing.md" in m for m in messages), messages
+    assert any("vanished.md" in m for m in messages), messages
+
+
 # (e) Fenced code blocks remain skipped; heading-anchor checks are unaffected.
 def test_fenced_code_block_links_remain_skipped(tmp_path):
     """Links inside fenced code blocks are NOT checked (pre-existing behaviour)."""

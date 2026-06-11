@@ -79,12 +79,17 @@ _HEADING_RE = re.compile(r'^(#{1,6})\s+(.*?)\s*#*\s*$')
 _EXPLICIT_ANCHOR_RE = re.compile(r'\s*\{#([^}]+)\}\s*$')
 
 # Balanced inline code span: a run of one or more backticks, followed by
-# any text (non-newline), closed by exactly the same backtick run.
-# The backreference \1 ensures only BALANCED spans are stripped -- an
-# unmatched backtick leaves the rest of the line intact and still
-# checked (safety contract R2).  No re.DOTALL: we operate per-line so
-# the content between backticks never spans lines.
-_BALANCED_CODE_SPAN_RE = re.compile(r'(`+)(.*?)\1')
+# any text (non-newline), closed by a backtick run of EXACTLY the same
+# length.  The backreference ``\1`` alone is not enough -- it can match a
+# *prefix* of a longer closing run (e.g. ``​``opener of 2 closed by a run
+# of 3), silently eating a real link (Codex cross-type review P2).  So the
+# run is anchored on both sides: ``(?<!`)`` before the opener makes ``(`+)``
+# capture the *whole* opening run (not a sub-run of a longer one), and
+# ``(?!`)`` after ``\1`` requires the closing run to be exactly that length
+# (not a prefix of a longer run).  An unmatched / mismatched run in EITHER
+# direction therefore leaves the rest of the line intact and still checked
+# (safety contract R2).  No re.DOTALL: we operate per-line.
+_BALANCED_CODE_SPAN_RE = re.compile(r'(?<!`)(`+)(?!`)(.*?)(?<!`)\1(?!`)')
 
 # File-level link-check-allow directive.  A standalone HTML-comment line
 # ``<!-- link-check-allow: target1, target2 -->`` lists link targets that

@@ -2,13 +2,19 @@
 
 Copyright (c) 2026 Anthony Kendall and the Cairn contributors.
 
-The **prose and templates** in this repository — the doctrine
-(`doctrine/`), the dimensions (`dimensions/`), the case studies
-(`case-studies/`), the bootstrap narrative (`bootstrap/*.md`), the
-forkable templates (`templates/`), the on-ramp (`on-ramp/`), and
-this repository's documentation (`README.md`, `CITATION.cff`) —
-are licensed under the **Creative Commons Attribution 4.0
-International License (CC BY 4.0)**.
+The **prose, templates, and explanatory visuals** in this repository —
+the doctrine (`doctrine/`), the dimensions (`dimensions/`), the case
+studies (`case-studies/`), the bootstrap narrative (`bootstrap/*.md`),
+the forkable templates (`templates/`), the on-ramp (`on-ramp/`), this
+repository's documentation (`README.md`, `CITATION.cff`), and the
+**explanatory diagrams** under `docs/assets/` (e.g.
+`dual-review-independence.svg`) — are licensed under the **Creative
+Commons Attribution 4.0 International License (CC BY 4.0)**.
+
+**Exception — project-identity graphics.** The Cairn brand mark
+(`docs/assets/cairn-banner.svg`) is *not* CC BY; it is licensed under
+**CC BY-ND 4.0** (Attribution-NoDerivatives) so the identity mark stays
+canonical. See [`LICENSE-CC-BY-ND.md`](LICENSE-CC-BY-ND.md).
 
 * Full legal text: <https://creativecommons.org/licenses/by/4.0/legalcode>
 * Human-readable summary: <https://creativecommons.org/licenses/by/4.0/>

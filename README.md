@@ -97,7 +97,9 @@ contradicting transition; named states are not dropped.*
 **Internal review** (same agent type, fresh session) helps a change
 land — a constructive second read.  **External review** (different
 agent type, or a human) makes a change prove it should land — an
-independent read with no shared training-time blind spot.  Both are
+independent read that sharply lowers the chance of a *shared*
+training-time blind spot (it reduces correlated failure; it cannot
+eliminate it).  Both are
 asynchronous, commit-mediated, and attributed.
 
 **Cairn works with one agent.**  At that scale, the Maintainer's own
@@ -270,7 +272,7 @@ the generalized doctrine extracted from that practice.
 
 ## License
 
-Dual-licensed:
+Licensed by file kind (three families):
 
 - **Prose, templates, and explanatory visuals** — doctrine,
   dimensions, case studies, bootstrap narrative, README, template
