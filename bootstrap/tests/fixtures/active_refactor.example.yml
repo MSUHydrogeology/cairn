@@ -1,0 +1,28 @@
+# Activation artifact schema (differential oracle, plan Phase 2.1).
+#
+# A live copy lives at `dev/.cairn/active-refactor.yml`, CREATED at the reviewed
+# plan-open of an engine refactor and REMOVED only at the reviewed archive. It is
+# authored OUTSIDE the evaluated branch (the supervised Phase-0 path-authorization)
+# and checked AGAINST the externally-anchored trusted expectation — the evaluated
+# branch cannot self-authorize by writing/deleting/narrowing it.
+#
+# This file is an example only; it does not activate anything.
+
+baseline_sha: 0000000000000000000000000000000000000000   # the pre-refactor full SHA
+trusted_ref: refs/heads/master                            # the out-of-band trust authority
+nonce: example-single-use-nonce                           # single-use; rejects replay
+
+# Exact paths/globs the refactor is authorized to touch (a trailing "/" is a
+# directory prefix). A sensitive change OUTSIDE this scope HOLDs.
+scope:
+  - bootstrap/_scaffold/
+  - bootstrap/scaffold.py
+
+# The oracle scenarios this refactor must pass before it may be promoted.
+required_scenarios:
+  - solo-greenfield
+  - collaborative-team
+  - high-rigor-legacy
+  - upgrade_apply
+  - containment_refusal
+  - dirty_tree_refusal
