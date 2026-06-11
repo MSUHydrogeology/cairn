@@ -270,19 +270,25 @@ the generalized doctrine extracted from that practice.
 
 Dual-licensed:
 
-- **Prose, templates, and visuals** — doctrine, dimensions, case
-  studies, bootstrap narrative, README, template documents, and
-  graphic assets (`docs/assets/`) — are licensed under **Creative
-  Commons Attribution 4.0 International (CC BY 4.0)**.  See
-  [`LICENSE-CC-BY.md`](LICENSE-CC-BY.md).
+- **Prose, templates, and explanatory visuals** — doctrine,
+  dimensions, case studies, bootstrap narrative, README, template
+  documents, and the explanatory diagrams in `docs/assets/` — are
+  licensed under **Creative Commons Attribution 4.0 International
+  (CC BY 4.0)**.  See [`LICENSE-CC-BY.md`](LICENSE-CC-BY.md).
+- **Project-identity graphics** — the Cairn banner / brand mark
+  (`docs/assets/cairn-banner.svg`) — are licensed under **Creative
+  Commons Attribution-NoDerivatives 4.0 International (CC BY-ND 4.0)**:
+  share with attribution, but no modified versions, so the identity
+  mark stays canonical.  See the deed at
+  https://creativecommons.org/licenses/by-nd/4.0/.
 - **Scripts** — `bootstrap/scaffold.py` and its tests — are
   licensed under the **MIT License**.  See
   [`LICENSE-MIT.md`](LICENSE-MIT.md).
 
-The boundary is by file kind: anything that is text-for-humans
-(including visuals) falls under CC BY; anything that is
-code-for-machines falls under MIT.  The two licenses are
-intentionally compatible.
+The boundary is by file kind: text-for-humans and explanatory
+visuals fall under CC BY; project-identity graphics under CC BY-ND
+(reuse with attribution, no derivatives); code-for-machines under
+MIT.  The licenses are intentionally compatible.
 
 ---
 

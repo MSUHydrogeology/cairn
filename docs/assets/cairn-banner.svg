@@ -7,8 +7,11 @@
   enhancement (proposal 2026-06-08-claude-cairn-readme-landing-page, accepted
   2026-06-09). No raster source; no external tool dependency.
 
-  License: Creative Commons Attribution 4.0 International (CC BY 4.0).
-  See LICENSE-CC-BY.md.
+  License: Creative Commons Attribution-NoDerivatives 4.0 International
+  (CC BY-ND 4.0) — this is a PROJECT-IDENTITY graphic, so it may be shared
+  with attribution but not modified, keeping the identity mark canonical.
+  Deed: https://creativecommons.org/licenses/by-nd/4.0/
+  (The explanatory diagrams under docs/assets/ are CC BY 4.0; see README > License.)
 
   Theme-adaptive: uses currentColor for text and stroke; fills draw from
   a prefers-color-scheme media query (stone fills shift between light and
