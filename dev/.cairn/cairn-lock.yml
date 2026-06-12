@@ -1,0 +1,566 @@
+# cairn-lock.yml -- machine-generated install lockfile (tool-owned; regenerate-only; do not hand-edit).
+# JSON-encoded (valid YAML 1.2) so it round-trips without a YAML dependency.
+{
+  "cairn_commit": "unknown",
+  "cairn_version": "0.3.0",
+  "files": [
+    {
+      "dst": ".agents/skills/_data/vendor_targets.yml",
+      "hash": "sha256:bce2a0098bbd2b5bf60f8010af382e45e02135f165102cff75d2d8cb1b4fd574",
+      "src": "skills/_data/vendor_targets.yml",
+      "verbatim": true
+    },
+    {
+      "dst": ".agents/skills/session-end/SKILL.md",
+      "hash": "sha256:d730a9b0e41fbd1e64beae11bca97c3c8fb3cc943e4df7fe3877f98fe472657e",
+      "src": "skills/session-end/SKILL.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": ".agents/skills/session-start/SKILL.md",
+      "hash": "sha256:84d9678b815a734fa682c3a49ded577db8f5314b4a56dde79a01fb78dcb088c5",
+      "src": "skills/session-start/SKILL.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "AGENTS.md",
+      "hash": "sha256:bfd599e441c9b7f5407c62393557845214c977b6b31d996ae1b90f2abe7208c4",
+      "src": "core/AGENTS.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "VENDOR.md",
+      "hash": "sha256:0a2f29ad19716c3247f14f7043293124e1f10b0839c5df0291168ec485119907",
+      "src": "core/VENDOR.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/.cairn/cairn_foldback.md",
+      "hash": "sha256:52f7df5693c275959107d2d727da28a825ee04a774ad5509df48d54d8320ed16",
+      "src": "modules/default-on/fold-back-ledger-template.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/.cairn/model-selection-mapping.yml",
+      "hash": "sha256:3e163996dd97e1162d11894b9519861f1ed0e6acc438b91f209e39c6ffbc78c3",
+      "src": "modules/team-gated/model_selection_mapping_stub.yml",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/NEXT_SESSION.md",
+      "hash": "sha256:f497695aa60f247521017693c37594d12c09937d4d95cd8cd62850aef26f0a40",
+      "src": "core/dev/NEXT_SESSION.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/PLANNING.md",
+      "hash": "sha256:41236f252c61482616ceb8af69a9dd5721c69ddbc95735c618854521b58e7c34",
+      "src": "core/dev/PLANNING.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/README.md",
+      "hash": "sha256:6391d0b8bb7c9a70915f7aca892b856e2ef0da39f6c5093e3683769f72e377fb",
+      "src": "core/dev/README.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/agent_collaboration.md",
+      "hash": "sha256:bf9e3bac9981df9d279ca1d1a4e1026ef0ee1b3a12d7786ed9b2f2b1c7086354",
+      "src": "core/dev/agent_collaboration.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/collaboration_agreement.md",
+      "hash": "sha256:1eb54dc9bd672c7842739b9cdf9f229f8e7df674da9774e7fa4cedda8a494d45",
+      "src": "core/dev/collaboration_agreement.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/measurement/README.md",
+      "hash": "sha256:726ee2b859df5bdd25546978e362a7e96086bd5b996ed7ec9af64dc4549e795c",
+      "src": "core/dev/measurement/README.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/modules/claim-check.md",
+      "hash": "sha256:3275ce399cc25b003983bd0e073807340379cf1eb5827eae75ff07e9e23d8041",
+      "src": "modules/default-on/claim-check.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/modules/coordination-tiers.md",
+      "hash": "sha256:49d16b96290851dea4fb2f16c1734c66027227ffd9efb29a9f96061755001cb9",
+      "src": "modules/team-gated/coordination-tiers.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/modules/doc-drift-prevention.md",
+      "hash": "sha256:f948c8594bc861981b305a0a842a66ffe6fc1d6600bc444fed45f0bd62f85db6",
+      "src": "modules/team-gated/doc-drift-prevention.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/modules/documentation-plan.md",
+      "hash": "sha256:c10dc811d2ffa4fbe1e400434cabe78d8f7a6a0ba1a3506a93e9fd47be1a0b98",
+      "src": "modules/default-on/documentation-plan.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/modules/dual-review.md",
+      "hash": "sha256:c88e73b59eee403f06577de710eee2752f4e101ac5850534943c45ee2f4e4a4d",
+      "src": "modules/team-gated/dual-review.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/modules/examples-gallery.md",
+      "hash": "sha256:412b14c9ed145bcd0120c963549575bccbf8a9aab4e9ca412e1767284d076052",
+      "src": "modules/team-gated/examples-gallery.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/modules/fold-back-active-prompt.md",
+      "hash": "sha256:15675c8b693d0f3bb0a868d817cb3830876cc6213a71fabc886cc9c15d39e0f3",
+      "src": "modules/default-on/fold-back-active-prompt.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/modules/fold-back-ledger.md",
+      "hash": "sha256:1c8b1507fcc116de48b15d90b806b162fdd07dd41f7afe476bec5bbe437dc82c",
+      "src": "modules/default-on/fold-back-ledger.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/modules/foldback_export_scan.md",
+      "hash": "sha256:e43e022eb9fbac5e0bb34bfd0536bfb36d1de08fd7870f23f87c3d0b451f9306",
+      "src": "modules/default-on/foldback_export_scan.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/modules/incident-trackers.md",
+      "hash": "sha256:9a4623f68c9404249c18b90b0cc8aee54ecdd59be64d270b7206643b35714006",
+      "src": "modules/default-on/incident-trackers.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/modules/incident_log_template.md",
+      "hash": "sha256:a9dea521dd301100c2731056c142699743a93a1336e81168e2aa33b9aecba20b",
+      "src": "modules/default-on/incident_log_template.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/modules/issue-capture.md",
+      "hash": "sha256:b3f02f90a741133012994191dd26f9a9da484f88e5d0c45594a31db69fae74c4",
+      "src": "modules/team-gated/issue-capture.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/modules/lifecycle-metrics.md",
+      "hash": "sha256:d1bc2a8a6a2b44f5ecdbad724c10da7f2dc36527257b9d915ecbadf538dfdb06",
+      "src": "modules/default-on/lifecycle-metrics.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/modules/model-selection.md",
+      "hash": "sha256:7e11fcfd1dfcb6a0f426511d768d484d830738e8bc800df8296808ae3d5e4055",
+      "src": "modules/team-gated/model-selection.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/modules/reflections.md",
+      "hash": "sha256:996d0089f63e855513c88d23c599f2ad6214212a77e4defa06a26036756e72af",
+      "src": "modules/default-on/reflections.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/modules/security-review.md",
+      "hash": "sha256:b838724c729a9e37aeef2f03b28e828bcff7cf775a995eb3537188c06cd2aaab",
+      "src": "modules/team-gated/security-review.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/modules/testing-discipline.md",
+      "hash": "sha256:d273698c33a2533e874ec2857ffaf420b86a581e9d2ada131e478610066a460b",
+      "src": "modules/team-gated/testing-discipline.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/plans/_template.md",
+      "hash": "sha256:e1f74d9019ca2fa6022785344621e23c5459407a5d76d2c24cbbc6e43e9d9f93",
+      "src": "core/dev/plans/_template.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/proposals/_template.md",
+      "hash": "sha256:ccf32c1812cbeacccce96b6a814a8ee33c987c742f19583ee3b8fa5392ab7072",
+      "src": "core/dev/proposals/_template.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/reflections/README.md",
+      "hash": "sha256:7ea5eb697ee1839f9d4af535ac32a0aea353dfd4563ae43baecb80d73ca44480",
+      "src": "modules/default-on/reflections-README.md",
+      "verbatim": true
+    },
+    {
+      "dst": "dev/rules/README.md",
+      "hash": "sha256:84e0918c684517fddf51d772c33f0112f2b24820fe333de4c2ca319f0f19f1e1",
+      "src": "core/dev/rules/README.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/strategy/README.md",
+      "hash": "sha256:c52c55a71679bfe43a0714cc9937565b7376e16563d0bd73d27958d6e7cba5ee",
+      "src": "core/dev/strategy/README.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/strategy/_template.md",
+      "hash": "sha256:6c58248d536c2cb26f40a4ad27af342c24d37e0cde6e32a64d10552abc04aa90",
+      "src": "core/dev/strategy/_template.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/upstream/README.md",
+      "hash": "sha256:1e9e19cdadc25a955f65810e25724f1eb00d81e6493a99a4d1d400179a6c9412",
+      "src": "core/dev/upstream/README.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/upstream/_template.md",
+      "hash": "sha256:4797def8eabe020132e5651dc976b136942fbd5031278b6c4f5c6822ff1d9f1d",
+      "src": "core/dev/upstream/_template.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "dev/upstream/archive/.gitkeep",
+      "hash": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "src": "core/dev/upstream/archive/.gitkeep",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "docs/DOCUMENTATION_PLAN.md",
+      "hash": "sha256:9957a634a941573ab9bf24d4664b53ebc1dee379811535149935a1b65541e4de",
+      "src": "modules/default-on/documentation_plan_template.md",
+      "unrecoverable_base": true,
+      "verbatim": false
+    },
+    {
+      "dst": "scripts/_onboarding/__init__.py",
+      "hash": "sha256:96ffbb4bb647cf964397e0a12b365300b150448c876bdc784622757a6d406d4f",
+      "src": "modules/default-on/_onboarding/__init__.py",
+      "verbatim": true
+    },
+    {
+      "dst": "scripts/_onboarding/activation.py",
+      "hash": "sha256:c0c4678fdd6df56bc3c3d0568796ad2c115b8d8999cddb5625ec42c2eaf71d5d",
+      "src": "modules/default-on/_onboarding/activation.py",
+      "verbatim": true
+    },
+    {
+      "dst": "scripts/_onboarding/cli.py",
+      "hash": "sha256:cc5e399fbc7c1a5212a0af32481d5df559a43555356f7d901a4ccadcb768ca22",
+      "src": "modules/default-on/_onboarding/cli.py",
+      "verbatim": true
+    },
+    {
+      "dst": "scripts/_onboarding/prompts.py",
+      "hash": "sha256:d0b184798376b1c0547fb31716ad307aca3ac826a0ca2833af908912ed4a413b",
+      "src": "modules/default-on/_onboarding/prompts.py",
+      "verbatim": true
+    },
+    {
+      "dst": "scripts/_onboarding/security.py",
+      "hash": "sha256:719598ff530db4ef235c7ddb68bc4aa0ff27ae9f593b2b67d2823df489501513",
+      "src": "modules/default-on/_onboarding/security.py",
+      "verbatim": true
+    },
+    {
+      "dst": "scripts/_onboarding/shared.py",
+      "hash": "sha256:2df82aebc4889f7ac56086676d1937e7be38fff2c4cd556a07314eee33c3d1e2",
+      "src": "modules/default-on/_onboarding/shared.py",
+      "verbatim": true
+    },
+    {
+      "dst": "scripts/_onboarding/slotparse.py",
+      "hash": "sha256:86dd6fea6d91e4c13c92a0a349f914890b33eb89b9ba2f002821792af9902437",
+      "src": "modules/default-on/_onboarding/slotparse.py",
+      "verbatim": true
+    },
+    {
+      "dst": "scripts/_onboarding/triggers.py",
+      "hash": "sha256:e7981225094ee2535ca15e1d30ff32c7934fa5bcb65405b6d5a031e6d1a79749",
+      "src": "modules/default-on/_onboarding/triggers.py",
+      "verbatim": true
+    },
+    {
+      "dst": "scripts/bootstrap_github_labels.py",
+      "hash": "sha256:d8b2c72e1457c40d25e96988d2876aa4491885380482fdba3060b7a3d8ae83d0",
+      "src": "modules/team-gated/issue-capture/bootstrap_github_labels.py",
+      "verbatim": true
+    },
+    {
+      "dst": "scripts/bootstrap_gitlab_labels.py",
+      "hash": "sha256:0d8afd095109dc40a6f9098213b54266bb7f4d2dea1ac45a7224fc0ee28ae0df",
+      "src": "modules/team-gated/issue-capture/bootstrap_gitlab_labels.py",
+      "verbatim": true
+    },
+    {
+      "dst": "scripts/check_model_selection.py",
+      "hash": "sha256:3b7d371fe231d8639d000756a37c967776432158c11f7c4fe65c7a721ca19800",
+      "src": "modules/team-gated/check_model_selection.py",
+      "verbatim": true
+    },
+    {
+      "dst": "scripts/claim_check.py",
+      "hash": "sha256:6fcef29017b3ad71b3984f24fbc179c00b84d4742218e6e01cab2a854f71304c",
+      "src": "modules/default-on/claim_check.py",
+      "verbatim": true
+    },
+    {
+      "dst": "scripts/foldback_export_scan.py",
+      "hash": "sha256:d241fb5c9c7733de355cf21b4608fbc5f9de69fe07a001af71b36fd6899adbb3",
+      "src": "modules/default-on/foldback_export_scan.py",
+      "verbatim": true
+    },
+    {
+      "dst": "scripts/foldback_suggest.py",
+      "hash": "sha256:b5f75d55813ff9a328a26594a6deac9119fa95d80b877d86de351e7df026ad1c",
+      "src": "modules/default-on/foldback_suggest.py",
+      "verbatim": true
+    },
+    {
+      "dst": "scripts/link_check.py",
+      "hash": "sha256:c3581b5bc89217604429722d2bc923afa7213fbba1b31b85e0dde1cb0a48f734",
+      "src": "modules/team-gated/link_check.py",
+      "verbatim": true
+    },
+    {
+      "dst": "scripts/onboarding_activate.py",
+      "hash": "sha256:113cb1de3d738716ad1d758798ff2fd0485e71b036f5fe76945fd1b222e66e28",
+      "src": "modules/default-on/onboarding_activate.py",
+      "verbatim": true
+    },
+    {
+      "dst": "scripts/sync_doc_snippets.py",
+      "hash": "sha256:4efb33413e8d17b3900c01863a722e66d36292a3520ad2fc647db21c6bb45bb1",
+      "src": "modules/team-gated/sync_doc_snippets.py",
+      "verbatim": true
+    },
+    {
+      "dst": "scripts/verify_stems.py",
+      "hash": "sha256:515c4102216a6c8eeef039862a23bb6b1328e5edda178423e8af9aaf51850e3b",
+      "src": "modules/default-on/verify_stems.py",
+      "verbatim": true
+    },
+    {
+      "dst": "tools/_intent/__init__.py",
+      "hash": "sha256:b7b38de3a06ee9cbb70dc1e9d3669acdf65268df473663ea579adefb79a3485c",
+      "src": "modules/team-gated/_intent/__init__.py",
+      "verbatim": true
+    },
+    {
+      "dst": "tools/_intent/cli.py",
+      "hash": "sha256:e1957083286c8053ab9da0d1a83243ead67cae1b49641eafea9b9743ace2328d",
+      "src": "modules/team-gated/_intent/cli.py",
+      "verbatim": true
+    },
+    {
+      "dst": "tools/_intent/conflict.py",
+      "hash": "sha256:9699effe323035c827b8d608c7bc7bf3ca8e0a68173e32796c7ccdb062fde37b",
+      "src": "modules/team-gated/_intent/conflict.py",
+      "verbatim": true
+    },
+    {
+      "dst": "tools/_intent/hooks.py",
+      "hash": "sha256:976c42abbff5f12970c9440628eec5cadf4c59e1a34da9174cf17b0b0a70d0f8",
+      "src": "modules/team-gated/_intent/hooks.py",
+      "verbatim": true
+    },
+    {
+      "dst": "tools/_intent/identity.py",
+      "hash": "sha256:02866a1ff9e71467015694e7716ddffbb291ba250a3ad764f376f6c3027de088",
+      "src": "modules/team-gated/_intent/identity.py",
+      "verbatim": true
+    },
+    {
+      "dst": "tools/_intent/record_io.py",
+      "hash": "sha256:bd9f01484f66f875a1872c4b8912064e25026d090a70dd57f5e9475eae0d2382",
+      "src": "modules/team-gated/_intent/record_io.py",
+      "verbatim": true
+    },
+    {
+      "dst": "tools/_intent/shared.py",
+      "hash": "sha256:5ddc3bdf611229dc107df5949083ba95380ce316955b381c11e34d8493940c3a",
+      "src": "modules/team-gated/_intent/shared.py",
+      "verbatim": true
+    },
+    {
+      "dst": "tools/_lifecycle_metrics/__init__.py",
+      "hash": "sha256:fb1c4d2657ba100fefd8aeb8d2834240c1dee422ec3e0da80b559e6d246af6cd",
+      "src": "modules/default-on/_lifecycle_metrics/__init__.py",
+      "verbatim": true
+    },
+    {
+      "dst": "tools/_lifecycle_metrics/cli.py",
+      "hash": "sha256:be790d5af8db385e9981656f8c1a0bd89efcdee5e7687c97256f7ee833327d73",
+      "src": "modules/default-on/_lifecycle_metrics/cli.py",
+      "verbatim": true
+    },
+    {
+      "dst": "tools/_lifecycle_metrics/config.py",
+      "hash": "sha256:80110f142ec5ec2f28889db25112839daf61fe1f5c9caec82ac337f7731e445a",
+      "src": "modules/default-on/_lifecycle_metrics/config.py",
+      "verbatim": true
+    },
+    {
+      "dst": "tools/_lifecycle_metrics/extract.py",
+      "hash": "sha256:ce5f7558c91c07f7c991aeba17274a7e345369f8c96a92565c4d08082a7f8476",
+      "src": "modules/default-on/_lifecycle_metrics/extract.py",
+      "verbatim": true
+    },
+    {
+      "dst": "tools/_lifecycle_metrics/gitmeta.py",
+      "hash": "sha256:3d057d535389c44dc870f5f6ca5d4ebd481c8307cd5abc96dbac4c66875389e8",
+      "src": "modules/default-on/_lifecycle_metrics/gitmeta.py",
+      "verbatim": true
+    },
+    {
+      "dst": "tools/_lifecycle_metrics/parse.py",
+      "hash": "sha256:d7c973e159acddfbae2825b3af6656519a884b7b5c7e5dc54838a4bd67bb1f04",
+      "src": "modules/default-on/_lifecycle_metrics/parse.py",
+      "verbatim": true
+    },
+    {
+      "dst": "tools/_lifecycle_metrics/report.py",
+      "hash": "sha256:130217374d387438961cbbd0d8c44123831d8952fb5583029c7b81a85db0eca9",
+      "src": "modules/default-on/_lifecycle_metrics/report.py",
+      "verbatim": true
+    },
+    {
+      "dst": "tools/_lifecycle_metrics/snapshot.py",
+      "hash": "sha256:3637757f5729e29bb07601eeb8ba8e5444d38775c4d6fb75337d234eb4387da8",
+      "src": "modules/default-on/_lifecycle_metrics/snapshot.py",
+      "verbatim": true
+    },
+    {
+      "dst": "tools/_lifecycle_metrics/subsystems.py",
+      "hash": "sha256:a0489d7ab5b396156afdfd6d2b11887afd054b0fc4e9e606ba0473cf65355af3",
+      "src": "modules/default-on/_lifecycle_metrics/subsystems.py",
+      "verbatim": true
+    },
+    {
+      "dst": "tools/evolution_infer.py",
+      "hash": "sha256:a72f4dbd36414ac6db9b65adaaf4358c831fbc4b20895310c5e92b8f2f74826b",
+      "src": "modules/default-on/evolution_infer.py",
+      "verbatim": true
+    },
+    {
+      "dst": "tools/intent.py",
+      "hash": "sha256:80b773c343f4f58cd20451e993be7e2fe7541961ba1663e332611d7c80d20ce1",
+      "src": "modules/team-gated/intent.py",
+      "verbatim": true
+    },
+    {
+      "dst": "tools/lifecycle.py",
+      "hash": "sha256:296ef88bda1e3e817734cc6cdb14e9571cd3a0ee0aada8d07dfa9e1f898839c9",
+      "src": "skills/_lib/lifecycle.py",
+      "verbatim": true
+    },
+    {
+      "dst": "tools/lifecycle_metrics.py",
+      "hash": "sha256:01a323268b787a0579177a0cbb5b29c4d08456af7a4d68574854780d25ed05a0",
+      "src": "modules/default-on/lifecycle_metrics.py",
+      "verbatim": true
+    },
+    {
+      "dst": "tools/lifecycle_planner.py",
+      "hash": "sha256:2b30639e4bf7c97037d2ba851d2487003f62f31824a98894c9fe0ca5b8c17263",
+      "src": "skills/_lib/lifecycle_planner.py",
+      "verbatim": true
+    },
+    {
+      "dst": "tools/prune_intents.py",
+      "hash": "sha256:6219eeffa6043d8ef10b4773d43aee92815bad255dc1620b52f9599b5a712708",
+      "src": "modules/team-gated/prune_intents.py",
+      "verbatim": true
+    },
+    {
+      "dst": "tools/prune_reflections.py",
+      "hash": "sha256:79e7c30f0ac0cdb57ff20c9b6602fb9e3a89833711712cdc0fdfff85ed12a4fa",
+      "src": "modules/default-on/prune_reflections.py",
+      "verbatim": true
+    }
+  ],
+  "migrated": true,
+  "modules": [
+    "claim-check",
+    "coordination-tiers",
+    "doc-drift-prevention",
+    "documentation-plan",
+    "dual-review",
+    "examples-gallery",
+    "fold-back-ledger",
+    "incident-trackers",
+    "issue-capture",
+    "lifecycle-metrics",
+    "model-selection",
+    "reflections",
+    "security-review",
+    "testing-discipline"
+  ],
+  "optional_templates": [],
+  "profile": {
+    "axes": {
+      "age": "greenfield",
+      "agent_team": "concurrent-multi-type",
+      "complexity": "moderate",
+      "human_team": "solo",
+      "language": "single",
+      "size": "medium"
+    },
+    "preset": "collaborative-team"
+  },
+  "schema": 1,
+  "tokens": {
+    "project_name": "Cairn",
+    "test_command": "python -m pytest bootstrap/tests"
+  }
+}

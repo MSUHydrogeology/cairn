@@ -4,3 +4,9 @@
 # Python (ahead of bootstrap/scaffold.py)
 __pycache__/
 *.pyc
+dev/.cairn/local-env.json
+dev/.cairn/handoff.lock
+dev/reflections/*
+!dev/reflections/README.md
+dev/.cairn/.foldback-draft-*.md
+dev/intents.jsonl

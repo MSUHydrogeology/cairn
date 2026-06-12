@@ -1,0 +1,18 @@
+# Issue-label manifest — Cairn issue-capture reference starter (GitHub).
+#
+# Same standing set as the .gitlab/ sibling. Apply via `gh label create`
+# or a label-sync GitHub Action. GitHub ISSUE_TEMPLATE/*.md forms carry
+# their labels in YAML frontmatter (labels: [...]), so the templates
+# self-apply on issue creation; this manifest defines the labels those
+# frontmatter entries reference. Extend with project-specific routing.
+
+- {name: bug,                     color: 'd73a4a', description: 'Something is broken.'}
+- {name: enhancement,             color: 'a2eeef', description: 'Capability missing, friction, or wish.'}
+- {name: 'enhancement::gap',      color: '84b6eb', description: 'Capability missing for current workflow.'}
+- {name: 'enhancement::friction', color: '84b6eb', description: 'Workflow rough edge / UX issue.'}
+- {name: 'enhancement::wish',     color: '84b6eb', description: 'Nice-to-have, not blocking.'}
+- {name: needs-triage,            color: 'fbca04', description: 'New issue, not yet triaged.'}
+- {name: triaged,                 color: '0e8a16', description: 'Reviewed; durable home assigned.'}
+- {name: 'priority::urgent',      color: 'b60205', description: 'Blocks active maintainer work.'}
+- {name: wontfix,                 color: 'cfd3d7', description: 'Not actually a gap; closed without action.'}
+- {name: meta,                    color: 'cfd3d7', description: 'Tooling smoke-test or operational issue.'}

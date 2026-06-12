@@ -1,0 +1,353 @@
+<!-- cairn-internal-ref-allow: doctrine/ reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
+# AGENTS.md — Cairn
+
+> **Single living reference for AI agents working on this
+> repository.** Read top-to-bottom on first entry; skim or jump on
+> later sessions. This repository runs the **Cairn** methodology —
+> a human + AI development method built on recorded, reviewed
+> deliberation.
+
+<!-- cairn:slot project-overview -->
+**Cairn is a methodology, not software** — an Open Science repository
+for scientists and research-software teams adopting AI coding agents who
+care about rigor, reproducibility, and review discipline. It packages a
+human + AI development method around two differentiators: an
+**append-only, git-committed deliberation lifecycle** (proposal → review
+→ decision, plus plans for non-trivial work), and a **Dual-Review
+model** (two-tier review across structural independence — a
+fresh-session same-type *Internal* read that helps a change land, and a
+different-agent-type-or-human *External* read that makes it prove it
+should). Cairn has four jobs: explain the doctrine (and *why* each piece
+exists), ship forkable templates, ship a single-agent bootstrap that
+installs and customizes the apparatus, and show two worked case studies.
+
+Cairn is for a scientist or small research-software team (one human plus
+agents, up to a small group) building scientific code who want recorded,
+reviewed deliberation rather than ad-hoc prompting. It is **vendor-
+neutral and model-agnostic by construction**: the coordination channel
+is git-committed files, so a project can mix or swap AI vendors without
+changing the method. **This repository builds Cairn using Cairn** — it
+is its own first adopter, which is why this `AGENTS.md` and `dev/` tree
+exist.
+<!-- cairn:end project-overview -->
+
+## How this project is built
+
+Work on Cairn is **deliberated, reviewed, and
+recorded**. A substantive change does not land because its author
+is confident; it lands because it went through a proposal, was
+reviewed across structural independence, and the reasoning is
+committed to the durable record. The coordination space is the
+`dev/` tree — a tree of git-committed files, which makes the
+method **model-agnostic**: this project can mix or swap AI vendors
+(or run a local open-weights model) without changing the
+coordination layer.
+
+* [`dev/README.md`](dev/README.md) — the entry point to the `dev/`
+  tree.
+* [`dev/collaboration_agreement.md`](dev/collaboration_agreement.md)
+  — the working norms and decision rights.
+* [`dev/agent_collaboration.md`](dev/agent_collaboration.md) — the
+  roles, the review loop, and the coordination doctrine in full.
+
+This file (`AGENTS.md`) is the **operational** reference — the
+rules an agent must follow to make a correct change. The `dev/`
+docs carry the deeper *why*. Which file a given rule belongs in —
+and the discipline that keeps this file's operational-safety content
+a compact imperative rather than a process manual — is the
+**doc-governance** routing rule (`doctrine/doc-governance.md`):
+build-the-software and operate-safely rules live here; the
+deliberation and decision process lives in
+`dev/agent_collaboration.md`; each rule has one canonical home and
+the other file only points.
+
+**Where `doctrine/` references resolve.** Throughout this file and the
+`dev/` tree, a reference to a `doctrine/<name>.md` file points to **Cairn's
+published methodology doctrine** — the repository you adopted from — **not
+a file in your own tree**. The bootstrap installs your `AGENTS.md` + `dev/`
+tree and the modules you selected, *not* Cairn's `doctrine/` directory; the
+doctrine is the shared methodology you consult in the Cairn repository (or
+its docs). So such a reference is a citation, never a broken local link.
+
+## The lifecycle
+
+A substantive change — a new abstraction, a cross-cutting
+refactor, a contract change, anything worth a second opinion —
+goes through a **proposal**:
+
+```
+proposed -> reviewed -> revised -> accepted / rejected / superseded
+```
+
+A non-trivial accepted proposal then gets a **plan**
+(`open -> executing -> review -> archived`). Two rules are
+bright-line:
+
+* **Append-only.** Never edit a prior section of a proposal —
+  append a revising one. The record shows what was believed *at
+  each point*, not a tidied final state.
+* **One commit per lifecycle transition.** Open, review, response,
+  and decision each get their own commit; bundling hides who
+  changed what.
+
+The full lifecycle, the trivial-vs-non-trivial triage, and the
+file-move rules are in
+[`dev/proposals/_template.md`](dev/proposals/_template.md) and
+[`dev/plans/_template.md`](dev/plans/_template.md).
+
+## Review
+
+Every substantive change is reviewed (see
+`dev/agent_collaboration.md`):
+
+* **Internal review** helps a change land — a constructive second
+  read. Floor: the same agent in a fresh session.
+* **External review** makes a change prove it should land — an
+  independent read. Floor: a different agent type, or a human.
+
+Review is asynchronous and commit-mediated: a review is a section
+appended to the artifact and committed, not a conversation that
+leaves no record.
+
+**Reviews are attributed and self-committed.** No agent writes or
+commits a review attributed to another agent — the named reviewer
+commits their own findings, or the Maintainer does. The attribution
+*is* the record's integrity: a review you did not write is not yours to
+sign, and a structurally-independent read is only independent if its
+author is its committer.
+
+## Session routines
+
+* **Session start** — at a cold start, or after a context-loss
+  event, run a short orientation pass: if the project keeps a
+  `RULES.md` (tracked, project-owned agent rules — Cairn never
+  templates it; see `doctrine/doc-governance.md`), read it *first*;
+  then re-anchor on the `dev/` tree, read the commit log since the
+  last handoff, note in-flight proposals, and confirm your role
+  before substantive work.
+* **Goodnight** — at the end of a session, leave a clean handoff:
+  a status summary, a per-agent reflection, and (for the
+  designated owner) a scrub of the roadmap boards. Committing and
+  pushing are never implied by the routine — they wait on explicit
+  maintainer approval.
+
+## Roles
+
+Work is organized by **roles**, not people — a role is a frame.
+The **Human Maintainer** holds final Decision authority and is the
+one role that is not interchangeable. Other roles (Strategy,
+Implementation, the reviewer tiers, and any the dimensional
+profile adds) are frames any capable agent fills; name your role
+before substantive work, and if it is not explicit, ask. The
+roster is in `dev/agent_collaboration.md`.
+
+## Git and commit workflow
+
+* **Never commit or push without explicit maintainer approval.**
+  Show what changed first.  Pushing always needs approval.
+
+  **Exception — deliberation / planning / strategy / upstream-ledger /
+  goodnight-handoff commits proceed without per-commit approval.** A commit
+  touching ONLY files under `dev/proposals/`, `dev/plans/`, `dev/strategy/`, or
+  the `dev/.cairn/` fold-back ledger (any combination) is a deliberation /
+  recording artifact and lands without per-commit approval — as does the single
+  goodnight-handoff commit (its routine artifacts: `dev/NEXT_SESSION.md`, the
+  end-of-day `dev/PLANNING.md` scrub, `CHANGELOG.md` additions, intent-ledger
+  pruning) and the one-line `dev/PLANNING.md` row-move that serializes a
+  lifecycle transition (proposal / plan open, supersession, archive). Three
+  guard-rails, all bright-line: **pushing still needs approval** (the exception
+  covers `git commit` only); the **Decision commit is the Maintainer's**
+  (scribing rules below); and **bundling any non-lifecycle file (code, `docs/`,
+  `AGENTS.md`, …) loses the exception** and re-triggers the approval gate. This
+  compact scope plus the three guard-rails are the operative rule; the
+  deliberation-layer rationale the carve-in serves is in
+  `doctrine/coordination.md`.
+* **Scribing a Decision — the guard-rail.** The Maintainer's Decision
+  (accept / reject / supersede) is theirs to land; an
+  explicitly-instructed agent may *scribe and commit* it, bounded by
+  three rules:
+  * **Attribution — quote the authorization verbatim.** Quote the
+    Maintainer's authorizing phrase(s) **verbatim and visually
+    isolated** in both the `## Decision` block and the commit body. Do
+    **not** paraphrase the authorization itself — paraphrase admits
+    semantic drift, condition-softening, or a hallucinated approval.
+    Surrounding explanatory prose is allowed, but clearly separated
+    from the quoted words, so a reader can tell exactly what was
+    authorized.
+  * **Unambiguous instruction, or confirm.** Act only on an instruction
+    unambiguous on *both* the disposition and the commit; if either is
+    unclear, confirm with the Maintainer before scribing.
+  * **Decision-only commit.** Flip the status and append the Decision
+    section, and nothing else — no implementation, plan-open, archive,
+    or roadmap work rides in a scribed Decision commit.
+
+  Absent an explicit, unambiguous (or confirmed) instruction, no agent
+  lands a Decision commit.
+* **Commit with explicit paths** — `git commit <path> [<path> ...]`,
+  naming exactly the files the commit should contain. **Never a bare
+  `git commit`**: it commits the *entire* staged index, so anything
+  another agent has staged rides into your commit under your message
+  and author. A path-scoped commit makes that collision *structurally
+  impossible*; the windowless habit below removes the staged window the
+  old backstops only narrowed.
+  * **Prefer the windowless commit** — for *tracked* files, `git commit
+    <paths>` stages *and* commits atomically: **no separate `git add`**,
+    so no staged window is ever exposed. **Verify via the working tree**
+    (`git status --short`, `git diff <paths>`) as its own step —
+    index-independent, and it does **not** show other agents' staged
+    work; do **not** verify with `git diff --cached`, which both
+    *manufactures* the window (it needs a prior `git add`) and reads back
+    *everyone's* staged index.
+  * **New / untracked files** — `git add <paths> && git commit <paths>`
+    in one invocation. If the chain aborts on a pre-commit / intent
+    check, the files are left staged — immediately `git restore --staged
+    <paths>` so a failed commit leaves no residue.
+  * **A `git mv` rename needs *both* sides named** in a path-scoped
+    commit — naming only the destination commits the "add" and leaves
+    the source-side deletion unstaged, so HEAD carries the file at both
+    paths until a fixup. Name both source and destination, and verify via
+    `git status --short` (the `R  source -> destination` line), not
+    `git diff --cached`.
+  * **Bright line** — never leave a `git add` / `git mv` sitting exposed
+    across tool calls, verification, or other work.
+* **Untracked lifecycle artifacts — commit atomically.** If you write a
+  lifecycle-opening artifact (plan, proposal, strategy doc) meaning to ship it,
+  commit it the *same turn* — write + `git mv` + `git commit` together; never
+  leave it untracked for another agent to inherit (the written-but-uncommitted
+  state is the failure surface). If you can't commit this turn, don't write it
+  yet (draft in chat or the harness scratch surface). Cold-start orientation
+  checks `dev/proposals/`, `dev/plans/`, `dev/strategy/` for untracked drafts:
+  commit one your own intent claim covers, leave one another agent's claim
+  covers, surface an unclaimed one to the maintainer. This is the third
+  commit-discipline hazard alongside the staged-index discipline
+  (`doctrine/coordination.md`); recurrences are tracked via the
+  `incident-trackers` module.
+* **Shared communication files** — the roadmap boards, the
+  changelog, and (when the `progressive-onboarding` mechanism is
+  installed) its activation log — are edited
+  only at defined serialization points (a lifecycle archive, the
+  goodnight routine, explicit instruction).  Refer to proposals
+  and plans by filename stem, not path link.
+* Run the test suite after any substantive change:
+  `python -m pytest bootstrap/tests`.
+* **Keep commit bodies concise.** The body is a *snapshot* — what
+  shipped and how it was verified — not a restatement of the proposal,
+  plan, or changelog (those are the durable audit trail). Target 15–30
+  lines for a non-trivial implementing commit (soft cap ~50; a trivial
+  fix is often just the subject + a one-line body): a one- or
+  two-sentence opener cross-referencing the source proposal / plan, a
+  short bullet list of the substantive changes by file or surface, and
+  a one-line verification snapshot with concrete numbers. Optimize for
+  `git log --oneline` skimmability.
+
+## Verifying claims
+
+<!-- cairn:slot claim-check -->
+**Verify before asserting.** Before committing a proposal, plan, or
+doc, run the claim checker (`python scripts/claim_check.py`) over it: it
+hard-flags broken repo paths and out-of-bounds line citations. A hard
+flag is resolved before commit; a deliberate forward-reference is
+*marked*, not left to assert, and a `claim-check-allow` directive
+(`<!-- claim-check-allow: <glob>, <glob> -->`) is the file-scoped path
+equivalent. Numeric claims follow the three-kind precision / `as_of`
+discipline — approximate a decision-irrelevant count, date a snapshot,
+register a live invariant — rather than a write-time count flag (retired
+2026-06-05).
+
+The checker is a **discipline aid, not a gate**: the verify-before-
+asserting habit is the doctrine (see `dev/modules/claim-check.md` for
+the A–E typology and the costlier runtime-behavior class no scanner
+reaches); the tool only shifts its cheap, mechanical part left, ahead
+of review. Cairn runs this exact checker on itself —
+`scripts/check_cairn.py` imports the same claim-path checker and adds
+link-checking on top.
+<!-- cairn:end claim-check -->
+
+## Documentation discipline
+
+<!-- cairn:slot documentation-discipline -->
+Cairn uses a **placement-decision procedure** for documentation and
+doctrine: see [`docs/DOCUMENTATION_PLAN.md`](docs/DOCUMENTATION_PLAN.md)
+for the four-layer vision (entry / governing / deliberation /
+descriptive), the routing rules, and the `AGENTS.md` ↔
+`agent_collaboration.md` boundary doctrine. When adding new
+documentation or doctrine, identify what the content is *doing*
+(prescription / deliberation / description) and route by layer.
+
+That `docs/DOCUMENTATION_PLAN.md` is Cairn's own self-hosted instance of
+the `documentation-plan` module — the same procedure Cairn ships its
+adopters, dogfooded on Cairn's own tree.
+<!-- cairn:end documentation-discipline -->
+
+## Project-specific conventions
+
+<!-- cairn:slot project-conventions -->
+**Naming.** UPPERCASE for landmark files (`README.md`, `AGENTS.md`,
+`BOOTSTRAP.md`, `CHANGELOG.md`, `SECURITY.md`, `PLANNING.md`,
+`NEXT_SESSION.md`); lowercase-kebab for content (doctrine and module
+files — `dual-review.md`, `doc-governance.md`). Proposal stems are
+`<YYYY-MM-DD>-<author>-<slug>.md`; plan stems are `<slug>.md`.
+
+**Development environment & dependency budget.** Everything Cairn ships
+an adopter — the scaffold engine, `scripts/`, the reference checkers
+(`claim_check.py`, `link_check.py`, `content_scan.py`) — is **standard-
+library-only**: adopters take on **zero runtime dependencies**. Dev/test
+tooling is dev-only and never in the adopter path (`vermin` for the
+Python-floor check; `pytest` for the suite). See
+`bootstrap/DEPENDENCY_BUDGET.md` and `doctrine/runtime-contract.md`
+before adding any import. Run the suite with `python -m pytest
+bootstrap/tests`.
+
+**High-risk surfaces (Security-Review + proposal triggers).**
+* **The scaffold / merge engine** (`bootstrap/scaffold.py` →
+  `bootstrap/_scaffold/`) parses untrusted module and profile files,
+  does path handling and YAML loading, and writes into a target tree —
+  guarded by a symlink/containment check and a Bandit gate over the
+  whole engine package.
+* **Vendor-neutrality.** Doctrine and templates must name no AI
+  model/vendor (`scripts/quality_gate.py --sub neutrality`); names live
+  only in the deliberation record or behind a `vendor-ok` marker.
+* **The install contract** — the fidelity manifest, the gate manifest,
+  the lockfile schema, and the published `scaffold.py --manifest` — is
+  what adopters depend on; treat it as byte-level stable.
+* **The by-file license split** — code is MIT wherever it lives; prose
+  and document templates are CC BY 4.0; the brand mark alone is CC
+  BY-ND. Keep the three families from overlapping.
+
+**Operational pitfalls.**
+* **Self-host `dev/` citation gotcha.** `scripts/check_cairn.py`'s
+  claim-path checker resolves `dev/...` citations now that Cairn hosts a
+  real `dev/` tree; doctrine/templates/CHANGELOG cite adopter-tree and
+  historical `dev/` paths that don't resolve. Handling is tracked in the
+  first proposal under `dev/proposals/`.
+* **AST attestation baseline.** `bootstrap/tests/test_ast_attest.py`
+  pins the engine package against a committed baseline; after any
+  `bootstrap/_scaffold/` change, re-anchor it per
+  `bootstrap/REANCHOR_RUNBOOK.md` (it does not auto-update).
+* **Commit hygiene.** Always `git commit <paths>` (never a bare
+  `git commit` — the index is shared); see *Git and commit workflow*
+  above.
+* **Doctrine changes clear the rate-limit gate** (`doctrine/rationale.md`
+  > "How the doctrine evolves under evidence") — a single incident does
+  not justify a doctrine change unless it is the high-risk case.
+<!-- cairn:end project-conventions -->
+
+## Vendor addendum
+
+`AGENTS.md` is vendor-neutral — it names no specific AI agent tool.
+Doctrine specific to one agent tool (a harness path, a
+session-model habit) goes in that tool's own file, which opens by
+importing this one (`@AGENTS.md`), so the shared content stays
+single-sourced. Cairn ships the thin wrapper as `VENDOR.md`; the
+adopter renames it to their tool's auto-loaded file (`CLAUDE.md`,
+`GEMINI.md`, …).
+
+**Drift guard.** The wrapper carries *only* harness-specific habits —
+this tool's session/context model, its scratch directory, its
+command quirks. Everything an agent of a *different* tool would also
+need — the required reading, the session routines, the CLI, the
+conventions, the development environment, the test command, the git
+rules — stays canonical **here**, and the wrapper points at it. A
+wrapper that duplicates this content has drifted into a fat fourth
+doc; fold it back and leave only the pointer. (`VENDOR.md` carries the
+same guard inline; `bootstrap/fidelity-check.md` notes it as a check.)

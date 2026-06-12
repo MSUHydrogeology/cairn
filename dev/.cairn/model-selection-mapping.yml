@@ -1,0 +1,42 @@
+# model-selection tier-to-model mapping (Cairn model-selection module).
+#
+# This file records the specific models your project assigns to each
+# capability tier (high / medium / low).  Complete the placeholder rows
+# below with your actual model assignments, then verify with:
+#
+#   python scripts/check_model_selection.py
+#
+# Schema: each row carries model, tier, date_verified, task_family,
+# source (see dev/modules/model-selection.md for the full record schema).
+#
+# The check_model_selection.py fidelity gate **fails non-zero while this
+# file still carries the seeded ``FILL ME`` placeholder** — so a fresh
+# adopter is forced to record their actual tier-to-model mapping before
+# the gate passes (it is forced, not silent: the silent-empty install is
+# the exact failure this module exists to prevent).  The scaffold install
+# itself succeeds (the tree is not blocked); the gate is a standalone
+# adopter fidelity check (`python scripts/check_model_selection.py`, or
+# wired into your CI) that stays red until you replace the placeholder.
+#
+# Replace the placeholder row below with your real assignments. Shape:
+#
+#   - tier: high
+#     model: vendor-a/flagship-model
+#     date_verified: 2025-01-01
+#     task_family: strategy-and-review
+#     source: "internal benchmark Jan 2025"
+#     price_basis: "$15/1M tokens"
+#     re_verification_trigger: major-model-release
+#
+# This file is adopter-local; do not commit vendor names to a shared
+# Cairn repository.
+
+mapping:
+  - tier: FILL ME           # high / medium / low
+    model: FILL ME          # your assigned model for this tier
+    date_verified: FILL ME  # YYYY-MM-DD
+    task_family: FILL ME
+    source: FILL ME
+
+# Replace the FILL ME placeholders above (add more rows per tier as
+# needed). The gate passes once no FILL ME remains.
