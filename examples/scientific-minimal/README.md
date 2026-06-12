@@ -1,3 +1,6 @@
+<!-- claim-check-allow: dev/proposals/archive/0001-add-mass-balance-invariant-test.md -->
+<!-- ^ Illustrative path: this example narrates a hypothetical proposal in the example's own dev/ tree, not a claim about Cairn's tree. -->
+
 # Scientific minimal example — Cairn on a tiny science workflow
 
 The two [`case-studies/`](../../case-studies/) are the full-apparatus

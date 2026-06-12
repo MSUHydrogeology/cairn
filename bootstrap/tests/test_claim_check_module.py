@@ -281,6 +281,57 @@ class TestClaimCheckAllowDirective:
 
 
 # ---------------------------------------------------------------------------
+# Self-host: the framework machine-state exempt set (exact + /-terminated
+# prefix).  Once a project self-hosts Cairn it has a real top-level dev/ tree,
+# so doctrine / templates / changelog that cite dev/<machine-state> must not
+# hard-flag -- but the matching must stay sharp (no sibling / suffix
+# over-exemption).  Settled by Internal + cross-type External review of the
+# 2026-06-12 check_cairn self-host-compat proposal.
+# ---------------------------------------------------------------------------
+
+
+class TestDefaultExemptFrameworkPaths:
+    """``_DEFAULT_EXEMPT_PATHS`` / ``_DEFAULT_EXEMPT_PREFIXES`` -- framework
+    runtime / generated paths a fresh scaffold lacks, exempt by the shipped
+    tool (not per-document directives).  Exact or ``/``-terminated-prefix, so
+    a sibling or a suffix is never over-exempted -- the gate stays sharp.
+    """
+
+    def test_exact_machine_state_path_exempt(self, cc, tmp_path):
+        _make_repo(tmp_path)
+        text = ("config `dev/.cairn/metrics-config.json`, "
+                "log `dev/measurement/collision_log.md`")
+        hard, _soft = cc.check_text(text, tmp_path)
+        assert hard == []
+
+    def test_generated_subtree_prefix_exempt(self, cc, tmp_path):
+        _make_repo(tmp_path)
+        text = "cache `dev/.cairn/base/` holds `dev/.cairn/base/ab12/manifest.json`"
+        hard, _soft = cc.check_text(text, tmp_path)
+        assert hard == []
+
+    def test_prefix_match_is_slash_terminated(self, cc, tmp_path):
+        # A sibling whose name merely *starts with* a prefix dir is NOT exempt.
+        _make_repo(tmp_path)
+        hard, _soft = cc.check_text("a stray `dev/.cairn-upgrade-bak/x.txt`", tmp_path)
+        assert [f.token for f in hard] == ["dev/.cairn-upgrade-bak/x.txt"]
+
+    def test_exact_path_does_not_exempt_suffix(self, cc, tmp_path):
+        # R3 (External review): dev/intents.jsonl.bak must NOT inherit the
+        # exemption of the exact entry dev/intents.jsonl.
+        _make_repo(tmp_path)
+        hard, _soft = cc.check_text("a stale `dev/intents.jsonl.bak`", tmp_path)
+        assert [f.token for f in hard] == ["dev/intents.jsonl.bak"]
+
+    def test_committed_lockfile_under_cairn_still_checked(self, cc, tmp_path):
+        # The .cairn/ subtree is NOT blanket-exempt: a non-existent
+        # committed-class file under it still hard-flags (R3 breadth concern).
+        _make_repo(tmp_path)
+        hard, _soft = cc.check_text("missing `dev/.cairn/cairn-lock.yml`", tmp_path)
+        assert [f.token for f in hard] == ["dev/.cairn/cairn-lock.yml"]
+
+
+# ---------------------------------------------------------------------------
 # Category-D count soft-flag retired 2026-06-05 (0 catches across the
 # verify-before-asserting instance log; the nag generated the
 # ``claim-check-allow-count`` header bloat it was meant to silence).  The

@@ -1,4 +1,7 @@
 <!-- cairn-internal-ref-allow: doctrine/fold-back.md doctrine/session-routines.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
+<!-- claim-check-allow: dev/modules/legacy-agent.md, dev/modules/dual-language-tests.md -->
+<!-- ^ Profile-conditional module files: present only in an adopter that installs them (this preset does); Cairn's own profile does not, so they don't resolve here. -->
+
 <!-- Cairn progressive-onboarding task list: high-rigor-legacy preset.
      Authored under plan 2026-05-28-claude-cairn-progressive-onboarding
      (Chunk P1.6 fills the full legacy-pre-pass + security-review +

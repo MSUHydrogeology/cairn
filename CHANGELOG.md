@@ -1,4 +1,6 @@
 <!-- claim-check-allow: scripts/onboarding_activate.py, scripts/_onboarding/ -->
+<!-- Historical lifecycle paths: this changelog narrates Cairn's construction, tracked in the modflow_tools-side dev/ lifecycle (and earlier Cairn locations) -- the cited stems are history, not claims about Cairn's own tree. -->
+<!-- claim-check-allow: dev/proposals/archive/2026-06-04-claude-cairn-foldback-drain-7-candidates.md, dev/proposals/archive/2026-06-08-claude-cairn-lifecycle-template-thinning.md, dev/proposals/archive/2026-06-03-claude-cairn-model-tier-efficiency.md, dev/proposals/archive/2026-06-03-claude-cairn-doctrine-token-efficiency.md, dev/proposals/archive/0001-add-mass-balance-invariant-test.md, dev/plans/cairn-profile-sized-assembly.md, dev/plans/archive/2026-06-04-claude-retire-verify-doc-links.md, dev/plans/archive/2026-05-28-claude-cairn-progressive-onboarding.md, dev/plans/2026-06-04-claude-cairn-foldback-drain.md, dev/cairn-lock.yml, dev/architecture_review.md -->
 <!-- The adopter-install path is cited verbatim in the
      progressive-onboarding entry; from Cairn's own checkout the path
      does not resolve (the source-of-truth lives at
@@ -32,7 +34,21 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
-*(nothing yet)*
+### Fixed
+
+- **`check_cairn` self-host claim-path findings.** Self-hosting Cairn gave
+  it a real top-level `dev/` tree, which flipped the shipped `claim_check`
+  checker into resolving the `dev/` paths cited across doctrine, templates,
+  the changelog, and examples — 66 hard-fails on adopter-tree /
+  framework-runtime / historical paths (none in the installed apparatus).
+  Extended `_DEFAULT_EXEMPT_PATHS` (now with `/`-terminated prefix matching,
+  scoped to generated machine-state subtrees so the committed
+  lockfile/profile stay checkable) for the universal framework paths, and
+  added in-template `claim-check-allow` directives for the
+  illustrative/historical cites so they travel to adopters. Per the accepted
+  proposal (`dev/proposals/archive/2026-06-12-claude-check_cairn-self-host-compat.md`);
+  the three-mechanism mapping + the prefix-match safety constraint were
+  settled by Internal + cross-type External (Gemini via Antigravity) review.
 
 ## 0.3.0 — 2026-06-12
 

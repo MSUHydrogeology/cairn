@@ -1,3 +1,6 @@
+<!-- claim-check-allow: dev/rules/custom_session_start.md, dev/rules/custom_session_end.md, dev/incident_log.md, dev/coordination_log.md -->
+<!-- ^ Illustrative / legacy-location adopter-tree paths cited in the routines doctrine; created on first use or superseded by dev/measurement/ homes. -->
+
 # Session routines
 
 A unit of work in Cairn is a **session** — one agent, one stretch

@@ -316,7 +316,7 @@ bootstrap/tests`.
 
 **Operational pitfalls.**
 * **Self-host `dev/` citation gotcha.** `scripts/check_cairn.py`'s
-  claim-path checker resolves `dev/...` citations now that Cairn hosts a
+  claim-path checker resolves `dev/`-prefixed citations now that Cairn hosts a
   real `dev/` tree; doctrine/templates/CHANGELOG cite adopter-tree and
   historical `dev/` paths that don't resolve. Handling is tracked in the
   first proposal under `dev/proposals/`.

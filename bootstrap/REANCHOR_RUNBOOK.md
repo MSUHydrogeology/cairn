@@ -1,3 +1,6 @@
+<!-- claim-check-allow: dev/.cairn/trusted-activation.yml, dev/.cairn/promotion-authorization.yml -->
+<!-- ^ Maintainer-supplied trust-root configs, absent unless the supervised re-anchor flow creates them. -->
+
 # Supervised re-anchor runbook (differential-oracle gate)
 
 > **Maintainer-only, supervised.** This runbook is how the **trust root** for the

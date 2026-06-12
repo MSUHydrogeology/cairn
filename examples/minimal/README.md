@@ -1,3 +1,6 @@
+<!-- claim-check-allow: dev/proposals/archive/0001-add-name-argument.md -->
+<!-- ^ Illustrative path: this example narrates a hypothetical proposal in the example's own dev/ tree, not a claim about Cairn's tree. -->
+
 # Minimal example — Cairn on a throwaway project
 
 The two [`case-studies/`](../../case-studies/) are the full-apparatus
