@@ -34,6 +34,15 @@ and a new empty `Unreleased` is started above.
 
 ### Changed
 
+- **`upgrade --finalize` gains a scoped write-set + the `#56` dirty-tree guard.**
+  An unscoped `--finalize` was whole-tree with no guard, so on a shared work
+  tree it silently advanced the lockfile hash for *every* drifted tracked file
+  — including a concurrent session's uncommitted WIP. Now `upgrade --finalize
+  <path> ...` scopes the re-record to the named records only (a name not in the
+  lockfile fails closed; matches either the on-disk or the lockfile-recorded
+  `dst` for a renamed vendor wrapper), and a bare whole-tree `--finalize`
+  **refuses on a dirty tree unless `--force`** (reusing the `--apply` `#56`
+  machinery; fail-soft on a non-git tree).
 - **Upgrade/verify tooling foldback roll-up (four adopter-robustness fixes).**
   (1) **`--adopt-module` flags a superseded pre-module local surface** — a new
   `_MODULE_SUPERSEDES` registry (`config.py`) lets adoption emit an *advisory*
@@ -91,6 +100,13 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **model-selection: interactive tier→model capture at install.** When the
+  `model-selection` module is selected and the install is interactive,
+  `scaffold install` now prompts for the adopter's tier→model bindings and
+  writes a gate-green mapping, so the fidelity gate ships green instead of
+  red-on-`FILL ME`. A non-interactive / CI install keeps the seeded `FILL ME`
+  stub as the fallback (idempotent — never clobbers an already-filled mapping;
+  free text is YAML-quoted; no PyYAML dependency).
 - **`link_check` parity with `claim_check`: inline code-span exemption + file-level `link-check-allow` directive.**
   Two exemptions that `claim_check` already had are now in `link_check` as well.
   (1) A Markdown file-link inside a *balanced* inline code span (backtick-delimited)
