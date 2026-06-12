@@ -1,6 +1,7 @@
 <!-- cairn-internal-ref-allow: doctrine/dual-review.md doctrine/lifecycle.md doctrine/proposals.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- Why exempt: these are illustrative adopter-tree / framework-runtime / historical `dev/` paths this proposal cites as EXAMPLES of the very findings it resolves -- dogfooding the category-C exemption mechanism it recommends. (claim-check-allow takes no reason= field, so the rationale lives here.) -->
-<!-- claim-check-allow: dev/cairn-lock.yml, dev/.cairn/metrics-config.json, dev/intent-config.json, dev/.cairn/foldback_export_denylist.txt, dev/.cairn/base/, dev/.cairn-upgrade/, dev/proposals/archive/0001-add-name-argument.md, dev/vision.md, dev/architecture_review.md, dev/measurement/incident_log.md, dev/rules/custom_session_routines.md, dev/modules/legacy-agent.md, dev/intents.jsonl.bak, dev/…, dev/proposals/archive/… -->
+<!-- claim-check-allow: dev/cairn-lock.yml, dev/.cairn/metrics-config.json, dev/intent-config.json, dev/.cairn/foldback_export_denylist.txt, dev/.cairn/base/, dev/.cairn-upgrade/, dev/proposals/archive/0001-add-name-argument.md, dev/vision.md, dev/architecture_review.md, dev/measurement/incident_log.md, dev/rules/custom_session_routines.md, dev/modules/legacy-agent.md, dev/intents.jsonl.bak, dev/…, dev/proposals/archive/…, dev/.cairn-upgrade-bak/ -->
+
 
 
 # check_cairn: resolve the `dev/` claim-path findings self-hosting introduced
@@ -363,5 +364,38 @@ the `/`-terminated, `dev/.cairn/`-scoped prefix-match safety constraint
 (R3). Per the Maintainer's direction the fix lands directly in a couple of
 well-scoped commits rather than via a plan; this proposal archives at the
 implementing commit.
+
+## Code review -- Gemini (External, different-agent-type) -- 2026-06-12
+
+**Model**: Gemini 3.5 Flash (High)
+
+### 1. Falsification Ledger
+
+* **Surfaces probed**:
+  - Examined the implementation of `_is_default_exempt` and the updated `_DEFAULT_EXEMPT_PATHS` and `_DEFAULT_EXEMPT_PREFIXES` in [claim_check.py](file:///Users/kendal30/Code/cairn/templates/modules/default-on/claim_check.py#L408-L470).
+  - Validated that the copy in [scripts/claim_check.py](file:///Users/kendal30/Code/cairn/scripts/claim_check.py) is byte-identical to the template source.
+  - Verified the 7 added `claim-check-allow` directives in the files changed by the commit to ensure they are minimal and correct.
+  - Verified that restoring the `.gitkeep` file in [strategy/archive/.gitkeep](file:///Users/kendal30/Code/cairn/templates/core/dev/strategy/archive/.gitkeep) is correct because `dev/strategy/README.md` explicitly links `archive/`, whereas proposals/archive and plans/archive do not have linking READMEs in templates.
+
+* **Negative / edge-case attempt**:
+  - Traced the `_is_default_exempt` function logic for negative cases to ensure that:
+    1. A suffix-matched file like `dev/intents.jsonl.bak` does *not* match `dev/intents.jsonl`.
+    2. A directory sibling like `dev/.cairn-upgrade-bak/` does *not* match the prefix `dev/.cairn-upgrade/`.
+    3. A missing committed file like `dev/.cairn/cairn-lock.yml` is *not* exempted by `_DEFAULT_EXEMPT_PREFIXES` and will correctly flag if absent.
+
+* **Verification**:
+  - Ran `python scripts/check_cairn.py` over the entire repository to confirm that all 69 + 3 path-claim errors have been resolved (exited with code `0` / OK).
+  - Ran `python -m pytest bootstrap/tests` to verify the 5 new tests in [test_claim_check_module.py](file:///Users/kendal30/Code/cairn/bootstrap/tests/test_claim_check_module.py#L282-L332) pass successfully, pinning the exact matching, prefix matching, slash-termination, suffix rejection, and committed-file verification.
+
+* **Residual risk**:
+  - Pre-existing AST baseline failures (`test_ast_attest.py` failures under Python 3.12 due to minor version serialization differences) remain present (tracked as issue #1). This is unrelated to the self-host compatibility changes.
+
+### 2. Coverage Line
+* **Covered**: Swept lenses 1-9 (Claims, Production path, Design completeness, Silent failure, Cross-document consistency, Drift, Lifecycle placement, Domain scope, and Satisfier) against commit `f9464b2`.
+* **Not covered / low confidence**: None. Full execution and verification checks were run locally.
+
+### 3. Verdict
+**Accept (commit f9464b2).** The changes are faithful to the accepted proposal contract, correct, minimal, and completely safe.
+
 
 
