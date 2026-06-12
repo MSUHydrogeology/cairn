@@ -117,7 +117,10 @@ anticipated but not yet in flight. When a queued item grows into
 multi-step work, open a plan under `plans/` and replace the entry
 with the plan's filename stem.
 
-*(Empty at adoption — the first accepted proposals populate it.)*
+*(Empty at adoption — native proposals populate this board. The Cairn
+roadmap migrated 2026-06-12 from modflow_tools — the queued items, the
+deferred follow-ups, and the release path — lives at the **bottom** of this
+file under "Migrated Cairn roadmap (2026-06-12)".)*
 
 ## Active
 
@@ -184,3 +187,137 @@ gates. Before deleting a board entry, confirm all three:
 
 If a gate is unmet, finish that migration first, then delete. See
 `doctrine/lifecycle.md` > "Removal preconditions for a roadmap item".
+
+---
+
+## Migrated Cairn roadmap (2026-06-12)
+
+Imported from the modflow_tools-side Cairn roadmap when Cairn self-hosted —
+live items only, re-expressed for Cairn's vantage (shipped history stays in
+the archives); see [`strategy/MIGRATION.md`](strategy/MIGRATION.md). As
+native proposals pick these up, they move into the Queued / Active board
+near the top of this file.
+
+### Queued
+
+* **Broad-look + roadmap pass** *(queued, Jun 2026)* — the strategy /
+  tighten-up pass: take a wide read of the project now that it self-hosts,
+  consolidate what accreted across phases 1–4, and shape the forward
+  roadmap. The first `dev/strategy/` notes + proposals of the self-hosted
+  era.
+* **0.3 external correctness test (R-H third-party probe)** *(blocked,
+  Jun 2026)* — the launch gate: a consenting third-party scientific repo
+  (one that did not contribute to the doctrine) runs the bootstrap
+  end-to-end. **Blocks the 0.4 public release.** Blocked on enrolling a
+  third party.
+* **Remove the collaboration agreement** *(queued, gate: before 0.4)* —
+  Maintainer decision (2026-06-12): Cairn no longer needs a collaboration
+  agreement. Retire `templates/core/dev/collaboration_agreement.md` and
+  re-home/drop every surface that references it (the `AGENTS.md`
+  required-reading link, the `agent_collaboration.md` / `dev/README.md`
+  pointers, the onboarding tour step, the `doctrine/plans.md` External
+  Review Norms cite — re-home those norms, the scaffold's expected-folder
+  wiring, the bootstrap tests). Cross-cutting doctrine + template +
+  scaffold + test change → its own proposal (the guide star treats the
+  agreement as load-bearing, so the proposal carries the deliberation).
+* **0.4 launch-surface polish** *(queued for 0.4, not launch-blocking)* —
+  graphics/figures in the adopter-facing docs + quickstart (lower the
+  "doctrine-heavy at first contact" friction); a comment-cleanup pass
+  (strip blow-by-blow comments; keep the *why*) before public adopters
+  fork the code; and the shipped-executable-authority unification (one
+  `shipped_executables()` traversal for install / manifest / security
+  scan / upgrade).
+
+### Deferred follow-ups (durable home)
+
+The permanent, tracked home for Cairn work parked with revival conditions
+— each becomes its own proposal when picked up (re-expressed generalizably,
+no adopter specifics). Imported from the modflow_tools-side batch ledgers;
+none blocking.
+
+**Lifecycle apparatus**
+* **Lifecycle mutation/commit arm** — the typed-mutation ops (decision /
+  review / open / archive) + commit the read-only planner deferred; gated on
+  the dogfood study *and* its own Security Review (commit is a separate
+  privilege; print-the-command in v1).
+* **Lifecycle mechanization dogfood study** — the multi-session,
+  Maintainer-run measurement that earns (or declines) the mutation arm; rank
+  by prevented-failure / preserved-assurance, not frequency.
+* **Planner cross-checks** — `next` surfaces "review status undetermined" on
+  an absent/malformed plan-review line (E-#1); assert the artifact resolves
+  under `dev/` (E-#2).
+* **`_agent_of` round-suffix regression test** — pin the `## Review (Round
+  N)` header shape in the Cairn tree.
+
+**Scaffold / engine**
+* **Facade-loader symlink hardening (C-#3)** — refuse any engine submodule
+  that is a symlink or resolves out-of-tree, across all three facades.
+* **End-gate frozen-set decision (C-#4)** — whether the A/B/C engine
+  packages fold into the gate manifest's `frozen_files`.
+* **Facade residuals (B-#1/2)** — clean a partial `sys.modules` entry on a
+  failed mid-load; reject a mismatched `<kind>:` prefix in `_ast_attest`.
+* **Side-door non-executable surfaces** — disposition for the onboarding
+  activation log, preset sources, and issue-capture forge starters.
+* **Module destination renames / binary module files** — relocation
+  classification when a module's destination changes; byte-preserving staging
+  for non-text module files.
+
+**Stack-neutrality**
+* **Language-neutral conformance fixtures + golden vectors (Move 5)** — for
+  the extrication seam (exit semantics, path containment, lockfile schema,
+  slot parsing, 3-way merge, security refusals), generated from the Python
+  reference. The seam architecture shipped; the executable fixtures are
+  deferred.
+
+**Coordination**
+* **Refine the intent tool's necessity test** — gate on *shared-worktree*
+  multi-agent, not just team size (worktree-per-agent doesn't need it).
+* **Move `dev/intent-config.json` → `dev/.cairn/`** — machine-edited settings
+  belong in the machine-state dir; transition reads both paths.
+
+**Doctrine**
+* **Count-claims doctrine dedup** — fold the three-kind concept into
+  `doctrine/lifecycle.md` with a one-line pointer from `doctrine/proposals.md`
+  + `doctrine/plans.md`.
+* **Model-tier vocab single-source** *(low residual)* — the tier→model
+  binding is canonical in `dev/.cairn/model-selection-mapping.yml`; revisit
+  only if a project later adds its own metrics-config tier vocab.
+
+**Adoption UX**
+* **Constructive readiness** — when a Cairn tool finds a project below an
+  expected bar, it should *offer and drive the path to readiness* (scaffold
+  the missing pieces, guide the next action), not emit a bare "not ready"
+  verdict. Generative about adoption, not only diagnostic.
+
+**Lower-priority**
+* **Container P3s** — acceptance credential-residue leg (note/drop); `--user`
+  on a future Docker acceptance leg; pin the `git` apt version for image
+  byte-reproducibility.
+* **Differential-oracle two-stage `promote`** — future-use mechanism for a
+  Cairn-engine refactor needing behavior-preservation promotion (trust root
+  established, nothing pending; see `bootstrap/REANCHOR_RUNBOOK.md`).
+* **Lifecycle-routine skill payloads (post-v1)** — additional episodic skills
+  (proposal-open, review-append, decision-scribe, plan-archive); promote
+  harness skill targets to native-tested as fixtures prove them.
+
+### Release path
+
+The version ladder is staged so the methodology stabilizes before going
+public:
+
+* **0.3.0** — current; private internal milestone (2026-06-12). Phases 1–4
+  complete; Phase 5 (launch + governance) in progress.
+* **0.3 external test** — the R-H third-party correctness probe (queued
+  above); must clear before going public.
+* **0.4 — earliest public release.** No earlier than 0.4, and only after the
+  0.3 external test clears. The 0.4 candidates above are launch-surface
+  polish, not blockers.
+* **0.5+** — per-project efficacy-data infrastructure and beyond.
+
+**Public-launch sequence** (deferred to 0.4+; Maintainer-gated, in order):
+eyeball-check the private mirror renders cleanly → flip the repo to public +
+set the template-repo flag (the actual "ship it" moment; explicit go-ahead
+required) → enable Zenodo integration → tag `v0.4.0` and push (triggers
+Zenodo deposition → DOI) → commit the issued DOI into `CITATION.cff` →
+archive the `cairn_methodology_repo` construction plan via lasting-truth
+migration.
