@@ -1,6 +1,7 @@
 <!-- cairn-internal-ref-allow: doctrine/dual-review.md doctrine/lifecycle.md doctrine/proposals.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- Why exempt: these are illustrative adopter-tree / framework-runtime / historical `dev/` paths this proposal cites as EXAMPLES of the very findings it resolves -- dogfooding the category-C exemption mechanism it recommends. (claim-check-allow takes no reason= field, so the rationale lives here.) -->
-<!-- claim-check-allow: dev/cairn-lock.yml, dev/.cairn/metrics-config.json, dev/intent-config.json, dev/.cairn/foldback_export_denylist.txt, dev/.cairn/base/, dev/.cairn-upgrade/, dev/proposals/archive/0001-add-name-argument.md, dev/vision.md, dev/architecture_review.md, dev/measurement/incident_log.md, dev/rules/custom_session_routines.md, dev/modules/legacy-agent.md -->
+<!-- claim-check-allow: dev/cairn-lock.yml, dev/.cairn/metrics-config.json, dev/intent-config.json, dev/.cairn/foldback_export_denylist.txt, dev/.cairn/base/, dev/.cairn-upgrade/, dev/proposals/archive/0001-add-name-argument.md, dev/vision.md, dev/architecture_review.md, dev/measurement/incident_log.md, dev/rules/custom_session_routines.md, dev/modules/legacy-agent.md, dev/intents.jsonl.bak, dev/…, dev/proposals/archive/… -->
+
 
 # check_cairn: resolve the `dev/` claim-path findings self-hosting introduced
 
