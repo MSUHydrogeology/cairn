@@ -32,6 +32,10 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+*(nothing yet)*
+
+## 0.3.0 — 2026-06-12
+
 ### Changed
 
 - **`upgrade --finalize` gains a scoped write-set + the `#56` dirty-tree guard.**
