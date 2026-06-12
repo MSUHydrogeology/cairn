@@ -118,7 +118,7 @@ python "$CAIRN/bootstrap/scaffold.py" \
 
 The `--summary` flag is **preview-only**: it prints the resolved
 axes and the module roster, then exits without touching the target.
-For the `solo-greenfield` profile you should see **6** modules listed
+For the `solo-greenfield` profile you should see **6** modules listed `<!-- verify: solo_greenfield_module_count -->`
 (the default-on floor): `lifecycle-metrics`, `reflections`, `claim-check`,
 `fold-back-ledger`, `incident-trackers`, `documentation-plan`.
 

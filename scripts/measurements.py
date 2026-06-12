@@ -154,6 +154,29 @@ def git_commits_in_range(root: Path, target: str) -> int:
     return sum(1 for line in completed.stdout.splitlines() if line.strip())
 
 
+def count_preset_modules(root: Path, target: str) -> int:
+    """Number of modules the scaffold resolves for the governance preset
+    ``target`` (e.g. ``solo-greenfield``).
+
+    Unlike the path-scan fns above, this **imports Cairn's own preset
+    resolver** (``_scaffold.expand_preset``) and calls it in-process.  It is
+    *resolve-only* -- ``expand_preset`` reads a profile dict and returns a
+    module roster; it writes nothing and installs nothing.  The preset name
+    ``target`` is **code-fixed in the REGISTRY**, never document-supplied (a
+    doc annotation carries only the registry key), so this fn -- like the
+    rest of the allowlist -- has no document-supplied path or command.  The
+    only widening over the file-scan fns is that it imports Cairn's trusted
+    engine; that is a Maintainer-accepted trade for guarding a count the
+    quickstart mirrors but that no bounded file scan can derive."""
+    import sys
+    bootstrap = (root / 'bootstrap').resolve()
+    if str(bootstrap) not in sys.path:
+        sys.path.insert(0, str(bootstrap))
+    from _scaffold import expand_preset  # Cairn's own engine; resolve-only
+    modules, _summary = expand_preset({'preset': target})
+    return len(modules)
+
+
 #: The closed allowlist of measurement functions.  An ``Invariant.fn`` is
 #: resolved here; a key absent from this map is refused by :func:`measure`.
 MEASURE_FNS = {
@@ -161,6 +184,7 @@ MEASURE_FNS = {
     'count_files': count_files,
     'count_defs': count_defs,
     'git_commits_in_range': git_commits_in_range,
+    'count_preset_modules': count_preset_modules,
 }
 
 
@@ -194,5 +218,14 @@ REGISTRY: dict[str, Invariant | Snapshot] = {
         root=_CAIRN_ROOT,
         fn='count_lines',
         target='templates/modules/default-on/claim_check.py',
+    ),
+    # The `solo-greenfield` module count the quickstart states. Guards the
+    # adopter-entry drift the 2026-06-12 audit found (F1's module half) under
+    # the check_cairn docs lens, complementing the install-path pytest gate in
+    # test_quickstart_sequence.py (which also guards the slot count).
+    'solo_greenfield_module_count': Invariant(
+        root=_CAIRN_ROOT,
+        fn='count_preset_modules',
+        target='solo-greenfield',
     ),
 }

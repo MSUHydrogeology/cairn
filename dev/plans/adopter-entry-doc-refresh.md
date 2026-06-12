@@ -154,8 +154,17 @@ pytest run, not under `check_cairn`'s docs-layer lens.
 
 **Required follow-ups (review):** (1) record this deviation in the plan +
 correct the now-false acceptance criterion — *done above + here*; (2) a
-Maintainer judgment call: accept the narrower pytest-only guard, or also
-wire the count under `check_cairn` — *surfaced to the Maintainer*.
+Maintainer judgment call on the guard scope — **resolved: Maintainer
+decision (2026-06-12) to also wire the module count under `check_cairn`.**
+Done: `scripts/measurements.py` gains a resolve-only `count_preset_modules`
+fn (imports `_scaffold.expand_preset` in-process; no install/write; preset
+name code-fixed) + a `solo_greenfield_module_count` Invariant, and
+`docs/quickstart.md` carries the `verify:` annotation. So the **module
+count is now guarded by both** the `check_cairn` docs lens (re-measures +
+flags `doc says N, measured M -- DRIFT`) **and** the install-path pytest
+gate; the **slot count** (which only a full install produces) stays guarded
+by the pytest gate. Verified: drift flagged on a mutated number under
+`check_cairn`; 102 measurements/verify/preset tests pass.
 
 No correctness defect; no new bug. The shipped gate works.
 
