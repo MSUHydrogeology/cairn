@@ -3,7 +3,7 @@
 # Plan: adopter-entry doc-refresh + verify-count drift-gate
 
 **Source proposal**: `dev/proposals/archive/2026-06-12-claude-adopter-entry-doc-refresh.md`
-**Status**: open
+**Status**: archived
 **Plan review**: not required — the revised approach was reviewed at
 proposal stage by a 3-reviewer Internal panel and accepted with revisions
 folded in; this plan only sequences accepted work.
@@ -170,6 +170,17 @@ No correctness defect; no new bug. The shipped gate works.
 
 ## Lasting-truth migration
 
-*Filled in at archive time.* Deferred follow-ups (the `--quickstart` mode;
-extending the `verify:` guard to other adopter counts) migrate to
-`dev/PLANNING.md` before archive.
+Archived 2026-06-12. **Follow-ups migrated to:** `dev/PLANNING.md` > Queued
+("Adopter-entry doc-refresh follow-ups") — the context-aware scaffold
+`--quickstart` mode, and extending the `verify:` count guard to other
+adopter-facing counts. Both are deferred, each its own future proposal.
+
+**Loop-fidelity sign-off.** The Decision→implementation chain holds: the
+accepted proposal's intent (refresh the drifted entry docs + a drift-gate
+that closes the prose↔runtime loop) shipped in `63db56f` + `6d61926`; the
+one mechanism deviation (test-extension over the `verify:` annotation for
+the slot count) is recorded in the Code review with rationale, and the
+module count was additionally wired under `check_cairn` per the Maintainer's
+follow-up decision. Code review: accept-with-followups, both resolved.
+Verification green (drift-gate proven non-vacuous; 1404 + 102 tests;
+`check_cairn` OK; F2 cold-walk clean).

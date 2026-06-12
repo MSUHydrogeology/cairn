@@ -117,17 +117,15 @@ anticipated but not yet in flight. When a queued item grows into
 multi-step work, open a plan under `plans/` and replace the entry
 with the plan's filename stem.
 
-* **Adopter-entry doc-drift gate** *(queued, Jun 2026)* — the 2026-06-12
-  adopter-friction audit
-  (`dev/strategy/2026-06-12-claude-adopter-friction-audit.md`) found the
-  quickstart's load-bearing numbers (module count, slot count,
-  installed-file list) silently drifted behind the scaffold — the exact
-  "docs lag the tool" failure Cairn's lifecycle exists to prevent. Immediate
-  remediation is a quickstart/README refresh (that audit's recommended
-  package); the **durable fix** is to make those numbers *generated or
-  drift-gated against a live `solo-greenfield` install* so the entry docs
-  cannot silently lag the tool again — a `doc-drift-prevention` extension →
-  its own proposal.
+* **Adopter-entry doc-refresh follow-ups** *(deferred, Jun 2026)* — the
+  doc-refresh + prose↔runtime drift-gate shipped (plan
+  `adopter-entry-doc-refresh`, archived; from the 2026-06-12
+  adopter-friction audit). Two deferred follow-ups: (a) a context-aware
+  scaffold **`--quickstart` mode** (richer than the "Next steps for a real
+  adoption" reframe — let the scaffold print a trimmed next-step for the
+  trivial path); (b) extend the `verify:` count guard to **other
+  adopter-facing counts** beyond the quickstart's two. Each → its own
+  proposal when revived.
 
 *(Otherwise empty at adoption — native proposals populate this board. The
 Cairn roadmap migrated 2026-06-12 from modflow_tools — queued items,
