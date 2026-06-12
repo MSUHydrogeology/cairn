@@ -19,7 +19,7 @@ shape.
 ## What you need
 
 * A POSIX shell (macOS / Linux / WSL).
-* Python 3.8+.
+* Python 3.11+.
 * `git`.
 <!-- vendor-ok-begin: illustrative list of adopter-side tools the recipe is compatible with -- not a vendor endorsement; the line itself says "vendor-neutral" -->
 * One AI coding agent connected to a repo of your choice -- Claude
@@ -51,6 +51,7 @@ shakedown.
 # Anywhere you keep code:
 git clone https://github.com/MSUHydrogeology/cairn-scientist-ai-teams.git cairn
 cd cairn
+export CAIRN="$(pwd)"   # the rest of this recipe refers to $CAIRN
 ```
 <!-- cairn-accept-end: suspicious-url -->
 
@@ -76,7 +77,7 @@ agent, new codebase, default-on modules only.  Copy the shipped
 YAML literally:
 
 ```bash
-cp /path/to/cairn/bootstrap/profiles/solo-greenfield.yml profile.yml
+cp "$CAIRN/bootstrap/profiles/solo-greenfield.yml" profile.yml
 ```
 
 The file looks like this -- you can read it before continuing:
@@ -109,7 +110,7 @@ anything, so you can confirm the dimension profile and the module
 roster Cairn would install):
 
 ```bash
-python /path/to/cairn/bootstrap/scaffold.py \
+python "$CAIRN/bootstrap/scaffold.py" \
     --config profile.yml \
     --target . \
     --summary
@@ -117,9 +118,9 @@ python /path/to/cairn/bootstrap/scaffold.py \
 
 The `--summary` flag is **preview-only**: it prints the resolved
 axes and the module roster, then exits without touching the target.
-For the `solo-greenfield` profile you should see four modules
-listed (the default-on floor): `lifecycle-metrics`, `reflections`,
-`claim-check`, `fold-back-ledger`.
+For the `solo-greenfield` profile you should see **6** modules listed
+(the default-on floor): `lifecycle-metrics`, `reflections`, `claim-check`,
+`fold-back-ledger`, `incident-trackers`, `documentation-plan`.
 
 > **What the six axes mean.** Cairn adapts the apparatus along
 > six dimensions: **age** (greenfield / legacy), **size** (small /
@@ -136,49 +137,53 @@ listed (the default-on floor): `lifecycle-metrics`, `reflections`,
 **Then install** (drop `--summary`):
 
 ```bash
-python /path/to/cairn/bootstrap/scaffold.py \
+python "$CAIRN/bootstrap/scaffold.py" \
     --config profile.yml \
     --target .
 ```
 
-The scaffold prints what it installed.  For the `solo-greenfield`
-profile you will see a kernel-and-default-on file set across the
-top level, `dev/`, `tools/`, and `scripts/` -- the scaffold output
-itself is the authoritative tally for *this* release.  The named
-files you should recognise:
+> **A note on the provenance warning.**  Because Step 1 cloned Cairn's
+> tip (not a tagged release), the scaffold prints a one-line provenance
+> warning suggesting `--allow-dev`.  That is **expected** for a shakedown
+> from the tip and never blocks the install.  (A real adoption scaffolds
+> from a tagged release, where the warning does not appear.)
 
-* `AGENTS.md` -- the kernel doctrine file every agent reads.
-* `VENDOR.md` -- the vendor addendum template (Cairn is vendor-
-  neutral; this file holds tool-specific notes if your team wants
-  them).
-* `dev/README.md`, `dev/PLANNING.md`, `dev/NEXT_SESSION.md` -- the
-  coordination tree.
-* `dev/collaboration_agreement.md`, `dev/agent_collaboration.md`
-  -- the working norms.
-* `dev/proposals/_template.md`, `dev/plans/_template.md` -- the
-  lifecycle templates.
-* `dev/modules/lifecycle-metrics.md`, `dev/modules/reflections.md`,
-  `dev/modules/claim-check.md`, `dev/modules/fold-back-ledger.md`
-  -- the default-on module docs.
-* `dev/.cairn/cairn_foldback.md` -- the upstream fold-back
-  ledger (you can ignore this for the quickstart).
-* External-repo paths: `tools/lifecycle_metrics.py`, `scripts/claim_check.py` -- the
-  default-on tool scripts (installed *into the target repo*; they
-  do not exist as Cairn-tree paths).
-* `dev/.cairn/cairn-lock.yml` plus the `dev/.cairn/base/` snapshot -- the
-  upgrade-safety anchor; you do not need to read these.
+The scaffold prints **its own install report** -- and *that report is the
+authoritative list* of every file it wrote.  Read it rather than matching
+against a list here, which would drift as Cairn's default-on set grows.
+The landmarks worth recognising:
 
-The scaffold also reports **20 unfilled block slots** -- placeholders
+* `AGENTS.md` -- the kernel doctrine file every agent reads; `VENDOR.md`
+  -- the vendor-addendum template you rename to your tool's auto-loaded
+  file (`CLAUDE.md`, …).
+* the `dev/` tree -- the coordination space: `README.md`, the roadmap
+  boards (`PLANNING.md`, `NEXT_SESSION.md`), the working-norm docs, the
+  `proposals/` + `plans/` lifecycle templates, and one
+  `dev/modules/<name>.md` per installed module.
+* the **lifecycle tooling** -- `tools/` and `scripts/` hold the runnable
+  reference tools (the metrics extractor, the claim-checker), and
+  `.agents/skills/` ships the `session-start` / `session-end` routines
+  your harness surfaces as commands (`tools/lifecycle.py` is their CLI).
+  Ignore these for the shakedown -- they are orientation, not homework.
+* `dev/.cairn/` -- machine state (the fold-back ledger, the
+  lockfile + base-cache upgrade anchor); you do not need to read it.
+
+(The `tools/` and `scripts/` files install *into your target repo*; they
+are not Cairn-tree paths.)
+
+The scaffold also reports **21 unfilled block slots** -- placeholders
 your agent will fill during dogfood.  See
 [`bootstrap/BOOTSTRAP.md`](../bootstrap/BOOTSTRAP.md) Act II-4 for the
-full filling pass.  For this quickstart we leave them; the trivial
-dogfood does not need them filled.
+full filling pass.  For this quickstart we leave them: the trivial dogfood
+below does not need them filled, and the scaffold's "Next steps **for a
+real adoption**" note is for when you install Cairn into a project for
+real, not this shakedown.
 
 Commit the install (path-scoped, since the scaffold touched many
 files; `CHANGELOG.md` was already committed in Step 1):
 
 ```bash
-git add AGENTS.md VENDOR.md dev/ tools/ scripts/ && \
+git add AGENTS.md VENDOR.md .gitignore dev/ tools/ scripts/ .agents/ docs/ && \
     git commit -q -m "Install Cairn kernel + default-on modules"
 ```
 

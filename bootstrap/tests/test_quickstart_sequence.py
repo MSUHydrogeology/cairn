@@ -38,6 +38,7 @@ Run from the cairn repo root::
 
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -209,20 +210,45 @@ class TestLayerAStepsOneThroughThree:
             assert (repo / relative).exists(), (
                 f"quickstart Step 3 should install {relative}; not present after run"
             )
-        # Step 3 says 21 block slots (bumped from 20 by Fold 6 of the
-        # foldback-drain-tooling proposal: dev/README.md gained the
-        # `cross-layer-doc-pointers` cairn:slot for cross-layer doc
-        # pointers; previously bumped from 15 by the lifecycle-template
-        # fold-up: the proposal template gained `triage-extra-triggers`,
-        # `tests-tier-home`, and `examples-smoke-home`; the plan template
-        # gained `acceptance-doc-tooling` and `verification-commands`).
-        # Verify the count matches what the scaffold actually emitted
-        # -- a drift between the prose and runtime is exactly what
-        # this test exists to catch.
-        assert "Block slots requiring agent attention (21)" in result.stdout, (
-            "Step 3 prose says '21 unfilled block slots' -- count drifted; "
-            "update the quickstart prose to match scaffold output:\n"
-            f"{result.stdout}"
+        # Drift-gate -- close the prose<->runtime loop (the 2026-06-12
+        # adopter-friction audit's F1). NO hardcoded count lives here: the
+        # quickstart's two load-bearing numbers are read FROM the doc and
+        # compared to what the live solo-greenfield install actually
+        # produced, so the gate fires the moment the default-on set (and
+        # thus the counts) drifts -- instead of an adopter discovering the
+        # mismatch at Step 3.
+        quickstart = (CAIRN_ROOT / "docs" / "quickstart.md").read_text()
+        # The `-> modules:` info line goes to stderr; the slot tally to
+        # stdout -- search the combined stream for both.
+        combined = result.stdout + result.stderr
+
+        # Module count: the resolved roster the scaffold logged.
+        live_mods = re.search(r"-> modules: ([^\n.]+)", combined)
+        assert live_mods, f"scaffold did not log a resolved roster:\n{combined}"
+        live_module_count = len(
+            [m for m in live_mods.group(1).split(",") if m.strip()]
+        )
+        prose_mods = re.search(r"\*\*(\d+)\*\* modules listed", quickstart)
+        assert prose_mods, (
+            "docs/quickstart.md must state '**N** modules listed' for solo-greenfield"
+        )
+        assert int(prose_mods.group(1)) == live_module_count, (
+            f"docs/quickstart.md says '**{prose_mods.group(1)}** modules' but the live "
+            f"solo-greenfield install resolves {live_module_count} "
+            f"({live_mods.group(1).strip()}) -- refresh the quickstart prose."
+        )
+
+        # Slot count: what the scaffold actually emitted.
+        live_slots = re.search(
+            r"Block slots requiring agent attention \((\d+)\)", combined
+        )
+        assert live_slots, f"scaffold did not report a slot count:\n{combined}"
+        prose_slots = re.search(r"\*\*(\d+) unfilled block slots\*\*", quickstart)
+        assert prose_slots, "docs/quickstart.md must state '**N unfilled block slots**'"
+        assert prose_slots.group(1) == live_slots.group(1), (
+            f"docs/quickstart.md says '{prose_slots.group(1)} unfilled block slots' "
+            f"but the live install reports {live_slots.group(1)} -- refresh the "
+            f"quickstart prose to match the scaffold."
         )
 
 

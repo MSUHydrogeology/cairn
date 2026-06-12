@@ -76,7 +76,7 @@ but the shape is identical.
 
 The workflow has **no third-party dependencies** (only `csv`,
 `pathlib`, and `sys` from the standard library), so it runs anywhere
-Python 3.10+ runs. Either form works -- pick whichever is more
+Python 3.11+ runs. Either form works -- pick whichever is more
 convenient.
 
 **From this example's directory** (`cairn/examples/scientific-minimal/`):

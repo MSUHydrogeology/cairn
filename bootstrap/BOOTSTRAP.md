@@ -107,8 +107,8 @@ From the six-axis profile, select the module set:
 
 2. **Default-on modules** (installed unless a dimension removes
    them): lifecycle-metrics, reflections, claim-check,
-   fold-back-ledger, incident-trackers. Remove a default-on
-   module only when the dimensional profile gives a specific
+   fold-back-ledger, incident-trackers, documentation-plan. Remove a
+   default-on module only when the dimensional profile gives a specific
    reason — record the reason.
 
    **Module-merge mechanics (Proposal B / audit gap #3).** Modules

@@ -15,7 +15,7 @@
 # bootstrap/scaffold.py's _PRESETS):
 #
 #   Default-on (always): lifecycle-metrics, reflections, claim-check,
-#     fold-back-ledger.
+#     fold-back-ledger, incident-trackers, documentation-plan.
 #   Team-gated baseline: (none -- no axis fires a team-gated module).
 #
 # On-ramp recommendation: Level 1 (hand-copy the kernel + default-on

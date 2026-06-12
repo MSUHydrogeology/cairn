@@ -1303,11 +1303,13 @@ def print_report(
         print("\n[OK] No block slots detected.")
 
     print()
-    print("Next steps (BOOTSTRAP.md Act II):")
+    print("Next steps for a real adoption (BOOTSTRAP.md Act II):")
     print("  3. Confirm the installed files match the accepted profile (II-3).")
     print("  4. Fill all block slots (II-4).")
     print("  5. Run the R-F acceptance gate (II-5).")
     print("  6. Dogfood one change through the lifecycle (II-6).")
+    print("  (Just trying Cairn on a throwaway repo? The docs/quickstart.md")
+    print("   shakedown skips 3-5 -- a trivial dogfood does not need them.)")
     print()
 
 

@@ -9,7 +9,9 @@ than only described.
 If you want to read the artifacts of a real (tiny) instance alongside
 this narrative, open [`../examples/minimal/`](../examples/minimal/) —
 it carries the actual proposal, code, and test for the change traced
-below.
+below. ([`../examples/scientific-minimal/`](../examples/scientific-minimal/)
+shows the same shape on a tiny science workflow — a mass-balance
+invariant — if you want a domain-flavored example.)
 
 > **Honest framing.** The five steps below add friction *before*
 > code: you write the decision down first, review it, accept it,
