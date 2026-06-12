@@ -251,7 +251,7 @@ recommended Cairn level + module roster.
 
 ## Status
 
-Cairn is released at **v0.2.0** (2026-05-27).
+Cairn is released at **v0.3.0** (2026-06-12).
 
 - **Phases 1–4 complete**: doctrine extraction, forkable templates,
   bootstrap procedure + scaffold + a full bootstrap and gate test
@@ -305,7 +305,7 @@ intentionally compatible.
 
 If you use Cairn, please cite it.  See [`CITATION.cff`](CITATION.cff)
 for citation metadata.  Until a GitHub release is published and a
-Zenodo DOI is issued, cite by version (**v0.2.0**) and the
+Zenodo DOI is issued, cite by version (**v0.3.0**) and the
 repository URL; the DOI lands in `CITATION.cff` and a release-tag
 note here once minted.
 
