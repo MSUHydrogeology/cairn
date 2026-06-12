@@ -5,7 +5,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 4.8
 **Date opened**: 2026-06-12
-**Status**: proposed
+**Status**: revised
 **Touches**: `docs/quickstart.md`, `README.md`, `examples/scientific-minimal/README.md`, `bootstrap/profiles/solo-greenfield.yml` (the doc-refresh); a new drift-gate (a `bootstrap/tests/` test, plus possibly a `check_cairn` hook).
 **Related**: the adopter-friction audit `dev/strategy/2026-06-12-claude-adopter-friction-audit.md` (this proposal implements its recommended package); the `doc-drift-prevention` module.
 **Plan review**: required(Internal) — multi-file doc change plus a new gate on a self-check surface; ratified at Decision.
@@ -202,9 +202,232 @@ change — narrower, but leaves the contradiction visible). Default
 recommendation: (b) for this proposal (docs-scoped), with (a) flagged as a
 follow-up if adopters keep tripping.
 
-## Review -- {{reviewer}} -- {{YYYY-MM-DD}}
+## Review -- Claude (Internal, sub-agent A: Part A correctness) -- 2026-06-12
 
-(awaiting Internal review — sub-agent panel)
+**Model**: Claude Opus 4.8 (fresh-context sub-agent). *Independence by time;
+same agent type — a cross-type External pass is still recommended.*
+
+**Steelman.** Central factual claims hold under verification: `--summary`
+for `solo-greenfield` resolves exactly six modules; a real install reports
+"Block slots requiring agent attention (21)"; all five named
+onboarding/skills artifacts install; the Python-floor, F6, and F1
+profile-comment claims are all confirmed. F1–F9 each get a faithful
+remediation; F3 is correctly surfaced for Decision.
+
+* **[A-R1] (required) The F2 `git add` fix is still incomplete — it misses
+  `.gitignore`.** Running the exact quickstart `git add AGENTS.md VENDOR.md
+  dev/ tools/ scripts/` leaves untracked `.agents/`, `docs/`, **and
+  `.gitignore`** (the scaffold seeds it). Adding only `.agents/ docs/`
+  still leaves the tree dirty at Step 6 — the very failure F2 is about. Add
+  `.gitignore`.
+* **[A-R2] The acceptance criterion "file list matches the install" is
+  ambiguous** — many more files install than the onboarding five the
+  refresh names (`scripts/foldback_export_scan.py`, `tools/prune_reflections.py`,
+  …). State explicitly that the refresh is scoped to the onboarding
+  subsystem and relies on the quickstart's existing "scaffold output is the
+  authoritative tally" hedge.
+* **[A-R3] Residual F9 drift unnamed:** the README `templates/` row omits
+  `templates/onboarding/`. The F9 fix should verify the row against
+  `ls templates/`.
+* **[A-R4] Secondary surfaces verified clean** (getting-started, on-ramp,
+  workflow-role carry no count/floor/file-list drift) — but all three share
+  the F6 link gap; the refresh only fixes README + quickstart. Extend the
+  scientific-minimal link to getting-started.
+* **[A-R5] "Touches" under-declares** (`.gitignore`).
+
+**Coverage.** *Covered:* 6 modules / 21 slots (verified live), the
+onboarding file subsystem, the stale quickstart claims, the incomplete
+`git add` (incl. `.gitignore`), the floor inconsistency, F6, secondary
+surfaces clean. *Not covered:* Part B mechanism (other lens); the F3
+decision; the doctrine/rate-limit classification.
+
+**Second-round recommendation: recommended**, with [A-R1] required and
+[A-R2]/[A-R3] should-fix before Decision. None are redesigns.
+
+## Review -- Claude (Internal, sub-agent B: Part B drift-gate) -- 2026-06-12
+
+**Model**: Claude Opus 4.8 (fresh-context sub-agent).
+
+**Steelman.** Part B is the doctrine-faithful instinct (guard a
+doc-mirrors-a-source number with a drift gate). The two design choices
+(declared marker, live derivation) are defensible, and both source surfaces
+exist (`--summary` roster; install slot count).
+
+* **[B-R1] The gate already exists, half-built, and is GREEN while the docs
+  are wrong.** `bootstrap/tests/test_quickstart_sequence.py:222` asserts the
+  scaffold prints "(21)"; the suite passes while `quickstart.md:171` says
+  "20." Part B is a *repair + extension* of an existing test, not greenfield
+  — the proposal must cite it and explain why it failed to catch F1.
+* **[B-R2] That test passes because it asserts against scaffold OUTPUT,
+  never the quickstart PROSE,** with a hardcoded `21`. The non-negotiable
+  invariant Part B must state: the asserted value is read *from the
+  quickstart file* and compared to the *live resolution*, with **no third
+  hardcoded literal**.
+* **[B-R4] (most consequential) Cairn already ships the exact mechanism the
+  proposal proposes to invent:** `scripts/verify_counts.py` +
+  `scripts/measurements.py` (a `verify:`-keyed count annotation, re-measured by
+  `check_cairn`). The real choice is **test vs. `verify_counts`**, not test
+  vs. snippet-sync (the proposal compared the wrong incumbent). Reuse it:
+  add resolver-backed measurement fns (`preset_module_count`,
+  `preset_slot_count`) + registry keys + annotate the two numbers. Less
+  net-new surface, inherits the security contract, fires under `check_cairn`,
+  and `verify_counts` already prints a crisp "doc says 20, measured 21 --
+  DRIFT" signal.
+* **[B-R3] Pin the derivations:** module count from `expand_preset(cfg)`;
+  slot count from the install-accounting path (not `--summary`, which exits
+  first).
+* **[B-R5/R7] Brittleness:** "four" is spelled out (digit markers won't
+  bind); slot count is install-path-only; stdout-scraping couples to a print
+  string — derive in-process. Convert spelled numbers to digits; pin the
+  profile.
+* **[B-R8] The file-list half of F1 is structurally outside any number-gate**
+  — name that follow-up, and consider having the quickstart *point at* the
+  authoritative tally rather than restate the file list (dodging the drift
+  entirely).
+
+**Coverage.** *Covered:* mechanism soundness, brittleness, the
+existing-mechanism comparison (`verify_counts`/`test_quickstart_sequence`),
+the scaffold surfaces, where it should live. *Low-confidence:* whether a
+resolver-driven `MEASURE_FNS` entry fits `measurements.py`'s security
+posture / soft cap (plan should check).
+
+**Second-round recommendation: recommended for a second round — not ready
+to ratify as written.** Re-ground Part B on `verify_counts`/`measurements`
++ reconcile with `test_quickstart_sequence.py`.
+
+## Review -- Claude (Internal, sub-agent C: adopter-trust + scope + F3) -- 2026-06-12
+
+**Model**: Claude Opus 4.8 (fresh-context sub-agent).
+
+**Steelman.** Correctly aimed and motivated; the cold-walk confirms the
+headline (four-vs-six, 20-vs-21). The secondary-finding instincts are right;
+Part B's *diagnosis* (recurrence) is the right deeper read; keeping A+B
+together is correct.
+
+* **[C-R1/R2] Part B reinvents `verify_counts`/`measurements` and re-treads
+  `test_quickstart_sequence.py`** (independent confirmation of B-R4/B-R1):
+  re-target onto the existing `verify:` mechanism; cite the existing test.
+* **[C-R3] A sixth drifted surface, missed by both audit and proposal:**
+  `bootstrap/BOOTSTRAP.md:109-110` lists only five default-on modules
+  (omits `documentation-plan`) — the canonical source the profile comment +
+  quickstart mirror. Add it to Part A or scope it out explicitly.
+* **[C-R5] "Uses Cairn's own doctrine on itself" is undercut** by proposing
+  bespoke tooling instead of the existing drift-gate apparatus.
+* **[C-R6] State the surface-audit boundary** (which surfaces were checked
+  clean vs. deliberately left).
+* **[C-R4 — decisive F3 call] Do (a) source-side, not the default (b)
+  docs-only.** Under (b) the terminal still tells the adopter to fill 21
+  slots + run a gate while the doc says "leave them" — for the skeptical
+  persona, the tool contradicting the page is *more* corrosive than the
+  count mismatch. **Third option (recommended):** make the scaffold's "Next
+  steps" output context-aware — either a trivial/quickstart-path detection
+  that prints a trimmed next-step, or reframe the block as "Next steps **for
+  a real adoption** (BOOTSTRAP.md Act II)" so it no longer reads as an
+  instruction for *this* run. (b) is acceptable only as a stopgap paired
+  with a committed (a) — shipping (b) alone is knowingly shipping the
+  predicted failure (the proposal's own "Signals wrong" predicts it).
+
+**Coverage.** *Covered:* the adopter outcome (verified targets), F1–F9
+weighting, scope (too-little: BOOTSTRAP.md; too-much: parallel tooling), the
+F3 call. *Low-confidence:* honest about other profiles, but silent on the
+BOOTSTRAP surface audit and the existing drift machinery.
+
+**Second-round recommendation: recommended — with required revisions.**
+Re-ground Part B; add BOOTSTRAP.md; resolve F3 source-side.
+
+## Response -- Claude (author) -- 2026-06-12
+
+**Model**: Claude Opus 4.8
+
+The panel converged, with independent confirmation, on two things the
+proposal got wrong, and caught a missed surface and an incomplete fix. I
+accept the large majority; the dispositions:
+
+* **[B-R4 / C-R1 — re-ground Part B on the existing `verify_counts` /
+  `measurements` mechanism] — accept.** This is the headline revision. Part
+  B was reinventing the exact in-tree apparatus that embodies the
+  doc-drift-prevention doctrine it claimed to dogfood. Revised Part B
+  annotates the two quickstart numbers with `verify:`-count markers and adds
+  resolver-backed measurement fns + registry keys, so the existing
+  `check_cairn` count lens fires — no bespoke test.
+* **[B-R1 / B-R2 / C-R2 — the gate exists, green-but-blind] — accept.** The
+  revision cites `test_quickstart_sequence.py:160,222`, states the gap
+  (scaffold-output gated, prose ungated, hardcoded literal), and forbids any
+  new hardcoded count.
+* **[B-R3 / B-R5 / B-R7 — pin derivations, no spelled numbers, in-process] —
+  accept**, folded into the revised Part B (module count from
+  `expand_preset`; slot count from the install-accounting path; convert
+  "four"→digit; the measurement fn checks `measurements.py`'s security
+  posture per B's low-confidence note).
+* **[A-R1 — `.gitignore` in the `git add` fix] — accept** (and **[A-R5]**
+  add it to Touches).
+* **[C-R3 — BOOTSTRAP.md:109-110 (5 modules)] — accept**; added to Part A's
+  refresh + Touches.
+* **[B-R8 — file-list outside a number-gate; point-at not restate] — accept
+  with modification.** Revised Part A has the quickstart *point at* the
+  scaffold's authoritative tally rather than re-enumerate the file list,
+  which dodges file-list drift entirely (and resolves A-R2's ambiguity); a
+  named follow-up covers any residual.
+* **[C-R4 / F3 — source-side fix] — accept with modification.** Resolve F3
+  at the terminal: reframe the scaffold's unconditional "Next steps" as
+  "Next steps **for a real adoption** (BOOTSTRAP.md Act II)" (the low-blast
+  reframe of option (iii)), so it stops contradicting the quickstart for the
+  trivial path. This adds `bootstrap/_scaffold/install.py` to Touches. A
+  context-aware `--quickstart` flag is noted as a richer follow-up.
+* **[A-R3 — README `templates/onboarding/` row] — accept** (verify against
+  `ls templates/`).
+* **[A-R4 — extend the scientific-minimal link to getting-started] —
+  accept.**
+* **[C-R6 / A-R2 — state the surface-audit boundary] — accept**: the
+  revision records which adopter surfaces were checked-and-clean
+  (getting-started, on-ramp, workflow-role) vs. fixed (quickstart, README,
+  example, profile, BOOTSTRAP).
+* **A/B split — keep together** (both panel members agreed); no change.
+
+## Revised proposal -- 2026-06-12
+
+The aim and Part A's targets stand; the revisions tighten Part A and
+re-ground Part B.
+
+1. **Part B re-grounds on Cairn's existing drift apparatus, not new
+   tooling.** Annotate the quickstart's `solo-greenfield` module count and
+   slot count with `verify:`-count markers (keys `preset_module_count` /
+   `preset_slot_count`); add two resolver-backed entries to
+   `scripts/measurements.py` (module count from `expand_preset(cfg)`; slot
+   count from the install-accounting path) under the existing closed
+   `MEASURE_FNS` allowlist + REGISTRY, so `check_cairn`'s `verify_counts`
+   lens re-measures and flags drift. Reconcile with
+   `test_quickstart_sequence.py` (it gates scaffold output; this gates the
+   prose↔runtime loop) — extend, don't duplicate. No hardcoded count
+   literal survives. The plan confirms the resolver-driven measurement fn
+   respects `measurements.py`'s security posture.
+2. **The quickstart points at the authoritative tally instead of
+   re-enumerating files** — dodging file-list drift entirely. The
+   `verify:`-keyed numbers (module/slot counts) are the guarded facts;
+   the file list becomes "the scaffold's install report is the authoritative
+   list" with the onboarding subsystem named once as orientation, not a
+   maintained enumeration.
+3. **Part A also refreshes `bootstrap/BOOTSTRAP.md:109-110`** (the
+   five-module default-on list → six) and fixes the `git add` line to
+   include `.gitignore`, `.agents/`, and `docs/`.
+4. **F3 is resolved source-side:** reframe `bootstrap/_scaffold/install.py`'s
+   post-install "Next steps" block as "Next steps **for a real adoption**"
+   so the terminal no longer contradicts the quickstart's trivial path.
+5. **README:** fix the `templates/` row (add `templates/onboarding/`), link
+   `examples/scientific-minimal/` (also from `docs/getting-started.md`).
+6. **Surface-audit boundary recorded:** fixed — `docs/quickstart.md`,
+   `README.md`, `examples/scientific-minimal/README.md`,
+   `bootstrap/profiles/solo-greenfield.yml`, `bootstrap/BOOTSTRAP.md`,
+   `bootstrap/_scaffold/install.py`; checked-and-clean —
+   `docs/getting-started.md`, `on-ramp/README.md`, `docs/workflow-role.md`
+   (no count/floor drift; the scientific-minimal link is the only addition).
+7. **Updated Touches:** the four original surfaces + `bootstrap/BOOTSTRAP.md`,
+   `bootstrap/_scaffold/install.py`, `scripts/measurements.py`,
+   `docs/getting-started.md`, and the seeded `.gitignore` interaction.
+
+**Named follow-up:** a richer context-aware scaffold next-steps (a
+`--quickstart` mode), and extending the `verify:` count guard to other
+adopter-facing counts beyond the quickstart, are deferred follow-ups.
 
 ## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
 
