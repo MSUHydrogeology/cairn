@@ -5,7 +5,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 4.8
 **Date opened**: 2026-06-12
-**Status**: revised
+**Status**: accepted
 **Touches**: `docs/quickstart.md`, `README.md`, `examples/scientific-minimal/README.md`, `bootstrap/profiles/solo-greenfield.yml` (the doc-refresh); a new drift-gate (a `bootstrap/tests/` test, plus possibly a `check_cairn` hook).
 **Related**: the adopter-friction audit `dev/strategy/2026-06-12-claude-adopter-friction-audit.md` (this proposal implements its recommended package); the `doc-drift-prevention` module.
 **Plan review**: required(Internal) — multi-file doc change plus a new gate on a self-check surface; ratified at Decision.
@@ -429,6 +429,18 @@ re-ground Part B.
 `--quickstart` mode), and extending the `verify:` count guard to other
 adopter-facing counts beyond the quickstart, are deferred follow-ups.
 
-## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
+## Decision -- Anthony Kendall (Maintainer) -- 2026-06-12
 
-(awaiting Maintainer Decision)
+**Accepted — open a plan and implement.**
+
+Maintainer authorization (verbatim, via the kickoff Decision prompt):
+
+> "Accept — open a plan + implement"
+
+Scribed by Claude at the Maintainer's explicit instruction. The Revised
+proposal is the implementation contract: Part B re-grounded on the existing
+`verify_counts`/`measurements` mechanism; the quickstart points at the
+authoritative tally rather than re-listing files; `BOOTSTRAP.md` +
+`.gitignore` added; F3 resolved source-side via the `install.py` "Next
+steps" reframe. Non-trivial + multi-file → a plan sequences the work; this
+proposal archives at plan-open.
