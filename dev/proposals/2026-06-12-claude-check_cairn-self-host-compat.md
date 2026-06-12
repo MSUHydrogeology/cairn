@@ -8,7 +8,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 4.8
 **Date opened**: 2026-06-12
-**Status**: revised
+**Status**: accepted
 **Touches**: `templates/modules/default-on/claim_check.py` (the shipped claim-path checker), `scripts/check_cairn.py` (Cairn's self-check wiring), and a handful of product-prose files that cite `dev/` paths (`CHANGELOG.md`, `doctrine/*`, `templates/*`, `examples/*/README.md`, `bootstrap/*`, `docs/quickstart.md`).
 **Related**: the Cairn self-host adoption (2026-06-12, `dev/.cairn/profile.yml`); BOOTSTRAP Act II-5 (R-F gate); the existing `_CAIRN_INTERNAL_PREFIXES` loop-fidelity gate in `scripts/check_cairn.py` (the mirror-image precedent).
 **Plan review**: required(Internal) — touches the shipped claim-check (a protected install contract); ratified at Decision.
@@ -346,7 +346,22 @@ drops:
   Folded into the Revised proposal §2 and the verification plan, with an
   explicit `dev/intents.jsonl.bak` non-exemption edge-case test.
 
-## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
+## Decision -- Anthony Kendall (Maintainer) -- 2026-06-12
 
-(awaiting Maintainer Decision)
+**Accepted — implement directly (no formal plan).**
+
+Maintainer authorization (verbatim, via the kickoff Decision prompt):
+
+> "Accept — implement directly"
+
+Scribed by Claude at the Maintainer's explicit instruction. The revised
+proposal is the implementation contract: the three-mechanism mapping
+(shipped `_DEFAULT_EXEMPT_PATHS` for framework paths; in-template
+`claim-check-allow` directives for illustrative paths so they travel with
+adopted templates; a Cairn-only `CHANGELOG.md` directive for history) plus
+the `/`-terminated, `dev/.cairn/`-scoped prefix-match safety constraint
+(R3). Per the Maintainer's direction the fix lands directly in a couple of
+well-scoped commits rather than via a plan; this proposal archives at the
+implementing commit.
+
 
