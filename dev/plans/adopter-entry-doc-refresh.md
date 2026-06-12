@@ -85,9 +85,12 @@ D. install.py Next-steps (F3) -- bootstrap/_scaffold/install.py: reframe "Next s
   disposable repo: every stated number + the `git add` line match the live
   install; `git status` clean after the documented commit; the scaffold's
   "Next steps" no longer contradicts the page.
-* **Docs** — `python scripts/check_cairn.py` green over the refreshed docs
-  (incl. the new `verify:` annotations resolving against the live
-  measurements).
+* **Docs** — `python scripts/check_cairn.py` green over the refreshed docs.
+  (Implementation note: the drift-gate landed as a `bootstrap/tests/`
+  extension, **not** a `verify:`/measurements annotation — so it runs under
+  pytest, not the `check_cairn` count lens. See the Code review's deviation
+  note for the rationale; this criterion is corrected from its original
+  "incl. the new `verify:` annotations" wording, which no longer applies.)
 
 ### Author-accounting
 
@@ -111,10 +114,50 @@ python scripts/check_cairn.py
 # cold-walk: scaffold solo-greenfield into a tmp repo; diff documented numbers/files vs actual
 ```
 
-## Code review
+## Code review -- Claude (sub-agent, fresh context, not the implementer) -- 2026-06-12
 
-*Filled in after implementation commits land.* Floor: not the implementing
-agent.
+**Verdict: Accept-with-followups** of commit `63db56f`.
+
+**Falsification ledger (highlights).** The gate was proven *non-vacuous* by
+mutation: editing the quickstart's `**6** modules` → `**5**` and `**21
+…slots**` → `**20…**` each made the test FAIL with a clear message
+(reverted). The `-> modules:` info line is on **stderr** and the slot tally
+on **stdout** — the test's `result.stdout + result.stderr` combine handles
+it; `--summary` emits no roster line, so the gate correctly runs on the
+install path. The F2 `git add` was cold-walked exhaustively: every
+scaffold-written path (`.agents/ .gitignore AGENTS.md VENDOR.md dev/ docs/
+scripts/ tools/`) is captured; only the adopter-authored `profile.yml`
+stays untracked (correct). The 2 `test_ast_attest` failures were confirmed
+**pre-existing** at the parent commit `0d24fec`; this commit's `install.py`
+edit only moves `print_report`'s hash (no new drifting function, no new
+failure). Verification re-run: `pytest test_quickstart_sequence.py` 8
+passed; `pytest bootstrap/tests` 1404 passed / 2 pre-existing ast_attest;
+`check_cairn` OK; cold-walk doc==terminal (6/21/git-add/Next-steps).
+
+**The deviation (recorded here per the review's required follow-up #1).**
+The accepted proposal's Part B contracted the `verify_counts`/`measurements`
+mechanism (plan A1/A2 + B1's `<!-- verify: -->` annotations). The
+implementation instead **extended `bootstrap/tests/test_quickstart_sequence.py`**
+to read the quickstart's two prose numbers and assert them against a live
+`solo-greenfield` install. This is *faithful to the proposal's intent* (the
+B-R2 non-negotiable — read-from-doc, compare-to-live, no third hardcoded
+literal — is fully honored, and the prose↔runtime loop the old green-but-blind
+test left open is closed) but is a *genuine departure from the contract's
+chosen means*. Engineering rationale: `MEASURE_FNS` is a closed allowlist of
+`(root, target)` file-path functions; the slot count is only produced by a
+full install (not a bounded file scan), so a `measurements.py` fn for it
+would have to *run an install* and would widen that module's trust surface —
+which the proposal's own author-accounting and the Internal panel's
+low-confidence note both flagged. The pytest extension avoids that
+surface-widening. **Cost:** the counts are now guarded in the bootstrap
+pytest run, not under `check_cairn`'s docs-layer lens.
+
+**Required follow-ups (review):** (1) record this deviation in the plan +
+correct the now-false acceptance criterion — *done above + here*; (2) a
+Maintainer judgment call: accept the narrower pytest-only guard, or also
+wire the count under `check_cairn` — *surfaced to the Maintainer*.
+
+No correctness defect; no new bug. The shipped gate works.
 
 ## Lasting-truth migration
 
