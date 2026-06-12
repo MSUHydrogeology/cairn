@@ -571,10 +571,13 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         InstallSpec("team-gated/model-selection.md",
                     "dev/modules/model-selection.md"),
         # Fold 5 (foldback-drain-tooling): stub mapping file + fidelity checker.
-        # The stub is seeded at install time with no "FILL ME" placeholder so a
-        # fresh scaffold passes the gate; the gate fires only when an adopter
-        # explicitly marks rows "FILL ME" to track in-progress work (seed-vs-gate
-        # sequencing: install is clean; gate flags an unfinished fill).
+        # The stub is seeded carrying a "FILL ME" placeholder, so the gate is
+        # **red on a fresh, unfilled mapping** -- forcing the adopter to record
+        # their real tier->model assignments (the silent-empty install is the
+        # failure this module prevents; the install itself is never blocked).
+        # An *interactive* install captures the bindings up front so the gate
+        # ships green (foldback #2: capture_model_selection_mapping); a
+        # non-interactive / CI install leaves the FILL ME stub as the fallback.
         # The checker is installed verbatim so adopters can invoke it directly
         # (`python scripts/check_model_selection.py`) or wire it into their CI.
         InstallSpec(

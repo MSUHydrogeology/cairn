@@ -76,7 +76,9 @@ from .lockfile import _BASE_CACHE_REL, _LOCKFILE_REL
 from .install import (
     InstallResult,
     _FORGE_REFERENCE_DIRS,
+    _MODEL_SELECTION_MAPPING_REL,
     _ONBOARDING_PRESETS,
+    capture_model_selection_mapping,
     create_dev_tree,
     fan_out_skills,
     format_manifest,
@@ -599,6 +601,25 @@ def main(argv: list[str] | None = None) -> int:
                 f"  [slot-content-{reason}] {target_rel} > {slot_name} "
                 f"(fidelity check)"
             )
+
+    # model-selection interactive capture (foldback #2): when the module is
+    # selected and the install is interactive, capture the adopter's
+    # tier -> model bindings now so the fidelity gate ships green; a
+    # non-interactive / CI install keeps the FILL ME stub (the gate then flags
+    # it until filled by hand). Runs before the lockfile write so the recorded
+    # mapping is the filled one. Never blocks the install.
+    if "model-selection" in modules:
+        try:
+            wrote = capture_model_selection_mapping(
+                target, interactive=not non_interactive)
+        except KeyboardInterrupt:
+            wrote = False
+            print("\n  model-selection: capture interrupted; FILL ME stub kept.",
+                  file=sys.stderr)
+        if not wrote and not non_interactive:
+            print("  model-selection: kept the FILL ME stub -- fill "
+                  f"{_MODEL_SELECTION_MAPPING_REL} and run "
+                  "`python scripts/check_model_selection.py`.", file=sys.stderr)
 
     # Seed the lifecycle skills' machine-state .gitignore entries
     # (unconditional -- the skills always install): the untracked interpreter

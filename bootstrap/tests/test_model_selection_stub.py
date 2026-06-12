@@ -29,6 +29,9 @@ _STUB_SRC = _TEAM_GATED / "model_selection_mapping_stub.yml"
 
 sys.path.insert(0, str(CAIRN_ROOT))
 from bootstrap.scaffold import _MODULE_MAPPINGS, main as scaffold_main  # noqa: E402
+from bootstrap._scaffold.install import (  # noqa: E402
+    capture_model_selection_mapping,
+)
 
 pytestmark = pytest.mark.skipif(
     not TEMPLATES_ROOT.exists(), reason="Cairn templates not available"
@@ -322,3 +325,82 @@ class TestStructuralValidity:
         err = capsys.readouterr().err
         assert "structural validation skipped" in err
         assert "PyYAML not installed" in err
+
+
+# ---------------------------------------------------------------------------
+# Interactive capture (foldback #2): fill the stub at install so the gate ships
+# green; non-interactive / CI keeps the FILL ME stub fallback.
+# ---------------------------------------------------------------------------
+
+def _seed_stub(target: Path) -> Path:
+    """Seed the FILL-ME stub at its install destination under *target*."""
+    mapping = target / "dev" / ".cairn" / "model-selection-mapping.yml"
+    mapping.parent.mkdir(parents=True, exist_ok=True)
+    mapping.write_text(_STUB_SRC.read_text(encoding="utf-8"), encoding="utf-8")
+    return mapping
+
+
+class TestInteractiveCapture:
+    def test_capture_fills_stub_and_greens_gate(self, tmp_path: Path) -> None:
+        checker = _load_checker()
+        mapping = _seed_stub(tmp_path)
+        # high tier filled; medium + low skipped (blank model).
+        answers = iter(["vendor-a/flagship", "2025-06-01", "strategy",
+                        "bench Jun 2025", "", ""])
+        wrote = capture_model_selection_mapping(
+            tmp_path, prompt=lambda _p: next(answers), interactive=True,
+            today="2025-06-12")
+        assert wrote is True
+        assert "FILL ME" not in mapping.read_text()
+        assert checker.check_mapping(mapping, quiet=True) == 0, (
+            "captured mapping must pass the fidelity gate (green)"
+        )
+
+    def test_non_interactive_keeps_stub(self, tmp_path: Path) -> None:
+        mapping = _seed_stub(tmp_path)
+        assert capture_model_selection_mapping(
+            tmp_path, interactive=False) is False
+        assert "FILL ME" in mapping.read_text(), "non-interactive must keep stub"
+
+    def test_idempotent_on_already_filled(self, tmp_path: Path) -> None:
+        mapping = _seed_stub(tmp_path)
+        answers = iter(["vendor/x", "2025-01-01", "general", "src", "", ""])
+        assert capture_model_selection_mapping(
+            tmp_path, prompt=lambda _p: next(answers), interactive=True) is True
+        before = mapping.read_text()
+        # Second run sees no FILL ME -> no-op, never clobbers a real mapping.
+        assert capture_model_selection_mapping(
+            tmp_path, prompt=lambda _p: "unused", interactive=True) is False
+        assert mapping.read_text() == before
+
+    def test_skip_every_tier_keeps_stub(self, tmp_path: Path) -> None:
+        mapping = _seed_stub(tmp_path)
+        assert capture_model_selection_mapping(
+            tmp_path, prompt=lambda _p: "", interactive=True) is False
+        assert "FILL ME" in mapping.read_text()
+
+    def test_missing_stub_is_noop(self, tmp_path: Path) -> None:
+        # No stub seeded -- capture must no-op (never create one from nothing).
+        assert capture_model_selection_mapping(
+            tmp_path, prompt=lambda _p: "x", interactive=True) is False
+
+    def test_special_chars_quoted_and_valid(self, tmp_path: Path) -> None:
+        """A model / source carrying YAML-special characters (':') is
+        double-quoted, so the written mapping still parses + passes the
+        structural gate."""
+        checker = _load_checker()
+        mapping = _seed_stub(tmp_path)
+        answers = iter(["vendor:flagship-v2", "2025-06-01", "strategy: review",
+                        "price: $15/1M", "", ""])
+        wrote = capture_model_selection_mapping(
+            tmp_path, prompt=lambda _p: next(answers), interactive=True,
+            today="2025-06-12")
+        assert wrote is True
+        assert checker.check_mapping(mapping, quiet=True) == 0
+
+    def test_full_noninteractive_scaffold_keeps_stub(self, tmp_path: Path) -> None:
+        """The CLI wiring: a full scaffold install in a non-TTY test run leaves
+        the FILL ME stub (the gate then flags it -- R1 fallback)."""
+        assert _scaffold(tmp_path) == 0
+        mapping = tmp_path / "dev" / ".cairn" / "model-selection-mapping.yml"
+        assert mapping.is_file() and "FILL ME" in mapping.read_text()

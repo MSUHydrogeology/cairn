@@ -23,7 +23,7 @@ from __future__ import annotations
 import re
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from .config import (
     _ALWAYS_ON_MAPPINGS,
@@ -620,6 +620,105 @@ def install_optional(
             _install_one(src, dst, tokens, target, dry_run=dry_run, force=force)
         )
     return results
+
+
+# ---------------------------------------------------------------------------
+# model-selection interactive capture (foldback #2)
+# ---------------------------------------------------------------------------
+
+#: The seeded adopter-local mapping the model-selection module installs.
+_MODEL_SELECTION_MAPPING_REL = "dev/.cairn/model-selection-mapping.yml"
+#: The capability tiers prompted for, in order.
+_MODEL_SELECTION_TIERS = ("high", "medium", "low")
+
+
+def _yaml_dq(value: str) -> str:
+    """A YAML double-quoted scalar for adopter free text (a ``:`` or ``#`` in a
+    model name / source would otherwise break the bare-scalar emit)."""
+    return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def capture_model_selection_mapping(
+    target: Path,
+    *,
+    prompt: Callable[[str], str] = input,
+    interactive: bool = True,
+    today: str | None = None,
+) -> bool:
+    """Interactively fill the seeded model-selection mapping stub at install /
+    ``--adopt-module`` time, so the fidelity gate ships **green** instead of
+    red-on-``FILL ME``.
+
+    Returns ``True`` when a filled mapping was written; ``False`` when the
+    ``FILL ME`` stub is left in place -- the non-interactive / CI fallback (the
+    gate then flags it until filled by hand). It leaves the stub, never
+    clobbers, when: the install is non-interactive (``interactive=False``); the
+    stub is absent; the mapping is **already filled** (idempotent); or the
+    adopter skips every tier. Writing is plain string templating -- no PyYAML
+    dependency, keeping the module's zero-hard-dep property.
+    """
+    mapping = target / _MODEL_SELECTION_MAPPING_REL
+    if not interactive or not mapping.is_file():
+        return False
+    if "FILL ME" not in mapping.read_text(encoding="utf-8"):
+        return False  # already filled -- never clobber a real mapping
+    if today is None:
+        import datetime
+        today = datetime.date.today().isoformat()
+
+    print(
+        "\nmodel-selection: record your tier -> model assignments now (the "
+        "fidelity gate\nstays red until the mapping is filled). Press Enter at "
+        "a tier's model prompt\nto skip that tier; skip every tier to keep the "
+        "FILL ME stub.",
+    )
+
+    def _ask(label: str, default: str) -> str:
+        try:
+            value = prompt(f"    {label} [{default}]: ").strip()
+        except EOFError:
+            return default
+        return value or default
+
+    rows: list[dict[str, str]] = []
+    for tier in _MODEL_SELECTION_TIERS:
+        try:
+            model = prompt(f"  {tier} tier -- model (blank to skip): ").strip()
+        except EOFError:
+            break
+        if not model:
+            continue
+        rows.append({
+            "tier": tier,
+            "model": model,
+            "date_verified": _ask("date_verified", today),
+            "task_family": _ask("task_family", "general"),
+            "source": _ask("source", "recorded at install"),
+        })
+    if not rows:
+        return False  # adopter skipped every tier -- keep the stub
+
+    lines = [
+        "# model-selection tier-to-model mapping (Cairn model-selection "
+        "module).",
+        "# Captured interactively at install; edit freely. Re-verify with:",
+        "#   python scripts/check_model_selection.py",
+        "# Adopter-local: do not commit vendor names to a shared Cairn repo.",
+        "",
+        "mapping:",
+    ]
+    for r in rows:
+        lines += [
+            f"  - tier: {r['tier']}",
+            f"    model: {_yaml_dq(r['model'])}",
+            f"    date_verified: {_yaml_dq(r['date_verified'])}",
+            f"    task_family: {_yaml_dq(r['task_family'])}",
+            f"    source: {_yaml_dq(r['source'])}",
+        ]
+    mapping.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"  model-selection: wrote {len(rows)} tier mapping(s) to "
+          f"{_MODEL_SELECTION_MAPPING_REL}.")
+    return True
 
 
 # ---------------------------------------------------------------------------
