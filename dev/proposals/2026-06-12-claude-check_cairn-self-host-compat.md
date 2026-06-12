@@ -8,7 +8,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 4.8
 **Date opened**: 2026-06-12
-**Status**: proposed
+**Status**: revised
 **Touches**: `templates/modules/default-on/claim_check.py` (the shipped claim-path checker), `scripts/check_cairn.py` (Cairn's self-check wiring), and a handful of product-prose files that cite `dev/` paths (`CHANGELOG.md`, `doctrine/*`, `templates/*`, `examples/*/README.md`, `bootstrap/*`, `docs/quickstart.md`).
 **Related**: the Cairn self-host adoption (2026-06-12, `dev/.cairn/profile.yml`); BOOTSTRAP Act II-5 (R-F gate); the existing `_CAIRN_INTERNAL_PREFIXES` loop-fidelity gate in `scripts/check_cairn.py` (the mirror-image precedent).
 **Plan review**: required(Internal) — touches the shipped claim-check (a protected install contract); ratified at Decision.
@@ -282,9 +282,69 @@ The proposal correctly identifies that adopting Cairn within Cairn has introduce
 **Second-round recommendation: recommended.**
 The proposal is sound, and the three-mechanism approach is the correct architectural choice. The Maintainer should approve the proposal once the prefix-matching safety detail (above) is integrated.
 
-## Response -- {{author}} -- {{YYYY-MM-DD}}
+## Revised proposal -- 2026-06-12
 
-(awaiting Author Response)
+The two reviews converge on the three-mechanism approach; two refinements
+land, and nothing else in the original Proposal changes.
+
+1. **The layering rationale is now load-bearing (External E-R1).** The
+   three mechanisms are not merely convenient — each lives at the layer its
+   exemption must live at, and that is *why* the asymmetry with the
+   `_CAIRN_INTERNAL_PREFIXES` gate is correct rather than an oversight:
+   * `_DEFAULT_EXEMPT_PATHS` (shipped code) for the framework paths
+     **every** adopter has;
+   * in-template `claim-check-allow` directives for illustrative paths, **so
+     the exemption travels with the adopted template** — a Cairn-only
+     code-level prefix filter would leave every adopter facing dangling
+     claims on those same templates when they run their own `check_cairn`;
+   * a Cairn-only `CHANGELOG.md` directive for Cairn's own history, which
+     should never ship in a tool.
+
+2. **Prefix-match safety constraint (Internal I-R3 / External E-R3).** The
+   `_DEFAULT_EXEMPT_PATHS` prefix matching is `/`-terminated and subtree-
+   scoped. A directory entry is stored with a trailing `/` and matches a
+   token only when `token == p.rstrip('/')` **or**
+   `token.startswith(p.rstrip('/') + '/')` — so `dev/intents.jsonl` still
+   exempts exactly itself and `dev/intents.jsonl.bak` is **not** silently
+   exempted. The directory-prefix entries are limited to the
+   `dev/.cairn/` machine-state subtree plus the named `dev/.cairn-upgrade/`
+   — never `dev/` broadly. The plan adds an explicit edge-case test for the
+   `.bak` non-exemption.
+
+## Response -- Claude (author) -- 2026-06-12
+
+**Model**: Claude Opus 4.8
+
+Both reviews recommend approval and converge on the three-mechanism
+approach; the External (Gemini) read resolved the one open fork (R1) with
+an argument the proposal had not made explicit — that the Category-C
+directives must travel with adopted templates. Dispositions, no silent
+drops:
+
+**Internal review (Claude, same-session):**
+* **[I-R1] unified prefix-set alternative — reject.** The External review
+  is decisive: a single code-level prefix-set in `scripts/check_cairn.py`
+  covers only Cairn's own self-check, but the Category-C exemptions live in
+  template files that get *adopted*, so a Cairn-only filter would leave
+  every adopter with dangling claims on the same templates. The asymmetry
+  with `_CAIRN_INTERNAL_PREFIXES` is justified by the layering.
+* **[I-R2] directive sprawl / glob-specificity — accept.** Recorded as an
+  accepted maintenance cost; the glob-specificity rule stays strict (both
+  reviewers agree relaxing it would blind the gate).
+* **[I-R3] `_DEFAULT_EXEMPT_PATHS` prefix breadth — accept with modification.**
+  Scoped to the `dev/.cairn/` machine-state subtree (+ named entries), not
+  `dev/` broadly, and `/`-terminated — see the Revised proposal.
+* **[I-R4] CHANGELOG maintenance — accept.** Named as expected cost.
+
+**External review (Gemini via Antigravity, different-agent-type):**
+* **[E-R1] three mechanisms are structurally correct — accept.** Adopted as
+  the load-bearing rationale (Revised proposal §1); this is the argument
+  that settles the design fork.
+* **[E-R2] keep glob-specificity strict — accept.** No relaxation of
+  `allow_glob_error`; spelling out paths is the necessary cost.
+* **[E-R3] prefix-match safety (`/`-terminated) — accept with modification.**
+  Folded into the Revised proposal §2 and the verification plan, with an
+  explicit `dev/intents.jsonl.bak` non-exemption edge-case test.
 
 ## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
 
