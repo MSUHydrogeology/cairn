@@ -1479,3 +1479,105 @@ class TestManifestHomeAndSelfHeal:
         dirty = s._dirty_tracked_paths(tmp_path)
         assert dirty is not None
         assert "dev/.cairn/profile.yml" not in dirty   # untracked -> excluded
+
+
+def _git_commit_install(tmp_path: Path) -> None:
+    """Make `tmp_path` a committed git work tree so the #56 dirty-tree guard
+    (which keys on `git status --porcelain`) is live."""
+    import subprocess
+    for c in (["init", "-q"], ["config", "user.email", "t@t"],
+              ["config", "user.name", "t"], ["add", "-A"],
+              ["commit", "-q", "-m", "install"]):
+        subprocess.run(["git", "-C", str(tmp_path), *c],
+                       check=True, capture_output=True, text=True)
+
+
+@pytest.mark.skipif(shutil.which("git") is None, reason="git not available")
+class TestFinalizeDirtyTreeGuard:
+    """#56 dirty-tree guard, finalize arm: an *unscoped* whole-tree
+    ``--finalize`` on a dirty tree advances the lockfile hash of every drifted
+    tracked file -- including a concurrent session's uncommitted WIP -- so it
+    refuses unless scoped (``--finalize <path>...``) or forced (``--force``).
+    Witnessed by the modflow_tools reference adopter (a single-file re-finalize
+    swept a concurrent session's facade-migration WIP)."""
+
+    def test_unscoped_finalize_refuses_on_dirty_tree(self, tmp_path: Path) -> None:
+        assert _install(tmp_path) == 0
+        _git_commit_install(tmp_path)
+        ag = tmp_path / "AGENTS.md"
+        ag.write_text(ag.read_text() + "\n<!-- concurrent WIP -->\n")  # dirty
+        lock_before = s.read_lockfile(tmp_path)
+        rc = s.main(["upgrade", "--finalize", "--target", str(tmp_path),
+                     "--cairn-root", str(CAIRN_ROOT)])
+        assert rc == 1, "unscoped finalize must refuse on a dirty tree"
+        assert s.read_lockfile(tmp_path) == lock_before, \
+            "a refused finalize must not write the lockfile"
+
+    def test_force_overrides_finalize_dirty_tree_guard(self, tmp_path: Path) -> None:
+        assert _install(tmp_path) == 0
+        _git_commit_install(tmp_path)
+        ag = tmp_path / "AGENTS.md"
+        ag.write_text(ag.read_text() + "\n<!-- WIP -->\n")
+        rc = s.main(["upgrade", "--finalize", "--force", "--target", str(tmp_path),
+                     "--cairn-root", str(CAIRN_ROOT)])
+        assert rc == 0, "--force must override the finalize dirty-tree guard"
+
+    def test_scoped_finalize_touches_only_named_records(self, tmp_path: Path) -> None:
+        """The anti-sweep guarantee: ``--finalize AGENTS.md`` advances only the
+        named record's hash, leaving a concurrent session's drifted file (a
+        verbatim script edited in parallel) untouched in the lockfile."""
+        assert _install(tmp_path) == 0
+        _git_commit_install(tmp_path)
+        lock0 = s.read_lockfile(tmp_path)
+        wip = next(r for r in lock0["files"] if r.get("verbatim"))  # concurrent WIP
+        wip_dst = wip["dst"]
+        assert wip_dst != "AGENTS.md"
+        # Both files drift: AGENTS.md (mine) + the verbatim script (the other agent).
+        ag = tmp_path / "AGENTS.md"
+        ag.write_text(ag.read_text() + "\n<!-- mine -->\n")
+        wipf = tmp_path / wip_dst
+        wipf.write_text(wipf.read_text() + "\n# concurrent WIP\n")
+        # Scope the finalize to AGENTS.md only.
+        rc = s.main(["upgrade", "--finalize", "AGENTS.md", "--target",
+                     str(tmp_path), "--cairn-root", str(CAIRN_ROOT)])
+        assert rc == 0
+        lock1 = s.read_lockfile(tmp_path)
+        rec_ag = next(r for r in lock1["files"] if r["dst"] == "AGENTS.md")
+        rec_wip = next(r for r in lock1["files"] if r["dst"] == wip_dst)
+        # AGENTS.md advanced to its on-disk content...
+        assert rec_ag["hash"] == "sha256:" + s._sha256_hex(ag.read_bytes())
+        # ...but the concurrent WIP's hash is UNCHANGED (not swept).
+        assert rec_wip["hash"] == wip["hash"], \
+            "scoped finalize must not advance the concurrent file's hash"
+        assert rec_wip["hash"] != "sha256:" + s._sha256_hex(wipf.read_bytes())
+
+    def test_scoped_finalize_unknown_path_fails_closed(self, tmp_path: Path) -> None:
+        assert _install(tmp_path) == 0
+        rc = s.main(["upgrade", "--finalize", "does/not/exist.md", "--target",
+                     str(tmp_path), "--cairn-root", str(CAIRN_ROOT)])
+        assert rc == 1, "a named path not in the lockfile must fail closed"
+
+    def test_positional_path_without_finalize_rejected(self, tmp_path: Path) -> None:
+        assert _install(tmp_path) == 0
+        rc = s.main(["upgrade", "AGENTS.md", "--target", str(tmp_path),
+                     "--cairn-root", str(CAIRN_ROOT)])
+        assert rc == 2, "positional PATH is only valid with --finalize"
+
+    def test_scoped_finalize_renamed_wrapper_by_recorded_name(
+        self, tmp_path: Path
+    ) -> None:
+        """External review P2: a renamed vendor wrapper can be scoped by its
+        lockfile-recorded name (VENDOR.md) even though it resolves on disk to
+        CLAUDE.md -- the recorded name must not fail closed once it resolves.
+        (Scoped finalize bypasses the dirty-tree guard, so no git tree needed.)"""
+        assert _install(tmp_path) == 0
+        (tmp_path / "VENDOR.md").rename(tmp_path / "CLAUDE.md")  # adopter rename
+        claude = tmp_path / "CLAUDE.md"
+        claude.write_text(claude.read_text() + "\n<!-- adopter edit -->\n")
+        rc = s.main(["upgrade", "--finalize", "VENDOR.md", "--target",
+                     str(tmp_path), "--cairn-root", str(CAIRN_ROOT)])
+        assert rc == 0, "scoping by the recorded VENDOR.md name must resolve"
+        lock = s.read_lockfile(tmp_path)
+        wrapper = next(r for r in lock["files"] if r["src"] == "core/VENDOR.md")
+        assert wrapper["dst"] == "CLAUDE.md"
+        assert wrapper["hash"] == "sha256:" + s._sha256_hex(claude.read_bytes())

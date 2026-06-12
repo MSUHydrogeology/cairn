@@ -1589,14 +1589,30 @@ def _cmd_adopt_collisions(
     return 0
 
 
-def _cmd_finalize_lockfile(target: Path, lock: dict[str, Any]) -> int:
-    """`upgrade --finalize`: advance each record's ``hash`` to the adopter's
-    *committed on-disk* content, so ``verify_integrity`` attests the customized
-    tree the adopter actually ships -- filled slots, the ``VENDOR.md ->
-    CLAUDE.md`` wrapper rename, project-owned forks -- rather than the pristine
-    clean-install state no real adopter keeps.  This is the step that makes a
-    *customized* install verifiable (R10): without it, every slot fill and
-    wrapper rename reads as integrity tampering.
+def _cmd_finalize_lockfile(
+    target: Path,
+    lock: dict[str, Any],
+    only: set[str] | None = None,
+    force: bool = False,
+) -> int:
+    """`upgrade --finalize [PATH ...]`: advance each record's ``hash`` to the
+    adopter's *committed on-disk* content, so ``verify_integrity`` attests the
+    customized tree the adopter actually ships -- filled slots, the ``VENDOR.md
+    -> CLAUDE.md`` wrapper rename, project-owned forks -- rather than the
+    pristine clean-install state no real adopter keeps.  This is the step that
+    makes a *customized* install verifiable (R10): without it, every slot fill
+    and wrapper rename reads as integrity tampering.
+
+    ``only`` scopes the write-set: when given (the ``--finalize <path> ...``
+    form) **only** those records are re-recorded and every other drifted file is
+    left untouched -- the surgical finalize for one file (e.g. after a
+    single-file pull-down) that will not sweep a concurrent session's WIP into
+    the lockfile.  When ``only`` is ``None`` (the whole-tree form) the **#56
+    dirty-tree guard** refuses on a tree carrying tracked-uncommitted changes
+    unless ``force`` (``--force``): an unscoped finalize on a dirty tree
+    silently advances the hash of *every* drifted tracked file -- including
+    another agent's uncommitted edits -- blessing un-reviewed content into the
+    integrity record.
 
     The upgrade ancestor is left untouched: ``base_cache`` / ``base_hash`` (the
     clean-install baseline the 3-way merge + ``classify_verbatim`` fork
@@ -1605,22 +1621,57 @@ def _cmd_finalize_lockfile(target: Path, lock: dict[str, Any]) -> int:
     *before* ``hash`` is advanced, so fork detection survives.  A renamed vendor
     wrapper's record ``dst`` is resolved to the on-disk wrapper (#45) so
     integrity checks the real file, not the absent ``VENDOR.md``.  Idempotent.
-    Fail-closed: a tracked file missing on disk aborts (never silently drop a
-    file from the integrity set)."""
+    Fail-closed: a tracked file missing on disk -- or a named ``only`` path that
+    matches no record -- aborts (never silently drop a file, or silently
+    no-op)."""
     files = lock.get("files") or []
     mapped = {r.get("dst") for r in files}
+
+    # #56 dirty-tree guard, finalize arm: an unscoped whole-tree finalize on a
+    # dirty tree advances the hash of *every* drifted tracked file -- including a
+    # concurrent session's uncommitted WIP -- blessing un-reviewed content into
+    # the integrity record. Require an explicit write-set (`--finalize <path>
+    # ...`) or --force. Fail-soft when the tree is unreadable (guard -> None).
+    if only is None and not force:
+        dirty = _dirty_tracked_paths(target)
+        if dirty:
+            print(
+                "error: refusing --finalize (#56 dirty-tree guard): the work "
+                f"tree has {len(dirty)} tracked file(s) with uncommitted "
+                "changes, and an unscoped finalize would advance the lockfile "
+                "hash for all of them (including a concurrent session's WIP):\n"
+                "  " + "\n  ".join(sorted(dirty)) +
+                "\n  re-run scoped to the file(s) you mean to finalize "
+                "(`--finalize <path> ...`), or pass --force to finalize the "
+                "whole tree anyway.", file=sys.stderr)
+            return 1
+
     changed = 0
     missing: list[str] = []
+    matched: set[str] = set()
     for rec in files:
         dst_rel = rec.get("dst")
         if not isinstance(dst_rel, str) or not dst_rel:
             continue
+        orig_dst = dst_rel  # lockfile-recorded dst, pre rename-resolution
         # Resolve a renamed vendor wrapper: the lockfile records VENDOR.md but
         # the adopter renamed it (CLAUDE.md, ...).
         if rec.get("src") == "core/VENDOR.md" and not (target / dst_rel).is_file():
             resolved = _resolve_vendor_wrapper(target, mapped)
             if resolved is not None:
                 rec["dst"] = dst_rel = resolved
+        # Scoped finalize: skip records outside the named write-set. A scope name
+        # may be EITHER the on-disk dst or the lockfile-recorded one -- they
+        # differ for a renamed vendor wrapper (#45: lock records VENDOR.md, disk
+        # has CLAUDE.md) -- so match on both and record each supplied name as
+        # matched, so a name that legitimately resolved does not then fail closed.
+        if only is not None:
+            if dst_rel not in only and orig_dst not in only:
+                continue
+            if dst_rel in only:
+                matched.add(dst_rel)
+            if orig_dst in only:
+                matched.add(orig_dst)
         dst_abs = target / dst_rel
         if not dst_abs.is_file():
             missing.append(dst_rel)
@@ -1645,9 +1696,19 @@ def _cmd_finalize_lockfile(target: Path, lock: dict[str, Any]) -> int:
               f"finalize (fix or re-install first):\n  " + "\n  ".join(missing),
               file=sys.stderr)
         return 1
+    # Scoped fail-closed: a named path that matched no lockfile record is a typo
+    # or a wrong path, never a silent no-op.
+    if only is not None:
+        unknown = sorted(only - matched)
+        if unknown:
+            print("error: --finalize: path(s) not tracked in the lockfile -- "
+                  "nothing to finalize:\n  " + "\n  ".join(unknown),
+                  file=sys.stderr)
+            return 1
     (target / _LOCKFILE_REL).parent.mkdir(parents=True, exist_ok=True)
     (target / _LOCKFILE_REL).write_text(_emit_lock_yaml(lock), encoding="utf-8")
-    print(f"Finalized {_LOCKFILE_REL}: advanced {changed} hash(es) to the "
+    scope = "" if only is None else f" (scoped to {len(matched)} path(s))"
+    print(f"Finalized {_LOCKFILE_REL}: advanced {changed} hash(es){scope} to the "
           f"committed on-disk content. `verify_integrity` now attests this tree "
           f"(the base cache / upgrade ancestor is unchanged).")
     return 0
@@ -2025,7 +2086,15 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
                    help="Advance each record's hash to the committed on-disk "
                         "content so verify_integrity attests a *customized* "
                         "install (filled slots, wrapper rename, forks). The "
-                        "base cache / upgrade ancestor is left unchanged.")
+                        "base cache / upgrade ancestor is left unchanged. "
+                        "Pass PATH(s) to scope the finalize to just those "
+                        "records (won't sweep a concurrent session's WIP); "
+                        "bare --finalize finalizes the whole tree but refuses "
+                        "on a dirty tree without --force.")
+    p.add_argument("finalize_paths", nargs="*", metavar="PATH",
+                   help="With --finalize: scope the write-set to these tracked "
+                        "path(s) only -- the surgical finalize for one file "
+                        "(e.g. after a single-file pull-down).")
     p.add_argument("--plan", action="store_true",
                    help="Read-only: classify drift, write nothing (default).")
     p.add_argument("--stage", action="store_true",
@@ -2037,9 +2106,10 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
                         "proceeds (the #44 completion gate is fail-closed "
                         "without this).")
     p.add_argument("--force", action="store_true",
-                   help="Override the Layer-3 dirty-tree guard (#56): apply "
-                        "even when the write-set overlaps tracked files with "
-                        "uncommitted changes (they will be overwritten).")
+                   help="Override the Layer-3 dirty-tree guard (#56): for "
+                        "--apply, overwrite tracked files with uncommitted "
+                        "changes in the write-set; for an unscoped --finalize, "
+                        "finalize the whole tree even when it is dirty.")
     p.add_argument("--adopt-module", default=None, metavar="NAME",
                    help="Record an already-on-disk opt-in module NAME into the "
                         "lockfile so it 3-way-merges on later upgrades (#49). "
@@ -2077,6 +2147,14 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
               "run one upgrade action at a time.", file=sys.stderr)
         return 2
 
+    # Positional PATHs scope the --finalize write-set; they are meaningless for
+    # any other action (argparse would otherwise swallow stray positionals
+    # silently).
+    if args.finalize_paths and not args.finalize:
+        print("error: positional PATH argument(s) are only valid with "
+              "--finalize (to scope the finalize write-set).", file=sys.stderr)
+        return 2
+
     target = Path(args.target).resolve()
     if not target.exists():
         print(f"error: target not found: {target}", file=sys.stderr)
@@ -2109,7 +2187,8 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
               file=sys.stderr, end="")
 
     if args.finalize:
-        return _cmd_finalize_lockfile(target, lock)
+        only = set(args.finalize_paths) if args.finalize_paths else None
+        return _cmd_finalize_lockfile(target, lock, only=only, force=args.force)
 
     if args.adopt_collisions:
         if args.to is not None:
