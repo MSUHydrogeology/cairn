@@ -497,7 +497,7 @@ bet, not an aspiration (**Anchor 11**):
   not in production -- not on a multiplier.
 
 Stated as the product promise (Codex's adopter-friction audit,
-`dev/strategy/2026-05-27-codex-cairn-adopter-friction-audit.md`): *"Keep the
+`dev/strategy/archive/2026-05-27-codex-cairn-adopter-friction-audit.md`): *"Keep the
 apparatus only as heavy as your codebase and team earn."*  This candor is
 load-bearing, not a caveat -- it is what lets a lone scientist + one agent start
 at the kernel and deepen only as the project earns it, and it is the premise of

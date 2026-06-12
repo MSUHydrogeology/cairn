@@ -24,7 +24,7 @@ modflow_tools' own science and must not enter the public Cairn repo.
 | `2026-05-14-claude-human-ai-team-development-framework.md` | same | living | **The guide star** — Cairn's rationale/state/direction. Source for the P3 permanent vision/charter doc. |
 | `2026-05-20-claude-team-productivity-metrics.md` | same | living | The Measurement-Compact research. |
 | `2026-05-27-claude-cairn-pre-release-sweep.md` | same | living | Version-independent release-strategy sweep. |
-| `2026-05-27-codex-cairn-adopter-friction-audit.md` | same | settled | Prospective-scientist adopter-friction lens. |
+| `2026-05-27-codex-cairn-adopter-friction-audit.md` | → `archive/` (2026-06-12) | settled | Prospective-scientist adopter-friction lens. Superseded + archived by the v0.3 re-run `2026-06-12-claude-adopter-friction-audit.md`. |
 | `2026-06-04-claude-documentation-graphics.md` | same | settled | Docs-graphics strategy (`docs/assets/`). |
 | `2026-06-05-claude-cairn-complexity-debt-audit.md` | same | revised | Complexity-debt audit. |
 
