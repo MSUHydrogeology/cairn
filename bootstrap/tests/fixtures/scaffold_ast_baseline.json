@@ -215,6 +215,22 @@
     ],
     "type": "Assign"
   },
+  "Assign:_MODEL_SELECTION_MAPPING_REL": {
+    "digest": "14367f5f5a3ec462",
+    "span": [
+      630,
+      630
+    ],
+    "type": "Assign"
+  },
+  "Assign:_MODEL_SELECTION_TIERS": {
+    "digest": "4caa7ea312e82cc2",
+    "span": [
+      632,
+      632
+    ],
+    "type": "Assign"
+  },
   "Assign:_MODULE_MAPPINGS": {
     "digest": "26957a8924042a0a",
     "span": [
@@ -608,10 +624,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_cmd_finalize_lockfile": {
-    "digest": "a1d5b3bea718cc4b",
+    "digest": "8b4e83339f401ec6",
     "span": [
-      3879,
-      3940
+      1592,
+      1714
     ],
     "type": "FunctionDef"
   },
@@ -927,6 +943,14 @@
     ],
     "type": "FunctionDef"
   },
+  "FunctionDef:_yaml_dq": {
+    "digest": "6acf4da4d463b836",
+    "span": [
+      635,
+      638
+    ],
+    "type": "FunctionDef"
+  },
   "FunctionDef:_yaml_sq": {
     "digest": "25787f122e275e88",
     "span": [
@@ -940,6 +964,14 @@
     "span": [
       4383,
       4466
+    ],
+    "type": "FunctionDef"
+  },
+  "FunctionDef:capture_model_selection_mapping": {
+    "digest": "9a9d03c13469b3d8",
+    "span": [
+      641,
+      721
     ],
     "type": "FunctionDef"
   },
@@ -960,10 +992,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:cmd_upgrade": {
-    "digest": "9e28ad92db3c24cd",
+    "digest": "0b3cf4e1a4ed2ba4",
     "span": [
-      2013,
-      2233
+      2074,
+      2312
     ],
     "type": "FunctionDef"
   },
@@ -1128,10 +1160,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:main": {
-    "digest": "34a09c88fc25f6c7",
+    "digest": "3d569a5104c8a81a",
     "span": [
-      4469,
-      4900
+      187,
+      685
     ],
     "type": "FunctionDef"
   },
