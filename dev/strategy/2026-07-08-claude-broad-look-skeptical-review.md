@@ -42,13 +42,18 @@ tracked gate issues (#1 AST-baseline drift, #2 neutrality-gate scope).
   reviewer, and a simulated postdoc first adopter), then **adversarial
   verification of every finding** — high-severity findings faced a
   three-lens panel (evidence accuracy, materiality at this project
-  stage, steelman-the-status-quo) — then a completeness critic that
-  spawned four targeted follow-up reviews (downstream licensing, the
-  daily-loop runtime code surface, cross-harness operability, the
-  upgrade path). 147 agents in total. **89 findings raised; 87
-  survived adversarial verification; 2 were refuted** and are excluded
-  below. Already-tracked items (F1–F9, issues #1/#2) were auto-refuted
-  as duplicates by construction.
+  stage, steelman-the-status-quo) — then a completeness critic whose
+  coverage sweeps ran against two successive confirmed-sets, six
+  targeted follow-up reviews in total (downstream licensing — twice,
+  the daily-loop runtime code surface, cross-harness operability, the
+  upgrade path, platform/Windows support, and the installed-executable
+  surface). ~150 agents per pass; the final verification pass ran
+  clean, with every finding re-verified. **Roughly one hundred distinct
+  findings survived adversarial verification; three were refuted** and
+  are excluded below (one further finding was refuted only by a
+  transient verifier error and re-confirmed in adjusted form on the
+  clean pass). Already-tracked items (F1–F9, issues #1/#2) were
+  auto-refuted as duplicates by construction.
 * **Hand re-verification at today's HEAD.** The audit ran before the
   doc-refresh landed; every claim asserted in this note was re-checked
   against HEAD `d789414` on 2026-07-08 (citations spot-checked
@@ -89,8 +94,8 @@ Cairn survived adversarial verification impressively:
   slower-at-first admission, the R-H gap admission), `doctrine/rationale.md`
   is a genuine, DOI-anchored related-work document, and
   `docs/workflow-role.md` correctly preempts the most common misreads.
-* **The self-host copies match their template sources**, and the two
-  refuted findings both died because the repo had already handled the
+* **The self-host copies match their template sources**, and the three
+  refuted findings all died because the repo had already handled the
   concern — evidence the record sometimes defends itself.
 
 The pattern in what follows is therefore *not* "the apparatus is
@@ -99,7 +104,7 @@ that describes it, and the record layer that showcases it.** For a
 methodology whose product *is* the record and the claims discipline,
 that inversion is the strategic finding.
 
-## Findings — seven themes
+## Findings — eight themes
 
 ### T1. Record integrity: verifiable cracks exactly where a skeptic will look first
 
@@ -306,6 +311,11 @@ discipline is simply absent — and it should gate the public release:
   interacts with the adopter's own repository license (research code is
   routinely GPL-2.0 or custom-academic), and no inbound-license
   statement for the case-study contributions the repo invites.
+* The by-file license split itself is not exhaustive: shipped
+  config/data files (`.yml`, `.txt` — e.g.
+  `templates/skills/_data/vendor_targets.yml`) are neither "code
+  (`.py`)" nor "prose/templates (`.md`)," so they sit outside both
+  declared families.
 
 The postdoc's hydrogeology repo, made public for a paper, would
 redistribute MIT code with its notice stripped and CC-BY prose with no
@@ -394,6 +404,23 @@ each step:
    Meanwhile `SECURITY.md:25` tells adopters to scaffold from a
    released tag, and the newest tag (`v0.3.0`) predates all twenty
    commits of entry-doc fixes.
+10. **The first session breaks in ordinary environments** — all
+   verified, two reproduced end-to-end. With no `.claude/` directory
+   yet (the likeliest first-session state for this harness), the
+   skills fan-out is silently skipped *and filtered out of the install
+   report*, whose closing line then invites running `/good-morning` —
+   a nickname that is not an installable command anywhere
+   (`bootstrap/_scaffold/cli.py:487`). A recorded-then-rebuilt
+   interpreter — conda-environment churn is the target adopter's
+   normal — hard-fails `session-start` and the goodnight handoff with
+   no recovery hint, because the install bakes a fully-resolved
+   `sys.executable` path into the binding
+   (`bootstrap/_scaffold/install.py:363`) and the runtime treats
+   present-but-stale as fatal instead of falling back the way it
+   already does for an absent binding. And onboarding seeds are copied
+   by preset *name*, not resolved module roster, so an axis-overridden
+   install (reproduced: `collaborative-team` + `agent_team: single`)
+   seeds day-one tasks commanding tools that were never installed.
 
 ### T6. Positioning: the differentiators outrun their evidence
 
@@ -445,11 +472,55 @@ section anchors in `dev/agent_collaboration.md` that do not exist;
 the charter has three conflicting canonical homes and `docs/vision.md`
 has no inbound navigation link; ~900 words of lifecycle doctrine are
 duplicated across `doctrine/proposals.md` and `doctrine/plans.md`
-against the one-canonical-home rule; and the upgrade path — the
-contract adopters will live on — has never been rehearsed across a real
-version boundary (the lockfile `schema` field is written but never
-validated on read, and Cairn's own init-lock-degraded install cannot
-rehearse the 3-way merge it sells).
+against the one-canonical-home rule; and the strategy record still
+presents the fully-implemented complexity-debt program as gated and
+pending — understating a genuine success.
+
+**The upgrade path — the contract adopters will live on — deserves its
+own paragraph, because the final verification pass confirmed all of
+it.** No cross-tag upgrade rehearsal has ever run or is queued at the
+0.4 gate (the one historical version delta, v0.2.0→v0.3.0, touched 108
+template files). `bootstrap/BOOTSTRAP.md:310-315` teaches the
+pre-merge `--force` re-run as the way "to upgrade Cairn," and no
+adopter entry doc points at `bootstrap/UPGRADE.md`'s plan/stage/apply
+workflow at all. The first real template retirement (the collaboration
+agreement) is already queued for 0.4, yet the removed-upstream class it
+will trigger has zero test coverage, no per-file flag, no migration
+guidance, and no way to ever clear the lockfile record. No automated
+test composes a multi-file, multi-class version delta (the container
+acceptance uses a one-line delta on a pristine adopter). The lockfile
+`schema` field is written but never read or validated. And Cairn's own
+init-lock-degraded install (all 38 mergeable records
+`unrecoverable_base`, no base cache, `cairn_commit` "unknown") cannot
+rehearse the 3-way merge it sells and regenerates itself degraded.
+
+### T8. Platform assumptions: native Windows silently breaks the trust chain
+
+The engine writes every installed artifact in text mode with no
+`newline=` argument (`bootstrap/_scaffold/install.py:272`; zero
+`newline=` occurrences in the file), so on native Windows, Python
+CRLF-translates every file on write — while the divergence check and
+all integrity hashing compare LF bytes. Verified consequence chain: the
+install *completes*, then refuses to write the lockfile (a stderr
+warning the quickstart never mentions) — and without a lockfile there
+is no integrity checking and no upgrade path. Compounding it:
+`doctrine/runtime-contract.md:107-109` — the self-declared
+supersede-everything authority — asserts "the engine does not normalize
+line endings on write," which is exactly backwards on Windows; the
+byte-exact hash policy plus zero shipped `.gitattributes` means a
+single `core.autocrlf` checkout flags the entire installed apparatus as
+tampered and every reference script as a fork; and the only platform
+statement in the adopter entry path is one bullet
+(`docs/quickstart.md:21`: "A POSIX shell (macOS / Linux / WSL)"), so a
+PowerShell user's first command block fails with an error naming the
+shell, not the prerequisite. For a lab whose members plausibly run
+Windows, the current posture is *unsupported-but-never-quite-said, and
+failing without explanation*. Either land the small fix
+(`newline="\n"` at the installed-artifact write sites plus a
+scaffold-seeded `.gitattributes`) or declare the OS matrix explicitly
+in the runtime contract — and in both cases fix the backwards
+line-endings sentence and put the prerequisite callout at the
+quickstart's first command block.
 
 ## Options
 
@@ -513,6 +584,13 @@ rate-limit gate on their own evidence.
   "adopting within a lab hierarchy" statement (the record serves
   system learning, never performance evaluation) and a lockfile-driven
   de-adoption/dormancy section in the on-ramp.
+* **A7. First-session survivability** (T5.10): print the
+  skipped-vendor-absent fan-out rows in the install report with the
+  one-line remedy; delete the phantom `/good-morning` from the report's
+  closing line; make a stale interpreter binding warn-and-fall-back
+  instead of hard-failing session-start; gate onboarding seeds by the
+  resolved module roster (the `cairn:if` conditional-region mechanism
+  already exists).
 
 **Phase B — before the 0.4 cut**
 
@@ -522,7 +600,10 @@ rate-limit gate on their own evidence.
   from the engine registry; a doctrine-index completeness check in
   `scripts/check_cairn.py`; `docs/DOCUMENTATION_PLAN.md` refreshed and
   made claim-checkable). Re-scope issue #2 to the measured
-  distribution and run the full neutrality disposition pass.
+  distribution and run the full neutrality disposition pass. Scope
+  `bootstrap/BOOTSTRAP.md`'s re-run advice to module additions and add
+  the missing "upgrading later" pointer to `bootstrap/UPGRADE.md` from
+  the entry docs.
 * **B2. Security-narrative alignment** (T3): derive `scan_targets()`
   and the skills-suite artifact lists from the registries; stand up
   minimal CI (suite + bandit + gates) or reword every fails-in-CI claim
@@ -541,15 +622,29 @@ rate-limit gate on their own evidence.
   the ND license; a glossary; strip the internal codes from the front
   door; a one-page CONTRIBUTING; reconcile the runtime-contract /
   on-ramp identity contradiction *(doctrine)*.
+* **B4. Platform posture** (T8): decide the Windows question (open
+  question 7) and implement it — either `newline="\n"` at the
+  installed-artifact write sites plus a scaffold-seeded
+  `.gitattributes`, or an explicit OS-support matrix in
+  `doctrine/runtime-contract.md`. Either way, fix the backwards
+  line-endings sentence and add the PowerShell failure-signature
+  callout above the quickstart's first command block.
 
 **Phase C — rolling hygiene** (T7): fold the metrics doc's review in
 and re-home Goal 7; guide-star vantage pass; serialize the
 collaboration-agreement retirement (annotate the seed task, open the
 retirement proposal) before the postdoc inherits the agreement; repoint
 the dangling doctrine anchors; single-home the duplicated lifecycle
-doctrine; link `docs/vision.md` from the README; one worktree-based
-v0.3.0→HEAD upgrade rehearsal plus lockfile-schema validation on read;
-fix the clock-dependent test (spun off already).
+doctrine; link `docs/vision.md` from the README; the upgrade-longevity
+package (a cross-tag v0.3.0→HEAD upgrade rehearsal, added to the 0.4
+gate; one composite multi-file/multi-class upgrade test; lockfile
+`schema` validation on read; removed-upstream handling landed *with*
+the collaboration-agreement retirement — its first real use; a
+payload-copy sync test over the 13 shipped/installed verbatim pairs;
+and either a re-baseline affordance for the permanently review-only
+self-host lockfile or an explicit posture note); update the strategy
+record to reflect the completed complexity-debt program; fix the
+clock-dependent test (spun off already).
 
 ## Open questions
 
@@ -573,6 +668,11 @@ fix the clock-dependent test (spun off already).
 6. **Probe identity**: is the postdoc formally the R-H probe (with the
    protocol and consent that implies), or a friendly pre-probe whose
    run does not consume the gate?
+7. **Windows** (T8, B4): support native Windows (the `newline="\n"` +
+   `.gitattributes` package — small and permanent), or declare it
+   unsupported in the runtime contract and gate the quickstart? The
+   lab's actual environment mix should decide; either answer beats the
+   current silent failure.
 
 ## Fold-up note
 
@@ -597,7 +697,7 @@ proposal; the doctrine rate-limit applies):
 
 ---
 
-## Appendix — verified finding inventory (87 confirmed, 2 refuted)
+## Appendix — verified finding inventory (~100 confirmed across all passes, 3 refuted)
 
 One line per confirmed finding, grouped by audit dimension; severity in
 brackets. Full evidence, impact, and per-finding verification notes
@@ -634,14 +734,14 @@ metrics doc supersession pointers dangle (Goal 7 ghost) (T7) · [M]
 metrics doc carries unfolded stale review (T7) · [M] guide-star release
 facts stale; Sweep B baseline missing (T7) · [M] construction record
 not publicly auditable; citations point out-of-tree (T6) · [M]
-neutrality-gate triage basis misdescribes live distribution (T2) · [L]
-plan-open board row-move skipped (T1.7-adjacent).
+neutrality-gate triage basis misdescribes live distribution (T2) · [M]
+strategy record still presents the completed complexity-debt program as
+gated/pending (T7).
 
-**Code (8):** [H] Bandit/CI postures presuppose CI that does not exist
+**Code (7):** [H] Bandit/CI postures presuppose CI that does not exist
 (T3.1) · [M] YAML fallback diverges from PyYAML on documented schema
 (T3.3) · [M] R6 false-flags live security code (T3.4) · [M] upgrade.py
-mega-functions outside the debt ledger (T7) · [L] sibling entry points
-skip scaffold.py's hardened load path (T3) · [L] lockfile-write
+mega-functions outside the debt ledger (T7) · [L] lockfile-write
 guard-order inversion (T3.5) · [L] profile keys fail open (T3.3) · [L]
 MergeResult status contract omits needs-value (T3).
 
@@ -674,11 +774,12 @@ named week-one value moment (T5.5) · [M] Appendix B example 3/6 +
 silent literal lists (T5.1) · [L] getting-started review step omits
 solo floor (T5).
 
-**Licensing gap (6):** [H] MIT notice stripped from installed copies ·
-[H] no CC-BY attribution travels; no adopter-facing mention · [M] base
-cache is hidden verbatim redistribution · [M] lockfile carries no
-creator/license/URL · [M] no downstream-license position · [L] no
-inbound-license statement (all T4).
+**Licensing gap (7, across two sweeps):** [H] MIT notice stripped from
+installed copies · [H] no CC-BY attribution travels; no adopter-facing
+mention · [M] base cache is hidden verbatim redistribution · [M]
+lockfile carries no creator/license/URL · [M] no downstream-license
+position · [M] shipped config/data files sit outside both declared
+license families · [L] no inbound-license statement (all T4).
 
 **Daily-loop runtime gap (5):** [H] release Bandit gate skips the
 skills registry · [M] lifecycle_planner.py outside every security
@@ -694,15 +795,40 @@ defined nowhere adopters read; matrix orphaned · [M] VENDOR.md rename
 example unfollowable by the resolver · [M] "vendor-neutral throughout"
 broader than the construction-level guarantee (all T5.8/T6).
 
-**Upgrade gap (1 verified + 4 hand-checked):** [L] lockfile schema
-write-only, no read validation · plus, verified directly this session:
-Cairn's own install records cairn_commit "unknown"; tag-only guidance
-(`SECURITY.md:25`) routes to a v0.3.0 tag now 20 commits behind the
-entry-doc fixes; the retirement-queued collaboration agreement has no
-upgrade-path handling; no real-tree upgrade rehearsal has crossed a
-version boundary (all T7/T5.9).
+**Upgrade gap (6):** [H] BOOTSTRAP.md teaches the `--force` re-run as
+"to upgrade Cairn"; no entry doc points at UPGRADE.md · [H] no
+cross-tag upgrade rehearsal ever run or queued at the 0.4 gate · [H]
+the queued template retirement's removed-upstream class has zero test
+coverage and no prune mechanism · [M] self-host lockfile permanently
+review-only (38/38 mergeable records unrecoverable-base, no base cache,
+cairn_commit "unknown") · [M] lockfile schema write-only, no read
+validation · [M] no automated multi-file/multi-class upgrade-delta
+test — plus, hand-verified: tag-only guidance (`SECURITY.md:25`) routes
+to a v0.3.0 tag now 20 commits behind the entry-doc fixes (all
+T7/T5.9).
 
-**Refuted (2, for the record):** the complexity-debt-audit
-"recommendations unimplemented" claim (they all landed — kept above as
-a *strength*), and a reading-burden framing that ignored the minimal
-path the quickstart already names.
+**Platform/Windows gap (6):** [H] text-mode writes CRLF-translate on
+Windows while hashes compare LF bytes — install completes, lockfile
+silently refused · [H] byte-exact hashing + no shipped .gitattributes:
+one core.autocrlf checkout reads as wholesale tampering · [H] no OS
+matrix in the self-declared authoritative runtime contract · [M] the
+runtime contract's "does not normalize line endings on write" is
+backwards on Windows · [M] the PowerShell failure is never
+self-explaining (quickstart dies at `export`) · [L] interpreter trust
+root bakes a version-pinned resolved path and hard-refuses on drift
+(all T8).
+
+**Installed-executable gap (4):** [H] Claude Code skills silently
+unreachable on the likeliest first-session state; install report
+invites a phantom `/good-morning` · [M] stale interpreter binding
+hard-fails session-start and the handoff (reproduced end-to-end) · [M]
+onboarding seeds copied by preset name, not resolved roster
+(reproduced) · [M] nothing automated keeps the 13 shipped/installed
+payload copies from diverging (all T5.10/T3).
+
+**Refuted (3, for the record):** a reading-burden framing that ignored
+the minimal path the quickstart already names; a plan-open
+board-row-move complaint mooted when the plan archived and the board
+was scrubbed at that serialization point; and a sibling-entry-point
+"bypasses the hardened loader" claim (the engine guard covers direct
+imports; the residual case is documented out-of-threat-model).
