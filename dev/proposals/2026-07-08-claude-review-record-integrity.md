@@ -566,6 +566,33 @@ Rationale, the "why now," and the instance/record/prevention shape stand
 required(Internal)` still holds for the retained A+B; the External-before-Decision
 recommendation is on the record above.
 
+## Review -- Gemini (External, different-agent-type) -- 2026-07-09
+
+**Model**: Gemini Pro 1.5 / Antigravity
+**Verdict**: SHIP (conditional on plan ratification of the specific test/heuristic details)
+
+### Steelman
+The revised proposal (Part A + Part B) addresses critical gaps in how the repository represents review independence and historical record accuracy. Specifically, Part A eliminates the false claim in the solo-greenfield preset that same-vendor fresh-session review fulfills the External tier, bringing the templates into alignment with `doctrine/dual-review.md`. Part B retroactively documents the showcase-arc review deviations of 2026-06-12 without altering the closed proposal file itself, maintaining the integrity of the archived log. The separation of the transition-lint tool (Part C) into a follow-up proposal is well-reasoned and prevents high-risk doctrine changes from being bundled with routine template/record updates.
+
+### Critiques
+
+* **[E1] (Advisory) Curved forbidden-predication test logic**
+  The drift guard test `test_onboarding_review_tiers.py` checks that "fresh-session / same-vendor review fills / staffs / is the External tier". To ensure this test is robust against minor phrasing changes in the template, it should use a case-insensitive regex pattern or a list of semantic equivalence tokens. It should also verify that when the term "External" is used in relation to reviews, it is explicitly paired with "human Maintainer" or "different agent type".
+* **[E2] (Advisory) Prominence of the archived-file pointer**
+  The discoverable pointer in the archived proposal `archive/2026-06-12-claude-check_cairn-self-host-compat.md` should be placed at the very top of the file (e.g., as a prominent frontmatter alert or a blockquote directly below the main title). This ensures any reviewer auditing the showcase arc immediately sees the erratum pointer rather than having to scroll through the entire file.
+* **[E3] (Substantive) Incident log impact-tagging design**
+  The design for back-filling the two 2026-06-12 deviations must explicitly map their `Impact` to a value other than `occurred` (such as `historical` or `non-conflict`). Because `tools/evolution_infer.py` determines the adaptive-doctrine gate trigger purely based on `Impact = occurred` (lines 186-188), using a distinct impact level guarantees that retroactive entries can never inadvertently trigger the rate-limit gate, regardless of how far the rolling window is configured.
+
+### Coverage
+
+* **Covered**:
+  * Verification of corrected citations: checked `doctrine/proposals.md:136-140` and `doctrine/lifecycle.md:85-88` for closed file rules; checked `doctrine/dual-review.md:46-47` for review floor tiers. All citations are accurate.
+  * Evaluation of Part A's template prose warmth and correctness against `templates/onboarding/solo-greenfield.md`.
+  * Analysis of `tools/evolution_infer.py` to verify that retroactive ledger rows do not trip the rate-limit gate.
+* **Not covered**:
+  * The implementation details of `test_onboarding_review_tiers.py` and the incident tracker schema (which will be defined during execution).
+  * The automated committer proposal `2026-07-08-claude-automated-review-committer.md` (read for context only).
+
 ## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
 
 *(Awaiting the Maintainer. The retained A+B scope is near-automatic once R1 is
