@@ -352,7 +352,85 @@ Internal review is *itself* author-orchestrated subagent work committed under th
 Maintainer's identity with no in-tree source — a second live instance of the very
 mechanism under debate, and evidence for R2/R3.
 
+## Response -- Claude (author) -- 2026-07-08
+
+**Model**: Claude Fable 5. Proposal-Response grammar. The panel is right, and
+the honest disposition is not a rescue-revision: **this proposal should not
+proceed as framed.** Two independent blockers are, on their own, dispositive,
+and a third finding shows the doctrine mostly already covers the case.
+
+* **[R1] accept — dispositive.** The gate clearance is invalid. The high-risk
+  bypass is exhaustive to security + data-loss (`rationale.md:337-347`);
+  "differentiator ⇒ high-risk" is the excluded framing, and recurrence is not
+  counted (one incident + a prediction). I cannot honestly clear the gate as a
+  standalone high-risk change, and I will not launder importance into
+  "high-risk." A doctrine change here needs *either* counted recurrence (which
+  the sibling proposal's deviation tracker would accrue) *or* an explicit
+  Maintainer act that widens the two-surface list — itself a rate-limited change
+  to `rationale.md`. Neither exists today.
+* **[R3] accept — dispositive.** "Committer" means the **controlling
+  agent-session**, not the git identity — that is what the self-commit rule
+  guards. But `git show -s e31625c` is the Maintainer, so at the git level that
+  review *already* used Alternative 2 (Maintainer-commits), the option this
+  proposal rejects. In a solo one-identity tree the scribe-vs-Maintainer
+  distinction is invisible in git metadata, so the proposal's premise ("if the
+  author-session commits it") has no observable referent and both tiers'
+  enforcement collapses to a prose marker. The rule cannot stand on a
+  distinction the record cannot carry.
+* **[R6] accept — decisive on direction.** The doctrine already answers
+  "reviewer lacks a capability → record a verification owner, default to
+  Maintainer fallback" (`dual-review.md:379-415`). A subagent that can't commit
+  is that same shape, and the existing answer *is* Alt 2. Standing up a parallel
+  tier-split mechanism next to it is the redundancy the panel names.
+* **[R2] accept.** Property 3 must be a hard "raw source committed/linked
+  in-tree," not "recoverable" from a harness-private journal; otherwise the
+  carve-out is self-attestation. This is the one finding worth acting on
+  *immediately and independently of any doctrine change* (see below).
+* **[R4] accept.** Alt #2 is the honest default for the solo audience, not the
+  fallback — the Maintainer already reads every review before Decision; the
+  "bottleneck" is one commit they run while in the loop. I withdraw the
+  unevidenced "bottleneck" rejection.
+* **[R5, R7, R8, R9, R10, R11, R12] accept.** Each is correct: rest any
+  carve-out on auditability not "non-adversarial" (R5); constrain panel *inputs*,
+  not just the commit step (R7); let model/type — not the section title —
+  determine the tier (R8); dimension-gate rather than burden every adopter (R9);
+  make property 2 falsifiable (R10); one canonical home (R11); name the
+  Maintainer's Decision as the verification point (R12). None needs a rebuttal;
+  all would fold into a reframe *if* one were warranted.
+
+### Recommended disposition: supersede, not amend
+
+The constructive path the findings point to, in order:
+
+1. **Adopt the practice now, under existing doctrine — no rate-limited change.**
+   Automated (subagent) reviews are committed by the **Maintainer**, or by the
+   author-session **only with the raw panel source committed in-tree** plus a
+   structured disclosure marker — as an application of the existing
+   restricted-verification-surfaces fallback (`dual-review.md:379-415`), not a
+   new rule. This closes the live R2/R3 integrity gap immediately (including for
+   this session's own author-scribed reviews) without touching the gate.
+2. **Defer any doctrine change until recurrence is counted.** The sibling
+   proposal's deviation tracker (Part B) is the natural counter; if
+   author-scribed automated review recurs enough to matter, *then* a minimal
+   change — extending restricted-verification-surfaces to name the commit
+   capability, with the hard in-tree-source and structured-marker requirements —
+   clears the gate honestly as recurrence-driven, and is reviewed on its own.
+3. **This proposal is superseded by that plan** — it over-reached (a tiered
+   committer axis the doctrine doesn't need, cleared via a gate it doesn't pass).
+
+**Disposition token: `defer` to the Maintainer's Decision.** The choice among
+*reject* (adopt the practice under existing doctrine, open nothing), *supersede*
+(reject + record the recurrence-gated minimal follow-up), or *hold* turns on the
+rate-limit-gate authority, which is the Maintainer's. I recommend **supersede**
+per steps 1–3. No `revised` proposal is offered, because the honest conclusion is
+"don't ship this," not "ship a patched version."
+
 ## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
 
-*(Awaiting the Maintainer, after the External read. No agent self-Decides; a
-doctrine change is the Maintainer's to ratify.)*
+*(Awaiting the Maintainer. The author recommends **supersede** — adopt the
+Alt-2 / commit-source-in-tree practice under existing restricted-verification-
+surfaces doctrine now, and defer any doctrine change until recurrence is counted.
+The `required(External)` line still holds if the Maintainer wants a cross-type
+read before ruling — though the Internal panel already gated the proposal on its
+own text. No agent self-Decides; a doctrine change — or the decision not to make
+one — is the Maintainer's.)*
