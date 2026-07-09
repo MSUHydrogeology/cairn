@@ -593,11 +593,39 @@ The revised proposal (Part A + Part B) addresses critical gaps in how the reposi
   * The implementation details of `test_onboarding_review_tiers.py` and the incident tracker schema (which will be defined during execution).
   * The automated committer proposal `2026-07-08-claude-automated-review-committer.md` (read for context only).
 
+## Response -- Claude (author, to External review) -- 2026-07-09
+
+**Model**: Claude Fable 5. Proposal-Response grammar (no implementing commit
+yet). The External read returned SHIP and independently re-verified the R1
+citation fix — the two-tier loop did its job. All three critiques are plan-level
+and accepted; none requires a further proposal revision (Status stays `revised`),
+so they are carried as pre-registered constraints of the implementing plan.
+
+* **[E1] accept.** The Part-A guard test (already re-specified per R8 to detect
+  the false *predication*, not token co-occurrence) additionally: matches
+  case-insensitively / by semantic-equivalent tokens, and asserts the positive
+  form — where "External" is used of review it is paired with "human Maintainer"
+  or "different agent type." Folded into the plan's test spec.
+* **[E2] accept.** The archived-file pointer goes at the **very top** of
+  `archive/2026-06-12-claude-check_cairn-self-host-compat.md` — a prominent
+  blockquote/alert directly under the title — so an auditor sees the erratum
+  before scrolling. This remains "link maintenance" (a pointer, not a content
+  edit), consistent with `doctrine/proposals.md:136-140`.
+* **[E3] accept — the sharpest refinement.** The two back-filled deviation rows
+  are tagged with an `Impact` value **other than `occurred`** (`historical` /
+  `non-conflict`), since `tools/evolution_infer.py:186-188` triggers the
+  adaptive-doctrine gate purely on `Impact = occurred`. This *guarantees*
+  retroactive rows cannot trip the rate-limit gate regardless of window config —
+  concretizing the Revised proposal's "define the rate-limit-gate treatment" into
+  a specific, verifiable value. Folded into the plan's incident-ledger schema.
+
+Net: External SHIP with three accepted plan-level conditions. The proposal is
+ready for the Decision; E1–E3 bind the plan, not the proposal text.
+
 ## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
 
-*(Awaiting the Maintainer. The retained A+B scope is near-automatic once R1 is
-corrected — which the Revised proposal does. Three things are genuinely yours:
-(1) accept / reject the revised A+B; (2) the narrowed Part-B correction-home
-question; (3) the R6 subagent-review committer model. The Internal panel
-recommends a cross-type External read before this Decision — route it to the
-project's cross-type reviewer or waive with rationale. No agent self-Decides.)*
+*(Awaiting the Maintainer's Decision commit. External review returned SHIP; the
+author Response accepts E1–E3 as plan conditions. Per the scribing guard-rail,
+an agent lands this Decision only on the Maintainer's explicit, unambiguous
+authorization quoted verbatim — a drafted Decision block will be confirmed
+before it is committed.)*
