@@ -7,7 +7,7 @@
 **Author**: Claude (Strategy / Implementation)
 **Model**: Claude Fable 5
 **Date opened**: 2026-07-08
-**Status**: revised
+**Status**: accepted
 **Touches**: `templates/onboarding/solo-greenfield.md`; a new test under `bootstrap/tests/`; a new advisory check `scripts/transition_lint.py` + its test; the incident record under `dev/measurement/`; a dated provenance note about the archived `2026-06-12-claude-check_cairn-self-host-compat` arc. *(Revised 2026-07-08: Part C — the transition-lint script + its test — is split out to its own follow-up proposal; the retained scope is Part A + Part B. See the Revised proposal below.)*
 **Related**: the broad-look review `dev/strategy/2026-07-08-claude-broad-look-skeptical-review.md` (Themes 1.1, 1.5, 5.2, and fold-up candidate "transition lint"); this is proposal 1 of that note's Phase A ("Record & review integrity", items A1 + A2).
 **Plan review**: required(Internal) — touches a shipped template, adds an advisory gate, and edits the deliberation record; Internal floor now (fresh-context subagent), with an External (cross-type) read available and recommended before the Decision because this proposal is *about* the record-integrity differentiator. Ratified at Decision.
@@ -622,10 +622,33 @@ so they are carried as pre-registered constraints of the implementing plan.
 Net: External SHIP with three accepted plan-level conditions. The proposal is
 ready for the Decision; E1–E3 bind the plan, not the proposal text.
 
-## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
+## Decision -- Anthony Kendall (Maintainer) -- 2026-07-09
 
-*(Awaiting the Maintainer's Decision commit. External review returned SHIP; the
-author Response accepts E1–E3 as plan conditions. Per the scribing guard-rail,
-an agent lands this Decision only on the Maintainer's explicit, unambiguous
-authorization quoted verbatim — a drafted Decision block will be confirmed
-before it is committed.)*
+**Accepted.** Scribed by Claude (Strategy) at the Maintainer's explicit,
+unambiguous instruction; commit permission given in the same instruction.
+
+Maintainer's authorization (verbatim):
+
+> Accept `review-record-integrity` as reviewed, scribe, and commit my decision.
+
+The revised **Part A + Part B** are accepted as reviewed. The proposal cleared
+both review tiers: a fresh-context Internal panel (12 critiques, 2 blocking)
+reshaped it, and the Gemini External read returned SHIP after independently
+re-verifying the corrected citations.
+
+**Resolved open questions** (Maintainer's calls, 2026-07-09): correction home =
+ledger + a prominent top-of-file pointer on the archived file (link-maintenance
+only, per `doctrine/proposals.md:136-140`); Part C (transition-lint) split to its
+own follow-up; the R6 subagent-review committer question handled by the separate
+`2026-07-08-claude-automated-review-committer` proposal (Decision: superseded),
+with this run's disclosed-scribe accepted as adequate.
+
+**Plan conditions, ratified here (bind the plan):** E1 — the guard test detects
+the false predication (with the positive-form fixture); E2 — the archived-file
+pointer is placed at the very top; E3 — the back-filled deviation rows are tagged
+`Impact = historical` (never `occurred`), so they cannot trip
+`evolution_infer`'s rate-limit gate. `Plan review: required(Internal)` stands.
+
+**Next (separate commits):** open the plan (which archives this proposal),
+execute Part A + Part B, a non-implementing agent runs the code review, then
+archive.
