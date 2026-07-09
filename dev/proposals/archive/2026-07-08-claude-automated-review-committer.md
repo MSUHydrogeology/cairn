@@ -5,8 +5,8 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Fable 5
 **Date opened**: 2026-07-08
-**Status**: proposed
-**Touches**: `doctrine/dual-review.md` (the committer-independence doctrine + rationale) and the review-attribution rule in `AGENTS.md` / `templates/core/AGENTS.md` (the operational addendum). **This is a doctrine change** — it clears the rate-limit gate below.
+**Status**: superseded
+**Touches**: `doctrine/dual-review.md` (the committer-independence doctrine + rationale) and the review-attribution rule in `AGENTS.md` / `templates/core/AGENTS.md` (the operational addendum). **This is a doctrine change** — it clears the rate-limit gate below. *(Superseded 2026-07-09 — did not proceed; see the Decision.)*
 **Related**: raised as finding **R6** in the Internal review of `2026-07-08-claude-review-record-integrity` (this proposal is that finding's promised follow-up); Maintainer directed opening it (2026-07-08). Rule family: `doctrine/dual-review.md` tier floors; the "Reviews are attributed and self-committed" rule in `AGENTS.md`.
 **Plan review**: required(External) — a doctrine change to the review-integrity contract should itself clear the differentiating (cross-type External) tier it governs. Ratified at Decision.
 
@@ -425,12 +425,46 @@ rate-limit-gate authority, which is the Maintainer's. I recommend **supersede**
 per steps 1–3. No `revised` proposal is offered, because the honest conclusion is
 "don't ship this," not "ship a patched version."
 
-## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
+## Decision -- Anthony Kendall (Maintainer) -- 2026-07-09
 
-*(Awaiting the Maintainer. The author recommends **supersede** — adopt the
-Alt-2 / commit-source-in-tree practice under existing restricted-verification-
-surfaces doctrine now, and defer any doctrine change until recurrence is counted.
-The `required(External)` line still holds if the Maintainer wants a cross-type
-read before ruling — though the Internal panel already gated the proposal on its
-own text. No agent self-Decides; a doctrine change — or the decision not to make
-one — is the Maintainer's.)*
+**Superseded.** Scribed by Claude (Strategy) at the Maintainer's explicit
+instruction.
+
+Maintainer's authorization (verbatim):
+
+> Yes, we can supersede the next proposal.
+
+The tier-split doctrine change **does not proceed.** The fresh-context Internal
+panel gated it on its own text — three blocking findings: R1 (the rate-limit
+clearance is invalid: the high-risk bypass is exhaustive to security + data-loss
+surfaces, "differentiator" is the excluded importance-framing, and recurrence is
+uncounted); R3 ("committer" was undefined, and `git show -s e31625c` is the
+Maintainer, so that review already used the rejected Alternative 2 — the
+distinction is invisible in a solo one-identity tree); R6 (the doctrine already
+answers "reviewer can't do X → Maintainer fallback" via
+`doctrine/dual-review.md:379-415`). The author Response concurred and recommended
+supersession rather than a rescue-revision.
+
+**Superseded in favor of** (from the author Response):
+
+1. **An immediate practice, under existing doctrine — no rate-limited change.**
+   Automated (subagent) reviews are committed by the Maintainer, or by the
+   author-session **only with the raw panel source committed in-tree** plus a
+   structured disclosure marker — an application of the restricted-verification-
+   surfaces fallback (`doctrine/dual-review.md:379-415`), not a new rule. This
+   closes the live R2/R3 self-attestation gap.
+2. **A deferred, recurrence-gated follow-up.** *Revival condition:* if
+   author-scribed automated review recurs enough to be counted (≥ the rate-limit
+   threshold) in the deviation tracker established by
+   `2026-07-08-claude-review-record-integrity` (Part B), a **minimal** doctrine
+   change — extending restricted-verification-surfaces to name the commit
+   capability, with the hard in-tree-source and structured-marker requirements —
+   may be opened, reviewed on its own, and cleared honestly as recurrence-driven.
+   Until then, no doctrine change is warranted.
+
+**Follow-ups migrated to:** this Decision section (item 2 above, with its revival
+condition) is the durable, auditable home for the deferred follow-up; a board
+reflection may pick it up at the next goodnight serialization.
+
+This proposal archives in this Decision commit, per the file-move doctrine for a
+superseded proposal.
