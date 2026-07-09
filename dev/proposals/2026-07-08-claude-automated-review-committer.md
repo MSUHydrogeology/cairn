@@ -194,13 +194,163 @@ This **is** a new doctrine rule, so it clears the gate
 * The rule is never used because subagent review doesn't recur → it was
   premature; but the tighten-up series already exercises it repeatedly.
 
-## Review -- {{reviewer}} -- {{YYYY-MM-DD}}
+## Review -- Claude (Internal, fresh-context subagent panel) -- 2026-07-08
 
-*(Awaiting Internal review — fresh-context subagent panel, same mechanism this
-proposal governs, committed under the very disclosed-scribe carve-out it
-proposes, as the live dogfood. Then an External cross-type read before the
-Decision, per the required(External) plan-review line — this doctrine change
-should clear its own External bar.)*
+**Model**: Claude Fable 5 (three fresh-context subagents — doctrine-coherence /
+rate-limit, independence-integrity, adopter-simplicity — no access to the
+authoring session; 22 source critiques consolidated to R1–R12, none dropped).
+
+**Attribution / committer note.** These are the panel's findings, transcribed
+faithfully; no finding was softened, reordered to bury, or dropped. Per the very
+issue this proposal debates (and per the panel's own R2/R3): the raw source
+currently lives in the harness workflow journal (run `wf_1a435c32-22a`), which is
+**harness-private and not committed in-tree** — exactly the property-3 gap the
+panel identifies. This section is committed under the Maintainer's git identity
+(the solo tree's single identity); see R3 on why that collapses the
+scribe-vs-Maintainer distinction. Disclosed, not hidden.
+
+**Steelman.** A serious, well-argued proposal that dogfoods honestly and does not
+hide its tensions. It identifies a real, recurring gap (a fresh-context subagent
+meets the Internal floor yet cannot run git; the self-commit rule has no provision
+for a reviewer that cannot commit), surfaces it as R6 rather than papering over
+it, and opens a follow-up rather than improvising. The tier-purpose asymmetry is
+correctly sourced (`dual-review.md:12-20`); refusing a carve-out at the External
+gate (Alt #4) protects the differentiator; the four properties correctly name
+attribution-laundering as the hazard; the fail-closed default is right; and it
+subjects itself to `required(External)`.
+
+**Critiques** (descending severity):
+
+* **[R1] (blocking, unanimous)** The rate-limit clearance is invalid under the
+  gate's own text. `doctrine/rationale.md:337-347` makes the high-risk
+  single-incident bypass **exhaustive to two surfaces — security and data-loss —**
+  and says any other importance framing "falls outside the bypass and obeys the
+  recurrence requirement." "Review-record integrity is the differentiator,
+  therefore high-risk" is precisely the excluded framing. The recurrence path also
+  fails: one incident (`e31625c`) plus a *prediction* it will recur, not the
+  counted (≥2) past recurrence the gate requires (`rationale.md:328-331,366`), and
+  the tracker that would count it isn't established yet. Clearing the gate is the
+  stated precondition (proposal:9), so this blocks. **Fix:** drop the
+  differentiator=high-risk claim; clear the gate honestly via counted recurrence
+  or as a gap-fill, or have the Maintainer record an explicit classification that
+  acknowledges it is *widening* the two-surface list (itself rate-limited).
+* **[R2] (blocking)** Of the four properties, only #3 (auditable source) makes
+  laundering *checkable*; #2 ("nothing softened") is self-attestation by the party
+  whose independence is in question — the assurance the self-commit rule refuses to
+  rely on (`AGENTS.md:114-117`). And #3 is soft ("recoverable … workflow journal /
+  transcript path"), not committed-or-linked, and the dogfood fails it: `e31625c`
+  cites no source, and no panel transcript is tracked (`git ls-files | grep -iE
+  'journal|transcript'` → none); the exemplar source is a harness-private artifact
+  a cross-type auditor can't open and a plain-chat solo adopter never produces. So
+  the carve-out **relabels** author-commits-review as "disclosed scribe." **Fix:**
+  promote property 3 to a hard "raw output committed/linked in-tree at scribe
+  time"; drop the harness-private exemplar; absent a committed source, fail closed
+  to Maintainer-commit.
+* **[R3] (blocking)** "Committer" is never defined (git identity vs. controlling
+  agent-session), yet the whole rule turns on it. Read as git identity, the
+  dogfood *refutes itself*: `git show -s e31625c` → **Anthony Kendall** (the
+  Maintainer), i.e. Alternative 2 (rejected), not the carve-out. In a solo tree
+  author==Maintainer==one git identity, so the distinction is invisible in the
+  record and the candidate lint can't detect an author-committed External review —
+  the "ironclad External committer" rule is asserted, not enforceable. **Fix:**
+  define "committer" explicitly and reconcile `e31625c`; because git metadata
+  can't distinguish the two in a solo tree, make the disclosure a required,
+  machine-detectable **structured marker**, and state that External enforcement
+  reduces to that marker + discipline, not committer identity.
+* **[R4] (substantive)** The proposal rejects Alt #2 ("Maintainer commits") as a
+  "human bottleneck" with no evidence it bites — and the one data point
+  (`e31625c`) shows the Maintainer committing without friction, under their own
+  identity anyway. For the solo audience (`dual-review.md:439-442`), Alt #2 is the
+  honest *default*, not the fallback (the Maintainer already reads every review
+  before Decision — the "bottleneck" is one commit they run while in the loop).
+  The External branch is *already* Alt #2. The triggering predicate ("cannot itself
+  commit") encodes a tool choice (the orchestrator withholds git access) as if
+  structural; a harness granting the subagent a scoped identity moots it (Anchor
+  13, the waist stays tool-independent). **Fix:** test a single unified rule first
+  (any subagent review committed by the Maintainer, or by the author-session with
+  the transcript committed alongside); demote disclosed-scribe to a
+  dimension-gated advanced option, kept only if the bottleneck is shown real.
+* **[R5] (substantive)** "Author-committed Internal review carries little
+  integrity risk because the reviewer is non-adversarial" substitutes the tier's
+  *purpose* for its *independence property*. `dual-review.md:28-32` grounds all
+  review value in independence from the author's blind spots; the self-commit rule
+  is tier-agnostic for that reason. And the Internal review isn't inert — it
+  produces the second-round recommendation that gates whether External runs
+  (`dual-review.md:289-323`); an author who shapes a clean panel can suppress the
+  External-escalation (the clean-pass trap, `:189-206`). **Fix:** rest the
+  carve-out on the disclosure/auditability properties, not "non-adversarial";
+  require the disclosed-scribe review to carry its coverage line + second-round
+  recommendation verbatim, and have the Maintainer weight an author-scribed clean
+  pass with extra skepticism.
+* **[R6] (substantive)** The doctrine already answers "reviewer lacks a
+  capability" — `dual-review.md:379-415` (restricted verification surfaces) records
+  a verification owner and defaults to Maintainer fallback. A subagent that can't
+  commit is the same shape, and the existing answer is Maintainer-as-fallback
+  (= Alt 2, which `e31625c` used). **Fix:** reconcile — either extend that pattern
+  to the commit capability (the simpler, coherent route), or argue explicitly why
+  committing warrants lighter treatment than executing; don't let two adjacent
+  mechanisms answer the same shape differently.
+* **[R7] (substantive)** The four properties govern only the commit *step*, not
+  the panel's *inputs*. The author still chooses which subagents to spawn and
+  writes their prompts; a narrowly-briefed panel ("check the citations") yields
+  "nothing softened" truthfully because there were no adverse findings — the gaming
+  vector sits upstream, unanchored to "brief on facts, not judgment"
+  (`dual-review.md:342-358`, unreferenced). **Fix:** add a fifth property — the
+  panel brief conforms to brief-on-facts, disclosed as the generic sweep, not a
+  change-specific "what to push on."
+* **[R8] (substantive)** The tier-split creates a perverse incentive to
+  *under-label* independence: the cheap self-scribe path is unlocked only for
+  "Internal," so an author is nudged to title a genuinely cross-type subagent read
+  "Internal" to avoid pinging the Maintainer — the exact mislabel the *sibling*
+  proposal's Part A is fixing. **Fix:** make model/type the determinant — a
+  subagent whose type differs from the author is External by floor regardless of
+  the section title; cross-check the disclosed model/type against the author's.
+* **[R9] (substantive)** The four-property protocol lands as unconditional
+  doctrine on every adopter (a `dual-review.md` subsection + an `AGENTS.md`
+  sentence), so a solo adopter who will never orchestrate a panel still carries it
+  — more apparatus than the lightest-review reservation (`dual-review.md:434-442`)
+  and an always-loaded-prose correctness cost (Anchor 12). **Fix:** keep the
+  `AGENTS.md` addendum to one sentence; dimension-gate the four-property detail
+  behind the orchestrated-subagent configuration.
+* **[R10] (minor)** Property 2 is partly unfalsifiable ("reordered … *to bury*" is
+  an intent a third party can't verify) and the dogfood under-meets it (`e31625c`
+  attests only "no finding softened," never disclaiming reordering). **Fix:**
+  reword to falsifiable terms ("every source finding appears, at its source
+  severity, wording preserved"); specify the exact attestation sentence.
+* **[R11] (minor)** Routing splits one rule-family across two canonical homes: the
+  amended rule ("Reviews are attributed and self-committed") lives canonically in
+  `AGENTS.md:112-117`, but the proposal makes `dual-review.md` the canonical home
+  for the amendment. **Fix:** decide deliberately — one canonical home for the
+  operational "who commits" imperative, the other only points.
+* **[R12] (minor)** No serialization point is named for verifying the four
+  properties; enforcement is author self-certification at commit time. **Fix:**
+  name the Maintainer's Decision (or goodnight scrub) as the property-verification
+  point, and state plainly that until the lint exists the properties are
+  honor-system + a Maintainer spot-check.
+
+**Covered.** The rate-limit gate on both paths (`rationale.md:319-347`); the tier
+purposes/floors + recommend-and-decide + clean-pass-trap + don't-telegraph-the-lens
+(`dual-review.md:11-49,189-206,289-358`); the tier-agnostic self-commit rule
+(`AGENTS.md:112-117`); the restricted-verification-surfaces parallel
+(`dual-review.md:379-415`); solo framing + lightest-review reservation; the
+always-loaded-prose correctness cost (`rationale.md:144-174`) and waist-minimality
+(Anchor 13); the four properties checked against `e31625c` directly; git/fs
+verification (`git show -s e31625c` → Maintainer; no tracked transcript). **Not
+covered:** did not run `check_cairn`/`quality_gate` (final wording unwritten); no
+committed transcript exists to check (that is R2's substance). **Overriding
+limitation: a same-agent-type Internal read of a Claude-authored doctrine change
+*about cross-type independence* — no cross-type independence on this pass, the
+exact blind spot the External floor exists to cover.**
+
+**Second-round recommendation: External is a floor here, not a choice** — the
+proposal declares `required(External)`, which `dual-review.md:329` says the
+Maintainer honors, not waives. But **sequencing:** because R1–R3 are blocking and
+definitional, the author Responds/Revises *first* (or recommends withdrawal), so
+the External reviewer reads a coherent artifact, not these cracks. Do **not** route
+to Decision on the current text. Live-dogfood note for whoever reads next: this
+Internal review is *itself* author-orchestrated subagent work committed under the
+Maintainer's identity with no in-tree source — a second live instance of the very
+mechanism under debate, and evidence for R2/R3.
 
 ## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
 
