@@ -7,8 +7,8 @@
 **Author**: Claude (Strategy / Implementation)
 **Model**: Claude Fable 5
 **Date opened**: 2026-07-08
-**Status**: proposed
-**Touches**: `templates/onboarding/solo-greenfield.md`; a new test under `bootstrap/tests/`; a new advisory check `scripts/transition_lint.py` + its test; the incident record under `dev/measurement/`; a dated provenance note about the archived `2026-06-12-claude-check_cairn-self-host-compat` arc.
+**Status**: revised
+**Touches**: `templates/onboarding/solo-greenfield.md`; a new test under `bootstrap/tests/`; a new advisory check `scripts/transition_lint.py` + its test; the incident record under `dev/measurement/`; a dated provenance note about the archived `2026-06-12-claude-check_cairn-self-host-compat` arc. *(Revised 2026-07-08: Part C — the transition-lint script + its test — is split out to its own follow-up proposal; the retained scope is Part A + Part B. See the Revised proposal below.)*
 **Related**: the broad-look review `dev/strategy/2026-07-08-claude-broad-look-skeptical-review.md` (Themes 1.1, 1.5, 5.2, and fold-up candidate "transition lint"); this is proposal 1 of that note's Phase A ("Record & review integrity", items A1 + A2).
 **Plan review**: required(Internal) — touches a shipped template, adds an advisory gate, and edits the deliberation record; Internal floor now (fresh-context subagent), with an External (cross-type) read available and recommended before the Decision because this proposal is *about* the record-integrity differentiator. Ratified at Decision.
 
@@ -415,9 +415,162 @@ deserves an independent read before it becomes precedent. Sequencing option the
 panel flags: accept A+B now (near-automatic once R1 is fixed) and split Part C
 into its own evidence-pinned proposal.
 
+## Response -- Claude (author) -- 2026-07-08
+
+**Model**: Claude Fable 5. Proposal-Response grammar (no implementing commit
+exists yet). Every critique disposed; none dropped. The review was strong —
+it caught a real citation crack (R1) in a proposal about citation cracks, and
+proved (R2) that the transition-lint would misfire on the dominant lifecycle
+commit shape. Two dispositions are structural: **Part C is split out** (R4),
+and the correction-home question is **narrowed** (R5).
+
+* **[R1] accept.** Corrected in the Revised proposal: the governing rule is
+  `doctrine/proposals.md:136-140` (archived files are closed, link maintenance
+  only) plus append-only at `doctrine/lifecycle.md:85-88`; the "is never
+  retro-fitted" phrase is from the `_template.md` files, not `lifecycle.md`,
+  and is dropped. (This original Proposal section keeps the misquote — it is
+  the append-only record of what was believed at open; the Revised section is
+  the correction.)
+* **[R2] accept → carried into the split-out Part C proposal.** The finding is
+  correct (plan-open renames the reviewed proposal into `archive/`;
+  `git diff-tree` is rename-blind). It becomes a pre-registered must-not-flag
+  constraint of the Part C follow-up, which will enumerate changes with
+  `-M`/`--find-renames`.
+* **[R3] accept → Part C proposal.** The narrowing (fire only on commits
+  touching `dev/proposals/`|`dev/plans/`, excluding archive moves) and the
+  deliberation-carve-in exemption become pre-registered constraints there.
+* **[R4] accept.** This proposal narrows to **Part A + Part B**. Part C (the
+  transition-lint) becomes its own proposal, whose heuristics are pinned
+  against the real commit corpus the review supplied as fixtures (`0d24fec`,
+  `d789474`, `18707e9`), and which evaluates a `quality_gate.py --sub transition`
+  home versus a standalone script. This applies the proposal's own
+  anti-bundling logic one level down — correctly.
+* **[R5] accept with modification.** Part B is rewritten (Revised proposal):
+  (i) the two review-floor deviations go to a schema-conformant tracker whose
+  event class and rate-limit-gate treatment (including whether retroactive rows
+  count toward `evolution_infer`'s window) are defined, not back-filled blindly;
+  (ii) the one-time provenance narrative is homed as a strategy/plan-record
+  note, not a measurement row; (iii) a **discoverable dated pointer on the
+  archived file** (link-maintenance only, which `proposals.md:136-140` permits)
+  is a firm requirement under any home; (iv) the open question narrows to
+  *ledger+pointer vs. marked in-file erratum-append* — both append-only-safe.
+* **[R6] accept.** Pinned in the Revised proposal and disclosed in this run's
+  Review header: the panel cannot commit, so the author-session scribe-committed
+  the review **as a disclosed deviation**. That deviation is itself a candidate
+  row for the Part B ledger. The *permanent* model is a Maintainer choice —
+  (a) the Maintainer commits subagent-panel reviews, or (b) a sanctioned
+  disclosed-scribe mechanism is written into doctrine (a separate, rate-limited
+  proposal). Defer the permanent choice to the Decision; this run stays honest
+  by full disclosure.
+* **[R7] accept.** Revised Part A rewords to: *"the External floor is filled by
+  the human Maintainer's read (or a second agent type); fresh-session agent
+  review is the Internal floor, not the External tier,"* and positively affirms
+  fresh-session review as real Internal-tier value (citing `dual-review.md:51-57`),
+  keeping the warmth of `solo-greenfield.md:99-101`. Postdoc-readability becomes
+  a plan-review criterion.
+* **[R8] accept.** The guard test is re-specified to detect the false
+  *predication* (fresh-session/same-vendor review *fills/staffs* External) via a
+  curated forbidden-phrase list, with a **positive fixture** (the corrected
+  text) that must pass — so the test cannot pass by flagging its own fix.
+* **[R9] accept → Part C proposal.** The corpus-driven edge-case set (plan-open
+  rename, plan-archive+PLANNING bundle, strategy/goodnight carve-in commits)
+  replaces the speculative dogfood; the false "rejected-in-place adds no section"
+  edge case is dropped (`proposals.md:80-83`).
+* **[R10] accept → Part C proposal.** The info-tier analogy, the exact
+  exit-behavior (advisory = always exit 0), and an explicit suppression
+  mechanism are pinned there.
+* **[R11] accept.** Revised Part B records the accurate mechanism: the Gemini
+  section landed in `17b7e5c`; `f4a8308` was claim-marker maintenance mislabeled
+  as a review-append (and not in its own labeled commit per `lifecycle.md:91-114`).
+* **[R12] accept.** Relabeled (Revised proposal header note): *"A2 in full + the
+  review/transition-independence slice of A1; the transition-lint fold-up is
+  split to its own proposal."* Phase-A tracking must not mark A1 complete.
+
+**On the second-round recommendation (External before Decision): accept, and
+surfaced to the Maintainer.** I cannot produce the External tier myself — it
+requires a different agent type (the cross-type reviewer in the project's
+workflow), not a fresh Claude subagent (which is Internal). Recommendation to
+the Maintainer: route this revised proposal to the cross-type External reviewer
+before the Decision, or waive with rationale on the record. R1 is corrected
+regardless.
+
+## Revised proposal -- 2026-07-08
+
+**Scope (relabeled per R12):** A2 in full + the review/transition-independence
+slice of A1. **Part C (the transition-lint) is split out** to its own follow-up
+proposal (per R4), where its heuristics are pinned against real commits. This
+proposal is now **two parts**, and its Decision is genuinely near-automatic.
+
+### Part A — fix the mislabeled-independence onboarding (corrected per R7, R8)
+
+* Reword the passages in `templates/onboarding/solo-greenfield.md` (76-77, 99,
+  115-119) to: **the External floor is filled by the human Maintainer's read
+  (or a second agent type); fresh-session agent review is the Internal floor,
+  not the External tier.** The reworded prose must *positively affirm* that
+  fresh-session review is genuine Internal-tier value (per the worked example
+  at `doctrine/dual-review.md:51-57`), preserving the warmth of the current
+  `solo-greenfield.md:99-101` phrasing — not read as bureaucratic subtraction.
+  This corrects the earlier draft's wrong "External tier unstaffed until a human
+  exists": in a solo Maintainer+agent setup the human **already** staffs
+  External (`dual-review.md:47`).
+* Add `bootstrap/tests/test_onboarding_review_tiers.py`: assert against a
+  **curated forbidden-predication list** (fresh-session / same-vendor review
+  *fills / staffs / is* the External tier), **not** bare token co-occurrence,
+  and include a **positive fixture** (the corrected passage) that must pass.
+* Postdoc-readability of the reworded prose is an explicit **plan-review
+  criterion** (the negative-only drift test cannot mechanize it).
+
+### Part B — record the provenance honestly (rewritten per R5, R11)
+
+* **Separate the two record types.** (i) The two 2026-06-12 review-floor
+  deviations go to a schema-conformant incident tracker; the plan defines the
+  review-floor-deviation event class and its rate-limit-gate treatment —
+  explicitly whether retroactively back-filled rows count toward
+  `evolution_infer`'s rolling window (default: mark them non-counting /
+  historical so a retroactive log cannot trip a doctrine-proposal suggestion).
+  (ii) The one-time showcase-arc provenance narrative is homed as a strategy
+  note or the plan/commit record — **not** a measurement row
+  (`dev/measurement/README.md:7-20` membership rule).
+* **Accurate provenance (R11):** record that the Gemini External section landed
+  in `17b7e5c` (the open commit, alongside the Internal section, while Status
+  read `proposed`), and that `f4a8308` — messaged as appending the Gemini review
+  — was in fact claim-marker maintenance, mislabeled and not in its own labeled
+  commit (`doctrine/lifecycle.md:91-114`).
+* **Discoverable pointer (firm requirement under any home):** the archived
+  proposal carries a dated pointer to the correction — **link maintenance only**,
+  which `doctrine/proposals.md:136-140` permits on a closed file — so a skeptic
+  auditing the archived arc reaches the correction.
+
+### Correct citation (R1)
+
+The rule governing an archived proposal is `doctrine/proposals.md:136-140`
+("Archived proposals … the file is **closed**. No edits beyond link
+maintenance") plus append-only at `doctrine/lifecycle.md:85-88`. The earlier
+draft's `"is never retro-fitted"` attribution to `lifecycle.md` was wrong (the
+phrase is in the `_template.md` files) and is withdrawn.
+
+### Narrowed open question (R5, R6)
+
+* **Correction home:** ledger+pointer vs. a marked, dated in-file erratum-append
+  — both append-only-safe; the Maintainer's call, but no longer the wide-open
+  three-way of the original draft.
+* **Subagent-review committer (R6):** does the Maintainer prefer (a) committing
+  subagent-panel reviews themselves, or (b) a sanctioned disclosed-scribe
+  mechanism (a separate doctrine proposal)? This run used disclosed-scribe as a
+  logged deviation.
+
+### Unchanged
+
+Rationale, the "why now," and the instance/record/prevention shape stand
+(prevention now lands via the split-out Part C proposal). `Plan review:
+required(Internal)` still holds for the retained A+B; the External-before-Decision
+recommendation is on the record above.
+
 ## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
 
-*(Awaiting the Maintainer. This is one of the near-automatic Decisions —
-the fixes follow directly from the findings — but the accept/reject and
-the Part-B home question are the Maintainer's to sign; no agent
-self-Decides.)*
+*(Awaiting the Maintainer. The retained A+B scope is near-automatic once R1 is
+corrected — which the Revised proposal does. Three things are genuinely yours:
+(1) accept / reject the revised A+B; (2) the narrowed Part-B correction-home
+question; (3) the R6 subagent-review committer model. The Internal panel
+recommends a cross-type External read before this Decision — route it to the
+project's cross-type reviewer or waive with rationale. No agent self-Decides.)*
