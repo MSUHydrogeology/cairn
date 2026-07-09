@@ -248,12 +248,172 @@ and the review mechanism, not its Decision.
 
 ## Review -- Claude (Internal, fresh-context subagent panel) -- 2026-07-08
 
-*(Awaiting the Internal review. It will be produced by fresh-context
-subagents with no access to the authoring session — the structural
-realization of the Internal floor's "same agent, fresh session" — and
-appended here as its own commit, attributed transparently to that
-mechanism. An External cross-type read remains available before the
-Decision if the Maintainer requires the differentiating tier.)*
+**Model**: Claude Fable 5 (three fresh-context subagents, distinct lenses —
+doctrine-conformance, implementation-feasibility, scope-and-prose — each with
+no access to the authoring session; findings consolidated, none dropped).
+
+**Attribution / committer note (this itself is finding R6).** These are the
+panel's findings, transcribed faithfully. The panel cannot run git, so the
+author-session committed this section **as scribe**, disclosing the mechanism
+in full rather than signing it as the author's own read. That the author
+commits an independent panel's review is exactly the coupling AGENTS.md's
+self-commit rule cautions against — surfaced here, not hidden, as R6, for the
+Maintainer / External tier to resolve. No finding was softened in transcription.
+
+**Steelman.** The diagnosis is real and verified across all three lenses.
+Part A's mislabel is genuine (`solo-greenfield.md:76-77,:99,:113-119` call
+fresh-session same-vendor review the "External tier," contradicting
+`dual-review.md:46-47`). Part B's provenance claims check against git
+(`git show 17b7e5c` = Status "proposed" already carrying both review sections;
+`git show f4a8308` = a claim-check-allow marker edit, no review content). The
+proposal dogfoods its own thesis — its open commit left the Review section an
+empty placeholder rather than baking it in. The instance/record/prevention
+triad is a recognized Cairn shape; the advisory posture, the append-only-
+respecting ledger default, and the drift-guard test are well-judged; the
+proposal names its own wrongness signals honestly.
+
+**Critiques** (descending severity; each grounded in a command/citation the
+reviewer ran):
+
+* **[R1] (blocking)** Part B's load-bearing citation misquotes and
+  misattributes: `'an archived proposal "is never retro-fitted"'` is presented
+  as a `doctrine/lifecycle.md` quote, but the phrase appears nowhere there
+  (`grep -c retro-fit doctrine/lifecycle.md` → 0); it lives only in the
+  `_template.md` files. The governing rule is `doctrine/proposals.md:136-140`
+  ("Archived proposals … the file is **closed**. No edits beyond link
+  maintenance") plus append-only at `lifecycle.md:85-88`. A proposal about
+  verifiable record cracks carries one on its own turf, and `claim_check`
+  can't catch it (doctrine refs are citation-exempt). The *conclusion*
+  (default to a ledger; don't annotate the archived file) is correct and in
+  fact better-supported by the accurate citation. **Fix:** correct the
+  citation (via the append-only Response/Revised, since the proposal is
+  committed).
+* **[R2] (blocking)** Part C flag-shape (b) ("a proposal-open commit whose
+  added file already contains `## Review`") false-positives on essentially
+  every **plan-open** commit, because plan-open renames the fully-reviewed
+  proposal into `archive/`. Rename detection is not uniform: `git show -M`
+  reports R100, but the natural stdlib plumbing
+  `git diff-tree --no-commit-id --name-status -r <c>` is rename-blind and
+  reports the archived proposal as an **added** file containing `## Review`
+  and `## Decision` (verified on `0d24fec`). This is the dominant lifecycle
+  commit shape, and the proposal's edge-case list omits it. **Fix:** add the
+  rename-to-archive case as a must-not-flag test; require the plan to enumerate
+  changes with `-M`/`--find-renames` (reuse the pattern at
+  `templates/modules/team-gated/_intent/conflict.py:749-776`).
+* **[R3] (substantive)** Flag-shape (a) ("message claims a transition but diff
+  adds no section") has a large false-positive surface in Cairn's own log: it
+  flags the deliberation-carve-in commits (`AGENTS.md:150-160`: goodnight
+  handoff, the one-line `PLANNING.md` row-move) and trips on "open/review/
+  Decision" as ordinary English (`18707e9`, `d0ba903`, `ebb1d6e`, `d789474`,
+  `0d24fec` all carry the words, touch only `dev/strategy/` or bundle a
+  row-move, add no proposal/plan section). The load-bearing narrowing — fire
+  only on commits that touch `dev/proposals/` or `dev/plans/` — is unstated.
+  Relatedly, "N/A — no doctrine change" is unverifiable while the exception
+  vocabulary is deferred to the plan without binding it to the carve-in.
+  **Fix:** state the narrowing; name the carve-in as the exemption source of
+  truth; bound the vocabulary to restating it; dogfood over ~30 real commits.
+* **[R4] (substantive)** Part C (a new tool) is a different risk class and
+  effort than the near-automatic A+B, yet is folded in under a "near-automatic"
+  Decision framing. Its rules, exception vocabulary, and home are all deferred.
+  Its natural home may be a `quality_gate.py --sub transition` sub-gate, not a
+  fourth standalone script. This is the proposal's own anti-bundling logic
+  (its Alt #3) applied one level down. **Fix:** split Part C into its own
+  proposal/plan whose heuristics are pinned against the real commit corpus.
+* **[R5] (substantive)** Part B routes two different record types into one
+  ledger: the two measurable review-floor deviations *and* a one-time
+  provenance narrative. `dev/measurement/README.md:7-20` restricts the folder
+  to metrics + feeding ledgers, and `incident-trackers.md:40-42,136-156` makes
+  any such tracker a rate-limit-gate substrate `evolution_infer.py` parses
+  (≥2 "occurred" rows in a window → suggests a doctrine proposal) — so
+  back-filling two same-class deviations could trip the gate, and a narrative
+  is not a measurement row at all. Also, defaulting the correction into a
+  ledger a skeptic auditing the archived file would never see *undercuts Part
+  B's own goal*. Append-only disfavors in-place edits but does not forbid a
+  marked, dated erratum-**append**. **Fix:** separate the two records; make "the
+  archived file carries a discoverable dated pointer to the correction" a firm
+  requirement; reframe the open question as ledger+pointer vs. marked in-file
+  erratum-append (both append-only-safe) — largely settleable now.
+* **[R6] (substantive)** The subagent-review committer model is unpinned (see
+  the attribution note above): a subagent can't commit, so if the author-session
+  commits, that is the author committing the review — the coupling
+  `AGENTS.md:112-113` forbids. **Fix:** name the committer explicitly and
+  reconcile the model (Maintainer commits, or a documented, disclosed
+  deviation) — the record must pin this, not leave it implicit.
+* **[R7] (substantive)** Part A's proposed "the External tier is explicitly
+  unstaffed until a second agent type or a human reviewer exists" is wrong:
+  solo-greenfield is "one human Maintainer + one AI agent"
+  (`solo-greenfield.md:25-28`), and `dual-review.md:47` names *a human* as a
+  full External floor — the Maintainer **already staffs External**. The
+  "unstaffed" wording is exactly the over-correction the proposal flags as a
+  wrongness signal. It also specifies only what to *remove*, never positively
+  affirming that fresh-session review is genuine Internal-tier value. **Fix:**
+  reword to "the External floor is filled by the human Maintainer's read (or a
+  second agent type); fresh-session agent review is the Internal floor, not
+  External," keep the warmth of the strongest source passage
+  (`solo-greenfield.md:99-101`), and make postdoc-readability a plan-review
+  criterion.
+* **[R8] (substantive)** The Part-A guard test as specified (assert no preset
+  pairs "External" with "fresh-session"/"same-vendor") would flag Part A's own
+  *corrected* text, which must name both tiers in one passage. A co-occurrence
+  assertion either red-flags the fix or catches nothing. **Fix:** detect the
+  specific false predication (fresh-session review *fills/staffs* External) via
+  a curated forbidden-phrase list, and add a positive fixture (the corrected
+  text) that must PASS.
+* **[R9] (substantive)** Part C's pre-registered verification is speculative,
+  not corpus-driven: the "live dogfood" over this proposal's own commits
+  exercises only easy paths (the plan-open rename that would stress it is
+  excluded), and one enumerated edge case ("a Decision commit that adds no
+  section on a rejected-in-place proposal") is premised on a false model — per
+  `proposals.md:80-83` a reject/supersede Decision *does* append a `## Decision`
+  section. **Fix:** derive edge cases from the real corpus (plan-open rename,
+  plan-archive+PLANNING bundle, strategy/goodnight carve-in commits:
+  `0d24fec`, `d789474`, `18707e9`); drop the false edge case.
+* **[R10] (minor)** "Same family as `quality_gate.py` … not a gate that blocks"
+  is imprecise: `quality_gate.py` is fail-closed (`:819`, `return 1 if failed`);
+  only its `info` tier is advisory. "Advisory exit code" is self-contradictory
+  (nonzero blocks CI). transition_lint would also be Cairn's first check
+  reasoning over commit diffs+messages, and the real R6/Theme-3.4 lesson is the
+  *suppression infrastructure* (exclusion roots + whitelist + info downgrade),
+  unspecified here. **Fix:** recast the analogy to the info tier; pin exact exit
+  behavior (advisory = always exit 0); commit to a suppression mechanism.
+* **[R11] (minor)** Part B undersells f4a8308: `git show` shows it added only
+  claim-check-allow marker tokens — it was claim-marker maintenance *mislabeled*
+  as a review-append (and per `lifecycle.md:91-114` such maintenance must land
+  in its own labeled commit, which it did not). **Fix:** record the accurate
+  mechanism (the Gemini section landed in `17b7e5c`; `f4a8308` was mislabeled
+  marker maintenance).
+* **[R12] (minor)** Scope-label over-claim: the header says "items A1 + A2," but
+  this delivers A2 in full and only the review/transition slice of A1 (the
+  v0.3.0 release-notes correction, the adoption-decision note, and the
+  zero-rejections explanation are absent), and Part C is a fold-up candidate,
+  not an A1/A2 item. A Maintainer tracking Phase A would mark A1 done at ~40%.
+  **Fix:** relabel to "A2 in full + the review/transition-independence slice of
+  A1 + the transition-lint fold-up."
+
+**Covered.** Doctrine-conformance (`dual-review.md`, `lifecycle.md`,
+`proposals.md`, `incident-trackers.md`, `dev/measurement/README.md`, the
+`AGENTS.md` carve-in + attribution rules); implementation-feasibility (git
+plumbing rename semantics run empirically on `0d24fec`; the shape-(a) FP surface
+against the real last-~15-commit corpus; `quality_gate.py` posture and R6
+suppression infra; rename-aware fixture pattern at `_intent/conflict.py`);
+scope-and-prose (the reworded passages, Part-C precedent, Phase-A scope mapping).
+**Not covered / low confidence:** did NOT run transition_lint or its tests (they
+don't exist yet — all Part-C findings are static reasoning); did not run the
+pytest suite; no real goodnight-handoff commit exists to test FP behavior
+against; linear history precluded exercising squash/merge/rebase; **all three
+passes are same-agent-type — no cross-type independence on this Internal panel.**
+
+**Second-round recommendation: an External (cross-type) pass is recommended
+before the Decision.** Four reasons: (1) the proposal is about the
+record-integrity differentiator, so it should clear the differentiating tier it
+advocates; (2) the blocking misquote (R1) is a doctrine-recall failure a
+same-type reviewer sharing the author's priors may miss and a different agent
+type is likelier to catch; (3) Part C as written would ship a check that
+false-positives on the dominant lifecycle commit shape (R2) and its home is a
+genuine design fork (R4); (4) the subagent-committer model (R6) is novel and
+deserves an independent read before it becomes precedent. Sequencing option the
+panel flags: accept A+B now (near-automatic once R1 is fixed) and split Part C
+into its own evidence-pinned proposal.
 
 ## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
 
