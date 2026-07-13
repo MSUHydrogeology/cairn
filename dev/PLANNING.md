@@ -142,7 +142,10 @@ archived plan / proposal, the implementing commits, and the
 changelog. There is no "completed recently" section on this
 board by design.
 
-*(Empty at adoption.)*
+* **review-record-integrity** *(plan open, 2026-07-13)* — Part A (fix the
+  onboarding review-tier mislabel) + Part B (record the showcase-arc
+  provenance honestly); source: `review-record-integrity` proposal
+  (accepted 2026-07-09).
 
 ---
 
