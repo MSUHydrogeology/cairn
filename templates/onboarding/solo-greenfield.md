@@ -72,10 +72,13 @@ no multi-agent coordination, no legacy-tree pre-pass.
   cross-agent-type review tier when you add a second agent later.
 
 * [trigger: second-agent-type; id: spin-up-second-agent]
-  You're at the point where a second agent type meaningfully
-  strengthens Dual-Review's External tier (currently filled by
-  fresh-session same-vendor review). Walk
-  `dev/modules/onboarding/agent-team-onboarding.md` for the spin-up checklist.
+  You're at the point where a second agent type would meaningfully
+  strengthen Dual-Review. The External floor is already filled by
+  the human Maintainer's read; a second agent type adds a
+  structurally-independent agent to both tiers and eases how much
+  falls on you alone. Walk
+  `dev/modules/onboarding/agent-team-onboarding.md` for the spin-up
+  checklist.
 
 * [trigger: first-foldback-candidate; id: walk-foldback-protocol]
   Your fold-back ledger has its first open candidate ready to
@@ -96,9 +99,10 @@ the `solo-greenfield` shape:
 Fill in your own name + your agent's identifier in the team-roster
 slot of `dev/collaboration_agreement.md`. No multi-party
 negotiation needed; you're the team. The roster makes the
-fresh-session External review tier reproducible (the second
-session of your agent reviewing your work is structurally
-independent only if the roster names you both explicitly).
+fresh-session Internal review tier reproducible -- real value, not
+a formality (the second session of your agent reviewing its own
+prior work catches what the first session missed); the External
+floor is filled by the human Maintainer's read.
 
 ### Row 2 -- Level 1→2 graduation prompt
 
@@ -112,11 +116,13 @@ working; Level 2 just automates what's now repeated work.
 ### Row 3 -- second-agent-type spin-up prompt
 
 Your solo deployment has matured to a point where a second agent
-type would meaningfully strengthen Dual-Review's External tier
-(currently filled by fresh-session same-vendor review). Walk
-`dev/modules/onboarding/agent-team-onboarding.md` for the spin-up checklist; the
-second agent's capability tier should match the work the
-External tier carries.
+type would meaningfully strengthen Dual-Review. The External floor
+is already filled by the human Maintainer's read; a second agent
+type adds a structurally-independent agent option to both tiers
+and eases how much falls on you alone. Walk
+`dev/modules/onboarding/agent-team-onboarding.md` for the spin-up
+checklist; the second agent's capability tier should match the
+work Dual-Review carries.
 
 ### Row 4 -- upstream PR/issue walkthrough prompt
 
