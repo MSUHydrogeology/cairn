@@ -150,6 +150,51 @@ touches to a file `doctrine/proposals.md:136-140` closes to everything but
 link maintenance; the interim gap is accepted as the cost of that choice,
 not overlooked.
 
+## Showcase-arc provenance record
+
+**What actually happened** to
+`dev/proposals/archive/2026-06-12-claude-check_cairn-self-host-compat.md`'s
+review sections, verified directly against the two commits during this
+session (`git show 17b7e5c` / `git show f4a8308`) rather than trusted from
+the original proposal's Context section, which described the mechanism as
+"likely... innocent" without having actually looked:
+
+* **`17b7e5c`** — the proposal's **open** commit (message: "dev/proposals:
+  open check_cairn self-host-compat (+ Internal review)"; commit body says
+  "Status: proposed; awaiting External (Antigravity) review + Maintainer
+  Decision"). The tree this commit wrote already contained the file in
+  full, **including both** `## Review -- Claude (Internal, same-session) --
+  2026-06-12` **and** `## Review -- Gemini (External, different-agent-type)
+  -- 2026-06-12`, while the file's own `**Status**:` field read `proposed`.
+  In other words: both review sections were written and committed at once,
+  in the same commit as the open, not incrementally as the lifecycle
+  discipline (one commit per transition) prescribes.
+* **`f4a8308`** — the very next commit on this file, messaged "dev/proposals:
+  add Gemini External Review for check_cairn self-host-compat" with the
+  body "Append the Gemini (External, different-agent-type) review section
+  to the proposal, addressing the Internal Reviewer's feedback on R1, R2,
+  and R3." The actual diff: one line of the file's `claim-check-allow`
+  directive gains three additional comma-separated path tokens
+  (dev/intents.jsonl.bak, an ellipsis token, and another ellipsis token —
+  illustrative path fragments, not real paths), plus one blank line. **No
+  review content is added.** The commit message does not describe what the
+  diff actually contains, and — per `doctrine/lifecycle.md:91-114` — a
+  claim-marker-maintenance edit is supposed to land in its own commit
+  labeled as exactly that, which this commit's message does not do either.
+
+**Assessment.** The most likely innocent explanation the original proposal
+offered (review conducted in chat, then batch-written to the file) is
+plausible and is not contradicted by anything found here — but the record
+as committed does not say that, and nothing here proves it either; an
+outside auditor working only from the git history could not distinguish
+"written up afterward, honestly" from "backfilled to look reviewed." This
+section exists so that distinction no longer depends on trusting an
+unverified claim: the actual commit contents are now on the record,
+verified, dated, and separated from what the mechanism might have been.
+
+This section, once this plan archives to `dev/plans/archive/`, is the
+target of the archived proposal's top-of-file pointer (Chunk C1).
+
 ## Acceptance criteria
 
 * **Tests that must pass** — the new `test_onboarding_review_tiers.py` (A2;
