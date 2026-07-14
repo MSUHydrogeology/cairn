@@ -3,13 +3,13 @@
 # Plan: review-record integrity (Part A + Part B)
 
 **Source proposal**: `dev/proposals/archive/2026-07-08-claude-review-record-integrity.md`
-**Status**: executing
+**Status**: review
 **Plan review**: required(Internal) — ratified at Decision; touches a shipped
 onboarding template read by every solo-greenfield adopter, and the plan pins
 concrete specifics (exact reworded prose, the guard-test heuristic, the
 incident-ledger schema, the `Impact=historical` wiring, the pointer placement)
 that the proposal left to plan stage.
-**Last update**: 2026-07-13
+**Last update**: 2026-07-14
 **Opened**: 2026-07-13
 
 ## Source proposal
@@ -345,9 +345,83 @@ of the prose.
 **Status: awaiting-plan-review → executing.** All findings disposed;
 implementation (Chunk A, then Chunk B) begins next.
 
-## Code review
+## Code review -- Claude (fresh-context, not the implementing agent) -- 2026-07-14
 
-*Filled in after implementation commits land.*
+**Attribution / committer note.** Fresh-context subagent read of both
+implementation commits (`c2b1235`, `2432f10`); the subagent cannot commit,
+so the author-session commits this section as a disclosed scribe, the
+same accepted deviation model used for the Plan review above.
+
+**Verdict: Accept.**
+
+**Model**: Claude Sonnet 5, fresh session, no access to the authoring session for either commit. Every claim below is grounded in a command run this session against the actual repo state at HEAD (`2432f10`), not against the commits' own messages.
+
+### Falsification ledger
+
+* **Plan-vs-implementation faithfulness (Chunk A / A1, A2).** Diffed `git show c2b1235` against the plan's "Pinned replacement text" subsection word-for-word. All three passages (task-list item, Row 1, Row 3) match the pinned prose exactly, with one byte-level exception: the plan's pinned text uses an em dash ("—") in Row 1 ("reproducible — real value"); the shipped file uses "--" instead. Checked whether this is a real drift or a style correction: `grep -c "—" templates/onboarding/solo-greenfield.md` → 0, `grep -c -- "--" templates/onboarding/solo-greenfield.md` → 19 — the file uses "--" exclusively throughout, zero em dashes anywhere else. The implementer silently normalized to the file's established house style. Correct call, but the plan's own words ("Verbatim, so implementation and plan-review are checking the same text") were not kept byte-for-byte, and the substitution isn't disclosed anywhere. Non-blocking.
+* **Guard test soundness (A2).** Ran `python3 -m pytest bootstrap/tests/test_onboarding_review_tiers.py -v` — 5/5 pass, including `test_solo_greenfield_external_tier_paragraphs_name_their_staffing`'s `checked == 3` assertion (empirically confirms exactly 3 paragraphs match "external"+"tier" in the file, not more/fewer — not just asserted, actually exercised). Manually walked every paragraph of `templates/onboarding/solo-greenfield.md` for a false positive/negative the guard might miss: the "Per Codex External Review P2-3" credit line (no "tier") and the collab-agreement task-list item's "cross-agent-type review tier" (no "external") both correctly fall outside the positive-predication check's scope, as designed. Independently ran `grep -n -i "external\|fresh-session\|same-vendor" templates/onboarding/collaborative-team.md` and `grep -n -i "fresh-session\|same-vendor\|vendor" templates/onboarding/high-rigor-legacy.md` — confirms the universal forbidden-phrase list (both wordings, case-insensitive) does not false-positive on either file's legitimate External-tier prose, and confirms plan-review R5's correction (no "fresh-session"/"same-vendor" text at all in `high-rigor-legacy.md`, zero matches) is accurate.
+* **`Impact: historical` mechanism (E3).** Did not just trust the commit message. Ran `python3 tools/evolution_infer.py --root . --trackers dev/measurement/review-floor-deviations.md` directly → `RATE-LIMIT SUGGESTIONS: none.` Then built a positive control: copied the ledger to scratch, changed both rows' `Impact` to `occurred` and dates to fall within the 14-day window, re-ran the tool against that copy → it correctly fired: `RATE-LIMIT SUGGESTIONS (1): event-class 'review-floor-deviation' has 2 'occurred' incident(s)...`. This proves the tool actually works and that `historical` — not some unrelated bug — is what keeps the real ledger silent. Also read `evaluate_tracker()` at `tools/evolution_infer.py:173-193` directly: the gate only counts `inc["impact"] == "occurred"`, confirming the mechanism structurally, not just empirically.
+* **Provenance record accuracy (B2).** Ran `git show 17b7e5c` and `git show f4a8308` independently against the archived proposal path. `17b7e5c`: `**Status**: proposed` at line 10, `## Review -- Claude (Internal, same-session)` at line 177, `## Review -- Gemini (External, different-agent-type)` at line 253, and the `## Decision` section still a template placeholder (`{{Maintainer}}`, `{{YYYY-MM-DD}}`) — confirms both review sections landed in the open commit while Status still read "proposed." `f4a8308`'s diff: exactly three new comma-separated tokens (dev/intents.jsonl.bak, an ellipsis token, another ellipsis token) appended to the `claim-check-allow` line plus one blank line, "2 insertions(+), 1 deletion(-)" — no review content. The plan's B2 section states "three tokens" (the Sharpening table's R6 fix), matching exactly what I found — the pre-Sharpening draft's "two tokens" would have been wrong. Also independently confirmed the two ledger rows against the archived proposal: `**Plan review**: required(Internal)` is present, `## Decision` reads "**Accepted — implement directly (no formal plan).**", and no plan file exists under `dev/plans/` or `dev/plans/archive/` for that proposal (`find` returns nothing) — row 2's claim checks out exactly.
+* **E1.** Read the test code directly: `_normalize()` lowercases + whitespace-normalizes before every comparison (case-insensitive, per E1), and the positive-predication check requires a staffing token ("human maintainer" / "different agent type" / "second agent type") in the same paragraph as "external"+"tier" — the positive form E1 asked for.
+* **E2.** Confirmed the archived file currently carries **no** pointer at all: `grep -n "review-floor-deviations\|Showcase-arc" dev/proposals/archive/2026-06-12-claude-check_cairn-self-host-compat.md` → no match. This matches the plan's explicit Sequencing-note disclosure that Chunk C1 is deferred to plan-archive time (a real, disclosed deferral, not a silently dropped condition) — an accepted residual per the disposed plan-review R8.
+* **E3.** See the `Impact: historical` bullet above — independently proven via a positive-control run, not just the commit message's assertion.
+* **Doctrine citation correctness (R1 disposition).** Read `doctrine/dual-review.md:1-90` in full. Lines 12-15 are exactly the Internal-review purpose statement ("helps a change land... catch problems, sharpen the argument, surface what the author missed"); lines 51-80 ("Worked example — the floor pays its way") are entirely about the different-agent-type/External floor's differentiated value. Confirms the Sharpening's R1 fix (citing `:12-15`, not `:51-57`) was the correct repair.
+* **Shared-module scope discipline (R2 disposition).** Confirmed `dev/modules/incident_log_template.md` and `dev/modules/incident-trackers.md` were **not** touched by either commit (`git log --oneline -3 -- dev/modules/incident_log_template.md dev/modules/incident-trackers.md` shows only an unrelated prior commit) — the `historical` extension was correctly scoped to the local fork only, as R2's "accept with modification" required.
+* **Commit-message precision.** `python3 scripts/quality_gate.py --sub neutrality` → 99 FAIL lines, matching the commit message's claim exactly. But one of those 99 is `templates/onboarding/solo-greenfield.md:92` ("Per Codex External Review P2-3"), which is a file Part A edited. Checked whether this predates Part A: `git show 5140e21:templates/onboarding/solo-greenfield.md | grep -n Codex` → present at line 89 before Part A's diff. So the finding is pre-existing and untouched by the diff, but the commit message's "my files contribute zero findings" is imprecise if read literally (the touched *file* has one finding; the touched *diff hunks* have zero). Minor, non-blocking.
+* **Test scope / no collateral damage.** Confirmed `templates/onboarding/collaborative-team.md` and `templates/onboarding/high-rigor-legacy.md` are read-only inputs to the new test (never mutated), and `ls templates/onboarding/*.md` shows exactly the three files the test's glob assumes — no fourth preset silently excluded.
+* **Commit hygiene / scope fence.** Both `git show c2b1235` and `git show 2432f10` touch exactly the files the plan's Chunk A/B tables name (2 files each) — no bundled unrelated changes, no touch to `dev/PLANNING.md` or other shared-serialization files.
+
+### Commands run (verification suite)
+
+```
+python3 -m pytest bootstrap/tests/test_onboarding_review_tiers.py -v   -> 5 passed
+python3 -m pytest bootstrap/tests -q                                    -> 1408 passed, 3 skipped, 3 failed
+                                                                            (all 3 pre-existing: test_ast_attest x2,
+                                                                            test_evolution_infer clock-expired case --
+                                                                            matches both commits' stated baseline)
+python3 scripts/check_cairn.py                                          -> OK, 155 files, no issues
+python3 scripts/claim_check.py templates/onboarding/solo-greenfield.md  -> OK
+python3 scripts/claim_check.py bootstrap/tests/test_onboarding_review_tiers.py -> OK
+python3 scripts/claim_check.py dev/measurement/review-floor-deviations.md -> OK
+python3 scripts/claim_check.py dev/plans/review-record-integrity.md     -> OK
+python3 scripts/quality_gate.py --sub neutrality                        -> fail=99 (pre-existing baseline; unchanged)
+python3 tools/lifecycle_planner.py next dev/plans/review-record-integrity.md -> structurally sound; legal next: review
+python3 tools/evolution_infer.py --root . --trackers dev/measurement/review-floor-deviations.md -> RATE-LIMIT SUGGESTIONS: none
+[positive-control run against a mutated scratch copy with Impact=occurred, in-window dates] -> correctly fires
+```
+
+### Coverage
+
+**Covered**: both implementation diffs in full against the plan's Chunk A/B tables and pinned text; all 9 disposed plan-review findings (R1-R9) checked against both the plan text *and* the shipped artifacts, not just one; the guard test's actual runtime behavior (not just its described design) via pytest + manual paragraph-by-paragraph walk of all three onboarding presets; the `Impact: historical` mechanism via direct tool execution plus an independent positive control (not trusted from the commit message); the provenance record's every specific factual claim (Status field, review-section presence, exact token count) against fresh `git show` output; E1/E2/E3 each checked against on-disk state; doctrine citation accuracy (`dual-review.md:12-15` vs `:51-57`) via full-file read; shared-module non-mutation for the `historical` schema extension; full test suite, check_cairn, claim_check (4 files), quality_gate neutrality, and lifecycle_planner all re-run fresh.
+
+**Not covered / low confidence**: did not re-run the mutation test the Part A commit message describes ("reintroducing the old wording made 2/5 tests fail") -- took the pytest-passing state as sufficient given my own paragraph-level analysis found no false positive/negative; did not exhaustively enumerate every conceivable future mislabel wording the guard might miss in `collaborative-team.md`/`high-rigor-legacy.md` (the plan's own "Known omissions" already discloses this residual -- not a defect introduced by these commits); did not independently verify the Part A commit's intermediate "154 files" check_cairn count at commit `c2b1235` in isolation (verified only the final combined state at HEAD, 155, which is what matters for current correctness); this is a single same-agent-type pass -- no cross-type independence on this Code review (floor is "not the implementing agent," which is met; Cairn's Code-review floor does not require a different agent type).
+
+### Required follow-ups
+
+None required to land. Two non-blocking observations for whoever next touches this plan/file (informational only, not gating archive):
+
+1. The em-dash → "--" substitution in Row 1 of `solo-greenfield.md` vs. the plan's "Pinned replacement text ... Verbatim" subsection is an appropriate house-style correction but is undisclosed; if the plan is later amended, note the substitution explicitly rather than leaving "verbatim" uncorrected.
+2. Part A's commit message ("my files contribute zero findings") is accurate for the diff's own content but imprecise for the touched file as a whole (`solo-greenfield.md:92` carries one pre-existing, unrelated neutrality-gate finding). No action needed -- flagging only so a future reader doesn't misread the claim as "this file is clean."
+
+Chunk C1 (the archived-file pointer) remains correctly and legitimately deferred to plan-archive time per the plan's own Sequencing note -- this is not a gap in the two commits under review.
+
+### Sharpening -- Claude (author) -- 2026-07-14
+
+Both non-blocking observations accepted and disposed:
+
+* **[1] accept, informational.** Noted here for the record: Row 1's pinned
+  text used an em dash stylistically; the implementation correctly
+  normalized to the file's established "--" house style rather than
+  introducing the file's only em dash. No further edit needed -- this
+  paragraph itself is the disclosure the finding asked for.
+* **[2] accept, informational.** Noted here for the record: Part A's
+  commit message claim ("my files contribute zero findings") refers to
+  the diff's own content, not the touched file's pre-existing,
+  unrelated `templates/onboarding/solo-greenfield.md:92` neutrality
+  finding (present since before Part A; unrelated to review-tier
+  labeling). No further edit needed.
+
+No sharpening commits required; both findings are closed by this note.
 
 ## Lasting-truth migration
 
