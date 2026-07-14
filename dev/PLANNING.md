@@ -126,6 +126,17 @@ with the plan's filename stem.
   trivial path); (b) extend the `verify:` count guard to **other
   adopter-facing counts** beyond the quickstart's two. Each → its own
   proposal when revived.
+* **Transition-lint (Part C follow-up)** *(deferred, Jul 2026)* — Part A +
+  Part B of the `review-record-integrity` proposal shipped (plan
+  `review-record-integrity`, archived); Part C (an advisory
+  scripts/transition_lint.py, not yet created, flagging commits whose
+  message claims a lifecycle transition but whose diff doesn't match)
+  was split out at
+  Internal review (R4/R9/R10: a distinct risk class, needing heuristics
+  pinned against the real commit corpus — plan-open renames, the
+  deliberation-carve-in exemption, etc.) rather than folded into the
+  near-automatic A+B. Revive as its own proposal when someone pins those
+  heuristics.
 
 *(Otherwise empty at adoption — native proposals populate this board. The
 Cairn roadmap migrated 2026-06-12 from modflow_tools — queued items,
@@ -142,10 +153,7 @@ archived plan / proposal, the implementing commits, and the
 changelog. There is no "completed recently" section on this
 board by design.
 
-* **review-record-integrity** *(plan open, 2026-07-13)* — Part A (fix the
-  onboarding review-tier mislabel) + Part B (record the showcase-arc
-  provenance honestly); source: `review-record-integrity` proposal
-  (accepted 2026-07-09).
+*(Empty — `review-record-integrity` archived 2026-07-14.)*
 
 ---
 

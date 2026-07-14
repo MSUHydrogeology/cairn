@@ -3,7 +3,7 @@
 # Plan: review-record integrity (Part A + Part B)
 
 **Source proposal**: `dev/proposals/archive/2026-07-08-claude-review-record-integrity.md`
-**Status**: review
+**Status**: archived
 **Plan review**: required(Internal) — ratified at Decision; touches a shipped
 onboarding template read by every solo-greenfield adopter, and the plan pins
 concrete specifics (exact reworded prose, the guard-test heuristic, the
@@ -127,7 +127,7 @@ flagged explicitly for the plan-review pass to confirm or correct.
 | # | File | Change |
 |---|------|--------|
 | B1 | dev/measurement/review-floor-deviations.md (new; see Proposed paths) | Fork `dev/modules/incident_log_template.md`. Define the `review-floor-deviation` event class (a review, or a stated plan-review requirement, that fell short of its doctrine floor without a waiver recorded at the time). Two dated rows for 2026-06-12: (i) the Internal review of the `check_cairn-self-host-compat` proposal was headed "same-session" (`17b7e5c`), below the fresh-session floor (`doctrine/dual-review.md:46`); (ii) the proposal's stated `Plan review: required(Internal)` was never addressed by the Decision ("Accepted — implement directly (no formal plan)") — no plan opened, no plan-review section landed. Both rows carry **`Impact: historical`** (never `occurred`) per E3 — `tools/evolution_infer.py:186-188` triggers the rate-limit gate purely on `Impact == "occurred"`, so `historical` structurally cannot trip it regardless of window config. `Resolved By: 2026-07-08-claude-review-record-integrity` (this proposal). **Schema note (per plan-review R2):** `historical` is a fourth value beyond the three documented in `dev/modules/incident_log_template.md` / `dev/modules/incident-trackers.md:108-109` (`occurred`/`prevented`/`non-conflict`). Rather than editing the shipped module's canonical enum (that ripples to every future adopter and would be a small doctrine change the proposal's own "Doctrine-change rate-limit" section says N/A applies — out of scope here), this local fork's own "What counts" section documents the extension at the point of use: `historical` = retroactively-logged, dated-before-this-tracker-existed rows that must never count toward the rate-limit gate, verified never counted since `evolution_infer.py`'s gate only counts `Impact == "occurred"`. |
-| B2 | `dev/plans/review-record-integrity.md` (this file) | Add a `## Showcase-arc provenance record` section stating the accurate mechanism per R11: the Gemini External review section landed in `17b7e5c` (the open commit, alongside the Internal section, while Status still read `proposed`); `f4a8308` — messaged as "add Gemini External Review" — in fact added only three path tokens to a `claim-check-allow` directive line (claim-marker maintenance, mislabeled, and not in its own labeled commit per `doctrine/lifecycle.md:91-114`; token count corrected per plan-review R6). Verified directly against `git show 17b7e5c` / `git show f4a8308` in this session. |
+| B2 | this file (dev/plans/review-record-integrity.md at the time; archived to dev/plans/archive/ once this plan closes) | Add a `## Showcase-arc provenance record` section stating the accurate mechanism per R11: the Gemini External review section landed in `17b7e5c` (the open commit, alongside the Internal section, while Status still read `proposed`); `f4a8308` — messaged as "add Gemini External Review" — in fact added only three path tokens to a `claim-check-allow` directive line (claim-marker maintenance, mislabeled, and not in its own labeled commit per `doctrine/lifecycle.md:91-114`; token count corrected per plan-review R6). Verified directly against `git show 17b7e5c` / `git show f4a8308` in this session. |
 
 ### Chunk C — archived-file pointer (sequenced last, see note)
 
@@ -425,7 +425,40 @@ No sharpening commits required; both findings are closed by this note.
 
 ## Lasting-truth migration
 
-*Filled in at archive time.*
+Archived 2026-07-14.
+
+Follow-ups migrated to: `dev/PLANNING.md` > Queued ("Transition-lint
+(Part C follow-up)") — Part C (an advisory scripts/transition_lint.py,
+not yet created), split out at the proposal's Internal review (R4/R9/R10)
+as its own risk class needing heuristics pinned against the real commit
+corpus. This is the only deferred follow-up; the Author-accounting's
+"Known omissions"
+note (the guard test's literal-phrase list not generalizing to a future,
+differently-worded mislabel in `collaborative-team.md` /
+`high-rigor-legacy.md`) is a disclosed design boundary, not a queued
+action item — there is no further work implied, only an acknowledged
+limit of a literal-match guard.
+
+**Loop-fidelity sign-off.** The Decision → implementation chain holds:
+the accepted Revised proposal's Part A + Part B, plus the three
+Gemini-ratified conditions (E1–E3), shipped in `c2b1235` (Part A) and
+`2432f10` (Part B), with Chunk C's archived-file pointer landing in this
+same archive commit per the plan's own disclosed sequencing (an accepted
+residual, not a gap — see the Sequencing note and plan-review R8). The
+Plan review (fresh-context Internal, 9 findings, all accepted and folded
+into the plan and/or the implementation) and the Code review (fresh-context,
+not the implementing agent, verdict Accept, two non-blocking observations
+disposed inline) both landed before their respective gates, per
+`doctrine/plans.md`'s plan-review and plan-archive preconditions. Every
+finding across both review passes was independently verified against the
+actual repo state (git history, live tool runs, positive controls) rather
+than trusted from a prior claim — which is the property this proposal
+exists to strengthen. Verification green throughout: `check_cairn` OK
+at every commit; `claim_check` clean on every changed file; the new guard
+test proven non-vacuous by mutation; `evolution_infer.py`'s rate-limit
+gate proven silent on the real ledger and firing on a positive-control
+mutation; `python -m pytest bootstrap/tests` at 1408 passed / 3 skipped /
+3 pre-existing failures throughout, unchanged by this work.
 
 Per the [Archive preconditions rule](../PLANNING.md#archive-preconditions-proposals-and-plans),
 plans archive only after every deferred follow-up has a durable home outside

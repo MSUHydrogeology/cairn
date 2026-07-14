@@ -6,6 +6,17 @@
 
 # check_cairn: resolve the `dev/` claim-path findings self-hosting introduced
 
+> **Erratum (2026-07-14, link-maintenance only per `doctrine/proposals.md:136-140`
+> — no other edit to this closed file).** This proposal's Internal review
+> below is headed "same-session," not fresh-session (below the doctrine
+> floor), and its `Plan review: required(Internal)` header line was never
+> addressed by the Decision (no plan was opened). Both are dated,
+> recorded incidents at `dev/measurement/review-floor-deviations.md`. The
+> accurate provenance of this file's review-section commit history (what
+> `17b7e5c` and `f4a8308` actually each contain) is recorded at
+> `dev/plans/archive/review-record-integrity.md` > "Showcase-arc
+> provenance record." Everything below this notice is unedited.
+
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 4.8
 **Date opened**: 2026-06-12
