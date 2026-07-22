@@ -287,19 +287,29 @@ This proposal constructs a verified, zero-engine-risk adoption path (`docs/solo-
 
 ### Critiques
 
-* **[E1] (YAML Formatting & Minimal Parser Compatibility)**
-  Formatting all YAML comments on dedicated full lines (rather than inline following scalar values) guarantees compatibility with `_minimal_yaml_parse` (`bootstrap/_scaffold/config.py:122-134`). Part 4's literal YAML round-trip test explicitly validates that PyYAML-free adopters will not encounter `PresetError`.
-* **[E2] (Separability of Part 3 Template Port)**
-  Part 3 (adding a local escape-hatch gloss to `templates/core/dev/proposals/_template.md`) edits a universal template that affects all adopters. Marking Part 3 as independently accept/rejectable allows the Maintainer to adopt the persona recipe (Parts 1, 2, 4, 5) without forcing a change to universal template pointer conventions if they prefer strict pointer-only discipline.
-* **[E3] (Pedagogical Sequencing of First Proposals)**
-  Sequencing a disposable "Hello World" trivial accept first before authoring `docs/assumptions.md` as the first substantive proposal preserves the pedagogical arc. The postdoc learns proposal/review/decision mechanics on disposable content before committing high-stakes scientific assumptions to repository history.
+* **[E1] (Blocking Finding Verification — Stdlib Minimal Parser Execution)**
+  Independent empirical verification of the revised YAML under `_minimal_yaml_parse` (`bootstrap/_scaffold/config.py:84-140`) confirms the fix:
+  1. Placing comments on dedicated full lines avoids scalar-line comment mangling (where `# comment` was previously included as part of the string value).
+  2. Executing `_minimal_yaml_parse` on the revised YAML string yields `{'preset': 'solo-greenfield', 'age': 'legacy', 'modules_add': ['legacy-agent', 'testing-discipline']}` without error.
+  3. Passing the parsed dictionary to `expand_preset` resolves cleanly to the expected 8-module roster (`lifecycle-metrics, reflections, claim-check, fold-back-ledger, incident-trackers, documentation-plan, legacy-agent, testing-discipline`) with zero staffability warnings.
+
+* **[E2] (Verbatim Doctrine Citation Check)**
+  Verified that `doctrine/proposals.md:200-204` is quoted accurately in the Revised section and Part 3 port:
+  > *"urgent, clearly reversible, or explicitly experimental ... the commit or follow-up note should say why the proposal step was skipped."*
+  The previous broadened paraphrase ("urgent, reversible, or experimental ... say why") has been corrected to include the exact qualifying adverbs ("clearly", "explicitly").
+
+* **[E3] (Sizing Discipline — Conditional Module Split)**
+  The revised `modules_add` design successfully addresses the Internal panel's objection (R3). Unconditionally adding only `legacy-agent` (the finding-2 gap) and `testing-discipline` (for characterization testing) keeps the baseline lightweight (8 modules), while making `security-review` (trust boundary dependent) and `model-selection` (complexity dependent) conditional on readiness report findings.
+
+* **[E4] (Separability of Part 3 Template Port)**
+  Part 3 (adding a local escape-hatch gloss to `templates/core/dev/proposals/_template.md`) edits a universal template affecting all adopters. Marking Part 3 as independently accept/rejectable allows the Maintainer to adopt the persona recipe (Parts 1, 2, 4, 5) without altering universal template pointer conventions if strict pointer-only discipline is preferred.
 
 ### Coverage
 
 * **Covered**:
-  * Verified `_minimal_yaml_parse` comment-stripping behavior in `bootstrap/_scaffold/config.py:122-134`.
-  * Checked `expand_preset` roster derivation mechanics in `config.py:1143-1148`.
-  * Verified escape hatch wording in `doctrine/proposals.md:200-204` and `templates/core/dev/proposals/_template.md:39-40`.
+  * Executed `_minimal_yaml_parse` and `expand_preset` via Python subshell under standard-library-only execution simulation.
+  * Verified verbatim quotes against `doctrine/proposals.md:200-204` and `templates/core/dev/proposals/_template.md:39-40`.
+  * Checked module staffing gates in `bootstrap/_scaffold/config.py:870-937` and `templates/modules/team-gated/`.
   * Verified `BOOTSTRAP.md:696-698` and `:215` default-on module list discrepancies.
 * **Not covered**:
   * Content of `docs/solo-legacy-recipe.md` (to be created during plan execution).
