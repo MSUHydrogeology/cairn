@@ -5,7 +5,8 @@
 # (see BOOTSTRAP.md Act II-2, "Where the profile lives").
 #
 # Accepted by the Maintainer on 2026-06-12 (Act I-6). The deliberation
-# behind it lives in dev/strategy/ (the adoption record).
+# behind it lives at dev/strategy/2026-07-11-claude-cairn-adoption-record.md
+# (a reconstruction -- written 2026-07-11, not contemporaneous).
 
 project_name: "Cairn"
 test_command: "python -m pytest bootstrap/tests"
