@@ -10,7 +10,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 4.8
 **Date opened**: 2026-07-22
-**Status**: revised
+**Status**: accepted
 **Touches**: `templates/skills/_lib/lifecycle.py` (`_resolve_interpreter`, `_intent_whoami`, and the two eager call sites); its byte-identical self-hosted copy `tools/lifecycle.py` plus that file's one entry in `dev/.cairn/cairn-lock.yml`; `bootstrap/tests/test_lifecycle_failsafe.py` (relocated + new cases). **Explicitly not touched**: `bootstrap/_scaffold/` (no engine edit, therefore no AST re-anchor — argued below), `doctrine/`, `AGENTS.md`.
 **Related**: carved out of the accepted `2026-07-11-claude-first-session-survivability` as its Finding 2 — the Maintainer's Decision (`dev/proposals/2026-07-11-claude-first-session-survivability.md:352-358`) accepted F1/F3/F4 and carved F2 out to open "as **its own proposal, gated on a dedicated Security Review**". Both review tiers of that proposal reached the split independently (Internal R4, External E3), and its Internal panel pre-registered hard constraints on this change (R1 test design, R3 doctrine framing, R5 appended-argument shape, R7 warning plumbing) that this proposal adopts. Upstream signal: `dev/strategy/2026-07-08-claude-broad-look-skeptical-review.md:399-413` (day-one item 10) and recommendation **A7** at `:575-579`. Raw Internal panel source for the parent: `dev/reviews/2026-07-11-first-session-internal-panel.json`.
 **Plan review**: required(External) — the floor is a fresh-context Internal read, and an **External (different-agent-type or human) read plus the dedicated Security Review the Decision already gated this on** are both required before the Decision. This proposal *relaxes* a fail-closed control on an executable trust root; it should not land on a same-type read.
@@ -672,10 +672,6 @@ parent is a symlink rather than the equivalent filesystem shape, and a design
 that closes S2's concurrent check/use race. No network, credential, or shell
 surface exists in the reviewed branch.
 
-## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
-
-*(Awaiting the Maintainer. The revised proposal has cleared Internal and External non-security reviews. Two decisions belong to the Maintainer with Security Review input: (1) Whether the detection downgrade for absent paths is acceptable; (2) Whether to probe before or after the symlink check.)*
-
 ## Response -- Claude (author, to External review and Security Review) -- 2026-07-22
 
 **Model**: Claude Opus 4.8. Proposal-Response grammar. Two independent reads
@@ -798,3 +794,89 @@ Net: External SHIP on the non-security aspects; Security Review **sign-off on
 the two risk rulings**, conditional on this S1 correction (now made) and on the
 revised tests passing during implementation. S2 and the governance registration
 become their own follow-ups. Decision-ready.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-07-22
+
+**Accepted, as reviewed and conditioned.** Scribed by Claude (Strategy) at the
+Maintainer's explicit instruction, given in direct response to a drafted Decision
+offered for authorization; commit permission given in the same exchange.
+
+Maintainer's authorization (verbatim):
+
+> I accept this proposal as reviewed and conditioned.
+
+*Scribe's reading of "conditioned", recorded so it is correctable:* accepted
+**subject to the conspicuousness conditions the Security Review attached to its
+sign-off**, enumerated below as binding acceptance criteria rather than design
+preferences.
+
+**Accepted scope.** The revised C1–C4: the `_probe_interpreter` classifier and
+the absent-path degrade, the corrected `_REBIND_REMEDY`, the once-per-process
+stale warning, C3's `_intent_whoami` disclosure, and the rewritten test plan.
+
+**Why it lands.** This proposal cleared three independent reads by three
+different agent types — a fresh-context Internal panel, a cross-type External
+gate, and a Maintainer-ordered dedicated Security Review. The Internal panel's
+three blocking findings were corrected; Gemini returned **SHIP** on the
+non-security aspects; and Codex, reviewing the read path, **accepted the
+detection downgrade** on reasoning stronger than the author's: the absent branch
+selects `sys.executable`, which is *already running this process*, so it grants
+no executable capability the invocation does not already hold. The loss is
+detection and assurance, not code execution.
+
+**Binding acceptance conditions** (from the Security Review's sign-off — the
+degradation must remain conspicuous, or the trade it accepted no longer holds):
+
+* exactly one stderr warning per process;
+* the stale recorded value **and** the substituted interpreter both named;
+* the source reported as `fallback-stale`;
+* actionable, non-`--force` recovery guidance;
+* and **no automatic rewrite** of the binding — a degraded run leaves the
+  recorded value byte-for-byte intact.
+
+**Required, not preferred: probe ordering.** The symlink walk runs first, then
+absence classification, with the whole classification normalized through one
+outer `except OSError`. The Security Review took this line explicitly rather
+than inheriting the author's default: probing first would erase the symlink
+guard exactly when a symlink target is absent, while the component remains
+retargetable out of band. A benign rebuild through a newly symlinked parent
+therefore takes the fatal path plus the rebind remedy.
+
+**Open question resolved — OQ4: the two-branch posture is *not* codified in
+`doctrine/`.** It is tool behavior. Codifying it would be a doctrine change that
+must clear the rate-limit gate on its own evidence, which it does not have; if
+it is ever wanted as doctrine, that is a separate, separately-gated proposal.
+(OQ1, OQ2 and OQ3 were resolved by the Security Review itself — the detection
+downgrade accepted, the probe ordering required, and C3 retained here rather
+than split.)
+
+**On the record: the S1 correction stands.** `dev/.cairn/local-env.json` is an
+operationally trusted executable binding, and `_resolve_interpreter` is a strict
+**shape validator, not an authenticator** — it checks neither Python identity
+nor binary provenance, and accepts any absolute, present, non-symlinked,
+executable regular file. Verified by execution by both the reviewer (3.13.13)
+and the author (3.12.9). The earlier claim that redirect tampering is
+necessarily loud is withdrawn.
+
+**Follow-ups, explicitly not accepted here:**
+
+* **S2 — the check/use race.** Red-teamed on both current code and revised C1,
+  and **not** accepted as closed. The symlink guard is not to be described as
+  race-free. Its own follow-up.
+* **Governance registration.** The local interpreter binding,
+  `_resolve_interpreter`, and every call site executing its result should be
+  registered on `AGENTS.md`'s high-risk-surface list, so that future changes
+  carry a standing Security-Review trigger instead of depending on a Maintainer
+  ordering one. Its own follow-up.
+* **S3 — native Windows execute semantics** remain unverified and are carried as
+  an explicit residual; the present-but-non-executable leg is not claimed as a
+  cross-platform verified guarantee.
+
+**Plan conditions ratified:** the revised tests must pass during implementation
+(the Security Review's sign-off is conditional on it); editing the **frozen**
+`bootstrap/tests/test_lifecycle_failsafe.py` routes through the supervised
+`_gate_reanchor.py` path; and no AST re-anchor is required, since this proposal
+edits nothing under `bootstrap/_scaffold/`.
+
+**Next (separate commits):** open the plan (which archives this proposal),
+implement, non-implementing code review, archive.
