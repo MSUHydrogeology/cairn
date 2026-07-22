@@ -32,8 +32,10 @@ Two safety properties are load-bearing and are *not* negotiable defaults:
   `disable-model-invocation` and auto-fires `session-end`, the worst case is a
   stray reflection file, never a roadmap scrub.
 
-Every side-effecting subcommand honors `--dry-run`: it prints the planned
-writes and exits writing nothing.
+`session-end` honors `--dry-run`: it prints the planned writes and exits
+writing nothing. `session-start` has no `--dry-run` -- it performs one
+write regardless, the idempotent skills fan-out self-heal (never anything
+else); see `cmd_session_start` below.
 
 Run:
     python tools/lifecycle.py session-start
@@ -1207,16 +1209,16 @@ def build_parser() -> argparse.ArgumentParser:
         prog="lifecycle",
         description=(
             "Deterministic backend for Cairn's session-start / session-end "
-            "skills.  Read-only orientation and reflection-only goodnight; "
-            "no network."
+            "skills.  Orientation gather (plus one idempotent skills-fan-out "
+            "self-heal write) and reflection-only goodnight; no network."
         ),
     )
     sub = parser.add_subparsers(dest="subcommand", required=True)
 
     p_start = sub.add_parser(
         "session-start",
-        help="Read-only orientation gather (commits, tree state, threads, "
-             "intents).",
+        help="Orientation gather (commits, tree state, threads, intents) "
+             "plus one idempotent skills-fan-out self-heal write.",
     )
     p_start.add_argument(
         "--handoff-marker",

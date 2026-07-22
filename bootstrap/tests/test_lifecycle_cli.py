@@ -3,8 +3,10 @@
 Covers Chunk 1 of the executing plan
 (`2026-06-01-claude-cairn-vendor-neutral-skills`):
 
-* session-start: read-only gather of commits / tree-state / in-flight threads;
-  the EP4 graceful fallback when no handoff-marker commit exists yet.
+* session-start: gather of commits / tree-state / in-flight threads, plus
+  the one idempotent write it always performs (the skills fan-out
+  self-heal -- see F4 below); the EP4 graceful fallback when no
+  handoff-marker commit exists yet.
 * session-start: optional intent.py is skipped-with-note (not a crash) when the
   coordination-tiers tool is not a sibling -- the default-on skill must not
   hard-require a team-gated module.
@@ -21,6 +23,7 @@ Run from the cairn repo root:
 """
 from __future__ import annotations
 
+import argparse
 import importlib.util
 import re
 import subprocess
@@ -491,3 +494,48 @@ def test_snapshot_flag_via_main(lm_repo: Path, capsys) -> None:
     assert snap_path.exists(), (
         f"snapshot file not found at {snap_path}"
     )
+
+
+# --- F4: session-start's self-description (first-session-survivability, C4) -
+
+
+def _subparser_help(parser: argparse.ArgumentParser, name: str) -> str:
+    """Look up a subcommand's `help=` text from a built parser."""
+    for action in parser._actions:  # noqa: SLF001 -- argparse has no public API for this
+        if isinstance(action, argparse._SubParsersAction):
+            for choice_action in action._choices_actions:
+                if choice_action.dest == name:
+                    return choice_action.help
+    raise AssertionError(f"no subparser named {name!r} in {parser}")
+
+
+def test_top_level_description_names_the_self_heal_write_not_read_only() -> None:
+    description = lifecycle.build_parser().description
+    assert "read-only" not in description.lower(), (
+        f"top-level description overclaims read-only: {description!r}"
+    )
+    assert "self-heal" in description, (
+        f"top-level description should name the self-heal write: {description!r}"
+    )
+
+
+def test_session_start_help_names_the_self_heal_write_not_read_only() -> None:
+    help_text = _subparser_help(lifecycle.build_parser(), "session-start")
+    assert "read-only" not in help_text.lower(), (
+        f"session-start help overclaims read-only: {help_text!r}"
+    )
+    assert "self-heal" in help_text, (
+        f"session-start help should name the self-heal write: {help_text!r}"
+    )
+
+
+def test_module_docstring_scopes_dry_run_claim_to_session_end() -> None:
+    doc = lifecycle.__doc__ or ""
+    assert "`session-end` honors `--dry-run`" in doc, (
+        "module docstring should scope the --dry-run claim to session-end "
+        f"explicitly: {doc!r}"
+    )
+    # The blanket "every side-effecting subcommand honors --dry-run" claim
+    # this replaces would have been false for session-start (F4's defect);
+    # it must not have come back.
+    assert "every side-effecting subcommand honors" not in doc.lower()
