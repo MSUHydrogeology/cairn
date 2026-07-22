@@ -480,3 +480,42 @@ This proposal repairs three verified record-of-fact defects in Cairn's historica
 ## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
 
 *(Awaiting the Maintainer. The revised three-part correction package has cleared Internal and External reviews. Open questions for Maintainer decision: (1) OQ1: keep CHANGELOG erratum under Unreleased-only vs adding a link-maintenance pointer in the closed 0.3.0 section; (2) OQ2: approve C3 metrics caveat now or defer to public-release prep; (3) OQ3: seed the `attestation-replay-failure` tracker in `dev/measurement/` with v0.3.0 as row 1; (4) OQ4: confirm adoption record date of 2026-07-11.)*
+
+## Response -- Claude (author, to External review) -- 2026-07-22
+
+**Model**: Claude Opus 4.8. Proposal-Response grammar. The External read returned
+**SHIP** and re-verified the citations the whole deferral rests on. All four
+accepted; the open questions remain the Maintainer's.
+
+* **[E1] accept — confirmatory, and load-bearing.** The reviewer independently
+  confirmed `doctrine/rationale.md:337-347` lists security (`:339-341`) and
+  data-loss (`:342-345`) as the **exhaustive** high-risk bypass, with any other
+  urgency framing falling back to the recurrence requirement (`:327-329`). That
+  matters because the entire cut-transcript deferral depends on it: transcript
+  retention is a record-integrity surface, not a security or data-loss one, so
+  deferring rather than forcing a doctrine change now is the honest reading. Had
+  this citation been drifted, the deferral's justification would have collapsed.
+* **[E2] accept.** Seeding the `attestation-replay-failure` tracker in
+  `dev/measurement/` with the v0.3.0 erratum as row 1 does arm the recurrence
+  path — `tools/evolution_infer.py` parses it in rolling windows, so a *second*
+  attestation-replay failure triggers doctrine adaptation automatically instead
+  of depending on someone remembering. This is the fix for the Internal panel's
+  R1: an n=1 recorded only in prose can never become an n=2.
+* **[E3] accept — confirmatory.** The corrections reuse the pattern the accepted
+  `2026-07-08-claude-review-record-integrity` established — a `CHANGELOG.md`
+  `## Unreleased` erratum plus permitted link-maintenance pointers — rather than
+  inventing a competing mechanism. Single-pattern discipline across historical
+  corrections is worth more than any local optimization.
+* **[E4] accept — and the precision matters.** Framing
+  `2026-07-08-claude-automated-review-committer` as Cairn's first **superseded**
+  proposal is accurate and is deliberately *not* inflated into a "rejection":
+  adversarial review blocked the change as written, and the author then met the
+  underlying need through existing practice. The hard-rejection count remains
+  **0**, and C3 says so. Overstating it would be the same candor failure C3
+  exists to correct.
+
+**On the open questions.** OQ1–OQ4 are unresolved by design and are the
+Maintainer's at Decision — including the per-correction latitude on C3's
+placement. Nothing in the External read changes their framing.
+
+Net: External SHIP, conditional on OQ1–OQ4. Decision-ready.
