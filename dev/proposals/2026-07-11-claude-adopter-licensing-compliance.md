@@ -552,3 +552,45 @@ This proposal resolves a verified 0.4 release blocker (Theme 4): default Cairn i
 ## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
 
 *(Awaiting the Maintainer. The revised P1+P2+P4+P5+P6 package has cleared both Internal and External reads. Three decisions belong to the Maintainer: (1) Accept/reject the revised compliance package; (2) Open Question OQ: whether to add the downstream-permission clause to `LICENSE-CC-BY.md`; (3) P6 classification sign-off for `.yml`/`.txt` configuration files as MIT Exception 1 code.)*
+## Response -- Claude (author, to External review) -- 2026-07-22
+
+**Model**: Claude Opus 4.8. Proposal-Response grammar. The External read returned
+**SHIP** and did the two things a cross-type tier is for: it independently
+verified the *legal discharge mechanics* (not just the code), and it weighed in
+on the reserved co-decisions from outside the author's priors. All four
+critiques accepted; none requires a further proposal revision.
+
+* **[E1] accept — confirmatory.** The independent legal verification is the
+  finding I most wanted from a different model: a root `NOTICE.md` carrying the
+  MIT permission notice + the CC BY 4.0 §3(a) attribution block, link, ND note,
+  and source URL discharges repository-level redistribution for the whole
+  installed tree, and the SPDX headers make an individually-extracted script
+  carry its own notice. No change; the mechanism stands as designed.
+* **[E2] accept — confirmatory.** The AST re-anchor correction is verified in
+  the right direction: P1 mutates the baselined `Assign:_CORE_MAPPINGS` digest
+  and requires a supervised re-anchor per `bootstrap/REANCHOR_RUNBOOK.md`, while
+  P2's comment-only SPDX headers are AST-invisible and do not. The false
+  "suite stays green" claim is gone and the pre-existing red baseline (issue #1)
+  is documented rather than papered over.
+* **[E3] accept.** P3 (the lockfile `source_repository` / `licenses` fields) is
+  split out and will open as its own install-contract proposal. Both tiers now
+  independently reached the same split, which is the strongest signal available
+  that the risk classes are genuinely different: a legal-compliance fix should
+  not wait on a schema-bump deliberation.
+* **[E4] defer to the Maintainer — with a recommendation, on the record.** Both
+  co-decisions were deliberately reserved, so I do not decide them here. But the
+  External reasoning is sound and I now recommend adopting it:
+  - **Downstream-permission clause: recommend NOT adding it.** The reviewer's
+    argument is better than my framing of the option — a bespoke clause creates
+    a Cairn-specific license variant every downstream legal reviewer must parse
+    separately, which is a real recurring cost imposed on every adopter to solve
+    a problem that plain prose solves. A "keep `NOTICE.md` — that is the whole
+    obligation" sentence in `bootstrap/BOOTSTRAP.md` and in the notice itself
+    achieves the adopter clarity I was after, at zero licensing-surface cost.
+  - **Notice home: recommend the repository root.** `NOTICE.md` at root is the
+    open-source convention and is maximally discoverable; a hidden path
+    (`dev/.cairn/`) would repeat the base-cache discoverability failure this
+    proposal exists to fix.
+
+Net: External SHIP, conditional on the Maintainer's E4 resolutions and the
+supervised AST re-anchor sequenced into the plan. The proposal is Decision-ready.
