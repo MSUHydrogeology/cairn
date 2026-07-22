@@ -9,7 +9,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 4.8
 **Date opened**: 2026-07-22
-**Status**: proposed
+**Status**: revised
 **Touches**: a new advisory check `scripts/transition_lint.py` + its suppression whitelist `scripts/transition_lint_whitelist.py`; a new behavioral test `bootstrap/tests/test_transition_lint.py`; a new `docs/tool-usage.md` section; `CHANGELOG.md` at finalization; the deferred row at `dev/PLANNING.md:129` moves at plan-open. **No doctrine, no `AGENTS.md`, no shipped template, no install-manifest entry.**
 **Related**: split out of the accepted `2026-07-08-claude-review-record-integrity` (its Part C), per that proposal's Internal-review findings R2, R3, R4, R9 and R10 (`dev/proposals/archive/2026-07-08-claude-review-record-integrity.md:291-321` and `:362-378`) and the author Response that carried them forward as pre-registered constraints (`dev/proposals/archive/2026-07-08-claude-review-record-integrity.md:434-481`); the broad-look review's fold-up candidate at `dev/strategy/2026-07-08-claude-broad-look-skeptical-review.md:673-676`; the deferred roadmap row at `dev/PLANNING.md:129`; the incident ledger established by that proposal's Part B, `dev/measurement/review-floor-deviations.md`.
 **Plan review**: required(Internal) — a new tool on a genuinely harder surface (commit diffs + messages) that a fresh-context reader should re-derive the heuristics against the real corpus. No shipped-template, install-contract, doctrine, or security surface, so the Internal floor is the right tier; an External read is welcome but not required by this proposal. Ratified at Decision.
@@ -711,3 +711,736 @@ Maintainer calls, surfaced rather than adjudicated:
 - Open questions 1-3 are correctly routed to the Maintainer. Two lenses note independently that Open question 1's arbitrary `HEAD~20..HEAD` default is weaker than the proposal admits: a HEAD-relative default is what produced the stale-endpoint error in the first place, so requiring an explicit range (exit 2 otherwise) is the option that would have prevented this proposal's own defect.
 - Whether the shipped `_STAGE_COMMIT_PATTERNS` drift (Best-effort x8) becomes its own follow-up — one lens recommends it should, as a defect in shipped adopter code rather than this tool's scope.
 - Raised outside any lens and worth the Maintainer's attention: commit 33487fc adds `dev/reviews/2026-07-11-record-corrections-internal-panel.json`, a lifecycle directory that is neither a trigger root in this proposal nor among the four paths named in the `AGENTS.md:151-157` carve-in.
+## Response -- Claude (author) -- 2026-07-22
+
+The panel is right, and on the one axis that matters most it is right in the
+most uncomfortable way available: **the evidence layer — the single thing this
+proposal was split out of its sibling to get right — is the part that failed.**
+A proposal whose entire warrant is "the heuristics are now pinned against a real
+corpus" asserted a false merge count inside a sentence explicitly labelled
+"verified rather than assumed," mislabelled both dogfood windows, and reported a
+motivating false-positive figure no reader can reconstruct. That is the exact
+failure class this repository has been burned by twice, committed by the
+proposal arguing for a tool that detects it. I am not going to soften that.
+
+Two further things I owe the record before the dispositions.
+
+**First — the panel's central methodological point has already proven itself a
+second time.** The panel ran at `HEAD = 57d1daf`. `HEAD` is now `51f2c10`, two
+commits later (`597c882`, `51f2c10`), and every HEAD-relative number in the
+proposal has moved again: `d6646a3..HEAD` is now **122 scanned / 53 triggered**,
+not 120/52 (re-derived this session). The stale-endpoint defect the panel caught
+regenerated itself between the review and this Response. That is dispositive for
+Open question 1 and I resolve it below rather than passing it to the Maintainer:
+a HEAD-relative default is the bug, not a convenience.
+
+**Second — the tool that survives this review is materially smaller than the
+proposal implied,** and the Maintainer should re-weigh Alternative #1 ("do
+nothing") against the *shrunken* scope, not the original framing. After R3, R8
+and R9 land honestly, `transition_lint` v1 covers: over-claiming on proposal and
+plan commits that carry an `A`/`M`, plus the open-with-baked-in-review bundling
+pair. It does **not** cover reject/supersede Decisions, plan-archives,
+unannounced lifecycle work, or bundling generally. It returns zero on the last
+45 commits. I still think it is worth its cost — it reproduces the real incident
+and costs one repo-local script — but that is now a closer call than the
+proposal made it look, and I would rather say so than let a shrunken tool ride
+in on an unshrunken argument.
+
+**Third, and this is the finding I most wish I had made myself:** R1 surfaced a
+live defect in *shipped adopter code* that is plausibly worth more than this
+entire proposal. If the Maintainer has appetite for exactly one piece of work in
+this area, I now think fixing `_STAGE_COMMIT_PATTERNS` beats adding
+`transition_lint.py`. Detail under R1.
+
+Every doctrine quote in the original proposal was checked by three lenses and
+held; I have re-verified the ones the panel corrected me on and adopted their
+anchors. Verification for this Response was re-run in this session at
+`HEAD = 51f2c10`; commands and results are cited inline.
+
+---
+
+### Dispositions
+
+**[R1] — shipped `_STAGE_COMMIT_PATTERNS` unnamed; Best-effort×8 drift. → accept.**
+The prior art is real, I did not name it, and that is hazard #6 committed
+verbatim: `templates/modules/default-on/_lifecycle_metrics/gitmeta.py:14-22`
+defines a commit-subject → lifecycle-stage vocabulary consumed by
+`_resolve_stage_commits` at `:65-83`, and `python bootstrap/scaffold.py
+--manifest` ships it to every adopter as `tools/_lifecycle_metrics/gitmeta.py`
+(verbatim mapping, re-verified this session). I reproduced the drift: `python
+templates/modules/default-on/lifecycle_metrics.py proposals --root
+/Users/kendal30/Code/cairn --format csv` returns
+`stage_timestamp_reliability = Best-effort` for **all 8** proposals, which per
+`gitmeta.py:110-112` means *no* stage resolved — the shipped patterns
+(`^(?:Open proposal|proposal:\s*open|opening proposal)`, etc.) match none of
+Cairn's `dev/proposals: <stage> ...` subjects. Cairn is shipping adopters a
+lifecycle-commit vocabulary that is broken on Cairn's own conventions. That is a
+defect in adopter-facing code with an imminent external adopter, and it is not
+this tool's scope; it goes to its own follow-up, which I recommend the
+Maintainer prioritise **above** this proposal. The revision names the prior art,
+states why claim-detection cannot single-source from anchored stage-resolution
+(different job: `gitmeta` asks "which commit *is* stage X for this file",
+`transition_lint` asks "does this commit's claim match its diff"), and re-argues
+Alternative #6 against a `lifecycle_metrics` subcommand — which, as the panel
+says, is the option I should have evaluated, since it needs zero new manifest
+entries.
+
+**[R2] — three defects in the dogfood layer. → accept** (all three sub-findings).
+(a) The merge count is false. `git rev-list --merges --count d6646a3..HEAD` → **0**;
+`git rev-list --merges HEAD | wc -l` → **2**, both predating the window
+(`4bf4ee4` 2026-06-09, `d6646a3` 2026-06-10). I reported the repo-wide total as a
+window-scoped figure inside a sentence claiming verification, and I ran the
+merge-blindness demonstration on `d6646a3` itself — the window's *exclusive*
+boundary, i.e. not a scanned commit. Corrected verbatim as the panel drafted it.
+(b) Both windows were mislabelled: `d6646a3..f0ce2af` is 119/51 and
+`e31625c..f0ce2af` is 43/39; the real endpoints are `d6646a3..57d1daf` (**120/52**)
+and `e31625c~1..57d1daf` (**45/41**), both re-derived by me this session with an
+independent trigger-enumeration script. The prototype ran past `f0ce2af` and I did
+not re-sync the prose. This mattered concretely, exactly as the panel says: the
+corpus-regression tier pins those ranges, so the plan as written shipped a red
+test. All ranges are now SHA-pinned, `A..B`-exclusivity is stated, and `57d1daf`
+is added to the named must-not-flag set.
+(c) Row 1 (26 findings / 23 false positives) is withdrawn and deleted. It is not
+reconstructible from the proposal text, it is internally inconsistent (it reports
+a narrowed trigger count for a variant defined by lacking the narrowing), and the
+panel's best-faith reconstruction yields 6. I cannot reproduce it this session
+either. The three named false-positive classes carry the design argument on their
+own and are individually checkable; that is what the revision rests on.
+
+**[R3] — rename-only commits presented as *Handled* when they are silently exempt. → accept.**
+Verified: `git diff-tree --no-commit-id --name-status -M -r b064576` emits exactly
+one line, `R091 dev/proposals/... -> dev/proposals/archive/...` — zero `A`/`M`
+under a trigger root, so the only supersession in the tree is never examined;
+`d789414` (plan archive) is the same shape. My edge-case inventory spent a
+paragraph proving such a commit *does* append a `## Decision` section, which is
+true (`b064576` adds 44 lines including `## Decision`) and entirely beside the
+point, because the commit never reaches a claim check. Presenting silent
+exemption as coverage is the overclaim this repo kills proposals for, and it is
+the same error the sibling's R9 flagged at me. Reclassified to *Known omissions*
+with the general rule stated; `reject` / `supersede` marked **dead tokens in v1**
+(corpus: `reject` occurs in **0** of 538 subjects, `supersede` in 2, both on
+rename-only or already-covered commits); `b064576` and `d789414` added to the
+corpus test as **must-SKIP**, not must-not-flag. I decline to *fix* the gap in
+v1: a targeted `R`-into-archive branch for `decision`/`reject`/`supersede` claims
+would work and I have gathered the evidence for it (`b064576` is `R091`, not
+`R100`, so its added lines are visible to `--unified=0`), but validating new
+design on n=1 at Response time is precisely the move that produced R2. It is
+recorded as a named, evidence-backed v2 candidate instead.
+
+**[R4] — three unpinned/wrong matcher details inside the section that claims everything is pinned. → accept** (all three).
+(a) Case-sensitivity is the serious one and it silently inverts my headline
+result: `git log -1 --format='%s' f4a8308` → `dev/proposals: add Gemini External
+Review for check_cairn self-host-compat` — capital `Review`. Under the regex as
+literally pinned there is no claim, no shape-(a) finding, and the "3 findings"
+headline is wrong. It also means the panel's reproducing prototype must have used
+`IGNORECASE` while my pinned spec did not — a spec/implementation divergence
+sitting underneath the evidence. `re.IGNORECASE` is now pinned inline, with a
+synthetic test asserting all-lowercase and all-uppercase subjects produce the
+same finding.
+(b) `-M` was argued on upside only. Measured: `-r` vs `-M -r` changes the trigger
+set on **0 of 120** commits; `git log --diff-filter=R -M -- 'dev/proposals/*'`
+returns 5 renames, all proposal→archive, and no slug correction has ever
+occurred. Meanwhile the panel's synthetic demo of a proposal-derived plan being
+absorbed into an `R096` is a real hazard for a repo whose plans are derived from
+their proposals (`dev/plans/archive/review-record-integrity.md:15`,
+`## Source proposal`). Pinned to `--find-renames=100%`, with the 0/120 cost
+stated honestly and the derived-plan commit added as a must-trigger test.
+(c) `opening` has **0** true positives in 538 subjects and is dropped. `open`
+matches 12 subjects, all genuine opens, and all 12 place `open` as the first word
+after the `dev/<tree>: ` prefix (enumerated this session); the token is now
+positionally anchored there, so a subject using Cairn's live "Open questions"
+vocabulary (`dev/proposals/2026-07-11-claude-record-corrections.md:248`,
+`templates/core/dev/strategy/_template.md:129`) cannot claim a transition. The
+panel's three constructed subjects become must-not-flag tests.
+
+**[R5] — silent-clean hole on an unresolvable range; contradictory git-error posture. → accept.**
+The two cited precedents really do disagree — `scripts/measurements.py:150-153`
+uses `check=True` and raises, while
+`templates/modules/team-gated/_intent/conflict.py:757-758` returns empty on any
+error — and I adopted one while citing the other. A range that passes the regex
+but does not resolve currently prints nothing and exits 0, indistinguishable from
+a clean scan, which for a tool whose value is "I ran it and saw nothing" is the
+one unacceptable failure. Both endpoints are now resolved with `git rev-parse
+--verify` (exit 2 on failure, per `scripts/quality_gate.py:803-808`), a one-line
+census always prints, and the revision states which posture applies where:
+fail-fast on *inputs*, degrade-quiet on *per-commit enumeration*.
+
+**[R6] — both halves of the human-facing signal are uninformative. → accept.**
+Verified: `git rev-parse --short HEAD~20` → `7c233b5` (it was `755165d` when the
+panel ran — the default range is not even stable across two commits), and
+`17b7e5c` is not in it; my own table says the last 45 commits yield zero. So the
+default shows nothing forever, and the one documented invocation shows the same
+two immutable commits forever — a permanent 3-line wall, which is the Theme-3.4
+"trains people to ignore it" failure arriving on day one. The revision requires an
+explicit rev-range (exit 2 without one), ships the whitelist **populated** with
+`17b7e5c` and `f4a8308` plus rationale comments, and moves the acid test into
+pytest via a whitelist-bypass argument, which is where an immutable historical
+finding belongs. This overturns my "it ships empty" reasoning outright.
+
+**[R7] — a pre-registered constraint (R10's info-downgrade layer) silently dropped. → accept with modification.**
+The finding is correct on both counts: the sibling's R10 named three layers
+(`dev/proposals/archive/2026-07-08-claude-review-record-integrity.md:375-378`) and
+my accepted Response pinned "the info-tier analogy" as carried forward (`:479-481`),
+and I shipped two layers without saying so. Also correct that "pinned in the type
+system" overstates — nothing about a missing field prevents `return 1 if findings
+else 0`; the test is the pin, and that sentence is deleted. I take the **second**
+branch of the panel's own suggested fix rather than the first: I state plainly
+that the class-level downgrade layer is dropped, and argue two layers suffice —
+measured 0 false positives across all 538 subjects means a class-level
+suppression would be machinery for a problem that has never occurred, and the
+*Signals* section already routes "entries accumulate past a handful" to retiring
+the tool rather than to a third layer. Adding pre-emptive suppression to a
+zero-FP tool is the over-engineering this repo's consolidation posture exists to
+resist. I also concede the sub-point: `scripts/quality_gate.py:634`'s
+`severity="info"` tier does mean `quality_gate` *can* host an all-advisory
+sub-gate, so ground 1 of the standalone argument is weaker than I wrote it;
+grounds 2-4 carry the decision and ground 1 is downgraded to a supporting
+consideration.
+
+**[R8] — detects over-claiming only, never bundling. → accept with modification.**
+The finding is right and the leftmost-wins rule makes it structural: `dev/plans:
+review-record-integrity -- Plan review (fresh-context Internal panel) +
+Sharpening` (`28816f0`) is exactly the shape and passes clean. I accept the
+non-goal and the Rationale softening in full — "makes an existing rule
+mechanically visible" overclaimed and is replaced by a statement of the corner
+actually covered. I **decline the optional symmetric check** (flag when ≥2
+evidence sections each receive ≥3 added lines) for v1: it is new, unvalidated
+design, and its most obvious collision is the legitimate `## Response + ##
+Revised proposal` commit, which is Cairn's standard shape and would need its own
+corpus pass. Recorded as a named v2 candidate with that collision written down.
+
+**[R9] — shape (b) can never fire on a plan. → accept.**
+Verified and worse than "can never fire": no plan carries `**Status**: proposed`
+(`dev/plans/_template.md:77` → `open`;
+`dev/plans/adopter-licensing-compliance.md:8` → `executing`;
+`dev/plans/archive/review-record-integrity.md:6` → `archived`), and plan review
+headings are `## Plan review` / `## Code review`
+(`dev/plans/archive/review-record-integrity.md:269`, `:348`), neither of which
+starts with `## Review`. I extend rather than scope out, because this closes the
+exact analogue of the incident and I could validate it this session: both real
+plan-opens (`5140e21`, `57d1daf`) add a blob carrying `**Status**:
+awaiting-plan-review` with **empty** `## Plan review` / `## Code review`
+placeholders and **zero** review-grammar markers, so the extension produces zero
+false positives on the only two real instances. Shape (b) now accepts
+`**Status**: proposed|open|awaiting-plan-review` and scans `## Review` |
+`## Plan review` | `## Code review`.
+
+**[R10] — the exemption model names the wrong doctrine authority. → accept.**
+`AGENTS.md:149-164` is an *approval* carve-in and says nothing about
+one-commit-per-transition; the bundling allowances the design actually depends on
+are `doctrine/proposals.md:299-325` ("File moves"), whose `:316-320` blesses the
+plan-open archive bundle and `:322-325` the reject/supersede archive bundle —
+every must-not-flag the `/archive/` exclusion buys derives from that section,
+which I never cited. Retitled and re-attributed as the panel drafted. The
+no-new-vocabulary bright line is unchanged; it was the section's real commitment
+and it survives intact.
+
+**[R11] — "that code is reused rather than re-derived" overstates. → accept with modification.**
+The substance is right: `_rename_map_via_git`
+(`templates/modules/team-gated/_intent/conflict.py:749-787`) runs `git diff
+--cached` (line 761), takes no rev-range, and discards every non-`R` entry via
+`i += 2` at `:784-786` — it cannot enumerate a commit's `A`/`M` set, which is the
+one thing the narrowed trigger needs. Only the `-z` token-walk idiom transfers;
+the enumeration is new code, and the revision says so. **One correction to the
+grounding:** this would not be "the first cross-layer import from `templates/`
+into `scripts/`" — `scripts/check_cairn.py:81-100` builds paths to three shipped
+template modules and loads them via `importlib.util.spec_from_file_location` at
+`:122-123`, and that is deliberate dogfooding. So the reason not to import is not
+a layering violation; it is that the function does not do the job. I still rule
+the import out and state the non-import in the header scope, on the narrower
+ground the panel's second half gets right: it would couple a repo-local script to
+a file `bootstrap/tests/_gate_manifest.py:165-167` byte-freezes under
+`templates/modules/**/*.py`.
+
+**[R12] — four citation-accuracy defects. → accept** (all four).
+(i) Re-anchored: the `scripts/*.py` glob is at `bootstrap/tests/_gate_manifest.py:14`
+(docstring) and `:165-167` (code); the HOLD rule spans `:15-16`; `:17` is the
+"strengthening" sentence. The panel is also right that `:16`'s "adding is allowed"
+clause is worded for *test* files, so the argument is re-grounded on the
+frozen-set membership check at `:168-174`, which hashes what exists pre-run.
+(ii) The sibling's rate-limit N/A is at `:134-141`; `:625` is the `## Decision`
+heading — both now cited.
+(iii) `doctrine/consolidation-review.md` does not track tool-surface growth: it is
+"the manual half of the redundancy gate" (`:1`), its R7 (`:26-43`) is a
+per-dimension capability checklist feeding "the next major-version cut" (`:42-43`),
+and its R1 (`:45-61`) filters prose overlap. Replaced with the honest statement
+that **no doctrine currently tracks script-count growth in `scripts/`**, which is
+a stronger version of the same cost point and hands the judgement to the
+Maintainer explicitly.
+(iv) `ls scripts/*.py | wc -l` → **16** today, so this lands as the 17th and 18th
+files, not "a fourth standalone script." Corrected.
+
+---
+
+### Net
+
+Twelve findings: eleven accepted, three of those with modification (R7, R8,
+R11), zero rejected, zero deferred. Three blocking findings (R1, R2, R3) are
+addressed by naming prior art, deleting an unreproducible number and re-pinning
+the rest to SHAs, and demoting a coverage claim to a documented gap. No finding
+required redesign; every one required the proposal to say something smaller or
+more accurate than it did.
+
+I considered recommending supersession, and I want the record to show why I did
+not. The case for it is real: the tool shrinks under R3/R8/R9, its default
+invocation is silent, and R1 surfaced a better target. But the defects are in
+what the proposal *claimed*, not in whether the design works — the panel
+independently reimplemented the heuristics from the proposal text and reproduced
+0 false positives across all 538 subjects with exactly the 3 true positives. A
+design that survives an adversarial independent reimplementation and fails on its
+own prose is a revision, not a supersession. What killed
+`automated-review-committer` was that its central mechanism was invalid; nothing
+here is invalid, it is overstated. So: revise, and let the Maintainer decide
+whether the shrunken tool still earns its place against Alternative #1 and
+against the higher-value `_STAGE_COMMIT_PATTERNS` fix.
+
+---
+
+## Revised proposal -- 2026-07-22
+
+Appended, not edited; the sections above stand as written and this is the
+delta. Changed sections are restated in full so they are self-contained.
+Everything not restated here is unchanged.
+
+**Status**: revised
+**Recommended second read**: a narrow, mechanical Internal pass over *Home*,
+*Exit behaviour*, *Suppression*, *Dogfood*, and the edge-case inventory only —
+not a full re-review. External remains not required: nothing here touches
+doctrine, the install contract, a shipped template's contract, or a security
+surface.
+
+### Prior art — the shipped lifecycle-commit vocabulary (new; R1)
+
+Cairn already ships a commit-subject → lifecycle-stage vocabulary.
+`templates/modules/default-on/_lifecycle_metrics/gitmeta.py:14-22` defines
+`_STAGE_COMMIT_PATTERNS`, four anchored regexes mapping a subject to
+`open` / `decision` / `revised` / `reviewed`, consumed by `_resolve_stage_commits`
+at `:65-83`; `python bootstrap/scaffold.py --manifest` installs it verbatim as
+`tools/_lifecycle_metrics/gitmeta.py` in every adopter tree. The original
+proposal did not name it. It should have.
+
+**Why `transition_lint` does not single-source from it.** The two ask different
+questions. `_resolve_stage_commits` asks *"which commit in this file's history
+**is** stage X?"* — it walks a per-file `git log --follow`, takes the first
+match per stage, and feeds stage-duration metrics; a miss degrades a reliability
+label. `transition_lint` asks *"does **this** commit's claim match **this**
+commit's diff?"* — it needs leftmost-wins across a claim vocabulary (so a subject
+claims at most one transition), hyphen-compound suppression (so slugs do not read
+as claims), and a claim→evidence mapping that `gitmeta` has no concept of. An
+anchored `^(?:Open proposal|...)` cannot express "claims a review anywhere in the
+subject." Sharing the regex list would force one of the two to accept the other's
+semantics.
+
+**A verified defect in shipped adopter code, routed out of scope.** Running the
+shipped tool against this tree — `python
+templates/modules/default-on/lifecycle_metrics.py proposals --root
+/Users/kendal30/Code/cairn --format csv` — returns
+`stage_timestamp_reliability = Best-effort` for **all 8** proposals (as_of
+2026-07-22). Per `gitmeta.py:110-112` that means *no* stage resolved to a commit:
+the shipped patterns match none of Cairn's `dev/proposals: <stage> ...` subject
+convention. Adopters receive a stage-timing feature that silently produces
+day-level fallbacks. This is a defect in adopter-facing code, not in this tool's
+scope, and it goes to its own follow-up — which I recommend the Maintainer
+prioritise **above this proposal**, given an imminent external adopter.
+
+### Alternative #6, re-argued (supersedes the original Alternative #6; R1)
+
+The original rejected adopter-shipping as "it would add an install-manifest
+entry." That evaluated the wrong option. The natural v2 home is a **subcommand of
+the already-installed `lifecycle_metrics` tool** — zero new manifest entries,
+zero new install-contract surface, and it sits beside the vocabulary it would
+share a corpus problem with. The rejection therefore rests on the *second*
+ground only, which is the one that actually holds: the heuristics are pinned
+against Cairn's own subject conventions (`dev/proposals: <slug> -- Response +
+Revised`), which an adopter's need not match — and the Best-effort×8 result above
+is direct evidence that a shipped subject vocabulary drifts from its adopters.
+Deferred to v2, revisit when a second real tree's corpus exists. Recorded as a
+deferred follow-up at archive time.
+
+### Exit behaviour (supersedes the original section; R5, R7)
+
+`main()` returns `0` whenever the scan completed, no matter how many findings it
+printed. It never returns `1`. The only non-zero return is `2`, for a usage
+error, per `scripts/quality_gate.py:803-808`. Usage errors are:
+
+* no rev-range given (see *CLI*);
+* a rev-range failing the `scripts/measurements.py:51` regex;
+* either endpoint failing `git rev-parse --verify` — **new**, and the fix for the
+  silent-clean hole: a range that parses but does not resolve (`deadbeef..HEAD`,
+  a deleted branch, a typo'd SHA) must not exit 0 with no output;
+* `--root` not a git work tree.
+
+**Two git-error postures, stated explicitly.** Fail-fast on *inputs*
+(`rev-parse --verify`, `check=True` in the spirit of
+`scripts/measurements.py:150-153`); degrade-quiet on *per-commit enumeration* (a
+`diff-tree` that errors yields an empty entry list and the commit is skipped, per
+`templates/modules/team-gated/_intent/conflict.py:757-758`). The original cited
+the first and adopted the second without saying so.
+
+**A census always prints**, on every run including a clean one:
+`scanned N commits, T triggered, F findings`. A zero-finding run must be positive
+evidence, not silence.
+
+`Finding` carries `(sha, shape, file, message)` and has no `severity` field, so
+there is no fail-tier to wire up by accident. **The original's "pinned in the type
+system, not just in prose" is withdrawn** — a missing field does not prevent
+`return 1 if findings else 0`; the invariant is pinned by an explicit test
+asserting `main()` returns 0 on a repo with findings.
+
+### Home — standalone script (revised grounds; R7, R12)
+
+The decision is unchanged; ground 1 is downgraded and one citation is corrected.
+
+1. *(downgraded to a supporting consideration)* `quality_gate.py` is fail-closed
+   at `scripts/quality_gate.py:819`. It **can** host an all-advisory sub-gate via
+   the `severity="info"` tier at `:634`, so this is not the blocker the original
+   made it. It remains a real cost: every finding forced to `info` collapses the
+   distinction the `Finding` dataclass exists to carry.
+2. **Different input domain** *(load-bearing)*. All three existing sub-gates scan
+   the working tree; this one reasons over commit diffs and messages, needing a
+   rev-range positional, git subprocess handling, and rename detection the others
+   neither share nor want.
+3. **Modifying an existing `scripts/*.py` is the *held* motion under Cairn's own
+   gate-control tooling** *(load-bearing, re-anchored)*.
+   `bootstrap/tests/_gate_manifest.py:15-16` makes "modifying or deleting a frozen
+   file HOLDs by default"; the glob is documented at `:14` and implemented at
+   `:165-167`. The docstring's "adding a new test file is allowed" clause is
+   worded for test files and does not bless a new `scripts/*.py`; the argument
+   rests instead on the frozen-set membership check at `:168-174`, which hashes
+   what exists pre-run — a file that did not exist is not in the frozen set.
+4. **The safe-git precedent is already a sibling script** *(load-bearing)*.
+   `scripts/measurements.py:24-27`, `:51`, `:139`.
+
+**The honest cost, restated.** `ls scripts/*.py | wc -l` → **16** as_of
+2026-07-22; this lands as the **17th and 18th** files under `scripts/`. The
+original said "a fourth standalone Cairn-only script," which was wrong, and
+attributed the concern to `doctrine/consolidation-review.md`, which does not
+cover it — that file is "the manual half of the redundancy gate" (`:1`), its R7
+(`:26-43`) is a per-dimension capability checklist and its R1 (`:45-61`) filters
+prose overlap. **No doctrine currently tracks script-count growth in `scripts/`.**
+That makes this a judgement call the Maintainer should make explicitly rather
+than one a doctrine citation can settle, and I am flagging it as such.
+
+### Trigger and enumeration (supersedes; R4b, R11)
+
+A commit is examined only if, after rename-aware enumeration, it has an `A` or
+`M` entry under `dev/proposals/` or `dev/plans/`, excluding any path containing
+`/archive/` and excluding `_template.md`. A rename is never a trigger.
+
+Enumeration is `git diff-tree --no-commit-id --name-status --find-renames=100% -r
+-z <sha>`. **`--find-renames=100%` replaces bare `-M`.** Honest accounting: `-r`
+vs `-M -r` changes the trigger set on **0 of 120** commits in the pinned window,
+and `git log --diff-filter=R -M -- 'dev/proposals/*'` returns 5 renames, all
+proposal→archive — the general slug-correction case `-M` was defended by has
+never occurred. Meanwhile bare `-M` is a similarity heuristic that can absorb a
+genuine `A` into an `R` and silently un-trigger a commit, which is concrete here
+because Cairn plans are derived from their proposals
+(`dev/plans/archive/review-record-integrity.md:15`, `## Source proposal`): a
+plan-open adding `dev/plans/<slug>.md` derived from its proposal pairs at ~96%
+under bare `-M`. Exact-match pairing keeps the archive renames (all `R091`+ by
+content identity where they are identical) from being confused with derivation.
+A must-trigger test pins the derived-plan case.
+
+**On reuse (corrected).** The `-z` walk idiom is **copied and re-implemented**
+from `templates/modules/team-gated/_intent/conflict.py:773-787`, adapted to
+`diff-tree <sha>`; the A/M enumeration is **new code**. The original's "that code
+is reused rather than re-derived" overstated: `_rename_map_via_git` runs `git
+diff --cached` (`:761`), takes no rev-range, and discards every non-`R` entry at
+`:784-786`. **No import crosses the `scripts/` ↔ `templates/` boundary** — added
+to the header scope claim. (Note for the record: such imports are not
+unprecedented — `scripts/check_cairn.py:81-100` loads three shipped template
+modules via `importlib.util.spec_from_file_location` at `:122-123` — so the
+ground is not layering purity but that `bootstrap/tests/_gate_manifest.py:165-167`
+byte-freezes `templates/modules/**/*.py`, and a repo-local script should not
+couple to a frozen file it cannot change.)
+
+### Shape (a) — claim detection (supersedes; R4a, R4c)
+
+Matching is **case-insensitive (`re.IGNORECASE`)**. This was omitted from the
+original pinned spec and silently inverted its headline result: `f4a8308`'s
+subject is `dev/proposals: add Gemini External Review for check_cairn
+self-host-compat` — capital `Review` — so under a case-sensitive read it makes no
+claim and produces no shape-(a) finding. A synthetic test asserts all-lowercase
+and all-uppercase subjects produce the same finding.
+
+Each token matches as `(?<![-\w])<token>s?(?![-\w])`, leftmost match wins, at most
+one claim per subject.
+
+| claim token(s) | required evidence |
+| --- | --- |
+| `open` — **anchored: must be the first word after the `dev/<tree>: ` prefix** | an `A` entry under a trigger root |
+| `review` / `reviews` | `## Review` \| `## Plan review` \| `## Code review` |
+| `response` / `responses` | `## Response` \| `## Revised proposal` |
+| `decision` / `accept` / `reject` / `supersede` | `## Decision` |
+
+**`opening` is dropped**: 0 true positives in 538 subjects (as_of 2026-07-22).
+**`open` is positionally anchored**: all 12 real matches in 538 subjects place it
+as the first word after the tree prefix, and anchoring is what stops Cairn's live
+"Open questions" vocabulary from claiming a transition. Three must-not-flag
+synthetic tests pin it: `dev/proposals: transition-lint -- resolve open questions
+from the Internal review`; `dev/plans: X -- close out the open acceptance
+criteria`; `dev/plans: transition-lint -- opening sequence step 1`.
+
+**`reject` and `supersede` are dead tokens in v1** — see *Known omissions*.
+Retained rather than deleted so the vocabulary documents intent, and marked in
+code with the reason.
+
+Evidence remains added body, never a heading: ≥3 non-blank added lines whose
+post-image line numbers fall inside the section's span.
+
+### Shape (b) — extended to plans (supersedes; R9)
+
+For each `A` entry under a trigger root: if the added blob's header carries
+`**Status**: proposed` **| `open` | `awaiting-plan-review`** and any
+`## Review` **| `## Plan review` | `## Code review`** section body contains a
+review-grammar marker — `[R<n>]`, `[E<n>]`, `**Steelman`, `**Covered**` — flag it.
+The header bound is the first 60 lines of the blob (previously undefined; the
+panel's negative space #3 is right that this must be pinned).
+
+The original could never fire on a plan: no plan carries `**Status**: proposed`
+(`dev/plans/_template.md:77` → `open`;
+`dev/plans/adopter-licensing-compliance.md:8` → `executing`;
+`dev/plans/archive/review-record-integrity.md:6` → `archived`), and plan review
+headings do not start with `## Review`
+(`dev/plans/archive/review-record-integrity.md:269`, `:348`) — so the exact
+analogue of the `17b7e5c` incident was undetectable while the framing implied
+symmetric coverage.
+
+**Validated this session, zero false positives on the only two real plan-opens:**
+both `5140e21` and `57d1daf` add a blob carrying `**Status**:
+awaiting-plan-review` with empty `## Plan review` / `## Code review` placeholders
+and **0** review-grammar markers.
+
+### Exemption model — retitled (supersedes; R10)
+
+**The carve-in plus the File-moves rule are the only sources of truth.**
+
+`AGENTS.md:149-164` is an *approval* carve-in — it governs which commits "land
+without per-commit approval" — and says nothing about one-commit-per-transition.
+The bundling allowances this design depends on live in
+`doctrine/proposals.md:299-325` ("File moves"), which the original never cited:
+`:316-320` —
+
+> The plan-open commit moves the proposal to `dev/proposals/archive/` in the same
+> commit — the proposal's deliberation is closed AND has now been carried into an
+> actionable execution artifact, so the proposal's home is now history.
+
+and `:322-325` —
+
+> **Rejected** and **superseded** proposals move to `dev/proposals/archive/` in
+> the Decision commit itself. No implementation will follow; the archive is the
+> right home immediately.
+
+Every must-not-flag the `/archive/` exclusion buys derives from those two
+paragraphs, and the rename-never-triggers rule is attributable to them rather
+than to the approval carve-in.
+
+The narrowing still discharges the approval carve-in without an exception
+vocabulary (strategy, ledger, goodnight, `PLANNING.md`, `CHANGELOG.md` and
+`NEXT_SESSION.md` are not trigger roots), and the **bright line is unchanged and
+verbatim**: the tool ships no exception keyword, no in-message opt-out directive,
+and no new obligation on any contributor. If implementation discovers it needs a
+rule neither source states, that is new operational doctrine and stops for its
+own rate-limited proposal.
+
+### Suppression (supersedes; R6, R7)
+
+Two layers, and the third pre-registered layer is **explicitly dropped**.
+
+1. **Exclusion roots** — unchanged.
+2. **A commit-SHA whitelist**, `scripts/transition_lint_whitelist.py`, in the
+   shape of `scripts/quality_gate_unused_def_whitelist.py`. **It ships
+   populated** with `17b7e5c` and `f4a8308`, each with a rationale comment
+   pointing at the corpus-regression test. This reverses the original's "it ships
+   empty ... the acid test." The acid test belongs in pytest, not in every
+   human-facing run: the two findings are on immutable history and can never be
+   fixed, so leaving them live makes the one documented invocation a permanent
+   3-line wall — the Theme-3.4 nagging failure on day one. The corpus test takes
+   a whitelist-bypass argument.
+3. **The class-level info-downgrade layer is dropped.** The sibling's R10
+   (`dev/proposals/archive/2026-07-08-claude-review-record-integrity.md:375-378`)
+   named three layers and my accepted Response (`:479-481`) carried the info-tier
+   analogy forward; shipping two without saying so was a silent unmet
+   pre-registration. Why two suffice: the measured false-positive rate is **0
+   across all 538 subjects**, so a class-level suppressor would be machinery for a
+   failure that has never occurred; and the *Signals* section already routes
+   accumulating entries to **retiring the tool**, not to a third layer — a
+   recurring false-positive *shape* is evidence the heuristics are wrong, which
+   should surface as a proposal rather than be absorbed. If a shape ever does
+   recur, adding the layer is a small, evidence-backed follow-up.
+
+### CLI (supersedes; R5, R6, Open question 1 resolved)
+
+```
+python scripts/transition_lint.py <rev-range> [--report] [--root <dir>]
+```
+
+**The rev-range is required.** Omitting it is a usage error (exit 2), not a
+default. Open question 1 is resolved in the revision rather than passed up,
+because the panel's argument is decisive and was then demonstrated twice: a
+HEAD-relative default is exactly what produced this proposal's own stale-endpoint
+defect, and `HEAD~20` resolved to `755165d` when the panel ran and `7c233b5` two
+commits later. A tool whose output is not reproducible from its invocation cannot
+support a record-integrity claim. The Maintainer may of course overrule.
+
+### Dogfood results (supersedes the original table; R2)
+
+All ranges are SHA-pinned. `A..B` is **exclusive of `A`**: `A` is not a scanned
+commit. Windows: **`d6646a3..57d1daf`** (120 commits, 2026-06-10 → 2026-07-22)
+and **`e31625c~1..57d1daf`** (45 commits).
+
+| run | window | scanned | triggered | findings | false positives |
+| --- | --- | --- | --- | --- | --- |
+| Proposed heuristics | `d6646a3..57d1daf` | 120 | 52 | **3** | **0** |
+| Proposed heuristics | `e31625c~1..57d1daf` | 45 | 41 | **0** | **0** |
+
+**Row 1 of the original table — "Sibling's literal Part-C wording: 120 / 52 / 26
+findings / 23 false positives" — is withdrawn and deleted.** It is not
+reconstructible from the proposal text and is internally inconsistent; an
+independent reconstruction by the review panel produced 6, not 26. The design
+rests instead on the three named false-positive classes, each individually
+checkable: (i) `-- Response to Gemini External review` reads as a *review* claim
+under bare keyword search → fixed by leftmost-wins; (ii) `dev/plans:
+review-record-integrity -- Plan review` claims from its *slug* → fixed by hyphen
+suppression; (iii) `open` commits flagged for containing `## Review` because the
+repo seeds a titled placeholder → fixed by the grammar-marker discriminator.
+
+**Provenance of these numbers, stated precisely.** The *trigger* counts were
+re-derived by me this session with an independent enumeration script
+(`d6646a3..57d1daf` → 120/52; `e31625c~1..57d1daf` → 45/41; and, as the
+freshness check, `d6646a3..HEAD` at `HEAD=51f2c10` → 122/53). The *finding*
+counts stand on the review panel's independent reimplementation from the proposal
+text alone, which reproduced both rows exactly and extended the result to the
+full 538-commit history: 52 commits ever trigger, 3 findings, 0 false positives
+repo-wide, minimum true-negative evidence margin 11 added lines against a ≥3
+threshold. That is stronger evidence than my uncommitted prototype was, and it is
+what the rows now cite. **One caveat the panel's run exposes:** that
+reimplementation must have matched case-insensitively, since a case-sensitive
+build cannot flag `f4a8308` — which is R4a, now pinned.
+
+**Merge commits (corrected; the original's number was false).** Zero merge
+commits fall inside the scanned window: `git rev-list --merges --count
+d6646a3..HEAD` → **0**. The repo's only two merges (`4bf4ee4` 2026-06-09,
+`d6646a3` 2026-06-10) predate it. The merge-blindness demonstration runs on
+`d6646a3`, which is the window's exclusive boundary and therefore not itself a
+scanned commit. The original reported the repo-wide total as a window-scoped
+figure inside a sentence labelled "verified rather than assumed."
+
+**Must-not-flag set** (all produce zero findings): `5140e21`, `a0a617a`,
+`18707e9`, `d0ba903`, `ebb1d6e`, `3ae1d47`, `87d3498`, `e31625c`, `f0ce2af`,
+`34fb61f`, `6e9e237`, `c23338e`, `2306f07`, `7c233b5`, `da9933c`, `755165d`,
+`28816f0`, `29d46e7`, `2432f10`, and **`57d1daf`** (added: the in-window
+plan-open + archive commit the original omitted).
+
+**Must-SKIP set** (never examined; pins the R3 gap): `b064576`, `d789414`.
+
+### Known omissions (supersedes; R3, R8)
+
+**Rename-only commits are never examined.** A commit whose only lifecycle-file
+motion is a rename — proposal→archive, plan→archive — has zero `A`/`M` entries
+under a trigger root and never reaches a claim check. Verified: `git diff-tree
+--no-commit-id --name-status -M -r b064576` emits exactly one line,
+`R091 dev/proposals/2026-07-08-claude-automated-review-committer.md ->
+dev/proposals/archive/...`. Consequently **reject/supersede Decisions and
+plan-archives are outside coverage**, and `reject` / `supersede` are dead tokens
+in v1. The original listed this under *Handled* and argued at length that such a
+commit does append a `## Decision` section — which is true (`b064576` adds 44
+lines including `## Decision`) and irrelevant, because the commit is never
+examined. Presenting silent exemption as coverage was an overclaim.
+*v2 candidate, evidence already gathered:* allow an `R` entry whose destination is
+under `dev/proposals/archive/` or `dev/plans/archive/` to trigger **shape (a)
+only**, and only when the leftmost claim is `decision`/`reject`/`supersede`. This
+cannot reopen the sibling's R2 (plan-open subjects claim `open`, and shape (b)
+stays rename-blind), and `b064576` is `R091` rather than `R100`, so its added
+lines are visible to `--unified=0`. Not shipped in v1: validating new design on
+n=1 at Response time is the move that produced R2.
+
+**Bundling is not detected — only over-claiming.** `doctrine/lifecycle.md:28-30`
+prohibits bundling; this tool checks only that a message's claim is supported by
+the diff. It does not detect the converse — unannounced lifecycle work, or
+lifecycle work bundled with implementation work (the second clause of
+`doctrine/proposals.md:85-87`). Leftmost-wins makes this structural: an honest
+bundler is checked on its first claim only, so `dev/plans:
+review-record-integrity -- Plan review (fresh-context Internal panel) +
+Sharpening` (`28816f0`) passes clean. Shape (b) covers exactly one bundling pair
+(open + baked-in review). *v2 candidate, declined for v1:* flag when ≥2 distinct
+evidence sections each receive ≥3 added non-blank lines — declined because its
+most obvious collision is the legitimate `## Response` + `## Revised proposal`
+commit, which is Cairn's standard shape and needs its own corpus pass.
+
+**Merge commits** are silently invisible (a merge emits no `diff-tree` entries).
+**Squashed / rebased / amended history**, `git notes`, and **commit bodies** are
+out of scope — only the subject line is parsed.
+
+**The tool is a heuristic over Cairn's own subject conventions** and will not
+generalise unchanged to another tree (Alternative #6).
+
+### Rationale — corrected claim (supersedes; R8)
+
+The original said the tool "makes an existing rule mechanically visible." That
+overclaimed. Corrected: **it makes one corner of `doctrine/lifecycle.md:28-30`
+mechanically visible — a commit message claiming a transition its diff does not
+contain, plus the open + baked-in-review bundling pair.** The rest of the rule,
+including bundling generally, remains enforced by memory.
+
+### Alternative #1 — "do nothing," re-weighed (supersedes; consequence of R3/R8/R9)
+
+The Maintainer should re-weigh this against the *revised* scope. What survives is
+a tool that: covers over-claiming on `A`/`M` proposal and plan commits plus one
+bundling pair; does **not** cover reject/supersede Decisions, plan-archives,
+unannounced lifecycle work, or bundling generally; produces zero findings on the
+last 45 commits; requires an explicit rev-range; and ships with its only two live
+findings whitelisted into a pytest acid test. Against that: it reproduces the real
+incident on real history with zero false positives across 538 subjects, it costs
+two repo-local files (17th and 18th under `scripts/`), and it blocks nothing. I
+still recommend adopting it — but the original argued for a larger tool than this,
+and a reasonable Maintainer could decline this one and should say so explicitly
+rather than let it pass by default.
+
+### Tests required — additions (R3, R4, R5, R9)
+
+Added to the synthetic tier: a case-insensitivity pair (all-lower / all-upper
+subject → same finding); the three `open`-vocabulary must-not-flag subjects; a
+proposal-derived plan-open (must trigger, pinning `--find-renames=100%`); an
+unresolvable-but-parsable rev-range (exit 2, not silent-0); a census line on a
+clean run; a baked-in `## Plan review` at plan-open (must flag shape (b)); a
+placeholder `## Plan review` at plan-open (must not flag).
+Added to the corpus tier: `b064576` and `d789414` as **must-SKIP** (asserting they
+are never examined, so the gap is pinned rather than latent); `57d1daf` as
+must-not-flag; a whitelist-bypass argument so the two incident SHAs still assert
+in pytest while being suppressed in human-facing runs.
+
+### Suite baseline (re-verified this session, unchanged)
+
+`python -m pytest bootstrap/tests` → **3 failed, 1408 passed, 3 skipped**, as_of
+2026-07-22, same three pre-existing nodes:
+`test_ast_attest.py::test_committed_baseline_accounted_for_across_the_engine_package`,
+`::test_ast_gate_passes_over_the_full_scaffold_module_set` (issue #1), and
+`test_evolution_infer.py::TestGateEval::test_main_suggests_and_json` (clock-expired).
+The correct claim remains "the three known failures stay the only failures, and
+the added file count rises." No AST re-anchor: nothing under `bootstrap/_scaffold/`
+changes.
+
+### Open questions — revised
+
+1. **~~Default rev-range~~ — resolved in the revision.** An explicit range is now
+   required (exit 2 without one). Maintainer may overrule.
+2. **Corpus-regression tier in the suite.** Unchanged and still the Maintainer's
+   call; it now pins must-SKIP entries as well as must-not-flag, which slightly
+   strengthens the case for keeping it in pytest.
+3. **Adopter shipping.** Re-argued above against a `lifecycle_metrics` subcommand
+   rather than a new module. Still deferred to v2; is that the Maintainer's intent?
+4. **New — priority against the `_STAGE_COMMIT_PATTERNS` follow-up.** The shipped
+   vocabulary is broken on Cairn's own conventions (Best-effort × 8). Should that
+   follow-up open first, and should this proposal wait on it? I recommend yes.
+5. **Surfaced, not asserted — `dev/reviews/` is outside every named boundary.**
+   `dev/reviews/` now holds **4** committed panel-source files (as_of 2026-07-22),
+   established by the practice from the superseded `automated-review-committer`
+   Decision. It is neither a trigger root in this proposal nor one of the paths
+   named in the `AGENTS.md:151-157` carve-in. No false negative follows for this
+   tool (a review commit also modifies its proposal, so it still triggers), but
+   the carve-in gap is real and belongs to the Maintainer, not to this proposal.
+6. **Retained from the original — the four "Refine Gemini External Review of …"
+   commits** (`87e6529`, `2d665cc`, `8281a0a`, `d32498c`) modify already-committed
+   Review sections. Still an explicit non-goal; still surfaced rather than
+   answered.
