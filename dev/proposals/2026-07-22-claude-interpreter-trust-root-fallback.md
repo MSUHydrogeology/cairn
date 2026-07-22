@@ -532,6 +532,146 @@ This proposal resolves a critical day-one failure mode where conda or pyenv envi
   * Parallel Security Review pass (running separately).
   * Execution on Python 3.11 and 3.13 (to be verified during plan execution).
 
+## Security Review -- Codex (dedicated Security Review) -- 2026-07-22
+
+**Role and partition.** This is the Maintainer-ordered Security Review of the
+read path, not the parallel External gate and not a recommendation on whether
+the proposal as a whole should land. Scope was
+`templates/skills/_lib/lifecycle.py:182-210` (`_intent_whoami`) and
+`:318-394` (`_has_symlink_component` / `_resolve_interpreter`), plus the eager
+resolver calls at `:701` and `:1158`. The write path was inspected only to
+confirm the scope fence: `bootstrap/_scaffold/install.py:337-369` is unchanged,
+and the proposed degraded path does not rewrite the binding.
+
+**Security adjudication: ACCEPT the absent-path detection downgrade, REQUIRE
+absence classification after the symlink walk.** This sign-off is conditional
+on S1's record correction before Decision and on the revised tests actually
+passing during implementation. It accepts a narrow risk trade, not the broader
+claim that the current binding authenticates an interpreter.
+
+### Trust-boundary classification
+
+`dev/.cairn/local-env.json` starts as project-produced input, but the reader has
+no provenance or integrity signal after installation: it is untracked,
+gitignored, mutable, and not lockfile-covered. For this review it is therefore
+**user-controlled at read time**. JSON loading does not execute code; the
+security boundary is the later use of its string as argv[0]. The subprocess
+sites correctly avoid a shell and pass an explicit argv list, so argument and
+shell injection are not the issue. Executable selection is.
+
+### Findings
+
+* **[S1] Important, blocking record correction -- the proposal overstates
+  shape validation as tamper detection.** The threat-model claim that an
+  attacker-controlled redirect becomes loud is false for the most direct
+  redirect: the current resolver accepts any absolute, present,
+  non-symlinked, executable regular file. It checks neither Python identity nor
+  binary provenance. Executing the current code on Python 3.13.13 confirmed
+  that a shell script satisfying those shape checks is selected and run.
+  **Attack scenario:** a writer changes `local-env.json` to an existing regular
+  executable they control; the next routine executes it without a warning.
+  **Satisfier:** before Decision, append a correction classifying the file as
+  an operationally trusted executable binding and the resolver as a strict
+  *shape* validator, not an authenticator. Remove or qualify the statements
+  that redirect tampering is necessarily loud and that refusal is the only
+  control. This is a record correction, not a request to add binary attestation
+  to C1.
+
+* **[S2] Important, pre-existing residual -- the symlink walk has a
+  check/use race.** On both the current resolver and an in-memory implementation
+  of revised C1, I replaced a checked real parent with a symlink after
+  `_has_symlink_component` returned and before execution. The selected lexical
+  path then executed the retargeted shell script (`BASELINE_RACE_EXECUTED` on
+  current code; `RACE_EXECUTED` on revised C1). **Attack scenario:** a process
+  able to rename an interpreter parent wins the narrow interval between the
+  symlink walk and subprocess execution. **Disposition:** I do not accept this
+  residual as closed or describe the symlink guard as race-free. It predates
+  C1 and the absent branch does not create it; the attacker prerequisites also
+  generally permit replacing the interpreter directly, so it does not block
+  this bounded downgrade. Register it separately if Cairn intends this binding
+  to resist a concurrent local writer rather than merely detect static bad
+  shapes.
+
+* **[S3] Important carry-forward, non-blocking to C1 -- native Windows execute
+  semantics remain unverified.** No Windows host was available, so the
+  universal statement that every present non-executable file refuses is not
+  security-verified there. `os.access(..., os.X_OK)` is unchanged by this
+  proposal, and the POSIX disposition is verified across every supported
+  Python minor. **Satisfier:** do not claim the present-non-executable leg as a
+  cross-platform verified guarantee until a native-Windows production-path
+  test exercises it; carry the limitation as an explicit residual meanwhile.
+
+### Required risk rulings
+
+**1. Detection downgrade -- accepted.** The absent branch never executes or
+persists the recorded value. It selects `sys.executable`, which is already
+running the lifecycle process, so the branch grants no executable capability
+that this invocation does not already possess. A writer can force loss of path
+continuity and can suppress the former hard stop, but cannot use an absent path
+to choose the child executable. The loss is therefore detection/assurance, not
+direct code execution. That trade is proportionate to the reproduced rebuild
+failure provided the degradation remains conspicuous: one stderr warning per
+process, the stale value and current interpreter named, the source reported as
+`fallback-stale`, actionable non-`--force` recovery guidance, and no automatic
+rewrite. The appended-argument and `ENOTDIR` shapes are included in this
+acceptance deliberately; provenance cannot be inferred from an absent path's
+spelling.
+
+The delete/recreate residual was red-teamed. Recreating the recorded path after
+classification did not change the current run: revised C1 still returned
+`sys.executable`. Deleting a path after a `present` classification caused the
+later file/execute checks to refuse. On a later invocation a recreated
+executable can be selected, but S1 establishes that the current resolver would
+already select that executable if it had been created first; the downgrade
+adds no new capability.
+
+**2. Probe ordering -- symlink first, then absence.** This is required, not a
+preference. Probing first would intentionally erase the symlink guard exactly
+when a symlink target is absent, even though the component remains retargetable
+out of band. A benign rebuild through a newly symlinked parent must take the
+fatal path plus rebind remedy. The revised `_probe_interpreter` ordering is the
+accepted ordering: walk every component first, then classify
+`FileNotFoundError` / `NotADirectoryError` as absent, with the whole
+classification normalized through the outer `except OSError`.
+
+### Pre-existing fail-open ruling
+
+`_intent_whoami`'s broad `except LifecycleError` is in scope because it is a
+reader call site and currently removes the only detection signal for every
+invalid binding shape. It does **not** need a separate record: retain C3 in this
+proposal. Keeping its fallback non-fatal is acceptable because the intent tool
+is optional, its script is repository-controlled, and it runs under the
+interpreter already executing the lifecycle command. The catch must surface
+the original refusal reason before fallback, and the resolver docstring must
+state this exception instead of claiming universal pre-execution refusal.
+
+### Governance recommendation
+
+**Yes -- register this boundary on `AGENTS.md`'s high-risk-surface list in a
+separate follow-up.** The standing trigger should cover the local interpreter
+binding, `_resolve_interpreter`, and every call site that executes its result;
+changes to schema, validation order, fallback/disposition, warning visibility,
+or subprocess use should require Security Review. The module-level rule already
+says a moved or widened trust boundary triggers review, but the current
+operational list does not make this existing executable boundary discoverable.
+
+### Execution evidence and negative space
+
+The revised classifier/disposition matrix was executed, not inferred, on
+Python **3.11.15**, **3.12.9**, and the canonical **3.13.13** on macOS as a
+non-root user. All three agreed on absent, `ENOTDIR`, symlinked-parent,
+unreadable-parent, delete/recreate, and present-then-delete dispositions; 3.12
+and 3.13 also ran the complete structural matrix. Unreadable parents became a
+clean `LifecycleError`; symlinked leaf/parent stayed fatal; absent and
+appended-argument-shaped paths degraded; present non-executable files and
+directories refused. The once-per-process stale-warning sentinel emitted once
+across repeated stale resolutions.
+
+Not covered: native Windows execution, a real conda rebuild whose rebuilt
+parent is a symlink rather than the equivalent filesystem shape, and a design
+that closes S2's concurrent check/use race. No network, credential, or shell
+surface exists in the reviewed branch.
+
 ## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
 
 *(Awaiting the Maintainer. The revised proposal has cleared Internal and External non-security reviews. Two decisions belong to the Maintainer with Security Review input: (1) Whether the detection downgrade for absent paths is acceptable; (2) Whether to probe before or after the symlink check.)*
