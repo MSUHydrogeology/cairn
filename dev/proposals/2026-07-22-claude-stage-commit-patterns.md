@@ -14,7 +14,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 4.8
 **Date opened**: 2026-07-22
-**Status**: proposed
+**Status**: revised
 **Touches**: `templates/modules/default-on/_lifecycle_metrics/gitmeta.py` and its byte-identical self-hosted twin `tools/_lifecycle_metrics/gitmeta.py`; the two-line degradation sentence in `templates/modules/default-on/_lifecycle_metrics/__init__.py` and its twin `tools/_lifecycle_metrics/__init__.py`; one new behavioural test file under `bootstrap/tests/`. No engine, no manifest rows, no doctrine.
 **Related**: opened under the Maintainer's 2026-07-22 direction *"fix the reader now, and as part of that proposal check whether this is needed"*, recorded in the sibling proposal stem `2026-07-22-claude-transition-lint` (its `## Sequencing note`). The defect was found by that proposal's Internal review panel (finding R1) and routed out of its scope. Prior verification of the gate-manifest boundary reused from proposal stem `2026-07-22-claude-interpreter-trust-root-fallback`.
 **Plan review**: required(Internal)
@@ -728,3 +728,352 @@ TIER: `required(Internal)` is correct and External is NOT warranted on the doctr
 ON THE OTHER OPEN QUESTIONS: the 41-entry lockfile staleness is correctly routed OUT — it is real, pre-existing, caused by `501efe3`, and bumping 1 of 41 would leave the check red while making the record less coherent; bundling it here would be a scope breach. P3 should ride along and open question 2 should be removed — the `__init__.py` twins are byte-identical so the parity cost is one mechanical copy, both touched files sit in `frozen_files` and both are stale from `501efe3` (identical posture to P1), and the sentence it corrects is false in every clause of its cause list. P3 should also pick up a clause on the `days_*`/`hours_*` divergence and the commit-batching semantics from R5, since that docstring is the only adopter-facing documentation of this tier.
 
 No blocking finding stands in the way of a Decision once R1 is settled in the revision.
+## Response -- Claude (author) -- 2026-07-22
+
+All measurements below were re-run by me this session on the canonical
+interpreter (`~/conda_envs/lhm/bin/python`, Python 3.13.13) at `HEAD`
+`b533596`, which is four commits past the `7d2d034` the proposal cited
+(`33edd10`, `cc66d2b`, `d3f3ef7`, `b533596`). The corpus is now **76**
+distinct `git log --follow` subjects across the same 12 proposal files.
+
+**The panel is right where it matters, and four of its findings are
+dispositive against the design as written.** R1, R2, R3 and R4 each
+reproduce exactly on my own re-run, and three of them (R1, R2, R3)
+produce the one outcome the proposal itself named as *worse than the
+defect*: a wrong stage timestamp emitted under an `Exact` label. I am
+not going to argue around that.
+
+What saves the proposal is that all four resolve by **narrowing** —
+classifying fewer subjects, not building more machinery. The revised
+design below classifies **52/76** corpus subjects instead of 70/76,
+touches the same one file pair plus one test, adds no module, no
+export, no config key, and no CLI surface. It is strictly smaller than
+what was proposed. That is why I am recommending `revised` rather than
+supersede.
+
+One correction runs the other way: **R11(b)'s off-by-one sub-claim is
+itself wrong**, and I show the check below.
+
+### Per-critique disposition
+
+| # | Token | Rationale (one sentence) |
+| --- | --- | --- |
+| R1 | **accept** | Reproduced 8/8 of the panel's adopter false positives plus `docs: review the API surface`; the bare-subject fallback is removed in the revised design, which takes 9 of those 10 to `None`. |
+| R2 | **accept** | Reproduced: `dev/proposals: transition-lint -- Maintainer Decision -- ACCEPT (post Internal review)` returns `reviewed` under the proposed code — a wrong stage on the corpus's own dominant slug-first style. |
+| R3 | **accept** | Reproduced and worse than reported at current HEAD: **five** `dev/plans: open …` subjects classify `open` when they are the proposal's *archive* event, and the ablation confirms the `plans?` branch changes no tier outcome. |
+| R4 | **accept** | Reproduced; my "carried over unchanged" sentence is false, and I am withdrawing it rather than defending it. |
+| R5(a) | **accept** | Reproduced: 4 of 12 rows carry `days_revised_to_decision = 11` beside `hours_revised_to_decision ≈ 116.46` (4.85 d) at `Exact`, because header dates are backdated ~6 days — my own tripwire fires on a correct fix. |
+| R5(b) | **accept** | Reproduced: three rows show `hours_reviewed_to_revised` of exactly `0.0` and five show `hours_open_to_reviewed` under 0.024 h; the Rationale sentence overclaims what those numbers measure. |
+| R6 | **accept** | Reproduced: only *one* corpus subject flips when the hyphen guard is ablated, and the `Security-Review gated` case classifies `open` with **and** without the guard, so proposed test 2 does not pin what I said it pins. |
+| R7(a) | **accept** | Correct: `_stage_for_subject` is priority-order-wins, not leftmost-wins; the reuse table's row 1 misdescribes what a lint could copy. |
+| R7(b) | **accept** | Correct and it strengthens my own verdict: Shape (b) parses no subject at all, so the repair contributes zero to the half that actually fires on `17b7e5c`. |
+| R7(c) | **accept** | Correct; "survives intact" is inconsistent with the honesty I applied one paragraph later to Alternative #6. |
+| R8 | **accept** | Verified independently: `git diff-tree --no-commit-id --name-status --find-renames=100% -r 88fd91f` → `M dev/proposals/2026-07-22-claude-transition-lint.md`, and the subject's parenthesised "(not a Decision)" would claim a Decision under the sibling's un-anchored `decision` token. Reporting it. |
+| R9(a) | **accept** | The size answer needs a denominator to be usable by the Maintainer. |
+| R9(b) | **accept** | Verified the precedent: `scripts/check_cairn.py:125` loads three shipped template modules by path (`:86`, `:93`, `:102`); my stated ground was weak and the byte-freeze ground (`bootstrap/tests/_gate_manifest.py:167`) is the real one. |
+| R9(c) | **accept** | Correct; the reader deliberately omits `accept`/`reject`/`supersede`, which the lint needs as first-class claim tokens. |
+| R10 | **accept** | Correct: I re-ran both loop shapes over all 12 files and the resolved SHA assignments are identical for 12 of 12, so "This is not hypothetical" overstates it. |
+| R11(a) | **accept with modification** | The de-anchored figure is **53/76** at current HEAD (the panel measured 52/73 at theirs) — the point stands that 51 was wrong and that the figure is HEAD-dependent; I also confirm de-anchoring *without* switching to `.search()` yields **0/76**, so Alternative 3 as worded was unreproducible. |
+| R11(b) | **accept with modification** | Accepting the re-anchor obligation (counts re-measured above), but **rejecting the off-by-one**: `grep -n 'Open proposal: README tagline' docs/quickstart.md` → `232:`, with `231` the opening ```` ```bash ```` fence and `233` the closing one. `docs/quickstart.md:232` was correct as cited. |
+| R11(c) | **accept** | The `$`-prompted block is a derived summary, not that command's output; relabelled. |
+| R12(a) | **accept** | P3 rides along and open question 2 is withdrawn; both touched files sit in `frozen_files` and both are stale from `501efe3`, so P3 adds no new posture. |
+| R12(b) | **accept** | Keeping `required(Internal)` and writing an explicit *execution* obligation into the plan. |
+| R12(c) | **accept** | Adding the quiet-tree caveat; the underlying silent degradation at `gitmeta.py:50-51` is pre-existing and stays out of scope. |
+
+No critique is deferred and none is dropped.
+
+### One thing the panel did not say that I have to say myself
+
+Fixing R1 costs something the original proposal claimed it would not
+cost. My scope fence said: *"The reader accommodates existing subjects;
+it does not mandate a form."* Under the revised design that sentence is
+only half true, and I am correcting it rather than keeping it. The
+richer house-style vocabulary now fires **only behind a
+`dev/proposals:` scope prefix**. An un-prefixed subject still gets
+exactly the shipped legacy vocabulary — byte-for-byte the four patterns
+that ship today — so nothing that classifies now stops classifying. But
+a project that wants sub-day stage resolution gets it by scoping its
+lifecycle commits. That is a de-facto preference expressed by what the
+reader can resolve, not a rule anyone must follow, and it is the price
+of not labelling `Add impulse response function to the transport
+solver` a `revised` transition in a hydrogeology postdoc's tree. I
+would rather state the trade than let a reviewer discover it.
+
+I also declined the panel's suggested hybrid (adding
+`Append/Refine … Review of <stem> proposal` as an explicitly-listed
+extra accepted form to preserve 11 `Exact`). That form is an artifact
+of one project's habit over a few weeks, and fitting the vocabulary to
+it is precisely the error R2 identifies in my own `decision` anchoring.
+The measured cost of refusing is **one tier**: 10 `Exact` / 2 `Good`
+instead of 11 / 1.
+
+---
+
+## Revised proposal -- 2026-07-22
+
+Supersedes the `## Proposal` section above. Scope, fence, and
+non-goals are otherwise unchanged; only what is restated here changes.
+
+### P1 (revised) — additive repair: shipped vocabulary untouched, scoped vocabulary added
+
+The key structural change from the original P1: **`_STAGE_COMMIT_PATTERNS`
+is not edited at all.** It keeps its name, its type, its priority order,
+and its four regexes byte-for-byte, including the `sharpening`
+exclusion in exactly the anchored position it has today
+(`gitmeta.py:24`). Backward compatibility is therefore guaranteed *by
+construction* rather than asserted by a 12-string table, and R4
+dissolves: the exclusion cannot widen because the pattern carrying it
+does not change.
+
+The repair adds a second, **scope-gated** vocabulary consulted only
+when the legacy vocabulary declines *and* the subject carries a
+proposal-tree scope prefix:
+
+```python
+_STAGE_SCOPE_PREFIX_RE = re.compile(r'^(?:dev/)?proposals?\s*:\s*', re.I)
+
+_STAGE_PHRASE_SEP_RE = re.compile(r'\s+(?:--|–|—)\s+')
+
+#: Consulted ONLY for a subject carrying the scope prefix above.  The
+#: looser word-boundary forms are safe there and unsafe anywhere else.
+_SCOPED_STAGE_PATTERNS: List[Tuple[str, 're.Pattern[str]']] = [
+    ('open', re.compile(r'^open(?:ing)?\b', re.I)),
+    ('decision', re.compile(
+        r'^(?:maintainer\s+)?decision\b'
+        r'|(?<!-)\bmaintainer\s+decision\b(?!-)', re.I)),
+    ('revised', re.compile(
+        r'(?<!-)\b(?:response|responses|revised|revise|respond\s+to)\b(?!-)',
+        re.I)),
+    ('reviewed', re.compile(r'(?<!-)\breview\b(?!-)', re.I)),
+]
+
+_HEAD_ANCHORED_STAGES = frozenset({'open', 'decision'})
+
+
+def _stage_for_subject(subject: str) -> Optional[str]:
+    """Classify a commit subject as AT MOST ONE lifecycle stage."""
+    text = subject.strip()
+    for stage, pattern in _STAGE_COMMIT_PATTERNS:   # shipped, unchanged
+        if pattern.match(text):
+            return stage
+    match = _STAGE_SCOPE_PREFIX_RE.match(text)
+    if match is None:
+        return None
+    body = text[match.end():]
+    parts = _STAGE_PHRASE_SEP_RE.split(body, maxsplit=1)
+    phrase = parts[1] if len(parts) > 1 else body
+    for stage, pattern in _SCOPED_STAGE_PATTERNS:
+        target = body if stage in _HEAD_ANCHORED_STAGES else phrase
+        if pattern.search(target):
+            return stage
+    return None
+```
+
+Four rules, each earning its place against a *measured* failure:
+
+* **No bare-subject fallback (R1).** An un-scoped subject sees only the
+  shipped patterns. Measured on the panel's adopter probe set: 9 of 10
+  go to `None`, including all 8 the panel found. The tenth,
+  `review: tighten the recharge bounds`, still classifies `reviewed` —
+  **but it does so today**, via the shipped `^Review\b` pattern
+  (verified by running the shipped patterns alone). That is status quo,
+  not a regression this fix introduces, and repairing it would mean
+  editing the shipped vocabulary, which is a separate and larger call.
+* **`plans?` dropped from the scope prefix (R3).** Every `dev/plans:`
+  subject now yields `None`. Verified across all seven `dev/plans:`
+  subjects in the corpus, including
+  `dev/plans: foo -- Code review (fresh-context, disclosed scribe)`,
+  the shape the panel flagged as latent. The justification sentence the
+  original P1 gave for `plans?` is withdrawn: the ablation shows the
+  branch buys no tier and every classification it produced was the
+  wrong end of the lifecycle.
+* **`decision` matches head-of-subject *or* a qualified
+  `maintainer decision` anywhere (R2).** Verified on all three real
+  forms: `dev/proposals: Maintainer Decision -- ACCEPT licensing` →
+  `decision`; `dev/proposals: licensing -- Maintainer Decision --
+  ACCEPT` → `decision`; `dev/proposals: transition-lint -- Maintainer
+  Decision -- ACCEPT (post Internal review)` → `decision` (was
+  `reviewed`). Known and accepted false negative: a Decision written
+  without the word — `dev/proposals: foo -- SUPERSEDE bar` → `None`.
+  That is consistent with the fence (`supersede` gets no stage) and
+  fails safe to `Good`.
+* **Never match inside a hyphen compound (R6).** Corrected claim: the
+  guard's measured necessity rests on **exactly one** corpus subject,
+  `dev/plans: archive review-record-integrity (Chunk C pointer +
+  lifecycle close)`. The `Security-Review gated` case is *not* evidence
+  for the guard — it classifies `open` with and without it, because
+  `open` is head-anchored and wins on priority order. The discriminating
+  probe is a stage-phrase-position one:
+  `dev/proposals: interpreter-trust-root -- add Security-Review section`
+  → `None` guarded, `reviewed` unguarded (verified both ways).
+
+### P2 (revised framing) — unchanged code, honest justification
+
+The code change is exactly as originally proposed. The justification is
+corrected per R10: I ran both loop shapes over `_git_log_for_path`
+output for all 12 proposal files with the patterns held constant, and
+the resolved `{open, reviewed, revised, decision}` SHA assignments are
+**identical for 12 of 12**. The fall-through is a *latent* defect of the
+same mechanism with no currently-observable effect, not a live one.
+"This is not hypothetical" is withdrawn. P2 stays because making
+classification a pure function of the subject is the right invariant
+and it is free; test 5 is the only thing pinning it, and its docstring
+will say so.
+
+### P3 — rides along (open question 2 withdrawn)
+
+Per R12(a), P3 is my call and I am making it: it ships. Both touched
+files sit in `bootstrap/tests/fixtures/gate_manifest.json`'s
+`frozen_files` and both are already stale from `501efe3`, so P3 adds no
+new gate posture; the `__init__.py` twins are byte-identical, so parity
+costs one mechanical copy.
+
+P3 now corrects three things in
+`templates/modules/default-on/_lifecycle_metrics/__init__.py:74-78`
+rather than one — the falsely-exhaustive cause list, plus (per R5) two
+sentences naming what the hour deltas measure: the interval between the
+*commits that recorded* each transition, which for a batch-committed
+session can be near zero, and which can legitimately disagree with the
+`days_*` columns when a proposal's header `**Date opened**` predates its
+opening commit.
+
+### Revised measurements (as_of 2026-07-22, HEAD `b533596`, Python 3.13.13)
+
+| measure | shipped | proposal as written | **revised design** |
+| --- | --- | --- | --- |
+| corpus subjects classified (of 76) | 0 | 70 | **52** |
+| proposals at `Best-effort` | 12 / 12 | 0 | **0** |
+| proposals at `Exact` | 0 | 11 | **10** |
+| proposals at `Good` | 0 | 1 | **2** |
+| panel's adopter false positives (of 10) | 1 | 10 | **1** (pre-existing) |
+| `dev/plans:` subjects misclassified | 0 | 5 | **0** |
+
+The second `Good` is `2026-07-22-claude-ast-known-new-repin`, whose
+`reviewed` slot was previously filled by the un-scoped subject
+`Append Gemini Internal Review of ast-known-new-repin proposal`. Losing
+it is the deliberate, priced cost of closing the bare-subject fallback.
+
+Corrected supporting figures: de-anchoring the shipped patterns *and*
+switching `.match()` → `.search()` gives **53/76** (not 51); de-anchoring
+alone, keeping `.match()` as it is at `gitmeta.py:83`, gives **0/76** —
+so Alternative 3 is reworded to "remove the `^` anchors **and** switch
+`.match()` to `.search()`", which is what the 53 figure requires. All
+counts are HEAD-dependent and will be re-measured immediately before
+the opening commit.
+
+### Revised "Signals the change is wrong" (first bullet)
+
+Replacing the unusable tripwire per R5(a). A `days_*` / `hours_*`
+disagreement is **expected and benign** on this corpus — 4 of 12 rows
+show `days_revised_to_decision = 11` beside `hours_revised_to_decision
+≈ 116.46`, because e.g. `2026-07-11-claude-adopter-licensing-compliance`
+carries `**Date opened**: 2026-07-11` while its opening commit `bee3a85`
+is `2026-07-17T11:55:42-04:00`. The real signal is narrower:
+
+* **A negative `hours_*` value**, or an `hours_*` that exceeds its
+  `days_*` span (rather than falling short of it, which is what
+  backdated headers produce). Either means a slot took a timestamp from
+  the wrong commit. *Recovery:* as before.
+
+### Revised obligation-section deltas (R7, R8, R9)
+
+Verdict unchanged — **the transition-lint is not made unnecessary** —
+but the argument is corrected:
+
+* **Reuse table row 1 split.** `_stage_for_subject` supplies "at most
+  one classification per subject". It does **not** supply leftmost-wins:
+  it is priority-order-wins, and the two diverge on real corpus
+  subjects (`dev/proposals: adopter-entry doc-refresh -- Internal review
+  panel + Response + Revised` → `revised` here, `review` under
+  leftmost). The divergence is legitimate — the reader's four stages are
+  lifecycle-ordered so priority order is meaningful, while the lint's
+  claim tokens have no such order — but it means the lint must still
+  implement its own disambiguation rule.
+* **Shape (b) gets zero.** The three reused idioms live entirely in
+  Shape (a). Shape (b) — the half that actually fires on the originating
+  incident `17b7e5c` — consumes no subject vocabulary whatsoever. That
+  is a sharper and more verifiable statement of "still warranted" than
+  the blanket claim I made.
+* **Spent / surviving, explicitly.** *Spent:* "an anchored regex cannot
+  express 'claims a review anywhere in the subject'", and "hyphen-
+  compound suppression must be invented". *Surviving:* the different-
+  question ground (which commit *is* stage X vs does *this* commit's
+  claim match *this* diff), and the claim→evidence mapping, which
+  `gitmeta.py` has no concept of.
+* **Denominator (R9a).** 3 of the ~8 pinned Shape (a) decisions, and 0
+  of Shape (b), the trigger/enumeration design, the exemption model,
+  suppression, the CLI, and exit behaviour.
+* **Caveat ground swapped (R9b).** The "design-level, not import-level"
+  caveat now rests on `bootstrap/tests/_gate_manifest.py:167` freezing
+  `templates/modules/**/*.py`, plus this proposal's own fence that
+  `_stage_for_subject` is private and unexported — not on "no such
+  dependency exists", which `scripts/check_cairn.py:125` falsifies.
+* **Vocabulary asymmetry (R9c).** The lint needs `accept` / `reject` /
+  `supersede` as first-class claim tokens; this reader deliberately
+  carries none of them.
+* **New evidence reported (R8).** Commit `88fd91f`
+  (`dev/proposals: transition-lint -- record Maintainer sequencing
+  direction (not a Decision)`) modifies the proposal file and adds only
+  a `## Sequencing note` heading. The sibling's `decision` token is not
+  positionally anchored, so the parenthesised "(not a Decision)" would
+  claim a Decision with no `## Decision` evidence — a Shape (a) false
+  positive on a commit *outside* the pinned `d6646a3..57d1daf` dogfood
+  window. The repaired reader returns `None` on the same subject. If the
+  lint is ever authorised, its `decision` token likely needs the same
+  positional treatment `open` received, and P1's `decision` pattern is a
+  working precedent.
+
+### Revised tests
+
+Additions and corrections to the frozen list in
+`bootstrap/tests/test_lifecycle_stage_patterns.py`:
+
+* **All 10 adopter-plausible subjects** from R1, with their intended
+  classifications — 9 `None`, and `review: tighten the recharge bounds`
+  → `reviewed` *labelled as pre-existing shipped-pattern behaviour*, so
+  a future reader does not mistake it for something this fix chose.
+* **All 7 `dev/plans:` corpus subjects** → `None` (R3), plus
+  `dev/plans: <slug> -- Code review (fresh-context, disclosed scribe)`
+  → `None`.
+* **All three real Decision forms** including the slug-first
+  `… -- Maintainer Decision -- ACCEPT (post Internal review)` →
+  `decision` (R2), and `… -- SUPERSEDE bar` → `None` as a documented
+  false negative.
+* **Both sharpening directions** (R4):
+  `dev/proposals: <stem> -- Internal review (fresh-context panel) +
+  Sharpening` → `reviewed`, and `Review sharpening pass` → `None` (the
+  shipped exclusion, still exactly where it was).
+* **Corrected hyphen-guard test** (R6): the discriminating case is
+  `dev/proposals: interpreter-trust-root -- add Security-Review section`
+  → `None`; the `Security-Review gated` case stays but is relabelled a
+  *priority-order* test.
+* **The four `days_*`/`hours_*` divergence rows and one `0.0`-delta
+  pair** (R5), pinned with the backdating explanation in the docstring.
+* Proposed test 5's docstring notes it is the only thing pinning P2
+  (R10).
+
+### Revised smoke checks and plan obligation
+
+* Add: the `0 Best-effort` verification must run on a **quiet tree** —
+  concurrent git load makes `_git_log_for_path` return `[]` at
+  `gitmeta.py:50-51` and silently degrades a row (R12c; pre-existing,
+  out of scope, noted to the Maintainer as an observation).
+* The plan carries an explicit **execution** obligation for its Internal
+  reviewer, not a reading one: re-run the classifier over the live
+  `git log --follow` subject set at then-current HEAD, and run at
+  minimum the scope-prefix, `plans?` and hyphen-guard ablations,
+  reporting counts. Four of the six most serious findings here were
+  invisible from reading and surfaced only by ablation; the frozen list
+  is an oracle only for subjects already in it.
+
+### Revised open questions
+
+1. **The 41-entry lockfile staleness from `501efe3`** — unchanged, still
+   the Maintainer's call, still deliberately untouched.
+2. *(withdrawn — P3 ships.)*
+3. **The plan-review tier.** Still declared `required(Internal)` on
+   `doctrine/dual-review.md:184-187`, and the panel concurs. I note one
+   thing against my own tier: the revised design changes what an adopter
+   tree's commits do and do not classify as, which is closer to
+   adopter-visible behaviour than the original framing implied. If the
+   Maintainer reads that as contract-touching, External is defensible.
