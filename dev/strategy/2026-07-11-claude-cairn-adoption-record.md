@@ -22,11 +22,11 @@ boundary.
 
 ## The six-axis point
 
-`profile.yml:14-16`'s own comment states Cairn's point in the adaptation
+`profile.yml:15-17`'s own comment states Cairn's point in the adaptation
 matrix: **greenfield / medium / moderate / single / solo /
-concurrent-multi-type**. The six axes themselves — three describing the
-codebase (age, size, complexity), three describing the team (language,
-human-team, agent-team) — are defined in `dimensions/README.md` and each
+concurrent-multi-type**. The six axes themselves — **four** describing
+the codebase (age, size, complexity, language), **two** describing the
+team (human-team, agent-team) — are defined in `dimensions/README.md` and each
 axis's own file (`dimensions/age.md`, `size.md`, `complexity.md`,
 `language.md`, `human-team.md`, `agent-team.md`). The canonical named
 point this profile is built from is `bootstrap/BOOTSTRAP.md:178-181`'s
@@ -45,7 +45,7 @@ define the six-axis point values; `bootstrap/BOOTSTRAP.md` and
 ## The preset and its one override
 
 **Preset: `collaborative-team`**, with **one override: `human_team: solo`**
-in place of the preset's canonical `small-multi` point (`profile.yml:17-18`).
+in place of the preset's canonical `small-multi` point (`profile.yml:18-19`).
 Cairn's own development, at adoption time, was one human maintainer
 (Anthony Kendall) plus AI collaborators — the `small-multi` human-team
 default the preset assumes did not match; `solo` does. Every other axis
@@ -55,7 +55,7 @@ was taken as-is.
 
 ## The three added modules
 
-`profile.yml:20-23` lists `modules_add`, each with an inline
+`profile.yml:21-24` lists `modules_add`, each with an inline
 trust-boundary rationale already recorded at the time:
 
 * **`issue-capture`** — GitHub Issues for gap/friction capture.

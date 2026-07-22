@@ -5,7 +5,7 @@
 # Plan: record corrections (C1, C2, C3, OQ3 tracker)
 
 **Source proposal**: `dev/proposals/archive/2026-07-11-claude-record-corrections.md`
-**Status**: open
+**Status**: review
 **Plan review**: required(Internal) — fresh-context read. The proposal
 already cleared a 3-lens Internal panel *and* a Gemini External SHIP at
 the proposal stage; this plan's own job is mechanical translation of an
@@ -323,7 +323,154 @@ explicit approval per its own flag above).
 
 ## Code review
 
-*Filled in after implementation commits land (Chunks A-D).*
+**Attribution / committer note.** Fresh-context subagent review of the
+four implementation commits; the subagent cannot commit, so the
+author-session commits this section as a disclosed scribe, the accepted
+deviation model used throughout this repo's lifecycle.
+
+## Code review -- Claude (sub-agent, fresh context, not the implementer) -- 2026-07-22
+
+**Verdict: Request changes**, applying to the four commits `9a95ee0`
+(Chunk A), `59885ec` (Chunk B), `84c23a0` (Chunk C), `938aa20` (Chunk D).
+Chunks A, C, and D independently verify clean end-to-end. Chunk B
+contains two real, independently-reproduced content defects in the new
+adoption-record note — neither fabricates deliberation (the
+honesty-guard boundary holds), but both are factual misstatements a
+skeptical reader who follows the citations would catch, exactly the
+failure class this whole proposal exists to correct.
+
+**Model**: Claude Sonnet 5, fresh session, no access to the implementing
+session. Read all four diffs in full, the plan (including Plan review +
+Sharpening), the accepted proposal's Revised proposal + Decision, and
+independently re-ran every gate the commit messages cite.
+
+### Falsification ledger
+
+**Chunk A — clean.** CHANGELOG.md entry matches the plan's
+post-simplification A1 spec verbatim. Independently replayed `12ec2ad`
+in a scratch dir: `--sub neutrality` exit 1/99 `FAIL`-class,
+`--sub redundancy` exit 1/6 `FAIL`-class — exact match. Gate-code diff
+confirmed comment-only (12 lines, SPDX header). The stale broad-look
+citation PR2 flagged turned out moot in the shipped one-line entry (it
+doesn't cite that note at all). Approval-gate framing against `AGENTS.md`
+confirmed accurate.
+
+**Chunk B — two real defects, both fixed post-review (see Sharpening).**
+
+* **[CR1, blocking] Three of four `profile.yml` line citations in the
+  new adoption record were off by exactly one line**, because the same
+  commit's B2 edit expanded `profile.yml:7-8`'s comment from 1 line to 2,
+  shifting everything below down by +1 — *within the same commit* the
+  note was drafted against the pre-edit numbering. Directly diffed
+  `59885ec^` vs `59885ec`: the six-axis comment cited as `:14-16` is
+  actually at `:15-17`; the preset/`human_team` cited as `:17-18` is
+  actually at `:18-19`; the `modules_add` block cited as `:20-23` is
+  actually at `:21-24` (only 2 of 3 entries, missing
+  `examples-gallery`). Only `profile.yml:7` (preceding the insertion
+  point) survived correctly. `claim_check` passed throughout — it only
+  bounds-checks, doesn't read cited-range content — confirming this is
+  the same failure class as plan-review's own PR2 finding, this time
+  self-inflicted within Chunk B's own commit and uncaught there.
+* **[CR2, blocking] The note misstated `dimensions/README.md`'s axis
+  grouping** as "three describing the codebase (age, size, complexity),
+  three describing the team (language, human-team, agent-team)" — a
+  false 3/3 split. `dimensions/README.md:15-37` (read directly) actually
+  defines **four** codebase axes (age, size, complexity, **language**)
+  and **two** team axes (human-team, agent-team) — a 4/2 split. The axis
+  *point values* and their mapping onto `profile.yml`'s six-axis comment
+  were unaffected — only the note's descriptive claim about its own
+  cited source's structure was wrong.
+* Minor: the commit message's `check_cairn OK (163 files)` undercounts
+  by one (actual: 164) — a self-verification ordering slip (checked
+  before `git add`, not after), not a content defect.
+
+**Chunk C — clean.** Genuinely append-only (29 insertions, 0 deletions
+against the original baseline bullets). `doctrine/lifecycle.md:280-296`
+cited precisely (shaping-stage-exists only, not losers-die-there).
+`automated-review-committer`'s Decision confirmed "Superseded," not
+rejected; grepped every `**Status**:` field across `dev/proposals/` +
+archive (12 proposals) — exactly one superseded, zero rejected. Dated at
+actual commit-landing time (2026-07-22), matching PR3's fix.
+
+**Chunk D — clean, and the fix genuinely works, not just reads well.**
+`parse_rolling_window` resolves to 90 against the committed file;
+`evaluate_tracker` confirms the seeded row (`2026-06-12`, `occurred`) is
+live as of today (cutoff `2026-04-23`). A scratch-copy mutation test
+(discarded after) with a synthetic second row dated **70 days** after
+the true incident — a realistically-spaced next-release gap, not a
+same-day trivial case — confirmed the recurrence trigger genuinely
+fires at threshold=2, directly validating plan-review PR1's fix rather
+than just trusting its prose. Release-cadence numbers (1/6/16-day gaps)
+re-verified directly from `CHANGELOG.md`. Minor: commit message's
+`check_cairn OK (164 files)` undercounts by one (actual: 165), same
+class of slip as Chunk B's.
+
+### Gate sweep at current HEAD
+
+Full suite: 1432 passed / 3 skipped / 2 failed (both the documented
+pre-existing `test_ast_attest.py` sandbox-interpreter artifacts).
+Canonical `lhm` interpreter: `test_ast_attest.py` 26/26 green — confirms
+zero AST impact, as this plan (touching no code) claims.
+`check_cairn.py` OK, 165 files. `claim_check.py` clean on every
+touched/new file. `quality_gate.py --sub neutrality` at 99 FAILs,
+matching the pre-existing baseline, none from the touched files. Scope
+discipline: each chunk touches only its table's files; Chunk A
+additionally touches the plan itself (the disclosed Maintainer
+simplification), not scope creep.
+
+### Coverage
+
+Independently verified: the v0.3.0 replay, the gate-code diff, every
+`profile.yml` citation in the new note against the actual committed
+file (both pre- and post-edit numbering), the `dimensions/README.md`
+grouping against the note's paraphrase, `bootstrap/BOOTSTRAP.md`'s
+preset table, the 2026-05-14 framework note's actual content, the
+metrics addendum's append-only property and citation precision, the
+supersession-vs-rejection framing against every proposal's `Status`
+field, `evolution_infer.py`'s rolling-window/recurrence mechanics (both
+as-shipped and via mutation test), the release-cadence dates, and the
+full gate sweep. Not independently exercised: whether explicit
+Maintainer approval was actually given in conversation before Chunk A's
+commit (git authorship is consistent with, not conclusive proof of, the
+claimed gate); the redundancy/order-independence sub-gate replay (task
+scope specified neutrality only); the plan's own header `Status` field,
+which still read `open` despite the body's executing transition and all
+four chunks landed (predates Chunks A-D, introduced at the plan-review
+commit `b533596`, uncorrected by any of them).
+
+### Required follow-ups
+
+1. **(Blocking, resolved post-review)** The three drifted `profile.yml`
+   citations in the adoption record, corrected: `:14-16` → `:15-17`,
+   `:17-18` → `:18-19`, `:20-23` → `:21-24`.
+2. **(Blocking, resolved post-review)** The axis-grouping misstatement,
+   corrected to the accurate 4-codebase/2-team split.
+3. **(Non-blocking, noted)** Chunk B/D commit-message file-count slips —
+   no action; a habit note for future commits (run `check_cairn` after
+   staging, not before).
+4. **(Non-blocking, resolved post-review)** The plan's header `Status`
+   field, corrected from `open` to `executing`.
+
+### Sharpening -- Claude (author) -- 2026-07-22
+
+Both blocking findings independently re-verified before fixing (not
+taken on the reviewer's word): re-read `profile.yml` with line numbers
+and confirmed the three citations were exactly as drifted as CR1
+describes; re-read `dimensions/README.md:15-37` directly and confirmed
+the 4/2 split CR2 describes, not the note's claimed 3/3.
+
+* **[CR1] accept — fixed.** `dev/strategy/2026-07-11-claude-cairn-adoption-record.md`'s
+  three citations corrected to `:15-17`, `:18-19`, `:21-24`, verified
+  against the actual file content post-fix.
+* **[CR2] accept — fixed.** The axis-grouping sentence corrected to
+  "four describing the codebase (age, size, complexity, language), two
+  describing the team (human-team, agent-team)."
+* **[Minor findings] accept, noted, no further action needed** — the
+  commit-message undercounts are historical (not rewriting past commit
+  messages); the Status field is fixed in this same commit.
+
+**Status: executing → review.** Code review's two blocking findings are
+resolved; the plan is otherwise complete and gate-clean. Archive next.
 
 ## Lasting-truth migration
 
