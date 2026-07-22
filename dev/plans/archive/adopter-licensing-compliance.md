@@ -5,7 +5,7 @@
 # Plan: adopter licensing compliance (P1, P2, P4, P5, P6)
 
 **Source proposal**: `dev/proposals/archive/2026-07-11-claude-adopter-licensing-compliance.md`
-**Status**: review
+**Status**: archived
 **Plan review**: required(Internal) — ratified at Decision; touches the install
 contract (a new `_CORE_MAPPINGS` member) and legal instruments, and this plan
 pins the exact NOTICE.md/BOOTSTRAP.md/LICENSE text the proposal left to plan
@@ -449,9 +449,56 @@ like a release-gated plan pending that one external, Maintainer-only act.
 
 ## Lasting-truth migration
 
-*Filled in at archive time — which for this plan is gated on Chunk D (the
-Maintainer's supervised re-anchor), not solely on code review. See "The
-re-anchor gate" above.*
+Archived 2026-07-22.
+
+Follow-ups migrated to: the only deferred follow-up from this plan's scope
+is P3 (the lockfile `source_repository` + `licenses` fields, withdrawn at
+proposal stage per R4/E3) — it already has its own durable home: the
+proposal `dev/proposals/2026-07-22-claude-lockfile-provenance-fields.md`
+(Status: revised as of archive time), opened and carried forward
+independently of this plan. No other deferred follow-up exists; P4/P5/P6
+landed in full, and the CC-BY downstream-permission clause was declined
+outright at Decision (not deferred — a closed question, not an open one).
+
+**Chunk D closed.** The Maintainer ran the supervised baseline correction:
+commit `e1eec63` ("Updated baseline") surgically updated exactly the two
+reviewed keys (`FunctionDef:print_report`, `Assign:_CORE_MAPPINGS`) in
+`bootstrap/tests/fixtures/scaffold_ast_baseline.json` — a 5-insertion/
+5-deletion diff (digest + span per key), every other one of the 174 entries
+untouched — using the dry-run-verified script this plan's implementing
+session prepared and handed off (never run by the implementing agent
+itself, per `bootstrap/REANCHOR_RUNBOOK.md`'s "must not bless its own
+verifier" principle, extended here to the correctly-identified real
+mechanism). Verified post-commit: `bootstrap/tests/test_ast_attest.py`
+is fully green under the canonical `lhm`/Python 3.13 interpreter (26/26
+passed) — resolving both the plan's own Chunk C addition *and* the
+separately-tracked Issue #1 baseline drift (the `print_report` half of
+it) in the same reviewed act, as designed.
+
+**Loop-fidelity sign-off.** The Decision → implementation chain holds in
+full, including through a real correction mid-stream: the accepted Revised
+proposal's P1+P2+P4+P5+P6 shipped in `597c882`/`501efe3`/`a8bb2a7`/`c7a144b`,
+and the Decision's own citation error (the AST re-anchor mechanism it named,
+`bootstrap/REANCHOR_RUNBOOK.md` Phase 4, does not in fact govern
+`scaffold_ast_baseline.json` — confirmed independently by both the plan
+review and, separately again, by the code review) was caught, corrected on
+the record, and routed to the *actual* governing mechanism
+(`_ast_attest.py`'s allowlisted `update-symbol` path, extended by a
+Maintainer-run script for the one non-allowlisted symbol blocking it)
+rather than either silently working around it or blindly following a wrong
+citation. Plan review: 4 findings, all accepted (one, PR1, itself
+sharpened twice — first identifying the wrong mechanism, then finding even
+the "133 blocking symbols" figure was an interpreter-version artifact).
+Code review: Accept-with-followups, both informational, independently
+re-derived from first principles at the historical commits rather than
+trusted from prose. Verification green throughout: `check_cairn` OK at
+every commit; `claim_check` clean; `quality_gate --sub neutrality`
+returned to its pre-existing baseline (99) after two real, found-and-fixed
+excursions (a security-test false positive, a vendor-token leak in a
+suppression marker); the full suite is now genuinely green under the
+canonical interpreter (1423 passed / 1 pre-existing, unrelated,
+separately-tracked failure — the clock-expired `test_evolution_infer`
+case) for the first time this session.
 
 Per the [Archive preconditions rule](../PLANNING.md#archive-preconditions-proposals-and-plans),
 plans archive only after every deferred follow-up has a durable home outside
