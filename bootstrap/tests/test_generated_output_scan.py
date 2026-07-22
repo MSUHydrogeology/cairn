@@ -47,9 +47,19 @@ def _scaffold(target: Path, profile_yaml: str) -> int:
 
 def _scan_generated(target: Path) -> list:
     """Scan every generated Markdown file (the agent-loaded artifacts) as
-    a strict instruction class (Layer 3 is strictest overall)."""
+    a strict instruction class (Layer 3 is strictest overall).
+
+    ``NOTICE.md`` (adopter-licensing-compliance P1) is excluded: it carries
+    no ``{{placeholder}}`` tokens, so it is never profile-substituted and
+    categorically cannot carry the token-injection payload this scan
+    exists to catch (see the module docstring). Its two URLs are static,
+    reviewed-at-Decision references to Cairn's own canonical repository
+    (the MIT notice-retention + CC-BY attribution obligation P1
+    discharges), not adopter- or token-controlled content."""
     flags: list = []
     for md in sorted(target.rglob("*.md")):
+        if md.name == "NOTICE.md":
+            continue
         flags.extend(content_scan.scan_file(md, scan_urls=True,
                                             url_allowlist=set()))
     return flags

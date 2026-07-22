@@ -1,13 +1,13 @@
 """Tests for the adopter-licensing-compliance plan (P1 + P2).
 
-* P2 (this file's initial cut): every shipped ``templates/**/*.py`` manifest
-  source carries the SPDX/copyright header within its first 3 lines (after
-  any shebang, per plan-review R10); every self-hosted twin under
-  ``scripts/``/``tools/`` carries the identical header AND stays byte-identical
-  to its ``templates/`` source (the parity check plan-review R3 flagged as
+* P2: every shipped ``templates/**/*.py`` manifest source carries the
+  SPDX/copyright header within its first 3 lines (after any shebang, per
+  plan-review R10); every self-hosted twin under ``scripts/``/``tools/``
+  carries the identical header AND stays byte-identical to its
+  ``templates/`` source (the parity check plan-review R3 flagged as
   missing).
-* P1 (extended once Chunk C lands): the notice installs to a scratch target,
-  is recorded in the lockfile ``files[]``, and appears in ``--manifest``.
+* P1: the notice installs to a scratch target, is recorded in the lockfile
+  ``files[]``, and appears in ``--manifest``.
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_notice_install.py
@@ -17,9 +17,12 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from bootstrap.scaffold import install_manifest  # noqa: E402
+from bootstrap.scaffold import install_manifest, main  # noqa: E402
+from bootstrap._scaffold.lockfile import read_lockfile  # noqa: E402
 
 CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
 
@@ -124,3 +127,54 @@ def test_own_only_dev_scripts_are_not_shipped():
     shipped_dsts = {dst for _src, dst, _verbatim in rows}
     shipped = [rel for rel in _OWN_ONLY_SCRIPTS if rel in shipped_dsts]
     assert not shipped, f"expected these to be unshipped, but found in manifest: {shipped}"
+
+
+# --- P1: the NOTICE.md install path ------------------------------------------
+
+
+def test_notice_is_a_core_mapping():
+    """NOTICE.md installs unconditionally, like AGENTS.md -- no module
+    selection should be able to skip it."""
+    rows = install_manifest(modules=None)
+    notice_rows = [row for row in rows if row[1] == "NOTICE.md"]
+    assert notice_rows == [("core/NOTICE.md", "NOTICE.md", False)]
+
+
+def test_notice_appears_in_manifest_data_row_count():
+    rows = install_manifest(modules=None)
+    assert len(rows) == 95, (
+        f"expected 95 manifest rows (94 + NOTICE.md), found {len(rows)} -- "
+        f"if this moved intentionally, update this test"
+    )
+
+
+@pytest.fixture
+def _scratch_install(tmp_path: Path) -> Path:
+    cfg = tmp_path / "profile.yml"
+    cfg.write_text(
+        "project_name: NoticeTest\ntest_command: pytest\nmodules: []\n",
+        encoding="utf-8",
+    )
+    rc = main([
+        "--config", str(cfg), "--target", str(tmp_path),
+        "--cairn-root", str(CAIRN_ROOT), "--allow-dev",
+    ])
+    assert rc == 0
+    return tmp_path
+
+
+def test_notice_installs_to_a_scratch_target(_scratch_install: Path):
+    installed = _scratch_install / "NOTICE.md"
+    assert installed.is_file()
+    assert installed.read_text(encoding="utf-8") == (
+        (CAIRN_ROOT / "templates" / "core" / "NOTICE.md").read_text(encoding="utf-8")
+    )
+
+
+def test_notice_is_recorded_in_the_lockfile(_scratch_install: Path):
+    lock = read_lockfile(_scratch_install)
+    assert lock is not None
+    notice_recs = [rec for rec in lock["files"] if rec["dst"] == "NOTICE.md"]
+    assert len(notice_recs) == 1, "expected exactly one NOTICE.md lockfile record"
+    assert notice_recs[0]["src"] == "core/NOTICE.md"
+    assert notice_recs[0]["hash"].startswith("sha256:")

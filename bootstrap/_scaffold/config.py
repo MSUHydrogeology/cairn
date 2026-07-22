@@ -165,6 +165,10 @@ def load_config(config_path: Path) -> dict[str, Any]:
 _CORE_MAPPINGS: tuple[tuple[str, str], ...] = (
     # repo root
     ("core/AGENTS.md",                              "AGENTS.md"),
+    # Licensing notice (adopter-licensing-compliance P1): discharges the MIT
+    # notice-retention + CC-BY attribution obligations for the whole
+    # installed tree with one file. Installs unconditionally, like AGENTS.md.
+    ("core/NOTICE.md",                              "NOTICE.md"),
     # Thin vendor wrapper (foldback #12): installed as VENDOR.md, a
     # vendor-neutral `@AGENTS.md` + harness-addendum template the
     # adopter renames to their tool's file (CLAUDE.md, etc.).  Core
