@@ -43,6 +43,20 @@ pytestmark = pytest.mark.skipif(
 _TODAY = datetime.date(2026, 6, 8)
 
 
+def _recent(days_ago: int) -> str:
+    """An incident date anchored to the *real* clock, for the ``main()`` path.
+
+    ``evaluate_tracker`` takes an injectable ``today=``, so tests that call it
+    pin ``_TODAY`` and stay hermetic.  ``main()`` resolves its own ``today``
+    from ``datetime.date.today()`` and exposes no injection point, so any test
+    exercising it must anchor its rows to the real clock -- a fixed date here
+    silently ages out of the rolling window and the test starts failing purely
+    because time passed (it did: 2026-06-05/-06-01 rows against a 14-day
+    window).  Keep ``days_ago`` well inside the narrowest window under test.
+    """
+    return (datetime.date.today() - datetime.timedelta(days=days_ago)).isoformat()
+
+
 @pytest.fixture()
 def ei() -> ModuleType:
     spec = importlib.util.spec_from_file_location("evolution_infer_uut", TOOL_SRC)
@@ -154,8 +168,8 @@ class TestGateEval:
         (tmp_path / "dev" / "measurement").mkdir(parents=True)
         (tmp_path / "dev" / "measurement" / "collision_log.md").write_text(
             _tracker("**Rolling window**: 14 days.", [
-                ("2026-06-05", "staged-index", "occurred"),
-                ("2026-06-01", "staged-index", "occurred"),
+                (_recent(1), "staged-index", "occurred"),
+                (_recent(3), "staged-index", "occurred"),
             ])
         )
         out = io.StringIO()
@@ -229,8 +243,8 @@ class TestOnlySuggests:
         (tmp_path / "dev" / "measurement").mkdir(parents=True)
         tracker = tmp_path / "dev" / "measurement" / "collision_log.md"
         tracker.write_text(_tracker("**Rolling window**: 14 days.", [
-            ("2026-06-05", "x", "occurred"),
-            ("2026-06-01", "x", "occurred"),
+            (_recent(1), "x", "occurred"),
+            (_recent(3), "x", "occurred"),
         ]))
         before = tracker.read_bytes()
         out = io.StringIO()
