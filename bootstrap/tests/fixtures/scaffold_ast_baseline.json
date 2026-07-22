@@ -1120,10 +1120,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:install_onboarding": {
-    "digest": "cec6f103797053c5",
+    "digest": "382bfff5b2ace579",
     "span": [
-      2023,
-      2213
+      951,
+      1173
     ],
     "type": "FunctionDef"
   },
@@ -1160,10 +1160,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:main": {
-    "digest": "3d569a5104c8a81a",
+    "digest": "ff5a7441cceda605",
     "span": [
       187,
-      685
+      698
     ],
     "type": "FunctionDef"
   },
@@ -1288,10 +1288,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:write_install_lockfile": {
-    "digest": "488f65b3193b958f",
+    "digest": "d3aaf82d69c46a18",
     "span": [
-      2713,
-      2850
+      1477,
+      1646
     ],
     "type": "FunctionDef"
   },
