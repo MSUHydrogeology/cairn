@@ -246,3 +246,34 @@ The important judgment: **none of the findings kills a design.** F1 (drop the ph
 **Citations (R10).** Doc-surface heading corrected to "High-risk surfaces (Security-Review + proposal triggers)" (`AGENTS.md:301`); the `/good-morning` uniqueness claim scoped to shipped surfaces ("within `templates/`+`bootstrap/`, only `cli.py:487`"); the inert top-of-file `cairn-internal-ref-allow` marker dropped for this `dev/proposals/` artifact.
 
 **Unchanged and still sound:** the four core designs; the "no doctrine change / rate-limit N/A" call (grep confirms no `doctrine/` file codifies the interpreter trust root); the `strip_conditional_regions` reuse (no invented mechanism); the deferred `session-start --dry-run` feature; and the recommendation for External + Security-Review before the Decision.
+
+## Review -- Gemini (External, different-agent-type) -- 2026-07-22
+
+**Model**: Gemini 3.6 Flash / Antigravity
+**Verdict**: SHIP (conditional on Security-Review sign-off for F2 and Maintainer decision structuring)
+
+### Steelman
+This proposal addresses four verified day-one adoption breakers that hit solo scientists in conda/pyenv environments. Removing the phantom `/good-morning` command invitation (F1) and correcting `session-start`'s self-description (F4) eliminate baseline user confusion. Gating seed tasks by the resolved roster via `strip_conditional_regions` (F3) stops `PLANNING.md` from commanding unstaffed tools. Degrading on absent interpreter paths while keeping tampered/malformed paths fatal (F2) allows the daily loop to survive routine environment rebuilds without compromising security.
+
+### Critiques
+
+* **[E1] (Security Verification of Interpreter Fallback Boundary)**
+  The security boundary for F2 is well-bounded: fallback to `sys.executable` occurs *only* when the recorded leaf path does not exist on disk (`not interp.exists()`). If the path exists but lacks execute permissions (`not os.access(interp, os.X_OK)`), is a symlink, or contains control/malformed characters, `_resolve_interpreter` strictly raises `LifecycleError`. This ensures tamper attacks (redirecting execution to present-but-unauthorized binaries) remain fail-closed.
+* **[E2] (Failsafe Test Refactoring Precision)**
+  The test refactoring in `bootstrap/tests/test_lifecycle_failsafe.py` must explicitly separate the absent-path cases (`/no/such/python`, `/usr/bin/python --foo`) into the `fallback-stale` test set, while adding present-unexecutable files (e.g. `_make_exe` without `+x`) and present directories to the fatal refuse test set.
+* **[E3] (Roster-Gated Seed Test Coverage)**
+  The drift guard test `bootstrap/tests/test_onboarding_seed_roster.py` should verify all preset × axis override combinations (such as `collaborative-team` with `agent_team: single`), confirming that no tool (e.g. `tools/intent.py`) or module reference (e.g. `dual-review.md`) from unstaffed modules appears in the rendered `PLANNING.md`.
+
+### Coverage
+
+* **Covered**:
+  * Verified phantom command invitation in `bootstrap/_scaffold/cli.py:487` and skill skip filtering in `cli.py:502-504`.
+  * Analyzed `_resolve_interpreter` and failsafe tests in `templates/skills/_lib/lifecycle.py:382-390` and `bootstrap/tests/test_lifecycle_failsafe.py`.
+  * Checked `strip_conditional_regions` mechanics in `bootstrap/_scaffold/config.py:1004-1024` and `install_core` at `bootstrap/_scaffold/install.py:251-252`.
+* **Not covered**:
+  * Standalone Security Review pass for F2 (recommended prior to Maintainer decision).
+  * Implementation of `test_first_session_report.py` and `test_onboarding_seed_roster.py`.
+
+## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
+
+*(Awaiting the Maintainer. Findings F1, F3, F4 have cleared Internal and External reads. F2 awaits Security Review. Maintainer options: (1) Accept F1, F3, F4 now and F2 upon Security-Review clearance; or (2) Accept all findings as a single unit following Security Review.)*
