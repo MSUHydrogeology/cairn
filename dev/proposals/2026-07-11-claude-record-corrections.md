@@ -452,19 +452,28 @@ This proposal repairs three verified record-of-fact defects in Cairn's historica
 
 ### Critiques
 
-* **[E1] (Attestation Replay Precision)**
-  Replaying the committed v0.3.0 tree (`12ec2ad`) confirms that `quality_gate.py --sub neutrality` returns exit 1 (99 fails), refuting the "all-info/justified" claim. The erratum accurately distinguishes neutrality's material misstatement from redundancy's accurate count (6 fails, explicitly accepted as debt), maintaining exact historical truth.
-* **[E2] (OQ3 Tracker Seeding for Recurrence Path)**
-  Recommending the seeding of an `attestation-replay-failure` log in `dev/measurement/` via `incident_log_template.md` effectively arms the rate-limit gate's parse target for `tools/evolution_infer.py`. Logging the v0.3.0 erratum as row 1 ensures future attestation failures trigger doctrine adaptation automatically rather than relying on vibes.
-* **[E3] (Serialization Discipline for Communication Files)**
-  Updating `dev/PLANNING.md:34-40` must occur during the plan-archive serialization pass or goodnight scrub, strictly adhering to `AGENTS.md` rules regarding shared communication files.
+* **[E1] (Rate-Limit Gate Citation Verification)**
+  Verified that the rate-limit gate citations in `doctrine/rationale.md` are exact:
+  1. `doctrine/rationale.md:337-347` explicitly lists security surfaces (:339-341) and data-loss surfaces (:342-345) as the **exhaustive** list of high-risk bypasses ("Any other 'this feels urgent' framing falls outside the bypass and obeys the recurrence requirement").
+  2. `doctrine/rationale.md:327-329` codifies the **recurrence** requirement for non-high-risk doctrine changes.
+  Because transcript retention is a record-integrity surface rather than security or data-loss, deferring the requirement respects the doctrine gate.
+
+* **[E2] (Arming Recurrence via Tracker Seeding — OQ3)**
+  Seeding the `attestation-replay-failure` tracker in `dev/measurement/` via `incident_log_template.md` with the v0.3.0 erratum as row 1 (count=1) successfully arms the recurrence path. `tools/evolution_infer.py` can parse this log in rolling windows, guaranteeing that a second attestation failure automatically triggers doctrine adaptation.
+
+* **[E3] (Consistency with Accepted Review-Record-Integrity Pattern)**
+  This proposal reuses the correction pattern established by `2026-07-08-claude-review-record-integrity.md`: placing an `## Unreleased` erratum in `CHANGELOG.md` accompanied by permitted link-maintenance pointers. This maintains single-pattern discipline across historical corrections rather than inventing competing mechanisms.
+
+* **[E4] (First Superseded Proposal & Metrics Precision)**
+  Framing `dev/proposals/archive/2026-07-08-claude-automated-review-committer.md` as Cairn's first **superseded** proposal accurately reflects gating-function behavior. Adversarial review blocked the change as written, leading the author to solve the need via existing practice without incrementing the hard rejection count (which remains 0).
 
 ### Coverage
 
 * **Covered**:
   * Verified `12ec2ad` attestation replay output for `--sub neutrality` and `--sub redundancy`.
+  * Inspected rate-limit gate rules in `doctrine/rationale.md:323-347`.
   * Checked `profile.yml:7-8` and `PLANNING.md:34-40` dangling pointer targets.
-  * Verified `doctrine/rationale.md:337-347` rate-limit gate rules and `dev/proposals/archive/2026-07-08-claude-automated-review-committer.md` supersession record.
+  * Verified `dev/proposals/archive/2026-07-08-claude-automated-review-committer.md` supersession record.
 * **Not covered**:
   * Content of `dev/strategy/2026-07-11-claude-cairn-adoption-record.md` (to be written during plan execution).
 
