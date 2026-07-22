@@ -77,6 +77,37 @@ quality-check issues already filed on GitHub (#1 and #2).
   This note itself passes Cairn's claim checker
   (`scripts/claim_check.py`).
 
+## Corrections since publication
+
+*This note asserted findings; where later evidence falsifies one, the correction
+is recorded here rather than quietly edited away. A strategy note is
+inline-revised, so the text above is corrected in place — this section says what
+changed and why, so a reader who acted on the original knows.*
+
+**2026-07-22 — the Bandit claim (Theme 3, finding 1) was wrong.** The original
+text said the scanner "runs nowhere" because it "isn't installed locally". That
+was measured on a **non-canonical interpreter**. The canonical development
+environment (Python 3.13.13 — the version the gate manifest pins) has `bandit`
+1.9.4 installed, and the Bandit-dependent tests **run and pass** there rather
+than skipping. The finding is narrowed, not withdrawn: there is still no CI, so
+nothing enforces the scan on a push — the guarantee rests on a human
+remembering, which is a real gap, just a smaller one than published.
+
+**The same measurement error inflated other numbers in this note.** Suite
+baselines cited here (and in the proposals that quote them) were taken on Python
+3.12.9. On one unchanged tree, measured 2026-07-22: the canonical 3.13.13 gives
+**2 failed / 1435 passed / 0 skipped** with **3** real AST drifts, while 3.12.9
+gives 2 failed / 1429 passed / 3 skipped plus *hundreds of spurious* AST
+mismatches — `ast.dump` structure varies across Python minors, so the
+attestation reports phantom CHANGED symbols off-canon. Treat any suite figure in
+this note as approximate and interpreter-dependent unless it names its
+interpreter.
+
+*Root cause worth keeping:* the instruction agents follow (`python -m pytest
+bootstrap/tests`) names no interpreter, so two honest agents on the same tree get
+materially different results and both report them as fact. That is a
+reproducibility defect in the instruction, not in anyone's diligence.
+
 ## The good news first
 
 A skeptical review is only useful if it is calibrated, so here is what
@@ -243,12 +274,18 @@ The implemented protections are strong (see the good news). The
 *narrative* around them is ahead of the facts in ways a careful reader
 will catch:
 
-1. **A promised automatic check runs nowhere.** Several documents say
-   the installer engine is guarded by a code-security scanner (Bandit),
-   with tests that "fail in CI" if the scanner is missing. There is no
-   CI — no automated checks run on this repository at all — and the
-   scanner isn't installed locally, so those tests silently skip. The
-   scanner does exist in the release script, run by hand.
+1. **A promised automatic check isn't wired to anything automatic.**
+   *(Corrected 2026-07-22 — see the correction note below; the original
+   claim, that the scanner "runs nowhere", was wrong.)* Several documents
+   say the installer engine is guarded by a code-security scanner
+   (Bandit), with tests that "fail in CI" if the scanner is missing.
+   There is no CI — no automated checks run on this repository at all —
+   so nothing enforces the check on a push. But the scanner **is**
+   installed in the canonical development environment and the
+   Bandit-dependent tests **do** run there; it also exists in the
+   release script, run by hand. The real gap is narrower than first
+   stated: the guarantee depends on a human remembering, not on the
+   check being absent.
 2. **The release security scan misses the code that runs most often.**
    The scan builds its target list from two of the installer's three
    internal file lists. The third list — which ships the session
