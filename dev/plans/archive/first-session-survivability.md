@@ -1,11 +1,17 @@
 <!-- cairn-internal-ref-allow: doctrine/plans.md doctrine/lifecycle.md doctrine/session-routines.md doctrine/onboarding.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- claim-check-allow: bootstrap/tests/test_first_session_report.py, bootstrap/tests/test_onboarding_seed_roster.py -->
 <!-- The two paths above are forward-reference files this plan creates; they materialize as the chunks land. -->
+<!-- claim-marker maintenance 2026-07-22: the plan-review section's own "Grounding" line self-cites
+     `dev/plans/first-session-survivability.md` -- ACCURATE when written (this file's own pre-archive
+     path). Archiving this same plan (git mv to dev/plans/archive/, this commit) breaks that self-citation.
+     Retained unedited (append-only, reviewer prose); path marked so the checker clears. Same shape as the
+     interpreter-trust-root-fallback and transition-lint proposals' own marker notes this session. -->
+<!-- claim-check-allow: dev/plans/first-session-survivability.md* -->
 
 # Plan: first-session survivability (F1, F3, F4)
 
 **Source proposal**: `dev/proposals/archive/2026-07-11-claude-first-session-survivability.md`
-**Status**: executing
+**Status**: archived
 **Plan review**: required(Internal) — ratified at Decision; F1/F3 touch the
 scaffold engine (a new install-set signature + preset-template conditional
 markers) and this plan pins the exact wording/markers the proposal left to
@@ -583,8 +589,57 @@ before its own Chunk D closed.
 
 ## Lasting-truth migration
 
-*Filled in at archive time — gated on Chunk D (the Maintainer's supervised
-AST correction), not solely on code review. See "The re-anchor gate" above.*
+Archived 2026-07-22.
+
+Follow-ups migrated to: no deferred follow-up from this plan's own scope
+— F1/F3/F4 shipped in full (Chunks A/B/C), and the two left-ungated seeds
+(PR3's residual) are a permanent, accepted judgment call recorded in the
+Author-accounting note above, not a deferred item. Preparing Chunk D's
+handoff surfaced one **unrelated, pre-existing** gap (the stale AST
+`known_new` manifest blocking the guarded `update-symbol` path for *any*
+allowlisted symbol, not just this plan's — confirmed via a disposable
+`git worktree` at `0864b16~1`, before this plan's own first commit); it
+already has its own durable home, opened and carried forward independently
+of this plan: `dev/proposals/2026-07-22-claude-ast-known-new-repin.md`
+(Status: revised as of archive time, Internal-tier — mislabeled per its
+own Response, functionally External — review complete, awaiting Decision).
+
+**Chunk D closed.** The Maintainer ran the supervised baseline correction:
+commit `2bd8f34` ("Update baseline") surgically updated exactly the three
+reviewed keys (`FunctionDef:main`, `FunctionDef:write_install_lockfile`,
+`FunctionDef:install_onboarding`) in
+`bootstrap/tests/fixtures/scaffold_ast_baseline.json` — an 8-insertion/
+8-deletion diff (digest + span per key), every other one of the 174
+entries untouched — using the dry-run-verified script this plan's
+implementing session prepared and handed off (never run by the
+implementing agent itself, per `bootstrap/REANCHOR_RUNBOOK.md`'s "must
+not bless its own verifier" principle, extended to the correctly-identified
+real mechanism). Verified post-commit: `bootstrap/tests/test_ast_attest.py`
+is fully green under the canonical `lhm`/Python 3.13 interpreter
+(26/26 passed).
+
+**Loop-fidelity sign-off.** The Decision → implementation chain holds in
+full: the accepted proposal's F1 + F3 + F4 shipped in
+`0864b16`/`2feefd1`/`b8d9e0b`, the PR1 plan-review finding (a real
+lockfile-divergence regression the original Chunk B design would have
+shipped) was caught before implementation and fixed from the start, and
+the Chunk D handoff itself surfaced a second, genuinely independent
+finding — the guarded `update-symbol` path's `known_new` staleness —
+which was neither silently worked around (the direct-edit path used
+instead is the same reviewed mechanism the sibling plan's Chunk D
+established) nor left unrecorded (routed to its own proposal rather than
+folded into this plan's scope). Plan review: 4 findings (PR1-PR4), all
+accepted, PR1 itself substantive (a shipped-defect catch, not a style
+note). Code review: **Accept**, no required follow-ups, from a
+fresh-context subagent that independently reproduced every load-bearing
+claim rather than trusting commit-message prose (including catching and
+disclosing its own mid-review process slip — a working-tree revert,
+self-caught and self-restored, independently re-verified clean by the
+invoking session before being folded into the record). Verification
+green throughout: `check_cairn` OK at every commit; `claim_check` clean;
+`quality_gate --sub neutrality` unchanged from its pre-existing baseline
+across every touched file; the full suite green under the canonical
+interpreter (26/26 on `test_ast_attest.py`, no other regressions).
 
 Per the [Archive preconditions rule](../PLANNING.md#archive-preconditions-proposals-and-plans),
 plans archive only after every deferred follow-up has a durable home outside

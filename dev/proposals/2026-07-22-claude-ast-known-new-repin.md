@@ -1,3 +1,13 @@
+<!-- claim-marker maintenance 2026-07-22: the `Related` citation below to
+     `dev/plans/first-session-survivability.md` was ACCURATE when written --
+     that plan was executing/in review and still at `dev/plans/`. This same
+     implementing session then archived it (git mv to `dev/plans/archive/`)
+     as part of closing out its Chunk D. The cited "Chunk D" section is
+     intact at the new path. The citation is retained unedited (append-only)
+     and the path marked so the checker clears. Surfaced, not silenced --
+     same shape as the interpreter-trust-root-fallback and transition-lint
+     proposals' own marker notes this session. -->
+<!-- claim-check-allow: dev/plans/first-session-survivability.md* -->
 # Re-pin the stale AST known-new manifest (and stop it recurring)
 
 **Author**: Claude (Strategy)
