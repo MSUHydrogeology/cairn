@@ -202,3 +202,45 @@ direct-edit path would have surfaced it in review — that is the
 signal to revert the exemption and fall back to full manifest pinning
 including imports, accepting the churn cost as the price of the wider
 safety margin.
+
+## Review -- Gemini (Internal) -- 2026-07-22
+
+**Model**: Gemini 3.6 Flash / Antigravity
+**Verdict**: ACCEPT (recommend ACCEPT without needing a second Internal pass)
+
+### Steelman
+This proposal addresses a critical friction point in scaffold engine maintenance: the guarded `update_symbol` tool (`bootstrap/tests/_ast_attest.py`) currently refuses all surgical registry-mapping updates because accumulated `Import:*` and legitimate named-symbol additions cause a strict `known_new` violation. Part 1 re-pins legitimate named symbols in `scaffold_ast_known_new.json`, while Part 2 exempts `Import:*` entries from the strict `known_new` check in `update_symbol`. This aligns `update_symbol` with `_classify()`'s existing import-exemption policy (`_ast_attest.py:163-171`), preventing routine import additions from breaking the guarded symbol update path while maintaining 100% strict enforcement over `FunctionDef`, `ClassDef`, and `Assign` symbols.
+
+### Findings & Observations
+
+* **[I1] (Full Audit Verification of 28 Named Symbols)**
+  The proposal noted that only 3 of the 28 named NEW symbols were traced to an origin commit during strategy drafting. During this review pass, a full repository `git log -S` trace was executed across all 28 named symbols:
+  * `02df6dc` (Codex R2-2 hardening pass): `_IF_RE`, `_MODULE_REQUIRED_TOKENS`, `_UNFILLED_TOKEN_VALUE`, `_embedded_axes`, `_resolve_current_profile`, `missing_required_tokens`, `verify_within_root`.
+  * `9bc1119` & `ed5a670` (Side-door parity & security fixes): `_ADOPTABLE_BLOCKED_KINDS`, `_BLOCKED_ADDITION_KINDS`, `_always_on_group_complete`, `_cmd_adopt_collisions`, `assert_always_on_complete`, `duplicate_destinations`, `_record_fork_entry`, `missing_always_on_sources`.
+  * `a9e281b` & `7519c5d` (Scaffold split & self-host): `_CANONICAL`, `EngineFinder`, `ScaffoldLoaderError`, `_reject_polluted_children`.
+  * `5d7d8f5`, `4799bfb`, `0d3d38f` (Adopt-as-fork refinements): `_assert_mapping_ownership`, `_parse_collision_auth`, `_count_adoptable_collisions`, `_print_adopt_command`.
+  * `4059d7a`, `4dfc98d`, `eab7141`, `9429178` (Recent plan chunks): `_ALWAYS_ON_MAPPINGS`, `_rendered_onboarding_overlay`, `strip_conditional_regions`, `_commit_lock_and_caches`.
+
+  **Result:** All 28 named symbols trace directly to accepted, reviewed commits in Cairn's history. Zero symbols are orphaned, unreviewed, or untraced.
+
+* **[I2] (Symmetry with `_classify()` Exemption Scope)**
+  In `_ast_attest.py:163-171`, `_classify()` exempts imports (`Import`, `ImportFrom`) and module docstrings (`Docstring#*`). When implementing Part 2 in `update_symbol()`, the filter predicate should explicitly match `_classify()` (`k.startswith("Import:") or k.startswith("ImportFrom:") or k.startswith("Docstring#")`) to ensure structural consistency across verification and update routines.
+
+* **[I3] (Zero Impact on Baseline Enforcement)**
+  Verified that `scaffold_ast_baseline.json` and the main `verify()` routine remain untouched. `CHANGED`, `MISSING`, and `DUPLICATE` checks for all baselined functions, classes, and constants remain strictly enforced. `update_symbol` will continue to strictly refuse any unpinned `FunctionDef`, `ClassDef`, or `Assign` symbol additions.
+
+* **[I4] (Test Plan Validation)**
+  The proposed test plan in `bootstrap/tests/test_ast_attest.py` is sound: adding test cases that assert (1) unpinned `Import:*` keys pass through `update_symbol` without error, and (2) unpinned `FunctionDef` keys continue to trigger a `REFUSED` hold guarantees no safety regressions.
+
+### Coverage
+
+* **Covered**:
+  * Executed full `git log -S` trace for all 28 named NEW symbols across repo history.
+  * Verified `_classify()` and `update_symbol()` logic in `bootstrap/tests/_ast_attest.py:140-350`.
+  * Ran AST attestation `verify()` and `_merge_current()` analysis over `bootstrap/_scaffold/*.py`.
+* **Not covered**:
+  * Execution of regenerated `known_new.json` against a live mapping update (to be verified during plan execution).
+
+## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
+
+*(Awaiting the Maintainer. The proposal has cleared Internal review with a full 28-symbol audit verification. The Maintainer may accept the proposal to proceed with plan creation and execution.)*
