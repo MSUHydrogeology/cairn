@@ -14,7 +14,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 4.8
 **Date opened**: 2026-07-22
-**Status**: revised
+**Status**: accepted
 **Touches**: `templates/modules/default-on/_lifecycle_metrics/gitmeta.py` and its byte-identical self-hosted twin `tools/_lifecycle_metrics/gitmeta.py`; the two-line degradation sentence in `templates/modules/default-on/_lifecycle_metrics/__init__.py` and its twin `tools/_lifecycle_metrics/__init__.py`; one new behavioural test file under `bootstrap/tests/`. No engine, no manifest rows, no doctrine.
 **Related**: opened under the Maintainer's 2026-07-22 direction *"fix the reader now, and as part of that proposal check whether this is needed"*, recorded in the sibling proposal stem `2026-07-22-claude-transition-lint` (its `## Sequencing note`). The defect was found by that proposal's Internal review panel (finding R1) and routed out of its scope. Prior verification of the gate-manifest boundary reused from proposal stem `2026-07-22-claude-interpreter-trust-root-fallback`.
 **Plan review**: required(Internal)
@@ -1128,10 +1128,6 @@ This proposal repairs a silent, critical defect in Cairn's default-on `_lifecycl
   * End-to-end execution against external non-Cairn repositories (to be covered by test fixtures in plan execution).
   * Implementation of `bootstrap/tests/test_lifecycle_stage_patterns.py`.
 
-## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
-
-*(Awaiting the Maintainer. The revised proposal has cleared both Internal and External reads. Two decisions belong to the Maintainer: (1) Resolution of Open Question 1 regarding the 41 pre-existing lockfile hash mismatches from commit 501efe3; (2) Acceptance of the proposal to proceed with plan creation.)*
-
 ## Response -- Claude (author, to External review) -- 2026-07-22
 
 **Model**: Claude Opus 4.8. Proposal-Response grammar. The External read returned
@@ -1219,3 +1215,67 @@ so it is recorded here rather than left to be discovered at execution.
 
 Net: External **SHIP**, its one stale premise inverted and converted into a plan
 obligation before it could reach execution. Decision-ready.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-07-22
+
+**Accepted, as revised.** Scribed by Claude (Strategy) at the Maintainer's
+explicit instruction, given in direct response to a drafted Decision offered for
+authorization; commit permission given in the same exchange.
+
+Maintainer's authorization (verbatim):
+
+> I accept this proposal as revised
+
+*Scribe's reading of "as revised", recorded so it is correctable:* accepted in
+the form set out in the **Revised proposal** section, which supersedes the
+original design — not the proposal as first opened.
+
+**What it repairs.** A silent defect in a **default-on** module:
+`_STAGE_COMMIT_PATTERNS` matched **zero of 76** real commit subjects, leaving
+every stage-timing metric empty and `stage_timestamp_reliability` at
+`Best-effort` on 100% of rows — while the tool exited 0 and emitted a
+well-formed report. The diagnosis is that the vocabulary was never Cairn's: an
+invented grammar validated only against Cairn's own toy examples, never a real
+log.
+
+**Why it lands.** The Internal panel's **blocking R1** established that a naive
+repair would be *worse than the status quo* — a bare-subject fallback would
+mislabel ordinary commits as lifecycle transitions and report the wrong
+timestamps as `Exact`, where today's all-`Best-effort` at least tells the truth.
+The design was **narrowed rather than rescued**: no bare-subject fallback, the
+vocabulary gated behind a `dev/proposals:` scope prefix or a positional stage
+phrase. Gemini's External read then **re-executed** the classifier on the
+canonical interpreter and independently reproduced **52 of 76 classified, zero
+wrong-stage, 10 `Exact` / 2 `Good` / 0 `Best-effort`**, with all ten
+adopter-plausible false positives resolving to `None`. One reliability tier was
+surrendered to buy the elimination of every wrong-stage-at-`Exact` hazard; that
+is the right price.
+
+**Open questions resolved.** **OQ1** — the 41-entry lockfile staleness from
+`501efe3` is finalized at `41875e4`, after each flagged file was byte-verified
+against its template source. **OQ2** — withdrawn; P3 ships. **OQ3** — the
+plan-review tier stays **`required(Internal)`**.
+
+**Plan conditions, ratified here (bind the plan):**
+
+* A **scoped `upgrade --finalize`** for `gitmeta.py` and its `__init__.py` twin.
+  This is now *mandatory*: the External review advised leaving the lockfile
+  untouched, correctly, on a tree where 41 entries were already stale — but OQ1's
+  resolution inverted that. With a clean lockfile, leaving these records would
+  create a fresh mismatch and re-red `verify_integrity`.
+* Template and installed-copy **byte-parity** maintained across both file pairs.
+* **No AST re-anchor** — nothing under `bootstrap/_scaffold/` is touched.
+* The stopping rule holds: no new CLI, configuration key, output column,
+  exported helper, or mandated commit convention.
+
+**Recorded for the sibling proposal.** The assigned obligation is answered: the
+transition-lint (stem `2026-07-22-claude-transition-lint`) is **not** made
+unnecessary by this repair. `_resolve_stage_commits` reads file history and never
+opens a diff, so the repaired vocabulary supplies the *message* side only. The
+original incident is the proof: commit `17b7e5c` carried a correct `open`
+subject while its diff already contained two pre-filled `## Review` blocks — this
+repair would still read it as clean. That proposal remains parked pending the
+Maintainer's explicit go-ahead under the standing build-nothing-new rule.
+
+**Next (separate commits):** open the plan (which archives this proposal),
+implement, non-implementing code review, archive.
