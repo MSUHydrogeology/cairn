@@ -7,7 +7,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 4.8
 **Date opened**: 2026-07-11
-**Status**: revised
+**Status**: accepted
 **Touches**: a new adopter-facing recipe doc (`docs/solo-legacy-recipe.md`); the adoption-path routing in `on-ramp/README.md`; a one-paragraph escape-hatch port into the installed proposal template `templates/core/dev/proposals/_template.md`; a regression test in `bootstrap/tests/test_presets.py`. **No engine change; no doctrine change.**
 **Related**: broad-look review `dev/strategy/2026-07-08-claude-broad-look-skeptical-review.md` Themes 5.1 / 5.3 / 5.4 / 5.5 (Phase A, "before the postdoc installs"); the accepted sibling `2026-07-08-claude-review-record-integrity` (same instance/record shape, and the model of a good proposal here); the superseded `2026-07-08-claude-automated-review-committer` (the rate-limit-gate lesson this proposal is deliberately built to respect).
 **Plan review**: required(Internal) — touches shipped adopter templates and the adoption-path docs and adds a regression test; Internal floor (fresh-context), with an External cross-type read *recommended* before the Decision because this is the exact path the first external adopter walks and a different agent type is likelier to catch a routing / usability gap. Ratified at Decision.
@@ -361,3 +361,50 @@ here; I am flagging that the evidence is accumulating in the record.
 
 Net: External SHIP, conditional only on the Maintainer's Part-3 separability
 call. Decision-ready.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-07-22
+
+**Accepted.** Scribed by Claude (Strategy) at the Maintainer's explicit,
+unambiguous instruction; commit permission given in the same instruction.
+
+Maintainer's authorization (verbatim):
+
+> Okay, I accept your recommendations on each of these. Please scribe my
+> acceptance, and mark them as accepted. When you're done with that we can go
+> ahead with the follow-on proposals.
+
+**Accepted scope: Parts 1, 2, 4, and 5** — the solo-legacy adopter recipe — **and
+Part 3** (the local escape-hatch gloss in
+`templates/core/dev/proposals/_template.md`).
+
+*Recorded explicitly, because Part 3 was carved as separable:* Part 3 was marked
+**independently accept/rejectable** at External review (E4) because it edits a
+*universal* template affecting every adopter, whereas Parts 1/2/4/5 are a
+persona-scoped recipe. The Maintainer's acceptance was given to the
+recommendations as a whole and did not separately decline Part 3, so Part 3 is
+accepted with the package. If the Maintainer intended to retain
+pointer-only discipline in the universal template, that is a one-line
+correction appended to this record — the separability is preserved, not spent.
+
+**Why it lands.** The Internal panel's **blocking** finding was real and is now
+verified closed: the headline deliverable — a "copy-pasteable" profile — did not
+parse for a zero-dependency adopter, because inline comments on scalar lines are
+mangled by `_minimal_yaml_parse`, the stdlib fallback used whenever PyYAML is
+absent. The External reviewer did not take the fix on faith: it **executed**
+`_minimal_yaml_parse` on the revised YAML and then `expand_preset`, confirming a
+clean parse and the intended 8-module roster with zero staffability warnings.
+That is the persona this proposal exists for.
+
+The panel also caught a **loosened paraphrase presented as a verbatim doctrine
+quote**; the escape-hatch rule now quotes `doctrine/proposals.md:200-204`
+exactly, including the qualifying adverbs the paraphrase had dropped
+("*clearly* reversible", "*explicitly* experimental"). Those adverbs are
+load-bearing — a looser hatch is a wider hatch.
+
+**Sizing discipline upheld:** only `legacy-agent` and `testing-discipline` are
+added unconditionally (8 modules total); `security-review` and `model-selection`
+are conditional on readiness-report findings rather than force-added, so the
+readiness report keeps its own job.
+
+**Next (separate commits):** open the plan (which archives this proposal),
+execute, non-implementing code review, archive.
