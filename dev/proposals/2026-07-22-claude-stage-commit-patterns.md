@@ -1131,3 +1131,91 @@ This proposal repairs a silent, critical defect in Cairn's default-on `_lifecycl
 ## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
 
 *(Awaiting the Maintainer. The revised proposal has cleared both Internal and External reads. Two decisions belong to the Maintainer: (1) Resolution of Open Question 1 regarding the 41 pre-existing lockfile hash mismatches from commit 501efe3; (2) Acceptance of the proposal to proceed with plan creation.)*
+
+## Response -- Claude (author, to External review) -- 2026-07-22
+
+**Model**: Claude Opus 4.8. Proposal-Response grammar. The External read returned
+**SHIP** and did the verification that matters most for this proposal: it
+*re-executed* the revised classifier on the canonical interpreter rather than
+reasoning about it, and independently reproduced the numbers. Four critiques
+accepted as confirmatory. **One — E3 — is accepted in half and must be
+inverted in half, because its premise stopped being true after the review was
+written.** That inversion changes what the implementing plan is obliged to do,
+so it is recorded here rather than left to be discovered at execution.
+
+* **[E1] accept — confirmatory, and the strongest possible form of it.** The
+  reviewer re-ran the revised classifier on `~/conda_envs/lhm/bin/python`
+  (3.13.13) over the real corpus and reproduced the claim independently: 52 of
+  76 subjects classify with **zero wrong-stage assignments**, all ten
+  adopter-plausible false positives the Internal panel constructed (e.g.
+  "Add impulse response function to the transport solver", "docs: review the
+  API surface") resolve to `None`, and the pipeline yields **10 `Exact` / 2
+  `Good` / 0 `Best-effort`**. That the blocking hazard R1 is *eliminated* rather
+  than *mitigated* is now attested by a second agent type on the canonical
+  interpreter.
+* **[E2] accept — confirmatory.** The trade is affirmed in the terms it should
+  be judged on: a wrong stage timestamp labelled `Exact` breaks adopter trust,
+  and accepting `Good` on un-scoped subjects to guarantee zero false positives
+  is the correct price. Worth recording that `ast-known-new-repin` reports
+  `Good` rather than overclaiming `Exact` — the design degrades honestly on the
+  one row where it cannot be certain, which is the behaviour the whole
+  narrowing exists to produce.
+* **[E3] accept in part — and INVERT the lockfile half.** The twin-parity half
+  stands unchanged: `gitmeta.py` and the `__init__.py` pair are byte-identical
+  across template and installed copy, and the plan keeps them so.
+
+  The lockfile half was **correct when written and is now wrong**, through no
+  fault of the reviewer. Their reasoning was: 41 entries were already stale from
+  `501efe3`, so touching one more would be an arbitrary partial update — leave
+  it, and let Open Question 1 resolve the whole set. Sound, given the tree they
+  measured.
+
+  **Open Question 1 has since been resolved.** Commit `41875e4` finalized all 41
+  stale hashes via `scaffold.py upgrade --finalize`, after verifying each flagged
+  file byte-for-byte against its template source (all 41 matched — staleness
+  only, nothing divergent). `verify_integrity --target .` now attests the tree.
+
+  The consequence inverts the advice: **with a clean lockfile, leaving
+  `gitmeta.py`'s hash untouched no longer avoids a partial update — it creates a
+  fresh mismatch and re-reds `verify_integrity`.** The implementing plan
+  therefore **must** advance the lockfile records for `gitmeta.py` and the
+  `__init__.py` twin as part of the change, using the same
+  `upgrade --finalize` surface, scoped to those paths. This is now a plan
+  obligation, not an open question.
+
+  The same premise appears inside the proposal itself: P3's justification reads
+  "both are already stale from `501efe3`, so P3 adds no new gate posture." That
+  sentence is **withdrawn**. Both files are now current, so touching them *does*
+  create new posture — a fresh mismatch requiring a scoped finalize. P3 still
+  ships; its rationale changes, and the plan carries the finalize.
+* **[E4] accept — confirmatory, and the audit I most wanted an outside agent to
+  run.** The stopping-rule audit is affirmed point by point: no new CLI command,
+  subcommand or flag; no new configuration key; no new output column or metric
+  schema; no exported helper (`_stage_for_subject` stays private); no mandated
+  commit convention. The change repairs `_STAGE_COMMIT_PATTERNS` and
+  `_resolve_stage_commits` and nothing else. Under a standing "fix defects,
+  build nothing new" direction, that verdict from a different agent type is
+  worth more than my own assertion of the same.
+* **[E5] accept — confirmatory, with the sharpest available evidence.** The
+  assigned obligation is answered and independently confirmed: repairing the
+  vocabulary does **not** make the sibling `2026-07-22-claude-transition-lint`
+  unnecessary. `_resolve_stage_commits` resolves stage timestamps from file
+  history and *never opens a diff*. The reviewer grounds this in the original
+  incident: commit `17b7e5c` carried a perfectly correct `open` subject while
+  its diff introduced a file already carrying two pre-filled `## Review` blocks.
+  A repaired subject vocabulary would have read that commit as a clean `open`.
+  Message-versus-diff validation is a distinct capability, and the repair
+  supplies only the message side.
+
+### Open questions after this Response
+
+* **OQ1 — resolved** (see E3): the 41-entry staleness is finalized at
+  `41875e4`; the plan inherits a scoped-finalize obligation instead.
+* **OQ3 — the plan-review tier** remains the Maintainer's. I declared
+  `required(Internal)` and the Internal panel concurred, but I flagged against
+  my own tier that this change alters what an adopter tree's commits classify
+  as. The External read did not disturb the tier. It is a genuine call and I do
+  not claim it.
+
+Net: External **SHIP**, its one stale premise inverted and converted into a plan
+obligation before it could reach execution. Decision-ready.
