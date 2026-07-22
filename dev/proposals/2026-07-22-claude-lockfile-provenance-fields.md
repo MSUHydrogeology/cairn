@@ -9,7 +9,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 4.8
 **Date opened**: 2026-07-22
-**Status**: proposed
+**Status**: revised
 **Touches**: `bootstrap/_scaffold/lockfile.py` (one new `_cairn_provenance` reader beside `_cairn_version` at `bootstrap/_scaffold/lockfile.py:103`, plus a schema-evolution rule on `_LOCK_SCHEMA` at `bootstrap/_scaffold/lockfile.py:42`); the install lock dict in `bootstrap/_scaffold/install.py:1584`; the two upgrade-side lock writers in `bootstrap/_scaffold/upgrade.py` (`_cmd_init_lock` at `bootstrap/_scaffold/upgrade.py:1111`, `_apply_upgrade` at `bootstrap/_scaffold/upgrade.py:1781`); the engine facade re-export block in `bootstrap/_scaffold/__init__.py:282`; a short "what the lockfile records" subsection in `bootstrap/UPGRADE.md`; a new `bootstrap/tests/test_lockfile_provenance.py`. **Explicitly out of scope:** any `_LOCK_SCHEMA` bump, any validate-on-read behavior in `read_lockfile` (`bootstrap/_scaffold/lockfile.py:193`), and any `creator` / author field.
 **Related**: split out of the ACCEPTED `2026-07-11-claude-adopter-licensing-compliance` (its P3; both review tiers independently called the split — Internal R4 and External E3). Motivation traces to the broad-look review's Theme 4 receipt-provenance sentences, `dev/strategy/2026-07-08-claude-broad-look-skeptical-review.md:300-302`. Triage triggers: the "Bootstrap fidelity / install contract … the lockfile schema" trigger at `dev/proposals/_template.md:58-61`, and the "install contract … byte-level stable" high-risk surface at `AGENTS.md:310-312`.
 **Plan review**: required(Internal) — it edits four engine functions under `bootstrap/_scaffold/` and changes the bytes every newly-written lockfile carries, so the Internal floor (a fresh-context read) applies; an External (cross-type) read is **recommended** before the Decision because the surface is the byte-level-stable install contract and the load-bearing judgment is a compatibility argument, not a test result. Ratified at Decision.
@@ -712,3 +712,141 @@ R4 is blocking on `doctrine/dual-review.md:186-187` and lands as an **edit to th
 **All three lenses converge on an External cross-type read of the proposal before the Decision**, narrowly briefed on facts only, carrying R1 and R9 as its starting questions plus exactly two framing questions: (i) does an old engine preserve unknown top-level keys on `--apply` in any released version — i.e. is no-bump correct for a byte-level-stable install contract, and does the old-engine-preserves-unknown-keys argument survive without a demonstration; (ii) is the additive-vs-breaking rule better sited in a `bootstrap/` domain-governance file than in `UPGRADE.md`. Both are cross-version-skew and rule-siting questions that a fresh same-type reader is structurally weak at. Per `doctrine/dual-review.md:320-323` that recommendation is the Maintainer's to weigh, not the panel's to impose.
 
 Open questions: 1 (`licenses` vs `source_licenses`) and 2 (rule home, which R10 says must be widened to three options) are genuinely Maintainer calls and need no further review to resolve; open question 4 is answered by P5's own analysis — but only once R5's correction lands, which converts it from a deferral-to-a-trigger-that-never-fires into a real choice.
+## Response — Claude (author) — 2026-07-22
+
+**Verdict: revise, not withdraw.** I want to be plain about what the panel found before I dispose of it item by item.
+
+Three lenses attacked P3's no-bump argument — the load-bearing judgment in this proposal — and none of them broke it. R3 goes further and says the argument is *better* supported by the tree than I claimed. The motivation, the evidence base, the blast-radius sweep, the doctrine quotes, and the suite baseline all reproduced independently. So the proposal's central claim is sound and I am not going to concede it.
+
+But I made a **factual error about code behavior that I did not open the file to check** (R1), and I **under-enumerated the writers I was reasoning about** (R3a). Those are exactly the failure modes this repository has killed proposals for, and the fact that the conclusions happen to survive does not make the method acceptable. I asserted that `--apply` "already re-sources `cairn_version` / `cairn_commit` from the Cairn being upgraded to." It does not. It reads values captured at `--stage` time out of `stage-metadata.json` (`bootstrap/_scaffold/upgrade.py:906-907` → `:931-932` → `:1801` → `:1944-1945`), and `--apply` never receives `--to` at all. I built P2's entire symmetry argument on a sentence I inferred from two lines instead of reading the path. I own that.
+
+This is not the automated-review-committer case. There, the premise was invalidated and no revision could rescue it. Here every defect is localized — a mechanism description, a gate accounting error, a writer inventory, a rule-siting call, a tier label — and each has a concrete correction that makes the proposal *more* accurate rather than papering over a hole. The revised design below is smaller in claim and larger in verified surface than what I opened.
+
+All twelve findings were re-verified against the tree this session at HEAD `57d1daf`. I found no finding to be wrong.
+
+---
+
+### R1 — `--apply` provenance mechanism mis-described; the implementation fork is unnamed — **accept**
+
+Correct as stated, and the most important finding in the panel. I re-read the path: `_write_stage` captures `"new_version": _cairn_version(cairn_root)` and `"new_commit": to_ref or _cairn_commit(cairn_root)` at `bootstrap/_scaffold/upgrade.py:906-907`, writes the meta dict at `:931-932`, and `_apply_upgrade` re-reads it at `:1801` and consumes it at `:1944-1945`. `--apply` re-sources nothing.
+
+**I take the stage-metadata route (the review's option b), and I have a cleaner argument for it than the one the review offered.** The review framed the ref-awareness question as an open fork; it is already answered in-tree. `new_commit` is ref-aware, but `new_version` is **not** — `_cairn_version(cairn_root)` at `:906` reads the working tree's `CITATION.cff` (`bootstrap/_scaffold/lockfile.py:103-111`) with no `to_ref` consultation. `source_repository` and `licenses` come from **that same file, by the same reader shape**. So the correct disposition is not a judgment call about ref-awareness: it is to source them exactly where and how `new_version` is sourced, in `_write_stage`'s meta dict, non-ref-aware, and to say so explicitly. Consistency with the sibling field read from the same file is the whole argument.
+
+`_write_stage` joins Touches and the AST delta as a fourth CHANGED `FunctionDef`. `_apply_upgrade` reads the new keys with a `.get()` fallback to the current lock value, so an old stage applied by a new engine degrades to "keep what the lockfile already had" rather than writing nulls — and that old-stage/new-engine case joins the edge-case inventory. The in-tree precedent for treating `stage-metadata.json` as a compat surface is real (`upgrade.py:920`, the `module_blocked` key-name comment).
+
+### R2 — editing `test_upgrade.py` HOLDs the gate manifest — **accept**
+
+Correct, and my blast-radius bullet was wrong by omission: I checked whether the *engine* edit matched a frozen glob and never checked the *test* edit. `bootstrap/tests/test_upgrade.py` is in the 147-entry pinned `frozen_files` set (verified by parsing `bootstrap/tests/fixtures/gate_manifest.json` this session), it is in neither `CASCADE_MUTABLE` nor `PHASE_SPLIT_TARGETS`, and `_gate_manifest.py:364` appends `FROZEN-MODIFIED` to `holds` — not `notes`. The `test_intents_tool.py` entry at `:93-101` documents a prior batch hitting this exact wall.
+
+All new nodes move into `bootstrap/tests/test_lockfile_provenance.py`, which reads `FROZEN-NEW` (`:366`, a note). It imports `_install` from `test_upgrade.py` (module-level at `:45`) rather than duplicating the harness — importing a frozen file does not modify it, so no HOLD. No second gate-manifest re-anchor is needed.
+
+### R3 — five lockfile writers, not three; the `migrated` precedent is the strongest evidence and I omitted it — **accept**
+
+Both halves correct. `grep _emit_lock_yaml` returns five write sites: `install.py:1602`, `upgrade.py:1207`, `:1308` (`_commit_lock_and_caches`), `:1709` (`_cmd_finalize_lockfile`), `:1997`. I read the two I had missed: both operate on the dict returned by `read_lockfile` and write it back, so unknown keys round-trip verbatim — which strengthens P3 rather than weakening it. But the reviewer's point stands that a reader could not tell whether I checked them or missed them, and I missed them.
+
+The behavioral consequence I also missed: neither backfills, so an adopter whose only upgrade traffic is `--finalize` or `--adopt-module` never gains the fields. That qualifies P2's "keeps that from being permanent" and my install-vs-apply parity invariant, and it goes in as a stated limit, not a footnote.
+
+On `migrated`: this is the finding I am most annoyed to have missed, because it is the best evidence in the proposal and it was sitting in Cairn's own lockfile. `migrated` is written only by `_cmd_init_lock` (`upgrade.py:1197`), is absent from every fresh install, is read only by a test assertion (`test_upgrade.py:797`), and coexists with `schema: 1` today. That is a live, additive, writer-varying optional key at the current schema number. It converts P3 from an argument-from-absence into an argument from existing practice — and, as R11 will need, it means P3 **codifies** a rule the engine already follows rather than authoring a new one.
+
+### R4 — declared plan-review tier is below the doctrinal floor — **accept**
+
+Correct, and it is an edit, not a defense. `doctrine/dual-review.md:184-187` reads verbatim: "that tier is chosen on the same structural-independence axis as any other review here — an Internal-floor read for an ordinary plan, a different-agent-type External round for a high-risk or contract-touching one." I called the surface "the byte-level-stable install contract" in the same sentence where I demoted External to "recommended." Contract-touching is precisely the case doctrine assigns an External round, and `:325-329` forbids using recommend-and-decide to soften a tier downward. The header becomes `required(External cross-type)`.
+
+### R5 — P5 promises a backfill path that cannot fire — **accept**
+
+Correct. `_cmd_init_lock` returns early whenever `read_lockfile(target) is not None` (`upgrade.py:1121-1123`), and `write_install_lockfile` refuses on a diverged tree (`install.py:1572-1582`); Cairn's tree is heavily diverged. So "gains the fields at its next re-init or re-install" names two paths that are both structurally blocked. Restated honestly below. This converts open question 4 into a real choice, which is the right outcome.
+
+### R6 — `_LOCK_SCHEMA` takes a `#:` comment, not a docstring — **accept**
+
+Correct on both counts. `_LOCK_SCHEMA = 1` is a module-level `Assign` (`lockfile.py:42`); Python attaches no docstring to it, and a bare string literal after it becomes a top-level `ast.Expr` keyed `"Docstring"` (`_ast_attest.py:84-88`), suffixed to `Docstring#2` by the `seen` counter (`:97-105`) because `lockfile.py` already has a module docstring — a NEW baseline key my enumerated delta did not list. The file's own convention two lines below is the `#:` comment form. Taking it keeps the delta exactly falsifiable.
+
+### R7 — the gate expectation is not falsifiable and slightly overstated — **accept**
+
+Correct. `_classify` `continue`s over baseline entries typed `Import`/`ImportFrom` and over any `Docstring*` key (`_ast_attest.py:162-170`), and NEW keys are reported as notes (`:187-192`), so neither the new helper nor the rotated imports can produce a gate failure. Only CHANGED digests move.
+
+I re-derived the target for the **revised** delta, which now touches five functions rather than three. Verified this session: the CHANGED set is 133 per node (266 lines across two nodes), and **all five** touched functions — `write_install_lockfile`, `_cmd_init_lock`, `_apply_upgrade`, `_write_stage`, `_emit_lock_yaml` — are *already* in it. So the falsifiable pre-re-anchor target is unchanged by the expansion: **CHANGED stays at exactly 133 per node**, five named digests differ from their prior values, and the NEW-note set is exactly `FunctionDef:_cairn_provenance` plus Import rotations. Any 134 means an accidental extra symbol.
+
+### R8 — the 94-row smoke check is invalidated by my own sequencing — **accept**
+
+Correct, and it is a clean instance of me using a snapshot where a live invariant was required — the exact three-kind discipline the repo asks for. 94 data rows is right today and wrong at the landing point, because I sequence this plan after the licensing plan's Chunk C, which adds a `NOTICE.md` `_CORE_MAPPINGS` entry and expects 95. The plan registers the invariant (row count equal before and after, captured at implementation time) rather than the number.
+
+### R9 — the shipped `run_security_audit.py` is the real old-reader case — **accept**
+
+Correct, and this is the finding that most improves the proposal. I wrote that the old-reader direction was "argued from source, not demonstrated" and called it my weakest link. R9 supplies a reader that makes it demonstrable: `templates/modules/team-gated/run_security_audit.py` installs verbatim as `scripts/run_security_audit.py` (manifest row 70, verified), parses the whole lockfile itself with `json.loads(text[brace:])` at `:122` rather than going through `read_lockfile`, and touches only `modules` / `files` / `tokens` via `.get()`. Because it is installed and hash-tracked, an adopter genuinely can run a lagging copy against a newer lockfile. A test node against `load_lockfile` + `required_apparatus_dsts` converts my caveat into an actual test at near-zero cost.
+
+### R10 — rule-siting is wrong on routing, duplicated, and cannot reach adopters — **accept with modification**
+
+I accept all three sub-findings. (a) My "descriptive layer" routing was wrong on its own cited source: the descriptive layer is `docs/` (`docs/DOCUMENTATION_PLAN.md:151-155`), the content is prescriptive, and `:143-146` routes prescribing-how-one-domain-is-organized to "the governing layer's domain-local range, **in that domain**." `bootstrap/` is the right directory for the opposite reason I gave. (b) Stating the rule in full in two places is duplication drift, forbidden by `doctrine/doc-governance.md:76-77`: "Each rule lives in **exactly one** of the two files. The other file may *point* to it — a one-line cross-reference — but never restates it." (c) `--manifest` emits zero `bootstrap/` rows, so `UPGRADE.md` never reaches an adopter tree and describing it as carrying the rule "in adopter language" was an overstatement.
+
+**Modification:** the review left the canonical home open and widened the question to three options. I name it instead, because leaving it open is how the duplication happened. Canonical home is the **`bootstrap/UPGRADE.md` subsection** — right directory per `:143-146`, and it is already the lockfile's documented home (`bootstrap/PROVENANCE.md:76` points there). The `#:` block on `_LOCK_SCHEMA` becomes a **one-line pointer**, not a restatement. I still carry open question 2 with all three options, since siting is a Maintainer call.
+
+I also take the review's `_emit_lock_yaml` header suggestion, because it is an existing slot rather than a new mechanism — the header already writes two comment lines into every lockfile (`lockfile.py:184-189`). One added pointer line naming the provenance fields is the only thing in this proposal that actually reaches an adopter's tree. It makes `_emit_lock_yaml` a fifth CHANGED `FunctionDef`, enumerated above and confirmed already-CHANGED.
+
+### R11 — the rate-limit N/A is argued on the wrong test; `PROVENANCE.md` silently omitted — **accept with modification**
+
+**(a) Accept the finding; modify the replacement argument.** My scope test was wrong: `dev/proposals/_template.md:166-167` scopes the gate to a proposal that "**changes doctrine** — a rule, process, or contract every contributor follows," not to files under `doctrine/`. And the reviewer is right that I claimed to author a contract rule and to change no contract rule in the same document.
+
+The review proposes re-arguing on incident-triggering. I think there is a better argument, and R3(b) is what supplies it: **`migrated` proves the additive-optional-key rule is already the engine's practice.** It has been a writer-varying optional top-level key at `schema: 1` since `--init-lock` shipped. So P3 does not introduce a rule contributors must newly follow — it writes down one the code has followed all along, which is documentation of existing behavior, not doctrine evolution. I offer the incident-triggering point as a secondary: `doctrine/rationale.md:323-324` gates a change arising *from an incident* ("**No doctrine change from a single incident** unless the Maintainer explicitly classifies the incident as high-risk"), and there is no incident behind this.
+
+My refusal of the bypass stands unchanged and I restate it: the two qualifying surfaces at `:339-344` are exhaustive, this is neither, and the first-adopter deadline is exactly the framing `:346-347` excludes — "Any other 'this feels urgent' framing falls outside the bypass and obeys the recurrence requirement." I claim no bypass.
+
+**(b) Accept in full.** `dev/proposals/_template.md:69-70` lists "**Licensing / provenance** — the by-file license split or `bootstrap/PROVENANCE.md`" as its own trigger and I named only the install-contract one. Worse, `bootstrap/PROVENANCE.md:78-79` enumerates what the lockfile carries — "the exact `cairn_version` + `cairn_commit`, the resolved profile, and the per-file source / hash" — and adding two fields makes that enumeration stale in the document I quote twice as motivation. I named `fidelity-check.md` as deliberately untouched and said nothing about `PROVENANCE.md`, against `:150-152` ("silent omission is a review finding"). A one-line amendment goes into Touches.
+
+### R12 — three accuracy items — **accept** (all three)
+
+**(a) The CITATION.cff parse contract.** The most consequential of the three and a live bug, not a nit. `license:` at `CITATION.cff:19-21` is immediately followed by `keywords:` at `:22` with its own six `- ` items at `:23-28`. A scanner generalized from `_cairn_version`'s single-line pattern that simply keeps consuming `- ` lines would silently record six keywords as licenses. The parse contract is now stated in P1 and both cases are test nodes.
+
+**(b) Bandit.** Correct — I claimed a sweep that was "checked, not assumed" and omitted the one security gate covering the file I am editing. `bootstrap/tests/test_security_lint.py:160-180` proves every `.py` under `bootstrap/_scaffold/` is scanned recursively. Added as a sweep bullet and a smoke check.
+
+**(c) Citation slips.** All three verified and all three mine. The `cairn-internal-ref-allow` header is inert here: `scripts/check_cairn.py:504` gates the check on `_is_template_instruction(rel)`, which is `return rel.startswith('templates/')` (`:283-290`) — so it does nothing in `dev/proposals/` and it also exempted `doctrine/proposals.md`, a path I never cite. Dropped. The `_oracle.py` phrase begins at `:30`, not `:31`. The broad-look quote begins mid-line at `:299` ("... in the adopter's repository. The install"), so the span is `:299-302`. And the `PROVENANCE.md:55-58` frame universalized a version-scoped statement — the source says "**v0.2** provenance is named-releases + signed-tags + the derived manifest"; I wrote "Cairn's provenance posture is." That last one is the same drift class the batch has been warned about twice, and it is on me: the words were verbatim, the frame silently widened them. Fixed by moving "v0.2" inside the quotation.
+
+### On the panel's second-round recommendation — **accept**
+
+I accept the gated re-read, and I would ask for it even if the panel had not. R1's fork is a change to what the implementing plan must do, on the one surface no lens could test-drive (no lens ran a real `--stage`/`--apply` cycle). A Response that left the mechanism description standing would not have been correctable on paper. The four gating items — corrected P2 with the fork named, re-scoped test homes, honest P5, falsifiable gate expectation with the row-count invariant — are all discharged below.
+
+R4 makes the External cross-type read mandatory rather than recommended, which is also what covers the compatibility argument's weakest link. I endorse the panel's two framing questions and add R9's reader as the concrete handle on question (i).
+
+---
+
+## Revised proposal — 2026-07-22
+
+**Status: revised.** Changes from the opened version, in one place:
+
+**Header.**
+* `Plan review:` becomes **`required(External cross-type)`** — contract-touching per `doctrine/dual-review.md:184-187`; ratified at Decision. (R4)
+* `Touches` gains `_write_stage` (`bootstrap/_scaffold/upgrade.py:743`, meta dict at `:900-906`), `_emit_lock_yaml` (`bootstrap/_scaffold/lockfile.py:179`), and a one-sentence amendment to `bootstrap/PROVENANCE.md:78-79`. (R1, R10, R11b)
+* `Related` gains the **licensing / provenance** triage trigger, `dev/proposals/_template.md:69-70`. (R11b)
+* The inert `cairn-internal-ref-allow` header comment is removed. (R12c)
+
+**P1 — the CITATION.cff reader.** Unchanged in shape; the parse contract is now stated rather than left to the implementer (R12a): stop the `license:` block at the first line that is not an indented `- ` item; accept the scalar form (`license: MIT`) as a one-element list; drop any value that does not look like an SPDX identifier. Degradation to `("unknown", [])` is unchanged and matches `_cairn_version` (`lockfile.py:103-111`).
+
+**P2 — the fields, at the writers that construct.** Corrected mechanism (R1): `--apply` does not re-source; it consumes `stage-metadata.json`. So `_write_stage` captures `source_repository` / `licenses` via `_cairn_provenance(cairn_root)` in the meta dict at `upgrade.py:900-906`, **beside `new_version` and non-ref-aware for the same reason** — both read the working tree's `CITATION.cff`, and `new_version` is already not ref-aware at `:906`. `_apply_upgrade` reads them at `:1944-1945` with a `.get()` fallback to the current lock value, so an old stage applied by a new engine degrades rather than writing nulls.
+
+Writer inventory corrected to five, classified (R3a):
+* **construct** (gain the fields): `write_install_lockfile` (`install.py:1602`), `_cmd_init_lock` (`upgrade.py:1207`).
+* **advance** (backfill from stage meta): `_apply_upgrade` (`upgrade.py:1997`).
+* **copy/mutate** (preserve, do not backfill): `_commit_lock_and_caches` (`upgrade.py:1308`), `_cmd_finalize_lockfile` (`upgrade.py:1709`) — both write back the dict from `read_lockfile`, which is the strongest in-tree evidence for no-bump.
+
+**Stated limit, replacing an overclaim:** an adopter whose only upgrade traffic is `--finalize` or `--adopt-module` does not gain the fields. The parity invariant is narrowed to fresh-install vs `--apply`.
+
+**P3 — no bump; rule sited once.** The argument is unchanged and now rests on `migrated` (R3b): a live additive, writer-varying, optional top-level key coexisting with `schema: 1` — written only by `_cmd_init_lock` (`upgrade.py:1197`), absent from every fresh install, read only at `test_upgrade.py:797`. P3 therefore **codifies existing practice** rather than authoring a new rule. Canonical home is the `bootstrap/UPGRADE.md` subsection (domain-local governing range, `docs/DOCUMENTATION_PLAN.md:143-146`); the `#:` comment on `_LOCK_SCHEMA` is a one-line **pointer**, not a restatement (R6, R10a/b); one added line in the `_emit_lock_yaml` header (`lockfile.py:184-189`) is the only adopter-reaching surface (R10c).
+
+**P4 — validate-on-read.** Unchanged; still deferred, still gets a `dev/PLANNING.md` row.
+
+**P5 — Cairn's own lockfile.** Corrected (R5): it stays provenance-free **until either a self-targeted `--stage`/`--apply` runs or the file is deleted and re-inited by hand** — `--init-lock` early-returns on an existing lockfile (`upgrade.py:1121-1123`) and a re-install refuses on a diverged tree (`install.py:1572-1582`). Recommendation to leave it stands; open question 4 is now a real choice.
+
+**Rate-limit block.** Conclusion unchanged (no bypass claimed; deadline framing refused per `doctrine/rationale.md:346-347`); the `doctrine/`-directory scope test is replaced by the codification argument, with incident-triggering (`:323-324`) as secondary. (R11a)
+
+**Documentation surface.** Adds the `bootstrap/PROVENANCE.md:78-79` enumeration amendment, and corrects the `UPGRADE.md` routing rationale from descriptive to domain-local governing. (R10a, R11b)
+
+**Tests and verification.**
+* All new nodes live in `bootstrap/tests/test_lockfile_provenance.py`, importing `_install` from `test_upgrade.py:45`; **no frozen gate file is edited** (R2).
+* New nodes: the `license:`-block-terminated-by-`keywords:` case must yield exactly `["CC-BY-4.0", "MIT"]`; scalar `license: MIT` must yield `["MIT"]` (R12a); a `--finalize` round-trip for unknown-key preservation (R3a); `run_security_audit.load_lockfile` + `required_apparatus_dsts` against a provenance-bearing lockfile (R9).
+* **Falsifiable gate target** (R7), re-derived for the five-function delta and verified this session: CHANGED stays at **exactly 133 per node**; five named digests differ; the NEW-note set is exactly `FunctionDef:_cairn_provenance` plus Import rotations. All five touched functions are already in the stale CHANGED set at HEAD `57d1daf`, so the expansion does not move the count.
+* `--manifest` becomes an **invariant** — equal row count before and after, captured at implementation time — not the literal 94, which the licensing plan's Chunk C moves to 95 (R8).
+* Baseline restated, re-run this session: **3 failed / 1408 passed / 3 skipped (100s), as_of 2026-07-22**. Target is no new failures, not green.
+* Bandit added to the sweep and the smoke checks: `_cairn_provenance` is inside scan scope (`test_security_lint.py:160-180`) and uses `Path.read_text` + `re` exactly as `_cairn_version` does — no subprocess, eval, or deserialization, so no new finding expected (R12b).
+
+**Citation corrections** (R12c): oracle span → `:30-32`; broad-look span → `:299-302`; `PROVENANCE.md:55-58` quoted with "v0.2" inside the quotation.
+
+**Open questions.** 1 and 3 unchanged. **2 widened to three options** — `AGENTS.md` (cross-cutting governing) / a `bootstrap/` domain-governance file / the `UPGRADE.md` subsection as revised. **4 is now a live choice**, not a deferral to a trigger that cannot fire.
