@@ -64,10 +64,10 @@
     "type": "Assign"
   },
   "Assign:_CORE_MAPPINGS": {
-    "digest": "c2998d8898af007d",
+    "digest": "c74e6013783bf4fe",
     "span": [
       165,
-      201
+      205
     ],
     "type": "AnnAssign"
   },
@@ -1200,10 +1200,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:print_report": {
-    "digest": "c3fb06e59f7297d0",
+    "digest": "19c50962a130a8e8",
     "span": [
-      2313,
-      2389
+      1235,
+      1313
     ],
     "type": "FunctionDef"
   },
