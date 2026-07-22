@@ -517,26 +517,37 @@ I accept all twelve. Dispositions below; the corrected design is in the Revised 
 **Verdict**: SHIP (conditional on Maintainer resolution of open questions and AST baseline re-anchoring)
 
 ### Steelman
-This proposal solves a critical, verified release-blocker (Theme 4): default Cairn installs currently redistribute notice-stripped MIT tools and un-attributed CC-BY markdown templates. The revised package (P1 + P2 + P4 + P5 + P6) cleanly discharges all downstream licensing obligations with minimal adopter friction (a single repo-root `NOTICE.md` + self-propagating SPDX headers on shipped Python source files). Splitting out P3 (lockfile schema modification) to its own proposal protects the byte-level-stable install contract, while keeping P1/P2/P4/P5/P6 zero-token and standard-library compliant.
+This proposal resolves a verified 0.4 release blocker (Theme 4): default Cairn installs currently redistribute notice-stripped MIT tools and un-attributed CC-BY markdown templates. The revised package (P1 + P2 + P4 + P5 + P6) cleanly discharges all downstream licensing obligations with minimal adopter friction (a single repo-root `NOTICE.md` + self-propagating SPDX headers on shipped Python source files). Splitting out P3 (lockfile schema modification) to its own proposal protects the byte-level-stable install contract, while keeping P1/P2/P4/P5/P6 zero-token and standard-library compliant.
 
 ### Critiques
 
-* **[E1] (Legal Sufficiency of Discharging Mechanics)**
-  The legal-sufficiency model is sound: `NOTICE.md` placed at the adopter repository root discharges CC BY 4.0 Section 3(a) attribution and global MIT notice requirements for the installed tree as a whole. Self-propagating SPDX headers (`# SPDX-License-Identifier: MIT`) placed after shebang lines in all 44 `templates/` Python sources guarantee notice retention even if individual tool scripts are copied out of the repository tree.
-* **[E2] (AST Attestation Baseline Re-anchoring Control)**
-  P1's addition of `("core/NOTICE.md", "NOTICE.md")` to `_CORE_MAPPINGS` in `bootstrap/_scaffold/config.py` modifies a baselined symbol digest (`Assign:_CORE_MAPPINGS`). The implementing plan must execute the supervised `REANCHOR_RUNBOOK.md` flow in lockstep with P1 to close tracked Issue #1 cleanly without leaving un-anchored intermediate commits.
-* **[E3] (P6 License Family Scope Clarification Placement)**
-  Classifying functional `.yml`/`.txt` configuration and data files as "other code" under `LICENSE-CC-BY.md` Exception 1 correctly preserves `AGENTS.md:313-315`'s non-overlapping family invariant. The plan should place the clarification canonically in `LICENSE-CC-BY.md` Exception 1 with brief cross-references in `LICENSE-MIT.md` and `AGENTS.md` to prevent doc-drift across legal instruments.
+* **[E1] (Legal Reasoning Verification — Discharge Mechanics)**
+  Independent verification confirms the legal sufficiency of the proposed mechanism:
+  1. **CC BY 4.0 §3(a) & MIT Global Retention:** Installing `NOTICE.md` at the adopter repository root containing the MIT permission notice, the CC BY 4.0 Section 3(a) attribution block, link, ND note, and source repo URL fully satisfies repository-level redistribution requirements for the entire installed tree.
+  2. **Code Export Protection:** Placing `# SPDX-License-Identifier: MIT` headers after shebang lines in all 44 `templates/` Python source files ensures that if an individual script is extracted out of the repository, the MIT notice travels with it automatically.
+
+* **[E2] (AST Attestation Re-anchor Correction Verified)**
+  The Revised proposal section successfully corrects the Internal panel's finding R1/R2:
+  1. It acknowledges that P1 (`_CORE_MAPPINGS` in `bootstrap/_scaffold/config.py:165`) modifies the baselined `Assign:_CORE_MAPPINGS` symbol digest and **requires a supervised AST re-anchor** (`scaffold_ast_baseline.json`) via `REANCHOR_RUNBOOK.md`.
+  2. It correctly identifies that comment-only SPDX headers (P2) do not alter the AST representation (`ast.dump(include_attributes=False)` is comment-insensitive) and do not trigger a re-anchor.
+  3. It drops the false claim that the test suite stays green, explicitly documenting the pre-existing red baseline (Issue #1) which the supervised re-anchor will resolve.
+
+* **[E3] (P3 Lockfile Split Agreement)**
+  I strongly agree with splitting P3 (lockfile `source_repository` and `licenses` fields) into a separate proposal. P3 alters the byte-level-stable install contract schema (`_LOCK_SCHEMA` at `lockfile.py:42`) for traceability, whereas P1/P2/P4/P5/P6 handle legal compliance. Separating them prevents a routine legal fix from being delayed by schema-bump considerations.
+
+* **[E4] (Weighing the Reserved Maintainer Co-Decisions)**
+  * **Downstream-Permission Clause (`LICENSE-CC-BY.md`):** Adding a custom downstream-relicensing clause risks creating an unexpected Cairn-specific license variant that downstream legal reviewers must parse separately. Reassurance in `BOOTSTRAP.md` + `NOTICE.md` stating "keep `NOTICE.md`, that's it" achieves adopter clarity without modifying standard CC BY 4.0 text.
+  * **Notice File Location:** `NOTICE.md` at the repository root is strongly recommended over hidden paths like `dev/.cairn/` for maximum discoverability and open-source standard compliance.
 
 ### Coverage
 
 * **Covered**:
-  * Verified mapping of `_CORE_MAPPINGS` in `bootstrap/_scaffold/config.py:165`.
-  * Checked license instruments (`LICENSE-MIT.md`, `LICENSE-CC-BY.md`, `LICENSE-CC-BY-ND.md`) and verified `CITATION.cff:18-21` repository/license fields.
-  * Verified AST attestation baseline dependencies in `bootstrap/tests/test_ast_attest.py`.
+  * Verified `_CORE_MAPPINGS` tuple in `bootstrap/_scaffold/config.py:165`.
+  * Evaluated `LICENSE-MIT.md:15-33`, `LICENSE-CC-BY.md:54-62`, `LICENSE-CC-BY-ND.md:15-27`, and `CITATION.cff:18-21`.
+  * Verified AST attestation behavior in `bootstrap/tests/test_ast_attest.py` and `bootstrap/tests/_ast_attest.py:13-14`.
 * **Not covered**:
   * P3 lockfile provenance schema modifications (deferred to separate proposal).
-  * Implementation of `bootstrap/tests/test_notice_install.py` (to be verified during plan execution).
+  * Implementation of `bootstrap/tests/test_notice_install.py` (to be created during plan execution).
 
 ## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
 
