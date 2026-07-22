@@ -510,3 +510,34 @@ I accept all twelve. Dispositions below; the corrected design is in the Revised 
 **Verification plan (corrected — R1, R2, R8, R9, R11).** Drop the "suite stays green modulo failures this proposal does not touch" disclaimer; state instead that P1 lands a supervised AST re-anchor that also closes Issue #1, with the baseline's current red state (2 failed / 24 passed) recorded before/after. Cite P3's motivation — in its own new proposal — to Theme 4 (`…:288-302`), not A4. Support the origin-not-license point from `PROVENANCE.md:74-83`, dropping the `:59-63` safety citation. Reframe the cache figure as "43 `.md` cached per install (manifest-derived, as_of 2026-07-11)."
 
 **Reserved to the Maintainer at Decision:** (a) the CC-BY downstream-permission clause (open question, unchanged); (b) the notice name/home (recommended: repo-root `NOTICE.md`); (c) new — the P6 `.yml`/`.txt`="other code" classification sign-off. **Next tier:** External (cross-type) read of this revised package before the Decision, focused on legal-sufficiency of the `NOTICE.md`-plus-headers discharge.
+
+## Review -- Gemini (External, different-agent-type) -- 2026-07-22
+
+**Model**: Gemini 3.6 Flash / Antigravity
+**Verdict**: SHIP (conditional on Maintainer resolution of open questions and AST baseline re-anchoring)
+
+### Steelman
+This proposal solves a critical, verified release-blocker (Theme 4): default Cairn installs currently redistribute notice-stripped MIT tools and un-attributed CC-BY markdown templates. The revised package (P1 + P2 + P4 + P5 + P6) cleanly discharges all downstream licensing obligations with minimal adopter friction (a single repo-root `NOTICE.md` + self-propagating SPDX headers on shipped Python source files). Splitting out P3 (lockfile schema modification) to its own proposal protects the byte-level-stable install contract, while keeping P1/P2/P4/P5/P6 zero-token and standard-library compliant.
+
+### Critiques
+
+* **[E1] (Legal Sufficiency of Discharging Mechanics)**
+  The legal-sufficiency model is sound: `NOTICE.md` placed at the adopter repository root discharges CC BY 4.0 Section 3(a) attribution and global MIT notice requirements for the installed tree as a whole. Self-propagating SPDX headers (`# SPDX-License-Identifier: MIT`) placed after shebang lines in all 44 `templates/` Python sources guarantee notice retention even if individual tool scripts are copied out of the repository tree.
+* **[E2] (AST Attestation Baseline Re-anchoring Control)**
+  P1's addition of `("core/NOTICE.md", "NOTICE.md")` to `_CORE_MAPPINGS` in `bootstrap/_scaffold/config.py` modifies a baselined symbol digest (`Assign:_CORE_MAPPINGS`). The implementing plan must execute the supervised `REANCHOR_RUNBOOK.md` flow in lockstep with P1 to close tracked Issue #1 cleanly without leaving un-anchored intermediate commits.
+* **[E3] (P6 License Family Scope Clarification Placement)**
+  Classifying functional `.yml`/`.txt` configuration and data files as "other code" under `LICENSE-CC-BY.md` Exception 1 correctly preserves `AGENTS.md:313-315`'s non-overlapping family invariant. The plan should place the clarification canonically in `LICENSE-CC-BY.md` Exception 1 with brief cross-references in `LICENSE-MIT.md` and `AGENTS.md` to prevent doc-drift across legal instruments.
+
+### Coverage
+
+* **Covered**:
+  * Verified mapping of `_CORE_MAPPINGS` in `bootstrap/_scaffold/config.py:165`.
+  * Checked license instruments (`LICENSE-MIT.md`, `LICENSE-CC-BY.md`, `LICENSE-CC-BY-ND.md`) and verified `CITATION.cff:18-21` repository/license fields.
+  * Verified AST attestation baseline dependencies in `bootstrap/tests/test_ast_attest.py`.
+* **Not covered**:
+  * P3 lockfile provenance schema modifications (deferred to separate proposal).
+  * Implementation of `bootstrap/tests/test_notice_install.py` (to be verified during plan execution).
+
+## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
+
+*(Awaiting the Maintainer. The revised P1+P2+P4+P5+P6 package has cleared both Internal and External reads. Three decisions belong to the Maintainer: (1) Accept/reject the revised compliance package; (2) Open Question OQ: whether to add the downstream-permission clause to `LICENSE-CC-BY.md`; (3) P6 classification sign-off for `.yml`/`.txt` configuration files as MIT Exception 1 code.)*
