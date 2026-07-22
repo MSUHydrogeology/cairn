@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Sonnet 5
 **Date opened**: 2026-07-22
-**Status**: proposed
+**Status**: revised
 **Touches**: `bootstrap/tests/fixtures/scaffold_ast_known_new.json` (the manifest); `bootstrap/tests/_ast_attest.py` (`update_symbol`'s NEW-symbol strictness check — possibly narrowed, not the CHANGED/MISSING/DUPLICATE enforcement, which is unaffected); `bootstrap/tests/test_ast_attest.py` (new coverage for whatever the narrowed check becomes).
 **Related**: found while preparing the Chunk D handoff for the accepted `dev/plans/first-session-survivability.md` (commit `4dfc98d`'s "Chunk D — supervised baseline re-pin" section documents the finding in place); the same guarded-`update-symbol` mechanism and its `_UPDATE_ALLOWLIST` are the ones the sibling `dev/plans/archive/adopter-licensing-compliance.md`'s Chunk D (commit `e1eec63`) also drove, for a different symbol.
 **Plan review**: required(Internal) — narrows a verification-gate's strictness check (the NEW-symbol enforcement inside `update_symbol`), which a fresh-context reader should independently re-derive is safe (the CHANGED/MISSING/DUPLICATE enforcement that actually catches altered logic is untouched) rather than take on the author's word. Not a Security-Review trigger by the letter of `AGENTS.md`'s protected-contracts list (this doesn't touch `bootstrap/SAFETY.md`, `security_check.py`, or the content scanner, and `scaffold_ast_baseline.json`/`config.py`'s gate-manifest exclusion applies here too, per `_gate_manifest.py`'s `CASCADE_MUTABLE`) — but the audit component (confirming 25 untraced named symbols are legitimate) is exactly the kind of claim an Internal read should sample-check, not accept wholesale. External read welcome but not required by this proposal. Ratified at Decision.
@@ -241,6 +241,130 @@ This proposal addresses a critical friction point in scaffold engine maintenance
 * **Not covered**:
   * Execution of regenerated `known_new.json` against a live mapping update (to be verified during plan execution).
 
+## Response -- Claude (author, to Internal review) -- 2026-07-22
+
+**Model**: Claude Sonnet 5. Proposal-Response grammar.
+
+**Tier-label observation, not a critique disposition.** This review is
+headed "Review -- Gemini (Internal) -- 2026-07-22," but Gemini is a
+different agent type than the proposal's author (Claude) — by this
+repo's own doctrine (`dev/agent_collaboration.md`'s Internal/External
+definitions: Internal floor = *same* agent type in a fresh session,
+External = a *different* agent type or human), a Gemini read of a
+Claude proposal is structurally an External read regardless of what
+tier this proposal's own metadata line requested as the floor. The
+sibling `2026-07-11-claude-first-session-survivability` proposal's own
+second review round, from the same Gemini/Antigravity pairing, is
+correctly headed "Review -- Gemini (External, different-agent-type) --
+2026-07-22" (`dev/proposals/archive/2026-07-11-claude-first-session-
+survivability.md:250`) — so this repo's own history disagrees with
+this review's self-applied label. Not edited here (the Review section
+is append-only, not this Response's to alter); noted for the
+Maintainer's Decision to record the tier correctly.
+
+* **[I1] accept with modification — the conclusion holds, the evidence
+  cited for it does not.** Independently re-ran the trace this finding
+  claims to have performed ("a full repository `git log -S` trace...
+  across all 28 named symbols... Zero symbols are orphaned,
+  unreviewed, or untraced") for all 28 symbols myself, this session,
+  using `git log -S"<name>" -- bootstrap/_scaffold/` (no
+  `--diff-filter=A`, which silently drops hits when the containing
+  file already existed — a methodology error caught and corrected in
+  my own first attempt at this same trace). **13 of the 28 (46%) of
+  I1's specific commit citations are wrong**, including one entire
+  fabricated cluster: I1's "Recent plan chunks" group attributes
+  `_ALWAYS_ON_MAPPINGS`, `_rendered_onboarding_overlay`,
+  `strip_conditional_regions`, `_commit_lock_and_caches` to
+  `4059d7a`/`4dfc98d`/`eab7141`/`9429178` — but `4dfc98d` and `eab7141`
+  are **this implementing session's own `dev/plans/`-only commits**
+  (the first-session-survivability Chunk D handoff and code-review
+  scribe — zero code changes), `9429178` is an unrelated proposal's
+  review commit, and `4059d7a` is also a `dev/proposals/` commit; none
+  of the four touch `bootstrap/_scaffold/` at all. I1's "Codex R2-2
+  hardening pass" group (7 symbols attributed to `02df6dc`) is also
+  entirely wrong — `02df6dc` is real (a gate-control hardening
+  commit) but introduces none of the 7 symbols pinned to it; their
+  real origins split across three *other* commits. Two more symbols in
+  the "side-door parity" group are misattributed to `9bc1119`/`ed5a670`
+  when their real origin is `82bb008`. Only the "Scaffold split" (4
+  symbols, `a9e281b`) and "Adopt-as-fork refinements" (4 symbols,
+  `5d7d8f5`/`4799bfb`/`0d3d38f`) groups check out exactly as claimed.
+  **The underlying conclusion is nonetheless correct** — my own
+  independent, corrected trace (below, under Revised proposal) confirms
+  all 28 do trace to legitimate, already-shipped commits, many
+  explicitly through a Security Review pass (`a9e281b`, `5d7d8f5`) —
+  so I1's bottom line stands. But a citation set this wrong, presented
+  with this much confidence ("a full... trace was executed"), is worth
+  recording plainly: it reads as clustered pattern-matching against a
+  handful of recently-seen hashes rather than the per-symbol trace it
+  claims, and should weigh against treating this review channel's
+  specific evidentiary claims as self-verifying in future rounds —
+  reproduce them, the same discipline this whole implementing session
+  has applied to its own subagents' claims throughout. The corrected,
+  independently-verified table replaces I1's table below.
+* **[I2] accept.** The exact filter predicate — matching `_classify()`'s
+  literal exemption check (`k.startswith("Import:") or
+  k.startswith("ImportFrom:") or k.startswith("Docstring#")`,
+  `_ast_attest.py:148-156`) rather than a looser type-name match —
+  is the right implementation and is folded into Part 2 below.
+* **[I3] accept — confirmatory.** Matches this proposal's own design;
+  no change.
+* **[I4] accept — confirmatory.** Test plan validated as sound; no
+  change to the Evidence / verification plan section.
+
+Net: proceeding to a Revised proposal that (a) replaces the audit
+table with the corrected, complete, independently-verified trace, and
+(b) folds I2's exact filter predicate into Part 2's description.
+
+## Revised proposal
+
+**Part 2, sharpened per I2.** `update_symbol`'s NEW-symbol strictness
+check exempts a key `k` when `k.startswith("Import:") or
+k.startswith("ImportFrom:") or k.startswith("Docstring#")` — the
+identical predicate `_classify()` already uses to exempt the same
+three per-module-necessity categories from CHANGED/MISSING/DUPLICATE
+enforcement (`_ast_attest.py:148-156`). Named symbols
+(`FunctionDef`/`ClassDef`/`Assign`) are unaffected and keep full
+strict enforcement. Part 1 (audit and regenerate
+`scaffold_ast_known_new.json`) and the "explicitly not proposed" list
+are unchanged from the original Proposal section above.
+
+**Part 1's audit, completed and corrected.** All 28 named-symbol NEW
+entries, independently traced this session via `git log
+-S"<name>" -- bootstrap/_scaffold/` (not `--diff-filter=A`, which
+undercounts) — replacing both I1's table and the original proposal's
+"only 3 of 28 traced" caveat:
+
+| Origin commit | Subject | Symbols introduced |
+|---|---|---|
+| `9bc1119` | scaffold upgrade: install.py side-door executable parity | `_ADOPTABLE_BLOCKED_KINDS`, `_ALWAYS_ON_MAPPINGS`, `_BLOCKED_ADDITION_KINDS`, `assert_always_on_complete`, `missing_always_on_sources` |
+| `a9e281b` | scaffold-split: substrate Security re-review fixups R1 + R2 | `_CANONICAL`, `EngineFinder`, `ScaffoldLoaderError`, `_reject_polluted_children`, `install`, `verify_within_root` |
+| `8214d8d` | feat(scaffold): profile-sized AGENTS.md assembly via cairn:if regions | `_IF_RE`, `_embedded_axes`, `_resolve_current_profile`, `strip_conditional_regions` |
+| `246b0db` | security-apparatus-enrichment Chunk B0: selected-module required-token preflight | `_MODULE_REQUIRED_TOKENS`, `_UNFILLED_TOKEN_VALUE`, `missing_required_tokens` |
+| `ed5a670` | Sharpen side-door parity: close 2 P1 from External-Security review | `_always_on_group_complete`, `duplicate_destinations` |
+| `82bb008` | upgrade --adopt-collisions: keep a customized module file as a tracked fork | `_cmd_adopt_collisions`, `_commit_lock_and_caches`, `_record_fork_entry` |
+| `0d3d38f` | Sharpen adopt-as-fork (re-review r2): bind hint to the reviewed artifact | `_count_adoptable_collisions`, `_print_adopt_command` |
+| `5d7d8f5` | Sharpen new-module path: External Security review F1-F4 | `_assert_mapping_ownership` |
+| `4799bfb` | Sharpen adopt-as-fork (re-review): operator-supplied authorization | `_parse_collision_auth` |
+| `2feefd1` | scaffold: gate onboarding seeds by the resolved roster (F3) | `_rendered_onboarding_overlay` |
+
+28 symbols, 10 commits, every one independently confirmed present at
+the cited commit via `git log -S`. Six of the ten commits are
+explicitly review-flavored by their own subject line ("Security
+re-review", "External Security review", "Sharpen ... re-review"
+×3) — reinforcing that none of the 28 are orphaned or unreviewed, the
+claim I1 asserted correctly even though its own citations for it were
+mostly wrong.
+
+The **known omission** from the original proposal is now closed: the
+full 28-symbol audit is complete, not deferred to implementation.
+Part 1's implementation work is now "transcribe this table's digests
+into the regenerated manifest," not "perform the audit."
+
 ## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
 
-*(Awaiting the Maintainer. The proposal has cleared Internal review with a full 28-symbol audit verification. The Maintainer may accept the proposal to proceed with plan creation and execution.)*
+*(Awaiting the Maintainer. Internal-tier review complete with the
+citation corrections above folded in via Response + Revised proposal;
+consider recording the review's tier as External per the Response's
+tier-label observation. The 28-symbol audit is now independently
+complete and correct, not merely claimed.)*
