@@ -37,7 +37,8 @@ tracked in the modflow_tools repository's `dev/plans/` lifecycle; this
 development — and Issues filed via GitHub — happens here. The accepted
 adoption profile is recorded at `dev/.cairn/profile.yml`
 (`collaborative-team` preset, human-team overridden to solo; the
-deliberation is in `dev/strategy/`).
+deliberation is at `dev/strategy/2026-07-11-claude-cairn-adoption-record.md`,
+a 2026-07-11 reconstruction, not contemporaneous).
 
 **Where it is headed.** The immediate next phase is a broad strategy +
 roadmap pass: take a wide look at the project, tighten what has

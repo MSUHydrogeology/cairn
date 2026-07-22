@@ -1,11 +1,18 @@
 <!-- cairn-internal-ref-allow: doctrine/proposals.md doctrine/lifecycle.md doctrine/rationale.md doctrine/dual-review.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- claim-check-allow: dev/strategy/2026-07-11-claude-cairn-adoption-record.md, dev/measurement/attestation-replay-failures.md -->
 <!-- The two paths above are forward-reference files this plan creates; they materialize as Chunks B and D land. -->
+<!-- claim-marker maintenance 2026-07-22: the plan-review section's own "Grounding" line self-cites
+     `dev/plans/record-corrections.md:161` -- ACCURATE when written (this file's own pre-archive path).
+     Archiving this same plan (git mv to dev/plans/archive/, this commit) breaks that self-citation.
+     Retained unedited (append-only, reviewer prose); path marked so the checker clears. Fourth occurrence
+     this session of the same shape (see the ast-known-new-repin, first-session-survivability, and
+     transition-lint proposals' own marker notes). -->
+<!-- claim-check-allow: dev/plans/record-corrections.md* -->
 
 # Plan: record corrections (C1, C2, C3, OQ3 tracker)
 
 **Source proposal**: `dev/proposals/archive/2026-07-11-claude-record-corrections.md`
-**Status**: review
+**Status**: archived
 **Plan review**: required(Internal) — fresh-context read. The proposal
 already cleared a 3-lens Internal panel *and* a Gemini External SHIP at
 the proposal stage; this plan's own job is mechanical translation of an
@@ -474,10 +481,76 @@ resolved; the plan is otherwise complete and gate-clean. Archive next.
 
 ## Lasting-truth migration
 
-*Filled in at archive time. Per the [Archive preconditions rule](../PLANNING.md#archive-preconditions-proposals-and-plans),
+Archived 2026-07-22.
+
+Follow-ups migrated to: no deferred follow-up from this plan's own
+scope — C1/C2/C3 shipped in full (Chunks A-C), and OQ3's tracker
+(Chunk D) is not a deferral, it's the arming mechanism for the
+proposal's own explicitly deferred, rate-limit-gated follow-up (the
+cut-commit gate-transcript requirement), which stays exactly where the
+proposal put it: named, deferred, and now armed rather than un-armed —
+revival condition is a second `attestation-replay-failure` `occurred`
+row landing within the tracker's 90-day window, or a Maintainer
+high-risk classification. That follow-up's own eventual proposal, if
+and when revived, is out of this plan's scope by design.
+
+**No Maintainer-gated closeout step.** Unlike the two sibling plans
+this session (`adopter-licensing-compliance`, `first-session-
+survivability`), this plan touches **no code** — `python -m pytest
+bootstrap/tests/test_ast_attest.py` is 26/26 green under the canonical
+interpreter throughout, confirmed both before and after every chunk.
+There is no AST baseline to re-anchor and no supervised correction to
+hand off; archive follows directly once code review's findings are
+resolved.
+
+**Code review closed.** Two real, independently-reproduced defects in
+Chunk B's adoption record (three drifted `profile.yml` line citations;
+a misstated `dimensions/README.md` axis grouping) — both fixed in
+commit `d4237ad`, both re-verified against the actual files post-fix.
+Two non-blocking findings (commit-message file-count slips; the plan's
+own stale header `Status` field) — the latter fixed in the same commit,
+the former noted as a habit correction with no retroactive fix (past
+commit messages aren't rewritten).
+
+**The required PLANNING.md closeout (plan-review R5).** Per the plan's
+own Chunk B design, the `PLANNING.md:34-40`-area pointer repoint is a
+required, tracked plan-archive closeout step, not deferred to "e.g.
+goodnight" — landing in this same archive commit, alongside the usual
+`dev/plans/` → `dev/plans/archive/` move, closes the inconsistent-
+pointer window (the `profile.yml` comment naming the concrete adoption
+record since Chunk B, `PLANNING.md` still saying the generic
+`dev/strategy/` directory until now).
+
+**Loop-fidelity sign-off.** The Decision → implementation chain holds
+in full, including through two independently-caught defects at two
+different review layers: the accepted Revised proposal's C1+C2+C3 (plus
+the Decision's own OQ3 departure from the proposal's default) shipped
+in `9a95ee0`/`59885ec`/`84c23a0`/`938aa20`. Plan review (fresh-context,
+Internal) found 3 findings — PR1 a genuine mechanics bug in the
+plan's own originally-proposed tracker design (a truthfully-dated row
+would have been functionally inert against the very recurrence-arming
+purpose OQ3 exists for), PR2 a same-day citation drift caught before it
+could land in a permanent CHANGELOG record, PR3 a minor date-rationale
+gap — all three accepted and fixed before implementation. During
+implementation, the Maintainer's own real-time review of the drafted
+CHANGELOG entry caught a genuine misuse of the artifact (a deliberation
+walkthrough where the file's own convention calls for one line that
+points elsewhere) — a finding neither review layer had flagged, since
+neither read the drafted CHANGELOG text as its own artifact against
+`CHANGELOG.md`'s own entry-shape rule. Code review (fresh-context,
+Internal) then caught two further defects **within Chunk B's own
+commit** — a self-inflicted citation drift (the same failure class as
+PR2, this time uncaught by the implementing session that had just fixed
+PR2 elsewhere in the same plan) and a factual misstatement about a
+cited source's own structure — both fixed. Four independent catches
+across three different review mechanisms (plan-review, Maintainer
+real-time read, code-review), on a plan whose entire subject is
+"Cairn's own record must be honest" — the record of *this plan's own
+production* held up the same standard it was correcting, catching real
+defects rather than asserting a clean pass.
+
+Per the [Archive preconditions rule](../PLANNING.md#archive-preconditions-proposals-and-plans),
 plans archive only after every deferred follow-up has a durable home
-outside the plan — the cut-transcript requirement stays the proposal's
-own explicitly deferred, rate-limit-gated follow-up (armed by Chunk D,
-not carried by this plan).*
+outside the plan.
 
 This section is append-only once written.
