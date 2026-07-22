@@ -292,287 +292,287 @@
     {
       "base_hash": "sha256:96ffbb4bb647cf964397e0a12b365300b150448c876bdc784622757a6d406d4f",
       "dst": "scripts/_onboarding/__init__.py",
-      "hash": "sha256:96ffbb4bb647cf964397e0a12b365300b150448c876bdc784622757a6d406d4f",
+      "hash": "sha256:d41cb4297e339dc70a34bdba7ce14acc803d467f172cf2cf5a7c517612a674b3",
       "src": "modules/default-on/_onboarding/__init__.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:c0c4678fdd6df56bc3c3d0568796ad2c115b8d8999cddb5625ec42c2eaf71d5d",
       "dst": "scripts/_onboarding/activation.py",
-      "hash": "sha256:c0c4678fdd6df56bc3c3d0568796ad2c115b8d8999cddb5625ec42c2eaf71d5d",
+      "hash": "sha256:b0265d86e5e25ae5c4bc22b81e35bc9ff213eaf27b33cd758fdb9be55a4b3682",
       "src": "modules/default-on/_onboarding/activation.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:cc5e399fbc7c1a5212a0af32481d5df559a43555356f7d901a4ccadcb768ca22",
       "dst": "scripts/_onboarding/cli.py",
-      "hash": "sha256:cc5e399fbc7c1a5212a0af32481d5df559a43555356f7d901a4ccadcb768ca22",
+      "hash": "sha256:72f0b37b48222145517a51b664b99ae9309709e93b2a979b0929eba477917410",
       "src": "modules/default-on/_onboarding/cli.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:d0b184798376b1c0547fb31716ad307aca3ac826a0ca2833af908912ed4a413b",
       "dst": "scripts/_onboarding/prompts.py",
-      "hash": "sha256:d0b184798376b1c0547fb31716ad307aca3ac826a0ca2833af908912ed4a413b",
+      "hash": "sha256:8dbf75d2bdd84b1009a5017ee9ea62ca0c9429151fadd098e0b8b805374c961d",
       "src": "modules/default-on/_onboarding/prompts.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:719598ff530db4ef235c7ddb68bc4aa0ff27ae9f593b2b67d2823df489501513",
       "dst": "scripts/_onboarding/security.py",
-      "hash": "sha256:719598ff530db4ef235c7ddb68bc4aa0ff27ae9f593b2b67d2823df489501513",
+      "hash": "sha256:8025f91660c36a8b84a2b141d85104488a5dd19eb77629241abf3b55ee2ff3ce",
       "src": "modules/default-on/_onboarding/security.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:2df82aebc4889f7ac56086676d1937e7be38fff2c4cd556a07314eee33c3d1e2",
       "dst": "scripts/_onboarding/shared.py",
-      "hash": "sha256:2df82aebc4889f7ac56086676d1937e7be38fff2c4cd556a07314eee33c3d1e2",
+      "hash": "sha256:d4df106a25ae17f11390c7ba547722eb10a545ccf0ed4f63a1c10c476d0f9f3b",
       "src": "modules/default-on/_onboarding/shared.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:86dd6fea6d91e4c13c92a0a349f914890b33eb89b9ba2f002821792af9902437",
       "dst": "scripts/_onboarding/slotparse.py",
-      "hash": "sha256:86dd6fea6d91e4c13c92a0a349f914890b33eb89b9ba2f002821792af9902437",
+      "hash": "sha256:fe88aa3d90600cec0abbdebbb637ad75fee46c25e7ac653ca4601aa39d969276",
       "src": "modules/default-on/_onboarding/slotparse.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:e7981225094ee2535ca15e1d30ff32c7934fa5bcb65405b6d5a031e6d1a79749",
       "dst": "scripts/_onboarding/triggers.py",
-      "hash": "sha256:e7981225094ee2535ca15e1d30ff32c7934fa5bcb65405b6d5a031e6d1a79749",
+      "hash": "sha256:6572c6b45cfbd67ea6a15a590355e6accf1ee6bf5f7e74f3334d782192900a2d",
       "src": "modules/default-on/_onboarding/triggers.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:d8b2c72e1457c40d25e96988d2876aa4491885380482fdba3060b7a3d8ae83d0",
       "dst": "scripts/bootstrap_github_labels.py",
-      "hash": "sha256:d8b2c72e1457c40d25e96988d2876aa4491885380482fdba3060b7a3d8ae83d0",
+      "hash": "sha256:9e29302b00f58c8b126a09567fc3fba7c0ce93d6edd873f1d4cd93c3fbf4fa29",
       "src": "modules/team-gated/issue-capture/bootstrap_github_labels.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:0d8afd095109dc40a6f9098213b54266bb7f4d2dea1ac45a7224fc0ee28ae0df",
       "dst": "scripts/bootstrap_gitlab_labels.py",
-      "hash": "sha256:0d8afd095109dc40a6f9098213b54266bb7f4d2dea1ac45a7224fc0ee28ae0df",
+      "hash": "sha256:439570e4833a0b8bfbb0392448f4fca4898e96b731dcf68181541b0b94639a67",
       "src": "modules/team-gated/issue-capture/bootstrap_gitlab_labels.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:3b7d371fe231d8639d000756a37c967776432158c11f7c4fe65c7a721ca19800",
       "dst": "scripts/check_model_selection.py",
-      "hash": "sha256:3b7d371fe231d8639d000756a37c967776432158c11f7c4fe65c7a721ca19800",
+      "hash": "sha256:482c9a23d602fa93d0c860a8975ab6c896fe7708cf7384342d02c4e47ef986b8",
       "src": "modules/team-gated/check_model_selection.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:6fcef29017b3ad71b3984f24fbc179c00b84d4742218e6e01cab2a854f71304c",
       "dst": "scripts/claim_check.py",
-      "hash": "sha256:75b719d020e0093d14b8b4d0203fea9b79b487236427e0589ce1279227c81617",
+      "hash": "sha256:86674ec440083a308ce202ccaf0bb8b54de3e68dac36c5d9e2d57dc212f9bec9",
       "src": "modules/default-on/claim_check.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:d241fb5c9c7733de355cf21b4608fbc5f9de69fe07a001af71b36fd6899adbb3",
       "dst": "scripts/foldback_export_scan.py",
-      "hash": "sha256:d241fb5c9c7733de355cf21b4608fbc5f9de69fe07a001af71b36fd6899adbb3",
+      "hash": "sha256:50335194f0f5556558d2e2f0dfe24d20f3a067f2ed63e6a364b2f4c200918e87",
       "src": "modules/default-on/foldback_export_scan.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:b5f75d55813ff9a328a26594a6deac9119fa95d80b877d86de351e7df026ad1c",
       "dst": "scripts/foldback_suggest.py",
-      "hash": "sha256:b5f75d55813ff9a328a26594a6deac9119fa95d80b877d86de351e7df026ad1c",
+      "hash": "sha256:675fc88f2e3ef421b56a2a761149c673ae3f6d64651a58ce5a0937b706cc3485",
       "src": "modules/default-on/foldback_suggest.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:c3581b5bc89217604429722d2bc923afa7213fbba1b31b85e0dde1cb0a48f734",
       "dst": "scripts/link_check.py",
-      "hash": "sha256:c3581b5bc89217604429722d2bc923afa7213fbba1b31b85e0dde1cb0a48f734",
+      "hash": "sha256:615eb8ae2a49be2fe39f036963eff9828c5fd973eebf1f6c1b8bc91ead47cd97",
       "src": "modules/team-gated/link_check.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:113cb1de3d738716ad1d758798ff2fd0485e71b036f5fe76945fd1b222e66e28",
       "dst": "scripts/onboarding_activate.py",
-      "hash": "sha256:113cb1de3d738716ad1d758798ff2fd0485e71b036f5fe76945fd1b222e66e28",
+      "hash": "sha256:0a8a404a536df99116e19d500415389407abfddcf3eb374d57722660fa5f89dd",
       "src": "modules/default-on/onboarding_activate.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:4efb33413e8d17b3900c01863a722e66d36292a3520ad2fc647db21c6bb45bb1",
       "dst": "scripts/sync_doc_snippets.py",
-      "hash": "sha256:4efb33413e8d17b3900c01863a722e66d36292a3520ad2fc647db21c6bb45bb1",
+      "hash": "sha256:23e7814ca0ec4c8fa6fbddba7f7616be60045b0ea1156da78316ec8de03b5870",
       "src": "modules/team-gated/sync_doc_snippets.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:515c4102216a6c8eeef039862a23bb6b1328e5edda178423e8af9aaf51850e3b",
       "dst": "scripts/verify_stems.py",
-      "hash": "sha256:515c4102216a6c8eeef039862a23bb6b1328e5edda178423e8af9aaf51850e3b",
+      "hash": "sha256:035d4438b9c1c760a8c027d6541721575cc11f3385509b18b7a5f71d018ffadd",
       "src": "modules/default-on/verify_stems.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:b7b38de3a06ee9cbb70dc1e9d3669acdf65268df473663ea579adefb79a3485c",
       "dst": "tools/_intent/__init__.py",
-      "hash": "sha256:b7b38de3a06ee9cbb70dc1e9d3669acdf65268df473663ea579adefb79a3485c",
+      "hash": "sha256:452ee35610b087feecedb10d9f8526e9662cec030db7cf9de908923a16d25738",
       "src": "modules/team-gated/_intent/__init__.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:e1957083286c8053ab9da0d1a83243ead67cae1b49641eafea9b9743ace2328d",
       "dst": "tools/_intent/cli.py",
-      "hash": "sha256:e1957083286c8053ab9da0d1a83243ead67cae1b49641eafea9b9743ace2328d",
+      "hash": "sha256:1562cdbc13881b0fb0036217eadad948793bc547714a0c7d48b169989b4358d7",
       "src": "modules/team-gated/_intent/cli.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:9699effe323035c827b8d608c7bc7bf3ca8e0a68173e32796c7ccdb062fde37b",
       "dst": "tools/_intent/conflict.py",
-      "hash": "sha256:9699effe323035c827b8d608c7bc7bf3ca8e0a68173e32796c7ccdb062fde37b",
+      "hash": "sha256:a62ed7d0c2a4018752afd08aeae71e953e806487e0d804802e7d0a9b5837b819",
       "src": "modules/team-gated/_intent/conflict.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:976c42abbff5f12970c9440628eec5cadf4c59e1a34da9174cf17b0b0a70d0f8",
       "dst": "tools/_intent/hooks.py",
-      "hash": "sha256:976c42abbff5f12970c9440628eec5cadf4c59e1a34da9174cf17b0b0a70d0f8",
+      "hash": "sha256:06f9705a135268c7edd8db9ebc7127aa7df068c46ff64474b0f82af48546fd10",
       "src": "modules/team-gated/_intent/hooks.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:02866a1ff9e71467015694e7716ddffbb291ba250a3ad764f376f6c3027de088",
       "dst": "tools/_intent/identity.py",
-      "hash": "sha256:02866a1ff9e71467015694e7716ddffbb291ba250a3ad764f376f6c3027de088",
+      "hash": "sha256:c69880a58162f6ba253d4a0c2a96e3646e5916f13916c06c1c42314228984c70",
       "src": "modules/team-gated/_intent/identity.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:bd9f01484f66f875a1872c4b8912064e25026d090a70dd57f5e9475eae0d2382",
       "dst": "tools/_intent/record_io.py",
-      "hash": "sha256:bd9f01484f66f875a1872c4b8912064e25026d090a70dd57f5e9475eae0d2382",
+      "hash": "sha256:1d5f0136443642b06c57b8255729ab6123d1ae7e7147c1a74230a53c9238a334",
       "src": "modules/team-gated/_intent/record_io.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:5ddc3bdf611229dc107df5949083ba95380ce316955b381c11e34d8493940c3a",
       "dst": "tools/_intent/shared.py",
-      "hash": "sha256:5ddc3bdf611229dc107df5949083ba95380ce316955b381c11e34d8493940c3a",
+      "hash": "sha256:5e9265c8bfb55f63170acf1db480bc06098fa75f5cc760d47841d587002a1565",
       "src": "modules/team-gated/_intent/shared.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:fb1c4d2657ba100fefd8aeb8d2834240c1dee422ec3e0da80b559e6d246af6cd",
       "dst": "tools/_lifecycle_metrics/__init__.py",
-      "hash": "sha256:fb1c4d2657ba100fefd8aeb8d2834240c1dee422ec3e0da80b559e6d246af6cd",
+      "hash": "sha256:c0e169e79956e1612501517dfd150c5917cb88de1078ef07c8151b878eaf3db5",
       "src": "modules/default-on/_lifecycle_metrics/__init__.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:be790d5af8db385e9981656f8c1a0bd89efcdee5e7687c97256f7ee833327d73",
       "dst": "tools/_lifecycle_metrics/cli.py",
-      "hash": "sha256:be790d5af8db385e9981656f8c1a0bd89efcdee5e7687c97256f7ee833327d73",
+      "hash": "sha256:d33c923236fa6cd898c248cb7bdf7eaf6b9610b9cf8a5a03de88ffbbe9296fb1",
       "src": "modules/default-on/_lifecycle_metrics/cli.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:80110f142ec5ec2f28889db25112839daf61fe1f5c9caec82ac337f7731e445a",
       "dst": "tools/_lifecycle_metrics/config.py",
-      "hash": "sha256:80110f142ec5ec2f28889db25112839daf61fe1f5c9caec82ac337f7731e445a",
+      "hash": "sha256:0b85ee0f0627882908435a20393e067b09a26947adca0a405689a20622f8a652",
       "src": "modules/default-on/_lifecycle_metrics/config.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:ce5f7558c91c07f7c991aeba17274a7e345369f8c96a92565c4d08082a7f8476",
       "dst": "tools/_lifecycle_metrics/extract.py",
-      "hash": "sha256:ce5f7558c91c07f7c991aeba17274a7e345369f8c96a92565c4d08082a7f8476",
+      "hash": "sha256:4629a36384b495e065fa372ac7673bfb28e2ca1d4b82b1d7a53267b5f4db6a64",
       "src": "modules/default-on/_lifecycle_metrics/extract.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:3d057d535389c44dc870f5f6ca5d4ebd481c8307cd5abc96dbac4c66875389e8",
       "dst": "tools/_lifecycle_metrics/gitmeta.py",
-      "hash": "sha256:3d057d535389c44dc870f5f6ca5d4ebd481c8307cd5abc96dbac4c66875389e8",
+      "hash": "sha256:5a47849b9937e4fa17a32d4eb9e28968466d880c454a7813281d2cc7401bf1a0",
       "src": "modules/default-on/_lifecycle_metrics/gitmeta.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:d7c973e159acddfbae2825b3af6656519a884b7b5c7e5dc54838a4bd67bb1f04",
       "dst": "tools/_lifecycle_metrics/parse.py",
-      "hash": "sha256:d7c973e159acddfbae2825b3af6656519a884b7b5c7e5dc54838a4bd67bb1f04",
+      "hash": "sha256:30f5e04bb8a89b414288d7c3b9f50b456a53c22027d0822bf1f2550ec0dfe136",
       "src": "modules/default-on/_lifecycle_metrics/parse.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:130217374d387438961cbbd0d8c44123831d8952fb5583029c7b81a85db0eca9",
       "dst": "tools/_lifecycle_metrics/report.py",
-      "hash": "sha256:130217374d387438961cbbd0d8c44123831d8952fb5583029c7b81a85db0eca9",
+      "hash": "sha256:44097a463944a794e6c7e9e21e0c1e87d955741c3f817814e07889d82fd8c07f",
       "src": "modules/default-on/_lifecycle_metrics/report.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:3637757f5729e29bb07601eeb8ba8e5444d38775c4d6fb75337d234eb4387da8",
       "dst": "tools/_lifecycle_metrics/snapshot.py",
-      "hash": "sha256:3637757f5729e29bb07601eeb8ba8e5444d38775c4d6fb75337d234eb4387da8",
+      "hash": "sha256:936b468fde26d1f16fe626da94f9ea020df69fb8897a225fa61cc8a400c7f043",
       "src": "modules/default-on/_lifecycle_metrics/snapshot.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:a0489d7ab5b396156afdfd6d2b11887afd054b0fc4e9e606ba0473cf65355af3",
       "dst": "tools/_lifecycle_metrics/subsystems.py",
-      "hash": "sha256:a0489d7ab5b396156afdfd6d2b11887afd054b0fc4e9e606ba0473cf65355af3",
+      "hash": "sha256:70c641a9f949264cc127664ec8d58471cba4ace5a972415cd114631384ce85e7",
       "src": "modules/default-on/_lifecycle_metrics/subsystems.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:a72f4dbd36414ac6db9b65adaaf4358c831fbc4b20895310c5e92b8f2f74826b",
       "dst": "tools/evolution_infer.py",
-      "hash": "sha256:a72f4dbd36414ac6db9b65adaaf4358c831fbc4b20895310c5e92b8f2f74826b",
+      "hash": "sha256:f17f342a5338cc7edb4b8534b1ae08c91fc33c6bb8305f13e05042e310766644",
       "src": "modules/default-on/evolution_infer.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:80b773c343f4f58cd20451e993be7e2fe7541961ba1663e332611d7c80d20ce1",
       "dst": "tools/intent.py",
-      "hash": "sha256:80b773c343f4f58cd20451e993be7e2fe7541961ba1663e332611d7c80d20ce1",
+      "hash": "sha256:6462d4041d5d88d1013a88b02d2c52a28523472899ddc8fde3ad51491a016e03",
       "src": "modules/team-gated/intent.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:296ef88bda1e3e817734cc6cdb14e9571cd3a0ee0aada8d07dfa9e1f898839c9",
       "dst": "tools/lifecycle.py",
-      "hash": "sha256:296ef88bda1e3e817734cc6cdb14e9571cd3a0ee0aada8d07dfa9e1f898839c9",
+      "hash": "sha256:6f6333ee3a5c0d53f8278601ccfdd0867f749452ac02d63faba6ccb32e46d852",
       "src": "skills/_lib/lifecycle.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:01a323268b787a0579177a0cbb5b29c4d08456af7a4d68574854780d25ed05a0",
       "dst": "tools/lifecycle_metrics.py",
-      "hash": "sha256:01a323268b787a0579177a0cbb5b29c4d08456af7a4d68574854780d25ed05a0",
+      "hash": "sha256:86a64b0a9163ff65f56accad733a855c8db8c8c8a99c2a340542abdaf533ff18",
       "src": "modules/default-on/lifecycle_metrics.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:2b30639e4bf7c97037d2ba851d2487003f62f31824a98894c9fe0ca5b8c17263",
       "dst": "tools/lifecycle_planner.py",
-      "hash": "sha256:2b30639e4bf7c97037d2ba851d2487003f62f31824a98894c9fe0ca5b8c17263",
+      "hash": "sha256:45c5c0edc78da82e04bb29578f04866ebd9f1907119ca7989ed0ff0d15f03bc1",
       "src": "skills/_lib/lifecycle_planner.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:6219eeffa6043d8ef10b4773d43aee92815bad255dc1620b52f9599b5a712708",
       "dst": "tools/prune_intents.py",
-      "hash": "sha256:6219eeffa6043d8ef10b4773d43aee92815bad255dc1620b52f9599b5a712708",
+      "hash": "sha256:21ddb93dcf1fc04ec77cedfdc3663282994ead4f1b645940b5314ab5639bdc78",
       "src": "modules/team-gated/prune_intents.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:79e7c30f0ac0cdb57ff20c9b6602fb9e3a89833711712cdc0fdfff85ed12a4fa",
       "dst": "tools/prune_reflections.py",
-      "hash": "sha256:79e7c30f0ac0cdb57ff20c9b6602fb9e3a89833711712cdc0fdfff85ed12a4fa",
+      "hash": "sha256:ae779b8915e3ad67a212b73a56ea553a8c29ac4e3d1a38a7f0091169c747dbde",
       "src": "modules/default-on/prune_reflections.py",
       "verbatim": true
     }
