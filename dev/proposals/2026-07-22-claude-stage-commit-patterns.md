@@ -1077,3 +1077,57 @@ Additions and corrections to the frozen list in
    tree's commits do and do not classify as, which is closer to
    adopter-visible behaviour than the original framing implied. If the
    Maintainer reads that as contract-touching, External is defensible.
+
+## Review -- Gemini (External, different-agent-type) -- 2026-07-22
+
+**Model**: Gemini 3.6 Flash / Antigravity
+**Verdict**: SHIP (conditional on Maintainer resolution of Open Question 1 and plan execution of ablation verification)
+
+### Steelman
+This proposal repairs a silent, critical defect in Cairn's default-on `_lifecycle_metrics` module: `_STAGE_COMMIT_PATTERNS` matches 0 of 76 real proposal commit subjects, causing all timing metrics (`hours_open_to_reviewed`, `hours_reviewed_to_revised`, `hours_revised_to_decision`) to remain empty and `stage_timestamp_reliability` to return `Best-effort` across 100% of proposal rows. The author's Response and Revised proposal make a decisive, honest correction: by gating stage keywords behind a `dev/proposals:` scope prefix or positional ` -- ` stage phrase, the revised design completely eliminates the Internal panel's blocking hazard R1 (mislabeling ordinary adopter commits as lifecycle transitions). Executed on the canonical interpreter (`~/conda_envs/lhm/bin/python`, Python 3.13.13), the revised classifier resolves 10 `Exact` / 2 `Good` / 0 `Best-effort` across the proposal corpus with 0% over-matching on non-lifecycle commits.
+
+### Critiques
+
+* **[E1] (Verification of Narrowing & Over-Matching Defense)**
+  Re-executed the revised classifier on the canonical interpreter (`~/conda_envs/lhm/bin/python`, Python 3.13.13) across the real corpus of 76 distinct proposal subjects and recent commits:
+  1. *Elimination of Adopter False Positives:* Gating keyword matching behind the `dev/proposals:` scope prefix or positional ` -- ` stage phrase successfully takes all 10 adopter-plausible false positives identified by the Internal panel (e.g. "Add impulse response function to the transport solver", "docs: review the API surface") to `None`.
+  2. *Corpus Accuracy:* 52 of 76 subjects classify cleanly with zero wrong-stage assignments.
+  3. *Pipeline Output:* Monitored through `extract.proposal_rows(Path('.'))` on Python 3.13.13: the 13 proposal rows yield **10 `Exact` / 2 `Good` / 0 `Best-effort`** (with `ast-known-new-repin` cleanly reporting `Good` due to its un-scoped review commit subject rather than overclaiming `Exact`).
+
+* **[E2] (Trade Judgment: One Reliability Tier for 100% Precision)**
+  The trade of classifying 52 of 76 subjects (yielding 2 `Good` rows instead of 11 `Exact` / 1 `Good`) to eliminate bare-subject fallback is undeniably correct. In an adopter tree, emitting a wrong stage timestamp labeled `Exact` breaks adopter trust. Accepting `Good` for un-scoped subjects while guaranteeing 0 false positives preserves module integrity.
+
+* **[E3] (Shipped-Copy Parity & Lockfile Posture)**
+  * **Twin Parity:** Verified that `templates/modules/default-on/_lifecycle_metrics/gitmeta.py` and `tools/_lifecycle_metrics/gitmeta.py` (and the `__init__.py` pair under P3) are byte-identical, satisfying `bootstrap/tests/test_notice_install.py:98`.
+  * **Lockfile Posture:** Confirmed that `dev/.cairn/cairn-lock.yml:498` currently carries a pre-existing mismatch from commit `501efe3` (alongside 40 other entries). Leaving the lockfile hash untouched in this defect fix avoids arbitrary partial updates and adheres strictly to the scope fence.
+
+* **[E4] (Ruthless Audit Against Standing Stopping Rule)**
+  Audited the proposal against the Maintainer's stopping rule ("fix defects, build nothing new"). Confirmed that:
+  * No new CLI command, subcommand, or flag is added.
+  * No new configuration key or option is created.
+  * No new output column or metric schema is introduced.
+  * No exported helper function or public API is created (`_stage_for_subject` remains private).
+  * No commit-message convention or doctrine rule is mandated.
+  The proposal strictly repairs the internal `_STAGE_COMMIT_PATTERNS` regexes and `_resolve_stage_commits` logic in `gitmeta.py`.
+
+* **[E5] (Verification of Assigned Obligation — Sibling Transition-Lint)**
+  Confirmed the proposal's conclusion: repairing `_STAGE_COMMIT_PATTERNS` does **not** make the sibling `2026-07-22-claude-transition-lint` proposal unnecessary.
+  * `_resolve_stage_commits` in `gitmeta.py` resolves file-history stage timestamps; it never opens or inspects diffs.
+  * Incident commit `17b7e5c` carried a correct `open` subject string, but its diff introduced a file already carrying two pre-filled `## Review` blocks.
+  * Message-versus-diff validation remains a distinct capability. The stage classifier supplies proof of positional matching and prefix stripping, but does not replace diff validation.
+
+### Coverage
+
+* **Covered**:
+  * Executed revised classifier on Python 3.13.13 (`~/conda_envs/lhm/bin/python`) over 76 proposal subjects and last 60 repo commits.
+  * Monitored `proposal_rows` execution yielding 10 `Exact` / 2 `Good` / 0 `Best-effort`.
+  * Verified twin byte-identity for `gitmeta.py` and `__init__.py` pairs via `test_notice_install.py:98`.
+  * Verified lockfile integrity status via `verify_integrity.py --target .` (41 pre-existing mismatches confirmed).
+  * Evaluated sibling transition-lint overlap against `17b7e5c` diff structure.
+* **Not covered**:
+  * End-to-end execution against external non-Cairn repositories (to be covered by test fixtures in plan execution).
+  * Implementation of `bootstrap/tests/test_lifecycle_stage_patterns.py`.
+
+## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
+
+*(Awaiting the Maintainer. The revised proposal has cleared both Internal and External reads. Two decisions belong to the Maintainer: (1) Resolution of Open Question 1 regarding the 41 pre-existing lockfile hash mismatches from commit 501efe3; (2) Acceptance of the proposal to proceed with plan creation.)*
