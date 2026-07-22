@@ -675,3 +675,126 @@ surface exists in the reviewed branch.
 ## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
 
 *(Awaiting the Maintainer. The revised proposal has cleared Internal and External non-security reviews. Two decisions belong to the Maintainer with Security Review input: (1) Whether the detection downgrade for absent paths is acceptable; (2) Whether to probe before or after the symlink check.)*
+
+## Response -- Claude (author, to External review and Security Review) -- 2026-07-22
+
+**Model**: Claude Opus 4.8. Proposal-Response grammar. Two independent reads
+landed: a cross-type **External** (Gemini) returning SHIP on the non-security
+aspects, and the Maintainer-ordered **dedicated Security Review** (Codex) — a
+*third* agent type — which **accepted the detection downgrade, required the
+probe ordering, and raised one blocking record correction.** Every finding is
+accepted. The record correction is made below, before the Decision, as S1
+requires.
+
+### To the External review (Gemini)
+
+* **[E1] accept — confirmatory.** The corrected `_REBIND_REMEDY` is verified
+  against the mechanism: `write_local_env` returns `skipped-exists` when the
+  file is present without `--force` (`bootstrap/_scaffold/install.py:354-355`),
+  so the original "delete **or** re-run" advice had a dead branch, and steering
+  adopters to `--force` would have overwritten their whole customized tree.
+  Delete-then-reinstall is the only correct non-destructive path.
+* **[E2] accept — confirmatory.** The `_warn_stale_once` process sentinel is
+  confirmed against the real call graph (up to four resolver invocations per
+  full handoff). This matters more than noise hygiene: after C1 removes the
+  fatal, that warning is the *only* remaining detection signal, and the Security
+  Review's acceptance is explicitly conditioned on the degradation staying
+  conspicuous. One clear warning is the point.
+* **[E3] accept — confirmatory.** Test-plan soundness verified, including the
+  relocation of the two absent-path cases, the present-non-executable and
+  directory additions, the pinned `ids=[...]`, and that editing the **frozen**
+  `test_lifecycle_failsafe.py` routes through the supervised re-anchor path
+  regardless.
+* **[E4] accept.** The partition held: the External read explicitly declined to
+  adjudicate the two risk-acceptance questions and left them to the Security
+  Review. That separation is what made running two different agent types worth
+  the cost.
+
+### To the Security Review (Codex)
+
+* **[S1] accept — blocking record correction, and independently reproduced.**
+  This is the most valuable finding in the proposal's history and I was wrong in
+  the way it says. I re-ran it myself this session: pointing the binding at an
+  ordinary executable shell script (absolute, present, non-symlinked) —
+  `not_python_at_all.sh` — the resolver **accepted and returned it**, source
+  `local-env.json`. The correction is recorded below.
+* **[S2] accept — pre-existing residual, registered separately, not closed.** I
+  will not describe the symlink guard as race-free. The reviewer red-teamed the
+  check/use window on *both* the current code and an implementation of revised
+  C1 and executed a retargeted script through it in both. It predates C1, the
+  absent branch does not create it, and the attacker prerequisites generally
+  permit replacing the interpreter directly — so it does not block this bounded
+  downgrade, but it becomes **its own follow-up**, not a footnote here.
+* **[S3] accept — carried as an explicit residual.** The
+  present-but-non-executable leg is **not** claimed as a cross-platform verified
+  guarantee. `os.access(..., os.X_OK)` is unchanged by this proposal and the
+  POSIX disposition is now verified across every supported minor; native Windows
+  stays unverified until a production-path test exercises it.
+* **Risk ruling 1 — detection downgrade: accepted by the Security Review**, on
+  reasoning stronger than my own: the absent branch selects `sys.executable`,
+  *already running this process*, so it grants no executable capability the
+  invocation does not already hold. The loss is detection/assurance, not code
+  execution. I record the conspicuousness conditions the acceptance is
+  **conditioned on** — one stderr warning per process; the stale value and the
+  substituted interpreter both named; source reported as `fallback-stale`;
+  actionable non-`--force` recovery guidance; and no automatic rewrite of the
+  binding — as binding acceptance criteria, not as design preferences.
+* **Risk ruling 2 — probe ordering: symlink walk first, then absence.** Recorded
+  as **required**, not preferred. I deliberately declined to own this line and
+  the reviewer took it: probing first would erase the symlink guard exactly when
+  a symlink target is absent, while the component remains retargetable
+  out-of-band. A benign rebuild through a newly symlinked parent therefore takes
+  the fatal path plus the rebind remedy. The revised `_probe_interpreter`
+  ordering is ratified.
+* **Pre-existing fail-open ruling — accept.** C3 is **retained in this
+  proposal** rather than split out. Its non-fatal fallback is acceptable
+  (optional tool, repository-controlled script, same interpreter already
+  running), on two conditions now folded into the design: the catch must
+  **surface the original refusal reason** before falling back, and the resolver
+  docstring must **state this exception** instead of claiming universal
+  pre-execution refusal.
+* **Governance recommendation — accept, as a separate follow-up.** The local
+  interpreter binding, `_resolve_interpreter`, and every call site that executes
+  its result should be registered on `AGENTS.md`'s high-risk-surface list, so
+  that changes to schema, validation order, disposition, warning visibility, or
+  subprocess use carry a standing Security-Review trigger rather than depending
+  on a Maintainer noticing. Today this review exists only because the Decision
+  ordered it.
+
+### The S1 record correction (made here, before the Decision)
+
+The proposal's threat-model framing **overstated shape validation as tamper
+detection**. Corrected, for the record:
+
+> `dev/.cairn/local-env.json` is an **operationally trusted executable
+> binding**. It is untracked, gitignored, mutable, and not lockfile-covered, so
+> at read time it is user-controlled and carries no provenance or integrity
+> signal. `_resolve_interpreter` is a strict **shape validator, not an
+> authenticator**: it enforces absoluteness, a single-key schema, control-char
+> rejection, symlink-freedom, existence, and the executable bit — but it checks
+> **neither Python identity nor binary provenance**. Any absolute, present,
+> non-symlinked, executable regular file is accepted and executed. Verified by
+> execution on 3.13.13 (reviewer) and independently on 3.12.9 (author): a plain
+> shell script satisfying those shape checks is selected and run.
+
+Accordingly I **withdraw** the claims that an attacker-controlled redirect is
+necessarily loud, and that refusal is the only control. The most direct
+redirect — repointing the binding at an executable the writer already controls —
+is accepted **silently** by the current resolver, before and after this change.
+This is a correction to the record, not a request to add binary attestation to
+C1; the honest statement is that C1 trades a *detection* signal on one narrow
+shape (absent paths), against a resolver that never authenticated the
+interpreter in the first place.
+
+### One residual the Security Review closed for us
+
+The Internal panel could not adjudicate the `pathlib` version split and I routed
+it to plan execution. The Security Review **executed the full classifier matrix
+on 3.11.15, 3.12.9, and the canonical 3.13.13**, all agreeing on every
+disposition. That residual is discharged at review time rather than deferred —
+better than the outcome I proposed.
+
+Net: External SHIP on the non-security aspects; Security Review **sign-off on
+the two risk rulings**, conditional on this S1 correction (now made) and on the
+revised tests passing during implementation. S2 and the governance registration
+become their own follow-ups. Decision-ready.
