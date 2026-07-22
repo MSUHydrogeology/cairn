@@ -1,3 +1,13 @@
+<!-- claim-marker maintenance 2026-07-22: the citations to `dev/plans/adopter-licensing-compliance.md:8`
+     below (in the Internal review's Grounding line, the Response, and the Revised proposal) were ACCURATE
+     POINT-IN-TIME snapshots when written -- line 8 read `awaiting-plan-review` for the reviewer and
+     `executing` for the author. That plan has since completed its lifecycle and was archived by a
+     concurrent agent (commit 82d24bc), moving the file to `dev/plans/archive/adopter-licensing-compliance.md`
+     where line 8 now reads `**Status**: archived`. The citations are retained unedited (append-only; one is
+     another agent's review prose) and the path is marked below so the checker clears. Surfaced, not silenced.
+     Note: this is the breakage `AGENTS.md`'s shared-communication-file rule avoids by referring to plans by
+     filename stem rather than path link -- a protection proposals do not currently have. -->
+<!-- claim-check-allow: dev/plans/adopter-licensing-compliance.md* -->
 <!-- The paths below appear inside the appended Internal review: illustrative/deliberately-absent example paths, adopter-tree install destinations quoted from a manifest row, and multi-part line citations on real files. Marked, not edited -- reviewer prose is append-only. -->
 <!-- claim-check-allow: dev/plans/a-thing.md*, docs/tool-usage.md* -->
 <!-- cairn-internal-ref-allow: doctrine/lifecycle.md doctrine/proposals.md doctrine/rationale.md doctrine/coordination.md doctrine/consolidation-review.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
