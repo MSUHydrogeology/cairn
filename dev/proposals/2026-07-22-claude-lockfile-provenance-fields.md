@@ -850,3 +850,44 @@ Writer inventory corrected to five, classified (R3a):
 **Citation corrections** (R12c): oracle span → `:30-32`; broad-look span → `:299-302`; `PROVENANCE.md:55-58` quoted with "v0.2" inside the quotation.
 
 **Open questions.** 1 and 3 unchanged. **2 widened to three options** — `AGENTS.md` (cross-cutting governing) / a `bootstrap/` domain-governance file / the `UPGRADE.md` subsection as revised. **4 is now a live choice**, not a deferral to a trigger that cannot fire.
+
+## Review -- Gemini (External, different-agent-type) -- 2026-07-22
+
+**Model**: Gemini 3.6 Flash / Antigravity
+**Verdict**: SHIP (conditional on Maintainer resolution of open questions 1–4 and AST baseline re-anchoring)
+
+### Steelman
+This proposal adds declared machine-readable install traceability (`source_repository` and `licenses` read from `CITATION.cff`) without risking install-contract instability. By keeping `_LOCK_SCHEMA = 1` and codifying the additive-optional-key compatibility rule, it avoids manufacturing artificial breaking changes for existing adopters. The revised proposal thoroughly addresses the Internal panel's findings: it corrects the `--apply` metadata plumbing (`_write_stage` -> `stage-metadata.json` -> `_apply_upgrade`), enumerates all five lockfile writers, provides an exact falsifiable gate target (CHANGED stays 133/node), isolates tests into a new `FROZEN-NEW` file to avoid gate-manifest HOLDs, and elevates the plan-review tier to `required(External cross-type)`.
+
+### Critiques
+
+* **[E1] (No-Bump Compatibility & Old-Engine Interrogation)**
+  Interrogating the no-bump compatibility argument and the two panel framing questions:
+  1. *Does an old engine preserve unknown top-level keys on `--apply`?* **Yes.** In all released versions, `_apply_upgrade` initializes `new_lock = dict(lock)` (`upgrade.py:1943`). When `read_lockfile` parses a lockfile containing top-level `source_repository` and `licenses` keys, `new_lock` retains those keys in memory and writes them back via `_emit_lock_yaml`. When an old engine stages an upgrade, its `stage-metadata.json` lacks new provenance keys, so a new engine applying an old stage gracefully falls back via `.get()` to existing lock values.
+  2. *Is no-bump correct for a byte-level-stable contract?* **Yes.** `AGENTS.md:310-312` mandates byte-level stability for the install contract. Because `_LOCK_SCHEMA` is a single integer with no minor component, bumping to `schema: 2` for purely additive optional fields would manufacture an incompatibility—causing old engines or future strict validators to refuse lockfiles they can read cleanly. The `migrated: true` key (written only by `_cmd_init_lock` at `upgrade.py:1197`, absent from fresh installs, coexisting with `schema: 1`) demonstrates that optional top-level fields without a schema bump represent established engine practice.
+
+* **[E2] (Verification of `--apply` Stage-Metadata Plumbing)**
+  The corrected `--apply` mechanism is sound: `_write_stage` (`upgrade.py:900-906`) captures `"new_source_repository"` and `"new_licenses"` via `_cairn_provenance(cairn_root)` into `stage-metadata.json` beside `"new_version"`. `_apply_upgrade` (`upgrade.py:1944-1945`) reads them with `.get()` fallbacks to the existing lock dict. Sourcing both from working-tree `CITATION.cff` maintains complete structural symmetry with `new_version`.
+
+* **[E3] (Verification of Five-Writer Inventory & Falsifiable Gate Target)**
+  * **Writer Inventory:** Verified all five `_emit_lock_yaml` write sites in `bootstrap/_scaffold/`: `install.py:1602` (fresh install), `upgrade.py:1207` (`_cmd_init_lock`), `upgrade.py:1308` (`_commit_lock_and_caches`), `upgrade.py:1709` (`_cmd_finalize_lockfile`), and `upgrade.py:1997` (`_apply_upgrade`). `_commit_lock_and_caches` and `_cmd_finalize_lockfile` preserve existing keys verbatim via `read_lockfile`.
+  * **Gate Target:** Verified in `bootstrap/tests/test_ast_attest.py` that all five touched functions (`write_install_lockfile`, `_cmd_init_lock`, `_apply_upgrade`, `_write_stage`, `_emit_lock_yaml`) are already present in the stale baseline's CHANGED set. The falsifiable gate target pre-re-anchor is exactly **133 CHANGED per node** (266 lines across two nodes).
+
+* **[E4] (Plan Review Tier Alignment)**
+  Elevating `Plan review` to `required(External cross-type)` complies with `doctrine/dual-review.md:184-187` (contract-touching surfaces require an External round) and `:325-329` (recommend-and-decide cannot soften a required tier downward).
+
+### Coverage
+
+* **Covered**:
+  * Verified `_apply_upgrade` lock dict building in `bootstrap/_scaffold/upgrade.py:1943-1946` and `_write_stage` metadata dict at `upgrade.py:900-932`.
+  * Checked all five `_emit_lock_yaml` call sites in `install.py` and `upgrade.py`.
+  * Evaluated `migrated` top-level key precedent in `dev/.cairn/cairn-lock.yml:7` and `upgrade.py:1197`.
+  * Verified AST attestation behavior in `bootstrap/tests/test_ast_attest.py` and `bootstrap/tests/_ast_attest.py`.
+  * Inspected `run_security_audit.py:117-124` lockfile parsing.
+* **Not covered**:
+  * End-to-end execution of `--stage`/`--apply` with a synthetic provenance lockfile (to be executed during plan implementation).
+  * Implementation of `bootstrap/tests/test_lockfile_provenance.py`.
+
+## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
+
+*(Awaiting the Maintainer. The revised proposal has cleared both Internal and External reads. Four decisions belong to the Maintainer: (1) Accept/reject the provenance fields and compatibility rule; (2) Open Question 1: field naming `licenses` vs. `source_licenses`; (3) Open Question 2: rule siting in `bootstrap/UPGRADE.md` vs. `AGENTS.md` vs. domain-governance file; (4) Open Question 4: whether to backfill `dev/.cairn/cairn-lock.yml` via self-targeted `--apply`.)*
