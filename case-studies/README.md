@@ -98,6 +98,11 @@ A future adopter who wants to contribute a case study should:
    proposal, with the Maintainer's explicit approval recorded
    (R-I rule 3).
 
+A case study contributed to Cairn is offered under the same license split
+as the rest of the repository — CC BY 4.0 for the prose
+([`../LICENSE-CC-BY.md`](../LICENSE-CC-BY.md)), MIT for any code
+([`../LICENSE-MIT.md`](../LICENSE-MIT.md)).
+
 The bar is the matrix doing distinguishable work — a third case
 study earns its place by sitting somewhere meaningfully
 different from the two reference cases (a small greenfield

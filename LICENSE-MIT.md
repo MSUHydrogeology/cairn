@@ -4,6 +4,10 @@
 `bootstrap/scaffold.py` and its tests under `bootstrap/tests/`, and the
 shipped Python tools under `templates/` (e.g. the scanners and checkers
 such as `templates/modules/team-gated/link_check.py`) and `scripts/`.
+This includes functional configuration and data files that are operational
+parts of the tools (`.yml`/`.txt`) — see
+[`LICENSE-CC-BY.md`](LICENSE-CC-BY.md)'s Exception 1 for the fuller
+"source code (`.py` or other code)" definition.
 **Source code takes precedence over the document license:** a code file
 is MIT even when delivered inside the otherwise-CC-BY `templates/` tree.
 The other two families are documents, not code — prose, document

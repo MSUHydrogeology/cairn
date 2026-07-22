@@ -325,6 +325,13 @@ Before running `--force` against an already-customized target,
 commit your current state so git records what the overwrite would
 discard.
 
+**Licensing of the installed files.** Cairn asks essentially nothing of
+you: keep the installed `NOTICE.md`, and keep the SPDX header on any
+shipped tool you redistribute. That's the whole obligation — you don't
+owe anything beyond retaining those two things, and none of it touches
+your own code's license. `NOTICE.md` (installed at your repository root)
+carries the details; see it for the full text.
+
 ### II-2a Legacy & existing-docs adopters — migrate state, de-risk the reorganization
 
 > **Greenfield projects skip this step.** A new project has no

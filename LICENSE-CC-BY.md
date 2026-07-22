@@ -15,6 +15,9 @@ the **Creative Commons Attribution 4.0 International License (CC BY 4.0)**.
 (`.py` or other code) is **MIT, wherever it lives** — including the shipped
 Python tools delivered *inside* the `templates/` tree (e.g.
 `templates/modules/team-gated/link_check.py`) and anything under `scripts/`.
+"Other code" includes functional configuration and data files that are
+operational parts of the tools — for example `.yml`/`.txt` files such as
+`vendor_targets.yml` or `content_scan_*.txt` — as distinct from prose data.
 A code file is never CC BY, even when it sits beside CC-BY documents. See
 [`LICENSE-MIT.md`](LICENSE-MIT.md).
 
