@@ -152,6 +152,35 @@ The 2026-05-19 baseline run (historical snapshot, not live count):
 * 80% reviewed cross-agent-type
 * Median `days_to_decision` = 0 days
 
+**Gating-function caveat (2026-07-22 addendum).** Three things worth
+stating plainly where these numbers are presented, not just implied:
+
+1. The corpus above is a **modflow_tools** 2026-05-19 baseline, not
+   Cairn's own tree.
+2. The numbers are strong evidence for review's **improvement**
+   function (mean 7.7 findings per reviewed proposal) — they are **not**
+   evidence for its **gating** function. A ~96% same-day acceptance
+   rate (0 rejected / 0 superseded, median 0 days to decision) reads,
+   on its own, like an accept-ceremony. One candidate honest
+   explanation: bad ideas die during chat-stage shaping, before a
+   proposal is ever written. `doctrine/lifecycle.md:285-296`
+   establishes that a pre-proposal shaping stage exists (chat
+   preferences are input folded into a draft, not a Decision) — it
+   does **not** itself claim that losing ideas are filtered out there,
+   so treat this as an unverified candidate explanation, not a
+   doctrine-backed fact.
+3. **Material update since the baseline:** Cairn's own tree has since
+   produced its first **superseded** proposal
+   (`2026-07-08-claude-automated-review-committer`, superseded
+   2026-07-09). Review's blocking Internal finding led the author to
+   *supersede* the proposal in favor of an existing-doctrine practice
+   plus a recurrence-gated follow-up — the adversarial read materially
+   blocked the change **as written**, and the author reshaped it. This
+   is not a rejection: the hard-rejection count stays **0**, and
+   supersession is a distinct, non-rejection gating signal — the first
+   recorded instance of the adversarial read actually biting, not just
+   improving.
+
 V1 is read-only on the corpus, regenerates from in-file headers, parses prose-structured artifacts (not a separate schema database), and documents its reliability tiers (exact / good / best-effort).
 
 ## Mapping the maintainer's four asks against the anchors
