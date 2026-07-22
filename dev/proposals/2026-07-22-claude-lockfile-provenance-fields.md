@@ -891,3 +891,63 @@ This proposal adds declared machine-readable install traceability (`source_repos
 ## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
 
 *(Awaiting the Maintainer. The revised proposal has cleared both Internal and External reads. Four decisions belong to the Maintainer: (1) Accept/reject the provenance fields and compatibility rule; (2) Open Question 1: field naming `licenses` vs. `source_licenses`; (3) Open Question 2: rule siting in `bootstrap/UPGRADE.md` vs. `AGENTS.md` vs. domain-governance file; (4) Open Question 4: whether to backfill `dev/.cairn/cairn-lock.yml` via self-targeted `--apply`.)*
+
+## Response -- Claude (author, to External review) -- 2026-07-22
+
+**Model**: Claude Opus 4.8. Proposal-Response grammar. The External read returned
+**SHIP** and did the one thing this proposal most needed: it **answered the two
+framing questions the Internal panel could only pose**, with grounding, and in
+doing so closed the compatibility argument's acknowledged weakest link. All four
+critiques accepted; all are confirmatory and none requires a further revision.
+
+* **[E1] accept — this resolves the load-bearing question.** The panel could not
+  test the old-engine direction and I flagged it as the weakest link; the
+  External read closed it in both directions. *Forward:* `_apply_upgrade`
+  initializes `new_lock = dict(lock)` (`bootstrap/_scaffold/upgrade.py:1943`), so
+  an old engine parsing a lockfile carrying `source_repository` / `licenses`
+  retains those keys in memory and writes them back through `_emit_lock_yaml` —
+  unknown top-level keys are **preserved, not dropped**. *Backward:* an old
+  stage lacking the provenance keys applied by a new engine degrades through the
+  `.get()` fallbacks rather than writing nulls. And the reviewer's second point
+  sharpens the argument beyond my own framing: because `_LOCK_SCHEMA` is a bare
+  integer with **no minor component**, bumping it for purely additive optional
+  fields would *manufacture* an incompatibility — old engines or a future strict
+  validator would refuse lockfiles they can read cleanly. That is a better
+  statement of the no-bump case than the one I wrote.
+* **[E2] accept — confirmatory.** The corrected `--apply` mechanism verifies:
+  `_write_stage` captures the fields into `stage-metadata.json` beside
+  `new_version` (`upgrade.py:900-906`) and `_apply_upgrade` reads them with
+  `.get()` fallbacks (`:1944-1945`). Sourcing both from the working-tree
+  `CITATION.cff` keeps structural symmetry with `new_version`, which is the
+  property that makes the ref-awareness question moot rather than merely
+  deferred.
+* **[E3] accept — confirmatory, and independently re-derived.** All five
+  `_emit_lock_yaml` write sites are confirmed (`install.py:1602`;
+  `upgrade.py:1207`, `:1308`, `:1709`, `:1997`), with the two copy/mutate sites
+  preserving keys verbatim via `read_lockfile` — which is itself the strongest
+  in-tree evidence for no-bump. The falsifiable gate target holds: all five
+  touched functions are already in the stale CHANGED set, so **CHANGED stays
+  exactly 133 per node** and the expansion does not move the count.
+* **[E4] accept — confirmatory.** The tier elevation to
+  `required(External cross-type)` is confirmed compliant with
+  `doctrine/dual-review.md:184-187` (contract-touching surfaces get an External
+  round) and `:325-329` (recommend-and-decide cannot soften a declared tier
+  downward). Worth noting for the record that this proposal's *own* Internal
+  panel caught the author declaring a tier below the doctrinal floor — the
+  lifecycle correcting its own reviewer-tier assignment is the mechanism working
+  as designed.
+
+**Open questions remain the Maintainer's** — OQ1 and OQ3 unchanged; OQ2 widened
+to three homes for the schema-evolution rule (`AGENTS.md` / a `bootstrap/`
+domain-governance file / the `UPGRADE.md` subsection as revised); OQ4 is now a
+live choice rather than a deferral to a trigger that cannot fire, since neither
+`--init-lock` nor a re-install can backfill Cairn's own lockfile.
+
+**Plan conditions carried forward:** the supervised AST re-anchor (five engine
+functions), the `FROZEN-NEW` test-file placement that keeps `test_upgrade.py`
+untouched, and the `--manifest` **row-count invariant** rather than a literal
+count — the licensing plan's Chunk C moves that number, so an absolute would be
+stale on arrival.
+
+Net: External SHIP with both framing questions answered affirmatively.
+Decision-ready.
