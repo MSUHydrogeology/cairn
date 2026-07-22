@@ -493,3 +493,45 @@ Added over the original: `test_symlinked_parent_with_absent_leaf_still_refuses` 
 ### Still open, still not mine to close
 
 Both questions go to the Security Review and the Maintainer, unchanged: **is the detection downgrade acceptable** (residuals 1 and 3), and **probe before or after the symlink check** (Alternative 4 / residual 4). Alternative 2 — guidance only, C4 alone — remains the shippable fallback, and with R1 fixed it is now a real one rather than a wrapper around wrong advice.
+
+## Review -- Gemini (External, different-agent-type) -- 2026-07-22
+
+**Model**: Gemini 3.6 Flash / Antigravity
+**Verdict**: SHIP (conditional on parallel Security Review sign-off for C1 and Maintainer resolution of risk acceptance)
+
+### Steelman
+This proposal resolves a critical day-one failure mode where conda or pyenv environment rebuilds delete the recorded interpreter binary, leaving `session-start` and goodnight handoffs refusing to run with a confusing schema-violation message. The posture ("absent degrades, present-but-wrong refuses") allows daily workflows to survive routine environment rebuilds while preserving strict fail-closed refusal for present-but-unexecutable or tampered files on disk. The revised proposal fixes the Internal panel's findings: it corrects the remedy guidance string (`_REBIND_REMEDY` instructs adopters to delete `local-env.json` first so `write_local_env` writes a fresh binding without `--force`), adds a process-level sentinel (`_warn_stale_once`) to prevent stderr warning quadrupling during handoffs, wraps `_has_symlink_component` and the probe in a unified `try...except OSError` block, and updates the test plan to relocate absent-path cases while pinning parametrize IDs.
+
+### Critiques
+
+* **[E1] (Verification of Corrected Remedy String `_REBIND_REMEDY`)**
+  Verification of `bootstrap/_scaffold/install.py:354-355` (`write_local_env`) confirms the fix for R1:
+  1. `write_local_env` returns `skipped-exists` when `dst.exists() and not force`. Therefore, re-running scaffold install with `local-env.json` present silently skipped rewriting the stale path.
+  2. Prompting adopters to use `--force` was dangerous because `--force` overwrites all customized files in the target tree (`bootstrap/_scaffold/cli.py:136-143`).
+  3. Correcting `_REBIND_REMEDY` to instruct adopters to **delete `dev/.cairn/local-env.json` first, then re-run install** guarantees that `dst.exists()` is False, writing a fresh binding safely without requiring `--force`.
+
+* **[E2] (Verification of Warning Multiplicity Control `_warn_stale_once`)**
+  `_resolve_interpreter` is called up to four times during a full `session-end --handoff` (`_intent_whoami:195`, `cmd_session_start:698`, `_do_reflection:1051`, `_do_full_handoff:1155`). Guarding `_warn` with the process-level `_warn_stale_once` sentinel prevents stderr quadrupling, ensuring adopters receive exactly one clear warning per run.
+
+* **[E3] (Verification of Test Plan Soundness & Frozen Gate Manifest Handling)**
+  * The test plan in `bootstrap/tests/test_lifecycle_failsafe.py` correctly relocates `/usr/bin/python --foo` and `/no/such/python` out of `test_tampered_local_env_refuses` into `test_stale_interpreter_path_degrades_with_guidance`, and adds a present-but-non-executable file (created without `+x`) and a directory case to `test_tampered_local_env_refuses`.
+  * Preserving `ids=["bad0", "bad1", "bad2", "bad3"]` on the parametrize decorator prevents pytest collection ID shifts.
+  * Because `test_lifecycle_failsafe.py` is in `frozen_files` of `gate_manifest.json`, editing it requires a supervised re-anchor via `_gate_reanchor.py`.
+
+* **[E4] (Non-Security Boundary & Security Review Partition)**
+  The non-security aspects (remedy text accuracy, warning sentinel, docstring fixes, and test structure) are coherent and verified. The two risk-acceptance questions (whether the detection downgrade for absent paths is acceptable, and probe ordering relative to symlinks) are properly partitioned and reserved for the parallel Security Review and Maintainer.
+
+### Coverage
+
+* **Covered**:
+  * Inspected `_resolve_interpreter`, `_has_symlink_component`, and `_intent_whoami` in `templates/skills/_lib/lifecycle.py:315-395` and `tools/lifecycle.py`.
+  * Checked `write_local_env` behavior in `bootstrap/_scaffold/install.py:335-369` and `cli.py:489`.
+  * Analyzed failsafe tests in `bootstrap/tests/test_lifecycle_failsafe.py:216-287`.
+  * Verified `gate_manifest.json` frozen files entries.
+* **Not covered**:
+  * Parallel Security Review pass (running separately).
+  * Execution on Python 3.11 and 3.13 (to be verified during plan execution).
+
+## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
+
+*(Awaiting the Maintainer. The revised proposal has cleared Internal and External non-security reviews. Two decisions belong to the Maintainer with Security Review input: (1) Whether the detection downgrade for absent paths is acceptable; (2) Whether to probe before or after the symlink check.)*
