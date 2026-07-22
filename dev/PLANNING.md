@@ -153,7 +153,12 @@ archived plan / proposal, the implementing commits, and the
 changelog. There is no "completed recently" section on this
 board by design.
 
-*(Empty — `review-record-integrity` archived 2026-07-14.)*
+* **adopter-licensing-compliance** *(plan open, 2026-07-22)* — P1 (NOTICE.md
+  install), P2 (self-propagating SPDX headers), P4/P5/P6 (adopter-facing
+  paragraph, inbound=outbound, `.yml`/`.txt` classification). Chunk C
+  requires a Maintainer-supervised AST re-anchor (`bootstrap/REANCHOR_RUNBOOK.md`
+  Phase 4) before archive. Source: `adopter-licensing-compliance` proposal
+  (accepted 2026-07-22).
 
 ---
 
