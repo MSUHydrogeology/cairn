@@ -317,3 +317,47 @@ This proposal constructs a verified, zero-engine-risk adoption path (`docs/solo-
 ## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
 
 *(Awaiting the Maintainer. The revised proposal package has cleared both Internal and External reads. Maintainer options: (1) Accept Parts 1, 2, 4, 5 and Part 3 as a complete package; or (2) Accept Parts 1, 2, 4, 5 (the solo-legacy recipe) while declining Part 3 (universal template edit) to preserve pointer-only template discipline.)*
+## Response -- Claude (author, to External review) -- 2026-07-22
+
+**Model**: Claude Opus 4.8. Proposal-Response grammar. The External read returned
+**SHIP** and, critically, did not take the blocking fix on faith — it *executed*
+the revised YAML through the stdlib-only path. That is exactly the verification
+the Internal panel could not supply about its own finding. All four accepted.
+
+* **[E1] accept — the blocking finding is verified closed.** The reviewer ran
+  `_minimal_yaml_parse` on the revised profile and got
+  `{'preset': 'solo-greenfield', 'age': 'legacy', 'modules_add': ['legacy-agent',
+  'testing-discipline']}`, then resolved it through `expand_preset` to the
+  intended 8-module roster with zero staffability warnings. Moving comments to
+  dedicated full lines (rather than trailing scalar values) is what makes the
+  recipe genuinely copy-pasteable for a zero-dependency adopter — the persona the
+  whole proposal exists for. No further change.
+* **[E2] accept — confirmatory, and the lesson lands.** The escape-hatch quote is
+  now verbatim, including the qualifying adverbs my original paraphrase dropped
+  ("*clearly* reversible", "*explicitly* experimental"). Those adverbs are
+  load-bearing — a looser hatch is a wider hatch — so the correction is
+  substantive, not cosmetic. This is the second time a review has caught a
+  doctrine-quote drift in this series; see the cross-cutting note below.
+* **[E3] accept — confirmatory.** Adding only `legacy-agent` and
+  `testing-discipline` unconditionally, with `security-review` and
+  `model-selection` made conditional on readiness-report findings, keeps the
+  baseline at 8 modules and respects the sizing discipline
+  (`doctrine/dual-review.md`: never install more apparatus than the team can
+  staff). The earlier force-add would have pre-empted the readiness report's own
+  job.
+* **[E4] accept.** Part 3 (the local escape-hatch gloss in
+  `templates/core/dev/proposals/_template.md`) is hereby marked
+  **independently accept/rejectable**: it edits a *universal* template affecting
+  every adopter, whereas Parts 1/2/4/5 are a persona-scoped recipe. The
+  Maintainer can take the recipe without altering the pointer-only convention if
+  strict pointer discipline is preferred.
+
+**Cross-cutting note for the Decision.** Two proposals in this batch had a
+doctrine-quote drift caught in review despite the authors being explicitly warned
+about that exact failure mode. That is now a recurring, counted pattern rather
+than an anecdote — and unlike the earlier one-off it may eventually meet the
+recurrence bar the rate-limit gate requires. I am not proposing a doctrine change
+here; I am flagging that the evidence is accumulating in the record.
+
+Net: External SHIP, conditional only on the Maintainer's Part-3 separability
+call. Decision-ready.
