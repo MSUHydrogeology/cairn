@@ -49,6 +49,9 @@ and a new empty `Unreleased` is started above.
   proposal (`dev/proposals/archive/2026-06-12-claude-check_cairn-self-host-compat.md`);
   the three-mechanism mapping + the prefix-match safety constraint were
   settled by Internal + cross-type External (Gemini via Antigravity) review.
+- **Corrected the `v0.3.0` release commit's quality-gate attestation**
+  (claimed a clean run; didn't reproduce on replay) — see
+  `dev/proposals/archive/2026-07-11-claude-record-corrections.md`.
 
 ## 0.3.0 — 2026-06-12
 
