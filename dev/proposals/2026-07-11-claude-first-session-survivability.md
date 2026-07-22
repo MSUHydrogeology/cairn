@@ -257,19 +257,29 @@ This proposal addresses four verified day-one adoption breakers that hit solo sc
 
 ### Critiques
 
-* **[E1] (Security Verification of Interpreter Fallback Boundary)**
-  The security boundary for F2 is well-bounded: fallback to `sys.executable` occurs *only* when the recorded leaf path does not exist on disk (`not interp.exists()`). If the path exists but lacks execute permissions (`not os.access(interp, os.X_OK)`), is a symlink, or contains control/malformed characters, `_resolve_interpreter` strictly raises `LifecycleError`. This ensures tamper attacks (redirecting execution to present-but-unauthorized binaries) remain fail-closed.
-* **[E2] (Failsafe Test Refactoring Precision)**
-  The test refactoring in `bootstrap/tests/test_lifecycle_failsafe.py` must explicitly separate the absent-path cases (`/no/such/python`, `/usr/bin/python --foo`) into the `fallback-stale` test set, while adding present-unexecutable files (e.g. `_make_exe` without `+x`) and present directories to the fatal refuse test set.
-* **[E3] (Roster-Gated Seed Test Coverage)**
-  The drift guard test `bootstrap/tests/test_onboarding_seed_roster.py` should verify all preset × axis override combinations (such as `collaborative-team` with `agent_team: single`), confirming that no tool (e.g. `tools/intent.py`) or module reference (e.g. `dual-review.md`) from unstaffed modules appears in the rendered `PLANNING.md`.
+* **[E1] (Blocking Test Plan Verification — `test_tampered_local_env_refuses`)**
+  Inspection of `bootstrap/tests/test_lifecycle_failsafe.py:240-252` verifies the Internal panel's finding R1:
+  1. The existing `test_tampered_local_env_refuses` test currently asserts `rc == 1` for absent-path cases (`/no/such/python` at `:243` and `/usr/bin/python --foo` at `:242`). Under F2's degrade-to-fallback carve, these input shapes return `rc == 0`, which would have broken the test suite had the test plan not been rewritten.
+  2. The Revised test plan correctly relocates `:242` and `:243` to `test_absent_local_env_uses_fallback_with_guidance` and adds present-but-non-executable files (created via `_make_exe` without `+x`) and present directories to `test_tampered_local_env_refuses`. This guarantees that tampered or un-executable paths present on disk strictly fail-close.
+
+* **[E2] (Verification of `high-rigor-legacy.md` Seed Claim)**
+  Verified that the original proposal's claim regarding `high-rigor-legacy.md` was factually false. File inspection confirms `high-rigor-legacy.md` carries **only 1 coordination seed** (`install-work-intent-hooks`), while `collaborative-team.md` carries 3 (`install-work-intent-hooks`, `read-coordination-doctrine`, `read-dual-review-module`). The Revised proposal correctly updates the marker list and per-preset seed counts.
+
+* **[E3] (Assessment of F2 Split & Security Review Requirement)**
+  I strongly support decoupling F2's Decision (or splitting F2 into Alternative 3 as a separate proposal):
+  1. Findings F1 (dropping phantom `/good-morning`), F3 (seed gating), and F4 (docstring fix) are non-security usability fixes that can land immediately once Internal + External reads and AST re-anchoring are complete.
+  2. F2 modifies the recorded interpreter trust root in `local-env.json`. While the absent-only fallback posture is safe, it touches a security surface and genuinely warrants a dedicated Security Review pass before the Maintainer accepts it.
+
+* **[E4] (Scaffold Engine AST Re-anchor Requirement)**
+  Because F1 (`cli.py:487`) and F3 (`install.py:924`, `config.py:1004`) modify shipped scaffold engine code, the implementing plan must execute a supervised re-anchor of `scaffold_ast_baseline.json` per `REANCHOR_RUNBOOK.md`.
 
 ### Coverage
 
 * **Covered**:
-  * Verified phantom command invitation in `bootstrap/_scaffold/cli.py:487` and skill skip filtering in `cli.py:502-504`.
-  * Analyzed `_resolve_interpreter` and failsafe tests in `templates/skills/_lib/lifecycle.py:382-390` and `bootstrap/tests/test_lifecycle_failsafe.py`.
-  * Checked `strip_conditional_regions` mechanics in `bootstrap/_scaffold/config.py:1004-1024` and `install_core` at `bootstrap/_scaffold/install.py:251-252`.
+  * Inspected `test_tampered_local_env_refuses` and `_make_exe` helper in `bootstrap/tests/test_lifecycle_failsafe.py:240-260`.
+  * Checked seed task markers in `templates/core/dev/PLANNING.md`, `collaborative-team.md`, and `high-rigor-legacy.md`.
+  * Verified `_resolve_interpreter` fallback logic in `templates/skills/_lib/lifecycle.py:382-390`.
+  * Verified `/good-morning` in `bootstrap/_scaffold/cli.py:487`.
 * **Not covered**:
   * Standalone Security Review pass for F2 (recommended prior to Maintainer decision).
   * Implementation of `test_first_session_report.py` and `test_onboarding_seed_roster.py`.
