@@ -1,7 +1,7 @@
 <!-- claim-marker maintenance 2026-07-22: `dev/proposals:` and `dev/plans:` below (in the
      appended Internal review) are COMMIT-SUBJECT PREFIX LITERALS -- the area prefix in Cairn's
      subject grammar, which is the very thing this proposal repairs -- not path references. The
-     real directories are `dev/proposals/` and `dev/plans/` with a trailing slash. Typo guard run:
+     real directories are `dev/proposals/` and `dev/plans/` with a trailing slash. Typo guard applied:
      these are quoted strings, not mistyped paths. Marked so the checker clears; reviewer prose is
      append-only and untouched. Surfaced, not silenced. -->
 <!-- claim-check-allow: dev/proposals:, dev/plans: -->
