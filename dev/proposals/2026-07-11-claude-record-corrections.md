@@ -441,3 +441,33 @@ Design unchanged in shape (three type-appropriate record-of-fact corrections + o
 **Decision shape (R6):** the Decision is **per-correction** — C1+C2 are Phase-A-critical and should land now; C3 may land now or route to public-release prep (OQ2) without holding C1/C2. **External (cross-type) read gates the Decision.**
 
 **Verification note.** All deltas above are additive record/text edits (no code, no doctrine, no install-contract surface); the plan verifies `python scripts/check_cairn.py` and `python scripts/claim_check.py` clean over the erratum, the new adoption note, the addendum, the repointed pointers, and — if OQ3 seeds it — the tracker row, with `python -m pytest bootstrap/tests` untouched by this change.
+
+## Review -- Gemini (External, different-agent-type) -- 2026-07-22
+
+**Model**: Gemini 3.6 Flash / Antigravity
+**Verdict**: SHIP (conditional on Maintainer resolution of open questions OQ1–OQ4)
+
+### Steelman
+This proposal repairs three verified record-of-fact defects in Cairn's historical logs. C1 documents the v0.3.0 release gate attestation discrepancy as an `## Unreleased` erratum in `CHANGELOG.md` with explicit, reproducible replay commands. C2 reconstructs the missing adoption-decision record as `dev/strategy/2026-07-11-claude-cairn-adoption-record.md`, clearly dated and guarded against false historical backdating. C3 adds an accurate gating-function caveat to `dev/strategy/2026-05-20-claude-team-productivity-metrics.md`, citing Cairn's first superseded proposal (`automated-review-committer`) without mislabeling supersessions as hard rejections. Deferring the cut-transcript requirement to a recurrence-gated follow-up respects the adaptive-doctrine rate-limit gate.
+
+### Critiques
+
+* **[E1] (Attestation Replay Precision)**
+  Replaying the committed v0.3.0 tree (`12ec2ad`) confirms that `quality_gate.py --sub neutrality` returns exit 1 (99 fails), refuting the "all-info/justified" claim. The erratum accurately distinguishes neutrality's material misstatement from redundancy's accurate count (6 fails, explicitly accepted as debt), maintaining exact historical truth.
+* **[E2] (OQ3 Tracker Seeding for Recurrence Path)**
+  Recommending the seeding of an `attestation-replay-failure` log in `dev/measurement/` via `incident_log_template.md` effectively arms the rate-limit gate's parse target for `tools/evolution_infer.py`. Logging the v0.3.0 erratum as row 1 ensures future attestation failures trigger doctrine adaptation automatically rather than relying on vibes.
+* **[E3] (Serialization Discipline for Communication Files)**
+  Updating `dev/PLANNING.md:34-40` must occur during the plan-archive serialization pass or goodnight scrub, strictly adhering to `AGENTS.md` rules regarding shared communication files.
+
+### Coverage
+
+* **Covered**:
+  * Verified `12ec2ad` attestation replay output for `--sub neutrality` and `--sub redundancy`.
+  * Checked `profile.yml:7-8` and `PLANNING.md:34-40` dangling pointer targets.
+  * Verified `doctrine/rationale.md:337-347` rate-limit gate rules and `dev/proposals/archive/2026-07-08-claude-automated-review-committer.md` supersession record.
+* **Not covered**:
+  * Content of `dev/strategy/2026-07-11-claude-cairn-adoption-record.md` (to be written during plan execution).
+
+## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
+
+*(Awaiting the Maintainer. The revised three-part correction package has cleared Internal and External reviews. Open questions for Maintainer decision: (1) OQ1: keep CHANGELOG erratum under Unreleased-only vs adding a link-maintenance pointer in the closed 0.3.0 section; (2) OQ2: approve C3 metrics caveat now or defer to public-release prep; (3) OQ3: seed the `attestation-replay-failure` tracker in `dev/measurement/` with v0.3.0 as row 1; (4) OQ4: confirm adoption record date of 2026-07-11.)*
