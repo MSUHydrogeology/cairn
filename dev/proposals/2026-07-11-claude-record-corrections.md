@@ -7,7 +7,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 4.8
 **Date opened**: 2026-07-11
-**Status**: revised
+**Status**: accepted
 **Touches**: `CHANGELOG.md` (an `## Unreleased` erratum entry); a new deliberation note `dev/strategy/2026-07-11-claude-cairn-adoption-record.md`; a dated addendum to `dev/strategy/2026-05-20-claude-team-productivity-metrics.md`; pointer edits to `dev/.cairn/profile.yml` (comment) and `dev/PLANNING.md`. No `doctrine/`, no code, no install-contract surface.
 **Related**: broad-look review `dev/strategy/2026-07-08-claude-broad-look-skeptical-review.md` (Theme 1; its A1 recommendation items 2, 3, 5 at `:543-549`). Sibling **accepted** `2026-07-08-claude-review-record-integrity` — carried A1 items 1 + 4, and its Internal review **R12** (`dev/proposals/archive/2026-07-08-claude-review-record-integrity.md:385-391`) explicitly flagged *this* remainder ("the v0.3.0 release-notes correction, the adoption-decision note, and the zero-rejections explanation are absent"). **Superseded** `2026-07-08-claude-automated-review-committer` — the model for a rate-limit-gated deferral (its Decision `:456-463`). The v0.3.0 cut is commit `12ec2ad`.
 **Plan review**: required(Internal) — this edits the deliberation record, writes a reconstructed record, and edits two shared communication files; Internal floor now (fresh-context), with an External (cross-type) read **recommended** before the Decision because this proposal is itself *about* the record-integrity differentiator (the same reasoning the sibling proposal used, `:406-416`). Ratified at Decision.
@@ -519,3 +519,63 @@ Maintainer's at Decision — including the per-correction latitude on C3's
 placement. Nothing in the External read changes their framing.
 
 Net: External SHIP, conditional on OQ1–OQ4. Decision-ready.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-07-22
+
+**Accepted.** Scribed by Claude (Strategy) at the Maintainer's explicit,
+unambiguous instruction; commit permission given in the same instruction.
+
+Maintainer's authorization (verbatim):
+
+> Okay, I accept your recommendations on each of these. Please scribe my
+> acceptance, and mark them as accepted. When you're done with that we can go
+> ahead with the follow-on proposals.
+
+**Accepted scope: C1, C2, and C3.** C1 (the v0.3.0 gate-attestation erratum) and
+C2 (the missing self-host adoption-decision record) are the Phase-A-critical
+factual corrections — the two a skeptic or the incoming postdoc hits first when
+auditing the record. C3 (the gating-function caveat on the metrics note) is
+accepted with the per-correction latitude the Internal panel asked for: it may be
+re-routed to public-release prep at plan time without holding C1/C2.
+
+**Open questions, resolved at this Decision** (the proposal's stated defaults,
+except OQ3):
+
+* **OQ1 — Unreleased-only.** The erratum lives in `CHANGELOG.md >
+  ## Unreleased`; **no** pointer is written into the closed `## 0.3.0` entry.
+  This is the doctrinally correct default: `doctrine/proposals.md:129-133` puts
+  CHANGELOG entries outside the outbound-link set and holds them written once at
+  finalization, a *stricter* rule than the archived-proposal link-maintenance
+  exemption — so a "yes" would have *extended* an exemption doctrine currently
+  withholds, not mirrored one.
+* **OQ2 — the addendum is enough.** No standalone citable note is minted now;
+  the gating-function framing rides the metrics addendum. Revisit at public-case-
+  study prep.
+* **OQ3 — seed the tracker** *(the one departure from the proposal's default)*.
+  The v0.3.0 attestation-replay failure is logged as row 1 of an
+  `attestation-replay-failure` tracker forked from the installed
+  `incident_log_template.md` into `dev/measurement/`. Rationale: leaving it at
+  "no tracker (n=1)" would leave the deferred cut-transcript follow-up's
+  recurrence path **un-armed** — an n=1 recorded only in prose can never become
+  an n=2 — reproducing the exact gap that killed the superseded
+  `automated-review-committer` proposal. `tools/evolution_infer.py` parses the
+  tracker in rolling windows, so a second failure now triggers doctrine
+  adaptation automatically instead of depending on memory.
+* **OQ4 — dated 2026-07-11, not backdated.** The reconstructed adoption record
+  carries its true authoring date and is explicitly marked a reconstruction.
+
+**Why it lands.** The External read verified the citations the entire deferral
+rests on: `doctrine/rationale.md:337-347` does make the high-risk bypass
+**exhaustive** to security and data-loss surfaces, with any other urgency framing
+falling back to the recurrence requirement (`:327-329`). Transcript retention is
+a record-integrity surface, so deferring the cut-transcript requirement rather
+than forcing a doctrine change now is the honest reading of our own gate.
+
+**Precision preserved.** C3 frames `2026-07-08-claude-automated-review-committer`
+as Cairn's first **superseded** proposal — not a rejection. Adversarial review
+blocked the change as written and the author then met the underlying need through
+existing practice. The hard-rejection count remains **0**, and C3 says so;
+inflating it would be the same candor failure C3 exists to correct.
+
+**Next (separate commits):** open the plan (which archives this proposal),
+execute C1/C2/C3, non-implementing code review, archive.
