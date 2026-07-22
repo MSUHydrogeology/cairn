@@ -13,6 +13,15 @@
 <!-- cairn-internal-ref-allow: doctrine/lifecycle.md doctrine/proposals.md doctrine/rationale.md doctrine/coordination.md doctrine/consolidation-review.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- Forward-reference paths this proposal plans to create; they materialize in the implementing plan. -->
 <!-- claim-check-allow: scripts/transition_lint.py, scripts/transition_lint_whitelist.py, bootstrap/tests/test_transition_lint.py, dev/plans/transition-lint.md -->
+<!-- claim-marker maintenance 2026-07-22: the citations to `dev/proposals/2026-07-11-claude-record-corrections.md:248`
+     below (Grounding lines quoting its "Open questions" vocabulary) were ACCURATE when written -- that proposal
+     was accepted and still at `dev/proposals/`. A concurrent agent then opened its plan (this same implementing
+     session, dev/plans/record-corrections.md), which archives the source proposal per the lifecycle, moving it
+     to `dev/proposals/archive/`. The cited "Open questions" text is intact at the new path, same line number.
+     The citations are retained unedited (append-only) and the path marked so the checker clears. Surfaced, not
+     silenced -- THIRD occurrence this session of the same shape (see this file's own marker note above, and the
+     ast-known-new-repin / first-session-survivability proposals' marker notes). -->
+<!-- claim-check-allow: dev/proposals/2026-07-11-claude-record-corrections.md* -->
 
 # The transition-lint: an advisory check that a commit's message matches its lifecycle diff
 
