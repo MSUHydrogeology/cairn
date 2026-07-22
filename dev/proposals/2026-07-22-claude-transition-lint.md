@@ -1454,3 +1454,32 @@ changes.
    commits** (`87e6529`, `2d665cc`, `8281a0a`, `d32498c`) modify already-committed
    Review sections. Still an explicit non-goal; still surfaced rather than
    answered.
+
+## Sequencing note -- Maintainer direction -- 2026-07-22
+
+**Not a Decision.** This proposal remains `revised` and undecided, by explicit
+Maintainer direction, recorded here so a cold reader is not left wondering why a
+fully-reviewed proposal carries no ruling.
+
+The Maintainer's direction (2026-07-22): *fix the reader now, and as part of that
+proposal check whether this is needed.*
+
+The Internal panel's R1 established that Cairn already ships a default-on
+commit-subject -> lifecycle-stage vocabulary (`_STAGE_COMMIT_PATTERNS` in
+`templates/modules/default-on/_lifecycle_metrics/gitmeta.py`) which is broken on
+Cairn's own corpus. The forthcoming reader-fix proposal (filename stem
+`2026-07-22-claude-stage-commit-patterns`, to be opened) therefore carries an
+explicit obligation: **determine whether this transition-lint remains necessary,
+and if so at what size**, once the shared vocabulary is repaired and available
+for reuse.
+
+**Why this rather than a deferral with a revival condition.** A revival trigger
+only fires if someone is watching for it; the superseded
+`automated-review-committer` proposal failed on exactly that shape. Assigning the
+question to a named in-flight artifact — answered by whoever has just finished
+repairing the reader, and best-informed to answer it — gives the deferral an
+owner instead of a hope. This proposal's Decision follows that answer.
+
+*(Artifacts are referenced by filename stem, not path link, so an archive-move
+needs no edit here -- see the two claim-marker maintenance notes at the head of
+this file for why that matters.)*
