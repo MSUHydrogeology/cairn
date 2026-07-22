@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Anthony Kendall and the Cairn contributors
+
 """Work-intent engine — conflict-check subsystem (intent-split phase A2).
 
 Pre-commit conflict detection: claim-TTL / stale-claim policy, the

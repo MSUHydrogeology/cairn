@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Anthony Kendall and the Cairn contributors
+
 """Cairn self-check -- prose-integrity gate over Cairn's own Markdown tree.
 
 Cairn ships a ``claim-check`` *methodology module* and tells adopters to

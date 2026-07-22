@@ -167,7 +167,17 @@ def test_tracked_artifacts_have_no_local_path_or_token_leak(tmp_path: Path):
     ):
         text = (target / rel).read_text(encoding="utf-8")
         assert "/Users/" not in text and "/home/" not in text, rel
-        assert "kendal" not in text.lower(), rel
+        # The SPDX/copyright header (P2, adopter-licensing-compliance) is
+        # expected to name the copyright holder -- legitimate attribution,
+        # not a maintainer-alias leak. Excluded from the "kendal" scan by
+        # stripping the deterministic two-line header before checking; any
+        # other occurrence (a leaked local path fragment, a debug string)
+        # still fails this test.
+        body = text.replace(
+            "# Copyright (c) 2026 Anthony Kendall and the Cairn contributors",
+            "",
+        )
+        assert "kendal" not in body.lower(), rel
         assert not ip_re.search(text), f"IP-like token in {rel}"
     # The interpreter binding is the one place an absolute path is allowed --
     # and it is untracked (gitignored), so it is not a commit leak.

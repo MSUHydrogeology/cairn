@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Anthony Kendall and the Cairn contributors
+
 """Progressive-onboarding activation helper — thin launcher/facade over the owned
 ``_onboarding/`` package.
 

@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Anthony Kendall and the Cairn contributors
+
 """Work-intent engine — git-hook-install subsystem (intent-split phase A2).
 
 Installs / uninstalls the post-commit auto-release hook and the opt-in

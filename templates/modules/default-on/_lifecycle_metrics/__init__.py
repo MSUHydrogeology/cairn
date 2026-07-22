@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Anthony Kendall and the Cairn contributors
+
 """Lifecycle-metrics extractor for the proposal / plan corpus.
 
 The Cairn ``lifecycle-metrics`` module's reference implementation.  The

@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Anthony Kendall and the Cairn contributors
+
 """Export-scrub scanner for the fold-back active-surfacing protocol.
 
 Stdlib-only.  Scans a drafted issue / PR body for **five mechanical

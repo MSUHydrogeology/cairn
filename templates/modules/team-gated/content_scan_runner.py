@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Anthony Kendall and the Cairn contributors
+
 """content_scan runner -- the adopter's self-audit advisory pass.
 
 Decomposed, **standard-library-only** wrapper around ``content_scan.py``: it

@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Anthony Kendall and the Cairn contributors
+
 """onboarding_activate.py -- progressive-onboarding activation engine package.
 
 The goodnight full-handoff owner runs this helper at the standing

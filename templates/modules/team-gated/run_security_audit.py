@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Anthony Kendall and the Cairn contributors
+
 """Python security-audit orchestrator -- the python-security self-audit gate.
 
 Composes the adopter's self-audit passes into one standalone, **standard-

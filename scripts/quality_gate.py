@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Anthony Kendall and the Cairn contributors
+
 """quality_gate.py -- consolidated pre-release quality-gate suite.
 
 Sibling of ``scripts/check_cairn.py``: where ``check_cairn`` runs the

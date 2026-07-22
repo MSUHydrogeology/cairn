@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Anthony Kendall and the Cairn contributors
+
 """onboarding-activate engine -- slot + preset parsing (B2).
 
 The PLANNING.md ``onboarding-tasks`` slot grammar and the preset-source-file

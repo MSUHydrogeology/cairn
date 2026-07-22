@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Anthony Kendall and the Cairn contributors
+
 """onboarding-activate engine -- activate / seed / CLI, the top layer (B2).
 
 The user-facing entry points: the top-level ``activate()`` flow, the held /

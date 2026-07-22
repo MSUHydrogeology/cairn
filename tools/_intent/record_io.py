@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Anthony Kendall and the Cairn contributors
+
 """Work-intent engine — record-I/O subsystem (intent-split phase A2).
 
 The claim-ledger record schema (claim/release dataclasses), the best-effort

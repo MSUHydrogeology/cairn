@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Anthony Kendall and the Cairn contributors
+
 """Thin launcher over the `_lifecycle_metrics` engine package."""
 from __future__ import annotations
 

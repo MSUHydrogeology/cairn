@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Anthony Kendall and the Cairn contributors
+
 """Snippet-sync -- keep doc code blocks in lockstep with their source.
 
 The ``doc-drift-prevention`` module installs this verbatim into an

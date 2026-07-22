@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Anthony Kendall and the Cairn contributors
+
 """Bootstrap the project's GitHub labels from ``.github/labels.yml``.
 
 Reads the declarative labels manifest, queries the remote repository for

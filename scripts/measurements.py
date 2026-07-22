@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Anthony Kendall and the Cairn contributors
+
 """The code-side measurement registry for ``verify_counts.py``.
 
 The **live-invariant** leg of the three-kind numeric-claim discipline

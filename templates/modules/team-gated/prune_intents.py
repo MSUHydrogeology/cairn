@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Anthony Kendall and the Cairn contributors
+
 """Goodnight compaction for the work-intent JSONL log.
 
 Rewrites the active intent log at ``dev/intents.jsonl`` to keep only active

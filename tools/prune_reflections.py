@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Anthony Kendall and the Cairn contributors
+
 """Prune the ``dev/reflections/`` session-reflection scratch directory.
 
 Keeps the reflection files whose date falls in the most-recent ``KEEP``

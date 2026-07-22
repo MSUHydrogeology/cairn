@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Anthony Kendall and the Cairn contributors
+
 """onboarding-activate engine -- active-surfacing prompt rendering (B2).
 
 The active-surfacing UX layer (plan P1.10a/b): the registry of surfacing rows,

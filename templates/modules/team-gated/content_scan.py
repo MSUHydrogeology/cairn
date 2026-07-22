@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Anthony Kendall and the Cairn contributors
+
 """Content-integrity scanner -- a supply-chain prompt-injection tripwire.
 
 Cairn distributes **agent-loaded instruction files**: its templates and

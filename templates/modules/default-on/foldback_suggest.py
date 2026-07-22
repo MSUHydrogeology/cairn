@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Anthony Kendall and the Cairn contributors
+
 """Foldback-surfacing helper -- list open candidates ready to surface.
 
 Stdlib-only.  Reads the deployment's fold-back ledger (a Markdown

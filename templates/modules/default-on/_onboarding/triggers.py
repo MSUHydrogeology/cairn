@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Anthony Kendall and the Cairn contributors
+
 """onboarding-activate engine -- trigger evaluation (B2).
 
 The maturity- and action-trigger evaluation engine (plan P1.9a/b): the deepen

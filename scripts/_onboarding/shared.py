@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Anthony Kendall and the Cairn contributors
+
 """onboarding-activate engine -- shared defaults + identity/time helpers (B2).
 
 Foundational constants (the adopter-tree-relative default paths) plus the

@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Anthony Kendall and the Cairn contributors
+
 """Write-time claim checker -- proactive verify-before-asserting validation.
 
 The Cairn ``claim-check`` module's reference implementation.  The

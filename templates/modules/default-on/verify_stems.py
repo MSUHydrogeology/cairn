@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Anthony Kendall and the Cairn contributors
+
 """Verify proposal/plan filename stems cited in coordination files.
 
 The Cairn ``AGENTS.md`` > "Shared communication files" convention requires

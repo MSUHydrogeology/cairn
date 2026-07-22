@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Anthony Kendall and the Cairn contributors
+
 """Work-intent engine — identity / session subsystem (intent-split phase A2).
 
 Per-session agent-identity resolution: env-var + static-config sources, the

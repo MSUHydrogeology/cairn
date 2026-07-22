@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Anthony Kendall and the Cairn contributors
+
 """Always-on token budget — measure the prefix every turn pays for.
 
 The token-efficiency doctrine's governing rule (principle 6): you cannot hold a

@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Anthony Kendall and the Cairn contributors
+
 """Cairn lifecycle checker/planner -- the *read-only* lifecycle aid.
 
 This is the read-only arm of the lifecycle-mechanization program

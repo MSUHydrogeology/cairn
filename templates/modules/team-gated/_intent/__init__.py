@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Anthony Kendall and the Cairn contributors
+
 """Work-intent engine — the private ``_intent`` package.
 
 The work-intent tool (claim/release JSONL substrate, per-session identity, the

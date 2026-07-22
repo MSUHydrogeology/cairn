@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Anthony Kendall and the Cairn contributors
+
 """Unused-def whitelist for the ``quality_gate.py`` R6 detector.
 
 Lists symbol names that the stdlib AST-based unreferenced-def
