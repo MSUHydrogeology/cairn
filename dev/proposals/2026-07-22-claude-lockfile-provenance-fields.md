@@ -9,7 +9,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 4.8
 **Date opened**: 2026-07-22
-**Status**: revised
+**Status**: accepted
 **Touches**: `bootstrap/_scaffold/lockfile.py` (one new `_cairn_provenance` reader beside `_cairn_version` at `bootstrap/_scaffold/lockfile.py:103`, plus a schema-evolution rule on `_LOCK_SCHEMA` at `bootstrap/_scaffold/lockfile.py:42`); the install lock dict in `bootstrap/_scaffold/install.py:1584`; the two upgrade-side lock writers in `bootstrap/_scaffold/upgrade.py` (`_cmd_init_lock` at `bootstrap/_scaffold/upgrade.py:1111`, `_apply_upgrade` at `bootstrap/_scaffold/upgrade.py:1781`); the engine facade re-export block in `bootstrap/_scaffold/__init__.py:282`; a short "what the lockfile records" subsection in `bootstrap/UPGRADE.md`; a new `bootstrap/tests/test_lockfile_provenance.py`. **Explicitly out of scope:** any `_LOCK_SCHEMA` bump, any validate-on-read behavior in `read_lockfile` (`bootstrap/_scaffold/lockfile.py:193`), and any `creator` / author field.
 **Related**: split out of the ACCEPTED `2026-07-11-claude-adopter-licensing-compliance` (its P3; both review tiers independently called the split — Internal R4 and External E3). Motivation traces to the broad-look review's Theme 4 receipt-provenance sentences, `dev/strategy/2026-07-08-claude-broad-look-skeptical-review.md:300-302`. Triage triggers: the "Bootstrap fidelity / install contract … the lockfile schema" trigger at `dev/proposals/_template.md:58-61`, and the "install contract … byte-level stable" high-risk surface at `AGENTS.md:310-312`.
 **Plan review**: required(Internal) — it edits four engine functions under `bootstrap/_scaffold/` and changes the bytes every newly-written lockfile carries, so the Internal floor (a fresh-context read) applies; an External (cross-type) read is **recommended** before the Decision because the surface is the byte-level-stable install contract and the load-bearing judgment is a compatibility argument, not a test result. Ratified at Decision.
@@ -888,10 +888,6 @@ This proposal adds declared machine-readable install traceability (`source_repos
   * End-to-end execution of `--stage`/`--apply` with a synthetic provenance lockfile (to be executed during plan implementation).
   * Implementation of `bootstrap/tests/test_lockfile_provenance.py`.
 
-## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
-
-*(Awaiting the Maintainer. The revised proposal has cleared both Internal and External reads. Four decisions belong to the Maintainer: (1) Accept/reject the provenance fields and compatibility rule; (2) Open Question 1: field naming `licenses` vs. `source_licenses`; (3) Open Question 2: rule siting in `bootstrap/UPGRADE.md` vs. `AGENTS.md` vs. domain-governance file; (4) Open Question 4: whether to backfill `dev/.cairn/cairn-lock.yml` via self-targeted `--apply`.)*
-
 ## Response -- Claude (author, to External review) -- 2026-07-22
 
 **Model**: Claude Opus 4.8. Proposal-Response grammar. The External read returned
@@ -951,3 +947,75 @@ stale on arrival.
 
 Net: External SHIP with both framing questions answered affirmatively.
 Decision-ready.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-07-22
+
+**Accepted, as revised, with the field renamed.** Scribed by Claude (Strategy) at
+the Maintainer's explicit instruction, given in direct response to a drafted
+Decision offered for authorization; commit permission given in the same
+exchange.
+
+Maintainer's authorization (verbatim):
+
+> I accept this proposal as revised and provisioned.
+
+*Scribe's reading of "provisioned", recorded so it is correctable:* accepted
+**with the provisions** — the four open-question resolutions and the ratified
+plan conditions below, as put to the Maintainer immediately before this
+authorization.
+
+**Accepted scope.** The revised proposal: the `_cairn_provenance` reader, the
+two provenance fields at the constructing writers, the stage-metadata plumbing
+for `--apply`, the no-bump compatibility rule, and the deferred validate-on-read
+item.
+
+The proposal cleared both tiers. A fresh-context Internal panel raised four
+blocking findings — a mis-described `--apply` mechanism, an undercounted writer
+inventory, a wrong gate-manifest blast radius, and a declared plan-review tier
+**below** the doctrinal floor — all corrected in the Revised proposal. The
+Gemini External read then returned **SHIP** after independently answering the
+two framing questions the Internal panel could only pose: an old engine **does**
+preserve unknown top-level keys (`_apply_upgrade` builds
+`new_lock = dict(lock)`, `bootstrap/_scaffold/upgrade.py:1943`), and no-bump is
+correct because `_LOCK_SCHEMA` carries no minor component — bumping it for
+purely additive optional fields would *manufacture* an incompatibility, causing
+engines to refuse lockfiles they can read cleanly.
+
+**Open questions resolved (2026-07-22):**
+
+* **OQ1 — the field is `source_licenses`, not `licenses`.** It pairs with
+  `source_repository`, and it forecloses the per-file misread the proposal
+  itself flags as a signal-it's-wrong: the value is the *source Cairn's*
+  declared set, never a claim about any installed file. This is a
+  byte-level-stable install-contract name — cheap to change now, a breaking
+  change after release. The stage-metadata key becomes `new_source_licenses`,
+  and the `bootstrap/UPGRADE.md` wording is tightened accordingly. *(The rename
+  does not disturb the External verification: all four of its critiques are
+  name-agnostic.)*
+* **OQ2 — the schema-evolution rule is sited in `bootstrap/UPGRADE.md`**, with a
+  one-line pointer comment on `_LOCK_SCHEMA`. **Not** `AGENTS.md`: the rule
+  serves engine contributors editing lockfile writers, not every agent every
+  session, and the always-loaded file is not to accrete it.
+* **OQ3 — the deferred validate-on-read item gets a `dev/PLANNING.md` row at
+  plan-open** (not in this Decision commit, which stays Decision-only). It
+  matters that this deferral be discoverable: the fields are being added to a
+  schema that nothing validates on read, and a follow-up recorded only inside an
+  archived proposal is a follow-up that cannot be found.
+* **OQ4 — Cairn's own `dev/.cairn/cairn-lock.yml` is not backfilled.** A
+  delete-and-reinit would rewrite all 81 records while `cairn_commit` stays
+  `"unknown"` regardless, on a lockfile already degraded, and `--init-lock`
+  early-returns on an existing file. It fills on the next self-targeted
+  `--stage`/`--apply`.
+
+**Plan conditions, ratified here (bind the plan):** `Plan review:
+required(External cross-type)` — contract-touching per
+`doctrine/dual-review.md:184-187`, and `:325-329` forbids softening a declared
+tier downward; a **supervised AST re-anchor** for the five touched engine
+functions per `bootstrap/REANCHOR_RUNBOOK.md`, with the falsifiable expectation
+that CHANGED stays at **133 per node**; new tests in their own `FROZEN-NEW`
+file so `bootstrap/tests/test_upgrade.py` is not edited; and the
+`--manifest` **row-count invariant** rather than a literal count, since the
+licensing plan moves that number.
+
+**Next (separate commits):** open the plan (which archives this proposal and
+carries the OQ3 roadmap row), implement, non-implementing code review, archive.
