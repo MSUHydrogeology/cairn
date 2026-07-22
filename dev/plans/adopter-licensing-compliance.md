@@ -5,7 +5,7 @@
 # Plan: adopter licensing compliance (P1, P2, P4, P5, P6)
 
 **Source proposal**: `dev/proposals/archive/2026-07-11-claude-adopter-licensing-compliance.md`
-**Status**: executing
+**Status**: review
 **Plan review**: required(Internal) — ratified at Decision; touches the install
 contract (a new `_CORE_MAPPINGS` member) and legal instruments, and this plan
 pins the exact NOTICE.md/BOOTSTRAP.md/LICENSE text the proposal left to plan
@@ -371,10 +371,81 @@ D's corrected framing is surfaced to the Maintainer before any baseline-
 mutating command runs, per the standing rule that this agent does not
 self-authorize that class of action.
 
-## Code review
+## Code review -- Claude (sub-agent, fresh context, not the implementer) -- 2026-07-22
 
-*Filled in after implementation commits land (Chunks A-C; Chunk D is
-Maintainer-gated and reviewed separately once it runs).*
+**Attribution / committer note.** Fresh-context subagent review of the four
+implementation commits; the subagent cannot commit, so the author-session
+commits this section as a disclosed scribe, the accepted deviation model
+used throughout this repo's lifecycle.
+
+**Verdict: Accept-with-followups**, applying to the four commits `597c882` (Chunk A), `501efe3` (Chunk B), `a8bb2a7` (Chunk C), `c7a144b` (Chunk C follow-up).
+
+**Model**: Claude Sonnet 5, fresh session, no access to the implementing session. Read all four diffs in full, the plan (including Plan review + Sharpening), the accepted proposal's Revised proposal + Decision, every touched legal instrument, and independently re-ran every gate the commit messages cite.
+
+### Falsification ledger
+
+**Legal-text fidelity (the highest-stakes surface).**
+* MIT block in `templates/core/NOTICE.md` diffed byte-for-byte against `LICENSE-MIT.md:19-37` (copyright line through the disclaimer paragraph) — `diff` empty, **verbatim**.
+* CC BY 4.0 attribution blockquote in `NOTICE.md` diffed against `LICENSE-CC-BY.md:62-64` ("How to attribute" example) — identical apart from the intentional `cairn-accept` HTML-comment marker inserted between the visible lines (invisible when rendered) — **verbatim**.
+* `NOTICE.md` (repo root) is byte-identical to `templates/core/NOTICE.md` (`diff` empty).
+* P6's `.yml`/`.txt` reframing checked in both `LICENSE-CC-BY.md` (Exception 1) and `LICENSE-MIT.md` (pointer clause) — matches the plan's A3/A4 text; `LICENSE-CC-BY-ND.md` correctly left unedited (its bullet already cross-references `LICENSE-MIT.md`).
+* `bootstrap/BOOTSTRAP.md`'s new paragraph names `NOTICE.md` by backtick only, no markdown link (correct — the plan required this since the file didn't exist until Chunk C); `case-studies/README.md` links only to the two real LICENSE files.
+
+**`_CORE_MAPPINGS` edit.** Read `bootstrap/_scaffold/config.py:165-171` — `("core/NOTICE.md", "NOTICE.md")` is correctly placed in the repo-root section immediately after `AGENTS.md`, with an explanatory comment. `python3 bootstrap/scaffold.py --manifest` → 96 lines (1 header + 95 data rows), `NOTICE.md ← core/NOTICE.md, substituted` present — matches AGENTS.md's own row shape (`substituted`, not `verbatim`), i.e. no unintended behavioral divergence.
+
+**91-file SPDX sweep (P2).** `git show --numstat 501efe3` → 71 `templates/`+`scripts/`+`tools/` files touched but the true population (correcting for `git --stat`'s path truncation, confirmed via `--numstat`) is 44 `templates/` + 24 `scripts/` + 23 `tools/` = **91**, matching the plan and commit message exactly. All 91 files carry byte-identical two-line headers (`grep`-verified, one unique SPDX line, one unique copyright line across the whole set); all 91 `py_compile` clean; header placement correct in both populations — after the shebang (34/44 `templates/` sources, confirmed by direct count) and at the true top for the 10 shebang-less sources — with the required blank line before existing content in both cases (spot-checked). Twin byte-identity spot-checked across 8 pairs (`claim_check.py`, `link_check.py`, `evolution_infer.py`, `lifecycle_metrics.py`, `intent.py`, `lifecycle.py`, `prune_reflections.py`, `_onboarding/cli.py` ↔ its `_intent/cli.py` decoy which correctly *differs*, confirming the diff tool itself works) — all identical. `docs/tool-usage.md`'s `claim_check_watch_file_lines` invariant (837→840) verified live: `wc -l scripts/claim_check.py` = 840, `python3 scripts/verify_counts.py docs/tool-usage.md` → "matches."
+
+**The three claimed bugs-fixed-during-implementation.**
+1. `test_skills_security.py`'s "kendal" leak scan: the fix does an exact `str.replace()` of the one deterministic copyright line (not a regex, not a lowercase/partial match), so any other "kendal" occurrence — a leaked path fragment, a stray debug string — still fails the test. Precise, not overbroad. `pytest bootstrap/tests/test_skills_security.py` → 10 passed.
+2. `test_generated_output_scan.py`'s NOTICE.md-by-name exclusion (added in `a8bb2a7`) is fully reverted in `c7a144b` — `git diff a8bb2a7~1 HEAD -- bootstrap/tests/test_generated_output_scan.py` is **empty**, confirming byte-identical to the pre-P1 state, no leftover special-casing. Independently ran `content_scan.scan_file` against the committed `templates/core/NOTICE.md` → `[]` (clean via the standard `cairn-accept` mechanism, not a test carve-out). Confirmed the mechanism is doing real work, not vacuous: stripping the two markers from a scratch copy and re-scanning reproduces both original flags (`suspicious-url` at lines 5 and 42). Both markers sit on the line immediately preceding the flagged URL line — including the blockquote case (`> <!-- cairn-accept: ... -->` immediately before `> <https://...>`) — which satisfies `content_scan.py`'s own documented "own line or immediately-preceding line" scope rule (`templates/modules/team-gated/content_scan.py:62-63`), confirmed empirically rather than just by reading the docstring.
+3. Vendor-neutrality: `python3 scripts/quality_gate.py --sub neutrality` → **99** FAIL lines at current HEAD (matches "fail=99, was 100" in `c7a144b`); zero FAIL/info lines reference `NOTICE.md`, `LICENSE-*.md`, `BOOTSTRAP.md`, or `case-studies/README.md`; `reviewer="agent"` confirmed in both marker lines, no `reviewer="Claude"` anywhere in the diffs.
+
+**The AST re-anchor citation correction — independently re-derived, not trusted.**
+* `grep -n -iE 'ast_attest|scaffold_ast_baseline' bootstrap/REANCHOR_RUNBOOK.md` → **zero hits**, confirming the Decision's "per `REANCHOR_RUNBOOK.md`" citation is a genuine error.
+* `bootstrap/tests/_gate_manifest.py:77-82`'s `CASCADE_MUTABLE` dict does explicitly exclude `bootstrap/_scaffold/config.py` and `bootstrap/tests/fixtures/scaffold_ast_baseline.json` from the frozen-hash gate, with the comment "integrity governed by the named mechanism, not a byte hash" — read directly, confirmed.
+* **Interpreter-version claim, re-run from scratch under both interpreters** (not just at HEAD — at the exact commits the plan's narrative describes, via disposable `git worktree`s, cleaned up afterward):
+  - At `51f2c10` (plan-review point, pre-Chunk-A): sandbox default `python3` (3.12.9) → **133** unique CHANGED symbols.
+  - At `501efe3` (post-Chunk-B): canonical `lhm`/`python3` (3.13.13) → **exactly 1** CHANGED symbol, `FunctionDef:print_report` — proving P2 is AST-invisible as claimed.
+  - At `a8bb2a7` (post-Chunk-C): canonical `lhm` → **exactly 2** CHANGED symbols, `Assign:_CORE_MAPPINGS` + `FunctionDef:print_report` — exactly "Chunk-B baseline plus exactly one new entry," as the commit message claims.
+  - At current HEAD, sandbox default `python3` (3.12) → **134** unique CHANGED symbols, not 133. This is **not a discrepancy**: it is the pre-Chunk-C 133 (132 interpreter artifacts + `print_report`) plus exactly one new real entry, `Assign:_CORE_MAPPINGS`, from Chunk C — confirmed by diffing the symbol sets directly. The plan's own logic predicts exactly this delta; I verified it rather than assuming it.
+
+**Regression / gate sweep at current HEAD.**
+* `python3 -m pytest bootstrap/tests -q` → **1418 passed / 3 skipped / 3 failed**, matching `c7a144b`'s claim exactly. The 3 failures (`test_ast_attest.py` x2, `test_evolution_infer.py`'s clock-expired case) independently confirmed **pre-existing** — reproduced identically at `597c882~1` (before any of the four reviewed commits), via a throwaway worktree.
+* `python3 scripts/check_cairn.py` → OK, 163 files, no issues.
+* `python3 scripts/claim_check.py templates/core/NOTICE.md` and `NOTICE.md` → clean, both.
+* `python3 scripts/link_check.py` over all 8 touched/new docs (NOTICE.md ×2, BOOTSTRAP.md, case-studies/README.md, the three LICENSE files, the plan itself) → OK, no issues.
+* One **pre-existing, unrelated** `claim_check.py` hard flag found in passing: `case-studies/README.md:67` cites dev/plans/cairn_methodology_repo.md (a path in the external `modflow_tools` repo, not this one). Confirmed present verbatim at `597c882~1`, i.e. it predates and is untouched by this plan's work — not a regression, not this plan's responsibility, but worth a note since `check_cairn.py`'s repo-wide run doesn't currently surface it as a hard stop the way a direct `claim_check.py <file>` invocation does.
+
+### Coverage
+
+Verified independently: all legal-text verbatim-quote claims (byte-diffed); the `_CORE_MAPPINGS` edit's placement and manifest-row effect (96-line `--manifest` output, live); the 91-file population split (44/24/23, cross-checked via `--numstat` against the plan's claim); twin byte-identity (8 pairs spot-checked, including a deliberately-mismatched pair to sanity-check the diff methodology itself); the 34/10 shebang split (recomputed independently, matches plan-review's own recount); all 91 files' `py_compile` cleanliness; the `docs/tool-usage.md` count update (live `verify_counts.py` run); both bug fixes' precision (read the diffs, ran the affected test files); the `cairn-accept` marker mechanism's non-vacuity (stripped-and-rescanned, not just docstring-read); the vendor-neutrality fix (live `quality_gate` run, zero hits on touched files); the AST re-anchor citation correction **from first principles**, at the actual historical commits, under both interpreters, rather than trusting the plan's prose — every number reproduced exactly, including the 133→134 shift the plan's own logic (but not its prose) predicts; the 3 pre-existing test failures' pre-existence (reproduced at the pre-Chunk-A commit); full-suite pass count; `check_cairn`/`link_check`/`claim_check` cleanliness.
+
+**Not independently re-verified** (out of this review's reach, and not required by the task brief): the Gemini External review's own legal-sufficiency reasoning (E1) as a matter of copyright law — I verified the *mechanics* match what both reviews describe, not the underlying legal-sufficiency judgment itself, which is outside a code review's competence; whether any adopter-side tooling beyond this repo's own gates would choke on the `cairn-accept` HTML comments inside a rendered blockquote (cosmetically they're invisible in every Markdown renderer checked by inspection, but no external renderer was tested).
+
+### Required follow-ups
+
+1. **Chunk D remains open and Maintainer-gated, as the plan itself states** — `print_report`'s stale baseline hash (from `63db56f`, unrelated to this plan) still blocks a clean `update-symbol` run for `_CORE_MAPPINGS`. Nothing in these four commits should attempt to close it; this is a note, not a defect.
+2. **Optional, low-priority, out-of-scope**: `case-studies/README.md:67`'s stale cross-repo path citation (pre-existing, unrelated to licensing) could use its own small fix at some point, but does not belong to this plan and should not block its own code review or archive.
+
+No correctness defect, no legal-text inaccuracy, and no scope deviation was found in any of the four commits.
+
+### Sharpening -- Claude (author) -- 2026-07-22
+
+Both follow-ups noted, neither requires a code change:
+
+* **[1] acknowledged.** Chunk D stays exactly as designed -- Maintainer-gated,
+  parked, not this agent's act. No change.
+* **[2] acknowledged, out of scope.** `case-studies/README.md:67`'s stale
+  cross-repo citation predates this plan and is unrelated to licensing
+  compliance. Not fixed here to avoid scope creep into an unrelated
+  pre-existing gap; a candidate for its own small future fix.
+
+**Status: executing → review** (not `archived`): code review has landed, so
+the plan advances to `review` per the normal lifecycle, but it cannot reach
+`archived` yet. Per the plan's own "re-anchor gate" section, that requires
+the Maintainer to run the supervised baseline correction (Chunk D) first.
+The plan is otherwise complete and gate-clean, parked at `review` exactly
+like a release-gated plan pending that one external, Maintainer-only act.
 
 ## Lasting-truth migration
 
