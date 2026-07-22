@@ -10,7 +10,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 4.8
 **Date opened**: 2026-07-22
-**Status**: proposed
+**Status**: revised
 **Touches**: `templates/skills/_lib/lifecycle.py` (`_resolve_interpreter`, `_intent_whoami`, and the two eager call sites); its byte-identical self-hosted copy `tools/lifecycle.py` plus that file's one entry in `dev/.cairn/cairn-lock.yml`; `bootstrap/tests/test_lifecycle_failsafe.py` (relocated + new cases). **Explicitly not touched**: `bootstrap/_scaffold/` (no engine edit, therefore no AST re-anchor — argued below), `doctrine/`, `AGENTS.md`.
 **Related**: carved out of the accepted `2026-07-11-claude-first-session-survivability` as its Finding 2 — the Maintainer's Decision (`dev/proposals/2026-07-11-claude-first-session-survivability.md:352-358`) accepted F1/F3/F4 and carved F2 out to open "as **its own proposal, gated on a dedicated Security Review**". Both review tiers of that proposal reached the split independently (Internal R4, External E3), and its Internal panel pre-registered hard constraints on this change (R1 test design, R3 doctrine framing, R5 appended-argument shape, R7 warning plumbing) that this proposal adopts. Upstream signal: `dev/strategy/2026-07-08-claude-broad-look-skeptical-review.md:399-413` (day-one item 10) and recommendation **A7** at `:575-579`. Raw Internal panel source for the parent: `dev/reviews/2026-07-11-first-session-internal-panel.json`.
 **Plan review**: required(External) — the floor is a fresh-context Internal read, and an **External (different-agent-type or human) read plus the dedicated Security Review the Decision already gated this on** are both required before the Decision. This proposal *relaxes* a fail-closed control on an executable trust root; it should not land on a same-type read.
@@ -309,3 +309,187 @@ Findings R5-R12 are mechanical text, citation, and plan corrections and need no 
 Two requests for the author's Response, both raised independently: state explicitly whether a gate-manifest-anchored batch is currently live (R3's fix — adding symlink tests — is free if the supervised re-anchor is already required and non-trivial if not), and note that doctrine-conformance's condition for needing a second Internal round is met if the Response changes the check ordering or splits C3, since either alters what the Security Review is reviewing — and the preferred R2 fix (extending the guard to cover the symlink walk) is exactly such a change.
 
 Recommended sequence: Response addressing R1-R4 in-tree, then a scoped Internal re-verify of (a)-(d) by execution, then External plus the dedicated Security Review before the Decision. Hand the Security Review the two questions the author correctly refused to close — probe-before-or-after the symlink check (Alternative 4 / residual 4) and whether the detection downgrade is acceptable (residual 1). The proposal is close; its evidence work is above the bar for this repo, and one empirically-false hardening claim plus one broken remedy string are what stand between it and landing well.
+## Response — Claude (author) — 2026-07-22
+
+**Disposition: revise, not withdraw.** I considered withdrawal seriously, because the panel's headline finding is the same failure class that killed a sibling proposal in this batch — a test plan asserting behavior the code does not have. The distinction I land on is *where* the defect sits. In the sibling case the false claim was load-bearing for the design. Here all four blocking findings sit in the evidence and implementation layer: a wrong remedy string, a false hardening credit, a missing test, and a warning that fires up to four times. The central posture — **absent degrades, present-but-wrong refuses** — is untouched by every one of the twelve findings, and no finding argues against it. So this is a proposal with a correctable evidence layer, not a proposal that should die.
+
+**What I got wrong, stated plainly.** My proposal opened with "*Every `path:line` citation below was read against the working tree this session*", and that was true — and insufficient. I read `:382-390`; I did not *execute* it. Reading told me `stat()` came after the symlink walk; only running would have told me the symlink walk **raises first** on an unreadable parent, which makes my `stat()` probe unreachable for the exact case I claimed it hardened. I then wrote that false claim into four places (C1 property 2, the edge-case inventory, invariant (i), and a named new test) and handed the Security Review a hardening credit I had not earned. For a *disposition* claim — what the code does when it fails — reading is not verification. Executing is. I have executed everything below.
+
+Per-critique dispositions follow. Every finding was independently re-verified by me this session against the working tree; where I ran something, I say what I ran and what it printed.
+
+---
+
+### R1 — wrong adopter remedy baked into three shipped messages — **accept**
+
+Confirmed exactly as reported, by reading the mechanism end to end: `bootstrap/_scaffold/install.py:354-355` returns `skipped-exists` when `dst.exists() and not force`; the **sole** caller is `bootstrap/_scaffold/cli.py:489` (`write_local_env(target, force=args.force)` — `grep -n write_local_env bootstrap/_scaffold/*.py` returns that one call site plus the definition and an `__init__` re-export); and `--force` is documented at `cli.py:136-143` as "Overwrite existing files in the target." with `bootstrap/BOOTSTRAP.md:310-315` and `:324` corroborating. So "re-run bootstrap" alone silently preserves the stale binding, and an adopter who reaches for `--force` because my message told them to gets the repo-wide overwrite `BOOTSTRAP.md:324` warns about. The finding's point (b) is the one that decides this: C4's remedy text *is* the whole of Alternative 2, my declared fallback, so shipping it wrong would have left the Security Review choosing between a relaxation and a no-op.
+
+I also checked whether a narrower re-bind mechanism already exists rather than inventing one (`bootstrap/scaffold.py` has one `upgrade` subcommand routed at `cli.py:190-193`, and `write_local_env` has exactly one caller): **there is no dedicated rebind command.** Delete-then-reinstall is the only mechanism the code actually has, so that is what the corrected string says. One honest addition the finding does not make: in the common case the degrade branch is already *correct* — a scientist who rebuilt their conda env and is running from inside it is on the right interpreter — so the remedy is a restoration of explicitness, not an emergency. The absence of a narrow rebind command is worth registering as a follow-up; I do not add one here, because the install side is explicitly out of scope and a new command is a new mechanism.
+
+### R2 — (a) the EACCES hardening claim is empirically false — **accept**; (b) version-scoped `pathlib` rationale — **accept with modification**
+
+**(a)** I reproduced the falsification rather than taking it on trust. On a mode-`000` parent, `is_symlink`, `stat`, `is_file`, and `exists` **all** raise `PermissionError` (3.12.9, this session) — so `_has_symlink_component` (`templates/skills/_lib/lifecycle.py:315-328`, walking via `cur.is_symlink()` at `:324`) raises at `:382`, before my probe. My four assertions are withdrawn.
+
+I take the finding's preferred fix, and I verified it works before proposing it. Wrapping the symlink walk *and* the probe in one guard gives, on a `.resolve()`d temp tree: absent leaf → DEGRADE; deep absent → DEGRADE; appended-arg string → DEGRADE; **EACCES parent → LifecycleError**; symlinked parent with absent leaf → **FATAL (symlink)**; present non-exec → present leg; present directory → present leg; `NotADirectoryError` → DEGRADE. Every pre-existing disposition is preserved and C1 property 1 (symlink guard keeps priority) survives intact. `LifecycleError` subclasses `RuntimeError` (`:107`), not `OSError`, so the `except OSError` cannot swallow the symlink refusal — I checked, because that would have been a silent fail-open introduced by the fix itself.
+
+One correction to the finding's framing, in my favor but worth stating precisely rather than leaving as a win: an uncaught `PermissionError` escapes `main` (`:1265-1272` catches only `LifecycleError`) and Python exits **non-zero**. So EACCES is already fail-*closed* in effect; what it lacks is a clean actionable message. The fix is a UX and legibility improvement, not a security fix — which is exactly the overclaim I made the first time, so I am not going to make the smaller version of it again.
+
+**(b)** Accepted with modification because I cannot close it here: `python3.11` and `python3.13` are **not available on this host** (checked this session; only 3.12.9), while the gate interpreter is pinned at 3.13.13 (`bootstrap/tests/fixtures/gate_manifest.json`, `interpreter.version`). I therefore drop the version-specific `Path.exists()` claim entirely and adopt the finding's recast: the property worth claiming is that an explicit probe plus `except OSError -> LifecycleError` **normalizes** the disposition across every supported minor. The 3.11/3.13 confirmation becomes a **plan-execution prerequisite**, not a review-time assertion.
+
+### R3 — the fail-closed invariant's symlink leg is asserted, not enforced — **accept**
+
+Confirmed: `grep -n "symlink" bootstrap/tests/test_lifecycle_failsafe.py` returns only two comment lines at `:219-220` (about defeating `/var -> /private/var` in an unrelated test) and nothing exercises `_has_symlink_component`. So the single property C1's ordering argument rests on — and the reviewer's open question 2 — has zero test pinning it in either direction. Adding `test_symlinked_parent_with_absent_leaf_still_refuses` and `test_symlinked_leaf_refuses`. The finding is also right that the node-ID argument buys nothing here: `bootstrap/tests/_gate_manifest.py:12-17` HOLDs on *any* modification of a frozen file, and the parametrize rewrite already modifies it. Coverage should be sized to the invariant.
+
+This one deserves the sharpest self-note. My own proposal said the rewritten parametrize "for the first time contains a genuinely *present* non-executable case" — I was pleased about closing one coverage gap while leaving the more load-bearing one open, in the very invariant list where I claimed it was enforced.
+
+### R4 — the stale warning fires up to four times, and the tests structurally cannot see it — **accept**
+
+Verified the multiplicity chain by grep: `_resolve_interpreter` is called at `:195` (inside `_intent_whoami`), `:698`, and `:1155`; `_intent_whoami` at `:233` and `:269`; `_resolve_agent` at `:1051` and `:1159`. And verified the test-blindness mechanism directly, which is the part that makes this more than cosmetic: `_sibling_tool` (`:283-292`) resolves `Path(__file__).resolve().parent / name`, `ls templates/skills/_lib/` contains only `lifecycle.py` and `lifecycle_planner.py` (**no `intent.py`**), while `ls tools/` **does** contain `intent.py`. Since the test module loads the *template* copy (`MODULE_PATH`, `:36`) and the `repo` fixture sets `CAIRN_AGENT=owner` (`:71`), the suite would have certified one warning where Cairn's own tree emits several. That is a suite that certifies a behavior the adopter does not get, which is worse than the noise itself.
+
+Taking the once-per-process fix plus the count assertion. One hazard the finding does not name, which I am adding because pytest runs the whole module in one process: a memoized warning must not leak across tests. Distinct `tmp_path` roots make the message distinct so it does not in practice, but the plan will add an autouse fixture clearing the sentinel rather than rely on that.
+
+### R5 — gate-manifest mitigation over-sold and self-defeating — **accept**
+
+Both halves verified. (a) `frozen_files` is a 147-entry dict containing `bootstrap/tests/test_lifecycle_failsafe.py`; `templates/skills/_lib/lifecycle.py` and `tools/lifecycle.py` are **not** in it — so the frozen-file HOLD is unconditional on the test edit, and the affirmative fact that the shipped-tool edit is manifest-clean is worth stating, as the finding says. (b) Reproduced the ID derivation empirically: a params list of `[dict, "PRESENT_NONEXEC", dict, dict]` collects as `test_x[bad0]`, `test_x[PRESENT_NONEXEC]`, `test_x[bad2]`, `test_x[bad3]` — `bad1` is **dropped**, precisely the collection-identity HOLD my mitigation existed to avoid. An all-dict list collects positionally. The plan will pin `ids=["bad0", "bad1", "bad2", "bad3"]` explicitly rather than rely on dict-shape accident, and say so in the Tests-required block since the executor reads only that text.
+
+### R6 — the docstring claims "no relative segments" and the code does not check — **accept with modification**
+
+Verified live: `_resolve_interpreter` accepts `<prefix>/bin/../bin/python3.12` and returns it with source `local-env.json`. So `:340` states a contract the code does not enforce, in the same docstring I was already opening to fix one overstatement. I take the finding's preferred branch and **enforce** it (reject any value whose `Path.parts` contains `..` or `.`), because bootstrap always records a `.resolve()`d path so there is no false-positive surface, and because it makes the stated spec true rather than weakening it.
+
+The modification is to the *justification*, not the fix: the finding implies `..` may defeat the lexical symlink walk. I tried to construct that bypass and **could not** — `_has_symlink_component` lstats each unnormalized prefix, and the kernel resolves `..` at syscall time, so a symlink at any position I tried was still detected. I am enforcing this as defense-in-depth and spec-truth, and I am explicitly **not** claiming it closes a demonstrated bypass. Overclaiming a security fix is what R2(a) just cost me.
+
+### R7 — the "no new execution path" argument omits its compensating control — **accept**
+
+Verified the two facts: `templates/skills/_lib/lifecycle.py:1` is `#!/usr/bin/env python3`, and `SECURITY.md:45` reads, verbatim, "interpreter — **`python scripts/x.py`**, never `./scripts/x.py` — so a" (continuing at `:46-47` to "hijacked `PATH` cannot substitute a shebang interpreter in a shared CI environment"). Both shipped SKILL.md files do follow it (`session-start/SKILL.md:19`, `session-end/SKILL.md:19`). Recasting the security property to the finding's more defensible form — "no capability the ambient interpreter did not already have," rather than "the ambient interpreter is trusted" — and scoping the docstring's `:344-347` fallback rationale, which reasons about *this* tool being stdlib-only while the resolved value runs *sub-tools*.
+
+### R8 — the doctrine-surface section names no doctrine — **accept**
+
+Opened and byte-checked every passage before agreeing to cite it. `doctrine/dual-review.md:229-232` is verbatim as quoted ("**Silent failure / fail-closed** — guards raise loudly rather than degrading or returning empty; they cover all configs and stages, not only the declared edges; any fail-open path is intentional, not accidental"), and the finding is right that it *permits* this change by demanding intentionality. `doctrine/runtime-contract.md:160` ("A missing tool that returns a silent green is a false-pass and is prohibited") and `:162` ("**Named forfeitures**") confirmed — and the finding is fair that I borrowed that section's vocabulary without citing it. `doctrine/coordination.md:267` ("over-warn, never to silently drop"), `:272` ("with **no controlling terminal degrades to `block`**"), and `:277-278` ("**fail-open by construction** — an internal error allows the commit") all confirmed verbatim. The prior-art reframing is a genuine strengthening of my own argument, and the `:272` counter-example is better distinguished by me than found by a reviewer. Adding the paragraph; the "no doctrine file changes" conclusion stands.
+
+### R9 — the self-host sync is an intention, not a control — **accept**
+
+`bootstrap/scaffold.py` does have an `upgrade` subcommand (`cli.py:190-193` → `cmd_upgrade`), and `bootstrap/_scaffold/upgrade.py` classifies verbatim entries, so the finding's question is live and answerable rather than rhetorical. The plan will name the refresh mechanism explicitly and justify it against the verbatim policy, promote `python bootstrap/verify_integrity.py --target .` from smoke check to a required before-and-after step, and add the byte-identity assertion — since no automated guard ties `tools/lifecycle.py` to the template.
+
+### R10 — citation-form hygiene — **accept**
+
+(a) Correct and correctly rated non-blocking: the bare `lifecycle.py:NNN` form is unresolvable by the claim checker, on a file that exists at two paths the plan must edit in lockstep, so my "claim_check clean" evidence line was true and nearly vacuous for the citations that matter. Adding the disambiguating note and converting the load-bearing citations to full paths. (b) Verified: `AGENTS.md:301` is the `**High-risk surfaces (Security-Review + proposal triggers).**` heading; the install-contract bullet naming the lockfile schema is at `:310`. Corrected.
+
+### R11 — invariant (iii) is vacuous; two edge cases skipped — **accept**
+
+Agreed, with one precision correction that slightly *weakens* the finding's suggested fix: `bootstrap/tests/test_lifecycle_contract.py:139-148` scans `_PLANNER_PATH` (`lifecycle_planner.py`), not `lifecycle.py` — so it is a **pattern to copy**, not an existing guard covering the resolver. I will re-label invariant (iii) as a forward regression guard against the explicitly-rejected auto-rebind alternative and add the source-scan assertion in that file's spirit. Adding empty/whitespace-only (`:368-369`) and control-character/ANSI (`:375-378`) to the edge-case inventory as explicitly-cleared, and noting that the control-char ban is what makes echoing the recorded value into a terminal warning safe — which matters more now that the warning is the only remaining detection signal.
+
+### R12 — Security-Review provenance and scope unreconciled — **accept**
+
+Both halves are fair. The parent Decision's phrase "F2 modifies the recorded interpreter trust root in `local-env.json`" describes the *surface*, not this edit — nothing on the write path moves — and a reviewer scoping to the write path would find nothing there. Adding the one-sentence scope reconciliation. On (b): the interpreter trust root is genuinely absent from the `AGENTS.md:310` high-risk list, so this Security Review derives from the Maintainer's Decision and not a standing trigger, meaning a *future* `_resolve_interpreter` change would have none. I will surface that as a follow-up for the Maintainer to take or decline rather than resolve it silently — it is their call, not mine, and my flat "No doctrine, no `AGENTS.md`" foreclosed a question I should have asked.
+
+---
+
+### The two answers the panel asked for
+
+**1. Is a gate-manifest-anchored batch live?** Evidence says no, though the Maintainer is the authority. The committed manifest pins `collection.node_count = 1404`; the tree collects **1414** this session (`python -m pytest bootstrap/tests --collect-only -q`). Its `gate_commands` expect "all green; 0 skipped / 0 xfailed", which the current tree does not satisfy (3 failed / 3 skipped). So the manifest describes a **prior, completed** supervised batch, not the current tree. Practical consequence, which cuts in R3's favor: adding the symlink tests is **free** — the parametrize rewrite already modifies a frozen file, so if a batch is anchored during this work the supervised `_gate_reanchor.py` path is required regardless of how many tests I add.
+
+**2. Does the Response meet doctrine-conformance's condition for a second Internal round?** **Yes, and I am not going to argue otherwise.** Its stated condition was a change to check ordering or a C3 split. The R2 fix restructures the guard block (the symlink walk moves inside a shared try, and R6 inserts a new refusal before it), which alters exactly what the Security Review would be reviewing. I concur with the two lenses that voted for a scoped re-verify **by execution**, covering (a)–(d). I have executed (a) and the disposition matrix myself and reported the outputs above, but an author demonstrating his own patch is not an independent read — particularly on this proposal, whose defining error was believing a disposition I had only read.
+
+**Not accepted silently:** nothing. All twelve findings receive a disposition above; none is deferred to the Maintainer, because none of the twelve turns on a judgment I am not entitled to make. The two genuine risk-acceptance questions remain where I left them — open, and addressed to the Security Review and the Maintainer.
+
+---
+
+## Revised proposal — 2026-07-22
+
+Superseding C1–C4 and the affected evidence claims. **The posture is unchanged:** absent degrades, present-but-wrong refuses. Numbering is retained so review can diff against the original.
+
+### C1 (revised) — one guard block: classify, then dispose
+
+A single classification helper keeps every inspection step under one `except OSError`, which is what R2(a) requires — wrapping only `stat()` demonstrably does not work:
+
+```python
+def _probe_interpreter(interp: Path) -> str:
+    """Classify a recorded path: "symlinked" / "absent" / "present".
+
+    Every inspection step lives here so the caller wraps the whole
+    classification in one ``except OSError``.  The symlink walk itself raises
+    on an unreadable parent (verified 2026-07-22, 3.12.9), so guarding only the
+    ``stat()`` probe would leave that case an uncaught traceback.
+    """
+    if _has_symlink_component(interp):        # may raise OSError
+        return "symlinked"
+    try:
+        interp.stat()
+    except (FileNotFoundError, NotADirectoryError):
+        return "absent"
+    return "present"
+```
+
+Replacing `templates/skills/_lib/lifecycle.py:380-390`:
+
+```python
+    if not interp.is_absolute():
+        raise LifecycleError(f'{cfg}: "interpreter" must be an absolute path.')
+    if any(part in ("..", ".") for part in interp.parts):          # R6
+        raise LifecycleError(
+            f'{cfg}: "interpreter" must not contain relative segments: {interp}.'
+        )
+    try:
+        shape = _probe_interpreter(interp)
+    except OSError as exc:                     # EACCES / ELOOP / ENAMETOOLONG
+        raise LifecycleError(
+            f'{cfg}: "interpreter" could not be inspected ({exc}): {interp}.  '
+            f"Refusing rather than guessing.  {_REBIND_REMEDY}"
+        ) from exc
+    if shape == "symlinked":
+        raise LifecycleError(
+            f'{cfg}: "interpreter" must not be reached through a symlink '
+            f"(leaf or parent).  {_REBIND_REMEDY}"
+        )
+    if shape == "absent":
+        _warn_stale_once(
+            f'{cfg}: recorded interpreter "{interp}" no longer exists -- your '
+            f"environment was likely rebuilt.  Using the current interpreter "
+            f"({sys.executable}) for this run.  {_REBIND_REMEDY}"
+        )
+        return sys.executable, "fallback-stale"
+    if not interp.is_file() or not os.access(interp, os.X_OK):
+        raise LifecycleError(
+            f'{cfg}: "interpreter" is not an executable file: {interp}.  '
+            f"{_REBIND_REMEDY}"
+        )
+    return str(interp), "local-env.json"
+```
+
+`LifecycleError` subclasses `RuntimeError` (`:107`), so `except OSError` cannot swallow the symlink refusal. Properties 1 and 3 from the original stand and are now **tested** (R3); property 2's hardening claim is **rewritten** to the normalization claim (R2b). Disposition matrix verified by execution this session and reported under R2(a).
+
+### C1a (new, per R1) — the remedy string, corrected once and reused
+
+```python
+_REBIND_REMEDY = (
+    "To refresh the binding: delete dev/.cairn/local-env.json, THEN re-run the "
+    "Cairn scaffold install against this repo.  Deletion is what makes the "
+    "install write a fresh binding -- re-running with the file still present "
+    "preserves the stale one, and --force is neither needed nor advised (it "
+    "overwrites your whole customized tree).  A bare delete alone leaves the "
+    "routines on the current-interpreter fallback."
+)
+```
+
+Single constant, so C1's degrade warning and both C4 fatals cannot drift apart, and the three test assertions derive from one source. **Never** suggests bare "re-run bootstrap"; **never** implies `--force`.
+
+### C2 (revised) — emit once per process
+
+`_warn_stale_once` guards `_warn` with a module-level sentinel, because the resolver is reached up to four times in one `session-end --handoff` (R4). Return type stays `Tuple[str, str]`, preserving `test_space_in_interpreter_path_accepted`; source token stays `"fallback-stale"`; the `:705-710` branch stays keyed to `"fallback"`. The plan adds an autouse fixture clearing the sentinel between tests.
+
+### C3, C4 — unchanged in substance
+
+C3 adds the `_warn` in `_intent_whoami`'s swallow (`:194-197`) and corrects `:341`. C4 appends `_REBIND_REMEDY` to the messages that stay fatal. Both now also carry the R8 doctrine grounding: C3 is `doctrine/coordination.md:267` ("over-warn, never to silently drop") applied to a surface that currently does the opposite; C1's deliberate fail-open is the intentionality `doctrine/dual-review.md:229-232` demands and is prior-arted by `coordination.md:277-278`, distinguished from `:272` (degrade-to-block is right where the degraded state is safe to block in; blocking `session-start` leaves the adopter no fallback).
+
+### Tests (revised)
+
+Added over the original: `test_symlinked_parent_with_absent_leaf_still_refuses` and `test_symlinked_leaf_refuses` (R3); a warning-**count** assertion — exactly one occurrence of the remedy across a full `session-end --handoff` (R4); an explicit `_sibling_tool` monkeypatch in the C3 test, following `test_full_handoff_surfaces_intents` at `:297-300`, plus one test leaving `CAIRN_AGENT`/`CAIRN_SESSION` unset so the real multi-call shape is exercised (R4c); a resolver source-scan for write primitives in the spirit of `test_lifecycle_contract.py:139-148`, noting that test targets the *planner*, not this module (R11). `test_uninspectable_interpreter_path_refuses` is **retained** — now valid against the revised guard, verified — with a root/non-POSIX skip guard. The parametrize keeps four cases and pins `ids=["bad0","bad1","bad2","bad3"]` explicitly (R5b).
+
+**Baseline, restated honestly and unchanged:** `python -m pytest bootstrap/tests` → **3 failed, 1408 passed, 3 skipped**, 1414 collected, Python 3.12.9 (not the canonical 3.13.13). The three failures are pre-existing: two `test_ast_attest.py` nodes (issue #1) and `test_evolution_infer.py::TestGateEval::test_main_suggests_and_json` (clock-expired). `test_lifecycle_failsafe.py` alone: **18 passed in 1.66s**. The suite is not green and this proposal does not make it green.
+
+**Plan-execution prerequisite (R2b):** re-run the disposition matrix on 3.11 and 3.13 before the Decision; neither interpreter exists on this host.
+
+**Unchanged:** no `bootstrap/_scaffold/` edit, therefore no AST re-anchor. No doctrine change, and the rate-limit bypass is not invoked and would not be available.
+
+### Still open, still not mine to close
+
+Both questions go to the Security Review and the Maintainer, unchanged: **is the detection downgrade acceptable** (residuals 1 and 3), and **probe before or after the symlink check** (Alternative 4 / residual 4). Alternative 2 — guidance only, C4 alone — remains the shippable fallback, and with R1 fixed it is now a real one rather than a wrapper around wrong advice.
