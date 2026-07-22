@@ -276,3 +276,34 @@ Design unchanged; five corrections and one bounded scope addition. Five parts, s
 **Verification plan corrections.** Invariant (iii) drops the `check_cairn` clause (enforced by review reading + minimal ported text + sync-note). The end-to-end dogfood runs under a forced no-PyYAML path (this env has PyYAML 6.0.3, which masked R1), and adds the literal-YAML round-trip. Findings 1 and 5 quotes corrected in Context. Deferred to their own proposals, unchanged: the finding-2 engine re-derivation fix (Alt 4), `cli.py`'s missing-warning gap, and a first-class `solo-legacy` preset (Alt 3) — recurrence-gated.
 
 **Open for the External read.** Recipe prose readability/followability by a real postdoc (named non-mechanizable criterion), the Level-1-oracle framing, and the reshaped conditional-modules guidance — the routing/usability judgments a different agent type catches best, on the exact path the first external adopter walks.
+
+## Review -- Gemini (External, different-agent-type) -- 2026-07-22
+
+**Model**: Gemini 3.6 Flash / Antigravity
+**Verdict**: SHIP (conditional on Maintainer decision on Part 3 separability)
+
+### Steelman
+This proposal constructs a verified, zero-engine-risk adoption path (`docs/solo-legacy-recipe.md`) for the solo scientist working with one agent on an existing, legacy codebase. By composing `preset: solo-greenfield` with `age: legacy` and explicit `modules_add: [legacy-agent, testing-discipline]`, the recipe avoids the silent under-installation of the naive axis override while preserving standard-library-only execution. Splitting `security-review` and `model-selection` into conditional pre-pass recommendations respects Cairn's sizing discipline. Testing literal YAML round-tripping against `_minimal_yaml_parse` (Part 4) ensures PyYAML-independent copy-pasteability.
+
+### Critiques
+
+* **[E1] (YAML Formatting & Minimal Parser Compatibility)**
+  Formatting all YAML comments on dedicated full lines (rather than inline following scalar values) guarantees compatibility with `_minimal_yaml_parse` (`bootstrap/_scaffold/config.py:122-134`). Part 4's literal YAML round-trip test explicitly validates that PyYAML-free adopters will not encounter `PresetError`.
+* **[E2] (Separability of Part 3 Template Port)**
+  Part 3 (adding a local escape-hatch gloss to `templates/core/dev/proposals/_template.md`) edits a universal template that affects all adopters. Marking Part 3 as independently accept/rejectable allows the Maintainer to adopt the persona recipe (Parts 1, 2, 4, 5) without forcing a change to universal template pointer conventions if they prefer strict pointer-only discipline.
+* **[E3] (Pedagogical Sequencing of First Proposals)**
+  Sequencing a disposable "Hello World" trivial accept first before authoring `docs/assumptions.md` as the first substantive proposal preserves the pedagogical arc. The postdoc learns proposal/review/decision mechanics on disposable content before committing high-stakes scientific assumptions to repository history.
+
+### Coverage
+
+* **Covered**:
+  * Verified `_minimal_yaml_parse` comment-stripping behavior in `bootstrap/_scaffold/config.py:122-134`.
+  * Checked `expand_preset` roster derivation mechanics in `config.py:1143-1148`.
+  * Verified escape hatch wording in `doctrine/proposals.md:200-204` and `templates/core/dev/proposals/_template.md:39-40`.
+  * Verified `BOOTSTRAP.md:696-698` and `:215` default-on module list discrepancies.
+* **Not covered**:
+  * Content of `docs/solo-legacy-recipe.md` (to be created during plan execution).
+
+## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
+
+*(Awaiting the Maintainer. The revised proposal package has cleared both Internal and External reads. Maintainer options: (1) Accept Parts 1, 2, 4, 5 and Part 3 as a complete package; or (2) Accept Parts 1, 2, 4, 5 (the solo-legacy recipe) while declining Part 3 (universal template edit) to preserve pointer-only template discipline.)*
