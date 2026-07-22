@@ -172,6 +172,69 @@ edit in Chunk C lands in the `templates/` source; the same edit is applied
 identically to `tools/lifecycle.py` in the same commit so the pair stays
 byte-identical, verified by direct `diff`.
 
+### Chunk D — supervised baseline re-pin (Maintainer-gated; not executed by this agent)
+
+**All three symbols go through the direct-edit path — a finding, not the
+originally-expected split.** The Scope section above anticipated
+`install_onboarding` (allowlisted in `_ast_attest._UPDATE_ALLOWLIST`) using
+the guarded `update-symbol` CLI path and only `main`/`write_install_lockfile`
+needing a direct edit. Preparing the handoff script's dry-run surfaced that
+the guarded path is **not currently usable for any allowlisted symbol**:
+`update_symbol()` refuses alongside any unpinned NEW top-level symbol, and
+the live `bootstrap/_scaffold/` package carries roughly 59-60 NEW top-level
+symbols against the committed `bootstrap/tests/fixtures/scaffold_ast_known_new.json`
+manifest (43 pinned keys, last touched 2026-06-08). Independently confirmed
+via a disposable `git worktree` at `0864b16~1` (the commit immediately
+before this plan's own Chunk A): the same ~59-symbol NEW set is already
+present there, and `verify` is otherwise clean (174/174 baselined symbols
+accounted for) — i.e. this is pre-existing drift in a *different* fixture
+(the known-new manifest, not the baseline this plan touches), predating all
+three of this plan's chunks, not caused by them. Correctly re-pinning that
+manifest means auditing every one of those ~59 symbols across many unrelated
+commits since June — its own task, out of scope here. Rather than block
+Chunk D on that unrelated gap, all three symbols (`main`,
+`write_install_lockfile`, `install_onboarding`) are corrected the same way
+`FunctionDef:print_report` was for the sibling adopter-licensing-compliance
+plan's Chunk D: a direct, Maintainer-reviewed digest+span replacement in
+`scaffold_ast_baseline.json`, minimal and fully auditable, just not routed
+through the (currently-broken-for-unrelated-reasons) guarded CLI path.
+
+**The handoff script.** Prepared at
+`reanchor_first_session_survivability.py` (this session's scratchpad, not
+committed to the repo — a one-off Maintainer-run correction, same as the
+licensing plan's). It: (1) requires the canonical `lhm`/Python 3.13
+interpreter, refusing otherwise; (2) for each of the three symbols, asserts
+the committed baseline still carries the exact digest this plan expects
+before touching anything (refuses on any mismatch — no blind overwrite);
+(3) computes each symbol's live digest+span via `_ast_attest.py baseline`;
+(4) in dry-run (default), simulates the write against a scratch copy and
+runs `_ast_attest.py verify` against *that* copy — proving the whole
+correction resolves clean, not just that each digest was computed; (5) with
+`--commit`, performs the same 3-key write atomically against the real
+baseline file, then re-verifies.
+
+**Dry-run, independently confirmed this session** (implementing session,
+under `/Users/kendal30/conda_envs/lhm/bin/python3`): all three baseline
+digests matched the expected pre-images exactly
+(`3d569a5104c8a81a`/`488f65b3193b958f`/`cec6f103797053c5`); the simulated
+3-key correction verifies clean — `AST attestation OK — 174 baselined
+symbol(s) accounted for, unchanged.` — with only the same pre-existing NEW
+notes (informational, non-fatal) plus the one legitimate addition,
+`FunctionDef:_rendered_onboarding_overlay` (Chunk B's new shared helper, as
+the Scope section predicted); `git status --short` on the real repo empty
+throughout (the scratch copy lived under a `tempfile`-issued path, deleted
+at the end of the dry-run). **Never run with `--commit` by this agent**,
+per `bootstrap/REANCHOR_RUNBOOK.md`'s "must not bless its own verifier"
+principle, extended to the real governing mechanism here exactly as the
+sibling plan's Chunk D established.
+
+**What the Maintainer does:** review the script and this section, run
+`/Users/kendal30/conda_envs/lhm/bin/python3 reanchor_first_session_survivability.py`
+(dry-run) to reproduce the above independently, then re-run with `--commit`,
+then confirm `bootstrap/tests/test_ast_attest.py` is green under the
+canonical interpreter. A closing plan commit then records the outcome and
+this plan advances to `archived`.
+
 ## Acceptance criteria
 
 * **Tests that must pass** — `bootstrap/tests/test_first_session_report.py`
