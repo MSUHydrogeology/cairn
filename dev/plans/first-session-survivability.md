@@ -313,10 +313,210 @@ All four findings accepted; none dropped.
 implementation begins next (Chunk A, then Chunk B with the PR1 fix
 folded in from the start, then Chunk C).
 
-## Code review
+## Code review -- Claude (sub-agent, fresh context, not the implementer) -- 2026-07-22
 
-*Filled in after implementation commits land (Chunks A-C; Chunk D is
-Maintainer-gated and reviewed separately once it runs).*
+**Attribution / committer note.** Fresh-context subagent review of the three
+implementation commits; the subagent cannot commit, so the author-session
+commits this section as a disclosed scribe, the accepted deviation model
+used throughout this repo's lifecycle.
+
+**Verdict: Accept**, applying to the three commits `0864b16` (Chunk A),
+`2feefd1` (Chunk B), `b8d9e0b` (Chunk C).
+
+**Model**: Claude Sonnet 5, fresh session, no access to the implementing
+session. Read all three diffs in full, the plan (including Plan review +
+Sharpening), the accepted proposal's Revised proposal + Decision, and
+independently re-ran every gate the commit messages cite.
+
+### Falsification ledger
+
+**Chunk A (F1) vs. plan A1-A3 — matches exactly.** `bootstrap/_scaffold/cli.py`'s
+closing line no longer contains the `(/good-morning)` parenthetical and now
+reads only `` `python tools/lifecycle.py session-start`. `` (A1). The fan-out
+loop's `skipped-vendor-absent` branch prints a calm, harness-named,
+no-action line (`"link automatically the first time you launch your
+harness -- no action needed."`) instead of being silently dropped; `noop`
+stays filtered (A2). `test_first_session_report.py` (new) asserts both
+properties plus idempotence across a re-run (A3). Read the diff directly —
+no drift from the table.
+
+**Chunk B (F3 + PR1 fix) vs. plan B1/B1b/B2/B3/B4/B5 — matches exactly.**
+Read `install.py`'s new `_rendered_onboarding_overlay` helper
+(`strip_conditional_regions` → `_extract_seed_tasks` →
+`_render_onboarding_slot`), confirmed `install_onboarding` gained
+`axes: dict | None = None` as a **keyword-only** parameter (after the bare
+`*`) and now routes write C through the shared helper, while write D (the
+verbatim preset copy) is untouched. Confirmed `write_install_lockfile`'s
+onboarding-overlay precompute (the PR1 defect site) now calls the **same**
+`_rendered_onboarding_overlay` with `profile.get("axes")`, and traced that
+value back to `cli.py:682` (`lock_profile["axes"] = embedded_axes`) — the
+identical dict `install_core` (`:473`) and `install_onboarding` (`:537`)
+both strip with, closing the "one axes map" invariant R8/B2 required.
+Read both onboarding templates in full: `collaborative-team.md` gates
+`read-coordination-doctrine`+`install-work-intent-hooks` on
+`concurrent-multi-type,concurrent-single-type`, `read-dual-review-module`+
+`agent-team-onboarding` on `concurrent-multi-type` only, leaves
+`sign-collab-agreement-day-one` ungated; `high-rigor-legacy.md` gates only
+its one coordination seed (`install-work-intent-hooks`) and its one tour
+seed (`agent-team-onboarding-legacy`), leaves `confirm-maintainer-authority`
+ungated. Grepped `_TEAM_STAFFING_GATES` in `bootstrap/_scaffold/config.py`
+directly: `"dual-review": frozenset({"concurrent-multi-type"})`,
+`"coordination-tiers": frozenset({"concurrent-multi-type",
+"concurrent-single-type"})` — the markers mirror this **exactly**.
+`test_onboarding_seed_roster.py` (new, 7 tests) implements the two-scenario
+split PR2 required (must-keep assertions for `concurrent-single-type`, not
+just absence).
+
+**Live-install regression reproduction (independent, not from the commit
+message).** Ran `bootstrap/scaffold.py` against two absolute scratch
+targets under `/private/tmp/...`:
+- `collaborative-team` + `agent_team: single` → `dev/.cairn/cairn-lock.yml`
+  written cleanly; the actual rendered onboarding-tasks slot in
+  `dev/PLANNING.md` contains none of `tools/intent.py`,
+  `doctrine/coordination.md`, `dev/modules/dual-review.md`,
+  `agent-team-onboarding.md`.
+- `collaborative-team` + `agent_team: concurrent-single-type` →
+  `dev/.cairn/cairn-lock.yml` written cleanly; the slot keeps
+  `tools/intent.py` + `doctrine/coordination.md`, drops
+  `dev/modules/dual-review.md` + `agent-team-onboarding.md`.
+
+Both lockfiles parse via `read_lockfile()` with a non-empty `files[]`. This
+independently confirms the B1b fix actually closes the PR1 gap in a real
+(non-dry-run) install, not merely in the new tests.
+
+**Chunk C (F4) vs. plan C1-C4 — matches exactly.** `templates/skills/_lib/lifecycle.py`'s
+module docstring now scopes the `--dry-run` claim to `session-end` and
+names `session-start`'s one unconditional write; `build_parser()`'s
+`description=` and the `session-start` subparser's `help=` both drop the
+unqualified "Read-only" framing and name the self-heal write. `tools/lifecycle.py`
+carries the identical edit. `test_lifecycle_cli.py` gained three new tests
+(C4) plus the optional PR4 module-docstring reword in the same file/commit.
+
+### Independently reproduced numbers (not trusted from commit messages)
+
+| Check | Independently run | Result |
+|---|---|---|
+| Twin parity | `diff templates/skills/_lib/lifecycle.py tools/lifecycle.py` | empty — byte-identical |
+| AST attest, canonical interpreter | `/Users/kendal30/conda_envs/lhm/bin/python3 -m pytest bootstrap/tests/test_ast_attest.py -v` (Python 3.13.13) | CHANGED set is **exactly** `FunctionDef:install_onboarding`, `FunctionDef:main`, `FunctionDef:write_install_lockfile` — no more, no less; 24 passed / 2 failed (both are the same baseline-drift assertion, run twice) |
+| Full suite, sandbox interpreter | `python3 -m pytest bootstrap/tests -q` (Python 3.12.9) | `2 failed, 1432 passed, 3 skipped` — both failures are the same AST-digest test under the wrong interpreter, matching the task's expected count exactly |
+| `check_cairn.py` | `python3 scripts/check_cairn.py` | `OK -- 162 Markdown file(s) scanned; no issues` |
+| `claim_check.py` | run once against the plan and once each against all 9 touched/new files (loop; the tool takes one file at a time) | clean on every file (`high-rigor-legacy.md` shows 2 pre-existing `claim-check-allow` exemptions, unrelated to this plan) |
+| `quality_gate.py --sub neutrality` | full run, then isolated the FAIL lines touching this plan's files | 99 FAILs total, but **zero are new**: verified via a disposable `git worktree` checked out at `0864b16~1` (before any of the three chunks) that the FAIL count is identically 99 there too; the FAILs inside `templates/skills/_lib/lifecycle.py` (lines 76/437/640/656/1104) are the same pre-existing `Claude`/`Codex` comment tokens at shifted line numbers (verified via `git show 0864b16~1:...` — the 2-line docstring insertion shifted everything below by exactly +2) |
+| `_TEAM_STAFFING_GATES` mirror | direct grep of `bootstrap/_scaffold/config.py:874-879` | matches B3/B4 markers exactly, as tabulated above |
+| `CASCADE_MUTABLE` | direct grep of `bootstrap/tests/_gate_manifest.py:77-82` | contains exactly `bootstrap/_scaffold/config.py` and `bootstrap/tests/fixtures/scaffold_ast_baseline.json`, confirming these two are excluded from the frozen-hash gate and governed by a different mechanism, as claimed |
+| AST-attest package scope | read `bootstrap/tests/test_ast_attest.py:65` and the identical line at `:80` — `modules = sorted(_SCAFFOLD.parent.glob("*.py"))` where `_SCAFFOLD = bootstrap/_scaffold/__init__.py` | confirms the attested set is `bootstrap/_scaffold/*.py` only — `templates/skills/_lib/lifecycle.py` is structurally outside it, so Chunk C's docstring/help edits are genuinely invisible to this gate, not merely asserted to be |
+
+### Test non-vacuity (mutation testing, all reverted and verified clean)
+
+For each mutation: broke the file, ran the targeted test(s), confirmed the
+predicted failure, restored via `git checkout -- <path>`, and confirmed
+`git status --short` / `git diff --stat` empty afterward (plus a byte
+`diff` against `git show HEAD:<path>` for the two most sensitive files).
+
+1. **B1b (`write_install_lockfile`)** — reverted its call site back to the
+   raw, unstripped `_extract_seed_tasks`/`_render_onboarding_slot` pair.
+   Result: `test_live_install_writes_a_clean_lockfile_under_agent_team_single`
+   and `..._under_concurrent_single_type` both failed with exactly the
+   predicted message — `"cairn-lock.yml NOT written: 1 installed file(s)
+   differ from a clean install (dev/PLANNING.md)"` — the other 5 tests in
+   the file stayed green. Restored; `git diff --stat` empty.
+2. **B3 gate mirroring** — narrowed `collaborative-team.md`'s
+   `read-coordination-doctrine` gate from
+   `concurrent-multi-type,concurrent-single-type` to `concurrent-multi-type`
+   only (de-mirroring it from `_TEAM_STAFFING_GATES["coordination-tiers"]`).
+   Result: `test_agent_team_concurrent_single_type_keeps_coordination_drops_dual_review`
+   failed (the PR2 must-keep assertion caught it), the other 6 tests stayed
+   green. Restored; content verified byte-identical to the committed prose.
+3. **A2 calm-line wording** — reverted the fan-out branch to the old
+   `f"... {status}"` (`"skipped"`) phrasing. Result:
+   `test_skipped_vendor_absent_is_a_calm_no_action_line` and
+   `test_calm_advisory_is_idempotent_across_a_force_rerun` both failed
+   (2 of 3, matching the commit message's own claim exactly). Restored.
+4. **C1-C3 wording** — reverted the parser `description=`/`help=` back to
+   the "Read-only" phrasing. Result:
+   `test_top_level_description_names_the_self_heal_write_not_read_only` and
+   `test_session_start_help_names_the_self_heal_write_not_read_only` both
+   failed with the predicted "overclaims read-only" message. Restored;
+   twin `diff` re-confirmed empty.
+
+### Scope discipline
+
+Diffed each commit's file list against the plan's tables: Chunk A touches
+only `bootstrap/_scaffold/cli.py` + the new `test_first_session_report.py`;
+Chunk B touches only `bootstrap/_scaffold/{cli,install}.py`, the new
+`test_onboarding_seed_roster.py`, and the two named onboarding templates;
+Chunk C touches only `templates/skills/_lib/lifecycle.py` + its twin +
+`test_lifecycle_cli.py`. No unrelated file, no doc/doctrine edit, no
+refactor riding along. `0bfba10` (between Chunks B and C) touches only
+`bootstrap/tests/test_evolution_infer.py` — confirmed genuinely unrelated
+(a clock-anchoring defect fix) and non-conflicting with any of the three
+chunks' files.
+
+### The two accepted-as-is residuals
+
+- **PR3 residual** (`sign-collab-agreement-day-one` / `confirm-maintainer-authority`
+  left ungated): confirmed both seeds are still present, unwrapped by any
+  `cairn:if`, in the live templates. Diffed their exact prose against the
+  pre-Chunk-B version (`git show 0864b16~1:...`) — byte-identical. Handled
+  exactly as the plan's Sharpening/Author-accounting section says: recorded
+  as a known, accepted conceptual-accuracy gap, neither silently dropped
+  nor silently "fixed" with an unreviewed prose edit.
+- **PR4 residual** (optional `test_lifecycle_cli.py` docstring reword):
+  present in Chunk C's diff, same commit, as specified.
+
+### Coverage
+
+Independently verified: every row of Chunk A/B/C's plan tables against the
+live diffs; the B1b fix by direct code read plus two live (non-dry-run)
+installs plus mutation-testing both the fix and the regression it prevents;
+the B3/B4 gate-marker mirror against `_TEAM_STAFFING_GATES` by direct grep,
+plus mutation testing one gate; twin parity by direct `diff`, both at rest
+and after a restore; the AST-digest claim under the canonical interpreter
+(exact 3-symbol CHANGED set, no more no less); the full suite under both
+interpreters with exact pass/fail counts; `check_cairn`, `claim_check`
+(per-file), and `quality_gate --sub neutrality` (with a disposable
+`git worktree` pre/post comparison to prove the 99 FAILs are unchanged
+in count and are pre-existing, not new, in every touched file); the two
+residuals' exact disposition against the plan's Sharpening section; and
+scope discipline via direct file-list diffing.
+
+Not independently re-derived (out of this review's reach, and not asked
+for): the Chunk D Maintainer-supervised AST re-anchor itself (explicitly
+parked, not part of these three commits); F2's interpreter-trust-root work
+(explicitly out of scope, tracked in its own proposal); whether the
+`CHANGELOG.md` / roadmap boards need an update for this plan (a
+serialization-point question for the goodnight routine, not this review).
+
+**Process note, disclosed for transparency.** Mid-review the subagent ran
+`git checkout 0864b16~1 -- .`, which briefly reverted the whole working
+tree (a destructive-operation slip its own safety instructions warn
+against). It caught this immediately, ran `git checkout HEAD -- .`, and
+confirmed `git status --short` was empty before continuing; it then redid
+the "before" comparison safely via a disposable `git worktree`. The
+invoking session independently re-verified after the review returned: at
+receipt time `git status --short --porcelain=v1 -uall` was empty, `HEAD`
+was still `b8d9e0b`, and `git diff HEAD` across every file touched by the
+three chunks was a zero-line diff — no commit, no push, and no lasting
+change to the repository resulted. Noted here per the "don't lie about
+state" theme this very plan is about, not because any residue was found.
+
+### Required follow-ups
+
+None. All three chunks match their plan-table specifications exactly, the
+PR1 regression fix is real (independently reproduced both broken and
+fixed), the roster-gate markers mirror `_TEAM_STAFFING_GATES` exactly, the
+AST-digest impact is precisely the three predicted symbols, twin parity
+holds, the full gate sweep is clean modulo the exact pre-registered
+exceptions, and both accepted residuals are handled exactly as recorded —
+no silent drops, no silent over-fixes, no scope creep.
+
+**Status: executing → review** (not `archived`): code review has landed, so
+the plan advances to `review` per the normal lifecycle, but it cannot reach
+`archived` yet. Per the plan's own "The re-anchor gate" section, that
+requires the Maintainer to run the supervised baseline correction
+(Chunk D) first. The plan is otherwise complete and gate-clean, parked at
+`review` exactly like the sibling `adopter-licensing-compliance` plan was
+before its own Chunk D closed.
 
 ## Lasting-truth migration
 
