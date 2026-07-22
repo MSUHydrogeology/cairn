@@ -153,7 +153,13 @@ archived plan / proposal, the implementing commits, and the
 changelog. There is no "completed recently" section on this
 board by design.
 
-*(Empty — `adopter-licensing-compliance` archived 2026-07-22.)*
+* **first-session-survivability** *(plan open, 2026-07-22)* — F1 (honest
+  fan-out report + real invitation), F3 (gate onboarding seeds by the
+  resolved roster), F4 (correct `session-start`'s self-description). F2
+  (interpreter trust-root degrade) is out of scope — its own proposal,
+  independently in progress. Chunks A/B require a Maintainer-supervised
+  AST correction before archive. Source: `first-session-survivability`
+  proposal (accepted 2026-07-22).
 
 ---
 
