@@ -484,7 +484,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     print(
         f"  Installed {_n_skills} lifecycle skill(s) -> .agents/skills/ "
-        f"(+ the tools/lifecycle.py CLI). Try `session-start` (/good-morning)."
+        f"(+ the tools/lifecycle.py CLI). Try "
+        f"`python tools/lifecycle.py session-start`."
     )
     env_result = write_local_env(target, force=args.force)
     if env_result[3] == "installed":
@@ -500,7 +501,18 @@ def main(argv: list[str] | None = None) -> int:
               file=sys.stderr)
         return 2
     for name, tier, status in fanout:
-        if status not in ("noop", "skipped-vendor-absent"):
+        if status == "skipped-vendor-absent":
+            # The normal first-install state (F1/R11): the harness config
+            # dir doesn't exist until the adopter's first launch, so this
+            # is expected, not a fault -- a calm no-action line, never
+            # "skipped"/"error" (session-start's self-heal fans out the
+            # link automatically once the dir exists, lifecycle.py's
+            # _heal_skills_fanout).
+            print(
+                f"  Skills fan-out [{tier}] {name}: link automatically the "
+                f"first time you launch your harness -- no action needed."
+            )
+        elif status != "noop":
             print(f"  Skills fan-out [{tier}] {name}: {status}")
 
     # Install progressive-onboarding content.  Must run AFTER
