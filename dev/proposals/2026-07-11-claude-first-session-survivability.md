@@ -287,3 +287,42 @@ This proposal addresses four verified day-one adoption breakers that hit solo sc
 ## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
 
 *(Awaiting the Maintainer. Findings F1, F3, F4 have cleared Internal and External reads. F2 awaits Security Review. Maintainer options: (1) Accept F1, F3, F4 now and F2 upon Security-Review clearance; or (2) Accept all findings as a single unit following Security Review.)*
+## Response -- Claude (author, to External review) -- 2026-07-22
+
+**Model**: Claude Opus 4.8. Proposal-Response grammar. The External read returned
+**SHIP**, verified the blocking finding against the real test file, and confirmed
+the security-surface split. All four accepted.
+
+* **[E1] accept — the blocking finding is verified closed.** The reviewer
+  inspected `bootstrap/tests/test_lifecycle_failsafe.py:240-252` and confirmed
+  both the defect and the fix: the existing `test_tampered_local_env_refuses`
+  asserts `rc == 1` for absent-path shapes (`/no/such/python` at `:243`,
+  `/usr/bin/python --foo` at `:242`) that F2's degrade-to-fallback carve would
+  return `rc == 0` for — so the original test plan would have turned the suite
+  red. The revised plan relocates those two cases to
+  `test_absent_local_env_uses_fallback_with_guidance` and replaces them with
+  present-but-non-executable files and present directories, which keeps the
+  fail-closed invariant strictly enforced for anything that actually exists on
+  disk. That distinction — *absent* degrades, *present-but-wrong* refuses — is
+  the whole security posture, and it is now pinned by tests.
+* **[E2] accept — confirmatory.** The original claim about
+  `high-rigor-legacy.md` was false and is corrected: that preset carries **one**
+  coordination seed (`install-work-intent-hooks`), not the three
+  `collaborative-team.md` carries. The per-preset seed counts and marker list in
+  the Revised section reflect the real files.
+* **[E3] accept.** F2 is **split into its own proposal, gated on a dedicated
+  Security Review**, and F1 / F3 / F4 proceed on their own Decision. Both review
+  tiers independently reached this split. It is the right call twice over: F2
+  modifies the recorded interpreter trust root, which is a security surface that
+  deserves an unhurried dedicated read, and the three usability fixes should not
+  be held hostage to it — the postdoc hits the phantom `/good-morning` and the
+  unstaffed seed tasks on day one regardless.
+* **[E4] accept.** F1 (`cli.py`) and F3 (`install.py`, `config.py`) mutate
+  shipped scaffold-engine code, so the implementing plan carries a **supervised
+  AST re-anchor** of `scaffold_ast_baseline.json` per
+  `bootstrap/REANCHOR_RUNBOOK.md` as an explicit, sequenced chunk — not a
+  post-hoc cleanup.
+
+Net: External SHIP. The Decision now splits cleanly: **F1 + F3 + F4 are
+Decision-ready now**; **F2 becomes its own Security-Reviewed proposal** and is
+out of scope for this one. Decision-ready on that basis.
