@@ -7,7 +7,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 4.8
 **Date opened**: 2026-07-11
-**Status**: revised
+**Status**: accepted
 **Touches**: `bootstrap/_scaffold/cli.py` (the install report + the phantom-command invitation); `bootstrap/_scaffold/install.py` (`install_onboarding` roster gating); `templates/skills/_lib/lifecycle.py` (interpreter-resolution graceful degrade + session-start self-description accuracy); `templates/onboarding/collaborative-team.md` and `templates/onboarding/high-rigor-legacy.md` (conditional-region markers on roster-dependent seed tasks); new + extended tests under `bootstrap/tests/`; the AST attestation baseline (`bootstrap/tests/fixtures/scaffold_ast_baseline.json`) re-anchor.
 **Related**: the broad-look review `dev/strategy/2026-07-08-claude-broad-look-skeptical-review.md` (Theme 5, day-one item 10 at ~L394-413; recommendation **A7** at ~L575-579); this is a Phase A proposal ("before the postdoc installs"). Shape precedent: the accepted `2026-07-08-claude-review-record-integrity` (fix-the-instance + guard-the-class).
 **Plan review**: required(Internal) — floor is a fresh-context Internal read; an **External (cross-type) read and a Security-Review pass are recommended before the Decision**, because Finding 2 changes behavior at the `local-env.json` interpreter *trust root* and Findings 1 + 3 edit the scaffold engine (both are high-risk surfaces per `AGENTS.md` > "High-risk surfaces"). Ratified at Decision.
@@ -326,3 +326,53 @@ the security-surface split. All four accepted.
 Net: External SHIP. The Decision now splits cleanly: **F1 + F3 + F4 are
 Decision-ready now**; **F2 becomes its own Security-Reviewed proposal** and is
 out of scope for this one. Decision-ready on that basis.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-07-22
+
+**Accepted, scoped to F1 + F3 + F4.** Scribed by Claude (Strategy) at the
+Maintainer's explicit, unambiguous instruction; commit permission given in the
+same instruction.
+
+Maintainer's authorization (verbatim):
+
+> Okay, I accept your recommendations on each of these. Please scribe my
+> acceptance, and mark them as accepted. When you're done with that we can go
+> ahead with the follow-on proposals.
+
+**Accepted scope:**
+
+* **F1** — drop the phantom `/good-morning` invitation from the install report
+  and surface the skipped-vendor-absent fan-out with its one-line remedy.
+* **F3** — gate onboarding seed tasks by the *resolved module roster* (via the
+  existing `strip_conditional_regions` conditional-region mechanism) so
+  `PLANNING.md` stops commanding tools the install never staffed.
+* **F4** — correct `session-start`'s self-description; it performs self-heal
+  writes and is not "read-only".
+
+**Carved out (not accepted here): F2** — the interpreter trust-root
+degrade-on-absent carve. It opens as **its own proposal, gated on a dedicated
+Security Review.** Both review tiers independently reached this split, and it is
+right twice over: F2 modifies the recorded interpreter trust root in
+`local-env.json` — a security surface deserving an unhurried dedicated read —
+while F1/F3/F4 are non-security usability fixes the first adopter hits on day
+one and which should not be held hostage to a security pass.
+
+**Why it lands.** The Internal panel's **blocking** finding was real: the
+original test plan was factually wrong about an existing test. The External
+reviewer inspected `bootstrap/tests/test_lifecycle_failsafe.py:240-252` and
+confirmed both the defect and the fix — the revised plan relocates the
+absent-path cases (`:242`, `:243`) to a fallback test and replaces them with
+present-but-non-executable files and present directories. That preserves the
+load-bearing security posture: **absent degrades, present-but-wrong refuses** —
+now pinned by tests rather than asserted. A second false factual claim (about
+`high-rigor-legacy.md` carrying three coordination seeds; it carries one) was
+also corrected.
+
+**Plan conditions, ratified here (bind the plan):** F1 (`cli.py`) and F3
+(`install.py`, `config.py`) mutate shipped scaffold-engine code, so the plan
+carries a **supervised AST re-anchor** of `scaffold_ast_baseline.json` per
+`bootstrap/REANCHOR_RUNBOOK.md` as an explicit sequenced chunk, not a post-hoc
+cleanup.
+
+**Next (separate commits):** open the plan (which archives this proposal),
+execute F1/F3/F4, non-implementing code review, archive. F2 opens separately.
