@@ -76,6 +76,7 @@ goes live.
   with existing operational dependencies -- a different
   discipline than greenfield development.
 
+<!-- cairn:if agent_team in concurrent-multi-type,concurrent-single-type -->
 * [seed; id: install-work-intent-hooks]
   Install the work-intent git hooks, or record that you are skipping
   them. This preset is concurrent, so the scaffold *recommended* the
@@ -86,12 +87,15 @@ goes live.
   signal never fires. To opt out (now or later), re-run either command
   with `--uninstall`; note the choice here so the team's preference is
   on the record.
+<!-- cairn:endif -->
 
+<!-- cairn:if agent_team in concurrent-multi-type -->
 * [seed; id: agent-team-onboarding-legacy]
   Walk `dev/modules/onboarding/agent-team-onboarding.md` together. The
   high-rigor-legacy profile expects multi-agent staffing; the
   second agent type's capability tier should be calibrated
   against the security-review module's bar from day one.
+<!-- cairn:endif -->
 
 * [seed; id: walk-dev-tour]
   Walk `dev/modules/onboarding/dev-tour.md` as a final pre-engagement read; it

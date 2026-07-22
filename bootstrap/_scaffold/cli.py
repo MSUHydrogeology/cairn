@@ -533,7 +533,8 @@ def main(argv: list[str] | None = None) -> int:
     # to a crisp non-zero exit (no traceback), mirroring the skills-fanout guard.
     try:
         onboarding_results = install_onboarding(
-            templates_root, target, preset_name, force=args.force
+            templates_root, target, preset_name,
+            axes=embedded_axes, force=args.force,
         )
     except ScaffoldSecurityError as exc:
         print(f"error: onboarding install refused: {exc}", file=sys.stderr)

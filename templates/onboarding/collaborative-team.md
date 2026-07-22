@@ -38,6 +38,7 @@ loop earns its keep early.
   proposal -> review -> decision -> archive shape is the load-
   bearing convention every later coordination behavior assumes.
 
+<!-- cairn:if agent_team in concurrent-multi-type,concurrent-single-type -->
 * [seed; id: read-coordination-doctrine]
   Read `doctrine/coordination.md`. The work-intent mechanism is
   what prevents collision between concurrent agents in the same
@@ -54,24 +55,29 @@ loop earns its keep early.
   signal never fires. To opt out (now or later), re-run either command
   with `--uninstall`; note the choice here so the team's preference is
   on the record.
+<!-- cairn:endif -->
 
+<!-- cairn:if agent_team in concurrent-multi-type -->
 * [seed; id: read-dual-review-module]
   Read `dev/modules/dual-review.md`. The collaborative-team
   preset installs the dual-review module by default; the
   External-tier review now has structural independence from
   the start.
+<!-- cairn:endif -->
 
 * [seed; id: walk-dev-tour]
   Walk the `dev/`-tree tour at `dev/modules/onboarding/dev-tour.md`
   together. It carries one paragraph per `dev/` subdirectory plus a
   worked example showing one change through the full lifecycle.
 
+<!-- cairn:if agent_team in concurrent-multi-type -->
 * [seed; id: agent-team-onboarding]
   Walk `dev/modules/onboarding/agent-team-onboarding.md` to align on capability
   tiers + the `Co-Authored-By:` trailer convention for each
   agent in the roster. Multi-agent is this preset's defining
   shape; the agent-team-onboarding doc carries the
   baseline configuration the team uses.
+<!-- cairn:endif -->
 
 * [seed; id: sign-collab-agreement-day-one]
   Convene the team + agents in your first session and fill the

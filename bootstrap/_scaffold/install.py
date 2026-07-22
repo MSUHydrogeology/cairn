@@ -805,6 +805,33 @@ def _render_onboarding_slot(preset_name: str, seed_blocks: list[str]) -> str:
     return "\n".join(parts).rstrip() + "\n"
 
 
+def _rendered_onboarding_overlay(
+    preset_name: str, preset_text: str, axes: dict[str, object] | None,
+) -> str:
+    """The ``dev/PLANNING.md`` ``onboarding-tasks`` slot content for
+    *preset_text*, gated by the resolved roster (finding 3,
+    first-session-survivability).
+
+    ``strip_conditional_regions`` removes any ``cairn:if`` region the
+    resolved *axes* don't staff (e.g. a coordination-tiers-gated seed
+    when ``agent_team`` resolves to ``single``) **before** seed
+    extraction, so a day-one task never commands a tool/doc the install
+    never staffed. Keep-on-missing-axis (an absent axis keeps the
+    content) matches ``strip_conditional_regions``'s own conservative
+    default.
+
+    **Single source of truth (plan-review PR1).** Both places that need
+    this rendering -- the live install (``install_onboarding``) and the
+    lockfile's expected-clean-install computation
+    (``write_install_lockfile``) -- call this one function, so they
+    cannot silently drift apart on whether/how the preset text is
+    stripped before extraction.
+    """
+    stripped = strip_conditional_regions(preset_text, axes or {})
+    seed_blocks = _extract_seed_tasks(stripped)
+    return _render_onboarding_slot(preset_name, seed_blocks)
+
+
 def _substitute_slot(
     text: str, slot_name: str, replacement: str,
 ) -> tuple[str, bool]:
@@ -926,6 +953,7 @@ def install_onboarding(
     target: Path,
     preset_name: str | None,
     *,
+    axes: dict[str, object] | None = None,
     dry_run: bool = False,
     force: bool = False,
 ) -> list[InstallResult]:
@@ -962,6 +990,17 @@ def install_onboarding(
        onboarding-doc-delivery; without this they were dead links on
        first run).  Shared across presets -- shipped on any preset
        selection.
+
+    ``axes`` (first-session-survivability finding 3): the resolved
+    six-axis profile, gating write C's rendered seed content by the
+    resolved roster via ``_rendered_onboarding_overlay`` (a task never
+    commands a tool/doc the resolved axes didn't staff). Keyword-only
+    with a ``None`` default -- omitted or ``None`` keeps every
+    ``cairn:if``-gated seed (the conservative default), preserving every
+    existing 3-positional call site unchanged. Callers pass the SAME
+    axes map ``install_core`` stripped the always-on surface with (the
+    CLI's ``embedded_axes``), not a separately-resolved axes dict, so
+    every strip site keys off one axes map.
 
     Returns the list of InstallResults for each write (the
     always-writes always present; the preset-conditional writes only
@@ -1051,8 +1090,7 @@ def install_onboarding(
         return results
 
     preset_text = src.read_text(encoding="utf-8")
-    seed_blocks = _extract_seed_tasks(preset_text)
-    rendered = _render_onboarding_slot(preset_name, seed_blocks)
+    rendered = _rendered_onboarding_overlay(preset_name, preset_text, axes)
 
     # Write C: substitute into installed PLANNING.md's slot.
     planning_dst = target / "dev" / "PLANNING.md"
@@ -1492,10 +1530,16 @@ def write_install_lockfile(
 
     # Pre-compute the onboarding overlay for PLANNING.md so the
     # `would` calculation in the loop below can apply the same slot
-    # substitution `install_onboarding` did at install time.  If no
-    # preset is selected, the overlay is empty and PLANNING.md is
-    # checked against the token-substituted raw template (the
-    # baseline behavior).
+    # substitution `install_onboarding` did at install time -- INCLUDING
+    # the same roster-gated strip (first-session-survivability finding 3,
+    # plan-review PR1): `install_onboarding` and this precompute must call
+    # the SAME `_rendered_onboarding_overlay` helper with the SAME axes
+    # map, or a roster-unstaffing axes override makes the actual on-disk
+    # PLANNING.md (stripped) diverge from this `would` (previously
+    # unstripped), tripping the fail-closed divergence guard below on
+    # every such install.  If no preset is selected, the overlay is empty
+    # and PLANNING.md is checked against the token-substituted raw
+    # template (the baseline behavior).
     onboarding_overlay: str | None = None
     if (
         onboarding_preset
@@ -1505,11 +1549,10 @@ def write_install_lockfile(
             templates_root / "onboarding" / f"{onboarding_preset}.md"
         )
         if preset_src.exists():
-            seed_blocks = _extract_seed_tasks(
-                preset_src.read_text(encoding="utf-8")
-            )
-            onboarding_overlay = _render_onboarding_slot(
-                onboarding_preset, seed_blocks,
+            onboarding_overlay = _rendered_onboarding_overlay(
+                onboarding_preset,
+                preset_src.read_text(encoding="utf-8"),
+                profile.get("axes"),
             )
 
     for src_rel, dst_rel, verbatim in _lock_file_list(modules, optional):
