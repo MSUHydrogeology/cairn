@@ -1,3 +1,13 @@
+<!-- claim-marker maintenance 2026-07-22: the `Related` citation below to
+     `dev/proposals/2026-07-11-claude-first-session-survivability.md:352-358` was ACCURATE when written --
+     that proposal was accepted and still in `dev/proposals/`. A concurrent agent then opened its plan
+     (commit 1ebafb1), which archives the source proposal per the lifecycle, moving it to
+     `dev/proposals/archive/`. The cited Decision text is intact at the new path. The citation is retained
+     unedited (append-only) and the path marked so the checker clears. Surfaced, not silenced.
+     SECOND occurrence this session of the same shape (see the transition-lint proposal's marker note):
+     a lifecycle artifact cited BY PATH, broken by a legitimate archive-move. `AGENTS.md`'s
+     shared-communication-file rule already solves this for the boards by citing filename STEM, not path. -->
+<!-- claim-check-allow: dev/proposals/2026-07-11-claude-first-session-survivability.md* -->
 <!-- The paths below appear inside the appended Internal review: illustrative/deliberately-absent example paths, adopter-tree install destinations quoted from a manifest row, and multi-part line citations on real files. Marked, not edited -- reviewer prose is append-only. -->
 <!-- claim-check-allow: bootstrap/nope/missing.py*, dev/strategy/2026-07-08-* -->
 <!-- Defensive: the dangling-internal-ref gate runs only on template-instruction surfaces, so this marker is inert for a dev/proposals/ file (parent proposal, R10c). Kept for consistency with the doctrine-citation convention. -->
