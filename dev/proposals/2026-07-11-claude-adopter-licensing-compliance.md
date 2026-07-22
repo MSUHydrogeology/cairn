@@ -7,7 +7,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 4.8
 **Date opened**: 2026-07-11
-**Status**: revised
+**Status**: accepted
 **Touches**: a new installed notice template (`templates/core/NOTICE.md` → adopter `NOTICE.md`, wired into `_CORE_MAPPINGS` in `bootstrap/_scaffold/config.py`); SPDX/copyright headers on the shipped `.py` under `templates/` and `scripts/`; the lockfile writer `bootstrap/_scaffold/install.py` (~1584-1592) + `bootstrap/_scaffold/lockfile.py` (new `source_repository` + `licenses` fields); an adopter-facing "Licensing of the installed files" paragraph in `bootstrap/BOOTSTRAP.md`; an inbound=outbound sentence for `case-studies/README.md`; a `.yml`/`.txt` disposition sentence in `LICENSE-MIT.md`; a new test `bootstrap/tests/test_notice_install.py`. **Explicitly out of scope / Maintainer-only:** any downstream-permission clause in `LICENSE-CC-BY.md` (surfaced as the open question below, not decided here).
 **Related**: broad-look skeptical review `dev/strategy/2026-07-08-claude-broad-look-skeptical-review.md` (Theme 4, lines 288-323; Phase A item A4, lines 562-565; Maintainer open question 1, lines 637-639). Follows the shape of the accepted `2026-07-08-claude-review-record-integrity` proposal (fix the live instance + correct the record + guard recurrence). Triage triggers: the proposal template's "Licensing / provenance — the by-file license split or `bootstrap/PROVENANCE.md`" trigger (`dev/proposals/_template.md:69-70`) and the "install contract … byte-level stable" high-risk surface (`AGENTS.md:310-314`).
 **Plan review**: required(Internal) — touches the install contract (a new install-set member + a lockfile-schema field addition) and a high-risk licensing surface; Internal floor is a fresh-context read, with an External (cross-type) read recommended before the Decision because the change alters what every adopter's tree redistributes. Ratified at Decision.
@@ -594,3 +594,52 @@ critiques accepted; none requires a further proposal revision.
 
 Net: External SHIP, conditional on the Maintainer's E4 resolutions and the
 supervised AST re-anchor sequenced into the plan. The proposal is Decision-ready.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-07-22
+
+**Accepted.** Scribed by Claude (Strategy) at the Maintainer's explicit,
+unambiguous instruction; commit permission given in the same instruction.
+
+Maintainer's authorization (verbatim):
+
+> Okay, I accept your recommendations on each of these. Please scribe my
+> acceptance, and mark them as accepted. When you're done with that we can go
+> ahead with the follow-on proposals.
+
+**Accepted scope: P1, P2, P4, P5, P6** — the adopter licensing-compliance
+package. The proposal cleared both review tiers: a fresh-context Internal panel
+(12 critiques) forced the AST-re-anchor correction and the removal of a false
+"suite stays green" claim, and the Gemini External read returned **SHIP** after
+*independently verifying the legal discharge mechanics* — that a root
+`NOTICE.md` carrying the MIT permission notice plus the CC BY 4.0 §3(a)
+attribution block satisfies repository-level redistribution for the whole
+installed tree, and that SPDX headers make an individually-extracted script
+carry its own notice.
+
+**Resolved — the two reserved co-decisions (External E4, author-endorsed):**
+
+* **No downstream-permission clause** is added to `LICENSE-CC-BY.md`. A bespoke
+  clause would create a Cairn-specific license variant every downstream legal
+  reviewer must parse separately — a recurring cost on every adopter to solve
+  what prose solves. Instead, `bootstrap/BOOTSTRAP.md` and the notice itself
+  state plainly that retaining `NOTICE.md` is the whole obligation.
+* **`NOTICE.md` lives at the repository root** — the open-source convention and
+  maximally discoverable. A hidden path (`dev/.cairn/`) would repeat the
+  base-cache discoverability failure this proposal exists to fix.
+* **The `.yml` / `.txt` family gap** is dispositioned per P6.
+
+**Split out (not accepted here): P3** — the lockfile `source_repository` +
+`licenses` fields. Both review tiers independently reached this split: P3 alters
+the byte-level-stable install contract (`_LOCK_SCHEMA`), a different risk class
+from legal compliance, and a routine compliance fix should not wait on a
+schema-bump deliberation. P3 opens as its own install-contract proposal.
+
+**Plan conditions, ratified here (bind the plan):** P1 mutates the baselined
+`Assign:_CORE_MAPPINGS` digest and therefore requires a **supervised AST
+re-anchor** of `scaffold_ast_baseline.json` per `bootstrap/REANCHOR_RUNBOOK.md`,
+sequenced as an explicit chunk; P2's comment-only SPDX headers are AST-invisible
+and trigger no re-anchor; the pre-existing red baseline (issue #1) is documented,
+not papered over. `Plan review: required(Internal)` stands.
+
+**Next (separate commits):** open the plan (which archives this proposal),
+execute P1/P2/P4/P5/P6, non-implementing code review, archive.
