@@ -5,7 +5,7 @@
 # Plan: the solo-legacy adopter recipe (Parts 1-5)
 
 **Source proposal**: `dev/proposals/archive/2026-07-11-claude-solo-legacy-adopter-path.md`
-**Status**: review
+**Status**: archived
 **Plan review**: required(Internal) — fresh-context read. The proposal
 already cleared a 3-lens Internal panel (12 findings, all accepted,
 including one **blocking** finding — the recipe's headline YAML did not
@@ -380,11 +380,82 @@ Archive next.
 
 ## Lasting-truth migration
 
-*Filled in at archive time. Per the [Archive preconditions rule](../PLANNING.md#archive-preconditions-proposals-and-plans),
+Archived 2026-07-31.
+
+Follow-ups migrated to: no deferred follow-up from this plan's own
+scope — Parts 1-5 shipped in full (Chunks A-E), and the code review's
+one substantive finding (the durable no-PyYAML regression test) was
+fixed in the same review pass, not deferred. The proposal's own three
+explicitly-deferred items stay exactly where the proposal put them,
+out of this plan's scope by design: the finding-2 engine fix
+(Alternative 4 — an `age`-override re-derivation change to
+`expand_preset`, a different risk class); `cli.py`'s missing-default-
+on-warning gap for the `modules:` branch (also engine, also deferred);
+and a first-class `solo-legacy` preset (Alternative 3, recurrence-
+gated — revives only if the persona recurs across multiple installs).
+
+**No Maintainer-gated closeout step.** Like the sibling
+`record-corrections` plan and unlike `adopter-licensing-compliance` /
+`first-session-survivability`, this plan touches no engine code —
+`python -m pytest bootstrap/tests/test_ast_attest.py` stayed 26/26
+green under the canonical interpreter across every one of the five
+implementation commits, confirmed fresh at each. Archive follows
+directly.
+
+**One accepted, disclosed departure from clean self-host state.** Part
+3 (Chunk D) edited both `templates/core/dev/proposals/_template.md`
+and Cairn's own installed twin `dev/proposals/_template.md`, confirmed
+byte-identical outside the pre-existing, already-filled `cairn:slot`
+regions — but the installed twin's `dev/.cairn/cairn-lock.yml` hash
+record was deliberately left un-finalized. `upgrade --target . --cairn-
+root . --plan` shows this tree already carries dozens of pre-existing
+"no recoverable base (review-only diff)" files against the base cache,
+unrelated to this plan and pre-dating it — confirmed independently by
+the code review, which also confirmed the lockfile's recorded hash for
+this one file genuinely doesn't match its current content and already
+carries `unrecoverable_base: true`. A full lockfile reconciliation
+across the whole tree is a separate, larger maintenance task this plan
+does not attempt; this one file joins a pre-existing pile rather than
+starting a new problem.
+
+**Code review closed.** One substantive finding (the real CLI
+`--summary` path under a genuinely no-PyYAML interpreter had been
+verified only ad hoc, not by a durable regression test) and one
+cosmetic finding (an em-dash-vs-comma deviation from a "verbatim"
+doctrine quote) — both fixed in commit `397472f`, both re-verified
+post-fix (the new test proven non-vacuous by reproducing the exact
+historical R1 bug class in a scratch copy; the doctrine quote re-diffed
+to confirm exact match). One further cosmetic finding (a twin-file
+slot-count narration slip, three claimed vs. four actual, all
+pre-existing) acknowledged with no corrective commit, per the
+reviewer's own disposition.
+
+**Loop-fidelity sign-off.** The Decision → implementation chain holds
+in full: the accepted proposal's Parts 1-5 shipped in
+`5114b4c`/`d83ed78`/`fb81efb`/`2e34528`/`60b4b83`. Plan review (fresh-
+context, Internal) found 3 findings — a stale `BOOTSTRAP.md` citation
+an intervening unrelated commit had broken, a doctrine-quote clause
+this plan's own Chunk A row had dropped even though its own Context
+section had it right two sections earlier, and an unanchored test-
+extraction design — all three accepted and fixed before implementation,
+with Chunk B's marker-comment mechanism (added to Chunk A in response)
+becoming a genuine cross-chunk design improvement, not just a patch.
+Code review (fresh-context, Internal) then caught the one item this
+plan's own acceptance criteria had explicitly flagged as needing a
+durable close — verified as true in substance (the recipe genuinely
+works copy-pasted with no PyYAML) but not yet backed by a regression
+test — and fixed it properly, with the new test immediately proven
+non-vacuous against the exact historical bug class (the original
+proposal's own blocking R1 finding) the whole proposal exists to
+prevent. Three independent catches across two review mechanisms
+(plan-review, code-review) on a proposal whose headline claim — a
+"verified, copy-pasteable" YAML profile — had already survived one
+blocking finding and two independent live executions before this plan
+even opened; the discipline held through implementation too, not just
+at the proposal stage.
+
+Per the [Archive preconditions rule](../PLANNING.md#archive-preconditions-proposals-and-plans),
 plans archive only after every deferred follow-up has a durable home
-outside the plan — the finding-2 engine-fix (Alternative 4), the
-`cli.py` missing-warning gap, and a first-class `solo-legacy` preset
-(Alternative 3, recurrence-gated) all stay the proposal's own explicitly
-deferred follow-ups, not carried by this plan.*
+outside the plan.
 
 This section is append-only once written.
