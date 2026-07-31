@@ -520,10 +520,10 @@
     "type": "Expr"
   },
   "FunctionDef:_apply_upgrade": {
-    "digest": "0b30b00e58a4887f",
+    "digest": "1035f6596541a4fa",
     "span": [
-      4007,
-      4204
+      1788,
+      2036
     ],
     "type": "FunctionDef"
   },
@@ -632,10 +632,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_cmd_init_lock": {
-    "digest": "58a093660555a6f9",
+    "digest": "dfffe7fb75b4c838",
     "span": [
-      3691,
-      3797
+      1115,
+      1224
     ],
     "type": "FunctionDef"
   },
@@ -656,10 +656,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_emit_lock_yaml": {
-    "digest": "7169c38cf30e1de9",
+    "digest": "84ab85394875811d",
     "span": [
-      2660,
-      2671
+      237,
+      252
     ],
     "type": "FunctionDef"
   },
@@ -928,10 +928,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_write_stage": {
-    "digest": "f0696207cc7e26d8",
+    "digest": "441ccdf85c979b6d",
     "span": [
-      617,
-      803
+      744,
+      938
     ],
     "type": "FunctionDef"
   },
@@ -1288,10 +1288,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:write_install_lockfile": {
-    "digest": "d3aaf82d69c46a18",
+    "digest": "50a36da0df30225e",
     "span": [
-      1477,
-      1646
+      1478,
+      1650
     ],
     "type": "FunctionDef"
   },
