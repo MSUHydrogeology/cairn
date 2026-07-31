@@ -45,6 +45,17 @@ follow-up, or has implementation tradeoffs worth a second opinion. Everything
 else — a new helper, a test, a typo fix, a self-contained refactor — just
 commit.
 
+**Escape hatch, local copy** (a short gloss alongside the pointer above, not
+a substitute for it — see `doctrine/proposals.md` for the full rule): if a
+change is urgent, clearly reversible, or explicitly experimental, it may
+proceed without a proposal, but the commit or follow-up note should say why
+the proposal step was skipped. *Sync note:* this gloss is a duplicate of
+`doctrine/proposals.md`'s escape-hatch paragraph; if that doctrine text is
+ever revised, re-sync this copy in the same change. *Port-exemption note:*
+this text predates Cairn's own self-hosting (introduced 2026-06-08, four
+days before the 2026-06-12 adoption) — there is no discrete `dev/` Decision
+to cite for it.
+
 <!-- cairn:slot triage-extra-triggers -->
 (Adopter-specific triage triggers beyond the general list above — e.g.
 a domain assumption class the project guards, or a protected-contract
