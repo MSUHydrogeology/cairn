@@ -1188,3 +1188,62 @@ two code files, with the diff showing exactly the `Status:` field flipping
 
 **Status: remains `awaiting-plan-review`.** A focused External re-read on
 ETR1-R3 is still required before Chunk A begins.
+
+## Plan re-review Round 4 -- Codex (External, different-agent-type; Security Review) -- 2026-07-31
+
+**Verdict: REVISE.** ETR1-R3 is closed: the expected whole-candidate delta now
+correctly includes this mutable plan artifact and totals six `P` -> `N` paths.
+One gate-scope blocker remains because G0 continues to present an already-stale
+snapshot as the current trust-root delta. The security-posture adjudication is
+unchanged.
+
+### Finding
+
+* **[ETR1-R4] BLOCKING PROCESS / RECORD -- G0's undated cumulative-scope
+  figures are already false at immutable HEAD.** The operative Sequence,
+  Chunk G0, and acceptance criterion still instruct the Maintainer to resolve
+  a `234-file / 54 changed pinned + 14 newly frozen / 1404 -> 1446` drift
+  (`:169-183`, `:290-298`, `:374-381`). Those figures were accurate evidence
+  during the earlier review, but unrelated lockfile-provenance implementation
+  landed before this re-read. Re-derived from a clean materialization of
+  immutable HEAD `5f3f9dbc18ef5b25cb2e04effcc11b8db3c06756` (so the unrelated dirty
+  AST-baseline file could not affect the result): the live scope is **236
+  changed files, 54 changed pinned files + 15 newly frozen files, and collection
+  1404 -> 1459**. The new frozen path is
+  `bootstrap/tests/test_lockfile_provenance.py`; the 13-node increase is real
+  committed scope. Because G0 is the Maintainer's authorization boundary for a
+  cumulative trust-root transition, silently undercounting that scope by one
+  frozen file and 13 nodes is not editorial. Updating the literals to today's
+  values would only repeat the failure on the next concurrent commit.
+  **Satisfier:** mark `234 / 54+14 / 1404->1446` as a dated historical snapshot
+  (preferably with the measured commit), remove it from the live acceptance
+  language, and make G0 re-derive and record all three values from the concrete
+  immutable commit that will become `P` immediately before the Maintainer's
+  review. Acceptance should require the recorded, reviewed G0 scope to match
+  that exact `P`, not any hardcoded count from plan-review time. Keep the later
+  G1 six-path candidate delta exact; that post-G0 invariant is correctly bounded
+  and is a different measurement.
+
+### Closed finding and security disposition
+
+**ETR1-R3 closed.** Sequence, G1, acceptance, and failure signals consistently
+name five candidate paths -- the four implementation files plus this plan's
+bounded execution-state mutation -- and the generated gate manifest as the
+sixth `P` -> `N` path. Executing the production `_construct_anchor_commit` /
+`_diff_name_only` helpers reproduced exactly those six paths; `C` -> `N`
+remained manifest-only.
+
+All resolver-security findings remain closed and the prior risk acceptances
+remain in force. ETR1 is open only as ETR1-R4, concerning accurate Maintainer
+authorization scope at G0; it changes no resolver disposition and introduces no
+new executable capability.
+
+### Verification
+
+Canonical Python 3.13.13: immutable-HEAD materialization and
+`_gate_manifest.produce()` yielded the `236 / 54+15 / 1404->1459` figures;
+the production anchor-helper probe yielded the expected six-path `P` -> `N`;
+the focused gate transition/re-anchor suite passed **25 tests**. No production
+ref, authorization artifact, manifest, or lifecycle implementation file was
+changed or promoted. Focused re-read required after ETR1-R4 is dispositioned;
+Chunk A remains blocked.
