@@ -127,17 +127,23 @@ with the plan's filename stem.
   trivial path); (b) extend the `verify:` count guard to **other
   adopter-facing counts** beyond the quickstart's two. Each → its own
   proposal when revived.
-* **Transition-lint (Part C follow-up)** *(deferred, Jul 2026)* — Part A +
-  Part B of the `review-record-integrity` proposal shipped (plan
-  `review-record-integrity`, archived); Part C (an advisory
-  scripts/transition_lint.py, not yet created, flagging commits whose
-  message claims a lifecycle transition but whose diff doesn't match)
-  was split out at
-  Internal review (R4/R9/R10: a distinct risk class, needing heuristics
-  pinned against the real commit corpus — plan-open renames, the
-  deliberation-carve-in exemption, etc.) rather than folded into the
-  near-automatic A+B. Revive as its own proposal when someone pins those
-  heuristics.
+* **Transition-lint** *(queued, accepted 2026-07-22)* — an **advisory**
+  check that a commit's message claim is supported by its diff: a subject
+  claiming a review / response / decision transition whose diff adds no such
+  section, and a proposal-*open* commit whose file already carries reviews.
+  Guards the failure that opened the tighten-up (Cairn's own showcase arc
+  carried both shapes). Accepted at proposal stem
+  `2026-07-22-claude-transition-lint`, which pinned the heuristics this entry's
+  earlier deferral was waiting on — an independent reimplementation scored **0
+  false positives across 538 commit subjects**, surfacing exactly the 3 real
+  incidents. The sibling reader-fix (stem
+  `2026-07-22-claude-stage-commit-patterns`) confirmed it is *not* made
+  redundant: that reader classifies messages and never opens a diff.
+  **Queued, not next** — maintainer-facing apparatus, and the standing priority
+  is postdoc-first; it does not displace adopter-path work. Plan conditions
+  (rename-awareness, narrowed trigger, carve-in-bounded exceptions, advisory
+  exit 0, no silent-clean) are ratified in the Decision. → plan-open when it
+  reaches the top.
 * **Self-host lockfile reconciliation** *(deferred, Jul 2026)* —
   `python bootstrap/scaffold.py upgrade --target . --cairn-root . --plan`
   currently reports **38** files as "no recoverable base (review-only
