@@ -244,6 +244,10 @@ def _emit_lock_yaml(data: dict[str, Any]) -> str:
         "(tool-owned; regenerate-only; do not hand-edit).\n"
         "# JSON-encoded (valid YAML 1.2) so it round-trips without a YAML "
         "dependency.\n"
+        "# source_repository/source_licenses are declared, not attested -- "
+        "see \"Adding a lockfile field without bumping the schema\" in "
+        "bootstrap/UPGRADE.md (a reference in the Cairn source repository, "
+        "not a file installed into this tree).\n"
     )
     return header + json.dumps(data, indent=2, sort_keys=True) + "\n"
 

@@ -196,6 +196,36 @@ inventory. `upgrade` warns if the manifest's citation is stale. Keep the
 two one-way: regenerate the lockfile with the tool; update the manifest's
 citation by hand.
 
+## Adding a lockfile field without bumping the schema
+
+The lockfile's top-level fields today: `schema`, `cairn_version`,
+`cairn_commit`, `source_repository`, `source_licenses`, `profile`,
+`modules`, `optional_templates`, `tokens`, `files`, plus the
+writer-varying `migrated` (present only on a lockfile synthesized by
+`upgrade --init-lock`).
+
+**The rule.** An additive **optional** top-level field does not bump
+`schema` — readers must use `.get()` with a default and tolerate
+unknown keys. A removal, rename, or change of meaning of an existing
+field does bump `schema`, and a bump is the point a reader-side
+validator becomes mandatory. `migrated` is the existing precedent this
+rule codifies, not a new invention: it is absent from every fresh
+install, written only by `upgrade --init-lock`, and has coexisted with
+`schema: 1` since it shipped.
+
+**`source_repository` / `source_licenses` are declared, not
+attested.** Both are read from the source tree's `CITATION.cff` at
+install/upgrade time — `source_repository` from its `repository-code:`
+line, `source_licenses` from its `license:` block — and are
+**derived** readings of that file (the parser filters as it reads; it
+is not a byte-for-byte copy), not attestations of checkout origin or
+installed-file licensing. A fork with a stale or false `CITATION.cff`
+produces a stale or false declaration; the fields' authority is
+exactly that of the file they were derived from, no more. Signed tags
+and Maintainer-approved release commits, the observed `cairn_commit`,
+and the per-file hashes remain the lockfile's actual origin/integrity
+controls (see [`PROVENANCE.md`](PROVENANCE.md)'s "Controls" section).
+
 ## A note on secrets
 
 Cairn templates must **not** introduce secret-bearing substitution tokens
