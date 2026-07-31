@@ -40,6 +40,9 @@ _LOCKFILE_REL = "dev/.cairn/cairn-lock.yml"        # tracked machinery (in .cair
 _BASE_CACHE_REL = "dev/.cairn/base"         # tracked raw-template cache (R1/I4)
 _PROFILE_REL = "dev/.cairn/profile.yml"     # canonical committed install-config (BOOTSTRAP.md)
 _LOCK_SCHEMA = 1
+#: An additive optional top-level lockfile field does NOT bump this --
+#: see "Adding a lockfile field without bumping the schema" in
+#: bootstrap/UPGRADE.md for the full rule and the reader-tolerance it relies on.
 
 
 #: Lockfile records for these dsts carry ``living_state: true`` and are
@@ -122,6 +125,61 @@ def _cairn_commit(cairn_root: Path) -> str:
     except (OSError, subprocess.SubprocessError):
         return "unknown"
     return r.stdout.strip() if r.returncode == 0 else "unknown"
+
+
+def _cairn_provenance(cairn_root: Path) -> tuple[str, list[str]]:
+    """Read the declared source repository and licenses from ``CITATION.cff``
+    (``("unknown", [])`` if absent, unreadable, or keyless).
+
+    ``source_repository`` is a single-line match on ``repository-code:``,
+    mirroring :func:`_cairn_version`'s pattern. ``source_licenses`` consumes
+    the indented ``- `` items immediately following a bare ``license:`` line,
+    stopping at the first line that is not such an item -- CITATION.cff's own
+    ``license:`` block is immediately followed by a ``keywords:`` block with
+    its own ``- `` items, and a scanner that kept consuming would silently
+    record keywords as licenses. A scalar ``license: MIT`` form is accepted
+    as a one-element list. A consumed value containing whitespace (not a bare
+    SPDX-shaped token) is dropped.
+
+    Both values are **declarations** derived from the source tree at
+    install/upgrade time, not attestations of checkout origin or
+    installed-file licensing -- see ``bootstrap/UPGRADE.md``.
+    """
+    cff = cairn_root / "CITATION.cff"
+    if not cff.exists():
+        return "unknown", []
+    try:
+        lines = cff.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return "unknown", []
+
+    repository = "unknown"
+    for line in lines:
+        m = re.match(r'\s*repository-code\s*:\s*"?([^"\s]+)"?\s*$', line)
+        if m:
+            repository = m.group(1)
+            break
+
+    licenses: list[str] = []
+    for i, line in enumerate(lines):
+        m = re.match(r'\s*license\s*:\s*(.*)$', line)
+        if not m:
+            continue
+        rest = m.group(1).strip()
+        if rest:
+            if " " not in rest:
+                licenses.append(rest)
+        else:
+            for nxt in lines[i + 1:]:
+                item = re.match(r'\s*-\s*(.+?)\s*$', nxt)
+                if not item:
+                    break
+                value = item.group(1).strip()
+                if value and " " not in value:
+                    licenses.append(value)
+        break
+
+    return repository, licenses
 
 
 def _behind_by_n(cairn_root: Path, lock_commit: str | None,

@@ -288,6 +288,7 @@ from .lockfile import (  # noqa: F401  (re-exported for the facade)
     _SECRET_TOKEN_RE,
     _behind_by_n,
     _cairn_commit,
+    _cairn_provenance,
     _cairn_version,
     _emit_lock_yaml,
     _refuse_secret_tokens,
