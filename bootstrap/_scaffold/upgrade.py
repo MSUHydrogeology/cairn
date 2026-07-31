@@ -898,6 +898,7 @@ def _write_stage(
             continue
         if "sha256:" + _sha256_hex(dst_abs.read_bytes()) != rec.get("hash"):
             verbatim_rehash.append(fp.dst)
+    _new_source_repository, _new_source_licenses = _cairn_provenance(cairn_root)
     meta = {
         "lock_commit": lock.get("cairn_commit"),
         "lock_version": lock.get("cairn_version"),
@@ -906,6 +907,8 @@ def _write_stage(
         "modules": lock.get("modules"),
         "new_version": _cairn_version(cairn_root),
         "new_commit": to_ref or _cairn_commit(cairn_root),
+        "new_source_repository": _new_source_repository,
+        "new_source_licenses": _new_source_licenses,
         "staged_files": sorted(staged_files),
         "kinds": kinds,
         "ours_hashes": ours_hashes,
@@ -1947,6 +1950,18 @@ def _apply_upgrade(
     new_lock = dict(lock)
     new_lock["cairn_version"] = meta.get("new_version", lock.get("cairn_version"))
     new_lock["cairn_commit"] = meta.get("new_commit", lock.get("cairn_commit"))
+    # Conditional-presence, NOT the .get()-chain pattern above: those two
+    # fields are original and always-present in any lock, so the chain never
+    # actually falls through to None. source_repository/source_licenses are
+    # new *optional* fields -- the equivalent chain would write a literal
+    # JSON null when an old stage (no new_source_* keys) is applied to a
+    # pre-provenance lock. new_lock already starts as dict(lock), so an
+    # already-absent field stays absent and an already-present field's
+    # current value survives untouched unless the stage supplies a fresher one.
+    if "new_source_repository" in meta:
+        new_lock["source_repository"] = meta["new_source_repository"]
+    if "new_source_licenses" in meta:
+        new_lock["source_licenses"] = meta["new_source_licenses"]
     # S1: if the adopter's profile changed since install, re-embed the current
     # resolved profile so the advanced lockfile matches the now-resized on-disk
     # files (the staged content was already sized under this profile).
