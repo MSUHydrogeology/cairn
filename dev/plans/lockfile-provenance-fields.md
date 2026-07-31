@@ -252,10 +252,48 @@ plan's preparation-time estimates. The falsifiable target (superseded from
 the proposal's stale 133/node): after Chunks A-F, `_classify()` reports
 **exactly 5 CHANGED** (`write_install_lockfile`, `_cmd_init_lock`,
 `_apply_upgrade`, `_write_stage`, `_emit_lock_yaml`), **0 MISSING, 0
-DUPLICATE**, and the NEW-note set is exactly `FunctionDef:_cairn_provenance`
-plus whatever `Import:` keys rotate from the new imports each edit
-introduces (informational only, never a failure — confirmed this session
-per `_classify()`'s own Import/Docstring skip).
+DUPLICATE**. **Correction to the NEW-note claim, confirmed by running the
+handoff script's dry-run below:** the NEW-note set is *not* only
+`FunctionDef:_cairn_provenance` plus rotated `Import:` keys — the live tree
+also carries ~29 other pre-existing NEW top-level symbols unrelated to this
+plan (the same known-new-manifest drift `ast-known-new-repin` tracks
+separately, predating Chunk A). All NEW notes are informational only, never
+a failure (`_classify()`'s own Import/Docstring/unpinned-NEW skip) — the
+actual falsifiable target is the CHANGED/MISSING/DUPLICATE counts above,
+which the dry-run confirms resolve to 0/0/0.
+
+**Chunks A-F landed; the handoff script is prepared and dry-run-verified.**
+`reanchor_lockfile_provenance_fields.py` (this session's scratchpad, not
+committed to the repo — a one-off Maintainer-run correction, same mechanism
+as the sibling `adopter-licensing-compliance` and `first-session-
+survivability` plans' Chunk D). It: (1) requires the canonical `lhm`/Python
+3.13 interpreter, refusing otherwise; (2) asserts the committed baseline
+still carries the exact pre-image digest for each of the five symbols
+before touching anything (refuses on any mismatch); (3) computes each
+symbol's live digest+span via `_ast_attest.digest_module()`; (4) in
+dry-run (default), simulates the write against a scratch copy and runs
+`_ast_attest.verify()` against *that* copy; (5) with `--commit`, performs
+the same 5-key write atomically against the real baseline file, then
+re-verifies.
+
+**Dry-run, independently confirmed this session**, under
+`/Users/kendal30/conda_envs/lhm/bin/python3.13`: all five pre-image digests
+matched exactly (`write_install_lockfile` `d3aaf82d69c46a18`, `_cmd_init_lock`
+`58a093660555a6f9`, `_apply_upgrade` `0b30b00e58a4887f`, `_write_stage`
+`f0696207cc7e26d8`, `_emit_lock_yaml` `7169c38cf30e1de9`); the simulated
+5-key correction verifies clean — `AST attestation OK — 174 baselined
+symbol(s) accounted for, unchanged.` **Never run with `--commit` by this
+agent**, per `bootstrap/REANCHOR_RUNBOOK.md`'s "must not bless its own
+verifier" principle, extended to the real governing mechanism here exactly
+as the two sibling plans' Chunk D established.
+
+**What the Maintainer does:** review the script and this section, run
+`/Users/kendal30/conda_envs/lhm/bin/python3.13
+reanchor_lockfile_provenance_fields.py` (dry-run) to reproduce the above
+independently, then re-run with `--commit`, then confirm
+`bootstrap/tests/test_ast_attest.py` is green under the canonical
+interpreter. A closing plan commit then records the outcome and this plan
+advances to `archived`.
 
 ## Acceptance criteria
 
