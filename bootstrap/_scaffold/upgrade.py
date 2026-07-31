@@ -53,6 +53,7 @@ from .lockfile import (
     _PROFILE_REL,
     _behind_by_n,
     _cairn_commit,
+    _cairn_provenance,
     _cairn_version,
     _emit_lock_yaml,
     _sha256_hex,
@@ -1193,9 +1194,12 @@ def _cmd_init_lock(
             rec["unrecoverable_base"] = True
             classification["unrecoverable-base"].append(dst_rel)
         records.append(rec)
+    _source_repository, _source_licenses = _cairn_provenance(cairn_root)
     lock = {
         "schema": _LOCK_SCHEMA, "migrated": True,
         "cairn_version": _cairn_version(cairn_root), "cairn_commit": commit,
+        "source_repository": _source_repository,
+        "source_licenses": _source_licenses,
         "profile": lock_profile, "modules": sorted(
             m for m in _MODULE_MAPPINGS
             if (target / "dev" / "modules" / f"{m}.md").exists()),

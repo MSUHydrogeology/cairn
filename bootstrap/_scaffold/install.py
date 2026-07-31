@@ -55,6 +55,7 @@ from .lockfile import (
     _LOCKFILE_REL,
     _LOCK_SCHEMA,
     _cairn_commit,
+    _cairn_provenance,
     _cairn_version,
     _emit_lock_yaml,
     _refuse_secret_tokens,
@@ -1624,10 +1625,13 @@ def write_install_lockfile(
         )
         return None
 
+    _source_repository, _source_licenses = _cairn_provenance(cairn_root)
     lock: dict[str, Any] = {
         "schema": _LOCK_SCHEMA,
         "cairn_version": _cairn_version(cairn_root),
         "cairn_commit": _cairn_commit(cairn_root),
+        "source_repository": _source_repository,
+        "source_licenses": _source_licenses,
         "profile": profile,
         "modules": sorted(modules),
         "optional_templates": sorted(dst for _, dst in optional),
