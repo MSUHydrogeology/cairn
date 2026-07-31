@@ -109,6 +109,26 @@ def _warn(message: str) -> None:
     print(f"{_PREFIX} NOTE: {message}", file=sys.stderr)
 
 
+_STALE_WARNED = False
+
+
+def _warn_stale_once(message: str) -> None:
+    """Emit a stale-interpreter warning at most once per process.
+
+    The interpreter resolver is reached up to four times in one
+    ``session-end --handoff`` (measured chain: ``_intent_whoami``,
+    ``cmd_session_start``, ``_do_reflection``, ``_do_full_handoff``).
+    Without this guard an adopter would see the remedy repeated up to four
+    times, aggravating alarm fatigue on the one remaining detection signal
+    for an absent-path tamper.
+    """
+    global _STALE_WARNED
+    if _STALE_WARNED:
+        return
+    _STALE_WARNED = True
+    _warn(message)
+
+
 class LifecycleError(RuntimeError):
     """A fatal, *actionable* failure -- never a silent skip.
 
@@ -333,6 +353,33 @@ def _has_symlink_component(path: Path) -> bool:
         cur = cur.parent
 
 
+_REBIND_REMEDY = (
+    "To refresh the binding: delete dev/.cairn/local-env.json, THEN re-run the "
+    "Cairn scaffold install against this repo.  Deletion is what makes the "
+    "install write a fresh binding -- re-running with the file still present "
+    "preserves the stale one, and --force is neither needed nor advised (it "
+    "overwrites your whole customized tree).  A bare delete alone leaves the "
+    "routines on the current-interpreter fallback."
+)
+
+
+def _probe_interpreter(interp: Path) -> str:
+    """Classify a recorded path: "symlinked" / "absent" / "present".
+
+    Every inspection step lives here so the caller wraps the whole
+    classification in one ``except OSError``.  The symlink walk itself raises
+    on an unreadable parent, so guarding only the ``stat()`` probe would leave
+    that case an uncaught traceback.
+    """
+    if _has_symlink_component(interp):        # may raise OSError
+        return "symlinked"
+    try:
+        interp.stat()
+    except (FileNotFoundError, NotADirectoryError):
+        return "absent"
+    return "present"
+
+
 def _resolve_interpreter(root: Path) -> Tuple[str, str]:
     """Resolve the project interpreter the routines invoke sub-tools with.
 
@@ -384,14 +431,34 @@ def _resolve_interpreter(root: Path) -> Tuple[str, str]:
     interp = Path(value)
     if not interp.is_absolute():
         raise LifecycleError(f'{cfg}: "interpreter" must be an absolute path.')
-    if _has_symlink_component(interp):
+    if ".." in interp.parts:
+        raise LifecycleError(
+            f'{cfg}: "interpreter" must not contain a parent-traversal '
+            f"(..) segment: {interp}."
+        )
+    try:
+        shape = _probe_interpreter(interp)
+    except OSError as exc:                     # EACCES / ELOOP / ENAMETOOLONG
+        raise LifecycleError(
+            f'{cfg}: "interpreter" could not be inspected ({exc}): {interp}.  '
+            f"Refusing rather than guessing.  {_REBIND_REMEDY}"
+        ) from exc
+    if shape == "symlinked":
         raise LifecycleError(
             f'{cfg}: "interpreter" must not be reached through a symlink '
-            "(leaf or parent)."
+            f"(leaf or parent).  {_REBIND_REMEDY}"
         )
+    if shape == "absent":
+        _warn_stale_once(
+            f'{cfg}: recorded interpreter "{interp}" no longer exists -- your '
+            f"environment was likely rebuilt.  Using the current interpreter "
+            f"({sys.executable}) for this run.  {_REBIND_REMEDY}"
+        )
+        return sys.executable, "fallback-stale"
     if not interp.is_file() or not os.access(interp, os.X_OK):
         raise LifecycleError(
-            f'{cfg}: "interpreter" is not an executable file: {interp}.'
+            f'{cfg}: "interpreter" is not an executable file: {interp}.  '
+            f"{_REBIND_REMEDY}"
         )
     return str(interp), "local-env.json"
 
