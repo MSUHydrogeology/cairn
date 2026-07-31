@@ -176,7 +176,8 @@ rather than left to be inferred.
 
 ```
 G0. [Maintainer prerequisite, BEFORE Chunk A] Resolve inherited gate-anchor  [parked]
-    drift (234 files), establish a concrete pre-implementation P
+    drift (live-derived at G0 time, not a hardcoded count -- ETR1-R4),
+    establish a concrete pre-implementation P
 A.  C1(revised)+C1a -- _probe_interpreter classifier, _REBIND_REMEDY, R6 guard [commit pending]
 B.  C2(revised) -- _warn_stale_once, docstring source-value update            [commit pending]
 C.  C3 -- _intent_whoami surfaces the swallowed refusal                      [commit pending]
@@ -296,14 +297,34 @@ session:
 implementing-agent act:**
 
 **G0 -- pre-Chunk-A prerequisite.** Before Chunk A begins: the Maintainer
-resolves the pre-existing 234-file / 54-changed-pinned-plus-14-newly-frozen
-/ 1404→1446-collection drift against `refs/cairn/gate-anchor` (a
-Maintainer-controlled gate-baseline transition, reviewed and recorded on its
-own -- this plan does not decide how, only that a concrete, resolved `P`
-must exist before implementation starts, so the eventual G1 handoff has a
-known, reviewable starting point rather than an open-ended inherited scope).
-This is a **precondition on Chunk A**, not parallel work -- the implementing
-agent does not begin Chunk A until the Maintainer confirms a usable `P`.
+resolves the pre-existing inherited drift against `refs/cairn/gate-anchor`
+(a Maintainer-controlled gate-baseline transition, reviewed and recorded
+on its own -- this plan does not decide how, only that a concrete,
+resolved `P` must exist before implementation starts, so the eventual G1
+handoff has a known, reviewable starting point rather than an open-ended
+inherited scope). This is a **precondition on Chunk A**, not parallel
+work -- the implementing agent does not begin Chunk A until the
+Maintainer confirms a usable `P`.
+
+**The scope figure is a live invariant, not a fixed count -- corrected at
+plan-review (ETR1-R4, External/Codex, blocking process/record).** This
+paragraph's first drafts stated the drift as a hardcoded "234 files / 54
+changed pinned + 14 newly frozen / 1404→1446 collection" and carried that
+literal into the Acceptance criteria. Those figures were an accurate
+measurement **at the time ETR1 was written** (2026-07-31, this session's
+Response-round plan-review) -- but unrelated work (the sibling
+`lockfile-provenance-fields` plan's own implementation) landed
+concurrently, and by the time ETR1-R4 re-measured at immutable commit
+`5f3f9dbc18ef5b25cb2e04effcc11b8db3c06756` the true scope had already
+moved to 236 files / 54 changed pinned + 15 newly frozen / 1404→1459
+collection. **Neither number is the one that matters at G0 time** --
+whoever runs G0 must re-derive `git diff --stat refs/cairn/gate-anchor
+HEAD` and `bootstrap/tests/_gate_manifest.py produce()`'s live figures
+fresh, from whatever commit is about to become `P`, and record that
+freshly-derived scope (not either historical figure above) as the
+reviewed basis for the Maintainer's gate-baseline-transition decision.
+Hardcoding a plan-review-time snapshot as a live acceptance target would
+only repeat this same failure on the next concurrent commit.
 
 **G1 -- post-Chunk-H handoff** (sequencing corrected -- this now runs
 **after** Chunk H, not between F and H; see the `## Sequence` block below).
@@ -380,10 +401,13 @@ F6, and by Chunk A's `_probe_interpreter` structure itself.
   landed."
 * **Gate-manifest re-anchor** -- **corrected at plan-review (ETR1,
   External/Codex, blocking process; delta/sequencing corrected again at
-  ETR1-R2, file count corrected again at ETR1-R3)**: **G0** (a precondition
-  on Chunk A) is a Maintainer-resolved, concrete pre-implementation `P` —
-  no current 234-file / 54+14-frozen-file drift against `refs/cairn/
-  gate-anchor` left unaddressed. **G1** (after Chunk H) is the
+  ETR1-R2, file count corrected again at ETR1-R3, scope-figure hardcoding
+  corrected again at ETR1-R4)**: **G0** (a precondition on Chunk A) is a
+  Maintainer-resolved, concrete pre-implementation `P` — the inherited
+  drift against `refs/cairn/gate-anchor`, **re-derived live at G0 time**
+  (not either historical figure this plan has cited -- both are already
+  stale; see G0's own "scope figure is a live invariant" note), left
+  unaddressed. **G1** (after Chunk H) is the
   **Maintainer's own recorded `promote` result** (`P`/`A`/`C`/`N`), where
   `C` is the actual final implementation commit and the reviewed expected
   `P`→`N` delta is **five files, not four**: `lifecycle.py`,
@@ -1253,3 +1277,39 @@ the focused gate transition/re-anchor suite passed **25 tests**. No production
 ref, authorization artifact, manifest, or lifecycle implementation file was
 changed or promoted. Focused re-read required after ETR1-R4 is dispositioned;
 Chunk A remains blocked.
+
+### Response -- Claude (author) -- 2026-07-31
+
+Independently re-verified before disposing: confirmed the cited immutable
+commit `5f3f9dbc18ef5b25cb2e04effcc11b8db3c06756` is exactly the sibling
+`lockfile-provenance-fields` plan's own code-review commit (`git show
+5f3f9db -s` matches); re-ran `git diff --stat refs/cairn/gate-anchor HEAD`
+and `_gate_manifest.produce()` against current HEAD myself and got the
+identical `236 / 54+15 / 1404->1459` figures the reviewer reports --
+confirming the drift has not moved further since Round 4's own
+measurement.
+
+* **[ETR1-R4] accept -- blocking process/record, fixed.** The root cause
+  was treating a live, ever-moving trust-root delta as if it were a fixed
+  fact worth hardcoding into the plan text -- exactly the "count claims"
+  failure mode this session's own doctrine warns against for anything
+  that isn't a genuinely static snapshot. Fixed by removing the hardcoded
+  `234 / 54+14 / 1404→1446` figures from every place they functioned as
+  **live acceptance language** (G0's own operative design paragraph, the
+  Sequence block's G0 line, and the Acceptance criteria's gate-manifest
+  bullet), replacing each with an explicit instruction to re-derive the
+  scope fresh at G0 time from whatever commit is about to become `P` --
+  never from a plan-review-time snapshot. Added a new paragraph under G0
+  ("The scope figure is a live invariant, not a fixed count") stating
+  both historical figures (the original 234/54+14/1404→1446 and Round
+  4's own already-stale 236/54+15/1404→1459) explicitly as **dated
+  snapshots that are not the number that matters**, so a future reader
+  cannot mistake either for the live target. Left the narrative
+  descriptions of what ETR1's *original finding* said (Context Finding 6,
+  Chunk G's "Rewritten twice" history) untouched -- those are historical
+  record of what was found and corrected at the time, not live acceptance
+  criteria, and the reviewer's own satisfier scoped the fix to "the live
+  acceptance language" specifically.
+
+**Status: remains `awaiting-plan-review`.** A focused External re-read on
+ETR1-R4 is still required before Chunk A begins.
