@@ -542,9 +542,9 @@
       "verbatim": true
     },
     {
-      "base_hash": "sha256:296ef88bda1e3e817734cc6cdb14e9571cd3a0ee0aada8d07dfa9e1f898839c9",
+      "base_hash": "sha256:c77b24c152396be9c125ab9826c305eee826efdfeaa94e0b4a016ab04dcb2df9",
       "dst": "tools/lifecycle.py",
-      "hash": "sha256:6f6333ee3a5c0d53f8278601ccfdd0867f749452ac02d63faba6ccb32e46d852",
+      "hash": "sha256:c77b24c152396be9c125ab9826c305eee826efdfeaa94e0b4a016ab04dcb2df9",
       "src": "skills/_lib/lifecycle.py",
       "verbatim": true
     },

@@ -109,6 +109,26 @@ def _warn(message: str) -> None:
     print(f"{_PREFIX} NOTE: {message}", file=sys.stderr)
 
 
+_STALE_WARNED = False
+
+
+def _warn_stale_once(message: str) -> None:
+    """Emit a stale-interpreter warning at most once per process.
+
+    The interpreter resolver is reached up to four times in one
+    ``session-end --handoff`` (measured chain: ``_intent_whoami``,
+    ``cmd_session_start``, ``_do_reflection``, ``_do_full_handoff``).
+    Without this guard an adopter would see the remedy repeated up to four
+    times, aggravating alarm fatigue on the one remaining detection signal
+    for an absent-path tamper.
+    """
+    global _STALE_WARNED
+    if _STALE_WARNED:
+        return
+    _STALE_WARNED = True
+    _warn(message)
+
+
 class LifecycleError(RuntimeError):
     """A fatal, *actionable* failure -- never a silent skip.
 
@@ -198,7 +218,11 @@ def _intent_whoami(root: Path, *, session_token: bool = False) -> Optional[str]:
         return None
     try:
         interpreter, _ = _resolve_interpreter(root)
-    except LifecycleError:
+    except LifecycleError as exc:
+        _warn(
+            f"interpreter binding refused ({exc}); running the optional "
+            f"intent tool under the current interpreter instead."
+        )
         interpreter = sys.executable
     cmd = [interpreter, str(intent_tool), "whoami"]
     if session_token:
@@ -333,23 +357,66 @@ def _has_symlink_component(path: Path) -> bool:
         cur = cur.parent
 
 
+_REBIND_REMEDY = (
+    "To refresh the binding: delete dev/.cairn/local-env.json, THEN re-run the "
+    "Cairn scaffold install against this repo.  Deletion is what makes the "
+    "install write a fresh binding -- re-running with the file still present "
+    "preserves the stale one, and --force is neither needed nor advised (it "
+    "overwrites your whole customized tree).  A bare delete alone leaves the "
+    "routines on the current-interpreter fallback."
+)
+
+
+def _probe_interpreter(interp: Path) -> str:
+    """Classify a recorded path: "symlinked" / "absent" / "present".
+
+    Every inspection step lives here so the caller wraps the whole
+    classification in one ``except OSError``.  The symlink walk itself raises
+    on an unreadable parent, so guarding only the ``stat()`` probe would leave
+    that case an uncaught traceback.
+    """
+    if _has_symlink_component(interp):        # may raise OSError
+        return "symlinked"
+    try:
+        interp.stat()
+    except (FileNotFoundError, NotADirectoryError):
+        return "absent"
+    return "present"
+
+
 def _resolve_interpreter(root: Path) -> Tuple[str, str]:
     """Resolve the project interpreter the routines invoke sub-tools with.
 
     Resolve-don't-bake (Decision 6 / R3): the interpreter binding lives in an
     **untracked** ``dev/.cairn/local-env.json`` written at bootstrap, never
-    baked into a tracked file.  Because that file is an *executable trust root*
-    a local edit can silently redirect, it carries a **strict, tamper-aware
-    contract** (S2): exactly one key ``interpreter`` mapping to an **absolute**
-    path to an **existing executable file**, reached through **no symlinked leaf
-    or parent**, with **no arguments / shell interpolation / relative segments**.
-    Any violation **refuses before running anything** (a `LifecycleError`).
+    baked into a tracked file.
+
+    **The trust-root contract, corrected on the record (S1).**
+    ``dev/.cairn/local-env.json`` is an **operationally trusted executable
+    binding**.  It is untracked, gitignored, mutable, and not
+    lockfile-covered, so at read time it is user-controlled and carries no
+    provenance or integrity signal.  ``_resolve_interpreter`` is a strict
+    **shape validator, not an authenticator**: it enforces absoluteness, a
+    single-key schema, control-char rejection, no parent-traversal (``..``)
+    segment, symlink-freedom, existence, and the executable bit -- but it
+    checks **neither Python identity nor binary provenance**.  Any absolute,
+    present, non-symlinked, executable regular file is accepted and
+    executed.
+
+    A structurally-valid-but-absent path **degrades** with a warning
+    (``"fallback-stale"``, below).  Every other violation **refuses before
+    running anything** (a `LifecycleError`) at every call site **except**
+    ``_intent_whoami``'s optional-tool fallback, which surfaces the refusal
+    as a warning and continues under the current interpreter (the intent
+    tool is optional and repository-controlled).
 
     Returns ``(interpreter_path, source)`` where source is ``"local-env.json"``
     or ``"fallback"``.  When the config is absent, the **runtime resolver
-    fallback** is the interpreter currently running this CLI -- safe because the
-    lifecycle tools are standard-library only -- and the caller surfaces install
-    guidance so the hidden binding is never silently assumed.
+    fallback** is the interpreter currently running this CLI -- safe because
+    *this* tool is standard-library only, a rationale scoped to this tool's
+    own execution and not to whatever sub-tool the resolved interpreter is
+    later used to run (R7) -- and the caller surfaces install guidance so the
+    hidden binding is never silently assumed.
     """
     cfg = _state_dir(root) / "local-env.json"
     if not cfg.is_file():
@@ -375,8 +442,10 @@ def _resolve_interpreter(root: Path) -> Tuple[str, str]:
     # Reject NUL / control characters only.  We invoke as an explicit argv list
     # (never a shell), so shell metacharacters in a path are inert, and spaces
     # are legitimate in real filesystem paths (`My Drive`, OneDrive, profile
-    # dirs).  An appended-argument string like "/usr/bin/python -c ..." is
-    # caught by the is_file() check below, not by banning spaces (finding 1).
+    # dirs).  An appended-argument string like "/usr/bin/python -c ..." is not
+    # a real path (nothing exists there), so under the revised classifier it
+    # DEGRADES as an absent path -- it is never executed, only named in a
+    # warning -- not "caught" by any fatal check (finding 1; corrected R2/R6).
     if any(ord(ch) < 0x20 or ch == "\x7f" for ch in value):
         raise LifecycleError(
             f'{cfg}: "interpreter" must not contain control characters.'
@@ -384,14 +453,34 @@ def _resolve_interpreter(root: Path) -> Tuple[str, str]:
     interp = Path(value)
     if not interp.is_absolute():
         raise LifecycleError(f'{cfg}: "interpreter" must be an absolute path.')
-    if _has_symlink_component(interp):
+    if ".." in interp.parts:
+        raise LifecycleError(
+            f'{cfg}: "interpreter" must not contain a parent-traversal '
+            f"(..) segment: {interp}.  {_REBIND_REMEDY}"
+        )
+    try:
+        shape = _probe_interpreter(interp)
+    except OSError as exc:                     # EACCES / ELOOP / ENAMETOOLONG
+        raise LifecycleError(
+            f'{cfg}: "interpreter" could not be inspected ({exc}): {interp}.  '
+            f"Refusing rather than guessing.  {_REBIND_REMEDY}"
+        ) from exc
+    if shape == "symlinked":
         raise LifecycleError(
             f'{cfg}: "interpreter" must not be reached through a symlink '
-            "(leaf or parent)."
+            f"(leaf or parent).  {_REBIND_REMEDY}"
         )
+    if shape == "absent":
+        _warn_stale_once(
+            f'{cfg}: recorded interpreter "{interp}" no longer exists -- your '
+            f"environment was likely rebuilt.  Using the current interpreter "
+            f"({sys.executable}) for this run.  {_REBIND_REMEDY}"
+        )
+        return sys.executable, "fallback-stale"
     if not interp.is_file() or not os.access(interp, os.X_OK):
         raise LifecycleError(
-            f'{cfg}: "interpreter" is not an executable file: {interp}.'
+            f'{cfg}: "interpreter" is not an executable file: {interp}.  '
+            f"{_REBIND_REMEDY}"
         )
     return str(interp), "local-env.json"
 
