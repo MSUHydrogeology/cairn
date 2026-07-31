@@ -13,7 +13,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Sonnet 5
 **Date opened**: 2026-07-22
-**Status**: revised
+**Status**: accepted
 **Touches**: `bootstrap/tests/fixtures/scaffold_ast_known_new.json` (the manifest); `bootstrap/tests/_ast_attest.py` (`update_symbol`'s NEW-symbol strictness check — possibly narrowed, not the CHANGED/MISSING/DUPLICATE enforcement, which is unaffected); `bootstrap/tests/test_ast_attest.py` (new coverage for whatever the narrowed check becomes).
 **Related**: found while preparing the Chunk D handoff for the accepted `dev/plans/first-session-survivability.md` (commit `4dfc98d`'s "Chunk D — supervised baseline re-pin" section documents the finding in place); the same guarded-`update-symbol` mechanism and its `_UPDATE_ALLOWLIST` are the ones the sibling `dev/plans/archive/adopter-licensing-compliance.md`'s Chunk D (commit `e1eec63`) also drove, for a different symbol.
 **Plan review**: required(Internal) — narrows a verification-gate's strictness check (the NEW-symbol enforcement inside `update_symbol`), which a fresh-context reader should independently re-derive is safe (the CHANGED/MISSING/DUPLICATE enforcement that actually catches altered logic is untouched) rather than take on the author's word. Not a Security-Review trigger by the letter of `AGENTS.md`'s protected-contracts list (this doesn't touch `bootstrap/SAFETY.md`, `security_check.py`, or the content scanner, and `scaffold_ast_baseline.json`/`config.py`'s gate-manifest exclusion applies here too, per `_gate_manifest.py`'s `CASCADE_MUTABLE`) — but the audit component (confirming 25 untraced named symbols are legitimate) is exactly the kind of claim an Internal read should sample-check, not accept wholesale. External read welcome but not required by this proposal. Ratified at Decision.
@@ -371,10 +371,91 @@ full 28-symbol audit is complete, not deferred to implementation.
 Part 1's implementation work is now "transcribe this table's digests
 into the regenerated manifest," not "perform the audit."
 
-## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
+## Decision -- Anthony Kendall (Maintainer) -- 2026-07-22
 
-*(Awaiting the Maintainer. Internal-tier review complete with the
-citation corrections above folded in via Response + Revised proposal;
-consider recording the review's tier as External per the Response's
-tier-label observation. The 28-symbol audit is now independently
-complete and correct, not merely claimed.)*
+**Accepted, as revised, with two corrections to the record.** Scribed by Claude
+(Strategy) at the Maintainer's explicit instruction. The scribe is **not** this
+proposal's author (authored by Claude Sonnet 5 in the implementing session), so
+no author-signs-own-Decision coupling arises.
+
+Maintainer's authorization (verbatim):
+
+> Accept as revised, with the corrections to the review tier and the author's
+> table should be used instead of the reviewer's
+
+**Accepted scope.** The Revised proposal: **Part 1** — the audit and
+regeneration of `bootstrap/tests/fixtures/scaffold_ast_known_new.json` — and
+**Part 2** — narrowing `update_symbol`'s NEW-symbol strictness check to exempt
+`Import:` / `ImportFrom:` / `Docstring#` keys, using the exact predicate
+`_classify()` already applies. The proposal's own "explicitly not proposed"
+fence is ratified as a scope fence: **no** loosening of CHANGED / MISSING /
+DUPLICATE, **no** widening of `_UPDATE_ALLOWLIST`, and **no** touching of
+`scaffold_ast_baseline.json`.
+
+### Correction 1 — the review tier is **External**, not Internal
+
+The review at `## Review -- Gemini (Internal) -- 2026-07-22` is hereby recorded
+as an **External (different-agent-type)** read. Gemini reviewing a
+Claude-authored proposal is cross-type, which is the External floor
+(`doctrine/dual-review.md`: Internal = same agent type in a fresh session;
+External = a different agent type or a human). The section header is left
+unedited — a review section is append-only and not the author's or the scribe's
+to alter — so this Decision is where the tier is corrected.
+
+The author flagged the mislabel themselves rather than accepting the more
+convenient label, and cited this repo's own contrary precedent (the sibling
+first-session-survivability proposal's same Gemini pairing is correctly headed
+"External, different-agent-type"). Noted because the error direction matters:
+this **understates** independence, the opposite of the overstatement the
+accepted `2026-07-08-claude-review-record-integrity` proposal was opened to fix.
+Consequence worth recording: the proposal declared `Plan review:
+required(Internal)` and treated an External read as optional — it has in fact
+already cleared the higher tier.
+
+### Correction 2 — the audit basis is the **author's** table, not the review's I1
+
+The review's finding **I1** claimed *"a full repository `git log -S` trace was
+executed across all 28 named symbols"* and concluded *"Zero symbols are
+orphaned, unreviewed, or untraced."* Its **citations are substantially wrong** —
+13 of 28 by the author's corrected trace. The failure is not marginal: I1's
+"Recent plan chunks" cluster attributes four scaffold symbols to `4059d7a`,
+`4dfc98d`, `eab7141` and `9429178`, **none of which touch
+`bootstrap/_scaffold/` at all** (they are proposal, plan-handoff, code-review
+and review-append commits); and its "Codex R2-2" cluster attributes seven
+symbols to `02df6dc`, which introduces none of them.
+
+Independently verified by the scribe before this Decision: the four
+"plan chunks" commits show **zero** `bootstrap/_scaffold/` files each, and two
+sampled symbols trace elsewhere (`_IF_RE` → `8214d8d`, `verify_within_root` →
+`a9e281b`).
+
+**The conclusion I1 reached is nonetheless correct** — but it is established by
+the **author's corrected table in the Revised proposal**, which is hereby the
+audit of record. The scribe spot-checked six of its rows, including four that
+I1 got wrong (`_ALWAYS_ON_MAPPINGS`, `_commit_lock_and_caches`,
+`_rendered_onboarding_overlay`, `_MODULE_REQUIRED_TOKENS`, plus `_IF_RE` and
+`verify_within_root`): **6 of 6 match git history exactly.** All 28 symbols
+trace to shipped, reviewed commits, six of the ten origin commits being
+review-flavored by their own subject lines.
+
+**Standing consequence:** this review channel's specific evidentiary claims are
+not to be treated as self-verifying. Reproduce them. That is the same
+discipline the implementing session applied to its own subagents, and it is what
+caught this.
+
+### Ratified plan conditions
+
+* `Plan review: required(Internal)` stands — the tier correction above concerns
+  the *proposal's* review, not the plan's.
+* **Part 1's implementation work is transcription, not audit.** The audit is
+  complete in the Revised proposal's table; the plan copies those symbols'
+  digests and multiplicities into the regenerated manifest and does not re-derive
+  provenance.
+* Part 2 uses `_classify()`'s literal predicate, so the two halves of
+  `_ast_attest.py` cannot drift apart again on this point.
+* The scope fence above is binding; `scaffold_ast_baseline.json` is untouched,
+  so the supervised re-anchor (`bootstrap/REANCHOR_RUNBOOK.md`, Maintainer-only)
+  remains a separate, still-outstanding act.
+
+**Next (separate commits):** open the plan (which archives this proposal),
+implement, non-implementing code review, archive.
