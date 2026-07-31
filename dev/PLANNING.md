@@ -301,6 +301,19 @@ none blocking.
   under `dev/` (E-#2).
 * **`_agent_of` round-suffix regression test** — pin the `## Review (Round
   N)` header shape in the Cairn tree.
+* **Interpreter trust-root check/use race (S2)** *(deferred, Jul 2026)* —
+  the `interpreter-trust-root-fallback` proposal's dedicated Security Review
+  (plan `interpreter-trust-root-fallback`) red-teamed
+  `_has_symlink_component`'s symlink walk in `templates/skills/_lib/
+  lifecycle.py` and demonstrated a check/use race: replacing a checked real
+  parent with a symlink between the walk and execution selects the
+  retargeted binary. Pre-existing (not introduced by that proposal's
+  absent-path degrade), and the attacker prerequisites generally permit
+  replacing the interpreter directly, so it does not block that proposal's
+  bounded downgrade — but the Decision explicitly did not accept it as
+  closed. Revive as: a design that closes the race (e.g. re-verify
+  post-walk, or resolve and open atomically) — its own proposal, on its own
+  review tier given the security surface.
 
 **Scaffold / engine**
 * **Facade-loader symlink hardening (C-#3)** — refuse any engine submodule
