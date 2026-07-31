@@ -252,7 +252,7 @@ plan-open** -- see below, committed in the same commit as this plan.
 
 | # | File | Change |
 |---|------|--------|
-| E1 | `templates/skills/_lib/lifecycle.py` | `_resolve_interpreter`'s docstring trust-root paragraph rewritten to the Decision's on-the-record correction: `dev/.cairn/local-env.json` is an **operationally trusted executable binding**, untracked, gitignored, **mutable**, and not lockfile-covered (**"mutable" restored at plan-review, PR10, Internal, minor — this row's original compression to "untracked/gitignored/not lockfile-covered" dropped one word of the Decision's verbatim four-adjective list; no other claim in this row was found softened**), and `_resolve_interpreter` is a strict **shape validator, not an authenticator** -- it checks neither Python identity nor binary provenance, and accepts any absolute, present, non-symlinked, executable regular file. This is not optional prose-polish: it is the specific correction the Security Review made blocking, and the Decision quotes it as "on the record." Land it in substance, not as a paraphrase that could soften it. |
+| E1 | `templates/skills/_lib/lifecycle.py` | `_resolve_interpreter`'s docstring trust-root paragraph rewritten to the Decision's on-the-record correction: `dev/.cairn/local-env.json` is an **operationally trusted executable binding**, untracked, gitignored, **mutable**, and not lockfile-covered (**"mutable" restored at plan-review, PR10, Internal, minor — this row's original compression to "untracked/gitignored/not lockfile-covered" dropped one word of the Decision's verbatim four-adjective list; no other claim in this row was found softened**), and `_resolve_interpreter` is a strict **shape validator, not an authenticator** -- it checks neither Python identity nor binary provenance, and accepts any absolute, present, non-symlinked, executable regular file. This is not optional prose-polish: it is the specific correction the Security Review made blocking, and the Decision quotes it as "on the record." Land it in substance, not as a paraphrase that could soften it. **Disclosure added at code review (CR2, sub-agent, minor):** the shipped docstring intentionally omits the blockquote's trailing verification-evidence sentence ("Verified by execution on 3.13.13 (reviewer) and independently on 3.12.9 (author): a plain shell script satisfying those shape checks is selected and run.") -- that sentence is procedural/evidentiary (who verified what, on which interpreter), not part of the trust-root contract itself, and belongs in the deliberation record rather than shipped-tool prose, per E3's own scoping principle below. Every substantive contract claim in the blockquote is landed word-for-word; only this one evidentiary trailer is deliberately not duplicated. The prior framing of this row ("verified by direct comparison, not paraphrase") was accurate on substance but did not disclose this specific, deliberate omission -- disclosed here for the record. |
 | E2 | `templates/skills/_lib/lifecycle.py` | The stale comment near the old `is_file()` check (the one claiming an appended-argument string "is caught by the `is_file()` check below") corrected -- under the revised classifier such a string is an absent *path* and degrades, per R2/R6's discussion. |
 | E3 | `templates/skills/_lib/lifecycle.py` | Threat-model-adjacent note (R7): the docstring's stdlib-only safety rationale is scoped to *this tool*, not the sub-tools the resolved interpreter runs -- one sentence, not a new section (the full threat-model argument lives in the proposal's record, not duplicated into shipped-tool prose). |
 
@@ -407,14 +407,25 @@ F6, and by Chunk A's `_probe_interpreter` structure itself.
   bootstrap/tests`, canonical `lhm` interpreter, at **0 failed / (1446 + new
   node count) passed / 0 skipped** -- today's re-verified baseline (Finding
   4 above); re-derive fresh at implementation time, don't copy.
-* **3.11 / 3.13 disposition parity (R2b's plan-execution prerequisite)** --
-  the Security Review already executed the full classifier matrix on
-  3.11.15, 3.12.9, and 3.13.13 and confirmed agreement on every disposition
-  (absent, `ENOTDIR`, symlinked-parent, unreadable-parent, delete/recreate,
-  present-then-delete); this plan's own implementation re-confirms on
-  whatever interpreters are available on the implementing host and records
-  which were and were not re-run, rather than re-asserting the Security
-  Review's figures as this session's own.
+* **3.11 / 3.13 disposition parity (R2b's plan-execution prerequisite) --
+  discharged and recorded at code review (CR1, sub-agent, substantive; the
+  implementation's own seven commits never named an interpreter version,
+  a real process gap independent of the underlying result).** Re-derived
+  fresh this session, all three under `templates/skills/_lib/lifecycle.py`
+  as actually shipped: **Python 3.11.13**
+  (`/Users/kendal30/conda_envs/geoparquet-test/bin/python3.11` -- contrary
+  to CR1's own "this host does not even have 3.11 available" note, a real
+  3.11 interpreter exists on this host, just off the default `PATH`; all 8
+  disposition-matrix checks pass, including the required symlink-before-
+  absence probe ordering and the `LifecycleError`/not-`OSError` subclass
+  relationship); **Python 3.12.9** (`/Users/kendal30/conda_envs/
+  miniforge3/bin/python3`, spot-checked: absent-degrade, required probe
+  ordering, subclass relationship); **Python 3.13.13**
+  (`/Users/kendal30/conda_envs/lhm/bin/python3.13`, canonical -- the full
+  suite and every implementation-time smoke/mutation test throughout
+  Chunks A-H ran under this interpreter). All three agree on every
+  disposition, matching the Security Review's own three-interpreter
+  matrix exactly.
 * **S1 record correction present** -- Chunk E1's docstring text is checked
   against the Decision's verbatim correction, not merely "some correction
   landed."
@@ -1393,3 +1404,216 @@ noted.
 **Status: remains `awaiting-plan-review`.** A focused External re-read
 confirming this one-word correction is still required before Chunk A
 begins.
+
+## Code review -- Claude (sub-agent, fresh context, not the implementer) -- 2026-07-31
+
+**Verdict: Accept.** All seven implementation commits (`33238ea`, `03f242e`,
+`f43d77a`, `e93f121`, `880ddd4`, `3703b57`, `d70dbcb`) match the plan as
+finally revised through all five review rounds, chunk-by-chunk, line-by-line,
+verified by direct diff reading, not by trusting the commit messages. The
+security-critical disposition matrix was independently re-derived by loading
+`templates/skills/_lib/lifecycle.py` via `importlib.util` and executing it
+directly (not reading it) -- every one of the seven required dispositions,
+plus the `LifecycleError`/`RuntimeError`/`OSError` subclass relationship,
+came back exactly as the plan and the Security Review specify. The full new
+test suite passes (28/28) under the canonical interpreter. Two non-blocking
+findings below; nothing rises to BLOCKING or SUBSTANTIVE-security.
+
+**Method.** Read the plan in full (Context, all eight chunks, Acceptance
+criteria, all five External/Security review rounds and their Responses, the
+Maintainer-authorization note). Ran `git show <hash>` on all seven commits
+and read every diff hunk against the corresponding chunk row. Wrote and ran
+an independent script (not copied from the plan or from
+`test_lifecycle_failsafe.py`) that loads the live module via
+`importlib.util.spec_from_file_location` and directly exercises: absent-path
+degrade, symlinked-leaf refusal, symlinked-parent-with-absent-leaf refusal
+(the required probe-ordering case), `..`-parent-traversal refusal (with a
+spy confirming `_probe_interpreter` is never reached), present-non-executable
+refusal, EACCES-blocked-parent clean `LifecycleError` (not a raw traceback),
+present-valid-executable acceptance, and the `LifecycleError(RuntimeError)`
+/ not-`OSError` subclass relationship. Wrote a second independent script
+confirming the once-per-process warning dedup (5 calls in one process, 1
+warning) and binding-not-rewritten (byte-identical before/after). Ran
+`bootstrap/tests/test_lifecycle_failsafe.py` and the full `bootstrap/tests`
+suite under `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13,
+canonical). Compared the shipped `_resolve_interpreter` docstring's S1
+paragraph character-by-character against the Decision's verbatim blockquote
+in `dev/proposals/archive/2026-07-22-claude-interpreter-trust-root-fallback.md`
+(found inside the Security Review's "S1 record correction" subsection, which
+the Decision incorporates by "accepted as reviewed and conditioned").
+Confirmed self-host byte-identity via `diff` and `shasum -a 256`, read the
+`cairn-lock.yml` entry directly, ran `verify_integrity.py --target .`, and
+ran the gate-manifest `verify()` helper directly to confirm the
+`FROZEN-MODIFIED` hold. Traced `write_local_env` in
+`bootstrap/_scaffold/install.py` to confirm `_REBIND_REMEDY`'s delete-then-
+reinstall claim is mechanically accurate.
+
+---
+
+### SUBSTANTIVE
+
+**CR1 -- the "3.11 / 3.13 disposition parity" Acceptance criterion was never
+discharged or recorded by the implementation itself.** The plan's Acceptance
+criteria section states: "this plan's own implementation re-confirms on
+whatever interpreters are available on the implementing host and records
+which were and were not re-run, rather than re-asserting the Security
+Review's figures as this session's own." None of the seven implementation
+commits' bodies name a Python interpreter or version for any of their
+"Verify:" claims (checked directly: `git show -s --format=%B <hash> | grep
+-iE "python|canonical|3\.1"` returns nothing interpreter-specific for any of
+the six code/test commits). The Security Review's own multi-version matrix
+(3.11.15 / 3.12.9 / 3.13.13) is real and still stands, but the plan's own
+acceptance bar asked this implementation pass to re-confirm and *record*
+that, not simply inherit it silently. This host does not even have 3.11
+available (`which python3.11` fails; only 3.12 via `/Users/kendal30/
+conda_envs/miniforge3` and 3.13 via `lhm` are installed) -- an implementer
+noting "3.11 unavailable on this host, re-ran 3.12/3.13" would have satisfied
+the criterion in one sentence, and it was never written anywhere in the
+implementation's own record. This review's own independent execution
+(`python3` = 3.12.9 for the disposition-matrix script, `lhm` = 3.13.13 for
+the full suite) reconfirms the matrix holds on both, so the underlying risk
+is verified low -- this is a process/record gap against a named,
+implementation-owned acceptance criterion, not a live security concern.
+*Suggested fix:* a short addendum to Chunk H's commit (or a follow-up note)
+recording which interpreter(s) the implementation's own verification ran
+under; not worth reopening any chunk's code.
+
+---
+
+### MINOR
+
+**CR2 -- Chunk E1's docstring is faithful on every substantive claim
+(including the previously-dropped word "mutable," now present) but silently
+omits the Decision blockquote's trailing verification-evidence sentence,
+without disclosing the omission.** Character-by-character comparison against
+the verbatim blockquote in the archived proposal (lines 775-784, inside the
+Security Review's "S1 record correction," incorporated into the Decision):
+every substantive clause matches exactly -- "operationally trusted executable
+binding," the four-adjective list "untracked, gitignored, mutable, and not
+lockfile-covered," "shape validator, not an authenticator," "checks neither
+Python identity nor binary provenance," and the final acceptance sentence are
+all landed word-for-word. The disclosed addition ("no parent-traversal (`..`)
+segment" in the enforced-checks list) is exactly as the commit message and
+plan's E1 row describe, and does not dilute any existing claim. However, the
+blockquote's final sentence -- "Verified by execution on 3.13.13 (reviewer)
+and independently on 3.12.9 (author): a plain shell script satisfying those
+shape checks is selected and run." -- is absent from the shipped docstring,
+and this omission is not mentioned anywhere (the commit message and plan row
+disclose only the addition, framing the change as "landed word-for-word...
+verified by direct comparison, not paraphrase," which is very slightly
+overstated given this drop). This does **not** soften any security claim --
+the dropped sentence is procedural/evidentiary (who verified what, on which
+interpreter), not part of the trust-root contract itself, and arguably
+belongs in the deliberation record rather than shipped-tool prose, consistent
+with E3's own stated scoping principle ("the full threat-model argument lives
+in the proposal's record, not duplicated into shipped-tool prose"). Flagged
+because the task brief specifically asked for a word-for-word check on this
+exact passage, given a prior sharpening round in this same plan already
+caught a real dropped word ("mutable," PR10) at this exact spot.
+*Suggested fix:* none required for security; if the record should be
+airtight, a one-line disclosure ("the blockquote's verification-evidence
+trailer is omitted from the shipped docstring by design, per E3's scoping")
+would close the gap between the commit's "word-for-word" claim and what
+actually landed.
+
+---
+
+### Independently confirmed as accurate (no issues found)
+
+* **Disposition matrix, by execution, not reading:** absent-path degrade to
+  `sys.executable` with source `"fallback-stale"`; symlinked leaf refuses;
+  symlinked parent with absent leaf still refuses (required probe ordering
+  confirmed -- symlink wins over absence); `..` parent-traversal refuses
+  *before* `_probe_interpreter` is ever called (confirmed via a spy wrapper,
+  not inference); present-non-executable file refuses; an EACCES-blocked
+  parent directory raises a clean `LifecycleError`, never an uncaught
+  traceback; a present valid executable is accepted and its path/source
+  returned exactly. `LifecycleError` subclasses `RuntimeError` and does
+  **not** subclass `OSError` -- confirmed by `issubclass()`, not by reading
+  the class statement, so the `except OSError` block in `_resolve_interpreter`
+  cannot silently swallow a `LifecycleError` raised through the same call
+  path (Chunk A's own explicit requirement).
+* **Once-per-process warning dedup:** 5 calls to `_resolve_interpreter` in
+  one process against one stale binding produced exactly 1 occurrence of the
+  warning text on stderr; `local-env.json` bytes were identical before and
+  after.
+* **Chunk A+B diff (`03f242e`):** `_probe_interpreter` wraps the symlink walk
+  and the `stat()` probe under one classification; the `..`-only guard (no
+  dead `"."` check) sits before the classifier call; the three-way dispatch
+  (`symlinked`/`absent`/`present`) and the `except OSError` wrapper match the
+  plan's A4 row exactly.
+* **Chunk C diff (`f43d77a`):** `_intent_whoami`'s swallow now warns with the
+  caught exception's message before falling back; the resolver docstring's
+  "any violation refuses" claim is corrected to name the one non-fatal
+  exception -- both match C1t/C2t verbatim.
+* **Chunk D diff (`e93f121`):** a single-line change appending
+  `_REBIND_REMEDY` to the parent-traversal message, the one fatal message
+  that didn't already carry it -- matches D1 exactly, no disposition change.
+* **Chunk E diff (`880ddd4`):** E2 (the stale is_file()-catches-appended-
+  arguments comment, corrected to describe the degrade path) and E3 (the
+  stdlib-only rationale scoped to this tool's own execution, R7) both match
+  their rows exactly, independent of CR2 above.
+* **Chunk F diff (`3703b57`):** F0's autouse fixture resets `_STALE_WARNED`
+  before *and* after every test, placed ahead of the `repo` fixture; F1's
+  relocated bad-cases and pinned `ids=["bad0","bad1","bad2","bad3"]`; F2's
+  `repo`-path-materialized stale values plus the PR6 stderr assertions
+  (stale path and `sys.executable` both asserted present); F3's real
+  multi-call chain with `CAIRN_AGENT`/`CAIRN_SESSION` unset, asserting an
+  exact count of 1; F4/F5/F5b/F6's regression tests; F7 corrected exactly as
+  ETR3 required (asserts the real fallback identity string, not `None`, plus
+  the refusal on stderr); F8's static source-scan; F9's module-docstring
+  reword to the two-branch posture (`bootstrap/tests/test_lifecycle_
+  failsafe.py:16-23`) -- all present and match their rows. F10's four
+  untouched nodes are untouched in the diff.
+* **`_REBIND_REMEDY`'s text** matches the Revised proposal's C1a block
+  byte-for-byte (diffed directly against
+  `dev/proposals/archive/2026-07-22-claude-interpreter-trust-root-fallback.md:473-480`).
+* **`_REBIND_REMEDY`'s delete-then-reinstall claim is mechanically accurate**,
+  traced directly in `bootstrap/_scaffold/install.py`'s `write_local_env`
+  (`:338-370`): `if dst.exists() and not force: return (..., "skipped-
+  exists")` -- a bare re-run with the file still present is a no-op, exactly
+  as the remedy states; deletion is what makes the write path reachable.
+* **`_intent_whoami`'s new warning carries no sensitive leak** beyond what
+  every other fatal message in this resolver already surfaces (the local,
+  gitignored config path and the tampered `interpreter` value) -- this is
+  local stderr output, not a network-facing surface, and the same class of
+  information is already the resolver's established disclosure policy
+  elsewhere.
+* **Self-host sync (Chunk H, `d70dbcb`):** `templates/skills/_lib/
+  lifecycle.py` and `tools/lifecycle.py` are byte-identical right now
+  (`diff` empty; `shasum -a 256` both
+  `c77b24c152396be9c125ab9826c305eee826efdfeaa94e0b4a016ab04dcb2df9`).
+  `dev/.cairn/cairn-lock.yml`'s `tools/lifecycle.py` entry has both `hash`
+  and `base_hash` set to that exact digest. `python bootstrap/
+  verify_integrity.py --target .` shows no `tools/lifecycle.py` line in
+  either its violations or its NOTE-level output -- the 3 reported
+  violations (`AGENTS.md`, `dev/plans/_template.md`,
+  `dev/proposals/_template.md`) and the 2 NOTE-level forked-facade warnings
+  (`tools/intent.py`, `tools/lifecycle_metrics.py`) are all pre-existing and
+  unrelated, exactly as H3 claims.
+* **Gate-manifest FROZEN state:** running `_gate_manifest.verify()` directly
+  against `bootstrap/tests/fixtures/gate_manifest.json` produces
+  `FROZEN-MODIFIED: bootstrap/tests/test_lifecycle_failsafe.py (gate file
+  edited — sha differs)` -- a real, expected, not-yet-resolved hold, exactly
+  as the plan frames it (pending the Maintainer-only G0/G1 supervised
+  re-anchor, which has correctly not happened: `refs/cairn/gate-authorization`
+  still does not exist, only `refs/cairn/gate-anchor`).
+* **Full suite:** `python -m pytest bootstrap/tests` under
+  `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13, canonical) --
+  **0 failed, 1469 passed, 0 skipped**, 155s (the count differs from the
+  plan's own last-measured 1446 because unrelated sibling-plan work landed
+  concurrently, consistent with the plan's own repeated disclosures of this
+  same live-drift pattern elsewhere). `test_lifecycle_failsafe.py` alone:
+  **28 passed**. `test_security_lint.py`: **4 passed**. `scripts/
+  claim_check.py` and `scripts/check_cairn.py`: both clean over this plan
+  file.
+* **`## Sequence` / G0 / G1 state:** the plan's own Status field reads
+  `executing` (unchanged since `33238ea`); no implementation commit touches
+  `refs/cairn/gate-anchor`, `bootstrap/tests/_gate_reanchor.py`, or attempts
+  a `prepare`/`promote` run -- G0 and G1 remain correctly untouched by these
+  seven commits, as Chunk H's own commit message states.
+
+No BLOCKING or security-disposition-affecting findings. The two findings
+above are a process/record-completeness gap (CR1) and a documentation-
+completeness nuance (CR2), neither of which reopens any risk ruling this
+plan's five review rounds already settled.
