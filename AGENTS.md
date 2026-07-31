@@ -313,6 +313,15 @@ bootstrap/tests`.
 * **The by-file license split** — code is MIT wherever it lives; prose
   and document templates are CC BY 4.0; the brand mark alone is CC
   BY-ND. Keep the three families from overlapping.
+* **The local interpreter binding** — `dev/.cairn/local-env.json`, its
+  reader `_resolve_interpreter` in `templates/skills/_lib/lifecycle.py`,
+  and every call site that executes the path it returns. This is an
+  untracked, gitignored, lockfile-uncovered **executable trust root**,
+  and the reader is a strict *shape* validator, not an authenticator: it
+  checks absoluteness, schema, symlink-freedom and the executable bit,
+  but neither Python identity nor provenance. Changes to its schema,
+  validation order, fallback disposition, warning visibility, or
+  subprocess use take a Security Review.
 
 **Operational pitfalls.**
 * **Self-host `dev/` citation gotcha.** `scripts/check_cairn.py`'s
