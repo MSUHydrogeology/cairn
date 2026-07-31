@@ -66,7 +66,9 @@ caught by either proposal-stage review round — disclosed up front:**
    pattern** used three times already this session (`adopter-licensing-
    compliance`'s Chunk D, `first-session-survivability`'s Chunk D, and
    `ast-known-new-repin`'s design), not the heavy Phase 0/4 ceremony.
-   Chunk H below prepares that lighter, already-proven handoff.
+   Chunk G below prepares that lighter, already-proven handoff. **(Corrected
+   at plan-review, EPR6, External/Codex, editorial — the plan's sequence
+   ends at Chunk G; a "Chunk H" reference here was stale.)**
 2. **Every quantitative baseline the proposal cites has moved, in this
    plan's favor.** Re-verified this session, under the canonical `lhm`
    interpreter and current `master`:
@@ -158,28 +160,28 @@ same commit as this plan.
 
 | # | File | Change |
 |---|------|--------|
-| B1 | `bootstrap/_scaffold/install.py` | `write_install_lockfile`'s lock dict (`:1627-1636`) gains `"source_repository": ...` and `"source_licenses": ...` from `_cairn_provenance(cairn_root)`, beside `cairn_version`/`cairn_commit`. |
-| B2 | `bootstrap/_scaffold/upgrade.py` | `_cmd_init_lock`'s synthesized migration lock dict (`:1196-1203`) gains the same two fields, same source. |
+| B1 | `bootstrap/_scaffold/install.py` | `write_install_lockfile`'s lock dict (`:1627-1636`) gains `"source_repository": ...` and `"source_licenses": ...` from `_cairn_provenance(cairn_root)`, beside `cairn_version`/`cairn_commit`. **Explicit, per plan-review (EPR5, External/Codex, minor):** `_cairn_provenance` is added to the existing `from .lockfile import (...)` block at `:52-58` (which already imports `_cairn_commit`/`_cairn_version`) — an edit to an existing `ImportFrom` node, not a new import statement. This is the source of the `Import:`-prefixed AST-baseline rotation Chunk G's target already accounts for as informational-only. |
+| B2 | `bootstrap/_scaffold/upgrade.py` | `_cmd_init_lock`'s synthesized migration lock dict (`:1196-1203`) gains the same two fields, same source. Same explicit `from .lockfile import (...)` edit (`:48-56`) as B1. |
 
 ### Chunk C — P2 continued (stage-metadata plumbing for `--apply`)
 
 | # | File | Change |
 |---|------|--------|
 | C1 | `bootstrap/_scaffold/upgrade.py` | `_write_stage`'s meta dict (`:900-930`) gains `"new_source_repository"` / `"new_source_licenses"` via `_cairn_provenance(cairn_root)`, immediately beside `"new_version"` / `"new_commit"` (`:906-907`) — **non-ref-aware, deliberately, for the same reason `new_version` already is**: both read the working tree's `CITATION.cff` with no `to_ref` consultation (only `new_commit` is ref-aware, via `to_ref or _cairn_commit(...)`); consistency with the sibling field sourced from the same file is the whole argument, not an open ref-awareness judgment call (R1's corrected framing). |
-| C2 | `bootstrap/_scaffold/upgrade.py` | `_apply_upgrade`'s lock advance (`:1943-1945`) gains `new_lock["source_repository"] = meta.get("new_source_repository", lock.get("source_repository"))` and the same pattern for `source_licenses` — a `.get()` fallback to the *current lock's* value, so an old stage (no provenance keys in its meta) applied by a new engine degrades to "keep what the lockfile already had," never writes a null. |
+| C2 | `bootstrap/_scaffold/upgrade.py` | `_apply_upgrade`'s lock advance (`:1943-1945`, base `new_lock = dict(lock)` at `:1943`) gains conditional-presence assignment, **not** the unconditional `.get()`-chain pattern `cairn_version`/`cairn_commit` use at `:1944-1945`: `if "new_source_repository" in meta: new_lock["source_repository"] = meta["new_source_repository"]`, same shape for `source_licenses`. **Corrected at plan-review (EPR1, External/Codex, blocking):** the `cairn_version`/`cairn_commit` pattern is safe only because those are original required fields every lock already carries, so `lock.get(...)` never actually falls through to `None`; `source_repository`/`source_licenses` are new *optional* fields, and the equivalent `meta.get("new_source_repository", lock.get("source_repository"))` chain writes a literal JSON `null` for both fields when an old stage (no provenance keys in its meta) is applied to a pre-provenance lock (both `.get()`s miss) — reproduced by executing the exact original expression through the real serializer this session. Since `new_lock` already starts as `dict(lock)`, the conditional form leaves an already-absent field absent (no key touched, no null written) and leaves an already-present field's current value untouched when the stage doesn't supply a fresher one — only a stage that *does* carry the new key overwrites. |
 
 ### Chunk D — P3 (schema-evolution rule, sited once)
 
 | # | File | Change |
 |---|------|--------|
-| D1 | `bootstrap/UPGRADE.md` | New subsection, canonical home (Decision OQ2 — domain-local governing range per `docs/DOCUMENTATION_PLAN.md:143-146`), inserted after the existing `## The lockfile and the fidelity manifest` section (`:189-197`) and before `## A note on secrets` (`:199`): enumerates the lockfile's top-level fields (`schema`, `cairn_version`, `cairn_commit`, `source_repository`, `source_licenses`, `profile`, `modules`, `optional_templates`, `tokens`, `files`, plus the writer-varying `migrated`), and states the additive-vs-breaking rule in full: an additive **optional** top-level field does not bump `schema`; readers must use `.get()` with a default and tolerate unknown keys; a removal, rename, or change of meaning of an existing field does bump, and a bump is the point a reader-side validator becomes mandatory. Cites `migrated` (`_cmd_init_lock`-only, absent from fresh installs, coexisting with `schema: 1` since it shipped) as the existing precedent this rule codifies, not a new invention. |
-| D2 | `bootstrap/_scaffold/lockfile.py` | `_emit_lock_yaml`'s header (`:184-186`) gains one line pointing to the rule's home — the only surface in this whole change that actually reaches an adopter's tree (`--manifest` emits zero `bootstrap/` rows, confirmed this session; `UPGRADE.md` itself never installs). |
+| D1 | `bootstrap/UPGRADE.md` | New subsection, canonical home (Decision OQ2 — domain-local governing range per `docs/DOCUMENTATION_PLAN.md:143-146`), inserted after the existing `## The lockfile and the fidelity manifest` section (`:189-197`) and before `## A note on secrets` (`:199`): enumerates the lockfile's top-level fields (`schema`, `cairn_version`, `cairn_commit`, `source_repository`, `source_licenses`, `profile`, `modules`, `optional_templates`, `tokens`, `files`, plus the writer-varying `migrated`), and states the additive-vs-breaking rule in full: an additive **optional** top-level field does not bump `schema`; readers must use `.get()` with a default and tolerate unknown keys; a removal, rename, or change of meaning of an existing field does bump, and a bump is the point a reader-side validator becomes mandatory. Cites `migrated` (`_cmd_init_lock`-only, absent from fresh installs, coexisting with `schema: 1` since it shipped) as the existing precedent this rule codifies, not a new invention. **Added at plan-review (EPR2, External/Codex, blocking):** the subsection states explicitly, next to the two new field names, that `source_repository`/`source_licenses` are **declarations copied verbatim from the source tree's `CITATION.cff` at install/upgrade time — not attestations of checkout origin or installed-file licensing**; a fork with a stale or false `CITATION.cff` produces a stale or false declaration, and the field's authority is exactly that of the file it was copied from, no more. Signed tags / release commits remain the actual origin control (`PROVENANCE.md`'s existing "Controls" section, unchanged by this plan). |
+| D2 | `bootstrap/_scaffold/lockfile.py` | `_emit_lock_yaml`'s header (`:184-186`) gains one line pointing to the rule's home — the only surface in this whole change that actually reaches an adopter's tree (`--manifest` emits zero `bootstrap/` rows, confirmed this session; `UPGRADE.md` itself never installs). **Per EPR2:** the header line's wording uses "declared" (not "recorded" or unqualified), and — since this line is the one surface of this whole change that ships to every adopter — names `bootstrap/UPGRADE.md` as a reference living in the **Cairn source repository**, not an installed file (an adopter's own tree never has it; `--manifest` emits zero `bootstrap/` rows, confirmed this session), so a reader is not sent chasing a path that doesn't exist on their disk. |
 
 ### Chunk E — R11b (`PROVENANCE.md` enumeration amendment)
 
 | # | File | Change |
 |---|------|--------|
-| E1 | `bootstrap/PROVENANCE.md` | One-sentence amendment to the install-side provenance enumeration (`:77-79`, "the exact `cairn_version` + `cairn_commit`, the resolved profile, and the per-file source / hash") — add `source_repository` + `source_licenses` to the list, so the document that this proposal quotes twice as its own motivation doesn't go stale the moment the fields it's arguing for actually ship. |
+| E1 | `bootstrap/PROVENANCE.md` | Amendment to the install-side provenance enumeration (`:77-79`, "the exact `cairn_version` + `cairn_commit`, the resolved profile, and the per-file source / hash") — add `source_repository` + `source_licenses` to the list, so the document that this proposal quotes twice as its own motivation doesn't go stale the moment the fields it's arguing for actually ship. **Expanded at plan-review (EPR2, External/Codex, blocking) from a bare one-sentence addition to a qualified one:** `PROVENANCE.md:4-6`'s framing is unqualified and strong ("Provenance *proves* where it came from") — adding the two new fields to that same enumeration with no distinguishing language would let a reader treat a self-declared `CITATION.cff` copy as proof-grade provenance, exactly the misreading the plan's own "Signals the change is wrong" section already names as a failure mode. The amendment therefore states inline that `source_repository`/`source_licenses` are **declared, not attested** — carried for adopter legibility, distinct in kind from the `cairn_version`/`cairn_commit`/per-file-hash entries in the same list, which *are* the file's actual proof-grade provenance controls. |
 
 ### Chunk F — tests (`bootstrap/tests/test_lockfile_provenance.py`, new)
 
@@ -188,8 +190,10 @@ same commit as this plan.
 | F1 | `bootstrap/tests/test_lockfile_provenance.py` (new) | **Not** `bootstrap/tests/test_upgrade.py` — that file is in the gate manifest's pinned 147-entry `frozen_files` set (confirmed this session), and editing a frozen file produces `FROZEN-MODIFIED`, appended to `holds` (a hard-stop), not `notes` (R2's blocking finding). The new file reads `FROZEN-NEW` (allowed, recorded as a note) instead. Imports `_install` from `test_upgrade.py` (module-level, `:45`) rather than duplicating the install/delta harness — importing a frozen file does not modify it, so this creates no HOLD. |
 | F2 | (same file) | **Reader nodes**: `_cairn_provenance` degrades to `("unknown", [])` on a `CITATION.cff`-less root; the `license:`-block-terminated-by-`keywords:` case yields exactly `["CC-BY-4.0", "MIT"]` (the live shape of Cairn's own `CITATION.cff`, the load-bearing regression case per R12a); a scalar `license: MIT` yields `["MIT"]`. |
 | F3 | (same file) | **Writer nodes**: a fresh install's lockfile carries `source_repository`/`source_licenses` equal to `_cairn_provenance(CAIRN_ROOT)`; `--init-lock`'s synthesized lock carries the same. |
-| F4 | (same file) | **Upgrade nodes** (using the imported `_install` harness, a real `--stage`/`--apply` cycle — closing the proposal's own named "weakest link," the untested old-engine direction): an `--apply` backfills a pre-provenance lockfile's two fields from stage metadata, and asserts the backfilled values equal `_cairn_provenance(cairn_root)` for the same root — the proposal's own stated **install-vs-apply parity invariant**, named explicitly here (per plan-review/PR6) rather than left implicit in F3+F4's combined coverage; an old stage (meta dict with no `new_source_*` keys, simulating a stage produced before this change) applied by a new engine degrades via `.get()` to the current lock's existing values, never writes null; a `--finalize` round-trip preserves unknown top-level keys verbatim (R3a's stated limit — `--finalize`/`--adopt-module` do not backfill, only preserve). |
+| F4 | (same file) | **Upgrade nodes**, expanded to the **three-case compatibility matrix** per plan-review (EPR1, External/Codex, blocking) rather than a single backfill case: **(i) new stage + pre-provenance lock** — an `--apply` backfills the two fields from stage metadata, and asserts the backfilled values equal `_cairn_provenance(cairn_root)` for the same root (the proposal's own stated **install-vs-apply parity invariant**, named explicitly per plan-review/PR6); **(ii) old stage + provenance-bearing lock** — a stage with no `new_source_*` keys (simulating one produced before this change) applied to a lock that already carries provenance preserves the lock's existing values unchanged; **(iii) old stage + pre-provenance lock** — the same old-shaped stage applied to a lock with neither field preserves their **absence** (`"source_repository" not in json.loads(...)`), never writes JSON `null`, the case EPR1 found the original `.get()`-chain design gets wrong. Uses the imported `_install` harness, a real `--stage`/`--apply` cycle — closing the proposal's own named "weakest link," the untested old-engine direction. A `--finalize` round-trip preserves unknown top-level keys verbatim (R3a's stated limit — `--finalize`/`--adopt-module` do not backfill, only preserve). |
 | F5 | (same file) | **`run_security_audit.py` compatibility node** (R9): feed a provenance-bearing lockfile to `templates/modules/team-gated/run_security_audit.py`'s `load_lockfile` + `required_apparatus_dsts` (this is the actual Cairn-tree source; it installs verbatim into an adopter tree as `scripts/run_security_audit.py`, which does not exist in Cairn's own `scripts/` — the module is team-gated / optional and not installed here) — the shipped, hash-tracked reader that parses the whole lockfile itself rather than via `read_lockfile` — and assert unchanged behavior. The real, demonstrable old-reader-vs-new-lockfile case the proposal's evidence plan named as its weakest link, now closed with an actual test rather than an argument from source. |
+| F6 | (same file) | **New, per plan-review (EPR2, External/Codex, blocking):** `_emit_lock_yaml`'s header text (D2) contains "declared" (or an equivalent unambiguous qualifier) adjacent to the provenance-fields pointer — a direct emitted-lock string assertion, so the declared-not-attested distinction is a checked property of the shipped output, not prose the plan (or a future edit) can silently drop. |
+| F7 | (same file) | **New, per plan-review (EPR5, External/Codex, minor):** the facade-identity coverage `bootstrap/tests/test_lockfile_module.py`'s `_MOVED` tuple (`:29-33`) does not enumerate — that file is *not* touched by this plan (it is a separate, non-frozen module test, safe to extend), so add `"_cairn_provenance"` to its `_MOVED` tuple in the same commit as Chunk A, asserting the lockfile owner, the `bootstrap._scaffold` engine facade, and the `bootstrap.scaffold` facade all expose the identical object — matching every other lockfile-module export's existing coverage rather than leaving the new symbol as the one export with no facade-identity assertion. |
 
 ### Chunk G — supervised AST re-anchor handoff (Maintainer-gated; not this agent's act)
 
@@ -214,11 +218,20 @@ a deviation from the **literal binding language the Maintainer
 ratified**, not merely a correction of stale proposal narrative — the
 underlying technical claim (the runbook never governs the AST baseline)
 is independently verified correct twice over (this plan's own
-preparation, and its Internal plan-review), but the choice of mechanism
-is being made here, by this plan, on that verification alone. This is
-flagged as a specific, nameable item for the required External
-cross-type reviewer — and ideally the Maintainer directly — to affirm,
-rather than left to be inferred from Finding 1's narrative.
+preparation, and its Internal plan-review).
+
+**Maintainer-authorized, per plan-review (EPR3, External/Codex,
+blocking-process — an External reviewer has no Decision authority to
+bless this substitution itself).** Asked directly, in chat, 2026-07-31:
+*"Chunk G proposes fixing the AST baseline via the established
+direct-edit script (not the REANCHOR_RUNBOOK.md Phase 0/4 ceremony your
+Decision text literally names, which is the wrong mechanism for this
+trust root). Do you authorize that substitution for this plan?"* —
+Anthony Kendall (Maintainer) selected: **"Yes, use the direct-edit
+script (Recommended)."** This is the explicit, recorded authorization
+EPR3 required before implementation begins; it is not implementation
+itself and rides in this plan-review response, not a separate Decision
+commit.
 
 Prepared once Chunks A-F land and their real live digests are known — not
 before, since the digests depend on the actual shipped code, not this
@@ -249,11 +262,22 @@ per `_classify()`'s own Import/Docstring skip).
   corrects the baseline JSON to match the new code; it adds no test
   nodes of its own).
 * **Gate-manifest check** — `python bootstrap/tests/_gate_manifest.py
-  verify` (optionally `--no-collect` to skip the pytest-collection check;
-  both read-only — `produce` takes no arguments, confirmed at
-  plan-review/PR3) confirms `bootstrap/tests/test_upgrade.py`'s hash is
-  unchanged and the new test file reads `FROZEN-NEW`, not
-  `FROZEN-MODIFIED`, anywhere.
+  verify --no-collect` (read-only; `produce` takes no arguments, confirmed
+  at plan-review/PR3). **Corrected at plan-review (EPR4, External/Codex,
+  substantive):** this command does **not** currently exit 0 on `master` --
+  re-run this session under canonical `lhm`: exit 1, **54 pre-existing
+  `FROZEN-MODIFIED` holds**, none touched by this plan (all under
+  `templates/modules/`, unrelated engine surfaces). "Confirms... unchanged"
+  is therefore not a pass/fail signal an executor can apply literally. The
+  real criterion: capture this 54-hold set as the pre-Chunk-A baseline
+  (`python bootstrap/tests/_gate_manifest.py verify --no-collect > baseline.txt`
+  before Chunk A), then after Chunks A-F require the **same 54 holds and no
+  new ones** — the new test file must appear only as a `FROZEN-NEW` /
+  `COLLECTION-ADDED` note, and `bootstrap/tests/test_upgrade.py`'s hash must
+  be unchanged (it is imported from, never edited, per F1). If a
+  Maintainer-controlled fresh gate-manifest anchor lands before or during
+  this plan's execution, re-derive the pre-Chunk-A baseline fresh rather
+  than carrying the 54 figure forward as a literal.
 * **`--manifest` row-count invariant** — re-derive the pre-edit *data-row*
   count at implementation time (this plan's own snapshot: 95 data rows,
   96 total lines including the header comment, as_of this session;
@@ -700,3 +724,59 @@ Maintainer authorization satisfying EPR3; verify EPR4's delta-based gate
 criterion and EPR5's facade assertion mechanically. Until that pass lands,
 status remains `awaiting-plan-review` and the required External gate is not
 satisfied.
+
+### Response -- Claude (author) -- 2026-07-31
+
+Every finding independently re-verified against the live tree before
+disposing, not taken on the reviewer's word: reproduced EPR1's exact null-
+write by executing the proposed expression through the real serializer
+(`{"source_repository": null, "source_licenses": null}`, confirmed); re-read
+`bootstrap/_scaffold/upgrade.py:1943-1945` directly and confirmed `new_lock =
+dict(lock)` already exists as C2's base, and that the existing `cairn_version`/
+`cairn_commit` `.get()`-chain pattern is safe only because those fields are
+original and always-present, not because the pattern itself is safe for a new
+optional field; re-read `bootstrap/PROVENANCE.md:4-6`'s "provenance *proves*"
+framing directly; re-ran `bootstrap/tests/_gate_manifest.py verify --no-collect`
+under canonical `lhm` myself and got the identical exit 1 / 54 FROZEN-MODIFIED
+holds the reviewer reported; read `bootstrap/tests/test_lockfile_module.py`'s
+`_MOVED` tuple directly and confirmed it does not and could not yet contain
+`_cairn_provenance`; grepped the plan for "Chunk H" and found both occurrences
+the reviewer cited.
+
+* **[EPR1] accept — blocking, fixed.** Chunk C2 rewritten to conditional-
+  presence assignment (`if "new_source_repository" in meta: ...`), not the
+  unconditional `.get()`-chain the reviewer falsified. Chunk F4 expanded from
+  one backfill case to the full three-case compatibility matrix the
+  reviewer's satisfier specifies (new+old, old+provenance, old+old — the last
+  being the one that previously wrote null).
+* **[EPR2] accept — blocking, fixed.** Chunks D1, D2, and E1 all gained
+  explicit "declared, not attested" language, not left as prose the plan
+  could silently omit — and Chunk F gained a new node (F6) asserting the
+  emitted-lock header text actually carries the qualifier, per the
+  reviewer's own suggested alternative ("the adopter header wording **or** a
+  direct emitted-lock check").
+* **[EPR3] accept — blocking process, resolved by direct Maintainer
+  authorization** (quoted above in Chunk G) rather than by review alone,
+  exactly as the finding required — an External reviewer correctly has no
+  authority to bless a deviation from the Decision's own ratified text, and
+  I did not treat Codex's technical affirmation as a substitute for asking.
+* **[EPR4] accept — substantive, fixed.** The Acceptance criteria's gate-
+  manifest bullet no longer asserts a clean pass; it captures the current
+  54-hold baseline explicitly and requires no *new* holds from Chunks A-F,
+  which is the criterion an executor can actually apply against a tree that
+  is not itself green today.
+* **[EPR5] accept — minor, fixed.** New Chunk F7 adds `_cairn_provenance` to
+  `test_lockfile_module.py`'s `_MOVED` tuple (a non-frozen file this plan
+  does not otherwise touch, safe to extend); Chunks B1/B2/C1 now name the
+  `from .lockfile import (...)` edit explicitly as the source of the
+  `Import:`-key AST rotation, rather than leaving it implicit.
+* **[EPR6] accept — editorial, fixed.** "Chunk H" corrected to "Chunk G" at
+  its one live occurrence (Context Finding 1); the reviewer's second citation
+  was inside its own review section, which stays append-only and untouched.
+
+**Status: remains `awaiting-plan-review`.** Per the reviewer's own explicit
+"Second-round recommendation," this Response and its fixes do not
+self-certify the External gate — a **focused External re-read** confirming
+EPR1's matrix, EPR2's wording, EPR3's now-recorded authorization, EPR4's
+delta-based criterion, and EPR5's facade assertion is still required before
+Chunk A begins. This is not this session's call to soften.
