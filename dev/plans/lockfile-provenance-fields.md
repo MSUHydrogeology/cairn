@@ -780,3 +780,76 @@ self-certify the External gate — a **focused External re-read** confirming
 EPR1's matrix, EPR2's wording, EPR3's now-recorded authorization, EPR4's
 delta-based criterion, and EPR5's facade assertion is still required before
 Chunk A begins. This is not this session's call to soften.
+
+## Plan review -- Codex (External, different-agent-type; Security Review, Round 2) -- 2026-07-31
+
+**Verdict: REVISE.** The response closes three findings and materially
+improves two others, but the proposed EPR5 fix contradicts the gate manifest
+and would itself violate EPR4's revised no-new-HOLD criterion. The required
+External gate therefore remains uncleared.
+
+### Focused adjudication
+
+* **EPR1 -- CLOSED.** I executed C2's conditional-presence design through the
+  real `_emit_lock_yaml` serializer for all three matrix cases. New stage + old
+  lock backfills typed values; old stage + provenance lock preserves values;
+  old stage + old lock serializes `{}` and preserves absence, with no nulls.
+  F4 now names all three as real stage/apply tests.
+* **EPR2 -- PARTIALLY CLOSED.** D1, D2, E1, and F6 now sequence the required
+  declared-not-attested distinction. Two new wording contradictions remain in
+  the mutable plan, recorded as RR2 below.
+* **EPR3 -- CLOSED.** Chunk G records the Maintainer's question and exact
+  affirmative answer, and commit `31c40a0` is Maintainer-authored. I accept
+  that as explicit authorization for the direct-edit mechanism; execution
+  remains Maintainer-gated and bounded by the five-function delta.
+* **EPR4 / EPR5 -- NOT CLOSED.** The delta-based gate criterion is the right
+  model, but F7 chooses a frozen test file and would add a new HOLD. RR1 is the
+  blocking correction.
+* **EPR6 -- CLOSED.** The mutable Context reference now points to Chunk G; the
+  historical review text remains untouched as append-only record.
+
+### Round 2 findings
+
+* **[RR1] BLOCKING -- F7 edits a pinned frozen file.** Contrary to F7 and the
+  Response, `bootstrap/tests/test_lockfile_module.py` is present in the gate
+  manifest's pinned `frozen_files`. I executed `_frozen_files(Path.cwd())` and
+  obtained `True` for that path; its current SHA-256 exactly equals the pinned
+  digest. Editing `_MOVED` therefore creates a new `FROZEN-MODIFIED` HOLD,
+  taking the current inherited set from 54 to 55 and directly failing EPR4's
+  “same 54 holds and no new ones” criterion. The live gate command still exits
+  1 with 54 holds; they are not “all under `templates/modules/`” as EPR4's
+  parenthetical claims -- fifteen are under `bootstrap/tests/` or `scripts/`.
+  **Satisfier:** leave `test_lockfile_module.py` byte-identical and put the
+  three-facade identity assertion in the new
+  `bootstrap/tests/test_lockfile_provenance.py`, exactly as EPR5 originally
+  requested. Remove the inaccurate hold-location parenthetical. Capture the
+  before/after hold **set**, not only the count, in a scratch/temp path.
+
+* **[RR2] SUBSTANTIVE SECURITY SEMANTICS -- the revised provenance wording
+  overclaims two source-derived values.** D1 calls the new fields declarations
+  “copied verbatim” from `CITATION.cff`, while A1 deliberately strips syntax
+  and drops license values that fail its SPDX-shaped filter. E1 then groups
+  `cairn_version` with proof-grade controls even though `_cairn_version`, like
+  the new helper, reads a self-declared value from that same file. Neither
+  statement matches the planned behavior or the Security Review's accepted
+  boundary. **Satisfier:** say the new values are **derived from** or **copied
+  from** `CITATION.cff`, not copied verbatim; reserve proof/origin language for
+  the signed tag or Maintainer-approved release commit plus commit/hash/manifest
+  controls. `cairn_version` is useful identifying metadata but is not an
+  independent attestation.
+
+### Security disposition and verification
+
+The underlying posture remains conditionally acceptable: these fields are
+JSON-escaped, non-executable declarations and the sentinel behavior is
+proportionate. RR1 is a gate-integrity/process failure rather than a new
+runtime exploit; RR2 matters because trust metadata must not claim stronger
+evidence than its source and transformation support.
+
+Executed on canonical Python 3.13.13: the full bootstrap suite passed **1446
+tests** with 3 warnings in 197.76s; the three-case conditional serializer probe
+produced typed backfill, typed preservation, and `{}` respectively; gate
+verification reproduced exit 1 / 54 inherited holds; claim-check passed before
+and after this append. **A final focused External re-read is required** after RR1 and RR2
+are corrected; until then the plan remains `awaiting-plan-review` and Chunk A
+must not begin.
