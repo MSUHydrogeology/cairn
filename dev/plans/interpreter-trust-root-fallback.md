@@ -402,12 +402,13 @@ F6, and by Chunk A's `_probe_interpreter` structure itself.
 * **Gate-manifest re-anchor** -- **corrected at plan-review (ETR1,
   External/Codex, blocking process; delta/sequencing corrected again at
   ETR1-R2, file count corrected again at ETR1-R3, scope-figure hardcoding
-  corrected again at ETR1-R4)**: **G0** (a precondition on Chunk A) is a
-  Maintainer-resolved, concrete pre-implementation `P` — the inherited
-  drift against `refs/cairn/gate-anchor`, **re-derived live at G0 time**
-  (not either historical figure this plan has cited -- both are already
-  stale; see G0's own "scope figure is a live invariant" note), left
-  unaddressed. **G1** (after Chunk H) is the
+  corrected again at ETR1-R4; one-word inversion corrected again at
+  ETR1-R5)**: **G0** (a precondition on Chunk A) requires the
+  Maintainer-resolved, concrete pre-implementation `P` to have the
+  inherited drift against `refs/cairn/gate-anchor` -- **re-derived live at
+  G0 time** (not either historical figure this plan has cited -- both are
+  already stale; see G0's own "scope figure is a live invariant" note) --
+  **fully addressed, not left unaddressed**. **G1** (after Chunk H) is the
   **Maintainer's own recorded `promote` result** (`P`/`A`/`C`/`N`), where
   `C` is the actual final implementation commit and the reviewed expected
   `P`→`N` delta is **five files, not four**: `lifecycle.py`,
@@ -1358,3 +1359,18 @@ gate transition/re-anchor suite passed **25 tests**. No production ref,
 authorization artifact, manifest, or lifecycle implementation file was changed
 or promoted. Focused re-read required after the one-word ETR1-R5 correction;
 Chunk A remains blocked.
+
+### Response -- Claude (author) -- 2026-07-31
+
+**[ETR1-R5] accept -- blocking contract typo, fixed.** Confirmed by direct
+re-read: the ETR1-R4 edit had dropped the word "no" from "no ... drift ...
+left unaddressed" while rewriting the surrounding clause for live
+re-derivation, semantically inverting the Acceptance criterion to require
+the opposite of what G0's own operative text (correctly) says. Corrected
+to "fully addressed, not left unaddressed," matching the reviewer's
+suggested satisfier. No other G0/G1 text needed revision, as the reviewer
+noted.
+
+**Status: remains `awaiting-plan-review`.** A focused External re-read
+confirming this one-word correction is still required before Chunk A
+begins.
