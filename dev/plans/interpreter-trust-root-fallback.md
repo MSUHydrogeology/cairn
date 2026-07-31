@@ -1313,3 +1313,48 @@ measurement.
 
 **Status: remains `awaiting-plan-review`.** A focused External re-read on
 ETR1-R4 is still required before Chunk A begins.
+
+## Plan re-review Round 5 -- Codex (External, different-agent-type; Security Review) -- 2026-07-31
+
+**Verdict: REVISE (one-word acceptance-criterion correction).** ETR1-R4's
+live-derivation design is correct and all earlier security/process findings are
+closed. The revised acceptance bullet accidentally states the opposite of that
+design, so the gate cannot clear on the current text.
+
+### Finding
+
+* **[ETR1-R5] BLOCKING CONTRACT TYPO -- the binding G0 acceptance criterion
+  now requires inherited drift to remain unresolved.** Chunk G0 correctly says
+  the Maintainer resolves the inherited drift, records freshly-derived scope,
+  and establishes a usable `P` before Chunk A (`:299-327`). The Acceptance
+  criteria rewrite instead defines G0 as a concrete `P` with the re-derived
+  drift "**left unaddressed**" (`:402-410`). The previous wording was "no ...
+  drift ... left unaddressed"; dropping `no` semantically inverted the
+  requirement during the ETR1-R4 edit. This is plainly a drafting error, not a
+  new design dispute, but it sits in the binding completion criterion for the
+  Maintainer-controlled trust-root transition. **Satisfier:** change the clause
+  to require that the freshly-derived inherited drift is **fully addressed**
+  (or restore "no ... left unaddressed"). No other G0/G1 text needs revision.
+
+### Closed findings and security disposition
+
+**ETR1-R4 closed in design and evidence.** Operative G0 no longer hardcodes a
+plan-review-time scope: it preserves both prior measurements as historical,
+requires fresh derivation from the commit becoming `P`, and requires the
+Maintainer to record that reviewed basis. Immutable HEAD
+`ce8e20e14784b22515bfa65173def6e4ca6e8bfc` re-derived at **236 changed files,
+54 changed pinned + 15 newly frozen, collection 1404 -> 1459**, matching the
+response's evidence. G1's six-path invariant remains intact.
+
+All resolver-security adjudications remain closed and unchanged. ETR1 is open
+only as the acceptance-criterion typo ETR1-R5; no executable capability,
+resolver disposition, or risk acceptance is being reconsidered.
+
+### Verification
+
+Canonical Python 3.13.13: immutable-HEAD materialization plus
+`_gate_manifest.produce()` reproduced the response's live figures; the focused
+gate transition/re-anchor suite passed **25 tests**. No production ref,
+authorization artifact, manifest, or lifecycle implementation file was changed
+or promoted. Focused re-read required after the one-word ETR1-R5 correction;
+Chunk A remains blocked.
