@@ -1,4 +1,13 @@
 {
+  "Assign:_ADOPTABLE_BLOCKED_KINDS": [
+    "b77cd1b7b08d3fe7"
+  ],
+  "Assign:_ALWAYS_ON_MAPPINGS": [
+    "2a694da91690ec5c"
+  ],
+  "Assign:_BLOCKED_ADDITION_KINDS": [
+    "3f1bba8eb574b6eb"
+  ],
   "Assign:_CANONICAL": [
     "dc872acc5f39cc99"
   ],
@@ -17,17 +26,53 @@
   "ClassDef:ScaffoldLoaderError": [
     "95aa990ef94c9f52"
   ],
+  "FunctionDef:_always_on_group_complete": [
+    "612256f69d0f6b79"
+  ],
+  "FunctionDef:_assert_mapping_ownership": [
+    "652ce979766bc887"
+  ],
+  "FunctionDef:_cmd_adopt_collisions": [
+    "ccfd3bfbb32a82c7"
+  ],
+  "FunctionDef:_commit_lock_and_caches": [
+    "c2be2364aa330412"
+  ],
+  "FunctionDef:_count_adoptable_collisions": [
+    "3715cff91aa4f798"
+  ],
   "FunctionDef:_embedded_axes": [
     "6b6be0f9021d22be"
+  ],
+  "FunctionDef:_parse_collision_auth": [
+    "86f293fad30fd98c"
+  ],
+  "FunctionDef:_print_adopt_command": [
+    "57eb2681040248e0"
+  ],
+  "FunctionDef:_record_fork_entry": [
+    "8d4f0f3869434b12"
   ],
   "FunctionDef:_reject_polluted_children": [
     "9242114fae01b4ce"
   ],
+  "FunctionDef:_rendered_onboarding_overlay": [
+    "70b9748f91fb259e"
+  ],
   "FunctionDef:_resolve_current_profile": [
     "cba0f67404694e64"
   ],
+  "FunctionDef:assert_always_on_complete": [
+    "91498717e24d21d1"
+  ],
+  "FunctionDef:duplicate_destinations": [
+    "2e5bae277e1e3f93"
+  ],
   "FunctionDef:install": [
     "5d2af1b105a77a61"
+  ],
+  "FunctionDef:missing_always_on_sources": [
+    "dd968fd521a911df"
   ],
   "FunctionDef:missing_required_tokens": [
     "d16142634e09ec07"
@@ -37,98 +82,5 @@
   ],
   "FunctionDef:verify_within_root": [
     "8d998b82d8a9cfab"
-  ],
-  "Import:062120524f01": [
-    "062120524f011ff2"
-  ],
-  "Import:080e5955857c": [
-    "080e5955857cc60c"
-  ],
-  "Import:28aac7484aa9": [
-    "28aac7484aa9a46d"
-  ],
-  "Import:2e7c4d9da58d": [
-    "2e7c4d9da58d00f3"
-  ],
-  "Import:2f50860721a3": [
-    "2f50860721a34038"
-  ],
-  "Import:30876d51f82f": [
-    "30876d51f82f5a76"
-  ],
-  "Import:347ce2a1a722": [
-    "347ce2a1a722e521"
-  ],
-  "Import:4b497a0c2216": [
-    "4b497a0c22160a92"
-  ],
-  "Import:4f4228beb075": [
-    "4f4228beb075e7cc"
-  ],
-  "Import:59e3e0fd8cdb": [
-    "59e3e0fd8cdbdc20"
-  ],
-  "Import:68c3503c9652": [
-    "68c3503c96524a29",
-    "68c3503c96524a29",
-    "68c3503c96524a29"
-  ],
-  "Import:6a99de5308a6": [
-    "6a99de5308a6dc86"
-  ],
-  "Import:764225844f2d": [
-    "764225844f2d6e2b"
-  ],
-  "Import:78b2f4472b73": [
-    "78b2f4472b73daf3"
-  ],
-  "Import:7a0a5978afeb": [
-    "7a0a5978afebc567"
-  ],
-  "Import:866a97c0a29d": [
-    "866a97c0a29d398d"
-  ],
-  "Import:86bc35508fdf": [
-    "86bc35508fdf610d"
-  ],
-  "Import:9523e5432f6f": [
-    "9523e5432f6faa43"
-  ],
-  "Import:9c92f19b21cd": [
-    "9c92f19b21cd2aa4",
-    "9c92f19b21cd2aa4"
-  ],
-  "Import:a10597dd9879": [
-    "a10597dd98794309"
-  ],
-  "Import:a44fdeb31920": [
-    "a44fdeb319202063"
-  ],
-  "Import:a5de01d06f82": [
-    "a5de01d06f824ab3"
-  ],
-  "Import:a6948c6ef9fd": [
-    "a6948c6ef9fd3034"
-  ],
-  "Import:a8745b8e01e8": [
-    "a8745b8e01e843be"
-  ],
-  "Import:b9241efcdac0": [
-    "b9241efcdac07f4d"
-  ],
-  "Import:c636ea87b7d2": [
-    "c636ea87b7d23616"
-  ],
-  "Import:da10787ca958": [
-    "da10787ca958786a"
-  ],
-  "Import:e1526c576fec": [
-    "e1526c576fec197d"
-  ],
-  "Import:ed4a4b4240d8": [
-    "ed4a4b4240d81a53"
-  ],
-  "Import:f17512062a6a": [
-    "f17512062a6a6d1d"
   ]
 }
