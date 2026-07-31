@@ -229,7 +229,10 @@ roster is in `dev/agent_collaboration.md`.
   goodnight routine, explicit instruction).  Refer to proposals
   and plans by filename stem, not path link.
 * Run the test suite after any substantive change:
-  `python -m pytest bootstrap/tests`.
+  `python -m pytest bootstrap/tests` — under the **canonical interpreter
+  (Python 3.13.x)**. A different minor silently changes the result, so
+  name the interpreter alongside any suite figure you assert; see
+  `bootstrap/DEPENDENCY_BUDGET.md` > "The canonical interpreter".
 * **Keep commit bodies concise.** The body is a *snapshot* — what
   shipped and how it was verified — not a restatement of the proposal,
   plan, or changelog (those are the durable audit trail). Target 15–30

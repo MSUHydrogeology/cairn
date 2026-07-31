@@ -124,6 +124,34 @@ gate. The control is **detective + human**, not preventive-automated:
   adopter-facing capability. Absence causes the floor check test to be skipped
   and is reported as such.
 
+## The canonical interpreter — Python 3.13.x
+
+Every gate in this record assumes one interpreter. The gate manifest pins it
+(`bootstrap/tests/fixtures/gate_manifest.json`, `interpreter.version`), and
+running the suite under a different minor changes the results on an otherwise
+identical tree.
+
+Measured 2026-07-22, one tree, nothing differing between the two runs but the
+interpreter:
+
+| | Python 3.13.13 (canonical) | Python 3.12.9 |
+|---|---|---|
+| suite | 2 failed / 1435 passed / **0 skipped** | 2 failed / 1429 passed / 3 skipped |
+| AST attestation | **3** real drifted symbols | *hundreds* of spurious mismatches |
+| `bandit` (Exception 1) | present — the gate **runs** | absent — the gate silently **skips** |
+
+Two independent causes. `ast.dump` structure varies across Python minors, so the
+attestation reports phantom `CHANGED` symbols off-canon — the drift looks like a
+logic change that never happened. And the dev-only tools this record admits
+(`bandit`, `vermin`) live in the canonical environment, so elsewhere their gates
+skip rather than fail, and a skip reads as a pass.
+
+**If you assert a suite figure or a gate outcome, name the interpreter with it.**
+Two honest agents on the same tree otherwise report different facts, each
+correct about what they actually ran. That happened here: a published audit
+finding — that the Bandit gate "runs nowhere" — was measured off-canon and had
+to be corrected.
+
 ## Out of scope (this record)
 
 Third-party **binary** provenance (downloaded solver / compiler executables and
