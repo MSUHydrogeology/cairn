@@ -441,7 +441,7 @@ def _resolve_interpreter(root: Path) -> Tuple[str, str]:
     if ".." in interp.parts:
         raise LifecycleError(
             f'{cfg}: "interpreter" must not contain a parent-traversal '
-            f"(..) segment: {interp}."
+            f"(..) segment: {interp}.  {_REBIND_REMEDY}"
         )
     try:
         shape = _probe_interpreter(interp)
