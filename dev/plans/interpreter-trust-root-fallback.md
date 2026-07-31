@@ -126,12 +126,16 @@ are not this plan's judgment calls to soften.
    **no candidate code**, and atomically advances one designated trusted ref
    via an expected-old compare-and-swap -- "the Maintainer's supervised act,"
    per the tool's own module docstring. **Corrected at plan-review (ETR1,
-   External/Codex, blocking process):** Chunk G below is scoped to
-   identifying candidate `C` and the expected plan-only delta only --
-   neither `prepare` nor `promote` is this plan's or any implementing
-   agent's act; `refs/cairn/gate-authorization` does not exist today, and
-   `prepare` itself (not only `promote`) requires it, per direct execution
-   this session.
+   External/Codex, blocking process; sequencing and delta mechanics
+   corrected again at ETR1-R2):** Chunk G below splits into a **G0**
+   pre-Chunk-A Maintainer prerequisite (resolve the inherited gate-anchor
+   drift, establish a concrete `P`) and a **G1** post-Chunk-H Maintainer
+   handoff (identify the actual final commit `C` and the correct
+   whole-candidate `P`→`N` delta). Neither `prepare` nor `promote` is this
+   plan's or any implementing agent's act at either step;
+   `refs/cairn/gate-authorization` does not exist today, and `prepare`
+   itself (not only `promote`) requires it, per direct execution this
+   session.
 
 **Everything else in the Revised proposal + Security Review + Decision is
 taken as settled** -- the C1-C4 code design, the S1 record correction's
@@ -165,15 +169,24 @@ rather than left to be inferred.
 ## Sequence
 
 ```
-A. C1(revised)+C1a -- _probe_interpreter classifier, _REBIND_REMEDY, R6 guard   [commit pending]
-B. C2(revised) -- _warn_stale_once, docstring source-value update              [commit pending]
-C. C3 -- _intent_whoami surfaces the swallowed refusal                        [commit pending]
-D. C4 -- _REBIND_REMEDY appended to the fatal messages                        [commit pending]
-E. The S1 record correction -- resolver docstring rewritten verbatim to spec  [commit pending]
-F. Tests -- bootstrap/tests/test_lifecycle_failsafe.py (FROZEN, rewritten)    [commit pending]
-G. Gate-manifest re-anchor handoff: identify C + delta (Maintainer runs it)   [parked]
-H. Self-host sync: tools/lifecycle.py + cairn-lock.yml hash refresh          [commit pending]
+G0. [Maintainer prerequisite, BEFORE Chunk A] Resolve inherited gate-anchor  [parked]
+    drift (234 files), establish a concrete pre-implementation P
+A.  C1(revised)+C1a -- _probe_interpreter classifier, _REBIND_REMEDY, R6 guard [commit pending]
+B.  C2(revised) -- _warn_stale_once, docstring source-value update            [commit pending]
+C.  C3 -- _intent_whoami surfaces the swallowed refusal                      [commit pending]
+D.  C4 -- _REBIND_REMEDY appended to the fatal messages                      [commit pending]
+E.  The S1 record correction -- resolver docstring rewritten verbatim to spec [commit pending]
+F.  Tests -- bootstrap/tests/test_lifecycle_failsafe.py (FROZEN, rewritten)  [commit pending]
+H.  Self-host sync: tools/lifecycle.py + cairn-lock.yml hash refresh         [commit pending]
+G1. [Maintainer handoff, AFTER Chunk H] C = final commit, expected P->N      [parked]
+    delta = all four plan files + generated gate_manifest.json
 ```
+**Corrected at plan-review (ETR1-R2, External/Codex, blocking process):**
+G0 now precedes Chunk A (a precondition, not parallel work) and G1 now
+follows Chunk H (its candidate `C` cannot be "the final implementation
+commit" while H is still pending) -- the prior draft placed the whole re-
+anchor step between F and H, self-contradicting its own "final commit"
+framing.
 
 `dev/PLANNING.md`'s deferred row for S2 (the check/use race) lands **now, at
 plan-open** -- see below, committed in the same commit as this plan.
@@ -184,7 +197,7 @@ plan-open** -- see below, committed in the same commit as this plan.
 |---|------|--------|
 | A1 | `templates/skills/_lib/lifecycle.py` | New `_probe_interpreter(interp: Path) -> str` helper (returns `"symlinked"` / `"absent"` / `"present"`), placed immediately above `_resolve_interpreter`. Wraps the **whole** classification -- the symlink walk *and* the `stat()` probe -- so the caller's `except OSError` is reachable for both; wrapping only the probe was disproven by execution at the Internal panel's R2(a) (an EACCES parent raises inside the symlink walk, before the probe is ever reached). |
 | A2 | `templates/skills/_lib/lifecycle.py` | New module-level constant `_REBIND_REMEDY`, exact text from the Revised proposal's C1a block -- delete-then-reinstall, explicit **never** `--force`, explicit that a bare delete alone leaves the fallback in place. Single source so C1's warning and both C4 fatals cannot drift apart. |
-| A3 | `templates/skills/_lib/lifecycle.py` | Insert the R6 relative-segment guard (`any(part in ("..", ".") for part in interp.parts)`) **before** the classifier call, so `..`/`.` segments raise `LifecycleError` rather than reach `_probe_interpreter` at all -- makes the docstring's "no relative segments" clause true rather than leaving it aspirational. |
+| A3 | `templates/skills/_lib/lifecycle.py` | Insert the R6 parent-traversal guard (`".." in interp.parts`) **before** the classifier call, so a `..` segment raises `LifecycleError` rather than reach `_probe_interpreter` at all. **Narrowed at plan-review (ETR4, External/Codex, substantive; response re-confirmed absent from the operative row at ETR4-R2 -- fixed here, this time verified landed by direct re-read after edit):** the original guard also checked for a bare `"."` component, but `Path(value).parts` already discards `.` at construction (executed on both 3.11.15 and 3.13.13 -- `Path("/a/./python").parts` never contains `"."`), so that half of the check is dead code. The guard's error message and the docstring's "no relative segments" claim are both narrowed to the security-relevant case, parent traversal (`..`), which *is* live and detected. F5b adds the direct resolver regression proving this. |
 | A4 | `templates/skills/_lib/lifecycle.py` | Replace the current tail of `_resolve_interpreter` (`:385-396` in the live tree — **corrected at plan-review, PR3, Internal, substantive, from this row's original `:380-395`**; the `is_absolute()` check is at `:385`, the final `return` at `:396`, an off-by-five-and-zero mix rather than a consistent drift) with the Revised proposal's dispatch on `_probe_interpreter`'s three outcomes: `symlinked` → fatal (symlink message + `_REBIND_REMEDY`); `absent` → `_warn_stale_once(...)` then `return sys.executable, "fallback-stale"`; `present` → the existing `is_file()`/`os.access(X_OK)` check, fatal message now carrying `_REBIND_REMEDY`. `except OSError` around the classifier call raises `LifecycleError` with `_REBIND_REMEDY` appended (the R2(a) EACCES fix). `LifecycleError` subclasses `RuntimeError` (`:107` region), not `OSError` -- verify this by inspection before relying on it, since the `except OSError` block must not swallow a symlink refusal raised through the same call. |
 
 ### Chunk B -- C2(revised) (once-per-process warning)
@@ -205,7 +218,7 @@ plan-open** -- see below, committed in the same commit as this plan.
 
 | # | File | Change |
 |---|------|--------|
-| D1 | `templates/skills/_lib/lifecycle.py` | `_REBIND_REMEDY` appended to: the symlink-refusal message, the not-an-executable-file message, the new relative-segment message (A3), and the new EACCES/uninspectable-path message (A4's `except OSError` branch). No disposition changes anywhere in this chunk -- guidance only. |
+| D1 | `templates/skills/_lib/lifecycle.py` | `_REBIND_REMEDY` appended to: the symlink-refusal message, the not-an-executable-file message, the new parent-traversal message (A3 -- **"relative-segment" corrected to "parent-traversal" at plan-review, ETR4-R2, External/Codex, matching A3's own narrowing**), and the new EACCES/uninspectable-path message (A4's `except OSError` branch). No disposition changes anywhere in this chunk -- guidance only. |
 
 ### Chunk E -- the S1 record correction (Decision-mandated, verbatim in substance)
 
@@ -232,7 +245,7 @@ plan-open** -- see below, committed in the same commit as this plan.
 | F9 | Module docstring (`:16-19`) reworded from "a tampered config refuses before running anything" to the two-branch posture. |
 | F10 | Must stay green, byte-unchanged in assertion shape: `test_interpreter_resolved_from_local_env_and_reported`, `test_absent_local_env_uses_fallback_with_guidance`, `test_space_in_interpreter_path_accepted`, `test_extra_key_in_local_env_refused`. |
 
-### Chunk G -- supervised gate-manifest re-anchor (Maintainer-only; a handoff, not an implementing-agent step)
+### Chunk G -- gate-manifest re-anchor (two Maintainer-only steps: a pre-Chunk-A prerequisite, and a post-Chunk-H handoff)
 
 **Not the AST-baseline direct-edit pattern** used on every other plan this
 session -- `test_lifecycle_failsafe.py` is a `bootstrap/tests/` FROZEN file
@@ -243,62 +256,63 @@ means no AST re-anchor at all, confirmed by the proposal and re-confirmed
 this session). The applicable mechanism is `bootstrap/tests/
 _gate_reanchor.py` + `bootstrap/REANCHOR_RUNBOOK.md`'s Phase 4 ceremony.
 
-**Substantially rewritten at plan-review (ETR1, External/Codex, blocking
-process).** This plan's first draft scoped the implementing agent to run
-`prepare` only, with `promote` left to the Maintainer. That scoping is
-**both impossible and unauthorized as written**, confirmed by execution
-this session:
+**Rewritten twice at plan-review.** First at ETR1 (External/Codex, blocking
+process): the original "implementer runs `prepare`, Maintainer runs
+`promote`" scoping is impossible (`refs/cairn/gate-authorization` does not
+exist; `prepare` itself, not only `promote`, needs it) and unauthorized (a
+234-file inherited drift against `refs/cairn/gate-anchor`, unrelated to this
+plan). Then again at **ETR1-R2 (External/Codex, blocking process)**, because
+the first rewrite still had two defects, both confirmed by execution this
+session:
 
-* **`prepare` cannot run today.** `REANCHOR_RUNBOOK.md:93-139`'s Phase 4 has
-  **three** steps, not two: (1) the Maintainer authors the authorization
-  anchor `A` and points the fixed ref `refs/cairn/gate-authorization` at it;
-  (2) `prepare` (dry-run, full Stage A+B validation, no CAS); (3) `promote`
-  (the CAS). Step 2's "Stage B validation" is exactly what resolves and
-  checks the authorization at `A` — so `prepare` **requires** step 1 to have
-  already happened, not just `promote`. Executed this session:
-  `refs/cairn/gate-authorization` does not exist (`git show-ref` finds only
-  `refs/cairn/gate-anchor`), and running the plan's own proposed command
-  (`_gate_reanchor.py prepare --repo . --candidate-ref HEAD`) exits with an
-  **uncaught `ValueError`** resolving that ref, before Stage A even gathers
-  evidence.
-* **This is not a narrow, plan-scoped re-anchor right now, even once `A`
-  exists.** Executed this session: `git diff --stat refs/cairn/gate-anchor
-  HEAD` shows **234 files changed**; `bootstrap/tests/_gate_manifest.py`'s
-  `produce()` against the live tree shows **54 changed pinned frozen files
-  + 14 newly frozen files**, with `collection.node_count` moving **1404 →
-  1446** — a large, unrelated, already-accumulated drift against the
-  anchor, entirely independent of this plan's own five-function... *sorry,*
-  one-test-file edit. Attempting `prepare`/`promote` today, even correctly
-  authorized, would construct and (on `promote`) advance the trust anchor
-  past **all** of that inherited scope, not just this plan's change — a
-  cumulative delta nobody has reviewed as a unit.
+* **Wrong candidate/delta mechanics.** `_construct_anchor_commit`
+  (`bootstrap/tests/_gate_reanchor.py:274-307`) builds `N = C`'s tree + the
+  trusted manifest blob, committed **with `C` as `N`'s sole parent** — so
+  `git diff P..N` is definitionally `git diff P..C` **plus** the manifest
+  file, i.e. *every* file that changed between `P` and candidate `C`, not
+  only whichever chunk the plan's prose singled out. The Round-1 rewrite
+  called the expected `P`→`N` delta "exactly Chunk F's test-file changes" --
+  wrong, confirmed by running the real `_construct_anchor_commit`/
+  `_diff_name_only` helpers in an isolated temp repo with this plan's four
+  implementation-touched files changed: `P..N` contained
+  `templates/skills/_lib/lifecycle.py`, `tools/lifecycle.py`, `dev/.cairn/
+  cairn-lock.yml`, and `bootstrap/tests/test_lifecycle_failsafe.py` (only
+  `C..N` was manifest-only).
+* **Wrong sequencing.** The Round-1 rewrite placed this chunk's handoff
+  between F and H in the `## Sequence` block while calling its candidate `C`
+  "this plan's final implementation commit" -- self-contradictory, since H
+  (the self-host sync, which itself touches `tools/lifecycle.py` and
+  `dev/.cairn/cairn-lock.yml`) had not landed yet at that point.
 
-**Corrected design — a handoff, not an implementing-agent act, at either
-step:**
+**Corrected design -- split into two Maintainer-only steps, neither an
+implementing-agent act:**
 
-1. The implementing agent's job, once Chunks A-F land, is limited to:
-   identifying the candidate commit `C` (this plan's final implementation
-   commit), and recording the **expected plan-only delta** — precisely
-   Chunk F's test-file changes, nothing else — as a clearly isolated
-   description for the Maintainer to review against whatever `A`/`P` state
-   exists when they act.
-2. **The Maintainer** — not this plan, not any implementing agent —
-   decides how to handle the pre-existing 234-file / 54+14-frozen-file /
-   1404→1446-collection drift against `refs/cairn/gate-anchor` (a
-   Maintainer-controlled gate-baseline transition, reviewed and recorded on
-   its own, separately from this plan; or explicit authorization to absorb
-   that cumulative scope alongside this plan's own change — the Maintainer's
-   call, not this plan's to make). Once a concrete new `P` exists (whatever
-   that resolution looks like), the Maintainer authors the authorization
-   anchor `A` (Phase 4 step 1), then runs **both** `prepare` (step 2) and
-   `promote` (step 3) themselves, recording the resulting `P`/`A`/`C`/`N`
-   in this plan's own eventual Lasting-truth migration section.
-3. **The acceptance criterion is the Maintainer-recorded result** — a
-   completed `promote` whose reported delta from `P` to `N` is exactly
-   Chunk F's test-file change (plus whatever the Maintainer's separate
-   gate-baseline-transition decision absorbed, disclosed as its own line
-   item) — **not** an implementing-agent `prepare` run, which no current
-   ref or code path supports as this plan first proposed it.
+**G0 -- pre-Chunk-A prerequisite.** Before Chunk A begins: the Maintainer
+resolves the pre-existing 234-file / 54-changed-pinned-plus-14-newly-frozen
+/ 1404→1446-collection drift against `refs/cairn/gate-anchor` (a
+Maintainer-controlled gate-baseline transition, reviewed and recorded on its
+own -- this plan does not decide how, only that a concrete, resolved `P`
+must exist before implementation starts, so the eventual G1 handoff has a
+known, reviewable starting point rather than an open-ended inherited scope).
+This is a **precondition on Chunk A**, not parallel work -- the implementing
+agent does not begin Chunk A until the Maintainer confirms a usable `P`.
+
+**G1 -- post-Chunk-H handoff** (sequencing corrected -- this now runs
+**after** Chunk H, not between F and H; see the `## Sequence` block below).
+Once Chunks A-H all land: the implementing agent's job is limited to
+identifying the actual final implementation commit as candidate `C`, and
+stating the **reviewed expected `P`→`N` delta** correctly this time --
+**all four** plan-touched files (`templates/skills/_lib/lifecycle.py`,
+`tools/lifecycle.py`, `dev/.cairn/cairn-lock.yml`, `bootstrap/tests/
+test_lifecycle_failsafe.py`) **plus** the generated `gate_manifest.json`,
+refusing (flagging to the Maintainer, not silently absorbing) any unrelated
+intervening change. The Maintainer then authors the authorization anchor `A`
+(Phase 4 step 1) against G0's established `P`, and runs **both** `prepare`
+(step 2) and `promote` (step 3) themselves, recording the resulting
+`P`/`A`/`C`/`N` in this plan's own eventual Lasting-truth migration section.
+**The acceptance criterion is this Maintainer-recorded result** -- not an
+implementing-agent `prepare` run, and not a delta claim scoped to one chunk
+when the mechanism itself always constructs the whole-candidate diff.
 
 ### Chunk H -- self-host sync
 
@@ -344,14 +358,21 @@ F6, and by Chunk A's `_probe_interpreter` structure itself.
   against the Decision's verbatim correction, not merely "some correction
   landed."
 * **Gate-manifest re-anchor** -- **corrected at plan-review (ETR1,
-  External/Codex, blocking process)**: the criterion is the **Maintainer's
-  own recorded `promote` result** (`P`/`A`/`C`/`N`, per Chunk G's rewritten
-  handoff design), not an implementing-agent `prepare` run -- no current ref
-  or code path supports the original "implementer runs `prepare`" framing
-  (`refs/cairn/gate-authorization` does not exist today, and the live tree
-  carries a 234-file / 54+14-frozen-file drift against `refs/cairn/
-  gate-anchor` unrelated to this plan). This plan's own implementation
-  stops at identifying candidate `C` and the expected plan-only delta.
+  External/Codex, blocking process; delta/sequencing corrected again at
+  ETR1-R2)**: **G0** (a precondition on Chunk A) is a Maintainer-resolved,
+  concrete pre-implementation `P` — no current 234-file / 54+14-frozen-file
+  drift against `refs/cairn/gate-anchor` left unaddressed. **G1** (after
+  Chunk H) is the **Maintainer's own recorded `promote` result**
+  (`P`/`A`/`C`/`N`), where `C` is the actual final implementation commit and
+  the reviewed expected `P`→`N` delta is **all four** plan-touched files
+  (`lifecycle.py`, `tools/lifecycle.py`, `cairn-lock.yml`, `test_lifecycle_
+  failsafe.py`) plus the generated `gate_manifest.json` -- not a single-chunk
+  delta claim, since `_construct_anchor_commit` (`N = C` + the manifest blob,
+  `C` as `N`'s sole parent) definitionally makes `P`→`N` equal `P`→`C` plus
+  the manifest, i.e. every file the whole candidate changed. Not an
+  implementing-agent `prepare` run at either step -- no current ref or code
+  path supports that framing. This plan's own implementation stops at G1's
+  candidate-`C`-and-delta identification.
 * **Self-host verification** -- H3's before/after `verify_integrity.py`
   runs, both scoped to the `tools/lifecycle.py` record (no `tools/
   lifecycle.py` line in either run's output) -- **not** whole-tree-clean, per
@@ -382,14 +403,16 @@ reverted); the self-host sync causing unanticipated lockfile churn
 (recovery: revert the `tools/lifecycle.py` sync, land the template change
 alone, documented divergence until the next full upgrade pass). Add one
 from this plan's own preparation, **corrected at plan-review (ETR1,
-External/Codex, blocking process)** to match Chunk G's rewritten handoff:
-**the Maintainer's `prepare`/`promote` run reports a diff (`P`→`N`) wider
-than Chunk F's own intended test rewrite plus whatever separately-decided
-gate-baseline-transition scope the Maintainer explicitly absorbed** -- the
-plan's own edits touched something unintended; the Maintainer does not
-run `promote` until the evidence bundle's diff matches exactly what
-Chunks A-F changed, plus that disclosed, separately-reviewed baseline
-scope, nothing else.
+External/Codex, blocking process; corrected again at ETR1-R2 to match the
+real `_construct_anchor_commit` mechanics)** to match Chunk G0/G1's
+rewritten handoff: **G1's `P`→`N` diff contains anything beyond the four
+named plan-touched files** (`lifecycle.py`, `tools/lifecycle.py`,
+`cairn-lock.yml`, `test_lifecycle_failsafe.py`) **plus the generated
+gate_manifest.json** -- since `P`→`N` is definitionally `P`→`C` plus the
+manifest, an unexpected extra file in that diff means either G0's
+established `P` was not actually current, or an unrelated change slipped
+into candidate `C`; the Maintainer does not run `promote` until the diff
+matches exactly those five items, nothing else.
 
 ## Review
 
@@ -1030,3 +1053,40 @@ current repository still has 234 changed files against `refs/cairn/gate-anchor`;
 no authorization ref, promotion, production lifecycle flow, or native Windows
 behavior was exercised. Focused re-read required after ETR1-R2 and ETR4-R2 are
 dispositioned; Chunk A remains blocked.
+
+### Response -- Claude (author) -- 2026-07-31
+
+**Process note, disclosed rather than glossed over:** the reviewer's ETR4-R2
+finding is correct and embarrassing -- my prior Response's commit message
+claimed A3 was narrowed to `".."` only, but the operative row still read
+`("..", ".")` unchanged. The Edit tool reported success at the time; the
+actual cause is not fully diagnosed (a "file modified on disk" notice
+appeared during that same editing pass, and the most likely explanation is
+that a subsequent edit's file-state read did not include the A3 change), but
+the practical lesson taken is procedural: every fix in this Response was
+independently re-read from the file immediately after editing, before moving
+to the next fix, specifically to catch a repeat of this failure. Both fixes
+below were confirmed present by direct `grep` re-read after their edits, not
+inferred from the edit tool's success message alone.
+
+* **[ETR4-R2] accept -- substantive security contract, fixed and verified
+  landed this time.** A3 actually narrowed to `".." in interp.parts` in the
+  operative row (re-read via `grep -n "^| A3 "` immediately after editing,
+  confirmed present); D1's "relative-segment message" reference corrected to
+  "parent-traversal message" to match.
+* **[ETR1-R2] accept -- blocking process, fixed.** Re-read
+  `_construct_anchor_commit` directly (`bootstrap/tests/_gate_reanchor.py:
+  274-307`): `N = C`'s tree + the manifest blob, `C` as `N`'s sole parent, so
+  `P`→`N` is definitionally `P`→`C` plus the manifest -- confirming the
+  reviewer's point that a single-chunk delta claim was never possible once
+  `C` is the whole candidate. Chunk G split into **G0** (a pre-Chunk-A
+  Maintainer prerequisite resolving the inherited 234-file drift and
+  establishing a concrete `P`) and **G1** (a post-Chunk-H handoff where `C`
+  is genuinely the final commit and the expected `P`→`N` delta correctly
+  names all four plan-touched files plus the generated manifest). The
+  `## Sequence` block, the Acceptance criteria's gate-manifest bullet, the
+  Signals-the-change-is-wrong entry, and Context Finding 6 all corrected to
+  match -- re-read after each edit, not just the primary Chunk G section.
+
+**Status: remains `awaiting-plan-review`.** A focused External re-read on
+ETR1-R2 and ETR4-R2 is still required before Chunk A begins.
