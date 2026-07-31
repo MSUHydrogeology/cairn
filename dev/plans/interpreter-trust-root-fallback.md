@@ -1090,3 +1090,60 @@ inferred from the edit tool's success message alone.
 
 **Status: remains `awaiting-plan-review`.** A focused External re-read on
 ETR1-R2 and ETR4-R2 is still required before Chunk A begins.
+
+## Plan re-review Round 3 -- Codex (External, different-agent-type; Security Review) -- 2026-07-31
+
+**Verdict: REVISE.** ETR4-R2 is closed. ETR1-R2's candidate order and
+whole-candidate mechanics are now correct, but its exact delta allowlist omits
+the plan's own required execution-state mutation. One blocking process finding
+remains; the accepted security posture itself is unchanged.
+
+### Finding
+
+* **[ETR1-R3] BLOCKING PROCESS -- G1's exact `P` -> `N` set omits this mutable
+  execution artifact.** G0 establishes `P` before Chunk A while this plan is
+  still `awaiting-plan-review` (`:169-183`). Cairn's plan template defines a
+  plan as an execution artifact whose status is updated in place, and the live
+  sibling execution demonstrates the transition: lockfile-provenance Chunk A
+  commit `02f6ee1` changed its plan status from `awaiting-plan-review` to
+  `executing` alongside the first code chunk. Following that established
+  workflow here means candidate `C` differs from G0's `P` in
+  `dev/plans/interpreter-trust-root-fallback.md` as well as the four files G1
+  names. But G1 and the "Signals" criterion require exactly those four plus
+  `gate_manifest.json`, and treat any additional file as an unrelated change
+  (`:300-315`, `:405-415`). Executing the production
+  `_construct_anchor_commit` / `_diff_name_only` helpers in a temporary repo
+  with that normal status mutation produced six `P..N` paths: the plan file,
+  the four named implementation files, and
+  `bootstrap/tests/fixtures/gate_manifest.json`; `C..N` remained manifest-only.
+  Thus the current criterion either falsely HOLDs the valid lifecycle transition
+  or pressures execution to leave the plan's status stale. **Satisfier:** include
+  this plan file in the reviewed expected `P` -> `N` set and bound its allowed
+  mutation to the normal execution-state update, yielding five candidate files
+  plus the generated manifest. Alternatively, specify that G0's supervised `P`
+  commit itself performs and contains the status transition, and prohibit any
+  further mutable plan update before G1; do not leave the timing implicit while
+  asserting an exact five-path result.
+
+### Closed finding and security disposition
+
+**ETR4-R2 closed.** Operative A3 now uses `".." in interp.parts`, narrows the
+message and docstring promise to parent traversal, aligns D1, and retains F5b's
+direct regression. Canonical Python 3.13.13 reconfirmed that `..` survives
+`Path.parts` and the narrowed guard returns true, while literal `.` is normalized
+away.
+
+The prior Security Review's risk acceptances remain in force. This remaining
+finding changes no resolver disposition and grants no executable capability; it
+is solely about making the Maintainer's trust-root transition match Cairn's own
+plan lifecycle. ETR2, ETR3, ETR4, and ETR5 are closed. ETR1 remains open only as
+ETR1-R3.
+
+### Verification
+
+Canonical Python 3.13.13: the executable six-file `P` -> `N` probe above; the
+focused gate transition/re-anchor suite passed **25 tests**. The exact status
+mutation was confirmed from commit `02f6ee1`. No production ref, authorization
+artifact, gate manifest, or lifecycle implementation file was changed or
+promoted. Focused re-read required after ETR1-R3 is dispositioned; Chunk A
+remains blocked.
