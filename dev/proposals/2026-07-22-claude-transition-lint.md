@@ -28,7 +28,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 4.8
 **Date opened**: 2026-07-22
-**Status**: revised
+**Status**: accepted
 **Touches**: a new advisory check `scripts/transition_lint.py` + its suppression whitelist `scripts/transition_lint_whitelist.py`; a new behavioral test `bootstrap/tests/test_transition_lint.py`; a new `docs/tool-usage.md` section; `CHANGELOG.md` at finalization; the deferred row at `dev/PLANNING.md:129` moves at plan-open. **No doctrine, no `AGENTS.md`, no shipped template, no install-manifest entry.**
 **Related**: split out of the accepted `2026-07-08-claude-review-record-integrity` (its Part C), per that proposal's Internal-review findings R2, R3, R4, R9 and R10 (`dev/proposals/archive/2026-07-08-claude-review-record-integrity.md:291-321` and `:362-378`) and the author Response that carried them forward as pre-registered constraints (`dev/proposals/archive/2026-07-08-claude-review-record-integrity.md:434-481`); the broad-look review's fold-up candidate at `dev/strategy/2026-07-08-claude-broad-look-skeptical-review.md:673-676`; the deferred roadmap row at `dev/PLANNING.md:129`; the incident ledger established by that proposal's Part B, `dev/measurement/review-floor-deviations.md`.
 **Plan review**: required(Internal) — a new tool on a genuinely harder surface (commit diffs + messages) that a fresh-context reader should re-derive the heuristics against the real corpus. No shipped-template, install-contract, doctrine, or security surface, so the Internal floor is the right tier; an External read is welcome but not required by this proposal. Ratified at Decision.
@@ -1492,3 +1492,77 @@ owner instead of a hope. This proposal's Decision follows that answer.
 *(Artifacts are referenced by filename stem, not path link, so an archive-move
 needs no edit here -- see the two claim-marker maintenance notes at the head of
 this file for why that matters.)*
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-07-22
+
+**Accepted, and queued.** Scribed by Claude (Strategy) at the Maintainer's
+explicit instruction.
+
+Maintainer's authorization (verbatim):
+
+> It seems cheap to implement, and will be there when we need it. I say accept
+> and move it into the queue
+
+**This is the explicit go-ahead the standing stopping rule requires.** The
+Maintainer's 2026-07-22 direction — *fix defects, build nothing new; any new
+tool, mechanism, or capability needs an explicit go-ahead no matter how well a
+review justifies it* — is why this proposal sat at `revised` rather than being
+carried through on the strength of its reviews. That authorization is now given,
+specifically and on the record. The rule was not bypassed; it was satisfied.
+
+**Accepted scope.** The Revised proposal: an **advisory** check that a commit's
+message claim is supported by its diff, flagging two shapes — a subject claiming
+a review / response / decision transition whose diff adds no such section, and a
+proposal-*open* commit whose added file already carries review sections.
+
+**Queued, not next.** The authorization's own framing — *"will be there when we
+need it"* — is recorded as a scheduling signal, not urgency. This is
+maintainer-facing apparatus: a solo adopter will not run a git-history linter,
+and the standing priority is postdoc-first. It takes a row on
+`dev/PLANNING.md`'s Queued board (added in a separate commit; a scribed Decision
+carries no roadmap work) and does not displace adopter-path work.
+
+**Why it lands.** It is the only mechanical guard against the failure that
+opened this whole tighten-up: Cairn's own showcase arc contains a proposal-open
+commit (`17b7e5c`) whose file already carried two reviews, and a commit
+(`f4a8308`) whose subject claimed a review append while adding only a marker
+line. To an outside auditor that is indistinguishable from a fabricated review
+trail. An independent reimplementation ran the design over **538 commit
+subjects with zero false positives**, surfacing exactly the three real
+incidents. The sibling reader-fix (stem `2026-07-22-claude-stage-commit-patterns`)
+confirmed this is not made redundant by repairing the stage vocabulary: that
+reader classifies *messages* and never opens a diff.
+
+### Ratified plan conditions
+
+The Internal panel pre-registered constraints that bind the plan; they are
+ratified here rather than left to implementation:
+
+* **Rename-awareness.** Enumerate changes with `-M` / `--find-renames`. The
+  rename-blind plumbing reports a plan-open's archived proposal as an *added*
+  file carrying `## Review` and `## Decision`, which would false-flag the
+  dominant lifecycle commit shape.
+* **Narrow trigger.** Fire only on commits touching `dev/proposals/` or
+  `dev/plans/`, excluding archive moves — the words "open", "review" and
+  "decision" are ordinary English and appear throughout this repo's subjects.
+* **No new rule.** The allowed-exception vocabulary is **bounded to restating**
+  `AGENTS.md`'s deliberation carve-in (goodnight handoff, the one-line
+  `PLANNING.md` row-move). If it diverges it becomes new operational doctrine
+  and must clear the rate-limit gate separately.
+* **Advisory means advisory:** always exit 0 on a completed scan, findings
+  printed. Paired with a suppression mechanism (exclusion roots + whitelist)
+  so the output stays low-noise enough to be read rather than ignored.
+* **No silent clean.** A rev-range that parses but does not *resolve* (a typo'd
+  SHA, a deleted branch) must not exit 0 with no output. For a tool whose whole
+  value is "I ran it and saw nothing," that is the one failure mode that must
+  never be silent.
+* **Corpus-derived edge cases**, with the dogfood windows SHA-pinned, and the
+  known omission recorded honestly: rename-only commits are structurally
+  invisible to the lint and are documented as a gap, not claimed as handled.
+
+`Plan review: required(Internal)` stands — no shipped-template, install-contract,
+doctrine, or security surface is touched.
+
+**Next (separate commits):** the `dev/PLANNING.md` queued row; then, when it
+reaches the top of the queue, plan-open (which archives this proposal),
+implement, non-implementing code review, archive.
