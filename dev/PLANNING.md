@@ -157,6 +157,19 @@ with the plan's filename stem.
   `--plan` fresh, confirming the current file list, and scoping the
   reconciliation pass (likely several small, reviewed `--finalize` batches
   rather than one large `--apply`).
+* **Lockfile schema validate-on-read** *(deferred, Jul 2026)* — the
+  `lockfile-provenance-fields` proposal (plan `lockfile-provenance-fields`)
+  adds two provenance fields to the install lockfile without bumping
+  `_LOCK_SCHEMA` or teaching `read_lockfile` to validate on read — a
+  deliberate P4 deferral, not an oversight: `read_lockfile` is the second
+  trust anchor (`bootstrap/_scaffold/lockfile.py:3`), and teaching it to
+  *reject* a lockfile on a version predicate is a fail-closed behavior
+  change on the path `upgrade` and `verify_integrity` both traverse —
+  plausibly its own Security-Review trigger, and exactly the "contract
+  change married to a smaller change" bundling this proposal itself was
+  split out to avoid. Revive as: validate `schema` on read, with a
+  migration hint, and decide the fail-open / fail-closed disposition — its
+  own proposal, on its own review tier.
 
 *(Otherwise empty at adoption — native proposals populate this board. The
 Cairn roadmap migrated 2026-06-12 from modflow_tools — queued items,
