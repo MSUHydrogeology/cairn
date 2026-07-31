@@ -16,7 +16,7 @@
 # Plan: lockfile provenance fields (P1-P5)
 
 **Source proposal**: `dev/proposals/archive/2026-07-22-claude-lockfile-provenance-fields.md`
-**Status**: executing
+**Status**: archived
 **Plan review**: required(**External cross-type**) — this is the Decision's
 own ratified condition (`doctrine/dual-review.md:184-187`, contract-touching
 surfaces get an External round; `:325-329` forbids softening a declared tier

@@ -9,11 +9,18 @@
      dev/plans/archive/, a separate commit) breaks the citation here. Retained
      unedited (append-only, response prose); path marked so the checker clears. -->
 <!-- claim-check-allow: dev/plans/lockfile-provenance-fields.md* -->
+<!-- claim-marker maintenance 2026-07-31: this file's Chunk G and its ETR1-R3
+     review round cite `dev/plans/interpreter-trust-root-fallback.md` -- this
+     file's OWN pre-archive path, ACCURATE when written. Archiving it (git mv
+     to dev/plans/archive/, this commit) breaks the self-citation. Retained
+     unedited (append-only plan + review prose); path marked so the checker
+     clears. -->
+<!-- claim-check-allow: dev/plans/interpreter-trust-root-fallback.md* -->
 
 # Plan: interpreter trust root -- absent degrades, present-but-wrong refuses
 
 **Source proposal**: `dev/proposals/archive/2026-07-22-claude-interpreter-trust-root-fallback.md`
-**Status**: executing
+**Status**: archived
 **Plan review**: required(**External**) -- the proposal's own header field,
 carried unamended into the Decision ("Accepted, as reviewed and
 conditioned"): "the floor is a fresh-context Internal read, and an External
@@ -507,12 +514,106 @@ mandates before implementation.*
 
 ## Lasting-truth migration
 
-*Filled in at archive time. Per the [Archive preconditions rule](../PLANNING.md#archive-preconditions-proposals-and-plans),
-plans archive only after every deferred follow-up has a durable home outside
-the plan -- S2 (the check/use race) is homed at this plan's own open, at its
-`dev/PLANNING.md` Queued row (see below); the governance-registration
-follow-up needs no home here, since it already landed independently
-(Finding 3, this plan's Context).*
+Archived 2026-07-31. Full lifecycle complete: proposal (accepted, with a
+dedicated Security Review) → plan-open → Internal plan-review + Sharpening →
+required External cross-type plan-review, **five rounds** to clear (Rounds
+1-4 each returning blocking process findings against this plan's own Chunk G
+design; Round 5 ending on a one-word wording fix) → Maintainer authorization
+to proceed without a sixth confirmatory round (`33238ea`) → implementation,
+Chunks A-H, six commits (`03f242e`, `f43d77a`, `e93f121`, `880ddd4`,
+`3703b57`, `d70dbcb`) → fresh-context code review (Accept + fixes, `b0670a8`)
+→ the Maintainer's supervised gate-anchor re-establishment (`e5ecaa5`) →
+archive.
+
+**Chunk G did not execute as designed, and the record should say so
+plainly.** The plan specified G0 (a Maintainer gate-baseline transition
+establishing a concrete `P`) as a **precondition on Chunk A**, and G1 (a
+post-Chunk-H handoff feeding `REANCHOR_RUNBOOK.md`'s Phase 4 promotion
+ceremony) after Chunk H. Neither happened that way. Implementation ran first;
+the gate work was taken up only after Chunk H had landed. At that point the
+Maintainer directed:
+
+> "Let's take care of this definitively. We can bless this current state,
+> because I trust it all (solo developer, single machine)."
+
+That decision resolved G0 and G1 **together, by a different mechanism than
+the plan named** — the runbook's **Phase 0** (supervised trust-root
+re-establishment: regenerate the gate manifest over the reviewed tree, commit
+it, advance `refs/cairn/gate-anchor` to it) rather than **Phase 4** (the
+authorization-anchor + `prepare`/`promote` ceremony). The substitution is
+deliberate and is the *stronger* authorization, not a bypass: Phase 4 exists
+so the machinery can prove a candidate safe **without** a personal Maintainer
+blessing of the whole tree; a direct Phase 0 blessing supplies that blessing
+outright, leaving Phase 4 nothing to prove. Running G0 after implementation
+rather than before it also means there was never a candidate `C` distinct
+from `P`, which is why no `A` and no constructed `N` exist for this plan.
+G0's own text explicitly reserved the *how* to the Maintainer ("this plan
+does not decide how"), so the mechanism choice was within what the plan left
+open; the **sequencing** deviation was not, and is recorded here as a
+deviation rather than presented as the design working.
+
+**Consequently, this plan's `## Signals the change is wrong` criterion on the
+`P`→`N` diff was never exercised** — it presupposed a Phase 4 promotion that
+did not occur. It is left standing unedited (append-only), but a reader should
+not take it as a check that passed. The check that *did* run is the Phase 0
+equality check: the six Stage-B authority modules were confirmed
+byte-identical to the superseded anchor `f4450f4` before blessing, so the new
+anchor pins **no newly-trusted verifier code**, and the produced manifest's
+pins were confirmed equal to the independently-recorded hashes.
+
+**Trust-root transition, recorded per the runbook's Audit trail section:**
+superseded anchor `f4450f42bfb39ef76abd913c4128bc23c03ce3c3` → new anchor
+`e5ecaa561db74ca98d0a65abc69e37260a06f8b3`. Scope blessed, re-derived live at
+run time per G0's own ETR1-R4 note (**not** either stale plan-review snapshot
+of 234 or 236 files): **237 files changed**, 45549 insertions / 271 deletions;
+**55 frozen gate files modified, 15 added, 0 removed**; pytest collection
+**1404 → 1469** (growth only). The six authorized verifier-module hashes are
+recorded in `e5ecaa5`'s own commit body.
+
+**Two conditions the Maintainer accepted explicitly rather than elided:**
+(1) the blessing covers an **agent-authored rewrite of a FROZEN gate test**
+(`bootstrap/tests/test_lifecycle_failsafe.py`, Chunk F) — precisely the actor
+the gate mechanism governs — accepted on the recorded basis of five External
+review rounds plus a fresh-context code review, i.e. reviewed rather than
+unexamined; (2) **no external anchor** — a single-machine solo checkout means
+`_gate_manifest.py verify --anchor-ref` resolves the anchor object from this
+same repo and reports target-owned rather than externally-anchored integrity.
+
+**Deferred follow-ups, per the archive-preconditions rule — homed outside
+this plan, none newly created at archive time:** S2 (the interpreter
+check/use race) at its `dev/PLANNING.md` Queued row, added at this plan's own
+open; the governance-registration follow-up needed no home, having landed
+independently before this plan (Finding 3, Context).
+
+**Final verification, this session:** full `python -m pytest bootstrap/tests`
+under the canonical `lhm` interpreter (Python 3.13.13) — **1469 passed, 0
+failed** (196.38s). `_gate_manifest.py verify --anchor-ref e5ecaa5` →
+"gate integrity intact (162 frozen files, 1469 pinned nodes)", the sole note
+being the expected no-external-anchor note above.
+
+**What this plan actually shipped:** a local interpreter binding that
+**degrades loudly when absent** and **still refuses when present-but-wrong** —
+`_probe_interpreter`'s classifier with its required symlink-before-absence
+probe ordering, a once-per-process stderr warning naming both the stale
+recorded value and the substituted interpreter, a `fallback-stale` source
+label, fixed non-`--force` recovery guidance (`_REBIND_REMEDY`), and no
+automatic rewrite of the binding — plus `_intent_whoami` no longer swallowing
+the failure silently (C3), recovery guidance on fatal messages (C4), the S1
+record correction, a rewritten `test_lifecycle_failsafe.py`, and the
+`tools/lifecycle.py` self-host sync.
+
+**Worth carrying forward as institutional memory:** the five-round External
+review on this plan spent Rounds 1-4 entirely on **Chunk G — the one chunk no
+agent was permitted to execute**, repeatedly catching that the plan had
+mis-specified a ceremony its author could not run and had not read closely
+enough (wrong candidate/delta mechanics, wrong sequencing, a hardcoded live
+count, an inverted acceptance criterion). The review tier did its job. But the
+deeper lesson is that four rounds of correcting a specification is weaker
+evidence than one attempt to walk through the real mechanism: the design was
+only *definitively* resolved when execution revealed that the specified
+ceremony was the wrong tool for the situation entirely. A plan that assigns
+work to a role the planning agent cannot occupy should be pressure-tested
+against that role's actual runbook early, not refined in prose across rounds.
 
 This section is append-only once written.
 
