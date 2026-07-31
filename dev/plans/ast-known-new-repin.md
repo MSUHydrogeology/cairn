@@ -3,7 +3,7 @@
 # Plan: re-pin the stale AST known-new manifest (Parts 1-2)
 
 **Source proposal**: `dev/proposals/archive/2026-07-22-claude-ast-known-new-repin.md`
-**Status**: executing
+**Status**: review
 **Plan review**: required(Internal) — per the Decision's ratified plan
 conditions (the proposal's own External-tier read already cleared the
 design; the plan's job is translation + the currency re-check below,
@@ -223,7 +223,91 @@ begins next (Chunks A-B).
 
 ## Code review
 
-*Filled in after implementation commits land (Chunks A-B).*
+**Attribution / committer note.** Fresh-context subagent review of the
+two implementation commits; the subagent cannot commit, so the
+author-session commits this section as a disclosed scribe, the
+accepted deviation model used throughout this repo's lifecycle.
+
+## Code review -- Claude (sub-agent, fresh context, not the implementer) -- 2026-07-31
+
+**Verdict: Accept**, applying to the two commits `a5d52af` (Chunk A)
+and `e039f33` (Chunk B).
+
+**Model**: Claude Sonnet 5, fresh session, no access to the
+implementing session.
+
+### Falsification ledger
+
+**Chunk A.** `scaffold_ast_known_new.json` has exactly 28 keys, all
+named-symbol type, zero `Import:`/`ImportFrom:` keys. Independently
+recomputed the live digest for **all 28** symbols (not a sample) via
+`_merge_current()` under the canonical `lhm` interpreter: 0 mismatches.
+Diffed the pre-Chunk-A 43-key manifest against the new one: the 13
+carried-forward named keys are byte-identical, 15 are genuinely new,
+all 30 `Import:` keys dropped — exact match to the commit message.
+`verify()` structurally cannot be affected by this change (it doesn't
+accept a `known_new` argument at all) — confirmed by reading its
+signature, then confirmed empirically: still 60 NEW entries as
+informational notes.
+
+**Chunk B — the most important part, and the most scrutinized.** The
+Docstring predicate is `key.split("#", 1)[0] == "Docstring"`, a
+literal character-for-character match to `_classify()`'s own predicate
+(plan-review PR3, confirmed actually landed). The exemption guard is
+present in **both** loops — the unpinned-NEW loop and the separate
+`MISSING-KNOWN-NEW` loop (plan-review PR2's asymmetry, confirmed
+genuinely closed in the shipped code by direct reading of both call
+sites, not just the commit message's claim). Named symbols confirmed
+unaffected by direct code reading and by test evidence.
+**Non-vacuity proven by mutation, independently repeated by the
+reviewer** (not just re-trusting the implementing session's own
+mutation test): removing both guards reproduces exactly the two
+predicted test failures with the exact refusal messages, the
+named-symbol boundary test stays green; reverted, confirmed
+byte-identical to HEAD via both `git diff` (0 lines) and
+`git hash-object` matching `git rev-parse HEAD:...` exactly.
+
+**Acceptance-criterion demonstration** reproduced independently
+end-to-end under `lhm`: synthetic stale `install_onboarding` digest,
+`update-symbol --dry-run` → exit 0, all 28 named symbols pinned and
+matched, all 32 `Import:` entries exempted and unpinned — direct proof
+Parts 1+2 together restore the guarded path.
+
+**Scope fence** confirmed via `git diff-tree`: neither commit touches
+`scaffold_ast_baseline.json` or `_UPDATE_ALLOWLIST`'s dict body.
+
+**Gate sweep at HEAD**, all independently reproduced: full suite 1441
+passed / 3 skipped / 2 failed (both failures independently confirmed
+**pre-existing** — reproduced identically at the pre-Chunk-A commit,
+`879176a`, before either chunk landed); canonical `lhm`
+`test_ast_attest.py` 29/29; `check_cairn` OK (164 files); `claim_check`
+clean on all four touched files; `quality_gate --sub neutrality`
+unchanged at 99 FAILs.
+
+### Coverage
+
+Independently verified: full 28-name/28-digest cross-check (not a
+sample) against the proposal's audit table; the `verify()`/
+`update_symbol()` structural separation; both loops' guards by direct
+code read plus live mutation testing (independently repeated, not
+re-trusted); all three new tests' bodies and non-vacuity; the
+acceptance demonstration end-to-end; the scope fence; the full gate
+sweep including re-deriving that the 2 full-suite failures pre-date
+this plan. Not re-covered: re-deriving the 28 symbols' origin-commit
+provenance (already settled at the proposal's Decision, not reopened).
+
+### Required follow-ups
+
+None. Both substantive gaps the plan's own review caught in the
+original design (PR2's loop asymmetry, PR3's Docstring predicate) are
+genuinely present in the shipped code, proven by direct reading and
+independent mutation testing, not merely asserted by commit messages.
+Every numeric claim in both commit messages independently reproduced
+exactly.
+
+**Status: executing → review.** Code review clean, no follow-ups. No
+Maintainer-gated closeout remains (`scaffold_ast_baseline.json`
+untouched throughout — the scope fence held). Archive next.
 
 ## Lasting-truth migration
 
