@@ -3,7 +3,7 @@
 # Plan: re-pin the stale AST known-new manifest (Parts 1-2)
 
 **Source proposal**: `dev/proposals/archive/2026-07-22-claude-ast-known-new-repin.md`
-**Status**: review
+**Status**: archived
 **Plan review**: required(Internal) — per the Decision's ratified plan
 conditions (the proposal's own External-tier read already cleared the
 design; the plan's job is translation + the currency re-check below,
@@ -311,10 +311,49 @@ untouched throughout — the scope fence held). Archive next.
 
 ## Lasting-truth migration
 
-*Filled in at archive time. Per the [Archive preconditions rule](../PLANNING.md#archive-preconditions-proposals-and-plans),
+Archived 2026-07-31.
+
+Follow-ups migrated to: no deferred follow-up from this plan's own
+scope — Parts 1-2 shipped in full (Chunks A-B), and code review found
+nothing further to fix. The proposal's own scope fence excludes the
+supervised `scaffold_ast_baseline.json` re-anchor (Maintainer-only,
+`bootstrap/REANCHOR_RUNBOOK.md`) — this plan never touched that file
+(confirmed at both plan-review and code review via `git diff-tree`),
+so that outstanding act stays exactly where the proposal's own
+Decision left it, unaffected by this plan either way.
+
+**No Maintainer-gated closeout step.** This plan edits only
+`bootstrap/tests/` — a test fixture and the tool that reads it — never
+`scaffold_ast_baseline.json` itself, so there is no baseline drift for
+a Maintainer to supervise re-anchoring. Archive follows directly.
+
+**Loop-fidelity sign-off.** The Decision → implementation chain holds
+in full, including through a second layer of the same "verify, don't
+trust a confident claim" discipline the proposal itself was about.
+The Decision corrected the proposal-stage review's own audit table
+(13 of 28 citations wrong despite a correct bottom line) and ratified
+the author's corrected table as the record. Plan review then
+independently re-verified that ratified table's currency (zero drift
+in nine days) and caught two further, genuinely new gaps neither the
+proposal nor its Decision had surfaced: the acceptance criterion's
+worked example was unsatisfiable against live repo state (a stale
+pre-image the sibling `first-session-survivability` plan had already
+resolved), and `update_symbol()`'s NEW-handling logic turned out to be
+two loops, not one — the original design closed only one. Both fixed
+before implementation. Code review then independently re-verified the
+fix by direct code reading *and* by repeating the mutation test itself
+rather than trusting the implementing session's own run — confirming
+by `git hash-object` that a scratch revert left the file byte-identical
+to HEAD. Three independent, adversarial passes (Decision-stage
+correction, plan-review, code-review) on a plan whose entire subject is
+"don't trust a confident-sounding claim about this exact mechanism
+without reproducing it" — each pass caught something real the previous
+one missed, and none rubber-stamped the one before it.
+
+Per the [Archive preconditions rule](../PLANNING.md#archive-preconditions-proposals-and-plans),
 plans archive only after every deferred follow-up has a durable home
-outside the plan — the supervised `scaffold_ast_baseline.json`
-re-anchor stays the Maintainer-only, separately-tracked outstanding
-act this proposal's scope fence explicitly excludes.*
+outside the plan.
+
+This section is append-only once written.
 
 This section is append-only once written.
