@@ -45,29 +45,54 @@ are not this plan's judgment calls to soften.
    unrelated edit landed between 2026-07-22 and now -- the accepted
    `first-session-survivability` F4 fix, which the proposal itself flagged as
    sharing the same file). Current, re-read locations used throughout this
-   plan: `_warn` `:107`; `_intent_whoami` `:187-213` (swallow at `:198-200`);
-   `_resolve_agent`/`_resolve_session` `:218-287`; `_sibling_tool`
-   `:288-292`; `_has_symlink_component` `:320-333`; `_resolve_interpreter`
-   `:336-395`; `cmd_session_start` `:634` (resolver call `:703`);
-   `_do_full_handoff` `:1130` (resolver call `:1160`); `main` `:1270-1281`
-   (catches only `LifecycleError`, unchanged). `bootstrap/tests/
-   test_lifecycle_failsafe.py`'s own citations, by contrast, are **exact** --
-   re-verified line-for-line (`_make_exe` `:255-260`, the parametrize
-   `:240-245`, `test_space_in_interpreter_path_accepted` `:263-275`,
+   plan: `_warn` `:107`; `_intent_whoami` `:187-213` (swallow `try`/`except`
+   at `:199-202`); `_resolve_agent`/`_resolve_session` `:218-287`;
+   `_sibling_tool` `:288-297`; `_has_symlink_component` `:320-333`;
+   `_resolve_interpreter` `:336-396` (its `is_absolute()` guard at `:385`,
+   the appended-argument comment at `:375-379`); `cmd_session_start` `:634`
+   (resolver call `:703`); `_do_full_handoff` `:1130` (resolver call
+   `:1160`); `main` `:1270-1281` (catches only `LifecycleError`, unchanged).
+   **Corrected at plan-review (PR3/PR4/PR5/PR8/PR9, Internal, substantive
+   and minor):** this plan's own first draft applied the ~5-line drift
+   inconsistently — some spans re-derived correctly, others still carried a
+   pre-drift or otherwise wrong number (the classifier-dispatch tail
+   `:380-395`→`:385-396`; the `_intent_whoami` swallow `:198-200`→`:199-202`;
+   `_sibling_tool` `:288-292`→`:288-297`; the appended-argument comment
+   `:370-374`→`:375-379`) — corrected above and at every chunk citing them,
+   listed by chunk below. `bootstrap/tests/test_lifecycle_failsafe.py`'s own
+   citations, by contrast, are **exact** — re-verified line-for-line
+   (`_make_exe` `:255-260`, the parametrize `:240-245`,
+   `test_space_in_interpreter_path_accepted` `:263-275`,
    `test_extra_key_in_local_env_refused` `:278-287`, the monkeypatch pattern
    `:297-300` -- no drift there at all).
-2. **The self-hosted copy is still byte-identical, re-verified.** `shasum -a
-   256` on both `templates/skills/_lib/lifecycle.py` and `tools/lifecycle.py`
-   → `6f6333ee3a5c0d53f8278601ccfdd0867f749452ac02d63faba6ccb32e46d852`,
-   matching both the `hash` and `base_hash` recorded at `dev/.cairn/
-   cairn-lock.yml:546-549` exactly. No unrelated drift to reconcile before
-   this plan's own edit lands.
+2. **The self-hosted copy is byte-identical, re-verified — but the
+   lockfile record is not the clean match this finding originally claimed.**
+   `shasum -a 256` on both `templates/skills/_lib/lifecycle.py` and
+   `tools/lifecycle.py` → `6f6333ee3a5c0d53f8278601ccfdd0867f749452ac02d63faba6ccb32e46d852`,
+   matching the entry's `hash` field exactly. **Corrected at plan-review
+   (PR2, Internal, blocking):** the entry's `base_hash`
+   (`dev/.cairn/cairn-lock.yml:545`, corrected range from `:546-549`) does
+   **not** match — it is still `sha256:296ef88b...`, the *pre-drift*,
+   *pre-`first-session-survivability`* value. Per `lockfile.py`'s own
+   fork-detection semantics (`hash != base_hash` → "forked from upstream,"
+   `:258-280`), this record currently reads as a silent fork even though
+   the two files are verified byte-identical right now. This inconsistency
+   **predates this plan** (it was introduced when `first-session-
+   survivability`'s F4 edit resynced `hash` without anyone refreshing
+   `base_hash` to match) and is not this plan's to have caused — but Chunk
+   H2's refresh (below) corrects it as a side effect, and that should be
+   named explicitly rather than left implicit in "a hash refresh for one
+   changed file."
 3. **The Security Review's governance-registration follow-up is already
    done -- landed independently, outside this plan's lifecycle.** `AGENTS.md`
    now carries "**The local interpreter binding**" as a fifth high-risk
-   surface (`:296-303`, `git blame` → commit `91c96b4`, "AGENTS.md: register
-   the interpreter trust boundary as a high-risk surface," committed directly
-   by the Maintainer today, 2026-07-31, citing this exact proposal's Security
+   surface (heading `:304`, bullet `:319-327` — **corrected at plan-review,
+   PR5, Internal, substantive, from this finding's original `:296-303`**,
+   which matched neither the source proposal's own unrelated pre-session
+   citation nor the file's state after either of two same-day edits;
+   `git blame` → commit `91c96b4`, "AGENTS.md: register the interpreter
+   trust boundary as a high-risk surface," committed directly by the
+   Maintainer today, 2026-07-31, citing this exact proposal's Security
    Review). **This plan's own follow-up-homing work is therefore only for
    S2** (the check/use race), not governance registration -- that box is
    already checked.
@@ -114,11 +139,24 @@ any of it.
 ### Documentation / doctrine surface
 
 Per the proposal: shipped-tool docstrings only (the resolver's contract
-paragraph, the stale `:370-374`-region comment, the module docstring of the
-test file). No `doctrine/` change, no further `AGENTS.md` change (the one
-follow-up that would have touched it is already landed, Finding 3). A
-`CHANGELOG.md` entry is deferred to the next goodnight-routine scrub per
-`AGENTS.md`'s shared-communication-file rule, not a chunk of this plan.
+paragraph, the `:375-379`-region comment — **corrected at plan-review, PR8,
+Internal, substantive, from this section's original `:370-374`**, the module
+docstring of the test file). No `doctrine/` change, no further `AGENTS.md`
+change (the one follow-up that would have touched it is already landed,
+Finding 3). A `CHANGELOG.md` entry is deferred to the next goodnight-routine
+scrub per `AGENTS.md`'s shared-communication-file rule, not a chunk of this
+plan.
+
+**S3 carried forward, per plan-review (PR7, Internal, substantive).** The
+Decision's third named follow-up — "native Windows execute semantics remain
+unverified... the present-but-non-executable leg is not claimed as a
+cross-platform verified guarantee" — was absent from this plan's first
+draft (S2 got its `dev/PLANNING.md` row; governance was marked already done;
+S3 was simply never mentioned). It carries forward unchanged as an explicit
+residual: this plan touches no Windows-specific code path, `os.access(...,
+os.X_OK)` is unmodified by any chunk here, and no chunk adds a Windows test
+— so no action in this plan closes it, and none is owed. Recorded here
+rather than left to be inferred.
 
 ## Sequence
 
@@ -143,20 +181,20 @@ plan-open** -- see below, committed in the same commit as this plan.
 | A1 | `templates/skills/_lib/lifecycle.py` | New `_probe_interpreter(interp: Path) -> str` helper (returns `"symlinked"` / `"absent"` / `"present"`), placed immediately above `_resolve_interpreter`. Wraps the **whole** classification -- the symlink walk *and* the `stat()` probe -- so the caller's `except OSError` is reachable for both; wrapping only the probe was disproven by execution at the Internal panel's R2(a) (an EACCES parent raises inside the symlink walk, before the probe is ever reached). |
 | A2 | `templates/skills/_lib/lifecycle.py` | New module-level constant `_REBIND_REMEDY`, exact text from the Revised proposal's C1a block -- delete-then-reinstall, explicit **never** `--force`, explicit that a bare delete alone leaves the fallback in place. Single source so C1's warning and both C4 fatals cannot drift apart. |
 | A3 | `templates/skills/_lib/lifecycle.py` | Insert the R6 relative-segment guard (`any(part in ("..", ".") for part in interp.parts)`) **before** the classifier call, so `..`/`.` segments raise `LifecycleError` rather than reach `_probe_interpreter` at all -- makes the docstring's "no relative segments" clause true rather than leaving it aspirational. |
-| A4 | `templates/skills/_lib/lifecycle.py` | Replace the current tail of `_resolve_interpreter` (`:380-395` in the live tree, i.e. from the `is_absolute()` check through the return) with the Revised proposal's dispatch on `_probe_interpreter`'s three outcomes: `symlinked` → fatal (symlink message + `_REBIND_REMEDY`); `absent` → `_warn_stale_once(...)` then `return sys.executable, "fallback-stale"`; `present` → the existing `is_file()`/`os.access(X_OK)` check, fatal message now carrying `_REBIND_REMEDY`. `except OSError` around the classifier call raises `LifecycleError` with `_REBIND_REMEDY` appended (the R2(a) EACCES fix). `LifecycleError` subclasses `RuntimeError` (`:107` region), not `OSError` -- verify this by inspection before relying on it, since the `except OSError` block must not swallow a symlink refusal raised through the same call. |
+| A4 | `templates/skills/_lib/lifecycle.py` | Replace the current tail of `_resolve_interpreter` (`:385-396` in the live tree — **corrected at plan-review, PR3, Internal, substantive, from this row's original `:380-395`**; the `is_absolute()` check is at `:385`, the final `return` at `:396`, an off-by-five-and-zero mix rather than a consistent drift) with the Revised proposal's dispatch on `_probe_interpreter`'s three outcomes: `symlinked` → fatal (symlink message + `_REBIND_REMEDY`); `absent` → `_warn_stale_once(...)` then `return sys.executable, "fallback-stale"`; `present` → the existing `is_file()`/`os.access(X_OK)` check, fatal message now carrying `_REBIND_REMEDY`. `except OSError` around the classifier call raises `LifecycleError` with `_REBIND_REMEDY` appended (the R2(a) EACCES fix). `LifecycleError` subclasses `RuntimeError` (`:107` region), not `OSError` -- verify this by inspection before relying on it, since the `except OSError` block must not swallow a symlink refusal raised through the same call. |
 
 ### Chunk B -- C2(revised) (once-per-process warning)
 
 | # | File | Change |
 |---|------|--------|
-| B1 | `templates/skills/_lib/lifecycle.py` | `_warn_stale_once(message)`: a module-level sentinel (e.g. `_STALE_WARNED: bool`) guarding a single `_warn` call, since the resolver is reached up to four times in one `session-end --handoff` (R4's measured chain: `_intent_whoami` `:198`, `cmd_session_start` `:703`, `_do_reflection`→`_resolve_agent`/`_resolve_session`, `_do_full_handoff` `:1160`). Return type of `_resolve_interpreter` stays `Tuple[str, str]` (preserves `test_space_in_interpreter_path_accepted`); source token stays `"fallback-stale"`. |
+| B1 | `templates/skills/_lib/lifecycle.py` | `_warn_stale_once(message)`: a module-level sentinel (e.g. `_STALE_WARNED: bool`) guarding a single `_warn` call, since the resolver is reached up to four times in one `session-end --handoff` (R4's measured chain: `_intent_whoami` `:200` — **corrected at plan-review, PR4, Internal, substantive, from this row's original `:198`, which is the unrelated early-return line** — `cmd_session_start` `:703`, `_do_reflection`→`_resolve_agent`/`_resolve_session`, `_do_full_handoff` `:1160`). Return type of `_resolve_interpreter` stays `Tuple[str, str]` (preserves `test_space_in_interpreter_path_accepted`); source token stays `"fallback-stale"`. |
 | B2 | `templates/skills/_lib/lifecycle.py` | Docstring's "Returns... source is `"local-env.json"` or `"fallback"`" gains the third value, `"fallback-stale"`. |
 
 ### Chunk C -- C3 (`_intent_whoami` stops swallowing silently)
 
 | # | File | Change |
 |---|------|--------|
-| C1t | `templates/skills/_lib/lifecycle.py` | The `except LifecycleError` swallow at `:199-200` gains a `_warn` naming the caught refusal's message *before* falling back to `sys.executable` -- per the Security Review's "pre-existing fail-open ruling": non-fatal fallback stays acceptable (optional tool, repo-controlled script, same interpreter already running), **conditioned on** surfacing the original refusal reason first. |
+| C1t | `templates/skills/_lib/lifecycle.py` | The `except LifecycleError` swallow (`try:`/call/`except`/fallback at `:199-202` — **corrected at plan-review, PR4, Internal, substantive, from this row's original `:199-200`, which stopped short of the `except` clause and the fallback assignment it names**) gains a `_warn` naming the caught refusal's message *before* falling back to `sys.executable` -- per the Security Review's "pre-existing fail-open ruling": non-fatal fallback stays acceptable (optional tool, repo-controlled script, same interpreter already running), **conditioned on** surfacing the original refusal reason first. |
 | C2t | `templates/skills/_lib/lifecycle.py` | Resolver docstring's "Any violation refuses before running anything" corrected to name this one non-fatal exception explicitly, rather than asserting a universal guarantee the code does not have. |
 
 ### Chunk D -- C4 (recovery guidance on messages that stay fatal)
@@ -169,7 +207,7 @@ plan-open** -- see below, committed in the same commit as this plan.
 
 | # | File | Change |
 |---|------|--------|
-| E1 | `templates/skills/_lib/lifecycle.py` | `_resolve_interpreter`'s docstring trust-root paragraph rewritten to the Decision's on-the-record correction: `dev/.cairn/local-env.json` is an **operationally trusted executable binding**, untracked/gitignored/not lockfile-covered, and `_resolve_interpreter` is a strict **shape validator, not an authenticator** -- it checks neither Python identity nor binary provenance, and accepts any absolute, present, non-symlinked, executable regular file. This is not optional prose-polish: it is the specific correction the Security Review made blocking, and the Decision quotes it as "on the record." Land it in substance, not as a paraphrase that could soften it. |
+| E1 | `templates/skills/_lib/lifecycle.py` | `_resolve_interpreter`'s docstring trust-root paragraph rewritten to the Decision's on-the-record correction: `dev/.cairn/local-env.json` is an **operationally trusted executable binding**, untracked, gitignored, **mutable**, and not lockfile-covered (**"mutable" restored at plan-review, PR10, Internal, minor — this row's original compression to "untracked/gitignored/not lockfile-covered" dropped one word of the Decision's verbatim four-adjective list; no other claim in this row was found softened**), and `_resolve_interpreter` is a strict **shape validator, not an authenticator** -- it checks neither Python identity nor binary provenance, and accepts any absolute, present, non-symlinked, executable regular file. This is not optional prose-polish: it is the specific correction the Security Review made blocking, and the Decision quotes it as "on the record." Land it in substance, not as a paraphrase that could soften it. |
 | E2 | `templates/skills/_lib/lifecycle.py` | The stale comment near the old `is_file()` check (the one claiming an appended-argument string "is caught by the `is_file()` check below") corrected -- under the revised classifier such a string is an absent *path* and degrades, per R2/R6's discussion. |
 | E3 | `templates/skills/_lib/lifecycle.py` | Threat-model-adjacent note (R7): the docstring's stdlib-only safety rationale is scoped to *this tool*, not the sub-tools the resolved interpreter runs -- one sentence, not a new section (the full threat-model argument lives in the proposal's record, not duplicated into shipped-tool prose). |
 
@@ -178,7 +216,7 @@ plan-open** -- see below, committed in the same commit as this plan.
 | # | Change |
 |---|--------|
 | F1 | `test_tampered_local_env_refuses` (`:240-252` live): relocate the two absent-path values (`/usr/bin/python --foo`, `/no/such/python`) out; replace with a present-non-executable regular file and a present directory, materialized in the test body via a non-id-representable sentinel (module-level parametrize values cannot use the `repo` fixture, and `_make_exe` at `:255` is defined *below* the decorator). Pin `ids=["bad0","bad1","bad2","bad3"]` explicitly on the decorator -- R5's empirically-verified fix (an all-dict-except-one-string list silently drops a node from collection; the explicit `ids=` avoids depending on parametrize-value shape). |
-| F2 | New `test_stale_interpreter_path_degrades_with_guidance`, parametrized over the two relocated values: `rc == 0`, `(from fallback-stale)` on stdout, `_REBIND_REMEDY`'s text on stderr. |
+| F2 | New `test_stale_interpreter_path_degrades_with_guidance`, parametrized over the two relocated values: `rc == 0`, `(from fallback-stale)` on stdout, `_REBIND_REMEDY`'s text on stderr, **and — added at plan-review, PR6, Internal, substantive, since this is one of the Decision's five binding conditions and its coverage must be named, not inferred — assert the recorded (stale) interpreter path string, and `sys.executable`, both appear in the captured stderr warning text** (the `_warn_stale_once` message the Revised proposal's C1 builds separately from `_REBIND_REMEDY`; `_REBIND_REMEDY` alone never names either value). |
 | F3 | New `test_stale_warning_fires_once_per_process` (R4's count fix, not presence): a full `session-end --handoff` with an `intent.py` sibling present (monkeypatch `_sibling_tool`, per F6) and `CAIRN_AGENT`/`CAIRN_SESSION` **unset** (the real multi-call shape the `repo` fixture's `CAIRN_AGENT=owner` would otherwise mask) asserts **exactly one** occurrence of the remedy string in captured stderr, not merely its presence. |
 | F4 | New `test_stale_binding_is_not_rewritten`: `local-env.json` bytes identical before/after a degraded run (R11's note: the resolver contains no write path today, so this is a forward regression guard against the explicitly-rejected auto-rebind alternative, not a guard against a present mechanism -- label it as such in the test docstring). |
 | F5 | New `test_uninspectable_interpreter_path_refuses`: an unreadable-parent (mode-000) path raises `LifecycleError` via the classifier's `except OSError`, root/non-POSIX skip-guarded. Valid against the *revised* guard only (R2(a)'s falsification was against the naive single-probe version). |
@@ -211,8 +249,8 @@ attempt it.
 | # | Change |
 |---|--------|
 | H1 | Copy the edited `templates/skills/_lib/lifecycle.py` to `tools/lifecycle.py` verbatim (the `config.py:211` `verbatim: true` mapping). |
-| H2 | Refresh `dev/.cairn/cairn-lock.yml:546-549`'s `hash` and `base_hash` for the `tools/lifecycle.py` entry to the new sha256 -- a **hash refresh for one changed file**, not a lockfile-schema change (R9). Named explicitly, per R9: hand-edit the two lines (matching the precedent this session already used for hash-only corrections), not `scaffold.py upgrade --target .` -- the latter is a full upgrade-stage/apply cycle with its own stage-metadata and backfill semantics that this single-entry refresh does not need and would pull in unrelated machinery for. Flagged for the required External reviewer to confirm this choice, since R9 asked the plan to justify it, not merely state it. |
-| H3 | `python bootstrap/verify_integrity.py --target .` run **before** H1/H2 (must already be clean) and **after** (must still be clean) -- promoted from a smoke check to a required plan step, per R9. |
+| H2 | Refresh `dev/.cairn/cairn-lock.yml:545-549`'s `hash` **and `base_hash`** for the `tools/lifecycle.py` entry to the new sha256 (**range corrected at plan-review, PR2, Internal, blocking, from `:546-549`, which excluded line `:545` — where `base_hash` actually is**) -- a **hash refresh for one changed file**, not a lockfile-schema change (R9). Named explicitly, per R9: hand-edit the two lines (matching the precedent this session already used for hash-only corrections), not `scaffold.py upgrade --target .` -- the latter is a full upgrade-stage/apply cycle with its own stage-metadata and backfill semantics that this single-entry refresh does not need and would pull in unrelated machinery for. Flagged for the required External reviewer to confirm this choice, since R9 asked the plan to justify it, not merely state it. **Also, per PR2:** this refresh corrects a **pre-existing** inconsistency, not only this plan's own edit — `base_hash` is already stale today (still the pre-`first-session-survivability` value, `hash != base_hash`), a silent-fork condition per `lockfile.py`'s own semantics, unrelated to and predating this plan (Context Finding 2). |
+| H3 | `python bootstrap/verify_integrity.py --target .` output **scoped to the `tools/lifecycle.py` record specifically** — no `tools/lifecycle.py` line in its violations/notes, checked before H1/H2 and again after. **Corrected at plan-review (PR1, Internal, blocking):** the original "must already be clean" / "must still be clean" whole-tree framing is not satisfiable on the live tree as written — re-run this session, `verify_integrity.py --target .` reports **3 pre-existing hash-mismatch violations** (`AGENTS.md`, `dev/plans/_template.md`, `dev/proposals/_template.md`), a known, already-tracked, same-day condition (`dev/PLANNING.md`'s "Self-host lockfile reconciliation" entry, commit `d472c00`, 38 files with "no recoverable base," none of them `tools/lifecycle.py`). None of this plan's own disclosed findings mentioned it. The scoped before/after check (no `tools/lifecycle.py` line, specifically) is satisfiable today and is the check R9 actually needs; the whole-tree baseline is out of this plan's scope and separately tracked. |
 | H4 | One-line byte-identity assertion (`shasum -a 256` on both copies, equal) added to the plan's own verification block below, since no automated test ties `tools/lifecycle.py` to the template. |
 
 ## Acceptance criteria
@@ -253,7 +291,10 @@ F6, and by Chunk A's `_probe_interpreter` structure itself.
   data-only validation (no HOLD); `promote` is explicitly deferred to the
   Maintainer.
 * **Self-host verification** -- H3's before/after `verify_integrity.py`
-  runs, both clean; H4's byte-identity assertion holds.
+  runs, both scoped to the `tools/lifecycle.py` record (no `tools/
+  lifecycle.py` line in either run's output) -- **not** whole-tree-clean, per
+  plan-review PR1; the tree carries 3 pre-existing, unrelated hash-mismatch
+  violations today. H4's byte-identity assertion holds.
 * **Bandit / security lint** -- `python -m pytest
   bootstrap/tests/test_security_lint.py` green; the new code adds no
   subprocess/eval/deserialization surface.
@@ -302,5 +343,375 @@ the plan -- S2 (the check/use race) is homed at this plan's own open, at its
 `dev/PLANNING.md` Queued row (see below); the governance-registration
 follow-up needs no home here, since it already landed independently
 (Finding 3, this plan's Context).*
+
+This section is append-only once written.
+
+## Plan review -- Claude (Internal, fresh-context) -- 2026-07-31
+
+**Tier reminder.** This plan's header declares `Plan review: required(External)`.
+Everything below is a same-agent-type, fresh-context **Internal** pass only. A
+clean Internal pass, however thorough, does **not** satisfy that gate --
+a genuinely different-agent-type or human read is still required before
+implementation begins.
+
+**Method.** Every `templates/skills/_lib/lifecycle.py` and
+`bootstrap/tests/test_lifecycle_failsafe.py` line the plan cites was re-read
+against the live tree independently (not copied from the plan's own
+numbers), `shasum -a 256` was run on both `lifecycle.py` copies, `dev/.cairn/
+cairn-lock.yml` and `AGENTS.md` were read directly, `git show 91c96b4` /
+`git log` were run, `bootstrap/tests/_gate_reanchor.py` was read in full,
+`python -m pytest bootstrap/tests --collect-only -q` and `bootstrap/tests/
+fixtures/gate_manifest.json` were checked, and the full suite was executed
+under the canonical interpreter (`/Users/kendal30/conda_envs/lhm/bin/
+python3.13 -m pytest bootstrap/tests -q`, 242s).
+
+**Summary: 2 BLOCKING, 6 SUBSTANTIVE, 2 MINOR.**
+
+---
+
+### BLOCKING
+
+**PR1 -- Chunk H3's "must already be clean" precondition is not satisfiable
+in the live tree right now, and the plan doesn't disclose why.**
+`python bootstrap/verify_integrity.py --target .` was run this session and
+does **not** report clean:
+
+```
+verify_integrity: 3 integrity violation(s) vs. dev/.cairn/cairn-lock.yml:
+  modified (hash mismatch): AGENTS.md
+  modified (hash mismatch): dev/plans/_template.md
+  modified (hash mismatch): dev/proposals/_template.md
+The on-disk tree no longer matches its recorded install. Do not trust the
+shipped scripts until this is resolved.
+```
+
+plus two NOTE-level forked-facade warnings (`tools/intent.py`,
+`tools/lifecycle_metrics.py` -- unrelated dormant-engine condition, not
+`tools/lifecycle.py`). This is a known, already-tracked, same-day condition:
+commit `d472c00` ("dev/PLANNING.md: queue the self-host lockfile
+reconciliation gap", 2026-07-31 09:22, at the Maintainer's explicit
+instruction) documents **38** files across the self-hosted tree with "no
+recoverable base" against `dev/.cairn/cairn-lock.yml`, of which the three
+`modified (hash mismatch)` files above are members (all `"verbatim": false,
+"unrecoverable_base": true` in the lockfile). None of this plan's own six
+disclosed findings mention it, and Chunk H3 as written ("run **before**
+H1/H2 (must already be clean) and **after** (must still be clean)") gives
+the implementer no way to reconcile the instruction with the actual tree:
+run literally, the *before* check fails immediately, on a condition this
+plan did not cause and cannot fix within its own scope.
+*Suggested fix:* Cross-reference `dev/PLANNING.md`'s "Self-host lockfile
+reconciliation" entry in Chunk H3, and scope the before/after clean-check to
+**the `tools/lifecycle.py` record specifically** (e.g. `verify_integrity.py`
+output contains no `tools/lifecycle.py` line, before and after), not to
+zero-violations over the whole tree -- the whole-tree baseline is a
+pre-existing, separately-tracked, out-of-scope condition.
+
+**PR2 -- Context Finding 2's "matching both the `hash` and `base_hash`...
+exactly" is false against the live lockfile; the same field is what Chunk H2
+is about to rewrite.** Re-verified independently: `shasum -a 256` on both
+copies gives `6f6333ee3a5c0d53f8278601ccfdd0867f749452ac02d63faba6ccb32e46d852`
+(matches the plan's claim), and the live `dev/.cairn/cairn-lock.yml` entry
+for `tools/lifecycle.py` (lines 545-549) reads:
+
+```
+545  "base_hash": "sha256:296ef88bda1e3e817734cc6cdb14e9571cd3a0ee0aada8d07dfa9e1f898839c9",
+546  "dst": "tools/lifecycle.py",
+547  "hash": "sha256:6f6333ee3a5c0d53f8278601ccfdd0867f749452ac02d63faba6ccb32e46d852",
+548  "src": "skills/_lib/lifecycle.py",
+549  "verbatim": true
+```
+
+`hash` matches the current byte-identical content (`6f6333ee...`); `base_hash`
+does **not** -- it is still `296ef88b...`, which is exactly the *original*
+2026-07-22 pre-drift proposal's cited hash, i.e. the value from **before**
+the intervening `first-session-survivability` F4 edit resynced this file.
+Per `bootstrap/_scaffold/lockfile.py`'s own fork-detection semantics
+(`hash != base_hash` = "forked from upstream", `:262`, `:280`), this record
+currently reads as a silent fork, even though the two files are verified
+byte-identical right now. This is exactly the class of false "re-verified"
+disclosed claim the task brief flags as highest-risk, on the one finding
+this review was specifically asked to check by direct inspection. Chunk H2's
+edit ("refresh ... `hash` and `base_hash` ... to the new sha256") happens to
+fix this stale `base_hash` as a side effect, but the plan frames it purely
+as "a hash refresh for one changed file" for *this plan's own edit* -- it
+never states that `base_hash` is *already* wrong, for a reason unrelated to
+this plan, before Chunk H even starts. Separately, the cited range
+`dev/.cairn/cairn-lock.yml:546-549` excludes line 545, which is where
+`base_hash` actually is -- the citation range does not even span the field
+the claim is about.
+*Suggested fix:* Correct Finding 2 in place is not possible (append-only),
+so append a one-line correction to the Context section (or fold it into
+Chunk H2's own row): "`base_hash` was already stale before this plan (still
+the pre-F4-edit value); Chunk H2's refresh corrects a pre-existing
+inconsistency, not only this plan's own edit." Fix the cited range to
+`:545-549`.
+
+---
+
+### SUBSTANTIVE
+
+**PR3 -- Chunk A4's citation for the single most load-bearing edit in the
+plan (the classifier-dispatch tail replacement) is wrong on both ends.**
+Chunk A4: "Replace the current tail of `_resolve_interpreter` (`:380-395` in
+the live tree, i.e. from the `is_absolute()` check through the return)".
+Read against the live file: `if not interp.is_absolute():` is at line
+**385**, not 380 (line 380 is `if any(ord(ch) < 0x20 ...` -- the
+control-character check, two guards earlier); the final `return str(interp),
+"local-env.json"` is at line **396**, not 395. The correct span is
+`:385-396`. This is the plan's own re-derivation, not a copy of the
+proposal's pre-drift number (which was `:380-390`) -- the end shifted by
++5 (consistent with the claimed drift) but the start did not shift at all,
+an inconsistent application of the same drift the plan says it corrected
+throughout. Low risk of actually misleading an implementer (the surrounding
+prose precisely describes the three-way dispatch), but on a security-
+sensitive trust-root resolver this is exactly the citation that should be
+exact.
+*Suggested fix:* Correct to `:385-396` in Chunk A4.
+
+**PR4 -- A cluster of citation errors around `_intent_whoami` / `_sibling_tool`
+that the plan claims were carefully re-derived.** Read against the live file
+(`templates/skills/_lib/lifecycle.py`):
+* Context Finding 1: "`_intent_whoami` `:187-213` (swallow at `:198-200`)".
+  The function does start at `:187` (exact), but the `try`/`except
+  LifecycleError` swallow is at `:199-202` (`try:` `:199`, the resolver call
+  `:200`, `except LifecycleError:` `:201`, the fallback assignment `:202`);
+  line `:198` is `return None` (the unrelated `intent_tool is None` early
+  return), not part of the swallow at all. The cited range also stops short
+  of the except clause itself (`:201-202`).
+* Chunk C1t (C3's own implementing instruction): "The `except LifecycleError`
+  swallow at `:199-200` gains a `_warn`..." -- same gap: `:199-200` is
+  `try:` plus the call being tried, not the `except` line or the fallback
+  assignment.
+* Chunk B1: "`_intent_whoami` `:198`" as the location of its resolver call --
+  the actual call is at `:200`.
+* Context Finding 1: "`_sibling_tool` `:288-292`" -- the function does start
+  at `:288` (exact), but spans `:288-297`; `:288-292` stops mid-docstring
+  and excludes the function's entire body (`candidate = ...` at `:296`,
+  `return ...` at `:297`).
+None of these point at nonexistent code, and an implementer reading the
+surrounding prose would still find the right lines, but Chunk C is exactly
+the chunk implementing the Security Review's "pre-existing fail-open ruling"
+(surface the caught refusal before falling back) -- the citations naming
+*where* to add the `_warn` should be exact.
+*Suggested fix:* Correct to swallow `:199-202` (except clause `:201-202`),
+`_intent_whoami` resolver call `:200`, `_sibling_tool` `:288-297`.
+
+**PR5 -- Context Finding 3's `AGENTS.md` citation is off by a much larger,
+differently-sourced margin (~15-23 lines) than the plan's own ~5-line
+lifecycle.py-drift pattern.** Finding 3 cites `AGENTS.md` "`:296-303`" for
+the "local interpreter binding" high-risk-surface bullet. Read against the
+live file: the "**High-risk surfaces**" heading is at `:304`, and the bullet
+itself spans `:319-327`. `git show 91c96b4 -- AGENTS.md` confirms the diff
+inserted the bullet immediately after the "by-file license split" bullet
+(`@@ -313,6 +313,15 @@`), so right after that commit landed the bullet sat
+around `:316-324`; a second same-day commit (`3325a13`, "docs: pin the
+canonical interpreter for the suite and the gates") also touched `AGENTS.md`
+and pushed it down further to the current `:319-327`. `:296-303` matches
+neither point in time -- it looks like a carry-forward of the *original*
+proposal's own `AGENTS.md:301`/`:310` numbers (from R10(b), a pre-session
+citation about an unrelated bullet) rather than a fresh re-derivation
+against the file as it stands after *today's* two edits. The qualitative
+claim (bullet exists, commit `91c96b4`, landed by the Maintainer today,
+independent of this plan) is correct and independently confirmed via `git
+show`/`git log`; only the line numbers are wrong.
+*Suggested fix:* Correct to heading `:304`, bullet `:319-327`.
+
+**PR6 -- F2's stated assertions don't clearly cover the binding condition
+the Acceptance-criteria table credits it with.** The Acceptance criteria
+section states: "The stale recorded value **and** the substituted
+interpreter both named in that warning (F2's stdout/stderr assertions)."
+But Chunk F's own description of F2 lists exactly three assertions: `rc ==
+0`, `(from fallback-stale)` on stdout, and `_REBIND_REMEDY`'s text on
+stderr. `_REBIND_REMEDY` (Chunk A2 / C1a) is a fixed generic string that
+never contains the stale path or `sys.executable` -- those values are named
+only in the `_warn_stale_once(...)` message the Revised proposal's C1 code
+builds separately (`f'{cfg}: recorded interpreter "{interp}" no longer
+exists ... Using the current interpreter ({sys.executable}) ...'`). As
+written, an implementer following F2's three listed assertions literally
+would not necessarily assert that either value appears in stderr; the
+"(from fallback-stale)" stdout check happens to co-occur with the
+interpreter path on the same `_emit` line at `cmd_session_start:709`, but
+that is incidental, not something F2's description asks for. This is a
+Decision-mandated, binding condition (not a preference), so its test
+coverage should be named explicitly rather than inferred.
+*Suggested fix:* Add to F2's description: "and assert the recorded (stale)
+interpreter path string, and `sys.executable`, both appear in the captured
+stderr warning text."
+
+**PR7 -- S3 (the Windows caveat) is the one Decision follow-up this plan
+never mentions.** The Decision lists three explicit follow-ups: S2 (its own
+`dev/PLANNING.md` row, confirmed present and accurate -- see below),
+governance registration (confirmed already landed, Finding 3), and S3
+("native Windows execute semantics remain unverified and are carried as an
+explicit residual; the present-but-non-executable leg is not claimed as a
+cross-platform verified guarantee"). A full-text scan of this plan (Context,
+all eight chunks, Acceptance criteria, Signals the change is wrong) turns up
+no mention of "Windows" anywhere. S2 gets a durable home at plan-open;
+governance is explicitly marked done; S3 is simply absent -- not carried
+forward, not marked as needing no action, not cross-referenced to the
+proposal's own residual-5 language. This is exactly the omission class the
+task brief asked this review to check for.
+*Suggested fix:* One sentence, e.g. in Chunk E's docstring rewrite or the
+Acceptance criteria: "S3 (native Windows `os.access(X_OK)` semantics)
+carries forward unchanged as an explicit residual per the Decision; this
+plan touches no Windows-specific code path and adds no Windows test, so no
+plan action closes it."
+
+**PR8 -- The Documentation-surface section cites a lifecycle.py comment at
+its pre-drift line number, contradicting the plan's own re-verification
+claim.** "Per the proposal: shipped-tool docstrings only (the resolver's
+contract paragraph, the stale `:370-374`-region comment, the module
+docstring of the test file)." Read against the live file, the comment in
+question ("An appended-argument string like ... is caught by the `is_file()`
+check below") is at `:375-379` -- a clean +5 shift consistent with the
+plan's own claimed drift, but the plan's text still carries the *old*,
+un-adjusted number. This is a small thing on its own, but it is a concrete,
+checkable instance of exactly the failure mode Finding 1 claims to have
+eliminated ("Current, re-read locations used throughout this plan").
+*Suggested fix:* `:375-379`.
+
+---
+
+### MINOR
+
+**PR9 -- `_resolve_interpreter`'s own end-of-function citation is off by
+one.** Context Finding 1 cites `_resolve_interpreter` as `:336-395`; the
+function's def is at `:336` (exact) but its final `return str(interp),
+"local-env.json"` is at `:396`, not `:395`. Same family as PR3.
+
+**PR10 -- E1's compressed restatement of the S1 correction drops one word
+from the Decision's verbatim text.** Comparing word-for-word per the task
+brief: the Decision (and the Response's original correction) describes
+`local-env.json` as "untracked, gitignored, **mutable**, and not
+lockfile-covered"; the plan's Chunk E1 compresses this to
+"untracked/gitignored/not lockfile-covered" -- dropping "mutable". The
+substantive claims (operationally-trusted-binding, shape-validator-not-
+authenticator, checks neither identity nor provenance, accepts any
+absolute/present/non-symlinked/executable file) are all preserved
+faithfully and I found no softening. Noted for completeness since the task
+asked for a strict word-for-word check, not because it changes meaning.
+
+---
+
+### Independently confirmed as accurate (no issues found)
+
+* All `bootstrap/tests/test_lifecycle_failsafe.py` citations in Context
+  Finding 1 (`_make_exe` `:255-260`, the parametrize `:240-245`,
+  `test_space_in_interpreter_path_accepted` `:263-275`,
+  `test_extra_key_in_local_env_refused` `:278-287`, the monkeypatch pattern
+  `:297-300`) -- exact, matching the plan's "no drift there at all" claim.
+* `cmd_session_start` def `:634` and its resolver call `:703`; `_do_full_
+  handoff` def `:1130` and its resolver call `:1160`; `main` `:1270-1281`;
+  `_has_symlink_component` `:320-333` -- all exact.
+* Finding 2's byte-identity claim: `shasum -a 256` on both `lifecycle.py`
+  copies is `6f6333ee...`, confirmed equal (only `base_hash`, per PR2, is
+  wrong).
+* Finding 3's qualitative claim (bullet exists, commit `91c96b4`, Maintainer,
+  today, independent of this plan) -- confirmed via `git show 91c96b4 --
+  AGENTS.md` and `git log`; only the line numbers are wrong (PR5).
+* Finding 4's suite baseline: `/Users/kendal30/conda_envs/lhm/bin/python3.13
+  -m pytest bootstrap/tests -q` run fresh this review -- **0 failed, 1446
+  passed, 0 skipped**, 242s. Exact match.
+* Finding 5's two figures: `--collect-only -q` reports **1446 collected**;
+  `bootstrap/tests/fixtures/gate_manifest.json`'s `collection.node_count` is
+  **1404**. Both exact. `test_lifecycle_failsafe.py` confirmed present in
+  the 147-entry `frozen_files` dict; `templates/skills/_lib/lifecycle.py`
+  and `tools/lifecycle.py` confirmed absent from it.
+* Finding 6's characterization of `bootstrap/tests/_gate_reanchor.py`:
+  module docstring and the `prepare`/`promote` CLI subcommands (`main`,
+  `:531-537`) confirm the Stage A (`gather_evidence`, executable,
+  non-authoritative) / Stage B (`promote_data_only`, data-only,
+  authoritative, CAS ref-advance) split exactly as described, and that
+  `prepare` = "Stage A+B through data-only validation; NO ref advance" while
+  `promote` is the ref-advance step. Chunk G's scoping to `prepare` only is
+  accurate.
+* Chunk A's `_probe_interpreter` design against the Revised proposal's C1
+  (revised) code block: the unified `except OSError` wraps both
+  `_has_symlink_component` and the `stat()` probe, matching R2(a)'s fix
+  exactly (not the "wrap only the probe" shape R2(a) disproved).
+* The required (not preferred) probe ordering -- symlink walk before
+  absence classification, both under one `except OSError` -- is correctly
+  preserved in both Chunk A's design and the Acceptance criteria's explicit
+  labeling.
+* The other four binding conspicuousness conditions map to concrete Chunk F
+  tests as claimed: exactly-one-warning (F3), source token `fallback-stale`
+  (F2), actionable non-`--force` guidance (F2 via `_REBIND_REMEDY`), and no
+  automatic rewrite (F4, correctly re-labeled per R11 as a forward
+  regression guard against the rejected auto-rebind alternative, not a
+  guard against a present write path).
+* The `dev/PLANNING.md` S2 row (`:304-316`, "Interpreter trust-root
+  check/use race (S2)" under "Lifecycle apparatus") accurately restates the
+  Security Review's disposition: pre-existing, not introduced by the
+  absent-path degrade, attacker prerequisites generally permit replacing the
+  interpreter directly, not accepted as closed by the Decision, revive as
+  its own proposal. Already committed (`3982918`, plan-open), consistent
+  with the plan's own "lands now, at plan-open" claim.
+* Chunk H's justification for hand-editing the two lockfile hash lines
+  instead of `scaffold.py upgrade --target .` is named and argued (not
+  merely asserted), satisfying R9's requirement, independent of PR1/PR2's
+  finding that the pre-existing lockfile state around it is not as clean as
+  Finding 2 claims.
+* F8's citation, `bootstrap/tests/test_lifecycle_contract.py:139-148`, is
+  exact -- the cited lines are precisely the no-write-primitive source-scan
+  pattern the plan proposes to copy.
+
+Coverage note: this pass did not independently re-execute the disposition
+matrix on 3.11/3.13, did not hand-run a real conda rebuild, and did not
+attempt Chunk G's `_gate_reanchor.py prepare` itself -- all three are
+implementation-time steps this plan correctly defers to the implementing
+agent, not something a plan-review pass should pre-empt.
+
+### Sharpening -- Claude (author) -- 2026-07-31
+
+All ten findings independently re-verified before disposing, not taken on
+the reviewer's word: ran `python bootstrap/verify_integrity.py --target .`
+myself (identical 3 violations, identical file list); read `dev/.cairn/
+cairn-lock.yml:544-550` directly and confirmed `base_hash` (`296ef88b...`)
+does not equal `hash` (`6f6333ee...`); re-derived the classifier-tail span
+by direct line count (`sed -n '375,397p'` against the live file) and
+confirmed `is_absolute()` at `:385`, the appended-argument comment at
+`:375-379`, and the final `return` at `:396`, all exactly as the reviewer
+reported.
+
+* **[PR1] accept — blocking, fixed.** Chunk H3 rewritten from an
+  unsatisfiable whole-tree "must already be clean" / "must still be clean"
+  pair to a check scoped to the `tools/lifecycle.py` record specifically,
+  cross-referenced to `dev/PLANNING.md`'s already-tracked reconciliation
+  gap. The Acceptance criteria's "Self-host verification" bullet corrected
+  to match.
+* **[PR2] accept — blocking, fixed.** Context Finding 2 corrected in place
+  (mutable per doctrine — this is the plan's own Context, not the
+  append-only review section) to state the `base_hash` staleness plainly,
+  as a pre-existing condition Chunk H2's refresh incidentally fixes. H2's
+  citation range corrected `:546-549` → `:545-549`, and H2's row now names
+  the pre-existing-fix explicitly rather than leaving it implicit.
+* **[PR3] accept — substantive, fixed.** Chunk A4's citation corrected
+  `:380-395` → `:385-396`.
+* **[PR4] accept — substantive, fixed.** Corrected throughout: Finding 1's
+  summary line, Chunk B1 (`:198`→`:200`), Chunk C1t (`:199-200`→`:199-202`),
+  and Finding 1's `_sibling_tool` citation (`:288-292`→`:288-297`).
+* **[PR5] accept — substantive, fixed.** Finding 3's `AGENTS.md` citation
+  corrected `:296-303` → heading `:304`, bullet `:319-327`.
+* **[PR6] accept — substantive, fixed.** Chunk F2 gained the explicit
+  stderr assertion (stale path and `sys.executable` both present) the
+  Acceptance criteria already credited it with but the row itself never
+  stated.
+* **[PR7] accept — substantive, fixed.** S3 added to the Documentation /
+  doctrine surface section as an explicit carried-forward residual,
+  matching how S2 and governance are each accounted for.
+* **[PR8] accept — substantive, fixed.** Documentation-surface section's
+  comment citation corrected `:370-374` → `:375-379`.
+* **[PR9] accept — minor, fixed.** Folded into Finding 1's `_resolve_
+  interpreter` span, corrected `:336-395` → `:336-396`.
+* **[PR10] accept — minor, fixed.** Chunk E1's compressed restatement
+  restored to the Decision's full four-adjective list ("untracked,
+  gitignored, mutable, and not lockfile-covered"), dropped word reinstated.
+
+**Status: remains `awaiting-plan-review`.** This Internal pass and its
+sharpening are the floor, not this plan's declared gate — the header's
+`Plan review: required(External)` is not satisfied by an Internal read at
+any thoroughness. Implementation on Chunk A does not begin until a
+genuinely different-agent-type or human review lands as its own dated
+`## Plan review` section.
 
 This section is append-only once written.
