@@ -543,3 +543,160 @@ until a genuinely different-agent-type or human review lands as its own
 dated `## Plan review` section.
 
 This section is append-only once written.
+
+## Plan review -- Codex (External, different-agent-type; Security Review) -- 2026-07-31
+
+**Verdict: REVISE.** This is the required External cross-type plan review,
+independent of the Claude author/Internal-review type. It does **not** clear
+the plan-review gate: three blocking satisfiers remain, and Chunk A must not
+start until a focused External re-read confirms them.
+
+**Steelman.** The plan is unusually strong where contract changes often go
+soft. It traces all five `_emit_lock_yaml` write sites, distinguishes the two
+constructing writers from the preserve-by-copy writers, carries provenance
+through stage metadata rather than re-reading it at apply time, tests the one
+shipped reader that bypasses `read_lockfile`, and gives the AST delta a named
+five-function boundary. The no-schema-bump decision is coherent with the live
+`migrated` precedent and with `new_lock = dict(lock)`: additive optional keys
+remain readable and preservable by older engines. The plan's correction of the
+AST mechanism is also technically right: `bootstrap/REANCHOR_RUNBOOK.md` does
+not govern `scaffold_ast_baseline.json`, and none of the five changed functions
+is eligible for `_ast_attest.py update-symbol`. A Maintainer-run, exact-delta
+direct re-anchor is the appropriate mechanism once its authority is resolved.
+
+### Security adjudication
+
+**Conditionally acceptable, subject to EPR1 and EPR2.** The new values are
+repository-controlled declarations serialized as JSON strings/lists. They are
+not executed, opened as paths, sent over the network, or used to authorize an
+operation; JSON escaping also prevents a crafted `CITATION.cff` value from
+injecting a second lockfile key. I accept fail-open degradation to
+`("unknown", [])` for an absent, unreadable, or keyless source file because
+these fields are informational and install availability is the higher-order
+contract. I also accept no schema bump for additive optional keys: current
+readers tolerate and preserve unknown top-level keys.
+
+The accepted residual is that a source-tree author can publish false or stale
+repository/license declarations; this reader is deliberately not an
+authenticator. I do **not** accept silently changing the fields' runtime types
+to null (EPR1), nor documentation that lets declarations be consumed as
+attested origin or installed-file licensing (EPR2). Those two failures would
+turn a bounded informational feature into misleading security evidence.
+
+### Findings
+
+* **[EPR1] BLOCKING -- old stage + pre-provenance lock writes two nulls.**
+  Chunk C2 specifies unconditional assignments using
+  `meta.get("new_source_repository", lock.get("source_repository"))` and the
+  same shape for `source_licenses`
+  (`dev/plans/lockfile-provenance-fields.md:169`). When both artifacts predate
+  this change, both inner `lock.get()` calls
+  return `None`; `_emit_lock_yaml` serializes that as JSON `null`, and
+  `read_lockfile` returns `None`. I executed that exact proposed expression
+  through the real serializer/reader and obtained
+  `{"source_repository": None, "source_licenses": None}`. This violates the
+  accepted invariants that repository is always a string and licenses always a
+  list, and falsifies F4's “never writes null” claim (`:191`).
+  **Satisfier:** make metadata presence conditional: start from
+  `new_lock = dict(lock)` and assign each provenance field only when its
+  corresponding `new_source_*` key is present in `meta`. Then an old stage
+  preserves either the current values **or their absence**, while a new stage
+  backfills them. Expand F4 into the three-case compatibility matrix: new stage
+  + old lock backfills; old stage + provenance lock preserves values; old stage
+  + old lock preserves absence and emits no null. Do not substitute live
+  `_cairn_provenance` values at apply time.
+
+* **[EPR2] BLOCKING -- the plan promises “declared, not attested” semantics
+  without sequencing them.** The Decision's OQ1 requires tightened
+  `bootstrap/UPGRADE.md` wording, and the plan's own wrong-change signal says
+  `source_repository` “stays documented as declared, not attested” (`:274-278`).
+  But D1 only enumerates fields and states the schema-evolution rule (`:175`),
+  E1 only adds the names to `bootstrap/PROVENANCE.md`'s enumeration (`:182`),
+  and D2 only points at the rule's home (`:176`). Current `PROVENANCE.md:3-18`
+  repeatedly says provenance proves origin; a URL copied from a fork's stale
+  `CITATION.cff` does not. This is the exact misinterpretation the accepted
+  proposal names as a signal the change is wrong.
+  **Satisfier:** D1 and E1 must explicitly say both fields are declarations
+  copied from the source tree's `CITATION.cff`, not attestations of checkout
+  origin or installed-file licensing; signed tags/release commits remain the
+  origin control. D2's adopter-reaching header should use “declared” and label
+  `bootstrap/UPGRADE.md` as a reference in the Cairn source repository, because
+  that file is deliberately absent from adopter trees. Add assertions for the
+  adopter header wording or a direct emitted-lock check so this distinction is
+  not prose the plan can silently omit.
+
+* **[EPR3] BLOCKING PROCESS -- External review cannot amend the Maintainer's
+  ratified mechanism.** Chunk G correctly discloses that its direct-edit AST
+  handoff deviates from the Decision's literal “per
+  `bootstrap/REANCHOR_RUNBOOK.md`” condition (`:208-221`). I affirm the
+  technical substitution, but an External reviewer has no Decision authority;
+  “ideally the Maintainer directly” is too weak for a binding condition.
+  **Satisfier:** obtain and record explicit Maintainer authorization for the
+  direct-edit baseline mechanism before implementation begins. The authorized
+  handoff remains Maintainer-run and must prove exactly five CHANGED functions,
+  zero MISSING/DUPLICATE, and only the expected NEW notes before changing the
+  baseline.
+
+* **[EPR4] SUBSTANTIVE -- the gate-manifest criterion is not a passing gate on
+  current master.** Running canonical Python 3.13.13
+  `bootstrap/tests/_gate_manifest.py verify --no-collect` currently exits 1
+  with **54 pre-existing FROZEN-MODIFIED holds**. The plan's criterion at
+  `:251-256` correctly predicts that its new test is a FROZEN-NEW note, but it
+  does not say how to judge that fact against an already-red manifest. A future
+  executor can neither require exit 0 nor distinguish this plan's regression
+  by the stated criterion alone.
+  **Satisfier:** capture the pre-Chunk-A hold/note set and require no new HOLDs
+  from Chunks A-F, with only the named FROZEN-NEW/COLLECTION-ADDED and
+  cascade-mutable notes added. If a fresh gate-manifest anchor is instead
+  required, sequence that Maintainer-controlled action explicitly; do not
+  report a non-zero inherited gate as green.
+
+* **[EPR5] MINOR -- A3's facade contract has no named enforcer.** The new helper
+  is re-exported from `bootstrap._scaffold` / `bootstrap.scaffold` (`:155`), but
+  the existing single-identity test enumerates a fixed `_MOVED` tuple that will
+  not include it, and Chunk F does not name a replacement assertion.
+  **Satisfier:** add a node in the new, non-frozen test file asserting the
+  lockfile owner, engine facade, and `bootstrap.scaffold` facade expose the same
+  `_cairn_provenance` object. Also make the direct `.lockfile` import additions
+  in `install.py` and `upgrade.py` explicit in Chunks B/C; those imports are the
+  reason the expected `Import:` AST keys rotate.
+
+* **[EPR6] EDITORIAL -- the preparation narrative points to a nonexistent
+  Chunk H.** The sequence and implementation body end at Chunk G, which is the
+  AST handoff. Correct Context finding 1's “Chunk H below” to “Chunk G below”
+  so the handoff reference is stable.
+
+### Review sweep and coverage
+
+1. **Claims:** re-derived the writer/reader inventory; executed the C2 fallback
+   expression through `_emit_lock_yaml`/`read_lockfile`; confirmed the 95-data-
+   row manifest invariant and the AST/update-symbol mechanism.
+2. **Production paths:** mapped fresh install, `--init-lock`, stage/apply,
+   finalize/adopt preservation, `verify_integrity`, and the shipped security
+   audit reader to Chunks F2-F5. EPR1 and EPR5 are the uncovered paths.
+3. **Completeness/fail-closed:** exercised the missing/missing compatibility
+   quadrant the plan omitted; reviewed absent/unreadable `CITATION.cff`, scalar
+   and list licenses, unknown keys, and mutable stage metadata. Provenance data
+   is non-executable; fail-open-to-sentinel remains proportionate for this
+   repository-controlled input.
+4. **Cross-document/process:** compared Chunks D/E with Decision OQ1/OQ2 and
+   the plan conditions; EPR2 and EPR3 are the resulting mismatches.
+5. **Drift:** the claim checker passed over this plan; canonical Python 3.13.13
+   `python -m pytest bootstrap/tests -q` passed **1446 tests** with 3 warnings
+   in 183.32s; AST attestation + security lint passed **33 tests**; manifest was
+   96 total lines / 95 data rows. The gate-manifest command produced EPR4's
+   inherited 54-HOLD baseline.
+
+**Negative space:** implementation does not exist, so no scratch install or
+real stage/apply cycle was available to code-review; the direct re-anchor
+script cannot be audited until the five live post-implementation digests
+exist. No network, credential, subprocess, or deserialization capability is
+added by the planned provenance reader; `CITATION.cff`, the lockfile, and stage
+metadata were reviewed as structured-input boundaries.
+
+**Second-round recommendation: REQUIRED, focused External re-read.** Re-read
+EPR1's three-case compatibility matrix, EPR2's emitted/adopter wording, and the
+Maintainer authorization satisfying EPR3; verify EPR4's delta-based gate
+criterion and EPR5's facade assertion mechanically. Until that pass lands,
+status remains `awaiting-plan-review` and the required External gate is not
+satisfied.
