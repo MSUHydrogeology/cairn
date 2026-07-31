@@ -62,6 +62,17 @@ to a recommended level (≥8 G → Level 2 cleanly; mostly Mixed with
 | small, simple, one or two contributors | Level 1 |
 | large, legacy, or multi-team | Level 2 |
 
+**Solo (or two contributors) on an existing/legacy codebase** is both
+"small, simple" *and* "legacy" at once — the coarse table above doesn't
+have a row for that combination. The axis that pushes toward Level 2 is
+*team size and complexity*, not age alone: a solo-staffed legacy
+codebase stays at **Level 1**, with the readiness-report pre-pass first
+(the G/M/P mapping above already covers this — "mostly Mixed with 1-2
+Poor → Level 1 first" applies here too) plus the legacy-retrofit
+modules added by hand. See
+[`docs/solo-legacy-recipe.md`](../docs/solo-legacy-recipe.md) for the
+exact composed profile.
+
 The levels are an **on-ramp, not a fork**: a project can move up.
 Level 0 readers become Level 1 adopters; a Level 1 project runs
 the bootstrap later to formalize what it assembled by hand. The
