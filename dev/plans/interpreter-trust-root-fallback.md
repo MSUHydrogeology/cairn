@@ -13,7 +13,7 @@
 # Plan: interpreter trust root -- absent degrades, present-but-wrong refuses
 
 **Source proposal**: `dev/proposals/archive/2026-07-22-claude-interpreter-trust-root-fallback.md`
-**Status**: awaiting-plan-review
+**Status**: executing
 **Plan review**: required(**External**) -- the proposal's own header field,
 carried unamended into the Decision ("Accepted, as reviewed and
 conditioned"): "the floor is a fresh-context Internal read, and an External
@@ -22,8 +22,27 @@ control on an executable trust root; it should not land on a same-type
 read." Read as governing the *plan's* implementation gate (the proposal's own
 Internal/External/Security-Review rounds are already complete and are not
 what this line requires) -- consistent with how `lockfile-provenance-fields`
-uses the identical header field. **This plan cannot proceed to implementation
-on an Internal pass alone.**
+uses the identical header field.
+
+**Maintainer-authorized transition to `executing`, 2026-07-31.** Five
+External/Security review rounds ran to completion: Rounds 1-4 found and
+closed real process/security-record defects (ETR1-ETR5, all substantive
+findings closed by Round 4's own verdict, "all resolver-security
+adjudications remain closed and unchanged"); Round 5's sole remaining item
+was a one-word drafting inversion in an Acceptance-criteria clause (ETR1-R5,
+"REVISE (one-word acceptance-criterion correction)", explicitly *not* a
+design or security dispute), fixed and independently re-verified in this
+session's own Response. With that fix pending only a sixth confirmatory
+re-read, the Maintainer instructed, verbatim: *"Go ahead without another
+review."* This is the Maintainer's own explicit authorization to proceed
+without a sixth round -- not this plan's or any agent's unilateral
+softening of the declared tier (`doctrine/dual-review.md:325-329`'s
+"forbids softening a declared tier downward" binds an *agent's* discretion,
+not the Maintainer's own Decision authority, which is final per
+`AGENTS.md` > "Roles"). **This plan never proceeded on an Internal pass
+alone** -- it cleared five genuinely External/Security review rounds
+first; only the sixth, purely confirmatory re-read of a one-word fix was
+waived, by the Maintainer, explicitly.
 
 ## Context
 
