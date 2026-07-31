@@ -8,7 +8,7 @@
 # Plan: lockfile provenance fields (P1-P5)
 
 **Source proposal**: `dev/proposals/archive/2026-07-22-claude-lockfile-provenance-fields.md`
-**Status**: open
+**Status**: awaiting-plan-review
 **Plan review**: required(**External cross-type**) — this is the Decision's
 own ratified condition (`doctrine/dual-review.md:184-187`, contract-touching
 surfaces get an External round; `:325-329` forbids softening a declared tier
@@ -85,20 +85,32 @@ caught by either proposal-stage review round — disclosed up front:**
      revised accordingly (0 → exactly 5 CHANGED, no MISSING/DUPLICATE, the
      NEW-note set exactly `FunctionDef:_cairn_provenance` plus rotated
      `Import:` keys).
-   * **`python bootstrap/scaffold.py --manifest` currently emits 96 data
-     rows**, not the proposal's snapshot of 94 (nor the 95 the proposal
-     predicted post-licensing-Chunk-C). The proposal's own Revised design
-     already treats this correctly as a **live invariant** ("equal row
-     count before and after, captured at implementation time"), not a
-     literal — this plan re-derives 96 as its own pre-edit snapshot and
-     re-verifies at implementation time per that same discipline.
-   * **The full suite baseline is now 2 failed / 1441 passed / 3 skipped**
-     (147s), not 3 failed / 1408 passed / 3 skipped. The proposal's
-     separately-tracked clock-dependent `test_evolution_infer` failure was
-     independently fixed earlier this session (commit `0bfba10`); the
-     remaining two failures are the same sandbox-interpreter AST artifacts
-     every sibling plan this session has documented (clean under canonical
-     `lhm`).
+   * **`python bootstrap/scaffold.py --manifest` currently emits 95 data
+     rows** (96 total lines: 1 `#`-prefixed header comment + 95 data rows,
+     per `test_manifest.py`'s own header-stripping convention), matching
+     the 95 the proposal predicted post-licensing-Chunk-C, not the
+     proposal's original snapshot of 94. **Corrected at plan-review
+     (PR2):** this plan's first draft conflated the 96-line total with the
+     data-row count. The proposal's own Revised design already treats this
+     correctly as a **live invariant** ("equal row count before and
+     after, captured at implementation time"), not a literal — this plan
+     re-derives 95 as its own pre-edit data-row snapshot and re-verifies
+     at implementation time per that same discipline.
+   * **The full suite baseline under the canonical `lhm` interpreter
+     (Python 3.13.13, `bootstrap/DEPENDENCY_BUDGET.md`'s pin) is fully
+     green — 1446 passed, 0 failed, 0 skipped** (independently re-run
+     twice this session, most recently 238.72s), not the proposal's 3
+     failed / 1408 passed / 3 skipped. The proposal's separately-tracked
+     clock-dependent `test_evolution_infer` failure was independently
+     fixed earlier this session (commit `0bfba10`). **Corrected at
+     plan-review (PR1):** this plan's first draft mislabeled the
+     non-canonical Python 3.12 sandbox run — 2 failed / 1441 passed / 3
+     skipped, two spurious `test_ast_attest.py` "NOT pure motion"
+     artifacts, the exact `ast.dump` minor-version phenomenon
+     `DEPENDENCY_BUDGET.md` warns about — as the canonical baseline. That
+     3.12 figure is real (and is what `dev/.cairn/local-env.json`
+     currently binds to) but is a sandbox-only comparison point, never
+     the target.
 
 **Everything else in the Revised proposal + Decision is taken as
 settled** — the stage-metadata mechanism (R1), the five-writer inventory
@@ -176,7 +188,7 @@ same commit as this plan.
 | F1 | `bootstrap/tests/test_lockfile_provenance.py` (new) | **Not** `bootstrap/tests/test_upgrade.py` — that file is in the gate manifest's pinned 147-entry `frozen_files` set (confirmed this session), and editing a frozen file produces `FROZEN-MODIFIED`, appended to `holds` (a hard-stop), not `notes` (R2's blocking finding). The new file reads `FROZEN-NEW` (allowed, recorded as a note) instead. Imports `_install` from `test_upgrade.py` (module-level, `:45`) rather than duplicating the install/delta harness — importing a frozen file does not modify it, so this creates no HOLD. |
 | F2 | (same file) | **Reader nodes**: `_cairn_provenance` degrades to `("unknown", [])` on a `CITATION.cff`-less root; the `license:`-block-terminated-by-`keywords:` case yields exactly `["CC-BY-4.0", "MIT"]` (the live shape of Cairn's own `CITATION.cff`, the load-bearing regression case per R12a); a scalar `license: MIT` yields `["MIT"]`. |
 | F3 | (same file) | **Writer nodes**: a fresh install's lockfile carries `source_repository`/`source_licenses` equal to `_cairn_provenance(CAIRN_ROOT)`; `--init-lock`'s synthesized lock carries the same. |
-| F4 | (same file) | **Upgrade nodes** (using the imported `_install` harness, a real `--stage`/`--apply` cycle — closing the proposal's own named "weakest link," the untested old-engine direction): an `--apply` backfills a pre-provenance lockfile's two fields from stage metadata; an old stage (meta dict with no `new_source_*` keys, simulating a stage produced before this change) applied by a new engine degrades via `.get()` to the current lock's existing values, never writes null; a `--finalize` round-trip preserves unknown top-level keys verbatim (R3a's stated limit — `--finalize`/`--adopt-module` do not backfill, only preserve). |
+| F4 | (same file) | **Upgrade nodes** (using the imported `_install` harness, a real `--stage`/`--apply` cycle — closing the proposal's own named "weakest link," the untested old-engine direction): an `--apply` backfills a pre-provenance lockfile's two fields from stage metadata, and asserts the backfilled values equal `_cairn_provenance(cairn_root)` for the same root — the proposal's own stated **install-vs-apply parity invariant**, named explicitly here (per plan-review/PR6) rather than left implicit in F3+F4's combined coverage; an old stage (meta dict with no `new_source_*` keys, simulating a stage produced before this change) applied by a new engine degrades via `.get()` to the current lock's existing values, never writes null; a `--finalize` round-trip preserves unknown top-level keys verbatim (R3a's stated limit — `--finalize`/`--adopt-module` do not backfill, only preserve). |
 | F5 | (same file) | **`run_security_audit.py` compatibility node** (R9): feed a provenance-bearing lockfile to `templates/modules/team-gated/run_security_audit.py`'s `load_lockfile` + `required_apparatus_dsts` (this is the actual Cairn-tree source; it installs verbatim into an adopter tree as `scripts/run_security_audit.py`, which does not exist in Cairn's own `scripts/` — the module is team-gated / optional and not installed here) — the shipped, hash-tracked reader that parses the whole lockfile itself rather than via `read_lockfile` — and assert unchanged behavior. The real, demonstrable old-reader-vs-new-lockfile case the proposal's evidence plan named as its weakest link, now closed with an actual test rather than an argument from source. |
 
 ### Chunk G — supervised AST re-anchor handoff (Maintainer-gated; not this agent's act)
@@ -193,6 +205,21 @@ non-allowlisted symbols this plan's own edits touch — none of the five
 all CHANGED, none in `_UPDATE_ALLOWLIST`) qualify for the guarded
 `update-symbol` self-service path.
 
+**Named explicitly, per plan-review (PR4):** the Decision's own "Plan
+conditions, ratified here (bind the plan)" text — not only the
+proposal's evidence-section prose — states the mechanism as "a
+supervised AST re-anchor for the five touched engine functions per
+`bootstrap/REANCHOR_RUNBOOK.md`." This chunk's substitution is therefore
+a deviation from the **literal binding language the Maintainer
+ratified**, not merely a correction of stale proposal narrative — the
+underlying technical claim (the runbook never governs the AST baseline)
+is independently verified correct twice over (this plan's own
+preparation, and its Internal plan-review), but the choice of mechanism
+is being made here, by this plan, on that verification alone. This is
+flagged as a specific, nameable item for the required External
+cross-type reviewer — and ideally the Maintainer directly — to affirm,
+rather than left to be inferred from Finding 1's narrative.
+
 Prepared once Chunks A-F land and their real live digests are known — not
 before, since the digests depend on the actual shipped code, not this
 plan's preparation-time estimates. The falsifiable target (superseded from
@@ -207,20 +234,32 @@ per `_classify()`'s own Import/Docstring skip).
 ## Acceptance criteria
 
 * **Tests that must pass** — `bootstrap/tests/test_lockfile_provenance.py`
-  (Chunk F, all nodes). Full `python -m pytest bootstrap/tests` at **2
-  failed / (1441 + new node count) passed / 3 skipped** — the two
-  pre-existing sandbox-interpreter AST artifacts, unchanged; canonical
-  `lhm` interpreter must show `test_ast_attest.py` reporting **exactly the
-  5-CHANGED delta** above before Chunk G's handoff runs, and fully green
-  (26/26 plus whatever `ast-known-new-repin` landed) after it.
+  (Chunk F, all nodes). Full `python -m pytest bootstrap/tests`, run
+  under the **canonical `lhm` interpreter** (Python 3.13.13), at **0
+  failed / (1446 + new node count) passed / 0 skipped** — the current
+  canonical baseline, independently re-verified twice this session (the
+  3.12 sandbox interpreter reports 2 failed / 1441 passed / 3 skipped on
+  the same tree today, a known documented artifact, never the target —
+  name the interpreter alongside any figure you assert, per
+  `DEPENDENCY_BUDGET.md`). Before Chunk G's handoff runs, canonical
+  `lhm`'s `test_ast_attest.py` must show **exactly the 5-CHANGED delta**
+  above; its pre-Chunk-A baseline is already **29 passed, 0 failed**
+  (re-verified this session under canonical `lhm`) — after Chunk G's
+  handoff it returns to that same 29 passed, 0 failed (the handoff
+  corrects the baseline JSON to match the new code; it adds no test
+  nodes of its own).
 * **Gate-manifest check** — `python bootstrap/tests/_gate_manifest.py
-  produce --dry-run` (or the equivalent read-only check) confirms
-  `bootstrap/tests/test_upgrade.py`'s hash is unchanged and the new test
-  file reads `FROZEN-NEW`, not `FROZEN-MODIFIED` anywhere.
-* **`--manifest` row-count invariant** — re-derive the pre-edit count at
-  implementation time (this plan's own snapshot: 96, as_of this session;
-  re-verify fresh, don't copy) and assert the post-edit count is identical
-  — the fields are lockfile-only, the manifest is field-independent.
+  verify` (optionally `--no-collect` to skip the pytest-collection check;
+  both read-only — `produce` takes no arguments, confirmed at
+  plan-review/PR3) confirms `bootstrap/tests/test_upgrade.py`'s hash is
+  unchanged and the new test file reads `FROZEN-NEW`, not
+  `FROZEN-MODIFIED`, anywhere.
+* **`--manifest` row-count invariant** — re-derive the pre-edit *data-row*
+  count at implementation time (this plan's own snapshot: 95 data rows,
+  96 total lines including the header comment, as_of this session;
+  re-verify fresh, don't copy) and assert the post-edit count is
+  identical — the fields are lockfile-only, the manifest is
+  field-independent.
 * **Bandit** — `python -m pytest bootstrap/tests/test_security_lint.py`
   green; `_cairn_provenance` uses only `Path.read_text` + `re`, no
   subprocess/eval/deserialization, so no new finding is expected (R12b).
@@ -269,5 +308,238 @@ OQ3), and Cairn's own `dev/.cairn/cairn-lock.yml` staying provenance-free
 until its next self-targeted `--stage`/`--apply` (Decision OQ4) is a
 stated, accepted disposition, not a deferred follow-up needing its own
 home.*
+
+This section is append-only once written.
+
+## Plan review -- Claude (Internal, fresh-context) -- 2026-07-31
+
+**Tier reminder, per the task that produced this review.** This plan's own
+header declares `Plan review: required(External cross-type)` — the Decision's
+own ratified condition (`doctrine/dual-review.md:184-187`,`:325-329`). What
+follows is a fresh-context Internal pass only (same agent type as the plan's
+author, new context, no memory of its drafting). **A clean Internal pass does
+not satisfy this plan's own declared gate.** Nothing below should be read as
+clearing the plan for Chunk A; a genuinely different-agent-type or human read
+is still required, exactly as the plan's own Context section already states.
+
+Chunk-by-chunk citation re-verification (independently re-read, not trusted
+from the plan's prose): every line citation in Chunks A-E and the two
+disclosed findings checked out **exactly** against the live tree —
+`lockfile.py:42` (`_LOCK_SCHEMA`), `:103-111`/`:114-124` (`_cairn_version`/
+`_cairn_commit`), `:184-190` (`_emit_lock_yaml`'s header); `install.py:1627-
+1636` (`write_install_lockfile`'s lock dict); `upgrade.py:1196-1203`
+(`_cmd_init_lock`'s lock dict), `:900-930` with `new_version`/`new_commit` at
+`:906-907` (`_write_stage`'s meta dict), `:1943-1945` (`_apply_upgrade`'s lock
+advance); `__init__.py:290-291` (the `_cairn_commit`/`_cairn_version` facade
+re-export pair); `UPGRADE.md`'s `## The lockfile and the fidelity manifest`
+at `:189-197` immediately followed by `## A note on secrets` at `:199`;
+`PROVENANCE.md:77-79`; `test_upgrade.py:45`'s module-level `_install`;
+`CITATION.cff:19-21`'s `license:` block immediately followed by `:22-28`'s
+6-item `keywords:` block. Both disclosed findings independently reproduced:
+`grep -c -i "scaffold_ast_baseline\|ast_attest" bootstrap/REANCHOR_RUNBOOK.md`
+→ 0; `bootstrap/tests/_gate_manifest.py`'s `CASCADE_MUTABLE` dict names
+`scaffold_ast_baseline.json`'s integrity mechanism as "`_ast_attest.py
+update-symbol`" with the "governed by the named mechanism, not a byte hash"
+comment, verbatim; `_ast_attest._UPDATE_ALLOWLIST` is exactly `{_MODULE_
+MAPPINGS, _SKILLS_MAPPINGS, _CORE_MAPPINGS, install_onboarding}`, none of the
+five touched functions among them; the "established... direct-edit script
+pattern" is real (`adopter-licensing-compliance` Chunk D, `first-session-
+survivability` Chunk D). `test_ast_attest.py` currently reports **29 passed,
+0 failed** under canonical `lhm`/Python 3.13.13 — confirming "0 CHANGED."
+`CITATION.cff`'s parse-contract edge case is real and P1's stop-at-first-
+non-`- `-line design handles it correctly. Chunk F1's FROZEN-NEW claim
+verified against `_gate_manifest.py:357-366`'s actual set-difference logic (a
+file not in the pinned `frozen_files` dict logs as a `note`, never a
+`hold`); the pinned manifest's frozen-file count is genuinely 147 (`bootstrap/
+tests/fixtures/gate_manifest.json`, `len(frozen_files) == 147` — a fresh
+`produce` gives 161, which is expected: the gate compares against the
+*pinned* commit, not a live regeneration). No stale citation found in
+Chunks A-F.
+
+**PR1 [SUBSTANTIVE].** The plan's disclosed Finding 2's full-suite figure —
+"2 failed / 1441 passed / 3 skipped (147s)... re-verified this session, under
+the canonical `lhm` interpreter" — is not what the canonical interpreter
+reports. I ran both, just now:
+
+* `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests -q`
+  (Python 3.13.13, the canonical interpreter per `bootstrap/DEPENDENCY_
+  BUDGET.md`'s "The canonical interpreter" section and `gate_manifest.json`'s
+  pin) → **1446 passed, 0 failed, 0 skipped, 217.79s**. `test_ast_attest.py`
+  alone: 29 passed, 0 failed.
+* The sandbox default `python3` (`/Users/kendal30/conda_envs/miniforge3/bin/
+  python3.12`, Python 3.12.9 — also what `dev/.cairn/local-env.json` currently
+  binds) → **2 failed, 1441 passed, 3 skipped, 202.17s** — the two failures
+  are the same `test_ast_attest.py` nodes, both reporting dozens of spurious
+  "NOT pure motion" `CHANGED` entries (an `ast.dump` minor-version artifact,
+  exactly the phenomenon `DEPENDENCY_BUDGET.md`'s canonical-interpreter table
+  documents).
+
+The plan's cited numbers are the **3.12 sandbox run**, not a canonical-`lhm`
+run — they match the 3.12 figures I reproduced exactly (2/1441/3, down to the
+"NOT pure motion" AST spam), while the actual canonical-`lhm` baseline is
+fully green (0/1446/0). This is the identical failure class `bootstrap/
+DEPENDENCY_BUDGET.md`'s own "canonical interpreter" section warns about
+("Two honest agents on the same tree otherwise report different facts... If
+you assert a suite figure or a gate outcome, name the interpreter with it")
+— and the same class of citation-mislabeling this plan's own Finding 1
+prides itself on catching. It also propagates into the **Acceptance
+criteria** section's literal target ("Full `python -m pytest bootstrap/tests`
+at 2 failed / (1441 + new node count) passed / 3 skipped"), which as written
+would read a genuinely clean canonical run as a regression from expectation.
+**Fix:** restate Finding 2's suite baseline and the Acceptance-criteria
+bullet as the canonical-`lhm` figure (0 failed / 1446 passed / 0 skipped),
+and either drop the sandbox figure or explicitly label it as the non-
+canonical comparison point, not the target.
+
+**PR2 [SUBSTANTIVE].** Finding 2's manifest-row claim — "`python bootstrap/
+scaffold.py --manifest` currently emits 96 data rows, not... the 95 the
+proposal predicted post-licensing-Chunk-C" — is off by one. Live count, just
+run: `python bootstrap/scaffold.py --manifest | wc -l` → 96 **total lines**,
+of which line 1 is the `# Cairn install manifest...` header; `grep -vc '^#'`
+→ **95** actual data rows. This is exactly the "95" the plan explicitly says
+is *not* the correct figure. The established convention distinguishing the
+two is not new: `bootstrap/tests/test_manifest.py`'s own `test_format_
+manifest_is_stable_and_tabbed` computes `body = [ln for ln in text.
+splitlines() if not ln.startswith("#")]` before counting, and the sibling
+`adopter-licensing-compliance` plan's own review already phrased the
+identical post-Chunk-C state as "96 lines (1 header + 95 data rows)" — the
+plan's "96 data rows" conflates the total line count with the data-row
+count. Low practical stakes (the Acceptance criteria correctly instructs
+"re-derive the pre-edit count at implementation time... re-verify fresh,
+don't copy," which self-corrects the number actually used), but the
+disclosed-finding prose itself is wrong and should say 95, not 96.
+
+**PR3 [MINOR].** The Acceptance criteria's gate-manifest check cites `python
+bootstrap/tests/_gate_manifest.py produce --dry-run`. `_gate_manifest.py`'s
+`produce` subcommand takes **no arguments** (`sub.add_parser("produce", ...)`
+with zero `add_argument` calls, `_gate_manifest.py:420`) — `--dry-run` would
+be rejected by argparse. `produce` is already read-only (emits JSON to
+stdout, mutates nothing), so a `--dry-run` flag on it wouldn't be meaningful
+even if it existed; the actual read-only integrity check is the `verify`
+subcommand, which is what would report the new file as `FROZEN-NEW` in its
+`notes` (confirmed at `_gate_manifest.py:357-366`). **Fix:** cite `python
+bootstrap/tests/_gate_manifest.py verify` (optionally `--no-collect` to skip
+the pytest-collection check), not `produce --dry-run`.
+
+**PR4 [SUBSTANTIVE, process].** The Decision's own "**Plan conditions,
+ratified here (bind the plan)**" text (not just the proposal's evidence
+section) states: *"a supervised AST re-anchor for the five touched engine
+functions **per `bootstrap/REANCHOR_RUNBOOK.md`**."* Finding 1's underlying
+technical claim is independently verified correct (the runbook never
+mentions the AST baseline; `CASCADE_MUTABLE` names a different mechanism) —
+but the plan's Chunk G substitutes a different procedure than the one the
+Maintainer's own ratified language names, on this plan's own authority. The
+plan does note "neither... the Decision caught this," which is honest
+disclosure that the error reaches the Decision text, but Chunk G doesn't
+explicitly flag that it is deviating from the **literal binding language of
+the ratified Plan conditions**, as distinct from correcting the proposal's
+stale prose — those are different weights of correction. Chunk G is already
+Maintainer-gated for its *execution*, but the *choice of mechanism* is being
+made now, by this plan, not deferred to that gate. **Suggested fix:** add one
+sentence to Chunk G (or the Context disclosure) naming this explicitly as a
+deviation from the Decision's own ratified condition text, not only the
+proposal's evidence — surfacing it as a specific, nameable item for the
+required External cross-type reviewer (and ideally the Maintainer directly)
+to affirm, rather than leaving the substitution to be inferred from the
+finding-1 narrative.
+
+**PR5 [MINOR].** The Acceptance criteria's AST-reanchor bullet targets
+"fully green (26/26 plus whatever `ast-known-new-repin` landed)" after
+Chunk G. Live count under canonical `lhm` right now (pre-Chunk-A) is already
+**29 passed, 0 failed** in `test_ast_attest.py` — i.e., the uncertain
+"26 + whatever landed" arithmetic already resolves to a known number today.
+Not wrong (the hedge covers it), but there's no reason to leave it a guess
+when it's cheaply re-derivable; state 29 (or re-derive at Chunk-G time) as
+the concrete pre-Chunk-A baseline rather than carrying the "26 + X" formula
+forward.
+
+**PR6 [MINOR].** The source proposal's own Author-accounting invariants
+table lists *"A fresh install and an `--apply` produce the *same* provenance
+values for the same `cairn_root`"*, enforced by a stated *"new install-vs-
+upgrade parity assertion."* The plan's Context section says the proposal's
+invariants are "taken as settled" and not re-litigated, but Chunk F's five
+rows (F1-F5) don't name this parity assertion as its own test node — F3
+covers fresh-install-vs-`--init-lock` (both call `_cairn_provenance`
+directly, so parity there is close to definitional) and F4 covers the
+`--apply` backfill's degradation behavior, but neither explicitly asserts
+that a real `--apply`-backfilled value equals `_cairn_provenance(CAIRN_
+ROOT)` for the same root. Likely subsumed by F4 in practice, but the plan
+should either name the parity assertion explicitly as its own bullet or note
+why F3+F4 jointly discharge it, so the coverage isn't silently narrower than
+the invariant the settled proposal commits to.
+
+**Coverage note.** Read `AGENTS.md` and skimmed `dev/agent_collaboration.md`
+for the review-tier/lifecycle grounding this task asked for. Did not attempt
+to independently re-derive the `--apply` stage-metadata backward/forward
+compatibility argument from scratch (E1/E2 in Gemini's External read) — that
+argument is unchanged from the Decision-ratified Revised proposal and is not
+something this plan's own edits touch differently; taken as settled per the
+plan's own Context section, consistent with this review's scope (auditing
+*this plan's* preparation, not re-litigating the proposal). Did not run a
+scratch install / `verify_integrity.py` smoke test (Chunk A-F code does not
+exist yet to smoke-test — nothing in the plan's design depends on that
+result before implementation). BLOCKING: 0. SUBSTANTIVE: 4 (PR1, PR2, PR4,
+and the tier reminder above). MINOR: 3 (PR3, PR5, PR6).
+
+### Sharpening -- Claude (author) -- 2026-07-31
+
+All six findings independently re-verified before disposing, not taken
+on the reviewer's word: re-ran the full suite under both interpreters
+myself (`/Users/kendal30/conda_envs/lhm/bin/python3.13`, 3.13.13 →
+**1446 passed, 0 failed, 0 skipped, 238.72s**; sandbox default `python3`,
+3.12.9, unchanged at 2 failed / 1441 passed / 3 skipped); re-ran
+`python bootstrap/scaffold.py --manifest | wc -l` (96) and `| grep -vc
+'^#'` (95) directly; read `_gate_manifest.py`'s `produce` subcommand
+construction directly (`sub.add_parser("produce", ...)` with zero
+`add_argument` calls — `--dry-run` is not a valid flag); re-read the
+Decision's own "Plan conditions, ratified here" text in the archived
+proposal and confirmed the literal "per `bootstrap/REANCHOR_RUNBOOK.md`"
+wording (`:1012-1015`); re-read the proposal's invariants table and
+confirmed the install-vs-apply parity row (`:482`) verbatim.
+
+* **[PR1] accept.** Context Finding 2's suite bullet and the Acceptance
+  criteria's tests bullet both corrected to the canonical-`lhm` figure
+  (0 failed / 1446 passed / 0 skipped), with the 3.12 sandbox figure
+  (2 failed / 1441 passed / 3 skipped) kept only as an explicitly-labeled
+  non-canonical comparison point, never the target. Also noted:
+  `dev/.cairn/local-env.json` currently binds the non-canonical 3.12
+  interpreter — worth the Maintainer's attention independent of this
+  plan, not something this plan's scope should fix.
+* **[PR2] accept.** Context Finding 2's manifest bullet and the
+  Acceptance criteria's row-count-invariant bullet both corrected to 95
+  data rows (96 total lines, 1 header comment), matching the proposal's
+  own post-Chunk-C prediction exactly.
+* **[PR3] accept.** Acceptance criteria's gate-manifest check corrected
+  from the nonexistent `produce --dry-run` to `verify` (optionally
+  `--no-collect`), the actual read-only integrity check.
+* **[PR4] accept.** Chunk G gains an explicit paragraph naming the
+  mechanism substitution as a deviation from the Decision's own literal
+  "Plan conditions" binding text, not only the proposal's stale
+  evidence-section prose — flagged as a specific item for the required
+  External cross-type reviewer (and the Maintainer) to affirm.
+* **[PR5] accept, folded into PR1's fix.** The Acceptance criteria's
+  "26/26 plus whatever landed" hedge is replaced with the concrete
+  pre-Chunk-A baseline (29 passed, 0 failed) and the exact post-Chunk-G
+  target (the same 29/0 — the handoff corrects the baseline, it adds no
+  test nodes).
+* **[PR6] accept.** Chunk F's F4 row now names the install-vs-apply
+  parity invariant explicitly as an assertion the `--apply` backfill node
+  makes, rather than leaving it to be inferred from F3+F4's combined
+  coverage.
+
+**Also corrected, self-caught (not from the Internal review):** the
+plan's `**Status**` line read `open`; `doctrine/plans.md`'s "plan-review
+precondition" names the correct status for a `required`-tier plan with
+no landed review as **`awaiting-plan-review`**, explicitly distinct from
+plain `open`. Corrected above.
+
+**Status: remains `awaiting-plan-review`.** This Internal pass and its
+sharpening are the floor, not the plan's declared gate — the header's
+`Plan review: required(External cross-type)` is not satisfied by an
+Internal read at any thoroughness, per `doctrine/dual-review.md:325-329`
+("forbids softening a declared tier downward") and this review's own
+tier-reminder paragraph above. Implementation on Chunk A does not begin
+until a genuinely different-agent-type or human review lands as its own
+dated `## Plan review` section.
 
 This section is append-only once written.
