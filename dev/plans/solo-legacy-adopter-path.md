@@ -5,7 +5,7 @@
 # Plan: the solo-legacy adopter recipe (Parts 1-5)
 
 **Source proposal**: `dev/proposals/archive/2026-07-11-claude-solo-legacy-adopter-path.md`
-**Status**: executing
+**Status**: review
 **Plan review**: required(Internal) — fresh-context read. The proposal
 already cleared a 3-lens Internal panel (12 findings, all accepted,
 including one **blocking** finding — the recipe's headline YAML did not
@@ -224,7 +224,159 @@ begins next (Chunks A-E in sequence).
 
 ## Code review
 
-*Filled in after implementation commits land (Chunks A-E).*
+**Attribution / committer note.** Fresh-context subagent review of the
+five implementation commits; the subagent cannot commit, so the
+author-session commits this section as a disclosed scribe, the accepted
+deviation model used throughout this repo's lifecycle.
+
+## Code review -- Claude (sub-agent, fresh context, not the implementer) -- 2026-07-31
+
+**Verdict: Accept-with-followups**, applying to the five commits `5114b4c`
+(Chunk A), `d83ed78` (Chunk B), `fb81efb` (Chunk C), `2e34528` (Chunk D),
+`60b4b83` (Chunk E). Chunks B, C, E verify clean end-to-end. Chunk A had
+one real punctuation deviation from a "verbatim" doctrine-quote claim
+(em dash vs. comma). Chunk D's commit message undercounted pre-existing
+twin-file slot differences (three claimed, four actual, all pre-dating
+the commit — a narration slip, not a functional defect). The most
+substantive finding: the plan's own acceptance criteria named the
+end-to-end no-PyYAML CLI dogfood as a residual item that must be
+"closed here, not deferred again" — the implementation closed it with a
+one-off manual run, not a durable regression test.
+
+**Model**: Claude Sonnet 5, fresh session, no access to the implementing
+session.
+
+### Falsification ledger
+
+**Chunk A — one real deviation, fixed post-review.** Read the full doc
+as a first-time postdoc would: genuinely followable, one action per
+step, no unexplained jargon. Mechanically confirmed: exactly one
+```` ```yaml ```` fence, marker-anchored, round-trips to the 8-module
+roster with zero warnings (three independent reproductions across this
+plan's lifecycle: plan-authoring, this code review, and the fix
+below). Week-one sequencing and the conditional-module framing both
+verified correct. **Found:** the escape-hatch text used an em dash
+where `doctrine/proposals.md:200-204` uses a comma before "but" — the
+commit message called this "quoted verbatim," and it was verbatim on
+every word (including "or follow-up note," R2's fix) but not on
+punctuation.
+
+**Chunk B — clean, and its extraction helper genuinely fails loud.**
+5/5 new tests passed (33/33 in the file). Independently stress-tested
+`_extract_marked_yaml` against four mutation scenarios (zero markers,
+duplicate markers, missing fence, unterminated fence) — all four raise
+with a clear message, none silently pick a fence. The naive-override
+pin's comment correctly frames it as current-pending-a-deferred-fix,
+not a desired invariant.
+
+**Chunk C — clean.** Genuine reconciliation (cites the existing G/M/P
+mapping as already covering the case), not a "missing route" overclaim.
+Correctly cross-links the recipe.
+
+**Chunk D — twin-file gloss byte-identical and doctrine-verbatim,
+correctly (comma, not the Chunk A em-dash), confirmed by direct
+extraction from both files. The R6 port-exemption date (`9ad0fdb`,
+2026-06-08, four days pre-self-hosting) reconfirmed. The lockfile-drift
+excuse independently reproduced as accurate, not invented:** `upgrade
+--target . --cairn-root . --plan` lists 38 pre-existing "no recoverable
+base" files including this one; the recorded hash genuinely doesn't
+match current content and already carries `unrecoverable_base: true`.
+**Found (narration only):** the commit message says "three" remaining
+slot differences between the twin files; there are four
+(`triage-extra-triggers`, `documentation-tier-home`,
+`tests-tier-home`, `examples-smoke-home`), all confirmed pre-existing
+via a diff against the pre-commit state — not introduced by Chunk D,
+just miscounted in its own commit message.
+
+**Chunk E — clean.** Both `BOOTSTRAP.md` locations (`:215`, and the
+Appendix B block, re-verified at its actual current lines rather than
+trusted from either prior citation) now list all six default-on
+modules, matching the live `_DEFAULT_ON_MODULES` tuple exactly. Doc-only.
+
+**Gate sweep at current HEAD (pre-fix).** Full suite 1437 passed / 3
+skipped / 2 failed (the two pre-existing `test_ast_attest.py`
+artifacts, matching every sibling plan this session). Canonical `lhm`
+interpreter: 26/26 — confirms the "no engine change" claim genuinely
+holds. `check_cairn` OK; `claim_check` clean on every touched file;
+`quality_gate --sub neutrality` at 99 FAILs, none from touched files.
+
+**The no-PyYAML dogfood — the substantive finding.** The plan's
+acceptance criteria named the real CLI `--summary` path under a
+genuinely PyYAML-absent interpreter as the one item both proposal-stage
+reviews left unexercised, and said explicitly it must be "closed here,
+not deferred again." None of Chunk B's five committed tests exercise
+`main(["--summary", ...])` — only `_minimal_yaml_parse`/`expand_preset`
+directly. The reviewer reproduced the real CLI manually via
+`/usr/bin/python3` (a genuinely PyYAML-absent interpreter on this
+machine) and confirmed it works, but flagged that this closes the item
+only for this one review session, not durably — the next person to
+touch this recipe has no regression test protecting the claim.
+
+### Coverage
+
+Independently reproduced: the 8-module roster and zero-warning claim
+(three ways); every doctrine-quote verbatim claim (found the one real
+em-dash deviation); the extraction helper's four-scenario loud-failure
+behavior; twin-file byte-identity of the ported gloss; the R6
+introducing-commit date; the lockfile-drift claim via the actual
+`--plan` command and a hash comparison; current `BOOTSTRAP.md` line
+numbers against the live tuple; the full gate sweep. Not independently
+exercised: visual rendering of the em dash vs. comma in a Markdown
+viewer (immaterial); `on-ramp/`'s doc-tier-layer fit against
+`docs/DOCUMENTATION_PLAN.md`'s four-layer map (a pre-existing loose end
+the original proposal review, R11, already flagged as no-gate-
+consequence, not newly surfaced here).
+
+### Required follow-ups
+
+1. **(Substantive, resolved post-review)** Add a durable regression test
+   exercising the real CLI `--summary` path under a genuinely forced
+   no-PyYAML condition, not just `_minimal_yaml_parse` called directly —
+   closing the plan's own named residual verification item properly
+   rather than leaving it verified only by ad hoc manual runs.
+2. **(Cosmetic, resolved post-review)** Align Chunk A's escape-hatch
+   text to the comma doctrine uses, for a strictly byte-verbatim quote.
+3. **(Cosmetic, noted, no action)** Chunk D's commit message undercounts
+   the twin files' pre-existing slot differences (three claimed, four
+   actual) — historical commit-message text, not corrected retroactively;
+   noted here for the record.
+
+### Sharpening -- Claude (author) -- 2026-07-31
+
+Both actionable findings independently re-verified before fixing: diffed
+the recipe's escape-hatch line against `doctrine/proposals.md:200-204`
+directly (confirmed the em-dash-vs-comma deviation, nothing else); read
+`config.py`'s `try: import yaml` / `except ImportError` branch structure
+to design a genuine (not simulated) forced-fallback test.
+
+* **[Follow-up 1] accept — fixed.** Added
+  `test_summary_cli_under_a_genuinely_forced_no_pyyaml_path` to
+  `TestSoloLegacyRecipe`: runs `bootstrap.scaffold.main(["--summary",
+  ...])` in a `subprocess.run([sys.executable, ...])` with
+  `sys.modules["yaml"] = None` set *before* `bootstrap.scaffold` is
+  ever imported in that subprocess — portable (uses `sys.executable`,
+  no hardcoded interpreter path) and genuine (forces `config.py`'s
+  `import yaml` to raise `ImportError` for real, not a simulation).
+  Proven non-vacuous by mutation: reintroducing the *original* R1 bug
+  (a trailing scalar comment on `preset:`) into a scratch copy of the
+  recipe reproduces the exact historical failure class
+  (`PresetError`-shaped `unknown preset 'solo-greenfield   # solo
+  staffing'`) that this whole proposal exists to prevent — reverted,
+  file diff-confirmed identical to HEAD afterward.
+* **[Follow-up 2] accept — fixed.** Escape-hatch text corrected to the
+  comma doctrine uses; re-diffed against `doctrine/proposals.md:200-204`
+  to confirm exact match (modulo the recipe's own section-header framing,
+  which never repeats the "**Escape hatch.**" bold lead-in since it has
+  its own `## The escape hatch` heading — an intentional, not a
+  deviation).
+* **[Follow-up 3] acknowledged, no action** — historical commit-message
+  text; not worth a corrective commit on its own, per the reviewer's own
+  disposition.
+
+**Status: executing → review.** Code review's substantive finding is
+resolved; the plan is otherwise complete and gate-clean. No
+Maintainer-gated closeout remains (no engine change, no AST re-anchor).
+Archive next.
 
 ## Lasting-truth migration
 

@@ -26,6 +26,7 @@ Run from the cairn repo root:
 
 from __future__ import annotations
 
+import subprocess
 import sys
 from pathlib import Path
 
@@ -420,6 +421,44 @@ class TestSoloLegacyRecipe:
         text = _SOLO_LEGACY_RECIPE.read_text(encoding="utf-8")
         yaml_text = _extract_marked_yaml(text, _SOLO_LEGACY_MARKER)
         assert _roster(_yaml_load(yaml_text)) == _roster(_minimal_yaml_parse(yaml_text))
+
+    def test_summary_cli_under_a_genuinely_forced_no_pyyaml_path(
+        self, tmp_path: Path,
+    ) -> None:
+        # Closes the residual verification item both proposal-stage reviews
+        # flagged as unexercised: the real CLI / stderr `--summary` path
+        # (format_profile_summary, mirroring test_summary_cli_exits_
+        # without_installing's F5 pattern), not just _minimal_yaml_parse
+        # called directly. Runs in a SUBPROCESS under sys.executable (the
+        # same interpreter running this test suite, so this is portable --
+        # no hardcoded /usr/bin/python3 path) with `sys.modules["yaml"] =
+        # None` set before bootstrap.scaffold is ever imported, which
+        # forces config.py's `try: import yaml` to raise ImportError and
+        # bind _yaml_load to the _minimal_yaml_parse fallback for real --
+        # not a simulation, the actual branch a zero-dependency adopter's
+        # interpreter takes.
+        text = _SOLO_LEGACY_RECIPE.read_text(encoding="utf-8")
+        yaml_text = _extract_marked_yaml(text, _SOLO_LEGACY_MARKER)
+        cfg = tmp_path / "profile.yml"
+        cfg.write_text(yaml_text, encoding="utf-8")
+
+        driver = (
+            "import sys\n"
+            "sys.modules['yaml'] = None\n"
+            f"sys.path.insert(0, {str(CAIRN_ROOT)!r})\n"
+            "from bootstrap.scaffold import main\n"
+            f"sys.exit(main(['--summary', '--config', {str(cfg)!r}]))\n"
+        )
+        result = subprocess.run(
+            [sys.executable, "-c", driver],
+            capture_output=True, text=True, cwd=str(CAIRN_ROOT),
+        )
+        assert result.returncode == 0, result.stderr
+        for module in _DEFAULT_ON | {"legacy-agent", "testing-discipline"}:
+            assert module in result.stdout, (
+                f"{module!r} missing from --summary output:\n{result.stdout}"
+            )
+        assert "[warn] staffability:" not in result.stdout, result.stdout
 
     def test_naive_age_override_alone_does_not_add_legacy_agent(self) -> None:
         # Pins the finding-2 behavior the recipe's "why these lines are

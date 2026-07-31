@@ -130,7 +130,7 @@ default?
 ## The escape hatch
 
 If a change is urgent, clearly reversible, or explicitly experimental,
-it may proceed without a proposal — but the commit or follow-up note
+it may proceed without a proposal, but the commit or follow-up note
 should say why the proposal step was skipped. This keeps the bypass
 traceable without forcing process onto bug fixes or short-lived
 experiments. (Your installed `dev/proposals/_template.md` carries this
