@@ -3,7 +3,7 @@
 # Plan: re-pin the stale AST known-new manifest (Parts 1-2)
 
 **Source proposal**: `dev/proposals/archive/2026-07-22-claude-ast-known-new-repin.md`
-**Status**: open
+**Status**: executing
 **Plan review**: required(Internal) — per the Decision's ratified plan
 conditions (the proposal's own External-tier read already cleared the
 design; the plan's job is translation + the currency re-check below,
@@ -26,7 +26,8 @@ as the audit of record). Full detail:
 
 * **Part 1's implementation work is transcription, not audit.** The
   audit is complete in the Revised proposal's table; this plan copies
-  those symbols' digests into the regenerated manifest and does not
+  those symbols' digests **and multiplicities** into the regenerated
+  manifest (plan-review PR5 — the Decision's exact wording) and does not
   re-derive provenance.
 * **Part 2 uses `_classify()`'s literal predicate**, so the two halves
   of `_ast_attest.py` cannot drift apart again on this point.
@@ -90,21 +91,33 @@ B. Part 2 -- exempt Import:/ImportFrom:/Docstring# from the NEW check  [commit p
 
 | # | File | Change |
 |---|------|--------|
-| B1 | `bootstrap/tests/_ast_attest.py` | In `update_symbol()`'s NEW-symbol loop (`:299-307`), skip a key `k` from `new_problems` entirely — never checked against `allowed_new`, never flagged unpinned — when `k.startswith("Import:") or k.startswith("ImportFrom:") or k.startswith("Docstring#")`. **The exact literal predicate `_classify()` already uses** (`:144`) for the CHANGED/MISSING/DUPLICATE side, so the two enforcement paths share one definition and cannot drift apart on this point again (plan-review PR1 in the sibling `first-session-survivability` plan flagged this exact drift risk for a different pair of functions; this design avoids it from the start by literal predicate reuse, not just parallel logic). Named symbols (`FunctionDef`/`ClassDef`/`Assign`) are completely unaffected — the loop's existing pinned/mismatch/deleted-key checks apply to them exactly as before. |
-| B2 | `bootstrap/tests/_ast_attest.py` | Module docstring (`:24-30` area, the `update_symbol` workflow description): short addition explaining the Import-exemption rationale, mirroring the existing per-module-necessity comment `_classify()` already carries (`:148-156`) — imports recurring across split modules are a per-module necessity, not injected/altered top-level logic, so pinning them by content hash buys no real security margin and is why the manifest went stale on ordinary commits. |
+| B1 | `bootstrap/tests/_ast_attest.py` | Define one shared helper, `_is_per_module_necessity(key)`, returning `key.startswith("Import:") or key.startswith("ImportFrom:") or key.split("#", 1)[0] == "Docstring"` — the Docstring check matching `_classify()`'s own `key.split("#", 1)[0] == "Docstring"` exactly (plan-review PR3; not `startswith("Docstring#")`, which misses a bare `"Docstring"` key `_classify()` would exempt). Apply it in **both** places `update_symbol()` needs it (plan-review PR2, closing an asymmetry the original design missed): (1) the NEW-symbol loop (`:299-307`) — skip a key `k` from `new_problems` entirely when `_is_per_module_necessity(k)`; (2) the `MISSING-KNOWN-NEW` loop (`:311-315`, `for k in sorted(set(allowed_new) - set(new))`) — same skip, so a pinned `Import:`/`Docstring#`-prefixed key that later vanishes from the live set can never trip this loop either, making the exemption correct-by-construction regardless of what the manifest happens to contain (not merely a consequence of Chunk A dropping all `Import:` pins today). Named symbols (`FunctionDef`/`ClassDef`/`Assign`) are completely unaffected in both loops — the existing pinned/mismatch/deleted-key checks apply to them exactly as before. |
+| B2 | `bootstrap/tests/_ast_attest.py` | Module docstring (`:24-30` area, the `update_symbol` workflow description): short addition explaining the Import-exemption rationale, mirroring the existing per-module-necessity comment `_classify()` already carries (`:148-156`) — imports recurring across split modules are a per-module necessity, not injected/altered top-level logic, so pinning them by content hash buys no real security margin and is why the manifest went stale on ordinary commits. Notes explicitly (plan-review PR4) that `ast.Import` and `ast.ImportFrom` nodes share one `"Import:"` key prefix in this file's key-generation scheme (`_node_key`) — there is no separate `"ImportFrom:"` prefix in practice, so a reader shouldn't infer a distinction the key strings don't carry. |
 | B3 | `bootstrap/tests/test_ast_attest.py` (extend) | Regression coverage per the proposal's own Evidence plan: (a) a synthetic fixture module with a fresh, unpinned `Import:*`-shaped NEW entry passes `update_symbol` cleanly (no `known_new` pin required) when it is the only NEW entry and no CHANGED/MISSING/DUPLICATE exists; (b) a synthetic fixture module with a fresh, unpinned `FunctionDef`/`ClassDef`/`Assign` NEW entry still refuses exactly as today (`REFUSED — ... new-symbol violation(s)`) — so the exemption cannot silently widen to cover named symbols later without this test catching it. |
 
 ## Acceptance criteria
 
 * **Tests that must pass** — the extended `bootstrap/tests/test_ast_attest.py`
-  (Chunk B3, both new cases). `bootstrap/tests/_ast_attest.py update-symbol
-  install_onboarding --baseline bootstrap/tests/fixtures/scaffold_ast_baseline.json
-  --expect-old cec6f103797053c5 --known-new bootstrap/tests/fixtures/scaffold_ast_known_new.json
-  bootstrap/_scaffold/*.py --dry-run` (the exact call the sibling
-  `first-session-survivability` plan's Chunk D needed and could not use)
-  must now succeed cleanly against the regenerated manifest, dry-run
-  only — proving Part 1 + Part 2 together actually restore the guarded
-  path's usability, not just that each part is individually plausible.
+  (Chunk B3, both new cases). **Corrected per plan-review PR1:** the
+  originally-planned `update-symbol install_onboarding --expect-old
+  cec6f103797053c5 ... --dry-run` worked example (the exact call the
+  sibling `first-session-survivability` plan's Chunk D needed) is
+  **not usable as an acceptance check** — that pre-image digest was
+  already resolved via direct-edit in that plan's own Chunk D, and
+  `install_onboarding` currently shows **no** CHANGED state against
+  the live baseline (`_classify()` confirms it), so the call refuses
+  with "nothing to update" (exit 4) regardless of how well this plan's
+  chunks are implemented. **Use a scratch demonstration instead:** copy
+  `scaffold_ast_baseline.json` to a scratch path, hand-edit
+  `install_onboarding`'s digest to a synthetic stale value (any
+  differing 16-hex-char string), then run `update-symbol
+  install_onboarding --baseline <scratch> --expect-old <the synthetic
+  stale value> --known-new bootstrap/tests/fixtures/scaffold_ast_known_new.json
+  bootstrap/_scaffold/*.py --dry-run` against the *real* module tree —
+  this must succeed cleanly (exit 0, "DRY-RUN — no write"), proving
+  Part 1 + Part 2 together actually restore the guarded path's
+  usability against genuine drift, without depending on a live symbol
+  that happens to currently show real drift (none currently does).
   Full `python -m pytest bootstrap/tests` green modulo the two
   pre-existing `test_ast_attest.py` sandbox-interpreter artifacts every
   sibling plan this session has documented (canonical `lhm` interpreter
@@ -123,10 +136,13 @@ B. Part 2 -- exempt Import:/ImportFrom:/Docstring# from the NEW check  [commit p
 
 ## Signals the change is wrong
 
-* **The dry-run `update-symbol` call above still refuses** after both
-  chunks land → Part 1 or Part 2 has a real gap this plan's own
-  preparation missed; do not proceed to declare success, re-derive
-  from the actual refusal message.
+* **The scratch synthetic-drift `update-symbol` call above still
+  refuses** after both chunks land → Part 1 or Part 2 has a real gap
+  this plan's own preparation missed; do not proceed to declare
+  success, re-derive from the actual refusal message. (Corrected per
+  plan-review PR1: a refusal on the *real*, undrifted baseline against
+  `install_onboarding` specifically is expected, not a signal — that
+  symbol currently has nothing to update regardless of this plan.)
 * **A future commit's ordinary import-line change trips `update_symbol`
   again** despite Part 2 → the predicate match is narrower than
   `_classify()`'s in some edge case (e.g. a key format mismatch) —
@@ -138,7 +154,72 @@ B. Part 2 -- exempt Import:/ImportFrom:/Docstring# from the NEW check  [commit p
 
 ## Review
 
-*Filled in after the fresh-context Internal plan-review subagent pass.*
+**Attribution / committer note.** Fresh-context subagent plan-review;
+the subagent cannot commit, so the author-session commits this section
+as a disclosed scribe, the accepted deviation model used throughout
+this repo's lifecycle.
+
+## Plan review -- Claude (Internal, fresh-context) -- 2026-07-31
+
+**Model**: Claude Sonnet 5
+
+**Steelman.** This is a well-scoped, well-fenced plan translating an already-litigated proposal into two concrete chunks. The Context section correctly reproduces both of the Decision's corrections, the scope fence is honored throughout (no edit to `scaffold_ast_baseline.json` anywhere in the plan; the one mention of that filename is a read-only `--baseline` argument to a `--dry-run` invocation), and the currency re-check and digest-transcription arithmetic — the two claims most likely to have silently rotted in nine days — both check out **exactly**, digit for digit, when independently reproduced. The core two-part design (drop `Import:*` pins, exempt them structurally) is not just plausible on paper; the reviewer built scratch copies of both chunks and confirmed by direct execution that the mechanism genuinely restores the guarded `update-symbol` path in a scenario with real drift, and that neither chunk alone is sufficient.
+
+**Findings** (most significant first):
+
+* **[PR1] The Acceptance Criteria's specific dry-run command cannot succeed, and will misdiagnose a healthy implementation as broken.** `install_onboarding`'s baseline digest is no longer `cec6f103797053c5` (that was the pre-image from `first-session-survivability`'s Chunk D handoff, already resolved via direct-edit) — it's now `382bfff5b2ace579`, and the *live* digest matches it exactly. `_classify()` reports `install_onboarding` as **not CHANGED**. The plan's literal command refuses with an `expect-old` mismatch (exit 3); corrected to the real digest, it still refuses because there's nothing to update (exit 4). None of the four allowlisted symbols currently show CHANGED state — the criterion is unsatisfiable against live repo state, no matter how well Chunks A/B are implemented, and the plan's own "Signals the change is wrong" would misdiagnose this refusal as a Part 1/2 gap.
+  *Grounding:* `bootstrap/tests/fixtures/scaffold_ast_baseline.json` (`install_onboarding.digest` = `382bfff5b2ace579`); live `digest_module()` over `install.py` returns the identical digest; direct execution of the plan's literal command (exit 3) and the digest-corrected version (exit 4); `dev/plans/archive/first-session-survivability.md:225` (origin of the stale pre-image).
+  *Suggested fix:* Replace the specific `install_onboarding` worked-example criterion with a scratch/synthetic-drift demonstration (inject a synthetic stale pre-image into a scratch baseline copy, confirm the dry-run then succeeds cleanly) — proving the mechanism works without depending on a live symbol that happens to currently show real drift. Amend "Signals the change is wrong" so a refusal on the *real* baseline isn't read as a gap.
+
+* **[PR2] The `MISSING-KNOWN-NEW` loop has no Import/Docstring exemption — Part 2's "cannot drift apart again" claim currently holds only by convention, not by code.** Chunk B1 as written only patches the NEW-unpinned loop (`_ast_attest.py:299-308`). A second, separate loop (`:311-315`, `for k in sorted(set(allowed_new) - set(new))`) flags any *pinned* `known_new` key that's vanished from the live set, with **no exemption predicate at all**. Proven live: running the patched first-loop-only fix against the *current, unregenerated* 43-key manifest (still carrying 30 `Import:*` pins) in a synthetic-drift scenario produces four unguarded `MISSING-KNOWN-NEW Import:...` refusals. Chunk A's design (drop all 30 `Import:*` keys) sidesteps this immediately after implementation — with zero `Import:*` keys ever pinned, the second loop has nothing to flag — but that's a consequence of Chunk A's data choice, not a code guarantee; if anyone ever re-pins an `Import:`/`Docstring#`-prefixed key into the manifest in the future, the asymmetry resurfaces.
+  *Grounding:* `_ast_attest.py:299-315` (both loops); direct execution showing 4 unguarded `MISSING-KNOWN-NEW Import:` refusals against the current manifest with only the first loop patched.
+  *Suggested fix:* Apply the identical predicate inside the second loop too, so the exemption is symmetric and correct-by-construction regardless of what the manifest happens to contain, not dependent on Chunk A's data choice holding forever.
+
+* **[PR3] The Docstring exemption predicate isn't literally identical to `_classify()`'s — currently unreachable, but the "exact literal predicate" framing overstates it.** `_classify()` exempts via `key.split("#", 1)[0] == "Docstring"`, matching both a bare `"Docstring"` key and any `"Docstring#N"`. The plan's proposed predicate, `k.startswith("Docstring#")`, does not match a bare `"Docstring"` key. Unreachable today (the baseline carries exactly one bare `"Docstring"` key, always already baselined, and the scope fence forbids touching the baseline) — but not literally the same predicate.
+  *Grounding:* `_ast_attest.py:164` vs. the plan's B1 text; the baseline's one bare `"Docstring"` key, confirmed present.
+  *Suggested fix:* Use `k.split("#", 1)[0] == "Docstring"` for true fidelity to the "exact literal predicate" claim, low priority given unreachability.
+
+* **[PR4] The `"ImportFrom:"` branch of the proposed predicate is dead code (cosmetic).** `_node_key()` keys both `ast.Import` and `ast.ImportFrom` nodes under the same `"Import:"` prefix — there is no `"ImportFrom:"`-prefixed key anywhere in this codebase's key scheme, confirmed by enumerating all Import/ImportFrom nodes across `bootstrap/_scaffold/*.py` (57 `ImportFrom` + 16 `Import`, all keyed `"Import:"`). Harmless, but implies a distinction that doesn't exist in this file's key-generation scheme.
+  *Suggested fix:* Optional one-line docstring note in B2 clarifying the key-string scheme collapses both AST types under one prefix.
+
+* **[PR5] Minor: "carried forward verbatim" drops "and multiplicities."** The plan's ratified-condition bullet says "...copies those symbols' digests into the regenerated manifest," while the Decision's actual text says "...digests **and multiplicities**..." Immaterial to the outcome (the manifest format already stores multiplicity as a list per key), but worth exact quotation given this repo's own discipline around it.
+
+**Coverage.** Independently verified: the full NEW-entry list (not just counts) against the proposal's table (zero drift, exact match); the manifest's key classification and digest values (30/13 split, 13/13 digest matches); both loops of `update_symbol()`'s NEW-handling logic by constructing and executing scratch copies of both chunks against the real live module set; the specific acceptance-criterion command, both as literally written and digest-corrected, against real current repo state; a synthetic-drift scenario proving the underlying design works when there's real drift to fix; that Chunk A alone and Chunk B alone are each individually insufficient. Not covered: re-deriving each of the 28 symbols' origin-commit attributions (already settled at the proposal's own Decision); the full `bootstrap/tests` suite (ran only `test_ast_attest.py`, 26/26 under canonical `lhm`, as a pre-implementation sanity baseline); B3's regression tests (don't exist yet — simulated via scratch scripts only).
+
+**Verdict:** Proceed with the fixes above folded in. PR1 and PR2 are substantive and should be resolved before implementation — PR1 because the Acceptance Criteria as written cannot pass and would misdiagnose a correct implementation as broken; PR2 because Part 2's "cannot drift apart again" claim currently depends on an unenforced convention (never re-pinning an Import:/Docstring#-prefixed key) rather than code. Chunk A's transcription work and Chunk B's core design are independently confirmed sound — not a "start over" finding.
+
+### Sharpening -- Claude (author) -- 2026-07-31
+
+All five findings independently re-verified before disposing: re-ran
+the exact `install_onboarding` digest comparison (confirmed
+`382bfff5b2ace579` == live, not CHANGED); re-read both loops in
+`update_symbol()` and confirmed the second loop's missing guard by
+direct code read; re-confirmed the baseline's one bare `"Docstring"`
+key and the `Import`/`ImportFrom` key-collapse via direct inspection.
+
+* **[PR1] accept.** The Acceptance Criteria's worked-example command
+  is replaced below with a scratch/synthetic-drift demonstration
+  (inject a synthetic stale pre-image into a scratch copy of the
+  baseline, confirm the dry-run then succeeds cleanly) — proving the
+  mechanism without depending on a live symbol currently showing real
+  drift. "Signals the change is wrong" corrected to not read a refusal
+  against the *real*, undrifted baseline as a gap.
+* **[PR2] accept.** Chunk B1 revised: the identical
+  `Import:`/`ImportFrom:`/`Docstring#` predicate now applies inside
+  **both** loops (the NEW-unpinned loop and the `MISSING-KNOWN-NEW`
+  loop), so the exemption is correct-by-construction regardless of
+  what the manifest contains, not dependent on Chunk A's "drop all
+  Import: keys" choice holding forever.
+* **[PR3] accept.** Chunk B1's Docstring check corrected to
+  `k.split("#", 1)[0] == "Docstring"`, matching `_classify()` exactly
+  rather than `k.startswith("Docstring#")`.
+* **[PR4] accept, folded into B2.** The docstring addition now notes
+  the `Import`/`ImportFrom` key-collapse explicitly.
+* **[PR5] accept.** Ratified-condition bullet corrected to "digests
+  and multiplicities."
+
+**Status: open → executing.** All findings disposed; implementation
+begins next (Chunks A-B).
 
 ## Code review
 
