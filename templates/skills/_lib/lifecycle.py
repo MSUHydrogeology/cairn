@@ -218,7 +218,11 @@ def _intent_whoami(root: Path, *, session_token: bool = False) -> Optional[str]:
         return None
     try:
         interpreter, _ = _resolve_interpreter(root)
-    except LifecycleError:
+    except LifecycleError as exc:
+        _warn(
+            f"interpreter binding refused ({exc}); running the optional "
+            f"intent tool under the current interpreter instead."
+        )
         interpreter = sys.executable
     cmd = [interpreter, str(intent_tool), "whoami"]
     if session_token:
@@ -390,7 +394,10 @@ def _resolve_interpreter(root: Path) -> Tuple[str, str]:
     contract** (S2): exactly one key ``interpreter`` mapping to an **absolute**
     path to an **existing executable file**, reached through **no symlinked leaf
     or parent**, with **no arguments / shell interpolation / relative segments**.
-    Any violation **refuses before running anything** (a `LifecycleError`).
+    Any violation **refuses before running anything** (a `LifecycleError`) at
+    every call site **except** ``_intent_whoami``'s optional-tool fallback,
+    which surfaces the refusal as a warning and continues under the current
+    interpreter (the intent tool is optional and repository-controlled).
 
     Returns ``(interpreter_path, source)`` where source is ``"local-env.json"``
     or ``"fallback"``.  When the config is absent, the **runtime resolver
