@@ -146,6 +146,21 @@ _UPDATE_ALLOWLIST: dict[str, str] = {
 }
 
 
+def _is_per_module_necessity(key: str) -> bool:
+    """True for a key that recurs across split modules by necessity, not because
+    it was single-sourced and then duplicated: an import (``Import:`` -- both
+    ``ast.Import`` and ``ast.ImportFrom`` share this one prefix, since
+    ``_node_key`` keys them identically; there is no separate ``ImportFrom:``
+    prefix in practice) or a module docstring (``Docstring`` bare key, or
+    ``Docstring#N`` when disambiguated). Mirrors ``_classify()``'s own
+    baseline-side exemption (``info.get("type") in ("Import", "ImportFrom") or
+    key.split("#", 1)[0] == "Docstring"``, one definition, checked here against
+    the live key string instead of a baseline ``type`` field) so the two
+    enforcement paths cannot drift apart on this point."""
+    return (key.startswith("Import:") or key.startswith("ImportFrom:")
+            or key.split("#", 1)[0] == "Docstring")
+
+
 def _classify(baseline: dict[str, dict], merged: dict[str, list[tuple[str, str]]]):
     """Compare a baseline against merged live digests.
 
@@ -242,7 +257,17 @@ def update_symbol(
       (an altered body behind an allowed name), with a changed occurrence count (a
       duplicated allowed key), **or a pinned key deleted from the live set** (a
       removed security-relevant facade symbol) is refused. Omitted ``known_new``
-      means **strict**: any new symbol refuses;
+      means **strict**: any new symbol refuses. **Exception:** an ``Import:``
+      (covers both ``ast.Import`` and ``ast.ImportFrom`` -- ``_node_key`` keys
+      them identically, so there is no separate ``ImportFrom:`` prefix in
+      practice) or ``Docstring``/``Docstring#N`` key is never required to be
+      pinned, in either direction -- it recurs across split modules as a
+      per-module necessity, not injected or altered top-level logic, mirroring
+      ``_classify()``'s identical exemption on the CHANGED/MISSING/DUPLICATE
+      side (one predicate, ``_is_per_module_necessity``, so the two paths
+      cannot drift apart on this point again). Content-hash-keyed ``Import:``
+      entries would otherwise make ``known_new`` go stale on nearly every
+      ordinary commit that touches an import line anywhere in the package;
     * a before/after attestation is emitted for the audit trail; and
     * only that one key's ``digest`` field is rewritten — every other baselined
       symbol is left byte-for-byte (the file stays canonical JSON).
@@ -299,6 +324,11 @@ def update_symbol(
     allowed_new = known_new if known_new is not None else {}
     new_problems: list[str] = []
     for k in new:
+        if _is_per_module_necessity(k):
+            # Imports and module docstrings are per-module necessities, not
+            # single-source moved symbols (mirrors _classify()'s exemption) --
+            # never require a known_new pin, regardless of whether one exists.
+            continue
         live_digests = sorted(d for d, _f in merged[k])
         if k not in allowed_new:
             new_problems.append(f"NEW {k}  (not in the pinned known-new manifest)")
@@ -311,6 +341,11 @@ def update_symbol(
     # keys are absent from the baseline by definition). Refuse it, so a security-relevant facade
     # symbol cannot be silently removed under cover of a mapping update.
     for k in sorted(set(allowed_new) - set(new)):
+        if _is_per_module_necessity(k):
+            # Symmetric with the loop above: a pinned Import:/Docstring# key
+            # that vanishes from the live set (e.g. the exact import line
+            # changed) is not a removed facade symbol -- don't refuse over it.
+            continue
         new_problems.append(f"MISSING-KNOWN-NEW {k}  (a pinned known-new symbol was deleted from "
                             f"the live module set)")
     if new_problems:

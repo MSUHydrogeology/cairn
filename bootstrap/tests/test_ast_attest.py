@@ -359,3 +359,56 @@ def test_update_symbol_refuses_deleted_known_new_key(tmp_path, capsys):
                            known_new={"FunctionDef:install": ["0" * 16]}) == 4
     assert bp.read_text(encoding="utf-8") == before
     assert "MISSING-KNOWN-NEW" in capsys.readouterr().err
+
+
+# ---------------------------------------------------------------------------
+# ast-known-new-repin plan, Chunk B3 — Import:/Docstring# exemption from the
+# NEW-symbol strictness check (both loops: unpinned-NEW and MISSING-KNOWN-NEW)
+# ---------------------------------------------------------------------------
+
+
+def test_update_symbol_allows_a_fresh_unpinned_import_with_no_known_new(tmp_path):
+    # A brand-new, entirely unpinned Import: key must NOT block a legitimate
+    # mapping update, even in strict mode (known_new omitted) -- an import
+    # recurring/changing across modules is a per-module necessity, not
+    # injected top-level logic.
+    bp, base = _canon_baseline(tmp_path, _SRC_V1)
+    live = _write(tmp_path, "live.py",
+                  "import os\n"
+                  "_MODULE_MAPPINGS = {'a': 1, 'b': 2}\n"
+                  "_SKILLS_MAPPINGS = (('x', 'y', True),)\n"
+                  "def helper():\n    return 1\n")
+    # The new `import os` line mints a fresh, unpinned Import:<hash> NEW key;
+    # known_new is omitted entirely (strict) to prove this isn't merely
+    # tolerated when pinned -- it's exempt regardless.
+    assert A.update_symbol(bp, "_MODULE_MAPPINGS", base[_MM]["digest"], [live]) == 0
+    assert json.loads(bp.read_text())[_MM]["digest"] == A.digest_module(live)[_MM]["digest"]
+
+
+def test_update_symbol_ignores_a_stale_pinned_import_key_missing_from_live(tmp_path):
+    # plan-review PR2: a known_new manifest that still pins an Import: key
+    # whose exact line no longer exists in the live set must NOT refuse via
+    # MISSING-KNOWN-NEW -- that loop needs the same exemption as the
+    # unpinned-NEW loop, or the two can drift out of symmetry.
+    bp, base = _canon_baseline(tmp_path, _SRC_V1)
+    live = _write(tmp_path, "live.py",
+                  "_MODULE_MAPPINGS = {'a': 1, 'b': 2}\n"
+                  "_SKILLS_MAPPINGS = (('x', 'y', True),)\n"
+                  "def helper():\n    return 1\n")
+    # A dangling, never-live Import: pin -- simulates a manifest that still
+    # carries an entry for an import line that has since changed or been
+    # removed. Without the fix, this trips MISSING-KNOWN-NEW.
+    assert A.update_symbol(bp, "_MODULE_MAPPINGS", base[_MM]["digest"], [live],
+                           known_new={"Import:0123456789ab": ["deadbeefdeadbeef"]}) == 0
+    assert json.loads(bp.read_text())[_MM]["digest"] == A.digest_module(live)[_MM]["digest"]
+
+
+def test_update_symbol_still_refuses_a_fresh_unpinned_named_symbol(tmp_path, capsys):
+    # The exemption must NOT widen to cover named symbols -- confirms the
+    # predicate is scoped to Import:/Docstring# only (same scenario as
+    # test_update_symbol_refuses_injected_new_symbol_strict, re-asserted here
+    # to pin the exemption's boundary explicitly in this plan's own coverage).
+    bp, base = _canon_baseline(tmp_path, _SRC_V1)
+    live = _write(tmp_path, "live.py", _SRC_INJECT)
+    assert A.update_symbol(bp, "_MODULE_MAPPINGS", base[_MM]["digest"], [live]) == 4
+    assert "new-symbol violation" in capsys.readouterr().err
