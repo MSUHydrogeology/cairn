@@ -138,6 +138,19 @@ with the plan's filename stem.
   deliberation-carve-in exemption, etc.) rather than folded into the
   near-automatic A+B. Revive as its own proposal when someone pins those
   heuristics.
+* **Self-host lockfile reconciliation** *(deferred, Jul 2026)* —
+  `python bootstrap/scaffold.py upgrade --target . --cairn-root . --plan`
+  currently reports **38** files as "no recoverable base (review-only
+  diff)" against the base cache, each needing a by-hand `--stage`/`--apply`
+  merge or a reviewed `--finalize` once its actual customization state is
+  confirmed. Surfaced (not caused) by the `solo-legacy-adopter-path` plan
+  (archived; Part 3 touched one of the 38, `dev/proposals/_template.md`,
+  and deliberately left its lockfile hash un-finalized rather than
+  hand-patching one file in isolation — see that plan's Lasting-truth
+  migration for the full account). No proposal yet; revive by running
+  `--plan` fresh, confirming the current file list, and scoping the
+  reconciliation pass (likely several small, reviewed `--finalize` batches
+  rather than one large `--apply`).
 
 *(Otherwise empty at adoption — native proposals populate this board. The
 Cairn roadmap migrated 2026-06-12 from modflow_tools — queued items,
