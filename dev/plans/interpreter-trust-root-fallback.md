@@ -3,6 +3,12 @@
      note in the source proposal cites this artifact path; it is not this
      plan's own concern and may or may not exist -- carried only because the
      plan's Context section quotes proposal text that mentions it. -->
+<!-- claim-marker maintenance 2026-07-31: this file's own Response section cites
+     `dev/plans/lockfile-provenance-fields.md` -- ACCURATE when written (that
+     sibling plan's own pre-archive path). Archiving that plan (git mv to
+     dev/plans/archive/, a separate commit) breaks the citation here. Retained
+     unedited (append-only, response prose); path marked so the checker clears. -->
+<!-- claim-check-allow: dev/plans/lockfile-provenance-fields.md* -->
 
 # Plan: interpreter trust root -- absent degrades, present-but-wrong refuses
 

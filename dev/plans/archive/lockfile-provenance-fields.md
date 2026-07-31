@@ -4,6 +4,14 @@
 <!-- The path above is cited only to explain it does NOT exist in Cairn's own
      tree (the module is team-gated / optional, not installed here) -- the
      real Cairn-tree source is templates/modules/team-gated/run_security_audit.py. -->
+<!-- claim-marker maintenance 2026-07-31: the External review section's own EPR1
+     finding self-cites `dev/plans/lockfile-provenance-fields.md:169` -- ACCURATE
+     when written (this file's own pre-archive path). Archiving this same plan
+     (git mv to dev/plans/archive/, this commit) breaks that self-citation.
+     Retained unedited (append-only, reviewer prose); path marked so the checker
+     clears. Same shape as the first-session-survivability plan's own marker
+     note this session. -->
+<!-- claim-check-allow: dev/plans/lockfile-provenance-fields.md* -->
 
 # Plan: lockfile provenance fields (P1-P5)
 
@@ -384,16 +392,60 @@ declared tier mandates before implementation.*
 
 ## Lasting-truth migration
 
-*Filled in at archive time. Per the [Archive preconditions rule](../PLANNING.md#archive-preconditions-proposals-and-plans),
-plans archive only after every deferred follow-up has a durable home
-outside the plan — P4 (validate-on-read) is already homed at its
-`dev/PLANNING.md` Queued row (added at this plan's own open, per Decision
-OQ3), and Cairn's own `dev/.cairn/cairn-lock.yml` staying provenance-free
-until its next self-targeted `--stage`/`--apply` (Decision OQ4) is a
-stated, accepted disposition, not a deferred follow-up needing its own
-home.*
+Archived 2026-07-31. Full lifecycle complete: proposal (accepted, three
+review rounds) → plan-open → Internal plan-review + Sharpening → required
+External cross-type plan-review, **three rounds** to clear (Round 1: 3
+blocking + 1 substantive + 1 minor + 1 editorial; Round 2: 1 new blocking
+[RR1, a wrong-file mistake in this plan's own EPR5 fix] + 1 substantive
+security-semantics finding [RR2]; Round 3: SHIP) → implementation, Chunks
+A-G, seven commits (`02f6ee1`-`3cb85ca`) → fresh-context code review
+(Accept, 2 minor non-blocking notes, no fix required) → the Maintainer's
+supervised AST re-anchor (`c3d5bd9`, dry-run-verified in `3cb85ca`,
+corrected exactly the five predicted digest+span pairs, nothing else) →
+archive.
 
-This section is append-only once written.
+**Deferred follow-ups, per the archive-preconditions rule — both already
+homed outside this plan, neither newly created at archive time:** P4
+(validate-on-read) at its `dev/PLANNING.md` "Lockfile schema validate-on-
+read" Queued row (added at plan-open, per Decision OQ3); Cairn's own
+`dev/.cairn/cairn-lock.yml` staying provenance-free until its next
+self-targeted `--stage`/`--apply` (Decision OQ4) is a stated, accepted
+disposition, not a follow-up needing a home.
+
+**Final verification, this session:** full `python -m pytest
+bootstrap/tests` under the canonical `lhm` interpreter (Python 3.13.13) —
+**1459 passed, 0 failed, 0 skipped** (225.92s) — exactly the Acceptance
+criteria's target (1446 pre-plan baseline + 13 new nodes in Chunk F,
+`test_ast_attest.py` fully clean now that the Maintainer's re-anchor
+landed). `python bootstrap/tests/_ast_attest.py verify
+bootstrap/tests/fixtures/scaffold_ast_baseline.json bootstrap/_scaffold/*.py`
+→ "AST attestation OK — 174 baselined symbol(s) accounted for, unchanged"
+(0 CHANGED/MISSING/DUPLICATE).
+
+**What this plan actually shipped:** two new declared-not-attested
+provenance fields (`source_repository`, `source_licenses`) on the install
+lockfile, read once from `CITATION.cff` via `_cairn_provenance()`, written
+by both constructing writers, threaded correctly through `--stage`/
+`--apply` (including the three-case compatibility matrix EPR1's review
+forced into existence), documented with an explicit declared-vs-attested
+distinction in `UPGRADE.md`/`PROVENANCE.md` (not the "copied verbatim" /
+"proof-grade" overclaims two review rounds caught and corrected), and
+covered by a new 13-node test file. No `_LOCK_SCHEMA` bump — additive
+optional fields don't need one, per the new codified rule.
+
+**What the review process itself demonstrated, worth carrying forward as
+institutional memory rather than just a plan-archive footnote:** the
+three-round External/Security review on this plan is the clearest
+evidence this session produced that the tiered review doctrine does its
+job under real pressure — Round 1 caught a genuine null-write security-
+adjacent bug in the `--apply` backfill logic that neither the Internal
+panel nor this plan's own author-side testing had found; Round 2 caught
+that the AUTHOR'S OWN FIX to a Round-1 finding (EPR5/F7's facade-identity
+test) had been misdirected at a FROZEN file, which would have created a
+new unauthorized gate hold; Round 3 shipped only once both were
+independently re-verified by execution, not by re-reading prose. Every
+round's claims were independently re-verified in this session before
+disposing, and every one reproduced exactly.
 
 ## Plan review -- Claude (Internal, fresh-context) -- 2026-07-31
 
