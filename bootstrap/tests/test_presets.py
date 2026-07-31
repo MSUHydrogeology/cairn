@@ -352,3 +352,84 @@ class TestRosterIntegrity:
         known = set(_MODULE_MAPPINGS) | _DEFAULT_ON
         for name in _PRESETS:
             assert _roster({"preset": name}) <= known, name
+
+
+# ---------------------------------------------------------------------------
+# The solo-legacy adopter recipe (docs/solo-legacy-recipe.md) -- pins the
+# recipe's central claim (copy-pasteability, not just resolver math) and
+# documents the finding-2 behavior it routes around, per the
+# solo-legacy-adopter-path plan's Chunk B.
+# ---------------------------------------------------------------------------
+
+_SOLO_LEGACY_RECIPE = (
+    CAIRN_ROOT / "docs" / "solo-legacy-recipe.md"
+)
+_SOLO_LEGACY_MARKER = "<!-- solo-legacy-recipe: canonical-profile -->"
+
+
+def _extract_marked_yaml(text: str, marker: str) -> str:
+    """Locate `marker`, then the single fenced ```yaml block immediately
+    following it. Fails loudly (not a silent first/last-fence pick) if the
+    marker or the fence is missing or duplicated -- a doc that ends up with
+    a second, contrasting YAML example (e.g. for a "why not the naive
+    override" callout) must not be picked up by accident."""
+    assert text.count(marker) == 1, (
+        f"expected exactly one {marker!r} in the recipe, found "
+        f"{text.count(marker)}"
+    )
+    rest = text[text.index(marker) + len(marker):]
+    fence_start = rest.index("```yaml") + len("```yaml")
+    fence_end = rest.index("```", fence_start)
+    return rest[fence_start:fence_end].lstrip("\n")
+
+
+class TestSoloLegacyRecipe:
+    def test_recipe_file_exists(self) -> None:
+        assert _SOLO_LEGACY_RECIPE.is_file(), _SOLO_LEGACY_RECIPE
+
+    def test_marked_yaml_extraction_is_unambiguous(self) -> None:
+        text = _SOLO_LEGACY_RECIPE.read_text(encoding="utf-8")
+        # Fails loudly if a second marker or fence is ever added without
+        # updating this extraction -- the whole point of anchoring on the
+        # marker rather than "the first ```yaml block in the file."
+        assert text.count(_SOLO_LEGACY_MARKER) == 1
+
+    def test_literal_recipe_yaml_round_trips_under_the_stdlib_parser(self) -> None:
+        # This is the recipe's actual headline claim: a zero-dependency
+        # adopter, with no PyYAML, copy-pastes this block and it works.
+        # Calling _minimal_yaml_parse directly (not _yaml_load, which
+        # prefers PyYAML when present) genuinely exercises the stdlib-only
+        # path regardless of what's installed in this environment -- the
+        # exact gap the original "verified via expand_preset on a
+        # hand-built dict" claim had (it never touched either YAML parser).
+        text = _SOLO_LEGACY_RECIPE.read_text(encoding="utf-8")
+        yaml_text = _extract_marked_yaml(text, _SOLO_LEGACY_MARKER)
+        parsed = _minimal_yaml_parse(yaml_text)
+        assert parsed["preset"] == "solo-greenfield"
+        assert parsed["age"] == "legacy"
+        assert parsed["modules_add"] == ["legacy-agent", "testing-discipline"]
+
+        modules, summary = expand_preset(parsed)
+        assert set(modules) == _DEFAULT_ON | {"legacy-agent", "testing-discipline"}
+        assert len(modules) == 8
+        assert summary["staffability_warnings"] == []
+
+    def test_literal_recipe_yaml_also_parses_via_pyyaml(self) -> None:
+        # Parity check (F4's existing convention): both parsers must agree
+        # on the recipe's flat schema, so neither path is silently wrong.
+        text = _SOLO_LEGACY_RECIPE.read_text(encoding="utf-8")
+        yaml_text = _extract_marked_yaml(text, _SOLO_LEGACY_MARKER)
+        assert _roster(_yaml_load(yaml_text)) == _roster(_minimal_yaml_parse(yaml_text))
+
+    def test_naive_age_override_alone_does_not_add_legacy_agent(self) -> None:
+        # Pins the finding-2 behavior the recipe's "why these lines are
+        # load-bearing" section routes around: overriding `age` alone does
+        # NOT re-derive age-gated baseline rows (the static-preset-baseline
+        # mechanism in expand_preset only re-derives the team-staffing-gated
+        # rows). This is CURRENT behavior, not a desired invariant -- it is
+        # pinned here so a future engine fix (the solo-legacy-adopter-path
+        # proposal's deferred Alternative 4) turning this red is expected
+        # and should be treated as "update this test," not "regression."
+        roster = _roster({"preset": "solo-greenfield", "age": "legacy"})
+        assert roster == _DEFAULT_ON
+        assert "legacy-agent" not in roster
