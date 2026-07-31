@@ -40,10 +40,16 @@ adoption profile is recorded at `dev/.cairn/profile.yml`
 deliberation is at `dev/strategy/2026-07-11-claude-cairn-adoption-record.md`,
 a 2026-07-11 reconstruction, not contemporaneous).
 
-**Where it is headed.** The immediate next phase is a broad strategy +
-roadmap pass: take a wide look at the project, tighten what has
-accumulated across phases 1–4, and lay out a forward roadmap. Those
-deliberations open as `dev/strategy/` notes and `dev/proposals/`.
+**Where it is headed.** The broad-look pass is **done** (2026-07-08, note
+`2026-07-08-claude-broad-look-skeptical-review`): ~100 verified findings in
+eight themes and a three-phase tighten-up. Phase A of that tighten-up has
+largely shipped — licensing compliance, first-session survivability, record
+corrections, lockfile provenance, the interpreter trust root, and
+review-record integrity are all implemented and archived. **Two standing
+directions now order the remaining work** (Maintainer, 2026-07-22):
+*postdoc-first* — order by whether it affects the first external adopter's
+first two weeks; and *fix defects, build nothing new* — any new tool or
+mechanism needs an explicit go-ahead, however well it reviews.
 
 *(Refreshed at each goodnight scrub.)*
 <!-- cairn:end project-status -->
@@ -185,6 +191,15 @@ section at the next goodnight scrub — the truth migrates to the
 archived plan / proposal, the implementing commits, and the
 changelog. There is no "completed recently" section on this
 board by design.
+
+* **stage-commit-patterns** *(accepted 2026-07-22, awaiting plan-open)* — the
+  reader fix: `_STAGE_COMMIT_PATTERNS` matched **zero of 76** real commit
+  subjects, leaving every stage-timing metric empty at `Best-effort` while the
+  tool exited 0. Accepted with the design narrowed (no bare-subject fallback)
+  so no commit is ever mislabelled at `Exact`. Part 1 is **transcription, not
+  audit** — the 28-symbol table is verified in the Revised proposal. Plan
+  carries a scoped `upgrade --finalize` for `gitmeta.py` and its `__init__.py`
+  twin, now mandatory since the lockfile is clean.
 
 
 ---
