@@ -212,7 +212,9 @@ Module selection
   Kernel (always):       lifecycle, Maintainer authority, append-only
                          deliberation, dev/ tree, baseline coordination,
                          session routines
-  Default-on (selected): lifecycle-metrics, reflections, claim-check
+  Default-on (selected): lifecycle-metrics, reflections, claim-check,
+                         fold-back-ledger, incident-trackers,
+                         documentation-plan
   Team-gated (selected): <list, or "none">
   Team-gated (deferred): <list with reason, or "none">
   Explicit add/remove:   <modules_add / modules_remove, or "none">
@@ -703,6 +705,9 @@ modules:
   - lifecycle-metrics
   - reflections
   - claim-check
+  - fold-back-ledger
+  - incident-trackers
+  - documentation-plan
   # Team-gated (add from templates/modules/team-gated/ as needed):
   # - dual-review
   # - domain-agents
