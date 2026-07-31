@@ -5,7 +5,7 @@
 # Plan: the solo-legacy adopter recipe (Parts 1-5)
 
 **Source proposal**: `dev/proposals/archive/2026-07-11-claude-solo-legacy-adopter-path.md`
-**Status**: open
+**Status**: executing
 **Plan review**: required(Internal) — fresh-context read. The proposal
 already cleared a 3-lens Internal panel (12 findings, all accepted,
 including one **blocking** finding — the recipe's headline YAML did not
@@ -52,9 +52,12 @@ authoritative design; this plan translates it into Chunks A-E.
   pre-self-hosting foundational doctrine with no discrete `dev/`
   Decision to cite — Part 3 states this explicitly per R6's own
   fallback clause, rather than citing a Decision that doesn't exist.
-* `bootstrap/BOOTSTRAP.md:215` and `:696-698` both currently list only
-  3 of the 6 default-on modules (`lifecycle-metrics`, `reflections`,
-  `claim-check`) against the live `_DEFAULT_ON_MODULES` tuple
+* `bootstrap/BOOTSTRAP.md:215` and `:701-705` (corrected from `:696-698`
+  at plan-review — see PR1; the proposal's original citation drifted
+  after an unrelated commit, `597c882`, inserted lines earlier in the
+  file) both currently list only 3 of the 6 default-on modules
+  (`lifecycle-metrics`, `reflections`, `claim-check`) against the live
+  `_DEFAULT_ON_MODULES` tuple
   (`config.py:70-77`, six entries) — confirmed live, matching R9/Part 5.
 
 ### Documentation / doctrine surface
@@ -85,7 +88,7 @@ E. Part 5 -- BOOTSTRAP.md default-on-module doc-sync             [commit pending
 
 | # | File | Change |
 |---|------|--------|
-| A1 | `docs/solo-legacy-recipe.md` (new) | Worked adoption walkthrough for the solo + one-agent + legacy-scientific-codebase persona, alongside `docs/quickstart.md` / `docs/getting-started.md`. Per the Revised proposal `:245-266`: **Which level** — Level 1 (hand-copy the kernel) with the readiness-report pre-pass first; `scaffold.py --summary` / `modules_add` framed explicitly as a **roster-computation oracle** (what to hand-copy), not the Level-2 installer (R4a) — reconciles with `on-ramp/README.md:29`'s "No bootstrap script." **The exact composed profile** (verified this session, reproduced above): comments on their own full lines (R1's fix, the shipped-profile convention), `preset: solo-greenfield` + `age: legacy` + unconditional `modules_add: [legacy-agent, testing-discipline]` → the 8-module roster, zero warnings; `security-review` and `model-selection` presented as **conditional**, keyed to readiness-report findings, not force-added (R3) — "add `security-review` IF your readiness report flags a trust boundary [`templates/modules/team-gated/security-review.md:4-11`, trust-boundary-first]; add `model-selection` IF the pre-pass places you at moderate+ complexity [`model-selection.md:4-9`]." **Finding-2 framed positively** (R12a): the two unconditional lines named "the legacy-retrofit modules an existing tree needs," with the silent-under-install mechanism (the `age` override does not re-derive age-gated baseline rows) moved to a "why these lines are load-bearing" rationale aside, not the main path. **Week-one arc, sequenced** (R4b): (a) fill `templates/codebase-readiness-report.md`; (b) **Hello-world trivial accept first** (`templates/onboarding/solo-greenfield.md:54-57`'s disposable first rep, unchanged); (c) **then** `docs/assumptions.md` as the first **substantive** proposal, matching the readiness report's own "first **accepted** proposal" framing (`codebase-readiness-report.md:363-367`), not the first-ever lifecycle rep. **The triage-extra-triggers slot fill** for the science trigger — ready-to-paste text for the adopter's own installed `dev/proposals/_template.md`, framed around the readiness report's own question (`:292`, "would the science silently degrade if a contributor changed this default?"), keyed to sign/unit conventions, default parameters, calibration weights. **Escape hatch inline**: a short local gloss with the faithful qualifiers ("urgent, **clearly** reversible, or **explicitly** experimental ... the commit should **say why the proposal step was skipped**," R2), plus a pointer to Part 3's now-local template copy. |
+| A1 | `docs/solo-legacy-recipe.md` (new) | Worked adoption walkthrough for the solo + one-agent + legacy-scientific-codebase persona, alongside `docs/quickstart.md` / `docs/getting-started.md`. Per the Revised proposal `:245-266`: **Which level** — Level 1 (hand-copy the kernel) with the readiness-report pre-pass first; `scaffold.py --summary` / `modules_add` framed explicitly as a **roster-computation oracle** (what to hand-copy), not the Level-2 installer (R4a) — reconciles with `on-ramp/README.md:29`'s "No bootstrap script." **The exact composed profile** (verified this session, reproduced above): comments on their own full lines (R1's fix, the shipped-profile convention), `preset: solo-greenfield` + `age: legacy` + unconditional `modules_add: [legacy-agent, testing-discipline]` → the 8-module roster, zero warnings; the canonical block is immediately preceded by an HTML-comment marker, `<!-- solo-legacy-recipe: canonical-profile -->` (plan-review PR3 — Chunk B's regression test locates this exact marker rather than a generic fence-split, since the doc may carry a second, contrasting YAML example for the "why not the naive override" callout below); `security-review` and `model-selection` presented as **conditional**, keyed to readiness-report findings, not force-added (R3) — "add `security-review` IF your readiness report flags a trust boundary [`templates/modules/team-gated/security-review.md:4-11`, trust-boundary-first]; add `model-selection` IF the pre-pass places you at moderate+ complexity [`model-selection.md:4-9`]." **Finding-2 framed positively** (R12a): the two unconditional lines named "the legacy-retrofit modules an existing tree needs," with the silent-under-install mechanism (the `age` override does not re-derive age-gated baseline rows) moved to a "why these lines are load-bearing" rationale aside, not the main path. **Week-one arc, sequenced** (R4b): (a) fill `templates/codebase-readiness-report.md`; (b) **Hello-world trivial accept first** (`templates/onboarding/solo-greenfield.md:54-57`'s disposable first rep, unchanged); (c) **then** `docs/assumptions.md` as the first **substantive** proposal, matching the readiness report's own "first **accepted** proposal" framing (`codebase-readiness-report.md:363-367`), not the first-ever lifecycle rep. **The triage-extra-triggers slot fill** for the science trigger — ready-to-paste text for the adopter's own installed `dev/proposals/_template.md`, framed around the readiness report's own question (`:292`, "would the science silently degrade if a contributor changed this default?"), keyed to sign/unit conventions, default parameters, calibration weights. **Escape hatch inline**: a short local gloss with the faithful qualifiers, verbatim against `doctrine/proposals.md:200-204` ("urgent, **clearly** reversible, or **explicitly** experimental ... the commit **or follow-up note** should say why the proposal step was skipped" — plan-review PR2: the proposal's own Part 1 bullet dropped "or follow-up note"; use this plan's Context section or the doctrine directly as the source, not that bullet), plus a pointer to Part 3's now-local template copy. |
 
 **Prose-quality criterion (named in the proposal's own Evidence plan,
 `:129`, as non-mechanizable — this plan's own verification, since the
@@ -99,7 +102,7 @@ recorded here as an explicit self-check, not a rubber-stamped box.
 
 | # | File | Change |
 |---|------|--------|
-| B1 | `bootstrap/tests/test_presets.py` (extend) | **(a) Literal-text round-trip (R1/R4a's actual test coverage gap).** Extract the recipe's YAML fenced code block directly from the committed `docs/solo-legacy-recipe.md` (regex/split on the ```` ```yaml ```` fence, not a hand-copied duplicate string — so the recipe and the test can never silently drift apart, matching this session's own established discipline of extracting real values over duplicating them) and round-trip it through `_minimal_yaml_parse` → `expand_preset`, asserting the documented 8-module roster and zero staffability warnings. Run once with `sys.modules` or an import-guard forcing the no-PyYAML path (mirroring `TestParserParity`'s existing `_yaml_load` vs. `_minimal_yaml_parse` parity pattern, `test_presets.py:290-297`), so this is a genuine stdlib-only reproduction, not a PyYAML-masked pass (R1's root cause). **(b) The naive-override pin (R12b).** `{preset: solo-greenfield, age: legacy}` alone resolves to exactly the 6 default-on modules, no `legacy-agent`, no warning — with a code comment stating explicitly this pins **current** behavior pending the deferred finding-2 engine-fix follow-up (Alternative 4 in the proposal, out of this plan's scope), so a future implementer who lands that fix reads a red test here as expected, not a regression. |
+| B1 | `bootstrap/tests/test_presets.py` (extend) | **(a) Literal-text round-trip (R1/R4a's actual test coverage gap).** Extract the recipe's YAML directly from the committed `docs/solo-legacy-recipe.md` — **anchored, not a generic fence-split** (plan-review PR3: the doc plausibly contains more than one ```` ```yaml ```` block, e.g. a contrasting "why not the naive override" example alongside the canonical recipe). Chunk A places an explicit marker, `<!-- solo-legacy-recipe: canonical-profile -->`, immediately before the canonical block (matching this repo's existing marker-comment convention); Chunk B's extraction locates that marker and takes the fenced block immediately following it, asserting **exactly one** match and failing loudly (not silently picking a fence) if that invariant breaks — so the recipe and the test can never silently drift apart, and a future second YAML example can't be picked up by accident. Round-trip the extracted text through `_minimal_yaml_parse` → `expand_preset`, asserting the documented 8-module roster and zero staffability warnings. Run once with `sys.modules` or an import-guard forcing the no-PyYAML path (mirroring `TestParserParity`'s existing `_yaml_load` vs. `_minimal_yaml_parse` parity pattern, `test_presets.py:290-297`), so this is a genuine stdlib-only reproduction, not a PyYAML-masked pass (R1's root cause). **(b) The naive-override pin (R12b).** `{preset: solo-greenfield, age: legacy}` alone resolves to exactly the 6 default-on modules, no `legacy-agent`, no warning — with a code comment stating explicitly this pins **current** behavior pending the deferred finding-2 engine-fix follow-up (Alternative 4 in the proposal, out of this plan's scope), so a future implementer who lands that fix reads a red test here as expected, not a regression. |
 
 ### Chunk C — Part 2 (on-ramp reconciliation)
 
@@ -117,7 +120,7 @@ recorded here as an explicit self-check, not a rubber-stamped box.
 
 | # | File | Change |
 |---|------|--------|
-| E1 | `bootstrap/BOOTSTRAP.md` | Correct `:696-698` (Appendix B's YAML comment) and `:215` (the Act I-6 summary template) — both currently list only 3 of 6 default-on modules (`lifecycle-metrics`, `reflections`, `claim-check`) — to list all six, matching the live `_DEFAULT_ON_MODULES` tuple (`config.py:70-77`): add `fold-back-ledger`, `incident-trackers`, `documentation-plan`. **Doc-only** — explicitly does *not* touch `cli.py:348-353`'s missing-default-on-warning behavior (an engine change of a different risk class, deferred to its own proposal per R9's disposition). |
+| E1 | `bootstrap/BOOTSTRAP.md` | Correct `:701-705` (Appendix B's YAML comment — **not** `:696-698`; plan-review PR1 found the proposal's original citation drifted after an unrelated commit, `597c882`, inserted 7 lines earlier in the file — re-verify the exact range again at implementation time in case of further drift) and `:215` (the Act I-6 summary template, unaffected by the drift) — both currently list only 3 of 6 default-on modules (`lifecycle-metrics`, `reflections`, `claim-check`) — to list all six, matching the live `_DEFAULT_ON_MODULES` tuple (`config.py:70-77`): add `fold-back-ledger`, `incident-trackers`, `documentation-plan`. **Doc-only** — explicitly does *not* touch `cli.py:348-353`'s missing-default-on-warning behavior (an engine change of a different risk class, deferred to its own proposal per R9's disposition). |
 
 ## Acceptance criteria
 
@@ -164,7 +167,60 @@ gap — named, not silently assumed fixed).
 
 ## Review
 
-*Filled in after the fresh-context Internal plan-review subagent pass.*
+**Attribution / committer note.** Fresh-context subagent plan-review;
+the subagent cannot commit, so the author-session commits this section
+as a disclosed scribe, the accepted deviation model used throughout
+this repo's lifecycle.
+
+## Plan review -- Claude (Internal, fresh-context) -- 2026-07-31
+
+**Model**: Claude Sonnet 5
+
+**Steelman.** This is a careful translation of an unusually well-scrutinized proposal. The plan does real, independent work rather than rubber-stamping the accepted design: it re-derives the YAML-parse fix a third time (correctly), it tracks down the actual introducing commit and date for the escape-hatch doctrine text rather than asserting the "pre-self-hosting, no Decision" claim on faith, and it live-checks the `BOOTSTRAP.md` default-on-module drift against the current `_DEFAULT_ON_MODULES` tuple rather than trusting the proposal's now-stale snapshot. The chunk breakdown (A-E) is a faithful, complete mapping of the Revised proposal's five parts, and the acceptance criteria correctly pick up the one residual verification item both prior reviews flagged as unexercised instead of deferring it a third time.
+
+**Findings** (most significant first):
+
+* **[PR1] `BOOTSTRAP.md:696-698` no longer resolves to the module list it describes — an intervening, unrelated commit shifted it.** Current HEAD: lines 696-698 are `project_name`/`test_command`/blank; the actual 3-of-6 default-on module list is at **`:701-705`** (`:701-702` the comment header, `:703-705` the three module lines). Root cause: commit `597c882` (2026-07-22, an unrelated licensing plan) inserted a 7-line paragraph earlier in the file, shifting everything below down. The substantive claim (only 3 of 6 listed) is still true; only the line pointer drifted. `:215` is unaffected.
+  *Grounding:* `awk 'NR==694,NR==706' bootstrap/BOOTSTRAP.md` (confirms `:701-705`); `git log -S"Licensing of the installed files" --oneline -- bootstrap/BOOTSTRAP.md` → `597c882`.
+  *Suggested fix:* Update Chunk E's citation to `:701-705`; re-verify the exact range again at implementation time in case further unrelated commits land before then.
+
+* **[PR2] Chunk A's own escape-hatch text drops "or follow-up note" from the doctrine quote — inherited from the proposal's residual narrowing, uncaught by this plan's own Context section which quotes it correctly two sections earlier.** Doctrine (`doctrine/proposals.md:200-204`) reads *"...the commit **or follow-up note** should say why..."* The proposal's own Part 1 bullet (`:266`) and this plan's Chunk A row both give *"...the commit should say why..."* — dropping the clause. This is the same failure class this proposal was twice corrected on (R2, and the Response's own "cross-cutting note" flagging doctrine-quote drift as "a recurring, counted pattern") — a third instance, this time inside the plan itself, and one my own Context section (which quotes the clause correctly) should have caught against my own Chunk A row.
+  *Grounding:* `doctrine/proposals.md:200-204` (full text); `dev/proposals/archive/2026-07-11-claude-solo-legacy-adopter-path.md:266` (drops the clause); this plan's Chunk A row (same drop) vs. this plan's Context section, line 46 (quotes it correctly).
+  *Suggested fix:* When drafting Chunk A's and Chunk D's actual gloss text, use the plan's own Context-section quote or `doctrine/proposals.md:200-204` directly, not the proposal's Part 1 bullet — include "or follow-up note."
+
+* **[PR3] Chunk B's YAML-extraction design ("split on the fence") is unanchored and ambiguous if the finished recipe contains more than one fenced YAML block** — plausible, since the accepted design's "why not the naive `age: legacy` override alone" callout (Revised proposal Part 1) names the same 2-key composition Chunk B(b) tests, and could reasonably be rendered as its own contrasting ```yaml example. `test_presets.py`'s own existing tests use a hardcoded literal, not extraction; the real in-repo precedent for extract-not-duplicate is `test_quickstart_sequence.py:220-239`, which anchors its regex to unique surrounding prose (`\*\*(\d+)\*\* modules listed`), not a generic fence-split.
+  *Grounding:* `bootstrap/tests/test_presets.py:280-303` (hardcoded, not extracted); `bootstrap/tests/test_quickstart_sequence.py:220-239` (the real precedent, anchored extraction).
+  *Suggested fix:* Anchor the extraction explicitly — an HTML-comment marker immediately preceding the canonical block (matching this repo's existing `cairn:slot`/`claim-check-allow`-style marker convention), or assert exactly one ```yaml fence exists and fail loudly if that invariant breaks, rather than picking "the first" or "the last" one silently.
+
+**Coverage.** Independently reproduced: the YAML parse/module-count claims (8-module unconditional, 10-module both-conditionals), the R6 introducing-commit date (`9ad0fdb`, 2026-06-08, four days before self-hosting), the `BOOTSTRAP.md` drift's substance, all five chunks' fidelity to the accepted design, the AST-attestation baseline under the canonical interpreter (26/26, confirming the "before" state this plan's acceptance criteria requires stay identical), and all general gates. Confirmed the two unrelated same-day-adjacent commits (`91c96b4`, `3325a13`) don't overlap any of this plan's five target files. Out of reach by design (implementation-time checks): the recipe's actual prose quality, the real end-to-end no-PyYAML dogfood, and whether Chunk B's eventual extraction code handles the multi-fence risk PR3 names.
+
+**Verdict:** Proceed with the fixes above folded in. None is design-fatal or reopens the proposal's own settled scope — PR1 is a stale citation, PR2 is a one-clause doctrine-quote correction, PR3 is a concrete implementation note.
+
+### Sharpening -- Claude (author) -- 2026-07-31
+
+All three findings independently re-verified before disposing: re-ran
+`awk`/`git log -S` for PR1 (confirmed `:701-705`, commit `597c882`);
+re-read `doctrine/proposals.md:200-204` against both the proposal's
+`:266` and this plan's own Chunk A row for PR2 (confirmed the drop in
+both, and confirmed my own Context section already had it right); read
+`test_quickstart_sequence.py:220-239` for PR3 (confirmed it anchors to
+unique prose, not a generic fence-split).
+
+* **[PR1] accept.** Chunk E's citation corrected below from `:696-698`
+  to `:701-705`.
+* **[PR2] accept.** Chunk A's escape-hatch text corrected below to
+  include "or follow-up note," matching the plan's own Context section
+  and the doctrine verbatim.
+* **[PR3] accept.** Chunk B's row sharpened below: extraction anchored
+  to an explicit HTML-comment marker (`<!-- solo-legacy-recipe:
+  canonical-profile -->`) immediately preceding the canonical YAML
+  block, with the test asserting exactly one match and failing loudly
+  (not silently picking a fence) if that invariant breaks — Part 1's
+  own drafting (Chunk A) must place that marker when the recipe is
+  written, so this is a cross-chunk dependency now made explicit.
+
+**Status: open → executing.** All findings disposed; implementation
+begins next (Chunks A-E in sequence).
 
 ## Code review
 
