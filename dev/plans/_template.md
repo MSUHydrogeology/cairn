@@ -243,8 +243,10 @@ enforces):
 * **Quality gate** — `python scripts/quality_gate.py` (order-
   independence + vendor-neutrality + redundancy; `--sub neutrality`
   alone for a doctrine / template wording change).
-* **Write-time claim check** — `python scripts/claim_check.py <changed
-  .md files>` over the proposals / plans / docs the change authored.
+* **Write-time claim check** — `python scripts/claim_check.py <file>` over
+  each proposal / plan / doc the change authored. **One file per
+  invocation** — the checker takes a single path and exits 2 (usage) on
+  more, so loop rather than passing a list.
 
 Plan-specific gates (a security-lint budget, a doc-drift gate, the
 model-selection mapping check `python scripts/check_model_selection.py`)
