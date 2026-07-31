@@ -953,3 +953,80 @@ and confirmed it runs the sibling tool under `sys.executable` on a
 "Focused External re-read required," this Response does not self-certify
 the gate -- a genuinely different-agent-type or human re-read confirming
 ETR1-ETR5 is still needed before Chunk A begins.
+
+## Plan re-review -- Codex (External, different-agent-type; Security Review) -- 2026-07-31
+
+**Verdict: REVISE.** ETR2, ETR3, and ETR5 are closed. ETR1's authority split
+is corrected, but the replacement handoff still cannot describe the actual
+promotion delta or sequence; ETR4's response describes an edit that is absent
+from the operative plan. The security-posture adjudication itself remains
+unchanged, but the External plan gate does not clear.
+
+### Remaining findings
+
+* **[ETR1-R2] BLOCKING PROCESS -- the rewritten gate handoff still has an
+  impossible candidate/delta order.** The Sequence places G after A-F but
+  before H (`:165-176`), while G calls the post-A-F candidate `C` "this plan's
+  final implementation commit" (`:279-284`) even though H's self-host and
+  lockfile changes have not landed. G then requires the reported `P` -> `N`
+  delta to be exactly Chunk F's test-file rewrite, plus separately absorbed
+  inherited drift (`:296-301`). That is not what the re-anchor constructs:
+  `_construct_anchor_commit` creates `N = C + gate_manifest.json`, so `P` ->
+  `N` necessarily contains **every** `P` -> `C` change, not only the frozen
+  test. Executing the production helper in an isolated temporary git repo with
+  this plan's four implementation paths changed produced `P..N` containing
+  `templates/skills/_lib/lifecycle.py`, `tools/lifecycle.py`, `dev/.cairn/
+  cairn-lock.yml`, `bootstrap/tests/test_lifecycle_failsafe.py`, and
+  `bootstrap/tests/fixtures/gate_manifest.json`; only `C..N` was manifest-only.
+  The current text also leaves creation of a usable `P` until after A-F, rather
+  than making resolution of the inherited 234-file drift the explicit
+  pre-implementation prerequisite ETR1 required. **Satisfier:** split G into
+  (1) a Maintainer-controlled prerequisite that resolves the inherited drift
+  and establishes a concrete pre-implementation `P`, before Chunk A; and (2) a
+  post-H handoff in which `C` is the actual final implementation commit and the
+  reviewed expected `P` -> `N` delta names all four plan files plus the generated
+  gate manifest (and refuses unrelated intervening changes). The Maintainer then
+  authors `A` and runs `prepare`/`promote`, recording `P/A/C/N`. If a different
+  ordering is intended, spell out exactly which plan changes the separate
+  baseline transition absorbs; do not label an after-A-F commit final while H
+  remains pending or call a whole-candidate delta test-only.
+
+* **[ETR4-R2] SUBSTANTIVE SECURITY CONTRACT -- the claimed narrowing did not
+  reach A3.** The Response says A3 was narrowed from `("..", ".")` to `".."`
+  and that the docstring claim was narrowed (`:942-945`), but operative A3 still
+  specifies `any(part in ("..", ".") for part in interp.parts)` and promises
+  both shapes refuse while making the broad "no relative segments" docstring
+  true (`:181-188`). Canonical Python 3.13.13 again produced
+  `Path("/absolute/a/./python").parts == ("/", "absolute", "a", "python")`
+  and the proposed guard returned false; `..` remained visible. F5b correctly
+  adds the parent-traversal regression, so the missing correction is narrow but
+  still security-contract-bearing. **Satisfier:** change A3 itself to reject
+  `..` only, narrow its error/message and docstring promise to parent traversal,
+  and align D1's description. Preserve F5b.
+
+### Closed findings and security disposition
+
+* **ETR2 closed:** F0 now resets `_STALE_WARNED` before and after every test
+  node while preserving F3's within-node once-only check.
+* **ETR3 closed:** F7 now exercises a valid sibling tool, requires successful
+  identity output, and requires the swallowed resolver refusal on stderr.
+* **ETR5 closed:** F2 uses host-native absolute missing paths; the executable-
+  bit case and symlink cases carry the appropriate portability/capability
+  guards.
+
+The prior Security Review's risk acceptances remain in force: absent paths may
+warn and use the already-running interpreter; symlink inspection remains first;
+present-but-wrong shapes remain fatal; S2 and S3 remain explicit residuals. No
+new executable capability is introduced by either remaining plan defect. This
+round concerns accurate enforcement and trust-root ceremony, not a reopening of
+the accepted posture.
+
+### Verification
+
+Canonical Python 3.13.13 executed the real `_construct_anchor_commit` /
+`_diff_name_only` helpers in a temporary repository to verify the `P` -> `N`
+and `C` -> `N` sets above, and re-executed the `Path.parts` guard probe. The
+current repository still has 234 changed files against `refs/cairn/gate-anchor`;
+no authorization ref, promotion, production lifecycle flow, or native Windows
+behavior was exercised. Focused re-read required after ETR1-R2 and ETR4-R2 are
+dispositioned; Chunk A remains blocked.
