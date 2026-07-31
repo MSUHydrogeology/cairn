@@ -125,9 +125,13 @@ are not this plan's judgment calls to soften.
    everything from trusted git objects at the immutable anchor, executes
    **no candidate code**, and atomically advances one designated trusted ref
    via an expected-old compare-and-swap -- "the Maintainer's supervised act,"
-   per the tool's own module docstring. Chunk G below is scoped to `prepare`
-   only; `promote` is explicitly not this plan's or any implementing agent's
-   act.
+   per the tool's own module docstring. **Corrected at plan-review (ETR1,
+   External/Codex, blocking process):** Chunk G below is scoped to
+   identifying candidate `C` and the expected plan-only delta only --
+   neither `prepare` nor `promote` is this plan's or any implementing
+   agent's act; `refs/cairn/gate-authorization` does not exist today, and
+   `prepare` itself (not only `promote`) requires it, per direct execution
+   this session.
 
 **Everything else in the Revised proposal + Security Review + Decision is
 taken as settled** -- the C1-C4 code design, the S1 record correction's
@@ -167,7 +171,7 @@ C. C3 -- _intent_whoami surfaces the swallowed refusal                        [c
 D. C4 -- _REBIND_REMEDY appended to the fatal messages                        [commit pending]
 E. The S1 record correction -- resolver docstring rewritten verbatim to spec  [commit pending]
 F. Tests -- bootstrap/tests/test_lifecycle_failsafe.py (FROZEN, rewritten)    [commit pending]
-G. Supervised gate-manifest re-anchor: prepare (Maintainer promotes)          [parked]
+G. Gate-manifest re-anchor handoff: identify C + delta (Maintainer runs it)   [parked]
 H. Self-host sync: tools/lifecycle.py + cairn-lock.yml hash refresh          [commit pending]
 ```
 
@@ -215,18 +219,20 @@ plan-open** -- see below, committed in the same commit as this plan.
 
 | # | Change |
 |---|--------|
-| F1 | `test_tampered_local_env_refuses` (`:240-252` live): relocate the two absent-path values (`/usr/bin/python --foo`, `/no/such/python`) out; replace with a present-non-executable regular file and a present directory, materialized in the test body via a non-id-representable sentinel (module-level parametrize values cannot use the `repo` fixture, and `_make_exe` at `:255` is defined *below* the decorator). Pin `ids=["bad0","bad1","bad2","bad3"]` explicitly on the decorator -- R5's empirically-verified fix (an all-dict-except-one-string list silently drops a node from collection; the explicit `ids=` avoids depending on parametrize-value shape). |
-| F2 | New `test_stale_interpreter_path_degrades_with_guidance`, parametrized over the two relocated values: `rc == 0`, `(from fallback-stale)` on stdout, `_REBIND_REMEDY`'s text on stderr, **and — added at plan-review, PR6, Internal, substantive, since this is one of the Decision's five binding conditions and its coverage must be named, not inferred — assert the recorded (stale) interpreter path string, and `sys.executable`, both appear in the captured stderr warning text** (the `_warn_stale_once` message the Revised proposal's C1 builds separately from `_REBIND_REMEDY`; `_REBIND_REMEDY` alone never names either value). |
-| F3 | New `test_stale_warning_fires_once_per_process` (R4's count fix, not presence): a full `session-end --handoff` with an `intent.py` sibling present (monkeypatch `_sibling_tool`, per F6) and `CAIRN_AGENT`/`CAIRN_SESSION` **unset** (the real multi-call shape the `repo` fixture's `CAIRN_AGENT=owner` would otherwise mask) asserts **exactly one** occurrence of the remedy string in captured stderr, not merely its presence. |
+| F1 | `test_tampered_local_env_refuses` (`:240-252` live): relocate the two absent-path values (`/usr/bin/python --foo`, `/no/such/python`) out; replace with a present-non-executable regular file and a present directory, materialized in the test body via a non-id-representable sentinel (module-level parametrize values cannot use the `repo` fixture, and `_make_exe` at `:255` is defined *below* the decorator). Pin `ids=["bad0","bad1","bad2","bad3"]` explicitly on the decorator -- R5's empirically-verified fix (an all-dict-except-one-string list silently drops a node from collection; the explicit `ids=` avoids depending on parametrize-value shape). **The present-non-executable-file parametrize case is POSIX-only** (per ETR5 below) until S3 (Windows `os.access(X_OK)`) closes -- skip-guard it on non-POSIX hosts; the present-directory case is a portable `Path.is_dir()`-shaped refusal and needs no such guard. |
+| F2 | New `test_stale_interpreter_path_degrades_with_guidance`, parametrized over two values **materialized from the test's resolved `repo` path, not hardcoded POSIX literals** (**corrected at plan-review, ETR5, External/Codex, substantive portability**: the original literals `/usr/bin/python --foo` / `/no/such/python` are not absolute under `PureWindowsPath` -- executed directly, both report `is_absolute() == False` there -- so on Windows they would hit the "must be an absolute path" fatal branch instead of the accepted absent-path degrade, silently broadening the Windows gap beyond S3's own carried `X_OK` residual): a plain-absent value (`repo / "no" / "such" / "python"`, not created) and an appended-argument-shaped absent value (`f"{repo / 'python'} --foo"`, still absolute-prefixed by the OS-native resolved `repo` path, still never created). Both cases assert: `rc == 0`, `(from fallback-stale)` on stdout, `_REBIND_REMEDY`'s text on stderr, **and — added at plan-review, PR6, Internal, substantive, since this is one of the Decision's five binding conditions and its coverage must be named, not inferred — assert the recorded (stale) interpreter path string, and `sys.executable`, both appear in the captured stderr warning text** (the `_warn_stale_once` message the Revised proposal's C1 builds separately from `_REBIND_REMEDY`; `_REBIND_REMEDY` alone never names either value). Preserve explicit `ids=` on this parametrize too. |
+| F3 | New `test_stale_warning_fires_once_per_process` (R4's count fix, not presence): a full `session-end --handoff` with an `intent.py` sibling present (monkeypatch `_sibling_tool`, per F6) and `CAIRN_AGENT`/`CAIRN_SESSION` **unset** (the real multi-call shape the `repo` fixture's `CAIRN_AGENT=owner` would otherwise mask) asserts **exactly one** occurrence of the remedy string in captured stderr, not merely its presence -- via multiple resolver-reaching calls made *within this one test node* (relies on F0's fixture below only to guarantee a clean sentinel on entry, not to isolate multiple calls from each other). |
+| F0 | **New, per plan-review (ETR2, External/Codex, blocking):** an **autouse fixture resetting the module-level `_STALE_WARNED` sentinel before and after every test in this file.** The Revised proposal explicitly committed to this ("`_warn_stale_once` guards `_warn` with a module-level sentinel... The plan adds an autouse fixture clearing the sentinel between tests," archived proposal `:485-487`) but this plan's first draft omitted it. Without it, `test_lifecycle_failsafe.py` loads `lifecycle` once per test session (module-level `_load()`, `:52`), so the sentinel persists across test *nodes* — F2's parametrize cases, and F3/F4's own stale resolutions, would see the sentinel already tripped by an earlier node and silently observe zero warnings, either failing outright or (worse) tempting a weakened assertion to accommodate the leaked state. |
 | F4 | New `test_stale_binding_is_not_rewritten`: `local-env.json` bytes identical before/after a degraded run (R11's note: the resolver contains no write path today, so this is a forward regression guard against the explicitly-rejected auto-rebind alternative, not a guard against a present mechanism -- label it as such in the test docstring). |
 | F5 | New `test_uninspectable_interpreter_path_refuses`: an unreadable-parent (mode-000) path raises `LifecycleError` via the classifier's `except OSError`, root/non-POSIX skip-guarded. Valid against the *revised* guard only (R2(a)'s falsification was against the naive single-probe version). |
-| F6 | New `test_symlinked_parent_with_absent_leaf_still_refuses` and `test_symlinked_leaf_refuses` (R3): a real dir, a symlink to it, binding pointed at `<symlink>/python` where `python` does not exist → `LifecycleError`; and a symlinked leaf directly → `LifecycleError`. Pins the required probe ordering (symlink walk before absence classification) as an actual enforced test, not an asserted-but-untested invariant. |
-| F7 | New `test_tampered_binding_warns_in_intent_whoami` (C3): a present-but-wrong binding produces a warning on stderr instead of silence; `_intent_whoami` still returns non-fatally (`None`). Requires monkeypatching `_sibling_tool` per the existing pattern at `:297-300` (R4c) -- `_intent_whoami` returns early at `:193`-ish without it. |
+| F5b | **New, per plan-review (ETR4, External/Codex, substantive security contract):** `test_parent_traversal_segment_refuses` -- a binding containing a `..` component (e.g. `str(repo / "a" / ".." / "python")`) raises `LifecycleError` **before** reaching `_probe_interpreter`, the direct regression the narrowed A3 guard needs and Chunk F's first draft never named. |
+| F6 | New `test_symlinked_parent_with_absent_leaf_still_refuses` and `test_symlinked_leaf_refuses` (R3): a real dir, a symlink to it, binding pointed at `<symlink>/python` where `python` does not exist → `LifecycleError`; and a symlinked leaf directly → `LifecycleError`. Pins the required probe ordering (symlink walk before absence classification) as an actual enforced test, not an asserted-but-untested invariant. **Capability-skip where the host cannot create symlinks** (per ETR5's portability note), rather than assume POSIX. |
+| F7 | New `test_tampered_binding_warns_in_intent_whoami` (C3). **Corrected at plan-review (ETR3, External/Codex, substantive):** this plan's first draft asserted `_intent_whoami` returns `None` on a present-but-wrong binding -- **wrong**: executed live, with `_resolve_interpreter` forced to raise and a valid, working fake `intent.py` sibling present, the C3 fallback runs that sibling under `sys.executable` and returns its real output (a `codex-12345678`-shaped identity string in the reviewer's probe), not `None`. A `None` assertion can only pass by making the sibling itself fail or emit nothing -- which would not exercise the fail-open path the Security Review actually accepted. Corrected: use a valid fake `intent.py` (the existing `:297-300` monkeypatch pattern -- `_intent_whoami` returns early without it), assert the fallback's expected identity string is returned (not `None`), and assert stderr contains the original resolver refusal message (C3's actual job: surface the refusal, then still fall back successfully). Optionally keep a second, separate failing-sibling case asserting `None` if useful, but it is not the primary regression. |
 | F8 | New resolver source-scan test in the spirit of `bootstrap/tests/test_lifecycle_contract.py:139-148` (which scans the *planner*, `lifecycle_planner.py` -- a pattern to copy, not an existing guard covering this module, per R11's precision correction): assert the resolver's source contains no write primitive against the state directory. |
 | F9 | Module docstring (`:16-19`) reworded from "a tampered config refuses before running anything" to the two-branch posture. |
 | F10 | Must stay green, byte-unchanged in assertion shape: `test_interpreter_resolved_from_local_env_and_reported`, `test_absent_local_env_uses_fallback_with_guidance`, `test_space_in_interpreter_path_accepted`, `test_extra_key_in_local_env_refused`. |
 
-### Chunk G -- supervised gate-manifest re-anchor (Maintainer-gated; `prepare` only)
+### Chunk G -- supervised gate-manifest re-anchor (Maintainer-only; a handoff, not an implementing-agent step)
 
 **Not the AST-baseline direct-edit pattern** used on every other plan this
 session -- `test_lifecycle_failsafe.py` is a `bootstrap/tests/` FROZEN file
@@ -235,14 +241,64 @@ structurally different control from `scaffold_ast_baseline.json`'s symbol
 digests (which this proposal never touches -- no `bootstrap/_scaffold/` edit
 means no AST re-anchor at all, confirmed by the proposal and re-confirmed
 this session). The applicable mechanism is `bootstrap/tests/
-_gate_reanchor.py`'s two-stage contract: `gather_evidence` (Stage A,
-executable, non-authoritative, isolated temp tree) then `promote_data_only`
-(Stage B, data-only, authoritative, git-plumbing CAS ref advance). This
-implementing agent runs **`prepare`** only -- Stage A+B through data-only
-validation, no ref advance -- once Chunks A-F land and their real diff is
-known. **`promote`** (the ref-advance CAS) is explicitly the Maintainer's
-supervised act per the tool's own module docstring; this plan does not
-attempt it.
+_gate_reanchor.py` + `bootstrap/REANCHOR_RUNBOOK.md`'s Phase 4 ceremony.
+
+**Substantially rewritten at plan-review (ETR1, External/Codex, blocking
+process).** This plan's first draft scoped the implementing agent to run
+`prepare` only, with `promote` left to the Maintainer. That scoping is
+**both impossible and unauthorized as written**, confirmed by execution
+this session:
+
+* **`prepare` cannot run today.** `REANCHOR_RUNBOOK.md:93-139`'s Phase 4 has
+  **three** steps, not two: (1) the Maintainer authors the authorization
+  anchor `A` and points the fixed ref `refs/cairn/gate-authorization` at it;
+  (2) `prepare` (dry-run, full Stage A+B validation, no CAS); (3) `promote`
+  (the CAS). Step 2's "Stage B validation" is exactly what resolves and
+  checks the authorization at `A` — so `prepare` **requires** step 1 to have
+  already happened, not just `promote`. Executed this session:
+  `refs/cairn/gate-authorization` does not exist (`git show-ref` finds only
+  `refs/cairn/gate-anchor`), and running the plan's own proposed command
+  (`_gate_reanchor.py prepare --repo . --candidate-ref HEAD`) exits with an
+  **uncaught `ValueError`** resolving that ref, before Stage A even gathers
+  evidence.
+* **This is not a narrow, plan-scoped re-anchor right now, even once `A`
+  exists.** Executed this session: `git diff --stat refs/cairn/gate-anchor
+  HEAD` shows **234 files changed**; `bootstrap/tests/_gate_manifest.py`'s
+  `produce()` against the live tree shows **54 changed pinned frozen files
+  + 14 newly frozen files**, with `collection.node_count` moving **1404 →
+  1446** — a large, unrelated, already-accumulated drift against the
+  anchor, entirely independent of this plan's own five-function... *sorry,*
+  one-test-file edit. Attempting `prepare`/`promote` today, even correctly
+  authorized, would construct and (on `promote`) advance the trust anchor
+  past **all** of that inherited scope, not just this plan's change — a
+  cumulative delta nobody has reviewed as a unit.
+
+**Corrected design — a handoff, not an implementing-agent act, at either
+step:**
+
+1. The implementing agent's job, once Chunks A-F land, is limited to:
+   identifying the candidate commit `C` (this plan's final implementation
+   commit), and recording the **expected plan-only delta** — precisely
+   Chunk F's test-file changes, nothing else — as a clearly isolated
+   description for the Maintainer to review against whatever `A`/`P` state
+   exists when they act.
+2. **The Maintainer** — not this plan, not any implementing agent —
+   decides how to handle the pre-existing 234-file / 54+14-frozen-file /
+   1404→1446-collection drift against `refs/cairn/gate-anchor` (a
+   Maintainer-controlled gate-baseline transition, reviewed and recorded on
+   its own, separately from this plan; or explicit authorization to absorb
+   that cumulative scope alongside this plan's own change — the Maintainer's
+   call, not this plan's to make). Once a concrete new `P` exists (whatever
+   that resolution looks like), the Maintainer authors the authorization
+   anchor `A` (Phase 4 step 1), then runs **both** `prepare` (step 2) and
+   `promote` (step 3) themselves, recording the resulting `P`/`A`/`C`/`N`
+   in this plan's own eventual Lasting-truth migration section.
+3. **The acceptance criterion is the Maintainer-recorded result** — a
+   completed `promote` whose reported delta from `P` to `N` is exactly
+   Chunk F's test-file change (plus whatever the Maintainer's separate
+   gate-baseline-transition decision absorbed, disclosed as its own line
+   item) — **not** an implementing-agent `prepare` run, which no current
+   ref or code path supports as this plan first proposed it.
 
 ### Chunk H -- self-host sync
 
@@ -287,9 +343,15 @@ F6, and by Chunk A's `_probe_interpreter` structure itself.
 * **S1 record correction present** -- Chunk E1's docstring text is checked
   against the Decision's verbatim correction, not merely "some correction
   landed."
-* **Gate-manifest re-anchor** -- Chunk G's `prepare` step succeeds through
-  data-only validation (no HOLD); `promote` is explicitly deferred to the
-  Maintainer.
+* **Gate-manifest re-anchor** -- **corrected at plan-review (ETR1,
+  External/Codex, blocking process)**: the criterion is the **Maintainer's
+  own recorded `promote` result** (`P`/`A`/`C`/`N`, per Chunk G's rewritten
+  handoff design), not an implementing-agent `prepare` run -- no current ref
+  or code path supports the original "implementer runs `prepare`" framing
+  (`refs/cairn/gate-authorization` does not exist today, and the live tree
+  carries a 234-file / 54+14-frozen-file drift against `refs/cairn/
+  gate-anchor` unrelated to this plan). This plan's own implementation
+  stops at identifying candidate `C` and the expected plan-only delta.
 * **Self-host verification** -- H3's before/after `verify_integrity.py`
   runs, both scoped to the `tools/lifecycle.py` record (no `tools/
   lifecycle.py` line in either run's output) -- **not** whole-tree-clean, per
@@ -319,11 +381,15 @@ a normal reflection-only `session-end` (recovery: one line, trivially
 reverted); the self-host sync causing unanticipated lockfile churn
 (recovery: revert the `tools/lifecycle.py` sync, land the template change
 alone, documented divergence until the next full upgrade pass). Add one
-from this plan's own preparation: **`_gate_reanchor.py prepare` reports a
-diff wider than the test file's own intended rewrite** -- the plan's own
-edits touched something unintended; do not hand off `promote` until the
-Stage A evidence bundle's diff matches exactly what Chunks A-F actually
-changed.
+from this plan's own preparation, **corrected at plan-review (ETR1,
+External/Codex, blocking process)** to match Chunk G's rewritten handoff:
+**the Maintainer's `prepare`/`promote` run reports a diff (`P`→`N`) wider
+than Chunk F's own intended test rewrite plus whatever separately-decided
+gate-baseline-transition scope the Maintainer explicitly absorbed** -- the
+plan's own edits touched something unintended; the Maintainer does not
+run `promote` until the evidence bundle's diff matches exactly what
+Chunks A-F changed, plus that disclosed, separately-reviewed baseline
+scope, nothing else.
 
 ## Review
 
