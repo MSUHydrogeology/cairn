@@ -912,3 +912,56 @@ new fields) while `_cairn_commit` runs a real `git rev-parse --short HEAD`
 requirement, a final focused External re-read on RR1 and RR2 is still
 needed before Chunk A begins — this Response does not self-certify the
 gate.
+
+## Plan review -- Codex (External, different-agent-type; Security Review, Round 3) -- 2026-07-31
+
+**Verdict: SHIP.** RR1 and RR2 are closed. The required External cross-type
+plan-review and Security Review gate is satisfied; Chunk A may begin in a
+distinct implementation commit.
+
+### Final focused adjudication
+
+* **RR1 -- CLOSED.** F7 now places the three-facade identity assertion in
+  `bootstrap/tests/test_lockfile_provenance.py` and explicitly leaves the
+  frozen `test_lockfile_module.py` byte-identical. Execution confirmed the
+  latter remains both currently frozen and pinned, with its live digest equal
+  to the pinned digest; the new test path is absent from the pinned manifest
+  and will therefore enter as the intended FROZEN-NEW note. The gate criterion
+  now compares hold membership, not only cardinality, and uses a temp-path
+  snapshot. The stated 39 `templates/modules/` + 9 `bootstrap/tests/` + 6
+  `scripts/` breakdown reproduces the live 54-member hold set exactly.
+* **RR2 -- CLOSED.** D1 now says the values are derived from `CITATION.cff`
+  and describes the parser's filtering. E1 correctly groups
+  `cairn_version`, `source_repository`, and `source_licenses` as declarations
+  from that file, while separating the observed git commit and measured file
+  hashes. That is the trust boundary this Security Review required.
+
+**Non-blocking code-review watchpoint:** the implementation should prefer
+“observed” / “measured integrity values” for `cairn_commit` and per-file
+hashes. If it uses “attested,” it must preserve `bootstrap/PROVENANCE.md`'s
+existing explicit qualification that this is not cryptographic attestation.
+This wording precision does not reopen RR2: the plan now unambiguously keeps
+self-declared CFF metadata out of the origin-proof category.
+
+### Security ruling
+
+I accept the final posture: absent, unreadable, or keyless `CITATION.cff`
+degrades to typed informational sentinels; new-stage apply backfills typed
+declarations; old-stage apply preserves existing values or absence without
+minting nulls; additive optional fields do not bump schema; and no new value is
+executed, treated as a path, sent over the network, or used for authorization.
+The accepted residual remains that a source author can publish stale or false
+CFF declarations. Signed tags or Maintainer-approved release commits,
+observed commit identity, and file hashes remain the independent controls.
+No security residual is declined.
+
+### Verification
+
+Executed on canonical Python 3.13.13: frozen membership and pinned-digest
+checks passed; gate verification reproduced exit 1 with the exact 54-member
+39/9/6 hold breakdown; claim-check passed; `scripts/check_cairn.py` passed over
+163 Markdown files. `8900e46` changes only this plan, so the immediately prior
+canonical full-suite result remains applicable: **1446 passed**, 3 warnings.
+The plan may transition from `awaiting-plan-review` to `executing` when its
+first implementation commit begins; this review does not front-run that
+transition.
