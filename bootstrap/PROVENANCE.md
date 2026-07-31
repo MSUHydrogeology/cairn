@@ -75,9 +75,14 @@ Provenance has two sides. **Source-side** is the above: *which Cairn to
 trust* (a named, tagged release). **Install-side** is the machine
 lockfile `dev/.cairn/cairn-lock.yml` (see [`UPGRADE.md`](UPGRADE.md)) that the
 scaffold writes *into the adopter's tree*: *which Cairn this tree actually
-got* — the exact `cairn_version` + `cairn_commit`, the resolved profile,
-and the per-file source / hash. It makes "which Cairn is this tree?"
-answerable from the tree itself, not from a human-maintained manifest that
-can lag, and it is the ancestor anchor the `upgrade` 3-way merge reads. A
-clean install from a tagged release (source-side) pinned by a lockfile
-(install-side) is the fully-provenanced state.
+got* — the exact `cairn_commit`, the resolved profile, and the per-file
+source / hash, all independently verifiable (the commit is `git
+rev-parse`'d, the hashes are measured); plus `cairn_version` and, as of
+this field's introduction, `source_repository` / `source_licenses` —
+**declared**, not attested, values read from the source tree's
+`CITATION.cff` (see `UPGRADE.md` > "Adding a lockfile field without
+bumping the schema" for the full distinction). It makes "which Cairn is
+this tree?" answerable from the tree itself, not from a human-maintained
+manifest that can lag, and it is the ancestor anchor the `upgrade` 3-way
+merge reads. A clean install from a tagged release (source-side) pinned
+by a lockfile (install-side) is the fully-provenanced state.
