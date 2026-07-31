@@ -1003,3 +1003,245 @@ canonical full-suite result remains applicable: **1446 passed**, 3 warnings.
 The plan may transition from `awaiting-plan-review` to `executing` when its
 first implementation commit begins; this review does not front-run that
 transition.
+
+## Code review -- Claude (sub-agent, fresh context, not the implementer) -- 2026-07-31
+
+**Verdict: Accept.** Cold read of the seven implementation commits
+(`02f6ee1` Chunk A through `3cb85ca` Chunk G), independent of the plan's own
+drafting/review history. Every commit matches the plan as finally revised
+(post Round-3 SHIP) chunk-for-chunk, with no drift found against the row
+descriptions in Chunks A-G. The EPR1 null-write bug the External review
+found and required fixed is independently re-verified fixed by reading
+`_apply_upgrade` directly and tracing the logic, not by trusting the test
+file's mocked scenario. Full test suite is green except the two anticipated,
+pre-existing `test_ast_attest.py` failures, which are exactly the 5-CHANGED
+delta Chunk G's Maintainer-gated re-anchor is staged to correct -- not a
+defect. No BLOCKING or SUBSTANTIVE findings. Two MINOR, non-blocking
+observations below (CR1, CR2); neither is a regression this plan
+introduced, and neither requires action before the plan archives.
+
+### Chunk-by-chunk diff check (item 1)
+
+Read every commit's diff (`git show <hash>`) against its row in Chunks A-G
+and re-verified the line-scope claims in each commit's own verify note
+(e.g. "4 insertions" for B1/B2, "no other file touched" for Chunk F) via
+`git show --stat` across all seven commits plus the plan-open commit
+(`c7bc70a`). Everything lines up exactly:
+
+* **A1-A3**: `_cairn_provenance` lands beside `_cairn_version`/`_cairn_commit`
+  in `lockfile.py`, the `_LOCK_SCHEMA` `#:` pointer comment (AST-invisible,
+  confirmed by the commit's own "0 CHANGED, +1 NEW" claim), and the facade
+  re-export in `__init__.py` beside the existing pair -- exactly as A1-A3
+  specify.
+* **B1/B2**: both constructing writers (`write_install_lockfile`,
+  `_cmd_init_lock`) gain the two fields from `_cairn_provenance(cairn_root)`
+  beside `cairn_version`/`cairn_commit`, with the explicit `from .lockfile
+  import (...)` edit named in both commit messages, matching EPR5's
+  requirement.
+* **C1/C2**: `_write_stage`'s meta dict gains `new_source_repository`/
+  `new_source_licenses` non-ref-aware, beside `new_version` -- and C2 is the
+  **conditional-presence** form (`if "new_source_repository" in meta: ...`),
+  not the falsified `.get()`-chain. See the dedicated trace below (item 2).
+* **D1/D2**: `UPGRADE.md` gains the new subsection with the "declared, not
+  attested" language (not "copied verbatim" -- RR2's fix is present), and
+  `_emit_lock_yaml`'s header gains the pointer line using "declared" and
+  correctly scoping `UPGRADE.md` as a Cairn-source-repository reference.
+* **E1**: `PROVENANCE.md`'s enumeration amendment groups
+  `source_repository`/`source_licenses` with `cairn_version` as
+  **declared**, distinct from `cairn_commit`/per-file-hash as **attested**
+  -- the RR2-corrected grouping, not the earlier "proof-grade" draft.
+* **F1-F7**: the new, non-frozen `bootstrap/tests/test_lockfile_provenance.py`
+  has exactly 13 nodes (all pass, see item 3), does not touch
+  `test_lockfile_module.py` or `test_upgrade.py` (`git show 8e91200 --stat`
+  shows only the one new file), and F7's facade-identity assertion lands in
+  the new file per RR1's fix -- confirmed `test_lockfile_module.py`'s last
+  touching commit (`305c1e1`) predates this plan entirely and its `_MOVED`
+  tuple still does not name `_cairn_provenance`.
+* **Chunk G**: touches only the plan file itself (prose, dry-run digests,
+  Maintainer-authorization record) -- no code change, as the row promises.
+
+No drift found anywhere in Chunks A-G.
+
+### CR-numbered findings
+
+No BLOCKING or SUBSTANTIVE findings. Two MINOR, informational-only
+observations, neither requiring a fix:
+
+**CR1 [MINOR, non-blocking].** `_cairn_provenance`'s `repository-code:`
+regex (`lockfile.py`) assumes a single-line scalar value, identical in
+shape to `_cairn_version`'s pre-existing `version:` regex
+(`lockfile.py:106-114`, `r'\s*version\s*:\s*"?([^"\s]+)"?\s*$'` vs. the new
+`r'\s*repository-code\s*:\s*"?([^"\s]+)"?\s*$'`). A YAML folded/literal
+block-scalar form (`repository-code: >-` followed by an indented
+continuation line) would capture the literal `">-"` token as the
+"repository" value instead of degrading to `"unknown"`. This is not a
+regression introduced by this plan -- it is inherited verbatim from
+`_cairn_version`'s already-shipped pattern, does not affect Cairn's actual
+`CITATION.cff` (a single-line quoted value), and was outside this plan's
+scope (P1 = "the exact parse contract from R12a," which addresses the
+`license:`-block boundary, not `repository-code:`'s value shape). No fix
+suggested; noted per the task's request to check parser edge cases the
+reviews didn't specifically cover.
+
+**CR2 [MINOR, non-blocking].** `_cairn_provenance` catches `OSError` around
+`cff.read_text(encoding="utf-8")` but not `UnicodeDecodeError` (a
+`ValueError` subclass raised on invalid UTF-8 bytes), so a `CITATION.cff`
+with non-UTF-8 content would raise past the "never able to fail an install"
+framing in the function's own docstring. In practice this is *more*
+defensive than the precedent it says it matches: `_cairn_version`
+(`lockfile.py:106-114`) has **no** exception handling at all around the
+identical `read_text` call, so this is an existing, lower-severity risk
+profile carried forward, not something this plan's edits made worse.
+`CITATION.cff` is a maintainer-authored file in a trusted source tree (not
+adopter- or attacker-controlled input), so the practical risk is
+negligible. No fix required; noted for completeness.
+
+### EPR1 re-verification, traced independently (item 2)
+
+Read `bootstrap/_scaffold/upgrade.py`'s `_apply_upgrade` directly
+(`:1950-1964`), not the test file. The lock advance:
+
+```python
+new_lock = dict(lock)
+new_lock["cairn_version"] = meta.get("new_version", lock.get("cairn_version"))
+new_lock["cairn_commit"] = meta.get("new_commit", lock.get("cairn_commit"))
+...
+if "new_source_repository" in meta:
+    new_lock["source_repository"] = meta["new_source_repository"]
+if "new_source_licenses" in meta:
+    new_lock["source_licenses"] = meta["new_source_licenses"]
+```
+
+Traced the exact old-stage + pre-provenance-lock case EPR1 found broken:
+`lock` starts without `source_repository`/`source_licenses` (pre-provenance)
+-> `new_lock = dict(lock)` carries that same absence -> `meta` (an old
+stage) has no `new_source_repository`/`new_source_licenses` keys -> both
+`if "new_source_*" in meta` guards are `False` -> neither key is ever
+touched on `new_lock`. The keys stay **absent**, not `null`; `json.dumps`
+(`_emit_lock_yaml`, `lockfile.py:237-252`) omits absent keys entirely
+rather than emitting `null` for them. This is exactly the fixed behavior
+Round 2/Round 3 of the External review confirmed, and it is what the
+shipped code (not just the mocked test) actually does. Independently
+re-ran `test_apply_preserves_absence_from_old_stage_no_null` and confirmed
+its own raw-string assertions (`'"source_repository": null' not in raw`)
+pass against a real `--stage`/`--apply` cycle through the CLI, not a mock.
+**EPR1 is genuinely fixed in the shipped code.**
+
+### Test suite (item 3)
+
+`python -m pytest bootstrap/tests/test_lockfile_provenance.py -v` under
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (canonical, Python
+3.13.13): **13 passed, 0 failed** -- all 13 nodes green, matching Chunk F's
+own count claim.
+
+Full suite, same interpreter: `python -m pytest bootstrap/tests -q` ->
+**2 failed, 1457 passed, 0 skipped** (206-221s across two runs). The 2
+failures are exactly `test_ast_attest.py::test_committed_baseline_
+accounted_for_across_the_engine_package` and `::test_ast_gate_passes_
+over_the_full_scaffold_module_set`, both reporting **exactly** the 5
+CHANGED functions the plan names (`_apply_upgrade`, `_cmd_init_lock`,
+`_emit_lock_yaml`, `_write_stage`, `write_install_lockfile`), 0 MISSING, 0
+DUPLICATE -- matching Chunk G's own falsifiable target precisely. 1457 =
+1446 (pre-plan baseline) + 13 - 2... no: 1446 baseline + 13 new nodes = 1459
+collected, of which 2 (the pre-existing-now-CHANGED AST nodes) fail and
+1457 pass -- exactly the arithmetic Chunk F's own commit message states.
+This is the expected, disclosed, non-defect state pending Chunk G's
+Maintainer-run re-anchor.
+
+### `_cairn_provenance` parser correctness (item 4)
+
+Traced the license-block scan against Cairn's real `CITATION.cff`
+byte-for-byte (`repository-code:` single-line quoted value; `license:`
+immediately followed by two `- ` items, then `keywords:` with 6 of its own
+`- ` items). Confirmed the scan appends `CC-BY-4.0` and `MIT`, then breaks
+at the first non-`- `-prefixed line (`keywords:`) via the inner loop's
+`break`-on-no-match, and the outer loop's unconditional `break` after the
+`license:` line is found ensures only the first `license:` occurrence is
+ever consulted. Ran the real file through `_cairn_provenance` directly (not
+just via the test) and got `("https://github.com/MSUHydrogeology/cairn-
+scientist-ai-teams", ["CC-BY-4.0", "MIT"])`, matching both the test's
+assertion and the plan's stated regression case exactly.
+
+### Additional checks (items 5-7)
+
+* **Error handling / edge cases**: see CR1/CR2 above. CRLF line endings
+  are not a live concern -- `Path.read_text()` performs universal-newline
+  translation by default (no explicit `newline=""`), so `.splitlines()`
+  never sees stray `\r`.
+* **Sensitive-data leak**: `source_repository`/`source_licenses` are
+  non-secret repository metadata (a public repo URL and SPDX license
+  identifiers) read from the source tree's own `CITATION.cff`, written into
+  the adopter's own lockfile in the adopter's own tree. `_refuse_secret_tokens`
+  governs the unrelated `tokens` dict; the new fields are outside its scope
+  and outside any plausible secret-leak surface.
+* **`--finalize` test**: read `upgrade.py:1710-1716` directly -- the
+  finalize path mutates the `lock` dict it read via `read_lockfile` in
+  place (advancing hashes) and re-serializes the same dict with
+  `_emit_lock_yaml(lock)`; it never reconstructs the dict, so an absent or
+  present `source_repository`/`source_licenses` passes through unchanged by
+  construction. `test_finalize_preserves_but_does_not_backfill_provenance`
+  matches this behavior and passes. Grepped all five `_emit_lock_yaml(`
+  call sites (`install.py:1649`, `upgrade.py:1214/1315/1716/2016`) and
+  confirmed the two "preserve-by-copy" writers (`:1315`, `:1716`) both
+  mutate an already-read `lock` dict rather than constructing a fresh one,
+  consistent with the plan's five-writer inventory (R3, taken as settled).
+* **Facade-identity test**: `test_cairn_provenance_single_identity_across_
+  consumers` imports `bootstrap._scaffold.lockfile` as `LK`,
+  `bootstrap._scaffold` as `engine`, and `bootstrap.scaffold` as the facade,
+  then asserts `engine._cairn_provenance is LK._cairn_provenance is
+  facade._cairn_provenance`. It asserts exactly what it claims (single
+  object identity across all three consumers), matching the pattern
+  `test_lockfile_module.py`'s own frozen identity test uses for the other
+  lockfile exports.
+* **Reanchor script not committed**: `git status --short` is clean of it;
+  `git log --all --oneline -- '*reanchor_lockfile*'` returns nothing;
+  `find . -iname '*reanchor_lockfile_provenance*'` (excluding `.git/`)
+  finds nothing; `git grep -l "reanchor_lockfile_provenance_fields"`
+  finds only the one prose reference inside the plan file itself. The
+  script genuinely never entered the repo, tracked or untracked, matching
+  Chunk G's "this session's scratchpad, not committed" claim exactly.
+
+### Security-sensitive check (item 6)
+
+Grepped the whole repo for every live `source_repository`/`source_licenses`
+reference outside this plan file and the new test file
+(`bootstrap/PROVENANCE.md`, `bootstrap/UPGRADE.md`,
+`bootstrap/_scaffold/{install,upgrade,lockfile}.py`). Every current-tree
+occurrence uses "declared" language and groups the two new fields (plus
+`cairn_version`) apart from `cairn_commit`/per-file-hash as the attested
+set -- consistent with RR2's fix and the Security Review's accepted
+boundary. No shipped doc or code overclaims the fields as attested/verified
+provenance. (Historical proposal/review documents under
+`dev/proposals/archive/` and `dev/reviews/` still use the pre-Decision
+field name `licenses` and pre-RR2 "proof-grade" framing in places, but
+those are append-only deliberation records describing what reviewers wrote
+*at the time*, not live documentation -- not a finding.)
+
+### Acceptance-criteria spot checks run independently
+
+* `python bootstrap/tests/_gate_manifest.py verify --no-collect`: exit 1,
+  **54** `FROZEN-MODIFIED` holds (unchanged set), the new test file appears
+  only as `note: FROZEN-NEW: bootstrap/tests/test_lockfile_provenance.py`,
+  and neither `test_lockfile_module.py` nor `test_upgrade.py` appears in
+  the hold list -- exactly the delta-based criterion the plan (post-RR1)
+  requires.
+* `python bootstrap/scaffold.py --manifest`: 96 total lines / **95** data
+  rows -- unchanged from the pre-edit baseline, as expected (fields are
+  lockfile-only, manifest-independent).
+* `python -m pytest bootstrap/tests/test_security_lint.py`: 4 passed.
+* `python scripts/claim_check.py` clean over the plan file, `UPGRADE.md`,
+  and `PROVENANCE.md`.
+* Real scratch install (`_install` harness into a temp target) +
+  `python bootstrap/verify_integrity.py --target <scratch>`: exit 0, "55
+  recorded file(s) match," with `source_repository`/`source_licenses`
+  present and correct in the written lockfile -- confirming the smoke test
+  end to end, not just via unit assertions.
+
+**Nothing else was found wrong.** This is a clean, faithful implementation
+of an unusually heavily-reviewed plan; the three-round External review
+process visibly did its job -- the specific failure modes it found
+(EPR1's null write, EPR2/RR2's attested-language overclaim, RR1's frozen-
+file violation) are all genuinely absent from the shipped code, independently
+re-confirmed here rather than taken on the plan's word.
+
+This section is append-only once written.
