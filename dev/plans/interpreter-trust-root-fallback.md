@@ -179,9 +179,11 @@ E.  The S1 record correction -- resolver docstring rewritten verbatim to spec [c
 F.  Tests -- bootstrap/tests/test_lifecycle_failsafe.py (FROZEN, rewritten)  [commit pending]
 H.  Self-host sync: tools/lifecycle.py + cairn-lock.yml hash refresh         [commit pending]
 G1. [Maintainer handoff, AFTER Chunk H] C = final commit, expected P->N      [parked]
-    delta = all four plan files + generated gate_manifest.json
+    delta = all four code files + this plan document + generated
+    gate_manifest.json (five files, not four -- ETR1-R3)
 ```
-**Corrected at plan-review (ETR1-R2, External/Codex, blocking process):**
+**Corrected at plan-review (ETR1-R2, External/Codex, blocking process;
+file count corrected again at ETR1-R3):**
 G0 now precedes Chunk A (a precondition, not parallel work) and G1 now
 follows Chunk H (its candidate `C` cannot be "the final implementation
 commit" while H is still pending) -- the prior draft placed the whole re-
@@ -304,14 +306,27 @@ identifying the actual final implementation commit as candidate `C`, and
 stating the **reviewed expected `P`→`N` delta** correctly this time --
 **all four** plan-touched files (`templates/skills/_lib/lifecycle.py`,
 `tools/lifecycle.py`, `dev/.cairn/cairn-lock.yml`, `bootstrap/tests/
-test_lifecycle_failsafe.py`) **plus** the generated `gate_manifest.json`,
-refusing (flagging to the Maintainer, not silently absorbing) any unrelated
-intervening change. The Maintainer then authors the authorization anchor `A`
-(Phase 4 step 1) against G0's established `P`, and runs **both** `prepare`
-(step 2) and `promote` (step 3) themselves, recording the resulting
-`P`/`A`/`C`/`N` in this plan's own eventual Lasting-truth migration section.
-**The acceptance criterion is this Maintainer-recorded result** -- not an
-implementing-agent `prepare` run, and not a delta claim scoped to one chunk
+test_lifecycle_failsafe.py`) **plus this plan document itself**
+(`dev/plans/interpreter-trust-root-fallback.md`) **plus** the generated
+`gate_manifest.json` -- **five files, not four** (**corrected at
+plan-review, ETR1-R3, External/Codex, blocking process**: a plan is a
+mutable execution artifact per Cairn's own template, and each
+implementation commit updates its Status field in place as chunks land --
+the sibling `lockfile-provenance-fields` plan's own Chunk A commit
+(`02f6ee1`) is the live proof, its diff naming the plan file alongside the
+code for exactly this reason. G1's delta bounds the plan file's *allowed*
+mutation to that normal execution-state progression (`Status:` transitions
+and, if any landed, per-chunk `[commit pending]`-style Sequence notes) --
+**not** a review or Sharpening/Response section, which stay append-only
+throughout). Refusing (flagging to the Maintainer, not silently absorbing)
+any unrelated intervening change, including an out-of-bound mutation to
+the plan file itself. The Maintainer then authors the authorization anchor
+`A` (Phase 4 step 1) against G0's established `P`, and runs **both**
+`prepare` (step 2) and `promote` (step 3) themselves, recording the
+resulting `P`/`A`/`C`/`N` in this plan's own eventual Lasting-truth
+migration section. **The acceptance criterion is this Maintainer-recorded
+result** -- not an implementing-agent `prepare` run, and not a delta claim
+scoped to one chunk
 when the mechanism itself always constructs the whole-candidate diff.
 
 ### Chunk H -- self-host sync
@@ -359,14 +374,18 @@ F6, and by Chunk A's `_probe_interpreter` structure itself.
   landed."
 * **Gate-manifest re-anchor** -- **corrected at plan-review (ETR1,
   External/Codex, blocking process; delta/sequencing corrected again at
-  ETR1-R2)**: **G0** (a precondition on Chunk A) is a Maintainer-resolved,
-  concrete pre-implementation `P` — no current 234-file / 54+14-frozen-file
-  drift against `refs/cairn/gate-anchor` left unaddressed. **G1** (after
-  Chunk H) is the **Maintainer's own recorded `promote` result**
-  (`P`/`A`/`C`/`N`), where `C` is the actual final implementation commit and
-  the reviewed expected `P`→`N` delta is **all four** plan-touched files
-  (`lifecycle.py`, `tools/lifecycle.py`, `cairn-lock.yml`, `test_lifecycle_
-  failsafe.py`) plus the generated `gate_manifest.json` -- not a single-chunk
+  ETR1-R2, file count corrected again at ETR1-R3)**: **G0** (a precondition
+  on Chunk A) is a Maintainer-resolved, concrete pre-implementation `P` —
+  no current 234-file / 54+14-frozen-file drift against `refs/cairn/
+  gate-anchor` left unaddressed. **G1** (after Chunk H) is the
+  **Maintainer's own recorded `promote` result** (`P`/`A`/`C`/`N`), where
+  `C` is the actual final implementation commit and the reviewed expected
+  `P`→`N` delta is **five files, not four**: `lifecycle.py`,
+  `tools/lifecycle.py`, `cairn-lock.yml`, `test_lifecycle_failsafe.py`,
+  **and this plan document itself** (its Status field transitions in place
+  as chunks land, exactly as the sibling `lockfile-provenance-fields`
+  plan's own Chunk A commit demonstrates) — plus the generated
+  `gate_manifest.json`. Not a single-chunk
   delta claim, since `_construct_anchor_commit` (`N = C` + the manifest blob,
   `C` as `N`'s sole parent) definitionally makes `P`→`N` equal `P`→`C` plus
   the manifest, i.e. every file the whole candidate changed. Not an
@@ -404,15 +423,16 @@ reverted); the self-host sync causing unanticipated lockfile churn
 alone, documented divergence until the next full upgrade pass). Add one
 from this plan's own preparation, **corrected at plan-review (ETR1,
 External/Codex, blocking process; corrected again at ETR1-R2 to match the
-real `_construct_anchor_commit` mechanics)** to match Chunk G0/G1's
-rewritten handoff: **G1's `P`→`N` diff contains anything beyond the four
-named plan-touched files** (`lifecycle.py`, `tools/lifecycle.py`,
-`cairn-lock.yml`, `test_lifecycle_failsafe.py`) **plus the generated
-gate_manifest.json** -- since `P`→`N` is definitionally `P`→`C` plus the
-manifest, an unexpected extra file in that diff means either G0's
-established `P` was not actually current, or an unrelated change slipped
-into candidate `C`; the Maintainer does not run `promote` until the diff
-matches exactly those five items, nothing else.
+real `_construct_anchor_commit` mechanics; file count corrected again at
+ETR1-R3)** to match Chunk G0/G1's rewritten handoff: **G1's `P`→`N` diff
+contains anything beyond the five named files** (`lifecycle.py`,
+`tools/lifecycle.py`, `cairn-lock.yml`, `test_lifecycle_failsafe.py`, and
+this plan document itself, bounded to its normal execution-state
+mutation) **plus the generated gate_manifest.json** -- since `P`→`N` is
+definitionally `P`→`C` plus the manifest, an unexpected extra file in that
+diff means either G0's established `P` was not actually current, or an
+unrelated change slipped into candidate `C`; the Maintainer does not run
+`promote` until the diff matches exactly those six items, nothing else.
 
 ## Review
 
@@ -1147,3 +1167,24 @@ mutation was confirmed from commit `02f6ee1`. No production ref, authorization
 artifact, gate manifest, or lifecycle implementation file was changed or
 promoted. Focused re-read required after ETR1-R3 is dispositioned; Chunk A
 remains blocked.
+
+### Response -- Claude (author) -- 2026-07-31
+
+Independently re-verified before disposing: read `git show 02f6ee1 --stat`
+myself and confirmed the sibling `lockfile-provenance-fields` plan's own
+Chunk A commit names `dev/plans/lockfile-provenance-fields.md` alongside its
+two code files, with the diff showing exactly the `Status:` field flipping
+`awaiting-plan-review` → `executing` -- the live precedent the finding cites.
+
+* **[ETR1-R3] accept -- blocking process, fixed.** G1's expected `P`→`N`
+  delta corrected from four files to **five**: the four named code/test
+  files plus this plan document itself, its allowed mutation bounded
+  explicitly to the normal execution-state progression (`Status:`
+  transitions and per-chunk Sequence notes) -- never a review or
+  Sharpening/Response section, which stay append-only throughout. Updated
+  everywhere the four-file count appeared: G1's own text, the `##
+  Sequence` block, the Acceptance criteria's gate-manifest bullet, and the
+  Signals-the-change-is-wrong entry (all four re-read after editing).
+
+**Status: remains `awaiting-plan-review`.** A focused External re-read on
+ETR1-R3 is still required before Chunk A begins.
