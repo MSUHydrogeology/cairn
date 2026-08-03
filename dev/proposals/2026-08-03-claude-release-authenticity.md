@@ -6,7 +6,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: revised
+**Status**: accepted
 **Touches**: `bootstrap/PROVENANCE.md`, `bootstrap/container/verify-ref.sh`,
 `bootstrap/container/recipe.md`, `bootstrap/container/acceptance.sh`,
 `bootstrap/tests/test_verify_ref.py` (new), `bootstrap/UPGRADE.md`,
@@ -1191,7 +1191,7 @@ The proposal fixes this by establishing an out-of-band trust bootstrap:
 * **Git Version Dependency:** `valid-before` / `valid-after` OpenSSH signer options were tested under git 2.53.0. Behavior on older system git versions (< 2.34.0) was not tested.
 * **Maintainer Out-of-Band Channel Setup (Part E):** Verification of actual SSH public key serving on GitHub/ORCID endpoints for `kendal30` is a Maintainer action prior to `v0.4.0` release tagging.
 
-## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
+## Decision (placeholder -- superseded by the Decision at the end of this file)
 
 *(Awaiting the Maintainer. The proposal has cleared External Security Review. The Maintainer may accept the proposal to proceed with plan creation.)*
 
@@ -2430,3 +2430,34 @@ appended to the same status). The BLOCKING finding is closed in the document, an
 closed with a reproduction in both directions rather than an assertion. Whether it
 is closed *well enough to accept* is the second round's question and then the
 Maintainer's, not this Response's.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-03
+
+**Accepted, as revised.** Scribed by Claude (Strategy) at the Maintainer's
+explicit instruction.
+
+**Maintainer's authorization (verbatim):**
+
+> I approve each of the seven proposals that you have listed as ready to accept,
+> as revised.
+
+The seven were presented as a ledger with a per-proposal recommendation; this is
+one of them. The authorization is quoted rather than paraphrased, per the
+scribing guard-rail: a paraphrase admits semantic drift, condition-softening, or
+a hallucinated approval.
+
+**Scribe-coupling disclosure.** The scribe is the proposal's author. That is the
+weaker configuration -- the party whose work was reviewed transcribes the ruling
+on it. Mitigations: the authorization is quoted verbatim, and this commit carries
+the Decision only.
+
+**A condition carried from the recommendation, flagged for confirmation.** The
+ledger entry the Maintainer approved read *"Accept, conditioned on a scoped
+External round for the tag-substitution fix only."* That condition is recorded
+here as adopted, because it was part of the item approved -- but the Maintainer's
+quoted words say "as revised" and do not name it. **If an unconditioned accept
+was intended, the condition is theirs to strike in one line.** The scribe records
+it rather than silently dropping or silently imposing it.
+
+The finding it guards is the fourth instance of one failure shape in a week, and
+the Internal reviewer who found it is the same agent type as the author.
