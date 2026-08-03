@@ -336,3 +336,158 @@ clean tree (Part 3); `python scripts/check_cairn.py` for all prose changes.
   share a root cause, the proposal's organizing claim is wrong and it should be
   split into separate proposals per part. The independent-disposition structure
   makes that split cheap.
+
+## Review -- Codex (External, Security Review) -- 2026-08-03
+
+**Model**: GPT-5 (Codex)
+
+**Verdict: REVISE / SPLIT.** The reported symptoms are real and worth fixing.
+The unsigned-tag acceptance, token collision, two false fork notes, destructive
+remediation, and missing disclosure channel all reproduce. The organizing claim
+does not: these are four different contracts with different trust roots and
+review gates. The proposal's own final signal is met, so I recommend splitting
+before Decision rather than issuing one four-part Decision and plan.
+
+### Findings
+
+* **[IDN1] BLOCKING SECURITY (Part 1) -- a signer roster inside the ref being
+  verified cannot bootstrap that ref's provenance.** The proposal says
+  `verify-ref.sh` will verify a tag against "the pinned roster," but does not say
+  how an adopter trusts that roster independently of the candidate checkout.
+  The live `dev/.cairn/allowed_signers` is useful for Cairn's already-established
+  local signing epoch; a first-time adopter has no prior anchor for it. Running
+  `verify-ref.sh` from the same unverified checkout also executes candidate bytes
+  before provenance is established.
+
+  I reproduced the circular pass in a temporary repository: generated an
+  attacker SSH key, committed an attacker-authored `allowed_signers` beside an
+  arbitrary payload, signed `v-test` with that key, and configured Git to use the
+  same roster. `git verify-tag v-test` returned 0 with a Good signature. The
+  cryptography proved internal consistency with attacker-supplied trust material,
+  not Cairn origin.
+
+  **Satisfier:** define the public trust bootstrap. The initial allowed-signers
+  bytes or key fingerprint must arrive through a channel independent of the ref
+  under test, and every Git verification invocation must receive that trusted
+  roster explicitly rather than resolving it through candidate `.git/config` or
+  candidate files. The first signed release needs a concrete out-of-band key
+  distribution/rotation story. Treat the in-repository script as a convenience
+  only after its own bytes are trusted, or give adopters a system-`git` bootstrap
+  command that does not execute the candidate checkout. Add a self-consistent
+  attacker-tag/attacker-roster negative test; unsigned and unrostered-tag tests
+  alone do not exercise this boundary.
+
+* **[IDN2] BLOCKING SECURITY (Part 1) -- immutable commit pins are not
+  Maintainer-approved provenance, and exact tag identity is still unspecified.**
+  The current script labels `HEAD` or a matching SHA as "Maintainer-approved"
+  without checking a signature, protected-branch membership, or any other
+  authorization. A SHA proves byte identity, not who approved it. The proposal
+  notices this but leaves the branch open with "if ... retained, say what verifies
+  it"; a security contract needs the disposition before plan time.
+
+  The tag path also starts from `git describe --exact-match --tags <commit>`,
+  which selects a tag attached to the commit rather than proving that the
+  caller-supplied ref is that exact annotated tag object. Multiple tags and a
+  lightweight tag need explicit semantics.
+
+  **Satisfier:** separate authenticity from immutability in both code and output.
+  Provenance mode should resolve and verify the exact annotated tag object named
+  by the caller against the independently trusted roster. An explicit commit SHA
+  may remain an integrity pin, but it must not be called Maintainer-approved
+  unless its commit signature is verified against the same trust root; otherwise
+  label it non-provenanced development input. Decide whether `HEAD` belongs at all.
+  Test annotated signed tag, lightweight tag, unsigned tag, wrong-key tag,
+  multiple tags on one commit, abbreviated/full SHA, and `HEAD` as distinct
+  classes.
+
+* **[IDN3] BLOCKING FRAMING (Part 2) -- exact full-name matching fixes a collision,
+  not identity authentication.** The existing implementation states the real
+  boundary in its own comment: the tool attests structure and the committing
+  operator guarantees authorization. Any author can write the exact string
+  `Anthony Kendall` into a section heading or add a full name to the project-owned
+  JSON. Symmetric full-name matching prevents `Kendall Smith` from colliding, but
+  it does not prove humanity or Maintainer authority.
+
+  **Satisfier:** either narrow Part 2 to an exact recognized-byline classifier and
+  withdraw "identity" / "sole positive authorization" claims, or design actual
+  authentication that binds the Decision-introducing commit to a trusted signer.
+  I recommend the narrow correction: store complete allowed display names,
+  normalize symmetrically, retain AI-first classification, and document that an
+  exact spoof still passes this structural lint. A regression should include the
+  exact-name spoof as a recorded residual, not imply the matcher prevents it.
+
+* **[IDN4] BLOCKING DESIGN (Part 3) -- "the upstream present on disk" has no
+  defined provenance or path boundary.** This defect is real, but it is a stale
+  baseline/remediation problem, not name-versus-identity. The proposed detector
+  currently receives only `(target, lock)`. A new comparison needs a separately
+  supplied Cairn/template root and exact semantics when that source is newer than
+  the lockfile's `cairn_commit`. Resolving `src` from the target or a path named by
+  its lockfile would let the tree being checked choose the comparison bytes; a
+  mutable current checkout can also differ legitimately from the installed
+  release baseline.
+
+  **Satisfier:** define the comparison source per caller. `verify_integrity` must
+  use the trusted verifier checkout's templates; `upgrade` must use its resolved
+  `cairn_root` / target-version templates; neither may derive an absolute root
+  from target-controlled lock data. Validate `src` as a contained regular source
+  path and state whether the note means "differs from current trusted upstream"
+  or "differs from install-time upstream." Keep `base_hash` as the upgrade
+  ancestor rather than silently rewriting it. Tests need source-version skew,
+  unsafe/missing/symlinked source paths, a target-supplied lookalike template,
+  and both facade/engine layouts. Remove the engine-deletion advice regardless
+  of detector disposition.
+
+  This part modifies `bootstrap/_scaffold/lockfile.py`, so the plan must include
+  the high-risk engine obligations in `AGENTS.md:304-315` and the mandatory AST
+  re-anchor in `AGENTS.md:335-338`, plus the engine security/Bandit and full-suite
+  gates. The proposal's current test list omits that work.
+
+* **[IDN5] SUBSTANTIVE (Part 4) -- changing `human_team` to install a front door
+  makes the profile stop describing the current team.** The live profile says
+  Cairn is solo, and the proposal says community maintenance is a future goal.
+  `human_team` is a staffing axis (`solo`, `small-multi`, `large-multi`), not an
+  "open to contributions" feature flag. Setting `small-multi` before a second
+  human joins trades a missing document for false machine-readable project state
+  and may affect future gates keyed to that axis.
+
+  **Satisfier:** add Cairn's project-owned root `CONTRIBUTING.md` without falsifying
+  the staffing axis, or propose a distinct contribution-readiness switch if this
+  should be a reusable adopter feature. The disclosure channel and contributor
+  prose can proceed independently; neither depends on the roster classifier or
+  fork detector.
+
+### Structural ruling
+
+Split the record along decision and trust boundaries:
+
+1. Release authenticity: signed-tag policy, exact-ref verifier, independent key
+   distribution, and the v0.4.0 release handoff. External Security plan review is
+   required whether tag creation lands here or in the release sequence; moving the
+   tag command does not make the shipped verifier less security-critical.
+2. Exact byline classification: the narrow Part 2 correctness fix, explicitly
+   structural rather than authenticating.
+3. Fork advisory semantics: trusted source-root plumbing, safe remediation, and
+   the `_scaffold` / lockfile high-risk gates.
+4. Contributor entry/disclosure: project documentation and truthful profile
+   modeling.
+
+Parts 1 and 3 should not share a plan merely because both use the word
+"provenance"; one establishes a public cryptographic root and the other chooses a
+local comparison baseline. Part 4 has no dependency on either. Splitting also
+lets the v0.4.0 tag fix move without waiting for contributor-governance choices.
+
+### Coverage
+
+Executed against current HEAD under canonical Python 3.13.13: `v0.3.0` is
+unsigned yet `verify-ref.sh` accepts it; the five-row byline table reproduced;
+`verify_integrity` emitted the two stated fork notes while both facades matched
+their template sources byte-for-byte; and the relevant lifecycle, integrity, and
+lockfile tests passed **50 tests** in 1.29 seconds. The self-pinned attacker tag
+probe above also passed verification, demonstrating IDN1. `claim_check` passed on
+the proposal.
+
+Not covered: no v0.4.0 tag exists to inspect; no public key-distribution channel
+is implemented; no proposed code exists for Parts 1-3; I did not independently
+rederive the review-corpus counts or assess non-ASCII name normalization. The
+concurrently landed gate-preflight implementation was outside this proposal and
+was not modified by this review.
