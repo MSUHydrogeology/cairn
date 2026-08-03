@@ -5,7 +5,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: reviewed
+**Status**: revised
 **Touches**: `templates/modules/team-gated/content_scan.py` (the two detector
 rules only), `templates/modules/team-gated/content-security.md` (the module
 doc that describes them), `bootstrap/tests/test_content_scan.py` (new cases)
@@ -617,3 +617,270 @@ The proposal fixes Defect (a) by introducing `unicode-ignorable` based on the PR
 
 *(Awaiting the Maintainer. The proposal has cleared External Security Review. The Maintainer may accept the proposal to proceed with plan creation.)*
 
+## Revised proposal -- Claude (author) -- 2026-08-03
+
+**Status moves to `revised`.** Change 1 stands byte-for-byte as proposed.
+Change 2 is amended, on a defect I found while re-verifying the External
+review's [G3] and which no reviewer raised: the proposal's own falsifying
+test fires. This section revises; it does not replace what is above.
+
+### What was wrong with Change 2
+
+`_CONFUSABLE_GREEK` is an **allowlist of 32 code points over a script
+`_SCRIPT_RANGES` defines as 400**. The two Greek rows
+(`templates/modules/team-gated/content_scan.py`, line 158 and line 159)
+span 400 code points carrying **347** assigned letters — 129 of them in
+the Greek and Coptic block alone (measured under UCD 15.1.0) — and the
+clause-3 rule clears any Latin+Greek token whose Greek characters are all
+*absent* from the 32.
+So **every omission from the curated set is a silent clear of a flag HEAD
+raises**. That is an allowlist failing open, and it is the exact opposite
+polarity from the principle the proposal states one paragraph earlier:
+"Erring toward *inclusion* is the safe direction, because inclusion means
+flagging."
+
+The omissions are not hypothetical or exotic. Three families, all
+measured at `292e2c6` under the canonical interpreter (Python 3.13.13,
+UCD 15.1.0):
+
+<!-- cairn-accept: homoglyph reason="These mixed-script tokens ARE the evidence: each one is a spoof that HEAD flags and the proposal-as-written clears. Rewriting them to ASCII would delete the finding this revision exists to record. Block-scoped, so a homoglyph planted elsewhere in this file still flags." reviewer="Claude (author)" date=2026-08-03 -->
+1. **Variant letterforms of letters already in the set.** `ρassword`
+   flags; `ϱassword` (U+03F1 GREEK RHO SYMBOL) clears. `εxecute` flags;
+   `ϵxecute` (U+03F5 LUNATE EPSILON SYMBOL) clears. `κey` flags; `ϰey`
+   (U+03F0 KAPPA SYMBOL) clears. An attacker who reads the shipped
+   32-entry table — which ships verbatim to adopters — picks the variant
+   glyph. This is the worst of the three, because the table itself is the
+   bypass instruction.
+2. **Archaic Greek letters with obvious ASCII twins.** `Ϝile` (U+03DC
+   DIGAMMA, reads as `F`), `ϝile` (U+03DD), `Ϻaintainer` (U+03FA SAN,
+   reads as `M`), `ϙuery` (U+03D9 ARCHAIC KOPPA), `ϸassword` (U+03F8 SHO)
+   — all flagged at HEAD, all cleared by the proposal as written.
+3. **Precomposed accented Greek vowels.** `άdmin`, `όverwrite`,
+   `ίnstall` — each a single code point that renders as an accented Latin
+   vowel (`á`, `ó`, `í`), all of which `_token_scripts` already counts as
+   Latin. Flagged at HEAD, cleared as written.
+
+Clause 1 inherits the same hole from the same set: `τοκεη` is caught,
+but `τοϰεη` — one letter swapped for its variant form — is not, because
+clause 1 is an `all()` over the same allowlist.
+<!-- cairn-accept-end: homoglyph -->
+
+### The amendment
+
+**Invert the set's polarity.** Replace the 32-entry `_CONFUSABLE_GREEK`
+allowlist with a ~25-entry `_NO_LATIN_TWIN` **denylist** — the Greek
+letters that have no Latin look-alike (Γ Δ Θ Λ Ξ Π Σ Φ Ψ Ω and their
+lowercase, plus the theta/phi/pi symbol variants) — and treat every other
+Greek character as confusable. Normalize each character with NFD before
+the lookup, so a precomposed accented vowel folds to its base letter and
+cannot bypass. Everything else in Change 2 is unchanged: clauses 1, 2 and
+3 keep their shape, the two-character carve-out stays, RV5 stays.
+
+The argument is polarity, not curation quality. Both forms are curated
+lists and both will be incomplete. The difference is what an omission
+*costs*: from an allowlist, an omission is a **silently missed spoof**;
+from a denylist, an omission is a **visible false positive** that an
+adopter reports. One failure mode is discoverable and one is not. That is
+the whole of the case.
+
+### Measured, both sides
+
+Two token sets: 83 ordinary scientific tokens (the proposal's 42 plus 41
+more — β coefficients, isotope deltas, structural-biology and
+plant-physiology notation) and 41 spoofs (7 Cyrillic, 14 base Greek, the
+15 bypasses above, 5 whole-script). Dated snapshot, `292e2c6`,
+2026-08-03, Python 3.13.13:
+
+| rule | scientific false positives | spoofs caught |
+|---|---|---|
+| HEAD | 62 / 83 | 36 / 41 |
+| proposal as written | 14 / 83 | **24 / 41** |
+| **amendment** | **14 / 83** | **38 / 41** |
+
+On the proposal's own 42-token set the amendment is 7/42 — **identical to
+the proposal as written**. The amendment closes 14 of the 17 spoof
+bypasses at *zero* additional false-positive cost, and it is strictly
+better than HEAD on both axes.
+
+<!-- cairn-accept: homoglyph reason="The beta/sharp-s residual is named by its tokens; they are the evidence for a documented limit. Block-scoped." reviewer="Claude (author)" date=2026-08-03 -->
+**Named residual, deliberately accepted.** The three spoofs the amendment
+still misses are the β family — `βank`, `ϐank`, `Straβe` — where the
+look-alike is `ß` (U+00DF), a *Latin-1* letter, not an ASCII one. Adding
+β to the confusable side catches all 41 spoofs but costs 6 more
+scientific false positives (`βpower`, `βsheet`, `βcoef`, `βhat`,
+`βsheets`, `βII`), because β is among the most common Greek letters in
+statistics and structural biology. Postdoc-first: I take the 38/41 and
+document the β limit rather than tax every regression table in the
+adopter's tree. A maintainer who wants 41/41 gets it by moving two code
+points, and the module doc will say so.
+<!-- cairn-accept-end: homoglyph -->
+
+### Cost to Cairn's own tree: zero
+
+<!-- cairn-accept: homoglyph reason="The two differing token types are named because naming them IS the measurement; substituting ASCII would delete the result. Block-scoped." reviewer="Claude (author)" date=2026-08-03 -->
+File-by-file comparison of the full flag set (pattern id and line number)
+across all **218** tracked `.md` files: the number of files whose flag set
+changes is **0** under the proposal as written, and **0** under the
+amendment. Across ~604k tokens, exactly two token types differ between
+the two rules — `βpower` and `βsheet` — and both occur only inside this
+proposal, inside existing suppression blocks.
+<!-- cairn-accept-end: homoglyph -->
+
+### Added to *Tests required*
+
+<!-- cairn-accept: homoglyph reason="These spoof tokens are the required test inputs; an executor needs the exact code points, so ASCII substitutes would make the test list unusable. Block-scoped." reviewer="Claude (author)" date=2026-08-03 -->
+8. Each of the three bypass families flags: a variant letterform
+   (`ϱassword`), an archaic letter with an ASCII twin (`Ϝile`), and a
+   precomposed accented Greek vowel (`άdmin`).
+9. Clause 1 is not defeated by one variant letterform: `τοϰεη` flags.
+10. The β residual is asserted **as a known limit**, so a future reader
+    sees it was priced rather than overlooked.
+<!-- cairn-accept-end: homoglyph -->
+
+
+### Two dated figures in the proposal are stale, corrected here
+
+* "all 207 tracked `.md` files" — the tree holds **218** tracked `.md`
+  files as_of 2026-08-03. The zero-change conclusion is unaffected; I
+  re-ran it over all 218.
+* Under *Known omissions*, the two-letter domain example claims a
+  Greek-omicron domain "flags as a non-allowlisted URL, where the ASCII
+  original is clean." The second half is false: the allowlist holds three
+  domains (`doi.org`, `keepachangelog.com`, `semver.org`), so an `https`
+  URL on the ASCII `go.dev` flags as `suspicious-url` too — both
+  encodings flag, for the same reason, and the homoglyph is doing no work
+  in that example. The backstop claim survives with a correct example: for an
+  *allowlisted* domain the ASCII original is clean while its
+  Greek-substituted twin raises `suspicious-url`. Verified both ways.
+
+---
+
+## Response -- Claude (author, to External Security Review) -- 2026-08-03
+
+**Model**: Claude Opus 5. Proposal-Response grammar (no implementing
+commits exist).
+
+Every numbered finding was re-run by me this session against a scratch
+copy of the scanner outside the repository, under the canonical
+interpreter (Python 3.13.13, UCD 15.1.0) at `292e2c6`. HEAD advanced from
+the `3292f21` the proposal cites; `git diff --stat 3292f21..HEAD` over
+`templates/modules/team-gated/content_scan.py` and
+`bootstrap/tests/test_content_scan.py` is empty, so every HEAD figure
+below is comparable to the proposal's.
+
+* **[G1] accept — reproduced verbatim, and it is the finding that
+  matters.** I re-ran the reviewer's script character for character and
+  got their four lines exactly: ASCII payload 2 flags
+  (`imperative-override`, `egress`), Tag-block payload 0, SOFT HYPHEN 0,
+  noncharacter U+FDD0 0. I extended the probe to five more
+  default-ignorable code points the review did not test — U+FE0F, U+2061,
+  U+180E, U+1D173, U+E0001 — and every one produces 0 flags at HEAD, so
+  the hole is the whole property, not the four sampled points. Change 1
+  fixes all of them in my patched copy, and the no-double-flag invariant
+  holds: a ZWSP line still yields `unicode-zero-width` and not
+  `unicode-ignorable`, and a leading BOM stays exempt.
+
+* **[G2] accept — reproduced verbatim, token for token.** 37/42, and the
+  same 37 tokens in the same order. The five cleared are exactly the RV5
+  unit shapes (`µs`, `µmol`, `kΩ`, `MΩ`, `µL`), which confirms the
+  proposal's diagnosis of *why* it is 37: the carve-out covers units and
+  scientists write variables.
+
+<!-- cairn-accept: homoglyph reason="The proposal's own falsifying-test wording is quoted verbatim, including the two-character token it names; paraphrasing the quoted criterion would defeat the point of quoting it. Block-scoped." reviewer="Claude (author)" date=2026-08-03 -->
+* **[G3] correct — the direction holds, the stated bound does not, and
+  this is my error that the review inherited rather than caught.** The
+  finding says the trade-off is "a single false negative for two-letter
+  single-Greek + single-Latin tokens." That is not what the rule does. I
+  built the patched rule and hunted for the falsifier the proposal itself
+  names — "a spoof that HEAD catches and the patch clears, other than the
+  named `dο` shape" — and found **15**, in three structured families
+  (variant letterforms, archaic letters with ASCII twins, precomposed
+  accented Greek), none of them two characters long. Measured on a
+  41-token spoof set: HEAD 36/41, proposal as written **24/41**. The
+  proposal as written is a *net detection loss* against HEAD on that set,
+  not the strict improvement the proposal claims and the review endorsed.
+  What survives from [G3] is real and I am not walking it back: two-letter
+  tokens cannot carry an instruction, and the net gain *is* worth having —
+  the amended rule above delivers 38/41 at 14/83 scientific false
+  positives versus HEAD's 36/41 at 62/83. The direction was right; the
+  bound was asserted rather than measured, by me first.
+<!-- cairn-accept-end: homoglyph -->
+
+### Beyond the numbered findings
+
+These are not numbered critiques and get no disposition token, but the
+record should carry them.
+
+* **The verdict line overstates its own evidence.** It reads "reproduced
+  both Defect (a) and Defect (b) verbatim, verified detection trade-off
+  metrics, confirmed zero regression on Cairn codebase." The first clause
+  is true and I have re-confirmed it. The second and third are not
+  supported by anything in *Covered*: all three swept lenses ran the
+  scanner **at HEAD**, so the review never executed the patched rule. A
+  HEAD-state scan cannot verify a trade-off metric or a regression
+  introduced by a patch — and the half of this change that removes flags
+  is precisely the half that needed the adversarial read the tier was
+  requested for. This is not a complaint about effort; it is the reason
+  [G3]'s bound went unchallenged.
+* **The baseline integrity check is narrower than "the Cairn codebase."**
+  `scripts/check_cairn.py` selects files through
+  `link_check.filter_sources`, which drops archived deliberation files
+  unless `--include-archives` is passed — hence 174 files scanned against
+  218 tracked `.md` as_of 2026-08-03. My file-by-file comparison covered
+  all 218.
+* **`vermin` / Python floor** — agreed, unrun, and it stays a plan
+  obligation. The amendment adds `unicodedata.normalize`, which does not
+  move the floor, but that is reasoning and not a `vermin` run.
+* **Performance** — agreed, unbenchmarked. The amendment makes it
+  cheaper, not dearer (a ~25-entry frozenset membership test replaces a
+  32-entry one), but I claim no number.
+
+### What this Response does not establish
+
+The amendment does not make the scanner a proof, and inverting the
+polarity does not make the curated list correct — it changes an omission
+from a silent miss into a visible false positive. My 41-token spoof set
+is hand-built by me and a curated set cannot demonstrate completeness. I
+did **not** run `python -m pytest bootstrap/tests`: another session is
+live in this tree and I wrote nothing into it, so the `1556 passed`
+baseline, the `scripts/check_cairn.py` end-to-end run, and the
+`bootstrap/tests/test_content_scan.py` replay all remain plan obligations
+exactly as the proposal left them. My corpus comparison covered tracked
+`.md` only, not the wider `.txt` / `.py` set behind the proposal's
+423-file figure.
+
+### Where the Maintainer's default-security direction lands
+
+The Maintainer directed, 2026-08-03:
+
+> "Obviously we need to change the default security stance for all
+> installations. Otherwise we are shipping a potentially dangerous tool."
+
+I take this as a premise, and it bears on this proposal without being
+inside its fence. Verified this session by expanding each preset through
+`bootstrap/_scaffold/config.py`: **none of the three presets selects
+`content-security`** — `solo-greenfield` resolves to 6 modules,
+`collaborative-team` to 11, `high-rigor-legacy` to 14, and the module is
+in no roster. Meanwhile `templates/onboarding/high-rigor-legacy.md` tells
+an adopter twice — at line 123 and line 164 — about "the
+high-rigor-legacy profile's content-security" apparatus. So the scanner
+this proposal repairs currently reaches an adopter only if they select
+the module by hand, against onboarding prose that says the profile
+already did.
+
+That does not change what this proposal should do — a detector that
+misses an entire invisible channel is worth fixing whether it ships to
+zero adopters or all of them, and fixing it before the defaults change is
+the right order. But it does mean **neither half of this change delivers
+adopter-facing security until the selection question is settled**, and
+this proposal's fence (two detector rules in one file) is the wrong place
+to settle it. It belongs in two places, neither of them here:
+
+* **The default itself** — adding `content-security` to preset rosters —
+  is a change to `bootstrap/_scaffold/config.py` and
+  `bootstrap/profiles/`, i.e. the install contract. It needs its own
+  proposal; none of the seven opened today claims that surface.
+* **The documentation half** — two onboarding statements asserting a
+  module that no preset selects — is exactly the subject of the
+  `gate-claims-vs-enforcement` proposal, which exists to make a
+  documented gate name what actually runs it.
