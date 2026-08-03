@@ -6,7 +6,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: reviewed
+**Status**: revised
 **Touches**: `bootstrap/PROVENANCE.md`, `bootstrap/container/verify-ref.sh`,
 `bootstrap/container/recipe.md`, `bootstrap/container/acceptance.sh`,
 `bootstrap/tests/test_verify_ref.py` (new), `bootstrap/UPGRADE.md`,
@@ -1194,3 +1194,206 @@ The proposal fixes this by establishing an out-of-band trust bootstrap:
 ## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
 
 *(Awaiting the Maintainer. The proposal has cleared External Security Review. The Maintainer may accept the proposal to proceed with plan creation.)*
+
+## Revised proposal -- 2026-08-03
+
+**Scope of the revision: one command in Part A's bootstrap block, one added
+test row, one drafting nit.** The trust model is unchanged — fingerprint
+compared out of band on two channels, roster written by the adopter, verification
+performed outside the candidate's git context. Nothing in Part B, C, D or E
+moves, no residual changes disposition, and no gate accounting changes. It is
+recorded as a revision rather than as a line in the Response because Part A's
+command block *is* the artifact this scope ships to an adopter, and the
+superseding Decision binds Part A as settled design rather than as a direction of
+travel.
+
+**What is wrong, and it is mine, not the reviewer's.** Part A tells the adopter
+to verify in a **fixed, durable** location (a bare repository created at a fixed
+path under the adopter's home) and to *"Judge the EXIT CODE, never the text."*
+Those two instructions are safe on a first run and unsafe on every run after it.
+Reproduced today, git 2.53.0, two throwaway candidate repositories publishing the
+**same tag name** — one signed by the genuine key, one by an attacker key —
+against **one** reused verification repository (paths abbreviated):
+
+```
+-- run 1: fetch from the GENUINE candidate --
+ * [new tag]         v9.9.9     -> v9.9.9
+fetch rc=0
+Good "git" signature for maint@example.org with ED25519 key SHA256:H69QCGeW…
+verify rc=0
+
+-- run 2: SAME verification repo, fetch from the ATTACKER candidate --
+ ! [rejected]        v9.9.9     -> v9.9.9  (would clobber existing tag)
+fetch rc=1
+Good "git" signature for maint@example.org with ED25519 key SHA256:H69QCGeW…
+verify rc=0
+```
+
+The second fetch was **rejected** — git will not clobber an existing tag ref
+without a force refspec — and `verify-tag` then exited **0** about the object
+cached by the *first* run. An adopter following the documented procedure verbatim,
+and judging the exit code they were explicitly told to judge, receives a pass for
+bytes they did not fetch on this run.
+
+This is not a cryptographic break: the object that verified was genuinely signed
+by the genuine key. It is [IDN2] limb 2 wearing different clothes — *the output
+must answer the question that was asked* — reappearing in the documented
+procedure after Part B removed it from the script. I fixed the resolver and left
+the same shape standing three sections earlier in my own document.
+
+**The revision.**
+
+1. **The verification repository is created fresh per run and discarded** — a
+   temporary directory from `mktemp -d`, not a fixed path. The durable thing is
+   the **anchor** (the roster the adopter wrote from two web pages); the
+   **workspace** must not be durable, because durable workspace state is what
+   carried the stale answer. Verified: a fresh bare repository per run refuses
+   the attacker tag with exit 1 and has no cached-object path available at all.
+2. **The fetch's exit code is judged too**, as its own numbered step. A
+   copy-pasted procedure has no `set -e`, so a failed step 3 followed by a
+   passing step 4 is exactly the observed failure.
+3. A **forced** refspec (`+refs/tags/<ref>:refs/tags/<ref>`) also updates the ref
+   and then correctly refuses — checked. It is recorded as the *inferior*
+   alternative: it repairs the symptom while keeping cross-run state in a
+   directory the adopter accumulates releases in.
+4. **One test row added** under *Tests required*: run the documented sequence
+   twice, against two candidates publishing the same tag name, and assert the
+   second run either reports on the second candidate's object or refuses — never
+   a silent pass on the first candidate's. This is a test of the **document**,
+   which is what the existing "documented public path with no executable home"
+   bullet already commits the plan to covering; it adds one case there, not a new
+   test surface.
+5. **Drafting nit, fixed in the same pass.** The block is called *"the
+   three-command bootstrap"* in Part A and Part E and *"four commands"* in
+   *Rationale*. It is four commands; with the revision it is four commands plus a
+   discarded temporary directory. The document says "four" throughout, and Part
+   E's cross-reference points at Part A, where the block lives, rather than at
+   Part C.
+
+**What the revision does not establish.** It removes one false-pass path from one
+documented procedure. It does not make that procedure idempotent-safe in general;
+it does not touch the case where the adopter's **roster** is stale rather than
+their workspace (that stays the rotation section's problem, unchanged); and it is
+not evidence that no third instance of this shape remains in the document. It is
+one instance, found by re-running the review's own attack scenario twice instead
+of once.
+
+## Response -- Claude (author, to External Security Review) -- 2026-08-03
+
+**Model**: Claude Opus 5. Proposal-Response grammar (no implementing commits
+exist).
+
+The verdict is SHIP and all three findings are **confirmations** rather than
+critiques. That is the disposition profile most in need of independent re-running,
+because a confirming finding that was not actually executed does double damage: it
+leaves the defect in place *and* retires the suspicion that would have found it.
+So each was re-run from scratch — throwaway repositories under the session scratch
+directory, freshly generated throwaway SSH keys, git 2.53.0, `GIT_CONFIG_SYSTEM`
+and `GIT_CONFIG_GLOBAL` neutralised so no ambient configuration could carry a
+result. No key material belonging to the Maintainer was used and nothing was
+written into the Cairn tree. Two confirm. One could not have been verified as
+stated, and saying so is the value of the pass rather than a slight on it.
+
+* **[G1] accept -- reproduced verbatim, down to the SHA.** `bash
+  bootstrap/container/verify-ref.sh . v0.3.0` prints `verify-ref: OK — release
+  tag 'v0.3.0' -> 12ec2ad2…` and exits 0; `git verify-tag v0.3.0` prints `error:
+  no signature found` and exits 1. One clause the review did not draw out and the
+  plan should keep: `12ec2ad2…` is the **commit**, while the tag *object* is
+  `fb05e4c1…` — the script resolves `<ref>^{commit}` and never handles the tag
+  object at all, which is the mechanical reason it cannot see a missing signature
+  rather than merely failing to look for one.
+
+* **[G2] accept -- the conclusion reproduces in full; the exhibit as printed does
+  not, and the gap is load-bearing for the plan's test.** All three attacks were
+  rebuilt independently. Attack 1 (attacker key, attacker-committed roster naming
+  the genuine principal, candidate `.git/config` pointing git at it) passes with
+  exit 0 — the tautology. Attack 3 (fetch only `refs/tags/<ref>` into an
+  adopter-created bare repository, roster supplied by `-c`) refuses with `No
+  principal matched.` and exit 1, and the forging program is **never invoked** in
+  either the fetch or the verify — I instrumented it with a witness file to check
+  that rather than infer it. So the central structural claim of Part A survives an
+  independent reconstruction, and **the circularity is broken**. The correction is
+  to Attack 2. The review's transcript labels the forged line `STDERR:` and
+  reports exit 0. A forger that writes the `Good "git" signature…` line to
+  **stderr** does not produce exit 0 — I built one, git ran it twice (`-Y
+  find-principals`, then `-Y verify`), accepted both exit codes, and still exited
+  **1**, because git parses the signer out of the program's **stdout**. Moving the
+  identical line to stdout yields exit 0 with fingerprint `SHA256:FORGED…` while
+  the genuine roster is passed on the command line. The finding is therefore
+  right and the exhibit as printed would not produce it. This matters concretely:
+  the `gpg.ssh.program` test named under *Tests required* must assert on a forger
+  that emits the principal on **stdout** and must assert the forger *executed*, or
+  it will pass for the wrong reason — git refusing a malformed forger — and be
+  vacuous. That instruction is added to the test's description; it is a
+  specification detail, not a design change, so it does not enlarge the revision
+  above.
+
+* **[G3] correct -- the property is the design's and I keep it, but there is no
+  updated script for anyone to have verified.** G3 states that *"every git
+  verification command in the proposed design **and updated `verify-ref.sh`
+  script**"* was verified to receive the roster explicitly. The shipped script is
+  71 lines and contains no occurrence of `signers`, `allowedSigners`,
+  `verify-tag`, or any `gpg.` key (`grep` over the file returns nothing, exit 1);
+  it is unmodified since `81ff0fd`, and the test module named under *Proposed
+  paths* does not exist. There is nothing executable to have checked. Read as a
+  statement about the **design text**, G3 is accurate and I am glad to have it
+  read that way — the requirement, the no-fallback rule, and the
+  roster-containment refusal are all specified in Part A. Read as a verification
+  result it is unsupported, and I flag it because an unearned "verified" on the
+  implementation is precisely what would let the implementation ship without one.
+  No change to the proposal follows.
+
+**On the review's negative space.** Both *Not Covered* items are already carried
+and neither creates a new obligation: the git-version dependency is the
+proposal's own known omission (b), which is why the plan pins a floor by probing
+for the **behaviour** rather than parsing a version string; and the forge/ORCID
+channel check is Part E step 1 plus the first bullet of *Signals the change is
+wrong*, where it is already named as the single most likely factual correction in
+the document.
+
+**What the review did not attempt, and what I found in its place.** The proposal's
+last *Signals the change is wrong* bullet invites exactly one adversarial test —
+*show that fetching into an adopter-authored repository does not escape candidate
+influence* — and says it is the finding I would most want a reviewer to try. The
+review did not try it; its Attack 3 reproduces my own demonstration rather than
+extending it. I ran the extension instead. Against a local fetch from a hostile
+candidate I probed six candidate-controlled surfaces for code execution on the
+verifier's side: `uploadpack.packObjectsHook`, `core.alternateRefsCommand`,
+`core.fsmonitor`, `core.gitProxy`, `core.sshCommand`, and a `post-upload-pack`
+hook on disk. None fired. That result is **weaker than six-for-six**, and the
+weakness is the honest part: three of the six are transport- or
+alternates-conditional and a local fetch may never reach them, so they are
+inconclusive rather than negative. The three meaningful ones are meaningful
+because of a positive control — the same hook, moved into a *trusted* (global)
+config, fired and was caught by the witness, so the harness can see execution when
+it happens. `uploadpack.packObjectsHook` in particular is ignored from
+repository-level config by design, which is git protecting exactly this case.
+
+**Residual RA5 does not close, and it does not narrow.** Six probes on one surface
+is not an enumeration; it is one author looking again in the place he already
+knew to look. RA5's expiry trigger and its mandate to the plan reviewer stand
+unchanged, and the reviewer's second mandate — sweep Cairn's other `git`
+invocations against trees it does not control — remains entirely unrun. So does
+the first mandate (name the channel each verification input arrives by). Those
+were written for the plan reviewer rather than this one, so their absence is not a
+defect in this review; it does mean the plan's `required(External, security lens)`
+tier is carrying its full original load and should not be read as partly
+discharged by a SHIP verdict at proposal time.
+
+**The Maintainer's 2026-08-03 direction on the default security stance, and where
+it bears here.** The direction — *"Obviously we need to change the default
+security stance for all installations. Otherwise we are shipping a potentially
+dangerous tool."* — is a premise, not an open question, and it reaches exactly one
+thing in this scope: Part B's flip of `verify-ref.sh`'s **default** from "HEAD,
+and call it approved" to provenance-required, with the permissive path reachable
+only when an operator types `--unprovenanced`. That flip is no longer a judgment
+call this proposal has to argue for; it is the direction applied to this surface,
+and I record it as ratification rather than re-arguing it. It reaches nothing
+else here. This scope selects no module, changes no preset, and adds and removes
+no manifest row — the *fail-closed-by-default* half of the direction is discharged
+here, and the *selected-by-zero-presets* half belongs to the proposals that own
+module selection (`scan-coverage` and `content-scan-detectors`), not to this one.
+Naming that boundary rather than quietly widening the scope is the point.
+
+**Status.** `reviewed` -> **`revised`**, on the Part A correction above. No
+finding in this review caused the move; re-running one of its findings twice did.
