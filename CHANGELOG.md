@@ -34,6 +34,29 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+### Added
+
+- **A reviewed pre-flight for the supervised gate re-anchor, and a first-use
+  trust root.** `REANCHOR_RUNBOOK.md` Phase 0 stated what to verify and nothing
+  verified it; the gap had been filled twice by a disposable scratchpad script,
+  which returned a wrong answer on its second use and whose unsequenced handoff
+  advanced `refs/cairn/gate-anchor` to a commit containing no blessing.
+  `bootstrap/tests/_gate_preflight.py` now performs the checks, constructs and
+  verifies the signed commit, and advances branch and anchor in one expected-old
+  transaction — with a loader that reads the checker from the anchor through a
+  sterile Git boundary. Six External exact-byte security review rounds closed
+  eleven findings (CR1, FUR1–FUR10), each reproduced as a working exploit before
+  being fixed: replacement objects substituting anchored reads, a configured
+  `gpg.ssh.program` forging signature verification, `core.fsmonitor` executing
+  during `git status`, a `reference-transaction` hook moving a third ref inside
+  the two-ref transaction, `.gitattributes export-ignore` hiding a tracked file
+  from the manifest, and — four times over — a trust boundary drawn one layer
+  above the thing it claimed to protect. The recurring lesson is recorded in the
+  plan rather than only fixed: a control that is present is not a control that is
+  reached, and the runbook's own bytes are now executed by its tests. Archived
+  proposal `2026-08-03-claude-gate-reanchor-preflight`; plan
+  `gate-reanchor-preflight`; trust root established at `e45e1fc`.
+
 ### Fixed
 
 - **The intent post-commit hook warned about agent identity on every human

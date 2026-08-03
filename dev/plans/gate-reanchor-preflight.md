@@ -2050,3 +2050,51 @@ and requires a new exact-byte review.
 **Scope unchanged.** I did not re-review Stage B, the accepted
 candidate-execution residual, replay posture, SSH cryptography, Windows
 behavior, external anchoring, concurrent Maintainers, or Phase 4.
+
+## Chunk G executed -- the trust root is established -- Maintainer -- 2026-08-03
+
+**Performed by the Maintainer**, per the runbook's separation rule; the
+implementing agent prepared command text and verified between steps, and ran no
+step of the ceremony.
+
+**Authorizing disposition.** Focused External exact-byte security review (Codex
+/ GPT-5) at `3a19ed6`:
+
+> **NO BLOCKING FINDINGS; THESE EXACT BYTES ARE FIT TO BLESS AS THE FIRST-USE
+> TRUST ROOT.**
+
+All nine reviewed files were confirmed byte-identical to the working tree
+immediately before the ceremony.
+
+**What ran.** The runbook's first-use manual bootstrap, not the loader -- the
+anchored invocation cannot introduce itself, because the prior anchor
+(`bf08f62`) predated the checker and contained neither it nor the roster.
+
+| Step | Result |
+|---|---|
+| 1. Reviewed hashes recorded | 9 files, from the External review; all matched the tree |
+| 2. Manifest produced under 3.13.13 | 164 frozen files, collection 1598 nodes |
+| 2b. Produced pins == reviewed hashes | **8/8** -- the equality that authorizes the pin |
+| 3. Supervised commit `P` | `e45e1fc`, signed (`%G? = G`), exactly one file, bytes identical to the verified manifest |
+| 4. `update-ref` with expected-old CAS | `bf08f62` → `e45e1fc` |
+
+**Two deviations from the runbook's literal text, both operational and neither
+touching a reviewed byte.** `produce` wrote to a temp file rather than
+redirecting onto the manifest, because `>` truncates its target *before* the
+command runs and a failed produce would otherwise leave an empty manifest in the
+tree. And `update-ref` was given its expected-old value, making the trust-root
+move a compare-and-swap -- this ref has moved unexpectedly in this repository
+before, and that is exactly the failure the third argument refuses.
+
+**Post-conditions verified.** The anchor now contains all seven closure modules,
+the runbook, and the roster; the anchored `_gate_preflight.py` hashes to the
+reviewed `f6dd89b8...`. `anchor == HEAD`, so the loader would currently refuse
+with A9 ("nothing to bless") -- correct behaviour, not a fault.
+
+**Delta blessed:** `_gate_preflight.py` and its test moved FROZEN-NEW → pinned
+(162 → 164 files). Nothing removed, no existing hash changed.
+
+**Not used:** external anchoring (`--trusted-repo`). Integrity of this state is
+target-owned, per the accepted single-maintainer posture. The upgrade path is
+now genuinely available for the first time -- push `P` and clone it -- and is the
+natural next step whenever the posture's triggers fire.
