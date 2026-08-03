@@ -737,7 +737,7 @@ All commands executed using canonical interpreter `~/conda_envs/lhm/bin/python` 
    * *Output:*
      ```
      honest: Claude scribing for Anthony Kendall -> ai
-     spoof: 'Clаude scribing for Anthony Kendall' -> human
+     spoof: 'Cl\u0430ude scribing for Anthony Kendall' -> human
      ```
 
 2. **Reproduction (b) — Roster Granularity Asymmetry:**
@@ -832,21 +832,22 @@ All commands executed using canonical interpreter `~/conda_envs/lhm/bin/python` 
      ```
    * *Output:*
      ```
-     Cyrillic a in Anthony                      | unknown  | ('anthonyа', 'kendall')                 
-     Greek alpha in Anthony                     | unknown  | ('anthαny', 'kendall')                  
-     Polish Ł (non-decomposing stroke)          | unknown  | ('łukasz', 'nowak')                     
-     Fullwidth Latin A                          | unknown  | ('ａnthony', 'kendall')                  
-     Latin small turned e ǝ                     | unknown  | ('anthony', 'kǝndall')                  
-     Non-breaking space U+00A0                  | unknown  | ('anthony\xa0kendall',)                 
-     Line separator U+2028                      | unknown  | ('anthony\u2028kendall',)               
-     rn vs m                                    | unknown  | ('anthorny', 'kendall')                 
-     uppercase II vs ll                         | unknown  | ('anthony', 'kendaii')                  
-     digits 11 vs ll                            | unknown  | ('anthony', 'kenda11')                  
-     digit 0 vs o, 1 vs l                       | unknown  | ('anth0ny', 'kenda1l')                  
+     Cyrillic a in Anthony                      | unknown  | ('anthony\u0430', 'kendall')
+     Greek alpha in Anthony                     | unknown  | ('anth\u03b1ny', 'kendall')
+     Polish Ł (non-decomposing stroke)          | unknown  | ('\u0142ukasz', 'nowak')
+     Fullwidth Latin A                          | unknown  | ('\uff21nthony', 'kendall')
+     Latin small turned e ǝ                     | unknown  | ('anthony', 'k\u01ddndall')
+     Non-breaking space U+00A0                  | unknown  | ('anthony\xa0kendall',)
+     Line separator U+2028                      | unknown  | ('anthony\u2028kendall',)
+     rn vs m                                    | unknown  | ('anthorny', 'kendall')
+     uppercase II vs ll                         | unknown  | ('anthony', 'kendaii')
+     digits 11 vs ll                            | unknown  | ('anthony', 'kenda11')
+     digit 0 vs o, 1 vs l                       | unknown  | ('anth0ny', 'kenda1l')
      i vs l in Ciaude                           | unknown  | ('ciaude', 'scribing', 'for', 'anthony', 'kendall')
      1 vs l in Cl1ude                           | unknown  | ('cl1ude', 'scribing', 'for', 'anthony', 'kendall')
      ur vs u in Claurde                         | unknown  | ('claurde', 'scribing', 'for', 'anthony', 'kendall')
      ```
+
 
 ### Not Covered / Low Confidence (Negative Space)
 
