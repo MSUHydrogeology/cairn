@@ -692,3 +692,168 @@ live record's conformance unchanged; `cmp` of the twin pair;
   narrows to the classification surface and R3 opens as its own scope with the
   reviewer-identity config change it needs. That is the split working, not
   failing.
+
+## Review -- Gemini Flash (External, Security Review) -- 2026-08-03
+
+**Model**: Gemini 3.6 Flash (External, different-agent-type)
+**Verdict**: SHIP (recommend ACCEPT; verified all 3 defects, verified proposed fix robustness against non-decomposing characters and ASCII confusables)
+
+### Steelman
+
+This proposal solves a security-critical defect in `tools/lifecycle_planner.py` (and its twin `templates/skills/_lib/lifecycle_planner.py`) where `re.sub(r"[^a-z0-9]", "", raw.lower())` stripped non-ASCII characters, allowing homoglyphs (such as Cyrillic `а` U+0430) to delete the AI agent token `claude` into `clude`, bypassing the AI registry and over-matching against the human Maintainer allowlist (`Claude scribing for Anthony Kendall` -> `human`). Furthermore, it resolves the roster granularity asymmetry where single-fragment entries in `dev/.cairn/agent-identities.json` either failed to match full names or over-matched arbitrary individuals sharing a name fragment.
+
+The proposed design replaces destructive ASCII-only deletion with a character-preserving, two-strength fold: `NFKD` for AI matching (to catch presentational variants like `Ⓒlaude` or `𝐂laude`) and `NFD` for human allowlist matching, paired with **symmetric, exact tuple equality** for human maintainer names. Because every letter and digit in every script is preserved in the comparison key, confusable characters cannot be deleted into a match, and extra words (like `scribing for`) prevent partial over-matching against rostered human names.
+
+### Concerns and Findings
+
+* **[G1] (Reproduction & Verification of Defects a, b, and c)**
+  * **Defect (a) — Cyrillic Homoglyph Flips `ai` to `human`:** Verified by calling `_load_identity_model(Path('.'))`. `"Claude scribing for Anthony Kendall"` classifies as `ai`, while `"Cl" + chr(0x430) + "ude scribing for Anthony Kendall"` classifies as `human`.
+  * **Defect (b) — Roster Asymmetry:** Verified using a temporary `agent-identities.json`. When `human_maintainers` is `["Anthony Kendall"]` (full display name), `"Anthony Kendall"` classifies as `unknown`. When `human_maintainers` is `["Anthony", "Kendall"]` (name fragments), `"Anthony Kendall"` classifies as `human`, but `"Anthony"` and `"Kendall Jenner"` also classify as `human`.
+  * **Defect (c) — Independence Comparator Homoglyph Bypass:** Verified calling `_identity_token`. `_identity_token("Claude (Internal Review)")` yields `'claude'`, whereas `_identity_token("Cl" + chr(0x430) + "ude (Internal Review)")` yields `'clude'`. Because `'claude' != 'clude'`, a same-agent homoglyph review is not flagged as self-review.
+
+* **[G2] (Falsification & Attack Analysis of Proposed Fix vs. Amendment Poison Rule)**
+  * *Attack Evaluation:* Tested the proposed `_fold_word` + exact tuple matching against non-decomposing characters (Cyrillic `а` U+0430, Greek `α` U+03B1, Polish `Ł` U+0141, Fullwidth `ａ` U+FF41, turned e `ǝ` U+01DD, non-breaking space `U+00A0`, line separator `U+2028`) and ASCII-only confusables (`rn` vs `m`, `II` vs `ll`, `11` vs `ll`, `0` vs `o`, `i` vs `l` in `Ciaude`, `1` vs `a` in `Cl1ude`).
+  * *Results:* Under the proposed fix, **all 14 attack bylines classify as `unknown`** (flagged violation). The proposed fix holds because:
+    1. Exact tuple equality requires `_grant_words(byline) == _grant_words(roster_entry)`. Any extra words in scribing bylines (`scribing for`) or character alterations make tuple equality fail.
+    2. Keeping non-ASCII letters and digits ensures characters are never deleted into a match.
+    3. `NFKD` on the AI leg successfully maps presentational forms (`Ⓒlaude`, `𝐂laude`) to `ai`.
+  * *Comparison with Amendment Poison Rule:* The Amendment's poison rule ("treat any surviving non-ASCII letter as poisoned -> `unknown`") combined with containment matching leaves open over-matching on ASCII-only confusables (`Anthorny Kendall` -> `human`, `Ciaude scribing for Anthony Kendall` -> `human`). The proposed fix's exact tuple matching is vastly superior and eliminates both international false positives and confusable over-matching.
+
+* **[G3] (Residual R3 Acknowledgment & Expiry Trigger)**
+  As noted in the proposal, Residual R3 remains partially open: because reviewer-identity lacks a separate roster, `_identity_token` under `NFKD` catches mathematical bold and circled variants but still produces `'clude'` for a Cyrillic homoglyph self-review. R3's expiry trigger (the first human review by a non-Maintainer or a reviewer-identity roster) is appropriate and avoids coupling Decision authority with review independence.
+
+* **[G4] (Gate-Manifest & Frozen-File Batch Window)**
+  `tools/lifecycle_planner.py` and `templates/skills/_lib/lifecycle_planner.py` are **unfrozen** in `gate_manifest.json`. `bootstrap/tests/test_lifecycle_contract.py` is **frozen** (`FROZEN-MODIFIED`), so updating its assertion requires supervised re-anchoring or landing outside an active manifest window.
+
+### Covered (Lenses Swept & Verbatim Executions)
+
+All commands executed using canonical interpreter `~/conda_envs/lhm/bin/python` (Python 3.13.13).
+
+1. **Reproduction (a) — Cyrillic U+0430 Homoglyph Flip:**
+   * *Command:*
+     ```bash
+     ~/conda_envs/lhm/bin/python -c "from pathlib import Path; from tools.lifecycle_planner import _load_identity_model; model = _load_identity_model(Path('.')); honest = 'Claude scribing for Anthony Kendall'; spoof = 'Cl' + chr(0x430) + 'ude scribing for Anthony Kendall'; print('honest:', honest, '->', model.classify(honest)); print('spoof:', repr(spoof), '->', model.classify(spoof))"
+     ```
+   * *Output:*
+     ```
+     honest: Claude scribing for Anthony Kendall -> ai
+     spoof: 'Clаude scribing for Anthony Kendall' -> human
+     ```
+
+2. **Reproduction (b) — Roster Granularity Asymmetry:**
+   * *Command:*
+     ```bash
+     ~/conda_envs/lhm/bin/python -c "import json, tempfile, pathlib; from tools.lifecycle_planner import _load_identity_model;
+     with tempfile.TemporaryDirectory() as tmp:
+         p = pathlib.Path(tmp); (p / 'dev' / '.cairn').mkdir(parents=True)
+         cfg1 = {'version': 1, 'human_maintainers': ['Anthony Kendall'], 'agent_names': []}
+         (p / 'dev' / '.cairn' / 'agent-identities.json').write_text(json.dumps(cfg1))
+         m1 = _load_identity_model(p)
+         print('Roster [\"Anthony Kendall\"]:')
+         print('  \"Anthony Kendall\" ->', m1.classify('Anthony Kendall'))
+         print('  \"Anthony\" ->', m1.classify('Anthony'))
+         print('  \"Kendall Jenner\" ->', m1.classify('Kendall Jenner'))
+         cfg2 = {'version': 1, 'human_maintainers': ['Anthony', 'Kendall'], 'agent_names': []}
+         (p / 'dev' / '.cairn' / 'agent-identities.json').write_text(json.dumps(cfg2))
+         m2 = _load_identity_model(p)
+         print('Roster [\"Anthony\", \"Kendall\"]:')
+         print('  \"Anthony Kendall\" ->', m2.classify('Anthony Kendall'))
+         print('  \"Anthony\" ->', m2.classify('Anthony'))
+         print('  \"Kendall Jenner\" ->', m2.classify('Kendall Jenner'))
+     "
+     ```
+   * *Output:*
+     ```
+     Roster ["Anthony Kendall"]:
+       "Anthony Kendall" -> unknown
+       "Anthony" -> unknown
+       "Kendall Jenner" -> unknown
+     Roster ["Anthony", "Kendall"]:
+       "Anthony Kendall" -> human
+       "Anthony" -> human
+       "Kendall Jenner" -> human
+     ```
+
+3. **Reproduction (c) — Independence Comparator Token Match (`_identity_token`):**
+   * *Command:*
+     ```bash
+     ~/conda_envs/lhm/bin/python -c "from tools.lifecycle_planner import _identity_token; t1 = _identity_token('Claude (Internal Review)'); t2 = _identity_token('Cl' + chr(0x430) + 'ude (Internal Review)'); print('t1:', repr(t1)); print('t2:', repr(t2)); print('t1 == t2:', t1 == t2)"
+     ```
+   * *Output:*
+     ```
+     t1: 'claude'
+     t2: 'clude'
+     t1 == t2: False
+     ```
+
+4. **Attack Suite — Non-Decomposing Characters & ASCII Confusables on Proposed Fix:**
+   * *Command:*
+     ```bash
+     ~/conda_envs/lhm/bin/python -c "import unicodedata, re
+     _ASCII_WS_RE = re.compile(r'[ \t\r\n\v\f]+')
+     def _fold_word(raw: str, form: str) -> str:
+         d = unicodedata.normalize(form, unicodedata.normalize(form, raw).casefold())
+         d = ''.join(c for c in d if not unicodedata.combining(c))
+         return ''.join(c for c in d if ord(c) > 0x7F or ('a' <= c <= 'z') or ('0' <= c <= '9'))
+     def _grant_words(name: str) -> tuple[str, ...]:
+         words = _ASCII_WS_RE.split(name.strip())
+         return tuple(_fold_word(w, 'NFD') for w in words if _fold_word(w, 'NFD'))
+     def _flag_words(name: str) -> tuple[str, ...]:
+         words = _ASCII_WS_RE.split(name.strip())
+         return tuple(_fold_word(w, 'NFKD') for w in words if _fold_word(w, 'NFKD'))
+     AGENT_NAMES = {'claude', 'codex', 'gemini', 'cairn'}
+     def classify(byline: str, roster: list[str]) -> str:
+         if not byline.strip(): return 'unknown'
+         for w in _flag_words(byline):
+             for agent in AGENT_NAMES:
+                 if w.startswith(agent): return 'ai'
+         if _grant_words(byline) in {_grant_words(r) for r in roster}: return 'human'
+         return 'unknown'
+     roster = ['Anthony Kendall']
+     attacks = [
+         ('Anthony' + chr(0x430) + ' Kendall', 'Cyrillic a in Anthony'),
+         ('Anth' + chr(0x3b1) + 'ny Kendall', 'Greek alpha in Anthony'),
+         ('Łukasz Nowak', 'Polish Ł (non-decomposing stroke)'),
+         (chr(0xff21) + 'nthony Kendall', 'Fullwidth Latin A'),
+         ('Anthony K' + chr(0x1dd) + 'ndall', 'Latin small turned e ǝ'),
+         ('Anthony' + chr(0x00a0) + 'Kendall', 'Non-breaking space U+00A0'),
+         ('Anthony' + chr(0x2028) + 'Kendall', 'Line separator U+2028'),
+         ('Anthorny Kendall', 'rn vs m'),
+         ('Anthony KendaII', 'uppercase II vs ll'),
+         ('Anthony Kenda11', 'digits 11 vs ll'),
+         ('Anth0ny Kenda1l', 'digit 0 vs o, 1 vs l'),
+         ('Ciaude scribing for Anthony Kendall', 'i vs l in Ciaude'),
+         ('Cl1ude scribing for Anthony Kendall', '1 vs l in Cl1ude'),
+         ('Claurde scribing for Anthony Kendall', 'ur vs u in Claurde'),
+     ]
+     for b, desc in attacks:
+         print(f'{desc:42s} | {classify(b, roster):8s} | {str(_grant_words(b)):40s}')
+     "
+     ```
+   * *Output:*
+     ```
+     Cyrillic a in Anthony                      | unknown  | ('anthonyа', 'kendall')                 
+     Greek alpha in Anthony                     | unknown  | ('anthαny', 'kendall')                  
+     Polish Ł (non-decomposing stroke)          | unknown  | ('łukasz', 'nowak')                     
+     Fullwidth Latin A                          | unknown  | ('ａnthony', 'kendall')                  
+     Latin small turned e ǝ                     | unknown  | ('anthony', 'kǝndall')                  
+     Non-breaking space U+00A0                  | unknown  | ('anthony\xa0kendall',)                 
+     Line separator U+2028                      | unknown  | ('anthony\u2028kendall',)               
+     rn vs m                                    | unknown  | ('anthorny', 'kendall')                 
+     uppercase II vs ll                         | unknown  | ('anthony', 'kendaii')                  
+     digits 11 vs ll                            | unknown  | ('anthony', 'kenda11')                  
+     digit 0 vs o, 1 vs l                       | unknown  | ('anth0ny', 'kenda1l')                  
+     i vs l in Ciaude                           | unknown  | ('ciaude', 'scribing', 'for', 'anthony', 'kendall')
+     1 vs l in Cl1ude                           | unknown  | ('cl1ude', 'scribing', 'for', 'anthony', 'kendall')
+     ur vs u in Claurde                         | unknown  | ('claurde', 'scribing', 'for', 'anthony', 'kendall')
+     ```
+
+### Not Covered / Low Confidence (Negative Space)
+
+* **Code Edits & Sandbox Execution:** The proposal code changes have not been applied to `tools/lifecycle_planner.py` yet; all verification was performed via standalone Python execution against the live tree (`71abeb4`).
+* **Third-Party Confusables Database:** No third-party Unicode confusable skeleton database (e.g. TR39) was used, as Cairn maintains a zero-runtime-dependency budget for adopters.
+
+## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
+
+*(Awaiting the Maintainer. The proposal has cleared External Security Review. The Maintainer may accept the proposal to proceed with plan creation.)*
+
