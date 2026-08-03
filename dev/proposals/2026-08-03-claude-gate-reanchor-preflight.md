@@ -1084,3 +1084,61 @@ be named explicitly rather than assumed — and which now also bounds SR9's resi
 trust set and SR10's replay posture. All three collapse into one question for the
 Maintainer, and the proposal should not be accepted without it being answered in
 the Decision text.
+
+## Revised proposal (Round 4) -- 2026-08-03
+
+**Maintainer preference during drafting**, 2026-08-03, verbatim: *"Here, we are
+just talking about a trust root for Cairn itself, which is single-maintainer now
+but won't always boot."* Recorded per the template's rule that chat input shapes
+the draft but is **not** the Decision; the threat-model question below still
+requires the Decision text to answer it.
+
+This narrows Round 3's posture in time. Nothing mechanical changes; what changes
+is how the posture is recorded and what the plan is forbidden to foreclose.
+
+**The threat model is a dated posture, not an architectural assumption.** Round 3
+proposed the trusted-contributor model as a standing property. That is wrong for
+a project that expects to outgrow it: an unstated expiry is how a temporary
+allowance becomes permanent. The model is therefore recorded with an explicit
+scope — *Cairn's own trust root, single-maintainer, as of 2026-08-03* — and with
+named triggers that force revisiting rather than leaving it to notice:
+
+* a second person gains write access to the repository or its refs;
+* the repository begins accepting outside contributions or agent-authored work
+  from a party the Maintainer does not control;
+* the ceremony is run on a machine or checkout the Maintainer does not solely
+  control;
+* any adopter takes this mechanism (which alternative 4 currently declines).
+
+**Each residual gets a named upgrade path**, so tightening is a known addition
+rather than a redesign:
+
+* **SR7 (candidate execution).** Real OS containment for the evidence stage, or
+  moving evidence generation to a machine that holds no authority. The expensive
+  one; deliberately deferred, not designed away.
+* **SR9 (residual trust set).** External anchoring, which the surrounding
+  machinery **already supports and this repository simply does not use**:
+  `_gate_manifest.py verify --trusted-repo/--trusted-ref` resolves the anchor
+  object from an independent repository and refuses a target-supplied anchor.
+  That is the answer to "local write access to the anchor ref," and it is
+  available today — which is why every blessing so far has recorded "no external
+  anchor" as a condition rather than a limitation.
+* **SR10 (replay).** The single-use nonce and consumption ledger already named in
+  the Round-3 response.
+
+**Constraint on the implementing plan:** no design choice may foreclose the three
+upgrades above, and each must remain an addition rather than a rewrite. Concretely
+— `check` and `apply` must thread `--trusted-repo`/`--trusted-ref` through to the
+existing verify path even while this repository passes neither, so external
+anchoring is a configuration change and not a retrofit. The plan states, for each
+upgrade, what would have to change; a plan that cannot answer that has foreclosed
+something.
+
+**Unchanged:** the Decision must still name the posture explicitly (SR7). It
+should now also name it as **dated**, with the triggers above, so that the next
+person to touch this finds an expiry rather than an assumption.
+
+**For the reviewer, if a further round is run:** this is strictly narrowing —
+it adds no mechanism, weakens no guard, and shortens the life of the residual the
+previous rounds asked be named. I do not think it needs a fourth security read,
+but that is the Maintainer's call, not mine.
