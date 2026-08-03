@@ -901,7 +901,99 @@ in `013a953` performs or discharges it.
 
 **Verification:** canonical Python 3.13.13: focused suite,
 `89 passed in 7.42s`; full bootstrap suite, `1560 passed, 3 warnings in 105.00s`.
+
 Independent temp-repository probes exercised stale-anchor atomic abort,
 self-rehashed manifest substitution, actual commit message and signature,
 post-success index/worktree state, same-SHA branch switching, and a symbolic
 gate-anchor. No network or host-containment probe was repeated.
+
+## Response to security code review -- Claude (author) -- 2026-08-03
+
+**Model**: Claude Opus 5
+
+**All five accepted. CR1 is resolved by a third option neither of us proposed,
+chosen after an External read the Maintainer commissioned.** I reproduced CR1,
+CR2 and CR3 against the committed code before disposing; CR4 and CR5 I accept on
+the reviewer's execution evidence, both being plainly correct.
+
+* **[CR1] accept -- and my proposed fix was rejected too.** Reproduced: changing
+  `manifest.collection.node_count` to `999999`, recomputing the adjacent digest,
+  and running `apply` anchored the tampered value. My design treated a digest
+  stored beside the bytes it covers as tamper evidence; it is a corruption
+  check. I offered two remedies and the External read rejected both. An
+  out-of-band digest argument only *narrows* it -- file-write and terminal
+  access are one practical authority domain on a single-user machine -- and
+  burdens a non-engineer with carrying a 64-character provenance. A signed check
+  artifact fails for a reason I should have seen myself: agents already hold the
+  Maintainer's key, so a signature proves *"someone could use this key"*, not
+  *"the anchored checker produced these bytes"* -- **the exact key-holder-not-
+  process limitation I wrote into `check_signatures` and then failed to apply
+  when evaluating my own proposal.**
+
+  Resolved by removing the artifact from the authority path entirely. `apply`
+  now takes **no bundle and no digest**: it runs the evidence stage and the
+  read-only checks itself, keeps the result in memory, and constructs from
+  values it derived. `check` remains a non-mutating preview whose output is a
+  record to read, explicitly not an input. `parse_bundle` is deleted, and a test
+  asserts it stays deleted. The stage separation survives -- candidate execution
+  still happens in the evidence subprocess, the checker still executes none of
+  it -- only the orchestration is now one invocation. This also *simplifies* the
+  ceremony, which matters for its operator.
+
+* **[CR2] accept.** Reproduced: the blessed commit's subject was
+  `cairn: supervised gate re-anchor (N = C + manifest)`, `message bound? False`,
+  signature `N`. Chunk C's entire audit trail was discarded by Chunk D, and the
+  most privileged commit in the repository was unsigned -- permanently invisible
+  to later `anchor..HEAD` signature checks, since it becomes the anchor. Fixed
+  with `_construct_signed_commit` in `_gate_preflight.py`, which uses the exact
+  reviewed message and `commit-tree -S`. Written here rather than editing
+  `_gate_reanchor.py` deliberately: that file is FROZEN, so fixing this plan's
+  defect there would have forced a re-anchor. `verify_constructed` now checks
+  parent, changed path, blob digest, **message**, signature validity and pinned
+  principal -- all before any ref moves, with wrong-message and unsigned
+  substitutions proving each non-vacuous.
+
+* **[CR3] accept.** Reproduced: after a successful apply, `git status` reported
+  `M bootstrap/tests/fixtures/gate_manifest.json`. Fixed by syncing the real
+  index and worktree after the transaction. Note the result is *stronger* than
+  the satisfier asked for: because construction uses a temporary index and never
+  touches the real one, an aborted transaction leaves **no residue at all**,
+  rather than residue that must be reported accurately. Asserted on both
+  `git diff` and `git diff --cached` after success, and on a clean tree after a
+  forced abort.
+
+* **[CR4] accept.** The anchor must now be a **direct** ref (`_require_direct_ref`
+  refuses a symbolic one), and the transaction passes `--no-deref`. `apply`
+  derives the branch itself rather than reading it from an artifact, so the
+  same-SHA branch-switch path is gone with the artifact. The access boundary is
+  restated as the finding asked: `check` has no path to any writer, and `apply`'s
+  capability is an *enumerated* set (`update-ref`, `hash-object`, `read-tree`,
+  `update-index`, `write-tree`, `commit-tree`, `add`) rather than a claim that
+  every invocation passes `_git`.
+
+* **[CR5] accept, with a residual I am stating rather than hiding.** Added
+  public-path subprocess tests: `evidence` → `check`, malformed evidence, and
+  `apply` refusing without confirmation while moving no ref. **There is still no
+  public-path `apply` SUCCESS case.** It would need the real manifest producer
+  to run inside a fixture, and the producer requires more of the repository than
+  a fixture can carry -- it fails outright in a minimal tree. `apply`'s success
+  path is covered in-process against a fixture that copies the real
+  authority-closure files and configures real SSH signing. So CR5's actual
+  point -- that missing public-path coverage let a discarded message and a dirty
+  success state pass 89/89 -- is answered, but the residual is real: no single
+  subprocess run exercises all three commands together, and I have written that
+  into the test class docstring rather than let a future reader assume otherwise.
+
+**Verification (canonical interpreter `/Users/kendal30/conda_envs/lhm/bin/python`,
+Python 3.13.13): 1554 passed, 0 failed** -- 1471 pre-existing plus 83 in
+`test_gate_preflight.py` (down from 89: the bundle-authority tests were deleted
+with the bundle they tested). Four mutations confirmed failing -- dropped `-S`,
+dropped worktree sync, dropped message verification, allowed symbolic anchor --
+with the source restored byte-identical each time. `_gate_reanchor.py` untouched,
+so no re-anchor is forced. Gate integrity intact; `refs/cairn/gate-anchor` still
+`bf08f62`, unmoved by any test.
+
+**Not reopened, per the reviewer's own framing:** the evidence stage's host
+access remains the Decision-accepted trusted-contributor residual; replay remains
+revalidate-and-confirm with no nonce (SR10); first use still requires Chunk G's
+Maintainer-only exact-byte bootstrap, which nothing here performs or discharges.

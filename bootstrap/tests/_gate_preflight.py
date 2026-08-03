@@ -666,10 +666,20 @@ def check_evidence(evidence: dict, head: str, report: Report) -> None:
 #: Bundle schema version. ``apply`` refuses anything else.
 BUNDLE_SCHEMA = 1
 
-#: Git subcommands ``apply`` may run. Deliberately a *separate*, much narrower
-#: allowlist than :data:`_READ_ONLY_GIT`: the ability to move a ref should be
-#: visibly partitioned from the checker, not reachable from it.
-_WRITE_GIT = frozenset({"update-ref"})
+#: The enumerated write operations ``apply`` needs -- object writes, the real
+#: index/worktree transition, and the two-direct-ref transaction. Deliberately a
+#: *separate* allowlist from :data:`_READ_ONLY_GIT`, so `check` has no path to
+#: any repository writer while `apply`'s capability is stated rather than
+#: implied (security code review CR4).
+_WRITE_GIT = frozenset({
+    "update-ref",     # the two-direct-ref transaction, --stdin only
+    "hash-object",    # write the manifest blob
+    "read-tree",      # build the prospective tree in a TEMP index
+    "update-index",   # insert the blob there, and refresh the real index
+    "write-tree",
+    "commit-tree",    # construct the signed commit
+    "add",            # the post-transaction worktree/index sync
+})
 
 
 def draft_message(*, observed_anchor: str, checked_head: str,
@@ -727,9 +737,16 @@ the Maintainer's own acts, per REANCHOR_RUNBOOK's Maintainer-only constraint.
 """
 
 
-def build_bundle(report: Report, evidence: dict, *, repo: Path = _REPO,
-                 last_legitimate_anchor: str | None = None) -> dict:
-    """Bind the checked state to the artifact ``apply`` revalidates."""
+def blessing_plan(report: Report, evidence: dict, *, repo: Path = _REPO,
+                  last_legitimate_anchor: str | None = None) -> dict:
+    """The derived description of what a blessing would do.
+
+    Formerly emitted as a handoff *bundle* that ``apply`` read back and trusted.
+    Code review CR1 falsified that: value and digest sat in the same editable
+    JSON, so re-hashing a tampered manifest was accepted. It is now built in
+    memory by whichever command needs it, and `check` may write it out only as a
+    **record for the operator to read** -- nothing consumes it as authority.
+    """
     old = json.loads(_blob_at(report.facts["anchor"], _MANIFEST_REL,
                               repo=repo) or b"{}")
     new = evidence["manifest"]
@@ -765,132 +782,239 @@ def build_bundle(report: Report, evidence: dict, *, repo: Path = _REPO,
     }
 
 
-def parse_bundle(text: str) -> dict:
-    """Parse a bundle, refusing anything unexpected. Untrusted input."""
-    try:
-        data = json.loads(text)
-    except json.JSONDecodeError as exc:
-        raise PreflightError(f"bundle is not valid JSON: {exc}") from None
-    if not isinstance(data, dict):
-        raise PreflightError("bundle must be a JSON object")
-    if data.get("schema") != BUNDLE_SCHEMA:
-        raise PreflightError(
-            f"bundle schema {data.get('schema')!r} != expected {BUNDLE_SCHEMA}")
-    for key, typ in (("checked_head", str), ("observed_anchor", str),
-                     ("manifest", dict), ("manifest_sha256", str),
-                     ("message", str), ("message_sha256", str)):
-        if not isinstance(data.get(key), typ):
-            raise PreflightError(
-                f"bundle field {key!r} missing or not {typ.__name__}")
-    for key in ("checked_head", "observed_anchor"):
-        sha = data[key]
-        if len(sha) != 40 or any(c not in "0123456789abcdef" for c in sha):
-            raise PreflightError(f"bundle {key} is not a full sha: {sha!r}")
-    if _sha256_bytes(data["message"].encode()) != data["message_sha256"]:
-        raise PreflightError("bundle message does not match its recorded digest")
-    return data
-
-
 # --------------------------------------------------------------------------
 # Chunk D -- apply: revalidate, construct, verify, then one ref transaction
 # --------------------------------------------------------------------------
 
-def _git_write(*args: str, repo: Path = _REPO,
-               stdin: str | None = None) -> subprocess.CompletedProcess:
-    """The **only** ref-writing path, with its own narrow allowlist."""
+def _git_write(*args: str, repo: Path = _REPO, stdin: str | None = None,
+               want_bytes: bool = False) -> subprocess.CompletedProcess:
+    """The **only** repository-writing path, with its own enumerated allowlist."""
     if not args or args[0] not in _WRITE_GIT:
         raise PreflightError(
             f"apply may only run {sorted(_WRITE_GIT)}; refused "
             f"{(args[0] if args else '<none>')!r}")
     return subprocess.run(["git", "-C", str(repo), *args], input=stdin,
-                          capture_output=True, text=True, check=False)
+                          capture_output=True, text=not want_bytes, check=False)
 
 
-def _advance_both_refs(repo: Path, branch: str, new: str, *,
-                       branch_old: str, anchor_old: str) -> tuple[bool, str]:
-    """Advance the branch and the gate anchor in **one** expected-old transaction.
+def _require_direct_ref(ref: str, *, repo: Path = _REPO) -> None:
+    """Refuse a symbolic ref as a transaction target (code review CR4).
 
-    Security review SR8: creating the commit and *then* advancing the anchor
-    leaves a blessing-shaped commit on the branch when the anchor CAS fails. A
-    single ``update-ref --stdin`` transaction aborts wholesale -- verified: on a
-    stale expected-old, git returns non-zero and **both** refs stay put.
+    ``update-ref`` follows a symbolic ref by default, so a gate anchor turned
+    symbolic would silently advance a *third* logical ref -- the claimed two-ref
+    transaction would then have three targets.
     """
-    stdin = (f"start\n"
-             f"update {branch} {new} {branch_old}\n"
-             f"update {_ANCHOR_REF} {new} {anchor_old}\n"
-             f"prepare\ncommit\n")
-    p = _git_write("update-ref", "--stdin", repo=repo, stdin=stdin)
-    return p.returncode == 0, (p.stderr or p.stdout or "").strip()
+    p = _git("rev-parse", "--symbolic-full-name", ref, repo=repo)
+    resolved = (p.stdout or "").strip()
+    if resolved != ref:
+        raise PreflightError(
+            f"{ref} is symbolic (points at {resolved!r}); the transaction "
+            f"requires direct refs so it has exactly its two intended targets")
 
 
-def apply_bundle(bundle: dict, *, repo: Path = _REPO,
-                 confirmed: bool = False, out=sys.stderr) -> dict:
-    """Revalidate, construct, verify, then move both refs -- or nothing.
+def _construct_signed_commit(repo: Path, head: str, manifest_bytes: bytes,
+                             message: str) -> str:
+    """Build ``N = HEAD's tree + the reviewed manifest``, with the reviewed
+    message, **signed**.
 
-    The bundle is **revalidate-and-confirm, not mechanically single-use**
-    (security review SR10): with no nonce or consumption ledger, a bundle whose
-    bound state is restored can be resubmitted, and every invocation revalidates
-    and requires fresh confirmation rather than pretending otherwise.
+    Written here rather than reusing ``_gate_reanchor._construct_anchor_commit``
+    for two reasons: that helper hard-codes its own message and does not sign, so
+    the audit trail never reached the commit and the most privileged commit in
+    the repository was unsigned (code review CR2); and it is a FROZEN gate file,
+    so editing it would force a re-anchor to fix a defect in this plan's work.
+
+    A temporary index is used, so nothing touches the real index or worktree
+    until the transaction has succeeded.
     """
-    if not confirmed:
-        raise PreflightError(
-            "apply requires explicit Maintainer confirmation "
-            "(--confirm-supervised-reanchor); it moves the trust root")
+    with tempfile.TemporaryDirectory(prefix="cairn-preflight-idx-") as td:
+        idx = str(Path(td) / "index")
 
-    head = _resolve("HEAD", repo=repo)
-    anchor = _resolve(_ANCHOR_REF, repo=repo)
-    if head != bundle["checked_head"]:
-        raise PreflightError(
-            f"HEAD moved since the bundle was built "
-            f"({bundle['checked_head'][:12]} -> {head[:12]}); re-run check")
-    if anchor != bundle["observed_anchor"]:
-        raise PreflightError(
-            f"the anchor moved since the bundle was built "
-            f"({bundle['observed_anchor'][:12]} -> {anchor[:12]}); re-run check")
+        def g(*args, **kw):
+            kw.setdefault("repo", repo)
+            return _git_write(*args, **kw)
 
-    manifest_bytes = (json.dumps(bundle["manifest"], indent=2, sort_keys=True)
-                      .encode() + b"\n")
-    if _sha256_bytes(manifest_bytes) != bundle["manifest_sha256"]:
-        raise PreflightError("bundle manifest body does not match its digest")
+        # The index-scoped steps need GIT_INDEX_FILE in the child environment;
+        # _git_write does not thread env, so it is set around them and restored.
+        import os as _os  # noqa: PLC0415 -- local, not an authority-closure dep
+        saved = _os.environ.get("GIT_INDEX_FILE")
+        _os.environ["GIT_INDEX_FILE"] = idx
+        try:
+            rt = g("read-tree", head)
+            if rt.returncode != 0:
+                raise PreflightError(f"read-tree failed: {rt.stderr.strip()}")
+            ho = _git_write("hash-object", "-w", "--stdin", repo=repo,
+                            stdin=manifest_bytes.decode("utf-8"))
+            if ho.returncode != 0:
+                raise PreflightError(f"hash-object failed: {ho.stderr.strip()}")
+            blob = ho.stdout.strip()
+            ui = g("update-index", "--add", "--cacheinfo",
+                   f"100644,{blob},{_MANIFEST_REL}")
+            if ui.returncode != 0:
+                raise PreflightError(f"update-index failed: {ui.stderr.strip()}")
+            wt = g("write-tree")
+            tree = wt.stdout.strip()
+            if wt.returncode != 0 or not tree:
+                raise PreflightError(f"write-tree failed: {wt.stderr.strip()}")
+            ct = _git_write("commit-tree", tree, "-p", head, "-S", "-F", "-",
+                            repo=repo, stdin=message)
+            new = ct.stdout.strip()
+            if ct.returncode != 0 or len(new) != 40:
+                raise PreflightError(
+                    f"commit-tree failed (is signing configured?): "
+                    f"{ct.stderr.strip()}")
+            return new
+        finally:
+            if saved is None:
+                _os.environ.pop("GIT_INDEX_FILE", None)
+            else:
+                _os.environ["GIT_INDEX_FILE"] = saved
 
-    branch = _git("rev-parse", "--symbolic-full-name", "HEAD",
-                  repo=repo).stdout.strip()
-    if not branch.startswith("refs/heads/"):
-        raise PreflightError(
-            f"HEAD is not on a branch ({branch!r}); refusing to advance a "
-            f"detached HEAD")
 
-    # Construct and verify BEFORE any ref moves (SR8).
-    new = R._construct_anchor_commit(repo, head, _MANIFEST_REL, manifest_bytes)
+def verify_constructed(repo: Path, new: str, head: str, *,
+                       manifest_sha256: str, message: str,
+                       principals: set, roster_path: Path) -> None:
+    """Verify the constructed commit **from the commit object**, before any ref
+    moves: exact parent, exact changed path, exact manifest blob digest, exact
+    message, valid signature, pinned principal (code review CR2)."""
     parents = _git("rev-parse", f"{new}^@", repo=repo).stdout.split()
     if parents != [head]:
         raise PreflightError(
             f"constructed commit's parent is {parents}, expected [{head}]")
+
     changed = [f for f in _git("diff", "--name-only", f"{head}..{new}",
                                repo=repo).stdout.splitlines() if f.strip()]
     if changed != [_MANIFEST_REL]:
         raise PreflightError(
             f"constructed commit changes {changed}, expected only "
             f"[{_MANIFEST_REL}]")
+
     blob = _blob_at(new, _MANIFEST_REL, repo=repo)
-    if blob is None or _sha256_bytes(blob) != bundle["manifest_sha256"]:
+    if blob is None or _sha256_bytes(blob) != manifest_sha256:
         raise PreflightError(
             "constructed commit's manifest blob does not carry the reviewed "
             "digest")
-    out.write(f"constructed and verified {new[:12]} (parent {head[:12]}, "
-              f"diff = {_MANIFEST_REL} only)\n")
+
+    body = _git("log", "-1", "--format=%B", new, repo=repo).stdout
+    if body.strip() != message.strip():
+        raise PreflightError(
+            "constructed commit does not carry the reviewed message -- the "
+            "audit trail would be lost")
+
+    sig = _git("log", "-1", "--format=%G?%x09%GS", new, repo=repo,
+               config={"gpg.ssh.allowedSignersFile": str(roster_path)})
+    status, _, signer = (sig.stdout or "").strip().partition("\t")
+    if status != "G":
+        raise PreflightError(
+            f"constructed commit is not validly signed (status {status or '?'})"
+            f" -- it becomes the anchor, so later anchor..HEAD checks would "
+            f"never see it")
+    if signer not in principals:
+        raise PreflightError(
+            f"constructed commit is signed by an unpinned principal {signer!r}")
+
+
+def _advance_both_refs(repo: Path, branch: str, new: str, *,
+                       branch_old: str, anchor_old: str) -> tuple[bool, str]:
+    """Advance the branch and the gate anchor in **one** expected-old transaction.
+
+    ``--no-deref`` so a symbolic target cannot redirect an update (CR4), on top
+    of the direct-ref precondition checked separately.
+    """
+    stdin = (f"start\n"
+             f"update {branch} {new} {branch_old}\n"
+             f"update {_ANCHOR_REF} {new} {anchor_old}\n"
+             f"prepare\ncommit\n")
+    p = _git_write("update-ref", "--no-deref", "--stdin", repo=repo, stdin=stdin)
+    return p.returncode == 0, (p.stderr or p.stdout or "").strip()
+
+
+def _sync_worktree(repo: Path, manifest_bytes: bytes) -> None:
+    """Bring the real index and worktree in line with the new HEAD.
+
+    Construction uses a temporary index, so before this the real index and
+    worktree still carry the pre-blessing blob and ``git status`` reports the
+    manifest as staged against the new trust root -- an immediate dirty state and
+    a staged rollback waiting to ride a later commit (code review CR3). Because
+    construction touched neither, an aborted transaction leaves **no** residue at
+    all, which is stronger than reporting one.
+    """
+    (repo / _MANIFEST_REL).write_bytes(manifest_bytes)
+    add = _git_write("add", "--", _MANIFEST_REL, repo=repo)
+    if add.returncode != 0:
+        raise PreflightError(
+            f"the refs advanced but the worktree/index sync failed: "
+            f"{add.stderr.strip()} -- the repository is left with the manifest "
+            f"unstaged; reconcile before committing anything else")
+
+
+def apply_now(*, repo: Path = _REPO, confirmed: bool = False,
+              out=sys.stderr) -> dict:
+    """Re-derive everything, then bless -- **no handoff artifact is trusted**.
+
+    Code review CR1 established that a bundle carrying its own digests is a
+    corruption check, not tamper evidence: both value and digest come from the
+    same editable JSON, and an execution probe re-hashed a tampered manifest and
+    had it anchored. External review then rejected both an out-of-band digest
+    argument (file-write and terminal access are one practical authority domain
+    on a single-user machine, and it burdens the operator with a 64-character
+    provenance) and a signed check artifact (agents already hold the Maintainer's
+    key, so a signature proves "someone could use this key", not "the anchored
+    checker produced these bytes" -- the same key-holder-not-process limit
+    :func:`check_signatures` documents).
+
+    So there is no authority-bearing file. ``apply`` runs the evidence stage and
+    the read-only checks itself, keeps the result in memory, and constructs from
+    values it derived. ``check`` remains available as a non-mutating preview; its
+    output is a record for the operator to read, never an input here.
+    """
+    if not confirmed:
+        raise PreflightError(
+            "apply requires explicit Maintainer confirmation "
+            "(--confirm-supervised-reanchor); it moves the trust root")
+
+    out.write("apply: re-deriving everything; no handoff artifact is trusted\n")
+    evidence = gather_evidence("HEAD", repo=repo, out=out)
+    report = check(repo=repo, evidence=evidence)
+    _render(report, out)
+    if report.blocked:
+        raise PreflightError(
+            "the read-only checks refuse this state; nothing was written")
+
+    head, anchor = report.facts["head"], report.facts["anchor"]
+    branch = _git("rev-parse", "--symbolic-full-name", "HEAD",
+                  repo=repo).stdout.strip()
+    if not branch.startswith("refs/heads/"):
+        raise PreflightError(
+            f"HEAD is not on a branch ({branch!r}); refusing to advance a "
+            f"detached HEAD")
+    _require_direct_ref(_ANCHOR_REF, repo=repo)
+
+    plan = blessing_plan(report, evidence, repo=repo)
+    manifest_bytes = (json.dumps(evidence["manifest"], indent=2, sort_keys=True)
+                      .encode() + b"\n")
+
+    with anchored_roster(anchor, repo=repo) as (roster_path, roster_text):
+        principals = parse_principals(roster_text)
+        new = _construct_signed_commit(repo, head, manifest_bytes,
+                                       plan["message"])
+        verify_constructed(repo, new, head,
+                           manifest_sha256=evidence["manifest_sha256"],
+                           message=plan["message"], principals=principals,
+                           roster_path=roster_path)
+    out.write(f"constructed, signed and verified {new[:12]}\n")
 
     ok, detail = _advance_both_refs(repo, branch, new, branch_old=head,
                                     anchor_old=anchor)
     if not ok:
-        # No cleanup: a cleanup step here would disguise which ref did or did
-        # not advance, which is exactly what the 2026-08-03 incident cost.
         raise PreflightError(
             f"the ref transaction ABORTED -- neither {branch} nor {_ANCHOR_REF} "
-            f"moved, and {new[:12]} is an unreferenced object left in place "
-            f"rather than deleted, so the state is inspectable: {detail}")
+            f"moved, and the real index and worktree were never touched, so "
+            f"there is no residue to reconcile. {new[:12]} is an unreferenced "
+            f"object left in place rather than deleted, so the state is "
+            f"inspectable: {detail}")
+    _sync_worktree(repo, manifest_bytes)
     out.write(f"advanced {branch} and {_ANCHOR_REF} to {new[:12]} in one "
-              f"expected-old transaction\n")
+              f"expected-old transaction; worktree and index synced\n")
     return {"new_anchor": new, "branch": branch, "previous_anchor": anchor,
             "previous_head": head}
 
@@ -899,7 +1023,7 @@ def apply_bundle(bundle: dict, *, repo: Path = _REPO,
 # orchestration
 # --------------------------------------------------------------------------
 
-def check(*, repo: Path = _REPO, evidence_path: str | None = None,
+def check(*, repo: Path = _REPO, evidence: dict | None = None,
           trusted_repo: str | None = None,
           trusted_ref: str = "HEAD") -> Report:
     """Run every read-only check. Returns a :class:`Report`; raises only on a
@@ -928,10 +1052,9 @@ def check(*, repo: Path = _REPO, evidence_path: str | None = None,
                  "externally anchored" if not trusted_repo else None),
     }
 
-    if evidence_path is not None:
-        evidence = parse_evidence(Path(evidence_path).read_text(encoding="utf-8"))
+    if evidence is not None:
         check_evidence(evidence, head, report)
-        report.facts["evidence_parsed"] = evidence
+        report.facts["evidence_checked"] = True
     return report
 
 
@@ -959,8 +1082,9 @@ def main(argv: list[str] | None = None) -> int:
                         "target (external anchoring)")
     c.add_argument("--trusted-ref", default="HEAD")
     c.add_argument("--bundle-out", default=None,
-                   help="write the digest-bound bundle here when every check "
-                        "passes (requires --evidence)")
+                   help="write the derived blessing plan here as a RECORD to "
+                        "read (requires --evidence). It is not an input to "
+                        "`apply`, which trusts no handoff artifact.")
     c.add_argument("--last-legitimate-anchor", default=None,
                    help="recovery only: the Maintainer-supplied last "
                         "legitimately blessed anchor. Nothing can derive this "
@@ -981,7 +1105,6 @@ def main(argv: list[str] | None = None) -> int:
         help="revalidate a bundle, construct and verify the commit, then move "
              "the branch and gate anchor in ONE transaction -- Maintainer-only")
     a.add_argument("--repo", default=None)
-    a.add_argument("--bundle", required=True)
     a.add_argument("--confirm-supervised-reanchor", action="store_true",
                    dest="confirmed",
                    help="required; this is the only step that moves the trust "
@@ -1006,9 +1129,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.cmd == "apply":
         try:
-            bundle = parse_bundle(
-                Path(args.bundle).read_text(encoding="utf-8"))
-            result = apply_bundle(bundle, repo=repo, confirmed=args.confirmed)
+            result = apply_now(repo=repo, confirmed=args.confirmed)
         except PreflightError as exc:
             sys.stderr.write(f"[REFUSE ] {exc}\n")
             return 2
@@ -1017,7 +1138,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     try:
-        report = check(repo=repo, evidence_path=args.evidence,
+        evidence = (parse_evidence(
+                        Path(args.evidence).read_text(encoding="utf-8"))
+                    if args.evidence else None)
+        report = check(repo=repo, evidence=evidence,
                        trusted_repo=args.trusted_repo,
                        trusted_ref=args.trusted_ref)
     except PreflightError as exc:
@@ -1025,16 +1149,18 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     _render(report, sys.stderr)
     if not report.blocked and args.bundle_out:
-        ev = report.facts.get("evidence_parsed")
-        if ev is None:
+        if evidence is None:
             sys.stderr.write("[REFUSE ] --bundle-out requires --evidence\n")
             return 2
-        bundle = build_bundle(report, ev, repo=repo,
-                              last_legitimate_anchor=args.last_legitimate_anchor)
+        plan = blessing_plan(report, evidence, repo=repo,
+                             last_legitimate_anchor=args.last_legitimate_anchor)
         Path(args.bundle_out).write_text(
-            json.dumps(bundle, indent=2, sort_keys=True) + "\n",
+            json.dumps(plan, indent=2, sort_keys=True) + "\n",
             encoding="utf-8")
-        sys.stderr.write(f"bundle written to {args.bundle_out}\n")
+        sys.stderr.write(
+            f"preview record written to {args.bundle_out} -- this is a RECORD "
+            f"for you to read, NOT an input to `apply`, which re-derives "
+            f"everything itself\n")
     if report.blocked:
         sys.stderr.write("\nPRE-FLIGHT REFUSED -- do not bless this state.\n")
         return 1
