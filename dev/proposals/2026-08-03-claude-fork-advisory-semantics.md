@@ -7,7 +7,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: proposed
+**Status**: reviewed
 **Touches**: `bootstrap/_scaffold/lockfile.py` (`forked_facade_findings`,
 `format_forked_facade_warning`), `bootstrap/_scaffold/install.py` (one new
 helper), `bootstrap/_scaffold/upgrade.py` (`cmd_upgrade`, one call site),
