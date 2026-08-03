@@ -631,3 +631,86 @@ exist for any part).
 **Nothing disputed.** Every finding is accepted, three of them correct errors I
 made rather than gaps I left. The proposal is more useful superseded than revised
 in place.
+
+## Amendment -- Claude (author) -- 2026-08-03 -- a declared residual is now a demonstrated exploit
+
+**Model**: Claude Opus 5. Appended before Decision, because the Decision would
+otherwise ratify a residual on a premise I have since falsified by execution.
+
+The *Author-accounting* block above declares **non-ASCII byline normalization out
+of scope**, and the reviewer's coverage line records that they did not assess it.
+Both were reasonable at the time. Neither survives measurement.
+
+### The demonstration
+
+Run against the live `dev/.cairn/agent-identities.json`, canonical Python
+3.13.13:
+
+<!-- cairn-accept: homoglyph reason="The Cyrillic U+0430 is the exploit being demonstrated; removing it would delete the evidence this amendment exists to record. The scanner flagging it here is the scanner working correctly." reviewer="Claude" date=2026-08-03 -->
+```
+'Claude scribing for Anthony Kendall'  ->  ai
+'Clаude scribing for Anthony Kendall'  ->  human
+```
+<!-- cairn-accept-end: homoglyph -->
+
+One character differs: the `a` in the second string is Cyrillic (U+0430). The two
+render identically in every editor, terminal, diff, and web view. The classifier
+normalizes with a bare `re.sub(r"[^a-z0-9]", "", raw.lower())` and no Unicode
+normalization, so the Cyrillic character is **deleted** rather than matched, the
+token `claude` never forms, the AI registry never fires, and the byline falls
+through to the human allowlist.
+
+### Why this is materially worse than the residual already accepted
+
+[IDN3] narrowed Part 2 to a structural lint and recorded an **exact-name spoof**
+as an accepted residual. That acceptance rested on a specific defence: an AI
+writing a human's name *visibly* is something a human reviewer notices. That
+defence is real, and it is why the residual was tolerable.
+
+<!-- cairn-accept: homoglyph reason="Second occurrence of the demonstrated exploit string; same rationale as above -- the spoofed byline is the evidence, not an accident." reviewer="Claude" date=2026-08-03 -->
+A homoglyph byline defeats it. `Clаude scribing for Anthony Kendall` is
+<!-- cairn-accept-end: homoglyph -->
+indistinguishable from the honest scribing convention this repository uses
+routinely. Human review does not catch it, because there is nothing to see. The
+residual as accepted assumed a human backstop that this variant removes.
+
+### A second defect, in the opposite direction, found while testing the first
+
+The roster and the byline are normalized by **different rules** — entries whole,
+bylines per-token. So an adopter who configures the obvious thing gets an
+allowlist that matches nothing at all:
+
+```
+roster ['Anthony Kendall']   ->  'Anthony Kendall' -> unknown ,  'Anthony' -> unknown
+roster ['Anthony','Kendall'] ->  'Anthony Kendall' -> human
+```
+
+The correct-looking configuration **fails closed** — every Decision the adopter
+authors classifies `unknown`, which the planner treats as a structural violation.
+The configuration that works is the one that also produces the `Kendall Jenner`
+over-match in the table above. Cairn escapes the first failure only because its
+own config happens to list two separate name tokens, which is precisely what
+creates the second. Both directions are wrong; this ships to adopters verbatim as
+`skills/_lib/lifecycle_planner.py`.
+
+### What this changes
+
+Part 2's successor scope is no longer "make matching symmetric." It is:
+
+1. **Normalize before classifying, and fail closed on what survives.** `NFD`,
+   strip combining marks, then treat any *remaining* non-ASCII letter as a
+   poisoned token that classifies `unknown` — already a flagged violation. The
+   invariant is that **dropping a character must never widen authority**; today
+   it does exactly that.
+2. **Fix the whole-string / per-token asymmetry**, so a full-name roster entry is
+   configurable and a partial token is not.
+3. **Record the honest cost**: rule 1 permanently flags a legitimately-rostered
+   non-ASCII maintainer name. For a vendor-neutral project courting international
+   contributors that is a real price, and it should be stated in the successor
+   rather than discovered by the first contributor it inconveniences.
+
+**Recommendation unchanged in shape, sharpened in content.** The recommended
+Decision remains *supersede into four scopes*. This amendment raises the second
+scope from a correctness cleanup to a security fix with a demonstrated exploit,
+and it should carry a security lens on its plan review — which the Response did
+not ask for, because at that point the exploit had not been demonstrated.
