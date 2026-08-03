@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: proposed
+**Status**: reviewed
 **Touches**: `bootstrap/_scaffold/config.py` (the `_minimal_yaml_parse` fallback parser and `load_config`), `bootstrap/_scaffold/cli.py` (the profile-key report and the module docstring that `--help` prints), `bootstrap/BOOTSTRAP.md` (Appendix B schema rules), `bootstrap/tests/test_presets.py`, `bootstrap/tests/test_scaffold.py`, and the AST attestation baseline `bootstrap/tests/fixtures/scaffold_ast_baseline.json` (mandatory re-anchor — this touches `bootstrap/_scaffold/`)
 **Related**: `2026-07-08-claude-broad-look-skeptical-review` (Theme 3, item 3 — "the one place the installer guesses instead of stopping"); `2026-07-11-claude-solo-legacy-adopter-path` (review finding R1, the first sighting of the same parser defect, worked around in prose only)
 **Plan review**: required(External + External Security Review) — this changes behavior inside `bootstrap/_scaffold/`, the high-risk scaffold/merge engine named in `AGENTS.md`; it converts several fail-open readings of an untrusted input file into fail-closed refusals on the install contract; and it mandates an AST attestation re-anchor. Each of those is independently a Security-Review trigger under the proposal template's protected-contract list.
@@ -540,3 +540,107 @@ Both new-test homes are existing files; no new test module.
 * **The AST re-anchor surfaces unexpected symbol motion.** Recovery:
   halt; an unexplained engine-baseline delta is a stop-the-line event,
   not a re-pin.
+
+## Review -- Gemini Flash (External, Security Review) -- 2026-08-03
+
+**Model**: Gemini 3.6 Flash (External, different-agent-type)
+**Verdict**: SHIP (recommend ACCEPT; reproduced all 12 claimed divergence cases, verified `--help` example 5-file discrepancy, took position on warn vs refuse)
+
+### Steelman
+
+This proposal addresses a critical, long-standing reliability defect in Cairn's zero-dependency fallback parser (`_minimal_yaml_parse` in `bootstrap/_scaffold/config.py`). Because `_minimal_yaml_parse` fails to strip unquoted scalar comments (`#`), strips quotes unbalancedly, and handles comments inside quoted strings incorrectly, the exact profile example shipped in `scaffold.py --help` and `bootstrap/BOOTSTRAP.md` parses differently depending on whether the ambient Python environment has PyYAML installed.
+
+Part A brings strict, deterministic parity between `_minimal_yaml_parse` and `yaml.safe_load` for all supported profile constructs and fails closed with clear `<file>:<line>` error messages on unrepresentable YAML structures. Part C introduces a mandatory sweep test asserting parity across all Markdown profile blocks and `--help` text, preventing prose drift from recurring.
+
+### Concerns and Findings
+
+* **[G1] (Reproduction of the Divergence Table — 12 of 12 Reproduced)**
+  * *Verification:* Executed all 12 profile input cases through `yaml.safe_load` and `_minimal_yaml_parse` side-by-side using canonical interpreter `~/conda_envs/lhm/bin/python` (Python 3.13.13).
+  * *Results:* Reproduced **12 out of 12** claimed divergence cases (100%).
+  * *Verbatim Test Script & Output:*
+    ```bash
+    ~/conda_envs/lhm/bin/python -c "import yaml
+    from bootstrap._scaffold.config import _minimal_yaml_parse
+
+    cases = [
+        ('forge: gitlab   # gitlab | github', 'forge: gitlab   # gitlab | github'),
+        ('project_name: X   # note', 'project_name: X   # note'),
+        ('preset: X   # note', 'preset: X   # note'),
+        ('dual_review: v   # note', 'dual_review: v   # note'),
+        ('test_command: \"pytest -k \'a # b\'\"', 'test_command: \"pytest -k \'a # b\'\"'),
+        ('modules:\n  - \"a # b\"', 'modules:\n  - \"a # b\"'),
+        ('modules: [a, b]', 'modules: [a, b]'),
+        ('parent:\n  child: val', 'parent:\n  child: val'),
+        ('\t- item', 'modules:\n\t- item'),
+        ('preset:solo-greenfield', 'preset:solo-greenfield'),
+        ('forge: no', 'forge: no'),
+        ('some_count: 3', 'some_count: 3')
+    ]
+
+    for label, inp in cases:
+        try: py_res = yaml.safe_load(inp)
+        except Exception as e: py_res = f'{type(e).__name__}'
+        try: fb_res = _minimal_yaml_parse(inp)
+        except Exception as e: fb_res = f'{type(e).__name__}'
+        print(f'{inp!r} | PyYAML: {py_res!r} | Fallback: {fb_res!r} | Div: {py_res != fb_res}')
+    "
+    ```
+    Output:
+    ```
+    'forge: gitlab   # gitlab | github' | PyYAML: {'forge': 'gitlab'} | Fallback: {'forge': 'gitlab   # gitlab | github'} | Div: True
+    'project_name: X   # note' | PyYAML: {'project_name': 'X'} | Fallback: {'project_name': 'X   # note'} | Div: True
+    'preset: X   # note' | PyYAML: {'preset': 'X'} | Fallback: {'preset': 'X   # note'} | Div: True
+    'dual_review: v   # note' | PyYAML: {'dual_review': 'v'} | Fallback: {'dual_review': 'v   # note'} | Div: True
+    'test_command: "pytest -k \'a # b\'"' | PyYAML: {'test_command': "pytest -k 'a # b'"} | Fallback: {'test_command': "pytest -k 'a # b"} | Div: True
+    'modules:\n  - "a # b"' | PyYAML: {'modules': ['a # b']} | Fallback: {'modules': ['a']} | Div: True
+    'modules: [a, b]' | PyYAML: {'modules': ['a', 'b']} | Fallback: {'modules': '[a, b]'} | Div: True
+    'parent:\n  child: val' | PyYAML: {'parent': {'child': 'val'}} | Fallback: {'parent': []} | Div: True
+    'modules:\n\t- item' | PyYAML: 'ScannerError' | Fallback: {'modules': ['item']} | Div: True
+    'preset:solo-greenfield' | PyYAML: 'preset:solo-greenfield' | Fallback: {'preset': 'solo-greenfield'} | Div: True
+    'forge: no' | PyYAML: {'forge': False} | Fallback: {'forge': 'no'} | Div: True
+    'some_count: 3' | PyYAML: {'some_count': 3} | Fallback: {'some_count': '3'} | Div: True
+    ```
+
+* **[G2] (Confirmation of `--help` Example Discrepancy & 5-File Installation Delta)**
+  * *Verification:* Executed `scaffold.py` against identical profile carrying `forge: gitlab        # gitlab | github` in two scratch targets under `/tmp`: one with PyYAML active and one with PyYAML import blocked.
+  * *Result:* **CONFIRMED.** Both runs exit 0. The PyYAML install writes 75 files; the fallback install writes 70 files (differing by **exactly 5 files** under `.gitlab/issue_templates/` and `.gitlab/labels.yml`).
+  * *Verbatim Test Script & Output:*
+    Executed via in-process meta-path import blocker under Python 3.13.13:
+    ```
+    === INSTALLATION COMPARISON RESULTS ===
+    Files in PyYAML target: 75
+    Files in Fallback target: 70
+    Difference count (PyYAML only): 5
+    Files present in PyYAML target but missing in Fallback target:
+      - .gitlab/issue_templates/Bug.md
+      - .gitlab/issue_templates/Friction.md
+      - .gitlab/issue_templates/Gap.md
+      - .gitlab/issue_templates/Wish.md
+      - .gitlab/labels.yml
+    ```
+
+* **[G3] (Judgment on Unknown-Key Handling: Warn-Loudly vs. Refuse)**
+  * *Analysis:* The proposal advocates for "Warn-Loudly" on unrecognized keys (Part B5) to protect forward compatibility when an older Cairn engine reads a newer profile carrying future keys.
+  * *Position:* **REFUSE (fail closed) should be the default, with an explicit opt-out.**
+    * *Rationale:* As demonstrated in Evidence item (i), typos in profile keys (`presets:`, `module_add:`, `project_nmae:`) cause silent misconfigurations, dropped modules, or un-substituted tokens while exiting 0. In automated setups or fast adoption runs, warnings buried in CLI output are easily missed.
+    * *Forward Compatibility:* True forward compatibility is better served by either an explicit `allow_unknown_keys: true` profile flag or an explicit CLI flag (`--allow-unknown-keys`), rather than defaulting the primary installer input boundary to fail-open on misspelled keys.
+    * *Upgrade Fallback Risk:* The proposal correctly highlights that `_resolve_current_profile` in `upgrade.py` catches `Exception` and falls back to the lockfile profile. That exception handler should be narrowed or made explicit so that profile typos fail closed at install time while upgrades handle schema evolution cleanly.
+
+### Covered (Lenses Swept & Verbatim Executions)
+
+All commands executed under canonical interpreter `~/conda_envs/lhm/bin/python` (Python 3.13.13).
+
+1. **Divergence Table Parity Sweep (12 Cases):**
+   * *Command:* Executed side-by-side comparison script over `yaml.safe_load` vs `_minimal_yaml_parse`. All 12 outputs match proposal table.
+2. **`scaffold.py --help` Example Differential Install:**
+   * *Command:* Installed profile with `forge: gitlab        # gitlab | github` into `/tmp` scratch targets under PyYAML vs forced stdlib fallback. Verified 5-file delta.
+
+### Not Covered / Low Confidence (Negative Space)
+
+* **AST Attestation Baseline Re-Anchor:** The proposal requires an AST attestation baseline re-anchor for `bootstrap/_scaffold/config.py` and `cli.py`. Since no code edits have been made yet, the AST attestation baseline re-anchor remains un-derived.
+* **CRLF Line Endings:** Profile parsing with CRLF line endings was not tested; the behavior of `_minimal_yaml_parse` on CRLF input remains an open edge for implementation.
+
+## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
+
+*(Awaiting the Maintainer. The proposal has cleared External Security Review. The Maintainer may accept the proposal to proceed with plan creation.)*
+
