@@ -1588,3 +1588,77 @@ delete it".
 Chunk G remains blocked; the reviewed hashes are still not recorded and the
 ceremony is still un-run. `shasum -a 256` is macOS/BSD (the block notes
 `sha256sum` for elsewhere), and Windows remains unexamined.
+
+## Focused External first-use re-review, round 2 -- Codex -- 2026-08-03
+
+**Model:** GPT-5 (Codex)
+
+**Exact commit reviewed:** `cc2a2f7257de8e27efa6b8d6f19b845706433715`
+
+**Disposition: two remaining blockers; NOT YET FIT TO BLESS.** The revised
+fenced loader closes FUR6's originally reproduced path: it names the checkout,
+uses a recorded Git binary, scrubs Git's environment, disables replacement and
+configured execution before anchored reads, reads raw blobs, verifies the
+declared Python import closure, and only then starts Python. Independent
+execution confirmed that the substitution and `GIT_DIR` regressions covered by
+the new tests are closed. The Python checker is unchanged from `355aedb`, and
+the editable-handoff CR1 remains closed.
+
+* **[FUR7] CRITICAL / BLOCKING -- the command that obtains the runbook is not
+  the sterile invocation it claims to be.** The prose says to read the runbook
+  with "the same sterile invocation the loader below uses", but the recorded
+  command has no `env -i` (and no equivalent Git-environment scrub). In an
+  isolated reproduction against the exact command, an inherited `GIT_DIR`
+  redirected `cat-file` away from the explicitly named `-C <checkout>` to a
+  second repository. The command returned 0 and emitted that repository's
+  runbook bytes. The fenced loader and its reviewed hashes cannot recover from
+  this: an alternate runbook is the instruction source and can omit the loader
+  entirely. **Satisfier:** spell out a genuinely sterile acquisition command,
+  using the recorded absolute Git binary under an empty environment and the
+  same relevant config pins before the first object read. Add an execution test
+  for the acquisition command itself: with `GIT_DIR` naming a second repository,
+  it must still return the named checkout's anchored runbook bytes.
+
+* **[FUR8] CRITICAL / BLOCKING -- the decisive hash check is resolved through
+  ambient `PATH`.** `PATH=/usr/bin:/bin` exists only inside the `env -i` child
+  used by `sterile_git`; it does not alter the surrounding shell. Consequently
+  `mktemp`, `cat`, `mkdir`, `dirname`, and especially `shasum` are selected from
+  the operator's ambient command environment. In an isolated execution of the
+  literal fenced block, a replacement `shasum` earlier on `PATH` changed the
+  extracted checker after raw extraction, reported success, and the changed
+  checker executed; the ceremony returned 0. This also makes the residual-trust
+  statement that these utilities are on `PATH=/usr/bin:/bin` factually false.
+  **Satisfier:** run the entire loader, including temporary-directory creation
+  and hash verification, inside one scrubbed shell environment, or invoke every
+  trusted utility by a Maintainer-recorded absolute path. The hash verifier must
+  not be replaceable by an inherited shell function or alias. Add a literal-
+  loader execution test with a conflicting ambient utility and assert that the
+  trusted verifier runs and no changed checker byte executes.
+
+**Verification.** Canonical Python 3.13.13:
+`test_gate_preflight.py` **119 passed in 26.14s**; full
+`bootstrap/tests` **1590 passed, 3 warnings in 137.30s**. A separate script-mode
+probe confirmed that the canonical interpreter searches the extraction
+directory before system packages and that no competing installed `bootstrap`
+package is present. The two blocking reproductions used isolated temporary
+repositories; no main-repository ref was moved.
+
+**Reviewed SHA-256 set:**
+
+```
+f6dd89b8e66638b5b15f17bfb6da62ef950c3583a6b939bcc1bba1435eef34e6  bootstrap/tests/_gate_preflight.py
+2eb2616efe8803d79f62e2dc383719365beaf9bf77b269737af98965437a7e32  bootstrap/REANCHOR_RUNBOOK.md
+7a8b581496c09a8ca4645680a5d48f7a0bbc3b52818b5b80548f104fd20a75fc  bootstrap/tests/test_gate_preflight.py  (evidence only)
+38d5009a51bb094820abfff899dc5be72a02c9b0eed2d5329923fb8abaecb5fc  bootstrap/tests/_gate_manifest.py
+55a11326baae75d5a2f5f1696c5e6c4745ba537286415ba84bfcab26ab36b876  bootstrap/tests/_gate_reanchor.py
+e272b868eb640b9193daefe76c5fbe2d6a8f5225eb934b53e9c7febdbc680b9b  bootstrap/tests/_gate_transition.py
+c719f770afe1b0ce5928923a7be2590666bc8f7935df2ad94eda95598be286e4  bootstrap/tests/_oracle_activation.py
+17007480162b0f4a100a100714a05198ef4a21ee8e726f31fb60b296127d429d  bootstrap/tests/_oracle.py
+e1d6c7db5d72729e43040dedb69fa47c50a3fe36b7d284ad73c1285b8a027007  bootstrap/tests/_oracle_trust.py
+```
+
+**Scope unchanged.** I did not re-review Stage B, the accepted
+candidate-execution residual, replay posture, SSH cryptography, Windows
+behavior, external anchoring, concurrent Maintainers, or Phase 4. Those accepted
+residuals remain as previously described; only the loader-utility residual is
+misstated, as FUR8 explains.
