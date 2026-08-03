@@ -578,9 +578,21 @@ def gather_evidence(candidate_ref: str = "HEAD", *, repo: Path = _REPO,
 
         out.write(f"materialized {candidate[:12]} at {tree} (no .git)\n")
         with R._scrubbed_environ():
+            # Drop the invoking process's import path so the producer cannot
+            # resolve `bootstrap.tests` from *another* checkout and measure a
+            # tree other than the one being blessed. Hardening on its own
+            # merits -- it was added while chasing an unrelated fixture bug
+            # (a root-level `code.py` shadowing the stdlib module), and did not
+            # fix that, so it is kept for the reason stated and not the one it
+            # was reached for.
+            import os as _os  # noqa: PLC0415 -- local, not a closure dep
+            env = {k: v for k, v in _os.environ.items()
+                   if k not in ("PYTHONPATH", "PYTHONHOME")}
             proc = subprocess.run(
-                [sys.executable, "bootstrap/tests/_gate_manifest.py", "produce"],
-                cwd=str(tree), capture_output=True, text=True, check=False)
+                [sys.executable, "-E", "-s",
+                 "bootstrap/tests/_gate_manifest.py", "produce"],
+                cwd=str(tree), capture_output=True, text=True, check=False,
+                env=env)
         if proc.returncode != 0:
             raise PreflightError(
                 f"the candidate's manifest producer failed "

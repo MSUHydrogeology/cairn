@@ -31,6 +31,68 @@ The mechanism reuses the **existing gate-manifest prerequisite-commit flow**
 (`bootstrap/tests/_gate_manifest.py`), the same machinery already used to pin
 gate-control files for the six-proposal batch.
 
+### Phase 0 pre-flight — `_gate_preflight.py`
+
+> **Obtain this invocation from the anchor, never from the working tree:**
+> `git show refs/cairn/gate-anchor:bootstrap/REANCHOR_RUNBOOK.md`.
+> Reading it from the checkout you are about to bless would let the candidate
+> choose which bytes you execute.
+
+```
+T=$(mktemp -d)
+git archive refs/cairn/gate-anchor bootstrap/tests | tar -x -C "$T"
+<maintainer-recorded-interpreter> -E -s "$T/bootstrap/tests/_gate_preflight.py" \
+    apply --confirm-supervised-reanchor
+```
+
+`apply` re-derives everything itself and **trusts no handoff file**. It runs the
+evidence stage, then the read-only checks, then constructs and verifies a signed
+commit, then advances the branch and `refs/cairn/gate-anchor` in one expected-old
+transaction. `check` is available as a non-mutating preview; its output is a
+record to read, not an input.
+
+There is **no flag that turns a refusal into a pass.** A refusal routes here, to
+the manual steps below.
+
+**Residual trust set — where the chain actually ends.** The `git` and `tar`
+binaries; the Maintainer-recorded interpreter path; the operator's discipline of
+reading this invocation from the anchor rather than the checkout; and **local
+write access to `refs/cairn/gate-anchor` itself** — whoever can move that ref
+chooses what executes. That last one is not closable here: moving that ref *is*
+the authority this ceremony protects. It is in scope only under the accepted
+trusted-contributor posture.
+
+**The evidence stage executes candidate code.** It runs in a tree materialized
+without `.git` and with credential-shaped variables dropped and `HOME`
+redirected. That is best-effort isolation and **not containment** — the executed
+code retains filesystem access outside that tree, process creation, and network
+access. Accepted by Maintainer Decision under the dated posture; the tool prints
+this on every run.
+
+### The dated posture, and what ends it
+
+The trusted-contributor threat model is scoped to **Cairn's own trust root,
+single-maintainer, as of 2026-08-03** — not a standing assumption. One trigger is
+mechanical: `apply` refuses if any commit at or after the signing epoch is
+unsigned or signed by a key outside `dev/.cairn/allowed_signers`. **Two triggers
+are not mechanical, and live here because nothing can observe them:**
+
+1. **The ceremony is run on a checkout the Maintainer does not solely control.**
+2. **An adopter takes this mechanism** (it is Cairn-internal today; nothing under
+   `bootstrap/tests/` is installed).
+
+On either, revisit the posture before blessing. The named upgrade paths are OS
+containment for the evidence stage, external anchoring via `_gate_manifest.py
+verify --trusted-repo` (already supported, merely unused here), and a single-use
+nonce for replay.
+
+**First use is different.** The invocation above executes the checker *from the
+anchor*, so it cannot be used until the checker is in the anchor. Introducing it
+is a one-time manual bootstrap under the steps below, gated on a focused External
+security review of the exact checker bytes and this invocation text, with the
+reviewed hashes recorded by the Maintainer alongside who compared them and at
+which commit.
+
 1. **Review the exact verifier bytes out-of-band.** The Maintainer reviews and
    records the sha256 of each Stage-B authority module *at the reviewed commit*:
 

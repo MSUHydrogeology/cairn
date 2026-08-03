@@ -767,6 +767,16 @@ def _ceremony_repo(tmp_path: Path):
     _write(repo, "bootstrap/tests/__init__.py", "")
     _write(repo, P._ALLOWED_SIGNERS_REL, f"m@example {keydata}\n")
     _write(repo, P._MANIFEST_REL, "{}\n")
+    # The REAL manifest producer runs in this fixture, so supply the two things
+    # it refuses without: a non-empty pytest collection, and the AST baseline
+    # keys it pins. That is what makes a true three-command integration test
+    # possible (code review CR5).
+    _write(repo, "bootstrap/tests/test_smoke.py",
+           "def test_smoke():\n    assert True\n")
+    _write(repo, "bootstrap/tests/fixtures/scaffold_ast_baseline.json",
+           json.dumps({f"Assign:{sym}": {"digest": f"d{i}"}
+                       for i, sym in enumerate(P.G.MAPPING_SYMBOLS_PHASES)},
+                      indent=2) + "\n")
 
     for k, v in (("gpg.format", "ssh"),
                  ("user.signingkey", str(key.with_suffix(".pub"))),
@@ -777,7 +787,9 @@ def _ceremony_repo(tmp_path: Path):
 
     anchor = _signed_commit(repo, "anchor")
     _run("git", "update-ref", P._ANCHOR_REF, anchor, cwd=repo)
-    _write(repo, "code.py", "x = 1\n")
+    # NOT `code.py`: a root-level module shadowing a stdlib name breaks
+    # pytest's own imports inside the evidence collection.
+    _write(repo, "work.py", "x = 1\n")
     head = _signed_commit(repo, "work to bless")
     return repo, anchor, head
 
@@ -831,7 +843,9 @@ def _anchored_repo(tmp_path: Path):
     _write(repo, P._MANIFEST_REL, "{}\n")
     anchor = _commit(repo, "anchor")
     _run("git", "update-ref", P._ANCHOR_REF, anchor, cwd=repo)
-    _write(repo, "code.py", "x = 1\n")
+    # NOT `code.py`: a root-level module shadowing a stdlib name breaks
+    # pytest's own imports inside the evidence collection.
+    _write(repo, "work.py", "x = 1\n")
     head = _commit(repo, "work to bless")
     return repo, anchor, head
 
@@ -1002,14 +1016,13 @@ class TestApplySuccessPath:
 class TestPublicPathCli:
     """CR5: the recorded workflow exercised through real subprocesses.
 
-    KNOWN GAP, stated rather than papered over: there is no public-path `apply`
-    SUCCESS case. It would need the real manifest producer to run inside a
-    fixture, and the producer requires more of the repository than a fixture can
-    carry. `apply`'s success path is covered in-process above. CR5's point --
-    that missing public-path coverage let a discarded message and a dirty
-    success state pass 89/89 focused tests -- is answered for `evidence` and
-    `check` here and for `apply` by the in-process class above; the residual is
-    that no single subprocess run exercises all three together.
+    The refusal paths live here; the full three-command success case is in
+    `TestThreeCommandIntegration`, which drives all three through subprocesses
+    against a fixture running the real manifest producer. An earlier version of
+    this docstring recorded a known gap -- no public-path `apply` success case --
+    because the producer refuses a fixture that collects zero nodes or lacks the
+    AST baseline. Supplying both closed it, so the gap is gone rather than
+    merely documented.
     """
 
     def _cli(self, *args, cwd=None):
@@ -1050,3 +1063,62 @@ class TestPublicPathCli:
         bad.write_text("{not json")
         r = self._cli("check", "--repo", str(repo), "--evidence", str(bad))
         assert r.returncode == 2 and "not valid JSON" in r.stderr
+
+
+class TestThreeCommandIntegration:
+    """Chunk E: `evidence` -> `check` -> `apply` as one flow, all real.
+
+    This is the coverage code review CR5 asked for. Nothing is substituted and
+    nothing is imported: all three commands run as real subprocesses, the
+    producer executes candidate code for real, and the transaction moves real
+    refs in a temp repo. It took supplying the two things the real producer
+    refuses without -- a non-empty collection and the AST baseline keys.
+    """
+
+    def _cli(self, *args):
+        return subprocess.run(
+            [sys.executable, str(_REPO / "bootstrap/tests/_gate_preflight.py"),
+             *args], capture_output=True, text=True, check=False)
+
+    def test_the_whole_ceremony_end_to_end_through_subprocesses(self, tmp_path):
+        repo, anchor, head = _ceremony_repo(tmp_path)
+        ev = tmp_path / "ev.json"
+
+        r1 = self._cli("evidence", "--repo", str(repo), "-o", str(ev))
+        assert r1.returncode == 0, r1.stderr[-1500:]
+        evidence = json.loads(ev.read_text())
+        assert evidence["candidate_sha"] == head
+        assert evidence["manifest"]["collection"]["node_count"] >= 1
+
+        r2 = self._cli("check", "--repo", str(repo), "--evidence", str(ev))
+        assert r2.returncode == 0, r2.stderr[-2500:]
+
+        r3 = self._cli("apply", "--repo", str(repo),
+                       "--confirm-supervised-reanchor")
+        assert r3.returncode == 0, r3.stderr[-2500:]
+        result = json.loads(r3.stdout)
+
+        new_head = _run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip()
+        new_anchor = _run("git", "rev-parse", P._ANCHOR_REF,
+                          cwd=repo).stdout.strip()
+        assert new_head == new_anchor == result["new_anchor"]
+        assert _run("git", "log", "-1", "--format=%G?",
+                    cwd=repo).stdout.strip() == "G"
+        assert "Authorized verifier-module hashes" in _run(
+            "git", "log", "-1", "--format=%B", cwd=repo).stdout
+        assert _run("git", "status", "--porcelain", cwd=repo).stdout == ""
+
+        # And the blessed manifest is the one the evidence stage produced.
+        blessed = json.loads(_run("git", "show",
+                                  f"{result['new_anchor']}:{P._MANIFEST_REL}",
+                                  cwd=repo).stdout)
+        assert blessed == evidence["manifest"]
+
+    def test_a_second_run_refuses_because_the_state_moved(self, tmp_path):
+        """Replay, honestly: no nonce, but the bound state no longer holds."""
+        repo, anchor, head = _ceremony_repo(tmp_path)
+        assert self._cli("apply", "--repo", str(repo),
+                         "--confirm-supervised-reanchor").returncode == 0
+        again = self._cli("apply", "--repo", str(repo),
+                          "--confirm-supervised-reanchor")
+        assert again.returncode == 2
