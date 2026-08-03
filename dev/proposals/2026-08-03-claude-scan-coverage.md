@@ -970,3 +970,156 @@ drafted, item 3 does not (scenario B above). With change 2 it does.
   correction and change 1's docstring rewrite touch the same docstring, so those two are no
   longer merely file-level neighbours. Whichever lands second must re-read rather than apply
   its recorded text.
+
+## Response -- Claude (author, to External Security Review) -- 2026-08-03
+
+**Model**: Claude Opus 5. Proposal-Response grammar (no implementing commits exist).
+
+**All four accepted; none disputed — and every one reproduced by execution before
+disposal, not accepted on the reviewer's report.** This is an unusual review to answer,
+because it raises no critique: G1–G4 are *verifications* and the verdict is SHIP. So the
+Response has two jobs, and the second matters more than the first. The first is to re-run
+the review rather than trust it. Done, and every figure reproduces under the canonical
+interpreter `~/conda_envs/lhm/bin/python` (Python 3.13.13, Bandit 1.9.4): 72 → 74 targets
+with zero removals; 16 LOW and 0 MEDIUM-or-higher over the two skills files; 113 LOW and 0
+blocking over the extended set; the unmodified release gate green; and both gate files
+present as literal keys in a 162-entry frozen set. The second job is to record what a SHIP
+verdict over four verifications does **not** cover — which is most of *Proposal > item 3*.
+That is the section below the bullets, and it is the part a Maintainer should read first.
+
+* **[G1] accept -- reproduced, and the two premises it asserts without showing also hold.**
+  The set algebra is right, and I re-derived it rather than reading it:
+  `install_manifest(modules=None)` yields 44 verbatim `.py` sources under `templates/`, the
+  current scan yields 42, `current.issubset(proposed)` is `True`, and `sorted(current -
+  proposed)` is `[]` (as_of 2026-08-03). The review states two things it does not
+  demonstrate, and both check out — the accumulator really is `targets: set[str] = set()`,
+  and all five existing population steps are retained (the `_MODULE_MAPPINGS` loop, the
+  `_ALWAYS_ON_MAPPINGS` loop, the non-recursive `scripts/` and `bootstrap/` globs, and the
+  recursive `bootstrap/_scaffold/` glob), which is what makes a union a union; see
+  `bootstrap/security_check.py:57` onward. One correction in the other direction, because
+  the review over-credits me: it says the item-2 `try`/`except ValueError` ensures the gate
+  exits 1, "preventing silent un-scanned releases." It prevents no silent release. `main()`
+  wraps `run_bandit()` in no handler, so an uncaught `ValueError` already exits non-zero;
+  the wrapper buys a security message instead of a traceback and nothing else — exactly what
+  item 2 says of itself ("legibility, not new safety"). I decline the stronger reading.
+
+  **What G1 does not establish.** Monotonicity is a property of the diff *as drafted*, not
+  one anything in the tree enforces: no test goes red if a later author replaces the two
+  explicit loops with the manifest derivation. *Author-accounting* already names this as the
+  claim to attack; the review verified the current shape without noting that the guarantee
+  is itself unguarded. I am not adding a guard for it here — that would be building
+  something new — but note that the addendum's change 2 (the on-disk oracle over
+  `templates/`) covers the case that would actually bite, since a shipped file dropped from
+  the scan by such a refactor is a file present on disk and absent from `scan_targets()`.
+
+* **[G2] accept -- all five reproduced verbatim.** Claims a–e were re-run, not read. (a) No
+  `_SKILLS_MAPPINGS` symbol appears anywhere in `bootstrap/security_check.py`; its import
+  block at `bootstrap/security_check.py:35` names only `_ALWAYS_ON_MAPPINGS` and
+  `_MODULE_MAPPINGS`. (b) 72 targets, of which 42 start with `templates/` and end in `.py`,
+  and zero contain `skills`. (c) 1370 + 1132 = 2502 physical lines. (d) `SECURITY.md:66`
+  reads "unallowlisted MEDIUM+ finding over the shipped Python surface, and also". (e) 16
+  LOW, 0 MEDIUM-or-higher, test ids `B404`×2, `B603`×10, `B607`×4. One clarification a
+  reader will want on claim c, since "ships exactly two Python files" can be misread as
+  "holds two entries": `_SKILLS_MAPPINGS` holds **five** entries as_of 2026-08-03. The other
+  three are `templates/skills/_data/vendor_targets.yml` (verbatim, not `.py`) and the two
+  substituted skill documents, of which `templates/skills/session-start/SKILL.md` is one.
+  That is why both the `verbatim` and the `.endswith(".py")` guards are load-bearing, and it
+  is the edge case the maintainer-direction note below bears on.
+
+* **[G3] accept -- reproduced end to end, and the review supplies the one measurement the
+  addendum declined to re-run.** Two-file scan: 16 findings, all LOW, 0 MEDIUM-or-higher.
+  Full simulation over the 74-target set through the real `ALLOWLIST` and the real blocking
+  filter: 113 findings, all LOW, 0 blocking. The unmodified release gate at HEAD prints
+  `Bandit clean over 72 shipped file(s)` and `PASS`, matching the review's transcript
+  exactly. Credit where it is owed: the addendum states plainly that it did *not* re-run the
+  *Context* Bandit measurement and that nothing in it disputes that measurement — this review
+  did re-run it, from a different starting point, and got the same numbers. That is a
+  structurally independent confirmation the addendum could not give itself. The claim it
+  supports stays narrow, though, and I will not let it read wider: **0 blocking is a
+  snapshot as_of 2026-08-03, not a property of these files.** That is precisely why
+  *Sequencing* argues FIRST — the zero is only free today.
+
+* **[G4] accept -- the fact is verified; I narrow the remedy.** Both files are literal keys
+  in the `frozen_files` map of `bootstrap/tests/fixtures/gate_manifest.json` (162 entries,
+  as_of 2026-08-03), each pinned to a sha256, and editing either produces a
+  `FROZEN-MODIFIED` HOLD. The review and the proposal describe one fact at two levels and
+  neither is wrong: discovery is by the glob patterns `bootstrap/*.py` and
+  `bootstrap/tests/**/*.py` in `bootstrap/tests/_gate_manifest.py:151`, and the committed
+  artifact stores the resolved literal paths. Two refinements. **(i) This is live, not
+  hypothetical.** The `gate-reanchor-preflight` plan is Status `executing` as_of 2026-08-03,
+  so the window is open *now*; the proposal's *Net recommendation* fallback is the operative
+  branch, not the preferred one, and "land FIRST" is currently a recommendation the schedule
+  does not grant. **(ii) The two remedies are not peers.** G4 offers "supervised
+  re-anchoring via `bootstrap/REANCHOR_RUNBOOK.md`" and "landing outside the active window"
+  as alternatives. *Signals* holds the stricter line and I keep it: an unexpected HOLD is a
+  signal to stop and sequence, never to re-anchor — re-anchoring is a Maintainer-supervised
+  promotion, and an unattended actor must not decide on its own that an edit to a security
+  gate is merely strengthening. For the record, G4 does not contradict this proposal's
+  header: the runbook's AST-attestation half is scoped to `bootstrap/_scaffold/` (subject
+  `bootstrap/_scaffold/__init__.py`, baseline
+  `bootstrap/tests/fixtures/scaffold_ast_baseline.json`), which this proposal does not
+  touch. Frozen-manifest and AST-baseline are different halves of the same runbook.
+
+### What the SHIP verdict does not cover
+
+The review predates the addendum, and that is chronology rather than negligence: `git log`
+on this file gives `e336c71` (review appended) before `2dd1e27` (the addendum). The
+reviewer could not have seen it. But the consequence holds regardless of fault, and it is
+the most important sentence in this Response: **the SHIP verdict was rendered against
+*Proposal > item 3* as originally drafted, and item 3 as originally drafted is exactly the
+part the addendum shows cannot fail.** G1 and G2 bear on item 1, item 2 and the *Context*
+measurements; G3 on the triage-cost claim; G4 on *Sequencing*. None of the four touches the
+regression test or the item-4 census, and the review's own *Not Covered* section names
+three unswept lenses, none of which is test design or oracle independence.
+
+A term, since the whole point turns on it: a test's **oracle** is the statement of what
+ought to be true, and its **subject** is the code being checked. When the oracle is computed
+from the same object the subject reads, the difference between them is empty by
+construction, and the test cannot fail. That is the defect the addendum records in
+`test_scan_targets_cover_all_shipped_scripts` at `bootstrap/tests/test_security_lint.py:134`,
+and item 3 as drafted would have reproduced it one abstraction higher.
+
+So the record should show: the replacement for item 3 — the split-and-rename, the on-disk
+oracle whose exclusion table is measured empty today, and the acceptance criterion that a
+regression test is accepted only when its author has *run* the perturbation that makes it
+fail — has been read by **no** External reviewer. This proposal already carries
+`required(External, security lens)` at plan review; that is where it gets read. I am
+recording the gap rather than letting a SHIP verdict over four verifications stand in for
+it, because the alternative is exactly the failure the addendum is about: a green signal
+retiring a question it never asked.
+
+Two things I am *not* claiming. The addendum did not come out of this review, so the review
+earns no credit for it; and the review is not at fault for missing it, because it did not
+exist when the review was written. What the review does establish, and establishes well, is
+that item 1's coverage fix is sound and costs nothing today — which is the half the addendum
+explicitly says it does not dispute.
+
+### Maintainer direction, 2026-08-03 — where it bears here
+
+The Maintainer's direction that the default security stance must change for all
+installations is a premise now, not an open question. It bears on exactly one sentence of
+this proposal, and does not disturb the rest. *Author-accounting > Edge cases* routes
+substituted `.md` skills sources away from the Bandit gate as "prose on the content-scanner
+path". Verified as_of 2026-08-03: `_PRESETS` in `bootstrap/_scaffold/config.py` holds three
+presets — `solo-greenfield`, `collaborative-team`, `high-rigor-legacy` — and **none** selects
+`content-security`. For a default adoption that path is therefore not installed, and the
+sentence must not be read as "covered by another gate". It is entitled to say only "outside
+Layer-4 code", which is what it was written to say.
+
+This changes nothing in item 1. Bandit coverage of verbatim `.py` is a different gate over
+different files, and the two skill documents are substituted, so they sit outside this
+proposal's scan set under any preset posture. The fix belongs where the preset → module
+selection table lives, in `bootstrap/_scaffold/config.py`, and **not here**: this proposal
+changes the coverage of one existing gate, and folding a shipped-posture change into it is
+the bundling mistake that cost `identity-not-name` a REVISE/SPLIT verdict from its own
+External Security Review earlier the same day. As_of 2026-08-03 no open proposal owns that
+table; the nearest neighbours are `profile-parse-fail-open`, which already touches
+`bootstrap/tests/test_presets.py` but is about fail-open *parsing* rather than preset
+contents, and `content-scan-detectors`, which owns the scanner itself and not who installs
+it. It needs its own proposal, and naming that is as far as this proposal's fence reaches.
+
+**Status stays `reviewed`.** No accepted critique changes the proposal text: G1–G3 confirm
+claims the proposal already makes, and G4's narrowing tightens a reading of a *Signals*
+entry that *Signals* already states in the stricter form. The one substantive change to
+this proposal — the supersession of item 3 — was appended and committed as the addendum
+before this Response and is not a product of this review.
