@@ -5,7 +5,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: proposed
+**Status**: reviewed
 **Touches**: `tools/lifecycle.py` and its byte-identical twin
 `templates/skills/_lib/lifecycle.py`; `bootstrap/tests/test_skills_security.py`;
 one bullet in `SECURITY.md`; a re-record of the `tools/lifecycle.py` row in
