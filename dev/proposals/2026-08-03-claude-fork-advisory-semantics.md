@@ -2017,3 +2017,724 @@ and the alternative is discovering the operand choice at implementation review,
 after the supervised re-anchor has already been spent. [I5] should be fixed
 before the Decision too, since it is a sequencing constraint the Maintainer is
 the one to arbitrate. The rest can ride into the plan.
+
+## Revised proposal — 2026-08-03 (round 2) — eight amendments from the Internal Security Review
+
+**Status stays `revised`.** Appended rather than folded in, per the append-only
+rule. Round 1's amendments (A1–A3) stand unchanged; this round's are numbered
+**B1–B8** so the two sets never collide in a later citation.
+
+**[I1] is accepted in full and fixed here, at proposal time, not deferred to the
+plan.** The reviewer is right, and the reason it is worth doing at proposal time
+rather than plan time is not politeness: **this is the third instance of the same
+shape inside this one proposal lineage.** [IDN1] (a release tag verified against
+a roster committed inside that tag), [IDN4] (a comparison whose source path the
+target names), and now [I1] (a comparison whose *target-side* operand is a field
+the target writes). All three were caught by review; the third was written *into
+the proposal that exists to close the class*, in the same document that quotes
+the invariant as its whole purpose. A defect that reappears inside its own remedy
+is not closed by another round of "fix it in the plan" — it is closed by writing
+the property down in a form the plan cannot miss and a reviewer can check for
+completeness.
+
+### B1 — the operand inventory: every input to the advisory, its provenance, and what it is allowed to decide
+
+This table is the amendment [I1] actually asks for. The proposal specified one
+operand exhaustively and left the other to prose, and there was no artifact in
+which that asymmetry was visible. The table makes the *whole* comparison
+inspectable in one place, so a reviewer can check completeness instead of
+discovering one more operand per round.
+
+Read it with one distinction in mind, which is new in this round and does the
+real work:
+
+> A target-supplied operand may **select** what gets examined. It may never
+> **suppress** — never decide that an examined file is clean.
+
+That is the form of *"the artifact under verification must not supply the
+material used to verify it"* that survives the obvious objection: the artifact
+under verification necessarily supplies the bytes being checked. It is the
+*verdict*, not the *subject*, that must not come from the target.
+
+| # | Operand | Where it comes from | Provenance | What it may decide | Pinned by |
+|---|---|---|---|---|---|
+| **O1** | `templates_root` | the caller (`CAIRN_ROOT / "templates"`; `cairn_root / "templates"`; or an operator's `--cairn-root`) | trusted-by-caller / operator-controlled | which tree upstream bytes are read from | F2; **R1** (amended, B7) |
+| **O2** | `src_for_dst` | `install_manifest(modules=None)` — four in-memory literals in the engine | trusted (code) | which template file a given `dst` maps to | A1; F2 |
+| **O3** | upstream bytes | `read_bytes(templates_root / src_rel)` after the three source-side checks | trusted-by-caller | one side of the byte comparison | F2 |
+| **O4** | **target-side bytes** | `read_bytes(target / dst_rel)` after the three destination-side checks | **target-supplied — and correctly so; this is the thing under check** | the other side of the byte comparison | **F5 (new, B2)** |
+| **O5** | `dst` | the target's lockfile | target-supplied | *which* file is examined, and nothing else | **F6 (new, B3)** |
+| **O6** | `hash`, `base_hash` | the target's lockfile | target-supplied | **candidate selection only** — never suppression | F5; **R10 (new)** |
+| **O7** | `src` | the target's lockfile | target-supplied | **nothing.** Annotation only | F1; **R9 (new)** |
+| **O8** | `fork_acknowledged` | the target's lockfile | target-supplied | verify-time display only | R5 |
+| **O9** | `cairn_version` / `cairn_commit` | lockfile vs. `UpstreamSource.ref` | mixed | a skew annotation line | F1 |
+| **O10** | engine-package presence | disk under `target` | target-supplied | candidate selection only | F6 |
+
+**What the table shows that the prose did not.** Before this round, exactly one
+row (O4) had no pin at all, and it is the row on which every suppression
+decision rests. O6's cell is the honest one: `hash` and `base_hash` are still
+target-supplied and still select the candidate set. That is not fixed here and
+**cannot** be fixed while `base_hash` is a lockfile field — recorded as **R10**
+rather than papered over.
+
+### The completeness statement — what "done" means for this contract
+
+Scoped **to this proposal's contract only**. It is not a repo-wide definition of
+secure-enough and does not propose one; generalizing it would be a doctrine
+change and would engage the rate-limit gate this proposal declares *not
+applicable*. Recorded here so that the next review has a stopping condition
+rather than an open-ended hunt.
+
+This proposal is complete when all six hold, and each is checkable by one named
+command or one named test node:
+
+1. **Every operand is inventoried with a provenance** — the B1 table; checked by
+   reading it against the implemented signature.
+2. **No target-supplied operand can suppress a finding** — F5; test node 16
+   (parametric over all four lockfile fields).
+3. **The target-side operand is bytes read from disk** — F5; test node 11.
+4. **Every path the detector opens or probes is containment-checked on both
+   sides** — F6; test nodes 3 and 13.
+5. **Every degradation path retains the finding** — the existing fail-loud rule,
+   extended to the destination side; test nodes 4, 12, 13.
+6. **Each invariant's guard can actually fail** — F1's oracle is external (B5);
+   F3 and F4 were already shown falsifiable by the Internal read.
+
+Anything a later review finds that is **not** an instance of 1–6 is new scope and
+should be recorded as a residual, not folded in. Anything that *is* an instance
+of 1–6 and is still open is a blocking gap. That is the stopping rule.
+
+### B2 — the target-side operand is pinned to bytes read from disk (closes [I1])
+
+Amending *The shape of the change*:
+
+> **The target-side operand is the bytes read from the facade on disk under
+> `target`, at the validated join `target / dst_rel`.** The comparison is
+> `disk_bytes == upstream_bytes` — a byte comparison of two reads, not a
+> comparison of hash strings. `rec["hash"]`, `rec["base_hash"]`, and every other
+> lockfile field are **forbidden** as the target-side operand. A caller may not
+> pass precomputed hashes in to avoid the read.
+
+**Invariant F5 (new) — suppression provenance.** A finding may be removed from
+the set by exactly one condition: byte-equality between the two validated reads
+above. No lockfile field, and no combination of lockfile fields, may cause a
+suppression. Enforced by test node 16, which mutates each of `hash`,
+`base_hash`, `src` and `fork_acknowledged` in turn on a record whose disk bytes
+differ from trusted upstream, and asserts the finding survives at the
+`cmd_upgrade` caller.
+
+**Why the read, and not the recorded hash — reproduced rather than argued.** See
+the Response below for the run. The short version: today the function decides
+"forked" without ever opening the facade, and will happily report a finding
+about a file that **does not exist on disk**. That is the operand gap in its
+purest form.
+
+**Two destination-side edge cases the inventory was missing**, added to
+*Edge-case inventory* (which today enumerates six source-side shapes and zero
+destination-side ones):
+
+* **`dst` missing on disk** → no comparison; finding **retained** as
+  `unconfirmed`. (`verify_integrity` separately reports it as a `missing:`
+  violation in its own loop; the advisory does not depend on that.)
+* **`dst` not a regular file** (directory, symlink, device) → no comparison;
+  finding retained as `unconfirmed`.
+
+**Gate impact: none.** The read lands inside `forked_facade_findings`, already
+one of the three CHANGED symbols. The falsifiable target stays **exactly 3
+CHANGED**.
+
+### B3 — the destination join is validated with the same three checks as the source join (closes [I2])
+
+The proposal spends its whole validation budget on the trusted side. Amending
+*Path validation on the source side*, which is renamed **Path validation on both
+sides**, and gains:
+
+1. `dst_rel` must be relative, POSIX-shaped, and free of `..` components.
+2. `(target / dst_rel)` is checked with `_assert_safe_write(candidate,
+   target_resolved)` — the same containment primitive, same three fail-closed
+   checks.
+3. The result must be an existing regular file, not a symlink.
+4. `forked_facade_findings` **resolves `target` once at entry** and uses the
+   resolved root for the containment check, the destination join *and* the
+   engine-directory probe. Today both callers happen to pass a resolved path
+   (`bootstrap/verify_integrity.py:146`
+   and `bootstrap/_scaffold/upgrade.py:2177`), but the detector must not depend
+   on caller ordering for a containment property.
+
+Failure of any check means **no comparison happens** and the finding is retained
+as `unconfirmed` — identical to the source-side disposition, so F1 and F5 are
+undisturbed.
+
+**Invariant F6 (new) — read containment.** Every path the detector opens or
+probes resolves inside `target` (destination side) or inside `templates_root`
+(source side). A refusal never suppresses.
+
+**Severity, stated at the level the evidence supports.** Today the consequence
+of the missing destination validation is an existence probe outside the target
+plus a *finding printed about a path outside the tree* — the reproduction below
+shows the detector emitting a finding naming an absolute path in another
+directory. Under B2 it becomes a content read of an attacker-named path whose
+observable is one bit (note present / absent), i.e. a weak equality oracle
+against a file whose contents the attacker already knows. **That is not a
+disclosure primitive and I am not going to inflate it into one.** The reason it
+is fixed at proposal time rather than carried is narrower and sufficient: B2 adds
+a read, and adding an unguarded read is not something a proposal whose thesis is
+path-join discipline gets to do.
+
+### B4 — the `src_relabelled` prose is downgraded to what it is, with its measured reach (closes [I3])
+
+The reviewer offers (a) keep F1 and downgrade the prose, or (b) make relabelled
+`src` a separate finding kind exempt from F1. **Taking (a)**, and saying so
+plainly, per the request to pick one.
+
+Replacing the sentence *"A disagreement can never suppress a note; it can only
+add one"* — which reads as a claim about findings and contradicts F1's "it can
+never add one" — with:
+
+> A `src` disagreement can never suppress a note. It is an **annotation on a
+> finding that already exists**: one extra line on an existing note, never a new
+> note. Its reach is therefore exactly the complement of this change's success —
+> a facade whose disk bytes match trusted upstream is suppressed, annotation and
+> all. Measured on Cairn's own tree at commit `54478e2` (the lockfile itself is
+> tracked, last moved at `073c6bd`, and clean in the working tree): **81 lockfile records,
+> all 81 carrying a `src` field, 2 of which can ever carry `src_relabelled`
+> (2.5%) — and 0 after this change, because both are byte-identical to their
+> trusted templates.** The signal is a diagnostic aid on genuinely forked
+> facades, not a tamper detector for the `src` field.
+
+Test node 15 (new) pins that reading rather than leaving it as prose: a record
+with a relabelled `src` whose disk bytes match trusted upstream produces **no
+note at all**. The node exists to make the coverage limit fail loudly if someone
+later assumes coverage the mechanism does not have.
+
+**Recorded as R9** so the limit has a durable home outside a proposal that
+archives.
+
+### B5 — F1's guard gets an oracle external to the function (closes [I4])
+
+Accepted, with one modification to the mechanism. **A term first**, since the
+whole finding turns on it: a test's **oracle** is whatever supplies the expected
+answer. If the oracle is computed by the same code the test is checking, the test
+cannot fail — it agrees with the code by construction, however wrong the code is.
+That is the shape here.
+
+The proposed guard runs the fixture matrix through `upstream=None` and through
+the trusted upstream and asserts subset. Both branches pass through the **same**
+candidate gate (`verbatim`, then `hash != base_hash`, then the engine probe), so
+the guard compares the function against itself under a different keyword. Any
+change to the shared gate moves both sides equally and the assertion still
+passes — while F1, which is stated against *today's* finding set, is violated.
+This is the shape this repository has already measured once: a regression
+assertion that derives its expectation from the object under test, green for 63
+days while the drift it named occurred.
+
+**Amended F1 guard.** The expected set is a **committed literal** in
+`bootstrap/tests/test_fork_advisory.py`, generated once at plan time by running
+the *pre-change* code over the fixture matrix and pasted in; never computed at
+test time, and never derived from `forked_facade_findings`. The trusted-upstream
+finding set must be a subset of that literal. The branch-to-branch assertion is
+kept as a consistency check, explicitly **not** labelled the F1 guard.
+
+**Modification, and its reason.** The review says "golden fixture"; a separate
+fixture file under `bootstrap/tests/fixtures/` would land a **second**
+`FROZEN-NEW` note (that glob is frozen). A literal in the new test file gets the
+same externality for one fewer gate artifact. Honest cost: a literal can be
+lazily re-pasted when it fails. That is a **review-visible diff**, which is
+exactly the property the derived oracle lacked.
+
+**One correction to the finding's illustration, which does not touch the
+finding.** The review names the failure state as a maintainer widening the gate
+to admit `base is None`, moving the candidate population "from 40 to 43". On this
+tree, `as_of` commit `54478e2`: **0** verbatim records lack `base_hash`, so that
+specific widening admits **nothing**; the 3 records separating 40 from 43 are
+those with `hash == base_hash`, and **none of the three has an engine directory
+present**, so even dropping the base test entirely adds **zero** findings here.
+The tree therefore does not currently exhibit the failure. The finding stands
+regardless, and is demonstrated below by construction rather than by population
+count — which is the stronger evidence anyway, since the population is a fact
+about today's tree and the guard has to hold for every tree.
+
+### B6 — `Touches`, the sequencing constraint, and a named baseline commit (closes [I5])
+
+**The amended `Touches` line**, authoritative from this section forward:
+
+> **Touches**: `bootstrap/_scaffold/lockfile.py` (`forked_facade_findings`,
+> `format_forked_facade_warning`), `bootstrap/_scaffold/install.py` (one new
+> helper), `bootstrap/_scaffold/upgrade.py` (`cmd_upgrade`, one call site),
+> `bootstrap/verify_integrity.py` (one call site), `bootstrap/UPGRADE.md`,
+> `bootstrap/_scaffold/SECURITY_MUTATIONS.md` (one recorded trigger sentence),
+> `bootstrap/tests/test_verify_integrity.py` (call-signature update, assertions
+> unchanged), **`bootstrap/tests/fixtures/scaffold_ast_baseline.json` (mandatory
+> supervised re-anchor — this touches `bootstrap/_scaffold/`)**, and a new test
+> file
+
+Whether the header line itself is edited in place is a Maintainer call (see
+*Maintainer decisions* below); this section is authoritative either way.
+
+**The sequencing constraint, stated explicitly.** `profile-parse-fail-open`
+(status `revised`, `as_of` commit `54478e2`) names the same baseline file in its
+own `Touches` and declares a mandatory re-anchor. The AST baseline is a **single
+committed file with a flat, module-unqualified namespace over the whole engine
+package** — 174 keys, `as_of` commit `54478e2` — so the two lifecycles share one
+artifact and one supervised ceremony. If both plans execute concurrently, a
+re-anchor run for one blesses the other's engine deltas without review, which is
+the exact outcome the gate exists to prevent. **Only one of the two may hold an
+open plan at a time**; which one goes first is the Maintainer's arbitration, with
+exact wording offered below.
+
+**The falsifiable AST target is pinned to a commit, not a date.** The
+**exactly 3 CHANGED** target is measured against the baseline as committed at
+**`c3d5bd9`** (2026-07-31, the `lockfile-provenance-fields` Chunk G re-anchor),
+which is the most recent commit to touch that file and is unmodified in the
+working tree at `54478e2`. If the baseline moves before this plan opens, the
+target is re-derived against the new commit and the new sha is written into the
+plan. A date stamp does not survive a day in this repository (see B8).
+
+**One correction and one addition to the review's sweep**, both from re-running
+it rather than inheriting it:
+
+* `r6-unused-def-blindspot` surfaces in a `Touches` grep for
+  `bootstrap/_scaffold/`, but it is a **disclaimer**, not a claim — its header
+  reads *"No `AGENTS.md`, no doctrine rule, no shipped template, no install
+  manifest, no gate manifest, no `bootstrap/_scaffold/` engine code."* Not a
+  collision.
+* **`gate-claims-vs-enforcement` has already claimed R8**, which this proposal's
+  residual table still records as unrouted. Its Class F row F1 takes the exact
+  `AGENTS.md` mispointing R8 identifies, names the correct governing artifact,
+  and records the hand-off from this proposal by name. **R8's disposition
+  therefore changes from "routed to a doc-correction commit or the next proposal
+  touching that list" to "claimed, owner named"** — amended row below. This is
+  the residual mechanism working as intended, and it is worth recording that the
+  sibling found this proposal's row rather than the reverse.
+
+### B7 — the `_assert_safe_write` motivation, and `--cairn-root`'s durable home (closes [I6])
+
+**The motivation sentence is wrong and is corrected.** *Path validation* today
+justifies the containment call partly "because a templates tree can be tampered
+with independently". It cannot serve that reason: the guard resolves the root it
+is handed without inspecting it
+(`bootstrap/_scaffold/security.py:47`), so a symlinked `templates_root` is
+followed silently, and a tampered file *inside* the root passes all three checks
+by construction. Replacement:
+
+> Even though `src_rel` now comes from trusted code, the joined path is
+> validated before it is read, because [IDN4]'s satisfier asks for it and
+> because the *path* must not escape the root even when the *name* is trusted.
+> Validation proves **containment, not provenance**: a tampered file inside
+> `templates_root`, or a symlinked `templates_root` itself, passes all three
+> checks. Provenance of the checkout is **R1**, and is not addressed here.
+
+That wording agrees with the sentence the proposal already gets right elsewhere
+("Validation proves *containment*, not *provenance*") instead of contradicting
+it.
+
+**`--cairn-root` moves into R1's durable cell.** The reviewer's point is not
+about the disposition — that stands — but about where it lives: a Response
+section archives with the proposal, and R1's Residual cell reads "the checkout
+hosting the verifier", which describes the verifier's self-location and does not
+cover an operator flag. Amended R1 below. This is the archive-precondition
+failure the proposal's own Addendum measures at 1 of 12; it should not be
+committed by the artifact that diagnosed it.
+
+### B8 — the frozen-file figure is re-measured and commit-pinned (closes [I7])
+
+The proposal asserts **162 frozen files, `as_of 2026-08-03`**, twice. Re-measured
+at commit `54478e2`: **164**. The set moved the same day, after the measurement,
+when `gate-reanchor-preflight`'s Phase 0 commit `e45e1fc` added
+`bootstrap/tests/_gate_preflight.py`
+and `bootstrap/tests/test_gate_preflight.py`.
+
+Every figure in the gate-accounting section is therefore restated
+**commit-pinned**, `as_of` `54478e2`: frozen set **164**; `bootstrap/_scaffold/`
+entries in the frozen set **0**; `bootstrap/tests/fixtures/scaffold_ast_baseline.json`
+**not** frozen; AST baseline **174** symbols, verify rc **0**. The membership
+table is unaffected and the "exactly 2 `FROZEN-MODIFIED` holds" expectation
+survives — the two newly-frozen files are outside this plan's touch set. The plan
+re-measures all four at plan-open rather than inheriting them.
+
+**One expectation in *Examples / smoke checks* does change**, and not because of
+the count: B5's decision to keep the F1 oracle as a literal rather than a fixture
+file is what holds the `FROZEN-NEW` note count at **1**
+(`bootstrap/tests/test_fork_advisory.py`). Had the oracle landed as a fixture
+file it would have been 2, since `bootstrap/tests/fixtures/**/*` is a frozen
+glob. Recorded so the smoke check's expected output is exact rather than
+approximately right.
+
+### Author-accounting — additions from this round
+
+* **New invariants.**
+  * **F5** — suppression provenance (B2). Enforced by test node 16, parametric
+    over `hash`, `base_hash`, `src`, `fork_acknowledged`; and by test node 11.
+    **Can fail**: reusing `rec["hash"]` as the target-side operand fails node 11
+    at both callers.
+  * **F6** — read containment on both sides (B3). Enforced by test nodes 3 and
+    13. **Can fail**: dropping either join's validation fails four nodes.
+* **New test nodes**, all in the new `bootstrap/tests/test_fork_advisory.py`,
+  extending the 10-item matrix:
+  11. **Target-side operand pinned** — a record whose `hash` equals the trusted
+      template's hash while the on-disk bytes differ still produces a finding, at
+      **both** callers.
+  12. **Target-side file missing** — facade absent from disk while the record
+      claims a fork: `unconfirmed`, retained, no exception.
+  13. **Unsafe destination joins** — four nodes: `dst` absolute; `dst` with
+      `..`; `dst` a symlink; `dst` with a symlinked parent. Each: nothing read
+      outside `target`, finding retained as `unconfirmed`.
+  14. **F1 golden oracle** — the committed literal from B5.
+  15. **`src_relabelled` is annotation-only** — relabelled `src` plus matching
+      disk bytes produces no note at all.
+  16. **Suppression provenance (F5)** — parametric over the four lockfile
+      fields; none can turn a finding into no-finding at the `cmd_upgrade`
+      caller.
+* **Edge-case inventory, destination side** (previously empty): `dst` missing;
+  `dst` not a regular file; `dst` a symlink; `dst` with a symlinked parent; `dst`
+  absolute; `dst` containing `..`; `dst` non-`.py`; unresolvable `target`.
+* **Failure modes, restated.** The fail-loud rule now covers both sides: every
+  degradation path — no trusted map row, missing source, missing destination,
+  containment refusal on either side, `--to <ref>`, `upstream=None` — **retains**
+  the finding as `unconfirmed`. The only removal path is F5's byte-equality.
+* **Gate accounting, unchanged by this round.** Exactly 3 CHANGED; 0 MISSING; 0
+  DUPLICATE; NEW-note set as stated, plus one additional `Import:` key
+  (`lockfile.py` gains `from .security import …`; `security.py` is a stdlib-only
+  leaf, so this is a downward dependency and no cycle). 2 `FROZEN-MODIFIED`
+  holds, 1 `FROZEN-NEW` note. `_GUARDED_WRITE_FUNCS` untouched — the detector
+  still performs no adopter-tree write.
+
+### Amended and new residual rows
+
+| # | Residual | Trigger | Kind | Durable home |
+|---|---|---|---|---|
+| **R1** *(amended, B7)* | The comparison bytes are only as trustworthy as the checkout that supplies them — **the checkout hosting the verifier, or any directory an operator names with `--cairn-root`, which may point inside the target**. This change makes the source caller-controlled, not cryptographically anchored, and validation proves containment, not provenance. | Unchanged: resolved when the `release-authenticity` successor lands an out-of-band trust bootstrap; re-opened on the first Cairn install verified from a checkout the adopter did not obtain themselves. | non-observable | unchanged, **plus** the `--cairn-root` clause carried in this cell rather than only in a Response section |
+| **R8** *(amended, B6)* | `AGENTS.md`'s operational-pitfall entry routes the AST-baseline re-anchor to `bootstrap/REANCHOR_RUNBOOK.md`, which never governs it. | **Now claimed**: `gate-claims-vs-enforcement` takes it as its Class F row F1 and records the hand-off from this row by name. Discharged when that proposal's Decision lands or it explicitly drops the row. | mechanical — unchanged grep | unchanged, **plus** the sibling's row F1 |
+| **R9** *(new, B4)* | `src_relabelled` annotates findings that already exist; it cannot detect a relabelled `src` on a facade whose bytes match trusted upstream. Measured reach on this tree: 2 of 81 records before the change, **0** after. | The first request for `src`-field tamper detection independent of fork status, **or** the first adopter report of an undetected `src` relabel. Taking it is a separate proposal — it is a new finding kind and would need F1 restated. | half-mechanical — test node 15 pins the current semantics and fails if someone widens the annotation into a finding | test node 15 + `bootstrap/UPGRADE.md` |
+| **R10** *(new, B1)* | **Candidate selection remains lock-derived.** F5 pins the *verdict* to trusted-vs-disk bytes, but `hash`, `base_hash`, `dst` and the engine-directory probe still decide *which* records are examined. A lockfile asserting `hash == base_hash` evades the advisory entirely. This is unfixable while `base_hash` is a lockfile field, and this change does not attempt it. | The next change that gives the detector a trusted candidate source (an install-manifest-derived facade list, or a `base_hash` re-anchored from upstream), **or** the first adopter report of a fork the advisory missed. | non-observable | this row + a `#` comment at the candidate gate in `bootstrap/_scaffold/lockfile.py`, alongside R2's existing comment |
+
+### What these amendments do not establish
+
+Stated at the same standard the proposal's own *What this change does not fix*
+section sets, because two of this round's amendments are easy to over-read.
+
+* **B1's table is an inventory, not a proof.** It is checked by reading, and by
+  the six tests it points at. Nothing enforces that a future operand gets a row.
+  A later maintainer adding a parameter to `forked_facade_findings` will not be
+  stopped by anything mechanical.
+* **F5 pins the verdict, not the question.** See R10. A lying lockfile still
+  controls which records reach the comparison. The advisory is a heuristic
+  correlation and remains one.
+* **B3 buys containment, not provenance** — the same limit B7 writes into the
+  source-side motivation now applies symmetrically to the destination side.
+* **The completeness statement is scoped to this contract.** It is not a
+  definition of secure-enough-to-ship for Cairn, it is not doctrine, and it does
+  not engage the doctrine-change rate-limit gate. Whether the shape generalizes
+  is a question for a separate proposal, and I am not asking for one here.
+* **Nothing in this round was reviewed by a different agent type.** B1–B8 answer
+  a same-type read. The proposal's `required(External, security lens)` tier is
+  undischarged and this round does not count toward it.
+
+### Maintainer decisions this round asks for
+
+**A note on this section.** An earlier draft supplied, for each option, a
+pre-written sentence for the Maintainer to say back. Those have been removed.
+Cairn's scribing guard-rail requires the authorization be quoted **verbatim**,
+because a paraphrase "admits semantic drift, condition-softening, or a
+hallucinated approval" — and a sentence an agent wrote for the Maintainer to
+repeat is the agent's decision wearing the Maintainer's name. The options below
+describe what each choice means; the wording of any authorization is the
+Maintainer's own.
+
+
+Three, each with a recommendation and the reasoning behind it.
+Nothing here is an open question; each has a default the author recommends.
+
+**(1) The `Touches` header line.** [I5]'s recovery asks for
+`bootstrap/tests/fixtures/scaffold_ast_baseline.json` to be added to the header
+`Touches` line — but the header states what the author believed at open time, and
+the append-only rule protects that. `Status` is already treated as a mutable
+header field, so `Touches` plausibly is too; the author will not decide it.
+**Recommendation: edit it in place**, because `Touches` is the *discovery index*
+siblings grep, and a stale index is precisely the failure [I5] names. B6 records
+the original wording verbatim above, so nothing is erased either way.
+
+  Edit the Touches line in place to add the AST baseline file; B6 keeps the
+  original wording on the record.
+Or, to leave the header untouched:
+
+  Leave the header alone — B6's restated Touches line is authoritative.
+**(2) Which lifecycle holds the AST baseline first.** `fork-advisory-semantics`
+and `profile-parse-fail-open` both require a supervised re-anchor of the same
+174-key file, and a re-anchor run while the other's engine edits are in the tree
+blesses them unreviewed. **Recommendation: `fork-advisory-semantics` first** — it
+is on the critical path (`identity-not-name` does not archive until its four
+successors are opened), its 3-CHANGED target is already derived, and the trivial
+remediation-string commit is queued against the same function.
+
+  fork-advisory-semantics opens its plan first; profile-parse-fail-open does
+  not open a plan until fork-advisory's re-anchor commit has landed.
+Or the reverse:
+
+  profile-parse-fail-open goes first; fork-advisory-semantics re-derives its
+  AST target against the baseline commit that leaves.
+**(3) Whether a second External read runs before the Decision.** The Internal
+review recommends a focused second External pass and holds Decision-readiness on
+[I1] and [I5], both of which are now closed in text. **Recommendation: run it,
+scoped to the three questions the reviewer named** — now answerable as
+yes/no against B2, B3 and B5 rather than as an open hunt, plus the fourth
+question the proposal itself nominates and no reviewer has yet attacked. The four,
+written out so the authorization has a referent:
+
+1. Is the target-side operand pinned to bytes read from disk at **both** callers
+   (B2 / F5)?
+2. Is the destination join containment-validated (B3 / F6)?
+3. Is F1's oracle external to the function under test (B5)?
+4. Can the trusted map's output be influenced by the target — the attack the
+   proposal nominates as its own most likely failure, still unattempted?
+
+  Run the focused External security read on the four scoped questions, then
+  bring it back for Decision.
+Or, to decide without it:
+
+  [I1] and [I5] are closed in the revision; take the Decision now and hold the
+  External security read for the plan.
+**Unchanged and still pending from earlier rounds**, listed so nothing is
+assumed closed: the **Class C** three-way choice (ratify / overrule scope 3 /
+overrule scope 1), and the **condition-3 sequencing** three-way choice for the
+trivial remediation-string commit. Neither is reopened here and neither moved.
+
+## Response -- Claude (author, to Internal Security Review) -- 2026-08-03
+
+**Model**: Claude Opus 5. Proposal-Response grammar (no implementing commits
+exist). Every command below was run against this working tree on 2026-08-03 at
+commit `54478e2` under the canonical interpreter
+(`~/conda_envs/lhm/bin/python`, 3.13.13) with `PYTHONDONTWRITEBYTECODE=1`.
+Reproduction fixtures were built under the harness scratchpad; **nothing was
+written into the repository**.
+
+**Verdict on the verdict: BLOCKING was the right call, and [I1] is accepted
+without qualification.** I re-ran every command in the review and reproduced
+every finding independently rather than inheriting it. Seven of seven reproduce.
+Two carry corrections to their *illustrations* — [I4]'s population arithmetic and
+[I5]'s sweep — and in both cases the correction leaves the finding standing and,
+in [I5]'s case, makes it larger. One thing the review did not claim, which I owe
+the record: **[I1] is the third instance of this defect shape in this lineage** —
+after [IDN1] and [IDN4] — and it sits inside the document whose whole stated
+purpose is closing the class. That is the reason it is fixed here rather than in
+the plan.
+
+* **[I1] accept.** No hedging, no narrowing, no deferral. The finding is a
+  specification gap and the reviewer says so; what the reviewer could not do
+  without code is show how cleanly the gap already exists. It does. Today
+  `forked_facade_findings` decides "forked" from lockfile fields alone
+  (`bootstrap/_scaffold/lockfile.py:339`) and the only thing it touches on disk is
+  the engine directory
+  (`bootstrap/_scaffold/lockfile.py:351`).
+
+  **Reproduction A — the function reports a fork in a file that does not exist.**
+  This is the operand gap with nothing else in the frame:
+
+  ```
+  $ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python repro_i1.py
+  === A. the facade does not exist on disk at all ===
+  facade on disk : False
+  finding(s)     : [{'dst': 'tools/intent.py', 'engine': 'tools/_intent', 'acknowledged': False}]
+  ```
+
+  **Reproduction B — the counterfactual the proposal fails to forbid.** Disk
+  bytes are hostile; the lockfile claims the trusted template's hash. I
+  implemented both candidate plan-time readings in the scratchpad — suppress on
+  `rec["hash"] == sha256(trusted)`, versus suppress on
+  `read_bytes(target/dst) == trusted`:
+
+  ```
+  === B. disk bytes are hostile; lockfile claims the trusted hash ===
+  disk bytes     : b"# HOSTILE launcher\nprint('pwn')\n"
+  disk hash      : sha256:ba2bb9782a913400d
+  lock 'hash'    : sha256:8181e6abe066d18ee (== trusted tmpl)
+  trusted tmpl   : sha256:8181e6abe066d18ee
+  today's finding: [{'dst': 'tools/intent.py', ...}]
+  unsafe variant : [] <- note GONE
+  safe   variant : [{'dst': 'tools/intent.py', ...}] <- note KEPT
+  ```
+
+  The reviewer's severity accounting is also right and I adopt it: at
+  `verify_integrity` the lie is caught, because the disk hash is recomputed in
+  that caller's own loop (`bootstrap/verify_integrity.py:108`) and a mismatch is
+  a violation. I checked the one bypass that loop has — the `living_state`
+  opt-out, which `continue`s before the recompute — and it is **not** a way in:
+  the authoritative set holds five paths, **none** of them `.py`, and a `.py`
+  record claiming `living_state` fails closed as a tamper attempt. At
+  `cmd_upgrade` there is no cross-check at all: the lockfile is read at
+  `bootstrap/_scaffold/upgrade.py:2192` and the advisory fires at
+  `bootstrap/_scaffold/upgrade.py:2204` with nothing between them but an error
+  branch. And the reviewer's sharpest observation is the one about intent: the
+  comment in that block records a *considered* decision that the tree gets no
+  suppression lever at upgrade time. Keying suppression on `rec["hash"]` would
+  hand the lever back at that exact site, through a field nobody would think to
+  grep for. **Closed by B1 (the operand inventory), B2 (F5 and the pinned
+  read), and test nodes 11 and 16.**
+
+* **[I2] accept.** Reproduced, and it is one step worse than the review states:
+  both escape shapes do not merely survive `_facade_engine_dir` and the engine
+  probe, they produce a **finding**, so the detector's own output today names a
+  path outside the target:
+
+  ```
+  $ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python repro_i2.py
+  dst                    : ../outside/secret.py
+    _facade_engine_dir   : ../outside/_secret
+    finding emitted      : [{'dst': '../outside/secret.py', 'engine': '../outside/_secret', ...}]
+    (target / dst) reads : b'SECRET\n'
+    lands inside target  : False
+
+  dst                    : /private/tmp/.../fx2/outside/secret.py     # absolute
+    finding emitted      : [{'dst': '/private/tmp/.../fx2/outside/secret.py', ...}]
+    (target / dst) reads : b'SECRET\n'
+    lands inside target  : False
+  ```
+
+  `verify_integrity` does validate `dst` in its own loop
+  (`bootstrap/verify_integrity.py:70`), but that guard runs in a different loop
+  and does not stop the detector from emitting the note; `cmd_upgrade` validates
+  nothing before line 2204. Inside the detector, `dst_rel` is checked only for
+  being a non-empty string
+  (`bootstrap/_scaffold/lockfile.py:346`). I accept the reviewer's refusal to
+  inflate the severity and have carried that refusal into B3 verbatim in spirit:
+  the reason to fix it is that B2 adds a read, not that the read is a disclosure
+  primitive. **Closed by B3 (F6) and test node 13.**
+
+* **[I3] accept with modification.** The contradiction is real as literal text
+  and I am not going to defend it with a charitable reading — the two sentences
+  say "it can only add one" and "it can never add one" seven lines apart, about
+  different referents, with nothing marking the difference. Taking the
+  reviewer's **option (a)**: F1 stands, the prose comes down to what the
+  mechanism does. Population re-measured independently, `as_of` `54478e2`: 81
+  records, 81 with a `src` field, 43 `verbatim`, 40 with `hash != base_hash`, 2
+  with an engine directory present (`tools/intent.py`,
+  `tools/lifecycle_metrics.py`) — and both of those are byte-identical to their
+  trusted templates, so after the fix the annotation's reachable population on
+  this tree is **0**. The modification beyond wording: one test node (15) that
+  pins the annotation-only semantics, and a residual row (**R9**) so the limit
+  outlives the proposal. **Closed by B4.**
+
+* **[I4] accept with modification.** The guard shape is the finding and it is
+  correct: the proposed test compares the function against itself under a
+  different keyword, both branches share the candidate gate
+  (`bootstrap/_scaffold/lockfile.py:339`), and F1 is stated against a different
+  reference than the guard tests. The modification is twofold. **First, the
+  illustration is wrong on this tree and I would rather correct it than let a
+  future reader inherit it**: 0 verbatim records lack `base_hash`, so admitting
+  `base is None` widens the candidate set by nothing; the 3 records between 40
+  and 43 are the `hash == base_hash` ones, and none of the three has an engine
+  directory, so even the wider change adds 0 findings here. **Second, I replaced
+  the population argument with a construction**, which is stronger because the
+  guard has to hold on every tree, not this one:
+
+  ```
+  $ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python repro_i4.py
+  golden (today's committed finding set): ['tools/a.py', 'tools/b.py']
+
+  today's gate
+    PROPOSED guard (B subset A) passes: True
+    GOLDEN  guard (B subset golden) passes: True
+
+  WIDENED gate
+    upstream=None branch     : ['tools/a.py', 'tools/b.py', 'tools/c.py']
+    trusted-upstream branch  : ['tools/b.py', 'tools/c.py']
+    PROPOSED guard (B subset A) passes: True
+    GOLDEN  guard (B subset golden) passes: False
+  ```
+
+  The proposed guard is green while F1 is violated; the external oracle is red.
+  That is the finding, demonstrated. The third modification is the oracle's form
+  — a committed literal rather than a fixture file, for the gate reason in B5,
+  with the re-paste weakness stated rather than hidden. **Closed by B5 and test
+  node 14.**
+
+* **[I5] accept with modification — and the finding gets bigger, not smaller.**
+  The `Touches` gap reproduces exactly: `profile-parse-fail-open` names
+  `bootstrap/tests/fixtures/scaffold_ast_baseline.json` in its `Touches` line and
+  declares a mandatory re-anchor; this proposal's `Touches` line does not name it,
+  and its only two occurrences outside review text are in the gate narrative and
+  in R8's grep string. The security framing is right — a shared 174-key flat
+  namespace, a supervised-only repair path, and a falsifiable target that is only
+  falsifiable against a baseline nobody else moved. I re-ran the sweep across all
+  twelve 2026-08-03 proposals rather than trusting it, with two results:
+
+  * **One apparent third claimant is not one.** `r6-unused-def-blindspot` matches
+    a `Touches` grep for `bootstrap/_scaffold/` only because it *disclaims* the
+    surface in that line. Recorded so the next sweeper does not re-flag it.
+  * **R8 is already claimed, and this proposal's residual table does not know
+    it.** `gate-claims-vs-enforcement` takes the identical `AGENTS.md`
+    mispointing as its Class F row F1, names the correct governing artifact, and
+    explicitly records the hand-off from this proposal's R8 row. R8's disposition
+    changes accordingly.
+
+  **Closed by B6**, which amends `Touches`, states the one-plan-at-a-time
+  sequencing constraint, pins the AST target to baseline commit `c3d5bd9`, and
+  amends R8. The arbitration between the two lifecycles is the Maintainer's and
+  is put to them with exact wording rather than left open.
+
+* **[I6] accept.** Both halves. The guard reproduces as described — it resolves
+  the root it is handed without inspecting it
+  (`bootstrap/_scaffold/security.py:47`):
+
+  ```
+  $ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python repro_i6.py
+  templates_root is a symlink : True
+  guard verdict               : PASSED
+  candidate resolves to       : /private/tmp/.../fx6/planted_templates/modules/team-gated/intent.py
+  bytes the comparison reads  : b'# PLANTED, not the real template\n'
+  ```
+
+  The reviewer's prescription is exactly right — *fix the motivation sentence,
+  not the guard* — and I am taking it unchanged; the guard is a containment
+  guard and is correct as a containment guard. On the second half: the
+  `--cairn-root` disposition is not being re-litigated, only re-homed, and the
+  reviewer is right that recording it only in a section that archives is the
+  failure mode this proposal's own Addendum spends 200 lines diagnosing. **Closed
+  by B7**, in the motivation sentence and in R1's cell.
+
+* **[I7] accept.** Re-measured at `54478e2`: **164**, not 162, and the review's
+  causal account is right — commit `e45e1fc` added
+  `bootstrap/tests/_gate_preflight.py`
+  and `bootstrap/tests/test_gate_preflight.py`
+  the same day, after the original measurement. I re-confirmed the three facts
+  the smoke check depends on and all three hold: 0 `bootstrap/_scaffold/` entries
+  in the frozen set, the AST baseline JSON not frozen, and the two newly-frozen
+  files outside this plan's touch set — so "exactly 2 `FROZEN-MODIFIED` holds"
+  survives. The reviewer's real point is the discipline one and I am taking it
+  literally: **every gate figure in this proposal is now pinned to a commit
+  rather than a date** (B8). A day-granular `as_of` is not precise enough for a
+  surface an in-flight sibling lifecycle is actively moving — the review watched
+  `HEAD` move twice while it was being written, and it has moved again since.
+
+**On the review's own limits, which it stated first and I am not going to soften.**
+This was a same-agent-type read with no cross-type independence, and it says so
+before its findings. Every acceptance above should be read with that discount.
+What it bought that the External pass structurally could not was execution
+against the real tree, and that is where six of the seven findings came from —
+including the two that no amount of re-reading the proposal would have produced
+([I2]'s escape shapes and [I7]'s stale count). It does **not** discharge the
+`required(External, security lens)` tier and must not be counted toward it.
+
+**One thing neither review has done, restated because it is still true after this
+round.** The proposal nominates its own most likely failure — *"the trusted map
+is not actually trusted"* — and it remains unattacked. The External pass stopped
+one step short; the Internal pass got one step closer (the registries are
+literals; the helper takes no module list) and did not break it. Two same-family
+reasoners failing to break something is weaker evidence than it looks, and A1
+remains a **written rule** enforced by one test node and by review, not a
+construction. I am not claiming otherwise.
+
+**What this round did not sweep.** Other consumers of `base_hash` (still named,
+still not measured). The `--to <ref>` path end to end. The `UPGRADE.md` and
+`SECURITY_MUTATIONS.md` prose, which do not exist yet. Whether B1's operand table
+is *complete* — I built it by enumerating every input the current function reads
+plus the two the design adds, and a reviewer who finds an eleventh operand has
+found a real gap in this round's central artifact. That is the attack I would
+most want made on B1, and I am naming it rather than waiting for it.
+
+**Net**: Internal BLOCKING accepted in full. [I1] closed at proposal time by B1
+and B2 rather than deferred; [I2]–[I7] closed by B3–B8. Two illustrations
+corrected, neither disturbing its finding; one finding ([I5]) enlarged by
+re-running its sweep. Two new invariants (F5, F6), six new test nodes, two new
+residuals (R9, R10), and a scoped completeness statement so the next review has a
+stopping rule. Status stays `revised`. Three Maintainer decisions are put with
+exact authorizing wording; none is left open.
