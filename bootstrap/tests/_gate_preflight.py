@@ -32,6 +32,7 @@ import argparse
 import contextlib
 import hashlib
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -72,23 +73,63 @@ EVIDENCE_SCHEMA = 1
 #: structural guarantee rather than a documented promise.
 _READ_ONLY_GIT = frozenset({
     "rev-parse", "rev-list", "log", "show", "cat-file", "ls-files",
-    "diff", "merge-base", "for-each-ref", "status",
-    # `archive` reads objects and writes only to a caller-chosen path; callers
-    # here always target a temp directory outside the repository. It mutates no
-    # repository state, which is the property this allowlist encodes.
-    "archive",
+    "ls-tree", "diff", "merge-base", "for-each-ref", "status",
+    # `archive` was here and is deliberately gone: it is attribute-aware, so a
+    # candidate `.gitattributes` could hide a tracked file from the materialized
+    # tree (FUR3). `raw_tree` reads `ls-tree` + `cat-file` instead, and removing
+    # the subcommand makes the archive path unreachable rather than merely
+    # unused.
 })
 
-#: Config pinned on **every** git invocation, so the checker's reading of the
-#: repository never depends on candidate-controlled `.git/config`. CR1 was one
-#: instance of that class (the allowed-signers roster's *location*); its reviewer
-#: flagged the class itself as unswept. `core.quotePath` is the sibling that
-#: sweep found: it defaults to *true* and escapes non-ASCII paths in both
-#: `ls-files --stage` and `status --porcelain`, so a frozen file named
-#: `d/café.py` reads back as `"d/caf\303\251.py"` and never matches the glob --
-#: a false refusal rather than a bypass, but the same failure shape. Pinning it
-#: here closes the class for future call sites too, rather than one instance.
-_PINNED_CONFIG: dict[str, str] = {"core.quotePath": "false"}
+#: The signature backend, pinned by absolute path. ``gpg.ssh.program`` is an
+#: ordinary repository-config key: pointing it at a script that answers
+#: ``-Y find-principals`` with a rostered name and ``-Y verify`` with success
+#: made a commit signed by a key **absent from the roster** report ``%G? = G``
+#: and ``%GS = m@example``. Reproduced against these exact bytes; pinning this
+#: restores ``U``. Used for verification *and* signing.
+_SSH_KEYGEN = "/usr/bin/ssh-keygen"
+
+#: Config forced onto **every** git invocation, read or write.
+#:
+#: CR1 found one instance of this class (the roster's *location*) and its
+#: reviewer flagged the class as unswept. The previous fix pinned exactly one
+#: sibling and declared the class closed; the first-use review then found four
+#: more, each defeating a different asserted guarantee. Each entry below is
+#: paired with the attack it was verified against, because "pinned a plausible
+#: key" is not evidence:
+#:
+#: * ``core.useReplaceRefs`` -- ``refs/replace/<anchor>`` made ``show
+#:   <anchor>:<path>`` return attacker bytes while ``rev-parse`` still reported
+#:   the original SHA, so :func:`anchored_roster` read an attacker roster with
+#:   every SHA looking correct (FUR1 probe 1).
+#: * ``core.hooksPath`` -- a ``reference-transaction`` hook advanced a **third**
+#:   ref while the two-ref transaction reported success (FUR2). ``/dev/null``
+#:   disables the configured path *and* the default ``.git/hooks``.
+#: * ``core.fsmonitor`` -- a configured monitor program executed during
+#:   ``git status``, so ``check`` was never structurally free of
+#:   candidate-configured execution (FUR2).
+#: * ``gpg.format`` -- unpinned, a candidate selects a backend whose program
+#:   key is not the one pinned below.
+#: * ``core.quotePath`` -- non-ASCII frozen paths read back escaped and never
+#:   match the glob (a false refusal, not a bypass, but the same shape).
+#:
+#: Command-line ``-c`` outranks system, global, repository **and worktree**
+#: config; verified here that it also outranks ``GIT_CONFIG_KEY_n`` /
+#: ``GIT_CONFIG_VALUE_n`` in the environment.
+#:
+#: **What this does not cover**, stated rather than left to be inferred: in-tree
+#: ``.gitattributes`` has no config switch, so ``export-ignore`` and filter
+#: drivers are addressed structurally instead -- see :func:`_tree_files` and
+#: :func:`_install_blob_in_index`.
+_STERILE_CONFIG: dict[str, str] = {
+    "core.useReplaceRefs": "false",
+    "core.hooksPath": os.devnull,
+    "core.fsmonitor": "false",
+    "core.quotePath": "false",
+    "gpg.format": "ssh",
+    "diff.external": "",
+    "core.pager": "cat",
+}
 
 #: Index modes accepted for a frozen-surface member: regular file only.
 #: 120000 is a symlink and 160000 a gitlink/submodule; both are refused, because
@@ -131,9 +172,90 @@ class Report:
 # git access -- read-only by construction
 # --------------------------------------------------------------------------
 
+_RESOLVED: dict[str, str] = {}
+
+
+def _resolved_binary(name: str, pinned: str | None = None) -> str:
+    """Resolve an executable to an absolute path, once, and refuse a bad one.
+
+    **This is not a containment control**, and the distinction matters after
+    four rounds of claiming protections at the strength intended rather than
+    delivered: ``PATH`` belongs to the operator, and the evidence stage's
+    declared non-containment residual means escaped candidate code could write
+    somewhere on it. What this does is resolve once instead of per invocation,
+    and report the concrete path, so the operator can see what actually ran.
+
+    Symlinks are **followed, not refused**. An earlier draft refused them and
+    broke on an ordinary Homebrew install, where ``/opt/homebrew/bin/git`` is a
+    symlink into the Cellar -- and refusing bought nothing, since exec follows
+    the link either way. Resolving makes the reported path the true one.
+    """
+    if name not in _RESOLVED:
+        found = pinned or shutil.which(name)
+        if not found:
+            raise PreflightError(f"{name} was not found on PATH")
+        p = Path(found)
+        if not p.is_absolute():
+            raise PreflightError(f"the {name} path {found} is not absolute")
+        p = p.resolve()
+        if not p.is_file() or not os.access(p, os.X_OK):
+            raise PreflightError(
+                f"{found} resolves to {p}, which is not an executable regular "
+                f"file; refusing rather than running an unexpected binary in "
+                f"the ceremony")
+        _RESOLVED[name] = str(p)
+    return _RESOLVED[name]
+
+
+def _sterile_env(index: str | None = None) -> dict[str, str]:
+    """The child environment for every git invocation.
+
+    Every ``GIT_*`` variable is **dropped** rather than denylisted by name. The
+    set that steers git is large -- ``GIT_DIR``, ``GIT_WORK_TREE``,
+    ``GIT_INDEX_FILE``, ``GIT_CONFIG_*``, ``GIT_EXTERNAL_DIFF``,
+    ``GIT_SSH_COMMAND``, ``GIT_REPLACE_REF_BASE``, the four pathspec flags --
+    and grows between releases, so removing everything and putting back what the
+    ceremony needs fails safe where an enumerated denylist does not.
+
+    The rest of the environment is left alone: ``PATH``, ``HOME`` and
+    ``SSH_AUTH_SOCK`` are the operator's, and signing needs them. That is a
+    scope statement, not a trust claim -- the runbook's residual trust set is
+    where the chain actually ends.
+    """
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    env["GIT_TERMINAL_PROMPT"] = "0"
+    if index is not None:
+        env["GIT_INDEX_FILE"] = index
+    return env
+
+
+def _run_git(args: tuple[str, ...], *, repo: Path,
+             config: dict[str, str] | None = None,
+             stdin: str | bytes | None = None, want_bytes: bool = False,
+             index: str | None = None) -> subprocess.CompletedProcess:
+    """The single sterile-Git launcher. Both allowlists route through here.
+
+    Nothing else in this module may call ``subprocess`` with ``git``: the
+    guarantees above hold only if there is exactly one place they are applied,
+    and a second call site is how ``_blob_at`` once bypassed the read-only
+    guard.
+    """
+    merged = {**_STERILE_CONFIG,
+              "gpg.ssh.program": _resolved_binary("ssh-keygen", _SSH_KEYGEN),
+              **(config or {})}
+    overrides: list[str] = []
+    for key, value in merged.items():
+        overrides += ["-c", f"{key}={value}"]
+    return subprocess.run(
+        [_resolved_binary("git"), "-C", str(repo), *overrides, *args],
+        input=stdin, capture_output=True, text=not want_bytes, check=False,
+        env=_sterile_env(index))
+
+
 def _git(*args: str, repo: Path = _REPO,
          config: dict[str, str] | None = None,
-         want_bytes: bool = False) -> subprocess.CompletedProcess:
+         want_bytes: bool = False,
+         stdin: str | bytes | None = None) -> subprocess.CompletedProcess:
     """Run a **read-only** git subcommand. Refuses anything not allowlisted.
 
     This is the enforcement point for the read-only invariant: a future edit that
@@ -149,12 +271,45 @@ def _git(*args: str, repo: Path = _REPO,
         raise PreflightError(
             f"_gate_preflight may only run read-only git subcommands; "
             f"refused {(args[0] if args else '<none>')!r}")
-    merged = {**_PINNED_CONFIG, **(config or {})}
-    overrides: list[str] = []
-    for key, value in merged.items():
-        overrides += ["-c", f"{key}={value}"]
-    return subprocess.run(["git", "-C", str(repo), *overrides, *args],
-                          capture_output=True, text=not want_bytes, check=False)
+    return _run_git(args, repo=repo, config=config, want_bytes=want_bytes,
+                    stdin=stdin)
+
+
+def _require_worktree_root(repo: Path) -> Path:
+    """Resolve the target repository, and refuse anything that is not its root.
+
+    Two failures, one root cause: **the checker's own location is not the
+    target.** The recorded anchored invocation extracts ``bootstrap/tests`` into
+    a temp directory and runs the checker from there, so the ``_REPO`` default --
+    computed from ``__file__`` -- names the *extraction* directory, not the
+    checkout being blessed. Executing the runbook's exact steps refused with
+    git's bare ``fatal: not a git repository`` before reaching the real checkout
+    (first-use review FUR5): fail-closed, but undiagnosable, and it meant the
+    recorded ceremony had never been run.
+
+    The second failure is why "not a git repository" was luck rather than
+    design. ``git -C <path>`` **discovers upward**. Had the extraction landed
+    anywhere beneath a repository -- a ``$TMPDIR`` inside a checkout is enough --
+    the identical invocation would have found *that* repository and blessed it,
+    reporting success against a target the operator never named. So requiring
+    *a* repository is not enough; the path must be the top level of the worktree
+    it names, which is what makes the binding explicit rather than ambient.
+    """
+    resolved = Path(repo).resolve()
+    p = _git("rev-parse", "--show-toplevel", repo=resolved)
+    top = (p.stdout or "").strip()
+    if p.returncode != 0 or not top:
+        raise PreflightError(
+            f"not a git repository: {resolved} -- name the checkout to bless "
+            f"explicitly as `--repo <checkout>`. The anchored invocation runs "
+            f"this checker from a temp extraction directory, so its own "
+            f"location is never the target ({(p.stderr or '').strip()!r})")
+    if Path(top).resolve() != resolved:
+        raise PreflightError(
+            f"{resolved} is not the top level of a git worktree -- git "
+            f"discovered {Path(top).resolve()} by walking upward. Refusing "
+            f"rather than operating on a repository the invocation did not name")
+    return resolved
 
 
 def _resolve(ref: str, *, repo: Path = _REPO) -> str:
@@ -167,6 +322,100 @@ def _resolve(ref: str, *, repo: Path = _REPO) -> str:
             f"ref does not resolve to a commit: {ref!r} "
             f"({(p.stderr or '').strip()})")
     return sha
+
+
+def _tree_entries(commit: str, *,
+                  repo: Path = _REPO) -> list[tuple[str, str, str]]:
+    """Every blob in a commit's tree, read from the **raw object graph**.
+
+    ``ls-tree -r -z`` walks tree objects and does no attribute processing, which
+    is the whole point: ``git archive`` honours in-tree ``.gitattributes``, so a
+    tracked file marked ``export-ignore`` was silently absent from the
+    materialized tree. The candidate's producer never saw it, the manifest it
+    emitted did not pin it, and the blessed commit's tree contained it anyway
+    (FUR3, reproduced). ``-z`` also means paths arrive raw rather than quoted.
+    """
+    p = _git("ls-tree", "-r", "-z", "--full-tree", commit, repo=repo,
+             want_bytes=True)
+    if p.returncode != 0:
+        raise PreflightError(
+            f"could not list the tree of {commit[:12]}: "
+            f"{(p.stderr or b'').decode('utf-8', 'replace').strip()}")
+    entries: list[tuple[str, str, str]] = []
+    for record in p.stdout.split(b"\0"):
+        if not record:
+            continue
+        meta, _, path = record.partition(b"\t")
+        mode, _, rest = meta.partition(b" ")
+        _type, _, sha = rest.partition(b" ")
+        entries.append((mode.decode(), sha.decode(),
+                        path.decode("utf-8", "surrogateescape")))
+    return entries
+
+
+def _batch_blobs(shas: list[str], *, repo: Path = _REPO) -> list[bytes]:
+    """Read many blobs in one ``cat-file --batch``.
+
+    472 separate ``cat-file`` invocations would work and be unusably slow; the
+    batch protocol is ``<sha> SP <type> SP <size> LF <contents> LF`` per request,
+    in request order.
+    """
+    if not shas:
+        return []
+    p = _git("cat-file", "--batch", repo=repo, want_bytes=True,
+             stdin="".join(f"{s}\n" for s in shas).encode())
+    if p.returncode != 0:
+        raise PreflightError(
+            f"could not read {len(shas)} blob(s): "
+            f"{(p.stderr or b'').decode('utf-8', 'replace').strip()}")
+    out, pos, blobs = p.stdout, 0, []
+    for sha in shas:
+        nl = out.find(b"\n", pos)
+        if nl < 0:
+            raise PreflightError(f"truncated cat-file stream at {sha[:12]}")
+        header = out[pos:nl].split()
+        if len(header) != 3 or header[1] != b"blob":
+            raise PreflightError(
+                f"expected a blob record for {sha[:12]}, got {out[pos:nl]!r}")
+        start = nl + 1
+        blobs.append(out[start:start + int(header[2])])
+        pos = start + int(header[2]) + 1
+    return blobs
+
+
+@contextlib.contextmanager
+def raw_tree(commit: str, *, repo: Path = _REPO):
+    """Materialize a commit's tree from raw objects, outside the repository.
+
+    Replaces ``git archive``, which is attribute-aware and therefore
+    candidate-steerable (FUR3). Non-regular entries refuse rather than being
+    written: a symlink can redirect a write out of the destination, and a
+    gitlink names content this repository does not hold.
+    """
+    entries = _tree_entries(commit, repo=repo)
+    irregular = [(m, rel) for m, _s, rel in entries if m not in _REGULAR_MODES]
+    if irregular:
+        raise PreflightError(
+            f"the tree of {commit[:12]} holds {len(irregular)} non-regular "
+            f"entr(ies) -- e.g. {irregular[:3]} -- and materializing a symlink "
+            f"or gitlink is refused rather than followed")
+    dest = Path(tempfile.mkdtemp(prefix="cairn-raw-tree-"))
+    try:
+        blobs = _batch_blobs([sha for _m, sha, _rel in entries], repo=repo)
+        root = dest.resolve()
+        for (mode, _sha, rel), data in zip(entries, blobs):
+            target = (dest / rel)
+            if rel.startswith("/") or ".." in Path(rel).parts or \
+                    root not in target.resolve().parents:
+                raise PreflightError(
+                    f"tree entry {rel!r} escapes the destination directory")
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
+            if mode == "100755":
+                target.chmod(0o755)
+        yield dest
+    finally:
+        shutil.rmtree(dest, ignore_errors=True)
 
 
 def _blob_at(sha: str, rel: str, *, repo: Path = _REPO) -> bytes | None:
@@ -403,9 +652,37 @@ def check_signatures(anchor: str, head: str, report: Report, *,
     Maintainer's strings passed that check silently. Signature status does not
     forge: ``N`` (unsigned) and ``U`` (signed by an unpinned key) both refuse.
     """
+    # Resolve the epoch explicitly, and prove it sits on the history being
+    # blessed, BEFORE enumerating anything (first-use review FUR4). Two distinct
+    # failures hid behind the old implicit use of the raw constant:
+    #   * absent object -- the epoch range came back empty via the fail-open
+    #     `_rev_list`, so every commit read as grandfathered and `checked` was 0;
+    #   * present but off the HEAD line -- "at or after the epoch" then names no
+    #     range on the history under consideration, and the intersection below is
+    #     empty for a reason that has nothing to do with the commits being safe.
+    # Resolving also normalises the constant to a full SHA, so it compares
+    # against `rev-list` output rather than relying on the literal being 40 hex.
+    try:
+        epoch = _resolve(_SIGNING_EPOCH, repo=repo)
+    except PreflightError as exc:
+        report.add("SIGNING", "refuse",
+                   f"the signing epoch {_SIGNING_EPOCH[:12]} is not present in "
+                   f"this repository ({exc}); the grandfathered range cannot be "
+                   f"established, so no commit can be shown to be exempt")
+        report.facts["signing"] = {"epoch": _SIGNING_EPOCH, "resolved": None}
+        return
+    if not _is_ancestor(epoch, head, repo=repo):
+        report.add("SIGNING", "refuse",
+                   f"the signing epoch {epoch[:12]} is not an ancestor of HEAD "
+                   f"{head[:12]}; 'at or after the epoch' names no range on the "
+                   f"history being blessed")
+        report.facts["signing"] = {"epoch": _SIGNING_EPOCH, "resolved": epoch,
+                                   "ancestor_of_head": False}
+        return
+
     blessed = set(_rev_list(f"{anchor}..{head}", repo=repo))
-    post_epoch = set(_rev_list(f"{_SIGNING_EPOCH}..{head}", repo=repo))
-    post_epoch.add(_SIGNING_EPOCH)
+    post_epoch = set(_rev_list(f"{epoch}..{head}", repo=repo))
+    post_epoch.add(epoch)
     to_check = blessed & post_epoch
 
     # Supply the roster BY INVOCATION, never letting git resolve it through
@@ -443,6 +720,8 @@ def check_signatures(anchor: str, head: str, report: Report, *,
 
     report.facts["signing"] = {
         "epoch": _SIGNING_EPOCH,
+        "resolved": epoch,
+        "ancestor_of_head": True,
         "commits_in_range": len(blessed),
         "checked": len(to_check),
         "grandfathered": len(blessed - post_epoch),
@@ -451,10 +730,38 @@ def check_signatures(anchor: str, head: str, report: Report, *,
 
 
 def _rev_list(spec: str, *, repo: Path = _REPO) -> list[str]:
+    """Enumerate commits, or raise. It **never** reports failure as emptiness.
+
+    This used to ``return []`` on any git error, which silently converted "the
+    signed range cannot be established" into "there is nothing to check". With
+    the signing-epoch object absent -- a shallow or partial clone is enough --
+    an unsigned commit inside ``anchor..HEAD`` was reported as *grandfathered*
+    and :func:`check_signatures` emitted no finding at all (first-use review
+    FUR4). An unestablishable range is not an empty one.
+    """
     p = _git("rev-list", spec, repo=repo)
     if p.returncode != 0:
-        return []
+        raise PreflightError(
+            f"could not enumerate commits for {spec!r}: "
+            f"{(p.stderr or '').strip()!r} -- refusing rather than treating an "
+            f"unestablishable range as empty")
     return [s for s in (p.stdout or "").split() if s]
+
+
+def _is_ancestor(ancestor: str, descendant: str, *, repo: Path = _REPO) -> bool:
+    """True iff ``ancestor`` is an ancestor of ``descendant``.
+
+    ``merge-base --is-ancestor`` has *three* outcomes, not two: 0 yes, 1 no, and
+    anything else a genuine error. Collapsing the third into "no" would be the
+    same fail-open shape :func:`_rev_list` just lost.
+    """
+    p = _git("merge-base", "--is-ancestor", "--end-of-options",
+             ancestor, descendant, repo=repo)
+    if p.returncode not in (0, 1):
+        raise PreflightError(
+            f"could not decide whether {ancestor[:12]} is an ancestor of "
+            f"{descendant[:12]}: {(p.stderr or '').strip()!r}")
+    return p.returncode == 0
 
 
 # --------------------------------------------------------------------------
@@ -539,8 +846,12 @@ RESIDUAL -- this stage EXECUTES CANDIDATE CODE.
   That is best-effort isolation and NOT containment: the executed code retains
   filesystem access outside this tree, process creation, and network access.
   Accepted by Maintainer Decision (trusted-contributor threat model, Cairn's own
-  trust root, single-maintainer, as of 2026-08-03). This output is
-  NON-AUTHORITATIVE evidence; `check` re-derives every static Git fact itself.
+  trust root, single-maintainer, as of 2026-08-03).
+  AUTHORITY -- named exactly, because a blanket "NON-AUTHORITATIVE" was too
+  strong: `check` re-derives every STATIC manifest field itself from raw commit
+  objects and refuses on any difference. What this stage alone can supply, and
+  what therefore remains trusted to it, is the pytest COLLECTION (and the
+  interpreter it ran under) -- a suite cannot be collected from object bytes.
 """
 
 
@@ -559,24 +870,12 @@ def gather_evidence(candidate_ref: str = "HEAD", *, repo: Path = _REPO,
     out.write(_EVIDENCE_RESIDUAL + "\n")
     candidate = _resolve(candidate_ref, repo=repo)
 
-    workdir = Path(tempfile.mkdtemp(prefix="cairn-evidence-tree-"))
-    try:
-        tarball = workdir / "candidate.tar"
-        arc = _git("archive", "--format=tar", "-o", str(tarball), candidate,
-                   repo=repo)
-        if arc.returncode != 0:
-            raise PreflightError(
-                f"could not materialize the candidate tree: "
-                f"{(arc.stderr or '').strip()}")
-        tree = workdir / "tree"
-        tree.mkdir()
-        with tarfile.open(tarball) as tf:
-            # ``filter="data"`` refuses absolute paths, ``..`` traversal, and
-            # special files -- the extraction itself must not be the weak point.
-            tf.extractall(tree, filter="data")
-        tarball.unlink()
-
-        out.write(f"materialized {candidate[:12]} at {tree} (no .git)\n")
+    # Materialized from raw objects, not `git archive`: the archive path honours
+    # in-tree `.gitattributes`, so a tracked file marked `export-ignore` was
+    # invisible to the producer while remaining in the blessed tree (FUR3).
+    with raw_tree(candidate, repo=repo) as tree:
+        out.write(f"materialized {candidate[:12]} at {tree} "
+                  f"(no .git, raw objects)\n")
         with R._scrubbed_environ():
             # Drop the invoking process's import path so the producer cannot
             # resolve `bootstrap.tests` from *another* checkout and measure a
@@ -603,8 +902,6 @@ def gather_evidence(candidate_ref: str = "HEAD", *, repo: Path = _REPO,
             raise PreflightError(
                 f"the candidate's manifest producer emitted invalid JSON: "
                 f"{exc}") from None
-    finally:
-        shutil.rmtree(workdir, ignore_errors=True)
 
     v = sys.version_info
     body = json.dumps(manifest, indent=2, sort_keys=True).encode() + b"\n"
@@ -614,6 +911,103 @@ def gather_evidence(candidate_ref: str = "HEAD", *, repo: Path = _REPO,
         "interpreter": f"{v.major}.{v.minor}.{v.micro}",
         "manifest": manifest,
         "manifest_sha256": _sha256_bytes(body),
+    }
+
+
+#: Manifest fields that need the suite to *run*, and so are irreducibly the
+#: evidence stage's to report. Everything else is re-derived by
+#: :func:`rederive_static_manifest` and compared.
+_EXECUTABLE_ONLY_FIELDS = frozenset({"collection", "interpreter"})
+
+
+def rederive_static_manifest(commit: str, *, repo: Path = _REPO) -> dict:
+    """Recompute every statically derivable manifest field, independently.
+
+    The evidence stage was labelled wholly "NON-AUTHORITATIVE" while ``check``
+    validated only the candidate SHA, an adjacent digest, and the interpreter --
+    so *file identity* was in fact delegated to a manifest the candidate's own
+    process produced. A signed candidate that added a tracked module under the
+    frozen directory and a ``.gitattributes`` marking it ``export-ignore`` got a
+    commit blessed whose tree held the file while its manifest did not pin it
+    (FUR3). The archive hole is closed in :func:`raw_tree`; this closes the
+    delegation.
+
+    Two deliberate choices. The tree is materialized from **raw objects**, so
+    the bytes hashed here are the ones the commit actually carries. And the
+    field derivations reuse ``_gate_manifest``'s own implementation rather than
+    reimplementing its glob semantics -- that module is authority-closure
+    covered and compared against the anchor, and a second copy of the globbing
+    rules would drift into false refusals the first time either side changed.
+
+    Only :data:`_EXECUTABLE_ONLY_FIELDS` are left to the candidate: a pytest
+    collection cannot be derived from object bytes, which is exactly why the
+    evidence stage exists.
+    """
+    with raw_tree(commit, repo=repo) as tree:
+        frozen = {rel: G._sha256(tree / rel) for rel in G._frozen_files(tree)}
+        cascade = {
+            rel: {"pre_run_sha256": G._sha256(tree / rel), "governed_by": why}
+            for rel, why in sorted(G.CASCADE_MUTABLE.items())
+            if (tree / rel).is_file()
+        }
+        phase_mutable = {
+            rel: {"pre_run_sha256": G._sha256(tree / rel), "governed_by": why}
+            for rel, why in sorted(G.PHASE_SPLIT_TARGETS.items())
+            if (tree / rel).is_file()
+        }
+        baseline_rel = "bootstrap/tests/fixtures/scaffold_ast_baseline.json"
+        try:
+            baseline = json.loads(
+                (tree / baseline_rel).read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise PreflightError(
+                f"cannot re-derive the mapping digests: {baseline_rel} is "
+                f"unreadable in the raw tree of {commit[:12]} ({exc})") from None
+        mappings = {}
+        for sym, phases in G.MAPPING_SYMBOLS_PHASES.items():
+            entry = baseline.get(f"Assign:{sym}")
+            if entry is None:
+                raise PreflightError(
+                    f"mapping symbol Assign:{sym} is absent from the anchored "
+                    f"AST baseline; the manifest cannot be re-derived")
+            mappings[sym] = {"baseline_digest": entry["digest"],
+                             "may_change_in_phases": phases}
+    return {
+        "schema": G.SCHEMA,
+        "gate_commands": G.GATE_COMMANDS,
+        "frozen_files": frozen,
+        "cascade_mutable": cascade,
+        "phase_mutable": phase_mutable,
+        "mapping_symbols": mappings,
+    }
+
+
+def check_static_manifest(evidence: dict, head: str, report: Report, *,
+                          repo: Path = _REPO) -> None:
+    """Compare the candidate's manifest against the independent re-derivation."""
+    ours = rederive_static_manifest(head, repo=repo)
+    theirs = evidence.get("manifest") or {}
+    for field, expected in sorted(ours.items()):
+        got = theirs.get(field)
+        if got == expected:
+            continue
+        detail = f"field {field!r} differs from the independent re-derivation"
+        if isinstance(expected, dict) and isinstance(got, dict):
+            missing = sorted(set(expected) - set(got))
+            extra = sorted(set(got) - set(expected))
+            changed = sorted(k for k in set(expected) & set(got)
+                             if expected[k] != got[k])
+            detail += (f" -- {len(missing)} missing, {len(extra)} unexpected, "
+                       f"{len(changed)} altered")
+            for label, items in (("missing", missing), ("unexpected", extra),
+                                 ("altered", changed)):
+                if items:
+                    detail += f"; {label}: {items[:5]}"
+        report.add("MANIFEST", "refuse", detail)
+    report.facts["static_manifest"] = {
+        "rederived_fields": sorted(ours),
+        "trusted_to_the_evidence_stage": sorted(_EXECUTABLE_ONLY_FIELDS),
+        "frozen_files_rederived": len(ours["frozen_files"]),
     }
 
 
@@ -690,7 +1084,11 @@ _WRITE_GIT = frozenset({
     "update-index",   # insert the blob there, and refresh the real index
     "write-tree",
     "commit-tree",    # construct the signed commit
-    "add",            # the post-transaction worktree/index sync
+    # `add` was here and is deliberately gone: it re-reads the worktree through
+    # any configured `clean` filter, putting a candidate-controlled transform
+    # between the verified bytes and the index (FUR2). The sync installs the
+    # already-verified blob by id via `update-index --cacheinfo`, so removing
+    # the subcommand makes the filtered path unreachable rather than unused.
 })
 
 
@@ -799,14 +1197,27 @@ def blessing_plan(report: Report, evidence: dict, *, repo: Path = _REPO,
 # --------------------------------------------------------------------------
 
 def _git_write(*args: str, repo: Path = _REPO, stdin: str | None = None,
-               want_bytes: bool = False) -> subprocess.CompletedProcess:
-    """The **only** repository-writing path, with its own enumerated allowlist."""
+               want_bytes: bool = False,
+               index: str | None = None) -> subprocess.CompletedProcess:
+    """The **only** repository-writing path, with its own enumerated allowlist.
+
+    Routed through :func:`_run_git` since FUR1/FUR2. Before that it called
+    ``subprocess`` directly with **no config pinning at all**, so the write path
+    -- the one that signs the commit and moves the trust root -- was the *least*
+    protected in the module: ``gpg.ssh.program`` chose the verifier and a
+    ``reference-transaction`` hook could move a third ref during the very
+    transaction whose two-ref atomicity was the claim.
+
+    ``index`` supplies ``GIT_INDEX_FILE`` for this invocation only, replacing a
+    mutate-and-restore of ``os.environ`` that leaked the temporary index into
+    every other subprocess started while it was set.
+    """
     if not args or args[0] not in _WRITE_GIT:
         raise PreflightError(
             f"apply may only run {sorted(_WRITE_GIT)}; refused "
             f"{(args[0] if args else '<none>')!r}")
-    return subprocess.run(["git", "-C", str(repo), *args], input=stdin,
-                          capture_output=True, text=not want_bytes, check=False)
+    return _run_git(args, repo=repo, stdin=stdin, want_bytes=want_bytes,
+                    index=index)
 
 
 def _require_direct_ref(ref: str, *, repo: Path = _REPO) -> None:
@@ -841,45 +1252,42 @@ def _construct_signed_commit(repo: Path, head: str, manifest_bytes: bytes,
     with tempfile.TemporaryDirectory(prefix="cairn-preflight-idx-") as td:
         idx = str(Path(td) / "index")
 
+        # GIT_INDEX_FILE is threaded per invocation rather than exported into
+        # this process: mutating os.environ leaked the temporary index into
+        # every unrelated subprocess started while it was set, and left the
+        # correctness of the restore load-bearing.
         def g(*args, **kw):
             kw.setdefault("repo", repo)
+            kw.setdefault("index", idx)
             return _git_write(*args, **kw)
 
-        # The index-scoped steps need GIT_INDEX_FILE in the child environment;
-        # _git_write does not thread env, so it is set around them and restored.
-        import os as _os  # noqa: PLC0415 -- local, not an authority-closure dep
-        saved = _os.environ.get("GIT_INDEX_FILE")
-        _os.environ["GIT_INDEX_FILE"] = idx
-        try:
-            rt = g("read-tree", head)
-            if rt.returncode != 0:
-                raise PreflightError(f"read-tree failed: {rt.stderr.strip()}")
-            ho = _git_write("hash-object", "-w", "--stdin", repo=repo,
-                            stdin=manifest_bytes.decode("utf-8"))
-            if ho.returncode != 0:
-                raise PreflightError(f"hash-object failed: {ho.stderr.strip()}")
-            blob = ho.stdout.strip()
-            ui = g("update-index", "--add", "--cacheinfo",
-                   f"100644,{blob},{_MANIFEST_REL}")
-            if ui.returncode != 0:
-                raise PreflightError(f"update-index failed: {ui.stderr.strip()}")
-            wt = g("write-tree")
-            tree = wt.stdout.strip()
-            if wt.returncode != 0 or not tree:
-                raise PreflightError(f"write-tree failed: {wt.stderr.strip()}")
-            ct = _git_write("commit-tree", tree, "-p", head, "-S", "-F", "-",
-                            repo=repo, stdin=message)
-            new = ct.stdout.strip()
-            if ct.returncode != 0 or len(new) != 40:
-                raise PreflightError(
-                    f"commit-tree failed (is signing configured?): "
-                    f"{ct.stderr.strip()}")
-            return new
-        finally:
-            if saved is None:
-                _os.environ.pop("GIT_INDEX_FILE", None)
-            else:
-                _os.environ["GIT_INDEX_FILE"] = saved
+        rt = g("read-tree", head)
+        if rt.returncode != 0:
+            raise PreflightError(f"read-tree failed: {rt.stderr.strip()}")
+        ho = _git_write("hash-object", "-w", "--stdin", repo=repo,
+                        stdin=manifest_bytes.decode("utf-8"))
+        if ho.returncode != 0:
+            raise PreflightError(f"hash-object failed: {ho.stderr.strip()}")
+        blob = ho.stdout.strip()
+        ui = g("update-index", "--add", "--cacheinfo",
+               f"100644,{blob},{_MANIFEST_REL}")
+        if ui.returncode != 0:
+            raise PreflightError(f"update-index failed: {ui.stderr.strip()}")
+        wt = g("write-tree")
+        tree = wt.stdout.strip()
+        if wt.returncode != 0 or not tree:
+            raise PreflightError(f"write-tree failed: {wt.stderr.strip()}")
+        ct = _git_write("commit-tree", tree, "-p", head, "-S", "-F", "-",
+                        repo=repo, stdin=message)
+        new = ct.stdout.strip()
+        if ct.returncode != 0 or len(new) != 40:
+            raise PreflightError(
+                f"commit-tree failed (is signing configured?): "
+                f"{ct.stderr.strip()}")
+        # The blob id travels with the commit id so the index sync can install
+        # it directly rather than re-deriving it from the worktree through a
+        # filter (FUR2).
+        return new, blob
 
 
 def verify_constructed(repo: Path, new: str, head: str, *,
@@ -940,7 +1348,7 @@ def _advance_both_refs(repo: Path, branch: str, new: str, *,
     return p.returncode == 0, (p.stderr or p.stdout or "").strip()
 
 
-def _sync_worktree(repo: Path, manifest_bytes: bytes) -> None:
+def _sync_worktree(repo: Path, manifest_bytes: bytes, blob: str) -> None:
     """Bring the real index and worktree in line with the new HEAD.
 
     Construction uses a temporary index, so before this the real index and
@@ -949,14 +1357,26 @@ def _sync_worktree(repo: Path, manifest_bytes: bytes) -> None:
     a staged rollback waiting to ride a later commit (code review CR3). Because
     construction touched neither, an aborted transaction leaves **no** residue at
     all, which is stronger than reporting one.
+
+    The index entry is installed **directly**, from the blob id already written
+    and already verified inside the blessed commit. It used to go through ``git
+    add``, which re-reads the worktree file through any configured ``clean``
+    filter -- a candidate-controlled transform standing between the bytes that
+    were verified and the bytes that land in the index (FUR2). ``update-index
+    --cacheinfo`` names the object outright, so no filter is in the path.
     """
     (repo / _MANIFEST_REL).write_bytes(manifest_bytes)
-    add = _git_write("add", "--", _MANIFEST_REL, repo=repo)
-    if add.returncode != 0:
+    ui = _git_write("update-index", "--add", "--cacheinfo",
+                    f"100644,{blob},{_MANIFEST_REL}", repo=repo)
+    if ui.returncode != 0:
         raise PreflightError(
             f"the refs advanced but the worktree/index sync failed: "
-            f"{add.stderr.strip()} -- the repository is left with the manifest "
+            f"{ui.stderr.strip()} -- the repository is left with the manifest "
             f"unstaged; reconcile before committing anything else")
+    # --cacheinfo writes the entry without stat information, so the file reads
+    # as modified until the cache is refreshed. Without this `git status` is
+    # dirty immediately after a successful blessing.
+    _git_write("update-index", "--refresh", repo=repo)
 
 
 def apply_now(*, repo: Path = _REPO, confirmed: bool = False,
@@ -983,6 +1403,10 @@ def apply_now(*, repo: Path = _REPO, confirmed: bool = False,
         raise PreflightError(
             "apply requires explicit Maintainer confirmation "
             "(--confirm-supervised-reanchor); it moves the trust root")
+    # Re-validated here and not only at the CLI boundary: this is the one
+    # function that moves the trust root, so the repository it moves must be the
+    # one the caller named, not one git discovered by walking upward (FUR5).
+    repo = _require_worktree_root(repo)
 
     out.write("apply: re-deriving everything; no handoff artifact is trusted\n")
     evidence = gather_evidence("HEAD", repo=repo, out=out)
@@ -1007,8 +1431,8 @@ def apply_now(*, repo: Path = _REPO, confirmed: bool = False,
 
     with anchored_roster(anchor, repo=repo) as (roster_path, roster_text):
         principals = parse_principals(roster_text)
-        new = _construct_signed_commit(repo, head, manifest_bytes,
-                                       plan["message"])
+        new, manifest_blob = _construct_signed_commit(
+            repo, head, manifest_bytes, plan["message"])
         verify_constructed(repo, new, head,
                            manifest_sha256=evidence["manifest_sha256"],
                            message=plan["message"], principals=principals,
@@ -1024,7 +1448,7 @@ def apply_now(*, repo: Path = _REPO, confirmed: bool = False,
             f"there is no residue to reconcile. {new[:12]} is an unreferenced "
             f"object left in place rather than deleted, so the state is "
             f"inspectable: {detail}")
-    _sync_worktree(repo, manifest_bytes)
+    _sync_worktree(repo, manifest_bytes, manifest_blob)
     out.write(f"advanced {branch} and {_ANCHOR_REF} to {new[:12]} in one "
               f"expected-old transaction; worktree and index synced\n")
     return {"new_anchor": new, "branch": branch, "previous_anchor": anchor,
@@ -1066,6 +1490,7 @@ def check(*, repo: Path = _REPO, evidence: dict | None = None,
 
     if evidence is not None:
         check_evidence(evidence, head, report)
+        check_static_manifest(evidence, head, report, repo=repo)
         report.facts["evidence_checked"] = True
     return report
 
@@ -1085,7 +1510,10 @@ def main(argv: list[str] | None = None) -> int:
         formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     c = sub.add_parser("check", help="run the read-only pre-flight checks")
-    c.add_argument("--repo", default=None)
+    _REPO_HELP = ("the checkout to operate on. REQUIRED for the anchored\n"
+                  "invocation: the checker runs from a temp extraction\n"
+                  "directory there, so its own location is not the target.")
+    c.add_argument("--repo", default=None, help=_REPO_HELP)
     c.add_argument("--evidence", default=None,
                    help="path to an evidence artifact (produced by the separate, "
                         "non-authoritative evidence stage)")
@@ -1108,7 +1536,7 @@ def main(argv: list[str] | None = None) -> int:
         "evidence",
         help="produce the evidence artifact -- EXECUTES CANDIDATE CODE; "
              "non-authoritative, and deliberately not part of `check`")
-    e.add_argument("--repo", default=None)
+    e.add_argument("--repo", default=None, help=_REPO_HELP)
     e.add_argument("--candidate-ref", default="HEAD")
     e.add_argument("-o", "--output", default=None,
                    help="write the artifact here (default: stdout)")
@@ -1116,14 +1544,18 @@ def main(argv: list[str] | None = None) -> int:
         "apply",
         help="revalidate a bundle, construct and verify the commit, then move "
              "the branch and gate anchor in ONE transaction -- Maintainer-only")
-    a.add_argument("--repo", default=None)
+    a.add_argument("--repo", default=None, help=_REPO_HELP)
     a.add_argument("--confirm-supervised-reanchor", action="store_true",
                    dest="confirmed",
                    help="required; this is the only step that moves the trust "
                         "root")
     args = ap.parse_args(argv)
 
-    repo = Path(args.repo) if args.repo else _REPO
+    try:
+        repo = _require_worktree_root(Path(args.repo) if args.repo else _REPO)
+    except PreflightError as exc:
+        sys.stderr.write(f"[REFUSE ] {exc}\n")
+        return 2
 
     if args.cmd == "evidence":
         try:

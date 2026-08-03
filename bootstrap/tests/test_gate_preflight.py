@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import re
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -624,11 +625,200 @@ class TestGitConfigCannotSteerTheChecker:
     def test_pinned_config_is_applied_to_every_invocation(self, tmp_path):
         repo = _repo(tmp_path)
         _commit(repo)
-        assert "core.quotePath" in P._PINNED_CONFIG
+        assert "core.quotePath" in P._STERILE_CONFIG
         # and it is not overridden away by a per-call config dict
         _write(repo, "d/naïve.txt", "y\n")
         _run("git", "add", "-A", cwd=repo)
         assert "d/naïve.txt" in P._index_entries(repo=repo)
+
+
+# --------------------------------------------------------------------------
+# FUR1 / FUR2 -- the sterile-Git launcher
+#
+# `_PINNED_CONFIG` pinned exactly one key and the module claimed that "closes
+# the class for future call sites too". It did not. Four more channels each
+# defeated a different asserted guarantee, and the write path -- which signs the
+# commit and moves the trust root -- was pinning *nothing at all*.
+#
+# Every test below reproduces the attack first and then asserts the launcher
+# defeats it. An assertion that a config key is present proves nothing about
+# whether the channel it names is actually closed.
+# --------------------------------------------------------------------------
+
+def _fake_ssh_keygen(path: Path, principal: str = "m@example") -> Path:
+    """A verifier that vouches for anything.
+
+    Git asks `-Y find-principals` first and only then `-Y verify`; a fake that
+    answers only the second never gets consulted, which is why an earlier
+    version of this probe failed to reproduce the attack at all. The `with
+    <type> key <fingerprint>` suffix matters too -- git parses it, and without
+    it the status comes back `B` rather than the forged `G`.
+    """
+    good = (f'Good "git" signature for {principal} '
+            f'with ED25519 key SHA256:AAAAfake')
+    path.write_text(
+        "#!/bin/sh\n"
+        "for a in \"$@\"; do\n"
+        "  case \"$a\" in\n"
+        f"    find-principals) echo '{principal}'; exit 0;;\n"
+        f"    verify) echo '{good}' >&2; exit 0;;\n"
+        "  esac\n"
+        "done\n"
+        "exec /usr/bin/ssh-keygen \"$@\"\n", encoding="utf-8")
+    path.chmod(0o755)
+    return path
+
+
+class TestSterileGitLauncher:
+
+    def test_replacement_objects_cannot_substitute_the_anchored_roster(
+            self, tmp_path):
+        """FUR1 probe 1. `refs/replace/<anchor>` makes every read of the anchor
+        return attacker content while `rev-parse` still reports the real SHA --
+        so the roster looks correctly sourced and is not."""
+        repo, _key, _signers = _signing_repo(tmp_path)
+        _write(repo, P._ALLOWED_SIGNERS_REL, "real@example ssh-ed25519 AAAAreal\n")
+        anchor = _commit(repo, "anchor")
+        _write(repo, P._ALLOWED_SIGNERS_REL,
+               "attacker@example ssh-ed25519 AAAAevil\n")
+        evil = _commit(repo, "attacker")
+        _run("git", "update-ref", f"refs/replace/{anchor}", evil, cwd=repo)
+
+        # The attack is live: an unpinned read returns the attacker's bytes.
+        assert "attacker@example" in _run(
+            "git", "show", f"{anchor}:{P._ALLOWED_SIGNERS_REL}",
+            cwd=repo).stdout
+
+        with P.anchored_roster(anchor, repo=repo) as (_path, text):
+            assert "real@example" in text
+            assert "attacker@example" not in text
+
+    def test_a_configured_verifier_cannot_forge_a_signature(self, tmp_path,
+                                                            monkeypatch):
+        """FUR1 probe 2. `gpg.ssh.program` is ordinary repository config; a fake
+        made a commit signed by an unrostered key report `%G? = G` with a
+        rostered-looking `%GS`."""
+        repo, key, signers = _signing_repo(tmp_path)
+        epoch = _signed_commit(repo, "epoch")
+        monkeypatch.setattr(P, "_SIGNING_EPOCH", epoch)
+
+        outsider = _keypair(tmp_path, "outsider")
+        _run("git", "config", "user.signingkey",
+             str(outsider.with_suffix(".pub")), cwd=repo)
+        head = _signed_commit(repo, "signed by an outsider")
+        _run("git", "config", "gpg.ssh.program",
+             str(_fake_ssh_keygen(tmp_path / "fake-keygen")), cwd=repo)
+
+        # The attack is live: git itself now reports a good signature.
+        assert _run("git", "log", "-1", "--format=%G?",
+                    cwd=repo).stdout.strip() == "G"
+
+        report = P.Report()
+        P.check_signatures(epoch, head, report, repo=repo)
+        assert any(f.level == "refuse" for f in _findings(report, "SIGNING")), (
+            "a forged verifier must not let an unrostered key through")
+
+    def test_a_configured_fsmonitor_does_not_execute(self, tmp_path):
+        """FUR2. A monitor program ran during `git status` while git returned
+        success, so `check` was never structurally free of candidate-configured
+        execution."""
+        repo = _repo(tmp_path)
+        _commit(repo)
+        log = tmp_path / "fsmonitor.log"
+        mon = tmp_path / "fsm.sh"
+        mon.write_text(f"#!/bin/sh\necho ran >> {log}\nprintf '/\\0'\n",
+                       encoding="utf-8")
+        mon.chmod(0o755)
+        _run("git", "config", "core.fsmonitor", str(mon), cwd=repo)
+
+        # The attack is live under an unpinned invocation.
+        _run("git", "status", "--porcelain", cwd=repo)
+        assert log.exists() and log.read_text().strip(), (
+            "the probe must actually execute, or this test proves nothing")
+        log.unlink()
+
+        P._git("status", "--porcelain", repo=repo)
+        assert not log.exists(), "the launcher let a configured program run"
+
+    def test_a_reference_transaction_hook_cannot_move_a_third_ref(self,
+                                                                  tmp_path):
+        """FUR2's sharpest case: the hook's committed phase advanced a THIRD ref
+        while the two-ref transaction reported `ok=True`."""
+        repo, anchor, head, _epoch = _ceremony_repo(tmp_path)
+        hook = repo / ".git/hooks/reference-transaction"
+        hook.parent.mkdir(parents=True, exist_ok=True)
+        hook.write_text(
+            "#!/bin/sh\n"
+            '[ -n "${CAIRN_HOOK_GUARD:-}" ] && exit 0\n'
+            "export CAIRN_HOOK_GUARD=1\n"
+            '[ "$1" = committed ] && git update-ref refs/heads/third HEAD\n'
+            "exit 0\n", encoding="utf-8")
+        hook.chmod(0o755)
+
+        ok, _detail = P._advance_both_refs(
+            repo, "refs/heads/master", head, branch_old=head, anchor_old=anchor)
+
+        assert ok
+        third = _run("git", "rev-parse", "--verify", "-q", "refs/heads/third",
+                     cwd=repo)
+        assert third.returncode != 0, (
+            "the hook moved a third ref during the two-ref transaction")
+
+    def test_the_hook_probe_is_live(self, tmp_path):
+        """Guards the test above: if the hook silently never fires, that test
+        passes while proving nothing. Here the same hook runs unpinned."""
+        repo, anchor, head, _epoch = _ceremony_repo(tmp_path)
+        hook = repo / ".git/hooks/reference-transaction"
+        hook.parent.mkdir(parents=True, exist_ok=True)
+        hook.write_text(
+            "#!/bin/sh\n"
+            '[ -n "${CAIRN_HOOK_GUARD:-}" ] && exit 0\n'
+            "export CAIRN_HOOK_GUARD=1\n"
+            '[ "$1" = committed ] && git update-ref refs/heads/third HEAD\n'
+            "exit 0\n", encoding="utf-8")
+        hook.chmod(0o755)
+
+        _run("git", "update-ref", "refs/heads/unpinned", head, cwd=repo)
+        assert _run("git", "rev-parse", "--verify", "-q", "refs/heads/third",
+                    cwd=repo).returncode == 0
+
+    def test_the_write_path_is_pinned_too(self, tmp_path):
+        """`_git_write` called subprocess directly with no config at all, so the
+        path that signs the commit and moves the trust root was the least
+        protected in the module."""
+        repo = _repo(tmp_path)
+        _commit(repo)
+        p = P._git_write("hash-object", "-w", "--stdin", repo=repo, stdin="x\n")
+        assert p.returncode == 0
+        import inspect
+        src = inspect.getsource(P._git_write)
+        assert "_run_git" in src and "subprocess.run" not in src
+
+    def test_only_the_launcher_starts_git(self):
+        """The guarantees hold only if there is exactly one place they are
+        applied; a second call site is how `_blob_at` once bypassed the
+        read-only guard."""
+        import inspect
+        src = inspect.getsource(P)
+        assert src.count("subprocess.run(") == 2, (
+            "expected exactly two: the launcher, and the evidence stage's "
+            "explicitly non-authoritative producer call")
+
+    def test_git_env_channels_are_dropped(self, monkeypatch):
+        monkeypatch.setenv("GIT_DIR", "/somewhere/else/.git")
+        monkeypatch.setenv("GIT_CONFIG_COUNT", "1")
+        monkeypatch.setenv("GIT_EXTERNAL_DIFF", "/bin/sh")
+        env = P._sterile_env()
+        assert not [k for k in env if k.startswith("GIT_")
+                    and k != "GIT_TERMINAL_PROMPT"]
+
+    def test_the_index_is_threaded_not_exported(self, monkeypatch):
+        """Mutating os.environ leaked the temporary index into every unrelated
+        subprocess started while it was set."""
+        assert P._sterile_env("/tmp/idx")["GIT_INDEX_FILE"] == "/tmp/idx"
+        assert "GIT_INDEX_FILE" not in P._sterile_env()
+        import inspect
+        assert "os.environ[" not in inspect.getsource(P._construct_signed_commit)
 
 
 # --------------------------------------------------------------------------
@@ -747,6 +937,39 @@ class TestEvidenceStage:
 _CLOSURE_SRC = {rel: (_REPO / rel) for rel in P.declared_authority_closure()}
 
 
+def _pin_epoch_in_checker(repo: Path, epoch: str) -> None:
+    """Rewrite the fixture's *copy* of the checker to name a real in-repo epoch.
+
+    The epoch constant lives in the checker's own bytes on purpose, and a fixture
+    repository cannot contain Cairn's actual epoch commit. Since FUR4 an absent
+    epoch is a refusal rather than a silent grandfathering, so the ceremony
+    fixture pins its own. Exactly one 40-character constant differs from the real
+    file; the copy is what these tests execute, which is *also* the real
+    ceremony's shape -- the anchored bytes, not the checkout's.
+    """
+    rel = "bootstrap/tests/_gate_preflight.py"
+    src = (repo / rel).read_text(encoding="utf-8")
+    old = f'_SIGNING_EPOCH = "{P._SIGNING_EPOCH}"'
+    assert src.count(old) == 1, "epoch constant moved; update this fixture"
+    (repo / rel).write_text(src.replace(old, f'_SIGNING_EPOCH = "{epoch}"'),
+                            encoding="utf-8")
+
+
+def _extract_anchored(repo: Path, dest: Path) -> Path:
+    """The runbook's own extraction, run as the literal shell pipeline.
+
+    `git archive <anchor> bootstrap/tests | tar -x -C "$T"` -- byte-for-byte the
+    recorded ceremony's first step, so a change to the runbook's shape that this
+    no longer matches shows up as a test edit rather than passing unnoticed.
+    """
+    dest.mkdir(parents=True, exist_ok=True)
+    subprocess.run(
+        f"git -C {shlex.quote(str(repo))} archive {P._ANCHOR_REF} "
+        f"bootstrap/tests | tar -x -C {shlex.quote(str(dest))}",
+        shell=True, check=True)
+    return dest / "bootstrap/tests/_gate_preflight.py"
+
+
 def _ceremony_repo(tmp_path: Path):
     """A repo where the whole ceremony can actually run.
 
@@ -785,13 +1008,18 @@ def _ceremony_repo(tmp_path: Path):
         _run("git", "config", k, v, cwd=repo)
     _run("git", "config", "user.email", "m@example", cwd=repo)
 
+    # The signing epoch has to be a commit this repository actually contains
+    # (FUR4: an absent epoch now refuses instead of grandfathering everything),
+    # so the fixture makes one and pins the checker copy to it before anchoring.
+    epoch = _signed_commit(repo, "epoch")
+    _pin_epoch_in_checker(repo, epoch)
     anchor = _signed_commit(repo, "anchor")
     _run("git", "update-ref", P._ANCHOR_REF, anchor, cwd=repo)
     # NOT `code.py`: a root-level module shadowing a stdlib name breaks
     # pytest's own imports inside the evidence collection.
     _write(repo, "work.py", "x = 1\n")
     head = _signed_commit(repo, "work to bless")
-    return repo, anchor, head
+    return repo, anchor, head, epoch
 
 
 _FAKE_MANIFEST = {"frozen_files": {"a.py": "sha256:aa"},
@@ -948,9 +1176,22 @@ class TestApplySuccessPath:
                 _run("git", "rev-parse", P._ANCHOR_REF, cwd=repo).stdout.strip())
 
     def _prepared(self, tmp_path, monkeypatch):
-        repo, anchor, head = _ceremony_repo(tmp_path)
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        # In-process, the executing constant is the real one; the fixture pinned
+        # only its own committed copy. The subprocess tests need no equivalent --
+        # they execute the anchored bytes, which carry the fixture's epoch.
+        monkeypatch.setattr(P, "_SIGNING_EPOCH", epoch)
+        # Only the *executable* half is stubbed. Since FUR3 the static fields
+        # are re-derived from raw objects and compared, so a wholly invented
+        # manifest is refused -- correctly. What the real producer supplies and
+        # this cannot is the pytest collection; everything else must be the
+        # truth about the tree.
+        manifest = {**P.rederive_static_manifest(head, repo=repo),
+                    "collection": {"node_count": 1, "node_ids": ["a.py::t"],
+                                   "skip_xfail_marked": []},
+                    "interpreter": {"version": "3.13.13"}}
         monkeypatch.setattr(P, "gather_evidence",
-                            lambda *a, **k: _fake_evidence(head))
+                            lambda *a, **k: _fake_evidence(head, manifest))
         return repo, anchor, head
 
     def test_success_signs_the_commit_and_leaves_a_clean_tree(
@@ -991,12 +1232,15 @@ class TestApplySuccessPath:
     def test_an_unsigned_commit_substitution_refuses(self, tmp_path,
                                                      monkeypatch):
         repo, anchor, head = self._prepared(tmp_path, monkeypatch)
-        body = (json.dumps(_FAKE_MANIFEST, indent=2, sort_keys=True).encode()
-                + b"\n")
         monkeypatch.setattr(
             P, "_construct_signed_commit",
-            lambda r, h, mb, msg: P.R._construct_anchor_commit(
-                r, h, P._MANIFEST_REL, body))
+            # Built from the SAME manifest bytes `apply` derived, so the parent
+            # and blob-digest checks pass and the refusal comes from the
+            # signature (and message) checks -- the ones under test. The
+            # unsigned helper returns only a commit id; the real one now also
+            # returns the manifest blob id for the direct index install.
+            lambda r, h, mb, msg: (P.R._construct_anchor_commit(
+                r, h, P._MANIFEST_REL, mb), "0" * 40))
         before = self._refs(repo)
         with pytest.raises(P.PreflightError, match="not validly signed|message"):
             P.apply_now(repo=repo, confirmed=True,
@@ -1073,27 +1317,42 @@ class TestThreeCommandIntegration:
     producer executes candidate code for real, and the transaction moves real
     refs in a temp repo. It took supplying the two things the real producer
     refuses without -- a non-empty collection and the AST baseline keys.
+
+    Since FUR5 the executed bytes come from **the anchor**, extracted by the
+    runbook's own pipeline, rather than from `_REPO`. That is what the ceremony
+    actually does, and running it any other way is how a recorded invocation
+    reached first use having never been executed once.
     """
 
-    def _cli(self, *args):
+    def _cli(self, checker: Path, *args):
         return subprocess.run(
-            [sys.executable, str(_REPO / "bootstrap/tests/_gate_preflight.py"),
-             *args], capture_output=True, text=True, check=False)
+            [sys.executable, "-E", "-s", str(checker), *args],
+            capture_output=True, text=True, check=False)
 
     def test_the_whole_ceremony_end_to_end_through_subprocesses(self, tmp_path):
-        repo, anchor, head = _ceremony_repo(tmp_path)
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        checker = _extract_anchored(repo, tmp_path / "extract")
         ev = tmp_path / "ev.json"
 
-        r1 = self._cli("evidence", "--repo", str(repo), "-o", str(ev))
+        r1 = self._cli(checker, "evidence", "--repo", str(repo), "-o", str(ev))
         assert r1.returncode == 0, r1.stderr[-1500:]
         evidence = json.loads(ev.read_text())
         assert evidence["candidate_sha"] == head
         assert evidence["manifest"]["collection"]["node_count"] >= 1
 
-        r2 = self._cli("check", "--repo", str(repo), "--evidence", str(ev))
+        r2 = self._cli(checker, "check", "--repo", str(repo),
+                       "--evidence", str(ev))
         assert r2.returncode == 0, r2.stderr[-2500:]
 
-        r3 = self._cli("apply", "--repo", str(repo),
+        # The signing check must have verified something. Before FUR4 this
+        # fixture could not contain the real epoch, `_rev_list` swallowed the
+        # resulting error, and `checked` was 0 -- so the tripwire this whole
+        # integration test is supposed to exercise had never fired on a single
+        # commit. Zero here is indistinguishable from a check that does nothing.
+        checked = re.search(r'"checked": (\d+)', r2.stderr)
+        assert checked and int(checked.group(1)) >= 1, r2.stderr[-2500:]
+
+        r3 = self._cli(checker, "apply", "--repo", str(repo),
                        "--confirm-supervised-reanchor")
         assert r3.returncode == 0, r3.stderr[-2500:]
         result = json.loads(r3.stdout)
@@ -1116,9 +1375,405 @@ class TestThreeCommandIntegration:
 
     def test_a_second_run_refuses_because_the_state_moved(self, tmp_path):
         """Replay, honestly: no nonce, but the bound state no longer holds."""
-        repo, anchor, head = _ceremony_repo(tmp_path)
-        assert self._cli("apply", "--repo", str(repo),
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        checker = _extract_anchored(repo, tmp_path / "extract")
+        assert self._cli(checker, "apply", "--repo", str(repo),
                          "--confirm-supervised-reanchor").returncode == 0
-        again = self._cli("apply", "--repo", str(repo),
+        again = self._cli(checker, "apply", "--repo", str(repo),
                           "--confirm-supervised-reanchor")
         assert again.returncode == 2
+
+
+# --------------------------------------------------------------------------
+# FUR5 -- the recorded anchored invocation, actually executed
+#
+# The runbook recorded a ceremony that had never been run once. It extracted
+# `bootstrap/tests` into a temp directory and invoked the checker with no
+# `--repo`, so the `_REPO` default -- derived from `__file__` -- named the
+# extraction directory. Executing the recorded steps refused with git's bare
+# `fatal: not a git repository` before reaching the checkout at all.
+#
+# These tests execute the runbook's literal shell pipeline against a separate
+# target repository, which is the only thing that would have caught it.
+# --------------------------------------------------------------------------
+
+def _runbook_ceremony_script() -> str:
+    """The Phase 0 pre-flight invocation, lifted verbatim from the runbook.
+
+    The recorded steps **are** the ceremony. A fix in code that the recorded
+    steps do not exercise is not a fix -- which is exactly the shape FUR5 took --
+    so the script under test comes out of the runbook rather than being
+    transcribed into Python, where it could be written correct while the
+    recorded steps stayed broken.
+    """
+    text = (_REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(encoding="utf-8")
+    block = text.split("### Phase 0 pre-flight")[1].split("```")[1]
+    assert "_gate_preflight.py" in block, block
+    return block.replace("<maintainer-recorded-interpreter>",
+                         shlex.quote(sys.executable))
+
+
+class TestAnchoredInvocationTargetsTheNamedCheckout:
+
+    def _cli(self, checker: Path, *args, cwd=None):
+        return subprocess.run(
+            [sys.executable, "-E", "-s", str(checker), *args],
+            capture_output=True, text=True, check=False,
+            cwd=str(cwd) if cwd else None)
+
+    def test_the_recorded_runbook_ceremony_actually_runs(self, tmp_path):
+        """The runbook's own bytes, executed.
+
+        This is the test whose absence *was* FUR5. The recorded ceremony had
+        never been run once, and a Python transcription of it would not have
+        caught that -- the transcription would have been written correct while
+        the recorded steps stayed broken. So the script comes out of the runbook.
+        """
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        script = _runbook_ceremony_script()
+
+        r = subprocess.run(["bash", "-c", script], cwd=str(repo),
+                           capture_output=True, text=True, check=False)
+
+        assert r.returncode == 0, f"{script}\n---\n{r.stderr[-2500:]}"
+        new = _run("git", "rev-parse", P._ANCHOR_REF, cwd=repo).stdout.strip()
+        assert new == _run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip()
+        assert new != anchor, "the ceremony reported success without blessing"
+
+    def test_the_extraction_directory_is_not_itself_a_repository(self, tmp_path):
+        """The premise the FUR5 shape depends on: were `$T` a repository, the
+        no-`--repo` default would have silently worked and hidden the defect."""
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        extract = tmp_path / "T"
+        _extract_anchored(repo, extract)
+        assert not (extract / ".git").exists()
+
+    def test_omitting_repo_refuses_diagnosably_and_moves_nothing(self, tmp_path):
+        """The exact FUR5 defect. It was fail-closed but undiagnosable: git's
+        bare `fatal: not a git repository` names neither the cause nor the fix."""
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        checker = _extract_anchored(repo, tmp_path / "T")
+        before = (_run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip(),
+                  _run("git", "rev-parse", P._ANCHOR_REF, cwd=repo).stdout.strip())
+
+        r = self._cli(checker, "apply", "--confirm-supervised-reanchor")
+
+        assert r.returncode == 2
+        assert "--repo <checkout>" in r.stderr
+        assert "not a git repository" in r.stderr
+        assert (_run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip(),
+                _run("git", "rev-parse", P._ANCHOR_REF,
+                     cwd=repo).stdout.strip()) == before
+
+    def test_an_extraction_nested_in_another_repo_refuses_that_repo(
+            self, tmp_path):
+        """Why "not a git repository" was luck, not design.
+
+        `git -C <path>` discovers upward. Put the extraction anywhere beneath a
+        repository -- a `$TMPDIR` inside a checkout is enough -- and the
+        no-`--repo` invocation finds *that* repository and operates on it,
+        reporting against a target the operator never named.
+        """
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        (tmp_path / "outer").mkdir()
+        outer = _repo(tmp_path / "outer")
+        _commit(outer, "innocent bystander")
+        checker = _extract_anchored(repo, outer / "T")
+
+        r = self._cli(checker, "check")
+
+        assert r.returncode == 2
+        assert "not the top level of a git worktree" in r.stderr
+        assert "walking upward" in r.stderr
+        assert str(outer.resolve()) in r.stderr
+
+    def test_the_checkout_is_recorded_before_the_extraction(self):
+        """An ordering the executed test cannot catch on its own: `mktemp` does
+        not `cd`, so capturing `$CHECKOUT` afterwards still passes here while
+        being wrong for any operator who moves between the two steps."""
+        script = _runbook_ceremony_script()
+        lines = [ln for ln in script.splitlines() if ln.strip()]
+        capture = next(i for i, ln in enumerate(lines) if "CHECKOUT=" in ln)
+        extract = next(i for i, ln in enumerate(lines) if "mktemp" in ln)
+        assert capture < extract
+
+
+# --------------------------------------------------------------------------
+# FUR4 -- signature-history enumeration must not fail open
+#
+# `_rev_list` returned `[]` on any git error, so "the signed range cannot be
+# established" became "there is nothing to check". With the epoch object
+# missing, an unsigned commit inside `anchor..HEAD` was reported as
+# grandfathered and no finding was emitted.
+# --------------------------------------------------------------------------
+
+class TestSigningRangeFailsClosed:
+
+    def test_rev_list_raises_rather_than_returning_empty(self, tmp_path):
+        repo = _repo(tmp_path)
+        _commit(repo, "c")
+        with pytest.raises(P.PreflightError) as exc:
+            P._rev_list("nosuchref..HEAD", repo=repo)
+        assert "unestablishable range" in str(exc.value)
+
+    def test_is_ancestor_raises_on_error_rather_than_reporting_no(self,
+                                                                  tmp_path):
+        repo = _repo(tmp_path)
+        head = _commit(repo, "c")
+        with pytest.raises(P.PreflightError) as exc:
+            P._is_ancestor("d" * 40, head, repo=repo)
+        assert "could not decide" in str(exc.value)
+
+    def test_missing_epoch_refuses_instead_of_grandfathering(self, tmp_path,
+                                                             monkeypatch):
+        """FUR4's reproduction, pinned: a missing epoch plus an unsigned commit
+        inside the blessed range reported `checked=0` and emitted no finding."""
+        repo, _key, _signers = _signing_repo(tmp_path)
+        anchor = _signed_commit(repo, "anchor")
+        head = _commit(repo, "unsigned work")          # inside anchor..HEAD
+        monkeypatch.setattr(P, "_SIGNING_EPOCH", "c" * 40)   # absent object
+
+        report = P.Report()
+        P.check_signatures(anchor, head, report, repo=repo)
+
+        assert any(f.level == "refuse" and "not present in this repository"
+                   in f.message for f in _findings(report, "SIGNING"))
+        assert report.facts["signing"]["resolved"] is None
+
+    def test_epoch_off_the_head_line_refuses(self, tmp_path, monkeypatch):
+        """Present but unrelated: "at or after the epoch" then names no range
+        on the history being blessed, and the intersection is empty for a
+        reason that has nothing to do with the commits being safe."""
+        repo, _key, _signers = _signing_repo(tmp_path)
+        base = _signed_commit(repo, "base")
+        _run("git", "checkout", "-q", "-b", "side", cwd=repo)
+        sidelined = _signed_commit(repo, "sidelined")
+        _run("git", "checkout", "-q", "-", cwd=repo)
+        anchor = _signed_commit(repo, "anchor")
+        head = _commit(repo, "unsigned work")
+        monkeypatch.setattr(P, "_SIGNING_EPOCH", sidelined)
+
+        report = P.Report()
+        P.check_signatures(anchor, head, report, repo=repo)
+
+        assert any(f.level == "refuse" and "not an ancestor of HEAD"
+                   in f.message for f in _findings(report, "SIGNING"))
+        assert report.facts["signing"]["ancestor_of_head"] is False
+
+    def test_a_resolvable_epoch_still_reports_its_resolution(self, tmp_path,
+                                                             monkeypatch):
+        """The clean case, so the two refusals above are not vacuous."""
+        repo, _key, _signers = _signing_repo(tmp_path)
+        epoch = _signed_commit(repo, "epoch")
+        monkeypatch.setattr(P, "_SIGNING_EPOCH", epoch)
+        head = _signed_commit(repo, "work")
+
+        report = P.Report()
+        P.check_signatures(epoch, head, report, repo=repo)
+
+        assert _findings(report, "SIGNING") == []
+        assert report.facts["signing"]["resolved"] == epoch
+        assert report.facts["signing"]["ancestor_of_head"] is True
+
+
+# --------------------------------------------------------------------------
+# FUR3 -- static manifest authority is no longer delegated
+#
+# `apply` correctly ignored a tampered evidence FILE (the CR1 redesign holds).
+# But it materialized the candidate tree with `git archive`, which honours
+# in-tree `.gitattributes`, and validated only the candidate SHA, an adjacent
+# digest, and the interpreter. A signed candidate that added a tracked module
+# under the frozen directory plus a `.gitattributes` marking it `export-ignore`
+# got a commit blessed whose tree held the file while its manifest did not pin
+# it -- so "the evidence is non-authoritative" and "check re-derives every
+# static Git fact" were both false for file identity.
+# --------------------------------------------------------------------------
+
+class TestRawTreeMaterialization:
+
+    def test_export_ignore_cannot_hide_a_tracked_file(self, tmp_path):
+        repo = _repo(tmp_path)
+        _write(repo, "bootstrap/tests/normal.py", "x = 1\n")
+        _write(repo, "bootstrap/tests/omitted.py", "hidden = True\n")
+        _write(repo, ".gitattributes",
+               "bootstrap/tests/omitted.py export-ignore\n")
+        head = _commit(repo, "with an export-ignore")
+
+        # The attack is live: `git archive` drops it while the tree keeps it.
+        archived = subprocess.run(
+            f"git -C {shlex.quote(str(repo))} archive --format=tar HEAD | tar -t",
+            shell=True, capture_output=True, text=True)
+        assert "bootstrap/tests/omitted.py" not in archived.stdout
+
+        with P.raw_tree(head, repo=repo) as tree:
+            assert (tree / "bootstrap/tests/omitted.py").exists()
+            assert (tree / "bootstrap/tests/normal.py").exists()
+
+    def test_a_tracked_symlink_refuses_rather_than_being_written(self, tmp_path):
+        repo = _repo(tmp_path)
+        (repo / "target.txt").write_text("real\n", encoding="utf-8")
+        (repo / "link.txt").symlink_to("target.txt")
+        head = _commit(repo, "with a symlink")
+        with pytest.raises(P.PreflightError, match="non-regular"):
+            with P.raw_tree(head, repo=repo):
+                pass
+
+    def test_executable_bits_survive_materialization(self, tmp_path):
+        repo = _repo(tmp_path)
+        script = repo / "run.sh"
+        script.write_text("#!/bin/sh\n", encoding="utf-8")
+        script.chmod(0o755)
+        head = _commit(repo, "executable")
+        with P.raw_tree(head, repo=repo) as tree:
+            import os as _os
+            assert _os.access(tree / "run.sh", _os.X_OK)
+
+
+class TestStaticManifestIsRederived:
+
+    def test_a_file_missing_from_the_manifest_refuses(self, tmp_path):
+        """FUR3's exact shape: the blessed tree would contain a frozen-surface
+        file that the manifest does not pin."""
+        repo, anchor, head, _epoch = _ceremony_repo(tmp_path)
+        honest = P.rederive_static_manifest(head, repo=repo)
+        assert honest["frozen_files"], "the fixture must have a frozen surface"
+
+        tampered = json.loads(json.dumps(honest))
+        dropped = sorted(tampered["frozen_files"])[0]
+        del tampered["frozen_files"][dropped]
+
+        report = P.Report()
+        P.check_static_manifest(_fake_evidence(head, tampered), head, report,
+                                repo=repo)
+        findings = _findings(report, "MANIFEST")
+        assert any(f.level == "refuse" and "frozen_files" in f.message
+                   for f in findings)
+        assert any(dropped in f.message for f in findings)
+
+    def test_an_altered_hash_refuses(self, tmp_path):
+        repo, anchor, head, _epoch = _ceremony_repo(tmp_path)
+        tampered = json.loads(json.dumps(
+            P.rederive_static_manifest(head, repo=repo)))
+        victim = sorted(tampered["frozen_files"])[0]
+        tampered["frozen_files"][victim] = "0" * 64
+
+        report = P.Report()
+        P.check_static_manifest(_fake_evidence(head, tampered), head, report,
+                                repo=repo)
+        assert any("altered" in f.message
+                   for f in _findings(report, "MANIFEST"))
+
+    def test_the_honest_manifest_is_silent(self, tmp_path):
+        """Non-vacuity for the two refusals above."""
+        repo, anchor, head, _epoch = _ceremony_repo(tmp_path)
+        honest = P.rederive_static_manifest(head, repo=repo)
+        report = P.Report()
+        P.check_static_manifest(_fake_evidence(head, honest), head, report,
+                                repo=repo)
+        assert _findings(report, "MANIFEST") == []
+
+    def test_only_collection_and_interpreter_stay_delegated(self, tmp_path):
+        """The boundary, asserted rather than described: everything the real
+        producer emits is either re-derived here or explicitly named as needing
+        the suite to run."""
+        repo, anchor, head, _epoch = _ceremony_repo(tmp_path)
+        checker = _extract_anchored(repo, tmp_path / "extract")
+        ev = tmp_path / "ev.json"
+        r = subprocess.run(
+            [sys.executable, "-E", "-s", str(checker), "evidence",
+             "--repo", str(repo), "-o", str(ev)],
+            capture_output=True, text=True, check=False)
+        assert r.returncode == 0, r.stderr[-1500:]
+
+        produced = set(json.loads(ev.read_text())["manifest"])
+        rederived = set(P.rederive_static_manifest(head, repo=repo))
+        assert produced - rederived == P._EXECUTABLE_ONLY_FIELDS, (
+            f"a manifest field is neither re-derived nor declared "
+            f"executable-only: {sorted(produced - rederived - P._EXECUTABLE_ONLY_FIELDS)}")
+
+    def test_the_rederivation_matches_the_real_producer(self, tmp_path):
+        """If the two disagreed on an honest tree, every ceremony would refuse
+        -- so this pins that the reuse of `_gate_manifest`'s own globbing is
+        actually equivalent, not merely similar."""
+        repo, anchor, head, _epoch = _ceremony_repo(tmp_path)
+        checker = _extract_anchored(repo, tmp_path / "extract")
+        ev = tmp_path / "ev.json"
+        subprocess.run(
+            [sys.executable, "-E", "-s", str(checker), "evidence",
+             "--repo", str(repo), "-o", str(ev)],
+            capture_output=True, text=True, check=False)
+        produced = json.loads(ev.read_text())["manifest"]
+        rederived = P.rederive_static_manifest(head, repo=repo)
+        for field, expected in rederived.items():
+            assert produced[field] == expected, f"{field} diverged"
+
+
+class TestStaticManifestIsWiredIntoCheck:
+    """Mutation testing caught this gap: every FUR3 test above called
+    `check_static_manifest` directly, so deleting its call site in `check()`
+    broke nothing. A guard the real path does not invoke is not a guard -- which
+    is precisely what FUR5 was."""
+
+    def test_check_refuses_a_manifest_that_does_not_match_the_tree(self,
+                                                                   tmp_path):
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        tampered = json.loads(json.dumps(
+            P.rederive_static_manifest(head, repo=repo)))
+        dropped = sorted(tampered["frozen_files"])[0]
+        del tampered["frozen_files"][dropped]
+        tampered["collection"] = {"node_count": 1, "node_ids": ["a::t"],
+                                  "skip_xfail_marked": []}
+        tampered["interpreter"] = {"version": "3.13.13"}
+
+        # Internally consistent: `_fake_evidence` re-hashes, so the digest check
+        # passes and the refusal must come from the re-derivation (CR1's lesson
+        # -- a tampered artifact that re-hashes itself is not caught by a digest).
+        report = P.check(repo=repo, evidence=_fake_evidence(head, tampered))
+
+        assert report.blocked
+        assert any(f.code == "MANIFEST" and f.level == "refuse"
+                   for f in report.findings), [f.code for f in report.findings]
+
+    def test_check_accepts_the_matching_manifest(self, tmp_path):
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        honest = P.rederive_static_manifest(head, repo=repo)
+        honest["collection"] = {"node_count": 1, "node_ids": ["a::t"],
+                                "skip_xfail_marked": []}
+        honest["interpreter"] = {"version": "3.13.13"}
+        report = P.check(repo=repo, evidence=_fake_evidence(head, honest))
+        assert [f for f in report.findings if f.code == "MANIFEST"] == []
+
+    def test_an_export_ignored_file_is_still_pinned_end_to_end(self, tmp_path):
+        """FUR3's own probe, driven through the real flow.
+
+        The property is **not** that this refuses -- a genuinely new frozen-surface
+        file should be pinned, not rejected. It is that the blessed manifest
+        covers what the blessed tree contains. Under `git archive` the producer
+        never saw this file, so the commit was blessed with the file present and
+        unpinned; that is the gap, and pinning it is the fix.
+        """
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        sneaked = "bootstrap/tests/omitted.py"
+        _write(repo, sneaked, "SNEAKED = True\n")
+        _write(repo, ".gitattributes", f"{sneaked} export-ignore\n")
+        _signed_commit(repo, "a file archive cannot see")
+        checker = _extract_anchored(repo, tmp_path / "extract")
+
+        # The hiding mechanism is still live -- otherwise this proves nothing.
+        archived = subprocess.run(
+            f"git -C {shlex.quote(str(repo))} archive --format=tar HEAD | tar -t",
+            shell=True, capture_output=True, text=True)
+        assert sneaked not in archived.stdout
+
+        r = subprocess.run(
+            [sys.executable, "-E", "-s", str(checker), "apply",
+             "--repo", str(repo), "--confirm-supervised-reanchor"],
+            capture_output=True, text=True, check=False)
+        assert r.returncode == 0, r.stderr[-2500:]
+
+        new = json.loads(r.stdout)["new_anchor"]
+        blessed = json.loads(_run("git", "show", f"{new}:{P._MANIFEST_REL}",
+                                  cwd=repo).stdout)
+        assert sneaked in blessed["frozen_files"], (
+            "the blessed tree contains a frozen-surface file its own manifest "
+            "does not pin -- FUR3, unfixed")

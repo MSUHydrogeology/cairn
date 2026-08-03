@@ -39,11 +39,22 @@ gate-control files for the six-proposal batch.
 > choose which bytes you execute.
 
 ```
+CHECKOUT=$(git rev-parse --show-toplevel)   # record the target BEFORE extracting
 T=$(mktemp -d)
-git archive refs/cairn/gate-anchor bootstrap/tests | tar -x -C "$T"
+git -C "$CHECKOUT" archive refs/cairn/gate-anchor bootstrap/tests | tar -x -C "$T"
 <maintainer-recorded-interpreter> -E -s "$T/bootstrap/tests/_gate_preflight.py" \
-    apply --confirm-supervised-reanchor
+    apply --repo "$CHECKOUT" --confirm-supervised-reanchor
 ```
+
+**`--repo` is not optional, and the order of those lines is the point.** The
+checker runs from `$T`, so its own location is the *extraction directory*, not
+the checkout — an earlier version of this block omitted `--repo` and the checker
+defaulted to `$T`, which is not a repository. That was fail-closed by luck, not
+design: `git -C` **discovers upward**, so an extraction anywhere beneath a
+repository (a `$TMPDIR` inside a checkout is enough) would have found *that*
+repository and reported against a target you never named. The checker now
+refuses any path that is not the top level of the worktree it names. `$CHECKOUT`
+is captured before `mktemp` because afterwards nothing guarantees where you are.
 
 `apply` re-derives everything itself and **trusts no handoff file**. It runs the
 evidence stage, then the read-only checks, then constructs and verifies a signed
@@ -55,12 +66,29 @@ There is **no flag that turns a refusal into a pass.** A refusal routes here, to
 the manual steps below.
 
 **Residual trust set — where the chain actually ends.** The `git` and `tar`
-binaries; the Maintainer-recorded interpreter path; the operator's discipline of
-reading this invocation from the anchor rather than the checkout; and **local
-write access to `refs/cairn/gate-anchor` itself** — whoever can move that ref
-chooses what executes. That last one is not closable here: moving that ref *is*
-the authority this ceremony protects. It is in scope only under the accepted
-trusted-contributor posture.
+binaries; **the signature backend `/usr/bin/ssh-keygen`**, which the checker pins
+by absolute path and uses for both signing and verification — an earlier version
+let repository config choose it, and a fake verifier made a commit signed by a
+key *absent from the roster* report a good signature under a rostered name; the
+Maintainer-recorded interpreter path; `PATH` and `HOME` in the operator's shell,
+which the checker deliberately does **not** scrub because signing needs them; the
+operator's discipline of reading this invocation from the anchor rather than the
+checkout; and **local write access to `refs/cairn/gate-anchor` itself** — whoever
+can move that ref chooses what executes. That last one is not closable here:
+moving that ref *is* the authority this ceremony protects. It is in scope only
+under the accepted trusted-contributor posture.
+
+**What the checker does take out of the repository's hands.** Every git
+invocation — read *and* write — is pinned so that repository-local
+configuration, hooks, and attributes cannot steer it: replacement objects are
+disabled (they substituted anchored reads while `rev-parse` reported the real
+SHA), hooks are disabled including the default `.git/hooks` (a
+`reference-transaction` hook moved a *third* ref while the two-ref transaction
+reported success), the filesystem monitor is disabled (it executed a program
+during `git status`), and the tree is materialized from raw objects rather than
+`git archive` (which honours `.gitattributes`, so `export-ignore` hid a tracked
+file from the manifest while leaving it in the blessed tree). Each of these was
+reproduced as a working attack before it was closed.
 
 **The evidence stage executes candidate code.** It runs in a tree materialized
 without `.git` and with credential-shaped variables dropped and `HOME`
@@ -68,6 +96,12 @@ redirected. That is best-effort isolation and **not containment** — the execut
 code retains filesystem access outside that tree, process creation, and network
 access. Accepted by Maintainer Decision under the dated posture; the tool prints
 this on every run.
+
+Its output is **not** wholly non-authoritative, and the runbook says so rather
+than leaving it implied: `check` independently re-derives every *static*
+manifest field from raw commit objects and refuses on any difference. What stays
+trusted to this stage is the pytest **collection** — which cannot be derived
+from object bytes, and is the reason the stage exists.
 
 ### The dated posture, and what ends it
 

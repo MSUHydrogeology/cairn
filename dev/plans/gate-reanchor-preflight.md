@@ -1230,3 +1230,230 @@ each of my fixes has carried its own defect. The next pass should be a fresh
 session with the plan re-read cold, not continued momentum -- and the
 sterile-Git launcher should be treated as its own reviewed unit rather than
 folded in alongside other work.
+
+## Remediation step 1 -- FUR5 and FUR4 -- Claude (author) -- 2026-08-03
+
+**Model**: Claude Opus 5
+
+Step 1 of the work order recorded in the previous section. **The disposition is
+unchanged: still NOT FIT TO BLESS.** FUR1, FUR2 and FUR3 are untouched, so Chunk
+G stays blocked, the reviewed hashes stay unrecorded, and the ceremony stays
+un-run. Two of five findings closed is not a disposition change, and only the
+reviewer's re-read can make it one.
+
+### FUR5 -- the recorded invocation now names the checkout
+
+`bootstrap/REANCHOR_RUNBOOK.md` captures `CHECKOUT=$(git rev-parse
+--show-toplevel)` **before** `mktemp`, archives with `git -C "$CHECKOUT"`, and
+passes `apply --repo "$CHECKOUT"`, quoted.
+
+`_require_worktree_root()` validates the target at the CLI boundary and again
+inside `apply_now`. A path that is not a repository refuses with a message
+naming `--repo` instead of git's bare `fatal: not a git repository`.
+
+**One deliberate step beyond the satisfier, flagged as such.** The satisfier
+asked for the checkout path to be recorded and passed. The checker additionally
+refuses any path that is not the **top level** of the worktree it names, because
+`git -C` *discovers upward*: the old no-`--repo` invocation was fail-closed only
+because `$TMPDIR` happened to sit outside a repository. Put the extraction
+beneath any checkout -- which a `$TMPDIR` inside one achieves -- and the
+identical command finds *that* repository and operates on it, reporting against
+a target the operator never named. Reproduced, and pinned by
+`test_an_extraction_nested_in_another_repo_refuses_that_repo`.
+
+**The test executes the runbook's own bytes.** `_runbook_ceremony_script()`
+lifts the fenced block out of `REANCHOR_RUNBOOK.md`, substitutes only
+`<maintainer-recorded-interpreter>`, and runs it under `bash -c` against a
+fixture repository. A Python transcription would not have caught this: the
+transcription would have been written correct while the recorded steps stayed
+broken -- which is precisely the shape FUR5 took. Deleting `--repo` from the
+runbook now fails a test.
+
+`TestThreeCommandIntegration` also stopped executing `_REPO`'s checker and now
+runs bytes **extracted from the anchor**, which is what the ceremony does.
+
+**Coverage limit, stated rather than implied.** `_require_worktree_root` guards
+`main()` and `apply_now()`. In-process library calls to `check()` or
+`gather_evidence()` are unguarded; those callers are the tests, and the guard is
+about invocation shape, not a trust boundary. It is not a containment control
+and nothing here claims otherwise.
+
+### FUR4 -- enumeration failure is now fatal
+
+`_rev_list` raises `PreflightError` on any non-zero `rev-list` instead of
+returning `[]`. `_is_ancestor` is new and treats `merge-base --is-ancestor` as
+having three outcomes, not two -- 0, 1, and *error* -- so it cannot reintroduce
+the same shape. `check_signatures` resolves the epoch explicitly before
+enumerating anything: an absent object refuses, and an epoch that is not an
+ancestor of HEAD refuses. Resolution also normalises the constant to a full SHA,
+which the old code assumed of the literal when intersecting against `rev-list`
+output.
+
+**FUR4 was also a test-coverage defect, and that is the part worth recording.**
+A fixture repository cannot contain Cairn's real epoch `a07fac88`, so under the
+fail-open every subprocess test reported `checked: 0`, `grandfathered: 1` -- and
+**passed**. Verified by running HEAD's pre-fix checker against a fixture whose
+tracked copy was reverted to those exact bytes:
+
+```
+"signing": { "checked": 0, "commits_in_range": 1,
+             "epoch": "a07fac88...", "grandfathered": 1 }
+Pre-flight checks pass.
+```
+
+The three-command integration test had therefore never verified a single
+signature. The expiry tripwire -- the mechanism the whole dated posture rests on
+-- was inert in the only test that exercised it end to end. `_ceremony_repo` now
+creates a real in-repo epoch and pins the anchored checker copy to it, the run
+reports `checked: 1`, and the integration test asserts `checked >= 1` so a zero
+can never again read as a pass.
+
+### Verification
+
+Canonical Python 3.13.13. Full suite `1566 passed` (was 1556); `test_gate_preflight.py`
+95 tests. `check_cairn.py` OK across 164 Markdown files; `claim_check.py` clean on the
+runbook. `quality_gate.py` unchanged from its known state -- the 10 redundancy `R6`
+failures are the documented pre-existing set, none in a file this step touched.
+
+**Mutation testing, eight mutations, all detected by the predicted test**, each
+reverted and confirmed byte-identical by sha256:
+
+| Mutation | Detected by |
+|---|---|
+| `_rev_list` returns `[]` on error | `test_rev_list_raises_rather_than_returning_empty` |
+| `_is_ancestor` swallows the error code | `test_is_ancestor_raises_on_error_rather_than_reporting_no` |
+| epoch used unresolved | `test_missing_epoch_refuses_instead_of_grandfathering` |
+| ancestry check removed | `test_epoch_off_the_head_line_refuses` |
+| top-level comparison removed | `test_an_extraction_nested_in_another_repo_refuses_that_repo` |
+| `main()` skips validation | `test_an_extraction_nested_in_another_repo_refuses_that_repo` |
+| runbook drops `--repo` | `test_the_recorded_runbook_ceremony_actually_runs` |
+| runbook captures `$CHECKOUT` after `mktemp` | `test_the_checkout_is_recorded_before_the_extraction` |
+
+### Still open, unchanged
+
+**FUR1** (replacement objects, `gpg.ssh.program`), **FUR2** (`core.fsmonitor`
+execution, `reference-transaction` hooks moving a third ref, the `git add`
+clean-filter surface), **FUR3** (`git archive` honours candidate
+`.gitattributes`; manifest fields not re-derived from raw `HEAD` objects). The
+next unit is the **sterile-Git launcher**, and per the recorded process change it
+should be reviewed on its own rather than folded in beside other work. Note that
+`_PINNED_CONFIG`'s comment still claims pinning `core.quotePath` "closes the
+class for future call sites too" -- that sentence is the false claim this review
+caught, and the launcher is where it gets replaced rather than patched.
+
+## Remediation step 2 -- FUR1, FUR2, FUR3 -- Claude (author) -- 2026-08-03
+
+**Model**: Claude Opus 5
+
+The remaining three findings. **Whether this is now fit to bless is the
+reviewer's call, not mine** -- what I can say is that all five findings have
+been addressed and every fix was verified against a working exploit first.
+Chunk G stays blocked pending that re-read; the hashes stay unrecorded.
+
+### The rule I worked under this time
+
+Every pin below was **reproduced as a live attack before being closed**, and
+each regression test asserts the attack is still live in the unpinned case
+before asserting the pin defeats it. This was the discipline the plan's own
+pattern note demanded, and it immediately paid for itself: my first
+fake-verifier probe *did not reproduce the attack at all* -- git asks
+`-Y find-principals` before `-Y verify`, and parses a `with <type> key
+<fingerprint>` suffix, so a naive fake yields `B` and never exercises the
+channel. Had I written the test from the satisfier rather than from a working
+exploit, it would have passed against an attack that never fired.
+
+### The sterile-Git launcher (FUR1, FUR2)
+
+One function, `_run_git`, that **both** allowlists route through. `_git_write`
+previously called `subprocess` directly with **no config pinning at all** -- so
+the path that signs the commit and moves the trust root was the least protected
+in the module. A test now asserts exactly two `subprocess.run` call sites exist
+in the whole module.
+
+| Channel | Attack reproduced | Pin |
+|---|---|---|
+| `refs/replace/<anchor>` returned attacker bytes while `rev-parse` reported the real SHA | ✓ | `core.useReplaceRefs=false` |
+| `gpg.ssh.program` forged `%G? = G`, `%GS = m@example` for an unrostered key | ✓ | `gpg.ssh.program=/usr/bin/ssh-keygen`, `gpg.format=ssh` |
+| `core.fsmonitor` executed a program during `git status` | ✓ | `core.fsmonitor=false` |
+| `reference-transaction` hook moved a **third** ref during the two-ref transaction | ✓ | `core.hooksPath=/dev/null` |
+
+Command-line `-c` outranks system, global, repository and worktree config;
+verified that it also outranks `GIT_CONFIG_KEY_n`/`VALUE_n`. The child
+environment drops **every** `GIT_*` variable rather than denylisting names --
+that set grows between releases. `GIT_INDEX_FILE` is threaded per invocation,
+replacing a mutate-and-restore of `os.environ` that leaked the temporary index
+into every unrelated subprocess started while it was set.
+
+Both allowlists **shrank**: `archive` and `add` are gone, so the attribute-aware
+and filter-aware paths are unreachable rather than merely unused.
+
+**A correction to my own first attempt.** `_resolved_binary` initially refused
+symlinks. That broke on an ordinary Homebrew install (`/opt/homebrew/bin/git` is
+a symlink into the Cellar) and bought nothing, since exec follows the link
+either way. It now resolves and reports the real target, and the docstring says
+plainly that this is not a containment control -- `PATH` is the operator's.
+
+### FUR3 -- static authority stops being delegated
+
+`raw_tree()` materializes from `ls-tree` + `cat-file --batch` instead of `git
+archive`, which honours in-tree `.gitattributes`. Non-regular entries refuse
+rather than being written.
+
+`rederive_static_manifest()` recomputes **every** statically derivable field --
+`schema`, `gate_commands`, `frozen_files`, `cascade_mutable`, `phase_mutable`,
+`mapping_symbols` -- from raw HEAD objects, and `check()` refuses on any
+difference. It reuses `_gate_manifest`'s own globbing rather than
+reimplementing it: that module is authority-closure covered, and a second copy
+of the rules would drift into false refusals. A test pins that the
+re-derivation matches the real producer on an honest tree, and another asserts
+that the only fields left delegated are exactly `collection` and `interpreter`
+-- a collection cannot be derived from object bytes, which is why the evidence
+stage exists.
+
+The `_EVIDENCE_RESIDUAL` text and the runbook both drop the blanket
+"NON-AUTHORITATIVE" the reviewer called too strong, and name what actually
+remains trusted.
+
+### FUR2's index path
+
+`_sync_worktree` installs the already-verified blob by id via `update-index
+--cacheinfo` instead of `git add`, which re-reads the worktree through any
+configured `clean` filter -- a candidate-controlled transform between the bytes
+that were verified and the bytes that land. `--cacheinfo` writes no stat
+information, so a following `update-index --refresh` keeps `git status` clean.
+
+### What is *not* covered, stated rather than left to inference
+
+* In-tree `.gitattributes` has **no config switch**. `export-ignore` and filter
+  drivers are therefore addressed structurally -- by not using `git archive` and
+  not using `git add` -- not by a pin. Enumerating filter drivers would require
+  reading candidate-controlled `.gitattributes` to learn their names.
+* The environment allowlist covers `GIT_*` only. `PATH`, `HOME` and
+  `SSH_AUTH_SOCK` are left intact because signing needs them; they are the
+  *operator's* environment, not the candidate's, and the runbook's residual
+  trust set now says so.
+* `/usr/bin/ssh-keygen` is hardcoded. Correct on macOS and mainstream Linux;
+  not portable, and Windows remains unexamined as the reviewer noted.
+
+### Verification
+
+Canonical Python 3.13.13. Full suite **1586 passed** (1566 before this step,
+1556 before the previous one); `test_gate_preflight.py` 115 tests.
+`check_cairn.py` OK across 170 Markdown files; `claim_check.py` clean.
+`quality_gate.py` unchanged from its documented pre-existing state.
+
+Smoke-tested against the real repository: `check --repo <cairn>` refuses
+cleanly with "the pinned roster is absent from the anchor bf08f62 -- first use
+requires the manual exact-byte bootstrap", no traceback.
+
+**Mutation testing, eight mutations.** Seven detected immediately; **one was
+not** -- deleting the `check_static_manifest` call from `check()` broke no test,
+because every FUR3 test called it directly. That is the FUR5 shape exactly: a
+guard the real path does not invoke. Three wiring tests were added and the
+mutation now fails `test_check_refuses_a_manifest_that_does_not_match_the_tree`.
+
+One further self-correction: the end-to-end `export-ignore` test first asserted
+that the attack now *refuses*. It does not, and should not -- a genuinely new
+frozen-surface file should be **pinned**, not rejected. The test now asserts the
+real property, that the blessed manifest covers what the blessed tree contains,
+and still checks the hiding mechanism is live so it cannot pass vacuously.
