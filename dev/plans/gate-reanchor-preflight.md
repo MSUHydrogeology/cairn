@@ -1014,3 +1014,143 @@ so no re-anchor is forced. Gate integrity intact; `refs/cairn/gate-anchor` still
 access remains the Decision-accepted trusted-contributor residual; replay remains
 revalidate-and-confirm with no nonce (SR10); first use still requires Chunk G's
 Maintainer-only exact-byte bootstrap, which nothing here performs or discharges.
+
+## Focused External first-use exact-byte security review -- Codex -- 2026-08-03
+
+**Model:** GPT-5 (Codex)
+
+**Exact commit reviewed:** `3292f217e47c14981698ef232ca4aff8c0fe95b8`
+
+**Disposition: NOT FIT TO BLESS as the trust root.** The original CR1 editable-
+handoff attack is closed, and the constructed-commit checks work under a sterile,
+honest Git configuration. The actual Git invocations are not sterile, however:
+repository-local replacement, helper, monitor, attribute, and hook channels can
+change what is read, what is authenticated, what executes, and which refs move.
+The first-use invocation also points the checker at the extracted directory
+rather than the checkout. All findings below were reproduced against the exact
+bytes at the commit above.
+
+* **[FUR1] CRITICAL / BLOCKING -- candidate-controlled Git mechanisms can
+  substitute both the anchored roster and the signature verifier.** `_git()`
+  pins only `core.quotePath`; it does not disable replacement objects or pin the
+  signing backend. Probe 1: `refs/replace/<anchor>` mapped the anchor to a commit
+  containing an attacker roster, and `anchored_roster(anchor)` returned the
+  attacker bytes while `rev-parse` still reported the original anchor SHA.
+  Probe 2: repository-local `gpg.ssh.program` pointed at a fake verifier; a
+  commit signed by a key absent from the anchored roster then produced
+  `%G? = G`, `%GS = maint@example`, and `verify_constructed()` accepted it.
+  Thus the roster is syntactically requested from the anchor, but not from the
+  raw anchor object, and the pinned-roster principal check is forgeable through
+  the same configuration channel the earlier CR1 roster-location fix identified
+  as candidate-controlled. **Satisfier:** route reads and writes through one
+  reviewed sterile-Git launcher: disable replacement objects, clear/override
+  security-relevant `GIT_*` environment channels, pin SSH format and an absolute
+  reviewed `ssh-keygen` path for both signing and verification, and make every
+  object read explicitly raw. Add non-vacuous replace-ref and fake-verifier
+  regressions. Add the signing/verifier binary to the runbook's residual trust
+  set; it is currently omitted.
+
+* **[FUR2] CRITICAL / BLOCKING -- the read/write allowlists do not contain Git's
+  configured execution paths, and hooks falsify the two-ref postcondition.** A
+  configured `core.fsmonitor` program executed during `_git("status")` while Git
+  returned success, so `check` is not structurally free of candidate-configured
+  execution. More directly, a configured `reference-transaction` hook ran from
+  `_advance_both_refs`; its committed phase advanced `refs/heads/third` while
+  the branch and gate anchor transaction also succeeded. The function returned
+  `ok=True` with three refs moved. Restricting the visible subcommand to
+  `update-ref` does not restrict programs Git dispatches. **Satisfier:** disable
+  repository and configured hooks for every invocation (including the default
+  `.git/hooks` path), disable fsmonitor and external diff/filter helpers, and
+  avoid the post-transaction `git add` clean-filter surface by installing the
+  already-known blob into the real index directly. Test a monitor helper and a
+  reference-transaction hook that attempts a third-ref move. With those channels
+  disabled, Git's expected-old transaction itself did abort both direct updates
+  atomically on a stale anchor.
+
+* **[FUR3] HIGH / BLOCKING -- the in-memory redesign closed CR1's file attack,
+  but static manifest authority is still delegated to candidate-steerable
+  materialization.** A prior evidence JSON changed to `node_count=999999` was
+  ignored by public `apply`, which regenerated and blessed `node_count=1`; the
+  authority-bearing handoff file is genuinely gone. But `gather_evidence()`
+  materializes with `git archive`, which honors candidate `.gitattributes`, and
+  `check_evidence()` validates only candidate SHA, adjacent digest, and
+  interpreter. Probe: a signed candidate added a tracked regular probe module
+  named `omitted.py` under the frozen test directory, plus `.gitattributes`
+  marking it `export-ignore`.
+  Public `apply` returned success and blessed a commit whose tree contained the
+  file while its new gate manifest did not pin it. This falsifies the statements
+  that the evidence is non-authoritative and that `check` re-derives every
+  static Git fact. **Satisfier:** materialize raw commit-tree bytes without
+  archive attributes, and independently compare every statically derivable
+  manifest field -- at minimum frozen membership and hashes, mutable-surface
+  entries, mapping inputs, schema, and fixed commands -- against raw `HEAD`
+  objects/trusted constants before construction. Candidate collection remains
+  the accepted executable evidence; static file identity need not be trusted to
+  it.
+
+* **[FUR4] HIGH / BLOCKING -- signature-history enumeration fails open.**
+  `_rev_list()` returns `[]` on any Git error. With a missing signing-epoch
+  object and one unsigned commit in `anchor..HEAD`, `check_signatures()` emitted
+  no finding and reported the unsigned commit as grandfathered (`checked=0`). A
+  shallow/corrupt repository therefore converts inability to establish the
+  signed range into success. **Satisfier:** raise `PreflightError` on every
+  `rev-list` failure, explicitly resolve the epoch, prove its required ancestry,
+  and add missing-epoch and command-failure regressions.
+
+* **[FUR5] HIGH / BLOCKING -- the recorded anchored invocation targets the
+  extraction directory, not the repository being blessed.** The runbook extracts
+  `bootstrap/tests` under `$T` and invokes the checker without `--repo`. The
+  checker's default `_REPO` is consequently `$T`, which has no `.git`. Executing
+  those exact steps from `3292f21` refused with `fatal: not a git repository`
+  before checking the real checkout. This is fail-closed, but makes the reviewed
+  ceremony unusable and means the recorded invocation has not received a public-
+  path test. **Satisfier:** record the checkout path before extraction and pass
+  it explicitly with `apply --repo <that-path>`, preserving argument boundaries;
+  add a test that extracts the anchored bytes and executes the literal runbook
+  shape against a separate target repository.
+
+**Constructed-commit adjudication.** With `/usr/bin/ssh-keygen` explicitly used
+in an isolated repository, the exact implementation accepted the intended
+one-parent / manifest-only / reviewed-blob / reviewed-message / pinned-signature
+commit. Independent substitutions for wrong parent, extra changed path, wrong
+blob digest, wrong message, unsigned commit, and foreign signer all refused
+before any ref move. FUR1 overrides that positive result in the real invocation:
+the verifier program itself is presently selected through untrusted config.
+
+**Accepted residuals.** The evidence subprocess's host access is accurately
+described as best-effort isolation and not containment; that posture was not
+re-litigated. Its label as wholly "NON-AUTHORITATIVE" is too strong for the
+reason in FUR3. Replay is accurately described as revalidate-and-confirm with no
+nonce. The key-holder-not-process caveat is accurate, but FUR1 is an additional
+failure: current Git configuration can forge what the tool believes the key
+holder and principal to be.
+
+**Reviewed SHA-256 set (commit-object bytes, each confirmed byte-identical to the
+worktree before execution):**
+
+```
+e4c0e0d4243132b6e80f6a955445cf89e3b9044ebc8ae91ff6a09bb1c808e2fa  bootstrap/tests/_gate_preflight.py
+4e9aea5937f2643c8d7e3081c6a5f2ffe4f8fb737925ea48317361f655a09a09  bootstrap/REANCHOR_RUNBOOK.md
+98ffb4c1dcff543f6461196abd4704a79679c6f3350684ae46319c5c8d109245  bootstrap/tests/test_gate_preflight.py  (evidence only)
+55a11326baae75d5a2f5f1696c5e6c4745ba537286415ba84bfcab26ab36b876  bootstrap/tests/_gate_reanchor.py
+38d5009a51bb094820abfff899dc5be72a02c9b0eed2d5329923fb8abaecb5fc  bootstrap/tests/_gate_manifest.py
+e272b868eb640b9193daefe76c5fbe2d6a8f5225eb934b53e9c7febdbc680b9b  bootstrap/tests/_gate_transition.py
+c719f770afe1b0ce5928923a7be2590666bc8f7935df2ad94eda95598be286e4  bootstrap/tests/_oracle_activation.py
+17007480162b0f4a100a100714a05198ef4a21ee8e726f31fb60b296127d429d  bootstrap/tests/_oracle.py
+e1d6c7db5d72729e43040dedb69fa47c50a3fe36b7d284ad73c1285b8a027007  bootstrap/tests/_oracle_trust.py
+55cd6796a2e73efcf822b73284c3610a7c71adf67ee065ae11f06036568423af  dev/.cairn/allowed_signers
+```
+
+**Verification:** canonical Python 3.13.13 full suite:
+`1556 passed, 3 warnings in 114.89s`. Additional isolated/public-path probes
+covered the exact runbook invocation, prior-artifact substitution, raw-vs-
+replacement roster reads, honest and fake SSH verification, all six constructed-
+commit checks, fsmonitor execution, third-ref hook mutation, missing signing
+epoch, archive-attribute omission, and expected-old abort behavior. Main-repo
+refs were not moved.
+
+**Not examined:** correctness of the six Stage-B algorithms beyond their role in
+this checker's import/trust path; network behavior or stronger containment of
+candidate collection; Windows or non-macOS Git behavior; cryptographic strength
+of SSH itself; concurrent Maintainers; external anchoring (`--trusted-repo` is
+still threaded but unused); or the later Phase 4 promotion ceremony.
