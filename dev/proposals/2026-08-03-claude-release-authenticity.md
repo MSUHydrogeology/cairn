@@ -683,7 +683,10 @@ The measurements that are load-bearing, each independently re-runnable:
 * **Public-path → test mapping.** `verify-ref.sh` has exactly one public entry
   point — its command line — and every test drives it through that command line
   via `subprocess`, never by sourcing a function. The tests live in
-  [`bootstrap/tests/test_verify_ref.py`](../../bootstrap/tests/test_verify_ref.py).
+  `bootstrap/tests/test_verify_ref.py` — registered under *Proposed paths*
+  above. Cited as a path rather than a relative link because the file does not
+  exist yet; the template's link form assumes an existing test, which a proposal
+  that proposes the test cannot satisfy.
   The three-command bootstrap in `bootstrap/PROVENANCE.md` is a *documented*
   public path with no executable home; it is covered by a test that runs the same
   three-command sequence against a fixture repository. The plan decides — and
