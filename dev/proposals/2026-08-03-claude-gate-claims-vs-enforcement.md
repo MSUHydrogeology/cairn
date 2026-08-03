@@ -856,3 +856,339 @@ grepping `bootstrap/tests/` for `floor-gate` returns nothing, `as_of
   that is a coverage correction to record, not a reason to withdraw the
   pattern finding. A sweep that can absorb a new instance without changing
   its conclusion is behaving correctly; one that cannot was overfitted.
+
+---
+
+## Appended 2026-08-03 — two further rows, from a later audit
+
+**Why this is appended and not folded into the ledger above.** The tables above
+are left byte-for-byte as they were written, per the append-only rule. Read the
+twelve-entry ledger as it stands, then read this. **The count of dispositioned
+claims is fourteen as of this section**, and three statements above are narrowed
+by it — the ledger count, the two-axis coverage claim in *How the sweep was
+run*, and the surface routing. Each narrowing is named explicitly at the end.
+
+**Provenance, and how much weight it carries.** These two rows come from a later
+audit that asked an unrelated question — whether Cairn's practices could be
+extracted as a separate package. That audit's verdict is not this proposal's
+business and is not relied on here. Two of its *measurements* are, because both
+are instances of this proposal's own pattern that the two-axis sweep did not
+reach. **I re-measured each myself before writing it down.** Where my
+measurement corrects the audit's framing, I have said so and used mine; one of
+the two corrections is substantive and is recorded under B2.
+
+### A third axis the sweep did not run
+
+Neither row below is reachable by either axis already recorded. Axis 1 is
+lexical — the token `CI` in Cairn's own prose. Axis 2 is behavioural — find the
+artifact that would check a stated control and run it. F1 is neither: it is a
+**pointer** defect, where the document names a trigger, the trigger exists as a
+real file, and it is the wrong file. B2 is neither: it is a **compliance**
+defect, where the obligation is stated, nothing checks it, and the committed
+record shows where the habit that substitutes for a check does and does not
+exist.
+
+So the honest coverage statement gains a third clause. Replacing the two-clause
+version above: **axis 1 is complete and reproducible; axis 2 is a sample; and a
+third axis — does the named trigger actually contain the procedure, and does the
+record bear out the stated obligation — was not run at all.** Two rows from one
+external pass at that third axis is a hit rate worth noticing, and it is a
+stronger reason than *Known omissions* currently gives to read this ledger as
+open rather than closed.
+
+### Class F — the named trigger exists and is the wrong artifact. Disposition: correct the pointer
+
+| # | Location | What it says | Disposition |
+|---|---|---|---|
+| F1 | `AGENTS.md` lines 335–338, the "AST attestation baseline" operational pitfall | after any `bootstrap/_scaffold/` change, *"re-anchor it per `bootstrap/REANCHOR_RUNBOOK.md`"* | **Correct the pointer** to name the artifact that actually governs the baseline (`bootstrap/tests/_ast_attest.py`), and say plainly that the procedure lives in code rather than in a document. See *the correction has no target* below — this row cannot be discharged by a search-and-replace. |
+
+**Evidence, re-run by me at the working tree, 2026-08-03.** The runbook does not
+mention the AST machinery at all — not the module, not the baseline fixture, not
+the word:
+
+```
+$ grep -ciE 'ast_attest|scaffold_ast_baseline' bootstrap/REANCHOR_RUNBOOK.md
+0
+$ grep -ciE '(^|[^A-Za-z])AST([^A-Za-z]|$)' bootstrap/REANCHOR_RUNBOOK.md
+0
+```
+
+Both counts are also `0` against `HEAD`, which matters here because that file is
+under concurrent edit by another session (249 lines at `HEAD`, 297 in the
+working tree, as_of 2026-08-03). The finding does not turn on which version is
+read.
+
+What the runbook governs instead is the **differential-oracle gate's** trust
+root — its own title says so — whose Phase 0 and Phase 4 establish and then
+compare-and-swap `refs/cairn/gate-anchor`. That is a structurally separate
+mechanism from the AST baseline, and the gate's own code says so: the
+`CASCADE_MUTABLE` dict in `bootstrap/tests/_gate_manifest.py` lists
+`bootstrap/tests/fixtures/scaffold_ast_baseline.json` as **excluded from frozen
+hashing**, under the comment *"integrity governed by the named mechanism, not a
+byte hash"*, and names that mechanism as `_ast_attest.py update-symbol`. So the
+document a contributor is sent to is the one document that explicitly disclaims
+the file in question.
+
+**Why this is a new class and not Class A.** In every Class A row there is *no*
+mechanism, and the document names one that does not exist; the reader goes
+looking and finds nothing, which at least fails visibly. Here the mechanism
+exists and is healthy, the named artifact exists, and the **pairing** is wrong.
+The reader who follows the pointer finds a real, careful, unrelated procedure —
+which is worse than finding nothing, because a substantial document reads as
+confirmation.
+
+**Why this is not Class E.** E1 is a *tool* that returns success without
+checking the property: a silent false negative from a verifier. F1 is a
+*document* naming a *document*: a confident false positive in a reader's head.
+Nothing executes on either side of F1, which is why no run-it axis reaches it.
+
+**F1 defeats the rule as drafted, and this is the second time that has
+happened.** The proposed rule says *"Any document that describes a check says
+what runs it."* That pitfall bullet **does** say what runs it. It names a file;
+the file exists; the path resolves; and the checker passes clean — I ran
+`python scripts/claim_check.py AGENTS.md` and it reports no flags. The sentence
+satisfies the rule and is still false. The second clause, added after E1, is
+closer but not sufficient: it obliges a document to state *what a trigger
+verifies*, which is framed around a tool's runtime behaviour, and F1 has no
+runtime behaviour to describe.
+
+The amendment I would take at review — stated here rather than edited into the
+block quote above, because that quote is part of the record as first written:
+
+> **and open it.** A named trigger is checked by opening it and confirming the
+> procedure is there. A path that resolves is not a trigger that governs.
+
+That this is the *second* rule-defeating instance is itself the more useful
+finding. A governing sentence has now been drafted twice and been insufficient
+twice, both times caught by someone other than its author. That is an argument
+for keeping the rule short and for expecting review to extend it, not an
+argument that the third draft will be complete.
+
+**The correction has no target, and that is part of the row.** Naming this
+"correct the pointer" would be unactionable without saying what to point at. I
+checked: across every tracked Markdown file outside `dev/` and `CHANGELOG.md`,
+**`AGENTS.md` is the only one that names the AST baseline machinery at all** —
+
+```
+$ git ls-files '*.md' | xargs grep -lniE 'scaffold_ast_baseline|_ast_attest|update-symbol' \
+    | grep -v '^dev/' | grep -v CHANGELOG
+AGENTS.md
+```
+
+— and its one sentence on the subject is the wrong pointer. So the procedure is
+documented nowhere shipped; it exists in code (`bootstrap/tests/_ast_attest.py`)
+and in the deliberation record. Worse, the surgical path is not the whole
+procedure: `_UPDATE_ALLOWLIST` restricts `update-symbol` to a handful of
+symbols, and it refuses outright when unrelated drift is present, so a real
+re-anchor sometimes needs a supervised wholesale re-pin that no committed
+document describes. **Only the first half is in scope here**: point the sentence
+at the code and stop implying a runbook governs it. Writing the missing
+procedure is a separate piece of work and should not be smuggled into a
+documentation-honesty ledger — the same reasoning that hands E1 off.
+
+**Propagation, and what I can and cannot verify.** Propagation is what
+distinguishes this from a dead cross-reference. A dead reference misleads
+whoever follows it; this one has been *copied forward into new artifacts* by
+agents who trusted the governing document.
+
+Verified from the committed record:
+
+* Two archived plan reviews found and corrected it independently, each naming
+  `AGENTS.md` as the root — `adopter-licensing-compliance` (its plan-review
+  finding PR1) and `lockfile-provenance-fields` (its disclosed finding 1). The
+  second records that neither the Internal panel, the External read, nor the
+  Decision caught the identical error on a sibling proposal in the same session.
+* `first-session-survivability` carried the same framing, per that same note.
+* Of the five open proposals dated 2026-08-03 that cite the runbook, **one still
+  repeats the mispointing** — `profile-parse-fail-open`, whose evidence list
+  reads *"AST attestation re-anchor — mandatory, per
+  `bootstrap/REANCHOR_RUNBOOK.md`"* — **one records it as a known defect and
+  routes it** (`fork-advisory-semantics`, its R8 row), and three cite the
+  runbook correctly for its own subject.
+
+**Not verified, and therefore not asserted:** any count of how many drafts
+carried the error before commit. Ten of the twelve proposals dated 2026-08-03
+are a single commit each, so pre-commit drafting states are not in the record
+and that count cannot be reconstructed. What the record supports is the shape:
+the same mispointing appears in five separate artifacts spanning three dates
+(2026-07-11, 2026-07-22 and 2026-08-03), and on at least one of them the
+`lockfile-provenance-fields` note records an Internal panel, an External read
+and a Decision all passing over it. That is enough to call it propagation. It is
+not enough to put a number on the near-misses, and I do not.
+
+**This row is a received hand-off, which is the mirror of E1.**
+`fork-advisory-semantics`'s R8 row identifies this defect, declines to fix it
+("governing layer, different contract"), and routes it to *"a doc-correction
+commit or the next proposal touching that list"*. This proposal already lists
+`AGENTS.md` in *Touches*, so it is that proposal, and F1 is the acceptance of
+that routing. The ledger therefore now both sends a row (E1) and receives one
+(F1). A reviewer holding both artifacts should confirm the row sits in exactly
+one of them as an obligation — the same check *Author-accounting* already
+prescribes for E1, applied in the opposite direction.
+
+### Class B, second row — a gate-phrased obligation whose consequence claim the record falsifies
+
+| # | Location | What it says | Disposition |
+|---|---|---|---|
+| B2 | `doctrine/proposals.md` line 360 and `doctrine/plans.md` line 602 | *"The archive commit body must name where each deferred item went, in the form:"* — followed in both files by *"This makes the migration auditable from `git log` alone."* | **Keep the obligation, name the trigger, and correct the consequence claim.** The "must" is a rule and stands. The auditability sentence is a factual claim about a mechanical property, and the record falsifies it. |
+
+**Method, stated before the numbers.** Two axes, both re-run by me on
+2026-08-03, over the 9 files in `dev/plans/archive/` and the 12 in
+`dev/proposals/archive/`.
+
+*Axis (i) — the artifact file.* Does the archived file itself contain the string
+`Follow-ups migrated`, case-insensitively?
+
+*Axis (ii) — the commit body*, which is the form the doctrine actually
+specifies. For each archived artifact, take the earliest commit that added or
+renamed it into `archive/` (`git log --format=%H --diff-filter=AR -- <path> |
+tail -1`) and test that commit's body the same way.
+
+**Numbers.** Axis (i): **plans 7 of 9; proposals 1 of 12**, as_of 2026-08-03.
+These reproduce the reported figures exactly, so I am carrying them forward as
+measured rather than as reported. The two plans without the block are
+`interpreter-trust-root-fallback` and `lockfile-provenance-fields`; the one
+proposal with it is `automated-review-committer`.
+
+Axis (ii): **0 of 9 plans and 0 of 12 proposals.** Cross-checked against the
+whole history — `git log --all --grep="Follow-ups migrated"` matches exactly
+**one** commit in the repository, and it is the commit that *introduced the
+doctrine*, not an archive commit.
+
+**What the numbers are not.** Neither figure is a violation count, and reading
+them as one would repeat the overstatement this proposal is about. A commit with
+no deferred item owes no block. What the two axes together establish is where a
+*habit* exists rather than whether a rule was broken:
+
+* The plan side records the migration **in the artifact file**, including when
+  there is nothing to migrate — several of the seven read "no deferred follow-up
+  from this plan's own scope". Using the empty form deliberately is the
+  strongest available evidence that a habit is present.
+* The proposal side records it in a fixed form essentially nowhere.
+* **Neither side has ever used the commit-body form the doctrine specifies.**
+
+**Disposition, and why it is not "the document lies".** This is the row where
+the distinction matters most, so it is drawn explicitly. The obligation is a
+**rule**, and a rule is not falsified by non-compliance — no Class A disposition
+applies to the "must". What *is* falsified is the sentence that follows it in
+both files: *"This makes the migration auditable from `git log` alone."* That is
+a claim about a mechanical property, and the structured form appears in zero
+archive commits, so nothing about the migration is recoverable from `git log` by
+the structure the doctrine names. The precise downgrade, not a sweeping one: a
+reader can still reconstruct *some* of it by reading the 21 archive commit
+bodies as prose — 8 of 9 plan archive commits and 3 of 12 proposal archive
+commits mention a follow-up in ordinary sentences, as_of 2026-08-03. What does
+not exist is the *mechanical* auditability the sentence promises, and on the
+proposal side most of the prose fallback is absent too.
+
+So B2 is **Class B**: a gate-phrased obligation with no trigger, re-worded to
+name the reviewer's obligation. One difference from B1 is worth the reader's
+attention. B1's defect is that three surfaces disagree about the same scanner.
+B2's is that a single surface is entirely self-consistent, and its *consequence*
+claim is measurably false — which is a defect no amount of cross-reading catches
+and only a count of the record reveals. The two-part disposition:
+
+1. **Keep the "must", name the trigger.** Nothing checks archive commit bodies;
+   the trigger is the person writing the archive commit, and after that, review.
+   Same shape as B1's re-wording.
+2. **Correct the consequence claim** in both files — replace *"auditable from
+   `git log` alone"* with what is true, which is that the form is what *makes*
+   it auditable and that nothing enforces the form.
+
+**The asymmetry is the argument for naming the trigger, not a separate finding.**
+7-of-9 against 1-of-12 is what an unenforced obligation looks like: it survives
+where a habit carries it and decays where none does. It is also partly
+structural and should not be read as 11 proposal-side violations — 10 of the 12
+archived proposals were archived at plan-open, and `doctrine/proposals.md`
+states that implementation follow-up is tracked "via the plan in `dev/plans/`",
+so for those the opened plan is the tracker. That reading is not airtight —
+the acceptable-homes list a few lines below does not include "the plan opened
+from this proposal" — but it is close enough that the gap should be described as
+*a habit the proposal side never formed*, not as a rule the proposal side broke.
+
+**A correction to the reason this row was raised.** The audit that surfaced it
+offered a concrete cost: the `bootstrap/_scaffold/SECURITY_MUTATIONS.md` Class C
+follow-on was lost, and the proposal-side gap explains why. I checked. **The
+follow-on is genuinely unhomed, and that explanation is wrong**, so I am not
+repeating it.
+
+What I verified: `bootstrap/_scaffold/SECURITY_MUTATIONS.md`'s Class C defers
+the single-write-capability redesign, *"deliberately scoped to a separate
+follow-on proposal (RR6/SR6)"*. No such proposal exists. The only artifacts
+naming RR6/SR6 today are three open 2026-08-03 proposals and the
+`gate-reanchor-preflight` pair, and `fork-advisory-semantics` explicitly
+*declines* the row rather than claiming it. But the archive gate never had the
+opportunity to fire: the scaffold-split lineage that recorded the deferral never
+had an artifact under `dev/proposals/` or `dev/plans/` at all — no matching file
+was ever added under either path, verified with `git log --diff-filter=A`.
+
+The real mechanism is different, and sharper. **The deferral was recorded in a
+code-adjacent document, outside the lifecycle tree entirely, naming a
+prospective proposal as its home.** `doctrine/proposals.md`'s acceptable-homes
+list names *"its own queued follow-up proposal at
+`dev/proposals/<date>-<author>-<short-title>.md`"* — a concrete path, i.e. a
+file that exists. A prospective proposal is not a home; it is an intention to
+create one, and nothing distinguishes it from a dropped item once the session
+that intended it ends.
+
+**That observation is recorded, not dispositioned here.** Drawing the
+exists-versus-intended distinction in the acceptable-homes list would be a
+change to a doctrine *rule*, not a factual correction to a description, and this
+proposal's rate-limit clearance was argued on the recurrence of a description
+defect. It has one instance. It belongs in whatever proposal owns the Class C
+follow-on's homing, and is left there.
+
+### What these two rows do not establish
+
+* **F1 does not show the AST attestation is broken.**
+  `bootstrap/tests/test_ast_attest.py` is in the suite and the suite is green.
+  The pointer is wrong; the mechanism is not.
+* **F1 does not show the mechanical checkers are defective.** `claim_check.py`
+  passes `AGENTS.md` clean precisely *because* the path resolves. A semantically
+  wrong but existing pointer is outside a path checker's reach by construction —
+  this is the costlier class the claim-check module's own typology already
+  names, not a checker bug, and it is a reason not to propose a checker for it.
+* **B2's figures are not violation counts**, for the reasons given above, and
+  the 1-of-12 in particular overstates the proposal side if read as compliance.
+* **Neither row supports or opposes adding CI.** Both are documentation defects
+  that a CI would not have caught: no pipeline reads a pointer for meaning, and
+  the commit-body form is not machine-checked anywhere.
+* **Neither row was found by either recorded axis**, so they are evidence the
+  ledger is open, not that the sweep was careless — but they do mean the
+  *lexical* axis's completeness cannot stand in for coverage even loosely.
+
+### What this section narrows above
+
+* **The ledger count** moves from twelve to **fourteen**. The tables above are
+  unchanged; F1 and B2 are additional rows in new and existing classes.
+* **The doctrine-change rate-limit count is unchanged.** The recurrence arm was
+  cleared on eight instances across seven files of the *"names a CI that does not
+  exist"* shape (A1–A8). F1 and B2 are different shapes and are **not** added to
+  that count. Inflating a cleared gate's evidence after the fact would be its
+  own overstatement.
+* **The documentation / doctrine surface routing gains two entries.** F1 lands
+  in the **governing layer** (`AGENTS.md`), already in *Touches*. B2 lands in
+  **doctrine** — `doctrine/proposals.md` and `doctrine/plans.md`, **neither of
+  which is in the header's *Touches* field.** That is a scope expansion, and it
+  is a reviewer's to ratify or refuse rather than the author's to assume.
+* **One boundary a reviewer should hold B2 to.** The same block is restated in
+  `doctrine/lifecycle-contract.md` and carried in `dev/PLANNING.md`, whose
+  adopter-facing twin is `templates/core/dev/PLANNING.md`. Extending B2's
+  re-wording to that twin would engage the loop-fidelity lens this proposal
+  states is *not* engaged, and would move an install-set surface. **I recommend
+  scoping B2 to the two `doctrine/` sentences only**, precisely so that
+  statement stays true; if review wants the twin corrected, that is a separate
+  proposal with a different lens.
+* **No new collision row.** I checked the open set at 2026-08-03: no other open
+  proposal lists `AGENTS.md`, `doctrine/proposals.md`, or `doctrine/plans.md` in
+  its *Touches* — `transition-lint` and `r6-unused-def-blindspot` each state "No
+  `AGENTS.md`" explicitly, and the eight proposals that mention the two
+  `doctrine/` files cite them without claiming them. The cross-artifact overlap
+  that *does* exist is F1's received hand-off from `fork-advisory-semantics`,
+  recorded above.
+* **One further signal the change is wrong**, extending that list: **F1 is
+  corrected to a target that does not describe the procedure end to end.** A
+  pointer moved from a wrong document to a code module, with no procedure
+  written down anywhere, is a cosmetically cleaner sentence that leaves the next
+  contributor exactly as stuck. Recovery: say in the sentence itself that the
+  procedure is not documented, so the gap is visible rather than papered over.
