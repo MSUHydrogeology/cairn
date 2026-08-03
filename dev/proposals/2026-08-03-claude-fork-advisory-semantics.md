@@ -7,7 +7,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: reviewed
+**Status**: revised
 **Touches**: `bootstrap/_scaffold/lockfile.py` (`forked_facade_findings`,
 `format_forked_facade_warning`), `bootstrap/_scaffold/install.py` (one new
 helper), `bootstrap/_scaffold/upgrade.py` (`cmd_upgrade`, one call site),
@@ -1075,3 +1075,226 @@ this addendum's ordering — condition, then `SECURITY_MUTATIONS.md` sentence, t
 row — as superseding the ordering in the *Class C* section's anti-drop paragraph,
 and should treat the separate-commit note above as superseding "in the Decision
 commit" there.
+
+## Revised proposal — 2026-08-03 — three amendments from the External Security Review
+
+**Status moves `reviewed` → `revised`.** Appended rather than folded into the
+sections above, per the append-only rule: the *Proposal* and *Alternatives*
+sections state what their author believed before the review ran, and rewriting
+them would erase that. Three amendments follow. None changes a deliverable, an
+invariant (F1–F4), the gate accounting, the Class C disposition, or the Addendum;
+each tightens a contract or corrects a stated reason.
+
+**A1 — `trusted_upstream` pins the full published catalog, in writing.**
+The *shape of the change* section gives the helper as
+`trusted_upstream(cairn_root: Path) -> UpstreamSource` and says its `src_for_dst`
+comes from `install_manifest()`, but never says **which module set**.
+`install_manifest` takes a `modules: list[str] | None` parameter
+(`bootstrap/_scaffold/install.py:1359`), so an unpinned contract leaves open the
+one construction this proposal exists to forbid: a future caller passing a module
+list derived from the target's own lockfile. The review's caller trace closes the
+question only by assuming `modules=None`; that assumption is right and it belongs
+in the contract rather than in a reviewer's working notes. Amended contract, to be
+written into the helper's docstring at plan time:
+
+> `src_for_dst` is `install_manifest(modules=None)` — the **full published
+> catalog**. `trusted_upstream` takes no module list, and must not be given one
+> derived from the target (its lockfile's profile, its recorded module set, or
+> anything else read from the tree under check).
+
+Measured, `as_of 2026-08-03`: `install_manifest(modules=None)` returns 95 rows
+with 95 unique destinations and 0 duplicates, and it covers both live
+false positives — `tools/intent.py` ← `modules/team-gated/intent.py`, and
+`tools/lifecycle_metrics.py` ← `modules/default-on/lifecycle_metrics.py`. The
+headline smoke check therefore has a mapped source to compare against, which the
+proposal asserted but did not demonstrate.
+
+**This is defence in depth, not a repair.** A narrowed map can only *drop* rows,
+and a dropped row degrades to `unconfirmed`, which **retains** the finding. So
+even the forbidden construction could not suppress a note; F1 and F2 hold either
+way. The pin removes an ambiguity a later maintainer could resolve wrongly. One
+test node is added to the matrix in *Tests required*: the trusted map equals the
+full catalog and is not a function of any lockfile field.
+
+**A2 — the Alternatives rejection of `--to <ref>` materialization is corrected.**
+Found while reproducing the review's caller-2 trace, not reported by the review.
+The engine **already owns** the primitive this proposal designs from scratch:
+`_theirs_bytes(cairn_root, templates_root, src_rel, to_ref)` at
+`bootstrap/_scaffold/upgrade.py:141` reads `templates_root / src_rel` when
+`to_ref is None`, and otherwise runs `git show <to_ref>:templates/<src_rel>`
+inside `cairn_root` (`bootstrap/_scaffold/upgrade.py:132`). Those are already the
+bytes an `upgrade --to <ref>` **writes into the adopter tree**, so they are
+already trusted for a strictly more consequential purpose than an advisory
+comparison. *Alternatives considered* rejected this route as "scope creep with its
+own trust questions (which ref, verified how)"; that overstated the difficulty and
+I withdraw it.
+
+The accurate reasons R3 stays a residual are two, and both are structural rather
+than about trust:
+
+1. **Layering.** `upgrade.py` imports `forked_facade_findings` *from*
+   `lockfile.py` (`bootstrap/_scaffold/upgrade.py:62`). Having `lockfile.py`
+   import `_theirs_bytes` back would invert that edge and risk an import cycle in
+   the engine package.
+2. **Guard parity.** `_theirs_bytes` applies **no** containment check to its
+   `templates_root / src_rel` join. Reusing it as-is would import an unguarded
+   read into the one path this proposal is adding a guard to.
+
+R3's disposition is unchanged — `--to` still yields `unconfirmed`, and its
+trigger is unchanged. Only the recorded reason changes, because a wrong reason in
+the record is what a later reader inherits.
+
+**A3 — R6's trigger is restated.** As written it fires on "the second read-side
+caller" of `_assert_safe_write`. A2 shows there is already one **unguarded**
+read-side join in the engine, so the case for a neutral containment primitive is
+nearer than that row implies — though the trigger as literally worded is not yet
+met, since `_theirs_bytes` is not a caller of the guard. Restated trigger: *the
+second read-side caller of `_assert_safe_write`, **or** the first change that
+brings `_theirs_bytes`'s join under a containment guard — whichever occurs
+first.* Kind and durable home unchanged (non-observable; a comment at the call
+site in `bootstrap/_scaffold/lockfile.py`).
+
+**What these amendments do not establish.** They do not make the trusted map
+provably target-independent — A1 writes a rule, and a rule is enforced by the one
+added test node and by review, not by construction. They do not move the AST
+target: `trusted_upstream` is a NEW symbol under either contract, and A2/A3 touch
+prose and a residual row only, so the falsifiable target stays **exactly 3
+CHANGED**. They do not touch either `FROZEN-MODIFIED` hold.
+
+## Response -- Claude (author, to External Security Review) -- 2026-08-03
+
+**Model**: Claude Opus 5. Proposal-Response grammar (no implementing commits
+exist).
+
+The External read returned **SHIP**, and it is a *verification* read rather than a
+critique read: all three numbered items are confirmations, not objections. I
+re-ran every command it cites and every claim it makes about code that exists
+today. **The evidence reproduces — all of it, including the two line-precise
+citations.** What does not survive is one absolute in [G2] and one causal
+statement in [G3], both of which the proposal itself states more accurately than
+the review does. Two of the three dispositions are therefore `narrow`, and that is
+not a complaint about the read: a reviewer who verifies carefully and then
+over-generalizes in the summary is a reviewer worth reading closely.
+
+* **[G1] accept — all three claims reproduce, and one of them reproduces more
+  precisely than the review needed to.** Claim (a): both facades are
+  byte-identical to their template sources under the canonical interpreter —
+  `tools/intent.py` and `templates/modules/team-gated/intent.py` both at
+  `sha256:6462d404…`, and (the pair the review did **not** check)
+  `tools/lifecycle_metrics.py` and
+  `templates/modules/default-on/lifecycle_metrics.py` both at
+  `sha256:86a64b0a…`. Claim (b): the review's import command runs verbatim and
+  reports the same 7 modules — but it verifies something *adjacent* to the
+  proposal's claim, and the difference matters. The launcher does not load its
+  engine by `import tools._intent`; `_load_engine` resolves the package by path
+  and raises `RuntimeError` when `_intent/__init__.py` is absent
+  (`tools/intent.py:50`). So the "engine is not dormant" half rests on that
+  path, which I re-read rather than inheriting from the review. Claim (c) is the
+  citation I most expected to be wrong, given this repository's history with
+  unverified review citations, and it is **exactly right**:
+  `bootstrap/_scaffold/upgrade.py:1624` opens the `base_hash` paragraph inside
+  `_cmd_finalize_lockfile`'s docstring, and the implementation sits at
+  `bootstrap/_scaffold/upgrade.py:1695`. **One correction, and it is mine, not the
+  reviewer's**: that backfill is gated on `rec.get("verbatim")`, while the
+  proposal's *Context* says only "a record predating that field". The looser
+  wording is immaterial to the argument — the detector itself skips
+  non-`verbatim` records (`bootstrap/_scaffold/lockfile.py:337`), so the two
+  populations coincide — but the proposal is looser than the code and the record
+  should say so.
+* **[G2] narrow — the trace of existing code reproduces line for line; the verdict
+  "ZERO target-influence paths exist" is an absolute that this proposal's own
+  residuals contradict, and I decline it in that form.** What reproduces:
+  `CAIRN_ROOT` is derived from the verifier's own location
+  (`bootstrap/verify_integrity.py:34`); `_cairn_root()` is
+  `Path(__file__).resolve().parents[2]` (`bootstrap/_scaffold/upgrade.py:72`);
+  `templates_root = cairn_root / "templates"`
+  (`bootstrap/_scaffold/upgrade.py:2183`); `install_manifest` is pure over four
+  in-memory registries in `bootstrap/_scaffold/config.py` and touches no
+  filesystem at all, and it does refuse duplicate destinations — 95 rows, 95
+  unique destinations, `as_of 2026-08-03`. That trace is the review's most
+  valuable contribution and I accept it in full **as a statement about the
+  comparison source**. Three qualifications on the absolute. **(i)**
+  `fork_acknowledged` is a field in the target's own lockfile and it suppresses
+  the note at verify time (`bootstrap/verify_integrity.py:119`). That is a
+  target-influence path on whether a note is *reported*; it is pre-existing, out
+  of scope, and carried as **R5** — but it makes "zero target-influence paths"
+  false as written. Narrowed to: **zero target-influence paths on the comparison
+  source.** **(ii)** `--cairn-root` (`bootstrap/_scaffold/upgrade.py:2101`,
+  resolved at `bootstrap/_scaffold/upgrade.py:2181`) lets the *operator* point the
+  comparison root anywhere, including at a directory inside the target. That is
+  caller-controlled, which is what the design intends — but **R1**'s wording
+  ("the checkout hosting the verifier") describes the verifier's self-location and
+  does not name the flag, so I record the flag here rather than let the residual
+  read narrower than the surface. **(iii)** Two slips in the trace, neither
+  load-bearing: step 4 says `forked_facade_findings` locates and reads
+  `target / dev/.cairn/cairn-lock.yml`, which it does not — both callers call
+  `read_lockfile(target)` first and pass the parsed mapping in
+  (`bootstrap/verify_integrity.py:47`), and the function's signature is
+  `(target, lock)` (`bootstrap/_scaffold/lockfile.py:320`); and step 3's
+  `install_manifest(modules=None)` is the reviewer's assumption rather than the
+  proposal's text. That assumption is correct and is exactly why **A1** above
+  writes it into the contract — the review earns the credit for making explicit
+  what the proposal left open.
+* **[G3] narrow — the ordering recommendation is right, its stated reason is
+  backwards, and the parenthetical alternative is not free.** Reproduced in a
+  throwaway copy of `bootstrap/_scaffold/`, canonical interpreter: the pristine
+  copy verifies clean (174 baselined symbols, rc 0), and a one-clause edit to
+  `format_forked_facade_warning`'s remediation string produces exactly one
+  failure — `CHANGED FunctionDef:format_forked_facade_warning`, baseline digest
+  `0689eab2a9a1d03e` against live `21214814aa79b9d6`, rc 1, with 0 MISSING and 0
+  DUPLICATE. Two test nodes carry that assertion, which is the proposal's "fails
+  exactly two nodes" figure confirmed at
+  `bootstrap/tests/test_ast_attest.py:66` and
+  `bootstrap/tests/test_ast_attest.py:82`. So landing the trivial commit first
+  does **not** "avoid invalidating the AST attestation baseline on
+  `lockfile.py`" — it invalidates it, and leaves the canonical suite red until a
+  supervised re-anchor, which is precisely the cost the *Coordination* section
+  priced. Ordering decides whether this plan's 3-CHANGED target must be
+  re-derived against a moved baseline, not whether the baseline moves. Separately,
+  "(or be absorbed into this plan's Chunk 1)" is the proposal's shape (3), which
+  the *Coordination* section says **requires the Maintainer to amend condition 3**
+  of the `identity-not-name` Decision; offering it as an equivalent alternative
+  loses that constraint. Narrowly accepted: land the trivial commit first, on the
+  proposal's reasoning rather than the review's, and the three-way choice stays
+  the Maintainer's.
+
+**What this review did not sweep, stated because the omission would otherwise be
+inherited silently.** Its *Not Covered* section declares two gaps (un-patched
+code, and checkout authenticity per R1) and does not declare a third: **none of
+the three findings touches the gate accounting** — the section the parent
+lifecycle's Response called its own "straight miss". I re-verified that section
+myself rather than let it pass unread: `bootstrap/tests/fixtures/gate_manifest.json`
+freezes 162 files; `bootstrap/verify_integrity.py` and
+`bootstrap/tests/test_verify_integrity.py` are both in the frozen set; there are
+**0** `_scaffold/` entries in it; and neither `.md` deliverable is frozen (the
+frozen set contains exactly one `.md`, a test fixture, which corroborates the
+proposal's glob reasoning). The membership table reproduces as written,
+`as_of 2026-08-03`. Two further gaps are worth naming: the review did **not**
+attack the target the proposal nominated as the right one — *"the trusted map is
+not actually trusted"* — its trace stops one step short of it, and A1 is the
+closest thing to a resolution while remaining a written rule rather than a
+construction; and **no reviewer attempted to break F1** by building a tree where
+supplying a trusted upstream *adds* a finding. F1 therefore remains a claim
+carried by the plan's test matrix, not an externally-falsified invariant.
+
+**On the Maintainer's 2026-08-03 direction** — *"Obviously we need to change the
+default security stance for all installations. Otherwise we are shipping a
+potentially dangerous tool."* — taken here as a premise, not an open question.
+**It does not land in this scope, and I am not expanding scope to meet it.** The
+direction's subject is which modules a preset selects by default; this proposal
+touches no preset, no profile, and no module-selection surface. Its home is the
+profile/preset definitions in `bootstrap/_scaffold/config.py` together with the
+two onboarding documents that already tell adopters the scanner applies, and it
+needs the scope that owns preset defaults — which is none of the four
+`identity-not-name` successors. Two places in *this* scope would move if the
+Maintainer reads the direction more broadly than presets: the *Alternatives*
+rejection of "make the advisory blocking", and **R5**'s target-controlled
+`fork_acknowledged` opt-out. Both are already wired for that: **F3**'s test
+asserts the advisory never changes an exit code, so any attempt to make it
+blocking fails that test and forces R5 to be re-decided in the same change. That
+is the interaction, recorded rather than resolved.
+
+**Net**: External SHIP, with every cited claim independently reproduced and two
+summary-level overstatements declined. Three amendments appended above; status
+moves to `revised`. Decision-ready on the Maintainer's reading of the Class C
+question, which this exchange did not touch.
