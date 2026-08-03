@@ -1154,3 +1154,79 @@ this checker's import/trust path; network behavior or stronger containment of
 candidate collection; Windows or non-macOS Git behavior; cryptographic strength
 of SSH itself; concurrent Maintainers; external anchoring (`--trusted-repo` is
 still threaded but unused); or the later Phase 4 promotion ceremony.
+
+## Response to the first-use exact-byte review -- Claude (author) -- 2026-08-03
+
+**Model**: Claude Opus 5
+
+**All five accepted. The disposition stands: NOT FIT TO BLESS.** Chunk G is
+**blocked**. Concretely, and this is the operative instruction for whoever picks
+this up: **do not record the reviewed hashes and do not run the ceremony.** The
+bytes must change first, so a hash record made now would attest to bytes that no
+longer exist.
+
+Nothing is degrading while this waits. The tool is unused, `refs/cairn/gate-anchor`
+is untouched at `bf08f62`, the suite is green at 1556, and no adopter is exposed
+(`bootstrap/tests/` ships to nobody).
+
+**Independently reproduced before disposing**, two of the five, both at least as
+bad as reported:
+
+* **FUR5 is worse than stated.** I executed the runbook's recorded invocation
+  verbatim. It does not merely target the wrong directory -- it cannot find the
+  file at all: `can't open file '.../bootstrap/tests/_gate_preflight.py'`,
+  because the anchor predates the checker, so extracting `bootstrap/tests` from
+  the anchor yields a tree without it. I wrote a ceremony into the runbook and
+  never once ran it.
+* **FUR1's replacement-object attack, reproduced exactly.** With
+  `refs/replace/<anchor>` pointing at an attacker commit, `git show
+  <anchor>:dev/.cairn/allowed_signers` returns the attacker roster while
+  `rev-parse` still reports the original anchor SHA; `--no-replace-objects`
+  returns the real one. So `anchored_roster()` -- the CR1 fix I described as
+  removing the ordering question *entirely* -- reads attacker bytes while every
+  SHA looks correct.
+
+**The pattern, recorded because it is the useful part.** After CR1 I found
+`core.quotePath`, pinned it, and wrote that this "closes the class for future
+call sites too, rather than one instance." That was false. The class contains at
+least five channels, each defeating a different asserted guarantee: replacement
+objects (substitutes anchored reads), `gpg.ssh.program` (forges signature
+verification), `core.fsmonitor` (executes a program during `git status`, so
+`check` was never structurally free of candidate-configured execution),
+`reference-transaction` hooks (moved a **third** ref while the "two-ref
+transaction" returned success), and `.gitattributes export-ignore` (hides a file
+from `git archive`, so the manifest does not pin what the blessed tree contains).
+The prior reviewer explicitly said the class was unswept; I swept one sibling and
+declared it closed. This is the fourth instance in this plan of asserting a
+protection at the strength intended rather than the strength delivered.
+
+**Work required, in the order I would take it:**
+
+1. **FUR5** and **FUR4** first -- small, unambiguous, independently testable.
+   FUR5: record the checkout path before extraction and pass `apply --repo
+   <path>`, plus a test that extracts the anchored bytes and runs the literal
+   runbook shape against a separate target repo. FUR4: `_rev_list` must raise on
+   any `rev-list` failure, the epoch must be explicitly resolved and its ancestry
+   proved, with missing-epoch and command-failure regressions.
+2. **A single sterile-Git launcher** every invocation routes through:
+   `--no-replace-objects`; hooks disabled (including the default `.git/hooks`
+   path); fsmonitor and external diff/filter helpers disabled; SSH format and an
+   absolute reviewed `ssh-keygen` pinned for both signing and verification;
+   security-relevant `GIT_*` environment channels cleared. Regressions for a
+   replace ref, a fake verifier, a monitor helper, and a reference-transaction
+   hook attempting a third-ref move. The signing/verifier binary joins the
+   runbook's residual trust set, which currently omits it.
+3. **FUR3**: materialize raw commit-tree bytes without archive attribute
+   processing, and compare every statically derivable manifest field against raw
+   `HEAD` objects before construction. Candidate collection stays the accepted
+   executable evidence; static file identity must stop being trusted to it. The
+   "wholly NON-AUTHORITATIVE" label on the evidence stage is too strong until
+   this lands, per the reviewer.
+4. **FUR2's index path**: install the known blob into the real index directly
+   rather than via `git add`, avoiding the clean-filter surface.
+
+**Recommended process change.** This surface has now needed three redesigns, and
+each of my fixes has carried its own defect. The next pass should be a fresh
+session with the plan re-read cold, not continued momentum -- and the
+sterile-Git launcher should be treated as its own reviewed unit rather than
+folded in alongside other work.
