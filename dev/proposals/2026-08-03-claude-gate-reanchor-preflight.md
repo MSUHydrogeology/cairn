@@ -1142,3 +1142,52 @@ person to touch this finds an expiry rather than an assumption.
 it adds no mechanism, weakens no guard, and shortens the life of the residual the
 previous rounds asked be named. I do not think it needs a fourth security read,
 but that is the Maintainer's call, not mine.
+
+## Revised proposal (Round 5) -- expiry mechanics -- 2026-08-03
+
+The Maintainer accepted the posture for today and asked how the expiry would
+**mechanically** function. It would not. Round 4's "named triggers that force
+revisiting" is prose in a document that archives on acceptance — nothing fires,
+and "force" was unearned. That is the same error the security rounds caught
+twice: claiming a protection the mechanism does not provide. Corrected here.
+
+**What the posture actually asserts, corrected by measurement.** All 666 commits
+in this repository carry one author and one committer (the Maintainer), but the
+`Co-Authored-By` trailers carry **eight distinct agent identities across three
+vendors**, as_of 2026-08-03. Candidate code here is *already* multi-party in
+authorship — the External security reviews this proposal is responding to were
+authored by a different vendor's model. So "trusted-contributor" does not mean
+"one party writes the code," which is already false. It means **one human
+reviews and commits everything**. The expiry must watch that boundary, not
+authorship.
+
+**The one trigger that can be mechanical.** Every commit in the range being
+blessed was *committed* by the Maintainer-recorded identity. Currently 666/666,
+so the check is silent today and fires the moment commit authority widens — the
+exact condition the posture rests on. `check` performs it over the
+anchor→HEAD range and, on any variance, refuses with `REVIEW REQUIRED` and routes
+to the manual runbook, exactly as the changed-authority path does. Cheap, no
+false positives on the current tree, and it degrades toward refusal rather than
+toward silence.
+
+**The triggers that cannot be mechanical, and are not dressed up as such.**
+Whether the ceremony runs on a checkout the Maintainer solely controls, and
+whether an adopter has taken the mechanism, are not observable from inside the
+repository. They are recorded where they will actually be read at the moment they
+matter: in `bootstrap/REANCHOR_RUNBOOK.md` (read at ceremony time) and as a
+`dev/PLANNING.md` row (surfaced at session-start orientation and goodnight
+scrubs). **Not in this proposal** — an accepted proposal archives, and archived
+proposals are not read, which is why Round 4's version was inert.
+
+**Rejected: a staleness timer.** A "re-review after N months" refusal is
+mechanical but arbitrary, and it manufactures exactly the failure this proposal
+already lists under *Signals the change is wrong* — a refusal the operator learns
+to route around. A trigger that fires on a real condition change is worth more
+than one that fires on the calendar.
+
+**Consequences for the plan.** The plan lands the committer-identity check with
+the other checks; adds the two non-observable triggers to the runbook edit already
+in scope; and opens the `dev/PLANNING.md` row at plan-open rather than at archive,
+so the row exists before the proposal stops being read. A test pins the check
+firing on a range containing a foreign committer identity and staying silent on
+the current single-identity history.
