@@ -764,3 +764,754 @@ is itself a security-surface change — or that *R1*'s heuristic disagreement is
 security-relevant falsehood rather than a documentation residual — the tier
 should be raised to `required(External)` and I will not argue the point. The
 tier is ratified at Decision; this is a recommendation, not a ruling.
+
+## Review — Claude (Internal, same-agent-type; security lens) — 2026-08-03
+
+**Model**: Claude Opus 5.
+
+**A framing correction before anything else.** I was briefed that this
+proposal had already taken an External security pass with an author Response.
+It has not. `contributor-entry` is still `**Status**: proposed`, and the file
+carries no `## Review` section — the only commit touching it is `91d3013
+dev/proposals: open contributor-entry (successor scope 4/4)`. So this is the
+**first** review of this artifact, not a second opinion layered on one. That
+matters for how much weight it can carry: nothing here has been filtered by a
+prior reader, and the same-agent-type limit below applies with no cross-type
+pass underneath it.
+
+```
+$ grep -n '^## ' dev/proposals/2026-08-03-claude-contributor-entry.md
+27:## Context
+67:## Proposed paths
+72:## Proposal
+386:## Cross-lineage collisions
+436:## Rationale
+461:## Alternatives considered
+499:## Evidence / verification plan
+596:## Residuals and expiry triggers
+706:## Signals the change is wrong
+740:## Plan review tier, and why not External
+```
+
+---
+
+### Steelman
+
+The two gaps are real, and I reproduced both rather than taking them on
+report. There is no root `CONTRIBUTING.md`; `README.md` is 327 lines with no
+*Contributing* heading; and `SECURITY.md` tells a reporter to report
+"privately to the maintainer" while naming no mechanism:
+
+```
+$ awk 'NR>=29 && NR<=35 {printf "%d: %s\n", NR, $0}' SECURITY.md
+29: ## Reporting a vulnerability
+30:
+31: Report suspected vulnerabilities **privately to the maintainer** (do not
+32: open a public issue for an unfixed vulnerability): a hidden instruction in a
+33: template, a way to make the scaffold write outside its target, a bypass of
+34: the SSRF / content-integrity guards, or anything that could subvert a
+35: downstream adopter's agents. Include a reproducer where possible.
+```
+
+The proposal's diagnosis of that section — a stated control with no mechanism
+behind it, the same shape as `PROVENANCE.md`'s unchecked signature — is
+correct, and it is the right thing to fix before the first outside reporter
+rather than after.
+
+Four further things hold up under checking, and I want them on the record
+because reviews that only list defects mislead about the artifact's quality:
+
+* **R1's boundedness claim reproduces, and is if anything understated.** The
+  presence heuristic is real and at the cited line
+  (`bootstrap/_scaffold/upgrade.py:1033`), and the only in-tree caller of
+  `_infer_init_lock_axes` is `_write_init_lock_profile_template` at
+  `bootstrap/_scaffold/upgrade.py:1080`. That function is reached only from
+  `_cmd_init_lock`, behind **two** guards, not the one the proposal names:
+  an early return when a lockfile already exists
+  (`bootstrap/_scaffold/upgrade.py:1125`) and the no-committed-profile test
+  (`bootstrap/_scaffold/upgrade.py:1133`). Cairn has both artifacts, so the
+  path is doubly unreachable here.
+* **The no-DCO argument's premise is true.** There is no CI:
+  `ls -d .github/workflows` → `no such file or directory`; `.github/` holds
+  only `ISSUE_TEMPLATE/`, `PULL_REQUEST_TEMPLATE/`, and `labels.yml`. An
+  unenforced `Signed-off-by:` really would be a second unenforced control.
+* **The licence *quotations* are verbatim-accurate.** Both quoted sentences
+  appear exactly as quoted (`LICENSE-MIT.md` lines 11–12; `LICENSE-CC-BY.md`
+  lines 15 and 21–22). The problem in [I6] below is with the *inference drawn
+  from* them, not with the quoting.
+* **The collision table is complete on `SECURITY.md`.** I swept the `Touches`
+  block of every live proposal; exactly two others name that file
+  (`scan-coverage`, `agent-context-scrub`), matching the table, and the
+  section line numbers `:29` / `:59` / `:72` all check out against
+  `grep -n '^#' SECURITY.md`. `agent-context-scrub` also states at its own
+  line 412 that it does **not** touch `_resolve_interpreter`, so the one
+  behavioural overlap I went looking for is not there.
+
+And the proposal pre-registers the objection it most fears (*Signals*, the
+`R1` bullet) instead of burying it. That is the right instinct and I have not
+tried to punish it for the honesty.
+
+---
+
+### Concerns
+
+#### [I1] The one check the proposal calls its distinguishing negative control cannot fail. (Highest-value finding.)
+
+The proposal designates a specific command as the check that separates it
+from its superseded parent:
+
+> `python bootstrap/scaffold.py --manifest` — run to show the install set is
+> **unchanged**. This is the negative smoke check that distinguishes this
+> proposal from its superseded parent: the parent's Part 4 would have *added*
+> `CONTRIBUTING.md` to the manifest, and this one must not.
+
+`--manifest` cannot show that, because optional templates are not in the
+manifest at all and the manifest does not depend on the dimension profile
+(the six-axis description of the project that drives what gets installed):
+
+```
+$ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python bootstrap/scaffold.py --manifest 2>&1 | grep -in "contributing\|optional\|human_team" || echo "(no hits)"
+(no hits)
+```
+
+The source says why — it takes no profile and returns before any axis is
+resolved:
+
+```
+$ awk 'NR>=198 && NR<=202 {printf "%d: %s\n", NR, $0}' bootstrap/_scaffold/cli.py
+198:     # --manifest is a read-only emit; it needs neither --config nor
+199:     # --target (it is the published catalog of all installable files).
+200:     if args.manifest:
+201:         sys.stdout.write(format_manifest())
+202:         return 0
+```
+
+So the check's output is byte-identical under `solo` and under `small-multi`.
+The parent's Part 4 — the change this is supposed to be a control
+against — would have passed it too. It is a check that returns the same answer
+for every input, which is the same defect shape already found once in this
+batch (`scan-coverage`'s regression guard whose oracle came from the object
+under test).
+
+I also checked the obvious substitute, and it is *also* blind. `--summary`
+does resolve the profile, but it returns at `bootstrap/_scaffold/cli.py:254`,
+before optional-template selection at `bootstrap/_scaffold/cli.py:371`. I ran
+it against a scratch copy of the profile with the axis flipped to
+`small-multi` and no optional-template line appears:
+
+```
+$ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python bootstrap/scaffold.py --summary --config <scratch>/flipped-profile.yml 2>&1 | grep -i "optional\|human_team"
+  human_team   small-multi
+```
+
+**A check that would work.** Either assert on the lockfile block directly
+(`grep '"optional_templates"' dev/.cairn/cairn-lock.yml` → `"optional_templates": [],`),
+or call the selector against Cairn's *own* resolved axes. The latter
+discriminates cleanly — this is the run, against the live profile:
+
+```
+Cairn's RESOLVED human_team : solo
+select_optional_templates() : []
+if flipped to small-multi   : [('optional/CONTRIBUTING.md', 'CONTRIBUTING.md')]
+```
+
+#### [I2] Cairn's own shipped doctrine states, twice, that a solo project ships no `CONTRIBUTING.md` — and the proposal says it changes no doctrine and no template.
+
+This is the design finding, and it is the one I did not expect to find.
+
+The proposal's *Documentation / doctrine surface* section says: "**No
+`doctrine/` change. No `AGENTS.md` change. No template change.**" But the
+proposition this change falsifies is written into two shipped surfaces the
+proposal never cites.
+
+The **core** `AGENTS.md` template — the one every adopter installs — carries
+it inside the human-team-gated region:
+
+```
+$ awk 'NR>=260 && NR<=272 {printf "%d: %s\n", NR, $0}' templates/core/AGENTS.md
+260: <!-- cairn:if human_team in small-multi,large-multi -->
+261: ## Human contributors
+...
+270: duplicating them. Keep the split single-sourced — shared / operational
+271: content lives here; `CONTRIBUTING.md` links to it. A solo-maintainer
+272: project ships no `CONTRIBUTING.md`, and this section is informational.
+```
+
+And the doctrine states it as fact:
+
+```
+$ awk 'NR>=373 && NR<=375 {printf "%d: %s\n", NR, $0}' doctrine/doc-governance.md
+373: currently gated section in the core `AGENTS.md` template is `##
+374: Human contributors`, gated on `human_team in small-multi,large-multi`
+375: — informational to a solo maintainer who ships no `CONTRIBUTING.md`.
+```
+
+Two precise consequences, and I want to be careful not to overstate either:
+
+1. The template sentence is inside a `cairn:if` region, so a *solo* adopter
+   never sees it — the falsified sentence ships only to `small-multi` /
+   `large-multi` adopters and lives in the template source. The
+   `doctrine/doc-governance.md:375` statement is ungated. Cairn is the
+   reference implementation and a solo project; shipping a root
+   `CONTRIBUTING.md` makes both statements false by example, in the one tree
+   an adopter is most likely to read as the worked case.
+2. Because that region is stripped at `solo`, **Cairn's own `AGENTS.md` gains
+   no pointer to the new front door.** `grep -n "CONTRIBUTING" AGENTS.md
+   README.md` returns nothing today, and the proposal adds a pointer only to
+   `README.md`. The template's design puts the `AGENTS.md` ↔
+   `CONTRIBUTING.md` link behind exactly the axis this proposal declines to
+   move, so the file the template calls canonical will not reference the file
+   the proposal calls the front door.
+
+**And the `RULES.md` analogy the whole design rests on is weaker than the
+proposal states.** The proposal says the project-owned root file is "the
+shape `doctrine/doc-governance.md` already sanctions for `RULES.md`" and
+characterises the difference as merely sharing a name with a gated template.
+The doctrine's actual sanction is defined *by* an enumeration that
+`CONTRIBUTING.md` fails:
+
+```
+$ awk 'NR>=121 && NR<=127 {printf "%d: %s\n", NR, $0}' doctrine/doc-governance.md
+121: `RULES.md` is the clean structural answer: an optional, repo-root,
+122: **project-owned** rules file that Cairn **never templates and never
+123: tracks**. It is absent from the install mappings (`_CORE_MAPPINGS`,
+124: the skills mappings, the optional templates, and every module's install
+125: specs), so the lockfile never records it and `scaffold.py upgrade`
+126: never writes a base-cache entry for it — it is *structurally incapable*
+127: of conflicting on upgrade.
+```
+
+"Absent from … the optional templates" is the *load-bearing clause*, and it
+is the one clause `CONTRIBUTING.md` cannot satisfy — it is literally the sole
+entry in `_OPTIONAL_TEMPLATES` (`bootstrap/_scaffold/config.py:257`). So the
+property that makes `RULES.md` structurally safe is precisely the property
+the new file lacks. The proposal is not wrong that a project-owned root file
+is *possible*; it is wrong that doctrine already sanctions this shape for
+this filename.
+
+*What I am asking for*: not necessarily a different design. A Maintainer may
+decide Cairn should ship the file and the two sentences should be corrected.
+But that is a doctrine + core-template edit, which is a different gate class
+than "prose at the entry layer", and the `Touches` line and the plan-review
+tier argument both currently assume it does not exist.
+
+#### [I3] The invariant's named enforcer cannot fail for the reason given.
+
+The proposal's first invariant:
+
+> `dev/.cairn/profile.yml`'s `human_team` value is unchanged, and
+> `dev/.cairn/cairn-lock.yml`'s `"optional_templates": []` stays empty.
+> *Enforced by*: the existing `bootstrap/tests/test_scaffold.py`
+> optional-template gate assertions, which would fail if the selection set
+> changed — they do not exercise this proposal, they *bound* it. This is the
+> honest characterization: the invariant has a pre-existing enforcer, not a
+> new one.
+
+Every assertion in that class feeds the selector a **hand-written literal**;
+not one reads Cairn's own profile or lockfile:
+
+```
+$ awk 'NR>=634 && NR<=648 {printf "%d: %s\n", NR, $0}' bootstrap/tests/test_scaffold.py
+634: class TestOptionalContributing:
+635:     def test_selected_at_small_multi(self) -> None:
+636:         sel = select_optional_templates({"human_team": "small-multi"})
+637:         assert ("optional/CONTRIBUTING.md", "CONTRIBUTING.md") in sel
+638:
+639:     def test_selected_at_large_multi(self) -> None:
+640:         sel = select_optional_templates({"human_team": "large-multi"})
+641:         assert ("optional/CONTRIBUTING.md", "CONTRIBUTING.md") in sel
+642:
+643:     def test_not_selected_for_solo(self) -> None:
+644:         assert select_optional_templates({"human_team": "solo"}) == []
+645:
+646:     def test_not_selected_when_axis_absent(self) -> None:
+647:         assert select_optional_templates({}) == []
+```
+
+The remaining three use `tmp_path` fixtures or read `bootstrap/fidelity-check.md`.
+A sweep of the whole suite for the axis name returns only literals and
+fixtures:
+
+```
+$ grep -rn "human_team" bootstrap/tests/*.py
+… test_config_module.py:216:    axes = {"human_team": "small-multi"}
+… test_install_module.py:172:    axes = {"human_team": "small-multi"}
+… test_scaffold.py:636/640/644/657/676: select_optional_templates({...literal...})
+… test_upgrade.py:60/247: literals written into tmp_path fixtures
+```
+
+They pass, and they would keep passing if someone flipped Cairn's committed
+`human_team` to `small-multi` tomorrow:
+
+```
+$ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python -m pytest bootstrap/tests/test_scaffold.py -k "OptionalContributing" -q -p no:cacheprovider
+7 passed, 59 deselected in 0.03s
+```
+(Python 3.13.13, the canonical interpreter.)
+
+So the tests bound `select_optional_templates`'s *behaviour on synthetic
+input*. They do not bound Cairn's own profile value or its own lockfile
+block, which is what the invariant is about. The sentence "This is the honest
+characterization" is where I would push hardest — it invites the reader to
+stop checking, and the characterisation it certifies is not right. The
+invariant is real and worth stating; it simply has **no** enforcer today, and
+[I1]'s replacement check is what would give it one.
+
+#### [I4] R2's reconciliation mechanism does not exist in the engine.
+
+R2's expiry trigger (b):
+
+> Cairn's `human_team` axis moves to `small-multi` or `large-multi`, at which
+> point the file becomes the scaffold-installed optional template, enters the
+> lockfile, and the accumulated drift is reconciled once via the normal
+> three-way merge. The retained `cairn:slot` markers are what make that
+> reconciliation mechanical.
+
+Three checks, none of which support this:
+
+1. **`upgrade` never selects optional templates.** The only two occurrences
+   of the word in the whole module are a hard-coded empty list and an
+   unrelated comment:
+   ```
+   $ grep -n "optional" bootstrap/_scaffold/upgrade.py
+   1209:        "optional_templates": [], "tokens": dict(tokens), "files": records,
+   1956:    # new *optional* fields -- the equivalent chain would write a literal
+   ```
+   `select_optional_templates` is defined in `config.py` and imported only by
+   `cli.py` (plus the package-level re-export in
+   `bootstrap/_scaffold/__init__.py:119`). An axis move will not cause
+   `upgrade` to notice the template at all.
+2. **On the `install` path the outcomes are skip or clobber, not merge.**
+   ```
+   $ awk 'NR>=260 && NR<=273 {printf "%d: %s\n", NR, $0}' bootstrap/_scaffold/install.py
+   260:     if dst.exists() and not force:
+   ...
+   267:         return (dst, unfilled, slots, "skipped-exists")
+   ...
+   273:     dst.write_text(text, encoding="utf-8")
+   ```
+   Either the project-owned file is left untouched (no reconciliation), or
+   `--force` overwrites it wholesale (reconciliation by destruction). And
+   `write_install_lockfile` refuses outright when a `skipped-exists` file
+   differs from a clean install (`bootstrap/_scaffold/install.py:1494`).
+3. **There is no base to merge from.** A three-way merge needs a recorded
+   ancestor. The proposal's own invariant is that this file never enters the
+   lockfile, so no base-cache entry exists for it. The nearest engine path
+   for a colliding unlocked destination is explicit that it is *not* a merge:
+   ```
+   $ awk 'NR>=451 && NR<=457 {printf "%d: %s\n", NR, $0}' bootstrap/_scaffold/upgrade.py
+   451:             plans.append(FilePlan(
+   452:                 dst_rel, "new-core-blocked", None,
+   453:                 "new core-like file collides with an existing unlocked "
+   454:                 "destination; keep it as a tracked fork "
+   455:                 "(`upgrade --adopt-collisions`) or reconcile by hand, then "
+   456:                 "re-stage", theirs_text, None,
+   ```
+
+The retained `cairn:slot` markers therefore do not make anything mechanical,
+because nothing mechanical runs. Note also that the template is
+**token-substituted**, not verbatim — optional templates are appended with
+`verbatim=False` at `bootstrap/_scaffold/install.py:1467`, and its first line
+is `# Contributing to {{project_name}}` — so even the retained-markers
+argument runs into the engine's own rule that token-substituted files with no
+recoverable token values are handled "review-only on later upgrades, never a
+pretended 3-way merge" (`bootstrap/_scaffold/upgrade.py:1123`).
+
+*The fix is cheap*: R2 is still a legitimate residual, but trigger (b) should
+say "reconciled **by hand**" and drop the merge claim. By the proposal's own
+standard — "a residual with a named trigger is a decision; a residual without
+one is debt" — a trigger that names a mechanism that will not fire is closer
+to debt than to a decision.
+
+Separately, R2's trigger (a) requires "this obligation is written into that
+template's own header." The header's `Deliberately not touched` line names
+`templates/optional/CONTRIBUTING.md`, and the doctrine-surface section says
+"No template change." R2 cannot be satisfied without contradicting both. Pick
+one.
+
+#### [I5] The slot content contradicts the single-source rule stated in *both* shipped surfaces — and R5 under-enumerates what can drift.
+
+The proposal justifies duplicating the test command by quoting the slot
+placeholder ("the slot's own placeholder text explicitly asks for 'how to run
+the tests'"). It does not quote the instruction sitting 30 lines above that
+placeholder in the same file:
+
+```
+$ awk 'NR>=10 && NR<=14 {printf "%d: %s\n", NR, $0}' templates/optional/CONTRIBUTING.md
+10: > **Single-source rule.** The operational detail — the development
+11: > environment, the test command, naming conventions, the commit and
+12: > review workflow — lives in `AGENTS.md` and the `dev/` docs, which the
+13: > AI team also reads. This file *links* to them; it does not copy them.
+14: > If you find yourself duplicating a rule here, link instead.
+```
+
+The core `AGENTS.md` template says the same thing independently (quoted in
+[I2], lines 267–271: "points back here for the shared rules (the development
+environment, the test command, …) rather than duplicating them").
+
+Of the five things the proposal puts in the slot, **three** — the canonical
+interpreter, the dev-dependency command, and the test command — are squarely
+inside "the development environment" and "the test command", the two items
+both surfaces name explicitly. The proposal describes the test command as
+"the one **deliberate duplication** in the file". By my count it is three,
+plus a fourth that the proposal itself calls a restatement ("The paragraph
+**restates** the split").
+
+That matters because **R5 exists only as a consequence of this choice**. R5
+says nothing verifies that `CONTRIBUTING.md` stays true, and names three
+drift-prone facts: "Its stated interpreter version, dev-dependency command,
+and test command." It omits the licence paragraph — the highest-consequence
+one, and the one `AGENTS.md` lists as a **named protected contract** ("The
+by-file license split"). A residual that enumerates the low-stakes
+duplications and skips the protected-contract one is under-scoped.
+
+The template's own rule, if followed, dissolves R5 entirely: link to
+`AGENTS.md` and `bootstrap/DEPENDENCY_BUDGET.md` and there is nothing to
+drift. Since the stated purpose of authoring from the template is
+*dogfooding*, an instance that breaks the template's flagship rule is a poor
+advertisement for it.
+
+#### [I6] The inbound-licence sentence is a two-family statement generalised onto a three-family repository, and "deterministic per file" is stronger than the licences deliver.
+
+The proposal:
+
+> The split is deterministic per file, with the precedence rule stated in
+> both license files. … File kind determines license; nothing about a pull
+> request's *composition* changes that.
+
+and:
+
+> Generalizing "A case study" to "A contribution" is a copy-edit, and it is
+> the whole of the inbound-license term.
+
+Two problems, both reproducible from the licence files.
+
+**(a) The generalisation widens the domain from two families to three.** The
+sentence being generalised is scoped to `case-studies/`, a directory whose
+contents are only prose and code, and it names only two licences:
+
+```
+$ awk 'NR>=101 && NR<=104 {printf "%d: %s\n", NR, $0}' case-studies/README.md
+101: A case study contributed to Cairn is offered under the same license split
+102: as the rest of the repository — CC BY 4.0 for the prose
+103: ([`../LICENSE-CC-BY.md`](../LICENSE-CC-BY.md)), MIT for any code
+104: ([`../LICENSE-MIT.md`](../LICENSE-MIT.md)).
+```
+
+The repository has three families, as `README.md:297` states: "The three
+families never overlap." Applied to *all* contributions, the sentence is
+silent on CC BY-ND material. The proposal's answer for that class is
+procedural — brand-mark changes go as an issue, not a pull request — but that
+is guidance in a different paragraph, not a licence term. A contribution that
+touches `docs/assets/` has no stated inbound term at all. Moving a
+two-family sentence from a two-family directory onto a three-family tree is
+not a copy-edit; it is a scope change to a **named protected contract**, and
+the proposal's own hard constraint ("The paragraph restates the split; it
+introduces no new term") is violated by omission rather than by addition.
+
+**(b) File kind does not in fact determine the licence for two real
+classes.** The licence text is role-based, not extension-based:
+
+```
+$ awk 'NR>=18 && NR<=21 {printf "%d: %s\n", NR, $0}' LICENSE-CC-BY.md
+18: "Other code" includes functional configuration and data files that are
+19: operational parts of the tools — for example `.yml`/`.txt` files such as
+20: `vendor_targets.yml` or `content_scan_*.txt` — as distinct from prose data.
+```
+
+"as distinct from prose data" means a `.yml` is MIT *or* CC BY depending on
+what it does. Likewise `docs/assets/` holds exactly two files under two
+different licences, distinguished only by role:
+
+```
+$ ls docs/assets/
+cairn-banner.svg
+dual-review-independence.svg
+```
+
+So a contributor adding a new `.yml` under `templates/`, or a new diagram
+under `docs/assets/`, genuinely must classify their own file — the thing the
+proposal says never happens ("the contributor never chooses"). This is the
+kind of sentence a scientist-contributor will read literally and then be
+wrong about. The honest version says: code is MIT wherever it lives;
+documents and explanatory visuals are CC BY; the brand mark is CC BY-ND and
+is not accepted by pull request; **if you are unsure which family your file
+is in, ask in the issue before sending it.**
+
+#### [I7] The disclosure channel's deciding property is asserted and verified nowhere — including by the plan's own live check. **COULD NOT REPRODUCE** in-tree.
+
+The proposal picks the channel on a permission property, and says so
+explicitly:
+
+> **Say who can read it, in one sentence** — access follows the repository's
+> own permissions, which is the property that makes this the right choice.
+
+and:
+
+> adding a maintainer to the repository grants access, removing them revokes
+> it, and no document is edited either time.
+
+That property is the entire answer to "does the channel survive roster
+growth", and I can find nothing in the tree that establishes it. There is no
+in-tree documentation of the forge's advisory permission model at all:
+
+```
+$ grep -rn -i "private vulnerability\|security advisor\|draft advisor" --include='*.md' .
+… only hits are inside the proposal itself and one unrelated line in agent-context-scrub
+```
+
+The author's own *Known omissions* #3 says the settings surface was not
+assessed. And the plan's compensating control does not close the gap either —
+it verifies **presence**, not **readership**:
+
+> **The live channel check** — after the Maintainer enables private
+> vulnerability reporting, confirm the *Report a vulnerability* control is
+> actually present on the repository before the prose naming it lands.
+
+I am flagging this rather than asserting the opposite because I cannot
+reproduce third-party platform behaviour from this repository, and this
+lineage has been burned twice by reviews that reasoned where they should have
+run something. What I can say precisely: **the proposal's forge-permission
+claim is load-bearing, is stated as fact, and is backed by nothing in the
+record.** My knowledge-based caution — flagged as *not reproduced*, and to be
+treated as a hypothesis for the Maintainer to check, not a finding — is that
+on GitHub, draft security advisories are visible to repository **admins**,
+not to every collaborator with write access, so "adding a maintainer grants
+access" may hold only for the admin role. If that is right, the roster-growth
+property is narrower than claimed and the second maintainer would need an
+explicit permission grant — a settings edit, which is the same class of
+recurring manual step the personal-email option was rejected for.
+
+*Concrete ask*: extend the plan's live check from "the control is present" to
+"the control is present **and** a named non-admin collaborator can/cannot see
+a test draft advisory", and write the sentence in `SECURITY.md` to match what
+is observed. That is one extra observation at the same moment the Maintainer
+is already in the settings, and it converts the deciding claim from asserted
+to verified.
+
+#### [I8] The primary prose gate silently skips the new file at the moment you would run it.
+
+The proposal names `python scripts/check_cairn.py` as "the primary check …
+over all four changed files". Its discovery is `git ls-files`:
+
+```
+$ awk 'NR>=180 && NR<=185 {printf "%d: %s\n", NR, $0}' scripts/check_cairn.py
+180: def tracked_markdown(root: Path) -> list[Path]:
+181:     out = subprocess.run(
+182:         ['git', 'ls-files', '*.md'], cwd=str(root),
+...
+185:     return [root / line for line in out.stdout.splitlines() if line.strip()]
+```
+
+`git ls-files` lists the index, so a freshly written, not-yet-added file is
+invisible. Demonstrated in a throwaway repo (no writes to the Cairn tree):
+
+```
+$ ls
+CONTRIBUTING.md  TRACKED.md
+$ git ls-files '*.md'
+TRACKED.md
+```
+
+The run would print `check_cairn: OK` with a file count that silently
+excludes the deliverable. And Cairn's own commit discipline squeezes the
+workaround: `AGENTS.md` forbids leaving a `git add` exposed across tool calls
+and prescribes `git add <paths> && git commit <paths>` in one invocation, so
+there is no sanctioned staged-then-verify window for a new file.
+
+*Fix is one word*: `check_cairn` already takes explicit paths
+(`scripts/check_cairn.py:519`, `'files', nargs='*'`). Run
+`python scripts/check_cairn.py CONTRIBUTING.md SECURITY.md README.md`. The
+proposal already does this correctly for `claim_check`; the bare-invocation
+form is the one that fails. (A related ordering constraint the proposal does
+not state: `README.md`'s new `[CONTRIBUTING.md](CONTRIBUTING.md)` link needs
+the target file to exist on disk when the gate runs, so the plan must not
+land the pointer in a commit ahead of the file.)
+
+#### [I9] Two pieces of the router content are wrong about the tree as it stands. (Lower severity; the router is the deliverable's substance.)
+
+The proposal describes four contribution shapes. Two descriptions do not
+match the tree:
+
+* **The fold-back route.** The proposal sends a fold-back to
+  "`.github/PULL_REQUEST_TEMPLATE/foldback.md` and its export-safety gate",
+  and describes the issue forms as "generic `bug` / `friction` / `gap` /
+  `wish`". There are **five** issue forms, and one of them is the fold-back
+  form — which is the *active-surfacing* route:
+  ```
+  $ find .github -type f | sort
+  .github/ISSUE_TEMPLATE/bug.md
+  .github/ISSUE_TEMPLATE/foldback.md
+  .github/ISSUE_TEMPLATE/friction.md
+  .github/ISSUE_TEMPLATE/gap.md
+  .github/ISSUE_TEMPLATE/wish.md
+  .github/PULL_REQUEST_TEMPLATE/foldback.md
+  .github/labels.yml
+  ```
+  `.github/ISSUE_TEMPLATE/foldback.md`'s front matter reads "A Cairn-portable
+  improvement surfaced from a deployment's fold-back ledger via the
+  active-surfacing protocol". Routing a first contributor to the PR template
+  only may send them down the wrong path.
+* **The dev-dependency pointer promotes a false CI claim to the entry
+  layer.** The slot points contributors at
+  `pip install -r bootstrap/requirements-dev.txt`. That file's own header
+  says its contents "gate the CI floor checks" and "See
+  doctrine/runtime-contract.md for the runtime contract and floor CI check
+  details" — and there is no CI (`.github/workflows/` does not exist). The
+  sibling `gate-claims-vs-enforcement` is systematically removing exactly
+  this language (its row A1 fixes the same claim at
+  `bootstrap/DEPENDENCY_BUDGET.md` line 101), but
+  `bootstrap/requirements-dev.txt` is **not** in that proposal's `Touches`
+  line, so it falls between the two scopes. Net effect: this proposal newly
+  routes the first outside contributor to an untrue claim, in the same change
+  whose stated purpose is closing claim-outruns-enforcement gaps.
+
+#### [I10] Implementation constraint on the `local-env.json` sentence. (Minor; raised as a bound on the prose, not a defect in the design.)
+
+`AGENTS.md` names `dev/.cairn/local-env.json` an "untracked, gitignored,
+lockfile-uncovered **executable trust root**". The proposal is right that
+documenting it changes nothing about it, and the behaviour it describes is
+accurate — `_resolve_interpreter` returns
+`sys.executable, "fallback"` when the file is absent
+(`templates/skills/_lib/lifecycle.py:423`) and the caller warns
+(`templates/skills/_lib/lifecycle.py:799`).
+
+The constraint I would put on the implementation: the sentence must **not**
+include a sample JSON body, and must say plainly *re-run the bootstrap; never
+hand-author this file*. A contributor-facing document that shows the shape of
+a file which names a binary the routines then execute is a paste target, and
+the reader most likely to hit the fallback warning is precisely the
+first-time contributor this file is written for. The proposal already says
+"hand-authoring it is not a routine step" — I am asking for that to be a hard
+"do not", and for no schema example.
+
+---
+
+### Covered
+
+Each lens below was swept, with the command that proves the sweep. All
+commands run from `/Users/kendal30/Code/cairn`, Python 3.13.13
+(`~/conda_envs/lhm/bin/python`), `PYTHONDONTWRITEBYTECODE=1`. Nothing was
+written into the repository — `git status --short` after every run showed
+only the two pre-existing untracked entries (`.claude/`,
+`dev/measurement/snapshots/`).
+
+* **Both stated gaps** — `wc -l README.md SECURITY.md`; `grep -n '^#' README.md`
+  (no *Contributing* heading in 327 lines); `grep -n "CONTRIBUTING" AGENTS.md README.md`
+  (no hits); `awk` over `SECURITY.md` lines 29–35.
+* **Every cited `file:line` in the proposal** — opened, not inferred:
+  `dev/.cairn/profile.yml:19`, `dev/.cairn/cairn-lock.yml:598`,
+  `bootstrap/_scaffold/config.py:257`, `bootstrap/_scaffold/upgrade.py:1033`,
+  `bootstrap/verify_integrity.py:62`, `scripts/quality_gate.py:208`,
+  `templates/optional/CONTRIBUTING.md:44`, `case-studies/README.md:101`,
+  `.gitignore` line 7, `dev/collaboration_agreement.md:15`,
+  `templates/skills/_lib/lifecycle.py:387`, `bootstrap/DEPENDENCY_BUDGET.md:127`.
+  All resolve and say what the proposal says they say.
+* **New failure mode the proposal does not name** — [I2] (two shipped
+  surfaces falsified) and [I9] (entry-layer promotion of a false CI claim),
+  found by grepping `templates/core/` and `doctrine/` for the filename rather
+  than trusting the `Touches` line.
+* **Boundaries** — *missing file*: [I8] (`git ls-files` on an untracked
+  deliverable, demonstrated in a scratch repo); *file already exists*: [I4]
+  (`skipped-exists` vs `--force` clobber at
+  `bootstrap/_scaffold/install.py:260`–`273`); *zero/empty*: the
+  `optional_templates: []` invariant probed against the live profile;
+  *N>>1 / roster growth*: [I7]; *axis flipped*: scratch-copy profile run
+  through `--summary` and `select_optional_templates`.
+* **Claim stronger than mechanism** — [I1], [I3], [I4], [I6], [I7]; each
+  quotes the claim verbatim before showing the mechanism.
+* **Vacuous check** — [I1] (`--manifest` is axis-independent; verified by
+  `grep` over its output and by `bootstrap/_scaffold/cli.py:198`–`202`) and
+  [I3] (`pytest -k OptionalContributing`, 7 passed, all inputs literal).
+* **Sibling-proposal collisions** — swept the `Touches` block of every
+  `dev/proposals/2026-*.md` for `SECURITY.md` / `README.md`; the table is
+  complete. `grep -n "README.md" dev/proposals/2026-08-03-claude-gate-claims-vs-enforcement.md`
+  returns 5 hits, all `bootstrap/tests/fixtures/skills/README.md` or
+  `doctrine/README.md` — the proposal's claim holds. Checked
+  `agent-context-scrub` for overlap on `_resolve_interpreter`; its own line
+  412 disclaims it.
+* **The proposal's own claim-check hygiene** —
+  `python scripts/claim_check.py dev/proposals/2026-08-03-claude-contributor-entry.md`
+  → `OK, no claim-check flags.`
+* **Cited precedents** — the `Sync note` pattern really exists
+  (`dev/proposals/_template.md:52`); the `RULES.md` project-owned quote is
+  verbatim (`doctrine/doc-governance.md:122`).
+
+### Not covered / low confidence
+
+* **No cross-type independence.** I am Claude; the author is Claude. This is
+  an Internal review by Cairn's definition — same agent type, fresh session —
+  and it carries **none** of the structural independence an External read
+  provides. I share the author's priors, its vocabulary, and very likely its
+  blind spots. Findings [I2] and [I6] are the ones I would least trust a
+  same-type reviewer to have caught reliably, which is a reason to want a
+  different reader, not a reason to be reassured by this one. Compounding it:
+  as noted at the top, **no External pass exists on this artifact**, so there
+  is no cross-type read underneath this one.
+* **Third-party platform behaviour — not reproduced.** [I7]'s permission
+  model, and the author's own inference about `PULL_REQUEST_TEMPLATE/`
+  directory selection behaviour (their *Known omissions* #2). Neither can be
+  established from this tree and I did not attempt network verification.
+* **Legal effect — out of my competence.** [I6] is a *documentation
+  completeness and internal-consistency* finding: the sentence names two of
+  three families and the licences classify two file classes by role rather
+  than kind. I am not offering a view on what CC BY inbound plus CC BY-ND
+  outbound means as a matter of law. That question, if it matters, needs a
+  human.
+* **The full suite was not run.** I ran only the 7-test optional-template
+  class, with `-p no:cacheprovider` to avoid writing into the tree. I assert
+  no whole-suite figure.
+* **The prose itself does not exist yet.** Every finding about
+  `CONTRIBUTING.md`'s content is a finding about the *specification* in the
+  proposal. The implemented file could be better or worse than specified, and
+  [I5], [I6], [I9], [I10] are all things a careful implementation could fix
+  without a proposal revision — I have flagged them at proposal stage because
+  the proposal states them as settled design.
+* **Not assessed**: whether `README.md`'s existing `## License` section at
+  `README.md:273` should be the canonical inbound reference instead of a new
+  paragraph (it is already a correct three-family statement); the
+  contribution-readiness axis question, which the proposal deliberately poses
+  without answering and which I agree is out of scope; the plan chunking,
+  which does not exist yet.
+
+### Second-round recommendation
+
+**Recommended — one further round, and I recommend raising the tier.**
+
+*Why a second round.* [I1] and [I3] mean the proposal's *verification
+section* — not its prose, its verification — currently contains two checks
+that cannot fail for the reasons given. In a repository whose product is
+verified claims, and in a lineage opened specifically because
+`PROVENANCE.md` promised what its verifier does not check, shipping a scope
+whose own negative control is inert would be a third instance of the named
+failure class. Both are cheap to fix (one command substitution, one honest
+"no enforcer today"). [I4] is likewise a two-word fix.
+
+[I2] is the one that needs a **Maintainer decision, not an author response**.
+Either Cairn ships the file and corrects `doctrine/doc-governance.md:375`
+plus the core-template sentence — which makes this a doctrine + core-template
+change with a different gate class than the one argued in *Plan review tier*
+— or it does not ship the file in this form. The proposal cannot resolve that
+by appending a Response, because either resolution changes its `Touches`
+line.
+
+*On the tier.* The proposal offers the escalation itself ("If the Internal
+reviewer … judges that publishing a security-disclosure channel is itself a
+security-surface change … the tier should be raised to `required(External)`
+and I will not argue the point"). I am taking that offer, but for a different
+reason than the one offered. The disclosure channel is not what worries me —
+[I7] is a live-check problem, and the proposal is right that a reviewer
+cannot detect an unenabled setting. What warrants External is [I2]: the
+change touches Cairn's **shipped adopter-facing doctrine and its core
+template** by falsifying statements in both, which is squarely inside the
+loop-fidelity surface, and it does so *invisibly* — the proposal's own
+collision analysis is file-and-section based and did not see it. That is
+exactly the class of miss a same-type Internal read is worst at catching, and
+I only found it by grepping for the filename outside the `Touches` set. A
+cross-type reader should confirm or demolish [I2] before this lands.
+
+*What I am not asking for.* I am not asking the author to reopen the `RULES.md`
+framing, the CLA/DCO reasoning, the choice of forge channel, or the decision
+not to fix the presence heuristic here. Those are argued well and I could not
+break them. Nor do I think [I5], [I6], [I9], or [I10] need a round of their
+own — they are implementation constraints and can ride the same revision.
