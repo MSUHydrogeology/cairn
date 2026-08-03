@@ -1,6 +1,16 @@
 <!-- cairn-internal-ref-allow: doctrine/rationale.md doctrine/proposals.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- Forward-reference paths this proposal plans to create; they materialize in the implementing plan. They are also named in the Proposed paths block, whose marker only exempts that block -- these citations recur in the header, the Proposal, and the Evidence sections. -->
 <!-- claim-check-allow: bootstrap/tests/_gate_preflight.py, bootstrap/tests/test_gate_preflight.py, dev/plans/gate-reanchor-preflight.md -->
+<!-- link-marker maintenance 2026-08-03: the Author-accounting section writes its
+     public-path -> test mapping as a relative markdown link, per the proposal
+     template's instruction that the link checker verify the cited test exists.
+     For a forward-referenced test that is not yet on disk the instruction cannot
+     be satisfied, so the target is exempted below rather than the (append-only)
+     section being edited. The sibling transition-lint / stage-commit-patterns
+     proposals avoid this by writing the same mapping as a plain backticked path;
+     that is the better convention and the implementing plan should adopt it.
+     Drop this directive once the test lands. -->
+<!-- link-check-allow: ../../bootstrap/tests/test_gate_preflight.py -->
 
 # A reviewed pre-flight for the supervised gate re-anchor (Phase 0)
 
@@ -296,3 +306,106 @@ scripts/check_cairn.py` for the runbook prose edit. **N/A**: the example gallery
   here so the reviewer can hold the plan to it.
 * **A second adopter needing this.** Would falsify alternative 4's scoping and
   require re-opening the ship-to-adopters question.
+
+## Amendment -- Claude (author) -- 2026-08-03
+
+**Model**: Claude Opus 5
+
+Appended, not merged into the sections above, per the append-only rule. This
+records an incident that occurred **after this proposal was committed
+(`deceb51`) and before any review**, and it corrects the proposal's own threat
+model. The reviewer should read the correction in *2* as the substantive change;
+the rest is evidence and consequent requirements.
+
+### 1. The hazard stopped being hypothetical
+
+While the Maintainer was running the very ceremony this proposal describes, the
+scratchpad checker's three emitted steps were pasted into a shell as three
+independent lines:
+
+```
+cp <tmp>/gate_manifest.json bootstrap/tests/fixtures/gate_manifest.json
+git commit bootstrap/tests/fixtures/gate_manifest.json      # (author the message yourself)
+git update-ref refs/cairn/gate-anchor $(git rev-parse HEAD)
+```
+
+The `cp` succeeded. The `git commit` opened an editor and was **aborted** (empty
+message, so git declined the commit). The `git update-ref` then **ran anyway**,
+because nothing sequenced it behind the commit's success — advancing
+`refs/cairn/gate-anchor` to `deceb51`, an ordinary proposal commit containing no
+blessing and no regenerated manifest.
+
+The trust root spent that interval pointing at a commit that had never been
+blessed. Repaired in `bf08f62`, whose message carries the incident record because
+custom refs keep no reflog and there was therefore no other ledger.
+
+Two things worked and should be credited: `_gate_manifest.py verify` reported
+`HOLD` continuously and correctly throughout ("working-tree manifest differs from
+the immutable `deceb51` object"), so the bad state was **loud, not silent**; and
+the installed manifest was independently confirmed byte-identical to a re-produced
+candidate before the repair committed it.
+
+### 2. The correction — this proposal had the threat model wrong
+
+The body above frames the risk as *a check that wrongly passes*, and treats the
+drafted commit message and emitted commands as a convenience ("Two outputs the
+Maintainer uses directly"). That framing is now falsified by events.
+
+In this incident **every check behaved correctly**. The interpreter check, the
+authority-module identity check, the hash-equality check, the scope derivation —
+all right. The damage came entirely from **how the verified result was handed
+over**: unsequenced steps, plus an instruction to hand-author a commit message
+whose mandated content the tool had already computed and the human could not
+reasonably retype. The Maintainer identified that second half independently,
+before the ref state was discovered, observing that the audit trail *"should have
+some very specific information, so I don't think this instruction about authoring
+the message myself is correct."*
+
+So the handoff is not a convenience surface. **It is a safety-critical surface,
+and on the evidence it is the more dangerous one** — a wrong check has to survive
+review, while a badly-sequenced handoff bypasses review entirely by mutating a
+trust ref through a shell the checker never sees. The security review should
+weight it accordingly rather than treating it as ergonomics, and should ask
+whether emitting shell text for a human to paste is the right interface at all,
+or whether the ceremony wants something the operator cannot partially execute.
+
+### 3. Consequent requirements added to the proposed design
+
+Binding requirements, not preferences — each maps to a test:
+
+* **Single chain, not steps.** The install, the commit, and the ref advance are
+  emitted as one `&&`-chained command. An aborted or failed commit must make the
+  ref advance unreachable. Emitting them as separately-runnable lines is the
+  defect above and is prohibited.
+* **The tool drafts the commit message; the human never composes it.** Written to
+  a file and passed with `git commit -F`, so no editor opens and the
+  runbook-mandated audit trail (six authority hashes, both anchor SHAs, live
+  scope) cannot go missing. The Maintainer reviews and may add to it.
+* **`git update-ref <ref> HEAD`, never `$(git rev-parse HEAD)`** — the command
+  substitution invites resolution before the commit exists.
+* **Two new refusals.** `anchor == HEAD` (nothing to bless — and the signature of
+  exactly this half-run) and `anchor is not an ancestor of HEAD` (an orphaned
+  trust root, from a rebase or a bad ref move).
+* **Superseded-anchor honesty.** When the ref has been moved without a blessing,
+  the drafted message must record the last *legitimately blessed* anchor as `P`,
+  and disclose the erroneous intermediate. `bf08f62` is the worked example.
+
+### 4. Added to the verification plan
+
+* A test that an aborted commit cannot be followed by a ref advance — the
+  incident, pinned.
+* A test that the emitted command text contains no separately-runnable ref
+  advance (a text-level assertion on the emitted chain; crude, but it is the
+  property that failed).
+* A test for each new refusal in *3*, each shown non-vacuous by mutation.
+* An assertion that the drafted message contains all six hashes and both SHAs —
+  already listed in the body, now load-bearing rather than a nicety.
+
+### 5. What this does not change
+
+The circularity analysis, the alternatives, and the read-only-by-construction
+constraint stand as written. Alternative 2 (a manual checklist, no new code)
+arguably gains from this incident, since the failure was in human-executed shell
+steps rather than in code — but it also loses, because a checklist is *entirely*
+human-executed steps and offers no place to put the `&&`. The reviewer should
+weigh both directions rather than take this amendment as settling it.
