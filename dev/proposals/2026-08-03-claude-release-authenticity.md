@@ -1397,3 +1397,521 @@ Naming that boundary rather than quietly widening the scope is the point.
 
 **Status.** `reviewed` -> **`revised`**, on the Part A correction above. No
 finding in this review caused the move; re-running one of its findings twice did.
+
+## Review -- Claude (Internal, same-agent-type; security lens) -- 2026-08-03
+
+**Model**: Claude Opus 5.
+
+**Verdict**: REVISE, with one **BLOCKING** finding ([I1]) that must be resolved
+at proposal time rather than deferred to the plan, because the superseding
+Decision binds Part B as settled design and [I1] says the settled design is
+wrong on one row of its own class table.
+
+Every command below was run today against the live tree, git 2.53.0, in
+throwaway repositories under the session scratch directory with freshly
+generated throwaway SSH keys, `GIT_CONFIG_GLOBAL` and `GIT_CONFIG_SYSTEM`
+neutralised to empty files so no ambient configuration could carry a result. No
+key material belonging to the Maintainer was used and nothing was written into
+the Cairn tree. Where I could not reproduce something I say so.
+
+### Steelman
+
+The core structural move is right, it is the hard part, and it holds under an
+independent reconstruction.
+
+I rebuilt the hostile candidate from scratch — attacker signing key, an
+attacker-committed roster naming the *genuine* principal string, and the
+candidate's own `.git/config` pointing both `gpg.ssh.allowedSignersFile` and
+`gpg.ssh.program` at attacker-controlled files in its own tree — and ran the
+revised four-command bootstrap against it, with a witness file recording every
+execution of the forging program:
+
+```
+$ git init --bare -q "$V/verify.git"
+$ git -C "$V/verify.git" fetch "$LAB/hostile" 'refs/tags/v0.4.0:refs/tags/v0.4.0'
+From .../ra-lab/hostile
+ * [new tag]         v0.4.0     -> v0.4.0
+fetch rc=0
+$ git -C "$V/verify.git" -c gpg.ssh.allowedSignersFile="$LAB/trusted_signers" verify-tag v0.4.0
+Good "git" signature with ED25519 key SHA256:AR+EbHSO6nLnvX6D4qLNqruLhEGPPkzvYzVlTmRz5Pw
+No principal matched.
+verify rc=1
+forger executed at any point? NO
+```
+
+Fetching into an adopter-created bare repository does escape the candidate's git
+context: the forging verifier never ran, and the forged key was refused. Contrast
+the same candidate verified *in place* with the genuine roster supplied by `-c`,
+exactly as [IDN1]'s satisfier prescribes — and note this also settles the author's
+correction to the External review's [G2] exhibit, which I could otherwise not
+have taken on trust:
+
+```
+$ git -C $LAB/hostile -c gpg.ssh.allowedSignersFile="$LAB/trusted_signers" verify-tag v0.4.0
+Good "git" signature for maint@example.org with ED25519 key SHA256:FORGEDFORGEDFORGED
+rc=0
+forger executed? YES
+--- what git asked the forger to do ---
+ARGS: -Y find-principals -f .../trusted_signers -s /var/folders/.../.git_vtag_tmpDAoY4u -Overify-time=20260803170224
+ARGS: -Y verify -n git -f .../trusted_signers -I maint@example.org -s /var/folders/.../.git_vtag_tmpDAoY4u -Overify-time=20260803170224
+```
+
+The author was right and the External reviewer's pasted exhibit was not: a forger
+emitting the `Good "git" signature` line on **stderr** exits 1; the identical line
+on **stdout** yields exit 0. My first attempt used a naive forger and got `rc=1`,
+which is precisely the "passes for the wrong reason" vacuity the Response warns
+the plan's test about. That warning is correct and load-bearing.
+
+Part D's rotation mechanism also reproduces, including the part the whole
+mechanism rests on:
+
+```
+$ printf 'maint@example.org valid-before="20230101" %s\n' "$(cut -d' ' -f1,2 maint_key.pub)" > retired_signers
+$ git -c gpg.ssh.allowedSignersFile=retired_signers verify-tag v0.1.0-old   # tagger 2021-05-05
+2021-dated tag  rc=0
+$ git -c gpg.ssh.allowedSignersFile=retired_signers verify-tag v0.3.0       # tagger today
+today-dated tag rc=1
+```
+
+And the premise reproduces exactly, down to the SHA:
+
+```
+$ bash bootstrap/container/verify-ref.sh . v0.3.0
+verify-ref: OK — release tag 'v0.3.0' -> 12ec2ad28f22a7d3d9c19ce67e78d86cc625757a
+verify-ref rc=0
+$ git verify-tag v0.3.0
+error: no signature found
+git verify-tag rc=1
+```
+
+```
+$ bash bootstrap/container/verify-ref.sh <attacker-repo> HEAD
+verify-ref: OK — commit pin 823184c7aafb06d42d4a8894ba9d61a145bd3b8a (no exact tag; Maintainer-approved commit)
+```
+(same line for the full SHA and for the 4-character abbreviation `8231`; commit
+authored by `Attacker <attacker@evil.example>`, unsigned.)
+
+The claim-level bookkeeping is also honest. Byte-parity of the shipped module and
+its self-hosted twin reproduces (`sha256:b838724c729a9e37…` for both). The
+sibling-collision note is accurate: `templates/modules/team-gated/security-review.md`
+line 62 is the "wire a linter" paragraph and line 169 is the provenance
+restatement — different sentences, as claimed. `bootstrap/UPGRADE.md` line 225
+carries "Maintainer-approved release commits" as stated. `FROZEN-NEW` semantics
+are as described (`bootstrap/tests/_gate_manifest.py` line 366: "new gate/test
+file — allowed, recorded"), and `frozen_files` held exactly 162 entries at the
+proposal's own commit.
+
+This is an unusually well-evidenced proposal. The findings below are what survived
+that.
+
+---
+
+### [I1] BLOCKING — the exact-tag resolver binds the caller's ref to a tag *object*, but not to the *name that object was signed under*. A hostile mirror that never touches the signing key gets `exit 0`.
+
+**The claim.** Part B's class table asserts:
+
+> | **lightweight** tag | REFUSED, with its own message naming the distinction | not an object; carries no signature; anyone with push access can move it |
+
+and the glossary that produces that row asserts:
+
+> * **Lightweight tag** — *not* an object: just a name pointing straight at a
+>   commit, like a bookmark.
+
+The second sentence is the false premise. A lightweight tag is a ref pointing at
+*any* object — including an **annotated tag object**. The specified resolver,
+`git rev-parse --verify "refs/tags/<ref>^{tag}"`, refuses a lightweight tag only
+when it points at a non-tag object. It accepts one that points at a tag object,
+and `git verify-tag` never compares the ref name against the name inside the
+signed payload.
+
+**The consequence.** An attacker who holds the forge account but **not** the
+signing key can publish any past genuinely-signed tag object under any new
+version name, and the documented four-command bootstrap returns exit 0 with a
+good signature from the genuine maintainer key. I built the forge-side repository
+as a bare clone, which is the shape a forge actually serves:
+
+```
+$ git clone -q --bare "$LAB/cand" "$LAB/mirror"
+$ git -C "$LAB/mirror" update-ref refs/tags/v0.5.0 "$(git -C $LAB/cand rev-parse refs/tags/v0.3.0)"
+
+=== adopter runs the documented four-command bootstrap, asking for v0.5.0 ===
+$ git -C "$V/verify.git" fetch "$LAB/mirror" 'refs/tags/v0.5.0:refs/tags/v0.5.0'
+fetch rc=0
+$ git -C "$V/verify.git" -c gpg.ssh.allowedSignersFile="$LAB/trusted_signers" verify-tag v0.5.0
+Good "git" signature for maint@example.org with ED25519 key SHA256:KU/c8lGmOcMnL1PyJNkVG6UmdHi4xXsgXSlEeQ0PTl8
+verify rc=0
+--- and the proposal Part B resolver agrees it is an annotated tag ---
+$ git -C "$V/verify.git" rev-parse --verify 'refs/tags/v0.5.0^{tag}'
+e4d52de4c8482df65ad240b5f18049230619c25d
+--- but the signed payload says: ---
+$ git -C "$V/verify.git" cat-file tag v0.5.0
+object 80e3c25696704cb1ae5a7ee5e1e0f399f9cc15b0
+type commit
+tag v0.3.0
+```
+
+The adopter asked about `v0.5.0`. The signed object says `v0.3.0`. Exit code 0.
+The bootstrap's own instruction is *"Judge the EXIT CODE, never the text"*, so
+the one place the real name appears — the payload echoed by `git tag -v` — is
+the place the adopter has been told not to read.
+
+**Why this is a finding and not a re-raise.** Nothing in the proposal, the
+External review, or the Response mentions the tag object's embedded name; `grep
+-n -i "embedded\|cat-file tag\|name field\|tag name"` over the proposal returns
+only three hits, none of them about this. And this is [IDN2] limb 2 in its own
+words — *"the output must answer the question that was asked"* — surviving the
+resolver written to close it. The author already caught one recurrence of this
+shape in the Revised proposal ("I fixed the resolver and left the same shape
+standing three sections earlier in my own document"). This is a third instance,
+inside the fixed resolver itself.
+
+It also silently defeats Part D. Substitution reuses the old object with its old
+tagger timestamp, and `valid-before` is evaluated against that timestamp — so a
+rotated-out key's tags stay substitutable forever. That is adjacent to RA2 but is
+not RA2: RA2 requires holding the compromised key, this requires no key at all.
+
+**It also breaks two stated invariants.** *"The caller's ref is the ref
+reported"* — the ref reported is `v0.5.0` and the ref signed is `v0.3.0`. And the
+contract sentence, *"an adopter can establish, from outside the artifact, that a
+Cairn release was signed by Cairn's maintainer"* — what the adopter establishes
+is that *some* Cairn tag object was signed, not that *this version* was. For a
+project about to mint a DOI per release, "which release did I verify" is the
+whole question.
+
+**Recommended fix, verified.** Bind the ref to the signed name. One extra command:
+
+```
+$ check_name () {
+    obj="$(git -C "$1" rev-parse --verify "refs/tags/${2}^{tag}" 2>/dev/null)" || { echo "REFUSED: not an annotated tag"; return 1; }
+    embedded="$(git -C "$1" cat-file tag "$obj" | awk '/^tag /{print $2; exit}')"
+    [ "$embedded" = "$2" ] || { echo "REFUSED: ref '$2' resolves to a tag object whose signed name is '$embedded'"; return 1; }
+    echo "name-bound OK: $2"; }
+--- substituted ref ---
+REFUSED: ref 'v0.5.0' resolves to a tag object whose signed name is 'v0.3.0'
+rc=1
+--- genuine ref (must still pass) ---
+name-bound OK: v0.3.0
+rc=0
+```
+
+It discriminates, it does not break the honest case, and it belongs in **both**
+the `bootstrap/PROVENANCE.md` bootstrap block and `bootstrap/container/verify-ref.sh`
+— the script inherits the defect because it inherits the resolver. Two class-table
+rows need rewording with it: the lightweight row (refusal is *by object type*, not
+by tag class) and a new row for name substitution. The glossary sentence needs
+correcting too, since it is the premise that produced the wrong row.
+
+Fairness note: the resolver *is* a strict improvement over `git describe
+--exact-match --tags`, which I confirmed still picks an arbitrary tag from a
+commit (`v0.3.0-alt`, given three tags on one commit) and still reports a
+lightweight tag as a "release tag". [I1] is that the replacement closes most of
+limb 2, not all of it.
+
+---
+
+### [I2] REVISE — the default flip makes two of `acceptance.sh`'s negative regression pins vacuous, and the proposal names only the one call site that fails loudly.
+
+The proposal says of `bootstrap/container/acceptance.sh`:
+
+> it currently calls the script with no ref and requires exit 0; that call site
+> is updated in the same change
+
+Singular. There are five invocations, and they split into two kinds:
+
+* `acceptance.sh` line 55 and line 79 are **positive** assertions (`|| fail`) —
+  they break loudly the moment provenance mode refuses `HEAD`, so an implementer
+  will find and fix them.
+* `acceptance.sh` line 81, line 84 and line 62 are **negative** assertions
+  (`&& fail` / `if … then fail`) — they pass whenever the script refuses, *for
+  any reason*.
+
+Once provenance mode is the default, `HEAD` is refused unconditionally, so lines
+81 and 84 pass without the dirty-surface check existing at all. I demonstrated
+this by writing a stub that implements only "provenance mode refuses HEAD" and
+has the dirty/untracked build-surface check **deleted entirely**, then replaying
+those two lines verbatim:
+
+```
+=== replaying acceptance.sh lines 81 and 84 verbatim against the STUB ===
+LINE 81 PASSES -- but the dirty check does not exist in this stub
+LINE 84 PASSES -- but the dirty check does not exist in this stub
+```
+
+Line 62 has the same shape for the Codex S5 branch pin: the specified provenance
+resolver refuses a branch name because it is not an annotated tag, not because
+the branch guard fired —
+
+```
+$ for R in main HEAD v0.3.0; do git rev-parse --verify "refs/tags/${R}^{tag}"; done
+main     -> fatal: Needed a single revision
+HEAD     -> fatal: Needed a single revision
+v0.3.0   -> e4d52de4c8482df65ad240b5f18049230619c25d
+```
+
+— so `bootstrap/container/verify-ref.sh` lines 31-39 could be deleted wholesale
+and line 62 would still report `ok`.
+
+This is exactly the shape the brief warned about: a regression guard whose oracle
+stops discriminating. It is worse here than in the pytest module, because the
+proposal's mutation discipline (*"remove the check, confirm the test fails"*) is
+scoped to the new test module and does not cover a shell harness. And the
+asymmetry is the trap: fixing only what breaks loudly leaves the two silent ones
+vacuous, and the proposal's own sentence points at exactly the loud one.
+
+**Fix**: state that *all four* no-ref call sites plus the branch pin take
+`--unprovenanced`, and add one row to *Tests required* asserting that the
+dirty-surface and branch refusals are still distinguishable from the
+provenance-mode refusal — e.g. by asserting on the refusal *reason*, not only on
+the exit code. Related and cheap: `PROVENANCED` and `NOT PROVENANCED` both exit 0,
+so no caller can distinguish them by exit code; a distinct code for the
+unprovenanced path would make these pins self-discriminating.
+
+Second-order: because `acceptance.sh` will now run permanently in
+`--unprovenanced` mode, Cairn's own end-to-end harness never exercises the
+provenance path. The proposal lists `acceptance.sh` under *Examples / smoke
+checks* for this scope; after this change it smoke-checks the mode this scope did
+not add.
+
+---
+
+### [I3] REVISE — RA1's expiry trigger is marked mechanical, but no mechanism exists by which Cairn learns its own signing authority widened.
+
+RA1 (a) is recorded as:
+
+> **(a) yes** — a tripwire in `verify-ref.sh`, silent at one principal today,
+> fires the moment signing authority widens.
+
+Three facts make "fires the moment signing authority widens" stronger than the
+mechanism delivers:
+
+1. The tripwire counts principals in the **adopter-held** roster — the file the
+   adopter typed from two web pages. Cairn adding a second signer changes nothing
+   in any adopter's file until that adopter re-anchors. Cairn's *own* roster,
+   `dev/.cairn/allowed_signers`, holds exactly one principal today (`wc -l` = 1)
+   and this design explicitly forbids consulting it for release verification.
+2. It lives in `bootstrap/container/verify-ref.sh` — the artifact Part C
+   *demotes to a convenience* and RA4 tells operators not to reach for before the
+   bootstrap. The documented primary path is system `git` only and never runs it.
+3. The warning surfaces on an adopter's terminal. There is no channel back to
+   Cairn. Meanwhile the proposed test asserts the warning fires against a
+   two-principal fixture roster — so the one place it reliably fires is Cairn's
+   own suite, where it is expected and carries no information.
+
+This does not make the tripwire useless; it makes it an adopter-facing hygiene
+warning, not a posture-expiry trigger for Cairn. **Fix**: either re-mark RA1 (a)
+as non-mechanical and give it a `dev/PLANNING.md` home like (b) and (c), or add a
+second, genuinely mechanical tripwire over `dev/.cairn/allowed_signers` that runs
+in Cairn's own suite. The residuals table is the artifact a future Maintainer
+reads to decide whether the posture still holds; a trigger marked "yes" that
+cannot fire on Cairn's side is the failure mode the table exists to prevent.
+
+---
+
+### [I4] REVISE — the Revised proposal falsifies the reason the documented-path test's form was deferred, and the append-only record never says so.
+
+*Public-path → test mapping* defers the form of the bootstrap test to the plan:
+
+> The plan decides — and states — which of two forms it takes: extracting the
+> commands from the document's fenced block (drift-proof, more machinery) or
+> duplicating them with a comment naming the source (cheaper, drift-prone). I am
+> not deciding that here because it is a genuine implementation tradeoff with no
+> security content
+
+That was written before the Revised proposal demonstrated that **the defect was
+in the document text itself** — a fixed durable workspace plus "judge the exit
+code" yielding a false pass on the second run. Under the *duplicating* form, the
+test runs a private copy of the sequence; it cannot detect that
+`bootstrap/PROVENANCE.md` still tells adopters something unsafe. The revision's
+new test row (item 4) explicitly leans on this same bullet — so the revision's own
+guard is only as good as a choice the proposal characterises as security-neutral.
+
+It has security content now. **Fix**: one appended sentence choosing the
+extract-from-the-document form for this test, or stating the constraint that
+whichever form is chosen must fail when the document's fenced block changes.
+
+---
+
+### [I5] NIT — *"Fetch ONLY the tag object"* is not what step 2 does, and the gap is checkable.
+
+`bootstrap/PROVENANCE.md`'s block will carry the comment `# 2. Fetch ONLY the tag
+object, into a repository whose config YOU wrote.` The fetch transfers the full
+reachable object graph *and* auto-follows other tags:
+
+```
+$ git -C "$V2/verify.git" fetch "$LAB/cand" 'refs/tags/v0.3.0:refs/tags/v0.3.0'
+ * [new tag]         v0.3.0     -> v0.3.0
+ * [new tag]         v0.4.0     -> v0.4.0
+ * [new tag]         v0.3.0-alt -> v0.3.0-alt
+$ git -C "$V2/verify.git" for-each-ref --format='%(refname) %(objecttype)'
+refs/tags/v0.3.0 tag
+refs/tags/v0.3.0-alt tag
+refs/tags/v0.4.0 tag
+```
+
+Three refs the adopter did not ask for, named by the candidate, now exist in the
+verification repository. Inert under the revised fresh-per-run design, and
+harmless as long as nothing enumerates refs there — but the proposal's structural
+argument is stated as *"Git config does not travel over a fetch; objects do"*, and
+**refs travel too**. Since the whole document's standard is that every sentence
+names something the reader can run, and since the mktemp revision now depends on
+the workspace being clean, this deserves accuracy: `--no-tags`, or a comment that
+says what actually arrives.
+
+---
+
+### [I6] NIT — "96 rows" is the manifest's line count, not its row count.
+
+Evidence item 9 says `python bootstrap/scaffold.py --manifest` *"emits **96
+rows** (`as_of 2026-08-03`)"*. Measured today under the canonical interpreter:
+
+```
+all lines:        96
+comment/header:   1
+actual data rows: 95
+```
+
+Line 1 is `# Cairn install manifest (destination<TAB>source<TAB>verbatim|substituted)`.
+The load-bearing half of that item is exactly right and I checked it: `grep -c
+"PROVENANCE\|container"` over the manifest returns **0**, and the one
+security-review row is present as `dev/modules/security-review.md	modules/team-gated/security-review.md	substituted`.
+So the conclusion ("adds and removes no manifest row; changes one installed
+file") stands. But this is the item the author flagged as *"I had this wrong in
+an earlier draft of this document, which is why it is spelled out"*, which is
+precisely why the count should be right.
+
+---
+
+### [I7] NIT — the adopter's release roster is given the same directory and file name as the internal roster the proposal forbids as an anchor.
+
+Part A's block writes `~/.cairn/allowed_signers`. Cairn's internal gate roster is
+`dev/.cairn/allowed_signers` — and in an adopter's tree, `dev/.cairn/` is the
+installed Cairn state directory (`ls -a dev/.cairn/` shows `allowed_signers`,
+`cairn-lock.yml`, `local-env.json`, `profile.yml`, …). The proposal's own words
+are that the in-repository file *"is **never** consulted for release verification,
+and there is **no fallback** to it."* Giving the two rosters an identical
+basename inside identically-named directories is the drafting choice most likely
+to produce exactly that fallback in a future skill, doc, or grep. Cheap fix:
+`~/.cairn/release-signers` or `~/.config/cairn/release-signers`.
+
+---
+
+### Covered — each lens swept, with the command that proves it
+
+* **Does the bootstrap break the circularity?** Rebuilt the hostile candidate
+  (attacker key, in-tree roster naming the genuine principal, `.git/config`
+  pointing at both it and a forging `gpg.ssh.program`) and ran the revised
+  bootstrap with an execution witness: `git init --bare` + `git fetch
+  refs/tags/v0.4.0:refs/tags/v0.4.0` + `git verify-tag -c
+  gpg.ssh.allowedSignersFile=<trusted>` → `No principal matched.`, `rc=1`, witness
+  file absent. **Yes, for key forgery.** Not for name substitution — [I1].
+* **Lightweight tags.** `git tag lw-commit HEAD` then `git rev-parse --verify
+  "refs/tags/lw-commit^{tag}"` → `error: … dereferences to tree type`, rc=128
+  (correctly refused). `git update-ref refs/tags/v0.4.0 <tag-object-sha>` then the
+  same resolver → rc=0 (**not** refused) — [I1]. Note also that rc=128 rather than
+  the script's documented `1 = refused` needs an explicit `|| refuse` guard under
+  `set -euo pipefail`; the shipped script already uses that pattern at lines 41-42.
+* **Multiple tags on one commit.** Three tags built on one commit; caller-ref
+  resolution returned `e4d52de4…` for `v0.3.0` and `6958cd08…` for `v0.3.0-alt`
+  (correct), while `git describe --exact-match --tags <commit>` returned
+  `v0.3.0-alt` (the defect Part B removes). Reproduces the proposal's Limb 2.
+* **Abbreviated SHAs.** Reproduced the current defect against an attacker-authored
+  unsigned commit via `HEAD`, the full SHA, and the 4-character prefix `8231` —
+  all three print `Maintainer-approved commit`, rc=0. The proposed refusal follows
+  mechanically from the `^{tag}` resolver, which I confirmed fails on non-ref
+  inputs.
+* **Roster boundaries — empty, keyless, missing, directory.** All four refuse:
+  `empty_signers -> rc=1`, `keyless_signers -> rc=1` (`missing key`),
+  `does_not_exist -> rc=1`, directory-as-roster → rc=1; genuine roster → rc=0.
+  Every one printed a line beginning `Good "git" signature` while exiting 1,
+  confirming the proposal's evidence item 8 and its "judge the exit code, never
+  the text" rule. The `$CAIRN_KEY`-unset copy-paste failure lands on the
+  `keyless_signers` case and therefore fails closed.
+* **Refspec metacharacters** (distinct from the shell metacharacters the edge-case
+  list names). `REF='*'` produces the valid refspec `refs/tags/*:refs/tags/*` and
+  fetches every tag; `verify-tag '*'` then cannot resolve, so it fails closed.
+  Worth one line in the edge-case list, not a finding.
+* **Part D rotation.** `valid-before="20230101"` roster: 2021-dated tag rc=0,
+  today-dated tag rc=1 — enforced against the tagger timestamp, as claimed. Also
+  observed directly in the args git passes the signer program
+  (`-Overify-time=20260803170224`).
+* **The External review's exhibits vs the Response's corrections.** [G1]
+  reproduced verbatim including the SHA. [G2]'s conclusion reproduced; the
+  Response's correction (stderr forger → rc=1, stdout forger → rc=0) reproduced in
+  both directions. [G3]: `grep -c "signers\|allowedSigners\|verify-tag\|gpg\."`
+  over the shipped script is 0, and the script is 71 lines — the Response's
+  characterisation is right.
+* **Bookkeeping claims.** `shasum -a 256` byte-parity of the two module copies;
+  `sed -n '169p'` and `sed -n '62p'` on the module; `sed -n '225p'` on
+  `bootstrap/UPGRADE.md`; `scaffold.py --manifest` row inspection;
+  `bootstrap/tests/fixtures/gate_manifest.json` `frozen_files` length at the
+  proposal's own commit (162) and at HEAD (164 — the same-day drift is `e45e1fc`,
+  not an error in the proposal, but it shows day-granularity `as_of` is coarse for
+  this figure); `FROZEN-NEW` semantics at `bootstrap/tests/_gate_manifest.py` line
+  366.
+* **Sibling-proposal collision.** `grep -n "security-review"` over
+  `dev/proposals/2026-08-03-claude-gate-claims-vs-enforcement.md` returns exactly
+  one citation, at line 62 of the template twin, and line 62 is inside the "wire a
+  linter" paragraph. The claimed non-overlap holds.
+* **Vacuity sweep over the proposed test list.** Found [I2]. The
+  `gpg.ssh.program` test is already protected by the Response's stdout/executed
+  instruction; the back-dating test is a deliberate residual pin and can fail if
+  git changes; the multi-tag test can fail. The `Maintainer-approved` grep test is
+  correctly scoped away from append-only history.
+
+### Not covered / low confidence — the negative space
+
+* **This review has no cross-type independence, and that is a structural limit,
+  not a caveat.** The author is Claude and I am Claude, in a fresh session. This
+  is an *Internal* read under Cairn's own definition and it cannot substitute for
+  the `required(External, security lens)` tier the superseding Decision mandates.
+  The specific risk is shared blind spots: I found [I1] by asking "what else can a
+  ref point at", which is the same *class* of question the author was already
+  asking. Whatever question neither of us thought to ask is still unasked.
+* **Neither of the proposal's two mandates to the plan reviewer was run here.** I
+  did not name the arrival channel of every input to every verification step, and
+  I did not sweep Cairn's other `git` invocations against trees it does not
+  control. RA5 does not narrow on this pass.
+* **No git other than 2.53.0 was tested**, so the version-fragility of
+  `valid-before` / tagger-timestamp verify-time remains unmeasured, as the
+  proposal's known omission (b) already says.
+* **Nothing network-side was checked** — the forge's SSH *signing*-key endpoint,
+  ORCID, and Zenodo. That is Part E step 1 and remains the single most likely
+  factual correction, exactly as the proposal predicts.
+* **Not swept**: hardlink or TOCTOU evasion of the roster-containment check
+  (containment is a path property; a hardlinked or concurrently-rewritten roster
+  is a content property). I did not build this and have no evidence it is
+  reachable in practice — flagged only so it is not mistaken for covered.
+* **Not swept**: SHA-256 repositories, non-UTF-8 principals, concurrent rotation,
+  and TLS-intercepting proxies — all four are already declared out of scope.
+* **[I1]'s exploitability depends on a threat model I did not test end to end.**
+  I demonstrated the ref manipulation on a bare clone, which is the shape a forge
+  serves; I did not verify that a particular forge's push rules accept a tag ref
+  pointing at a tag object of another name. If a forge rejects it, [I1] narrows to
+  hostile mirrors, typosquats, and local candidates — which the container recipe
+  and `verify-ref.sh` both accept as inputs, so it does not narrow to zero.
+
+### Second-round recommendation
+
+**Recommended, and scoped.** Not a full re-review — the structural design, the
+channel model, Part C, Part D and Part E all survived this pass and re-reading
+them would spend attention this repository is trying to conserve.
+
+The second round should be **[I1] only, and it should be External**. Three
+reasons. It is a defect in the mechanism the superseding Decision bound as
+settled design, so it cannot be pushed to the plan the way a test-shape question
+could. It is the fourth instance of one failure shape in a single week — [CR1],
+[IDN1], the `gpg.ssh.program` vector, and now this — which is the pattern the
+proposal itself cites as evidence that same-agent vigilance has a demonstrated
+failure rate; I am the same agent. And the fix I verified is a two-line addition
+whose correctness is exactly the kind of claim that ought to be checked by someone
+who did not write it, especially since it is a *name-comparison* fix and
+name-comparison spoofing is scope 2's entire subject.
+
+[I2] through [I4] can be dispositioned in a Response without a further pass;
+[I5] through [I7] are drafting.
+
+One process note: **[I1] should not be closed by an append that asserts the fix
+without re-running the substitution attack.** The exhibit above is four commands
+and reproduces in under a minute; a Response that reproduces it and then shows it
+refusing is the right shape, and it is the shape this lifecycle has repeatedly
+shown to be necessary.
