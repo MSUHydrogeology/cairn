@@ -660,6 +660,242 @@ def check_evidence(evidence: dict, head: str, report: Report) -> None:
 
 
 # --------------------------------------------------------------------------
+# Chunk C -- the digest-bound bundle
+# --------------------------------------------------------------------------
+
+#: Bundle schema version. ``apply`` refuses anything else.
+BUNDLE_SCHEMA = 1
+
+#: Git subcommands ``apply`` may run. Deliberately a *separate*, much narrower
+#: allowlist than :data:`_READ_ONLY_GIT`: the ability to move a ref should be
+#: visibly partitioned from the checker, not reachable from it.
+_WRITE_GIT = frozenset({"update-ref"})
+
+
+def draft_message(*, observed_anchor: str, checked_head: str,
+                  manifest_sha256: str, authority_hashes: dict,
+                  scope: dict, last_legitimate_anchor: str | None = None,
+                  erroneous_ref: str | None = None) -> str:
+    """The commit message, built from values the checker computed.
+
+    The runbook's audit trail requires the authorized verifier hashes, both
+    anchor SHAs, and the derived scope. Those are mechanical facts; asking a
+    human to retype six sha256 strings mid-ceremony is how the 2026-07-31 run
+    lost its audit trail entirely.
+
+    It does **not** contain the resulting ``P`` SHA (security review SR4): a
+    commit's SHA hashes its own message, so a message cannot carry it. The real
+    ``e5ecaa5`` / ``bf08f62`` messages say "this commit", which is the honest
+    form and the one used here.
+    """
+    hashes = "\n".join(f"  {v}  {k}" for k, v in sorted(authority_hashes.items()))
+    recovery = ""
+    if last_legitimate_anchor:
+        recovery = (
+            f"\nRECOVERY -- the superseded anchor recorded below is the "
+            f"Maintainer-supplied last legitimately blessed anchor,\n"
+            f"{last_legitimate_anchor}. It was NOT inferred: nothing in this "
+            f"repository can derive it, because\ncustom refs carry no reflog.\n")
+        if erroneous_ref:
+            recovery += (
+                f"The ref currently reads {erroneous_ref}, which this run "
+                f"treats as erroneous rather than\nas the prior state.\n")
+    return f"""\
+gate-anchor: supervised trust-root re-establishment (REANCHOR_RUNBOOK Phase 0)
+
+Regenerates {_MANIFEST_REL} over the reviewed tree at
+{checked_head[:12]} and re-establishes it as the prior gate state P.
+{recovery}
+Authorized verifier-module hashes (Phase 0 step 1):
+
+{hashes}
+
+Scope blessed -- derived at check time from the observed state:
+
+  superseded anchor P : {last_legitimate_anchor or observed_anchor}
+  checked HEAD        : {checked_head}
+  new anchor P        : this commit
+  prospective manifest: {manifest_sha256}
+  frozen gate files   : {scope.get('modified', '?')} modified, \
+{scope.get('added', '?')} added, {scope.get('removed', '?')} removed
+  pytest collection   : {scope.get('collection_before', '?')} -> \
+{scope.get('collection_after', '?')}
+
+Produced under the canonical interpreter. The pre-flight ran read-only from the
+anchored checker; the review, the decision, this commit and the ref advance are
+the Maintainer's own acts, per REANCHOR_RUNBOOK's Maintainer-only constraint.
+"""
+
+
+def build_bundle(report: Report, evidence: dict, *, repo: Path = _REPO,
+                 last_legitimate_anchor: str | None = None) -> dict:
+    """Bind the checked state to the artifact ``apply`` revalidates."""
+    old = json.loads(_blob_at(report.facts["anchor"], _MANIFEST_REL,
+                              repo=repo) or b"{}")
+    new = evidence["manifest"]
+    of, nf = old.get("frozen_files", {}), new.get("frozen_files", {})
+    scope = {
+        "modified": sum(1 for k in nf if k in of and nf[k] != of[k]),
+        "added": sum(1 for k in nf if k not in of),
+        "removed": sum(1 for k in of if k not in nf),
+        "collection_before": old.get("collection", {}).get("node_count", "?"),
+        "collection_after": new.get("collection", {}).get("node_count", "?"),
+    }
+    erroneous = (report.facts["anchor"]
+                 if last_legitimate_anchor
+                 and last_legitimate_anchor != report.facts["anchor"] else None)
+    message = draft_message(
+        observed_anchor=report.facts["anchor"],
+        checked_head=report.facts["head"],
+        manifest_sha256=evidence["manifest_sha256"],
+        authority_hashes=report.facts["authority_hashes"],
+        scope=scope, last_legitimate_anchor=last_legitimate_anchor,
+        erroneous_ref=erroneous)
+    return {
+        "schema": BUNDLE_SCHEMA,
+        "checked_head": report.facts["head"],
+        "observed_anchor": report.facts["anchor"],
+        "last_legitimate_anchor": last_legitimate_anchor,
+        "manifest": evidence["manifest"],
+        "manifest_sha256": evidence["manifest_sha256"],
+        "message": message,
+        "message_sha256": _sha256_bytes(message.encode()),
+        "authority_hashes": report.facts["authority_hashes"],
+        "scope": scope,
+    }
+
+
+def parse_bundle(text: str) -> dict:
+    """Parse a bundle, refusing anything unexpected. Untrusted input."""
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise PreflightError(f"bundle is not valid JSON: {exc}") from None
+    if not isinstance(data, dict):
+        raise PreflightError("bundle must be a JSON object")
+    if data.get("schema") != BUNDLE_SCHEMA:
+        raise PreflightError(
+            f"bundle schema {data.get('schema')!r} != expected {BUNDLE_SCHEMA}")
+    for key, typ in (("checked_head", str), ("observed_anchor", str),
+                     ("manifest", dict), ("manifest_sha256", str),
+                     ("message", str), ("message_sha256", str)):
+        if not isinstance(data.get(key), typ):
+            raise PreflightError(
+                f"bundle field {key!r} missing or not {typ.__name__}")
+    for key in ("checked_head", "observed_anchor"):
+        sha = data[key]
+        if len(sha) != 40 or any(c not in "0123456789abcdef" for c in sha):
+            raise PreflightError(f"bundle {key} is not a full sha: {sha!r}")
+    if _sha256_bytes(data["message"].encode()) != data["message_sha256"]:
+        raise PreflightError("bundle message does not match its recorded digest")
+    return data
+
+
+# --------------------------------------------------------------------------
+# Chunk D -- apply: revalidate, construct, verify, then one ref transaction
+# --------------------------------------------------------------------------
+
+def _git_write(*args: str, repo: Path = _REPO,
+               stdin: str | None = None) -> subprocess.CompletedProcess:
+    """The **only** ref-writing path, with its own narrow allowlist."""
+    if not args or args[0] not in _WRITE_GIT:
+        raise PreflightError(
+            f"apply may only run {sorted(_WRITE_GIT)}; refused "
+            f"{(args[0] if args else '<none>')!r}")
+    return subprocess.run(["git", "-C", str(repo), *args], input=stdin,
+                          capture_output=True, text=True, check=False)
+
+
+def _advance_both_refs(repo: Path, branch: str, new: str, *,
+                       branch_old: str, anchor_old: str) -> tuple[bool, str]:
+    """Advance the branch and the gate anchor in **one** expected-old transaction.
+
+    Security review SR8: creating the commit and *then* advancing the anchor
+    leaves a blessing-shaped commit on the branch when the anchor CAS fails. A
+    single ``update-ref --stdin`` transaction aborts wholesale -- verified: on a
+    stale expected-old, git returns non-zero and **both** refs stay put.
+    """
+    stdin = (f"start\n"
+             f"update {branch} {new} {branch_old}\n"
+             f"update {_ANCHOR_REF} {new} {anchor_old}\n"
+             f"prepare\ncommit\n")
+    p = _git_write("update-ref", "--stdin", repo=repo, stdin=stdin)
+    return p.returncode == 0, (p.stderr or p.stdout or "").strip()
+
+
+def apply_bundle(bundle: dict, *, repo: Path = _REPO,
+                 confirmed: bool = False, out=sys.stderr) -> dict:
+    """Revalidate, construct, verify, then move both refs -- or nothing.
+
+    The bundle is **revalidate-and-confirm, not mechanically single-use**
+    (security review SR10): with no nonce or consumption ledger, a bundle whose
+    bound state is restored can be resubmitted, and every invocation revalidates
+    and requires fresh confirmation rather than pretending otherwise.
+    """
+    if not confirmed:
+        raise PreflightError(
+            "apply requires explicit Maintainer confirmation "
+            "(--confirm-supervised-reanchor); it moves the trust root")
+
+    head = _resolve("HEAD", repo=repo)
+    anchor = _resolve(_ANCHOR_REF, repo=repo)
+    if head != bundle["checked_head"]:
+        raise PreflightError(
+            f"HEAD moved since the bundle was built "
+            f"({bundle['checked_head'][:12]} -> {head[:12]}); re-run check")
+    if anchor != bundle["observed_anchor"]:
+        raise PreflightError(
+            f"the anchor moved since the bundle was built "
+            f"({bundle['observed_anchor'][:12]} -> {anchor[:12]}); re-run check")
+
+    manifest_bytes = (json.dumps(bundle["manifest"], indent=2, sort_keys=True)
+                      .encode() + b"\n")
+    if _sha256_bytes(manifest_bytes) != bundle["manifest_sha256"]:
+        raise PreflightError("bundle manifest body does not match its digest")
+
+    branch = _git("rev-parse", "--symbolic-full-name", "HEAD",
+                  repo=repo).stdout.strip()
+    if not branch.startswith("refs/heads/"):
+        raise PreflightError(
+            f"HEAD is not on a branch ({branch!r}); refusing to advance a "
+            f"detached HEAD")
+
+    # Construct and verify BEFORE any ref moves (SR8).
+    new = R._construct_anchor_commit(repo, head, _MANIFEST_REL, manifest_bytes)
+    parents = _git("rev-parse", f"{new}^@", repo=repo).stdout.split()
+    if parents != [head]:
+        raise PreflightError(
+            f"constructed commit's parent is {parents}, expected [{head}]")
+    changed = [f for f in _git("diff", "--name-only", f"{head}..{new}",
+                               repo=repo).stdout.splitlines() if f.strip()]
+    if changed != [_MANIFEST_REL]:
+        raise PreflightError(
+            f"constructed commit changes {changed}, expected only "
+            f"[{_MANIFEST_REL}]")
+    blob = _blob_at(new, _MANIFEST_REL, repo=repo)
+    if blob is None or _sha256_bytes(blob) != bundle["manifest_sha256"]:
+        raise PreflightError(
+            "constructed commit's manifest blob does not carry the reviewed "
+            "digest")
+    out.write(f"constructed and verified {new[:12]} (parent {head[:12]}, "
+              f"diff = {_MANIFEST_REL} only)\n")
+
+    ok, detail = _advance_both_refs(repo, branch, new, branch_old=head,
+                                    anchor_old=anchor)
+    if not ok:
+        # No cleanup: a cleanup step here would disguise which ref did or did
+        # not advance, which is exactly what the 2026-08-03 incident cost.
+        raise PreflightError(
+            f"the ref transaction ABORTED -- neither {branch} nor {_ANCHOR_REF} "
+            f"moved, and {new[:12]} is an unreferenced object left in place "
+            f"rather than deleted, so the state is inspectable: {detail}")
+    out.write(f"advanced {branch} and {_ANCHOR_REF} to {new[:12]} in one "
+              f"expected-old transaction\n")
+    return {"new_anchor": new, "branch": branch, "previous_anchor": anchor,
+            "previous_head": head}
+
+
+# --------------------------------------------------------------------------
 # orchestration
 # --------------------------------------------------------------------------
 
@@ -695,6 +931,7 @@ def check(*, repo: Path = _REPO, evidence_path: str | None = None,
     if evidence_path is not None:
         evidence = parse_evidence(Path(evidence_path).read_text(encoding="utf-8"))
         check_evidence(evidence, head, report)
+        report.facts["evidence_parsed"] = evidence
     return report
 
 
@@ -721,6 +958,15 @@ def main(argv: list[str] | None = None) -> int:
                    help="resolve the anchor object from THIS repository, not the "
                         "target (external anchoring)")
     c.add_argument("--trusted-ref", default="HEAD")
+    c.add_argument("--bundle-out", default=None,
+                   help="write the digest-bound bundle here when every check "
+                        "passes (requires --evidence)")
+    c.add_argument("--last-legitimate-anchor", default=None,
+                   help="recovery only: the Maintainer-supplied last "
+                        "legitimately blessed anchor. Nothing can derive this "
+                        "-- custom refs carry no reflog -- so it is never "
+                        "inferred, and the erroneous ref is disclosed apart "
+                        "from it.")
 
     e = sub.add_parser(
         "evidence",
@@ -730,6 +976,16 @@ def main(argv: list[str] | None = None) -> int:
     e.add_argument("--candidate-ref", default="HEAD")
     e.add_argument("-o", "--output", default=None,
                    help="write the artifact here (default: stdout)")
+    a = sub.add_parser(
+        "apply",
+        help="revalidate a bundle, construct and verify the commit, then move "
+             "the branch and gate anchor in ONE transaction -- Maintainer-only")
+    a.add_argument("--repo", default=None)
+    a.add_argument("--bundle", required=True)
+    a.add_argument("--confirm-supervised-reanchor", action="store_true",
+                   dest="confirmed",
+                   help="required; this is the only step that moves the trust "
+                        "root")
     args = ap.parse_args(argv)
 
     repo = Path(args.repo) if args.repo else _REPO
@@ -748,6 +1004,18 @@ def main(argv: list[str] | None = None) -> int:
             sys.stdout.write(text)
         return 0
 
+    if args.cmd == "apply":
+        try:
+            bundle = parse_bundle(
+                Path(args.bundle).read_text(encoding="utf-8"))
+            result = apply_bundle(bundle, repo=repo, confirmed=args.confirmed)
+        except PreflightError as exc:
+            sys.stderr.write(f"[REFUSE ] {exc}\n")
+            return 2
+        json.dump(result, sys.stdout, indent=2, sort_keys=True)
+        sys.stdout.write("\n")
+        return 0
+
     try:
         report = check(repo=repo, evidence_path=args.evidence,
                        trusted_repo=args.trusted_repo,
@@ -756,6 +1024,17 @@ def main(argv: list[str] | None = None) -> int:
         sys.stderr.write(f"[REFUSE ] {exc}\n")
         return 2
     _render(report, sys.stderr)
+    if not report.blocked and args.bundle_out:
+        ev = report.facts.get("evidence_parsed")
+        if ev is None:
+            sys.stderr.write("[REFUSE ] --bundle-out requires --evidence\n")
+            return 2
+        bundle = build_bundle(report, ev, repo=repo,
+                              last_legitimate_anchor=args.last_legitimate_anchor)
+        Path(args.bundle_out).write_text(
+            json.dumps(bundle, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8")
+        sys.stderr.write(f"bundle written to {args.bundle_out}\n")
     if report.blocked:
         sys.stderr.write("\nPRE-FLIGHT REFUSED -- do not bless this state.\n")
         return 1

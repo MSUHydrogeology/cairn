@@ -729,3 +729,250 @@ class TestEvidenceStage:
                 assert "not containment" in low, (
                     f"residual sentence may read as a containment claim: "
                     f"{sentence.strip()!r}")
+
+
+# --------------------------------------------------------------------------
+# Chunks C + D -- the bundle, and the application transaction
+# --------------------------------------------------------------------------
+
+_MANIFEST = {"frozen_files": {"a.py": "sha256:aa"},
+             "collection": {"node_count": 2, "node_ids": ["a::t", "b::t"]}}
+
+
+def _manifest_bytes(manifest=None):
+    return (json.dumps(manifest or _MANIFEST, indent=2, sort_keys=True)
+            .encode() + b"\n")
+
+
+def _anchored_repo(tmp_path: Path):
+    """A repo with an anchor ref and a later HEAD -- enough for `apply`."""
+    repo = _repo(tmp_path)
+    _write(repo, "bootstrap/tests/fixtures/gate_manifest.json", "{}\n")
+    anchor = _commit(repo, "anchor")
+    _run("git", "update-ref", P._ANCHOR_REF, anchor, cwd=repo)
+    _write(repo, "code.py", "x = 1\n")
+    head = _commit(repo, "work to bless")
+    return repo, anchor, head
+
+
+def _bundle_for(repo: Path, anchor: str, head: str, manifest=None,
+                last_legitimate: str | None = None) -> dict:
+    report = P.Report()
+    report.facts.update({
+        "anchor": anchor, "head": head,
+        "authority_hashes": {f"bootstrap/tests/_m{i}.py": f"sha256:{i:064d}"
+                             for i in range(6)},
+    })
+    body = _manifest_bytes(manifest)
+    evidence = {"schema": P.EVIDENCE_SCHEMA, "candidate_sha": head,
+                "interpreter": "3.13.13", "manifest": manifest or _MANIFEST,
+                "manifest_sha256": P._sha256_bytes(body)}
+    return P.build_bundle(report, evidence, repo=repo,
+                          last_legitimate_anchor=last_legitimate)
+
+
+class TestBundle:
+    def test_round_trips(self, tmp_path):
+        repo, anchor, head = _anchored_repo(tmp_path)
+        b = _bundle_for(repo, anchor, head)
+        assert P.parse_bundle(json.dumps(b))["checked_head"] == head
+
+    def test_message_carries_the_audit_trail(self, tmp_path):
+        repo, anchor, head = _anchored_repo(tmp_path)
+        b = _bundle_for(repo, anchor, head)
+        msg = b["message"]
+        for h in b["authority_hashes"].values():
+            assert h in msg, "every authority hash must be in the message"
+        assert anchor in msg and head in msg
+
+    def test_message_carries_no_self_referential_sha(self, tmp_path):
+        """Security review SR4: a commit's SHA hashes its own message, so the
+        message cannot contain it. The honest form is 'this commit'."""
+        repo, anchor, head = _anchored_repo(tmp_path)
+        msg = _bundle_for(repo, anchor, head)["message"]
+        assert "new anchor P        : this commit" in msg
+
+    def test_tampered_message_is_fail_closed(self, tmp_path):
+        repo, anchor, head = _anchored_repo(tmp_path)
+        b = _bundle_for(repo, anchor, head)
+        b["message"] += "\nand also bless everything else\n"
+        with pytest.raises(P.PreflightError, match="does not match its recorded"):
+            P.parse_bundle(json.dumps(b))
+
+    @pytest.mark.parametrize("missing", ["checked_head", "observed_anchor",
+                                         "manifest", "manifest_sha256",
+                                         "message", "message_sha256"])
+    def test_missing_fields_are_fail_closed(self, tmp_path, missing):
+        repo, anchor, head = _anchored_repo(tmp_path)
+        b = _bundle_for(repo, anchor, head)
+        del b[missing]
+        with pytest.raises(P.PreflightError, match=missing):
+            P.parse_bundle(json.dumps(b))
+
+    def test_unknown_schema_is_fail_closed(self, tmp_path):
+        repo, anchor, head = _anchored_repo(tmp_path)
+        b = _bundle_for(repo, anchor, head)
+        b["schema"] = 99
+        with pytest.raises(P.PreflightError, match="schema"):
+            P.parse_bundle(json.dumps(b))
+
+    def test_recovery_mode_never_claims_to_have_inferred_legitimacy(self,
+                                                                    tmp_path):
+        """SR4's second half: nothing can derive the last legitimate anchor --
+        custom refs carry no reflog -- so it is Maintainer-supplied, and the
+        erroneous current ref is disclosed separately."""
+        repo, anchor, head = _anchored_repo(tmp_path)
+        legit = "b" * 40
+        msg = _bundle_for(repo, anchor, head, last_legitimate=legit)["message"]
+        assert "NOT inferred" in msg
+        assert legit in msg
+        assert anchor in msg, "the erroneous ref must still be disclosed"
+
+
+class TestApplyTransaction:
+    def _refs(self, repo: Path):
+        return (_run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip(),
+                _run("git", "rev-parse", P._ANCHOR_REF, cwd=repo).stdout.strip())
+
+    def test_refuses_without_explicit_confirmation(self, tmp_path):
+        repo, anchor, head = _anchored_repo(tmp_path)
+        b = _bundle_for(repo, anchor, head)
+        before = self._refs(repo)
+        with pytest.raises(P.PreflightError, match="explicit Maintainer"):
+            P.apply_bundle(b, repo=repo, confirmed=False)
+        assert self._refs(repo) == before
+
+    def test_write_path_allowlist_refuses_anything_but_update_ref(self, tmp_path):
+        repo, _a, _h = _anchored_repo(tmp_path)
+        for bad in ("commit", "push", "checkout", "gc"):
+            with pytest.raises(P.PreflightError, match="apply may only run"):
+                P._git_write(bad, repo=repo)
+
+    def test_head_moved_after_check_refuses(self, tmp_path):
+        repo, anchor, head = _anchored_repo(tmp_path)
+        b = _bundle_for(repo, anchor, head)
+        _commit(repo, "drift")
+        before = self._refs(repo)
+        with pytest.raises(P.PreflightError, match="HEAD moved"):
+            P.apply_bundle(b, repo=repo, confirmed=True)
+        assert self._refs(repo) == before
+
+    def test_anchor_moved_after_check_refuses(self, tmp_path):
+        repo, anchor, head = _anchored_repo(tmp_path)
+        b = _bundle_for(repo, anchor, head)
+        _run("git", "update-ref", P._ANCHOR_REF, head, cwd=repo)
+        with pytest.raises(P.PreflightError, match="anchor moved"):
+            P.apply_bundle(b, repo=repo, confirmed=True)
+
+    def test_manifest_body_digest_mismatch_refuses(self, tmp_path):
+        repo, anchor, head = _anchored_repo(tmp_path)
+        b = _bundle_for(repo, anchor, head)
+        b["manifest"] = {"frozen_files": {"injected": "x"}}
+        b["message_sha256"] = P._sha256_bytes(b["message"].encode())
+        with pytest.raises(P.PreflightError, match="does not match its digest"):
+            P.apply_bundle(b, repo=repo, confirmed=True)
+
+    def test_detached_head_refuses(self, tmp_path):
+        repo, anchor, head = _anchored_repo(tmp_path)
+        b = _bundle_for(repo, anchor, head)
+        _run("git", "checkout", "-q", "--detach", head, cwd=repo)
+        with pytest.raises(P.PreflightError, match="detached"):
+            P.apply_bundle(b, repo=repo, confirmed=True)
+
+    def test_success_advances_both_refs_to_the_verified_commit(self, tmp_path):
+        repo, anchor, head = _anchored_repo(tmp_path)
+        b = _bundle_for(repo, anchor, head)
+        out = P.apply_bundle(b, repo=repo, confirmed=True,
+                             out=__import__("io").StringIO())
+        new_head, new_anchor = self._refs(repo)
+        assert new_head == new_anchor == out["new_anchor"]
+        parents = _run("git", "rev-parse", f"{out['new_anchor']}^@",
+                       cwd=repo).stdout.split()
+        assert parents == [head], "the blessing commit's parent must be HEAD"
+        changed = _run("git", "diff", "--name-only", f"{head}..{new_head}",
+                       cwd=repo).stdout.split()
+        assert changed == [P._MANIFEST_REL], "the diff must be the manifest only"
+
+    def test_stale_anchor_aborts_leaving_BOTH_refs_unmoved(self, tmp_path):
+        """Security review SR8, the core property.
+
+        Creating the commit and *then* advancing the anchor would leave a
+        blessing-shaped commit on the branch when the anchor CAS failed. One
+        expected-old transaction aborts wholesale instead.
+
+        The first version of this test was caught VACUOUS by mutation: it passed
+        `new=head`, which makes the branch update a no-op that succeeds even
+        under sequential single-ref updates, so it could not detect the very
+        anti-pattern it names. It now advances to a genuinely different commit.
+        """
+        repo, anchor, head = _anchored_repo(tmp_path)
+        target = P.R._construct_anchor_commit(
+            repo, head, P._MANIFEST_REL, _manifest_bytes())
+        assert target != head, "the transaction must actually move the branch"
+        before = self._refs(repo)
+        ok, detail = P._advance_both_refs(
+            repo, "refs/heads/master", target,
+            branch_old=head, anchor_old="c" * 40)   # stale anchor expectation
+        assert not ok, "a stale expected-old must abort the transaction"
+        assert self._refs(repo) == before, (
+            "neither ref may move when the transaction aborts")
+        assert detail
+
+    def test_constructed_commit_touching_more_than_the_manifest_refuses(
+            self, tmp_path, monkeypatch):
+        """The pre-ref-move verification, exercised directly.
+
+        Mutation testing found this guard entirely untested: removing it broke
+        nothing, because no natural path produces a wrong constructed commit.
+        Substituting the constructor is the honest way to reach it.
+        """
+        repo, anchor, head = _anchored_repo(tmp_path)
+        b = _bundle_for(repo, anchor, head)
+        _write(repo, "unrelated.py", "sneaky = True\n")
+        rogue = _commit(repo, "extra content")
+        _run("git", "update-ref", "refs/heads/master", head, cwd=repo)
+        monkeypatch.setattr(P.R, "_construct_anchor_commit",
+                            lambda *a, **k: rogue)
+        before = self._refs(repo)
+        with pytest.raises(P.PreflightError, match="changes"):
+            P.apply_bundle(b, repo=repo, confirmed=True,
+                           out=__import__("io").StringIO())
+        assert self._refs(repo) == before, "no ref may move on a failed verify"
+
+    def test_constructed_commit_with_the_wrong_parent_refuses(
+            self, tmp_path, monkeypatch):
+        repo, anchor, head = _anchored_repo(tmp_path)
+        b = _bundle_for(repo, anchor, head)
+        monkeypatch.setattr(P.R, "_construct_anchor_commit",
+                            lambda *a, **k: anchor)   # parent is not HEAD
+        before = self._refs(repo)
+        with pytest.raises(P.PreflightError, match="parent"):
+            P.apply_bundle(b, repo=repo, confirmed=True,
+                           out=__import__("io").StringIO())
+        assert self._refs(repo) == before
+
+    def test_a_constructed_but_unblessed_commit_never_reaches_the_branch(
+            self, tmp_path):
+        repo, anchor, head = _anchored_repo(tmp_path)
+        before = self._refs(repo)
+        new = P.R._construct_anchor_commit(
+            repo, head, P._MANIFEST_REL, _manifest_bytes())
+        ok, _ = P._advance_both_refs(repo, "refs/heads/master", new,
+                                     branch_old=head, anchor_old="d" * 40)
+        assert not ok
+        assert self._refs(repo) == before
+        # the object exists but is unreferenced -- inspectable, not hidden
+        assert _run("git", "cat-file", "-t", new, cwd=repo).stdout.strip() == \
+            "commit"
+
+    def test_replay_after_success_refuses_because_the_refs_moved(self, tmp_path):
+        """SR10's real contract: revalidate-and-confirm, not mechanical
+        single-use. There is no nonce; what stops a replay is that the bound
+        state no longer holds."""
+        repo, anchor, head = _anchored_repo(tmp_path)
+        b = _bundle_for(repo, anchor, head)
+        P.apply_bundle(b, repo=repo, confirmed=True,
+                       out=__import__("io").StringIO())
+        with pytest.raises(P.PreflightError, match="moved"):
+            P.apply_bundle(b, repo=repo, confirmed=True,
+                           out=__import__("io").StringIO())
