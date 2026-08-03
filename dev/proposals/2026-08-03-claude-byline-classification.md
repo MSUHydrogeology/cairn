@@ -5,7 +5,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: proposed
+**Status**: reviewed
 **Touches**: `tools/lifecycle_planner.py` and its byte-identical
 `templates/skills/_lib/lifecycle_planner.py` twin; the live roster value in
 `dev/.cairn/agent-identities.json`; one existing node plus new nodes under
