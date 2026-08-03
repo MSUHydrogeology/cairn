@@ -5,7 +5,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: reviewed
+**Status**: accepted
 **Touches**: `bootstrap/security_check.py`, `bootstrap/tests/test_security_lint.py`,
 `bootstrap/SAFETY.md`, `SECURITY.md`
 **Related**: the broad-look strategy note `2026-07-08-claude-broad-look-skeptical-review`,
@@ -720,7 +720,7 @@ Sweep executed on canonical interpreter `~/conda_envs/lhm/bin/python` (Python 3.
 * **Adopter `tools/*.py` Scans:** Adopter-side installed copies (`tools/lifecycle.py` and `tools/lifecycle_planner.py`) remain un-scanned by the release gate, which scans template sources `templates/skills/_lib/*.py`. As noted in the proposal, these files are byte-identical twins enforced by `test_every_self_hosted_twin_stays_byte_identical_to_its_source`, so coverage of template sources is equivalent.
 * **Low-Severity Subprocess Hardening:** The 16 LOW findings (`B404`, `B603`, `B607`) in the skills files are not remediated by this proposal.
 
-## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
+## Decision (placeholder -- superseded by the Decision at the end of this file)
 
 *(Awaiting the Maintainer. The proposal has cleared External Security Review. The Maintainer may accept the proposal to proceed with plan creation.)*
 
@@ -1766,3 +1766,29 @@ prove. The strongest thing in this proposal is the addendum's acceptance criteri
 and I applied it: I did not accept change 2 because it looked independent, I ran the
 state in which it fails. The weakest thing about this review is that I am the same
 model as the author, and the criterion I just praised is one I inherited from him.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-03
+
+**Accepted, as revised.** Scribed by Claude (Strategy) at the Maintainer's
+explicit instruction.
+
+**Maintainer's authorization (verbatim):**
+
+> I approve each of the seven proposals that you have listed as ready to accept,
+> as revised.
+
+The seven were presented as a ledger with a per-proposal recommendation; this is
+one of them. The authorization is quoted rather than paraphrased, per the
+scribing guard-rail: a paraphrase admits semantic drift, condition-softening, or
+a hallucinated approval.
+
+**Scribe-coupling disclosure.** The scribe is the proposal's author. That is the
+weaker configuration -- the party whose work was reviewed transcribes the ruling
+on it. Mitigations: the authorization is quoted verbatim, and this commit carries
+the Decision only.
+
+**One thing the Maintainer should know is carried by this acceptance.** The
+External pass returned SHIP against item 3 *as originally drafted*; the author
+addendum showing that item's regression guard cannot fail was appended
+afterwards and no External reviewer has read the replacement. It is routed to
+the plan-level External security read, which stays required.
