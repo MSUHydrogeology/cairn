@@ -1992,3 +1992,61 @@ failure is not the guard.
 Chunk G remains blocked. `shasum -a 256` is macOS/BSD; Windows unexamined; the
 accepted candidate-execution residual, replay posture, external anchoring and
 Phase 4 are untouched.
+
+## Focused External first-use re-review, final -- Codex -- 2026-08-03
+
+**Model:** GPT-5 (Codex)
+
+**Exact commit reviewed:** `3a19ed6de4dc4f46a21731517a5576bcc3c66c35`
+
+**Disposition: NO BLOCKING FINDINGS; THESE EXACT BYTES ARE FIT TO BLESS AS THE
+FIRST-USE TRUST ROOT.** FUR10 is closed in the operator-facing artifact, not
+only in its harness: `/bin/sh` is now literal, the recorded-shell placeholder is
+gone, and the runbook explains why substitution is forbidden. Execution under
+the literal block confirms that the clean child excludes the previously
+reproduced inherited command definition while the complete ceremony still
+succeeds. The acquisition command remains sterile; raw anchored extraction,
+exact-byte verification and the complete Python import closure remain intact.
+The Python checker is unchanged from the bytes that closed CR1 and FUR1-FUR5.
+
+The loader residual is now accurately bounded: the recorded absolute `ENV`,
+`GIT`, `MKTEMP`, `MKDIR`, `SHASUM` and `PY`; literal `/bin/sh`; recorded
+`CHECKOUT` and `HOME`; the first-use hash set; the operator-known sterile
+acquisition command; and the deliberately passed `SSH_AUTH_SOCK`. A wrong agent
+socket fails signing or produces a signature rejected by the pinned anchored
+roster; it does not turn refusal into acceptance. The previously accepted
+candidate-execution, replay, key-holder-not-process, external-anchoring and
+single-Maintainer residuals remain as described and are not expanded by this
+revision.
+
+**Verification.** Canonical Python 3.13.13:
+`test_gate_preflight.py` **127 passed in 28.65s**; full
+`bootstrap/tests` **1598 passed, 3 warnings in 132.72s**. The focused suite
+executes the literal acquisition and loader blocks, including live regressions
+for replacement objects, Git environment redirection, ambient utility
+selection, inherited shell definitions, and the `/bin/sh` versus `/bin/zsh`
+startup-file distinction. No main-repository ref was moved.
+
+**Reviewed SHA-256 set:**
+
+```
+f6dd89b8e66638b5b15f17bfb6da62ef950c3583a6b939bcc1bba1435eef34e6  bootstrap/tests/_gate_preflight.py
+e68b5641735fc4e5cee9d063d1cea917334df3c6d510d234cda55a4d5eb6ef06  bootstrap/REANCHOR_RUNBOOK.md
+c1e0634765726dbc84842b5a03ccc173362cae08edbbe561760d7cf5f0483559  bootstrap/tests/test_gate_preflight.py  (evidence only)
+38d5009a51bb094820abfff899dc5be72a02c9b0eed2d5329923fb8abaecb5fc  bootstrap/tests/_gate_manifest.py
+55a11326baae75d5a2f5f1696c5e6c4745ba537286415ba84bfcab26ab36b876  bootstrap/tests/_gate_reanchor.py
+e272b868eb640b9193daefe76c5fbe2d6a8f5225eb934b53e9c7febdbc680b9b  bootstrap/tests/_gate_transition.py
+c719f770afe1b0ce5928923a7be2590666bc8f7935df2ad94eda95598be286e4  bootstrap/tests/_oracle_activation.py
+17007480162b0f4a100a100714a05198ef4a21ee8e726f31fb60b296127d429d  bootstrap/tests/_oracle.py
+e1d6c7db5d72729e43040dedb69fa47c50a3fe36b7d284ad73c1285b8a027007  bootstrap/tests/_oracle_trust.py
+```
+
+**Maintainer action still required.** This review discharges the independent
+exact-byte gate; it does not perform the ceremony. The Maintainer must record
+the hash set above with the absolute loader inputs and execute the anchored
+runbook themselves. Any change to a reviewed byte invalidates this disposition
+and requires a new exact-byte review.
+
+**Scope unchanged.** I did not re-review Stage B, the accepted
+candidate-execution residual, replay posture, SSH cryptography, Windows
+behavior, external anchoring, concurrent Maintainers, or Phase 4.
