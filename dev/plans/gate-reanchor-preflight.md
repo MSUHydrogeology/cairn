@@ -1457,3 +1457,55 @@ that the attack now *refuses*. It does not, and should not -- a genuinely new
 frozen-surface file should be **pinned**, not rejected. The test now asserts the
 real property, that the blessed manifest covers what the blessed tree contains,
 and still checks the hiding mechanism is live so it cannot pass vacuously.
+
+## Focused External first-use re-review -- Codex -- 2026-08-03
+
+**Model:** GPT-5 (Codex)
+
+**Exact commit reviewed:** `355aedbe45dfa687ef6db12d8717c331c3571d9b`
+
+**Disposition: one remaining blocker; NOT YET FIT TO BLESS.** The remediation
+closes the five findings inside `_gate_preflight.py`: raw object reads defeat
+replacement substitution, the SSH verifier and Git execution environment are
+pinned, configured monitors and hooks do not run, the transaction remains two-
+ref under those pins, static manifest fields are re-derived from raw tree
+objects, signature-history failures refuse, and the checker requires an explicit
+worktree root. The original editable-handoff CR1 remains closed.
+
+* **[FUR6] CRITICAL / BLOCKING -- the recorded loader runs before the sterile
+  Git boundary exists.** The Phase 0 fenced block still obtains the invocation
+  and extracts the checker with ordinary ambient Git commands. The internal
+  launcher cannot protect code that has not been loaded yet. In an isolated
+  reproduction, repository-local object substitution caused the literal
+  runbook block to execute substituted checker bytes while the command returned
+  success. The gate-anchor ref itself remained textually unchanged, so this is
+  the same trust-source failure FUR1 fixed inside the checker, one step earlier.
+  **Satisfier:** make the runbook's pre-checker loader its own minimal reviewed
+  trust boundary: name the checkout without ambient repository discovery; use a
+  recorded absolute Git binary under a scrubbed Git environment; disable object
+  replacement and configured execution before reading either the runbook or the
+  checker; and verify the extracted checker/dependency hashes against the
+  Maintainer-recorded first-use set before executing Python. Extend the literal-
+  runbook test with a substituted-object case and assert that no substituted
+  checker byte executes. The loader's binaries and environment then belong in
+  the residual trust set explicitly.
+
+**Positive re-verification.** Focused suite: `115 passed in 22.86s`. Full
+canonical Python 3.13.13 suite: `1586 passed, 3 warnings in 130.69s`. Independent
+checks confirmed that the in-process anchored-roster read now ignores a local
+replacement mapping and that the prior-artifact path remains absent. The
+remaining finding is confined to the shell loader before `_run_git()` starts;
+it does not reopen the implementation fixes behind that boundary.
+
+**Reviewed SHA-256 set:**
+
+```
+f6dd89b8e66638b5b15f17bfb6da62ef950c3583a6b939bcc1bba1435eef34e6  bootstrap/tests/_gate_preflight.py
+b6cd7222c2d4cff02bc7b2d3f43abb7dbc2800a463890411d3e1b6097bd07114  bootstrap/REANCHOR_RUNBOOK.md
+b7b522ad386e2e870eb428b4765c0224147e1546d806bf2be0048729c978fc96  bootstrap/tests/test_gate_preflight.py  (evidence only)
+```
+
+**Scope unchanged:** I did not re-review the Stage-B algorithms, accepted
+candidate-execution residual, replay posture, SSH cryptography, Windows behavior,
+external anchoring, concurrent Maintainers, or Phase 4. No main-repository ref
+was moved.
