@@ -217,9 +217,121 @@ and `check_cairn` clean.
 * `python scripts/claim_check.py <changed .md>` and `python scripts/check_cairn.py`.
 * Mutation-test every refusal: remove the check, confirm the test fails, revert, `diff` for byte-identity.
 
-## Plan review
+## Plan review -- Codex (External, different-agent-type; Security Review) -- 2026-08-03
 
-*Filled in after the required External (security lens) read.*
+**Verdict: REVISE.** This is the required External security-lens plan review and
+does not clear Chunk A to begin. The plan carries SR2-SR10 unusually faithfully:
+the candidate-execution residual is now honest and Decision-accepted, first use
+stays Maintainer-only and exact-byte reviewed, commit construction precedes one
+two-ref expected-old transaction, and replay is described as revalidate-and-
+confirm rather than single-use. Three blocking enforceability gaps and two
+substantive plan/test corrections remain.
+
+### Findings
+
+* **[GPR1] BLOCKING SECURITY -- the closed authority set stops at the old six
+  modules and does not protect the authority this plan adds.** A4-A6 compare and
+  record the six modules enumerated by `_gate_reanchor._authority_code_files()`.
+  After first use, `_gate_preflight.py` itself decides what may be blessed, and
+  the anchored invocation in `REANCHOR_RUNBOOK.md` decides which bytes execute.
+  Neither is in that six-file set; the runbook is outside `_frozen_files()`
+  entirely. A8 refuses a frozen removal or collection shrink, but does not say a
+  frozen modification refuses. Thus the old anchored checker can run safely,
+  bless a candidate that changes its successor or the next invocation, and make
+  those changed bytes authoritative at the next ceremony. E's proposed test only
+  proves that worktree changes cannot affect the *current* invocation; it does
+  not prove they cannot be blessed for the next one.
+
+  **Satisfier:** define one explicit preflight-authority closure containing the
+  checker, every helper whose code it executes, the canonical invocation source,
+  and every trusted policy input such as the expected committer/hash record.
+  Compare that closure's candidate Git blobs to the anchor before emitting a
+  bundle. Any changed, missing, extra, symlinked, or unpinned authority member
+  must return `REVIEW REQUIRED`, non-zero, with no bundle, and route to the manual
+  exact-byte review. Tests must mutate `_gate_preflight.py`, one dependency, the
+  invocation text, and the policy record independently and prove that none can be
+  applied through the automated path.
+
+* **[GPR2] BLOCKING SECURITY -- committer name/email variance is not a mechanical
+  detector of widened commit authority.** Git's `%cn` / `%ce` fields are supplied
+  by the process creating the commit and are not authenticated. In an isolated
+  repository I made the anchor as `Maintainer <m@example>`, then created the next
+  commit with a different author while setting the same committer name/email.
+  The proposed equality tripwire passed. Any second committer can set those same
+  strings, so A10 can detect honest metadata variance but cannot guarantee that
+  it "fires when commit authority widens."
+
+  **Satisfier:** either authenticate the committer with a verified signature
+  against a pinned Maintainer key, or rename this to a best-effort committer-
+  metadata variance tripwire and withdraw the authority-expiry guarantee. The
+  latter changes a premise the Maintainer's Decision explicitly accepted, so it
+  requires Maintainer adjudication rather than an author-only plan response. Add
+  a same-name/email foreign-writer test to pin the residual instead of testing
+  only the easy distinct-metadata case.
+
+* **[GPR3] BLOCKING DESIGN -- the evidence-to-check data flow has no public
+  interface or binding contract.** The accepted design still says two
+  subcommands, `check` and `apply`; Chunk B moves candidate execution outside
+  `check`, but names no command, artifact, schema, or ordering. Chunk C then binds
+  a candidate-manifest digest without saying how read-only `check` receives the
+  manifest/collection evidence, proves which immutable HEAD produced it, or
+  handles drift between evidence and check. If `check` launches collection, its
+  read-only claim is false under the accepted host-access residual. If it consumes
+  a file, parsing and state binding become security-critical inputs that the plan
+  currently leaves unspecified. The public-path mapping tests only `check` and
+  `apply`, so the evidence path is also untested as a public workflow.
+
+  **Satisfier:** name the complete CLI/state machine. A separate evidence command
+  or existing Stage-A producer should emit a strict, versioned artifact bound to
+  immutable candidate SHA, interpreter, manifest bytes/digest, and collection
+  result. `check` must parse it fail-closed, independently rederive every static
+  Git/object fact, bind its output bundle to the same candidate and current
+  anchor, and refuse intervening drift; `apply` must revalidate those bindings.
+  Exercise evidence -> check -> apply through public CLI subprocesses, including
+  malformed, substituted, stale, and wrong-candidate evidence.
+
+* **[GPR4] SUBSTANTIVE -- the read-only invariant's proposed snapshot misses the
+  state classes most relevant to this incident.** `git status --porcelain` does
+  not report ignored files and cannot see `.git/config`, hooks, arbitrary refs,
+  or other repository metadata; checking only `refs/cairn/*` misses mutation of
+  branch/tag/other refs. A checker that writes one of those surfaces could pass
+  the stated test. This repeats the status-observability limitation that exposed
+  SR5.
+
+  **Satisfier:** snapshot all refs, HEAD, index identity, tracked and untracked
+  state including ignored entries, and the Git metadata paths the checker can
+  address; pair that with subprocess instrumentation asserting `check` invokes no
+  mutating Git command. Keep the evidence-stage mutation residual separate from
+  this test so a benign evidence subprocess cannot make a weak `check` invariant
+  look strong.
+
+* **[GPR5] SUBSTANTIVE PROCESS -- the scope says no re-anchor is required while
+  Chunk G makes a manual re-anchor a completion dependency.** Lines 43-46 are
+  correct only in the narrow sense that Chunks A/E initially appear as allowed
+  `FROZEN-NEW`/collection growth. Lines 48-55 and 153-165 correctly say the
+  mechanism cannot be used as designed until the Maintainer performs one manual
+  Phase 0 blessing. Calling that blessing "not required by this plan's own work"
+  obscures the handoff and could let the plan archive with an unbootstrapped
+  mechanism.
+
+  **Satisfier:** say that no pre-existing frozen modification independently
+  triggers a re-anchor, but first-use bootstrap still requires Chunk G. Define
+  whether the plan waits at a Maintainer checkpoint before H/archive, and record
+  the candidate commit and exact-byte review in the progress/lasting-truth record.
+  Until the findings are disposed, the lifecycle status should be
+  `awaiting-plan-review`, not `executing`.
+
+### Verification and residuals
+
+Executed under canonical Python 3.13.13: the existing manifest, transition, and
+re-anchor subset passed **38 tests** in 9.16 seconds. An isolated Git probe
+confirmed both directions relevant here: the two-ref expected-old transaction
+aborts atomically on stale state, while a commit creator can preserve the exact
+same committer name/email metadata and pass an equality tripwire. `claim_check`
+passes on the plan. No implementation exists, so bundle parsing, temp-artifact
+permissions/lifetime, exact import closure, ref-transaction CLI construction, and
+the anchored invocation remain for code-level review; first use still requires
+the separately mandated exact-byte External review.
 
 ## Code review
 
