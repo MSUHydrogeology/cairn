@@ -706,3 +706,104 @@ first-use bootstrap is the one step with no mechanical protection, and it is the
 step that introduces the trust boundary itself. I do not think that is
 eliminable — it is the same shape as Phase 0's own out-of-band review — but it
 deserves the re-read's attention rather than my assurance.
+
+## External Security Review -- Round 2 -- Codex -- 2026-08-03
+
+**Model**: GPT-5 (Codex)
+
+**Commit reviewed:** `962badc`
+
+**Verdict: REVISE.** The response resolves SR2-SR5 at the design level: the
+handoff is state-bound and CAS-guarded, changed authority code cannot emit an
+actionable bundle, the audit record no longer promises unknowable values, and
+frozen membership is derived from stage-0 regular Git blobs. SR1 is not yet
+closed. The revision correctly identifies trusted launch and first use as the
+remaining hard parts, but its proposed mechanisms still claim two protections
+that they cannot provide.
+
+* **[SR6] BLOCKING -- the proposed checker still appears to authenticate itself
+  after entry.** `check` is described as resolving the reviewed preflight bytes
+  from the anchor and refusing when the *running* bytes differ. If the operator
+  starts the worktree `_gate_preflight.py`, Python has already executed that
+  file's top-level code before any self-comparison it performs. This is the same
+  verify-after-execute problem accepted in the response, only moved earlier in
+  the program.
+
+  **Satisfier:** make the immutable anchor copy the actual entry point. A launcher
+  outside the candidate tree must resolve the anchor, materialize the reviewed
+  checker and dependencies from Git objects, and execute that copy; the anchored
+  checker may then compare candidate authority bytes and route any change to the
+  manual procedure. Do not describe a worktree process checking its own bytes as
+  a trusted-launch boundary.
+
+  First use is an unavoidable manual bootstrap, and I accept that posture only
+  with exact-byte independent review. The phrase "this review's reviewed hashes"
+  is currently impossible: this round reviewed a design and no
+  `_gate_preflight.py` implementation exists to hash. The implementing plan must
+  require a focused External security review of the exact initial checker and
+  dependency bytes, followed by a Maintainer-recorded hash set consumed by the
+  manual bootstrap. This review cannot prospectively bless those bytes.
+
+* **[SR7] BLOCKING -- a repository-less temp tree is isolation from accidental
+  relative writes, not containment of Python.** The inherited Stage A helper is
+  explicit about this at `bootstrap/tests/_gate_reanchor.py:110-113`: its
+  environment is best-effort and "not hermetic." It removes credential-shaped
+  environment variables, redirects `HOME`, and disables Git prompts; it does not
+  restrict filesystem access, process creation, or network access. I executed a
+  candidate `conftest.py` through `_gate_manifest._collect()` from a fresh temp
+  tree. Collection returned 0 and the candidate wrote a marker to a second path
+  under `/private/tmp`, outside the materialized tree. The marker was removed
+  after the probe. The same process could target a known or discoverable live
+  checkout, `.git`, or a network endpoint.
+
+  Therefore the promised test that candidate collection "cannot reach the real
+  repository" cannot pass honestly under the stated mechanism, and `check` is
+  not read-only by construction while it executes host-capable candidate code.
+
+  **Satisfier:** either run candidate collection behind a real OS containment
+  boundary with no live-repository mount, no ambient credentials, and no network,
+  or remove candidate execution from the read-only checker and put it in a
+  separately named non-authoritative evidence stage whose host-access residual is
+  explicit. If the intended threat model trusts candidate code not to act
+  adversarially, say so, withdraw "cannot reach" and "untrusted" containment
+  claims, and adjudicate that weaker posture as a deliberate residual rather than
+  a mechanical guarantee.
+
+* **[SR8] SUBSTANTIVE -- define the failure state between commit creation and the
+  final anchor CAS.** The revision says `apply` creates the commit and only then
+  advances the anchor. If creation advances the current branch, a stale-anchor
+  CAS failure leaves a blessing-shaped commit on the branch even though authority
+  did not move. That is safer than the incident's bad-ref state, but it is still a
+  partial transaction on the exact surface this proposal exists to harden.
+
+  **Satisfier:** construct and verify the commit object before moving refs, then
+  update the branch and gate anchor in one expected-old ref transaction; or state
+  and test the narrower contract that a failed CAS leaves the anchor unchanged,
+  never reports success, makes the bundle non-replayable, and emits an explicit
+  recovery for any branch/index residue. No cleanup step may disguise which ref
+  did or did not advance.
+
+### First-use adjudication and residuals
+
+The one-time out-of-band bootstrap is acceptable in principle; trust roots need
+an initial human-reviewed insertion. It is not acceptable on design-review
+attribution alone. Acceptance is conditional on the exact-byte review and
+Maintainer-recorded hashes in SR6, plus a runbook that records who compared those
+hashes and at which immutable commit.
+
+I do not accept candidate-code containment as a residual while the proposal calls
+the code untrusted and promises read-only-by-construction behavior. I would accept
+best-effort repository-less execution only under an explicitly narrower,
+trusted-contributor threat model, with filesystem/network reachability recorded
+as residual risk and no test claiming otherwise. Cross-platform availability and
+semantics of any real sandbox remain open until the plan names one.
+
+### Coverage
+
+Focused re-read of the response and revised design in `962badc`; comparison with
+the existing Stage A boundary; canonical Python 3.13.13 execution probe showing a
+candidate collection-time write outside its temp tree. The existing manifest,
+transition, and re-anchor tests passed **38 tests** in 10.23 seconds. No proposed
+implementation exists, so parser strictness, bundle permissions and lifetime,
+actual ref-transaction behavior, Windows behavior, and sandbox enforcement remain
+for plan/code review.
