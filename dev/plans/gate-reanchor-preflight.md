@@ -1,10 +1,10 @@
 <!-- cairn-internal-ref-allow: doctrine/plans.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- Forward-reference paths this plan creates; they materialize in Chunks A/E. -->
-<!-- `dev/.cairn/allowed_signers` is created by the MAINTAINER at step M1 of the
-     2026-08-03 plan revision, not by an implementing commit; it is cited in body
-     prose (the M-steps and the authority closure), outside the Proposed-paths
-     marker block, so it needs the file-scoped exemption below until M1 runs. -->
-<!-- claim-check-allow: bootstrap/tests/_gate_preflight.py, bootstrap/tests/test_gate_preflight.py, dev/.cairn/allowed_signers -->
+<!-- `dev/.cairn/allowed_signers` needed a file-scoped exemption while it was a
+     forward reference; the Maintainer ran M1-M5 on 2026-08-03 and the path now
+     resolves, so the exemption is dropped per the marker discipline (drop it
+     once the path lands) rather than left to rot. -->
+<!-- claim-check-allow: bootstrap/tests/_gate_preflight.py, bootstrap/tests/test_gate_preflight.py -->
 
 # Plan: a reviewed pre-flight for the supervised gate re-anchor (Phase 0)
 
@@ -554,6 +554,27 @@ pre-epoch unsigned commits do **not** fire.
 Chunk A remains blocked until the Maintainer (a) runs M1-M5 and reports the epoch
 SHA, and (b) amends the Decision at `b37e137`, whose recorded premise — the
 committer-identity check as "the mechanical tripwire" — this revision replaces.
+
+### Both preconditions satisfied -- 2026-08-03
+
+**M1-M5 complete.** Signing epoch:
+**`a07fac88e6dcda08513cac28e6f1310999f1e577`** — the Maintainer-authored commit
+pinning `dev/.cairn/allowed_signers`. Verified at recording time, not taken on
+report: `%G?` = `G`, `%GS` = `kendal30@msu.edu`, one file changed, tree clean.
+Repository-local signing config is in place, so commits from this checkout —
+including agent-made ones — are signed with the Maintainer's key, exactly as the
+caveat above states.
+
+**Decision amended** at `3e962b7`, correcting `b37e137`'s falsified premise while
+leaving the posture itself and its acceptance unchanged.
+
+**Chunk A is unblocked.** A10 is implemented against the epoch above; the
+authority closure includes `dev/.cairn/allowed_signers` and the epoch SHA as
+trusted policy inputs. The plan's Status moves `awaiting-plan-review` →
+`executing` only when implementation actually begins — the required External
+security plan review has been answered, and the remaining plan-review gate is the
+Chunk G first-use exact-byte review, which is a *pre-first-use* gate rather than a
+pre-implementation one.
 
 ## Code review
 
