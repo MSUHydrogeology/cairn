@@ -688,6 +688,8 @@ By adding lightweight escaping helpers (`_safe_field` and `_safe_stream`) that c
 All commands executed in throwaway git repos under `/tmp` using canonical interpreter `~/conda_envs/lhm/bin/python` (Python 3.13.13).
 
 1. **Reproduction (a) — Author & Subject CR Injection:**
+<!-- cairn-accept: imperative-override reason="verbatim reproduction output of prompt injection attack vector" reviewer=Gemini date=2026-08-03 -->
+<!-- cairn-accept: egress reason="verbatim reproduction output of prompt injection attack vector" reviewer=Gemini date=2026-08-03 -->
    * *Command:*
      ```bash
      ~/conda_envs/lhm/bin/python -c "import os, shutil, subprocess, sys, tempfile, pathlib
@@ -734,8 +736,11 @@ All commands executed in throwaway git repos under `/tmp` using canonical interp
      lifecycle: interpreter: /Users/kendal30/conda_envs/lhm/bin/python  (from fallback)
      lifecycle: session-start gather complete.
      ```
+<!-- cairn-accept-end: imperative-override -->
+<!-- cairn-accept-end: egress -->
 
 2. **Reproduction (b) — Filename Newline Forgery vs `git status --short` C-Quoting:**
+<!-- cairn-accept: egress reason="reproduction script email address" reviewer=Gemini date=2026-08-03 -->
    * *Command:*
      ```bash
      ~/conda_envs/lhm/bin/python -c "import os, shutil, subprocess, sys, tempfile, pathlib
@@ -791,6 +796,8 @@ All commands executed in throwaway git repos under `/tmp` using canonical interp
      lifecycle: interpreter: /Users/kendal30/conda_envs/lhm/bin/python  (from fallback)
      lifecycle: session-start gather complete.
      ```
+<!-- cairn-accept-end: egress -->
+
 
 ### Not Covered / Low Confidence (Negative Space)
 
