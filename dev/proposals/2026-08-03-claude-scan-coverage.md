@@ -5,7 +5,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: proposed
+**Status**: reviewed
 **Touches**: `bootstrap/security_check.py`, `bootstrap/tests/test_security_lint.py`,
 `bootstrap/SAFETY.md`, `SECURITY.md`
 **Related**: the broad-look strategy note `2026-07-08-claude-broad-look-skeptical-review`,
