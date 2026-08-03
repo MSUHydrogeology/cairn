@@ -1,5 +1,6 @@
 # cairn-lock.yml -- machine-generated install lockfile (tool-owned; regenerate-only; do not hand-edit).
 # JSON-encoded (valid YAML 1.2) so it round-trips without a YAML dependency.
+# source_repository/source_licenses are declared, not attested -- see "Adding a lockfile field without bumping the schema" in bootstrap/UPGRADE.md (a reference in the Cairn source repository, not a file installed into this tree).
 {
   "cairn_commit": "unknown",
   "cairn_version": "0.3.0",
@@ -27,7 +28,7 @@
     },
     {
       "dst": "AGENTS.md",
-      "hash": "sha256:f8a5e039275d7167ab12abc9a74bbca9a631d4bc98619ab8d2bf7fe5239302bd",
+      "hash": "sha256:e45db6579b8b06ae69dc439ce7d0f5450768ca693472e7ca676b418613ea29d7",
       "src": "core/AGENTS.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -221,14 +222,14 @@
     },
     {
       "dst": "dev/plans/_template.md",
-      "hash": "sha256:68f3e963dc800d942dfb62e5642be72dba5746267494688529b1493f5a5dadc0",
+      "hash": "sha256:563c547d4decded921690ce5028be89ff17a94ffd0ac45c4fe72463cfb2a3253",
       "src": "core/dev/plans/_template.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/proposals/_template.md",
-      "hash": "sha256:29300622ed3f6cc2e0febbec69b5d4ef131d261e56576c726be4eb3e22e8155a",
+      "hash": "sha256:edf51691cf49537afc320b4546e94086529e7517963d876f72144562116891f1",
       "src": "core/dev/proposals/_template.md",
       "unrecoverable_base": true,
       "verbatim": false
