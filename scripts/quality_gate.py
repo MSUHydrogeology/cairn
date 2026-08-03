@@ -561,9 +561,10 @@ def _collect_py_defs_and_refs(
 ) -> tuple[list[tuple[str, int]], set[str]]:
     """Return ``([(name, lineno), ...], referenced_names)`` for one
     .py file.  Defs are top-level function / class definitions; refs
-    are every ``ast.Name`` / ``ast.Attribute`` *target* name seen
-    anywhere in the file (including its own body, so a recursive
-    helper counts as referenced).
+    are every ``ast.Name`` / ``ast.Attribute`` *target* name and every
+    ``from X import Y`` imported symbol name seen anywhere in the file
+    (including its own body, so a recursive helper counts as
+    referenced).
     """
     try:
         src = path.read_text(encoding="utf-8", errors="replace")
@@ -580,6 +581,16 @@ def _collect_py_defs_and_refs(
             refs.add(node.id)
         elif isinstance(node, ast.Attribute):
             refs.add(node.attr)
+        elif isinstance(node, ast.ImportFrom):
+            # `from X import Y` binds Y as a reference to the def named
+            # Y in module X.  The alias nodes are neither Name nor
+            # Attribute, so without this branch a def whose only
+            # in-corpus reference is a package-facade re-export reads
+            # as dead.  `alias.name` only, not `alias.asname`: the def
+            # being matched is named `alias.name`, and the local
+            # rebinding is already an ast.Name at every use site.
+            for alias in node.names:
+                refs.add(alias.name)
         elif isinstance(node, ast.Call):
             # Direct ast.Name calls are already captured above; this
             # branch is here to make the intent explicit.

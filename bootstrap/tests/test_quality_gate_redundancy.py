@@ -11,6 +11,9 @@ Pins:
   false positives.
 * Cross-file references (one module calling another's def) count as
   referenced and DO NOT trip R6.
+* A ``from X import Y`` re-export (plain or aliased) counts as a
+  reference to ``Y``, while the import's *other* tokens -- the local
+  ``as`` binding and the module name -- do not silence unrelated defs.
 """
 from __future__ import annotations
 
@@ -224,3 +227,76 @@ class TestR6UnusedDef:
             ("_private_helper" not in f.message) or f.severity == "info"
             for f in findings
         ), [(f.severity, f.message) for f in findings]
+
+    def test_re_exported_def_not_flagged(self, qg, tmp_path):
+        # A def whose ONLY in-corpus reference is a package-facade
+        # re-export (`from .x import public_api` in the sibling
+        # __init__.py) is live, not dead.  Before the ImportFrom
+        # branch existed in `_collect_py_defs_and_refs`, the alias
+        # nodes of an import were harvested by neither the ast.Name
+        # nor the ast.Attribute case, so this shape produced a `fail`.
+        (tmp_path / "scripts").mkdir()
+        (tmp_path / "scripts" / "x.py").write_text(
+            "def public_api():\n"
+            "    return 1\n"
+        )
+        (tmp_path / "scripts" / "__init__.py").write_text(
+            "from .x import public_api\n"
+        )
+        findings = qg._run_r6_redundancy(tmp_path)
+        assert not any("public_api" in f.message for f in findings), [
+            (f.severity, f.message) for f in findings
+        ]
+
+    def test_aliased_re_export_not_flagged(self, qg, tmp_path):
+        # Same, with the `as` form -- the shape the engine facade
+        # actually uses (`from ._guard import install as
+        # _install_engine_guard`).  The def being matched is named by
+        # the imported symbol, not by the local rebinding.
+        (tmp_path / "scripts").mkdir()
+        (tmp_path / "scripts" / "x.py").write_text(
+            "def public_api():\n"
+            "    return 1\n"
+        )
+        (tmp_path / "scripts" / "__init__.py").write_text(
+            "from .x import public_api as _p\n"
+        )
+        findings = qg._run_r6_redundancy(tmp_path)
+        assert not any("public_api" in f.message for f in findings), [
+            (f.severity, f.message) for f in findings
+        ]
+
+    def test_import_does_not_silence_an_unreferenced_def(self, qg, tmp_path):
+        # Negative control for the ONLY failure direction this
+        # detector has: over-suppression.  Harvesting an import must
+        # add the *imported symbol* name and nothing else.  Two defs
+        # here are genuinely dead; each is named after one of the
+        # import statement's other tokens, so a broader harvest goes
+        # quiet on real dead code:
+        #
+        #   * `orphan_alias` collides with the local `as` binding --
+        #     it would go silent if `alias.asname` were harvested too.
+        #   * `mod_a` collides with the module name -- it would go
+        #     silent if `node.module` were harvested too.
+        #
+        # `thing` is the only name the import legitimately references,
+        # and there is no def by that name in the corpus.  The import
+        # has no use site in its own file on purpose: that is the
+        # facade re-export shape, and it also keeps `orphan_alias` out
+        # of the reference set via the ast.Name path, so this test
+        # isolates the import harvest.
+        (tmp_path / "scripts").mkdir()
+        (tmp_path / "scripts" / "x.py").write_text(
+            "from mod_a import thing as orphan_alias\n"
+        )
+        (tmp_path / "scripts" / "y.py").write_text(
+            "def orphan_alias():\n"
+            "    return 1\n"
+            "\n"
+            "def mod_a():\n"
+            "    return 2\n"
+        )
+        fails = _failures(qg._run_r6_redundancy(tmp_path))
+        messages = [f.message for f in fails]
+        assert any("`orphan_alias`" in m for m in messages), messages
+        assert any("`mod_a`" in m for m in messages), messages
