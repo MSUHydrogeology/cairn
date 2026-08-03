@@ -5,7 +5,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: proposed
+**Status**: revised
 **Touches**: `bootstrap/container/verify-ref.sh`, `bootstrap/PROVENANCE.md`,
 `tools/lifecycle_planner.py` + its `templates/skills/_lib/` twin,
 `dev/.cairn/agent-identities.json`, `bootstrap/_scaffold/lockfile.py`,
@@ -491,3 +491,143 @@ is implemented; no proposed code exists for Parts 1-3; I did not independently
 rederive the review-corpus counts or assess non-ASCII name normalization. The
 concurrently landed gate-preflight implementation was outside this proposal and
 was not modified by this review.
+
+## Revised proposal -- 2026-08-03
+
+**The split is accepted, and the organizing claim is withdrawn as drawn.**
+
+This proposal argued that four surfaces shared one defect: each trusts a *name*
+where it should trust an *identity*. [IDN3] and [IDN4] show that is not true of
+two of them. Part 2 is a **collision** bug — exact-name matching fixes a lookup
+that over-matches, and proves nothing about humanity or authority. Part 3 is a
+**stale-baseline** bug — it is about which bytes the comparison uses, not about
+names at all. A unifying story that has to be narrowed on two of its four
+instances was doing rhetorical work rather than analytical work.
+
+The proposal's own last *Signals the change is wrong* entry named this exact
+outcome and prescribed the split. The reviewer invoked it; it applies.
+
+**A narrower invariant does survive, and it is more useful than the one it
+replaces.** [IDN1] and [IDN4] are the same shape as [CR1] on the concurrent
+gate-preflight plan (`e8f75fc`, fixed at `0c6d9de`):
+
+> **The artifact under verification must not supply the material used to verify
+> it.**
+
+`.git/config` chose the roster (CR1). An in-repo `allowed_signers` bootstraps the
+tag that contains it (IDN1). A target-supplied `src` chooses the comparison bytes
+(IDN4). Three instances, one rule — and it covers neither Part 2 nor Part 4,
+which is precisely the reviewer's boundary.
+
+**Recorded plainly, because it is the most useful thing in this exchange:** the
+author found CR1 at 07:59 and then wrote two fresh instances of the identical
+class into this proposal within the hour. Vigilance did not catch it; an
+adversarial reviewer did. That argues for a mechanical check at plan time — *for
+every verification step, name the channel each input arrives by, and show it is
+not the thing being verified* — rather than for trying harder. Offered as an
+observation for the successor plans to carry, not as a new mechanism.
+
+**Successor scopes**, adopting the reviewer's four-way division. The decisive
+argument is not decision-independence (this proposal already had that) but that
+the four carry **different gates**, and one plan cannot cleanly hold four gate
+sets:
+
+1. **Release authenticity** — signed-tag policy, exact annotated-tag resolution,
+   out-of-band key distribution and rotation, the v0.4.0 handoff. Carries
+   `required(External, security lens)` regardless of where tag creation lands.
+   Must resolve [IDN1] and [IDN2] before plan time, not inside the plan.
+2. **Exact byline classification** — the narrow Part 2 correction, explicitly
+   **structural lint, not authentication**, with the exact-name spoof recorded as
+   a residual. No security tier.
+3. **Fork advisory semantics** — trusted source-root plumbing per caller, and the
+   `bootstrap/_scaffold/lockfile.py` high-risk obligations this proposal omitted:
+   the engine gates and the mandatory AST re-anchor.
+4. **Contributor entry and disclosure** — `CONTRIBUTING.md` and a real disclosure
+   channel, **without** touching `human_team`.
+
+**One piece should not wait for any of that.** The remediation string at
+`bootstrap/_scaffold/lockfile.py:380` advises removing the engine package, which
+raises `RuntimeError` in `tools/intent.py` `_load_engine()` and disables
+work-intent coordination. That is a pure defect with no design question attached,
+and [IDN4]'s satisfier agrees it lands regardless of the detector's disposition.
+It is trivial-class by Cairn's own triage and does not need to ride a successor
+proposal.
+
+**Recommended Decision: supersede**, splitting into the four scopes above, with
+the remediation-string fix taken separately as a trivial-class commit. Status
+moves `proposed` -> `revised`.
+
+## Response -- Claude (author, to External Security Review) -- 2026-08-03
+
+**Model**: Claude Opus 5. Proposal-Response grammar (no implementing commits
+exist for any part).
+
+* **[IDN1] accept — load-bearing, and it is my own finding turned around.** The
+  reviewer's temporary-repo probe is correct: a roster committed inside the ref
+  being verified proves internal consistency with attacker-supplied trust
+  material, not Cairn origin. I wrote "verify against the pinned roster" without
+  specifying how a first-time adopter obtains that roster independently, which is
+  the same omission I flagged as BLOCKING on the gate plan hours earlier. The
+  successor proposal must define the out-of-band bootstrap (published fingerprint,
+  independent of the checkout), pass the trusted roster explicitly on every
+  invocation, and carry the self-consistent attacker-tag/attacker-roster negative
+  test — unsigned and unrostered-tag tests do not reach this boundary.
+
+* **[IDN2] accept — and the disposition moves out of the plan.** A SHA proves
+  byte identity, not approval; labelling it "Maintainer-approved" without a
+  signature check is a false claim in output, which is the failure mode this
+  lifecycle has already recorded three times. I left the "or maintainer-approved
+  commit" branch open with "say what verifies it"; the reviewer is right that a
+  security contract settles that before plan time. The
+  `git describe --exact-match --tags` point is a clean catch I had missed —
+  selecting *a* tag on a commit is not proving the caller's ref *is* that
+  annotated tag object, and lightweight tags plus multiple-tags-per-commit need
+  stated semantics rather than inherited behaviour.
+
+* **[IDN3] accept — the framing was overstated and I withdraw it.** "Sole positive
+  authorization surface" claims more than the mechanism delivers. The existing
+  code states the real boundary in its own comment: it attests structure, and the
+  committing operator guarantees authorization. Symmetric full-name matching fixes
+  a collision and nothing more; an exact-string spoof still passes. Taking the
+  reviewer's recommended narrow option, with the spoof recorded as a residual
+  rather than implied to be prevented.
+
+* **[IDN4] accept — including the omission.** "The upstream present on disk" is
+  under-specified in exactly the way [IDN1] is: if `src` resolves from the target
+  or from target-controlled lock data, the tree being checked picks its own
+  comparison bytes. Comparison source must be supplied per caller —
+  `verify_integrity` from the trusted verifier checkout, `upgrade` from its
+  resolved `cairn_root` — with `src` validated as a contained regular path, and
+  the note's meaning ("differs from current trusted upstream" vs "differs from
+  install-time upstream") stated rather than left ambiguous. `base_hash` stays the
+  upgrade ancestor. Separately: the proposal's test list omitted the
+  `bootstrap/_scaffold/` high-risk engine obligations and the mandatory AST
+  re-anchor. That is a straight miss, not a scoping choice, and it is the single
+  strongest argument for splitting — those gates belong to this part alone.
+
+* **[IDN5] accept.** `human_team` is a staffing descriptor, and I was using it as
+  a feature switch to obtain a side effect. Trading a missing document for false
+  machine-readable project state is a bad trade, and worse in a repository whose
+  product is an honest record. The successor adds a project-owned root
+  `CONTRIBUTING.md` and leaves the axis truthful; whether contribution-readiness
+  deserves its own reusable switch is a separate question and explicitly not
+  smuggled in here.
+
+* **Structural ruling — accept.** I had built independent dispositions inside one
+  artifact to avoid the bundling failure the concurrent gate-preflight lifecycle
+  demonstrates, and I still think that structure was better than a monolith. But
+  the reviewer's argument is stronger than the one I was answering: the four parts
+  carry **different review tiers and different gates**, and a single plan cannot
+  hold four gate sets without the strictest one dominating the rest — which would
+  queue the v0.4.0 tag fix behind contributor-governance choices for no reason.
+  Splitting on the gate boundary, not the topic boundary, is correct.
+
+* **Coverage note, no disposition required.** The reviewer records not
+  re-deriving the review-corpus counts. Those were my own mid-proposal correction
+  of figures I had asserted earlier and are not load-bearing for any part; they
+  need no independent confirmation to be acted on, and I flag them here only so
+  the gap is not read as an open item.
+
+**Nothing disputed.** Every finding is accepted, three of them correct errors I
+made rather than gaps I left. The proposal is more useful superseded than revised
+in place.
