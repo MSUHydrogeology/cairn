@@ -9,9 +9,9 @@
 # Plan: a reviewed pre-flight for the supervised gate re-anchor (Phase 0)
 
 **Source proposal**: `dev/proposals/archive/2026-08-03-claude-gate-reanchor-preflight.md`
-**Status**: awaiting-plan-review
+**Status**: executing
 **Plan review**: required(**External**, security lens) — carried from the proposal header and ratified at Decision. Additionally, **first use is gated on a focused External security review of the exact initial checker bytes and the recorded invocation** (SR6 / SR9); the Decision explicitly does *not* prospectively bless those bytes.
-**Last update**: 2026-08-03 (plan review response)
+**Last update**: 2026-08-03 (Chunk A landed)
 **Opened**: 2026-08-03
 
 ## Source proposal
@@ -568,6 +568,24 @@ caveat above states.
 **Decision amended** at `3e962b7`, correcting `b37e137`'s falsified premise while
 leaving the posture itself and its acceptance unchanged.
 
+### Sequence revision 2026-08-03 -- tests land with A, not at E
+
+The recorded sequence `A -> B -> C -> D -> E -> F` puts every test at Chunk E,
+which would leave **four chunks of security-critical code unverified** while they
+land. That is a sequencing flaw in this plan, of the same shape the plan's own
+source proposal documents elsewhere. Revised: **each chunk lands with the tests
+for its own surface**; Chunk E becomes the integration pass
+(`evidence` → `check` → `apply` through public CLI subprocesses) rather than the
+first appearance of tests.
+
+Vindicated immediately: mutation-testing Chunk A's tests caught one of them
+(`unpinned key refuses`) as **vacuous** — it was passing through the signature-
+*status* branch while the signer-*principal* comparison went unexercised. Removing
+the principal check did not fail it. Rewritten so git trusts both keys (making the
+outsider's commit verify as `G`) while the repository pins only the Maintainer;
+the mutation now fails it. Had tests waited for Chunk E, that gap would have sat
+in a security check for four chunks.
+
 **Chunk A is unblocked.** A10 is implemented against the epoch above; the
 authority closure includes `dev/.cairn/allowed_signers` and the epoch SHA as
 trusted policy inputs. The plan's Status moves `awaiting-plan-review` →
@@ -575,6 +593,117 @@ trusted policy inputs. The plan's Status moves `awaiting-plan-review` →
 security plan review has been answered, and the remaining plan-review gate is the
 Chunk G first-use exact-byte review, which is a *pre-first-use* gate rather than a
 pre-implementation one.
+
+## Plan review -- Claude (Internal, same-agent-type; security lens) -- 2026-08-03
+
+**Model**: Claude Opus 5.
+
+**Tier note.** This is an *additional* Internal pass, not the declared
+`required(External, security lens)` tier -- that obligation was answered by the
+Codex rounds above and is not discharged or replaced by this section. I did not
+author this plan or any of its revisions; I came to it from an unrelated thread
+(a broad security-surface review) and read it cold, which is the Internal floor
+of "the same agent type in a fresh session." No cross-type independence on this
+pass.
+
+**Steelman.** The move from committer-identity strings to signature verification
+is the right correction, and the revision is careful in the places that usually
+go wrong. It reads `%G?`/`%GS` rather than parsing `git verify-commit`'s prose --
+which matters more than it looks, because that prose *lies*: with an unmatched
+key git prints `Good "git" signature with ED25519 key SHA256:...` on the line
+directly above `No principal matched.`, so a stdout-parsing check would pass an
+unrostered signer. It refuses on both `N` and `U` rather than on "not `G`". It
+puts `dev/.cairn/allowed_signers` and the epoch SHA into the authority closure,
+closing the obvious self-authorization move. It grandfathers pre-epoch commits
+instead of pretending history was signed. And it records the key-holder-not-human
+residual beside the mechanism rather than leaving it for a later reviewer to
+find. The negative-test discipline -- validating `G`/`N`/`U` with throwaway keys
+*before* writing the mechanism down -- is why this finding is narrow rather than
+structural.
+
+### [CR1] BLOCKING -- the roster is *located* through a candidate-controlled channel
+
+The closure verifies **what the roster says**. Nothing verifies **whether that
+roster is the one git consults**.
+
+Step M2 pins the roster path into repository config:
+
+```
+git config gpg.ssh.allowedSignersFile "$(pwd)/dev/.cairn/allowed_signers"
+```
+
+That is the plan's only mention of `allowedSignersFile`; no verification step
+supplies the path itself. So A10's `%G?`/`%GS` check resolves the roster through
+`.git/config` -- and this plan already establishes, at GPR4, that the read-only
+snapshot "cannot see `.git/config`". The signature check depends on the one
+surface the plan says nothing can observe.
+
+An attacker who can write `.git/config` never touches `dev/.cairn/allowed_signers`
+at all. The closure comparison passes byte-for-byte because the file *is*
+untouched; git simply reads a different file. Reproduced in an isolated
+repository with throwaway keys:
+
+| condition | `%G?` | `%GS` | `verify-commit` |
+|---|---|---|---|
+| `.git/config` points at an attacker roster; commit signed by the unrostered attacker key | `G` | `evil@example.org` | exit 0 -- **accepted** |
+| identical commit, roster supplied on the command line | `U` | *(empty)* | exit 1 -- refused |
+
+Command-line `-c` outranks repository config, so the fix is one flag on every
+verification invocation rather than any new machinery:
+
+```
+git -c gpg.ssh.allowedSignersFile=<abs path to the closure-verified roster> log --format='%G? %GS' ...
+```
+
+With that, the chain reads: anchor object (trusted) -> roster blob
+(closure-verified) -> keys. `.git/config` leaves the trust path entirely, and the
+closure check becomes load-bearing instead of decorative.
+
+The same flag closes a second, milder hole in the same surface. A candidate that
+merely *unsets* the config makes every genuinely-signed commit report `%G?` = `N`
+-- verified. Under A10 that refuses (`N` -> `REVIEW REQUIRED`), so it is
+fail-closed rather than a bypass; but it is a cheap denial of the ceremony, and
+supplying the path by invocation removes it for free.
+
+**Why this is worth a BLOCKING flag rather than a note.** `73d9026` unblocked
+Chunk A, and `bootstrap/tests/_gate_preflight.py` does not yet exist. The cost of
+fixing this is one sentence in the spec today, versus a re-review of written
+checker bytes tomorrow -- and Chunk G's first-use gate is an *exact-byte* review,
+so a defect that reaches the bytes is maximally expensive to remove.
+
+### [CR2] SUBSTANTIVE -- add the negative test that would have caught CR1
+
+The A10 validation covers `G` / `N` / `U` -- three cases that all vary *the
+signature*. None varies *the roster's location*, which is why the gap survived a
+careful design pass. Acceptance criteria should require a case where the roster
+contents are correct and untampered, the config points elsewhere, and the checker
+still refuses. That test fails today by construction and passes under CR1's fix,
+which makes it a real regression guard rather than a restatement.
+
+**Covered.** The signature-verification mechanism as specified in *Plan revision
+2026-08-03* and the M-step block: read in full and exercised against a scratch
+repository with generated keys for all four cases in the table above, plus the
+config-unset case and the stdout-versus-`%G?` divergence. Authority-closure
+membership: confirmed `dev/.cairn/allowed_signers` is listed and that it does not
+cover the config channel. Forward-reference status: confirmed
+`bootstrap/tests/_gate_preflight.py` is absent, so no written bytes are affected.
+
+**Not covered / low confidence.** Same-agent-type reviewer -- no cross-type
+independence. I did not review Chunks B-H, the bundle format, the SR10
+nonce/ledger deferral, or the authority-closure enumeration itself (GPR1), which
+remains the larger open scope question. I did not re-derive whether any *other*
+git config key reachable from the checker's invocation carries comparable
+authority; CR1 is one instance of a class I have not swept, and that sweep is the
+natural follow-up.
+
+**Second-round recommendation.** Not recommended as a full round. CR1 is a
+one-line spec change with a reproduction attached and CR2 is its regression
+guard; both are cheaper to apply than to re-review. What I would recommend
+instead, and only if the Maintainer wants it, is a narrow cross-type pass over
+the *class* named in the negative space above -- the checker's git-invocation
+surface generally -- rather than another full-plan round. The declared
+`required(External, security lens)` tier stands regardless of this
+recommendation.
 
 ## Code review
 
