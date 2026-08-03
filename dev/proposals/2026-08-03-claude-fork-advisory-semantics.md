@@ -853,3 +853,225 @@ Executed under canonical interpreter `~/conda_envs/lhm/bin/python` (Python 3.13.
 
 *(Awaiting the Maintainer. The proposal has cleared External Security Review. The Maintainer may accept the proposal to proceed with plan creation.)*
 
+## Addendum — 2026-08-03 — the mechanical reason Class C was dropped
+
+> **This addendum is worded identically in scope 1 (`release-authenticity`), for the same reason
+> the *Class C* section above is: the two proposals must not be readable as
+> disagreeing about the disposition or about how it is held.** It is *appended*
+> rather than folded into that section because that section is committed
+> lifecycle record. It states what its authors believed when they wrote it —
+> before anyone had measured whether the mechanism they proposed is the kind of
+> mechanism that holds. Rewriting it would erase that, so the correction is a
+> later section.
+
+**What this adds.** The *Class C* section above establishes *that* the follow-on
+was documented, routed, and never opened, and takes from it the lesson that
+"naming a home is what failed last time." It does not say **why** naming a home
+failed. A later audit proposed a mechanical answer. I re-measured it rather than
+adopting it on report, and the measured version is stronger and more specific
+than the reported one. The disposition does not change; the strength ranking of
+the parts holding it does, and one drafting defect in the mechanism surfaces.
+
+### The measurement
+
+Two forms have to be kept apart, and the distinction is the finding.
+
+* **The commit-body form** is what the doctrine actually requires. Cairn's
+  archive precondition says the archive commit *body* must name where each
+  deferred item went, in a literal `Follow-ups migrated to:` block — the stated
+  purpose being that the migration is auditable from the commit log alone
+  (`doctrine/proposals.md:370`).
+* **The in-file form** is what the only checker in the tree actually looks for:
+  a `Follow-ups migrated to:` block inside the artifact.
+
+Measured on this repository, `as_of 2026-08-03`:
+
+* **Commit-body form: 0 of 9** archived plans and **0 of 12** archived proposals.
+  Across the entire history exactly one commit message contains the phrase, and
+  it is the commit that *introduced* the doctrine, not an archive commit. Plans
+  record the migration in prose instead ("Lasting-truth migration: … moved to
+  `dev/PLANNING.md` > Queued"). Neither side satisfies the doctrine as written.
+* **In-file form: 7 of 9** archived plans carry the block; **1 of 12** archived
+  proposals do. The single compliant proposal is a *superseded* one that carries
+  the block inside its own Decision section — hand-written, in a Decision commit
+  that also performed the archive move.
+
+Method, so this is re-runnable rather than asserted: for the in-file form,
+`grep -rl` for the phrase across `dev/plans/archive/` and
+`dev/proposals/archive/`; for the commit-body form, for each archived file the
+commit that added it at its archive path, then that commit's message body. The
+7-of-9 / 1-of-12 figures reproduce the audit's exactly. The commit-body figures
+are new here.
+
+### The mechanism, and it is not carelessness
+
+`tools/lifecycle_planner.py` — with its byte-parity twin shipped under
+`templates/skills/_lib/` — is the only place in the tree where this precondition
+is checked at all. Two facts about it:
+
+* The parser computes the field for **every** artifact, plan or proposal; it is
+  kind-independent (`tools/lifecycle_planner.py:488`).
+* The *check* is not. It sits inside the plan branch's archived-status arm
+  (`tools/lifecycle_planner.py:654`). The proposal branch has no counterpart.
+
+And in the current model it cannot have one, which is the real finding.
+`archived` is a plan status; it is **not** a proposal status. The proposal state
+tuple (`tools/lifecycle_planner.py:501`) runs `proposed → reviewed → revised →
+accepted / rejected / superseded` and stops there; the transition table returns
+the empty list from `accepted`, carrying an inline comment that says why — the
+archive move is a file operation, not a status flip. There is therefore no
+proposal state for an archive-time precondition to attach to. On the proposal
+side the gate is not lax. It is **structurally absent**.
+
+That asymmetry is visible in one pair of commands (output abridged,
+`as_of 2026-08-03`):
+
+```
+$ python tools/lifecycle_planner.py next dev/plans/archive/interpreter-trust-root-fallback.md
+lifecycle-planner: current state: archived
+lifecycle-planner: VIOLATION: status is 'archived' but no 'Follow-ups migrated to:'
+                   block is present (archive precondition).
+
+$ python tools/lifecycle_planner.py next dev/proposals/archive/2026-07-11-claude-record-corrections.md
+lifecycle-planner: current state: accepted
+   ... three VIOLATIONs reported, none of them about follow-ups ...
+lifecycle-planner: (terminal state -- no status transition; any archive move is a
+                   file operation, not a status flip.)
+```
+
+An archived plan missing its migration block is told so by name. An archived
+proposal missing its migration block is told about three unrelated things and
+then told the archive is not a transition. (Both artifacts are cited by path in
+the transcript because they are literal command arguments; in prose they are the
+`interpreter-trust-root-fallback` plan and the `record-corrections` proposal.)
+
+### What this corrects
+
+The superseding Decision's condition 1 in `identity-not-name` diagnosed the loss
+this way: the existing archive-precondition rule *"is satisfied by a roadmap
+row, and a roadmap row is where `SECURITY_MUTATIONS.md`'s Class C gap went."*
+That is right about the outcome and it understates the cause. The rule is not
+merely satisfiable by a weak home on the proposal side — on the proposal side it
+is not applied at all, and 1-of-12 is what that looks like from outside. Class C
+did not slip past a permissive gate. It was routed to the one half of the
+lifecycle where the gate does not run.
+
+This is a correction *in favour of* condition 1's instinct, not against it. The
+condition was written against the right failure; the failure is worse than
+stated.
+
+### Does the anti-drop mechanism inherit the weakness? Yes
+
+Stated plainly, because the *Class C* section above rests on it. The mechanism
+proposed there is a `dev/PLANNING.md` row landed in the first successor's
+Decision commit. That is **a roadmap row on the proposal side of the lifecycle**
+— the same class of object, on the same side, as the one that lost Class C. On
+this measurement it is not a stronger mechanism than the one that failed; it is
+the same mechanism.
+
+The inheritance is not total, and the two refinements both cut the same way:
+
+* The row lands at **Decision**, not at archive, and `accepted` / `rejected` /
+  `superseded` *are* modeled proposal states that the checker validates. So the
+  moment is one the tooling can see. But the terminal-state validation checks
+  three things — that a `## Decision` section exists, that it carries an isolated
+  verbatim-authorization blockquote, and that its byline classifies as a known
+  human Maintainer — and follow-up migration is not among them. The row is
+  unenforced at precisely the moment it is supposed to land.
+* Nothing later can catch its absence. The transition table returns no legal
+  target from `accepted`, so there is no subsequent modeled event at which a
+  missing row becomes visible to anything.
+
+The row's only guarantee is that a human remembered. That is exactly the
+guarantee Class C already had, and it is the guarantee that failed.
+
+### A second defect in the mechanism as written, found while checking this
+
+The *Class C* section says the disposition "lands as a `dev/PLANNING.md` row in
+the Decision commit of whichever successor is decided first." `AGENTS.md`'s
+scribing guard-rail says a scribed Decision commit flips the status and appends
+the Decision section *"and nothing else — no implementation, plan-open, archive,
+or roadmap work rides in a scribed Decision commit."* A `dev/PLANNING.md` row is
+roadmap work.
+
+This is not hypothetical. The Decision that spawned these four scopes was itself
+scribed: commit `6c6ce39` opens "Scribed by Claude (Strategy) at the Maintainer's
+explicit instruction" and closes by attesting "no plan-open, **no board edit**,
+no implementation." A `dev/PLANNING.md` row would have been excluded from it by
+the rule the scribe was following.
+
+So the mechanism as drafted is executable only when the Maintainer types the
+Decision commit themselves. If it is scribed — the immediately preceding
+precedent — the instruction is either to drop the row or to break the
+guard-rail, and neither is what the section intends. This is a drafting defect
+in the mechanism, not a problem with the guard-rail. The fix is cheap and is the
+Maintainer's to choose: land the row in a **separate, immediately-following**
+commit (a one-file `dev/PLANNING.md` commit, which the git-workflow carve-out
+already lets land without per-commit approval), and have the Decision section
+name that commit as its discharge.
+
+### What would have to change for the row to actually hold
+
+Three components are on the table. The *Class C* section lists them in what this
+measurement shows is the wrong order of strength. Corrected ordering, strongest
+first:
+
+1. **Extend condition 1 — the only *blocking* component, and already option 1's
+   real content.** Option 1 proposes that `identity-not-name` not archive until
+   Class C is opened. That is not a row; it is a precondition on an act only the
+   Maintainer performs. No tool enforces it either — but its holder is the one
+   role that cannot delegate the archive, and its failure mode is a visibly stuck
+   artifact rather than a silent missing line. On this measurement the
+   *condition* is the load-bearing half of option 1, not the "open a proposal"
+   half. Only the Maintainer can add it.
+2. **The `SECURITY_MUTATIONS.md` sentence — stronger than the row, and it should
+   have been named first.** It sits in the file that an engine change forces
+   someone to open, and that file's own closing line already carries a
+   re-inventory instruction firing on exactly that event — the trigger scope 3's
+   residual **R7** names as its (b). A durable home on a path someone *must*
+   walk beats a durable home on a board someone *might* scan. Concrete
+   recommendation to the Maintainer: **if only one of the two is landed, land the
+   sentence.**
+3. **Wire the proposal side — named here, explicitly not taken here.** The
+   parser already computes the field for both artifact kinds; what is missing is
+   a proposal-side check and a modeled state for it to attach to. That is a
+   change to `tools/lifecycle_planner.py` plus its byte-parity template twin, it
+   touches the shipped lifecycle contract that adopters install, and on the
+   numbers above it would immediately flag 11 of the 12 already-archived
+   proposals — which is a disposition question about historical artifacts, not a
+   code question. It is proposal-sized. Naming it is the correct treatment;
+   taking it as a rider on either successor would repeat exactly the
+   four-gate-sets-in-one-artifact failure the split exists to prevent. Recorded
+   so whoever opens Class C, or whoever next touches the lifecycle checker,
+   finds it rather than rediscovers it.
+
+### What this addendum does not establish
+
+* **It does not establish that the plan side works.** The checker is a read-only
+  reporter run at session-start, not a CI gate — it reports, it does not block.
+  And 0-of-9 on the commit-body form says the plan side fails the doctrine's own
+  stated requirement too. Both sides are out of conformance with the archive
+  precondition as written; the difference measured here is that only one side is
+  ever *told*.
+* **It does not prove this is why Class C specifically was lost.** It establishes
+  that the check which should have caught it does not run on that side of the
+  lifecycle. That is a sufficient and checkable explanation. Whether some further
+  factor also contributed is not measured, and no claim is made that it did not.
+* **It does not establish that a `dev/PLANNING.md` row never works.** Rows have
+  carried follow-ups in this repository. It establishes that a row is the weakest
+  of the three components on offer, and that this particular item has already
+  been lost from one.
+* **It does not change the disposition.** Both authors still decline Class C, for
+  the reasons recorded above, and the three options put to the Maintainer are
+  unchanged. What changes is the strength ranking in the anti-drop paragraph and
+  the commit mechanics for the row.
+
+### Status
+
+**No status change.** This is an append to a proposal still in `proposed` status
+with no review yet; it requests no re-review, adds no scope, changes no
+deliverable, and moves no residual. A reviewer reading top-to-bottom should treat
+this addendum's ordering — condition, then `SECURITY_MUTATIONS.md` sentence, then
+row — as superseding the ordering in the *Class C* section's anti-drop paragraph,
+and should treat the separate-commit note above as superseding "in the Decision
+commit" there.
