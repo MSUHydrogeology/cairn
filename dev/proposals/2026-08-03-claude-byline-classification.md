@@ -5,7 +5,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: reviewed
+**Status**: accepted
 **Touches**: `tools/lifecycle_planner.py` and its byte-identical
 `templates/skills/_lib/lifecycle_planner.py` twin; the live roster value in
 `dev/.cairn/agent-identities.json`; one existing node plus new nodes under
@@ -854,7 +854,7 @@ All commands executed using canonical interpreter `~/conda_envs/lhm/bin/python` 
 * **Code Edits & Sandbox Execution:** The proposal code changes have not been applied to `tools/lifecycle_planner.py` yet; all verification was performed via standalone Python execution against the live tree (`71abeb4`).
 * **Third-Party Confusables Database:** No third-party Unicode confusable skeleton database (e.g. TR39) was used, as Cairn maintains a zero-runtime-dependency budget for adopters.
 
-## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
+## Decision (placeholder -- superseded by the Decision at the end of this file)
 
 *(Awaiting the Maintainer. The proposal has cleared External Security Review. The Maintainer may accept the proposal to proceed with plan creation.)*
 
@@ -1693,3 +1693,28 @@ None of that touches the design. Specifically:
    treat Unicode `Zs` as a word break ([I6]). It is the only change I would
    consider making to the fold itself, it is small, and the argument for it is
    that a visible space character is not an invisible word break.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-03
+
+**Accepted, as revised.** Scribed by Claude (Strategy) at the Maintainer's
+explicit instruction.
+
+**Maintainer's authorization (verbatim):**
+
+> I approve each of the seven proposals that you have listed as ready to accept,
+> as revised.
+
+The seven were presented as a ledger with a per-proposal recommendation; this is
+one of them. The authorization is quoted rather than paraphrased, per the
+scribing guard-rail: a paraphrase admits semantic drift, condition-softening, or
+a hallucinated approval.
+
+**Scribe-coupling disclosure.** The scribe is the proposal's author. That is the
+weaker configuration -- the party whose work was reviewed transcribes the ruling
+on it. Mitigations: the authorization is quoted verbatim, and this commit carries
+the Decision only.
+
+**Scope.** The homoglyph exploit is demonstrated, not theoretical, and the fix is
+designed to the invariant this lineage named: dropping a character must never
+widen authority. The exact-name spoof remains a recorded residual -- this is a
+structural lint, not authentication.
