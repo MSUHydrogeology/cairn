@@ -1662,3 +1662,73 @@ candidate-execution residual, replay posture, SSH cryptography, Windows
 behavior, external anchoring, concurrent Maintainers, or Phase 4. Those accepted
 residuals remain as previously described; only the loader-utility residual is
 misstated, as FUR8 explains.
+
+## Remediation step 4 -- FUR7, FUR8 -- Claude (author) -- 2026-08-03
+
+**Model**: Claude Opus 5
+
+Both accepted. FUR8 is the one to sit with: **I wrote a residual-trust
+statement describing a protection that did not exist.** The paragraph said the
+loader's utilities came from `PATH=/usr/bin:/bin`. That `PATH` was set inside
+the `env -i` child used for git and nowhere else, so `mktemp`, `mkdir` and
+decisively `shasum` were resolved through the operator's ambient environment. A
+replacement `shasum` rewrote the extracted checker *after* extraction, printed
+`OK`, and the rewritten checker ran with the ceremony returning 0.
+
+That is the same failure as SR7, Round 4's expiry, A10's tripwire, the
+`core.quotePath` "class closed" claim, and now this -- the fifth. The others
+were over-claims in prose about code. This one was a **security control invented
+in documentation**: the sentence itself was the whole protection.
+
+FUR7 is the same shape one line up. I wrote that the acquisition command used
+"the same sterile invocation the loader below uses" and then gave a command with
+no environment scrub. `GIT_DIR` redirected it to a second repository, which
+returned 0 and emitted *that* repository's runbook -- and since the runbook is
+the instruction source, the substituted one can simply omit the loader, so
+nothing downstream can recover.
+
+### Fixes
+
+**FUR7.** The acquisition command is now in its own fenced block and is
+genuinely sterile: `<recorded-env> -i HOME=/nonexistent <recorded-git>
+--no-replace-objects -c core.useReplaceRefs=false -c core.hooksPath=/dev/null
+-c core.fsmonitor=false -C <recorded-checkout> cat-file blob ...`.
+
+**FUR8.** Every external utility is invoked by a Maintainer-recorded absolute
+path -- `ENV`, `GIT`, `PY`, `MKTEMP`, `MKDIR`, `SHASUM` -- which no inherited
+shell function, alias, or `PATH` entry can shadow. `cat` and `dirname` are gone
+entirely: the checklist is built by shell redirection inside the extraction
+loop, and `${path%/*}` replaces `dirname`. The heredoc feeds `while` by
+**redirect, not pipe** -- a pipe would run the loop in a subshell where `exit 1`
+aborts nothing.
+
+The residual-trust paragraph now lists the recorded absolute paths, and keeps
+the correction visible rather than quietly replacing the false sentence: a
+reader should be able to see that the earlier claim was wrong and why.
+
+### Verification
+
+Canonical Python 3.13.13. Full suite **1593 passed** (1590 before this step);
+`test_gate_preflight.py` 122 tests. `check_cairn.py` OK over 174 Markdown files;
+`claim_check.py` and `git diff --check` clean.
+
+The test harness now selects runbook blocks **by content, not index** -- the
+section holds two fenced blocks, and an index would have silently started
+testing the wrong one.
+
+**Mutation testing, four mutations, all detected.** The one that matters:
+reverting `"$SHASUM"` to a bare `shasum` is caught by the *execution* test, not
+a text assertion -- which is the proof that the FUR8 attack genuinely lands
+against a bare-name loader rather than being a theoretical concern. The
+acquisition command's `env -i` is likewise caught by executing it with `GIT_DIR`
+set to a second repository.
+
+Standing check from step 3 applied and kept: for each control, not "is it
+present" but "which test fails when I delete it". Every guard added in this step
+was mutation-verified before this section was written.
+
+### Unchanged
+
+Chunk G remains blocked. `shasum -a 256` is macOS/BSD (the block notes
+`sha256sum`); Windows remains unexamined; the accepted candidate-execution
+residual, replay posture, external anchoring and Phase 4 are untouched.

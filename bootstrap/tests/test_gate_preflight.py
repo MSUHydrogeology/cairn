@@ -1423,31 +1423,78 @@ def _recorded_hashes(repo: Path, ref: str = P._ANCHOR_REF) -> str:
     return "\n".join(lines)
 
 
+def _runbook_block(containing: str) -> str:
+    """The fenced block under Phase 0 pre-flight that contains `containing`.
+
+    Selected by content, not by index: the section now holds both the
+    acquisition command and the loader, and an index would silently start
+    testing the wrong one the next time a block is added.
+    """
+    text = (_REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(encoding="utf-8")
+    section = text.split("### Phase 0 pre-flight")[1].split("\n## ")[0]
+    blocks = [b for i, b in enumerate(section.split("```")) if i % 2]
+    matching = [b for b in blocks if containing in b]
+    assert len(matching) == 1, (
+        f"expected exactly one Phase 0 block containing {containing!r}, "
+        f"found {len(matching)}")
+    return matching[0]
+
+
+def _recorded(repo: Path) -> dict[str, str]:
+    """The values a Maintainer records at first use. Nothing is discovered by
+    the runbook itself -- that was FUR6 and FUR7 -- so the fixtures stand in for
+    the Maintainer and supply them explicitly."""
+    values = {
+        "<absolute-path-of-the-checkout-to-bless>": str(repo),
+        "<maintainer-recorded-interpreter>": sys.executable,
+        "<maintainer-recorded-env>": shutil.which("env"),
+        "<maintainer-recorded-git>": shutil.which("git"),
+        "<maintainer-recorded-mktemp>": shutil.which("mktemp"),
+        "<maintainer-recorded-mkdir>": shutil.which("mkdir"),
+        "<maintainer-recorded-shasum>": shutil.which("shasum"),
+    }
+    missing = [k for k, v in values.items() if not v]
+    assert not missing, f"cannot resolve recorded utilities: {missing}"
+    return values
+
+
+def _substitute(block: str, repo: Path, *, hashes: bool = True) -> str:
+    for placeholder, value in _recorded(repo).items():
+        if placeholder in block:
+            block = block.replace(placeholder, shlex.quote(value))
+    assert "<maintainer-recorded" not in block.replace(
+        "<maintainer-recorded-first-use-hashes>", ""), (
+        f"an unrecorded placeholder survived substitution:\n{block}")
+    if hashes:
+        assert "<maintainer-recorded-first-use-hashes>" in block
+        block = block.replace("<maintainer-recorded-first-use-hashes>",
+                              _recorded_hashes(repo))
+    return block
+
+
 def _runbook_ceremony_script(repo: Path) -> str:
     """The Phase 0 pre-flight loader, lifted verbatim from the runbook.
 
     The recorded steps **are** the ceremony. A fix in code that the recorded
     steps do not exercise is not a fix -- which is exactly the shape FUR5 took,
-    and FUR6 after it -- so the script under test comes out of the runbook rather
-    than being transcribed into Python, where it could be written correct while
-    the recorded steps stayed broken.
+    and FUR6 and FUR7 after it -- so the script under test comes out of the
+    runbook rather than being transcribed into Python, where it could be written
+    correct while the recorded steps stayed broken.
 
     Only the Maintainer-recorded values are substituted; every line of logic is
     the runbook's own.
     """
-    text = (_REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(encoding="utf-8")
-    block = text.split("### Phase 0 pre-flight")[1].split("```")[1]
-    assert "_gate_preflight.py" in block, block
-    for placeholder, value in (
-            ("<maintainer-recorded-interpreter>", sys.executable),
-            ("<maintainer-recorded-git>", shutil.which("git")),
-            ("<absolute-path-of-the-checkout-to-bless>", str(repo)),
-    ):
-        assert placeholder in block, f"{placeholder} is no longer in the runbook"
-        block = block.replace(placeholder, shlex.quote(value))
-    assert "<maintainer-recorded-first-use-hashes>" in block
-    return block.replace("<maintainer-recorded-first-use-hashes>",
-                         _recorded_hashes(repo))
+    return _substitute(_runbook_block("_gate_preflight.py"), repo)
+
+
+def _runbook_acquisition_command(repo: Path) -> str:
+    """The step-1 command that reads the runbook itself from the anchor.
+
+    Under test because it claimed to be sterile and was not: it is the
+    instruction source, so a substituted one can simply omit the loader (FUR7).
+    """
+    return _substitute(_runbook_block("REANCHOR_RUNBOOK.md"), repo,
+                       hashes=False)
 
 
 class TestAnchoredInvocationTargetsTheNamedCheckout:
@@ -1528,8 +1575,7 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
         """Properties of the recorded text that an execution test cannot see,
         because a substituted repository answers correctly right up until it
         doesn't (FUR6). Read raw -- no fixture substitution."""
-        text = (_REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text()
-        block = text.split("### Phase 0 pre-flight")[1].split("```")[1]
+        block = _runbook_block("_gate_preflight.py")
         # Comments are stripped first. An earlier version of this assertion
         # fired on the comment *explaining* why `git archive` is not used --
         # the same false-positive shape as the containment lint deleted in the
@@ -1550,7 +1596,7 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
 
         assert first("--no-replace-objects") < first("cat-file"), (
             "replacement must be disabled before the first object read")
-        assert first("shasum") < first("_gate_preflight.py\" \\"), (
+        assert first('"$SHASUM"') < first('"$PY"'), (
             "the extracted bytes must be verified before Python executes them")
 
 
@@ -1943,3 +1989,88 @@ class TestLoaderTrustBoundary:
             f"{r.stderr[-1500:]}")
         assert _run("git", "rev-parse", P._ANCHOR_REF,
                     cwd=repo).stdout.strip() != anchor, "nothing was blessed"
+
+    def test_the_acquisition_command_resists_git_dir_redirection(self, tmp_path):
+        """FUR7. The command that obtains the runbook is the instruction source:
+        a substituted one can omit the loader entirely, so no later check can
+        recover. It claimed to be sterile and had no environment scrub."""
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        marker = "THE-REAL-ANCHORED-RUNBOOK"
+        _write(repo, P._RUNBOOK_REL, f"{marker}\n")
+        real_anchor = _signed_commit(repo, "anchored runbook")
+        _run("git", "update-ref", P._ANCHOR_REF, real_anchor, cwd=repo)
+
+        elsewhere = tmp_path / "elsewhere"
+        elsewhere.mkdir()
+        _run("git", "init", "-q", ".", cwd=elsewhere)
+        _run("git", "config", "user.email", "e@example", cwd=elsewhere)
+        _run("git", "config", "user.name", "E", cwd=elsewhere)
+        _write(elsewhere, P._RUNBOOK_REL, "AN ALTERNATE RUNBOOK WITH NO LOADER\n")
+        _commit(elsewhere, "impostor")
+        _run("git", "update-ref", P._ANCHOR_REF, "HEAD", cwd=elsewhere)
+
+        command = _runbook_acquisition_command(repo)
+        import os as _os
+        r = subprocess.run(
+            ["bash", "-c", command], cwd=str(repo), capture_output=True,
+            text=True, check=False,
+            env={**_os.environ, "GIT_DIR": str(elsewhere / ".git")})
+
+        assert r.returncode == 0, r.stderr[-1500:]
+        assert marker in r.stdout, (
+            f"GIT_DIR redirected the acquisition command to another "
+            f"repository's runbook: {r.stdout[:300]!r}")
+        assert "ALTERNATE" not in r.stdout
+
+    def test_a_replacement_shasum_on_path_cannot_vouch_for_rewritten_bytes(
+            self, tmp_path):
+        """FUR8. `PATH=/usr/bin:/bin` lived only inside the `env -i` child used
+        for git; every other utility -- decisively `shasum` -- came from the
+        operator's ambient environment. A replacement rewrote the extracted
+        checker after extraction, reported success, and the rewritten checker
+        ran, with the ceremony returning 0."""
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        script = _runbook_ceremony_script(repo)
+
+        evil_bin = tmp_path / "evilbin"
+        evil_bin.mkdir()
+        fake = evil_bin / "shasum"
+        fake.write_text(
+            "#!/bin/sh\n"
+            "for f in \"$@\"; do :; done\n"
+            # rewrite the extracted checker, then vouch for it
+            f"printf 'import pathlib\\n"
+            f"pathlib.Path({str(repo / 'PWNED')!r}).write_text(\"x\")\\n' "
+            f"> bootstrap/tests/_gate_preflight.py 2>/dev/null\n"
+            "echo 'bootstrap/tests/_gate_preflight.py: OK'\n"
+            "exit 0\n", encoding="utf-8")
+        fake.chmod(0o755)
+
+        import os as _os
+        env = {**_os.environ, "PATH": f"{evil_bin}:{_os.environ['PATH']}"}
+
+        # The replacement is live: a bare `shasum` in this environment is it.
+        which = subprocess.run(["bash", "-c", "command -v shasum"], env=env,
+                               capture_output=True, text=True)
+        assert which.stdout.strip() == str(fake), which.stdout
+
+        r = subprocess.run(["bash", "-c", script], cwd=str(repo), env=env,
+                           capture_output=True, text=True, check=False)
+
+        assert not (repo / "PWNED").exists(), (
+            "a replacement shasum rewrote the checker and vouched for it")
+        assert r.returncode == 0, r.stderr[-2500:]
+
+    def test_the_loader_invokes_every_utility_by_absolute_path(self):
+        """The property behind both tests above, asserted on the recorded text:
+        a bare utility name is resolved through the operator's environment."""
+        block = _runbook_block("_gate_preflight.py")
+        code = "\n".join(ln for ln in block.splitlines()
+                         if ln.strip() and not ln.lstrip().startswith("#"))
+        for bare in ("mktemp -d", "mkdir -p", "shasum -a", "env -i"):
+            assert bare not in code, (
+                f"{bare!r} is invoked by bare name; an inherited function, "
+                f"alias, or PATH entry can shadow it")
+        for recorded in ('"$MKTEMP"', '"$MKDIR"', '"$SHASUM"', '"$ENV"',
+                         '"$GIT"', '"$PY"'):
+            assert recorded in code, f"{recorded} is not used"

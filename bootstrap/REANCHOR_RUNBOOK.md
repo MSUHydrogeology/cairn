@@ -33,13 +33,27 @@ gate-control files for the six-proposal batch.
 
 ### Phase 0 pre-flight — `_gate_preflight.py`
 
-> **Obtain this invocation from the anchor, never from the working tree** — and
-> read it with the *same* sterile invocation the loader below uses:
-> `<maintainer-recorded-git> --no-replace-objects -c core.hooksPath=/dev/null
-> -C <checkout> cat-file blob refs/cairn/gate-anchor:bootstrap/REANCHOR_RUNBOOK.md`.
-> An ordinary `git show` here is subject to the very substitution the loader
-> exists to defeat. This one command is irreducibly the operator's to know: it
-> is the bootstrap of the bootstrap, and it lives in the residual trust set.
+**Step 1 — obtain this document from the anchor, sterilely.** The acquisition
+command is *itself* a trust boundary, and a weaker one than it looks: an
+alternate runbook is the instruction source, so it can simply omit the loader.
+An earlier version of this section claimed to use "the same sterile invocation
+the loader below uses" and did not — it had no environment scrub, and an
+inherited `GIT_DIR` redirected `cat-file` away from the explicitly named `-C`
+checkout to a second repository, returning 0 and emitting *that* repository's
+runbook (FUR7, reproduced). The command below is the real thing:
+
+```
+<maintainer-recorded-env> -i HOME=/nonexistent \
+    <maintainer-recorded-git> --no-replace-objects \
+        -c core.useReplaceRefs=false \
+        -c core.hooksPath=/dev/null \
+        -c core.fsmonitor=false \
+        -C <absolute-path-of-the-checkout-to-bless> \
+        cat-file blob refs/cairn/gate-anchor:bootstrap/REANCHOR_RUNBOOK.md
+```
+
+This one command is irreducibly the operator's to know — it is the bootstrap of
+the bootstrap — and it lives in the residual trust set.
 
 **The loader is its own trust boundary.** Everything below runs *before* the
 checker exists, so none of the checker's internal pinning protects it. Reviewed
@@ -49,21 +63,25 @@ substitution caused the literal block to execute substituted checker bytes while
 returning success — the same trust-source failure as FUR1, one step earlier.
 
 ```
-# Recorded by the Maintainer. NOT discovered from the environment: ambient
-# discovery is what let a substituted repository answer for the named one.
+# Every value here is recorded by the Maintainer at first use. NOTHING is
+# discovered: ambient discovery is what let a substituted repository answer for
+# the named one, and an ambient `PATH` is what let a replacement `shasum` vouch
+# for bytes it had just rewritten (FUR8). Utilities are invoked by absolute
+# path, which no inherited shell function or alias can shadow.
 CHECKOUT=<absolute-path-of-the-checkout-to-bless>
+ENV=<maintainer-recorded-env>
 GIT=<maintainer-recorded-git>
 PY=<maintainer-recorded-interpreter>
+MKTEMP=<maintainer-recorded-mktemp>
+MKDIR=<maintainer-recorded-mkdir>
+SHASUM=<maintainer-recorded-shasum>
 
-T=$(mktemp -d) || exit 1
-cat > "$T/RECORDED.sha256" <<'HASHES'
-<maintainer-recorded-first-use-hashes>
-HASHES
+T=$("$MKTEMP" -d) || exit 1
 
 # Object replacement, hooks and monitors are disabled BEFORE the first read, and
 # the environment is emptied so no GIT_* variable steers the loader.
 sterile_git() {
-    env -i PATH=/usr/bin:/bin HOME="$T" \
+    "$ENV" -i HOME=/nonexistent \
         "$GIT" --no-replace-objects \
                -c core.useReplaceRefs=false \
                -c core.hooksPath=/dev/null \
@@ -73,13 +91,20 @@ sterile_git() {
 
 # `cat-file blob` reads raw object bytes. `git archive` was used here and is
 # attribute-aware, so a candidate `.gitattributes` could reshape what landed.
-while read -r _sum path; do
-    mkdir -p "$T/$(dirname "$path")" || exit 1
+# The heredoc feeds `while` by redirect, not by pipe: a pipe would run the loop
+# in a subshell where `exit 1` aborts nothing.
+: > "$T/RECORDED.sha256" || exit 1
+while read -r sum path; do
+    [ -n "$path" ] || continue
+    "$MKDIR" -p "$T/${path%/*}" || exit 1
     sterile_git cat-file blob "refs/cairn/gate-anchor:$path" > "$T/$path" || exit 1
-done < "$T/RECORDED.sha256"
+    echo "$sum  $path" >> "$T/RECORDED.sha256"
+done <<'HASHES'
+<maintainer-recorded-first-use-hashes>
+HASHES
 
 # Decisive check: whatever route the bytes took, they must be the reviewed ones.
-( cd "$T" && shasum -a 256 -c RECORDED.sha256 ) || {
+( cd "$T" && "$SHASUM" -a 256 -c RECORDED.sha256 ) || {
     echo "REFUSE: extracted bytes do not match the reviewed first-use set" >&2
     exit 1
 }
@@ -108,12 +133,21 @@ There is **no flag that turns a refusal into a pass.** A refusal routes here, to
 the manual steps below.
 
 **Residual trust set — where the chain actually ends.** **The loader's own
-inputs, which nothing above them can check:** the recorded `GIT` binary, the
-`env`/`mkdir`/`shasum` utilities on `PATH=/usr/bin:/bin`, the recorded
-`CHECKOUT` path, the recorded first-use hash set, and the operator's knowledge of
-the one sterile `cat-file` command used to read this document. That set is the
-bootstrap of the bootstrap: the loader can verify the checker's bytes, but
-nothing verifies the loader's. **The signature backend `/usr/bin/ssh-keygen`**,
+inputs, which nothing above them can check:** the recorded absolute paths
+`ENV`, `GIT`, `MKTEMP`, `MKDIR`, `SHASUM` and `PY`; the recorded `CHECKOUT`; the
+recorded first-use hash set; and the operator's knowledge of the acquisition
+command in step 1. That set is the bootstrap of the bootstrap: the loader can
+verify the checker's bytes, but nothing verifies the loader's.
+
+*A correction worth keeping, because it is the kind of error this document
+exists to prevent.* An earlier version of this paragraph said these utilities
+came from `PATH=/usr/bin:/bin`. That was **false**: the `PATH` assignment lived
+only inside the `env -i` child used for git, and every other utility —
+`mktemp`, `mkdir`, and decisively `shasum` — was resolved through the operator's
+ambient environment. A replacement `shasum` earlier on `PATH` rewrote the
+extracted checker, reported success, and the rewritten checker ran (FUR8). The
+recorded absolute paths above are what actually holds; the sentence they replace
+described a protection that did not exist. **The signature backend `/usr/bin/ssh-keygen`**,
 which the checker pins
 by absolute path and uses for both signing and verification — an earlier version
 let repository config choose it, and a fake verifier made a commit signed by a
