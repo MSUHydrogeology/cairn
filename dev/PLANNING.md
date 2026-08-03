@@ -225,21 +225,27 @@ archived plan / proposal, the implementing commits, and the
 changelog. There is no "completed recently" section on this
 board by design.
 
-* **gate-reanchor-preflight** *(accepted 2026-08-03, plan open)* — a reviewed
-  pre-flight for `REANCHOR_RUNBOOK` Phase 0, replacing the disposable scratchpad
-  script that returned a wrong answer and whose unsequenced handoff advanced
-  `refs/cairn/gate-anchor` to a commit containing no blessing. Cleared three
-  External Security Review rounds (SR1-SR10). **Carries the dated threat-model
-  posture**: Cairn accepts a *trusted-contributor* model for its own trust root,
-  **single-maintainer, as of 2026-08-03** — not a standing assumption. Its
-  mechanical expiry is the committer-identity tripwire (silent at 666/666
-  commits today, fires when commit authority widens). **Two triggers cannot be
-  mechanical and live here on purpose:** (a) the ceremony run on a checkout the
-  Maintainer does not solely control; (b) any adopter taking the mechanism. On
-  either, revisit the posture — the named upgrade paths are OS containment for
-  the evidence stage (SR7), external anchoring via `_gate_manifest.py verify
-  --trusted-repo` (SR9, already supported and merely unused), and a single-use
-  nonce / consumption ledger (SR10).
+* **gate-reanchor-preflight posture** *(plan archived 2026-08-03; this entry
+  survives because its commitments are live, not completed)* — the trust root is
+  established at `e45e1fc` and the pre-flight is in the anchor, so every ceremony
+  from here runs the anchored loader. What remains open is the **dated
+  threat-model posture**: Cairn accepts a *trusted-contributor* model for its own
+  trust root, **single-maintainer, as of 2026-08-03** — not a standing
+  assumption. Its mechanical expiry is **signature verification against a pinned
+  roster from the recorded signing epoch** (`a07fac8`); `apply` refuses any
+  commit at or after it that is unsigned or signed by a key outside
+  `dev/.cairn/allowed_signers`. *(Corrected at archive: this entry previously
+  named a committer-identity tripwire. That mechanism was superseded during
+  implementation — Git's committer name and email are unauthenticated and a
+  spoofing probe defeated it, GPR2.)* **Two triggers cannot be mechanical and
+  live here on purpose:** (a) the ceremony run on a checkout the Maintainer does
+  not solely control; (b) any adopter taking the mechanism. On either, revisit
+  the posture — the named upgrade paths are OS containment for the evidence stage
+  (SR7), external anchoring via `_gate_manifest.py verify --trusted-repo` (SR9,
+  supported all along and **newly usable now that a `P` exists to anchor**), and
+  a single-use nonce / consumption ledger (SR10). Archived plan
+  `gate-reanchor-preflight`; eleven findings closed across seven reviews (CR1,
+  FUR1-FUR10).
 
 * **stage-commit-patterns** *(accepted 2026-07-22, awaiting plan-open)* — the
   reader fix: `_STAGE_COMMIT_PATTERNS` matched **zero of 76** real commit

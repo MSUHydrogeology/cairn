@@ -9,9 +9,9 @@
 # Plan: a reviewed pre-flight for the supervised gate re-anchor (Phase 0)
 
 **Source proposal**: `dev/proposals/archive/2026-08-03-claude-gate-reanchor-preflight.md`
-**Status**: executing
+**Status**: archived
 **Plan review**: required(**External**, security lens) — carried from the proposal header and ratified at Decision. Additionally, **first use is gated on a focused External security review of the exact initial checker bytes and the recorded invocation** (SR6 / SR9); the Decision explicitly does *not* prospectively bless those bytes.
-**Last update**: 2026-08-03 (Chunk A landed)
+**Last update**: 2026-08-03 (archived; trust root established at `e45e1fc`)
 **Opened**: 2026-08-03
 
 ## Source proposal
@@ -812,15 +812,58 @@ exactly what this plan keeps getting wrong. Left for the Maintainer to decide.
 
 ## Code review
 
-*Filled in after implementation commits land (Chunks A-F, H).*
+Discharged by the **Security code review** (Codex, `d0102a6`) plus **six focused
+External exact-byte security reviews**, recorded in full below. Between them they
+closed CR1 and FUR1-FUR10, at these commits: `3292f21`, `355aedb`, `cc2a2f7`,
+`292e2c6`, `c0bf2a7`, `3a19ed6`. The final disposition -- *"NO BLOCKING FINDINGS;
+THESE EXACT BYTES ARE FIT TO BLESS AS THE FIRST-USE TRUST ROOT"* -- covers
+`3a19ed6`, and all nine reviewed files were confirmed byte-identical to the tree
+immediately before the ceremony.
+
+**What those reviews did *not* cover, stated so the record is not read as
+broader than it is:**
+
+* `bootstrap/tests/test_gate_preflight.py` was carried in every reviewed hash set
+  marked **"(evidence only)"**. It was used to check that claims were backed by
+  live regressions, not audited as code in its own right.
+* Chunk H (the changelog entry) and the Chunk G record landed **after** the final
+  disposition and are unreviewed. Both are prose; neither is in the frozen
+  surface nor the authority closure.
+* The scope each reviewer declined is listed in their own section and is
+  unchanged: Stage B's algorithms, the accepted candidate-execution residual,
+  replay posture, SSH cryptography, Windows behaviour, external anchoring,
+  concurrent Maintainers, and Phase 4.
 
 ## Lasting-truth migration
 
-*Filled in at archive time. Per the archive-preconditions rule, this plan
-archives only once every deferred follow-up has a durable home outside it — the
-SR7 containment upgrade, the SR10 nonce/ledger, and the external-anchoring
-upgrade are all named in the Decision and belong on `dev/PLANNING.md` before
-archive if not already homed.*
+**Follow-ups migrated to: `dev/PLANNING.md`** (the *gate-reanchor-preflight
+posture* entry), which survives this archive because the commitments it carries
+are live, not completed:
+
+| Deferred follow-up | Status at archive |
+|---|---|
+| **SR7** — OS containment for the evidence stage | deferred; the stage's non-containment is declared in code, tests, docs and at every run |
+| **SR9** — external anchoring via `_gate_manifest.py verify --trusted-repo` | deferred, and **newly available**: supported all along, unusable before a `P` existed to anchor |
+| **SR10** — single-use nonce / consumption ledger | deferred; replay is described as revalidate-and-confirm, with no non-replayability claimed |
+| **The two non-mechanical posture triggers** | live on the board and in `REANCHOR_RUNBOOK.md`: a checkout the Maintainer does not solely control, or any adopter taking the mechanism |
+
+**A correction carried to the board.** The `dev/PLANNING.md` entry described the
+posture's mechanical expiry as the *committer-identity tripwire*. That mechanism
+was **superseded during implementation** — Git's committer name and email are
+supplied unauthenticated by the committing process, and a spoofing probe defeated
+the check (GPR2). The live expiry is **signature verification against a pinned
+roster from a recorded epoch**. The board is corrected at this archive rather
+than left asserting a control that does not exist, which is precisely the class
+of error this plan spent six rounds learning to catch.
+
+**The methodological finding, recorded because it outlived the artifact.** Eleven
+findings across seven reviews reduce to one shape: *a control that is present is
+not a control that is reached.* Four consecutive rounds found a trust boundary
+drawn one layer above the thing it claimed to protect; mutation testing found
+three guards no test exercised; FUR10 found a security property that existed only
+in a test fixture. The working question for any future trust-root surface is not
+"is the control present" but "which test fails when I delete it", asked until the
+only remaining answer is the declared residual set.
 
 This section is append-only once written.
 
