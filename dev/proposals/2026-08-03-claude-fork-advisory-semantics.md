@@ -1874,7 +1874,7 @@ touched engine code, fixtures, or the gate manifest (`git show --stat` on both:
 `CHANGELOG.md`, `dev/PLANNING.md`, and the plan file's archive move only), so
 every measurement above stands and I re-confirmed the frozen count at the new
 `HEAD` — still 164. I record it because it is the concrete form of the hazard in
-[I5]: this repository currently runs concurrent sessions against a shared
+finding [I5] — this repository currently runs concurrent sessions against a shared
 gate surface, and a proposal that pins a falsifiable gate target owes the
 Maintainer a named baseline commit rather than a date.
 

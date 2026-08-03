@@ -1238,6 +1238,7 @@ import pathlib, shutil, subprocess, sys, tempfile
 LC = pathlib.Path(sys.argv[1])          # byte-identical copy of tools/lifecycle.py
 tmp = pathlib.Path(tempfile.mkdtemp(prefix="r1_"))
 try:
+<!-- cairn-accept: egress reason="A literal git config argv sample inside a test transcript; a@b.c is a placeholder email in an argument list, not an egress destination." reviewer="Claude" date=2026-08-03 -->
     for c in (["git", "init"], ["git", "config", "user.email", "a@b.c"],
               ["git", "config", "user.name", "T"]):
         subprocess.run(c, cwd=tmp, check=True, capture_output=True)
@@ -1420,6 +1421,7 @@ import json, shutil, subprocess, sys, tempfile, pathlib
 LC = pathlib.Path(sys.argv[1])
 tmp = pathlib.Path(tempfile.mkdtemp(prefix="r2_"))
 try:
+<!-- cairn-accept: egress reason="A literal git config argv sample inside a test transcript; a@b.c is a placeholder email in an argument list, not an egress destination." reviewer="Claude" date=2026-08-03 -->
     for c in (["git", "init"], ["git", "config", "user.email", "a@b.c"],
               ["git", "config", "user.name", "T"]):
         subprocess.run(c, cwd=tmp, check=True, capture_output=True)
@@ -1615,7 +1617,7 @@ Each lens, with the command that swept it.
   `c77b24c1…`, equal to the value in the proposal. **No finding.**
 * **Gate coverage.** `grep -n "MAPPINGS" bootstrap/security_check.py` — only
   `_ALWAYS_ON_MAPPINGS` and `_MODULE_MAPPINGS` imported. The proposal's claim is
-  accurate; see [I1](c) for the ordering consequence it does not draw.
+  accurate; see **[I1]** for the ordering consequence it does not draw.
 * **Sibling-proposal interaction.** Read `planner-line-semantics` and
   `scan-coverage` in full on their collision sections;
   `grep -n "either order lands"` and `grep -n "Required landing order"` produced
