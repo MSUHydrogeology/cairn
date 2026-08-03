@@ -858,3 +858,158 @@ All commands executed using canonical interpreter `~/conda_envs/lhm/bin/python` 
 
 *(Awaiting the Maintainer. The proposal has cleared External Security Review. The Maintainer may accept the proposal to proceed with plan creation.)*
 
+## Response -- Claude (author, to External Security Review) -- 2026-08-03
+
+**Model**: Claude Opus 5. Proposal-Response grammar (no implementing commits
+exist).
+
+**Two accepted as reproduced, one narrowed, one corrected. No design change,
+so the status stays `reviewed`.** Every finding was re-verified by execution
+before disposing, not accepted on the reviewer's report — this lineage has
+already recorded one review whose evidentiary claims did not survive re-running,
+and a `SHIP` verdict does not move a proposal by itself. What I ran: the
+review's three reproduction commands verbatim under the canonical interpreter
+(`~/conda_envs/lhm/bin/python`, 3.13.13); its 14-case attack harness, re-run
+with the *real* 13-entry AI registry in place of its 4-name stand-in; an
+independent 23-name international corpus against **both** this design and the
+recipe the review compared it to; the independence comparator over four
+byline variants; and the frozen-file membership of all four touched paths
+against `bootstrap/tests/fixtures/gate_manifest.json`.
+
+One preliminary, because the review's figures are pinned to a commit the tree
+has since left. The review measured against `71abeb4`; `HEAD` is now `292e2c6`
+(`as_of 2026-08-03`). `git diff --stat 71abeb4 HEAD` over the four touched
+paths — `tools/lifecycle_planner.py`, its twin, `dev/.cairn/agent-identities.json`
+and `bootstrap/tests/test_lifecycle_contract.py` — is **empty**, so every
+figure below still stands at `HEAD`. The twins remain byte-identical
+(`sha256:45c5c0ed…`, both files, `shasum -a 256`, 2026-08-03), as the proposal
+claims.
+
+* **[G1] accept -- all three defects reproduce verbatim, including the one the
+  review re-derived rather than copied.** Defect (a): the review's command
+  returns `ai` for the honest byline and `human` for `"Cl" + chr(0x430) +
+  "ude scribing for Anthony Kendall"` (`chr(0x430)` is CYRILLIC SMALL LETTER A,
+  which renders identically to ASCII `a`). Defect (b): with a temporary roster
+  I get `{'anthonykendall'}` as the whole-entry key and `unknown` for all four
+  bylines, then `{'anthony','kendall'}` and `human` for all four — including
+  `Kendall Smith`, which the review did not test and which also over-matches.
+  Defect (c): `_identity_token` yields `'claude'` against `'clude'`. One nit
+  recorded so nobody reuses the snippet as a template: the review's temporary
+  config sets `agent_names`, but the loader reads `ai_agents`
+  (`tools/lifecycle_planner.py:222`), so that key was inert. It is harmless
+  here — the config can only *extend* the registry, never shrink it, and no
+  test byline touches the AI leg — but a reader copying it would silently
+  configure nothing.
+
+* **[G2] narrow -- the falsification result reproduces and I accept it; the
+  comparison that frames it is against a composite the Amendment never
+  proposed.** The result first, because it is the finding's substance and it
+  holds: re-running the harness gives `unknown` on all 14 attack bylines, and it
+  still gives `unknown` when the 4-name `AGENT_NAMES` stand-in is replaced by
+  the real 13-entry `_AI_AGENT_REGISTRY`, which is a stronger check than the one
+  reported. The narrowing is on the comparative claim. The review pairs the
+  Amendment's poison rule with **containment matching** and concludes the
+  proposed fix is "vastly superior"; but the Amendment's own second item asks to
+  fix the whole-string / per-token asymmetry *"so a full-name roster entry is
+  configurable and a partial token is not"* — that is exactness, the same rule
+  this proposal takes. Measured, Amendment fold (`NFD`, strip combining marks,
+  poison any surviving non-ASCII letter) plus its own item-2 exactness: **0 of
+  14 attack bylines reach `human`**, identical to this design. So exactness is
+  not the delta between the two designs; both have it. The delta is the
+  international-name cost — on an independently-built 23-name corpus, each name
+  rostered under itself, this design flags **0 of 23** and the Amendment recipe
+  flags **17 of 23** (`Łukasz Nowak`, `Ольга Иванова`, `张伟`, `Søren
+  Kierkegaard`, …). Direction agrees with the proposal's `12 of 23`; the
+  magnitude does not, because the two corpora are different synthetic sets, and
+  that is itself a finding against my own evidence (see the carries below). Two
+  smaller narrowings on the same bullet. The review attributes the elimination
+  of international false positives to *exact tuple matching*; the measurement
+  above says it comes from the character-preserving fold — exactness is
+  indifferent to script. And "eliminates confusable over-matching" is true only
+  in the direction that matters for authority: confusables stop reaching
+  `human`, but they classify `unknown`, which is flagged at the one site that
+  consumes a classification (`tools/lifecycle_planner.py:613`, where both `ai`
+  and `unknown` raise a violation, verified as the only `classify` call site).
+  The tool still cannot tell a reader that a *confusable* was the reason rather
+  than an unconfigured roster, and `Ciaude` is still not recognized as an agent
+  name. That gap is R4 and R1, unchanged by this review.
+
+* **[G3] correct -- the conclusion is right and I keep it; the mechanism stated
+  for it describes today's code, not the proposed fold.** R3 does stay open for
+  the Cyrillic case, and the reasoning that reviewer-identity and Decision
+  authority must not be coupled to close it is exactly the argument the proposal
+  makes. But the finding says the proposed `_identity_token` "still produces
+  `'clude'` for a Cyrillic homoglyph self-review." It does not. Under the
+  proposed fold nothing is dropped, so the key is `'cl' + chr(0x430) + 'ude'`
+  — seven characters, not five. It fails to match the author key `'claude'`
+  because it contains a *different letter*, not because a letter vanished. The
+  security outcome is identical (the self-review is still not flagged, the
+  `independent_review` gate is still met), which is why the disposition is a
+  correction and not a rejection — but the distinction is load-bearing for this
+  proposal specifically, whose entire design rule is that no letter is ever
+  dropped. A Decision that adopted the finding's wording verbatim would record
+  the fixed code as still deleting the character it was changed to keep.
+  Measured, author `Claude (Strategy)`, reviewer variants under the proposed
+  `NFKD` comparator: precomposed accent → `'claude'`, **flagged** (today:
+  `'clude'`, not flagged); mathematical-bold `C` → `'claude'`, **flagged**
+  (today: `'laude'`); circled `C` → `'claude'`, **flagged** (today: `'laude'`);
+  Cyrillic → `'cl' + chr(0x430) + 'ude'`, **not flagged**. That is the 3-of-4
+  the proposal claims, confirmed against the proposal's own precomposed
+  convention.
+
+* **[G4] accept -- reproduced exactly, and it names a path the proposal left
+  implicit.** Against `bootstrap/tests/fixtures/gate_manifest.json` (schema
+  `cairn-gate-manifest/v1`, `162` frozen entries, `as_of 2026-08-03`):
+  `tools/lifecycle_planner.py`, `templates/skills/_lib/lifecycle_planner.py` and
+  `dev/.cairn/agent-identities.json` are **not** frozen;
+  `bootstrap/tests/test_lifecycle_contract.py` **is**. A frozen-file edit
+  appends a `FROZEN-MODIFIED` **hold** (`bootstrap/tests/_gate_manifest.py:364`)
+  while a new frozen-surface file is a recorded note
+  (`bootstrap/tests/_gate_manifest.py:366`), which is the asymmetry the
+  proposal's test plan is built around. The proposal said implementation waits
+  on "the batch closing or on that one modification being admitted to it"; the
+  review names the second route concretely as supervised re-anchoring, and that
+  mechanism is real and two-staged (`bootstrap/tests/_gate_reanchor.py`).
+  Adopted as a plan-time note, not a design change: the choice between waiting
+  and re-anchoring is a scheduling decision for plan-open, and it is the
+  Maintainer's, since Stage B consumes a promotion authorization.
+
+**Bearing of the Maintainer direction of 2026-08-03 on the default security
+stance** — *"we need to change the default security stance for all
+installations. Otherwise we are shipping a potentially dangerous tool."* It
+bears on this proposal in one narrow way, and I want to state the limit rather
+than borrow the direction's weight. This surface is **core, not preset-gated**:
+`dev/.cairn/cairn-lock.yml` carries the twin as `src: skills/_lib/lifecycle_planner.py`
+with no `modules/` prefix, and `python bootstrap/scaffold.py --manifest` lists
+the pair unconditionally (verified 2026-08-03). So the fix reaches every adopter
+on install with no preset or profile work — which is precisely what is *not*
+true of the module the direction is actually about. Changing which presets
+select the content-security module is outside this fence and belongs in its own
+proposal over the profile/preset surface; it is currently unowned, since none of
+the three in-flight proposals that mention `content-security` —
+`content-scan-detectors`, `gate-claims-vs-enforcement`, `scan-coverage` —
+contains the word "preset" at all (measured 2026-08-03).
+
+**What this Response does not establish.** The review verified the design
+against a standalone re-implementation of the fold, not against edited source —
+it says so in its own negative space, and I confirm it: no implementing commit
+exists, so nothing here is evidence about the code that will ship. Nothing in
+this exchange touches R1 (the exact-name spoof), R3's Cyrillic case, or R4;
+`unknown` remains a flag a reader must interpret, not a detector. And a review
+that reproduces three defects and finds no counterexample to a fix is evidence
+the fix survives *the cases both of us thought to try* — the proposal's own
+`Known omissions` (the unswept `re.sub` pattern elsewhere, the synthetic corpus,
+the non-exhaustive `NFKD` enumeration) are untouched by this review, and the
+third of those is the one it was specifically asked to break.
+
+**Carries to plan-open, from this Response rather than from the review.**
+(i) The international corpus must be **committed in the test module**, not
+described. My inability to reproduce `12 of 23` — I get `17 of 23` on a corpus I
+built to the same description — is not a disagreement about the direction of the
+result, it is proof that a figure resting on an unenumerated synthetic corpus is
+not reproducible from the artifact, which is the property this repository's
+record exists to have. The plan states the corpus by name-list, and the
+proposal's `12 of 23` should be read as corpus-specific.
+(ii) The rationale for choosing this design over the Amendment's records the
+corrected delta — international cost, not attack blocking — so a later reader
+does not re-derive the wrong reason for the decision.
