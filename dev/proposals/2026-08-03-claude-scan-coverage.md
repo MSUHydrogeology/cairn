@@ -587,3 +587,140 @@ to produce it — the extension was simulated in a scratch script that imports t
   quoted lines may have moved and its line citations gone stale. Recovery: re-read the
   three files before implementing and re-verify each quoted sentence — do not apply the
   edits from the proposal text alone.
+
+## Review -- Gemini Flash (External, Security Review) -- 2026-08-03
+
+**Model**: Gemini 3.6 Flash (External, different-agent-type)
+**Verdict**: SHIP (recommend ACCEPT; verified monotonicity, verified claim accuracy, 0 blocking findings)
+
+### Steelman
+
+This proposal corrects a genuine release-security gap in Cairn's `bootstrap/security_check.py`. Currently, `scan_targets()` manually enumerates `_MODULE_MAPPINGS` and `_ALWAYS_ON_MAPPINGS` but ignores `_SKILLS_MAPPINGS`. As a result, 2,502 physical LOC across `templates/skills/_lib/lifecycle.py` and `templates/skills/_lib/lifecycle_planner.py`—the very files executed most frequently by adopters at session start and end—are omitted from the Bandit release scan.
+
+By deriving the verbatim Python scan target set from `install_manifest(modules=None)` as a **set union** (`set.add`/`set.update`) with the existing explicit loops, the proposal structurally guarantees monotonic non-decreasing coverage. It replaces a drift-prone manual enumeration with the same published catalog derivation used by `scaffold.py --manifest` and the SPDX licensing gate (`bootstrap/tests/test_notice_install.py`). Bandit execution over the newly included files yields zero MEDIUM or HIGH findings (16 LOW findings, 0 blocking), meaning coverage is extended with zero triage backlog.
+
+### Concerns and Findings
+
+* **[G1] (Verification of Set Monotonicity — Derivation Cannot Shrink Target Set)**
+  * *Question:* Can the proposed derivation ever yield a SMALLER set than today's?
+  * *Reasoning & Falsification:* The proposed implementation in `scan_targets()` initializes `targets: set[str] = set()`, populates it using the existing loops (`_MODULE_MAPPINGS`, `_ALWAYS_ON_MAPPINGS`, `scripts/`, `bootstrap/`, and `bootstrap/_scaffold/`), and then executes:
+    ```python
+    for src, _dst, verbatim in install_manifest(modules=None):
+        if verbatim and src.endswith(".py"):
+            targets.add(f"templates/{src}")
+    ```
+    Because Python `set.add()` and `set.update()` are strictly monotonic insertion operations and all existing loops are retained in full, $T_{\text{proposed}} = T_{\text{existing}} \cup T_{\text{manifest\_py}}$. The target set can never shrink.
+    Furthermore, in `run_bandit()`, wrapping `scan_targets()` in a `try...except ValueError` block ensures that if `install_manifest` encounters any destination ownership conflict, the gate exits 1 immediately (`FAIL CLOSED`), preventing silent un-scanned releases.
+
+* **[G2] (Verification of Author Claims a–e)**
+  All five specific claims in the proposal were verified by direct execution using the canonical interpreter (`~/conda_envs/lhm/bin/python`, Python 3.13.13):
+  * **Claim a:** `bootstrap/security_check.py` imports `_MODULE_MAPPINGS` and `_ALWAYS_ON_MAPPINGS` but NOT `_SKILLS_MAPPINGS`. **VERIFIED.**
+  * **Claim b:** The scanned set contains 42 verbatim `.py` sources under `templates/`. **VERIFIED.**
+  * **Claim c:** `_SKILLS_MAPPINGS` ships exactly 2 `.py` files totaling 2,502 physical LOC (`lifecycle.py`: 1,370 lines; `lifecycle_planner.py`: 1,132 lines). **VERIFIED.**
+  * **Claim d:** `SECURITY.md` line 66 claims coverage of "the shipped Python surface". **VERIFIED.**
+  * **Claim e:** Bandit scan over the two skills files is clean at MEDIUM+ (0 MEDIUM/HIGH findings, 16 LOW findings). **VERIFIED.**
+
+* **[G3] (Zero Triage Backlog & Measured Zero-Cost Landing)**
+  Executing `bandit` over `templates/skills/_lib/lifecycle.py` and `templates/skills/_lib/lifecycle_planner.py` confirms 16 LOW severity findings (all `B404`, `B603`, or `B607` subprocess-related warnings) and 0 MEDIUM or HIGH findings. Running a full simulated security check over all 74 targets yields 113 LOW findings and 0 blocking findings. Extending the scan set turns nothing red and adds no triage queue.
+
+* **[G4] (Gate-Manifest & Frozen-File Batch Window)**
+  `bootstrap/security_check.py` and `bootstrap/tests/test_security_lint.py` are both present in `frozen_files` within `bootstrap/tests/fixtures/gate_manifest.json`. Editing these files requires supervised re-anchoring via `bootstrap/REANCHOR_RUNBOOK.md` if an active manifest batch window is open, or landing outside the active window.
+
+### Covered (Lenses Swept & Verbatim Executions)
+
+Sweep executed on canonical interpreter `~/conda_envs/lhm/bin/python` (Python 3.13.13).
+
+1. **Claim a — Import inspection in `bootstrap/security_check.py`:**
+   * *Command:*
+     ```bash
+     grep -n "from bootstrap._scaffold.config import" bootstrap/security_check.py -A 4
+     ```
+   * *Output:*
+     ```
+     35:from bootstrap._scaffold.config import (  # noqa: E402  (trust anchor: narrowest owner, plan 0B.3 / Stage 4)
+     36-    _ALWAYS_ON_MAPPINGS,
+     37-    _MODULE_MAPPINGS,
+     38-)
+     ```
+
+2. **Claim b — Current scanned template `.py` targets count:**
+   * *Command:*
+     ```bash
+     ~/conda_envs/lhm/bin/python -c "from bootstrap.security_check import scan_targets; t = scan_targets(); print('Total targets:', len(t)); template_py = [x for x in t if x.startswith('templates/') and x.endswith('.py')]; print('Template .py targets:', len(template_py))"
+     ```
+   * *Output:*
+     ```
+     Total targets: 72
+     Template .py targets: 42
+     ```
+
+3. **Claim c — `_SKILLS_MAPPINGS` `.py` files and physical LOC:**
+   * *Command:*
+     ```bash
+     ~/conda_envs/lhm/bin/python -c "from bootstrap._scaffold.config import _SKILLS_MAPPINGS; py_files = [(src, dst, v) for src, dst, v in _SKILLS_MAPPINGS if src.endswith('.py')]; print('py_files:', py_files); import pathlib; locs = [len(pathlib.Path(f'templates/{src}').read_text().splitlines()) for src, dst, v in py_files]; print('LOCs per file:', locs); print('Total LOC:', sum(locs))"
+     ```
+   * *Output:*
+     ```
+     py_files: [('skills/_lib/lifecycle.py', 'tools/lifecycle.py', True), ('skills/_lib/lifecycle_planner.py', 'tools/lifecycle_planner.py', True)]
+     LOCs per file: [1370, 1132]
+     Total LOC: 2502
+     ```
+
+4. **Claim d — `SECURITY.md` line 66 quote check:**
+   * *Command:*
+     ```bash
+     sed -n '66p' SECURITY.md
+     ```
+   * *Output:*
+     ```
+       unallowlisted MEDIUM+ finding over the shipped Python surface, and also
+     ```
+
+5. **Claim e — Bandit scan over skills files at MEDIUM+:**
+   * *Command:*
+     ```bash
+     ~/conda_envs/lhm/bin/python -c "import subprocess, json; res = subprocess.run(['/Users/kendal30/conda_envs/lhm/bin/python', '-m', 'bandit', '-q', '-f', 'json', 'templates/skills/_lib/lifecycle.py', 'templates/skills/_lib/lifecycle_planner.py'], capture_output=True, text=True); data = json.loads(res.stdout); print('Total findings:', len(data['results'])); severities = [r['issue_severity'] for r in data['results']]; from collections import Counter; print('By severity:', dict(Counter(severities))); medium_plus = [r for r in data['results'] if r['issue_severity'] in ('MEDIUM', 'HIGH')]; print('MEDIUM+ count:', len(medium_plus))"
+     ```
+   * *Output:*
+     ```
+     Total findings: 16
+     By severity: {'LOW': 16}
+     MEDIUM+ count: 0
+     ```
+
+6. **Monotonicity & Target Extension Verification:**
+   * *Command:*
+     ```bash
+     ~/conda_envs/lhm/bin/python -c "from bootstrap.security_check import scan_targets; current_targets = set(scan_targets()); from bootstrap._scaffold.install import install_manifest; proposed_targets = set(current_targets); [proposed_targets.add(f'templates/{src}') for src, _dst, verbatim in install_manifest(modules=None) if verbatim and src.endswith('.py')]; print('Current target count:', len(current_targets)); print('Proposed target count:', len(proposed_targets)); print('Is current subset of proposed:', current_targets.issubset(proposed_targets)); print('Added targets:', sorted(proposed_targets - current_targets)); print('Removed targets:', sorted(current_targets - proposed_targets))"
+     ```
+   * *Output:*
+     ```
+     Current target count: 72
+     Proposed target count: 74
+     Is current subset of proposed: True
+     Added targets: ['templates/skills/_lib/lifecycle.py', 'templates/skills/_lib/lifecycle_planner.py']
+     Removed targets: []
+     ```
+
+7. **Baseline Gate Execution:**
+   * *Command:*
+     ```bash
+     ~/conda_envs/lhm/bin/python bootstrap/security_check.py
+     ```
+   * *Output:*
+     ```
+     check_cairn: OK -- 174 Markdown file(s) scanned; no issues; 48 external link(s) not probed.
+     security_check: Bandit clean over 72 shipped file(s).
+     security_check: PASS -- release security gate clean.
+     ```
+
+### Not Covered / Low Confidence (Negative Space)
+
+* **Implementation Code Execution:** The proposal code changes have not been written to `bootstrap/security_check.py` or `bootstrap/tests/test_security_lint.py` yet; all verification was performed via inline simulation against current HEAD (`3292f21`).
+* **Adopter `tools/*.py` Scans:** Adopter-side installed copies (`tools/lifecycle.py` and `tools/lifecycle_planner.py`) remain un-scanned by the release gate, which scans template sources `templates/skills/_lib/*.py`. As noted in the proposal, these files are byte-identical twins enforced by `test_every_self_hosted_twin_stays_byte_identical_to_its_source`, so coverage of template sources is equivalent.
+* **Low-Severity Subprocess Hardening:** The 16 LOW findings (`B404`, `B603`, `B607`) in the skills files are not remediated by this proposal.
+
+## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
+
+*(Awaiting the Maintainer. The proposal has cleared External Security Review. The Maintainer may accept the proposal to proceed with plan creation.)*
+
