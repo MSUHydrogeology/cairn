@@ -825,3 +825,580 @@ docstring.
   row about accreting special cases stays live.
 * CRLF handling remains untested and the AST attestation baseline remains
   un-derived, exactly as the review's negative space records.
+
+## Review -- Claude (Internal, same-agent-type; security lens) -- 2026-08-03
+
+**Model**: Claude Opus 5.
+
+*Terms, first use.* **PyYAML** is the standard third-party YAML parsing
+library; **the fallback** is `_minimal_yaml_parse`, the ~55-line hand-written
+parser in `bootstrap/_scaffold/config.py` that runs when PyYAML is absent —
+the path Cairn's zero-dependency promise makes normal. **Fail open** = a wrong
+or missing value that still exits 0; **fail closed** = a refusal before any
+write. **Parity** = the two parsers return equal results for the same text.
+**Oracle** = the value a test compares against to decide pass/fail.
+
+All commands below were run this session under `~/conda_envs/lhm/bin/python`
+(Python 3.13.13, PyYAML 6.0.3), at working-tree HEAD `af4b2ee`, with
+`PYTHONDONTWRITEBYTECODE=1`. No file was written into the repository; every
+scratch artifact lives outside it. Where I say COULD NOT REPRODUCE I show what
+I ran.
+
+### Steelman
+
+The proposal is right about the thing that matters most, and the External pass
+and Response have already hardened it further. Its core insight — that a
+profile is the *input* to the install contract, and an input boundary that
+guesses is not a contract — is exactly the correct frame, and the recurrence
+argument (`2026-07-11-claude-solo-legacy-adopter-path` finding R1 fixed in
+prose, the identical shape still shipping 23 days later in the installer's own
+`--help`) is the strongest possible case that a prose remedy cannot hold a
+mechanical invariant. Part C, the sweep test, is the piece that makes the
+change durable rather than another prose fix, and it is the piece a weaker
+proposal would have omitted.
+
+The revised Part B is well-argued and, on my reading, correct: the flip from
+warn to refuse is backed by a *measured* availability cost (no shipped profile
+under `bootstrap/profiles/` carries an unrecognized key — I confirmed this
+independently, see *Covered*), and the Response's rejection of both proposed
+opt-outs is sound reasoning I could not fault: an `allow_unknown_keys:` line is
+itself a key an older engine would refuse, and a CLI flag cannot reach
+`load_config` on the upgrade path because `bootstrap/_scaffold/upgrade.py:237`
+has no argv plumbing. The Response's two self-corrections — that
+`dev/.cairn/profile.yml` *is* the adopter's own committed file, and that the
+five-file install delta reproduces while the absolute file totals do not — are
+the kind of author accounting that makes a record trustworthy. The A4
+sharpening to indicator position, prompted by the engine's own template writer,
+is a genuine catch nobody asked for.
+
+I did not find a reason to reverse any of that. What I found is that the
+proposal's *specification* is not yet strong enough to be executed as written:
+three of its own stated protections do not hold on the fallback path, and the
+fix as described regresses inputs that are correct today.
+
+---
+
+### [I1] BLOCKING — the fail-closed posture A4 says it "extends" does not exist on the fallback path, and two edge-case rows in the record are false
+
+The proposal twice grounds A4 in an existing guard:
+
+> `load_config` (at `bootstrap/_scaffold/config.py:147`) already raises on a
+> non-mapping document; this extends the same fail-closed posture down to the
+> line level.
+
+and, in *Rationale*:
+
+> `load_config` already fails closed on a non-mapping document; A4 extends that
+> same posture consistently rather than inventing one.
+
+That guard is `if not isinstance(cfg, dict)` at `bootstrap/_scaffold/config.py:151`.
+`_minimal_yaml_parse` initialises `result` as a dict at
+`bootstrap/_scaffold/config.py:95` and returns it unconditionally at
+`bootstrap/_scaffold/config.py:140` — it **cannot** return a non-dict. So on
+the stdlib-only path the guard is unreachable. The posture A4 says it is
+extending exists only when PyYAML is installed.
+
+This is not academic. Three inputs that PyYAML refuses are silently accepted as
+an empty profile by the fallback:
+
+```
+$ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python probe3.py          # PyYAML present
+PyYAML seen by config module: <module 'yaml' from '.../site-packages/yaml/__init__.py'>
+  zero-byte        -> REFUSED  ValueError: .../zero-byte.yml: expected a YAML mapping at the top level, got NoneType
+  whitespace-only  -> REFUSED  ValueError: .../whitespace-only.yml: expected a YAML mapping at the top level, got NoneType
+  comment-only     -> REFUSED  ValueError: .../comment-only.yml: expected a YAML mapping at the top level, got NoneType
+  modules-{}       -> ACCEPTED {'project_name': 'X', 'modules': {}}
+
+$ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python probe3.py block    # PyYAML blocked
+PyYAML seen by config module: None
+  zero-byte        -> ACCEPTED {}
+  whitespace-only  -> ACCEPTED {}
+  comment-only     -> ACCEPTED {}
+  modules-{}       -> ACCEPTED {'project_name': 'X', 'modules': []}
+```
+
+(`probe3.py` blocks PyYAML with a `sys.meta_path` finder that raises
+`ImportError` on `yaml`, and prints `config._yaml` to prove the branch was
+taken before any `load_config` call.)
+
+The proposal's *Edge-case inventory* therefore contains two false rows:
+
+> Empty file (zero bytes): `load_config` already raises.
+
+> Comment-only file: verified equivalent.
+
+Neither holds on the path the proposal itself calls normal.
+
+The sharpest instance is not the empty file — it is the **uniformly indented**
+profile, which is what a copy-paste out of a documentation page or an email
+actually produces:
+
+```
+$ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python probe9.py
+config._yaml = None
+profile text (every line indented two spaces): '  project_name: Photosynthesis-Model\n  preset: high-rigor-legacy\n'
+load_config -> {}
+
+$ ... python -c "import yaml; print(yaml.safe_load('  project_name: ...\n  preset: high-rigor-legacy\n'))"
+{'project_name': 'Photosynthesis-Model', 'preset': 'high-rigor-legacy'}
+```
+
+With PyYAML the postdoc gets the twelve-module high-rigor tree. Without it they
+get `{}` — the six default-on modules, exit 0, and the only signal is the
+unfilled-token warning the proposal already measured at output line 97. That is
+the *same* fail-open class the proposal exists to close, triggered by
+indentation rather than by a typo, and it survives the change as specified.
+
+**Ask.** A4's refusal list needs one more entry, and it is arguably the most
+important one: *a document that produced no keys at all is refused, not
+returned as `{}`*. Correspondingly, the two edge-case rows should be corrected
+in an appended section rather than left standing.
+
+---
+
+### [I2] BLOCKING — A1 + A3 as specified regress inputs that are correct today, and the parity table is missing the row that proves it
+
+A1 says the scalar branch must "strip an unquoted trailing `#` comment", noting
+that "the list-item helper already tries to". A3 says to make comment-stripping
+"quote-aware, in one shared helper used by both branches, so a `#` inside a
+quoted value survives".
+
+Quote-awareness is not the whole rule. YAML starts a comment at `#` only when
+the `#` is at line start or preceded by whitespace; `a#b` is a plain scalar
+containing a hash. The existing helper at `bootstrap/_scaffold/config.py:101`
+does `.split("#")[0]`, which ignores that. So the helper A1 points at as the
+model is *itself wrong in a way the proposal's twelve-row divergence table does
+not record* — and a shared helper built to that model propagates the bug from
+the list branch to the scalar branch, where today the behaviour is correct.
+
+I implemented A1+A2+A3 as literally described (a quote-aware stripper plus a
+balanced unquote) and ran the corpus through current vs. proposed:
+
+```
+$ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python probe5.py
+input                          | PyYAML                    | CURRENT                   | PROPOSED
+'project_name: a#b'            | {'project_name': 'a#b'}   | {'project_name': 'a#b'}   | {'project_name': 'a'}   <<< REGRESSION
+'project_name: issue#42-tracker' | {'...': 'issue#42-tracker'} | {'...': 'issue#42-tracker'} | {'...': 'issue'}   <<< REGRESSION
+'modules:\n  - a#b'            | {'modules': ['a#b']}      | {'modules': ['a']}        | {'modules': ['a']}   (still divergent)
+'forge: gitlab        # gitlab | github' | {'forge': 'gitlab'} | {'forge': 'gitlab        # ...'} | {'forge': 'gitlab'}   (fixed)
+'test_command: "pytest -k \'a # b\'"' | "pytest -k 'a # b'" | "pytest -k 'a # b"      | "pytest -k 'a # b'"   (fixed)
+```
+
+Two of the seven rows are cases where the fallback is **correct today and wrong
+after the fix**. The `- a#b` row is a thirteenth divergence class, present at
+HEAD, absent from the proposal's table, and *not* closed by A1/A3 as written.
+
+This matters beyond tidiness because of the direction of the failure: A1's
+stated purpose is to make the shipped `--help` and `BOOTSTRAP.md` examples
+parse identically, and it does — while quietly corrupting any profile value
+containing a hash without a preceding space. `project_name` and `test_command`
+are exactly the free-text fields where that occurs.
+
+**Ask.** Specify the whitespace rule explicitly in A3 (a `#` is a comment
+start only at line start or preceded by space/tab); add the `- a#b` row to the
+parity table; and pin **both** directions in the Part A regression tests —
+comment stripped when preceded by whitespace, hash preserved when not.
+
+---
+
+### [I3] BLOCKING — the engine's own `profile.yml` writer emits values the fallback misreads, A2 does not fix them, and the Part C corpus names the wrong writer
+
+The Response adds the init-lock template to the Part C sweep corpus:
+
+> Verified 2026-08-03 under Python 3.13.13: a synthesized init-lock template
+> parses **identically** under `yaml.safe_load` and `_minimal_yaml_parse`
+> today.
+
+There are two engine-side writers, and the sweep corpus gained the benign one.
+The other is `_self_heal_profile_config` at `bootstrap/_scaffold/upgrade.py:2046`,
+which emits every token through `_yaml_sq` (`bootstrap/_scaffold/upgrade.py:2039`)
+— a YAML single-quoted scalar that **doubles any embedded single quote**. I ran
+both writers and round-tripped their real output:
+
+```
+$ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python probe6.py
+--- self-healed profile.yml ---
+project_name: 'O''Brien Lab Model'
+test_command: 'pytest -k ''not slow'''
+preset: solo-greenfield
+...
+PyYAML  : {'project_name': "O'Brien Lab Model", 'test_command': "pytest -k 'not slow'", ...}
+fallback: {'project_name': "O''Brien Lab Model", 'test_command': "pytest -k ''not slow", ...}
+EQUAL   : False
+
+--- init-lock template (no installed modules), rc=2 ---
+'... (inferred from dev/modules/):\nmodules:\n'
+PyYAML  : {..., 'modules': None}
+fallback: {..., 'modules': []}
+EQUAL   : False
+```
+
+Two distinct problems:
+
+1. **The quote-doubling survives A2.** A2 replaces the unbalanced
+   `.strip('"').strip("'")` at `bootstrap/_scaffold/config.py:133` with a
+   balanced pair-strip. `probe5.py` shows the result: `'O''Brien'` goes from
+   `O''Brien` to `O''Brien` (unchanged) and `'pytest -k ''a b'''` goes from
+   `pytest -k ''a b` to `pytest -k ''a b''` — differently wrong, still not
+   `pytest -k 'a b'`. The same gap exists for double-quoted escapes:
+   `test_command: "pytest -k \"x\""` is `pytest -k "x"` under PyYAML and
+   `pytest -k \"x\` under the fallback (probe1). Neither construct is in the A4
+   refusal list, so after Part A they are *accepted and still divergent* —
+   directly falsifying the live invariant "for every input
+   `_minimal_yaml_parse` accepts, its output equals `yaml.safe_load`'s".
+
+2. **The corrupted value propagates into the install contract.** These are not
+   read-only misreadings; they feed the lockfile:
+
+```
+$ printf "project_name: 'O''Brien Lab Model'\ntest_command: 'pytest -k ''not slow'''\npreset: solo-greenfield\n" | ... python probe7.py
+PyYAML    tokens -> {'project_name': "O'Brien Lab Model", 'test_command': "pytest -k 'not slow'"}
+fallback  tokens -> {'project_name': "O''Brien Lab Model", 'test_command': "pytest -k ''not slow"}
+```
+
+   `_resolve_lock_profile_fields` is what `upgrade --init-lock` uses to build
+   the lockfile `tokens` block. So an adopter whose name or test command
+   contains an apostrophe — not exotic — gets a mangled test command recorded
+   in the install contract *and* rendered into their `AGENTS.md`. This is the
+   proposal's own "wrong write, fail closed" category, produced by a file the
+   engine wrote itself.
+
+Separately, the init-lock template's *own* output diverges in the
+zero-installed-modules shape: `bootstrap/_scaffold/upgrade.py:1099` appends the
+bare string `"modules:"` and then appends nothing when the module scan is
+empty, giving `None` under PyYAML and `[]` under the fallback. The Response's
+"parses identically" verification is true for the shape it synthesized and not
+true of the writer.
+
+**Ask.** Either extend A2/A3 to handle single-quote doubling and
+double-quoted escape sequences, or add both to A4's refusal list (refusing a
+file the engine writes is not acceptable, so the first option is likely
+forced for `_yaml_sq` output specifically). Put **both** writers' output in the
+Part C corpus, generated across shapes — including zero modules and a token
+containing an apostrophe — rather than one synthesized example.
+
+---
+
+### [I4] The parity invariant is stated as live but is false for a further set of accepted inputs that A4 does not refuse
+
+Beyond [I2] and [I3], these shapes are accepted by the fallback today and are
+neither fixed by A1–A3 nor refused by A4 (probe1, probe2, probe8):
+
+| input | PyYAML | fallback | class |
+|---|---|---|---|
+| `modules:` with nothing under it | `None` | `[]` | shape divergence, inert downstream |
+| `project_name: foo` / newline / `  bar` | `'foo bar'` | `'foo'` | **silent truncation** |
+| `project_name: "a\nb"` | real newline | literal `\n` | escape not processed |
+| `modules: {}` | `{}` → `PresetError` | `[]` → silent opt-out | **fallback more permissive** |
+| `project_name: My Project: Phase 2` | `ScannerError` | accepted | **fallback more permissive** |
+| `modules:` / `  - a` / `- b` (mixed indent) | `ParserError` | accepted | **fallback more permissive** |
+| `project_name: >` + folded block | `'folded text\n'` | `'>'` | block scalar mis-read |
+
+The last three are the same "neither parser is a subset of the other" shape the
+proposal already identified for tab indentation, so the *category* is
+acknowledged — but A4 enumerates only two members of it (tab indent,
+`key:value`), and there are at least five. The `modules: {}` row is worth
+singling out: the code comment at `bootstrap/_scaffold/config.py:129` says the
+`[]`/`{}` branch exists so `modules: []` "is honored as an explicit opt-out",
+and for `{}` that documented behaviour is a fallback-only invention — under
+PyYAML the same line is a hard `PresetError`.
+
+This is the *Signals the change is wrong* row about "the parity table starts
+accreting special cases" firing on day one. It is not an argument against the
+change; it is an argument that the plan must **enumerate the closure before
+implementation**, because the honest form of the invariant is "equal, or
+refused with a demonstrated reason", and the refusal list is currently
+demonstrably incomplete.
+
+---
+
+### [I5] New failure mode not named: A4 makes the installer's *acceptance set* environment-dependent, and the doc surface will present it as a universal contract
+
+Part A is scoped to the fallback ("Rework `_minimal_yaml_parse` and its helper
+`_list_item_text`"). The refusals therefore fire only when PyYAML is absent.
+The documentation surface says:
+
+> `bootstrap/BOOTSTRAP.md` — the "Schema rules" list in the preset section
+> gains the fallback parser's refusal list, stated as a contract an adopter can
+> rely on.
+
+After the change, an adopter with PyYAML writes `modules: [a, b]` and installs
+cleanly; their stdlib-only collaborator running the byte-identical command gets
+a refusal. That is strictly better than today (loud rather than silent), and I
+am not asking to reverse it — but it is a *new* environment-dependent outcome,
+it is the mirror image of the reproducibility argument the proposal makes in
+*Rationale*, and the proposal does not name it. A schema rule that binds on one
+of two code paths is not "a contract an adopter can rely on".
+
+**Ask.** Consider applying the A4 construct checks in `load_config` over the
+raw text, independent of which parser ran, so there is one acceptance contract
+on both paths and the shipped `BOOTSTRAP.md` rules are true as written. If that
+is judged out of scope, say plainly in `BOOTSTRAP.md` that the refusal list is
+the stdlib-parser contract and a PyYAML environment is more permissive.
+
+---
+
+### [I6] Forward compatibility: Cairn already has a written unknown-key doctrine for the sibling install-contract file, and the revised Part B contradicts it without reconciling
+
+This is the lens I was asked to aim at, and it is not the G3 argument. I accept
+the flip to refuse; the measured availability cost is real and I re-verified it
+(see *Covered*). What is missing is what must ship *with* the flip.
+
+`bootstrap/UPGRADE.md:208` states the opposite discipline for
+`dev/.cairn/cairn-lock.yml`, the profile's sibling in the same directory and
+the other half of the install contract:
+
+> An additive **optional** top-level field does not bump `schema` — readers
+> must use `.get()` with a default and tolerate unknown keys.
+
+That rule is safe there because the lockfile carries a `schema` field, so a
+reader can distinguish "a field I don't know" from "a file from the future".
+`dev/.cairn/profile.yml` has **no version key**, and the proposed
+`RECOGNIZED_PROFILE_KEYS` (five tokens + six axes + five structural keys) does
+not add one. The consequence is structural: because the refusal is enforced by
+the *reading* engine, every profile key Cairn ever adds after this ships is a
+hard break for every engine released before it, with no carrier for the
+"newer profile" signal and no way to say "this profile was written by a newer
+Cairn". The Response is right that neither proposed opt-out works — but a
+reserved version key is not an opt-out. It does not weaken typo detection
+(`presets:` is not a version key) and it costs one entry in a set.
+
+Two smaller items in the same area:
+
+* The comment at `bootstrap/_scaffold/config.py:46-49` — inside the file the
+  proposal is changing, and inside the module that holds the `_MODULE_MAPPINGS`
+  trust anchor — states the now-reversed intent: unknown keys are ignored "so
+  that future tokens do not break old configs". The revised Part B must update
+  it, or the trust-anchor file will document the opposite of its behaviour.
+* The proposal's *Touches* names "`bootstrap/BOOTSTRAP.md` (Appendix B schema
+  rules)". I could not find an Appendix B statement of unknown-key handling;
+  the token vocabulary lives in Appendix A (`bootstrap/BOOTSTRAP.md:652`), and
+  `bootstrap/UPGRADE.md` is the file that actually states an unknown-key rule.
+  The doc-surface list should be re-derived at plan open.
+
+**Ask.** Add a reserved version/`schema` key to `RECOGNIZED_PROFILE_KEYS` now,
+or state explicitly in `BOOTSTRAP.md` that the profile schema is closed for
+every engine shipped to date and that adding a key is a breaking change.
+Reconcile the two `dev/.cairn/` dispositions in one sentence somewhere a
+future contributor will find it.
+
+---
+
+### [I7] The parity oracle collapses in exactly the environment that matters — the Part C sweep as specified cannot fail on a stdlib-only interpreter
+
+This is the vacuous-guard shape the brief asks about, and it is already
+shipping. `_yaml_load` (`bootstrap/_scaffold/config.py:36-43`) *is* the
+fallback when PyYAML is absent. So any assertion of the form
+`_yaml_load(x) == _minimal_yaml_parse(x)` compares the function under test to
+itself:
+
+```
+$ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python probe4.py
+config._yaml = None
+input: 'forge: gitlab        # gitlab | github\n'
+_yaml_load        -> {'forge': 'gitlab        # gitlab | github'}
+_minimal_yaml_parse -> {'forge': 'gitlab        # gitlab | github'}
+assert _yaml_load(x) == _minimal_yaml_parse(x)  PASSES: True
+(true PyYAML answer for this input is {'forge': 'gitlab'})
+```
+
+Two existing tests are written in exactly that form —
+`test_flat_schema_parses_identically` (`bootstrap/tests/test_presets.py:292`)
+and the parity check at `bootstrap/tests/test_presets.py:423` — and the
+proposal points the plan at that file precisely because it "already houses
+`TestParserParity` ... this work should reuse rather than reinvent".
+
+The proposal protects the *differential parity* test (Tests-required #1) with
+"skipped-with-a-message if PyYAML is absent (so the environment never silently
+voids it)" — good. It gives **no** such guard to Tests-required #4, the Part C
+sweep, which is the drift gate the entire recurrence argument rests on. Worse,
+#4 carries a reproduction check —
+
+> This test must **fail** against today's HEAD; a plan that lands it green is a
+> plan that did not reproduce the defect.
+
+— which on a stdlib-only interpreter would pass green at HEAD, vacuously, and
+be recorded as "the defect did not reproduce".
+
+**Ask.** State in Part C that the sweep imports `yaml` directly (never
+`_yaml_load`) and hard-skips with a message when it is absent; and name the
+`_yaml_load`-as-oracle pattern as banned in the plan, since two live tests
+model it.
+
+---
+
+### [I8] Part C's corpus definition is over-inclusive as written, with evidence
+
+"Every profile-YAML block in a tracked Markdown file" is a shape heuristic. I
+implemented it (fenced `yaml`/`yml` blocks in `git ls-files '*.md'` containing
+a top-level `project_name`/`preset`/`modules`/`test_command`/`forge` key) and
+got seven blocks, four divergent:
+
+```
+$ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python sweep.py
+profile-shaped yaml blocks in tracked .md: 7
+=== blocks whose two parsers DISAGREE (4) ===
+  bootstrap/BOOTSTRAP.md (fence opens ~line 730)      [the two known divergent lines]
+  bootstrap/fidelity-check.md (fence opens ~line 115)
+     PyYAML  : {... 'profile': {'age': ..., 'size': ...}, 'modules': {'kernel': [...], ...}}
+     fallback: {... 'profile': [], 'modules': ['AGENTS.md', ...]}
+  dev/proposals/archive/2026-07-11-claude-solo-legacy-adopter-path.md (~line 49)
+     PyYAML  : {'project_name': '<your-repo>', ...}   fallback: {}
+  dev/proposals/archive/2026-07-11-claude-solo-legacy-adopter-path.md (~line 248)
+```
+
+The `bootstrap/fidelity-check.md` hit is the *fidelity manifest* example — a
+different document type entirely, deeply nested, which the fallback is never
+meant to parse. The two archived-proposal hits reduce to `{}` because the fence
+is indented inside a list item. A sweep defined by shape will pick all of these
+up on day one and force either a permanent allowlist or a skip — which is the
+proposal's own "the documentation sweep test becomes a nuisance" signal firing
+before the test is written.
+
+The repository already has the right mechanism: `bootstrap/tests/test_presets.py`
+anchors on an explicit marker string and asserts the marker appears exactly
+once, so a second block cannot silently join the corpus.
+
+**Ask.** Define the Part C corpus by explicit marker, not by shape, and carry
+the "marker appears exactly once" assertion forward.
+
+---
+
+### [I9] Two existing tests contradict Part A and are not named in the plan
+
+* `test_mixed_indent_list` (`bootstrap/tests/test_scaffold.py:204`) pins
+  fallback-more-permissive-than-PyYAML behaviour, and its docstring endorses it:
+  "not valid YAML strictly speaking, but the minimal parser is forgiving". I
+  confirmed PyYAML raises `ParserError` on that input while the fallback
+  accepts it (probe8). Part A's invariant requires refusing it, so this test
+  must be inverted or deleted.
+* `test_raises_on_invalid_yaml` (`bootstrap/tests/test_scaffold.py:246`) has
+  **no assertion at all** — its body is `write_text` followed by three comment
+  lines ending "We tolerate the minimal parser's inaccuracy here." A test named
+  for a refusal that asserts nothing, expressing the exact posture this
+  proposal reverses, sitting in the file the new refusal tests will land in.
+
+The proposal says "Both new-test homes are existing files; no new test module"
+and never mentions retiring or inverting an existing pin.
+
+---
+
+### [I10] Sibling collision on the shared AST attestation baseline
+
+`2026-08-03-claude-fork-advisory-semantics` is also at status `revised`, also
+touches `bootstrap/_scaffold/upgrade.py`, and therefore also mandates a
+re-anchor of the same committed baseline
+`bootstrap/tests/fixtures/scaffold_ast_baseline.json`. This proposal's revision
+adds `upgrade.py` to its own *Touches*. That sibling has already priced the
+hazard in its own *Coordination* section — including the finding that an
+engine-package edit landing without a re-anchor leaves the canonical suite red
+for the whole interval. This proposal's record is silent on it, and its own
+stop-the-line signal ("an unexplained engine-baseline delta is a stop-the-line
+event, not a re-pin") will fire on the *sibling's* legitimate symbol motion if
+the two are executed without an ordering.
+
+**Ask.** One sentence of coordination naming the sibling and the ordering, so
+the second executor is not surprised.
+
+---
+
+### Covered
+
+Every command below was run this session, `PYTHONDONTWRITEBYTECODE=1`,
+`~/conda_envs/lhm/bin/python` (3.13.13), scratch files under the session
+scratchpad, nothing written into the repository.
+
+* **Boundary sweep (empty, None, one, N, non-ASCII, CRLF, symlink-free,
+  indented).** `probe1.py`, `probe2.py`, `probe3.py`, `probe9.py` — 25 inputs
+  through `yaml.safe_load` vs `_minimal_yaml_parse`, plus `load_config` under a
+  real `sys.meta_path` PyYAML blocker with `config._yaml` printed to prove the
+  branch. Yielded [I1], [I4].
+* **Does the fix introduce new divergence?** `probe5.py` — A1+A2+A3
+  implemented as literally specified and diffed against current behaviour over
+  seven inputs. Yielded [I2] and the A2-insufficiency half of [I3].
+* **Round-trip of the engine's own writers.** `probe6.py` calls the real
+  `_self_heal_profile_config` and `_write_init_lock_profile_template` into a
+  temp tree and parses their output both ways; `probe7.py` feeds the mis-parsed
+  result to the real `_resolve_lock_profile_fields`. Yielded [I3].
+* **Test-vacuity / oracle-collapse check.** `probe4.py` under a blocked-PyYAML
+  interpreter, plus reading `bootstrap/tests/test_presets.py:281-300` and
+  `bootstrap/tests/test_scaffold.py:165-255`. Yielded [I7], [I9].
+* **Part C corpus feasibility.** `sweep.py` over `git ls-files '*.md'`.
+  Yielded [I8].
+* **Forward-compatibility / doctrine consistency.** `grep -rn 'silently
+  ignored|are ignored|unknown keys|ignores unknown'` over `bootstrap/*.md`,
+  `docs/*.md`, `templates/core/*.md`; read `bootstrap/UPGRADE.md:199-215`.
+  Yielded [I6].
+* **Confirmations of author claims that HELD.** The recognized-key set is
+  complete against the engine's real reads —
+  `grep -rn 'cfg\.get(|cfg\[|config\.get(|profile\.get('` over
+  `bootstrap/_scaffold/*.py` returns exactly `preset`, `modules`,
+  `modules_add`, `modules_remove`, `forge`, `project_name`, the six `_AXES`
+  keys and the `KNOWN_TOKENS` filter, so the proposed five structural keys are
+  right. `load_config` has exactly four call sites, all profile-reading
+  (`bootstrap/_scaffold/cli.py:218`, `bootstrap/_scaffold/cli.py:296`,
+  `bootstrap/_scaffold/upgrade.py:237`, `bootstrap/_scaffold/upgrade.py:1136`),
+  so a key whitelist there cannot leak onto other YAML files. All three shipped
+  profiles under `bootstrap/profiles/` carry only `project_name`,
+  `test_command`, `preset` and no divergent line — the Response's measured
+  availability cost reproduces. The "exactly 3 divergent-shape lines in
+  adopter-facing files" count reproduces (two in the `bootstrap/BOOTSTRAP.md`
+  block at `bootstrap/BOOTSTRAP.md:734` and `bootstrap/BOOTSTRAP.md:739`, one at
+  `bootstrap/_scaffold/cli.py:28`), and both cited line numbers are correct.
+  `python scripts/claim_check.py` over the proposal: OK, no flags.
+
+### Not covered / low confidence
+
+* **This is a same-agent-type review and carries no cross-type independence.**
+  The author is Claude; I am Claude in a fresh session. Whatever blind spot
+  produced the overstatements in [I1] and [I3] is a blind spot I share by
+  construction. The External tier for this proposal was Gemini Flash, and this
+  review does not substitute for it — treat these findings as a second read
+  from inside the same head, not as independent confirmation.
+* **I did not re-run the suite.** The `1556 passed` baseline is unverified by
+  me; the proposal already says to re-measure at plan open.
+* **I did not run a full install.** The five-file `--help` delta, the 11
+  differing-content files for the `project_name` case, and the four typo rows
+  of Evidence (i) were reproduced by the External pass and re-reproduced by the
+  Response; I relied on that and spent the budget on unexercised surface
+  instead.
+* **COULD NOT REPRODUCE: a CRLF problem.** The proposal names CRLF as an
+  explicit gap. I ran `project_name: X\r\nmodules:\r\n  - claim-check\r\n`
+  through both parsers (probe1) and got identical results, because
+  `line.strip()` removes the `\r`. I tested three shapes only; I did not test
+  CRLF combined with quoting or comments, so the gap is narrowed, not closed.
+* **Not examined:** the AST attestation delta itself (no code exists yet); the
+  Bandit and `vermin` gates; concurrent-writer behaviour on
+  `dev/.cairn/profile.yml` (no locking is involved on the read path, but I did
+  not test a writer racing `load_config`); non-UTF-8 profiles (the proposal
+  scopes them out and `read_text(encoding="utf-8")` does raise); symlinked
+  profile paths.
+* **[I5]'s recommendation is a design opinion, not a defect.** Applying A4 on
+  both paths is more work and may collide with *FIX DEFECTS, BUILD NOTHING
+  NEW*; I flag the unnamed failure mode as a finding and the remedy as a
+  suggestion.
+
+### Second-round recommendation
+
+**A second round is recommended — a Revised-proposal round, not a re-review of
+the direction.** The proposal's direction survives this pass intact: Part A,
+Part C, and the revised fail-closed Part B are all the right calls, and I found
+nothing that should reverse them. But three of its stated protections do not
+hold on the stdlib-only path ([I1], [I2], [I3]), and a plan opened against the
+current text would ship a change that closes the documented fail-opens while
+leaving the largest one — an empty or indented profile accepted as `{}` — wide
+open, and would regress `project_name: issue#42-tracker` in the process.
+
+The remedy is cheap and entirely within the existing fence: an appended
+*Revised proposal* section that (a) adds the empty-parse refusal to A4 and
+corrects the two false edge-case rows, (b) specifies the whitespace rule in A3
+and adds the missing parity row, (c) decides the quote-doubling/escape question
+and fixes the Part C corpus to both writers, (d) states the sweep's PyYAML
+guard, and (e) adds one sentence each on the version carrier ([I6]) and the
+sibling ordering ([I10]). [I4], [I5], [I8] and [I9] are plan-scoping items that
+can be recorded as constraints rather than resolved in the proposal.
+
+I would not send this back to External review. Everything above is
+specification detail below the level the External tier is for, and the External
+tier already did its job — including on the question ([I3]'s writer
+round-trip) that its own A4-sharpening exchange opened and did not finish.
