@@ -37,6 +37,7 @@ import os
 import stat
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from types import ModuleType
 
@@ -117,11 +118,21 @@ def _stage_tool(tools_dir: Path) -> Path:
     return facade
 
 
+# An isolated, provably-empty HOME for subprocess envs.  Identity tier 3 is
+# ``$HOME/.cairn/agent.json`` (``identity._load_config``), so a developer who
+# has that file -- an ordinary, documented setup -- would otherwise resolve a
+# real identity inside tests whose whole premise is that none is resolvable,
+# turning them red on their machine and green in CI.  Git needs no HOME here:
+# ``_git_repo`` sets user.name / user.email per-repo, not from ~/.gitconfig.
+_ISOLATED_HOME = tempfile.mkdtemp(prefix="cairn-test-home-")
+
+
 def _clean_env(**overrides: str) -> dict:
     """A subprocess env with identity vars cleared, then *overrides*."""
     env = dict(os.environ)
     for var in _IDENTITY_VARS:
         env.pop(var, None)
+    env["HOME"] = _ISOLATED_HOME
     env.update(overrides)
     return env
 
@@ -309,6 +320,63 @@ class TestIdentity:
         )
         assert res.returncode == 0  # always fail-soft
         assert "shadowing the per-session identity" in res.stderr
+
+
+# ---------------------------------------------------------------------------
+# Auto-release stays quiet when there is provably nothing to release (#3)
+# ---------------------------------------------------------------------------
+
+class TestAutoReleaseQuietOnNoClaims:
+    """The unresolved-identity warning is gated on there being live claims.
+
+    A human committing from an ordinary terminal fails identity resolution
+    *by construction* -- the harness session vars exist only inside an agent
+    harness -- so an ungated warning fires on every hand-made commit, and
+    once per replayed commit through a rebase, while auto-release is a
+    provable no-op. The warning is retained for the case it was written for:
+    live claims whose holder cannot be named.
+    """
+
+    def _paths_file(self, tmp_path: Path) -> Path:
+        paths = tmp_path / "paths"
+        paths.write_bytes(b"dev/x\x00")
+        return paths
+
+    def test_silent_when_no_claims_and_no_identity(self, tmp_path) -> None:
+        """The reported defect: nothing claimed => no identity warning."""
+        tool = _git_repo(tmp_path)
+        log = tmp_path / "intents.jsonl"  # deliberately absent -> reads as []
+        res = _run_tool(
+            tool,
+            ["--log-path", str(log), "_auto_release", "--commit", "abc0123456",
+             "--paths-from-file", str(self._paths_file(tmp_path))],
+            cwd=tmp_path, env=_clean_env(),
+        )
+        assert res.returncode == 0  # always fail-soft
+        assert "agent identity not configured" not in res.stderr
+        assert res.stderr == ""  # silent, not merely un-warned
+
+    def test_still_warns_when_a_live_claim_cannot_be_released(
+        self, tmp_path
+    ) -> None:
+        """Non-vacuity: the warning survives for the case it was written for."""
+        tool = _git_repo(tmp_path)
+        log = tmp_path / "intents.jsonl"
+        # A live claim held by someone this committer cannot be resolved as.
+        _run_tool(
+            tool,
+            ["--log-path", str(log), "claim", "--files", "dev/x",
+             "--action", "held-by-another-session"],
+            cwd=tmp_path, env=_clean_env(CAIRN_AGENT="other-session"),
+        )
+        res = _run_tool(
+            tool,
+            ["--log-path", str(log), "_auto_release", "--commit", "abc0123456",
+             "--paths-from-file", str(self._paths_file(tmp_path))],
+            cwd=tmp_path, env=_clean_env(),  # no identity resolvable
+        )
+        assert res.returncode == 0
+        assert "agent identity not configured" in res.stderr
 
 
 # ---------------------------------------------------------------------------

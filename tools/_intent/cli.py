@@ -169,14 +169,27 @@ def _cmd_auto_release(args) -> int:
         Path(args.log_path) if args.log_path is not None else INTENTS_LOG_PATH
     )
     try:
+        # Read the log BEFORE resolving identity, so the unresolved-identity
+        # warning below can be suppressed when there is provably nothing to
+        # release.  A human committing from an ordinary terminal fails
+        # resolution *by construction* -- the harness session vars exist only
+        # inside an agent harness -- so warning them once per commit, and
+        # once per replayed commit through a rebase, is exactly the nuisance
+        # this command's contract forbids.  An absent log reads as []
+        # (``read_log``), so a fresh adopter is silent here too.
+        actives = active_intents(log_path=log_path)
+
         agent = resolve_agent_identity()
         if agent is None:
-            sys.stderr.write(
-                "intent: agent identity not configured ($CAIRN_AGENT unset, "
-                "no harness session var, and ~/.cairn/agent.json missing or "
-                "unreadable); skipping auto-release for commit "
-                f"{(args.commit or '')[:8]}.\n"
-            )
+            # Retained for the case the warning was written for: live claims
+            # that cannot be released because the holder cannot be named.
+            if actives:
+                sys.stderr.write(
+                    "intent: agent identity not configured ($CAIRN_AGENT "
+                    "unset, no harness session var, and ~/.cairn/agent.json "
+                    "missing or unreadable); skipping auto-release for "
+                    f"commit {(args.commit or '')[:8]}.\n"
+                )
             return 0
 
         # Override-shadow warning: a global CAIRN_AGENT export shadows the
@@ -215,7 +228,6 @@ def _cmd_auto_release(args) -> int:
             return 0
 
         committed_set = {normalize_path(p) for p in committed_paths}
-        actives = active_intents(log_path=log_path)
         released_count = 0
         for active in actives:
             if active.get("agent") != agent:

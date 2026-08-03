@@ -36,6 +36,18 @@ and a new empty `Unreleased` is started above.
 
 ### Fixed
 
+- **The intent post-commit hook warned about agent identity on every human
+  commit.** `_auto_release` resolved identity *before* opening the intent
+  log, so it warned that identity was unconfigured even when there were no
+  claims to release at all — once per commit, and once per replayed commit
+  through a rebase. The harness session vars it resolves from exist only
+  inside an agent harness, so any adopter with a human in the commit loop
+  hit this by construction, on the path where the warning was most often
+  vacuous. The log is now read first and the warning fires only when live
+  claims exist — preserving it for the case it was written for, an
+  unidentifiable holder of real claims. GitHub issue #3; template
+  `templates/modules/team-gated/_intent/cli.py` and its self-hosted twin.
+
 - **`check_cairn` self-host claim-path findings.** Self-hosting Cairn gave
   it a real top-level `dev/` tree, which flipped the shipped `claim_check`
   checker into resolving the `dev/` paths cited across doctrine, templates,
