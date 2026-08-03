@@ -17,7 +17,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: proposed
+**Status**: revised
 **Touches**: a new Cairn-internal checker `bootstrap/tests/_gate_preflight.py` and its behavioural test `bootstrap/tests/test_gate_preflight.py`; a new pre-flight step in `bootstrap/REANCHOR_RUNBOOK.md`'s Phase 0. **No shipped template, no install-manifest entry, no adopter-facing surface** (`scaffold.py --manifest` has zero entries under `bootstrap/tests/`, verified 2026-08-03); no doctrine file under `doctrine/`; no change to `_gate_reanchor.py`'s Stage A / Stage B contract.
 **Related**: `bootstrap/REANCHOR_RUNBOOK.md` Phase 0; the two supervised runs that motivated this — the 2026-07-31 trust-root re-establishment (`e5ecaa5`) and the pending re-bless for `cfc5530`; the archived plan `dev/plans/archive/interpreter-trust-root-fallback.md`, whose Lasting-truth section records the four review rounds spent mis-specifying this same ceremony. Opened under the Maintainer's 2026-08-03 direction, *"I feel like this script should be more formalized as an actual mechanism for re-use"* and *"I think it needs to be externally reviewed with a security lens"*.
 **Plan review**: required(**External**, security lens) — the Maintainer's direction above, applied to this proposal *and* carried to the plan. The surface is the input to a trust-root blessing decision; a same-type read cannot supply the independence the circularity in *Proposal > The circularity this does not eliminate* needs.
@@ -560,3 +560,149 @@ requires an External security lens; after the author revises SR1-SR5, a focused
 security re-read should verify the trusted-launch model and application
 transaction before Decision. A general second full sweep is unnecessary if the
 rest of the proposal remains unchanged.
+
+## Response -- Claude (author, to External Security Review) -- 2026-08-03
+
+**Model**: Claude Opus 5
+
+**All five accepted; none disputed.** Every finding was independently
+re-verified by execution before disposing, not accepted on the reviewer's
+report. What I ran: `bootstrap/tests/conftest.py` exists and is therefore
+imported by `_gate_manifest._collect`'s `pytest --collect-only` subprocess
+(SR1's premise); a two-argument `git update-ref` overwrote a ref
+unconditionally while the three-argument expected-old form refused with
+`cannot lock ref ... is at <x> but expected <y>` (SR2); and an isolated temp
+repo reproduced SR5 in full. The review's central claim — that `&&` addresses
+one failure class while the interface still executes untrusted code before
+trust, binds nothing to the checked state, and promises underivable facts — is
+correct, and the handoff ruling is right.
+
+* **[SR1] accept.** The circularity is executable, not residual, and I stated
+  it too weakly. The body's mitigation "it is itself pinned" is worth less than
+  claimed: on first use the checker is absent from the old anchor entirely, and
+  thereafter pinning detects a changed checker only *after* it has run. The
+  revised design takes the trusted-launch boundary — reviewed preflight code
+  resolved from the immutable anchor and byte-compared before any candidate
+  import, candidate collection run inside a repository-less scrubbed temp tree
+  following Stage A's containment pattern, that execution treated as
+  non-authoritative evidence. The first-use bootstrap is specified explicitly
+  as a one-time manual step keyed to this review's reviewed hashes, since it
+  cannot be self-hosted. I accept that a before/after status snapshot is not
+  containment; it was the wrong instrument and is demoted to a diagnostic.
+
+* **[SR2] accept.** Both probes reproduced. The `&&` chain was the fix to the
+  failure I had just witnessed, and I generalized from one incident to a
+  contract — the amendment's own lesson about handoff being safety-critical
+  applied more rigorously than I applied it. `cp && commit && update-ref HEAD`
+  proves nothing about *which* HEAD, and its final step overwrites whatever
+  anchor exists. Revised: `check` emits a digest-bound bundle; a separate
+  `apply` revalidates HEAD and worktree state, verifies the created commit's
+  parent, diff, and manifest-blob digest, and advances by expected-old CAS.
+
+* **[SR3] accept.** This is the sharpest finding. "Not a refusal" let changed
+  authority code emit an actionable blessing on its own report — a hole I
+  created while arguing elsewhere that the failure direction must stay closed.
+  Revised: changed authority bytes produce non-zero / `REVIEW REQUIRED` and
+  **no bundle**, routed to the manual runbook, with a test that no blessing
+  artifact is ever emitted on that path. Note this is not a suppression flag by
+  another name: there is no input that converts the refusal into a pass.
+
+* **[SR4] accept.** Both values are genuinely underivable and I should have
+  caught the first from arithmetic alone — a SHA hashes the message, so a
+  message cannot contain it. The real `e5ecaa5` / `bf08f62` messages say "this
+  commit," which is the honest form; my amendment's requirement was stricter
+  than reality allows. On the second: `bf08f62` named `e5ecaa5` because *I*
+  still knew it in-session, not because anything derived it — precisely the
+  knowledge that compaction destroys, which is the failure this proposal exists
+  to prevent. Revised: pre-commit fields become observed anchor / checked HEAD /
+  prospective manifest digest; the resulting `P` is recorded post-creation by
+  the tool and the ledger; recovery takes a Maintainer-supplied
+  `last_legitimate_anchor` and the checker discloses the erroneous ref
+  separately without claiming to have inferred legitimacy.
+
+* **[SR5] accept — and the finding understates the exposure.** Reproduced in an
+  isolated temp repo, with one addition the review did not draw out: the
+  detection method I actually shipped is blind to it. `_frozen_files()` returned
+  a **gitignored** `.py` under `bootstrap/tests/`, and returned a **symlink**
+  whose `_sha256` equalled its outside-the-repo target's — so a manifest can pin
+  bytes no committed blob contains. Meanwhile `git ls-files --others
+  --exclude-standard`, which the scratchpad checker's untracked-surface check
+  uses, reported **neither**. So that check passes while the manifest pins
+  unreproducible content. Revised: validate every discovered frozen path against
+  `git ls-files --stage`, require stage-0 regular blob mode, reject symlinks and
+  submodules, refuse any discovered path absent from the index, and enumerate
+  untracked candidates with ignored entries included. Regressions for the
+  ignored file and the tracked symlink alongside the ordinary-untracked case.
+
+* **Handoff ruling — accept.** Pasteable shell text is withdrawn as the
+  authority-mutating interface. `check` stays read-only and emits a
+  machine-readable, digest-bound bundle; `apply` is separately reviewed,
+  explicitly confirmed, and revalidating. The manual runbook remains the
+  independent fallback, which preserves the property that the tool is a
+  convenience over an independently-executable procedure.
+
+**Disclosure — the live scratchpad checker inherits SR5 and must not be used.**
+`g0_check.py` is not covered by this proposal's revisions and now has a *known*
+hole: its untracked-surface check cannot see an ignored file inside the gate
+surface. The 2026-08-03 blessing (`bf08f62`) is unaffected — the tree has no
+such file, verified — but the next blessing must not run through that script.
+Until the implementing plan lands, Phase 0 runs by the manual runbook.
+
+## Revised proposal -- 2026-08-03
+
+Supersedes the design in `## Proposal` and the requirements in `## Amendment >
+3`. Unchanged: the read-only-by-construction constraint, no suppression switch,
+Cairn-internal scoping, the preserved manual path, and the circularity analysis
+(now with SR1's correction that the "itself pinned" property is weaker than
+claimed).
+
+**Two subcommands, split on the authority boundary.**
+
+* **`check`** — read-only, and never the blessing interface. It (a) resolves
+  reviewed preflight code and its dependency bytes from the immutable anchor and
+  refuses if the running bytes differ; (b) materializes the checked immutable
+  HEAD into a repository-less temp tree with credentials, `HOME`, and Git
+  prompts scrubbed, and runs candidate collection **there**, treating the result
+  as non-authoritative evidence; (c) runs the checks below; (d) emits a
+  machine-readable bundle bound to the checked HEAD, the observed anchor, the
+  candidate-manifest digest, and the drafted-message digest. No shell text that
+  mutates authority.
+* **`apply`** — separately reviewed, requiring explicit Maintainer confirmation.
+  It revalidates the bundle against live state, refuses on any drift, creates
+  the commit, proves the new commit's parent is the checked HEAD and its diff is
+  exactly the manifest with the reviewed blob digest, then advances the anchor by
+  **expected-old CAS**. Judgment stays the Maintainer's; only mechanics are
+  automated.
+
+**Checks, revised.** Canonical interpreter; no uncommitted tracked changes;
+frozen-surface membership validated against `git ls-files --stage` (stage-0
+regular blob mode; symlinks, submodules, ignored-but-globbed, and
+absent-from-index all refuse); untracked enumeration includes ignored entries;
+**changed authority modules refuse with no bundle**; hash equality; interpreter
+pin; live scope with zero frozen removals and no collection shrink; anchor
+ancestry; `anchor == HEAD` refuses.
+
+**Audit fields, corrected.** Pre-commit: observed anchor, checked HEAD,
+prospective manifest digest. Post-commit: the resulting `P`, recorded by the
+tool and the ledger, never inside its own message. Recovery: a
+Maintainer-supplied `last_legitimate_anchor`, with the erroneous ref disclosed
+separately. `update-ref --create-reflog` as diagnostic evidence only, never the
+durable ledger.
+
+**First-use bootstrap.** The trusted-launch boundary cannot verify a checker
+absent from the old anchor. Introduction is a one-time manual step keyed to this
+review's reviewed hashes, performed under the manual runbook, and specified in
+the plan rather than left implicit.
+
+**Tests added beyond the body's list.** Candidate `conftest.py` executing at
+collection cannot reach the real repository (containment, mutation-tested);
+`apply` refuses when HEAD moved after `check`; CAS refuses a stale anchor; a
+changed authority module emits no bundle on any path; an ignored `.py` inside
+the surface refuses; a tracked symlink refuses; paths with spaces and shell
+metacharacters survive whatever argument construction remains.
+
+**Open for the focused re-read** (not resolved here, flagged deliberately): the
+first-use bootstrap is the one step with no mechanical protection, and it is the
+step that introduces the trust boundary itself. I do not think that is
+eliminable — it is the same shape as Phase 0's own out-of-band review — but it
+deserves the re-read's attention rather than my assurance.
