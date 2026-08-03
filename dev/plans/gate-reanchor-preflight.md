@@ -70,6 +70,23 @@ template, no install-manifest entry.**
 
 ## Sequence
 
+> **⚠ Read the revisions before trusting the chunk descriptions below.** The
+> chunk entries in this section are the *original* plan and are **append-only**,
+> so they are not edited in place — but two of them now misdescribe what was
+> actually built, and a reader coming top-to-bottom would take the wrong picture
+> from them. Superseded, with the current design in the section named:
+>
+> | Below | Status | Current design |
+> |---|---|---|
+> | **A10**, "committer-identity tripwire" | **superseded** — Git's committer name/email are unauthenticated and the check was defeated by a spoofing probe (GPR2) | *Plan revision 2026-08-03 — GPR2 resolved*: signature verification against a pinned roster from a recorded epoch |
+> | **Chunk C**, "digest-bound bundle" that `apply` revalidates | **superseded** — a digest stored beside the bytes it covers is a corruption check, not tamper evidence; a re-hashed tampered manifest was anchored (code-review CR1) | *Response to security code review*: **no authority-bearing artifact at all** — `apply` re-derives everything in memory |
+> | **Chunk D**, "revalidates every binding" | **partly false as written** — it revalidated a mutable artifact against itself | same section: `apply` takes no bundle and no digest |
+>
+> Chunk B's description stands. Chunk A's other checks stand, with the frozen
+> surface hardened per SR5 and every git invocation config-pinned per CR1's class
+> sweep. This banner exists because the plan's own premise is that the record can
+> be trusted; a stale Sequence section quietly falsifies that.
+
 ```
 A -> B -> C -> D -> E -> F -> [G: Maintainer-only] -> H
 ```
