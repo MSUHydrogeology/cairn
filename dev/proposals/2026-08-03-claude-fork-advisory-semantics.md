@@ -7,7 +7,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: revised
+**Status**: accepted
 **Touches**: `bootstrap/_scaffold/lockfile.py` (`forked_facade_findings`,
 `format_forked_facade_warning`), `bootstrap/_scaffold/install.py` (one new
 helper), `bootstrap/_scaffold/upgrade.py` (`cmd_upgrade`, one call site),
@@ -849,7 +849,7 @@ Executed under canonical interpreter `~/conda_envs/lhm/bin/python` (Python 3.13.
 * **Un-Patched Code Verification:** The proposed refactoring of `lockfile.py`, `install.py`, and `upgrade.py` has not been implemented in code yet; all verifications were conducted against the current un-patched codebase and proposal text.
 * **Out-of-Band Checkout Authenticity (R1):** This review confirms that the target tree cannot influence the comparison source, but does not verify that the runner's checkout (`CAIRN_ROOT`) is cryptographically authentic. That trust boundary is explicitly assigned to Scope 1 (`release-authenticity`).
 
-## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
+## Decision (placeholder -- superseded by the Decision at the end of this file)
 
 *(Awaiting the Maintainer. The proposal has cleared External Security Review. The Maintainer may accept the proposal to proceed with plan creation.)*
 
@@ -2738,3 +2738,28 @@ re-running its sweep. Two new invariants (F5, F6), six new test nodes, two new
 residuals (R9, R10), and a scoped completeness statement so the next review has a
 stopping rule. Status stays `revised`. Three Maintainer decisions are put with
 exact authorizing wording; none is left open.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-03
+
+**Accepted, as revised.** Scribed by Claude (Strategy) at the Maintainer's
+explicit instruction.
+
+**Maintainer's authorization (verbatim):**
+
+> I approve each of the seven proposals that you have listed as ready to accept,
+> as revised.
+
+The seven were presented as a ledger with a per-proposal recommendation; this is
+one of them. The authorization is quoted rather than paraphrased, per the
+scribing guard-rail: a paraphrase admits semantic drift, condition-softening, or
+a hallucinated approval.
+
+**Scribe-coupling disclosure.** The scribe is the proposal's author. That is the
+weaker configuration -- the party whose work was reviewed transcribes the ruling
+on it. Mitigations: the authorization is quoted verbatim, and this commit carries
+the Decision only.
+
+**Engine obligations.** Touches `bootstrap/_scaffold/`, so the plan carries the
+high-risk engine obligations and a Maintainer-run AST baseline re-anchor.
+**Batch it** with `profile-parse-fail-open` so that ceremony is paid once.
+The Class C follow-on this scope declined is deferred, not dropped.
