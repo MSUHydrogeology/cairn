@@ -5,7 +5,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: revised
+**Status**: superseded
 **Touches**: `bootstrap/container/verify-ref.sh`, `bootstrap/PROVENANCE.md`,
 `tools/lifecycle_planner.py` + its `templates/skills/_lib/` twin,
 `dev/.cairn/agent-identities.json`, `bootstrap/_scaffold/lockfile.py`,
@@ -714,3 +714,88 @@ Decision remains *supersede into four scopes*. This amendment raises the second
 scope from a correctness cleanup to a security fix with a demonstrated exploit,
 and it should carry a security lens on its plan review — which the Response did
 not ask for, because at that point the exploit had not been demonstrated.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-03
+
+**Superseded — split into four scopes, with three anti-debt conditions.**
+
+Scribed by Claude (Strategy) at the Maintainer's explicit instruction.
+
+**Scribe-coupling disclosure.** Unlike the `ast-known-new-repin` precedent, where
+the record could note that the scribe was not the proposal's author, **here the
+scribe *is* the author.** That is the weaker configuration: the party whose work
+was reviewed is the party transcribing the ruling on it. The mitigations are that
+the authorization is quoted verbatim below rather than paraphrased, that the
+Maintainer's own words are independently checkable against this transcript, and
+that this commit carries the Decision only. Recorded so a reader can weigh it
+rather than discover it.
+
+**Maintainer's authorization (verbatim, operative):**
+
+> Yes, please record my decision as Supersede, split into the four scopes, with
+> the three anti-debt conditions.
+
+**Maintainer's standing direction that generated the conditions (verbatim):**
+
+> What I don't want to do is create security debt we have to pay down in the
+> future.
+
+**A disposition ambiguity was raised and resolved before scribing.** The
+Maintainer's prior phrasing was *"I accept your decision to accept, splitting
+into four separate scopes"*, which was unclear between `accepted` and
+`superseded` — different statuses producing different records, and only the
+second supports a four-way split. The scribe declined to act and asked; the
+instruction above is the resolution. Noted because the guard-rail working is
+itself part of the record.
+
+### The four successor scopes
+
+1. **Release authenticity** — signed release tags, exact annotated-tag
+   resolution, out-of-band key distribution and rotation,
+   `bootstrap/container/verify-ref.sh`, and `bootstrap/PROVENANCE.md`.
+   `required(External, security lens)`. **[IDN1] and [IDN2] must be resolved at
+   proposal time, not deferred into the plan** — a roster carried inside the ref
+   it authenticates is circular, and a SHA labelled "Maintainer-approved" without
+   a signature check is a false claim in output.
+2. **Exact byline classification** — `tools/lifecycle_planner.py` and its shipped
+   `templates/skills/_lib/` twin. Raised by the 2026-08-03 amendment from a
+   correctness cleanup to a **security fix with a demonstrated exploit**; carries
+   a security lens the Response did not request, because the exploit did not
+   exist when the Response was written. Invariant to enforce: **dropping a
+   character must never widen authority.**
+3. **Fork advisory semantics** — trusted comparison-source plumbing per caller,
+   plus the `bootstrap/_scaffold/` high-risk engine obligations and the mandatory
+   AST re-anchor that this proposal omitted.
+4. **Contributor entry and disclosure** — a project-owned root `CONTRIBUTING.md`
+   and a real security-disclosure channel, **without** altering `human_team`,
+   which is a staffing descriptor rather than a feature switch.
+
+### The three anti-debt conditions
+
+1. **This proposal does not archive until all four successors are *opened*** —
+   opened with a Status line, not queued and not merely homed on a board. This
+   **departs deliberately from the default file-move rule**, under which a
+   superseded proposal archives in its own Decision commit. The departure is the
+   point: the existing archive-precondition rule is satisfied by a roadmap row,
+   and a roadmap row is where `SECURITY_MUTATIONS.md`'s Class C gap went. That
+   gap was documented, routed to "a separate follow-on proposal (RR6/SR6)", and
+   **that follow-on has never been opened** — verified across every live and
+   archived proposal on 2026-08-03. This condition closes the window that debt
+   fell into.
+2. **Each successor's Decision states its residuals with an expiry trigger**,
+   reusing the dated-posture pattern established by `gate-reanchor-preflight`. A
+   residual with a named trigger is a decision; a residual without one is debt.
+3. **The `bootstrap/_scaffold/lockfile.py` remediation string lands immediately
+   as trivial-class**, outside all four scopes. It has no design question
+   attached and it currently advises an action — removing the engine package —
+   that raises `RuntimeError` in `tools/intent.py` and disables work-intent
+   coordination outright.
+
+### Carried forward
+
+The Class C follow-on named above is adopted as a candidate for scope 1 or
+scope 3, at the drafting author's judgment. It is an aged instance of precisely
+the debt this Decision's conditions exist to prevent, and closing it while the
+surrounding work is open costs less than opening it cold later.
+
+**Status**: `revised` → `superseded`.
