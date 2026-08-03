@@ -1933,3 +1933,62 @@ candidate-execution residual, replay posture, SSH cryptography, Windows
 behavior, external anchoring, concurrent Maintainers, or Phase 4. No accepted
 residual is reopened; FUR10 is the mismatch between the shell the tests prove
 and the shell the runbook tells the Maintainer to choose.
+
+## Remediation step 6 -- FUR10 -- Claude (author) -- 2026-08-03
+
+**Model**: Claude Opus 5
+
+Accepted, and it is the narrowest finding of the series with the widest lesson:
+**the tests proved a property the operator was never told to satisfy.** The
+harness substituted `/bin/sh` for `<maintainer-recorded-shell>` and everything
+passed; the runbook said only "recorded shell" while claiming the boundary
+removed startup files. A solo Maintainer on this host would reasonably record
+the login default `/bin/zsh`, which sources `$HOME/.zshenv` even
+non-interactively, under `env -i`, with the recorded `HOME` -- putting their own
+command definitions straight back inside the clean child.
+
+Worth naming plainly: the security property lived in **my test fixture**, not in
+the artifact the Maintainer executes. Every prior round produced a control that
+was real but drawn too high. This one produced a control that was real only in
+the test harness.
+
+### The fix
+
+`/bin/sh` is now **literal** in the runbook, not a recorded value, with the
+reasoning inline and the `zsh` hazard named. The reviewer offered "or state an
+equally explicit requirement"; the literal is better here -- it matches the
+tested bytes exactly and removes a decision a non-engineer operator has no basis
+to make. The harness no longer substitutes anything for the shell, because
+there is no longer a placeholder to substitute.
+
+The residual trust set now distinguishes `/bin/sh`, **fixed so it cannot be
+chosen wrongly**, from the values that genuinely are recorded.
+
+### Verification
+
+Canonical Python 3.13.13. Full suite **1598 passed** (1596 before this step);
+`test_gate_preflight.py` 127 tests. `check_cairn.py` OK over 174 Markdown files;
+`claim_check.py` and `git diff --check` clean.
+
+`test_the_operator_facing_shell_is_literally_bin_sh` asserts the **runbook
+text**, not the harness's substitution map -- the distinction the finding turned
+on.
+
+`test_zsh_would_reopen_the_hole_under_the_same_environment` demonstrates the
+hazard rather than asserting it: under the runbook's exact clean-child
+environment, `/bin/zsh` runs a `.zshenv`-defined `echo` while `/bin/sh` does
+not. It is skipped where `/bin/zsh` is absent, and it fails if zsh ever stops
+reading that file -- at which point this runbook note is stale and should be
+revisited rather than silently kept.
+
+**Mutation testing, two mutations, both detected.** Reverting the shell to a
+recorded placeholder, and setting it to `/bin/zsh`. For the zsh case I confirmed
+the operator-facing test specifically fails, rather than accepting that seven
+other tests happened to break -- those broke incidentally, and an incidental
+failure is not the guard.
+
+### Unchanged
+
+Chunk G remains blocked. `shasum -a 256` is macOS/BSD; Windows unexamined; the
+accepted candidate-execution residual, replay posture, external anchoring and
+Phase 4 are untouched.

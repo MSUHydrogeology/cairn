@@ -1453,10 +1453,6 @@ def _recorded(repo: Path) -> dict[str, str]:
         "<maintainer-recorded-mktemp>": shutil.which("mktemp"),
         "<maintainer-recorded-mkdir>": shutil.which("mkdir"),
         "<maintainer-recorded-shasum>": shutil.which("shasum"),
-        # FUR9: the loader body is interpreted by a clean child shell, not the
-        # operator's. /bin/sh is chosen because a non-interactive sh reads no
-        # startup file; zsh sources /etc/zshenv unconditionally.
-        "<maintainer-recorded-shell>": "/bin/sh",
         "<maintainer-recorded-home>": os.environ.get("HOME", "/nonexistent"),
     }
     missing = [k for k, v in values.items() if not v]
@@ -2144,7 +2140,52 @@ class TestLoaderTrustBoundary:
         launch = code.splitlines()[0]
         assert "-i" in launch and "<maintainer-recorded-env>" in launch, (
             f"the loader must be launched through a recorded `env -i`: {launch}")
-        assert "<maintainer-recorded-shell> <<'LOADER'" in code, (
-            "the body must be supplied to a recorded absolute shell")
+        assert "/bin/sh <<'LOADER'" in code, (
+            "the body must be supplied to the literal /bin/sh")
         assert code.rstrip().endswith("LOADER"), (
             "the body must be fully enclosed by the clean-child heredoc")
+
+    def test_the_operator_facing_shell_is_literally_bin_sh(self):
+        """FUR10. The harness used to substitute `/bin/sh` for a recorded
+        placeholder, so the tested property depended on a choice the runbook
+        never told the operator to make. The value is now literal in the
+        operator-facing text, and this asserts *that* text rather than the
+        harness's substitution map."""
+        block = _runbook_block("_gate_preflight.py")
+        code = "\n".join(ln for ln in block.splitlines()
+                         if ln.strip() and not ln.lstrip().startswith("#"))
+        assert "/bin/sh <<'LOADER'" in code
+        assert "<maintainer-recorded-shell>" not in block, (
+            "the shell must not be an operator decision -- a wrong choice "
+            "silently restores startup-file loading inside the clean child")
+
+    @pytest.mark.skipif(not Path("/bin/zsh").exists(),
+                        reason="needs /bin/zsh to demonstrate the hazard")
+    def test_zsh_would_reopen_the_hole_under_the_same_environment(self,
+                                                                  tmp_path):
+        """Why the literal matters, demonstrated rather than asserted.
+
+        `/bin/zsh` is the login default on this host, so a solo Maintainer could
+        reasonably record it. Under the runbook's exact clean-child environment
+        it still sources `$HOME/.zshenv`, which is where a pre-loader command
+        definition would come back.
+        """
+        home = tmp_path / "home"
+        home.mkdir()
+        (home / ".zshenv").write_text(
+            "echo() { command echo REPLACED; }\n", encoding="utf-8")
+        env_bin, script = shutil.which("env"), "echo clean\n"
+
+        zsh = subprocess.run(
+            [env_bin, "-i", "PATH=/usr/bin:/bin", f"HOME={home}", "/bin/zsh"],
+            input=script, capture_output=True, text=True, check=False)
+        sh = subprocess.run(
+            [env_bin, "-i", "PATH=/usr/bin:/bin", f"HOME={home}", "/bin/sh"],
+            input=script, capture_output=True, text=True, check=False)
+
+        assert "REPLACED" in zsh.stdout, (
+            "if zsh no longer read .zshenv here, this hazard would be stale "
+            "and the runbook note should be revisited")
+        assert sh.stdout.strip() == "clean", (
+            "/bin/sh must not read the startup file -- the whole basis for "
+            "fixing the shell to it")

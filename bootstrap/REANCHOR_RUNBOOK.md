@@ -79,11 +79,20 @@ returning success — the same trust-source failure as FUR1, one step earlier.
 # socket is per-session and cannot be recorded; a wrong value can only make
 # signing FAIL, never pass, because the signature is verified against the
 # anchored roster with a pinned verifier.
+#
+# THE SHELL IS `/bin/sh`, LITERALLY -- do not substitute your own. This is not a
+# recorded value and not a preference: a non-interactive `/bin/sh` reads no
+# startup file, which is the entire reason the clean child is clean. The obvious
+# alternative on this host is the login default `/bin/zsh`, and `zsh` sources
+# `$HOME/.zshenv` even here -- non-interactive, under `env -i`, with the recorded
+# HOME -- which puts the operator's own command definitions straight back inside
+# the supposedly clean child. An earlier version left this as a recorded choice
+# while claiming the boundary removed startup files (FUR10).
 <maintainer-recorded-env> -i \
     PATH=/usr/bin:/bin \
     HOME=<maintainer-recorded-home> \
     SSH_AUTH_SOCK="${SSH_AUTH_SOCK-}" \
-    <maintainer-recorded-shell> <<'LOADER'
+    /bin/sh <<'LOADER'
 # Every value here is recorded by the Maintainer at first use. NOTHING is
 # discovered: ambient discovery is what let a substituted repository answer for
 # the named one, and an ambient `PATH` is what let a replacement `shasum` vouch
@@ -156,9 +165,10 @@ the manual steps below.
 
 **Residual trust set — where the chain actually ends.** **The loader's own
 inputs, which nothing above them can check:** the recorded absolute paths
-`ENV`, `GIT`, `MKTEMP`, `MKDIR`, `SHASUM` and `PY`; the recorded `CHECKOUT`; the
-recorded first-use hash set; and the operator's knowledge of the acquisition
-command in step 1. That set is the bootstrap of the bootstrap: the loader can
+`ENV`, `GIT`, `MKTEMP`, `MKDIR`, `SHASUM` and `PY`; `/bin/sh` itself, which is
+fixed rather than recorded so it cannot be chosen wrongly; the recorded
+`CHECKOUT` and `HOME`; the recorded first-use hash set; and the operator's
+knowledge of the acquisition command in step 1. That set is the bootstrap of the bootstrap: the loader can
 verify the checker's bytes, but nothing verifies the loader's.
 
 *A correction worth keeping, because it is the kind of error this document
