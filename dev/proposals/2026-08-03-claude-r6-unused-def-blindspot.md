@@ -9,7 +9,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: proposed
+**Status**: accepted
 **Touches**: one function in `scripts/quality_gate.py` (the R6 reference harvester) + new behavioral tests in `bootstrap/tests/test_quality_gate_redundancy.py` + one appended dogfood-log row in `doctrine/consolidation-review.md`. **No `AGENTS.md`, no doctrine rule, no shipped template, no install manifest, no gate manifest, no `bootstrap/_scaffold/` engine code.**
 **Related**: `dev/strategy/2026-07-08-claude-broad-look-skeptical-review.md:305-309` (Theme 3, item 4, "Our dead-code detector cries wolf"); the R6 dogfood-log rows at `doctrine/consolidation-review.md:79`, last appended 2026-05-28.
 **Plan review**: not required — the accepted change is a single implementing commit: ~4 lines inside one function of a **dev-only, non-shipped** script, plus three regression tests and one log row. There is no plan, so there is no plan review. If the Maintainer prefers a plan anyway, Internal is the ceiling: no shipped-template, install-contract, doctrine-rule, gate-manifest, or security surface is touched (see *Rationale > Why this needs no Security Review*). Ratified at Decision.
@@ -430,3 +430,27 @@ interpreter in the commit body.
 * **The dogfood log stays lapsed anyway.** If the log picks up no new row
   after this pass, the noise was not the reason it lapsed, and the real
   problem is the practice, not the detector.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-03
+
+**Accepted, as revised.** Scribed by Claude (Strategy) at the Maintainer's
+explicit instruction.
+
+**Maintainer's authorization (verbatim):**
+
+> I approve each of the seven proposals that you have listed as ready to accept,
+> as revised.
+
+The seven were presented as a ledger with a per-proposal recommendation; this is
+one of them. The authorization is quoted rather than paraphrased, per the
+scribing guard-rail: a paraphrase admits semantic drift, condition-softening, or
+a hallucinated approval.
+
+**Scribe-coupling disclosure.** The scribe is the proposal's author. That is the
+weaker configuration -- the party whose work was reviewed transcribes the ruling
+on it. Mitigations: the authorization is quoted verbatim, and this commit carries
+the Decision only.
+
+**Scope.** ~4 lines in one function of a dev-only, non-shipped script, plus its
+tests. No review tier was proposed and none is ratified; the change carries no
+shipped-template, install-contract, doctrine or engine surface.
