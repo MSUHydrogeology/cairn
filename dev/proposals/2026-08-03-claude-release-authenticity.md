@@ -6,7 +6,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: proposed
+**Status**: reviewed
 **Touches**: `bootstrap/PROVENANCE.md`, `bootstrap/container/verify-ref.sh`,
 `bootstrap/container/recipe.md`, `bootstrap/container/acceptance.sh`,
 `bootstrap/tests/test_verify_ref.py` (new), `bootstrap/UPGRADE.md`,
@@ -1121,3 +1121,76 @@ this addendum's ordering — condition, then `SECURITY_MUTATIONS.md` sentence, t
 row — as superseding the ordering in the *Class C* section's anti-drop paragraph,
 and should treat the separate-commit note above as superseding "in the Decision
 commit" there.
+
+## Review -- Gemini Flash (External, Security Review) -- 2026-08-03
+
+**Model**: Gemini 3.6 Flash (External, different-agent-type)
+**Verdict**: SHIP (recommend ACCEPT; verified existing `verify-ref.sh` flaw, verified attack neutralization via bare fetch + external trusted roster, confirmed explicit roster requirement)
+
+### Steelman
+
+This proposal solves a critical circular trust defect ([IDN1] & [IDN2]) in Cairn's release verification process. Previously, `bootstrap/container/verify-ref.sh` accepted unsigned tags like `v0.3.0` while printing `Maintainer-approved commit`, and relying on in-repo `allowed_signers` files allowed an attacker repo to self-certify its own forged signatures.
+
+The proposal fixes this by establishing an out-of-band trust bootstrap:
+1. The maintainer's public key fingerprint is published out-of-band across multiple independent channels (e.g. GitHub SSH keys, ORCID, Zenodo).
+2. The adopter writes a trusted `allowed_signers` file on their own machine.
+3. Verification is performed strictly via system `git` into a fresh, bare repository (`git init --bare ~/.cairn/verify.git`), fetching *only* tag objects into a clean environment where candidate `.git/config` settings (such as forged `gpg.ssh.allowedSignersFile` or malicious `gpg.ssh.program` helpers) cannot hijack execution.
+4. `verify-ref.sh` is refactored to require an explicit `--signers` roster path, refuse rosters located inside the candidate tree, and judge strict non-zero exit codes rather than string-matching stdout.
+
+### Concerns and Findings
+
+* **[G1] (Verification of Shipped `verify-ref.sh` vs `git verify-tag` on `v0.3.0`)**
+  * *Verification:* Executed against Cairn repository at HEAD. `verify-ref.sh . v0.3.0` returns exit 0 while `git verify-tag v0.3.0` returns exit 1 (`error: no signature found`).
+  * *Commands & Verbatim Output:*
+    ```bash
+    $ bash bootstrap/container/verify-ref.sh . v0.3.0
+    verify-ref: OK — release tag 'v0.3.0' -> 12ec2ad28f22a7d3d9c19ce67e78d86cc625757a
+    $ echo $?
+    0
+
+    $ git verify-tag v0.3.0
+    error: no signature found
+    $ echo $?
+    1
+    ```
+
+* **[G2] (Proof of Attack Neutralization — Bare Fetch & External Roster Breaks Circularity)**
+  * *Question:* Does the proposed design successfully reject a self-consistent attacker attack (attacker key, attacker-committed `allowed_signers`, attacker `gpg.ssh.program` hijack)?
+  * *Demonstration:* Constructed a throwaway attacker repository under `/tmp/cairn_attack_demo_*`.
+    1. **Attack 1 (Tautological In-Repo Roster):** Attacker signs tag `v9.9.9` with `attack_key` and sets `gpg.ssh.allowedSignersFile` to attacker's own `allowed_signers` in `.git/config`. `git -C <attacker_repo> verify-tag v9.9.9` yields `Good "git" signature for attacker@evil.com` with **exit code 0** (Tautology / In-repo circularity confirmed).
+    2. **Attack 2 (In-Repo Verification with Malicious `gpg.ssh.program` Hijack):** Passing `-c gpg.ssh.allowedSignersFile=<trusted_signers>` directly to `git -C <attacker_repo> verify-tag` is hijacked by candidate's `.git/config` setting `gpg.ssh.program = ./fake_ssh.sh`. The attacker script prints forged output and returns **exit code 0** (Proves `-c` alone inside candidate directory is INSUFFICIENT).
+    3. **Attack 3 (Proposed Design — Bare Fetch + Trusted External Roster):** Initialized bare repo `~/.cairn/verify.git`, fetched `v9.9.9` from candidate, and ran `git -C verify.git -c gpg.ssh.allowedSignersFile=<trusted_signers> verify-tag v9.9.9`. Result: `No principal matched.` with **exit code 1** (ATTACK REJECTED, circularity broken).
+  * *Verbatim Output:*
+    ```
+    === TAUTOLOGICAL IN-REPO VERIFICATION (ATTACKER SIGNERS IN CONFIG) ===
+    STDERR: Good "git" signature for attacker@evil.com with ED25519 key SHA256:ZwZna6If0nv7U4kTjAcqSzqOqnJX8riirl0zWPAtseY
+    EXIT CODE: 0
+
+    === IN-REPO VERIFICATION OVERRIDDEN WITH -c TRUSTED SIGNERS (FAILING IF GPG.SSH.PROGRAM TAMPERED) ===
+    STDERR: Good "git" signature for maintainer@cairn.org with ED25519 key SHA256:FORGED
+    EXIT CODE: 0
+
+    === PROPOSED DESIGN VERIFICATION (BARE FETCH + TRUSTED ROSTER) ===
+    STDERR: Good "git" signature with ED25519 key SHA256:ZwZna6If0nv7U4kTjAcqSzqOqnJX8riirl0zWPAtseY
+    No principal matched.
+    EXIT CODE: 1
+    ```
+
+* **[G3] (Confirmation of Explicit Roster Passing for all Invocations)**
+  * Verified that every git verification command in the proposed design and updated `verify-ref.sh` script receives the trusted roster explicitly via `-c gpg.ssh.allowedSignersFile=<trusted_path>` and `--signers`, refusing any candidate `.git/config` resolution or in-tree roster file.
+
+### Covered (Lenses Swept & Verbatim Executions)
+
+1. **Shipped vs True Verification on `v0.3.0`:**
+   * `bash bootstrap/container/verify-ref.sh . v0.3.0` (exit 0) vs `git verify-tag v0.3.0` (exit 1).
+2. **Attacker Repository Simulation & Bare Fetch Test:**
+   * Script executed under Python 3.13.13 / bash creating SSH key pairs and git tags in `/tmp`. Confirmed exit 1 rejection under bare fetch.
+
+### Not Covered / Low Confidence (Negative Space)
+
+* **Git Version Dependency:** `valid-before` / `valid-after` OpenSSH signer options were tested under git 2.53.0. Behavior on older system git versions (< 2.34.0) was not tested.
+* **Maintainer Out-of-Band Channel Setup (Part E):** Verification of actual SSH public key serving on GitHub/ORCID endpoints for `kendal30` is a Maintainer action prior to `v0.4.0` release tagging.
+
+## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
+
+*(Awaiting the Maintainer. The proposal has cleared External Security Review. The Maintainer may accept the proposal to proceed with plan creation.)*
