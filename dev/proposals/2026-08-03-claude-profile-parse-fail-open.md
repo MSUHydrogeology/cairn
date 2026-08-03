@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: reviewed
+**Status**: revised
 **Touches**: `bootstrap/_scaffold/config.py` (the `_minimal_yaml_parse` fallback parser and `load_config`), `bootstrap/_scaffold/cli.py` (the profile-key report and the module docstring that `--help` prints), `bootstrap/BOOTSTRAP.md` (Appendix B schema rules), `bootstrap/tests/test_presets.py`, `bootstrap/tests/test_scaffold.py`, and the AST attestation baseline `bootstrap/tests/fixtures/scaffold_ast_baseline.json` (mandatory re-anchor — this touches `bootstrap/_scaffold/`)
 **Related**: `2026-07-08-claude-broad-look-skeptical-review` (Theme 3, item 3 — "the one place the installer guesses instead of stopping"); `2026-07-11-claude-solo-legacy-adopter-path` (review finding R1, the first sighting of the same parser defect, worked around in prose only)
 **Plan review**: required(External + External Security Review) — this changes behavior inside `bootstrap/_scaffold/`, the high-risk scaffold/merge engine named in `AGENTS.md`; it converts several fail-open readings of an untrusted input file into fail-closed refusals on the install contract; and it mandates an AST attestation re-anchor. Each of those is independently a Security-Review trigger under the proposal template's protected-contract list.
@@ -644,3 +644,184 @@ All commands executed under canonical interpreter `~/conda_envs/lhm/bin/python` 
 
 *(Awaiting the Maintainer. The proposal has cleared External Security Review. The Maintainer may accept the proposal to proceed with plan creation.)*
 
+## Response -- Claude (author, to External Security Review) -- 2026-08-03
+
+**Model**: Claude Opus 5. Proposal-Response grammar (no implementing commits
+exist). Every finding was re-run this session under
+`~/conda_envs/lhm/bin/python` (Python 3.13.13, PyYAML 6.0.3), against the
+working tree at HEAD `292e2c6` — a later commit than the `3292f21` the proposal
+cites, because another session has committed since. No file was written into
+the repository; all scratch artifacts live outside it, and every interpreter
+invocation ran under `PYTHONDONTWRITEBYTECODE=1`.
+
+* **[G1] accept -- reproduced 12/12, with one precision about what the sweep
+  establishes.** I re-ran the twelve cases independently rather than reading
+  the reviewer's transcript: every row diverges, and my outputs match the
+  review's byte for byte (`{'forge': 'gitlab'}` vs
+  `{'forge': 'gitlab   # gitlab | github'}`; `{'modules': ['a # b']}` vs
+  `{'modules': ['a']}`; `ScannerError` vs `{'modules': ['item']}`; and the
+  rest). Two precisions, neither of which weakens the finding: the script
+  exercises the **divergence** column only — the *disposition* column (fail
+  open / fail closed) is not touched by a side-by-side parse and remains
+  author-asserted; and the review's row D substitutes `dual_review:` for
+  `<axis>`, which is not one of the six axis keys (`_AXES` is `age`,
+  `agent_team`, `complexity`, `human_team`, `language`, `size`). The parse is
+  key-agnostic, so the reproduction holds regardless — but that row's "fail
+  closed" claim went unverified by the review.
+
+* **[G2] accept -- the five-file delta reproduces exactly; the absolute totals
+  do not, and should not be cited.** Two installs of the `--help` example
+  profile (`bootstrap/_scaffold/cli.py:28`) with `issue-capture` selected, one
+  under PyYAML and one under a `sys.modules['yaml'] = None` blocker asserted
+  effective before import: both exit 0, and the delta is exactly the five
+  files the review names — `.gitlab/labels.yml` plus the four
+  `.gitlab/issue_templates/` files — with the fallback run emitting
+  `[warn] unknown forge 'gitlab        # gitlab | github' ...` verbatim. My
+  totals were 83/78, not the review's 75/70; re-running with a single-module
+  roster gave 63/58 and the same five-file delta. So the totals track the
+  roster while the **delta is roster-invariant** — which strengthens the
+  finding, but means "writes 75 files" is not a reproducible number and the
+  Decision should not rest on it. I also re-verified the stronger case the
+  review did not touch: `project_name: Photosynthesis-Model   # the postdoc's
+  repo` installs at exit 0 both ways with an *identical file set* and **11
+  common files differing in content**, the fallback tree's `AGENTS.md` line 2
+  reading `# AGENTS.md — Photosynthesis-Model   # the postdoc's repo`.
+
+* **[G3] narrow -- the default flips to refuse, as argued; neither proposed
+  opt-out ships.** I reproduced the premise before conceding it: all four typo
+  rows of Evidence (i) hold at exit 0, and the two sharpest are worse than the
+  review's own framing. The review says warnings "are easily missed"; in fact
+  for `module_add:` and `agent_teams:` there is **nothing to miss** — the
+  `--summary` acceptance artifact is byte-identical to a correct
+  `solo-greenfield` run (compared programmatically; both `True`), and the
+  `module_add:` typo silently drops `security-review` from the roster. A
+  one-character typo that removes a *security* module while leaving the
+  acceptance artifact byte-identical is a fail-open default on the shipped
+  security posture, which is what the Maintainer's direction of 2026-08-03
+  puts out of bounds — verbatim: "Obviously we need to change the default
+  security stance for all installations. Otherwise we are shipping a
+  potentially dangerous tool." I also measured the availability cost I had
+  merely asserted, and it is smaller than I claimed: no shipped profile under
+  `bootstrap/profiles/` carries a key outside the recognized set (they use
+  only `preset`, `project_name`, `test_command`), and both engine-side
+  `profile.yml` writers emit only recognized keys — so refusal breaks nothing
+  that exists today. Two corrections against myself: my *Rationale* said the
+  remedy would mean "editing a file the adopter may not own", which is
+  **wrong** — `dev/.cairn/profile.yml` is committed in the adopter's own
+  repository (`bootstrap/_scaffold/lockfile.py:41`); and Alternative 5, which I
+  called "the strongest rejected option", was rejected partly on that mistaken
+  cost. **Where I decline the finding:** neither opt-out mechanism works. An
+  `allow_unknown_keys: true` line is itself a profile key, so any engine older
+  than the release introducing it refuses the flag as unrecognized — it cannot
+  rescue the older-engine case for any Cairn shipped to date, only for engines
+  released after it, in exchange for a permanent documented fail-open switch.
+  And `--allow-unknown-keys` cannot reach the upgrade path at all:
+  `bootstrap/_scaffold/upgrade.py:237` calls `load_config` with no argv
+  plumbing, so the hatch would be absent in exactly the `upgrade` scenario
+  G3's own third bullet is about. **Where I agree without reservation:** that
+  third bullet. The bare `except Exception` at
+  `bootstrap/_scaffold/upgrade.py:239` becomes a blocking, order-constrained
+  precondition rather than a plan note — see *Revised proposal* below.
+
+**Status.** The accepted findings reverse Part B's central disposition, so the
+status moves to `revised`. Parts A and C are unchanged in substance; A4 is
+narrowed to indicator-position refusals for a reason the review did not raise,
+recorded below.
+
+## Revised proposal -- Part B flips to fail-closed -- 2026-08-03
+
+Append-only: nothing above is edited. Where this section and the original
+*Proposal* conflict, **this section governs**.
+
+The Maintainer direction quoted at G3 bears on Part B as a *premise* rather
+than an open question, because Part B is a shipped default on the installer's
+input boundary. It does not settle the question by fiat — the availability cost
+still had to be measured, and G3 records that measurement — but it removes
+"fail-open is the safe default" from the set of positions I may assume.
+
+**Scope guard, stated so it cannot be mistaken for scope creep.** The
+direction's own concrete referent — the `content-security` module being
+selected by no preset — reproduces here (`_PRESETS` in
+`bootstrap/_scaffold/config.py`, checked 2026-08-03: `content-security` is in
+the roster of none of `solo-greenfield`, `collaborative-team`,
+`high-rigor-legacy`). That roster lives in the *same file* this proposal
+touches, which makes the temptation to fix it here real. I decline it. Preset
+composition is a module-doctrine decision with a different evidence base than
+an input-boundary contract, and it belongs to
+`2026-08-03-claude-content-scan-detectors`, which owns the `content-security`
+module surface, or to a dedicated preset-roster proposal. This proposal changes
+**how a profile is read**, not **what a preset selects**.
+
+### What changes
+
+* **B3, B4 and B5 are withdrawn.** The three-placement warning and the
+  "no refusal" argument go. In their place: **`load_config` refuses a profile
+  carrying any key outside `RECOGNIZED_PROFILE_KEYS`**, naming every
+  unrecognized key and printing the recognized set, before any write. B1 (the
+  derived constant) and B2 (the pure function) stand unchanged — they are now
+  the inputs to a refusal instead of to a warning.
+* **Part B is now smaller, not larger.** One refusal in one function replaces a
+  warning threaded into `--summary`, the pre-write section and the end-of-run
+  block. That is a judgment about code volume, not a measurement — but it does
+  mean the *FIX DEFECTS, BUILD NOTHING NEW* objection I raised against my own
+  Part B in *Rationale* gets weaker under the flip, not stronger.
+* **No opt-out ships.** Neither `allow_unknown_keys: true` nor
+  `--allow-unknown-keys`; reasons at G3.
+* **The asymmetry argument in *Proposal* dissolves.** A and B now take the
+  *same* disposition. The two-part structure survives as a division of labor
+  (value parity vs. key recognition), not as a deliberate opposition.
+* **Alternative 5 is adopted** and its rejection paragraph superseded.
+  Alternative 6 (the edit-distance heuristic) stays declined — a blanket
+  refusal subsumes it and needs no heuristic. Alternative 8's severance line
+  moves to the ordering constraint below.
+
+### The precondition, promoted from "the plan must" to blocking
+
+`bootstrap/_scaffold/upgrade.py:239` is a bare `except Exception` that silently
+substitutes the lockfile profile when `load_config` raises. A stricter
+`load_config` feeds it more exceptions. **Narrowing that handler so it reports
+what it swallowed lands first, or in the same change — never after.** This is
+now an ordering constraint on the plan, and it is the natural severance line if
+the work is split.
+
+One precision neither the proposal nor the review made: there are **two**
+upgrade-side `load_config` callers and only one is the hazard.
+`bootstrap/_scaffold/upgrade.py:1136` (the `init-lock` arm) already prints
+`error loading dev/.cairn/profile.yml: <exc>` and returns 1 — loud, and correct
+as-is. Only `_resolve_current_profile` swallows. Scope the fix to that one call
+site rather than to "the upgrade path".
+
+**Touches grows by one file** — `bootstrap/_scaffold/upgrade.py`. The gate set
+does **not** grow: that file is inside `bootstrap/_scaffold/`, which the Bandit
+gate and the AST attestation baseline (it globs every `*.py` under the package)
+already cover.
+
+### A4 is sharpened: indicator position, not character presence
+
+The engine writes profile files itself. `_write_init_lock_profile_template`
+(`bootstrap/_scaffold/upgrade.py:1084`) emits `size: <small|medium|large>` and
+`test_command: "<your test command, e.g. pytest>"`. Verified 2026-08-03 under
+Python 3.13.13: a synthesized init-lock template parses **identically** under
+`yaml.safe_load` and `_minimal_yaml_parse` today. So A4's refusal of `|`, `>`,
+`&`, `*` and `!` must be scoped to **indicator position** — the first character
+of the value — because a refusal keyed on "the line contains `|`" would make
+the engine refuse the file it just generated. The Part C sweep corpus gains
+that generated template alongside the Markdown blocks and the `--help`
+docstring.
+
+### What this revision does *not* establish
+
+* It closes the **misspelled-key** omission class. It does not close the
+  adjacent one: a correctly-spelled key carrying an unrecognized *value*.
+  Verified 2026-08-03 — a profile listing `- not-a-real-module` under
+  `modules:` is accepted at exit 0 and the bogus name appears in the
+  `--summary` roster. That is a separate defect and is outside this fence.
+* The forward-compatibility cost of refusing is **argued, not measured**.
+  Cairn has zero external adopters, so there is no field data in either
+  direction. If a genuine older-engine/newer-profile break appears, the remedy
+  is a follow-up proposal reversing this, not a quiet loosening.
+* Parity does not make `_minimal_yaml_parse` a YAML parser. It makes it
+  agree-or-refuse on the profile subset — the *Signals the change is wrong*
+  row about accreting special cases stays live.
+* CRLF handling remains untested and the AST attestation baseline remains
+  un-derived, exactly as the review's negative space records.
