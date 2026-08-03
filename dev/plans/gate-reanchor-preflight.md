@@ -1509,3 +1509,82 @@ b7b522ad386e2e870eb428b4765c0224147e1546d806bf2be0048729c978fc96  bootstrap/test
 candidate-execution residual, replay posture, SSH cryptography, Windows behavior,
 external anchoring, concurrent Maintainers, or Phase 4. No main-repository ref
 was moved.
+
+## Remediation step 3 -- FUR6 -- Claude (author) -- 2026-08-03
+
+**Model**: Claude Opus 5
+
+**Accepted, and it is a finding I should have reached myself.** The whole of
+step 2 was about routing every git invocation through one sterile launcher --
+and I left the invocations that run *before* the launcher exists using ambient
+Git. My own test helper `_extract_anchored` used `git archive`, the
+attribute-aware call I had just removed from the checker on exactly these
+grounds. The class was swept inside the boundary and not at the boundary itself.
+
+### The loader is now its own reviewed unit
+
+The runbook's Phase 0 block was rewritten to be a trust boundary rather than a
+convenience:
+
+* **The checkout is recorded, not discovered.** `CHECKOUT=$(git rev-parse
+  --show-toplevel)` is gone. `git -C` discovers upward, so discovery can answer
+  with a repository the operator never named -- the same defect FUR5 raised,
+  which I had fixed *inside* the checker while leaving the loader deriving its
+  target ambiently.
+* **A recorded absolute `GIT`, under `env -i`.** The loader runs git with an
+  emptied environment (`PATH=/usr/bin:/bin`, `HOME=$T`), so no `GIT_*` variable
+  steers it.
+* **Replacement, hooks and monitors are disabled before the first read** --
+  `--no-replace-objects`, `core.useReplaceRefs=false`, `core.hooksPath=/dev/null`,
+  `core.fsmonitor=false` -- not after, and not only inside the checker.
+* **`cat-file blob` replaces `git archive`.** Raw object bytes, no attribute
+  processing, no `tar`.
+* **The recorded hash set is verified before any Python executes.** This is the
+  decisive control: it makes the extraction *route* non-load-bearing. However
+  the bytes arrived, they must equal the set the Maintainer reviewed out of
+  band, and those expected values never come from the checkout.
+
+The instruction for reading the runbook itself now specifies the same sterile
+`cat-file` form. That one command is irreducibly the operator's to know -- it is
+the bootstrap of the bootstrap -- and the residual trust set says so plainly
+rather than implying the chain closes.
+
+**Residual trust set extended** with the loader's own inputs: the recorded `GIT`
+binary, the `env`/`mkdir`/`shasum` utilities, the recorded `CHECKOUT`, the
+recorded hash set, and that one command. The loader can verify the checker's
+bytes; nothing verifies the loader's.
+
+### Verification
+
+Canonical Python 3.13.13. Full suite **1590 passed** (1586 before this step).
+`test_gate_preflight.py` 119 tests. `check_cairn.py` OK over 174 Markdown files;
+`claim_check.py` clean; `git diff --check` clean.
+
+The literal-runbook test now substitutes only Maintainer-recorded values
+(interpreter, git binary, checkout path, hash set) -- every line of logic is the
+runbook's own. New regressions: object substitution cannot reach the executed
+checker (the tampered copy writes a marker file, so it cannot pass by accident,
+and the test first asserts an ambient read *does* return the tampered bytes); a
+tampered recorded hash refuses before Python runs and moves no ref; the recorded
+set equals the declared authority closure.
+
+**Mutation testing, five mutations.** Four detected immediately. **One was
+not** -- deleting the loader's `env -i` broke no test, because I had asserted
+the scrub existed nowhere. The channel that makes it matter is `GIT_DIR`, which
+names the object store outright and takes precedence over `-C`, so the loader
+would read the checker from a repository never named. With that regression
+added, the mutation fails
+`test_git_dir_in_the_environment_cannot_redirect_the_loader`.
+
+That is the second consecutive step where mutation testing found a guard no test
+exercised. Both times the shape was identical, and it is the shape of FUR5 and
+FUR6 themselves: the protection existed, and the path that needed it did not use
+it. Worth carrying into the next review as a standing check rather than a
+lesson -- ask of each control not "is it present" but "which test fails when I
+delete it".
+
+### Unchanged
+
+Chunk G remains blocked; the reviewed hashes are still not recorded and the
+ceremony is still un-run. `shasum -a 256` is macOS/BSD (the block notes
+`sha256sum` for elsewhere), and Windows remains unexamined.

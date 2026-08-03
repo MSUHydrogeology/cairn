@@ -33,28 +33,70 @@ gate-control files for the six-proposal batch.
 
 ### Phase 0 pre-flight — `_gate_preflight.py`
 
-> **Obtain this invocation from the anchor, never from the working tree:**
-> `git show refs/cairn/gate-anchor:bootstrap/REANCHOR_RUNBOOK.md`.
-> Reading it from the checkout you are about to bless would let the candidate
-> choose which bytes you execute.
+> **Obtain this invocation from the anchor, never from the working tree** — and
+> read it with the *same* sterile invocation the loader below uses:
+> `<maintainer-recorded-git> --no-replace-objects -c core.hooksPath=/dev/null
+> -C <checkout> cat-file blob refs/cairn/gate-anchor:bootstrap/REANCHOR_RUNBOOK.md`.
+> An ordinary `git show` here is subject to the very substitution the loader
+> exists to defeat. This one command is irreducibly the operator's to know: it
+> is the bootstrap of the bootstrap, and it lives in the residual trust set.
+
+**The loader is its own trust boundary.** Everything below runs *before* the
+checker exists, so none of the checker's internal pinning protects it. Reviewed
+as its own unit (FUR6): an earlier version obtained the checkout by ambient
+discovery and extracted with `git archive`, and repository-local object
+substitution caused the literal block to execute substituted checker bytes while
+returning success — the same trust-source failure as FUR1, one step earlier.
 
 ```
-CHECKOUT=$(git rev-parse --show-toplevel)   # record the target BEFORE extracting
-T=$(mktemp -d)
-git -C "$CHECKOUT" archive refs/cairn/gate-anchor bootstrap/tests | tar -x -C "$T"
-<maintainer-recorded-interpreter> -E -s "$T/bootstrap/tests/_gate_preflight.py" \
+# Recorded by the Maintainer. NOT discovered from the environment: ambient
+# discovery is what let a substituted repository answer for the named one.
+CHECKOUT=<absolute-path-of-the-checkout-to-bless>
+GIT=<maintainer-recorded-git>
+PY=<maintainer-recorded-interpreter>
+
+T=$(mktemp -d) || exit 1
+cat > "$T/RECORDED.sha256" <<'HASHES'
+<maintainer-recorded-first-use-hashes>
+HASHES
+
+# Object replacement, hooks and monitors are disabled BEFORE the first read, and
+# the environment is emptied so no GIT_* variable steers the loader.
+sterile_git() {
+    env -i PATH=/usr/bin:/bin HOME="$T" \
+        "$GIT" --no-replace-objects \
+               -c core.useReplaceRefs=false \
+               -c core.hooksPath=/dev/null \
+               -c core.fsmonitor=false \
+               -C "$CHECKOUT" "$@"
+}
+
+# `cat-file blob` reads raw object bytes. `git archive` was used here and is
+# attribute-aware, so a candidate `.gitattributes` could reshape what landed.
+while read -r _sum path; do
+    mkdir -p "$T/$(dirname "$path")" || exit 1
+    sterile_git cat-file blob "refs/cairn/gate-anchor:$path" > "$T/$path" || exit 1
+done < "$T/RECORDED.sha256"
+
+# Decisive check: whatever route the bytes took, they must be the reviewed ones.
+( cd "$T" && shasum -a 256 -c RECORDED.sha256 ) || {
+    echo "REFUSE: extracted bytes do not match the reviewed first-use set" >&2
+    exit 1
+}
+
+"$PY" -E -s "$T/bootstrap/tests/_gate_preflight.py" \
     apply --repo "$CHECKOUT" --confirm-supervised-reanchor
 ```
 
-**`--repo` is not optional, and the order of those lines is the point.** The
-checker runs from `$T`, so its own location is the *extraction directory*, not
-the checkout — an earlier version of this block omitted `--repo` and the checker
-defaulted to `$T`, which is not a repository. That was fail-closed by luck, not
-design: `git -C` **discovers upward**, so an extraction anywhere beneath a
-repository (a `$TMPDIR` inside a checkout is enough) would have found *that*
-repository and reported against a target you never named. The checker now
-refuses any path that is not the top level of the worktree it names. `$CHECKOUT`
-is captured before `mktemp` because afterwards nothing guarantees where you are.
+**Why each line is the way it is.** `CHECKOUT` is *typed*, not derived: `git -C`
+**discovers upward**, so an extraction beneath any repository would otherwise
+find *that* one and report against a target never named. `--repo` is not
+optional — the checker runs from `$T`, so its own location is the extraction
+directory, and it refuses any path that is not a worktree top level. The hash
+comparison is the control that makes the extraction route non-load-bearing: it
+runs before any Python executes, and its expected values come from the
+Maintainer's out-of-band review (step M2 below), never from the checkout.
+`shasum -a 256` is macOS/BSD; use `sha256sum -c` where that is what exists.
 
 `apply` re-derives everything itself and **trusts no handoff file**. It runs the
 evidence stage, then the read-only checks, then constructs and verifies a signed
@@ -65,8 +107,14 @@ record to read, not an input.
 There is **no flag that turns a refusal into a pass.** A refusal routes here, to
 the manual steps below.
 
-**Residual trust set — where the chain actually ends.** The `git` and `tar`
-binaries; **the signature backend `/usr/bin/ssh-keygen`**, which the checker pins
+**Residual trust set — where the chain actually ends.** **The loader's own
+inputs, which nothing above them can check:** the recorded `GIT` binary, the
+`env`/`mkdir`/`shasum` utilities on `PATH=/usr/bin:/bin`, the recorded
+`CHECKOUT` path, the recorded first-use hash set, and the operator's knowledge of
+the one sterile `cat-file` command used to read this document. That set is the
+bootstrap of the bootstrap: the loader can verify the checker's bytes, but
+nothing verifies the loader's. **The signature backend `/usr/bin/ssh-keygen`**,
+which the checker pins
 by absolute path and uses for both signing and verification — an earlier version
 let repository config choose it, and a fake verifier made a commit signed by a
 key *absent from the roster* report a good signature under a rostered name; the

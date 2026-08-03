@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -1397,20 +1398,56 @@ class TestThreeCommandIntegration:
 # target repository, which is the only thing that would have caught it.
 # --------------------------------------------------------------------------
 
-def _runbook_ceremony_script() -> str:
-    """The Phase 0 pre-flight invocation, lifted verbatim from the runbook.
+#: The first-use hash set the loader verifies against. Recorded by the
+#: Maintainer at Chunk G step M2; the fixtures compute their own.
+_LOADED_MODULES = (
+    "bootstrap/tests/_gate_preflight.py",
+    "bootstrap/tests/_gate_manifest.py",
+    "bootstrap/tests/_gate_reanchor.py",
+    "bootstrap/tests/_gate_transition.py",
+    "bootstrap/tests/_oracle_activation.py",
+    "bootstrap/tests/_oracle.py",
+    "bootstrap/tests/_oracle_trust.py",
+)
+
+
+def _recorded_hashes(repo: Path, ref: str = P._ANCHOR_REF) -> str:
+    """The `shasum -c` checklist for the loader, over the ANCHORED bytes."""
+    import hashlib
+    lines = []
+    for rel in _LOADED_MODULES:
+        blob = subprocess.run(
+            ["git", "-C", str(repo), "cat-file", "blob", f"{ref}:{rel}"],
+            capture_output=True, check=True).stdout
+        lines.append(f"{hashlib.sha256(blob).hexdigest()}  {rel}")
+    return "\n".join(lines)
+
+
+def _runbook_ceremony_script(repo: Path) -> str:
+    """The Phase 0 pre-flight loader, lifted verbatim from the runbook.
 
     The recorded steps **are** the ceremony. A fix in code that the recorded
-    steps do not exercise is not a fix -- which is exactly the shape FUR5 took --
-    so the script under test comes out of the runbook rather than being
-    transcribed into Python, where it could be written correct while the
-    recorded steps stayed broken.
+    steps do not exercise is not a fix -- which is exactly the shape FUR5 took,
+    and FUR6 after it -- so the script under test comes out of the runbook rather
+    than being transcribed into Python, where it could be written correct while
+    the recorded steps stayed broken.
+
+    Only the Maintainer-recorded values are substituted; every line of logic is
+    the runbook's own.
     """
     text = (_REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(encoding="utf-8")
     block = text.split("### Phase 0 pre-flight")[1].split("```")[1]
     assert "_gate_preflight.py" in block, block
-    return block.replace("<maintainer-recorded-interpreter>",
-                         shlex.quote(sys.executable))
+    for placeholder, value in (
+            ("<maintainer-recorded-interpreter>", sys.executable),
+            ("<maintainer-recorded-git>", shutil.which("git")),
+            ("<absolute-path-of-the-checkout-to-bless>", str(repo)),
+    ):
+        assert placeholder in block, f"{placeholder} is no longer in the runbook"
+        block = block.replace(placeholder, shlex.quote(value))
+    assert "<maintainer-recorded-first-use-hashes>" in block
+    return block.replace("<maintainer-recorded-first-use-hashes>",
+                         _recorded_hashes(repo))
 
 
 class TestAnchoredInvocationTargetsTheNamedCheckout:
@@ -1430,7 +1467,7 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
         the recorded steps stayed broken. So the script comes out of the runbook.
         """
         repo, anchor, head, epoch = _ceremony_repo(tmp_path)
-        script = _runbook_ceremony_script()
+        script = _runbook_ceremony_script(repo)
 
         r = subprocess.run(["bash", "-c", script], cwd=str(repo),
                            capture_output=True, text=True, check=False)
@@ -1487,15 +1524,34 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
         assert "walking upward" in r.stderr
         assert str(outer.resolve()) in r.stderr
 
-    def test_the_checkout_is_recorded_before_the_extraction(self):
-        """An ordering the executed test cannot catch on its own: `mktemp` does
-        not `cd`, so capturing `$CHECKOUT` afterwards still passes here while
-        being wrong for any operator who moves between the two steps."""
-        script = _runbook_ceremony_script()
-        lines = [ln for ln in script.splitlines() if ln.strip()]
-        capture = next(i for i, ln in enumerate(lines) if "CHECKOUT=" in ln)
-        extract = next(i for i, ln in enumerate(lines) if "mktemp" in ln)
-        assert capture < extract
+    def test_the_loader_never_discovers_the_checkout_ambiently(self):
+        """Properties of the recorded text that an execution test cannot see,
+        because a substituted repository answers correctly right up until it
+        doesn't (FUR6). Read raw -- no fixture substitution."""
+        text = (_REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text()
+        block = text.split("### Phase 0 pre-flight")[1].split("```")[1]
+        # Comments are stripped first. An earlier version of this assertion
+        # fired on the comment *explaining* why `git archive` is not used --
+        # the same false-positive shape as the containment lint deleted in the
+        # security code review, where every hit was prose and none was code.
+        lines = [ln for ln in block.splitlines()
+                 if ln.strip() and not ln.lstrip().startswith("#")]
+        code = "\n".join(lines)
+
+        assert "rev-parse --show-toplevel" not in code, (
+            "the checkout must be recorded, not derived: `git -C` discovers "
+            "upward, so discovery can answer with a repository never named")
+        assert "git archive" not in code and "archive " not in code, (
+            "`git archive` is attribute-aware; the loader reads raw blobs")
+        assert "--no-replace-objects" in code and "core.hooksPath" in code
+
+        def first(needle):
+            return next(i for i, ln in enumerate(lines) if needle in ln)
+
+        assert first("--no-replace-objects") < first("cat-file"), (
+            "replacement must be disabled before the first object read")
+        assert first("shasum") < first("_gate_preflight.py\" \\"), (
+            "the extracted bytes must be verified before Python executes them")
 
 
 # --------------------------------------------------------------------------
@@ -1777,3 +1833,113 @@ class TestStaticManifestIsWiredIntoCheck:
         assert sneaked in blessed["frozen_files"], (
             "the blessed tree contains a frozen-surface file its own manifest "
             "does not pin -- FUR3, unfixed")
+
+
+# --------------------------------------------------------------------------
+# FUR6 -- the loader is its own trust boundary
+#
+# The checker's sterile launcher cannot protect bytes that have not loaded yet.
+# The recorded block obtained the checkout by ambient discovery and extracted
+# with `git archive`, so repository-local object substitution made the literal
+# runbook block execute substituted checker bytes while returning success --
+# FUR1's failure one step earlier, outside everything FUR1 fixed.
+# --------------------------------------------------------------------------
+
+class TestLoaderTrustBoundary:
+
+    _MARKER = "CAIRN_SUBSTITUTED_CHECKER_EXECUTED"
+
+    def _substitute_the_checker(self, repo: Path, anchor: str) -> str:
+        """Point `refs/replace/<anchor>` at a commit carrying a tampered checker.
+
+        The tamper is loud on purpose: if the substituted bytes ever run, they
+        leave a file behind, so the test cannot pass by accident.
+        """
+        rel = "bootstrap/tests/_gate_preflight.py"
+        original = (repo / rel).read_text(encoding="utf-8")
+        (repo / rel).write_text(
+            f"import pathlib\n"
+            f"pathlib.Path({str(repo / 'PWNED')!r}).write_text('{self._MARKER}')\n"
+            + original, encoding="utf-8")
+        evil = _signed_commit(repo, "substituted checker")
+        _run("git", "update-ref", f"refs/replace/{anchor}", evil, cwd=repo)
+        (repo / rel).write_text(original, encoding="utf-8")
+        _signed_commit(repo, "restore the worktree copy")
+        return evil
+
+    def test_object_substitution_cannot_reach_the_executed_checker(self,
+                                                                   tmp_path):
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        script = _runbook_ceremony_script(repo)      # hashes over the REAL anchor
+        self._substitute_the_checker(repo, anchor)
+
+        # The substitution is live: an ambient read returns the tampered bytes.
+        ambient = _run("git", "show",
+                       f"{anchor}:bootstrap/tests/_gate_preflight.py", cwd=repo)
+        assert self._MARKER in ambient.stdout, (
+            "the probe must actually substitute, or this proves nothing")
+
+        r = subprocess.run(["bash", "-c", script], cwd=str(repo),
+                           capture_output=True, text=True, check=False)
+
+        assert not (repo / "PWNED").exists(), (
+            "the loader executed substituted checker bytes")
+        assert r.returncode == 0, r.stderr[-2500:]
+
+    def test_a_tampered_recorded_hash_refuses_before_python_runs(self,
+                                                                 tmp_path):
+        """The decisive control, isolated: whatever route the bytes took, they
+        must equal the reviewed set -- and the check must precede execution."""
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        script = _runbook_ceremony_script(repo)
+        real = _recorded_hashes(repo)
+        first = real.splitlines()[0]
+        script = script.replace(first, "0" * 64 + first[64:])
+        before = _run("git", "rev-parse", P._ANCHOR_REF, cwd=repo).stdout.strip()
+
+        r = subprocess.run(["bash", "-c", script], cwd=str(repo),
+                           capture_output=True, text=True, check=False)
+
+        assert r.returncode != 0
+        assert "do not match the reviewed first-use set" in r.stderr
+        assert _run("git", "rev-parse", P._ANCHOR_REF,
+                    cwd=repo).stdout.strip() == before
+
+    def test_the_loader_covers_the_whole_import_closure(self, tmp_path):
+        """A module missing from the recorded set would be absent at import
+        time -- fail-closed, but only if the set is actually complete."""
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        declared = {r for r in P.declared_authority_closure()
+                    if r.endswith(".py")}
+        assert declared == set(_LOADED_MODULES), (
+            f"the loader's recorded set and the authority closure disagree: "
+            f"{declared ^ set(_LOADED_MODULES)}")
+
+    def test_git_dir_in_the_environment_cannot_redirect_the_loader(self,
+                                                                   tmp_path):
+        """Mutation testing caught this gap: deleting the loader's `env -i`
+        broke nothing, so the scrub was asserted nowhere.
+
+        `GIT_DIR` is the channel that makes it matter. It names the object store
+        outright and takes precedence over `-C`, so the loader would read the
+        checker from a repository the operator never named -- the FUR6 failure
+        by a different route.
+        """
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        script = _runbook_ceremony_script(repo)
+
+        elsewhere = tmp_path / "elsewhere"
+        elsewhere.mkdir()
+        _run("git", "init", "-q", ".", cwd=elsewhere)   # has no gate-anchor ref
+
+        import os as _os
+        r = subprocess.run(
+            ["bash", "-c", script], cwd=str(repo), capture_output=True,
+            text=True, check=False,
+            env={**_os.environ, "GIT_DIR": str(elsewhere / ".git")})
+
+        assert r.returncode == 0, (
+            f"GIT_DIR redirected the loader away from the named checkout: "
+            f"{r.stderr[-1500:]}")
+        assert _run("git", "rev-parse", P._ANCHOR_REF,
+                    cwd=repo).stdout.strip() != anchor, "nothing was blessed"
