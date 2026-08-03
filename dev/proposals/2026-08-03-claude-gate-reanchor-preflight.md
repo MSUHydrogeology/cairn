@@ -807,3 +807,117 @@ transition, and re-anchor tests passed **38 tests** in 10.23 seconds. No propose
 implementation exists, so parser strictness, bundle permissions and lifetime,
 actual ref-transaction behavior, Windows behavior, and sandbox enforcement remain
 for plan/code review.
+
+## Response -- Claude (author, to External Security Review Round 2) -- 2026-08-03
+
+**Model**: Claude Opus 5
+
+**All three accepted.** Verified independently before disposing: the Stage A
+helper's own docstring reads *"Best-effort credential-free environment for Stage
+A (contained, **not hermetic**)"* at `bootstrap/tests/_gate_reanchor.py:109-112`,
+exactly as SR7 cites; and `git update-ref --stdin` with `start`/`prepare`/`commit`
+does abort a two-ref transaction wholesale on an expected-old mismatch, leaving
+both refs untouched — so SR8's stronger satisfier is mechanically available and I
+take it rather than the narrower documented-contract option.
+
+* **[SR6] accept.** Correct, and it is the same error one level down: a process
+  cannot authenticate the file it has already executed. Revised so the **entry
+  point is the anchored copy** — a launcher outside the candidate tree resolves
+  the anchor, materializes the reviewed checker and its dependencies from Git
+  objects, and executes *that*; the anchored checker then compares candidate
+  authority bytes. The description of a worktree process checking its own bytes
+  is withdrawn.
+
+  I also withdraw "keyed to this review's reviewed hashes" as impossible, and
+  the reviewer is right that it was never available: this round reviewed a
+  design, and there is no `_gate_preflight.py` to hash. The plan carries an
+  explicit gate — a focused External security review of the **exact** initial
+  checker and dependency bytes, then a Maintainer-recorded hash set consumed by
+  the manual bootstrap, with the runbook recording who compared those hashes and
+  at which immutable commit.
+
+* **[SR7] accept with modification — and the modification is a retreat, not a
+  redesign.** The containment claims are withdrawn unconditionally: the promised
+  "candidate collection cannot reach the real repository" test is **deleted, not
+  weakened** (a test asserting a property the mechanism does not provide is worse
+  than no test), and "untrusted" and "read-only by construction" are withdrawn
+  wherever they describe a process that executes candidate code.
+
+  I am not proposing a real OS sandbox. It would need a platform-specific,
+  non-stdlib dependency; no cross-platform option exists; and the reviewer
+  rightly leaves that availability question open. For a single-maintainer
+  methodology repository it is disproportionate to the threat.
+
+  One piece of context that bears on the adjudication, verified rather than
+  asserted: **Phase 0 already executes candidate code in the live checkout
+  today.** `bootstrap/REANCHOR_RUNBOOK.md:48-56` has the Maintainer run
+  `_gate_manifest.py produce` from the trusted checkout, redirecting straight
+  into the fixture — no temp tree, no scrubbed environment, nothing. So the
+  residual is not introduced by this proposal; it is inherent to Phase 0 as
+  documented, and a repository-less scrubbed temp tree strictly *reduces* it.
+  What the proposal did wrong was claim that reduction was containment.
+
+  Revised accordingly: the stage is renamed to a **non-authoritative evidence
+  stage** with its host-access residual stated explicitly in both the runbook and
+  the tool's own output, under a declared trusted-contributor threat model.
+  **The adjudication is the Maintainer's, not mine** — the reviewer asks for that
+  posture to be deliberately adjudicated rather than assumed, and per the
+  disposition grammar this is the part I escalate to the Decision. My
+  recommendation is the narrower model; the Decision should say so explicitly if
+  it agrees, because an unstated threat model is how this proposal got here.
+
+* **[SR8] accept, taking the stronger satisfier.** Verified above that a single
+  `update-ref --stdin` transaction covers both refs with expected-old and aborts
+  atomically. So the partial-transaction window is **eliminated rather than
+  documented**: `apply` constructs the commit object with plumbing
+  (`hash-object` / `write-tree` / `commit-tree`, the pattern
+  `_construct_anchor_commit` already uses), verifies its parent, diff and
+  manifest-blob digest **before any ref moves**, then advances the branch and the
+  gate anchor in one expected-old transaction. Nothing blessing-shaped reaches
+  the branch unless the anchor moves with it. The narrower contract the finding
+  offered as an alternative is not needed and is not taken.
+
+## Revised proposal (Round 2) -- 2026-08-03
+
+Amends the Round-1 revision. Unchanged: the two-subcommand split, the CAS
+requirement, the closed authority path, the corrected audit fields, the
+index-validated frozen surface, no suppression switch, the preserved manual path.
+
+**Trusted launch, corrected (SR6).** The entry point is a launcher outside the
+candidate tree. It resolves `refs/cairn/gate-anchor`, materializes the reviewed
+checker and its dependencies from Git objects into a location the worktree does
+not control, and executes that anchored copy. No worktree process is described as
+checking its own bytes. The anchored checker compares candidate authority bytes
+and routes any change to the manual procedure.
+
+**First use (SR6).** A one-time manual bootstrap, gated on a focused External
+security review of the exact initial checker and dependency bytes and a
+Maintainer-recorded hash set, recorded in the runbook with the comparer's
+identity and the immutable commit compared at. No prospective blessing.
+
+**Evidence stage, honestly named (SR7).** Candidate collection moves out of
+`check`'s read-only guarantee into an explicitly non-authoritative **evidence**
+stage. It runs in a repository-less tree with the Stage A scrub — which is
+`contained, not hermetic` and is now labelled as such — and its residual
+(filesystem reachability, process creation, network) is stated in the runbook,
+in the tool's output, and in the plan. Declared threat model:
+trusted-contributor. Withdrawn: any claim that candidate code is contained,
+cannot reach the repository, or that a stage executing it is read-only by
+construction. **Flagged for the Maintainer's Decision to adjudicate explicitly.**
+
+**Application transaction (SR8).** `apply` constructs and verifies the commit
+object before moving any ref, then advances branch and anchor in one expected-old
+`update-ref --stdin` transaction. On abort: no ref moves, no success is reported,
+the bundle is non-replayable, and any index residue is reported explicitly rather
+than cleaned up silently.
+
+**Tests, corrected.** Deleted: the containment test. Added: the evidence stage's
+residual is documented rather than asserted away; `apply` aborts leaving *both*
+refs unmoved on a stale anchor; a constructed-but-unblessed commit never reaches
+the branch; the launcher refuses when the anchored checker bytes differ from the
+Maintainer-recorded set.
+
+**Still open, and I am not closing it:** first use remains a human trust
+insertion with no mechanical protection, now bounded by an exact-byte review gate
+rather than by my assurance. The trusted-contributor threat model is the
+Maintainer's to adjudicate at Decision.
