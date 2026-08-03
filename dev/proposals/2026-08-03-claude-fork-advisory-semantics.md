@@ -1298,3 +1298,722 @@ is the interaction, recorded rather than resolved.
 summary-level overstatements declined. Three amendments appended above; status
 moves to `revised`. Decision-ready on the Maintainer's reading of the Class C
 question, which this exchange did not touch.
+
+## Review -- Claude (Internal, same-agent-type; security lens) -- 2026-08-03
+
+**Model**: Claude Opus 5.
+
+**Verdict**: **BLOCKING** — one finding ([I1]) that I judge must be closed
+before this proposal enters plan; four substantive concerns and two minor items
+that are ordinary REVISE-class fixes. The design itself is sound and I am not
+asking for it to be reshaped. Every command below was run against this
+working tree on 2026-08-03 under the canonical interpreter
+(`~/conda_envs/lhm/bin/python`, 3.13.13), with `PYTHONDONTWRITEBYTECODE=1`, and
+its real output is pasted.
+
+**A note on what "Internal" buys here, stated before the findings rather than
+after.** This is a same-agent-type read: the proposal's author is Claude and so
+am I. I have **no cross-type independence**. The proposal's own *Why this tier*
+argument (§ reason 2) says an Internal read "is by construction the same
+reasoning that produced the error" — I agree with that, and this review should
+be weighed as a second pass by the same reasoning apparatus, not as an
+independent one. What I can offer that the External pass structurally could not
+is **execution against the real tree with the proposal's own numbers re-measured
+from scratch**, which is where most of what follows came from.
+
+---
+
+### Steelman
+
+The proposal is right about the defect, right about the shape of the fix, and
+its central design decision is genuinely stronger than the one it replaces.
+
+The false positive is real and reproduces exactly as described:
+
+```
+$ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python bootstrap/verify_integrity.py --target .
+verify_integrity: NOTE -- facade 'tools/intent.py' is forked from upstream (hash != base_hash) but its engine package 'tools/_intent' is installed.
+  You are running an un-maintained fork of the launcher while the maintained engine sits dormant; upstream engine fixes will not take effect.
+  Complete the swap (adopt the thin launcher) or remove the dormant engine package.
+  Set "fork_acknowledged": true on its lockfile record to silence this at verify time (upgrade still re-surfaces it).
+verify_integrity: NOTE -- facade 'tools/lifecycle_metrics.py' is forked from upstream (hash != base_hash) but its engine package 'tools/_lifecycle_metrics' is installed.
+  You are running an un-maintained fork of the launcher while the maintained engine sits dormant; upstream engine fixes will not take effect.
+  Complete the swap (adopt the thin launcher) or remove the dormant engine package.
+  Set "fork_acknowledged": true on its lockfile record to silence this at verify time (upgrade still re-surfaces it).
+verify_integrity: OK -- 76 recorded file(s) match dev/.cairn/cairn-lock.yml (5 adopter-authored living-state file(s) tracked for upgrade but excluded from the tamper check).
+rc=0
+```
+
+Both notes are false in both halves, and I confirmed the *whole* relationship
+the fix depends on — not just the hash pair the External review checked:
+
+```
+$ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python -c "
+import sys, hashlib; sys.path.insert(0,'.')
+from pathlib import Path
+from bootstrap._scaffold.install import install_manifest
+from bootstrap._scaffold.lockfile import read_lockfile
+m = {d:(s,v) for s,d,v in install_manifest(modules=None)}
+lock = read_lockfile(Path('.'))
+for dst in ('tools/intent.py','tools/lifecycle_metrics.py'):
+    rec = [r for r in lock['files'] if r['dst']==dst][0]
+    src, verb = m[dst]
+    tp = Path('templates')/src
+    dh = 'sha256:'+hashlib.sha256(Path(dst).read_bytes()).hexdigest()
+    th = 'sha256:'+hashlib.sha256(tp.read_bytes()).hexdigest()
+    print(dst)
+    print('  manifest src =', src, ' verbatim=', verb)
+    print('  lock src     =', rec['src'], ' agree=', rec['src']==src)
+    print('  disk hash    =', dh[:24])
+    print('  tmpl hash    =', th[:24], ' equal=', dh==th)
+    print('  rec hash     =', rec['hash'][:24], ' rec==disk:', rec['hash']==dh)
+    print('  rec base     =', rec['base_hash'][:24])
+"
+tools/intent.py
+  manifest src = modules/team-gated/intent.py  verbatim= True
+  lock src     = modules/team-gated/intent.py  agree= True
+  disk hash    = sha256:6462d4041d5d88d10
+  tmpl hash    = sha256:6462d4041d5d88d10  equal= True
+  rec hash     = sha256:6462d4041d5d88d10  rec==disk: True
+  rec base     = sha256:80b773c343f4f58cd
+tools/lifecycle_metrics.py
+  manifest src = modules/default-on/lifecycle_metrics.py  verbatim= True
+  lock src     = modules/default-on/lifecycle_metrics.py  agree= True
+  disk hash    = sha256:86a64b0a9163ff65f
+  tmpl hash    = sha256:86a64b0a9163ff65f  equal= True
+  rec hash     = sha256:86a64b0a9163ff65f  rec==disk: True
+  rec base     = sha256:01a323268b787a057
+```
+
+Both facades are `verbatim` in the trusted manifest, the lockfile's `src` agrees
+with the trusted map, and the on-disk bytes equal the template bytes. So the
+headline fix does what it says on this tree.
+
+**The design decision is the right one, and it is stronger than the parent's.**
+Using the destination→source map built from the engine's own registries, instead
+of validating the lockfile's `src`, removes the target's ability to *name* the
+comparison file rather than policing the name it gives. I traced that
+independently and it holds: `install_manifest` (`bootstrap/_scaffold/install.py:1359`)
+composes four in-memory tuples/dicts defined as literals in
+`bootstrap/_scaffold/config.py` and performs no filesystem read; the only
+`read_text` in that module is `load_config`, which is not on this path.
+Measured: 95 rows, 95 unique destinations, matching the proposal.
+
+**The gate accounting is genuinely careful and mostly re-measures true.** The
+AST baseline is green and the symbol count is exact:
+
+```
+$ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python -c "
+import sys; sys.path.insert(0,'.')
+from pathlib import Path
+from bootstrap.tests import _ast_attest as A
+mods = sorted(Path('bootstrap/_scaffold').glob('*.py'))
+print('modules:', len(mods))
+rc = A.verify(Path('bootstrap/tests/fixtures/scaffold_ast_baseline.json'), mods)
+print('verify rc =', rc)
+"
+...
+modules: 10
+AST attestation OK — 174 baselined symbol(s) accounted for, unchanged.
+verify rc = 0
+```
+
+I also confirmed the claim that `NEW` symbols are *notes*, not failures: the run
+above emitted `note: NEW Import:...` lines and still returned 0. And the
+`_UPDATE_ALLOWLIST` claim is exactly right — four symbols
+(`bootstrap/tests/_ast_attest.py:141`), none of them touched here, so the
+self-service repair path is genuinely unavailable and a supervised re-anchor is
+genuinely required.
+
+Finally, the proposal's honesty discipline is above the bar. *What this change
+does not fix* correctly declines to claim cryptographic anchoring, and the
+*Known omissions* paragraph pre-emptively concedes that Cairn's `templates/` is
+co-located with its install. That concession is load-bearing and I want to give
+it credit before [I1]: it means the author already knows the headline smoke
+check runs in the degenerate configuration. I verified that configuration is
+degenerate:
+
+```
+$ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python -c "
+from pathlib import Path
+CAIRN_ROOT = Path('bootstrap/verify_integrity.py').resolve().parent.parent
+target = Path('.').resolve()
+print('CAIRN_ROOT   =', CAIRN_ROOT)
+print('target(.)    =', target)
+print('SAME TREE    =', CAIRN_ROOT == target)
+"
+CAIRN_ROOT   = /Users/kendal30/Code/cairn
+target(.)    = /Users/kendal30/Code/cairn
+SAME TREE    = True
+```
+
+I am not raising that as a finding, because the proposal names it. I record it
+so a later reader does not mistake the smoke check for evidence of
+target-independence.
+
+---
+
+### Findings
+
+#### [I1] BLOCKING (for plan entry) — the design pins one operand of the comparison and never names the other; the incumbent code makes the unsafe choice the default, and one of the two callers has no cross-check
+
+**Gloss.** A comparison has two sides. The proposal specifies the *upstream* side
+in exhaustive detail — a `NamedTuple`, a helper, a per-caller table, three
+containment checks. It never specifies where the *target* side's bytes come
+from. That omission is not cosmetic, because the function being changed does not
+currently read the target file at all.
+
+**What the code does today.** `forked_facade_findings` decides "forked" purely
+from lockfile fields. The hash it uses is `rec["hash"]`
+(`bootstrap/_scaffold/lockfile.py:339`), a string stored in the target's own
+lockfile. The only thing the function touches on disk is the engine directory
+(`bootstrap/_scaffold/lockfile.py:351`), probed with `is_dir()` and `glob`. It
+never opens the facade.
+
+**What the proposal says.** The target side appears three times, always as bare
+prose and never as a mechanism:
+
+> Supplying a trusted upstream can only *remove* a finding (when **the on-disk
+> file** is byte-identical to trusted upstream …)
+
+> **`differs-from-upstream`** — a trusted upstream was resolved and **the
+> on-disk file** differs from it.
+
+There is no statement anywhere that the implementation must `read_bytes()` the
+facade rather than reuse the `h = rec.get("hash")` value already in hand. Reusing
+it is the smaller diff, is what the surrounding code does, and is what a
+plan-time implementer optimizing for the "exactly 3 CHANGED" AST target would
+naturally reach for.
+
+**Why that choice is not safe.** Under it, suppression is decided by
+`rec["hash"] == sha256(trusted template)` — i.e. by a **claim the tree makes
+about itself**, compared against trusted bytes. At the `verify_integrity` caller
+this is caught: the real disk hash is recomputed at
+`bootstrap/verify_integrity.py:108` and a lie becomes a violation. At the
+`cmd_upgrade` caller there is **no cross-check at all**. I checked the whole
+window between the lockfile read and the advisory call:
+
+```
+$ sed -n '2192,2206p' bootstrap/_scaffold/upgrade.py
+    lock = read_lockfile(target)
+    if lock is None:
+        print(f"error: no {_LOCKFILE_REL} in the target. Run "
+              "`upgrade --init-lock --target <repo>` to migrate a "
+              "pre-lockfile tree first.", file=sys.stderr)
+        return 1
+
+    # Advisory (rollup #4): surface any forked verbatim facade whose engine
+    # package is installed-but-dormant.  Unconditional at upgrade time -- this
+    # is the active decision point, so the per-record fork_acknowledged opt-out
+    # (which silences verify_integrity) does NOT silence it here.  Advisory
+    # only: it never blocks the upgrade.
+    for _ff in forked_facade_findings(target, lock):
+        print(format_forked_facade_warning(_ff, at_upgrade=True),
+              file=sys.stderr, end="")
+```
+
+Read the comment in that block against the design. It says the
+`fork_acknowledged` opt-out **deliberately does not silence the advisory at
+upgrade time**, "this is the active decision point". So the engine already has a
+considered position: at upgrade, the tree gets no suppression lever. If
+suppression keys on `rec["hash"]`, the tree gets that lever back at exactly that
+call site, silently, through a different field — and unlike `fork_acknowledged`
+it is not a declared opt-out anyone can grep for.
+
+**Why I call this blocking rather than a nit.** The proposal's stated purpose is
+to satisfy one sentence:
+
+> **The artifact under verification must not supply the material used to verify
+> it.**
+
+`rec["hash"]` is material supplied by the artifact under verification. The
+proposal's F2 is scoped to "the trusted upstream is never derived from `target`
+or from lock data" — true, and I could not break it (see *Covered*) — but F2
+leaves the *comparison as a whole* half-lock-derived, and the proposal reads as
+though the invariant is discharged. It is discharged on one operand.
+
+I want to be precise about the limits of this finding: **this is a specification
+gap, not a demonstrated defect in shipped code.** The proposal does not state
+the unsafe choice; it fails to forbid it, in a context where the unsafe choice
+is the path of least resistance. It is also **not a regression** — today's test
+is entirely lock-derived. But a proposal whose entire content is closing this
+defect class should not leave the class open in the operand it never mentions.
+
+**Recovery, and it is one sentence.** Amend *The shape of the change* to state
+that the target-side operand is the bytes read from the facade on disk under
+*target*, never `rec["hash"]` or any other lockfile field, and add one test node
+asserting that a record whose `hash` field equals the trusted template's hash
+while the on-disk bytes differ still produces a finding at **both** callers.
+That test is not vacuous and it pins the operand permanently.
+
+#### [I2] CONCERN — the validation budget is spent entirely on the trusted side; the untrusted side gets none, and resolving [I1] toward "read the file" opens a new unguarded read
+
+This is contingent on [I1] resolving the way I recommend, and it is cheap to
+close in the same amendment.
+
+The proposal adds three checks to the source join (`src_rel` relative,
+POSIX-shaped, no `..`; `_assert_safe_write` containment; must be a regular
+non-symlink file), on a path that comes from **trusted engine code**. It adds
+zero checks to the destination join, which comes from **the target's lockfile**.
+Inside `forked_facade_findings`, `dst_rel` is validated only as a non-empty
+string (`bootstrap/_scaffold/lockfile.py:346`).
+
+`verify_integrity` does validate `dst` against absolute / `..` / escape — but in
+its *own* loop (`bootstrap/verify_integrity.py:70`–`79`), which the detector
+does not share; and `cmd_upgrade` performs no `dst` validation at all before
+line 2204. Both escape shapes survive the detector's own gates today:
+
+```
+$ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python -c "
+import sys; sys.path.insert(0,'/Users/kendal30/Code/cairn')
+from pathlib import Path
+from bootstrap._scaffold.lockfile import _facade_engine_dir
+target = Path('dstx/target').resolve()
+for dst in ('../outside/secret.py', str((Path('dstx/outside/secret.py')).resolve())):
+    eng = _facade_engine_dir(dst)
+    joined = target / dst
+    print('dst        =', dst)
+    print('  _facade_engine_dir ->', eng)
+    print('  target/dst ->', joined)
+    print('  engine dir exists  ->', (target/eng).is_dir(), 'has .py:', any((target/eng).glob('*.py')) if (target/eng).is_dir() else False)
+    print('  read_bytes() would yield ->', joined.read_bytes() if joined.exists() else 'N/A')
+    print()
+"
+dst        = ../outside/secret.py
+  _facade_engine_dir -> ../outside/_secret
+  target/dst -> /private/tmp/.../dstx/target/../outside/secret.py
+  engine dir exists  -> True has .py: True
+  read_bytes() would yield -> b'SECRET\n'
+
+dst        = /private/tmp/.../dstx/outside/secret.py
+  _facade_engine_dir -> /private/tmp/.../dstx/outside/_secret
+  target/dst -> /private/tmp/.../dstx/outside/secret.py
+  engine dir exists  -> True read_bytes() would yield -> b'SECRET\n'
+```
+
+(Scratch fixture built under the scratchpad; paths elided for width. Both shapes
+pass `_facade_engine_dir` and the engine-directory probe, and both joins land
+outside the target.)
+
+**Honest severity accounting.** Today the consequence is an existence probe
+outside the target — low. Under [I1]'s fix it becomes a **content read of an
+attacker-named path**, and the observable output is one bit (note present /
+absent), i.e. a weak equality oracle against a known template. That is not a
+disclosure primitive and I am not going to inflate it into one. What makes it
+worth a finding is the **asymmetry**: a change whose thesis is path-join
+discipline would be adding an unguarded join. It is also inconsistent with the
+proposal's own *Edge-case inventory*, which enumerates `src` absolute, `src`
+with `..`, symlinked source, symlinked source parent — and has **no destination-
+side entry at all**.
+
+**Recovery.** Apply the same three checks to `target / dst_rel` (or, cheaper,
+reuse `_assert_safe_write(target / dst_rel, target)`), and add the four mirror
+nodes to the test matrix.
+
+#### [I3] CONCERN — F1 and the `src_relabelled` tamper signal contradict each other in the proposal's own text, and the signal's reachable population is 2 records today and 0 after the fix
+
+Two sentences, 7 lines apart:
+
+> `src` is still read, for one purpose … A disagreement can never *suppress* a
+> note; **it can only add one.**
+
+> **Invariant F1 — the new finding set is a subset of today's finding set.** …
+> **It can never add one.**
+
+Read literally these are contradictory. The charitable reading is that the first
+means "add a *line* to an existing note" — the preceding clause does say "the
+note appends a tamper line". But then the tamper signal is **gated behind a
+finding**, and the change's whole purpose is to remove findings. That is not a
+hypothetical: I measured the population.
+
+```
+$ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python -c "
+import sys; sys.path.insert(0,'.')
+from pathlib import Path
+from bootstrap._scaffold.lockfile import read_lockfile, _facade_engine_dir
+lock = read_lockfile(Path('.'))
+files = lock.get('files') or []
+print('total records:', len(files))
+print('has src field:', sum(1 for r in files if r.get('src')))
+verb = [r for r in files if r.get('verbatim')]
+print('verbatim records:', len(verb))
+fork = [r for r in verb if isinstance(r.get('hash'),str) and isinstance(r.get('base_hash'),str) and r['hash']!=r['base_hash']]
+print('verbatim + hash!=base_hash:', len(fork))
+eng = [r for r in fork if (_facade_engine_dir(r['dst']) and (Path('.')/_facade_engine_dir(r['dst'])).is_dir())]
+print('...with engine dir present:', len(eng), [r['dst'] for r in eng])
+"
+total records: 81
+has src field: 81
+verbatim records: 43
+verbatim + hash!=base_hash: 40
+...with engine dir present: 2 ['tools/intent.py', 'tools/lifecycle_metrics.py']
+```
+
+`as_of 2026-08-03`, on Cairn's own tree: **81 records carry a `src` field; 2 of
+them can ever carry a `src_relabelled` flag** — 2.5%. And because both of those
+two are byte-identical to their trusted templates (steelman above), the fix
+suppresses both findings, so after this change the tamper detector fires on
+**zero** records here. Its coverage is exactly the complement of the change's
+success.
+
+**This is not an argument to break F1.** F1 is the right invariant and the
+proposal is right to hold it. The finding is that the proposal presents
+`src_relabelled` as a security *gain* ("a disagreement … can only add one") when
+under F1 it is a gain only in the narrow band where a fork finding already
+exists — a band this change is designed to shrink. Two of the ten test nodes
+(item 5) exercise the one shape where it fires, so the *tests* are honest; the
+*prose* oversells the mechanism.
+
+**Recovery.** Pick one and say which: either (a) keep F1 and downgrade the
+`src_relabelled` prose to what it is — a diagnostic annotation on findings that
+already exist, with the measured reachability stated — or (b) declare relabelled
+`src` a *separate* finding kind exempt from F1, and say plainly that F1 is
+"subset, modulo the tamper kind". Option (b) is a real design change and I do
+not recommend it inside this scope; option (a) is a wording fix.
+
+#### [I4] CONCERN — F1's regression guard has the "oracle derived from the code under test" shape, and I can name the future state in which it fails to fail
+
+The proposal specifies F1's test as:
+
+> enforced by a test that runs the fixture matrix through both the
+> `upstream=None` path and the trusted-upstream path and asserts the second's
+> finding set is a subset of the first's.
+
+But F1 itself is stated against a *different* reference:
+
+> **Invariant F1 — the new finding set is a subset of **today's** finding set.**
+
+Those two are the same only while the shared candidate gate is unchanged. Both
+branches of the new function pass through the identical pre-filter — `verbatim`,
+then `hash != base_hash` (`bootstrap/_scaffold/lockfile.py:339`), then the
+engine-directory probe. The proposed test compares one function against
+**itself** under a different keyword argument. Any change to the shared gate
+moves both sides equally and the subset assertion still passes.
+
+**Concrete future state in which this guard cannot fail.** An implementer or a
+later maintainer observes — correctly — that now that trusted bytes are
+available, records with **no** `base_hash` could be checked too, and widens the
+gate to admit `base is None`. On this tree that would move the candidate
+population from 40 to 43 verbatim records (measured above) and could add
+findings relative to *today's* behaviour. Both branches gain the same
+candidates, so the subset test stays green, and F1-as-written is violated with
+the guard reporting success. This is the same shape as the regression guard
+already found defective elsewhere in this lifecycle: the oracle and the code
+under test are one object.
+
+**Recovery, cheap.** Make the oracle external to the function: capture today's
+committed output over the fixture matrix as a golden fixture, and assert the
+new trusted-upstream finding set is a subset of **that**. That version fails in
+the scenario above. Keep the branch-to-branch assertion too if you like — it is
+a useful consistency check — but it is not the F1 guard.
+
+#### [I5] CONCERN — the "no collision" claim was tested with search terms that cannot find the artifact that actually collides
+
+The *Coordination* section says:
+
+> **No collision with the other successors.** … **No collision with the
+> concurrent Theme 3 proposals.** Checked by grep across the seven proposals
+> opened 2026-08-03: none names `lockfile.py`, `verify_integrity`, or the fork
+> advisory.
+
+All three search terms are files this proposal solely owns. The shared artifact
+is the AST attestation baseline, and it is a **single committed file with a flat,
+module-unqualified namespace covering the entire engine package**:
+
+```
+$ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python -c "
+import json
+b=json.load(open('bootstrap/tests/fixtures/scaffold_ast_baseline.json'))
+print('total keys', len(b))
+ks=[k for k in b if 'forked_facade' in k or 'format_forked' in k or 'cmd_upgrade' in k or 'install_manifest' in k or 'load_config' in k]
+print(ks)
+"
+total keys 174
+['FunctionDef:cmd_upgrade', 'FunctionDef:forked_facade_findings', 'FunctionDef:format_forked_facade_warning', 'FunctionDef:install_manifest', 'FunctionDef:load_config']
+```
+
+`FunctionDef:load_config` lives in the same 174-key file as
+`FunctionDef:forked_facade_findings` — and `load_config` is claimed by a sibling
+opened the same day. From that sibling's own header:
+
+```
+$ grep -n "^\*\*Touches\*\*" -A 1 dev/proposals/2026-08-03-claude-profile-parse-fail-open.md
+7:**Touches**: `bootstrap/_scaffold/config.py` (the `_minimal_yaml_parse` fallback parser and `load_config`), `bootstrap/_scaffold/cli.py` (the profile-key report and the module docstring that `--help` prints), `bootstrap/BOOTSTRAP.md` (Appendix B schema rules), `bootstrap/tests/test_presets.py`, `bootstrap/tests/test_scaffold.py`, and the AST attestation baseline `bootstrap/tests/fixtures/scaffold_ast_baseline.json` (mandatory re-anchor — this touches `bootstrap/_scaffold/`)
+```
+
+The sibling names the baseline file in its `Touches` line and declares a
+mandatory re-anchor. **This proposal's `Touches` line does not name the baseline
+file at all** — I checked; the only two occurrences in the whole proposal are in
+the gate-accounting narrative and in R8's grep string:
+
+```
+$ grep -n "scaffold_ast_baseline" dev/proposals/2026-08-03-claude-fork-advisory-semantics.md
+513:baseline (`bootstrap/tests/fixtures/scaffold_ast_baseline.json`) by a structural
+708:| **R8** | … `grep -n -iE 'ast_attest\|scaffold_ast_baseline' bootstrap/REANCHOR_RUNBOOK.md` …
+```
+
+`Touches` is the field the other Theme 3 siblings used to find each other —
+`scan-coverage` records "**Within-set file collisions**" and `agent-context-scrub`
+records "**File claims by other proposals, recorded here so they are found now
+rather than at merge**". This proposal is invisible to that mechanism on the one
+artifact that matters.
+
+**Why it is a security finding and not a bookkeeping one.** The AST attestation
+is a source-motion gate over a high-risk surface, and the only available repair
+is a supervised, Maintainer-run re-anchor (the self-service `update` path refuses
+here — allowlist of four symbols at `bootstrap/tests/_ast_attest.py:141`, plus a
+documented refusal on "any unrelated discrepancy"). If two plans are executing
+concurrently and one runs a re-anchor over a tree that also holds the other's
+engine edits, the re-anchor **blesses the other change's deltas without review**
+— which is precisely what the gate exists to prevent. The proposal's own
+falsifiable target ("**exactly 3 CHANGED**", "A 4th CHANGED symbol is a
+stop-and-explain") is only falsifiable relative to a baseline nobody else moved,
+and it does not name which baseline commit it is measured against.
+
+**Recovery.** Add `bootstrap/tests/fixtures/scaffold_ast_baseline.json` to the
+`Touches` line; state the sequencing constraint against `profile-parse-fail-open`
+in *Coordination* explicitly (it is the same class of constraint already
+correctly priced for the trivial remediation commit); and re-derive the
+3-CHANGED target against a named baseline commit at plan time.
+
+#### [I6] MINOR — `_assert_safe_write` does not validate the root it is handed, so it does not serve the motivation the proposal gives for using it
+
+The proposal justifies the containment call this way:
+
+> Even though `src_rel` now comes from trusted code, the joined path is
+> validated before it is read, because [IDN4]'s satisfier asks for it and
+> **because a templates tree can be tampered with independently**
+
+The guard cannot serve that second reason. It polices *within* whatever root it
+is given and resolves that root without inspecting it
+(`bootstrap/_scaffold/security.py:47`). A symlinked root is followed silently:
+
+```
+$ ln -s "$(pwd)/symx/real_templates" symx/cairn/templates
+$ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python -c "
+import sys; sys.path.insert(0,'/Users/kendal30/Code/cairn')
+from pathlib import Path
+from bootstrap._scaffold.security import _assert_safe_write, ScaffoldSecurityError
+print('is_symlink(symx/cairn/templates):', Path('symx/cairn/templates').is_symlink())
+cand = Path('symx/cairn/templates')/'modules/intent.py'
+try:
+    _assert_safe_write(cand, Path('symx/cairn/templates'))
+    print('GUARD PASSED for candidate through symlinked root ->', cand.resolve())
+    print('bytes read:', cand.read_bytes())
+except ScaffoldSecurityError as e:
+    print('GUARD REFUSED:', e)
+"
+is_symlink(symx/cairn/templates): True
+GUARD PASSED for candidate through symlinked root -> /private/tmp/.../symx/real_templates/modules/intent.py
+bytes read: b'REAL\n'
+```
+
+The guard is a *containment* guard, and a tampered file **inside** the root
+passes all three checks by construction. The proposal itself says elsewhere
+"Validation proves *containment*, not *provenance*" — that sentence is right and
+the *Path validation* section's motivation contradicts it. Fix the motivation
+sentence, not the guard.
+
+**The half of this that touches an already-dispositioned item.** The author's
+Response records `--cairn-root` as a caller-controlled path that can point the
+comparison root inside the target ("(ii)"). I am not re-litigating the
+disposition — it is correct. I am noting that its **durable home is wrong by the
+proposal's own standard**: it lives only in the Response section, while R1's row
+still describes the exposure as "the checkout hosting the verifier", which
+reads as the verifier's self-location and does not cover an operator flag. The
+proposal's own Addendum spends 200 lines establishing that "an accepted proposal
+archives, and archived proposals are not read", and measures the proposal side of
+the archive precondition at **1 of 12**. Recording the flag only in a section
+that archives is that failure mode, committed by the artifact that diagnosed it.
+Two words in R1's Residual cell fix it.
+
+#### [I7] MINOR — the frozen-file count is stale within its own date stamp
+
+The proposal asserts, twice (once in *the gate manifest* subsection and once in
+the Response), that the frozen set is **162 files, `as_of 2026-08-03`**.
+Measured today at HEAD:
+
+```
+$ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python -c "
+import json
+d=json.load(open('bootstrap/tests/fixtures/gate_manifest.json'))
+print('n frozen:', len(d['frozen_files']))
+"
+n frozen: 164
+```
+
+The cause is benign and the author is not at fault — the set moved *the same
+day*, after the measurement:
+
+```
+$ git log -1 --format='%h %ad %s' --date=iso e45e1fc
+e45e1fc 2026-08-03 16:46:33 -0400 gate: Phase 0 prerequisite commit -- pin the pre-flight checker (becomes P)
+$ git log -1 --format='%h %ad %s' --date=iso bf08f62
+bf08f62 2026-08-03 06:21:07 -0400 gate-anchor: supervised trust-root re-establishment (REANCHOR_RUNBOOK Phase 0)
+$ ...frozen count at bf08f62 -> 162 ; at e45e1fc -> 164
+$ ...added: ['bootstrap/tests/_gate_preflight.py', 'bootstrap/tests/test_gate_preflight.py']
+```
+
+**Nothing else in the accounting moves.** I re-verified the two facts the plan's
+smoke check actually depends on, and both hold at HEAD:
+`bootstrap/tests/fixtures/scaffold_ast_baseline.json` is **not** in the frozen
+set (so the re-anchor does not create a third `FROZEN-MODIFIED` hold), and there
+are **0** `bootstrap/_scaffold/` entries in it. The two newly-frozen files are
+unrelated to this plan's touch set, so "exactly 2 `FROZEN-MODIFIED` holds"
+survives.
+
+The point worth carrying forward is about the *discipline*, not the number: a
+day-granular `as_of` stamp did not protect a figure that changed within the day,
+on a surface an in-flight sibling lifecycle (`gate-reanchor-preflight`) is
+actively moving. Re-measure at plan-open rather than inheriting.
+
+**A live demonstration, unplanned.** `HEAD` moved twice *while I was writing this
+review* — another session landed `af4b2ee` and `b67fabc`, both from
+`gate-reanchor-preflight`, the second of which archived that plan. Neither
+touched engine code, fixtures, or the gate manifest (`git show --stat` on both:
+`CHANGELOG.md`, `dev/PLANNING.md`, and the plan file's archive move only), so
+every measurement above stands and I re-confirmed the frozen count at the new
+`HEAD` — still 164. I record it because it is the concrete form of the hazard in
+[I5]: this repository currently runs concurrent sessions against a shared
+gate surface, and a proposal that pins a falsifiable gate target owes the
+Maintainer a named baseline commit rather than a date.
+
+---
+
+### Covered — each lens swept, with the command that proves it
+
+* **Trusted-source target-independence (the assigned aim, source side).**
+  Traced end to end and **found no surviving path**. `install_manifest`
+  (`bootstrap/_scaffold/install.py:1359`) composes four literals defined in
+  `bootstrap/_scaffold/config.py`; the sole `read_text` in that module is
+  `load_config`, which is not on this path. Verified purity by grep for
+  filesystem calls in that module, and by measuring the output shape:
+  `install_manifest(modules=None)` → 95 rows, 95 unique destinations. The
+  `trusted_upstream(cairn_root)` signature takes no module list, which makes A1's
+  rule structural rather than advisory for that one argument. `templates_root`
+  for the upgrade caller is computed at `bootstrap/_scaffold/upgrade.py:2183`,
+  before the advisory call at `bootstrap/_scaffold/upgrade.py:2204`. **I could
+  not construct a path by which the target selects the upstream bytes**, and I
+  say so plainly: [I1] is about the *other* operand, not this one.
+* **Boundary sweep on the detector's own inputs.** Empty / `None` / zero / one /
+  N≫1 / non-ASCII / symlink / missing file: exercised via the two scratch
+  fixtures above (`symx`, `dstx` under the scratchpad) and by reading
+  `forked_facade_findings` line by line. The empty-lockfile, no-`base_hash`, and
+  no-engine-dir paths all `continue` correctly today
+  (`bootstrap/_scaffold/lockfile.py:343`, `:349`, `:353`). The gaps found are
+  [I2] (no destination-side validation) and the concurrency case, which the
+  proposal itself excludes ("a concurrently-mutating templates tree … the
+  advisory is not a security boundary") — I accept that exclusion for an
+  advisory surface.
+* **Protection-vs-mechanism (claims stronger than they deliver).** Swept by
+  quoting each protective claim and testing its mechanism. Three claims survive
+  (F2 on the source side; the trusted-map-not-`src` argument; the
+  `FROZEN-MODIFIED` accounting). Two do not: the `_assert_safe_write` motivation
+  ([I6], reproduced with a symlinked root) and the `src_relabelled` framing
+  ([I3], reproduced by counting the 81-record population).
+* **Vacuous-test check.** Ran the named shape against every proposed invariant
+  guard. F3 (exit code unchanged) and F4 (`TypeError` on the positional call) are
+  both sound and both can genuinely fail. F1's proposed guard has the
+  oracle-from-the-same-object shape — [I4], with a named future state.
+* **Sibling-proposal interaction.** Swept all twelve proposals under
+  `dev/proposals/` dated 2026-08-03 by counting engine-file mentions
+  (`grep -c -E "_scaffold/(install|upgrade|config|lockfile)\.py"`), then read the
+  `Touches` line of every proposal that scored non-zero. Result: [I5]. The
+  proposal's handling of `release-authenticity`, `contributor-entry`
+  (which explicitly disclaims `bootstrap/_scaffold/`) and scope 4's R1
+  `_infer_init_lock_axes` adjacency is **correct and better than most** — the
+  miss is specific to `profile-parse-fail-open` and to the baseline artifact.
+* **Gate accounting re-measured from scratch.** AST baseline: 174 symbols, rc 0,
+  `NEW` reported as notes (command in the Steelman). `_UPDATE_ALLOWLIST`: four
+  symbols, none touched. Frozen set: 164 at HEAD (see [I7]), 0 `_scaffold`
+  entries, baseline JSON not frozen, `bootstrap/verify_integrity.py` and
+  `bootstrap/tests/test_verify_integrity.py` both frozen — the membership table
+  otherwise reproduces as written.
+* **Author's Response claims, checked with the same suspicion as the review's.**
+  Spot-checked its three most load-bearing new assertions. `_theirs_bytes`
+  performs an unguarded `templates_root / src_rel` read
+  (`bootstrap/_scaffold/upgrade.py:142`) — A2 reproduces. `--cairn-root` is
+  resolved at `bootstrap/_scaffold/upgrade.py:2181` — reproduces. The 95-row /
+  95-unique-destination figure reproduces. The **162** figure does not — [I7].
+* **Whole-file claim check** of this review, run standalone per the house rule
+  (`~/conda_envs/lhm/bin/python scripts/claim_check.py <this file>`) — clean —
+  with every `path:line` citation on its own line; verified the checker was
+  actually resolving repo paths by running a negative control that flagged a
+  bogus file and an out-of-bounds line.
+* **Re-verification after `HEAD` moved mid-review** (see [I7]): re-ran the
+  frozen-count measurement at the new `HEAD` and inspected both new commits with
+  `git show --stat`. No measurement in this review is stale.
+
+### Not covered / low confidence — the negative space
+
+* **Same-agent-type limitation, stated plainly and first.** This is an
+  **Internal** review: the author is Claude and so am I. There is **no
+  cross-type structural independence here**. The proposal argues (correctly, and
+  with recorded evidence from the parent lifecycle) that a same-type read is "by
+  construction the same reasoning that produced the error". Every finding above
+  should be read with that discount applied. In particular, if the *design*
+  premise is wrong in a way that a Claude-shaped reasoner is systematically blind
+  to, I would not have seen it, and nothing in this review is evidence that no
+  such blindness exists. This review does **not** discharge the proposal's
+  `required(External, security lens)` tier, and must not be counted toward it.
+* **No code exists.** Every finding is against the proposal text plus the
+  *current* implementations of `forked_facade_findings`, `cmd_upgrade`,
+  `verify_integrity.verify`, `install_manifest` and `_assert_safe_write`. [I1],
+  [I2] and [I4] are predictions about an implementation that has not been
+  written; a plan that pins the operand and the oracle disposes of all three.
+* **I did not attempt a full F1 falsification.** The proposal correctly notes
+  that no reviewer has tried to build a tree where a trusted upstream *adds* a
+  finding. Neither did I, in the constructive sense — I reasoned about the branch
+  structure and measured the candidate population, but I did not build the tree.
+  F1 remains an un-falsified claim carried by a test matrix, and [I4] argues that
+  matrix cannot carry it as specified.
+* **COULD NOT REPRODUCE — nothing.** Every command I ran is pasted with its real
+  output. Where I did not run something, I said so rather than inferring, and I
+  ran no command whose output I have not shown.
+* **Not swept.** Other consumers of `base_hash` (the author names this omission
+  and I did not close it). The `--to <ref>` path end to end (I read
+  `_theirs_bytes` but did not exercise a git-ref materialization). The
+  `UPGRADE.md` and `SECURITY_MUTATIONS.md` prose deliverables, which do not exist
+  yet. The Class C disposition and the Addendum's archive-precondition
+  measurement — out of the security lens, and the Addendum is self-consistent on
+  its face. The Maintainer's 2026-08-03 default-security-stance direction: I
+  agree with the Response that it does not land in this scope, and I did not
+  re-open it.
+
+### Second-round recommendation
+
+**Recommended — a focused second External read, not a full re-review, and not
+another Internal one.**
+
+Reasons, in order:
+
+1. **[I1] changes the contract, not just the prose.** Pinning the target-side
+   operand is a statement about what the design guarantees, on the same invariant
+   the External pass was convened for. It should be attacked by the tier that
+   produced [IDN4], and by an agent type that is not the author's. An Internal
+   read — this one — has already been spent.
+2. **The re-read is small and can be scoped.** [I1], [I2] and [I4] are the whole
+   security surface of a second round; [I3], [I5], [I6] and [I7] are wording,
+   `Touches`-line and re-measurement fixes that a revision can absorb without a
+   reviewer. A second External pass should be given exactly three questions:
+   *is the target-side operand pinned to on-disk bytes at both callers; is the
+   destination join validated; and is F1's oracle external to the function?*
+3. **The nominated attack target is still unattacked.** The proposal names its
+   own most likely failure — *"The trusted map is not actually trusted"* — and
+   the Response concedes the External trace "stops one step short of it". I got
+   one step closer (the registries are literals; the helper takes no module list)
+   and still did not break it. That is two same-family reasoners failing to break
+   it, which is weaker evidence than it looks.
+
+**What I would *not* do.** I would not defer the whole scope, and I would not
+reshape the design to avoid the two `FROZEN-MODIFIED` holds — the proposal's own
+*Signals* section is right that the cheaper shape reintroduces the ambiguity
+[IDN4] blocked. The design is sound. It is under-specified in one operand and
+over-claimed in two sentences.
+
+**Decision-readiness, stated for the Maintainer.** On the security lens I would
+hold the Decision until [I1] is amended, because the amendment is one sentence
+and the alternative is discovering the operand choice at implementation review,
+after the supervised re-anchor has already been spent. [I5] should be fixed
+before the Decision too, since it is a sequencing constraint the Maintainer is
+the one to arbitrate. The rest can ride into the plan.
