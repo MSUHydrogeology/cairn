@@ -429,6 +429,128 @@ invocation source the design trusts is outside the manifest entirely (GPR1).
 chunks above; GPR2 blocks on the Maintainer, and since it governs what A10
 actually is, Chunk A cannot be written correctly until it is answered.
 
+## Plan revision 2026-08-03 -- GPR2 resolved: signature verification + Maintainer-side steps
+
+Appended, not merged into the Chunk A table above, per the append-only rule for
+Sequence entries already recorded.
+
+**Maintainer direction**, verbatim: *"I don't want to kick the can down the road
+here. I want robust security that scales as the project grows."* GPR2 is resolved
+by **option 1 now, option 3 as infrastructure** — signing repairs the falsified
+premise and makes A10 mechanical; external anchoring remains the named upgrade for
+a different question (whether the anchor object itself is repo-minted) and is
+already a plan constraint via `--trusted-repo` threading.
+
+**Correction to the author's earlier framing.** The three options were presented
+as alternatives. They are not: signing answers *"was this commit created by an
+authorized identity?"*; external anchoring answers *"is the anchor I trust the one
+that was blessed?"*. Only the first repairs GPR2.
+
+### A10, revised
+
+**Was:** every commit in the anchor→HEAD range carries the Maintainer-recorded
+committer *name/email*. Falsified — those strings are unauthenticated.
+
+**Now:** every commit in the range at or after the recorded **signing epoch**
+carries a valid signature (`%G?` == `G`) whose signer principal (`%GS`) is a
+member of the pinned allowed-signers set. Commits before the epoch are
+grandfathered. Any `N` (unsigned) or `U` (signed by an unpinned key) refuses with
+`REVIEW REQUIRED`, no bundle, routed to manual review.
+
+Validated end-to-end in an isolated temp repository with throwaway keys, all three
+cases, before being written here: pinned key → `G`; unsigned → `N`; signed by a
+key absent from allowed-signers → `U` with an empty signer. The tripwire fires on
+both failure modes, so it is non-vacuous by construction.
+
+### Authority-closure additions (GPR1)
+
+Two new trusted policy inputs join the closure and are compared blob-by-blob
+against the anchor before any bundle is emitted:
+
+* `dev/.cairn/allowed_signers` — the pinned key set. A candidate that adds a key
+  to itself must be caught here; it is **not** covered by `_frozen_files()`.
+* the **recorded signing-epoch SHA** — otherwise a candidate could move the epoch
+  forward and grandfather its own unsigned commits.
+
+### The honest caveat, recorded with the mechanism
+
+Signing authenticates the **key holder**, not the human, and not the process. On
+this machine every agent that invokes git commits as the Maintainer and would sign
+with the Maintainer's key. So A10 detects a **second person**, which is exactly
+what the dated posture's expiry is for — it does **not** establish that any
+individual commit was human-reviewed, and it is not a defence against a
+compromised local machine. Written here beside the mechanism rather than left for
+a later review to find; the author has overstated three protections in this
+lifecycle already (SR7 containment, Round 4's "forced" revisiting, and A10 itself).
+
+### Maintainer-side implementation steps
+
+**These are the Maintainer's to run; no implementing agent performs them.** Every
+command below was validated in an isolated temp repository with throwaway keys.
+Paths assume the repository root and the existing `~/.ssh/id_ed25519.pub`
+(git 2.53.0 present; SSH signing needs ≥ 2.34).
+
+**M1 — write the allowed-signers file.** Principal is the Maintainer's git email;
+the second field is the key type and key data, without the comment.
+
+```
+printf '%s %s\n' "kendal30@msu.edu" \
+  "$(cut -d' ' -f1-2 ~/.ssh/id_ed25519.pub)" > dev/.cairn/allowed_signers
+```
+
+**M2 — configure signing, repository-local** (deliberately not `--global`: this
+is about *this* repository's trust root).
+
+```
+git config gpg.format ssh && \
+git config user.signingkey ~/.ssh/id_ed25519.pub && \
+git config commit.gpgsign true && \
+git config gpg.ssh.allowedSignersFile "$(pwd)/dev/.cairn/allowed_signers"
+```
+
+**M3 — commit the allowed-signers file.** This commit is itself signed and becomes
+the **signing epoch**.
+
+```
+git add dev/.cairn/allowed_signers && \
+git commit dev/.cairn/allowed_signers -m "gate: pin the allowed-signers set (signing epoch)"
+```
+
+**M4 — verify the signature took.** Expect `G` and the principal from M1.
+
+```
+git log -1 --format='%G? %GS'
+```
+
+**M5 — record the epoch.** Report the M3 commit SHA; it is written into the
+policy record and the runbook, and joins the authority closure. Until it is
+recorded, A10 has no epoch and Chunk A cannot be completed.
+
+**Note on what changes for you afterwards:** every subsequent commit in this
+repository is signed automatically, including commits an agent makes on your
+behalf. That is the current trust model made explicit, not a change to it.
+
+### Division of labour
+
+| Who | What |
+|---|---|
+| **Maintainer** | M1-M5 above; the Decision amendment correcting `b37e137`'s premise; Chunk G's first-use bootstrap. |
+| **Implementer** | A10's signature-verification logic; the authority-closure comparison including the two new inputs; Chunks A-F and H; all tests. |
+
+### Tests added
+
+`%G?`/`%GS` verification fires on an unsigned commit and on a commit signed by an
+unpinned key, each proved non-vacuous by mutation; a candidate that appends a key
+to `dev/.cairn/allowed_signers` is caught by the authority closure and emits no
+bundle; a candidate that advances the recorded epoch is likewise caught;
+pre-epoch unsigned commits do **not** fire.
+
+### Still blocked
+
+Chunk A remains blocked until the Maintainer (a) runs M1-M5 and reports the epoch
+SHA, and (b) amends the Decision at `b37e137`, whose recorded premise — the
+committer-identity check as "the mechanical tripwire" — this revision replaces.
+
 ## Code review
 
 *Filled in after implementation commits land (Chunks A-F, H).*
