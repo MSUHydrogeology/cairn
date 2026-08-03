@@ -5,9 +5,9 @@
 # Plan: a reviewed pre-flight for the supervised gate re-anchor (Phase 0)
 
 **Source proposal**: `dev/proposals/archive/2026-08-03-claude-gate-reanchor-preflight.md`
-**Status**: open
+**Status**: awaiting-plan-review
 **Plan review**: required(**External**, security lens) — carried from the proposal header and ratified at Decision. Additionally, **first use is gated on a focused External security review of the exact initial checker bytes and the recorded invocation** (SR6 / SR9); the Decision explicitly does *not* prospectively bless those bytes.
-**Last update**: 2026-08-03
+**Last update**: 2026-08-03 (plan review response)
 **Opened**: 2026-08-03
 
 ## Source proposal
@@ -332,6 +332,102 @@ passes on the plan. No implementation exists, so bundle parsing, temp-artifact
 permissions/lifetime, exact import closure, ref-transaction CLI construction, and
 the anchored invocation remain for code-level review; first use still requires
 the separately mandated exact-byte External review.
+
+## Response to plan review -- Claude (author) -- 2026-08-03
+
+**Model**: Claude Opus 5
+
+**Four accepted, one deferred to the Maintainer.** Status moved `open` →
+`awaiting-plan-review`, per GPR5. Chunk A does not begin. Independently verified
+before disposing: a second writer setting `GIT_COMMITTER_NAME` /
+`GIT_COMMITTER_EMAIL` to the Maintainer's strings produced a commit whose author
+was `Attacker <evil@example>` while the proposed A10 equality check saw exactly
+one committer and **passed silently** (GPR2, reproduced); and
+`bootstrap/REANCHOR_RUNBOOK.md` is **not** in `_frozen_files()` at all, so the
+invocation source the design trusts is outside the manifest entirely (GPR1).
+
+* **[GPR1] accept.** The finding is right and the gap is worse than the plan
+  implies: `_gate_preflight.py` would at least be inside the frozen surface
+  (`bootstrap/tests/**/*.py`), but the **runbook holding the invocation is not
+  frozen at all**, so nothing covers the bytes that decide what executes. And A8
+  cannot close this by refusing frozen modification — modification is the normal
+  case a blessing exists to record. Revised: Chunk A gains an explicit
+  **preflight-authority closure** — the checker, its full import closure, the
+  canonical invocation source, and every trusted policy input (the expected
+  committer record and the recorded hash set) — enumerated as data, compared blob
+  by blob against the anchor before any bundle is emitted. Any member changed,
+  missing, extra, symlinked, or unpinned returns `REVIEW REQUIRED`, non-zero, no
+  bundle, routed to manual exact-byte review. Chunk E mutates each member
+  independently and proves none can be applied through the automated path. Note
+  the closure must pin the runbook explicitly rather than delegating to the
+  manifest, which does not reach it.
+
+* **[GPR2] defer — Maintainer adjudication required; I am not disposing this as
+  author.** Reproduced exactly: committer metadata is supplied by the committing
+  process and is unauthenticated, so A10 detects *honest* metadata variance and
+  cannot guarantee it "fires when commit authority widens." This matters beyond
+  the plan: the **Decision at `b37e137` records the committer-identity check as
+  "the mechanical tripwire"** for the dated posture's expiry, and that premise is
+  now falsified. The Decision is committed and append-only; correcting a premise
+  inside it is the Maintainer's act, not the author's. Three options, for the
+  Maintainer to choose:
+
+  1. **Authenticate.** Verified signatures against a pinned Maintainer key, with
+     A10 checking signature validity and signer identity rather than strings.
+     This repository signs nothing today (0 of the last 8 commits carry a
+     signature; `commit.gpgsign`, `user.signingkey`, `gpg.format` all unset), so
+     this is a new workflow commitment. SSH signing is the cheap path given an
+     SSH key already exists. **Caveat:** the allowed-signers file then becomes a
+     trusted policy input and must join GPR1's authority closure.
+  2. **Withdraw the guarantee.** Rename to a *best-effort committer-metadata
+     variance tripwire* and accept that the expiry is advisory. Honest and free,
+     but it returns to roughly the position the Maintainer pushed back on when
+     asking how the expiry would mechanically function.
+  3. **Withdraw the guarantee *and* promote external anchoring.** Take option 2's
+     honest renaming, and make the real authority control the SR9 upgrade already
+     named in the Decision — `_gate_manifest.py verify --trusted-repo/--trusted-ref`,
+     which refuses a target-supplied anchor and is existing, unused machinery. An
+     independent trusted repository detects unauthorized ref movement in a way no
+     in-repo metadata check can, whoever wrote the commit.
+
+  **My recommendation is 3**, because it stops claiming a guarantee the mechanism
+  cannot make while putting the actual detection somewhere an attacker inside the
+  repository cannot reach — and it needs no new signing workflow. But this is the
+  Maintainer's premise to correct.
+
+* **[GPR3] accept.** Chunk B named a boundary without naming an interface.
+  Revised to a three-command state machine — `evidence` → `check` → `apply` —
+  where `evidence` emits a **strict, versioned artifact** bound to the immutable
+  candidate SHA, the interpreter, the manifest bytes and digest, and the
+  collection result; `check` parses it **fail-closed**, independently re-derives
+  every static Git/object fact rather than trusting the artifact for them, binds
+  its bundle to the same candidate and the observed anchor, and refuses
+  intervening drift; `apply` revalidates those bindings. Public-path tests cover
+  `evidence` → `check` → `apply` through CLI subprocesses, including malformed,
+  substituted, stale, and wrong-candidate evidence. This also resolves the
+  read-only contradiction: `check` no longer launches candidate execution at all.
+
+* **[GPR4] accept.** The proposed snapshot repeats exactly the observability
+  limitation that produced SR5 — `git status --porcelain` cannot see ignored
+  files, and `refs/cairn/*` misses branches, tags, and other refs. Revised: the
+  invariant test snapshots **all** refs, `HEAD`, index identity, tracked and
+  untracked state **including ignored entries**, and the addressable `.git`
+  metadata paths (config, hooks), paired with subprocess instrumentation
+  asserting `check` invokes no mutating Git command. The evidence stage's
+  mutation residual is tested **separately**, so a benign evidence subprocess
+  cannot make a weak `check` invariant look strong.
+
+* **[GPR5] accept.** The wording did obscure the handoff. Corrected: *no
+  pre-existing frozen modification independently triggers a re-anchor, but
+  first-use bootstrap still requires Chunk G, and the mechanism is unusable as
+  designed until it completes.* Chunk H and archive now sit behind an explicit
+  **Maintainer checkpoint** after G, and the candidate commit plus the exact-byte
+  review are recorded in the Lasting-truth section. Status set to
+  `awaiting-plan-review`.
+
+**Not proceeding to Chunk A.** Four findings are dispositioned in the revised
+chunks above; GPR2 blocks on the Maintainer, and since it governs what A10
+actually is, Chunk A cannot be written correctly until it is answered.
 
 ## Code review
 
