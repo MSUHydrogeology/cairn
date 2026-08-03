@@ -63,6 +63,27 @@ substitution caused the literal block to execute substituted checker bytes while
 returning success — the same trust-source failure as FUR1, one step earlier.
 
 ```
+# The whole loader is handed to a CLEAN CHILD SHELL. Pinning the utilities was
+# not enough: the block was still interpreted by the operator's inherited shell,
+# and an inherited `echo` function rewrote the extracted checker and wrote the
+# rewritten file's digest into the checklist, so the pinned absolute `shasum`
+# dutifully verified the wrong list and reported success (FUR9). Pinning `echo`
+# would not have closed it either -- `read`, `cd`, `[`, and the redirections are
+# the same class. One boundary removes inherited functions, aliases, startup
+# files and exported-function environment entries together.
+#
+# `PATH` is real here, unlike an earlier version of this block that set it only
+# inside the git child and then claimed it covered the utilities.
+# `HOME` is recorded because the signing backend needs it. `SSH_AUTH_SOCK` is
+# the single deliberate pass-through from the invoking shell, since an agent
+# socket is per-session and cannot be recorded; a wrong value can only make
+# signing FAIL, never pass, because the signature is verified against the
+# anchored roster with a pinned verifier.
+<maintainer-recorded-env> -i \
+    PATH=/usr/bin:/bin \
+    HOME=<maintainer-recorded-home> \
+    SSH_AUTH_SOCK="${SSH_AUTH_SOCK-}" \
+    <maintainer-recorded-shell> <<'LOADER'
 # Every value here is recorded by the Maintainer at first use. NOTHING is
 # discovered: ambient discovery is what let a substituted repository answer for
 # the named one, and an ambient `PATH` is what let a replacement `shasum` vouch
@@ -111,6 +132,7 @@ HASHES
 
 "$PY" -E -s "$T/bootstrap/tests/_gate_preflight.py" \
     apply --repo "$CHECKOUT" --confirm-supervised-reanchor
+LOADER
 ```
 
 **Why each line is the way it is.** `CHECKOUT` is *typed*, not derived: `git -C`

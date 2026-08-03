@@ -1793,3 +1793,84 @@ candidate-execution residual, replay posture, SSH cryptography, Windows
 behavior, external anchoring, concurrent Maintainers, or Phase 4. No accepted
 residual is reopened by this finding; FUR9 concerns the loader boundary that the
 revision itself claims to scrub.
+
+## Remediation step 5 -- FUR9 -- Claude (author) -- 2026-08-03
+
+**Model**: Claude Opus 5
+
+Accepted. I pinned every executable the loader calls and left the **interpreter**
+ambient. An inherited `echo` function rewrote the extracted checker and wrote
+the *rewritten* file's digest into `RECORDED.sha256`, so the pinned absolute
+`shasum` verified a checklist that agreed with the tampered bytes and reported
+success. The ceremony returned 0.
+
+The reviewer's instruction not to close this incrementally is the useful part,
+and I would have got it wrong: my first instinct was to pin `echo`. `read`,
+`cd`, `[`, and the redirections are all the same class, so that would have been
+a fourth round of the same finding.
+
+### The fix -- one boundary, not another pin
+
+The entire loader body is now handed to a clean child:
+
+```
+<recorded-env> -i PATH=/usr/bin:/bin HOME=<recorded-home> \
+    SSH_AUTH_SOCK="${SSH_AUTH_SOCK-}" <recorded-shell> <<'LOADER'
+... body ...
+LOADER
+```
+
+That removes inherited functions, aliases, startup files and exported-function
+environment entries in a single step. `/bin/sh` is the recorded shell because a
+non-interactive `sh` reads no startup file, where `zsh` sources `/etc/zshenv`
+unconditionally.
+
+**`PATH` is now real.** In the version FUR8 corrected, `PATH=/usr/bin:/bin` was
+set only inside the git child while the prose claimed it covered the utilities.
+Here it is the child's actual environment, and the checker resolves `git`
+through it.
+
+**One deliberate pass-through, named as such.** `SSH_AUTH_SOCK` comes from the
+invoking shell, because an agent socket is per-session and cannot be recorded.
+Its worst case is fail-closed: a wrong value can only make signing **fail**,
+never pass, because the signature is verified against the anchored roster with a
+pinned verifier. `HOME` is recorded rather than inherited.
+
+Verified before writing this: a nested heredoc inside the outer `LOADER`
+heredoc parses correctly when `sh` reads its script from stdin, and the inner
+`while ... <<'HASHES'` still aborts the script on failure.
+
+### Verification
+
+Canonical Python 3.13.13. Full suite **1596 passed** (1593 before this step);
+`test_gate_preflight.py` 125 tests. `check_cairn.py` OK over 174 Markdown files;
+`claim_check.py` and `git diff --check` clean.
+
+**Mutation testing.** Removing the clean-child wrapper fails five tests,
+including `test_an_inherited_shell_function_cannot_alter_the_checklist` --
+checked explicitly, because the reviewer's satisfier names that requirement and
+"some test failed" is not the same claim. Removing the heredoc terminator fails
+the structural test.
+
+The hostile-function regression carries its own liveness guard
+(`test_the_hostile_function_probe_is_live`): if the inherited definition never
+took effect, the main test would pass while proving nothing.
+
+### The pattern, at five rounds
+
+FUR6 through FUR9 are one finding discovered four times: **the boundary was
+drawn one layer too high.** Each round I closed the layer named and left the
+layer beneath it -- the launcher protected git but not the loader; the loader
+pinned utilities but not their inputs; the inputs were pinned but not the
+interpreter assembling them. The reviewer has had to supply the next layer down
+every time.
+
+What I take from it: on a trust-root surface, "what does this depend on that I
+have not named?" is the question, asked repeatedly until the answer is only the
+declared residual set. Listing controls is not the same as tracing the chain.
+
+### Unchanged
+
+Chunk G remains blocked. `shasum -a 256` is macOS/BSD; Windows unexamined; the
+accepted candidate-execution residual, replay posture, external anchoring and
+Phase 4 are untouched.

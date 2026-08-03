@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import re
+import os
 import shlex
 import shutil
 import subprocess
@@ -1452,6 +1453,11 @@ def _recorded(repo: Path) -> dict[str, str]:
         "<maintainer-recorded-mktemp>": shutil.which("mktemp"),
         "<maintainer-recorded-mkdir>": shutil.which("mkdir"),
         "<maintainer-recorded-shasum>": shutil.which("shasum"),
+        # FUR9: the loader body is interpreted by a clean child shell, not the
+        # operator's. /bin/sh is chosen because a non-interactive sh reads no
+        # startup file; zsh sources /etc/zshenv unconditionally.
+        "<maintainer-recorded-shell>": "/bin/sh",
+        "<maintainer-recorded-home>": os.environ.get("HOME", "/nonexistent"),
     }
     missing = [k for k, v in values.items() if not v]
     assert not missing, f"cannot resolve recorded utilities: {missing}"
@@ -2074,3 +2080,71 @@ class TestLoaderTrustBoundary:
         for recorded in ('"$MKTEMP"', '"$MKDIR"', '"$SHASUM"', '"$ENV"',
                          '"$GIT"', '"$PY"'):
             assert recorded in code, f"{recorded} is not used"
+
+    def test_an_inherited_shell_function_cannot_alter_the_checklist(self,
+                                                                    tmp_path):
+        """FUR9. Pinning the utilities left the loader *body* interpreted by the
+        operator's shell. An inherited `echo` function rewrote the extracted
+        checker and emitted the rewritten file's digest into RECORDED.sha256, so
+        the pinned absolute `shasum` verified the wrong list and reported
+        success. The rewritten checker then ran and the ceremony returned 0.
+
+        Pinning `echo` would not have closed it -- `read`, `cd`, `[` and the
+        redirections are the same class -- so the whole body is handed to a
+        clean child shell instead.
+        """
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        script = _runbook_ceremony_script(repo)
+        pwned = repo / "PWNED"
+
+        # An inherited definition in the shell that interprets the block. It
+        # rewrites the checker, then emits the REWRITTEN file's digest so the
+        # checklist agrees with the tampered bytes.
+        hostile = (
+            'echo() {\n'
+            '  case "$1" in\n'
+            '    *"  bootstrap/tests/_gate_preflight.py")\n'
+            f'      printf %s\\\\n "import pathlib" '
+            f'"pathlib.Path({str(pwned)!r}).write_text(\'x\')" '
+            '        > "$T/bootstrap/tests/_gate_preflight.py"\n'
+            '      set -- "$(/usr/bin/shasum -a 256 '
+            '"$T/bootstrap/tests/_gate_preflight.py" '
+            '| cut -d" " -f1)  bootstrap/tests/_gate_preflight.py"\n'
+            '      ;;\n'
+            '  esac\n'
+            '  command echo "$@"\n'
+            '}\n')
+
+        r = subprocess.run(["bash", "-c", hostile + script], cwd=str(repo),
+                           capture_output=True, text=True, check=False)
+
+        assert not pwned.exists(), (
+            "an inherited shell function rewrote the checker and forged its "
+            "checklist entry past the pinned verifier")
+        assert r.returncode == 0, r.stderr[-2500:]
+
+    def test_the_hostile_function_probe_is_live(self, tmp_path):
+        """Guards the test above. If the inherited definition never took effect,
+        that test would pass while proving nothing -- so assert the same
+        mechanism works against a shell that does not scrub."""
+        marker = tmp_path / "PROVEN"
+        hostile = (
+            'echo() { command echo "REPLACED:$*"; }\n'
+            f'echo hello > {shlex.quote(str(marker))}\n')
+        subprocess.run(["bash", "-c", hostile], capture_output=True, text=True,
+                       check=False)
+        assert marker.read_text().startswith("REPLACED:"), (
+            "the probe mechanism itself does not work")
+
+    def test_the_loader_body_runs_in_a_clean_child_shell(self):
+        """The structural property, on the recorded text."""
+        block = _runbook_block("_gate_preflight.py")
+        code = "\n".join(ln for ln in block.splitlines()
+                         if ln.strip() and not ln.lstrip().startswith("#"))
+        launch = code.splitlines()[0]
+        assert "-i" in launch and "<maintainer-recorded-env>" in launch, (
+            f"the loader must be launched through a recorded `env -i`: {launch}")
+        assert "<maintainer-recorded-shell> <<'LOADER'" in code, (
+            "the body must be supplied to a recorded absolute shell")
+        assert code.rstrip().endswith("LOADER"), (
+            "the body must be fully enclosed by the clean-child heredoc")
