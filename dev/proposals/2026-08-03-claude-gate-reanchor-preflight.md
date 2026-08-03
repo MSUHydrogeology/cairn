@@ -17,7 +17,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: revised
+**Status**: accepted
 **Touches**: a new Cairn-internal checker `bootstrap/tests/_gate_preflight.py` and its behavioural test `bootstrap/tests/test_gate_preflight.py`; a new pre-flight step in `bootstrap/REANCHOR_RUNBOOK.md`'s Phase 0. **No shipped template, no install-manifest entry, no adopter-facing surface** (`scaffold.py --manifest` has zero entries under `bootstrap/tests/`, verified 2026-08-03); no doctrine file under `doctrine/`; no change to `_gate_reanchor.py`'s Stage A / Stage B contract.
 **Related**: `bootstrap/REANCHOR_RUNBOOK.md` Phase 0; the two supervised runs that motivated this — the 2026-07-31 trust-root re-establishment (`e5ecaa5`) and the pending re-bless for `cfc5530`; the archived plan `dev/plans/archive/interpreter-trust-root-fallback.md`, whose Lasting-truth section records the four review rounds spent mis-specifying this same ceremony. Opened under the Maintainer's 2026-08-03 direction, *"I feel like this script should be more formalized as an actual mechanism for re-use"* and *"I think it needs to be externally reviewed with a security lens"*.
 **Plan review**: required(**External**, security lens) — the Maintainer's direction above, applied to this proposal *and* carried to the plan. The surface is the input to a trust-root blessing decision; a same-type read cannot supply the independence the circularity in *Proposal > The circularity this does not eliminate* needs.
@@ -1191,3 +1191,49 @@ in scope; and opens the `dev/PLANNING.md` row at plan-open rather than at archiv
 so the row exists before the proposal stops being read. A test pins the check
 firing on a range containing a foreign committer identity and staying silent on
 the current single-identity history.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-03
+
+**Accepted**, with the threat-model posture named explicitly, as both External
+security rounds require.
+
+Authorizing instructions, quoted verbatim and visually isolated:
+
+> "I do accept the trusted-contributed posture for today, but don't understand
+> how the expiry would mechanically function"
+
+> "Okay, let's go ahead and move this one forward to implementation"
+
+> "Yes, commit as my decision, and accept as dated"
+
+**Threat model, named.** Cairn accepts the **trusted-contributor** posture for
+Phase 0 of its own trust root: candidate code in this repository is assumed
+non-adversarial, and the evidence stage's filesystem / process / network residual
+is **accepted rather than contained**. This resolves SR7, which both security
+rounds declined to settle on the author's behalf.
+
+**Accepted as dated**, not as a standing architectural assumption — scoped to
+Cairn's own trust root, single-maintainer, as of 2026-08-03.
+
+**Expiry.** The mechanical tripwire is Round 5's committer-identity check: every
+commit in a blessed range must carry the Maintainer-recorded committer identity;
+variance refuses and routes to the manual runbook. It is silent on the current
+history (666/666 commits, as_of 2026-08-03) and fires when commit authority
+widens. The two non-observable triggers — the ceremony run on a checkout the
+Maintainer does not solely control, and adopter uptake of the mechanism — are
+recorded in `bootstrap/REANCHOR_RUNBOOK.md` and as a `dev/PLANNING.md` row opened
+at **plan-open**, not at archive, so the expiry outlives the proposal's
+readership.
+
+**Accepted scope:** the design as revised through Round 5 — the two-subcommand
+split, the no-launcher anchored invocation, the closed changed-authority path, the
+single expected-old two-ref transaction, the index-validated frozen surface, and
+the honestly-named non-authoritative evidence stage.
+
+**Plan review** stays `required(External, security lens)`. First use is
+additionally gated on a focused External security review of the **exact** initial
+checker bytes and the recorded invocation (SR6 / SR9). **This Decision does not
+prospectively bless those bytes.**
+
+*Scribed by Claude (Opus 5) at the Maintainer's instruction quoted above; commit
+permission given explicitly in the third quotation.*
