@@ -986,3 +986,101 @@ unregistered mutable entry point.
 No implementation exists, so this round did not re-run the unchanged 38-test gate
 subset. Coverage was the focused `97900cd` design diff, the proposed path/accounting
 surface, the current Phase 0 runbook, and an isolated two-ref transaction probe.
+
+## Response -- Claude (author, to External Security Review Round 3) -- 2026-08-03
+
+**Model**: Claude Opus 5
+
+**Both accepted.** SR9 is correct and is my error from Round 2: "outside the
+candidate tree" is a location, not a provenance, and naming it a trusted-launch
+boundary moved verify-after-execute outward one level rather than terminating it.
+The `Touches` / `Proposed paths` omission the finding notes is real — I
+introduced an unregistered entry point while arguing that entry points must be
+registered.
+
+* **[SR9] accept, taking the second satisfier: there is no launcher program.**
+  A launcher *as code* regresses — it needs its own launcher. So the form is the
+  finding's alternative: **a fixed manual invocation, recorded verbatim in the
+  runbook, obtained from the anchor rather than from the worktree.** Verified
+  end-to-end before proposing it:
+
+  ```
+  # Obtain this invocation from the ANCHOR, never from the working tree:
+  #   git show refs/cairn/gate-anchor:bootstrap/REANCHOR_RUNBOOK.md
+  T=$(mktemp -d)
+  git archive refs/cairn/gate-anchor bootstrap/tests | tar -x -C "$T"
+  <maintainer-recorded-canonical-interpreter> -E -s \
+      "$T/bootstrap/tests/_gate_preflight.py" check --repo .
+  ```
+
+  Probed against this repository: `git archive` at the anchor materialized 100
+  `.py` files whose bytes are **equal to the anchored Git objects**, checked for
+  `_gate_manifest.py` and `_gate_reanchor.py`; the runbook is itself readable at
+  `refs/cairn/gate-anchor:bootstrap/REANCHOR_RUNBOOK.md`, so the operator takes
+  the invocation from an immutable object and never from a candidate-editable
+  file; and `-E -s` was confirmed to drop an injected `PYTHONPATH` entry, so
+  worktree state cannot reach `sys.path`. Every byte Python executes comes from
+  anchored objects, and `sys.path[0]` is the extracted anchored directory, so the
+  checker's dependencies resolve there too.
+
+  Because there is no launcher artifact, nothing is added to `Proposed paths`;
+  what changes is the runbook, already in `Touches`, which gains the verbatim
+  reviewed invocation. The first-use review gate extends to cover the recorded
+  invocation text and the provenance of the expected-hash record, not only the
+  checker bytes.
+
+  **Where the chain actually terminates, stated rather than implied:** the `git`
+  and `tar` binaries; the Maintainer-recorded interpreter path; the operator's
+  discipline of reading the invocation from the anchor; and **local write access
+  to `refs/cairn/gate-anchor` itself** — an attacker who can move that ref
+  chooses what executes. That last one is not a gap this design can close, because
+  moving that ref *is* the authority the ceremony exists to protect; it is in
+  scope only under the trusted-contributor model SR7 asks the Decision to name.
+  Regression added as the finding requires: altered worktree launcher-invocation
+  text, altered worktree checker bytes, and an altered candidate hash record all
+  fail to influence the executed anchored bytes.
+
+* **[SR10] accept.** "Non-replayable" was an absolute I had no mechanism for, and
+  the finding's reading is right: a state-bound bundle can be resubmitted if its
+  expected state is restored. Withdrawn and replaced with the real contract —
+  every `apply` invocation revalidates live state against the bundle's bindings
+  and requires fresh Maintainer confirmation; any drift refuses; and after a
+  successful transaction the bundle is stale because both refs have moved. No
+  single-use nonce or consumption ledger is added, because replay after exact
+  state restoration is not in the trusted-contributor threat model; if the
+  Decision adopts a wider model, that mechanism becomes required and is the first
+  thing to add.
+
+## Revised proposal (Round 3) -- 2026-08-03
+
+Amends Round 2. Unchanged: the two-subcommand split, the pre-ref-move commit
+construction and single expected-old two-ref transaction (SR8, closed), the closed
+authority path, corrected audit fields, index-validated frozen surface, the
+non-authoritative evidence stage and its stated residual, no suppression switch,
+the preserved manual path.
+
+**Entry point (SR9).** No launcher program exists. Entry is a fixed invocation
+recorded verbatim in `bootstrap/REANCHOR_RUNBOOK.md`, obtained by the operator
+from `refs/cairn/gate-anchor` rather than the worktree, which materializes the
+anchored `bootstrap/tests` tree with `git archive` and executes the anchored
+checker under the Maintainer-recorded interpreter with `-E -s`. First-use review
+covers the invocation text and the expected-hash record's provenance alongside the
+checker bytes. The residual trust set is enumerated in the runbook, ending at
+write access to the anchor ref.
+
+**Bundle contract (SR10).** Revalidate-and-confirm, not mechanical single-use:
+every `apply` rechecks all bindings against live state, refuses on drift, and
+requires fresh confirmation; success moves both refs, making the old bundle stale.
+Persistent single-use state is deferred to a wider threat model.
+
+**Tests, revised.** Added: worktree launcher-invocation text, worktree checker
+bytes, and candidate hash records cannot alter the executed anchored bytes;
+`apply` refuses a resubmitted bundle whenever any binding has drifted. Removed:
+any test asserting mechanical non-replayability.
+
+**Carried to the Decision, unresolved by design:** the trusted-contributor threat
+model and its filesystem/process/network residual (SR7), which both reviewers ask
+be named explicitly rather than assumed — and which now also bounds SR9's residual
+trust set and SR10's replay posture. All three collapse into one question for the
+Maintainer, and the proposal should not be accepted without it being answered in
+the Decision text.
