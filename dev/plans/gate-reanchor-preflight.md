@@ -705,6 +705,94 @@ surface generally -- rather than another full-plan round. The declared
 `required(External, security lens)` tier stands regardless of this
 recommendation.
 
+## Response to Internal plan review (CR1/CR2) -- Claude (author) -- 2026-08-03
+
+**Model**: Claude Opus 5
+
+**Both accepted, both fixed, plus two further defects the finding's negative
+space led to.** One correction to the review's own cost estimate first, because
+it changes the stakes rather than the disposition.
+
+**The review's premise was stale by eleven minutes.** CR1 argues the fix is
+cheap because "`bootstrap/tests/_gate_preflight.py` does not yet exist," so no
+written bytes are affected. It existed: Chunk A landed at `1843179`, 08:11:57,
+after the review commit at 08:00:48. So this was a live defect in committed code,
+not a spec correction. The finding is *more* valuable than its author estimated,
+not less — and it was still caught before Chunk G's exact-byte gate, which was
+the point.
+
+* **[CR1] accept — reproduced against the committed code, in its lethal form.**
+  The review's table shows an attacker roster naming `evil@example.org`, which my
+  principal comparison would in fact have caught. The version that defeats it
+  names **the same principal string** with the attacker's key. Reproduced: pinned
+  roster byte-identical (closure check passes), `.git/config` pointed elsewhere,
+  and `check_signatures` saw `status=G  signer=m@example` — passing both the
+  status and the principal branch. Fixed exactly as the satisfier specifies: the
+  roster is supplied **by invocation** from the closure-verified path, so
+  command-line `-c` outranks repository config and `.git/config` leaves the trust
+  path.
+
+* **[CR2] accept.** Added, and proved non-vacuous: reverting the `-c` supply
+  makes it fail. It is the first test in this file to vary the roster's
+  *location* rather than the signature.
+
+* **Follow-on 1 — the class, swept.** The review's negative space says CR1 "is
+  one instance of a class I have not swept." Swept: `core.quotePath` defaults to
+  **true** and escapes non-ASCII paths in both `ls-files --stage` and `status
+  --porcelain`, so a frozen file named `d/café.py` reads back as
+  `"d/caf\303\251.py"` and never matches the glob. Fail-closed (a false refusal,
+  not a bypass), but the same shape. Closed at the class level rather than the
+  instance: a `_PINNED_CONFIG` baseline is now applied to **every** git
+  invocation, so future call sites inherit it.
+
+* **Follow-on 2 — a correctness defect in my own parser.** Re-deriving which
+  branch CR1's fix left reachable exposed it: `allowed_signers` permits
+  comma-separated principals (`a@x,b@y <key>`) and `%GS` reports only the matched
+  one, so parsing the field whole compared git's `a@x` against the literal
+  `a@x,b@y` and **falsely refused a legitimate signer**. Fixed and tested.
+
+**One structural consequence worth recording.** With the roster supplied by
+invocation, a key outside it can no longer reach `G` at all — so refusal now
+comes through the *status* branch, and the principal comparison becomes
+defence-in-depth against roster-parse divergence rather than the primary control.
+That is the stronger arrangement, but it means the earlier test asserting the
+principal branch was re-framed to assert the security property (refusal) rather
+than which branch delivers it. Recorded because this is the second time mutation
+testing has re-shaped a test in this file, and the churn is evidence the tests
+are load-bearing rather than decorative.
+
+**Ordering refinement, from a second agent's independent read of CR1 — accepted,
+and my first fix was the weaker form.** That read pointed out what CR1's own
+satisfier only implies: the path handed to `-c` must not be the **candidate
+worktree's** copy of the roster unless the closure comparison has already passed
+for that exact blob. My first fix pointed at
+`repo / dev/.cairn/allowed_signers`. It happened to fail closed only because the
+closure check flags a tampered roster in the same run — incidental, not
+structural: findings accumulate rather than short-circuit, so the tampered roster
+would still have been *consulted*, and `check_signatures` called on its own
+trusted the candidate outright, which is exactly how the tests call it.
+
+Corrected to their preferred form: `anchored_roster()` materializes the roster
+**from the trusted anchor object** into a path outside the candidate tree, and
+both the `-c` supply and the parsed principal set come from that blob. The
+candidate's copy is never trusted at any point, and the ordering question
+disappears rather than being managed. Two guards added, both proved non-vacuous
+by reverting to the worktree read: a candidate appending its own key to the
+worktree roster does not change the principal set, and a roster absent from the
+anchor fail-closes with a pointer to the M1-M5 bootstrap.
+
+**Verification (canonical interpreter, `/Users/kendal30/conda_envs/lhm/bin/python`,
+Python 3.13.13): 1529 passed, 0 failed** — 1471 pre-existing plus 58 in
+`test_gate_preflight.py`. Every guard in this response was mutation-tested:
+the check removed, the test confirmed failing, the source restored byte-identical.
+
+**Tier note honoured:** this Internal pass does not discharge the declared
+`required(External, security lens)` obligation, which the Codex rounds answered.
+The reviewer's suggested narrow cross-type pass over the checker's git-invocation
+surface is **not** taken by this response — `_PINNED_CONFIG` closes the one
+sibling I found, but "I found one" is not "I swept it," and that distinction is
+exactly what this plan keeps getting wrong. Left for the Maintainer to decide.
+
 ## Code review
 
 *Filled in after implementation commits land (Chunks A-F, H).*

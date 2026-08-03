@@ -29,10 +29,13 @@ Maintainer's key, so this detects a second *person*, not a second *process*.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import hashlib
 import json
+import shutil
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -70,6 +73,17 @@ _READ_ONLY_GIT = frozenset({
     "rev-parse", "rev-list", "log", "show", "cat-file", "ls-files",
     "diff", "merge-base", "for-each-ref", "status",
 })
+
+#: Config pinned on **every** git invocation, so the checker's reading of the
+#: repository never depends on candidate-controlled `.git/config`. CR1 was one
+#: instance of that class (the allowed-signers roster's *location*); its reviewer
+#: flagged the class itself as unswept. `core.quotePath` is the sibling that
+#: sweep found: it defaults to *true* and escapes non-ASCII paths in both
+#: `ls-files --stage` and `status --porcelain`, so a frozen file named
+#: `d/café.py` reads back as `"d/caf\303\251.py"` and never matches the glob --
+#: a false refusal rather than a bypass, but the same failure shape. Pinning it
+#: here closes the class for future call sites too, rather than one instance.
+_PINNED_CONFIG: dict[str, str] = {"core.quotePath": "false"}
 
 #: Index modes accepted for a frozen-surface member: regular file only.
 #: 120000 is a symlink and 160000 a gitlink/submodule; both are refused, because
@@ -112,18 +126,28 @@ class Report:
 # git access -- read-only by construction
 # --------------------------------------------------------------------------
 
-def _git(*args: str, repo: Path = _REPO) -> subprocess.CompletedProcess:
+def _git(*args: str, repo: Path = _REPO,
+         config: dict[str, str] | None = None) -> subprocess.CompletedProcess:
     """Run a **read-only** git subcommand. Refuses anything not allowlisted.
 
     This is the enforcement point for the read-only invariant: a future edit that
     tries to commit, checkout, or update a ref from inside the checker raises
     instead of running.
+
+    ``config`` supplies ``-c key=value`` overrides ahead of the subcommand.
+    Command-line ``-c`` outranks repository config, which is what lets a caller
+    take a security-relevant setting **out of the candidate's hands** -- see
+    :func:`check_signatures` and plan finding CR1.
     """
     if not args or args[0] not in _READ_ONLY_GIT:
         raise PreflightError(
             f"_gate_preflight may only run read-only git subcommands; "
             f"refused {(args[0] if args else '<none>')!r}")
-    return subprocess.run(["git", "-C", str(repo), *args],
+    merged = {**_PINNED_CONFIG, **(config or {})}
+    overrides: list[str] = []
+    for key, value in merged.items():
+        overrides += ["-c", f"{key}={value}"]
+    return subprocess.run(["git", "-C", str(repo), *overrides, *args],
                           capture_output=True, text=True, check=False)
 
 
@@ -308,22 +332,51 @@ def check_frozen_surface(report: Report, *, repo: Path = _REPO) -> None:
 # the expiry tripwire -- signature verification (Decision amendment 2026-08-03)
 # --------------------------------------------------------------------------
 
-def allowed_principals(*, repo: Path = _REPO) -> set[str]:
-    """Principals from ``dev/.cairn/allowed_signers`` (first field per line)."""
-    path = repo / _ALLOWED_SIGNERS_REL
-    if not path.is_file():
+@contextlib.contextmanager
+def anchored_roster(anchor: str, *, repo: Path = _REPO):
+    """Materialize the pinned roster **from the trusted anchor object**, outside
+    the candidate tree, and yield its path and text.
+
+    Pointing ``-c gpg.ssh.allowedSignersFile`` at the candidate worktree's copy
+    would only be safe *if* the closure comparison for that exact blob had
+    already passed -- an ordering dependency, and a fragile one: findings
+    accumulate rather than short-circuit, so a tampered roster is flagged by the
+    closure check while this function would still have consulted it, and
+    :func:`check_signatures` called on its own trusts the candidate outright.
+    Reading the blob from the anchor removes the ordering question entirely: the
+    candidate's copy is never trusted at any point.
+    """
+    blob = _blob_at(anchor, _ALLOWED_SIGNERS_REL, repo=repo)
+    if blob is None:
         raise PreflightError(
-            f"allowed-signers file is missing: {_ALLOWED_SIGNERS_REL} -- run the "
-            f"runbook's M1 step before blessing")
+            f"the pinned roster {_ALLOWED_SIGNERS_REL} is absent from the anchor "
+            f"{anchor[:12]} -- first use requires the manual exact-byte "
+            f"bootstrap (runbook steps M1-M5); the candidate's own copy is not "
+            f"a substitute")
+    tmpdir = tempfile.mkdtemp(prefix="cairn-preflight-roster-")
+    path = Path(tmpdir) / "allowed_signers"
+    path.write_bytes(blob)
+    try:
+        yield path, blob.decode("utf-8", "replace")
+    finally:
+        shutil.rmtree(tmpdir, ignore_errors=True)
+
+
+def parse_principals(text: str) -> set[str]:
+    """Principals named by an ``allowed_signers`` document."""
     principals: set[str] = set()
-    for line in path.read_text(encoding="utf-8").splitlines():
+    for line in text.splitlines():
         line = line.strip()
         if not line or line.startswith("#"):
             continue
-        principals.add(line.split()[0])
+        # The first field may carry several comma-separated principals
+        # (`a@x,b@y ssh-ed25519 ...`), and `%GS` reports only the one that
+        # matched. Splitting on whitespace alone would compare git's `a@x`
+        # against the literal `a@x,b@y` and falsely refuse a legitimate signer.
+        principals.update(p for p in line.split()[0].split(",") if p)
     if not principals:
         raise PreflightError(
-            f"allowed-signers file names no principals: {_ALLOWED_SIGNERS_REL}")
+            f"the pinned roster {_ALLOWED_SIGNERS_REL} names no principals")
     return principals
 
 
@@ -338,20 +391,34 @@ def check_signatures(anchor: str, head: str, report: Report, *,
     Maintainer's strings passed that check silently. Signature status does not
     forge: ``N`` (unsigned) and ``U`` (signed by an unpinned key) both refuse.
     """
-    principals = allowed_principals(repo=repo)
     blessed = set(_rev_list(f"{anchor}..{head}", repo=repo))
     post_epoch = set(_rev_list(f"{_SIGNING_EPOCH}..{head}", repo=repo))
     post_epoch.add(_SIGNING_EPOCH)
     to_check = blessed & post_epoch
 
+    # Supply the roster BY INVOCATION, never letting git resolve it through
+    # `.git/config` (plan finding CR1). Verifying the roster's *contents* via the
+    # authority closure is not enough while its *location* comes from a channel
+    # the candidate controls and the read-only snapshot cannot observe: an
+    # attacker who writes `gpg.ssh.allowedSignersFile` to a roster of their own
+    # -- naming the same principal string with their own key -- gets `%G?` = `G`
+    # and a rostered-looking `%GS` while `dev/.cairn/allowed_signers` sits
+    # byte-identical and passes the closure check. Reproduced before this fix.
+    # Command-line `-c` outranks repository config, so the trust chain reads:
+    # anchor object -> closure-verified roster blob -> keys, with `.git/config`
+    # off the path entirely.
     unsigned, foreign = [], []
-    for sha in sorted(to_check):
-        p = _git("log", "-1", "--format=%G?%x09%GS", sha, repo=repo)
-        status, _, signer = (p.stdout or "").strip().partition("\t")
-        if status != "G":
-            unsigned.append((sha, status))
-        elif signer not in principals:
-            foreign.append((sha, signer))
+    with anchored_roster(anchor, repo=repo) as (roster_path, roster_text):
+        principals = parse_principals(roster_text)
+        roster_cfg = {"gpg.ssh.allowedSignersFile": str(roster_path)}
+        for sha in sorted(to_check):
+            p = _git("log", "-1", "--format=%G?%x09%GS", sha, repo=repo,
+                     config=roster_cfg)
+            status, _, signer = (p.stdout or "").strip().partition("\t")
+            if status != "G":
+                unsigned.append((sha, status))
+            elif signer not in principals:
+                foreign.append((sha, signer))
 
     for sha, status in unsigned:
         report.add("SIGNING", "refuse",

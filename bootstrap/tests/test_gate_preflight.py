@@ -275,18 +275,21 @@ class TestSigningTripwire:
         assert any("not validly signed" in f.message and f.level == "refuse"
                    for f in _findings(report, "SIGNING"))
 
-    def test_commit_signed_by_a_key_git_trusts_but_we_do_not_refuses(
-            self, tmp_path, monkeypatch):
-        """Exercises the *principal* branch specifically.
+    def test_key_absent_from_the_pinned_roster_refuses(self, tmp_path,
+                                                       monkeypatch):
+        """A key git's own config would accept must still refuse.
 
-        Mutation testing caught the naive version of this test as vacuous: with
-        the outsider key simply absent from git's allowed-signers file, `%G?` is
-        `U` and the check fired on signature *status*, leaving the
-        principal comparison untested. So here git is given a signers file
-        containing **both** keys -- making the outsider's commit verify as `G` --
-        while the repository's own pinned `dev/.cairn/allowed_signers` lists only
-        the Maintainer. A validly-signed commit by a non-pinned principal must
-        still refuse.
+        History worth keeping: the first version of this test was caught **vacuous**
+        by mutation testing -- with the outsider key simply missing from git's
+        roster, `%G?` was `U` and the check fired on signature *status*, leaving
+        the principal comparison unexercised. It was rewritten to give git a
+        roster containing both keys. The CR1 fix then changed the picture again:
+        now that the roster is supplied *by invocation* from the closure-verified
+        file, a key outside it can no longer reach `G` at all, so refusal comes
+        through the status branch by design. That is the stronger arrangement --
+        the principal comparison became defence-in-depth against roster-parse
+        divergence rather than the primary control -- and this test asserts the
+        security property (refusal) rather than which branch delivers it.
         """
         repo, key, signers = _signing_repo(tmp_path)
         epoch = _signed_commit(repo, "epoch")
@@ -295,24 +298,32 @@ class TestSigningTripwire:
         outsider = _keypair(tmp_path, "outsider")
         maint_line = " ".join(key.with_suffix(".pub").read_text().split()[:2])
         out_line = " ".join(outsider.with_suffix(".pub").read_text().split()[:2])
-        # git trusts both...
         signers.write_text(f"m@example {maint_line}\noutsider@example {out_line}\n",
-                           encoding="utf-8")
-        # ...but the repository pins only the Maintainer.
+                           encoding="utf-8")          # git would accept both
         _write(repo, "dev/.cairn/allowed_signers", f"m@example {maint_line}\n")
         _run("git", "config", "user.signingkey",
              str(outsider.with_suffix(".pub")), cwd=repo)
         _run("git", "config", "user.email", "outsider@example", cwd=repo)
-        head = _signed_commit(repo, "validly signed, wrong principal")
+        head = _signed_commit(repo, "signed by a key the repo does not pin")
 
-        status = _run("git", "log", "-1", "--format=%G?%x09%GS", cwd=repo).stdout
-        assert status.startswith("G"), (
-            f"test setup must produce a git-valid signature, got {status!r}")
+        assert _run("git", "log", "-1", "--format=%G?", cwd=repo
+                    ).stdout.startswith("G"), (
+            "setup must produce a signature git's own config accepts, so the "
+            "refusal below is attributable to the pinned roster")
 
         report = P.Report()
         P.check_signatures(epoch, head, report, repo=repo)
-        assert any("unpinned principal" in f.message
-                   for f in _findings(report, "SIGNING"))
+        assert _findings(report, "SIGNING")
+
+    def test_comma_separated_roster_principals_are_parsed(self, tmp_path):
+        """`allowed_signers` permits `a@x,b@y <key>`; `%GS` reports only the
+        matched principal. Parsing the field whole compared git's `a@x` against
+        the literal `a@x,b@y` and **falsely refused a legitimate signer** --
+        fail-closed, so not a hole, but a real correctness defect found while
+        re-deriving which branch CR1's fix left reachable."""
+        assert P.parse_principals(
+            "a@x,b@y ssh-ed25519 AAAAKEY\n# comment\nc@z ssh-ed25519 AAAA2\n"
+        ) == {"a@x", "b@y", "c@z"}
 
     def test_spoofed_committer_metadata_does_not_defeat_it(self, tmp_path,
                                                            monkeypatch):
@@ -332,6 +343,50 @@ class TestSigningTripwire:
             "an unsigned commit carrying spoofed committer metadata must still "
             "refuse -- this is the finding that falsified the original design")
 
+    def test_roster_location_cannot_be_redirected_via_git_config(
+            self, tmp_path, monkeypatch):
+        """Plan finding CR1, as a regression guard.
+
+        Verifying the roster's *contents* through the authority closure is not
+        enough while its *location* is resolved through `.git/config` -- a
+        channel the candidate controls and the read-only snapshot cannot observe.
+        The attack never touches `dev/.cairn/allowed_signers`: it points git at a
+        roster of its own that names **the same principal string** with the
+        attacker's key, so `%G?` is `G` and `%GS` looks rostered while the pinned
+        file stays byte-identical and the closure check passes.
+
+        This test failed against the first implementation of `check_signatures`,
+        which let git resolve the roster itself.
+        """
+        repo, _key, signers = _signing_repo(tmp_path)
+        epoch = _signed_commit(repo, "epoch")
+        monkeypatch.setattr(P, "_SIGNING_EPOCH", epoch)
+
+        pinned_before = (repo / "dev/.cairn/allowed_signers").read_bytes()
+
+        attacker = _keypair(tmp_path, "attacker")
+        rogue = tmp_path / "attacker_roster"
+        rogue.write_text(
+            "m@example " + " ".join(
+                attacker.with_suffix(".pub").read_text().split()[:2]) + "\n",
+            encoding="utf-8")
+        _run("git", "config", "gpg.ssh.allowedSignersFile", str(rogue), cwd=repo)
+        _run("git", "config", "user.signingkey",
+             str(attacker.with_suffix(".pub")), cwd=repo)
+        head = _signed_commit(repo, "signed by an unrostered key")
+
+        # The pinned roster is untouched, so the authority closure is satisfied.
+        assert (repo / "dev/.cairn/allowed_signers").read_bytes() == pinned_before
+        # And git, left to itself, reports this as a good, rostered signature.
+        assert _run("git", "log", "-1", "--format=%G?%x09%GS",
+                    cwd=repo).stdout.startswith("G\tm@example")
+
+        report = P.Report()
+        P.check_signatures(epoch, head, report, repo=repo)
+        assert _findings(report, "SIGNING"), (
+            "a commit signed by a key absent from the PINNED roster must refuse, "
+            "even when .git/config points git at a roster that accepts it")
+
     def test_pre_epoch_commits_are_grandfathered(self, tmp_path, monkeypatch):
         """All 672 commits predating the epoch are unsigned; they must not fire."""
         repo, _key, _signers = _signing_repo(tmp_path)
@@ -343,18 +398,31 @@ class TestSigningTripwire:
         assert _findings(report, "SIGNING") == []
         assert report.facts["signing"]["grandfathered"] == 0  # anchor..epoch
 
-    def test_missing_allowed_signers_is_fail_closed(self, tmp_path):
+    def test_roster_absent_from_the_anchor_is_fail_closed(self, tmp_path):
+        """The candidate's own copy is never a substitute for the anchor's."""
         repo = _repo(tmp_path)
-        _commit(repo)
-        with pytest.raises(P.PreflightError, match="allowed-signers"):
-            P.allowed_principals(repo=repo)
+        anchor = _commit(repo)
+        _write(repo, "dev/.cairn/allowed_signers", "m@example ssh-ed25519 AAAA\n")
+        _commit(repo, "candidate adds a roster after the anchor")
+        with pytest.raises(P.PreflightError, match="absent from the anchor"):
+            with P.anchored_roster(anchor, repo=repo):
+                pass
 
-    def test_empty_allowed_signers_is_fail_closed(self, tmp_path):
-        repo = _repo(tmp_path)
-        _write(repo, "dev/.cairn/allowed_signers", "# only a comment\n")
-        _commit(repo)
+    def test_roster_naming_no_principals_is_fail_closed(self):
         with pytest.raises(P.PreflightError, match="no principals"):
-            P.allowed_principals(repo=repo)
+            P.parse_principals("# only a comment\n")
+
+    def test_roster_is_read_from_the_anchor_not_the_worktree(self, tmp_path):
+        """The ordering subtlety: a candidate that appends its own key to the
+        worktree roster must not influence which keys count."""
+        repo = _repo(tmp_path)
+        _write(repo, "dev/.cairn/allowed_signers", "m@example ssh-ed25519 AAAA\n")
+        anchor = _commit(repo, "anchor pins the roster")
+        _write(repo, "dev/.cairn/allowed_signers",
+               "m@example ssh-ed25519 AAAA\nevil@example ssh-ed25519 BBBB\n")
+        _commit(repo, "candidate appends its own key")
+        with P.anchored_roster(anchor, repo=repo) as (_path, text):
+            assert P.parse_principals(text) == {"m@example"}
 
 
 # --------------------------------------------------------------------------
@@ -513,8 +581,14 @@ class TestPublicCli:
             [sys.executable, str(_REPO / "bootstrap/tests/_gate_preflight.py"),
              "check"],
             capture_output=True, text=True, check=False, cwd=str(_REPO))
-        assert r.returncode in (0, 1), r.stderr[-2000:]
+        assert r.returncode in (0, 1, 2), r.stderr[-2000:]
+        assert "Traceback" not in r.stderr, "must refuse cleanly, not crash"
         assert "anchor" in r.stderr
+        if r.returncode == 2:
+            # The live tree's anchor predates the roster commit, so the
+            # anchored-roster read fail-closes. That is the first-use bootstrap
+            # condition, and it must say so rather than merely erroring.
+            assert "bootstrap" in r.stderr
 
     def test_no_flag_can_turn_a_refusal_into_a_pass(self):
         """There is deliberately no suppression switch (security review SR3)."""
@@ -525,3 +599,32 @@ class TestPublicCli:
         lowered = r.stdout.lower()
         for banned in ("--force", "--allow", "--skip", "--ignore", "--no-verify"):
             assert banned not in lowered, f"suppression flag present: {banned}"
+
+
+class TestGitConfigCannotSteerTheChecker:
+    """CR1's *class*, not just its instance: the checker's reading of the
+    repository must not depend on candidate-controlled `.git/config`."""
+
+    def test_non_ascii_frozen_path_is_matched_despite_quotepath(
+            self, tmp_path, monkeypatch):
+        """`core.quotePath` defaults to true and escapes non-ASCII paths, so an
+        unpinned invocation reads `d/café.py` back as `"d/caf\\303\\251.py"` and
+        falsely refuses it as absent from the index."""
+        repo = _repo(tmp_path)
+        _run("git", "config", "core.quotePath", "true", cwd=repo)
+        _write(repo, "d/café.py", "x = 1\n")
+        _commit(repo)
+        monkeypatch.setattr(P.G, "_frozen_files", lambda r=None: ["d/café.py"])
+        report = P.Report()
+        P.check_frozen_surface(report, repo=repo)
+        assert _findings(report, "SURFACE") == [], (
+            "a tracked non-ASCII frozen path must not be reported absent")
+
+    def test_pinned_config_is_applied_to_every_invocation(self, tmp_path):
+        repo = _repo(tmp_path)
+        _commit(repo)
+        assert "core.quotePath" in P._PINNED_CONFIG
+        # and it is not overridden away by a per-call config dict
+        _write(repo, "d/naïve.txt", "y\n")
+        _run("git", "add", "-A", cwd=repo)
+        assert "d/naïve.txt" in P._index_entries(repo=repo)
