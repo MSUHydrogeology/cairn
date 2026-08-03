@@ -10,7 +10,7 @@
     }
   },
   "collection": {
-    "node_count": 1469,
+    "node_count": 1471,
     "node_ids": [
       "bootstrap/tests/test_active_surfacing_mechanism.py::TestActivatePromptEmission::test_active_prompt_in_outcome",
       "bootstrap/tests/test_active_surfacing_mechanism.py::TestActivatePromptEmission::test_active_prompt_not_re_emitted_on_second_run",
@@ -439,6 +439,8 @@
       "bootstrap/tests/test_install_module.py::test_no_lower_leaf_imports_install",
       "bootstrap/tests/test_install_module.py::test_shared_helpers_stay_in_engine_not_install",
       "bootstrap/tests/test_install_module.py::test_single_identity_across_consumers",
+      "bootstrap/tests/test_intents_tool.py::TestAutoReleaseQuietOnNoClaims::test_silent_when_no_claims_and_no_identity",
+      "bootstrap/tests/test_intents_tool.py::TestAutoReleaseQuietOnNoClaims::test_still_warns_when_a_live_claim_cannot_be_released",
       "bootstrap/tests/test_intents_tool.py::TestClaimTTL::test_configurable_ttl_window",
       "bootstrap/tests/test_intents_tool.py::TestClaimTTL::test_fresh_cross_claim_still_blocks",
       "bootstrap/tests/test_intents_tool.py::TestClaimTTL::test_malformed_ts_does_not_crash_or_block",
@@ -1733,6 +1735,8 @@
       "bootstrap/tests/test_incident_trackers_module.py::TestSchemaContract::test_forkable_template_carries_canonical_schema",
       "bootstrap/tests/test_incident_trackers_module.py::TestSchemaContract::test_template_names_resolved_by_three_forms",
       "bootstrap/tests/test_incident_trackers_module.py::TestSchemaContract::test_template_names_three_impact_values",
+      "bootstrap/tests/test_intents_tool.py::TestAutoReleaseQuietOnNoClaims::test_silent_when_no_claims_and_no_identity",
+      "bootstrap/tests/test_intents_tool.py::TestAutoReleaseQuietOnNoClaims::test_still_warns_when_a_live_claim_cannot_be_released",
       "bootstrap/tests/test_intents_tool.py::TestClaimTTL::test_configurable_ttl_window",
       "bootstrap/tests/test_intents_tool.py::TestClaimTTL::test_fresh_cross_claim_still_blocks",
       "bootstrap/tests/test_intents_tool.py::TestClaimTTL::test_malformed_ts_does_not_crash_or_block",
@@ -2653,7 +2657,7 @@
     "templates/modules/default-on/prune_reflections.py": "ae779b8915e3ad67a212b73a56ea553a8c29ac4e3d1a38a7f0091169c747dbde",
     "templates/modules/default-on/verify_stems.py": "035d4438b9c1c760a8c027d6541721575cc11f3385509b18b7a5f71d018ffadd",
     "templates/modules/team-gated/_intent/__init__.py": "452ee35610b087feecedb10d9f8526e9662cec030db7cf9de908923a16d25738",
-    "templates/modules/team-gated/_intent/cli.py": "1562cdbc13881b0fb0036217eadad948793bc547714a0c7d48b169989b4358d7",
+    "templates/modules/team-gated/_intent/cli.py": "ad994ccf0dd4ea6f8714ff7e09eb124107788d44c6774063a8dfe4705224d8aa",
     "templates/modules/team-gated/_intent/conflict.py": "a62ed7d0c2a4018752afd08aeae71e953e806487e0d804802e7d0a9b5837b819",
     "templates/modules/team-gated/_intent/hooks.py": "06f9705a135268c7edd8db9ebc7127aa7df068c46ff64474b0f82af48546fd10",
     "templates/modules/team-gated/_intent/identity.py": "c69880a58162f6ba253d4a0c2a96e3646e5916f13916c06c1c42314228984c70",
@@ -2745,7 +2749,7 @@
   "phase_mutable": {
     "bootstrap/tests/test_intents_tool.py": {
       "governed_by": "phase A intent-split TEST FIXTURE \u2014 _git_repo (+ inline copies) stage the _intent/ package beside the copied facade so the git-hook subprocess tests find the engine; ASSERTIONS UNCHANGED. Governed by collection identity (node-IDs / skip-xfail) + green suite + External-stance review, not a byte hash. Supervised re-anchor, Maintainer-authorized.",
-      "pre_run_sha256": "9214a46373e9274d8407c78a06a51500fb8821b0e8a146e2d0971a7caa34fabf"
+      "pre_run_sha256": "8cd9ec1d5177d516605e2fb7b4783eee55997bf0f50e06f7ae06b4e11d8c8456"
     },
     "templates/modules/default-on/lifecycle_metrics.py": {
       "governed_by": "phase C metrics fold-up \u2014 per-phase AST attestation + External-stance review",
