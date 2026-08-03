@@ -884,3 +884,719 @@ to settle it. It belongs in two places, neither of them here:
   module that no preset selects — is exactly the subject of the
   `gate-claims-vs-enforcement` proposal, which exists to make a
   documented gate name what actually runs it.
+
+## Review -- Claude (Internal, same-agent-type; security lens) -- 2026-08-03
+
+**Model**: Claude Opus 5.
+
+**Standing, stated up front.** This is an *Internal* review: same agent type
+as the author (Claude), fresh session. It carries **no cross-type
+independence**. The threat model I bring is the author's threat model, so a
+blind spot the author has, I probably share. Read this as a second pass that
+can execute and measure, not as the adversarial read the `Plan review` line
+asks for.
+
+**How the "with the patch" figures were produced, and why that matters.**
+No implementing commit exists, so there is nothing to measure. I therefore
+built a scratch reconstruction of the scanner outside the repository
+(nothing was written into the working tree) implementing Change 1 plus the
+Revised-proposal amendment, reading the proposal the way *most favourable*
+to it wherever it is underspecified. The reconstruction lands on the exact
+shapes the proposal states -- **17** ignorable range rows, **18**
+noncharacter rows, a **25**-code-point `_NO_LATIN_TWIN` -- and reproduces
+HEAD's headline figure token for token:
+
+<!-- cairn-accept: homoglyph reason="The scientific tokens in this measured output ARE the finding: the residual false-positive set is the number under review, and rewriting it to ASCII would delete the result. Block-scoped." reviewer="Claude (Internal reviewer)" date=2026-08-03 -->
+```
+$ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python t1_faithfulness.py
+scientific FALSE POSITIVES  HEAD    : 37/42
+scientific FALSE POSITIVES  patched : 5/42
+patched residual set        : ['νmax', 'κeff', 'αlevel', 'ηeff', 'αdecay']
+```
+<!-- cairn-accept-end: homoglyph -->
+
+It is still my reconstruction, not the author's code. So I have anchored the
+two findings that matter -- **[I1]** and **[I2]** -- on contradictions
+*internal to the proposal's own prose*, which hold whatever an executor
+writes. Everything else is flagged for what it is.
+
+All figures below: dated snapshot 2026-08-03, HEAD `af4b2ee`, canonical
+interpreter Python 3.13.13 / UCD 15.1.0.
+
+### Steelman
+
+Defect (a) is real, severe, and correctly diagnosed. I re-ran the reviewer's
+probe and the author's extension: an entire default-ignorable channel passes
+HEAD with zero flags, and the fix is the right *kind* of fix -- adopt a set
+an existing standard already decided must not pass silently, hold it as
+numeric ranges so the scanner still carries none of the code points it
+detects, skip characters an existing pattern id already owns so no
+suppression is invalidated, and **flag rather than rewrite**. I checked the
+one external claim the author flagged as unverifiable and it holds exactly:
+
+```
+$ fetched the published RFC 8264 text from the RFC Editor
+Section 9.13. PrecisIgnorableProperties (M)
+  "M: Default_Ignorable_Code_Point(cp) = True or
+     Noncharacter_Code_Point(cp) = True"
+```
+
+Change 1 is independently landable, as the proposal says, and on the
+evidence below I think it *should* land close to as-drafted.
+
+Defect (b) is also real and the alarm-fatigue argument is the correct
+argument. And the Revised proposal's polarity insight -- that an allowlist
+omission is a silent miss while a denylist omission is a visible false
+positive -- is the single best piece of reasoning in this lifecycle. The
+author found their own falsifier after the External pass had endorsed the
+bound. That is the discipline working.
+
+I also verified three of the proposal's own scoping claims and all three are
+correct. No file outside `content_scan.py` and its tests enumerates the
+pattern ids (`grep -rln "unicode-zero-width" --include="*.md" --include="*.py"
+--include="*.json" --include="*.txt" .` returns four files: the scanner, its
+test module, this proposal, and `planner-line-semantics` in passing --
+`bootstrap/SAFETY.md` and `SECURITY.md` are clean). No sibling in-flight
+proposal claims `content_scan.py` or `test_content_scan.py`. And the
+Response's preset finding reproduces exactly:
+
+```
+$ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python -c "..."
+collaborative-team   11 modules  content-security in roster: False
+high-rigor-legacy    14 modules  content-security in roster: False
+solo-greenfield       6 modules  content-security in roster: False
+```
+
+### Concerns
+
+<!-- cairn-accept: homoglyph reason="Every mixed-script token in this review IS the measurement -- these are the spoofs HEAD catches and the amendment clears, and the scientific tokens whose false-positive count is at issue. Substituting ASCII would delete the finding. Block-scoped, so a homoglyph planted elsewhere in this file still flags." reviewer="Claude (Internal reviewer)" date=2026-08-03 -->
+
+#### [I1] The amendment's denylist reopens spoofs HEAD catches -- including one the proposal itself counts among its five closures. The proposal's own falsifying test fires again.
+
+The proposal states its falsifying criterion:
+
+> **A reviewer produces a spoof that HEAD catches and the patch clears, other
+> than the named `dο` shape.** That is the falsifying test for this whole
+> proposal.
+
+There are at least eighteen, none of them two characters long, and they come
+from a **contradiction between the base proposal and its own amendment**.
+
+The base proposal classifies the non-confusable Greek letters:
+
+> A Greek letter with no Latin twin (`Δ`, `λ`, `σ`, `θ`, `φ`, `ψ`, `β`, `μ`,
+> `Ω`) cannot power a visual spoof **by definition of the threat**, so
+> clearing it costs no detection.
+
+The amendment populates the inverted set differently:
+
+> Replace the 32-entry `_CONFUSABLE_GREEK` allowlist with a ~25-entry
+> `_NO_LATIN_TWIN` **denylist** -- the Greek letters that have no Latin
+> look-alike (Γ Δ Θ Λ Ξ Π Σ Φ Ψ Ω and their lowercase, plus the theta/phi/pi
+> symbol variants)
+
+Thirteen code points are declared *twinned* by the first passage and
+*untwinned* by the second: Γ Θ Λ Ξ Π Σ Φ Ψ and γ δ ξ π ω. Each one is a
+silent clear of a flag HEAD raises:
+
+```
+$ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python -c "..."
+δelete         HEAD=True  amendment=False <-- HEAD flags, amendment CLEARS
+δev            HEAD=True  amendment=False <-- HEAD flags, amendment CLEARS
+keγ            HEAD=True  amendment=False <-- HEAD flags, amendment CLEARS
+γour           HEAD=True  amendment=False <-- HEAD flags, amendment CLEARS
+ωrite          HEAD=True  amendment=False <-- HEAD flags, amendment CLEARS
+ωarn           HEAD=True  amendment=False <-- HEAD flags, amendment CLEARS
+Λogin          HEAD=True  amendment=False <-- HEAD flags, amendment CLEARS
+Πassword       HEAD=True  amendment=False <-- HEAD flags, amendment CLEARS
+Σecret         HEAD=True  amendment=False <-- HEAD flags, amendment CLEARS
+ξfil           HEAD=True  amendment=False <-- HEAD flags, amendment CLEARS
+πost           HEAD=True  amendment=False <-- HEAD flags, amendment CLEARS
+Φile           HEAD=True  amendment=False <-- HEAD flags, amendment CLEARS
+δisregard      HEAD=True  amendment=False <-- HEAD flags, amendment CLEARS
+δo not tell    HEAD=True  amendment=False <-- HEAD flags, amendment CLEARS
+```
+
+`δelete` and `δisregard` are the two most load-bearing: *delete* and
+*disregard* are both literal alternatives in the scanner's own
+`_IMPERATIVE_IN_COMMENT_RE` (`templates/modules/team-gated/content_scan.py`,
+line 186), so this is a substitution that defeats one detector to smuggle a
+string a second detector exists to catch.
+
+Worse, the same 13 code points **reopen a closure the proposal advertises as
+its net-security-gain argument**. The base proposal's maximal-substitution
+sweep names its misses, then says "Clause 1 closes five of those six" and
+reports `missed=['dο']`. Under the amendment's denylist:
+
+```
+$ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python -c "..."
+τοκεη      HEAD=False amendment=True
+εχεϲυτε    HEAD=False amendment=True
+κεγ        HEAD=False amendment=False
+      blocked by _NO_LATIN_TWIN member U+03B3 GREEK SMALL LETTER GAMMA
+αρι        HEAD=False amendment=True
+ροσι       HEAD=False amendment=False
+      blocked by _NO_LATIN_TWIN member U+03C3 GREEK SMALL LETTER SIGMA
+τοϰεη      HEAD=False amendment=True
+```
+
+`κεγ` is one of the five the proposal says clause 1 closes. The amendment
+puts γ into the denylist and closes four, not five, and the maximal sweep's
+missed set is no longer `['dο']` alone.
+
+**The deeper point, and the reason this is not just a curation nit.** The
+amendment's case is:
+
+> The argument is polarity, not curation quality. Both forms are curated
+> lists and both will be incomplete. The difference is what an omission
+> *costs*: from an allowlist, an omission is a **silently missed spoof**;
+> from a denylist, an omission is a **visible false positive** that an
+> adopter reports.
+
+That is true of *omissions* and false of *inclusions*. A denylist
+**entry** is a silent clear, structurally identical to an allowlist
+omission. The amendment inverted the polarity and then put 13 silent clears
+inside the new list -- relative to the base proposal's own classification of
+those same letters. So the failure-open direction was moved, not removed,
+and the claim "it is strictly better than HEAD on both axes" does not hold
+on my set:
+
+```
+$ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python t10_both_sides.py
+GENUINE SPOOFS (caught -- higher is better)
+  family             n     HEAD   favourable   restrictive
+  cyrillic-1sub      7     7      7            7
+  greek-1sub         14    14     14           14
+  greek-variant      3     3      3            3
+  greek-archaic      5     5      5            5
+  greek-precomp      3     3      3            3
+  whole-greek        6     0      4            4
+  gamma/omega        5     5      0            0
+  whole-cyrillic     5     0      5            0
+  whole-fullwidth    3     0      3            0
+  TOTAL              51    37     44           36
+```
+
+Under the restrictive reading of clause 1 (see **[I2]**) the amendment
+catches **36 of 51** where HEAD catches **37** -- a net detection loss. Under
+the favourable reading it is 44, a real gain, but still loses the
+`gamma/omega` column outright.
+
+**What I am not claiming.** I am not asserting a typographic verdict on
+whether δ, γ, ω, Λ, Π, Σ have adequate ASCII twins. I do not need to: the
+proposal answered that question one way and its amendment answered it the
+other way, and the plan cannot execute both. My set is hand-built by me and
+inherits the same non-completeness the author names for theirs.
+
+**Suggested disposition.** Re-derive `_NO_LATIN_TWIN` from the base
+proposal's own classification rather than from a fresh enumeration, i.e.
+seed it with exactly `Δ λ σ θ φ ψ β μ Ω` plus the symbol variants of those,
+and justify any *addition* individually against the ASCII alphabet. Then
+re-run the maximal-substitution sweep and re-state the `missed=` set, since
+`κεγ` and `ροσι` move.
+
+#### [I2] Clause 1's confusability predicate is undefined outside Greek, and the two readings cannot both be true -- one of them contradicts the "0 files change" corpus measurement.
+
+Clause 1 is stated script-generally:
+
+> **Whole-script confusable** -- the token has no Latin characters, has at
+> least three letters, and *every* letter has an ASCII-Latin look-alike.
+> This closes a pre-existing hole (below).
+
+But the only confusability pivot the proposal defines -- `_CONFUSABLE_GREEK`,
+then `_NO_LATIN_TWIN` -- is **Greek-only**. `_SCRIPT_RANGES`
+(`templates/modules/team-gated/content_scan.py`, line 156) carries five other
+scripts, and for those the predicate is never specified. The two readings
+diverge sharply, and the divergence lands on the classic vector:
+
+```
+$ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python t3_clause1_scope.py
+token                  ascii      HEAD   favourable   restrictive
+--- CYRILLIC ---
+ехесуте                execute    False  True         False
+ассеѕѕ                 access     False  True         False
+роѕт                   post       False  True         False
+--- FULLWIDTH ---
+ｐａｓｓｗｏｒｄ               password   False  True         False
+ａｄｍｉｎ                  admin      False  True         False
+--- GREEK ---
+τοκεη                  token      False  True         True
+
+scripts seen by _token_scripts:
+   ехесуте        -> ['cyrillic']
+   ｐａｓｓｗｏｒｄ       -> ['fullwidth-latin']
+```
+
+Whole-script **Cyrillic** substitution is the single most available
+homoglyph attack -- Cyrillic supplies near-complete ASCII look-alikes, and
+this repository has a *live demonstrated instance* of the Cyrillic vector in
+the `identity-not-name` lineage. It passes HEAD, and under the restrictive
+reading it passes the patch too. The proposal's whole "what Change 2 also
+fixes, unasked" section, and its `34/40 -> 39/40` sweep, are measured over
+**Greek substitutions only** -- every token in the `missed=` list is Greek.
+The Cyrillic instance of the same hole was never measured in either
+direction.
+
+**And the readings are not free to choose, because one of them breaks the
+corpus claim.** The proposal asserts:
+
+> File-by-file comparison of the full flag set (pattern id and line number)
+> across all **218** tracked `.md` files: the number of files whose flag set
+> changes is **0** under the proposal as written, and **0** under the
+> amendment.
+
+Under the favourable (script-general) reading that is not true, at HEAD or at
+the author's own snapshot commit:
+
+```
+$ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python t6_corpus.py
+tracked .md               : 218
+tracked .md/.txt/.py      : 434
+
+files raising a NEW unicode-ignorable flag : 0
+
+tracked .md files whose flag set CHANGES   : 1
+    dev/proposals/2026-08-03-claude-byline-classification.md lost= [] gained= [('homoglyph', 575), ('homoglyph', 576), ('homoglyph', 921)]
+```
+
+```
+$ git show 292e2c6:dev/proposals/2026-08-03-claude-byline-classification.md > byline_at_292e2c6.md
+$ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python -c "..."
+at 292e2c6, that one file: HEAD flags=0 patched flags=2
+gained: [('homoglyph', 575), ('homoglyph', 576)]
+```
+
+The newly-flagged tokens are a **person's name**:
+
+```
+line 575
+  HEAD   : []
+  patched: [('homoglyph', "mixed-script token (possible homoglyph): 'Ольга'")]
+  restrictive-reading clause1 on that token:
+      'Ольга' favourable=True restrictive=False
+      'Иванова' favourable=True restrictive=False
+```
+
+So either (a) the executor implements clause 1 script-generally, it does
+close whole-script Cyrillic, and the corpus prediction is wrong -- which
+trips the proposal's own tripwire, "**`scripts/check_cairn.py` flag count
+moves at all.** Predicted delta is zero. Any movement means the corpus
+comparison was wrong"; or (b) the executor implements it Greek-only, the
+corpus prediction holds, and clause 1 does *not* close the whole-script hole
+for the script that matters most -- in which case the sentence "This closes
+a pre-existing hole" should say "for Greek".
+
+Since the author measured 0 and I measure 1, the author's unwritten
+implementation is almost certainly reading (b). That is a defensible choice;
+it is just not the choice the proposal's prose describes.
+
+**Sibling-proposal interaction, which is what makes reading (a) expensive.**
+The file that gains those flags is `byline-classification`, an in-flight
+Theme-3 sibling whose headline claim is:
+
+> **International-name cost: zero, and this is the claim most worth
+> checking.** Against the 23-name corpus, each rostered under its own name:
+> proposed design flags **0 of 23**
+
+Clause 1, read script-generally, flags the very sentence in which that claim
+is stated. The two proposals in the same batch pull in opposite directions on
+the same object -- a non-Latin proper noun in an otherwise-English document.
+That case is not covered by the proposal's stated out-of-scope note, which
+scopes only to a whole repository in another language: "a Greek- or
+Russian-language repository would see clause 1 misfire, and Cairn's doctrine
+and templates are English."
+
+**Suggested disposition.** The plan must state the clause-1 predicate for
+each script in `_SCRIPT_RANGES`, and re-measure both axes under whichever it
+picks. If it picks Greek-only, say so in the clause text and in the module
+doc. If it picks script-general, the ≥3-letter whole-script rule needs an
+answer for legitimate non-Latin proper nouns before it ships -- and note
+that under reading (b) `whole-fullwidth` also stays open (3 of 3 missed
+above), which is a pure-loss case with no natural-language cost at all.
+
+<!-- cairn-accept-end: homoglyph -->
+
+#### [I3] Change 1 puts one suppressible pattern id over both the benign-and-common and the never-benign. A reasonable accept marker for an emoji then silently clears a Tag-block payload.
+
+This is a **new failure mode the proposal does not name**. Suppression in
+this scanner is per-`(pattern_id, line)` and supports block scope
+(`templates/modules/team-gated/content_scan.py`, line 240 onward). The
+proposal routes the whole PRECIS set through a single id and then *directs
+adopters to the marker* as the designed remedy for the benign case:
+
+> **An adopter reports a legitimate document that now flags
+> `unicode-ignorable` and cannot reasonably be rewritten** -- most plausibly
+> an emoji sequence using a variation selector or a regional-tag flag.
+> Recovery: an inline `cairn-accept` marker is the designed answer
+
+Measured on my reconstruction:
+
+```
+$ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python t4_conflation.py
+=== A. baseline: the detector works ===
+tag-block payload, no marker                   -> 1 flag(s): ['unicode-ignorable']
+      line 2 [unicode-ignorable] default-ignorable / noncharacter code point U+E0069 (TAG LATIN SMALL LETTER I)
+
+=== B. an adopter suppresses a BENIGN emoji variation selector ===
+benign block, marker present                   -> 0 flag(s): []
+
+=== C. the SAME block, with a tag-block payload planted inside it ===
+SAME marker, tag payload inside the block      -> 0 flag(s): []
+```
+
+Case C is a block-scoped `cairn-accept: unicode-ignorable` written in good
+faith for a markdown status table containing `✔️` and `✖️` (U+2714/U+2716
+plus VARIATION SELECTOR-16). It silences a 57-code-point Tag-block
+prompt-injection payload planted between the rows. Zero flags.
+
+Two amplifiers, same run:
+
+```
+=== D. same-line masking: which character does the message name? ===
+VS16 first, tag payload later on the SAME line -> 1 flag(s): ['unicode-ignorable']
+      line 1 [unicode-ignorable] default-ignorable / noncharacter code point U+FE0F (VARIATION SELECTOR-16)
+
+=== E. how many raw characters is the reviewer being pointed at? ===
+    tag-block payload length (code points): 57
+    flags raised for it                    : 1
+```
+
+The detector reports once per line (the shape the proposal explicitly adopts:
+"reported once, under the existing id"), so a benign VS16 earlier on the line
+*masks* the payload -- the human reads `VARIATION SELECTOR-16`, recognises it
+as an emoji artifact, and moves on. And a 57-character shadow-alphabet
+payload produces exactly one flag naming one character, with no count.
+
+This is the proposal's own alarm-fatigue argument, reproduced inside its own
+new detector: "The predictable adaptation is to stop reading `homoglyph`
+output, which is exactly how the real Cyrillic substitution gets through."
+
+**Suggested disposition**, both cheap and inside the fence:
+
+1. **Split the id.** The Tag block (U+E0000-E007F) has no legitimate use in
+   agent-loaded Markdown outside emoji tag sequences; U+FE00-FE0F does. Give
+   the Tag block its own pattern id (e.g. `unicode-tag`) so an accept marker
+   for the common benign case cannot bless the never-benign one. This is one
+   extra id, not a new mechanism.
+2. **Put the count and the distinct code points in the message**, not just
+   the first character's name -- "3 default-ignorable code points on this
+   line: U+FE0F, U+E0069 x2" tells a reviewer which of the two situations
+   they are in. This also removes the same-line masking in D.
+
+#### [I4] The proposed drift sentinel guards a set disjoint from six of the seventeen rows it is supposed to guard. I can name the future state in which it passes anyway.
+
+Tests required #3, and its invariant row:
+
+> The ignorable constant covers every `Cf` code point in the running
+> interpreter's UCD, minus the documented exclusions | new test computing the
+> set from `unicodedata` and asserting the uncovered set is empty -- **this is
+> the invariant that catches a future UCD drift**
+
+and the evidence claim:
+
+> **The ignorable constant is complete against the shipped interpreter's
+> Unicode**: every `Cf`-category code point in UCD 15.1.0 ... falls inside the
+> 17 hard-coded ranges.
+
+`Default_Ignorable_Code_Point` is not general category `Cf`. Large parts of
+it are `Mn` and `Lo`:
+
+```
+$ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python t5_sentinel.py
+unicodedata.unidata_version = 15.1.0
+Default_Ignorable members that category 'Cf' does NOT reach:
+  cp        cat    in-table name
+  U+0034F  Mn     True     COMBINING GRAPHEME JOINER
+  U+0115F  Lo     True     HANGUL CHOSEONG FILLER
+  U+01160  Lo     True     HANGUL JUNGSEONG FILLER
+  U+017B4  Mn     True     KHMER VOWEL INHERENT AQ
+  U+017B5  Mn     True     KHMER VOWEL INHERENT AA
+  U+03164  Lo     True     HANGUL FILLER
+  U+0FE00  Mn     True     VARIATION SELECTOR-1
+  U+0FE0F  Mn     True     VARIATION SELECTOR-16
+  U+0FFA0  Lo     True     HALFWIDTH HANGUL FILLER
+  U+E0100  Mn     True     VARIATION SELECTOR-17
+
+of the 10 sampled Default_Ignorable code points, 0 are category Cf
+```
+
+So: delete any of six whole rows from the constant and the sentinel still
+reports an empty uncovered set.
+
+```
+$ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python t5b_sentinel.py
+A. the sentinel against the FULL table (the proposal's measurement):
+   uncovered Cf set: [] -> PASSES
+B. drop row U+FE00-U+FE0F (VARIATION SELECTOR-1):
+     sentinel uncovered Cf set : [] -> PASSES
+     but that code point is now detected: False
+B. drop row U+034F-U+034F (COMBINING GRAPHEME JOINER):
+     sentinel uncovered Cf set : [] -> PASSES
+     but that code point is now detected: False
+B. drop row U+115F-U+1160 (HANGUL CHOSEONG FILLER):
+     sentinel uncovered Cf set : [] -> PASSES
+     but that code point is now detected: False
+B. drop row U+3164-U+3164 (HANGUL FILLER):
+     sentinel uncovered Cf set : [] -> PASSES
+     but that code point is now detected: False
+B. drop row U+17B4-U+17B5 (KHMER VOWEL INHERENT AQ):
+     sentinel uncovered Cf set : [] -> PASSES
+     but that code point is now detected: False
+B. drop row U+FFA0-U+FFA0 (HALFWIDTH HANGUL FILLER):
+     sentinel uncovered Cf set : [] -> PASSES
+     but that code point is now detected: False
+```
+
+The named future state: **a future UCD adds a default-ignorable code point of
+category `Mn` or `Lo` outside the frozen ranges.** That is precisely where
+Unicode has added them before -- the Variation Selectors Supplement
+(U+E0100-E01EF, `Mn`) and the Khmer inherent vowels (`Mn`). The sentinel
+passes and the constant is silently short. And this is not academic: U+3164
+HANGUL FILLER is `Lo`, so `re`'s `\w` treats it as a *letter*, meaning it
+sits inside a word and does not even split the token. My boundary sweep
+confirms both the Hangul filler and the combining grapheme joiner are caught
+today only because the rows happen to be there:
+
+```
+  hangul filler in word      HEAD=[]                       patched=['unicode-ignorable']
+  CGJ in word                HEAD=[]                       patched=['unicode-ignorable']
+```
+
+`unicodedata` does not expose `Default_Ignorable_Code_Point`, which is
+presumably why `Cf` was chosen -- so the honest stdlib-only fix is to keep
+the `Cf` sweep *and* add an explicit positive assertion over the ~30 known
+non-`Cf` members, so a deleted row fails loudly. Zero dependencies, one
+table.
+
+The evidence sentence should also be narrowed: "complete against the shipped
+interpreter's Unicode" is claimed for `Default_Ignorable ∪ Noncharacter` and
+measured over `Cf`.
+
+#### [I5] Tests required #7 cannot fail. It is the vacuous-guard shape.
+
+> 7. `scan_text` leaves its input unmodified.
+
+backing the invariant "The scanner never modifies the text it scans". Python
+`str` is immutable, so no implementation of `scan_text` can mutate a caller's
+string -- the assertion holds for a scanner that strips ignorables, which is
+exactly the behaviour the proposal forbids most emphatically ("Rejected
+outright and on principle ... Detect and fail").
+
+```
+$ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python t9_vacuous.py
+test #7 as specified, run against a scanner that DOES rewrite:
+  input unchanged after the call : True -> test PASSES
+  str is immutable               : str -- no implementation can mutate a caller's str
+
+the half with teeth -- does scan_file leave the FILE alone?
+  file bytes unchanged after scan_file: True   <- this assertion CAN fail; #7 cannot
+```
+
+The testable half of that invariant is `scan_file`: assert the file's bytes
+are unchanged after a scan. Swap #7 for that, or keep both.
+
+#### [I6] Performance is not merely unbenchmarked -- the naive implementation is ~33x the existing invisible-character pass, against a fail-closed wall-clock budget.
+
+The proposal characterises the cost as:
+
+> The scanner gains two range-table lookups per character; the corpus runs
+> above completed in seconds over ~508k tokens, but I did not benchmark it
+> and do not claim a number.
+
+It is up to 35 range comparisons per character (17 + 18 rows), and the
+obvious implementation dominates the whole scan:
+
+```
+$ PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python t8_perf_split.py
+per-detector, same corpus (30314 lines):
+  HEAD    _scan_unicode        : 0.071 s
+  patched _scan_unicode        : 0.071 s
+  patched _scan_ignorable      : 2.343 s
+  HEAD    _scan_homoglyph      : 0.193 s
+  patched _scan_homoglyph      : 0.290 s
+
+lowest code point in the two tables: U+00AD
+  patched _scan_ignorable+guard: 0.040 s
+  guarded variant agrees with unguarded: True (both 0 flags)
+```
+
+Whole-`scan_text` on a 2.0 MB corpus: 0.365 s at HEAD, 2.814 s patched --
+**7.7x**. This matters because `content_scan_runner.py` enforces
+`_MAX_WALL_SECONDS = 120.0` (line 83) and a breach is a **fail-closed exit
+2**, not a slow pass -- the runner's own docstring: "A per-file or aggregate
+breach is a distinct LOUD failure (exit 2), never a skip." A 7.7x regression
+converts some large adopter trees from "scan clean" to "scan could not be
+trusted to have run".
+
+The fix is one line and I verified it produces byte-identical flags: every
+code point in both tables is ≥ U+00AD, so `if ch < "­": continue`
+short-circuits all ASCII and lands at 0.040 s -- *below* HEAD's existing
+unicode pass. The plan should carry this guard and a one-number benchmark.
+
+#### [I7] Two carried-forward figures are stale; one of them is the list the module doc is told to publish.
+
+<!-- cairn-accept: homoglyph reason="The two named scientific tokens ARE the finding -- they are the residual-list entries that the amendment silently clears, and naming them in ASCII would delete the result. Block-scoped." reviewer="Claude (Internal reviewer)" date=2026-08-03 -->
+* The amendment states "On the proposal's own 42-token set the amendment is
+  7/42 -- **identical to the proposal as written**." Under the amendment's own
+  enumerated denylist it is **5/42**, because γ and ω move to the
+  non-confusable side and `γray` and `ωopt` clear (t1 output above). The
+  *Documentation / doctrine surface* section commits the module doc to
+  "the seven residual shapes that still flag" -- that list is now five, and
+  publishing seven would document two limits that do not exist. This is the
+  benign-direction shadow of **[I1]**: the same 13-code-point disagreement,
+  showing up on the false-positive axis. Whichever way [I1] resolves, this
+  number must be re-measured rather than carried.
+* "the detector run across all **423** tracked `.md` / `.txt` / `.py` files"
+  -- the tree holds **434** as_of 2026-08-03 (t6 output above). The
+  conclusion is unaffected: I reproduce **0** new `unicode-ignorable` flags
+  across all 434, which independently confirms the proposal's central
+  no-cost claim for Change 1.
+<!-- cairn-accept-end: homoglyph -->
+
+#### Where the Maintainer's default-security direction lands
+
+The Response is right that the preset-roster question belongs in its own
+proposal, and I reproduced its preset figures exactly. But the direction
+changes the *severity ordering* of everything above, and that is decision-
+relevant here. Today `content-security` reaches an adopter only by hand, so
+[I2]'s non-Latin-name flagging, [I3]'s conflated suppression id, and [I6]'s
+fail-closed budget cost are hypothetical. Under "change the default security
+stance for all installations" they become shipped default behaviour for every
+adopter -- including the many scientists whose names, collaborators, and
+citations are not Latin-script. [I2]'s out-of-scope note ("Cairn's doctrine
+and templates are English") is a reasonable scoping decision for an opt-in
+module and a much weaker one for a default. I would not hold this proposal
+for the roster change, but I would settle [I2] and [I3] *before* the roster
+change lands, not after.
+
+### Covered
+
+Each lens, with the command that swept it. All commands run under
+`PYTHONDONTWRITEBYTECODE=1 ~/conda_envs/lhm/bin/python` from a scratch
+directory outside the repository; nothing was written into the working tree.
+
+1. **Faithfulness of my reconstruction** -- `t1_faithfulness.py`; reproduces
+   HEAD 37/42 exactly and the proposal's stated 17/18/25 table sizes.
+2. **Both required token sets, both directions** -- `t10_both_sides.py`;
+   scientific 42-token set *and* a 51-token spoof set across nine families,
+   HEAD vs patch vs patch-under-the-other-reading. Counts reported in
+   **[I1]**.
+3. **The narrowed rule vs genuine spoofs, per code point** -- the δ/γ/ω/Λ/Π/Σ
+   sweep in **[I1]**, and the whole-Greek maximal-substitution replay.
+4. **Clause-1 scope across every script in `_SCRIPT_RANGES`** --
+   `t3_clause1_scope.py`.
+5. **Corpus regression, read-only, over the real tree** -- `t6_corpus.py`
+   (all 218 tracked `.md`, all 434 tracked `.md`/`.txt`/`.py`), plus a replay
+   of the one changing file at the author's own snapshot commit `292e2c6` via
+   `git show` into scratch.
+6. **New failure modes from the suppression grammar** -- `t4_conflation.py`.
+7. **Test vacuity** -- `t9_vacuous.py`, plus a read of each of the ten
+   *Tests required* items against "name a future state in which it fails".
+8. **Drift-sentinel oracle** -- `t5_sentinel.py` and `t5b_sentinel.py`.
+9. **Boundaries** -- `t7_perf_bounds.py`: empty string, single newline,
+   one ASCII char, one Greek char, one Tag char, digits-only, BOM-only,
+   BOM + prose, BOM mid-file, underscore-joined token, invisible-inside-word
+   (Hangul filler, CGJ), 10 000 ignorables on one line, and at file level
+   empty file, symlink, invalid UTF-8, missing file. Only intended
+   differences appeared; `scan_file` still propagates `FileNotFoundError`
+   unchanged.
+10. **Performance against the runner's fail-closed budget** --
+    `t8_perf_split.py`, and a read of `content_scan_runner.py` line 83.
+11. **Residual-baseline interaction** -- read `_flag_fingerprint`
+    (`templates/modules/team-gated/content_scan_runner.py`, line 291): the
+    fingerprint is `relpath:pattern_id:sha256(stripped line)[:12]`, so a
+    changed flag *message* does not churn a fingerprint. The proposal's
+    "no existing ... residual fingerprint is invalidated" claim for Change 1
+    holds. The shipped `content_scan_residuals.txt` is empty, so no adopter
+    ships a homoglyph fingerprint that Change 2 could strand at exit 3.
+12. **Blast radius outside the named files** -- `grep -rln` for the pattern
+    ids; only the scanner, its tests, and two proposals. `bootstrap/SAFETY.md`
+    and `SECURITY.md` are clean, as the proposal claims.
+13. **Sibling file collisions** -- swept every open proposal's `Touches`
+    line; none claims `content_scan.py` or `test_content_scan.py`. The
+    conflict I did find is content-level, with `byline-classification`
+    (**[I2]**).
+14. **The RFC citation the proposal left unverified** -- fetched RFC 8264;
+    § 9.13 `PrecisIgnorableProperties` and its definition match exactly. That
+    plan obligation can be closed.
+15. **The Response's preset claim** -- re-expanded all three presets through
+    `bootstrap/_scaffold/config.py`; 6 / 11 / 14, none selecting
+    `content-security`. Confirmed, not disputed.
+
+### Not covered / low confidence
+
+* **No cross-type independence.** I am Claude reviewing Claude. The
+  `Plan review` line asks for "an adversarial read by a different agent type
+  or a human" precisely because a same-type reviewer shares the author's
+  threat model. Nothing below the level of "run it and measure" should be
+  taken as independent here -- in particular, my *spoof set is my own
+  construction* and inherits the same non-completeness the author names for
+  theirs. If my imagination and the author's overlap, we both missed the same
+  vector.
+* **Every "with the patch" number is against my reconstruction**, not the
+  author's implementation, which does not exist. Where my reconstruction and
+  the author's numbers disagree ([I2]'s 1-file delta, [I7]'s 5-vs-7), the
+  disagreement is *evidence about the specification's ambiguity*, and I have
+  said which reading produces which. **[I1]** and **[I7]** do not depend on my
+  code -- they are contradictions between two passages of the proposal.
+* **`vermin` / the ≥3.11 floor: still unrun.** Not installed here either. It
+  stays a plan obligation exactly as the proposal and the External pass left
+  it.
+* **`python -m pytest bootstrap/tests`: not run.** Another session is live in
+  this tree and I wrote nothing into it, so the `1556 passed` baseline, the
+  `scripts/check_cairn.py` end-to-end run, and the `test_content_scan.py`
+  replay all remain plan obligations. My corpus work was read-only.
+* **Bandit over the patched file: not run.** The author reports clean at
+  their scratch copy; I did not reproduce it.
+* **My performance numbers are for one plausible implementation**, on one
+  machine, single-run-best-of-three. A different executor writing a
+  bisect-based or precomputed-set lookup gets a different constant. What I do
+  claim is that the *naive* implementation is 7.7x and the guard fixes it.
+* **Typography.** I deliberately do not adjudicate whether δ, γ, ω, Λ, Π, Σ
+  have adequate ASCII twins. I show only that the proposal and its amendment
+  answer that question differently, and what each answer costs.
+* **UTS #39 confusables data: not consulted.** I could not verify the
+  curated set against the real confusables table, so I cannot bound how many
+  further omissions either polarity carries.
+* **Not examined**: the scaffold/install contract, the AST attestation
+  baseline, the lockfile, the fidelity manifest. I accepted the proposal's
+  "no engine change, therefore no re-anchor obligation" claim without
+  independently testing it.
+* **Not examined**: whether the module doc rewrite lands correctly, since it
+  does not exist yet.
+
+### Second-round recommendation
+
+**Recommended -- and specifically, an External round scoped to Change 2
+only.** Reasons:
+
+1. **Change 1 and Change 2 have diverged in maturity.** Change 1 survived
+   everything I threw at it: the PRECIS citation is exact, the corpus cost is
+   genuinely zero across 434 files, the boundaries hold, and its two
+   remaining defects (**[I3]**, **[I4]**, plus **[I6]**) are additive fixes
+   with named one-line or one-table remedies. The proposal already names
+   Change 1 as independently landable. I would take that split: land Change 1
+   with [I3]/[I4]/[I6] folded in, and let Change 2 take another round.
+2. **Change 2's falsifying test has now fired twice, for the same reason both
+   times** -- a curated set was asserted rather than swept. Round one found
+   15 bypasses in an allowlist; this round finds 13 silent clears in the
+   denylist that replaced it, including one that reopens a closure the
+   proposal counts among its five. A third assertion of a hand-curated set
+   should not be accepted without an adversarial sweep by someone who did not
+   write it.
+3. **[I2] is a specification hole, not a bug**, and it cannot be closed by
+   measurement alone -- it needs a decision about non-Latin proper nouns that
+   trades directly against a sibling proposal's headline claim, under a
+   Maintainer direction that is about to make the module a default. That is a
+   Maintainer call informed by an independent read, not an author call.
+4. **The External tier has not yet been exercised on the half that removes
+   flags.** The Response already established that all three of the External
+   pass's swept lenses ran the scanner *at HEAD*, so no reviewer has yet
+   executed the narrowed rule adversarially except the author and now me --
+   and I am the same agent type. The tier the `Plan review` line asks for has
+   effectively not happened for Change 2.
+
+If the Maintainer prefers a single round over a split: hold the whole
+proposal, resolve **[I1]** and **[I2]** in a further revision with both token
+sets re-measured, and send it back to External. I would not send Change 2 to
+a plan on the current numbers.
