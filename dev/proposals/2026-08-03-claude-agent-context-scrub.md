@@ -5,7 +5,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: revised
+**Status**: accepted
 **Touches**: `tools/lifecycle.py` and its byte-identical twin
 `templates/skills/_lib/lifecycle.py`; `bootstrap/tests/test_skills_security.py`;
 one bullet in `SECURITY.md`; a re-record of the `tools/lifecycle.py` row in
@@ -804,7 +804,7 @@ All commands executed in throwaway git repos under `/tmp` using canonical interp
 * **Code Edits & Lockfile Update:** The proposal code edits have not been written to `tools/lifecycle.py` or `templates/skills/_lib/lifecycle.py` yet; all reproductions were run against un-patched `tools/lifecycle.py` in temporary scratch repositories.
 * **Model Prompt Injection Vulnerability:** No LLM inference benchmark was run to test model compliance with printable single-line prompt injections; the distinction between channel escaping and semantic safety relies on theoretical prompt injection boundaries.
 
-## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
+## Decision (placeholder -- superseded by the Decision at the end of this file)
 
 *(Awaiting the Maintainer. The proposal has cleared External Security Review. The Maintainer may accept the proposal to proceed with plan creation.)*
 
@@ -1712,3 +1712,27 @@ sequencing and test quality* rather than the table. That is not an argument for
 lowering the tier — it is an argument that the External reviewer should be
 pointed at the ordering and the residual-disclosure surface rather than at the
 table, which two same-type sessions have now swept exhaustively and agree on.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-03
+
+**Accepted, as revised.** Scribed by Claude (Strategy) at the Maintainer's
+explicit instruction.
+
+**Maintainer's authorization (verbatim):**
+
+> I approve each of the seven proposals that you have listed as ready to accept,
+> as revised.
+
+The seven were presented as a ledger with a per-proposal recommendation; this is
+one of them. The authorization is quoted rather than paraphrased, per the
+scribing guard-rail: a paraphrase admits semantic drift, condition-softening, or
+a hallucinated approval.
+
+**Scribe-coupling disclosure.** The scribe is the proposal's author. That is the
+weaker configuration -- the party whose work was reviewed transcribes the ruling
+on it. Mitigations: the authorization is quoted verbatim, and this commit carries
+the Decision only.
+
+**Ordering.** Its recorded landing order against `planner-line-semantics` on the
+shared `tools/lifecycle.py` surface stands; the sanitizer and the line-split are
+behaviourally order-sensitive.
