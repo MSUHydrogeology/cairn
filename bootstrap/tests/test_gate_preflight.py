@@ -13,6 +13,7 @@ a test claiming otherwise is worse than no test (security review SR7 / SR10):
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -628,3 +629,103 @@ class TestGitConfigCannotSteerTheChecker:
         _write(repo, "d/naïve.txt", "y\n")
         _run("git", "add", "-A", cwd=repo)
         assert "d/naïve.txt" in P._index_entries(repo=repo)
+
+
+# --------------------------------------------------------------------------
+# the evidence stage (Chunk B) -- non-authoritative, and honest about it
+# --------------------------------------------------------------------------
+
+_STUB_PRODUCER = '''\
+import json, os, sys
+json.dump({"frozen_files": {"a.py": "sha256:aa"},
+           "collection": {"node_count": 1, "node_ids": ["a.py::t"]},
+           "saw_dot_git": os.path.isdir(".git"),
+           "saw_home": os.environ.get("HOME", "")},
+          sys.stdout, indent=2, sort_keys=True)
+sys.stdout.write("\\n")
+'''
+
+
+def _evidence_repo(tmp_path: Path, producer: str = _STUB_PRODUCER) -> Path:
+    """A repo whose `_gate_manifest.py produce` is a fast stub.
+
+    The real producer runs a full pytest collection; these tests exercise the
+    stage's orchestration, not pytest.
+    """
+    repo = _repo(tmp_path)
+    _write(repo, "bootstrap/tests/_gate_manifest.py", producer)
+    _commit(repo, "stub producer")
+    return repo
+
+
+class TestEvidenceStage:
+    def test_artifact_round_trips_and_binds_to_the_candidate(self, tmp_path):
+        repo = _evidence_repo(tmp_path)
+        head = _run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip()
+        art = P.gather_evidence("HEAD", repo=repo, out=__import__("io").StringIO())
+        assert art["candidate_sha"] == head
+        assert art["schema"] == P.EVIDENCE_SCHEMA
+        parsed = P.parse_evidence(json.dumps(art))
+        report = P.Report()
+        P.check_evidence(parsed, head, report)
+        assert _findings(report, "EVIDENCE") == []
+
+    def test_candidate_tree_is_materialized_without_a_git_directory(self,
+                                                                    tmp_path):
+        repo = _evidence_repo(tmp_path)
+        art = P.gather_evidence("HEAD", repo=repo, out=__import__("io").StringIO())
+        assert art["manifest"]["saw_dot_git"] is False, (
+            "the producer must run against a repository-less tree")
+
+    def test_environment_is_scrubbed_for_the_producer(self, tmp_path):
+        repo = _evidence_repo(tmp_path)
+        art = P.gather_evidence("HEAD", repo=repo, out=__import__("io").StringIO())
+        assert art["manifest"]["saw_home"] != str(Path.home()), (
+            "HOME must be redirected away from the real home directory")
+
+    def test_residual_is_printed_and_claims_no_containment(self, tmp_path):
+        repo = _evidence_repo(tmp_path)
+        buf = __import__("io").StringIO()
+        P.gather_evidence("HEAD", repo=repo, out=buf)
+        printed = buf.getvalue()
+        assert "EXECUTES CANDIDATE CODE" in printed
+        assert "NOT containment" in printed
+        for claim in ("filesystem access", "process creation", "network access"):
+            assert claim in printed, f"residual must name {claim}"
+
+    def test_producer_failure_is_fail_closed(self, tmp_path):
+        repo = _evidence_repo(tmp_path, "import sys; sys.exit(3)\n")
+        with pytest.raises(P.PreflightError, match="manifest producer failed"):
+            P.gather_evidence("HEAD", repo=repo,
+                              out=__import__("io").StringIO())
+
+    def test_producer_emitting_non_json_is_fail_closed(self, tmp_path):
+        repo = _evidence_repo(tmp_path, "print('not json')\n")
+        with pytest.raises(P.PreflightError, match="invalid JSON"):
+            P.gather_evidence("HEAD", repo=repo,
+                              out=__import__("io").StringIO())
+
+    def test_the_operator_facing_residual_makes_no_containment_claim(self):
+        """Security review SR7, asserted where it actually bites.
+
+        A file-wide prose lint was tried first and removed: it produced three
+        false positives in a row -- on the ordinary verb "contain", on a wrapped
+        comment that *denies* containment, and finally on this test's own name --
+        and zero true positives. A grep over prose cannot distinguish a claim
+        from a denial of one, and a guard that cries wolf gets bypassed, which is
+        the failure mode this plan already lists under "Signals the change is
+        wrong". So the property is asserted against the text the operator
+        actually reads, which is where a false claim would do the damage.
+        """
+        residual = P._EVIDENCE_RESIDUAL
+        assert "NOT containment" in residual
+        assert "EXECUTES CANDIDATE CODE" in residual
+        for named in ("filesystem access", "process creation", "network access"):
+            assert named in residual, f"the residual must name {named}"
+        # No sentence in the operator-facing text may assert containment.
+        for sentence in re.split(r"(?<=[.:])\s+", residual):
+            low = " ".join(sentence.lower().split())
+            if "containment" in low or "contained" in low:
+                assert "not containment" in low, (
+                    f"residual sentence may read as a containment claim: "
+                    f"{sentence.strip()!r}")

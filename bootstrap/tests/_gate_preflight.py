@@ -35,6 +35,7 @@ import json
 import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -72,6 +73,10 @@ EVIDENCE_SCHEMA = 1
 _READ_ONLY_GIT = frozenset({
     "rev-parse", "rev-list", "log", "show", "cat-file", "ls-files",
     "diff", "merge-base", "for-each-ref", "status",
+    # `archive` reads objects and writes only to a caller-chosen path; callers
+    # here always target a temp directory outside the repository. It mutates no
+    # repository state, which is the property this allowlist encodes.
+    "archive",
 })
 
 #: Config pinned on **every** git invocation, so the checker's reading of the
@@ -127,7 +132,8 @@ class Report:
 # --------------------------------------------------------------------------
 
 def _git(*args: str, repo: Path = _REPO,
-         config: dict[str, str] | None = None) -> subprocess.CompletedProcess:
+         config: dict[str, str] | None = None,
+         want_bytes: bool = False) -> subprocess.CompletedProcess:
     """Run a **read-only** git subcommand. Refuses anything not allowlisted.
 
     This is the enforcement point for the read-only invariant: a future edit that
@@ -148,7 +154,7 @@ def _git(*args: str, repo: Path = _REPO,
     for key, value in merged.items():
         overrides += ["-c", f"{key}={value}"]
     return subprocess.run(["git", "-C", str(repo), *overrides, *args],
-                          capture_output=True, text=True, check=False)
+                          capture_output=True, text=not want_bytes, check=False)
 
 
 def _resolve(ref: str, *, repo: Path = _REPO) -> str:
@@ -164,8 +170,14 @@ def _resolve(ref: str, *, repo: Path = _REPO) -> str:
 
 
 def _blob_at(sha: str, rel: str, *, repo: Path = _REPO) -> bytes | None:
-    p = subprocess.run(["git", "-C", str(repo), "show", f"{sha}:{rel}"],
-                       capture_output=True, check=False)
+    """Read a blob from an immutable commit, as bytes.
+
+    Routed through :func:`_git` rather than calling ``subprocess`` directly:
+    an escape hatch here would quietly falsify the module's claim that *every*
+    git invocation passes the read-only guard, which is the property the
+    invariant test asserts.
+    """
+    p = _git("show", f"{sha}:{rel}", repo=repo, want_bytes=True)
     return p.stdout if p.returncode == 0 else None
 
 
@@ -513,6 +525,86 @@ def check_authority_modules(anchor: str, report: Report, *,
 # the evidence artifact (plan finding GPR3) -- parsed fail-closed
 # --------------------------------------------------------------------------
 
+#: Printed by the evidence stage, every run. Deliberately not softened: the
+#: proposal's Round-2 security review established that a repository-less tree
+#: with a scrubbed environment is isolation from accidental relative writes, not
+#: containment of Python, and the inherited helper's own docstring says
+#: "contained, not hermetic". Claiming otherwise is the failure this whole
+#: lifecycle kept repeating.
+_EVIDENCE_RESIDUAL = """\
+RESIDUAL -- this stage EXECUTES CANDIDATE CODE.
+  The candidate tree is materialized without a .git directory, credential-shaped
+  environment variables are dropped, HOME is redirected to a throwaway, and
+  interactive git prompts are disabled.
+  That is best-effort isolation and NOT containment: the executed code retains
+  filesystem access outside this tree, process creation, and network access.
+  Accepted by Maintainer Decision (trusted-contributor threat model, Cairn's own
+  trust root, single-maintainer, as of 2026-08-03). This output is
+  NON-AUTHORITATIVE evidence; `check` re-derives every static Git fact itself.
+"""
+
+
+def gather_evidence(candidate_ref: str = "HEAD", *, repo: Path = _REPO,
+                    out=sys.stderr) -> dict:
+    """Produce the evidence artifact by running the **candidate's** manifest
+    producer over a materialized copy of the candidate tree.
+
+    Separated from :func:`check` on purpose (plan finding GPR3): producing a
+    manifest requires a pytest collection, which imports the candidate's
+    ``conftest.py`` and test modules. ``check`` promises to be read-only, and a
+    stage that executes host-capable code cannot make that promise. So this is a
+    distinct, explicitly non-authoritative command, and everything it emits is
+    treated by ``check`` as untrusted input.
+    """
+    out.write(_EVIDENCE_RESIDUAL + "\n")
+    candidate = _resolve(candidate_ref, repo=repo)
+
+    workdir = Path(tempfile.mkdtemp(prefix="cairn-evidence-tree-"))
+    try:
+        tarball = workdir / "candidate.tar"
+        arc = _git("archive", "--format=tar", "-o", str(tarball), candidate,
+                   repo=repo)
+        if arc.returncode != 0:
+            raise PreflightError(
+                f"could not materialize the candidate tree: "
+                f"{(arc.stderr or '').strip()}")
+        tree = workdir / "tree"
+        tree.mkdir()
+        with tarfile.open(tarball) as tf:
+            # ``filter="data"`` refuses absolute paths, ``..`` traversal, and
+            # special files -- the extraction itself must not be the weak point.
+            tf.extractall(tree, filter="data")
+        tarball.unlink()
+
+        out.write(f"materialized {candidate[:12]} at {tree} (no .git)\n")
+        with R._scrubbed_environ():
+            proc = subprocess.run(
+                [sys.executable, "bootstrap/tests/_gate_manifest.py", "produce"],
+                cwd=str(tree), capture_output=True, text=True, check=False)
+        if proc.returncode != 0:
+            raise PreflightError(
+                f"the candidate's manifest producer failed "
+                f"(exit {proc.returncode}): {(proc.stderr or '')[-800:]}")
+        try:
+            manifest = json.loads(proc.stdout)
+        except json.JSONDecodeError as exc:
+            raise PreflightError(
+                f"the candidate's manifest producer emitted invalid JSON: "
+                f"{exc}") from None
+    finally:
+        shutil.rmtree(workdir, ignore_errors=True)
+
+    v = sys.version_info
+    body = json.dumps(manifest, indent=2, sort_keys=True).encode() + b"\n"
+    return {
+        "schema": EVIDENCE_SCHEMA,
+        "candidate_sha": candidate,
+        "interpreter": f"{v.major}.{v.minor}.{v.micro}",
+        "manifest": manifest,
+        "manifest_sha256": _sha256_bytes(body),
+    }
+
+
 def parse_evidence(text: str) -> dict:
     """Parse an evidence artifact, refusing anything unexpected.
 
@@ -629,9 +721,33 @@ def main(argv: list[str] | None = None) -> int:
                    help="resolve the anchor object from THIS repository, not the "
                         "target (external anchoring)")
     c.add_argument("--trusted-ref", default="HEAD")
+
+    e = sub.add_parser(
+        "evidence",
+        help="produce the evidence artifact -- EXECUTES CANDIDATE CODE; "
+             "non-authoritative, and deliberately not part of `check`")
+    e.add_argument("--repo", default=None)
+    e.add_argument("--candidate-ref", default="HEAD")
+    e.add_argument("-o", "--output", default=None,
+                   help="write the artifact here (default: stdout)")
     args = ap.parse_args(argv)
 
     repo = Path(args.repo) if args.repo else _REPO
+
+    if args.cmd == "evidence":
+        try:
+            artifact = gather_evidence(args.candidate_ref, repo=repo)
+        except PreflightError as exc:
+            sys.stderr.write(f"[REFUSE ] {exc}\n")
+            return 2
+        text = json.dumps(artifact, indent=2, sort_keys=True) + "\n"
+        if args.output:
+            Path(args.output).write_text(text, encoding="utf-8")
+            sys.stderr.write(f"evidence written to {args.output}\n")
+        else:
+            sys.stdout.write(text)
+        return 0
+
     try:
         report = check(repo=repo, evidence_path=args.evidence,
                        trusted_repo=args.trusted_repo,
