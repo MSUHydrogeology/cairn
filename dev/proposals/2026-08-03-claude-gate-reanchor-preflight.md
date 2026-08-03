@@ -409,3 +409,154 @@ arguably gains from this incident, since the failure was in human-executed shell
 steps rather than in code — but it also loses, because a checklist is *entirely*
 human-executed steps and offers no place to put the `&&`. The reviewer should
 weigh both directions rather than take this amendment as settling it.
+
+## Review -- Codex (External, Security Review) -- 2026-08-03
+
+**Model**: GPT-5 (Codex)
+
+**Verdict: REVISE.** The proposal is right to formalize this ceremony, and the
+amendment correctly promotes the handoff from ergonomics to a security boundary.
+The incident is unusually useful evidence: the existing verifier stayed loud and
+correct while unsequenced authority mutation failed. The proposed checker also
+has good instincts -- no suppression switch, exact candidate bytes, raw audit
+values, frozen-surface scoping, ancestry checks, and a preserved manual path.
+
+The remaining issue is that `&&` addresses only one failure class. The proposed
+interface still executes untrusted candidate code before trust is established,
+does not bind application to the state that was checked, and promises audit facts
+the checker cannot derive. I do **not** accept pasteable shell text as the primary
+blessing interface on the current design.
+
+### Findings
+
+* **[SR1] BLOCKING -- the checker verifies candidate authority only after
+  executing it.** The proposed checker lives in the mutable worktree, imports
+  `_gate_manifest` / `_gate_reanchor`, and calls manifest production. Production
+  runs `pytest --collect-only`, which imports candidate `conftest.py` and test
+  modules. I executed the real `_gate_manifest._collect()` against a temporary
+  candidate whose `conftest.py` wrote a marker at import time: collection exited
+  0 and the marker existed. The same code can read credentials, use the network,
+  mutate `.git`, or restore the repository before the proposed before/after
+  snapshot. Pinning `_gate_preflight.py` in the manifest detects a later byte
+  change only **after the changed checker has already run**; on its first use it
+  is not in the old anchor at all. This is the proposal's circularity in an
+  executable form, not merely a residual.
+
+  **Satisfier:** define a trusted-launch boundary. Before importing any candidate
+  authority module, execute reviewed preflight code from the immutable current
+  anchor (or an out-of-band Maintainer-reviewed copy) and compare its own and its
+  dependency bytes to that trust source. Materialize the checked immutable HEAD
+  into a repository-less temporary tree and run candidate pytest collection there
+  with credentials/HOME/Git prompts scrubbed, following `_gate_reanchor` Stage
+  A's containment pattern; treat that execution as non-authoritative evidence.
+  The one-time introduction of a checker absent from the old anchor needs an
+  explicit manual bootstrap based on this External review and exact reviewed
+  hashes. A status/refs snapshot test is still useful, but it is not containment.
+
+* **[SR2] BLOCKING -- the emitted chain is neither state-bound nor atomic at the
+  ref.** `cp && git commit -F && git update-ref <ref> HEAD` prevents a failed
+  commit from falling through, but it never proves that HEAD is still the HEAD
+  whose manifest was checked, and its final `update-ref` unconditionally
+  overwrites whatever anchor exists then. In an isolated execution probe, I ran
+  preflight conceptually at commit B, advanced HEAD to D, then ran the proposed
+  commit/update sequence: every command succeeded, the blessing commit's parent
+  was D, and the anchor moved to a tree containing D's unchecked bytes. A second
+  probe showed `git update-ref <ref> <new> <expected-old>` correctly refused a
+  stale anchor while the proposed two-argument form did not.
+
+  **Satisfier:** bind the handoff bundle to the checked HEAD, observed anchor,
+  candidate-manifest digest, and drafted-message digest. At application time,
+  recheck HEAD and relevant worktree state; after committing, prove the new
+  commit's parent is the checked HEAD, its diff is exactly the manifest, and its
+  manifest blob has the reviewed digest; then advance with expected-old CAS.
+  Prefer a separately reviewed `apply` subcommand requiring an explicit
+  Maintainer confirmation, analogous to Phase 4's supervised executor. That
+  automates mechanics, not judgment. If shell output is retained, it needs all
+  those guards, argument-vector-safe quoting (`shlex.quote`, `--` before
+  pathspecs), metacharacter/space-path tests, and post-commit verification.
+
+* **[SR3] BLOCKING -- changed authority modules cannot be a successful open
+  path.** The body says authority-module changes are "not a refusal," and
+  Author-accounting calls this the one deliberately open path. Those six files
+  are the code that decides whether to bless; the checker cannot infer that a
+  human actually reviewed changed bytes. If this path exits successfully or
+  emits an actionable handoff, the operator can bless newly changed authority
+  code on the changing code's own report.
+
+  **Satisfier:** a changed authority module must produce non-zero / REVIEW
+  REQUIRED and **no actionable apply bundle** unless the checker consumes a
+  separate Maintainer-authored authorization artifact binding every reviewed
+  hash. With the proposal's current no-bypass interface, route that case to the
+  manual runbook. Add a test that changed authority bytes never emit a blessing
+  command or bundle. This keeps the failure direction closed without inventing
+  a generic suppression flag.
+
+* **[SR4] BLOCKING -- the amended audit contract asks the checker to know two
+  unknowable values.** First, a commit message drafted before a commit cannot
+  contain that commit's own prospective SHA: the SHA hashes the message itself.
+  Executing `commit-tree` with a placeholder and then embedding the resulting SHA
+  produced a different SHA, as expected; the real `e5ecaa5` / `bf08f62` messages
+  honestly say "this commit." Second, after an erroneous ref move the checker
+  cannot derive the "last legitimately blessed" anchor from its only input,
+  `--repo`. The amendment itself says the custom ref has no reflog, and
+  `git reflog show refs/cairn/gate-anchor` is empty now. `bf08f62` could name
+  `e5ecaa5` only because the human/session still knew it.
+
+  **Satisfier:** rename the pre-commit fields to facts that exist -- observed
+  anchor, checked HEAD, and prospective manifest digest. Record the resulting P
+  SHA only after commit creation (tool output plus the plan/ledger), never inside
+  its own message. For recovery, add an explicit Maintainer-supplied
+  `last_legitimate_anchor` bound into the authorization/recovery record, or add a
+  durable independent blessing ledger; the checker must disclose the current
+  erroneous ref separately and must not claim it inferred legitimacy. Use
+  `update-ref --create-reflog` going forward as diagnostic evidence, but do not
+  treat a local reflog as the durable authority ledger.
+
+* **[SR5] SUBSTANTIVE -- frozen-surface membership must validate Git object
+  type, not only untracked status.** `_frozen_files()` discovers filesystem
+  entries and `_sha256()` follows symlinks. In a temporary repo, an ignored
+  Python file under the bootstrap test directory appeared in `_frozen_files()`
+  while absent from `git ls-files`; a tracked symlink also appeared and was
+  hashed through to its target. Either can produce manifest bytes that a fresh
+  checkout cannot reproduce from the committed blob set. A
+  `git status --porcelain`-style test also misses ignored files by default.
+
+  **Satisfier:** compare every discovered frozen path against `git ls-files
+  --stage`, including ignored filesystem entries by construction; require a
+  stage-0 regular blob mode (permit the repository's intended regular modes,
+  reject symlinks/submodules), and refuse any discovered frozen path absent from
+  the index. Add regressions for an ignored matching file and a tracked symlink,
+  alongside the proposed ordinary-untracked case.
+
+### Handoff ruling
+
+The amendment asks whether emitting shell text is the right interface. My ruling
+is **no, not for the authority-mutating half**. Keep `check` read-only and have it
+emit a machine-readable, digest-bound handoff bundle. A reviewed `apply` path,
+invoked and explicitly confirmed by the Maintainer, should revalidate the bundle,
+create and verify the commit, and CAS the ref. The manual runbook remains the
+independent fallback. This preserves separation of decision rights while making
+partial paste, stale state, quoting, and command-substitution errors
+structurally unavailable.
+
+### Coverage and recommendation
+
+**Covered:** full proposal plus amendment `5a9f498`; Phase 0 runbook
+`bootstrap/REANCHOR_RUNBOOK.md:28-87`; the real `e5ecaa5` / `bf08f62` blessing
+records and current empty custom-ref reflog; `_gate_manifest._frozen_files`,
+`_collect`, and `produce`; canonical Python 3.13.13 execution probes for stale
+HEAD, unconditional vs expected-old ref update, self-referential commit SHA,
+candidate collection-time code execution, ignored frozen files, and symlinked
+frozen files. Existing manifest/transition/re-anchor tests passed **38 tests**.
+
+**Not covered / low confidence:** no proposed implementation exists, so I could
+not inspect parsing, temp-file lifetime/permissions, shell quoting, Windows
+behavior, or actual `check`/`apply` failure output. I did not exercise network or
+credential exfiltration. Concurrent Maintainers remain outside the stated model,
+though SR2's CAS is still required for stale-state safety.
+
+**Second-round recommendation: recommended and focused.** The Maintainer already
+requires an External security lens; after the author revises SR1-SR5, a focused
+security re-read should verify the trusted-launch model and application
+transaction before Decision. A general second full sweep is unnecessary if the
+rest of the proposal remains unchanged.
