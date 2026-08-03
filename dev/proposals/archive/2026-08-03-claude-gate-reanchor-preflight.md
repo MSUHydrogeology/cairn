@@ -1237,3 +1237,54 @@ prospectively bless those bytes.**
 
 *Scribed by Claude (Opus 5) at the Maintainer's instruction quoted above; commit
 permission given explicitly in the third quotation.*
+
+## Decision amendment -- Anthony Kendall (Maintainer) -- 2026-08-03
+
+Authorizing instructions, quoted verbatim and visually isolated:
+
+> "I don't want to kick the can down the road here. I want robust security that
+> scales as the project grows."
+
+> "Go ahead and write the amendment."
+
+> "Yes, commit with the posture and the corrected mechanism"
+
+**What is corrected.** The Decision above records the committer-identity check as
+*"the mechanical tripwire"* for this posture's expiry. **That premise is
+falsified.** The required External security plan review (GPR2) demonstrated, and
+the author independently reproduced, that Git's committer name and email are
+supplied unauthenticated by the committing process: a second writer setting
+`GIT_COMMITTER_NAME` / `GIT_COMMITTER_EMAIL` to the Maintainer's strings produced
+a commit authored by another identity while the proposed equality check saw one
+committer and passed silently.
+
+**The corrected mechanism — signature verification.** Every commit at or after a
+recorded **signing epoch** must carry a valid signature (`%G?` == `G`) whose
+signer principal (`%GS`) is a member of the pinned `dev/.cairn/allowed_signers`
+set. Unsigned commits (`N`) and commits signed by unpinned keys (`U`) both refuse.
+Commits before the epoch are grandfathered.
+
+**Signing epoch: `a07fac88e6dcda08513cac28e6f1310999f1e577`** — the
+Maintainer-authored commit pinning the allowed-signers set, verified at
+recording time as `sig=G`, signer `kendal30@msu.edu`. Both the allowed-signers
+file and this epoch SHA join the preflight-authority closure, so a candidate can
+neither add its own key nor advance the epoch to grandfather its own unsigned
+commits.
+
+**What is unchanged.** The posture itself — **trusted-contributor**, scoped to
+Cairn's own trust root, single-maintainer, **as of 2026-08-03** — and its
+acceptance. Only the expiry's mechanism changes, from unauthenticated metadata to
+authenticated identity. The Maintainer was offered the alternative of reopening
+the posture itself and declined it in the third quotation above.
+
+**Limitation recorded alongside the correction.** Signing authenticates the **key
+holder**, not the human and not the process: every agent operating on this machine
+commits as the Maintainer and signs with the Maintainer's key. The tripwire
+detects a **second person**, which is what this expiry exists for. It does **not**
+establish that any individual commit was human-reviewed, and it is no defence
+against a compromised local machine. External anchoring (`_gate_manifest.py verify
+--trusted-repo`) remains the named upgrade for the distinct question of whether
+the anchor object is repository-minted.
+
+*Scribed by Claude (Opus 5) at the Maintainer's instruction; commit permission
+given explicitly in the third quotation above.*
