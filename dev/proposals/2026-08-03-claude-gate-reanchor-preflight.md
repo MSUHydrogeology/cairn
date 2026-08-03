@@ -921,3 +921,68 @@ Maintainer-recorded set.
 insertion with no mechanical protection, now bounded by an exact-byte review gate
 rather than by my assurance. The trusted-contributor threat model is the
 Maintainer's to adjudicate at Decision.
+
+## External Security Review -- Round 3 -- Codex -- 2026-08-03
+
+**Model**: GPT-5 (Codex)
+
+**Commit reviewed:** `97900cd`
+
+**Verdict: REVISE, narrowly.** SR7's corrected posture is acceptable if the
+Maintainer's Decision explicitly accepts the trusted-contributor threat model and
+its filesystem/process/network residual. The proposal now improves the existing
+Phase 0 exposure without calling best-effort isolation containment. SR8 is closed:
+I independently executed a stale-expected-value `git update-ref --stdin`
+`start`/`prepare`/`commit` transaction, and Git returned 128 while leaving both
+the branch and gate ref unchanged. One trust root remains unspecified.
+
+* **[SR9] BLOCKING -- the launcher is a new outer trust root, but it has no named
+  provenance.** "Outside the candidate tree" describes location, not trust. The
+  launcher chooses the anchor, materializes the checker and dependencies, obtains
+  the Maintainer-recorded expected hashes, and decides which bytes Python
+  executes. A mutable or candidate-influenced launcher can simply execute the
+  worktree checker or substitute its own expected hashes, defeating SR6 before
+  the anchored checker starts.
+
+  The proposal's `Touches` and `Proposed paths` name only
+  `_gate_preflight.py`, its test, the runbook, and the future plan. The first-use
+  review gate names the checker and dependency bytes, but not launcher bytes or
+  the provenance of the hash record the launcher consumes. The design therefore
+  moves verify-after-execute outward one level without yet terminating the chain
+  in a named trusted mechanism.
+
+  **Satisfier:** specify the launcher form and its root of trust. If it is code,
+  name its storage/path, include its exact bytes and the expected-hash source in
+  the focused External first-use review and Maintainer bootstrap record, and make
+  candidate state unable to replace either. If it is a fixed manual invocation,
+  record the exact reviewed invocation in the runbook and define how the operator
+  obtains it without executing or trusting candidate-controlled instructions.
+  Add a regression showing that altered worktree launcher/checker bytes and an
+  altered candidate hash record cannot influence the executed anchored bytes.
+
+* **[SR10] SUBSTANTIVE -- an aborted ref transaction does not mechanically consume
+  a bundle.** The stronger SR8 transaction correctly leaves both refs unchanged
+  on failure, but the revised proposal additionally says the bundle is
+  "non-replayable" on abort. With no single-use nonce or independent consumption
+  ledger, a state-bound bundle can be submitted again if its expected state is
+  restored. That is not inherently unsafe: `apply` can revalidate every binding
+  and require fresh Maintainer confirmation. It is simply different from
+  mechanical non-replayability.
+
+  **Satisfier:** withdraw the absolute non-replayability claim and state the real
+  contract: every invocation revalidates live state and requires confirmation;
+  drift refuses; after a successful transaction the old bundle is stale because
+  both refs moved. Add persistent single-use state only if replay after exact
+  state restoration is actually in the threat model.
+
+### Security disposition
+
+I recommend accepting the trusted-contributor residual at Decision for this
+single-maintainer repository, provided the Decision names it explicitly. I do not
+recommend an OS sandbox for this proposal. SR9 must be resolved before Decision;
+otherwise the mechanism's claimed immutable entry point depends on an
+unregistered mutable entry point.
+
+No implementation exists, so this round did not re-run the unchanged 38-test gate
+subset. Coverage was the focused `97900cd` design diff, the proposed path/accounting
+surface, the current Phase 0 runbook, and an isolated two-ref transaction probe.
