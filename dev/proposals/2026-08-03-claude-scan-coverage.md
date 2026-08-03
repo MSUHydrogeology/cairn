@@ -1123,3 +1123,646 @@ claims the proposal already makes, and G4's narrowing tightens a reading of a *S
 entry that *Signals* already states in the stricter form. The one substantive change to
 this proposal — the supersession of item 3 — was appended and committed as the addendum
 before this Response and is not a product of this review.
+
+## Review -- Claude (Internal, same-agent-type; security lens) -- 2026-08-03
+
+**Model**: Claude Opus 5.
+**Verdict**: REVISE -- item 1 stands; the *Author-accounting* failure-mode table
+contains one falsified guarantee; the addendum's replacement item 3 is
+directionally right and its change 2 is a real (non-vacuous) guard, but it under-
+asserts in the one direction that matters and leaves a second instance of the very
+defect it names untouched.
+
+All work below was done at HEAD `b67fabc` under the canonical interpreter
+`~/conda_envs/lhm/bin/python` (Python 3.13.13, Bandit 1.9.4). **No repository file
+was modified**: every "proposed" derivation was re-implemented in a throwaway script
+that imports the real `scan_targets`, the real `install_manifest`, the real
+`ALLOWLIST` and the real blocking filter. HEAD has moved twice since the proposal
+(`3292f21`) and once since the addendum (`5e6bf0c`); I re-took the load-bearing
+measurements rather than carrying them forward, and they all reproduce -- see
+*Covered*.
+
+### Steelman
+
+The defect is real, the diagnosis is right, and the fix is the smallest shape that
+fixes it. `scan_targets()` walks two of the delivery registries by hand; a third
+ships 2502 physical lines of Python that an adopter executes at every session start
+and end; the release gate has never read them. I reproduced that at HEAD: `disk -
+scan_targets()` is exactly `['templates/skills/_lib/lifecycle.py',
+'templates/skills/_lib/lifecycle_planner.py']`. Binding the scan set to
+`install_manifest()` as a **union** with the retained loops makes "coverage cannot
+shrink" a property you can check by reading three lines rather than by trusting a
+measurement, and I confirmed no removals (72 -> 74, `current - proposed` empty). The
+triage cost is genuinely zero today (113 findings over the extended set, all LOW, 0
+blocking) -- reproduced from a cold start, with Bandit's own `errors` list empty, so
+the zero is a real scan and not a skipped one.
+
+The addendum is the best thing in this lifecycle. It caught its own proposal's
+durable half being a tautology, stated the oracle/subject distinction cleanly,
+corrected the *Context* chronology against its own interest, and named an acceptance
+criterion -- *a regression test is accepted only when its author can name a future
+state in which it fails, and has run the perturbation* -- that is worth more than
+this proposal. I verified its central replacement is not itself hollow: the on-disk
+oracle **fails at unmodified HEAD**, naming exactly the two files, so change 2 is a
+guard and not a decoration. The Response's refusal of the reviewer's over-credit on
+item 2 ("It prevents no silent release") is correct and I reproduced the reason.
+
+What follows are things the External pass, the addendum and the Response all missed.
+
+### Concerns
+
+---
+
+#### [I1] The failure-mode table asserts a fail-closed property the gate does not have: a shipped file that is missing from disk is silently skipped, and the gate prints "clean".
+
+*Author-accounting > Failure modes* states, as a settled disposition:
+
+> * A shipped file listed in the manifest is missing from disk → Bandit errors,
+>   `rc` outside `{0, 1}` → **closed** by the pre-existing scanner-error branch.
+
+That is false. Bandit records the failure in a JSON `errors` array, scans the rest,
+and exits **0**:
+
+```
+$ cd <scratch>; echo 'x = 1' > ok.py
+$ ~/conda_envs/lhm/bin/python -m bandit -q -f json ok.py /nonexistent/missing_file.py > out.json 2> err.txt; echo "RC=$?"
+RC=0
+--- stderr ---
+(empty)
+--- stdout head ---
+{
+  "errors": [
+    {
+      "filename": "/nonexistent/missing_file.py",
+      "reason": "No such file or directory"
+    }
+  ],
+```
+
+`rc == 0` never reaches the `proc.returncode not in (0, 1)` branch at
+`bootstrap/security_check.py:128`, and nothing in the module reads
+`report["errors"]`. Driven through the **real** `run_bandit()`:
+
+```
+$ ~/conda_envs/lhm/bin/python -c "
+import sys; sys.path.insert(0,'.')
+import bootstrap.security_check as sc
+real = sc.scan_targets
+sc.scan_targets = lambda: sorted(set(real()) | {'templates/skills/_lib/GONE.py'})
+print('run_bandit() returned:', sc.run_bandit())
+"
+security_check: Bandit clean over 73 shipped file(s).
+run_bandit() returned: 0
+```
+
+The gate reports **73 shipped file(s)** and **PASS** while one of them was never
+opened. The count in that message is the number of *requested* targets, not scanned
+ones, so it cannot distinguish the two states -- which also means the *Examples /
+smoke checks* line ("Expected: `PASS`, with the Bandit line reporting 74 files rather
+than 72") is not evidence that 74 files were scanned.
+
+The same hole swallows an unparseable file, which is the more likely real-world
+trigger:
+
+```
+$ printf 'def f(:\n' > broken.py
+$ ~/conda_envs/lhm/bin/python -m bandit -q -f json ok.py broken.py > o2.json 2> e2.txt; echo "RC=$?"
+RC=0
+$ ~/conda_envs/lhm/bin/python -c "import json;d=json.load(open('o2.json'));print(d['errors']);print('results:',len(d['results']))"
+[{'filename': './broken.py', 'reason': 'syntax error while parsing AST from file'}]
+results: 0
+```
+
+A shipped `.py` that does not parse is scanned-as-clean, silently, forever.
+
+**Why this bears on *this* proposal and is not merely pre-existing.** It is
+pre-existing -- item 1 does not create it, and item 1 still strictly increases
+coverage. But (a) the proposal *newly asserts it is closed*, in the section a
+Security reviewer is told to attack, so the record is wrong where it is most load-
+bearing; and (b) item 1 changes the scan set from *a hand-picked walk of registries*
+to *a declaration of what ships*, which makes manifest-vs-disk divergence the
+governing risk -- and this fail-open is precisely what that divergence lands on. The
+addendum **measured** both directions (`disk - manifest` and `manifest - disk` both
+empty) but change 2 only **asserts** one of them.
+
+*Cheapest fix, entirely inside the proposal's existing scope, no new mechanism:*
+after `json.loads`, fail closed on a non-empty `report["errors"]` (verified present
+and `[]` on a clean 74-target run -- see *Covered* item 3), and have change 2's
+oracle assert the reverse direction (`manifest - disk` empty) alongside the forward
+one. Both are one line.
+
+---
+
+#### [I2] The addendum found one instance of the tautology and stopped; a second instance of the identical shape sits in a file the proposal does not touch -- and it is the one whose *name* makes the "shipped surface" overclaim.
+
+`bootstrap/tests/test_security_check.py:28` defines
+`test_scan_targets_are_explicit_files_covering_shipped_surface`. Its always-on
+coverage loop at `bootstrap/tests/test_security_check.py:43` is:
+
+```
+    for spec in _ALWAYS_ON_MAPPINGS:
+        if spec.verbatim and spec.src.endswith(".py"):
+            assert f"templates/modules/{spec.src}" in targets, spec.src
+```
+
+That is, character for character, the code's second loop at
+`bootstrap/security_check.py:74`. Applying the addendum's own identity check:
+
+```
+$ ~/conda_envs/lhm/bin/python -c "
+import sys; sys.path.insert(0,'.')
+from bootstrap._scaffold.config import _ALWAYS_ON_MAPPINGS as CODE_REG
+from bootstrap.security_check import scan_targets
+expect    = {f'templates/modules/{s.src}' for s in CODE_REG if s.verbatim and s.src.endswith('.py')}
+code_loop = {f'templates/modules/{s.src}' for s in CODE_REG if s.verbatim and s.src.endswith('.py')}
+print('test expectation == code loop-2 output ->', expect == code_loop)
+print('len(expect) =', len(expect))
+print('expect - scan_targets() =', sorted(expect - set(scan_targets())))
+"
+test expectation == code loop-2 output -> True
+len(expect) = 9
+expect - scan_targets() = []
+```
+
+Same defect, same file family, and **content-invariant for every possible content of
+`_ALWAYS_ON_MAPPINGS`** -- the addendum's exact criterion. The tree contains the
+strong twin of this loop at `bootstrap/tests/test_upgrade_side_door_parity.py:168`,
+which adds `assert scanned == 9` and is therefore a real growth tripwire; the
+addendum praises that very line. The weak twin is the one that has not been found.
+
+Three consequences the plan should absorb:
+
+1. `bootstrap/tests/test_security_check.py` is **not in this proposal's *Touches*
+   line**, so as scoped the plan will not reach it.
+2. Its test *name* asserts "covering shipped surface" -- exactly the overclaim
+   addendum change 1 exists to retire, one file over. After the fix it will still be
+   green and still not cover the skills tools by any independent means.
+3. It is **also frozen**: `bootstrap/tests/test_security_check.py` is a literal key
+   in the frozen map (see *Covered* item 7), so absorbing it enlarges the sequencing
+   footprint from two frozen files to three. Better to know that before the plan
+   opens than during it.
+
+---
+
+#### [I3] "The manifest is the single chokepoint" is false today: a fifth delivery registry ships files that never reach `install_manifest()`, and its name does not match the pattern item 4's census keys on.
+
+Item 4 says: *"Binding the scan to the manifest makes the manifest the single
+chokepoint: anything in the manifest is scanned, with no list to extend. The residual
+is a delivery path that never reaches the manifest at all -- which is the historical
+`_ALWAYS_ON_MAPPINGS` side door."*
+
+The residual is not historical. `_OPTIONAL_TEMPLATES` at
+`bootstrap/_scaffold/config.py:249` is a live delivery registry, selected at install
+time by `bootstrap/_scaffold/cli.py:371`, and it does not appear in the manifest:
+
+```
+$ ~/conda_envs/lhm/bin/python -c "
+import sys; sys.path.insert(0,'.')
+from bootstrap._scaffold.install import install_manifest
+from bootstrap._scaffold.config import _OPTIONAL_TEMPLATES
+m = install_manifest(modules=None)
+print('manifest rows:', len(m))
+print('optional/ rows in manifest:', [r for r in m if r[0].startswith('optional/')])
+print('_OPTIONAL_TEMPLATES:', _OPTIONAL_TEMPLATES)
+"
+manifest rows: 95
+optional/ rows in manifest: []
+_OPTIONAL_TEMPLATES: (('optional/CONTRIBUTING.md', 'CONTRIBUTING.md', 'human_team', frozenset({'large-multi', 'small-multi'})),)
+```
+
+It is appended to the lockfile *separately from* the manifest, at
+`bootstrap/_scaffold/install.py:1466`, with `verbatim` hard-coded `False`.
+
+Three things follow, and they cut in different directions -- I am not claiming a live
+security hole:
+
+* **No live gap.** The single optional entry today is a `.md`, so nothing shipped as
+  Python escapes the scan right now.
+* **The census as specified would not catch it.** Item 4's tripwire fires on a
+  module-level `*_MAPPINGS` symbol; the addendum's change 3 upgrade iterates "every
+  module-level `*_MAPPINGS` in `bootstrap/_scaffold/config.py`". `_OPTIONAL_TEMPLATES`
+  matches neither. So the mechanism the proposal offers for its own named residual is
+  demonstrably already blind to a member of that residual, in the same file, today.
+  This is not hypothetical drift; it is the drift, present at authoring time.
+* **This is evidence *for* change 2.** The on-disk oracle would catch an optional
+  `.py`, because `templates/optional/` is under `templates/`. The addendum's judgement
+  that change 2 is the load-bearing guard and item 4 stays strikeable is, on this
+  evidence, right -- more right than it knew.
+
+*Recommendation:* keep item 4 strikeable, and if it survives, key the census on
+"module-level tuple/dict of install mappings" by shape rather than by the `_MAPPINGS`
+suffix -- or drop it and rely on change 2, which is the honest outcome this evidence
+supports.
+
+---
+
+#### [I4] The new contract is *verbatim* `.py`, not *shipped* `.py` -- so `SECURITY.md`'s sentence does not "become true", it becomes true-as-of-today.
+
+The proposal's *Documentation / doctrine surface* concludes: *"`SECURITY.md:66` needs
+**no** change -- 'over the shipped Python surface' becomes true. That is the point:
+the doctrine was right and the code was wrong."*
+
+It becomes true only because the substituted-`.py` set is empty today:
+
+```
+$ ~/conda_envs/lhm/bin/python -c "
+import sys; sys.path.insert(0,'.')
+from bootstrap._scaffold.install import install_manifest
+m = install_manifest(modules=None)
+print('manifest verbatim .py   :', len([1 for s,d,v in m if v and s.endswith('.py')]))
+print('manifest SUBSTITUTED .py:', [(s,d) for s,d,v in m if (not v) and s.endswith('.py')])
+"
+manifest verbatim .py   : 44
+manifest SUBSTITUTED .py: []
+```
+
+The mechanism, though, forecloses nothing. `install_manifest` stamps
+`verbatim=False` unconditionally on every core row at
+`bootstrap/_scaffold/install.py:1374`:
+
+```
+        (src_rel, dst_rel, False) for src_rel, dst_rel in _CORE_MAPPINGS
+```
+
+and, per [I3], on every optional row too. So a `.py` added to `_CORE_MAPPINGS` or
+`_OPTIONAL_TEMPLATES` -- a Python file with `{{token}}` slots, which is a perfectly
+ordinary thing to want -- ships to every adoption as executable code and is filtered
+out of the scan by the `verbatim` guard, while `SECURITY.md:66` and
+`bootstrap/SAFETY.md:132` both continue to claim the whole shipped Python surface.
+
+Sharper still: the proposal cites the SPDX licensing gate as the idiom it is
+adopting, and the proposed code comment says *"Same derivation the SPDX licensing
+gate already uses"*. It is not the same derivation. `_manifest_py_sources()` in
+`bootstrap/tests/test_notice_install.py` has **no `verbatim` filter** at all, and
+pins its count at `bootstrap/tests/test_notice_install.py:75`. On the one case where
+the two differ -- a substituted `.py` -- the *licensing* gate is the stricter one,
+which inverts the proposal's own framing of licensing as "the lower-stakes concern".
+
+*This is a wording-and-record fix, not a design change.* Either say the contract is
+"every file the scaffold ships **byte-for-byte** as Python" consistently (the
+proposal's own one-line contract statement already says exactly that, correctly --
+the drift is in the `SECURITY.md` disposition), or add substituted `.py` to change
+2's oracle so the first one forces a decision instead of shipping unscanned.
+
+---
+
+#### [I5] Change 1's replacement name claims a property its assertion does not pin, with a measured margin of two files.
+
+Addendum change 1 renames the test to something like
+`test_scan_targets_consume_the_full_install_manifest` and justifies it: *"it pins
+that `scan_targets()` actually consumes the manifest, which is the deletion case
+(remove the union from item 1 and it goes red)."*
+
+It goes red only because two manifest files are not reachable by the retained
+explicit loops. Once a future author adds the third explicit loop -- the "minimal
+one-liner" *Alternatives considered* rejects, but which item 1 keeps the door open to
+by retaining the loops as a "defense-in-depth floor" -- the assertion goes green with
+the manifest derivation deleted:
+
+```
+$ ~/conda_envs/lhm/bin/python <scratch/scenarios.py>
+A post-fix (item1 as drafted)                            |targets|= 74  shipped-targets=[]  verdict=GREEN
+B manifest loop DELETED                                  |targets|= 72  shipped-targets=['templates/skills/_lib/lifecycle.py', 'templates/skills/_lib/lifecycle_planner.py']  verdict=RED
+C manifest loop DELETED + explicit _SKILLS_MAPPINGS loop |targets|= 74  shipped-targets=[]  verdict=GREEN
+
+discriminating margin of the conformance assertion (files in manifest but not in the retained explicit loops):
+['templates/skills/_lib/lifecycle.py', 'templates/skills/_lib/lifecycle_planner.py']
+```
+
+(The script rebuilds `scan_targets()` from the real registries and the real
+`install_manifest`, toggling one loop at a time; it is reproduced in full in
+*Covered* item 4.)
+
+So the assertion pins "the union of all loops covers the manifest", not "`scan_targets()`
+consumes the manifest". That is a weaker property than the proposed name states, in a
+change whose stated purpose is *"A test that names a property it does not have is
+worse than a missing test, because it retires the question."* The addendum's own
+standard, applied one notch smaller, catches its own rename. Fix is a sentence in the
+docstring, not a redesign -- say what it pins ("every manifest-verbatim `.py` is
+scanned by *some* path") and stop implying which path.
+
+---
+
+#### [I6] Change 2's oracle has three boundaries the addendum does not name; one of them re-imports the hand-maintained-list failure mode the addendum condemns.
+
+Change 2 is a genuine guard -- I verified it fails at unmodified HEAD (*Covered* item
+2). These are hardening notes on the shape it should take in the plan, not objections
+to it.
+
+**(a) It is vacuous if `templates/` is absent or empty.** The existing test carries
+`assert shipped, "expected at least one verbatim .py reference script"` at
+`bootstrap/tests/test_security_lint.py:147` precisely for this. A glob has the same
+need and the addendum proposes no equivalent:
+
+```
+$ ~/conda_envs/lhm/bin/python -c "
+import pathlib
+print('rglob over missing dir :', sorted(str(p) for p in pathlib.Path('t/nope').rglob('*.py')))
+"
+rglob over missing dir : []
+```
+
+Empty minus anything is empty; the oracle passes. Carry the non-emptiness guard over.
+
+**(b) `Path.rglob` does not descend symlinked directories in Python 3.13, so
+"physically present under `templates/`" is glob-default-scoped, not filesystem-
+scoped.** Measured on the canonical interpreter, with a real symlinked directory
+holding a `.py`:
+
+```
+$ ~/conda_envs/lhm/bin/python -c "
+import pathlib
+root = pathlib.Path('t/templates')
+print('default   :', sorted(str(p) for p in root.rglob('*.py')))
+print('recurse=T :', sorted(str(p) for p in root.rglob('*.py', recurse_symlinks=True)))
+"
+default   : ['t/templates/real/plain.py']
+recurse=T : ['t/templates/linkdir/shipped.py', 't/templates/real/plain.py']
+```
+
+`find templates -type l` is empty today, so nothing escapes now. But the addendum's
+independence argument is *"all four registries source from under `templates/`, so a
+shipped Python file must exist there before any registry can reference it"* -- and
+"exist there" and "be returned by the default `rglob`" are different sets. Make the
+choice explicit and record it (there is a real argument for `False`: the engine has a
+symlink/containment guard in `bootstrap/_scaffold/security.py` for the mirror-image
+reason). An unrecorded default is how this class of thing goes stale.
+
+**(c) The exclusion table is a hand-maintained, fail-open list -- the exact shape the
+addendum's own level table condemns.** The addendum writes: *"At every level the
+derivation is honest and the residue is a hand-maintained list one abstraction
+higher."* Change 2 proposes *"modulo a declared table of exclusions each carrying a
+rationale"*. An entry once added silences that file forever, and nothing goes red
+when it should not have been there. The addendum itself supplies the antidote it
+does not apply: it praises `assert scanned == 9` at
+`bootstrap/tests/test_upgrade_side_door_parity.py:168` as the shape that *"fails
+loudly when the registry grows, forcing a human to look"*, and the licensing gate
+already does this at `bootstrap/tests/test_notice_install.py:75`. Pin a count
+alongside the oracle. The table is measured empty today -- I reproduced 44/44/44 --
+so pinning costs nothing and makes the first exclusion a decision rather than a
+commit.
+
+---
+
+#### [I7] The perturbation that the addendum elevates to an acceptance criterion cannot be written the obvious way -- patching the registry where it is *defined* is a no-op.
+
+The addendum's criterion is the best thing in the document: *"perturb the delivery
+path so the two skills tools stop being scanned, and confirm the new assertion goes
+red."* `bootstrap/_scaffold/install.py` binds the registry by value at import
+(`from .config import ... _SKILLS_MAPPINGS ...`), so patching the owning module does
+nothing:
+
+```
+$ ~/conda_envs/lhm/bin/python -c "
+import sys; sys.path.insert(0,'.')
+import bootstrap._scaffold.config as cfg
+import bootstrap._scaffold.install as inst
+n = lambda: len([1 for s,_d,v in inst.install_manifest(modules=None) if v and s.endswith('.py')])
+print('baseline verbatim .py in manifest:', n())
+cfg._SKILLS_MAPPINGS  = tuple(e for e in cfg._SKILLS_MAPPINGS  if not e[0].endswith('.py'))
+print('after patching config._SKILLS_MAPPINGS :', n(), '<- perturbation had NO effect')
+inst._SKILLS_MAPPINGS = tuple(e for e in inst._SKILLS_MAPPINGS if not e[0].endswith('.py'))
+print('after patching install._SKILLS_MAPPINGS:', n(), '<- perturbation took effect')
+"
+baseline verbatim .py in manifest: 44
+after patching config._SKILLS_MAPPINGS : 44 <- perturbation had NO effect
+after patching install._SKILLS_MAPPINGS: 42 <- perturbation took effect
+```
+
+Severity is honest-low: a no-op perturbation leaves the oracle green, so the
+perturbation check *fails visibly* rather than silently passing, and the author
+notices. But the criterion's whole point is that authors have repeatedly mistaken "I
+ran something and it did what I expected" for a guard, and this is a live trap on the
+first step of executing it -- one the plan should name (`monkeypatch.setattr` targets
+`bootstrap._scaffold.install`, not `bootstrap._scaffold.config`) rather than
+rediscover. The repository already has doctrine for this shape:
+`bootstrap/tests/test_scaffold_substrate.py` documents the patch-the-owning-module
+rule for a different symbol.
+
+---
+
+#### [I8] Sequencing: the fact the Response builds its operative branch on has changed at HEAD. The frozen-file window is no longer open.
+
+Not a defect in the proposal -- a stale premise that decides its schedule, worth
+surfacing because the Maintainer will act on it. The Response states: *"**(i) This is
+live, not hypothetical.** The `gate-reanchor-preflight` plan is Status `executing`
+as_of 2026-08-03, so the window is open *now*; the proposal's *Net recommendation*
+fallback is the operative branch, not the preferred one."*
+
+At HEAD `b67fabc` that plan is archived:
+
+```
+$ git log --oneline -3
+b67fabc dev/plans: archive gate-reanchor-preflight (trust root established)
+af4b2ee gate-reanchor-preflight: record Chunk G + the changelog entry
+e45e1fc gate: Phase 0 prerequisite commit -- pin the pre-flight checker (becomes P)
+$ grep -n -m1 -i "^\*\*Status" dev/plans/archive/gate-reanchor-preflight.md
+12:**Status**: archived
+```
+
+The frozen map itself is unchanged in kind but has grown, so the Response's count is
+also stale within the same day:
+
+```
+$ ~/conda_envs/lhm/bin/python -c "
+import json
+fz = json.load(open('bootstrap/tests/fixtures/gate_manifest.json'))['frozen_files']
+print('frozen entries:', len(fz))
+for k in ('bootstrap/security_check.py','bootstrap/tests/test_security_lint.py','bootstrap/tests/test_security_check.py'):
+    print(' ', k, 'frozen?', k in fz)
+"
+frozen entries: 164
+  bootstrap/security_check.py frozen? True
+  bootstrap/tests/test_security_lint.py frozen? True
+  bootstrap/tests/test_security_check.py frozen? True
+```
+
+I am **not** concluding the HOLD no longer binds -- whether a frozen entry constrains
+edits outside an active batch window is a Maintainer question and I did not find a
+file that settles it. What I am reporting is that the premise the Response used to
+pick the fallback branch ("Status `executing`, window open now") no longer holds at
+HEAD, so *Sequencing*'s preferred position (land FIRST) may now be schedulable and
+should be re-decided rather than inherited. Note also that per [I2] the plan may need
+a third frozen file.
+
+### Covered -- lenses swept, with the command that proves the sweep
+
+1. **Ground truth re-taken at current HEAD (the proposal's figures are two commits
+   old).**
+   ```
+   $ ~/conda_envs/lhm/bin/python -c "
+   import sys; sys.path.insert(0,'.')
+   from bootstrap.security_check import scan_targets
+   from bootstrap._scaffold.install import install_manifest
+   import pathlib
+   t = set(scan_targets())
+   m = {f'templates/{s}' for s,d,v in install_manifest(modules=None) if v and s.endswith('.py')}
+   disk = {str(p.relative_to(pathlib.Path('.').resolve())) for p in (pathlib.Path('.').resolve()/'templates').rglob('*.py')}
+   print('targets', len(t), 'manifest_py', len(m), 'disk_py', len(disk))
+   print('disk - scan_targets:', sorted(disk-t))
+   print('manifest - disk:', sorted(m-disk))
+   "
+   targets 72 manifest_py 44 disk_py 44
+   disk - scan_targets: ['templates/skills/_lib/lifecycle.py', 'templates/skills/_lib/lifecycle_planner.py']
+   manifest - disk: []
+   ```
+   `git ls-files templates | grep '\.py$' | wc -l` -> `44`, and `find templates -type
+   l` -> empty, so on-disk == tracked == manifest-verbatim, 44 each, as_of 2026-08-03.
+
+2. **Is change 2's on-disk oracle vacuous? No -- it fails at unmodified HEAD.** The
+   `disk - scan_targets` line above *is* the oracle, and it is non-empty today,
+   naming exactly the two files. Future states in which it fails: (i) today's
+   pre-fix state; (ii) the union deleted from item 1; (iii) any registry -- including
+   `_OPTIONAL_TEMPLATES`, per [I3] -- shipping a `.py` under `templates/` that the
+   manifest never sees. This is the addendum's own criterion, met.
+
+3. **The zero-triage claim, re-measured from cold, with the scan verified real.**
+   ```
+   base 72 extended 74 removals []
+   bandit rc 1
+   errors key: []
+   severities: {'LOW': 113}
+   BLOCKING: 0
+   ```
+   (real `scan_targets` + real `install_manifest` + real `_BLOCKING_SEVERITIES` +
+   real `ALLOWLIST` + real `_rel`.) `errors key: []` is the check [I1] says the gate
+   should be making: on this run nothing was skipped, so the 113/0 is a real scan.
+
+4. **Set-monotonicity and the conformance test's discriminating margin** -- the
+   scenario script behind [I5], run in full:
+   ```
+   A post-fix (item1 as drafted)                            |targets|= 74  shipped-targets=[]  verdict=GREEN
+   B manifest loop DELETED                                  |targets|= 72  shipped-targets=[... 2 skills files ...]  verdict=RED
+   C manifest loop DELETED + explicit _SKILLS_MAPPINGS loop |targets|= 74  shipped-targets=[]  verdict=GREEN
+   ```
+
+5. **Oracle/subject coupling, swept across every `scan_targets()` consumer, not just
+   the one the addendum found.**
+   ```
+   $ grep -rn "scan_targets" . --exclude-dir=.git --exclude-dir=__pycache__
+   ```
+   Five consumers: `bootstrap/tests/test_security_lint.py` (the addendum's finding),
+   `bootstrap/tests/test_security_check.py` (finding [I2]),
+   `bootstrap/tests/test_upgrade_side_door_parity.py` (has the pinned count -- sound),
+   `bootstrap/tests/test_scaffold_substrate.py` (named-literal assertions only --
+   sound), and `bootstrap/security_check.py` itself. No test anywhere pins the target
+   count at 72, so nothing breaks on 72 -> 74:
+   `grep -rn "== 72\|72 shipped" bootstrap/tests/*.py bootstrap/*.py` -> no matches.
+
+6. **Delivery paths that bypass the manifest** -- enumerated by reading every
+   registry-shaped module-level symbol in `bootstrap/_scaffold/config.py`
+   (`grep -n "_MAPPINGS" bootstrap/_scaffold/config.py`, plus a read of lines
+   160-280 for the non-`_MAPPINGS` ones). Found `_OPTIONAL_TEMPLATES` -> [I3]; traced
+   it through `bootstrap/_scaffold/cli.py:371` and `bootstrap/_scaffold/install.py:1466`.
+
+7. **Frozen-set / sequencing state** -- re-read `frozen_files` at HEAD (164 entries),
+   confirmed all three relevant files present, and confirmed the
+   `gate-reanchor-preflight` plan is archived. See [I8].
+
+8. **Boundaries.** Empty (`templates/` missing -> oracle empty, [I6a]); one/N>>1 (44
+   -> 74 targets; Bandit invoked with 74 absolute paths, ~6 KB of argv, far under
+   `ARG_MAX`); symlink ([I6b], measured); missing file ([I1], measured); unparseable
+   file ([I1], measured); `None` (`modules=None` verified load-bearing -- it is the
+   full-catalog branch at `bootstrap/_scaffold/install.py:1383`); non-ASCII -- all 44
+   source paths are ASCII, so not exercised.
+
+9. **A hypothesis I checked and it does NOT hold** (recorded so the next reviewer
+   does not spend the time). I suspected item 1 widens the release gate's trust
+   anchor, because `bootstrap/security_check.py:35` imports from the pure-stdlib leaf
+   `bootstrap/_scaffold/config.py` under an explicit "trust anchor: narrowest owner"
+   comment, and item 1 adds a dependency on the much larger
+   `bootstrap/_scaffold/install.py`. Measured:
+   ```
+   loaded today          : 12
+   ['bootstrap', 'bootstrap._scaffold', 'bootstrap._scaffold._guard', 'bootstrap._scaffold.cli', 'bootstrap._scaffold.config', 'bootstrap._scaffold.install', 'bootstrap._scaffold.lockfile', 'bootstrap._scaffold.merge', 'bootstrap._scaffold.security', 'bootstrap._scaffold.slotmerge', 'bootstrap._scaffold.upgrade', 'bootstrap.security_check']
+   extra after importing install: []
+   ```
+   Importing `bootstrap.security_check` already executes the whole engine package, so
+   the runtime trust surface is unchanged. I also checked the mechanical guard:
+   `test_security_check_imports_trust_anchor_from_narrowest_owner` at
+   `bootstrap/tests/test_config_module.py:50` constrains only the `ImportFrom` that
+   names `_MODULE_MAPPINGS`, so a separate `install_manifest` import does not trip it.
+   **No finding.**
+
+10. **Spot-check of a Response claim** (per the brief's instruction to treat the
+    Response with the same suspicion as the review). The Response asserts no preset
+    selects `content-security`. Consistent: `_PRESETS` holds exactly
+    `['collaborative-team', 'high-rigor-legacy', 'solo-greenfield']`, none carries a
+    `modules` key, `_DEFAULT_ON_MODULES` is
+    `('lifecycle-metrics', 'reflections', 'claim-check', 'fold-back-ledger', 'incident-trackers', 'documentation-plan')`,
+    and `content-security` appears in `bootstrap/_scaffold/config.py` only as a
+    `_MODULE_MAPPINGS` key. **No finding**, and it does not touch item 1 either way.
+
+### Not covered / low confidence
+
+* **I am the same agent type as the author, in a fresh session. This review carries
+  NO cross-type independence.** Per this repository's own Dual-Review model that is
+  the *Internal* floor, and it is the weaker tier by construction: I share the
+  author's priors, its vocabulary, its blind spots and its taste in what counts as a
+  sufficient argument. Two of my findings ([I2], [I5]) are literally the author's own
+  criterion turned back on the author's own text -- which is the kind of finding a
+  same-type reader is good at, and is *not* a substitute for a reader who does not
+  share the frame. The proposal's `required(External, security lens)` at plan review
+  is not discharged by this review and should not be treated as narrowed by it.
+* **I did not write the change.** Hard constraint: not one byte into the repository.
+  Every "post-fix" number is a simulation that imports the real objects, so it is
+  faithful to the derivation but not to the diff. Nobody in this lifecycle has yet
+  run the actual edited `bootstrap/security_check.py`, and the External pass says the
+  same of itself.
+* **I did not run the full suite** (`python -m pytest bootstrap/tests`), because
+  doing so writes bytecode/artifacts and another session is live in this tree. So I
+  have not shown the suite stays green -- only that no test pins the count at 72 and
+  that the four other `scan_targets()` consumers' assertions survive 72 -> 74 by
+  inspection plus targeted execution.
+* **I did not audit the two newly-scanned files for security content.** Bandit's
+  verdict on them (16 LOW, 0 MEDIUM+) has now been reproduced three times by three
+  parties; a *human* read of 2502 lines of subprocess-shelling code that runs inside
+  an adopter's git repository is a different exercise and nobody has done it. The
+  proposal explicitly defers the four `B607` findings (`git` invoked by name, not
+  absolute path) to a separate proposal; I did not evaluate whether that deferral is
+  right.
+* **I did not verify the sibling-collision table** beyond the three shared files
+  named in it, and did not read `gate-claims-vs-enforcement` or `agent-context-scrub`
+  to confirm their claimed line-level scopes. The addendum's warning that A5's
+  docstring correction and change 1's docstring rewrite now touch the *same* docstring
+  is un-rechecked by me.
+* **I did not determine whether a frozen entry binds outside an active batch window.**
+  [I8] reports the plan status only.
+* **Untracked working-tree sensitivity of change 2 is unexplored.** The oracle globs
+  disk, so a developer with a scratch `.py` under `templates/` gets a red security
+  test. The addendum arguably *intends* this ("*should* turn the dev suite red until
+  someone records which it is"), but I did not check how it interacts with parallel
+  test runners or with a dirty tree in CI.
+
+### Second-round recommendation
+
+**Recommended -- one focused round, External, security lens, scoped to four items.**
+Not a full re-review: item 1 is sound, has now been verified independently by three
+readers, and I found nothing against it. The round should be scoped to what no
+External reader has yet seen -- the replacement item 3 and its neighbours:
+
+1. **[I1] must be answered before the Decision, whatever the disposition.** A
+   Security-Review proposal whose *Author-accounting* asserts a fail-closed property
+   the gate demonstrably lacks is the failure this proposal is about, one level up.
+   The correction is cheap and in scope (fail on non-empty `report["errors"]`; assert
+   the reverse direction in change 2's oracle). If the author would rather not touch
+   `run_bandit()`, then the *claim* must come out of the table and become a named
+   residual -- but it cannot stay as written.
+2. **[I2] decides the plan's scope**, including whether a third frozen file is in it.
+   Cheap to settle, expensive to discover mid-plan.
+3. **[I3] and [I6c] should settle item 4's fate.** My reading of the evidence is that
+   item 4 should be **struck** -- the proposal already marks it strikeable, and
+   `_OPTIONAL_TEMPLATES` shows the name-keyed census is blind on the day it is
+   written -- with change 2 plus a pinned count carrying the load instead.
+4. **[I4], [I5], [I7] are record-and-wording corrections**, each one to three
+   sentences, and should ride the same round rather than a separate one.
+
+**And [I8] is for the Maintainer, not the reviewer**: the schedule premise has moved
+at HEAD, so *Sequencing*'s preferred "land FIRST" should be re-decided rather than
+inherited from a Response written against an open window.
+
+A note on my own standing, since this review is about tests that overstate what they
+prove. The strongest thing in this proposal is the addendum's acceptance criterion,
+and I applied it: I did not accept change 2 because it looked independent, I ran the
+state in which it fails. The weakest thing about this review is that I am the same
+model as the author, and the criterion I just praised is one I inherited from him.
