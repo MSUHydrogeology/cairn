@@ -806,3 +806,102 @@ upgrade are all named in the Decision and belong on `dev/PLANNING.md` before
 archive if not already homed.*
 
 This section is append-only once written.
+
+## Security code review -- Codex -- 2026-08-03
+
+**Model:** GPT-5 (Codex)
+
+**Commit reviewed:** `013a953`
+
+**Disposition: changes requested.** The direct stale-expected-old probe confirms
+that Git aborts the two direct ref updates together, and the parent / changed-path
+/ manifest-blob checks each fail closed on the mutations they cover. The
+surrounding bindings do not yet establish that the commit and refs moved are the
+ones the passed check authorized, so `apply` is not ready for the Maintainer-only
+ceremony.
+
+* **[CR1] BLOCKING -- the bundle's adjacent digests do not make its untrusted
+  fields tamper-evident.** `parse_bundle()` checks that `message_sha256` hashes
+  `message`, and `apply_bundle()` checks that `manifest_sha256` hashes
+  `manifest`, but both value and digest come from the same untrusted JSON. An
+  editor can replace either pair consistently; `authority_hashes`, `scope`, and
+  `last_legitimate_anchor` are neither strictly parsed nor re-derived, and extra
+  keys are accepted despite the parser's "refusing anything unexpected"
+  contract. Execution probe: I changed `manifest.collection.node_count` to
+  `999999`, recomputed the adjacent manifest digest, and `apply_bundle()` moved
+  both refs to a commit carrying `999999`. This falsifies "revalidates every
+  binding." **Satisfier:** give `apply` an authority independent of the mutable
+  bundle -- re-derive the prospective manifest and every computed field, or
+  verify an authenticated check artifact -- then strictly validate the exact
+  schema and compare all derived values before constructing a commit. A digest
+  stored beside the bytes it covers may remain a corruption check, but must not
+  be described or relied on as tamper evidence.
+
+* **[CR2] BLOCKING -- the constructed trust-root commit carries neither the
+  reviewed message nor a signature.** `apply_bundle()` passes only the manifest
+  to `_gate_reanchor._construct_anchor_commit()`. That helper hard-codes
+  `cairn: supervised gate re-anchor (N = C + manifest)`, a synthetic identity,
+  and no `commit-tree -S`; the drafted message and its digest never reach the
+  commit or the pre-ref verification. Execution produced
+  `message_bound=false` and signature status `N`. This loses the required six
+  hashes / SHAs audit trail and bypasses the post-epoch signing rule at its most
+  privileged commit. Because the resulting commit becomes the anchor, later
+  `anchor..HEAD` signature checks exclude it permanently. **Satisfier:** construct
+  from the exact bundle message, sign as the Maintainer, then verify from the
+  commit object before either ref moves: exact parent, exact tree/path and mode,
+  exact manifest blob digest, exact message digest, valid signature, and pinned
+  principal. Add non-vacuous wrong-message and unsigned-commit substitutions.
+
+* **[CR3] BLOCKING -- a successful transaction leaves the old manifest staged
+  against the new trust root.** The constructor uses a temporary index and the
+  transaction moves only refs. In an execution probe, successful `apply` left
+  `git status --porcelain=v1` reporting
+  `M  bootstrap/tests/fixtures/gate_manifest.json`: the real index and worktree
+  still carry the pre-blessing blob while `HEAD` and the anchor carry the new
+  one. That is an immediate dirty-state failure and a staged rollback waiting to
+  ride a later commit. It also does not implement the plan's promised explicit
+  index-residue report on abort. **Satisfier:** include the real index/worktree
+  transition in the supervised state machine so success is clean; on CAS abort,
+  leave and accurately report any prepared manifest residue without implying
+  either ref moved. Test both `git diff` and `git diff --cached` after success and
+  after a forced abort.
+
+* **[CR4] BLOCKING -- the transaction does not bind two direct ref identities.**
+  The bundle records only the checked commit, not its branch. Switching from
+  `master` to a new branch at the same SHA after bundle creation was accepted;
+  `apply` advanced the new branch and the anchor while leaving `master` behind.
+  Separately, making `refs/cairn/gate-anchor` a symbolic ref caused
+  `update-ref` to follow it and advance its target branch, so the claimed
+  two-ref transaction changed a third logical ref. The narrow `_git_write`
+  allowlist is useful, but command-name restriction alone does not constrain
+  the update protocol's targets or dereference behavior; the broader module
+  claim that every Git invocation passes `_git` is also no longer true once
+  `apply` reaches the raw-plumbing constructor. **Satisfier:** bind and
+  revalidate the exact checked branch, require the gate anchor to be a direct
+  ref, and use no-deref/ref-format guards so the transaction has exactly the two
+  intended targets. Restate and test the access boundary as `check` having no
+  path to any repository writer, while `apply` has only the enumerated object,
+  index/worktree, and two-direct-ref operations it requires.
+
+* **[CR5] REQUIRED COVERAGE -- the recorded public three-command workflow is
+  still not tested.** The CLI tests cover only a live-repository `check` smoke
+  and help text; bundle and apply tests import internals. This does not meet the
+  plan's explicit `evidence -> check -> apply` subprocess criterion and allowed
+  the discarded message and dirty success state to pass 89/89 focused tests.
+  Add a public-path success case plus malformed, stale-state, wrong-branch,
+  symbolic-anchor, tampered/authentication-failure, unsigned, and transaction-
+  abort cases. Assert exit status, exact ref set, committed metadata, and final
+  index/worktree state.
+
+**Accepted / deferred posture, not reopened here.** The evidence stage's host
+access remains the Decision-accepted trusted-contributor residual. Replay remains
+revalidate-and-confirm rather than mechanically single-use (SR10; no nonce).
+First use still requires Chunk G's Maintainer-only exact-byte bootstrap; nothing
+in `013a953` performs or discharges it.
+
+**Verification:** canonical Python 3.13.13: focused suite,
+`89 passed in 7.42s`; full bootstrap suite, `1560 passed, 3 warnings in 105.00s`.
+Independent temp-repository probes exercised stale-anchor atomic abort,
+self-rehashed manifest substitution, actual commit message and signature,
+post-success index/worktree state, same-SHA branch switching, and a symbolic
+gate-anchor. No network or host-containment probe was repeated.
