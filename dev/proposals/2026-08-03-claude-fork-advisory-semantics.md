@@ -747,3 +747,109 @@ being read. That mechanic is `gate-reanchor-preflight`'s, adopted wholesale.
   noise rather than removing it. Recovery: measure on a real adopter install
   before the plan's final chunk, and if the rate is high, reconsider whether the
   advisory earns its place at all.
+
+## Review -- Gemini Flash (External, Security Review) -- 2026-08-03
+
+**Model**: Gemini 3.6 Flash (External, different-agent-type)
+**Verdict**: SHIP (recommend ACCEPT; verified claims a–c, verified complete target-independence of caller-supplied comparison source)
+
+### Steelman
+
+This proposal satisfies the core Cairn integrity invariant: *"The artifact under verification must not supply the material used to verify it."* By refactoring `forked_facade_findings` to take a required, keyword-only `upstream: UpstreamSource` parameter with no default value, the proposal forces callers to supply their own trusted upstream template root and destination-to-source mapping.
+
+The design completely removes the lockfile's `src` field from comparison path resolution—using it only to detect and flag relabeling tamper attempts—and builds `src_for_dst` from static engine mappings (`install_manifest(modules=None)`). This closes the vulnerability where a target tree could point the verification logic at a lookalike or target-planted template file.
+
+### Concerns and Findings
+
+* **[G1] (Verification of Claims a, b, and c)**
+  * **Claim (a) — SHA-256 Byte-Identity of `tools/intent.py` Twins:**
+    Verified under Python 3.13.13. `tools/intent.py` and `templates/modules/team-gated/intent.py` are byte-identical.
+    * *Command:* `~/conda_envs/lhm/bin/python -c "import hashlib, pathlib; h1 = hashlib.sha256(pathlib.Path('tools/intent.py').read_bytes()).hexdigest(); h2 = hashlib.sha256(pathlib.Path('templates/modules/team-gated/intent.py').read_bytes()).hexdigest(); print('tools/intent.py:', h1); print('templates/modules/.../intent.py:', h2); print('Identical:', h1 == h2)"`
+    * *Output:*
+      ```
+      tools/intent.py: 6462d4041d5d88d1013a88b02d2c52a28523472899ddc8fde3ad51491a016e03
+      templates/modules/.../intent.py: 6462d4041d5d88d1013a88b02d2c52a28523472899ddc8fde3ad51491a016e03
+      Identical: True
+      ```
+  * **Claim (b) — Runtime Load of `tools._intent.*` Package:**
+    Verified under Python 3.13.13. All 7 modules in `tools._intent/` load without error.
+    * *Command:* `~/conda_envs/lhm/bin/python -c "import importlib, pathlib; pkg = pathlib.Path('tools/_intent'); files = sorted([p.name for p in pkg.glob('*.py')]); print('Files:', files); imported = [importlib.import_module('tools._intent.' + f[:-3] if f != '__init__.py' else 'tools._intent').__name__ for f in files]; print('Loaded:', len(imported), imported)"`
+    * *Output:*
+      ```
+      Files: ['__init__.py', 'cli.py', 'conflict.py', 'hooks.py', 'identity.py', 'record_io.py', 'shared.py']
+      Loaded: 7 ['tools._intent', 'tools._intent.cli', 'tools._intent.conflict', 'tools._intent.hooks', 'tools._intent.identity', 'tools._intent.record_io', 'tools._intent.shared']
+      ```
+  * **Claim (c) — Documentation of `--finalize` `base_hash` Backfill:**
+    Verified in `bootstrap/_scaffold/upgrade.py:1624-1628`. The docstring explicitly documents that `--finalize` preserves `base_cache` / `base_hash` and copies `hash` to `base_hash` for records predating `base_hash`.
+
+* **[G2] (Deep Security Evaluation — Target Independence Trace)**
+  * *Question:* Can the target tree being checked (`target`) influence the comparison source?
+  * *Trace of Caller 1 (`bootstrap/verify_integrity.py`):*
+    1. Resolves `CAIRN_ROOT = Path(__file__).resolve().parent.parent` from the location of `verify_integrity.py` itself (the runner checkout).
+    2. Builds `upstream = trusted_upstream(CAIRN_ROOT)` where `templates_root = CAIRN_ROOT / "templates"` and `src_for_dst` comes from `install_manifest(modules=None)`.
+    3. `install_manifest(modules=None)` evaluates static in-memory Python structures (`_CORE_MAPPINGS`, `_SKILLS_MAPPINGS`, `_ALWAYS_ON_MAPPINGS`, `_MODULE_MAPPINGS` in `config.py`). It reads zero files from `target`.
+    4. Inside `forked_facade_findings`: `target` is used to locate `target / dev/.cairn/cairn-lock.yml` and read target files on disk. `rec["src"]` from `target`'s lockfile is ignored for path resolution. `rec["dst"]` is used as a lookup key in `upstream.src_for_dst`.
+    5. If `rec["dst"]` is not in `src_for_dst`, `src_rel` is `None` -> degrades to `unconfirmed` (no template read, no suppression). If `rec["dst"]` is in `src_for_dst`, `src_rel` is hardcoded by the engine. `template_path = upstream.templates_root / src_rel` is validated via `_assert_safe_write` inside `upstream.templates_root`.
+  * *Trace of Caller 2 (`cmd_upgrade` in `bootstrap/_scaffold/upgrade.py`):*
+    1. `cairn_root` is resolved from CLI `--cairn-root` or `_cairn_root()` (`Path(__file__).resolve().parents[2]`). Neither reads `target`.
+    2. If `--to <ref>` is specified, `upstream` is set to `None`, falling back to `unconfirmed` without reading templates.
+  * *Verdict:* **ZERO target-influence paths exist.** The comparison source is strictly caller-controlled and target-independent.
+
+* **[G3] (Coordination with Trivial Remediation String Commit)**
+  Confirming the proposal's coordination recommendation: because `format_forked_facade_warning` is edited by both the trivial remediation fix and this proposal, the trivial commit should land first (or be absorbed into this plan's Chunk 1) to avoid invalidating the AST attestation baseline on `lockfile.py`.
+
+### Covered (Lenses Swept & Verbatim Executions)
+
+Executed under canonical interpreter `~/conda_envs/lhm/bin/python` (Python 3.13.13).
+
+1. **Byte-Identity Check (`tools/intent.py` vs `templates/modules/team-gated/intent.py`):**
+   * *Command:*
+     ```bash
+     ~/conda_envs/lhm/bin/python -c "import hashlib, pathlib
+     h1 = hashlib.sha256(pathlib.Path('tools/intent.py').read_bytes()).hexdigest()
+     h2 = hashlib.sha256(pathlib.Path('templates/modules/team-gated/intent.py').read_bytes()).hexdigest()
+     print('tools/intent.py sha256:                    ', h1)
+     print('templates/modules/team-gated/intent.py sha256:', h2)
+     print('Byte identical:', h1 == h2)
+     "
+     ```
+   * *Output:*
+     ```
+     tools/intent.py sha256:                     6462d4041d5d88d1013a88b02d2c52a28523472899ddc8fde3ad51491a016e03
+     templates/modules/team-gated/intent.py sha256: 6462d4041d5d88d1013a88b02d2c52a28523472899ddc8fde3ad51491a016e03
+     Byte identical: True
+     ```
+
+2. **Runtime Import Check (`tools._intent.*` package):**
+   * *Command:*
+     ```bash
+     ~/conda_envs/lhm/bin/python -c "import importlib, pathlib
+     pkg = pathlib.Path('tools/_intent')
+     files = sorted([p.name for p in pkg.glob('*.py')])
+     print('Files in tools/_intent:', files)
+     imported = []
+     for f in files:
+         mod_name = 'tools._intent.' + f[:-3] if f != '__init__.py' else 'tools._intent'
+         mod = importlib.import_module(mod_name)
+         imported.append(mod.__name__)
+     print('Loaded modules (count:', len(imported), '):', imported)
+     "
+     ```
+   * *Output:*
+     ```
+     Files in tools/_intent: ['__init__.py', 'cli.py', 'conflict.py', 'hooks.py', 'identity.py', 'record_io.py', 'shared.py']
+     Loaded modules (count: 7 ): ['tools._intent', 'tools._intent.cli', 'tools._intent.conflict', 'tools._intent.hooks', 'tools._intent.identity', 'tools._intent.record_io', 'tools._intent.shared']
+     ```
+
+3. **Docstring Inspection (`bootstrap/_scaffold/upgrade.py:1624-1628`):**
+   Opened file `bootstrap/_scaffold/upgrade.py` and inspected lines 1624-1628 confirming exact wording regarding `base_hash` backfill logic.
+
+### Not Covered / Low Confidence (Negative Space)
+
+* **Un-Patched Code Verification:** The proposed refactoring of `lockfile.py`, `install.py`, and `upgrade.py` has not been implemented in code yet; all verifications were conducted against the current un-patched codebase and proposal text.
+* **Out-of-Band Checkout Authenticity (R1):** This review confirms that the target tree cannot influence the comparison source, but does not verify that the runner's checkout (`CAIRN_ROOT`) is cryptographically authentic. That trust boundary is explicitly assigned to Scope 1 (`release-authenticity`).
+
+## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
+
+*(Awaiting the Maintainer. The proposal has cleared External Security Review. The Maintainer may accept the proposal to proceed with plan creation.)*
+
