@@ -1732,3 +1732,64 @@ was mutation-verified before this section was written.
 Chunk G remains blocked. `shasum -a 256` is macOS/BSD (the block notes
 `sha256sum`); Windows remains unexamined; the accepted candidate-execution
 residual, replay posture, external anchoring and Phase 4 are untouched.
+
+## Focused External first-use re-review, round 3 -- Codex -- 2026-08-03
+
+**Model:** GPT-5 (Codex)
+
+**Exact commit reviewed:** `292e2c648ccd00eecc24f63a70a297946cdfb49a`
+
+**Disposition: one remaining blocker; NOT YET FIT TO BLESS.** FUR7 is closed:
+the acquisition command now runs the recorded Git binary under `env -i`, and an
+independent execution with `GIT_DIR` naming another repository still read the
+named checkout's anchored runbook. FUR8's reported `PATH` substitution is also
+closed: the literal loader ignored a conflicting `shasum` earlier on `PATH`, and
+the new tests cover both behaviors. The Python checker remains unchanged from
+`355aedb`; CR1 and FUR1-FUR7 remain closed.
+
+* **[FUR9] CRITICAL / BLOCKING -- absolute utility paths do not scrub the shell
+  interpreting the loader.** The revision pins every external utility, but the
+  fenced block itself still runs in the operator's inherited shell environment.
+  Its checksum-list construction uses shell commands such as bare `echo`, and
+  inherited functions or startup configuration can replace those before the
+  absolute `SHASUM` verifies the resulting list. In an isolated execution of
+  the literal block, an inherited `echo` function rewrote the extracted checker,
+  emitted the rewritten file's digest into `RECORDED.sha256`, and allowed the
+  recorded absolute `SHASUM` to report success. The rewritten checker executed
+  and the ceremony returned 0. This is the same incomplete-boundary class as
+  FUR8: the trusted executable is pinned, but its authority-bearing input is
+  still assembled by an unsterile interpreter. **Satisfier:** launch the entire
+  fenced loader through the recorded absolute `ENV -i` and a Maintainer-recorded
+  absolute shell, with the loader body supplied to that clean child. This
+  removes inherited functions, aliases, startup variables and utility-specific
+  environment steering in one boundary. Do not close this incrementally by
+  pinning `echo`; `read`, test, `cd`, failure handling, and interpreted utility
+  environments would remain the same class. Add a literal-loader execution test
+  with an inherited command override and assert that no changed checker byte
+  executes; mutation of the whole-loader scrub must make that test fail.
+
+**Verification.** Canonical Python 3.13.13:
+`test_gate_preflight.py` **122 passed in 28.02s**; full
+`bootstrap/tests` **1593 passed, 3 warnings in 135.31s**. FUR9 was reproduced
+against the runbook's literal loader in an isolated temporary repository; no
+main-repository ref was moved.
+
+**Reviewed SHA-256 set:**
+
+```
+f6dd89b8e66638b5b15f17bfb6da62ef950c3583a6b939bcc1bba1435eef34e6  bootstrap/tests/_gate_preflight.py
+c4a7392dc6a486a7e3b4babbf7f2a217bcfddc782e6409a3f2d945a83024e0c5  bootstrap/REANCHOR_RUNBOOK.md
+8668a059eb14549131fd7c7ad14eeeb3e3687d1a065af6e1c615f5d601844936  bootstrap/tests/test_gate_preflight.py  (evidence only)
+38d5009a51bb094820abfff899dc5be72a02c9b0eed2d5329923fb8abaecb5fc  bootstrap/tests/_gate_manifest.py
+55a11326baae75d5a2f5f1696c5e6c4745ba537286415ba84bfcab26ab36b876  bootstrap/tests/_gate_reanchor.py
+e272b868eb640b9193daefe76c5fbe2d6a8f5225eb934b53e9c7febdbc680b9b  bootstrap/tests/_gate_transition.py
+c719f770afe1b0ce5928923a7be2590666bc8f7935df2ad94eda95598be286e4  bootstrap/tests/_oracle_activation.py
+17007480162b0f4a100a100714a05198ef4a21ee8e726f31fb60b296127d429d  bootstrap/tests/_oracle.py
+e1d6c7db5d72729e43040dedb69fa47c50a3fe36b7d284ad73c1285b8a027007  bootstrap/tests/_oracle_trust.py
+```
+
+**Scope unchanged.** I did not re-review Stage B, the accepted
+candidate-execution residual, replay posture, SSH cryptography, Windows
+behavior, external anchoring, concurrent Maintainers, or Phase 4. No accepted
+residual is reopened by this finding; FUR9 concerns the loader boundary that the
+revision itself claims to scrub.
