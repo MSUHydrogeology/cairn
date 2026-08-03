@@ -1874,3 +1874,62 @@ declared residual set. Listing controls is not the same as tracing the chain.
 Chunk G remains blocked. `shasum -a 256` is macOS/BSD; Windows unexamined; the
 accepted candidate-execution residual, replay posture, external anchoring and
 Phase 4 are untouched.
+
+## Focused External first-use re-review, round 4 -- Codex -- 2026-08-03
+
+**Model:** GPT-5 (Codex)
+
+**Exact commit reviewed:** `c0bf2a76f727f5a72aeb991f5457204f825c3585`
+
+**Disposition: one narrow remaining blocker; NOT YET FIT TO BLESS.** FUR9's
+mechanism is closed. The whole loader now runs beneath a recorded absolute
+`env -i` and child shell; the previous inherited-function reproduction no
+longer reaches the checker, the ceremony still completes, and the regression is
+live and literal. FUR7, FUR8 and the Python checker findings remain closed.
+
+* **[FUR10] HIGH / BLOCKING -- the clean-shell property is tested with
+  `/bin/sh` but the operator-facing runbook leaves the shell unconstrained.**
+  The test harness silently substitutes `/bin/sh`, and the author response says
+  it was chosen because non-interactive `sh` reads no startup file. The runbook
+  itself only says `<maintainer-recorded-shell>`, while claiming that the
+  boundary removes startup files. A solo Maintainer on this macOS host could
+  reasonably record the default `/bin/zsh`; execution confirmed that `/bin/zsh`
+  under the runbook's `env -i HOME=<recorded-home>` still reads
+  `<recorded-home>/.zshenv`. The tested security property therefore depends on a
+  choice the ceremony never tells its non-engineer operator to make. That can
+  restore pre-loader command definitions inside the supposedly clean child.
+  **Satisfier:** make `/bin/sh` the literal recorded shell for this canonical
+  ceremony, or state an equally explicit requirement that the recorded shell
+  must read no system or user startup file in this exact non-interactive,
+  empty-environment invocation. Prefer the literal `/bin/sh`: it matches the
+  tested bytes and removes an unnecessary operator decision. Add a test over the
+  operator-facing value, rather than keeping the requirement only in the test
+  helper's substitution map.
+
+**Verification.** Canonical Python 3.13.13:
+`test_gate_preflight.py` **125 passed in 29.50s**; full
+`bootstrap/tests` **1596 passed, 3 warnings in 132.34s**. Independent execution
+confirmed both that the prior inherited-function probe is blocked with the
+tested `/bin/sh` value and that `/bin/zsh` reads a user startup file under the
+documented clean-child environment. All probes used isolated temporary state;
+no main-repository ref was moved.
+
+**Reviewed SHA-256 set:**
+
+```
+f6dd89b8e66638b5b15f17bfb6da62ef950c3583a6b939bcc1bba1435eef34e6  bootstrap/tests/_gate_preflight.py
+48cc8cfb4ad6108565b3683a1cb4fc3cf4b638d55cd7a439287742e6d19ab0eb  bootstrap/REANCHOR_RUNBOOK.md
+173dd7403ee9f8ba1952a9431221ca1ff685465fa6518e8c6f1b93c77fa6ed21  bootstrap/tests/test_gate_preflight.py  (evidence only)
+38d5009a51bb094820abfff899dc5be72a02c9b0eed2d5329923fb8abaecb5fc  bootstrap/tests/_gate_manifest.py
+55a11326baae75d5a2f5f1696c5e6c4745ba537286415ba84bfcab26ab36b876  bootstrap/tests/_gate_reanchor.py
+e272b868eb640b9193daefe76c5fbe2d6a8f5225eb934b53e9c7febdbc680b9b  bootstrap/tests/_gate_transition.py
+c719f770afe1b0ce5928923a7be2590666bc8f7935df2ad94eda95598be286e4  bootstrap/tests/_oracle_activation.py
+17007480162b0f4a100a100714a05198ef4a21ee8e726f31fb60b296127d429d  bootstrap/tests/_oracle.py
+e1d6c7db5d72729e43040dedb69fa47c50a3fe36b7d284ad73c1285b8a027007  bootstrap/tests/_oracle_trust.py
+```
+
+**Scope unchanged.** I did not re-review Stage B, the accepted
+candidate-execution residual, replay posture, SSH cryptography, Windows
+behavior, external anchoring, concurrent Maintainers, or Phase 4. No accepted
+residual is reopened; FUR10 is the mismatch between the shell the tests prove
+and the shell the runbook tells the Maintainer to choose.
