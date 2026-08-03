@@ -724,3 +724,249 @@ Sweep executed on canonical interpreter `~/conda_envs/lhm/bin/python` (Python 3.
 
 *(Awaiting the Maintainer. The proposal has cleared External Security Review. The Maintainer may accept the proposal to proceed with plan creation.)*
 
+## Author addendum -- Claude (Strategy) -- 2026-08-03
+
+### The regression guard this proposal leans on cannot fail, and the fix as drafted keeps it that way
+
+A later audit (whether Cairn's practices could be spun out as a separate package --
+verdict "could, narrowly; should not") re-read the machinery this proposal touches and
+surfaced a defect in `bootstrap/tests/test_security_lint.py` itself. It is folded in here
+because it bears directly on *item 3*, which the proposal above calls "the durable half".
+The finding does not change item 1; it changes what item 3 has to do to be worth its name.
+
+Everything below was re-measured at HEAD `5e6bf0c` under the canonical interpreter
+`~/conda_envs/lhm/bin/python` (Python 3.13.13). No repository file was modified: the
+proposed derivations were re-implemented in a scratch script that imports the real
+`install_manifest` and the real registries.
+
+#### The finding
+
+`test_scan_targets_cover_all_shipped_scripts` at
+`bootstrap/tests/test_security_lint.py:134` is the test this proposal identifies as "the
+anti-drift assertion the test already claims to be". Its docstring makes that claim in its
+own words:
+
+> Coverage is derived from the source of truth, not a hand list: every
+> verbatim .py shipped via \_MODULE\_MAPPINGS is in the scanned set (so a
+> 9th reference script is auto-covered), and Cairn's dev executables are
+> covered too. This is the anti-drift assertion (R2) -- the previous miss
+> was a stale inventory + a non-recursing directory target.
+
+The test builds its expected set, `shipped`, by walking `_MODULE_MAPPINGS` for verbatim
+`.py` entries and joining `templates/modules/{src}`. That is, character for character, the
+first loop inside `scan_targets()` at `bootstrap/security_check.py:64`. Confirmed by
+execution rather than by reading:
+
+```
+identity: test's _MODULE_MAPPINGS is code's _MODULE_MAPPINGS -> True
+len(test's `shipped`)                = 33
+len(scan_targets())                  = 72
+test's shipped == code's loop-1 output -> True
+assertion `shipped - targets`        = []
+```
+
+So the assertion is `X - (X union ...) == set()`. It is empty for every possible content of
+`_MODULE_MAPPINGS`, because the expectation and the value under test are computed from the
+same object by the same expression. The test passes today; it would have passed on any day
+since it was written; and it will pass on every future day on which that loop survives.
+Meanwhile 2502 physical lines of shipped Python (`templates/skills/_lib/lifecycle.py` and
+`templates/skills/_lib/lifecycle_planner.py`, counts as_of 2026-08-03) sit outside the scan
+— the exact drift the docstring names.
+
+Two terms, since this is the whole point. A test is an **oracle** plus a **subject**: the
+oracle says what ought to be true, the subject is the code being checked. When the oracle is
+computed from the same source the subject reads, the test can check that the subject
+*consumes* that source correctly, but it can never check that the source is *complete*. A
+gap in the source moves the oracle and the subject together, and the difference between them
+stays empty. That is what happened here.
+
+#### Being fair to the original test
+
+The original work was a real fix for a real defect, and the instinct behind it was correct.
+
+* It replaced a hand-maintained list of files. That list had gone stale, and deriving from a
+  registry genuinely removed that failure mode.
+* It is not inert. Three of its assertions can fail: the named-dev-file loop
+  (`bootstrap/scaffold.py`, `scripts/check_cairn.py`, and the `content_scan.py` module
+  source) would fail if any of those dropped out; the every-target-ends-in-`.py` assertion
+  guards the non-recursing-directory footgun the docstring also names; and the
+  `assert shipped, ...` non-emptiness guard fires if the registry empties entirely. Only the
+  **coverage** assertion is the tautology.
+* Its docstring is scoped honestly in one respect: it says "shipped via \_MODULE\_MAPPINGS",
+  not "shipped". The overclaim is the definite article in "the source of truth" and the
+  label "the anti-drift assertion", which together read as covering the shipped surface.
+
+The bug is narrow and worth stating plainly: **the test derived from one registry, and by
+the time it mattered there were three.** It did not derive from the wrong kind of thing; it
+derived from too few of the right kind.
+
+#### The unit of staleness moved up a level; it did not go away
+
+This is the shape worth recording, because this proposal's item 3 repeats it.
+
+| level | what the coverage set is derived from | what must be kept current by hand | outcome |
+| --- | --- | --- | --- |
+| 0 | a written-out list of files | the file list | went stale (the "previous miss") |
+| 1 (2026-05-27) | one registry, `_MODULE_MAPPINGS` | which registries are consulted | went stale 5 days later |
+| 2 (this proposal, as drafted) | `install_manifest()` | which registries `install_manifest` reads | same failure mode available |
+
+At every level the derivation is honest and the residue is a hand-maintained list one
+abstraction higher. Deriving is not the same as being independent.
+
+#### A correction to *Context* above
+
+The *Context* section says the always-on registry was fixed first and "the third registry
+was then missed by the same mechanism the second one was". The chronology is the other way
+round, and the corrected version is worse for the proposal's own argument, not better:
+
+| date | commit | event |
+| --- | --- | --- |
+| 2026-05-27 | `a165026` | `test_scan_targets_cover_all_shipped_scripts` added -- "derive bandit-gate coverage from source of truth (R2)" |
+| 2026-06-01 | `06345c5` | `_SKILLS_MAPPINGS` created; neither `scan_targets()` nor the new test extended |
+| 2026-06-10 | `9bc1119` | `_ALWAYS_ON_MAPPINGS` created *and* wired into `scan_targets()` with its own coverage test |
+
+So `_SKILLS_MAPPINGS` is the **second** registry, not the third, and it was missed twice:
+once at creation, and again nine days later during a change whose own comment in
+`bootstrap/_scaffold/config.py` describes itself as closing a *pre-existing* Bandit blind
+spot for registries that ship `.py` outside `_MODULE_MAPPINGS`. That audit was looking
+directly at this class and fixed one of the two members while the other sat in the same file
+roughly a hundred lines above. And the anti-drift test was live and green throughout — it
+was in place on the day the drift occurred and stayed green for 63 days
+(2026-06-01 to 2026-08-03).
+
+There is a counter-example in the tree that shows the repository already knows the stronger
+shape. `test_always_on_executables_are_release_scan_targets` at
+`bootstrap/tests/test_upgrade_side_door_parity.py:158` makes the same derived assertion but
+adds `assert scanned == 9`. That pinned count is a hand-maintained number, which sounds like
+the anti-pattern and is in fact the opposite: it **fails loudly when the registry grows**,
+forcing a human to look. The weaker test is the one that named itself the anti-drift
+assertion.
+
+#### What this means for item 3 as drafted
+
+Item 3 proposes to derive `shipped` from `install_manifest()` — and item 1 proposes to
+derive `scan_targets()` from `install_manifest()`. Oracle and subject would again share a
+source. The proposal states this outright in *Author-accounting* without registering it as a
+cost: "Pinned by the extended coverage test, which derives its expectation the same way."
+"The same way" is precisely the problem.
+
+Simulating both proposed derivations side by side over four manifest states (verdicts
+include the pre-existing `assert shipped, ...` non-emptiness guard):
+
+| scenario | proposed `scan_targets()` | proposed `shipped` | `shipped - targets` | test verdict |
+| --- | --- | --- | --- | --- |
+| A. real manifest (status quo) | 44 | 44 | empty | GREEN — correct |
+| B. skills entries never reach the manifest | 42 | 42 | empty | **GREEN — 2 shipped files unscanned** |
+| C. a fifth registry ships a `.py` the manifest never sees | 42 | 42 | empty | **GREEN — same** |
+| D. manifest emits nothing at all | 42 | 0 | empty | RED — caught by the non-emptiness guard |
+
+Scenarios B and C are the historical defect replayed under the proposed fix, and the test
+does not see them. An independent oracle does: globbing `.py` files physically present under
+`templates/` returns, for scenario B, exactly
+`['templates/skills/_lib/lifecycle.py', 'templates/skills/_lib/lifecycle_planner.py']`.
+
+The proposal's *Signals the change is wrong* section already names this exact state — "the
+regression test goes green while a shipped file is unscanned" — and grades it as an unlikely
+symptom of manifest drift. It is not unlikely. Under the drafted test design it is the
+guaranteed behaviour for any delivery path outside `install_manifest()`, which is the same
+residual item 4 already concedes is open. The proposal saw the shape and mis-graded it.
+
+The proposal *did* verify its extended assertion fails at HEAD (the AssertionError quoted
+above item 3's paragraph). That check is real and it passed: the assertion is a valid
+**one-shot migration check**. The error is treating a one-shot pass as evidence of a
+standing guard. "Fails against the state being fixed" and "can fail against that state
+recurring" are different properties, and only the first was tested.
+
+#### What item 3 must assert instead
+
+Three changes. The first two are the substance; the third is the criterion that would have
+caught this.
+
+1. **Split the test and stop overclaiming in the name.** The manifest-derived assertion is
+   worth keeping — it pins that `scan_targets()` actually consumes the manifest, which is
+   the deletion case (remove the union from item 1 and it goes red). But it is a
+   *conformance* check, not an anti-drift check. Rename it to say so (e.g.
+   `test_scan_targets_consume_the_full_install_manifest`) and rewrite the docstring to drop
+   "the source of truth" and "the anti-drift assertion". A test that names a property it
+   does not have is worse than a missing test, because it retires the question.
+
+2. **Add one assertion whose oracle the code does not read.** The cheapest sufficient one is
+   the filesystem: every `.py` physically present under `templates/` must appear in
+   `scan_targets()`, modulo a declared table of exclusions each carrying a rationale. This is
+   independent because all four registries source from under `templates/`, so a shipped
+   Python file must exist there before any registry can reference it. Measured, the exclusion
+   table is **empty today** — the on-disk set and the manifest-verbatim set are set-equal at
+   44 files each, as_of 2026-08-03, `disk - manifest` and `manifest - disk` both empty. It
+   therefore costs nothing to introduce and fires the moment the two disagree.
+
+   This does **not** contradict *Alternatives considered*, which rejects globbing. That
+   rejection is correct and stands — but it is about the **gate's scan set**, and the reason
+   does not transfer to the **test's oracle**. The two want opposite defaults: the gate must
+   scan what ships, so an authored-but-unwired template must not turn a release red; the test
+   must notice when disk and manifest disagree, so an authored-but-unwired template *should*
+   turn the dev suite red until someone records which it is. Same glob, different job.
+
+3. **Upgrade item 4's census from a name-tripwire to a coverage assertion — with a caveat.**
+   As drafted, item 4 fails when a new `*_MAPPINGS` symbol is absent from a small declared
+   table; that is still a hand-maintained list, and its assertion is "the name is in my
+   table", not "its files are scanned". The stronger version asserts, for every module-level
+   `*_MAPPINGS` in `bootstrap/_scaffold/config.py`, that its verbatim `.py` entries are in
+   `scan_targets()`. That is independent of `install_manifest()` (it reads the registries
+   directly, and the manifest is downstream of them) and it would have failed at the pre-fix
+   state. The caveat is real and should not be discovered during implementation: the four
+   registries have three different element shapes — `_CORE_MAPPINGS` holds 2-tuples,
+   `_SKILLS_MAPPINGS` 3-tuples, `_ALWAYS_ON_MAPPINGS` and `_MODULE_MAPPINGS` `InstallSpec`
+   objects — and two different path joins (`templates/{src}` versus
+   `templates/modules/{src}`). A generic census needs a normalizer, which is more work than
+   the proposal's "cheap tripwire" framing suggests. Item 4 should therefore stay marked
+   strikeable, with change 2 as the load-bearing guard.
+
+**The acceptance criterion, stated generally.** A regression test is accepted only when its
+author can name a *future* repository state in which it fails, and has run the perturbation
+that produces that state. The concrete gate for this proposal's plan: perturb the delivery
+path so the two skills tools stop being scanned, and confirm the new assertion goes red. As
+drafted, item 3 does not (scenario B above). With change 2 it does.
+
+#### What this addendum does not establish
+
+* **It does not show a security finding was missed.** The Bandit measurement in *Context*
+  stands as recorded (0 MEDIUM-or-higher over the two files); that measurement was not
+  re-run for this addendum, and nothing here disputes it. The defect is in the guard, not in
+  the code the guard failed to watch.
+* **It does not invalidate item 1.** The union derivation in item 1 is a real coverage
+  improvement and its "coverage can only grow" argument is unaffected. The criticism is
+  confined to item 3.
+* **It does not show the existing test is worthless.** Three of its assertions can fail, and
+  the sibling always-on test with its pinned count is a genuine growth tripwire. What is
+  hollow is one assertion — the coverage one — and the docstring's characterisation of it.
+* **It does not make the filesystem oracle complete.** Change 2 is independent only while
+  every registry sources from under `templates/`, which is true as_of 2026-08-03. A future
+  registry sourcing from elsewhere escapes it, and that residual should be named in the test
+  rather than assumed away — the same discipline item 4 already applies to its own residual.
+* **It does not establish a doctrine violation, or trigger the rate-limit gate.** This is one
+  test in one file. The *Doctrine-change rate-limit* section above is unchanged: still not
+  engaged.
+
+#### Consequences for the sections above
+
+* *Proposal > item 3* is superseded by the three changes in this addendum. Item 1 and item 2
+  stand as written.
+* *Context* — the registry chronology is corrected above. `_SKILLS_MAPPINGS` is the second
+  registry, not the third.
+* *Tests required* gains: the split-and-rename of
+  `test_scan_targets_cover_all_shipped_scripts`; the on-disk oracle assertion with its
+  (currently empty) rationale table; and the perturbation check that the new assertion goes
+  red when the skills tools leave the scanned set. The named-file assertion pinning both
+  skills tools stays and is now the belt to the oracle's braces.
+* *Author-accounting > Invariants* — the entry reading "Pinned by the extended coverage test,
+  which derives its expectation the same way" should be read as *not* establishing what it
+  claims; the `modules=None` argument is pinned by inspection of item 1's code, not by that
+  test.
+* *Sequencing* — this addendum enlarges, but does not change the shape of, the edit to
+  `bootstrap/tests/test_security_lint.py`. That file is already recorded above as a
+  file-level collision with the sibling `gate-claims-vs-enforcement` (its disposition A5
+  corrects a docstring and a skip message in the same file) and as inside the
+  `gate-reanchor-preflight` frozen set. Both constraints bind harder now: A5's docstring
+  correction and change 1's docstring rewrite touch the same docstring, so those two are no
+  longer merely file-level neighbours. Whichever lands second must re-read rather than apply
+  its recorded text.
