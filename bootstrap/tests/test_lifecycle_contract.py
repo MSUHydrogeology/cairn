@@ -531,3 +531,57 @@ def test_decision_by_configured_human_maintainer_is_accepted(tmp_path, monkeypat
     assert rc == 0
     assert "structurally sound" in out
     assert "UNRECOGNIZED" not in out
+
+
+# --- archive-precondition disposition block (deferral-discipline C1) ----------
+#
+# The planner's archive-precondition recognizer must accept BOTH the new
+# `Dispositions:` spelling and the older `Follow-ups migrated to:` one.  The
+# older spelling is load-bearing: artifacts archived under it are append-only
+# and correct as they stand, so a hard rename would make the adopter-facing
+# `scan` report historically-correct records as violations.
+
+_ARCHIVED_PLAN_BODY = (
+    "## Plan review -- R -- 2026-05-01\n\nok\n\n"
+    "## Code review -- R -- 2026-05-02\n\nok\n\n"
+    "## Lasting-truth migration\n\n"
+    "**Fidelity sign-off** -- commit abc1234 matches the Revised section.\n\n"
+)
+
+_ARCHIVE_PRECONDITION_MSG = "archive precondition"
+
+
+def _scan_archived_plan(tmp_path, monkeypatch, capsys, block: str) -> str:
+    repo = _make_repo(tmp_path)
+    _write_plan(repo, "x.md", status="archived",
+                body=_ARCHIVED_PLAN_BODY + block)
+    monkeypatch.chdir(repo)
+    planner.main(["scan"])
+    return capsys.readouterr().out
+
+
+def test_archived_plan_with_dispositions_block_is_not_flagged(
+        tmp_path, monkeypatch, capsys):
+    """The new spelling satisfies the archive precondition."""
+    out = _scan_archived_plan(
+        tmp_path, monkeypatch, capsys,
+        "Dispositions:\n* the thing -> wontfix (out of scope, no adopter reach)\n",
+    )
+    assert _ARCHIVE_PRECONDITION_MSG not in out
+
+
+def test_archived_plan_with_legacy_followups_block_is_not_flagged(
+        tmp_path, monkeypatch, capsys):
+    """The older spelling still satisfies it -- already-archived records."""
+    out = _scan_archived_plan(
+        tmp_path, monkeypatch, capsys,
+        "Follow-ups migrated to:\n* the thing -> dev/PLANNING.md > Queued\n",
+    )
+    assert _ARCHIVE_PRECONDITION_MSG not in out
+
+
+def test_archived_plan_with_neither_block_is_flagged(
+        tmp_path, monkeypatch, capsys):
+    """Neither spelling present -- the precondition still fails closed."""
+    out = _scan_archived_plan(tmp_path, monkeypatch, capsys, "")
+    assert _ARCHIVE_PRECONDITION_MSG in out

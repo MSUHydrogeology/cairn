@@ -628,7 +628,11 @@ def _read_artifact(path: Path) -> Artifact:
     art.plan_review = _parse_field(text, "Plan review")
     art.sections = _parse_sections(text)
     art.has_followups_migrated = bool(
-        re.search(r"^\s*Follow-ups migrated to\s*:", text, re.MULTILINE)
+        re.search(
+            r"^\s*(?:Follow-ups migrated to|Dispositions)\s*:",
+            text,
+            re.MULTILINE,
+        )
     )
     art.has_fidelity_signoff = bool(
         re.search(r"Fidelity sign-off|loop-fidelity", text, re.IGNORECASE)
@@ -797,8 +801,9 @@ def _conformance_violations(art: Artifact, identity: "IdentityModel") -> List[st
                 )
             if not art.has_followups_migrated:
                 v.append(
-                    "status is 'archived' but no 'Follow-ups migrated to:' block "
-                    "is present (archive precondition)."
+                    "status is 'archived' but no 'Dispositions:' block "
+                    "(or the older 'Follow-ups migrated to:') is present "
+                    "(archive precondition)."
                 )
             if not art.has_fidelity_signoff:
                 v.append(
@@ -876,8 +881,8 @@ def _gating_preconditions(art: Artifact, target: str,
                           "a '## Code review' has occurred (archive commit is "
                           "distinct from the implementing commits)"))
             gates.append((True,
-                          "every deferred follow-up has a durable home, recorded "
-                          "in a 'Follow-ups migrated to:' block."))
+                          "every deferred follow-up carries a recorded "
+                          "disposition in a 'Dispositions:' block."))
             gates.append((True,
                           "the loop-fidelity sign-off names the implementing "
                           "commit and the governing Revised section."))
@@ -1010,8 +1015,10 @@ def _scaffold(art: Artifact, target: str, date: str) -> Tuple[str, str, List[str
         if target == "archived":
             block = (
                 "## Lasting-truth migration -- " + date + "\n\n"
-                "Follow-ups migrated to:\n"
-                "* <item> -> dev/PLANNING.md > <section>\n\n"
+                "Dispositions:\n"
+                "* <item> -> accept | guard (<path>::<node>) | wontfix (<why>)\n"
+                "* <item> -> defer -> dev/PLANNING.md > <section>"
+                "   [Maintainer: \"<quote>\"]\n\n"
                 "**Evidence shipped** / **Evidence deferred** / **Deferred "
                 "evidence home**: ...\n\n"
                 "**Fidelity sign-off** -- the landed implementation commit(s) "
@@ -1021,9 +1028,10 @@ def _scaffold(art: Artifact, target: str, date: str) -> Tuple[str, str, List[str
                 "Status: review -> archived; move the file to dev/plans/archive/.",
                 "the plan-archive commit is DISTINCT from the implementing "
                 "commits (proves review happened).",
-                "every deferred follow-up has a durable home, named in the "
-                "'Follow-ups migrated to:' block; the fidelity sign-off names the "
-                "implementing commit + governing section.",
+                "every deferred follow-up carries a recorded disposition, "
+                "named in the 'Dispositions:' block, with any 'defer' carrying "
+                "the Maintainer's quoted authorization; the fidelity sign-off "
+                "names the implementing commit + governing section.",
             ]
             return ("review", "archived", [block] + manifest)
     # Fallback (should be unreachable given _legal_transitions gating).
