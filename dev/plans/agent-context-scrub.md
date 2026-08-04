@@ -1036,3 +1036,92 @@ The five items under *Findings the Decision did not see* in the source
 proposal's Response remain **undecided**. This ruling settles the landing
 order and nothing else; no plan chunk may adopt any of those five on the
 strength of it.
+
+## Maintainer ruling 2026-08-04 -- the four escalated findings, dispositioned
+
+**Authorization, quoted verbatim:**
+
+> Accept all of those dispositions
+
+Scribed by Claude on the Maintainer's instruction. Because that authorization
+refers to a set presented in conversation, each disposition is reproduced in
+full below so the record stands alone. This is a **ruling on an
+already-accepted plan**, not a Decision.
+
+Five items were escalated under *Findings the Decision did not see* in the
+source proposal's Response. **[I1] (the landing order) was already settled** by
+the 2026-08-03 ruling above; the remaining four are dispositioned here.
+
+### [I2] — the non-UTF-8 crash: **routed, not declined**
+
+A single hostile byte in a collaborator's file takes `session-start` down and
+**suppresses the S2 disclosure of the interpreter trust root**. The one-clause
+fix was out of fence twice over: it edits `_status_of`, which this proposal
+declares "needs no change of its own", and `_status_of` was claimed by
+`planner-line-semantics` under the one-proposal-in-flight rule.
+
+**That conflict has dissolved.** `planner-line-semantics` is now accepted
+(Decision `f32d5e8`), planned (`000e480`), owns `_status_of`, and **lands
+first** under the ratified order. The fix goes there. It is not this plan's to
+make and not this plan's to skip.
+
+### [I4] — the fourth application site: **authorized into scope**
+
+`tools/lifecycle.py:758` relays the vendor-target name unescaped, and it prints
+**above every other field in the stream**. The accepted Proposal's Context
+enumerates *three* externally-sourced fields; that enumeration is factually
+wrong.
+
+Authorized because the alternative is worse than the one-line
+`_safe_field(name)`: a `SECURITY.md` residual bullet that reads as exhaustive
+while a fourth forging route stays undisclosed. The Context enumeration is
+corrected to four, and the disclosure must not claim exhaustiveness it does not
+have.
+
+### [I5] — escape-boundary-aware truncation: **declined**
+
+Cutting at 200 characters can leave a lone trailing backslash, which
+contradicts the escape table's stated unambiguity property. Fixing it means
+changing the truncation logic of a helper the Decision accepted **as quoted**.
+
+Declined and kept as a recorded cosmetic residual. The 2026-08-03 sweep
+measured the reachable trailing-partial set at **11 concrete forms across 7
+structural positions**, and **10 of the 11 raise** under `ast.literal_eval` —
+only the lone backslash is benign, and it is already pinned by test row A8.
+
+### [I7] — CRLF normalization: **authorized, pairs-only, for Windows**
+
+`_safe_stream` over a CRLF-terminated stream leaves a visible `\x0d` on every
+line. Taken in the **CRLF-pairs-only** form and no other.
+
+**The review's preferred remedy stays rejected**, on its own measurement:
+splitting on `\r\n|\r|\n` reopens the `[G1]` forgery. Re-verified 2026-08-04
+against the `[G1]` lone-CR author-name stream — the rejected variant splits the
+author name across two lines; the pairs-only variant does not, and still
+removes every CR from a CRLF stream.
+
+**Why this is taken now, stated precisely so a future reader inherits no claim
+that was not established.** Reachability was **not** demonstrated. Two
+mechanisms measured against it and neither is macOS-specific: `core.autocrlf`
+governs working-tree *file content* rather than `git log --format` output, and
+git was observed rewriting a `\r\n` commit message to `\n` at commit time.
+
+It is taken because **the safe variant is measured safe and the platform is
+real** — the Maintainer runs a Windows Cairn-enabled environment (LHM, one of
+Cairn's two case studies), and Cairn ships to adopters who will too. Predicating
+a cheap, known-correct control on unproven reachability of the hazard is the
+same shape as the defects this whole effort has been closing: a control's
+strength argued from evidence about the threat rather than from the correctness
+of the control.
+
+**Scope cost, stated rather than buried:** this is a behaviour change to a
+subprocess decoding contract the original Decision did not see. It is
+authorized here explicitly, not absorbed under "as revised".
+
+### Consequence for this plan
+
+Chunks change: `[I4]` adds a fourth application site and corrects the Context
+enumeration; `[I7]` adds CRLF-pairs-only normalization inside `_git` ahead of
+escaping. Both need a test whose named perturbation actually reddens it, and
+the `SECURITY.md` bullet must not read as exhaustive. `[I2]` leaves this plan
+entirely. `[I5]` stays a residual.
