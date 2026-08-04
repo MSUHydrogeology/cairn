@@ -919,3 +919,24 @@ evidence is established and should be carried forward rather than re-derived:
 Recommended form: a successor proposal `conda-advisory-coverage`, or a board row
 under the deferred-questions section. The Decision that accepts this revision
 should also record which, per the archive-precondition rule.
+
+## Successor form settled — Maintainer, 2026-08-03
+
+**Quoted verbatim:**
+
+> Let's just record the Conda part as a future security module improvement in
+> PLANNING.md
+
+**Follow-ups migrated to:** `dev/PLANNING.md` > *Deferred follow-ups (durable
+home)* > **Security apparatus** > *Conda advisory coverage*.
+
+That discharges this revision's successor requirement, so the archive
+precondition is satisfied ahead of the Decision rather than at it. The board row
+carries the measured gap (147 conda-only, 82 native, `as_of 2026-08-03`), the
+three candidate dispositions including Grype/Syft as unevaluated, the
+name→CPE warning, and the revival condition — **a maintained conda-forge
+advisory authority demonstrated by execution, not documentation**.
+
+The board section's own rule is that a parked item "becomes its own proposal
+when picked up", so choosing the row over opening `conda-advisory-coverage` now
+defers the artifact without dropping the requirement.

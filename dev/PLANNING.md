@@ -430,6 +430,26 @@ none blocking.
   classification when a module's destination changes; byte-preserving staging
   for non-text module files.
 
+**Security apparatus**
+* **Conda advisory coverage** — `python-security` audits **Python
+  distributions**; conda-managed native packages are outside its declared scope
+  (narrowed by Maintainer direction 2026-08-03 in `dependency-advisory-coverage`,
+  finding DAC3). The gap is measured, not estimated: on the canonical
+  environment **147 conda-only packages, 82 of them native** — `krb5`, `openssl`,
+  `freetype`, `icu`, `hdf5`, the `aws-c-*` stack — `as_of 2026-08-03`. Revival
+  condition: **a maintained advisory authority for conda-forge packages that
+  execution demonstrates**, not documentation. Evidence already established, so a
+  successor does not re-derive it: **Trivy**'s conda coverage is SBOM/license
+  only with vulnerability scanning *unsupported*; **OSV-Scanner** does not list
+  Conda among supported ecosystems; **Grype/Syft** match by CPE rather than
+  ecosystem and are **unevaluated by anyone** — the first candidate to actually
+  run. A hand-built conda-name→CPE map is *not* another adapter: it makes Cairn
+  the security authority for product identity, and needs its own Decision.
+  Watch-outs a successor inherits: conda-forge can patch a CVE without bumping
+  the upstream version (build strings carry no patch manifest), so naive version
+  matching produces false positives in one direction and false negatives in the
+  other; and vendored/statically-linked code has no record in any inventory.
+
 **Stack-neutrality**
 * **Language-neutral conformance fixtures + golden vectors (Move 5)** — for
   the extrication seam (exit semantics, path containment, lockfile schema,
