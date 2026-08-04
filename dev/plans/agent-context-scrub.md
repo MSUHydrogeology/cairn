@@ -1,0 +1,808 @@
+<!-- cairn-internal-ref-allow: doctrine/plans.md doctrine/dual-review.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
+
+# Plan: escape what the orientation stream relays
+
+**Source proposal**: `agent-context-scrub` (accepted 2026-08-03 *as revised*; the
+Decision commit is `c7266d4`). It currently sits under `dev/proposals/` and moves
+to `dev/proposals/archive/` when it archives.
+**Status**: open
+**Plan review**: required(**External**, security lens) — carried from the
+proposal header, argued there on the merits rather than by an `AGENTS.md`
+enumerated trigger, and ratified at Decision. **No implementation commit lands
+before a `### Plan review -- <reviewer> -- YYYY-MM-DD` sub-heading is in the
+tree.**
+**Last update**: 2026-08-03
+**Opened**: 2026-08-03
+
+## Source proposal
+
+`agent-context-scrub` settles one contract: **text that arrives from outside the
+tool must not be able to imitate the orientation stream's own grammar.** Every
+Cairn session begins by running `tools/lifecycle.py session-start`, which prints
+a survey of the repository into the agent's context window before any human
+instruction lands. Three of that survey's fields come from outside the tool — a
+git author name, a git commit subject, and a filename read off the filesystem
+together with the `**Status**:` line inside the file it names — and all three are
+relayed with no escaping. A filename on POSIX may contain any byte except `/` and
+NUL, newline included, so a file *named* to look like two extra lines prints as
+two extra lines, wearing the tool's own `lifecycle:` prefix.
+
+The accepted design is deliberately small: two module-private helpers
+(`_safe_field`, `_safe_stream`) added near the top of `tools/lifecycle.py` and its
+byte-identical twin, applied at two producers (`_git` and `_in_flight`), plus one
+decoding fix and one git flag. No new file, no new module, no new dependency, no
+contract change.
+
+This plan executes that decision. It does not re-open it. Where the record left a
+question open, the plan carries it forward marked as open rather than resolving
+it quietly — see *The Internal review's findings, and where each one goes*.
+
+### Glossary — every term glossed on first use
+
+The audience is a scientist who codes, not a security engineer.
+
+* **Prompt injection** — text that is *data* from the program's point of view but
+  reads as an *instruction* to the AI agent consuming it. The defense is never to
+  detect malicious meaning; it is to stop untrusted data imitating the channel's
+  trusted grammar.
+* **C0 / C1 control characters** — the non-printing byte ranges `0x00`–`0x1F` and
+  `0x80`–`0x9F`. Newline (`0x0A`) and carriage return (`0x0D`) are C0 controls.
+* **C-quoting** — the convention git already uses when printing an awkward path:
+  wrap in double quotes, replace each control character with a printable escape
+  such as `\x0a`, and double any literal backslash so the escapes stay
+  unambiguous. The payload stays readable and auditable instead of vanishing.
+* **`str.translate`** — the Python standard-library call that replaces characters
+  by a code-point → replacement table in one pass. It is the whole mechanism of
+  `_safe_field`.
+* **Twin / twin parity** — Cairn self-hosts the apparatus it ships, so
+  `templates/skills/_lib/lifecycle.py` (what an adopter installs) and
+  `tools/lifecycle.py` (Cairn's own copy) are byte-identical, enforced by a test.
+* **Lockfile** — `dev/.cairn/cairn-lock.yml`, the machine record of every
+  installed file and its hash. Cairn's own tree is recorded there too, so an
+  un-re-recorded edit makes Cairn report itself as a fork of itself.
+* **Vacuous test** — a test that cannot fail in the state it was written to
+  catch. This repository shipped one and it stayed green for 63 days.
+* **Oracle** — the thing a test compares the observed result against. An oracle
+  derived from the code under test cannot discriminate; an oracle the *attacker*
+  controls is worse.
+
+### What this change does NOT fix — stated plainly, at the front
+
+The escape table constrains **shape**, never **meaning**. A forged line built
+entirely from ordinary printable characters — a commit subject that reads like an
+instruction, a proposal filename chosen to look like a maintainer waiver —
+contains no control characters, passes the table byte-identically, and reaches
+the agent unchanged. An *escaped* payload is also still fully legible: the agent
+reads the words on one line, with only their authority-by-shape removed. Anyone
+who reads this change as "session-start is now safe against prompt injection" has
+misread it. That sentence is the reason `SECURITY.md` gains a residual bullet in
+Chunk C rather than a reassurance.
+
+## The landing-order precondition — this plan starts blocked
+
+The Decision is explicit:
+
+> **Ordering.** Its recorded landing order against `planner-line-semantics` on the
+> shared `tools/lifecycle.py` surface stands; the sanitizer and the line-split are
+> behaviourally order-sensitive.
+
+The recorded order is **`planner-line-semantics` first, this plan second** — the
+order the code runs in: split a file into lines, *then* render the selected line
+inert. The reason is that the two changes meet at exactly one expression,
+
+```python
+f"{kind}/{_safe_field(path.name)} -- {_safe_field(_status_of(path))}"
+```
+
+where `_status_of` *selects* a value and `_safe_field` *renders it inert*, and the
+two do not commute. Escaping the file text upstream of the split returns the same
+answer as the correct composition on the proposal's fixture — the survey looks
+right — while `tools/lifecycle_planner.py`, which carries no sanitizer at all,
+goes on attesting a separator-forged `## Decision` as structurally sound. A
+right-looking survey over a still-broken checker is the failure this ordering
+exists to prevent.
+
+**Three facts an implementing agent must hold together before Chunk A.**
+
+1. **`planner-line-semantics` is not accepted yet.** As of 2026-08-03 it sits
+   under `dev/proposals/` at `**Status**: proposed`, with no `## Decision`
+   section. Its own plan and implementation must land in both twins **before**
+   Chunk A of this plan begins. If that has not happened, this plan does not
+   start; it is not the implementing agent's call to re-order.
+2. **The intervening window is a measured regression, and it is the mandated
+   order that opens it.** The Internal review measured that `planner-line-
+   semantics` landing *alone* moves a raw `U+2028` LINE SEPARATOR into the
+   surveyed status value — a character HEAD's accidental `splitlines()` had kept
+   out, and one that this proposal's own escape table classifies as line-forging.
+   This plan is what closes that window. Nothing here can shorten it; what this
+   plan can do is not pretend it is absent. **The two changes should land in the
+   same working session**, and if they cannot, the window is a fact the Maintainer
+   should know they are holding.
+3. **One proposal at a time is in flight against `tools/lifecycle.py` and its
+   twin.** The cohort's collision constraint binds at plan-open and
+   implementation. Take the work-intent claim on both twins before Chunk A and
+   hold it through Chunk B; nothing mechanical enforces this.
+
+**Consequence for the disclosure list.** The proposal committed to a *fourth*
+`SECURITY.md` residual bullet naming the selection hazard **only if** the
+Maintainer sequenced the two the other way. The Maintainer did not. Chunk C
+therefore writes the three bullets the proposal specifies and **not** a fourth,
+and Chunk A's acceptance criteria include a positive check that the narrowed
+splitter is present in the file before the escaping is applied on top of it.
+
+## The Internal review's findings, and where each one goes
+
+The Internal review (Claude, same-agent-type, security lens, 2026-08-03) returned
+**REVISE** with seven findings, [I1]–[I7]. No author Response to that review is in
+the record, and the Decision accepted the proposal *as revised* — where "as
+revised" names the author's own R-1 through R-4 revision block, which predates
+that review. So the findings arrive at plan stage undispositioned. Leaving them
+undispositioned in the plan too would be the quiet failure; here is where each one
+lands, with the ones this plan cannot resolve marked as such.
+
+| # | Finding | Disposition in this plan |
+|---|---------|--------------------------|
+| [I1] | Landing order is backwards on the security axis | **Resolved by the Decision** — the recorded order stands. The residual window is disclosed above rather than argued again. |
+| [I2] | A one-byte non-UTF-8 file under `dev/proposals/` crashes `session-start` and blanks the rest of the stream | **Not in the accepted design; disclosed, not fixed.** Re-measured against a patched build for this plan: **it still crashes.** Chunk C discloses it; the `concerns` line raises the one-clause fix to the Maintainer. |
+| [I3] | Tests 1 and 3 are vacuous as worded — the block delimiter is attacker-controlled | **Plan territory, taken.** Chunks A and B specify three independent oracles per test, none attacker-controlled, and the vacuity has been re-run for this plan. |
+| [I4] | A **fourth** externally-sourced field (the vendor-target table) forges a section header, and prints *first* | **Not in the accepted design; disclosed, not fixed.** Re-measured against a patched build: **it still forges.** Chunk C's bullet names it so the residual list is not read as exhaustive. |
+| [I5] | Test 4 has no sound independent oracle; the truncation path emits an unpaired backslash | **Plan territory, taken.** The oracle is named and justified in Chunk A (A7), and the backslash tail is pinned as a residual (A8). |
+| [I6] | "Over-long field — truncated at 200 characters" is not true of the `_git` path | **Plan territory, taken.** Re-measured: an oversized commit subject stays 20016 bytes with or without the change. Disclosed in Chunk C and in *Known omissions*. |
+| [I7] | Removing `text=True` also removes CRLF normalisation | **Plan territory, taken — and the suggested remedy is declined on measured grounds.** See below. |
+
+**[I7] deserves its own paragraph, because its suggested fix is actively
+wrong.** The finding proposes that `_safe_stream` "split on `\r\n|\r|\n` rather
+than `"\n"`" as cheap insurance against CRLF-terminated git output. Measured this
+session under the canonical interpreter, that remedy **re-opens the carriage-
+return forgery the change exists to close**: splitting on a lone `\r` and
+re-joining with `\n` converts the attacker's CR into a real line break, which is
+precisely `text=True`'s universal-newline promotion arriving by a different
+route.
+
+```
+accepted (split on \n)                   lone-CR payload -> real LF count 1
+[I7]'s advice (split on \r\n|\r|\n)      lone-CR payload -> real LF count 2   *** FORGERY RE-OPENED ***
+normalise CRLF, then split               lone-CR payload -> real LF count 1
+```
+
+The third row is the correct shape of the same idea — normalise `\r\n` to `\n`
+*before* the split, which leaves a lone `\r` to be escaped. That is a change to
+the accepted helper, so this plan does **not** make it; it records the residual
+under *Known omissions* and names the safe shape so that a future proposal does
+not take [I7]'s wording at face value. Reachability is still unreproduced: no
+platform was found on which real `git log` output arrives CRLF-terminated, and
+this session had macOS only.
+
+## Scope
+
+Executes the accepted Proposal plus its author revisions R-1 through R-4, across
+two production files (a twin pair edited as one), one test module, one policy
+document, and one lockfile row. Three implementation commits.
+
+**In scope:**
+
+* The two escaping helpers, added once, in both twins.
+* The `_in_flight` producer — both halves of the joined survey line.
+* The `_git` chokepoint — explicit byte decoding, the escaped return, the
+  matching decode on the error path, and `-c core.quotePath=false` on the
+  `git status --short` invocation (R-1).
+* Four new security-gate test nodes plus their supporting fixtures, in the
+  existing `bootstrap/tests/test_skills_security.py`.
+* One residual-risk bullet in `SECURITY.md`, and one `CHANGELOG.md` line.
+* Re-recording the `tools/lifecycle.py` row in `dev/.cairn/cairn-lock.yml`.
+
+**Out of scope, fenced explicitly:**
+
+* **`_status_of`'s line splitting.** It belongs to `planner-line-semantics` and
+  is the one function this proposal declines to touch. Chunk A asserts the
+  narrowed splitter is *already there*; it does not add or modify it.
+* **The `UnicodeDecodeError` crash in `_status_of` ([I2]).** Same function, same
+  reason, plus: it is a scope extension the accepted design does not carry.
+  Disclosed in Chunk C, raised to the Maintainer, not implemented here.
+* **The vendor-target relay at the skills fan-out emit site ([I4]).** One line and
+  the same helper would close it, and the accepted design does not include it.
+  Disclosed in Chunk C, not implemented here.
+* **The sub-tool stream relays** — `intent.py list`, the metrics and evolution
+  relays, which write another tool's stdout straight through. Same defect class,
+  different contract: in a relayed stream a newline is legitimate output, so
+  escaping can never stop a compromised sibling tool emitting a forged prefixed
+  line. Named in the proposal as the follow-up it should become.
+* **Capping the git-derived stream ([I6]).** `_safe_stream` calls `_safe_field`
+  with `limit=None` by construction, because a commit log legitimately has many
+  lines. An oversized commit subject stays uncapped; that is a disclosure, not a
+  code change.
+* **Bidirectional-override and zero-width characters.** A homoglyph / rendering
+  class, not a line-forging class. R-4's premise check stands: the
+  `content-security` module that would handle them is in the `baseline` tuple of
+  **none** of the three presets, so nothing handles that class in a default
+  install. Changing which presets select it is not this plan's — it belongs to the
+  preset → module table, which another proposal claims.
+* **Any `bootstrap/_scaffold/` change.** None. That is what keeps the engine gate
+  set, the Bandit-over-the-engine gate, and the AST attestation re-anchor off this
+  plan — see *Gate accounting*.
+* **Any install-contract movement.** No manifest row, no lockfile *schema* field,
+  no fidelity-manifest entry, no gate-manifest command. Exactly one recorded hash
+  value changes.
+
+**Sequencing invariant — every intermediate commit is no worse than HEAD.**
+Chunk A closes the filename and status routes and opens none. Chunk B closes the
+CR-promotion route and opens none. Neither chunk depends on the other to be safe.
+A reviewer should check that claim per chunk rather than take it here.
+
+### Documentation / doctrine surface
+
+* **Entry layer** — `SECURITY.md`, one bullet in *Documented residual risks
+  (consciously accepted)*. This is the only prose an adopter reads that changes.
+* **Deliberation layer** — this plan, its plan review, its code review, and the
+  `dev/PLANNING.md` row-move that serializes plan-open.
+* **Release-facing** — `CHANGELOG.md > Unreleased > Fixed`, one line.
+* **Governing layer** — **none.** No `AGENTS.md` change and no `doctrine/`
+  change. This fixes a code defect and adds one disclosure to a public statement
+  of risks already taken; it changes no rule a contributor follows.
+* **Shipped module prose** — **none.** The two files edited are code, and
+  `tools/lifecycle.py` is a `verbatim: true` install with no prose surface.
+
+**A collision on the doc surface, recorded so it is found now rather than at
+merge.** `scan-coverage` also claims `SECURITY.md`. The two edits sit in different
+lists and do not collide textually, but the file is sequenced like any other
+shared surface: one proposal in flight against it at a time, and whichever lands
+second re-reads the list before appending. There is also a small factual
+disagreement between the two records — this proposal says "both proposals add to
+it"; `scan-coverage` says its own side "concludes that section needs **no
+edit**". Chunk C re-reads the section at implementation time rather than trusting
+either sentence.
+
+<!-- cairn:slot documentation-tier-home -->
+**Doc tier home rule** — route doc and doctrine changes by layer per
+[`docs/DOCUMENTATION_PLAN.md`](../../docs/DOCUMENTATION_PLAN.md):
+cross-cutting prescription → governing layer (`AGENTS.md`);
+deliberation about what to build → deliberation layer (`dev/`);
+description of the software as it is → descriptive layer (`docs/`). A
+plan's *Scope* must name the doctrine-surface touched (or an explicit
+"no doctrine surface").
+<!-- cairn:end documentation-tier-home -->
+
+### Gate accounting
+
+Each figure was measured for this plan under the canonical interpreter
+(`~/conda_envs/lhm/bin/python`, Python 3.13.13) with `PYTHONDONTWRITEBYTECODE=1`,
+and each is a dated snapshot to re-check at implementation.
+
+* **Suite baseline: 1601 passed, 0 failed, 0 skipped, `as_of 2026-08-03`**
+  (157 s). Re-measured for this plan, not quoted. Collection only grows here — no
+  node is dropped and no skip or xfail marker is added.
+* **The frozen-file regime no longer HOLDs.** The gate batch closed at `b67fabc`
+  and the frozen set was re-pinned at **164 files, `as_of 2026-08-03`**;
+  `bootstrap/tests/test_skills_security.py` is one of them. Editing it is
+  permitted now that the batch is closed; it would have been a HOLD during it.
+* **No AST attestation re-anchor.** Neither file this plan edits is under
+  `bootstrap/_scaffold/`, so `bootstrap/REANCHOR_RUNBOOK.md` is not engaged and no
+  engine obligation attaches. Stated explicitly rather than left to be inferred.
+* **The install manifest is unchanged, and that is the assertion.**
+  `python bootstrap/scaffold.py --manifest` emits 96 lines — 1 comment header,
+  **95 data rows**, `as_of 2026-08-03`. This plan adds and removes no row and
+  changes the *content* of one already-installed file.
+* **`python bootstrap/verify_integrity.py --target .` is GREEN today** — 76
+  recorded files match the lockfile, `as_of 2026-08-03`. It is therefore a live
+  channel, not a dead one: it goes **red** the moment `tools/lifecycle.py` changes
+  and stays red until the lockfile row is re-recorded. Each chunk must leave it
+  green. (It emits two pre-existing advisory `NOTE` lines about forked facades
+  for `tools/intent.py` and `tools/lifecycle_metrics.py`; those are not this
+  plan's and are not errors.)
+* **Two gates that a reader would assume cover this file, and do not.** Checked
+  by reading the source, not assumed:
+  * `bootstrap/security_check.py` — the fail-closed release Bandit gate — derives
+    its targets from `_MODULE_MAPPINGS` and `_ALWAYS_ON_MAPPINGS` and never from
+    `_SKILLS_MAPPINGS`. Both twins are therefore **outside** it. New security code
+    added here gets no automated security scanning at all. Human adversarial
+    review is the only gate this code has, which is the second of the three
+    arguments the proposal made for the External tier.
+  * `scripts/quality_gate.py`'s R6 unused-definition scan runs over `scripts`,
+    `bootstrap` and `templates/modules` only. Neither `tools/` nor
+    `templates/skills/` is in its roots. This is load-bearing for the chunk
+    split: Chunk A defines `_safe_stream` and does not call it until Chunk B, and
+    no gate flags that intermediate state. Run the quality gate at each chunk
+    anyway, to confirm rather than to assume.
+* **The twin-parity gate exists and fires.** In
+  `bootstrap/tests/test_notice_install.py`, the node
+  `test_every_self_hosted_twin_stays_byte_identical_to_its_source`
+  reads both files and compares bytes; the pair list is derived from the install
+  manifest, so `tools/lifecycle.py` is in it. Run alone for this plan: **1 passed
+  in 0.02 s**. Its failure state is "the two files differ", and each chunk's
+  acceptance criteria require the implementer to *demonstrate* that by editing one
+  twin first, observing the failure, then syncing.
+* **The plan-review gate cannot be satisfied by a placeholder.** Measured
+  directly against the shipped header regex in `tools/lifecycle_planner.py`: a
+  bare `## Plan review` heading **is** registered as a landed review section (so
+  an empty section would open the gate), while this plan's
+  `## Plan review — the brief …` heading is *not* parsed as a section at all,
+  because the kind group admits only letters, spaces, slashes and hyphens and the
+  em-dash and comma break the match. A real
+  `### Plan review -- <reviewer> -- YYYY-MM-DD` sub-heading is what registers.
+  **Do not rename the heading to a bare `## Plan review`.** The same shaping, for
+  the same measured reason, is applied to `## Code review`.
+
+## Sequence
+
+```
+0. precondition   -- planner-line-semantics landed in BOTH twins;
+                     plan review landed; work-intent claimed         [not a commit]
+1. Chunk A -- helpers + `_in_flight`: the filename and status routes  [commit pending]
+2. Chunk B -- the `_git` chokepoint: decode, escape, quotePath        [commit pending]
+3. Chunk C -- SECURITY.md residual bullet + CHANGELOG                 [commit pending]
+```
+
+### Chunk A — the helpers, and the `_in_flight` producer
+
+The serious defect: a filename forging survey lines, and an unbounded status
+relay. Escaping is applied **inside the producer**, not at the two printers, so
+both consumers — `session-start` and the goodnight thread survey — are covered by
+one edit and a future third consumer cannot forget.
+
+| # | File | Change |
+|---|------|--------|
+| A1 | `tools/lifecycle.py` | Add `_FIELD_ESCAPES`, `_FIELD_LIMIT`, `_safe_field`, `_safe_stream` immediately below the `_PREFIX` / `_emit` block. Table exactly as accepted: C0, DEL, C1, `U+2028`, `U+2029`, and backslash-doubling. Keep the source comment that `split("\n")` is deliberate and `splitlines()` would re-open the hole. |
+| A2 | `tools/lifecycle.py` | `_in_flight`: wrap both halves — `f"{kind}/{_safe_field(path.name)} -- {_safe_field(_status_of(path))}"`. No other change to `_in_flight`, and **no change to `_status_of`**. |
+| A3 | `templates/skills/_lib/lifecycle.py` | The identical A1 + A2 edit. Same commit, or the twin-parity gate fires. |
+| A4 | `dev/.cairn/cairn-lock.yml` | Re-record **both** `hash` and `base_hash` on the `tools/lifecycle.py` record to the new sha256. Hand-edit the two lines — the precedent set by the archived `interpreter-trust-root-fallback` plan for a single-entry hash refresh — not `scaffold.py upgrade --target .`, which is a full stage-and-apply cycle this refresh does not need. |
+| A5 | `bootstrap/tests/test_skills_security.py` | **S6-a, filename cannot forge a survey line.** Fixture: a temp git repo with **two** artifacts under `dev/proposals/`, one benign, one whose *name* ends in `.md` and contains two newlines carrying a forged section header and a forged authority claim. Drive `session-start` **through the CLI in a subprocess** and read stdout as **bytes**. |
+| A6 | `bootstrap/tests/test_skills_security.py` | **S6-b, status prose is bounded and inert.** A status line carrying `ESC [2K` / `ESC [1A` and 4000 filler characters emits one line, under the cap plus its elision marker, with no raw `0x1b` byte anywhere in stdout. |
+| A7 | `bootstrap/tests/test_skills_security.py` | **S6-c, escaping is lossless below the cap.** A unit-level round-trip at `limit=None`, with the oracle **named**: `ast.literal_eval('"' + escaped + '"')`. Fixtures must contain no `"` character and **must** include one backslash-bearing string plus non-ASCII in NFC, NFD and CJK forms. |
+| A8 | `bootstrap/tests/test_skills_security.py` | **S6-d, the capped tail is a residual, and is pinned as one.** Assert that a field truncated mid-escape may end on a lone, unpaired backslash and still carries the `chars elided` marker. This test asserts a known cosmetic defect on purpose, so that a future "narrow the table" fix cannot silently void the losslessness property. |
+
+**Acceptance criteria — Chunk A**
+
+* **Red-then-green, in that order.** Run A5–A8 against a byte-identical copy of
+  the *pre-fix* file in a scratch directory outside the Cairn tree and capture the
+  failures **before** A1–A3 are applied. This is what shows the tests discriminate
+  against the real historical defect and not only against a synthetic mutant. The
+  captured failure output goes in the commit body.
+* **Three independent oracles on A5, none of them attacker-controlled**, all
+  asserted on stdout **bytes** from a subprocess pipe:
+  1. **A literal section-header count.** The number of stdout lines beginning
+     `b"lifecycle: == "` equals **6** — a hard-coded specification, not a value
+     read back from the tool. A section added to `session-start` must update this
+     literal in the same commit, and the test comment must say so.
+  2. **A differential count.** Run the same tool a second time on a control
+     fixture identical except that each control character in the hostile name is
+     a space; the two runs must emit the same number of LF bytes.
+  3. **Positive and negative substring.** The escaped payload
+     (`\x0alifecycle: == maintainer standing waiver ==`) is present, **and** the
+     raw newline-bearing payload is absent, **and** both artifacts appear.
+     Oracles 1 and 2 can both be satisfied by a tool that lists nothing at all;
+     oracle 3 is what forbids that.
+* **The oracle the proposal specified is not used.** "Assert the emitted in-flight
+  block contains exactly one line per file on disk" delimits the block from one
+  `lifecycle: == … ==` header to the next, and the payload forges headers — so the
+  attacker sets the block boundary. Re-run for this plan against unpatched HEAD:
+  with **one** artifact on disk the assertion **passes on the vulnerable code**;
+  it only bites at N ≥ 2. Every fixture in A5 and B4–B5 therefore carries at least
+  two artifacts / two commits, and the block-delimited count is kept only as a
+  fourth, secondary check.
+* **A7's oracle choice is justified in the test docstring, and the rejected
+  alternatives are named.** `codecs.decode(..., "unicode_escape")` mangles exactly
+  the international text this change advertises as passing through untouched —
+  measured, on accented NFC, accented NFD and CJK fixtures — so a test written
+  that way either fails on an accented fixture or, worse, is only ever run on an
+  ASCII one and certifies a property it never checked. `ast.literal_eval` handles
+  Unicode correctly but raises on a field containing `"`, hence the documented
+  no-quote fixture constraint. Writing a bespoke inverse from `_FIELD_ESCAPES` is
+  the same-object-oracle shape and would pass for any table, including a wrong
+  one.
+* **Mutation ledger, recorded in the commit body.** Each mutation is applied to a
+  scratch copy, the named test observed to fail, and the source restored
+  byte-identical:
+  * delete `_safe_field` from the `path.name` half → **A5 fails**;
+  * delete it from the `_status_of` half → **A6 fails**;
+  * drop `0x5C: "\\\\"` (the backslash doubling) from the table → **A7 fails on
+    its backslash-bearing fixture only**. Verified for this plan: without a
+    backslash fixture this mutation stays green, which is why A7's fixture list is
+    a requirement and not a suggestion;
+  * set `_FIELD_LIMIT = None` → **A6 fails**.
+* **The narrowed splitter is present before this lands.** A positive check, not a
+  comment: `_status_of` uses `planner-line-semantics`'s CR/LF-only splitter and
+  not `str.splitlines()`. If it does not, the precondition was violated and Chunk A
+  does not land.
+* **Twin parity demonstrated, not assumed.** Edit `tools/lifecycle.py` first, run
+  `python -m pytest bootstrap/tests/test_notice_install.py -q`, observe the parity
+  test **fail**, then apply A3 and observe it pass. The failure observation goes in
+  the commit body — that is the perturbation this plan owes for a pre-existing test
+  it relies on.
+* **`python bootstrap/verify_integrity.py --target .` green after A4**, and
+  observed **red between A2 and A4**. Both observations in the commit body.
+* Full suite green under the canonical interpreter, **0 skipped / 0 xfailed**,
+  collection grown by exactly the four new nodes from the 1601 baseline.
+
+### Chunk B — the `_git` chokepoint
+
+One function, four edits. `_git` is the single chokepoint for git-derived display
+text: four call sites, one of which takes a `%H` hash used as a value (hex-only,
+so escaping cannot corrupt it), one of which is `git status --short`, and two of
+which are the commit-log formats.
+
+| # | File | Change |
+|---|------|--------|
+| B1 | `tools/lifecycle.py` | Drop `text=True` from `_git`'s `subprocess.run` and decode explicitly: `out.stdout.decode("utf-8", "replace")`. This is the defect fix, not tidying — `text=True` wraps the pipe in universal-newline mode, so a carriage return git *does* store is translated to a real newline before `lifecycle.py` sees it. |
+| B2 | `tools/lifecycle.py` | Return `_safe_stream(...)` rather than the raw text. |
+| B3 | `tools/lifecycle.py` | **The edit the proposal does not name.** With `text=True` gone, `exc.stderr` on the error path is `bytes`, and the existing `(exc.stderr or "").strip()` yields a bytes `detail` — so the tool's actionable error message renders with a `b'…'` prefix. Measured this session: `b"git: 'no-such-cmd' is not a git command. …"`. Decode it the same way before stripping. |
+| B4 | `tools/lifecycle.py` | R-1: pass `-c core.quotePath=false` on the `git status --short` invocation. Git's default C-quotes *any* non-ASCII path byte, so without this an ordinary accented filename arrives already backslash-bearing and `_safe_stream` doubles it — the proposal's own first "signals the change is wrong" bullet firing on a postdoc whose filenames carry an accent. |
+| B5 | `templates/skills/_lib/lifecycle.py` | The identical B1–B4 edit, same commit. |
+| B6 | `dev/.cairn/cairn-lock.yml` | Re-record `hash` and `base_hash` again, as in A4. |
+| B7 | `bootstrap/tests/test_skills_security.py` | **S6-e, a CR in a git author name cannot forge a log line.** Fixture: **three** commits, one authored with a **lone `\r`** (never `\r\n`) in `GIT_AUTHOR_NAME` carrying a forged section header. |
+| B8 | `bootstrap/tests/test_skills_security.py` | **S6-f, a CR in a commit subject cannot forge a log line.** Its own case, on the same three-commit shape. |
+| B9 | `bootstrap/tests/test_skills_security.py` | **S6-g, an ordinary accented path is not escaped.** The false-positive guard for R-1: a plain `café`-bearing filename appears in the `git status --short` block with its UTF-8 bytes intact and **no** backslash escape. |
+| B10 | `bootstrap/tests/test_skills_security.py` | **S6-h, a failed git call still reports text.** Assert the `LifecycleError` message from a failing `_git` call is a `str` and carries no `b'` prefix — the pin for B3. |
+
+**Acceptance criteria — Chunk B**
+
+* **Why the fixtures use a lone `\r` and never `\r\n`**, stated in the test
+  docstring: git rewrites `\r\n` in a commit message to `\n` at commit time and
+  the `%s` format folds a multi-line subject to spaces, so a `\r\n` fixture passes
+  while the defect stays wide open. Re-measured for this plan at HEAD: with a lone
+  CR in the author name and three commits on disk, the log block renders **1**
+  body line and stdout carries **8** section-header lines where the tool emits 6;
+  patched, **3** body lines and **6** headers. With a lone CR in the *subject*:
+  HEAD **2** body lines and **7** headers; patched **3** and **6**.
+* **The same three oracles as A5**, on the commit-log region: the literal
+  header-line count (6), a differential control run whose fixture differs only in
+  the control characters, and the positive/negative substring pair (`\x0d`
+  present, raw `0x0d` byte absent from stdout). **N ≥ 2 commits in every
+  fixture**, plus the initial commit, for the reason [I3] established.
+* **B9 must fail before B4 and pass after.** Re-measured for this plan on a
+  `café`-bearing filename: at HEAD the status block emits
+  `?? "dev/proposals/…-caf\303\251.md"` — already escaped by git, before this
+  change touches it; with `core.quotePath=false` it emits the raw UTF-8 bytes and
+  no quoting. **This is the test that stops the change producing false positives
+  on ordinary international filenames**, and it is the only new test whose failure
+  mode is "the fix is too broad" rather than "the fix is absent".
+* **Mutation ledger, in the commit body**: restore `text=True` → **B7 fails**;
+  remove `_safe_stream` from the return → **B7 and B8 fail**; remove
+  `core.quotePath=false` → **B9 fails**; revert B3's decode → **B10 fails**.
+* **The hash call site is provably unharmed.** `_git(["log", …, "--format=%H", …])`
+  returns hex, and `_safe_stream` over hex is the identity — assert it, since the
+  value builds the `rng` the log window depends on and a corrupted one would fail
+  quietly by showing the wrong commits.
+* Twin parity demonstrated as in Chunk A; `verify_integrity --target .` observed
+  red between B5 and B6 and green after; full suite green, 0 skipped / 0 xfailed,
+  collection grown by exactly four more nodes.
+
+### Chunk C — the disclosure
+
+The smallest chunk and the one most likely to be under-read. Its content is
+determined by what Chunks A and B measurably do *not* close.
+
+| # | File | Change |
+|---|------|--------|
+| C1 | `SECURITY.md` | **Bullet 1 — shape, not meaning.** The escape table constrains the *shape* of relayed text and never its meaning. A forged line built entirely from ordinary printable characters passes unchanged, and an *escaped* payload is still fully legible on one line: escaping removes authority-by-shape, not words. Per R-3, and per the External review's third negative-space item, this must also say that a model may read instructions inside an escaped string. |
+| C2 | `SECURITY.md` | **Bullet 2 — what the change does not reach.** Two relays in the same stream stay unescaped: the sub-tool stdout relays (deliberately, for the stated contract reason) and the vendor-target name at the skills fan-out emit site ([I4]), which prints *above* every other section. Plus the uncapped git-derived stream ([I6]): the 200-character cap applies to the **status** field only. |
+| C3 | `SECURITY.md` | **Bullet 3 — a non-UTF-8 artifact aborts the survey ([I2]).** A single invalid byte in any `dev/proposals/*.md` or `dev/plans/*.md` file raises `UnicodeDecodeError` out of `_status_of`, which catches `OSError` only; `session-start` exits 1 with the in-flight body, the work-intents block, **and the resolved-interpreter disclosure** all missing. Re-measured against a patched build for this plan: **unchanged by this fix.** |
+| C4 | `CHANGELOG.md > Unreleased > Fixed` | One line: the orientation stream now C-quotes externally-sourced fields, and a carriage return in git metadata no longer becomes a line break. |
+
+**Acceptance criteria — Chunk C**
+
+* **Every bullet names something measured, and the residual list is honest about
+  being partial.** The failure this chunk exists to avoid is a residual list that
+  *reads* as exhaustive while a fourth forging route stays undisclosed — the same
+  false-assurance outcome the proposal names as the worst available.
+* **Exactly three bullets, not four.** The fourth (selection-hazard) bullet was
+  owed only under the reversed landing order, which the Decision did not choose.
+* **Re-read the *Documented residual risks* list immediately before appending**,
+  because `scan-coverage` claims the same file and the two records disagree about
+  whether it edits this section.
+* `python scripts/check_cairn.py` green; `python scripts/claim_check.py SECURITY.md`
+  clean; `python scripts/quality_gate.py --sub neutrality` green.
+* No test asserts the wording. This is the one chunk with no executable gate, and
+  saying so is better than inventing a grep that would pass on any three bullets.
+
+## Acceptance criteria
+
+Per-chunk criteria are above. These are the plan-level deliverables.
+
+* **Tests that must pass.**
+  * `python -m pytest bootstrap/tests` — the whole suite, green, **0 skipped / 0
+    xfailed**, under the canonical interpreter (3.13.13). Baseline **1601 passed,
+    `as_of 2026-08-03`**; collection grows by exactly the eight new nodes and
+    drops none.
+  * The eight new nodes in
+    [`bootstrap/tests/test_skills_security.py`](../../bootstrap/tests/test_skills_security.py),
+    driving `session-start` **through the CLI in a subprocess** and asserting on
+    **bytes**, in throwaway git repositories built by a fixture.
+  * The existing in-flight coverage in
+    [`bootstrap/tests/test_lifecycle_cli.py`](../../bootstrap/tests/test_lifecycle_cli.py)
+    stays green — the regression check that escaping at the producer did not
+    change the survey's ordinary output.
+  * The existing twin-parity node in
+    [`bootstrap/tests/test_notice_install.py`](../../bootstrap/tests/test_notice_install.py),
+    demonstrated failing once per chunk before the twin is synced.
+  * **Every new test shown non-vacuous by mutation**, plus the red-then-green run
+    against a pre-fix copy. The ledgers go in the commit bodies.
+* **Doc updates that must land.** Hand-authored only: `SECURITY.md` (three
+  bullets) and `CHANGELOG.md > Unreleased > Fixed` (one line). **N/A**: no
+  generated docs, no snippet-synced blocks, no `docs/` topic page — the change is
+  invisible in ordinary use and its only user-facing surface is the residual-risk
+  statement.
+* **Examples / smoke checks required.**
+  * `python bootstrap/verify_integrity.py --target .` — green before, red mid-chunk,
+    green after each of Chunks A and B.
+  * `python bootstrap/scaffold.py --manifest` — diffed against the pre-change
+    output, **expected empty** (95 data rows across 96 lines, `as_of 2026-08-03`).
+    This is the assertion that no install-contract row moved.
+  * `shasum -a 256 tools/lifecycle.py templates/skills/_lib/lifecycle.py` — equal
+    after each chunk, and equal to the value recorded in the lockfile row.
+  * A manual `session-start` in a scratch repo carrying all three payloads, with
+    the output pasted into the code-review section — the end-to-end proof that the
+    survey stays one line per artifact.
+  * **Explicitly not required:** the AST attestation re-anchor. No
+    `bootstrap/_scaffold/` file is touched.
+* **Inbound path-link updates.** None expected. `dev/PLANNING.md` and
+  `dev/NEXT_SESSION.md` refer to plans by filename stem, not path link, so the
+  archive-move needs no edit there. Confirm at archive time rather than assume.
+
+### Author-accounting — invariants, failure modes, edge cases
+
+**Invariants, each with the chunk that enforces it and the test that pins it.**
+
+* *No externally-sourced single-line field can introduce a line break into the
+  orientation stream.* A1/A2 and B1/B2, pinned by A5, B7 and B8. The table was
+  swept exhaustively over all 1,114,112 code points against `str.splitlines()` —
+  the strictest line-splitter in the standard library, and the one
+  `tools/lifecycle_planner.py` uses — for this plan, independently of the two
+  earlier sweeps: **10 separators, 10 covered, 0 missing, 0 still splitting after
+  `translate`, 68 table entries**. Three sweeps by two parties now agree.
+* *No payload is destroyed below the cap.* A1, pinned by A7 at `limit=None`; the
+  above-cap path deletes by design and is pinned as a residual by A8. R-2's
+  correction is the operative wording, not the Proposal's unqualified "no payload
+  is destroyed".
+* *Ordinary international text is untouched.* B4, pinned by B9. This is the only
+  invariant whose violation looks like *over*-correction, and it is the one a
+  postdoc would hit first.
+* *The twins stay byte-identical, and the lockfile records what is on disk.*
+  A3/A4 and B5/B6, pinned by the existing twin-parity node and by
+  `verify_integrity --target .`.
+* *Escaping runs after the split, never before.* Structural — `_safe_field` wraps
+  the *result* of `_status_of` — and checked positively in Chunk A's acceptance
+  criteria. The tell that it has drifted upstream is a survey that renders
+  correctly on a separator-forged status while `lifecycle_planner next` still
+  reports `structurally sound` on the same artifact.
+
+**Public-path → test mapping.** The public entry points this plan touches are
+`lifecycle.py session-start` and `lifecycle.py session-end` (which reaches
+`_in_flight` through `_do_thread_survey`). Both are exercised **through the CLI**
+by the new nodes rather than by calling the helpers — the helpers are exercised
+directly only by A7 and A8, which are unit-level by intent because losslessness is
+a property of the function, not of the stream. No public entry point is added; no
+signature changes.
+
+**Channel discipline — for each verification step, the channel each input arrives
+by.** This is the property this repository has broken four times in one week, so
+it is enumerated rather than asserted.
+
+| Step | Input | Channel | Is it supplied by the artifact under verification? |
+|------|-------|---------|-----|
+| A5/B7/B8 observed output | stdout | an OS pipe from a `subprocess` the test spawned, read as bytes | No — the tool writes it, but the *test* chose the fixture and reads raw bytes, so neither the tool nor the payload can hide a line break from the count |
+| A5/B7/B8 expected header count | the literal `6` | written into the test as a specification | No |
+| A5/B7/B8 differential control | a second run on a fixture differing only in control characters | the test's own construction | No — and the positive substring assertion is what stops a tool that emits nothing from satisfying it |
+| A5 fixture | the hostile filename | written by the test into a throwaway repo | No |
+| A7 oracle | `ast.literal_eval` | Python standard library | No — deliberately not a bespoke inverse built from `_FIELD_ESCAPES`, which would pass for a wrong table |
+| Twin parity | both files' bytes | the filesystem, compared by a pre-existing test the manifest drives | No |
+| Lockfile check | the recorded hash | `dev/.cairn/cairn-lock.yml`, a separate tracked artifact | No — which is exactly why it goes red when only one side is updated |
+| Escape-table sweep | the separator set | `str.splitlines()` over the whole code-point range | No |
+
+**Failure modes.**
+
+* *Non-UTF-8 git output* — **open** (degrades): `errors="replace"` yields U+FFFD
+  rather than raising. Intentional; git normalises log output to UTF-8 by default,
+  so this is a backstop. It is a behaviour change from `text=True`'s strict locale
+  decode and is on the plan reviewer's brief as a fail-open decision to challenge.
+* *Non-UTF-8 *path* bytes under `core.quotePath=false`* — **open, and not
+  measured.** With the flag, git emits path bytes raw, so a path whose bytes are
+  not valid UTF-8 reaches `errors="replace"` as U+FFFD instead of arriving
+  pre-escaped. macOS rejects such names at the filesystem layer, so no fixture
+  could be built here. R-1 flagged this for the plan; the plan can only state that
+  the disposition needs a platform that can build it.
+* *Over-long **status** field* — **open**: truncated at 200 characters with an
+  explicit `[+N chars elided]` marker. The marker is the alarm; the full text
+  stays on disk. Note the word *status*: [I6] is right that the unqualified
+  wording is false of the git path.
+* *Over-long git-derived line* — **open, by design.** Re-measured for this plan: a
+  20000-character commit subject emits a 20016-byte line at HEAD and a 20016-byte
+  line patched. Disclosed in C2.
+* *A hostile filename* — **open, by choice**: listed, escaped, visible, not
+  suppressed. The fail-closed alternative (refuse to list it) was rejected in the
+  proposal because it converts a hostile filename into an *invisible* one, and the
+  reviewer should press hardest on that call.
+* *A non-UTF-8 artifact* — **open, and total** ([I2]). Disclosed in C3.
+* *Plain-text forgery* — **open, and permanent.** Disclosed in C1.
+
+**Edge cases handled.** Empty status value (the existing `(unspecified)` /
+`(no status line)` paths are unchanged); a name that is pure control characters;
+a name at the 255-byte filesystem component limit whose escaped form exceeds the
+cap; CJK and accented text in NFC and NFD (unchanged by the table); a Greek letter
+in a status line (unchanged — the table touches no letter); backslash-bearing text
+(doubled, matching git); an empty stream (`_safe_stream("")` returns `''` and
+`_safe_stream("a\nb\n")` round-trips unchanged); a directory or a broken symlink
+named `*.md` (both raise `OSError`, already caught).
+
+**Known omissions, stated rather than implied.**
+
+1. **No test asserts a terminal's *rendering*.** The tests assert on the emitted
+   bytes only. Whether a given terminal or a given model "decodes" `\x0a` back
+   into a break is unmeasured, and the External review's third negative-space item
+   owns it.
+2. **No test covers a non-UTF-8 git stream.** Git normalises it away and
+   constructing one reliably across platforms is not worth the fixture.
+3. **CRLF reachability is unreproduced** ([I7]). The mechanism is reproduced; no
+   platform on which real `git log` output arrives CRLF-terminated was found, and
+   this session had macOS only. The safe remedy shape is recorded above so a
+   future proposal does not adopt the unsafe one.
+4. **Lone surrogates in filenames are unassessed.** `_safe_field` passes a lone
+   surrogate through; the crash the Internal reviewer expected at `print` could
+   not be reproduced, and APFS rejects the byte sequence, so no fixture exists.
+   Reachable only on a filesystem that permits non-UTF-8 names.
+5. **No coverage of the sub-tool relays, the vendor-target relay, or the
+   `UnicodeDecodeError` path**, all explicitly out of scope and all disclosed in
+   Chunk C.
+6. **Two same-type sweeps and one cross-type review agree the escape table is
+   complete.** Agreement between two runs of the same model is weak evidence; the
+   third sweep in this plan is a third *execution*, not a third opinion. The
+   External plan reviewer is the first party who can make it independent.
+
+## Verification
+
+The concrete commands the implementation must pass. Run every one under the
+canonical interpreter (`~/conda_envs/lhm/bin/python`, Python 3.13.13) with
+`PYTHONDONTWRITEBYTECODE=1`; a different Python minor silently changes AST and
+oracle results, and stray `__pycache__` in the tree is its own small mess.
+
+<!-- cairn:slot verification-commands -->
+The standing gates Cairn runs before a change lands (the same ones CI
+enforces):
+
+* **Engine suite** — `python -m pytest bootstrap/tests` (the whole
+  suite; scope to `bootstrap/tests/test_<surface>.py` while iterating,
+  but the full suite gates the cut).
+* **Prose integrity** — `python scripts/check_cairn.py` (internal link
+  / anchor resolution + claim-path check over the Markdown tree).
+* **Quality gate** — `python scripts/quality_gate.py` (order-
+  independence + vendor-neutrality + redundancy; `--sub neutrality`
+  alone for a doctrine / template wording change).
+* **Write-time claim check** — `python scripts/claim_check.py <file>` over
+  each proposal / plan / doc the change authored. **One file per
+  invocation** — the checker takes a single path and exits 2 (usage) on
+  more, so loop rather than passing a list.
+
+Plan-specific gates (a security-lint budget, a doc-drift gate, the
+model-selection mapping check `python scripts/check_model_selection.py`)
+are added per plan when the change touches that surface.
+<!-- cairn:end verification-commands -->
+
+**Plan-specific gates, added here because this change touches those surfaces.**
+
+* **Self-host integrity** — `python bootstrap/verify_integrity.py --target .`.
+  Green before each chunk, observed **red** after the code edit and **green**
+  after the lockfile re-record. Both observations recorded; the mid-chunk red is
+  the evidence that the check is live rather than decorative.
+* **Twin parity** — `python -m pytest bootstrap/tests/test_notice_install.py -q`,
+  observed **failing** with one twin edited and passing after the sync.
+* **Byte parity by hand** —
+  `shasum -a 256 tools/lifecycle.py templates/skills/_lib/lifecycle.py`, equal to
+  each other and to the re-recorded lockfile value.
+* **The install-contract assertion** — `python bootstrap/scaffold.py --manifest`,
+  diffed against the pre-change output. **Expected empty.**
+* **Not run, and stated so:** `python bootstrap/security_check.py`. Its target set
+  is derived from `_MODULE_MAPPINGS` and `_ALWAYS_ON_MAPPINGS` and does not
+  include either twin, so running it would produce a green that means nothing
+  about this change. Naming that is better than banking a vacuous pass.
+* **The mutation ledgers and the red-then-green capture** — per chunk, in the
+  commit body: the mutation, the observed test failure, and the byte-identical
+  restore.
+
+**Note on doc gates**: drift gates (broken references, stale renders,
+snippets that diverged from their source) catch **drift**, not
+**absence** of new doc updates. Confirm each doc named in Acceptance
+was actually updated; the gates don't enforce that.
+
+## Plan review — the brief, and the three questions worth the reviewer's time
+
+*Required — External, security lens. Implementation does not start until a
+`### Plan review -- <reviewer> -- YYYY-MM-DD` sub-heading has landed under this
+heading.* Do not rename this heading to a bare `## Plan review`: measured against
+the shipped header regex, the bare form registers as a landed review section and
+would open the gate on an empty placeholder.
+
+**What has already been swept, twice, and should not consume the pass.** The
+escape table's completeness against `str.splitlines()` over all 1,114,112 code
+points — swept by the External proposal reviewer analytically, then executed
+independently by the author and by the Internal reviewer, and executed a third
+time for this plan. Ten separators, ten covered, zero residual. Also settled:
+escape-over-strip, producer-side application, and the `_git` chokepoint claim.
+
+**The three questions this plan is actually exposed on.**
+
+1. **Is the mandated landing order still right, given what it costs?** The
+   Decision upheld `planner-line-semantics` first. The Internal review measured
+   that this order — and only this order — opens a window in which a raw `U+2028`
+   reaches the surveyed status value, a character this change's own table
+   classifies as line-forging. The disclosure argument for the order is sound; the
+   code argument runs the other way. A reviewer who thinks the window is
+   unacceptable should say so now, because after Chunk A it is closed and
+   unrecoverable as evidence.
+2. **Are the four disclosed-but-unfixed residuals the right side of the scope
+   fence?** Two of them ([I2], the total-suppression crash on one bad byte; [I4],
+   the fourth forging relay that prints above everything else) were reproduced
+   against a **patched** build for this plan and are unchanged by the fix. Each is
+   roughly one line of code. The plan disclosed rather than fixed them because the
+   accepted design does not carry them, and quietly widening an accepted design is
+   the failure mode the plan stage is supposed to prevent. Is that the right call,
+   or is a change whose subject is "what the orientation stream relays" obliged to
+   close a total blind in the same function it is already editing?
+3. **Can the specified oracles fail?** For each of the eight new nodes, name the
+   future state in which it fails. The plan claims three independent oracles per
+   line-counting test, one of which is a literal and one of which is a
+   differential; it also claims that the differential alone would be satisfied by
+   a tool that lists nothing at all. Is the third oracle sufficient to close that,
+   and is there a fourth degenerate state none of the three catches?
+
+**A fourth, if the reviewer has appetite.** The fail-open decoding decision —
+`errors="replace"` on the git stream — is a deliberate choice on an encoding
+boundary. The proposal invited a fresh reader to argue for fail-closed and no
+reader has yet.
+
+**The stopping rule.** A finding on this scope is one of two things. Either it
+names a way relayed external text can still imitate the stream's grammar — a bug
+against a stated property, with a bounded fix — or it names a *property* this plan
+never stated, in which case the specification was incomplete, the property is
+added, and every step is re-swept against it. The second branch is the expensive
+one and is meant to be.
+
+## Code review — the brief (no review has landed)
+
+*Filled in after implementation commits land.* Per `doctrine/plans.md`, the
+reviewer is **not** the implementing agent, the section is append-only, and a
+clean final review carries a falsification ledger and a coverage line. The landed
+review appends here as a `### Code review -- <reviewer> -- YYYY-MM-DD`
+sub-heading, beginning with a `**Model**:` line stating the reviewer's actual
+running model identity rather than one copied from a past template. The heading
+above is shaped like the plan-review one and for the same measured reason.
+
+Three checks this plan asks its code reviewer to **run** rather than read:
+
+* **Re-run the filename forgery against the landed code**, with at least two
+  artifacts on disk, reading stdout as bytes. A review that asserts the fix
+  without re-running the attack does not close it.
+* **Re-run one mutation from each chunk's ledger**, chosen by the reviewer and not
+  by the implementer.
+* **Run `session-start` on a fixture whose filenames are ordinary accented and CJK
+  text and confirm nothing is escaped.** The over-correction failure is the one a
+  first adopter meets, and it is the only one no attacker has to arrange.
+
+## Lasting-truth migration
+
+*Filled in at archive time.* Per `doctrine/plans.md`, the archive commit body
+carries the literal `Follow-ups migrated to:` block naming where each deferred
+item went, so the migration is auditable from the commit log alone — and the plan
+does not archive until every deferred follow-up has a durable home outside it.
+
+The homes are pre-declared here so archive time is bookkeeping rather than recall:
+
+* The three disclosed residuals (plain-text forgery; the uncapped git stream and
+  the two unescaped relays; the non-UTF-8 abort) → `SECURITY.md`, Chunk C.
+* **[I2]** (the `UnicodeDecodeError` total suppression) and **[I4]** (the
+  vendor-target relay) → a `dev/PLANNING.md` row each, because a disclosure is not
+  a fix and an accepted proposal archives out of sight. Neither is claimed by any
+  in-flight proposal today.
+* **[I7]**'s CRLF residual, including the measured fact that the reviewer's
+  suggested remedy re-opens the CR forgery → a `dev/PLANNING.md` row. This one
+  must not be lost: the next person to read [I7] will otherwise implement it.
+* The sub-tool stream relays → the follow-up proposal the accepted proposal
+  already names.
+* The premise R-4 recorded — that no preset selects the module which would handle
+  the homoglyph class, so nothing handles it in a default install — → an existing
+  `dev/PLANNING.md` question. It bears directly on the Maintainer's 2026-08-03
+  direction about the default security stance and is nobody's proposal today.
+
+Per the [Archive preconditions rule](../PLANNING.md#archive-preconditions-proposals-and-plans),
+plans archive only after every deferred follow-up has a durable home outside the
+plan.
+
+This section is append-only once written.
