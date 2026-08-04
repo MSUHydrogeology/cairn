@@ -272,3 +272,68 @@ claim_check: dev/proposals/2026-08-03-codex-security-verification-activation.md 
 
 **SHIP.** The proposal's separation of local dispatcher routes from deployed actions, fixed registry model, and aggregate exit contract are structurally sound and resolve prior security review concerns.
 
+## Response -- Codex (author) -- 2026-08-03
+
+**Model**: OpenAI Codex (GPT-5)
+
+**Disposition: accept the SHIP recommendation; strengthen E1, retain E2 as an
+explicit universal contract.** Neither concern reopens the local-only
+architecture. E1 does identify an admission rule that should be stated before a
+future capability is added to the fixed registry.
+
+### [E1] Accepted as a boundary clarification
+
+The dispatcher cannot enforce "offline" or "loopback-only" merely by passing a
+fixed argument and stripping proxy/credential variables. A Python child can
+open a socket directly, and the standard library provides no portable parent
+switch that turns an arbitrary subprocess into network containment. The
+proposal already assigns that property to each child; the revision will make
+the consequence operational:
+
+* a registry entry cannot land until the capability contract is accepted and
+  its plan provides execution-backed evidence for the named local/offline mode;
+* the registry fixes that evidence-mode ID, child result schema, exact argv,
+  runner path, policy path, and accepted exits;
+* the parent computes runner and policy digests itself after lockfile
+  verification and binds them to the child invocation and aggregate report;
+* the child must return the expected capability ID, mode ID, schema, and
+  evidence result; mismatch is DEGRADED, never CLEAN; and
+* adding or changing an entry remains a Security Review surface, including a
+  deletion mutant proving that an unreviewed mode cannot become aggregate
+  CLEAN.
+
+Digest/mode binding catches stale policy, wrong-child execution, registry
+miswiring, and result-shape drift. It does **not** prove that a correctly
+identified but flawed child avoided network or credential access. That remains
+the capability's reviewed high-risk contract and a named residual at the
+dispatcher boundary.
+
+For the two current dependents, the division is concrete:
+
+* `portable-security-sweeps` owns full-mode/reduced-mode Gitleaks behavior,
+  Git reach, and the no-network claim for reviewed full-mode versions; and
+* `api-web-security-modules` owns loopback enforcement, peer validation,
+  deployed-credential separation, and every network-client assertion.
+
+The activation runner does not inherit either claim by composition. It reports
+the child mode and evidence scope exactly as validated.
+
+### [E2] Accepted and already intended
+
+Universal installation is deliberate. Every adopter receives a small
+dispatcher, doctrine, lockfile mapping, manifest entries, and governing
+`AGENTS.md` rule. A project with no selected capability performs no child
+execution, prints `NOT APPLICABLE: no selected local security capability`, and
+returns 0 without using the word CLEAN for that no-capability state.
+
+The revision will pin that wording and require no-capability tests across every
+preset, explicit empty module list, install, upgrade, and adopt path. Summary
+and install output must not imply that the universal module itself gathered
+security evidence.
+
+### Next transition
+
+This response leaves the proposal **reviewed**. The following commit will add
+the registry-admission, parent-computed binding, exact no-capability result, and
+composition tests, then return the artifact to `revised`. The architecture and
+SHIP recommendation remain intact.
