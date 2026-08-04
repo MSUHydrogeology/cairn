@@ -25,6 +25,45 @@ _STAGE_COMMIT_PATTERNS: List[Tuple[str, 're.Pattern[str]']] = [
 ]
 
 
+_STAGE_SCOPE_PREFIX_RE = re.compile(r'^(?:dev/)?proposals?\s*:\s*', re.I)
+
+_STAGE_PHRASE_SEP_RE = re.compile(r'\s+(?:--|–|—)\s+')
+
+#: Consulted ONLY for a subject carrying the scope prefix above.  The
+#: looser word-boundary forms are safe there and unsafe anywhere else.
+_SCOPED_STAGE_PATTERNS: List[Tuple[str, 're.Pattern[str]']] = [
+    ('open', re.compile(r'^open(?:ing)?\b', re.I)),
+    ('decision', re.compile(
+        r'^(?:maintainer\s+)?decision\b'
+        r'|(?<!-)\bmaintainer\s+decision\b(?!-)', re.I)),
+    ('revised', re.compile(
+        r'(?<!-)\b(?:response|responses|revised|revise|respond\s+to)\b(?!-)',
+        re.I)),
+    ('reviewed', re.compile(r'(?<!-)\breview\b(?!-)', re.I)),
+]
+
+_HEAD_ANCHORED_STAGES = frozenset({'open', 'decision'})
+
+
+def _stage_for_subject(subject: str) -> Optional[str]:
+    """Classify a commit subject as AT MOST ONE lifecycle stage."""
+    text = subject.strip()
+    for stage, pattern in _STAGE_COMMIT_PATTERNS:   # shipped, unchanged
+        if pattern.match(text):
+            return stage
+    match = _STAGE_SCOPE_PREFIX_RE.match(text)
+    if match is None:
+        return None
+    body = text[match.end():]
+    parts = _STAGE_PHRASE_SEP_RE.split(body, maxsplit=1)
+    phrase = parts[1] if len(parts) > 1 else body
+    for stage, pattern in _SCOPED_STAGE_PATTERNS:
+        target = body if stage in _HEAD_ANCHORED_STAGES else phrase
+        if pattern.search(target):
+            return stage
+    return None
+
+
 def _git_log_for_path(
     path: Path, *, repo_root: Optional[Path] = None,
 ) -> List[Tuple[str, datetime.datetime, str]]:
@@ -79,10 +118,9 @@ def _resolve_stage_commits(
         'open': None, 'reviewed': None, 'revised': None, 'decision': None,
     }
     for sha, ts, subject in log_oldest_first:
-        for stage, pattern in _STAGE_COMMIT_PATTERNS:
-            if out[stage] is None and pattern.match(subject):
-                out[stage] = (sha, ts)
-                break
+        stage = _stage_for_subject(subject)
+        if stage is not None and out[stage] is None:
+            out[stage] = (sha, ts)
     return out
 
 
