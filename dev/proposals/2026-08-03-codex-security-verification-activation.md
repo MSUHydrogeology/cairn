@@ -5,7 +5,7 @@
 **Author**: Codex (Strategy, from the Security Review role)
 **Model**: OpenAI Codex (GPT-5)
 **Date opened**: 2026-08-03
-**Status**: revised
+**Status**: accepted
 **Touches**: `bootstrap/_scaffold/config.py`, `templates/core/AGENTS.md`, the
 default-on module catalog, `bootstrap/SAFETY.md`, the install manifest /
 lockfile file set, and behavioral tests under `bootstrap/tests/`
@@ -545,3 +545,54 @@ installed of the three has had the least adversarial attention.
 
 **Scope:** I did not evaluate the registry schema in detail, the lockfile
 digest mechanism, preset expansion, or the `AGENTS.md` merge slot mechanics.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-03
+
+**ACCEPTED as revised.** Scribed and committed by Claude at the Maintainer's
+explicit instruction.
+
+**Maintainer's authorization, quoted verbatim:**
+
+> I accept this proposal as revised
+
+**What is accepted.** The default-on `security-verification` dispatcher, its
+`AGENTS.md` slot, the fixed capability registry, and the shared aggregate exit
+contract (`0` / `5` / `10` / `20`, precedence `20 > 10 > 5 > 0`), as revised.
+
+**The properties the acceptance rests on**, recorded because they are what the
+reviews turned on rather than restated prose:
+
+* a **closed registry of evidence modes** — a credentialed, deployed, active,
+  arbitrary or unknown result is **not representable**, not merely rejected;
+* **parent aggregation cannot strengthen a child** — the property that prevents
+  a dispatcher laundering INCOMPLETE legs into a CLEAN summary;
+* **CLEAN requires an admitted contract**, not a zero exit.
+
+**Ordering, which this Decision establishes.** This artifact is the dependency
+root for `api-web-security-modules` and `portable-security-sweeps`; their
+invocation contract is defined here. Accepting activation alone is harmless — a
+dispatcher with no applicable capability reports `NOT APPLICABLE` and exits 0 —
+while the reverse cannot hold. This Decision therefore precedes any Decision on
+the two capability proposals, and closes External finding **AW3**, which
+recorded them as mutually blocking over an undesigned activation path.
+
+**Known and accepted at Decision time:**
+
+* **Default-on reach.** Every adopter receives the dispatcher and the
+  `AGENTS.md` rule whether or not they select a capability. The runtime effect
+  of a no-capability install is nil (`NOT APPLICABLE`, exit 0); the
+  install-contract and governing-document surface change is universal.
+* **Review asymmetry.** This artifact took one External round plus one, where
+  each capability proposal took three. Defensible — it is much smaller and
+  strictly narrowing — and recorded because it is the artifact an adopter's
+  `AGENTS.md` carries.
+
+**Review tier discharged.** Required `required(External, security lens)`;
+received a Gemini Flash External round and a Claude External round, both with no
+blocking findings.
+
+**Next transition:** plan-open. The plan carries
+`required(External, security lens)` in its own right; this Decision does not
+discharge it.
+
+**Decision-only commit.** Status flip and this section, nothing else.
