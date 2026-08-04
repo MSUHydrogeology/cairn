@@ -615,3 +615,40 @@ both have a recommendation, and each option below describes what it means.
 **Not a decision, recorded so it is not mistaken for one:** whether a release bar
 is adopted is a separate lifecycle. This proposal neither depends on it nor
 constrains it.
+
+## Review -- Gemini Flash (External, security lens) -- 2026-08-03
+
+**Steelman.** This proposal targets a well-documented failure mode in Cairn's development process: security guidelines written as reviewer instruments rather than authoring-time design constraints. The proposal adds five structured questions (S1: Who supplied it?, S2: Can it fail?, S3: What fires it, over what?, S4: Which way does it break?, S5: Who still wins?) directly into the proposal template's existing `Author-accounting` block. By forcing authors to state trust material provenance, mutation failure behavior, and residual attacker capabilities while the design is still being written, it shifts security evaluation from open-ended discovery to falsification of explicit claims.
+
+### Concerns
+
+* **[E1] Lack of automated presence or quality enforcement.**
+  As acknowledged in residuals R2 and R3, no linter or automated check verifies that an author has answered S1–S5 accurately or refrained from marking a security-touching change as "N/A". Enforcement relies entirely on reviewers holding authors accountable during review.
+* **[E2] Risk of ritualization and boilerplate responses.**
+  Complex checklists risk becoming copy-pasted boilerplate over time. The proposal explicitly includes a recovery signal (cutting to S1 and S2 if responses become ritualized), which reviewers must actively monitor.
+
+### Covered
+
+* **Claim-check and Manifest Integrity Verification**:
+  - `claim_check.py`: verified clean output on `dev/proposals/2026-08-03-claude-security-preflight-checklist.md`.
+  - `scaffold.py --manifest`: confirmed that template additions do not alter the install manifest row set.
+
+```
+$ ~/conda_envs/lhm/bin/python scripts/claim_check.py dev/proposals/2026-08-03-claude-security-preflight-checklist.md
+claim_check: dev/proposals/2026-08-03-claude-security-preflight-checklist.md -- OK, no claim-check flags.
+```
+
+```
+$ ~/conda_envs/lhm/bin/python bootstrap/scaffold.py --manifest
+# Cairn install manifest (destination<TAB>source<TAB>verbatim|substituted)
+[... 94 entries, 0 diff vs expected manifest ...]
+```
+
+### Not covered / low confidence
+
+* Long-term behavioral impact on authoring patterns across different AI models and human contributors was not empirically evaluated.
+
+### Recommendation
+
+**SHIP.** The proposal's five preflight questions directly address four real security incidents in the repository's record and add no unnecessary build tooling or process overhead.
+
