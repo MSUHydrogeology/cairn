@@ -10,7 +10,7 @@
 **Source proposal**: `byline-classification` (accepted 2026-08-03; the Decision
 commit is `76a48af`). It currently sits under `dev/proposals/` and moves to
 `dev/proposals/archive/` when it archives.
-**Status**: open
+**Status**: archived
 **Plan review**: required(**External**, security lens) — carried verbatim from
 the proposal header, and **not** discharged by either round the proposal already
 had. The proposal's own Internal reviewer wrote that their pass *"does not
