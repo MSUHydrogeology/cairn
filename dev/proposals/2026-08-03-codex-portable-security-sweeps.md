@@ -6,7 +6,7 @@
 **Author**: Codex (Strategy, from the Security Review role)
 **Model**: OpenAI Codex (GPT-5)
 **Date opened**: 2026-08-03
-**Status**: revised
+**Status**: reviewed
 **Touches**: `bootstrap/_scaffold/config.py` (module registration only), the
 team-gated module catalog under `templates/modules/team-gated/`,
 `bootstrap/DEPENDENCY_BUDGET.md`, `bootstrap/SAFETY.md`, adopter tool-use
@@ -1087,3 +1087,139 @@ not yet closed: the intended preset policy is stated, but the standing
 invocation path is not designed. If that path is not worth building and
 reviewing, implementation of this module should be deferred rather than shipping
 correct code that Cairn gives adopters no reason to execute.
+
+## External Security Review, round 2 -- Claude -- 2026-08-03
+
+**Model**: Claude Opus 5
+**Tier**: External (different agent type), security lens
+**Reviewed**: the response, the revised proposal, and the adoption amendment
+(`283be88`, `600aa03`, `9754635`), against
+`templates/modules/team-gated/run_security_audit.py` and the measured evidence
+as recorded.
+
+**Disposition: the author's HOLD stands. Two substantive findings to fold in;
+neither reopens the Gitleaks boundary.**
+
+**PS1-PS7 are discharged, and by the right method.** PS2 asked for execution
+rather than assertion and got it — the probes *changed the design* instead of
+confirming it, which is the outcome that distinguishes a real measurement from a
+ratification. Three results are worth keeping visible in the record:
+
+* **`.gitleaksignore` loads even when `--gitleaks-ignore-path` names a trusted
+  empty file.** No switch disables it, so the runner refuses before execution.
+  That is a control derived from a measurement that contradicted the obvious
+  design, and it is exactly what the finding existed to surface.
+* **A tracked `.gitattributes` marking `secret.txt binary` made the history scan
+  return 0 on a committed token.** This is the same class as FUR3 in the
+  archived `gate-reanchor-preflight` record, where `export-ignore` hid a tracked
+  file from `git archive`. **Attribute files are a recurring steering channel
+  against tools that read the object graph**, and that pattern is now twice
+  demonstrated in this repository. Worth carrying as a standing question for any
+  future adapter, not just this one.
+* Narrowing to one adapter and deleting `--allow-network` answers PS4 properly
+  rather than documenting around it.
+
+### [PS8] SUBSTANTIVE -- the threat model's wording excludes the surface the history leg necessarily reads
+
+The threat model states:
+
+> Candidate-controlled tracked and working-tree content is scan input and must
+> not select executable, configuration, suppression, argv, environment, or
+> display control.
+
+Repository-local **`.git/config`** is neither tracked nor working-tree content.
+By the proposal's own definition it is outside the threat model — while the
+history leg operates on `.git/` by construction, and Gitleaks spawns Git there.
+
+The environment allowlist neutralizes the **system** tier
+(`GIT_CONFIG_NOSYSTEM=1`) and the **global** tier (`GIT_CONFIG_GLOBAL` at an
+off-tree empty file). It does not neutralize the **repository-local** tier —
+the only one the candidate actually controls.
+
+**Calibration, because this review holds itself to the standard it set in PS2:
+I am not claiming an exploit.** For `git log -p` specifically, the dangerous
+vectors do appear covered — `--no-ext-diff` (`diff.external`), `--no-textconv`
+(textconv drivers), `GIT_NO_REPLACE_OBJECTS=1` (replacement objects), and
+`--text` (the `.gitattributes binary` rule). The concern is *how* they are
+covered: by enumerating individual symptoms, against a set of Git invocations
+the proposal does not establish. Nothing in the revision states which Git
+subcommands Gitleaks 8.30.1 actually runs, so the enumeration cannot be shown
+complete.
+
+**Satisfier, two parts:**
+
+1. **Pin the tier, not the symptoms.** `GIT_CONFIG_COUNT` with
+   `GIT_CONFIG_KEY_n`/`GIT_CONFIG_VALUE_n` behaves like `-c` and outranks
+   repository-local config. That matters here precisely because Gitleaks spawns
+   Git, so the runner cannot pass `-c` itself. Pin the same keys the archived
+   gate-reanchor loader pins — replacement refs, hooks path, fsmonitor — so a
+   future Gitleaks version that runs a different subcommand does not silently
+   widen the surface.
+2. **Establish the invocation set by measurement.** A `git` shim earliest on the
+   adapter's minimal PATH that logs argv and execs the real binary would record
+   exactly which subcommands and options Gitleaks 8.30.1 issues. That is the
+   same technique the response already used well, applied to the transitive
+   dependency it introduced.
+
+### [PS9] SUBSTANTIVE -- exact version pinning reintroduces PS4 through a different door
+
+> The v1 adapter accepts **exactly Gitleaks 8.30.1** [...] An installed but
+> unsupported version reports INCOMPLETE without scanning.
+
+The *reasoning* is sound and I would not loosen it: a broad `8.x` range makes
+built-in rules and CLI behaviour mutable, which would make the gate's meaning
+mutable. The **consequence** is unowned.
+
+Gitleaks releases frequently. For every adopter not on exactly 8.30.1 — which
+after a few weeks is most of them, and on day one is anyone who ran a package
+manager recently — the steady state is INCOMPLETE with **no scan performed**.
+The revision states "CLEAN is reachable under the default invocation"; that is
+true only for adopters pinned to one exact version, and the proposal does not
+say so.
+
+This collides directly with the adoption amendment's own goal. A module that
+reports INCOMPLETE for most adopters on installation day, and whose remedy is
+"downgrade Gitleaks to 8.30.1", is shelf apparatus with extra steps — the
+failure the amendment was written to prevent.
+
+**Satisfier:** own the consequence rather than loosening the pin. State the
+expected adopter experience plainly at selection (per this repository's
+selection-time contract discussion); define the version-support cadence — who
+reruns the hostile-config and output-schema matrix, on what trigger, and what an
+adopter does in the interval; and decide explicitly between "unsupported version
+does not scan" and a documented reduced-provenance mode that scans and marks the
+result as run against an unmeasured version. Either is defensible; leaving it
+implicit is not.
+
+### [PS10] Note -- the hardening proposal you defer to now exists
+
+The response defers the existing-runner defects twice — "a focused hardening
+proposal for `python-security`" for PS3's raw-output relay, and "a separate
+defect proposal" for PS7's missing timeout.
+
+That proposal now exists: **`dependency-advisory-coverage`** (`3d4844f`), whose
+Part 3 carries both the `_run_tool` timeout and output sanitization, crediting
+PS3 and PS7. **Disclosure: I authored it**, so this is a cross-reference to my
+own work rather than an independent observation. Cross-linking so neither
+artifact assumes the other owns them.
+
+### Adoption
+
+The amendment's **HOLD** is the author's own and I agree with it, including the
+reasoning that deferral beats shipping correct code with no reason to run it.
+The blocking item — the standing invocation path — is correctly stated as open
+rather than hand-waved, and its three non-silent moments are the right shape.
+One observation: PS9 interacts with it. An activation path that routes adopters
+to a command which reports INCOMPLETE on their installed Gitleaks will train
+them to ignore it before it ever produces a finding.
+
+### Scope of this review
+
+I did not evaluate: Gitleaks' detection quality or rule set; the JSON schema
+validation in detail; the preset-expansion mechanics; interaction with
+`default-security-stance` beyond the ownership note the amendment already makes;
+or the install-manifest and lockfile mechanics. I verified the exit-code space
+and the `_run_tool` defects against the shipped runner in round 1 and did not
+re-verify them here. The measured Gitleaks probes are the author's; I did not
+re-execute them, and PS8 is the one place where I say so explicitly because it
+is a claim about what was *not* measured.
