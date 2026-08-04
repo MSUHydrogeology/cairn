@@ -72,10 +72,29 @@ schema-structured):
   collision-log / disposition parsers (forgiving by design).
 
 Robust across VCS settings: when git is absent, the path is not a
-checkout, or the default branch is named ``main`` rather than
-``master``, the optional commit-timestamp augmentation degrades quietly
-(empty hour-delta columns + a ``Best-effort`` reliability tier) rather
-than raising.
+checkout, the default branch is named ``main`` rather than ``master``,
+or **no commit subject in a file's history matches the stage
+vocabulary**, the optional commit-timestamp augmentation degrades
+quietly (empty hour-delta columns + a ``Best-effort`` reliability tier)
+rather than raising.  That last cause is the common one in a project
+whose commit subjects do not carry the lifecycle-stage wording the
+reader looks for, and it is indistinguishable in the output from having
+no git at all.
+
+What the ``hours_*`` columns measure is the interval between the
+**commits that recorded** each transition -- not how long the
+deliberation itself took.  A session that reviews, responds and decides
+in one sitting and commits the results together reports deltas at or
+near ``0.0``, which is an honest reading of the commit record.  Test an
+hour delta against ``''`` rather than for truthiness: ``0.0`` is a
+populated value, not a missing one.
+
+``hours_*`` and ``days_*`` can therefore disagree, legitimately.  The
+day counts come from the dates written in the document's own section
+headers; the hour deltas come from the commit timestamps.  A proposal
+whose ``**Date opened**`` predates the commit that opened it reports a
+larger day count than the hour delta spans.  Neither column is wrong --
+they read two different clocks.
 """
 from __future__ import annotations
 
