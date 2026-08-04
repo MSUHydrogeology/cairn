@@ -133,3 +133,143 @@ against the live module. The plan must additionally:
 * The `##` requirement breaks more existing artifacts than it protects.
 * The gate becomes strict enough that agents route around it by editing headings
   to satisfy the parser, which would be worse than the present silence.
+
+## Review -- Codex -- 2026-08-04
+
+**Model**: Codex, based on GPT-5. External, different-agent-type review at
+`34a3f18`, using `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python
+3.13.13).
+
+**Structural-independence stance.** The author is Claude; I am a different
+agent type. I treated the proposal's diagnosis and its proposed remedy as
+separate claims. The diagnosis was reproduced from new fixtures before I used
+the proposal's table as evidence.
+
+**Steelman.** The present gate is materially misleading. It emits a positive
+answer for a record that can be empty, undated, at the wrong heading depth, and
+explicitly labelled below the declared tier. That is worse than a narrow lint
+being absent because an implementing agent can reasonably mistake the green
+result for authorization. A separate proposal is warranted, and changing both
+the self-hosted tool and the installed twin is the correct behavioral surface.
+
+### Reproduction
+
+I loaded `tools/lifecycle_planner.py`, wrote five independent temporary plans
+at status `executing`, parsed each with `_read_artifact`, and called
+`_conformance_violations` directly. Every plan declared
+`required(**External**)`; only the body varied:
+
+| Fixture | Parsed review | Result |
+|---|---|---|
+| no review heading | none | violation |
+| complete review labelled `Internal, same-agent-type` | dated `##`, non-empty | clears |
+| empty `###` review | dated `###`, empty | clears |
+| bare `## Plan review` | no name, role, date, or body | clears |
+| External review saying REVISE, with a finding and no Sharpening | dated `##`, non-empty | clears |
+
+The diagnosis therefore reproduces in full. The existing focused contract suite
+also passed unchanged: **30 passed in 1.24s** under Python 3.13.13.
+
+### Findings
+
+* **[E1] A free-text role can enforce syntax, not the declared review tier
+  (blocking).** The proposed rule asks whether the heading's role field names
+  the required tier. That field is an unauthenticated assertion supplied by the
+  same editable document. An author-session can write `(External)` just as
+  easily as the real reviewer can. Conversely, the published review format in
+  `doctrine/plans.md` uses `### Plan review -- <reviewer> -- YYYY-MM-DD` with
+  **no role field**, so a legitimate human review or a different agent whose
+  name does not encode its type would be blocked. The existing identity model
+  cannot repair this: plans carry no author identity, the AI registry identifies
+  agents but not agent types, and the positive human roster contains
+  Maintainers rather than every possible human reviewer. Git provenance did not
+  supply the missing fact in the cross-type review commit I checked either:
+  `29840f7` is authored, committed, and signed under the Maintainer's Git
+  identity. Revise the claim to "the record carries a declared tier
+  attestation," define that attestation
+  as a machine-readable field with a closed vocabulary, and state plainly that
+  the gate does not authenticate independence. Do not block on today's
+  free-form role text.
+
+* **[E2] Requiring `##` chooses one side of a live contract contradiction and
+  would be an adopter flag day (blocking).** The precondition prose at
+  `doctrine/plans.md:115` says dated `##`, and Cairn's current practice follows
+  it: my corpus pass found **35 exact Plan-review headings, all level 2 and none
+  level 3, as of `34a3f18`**. But the same doctrine's normative format at line
+  422 prescribes a
+  dated `### Plan review` pass under an `## Plan review` container;
+  `dev/plans/_template.md` and `templates/core/dev/plans/_template.md` ship that
+  container; and `_scaffold` in the planner emits the dated review at `###`.
+  The proposal's claim that an existing plan deliberately carries an exact
+  `### Plan review` did not reproduce at this HEAD, but adopters following the
+  shipped scaffold can legitimately have that shape. A migration note does not
+  prevent their previously-valid trees from turning red. First select and
+  document one grammar across doctrine, both plan templates, and the scaffold;
+  then either accept both dated forms when structurally placed, or ship a
+  compatibility/warning phase before rejecting the legacy form. The proposal's
+  Touches list is too narrow for that work.
+
+* **[E3] "Review raised findings" is not presently machine-readable
+  (blocking).** The fourth rule depends on a semantic classification of free
+  prose. `REVISE`, `HOLD`, `Findings`, numbered IDs, and narrative concerns are
+  conventions, not a parsed schema, and `_KNOWN_KINDS` does not currently admit
+  `Sharpening` as a section kind. A heuristic will either let an
+  unconventionally-worded finding bypass the gate or block a clean review that
+  happens to discuss findings. Add an explicit review outcome and findings
+  declaration, with closed values, before making Sharpening conditional; define
+  how rounds link each review to its corresponding Sharpening. As with E1, this
+  validates the record's declared state rather than proving the underlying
+  deliberation occurred.
+
+* **[E4] The strict gate remains trivially routable unless its security claim is
+  narrowed (important).** Even after the four syntax checks, an editor can add a
+  plausible heading/body, relabel the role, or change the plan metadata to
+  `not required(...)`. The append-only and self-commit rules make that conduct
+  reviewable, but this parser does not authenticate either rule. Under Cairn's
+  trusted-contributor model, stronger structural checks still have value: they
+  catch mistakes and force an explicit false record instead of accepting an
+  omission. They do **not** establish that the declared review happened. Frame
+  the tool as a conformance backstop, keep its error text from claiming
+  authorization, and preserve human inspection of attribution and commit
+  history as the authority check.
+
+### Scope call and blast radius
+
+A fifth scope is the right choice. Folding executable behavior into
+`gate-claims-vs-enforcement` would violate its accepted "Nothing that executes
+changes" boundary. Folding it into `planner-line-semantics` would couple an
+independent review-contract change to a plan currently blocked on unrelated
+parser work merely because both touch one file. File ownership is not conceptual
+ownership.
+
+The new scope must nevertheless include the whole format contract, not just the
+parser and tests. At minimum the plan must reconcile `doctrine/plans.md`, the
+self-hosted and adopter plan templates, and the planner's generated scaffold
+with the validator. `tools/lifecycle_planner.py` and
+`templates/skills/_lib/lifecycle_planner.py` are currently byte-identical at
+SHA-256
+`f1552fc7d0ee1d68a60d957389db75b4e5f8d39d8b7cb3561a028b36aa19f808`;
+the latter is a `verbatim` manifest source installed as
+`tools/lifecycle_planner.py`. The behavior and migration policy therefore ship
+to every adopter, not only Cairn's own tree.
+
+### Covered / not covered
+
+**Covered:** direct execution of all five diagnosed states; parser and scaffold
+inspection; current-plan heading/role inventory; canonical doctrine and both
+plan templates; twin identity and install-manifest row; the routing boundaries
+of the two neighboring plans.
+
+**Not covered / low confidence:** I did not inventory adopter repositories, so
+their exact H2/H3 breakage is unknown. I did not design the final review-record
+schema, migration command, or multi-round state machine. I did not run the full
+suite because no implementation is under review; only the focused 30-node
+contract module was run.
+
+### Recommendation
+
+**REVISE.** The diagnosis and fifth-scope decision are sound, but the proposed
+fix cannot safely block work until it distinguishes structural attestation from
+authenticated independence, reconciles the H2/H3 contract across shipped
+surfaces, and gives findings/Sharpening a machine-readable linkage. With those
+changes, a stricter conformance gate is worth shipping.
