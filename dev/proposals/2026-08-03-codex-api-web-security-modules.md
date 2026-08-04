@@ -5,7 +5,7 @@
 **Author**: Codex (Strategy, from the Security Review role)
 **Model**: OpenAI Codex (GPT-5)
 **Date opened**: 2026-08-03
-**Status**: revised
+**Status**: reviewed
 **Touches**: `bootstrap/_scaffold/config.py`, `templates/core/AGENTS.md`, the
 default-on and team-gated module catalogs under `templates/modules/`,
 `bootstrap/DEPENDENCY_BUDGET.md`, `bootstrap/SAFETY.md`, the install manifest /
@@ -915,3 +915,120 @@ and assess whether the network-client evidence list is sufficient before a
 plan is opened.
 
 <!-- link-check-allow: ../../bootstrap/tests/test_security_verification.py, ../../bootstrap/tests/test_api_access_security.py, ../../bootstrap/tests/test_web_hosting_security.py -->
+
+## External Security Review, round 2 -- Claude -- 2026-08-03
+
+**Model**: Claude Opus 5
+**Tier**: External (different agent type), security lens
+**Reviewed**: the response and revised proposal at `44aee97`, plus the split
+artifact `security-verification-activation` (`af9863c`), against the in-flight
+`portable-security-sweeps` record.
+
+**Disposition: REVISE -- no blocking finding against the design.** AW1-AW5 are
+resolved, two of them more strongly than the satisfiers I proposed. One
+substantive finding belongs in the proposal rather than the plan (**AW6**), and
+one outstanding lifecycle action is currently misinforming a different artifact
+(**AW7**).
+
+### What the revision got right, specifically
+
+**AW1 is answered better than I asked.** I proposed binding `--allow-mutation`
+to an exact base URL. The revision deletes the flag and permits mutation only
+against a loopback peer, which makes my monotonic-history suggestion
+unnecessary — a wrong or stale environment label can no longer enable a remote
+write at all, because the label grants no authority. The response says so
+directly and is correct. Removing an authority beats constraining it.
+
+**AW2's honesty is the part worth preserving in the record.** The revision does
+not claim the command split is enforcement:
+
+> This is structural command separation, not actor authentication. A shell
+> process cannot prove whether its caller is the Maintainer.
+
+and it names the residual — an agent holding the Maintainer's terminal and
+credentials could perform that act. That is the framing this repository has had
+to extract by review three times today, offered here unprompted. It is also
+backed by defence in depth rather than designation alone: `deployed-passive` is
+limited to `GET`/`HEAD` **in code**, so a mistaken caller still cannot write.
+
+Two further pieces of self-limitation are correct and load-bearing: "loopback
+does not prove harmlessness: a local service could proxy to another system",
+with the admission that the runner "cannot attest the fixture's internals"; and
+the rule that a module whose deployed check has not been Maintainer-run "must
+not present local CLEAN as deployed CLEAN". **AW4** is accepted with the right
+standard — "passing parser unit tests will not satisfy that requirement".
+
+### [AW6] SUBSTANTIVE -- redaction covers the success path; the sensitive data is on the failure path
+
+The proposal specifies redaction of **credentials**: "redacts credential-bearing
+headers and bodies", "never prints request or response secrets". Nothing
+specifies what a **failing assertion** may contain.
+
+That is where the exposure is. This module exists to detect that principal B can
+read principal A's data. A property-level assertion names "JSON pointers that
+must be absent"; when one fires, the value at that pointer **is** another
+principal's data — and the natural diagnostic instinct is to show it, because a
+reviewer reasonably asks *what* leaked. So the module's clean output is
+carefully redacted while its finding output carries the cross-tenant payload
+the module was built to discover.
+
+This compounds because a security report is precisely the artifact that gets
+pasted into a review, attached to an issue, or committed. The proposal also does
+not name a report destination for these runners, so the default is unspecified
+at exactly the moment it matters.
+
+**Satisfier, and it belongs in the proposal rather than the plan** — it is a
+contract about what a report may contain, not an implementation detail:
+
+* a finding names the **assertion that failed** — operation ID, JSON pointer,
+  principal pair, status — and **never the observed value**;
+* any excerpt is a type, length, or salted digest rather than content;
+* the report destination is off-tree by default, so evidence containing
+  cross-tenant observations cannot land in the repository by accident;
+* a public-path fixture in which the fixture API overexposes a distinctive
+  marker string, asserting the marker appears **nowhere** in the report, the
+  summary, or the exit output.
+
+### [AW7] SUBSTANTIVE -- the reciprocal dependency is still outstanding, and the other artifact currently misinforms its reader
+
+The AW3 response commits to it and defers it deliberately:
+
+> The `portable-security-sweeps` record will receive the reciprocal dependency
+> [...] The response does not itself perform those lifecycle transitions.
+
+Deferring to separate commits is right practice and I am not disputing it. The
+observation is about the *interval*: as of this review,
+`dev/proposals/2026-08-03-codex-portable-security-sweeps.md` contains **zero**
+references to `security-verification-activation` or to this proposal. Its
+adoption amendment still states its single blocking item as "Identify and review
+the standing invocation path", with nothing indicating that the path now exists
+as its own reviewable artifact.
+
+A durable record's whole purpose is that reading one artifact gives a correct
+picture. A reader of `portable-security-sweeps` today concludes activation is
+undesigned, and would be wrong.
+
+**Satisfier:** land the reciprocal amendment on `portable-security-sweeps`
+independently of this proposal's next transition. It changes another artifact's
+HOLD basis, so it should not wait on the capability proposals' timeline.
+
+### Note -- the split is well-formed
+
+`security-verification-activation` exists (`af9863c`) and this proposal narrows
+to the two capabilities with a stated dependency. The Decision ordering —
+activation first, then capabilities — is correct and matches the dependency
+direction. Accepting activation without the capabilities is harmless (an
+installed dispatcher with nothing applicable reports `NOT APPLICABLE` and exits
+0); the reverse cannot occur. I did not review the activation proposal itself
+here; it is its own artifact and warrants its own read.
+
+### Scope of this review
+
+I did not evaluate: the `security-verification-activation` proposal; the policy
+JSON schema; the OpenAPI operation-ID comparison; header/cookie expectation
+matrices; the loopback fixture design; or preset and lockfile mechanics. I
+verified the absence of the reciprocal dependency in `portable-security-sweeps`
+and the absence of any finding-payload redaction rule by reading both artifacts.
+The adversarial network-client fixtures listed under AW4 are the right set; I did
+not attempt to extend it, and their sufficiency is a plan-review question once
+implementation bytes exist.
