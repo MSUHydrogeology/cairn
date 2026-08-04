@@ -1724,3 +1724,468 @@ the arithmetic that motivates it (7/42 and 13/14 both reproduce exactly), so the
 judgment, which [I4] and [I5] leave standing as the plan's largest unattested
 surface and which no same-type reviewer -- including this one -- is the right
 instrument to settle.
+
+---
+
+## Response to plan review -- Claude (author) -- 2026-08-04
+
+**Model**: Claude Opus 5 (`claude-opus-5`), queried at response time, not copied
+from a prior label.
+
+**Standing, and what this Response is not.** I am the plan's author responding to
+an Internal round written by the same agent type. **This Response does not
+discharge the plan's declared tier**, and neither did the round it answers. The
+tier is `required(External, security lens)`; it stays owed after this section
+lands, and no implementation commit may proceed on the strength of an author's
+Response to a same-type review. What a Response can do is disposition, amend, and
+**re-measure** — and the re-measurement is the part with teeth here, because the
+review was written against HEAD `eacb7dd` and the tree has moved to `e20b18e`
+since.
+
+Every figure below is a run at `/Users/kendal30/conda_envs/lhm/bin/python3.13`
+(Python 3.13.13, UCD 15.1.0), `PYTHONDONTWRITEBYTECODE=1`, working tree at HEAD
+`e20b18e`. **No repository file was modified to produce any of them**; the
+homoglyph reconstruction lives in a scratch directory outside the repository and
+is *my reconstruction of the plan's clause prose*, labelled as such at every use.
+The shipped scanner supplied every `HEAD` column. Both mandated checkers were run
+over this file:
+
+```
+claim_check: dev/plans/content-scan-detectors.md -- OK, no claim-check flags.   (exit 0)
+check_cairn: OK -- 195 Markdown file(s) scanned; no issues; 68 external link(s)
+             not probed.                                                        (exit 0)
+```
+
+**Headline.** Nine findings: **eight accepted** (two with modification), **one
+accepted with its remedy corrected**, **zero declined**. Every acceptance carries
+mechanical residue in the *Amendments in force* table below — a superseded row, a
+new row, a new perturbation, or a retired obligation. And the re-measurement
+produced **two things neither the plan nor the review has**: the plan's `vermin`
+fence rests on a **false premise** that the review confirmed with the wrong
+oracle, and the review's own [I7] understates itself — the `check_cairn` tripwire
+is structurally null for **Change 2 as well**, for a reason that is this cycle's
+recurring failure in its purest form.
+
+### 1. Re-measurement: the plan's own figures against the live tree
+
+| the plan states (`as_of 2026-08-04`, HEAD `eacb7dd`) | live tree, HEAD `e20b18e` | verdict |
+|---|---|---|
+| Suite collection **1746 nodes** | **1790** | drifted (+44) |
+| `check_cairn` **180** Markdown / **68** external | **195 / 68** | Markdown drifted; external exact |
+| **234** tracked `.md` | **249** | drifted |
+| **452** tracked `.md`/`.txt`/`.py` | **469** | drifted |
+| **9 lines** carry a covered code point, **0** unowned | **9 / 0**, identical file:line list | **exact** |
+| 17 ignorable rows, 18 noncharacter rows, lowest `U+00AD` | **17 / 18 / U+00AD** | **exact** |
+| **164**-entry `frozen_files`; both edited files present, hashes match the live tree | 164; both present; **both match** | **exact** |
+| `content-security.md` **not** frozen | not frozen | **exact** |
+| `collection.node_count = 1598`, 1598 `node_ids` | **1598 / 1598** | **exact** |
+| `scaffold.py --manifest` **96** lines (1 header + 95 data) | **96**, header at line 1 | **exact** |
+| `test_gate_manifest.py:67` asserts the scanner frozen | verbatim at that line | **exact** |
+| sampled Default_Ignorable categories `['Lo','Mn']`, any `Cf` **False**; noncharacters `Cn`; **170** `Cf` in UCD 15.1.0 | `['Lo','Mn']` / False / `['Cn']` / **170** | **exact** |
+| Greek `_SCRIPT_RANGES` span **400** code points, **347** assigned letters (129 + 218) | 400 / **347** / 129 + 218 | **exact** |
+| HEAD flags **37/42** scientific tokens | **37 of the 37 published** false positives flag | **exact** |
+| case-exact seed leaves **7** residuals, exactly the seven the module doc is committed to naming | **7**, token-for-token the named seven | **exact** |
+| **13 of [I1]'s 14** tokens stay flagged; the cleared one is the two-character shape | **13/14**; cleared = `U+03B4`+`o` | **exact** |
+| `U+03C1 U+03BF U+03C3 U+03B9` predicted to stay missed because `U+03C3` is seeded | still missed; the other six HEAD-missed maximal tokens are caught | **exact** |
+| Perf: HEAD 0.218 s / naive **5.757 s (26.4x)** / guarded 0.121 s (0.56x) | HEAD **0.209 s** / naive **7.774 s (37.2x)** / guarded **0.150 s (0.72x)** over 249 files, 114 493 lines, 7.44 MB | direction **exact**, constants moved (see below) |
+| `bandit 1.9.4` present; scanner clean, exit 0 | 1.9.4; **exit 0** | **exact** |
+| three presets, **none** selects `content-security` | three; none | **exact** |
+| `dev/modules/` holds 18 files, no `content-security` mirror | 18; none | **exact** |
+| shipped residual baseline comment-only, 0 fingerprints | 0 non-comment lines | **exact** |
+| `_flag_fingerprint` at runner `:291` hashes `relpath:pattern_id:sha256(stripped line)` | verbatim at `:291-299`; the **message is not an input** | **exact** |
+| `content_scan.py:401-403`, ternary verbatim at `:402`; HEAD homoglyph rule at `:357`; runner `:83` `_MAX_WALL_SECONDS = 120.0`; docstring `29-55` / `:40` / `:43` / `:46`; `content-security.md:138-144` and `:25-33`; `test_content_scan.py:47-52` (`0x00AD` **absent**) and `:81` | all verbatim at the cited lines | **exact** |
+| `vermin` is not installed, so `test_python_floor.py` **skips gracefully** | **`vermin 1.8.0` is on PATH; the test runs and both cases PASS** | **DOES NOT REPRODUCE** |
+
+**On the performance constants.** The naive-walk multiplier moved from **26.4x**
+to **37.2x** — outside noise, and in the direction that *strengthens* [I6] rather
+than weakening it. The corpus grew from 89 445 to 114 493 lines while the guard's
+cost stayed flat, which is what a per-character table walk does and a
+short-circuit does not. The plan already says "the interesting claim is the
+direction and the guard, not the constant"; that instruction is correct and is
+now evidenced twice over.
+
+### 2. Re-measurement: the review's own figures
+
+| the review states | live tree | verdict |
+|---|---|---|
+| collection **1749**; **235** `.md`; **453** `.md`/`.txt`/`.py` | **1790 / 249 / 469** | drifted further — the review's own point, proven again |
+| `check_cairn` **180 / 68** exact; manifest **96** exact | **195 / 68**; **96** | manifest exact; Markdown count drifted |
+| [I1]: six reviewer-built no-Latin multi-script tokens, HEAD **flag** -> rule **CLEAR**, 6 for 6 | **6 for 6**, every row identical | **exact** |
+| [I2]: **20** non-seed Greek letters whose NFD base is a `_NO_LATIN_TWIN` member — `U+038F` plus 19 in Greek Extended (`U+1F68`-`U+1F6F`, `U+1FA8`-`U+1FAF`, `U+1FFA`-`U+1FFC`) | **20**; `U+038F` + **19** spanning `U+1F68`..`U+1FFC` | **exact** |
+| [I2]: `U+038F`+`mega`, `U+1F68`+`mega`, `U+1FFB`+`mega` are flag -> CLEAR | all three | **exact** |
+| [I3]: **217 of 218** Greek Extended letters decompose to >1 char; `ord(normalize("NFD", ...))` raises `TypeError` | **217/218**; `TypeError: ord() expected a character, but string of length 2 found` | **exact** |
+| [I4]: dropping `U+03BC` leaves both decisive figures **identical** | 7 and 13/14 both unchanged | **exact** |
+| [I4]: `U+03BC`+`ser` and `U+03BC`+`rl` are HEAD-clean; `U+03BC`+`pload` HEAD-flags | clean / clean / flags | **exact** |
+| [I5]: seven seeded-letter families, HEAD **flag** -> rule **CLEAR** | 7 for 7 | **exact** |
+| [I7]: the 9 covered-code-point lines are **all** in `.py`; **zero** tracked `.md` lines carry one | identical file:line list; **0** `.md` lines | **exact** |
+| [I8]: **zero** lines carry `U+FE0F` | **0** | **exact** |
+| [I9]: `tuple + list` raises | `TypeError: can only concatenate tuple (not "list") to tuple` | **exact** |
+| fullwidth `U+FF21`-`U+FF5A`: **0** rows whose NFKC is not a single ASCII char | **0** of 58 | **exact** |
+| `test_content_scan.py:81-87` tests four tokens, **all** carrying Latin | all four are `A`+X+`bc` | **exact** |
+| `vermin` is **absent** (`No module named vermin`) so `test_python_floor.py` skips | the **import** fails; the **test passes** | premise reproduces, **consequence does not** |
+
+**The review's measurements are, with one exception, exact.** Eighteen
+independent re-runs, eighteen hits. That is unusually good and it is worth saying
+before the dispositions, because every finding below inherits its credibility
+from it.
+
+### 3. Disposition
+
+#### [I1] — **ACCEPTED, with the remedy corrected.** The finding is right; its remedy as worded reverts Change 2 entirely.
+
+The hole is real and I reproduce it 6 for 6 with the shipped scanner. Clauses 2
+and 3 both predicate on Latin being present; clause 1 covers all-Greek and
+all-fullwidth. A token whose scripts are Cyrillic + Armenian, or Greek +
+Cyrillic, with **zero** Latin characters, falls through all four gaps. HEAD flags
+it (`content_scan.py:357`, `len(_token_scripts(token)) > 1`, script-blind); the
+rule as the plan words it clears it. The Maintainer direction narrowed clause 1
+to Greek-only and nothing was added to catch what the old script-general clause 1
+and HEAD's rule used to catch between them. The review's three consequences all
+hold: the plan's "Unchanged behaviour from HEAD" sentence is false, D12 cannot
+detect it (all four of its tokens carry Latin, verified at `:81-87`), and the
+specified falsifying sweep cannot find it because no token set in the record
+contains a no-Latin multi-script token.
+
+**But the remedy as the review words it does not work, and I measured it rather
+than reasoning about it.** The review proposes *"two or more distinct confusable
+scripts in one token always flags"* and asserts it "removes zero flags relative
+to HEAD and costs no scientific notation":
+
+```
+                                        sciFP    [I1] kept   no-Latin caught
+plan as written                          7/37      13/14           0/6
+clause 0, non-Latin scripts only         7/37      13/14           6/6
+clause 0, literal ("any two scripts")   37/37      14/14           6/6
+```
+
+The literal reading restores **all thirty-seven** scientific false positives —
+it is HEAD's rule, and it deletes Change 2. The review's claimed properties hold
+**only** under the non-Latin restriction, which the sentence does not say. This
+is the same defect class as the review's own [I3]: a remedy whose most natural
+reading breaks the thing it is repairing.
+
+**Why the non-Latin form is genuinely free, measured rather than asserted:**
+every one of the 37 published false-positive tokens carries **exactly one**
+non-Latin script (`Counter({1: 37})`). A clause keyed on *two or more non-Latin
+confusable scripts* therefore cannot touch any of them, by measurement of the
+token set and not by intuition about scientific notation.
+
+Residue: **AM-1** through **AM-5**.
+
+**Maintainer strike-line.** Clause 0 adds a clause the Decision did not
+enumerate, even though it restores only behaviour HEAD already has and removes
+none. I classify it *within-contract* — a correction preserving accepted
+behaviour, adding no surface. If the Maintainer instead reads it as scope, strike
+AM-1 through AM-4 and the class becomes a **new** declared residual needing a
+Decision; it is emphatically **not** the priced whole-script Cyrillic residual,
+since `U+03C1` + Cyrillic `a,s,s` is neither whole-script nor Cyrillic.
+
+#### [I2] — **ACCEPTED in full.** The number is 20, the branch is the other one, and the plan wrote down an answer it had not taken.
+
+Reproduced exactly: 20 non-seed Greek letters fold onto a `_NO_LATIN_TWIN`
+member — `U+038F`, `U+1F68`-`U+1F6F`, `U+1FA8`-`U+1FAF`, `U+1FFA`-`U+1FFC`. The
+review is also right that the plan's measurement *question* is under-scoped: it
+asks about "the 218 assigned Greek Extended letters" and `U+038F` is in Greek and
+Coptic, so an honest answer to the question as asked would still have
+under-counted by one.
+
+I accept the sharper half without argument. The plan's own sentence is **"Do not
+ship a mechanism described as a guard without a number saying what it guards"**
+and the plan then supplied a predicted number in place of a measured one, in that
+same paragraph. Under a denylist the fold **widens clearing**; the plan
+identified that polarity inversion correctly and then reported the pre-inversion
+answer. The conditional branch the plan pre-committed to ("if it is not zero, the
+cleared set must be listed and put to the plan reviewer") is hereby **taken**:
+the set is listed above and is now in the record.
+
+Residue: **AM-6**.
+
+#### [I3] — **ACCEPTED in full.** This is the finding with the worst failure mode and the cheapest fix.
+
+Reproduced: 217 of 218 Greek Extended letters decompose to more than one
+character, and `ord(unicodedata.normalize("NFD", ch))` raises `TypeError`. D1
+offers "escapes **or** integer literals" and D2 says "NFD-fold, then test
+non-membership" — between them they invite the int-set form, which raises on any
+polytonic Greek. The failure scenario is exactly as stated: an adopter with a
+classics repository, a quoted epigraph, or a Unicode fixture gets a **denial of
+scan** in a fail-closed runner, triggered by legitimate content. And the review
+is right that nothing in D4-D11 touches Greek Extended at all — every token in
+those rows draws from `U+0370`-`U+03FF`.
+
+Residue: **AM-7**, **AM-8**, **AM-9** (the new does-not-raise sweep over all 347
+assigned letters — which also gives D10 the companion the review names: D10 pins
+the table's *members*, nothing pinned the *function* against its domain).
+
+#### [I4] — **ACCEPTED.** The seed is exempted from the plan's own admission rule, and `U+03BC` is unconstrained by every figure the plan uses.
+
+Reproduced: dropping `U+03BC` from the seed leaves **both** decisive figures
+bit-identical (7 residuals, 13/14 kept). The plan's two measurements do not
+touch it — the micro tokens in the 42-set are `U+00B5` MICRO SIGN, not `U+03BC` —
+so the one seeded letter with the most arguable ASCII twin (`u`) is the one no
+measurement in this plan constrains. The structural point is the stronger one:
+the admission rule governs only what is admitted *beyond* the seed, so it binds
+`U+03D1`/`U+03D5`/`U+03D6` (which clear nothing in any published figure) and
+correctly refuses `U+03F2`, while the nine letters that do **all** the clearing
+are admitted by inheritance from the artifact the plan itself says failed twice.
+
+The reviewer's adjacent note also reproduces: `U+03BC`+`ser` and `U+03BC`+`rl`
+are HEAD-clean (RV5 already clears them), so `U+03BC`'s real new exposure is
+longer tokens such as `U+03BC`+`pload`, which HEAD flags and the rule clears.
+That belongs in the module doc, and AM-10 puts it there.
+
+Residue: **AM-10**.
+
+#### [I5] — **ACCEPTED.** The claim is stronger than the evidence, and the fix is to write the checkable sentence.
+
+Reproduced 7 for 7. I want to be precise about what I am conceding, because the
+plan's underlying judgment is not what is wrong. I still think most of
+`U+0394`/`U+03BB`/`U+03C6`/`U+03A9` are weak spoofs and the review says it agrees.
+What is wrong is the **form** of the claim: "the falsifying criterion no longer
+fires" is a statement about the world, and it is true only if you first accept
+the ASCII-twin judgment as settled — which *Known omissions* (d) already concedes
+is "unattested to any external oracle". A security control should not carry a
+claim whose truth depends on the reader granting the very judgment under review.
+The review's replacement sentence is checkable and mine is not, so I take it.
+
+Residue: **AM-11**.
+
+#### [I6] — **ACCEPTED.** The channel note claims independence the selection step destroyed.
+
+This one I should have caught myself, because the plan half-says it: "it does not
+convert it into 'the table covers its domain', which is not [a test]" — and then
+the channel note takes it back by calling the published figures an independent
+oracle. They are not independent of the seed: the seed was **chosen because** it
+reproduces 7/42. D9 is a genuine **drift** guard (P-D1's "add `U+03B3`, watch the
+seven become six" is a correct hazard-side perturbation and I keep it), but it
+cannot fail for the seed as selected. Both the channel note and the
+*Author-accounting* invariant get restated as drift.
+
+Residue: **AM-12**.
+
+#### [I7] — **ACCEPTED, and it understates itself. The tripwire is null for Change 2 too.**
+
+The review's Change 1 half reproduces exactly: `check_cairn` scans tracked
+Markdown only (`scripts/check_cairn.py:50` says so, `:182` runs the `git ls-files
+'*.md'`, `:393` composes `content_scan.scan_file`), and **zero** tracked `.md`
+lines carry any code point in the ignorable-union-noncharacter set — all nine
+live in `.py` files. Change 1 therefore adds zero `check_cairn` flags whether the
+detector is correct or broken.
+
+**What the review did not check, and I did.** I ran the file-by-file
+`(pattern_id, line)` comparison the plan specifies, over all 249 tracked `.md`,
+through `scan_file` (so suppressions apply), with `_scan_homoglyph` swapped for
+my reconstruction of the plan's rule:
+
+```
+post-suppression flags over tracked .md   BEFORE: 77   AFTER: 77
+flags REMOVED: 0    flags ADDED: 0    files whose flag set changes: 0
+post-suppression `homoglyph` flags across all 249 tracked .md : 0
+```
+
+The "0 files change" prediction reproduces — but for a reason that voids it as
+evidence. There are **zero** unsuppressed `homoglyph` flags in the entire tracked
+Markdown tree. The one file that carries any is the source proposal itself: 73
+raw homoglyph lines, **all** silenced by its 23 block-scoped `cairn-accept:
+homoglyph` markers. Pre-suppression, my reconstruction moves 26 lines cleared and
+16 added in that file — and every one of them is inside a suppression block the
+proposal wrote about itself.
+
+**This is the recurring failure of this cycle in its purest form: the artifact
+under verification is the only file supplying the material the check runs on, and
+it has suppressed itself.** The plan cites the flag-count tripwire twice as a
+signal-the-change-is-wrong guard. It is structurally incapable of moving for
+either change. Calling that "at full strength again" is precisely the kind of
+sentence this plan exists to prevent, and the review was right to name it — it
+was simply right about half of it.
+
+Residue: **AM-13**, **AM-14**.
+
+#### [I8] — **ACCEPTED with modification.** The bias is real; the "one emoji-bearing corpus outside this repository" is not a measurement I can bound.
+
+Reproduced: **zero** lines carry `U+FE0F` across 469 tracked files. The review is
+right that this is the house emoji rule showing up in the data rather than
+evidence about the world, that `unicode-ignorable` fires on `U+FE0F`, and that
+the adopter-facing accounting is one-sided — E5's `Changed` line covers Change 2's
+clearing direction (`STALE` at exit 3) while Change 1's **adding** direction
+appears nowhere.
+
+I accept the asymmetry and the changelog fix without reservation. I **modify**
+the measurement ask. "Measure `U+FE0F` density on one emoji-bearing corpus
+outside this repository" has no defensible sampling frame — one arbitrary
+repository's emoji rate is not a number an adopter can use, and quoting it in a
+changelog would be a figure with a false precision, which is the failure mode
+this whole lifecycle is about. What is both measurable and *decision-relevant* is
+the **shape**: `unicode-ignorable` fires once per line per category, so the
+upgrade cost is bounded by *emoji-bearing lines*, not emoji. AM-15 requires the
+per-line bound to be stated as a rule with a worked example, and the `Added`
+changelog line to carry the same upgrade-consequence sentence the `Changed` line
+gets. If the Maintainer wants a density figure with a named corpus and a stated
+frame, that is a one-line instruction and I will take it.
+
+Residue: **AM-15**.
+
+#### [I9] — **ACCEPTED in full.** Both halves.
+
+`tuple + list` raises, confirmed. And the substantive half is the one that
+matters: B10 as specified compares the table minimum against a hard-coded
+`0x00AD`, so it pins "the table never drops below `U+00AD`" and **not** the
+invariant *Author-accounting* names it as enforcing. A future author who raises
+the guard constant leaves B10 green. Asserting against the module's own constant
+makes the coupling real.
+
+Residue: **AM-16**.
+
+#### Carried figures — **ACCEPTED.** And the drift is now larger than the review found.
+
+The review measured 1749 against the plan's 1746; the live tree is at **1790**.
+Tracked `.md` has gone 234 -> 235 -> **249**. The plan says "Re-measure, do not
+carry" and then hands an implementing agent a constant to compute a delta
+against. AM-17 makes the baseline a **procedure**.
+
+#### On the two things the plan invited a reviewer to strike
+
+* **C4's `_BANNED_CODEPOINTS` widening** — the review declines to strike it and I
+  agree. `0x00AD` is verifiably **absent** from the set at
+  `test_content_scan.py:47-52`, so P-C3's green-at-HEAD / red-after-C4 pair is
+  real and the widening closes a live gap at no cost. **Kept, unchanged.**
+* **The case-exact reading of `_NO_LATIN_TWIN`** — the review confirms the
+  arithmetic (7 residuals and 13/14 both reproduce exactly here too) and declines
+  to strike the *reading*. **Kept.** The strike-line in *Chunk D* stays live for
+  the Maintainer; what [I4] and [I5] establish is that the reading is
+  well-evidenced while the **seed's** ASCII-twin judgment is not, and AM-10 and
+  AM-11 make the plan say so in both places.
+
+### 4. Two things the re-measurement forced, that the review did not raise
+
+#### [A1] The `vermin` fence rests on a false premise. The plan asserted it, the review confirmed it with the wrong oracle, and the test has been passing the whole time.
+
+The plan says `vermin` "is not installed in this environment" and that
+`test_python_floor.py` "**skips gracefully**". The review confirms it: "`vermin`
+is **absent** (`No module named vermin`) so `test_python_floor.py` skips."
+
+Both premises come from an **import probe**. That is not what the test checks:
+
+```
+bootstrap/tests/test_python_floor.py  _vermin_cmd()
+    subprocess.run(["vermin", "--version"], ...)          # the binary on PATH
+    shutil.which("vermin", path=<interpreter dir>)        # then interpreter-adjacent
+```
+
+`import vermin` fails because `vermin` installs as a **standalone executable, not
+an importable module** — the test's own docstring says so in terms. Followed to
+the call path rather than to the first check that supports the claim:
+
+```
+$ which vermin      -> /Users/kendal30/conda_envs/miniforge3/bin/vermin
+$ vermin --version  -> 1.8.0
+$ python -m pytest bootstrap/tests/test_python_floor.py -v
+  TestPythonFloor::test_engine_floor_does_not_exceed_declared_minimum PASSED
+  TestPythonFloor::test_engine_floor_is_at_least_3_7                  PASSED
+  2 passed
+```
+
+**It does not skip. It passes.** This is the round's stated failure mode with the
+roles reversed: *follow the call path, not the first function that supports the
+claim.* I asserted the skip; the reviewer probed the artifact I named rather than
+the trigger that governs, and confirmed it.
+
+**And the conclusion survives anyway, for a better reason.**
+`test_python_floor.py` scopes to `ENGINE_DIR = bootstrap/_scaffold` — the scaffold
+engine, **not** `templates/modules/team-gated/content_scan.py`. So even with
+`vermin` present and both cases green, that test verifies nothing about the file
+this plan edits. Installing the dev dependency, which is the remedy the plan's
+fence names, would have discharged **nothing**.
+
+The correct check is a **scoped `vermin` run over the edited file**, which is
+dischargeable in-session and which I have taken a pre-change baseline for:
+
+```
+$ vermin --backport dataclasses --backport typing \
+      templates/modules/team-gated/content_scan.py
+  Minimum required versions: 3.7
+  Incompatible versions:     2.x
+```
+
+`3.7`, well under the declared `>= 3.11` floor. So *The Maintainer fence* item 2
+is **retired** — the obligation moves back to the implementing agent as a scoped
+run against a stated baseline, not up to the Maintainer as an uninstallable
+dependency. Residue: **AM-18**.
+
+#### [A2] The `check_cairn` tripwire is null for Change 2 as well
+
+Stated under [I7] above; it is listed separately here because it is an author
+finding against the author's own plan, not a disposition of a reviewer's, and
+because it is the one place where the plan's central self-verification story is
+load-free in both halves rather than one. Residue: **AM-14**.
+
+### 5. Amendments in force
+
+Append-only: the rows below **supersede** the quoted text without editing it. An
+implementing agent reads the plan **through** this table.
+
+| # | Superseded text (verbatim) | Replaced by |
+|---|---|---|
+| **AM-1** | Chunk D: `**The three clauses. A token flags when any holds:**` | `**The four clauses. A token flags when any holds:**`, with a new **clause 0** inserted first: *"**Two or more distinct non-Latin confusable scripts in one token always flags.** Latin is excluded from the count; the clause is HEAD's script-blind rule restricted to the no-Latin case, so it removes no flag HEAD has and adds none. Measured free: all 37 published scientific false positives carry exactly one non-Latin script."* Clauses 1-3 keep their numbering and text, evaluated after clause 0. |
+| **AM-2** | Chunk D, clause 2: `2. **Non-Greek confusable script mixed with Latin always flags.** Cyrillic,` / `   Armenian, Cherokee, Coptic, fullwidth. Unchanged behaviour from HEAD.` | Same first sentence; the second becomes: *"Cyrillic, Armenian, Cherokee, Coptic, fullwidth. **Unchanged behaviour from HEAD for any token containing a Latin character**; the no-Latin case is clause 0's, and without clause 0 this sentence is false."* |
+| **AM-3** | Chunk D row **D3** (`_scan_homoglyph` rewritten to the three clauses) | `_scan_homoglyph` rewritten to the **four** clauses. Clause 0 is evaluated first and its comment states the measured zero-cost basis (37/37 tokens carry one non-Latin script). Clause 1's comment and code still say **"for Greek"**; the fullwidth arm stays separate; the Cyrillic-residual comment is unchanged. |
+| **AM-4** | Chunk D row **D5** (`test_spoofs_still_flag`) | Gains a `test_no_latin_multi_script_flags` case carrying the six reviewer-built tokens (Cyrillic+Armenian "session", Armenian+Cyrillic "ronin", Cyrillic+Coptic+Armenian, `U+03C1`+Cyrillic "pass", Cyrillic+Armenian "admin", Cyrillic+Greek "open"), all written as `\uXXXX` escapes, each asserted **flagged**. Their provenance — *built by the plan reviewer, present in no set in the record* — is recorded in the docstring. |
+| **AM-5** | Chunk D acceptance, `**The falsifying sweep must be RUN, not reasoned.**` bullet | Unchanged in its demand, prefaced by: *"**The record's token sets cannot find the no-Latin multi-script class — no set in the record contains such a token, so the sweep's answer is fixed by construction.** Widen the sweep with the six reviewer-built tokens above plus at least six more built at implementation time, before treating any sweep result as evidence."* New perturbation **P-D7, RUN**: delete clause 0; confirm the new D5 case goes RED and D4's scientific set stays green. |
+| **AM-6** | Chunk D acceptance: `Under the case-exact seed, **no** precomposed or` / `Greek Extended form appears to fold onto a seeded base, which would make the` / `folding inert.` | **Measured, not predicted: the number is 20.** `U+038F` (Greek and Coptic — a block the original question did not even scope), `U+1F68`-`U+1F6F` (8), `U+1FA8`-`U+1FAF` (8), `U+1FFA`-`U+1FFC` (3). All are capital-omega variants; `U+038F`+`mega`, `U+1F68`+`mega` and `U+1FFB`+`mega` are flag-at-HEAD -> cleared-by-the-rule. The plan's own conditional ("if it is not zero, the cleared set must be listed and put to the plan reviewer") is **discharged** by this Response. The code comment beside the fold must carry **20** and the listed set, and the module doc must state that the fold widens clearing under a denylist. |
+| **AM-7** | Chunk D row **D1**: `` `_NO_LATIN_TWIN`, a `frozenset` of Greek code points **written as `\uXXXX` escapes or integer literals** `` | `` `_NO_LATIN_TWIN`, a `frozenset` of **single-character `str` members written as `\uXXXX` escapes. Integer literals are forbidden** — the int form invites `ord(normalize("NFD", ch))`, which raises on 217 of the 218 Greek Extended letters. `` |
+| **AM-8** | Chunk D row **D2**: `` `_is_confusable_greek(ch)` — NFD-fold, then test non-membership in `_NO_LATIN_TWIN`. `` | `` `_is_confusable_greek(ch)` — take `unicodedata.normalize("NFD", ch)[0]` (**the arity is pinned: NFD of a Greek Extended letter is a multi-character string**), then test non-membership in `_NO_LATIN_TWIN`. `` |
+| **AM-9** | *(new row)* | **D13** — `test_scan_text_survives_every_greek_letter`: `scan_text` **does not raise** across all **347** assigned letters in the two Greek `_SCRIPT_RANGES` rows (`U+0370`-`U+03FF`, `U+1F00`-`U+1FFF`), each in a token with a Latin neighbour and alone. New perturbation **P-D8, RUN**: replace the pinned `[0]` with the bare `normalize(...)` inside `ord(...)`; confirm D13 goes RED with `TypeError`. D10 pins the table's members; D13 pins the function against its domain. |
+| **AM-10** | Chunk D row **D1** (the seed's admission) | Additionally: the **nine seeded letters each carry their own per-code-point justification comment**, under the same rule the plan applies to the three admitted variants — inheritance from the base proposal is no longer sufficient. Each comment states whether the letter is **pinned by a published figure** (`U+0394`, `U+03BB`, `U+03C3`, `U+03B8`, `U+03C6`, `U+03C8`, `U+03B2`, `U+03A9` — these move the residual count) or **figure-unconstrained** (`U+03BC` — dropping it leaves both decisive figures bit-identical; the 42-set's micro tokens are `U+00B5` MICRO SIGN, not `U+03BC`). The module doc records that RV5 already clears short micro-prefixed tokens at HEAD, so `U+03BC`'s new exposure is longer tokens such as `U+03BC`+`pload`. |
+| **AM-11** | Chunk D: `So the proposal's own falsifying criterion (*"a spoof that HEAD catches and the` / `patch clears, other than the named two-character shape"*) **no longer fires**.` | *"So the proposal's own falsifying criterion fires only on a class the plan can name: **no spoof HEAD catches is cleared except the two-character shape and the seven seeded-letter families (`U+0394`, `U+03BB`, `U+03C6`, `U+03A9`, `U+03B2` x2, `U+03BC`), whose ASCII-twin status is asserted by judgment and unattested to any external oracle.** That sentence is checkable; 'no longer fires' was not."* |
+| **AM-12** | Chunk D channel note: `` D9's oracle is the `` / `` proposal's own **published figures**, an artifact written before the `` / `` implementation existed. `` | *"D9 is a **drift** guard, not an independence check. The case-exact seed was selected **because** it reproduces the published residual count, so D9 cannot fail for the seed as selected; it fails when the table drifts from what the module doc publishes, which is what P-D1 perturbs and what it is worth having."* The *Author-accounting* invariant `` *`_NO_LATIN_TWIN` agrees with the figures the module doc publishes.* `` is read as a consistency check between two descriptions of one judgment, never as a check that the judgment is right. |
+| **AM-13** | Chunk B acceptance: `* `python scripts/check_cairn.py` → **flag count unchanged**. The predicted delta` ... `is at full strength again now that the `+2` exposure has been repaired.` | *"`python scripts/check_cairn.py` -> flag count unchanged. **This check is structurally incapable of moving for Change 1**: `check_cairn` scans tracked Markdown only (`scripts/check_cairn.py:50`, `:182`, `:393`) and **zero** tracked `.md` lines carry any covered code point — all nine live in `.py` files. It is a guard against someone planting a raw code point in Markdown, **not** a verification of this change. Run it, expect no movement, and do **not** cite it as evidence the detector is correct."* |
+| **AM-14** | *Verification*: `* **The corpus tripwire, at full strength.**` bullet, and the `* **The file-by-file flag-set comparison**` bullet's `Predicted: **0 files change**.` | *"**The corpus tripwire is null for both changes, and this is the plan's own recurring-failure class.** Change 1: zero tracked `.md` lines carry a covered code point. Change 2: there are **zero unsuppressed `homoglyph` flags in the entire tracked Markdown tree** — the only file carrying any is the source proposal (73 raw lines, all silenced by its own 23 block-scoped `cairn-accept: homoglyph` markers), so a measured 0-removed / 0-added over 249 files is an artifact of the proposal having suppressed itself. **The artifact under verification is supplying the material the check runs on.** The informative run is the `.py`/`.txt` half plus a purpose-built corpus that actually contains the newly-covered code points and no-Latin multi-script tokens; build it at implementation and state its provenance."* |
+| **AM-15** | Chunk E row **E5**, and the Chunk E `**Adopter-upgrade consequence**` bullet | The `Added` changelog line gains its own upgrade-consequence sentence, symmetric with `Changed`: *"`unicode-ignorable` fires on variation selectors, so a previously-clean adopter tree containing emoji gains flags on upgrade."* The bound is stated as a **rule, not a density figure**: one flag **per line per category**, so the cost is bounded by emoji-bearing *lines*, with a worked example in `content-security.md`. Cairn's own corpus is named as **unusable evidence** here — zero `U+FE0F` across 469 tracked files is the house emoji rule, not a fact about adopters. *(A density figure against a named external corpus with a stated sampling frame is a Maintainer call, not this plan's to invent.)* |
+| **AM-16** | Chunk B row **B10**: `` assert `min(lo for lo, _ in _IGNORABLE_RANGES + _NONCHARACTER_RANGES + [_TAG_RANGE]) >= 0x00AD` `` | `` assert `min(lo for lo, _ in (*_IGNORABLE_RANGES, *_NONCHARACTER_RANGES, _TAG_RANGE)) >= ord(_ASCII_GUARD)` `` — the tuple/list concatenation raises `TypeError` as written, and the bound must be **the module's own guard constant**, not a hard-coded `0x00AD`, or a future author who raises the guard leaves B10 green. **P-B5** additionally raises the guard constant (leaving the tables alone) and confirms B10 goes RED. |
+| **AM-17** | *Acceptance criteria*: `canonical interpreter (3.13.13) with `PYTHONDONTWRITEBYTECODE=1`. Collection` / `baseline **1746 nodes `as_of 2026-08-04`**; it grows by exactly the new nodes` / `and drops none.` | *"Collection baseline is a **procedure, not a constant**: capture `python -m pytest bootstrap/tests --collect-only -q` immediately before the first chunk and record it in the first commit body; the final count must exceed it by exactly the new nodes and drop none. The plan's 1746 was 1749 within hours and is **1790** as of this Response — do not compute a delta against any number written in this file."* |
+| **AM-18** | *Gate accounting*: `* **`vermin` is not installed in this environment**, so` ... `open and is fenced below rather than reasoned away.` — together with *The Maintainer fence* item **2**, the *Verification* bullet `* **The Python floor** — ... **It currently skips**: `vermin` is not installed at the canonical interpreter,` , *Known omissions* **(b)**, and the *Lasting-truth migration* row `The unrun `vermin` >= 3.11 floor verification` | **All five superseded; the fence item is retired.** `vermin 1.8.0` **is** on PATH (`/Users/kendal30/conda_envs/miniforge3/bin/vermin`); `test_python_floor.py` **passes**, it does not skip — the `import vermin` probe both the plan and the review used is not the trigger the test consults (`_vermin_cmd()` shells the binary). Separately, that test scopes to `bootstrap/_scaffold/` and so verifies **nothing** about the edited file either way. The obligation returns to the **implementing agent** as a scoped run — `vermin --backport dataclasses --backport typing templates/modules/team-gated/content_scan.py`, pre-change baseline **`Minimum required versions: 3.7`** measured for this Response — recorded in the Chunk B commit body. The *Lasting-truth* row is replaced by: *"Discharged in-session by the scoped run; no Maintainer action."* |
+
+### 6. Does this Response clear the plan to implement?
+
+**No. The plan is not cleared, and this Response does not clear it.**
+
+* **The declared tier is `required(External, security lens)` and it is
+  undischarged.** The Internal round said so; this Response says so; nothing has
+  changed that. An author's Response to a same-type review is the weakest
+  possible instrument for a tier that exists precisely because author and
+  same-type reviewer share blind spots — and this round is the demonstration: I
+  wrote the plan, an Internal round found nine things, and re-measuring for this
+  Response found a tenth ([A1]) that **both of us had asserted incorrectly, from
+  the same wrong probe**. That is what structural non-independence looks like
+  from the inside.
+* **The three named pre-implementation blockers are addressed in the plan text,
+  not resolved in code.** [I1], [I2] and [I3] now have amendments; an amendment
+  is a specification, and a specification is what the External round exists to
+  attack. [I1] in particular is the falsifying criterion firing for the **third**
+  time in this lifecycle, and its remedy needed correcting on first contact with
+  measurement — which is not a reason to trust the corrected remedy more.
+* **What the External round should now aim at**, revised from the brief in light
+  of this round:
+  1. **Clause 0 is a new sentence in a security control and has never been
+     reviewed by anyone but its author.** Attack it. Build no-Latin
+     multi-script tokens I have not seen; check the non-Latin restriction is
+     correct rather than merely convenient; check it does not resurrect the
+     scientific false positives under some token shape the 37-token set lacks.
+  2. **The seed's ASCII-twin judgment remains the plan's largest unattested
+     surface** ([I4], [I5]) and no same-type reviewer — author or Internal — is
+     the right instrument. This is question 1 of the original brief, unchanged
+     and un-discharged.
+  3. **Every corpus-based self-check in this plan is now known to be
+     structurally null** ([I7], [A2]). Any evidence the External round accepts
+     must come from a corpus built for the purpose, with stated provenance —
+     not from Cairn's tree, and not from the proposal's token sets.
+  4. Questions 2, 3 and 4 of the original brief stand as written.
+* **Still open and unowned:** `dev/PLANNING.md` carries **no row** for this plan
+  (checked), so *Sequence* step 0's row-move has not landed. That file is a
+  serialized shared file and is not this Response's to edit; it is raised in the
+  handoff.
+
+**Tier status, stated plainly so no one can read discharge into this section:**
+Internal plan review — **landed** (floor, not the tier). Author Response —
+**this section**. External plan review, security lens — **OWED**. Code review —
+not yet due. **No implementation commit lands until the External section is in
+the tree.**
