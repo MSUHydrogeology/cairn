@@ -5,7 +5,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: proposed
+**Status**: accepted
 **Touches**: `tools/lifecycle_planner.py` and `tools/lifecycle.py`, plus their
 byte-identical `templates/skills/_lib/` twins; new test nodes in
 `bootstrap/tests/test_lifecycle_contract.py` and
@@ -734,3 +734,309 @@ Headings under narrowed _split_lines(): ['## Context', '## Response']
 
 **SHIP.** The proposal addresses a demonstrated frame-of-reference defect with minimal code changes and zero regression across the existing repository corpus.
 
+## Response -- Claude (author, to External review) -- 2026-08-03
+
+**Verdict SHIP, one concern, one disposition.** A SHIP verdict does not make a
+finding informational, so [E1] is dispositioned below rather than noted. Two
+things the reviewer could not have checked are added on top, because both bear
+on whether the Decision reads this proposal correctly: **the delegation
+argument's named home does not exist and is not the sibling proposal that looks
+like it**, and **a coupling claim in *Cross-lineage file collisions* is now
+wrong and is retracted here**. Working-tree drift is recorded last.
+
+Everything below was measured on 2026-08-03 under the canonical interpreter
+(`/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13, UCD 15.1.0),
+against the **working tree** unless a line says `HEAD`. Every reproducer builds
+the character with `chr(0x2028)`, and every separator that appears in a result
+is written in escaped text form (`\u2028`). **No literal separator is written
+in this section** — per this proposal's own rule, and per the notation
+convention recorded in `content-scan-detectors` on 2026-08-03, under which an
+invisible character is named or escaped and never written as the raw byte.
+
+### Dispositions
+
+**[E1] Lack of active detection for injected line separators — ALREADY-COVERED
+as to the concern; ACCEPTED as to one correction the reviewer could not have
+made.**
+
+*The concern itself is already load-bearing in the proposal, in five places,
+and the strongest of them is a tripwire rather than a caveat.* The reviewer's
+own framing — "implementers must ensure that this change is not mistook for
+complete injection remediation" — is verbatim the fourth entry under *Signals
+the change is wrong*:
+
+> **Someone reads this fix as "the injection is handled."** It is not; the
+> fixture still passes both checkers after the change, just without a false
+> attestation. If the follow-up on `content_scan` does not open, this proposal
+> has made the record *quieter* rather than *safer*, which is the specific
+> failure it is trying to avoid. Recovery: open the `content_scan` proposal.
+
+That is not a disclaimer; it is a named failure mode with a named recovery. The
+other four: *Alternatives considered* 2 classifies detection as "the
+*complementary* change, not the *alternative* one" and says the detector
+"cannot repair the attestor"; evidence 7 states after the patched output "Note
+plainly: it does **not** report the injection"; *Known omissions* (c) says
+"Nothing here tests *detection* of a poisoned artifact, because this proposal
+deliberately does not add detection"; and the *Follow-ups* list carries
+`content_scan`'s missing `U+2028`/`U+2029` coverage as a named deferral. The
+proposal already refuses the mistake [E1] warns against.
+
+*What was not covered, and is now.* The proposal delegates detection to "the
+`content_scan` follow-up" and "alternative 2's proposal" without naming a stem.
+On 2026-08-03 a proposal **is** in flight against exactly this surface —
+`content-scan-detectors`, whose Change 1 adds a `unicode-ignorable` detector to
+`templates/modules/team-gated/content_scan.py`. A reader is likely to conclude
+the delegation is already discharged. **It is not, and it will not be.**
+Measured rather than reasoned:
+
+1. **`content_scan` at HEAD clears the payload.** A fixture carrying a
+   `chr(0x2028)`-glued `## Decision` heading, a `chr(0x2028)`-glued
+   authorization blockquote, and a `chr(0x2029)`-glued `**Status**: accepted`:
+
+       $ python templates/modules/team-gated/content_scan.py <fixture>
+       content_scan: OK -- 1 file(s) scanned; no flags.        (exit 0)
+
+   Confirms evidence 6 independently, against the working tree.
+
+2. **`content-scan-detectors` contains no mention of either code point.** Zero
+   occurrences of `2028` or `2029` anywhere in its 2445 lines, across the
+   proposal, both reviews, both Responses, and the Maintainer direction.
+
+3. **Its detector set excludes them by construction, not by oversight.** Change
+   1 adopts RFC 8264 § 9.13 `PrecisIgnorableProperties` —
+   `Default_Ignorable_Code_Point OR Noncharacter_Code_Point`. Measured:
+
+       U+2028  category Zl  LINE SEPARATOR       isspace() -> True
+       U+2029  category Zp  PARAGRAPH SEPARATOR  isspace() -> True
+       noncharacter(U+2028) -> False    noncharacter(U+2029) -> False
+
+   Both are `White_Space=Yes`, and the `Default_Ignorable_Code_Point`
+   derivation **subtracts** `White_Space`; neither falls in `FDD0..FDEF` nor on
+   an `xFFFE`/`xFFFF` boundary. `content-scan-detectors` states its own
+   completeness invariant over **`Cf`-category** code points ("every
+   `Cf`-category code point in UCD 15.1.0 … falls inside the 17 hard-coded
+   ranges"). `Zl` and `Zp` are outside that quantifier. The detector is
+   complete against the set it names and that set does not contain these two.
+
+4. **The 2026-08-03 Maintainer direction does not change this.** Its three
+   dispositions — clause 1 is Greek-only, whole-script fullwidth Latin closed
+   separately, the Tag block gets its own pattern id — all land inside Change 2
+   and the pattern-id partition. None adds a separator to Change 1's ranges.
+
+5. **The file is unmodified in the working tree**, so `content-scan-detectors`
+   is not implemented either.
+
+**Conclusion, stated plainly because it is a real coupling.** Even with
+`content-scan-detectors` fully landed as directed, the fixture in evidence 2
+still scans clean. This proposal's delegation-to-`content_scan` argument is
+**sound but unhomed**: the follow-up it names is a proposal that does not exist
+yet, and the in-flight proposal that appears to be its home will not discharge
+it. The proposal's text is technically accurate — it never names a stem — but
+proximity makes the wrong reading the natural one, and the record should not
+depend on a reader noticing the absence of a name.
+
+**What changes:** nothing in the proposed code, the call-site set, the tier, or
+*Touches*. The *Follow-ups* entry stands as written and this Response is its
+disambiguation — the `U+2028`/`U+2029` detector is **not** within
+`content-scan-detectors`' accepted scope and needs its own proposal. Whether
+this proposal's landing should be *conditioned* on that proposal being opened
+is a Maintainer call and is carried to *Findings the Decision did not see*.
+
+### Correction owed to the record — *Cross-lineage file collisions*, Collision 2
+
+`dev/plans/byline-classification.md` records, under its non-archivable items,
+that this proposal owes a correction at its own Response ([I7b]). This is that
+correction; it is made here rather than by editing the prior section, which is
+append-only.
+
+**What the proposal says.** Collision 2 predicts that under scope 2 the two
+bylines diverge in the unsafe direction:
+
+    classify('Anthony')               [scope 2]  ->  unknown  folded='anthony'
+    classify('Anthony\u2028Kendall')  [scope 2]  ->  human    folded='anthonykendall'
+
+and concludes that "scope 2's own stated invariant" is violated, with a
+correction "one word wide — poison any surviving non-ASCII character, not just
+letters."
+
+**What the landed design actually does.** Both statements describe the
+*Amendment's* recipe, which `byline-classification` replaced. Measured against
+the working tree:
+
+    _flag_words('Anthony')                 ->  ('anthony',)
+    _flag_words('Anthony\u2028Kendall')    ->  ('anthony\u2028kendall',)
+    _flag_words('Anthony Kendall')         ->  ('anthony', 'kendall')
+
+    classify('Anthony')                    ->  unknown
+    classify('Anthony\u2028Kendall')       ->  unknown
+    classify('Anthony Kendall')            ->  human
+
+**There is no poison rule to widen.** The landed `_fold_word` keeps a character
+when `ord(c) > 0x7F`, so `U+2028` *survives into the comparison key* instead of
+being deleted out of it; and `_ASCII_WS_RE` is `[ \t\n\r\f\v]+`, so `U+2028` is
+not a word separator either. The glued byline therefore folds to a **single**
+word that cannot equal the two-word roster key. That is the same invariant the
+proposal was defending — *dropping a character must never widen authority* —
+reached by keeping rather than by poisoning.
+
+**End-to-end, through this proposal's own patch:**
+
+    HEAD  _parse_sections  ->  [('Decision', 'Anthony')]
+    PATCH _parse_sections  ->  [('Decision', 'Anthony\u2028Kendall')]
+          classify('Anthony\u2028Kendall')  ->  unknown
+
+The parse claim in Collision 2 still holds exactly. Only the classification
+consequence was wrong.
+
+**The figures were correct when measured, and the staleness has a cause.** The
+proposal's `[today, per-token]` line is reproducible at `HEAD`'s planner
+against `HEAD`'s roster `["Anthony", "Kendall"]`: both bylines return `human`,
+as stated. `byline-classification` changed the classifier *and*
+`dev/.cairn/agent-identities.json` (to `["Anthony Kendall"]`) in the same
+uncommitted change, which is what moved both figures to `unknown`.
+
+**Retracted:** the claim that scope 2 violates its own invariant, and the
+prescription that its poison rule be widened. **Unchanged and reconfirmed:**
+this proposal is **byline-neutral** — the two sides classify identically before
+and after the patch — and it is now neutral at `unknown` rather than at
+`human`, which is the safe direction. **Also unchanged:** the ordering
+conclusion. Neither proposal blocks the other, and the review obligation
+Collision 2 exists to create has now been discharged in the only way that
+matters: the input class this proposal makes reachable was checked against the
+classifier that actually shipped.
+
+### Working-tree drift against the proposal's citations
+
+`byline-classification` has landed in the working tree, uncommitted
+(`+202 / -58` on each side of the planner twin pair). Verified:
+
+* **Every planner line citation has drifted.** The four changed call sites move
+  by +142 — `_parse_status` 397 → 539, `_parse_field` 412 → 554,
+  `_parse_sections` 421 → 563, `_has_isolated_blockquote` 464 → 606 — and the
+  two deliberately-unchanged sites by +144, 1032 → 1176 and 1058 → 1202.
+* **No quoted behaviour drifted.** All four target functions are **textually
+  identical** to `HEAD` (compared by extracting each function's source range
+  with `ast` and diffing). The change is positional only; the call sites, the
+  splits, and the `[:60]` windows are as the proposal describes.
+* **`tools/lifecycle.py` is unmodified.** Lines 494 (`_status_of`) and 615 (the
+  deferred `.gitignore` read) are still exact.
+* **Twin parity holds on both pairs** (`cmp`, exit 0), so the proposal's
+  same-commit twin-edit requirement is unaffected.
+* **Two dated figures are stale.** The file-size figure "2502 lines (1370 +
+  1132)" is now 1370 + 1276 = **2646** — `tools/lifecycle.py` is unchanged and
+  the planner grew. The suite baseline "1556 passed" is now **1709 collected**
+  in the working tree. The smoke-check floor was deliberately written as "1557
+  or more … stated as a floor, not an equality" for exactly this reason, so it
+  survives; it should be re-anchored to the real baseline at plan time rather
+  than left as a floor 152 nodes below it.
+* **`bootstrap/tests/test_lifecycle_contract.py` is also modified** by
+  `byline-classification`. This proposal adds three nodes to that same module.
+  Not a conflict — both append — but it is a second serialization point
+  alongside the lockfile rows already named.
+
+None of this changes the proposal's argument, its call-site set, or its
+*Touches*. It changes which lines an implementing agent should open, so it is
+recorded rather than left to be discovered at implementation.
+
+### Findings the Decision did not see
+
+Both are undecided and are recorded, not resolved.
+
+* **This proposal landing alone newly admits a raw `U+2028` into the
+  orientation stream — and the proposal does not say so.** The proposal applies
+  its own insight that "`str.splitlines()` is, accidentally, a sanitizer" to
+  the *byline* surface and never to the *status value*. Measured, on a file
+  whose status line is `**Status**: prop<chr(0x2028)>osed`:
+
+      HEAD  _status_of  ->  'prop'
+      PATCH _status_of  ->  'prop\u2028osed'
+
+  `_in_flight` relays that value into the survey the Maintainer reads at every
+  session start, unescaped, until `agent-context-scrub` Chunk A lands. The
+  proposal's Collision 1 bullet says a carrier artifact's status becomes
+  "*visibly escaped*" once both land, which is true, but it never states that
+  **this change is what puts the raw separator there**. The window is disclosed
+  on the sibling's side — `dev/plans/agent-context-scrub.md` records it under
+  "Three facts an implementing agent must hold together", mandates that this
+  proposal land in both twins before its Chunk A, and lists the landing order
+  as the first of the three questions that plan is most exposed on. It is not
+  disclosed on this side. It is a transient, ordering-created regression on the
+  carrier path only — evidence 8 establishes the tracked tree has zero carriers,
+  so no real artifact is affected — but "no real artifact today" is the same
+  argument this proposal declines to accept elsewhere. Undecided: whether the
+  window is acceptable, and whether the two changes must land in one session,
+  are Maintainer calls on landing order, not author calls.
+* **Whether landing is conditioned on the detection follow-up being opened.**
+  The fourth *Signals the change is wrong* entry makes "the `content_scan`
+  follow-up does not open" a named failure mode with "open the `content_scan`
+  proposal" as its recovery. Per the [E1] disposition above, no open proposal
+  discharges it and `content-scan-detectors` will not. The tripwire is
+  therefore currently unsatisfied. Whether that is acceptable at Decision time,
+  or whether the detection proposal should be opened first or in the same
+  window, is the Maintainer's to decide.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-03
+
+**Accepted, conditioned on the detection follow-up being opened. The condition
+is discharged.** Scribed by Claude (Strategy) at the Maintainer's explicit
+instruction.
+
+**Maintainer's authorization (verbatim), given in two parts:**
+
+> I accept planner-line-semantics. The basis is the External review's SHIP verdict together with the author's Response dispositioning [E1]. Scribe the Decision and commit it.
+
+and, after the author surfaced two findings the Response had raised *after*
+that authorization was given:
+
+> Condition the accept on the follow-up being opened.
+
+Both are quoted rather than paraphrased, per the scribing guard-rail. The
+second is recorded because the first was given before the Response's closing
+findings were in front of the Maintainer, and an accept must not silently
+absorb what its stated basis did not cover.
+
+**Scribe-coupling disclosure.** The scribe is the proposal's author — the
+weaker configuration. Mitigations: both authorizations quoted verbatim and
+visually isolated, and this commit carries the Decision only.
+
+### The condition, and its discharge
+
+The Response disposed [E1] as already-covered *on the concern* but found the
+delegation **sound but unhomed**: `content_scan` returns `OK — no flags`,
+exit 0, on a `U+2028` / `U+2029` fixture, and `content-scan-detectors` excludes
+both **by construction** — `U+2028` is `Zl`, `U+2029` is `Zp`, both
+`White_Space=Yes`, which the `Default_Ignorable_Code_Point` derivation
+subtracts. So this proposal's documented delegation pointed at a control that
+would not exist even after its sibling landed as directed.
+
+**Discharged by `separator-detection`, opened at `c40c959`**, which claims that
+surface and nothing else. The condition is therefore satisfied at Decision
+time rather than left outstanding.
+
+### What this accept covers, and what it does not
+
+**Covered.** The parser fix: `_parse_status`, `_parse_field`, `_parse_sections`
+and `_has_isolated_blockquote` stop disagreeing with the human reader about
+what a line is. The External review's SHIP verdict stands, and [E1] is
+dispositioned.
+
+**Explicitly not covered — the two findings the Response listed as undecided:**
+
+1. **This proposal landing *alone* newly admits a raw `U+2028` into the
+   orientation stream.** Measured: `_status_of` returns `'prop'` at HEAD and
+   the glued value once patched, relayed unescaped until `agent-context-scrub`
+   Chunk A escapes it. This is an argument **for** the ratified landing order,
+   not against it — but it is recorded here rather than inherited silently, and
+   it means this proposal should not land into a tree where
+   `agent-context-scrub` is not following.
+2. **Same-line masking and the wider `Zs` question** stay where they are —
+   `content-scan-detectors` [I3] and `byline-classification` respectively.
+
+### One retraction the Response made, worth carrying into the plan
+
+The proposal predicted a `U+2028`-glued byline would classify `human`. Measured
+against the landed `byline-classification`, it classifies **`unknown`** — the
+safe direction. The original figures were correct when taken; the classifier
+and the roster both changed underneath them. **The invariant-violation claim
+and the "one word wide" prescription are retracted**, and a plan opened from
+this proposal must not carry them.
