@@ -266,6 +266,18 @@ of review. Cairn runs this exact checker on itself —
 link-checking on top.
 <!-- cairn:end claim-check -->
 
+**Name the trigger, check what it checks, and open it.** Any document that
+describes a check says what runs it — a command a person runs, a test in
+`bootstrap/tests`, a git hook, or a CI job. Cairn has no CI; do not write
+"in CI" for something no CI runs. A check whose only trigger is a human
+remembering is described that way. And when a named trigger exists, the
+document states what that trigger actually verifies: a tool that returns
+success without testing the claimed property is a worse defect than no
+tool, because it is silent. **A named trigger is checked by opening it and
+confirming the procedure is there — a path that resolves is not a trigger
+that governs — and the check does not stop at the first named artifact: it
+recurses until it reaches a human or a machine.**
+
 ## Documentation discipline
 
 <!-- cairn:slot documentation-discipline -->
