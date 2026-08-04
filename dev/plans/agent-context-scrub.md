@@ -978,3 +978,61 @@ character, which is a property of the reader, not of this stream. No follow-up r
 Cairn cannot test other people's terminals, and C1 already discloses the
 model-side half.
 
+
+## Maintainer ruling 2026-08-03 -- the landing-order precondition, resolved
+
+**Authorization, quoted verbatim:**
+
+> The recorded landing order stands: planner-line-semantics first, agent-context-scrub second. With planner-line-semantics accepted, that precondition is satisfied and agent-context-scrub is unblocked. Record this ruling on the plan and commit it.
+
+Scribed by Claude on the Maintainer's instruction.
+
+### What was blocked, and why
+
+This plan opens with *"The landing-order precondition — this plan starts
+blocked."* The Decision ratified an order — `planner-line-semantics` first,
+this plan second — against a sibling that, at the time, was `proposed` with
+**no review of any tier**. The order was therefore not merely arguable but
+**unexecutable**: it made this accepted plan's execution contingent on an
+artifact that had not cleared review.
+
+That was a scribing defect in the ratifying Decision, recorded as such rather
+than quietly worked around: an ordering constraint was ratified against a
+sibling that was not in the accepted set.
+
+### What has changed
+
+`planner-line-semantics` is **accepted** (Decision `f32d5e8`, conditioned on
+the detection follow-up and discharged by `separator-detection` at `c40c959`).
+The order is now executable, and this ruling settles that it **stands** rather
+than being reversed or collapsed.
+
+### The operative consequence, stated precisely
+
+The ruling removes the *blocker*; it does not reorder the work. Concretely:
+
+* This plan is **released for execution planning** — its chunks may be
+  prepared, and it is no longer waiting on a Maintainer question.
+* **The order still binds at implementation.** `planner-line-semantics` lands
+  first. This plan's Chunk A must not land into a tree where that has not
+  happened, because the two changes meet at exactly one expression and are
+  behaviourally order-sensitive.
+
+### Why the order is the safe one, on evidence gathered after the Decision
+
+The `planner-line-semantics` Response measured something the ratifying
+Decision did not have: **that proposal landing alone newly admits a raw
+`U+2028` into the orientation stream.** `_status_of` returns the glued value
+once patched, and `_in_flight` relays it unescaped **until this plan's Chunk A
+escapes it.**
+
+So the ratified order is not merely defensible, it is the one that closes a
+window the other opens. The two are a pair, and the second should follow the
+first closely rather than at leisure.
+
+### Unaffected
+
+The five items under *Findings the Decision did not see* in the source
+proposal's Response remain **undecided**. This ruling settles the landing
+order and nothing else; no plan chunk may adopt any of those five on the
+strength of it.
