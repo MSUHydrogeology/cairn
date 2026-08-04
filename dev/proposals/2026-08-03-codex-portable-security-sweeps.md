@@ -1223,3 +1223,145 @@ and the `_run_tool` defects against the shipped runner in round 1 and did not
 re-verify them here. The measured Gitleaks probes are the author's; I did not
 re-execute them, and PS8 is the one place where I say so explicitly because it
 is a claim about what was *not* measured.
+
+## Response to External Security Review, round 2 -- Codex (author) -- 2026-08-03
+
+**Model**: OpenAI Codex (GPT-5)
+
+**Disposition: accept PS8-PS10 and revise.** PS8 was correct that the threat
+model omitted repository-local metadata. Execution also found one more Git
+invocation than either the revision or review named. PS9 is accepted with a
+reduced-provenance mode that gathers useful current-tree evidence without
+allowing an unmeasured version to produce CLEAN.
+
+### [PS8] Accepted and reproduced -- `.git/config` is candidate-controlled input
+
+The threat model's phrase "tracked and working-tree content" is too narrow.
+Repository-local `.git/config`, refs, shallow boundaries, and remote metadata
+are also inputs to the history leg even though they are not tracked files. The
+revision will name them and will not claim that pointing Git's system and
+global config at neutral sources disables the local tier.
+
+I reran the real adapter boundary on 2026-08-03 under canonical Python 3.13.13
+with the checksum-verified Gitleaks 8.30.1 binary retained at
+`/private/tmp/gitleaks-8.30.1/gitleaks`. A logging `git` shim first on the
+minimal PATH recorded **two** invocations for `gitleaks git`, not one:
+
+```text
+git -C <repo> log -p -U0 --all --full-history --text --no-textconv --no-ext-diff
+git ls-remote --quiet --get-url
+```
+
+The second command was absent from the prior evidence. Git's own local help
+states that `--get-url` expands URL rewrite configuration and exits without
+contacting the remote. It therefore adds a candidate-controlled metadata input,
+not observed network egress, for this exact invocation. The runner does not
+render Gitleaks link/remote fields, but the call still belongs in the measured
+contract and test oracle.
+
+The same shim recorded no Git invocation for `gitleaks dir`. That distinction
+supports the reduced-provenance design under PS9 rather than assuming both legs
+share the same transitive boundary.
+
+I also configured hostile repository-local values for `core.useReplaceRefs`,
+`core.hooksPath`, `core.fsmonitor`, `core.pager`, and `diff.external`. Supplying
+the corresponding `GIT_CONFIG_COUNT` / `GIT_CONFIG_KEY_n` /
+`GIT_CONFIG_VALUE_n` entries made `git config --get` return the forced values,
+and the Gitleaks scan found the planted token without attempting the hostile
+fsmonitor or diff paths. This verifies named-key precedence. It does **not**
+verify that `GIT_CONFIG_COUNT` neutralizes the entire local tier; it does not.
+
+The revision will therefore:
+
+* drop every inherited `GIT_*` variable and reconstruct only the fixed child
+  values;
+* force, through `GIT_CONFIG_COUNT`, `core.useReplaceRefs=false`,
+  `core.hooksPath=<os.devnull>`, `core.fsmonitor=false`,
+  `core.quotePath=false`, `diff.external=` and `core.pager=cat`;
+* additionally force `protocol.allow=never` and `protocol.file.allow=never` as
+  defense in depth against transport if a future measured invocation changes;
+* retain `GIT_NO_REPLACE_OBJECTS=1`, the explicit history argv, null system and
+  global config, and the selected-field report parser;
+* assert the exact two-command Git invocation set in a live shim test for every
+  fully supported Gitleaks version; and
+* refuse to add a fully supported version if it invokes an unaccounted Git
+  subcommand, drops a required option, contacts a remote, or makes another
+  local-config key security-relevant without a pinned or structural control.
+
+This is a measured finite boundary, not complete Git-config sterilization. The
+residual is acceptable only while full-mode support remains exact-versioned and
+each version reruns the invocation/config matrix.
+
+### [PS9] Accepted -- scan usefully, but reserve CLEAN for measured versions
+
+Exact-only refusal is secure but operationally brittle. It would route an
+adopter who received a package-manager update to a standing command that does
+nothing. A broad `8.x` full scan is also unacceptable because the history
+subcommand set, CLI, output, and built-in rule corpus would become unreviewed.
+
+The revision will use two explicit modes:
+
+1. **Reviewed full mode.** A source-owned exact-version set, initially only
+   `8.30.1`, runs both `dir` and `git`. Only this mode can reach CLEAN.
+2. **Reduced-provenance current-tree mode.** A strictly parsed, otherwise
+   unsupported `8.x.y` release may run only `gitleaks dir` with the same fixed
+   config, suppressions, redaction, timeout, bounded report parser, and an
+   off-tree empty PATH. A finding remains FINDINGS. No finding is INCOMPLETE
+   because history, invocation behavior, and rule-corpus provenance are
+   unmeasured. A changed CLI/output contract is DEGRADED. Other major versions,
+   prereleases, and unparsable version strings do not execute and are
+   INCOMPLETE.
+
+I reproduced the key feasibility claim with 8.30.1: `gitleaks dir` found the
+fixture token at exit 1 with an empty PATH and produced the expected redacted
+JSON report. That does not establish future 8.x behavior; it establishes that
+the reduced mode can deny Git reach without making the current supported binary
+inoperable.
+
+Reduced mode still executes a host-installed binary whose behavior has not
+received Cairn's live matrix. It is not containment and cannot prove absence of
+new egress or child execution inside that binary. The host executable remains
+a declared trust root; the report must label this residual prominently. The
+reason to accept it is limited: it can surface present-working-tree findings,
+cannot produce CLEAN, cannot invoke the history leg, and avoids training users
+that a version update means "no scan happened."
+
+The support cadence becomes part of the release contract:
+
+* scaffold summary and install output name the exact full-mode versions and the
+  reduced-mode consequence before selection;
+* each Cairn release tests the newest candidate Gitleaks 8.x release and retains
+  every prior exact version whose matrix still passes;
+* a reported real-adopter reduced-mode result is also a support-review trigger;
+* adding/removing an exact version requires the live hostile-config, Git-shim,
+  output-schema, no-network, and end-to-end matrices plus security-lens review;
+  and
+* between updates, adopters may keep useful current-tree coverage or pin one of
+  the named full-mode versions outside Cairn when they require CLEAN.
+
+The version set is source-owned, never policy-controlled. Reduced mode cannot
+silently promote itself after a Cairn update; the exact version must enter the
+reviewed set.
+
+### [PS10] Accepted -- record the owner that now exists
+
+`dependency-advisory-coverage` now owns the pre-existing `python-security`
+timeout and safe-output work in its strengthened Part 3. This proposal will
+cross-reference that artifact and will neither duplicate nor wait on its
+implementation for the portable runner's independent controls.
+
+### Adoption dependency now has a concrete owner
+
+The standing invocation path is no longer undesigned. The separate
+`security-verification-activation` proposal opened at `af9863c` owns the
+default-on local/offline dispatcher, aggregate result, non-silent summary and
+install moments, and the adopter `AGENTS.md` cadence. This proposal will record
+the reciprocal dependency and remain on HOLD until that activation contract is
+accepted. Its registry may invoke only the portable runner's local/offline
+entry point; no network or credential-bearing route is introduced here.
+
+### Next transition
+
+This response leaves the proposal **reviewed**. The next commit will append the
+replacement Git-config, version-mode, maintenance, activation, and test
+contracts and return the artifact to `revised` for focused External re-review.
