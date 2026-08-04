@@ -852,3 +852,119 @@ class TestWhitelistHygiene:
         unrelated = {ROOT_SHA: "the root commit, which flags nothing"}
         _, _, findings = tl.scan(PINNED_WINDOW, REPO_ROOT, whitelist=unrelated)
         assert len(findings) == 3
+
+
+# ---------------------------------------------------------------------------
+# Chunk E -- the corpus-regression tier
+# ---------------------------------------------------------------------------
+
+
+@requires_corpus
+class TestCorpusRegression:
+    """AC-R4 and AC-R9, landing together.
+
+    Cairn-repo-only and **self-skipping**: the guard above skips, never
+    fails, if the root is not a git work tree or if any pinned SHA does
+    not resolve, because a history rewrite must not redden the suite for
+    a reason unrelated to the code.  Every figure below was re-derived
+    from the **committed** script, not from a scratch prototype.
+    """
+
+    def test_window_one_reproduces_the_pinned_findings(
+        self, tl: ModuleType,
+    ) -> None:
+        # E2.  The window the accepted proposal pinned, reproduced to the
+        # digit nine months later -- the payoff for SHA-pinning it.
+        # Perturbation, RUN: repoint at `<self-host>..HEAD`; it fails on
+        # the scanned count, proving this node pins a *window* and not
+        # merely a finding set.
+        scanned, triggered, findings = tl.scan(
+            PINNED_WINDOW, REPO_ROOT, whitelist={},
+        )
+        assert (scanned, triggered) == (120, 52)
+        assert {(f.sha, f.shape) for f in findings} == {
+            (INCIDENT_SHA, "b"), (EMPTY_REVIEW_SHA, "a"),
+        }
+        assert len([f for f in findings if f.sha == INCIDENT_SHA]) == 2
+
+    def test_window_two_is_clean(self, tl: ModuleType) -> None:
+        # E3.  The must-not-flag set is asserted **by construction** --
+        # zero findings over a window containing all the named SHAs --
+        # rather than by twenty separate lookups.
+        scanned, triggered, findings = tl.scan(
+            f"{REVIEW_APPEND_SHA}~1..{PROPOSAL_SHA}", REPO_ROOT, whitelist={},
+        )
+        assert (scanned, triggered, findings) == (45, 41, [])
+
+    def test_the_archive_moves_are_never_examined(self, tl: ModuleType) -> None:
+        # E4.  Must-SKIP, not must-not-flag.  A correction the plan
+        # carries and this node re-verified: the accepted proposal
+        # justifies this by quoting `-M` enumeration as a single `R091`
+        # line, but under the pinned `--find-renames=100%` both commits
+        # enumerate `D` + `A .../archive/...` -- 91% similarity is below
+        # the threshold, because the Decision was appended in the same
+        # commit.  The conclusion survives; **the mechanism is the
+        # `/archive/` exclusion, not rename-blindness.**
+        for sha in (SUPERSEDE_SHA, PLAN_ARCHIVE_SHA):
+            entries = tl._entries(REPO_ROOT, sha)
+            assert not any(s.startswith("R") for s, _ in entries), sha
+            scanned, triggered, findings = tl.scan(
+                f"{sha}~1..{sha}", REPO_ROOT, whitelist={},
+            )
+            assert (scanned, triggered, findings) == (1, 0, []), sha
+
+    def test_window_three_pins_the_post_proposal_drift(
+        self, tl: ModuleType,
+    ) -> None:
+        # E5.  SHA-pinned at **both** ends.  The plan shipped
+        # `<proposal>..HEAD` here once, which three of its own criteria
+        # forbid; measured, that range moved 332 -> 333 -> 335 -> 363
+        # across four commits in two days.  A node asserting
+        # `scanned == N` over a moving range is red on the next commit by
+        # anyone.  Perturbation, RUN: repoint at `<proposal>..HEAD` --
+        # fails on the scanned count.
+        #
+        # The number to beat is **not 0**: the residue is FP-3 (the
+        # `accept` token, 5), FP-5 (2), FP-6 (2) and one FP-2 residue,
+        # and all four classes are routed to the Maintainer fence rather
+        # than fixed here.
+        window = f"{PROPOSAL_SHA}..{SNAPSHOT_SHA}"
+        scanned, triggered, shipped = tl.scan(window, REPO_ROOT, whitelist={})
+        assert (scanned, triggered) == (332, 265)
+        assert len(shipped) == 10
+        _, _, pinned = tl.scan(
+            window, REPO_ROOT, whitelist={}, rules=tl.Rules(**PINNED_RULES),
+        )
+        assert len(pinned) == 20
+
+
+class TestSourceLevelBans:
+    """Three separate criteria forbade a HEAD-relative corpus range and
+    the plan shipped one anyway.  That is the argument for making the ban
+    mechanical instead of repeated."""
+
+    def test_no_corpus_node_carries_a_head_relative_range(self) -> None:
+        # Perturbation: reintroduce `<proposal>..HEAD` anywhere inside a
+        # corpus-tier class.  Red.
+        tree = ast.parse(Path(__file__).read_text(encoding="utf-8"))
+        checked = 0
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.ClassDef):
+                continue
+            if not any(
+                isinstance(d, ast.Name) and d.id == "requires_corpus"
+                for d in node.decorator_list
+            ):
+                continue
+            checked += 1
+            for inner in ast.walk(node):
+                if isinstance(inner, ast.Constant) and isinstance(inner.value, str):
+                    assert "HEAD" not in inner.value, (node.name, inner.value)
+        assert checked >= 3
+
+    def test_every_pinned_sha_constant_is_a_full_40_hex(self) -> None:
+        # The other half: a range built from abbreviated SHAs is not
+        # pinned either.  Perturbation: abbreviate one constant.  Red.
+        for name, value in globals().items():
+            if name.endswith("_SHA") and isinstance(value, str):
+                assert re.fullmatch(r"[0-9a-f]{40}", value), name
