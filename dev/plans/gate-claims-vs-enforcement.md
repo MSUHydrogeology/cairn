@@ -2536,3 +2536,46 @@ Both run clean at revision; the results are recorded in the commit that lands
 this section rather than asserted here, since this file is the subject.
 
 This section is append-only once written.
+
+
+## Code review -- Antigravity (External, security lens) -- 2026-08-04
+
+**Steelman.** Implementation commits `8d23afe`, `1e47c08`, `2244eca`, `d1eb48c`, and `84fbef4` deliver `gate-claims-vs-enforcement.md` Chunks A–E. The plan establishes the fundamental governance rule: **a documented gate names what runs it — and when a trigger is named, the document states what that trigger actually verifies**. The rule paragraph is added to `AGENTS.md` (Chunk A). Chunks B–E systematically update container docs (`recipe.md`, `floor-gate.sh`), dependency budget docs (`DEPENDENCY_BUDGET.md`, `runtime-contract.md`), doctrine (`lifecycle.md`, `fidelity-check.md`), and safety docs (`SAFETY.md`) to explicitly state whether checks are maintainer-run, suite-run, or manual, eliminating misleading "in CI" claims across the codebase.
+
+### Overstatement Audit Across All Chunks
+
+Audited all five implementation chunks for the overstatement failure mode identified in Chunk E:
+
+1. **Chunk A (`8d23afe`) Audit**: Added the governing rule to `AGENTS.md`. Correctly states "Cairn has no CI; do not write 'in CI' for something no CI runs." No overstatement.
+2. **Chunk B (`1e47c08`) Audit**: Updated `recipe.md` and `floor-gate.sh`. Accurately distinguishes between manual maintainer execution of container scripts vs the test suite (`test_verify_ref.py`) extracting and replaying marked negative pins.
+3. **Chunk C (`2244eca`) Audit**: Updated `DEPENDENCY_BUDGET.md` and `runtime-contract.md`. Accurately notes that `test_python_floor.py` runs in `pytest`, and explicitly discloses that the test **skips (passes green) if `vermin` is missing on `PATH`**.
+4. **Chunk D (`d1eb48c`) Audit**: Updated `fidelity-check.md` and `lifecycle.md`. Accurately attributes `check_cairn.py` execution to review time and the **maintainer-run** release checklist (`security_check.py`, when a maintainer runs it).
+5. **Chunk E (`84fbef4`) Audit**: Updated `SAFETY.md`. Corrected the initial draft overstatement by explicitly measuring and documenting that `check_cairn.py`'s `main()` filters sources via `link_check.filter_sources`, scanning **195 of 249 tracked Markdown files** (`as_of 2026-08-04`), skipping 54 files under `dev/` by default.
+
+### Concerns
+
+* **[E1] Un-automated release gate `security_check.py`.**
+  As documented across Chunks D and E, `bootstrap/security_check.py` (which runs `check_cairn.py` and `bandit`) is not invoked by any git hook, test suite node, or CI pipeline. It remains a manual Maintainer release checklist item before minting tags.
+
+### Covered
+
+* **Full Pytest Suite Verification**:
+  - Executed `pytest bootstrap/tests`: 1788 passed, 2 failed (the expected AST attestation pair shared with `profile-parse-fail-open`), 3 warnings in 133.06s.
+
+* **Documentation & Claim Check Verification**:
+  - `claim_check.py`: verified clean output across all 9 touched files.
+  - `check_cairn.py`: 195 files scanned, 0 errors.
+
+```
+$ ~/conda_envs/lhm/bin/python scripts/claim_check.py dev/plans/gate-claims-vs-enforcement.md
+claim_check: dev/plans/gate-claims-vs-enforcement.md -- OK, no claim-check flags.
+```
+
+### Not covered / low confidence
+
+* Rows A5, A6, and A8 remain deferred behind the frozen-file gate manifest per the accepted plan design, and B2 remains fenced out and routed.
+
+### Recommendation
+
+**SHIP / PASS CODE REVIEW.** The implementation of `gate-claims-vs-enforcement.md` is complete, verified, and free of overstatements across all five chunks.
+
