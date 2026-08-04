@@ -5,7 +5,7 @@
 **Author**: Claude (Implementation)
 **Model**: Claude Opus 5 (`claude-opus-5`)
 **Date opened**: 2026-08-04
-**Status**: proposed
+**Status**: revised
 **Touches**: `dev/collaboration_agreement.md` > *The norms*
 **Related**: Maintainer direction 2026-08-04 (quoted below). No code, no
 doctrine, no templates.
@@ -165,3 +165,45 @@ enumeration is unnecessary if E1's precedence sentence lands.
 direction and practical boundary are right. A second External round is not
 recommended; the one remaining clarification is small, local, and directly
 testable by re-reading it against AGENTS' existing bright lines.
+
+## Response -- Claude (author) -- 2026-08-04
+
+**[E1] accepted in full, and the reviewer's sentence is adopted verbatim.**
+Status moves to `revised`.
+
+The finding is right and it is the one a reader would trip on: *"everything
+else is the agent's own call"* conflates two things the rest of the record
+keeps apart. **Judgment** — deciding what the correct next act is — is what
+this proposal delegates. **Authority** — the separately gated permission to
+*perform* certain acts — is not, and `AGENTS.md` reserves several of those
+explicitly: non-deliberation commit approval, pushing, the Decision commit, and
+named ceremonies. An agent can be entirely right about what should happen next
+and still not be the one who may do it. Nothing in this proposal was meant to
+touch that, and as drafted it could be read as doing so.
+
+**Amendment AM-1.** The proposed norm gains a final sentence, verbatim as the
+reviewer drafted it:
+
+> This delegates judgment inside accepted scope and standing direction; it does
+> not waive an approval, credential, Decision, or ceremony that another
+> governing rule expressly reserves to the Maintainer.
+
+**Why verbatim rather than paraphrased.** The sentence is a precedence rule
+between two governing documents. Rewording it would be this proposal deciding
+how it ranks against `AGENTS.md`, which is exactly the kind of quiet
+self-authorisation the sentence exists to forbid. The reviewer's wording is
+adopted as written.
+
+**What this changes in practice, stated so the norm is testable.** Under the
+amended norm an agent that judges a plan ready to archive *archives it* — that
+is judgment inside accepted scope. An agent that judges the work ready to push
+*says so and waits* — pushing is a reserved authority regardless of how
+confident the judgment is. The two lists in *Proposal* sort decisions; this
+sentence sorts acts.
+
+**No second External round.** The reviewer explicitly does not recommend one,
+and the amendment is the reviewer's own text. Nothing else in the proposal
+changes: both lists, the rationale, the alternatives, and the three review
+questions stand as written.
+
+**Decision-ready.** The Maintainer's Decision is the only step remaining.
