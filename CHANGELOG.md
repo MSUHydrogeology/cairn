@@ -184,6 +184,26 @@ and a new empty `Unreleased` is started above.
 
 ### Changed
 
+- **The archive precondition routes a deferred follow-up instead of only
+  preserving it.** Before, every explicitly-deferred follow-up needed a *durable
+  home* before its artifact could archive, and the roadmap board was the
+  first-named home — so review (which promotes observations to findings) and the
+  scope fence (which defers what an artifact cannot fix) fed a board with no
+  discarding step anywhere in the chain. Cairn's own board grew 349 → 1002 lines
+  in thirteen days. The precondition now takes a **recorded disposition** from
+  the grammar Cairn already had — `accept`, `wontfix`, `defer` — plus one new
+  token, **`guard`**, for a follow-up homed in something that *executes* and
+  names its node, because a follow-up whose revival condition is mechanical
+  belongs where that condition fires rather than on a board that fires only when
+  someone re-reads it. A comment is explicitly not an eligible `guard`. `defer`
+  now requires the Maintainer's **quoted authorization**, batched at
+  archive-preparation; `wontfix` is barred for anything that reaches an adopter,
+  blocks a release, or needs a Decision. The `Follow-ups migrated to:` block
+  becomes `Dispositions:` — **both spellings stay valid**, so already-archived
+  records remain correct and are never rewritten. See `doctrine/lifecycle.md` >
+  "Archive precondition" and the archived proposal
+  `2026-08-04-claude-deferral-discipline`.
+
 - **`upgrade --finalize` gains a scoped write-set + the `#56` dirty-tree guard.**
   An unscoped `--finalize` was whole-tree with no guard, so on a shared work
   tree it silently advanced the lockfile hash for *every* drifted tracked file
