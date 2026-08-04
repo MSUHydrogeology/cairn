@@ -1132,3 +1132,595 @@ plan. **Pre-declared here so no follow-up is homeless at archive time:**
 This section is append-only once written.
 
 ---
+
+## Plan review -- Claude (Internal, same-agent-type; security lens) -- 2026-08-04
+
+**Model**: Claude Opus 5 (`claude-opus-5`), queried at review time, not copied
+from a prior label.
+
+*Placement note.* The plan's *Plan review -- the brief* section asks a landed
+review to append there as a `### Plan review -- <reviewer> -- <date>`
+sub-heading. This round was commissioned with an explicit end-of-file `##`
+heading, so it lands here; retitling or relocating it is a one-line edit for
+whoever files the External round, and nothing in the lifecycle gate depends on
+which of the two the Maintainer prefers.
+
+**Standing, stated before anything else.** I am Claude reviewing a plan written
+by Claude. There is **no cross-type independence** in this read: a blind spot the
+author has, I probably share, and the plan says so itself in terms I cannot
+improve on. **This round does NOT discharge the plan's declared tier.** The tier
+is `required(External, security lens)`, carried from the proposal header and
+restated in the Decision; it stays owed after this section lands. What an
+Internal round can do is execute, measure, and arithmetic-check, and that is what
+this one did: every figure below is a run, not a reading. Where I built code to
+test a claim, it is **my reconstruction of the plan's prose, not the author's
+code**, and it is labelled as such at every use. No repository file was modified;
+no source file was touched; nothing was committed, added, or moved.
+
+Both mandated checkers were run at `/Users/kendal30/conda_envs/lhm/bin/python3.13`
+(Python 3.13.13, UCD 15.1.0):
+
+```
+claim_check: dev/plans/content-scan-detectors.md -- OK, no claim-check flags.        (exit 0)
+check_cairn: OK -- 1 Markdown file(s) scanned; no issues.                            (exit 0)
+```
+
+### Steelman
+
+This is the strongest plan I have read in this tree, and most of what it claims
+is true. Its central moves are right and they are *demonstrated* rather than
+asserted:
+
+* **The `_scan_unicode` prose-dispatch finding is exactly correct and correctly
+  sequenced.** `templates/modules/team-gated/content_scan.py:402` reads
+  `pid = "unicode-bidi" if "bidirectional" in msg else "unicode-zero-width"` --
+  verbatim, at that line. A new id introduced over that call site is silently
+  relabelled `unicode-zero-width`, its promised `cairn-accept` marker matches
+  nothing, and any existing `unicode-zero-width` suppression anywhere in the tree
+  hides it. Making Chunk A a **precondition** rather than a tidy-up is the right
+  call, and writing it to be correct in either landing order with the sibling is
+  the right engineering.
+* **[I4] is real and I re-derived it independently.** Sampled
+  Default_Ignorable members are `Lo`/`Mn` with **no** `Cf`; **every**
+  noncharacter is `Cn`; 170 `Cf` code points exist in UCD 15.1.0. A `Cf` sweep
+  guards neither the non-`Cf` ignorable rows nor **any** of the 18 noncharacter
+  rows. The C1/C2/C3 three-sentinel replacement, and the P-C1 discriminating pair
+  (*C1 green, C2 red* in the same run), are the correct shape: the pair is what
+  converts a finding into a guard.
+* **[I5] is a real finding, not a style note**, and the replacement is right:
+  `str` immutability makes the specified assertion pass against a scanner that
+  strips ignorables, and P-C4's second half -- running the retired form against a
+  deliberately-rewriting scanner and observing it **pass** -- is the evidence,
+  not the argument.
+* **The [I6] guard reproduces, closely.** My own independent walk over the
+  tracked `.md` corpus (235 files, 91 182 lines, 5.81 MB, best of three):
+  HEAD `_scan_unicode` **0.220 s**, naive table walk **5.953 s (27.1x)**, the
+  same walk with the `U+00AD` short-circuit **0.118 s (0.54x)**. The plan's
+  0.218 / 5.757 / 0.121 are within noise of that. Against
+  `content_scan_runner.py:83`'s `_MAX_WALL_SECONDS = 120.0` fail-closed ceiling
+  (verified at that line), the direction is the load-bearing claim and it holds.
+* **The Maintainer's id split is correctly identified as load-bearing**, and
+  P-B2 (merge the Tag rows back, watch B7 go red) is the perturbation that proves
+  it rather than decorating it.
+* **The gate accounting is honest and, where checkable, exact.** 164 frozen
+  entries; both edited files present with hashes matching the live tree;
+  `content-security.md` genuinely not frozen; collection pinned at 1598/1598;
+  `scaffold.py --manifest` at 96 lines with the expected verbatim row. The
+  Maintainer fence -- do not re-pin, batch with `separator-detection`, a skip is
+  not a pass -- is the right disposition and the sibling plan does adopt the
+  identical rule (checked in its own fence section).
+* **Every line citation in the plan is exact.** Ten spot-checks, ten hits.
+* **The `_flag_fingerprint` reasoning is correct.**
+  `content_scan_runner.py:291-299` hashes `rel:pattern_id:sha256(line.strip())`
+  -- the *message* is not an input, so [I3] remedy 2's enrichment churns no
+  residual fingerprint. Verified, not reasoned.
+* And the plan's self-assessment of its weakest joint is accurate: it *says*
+  the curated set has failed twice for the same reason, it *says* an author
+  reconciling their own reading is that same shape a third time, and it hands
+  the reviewer a strike-line. Findings [I1] and [I5] below are the plan's own
+  warning coming true, which is a point in the plan's favour, not against it.
+
+### Concerns
+
+#### [I1] The falsifying test fires a third time. The three-clause rule releases every token that mixes two non-Latin confusable scripts with no Latin character -- a class HEAD flags, no clause covers, and no Decision priced.
+
+Clauses 2 and 3 both predicate on **Latin being present** ("mixed with Latin").
+Clause 1 covers only all-Greek and all-fullwidth. So a token whose scripts are,
+say, Cyrillic + Armenian, or Cyrillic + Coptic, or Greek + Cyrillic, with **zero**
+Latin characters, falls through all three clauses. HEAD flags it, because HEAD's
+rule is `len(_token_scripts(token)) > 1`
+(`templates/modules/team-gated/content_scan.py:357`) and does not care which
+scripts.
+
+Measured. HEAD column is the **shipped scanner**; the `rule` column is **my
+reconstruction of the plan's clause prose**, not the author's code. Tokens are
+mine, built for this review, none drawn from the record:
+
+```
+token (reviewer-built, no Latin character)                     HEAD    rule
+Cyrillic s,e,c,c,i,o + Armenian n   -- renders "session"       flag    CLEAR
+Armenian r + Cyrillic o,n,i,o       -- renders "ronin"         flag    CLEAR
+Cyrillic o + Coptic + Armenian r                               flag    CLEAR
+Greek U+03C1 + Cyrillic a,s,s       -- renders "pass"          flag    CLEAR
+Cyrillic a,d + Armenian m,i,n       -- renders "admin"         flag    CLEAR
+Cyrillic o + Greek U+03C1 + Cyrillic e,n                       flag    CLEAR
+```
+
+Six for six. **None of them is the named two-character shape**, so the proposal's
+falsifying criterion -- *"a spoof that HEAD catches and the patch clears, other
+than the named two-character shape"* -- is met, on a class the record never
+imagined.
+
+Three consequences, each independently worth fixing:
+
+1. **The plan's clause-2 sentence is false.** It says "Non-Greek confusable
+   script mixed with Latin always flags. Cyrillic, Armenian, Cherokee, Coptic,
+   fullwidth. **Unchanged behaviour from HEAD.**" It is not unchanged from HEAD
+   for any token without a Latin character. The Maintainer direction narrowed
+   clause 1 from the proposal's script-general form
+   (`dev/proposals/2026-08-03-claude-content-scan-detectors.md:163`: *"the token
+   has no Latin characters, has at least three letters, and every letter has an
+   ASCII-Latin look-alike"*) to Greek-only, and nothing was added to catch what
+   the old clause-1-plus-HEAD-rule pair used to catch between them.
+2. **D12 cannot detect it.** The retained
+   `TestHomoglyphExpandedScripts::test_expanded_confusable_scripts_flagged`
+   (verified at `bootstrap/tests/test_content_scan.py:81-87`) tests
+   `A<U+0561>bc`, `A<U+13A0>bc`, `A<U+2C80>bc`, `A<U+0430>bc` -- **all four carry
+   Latin**. It passes unmodified while the hole is wide open, which is precisely
+   the "an edit to that test would be the tell" argument failing in the
+   direction the plan did not consider.
+3. **The specified falsifying sweep cannot find it, by construction.** The Chunk
+   D acceptance criterion says to sweep "the union of every token set in the
+   proposal's record". Those sets are 42 + 83 scientific, 21 hand-built, 153
+   single-substitution, 40 maximal-substitution, 41 and 51 spoof -- and the
+   maximal-substitution family is documented single-script Greek
+   (`...:187-193`, `missed=['<U+03B5><U+03C7>...', ...]`). **No set in the record
+   contains a no-Latin multi-script token.** So the sweep is guaranteed to return
+   "the two-character shape and nothing else" whether or not the rule is sound.
+   This is the recurring failure the brief names: *the artifact under
+   verification supplying the material used to verify it.* The sweep is a
+   regression check against the record's imagination, and the plan cites it as
+   "the single most important run in this plan".
+
+**Remedy, cheap and script-general.** Add a clause 0 before the others: *two or
+more distinct confusable scripts in one token always flags* -- which is exactly
+HEAD's rule restricted to the no-Latin case, so it removes zero flags relative
+to HEAD and costs no scientific notation (a token with no Latin character is not
+`<U+0394>G`). Then clauses 1-3 do what the Decision asked without opening a new
+hole. If instead this class is to stay open, it is a **new** declared residual,
+not the priced Cyrillic one -- the Cyrillic residual is *whole-script*, and
+`<U+03C1>` + Cyrillic `a,s,s` is neither whole-script nor Cyrillic. A new
+residual needs the Maintainer, not a plan sentence.
+
+#### [I2] The NFD fold is not inert. Twenty Greek code points join `_NO_LATIN_TWIN` through it, and the plan predicts zero -- then pre-commits to a branch that measurement does not take.
+
+The Chunk D acceptance criterion says: *"Under the case-exact seed, **no**
+precomposed or Greek Extended form appears to fold onto a seeded base, which
+would make the folding inert. Measure it: report how many of the 218 assigned
+Greek Extended letters fold onto a `_NO_LATIN_TWIN` member... If the number is
+zero, say so in the code comment and keep the fold... if it is not zero, the
+cleared set must be listed and put to the plan reviewer."*
+
+Measured (`unicodedata`, UCD 15.1.0), seed plus the three admitted symbol
+variants:
+
+```
+non-seed Greek letters whose NFD base is a _NO_LATIN_TWIN member : 20
+  U+038F  GREEK CAPITAL LETTER OMEGA WITH TONOS            (Greek and Coptic block)
+  U+1F68 .. U+1F6F   OMEGA WITH PSILI / DASIA / VARIA / OXIA / PERISPOMENI  (8)
+  U+1FA8 .. U+1FAF   the same, WITH PROSGEGRAMMENI                          (8)
+  U+1FFA, U+1FFB, U+1FFC   OMEGA WITH VARIA / OXIA / PROSGEGRAMMENI         (3)
+```
+
+Nineteen are in Greek Extended; the twentieth, `U+038F`, is in **Greek and
+Coptic** -- a block the plan's measurement question does not even scope, so the
+under-scoped question would have under-counted even if it had been asked
+honestly. Concrete effect, HEAD = shipped scanner, `rule` = my reconstruction:
+`U+038F`+`mega`, `U+1F68`+`mega`, `U+1FFB`+`mega` are **flag -> CLEAR** in all
+three cases.
+
+The severity is *modest* -- these are all capital-omega variants and omega is a
+weak ASCII twin at best -- but the finding is not about severity. It is that the
+plan states a measurement result it did not take, in a section whose own last
+sentence is **"Do not ship a mechanism described as a guard without a number
+saying what it guards."** The number is 20, the cleared set is listed above, and
+the plan's stated branch ("say so in the code comment and keep the fold as
+declared defence") is the wrong branch. Under a **denylist**, folding widens
+clearing -- the plan correctly identifies that the polarity inverted when the
+set inverted, and then reports the pre-inversion answer.
+
+#### [I3] D2's fold arity is unspecified, and the most natural reading crashes the scanner on ordinary polytonic Greek.
+
+D1 holds `_NO_LATIN_TWIN` as "a `frozenset` of Greek code points **written as
+`\uXXXX` escapes or integer literals**" -- chars or ints, unresolved. D2 says
+`_is_confusable_greek(ch)` is "NFD-fold, then test non-membership in
+`_NO_LATIN_TWIN`". `unicodedata.normalize("NFD", ch)` returns a **string**, and
+**217 of the 218** assigned Greek Extended letters decompose to more than one
+character. Measured:
+
+```
+>>> ord(unicodedata.normalize("NFD", "ἀ"))
+TypeError: ord() expected a character, but string of length 2 found
+```
+
+Failure scenario: the implementer writes the int-set form
+(`ord(unicodedata.normalize("NFD", ch)) not in _NO_LATIN_TWIN`), which D1's
+"integer literals" clause invites; an adopter scans a file containing any
+polytonic Greek word -- a classics repository, a quoted epigraph, a Unicode test
+fixture; `_scan_homoglyph` raises `TypeError`; the plan's own failure-mode table
+says *"a malformed or unreadable file: unchanged, `scan_file` propagates"*, so
+the exception leaves the scanner and aborts the audited run. In a fail-closed
+security runner that is a **denial-of-scan triggered by legitimate content**, and
+nothing in the plan's test list touches Greek Extended at all: D4-D11 are drawn
+from `U+0370`-`U+03FF` exclusively.
+
+The fix is two words in D2 (`normalize(..., ch)[0]`) plus one decision in D1
+(chars, not ints), and one new test: assert `scan_text` **does not raise** across
+all 347 assigned letters in the two Greek `_SCRIPT_RANGES` rows. That test also
+gives D10 a companion with teeth -- D10 checks the table's *members* are in
+domain, and nothing checks the *function* survives its domain.
+
+#### [I4] The nine seeded members -- the only load-bearing part of `_NO_LATIN_TWIN` -- are exempted from the plan's own admission rule, and one of them is invisible to both figures the plan uses to justify the seed.
+
+The rule reads: *"Admit any further code point only on a per-code-point
+justification against the ASCII alphabet, recorded in a comment beside the entry.
+Membership is **never** inherited from a base letter."* That rule governs only
+what is admitted **beyond** the seed. It therefore applies to `U+03D1`, `U+03D5`,
+`U+03D6` -- which clear nothing in any published figure -- and it refuses
+`U+03F2` -- correctly. Meanwhile the nine seeded letters, which do **all** of the
+clearing, are admitted by inheritance from the artifact the plan itself says
+failed twice, with no per-code-point justification required.
+
+That would be defensible if the seed were pinned by measurement. It is only
+partly. Measured, dropping `U+03BC` from the seed:
+
+```
+seed as the plan lists it       sci FP = 7/42    [I1]-token kept = 13/14
+seed WITHOUT U+03BC             sci FP = 7/42    [I1]-token kept = 13/14
+```
+
+**Identical.** Neither of the plan's two decisive measurements touches `U+03BC`
+at all -- the micro tokens in the 42-token set are `U+00B5` MICRO SIGN, not
+`U+03BC`. Its membership rests entirely on the assertion that the amendment's
+*Named residual* and its 14/83 figure "require it to contain" it, and the plan
+does not reproduce the 83-token set. So the one seeded letter with the most
+arguable ASCII twin (`u`) is the one seeded letter no measurement in this plan
+constrains.
+
+(Adjacent, and worth a sentence in the module doc rather than a finding: RV5
+already clears short micro-prefixed tokens at HEAD -- `U+03BC`+`ser` and
+`U+03BC`+`rl` are **HEAD-clean** today, verified with the shipped scanner. So
+`U+03BC`'s real new exposure is longer tokens such as `U+03BC`+`pload`, which
+HEAD flags and the rule clears.)
+
+Minimum ask: write the per-code-point justification for all nine seeded letters,
+under the same rule the plan applies to the three additions, and mark which of
+the nine are pinned by a published figure (`U+0394`, `U+03BB`, `U+03C3`,
+`U+03B8`, `U+03C6`, `U+03C8`, `U+03B2`, `U+03A9` move 7/42) and which are not
+(`U+03BC`).
+
+#### [I5] "The proposal's own falsifying criterion no longer fires" is retired by definition, not by measurement.
+
+Measured, HEAD = shipped scanner, `rule` = my reconstruction of the plan's
+clauses:
+
+```
+reviewer-built token          HEAD    rule
+U+0394 + "elete"              flag    CLEAR
+U+03BB + "ogin"               flag    CLEAR
+U+03C6 + "ile"                flag    CLEAR
+U+03A9 + "mega"               flag    CLEAR
+U+03B2 + "ank"                flag    CLEAR   (priced: the beta family)
+U+03B2 + "ase64"              flag    CLEAR   (priced: the beta family)
+U+03BC + "pload"              flag    CLEAR
+```
+
+Seven token families, none of them the two-character shape, every one a spoof
+HEAD catches and the rule clears. The plan's answer is that these letters "cannot
+power a visual spoof **by definition of the threat**". That may well be right --
+but it is a **judgment**, and the plan's own *Known omissions* (d) concedes it is
+"unattested to any external oracle". So the criterion is satisfied only by
+accepting the exact judgment that failed in round one (a 32-entry allowlist over
+a 347-letter domain, 15 bypasses) and round two (a denylist clearing 14 tokens
+HEAD flags). Round three retires the criterion by redefining its subject.
+
+I am not asserting `U+0394`/`U+03BB`/`U+03C6`/`U+03A9` **are** convincing
+spoofs -- I think most are not. I am asserting that the plan's claim "the
+falsifying criterion no longer fires" is stronger than its evidence supports, and
+that a claim of that weight in a security control should be restated as what it
+is: *"no spoof HEAD catches is cleared **except** the two-character shape and the
+seven seeded-letter families, whose ASCII-twin status is asserted by judgment and
+unattested."* That sentence is checkable; the current one is not.
+
+#### [I6] D9's channel note claims an independence the selection step destroys.
+
+The Chunk D channel note says *"D9's oracle is the proposal's own **published
+figures**, an artifact written before the implementation existed."* True of the
+artifact; false of the coupling. The plan **chose** the case-exact seed *because*
+it reproduces the published 7/42 -- that is the argument of the whole
+sub-section, and its first bullet is "7 / 42 is exactly the figure the amendment
+publishes". D9 then asserts that the implementation reproduces 7/42. The oracle
+supplied the subject; D9 cannot fail for the seed as selected.
+
+D9 is still worth having -- as a **drift** guard it has real teeth, and P-D1's
+"add `U+03B3`, watch the seven become six" is a correct hazard-side perturbation.
+But the channel note should say drift, not independence, and the *Author-
+accounting* invariant "`_NO_LATIN_TWIN` agrees with the figures the module doc
+publishes" should be read for what it is: a consistency check between two
+descriptions of the same judgment, not a check that the judgment is right. The
+plan gets three-quarters of the way to saying this ("it does not convert it into
+'the table covers its domain'") and then the channel note takes it back.
+
+#### [I7] The `check_cairn` corpus tripwire cannot move for Change 1, so it is not the guard the plan says it is.
+
+The plan calls the zero-delta `check_cairn` flag count "the proposal's own
+signal-the-change-is-wrong tripwire, and it is at full strength again now that
+the `+2` exposure has been repaired". Measured, it has no strength on Change 1 at
+all:
+
+* `scripts/check_cairn.py` scans **tracked Markdown only** -- its own header says
+  *"the whole tracked Markdown tree (`git ls-files '*.md'`)"*, and it composes
+  `content_scan.scan_file` over those files (`scripts/check_cairn.py:393`).
+* **Zero** tracked `.md` lines carry any code point in the ignorable-union-
+  noncharacter set. All nine lines the plan counts are in `.py` files:
+
+```
+bootstrap/tests/test_content_scan.py         L138 L142 L148 L149 L150 L205 L208
+scripts/link_check.py                        L87
+templates/modules/team-gated/link_check.py   L87
+```
+
+So Change 1 adds exactly zero `check_cairn` flags **whether the detector is
+correct or broken**. The tripwire is a guard against someone planting a raw code
+point in Markdown, not a verification of this change. The plan's own
+file-by-file `(pattern_id, line)` comparison "over the full tracked set" is the
+run with power -- and it should be stated that its `.md` half is 0-vs-0 by
+construction, so the informative half is the `.py`/`.txt` half plus a corpus that
+actually contains the newly-covered code points. Presenting a structurally-null
+check as a restored tripwire is the kind of sentence this plan exists to
+prevent.
+
+#### [I8] Cairn's corpus is a biased oracle for exactly the cost Change 1 imposes on adopters, and the plan prices only the other direction.
+
+Measured over the 453 tracked `.md`/`.txt`/`.py` files: **zero** lines carry
+`U+FE0F` VARIATION SELECTOR-16. That is not evidence that variation selectors are
+rare; it is the house emoji rule showing up in the data. `unicode-ignorable`
+fires on `U+FE0F`, and `U+FE0F` is how ordinary Markdown writes `warning`,
+`check`, and most other emoji. An adopter with an emoji-bearing README gains one
+`unicode-ignorable` flag **per emoji line** on upgrade, each requiring a
+`cairn-accept` marker with reason/reviewer/date or a baseline fingerprint.
+
+That is Defect (b) -- "the homoglyph rule cries wolf at ordinary scientific
+notation", the cry-wolf defect this proposal exists to fix -- reintroduced
+through Change 1 on a different axis, and the plan's zero-cost evidence comes
+from the one corpus structurally guaranteed not to show it. The plan *notices*
+the fact (`U+FE00`-`U+FE0F` is "benign-and-common -- emoji use it") and uses it
+to justify the id split, then never carries it into a cost estimate.
+
+The adopter-facing accounting is one-sided to match: the Chunk E acceptance
+bullet and E5's changelog line cover only Change 2's **clearing** direction (a
+stale `homoglyph` fingerprint going `STALE` at exit 3). The Change 1 **adding**
+direction -- a previously-clean adopter tree that now fails -- is not in the
+changelog, not in `content-security.md`, and not in the commit-body obligation.
+Minimum ask: measure `U+FE0F` density on one emoji-bearing corpus outside this
+repository, state the number, and give the `Added` changelog line the same
+upgrade-consequence sentence the `Changed` line gets.
+
+#### [I9] B10 as literally specified raises rather than asserts, and it pins the table without pinning the guard. (Minor.)
+
+`min(lo for lo, _ in _IGNORABLE_RANGES + _NONCHARACTER_RANGES + [_TAG_RANGE])` --
+B1 declares both tables as **tuples** of pairs, and `tuple + list` raises
+`TypeError`. A typo, and it would surface on the first run; noted so it does not
+consume a debugging cycle.
+
+The substantive half: B10 compares the table minimum against a hard-coded
+`0x00AD` rather than against the guard constant the module actually uses, so it
+enforces "the table never drops below `U+00AD`" and **not** the invariant the
+plan claims for it -- *"the ASCII short-circuit can never skip a detected code
+point."* A future author who raises the guard leaves B10 green. B6 does catch
+that today (its lowest case is `U+00AD` itself), so this is hardening rather than
+a hole; but the invariant table in *Author-accounting* names B10 as the enforcer,
+and B10 is not it. Assert against the module's own constant and the coupling
+becomes real.
+
+#### Carried figures that have already drifted (not a numbered finding, but the plan's own indictment applies)
+
+Re-measured just now, same interpreter, same machine:
+
+| plan says | measured 2026-08-04 |
+|---|---|
+| suite collection **1746** nodes | **1749** |
+| **234** tracked `.md` | **235** |
+| **452** tracked `.md`/`.txt`/`.py` | **453** |
+| `check_cairn` 180 Markdown / 68 external | **180 / 68** -- exact |
+| `scaffold.py --manifest` 96 lines | **96** -- exact |
+
+The tree is being edited by concurrent sessions **while this review runs**:
+`bootstrap/tests/test_scaffold.py` became modified and one plan file left the
+untracked set between my first and second `git status`. The plan says "Re-measure,
+do not carry" -- and then states **1746** as an acceptance-criteria baseline
+("Collection baseline 1746 nodes `as_of 2026-08-04`; it grows by exactly the new
+nodes and drops none"). An implementing agent that computes its delta against
+1746 will report a wrong number. Make the baseline a *procedure* ("capture
+immediately before the first chunk"), not a constant.
+
+### Covered
+
+Every line below is a run at `/Users/kendal30/conda_envs/lhm/bin/python3.13`
+(Python 3.13.13, UCD 15.1.0), `PYTHONDONTWRITEBYTECODE=1`, working tree at
+HEAD `eacb7dd` plus concurrent uncommitted work by other sessions.
+
+**Reproduced with the shipped scanner (no reconstruction in the loop):**
+
+```
+len(SCI42) = 42
+HEAD scientific FPs: 37/42     <- token-for-token identical to the proposal's list
+HEAD flags I1 tokens: 14/14
+```
+
+**Reproduced with my reconstruction of the plan's clause prose (NOT the author's code):**
+
+```
+recon scientific FPs: 7/42
+  U+03BD+max, U+03C9+opt, U+03BA+eff, U+03B1+level, U+03B7+eff, U+03B3+ray, U+03B1+decay
+I1: HEAD flags & recon KEEPS  : 13/14
+I1: HEAD flags & recon CLEARS :  1/14  -- the two-character U+03B4+o shape, as named
+```
+
+The seven residual tokens are **exactly** the seven the proposal commits the
+module doc to naming (`...:435-437`). The plan's interpretive call reproduces on
+both figures.
+
+**Unicode / UCD claims, all exact:**
+
+```
+unicodedata.unidata_version = 15.1.0
+Greek _SCRIPT_RANGES span : 400 code points   assigned letters: 347  [129 + 218]
+sampled default-ignorable categories : ['Lo', 'Mn']      any Cf: False
+noncharacter categories              : {'Cn'}
+total Cf code points in UCD 15.1.0   : 170
+fullwidth U+FF21-U+FF5A rows whose NFKC is not a single ASCII char : 0
+```
+
+The last line confirms the plan's "bijection by construction" claim for the
+fullwidth arm -- **and** shows a stdlib oracle exists for it:
+`unicodedata.normalize("NFKC", ch)` is `A`-`Z`/`a`-`z` for every one of those 58
+code points. The fullwidth arm could be *derived* rather than range-asserted, at
+zero dependency cost. Offered as a strengthening, not a finding.
+
+**Corpus sweep, reproduced:**
+
+```
+tracked files (.md/.txt/.py) : 453
+lines carrying a covered code point            : 9
+lines carrying an UNOWNED covered code point   : 0
+lines carrying U+FE0F                          : 0
+```
+
+**Performance, independently re-run (235 files / 91 182 lines / 5.81 MB, best of three):**
+
+```
+HEAD _scan_unicode   0.220 s
+naive walk           5.953 s   (27.1x)
+guarded walk         0.118 s   (0.54x)
+```
+
+**Line citations -- ten checked, ten exact:** `content_scan.py:29` (the
+`What it flags` list opener), `:40` `unicode-zero-width`, `:43` `unicode-bidi`,
+`:46` `homoglyph`, `:401-403` with the ternary verbatim at `:402`;
+`content-security.md:138-144` (*Scientific-unit homoglyph allowance*) and
+`:25-33` (the *Template content* blockquote); `test_content_scan.py:47-52`
+(`_BANNED_CODEPOINTS`, and `0x00AD` is indeed **absent**, so P-C3's "green at
+HEAD, red after C4" pair is real) and `:81`; `test_gate_manifest.py:67`
+(*"shipped scanner / security-gate implementations ARE frozen"*);
+`content_scan_runner.py:83` (`_MAX_WALL_SECONDS = 120.0`) and `:291-299`.
+
+**Gate accounting:** 164 `frozen_files` entries; both
+`templates/modules/team-gated/content_scan.py` and
+`bootstrap/tests/test_content_scan.py` present with sha256 **matching the live
+tree**; `templates/modules/team-gated/content-security.md` **not** frozen;
+`collection.node_count = 1598` with 1598 `node_ids`.
+`python bootstrap/scaffold.py --manifest` emits **96** lines and carries
+`scripts/content_scan.py<TAB>modules/team-gated/content_scan.py<TAB>verbatim`.
+
+**Scope fences, each checked:** three presets (`solo-greenfield`,
+`collaborative-team`, `high-rigor-legacy`) and **none** selects
+`content-security`; `dev/modules/` holds **18** files with **no**
+`content-security` mirror;
+`templates/modules/team-gated/content_scan_residuals.txt` has **0**
+non-comment lines, so no adopter inherits a fingerprint from Cairn; `vermin`
+is **absent** (`No module named vermin`) so `test_python_floor.py` skips;
+`bandit 1.9.4` is present.
+
+**Sibling coordination:** `dev/plans/separator-detection.md` does adopt the
+identical rule -- neither plan re-pins, one ceremony, one shared `CHANGELOG.md`
+line -- and does record that the `gate-reanchor-preflight` batch is archived.
+The plan's cross-reference is accurate.
+
+**Perturbations, named against the hazard.** Every perturbation the plan
+specifies is hazard-side (it changes the scanner or a table, never a test body),
+which is the right discipline and rarer than it should be. Reading each one
+against the state it would have to detect, the two the plan calls discriminating
+(P-B2, P-C1) are correctly constructed, and P-D3's *"D7 red and D6 green"* pair is
+the right shape for proving the fullwidth arm is separate rather than folded in.
+**The perturbations this plan omits** are the ones for the hazards above: nothing
+perturbs the no-Latin multi-script case ([I1] -- add a Cyrillic+Armenian token to
+D5 and it becomes a real guard), nothing perturbs the NFD fold ([I2] -- swap
+`normalize("NFD", ch)` for `ch` and no listed test moves, because no listed test
+uses a decomposable letter), and nothing exercises Greek Extended at all ([I3]).
+
+### Not covered / low confidence
+
+* **The 17-row ignorable table's completeness against RFC 8264 s 9.13 is
+  unverified.** `unicodedata` exposes no Default_Ignorable accessor -- I probed
+  and confirm the plan's statement -- and I did not fetch DerivedCoreProperties
+  from outside the tree. I checked what is checkable: the **minimum** across both
+  tables is `U+00AD` (which licenses the [I6] guard), and the 18 noncharacter
+  rows are arithmetically right (1 + 17 planes). The 17 ignorable rows are taken
+  on the author's word.
+* **My homoglyph rule is a reconstruction from the plan's prose, not the
+  author's code.** [I1], [I2] and [I5] are claims about *the rule as the plan
+  states it*. An implementer who writes clause 2 as "two or more confusable
+  scripts" rather than the plan's "mixed with Latin" would not have [I1] -- which
+  is itself the argument for fixing the plan's sentence rather than trusting the
+  implementation to be luckier than its specification.
+* **I did not reproduce the 83-token, 21-token, 153-token, 40-token, 41-token or
+  51-token sets** -- they are not enumerated in the record in a form I could
+  extract without transcription risk. [I4]'s `U+03BC` finding is therefore
+  bounded: it says the *plan's own two figures* do not constrain `U+03BC`, not
+  that the 83-token figure is wrong.
+* **No perturbation was executed against real code**, because no implementation
+  exists. Every P-* verdict above is a reading of the specified perturbation
+  against the specified test, not a run.
+* **Brief question 4 (Cyrillic), partially answered.** I did not find a Cyrillic
+  prose-detection consequence outside `byline-classification`'s reach, and I did
+  not attack it hard -- one Internal round is the wrong instrument for that
+  question. But note the framing correction [I1] forces: the class I *did* find
+  is **not** the declared Cyrillic residual. Greek `U+03C1` + Cyrillic `a,s,s` is
+  neither whole-script nor Cyrillic-only, and no Decision priced it.
+* **The adopter path was not exercised end-to-end.** I did not scaffold a tree,
+  did not run `content_scan_runner.py`, and did not test the residual-baseline
+  interaction. The plan's own omission (f) already says the fingerprint reasoning
+  is untested end-to-end; [I8] adds that the *volume* of new adopter-side flags
+  is unmeasured on any corpus that could show it.
+* **Vendor-neutrality and quality gates** were not run over the plan (it is a
+  `dev/` deliberation artifact; the plan schedules them for the Chunk E edits).
+
+### Recommendation
+
+**A second round is required, and it is the External round -- this one does not
+substitute for it.**
+
+Three findings are **pre-implementation blockers**, in the sense that landing
+Chunk D as written would ship a security control weaker than HEAD on a class the
+record never priced:
+
+* **[I1]** -- the rule releases every no-Latin multi-script token; the fix is a
+  clause 0, or a Maintainer-priced residual. The specified falsifying sweep
+  cannot find this, so the sweep must be widened with reviewer-built tokens
+  before it is treated as evidence.
+* **[I2]** -- the NFD-fold measurement the plan pre-commits to reports 20, not
+  zero, and the cleared set is listed above; the plan's own conditional branch
+  says that goes to the plan reviewer, so it is now discharged and the code
+  comment must carry 20.
+* **[I3]** -- pin the fold's arity and the set's element type, and add a
+  does-not-raise sweep over all 347 Greek letters, before any Greek-facing code
+  is written.
+
+Three more should be **fixed in the plan text** rather than deferred to code
+review: **[I4]** (justify the nine seeded letters under the plan's own admission
+rule; mark `U+03BC` as figure-unconstrained), **[I5]** (restate the
+falsifying-criterion claim to what the evidence supports), and **[I8]** (measure
+`U+FE0F` density on a corpus that has some, and give the `Added` changelog line
+an upgrade-consequence sentence). **[I6]**, **[I7]** and **[I9]** are wording and
+one typo -- they cost the plan credibility on claims it did not need to make, and
+each is a one-paragraph repair.
+
+On the two things the plan invites a reviewer to strike: I would **not** strike
+C4's `_BANNED_CODEPOINTS` widening -- P-C3's green-then-red pair shows it closes
+a real gap at no cost. On the case-exact reading of `_NO_LATIN_TWIN`, I confirm
+the arithmetic that motivates it (7/42 and 13/14 both reproduce exactly), so the
+*reading* is well-evidenced; what is not evidenced is the **seed's** ASCII-twin
+judgment, which [I4] and [I5] leave standing as the plan's largest unattested
+surface and which no same-type reviewer -- including this one -- is the right
+instrument to settle.
