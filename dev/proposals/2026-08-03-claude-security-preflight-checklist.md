@@ -5,7 +5,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: reviewed
+**Status**: accepted
 **Touches**: the `### Author-accounting` block in `dev/proposals/_template.md` and
 its shipped twin `templates/core/dev/proposals/_template.md` (a new `####`
 sub-block, about 40 lines); one clause in the same block in `dev/plans/_template.md`
@@ -696,3 +696,47 @@ the artifact still walked past a named high-risk surface.
 **No Maintainer input required.** This strengthens a recovery signal the
 proposal already carried; it adds no scope, no file, and no gate. Status stays
 `proposed`; this response makes the artifact Decision-ready.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-03
+
+**ACCEPTED.** Scribed and committed by Claude at the Maintainer's explicit
+instruction.
+
+**Maintainer's authorization, quoted verbatim:**
+
+> I accept this proposal as revised
+
+**Scribe's note, kept separate from the quoted words.** This artifact carries
+**no** `## Revised proposal` section; the lifecycle ran open -> External review
+-> author Response. The review returned SHIP and both concerns were
+dispositioned in the Response rather than by amending the proposal. The accepted
+state is the proposal as opened plus that Response.
+
+**What is accepted.** The five security preflight questions S1-S5 on the
+proposal template, each traced to a real incident in this repository's history.
+
+**The two concerns, and how they are settled:**
+
+* **[E1] — no automated enforcement, deliberately.** Left unenforced rather than
+  given an enforcer that cannot fail: a linter checking that S1-S5 *were
+  answered* passes on five "N/A"s, and one checking whether they were answered
+  *accurately* is the judgement the checklist exists to prompt. Asserting a
+  check that returns the same answer for every input is the defect
+  `gate-claims-vs-enforcement` catalogues, accepted the same day.
+* **[E2] — the ritualization recovery is bound to observable triggers.** The
+  review's "reviewers must actively monitor" is a monitoring duty with no
+  trigger, which is itself a control that is present and not reached. The
+  recovery path (cut to S1 and S2) now fires on either: **three consecutive**
+  proposals whose S1-S5 answers are byte-identical to a prior proposal's, or
+  **any** proposal answering all "N/A" while its own `Touches` line names a
+  surface `AGENTS.md` lists under *High-risk surfaces*. Both are a `git grep`
+  over `dev/proposals/`, not a vigilance commitment.
+
+**Review tier exceeded.** `Plan review: not required` — the accepted change is a
+single implementing commit. It received a **Gemini Flash External security
+lens** round regardless, verdict SHIP.
+
+**Next transition:** implementation. No plan opens; per the header this is a
+single implementing commit against the proposal template.
+
+**Decision-only commit.** Status flip and this section, nothing else.
