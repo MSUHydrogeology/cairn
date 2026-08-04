@@ -201,16 +201,19 @@ class TestMinimalYamlParse:
             "claim-check",
         ]
 
-    def test_mixed_indent_list(self) -> None:
-        """Mixed indented and unindented items under one key -- not valid
-        YAML strictly speaking, but the minimal parser is forgiving."""
+    def test_mixed_indent_list_is_refused(self) -> None:
+        """Mixed indented and unindented items under one key is not valid
+        YAML -- PyYAML raises ``ParserError`` on it -- so the recognizer
+        **refuses** it (profile-parse-fail-open Chunk E1).  This test used to
+        assert the opposite, endorsing the best-effort posture that change
+        reverses."""
         text = textwrap.dedent("""\
             modules:
               - lifecycle-metrics
             - reflections
         """)
-        result = _minimal_yaml_parse(text)
-        assert result["modules"] == ["lifecycle-metrics", "reflections"]
+        with pytest.raises(ValueError, match="indentation"):
+            _minimal_yaml_parse(text)
 
     def test_skips_comments(self) -> None:
         text = "# comment\nproject_name: MyProject\n"
@@ -244,12 +247,20 @@ class TestLoadConfig:
         assert cfg["modules"] == ["reflections"]
 
     def test_raises_on_invalid_yaml(self, tmp_path: Path) -> None:
+        """A bare list is not a mapping, so the profile is refused with a line
+        number (profile-parse-fail-open Chunk E2).
+
+        This node previously asserted **nothing** -- a `write_text` followed by
+        three comment lines ending "We tolerate the minimal parser's inaccuracy
+        here."  It could not fail; at HEAD the reader turned this input into a
+        mapping-shaped `{}` and installed a default tree at exit 0."""
         cfg_file = tmp_path / "bad.yml"
-        # A bare list is not a mapping
         cfg_file.write_text("- item1\n- item2\n")
-        # _minimal_yaml_parse may return a dict; only PyYAML will return a list.
-        # Just verify load_config doesn't crash for the minimal parser.
-        # (We tolerate the minimal parser's inaccuracy here.)
+        with pytest.raises(ValueError) as exc:
+            load_config(cfg_file)
+        message = str(exc.value)
+        assert message.startswith(f"{cfg_file}:1:"), message
+        assert "list item" in message, message
 
 
 # ---------------------------------------------------------------------------

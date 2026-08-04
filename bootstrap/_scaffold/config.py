@@ -1,7 +1,7 @@
 """Scaffold engine -- configuration / tokens / profile resolution (scaffold-split Stage 4).
 
-The static install schema and configuration-resolution surface: the YAML config
-loader (with the no-PyYAML minimal fallback), the inline-token vocabulary, the
+The static install schema and configuration-resolution surface: the profile
+**recognizer** (the sole runtime YAML reader), the inline-token vocabulary, the
 template/skills/module mapping registries (including the trust anchor
 ``_MODULE_MAPPINGS`` the release-security scanner reads), and the governance
 preset / six-axis resolution that derives a module roster + profile summary.
@@ -30,23 +30,36 @@ from pathlib import Path
 from typing import Any, NamedTuple
 
 
-try:
-    import yaml as _yaml  # type: ignore[import]
+#: **PyYAML is not a runtime parser.**  Until 2026-08-03 this module picked its
+#: parser from whatever happened to be importable -- ``yaml.safe_load`` when
+#: PyYAML was installed, the in-tree reader otherwise -- so an adopter's install
+#: behaviour depended on an unrelated package being present.  Cairn's runtime
+#: contract is **zero adopter dependencies**, which made the in-tree path the
+#: one most adopters ran and the one Cairn least exercised.  The recognizer
+#: below is now the **sole runtime parser**; PyYAML survives only as a
+#: **test-only oracle** the suite compares against (see
+#: ``bootstrap/tests/test_profile_grammar.py``).  ``_yaml`` stays bound to
+#: ``None`` because the engine facade re-exports it.
+_yaml = None  # type: ignore[assignment]
 
-    def _yaml_load(text: str) -> Any:
-        return _yaml.safe_load(text)
 
-except ImportError:  # pragma: no cover
-    _yaml = None  # type: ignore[assignment]
+def _yaml_load(text: str) -> Any:
+    """Compatibility alias for :func:`_minimal_yaml_parse`.
 
-    def _yaml_load(text: str) -> Any:
-        return _minimal_yaml_parse(text)
+    Retained because the engine facade re-exports it and existing tests import
+    it.  **Never use it as a parity oracle**: it *is* the function under test,
+    so ``_yaml_load(x) == _minimal_yaml_parse(x)`` compares a function to
+    itself.  Import ``yaml`` directly for an oracle."""
+    return _minimal_yaml_parse(text)
 
 
 #: The inline tokens the core and module templates currently use.  The
-#: scaffold only substitutes tokens present in this set; unknown keys
-#: from the config are silently ignored so that future tokens do not
-#: break old configs.  Documented in BOOTSTRAP.md Appendix A.
+#: scaffold only substitutes tokens present in this set.  A profile key
+#: outside ``RECOGNIZED_PROFILE_KEYS`` is **refused** before any write --
+#: the profile schema is closed, and the reserved ``schema`` key (not a
+#: silent tolerance for unknown keys) is what lets a future engine say
+#: "this profile declares schema 2; this engine understands 1".
+#: Documented in BOOTSTRAP.md Appendix A.
 KNOWN_TOKENS: frozenset[str] = frozenset(
     {
         "project_name",
@@ -78,80 +91,415 @@ _DEFAULT_ON_MODULES: tuple[str, ...] = (
 
 
 # ---------------------------------------------------------------------------
-# Minimal YAML fallback (no dependency on PyYAML)
+# The closed profile grammar (the sole runtime parser)
 # ---------------------------------------------------------------------------
+#
+# The installer's only substantive input is the adopter's profile.  It used to
+# be read best-effort: any line the reader did not understand was skipped, so a
+# profile could install the wrong tree at exit 0.  The reader below is a
+# **recognizer** instead -- it accepts exactly the eight line forms documented
+# on ``_minimal_yaml_parse`` and refuses everything else with a file, a line
+# number, and the rewrite.  There is no third outcome: for every profile text
+# it either returns a value equal to ``yaml.safe_load``'s or raises.  (The
+# equality half is verified against PyYAML as a test-only oracle over a finite
+# corpus; the *totality* half -- no content line is ever silently dropped -- is
+# structural, because the parse loop refuses any line matching no form.)
 
-def _minimal_yaml_parse(text: str) -> dict[str, Any]:
-    """Very small YAML parser covering the subset scaffold.py needs.
 
-    Handles::
+class ProfileGrammarError(ValueError):
+    """A profile line the closed grammar does not accept.
 
-        key: value
-        key:
-          - item
+    The message is ``<path>:<line>: <reason>`` and, wherever one exists, the
+    **rewrite** that makes the line acceptable.  "Install PyYAML" is never an
+    acceptable remedy in a zero-dependency project.  A ``ValueError`` subclass
+    so callers already catching ``ValueError`` keep working."""
 
-    Not a full YAML parser.  PyYAML is used when available.
+
+#: A profile key.  The ``:`` must be followed by end-of-line or whitespace, so
+#: ``preset:solo-greenfield`` (which YAML reads as a *plain scalar document*,
+#: not a mapping) is refused rather than silently read as a key.
+_PROFILE_KEY_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_.-]*):(?: +(.*))?$")
+
+#: The one numeric form whose meaning is unambiguous across YAML versions.
+#: Anything else that *starts* like a number (``010``, ``1:30``, ``2024-01-01``,
+#: ``1.5``) is refused with "write it quoted".
+_PROFILE_INT_RE = re.compile(r"^-?(0|[1-9][0-9]*)$")
+
+#: Characters that may not open a plain scalar: the YAML indicators, plus the
+#: flow closers that cannot legally start one either.
+_PROFILE_INDICATORS = "&*!|>[]{}@`%,"
+
+#: Plain scalars YAML 1.1 reads as a boolean or null.  ``forge: no`` is
+#: ``False``, not ``"no"`` -- refused with "write it quoted".  Also refused as
+#: a **key**: ``on:`` is the mapping key ``True`` to PyYAML and the string
+#: ``"on"`` to a textual reader, which is the same different-key hazard the
+#: byte-order-mark rule closes.
+_PROFILE_RESERVED_SCALARS: frozenset[str] = frozenset({
+    "y", "Y", "yes", "Yes", "YES", "n", "N", "no", "No", "NO",
+    "true", "True", "TRUE", "false", "False", "FALSE",
+    "on", "On", "ON", "off", "Off", "OFF",
+    "null", "Null", "NULL", "~",
+})
+
+#: Whole plain scalars YAML resolves to something that is not a string and not
+#: a value at all: ``=`` is the YAML 1.1 *value* key and ``<<`` the *merge*
+#: key, and ``safe_load`` raises ``ConstructorError`` on both.  ``?`` opens a
+#: complex mapping key and raises ``ScannerError``.  Each is refused, because
+#: a textual reader would otherwise hand back a plain string where the oracle
+#: refuses -- the third outcome the contract denies.  (These are *tokens*, not
+#: prefixes: ``==``, ``=x``, ``<<x`` and ``?x`` are ordinary plain scalars to
+#: PyYAML and stay accepted.)
+_PROFILE_RESOLVER_TOKENS: frozenset[str] = frozenset({"=", "<<", "?"})
+
+#: C0 (minus tab / newline / carriage return), DEL, C1, the Unicode line/para
+#: separators, and the byte-order mark.  ``project_name`` is rendered into the
+#: generated adopter tree *and* printed by ``--summary``, so a control
+#: character reaching it is a security question, not a tidiness one; a
+#: BOM-prefixed key silently becomes a *different key*.
+_PROFILE_CONTROL_RE = re.compile(
+    "[\\x00-\\x08\\t\\x0b\\x0c\\x0e-\\x1f\\x7f-\\x9f"
+    "\\u2028\\u2029\\ufeff]"
+)
+
+#: **YAML's only whitespace is SPACE and TAB.**  Python's no-argument
+#: ``str.strip()`` removes every character for which ``str.isspace()`` is true
+#: -- NBSP, the EN/EM quad family, the ideographic space -- so a reader built
+#: on it *consumes* characters YAML treats as ordinary text.  An NBSP-prefixed
+#: ``project_name`` is read as ``project_name`` by such a reader and as
+#: ``"\xa0project_name"`` by PyYAML: a **different key**, exactly the
+#: byte-order-mark hazard above, from a character ordinary copy-paste out of a
+#: rendered page produces.  Refused with the codepoint named, because the
+#: character is invisible in an editor and a generic "unrecognized line" would
+#: point at a line that looks perfectly correct.
+#:
+#: This class is the **diagnostic**, not the guarantee.  The guarantee is that
+#: the tokenizer below only ever strips ``" "`` -- ``line.strip(" ")``,
+#: ``raw.lstrip(" ")`` and ``value.rstrip(" ")``, with tab, CR/LF and the
+#: C0/C1 separators refused or consumed before it runs -- so a whitespace
+#: character this class does not list cannot be silently eaten; it falls
+#: through to a refusal.
+#:
+#: **Do not loosen any of those three to the no-argument form**, and do not
+#: rely on this class to catch it if you do: the diagnostic runs *first*, so
+#: while it is in place a loosened tokenizer is invisible.
+#: ``TestInvisibleWhitespaceIsNotConsumed`` in ``test_profile_grammar.py``
+#: therefore disables this class and re-asserts the contract over every
+#: ``str.isspace()`` codepoint against the tokenizer alone -- which is what
+#: makes the paragraph above a tested claim rather than a comment, and what
+#: catches a future Unicode revision that adds a codepoint this class omits.
+_PROFILE_UNICODE_SPACE_RE = re.compile(
+    "[\\u00a0\\u1680\\u2000-\\u200a\\u202f\\u205f\\u3000]"
+)
+
+#: The profile schema version this engine understands.  ``schema:`` is
+#: **reserved**: an absent or matching value is accepted and ignored, a
+#: different one refuses with a version message.  It buys nothing today (it
+#: rescues no engine already released) and everything later -- it is what lets
+#: a future refusal say *"this profile declares schema 2; this engine
+#: understands 1"* instead of *"unknown key"*.
+_ENGINE_PROFILE_SCHEMA = 1
+
+
+def _minimal_yaml_parse(text: str, source: str = "<profile>") -> dict[str, Any]:
+    """Recognize the profile subset; refuse everything else.
+
+    Eight accepted line forms -- every non-blank line matches exactly one, or
+    the profile is refused:
+
+    ==  ==========================================================
+    L1  a blank line, or a comment line (first non-space is ``#``)
+    L2  a single leading ``---`` document marker
+    L3  ``key: <plain scalar>``
+    L4  ``key: '<single-quoted>'`` (``''`` unescapes to ``'``)
+    L5  ``key: "<double-quoted>"`` (no backslash, no interior ``"``)
+    L6  ``key: []``
+    L7  a bare ``key:`` (value ``None`` unless list items follow)
+    L8  ``- <scalar>`` at a consistent indent under an open bare key
+    ==  ==========================================================
+
+    Plus two whole-document rules: a literal ``{}`` document is an empty
+    mapping, and a document with **no content lines at all** (zero-byte,
+    whitespace-only, comment-only) is refused rather than read as ``{}``.
+
+    A ``#`` starts a comment **only** at the start of a value or when preceded
+    by a space or tab, so ``project_name: issue#42-tracker`` keeps its hash
+    while ``forge: gitlab   # gitlab | github`` loses its comment.
+
+    *source* is the path quoted in refusals; :func:`load_config` passes the
+    real profile path.  Raises :class:`ProfileGrammarError`.
     """
+    def refuse(lineno: int, reason: str) -> None:
+        raise ProfileGrammarError(f"{source}:{lineno}: {reason}")
+
+    control = _PROFILE_CONTROL_RE.search(text)
+    if control is not None:
+        char = control.group(0)
+        where = text.count("\n", 0, control.start()) + 1
+        if char == "\ufeff":
+            refuse(where, "a byte-order mark (U+FEFF) makes the key that "
+                          "follows it a different key; save the file as UTF-8 "
+                          "without a BOM")
+        if char == "\t":
+            refuse(where, "a tab character; YAML forbids tabs in indentation "
+                          "and rejects them inside plain values -- indent and "
+                          "separate a trailing comment with spaces")
+        refuse(where, f"a control character (U+{ord(char):04X}) is not "
+                      "allowed in a profile; remove it")
+
+    space = _PROFILE_UNICODE_SPACE_RE.search(text)
+    if space is not None:
+        char = space.group(0)
+        where = text.count("\n", 0, space.start()) + 1
+        refuse(where, f"a Unicode space character (U+{ord(char):04X}) that is "
+                      "not an ordinary space; YAML's only whitespace is SPACE "
+                      "and TAB, so this character is part of the key or value "
+                      "rather than a separator -- it is invisible in an editor "
+                      "and typically arrives by copy-paste from a rendered "
+                      "page.  Replace it with an ordinary space")
+
+    def scalar(raw: str, lineno: int, allow_empty_list: bool) -> tuple[bool, Any]:
+        """``(present, value)`` for the text after ``key:`` or ``- ``.
+
+        ``present`` is False when the text is empty or only a comment -- the
+        caller turns that into a bare key (``None``) or a refusal."""
+        text_ = raw.lstrip(" ")
+        if not text_ or text_.startswith("#"):
+            return False, None
+
+        def check_tail(rest: str) -> None:
+            if rest and not (
+                rest[0] == " " and rest.lstrip(" ").startswith("#")
+            ):
+                refuse(lineno, "trailing text after the value; a trailing "
+                               "comment needs a space before its `#`")
+
+        if text_[0] in ("'", '"'):
+            quote = text_[0]
+            out: list[str] = []
+            index = 1
+            closed = False
+            while index < len(text_):
+                char_ = text_[index]
+                if quote == "'":
+                    if char_ == "'":
+                        if text_[index + 1:index + 2] == "'":
+                            out.append("'")
+                            index += 2
+                            continue
+                        closed = True
+                        index += 1
+                        break
+                else:
+                    if char_ == "\\":
+                        refuse(lineno, "a backslash escape in a double-quoted "
+                                       "value is not accepted; use the "
+                                       "single-quoted form (`'...'`, doubling "
+                                       "any embedded `'`)")
+                    if char_ == '"':
+                        closed = True
+                        index += 1
+                        break
+                out.append(char_)
+                index += 1
+            if not closed:
+                refuse(lineno, f"unterminated {quote}-quoted value; close the "
+                               "quote")
+            check_tail(text_[index:])
+            return True, "".join(out)
+
+        if text_[0] == "[":
+            if not allow_empty_list or text_[:2] != "[]":
+                refuse(lineno, "an inline `[a, b]` list is not accepted; write "
+                               "`key:` on its own line followed by `  - a` "
+                               "lines")
+            check_tail(text_[2:])
+            return True, []
+
+        if text_[0] == "{":
+            refuse(lineno, "an inline `{...}` mapping is not accepted; the "
+                           "profile schema is flat (`key: value` lines only)")
+
+        cut = None
+        for index, char_ in enumerate(text_):
+            if char_ == "#" and index > 0 and text_[index - 1] == " ":
+                cut = index
+                break
+        value = (text_ if cut is None else text_[:cut]).rstrip(" ")
+        if not value:
+            return False, None
+        if value[0] in _PROFILE_INDICATORS:
+            refuse(lineno, f"a value starting with `{value[0]}` is a YAML "
+                           "indicator; write the value quoted")
+        if value in _PROFILE_RESOLVER_TOKENS or value.startswith("? "):
+            refuse(lineno, f"`{value}` is a YAML indicator, not text: `=` and "
+                           "`<<` are the value and merge keys and `?` opens a "
+                           "complex mapping key, so a YAML reader refuses this "
+                           'line rather than reading it as a string; write it '
+                           f'quoted (`"{value}"`)')
+        if value in _PROFILE_RESERVED_SCALARS:
+            refuse(lineno, f"`{value}` reads as a YAML boolean or null, not as "
+                           f'text; write it quoted (`"{value}"`)')
+        if ": " in value or value.endswith(":"):
+            refuse(lineno, "a plain value may not contain `: ` or end in `:`; "
+                           "write it quoted")
+        if '"' in value or "'" in value:
+            refuse(lineno, "a plain value may not contain a quote character; "
+                           "quote the whole value instead (a `'` doubles "
+                           "inside single quotes: `'O''Brien Lab'`)")
+        if value[0] in "0123456789-+.":
+            if _PROFILE_INT_RE.match(value):
+                return True, int(value)
+            refuse(lineno, f"`{value}` may be read as a number, date or time; "
+                           f'write it quoted (`"{value}"`)')
+        return True, value
+
     result: dict[str, Any] = {}
-    current_list_key: str | None = None
+    base_indent: int | None = None
+    open_key: str | None = None
+    item_indent: int | None = None
+    seen_marker = False
+    seen_content = False
+    empty_mapping = False
 
-    def _list_item_text(stripped: str) -> str:
-        """Strip leading ``- ``, an optional trailing ``# comment``, and
-        surrounding quotes, returning the item value."""
-        return stripped[2:].split("#")[0].strip().strip('"').strip("'")
-
-    for line in text.splitlines():
-        stripped = line.strip()
+    for lineno, line in enumerate(text.splitlines(), start=1):
+        # ``strip(" ")``, never the no-argument ``strip()``: Python's default
+        # strips every ``str.isspace()`` character, YAML's whitespace is only
+        # SPACE and TAB, and TAB / CR / LF / C0 / C1 are already refused or
+        # consumed above.  Stripping exactly one character class is what makes
+        # the contract structural rather than enumerated -- any other
+        # whitespace stays in the token and falls through to a refusal.
+        stripped = line.strip(" ")
         if not stripped or stripped.startswith("#"):
             continue
+        indent = len(line) - len(line.lstrip(" "))
 
-        if line[:1] in (" ", "\t"):
-            # Indented continuation -- list item under current_list_key.
-            if current_list_key is not None and stripped.startswith("- "):
-                item = _list_item_text(stripped)
-                if item:
-                    result.setdefault(current_list_key, []).append(item)
-        elif stripped.startswith("- ") and current_list_key is not None:
-            # Unindented list item under current_list_key.  PyYAML
-            # accepts both ``key:\n  - a`` and ``key:\n- a`` shapes;
-            # the minimal parser honors the second form too so a
-            # PyYAML-free environment behaves the same way.
-            item = _list_item_text(stripped)
-            if item:
-                result.setdefault(current_list_key, []).append(item)
-        elif ":" in line:
-            key, _, rest = line.partition(":")
-            key = key.strip()
-            rest = rest.strip()
-            if rest and not rest.startswith("#"):
-                # Recognize inline empty list/dict notations so e.g.
-                # ``modules: []`` is honored as an explicit opt-out.
-                if rest in ("[]", "{}"):
-                    result[key] = []
-                    current_list_key = None
-                else:
-                    result[key] = rest.strip('"').strip("'")
-                    current_list_key = None
-            else:
-                current_list_key = key
-                if key not in result:
-                    result[key] = []
+        if stripped == "---":
+            if seen_marker or seen_content:
+                refuse(lineno, "a second document; a profile is one YAML "
+                               "document -- delete the extra `---`")
+            seen_marker = True
+            continue
+        if stripped == "..." or stripped.startswith("---") or stripped[0] == "%":
+            refuse(lineno, "a YAML document marker or directive here is not "
+                           "accepted; a profile is one plain document")
+        if empty_mapping:
+            refuse(lineno, "content after an empty `{}` document; write the "
+                           "keys instead of `{}`")
+        if stripped == "{}":
+            if seen_content:
+                refuse(lineno, "`{}` is accepted only as the whole document")
+            empty_mapping = True
+            seen_content = True
+            continue
 
+        matched = _PROFILE_KEY_RE.match(stripped)
+        if matched is not None:
+            if base_indent is None:
+                base_indent = indent
+            elif indent > base_indent:
+                refuse(lineno, "a nested mapping; the profile schema is flat "
+                               "-- every key sits at the same indentation")
+            elif indent < base_indent:
+                refuse(lineno, "this key is indented less than the first key; "
+                               "every key sits at the same indentation")
+            key = matched.group(1)
+            if key in _PROFILE_RESERVED_SCALARS:
+                refuse(lineno, f"`{key}` reads as a YAML boolean or null, not "
+                               "as a key name -- PyYAML would make the mapping "
+                               f"key `{key}` a non-string, so the two readers "
+                               "would disagree on which key this is.  The "
+                               "profile schema has no key by that name")
+            if key in result:
+                refuse(lineno, f"`{key}` is set twice; the later value would "
+                               "silently replace the earlier one -- delete one")
+            present, value = scalar(
+                matched.group(2) or "", lineno, allow_empty_list=True,
+            )
+            result[key] = value if present else None
+            open_key = None if present else key
+            item_indent = None
+            seen_content = True
+            continue
+
+        if stripped == "-" or stripped[:2] == "- ":
+            if open_key is None:
+                refuse(lineno, "a `- ` list item with no `key:` line open "
+                               "above it; a profile is a mapping, so every "
+                               "list belongs to a key")
+            if item_indent is None:
+                if base_indent is not None and indent < base_indent:
+                    refuse(lineno, "a list item indented less than its key")
+                item_indent = indent
+            elif indent != item_indent:
+                refuse(lineno, "a list item at a different indentation from "
+                               "the item above it; keep every item of one "
+                               "list at the same indent")
+            present, value = scalar(
+                stripped[1:], lineno, allow_empty_list=False,
+            )
+            if not present:
+                refuse(lineno, "an empty list item; write a value after `- ` "
+                               "or delete the line")
+            if result[open_key] is None:
+                result[open_key] = []
+            result[open_key].append(value)
+            seen_content = True
+            continue
+
+        refuse(lineno, "not a recognized profile line; write `key: value`, a "
+                       "bare `key:` followed by `  - item` lines, or a "
+                       "`#` comment")
+
+    if not seen_content:
+        refuse(1, "the profile has no content lines -- an empty, "
+                  "whitespace-only or comment-only profile would install a "
+                  "default tree silently; write the keys you mean")
     return result
 
 
 # ---------------------------------------------------------------------------
 # Config loading
 # ---------------------------------------------------------------------------
+#
+# ``RECOGNIZED_PROFILE_KEYS`` / :func:`unrecognized_profile_keys` are defined
+# after ``_AXES`` (the recognized set is *derived* from the three source
+# definitions, never hand-maintained); ``load_config`` resolves them at call
+# time.
 
 def load_config(config_path: Path) -> dict[str, Any]:
-    """Load a profile YAML config file."""
+    """Load a profile config file, or refuse it.
+
+    Three gates, in this order:
+
+    1. the closed line grammar (:func:`_minimal_yaml_parse`);
+    2. the reserved ``schema`` key -- read **first**, so a profile from a
+       future engine refuses with *"this profile declares schema N"* rather
+       than with an unknown-key list, which is the whole reason the key is
+       reserved;
+    3. the closed key set -- an unrecognized key refuses **before any write**,
+       naming every unrecognized key and printing the recognized set.
+
+    No third outcome: the returned mapping is equal to ``yaml.safe_load``'s, or
+    a :class:`ProfileGrammarError` says which line and how to rewrite it."""
     text = config_path.read_text(encoding="utf-8")
-    cfg = _yaml_load(text)
-    if not isinstance(cfg, dict):
-        raise ValueError(
-            f"{config_path}: expected a YAML mapping at the top level, "
-            f"got {type(cfg).__name__}"
+    cfg = _minimal_yaml_parse(text, source=str(config_path))
+
+    declared = cfg.get("schema")
+    if declared is not None and declared != _ENGINE_PROFILE_SCHEMA:
+        raise ProfileGrammarError(
+            f"{config_path}: this profile declares schema {declared!r}; this "
+            f"engine understands {_ENGINE_PROFILE_SCHEMA} -- upgrade Cairn, or "
+            "remove the `schema:` line if it was set by mistake."
+        )
+
+    unrecognized = unrecognized_profile_keys(cfg)
+    if unrecognized:
+        raise ProfileGrammarError(
+            f"{config_path}: unrecognized profile key(s): "
+            f"{', '.join(unrecognized)}. The profile schema is closed -- a key "
+            "outside the recognized set is refused rather than silently "
+            "ignored, because a mis-typed key drops whatever it was meant to "
+            f"set. Recognized keys: {', '.join(sorted(RECOGNIZED_PROFILE_KEYS))}."
         )
     return cfg
 
@@ -857,6 +1205,33 @@ _AXES: dict[str, tuple[str, ...]] = {
         "single", "concurrent-single-type", "concurrent-multi-type",
     ),
 }
+
+#: The keys that carry the profile's *structure* rather than a token value or
+#: a dimension axis.  The one hand-written third of the recognized set; the
+#: other two thirds are read off ``KNOWN_TOKENS`` and ``_AXES``.
+_STRUCTURAL_PROFILE_KEYS: frozenset[str] = frozenset({
+    "preset", "modules", "modules_add", "modules_remove", "forge",
+})
+
+#: Every key a profile may carry -- **derived**, never a fourth hand-maintained
+#: list: the inline tokens, the six dimension axes, the structural keys, and
+#: the reserved ``schema``.  A key outside this set refuses the install before
+#: any write (``load_config``): a mis-typed key is not a harmless extra, it is
+#: whatever the adopter meant to set, dropped.
+RECOGNIZED_PROFILE_KEYS: frozenset[str] = (
+    KNOWN_TOKENS
+    | frozenset(_AXES)
+    | _STRUCTURAL_PROFILE_KEYS
+    | frozenset({"schema"})
+)
+
+
+def unrecognized_profile_keys(cfg: dict[str, Any]) -> list[str]:
+    """The profile's keys that are not in :data:`RECOGNIZED_PROFILE_KEYS`,
+    sorted.  Pure: no filesystem, no mutation -- so every caller can run it as
+    a pre-write gate."""
+    return sorted(str(k) for k in cfg if str(k) not in RECOGNIZED_PROFILE_KEYS)
+
 
 #: Per-module team-staffing gate: the ``agent_team`` axis values that staff
 #: each module.  These are the ONLY part of the I-5 gate evaluated as runtime

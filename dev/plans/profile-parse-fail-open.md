@@ -872,6 +872,258 @@ changes AST-attestation results and PyYAML-oracle behaviour alike.
   today from a prior commit. This plan runs it to *record* its delta, not to pass
   it.
 
+### Gate-manifest delta — measured with collection
+
+**The flag that cannot support the claim, named first.** An earlier
+implementation report banked *"exactly 1 FROZEN-MODIFIED + 1 FROZEN-NEW, and 0
+SKIP-XFAIL-NEW"* from `_gate_manifest.py verify --no-collect`. That flag prints
+`COLLECTION: skipped (static-only verification, --no-collect)` and
+**structurally cannot report** `COLLECTION-DROPPED`, `COLLECTION-ADDED` or
+`SKIP-XFAIL-NEW` — the three classes the verifier derives from a pytest
+collection it did not run. A `0 SKIP-XFAIL-NEW` read off a `--no-collect` run is
+not a measurement of zero; it is the absence of a measurement. Everything below
+was re-run **with** collection.
+
+**How the attribution was established** (`as_of 2026-08-04`, canonical
+interpreter Python 3.13.13, `PYTHONDONTWRITEBYTECODE=1`, working tree at HEAD
+`da2d00e` carrying both Wave 2 plans' uncommitted work):
+
+* **working tree** — `python bootstrap/tests/_gate_manifest.py verify
+  --anchor-ref e45e1fc` → **HOLD — 17**.
+* **pre-existing floor** — the same command against a pristine `git archive
+  HEAD` tree (`--target-repo <archive> --trusted-repo <this repo>`) → **HOLD —
+  12**. Neither plan is responsible for any of those 12.
+* The delta is therefore **5 HOLD entries**, set-differenced rather than eyeballed.
+
+**The three classes, separated.**
+
+| entry | class | whose |
+|---|---|---|
+| `FROZEN-MODIFIED: bootstrap/tests/test_scaffold.py` | frozen edit | **this plan** (Chunk E) |
+| `COLLECTION-DROPPED: bootstrap/tests/test_scaffold.py::TestMinimalYamlParse::test_mixed_indent_list` | collection | **this plan** (Chunk E1) |
+| `FROZEN-MODIFIED: bootstrap/tests/test_lockfile_module.py` | frozen edit | `fork-advisory-semantics` |
+| `FROZEN-MODIFIED: bootstrap/tests/test_verify_integrity.py` | frozen edit | `fork-advisory-semantics` |
+| `FROZEN-MODIFIED: bootstrap/verify_integrity.py` | frozen edit | `fork-advisory-semantics` |
+
+**`SKIP-XFAIL-NEW` attributable to this plan: 0** — and that is now a
+*measurement*. All four entries (three in
+`bootstrap/tests/test_quality_gate_redundancy.py`, one in
+`bootstrap/tests/test_security_check.py`) are present at the HEAD floor and
+predate both plans. The new module's design goal held: it carries no
+module-level marker, so none of its nodes registers as marked.
+
+**Notes, not HOLDs** — recorded because the ceremony re-pins from them:
+`FROZEN-NEW` for `bootstrap/tests/test_profile_grammar.py` (this plan) and for
+`bootstrap/tests/test_fork_advisory.py` (the sibling), against two already at
+the floor; `COLLECTION-ADDED` × **44** for the new module plus × 1 for the
+renamed `test_scaffold.py` node (this plan) and × 36 for the sibling;
+`CASCADE-CHANGED: bootstrap/_scaffold/config.py`, which the verifier does not
+HOLD on by design because the AST attestation governs it. The `ANCHOR` note
+records that `e45e1fc` resolved from the *target* repo, so this is not an
+externally anchored verification.
+
+**One deviation from this plan's own Chunk E criterion, recorded rather than
+smoothed.** Chunk E's acceptance criteria promise the reviewer that
+`bootstrap/tests/test_scaffold.py` shows *"only these two nodes changed and no
+node added"*, and predict *"one `FROZEN-MODIFIED`"* with no collection entry.
+The implementation **renamed** `test_mixed_indent_list` to
+`test_mixed_indent_list_is_refused` so the node name states what it now
+asserts. A rename is a drop plus an add in collection identity, so the delta is
+one entry larger than the plan predicted. The rename is defensible and is kept;
+the prediction it falsifies is the plan's, and the Maintainer re-pins from this
+table, not from that criterion.
+
+### The Unicode-whitespace repair (defect found by running the artifact)
+
+Part (a) of the invariant had a hole in exactly the class Amendment 2 was
+written to close. Python's no-argument `str.strip()` removes every
+`str.isspace()` character; **YAML's whitespace is only SPACE and TAB**. An
+NBSP-prefixed key was read as `project_name` by the recognizer and as
+`'\xa0project_name'` by PyYAML — Amendment 2's own *different key* sentence,
+reached by a character ordinary copy-paste out of a rendered page produces.
+`_PROFILE_CONTROL_RE` did not (and deliberately still does not) enumerate that
+range.
+
+The tokenizer now strips exactly `" "` in all three places (`line.strip(" ")`,
+`raw.lstrip(" ")`, `value.rstrip(" ")`) and `_PROFILE_UNICODE_SPACE_RE` names
+the codepoint in the refusal. **The two are separate controls and the tests keep
+them separate**, because the diagnostic runs *first*: while it is in place a
+loosened tokenizer is invisible, and an enumeration is exactly what a future
+Unicode revision outdates.
+`TestInvisibleWhitespaceIsNotConsumed::test_the_invariant_holds_without_the_diagnostic`
+therefore disables the enumeration and re-asserts the contract against the
+tokenizer alone.
+
+**There is a third control, and an earlier revision of this section did not
+name it.** The 29 `str.isspace()` codepoints (CPython 3.13.13) do not form one
+class against the oracle — measured by probing `yaml.safe_load` once per
+codepoint, `as_of 2026-08-04`: 2 are YAML's own whitespace (SPACE, TAB), **16
+are ordinary text** the oracle preserves inside a scalar (NBSP, OGHAM SPACE
+MARK, the `U+2000`–`U+200A` family, `U+202F`, `U+205F`, `U+3000` — this subset
+*is* the hazard), **5 are YAML line breaks** (`U+000A`, `U+000D`, `U+0085`,
+`U+2028`, `U+2029`, where `str.splitlines()` and PyYAML agree so no *different
+key* is reachable), and **6 the oracle refuses outright** as non-printable
+(`ReaderError`: `U+000B`, `U+000C`, `U+001C`–`U+001F`). The tokenizer holds
+nothing on that last 6; **`_PROFILE_CONTROL_RE` does**. That is what M7 below
+measures, and it is why the shipped-configuration sweep
+(`..._refuses_or_equals_the_oracle`) has a falsifier at all.
+
+**Mutation ledger** — every row applied to `bootstrap/_scaffold/config.py`,
+`__pycache__` purged, the whole module run on CPython 3.13.13, and `config.py`
+restored byte-identically (sha256 `8089586e…` verified after each restore).
+**Re-measured end-to-end `as_of 2026-08-04`**; the M7 row is new, and the
+bytecode purge is the correction described in the *stale-`.pyc`* note below.
+
+| # | perturbation | result |
+|---|---|---|
+| M1 | `line.strip(" ")` → `line.strip()` | **2 red** — `..._holds_without_the_diagnostic`, `..._never_eaten_from_a_value` |
+| M2 | `value.rstrip(" ")` → `value.rstrip()` | **2 red** — same two nodes |
+| M3 | delete the `_PROFILE_UNICODE_SPACE_RE` scan | **1 red** — `..._names_the_codepoint` (both sweeps stay green: the contract holds, only the message degrades) |
+| M4 | delete the `_PROFILE_RESOLVER_TOKENS` branch | **1 red** — `..._refuse_where_the_oracle_refuses` |
+| M5 | `raw.lstrip(" ")` → `raw.lstrip()` | **1 red** — `..._holds_without_the_diagnostic` |
+| M6 | `indent = … line.lstrip(" ")` → `line.lstrip()` | **0 red — and no test was written to force one** (below) |
+| M7 | delete the `_PROFILE_CONTROL_RE` scan | **5 red** — `..._refuses_or_equals_the_oracle`, `..._holds_without_the_diagnostic`, plus 3 in `TestGrammarTotality` |
+
+**Four things the ledger taught that the plan should not lose.**
+
+1. **A first draft of these nodes was vacuous, and only the perturbation showed
+   it.** Written against the shipped module they passed under M1 *and* M2 —
+   the diagnostic masked both. The nodes were rebuilt around the
+   diagnostic-disabled sweep. The plan's *"a test whose deletion-mutant stays
+   green is not accepted"* rule caught this only because the mutant was
+   actually run.
+2. **One node is subsumed by construction, and that is now written into it
+   rather than left for a reader to discover.** A second audit flagged
+   `test_every_isspace_codepoint_refuses_or_equals_the_oracle` as unfalsifiable
+   under every ledger mutation. Re-derived: the audit's mutation set was the
+   incomplete thing — M7 (new above) *does* turn it red. But the deeper
+   property is stronger than the audit claimed, and it is structural, not a
+   gap in the ledger. That node runs the same corpus as
+   `..._holds_without_the_diagnostic`, which runs it with one refusal path
+   removed; a refusal is contract-legal, so removing one can only **add** third
+   outcomes. Its falsifier set is therefore a strict **subset** of the
+   diagnostic-off node's, and **no mutation can ever turn it red alone**. It is
+   kept — it is the only node stating the guarantee for the configuration
+   adopters actually run, with no monkeypatch — and its docstring now says it
+   guards no control on its own. Each of the three controls has its own
+   single-control falsifier: the tokenizer → `..._holds_without_the_diagnostic`
+   (M1, M2, M5 each turn it red singly); the diagnostic →
+   `..._names_the_codepoint` (M3); `_PROFILE_CONTROL_RE` →
+   `..._refuses_or_equals_the_oracle` (M7).
+3. **M6 is a genuine no-op, not a coverage gap**, and it is recorded as such
+   rather than given a manufactured test. Re-verified `as_of 2026-08-04` by
+   applying M6 and re-running the whole breadth harness below: **67,637 inputs,
+   0 third outcomes** — the mutant is indistinguishable from the shipped module
+   on every corpus this plan has. The mechanism: with the invisible character
+   still in `stripped`, the key and list patterns fail before the indent value
+   is consulted. M5 by contrast *looked* like a no-op under the first corpus and
+   was not — the corpus was missing `project_name: <space><NBSP>X`, the only
+   shape that reaches the value-side tokenizer, because `_PROFILE_KEY_RE`
+   requires a real SPACE after the `:`. That row (`value-prefix-spaced`) and its
+   list twin are now in `_INVISIBLE_POSITIONS` with the reason written beside
+   them.
+4. **A stale `__pycache__` is how this section shipped figures that did not
+   reproduce**, and the fix is procedural, not a one-off correction. M1, M2 and
+   M5 each delete the same 3 source bytes (`" "`), so the mutants are
+   byte-identical in length; CPython validates a cached `.pyc` on
+   (mtime-seconds, size), so a second mutant written inside the same second is
+   silently executed as the *first* mutant's bytecode. Re-running the M1/M2/M5
+   counts without purging reproduces the failure exactly — all three report the
+   same number. **Every mutation figure in this section was re-measured with
+   `__pycache__` removed before each run**, and any future re-anchor must do the
+   same. This is the mechanical root cause behind two rounds of bad figures, and
+   it is worth more than the corrected numbers.
+
+**The related resolver finding, fixed rather than dispositioned.** `k: =`,
+`k: <<` and `k: ? x` were accepted as plain strings while `yaml.safe_load`
+raises (`ConstructorError` / `ScannerError`) — the same third-outcome shape from
+the other side, the plain-scalar rule not modelling PyYAML's *implicit
+resolvers*. `_PROFILE_RESOLVER_TOKENS` refuses the three whole tokens;
+`TestImplicitResolverTokens` pins both directions, because the lookalikes
+`==`, `=x`, `<<x`, `?x` are ordinary scalars to PyYAML and refusing them would
+be over-refusal.
+
+**Breadth check** (a check, not a proof — part (a) remains finite-corpus).
+`_minimal_yaml_parse` vs `yaml.safe_load`, CPython 3.13.13, **re-run `as_of
+2026-08-04`**:
+
+| corpus | inputs | third outcomes |
+|---|---|---|
+| Unicode whitespace — the module's own `_invisible_corpus()`, 29 `str.isspace()` codepoints × 13 positions | **377** | 0 |
+| structured grammar shapes — `itertools.product` over 7 keys × 6 separator forms (4 distinct) × 29 value forms × 5 tails × 6 leads = 36,540, plus 16 list items × 5 indents × 3 tails × 3 shapes = 720 | **37,260** | 0 |
+| random-character inputs — 1–40 chars drawn from a 50-entry alphabet (49 distinct: grammar punctuation, ASCII, TAB/CR, NBSP, IDEOGRAPHIC SPACE, `U+000B`, `U+001F`, BOM), `random.Random(20260804)` | **30,000** | 0 |
+| **total** | **67,637** | **0** |
+
+**The whitespace figure is the one the earlier revision got wrong**, and the
+correction is arithmetic: it read **319** = 29 × 11, the position table as it
+stood *before* this same section added `value-prefix-spaced` and
+`list-value-spaced`. The shipped table has 13 positions, so the corpus is
+29 × 13 = **377**. The grammar and random figures are **not** corrections of
+the earlier 6,253 / 30,000 — that harness was not retained, so those numbers
+could be neither reproduced nor refuted. The table above is a fresh
+measurement from a harness described in the row itself; a re-anchor should
+re-run it rather than carry the figure forward.
+
+### The AST transaction, re-derived (Maintainer amendment, Chunk M input)
+
+The amendment instructs: *"Re-measure against the committed baseline; do not
+carry the old figure forward"*, because Amendment 1 removed a runtime branch
+from `config.py`. Measured `as_of 2026-08-04` on the combined working tree
+(`python bootstrap/tests/_ast_attest.py verify
+bootstrap/tests/fixtures/scaffold_ast_baseline.json bootstrap/_scaffold/*.py`):
+**6 non-pure-motion symbols, 0 DUPLICATE**, split cleanly by plan.
+
+| symbol | module | whose |
+|---|---|---|
+| `CHANGED FunctionDef:_minimal_yaml_parse` | `bootstrap/_scaffold/config.py` | **this plan** |
+| `CHANGED FunctionDef:load_config` | `bootstrap/_scaffold/config.py` | **this plan** |
+| `MISSING Try` | (was `bootstrap/_scaffold/config.py`) | **this plan** |
+| `CHANGED FunctionDef:cmd_upgrade` | `bootstrap/_scaffold/upgrade.py` | `fork-advisory-semantics` |
+| `CHANGED FunctionDef:forked_facade_findings` | `bootstrap/_scaffold/lockfile.py` | `fork-advisory-semantics` |
+| `CHANGED FunctionDef:format_forked_facade_warning` | `bootstrap/_scaffold/lockfile.py` | `fork-advisory-semantics` |
+
+**The `MISSING Try` is this plan's third entry and the earlier target did not
+predict it.** *Gate accounting* (i) recorded *"exactly 2 CHANGED … 0 MISSING, 0
+DUPLICATE"*, written before Amendment 1 folded in. The baselined `Try` at span
+`[86, 96]` is the `try: import yaml as _yaml / except ImportError` block that
+Amendment 1 deleted — so it is the amendment's own predicted consequence, not an
+unexplained baseline delta, and it does **not** trip the stop-the-line rule. The
+union the single ceremony must absorb is therefore **5 CHANGED + 1 MISSING + 0
+DUPLICATE**; anything outside this table is a stop-and-explain.
+
+**Two collision checks, run because the baseline is keyed by bare symbol name.**
+None of this plan's new top-level names (`ProfileGrammarError`,
+`RECOGNIZED_PROFILE_KEYS`, `unrecognized_profile_keys`, `_ENGINE_PROFILE_SCHEMA`
+and the six `_PROFILE_*` constants) matches any of the 174 baselined keys, and
+the verifier reports **0 DUPLICATE** — so the `_yaml_sq` / `_yaml_dq` near-miss
+*Gate accounting* flagged did not materialise.
+
+**Install contract and dual-parser smoke, re-run on the final tree.**
+`python bootstrap/scaffold.py --manifest` diffed against the same command run in
+a pristine `git archive HEAD` tree — **empty**. All three profiles under
+`bootstrap/profiles/` through `--summary` twice, once normally and once under a
+`sys.modules['yaml'] = None` driver — **identical stdout/stderr and identical
+exit code on all three**.
+
+**Suite, `as_of 2026-08-04`, canonical interpreter (Python 3.13.13):**
+`python -m pytest bootstrap/tests` → **1788 passed, 2 failed, 0 skipped, 0
+xfailed**, 187s. The two failures are exactly the two `test_ast_attest.py`
+nodes *Scope* prices as the deliberate red window
+(`test_committed_baseline_accounted_for_across_the_engine_package`,
+`test_ast_gate_passes_over_the_full_scaffold_module_set`) — the ones the
+Maintainer's Chunk M closes. Nothing else is red. The figure covers both Wave 2
+plans' work; this plan's own module contributes **44** nodes. `test_python_floor.py`
+(the `vermin` floor assertion, declared floor 3.11) is among the passing nodes,
+so the new code did not raise the floor.
+
+**The adopter prose was brought into line with what is established.**
+`bootstrap/BOOTSTRAP.md` Appendix B shipped the contract as *"there is no third
+outcome"* flat, while this plan records part (a) as *verified over a finite
+corpus, not proved*. Appendix B now says which half is which: totality is
+structural, equality is checked against PyYAML over a corpus. Appendix B also
+gained the invisible-space rule and the resolver-token clause, both of which the
+code enforces and the adopter can hit.
+
 **Note on doc gates**: drift gates (broken references, stale renders,
 snippets that diverged from their source) catch **drift**, not
 **absence** of new doc updates. Confirm each doc named in Acceptance

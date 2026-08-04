@@ -237,7 +237,19 @@ def _resolve_current_profile(
     try:
         cfg = load_config(profile_path)
         block, _tokens, missing, invalid = _resolve_lock_profile_fields(cfg)
-    except Exception:  # noqa: BLE001 -- a malformed profile.yml falls back
+    except Exception as exc:  # noqa: BLE001 -- a malformed profile.yml falls back
+        # The fallback DISPOSITION is unchanged; only its silence is
+        # (profile-parse-fail-open Chunk A).  A stricter ``load_config``
+        # feeds this handler more exceptions, so a swallow that says nothing
+        # would trade a loud install-time refusal for a quiet upgrade-time
+        # one -- the same fail-open hazard, moved rather than removed.
+        print(
+            f"  [warn] could not read {profile_path}: "
+            f"{type(exc).__name__}: {exc}\n"
+            "         falling back to the lockfile's embedded profile; "
+            "fix the profile and re-run to upgrade under it.",
+            file=sys.stderr,
+        )
         return lock_profile, lock_axes
     axes = _embedded_axes(block)
     if missing or invalid or not axes:

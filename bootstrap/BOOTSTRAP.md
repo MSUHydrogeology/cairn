@@ -693,6 +693,7 @@ Block slots (judgment work, left for the agent and Maintainer):
 
 The scaffold script reads a YAML file with the following shape:
 
+<!-- cairn-parity-corpus: appendix-b-example -->
 ```yaml
 # Inline token values (mechanical substitution)
 project_name: "MyProject"
@@ -727,6 +728,7 @@ modules:
 Instead of a hand-derived `modules:` list, a profile may name a
 **preset** and adjust it with flat add/remove lists:
 
+<!-- cairn-parity-corpus: preset-example -->
 ```yaml
 project_name: "MyProject"
 test_command: "pytest"
@@ -757,6 +759,82 @@ modules_remove:                   # always removes; wins on a same-module
   unknown value, or an unknown module name in add/remove, or a scalar
   where a list is expected, is a **friendly hard error**.
 * Removing a default-on module is a permitted explicit opt-out (logged).
+
+**The line grammar** — the profile is read by a **closed grammar**, not by a
+best-effort reader, and by **one** parser: the in-tree recognizer, always
+(PyYAML is never consulted at runtime, so an install behaves the same whether
+or not it happens to be installed). Every non-blank line matches exactly one
+accepted form or the profile is **refused** with `<path>:<line>: <reason>` and
+the rewrite. **No content line is ever silently dropped** — that half is
+structural, because the parse loop refuses any line matching no form. The other
+half — that an *accepted* profile means exactly what a standard YAML parser
+would say it means — is **verified against PyYAML over a corpus, not proved**:
+the suite parses this appendix's examples, the `--help` example, both profiles
+the engine itself writes, and a generated sample of the grammar through both
+readers and asserts equality, but a finite corpus is a check, not a proof. The
+accepted forms:
+
+| form | example |
+|---|---|
+| a comment, or a blank line | `# module selection` |
+| a single leading document marker | `---` |
+| `key: <plain value>` | `preset: solo-greenfield` |
+| `key: '<single-quoted>'` (`''` is a literal `'`) | `project_name: 'O''Brien Lab'` |
+| `key: "<double-quoted>"` (no `\` escape, no interior `"`) | `test_command: "pytest"` |
+| `key: []` — the explicit empty list | `modules: []` |
+| a bare `key:` — value `None` unless items follow | `modules:` |
+| `- <value>` at a consistent indent under a bare key | `  - claim-check` |
+
+Plus: a literal `{}` document is an empty profile; a document with **no**
+content lines (empty, whitespace-only or comment-only) is refused rather than
+read as an empty profile; and every key sits at the **same** indentation (a
+uniformly-indented document — a copy-paste out of a rendered page — is fine, a
+*nested* mapping is not).
+
+* **Comments.** A `#` starts a comment only at the start of a value or when
+  preceded by a **space**. So `forge: gitlab   # gitlab | github` loses its
+  comment and `project_name: issue#42-tracker` keeps its hash.
+* **Quote anything that could read as something else.** A value that YAML
+  would read as a number, date, time, boolean or null is refused with *"write
+  it quoted"*: `forge: no` is `False`, `size: 010` is `8`, `project_name: 1:30`
+  is `90`, `project_name: 2024-01-01` is a date. Only a canonical integer
+  (`-?(0|[1-9][0-9]*)`) is accepted unquoted. Quote a value containing an
+  apostrophe or a double quote too. A value that is exactly `=`, `<<` or `?`
+  is refused for the same reason: those are YAML's value, merge and
+  complex-key indicators, not text (`==`, `=x` and `?x` are ordinary values
+  and stay accepted).
+* **No tabs.** A tab anywhere in the profile is refused: YAML forbids tabs in
+  indentation and rejects them inside plain values.
+* **No control characters, no BOM.** A byte-order mark makes the key after it
+  a *different key*, and `project_name` is rendered into your tree and printed
+  by `--summary`. Save the profile as UTF-8 without a BOM.
+* **No invisible spaces.** YAML's whitespace is **only** an ordinary space and
+  a tab. A non-breaking space (`U+00A0`), an EN/EM quad or an ideographic space
+  is *part of the key or the value*, not a separator — so `project_name`
+  preceded by a non-breaking space is a different key, exactly like the BOM
+  above, and it arrives the same way a BOM does: by copy-paste out of a
+  rendered page. The refusal names the codepoint, because the character is
+  invisible in an editor and a generic "unrecognized line" would point at a
+  line that looks perfectly correct.
+* **Unknown keys are refused, not ignored** — the profile schema is **closed**.
+  A profile carrying a key outside the recognized set fails **before anything
+  is written**, naming every unrecognized key and printing the recognized set.
+  A mis-typed `module_add:` is not a harmless extra line; it is the module
+  roster you meant to set, dropped. The recognized keys are the inline tokens
+  (Appendix A), the six axis keys, `preset` / `modules` / `modules_add` /
+  `modules_remove` / `forge`, and the reserved `schema`.
+* **`schema:` is reserved, and read first.** Omit it, or set `schema: 1`.
+  Adding a key to this schema is a breaking change for every engine shipped
+  before it — which is why the key is reserved now: a future profile refuses
+  with *"this profile declares schema 2; this engine understands 1 — upgrade
+  Cairn"* rather than with an unhelpful unknown-key list.
+
+Every rule above has a command behind it: run `python bootstrap/scaffold.py
+--summary --config <profile>` and read the refusal, or run `python -m pytest
+bootstrap/tests/test_profile_grammar.py`, which parses this appendix's own
+examples — and the `--help` example, and both profiles the engine itself
+writes — through the recognizer and asserts each equals `yaml.safe_load`'s
+value.
 
 Preview the resolved profile **without installing** with
 `python bootstrap/scaffold.py --summary --config <profile>` (the Act I-6
