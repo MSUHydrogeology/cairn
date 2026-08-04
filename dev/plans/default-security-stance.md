@@ -1202,3 +1202,274 @@ attribution [I5].
 **This Internal round does not discharge the declared
 `required(**External**, security lens)` tier.** No implementation commit should
 land until an External security-lens section is in the tree.
+
+## Response to plan review -- Claude (author) -- 2026-08-04
+
+**Model**: Claude Opus 5 (`claude-opus-5`).
+
+**Standing and scope.** I am the plan's author, responding to the Internal
+(same-agent-type, security-lens) plan review committed at `ab66d19`. This
+Response **dispositions findings and amends the plan**; it discharges **no**
+review tier. The declared tier is `required(**External**, security lens)` and
+**no External security-lens section is in the tree**. The plan remains
+review-blocked and **no implementation commit may land**. See *Clearance* below.
+
+**Method, and why every figure moved.** The review was written at `ab66d19`.
+Working-tree HEAD is now **`6618e54`**, and **two commits landed in between that
+invalidate the plan's own measurement frame**:
+
+* **`3852cf7` — "Ceremony 1 -- batched AST baseline re-anchor for Wave 2
+  (Maintainer-run)"**, which is **not** an ancestor of `ab66d19`
+  (`git merge-base --is-ancestor 3852cf7 ab66d19` → false). It re-anchored
+  `bootstrap/tests/fixtures/scaffold_ast_baseline.json` and absorbed the
+  in-flight sibling's three CHANGED symbols.
+* **`84fbef4` — `gate-claims-vs-enforcement` Chunk E**, which edited
+  `bootstrap/SAFETY.md` and moved a line this plan cites.
+
+So I re-derived rather than inherited. Every engine measurement below was taken
+on a **`git clone` of the repository into the session scratch directory** — a
+clone, not a bare source extract, so `.git` is present and the git-dependent
+gates actually run. **No repository file was modified, added, moved, staged or
+committed**; the only path this Response writes is
+`dev/plans/default-security-stance.md`. Interpreter throughout:
+`~/conda_envs/lhm/bin/python3.13` (CPython 3.13.13) with
+`PYTHONDONTWRITEBYTECODE=1`. `as_of 2026-08-04`, at `6618e54` unless stated.
+
+### The headline: the plan's measurement frame is stale, and one review finding was itself mis-measured
+
+1. **The suite is green.** `python -m pytest bootstrap/tests` on the live tree
+   returns **1790 passed, 0 failed, 0 skipped**, 186.73s. The plan's
+   *"1744 passed, 2 failed"* and the whole *"The window is already open, measured
+   rather than predicted"* premise describe a state that no longer exists:
+   Ceremony 1 re-anchored the baseline and the two `test_ast_attest.py` nodes are
+   green. **This is not a cosmetic drift** — Chunk A's central acceptance
+   criterion ("red on exactly two nodes") was written against a red baseline and
+   is now measuring against a green one.
+2. **The AST baseline shrank, and the four declared digests survived.** The
+   baseline now holds **173** entries, not 174. The three-kind count is
+   **unchanged at 161 (98 `FunctionDef:` / 53 `Assign:` / 10 `ClassDef:`)**; the
+   12 remaining are 8 `Import:`, 1 `Docstring`, 1 `Expr`, and 2 `If`-prefixed
+   (`If:` and `If#2:`). **There is no `Try:` key** — the review's *"13 exempt (8 `Import:`,
+   1 `Docstring`, 1 `Expr`, 2 `If`, 1 `Try`)"* is wrong on both the total and
+   the `Try`. Against that new baseline, **all four declared CHANGED digests
+   still match character-for-character** (`2c8ef688f6865487`, `6bd2e6caa83f4017`,
+   `830aac8b7c3d1bde`, `ff5a7441cceda605`), and `verify` on the unedited tree
+   returns **rc 0, "173 baselined symbol(s) accounted for, unchanged"**. The
+   plan's symbol table survives the ceremony; only its *sizing* prose does not.
+3. **[I2]'s red-node enumeration is short by three, and the review
+   mis-attributed them.** Controlled delta, same clone, same interpreter:
+
+   | Tree | Result |
+   |---|---|
+   | committed `6618e54`, unedited clone | **1 failed, 1788 passed, 1 skipped** |
+   | `6618e54` + A1–A6 (uncommitted) | **8 failed, 1781 passed, 1 skipped** |
+
+   The one common failure is a clone artifact
+   (`test_gate_preflight.py::TestPublicCli::test_check_runs_against_the_live_repo_and_reports`,
+   which runs against the live repo). The attributable delta is **seven** nodes,
+   not two and not four: the two `test_ast_attest.py` nodes, the two [I2] nodes,
+   **and three `test_oracle.py` nodes** —
+   `test_oracle_matrix_behavior_preserved`, `test_oracle_privileged_workflows_preserved`,
+   `test_oracle_measures_target_not_verifier`. The review dismissed
+   `test_oracle.py` as an *"absent `.git`"* artifact *"present in both runs"*.
+   With `.git` present it is **green on the base tree and red on the edited
+   one**: the differential oracle materializes the baseline engine at
+   `baseline_ref="HEAD"` and diffs its scaffold output against the current
+   engine, so an uncommitted A1 makes every scenario report
+   `only_in_current: scripts/content_scan_*` diffs. **Committing A1–A6 in the
+   scratch clone clears all three** (`test_oracle.py` → 18 passed). They are
+   working-tree-only transients and do not violate Chunk A's *"from this
+   commit"* scoping — but an implementer who runs the suite before committing
+   sees **seven** reds where the plan promises two, and must be told which three
+   clear on the commit itself. This is exactly the hazard the review warned about
+   in its own *Same-type blind spot* note, landing on the review.
+
+### Disposition of every finding
+
+| # | Disposition | Reasoning | Mechanical residue |
+|---|---|---|---|
+| **[I1]** — the `--summary` no-preset path | **ACCEPT** | Reproduced end-to-end on the edited clone, and it is worse than the review states because I ran the install too. `bootstrap/_scaffold/cli.py:236`–`239` (`else list(_DEFAULT_ON_MODULES)`) is verbatim as cited. With `project_name` + `python_package: mypkg` and neither `preset:` nor `modules:`, `scaffold.py --summary` prints a **7-module roster with `python-security` absent** and asks *"Does this profile look right before I install anything?"*; the install of that same profile writes **`scripts/run_security_audit.py`, and the module's doctrine file under the target's `dev/modules/`**. A5's own stated justification is inverted: the pre-install acceptance artifact promises a security module will not be installed, and it is. | New **A7**; **C1j** gains a second shape; new pin **C1m** (summary/install agreement) |
+| **[I2]** — two undeclared RED nodes | **ACCEPT WITH MODIFICATION** | The substance reproduces exactly, message text included: `bootstrap/tests/test_presets.py:415` is `assert len(modules) == 8` and reports `AssertionError: assert 9 == 8`; `bootstrap/tests/test_quickstart_sequence.py:235` reports *"docs/quickstart.md says '**6** modules' but the live solo-greenfield install resolves 7 ... refresh the quickstart prose."* `test_presets.py` **is** a frozen file (confirmed in the 164-entry `frozen_files` map at `6618e54`), so C4's *"no assertion changes"* justification does not survive. **Modified because the enumeration is short by three** — see the headline table. | Chunk A acceptance bullets 1 and 4 rewritten; **C4** rewritten; *Gate accounting* frozen-files line rewritten |
+| **[I3]** — Chunk B is short by two doc files | **ACCEPT WITH MODIFICATION** | Both sites reproduce: `docs/quickstart.md:129` carries `**6** modules listed <!-- verify: solo_greenfield_module_count -->`, and `docs/solo-legacy-recipe.md:58`–`62` claims an *"**8-module roster** — the six default-on modules"*. No test extracts the recipe prose. **Modified on two points.** (a) The review says the quickstart fix is *"one prose edit"*; it is **two** — `:129`'s guarded number **and** `:130`–`:131`'s **unguarded** six-name enumeration, which no test reads. The quickstart carries the same guarded/unguarded split as the recipe. (b) I measured the enumeration surface for completeness rather than leaving it open: `grep -rl` for `fold-back-ledger` across `docs/`, `bootstrap/`, `templates/` returns **exactly** `docs/solo-legacy-recipe.md`, `docs/quickstart.md`, `bootstrap/BOOTSTRAP.md` (×3 sites), the three `bootstrap/profiles/*.yml`, and `templates/modules/README.md`. With B6/B7 added the prose surface is **complete**, and I assert that as a measurement. | New **B6**, new **B7**; *Documentation / doctrine surface* amended |
+| **[I4]** — B3's premise and guard claim | **ACCEPT** | Both halves reproduce. `bootstrap/profiles/solo-greenfield.yml:17`–`18` **already lists all six** default-on modules correctly; only `collaborative-team.yml:16`–`17` and `high-rigor-legacy.yml:16`–`17` omit `incident-trackers` and `documentation-plan` (each lists four). And `grep "Resulting module roster" bootstrap/tests/ scripts/` returns **nothing** at `6618e54` — no C1 pin reads a profile comment block, so *"pinned by test in Chunk C"* is false. Re-derivation remains right; the justification was wrong. | **B3** row rewritten; Chunk B acceptance bullet 4 rewritten with the residual named |
+| **[I5]** — the NEW-key criterion | **ACCEPT WITH MODIFICATION** | The finding's substance is right and its **figures do not reproduce**. On the unedited committed engine at `6618e54`, `verify` emits **45** NEW non-`Import:` / non-`Docstring` keys (the review said 29); the edited tree emits **47** (the review said 31). The set difference is **exactly** `Assign:_TOKEN_GATED_MODULES` and `FunctionDef:token_gated_modules`, so the plan's diff-against-pre-chunk method rescues the operation, as the review says. The right correction is therefore **not** to substitute 45 for 29 — that number will drift again on the next engine change. The criterion must be stated as a **set difference with no count at all**, and the sibling attribution dropped: the excess is a standing set of post-baseline engine additions, because the baseline is a partial pin rather than a complete inventory. | Chunk A acceptance bullet 3 rewritten as a set difference |
+| *Nit* — `scripts/check_cairn.py:100` vs `:101` | **DECLINE** | Does not reproduce, and did not reproduce when written. At `6618e54`, `scripts/check_cairn.py:100` **is** `_LINK_CHECK_SRC = (`; the comment is `:96`–`:99`. At the review's own commit `ab66d19` the same line was already the assignment (`git show ab66d19:scripts/check_cairn.py`), and the file has not changed since. The plan's `:84` / `:91` / `:100` citations are all exact. | None — the plan is correct as written |
+| *Nit* — `180 Markdown file(s)` | **ACCEPT WITH MODIFICATION** | Neither figure holds. `python scripts/check_cairn.py` at `6618e54` → `OK -- 195 Markdown file(s) scanned; no issues; 68 external link(s) not probed`. The review's 181 was already stale when written. The nit's *prescription* — prefer `as_of` + growth-direction over a bare count — is right and is what I adopt; substituting 195 would repeat the error in three weeks. | *Gate accounting* prose-integrity bullet rewritten |
+
+### Findings I am adding on my own re-measurement
+
+* **[R1] The three `test_oracle.py` transients.** Above. Amends Chunk A's
+  acceptance and adds a workflow note, because an implementer confronted with
+  seven reds and a plan promising two will reasonably stop.
+* **[R2] `bootstrap/SAFETY.md:155` no longer resolves.** The plan cites it for
+  *"already names the `content-security` / `python-security` apparatus as Layer-4
+  code"*, and the review's *Covered #14* endorsed the citation. At `6618e54`
+  that text is at **`:173`**; `:155` is now `` `upgrade`, `cli` — plus the
+  verifying loader `_guard.py`; *every module ``. `gate-claims-vs-enforcement`
+  Chunk E (`84fbef4`) moved it **after** the review was written. The underlying
+  claim — that the file already covers this apparatus and stays true — still
+  holds; only the line number is wrong.
+* **[R3] B5's "four pre-existing omissions" is arithmetically wrong.** Derived
+  from `_MODULE_MAPPINGS` + `_DEFAULT_ON_MODULES` against the table's 12 rows:
+  `templates/modules/README.md` omits **two** default-on (`incident-trackers`,
+  `documentation-plan`) and **six** team-gated (`content-security`,
+  `doc-drift-prevention`, `examples-gallery`, `model-selection`,
+  `python-security`, `testing-discipline`). B5 adds two of the six, leaving
+  **six** residual rows (2 + 4) — which is what *Lasting-truth migration* row 2
+  actually lists. *Scope*'s "six team-gated modules" is right; B5's "four" is
+  not.
+* **[R4] Chunk R item 3's `known_new` requirement may target the wrong
+  mechanism.** `known_new` is read **only** by `update_symbol`
+  (`bootstrap/tests/_ast_attest.py:230`, its keyword parameter; `verify` never
+  reads it — `A.verify(baseline, modules)` takes two arguments). This plan
+  establishes on two independent grounds that `update-symbol` is unavailable to
+  this scope. So either the ceremony does not need `known_new` pins for these two
+  keys, or the ceremony mechanism is not the one Chunk R names. **Routed to the
+  Maintainer, not decided here** — Chunk R is a Maintainer fence and this is a
+  ceremony-design question.
+* **[R5] "0 skipped" is now measured-reachable.** The review flagged the plan's
+  post-R *"0 failed / 0 skipped"* target as unverified, citing an
+  environment-conditional skip. On the **live tree** the suite reports **0
+  skipped** at `6618e54`. (One skip fires in the scratch clone; that is a clone
+  artifact, like the `test_gate_preflight` failure.) This closes a review
+  *Not covered* item in the plan's favour.
+
+### Review claims I re-ran and confirmed exactly
+
+Reported as plainly as the non-reproductions. Each was **run**, not read:
+
+1. **The declared symbol delta, against the *new* baseline.** Applying A1–A6 to
+   the clone and running the real `bootstrap/tests/_ast_attest.py verify` against
+   the real re-anchored baseline: **4 CHANGED — exactly the four in the plan's
+   table, with the four declared digests — 0 MISSING, 0 DUPLICATE**, and a NEW
+   set difference of exactly the two declared names. **No fifth CHANGED symbol.**
+2. **C2's discriminating perturbation — the brief's #1 question.** Twins: **41**
+   before, **43** after copying both `.py` files into `scripts/`. Deleting
+   `scripts/content_scan.py` → **42** twins and `test_notice_install.py` stays
+   **fully green (10 passed)**. Appending one byte → **`FAILED ... ::test_every_self_hosted_twin_stays_byte_identical_to_its_source`**
+   at `bootstrap/tests/test_notice_install.py:109`. C2 is necessary; deletion is
+   the right perturbation. Restore verified byte-identical.
+3. **The install contract does not move.** `scaffold.py --manifest` → **96**
+   lines. `content-security` carries **6** `InstallSpec`s and `python-security`
+   **2**, both already registered — **zero manifest rows added**.
+4. **A4's placement / C1g.** `preset: solo-greenfield` + `python_package: mypkg`
+   + `modules_remove: [python-security]` → `python-security` **absent** and
+   `summary["token_gated"]` **empty**, with the union in the baseline.
+5. **The `DUPLICATE` pre-check.** Neither `_TOKEN_GATED_MODULES` nor
+   `token_gated_modules` collides with any of the 161 baselined three-kind names.
+6. **`_UPDATE_ALLOWLIST`** admits exactly `_CORE_MAPPINGS`, `_MODULE_MAPPINGS`,
+   `_SKILLS_MAPPINGS`, `install_onboarding`; none of the four CHANGED is among
+   them.
+7. **Lockfile accounting — exact, including identities.** **81** files, **14**
+   modules, **41** `scripts/`+`tools/` `.py` records **all hash-clean**, and
+   exactly **five** drifted records: `AGENTS.md`, `dev/NEXT_SESSION.md`,
+   `dev/PLANNING.md`, `dev/collaboration_agreement.md`,
+   `dev/modules/security-review.md`.
+8. **`scan_targets()` returns 74.** Exact.
+9. **Gate-manifest figures.** `frozen_files` **164** entries; all four named test
+   files present; `config.py` / `cli.py` absent; `cascade_mutable` carries
+   `bootstrap/_scaffold/config.py`; `collection.node_count` **1598**.
+10. **`_self_hosted_twins()` is presence-derived** — it `rglob`s `scripts/` and
+    `tools/` and intersects with the manifest, so a deleted twin silently leaves
+    the set.
+11. **`structural["new_modules"]` is registry-versus-lockfile** —
+    `sorted(set(_MODULE_MAPPINGS) - lock_modules)` at
+    `bootstrap/_scaffold/upgrade.py:628`, independent of `_DEFAULT_ON_MODULES`
+    and of the expansion. The printed string `new modules available (opt-in)` is
+    at `:679`–`:680`. Review *Covered #18* holds.
+12. **The three REQUIRED content-scan roots** are exactly `!AGENTS.md`,
+    `!.agents/skills`, `!dev`; all present in Cairn.
+13. **B1 / B2's quoted sentences are verbatim-correct** in the tree
+    (`templates/modules/team-gated/content-security.md:3`,
+    `templates/modules/team-gated/python-security.md:6`–`7`), and C3's premise
+    holds at `bootstrap/tests/test_security_stack.py:733`.
+14. **Remaining line citations resolve**: `bootstrap/BOOTSTRAP.md:108` / `:215` /
+    `:703` (and these are the **only** three roster enumerations in that file),
+    `bootstrap/tests/test_presets.py:91`,
+    `bootstrap/tests/test_profiles_smoke.py:112` and `:227`,
+    `bootstrap/DEPENDENCY_BUDGET.md:30`, `scripts/check_cairn.py:84` and `:91`.
+
+### Amendments in force
+
+Every row supersedes the quoted text **verbatim**. Where an amendment adds a
+chunk row or a pin, the added text is given in full so no reconstruction is
+needed at implementation. **One rendering caveat, stated so the quotes stay
+checkable:** when a superseded span is itself a chunk-table row, its cell
+separators appear here as `\|` so this table renders; the *words* are verbatim
+and every quote below was verified by substring match against the plan file
+before commit.
+
+| # | Superseded text (verbatim) | Replaced by |
+|---|---|---|
+| **1** | *"`python -m pytest bootstrap/tests` → **1744 passed, 2 failed**, 165s. The two failures are `test_ast_attest.py::test_committed_baseline_accounted_for_across_the_engine_package` and `::test_ast_gate_passes_over_the_full_scaffold_module_set`, reporting 3 CHANGED symbols — `FunctionDef:cmd_upgrade` (`bootstrap/_scaffold/upgrade.py`), `FunctionDef:forked_facade_findings` and `FunctionDef:format_forked_facade_warning` (`bootstrap/_scaffold/lockfile.py`) — from a sibling's uncommitted work."* | **The window has closed.** At `6618e54`, `python -m pytest bootstrap/tests` → **1790 passed, 0 failed, 0 skipped**, 186.73s, `as_of 2026-08-04`. The sibling's three CHANGED symbols were absorbed by the Maintainer-run **Ceremony 1** re-anchor (`3852cf7`), which landed **after** the plan review. The whole *"The window is already open, measured rather than predicted"* framing is retired: the cluster hazard it describes is real and unchanged, but the specific red state it cites no longer exists. |
+| **2** | *"Against the **committed** HEAD engine sources (extracted to a scratch tree, no repository file touched) the same verify returns **rc 0: 174 baselined symbols accounted for, unchanged**. So the baseline is clean at HEAD and the red is entirely the in-flight sibling's."* | At `6618e54` the **live working tree** returns **rc 0: 173 baselined symbol(s) accounted for, unchanged** — no scratch extraction needed, because there is no in-flight engine red to subtract. |
+| **3** | *"`bootstrap/tests/fixtures/scaffold_ast_baseline.json` holds **174** entries, **161** of them `FunctionDef:` / `Assign:` / `ClassDef:` (98 / 53 / 10); the remaining 13 are `Import:` / `Docstring` / `Expr` / `If` / `Try` keys that `_classify()` exempts as per-module necessities. `as_of 2026-08-04`."* | Post-Ceremony-1 (`3852cf7`) the baseline holds **173** entries, **161** of them `FunctionDef:` / `Assign:` / `ClassDef:` (**98 / 53 / 10 — unchanged**); the remaining **12** are 8 `Import:`, 1 `Docstring`, 1 `Expr` and 2 `If`-prefixed (`If:`, `If#2:`) keys that `_classify()` exempts. **There is no `Try:` key.** `as_of 2026-08-04` at `6618e54`. The 161 figure is the one the plan's name-collision pre-check depends on, and it did **not** move. |
+| **4** | *"Derived by applying this plan's intended edits to a **scratch copy of the committed HEAD engine sources** and running the real `bootstrap/tests/_ast_attest.py verify` against the real committed baseline. No repository file was modified. `as_of 2026-08-04`."* | Re-derived at `6618e54` against the **re-anchored** baseline, on a `git clone` in the session scratch directory; no repository file modified. **The table below stands unchanged: all four CHANGED keys and all four baseline digests still match exactly.** `as_of 2026-08-04`. |
+| **5** | *"* **Suite baseline: 1744 passed / 2 failed** (both the AST nodes, from the in-flight sibling), 165s, `as_of 2026-08-04`. Collection may only grow by this plan's new nodes; a dropped node or a new skip/xfail marker is a HOLD class."* | **Suite baseline: 1790 passed / 0 failed / 0 skipped**, 186.73s, `as_of 2026-08-04` at `6618e54`. Collection may only grow by this plan's new nodes; a dropped node or a new skip/xfail marker is a HOLD class. **Re-take this figure at implementation** — it moved by 46 nodes in the day between plan-open and this Response. |
+| **6** | *"* **Frozen files modified: four**, all in `bootstrap/tests/`, all literal keys in the 164-entry `frozen_files` map (`as_of 2026-08-04`) — `test_notice_install.py` (C2), `test_security_stack.py` (C3), `test_presets.py` and `test_profiles_smoke.py` (C4, docstring-only)."* | **Frozen files modified: four**, all in `bootstrap/tests/`, all literal keys in the 164-entry `frozen_files` map (`as_of 2026-08-04`) — `test_notice_install.py` (C2), `test_security_stack.py` (C3), `test_profiles_smoke.py` (C4, **docstring-only**), and `test_presets.py` (C4, **docstring plus one assertion**: `:415`'s `assert len(modules) == 8` → `== 9`). **One of the four now carries a behaviour-bearing edit to a frozen file**, and the Chunk R frozen-set note must say so rather than describing all four as documentation. |
+| **7** | *"a stale artifact of a closed batch window (its sibling `collection.node_count` reads **1598** against today's 1746), so the plan records the state and leaves the re-pin decision to Chunk R."* | a stale artifact of a closed batch window (its sibling `collection.node_count` reads **1598** against the **1790** collected at `6618e54`), so the plan records the state and leaves the re-pin decision to Chunk R. |
+| **8** | *"* **Prose integrity** — `python scripts/check_cairn.py` → `OK -- 180 Markdown file(s) scanned; no issues; 68 external link(s) not probed`, `as_of 2026-08-04`. Chunk D adds `dev/modules/content-security.md`, so the count grows by one plus whatever `dev/` artifacts this lifecycle itself contributes."* | **Prose integrity** — `python scripts/check_cairn.py` → `OK`, `as_of 2026-08-04` at `6618e54` the count read **195** Markdown files and 68 unprobed external links. **The assertion is `OK` and a non-decreasing count, not a literal figure**: this repository adds Markdown daily (180 → 195 in one day), so a pinned count is stale on arrival. Chunk D must grow it by at least one (`dev/modules/content-security.md`). |
+| **9** | *"* **No change needed, checked rather than assumed** — `bootstrap/SAFETY.md:155` already names the `content-security` / `python-security` apparatus as Layer-4 code and stays true."* | **No change needed, checked rather than assumed** — `bootstrap/SAFETY.md:173` (`as_of 2026-08-04`; it was `:155` until `gate-claims-vs-enforcement` Chunk E, `84fbef4`, landed after the plan review) already names the `content-security` / `python-security` apparatus as Layer-4 code and stays true. **Re-locate by string, not by line** — that file is under a sibling scope's edit. |
+| **10** | *"* **Descriptive / bootstrap prose** — `bootstrap/BOOTSTRAP.md` enumerates the default-on roster in **three** places (Act I-5 step 2, the Act I-6 summary template, and the hand-derived `modules:` example). **The proposal's documentation section did not name this file.**"* | **Descriptive / bootstrap prose** — `bootstrap/BOOTSTRAP.md` enumerates the default-on roster in **three** places (`:108`, `:215`, `:703`; measured — those are the only three), **and `docs/quickstart.md` and `docs/solo-legacy-recipe.md` each enumerate it once more** (B6, B7 — [I3]). **The proposal's documentation section named none of these three files.** The prose enumeration surface is now **complete, measured**: `grep -rl "fold-back-ledger"` across `docs/`, `bootstrap/` and `templates/` returns exactly these three files, the three `bootstrap/profiles/*.yml` (B3) and `templates/modules/README.md` (B5). |
+| **11** | *"| A6 \| `bootstrap/_scaffold/cli.py` \| `main`'s **no-key** branch (`modules = list(_DEFAULT_ON_MODULES)`) appends `token_gated_modules(cfg)`, and its `[info]` line names the token-gated additions separately from the default-on set so the printed message stays true. **The `modules:`-alone branch is not touched** — that is the exact-list contract, and leaving it alone is the implementation of the Decision's precedence rule. |"* | Unchanged in substance, with one correction to its premise: **`cli.main` has four module-selection sites, not three.** A6 covers the **install-path** no-key branch (`bootstrap/_scaffold/cli.py:356`). The `modules:`-alone branch is still not touched. The fourth site gets its own row, **A7**. |
+| **12** | *(insertion, no superseded text — new row appended to the Chunk A table)* | **A7 — `bootstrap/_scaffold/cli.py`, the `--summary` no-preset fallback.** The `--summary` handler has its **own** roster construction at `bootstrap/_scaffold/cli.py:236`–`239` (`mods = _as_str_list(...) if "modules" in summary_cfg else list(_DEFAULT_ON_MODULES)`); it builds the roster inline and **never calls `format_profile_summary`**, so A5 does not reach it. Extend the `else` limb with `token_gated_modules(summary_cfg)` and label the additions, exactly as A6 does on the install side. **Measured on the edited clone before A7:** a profile with `python_package: mypkg` and neither `preset:` nor `modules:` prints a **7-module roster with `python-security` absent**, then asks *"Does this profile look right before I install anything?"* — while the install of that same profile writes `scripts/run_security_audit.py` **and** the module's doctrine file under the target's `dev/modules/`. That is A5's stated failure mode inverted and made worse: the acceptance artifact promises absence and the module lands. |
+| **13** | *"* `~/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_presets.py bootstrap/tests/test_profiles_smoke.py bootstrap/tests/test_config_module.py -q` → green."* | → green **except** `test_presets.py::TestSoloLegacyRecipe::test_literal_recipe_yaml_round_trips_under_the_stdlib_parser`, which reports `AssertionError: assert 9 == 8` at `bootstrap/tests/test_presets.py:415`. That node is repaired in **Chunk B**, alongside the `docs/solo-legacy-recipe.md` prose it mirrors — **not** in Chunk A, because bumping the literal without the prose is the vacuity [I3] identifies. |
+| **14** | *"reports **4 CHANGED** — and exactly the four in the table — **0 MISSING, 0 DUPLICATE**, and **2 NEW non-`Import:` / non-`Docstring` keys** with the two declared names. Any fifth CHANGED or third NEW key attributable to this scope is a stop-and-explain before the commit, not a ceremony-time discovery. *(The sibling's in-flight symbols will also appear; the assertion is over **this scope's** contribution, established by diffing against the same verify run on the pre-chunk working tree.)*"* | reports **4 CHANGED** — and exactly the four in the table — and **0 MISSING, 0 DUPLICATE**. **The NEW criterion is a set difference and carries no count.** `verify` emits a large standing set of NEW non-`Import:` / non-`Docstring` keys on the **unedited** engine (45 at `6618e54`), because the baseline is a **partial pin, not a complete inventory**; that set is **not** sibling work and must not be attributed to it. The assertion is: run `verify` before the chunk and after, and the **set difference of NEW non-`Import:` / non-`Docstring` keys is exactly `{Assign:_TOKEN_GATED_MODULES, FunctionDef:token_gated_modules}`**. Any fifth CHANGED, or any third key in that difference, is a stop-and-explain before the commit. **Do not carry a NEW-key count forward from this plan** — it drifts on every engine change. |
+| **15** | *"* **The suite is red on exactly two nodes and no others** from this commit until Chunk R: the two `test_ast_attest.py` nodes. Any third failure is this plan's to explain."* | **From the Chunk A commit, the suite is red on exactly four nodes**: the two `test_ast_attest.py` nodes (red until Chunk R), plus `test_presets.py::TestSoloLegacyRecipe::test_literal_recipe_yaml_round_trips_under_the_stdlib_parser` and `test_quickstart_sequence.py::TestLayerAStepsOneThroughThree::test_step3_install_writes_expected_kernel_and_modules`, **both of which clear inside Chunk B**. Any fifth is this plan's to explain. **Working-tree note, before the commit:** three further nodes go red and **clear on the Chunk A commit itself** — `test_oracle.py::test_oracle_matrix_behavior_preserved`, `::test_oracle_privileged_workflows_preserved`, `::test_oracle_measures_target_not_verifier`. The differential oracle materializes its baseline at `baseline_ref="HEAD"`, so an *uncommitted* A1 makes every scenario report `only_in_current: scripts/content_scan_*`. Measured: 8 failed uncommitted → `test_oracle.py` 18 passed after committing A1–A6 on a scratch clone. **Do not re-anchor the oracle for this** — it is a working-tree artifact, not a gate anchor obligation. |
+| **16** | *"| B3 \| `bootstrap/profiles/solo-greenfield.yml`, `collaborative-team.yml`, `high-rigor-legacy.yml` \| The "Resulting module roster" comment block in each is **re-derived from a live `expand_preset` run**, not hand-patched. All three are already wrong today (each omits `incident-trackers` and `documentation-plan`), so hand-patching would propagate an existing error. Record the derivation command in the commit body. |"* | Same action, corrected premise. **`bootstrap/profiles/solo-greenfield.yml:17`–`18` already lists all six default-on modules correctly**; only `collaborative-team.yml:16`–`17` and `high-rigor-legacy.yml:16`–`17` omit `incident-trackers` and `documentation-plan` (each lists four). Re-derive all three from a live `expand_preset` run anyway — the correct one must be **confirmed** by derivation, not assumed — and record the command in the commit body. |
+| **17** | *"* **B3's rosters agree with the code, checked by running it**, not by reading it: for each preset, `expand_preset({"preset": p})[0]` is compared against the comment block by eye at implementation, and the three rosters are pinned by test in Chunk C."* | **B3's rosters agree with the code, checked by running it**, not by reading it: for each preset, `expand_preset({"preset": p})[0]` is compared against the comment block at implementation. **The clause "the three rosters are pinned by test in Chunk C" is struck as false** — no C1 pin reads a `bootstrap/profiles/*.yml` comment block, and `grep "Resulting module roster" bootstrap/tests/ scripts/` returns nothing at `6618e54`. **Stated residual:** the three comment blocks remain **unguarded** after this plan and can drift again; two of the three drifted this way already. Routed as *Lasting-truth migration* row 8. |
+| **18** | Chunk B, row **B5** — *"The table's four pre-existing omissions are **not** fixed here; routed in *Lasting-truth migration*."* | Same two rows. **Six**, not four, pre-existing omissions remain after B5 — measured by deriving the table from `_MODULE_MAPPINGS` + `_DEFAULT_ON_MODULES` at `6618e54`: two default-on (`incident-trackers`, `documentation-plan`) and four team-gated (`doc-drift-prevention`, `examples-gallery`, `model-selection`, `testing-discipline`). They are **not** fixed here; routed in *Lasting-truth migration* row 2, whose list is the correct one. |
+| **19** | *(insertion, no superseded text — new rows appended to the Chunk B table)* | **B6 — `docs/quickstart.md`.** Two edits at one site, and only one of them is guarded. `:129` carries `**6** modules listed <!-- verify: solo_greenfield_module_count -->`; `test_quickstart_sequence.py:235` extracts that integer and compares it to the live install, so the `6` → `7` bump is **mechanically enforced**. `:130`–`:131` then enumerates the six modules **by name** and **no test reads it** — the same unguarded shape as the recipe. Both must change; the green test proves only the first. <br> **B7 — `docs/solo-legacy-recipe.md`.** `:58`–`:62` claims *"an **8-module roster** — the six default-on modules (…) plus `legacy-agent` and `testing-discipline`"*. **No test extracts this prose.** It becomes a 9-module roster over seven default-on modules. **This obligation is not discharged by C4's `8` → `9` bump in `test_presets.py:415`** — that bump turns the suite green while leaving the recipe permanently wrong, which is exactly the vacuity Chunk C's own preamble rejects, arriving through a door the plan left open. Chunk B's commit body states both edits explicitly. |
+| **20** | *"| C4 \| `bootstrap/tests/test_presets.py`, `bootstrap/tests/test_profiles_smoke.py` \| **Docstring-only.** The three tautological guards above are *kept* — they pin "the expansion consumes the table", which is real — and each gains one sentence stating what it cannot do (fail on a change to the table itself) and naming C1a as the guard that can. Both **frozen files**; no assertion changes, so no behaviour rides on a frozen-file edit. |"* | **C4 is docstring-only for `bootstrap/tests/test_profiles_smoke.py`, and docstring-plus-one-assertion for `bootstrap/tests/test_presets.py`.** The three tautological guards are kept and each gains its one sentence, as before. **Additionally**, `bootstrap/tests/test_presets.py:415`'s `assert len(modules) == 8` becomes `== 9`. `test_presets.py` **is** a frozen file, so **a behaviour-bearing change does ride on a frozen-file edit**, and the *"no assertion changes"* justification is withdrawn. The bump is committed **together with B7's prose fix in Chunk B**, never alone, and Chunk B's perturbation ledger records that the prose is the claim and the literal is only its mirror. |
+| **21** | *"| C1j `test_the_profile_summary_names_the_token_gated_addition` \| `scaffold.py --summary` over a preset + filled token names `python-security` under the token-gated line \| Delete A5's summary line → red |"* | **C1j `test_the_profile_summary_names_the_token_gated_addition` — two shapes, two code paths.** (i) **preset + filled token** → `scaffold.py --summary` names `python-security` under the token-gated line; **perturbation:** delete A5's summary line → red. (ii) **no `preset:`, no `modules:`, filled token** → `scaffold.py --summary` names `python-security` in the roster it prints; **perturbation:** revert A7's `else` limb to bare `list(_DEFAULT_ON_MODULES)` → red. Shape (ii) exercises the inline `--summary` fallback, **a different function from `format_profile_summary`**, which is why one pin over one shape does not reach it. |
+| **22** | *"**Two further pins in C1, both non-obvious and both required by the Decision:**"* | **Three further pins in C1, all non-obvious:** C1k and C1l as written, plus **C1m** below. |
+| **23** | *(insertion, no superseded text — new pin appended after C1l)* | **C1m `test_the_summary_and_the_install_agree_on_the_roster_for_a_no_preset_profile`** — the pin that closes [I1] **structurally** rather than branch-by-branch. For a profile with `project_name` + `python_package: mypkg` and neither `preset:` nor `modules:`: capture `scaffold.py --summary` stdout, then run the real install into `tmp_path`, and assert **the module set the summary names equals the module set whose files actually landed**. **Perturbation:** revert A7 → the summary omits `python-security` while `scripts/run_security_audit.py` and the module's doctrine file under the target's `dev/modules/` are written → red. **Oracle independence:** the two sides are a parsed stdout roster and a filesystem listing, neither derived from `_DEFAULT_ON_MODULES` or `_TOKEN_GATED_MODULES`. This pin is what makes a *fifth* selection site a test failure rather than another enumeration miss — the failure class the review names as this plan's characteristic weakness. |
+| **24** | *"* `bootstrap/tests/test_default_security_stance.py` *(new; a `Proposed paths:` entry until Chunk C)* — the twelve selection-contract pins."* | — the **thirteen** selection-contract pins (C1a–C1j, C1k, C1l, C1m). |
+| **25** | *"1. **Readiness condition.** All four implementation chunks are in the tree, the suite is green **except** the two `test_ast_attest.py` nodes, and this plan's contribution to the union is exactly the declared four CHANGED + two NEW keys."* | **1. Readiness condition.** All four implementation chunks are in the tree; the suite is green **except** the two `test_ast_attest.py` nodes — the two [I2] nodes are repaired inside Chunk B and **must not** be carried to R; the three `test_oracle.py` transients cleared at the Chunk A commit and **must not** appear; and this plan's contribution to the union is exactly the declared four CHANGED + two NEW keys, established as a **set difference** per amendment 14. |
+| **26** | *"3. **The `known_new` manifest.** The two NEW keys — `Assign:_TOKEN_GATED_MODULES` and `FunctionDef:token_gated_modules` — need digest pins in `bootstrap/tests/fixtures/scaffold_ast_known_new.json`, measured at ceremony time against the landed bodies. Their **key set** is declared in advance; their digests cannot be."* | **3. The `known_new` manifest — declared, but its necessity is an open Maintainer question.** The two NEW keys are `Assign:_TOKEN_GATED_MODULES` and `FunctionDef:token_gated_modules`; their **key set** is declared in advance and their digests cannot be. **Whether they need pins in `bootstrap/tests/fixtures/scaffold_ast_known_new.json` is unresolved**: `known_new` is read **only** by `update_symbol` (`bootstrap/tests/_ast_attest.py:230`) and never by `verify`, and this plan establishes on two independent grounds that `update-symbol` is unavailable to this scope. Either the pins are unnecessary here, or the ceremony mechanism is not the direct-correction script this plan names. **The Maintainer decides at ceremony time**; the implementing agent declares the key set and stops. |
+| **27** | *"4. **The frozen-set decision.** Four frozen files are modified and one is `FROZEN-NEW`; `bootstrap/tests/fixtures/gate_manifest.json` also carries a `cascade_mutable` entry for `bootstrap/_scaffold/config.py` and a `collection.node_count` of 1598 against today's 1746, both stale from a closed window."* | **4. The frozen-set decision.** Four frozen files are modified — **one of them (`bootstrap/tests/test_presets.py`) with a behaviour-bearing assertion change, not documentation** — and one is `FROZEN-NEW`; `bootstrap/tests/fixtures/gate_manifest.json` also carries a `cascade_mutable` entry for `bootstrap/_scaffold/config.py` and a `collection.node_count` of **1598** against the **1790** collected at `6618e54`, both stale from a closed window. |
+| **28** | *"| 3 \| **The vendor-wrapper root gap.**"* *(migration table, row 3's leading cell)* | Unchanged; **two rows are appended** — **row 8: the three `bootstrap/profiles/*.yml` "Resulting module roster" comment blocks stay unguarded** by any test after B3 (`dev/PLANNING.md > Deferred follow-ups`; candidate fix: generate the blocks, or extract-and-compare them the way `test_quickstart_sequence.py` does for `docs/quickstart.md`). **Row 9: `docs/solo-legacy-recipe.md`'s roster prose stays unguarded** after B7 — `test_presets.py:415` pins the resolver arithmetic, not the sentence (`dev/PLANNING.md > Deferred follow-ups`). |
+| **29** | *"* **Every new node shown non-vacuous by a RUN perturbation**, ledger in the commit body — the change made, the failure observed with its message, the byte-identical restore verified."* | Unchanged, with one addition: **the ledger records the interpreter and the commit sha the perturbation ran at.** Two of this plan's own figures and three of its review's went stale inside 24 hours because they were quoted without a sha; a perturbation ledger without one is not reproducible either. |
+
+### Clearance
+
+**This Response does NOT clear the plan to implement.** What remains, stated
+without softening:
+
+1. **The declared tier is undischarged.** `required(**External**, security lens)`
+   and the tree holds only an Internal, same-agent-type section. **I am the
+   plan's author** — this Response is neither Internal nor External review and
+   cannot discharge either. Per the plan's own header and
+   `doctrine/plans.md`'s plan-review precondition, **no implementation commit
+   lands** until an External security-lens section is committed.
+2. **The External reviewer reads the amended shape.** The Internal round's
+   second-round recommendation was *"REVISE, then proceed to the required
+   External security-lens round — and the revision should land before that
+   round, not after."* That is what this Response is; the External round starts here.
+3. **Four things the External reviewer should attack first**, replacing the
+   original brief's list, which the Internal round has already discharged (C2,
+   A4/C1g and the symbol delta all survived direct falsification, twice):
+   * **The fifth selection site.** Neither the Internal round nor I proved the
+     `cli.main` enumeration complete — we each found sites by reading and then
+     confirmed by running. C1m is designed to convert a missed site into a red
+     test rather than a silent gap; **check that it actually would**, and look
+     for a shape it does not reach (`upgrade --adopt-module` with a token
+     declared is the one I would try first).
+   * **[R4], the `known_new` question.** If the ceremony genuinely needs pins
+     that only an unavailable tool consumes, Chunk R has a hole.
+   * **Chunk D, still entirely unexecuted.** The 81→87 / 14→15 / 74→76 / 41→43
+     arithmetic is consistent but **unverified**, and D3's alarm-fatigue
+     measurement — the one number the whole restated argument rests on — cannot
+     be taken by any reviewer. It is the plan's largest open risk and it is
+     structurally deferred to implementation.
+   * **Whether the stale-figure pattern is a plan defect or an environment
+     defect.** Three separate measurement frames (the plan's, the review's, and
+     the pre-Ceremony-1 baseline) went stale inside 24 hours in a repository with
+     nine concurrent scopes. Amendment 29 is a partial mitigation. A reviewer may
+     reasonably conclude the plan should assert **invariants and directions**
+     rather than counts nearly everywhere it currently asserts a number.
+4. **Nothing in this Response changes code.** No source file, test, fixture,
+   template or doc was modified; the amendments are instructions to Chunk A–D,
+   not their execution.
+
+This section is append-only once written.
