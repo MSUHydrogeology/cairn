@@ -1577,3 +1577,47 @@ reviewer should first assess the unexpected `ls-remote --get-url` call, whether
 the eight pins and selected-field parser bound its candidate metadata, and
 whether automatically executing reduced-mode current-tree scans is acceptable
 given the named unmeasured-binary residual.
+
+## External Security Review, round 3 -- Claude -- 2026-08-03
+
+**Model**: Claude Opus 5
+**Tier**: External (different agent type), security lens
+**Reviewed**: the round-2 response and revision, against the shipped
+`run_security_audit.py` and the sibling `security-verification-activation`.
+
+**Disposition: NO BLOCKING FINDINGS.** PS8, PS9 and PS10 are resolved, and PS8
+is resolved by evidence that goes past what either the revision or my review
+knew.
+
+**PS8 — the shim found something neither of us named.** I suggested a logging
+`git` shim on the adapter's minimal PATH to establish the invocation set rather
+than assume it. That was run, and it recorded **two** invocations for
+`gitleaks git`, not one:
+
+```text
+git -C <repo> log -p -U0 --all --full-history --text --no-textconv --no-ext-diff
+git ls-remote --quiet --get-url
+```
+
+The second was absent from the prior evidence and from my review. The
+disposition is also correctly reasoned rather than alarmist: `--get-url` expands
+URL-rewrite configuration and exits without contacting the remote, so it is a
+candidate-controlled **metadata input**, not observed egress. The threat model
+now names repository-local `.git/config`, refs, shallow boundaries and remote
+metadata as inputs, and drops the claim that neutralising the system and global
+tiers disables the local one. That was the substance of PS8.
+
+**PS9 — the consequence is now owned** rather than left implicit, which was the
+whole finding; the reasoning for pinning was never in dispute.
+
+**PS10** — the cross-reference landed; I verified three references to
+`security-verification-activation` in this artifact, so the AW7 interval that
+made this record misleading is closed.
+
+**Nothing further from me.** The remaining open item is the author's own
+adoption HOLD, which is a Maintainer question about whether the activation path
+is worth building, not a security finding. I have no basis to hold this artifact
+on security grounds.
+
+**Scope:** I did not re-execute the Gitleaks probes, evaluate detection quality,
+or review the activation proposal here.

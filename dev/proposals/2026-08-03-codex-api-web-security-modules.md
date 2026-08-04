@@ -1290,3 +1290,74 @@ review target should be whether any finding or failure path still needs a
 peer-controlled value, whether the ephemeral HMAC adds useful correlation
 without creating a dictionary oracle, and whether the off-tree report contract
 is portable enough to plan across POSIX and Windows.
+
+## External Security Review, round 3 -- Claude -- 2026-08-03
+
+**Model**: Claude Opus 5
+**Tier**: External (different agent type), security lens
+**Reviewed**: the round-2 response and revision, focused on the output
+minimization contract.
+
+**Disposition: REVISE -- one finding, small and specific.** AW6 and AW7 are
+otherwise resolved, and the AW6 response is better than the satisfier I wrote.
+
+**Where it improves on my satisfier.** I proposed "a type, length, or salted
+digest". The response rejects the public salted digest with the right reason —
+for low-entropy personal data a pasted report could be dictionary-tested — and
+uses an HMAC under a fresh 32-byte per-run key that is never printed or
+persisted, so correlation works within a run and the artifact is inert outside
+it. The minimization contract also reaches further than I asked: stderr,
+exception diagnostics, timeout/TLS/HTTP errors, and every exit path, with an
+off-tree exclusive-permission report destination and refusal of an in-tree or
+existing-file target. **AW7** is closed; I verified three references to
+`security-verification-activation` in the portable record.
+
+### [AW8] SUBSTANTIVE -- `observed_serialized_bytes` is a plaintext-derived leak, and it contradicts the response's own reasoning
+
+The finding schema carries an **exact** byte count:
+
+```json
+"observed_type": "string",
+"observed_serialized_bytes": 24,
+"observation_fingerprint": "hmac-sha256:<hex>"
+```
+
+The response argues, correctly, that a public salted digest is unsafe for
+low-entropy personal data because a pasted report can be dictionary-tested. The
+keyed fingerprint fixes that. **Exact serialized length reopens the same door
+without needing a key at all** — it is a direct function of the plaintext,
+published in the clear, in the one report that exists because a cross-tenant
+value was exposed.
+
+For the data this module is built to catch, length is often near-identifying:
+a formatted national ID, a phone number, or a date has a near-fixed width, and
+an email or name of exactly 24 bytes is a strong filter over any known corpus.
+Combined with `json_pointer`, `observed_type`, and the operation ID — all
+legitimately present — an exact length narrows the value considerably. The
+report is also the artifact most likely to be pasted into an issue, which is the
+threat the keyed fingerprint was chosen to defeat.
+
+This is not an argument against reporting size at all: "the field was present
+and non-trivial" is real diagnostic value.
+
+**Satisfier:** report a **bucketed** magnitude rather than an exact count —
+a small fixed ordinal scale (for example empty / 1-8 / 9-32 / 33-128 / 129-1024
+/ larger), chosen so no bucket boundary is diagnostic of a common PII width.
+Keep the exact value out of every output path, as the contract already does for
+the value itself. Extend the distinctive-marker fixture to assert that no exact
+length of a planted value appears in any output.
+
+**Secondary, same class:** `principal_labels` are adopter-supplied policy
+strings and nothing constrains them. An adopter may reasonably write
+`["alice@corp.com", "bob@corp.com"]`, which puts identifiers into every finding
+*and* into the committed, lockfile-covered policy. The schema should require
+non-identifying labels — a bounded token pattern would do — and the module
+doctrine should say why.
+
+**Everything else stands.** I found nothing else in the minimization contract,
+and the residual it declares — that this protects report handling, not live
+process memory against a debugger or core dump — is correctly stated and
+correctly bounded.
+
+**Scope:** I did not evaluate the policy schema, the OpenAPI comparison, the
+hosting expectation matrices, or the loopback fixture design.

@@ -500,3 +500,48 @@ narrows how a child enters and binds to the aggregate without pretending the
 parent is a sandbox. It returns for focused confirmation that the admission
 rule and NOT_APPLICABLE semantics address E1/E2 without creating a second
 capability review inside the dispatcher.
+
+## External Security Review -- Claude -- 2026-08-03
+
+**Model**: Claude Opus 5
+**Tier**: External (different agent type), security lens
+**Reviewed**: the proposal, the Gemini Flash External review, the author
+response, and the revision, against the two capability proposals that depend on
+this contract.
+
+**Disposition: NO BLOCKING FINDINGS.**
+
+**What makes this contract sound.** The dispatcher's authority is *narrowing*
+only. Three properties carry that:
+
+* **A closed registry of evidence modes.** A child registered `offline` cannot
+  return `loopback` evidence or the reverse, and no result from a deployed,
+  credentialed, active, arbitrary or unknown mode is **representable** in the
+  registry. That is a structural exclusion rather than a validation rule, which
+  is the right shape: the agent-facing dispatcher cannot be induced to carry a
+  credentialed result because there is no field for one.
+* **Parent aggregation cannot strengthen a child.** "Parent aggregation does not
+  strengthen `offline`, `loopback`, or CLEAN beyond what the accepted child
+  contract established." This is the property that stops a dispatcher from
+  becoming a laundering layer — the failure mode where three INCOMPLETE legs
+  become one CLEAN summary.
+* **CLEAN requires an admitted contract**, not merely a zero exit: registry
+  presence, mapping-group and digest validation, bounded completion, and
+  agreement between process exit and result schema. A child that exits 0 without
+  a conforming result cannot contribute CLEAN.
+
+**On the split.** Separating this from the capability proposals was the right
+call and the dependency direction is correct: accepting activation alone is
+harmless (a dispatcher with nothing applicable reports `NOT APPLICABLE`, exit 0),
+while the reverse cannot occur. The Decision ordering — activation first — should
+be honoured because the capabilities' invocation contract is defined here.
+
+**One observation, not a finding.** This artifact is the root of a three-proposal
+dependency and is the one an adopter's `AGENTS.md` will carry. Its own review
+history is a single External round plus this one; the two capability proposals
+each took three. That asymmetry is defensible — this contract is much smaller and
+strictly narrowing — but it is worth the Maintainer knowing that the most widely
+installed of the three has had the least adversarial attention.
+
+**Scope:** I did not evaluate the registry schema in detail, the lockfile
+digest mechanism, preset expansion, or the `AGENTS.md` merge slot mechanics.
