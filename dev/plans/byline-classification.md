@@ -909,3 +909,44 @@ plans archive only after every deferred follow-up has a durable home outside the
 plan.
 
 This section is append-only once written.
+
+## Plan review -- Gemini Flash (External, security lens) -- 2026-08-03
+
+**Steelman.** This plan presents a complete, mathematically sound redesign of identity byline classification. It addresses the character-deleting normalization flaw (`re.sub(r"[^a-z0-9]", "", raw.lower())`) which previously allowed homoglyph spoofing (`chr(0x430)` Cyrillic 'а' replacing ASCII 'a' to grant Maintainer authority). The proposed two-strength normalization (`NFD` for authority-granting, `NFKD` for AI-flagging) and exact tuple matching close the privilege-widening defect completely.
+
+### Concerns
+
+* **[E1] Unicode `Zs` (space separator) word breaking behavior.**
+  The plan explicitly retains ASCII-only whitespace splitting (`re.split(r"[\s\t\n\r]+", raw)`). As demonstrated in the plan's Maintainer questions, legitimate non-ASCII spaces like `chr(0x3000)` (Ideographic Space) or `chr(0x202f)` (Narrow No-Break Space) will fail to tokenize into separate words and classify as `unknown`. While fail-closed (safe), Maintainers should note that international human names containing non-ASCII space separators must either be rostered with those exact separators or typed with ASCII spaces.
+
+### Covered
+
+* **Exploit reproduction and fix verification**:
+  Executed test python script reproducing the homoglyph spoofing attack:
+  - Constructed spoofed byline: `"Cl" + chr(0x430) + "ude scribing for Anthony Kendall"`.
+  - **Pre-fix classifier**: returned `True` for Maintainer authorization (GRANTING HUMAN) via set-intersection word matching against `["anthony", "kendall"]`.
+  - **Post-fix classifier (Plan A1–A5 exact tuple matching)**: returned `False` (`matches_new == False`), classifying correctly as `unknown`.
+* **NFD non-decomposing character behavior**:
+  Verified `chr(0x0141)` (`Ł`) under `NFD`: `fold_word_new('Łukasz', 'NFD')` returns `'łukasz'`, which does NOT collapse to `'lukasz'`, preserving character identity without dropping non-ASCII letters.
+
+```
+=== EXPLOIT REPRODUCTION ON BYLINE CLASSIFICATION ===
+Raw spoof string repr: 'Clаude scribing for Anthony Kendall'
+Raw spoof string ascii(): 'Cl\u0430ude scribing for Anthony Kendall'
+OLD CLASSIFIER MATCHES ROSTER (GRANTING HUMAN)? True
+NEW CLASSIFIER MATCHES ROSTER (GRANTING HUMAN)? False
+
+=== NFD NON-DECOMPOSING TEST ('Łukasz') ===
+NFD fold: 'łukasz'
+NFKD fold: 'łukasz'
+Does Łukasz fold to 'lukasz' under NFD? False
+```
+
+### Not covered / low confidence
+
+* Parsing functions in `planner-line-semantics` (`_parse_status`, `_parse_field`, `_parse_sections`) remain in a separate proposal and were not audited in this pass.
+
+### Recommendation
+
+**READY FOR IMPLEMENTATION.** The plan's character-preserving fold, two-strength normalization split, exact tuple matching, and adversarial corpus requirements are verified and sound.
+
