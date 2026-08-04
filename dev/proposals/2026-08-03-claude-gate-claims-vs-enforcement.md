@@ -5,7 +5,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: reviewed
+**Status**: accepted
 **Touches**: `bootstrap/SAFETY.md`, `bootstrap/DEPENDENCY_BUDGET.md`,
 `bootstrap/container/recipe.md`, `bootstrap/container/floor-gate.sh`,
 `bootstrap/fidelity-check.md`,
@@ -1264,3 +1264,46 @@ them.
 strengthening of a disposition the proposal already recorded; it changes no
 row, no scope fence, and no `Touches` line. Status stays `proposed`; this
 response makes the artifact Decision-ready.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-03
+
+**ACCEPTED.** Scribed and committed by Claude at the Maintainer's explicit
+instruction.
+
+**Maintainer's authorization, quoted verbatim:**
+
+> I accept this proposal as revised.
+
+**Scribe's note on the quoted words, kept separate from them.** This artifact
+carries **no** `## Revised proposal` section — the lifecycle here ran
+open -> append (two further rows from a later audit) -> Internal review ->
+author Response. Nothing was revised, and nothing needed to be: the review
+returned SHIP and its single concern was dispositioned in the Response rather
+than by amending the proposal. The accepted state is therefore the proposal as
+opened, **plus** the two appended rows, **plus** the Response's binding below.
+Recorded so a later reader does not go looking for a revision that does not
+exist.
+
+**What is accepted.** The governing rule, the 12-row enforcement ledger, and the
+deferred frozen-file handling — all verified row by row by the reviewer.
+
+**Accepting this fixes none of the 12 rows.** It establishes what is true and
+who owns each. Row E1's remedy lives in `release-authenticity`.
+
+**The binding that carries forward.** Row E1 hands `bootstrap/PROVENANCE.md`'s
+release-tag signing claim to `release-authenticity`. Per the Response, the
+fallback is an **archive precondition of this proposal**, not prose:
+
+> This proposal does not archive while `bootstrap/PROVENANCE.md` asserts
+> verified release-tag signing that no shipped checker performs. Either
+> `release-authenticity` lands the verification, or the sentence is downgraded
+> to describe what is actually checked.
+
+**Review tier discharged.** Required `required(Internal)`; received **Gemini
+Flash, Internal fresh-context** — a different agent type, which exceeds the
+Internal floor rather than merely meeting it. Verdict SHIP.
+
+**Next transition:** plan-open. The plan carries `required(Internal)` in its own
+right; this Decision does not discharge it.
+
+**Decision-only commit.** Status flip and this section, nothing else.
