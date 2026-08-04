@@ -715,10 +715,48 @@ public:
   polish, not blockers.
 * **0.5+** — per-project efficacy-data infrastructure and beyond.
 
-**Public-launch sequence** (deferred to 0.4+; Maintainer-gated, in order):
-eyeball-check the private mirror renders cleanly → flip the repo to public +
-set the template-repo flag (the actual "ship it" moment; explicit go-ahead
-required) → enable Zenodo integration → tag `v0.4.0` and push (triggers
-Zenodo deposition → DOI) → commit the issued DOI into `CITATION.cff` →
-archive the `cairn_methodology_repo` construction plan via lasting-truth
-migration.
+**Public-launch sequence** (deferred to 0.4+; Maintainer-gated, in order).
+**Revised 2026-08-04** to carry plan `release-authenticity`'s Chunk M, which is
+Maintainer-only and was not performed by the implementing agent. The previous
+ordering is preserved below under *What changed and why*, because following it
+would have failed this scope's own acceptance check.
+
+1. Eyeball-check the private mirror renders cleanly.
+2. **Publish the signing key's fingerprint on the named channels.** This
+   creates the trust root and **must precede the tag**, so the tag is
+   verifiable the moment it exists. Includes confirming the forge actually
+   serves SSH **signing** keys (not authentication keys) at a stable public
+   endpoint for this account — `bootstrap/PROVENANCE.md` records this as **"not
+   established, as_of 2026-08-03"** and names it the fact the scope most
+   expects to be corrected. If it is false, ORCID is promoted to primary and a
+   third channel is added; the procedure is unchanged, only the table.
+3. Flip the repo to public + set the template-repo flag (the actual "ship it"
+   moment; explicit go-ahead required).
+4. **Tag `v0.4.0` with `git tag -s`** — signed, **not** `-a`.
+5. **Run the bootstrap block cold against the pushed tag**, from a machine and
+   a roster that did not come from the repository. **This is the acceptance
+   check for the whole `release-authenticity` scope**: if it does not pass
+   here, nothing in that plan's Chunks A–G established the control.
+6. **Only then** enable Zenodo integration and let deposition proceed → DOI.
+7. Commit the issued DOI into `CITATION.cff`.
+8. Archive the `cairn_methodology_repo` construction plan via lasting-truth
+   migration.
+
+**What changed and why.** The prior sequence read *"enable Zenodo integration →
+tag `v0.4.0` and push (triggers Zenodo deposition → DOI)"*. Because deposition
+fires automatically on the tag push, enabling Zenodo before the tag leaves **no
+window** for step 5's cold run — the acceptance check would land after an
+immutable version record already existed. Steps 5 and 6 are therefore swapped
+relative to the old ordering, and steps 2 and 4 are new. The old sequence also
+did not specify `-s`, so it would have produced an **unsigned** tag that the
+whole scope exists to make verifiable.
+
+**If the launch reaches step 4 before step 2 is done, HOLD the tag** rather
+than shipping an unsigned one and fixing it later. A Zenodo version record is
+immutable once published and a methods-section citation is not recallable.
+
+**Archive note.** Plan `release-authenticity` **cannot archive until step 5
+passes.** Its control is *documented and tested but not established* — no
+fingerprint is published, no signed tag exists, and no network-side fact has
+been checked. Homing Chunk M here gives it a durable home; it does not make the
+plan complete.
