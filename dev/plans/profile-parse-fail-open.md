@@ -1240,3 +1240,92 @@ to answer and nothing in this Response answers it. What this Response does add i
 one fact bearing on it, offered as evidence and not as an answer: the totality
 claim is, as of now, affirmed but unchecked.
 
+
+## Maintainer amendment 2026-08-03 -- the sole runtime parser, folded in
+
+**Authorization, quoted verbatim:**
+
+> Let's reopen the other plan and supersede this proposal into.
+
+Scribed by Claude on the Maintainer's instruction. `yaml-parser-divergence` is
+**superseded** into this plan (Decision `fdf7e53`, archived `9c95653`). Two
+things fold in; everything else in that proposal was either already owned here
+or found wrong on review.
+
+### Amendment 1 -- the PyYAML runtime branch is removed
+
+The accepted design retained **both** runtime parsers behind one pre-validated
+grammar. This amendment makes the in-tree recognizer the **sole runtime parser**
+and demotes PyYAML to a **test-only oracle**.
+
+The defect that motivates it is parser *selection*, not parser *behaviour*:
+`config.py:33-43` picks an implementation from whatever happens to be importable,
+so an adopter's install depends on an unrelated package being present. Cairn's
+runtime contract is zero adopter dependencies, so the typical adopter takes the
+in-tree path while Cairn's own canonical environment (PyYAML 6.0.3) takes
+`safe_load` — the path most adopters run is the path Cairn least exercises, and
+the `except ImportError` branch carries `# pragma: no cover`.
+
+The External reviewer (Codex) reached the same conclusion independently:
+
+> on security grounds I prefer it to retaining two runtime execution paths after
+> both have been restricted to the same grammar
+
+with the caveat this amendment adopts in full — one runtime parser closes the
+*selection* defect but **not** the fail-open defect; it is a genuine closure only
+alongside this plan's closed grammar, the control-character rule below, and
+public-path tests. Without those it merely makes the fallback's mistakes
+universal.
+
+**Consequence for this plan's equality invariant.** The accepted contract —
+`load_config` either returns a value equal to `yaml.safe_load`'s or raises — is
+unchanged as a *specification*, but its status changes: with one runtime parser
+it is verified against an oracle in tests rather than held by two implementations
+at runtime. The reviewer's note that runtime equality "remains a finite-test
+claim" applies to the oracle, and the plan should say so where it states the
+invariant.
+
+### Amendment 2 -- BOM and C0/C1 control characters refuse
+
+Added to the closed L1-L8 grammar. Executed evidence from the review:
+
+* a BOM-prefixed `project_name` becomes a **different key**;
+* `project_name: a: b` is accepted where `safe_load` refuses;
+* **NUL, ESC and backspace** are accepted inside `project_name`, where
+  `safe_load` raises `ReaderError`.
+
+`project_name` is rendered into the generated adopter tree **and** printed by
+`--summary`, so control-character acceptance is a security requirement, not a
+tidiness one. The grammar must define membership rather than enumerate
+refusals — the superseded proposal named four rejected shapes and called that a
+boundary, which finding **[E2]** correctly rejected.
+
+### What this amendment does NOT introduce
+
+* **No new dev dependency.** The superseded proposal claimed Hypothesis and
+  PyYAML held "the same standing as `pytest` and `vermin`" in the ledger.
+  Verified false: `bootstrap/requirements-dev.txt` declares `vermin` only,
+  `bootstrap/DEPENDENCY_BUDGET.md` mentions Hypothesis zero times, and `pytest`
+  is not in the ledger at all. Generate the closed grammar with the standard
+  library, and make an absent PyYAML oracle an explicit **non-green** condition
+  rather than a skipped test.
+* **No change to the AST re-anchor procedure.** This plan's existing Chunk M
+  accounting stands. The superseded proposal cited
+  `bootstrap/REANCHOR_RUNBOOK.md`, inheriting the broken pointer at
+  `AGENTS.md:337` that this plan already documents and that is tracked as
+  deferred Maintainer question 4.
+
+### Review status -- this does not add a ceremony
+
+The amendment changes an accepted design, which would ordinarily require a
+focused External re-review. It does not here, because **this plan's own required
+External security-lens review has not yet landed**: the `## Plan review` heading
+carries the brief and explicitly states that implementation does not start until
+a review lands under it. The amended design is therefore simply part of what that
+pending review covers.
+
+**The pre-recorded AST transaction accounting must be re-derived before Chunk M.**
+Amendment 1 removes a runtime branch from `config.py`, so the falsifiable
+"exactly 2 CHANGED" target recorded for `_minimal_yaml_parse` and `load_config`
+may no longer hold. Re-measure against the committed baseline; do not carry the
+old figure forward.
