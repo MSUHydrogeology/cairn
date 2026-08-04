@@ -307,3 +307,96 @@ Cairn's runtime, and it is *not* a licence to ship a module whose name promises
 more than its mechanism delivers. If the selection promises comprehensive Python
 security, the module either delivers it on the adopter's real environment or
 says — at selection, and in the exit code — exactly where it stops.
+
+## Amendment 2 (2026-08-03) — 100% *scanned* is unreachable; 100% *accounted for* is the contract
+
+**Maintainer question:**
+
+> Is there no way for us to get to 100% coverage?
+
+**No — not 100% scanned.** And amendment 1's rule is defective as written, which
+this question exposed. Correcting it here rather than letting the plan inherit
+it.
+
+### Why 100% scanned is unreachable
+
+conda-meta metadata is better than expected: records carry the **upstream**
+version, which is what advisory databases index — `openssl 3.6.2`,
+`krb5 1.22.2`, `libcurl 8.19.0`, `freetype 2.14.3`. Mapping is therefore
+tractable, not hopeless. Four obstacles remain, and none is closable by effort:
+
+1. **Build-level patching breaks version matching in both directions.**
+   `openssl 3.6.2` build `hd24854e_0` — conda-forge can carry a security patch
+   without bumping the upstream version. Matching on version alone reports CVEs
+   the build already fixed (false positive); a rebuild that did *not* patch is
+   indistinguishable (false negative). The build string carries no patch
+   manifest.
+2. **No canonical name → CPE mapping.** Native advisories are indexed by CPE
+   (`libcurl` → `cpe:2.3:a:haxx:curl`, `krb5` → `cpe:2.3:a:mit:kerberos`).
+   conda names diverge from CPE product names and no authoritative table exists.
+3. **Vendored and statically-linked code.** A package may bundle a vulnerable
+   library with no separate record in any inventory. This is the general SBOM
+   completeness problem and it does not have a local solution.
+4. **No conda-forge advisory feed** mapping its packages to CVEs — stated as
+   author understanding, **not verified**, and the plan must confirm it rather
+   than inherit it.
+
+### The defect in amendment 1
+
+Amendment 1 offered two states — coverage *established* → CLEAN, coverage *not
+established or partial* → INCOMPLETE. Given obstacles 1–4, coverage is
+permanently partial, so that rule yields **permanent INCOMPLETE** — which the
+same amendment identified (via **PS4**) as the failure mode that trains operators
+to stop reading the gate. The rule contradicted its own stated condition that
+"INCOMPLETE is acceptable only while it is closable."
+
+The error was treating *unknown* and *unknowable* as one category. They are not,
+and Cairn already distinguishes them everywhere else: the evidence stage's
+non-containment and the key-holder-not-process limit are **declared residuals**,
+not INCOMPLETE states.
+
+### The corrected rule — three dispositions per package
+
+Every enumerated package resolves to exactly one:
+
+| Disposition | Meaning |
+|---|---|
+| **SCANNED** | resolved to an advisory source and checked |
+| **NO-ADVISORY-SOURCE** | enumerated, lookup attempted, and no advisory source exists for it — a **declared residual** |
+| **UNKNOWN** | not enumerated, or lookup not attempted |
+
+**CLEAN requires: zero UNKNOWN, and the NO-ADVISORY-SOURCE set enumerated and
+within the reviewed residual.** Findings still dominate; unsafe/failed still
+dominates both.
+
+The target is therefore **100% accounted for**, not 100% scanned:
+
+* today — 244 scanned, **147 UNKNOWN** (unenumerated, uncharacterised);
+* achievable — 391 accounted for, with each unresolvable package **named**.
+
+That is a real improvement and an honest ceiling. What it removes is not the
+residual but the *invisibility* of the residual.
+
+### The residual must be diffable, or it becomes a blob
+
+A named residual decays into a blanket exemption the moment it stops being
+reviewed. So the residual set is **recorded and compared run over run**: a newly
+unresolvable package is a **delta that surfaces**, not a silent addition to an
+existing exemption. A residual that grows without anyone noticing is
+indistinguishable from no control — the same lesson the archived
+`gate-reanchor-preflight` record states as *a control that is present is not a
+control that is reached*.
+
+### What the plan must decide, on evidence
+
+* whether any candidate mechanism resolves the native layer, and at what
+  measured rate against these 391 packages;
+* whether build-level patch divergence makes version matching produce
+  false positives at a rate that would train operators to ignore findings —
+  which would be a worse outcome than the current gap;
+* the initial residual set, reviewed and recorded, and what governs adding to it.
+
+**If the measured NO-ADVISORY-SOURCE set turns out to be most of the native
+layer**, the honest conclusion is amendment 1's fallback: shrink the module's
+declared scope and say so at selection. This amendment makes CLEAN *reachable*;
+it does not assume the measurement will be favourable.
