@@ -242,3 +242,33 @@ The implementation is wrong if a project file can add or steer a child, a
 deployed route or credential lookup becomes reachable from the dispatcher,
 raw child output reaches the terminal, selection can be CLEAN without running
 its applicable local leg, or installation claims evidence it did not gather.
+
+## Review -- Gemini Flash (External, security lens) -- 2026-08-03
+
+**Steelman.** This proposal cleanly resolves the architectural security defect identified in review AW3 by separating local, offline evidence collection from credentialed, deployed operations. By introducing a default-on local dispatcher (`run_security_verification.py`) governed by a fixed source-owned registry, strict environment sanitization (stripping credential and proxy variables), `shell=False` execution, and a 4-tier aggregate exit contract (0 CLEAN, 5 INCOMPLETE, 10 FINDINGS, 20 DEGRADED/TAMPER), it establishes a safe, predictable trusted-checkout verification habit for adopters without exposing remote endpoints or ambient credentials.
+
+### Concerns
+
+* **[E1] Structural reliance on child runner network/credential safety.**
+  Although the dispatcher strips credential-bearing environment variables and enforces `shell=False` with fixed argument vectors, it cannot independently prevent a child script from attempting network I/O if the child itself is flawed. Child modules registered in the fixed registry (e.g., from `portable-security-sweeps`) must maintain strict loopback/offline guarantees verified at their own boundary.
+* **[E2] Universal default-on installation footprint.**
+  Making `security-verification` a default-on module adds dispatcher scripts and `AGENTS.md` rules to every adopter tree, including minimal presets. The proposal handles this appropriately by ensuring zero-capability runs complete cheaply without reporting false security claims.
+
+### Covered
+
+* **Claim-check Verification**:
+  - `claim_check.py`: verified clean output on `dev/proposals/2026-08-03-codex-security-verification-activation.md`.
+
+```
+$ ~/conda_envs/lhm/bin/python scripts/claim_check.py dev/proposals/2026-08-03-codex-security-verification-activation.md
+claim_check: dev/proposals/2026-08-03-codex-security-verification-activation.md -- OK, no claim-check flags.
+```
+
+### Not covered / low confidence
+
+* Subprocess isolation and aggregate exit precedence behavior will be verified when `bootstrap/tests/test_security_verification.py` is implemented.
+
+### Recommendation
+
+**SHIP.** The proposal's separation of local dispatcher routes from deployed actions, fixed registry model, and aggregate exit contract are structurally sound and resolve prior security review concerns.
+
