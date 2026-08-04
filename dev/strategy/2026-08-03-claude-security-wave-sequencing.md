@@ -117,3 +117,61 @@ measured against.
   owes four follow-ups a durable home, `byline-classification` waits on three
   Maintainer questions, and `release-authenticity` cannot archive until its
   Chunk M runs.
+
+---
+
+## Revision 2026-08-04 — what actually happened, and the collisions this note missed
+
+Appended rather than rewritten: the note above was accurate when written and
+is kept so the drift is visible.
+
+**Waves 2 and 3 landed.** `fork-advisory-semantics` (`9bd6752`) and
+`profile-parse-fail-open` (`e7394cb`) shipped sequentially as planned, and
+**Ceremony 1** — the batched AST re-anchor — was run by the Maintainer and
+recorded at `3852cf7`: 5 CHANGED, 1 MISSING (`Try`), baseline 174 → 173. The
+union was formed from two **per-plan isolated** measurements, which is the part
+worth carrying forward: a shared-tree measurement shows the union and cannot be
+attributed, and one earlier attempt was contaminated by a sibling's hunk and had
+to be retaken. `gate-claims-vs-enforcement` landed as five chunk commits
+(`8d23afe`…`84fbef4`).
+
+**Two collisions this note did not predict.**
+
+1. **`dev/.cairn/cairn-lock.yml` is a shared surface, and it is *generated*.**
+   `stage-commit-patterns` Chunk C and `planner-line-semantics` B4 both write
+   it — the former by `upgrade --finalize`, which regenerates the file. Two
+   concurrent runs do not merge, they clobber, and the loser's finalize is
+   silently invalid. The collision map above tracks *principal* surfaces and
+   missed it because neither plan's headline surface is the lockfile.
+   **Lesson: a generated shared file is a harder collision than an edited one**,
+   because the damage is invisible in a diff. Sequenced 2026-08-04:
+   `stage-commit-patterns` first, `planner-line-semantics` behind it.
+2. **The `_scaffold/config.py` cluster is five scopes, not two** —
+   `profile-parse-fail-open`, `default-security-stance`, and the three Codex
+   module-registration scopes (`api-web-security-modules`,
+   `portable-security-sweeps`, `security-verification-activation`). The note's
+   "five real collisions" list understated the fan-in on this one file.
+
+**Two scopes exist that this note predates**, neither in any wave:
+
+* **`review-gate-enforcement`** (proposal accepted `eb1b2b7`, plan open
+  `8dfb664`) — the review-before-implement gate clears on the *presence* of a
+  section, tier-blind. Surface: `tools/lifecycle_planner.py` + twin,
+  `doctrine/plans.md`, both plan templates, the planner scaffold. **Collides
+  with `planner-line-semantics`** on the same module and twin, so it sequences
+  after it. Not startable yet: its own Response requires a settled record
+  schema and a second External round first.
+* **Class C** — six `upgrade`-family commands that write into an adopter tree
+  without the `_assert_safe_write` containment guard. Assigned to
+  `fork-advisory-semantics` by Maintainer ruling `a429530`, landing as
+  additional chunks **after** that plan's current chunks commit. It touches
+  `_scaffold/upgrade.py`, so it re-opens the Wave 2 surface and will need its
+  own AST re-anchor accounting.
+
+**Wave 4's open question is settled.** `separator-detection` is **accepted**, so
+it batches with `content-scan-detectors` as one scope on the scanner and
+Ceremony 2 is paid once — the avoidable cost this note flagged.
+
+**Still true, and the note's most useful line:** `transition-lint` creates only
+new files and collides with nothing by construction. It was startable at any
+point and was started last, on 2026-08-04.
