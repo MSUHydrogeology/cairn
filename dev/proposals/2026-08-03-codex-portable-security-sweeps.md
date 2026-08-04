@@ -5,7 +5,7 @@
 **Author**: Codex (Strategy, from the Security Review role)
 **Model**: OpenAI Codex (GPT-5)
 **Date opened**: 2026-08-03
-**Status**: proposed
+**Status**: reviewed
 **Touches**: `bootstrap/_scaffold/config.py` (module registration only), the
 team-gated module catalog under `templates/modules/team-gated/`,
 `bootstrap/DEPENDENCY_BUDGET.md`, `bootstrap/SAFETY.md`, adopter tool-use
@@ -406,3 +406,172 @@ as proof.
 * The implementation requires a runtime Python package. Recovery: reject the
   design; the orchestrator must remain standard-library-only even though the
   optional scanners are external dev/CI tools.
+
+## External Security Review -- Claude -- 2026-08-03
+
+**Model**: Claude Opus 5
+**Tier**: External (different agent type -- the proposal is Codex-authored), security lens
+**Reviewed**: the proposal text at `1af0441`, against `templates/modules/team-gated/run_security_audit.py`,
+`bootstrap/DEPENDENCY_BUDGET.md`, and the installed module layout.
+
+**Disposition: REVISE.** The contract is sound and the design resists the
+failure I most expected -- it does not become a generic command runner. Two
+findings are blocking, and I recommend a narrower v1 than proposed.
+
+**What I checked rather than accepted.** The aggregate exit space is real:
+`_AGG_INCOMPLETE = 5`, `_AGG_FINDINGS = 10`, `_AGG_DEGRADED = 20`
+(`run_security_audit.py:76-78`), so reusing it is accurate. `templates/modules/team-gated/`
+is the right home. The claim that Bandit-derived Ruff `S` rules are not an
+independent second layer is correct.
+
+**Credit where due**, since a review that only lists faults misrepresents the
+artifact: the question-oriented adapter boundary is the right abstraction; the
+closed registry with no executable paths, argv, or shell fragments in policy is
+the control that keeps this from becoming a shell runner; `20 > 10 > 5 > 0` with
+"a missing executable is never clean" is fail-closed in the right direction;
+deferring Semgrep because a remote registry would make the gate's meaning
+mutable is the correct call and correctly reasoned.
+
+### [PS1] HIGH / BLOCKING -- the executable trust model is a new class, not a match for `python-security`
+
+§3 opens "This remains a **self-audit of a trusted checkout, matching
+`python-security`**". That understates a real delta, and a reviewer skimming §3
+would take the wrong picture.
+
+The existing module **never executes a host binary.** `_run_tool`'s contract is
+explicit: "``argv`` MUST begin ``[sys.executable, "-I", "-m", ...]``"
+(`run_security_audit.py:271`). Tools run as Python modules under the *pinned
+canonical interpreter in isolated mode*, and `shutil.which("bandit")` /
+`shutil.which("pip-audit")` appear only as **presence detection**
+(`:333`, `:407`), never as execution authority.
+
+This proposal executes four arbitrary host binaries resolved from `PATH`. That
+is unavoidable -- there is no `python -m gitleaks` -- but it is the first time
+`PATH` resolution becomes executable authority in this module family, and it
+adds four executable trust roots where there were zero.
+
+The proposal does say "the host-installed scanner is a declared executable trust
+root", which is honest. The framing around it is not. **Satisfier:** state the
+delta explicitly in §3, and enumerate the four binaries in the module's residual
+trust set the way `bootstrap/REANCHOR_RUNBOOK.md` now enumerates
+`/usr/bin/ssh-keygen` -- a named list a reader can audit, not a general
+assurance.
+
+### [PS2] HIGH / BLOCKING -- the ambient-config boundary is asserted per tool and established for none
+
+§4: "A tool-specific ambient configuration discovered in the target repository is
+either disabled by argv or causes a refusal if the tool offers no reliable
+disable switch."
+
+The whole candidate-configuration boundary rests on a per-tool fact the proposal
+never establishes. Does Gitleaks have a flag that ignores an in-repo
+`.gitleaks.toml`? Does Trivy ignore an in-repo `trivy.yaml` **and** avoid
+fetching its policy bundle? Does zizmor ignore repository config? Each is
+plausible and none is demonstrated.
+
+This repository has just spent six review rounds discovering that per-tool and
+per-shell facts do not match their documentation -- `/bin/zsh` sources
+`$HOME/.zshenv` under `env -i` with a recorded `HOME`, which no amount of
+reading "non-interactive shells skip startup files" would have surfaced. An
+unestablished per-tool claim at a trust boundary is precisely that shape.
+
+**Satisfier:** before Decision, execute each candidate adapter against a fixture
+carrying a hostile ambient config, and record the observed behaviour and the
+exact flag that suppressed it. Where no reliable switch exists, drop that
+adapter -- which is already the proposal's own recovery under *Signals the change
+is wrong*, so this asks it to apply its own rule before shipping rather than
+after.
+
+### [PS3] MEDIUM -- adapter output is candidate-controlled and rendered unsanitized
+
+`_run_tool` prints `proc.stdout` and `proc.stderr` straight through
+(`run_security_audit.py:283-286`). Scanner output embeds repository-controlled
+content: matched filenames, matched lines, workflow fragments. A filename
+carrying ANSI escapes, or a newline followed by forged status text, can forge
+report lines in the operator's terminal -- and this report is the operator's
+evidence for a security decision.
+
+The proposal validates control characters in **policy** (§2) and says nothing
+about **output**. Cairn already ships injection apparatus (`content_scan.py`)
+whose entire premise is that displayed content can carry instructions; the same
+premise applies to a security report assembled from candidate-controlled strings.
+
+**Satisfier:** render only parsed structured fields with control characters
+stripped, or escape adapter output before display; add a fixture with a
+hostile filename and assert the report cannot be forged. Note this is a latent
+defect in the **existing** module too, not only the proposed one.
+
+### [PS4] MEDIUM -- INCOMPLETE becomes the default steady state, and the proposal should own that
+
+`run_pip_audit_pass` returns `_AGG_INCOMPLETE` whenever egress is off
+(`:397-406`), and egress is off by default. So an unconfigured `python-security`
+run **already can never be CLEAN**. That is defensible for one pass.
+
+The portable module inherits the property and multiplies it: OSV-Scanner needs
+advisory data, and Trivy's misconfiguration scanner fetches policy bundles. With
+four adapters, aggregate `5` becomes the normal outcome for a correctly
+configured repository. A gate whose usual result is INCOMPLETE trains its
+operator to stop distinguishing `5` from `0` -- which is the exact signal the
+exit contract exists to carry.
+
+**Satisfier:** decide it explicitly rather than inheriting it. Either support
+local advisory/policy data so `0` is reachable offline, or state plainly in the
+adopter documentation that `5` is the expected default and `0` requires
+`--allow-network`. Do not leave the operator to infer which of the two Cairn
+means.
+
+### [PS5] MEDIUM -- scope, measured against the standing direction
+
+The proposal flags Cairn's standing "fix defects, build nothing new" direction
+and proceeds anyway. That is the right disclosure and I do not think the
+proposal is wrong to exist -- but the size deserves a Decision, not an
+assumption.
+
+As written, v1 is three shipped files, a versioned policy schema, four
+executable trust roots, and roughly forty enumerated required tests, opened
+alongside ~10 other in-flight proposals. The security-review cost is not one
+review: each adapter carries its own ambient-config surface (PS2), output-parsing
+surface (PS3), and version-drift surface that the proposal names under *Signals*.
+
+**Recommendation -- accept the contract, ship one adapter.** Take the
+question-oriented boundary, the aggregate semantics, and the strict policy schema
+as the reviewed contract, and implement **Gitleaks alone** in v1. It is the
+strongest first adapter on this specific evidence: secrets are the
+highest-consequence finding class, and it needs no advisory database, so `0`
+is reachable offline and PS4 does not bite. Each further adapter then arrives as
+its own reviewed increment with its PS2 evidence attached.
+
+### [PS6] LOW -- a note on the quoted authorization, not a challenge to it
+
+The proposal's Context quotes the Maintainer asking a two-part question. The
+first part matches what I received in my own channel verbatim; the second ("How
+about command line tools for those without python?") I have no way to verify
+from here, and it may well have been asked in the Codex channel.
+
+Raising it only because this repository's own scribing rule requires authorizing
+quotes to be verbatim and visually isolated *precisely so drift is visible*, and
+this quote is doing authorizing work -- it is the proposal's stated go-ahead.
+Worth a Maintainer confirmation before it hardens into the record. No suggestion
+that it is inaccurate.
+
+### [PS7] Defect surfaced in passing -- the existing runner has no timeout
+
+`_run_tool` calls `subprocess.run(argv, cwd=neutral, shell=False, env=env,
+capture_output=True, text=True)` with **no `timeout=`** (`:275-278`). A hung
+Bandit or pip-audit blocks the audit indefinitely, and a hang is
+indistinguishable from a slow scan.
+
+The proposal correctly requires a timeout for its own adapters (§3.4). That
+standard should be back-ported to `python-security`, and doing so is a **defect
+fix** that sits comfortably inside the standing direction -- unlike the new
+module, it needs no new trust roots. Worth splitting out as its own small
+proposal rather than riding this one.
+
+### Scope of this review
+
+I did not evaluate: the adapters' detection quality, OSV/Trivy/Gitleaks/zizmor
+advisory-data correctness, the install-manifest and lockfile mechanics beyond
+confirming the module layout, `default-security-stance` interaction, or the
+proposal's test list for completeness. I verified the exit-code contract, the
+`python-security` execution boundary, the output-rendering path, and the
+default-egress disposition by reading the shipped runner.
