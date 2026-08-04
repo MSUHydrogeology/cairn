@@ -91,6 +91,7 @@ import os
 import re
 import subprocess
 import sys
+import unicodedata
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -191,11 +192,32 @@ def _today() -> str:
 # human.  Both lists are config-extensible (``dev/.cairn/agent-identities.json``),
 # never a code edit.  None of this authenticates the quoted authorization --
 # the tool attests *structure*, the committing operator guarantees the quote.
+#
+# What a roster entry IS -- the config's grammar, written down here because
+# this comment is its only home:
+#
+#   * ``human_maintainers`` -- each entry is the **complete display name
+#     exactly as it appears in the byline**, never a name fragment.  Matching
+#     is whole-name and **exact** (tuple equality over folded words), so
+#     ``["Anthony Kendall"]`` recognizes the byline ``Anthony Kendall`` and
+#     nothing else.  The older fragment form ``["Anthony", "Kendall"]``
+#     recognized any byline *containing* either word -- the privilege-widening
+#     defect this grammar replaced.  Words are separated by **ASCII
+#     whitespace** and compared separator-for-separator, so a display name
+#     written with a non-ASCII space is rostered with that exact separator
+#     (or typed with ASCII spaces).
+#   * ``ai_agents`` -- each entry is a *token* matched as a **prefix** of any
+#     byline word, so a versioned agent byline still resolves to its agent.
+#
+# Both lists fold through the same functions as the byline, at the two
+# strengths ``_fold_word`` documents.  An entry that folds to nothing is
+# **dropped**, never admitted as a wildcard that would match everything.
 
-#: The built-in AI-agent identity registry (normalized, lower-cased first
-#: token of the author name).  Extended -- never replaced -- by an
-#: optional ``dev/.cairn/agent-identities.json`` (an ``ai_agents`` list),
-#: so a future vendor (or a project's renamed agent) is a data edit.
+#: The built-in AI-agent identity registry: flagging-strength tokens, each
+#: matched as a **prefix** of any word of the author name.  Extended -- never
+#: replaced -- by an optional ``dev/.cairn/agent-identities.json`` (an
+#: ``ai_agents`` list), so a future vendor (or a project's renamed agent) is a
+#: data edit.
 _AI_AGENT_REGISTRY: frozenset = frozenset({
     "codex", "claude", "gemini", "antigravity", "cursor", "copilot",
     "qwen", "aider", "devin", "gpt", "openai", "anthropic", "agent",
@@ -204,6 +226,97 @@ _AI_AGENT_REGISTRY: frozenset = frozenset({
 #: Where the optional identity-registry extension lives.
 _AGENT_IDENTITIES_REL = ("dev", ".cairn", "agent-identities.json")
 
+#: The word separator.  Deliberately an **explicit ASCII class**, not
+#: ``str.split()`` and not a ``\s`` class in a ``str`` pattern: both of those
+#: are Unicode-aware and would treat a ``Zs`` space separator (NO-BREAK
+#: SPACE, IDEOGRAPHIC SPACE, NARROW NO-BREAK SPACE, ...) as a word break.
+#: Here such a character stays *inside* its word, so it cannot act as an
+#: invisible word break, and a display name that carries one is rostered
+#: with that exact separator.  The mechanism is the requirement, not a
+#: description of it.
+_ASCII_WS_RE = re.compile(r"[ \t\n\r\f\v]+")
+
+#: The fold's **allow-set** over ASCII: the only ASCII characters a folded
+#: word keeps.  Written as an explicit set (rather than as a deletion
+#: pattern) so that the rule and the code are the same statement -- the
+#: previous ``re.sub(r"[^a-z0-9]", ...)`` named two deleted classes and
+#: silently deleted three.  Case-folding runs first, so ASCII upper-case
+#: letters survive as their lower-case selves.
+_FOLD_KEEP_ASCII = frozenset("abcdefghijklmnopqrstuvwxyz0123456789")
+
+
+def _fold_word(raw: str, form: str) -> str:
+    """Fold one display-name word to the key actually compared.
+
+    Case-fold (``str.casefold``, stronger than ``lower()``), normalize at
+    `form` on both sides of the case-fold, drop combining marks, then keep a
+    character only if it is **non-ASCII** or in ``_FOLD_KEEP_ASCII``.
+
+    `form` is ``"NFKD"`` on the flagging leg and ``"NFD"`` on the granting
+    leg; see ``_flag_words`` / ``_grant_words`` for why the two strengths
+    differ.
+
+    **Three classes are deleted, and all three are named** -- the superseded
+    rule named two of them and silently deleted the third:
+
+    1. ASCII punctuation **and symbols** (plus the ASCII space characters the
+       tokenizer has already consumed);
+    2. the **C0 control characters and DEL**, which the superseded rule
+       deleted without saying so;
+    3. **combining marks**, at whatever strength `form` decomposed to.
+
+    Over ASCII, (1) and (2) together are exactly the complement of the
+    allow-set: every ASCII character that is neither an ASCII letter nor an
+    ASCII digit.  That equality is what makes the rule and the code one
+    statement, and it is pinned by a test.
+
+    **No letter and no digit, in any script, folds to nothing.** That is the
+    invariant the accepted design turns on -- *dropping a character must
+    never widen authority* -- and it is exactly what the superseded
+    ``re.sub(r"[^a-z0-9]", "", raw.lower())`` violated: it deleted every
+    non-ASCII letter, so a confusable letter (a Cyrillic character that
+    renders identically to an ASCII one) could be *deleted into* a match on
+    the human-Maintainer allowlist.  Deleting nothing that carries identity
+    is what closes that."""
+    d = unicodedata.normalize(form, unicodedata.normalize(form, raw).casefold())
+    d = "".join(c for c in d if not unicodedata.combining(c))
+    return "".join(c for c in d
+                   if ord(c) > 0x7F or c in _FOLD_KEEP_ASCII)
+
+
+def _fold_words(name: str, form: str) -> Tuple[str, ...]:
+    """Split `name` on ASCII whitespace and fold each word at `form`.
+
+    Words that fold to nothing (a lone hyphen, a bare parenthesis) are
+    dropped, so the key of a punctuation-only name is the empty tuple."""
+    return tuple(w for w in (_fold_word(p, form)
+                             for p in _ASCII_WS_RE.split(name)) if w)
+
+
+def _flag_words(name: str) -> Tuple[str, ...]:
+    """The FLAGGING key: words folded at ``NFKD`` (compatibility).
+
+    ``NFKD`` additionally collapses presentational variants -- mathematical
+    alphanumerics, circled letters, full-width forms -- onto their plain
+    letters, so a presentational disguise of a registry entry still resolves
+    to it.  Over-folding **here** produces an over-flag: a spurious,
+    human-reviewable violation, which is the SAFE direction for a fidelity
+    scan.  Contrast ``_grant_words``, where over-folding would *grant*."""
+    return _fold_words(name, "NFKD")
+
+
+def _grant_words(name: str) -> Tuple[str, ...]:
+    """The GRANTING key: words folded at ``NFD`` (canonical only).
+
+    ``NFD`` separates a letter from its accents and does nothing else, so a
+    presentational variant of a rostered name does **not** collapse onto it.
+    Over-folding here would widen the set of strings that classify as the
+    human Maintainer -- it would *grant* authority rather than flag -- which
+    is why the granting leg is deliberately the weaker normalization.  The
+    asymmetry is the one genuinely non-obvious choice in this model, so it is
+    stated rather than left to be inferred."""
+    return _fold_words(name, "NFD")
+
 
 def _load_ai_registry(root: Path) -> frozenset:
     """Return the AI-agent registry, extended by the optional config.
@@ -211,7 +324,23 @@ def _load_ai_registry(root: Path) -> frozenset:
     The config **adds** identities; it never shrinks the built-in set, so
     a malformed or hostile config cannot reclassify a known AI agent as
     the human Maintainer.  Absent / unreadable / wrong-shape -> the
-    built-in registry unchanged (fail-safe, never a crash)."""
+    built-in registry unchanged (fail-safe, never a crash).
+
+    Config entries fold through ``_flag_words`` -- the same function a byline
+    word folds through -- so the extension mechanism is symmetric with the
+    built-ins.
+
+    **That symmetry is what creates the empty-token hazard, and the guard
+    against it is part of the same change** -- the hazard is introduced here,
+    not inherited.  The superseded loader did not fold at all
+    (``{str(t).strip().lower() for t in extra if str(t).strip()}``), and a
+    truthy ``.strip()`` guarantees a non-empty ``.lower()``, so it could not
+    emit the empty token however malformed the entry was.  Folding can:
+    ``"-"`` and ``"  .  "`` fold to nothing, and an admitted empty token is a
+    *universal prefix* -- ``"anything".startswith("")`` is ``True`` -- which
+    would classify **every** byline as AI.  The filter is therefore on the
+    **folded** value, and it lives one level down in ``_fold_words``, which
+    drops a word that folds to nothing."""
     path = root.joinpath(*_AGENT_IDENTITIES_REL)
     if not path.is_file():
         return _AI_AGENT_REGISTRY
@@ -222,63 +351,59 @@ def _load_ai_registry(root: Path) -> frozenset:
     extra = data.get("ai_agents") if isinstance(data, dict) else None
     if not isinstance(extra, list):
         return _AI_AGENT_REGISTRY
-    tokens = {str(t).strip().lower() for t in extra if str(t).strip()}
+    # The folded-value filter lives in ``_fold_words``, which drops a word
+    # that folds to nothing -- so an entry of ``"-"`` contributes no token at
+    # all rather than the empty-string universal prefix.
+    tokens = {tok for t in extra for tok in _flag_words(str(t))}
     return _AI_AGENT_REGISTRY | tokens
 
 
 def _identity_token(name: str) -> str:
     """Normalize an author display name to its classification token.
 
-    The first whitespace token, lower-cased (``Antigravity (External
-    Reviewer)`` -> ``antigravity``; ``Claude Opus`` -> ``claude``).  This
-    preserves the *real* identity rather than collapsing it to a
-    closed enum."""
-    first = name.strip().split()[0] if name.strip() else ""
-    return re.sub(r"[^a-z0-9]", "", first.lower())
-
-
-def _ai_candidate_tokens(name: str) -> List[str]:
-    """All classification candidates from a display name: every whitespace
-    token, lower-cased and reduced to its alphanumeric run.
-
-    Scanning *every* token (not just the first) and matching a registry
-    entry as a **prefix** keeps a versioned or punctuated agent byline from
-    slipping through -- ``Claude-3.5`` -> ``claude35``, ``gpt-4o`` ->
-    ``gpt4o``, ``\U0001f916 Claude`` -> ``claude`` -- the exact evasions a
-    first-token exact-match would miss."""
-    out: List[str] = []
-    for raw in name.strip().split():
-        tok = re.sub(r"[^a-z0-9]", "", raw.lower())
-        if tok:
-            out.append(tok)
-    return out
+    The **first** flagging-strength word of the name (``Sage (External
+    Reviewer)`` -> ``sage``), or ``""`` for a name with no folding word.
+    This preserves the *real* identity rather than collapsing it to a closed
+    enum.  It shares ``_flag_words`` with the AI leg, so the independence
+    comparator inherits ``NFKD`` and stops deleting non-ASCII letters."""
+    words = _flag_words(name)
+    return words[0] if words else ""
 
 
 def _is_ai_agent(name: str, registry: frozenset) -> bool:
     """True if `name` matches a known AI agent (the AI leg of `IdentityModel`).
 
-    A registry token matched as a **prefix** of any name token classifies
-    the name as AI, so version/build suffixes (``claude35``, ``gpt4o``,
-    ``claudebot``) still resolve to their agent.  The match deliberately
-    **errs toward flagging**: a human whose token happens to begin with an
-    agent name is over-flagged (a spurious, human-reviewable violation --
-    the SAFE direction for a fidelity scan), but a versioned agent byline
-    is never laundered into the human residual (the unsafe direction that
-    would let an AI author a Maintainer Decision unflagged)."""
-    for tok in _ai_candidate_tokens(name):
+    A registry token matched as a **prefix** of any flagging-strength word
+    classifies the name as AI, so version/build suffixes (``agent-3.5`` ->
+    ``agent35``, ``agent-4o`` -> ``agent4o``, ``\U0001f916 Agent`` ->
+    ``agent``) still resolve to their agent -- the exact evasions a
+    first-token exact-match would miss.  The match deliberately **errs
+    toward flagging**: a human whose word happens to begin with an agent
+    name is over-flagged (a spurious, human-reviewable violation -- the SAFE
+    direction for a fidelity scan), but a versioned agent byline is never
+    laundered into the human residual (the unsafe direction that would let
+    an AI author a Maintainer Decision unflagged)."""
+    for tok in _flag_words(name):
         if any(tok.startswith(agent) for agent in registry):
             return True
     return False
 
 
 def _load_human_maintainers(root: Path) -> frozenset:
-    """Return the project's POSITIVE human-Maintainer allowlist (normalized
-    tokens) from ``dev/.cairn/agent-identities.json`` (a ``human_maintainers``
-    list). Absent / unreadable / wrong-shape -> empty (fail-closed: with no
-    configured Maintainer identity, NO byline can be confirmed human, so every
-    terminal Decision surfaces as an unrecognized-identity violation until the
-    project configures its Maintainer). This is the deliberate inverse of the
-    AI registry's fail-safe: humanity must be *proved*, never assumed."""
+    """Return the project's POSITIVE human-Maintainer allowlist from
+    ``dev/.cairn/agent-identities.json`` (a ``human_maintainers`` list), as a
+    frozenset of **granting-strength word tuples** -- one tuple per complete
+    display name. Absent / unreadable / wrong-shape -> empty (fail-closed:
+    with no configured Maintainer identity, NO byline can be confirmed human,
+    so every terminal Decision surfaces as an unrecognized-identity violation
+    until the project configures its Maintainer). This is the deliberate
+    inverse of the AI registry's fail-safe: humanity must be *proved*, never
+    assumed.
+
+    The filter is on the **folded** value, not the raw entry. A blank-entry
+    test is the wrong predicate here: under tuple equality ``() == ()`` is
+    ``True``, so a punctuation-only typo (``"-"``) admitted as the empty
+    tuple would make a punctuation-only byline the human Maintainer."""
     path = root.joinpath(*_AGENT_IDENTITIES_REL)
     if not path.is_file():
         return frozenset()
@@ -289,10 +414,8 @@ def _load_human_maintainers(root: Path) -> frozenset:
     lst = data.get("human_maintainers") if isinstance(data, dict) else None
     if not isinstance(lst, list):
         return frozenset()
-    return frozenset(
-        re.sub(r"[^a-z0-9]", "", str(t).strip().lower())
-        for t in lst if str(t).strip()
-    )
+    keys = {_grant_words(str(t)) for t in lst}
+    return frozenset(k for k in keys if k)
 
 
 class IdentityModel:
@@ -302,7 +425,13 @@ class IdentityModel:
     launder into the human residual), so the human Maintainer is a **positive
     allowlist**, never the residual. ``classify`` returns ``"ai"`` /
     ``"human"`` / ``"unknown"``; the conformance check treats ``unknown`` at a
-    terminal Decision as a structural violation, not a silent human."""
+    terminal Decision as a structural violation, not a silent human.
+
+    The human leg is **whole-name exact** -- tuple equality of the byline's
+    granting key against the roster's key set -- not containment. A byline
+    that *contains* a rostered name plus anything else no longer matches,
+    whether the "anything else" is a disguised agent name, a misspelling, or
+    a digit substitution."""
 
     def __init__(self, ai_registry: frozenset, human: frozenset) -> None:
         self.ai_registry = ai_registry
@@ -311,7 +440,7 @@ class IdentityModel:
     def classify(self, name: str) -> str:
         if _is_ai_agent(name, self.ai_registry):
             return "ai"
-        if set(_ai_candidate_tokens(name)) & self.human:
+        if _grant_words(name) in self.human:
             return "human"
         return "unknown"
 
@@ -319,6 +448,19 @@ class IdentityModel:
 def _load_identity_model(root: Path) -> IdentityModel:
     """Load the three-way identity model from the project config."""
     return IdentityModel(_load_ai_registry(root), _load_human_maintainers(root))
+
+
+def _ascii_hint(name: str) -> str:
+    """An ``ascii()``-escaped rendering of `name`, or ``""`` if it is ASCII.
+
+    ``repr()`` renders a confusable byline *indistinguishably* from the
+    honest one, because ``repr()`` of a ``str`` leaves non-ASCII characters
+    as-is.  ``ascii()`` spells the confusable out as its escape, so a reader
+    can see that two identical-looking bylines are not the same string.  A
+    flag the reader cannot interpret is half a flag."""
+    if name.isascii():
+        return ""
+    return f", non-ASCII -- escaped: {ascii(name)}"
 
 
 # --- artifact parsing --------------------------------------------------------
@@ -620,12 +762,14 @@ def _conformance_violations(art: Artifact, identity: "IdentityModel") -> List[st
                 elif cls == "unknown":
                     v.append(
                         f"'## Decision' at line {d.line_no} is authored by an "
-                        f"UNRECOGNIZED identity ({d.name!r}); a terminal Decision "
-                        "requires a KNOWN human Maintainer. Configure the project's "
-                        "Maintainer identity in dev/.cairn/agent-identities.json "
-                        "('human_maintainers') -- an unrecognized author cannot be "
-                        "confirmed human (the tool attests structure, never "
-                        "authenticity)."
+                        f"UNRECOGNIZED identity ({d.name!r}{_ascii_hint(d.name)}); "
+                        "a terminal Decision requires a KNOWN human Maintainer. "
+                        "Configure the project's Maintainer identity in "
+                        "dev/.cairn/agent-identities.json ('human_maintainers') -- "
+                        "an entry must be the COMPLETE display name exactly as it "
+                        "appears in the byline, not a name fragment. An "
+                        "unrecognized author cannot be confirmed human (the tool "
+                        "attests structure, never authenticity)."
                     )
                 # cls == "human": the byline is a recognized Maintainer. The tool
                 # still does not authenticate the quoted authorization itself --

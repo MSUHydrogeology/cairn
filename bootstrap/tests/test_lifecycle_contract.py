@@ -480,11 +480,17 @@ def _write_identity_config(repo, ai=None, humans=None):
 def test_identity_model_is_three_way_positive_human(tmp_path):
     """Known-AI / known-human (positive allowlist) / unknown -- never a residual."""
     repo = _make_repo(tmp_path)
-    _write_identity_config(repo, humans=["Anthony"])
+    # A roster entry is the COMPLETE display name as it appears in the byline
+    # (byline-classification).  The prior form of this node rostered the
+    # fragment ["Anthony"] and asserted that `classify("Anthony (Maintainer)")`
+    # was human -- the over-match defect written down as an expectation, and
+    # an input shape real parsing never produces (`_HEADER_RE` captures the
+    # role separately from the name).  Corrected to the full-name roster.
+    _write_identity_config(repo, humans=["Anthony Kendall"])
     im = planner._load_identity_model(repo)
     assert im.classify("Gemini (Maintainer)") == "ai"
     assert im.classify("Claude-3.5") == "ai"
-    assert im.classify("Anthony (Maintainer)") == "human"   # on the allowlist
+    assert im.classify("Anthony Kendall") == "human"        # on the allowlist
     assert im.classify("Sage (Maintainer)") == "unknown"    # novel agent, NOT human
     # No config at all -> no human can be confirmed (fail-closed): all non-AI unknown.
     bare_root = tmp_path / "bare"; bare_root.mkdir()

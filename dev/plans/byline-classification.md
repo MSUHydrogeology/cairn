@@ -806,6 +806,103 @@ snippets that diverged from their source) catch **drift**, not
 **absence** of new doc updates. Confirm each doc named in Acceptance
 was actually updated; the gates don't enforce that.
 
+### B1 as landed — the per-leg narrowing, recorded
+
+*Appended at implementation, 2026-08-03 — after the plan review and Response
+below, which did not see it. Nothing above or below is edited; this subsection
+only adds.*
+
+**The B1 row above says the invariant holds "at both strengths". What shipped
+does not, and until this subsection the narrowing was nowhere in the record** —
+an independent audit of the landed work surfaced the gap. The relaxation is
+factually forced and safe-direction, so the tests stay exactly as shipped; the
+defect was the record, which is precisely the failure the B1 row itself names:
+*"a test weakened at implementation to something that passes would not be the
+Decision's invariant while the record claimed it was."*
+
+**Re-measured against the landed `_fold_word`** (not against a scratch
+transcription), over the whole codespace `range(0x110000)`, with the `L*`/`N*`
+classification read from `unicodedata` — UCD **15.1.0**, canonical interpreter
+3.13.13:
+
+| leg | fold | letters/digits folding to empty |
+|---|---|---|
+| granting (`_grant_words`) | `NFD` | **0** |
+| flagging (`_flag_words`) | `NFKD` | **16** |
+
+So B1 ships as two nodes with **different strengths of claim**, and the
+difference is the thing to record:
+
+* `test_no_letter_or_digit_folds_to_nothing_on_the_granting_leg` —
+  **unconditional**, `empties == []` over the whole codespace at `NFD`. This is
+  the leg where a deletion would *grant*, and it is the leg the Decision's
+  invariant is about.
+* `test_flagging_leg_empties_are_only_compatibility_marks` — a
+  **characterization**, not an unconditional invariant. It asserts that every
+  `NFKD` empty decomposes entirely into combining marks and ASCII characters
+  outside the allow-set; it therefore permits the 16 below and fails on a
+  seventeenth member outside the characterization.
+
+**The 16, enumerated** (`as_of 2026-08-03`, UCD 15.1.0 — the set is
+UCD-version-dependent, which is why the interpreter is named alongside it):
+
+| codepoints | count | category | `NFKD` decomposition |
+|---|---|---|---|
+| `U+FC5E`–`U+FC63` — ARABIC LIGATURE SHADDA WITH DAMMATAN / KASRATAN / FATHA / DAMMA / KASRA / SUPERSCRIPT ALEF, ISOLATED FORM | 6 | `Lo` | ASCII SPACE + two `Mn` marks |
+| `U+FE70`, `U+FE72`, `U+FE74`, `U+FE76`, `U+FE78`, `U+FE7A`, `U+FE7C`, `U+FE7E` — ARABIC FATHATAN / DAMMATAN / KASRATAN / FATHA / DAMMA / KASRA / SHADDA / SUKUN, ISOLATED FORM | 8 | `Lo` | ASCII SPACE + one `Mn` mark |
+| `U+FF9E`, `U+FF9F` — HALFWIDTH KATAKANA VOICED / SEMI-VOICED SOUND MARK | 2 | `Lm` | one `Mn` mark (`U+3099` / `U+309A`) |
+
+Only the **even** codepoints of `U+FE70`–`U+FE7E` are in the class — measured,
+not inferred from the range. The odd ones (`U+FE71`, `U+FE77`, `U+FE79`,
+`U+FE7B`, `U+FE7D`) decompose to ARABIC TATWEEL `U+0640` plus a mark, and the
+tatweel is non-ASCII, so the allow-set keeps it and they fold non-empty.
+
+**Why the relaxation is forced rather than chosen.** The shipped fold is three
+steps: case-fold and normalize at `form`; drop every combining mark; keep a
+character only if it is non-ASCII or in the allow-set. Each of the 16
+decomposes at `NFKD` *entirely* into combining marks, plus — for 14 of them —
+one ASCII SPACE. Step 2 removes the marks, and it is load-bearing: it is what
+merges the [I1b] classes R2 ratifies and what B4 pins. Step 3 removes the
+space, and it is load-bearing: A1's explicit allow-set is the disposition [I2]
+asked for and B2 pins it. Nothing survives either step. There is therefore **no
+version of the accepted design** in which the flagging leg carries the
+invariant unconditionally: the only escapes would be to stop stripping
+combining marks at `NFKD` — which breaks the presentational-disguise close the
+flagging leg exists for — or to special-case sixteen codepoints, which neither
+the proposal nor the Decision asked for. The set is a property of `NFKD` plus
+the allow-set, not of this implementation.
+
+**Why it is safe-direction.** Each half measured against the landed code:
+
+* **It cannot grant.** `_grant_words` is `NFD`-only, and the human allowlist is
+  compared *exclusively* through it — `classify` reaches the roster by
+  `_grant_words(name) in self.human` and by no other path. All 16 fold
+  **non-empty** at `NFD`, so a word made of them has a real granting key, never
+  the empty tuple that `()` -equality would admit. The flagging leg never
+  reaches the human allowlist at all.
+* **On the AI leg it can only under-flag, and only in a case that could not
+  match anyway.** `_fold_words` drops a word that folds to nothing, so the whole
+  effect is that a word made **entirely** of these characters contributes no
+  prefix candidate. A *mixed* word is untouched — measured, `"Cl" +
+  chr(0xff9e) + "aude"` and `"Cl" + chr(0xfe7c) + "aude"` both still classify
+  `ai`, because stripping the mark is exactly what the flagging leg is for. And
+  an all-mark word has nothing to match: a config `ai_agents` entry built from
+  the same characters folds through `_flag_words` too, so it is dropped rather
+  than admitted (measured: it contributes no token, and `""` stays out of the
+  registry).
+* **The third consumer is fail-closed too.** `_identity_token` shares
+  `_flag_words`, so an all-mark author name yields `""`. Both call sites treat
+  *equal* tokens as non-independent — the conformance check raises a violation,
+  the `independent_review` gate withholds — so an empty flagging key collapses
+  toward flagging, never toward clearance.
+
+**What this does not establish, stated rather than implied.** The
+characterization is asserted over the codespace, but the safety argument above
+is an argument about *call sites*, not a test: no node asserts that the granting
+leg never receives an `NFKD` key. That property is structural — one call each
+side, per the *Author-accounting* invariant list — and it is something the code
+reviewer should re-check directly rather than take from this subsection.
+
 ## Plan review — the brief, and why the tier is not discharged
 
 *Required — External, security lens. Implementation does not start until a
