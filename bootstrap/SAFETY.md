@@ -117,8 +117,26 @@ blast radius: a hidden instruction injected into a template reaches
 Therefore **template integrity is a security property**, not only a
 correctness one.  Every change to agent-loaded content is reviewed
 for *injected, hidden, or unsafe instructions* — not just for whether
-the prose is right — and must pass the content-integrity scanner (`content_scan.py`, run by
-[`check_cairn.py`](../scripts/check_cairn.py)).  The review threshold
+the prose is right — and **must pass** the content-integrity scanner
+(`content_scan.py`, run by [`check_cairn.py`](../scripts/check_cairn.py)).
+**Two triggers exist and neither fires on a commit**: the suite scans
+generated output and the skills artifacts on every `pytest` run, and
+`check_cairn.py` scans the tracked Markdown files **its default filter
+keeps** when a person runs it (the **maintainer-run** release gate
+`security_check.py` invokes it, when a maintainer runs that).  That
+filter is not a formality: `main` wraps the tracked list in
+`link_check.filter_sources`, which drops four classes by default —
+`dev/**/archive/`, `dev/modules/`, `dev/.cairn/` and `dev/reflections/`,
+each re-includable by flag.  **249 tracked, 195 scanned, 54 skipped**
+(`as_of 2026-08-04`); the run's own "N Markdown file(s) scanned" banner
+is the honest number.  Everything skipped is under `dev/`, so
+`doctrine/`, `docs/`, `case-studies/`, `bootstrap/` and `templates/`
+are all reached — but `dev/modules/` is **vendored, agent-loaded
+content that a default run does not scan**.  Source prose that no
+scaffolded profile emits — **including** `doctrine/`, `docs/`,
+`case-studies/` and this document — is reached **only** by that manual
+run.  **Running it, and resolving what it flags to a clean scan, is the
+reviewer's obligation, not a mechanism's guarantee.**  The review threshold
 scales **by file class**:
 
 * **Source template → instruction file** (the core `AGENTS.md`
