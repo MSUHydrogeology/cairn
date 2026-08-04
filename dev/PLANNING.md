@@ -706,6 +706,227 @@ plan can archive)*
   (proposal-open, review-append, decision-scribe, plan-archive); promote
   harness skill targets to native-tested as fixtures prove them.
 
+**Archive-time follow-ups — the 2026-08-04 six-plan census**
+
+Every deferred follow-up named in the six plans that reached code review
+on 2026-08-04, homed here so they survive the archive. Produced by a per-
+plan census that verified each claimed home by opening it: 95 candidate
+items, 29 already homed, 38 judged fenced residuals rather than follow-
+ups, and the 28 below with no durable home at all. A plan does not archive
+until its items here are landed -- that is this section's whole purpose.
+
+*From `byline-classification` (4):*
+* **byline-classification, uncovered — the NFKD compatibility mappings are
+  unpinned.** The `NFD`-granting / `NFKD`-flagging split rests on a
+  *representative*, not exhaustive, enumeration of NFKD's compatibility
+  mappings; B2 pins only the ASCII deletion set. Plan-review mandate 1,
+  returned unanswered. *Trigger:* the first demonstrated compatibility
+  mapping that folds a non-rostered name onto a rostered one, or a UCD
+  version bump under the canonical interpreter.
+* **Author-accounting omission (d): "`casefold()` was sampled, not
+  enumerated against the full case-folding table — [I1a] shows the class
+  reaches the granting path and there may be worse members than
+  `chr(0x17f)`." Plan-review mandate 2 asked for the enumeration and
+  returned unanswered.** *(census produced no drafted row; text is the
+  plan's own wording)*
+* **byline-classification, uncovered — no hostile roster has been
+  tested.** `dev/.cairn/agent-identities.json` is lockfile-untracked and
+  written by no installer; both proposal reviews and the External plan
+  review probed benign typos only, so a deliberately hostile config
+  remains an unexplored threat model on the granting leg. Plan-review
+  mandate 3, returned unanswered. *Trigger:* any change to how the roster
+  file is written, installed or trusted — or the first external adopter.
+* **byline-classification, undecided — the B2 adjacency.** B2's expected
+  deletion set is the allow-set literal in `_fold_word`'s own docstring,
+  so the pin proves self-consistency rather than correctness; the plan
+  named the remedy (move the literal into the test module, docstring cites
+  it) and asked a reviewer to decide whether the shipped arrangement is
+  enough. Neither reviewer decided. *Trigger:* the decision itself, or the
+  move.
+
+*From `scan-coverage` (1):*
+* **SC5 — the Bandit `ALLOWLIST` has no staleness guard, only a rationale
+  guard.** `test_allowlist_entries_have_rationale`
+  (`bootstrap/tests/test_security_lint.py:183`) asserts a non-empty
+  rationale and nothing else; the sole live entry
+  (`templates/modules/team-gated/link_check.py` / `B310`,
+  `bootstrap/security_check.py:51`) survives unchanged if that file moves
+  or the finding is remediated — the same silent latch `scan-coverage`'s
+  C3(e) added for `_SCAN_EXCLUSIONS`, one guard over. Raised and
+  deliberately deferred in that plan's Response to plan review
+  (2026-08-03) as belonging in its own proposal. *Trigger:* any edit to
+  `ALLOWLIST`, or the next change to
+  `bootstrap/tests/test_security_lint.py` — at which point the guard is
+  two assertions (key still on disk; key still produced by a live Bandit
+  finding).
+
+*From `release-authenticity` (2):*
+* **`release-authenticity` — the Decision's flagged condition,
+  undispositioned** — the approved ledger entry read *"Accept, conditioned
+  on a scoped External round for the tag-substitution fix only"*, but the
+  Maintainer's quoted words said only *"as revised"*. Either strike it in
+  one line or name what discharges it (the 2026-08-03 Gemini Flash
+  External plan review is the candidate, per `dev/NEXT_SESSION.md`).
+  Blocks the plan's archive until dispositioned.
+* **`release-authenticity` — channel 3 (Zenodo) is a documented channel
+  with nothing in it** — `bootstrap/PROVENANCE.md`'s channel table lists
+  the per-version deposition as channel 3, but no fingerprint has ever
+  been recorded in a deposition and no public-launch step names it. At
+  launch step 6, either record the fingerprint beside the deposition or
+  correct the table row to say channel 3 is prospective.
+
+*From `fork-advisory-semantics` (5):*
+* **FA-R1 — the fork advisory's comparison bytes are caller-trusted, not
+  anchored** *(residual R1 of plan `fork-advisory-semantics`)* — the
+  upstream operand is read from the checkout hosting the verifier, **or
+  from any directory an operator names with `--cairn-root`, which may
+  point inside the target**; containment is proven, provenance is not.
+  Revive when `release-authenticity` lands an out-of-band trust bootstrap,
+  or on the first Cairn install verified from a checkout the adopter did
+  not obtain themselves.
+* **Two frozen pins stale from `7066489`** *(surfaced by plan `fork-
+  advisory-semantics`, Correction 2; unclaimed)* — `_gate_manifest.py
+  verify --no-collect` HOLDs on
+  `bootstrap/tests/test_quality_gate_redundancy.py` and
+  `scripts/quality_gate.py`, edited by the `r6-unused-def-blindspot` fix
+  with no re-pin. Seam with `gate-claims-vs-enforcement`, which
+  inventories them but does not claim them. Trigger: the next supervised
+  re-anchor ceremony, where the re-pin is cheapest to fold in.
+* **`identity-not-name` condition 3 is unlanded** *(Maintainer call; plan
+  `fork-advisory-semantics` Chunk B is fenced on it)* —
+  `format_forked_facade_warning` still advises "remove the dormant engine
+  package", which makes `tools/intent.py`'s `_load_engine()` raise
+  `RuntimeError` and disables work-intent coordination. Decide shape (1)
+  trivial commit now + own ceremony, (2) trivial commit now + re-anchor at
+  Chunk R, or (3) amend condition 3 and let Chunk B run inside the
+  already-red window.
+* **Sweep the other consumers of `base_hash`** *(known omission (c) of
+  plan `fork-advisory-semantics`; named in the proposal and never
+  measured)* — `base_hash` ratchets forward on every `--finalize`, and the
+  fork advisory was one consumer that treated the ratchet as an upstream
+  signal. No enumeration exists of the other readers of the field or of
+  which inherit the same wrong inference. Trigger: the next change to
+  `--finalize`'s backfill, or any new detector keyed on `base_hash`.
+* **`_infer_init_lock_axes` guesses `human_team` from a filename**
+  *(orphaned residual: routed by `fork-advisory-semantics` to scope 4,
+  whose supersession Decision did not carry it; also fenced by `profile-
+  parse-fail-open`)* — `bootstrap/_scaffold/upgrade.py` infers `small-
+  multi` from the mere presence of a root `CONTRIBUTING.md` and `solo`
+  otherwise, so the engine's heuristic can read a project's declared axis
+  back wrong. Named upgrade path: read the manifest's `optional_templates`
+  block instead of file presence. Reachable only on a first `upgrade
+  --init-lock` in a tree with no committed `dev/.cairn/profile.yml`.
+
+*From `profile-parse-fail-open` (9):*
+* **Profile key with an unrecognized *value*** *(residual from plan
+  `profile-parse-fail-open`, G1)* — a profile listing `- not-a-real-
+  module` under `modules:` is accepted at exit 0 and printed in the
+  roster; measured 2026-08-03, there is **no** downstream module
+  validation to catch it. *Trigger:* the first adopter report of a mis-
+  typed module name, or the next proposal touching `expand_preset`.
+* **Profile forward-compatibility cost is argued, not measured**
+  *(residual from plan `profile-parse-fail-open`, G2)* — unknown profile
+  keys now refuse; the reserved `schema` key rescues no already-released
+  engine, so the disposition is free only while the adopter set is empty.
+  *Trigger:* the first genuine older-engine/newer-profile break. *Remedy:*
+  a follow-up proposal reversing the disposition — never a quiet
+  loosening.
+* **Two `test_presets.py` nodes use `_yaml_load` as its own oracle**
+  *(residual from plan `profile-parse-fail-open`, G3)* —
+  `bootstrap/tests/test_presets.py:293` and `:423` compare the parser
+  against itself whenever PyYAML is absent; left standing because the file
+  is frozen. *Trigger:* the next change that edits `test_presets.py` for
+  any reason. *Mechanical:* `grep -n "_yaml_load"
+  bootstrap/tests/test_presets.py`.
+* **`_gate_manifest.py`'s `SKIP-XFAIL-NEW` over-reports** *(residual from
+  plan `profile-parse-fail-open`, G4)* — the check reads
+  `get_closest_marker("skipif")`, which resolves a module-level
+  `pytestmark`, so any node added to such a module registers as newly
+  marked; 34 `test_presets.py` nodes are recorded "marked" while the suite
+  reports 0 skipped. *Trigger:* the next supervised ceremony, or the next
+  plan needing a node in a marked module. *Mechanical:* `python
+  bootstrap/tests/_gate_manifest.py verify --anchor-ref <P>`.
+* **`_resolve_current_profile`'s lockfile fallback is audible but
+  unexamined** *(residual from plan `profile-parse-fail-open`, G5)* —
+  Chunk A made the swallowed exception print to stderr; whether
+  substituting the lockfile profile is the right disposition at all was
+  never examined. *Trigger:* the next upgrade-path proposal.
+* **Nothing enforces the suite's `0 skipped` invariant** *(residual from
+  plan `profile-parse-fail-open`, G6)* — `bootstrap/tests/conftest.py`
+  carries only the order-independence shuffle hook and there is no CI, so
+  a node that skips itself away (the parity sweep plus both canaries, on a
+  PyYAML-less host) still exits 0. *Trigger:* the first suite run
+  reporting a non-zero skip count, or the next change to
+  `bootstrap/tests/conftest.py`.
+* **`profile-parse-fail-open` decision point 4 — the totality claim is
+  affirmed but unchecked** *(Maintainer question, carried since plan-open
+  2026-08-03)* — the recommended focused Internal round on the closed
+  grammar's totality claim never ran; the External round affirmed it from
+  the plan's own specification prose and the author's Response banks it
+  **unverified**. Implementation landed anyway at `e7394cb`. *Decide:*
+  strike it as absorbed, or run the round against the landed code.
+* **`profile-parse-fail-open`'s gate-manifest delta awaits a supervised
+  ceremony** *(residual, 2026-08-04)* — one `FROZEN-MODIFIED` on
+  `bootstrap/tests/test_scaffold.py` plus one `COLLECTION-DROPPED` from
+  the `test_mixed_indent_list` → `..._is_refused` rename; the plan
+  measured them and explicitly neither performs nor schedules the re-pin.
+  *Trigger:* the next supervised gate ceremony — batch with SC4, which
+  carries the same disposition.
+* **`_infer_init_lock_axes` infers `human_team` from a file's mere
+  presence** *(orphaned residual — was `contributor-entry` R1, which was
+  superseded 2026-08-03 without migrating it; disclaimed by `fork-
+  advisory-semantics` and `profile-parse-fail-open`)* — a root
+  `CONTRIBUTING.md` existing is treated as evidence of a human team.
+  *Trigger:* the next proposal touching `bootstrap/_scaffold/upgrade.py`'s
+  init-lock axis inference.
+
+*From `gate-claims-vs-enforcement` (7):*
+* **Gate-claims A5/A6/A8 — three CI-wording corrections deferred behind
+  the frozen-file manifest**
+  (`bootstrap/tests/test_security_lint.py` lines 12 and 89;
+  `bootstrap/tests/fixtures/skills/README.md` lines 16 and 41;
+  `bootstrap/tests/test_python_floor.py:1`) — *Trigger:* the manifest is
+  retired, **or** the next supervised re-pin ceremony (SC4's "fold in")
+  carries them with Maintainer assent.
+* **Gate-claims B2 — the archive-commit-body auditability claim is
+  falsified** (`doctrine/proposals.md:370` and `doctrine/plans.md:611`:
+  *"This makes the migration auditable from `git log` alone"*) — keep the
+  "must", name the trigger, correct the consequence claim; its own
+  proposal, because the block is restated at `doctrine/lifecycle-
+  contract.md:137` and `templates/core/dev/PLANNING.md:105`, which engages
+  the loop-fidelity lens.
+* **B2's evidentiary figure is re-measured at pickup, never carried** —
+  the proposal's *"zero archive commits"* is falsified; measured
+  2026-08-04 at HEAD `da2d00e`: plan archives **1 of 10** (`b67fabc`),
+  proposal archives **2 of 21** (`bd608c9`, `9c95653`). Re-run the
+  enumeration before writing any number.
+* **`dev/plans/_template.md`'s `verification-commands` slot claims the
+  gates are "the same ones CI enforces"; Cairn has no CI** — a Class-A
+  instance in Cairn's own filled slot (the adopter template is an unfilled
+  placeholder, so nothing is correct-for-adopters here). *Trigger:* its
+  own serialization point, because the fix cascades into every live plan —
+  re-run `git ls-files | xargs grep -ln "the same ones CI"` rather than
+  trusting a count.
+* **Gate-claims B3 — `doctrine/runtime-contract.md:202-211` calls
+  `bootstrap/container/floor-gate.sh` "the **release floor gate**" and "In
+  the release gate"** — gate vocabulary (Class B, axis 2, un-ledgered) for
+  a script only the maintainer runs by hand, and it now directly
+  contradicts `bootstrap/container/recipe.md` as corrected by `1e47c08`.
+* **Cairn's enforcement claims bottom out in
+  `bootstrap/security_check.py`, and nothing invokes it** —
+  `doctrine/lifecycle.md`, `bootstrap/fidelity-check.md` and
+  `bootstrap/SAFETY.md` now all name it as the trigger;
+  `SECURITY.md:59-63` is a release checklist a person remembers. Candidate
+  proposal; whether that recursion deserves its own artifact is a
+  Maintainer call.
+* **The gate-claims audit's axis 2 (behavioural — run the artifact that
+  would check the stated control) and axis 3 (does the named trigger
+  contain the procedure) were never swept systematically** — `gate-claims-
+  vs-enforcement` sampled both; two ledger rows fell out of a single ad-
+  hoc axis-3 pass, which is the argument for finishing the sweep as its
+  own proposal.
+
+
 ### Release path
 
 The version ladder is staged so the methodology stabilizes before going
