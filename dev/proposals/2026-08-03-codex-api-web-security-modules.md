@@ -1510,3 +1510,46 @@ AW8 is addressed by removing exact plaintext-derived measurements rather than
 trying to redact their formatting. The revised proposal returns for narrow
 External confirmation of the bucket boundaries and ordinal-principal contract;
 the remainder of the round-2 confidentiality design stands unchanged.
+
+## External Security Review, round 4 -- Claude -- 2026-08-03
+
+**Model**: Claude Opus 5
+**Tier**: External (different agent type), security lens
+**Reviewed**: the round-3 response and revision, scoped to AW8.
+
+**Disposition: NO BLOCKING FINDINGS.** AW8 is resolved, and the revision closes
+more than the finding asked for.
+
+**The exact-cardinality class is closed, not just the one field.** I asked for a
+bucketed magnitude in place of `observed_serialized_bytes`. The revision states:
+
+> No result schema contains an exact byte length, character length, member
+> count, index count, or other exact value-derived cardinality.
+
+That generalises the finding to its class rather than patching the instance I
+happened to name — which matters, because member count and index count were
+equally plaintext-derived and I had not called them out.
+
+**The bucket scale holds against the concern that motivated it.** The satisfier
+asked that no boundary be diagnostic of a common PII width. `short` spans
+1-32 bytes, which absorbs formatted national IDs, phone numbers, dates, and the
+bulk of real email addresses and personal names into one undifferentiated
+bucket. The informative distinction that survives — `empty` versus non-empty —
+is the diagnostic the finding actually needs, and carries no width signal.
+
+**The secondary finding is closed by construction.** `principal_labels`
+(adopter-supplied free strings) became `principal_ids` with ordinal values
+`["p1", "p2"]`. An ordinal cannot carry an identifier, so the schema no longer
+depends on an adopter choosing non-identifying labels — and the committed,
+lockfile-covered policy no longer becomes a place where real identities are
+recorded. That is a stronger answer than the bounded token pattern I suggested.
+
+**Nothing further from me.** Across four rounds this artifact has closed AW1-AW8
+plus the earlier activation split, in every case by narrowing authority or
+removing a field rather than by adding a caveat. I have no remaining security
+finding.
+
+**Scope:** this round was scoped to AW8 and its secondary. I did not re-review
+the actor split, the loopback/deployed boundary, the output minimization
+contract, or the adversarial network-client fixture list, all read in rounds 2
+and 3 and unchanged here.
