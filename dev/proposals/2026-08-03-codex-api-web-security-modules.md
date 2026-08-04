@@ -5,7 +5,7 @@
 **Author**: Codex (Strategy, from the Security Review role)
 **Model**: OpenAI Codex (GPT-5)
 **Date opened**: 2026-08-03
-**Status**: revised
+**Status**: reviewed
 **Touches**: `bootstrap/_scaffold/config.py`, `templates/core/AGENTS.md`, the
 default-on and team-gated module catalogs under `templates/modules/`,
 `bootstrap/DEPENDENCY_BUDGET.md`, `bootstrap/SAFETY.md`, the install manifest /
@@ -1361,3 +1361,57 @@ correctly bounded.
 
 **Scope:** I did not evaluate the policy schema, the OpenAPI comparison, the
 hosting expectation matrices, or the loopback fixture design.
+
+## Response to External Security Review, round 3 -- Codex (author) -- 2026-08-03
+
+**Model**: OpenAI Codex (GPT-5)
+
+**Disposition: accept AW8 and revise narrowly.** Exact serialized length is a
+plaintext-derived disclosure and conflicts with the minimization rule. The same
+principle applies to exact collection member counts. The principal-label note
+is also accepted: syntax can reject obvious identifiers, but an ordinal ID is
+the stronger report boundary.
+
+### [AW8] Accepted -- bucket magnitude; identify principals only by ordinal
+
+The revision will remove `observed_serialized_bytes` and every exact count
+derived from an observed value. Findings may report one coarse magnitude:
+
+* `empty` -- null or a semantically empty string, array, or object;
+* `short` -- a non-empty scalar of at most 32 canonical bytes, or 1 through 8
+  members;
+* `medium` -- 33 through 256 bytes, or 9 through 64 members;
+* `large` -- 257 through 4096 bytes, or 65 through 1024 members; and
+* `oversized` -- anything larger, normally accompanied by a bounded-input
+  refusal rather than continued parsing.
+
+The ordinary fixed-width PII classes named by the review all collapse into the
+same `short` byte bucket. The report never prints a bucket boundary, exact
+length, member count, or source value. Bucket labels are fixed enums, not
+peer-controlled strings. The per-run HMAC remains optional and keyed as already
+specified.
+
+Two controlled values of different exact lengths inside the same bucket, with
+fingerprinting disabled, must produce byte-identical sanitized findings. Tests
+also parse every output schema and reject any exact-length/count field; this is
+stronger and less collision-prone than searching rendered text for a decimal
+that might legitimately occur in a status or stable ID.
+
+Free-form `principal_labels` will leave the report schema. Principals receive
+strict ordinal IDs matching `p[1-9][0-9]{0,2}`. Cross-principal findings may
+name only those IDs. Credential environment-variable names are derived from the
+ordinal (`CAIRN_API_P<N>_CREDENTIAL`) rather than carrying a person or account
+name supplied by policy.
+
+The policy may separately name a bounded application role token for test
+semantics, but reports do not emit it, and module doctrine forbids personal
+names, email addresses, tenant/account identifiers, or production usernames in
+role tokens and stable case/operation IDs. Syntax cannot prove a token is
+non-identifying; strict ordinal report IDs plus review of the lockfile-covered
+policy are the actual boundary.
+
+### Next transition
+
+This response leaves the proposal **reviewed**. The following commit will
+replace the finding schema and confidentiality tests with the bucketed and
+ordinal forms, then return it to `revised` for focused confirmation.
