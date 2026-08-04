@@ -1245,8 +1245,8 @@ SAME marker, tag payload inside the block      -> 0 flag(s): []
 ```
 
 Case C is a block-scoped `cairn-accept: unicode-ignorable` written in good
-faith for a markdown status table containing `✔️` and `✖️` (U+2714/U+2716
-plus VARIATION SELECTOR-16). It silences a 57-code-point Tag-block
+faith for a markdown status table containing `U+2714`/`U+2716` each followed by
+VARIATION SELECTOR-16 (`U+FE0F`). It silences a 57-code-point Tag-block
 prompt-injection payload planted between the rows. Zero flags.
 
 Two amplifiers, same run:
@@ -1429,7 +1429,7 @@ converts some large adopter trees from "scan clean" to "scan could not be
 trusted to have run".
 
 The fix is one line and I verified it produces byte-identical flags: every
-code point in both tables is ≥ U+00AD, so `if ch < "­": continue`
+code point in both tables is ≥ U+00AD, so `if ch < "\u00ad": continue`
 short-circuits all ASCII and lands at 0.040 s -- *below* HEAD's existing
 unicode pass. The plan should carry this guard and a one-number benchmark.
 
@@ -1600,3 +1600,846 @@ If the Maintainer prefers a single round over a split: hold the whole
 proposal, resolve **[I1]** and **[I2]** in a further revision with both token
 sets re-measured, and send it back to External. I would not send Change 2 to
 a plan on the current numbers.
+
+## Response -- Claude (author, to Internal security review) -- 2026-08-03
+
+**Model**: Claude Opus 5. Proposal-Response grammar (no implementing commits
+exist). Dated snapshot: HEAD `005a8dd`, canonical interpreter Python 3.13.13 /
+UCD 15.1.0, 2026-08-03.
+
+**Self-correction pass, same session, same date.** After this Response was
+first written, an adversarial audit found four defects in it: a token-count
+error in **[I1]** that made its own evidence block fail to reconcile; two
+items from the review's *Not covered* list carried forward as unrun when they
+were closable now; a live absolute figure inside a question put to the
+Maintainer that had already gone stale; and one recommendation left without
+the beyond-contract / within-contract label every other item in this Response
+carries. All four are corrected in place below and each correction says what it
+is correcting. HEAD has advanced to `7e078b5` since the snapshot above; I
+confirmed `git diff 005a8dd..HEAD` is **empty** for
+`templates/modules/team-gated/content_scan.py` and for `scripts/`, so every
+scanner measurement in this Response still reads the same bytes it read at
+`005a8dd`. The `check_cairn.py` figure is the one thing that did move, and is
+restated as a delta below.
+
+**How I verified, and why it differs from the review's method.** The review
+says plainly that every "with the patch" figure came from a scratch
+reconstruction built outside the repository, and anchors **[I1]** and **[I2]**
+on contradictions internal to the proposal's prose for that reason. That is the
+right instinct, and I have gone one step further where I could: for **[I1]**'s
+HEAD half, **[I2]**'s corpus half, the whole of **[I3]**, **[I4]**, **[I5]**
+and **[I7]**'s first bullet, I re-derived the finding from a **primary
+source** — the shipped `templates/modules/team-gated/content_scan.py` at HEAD,
+the proposal's own committed figures, or `unicodedata` — with no reconstruction
+in the loop at all. **[I6]** is the only finding where a reconstruction was
+unavoidable, and there my number and the reviewer's differ; I report both.
+
+Every command below ran under `/Users/kendal30/conda_envs/lhm/bin/python3.13`
+from the scratch directory, read-only. I wrote nothing into the working tree
+and I ran no test suite (another session is live here).
+
+**One convention, stated because this Response is itself scanned material**:
+every code point below is written `U+XXXX`. This Response carries **no raw
+invisible character**. That is not decoration — see *What neither review found*.
+
+### Dispositions
+
+#### [I1] ACCEPTED -- the falsifying test does fire, on stronger evidence than the finding claims, and it fires in a third direction the review did not check
+
+**Two counts, and they are not the same count.** The finding carries two
+figures and they measure different things. Its prose names **thirteen code
+points** ("Thirteen code points are declared *twinned* by the first passage and
+*untwinned* by the second"). Its table lists **fourteen tokens**, and those
+fourteen tokens carry only **nine** distinct Greek code points between them
+(U+03B4 appears four times, U+03B3 and U+03C9 twice each). Thirteen is the
+code-point count; fourteen is the token count; nine is the code-point count
+*of the table*. Below, every figure says which of the three it is.
+
+**The falsifying criterion is met.** The proposal's criterion is "a spoof that
+HEAD catches and the patch clears, other than the named two-character shape".
+I ran all **fourteen** tokens the finding's table names through the shipped
+scanner at HEAD and checked each one's Greek characters against the
+amendment's **own enumerated** denylist (the parenthetical `Γ Δ Θ Λ Ξ Π Σ Φ Ψ
+Ω` and their lowercase, plus the theta/phi/pi symbol variants). Greek
+characters are written `<U+XXXX>` so this block introduces no mixed-script
+token of its own:
+
+```
+$ ~/conda_envs/lhm/bin/python3.13 ...   # shipped content_scan.py, HEAD 005a8dd
+   1/14  <U+03B4>elete            HEAD_flags=True   all-greek-in-_NO_LATIN_TWIN=True
+   2/14  <U+03B4>ev               HEAD_flags=True   all-greek-in-_NO_LATIN_TWIN=True
+   3/14  ke<U+03B3>               HEAD_flags=True   all-greek-in-_NO_LATIN_TWIN=True
+   4/14  <U+03B3>our              HEAD_flags=True   all-greek-in-_NO_LATIN_TWIN=True
+   5/14  <U+03C9>rite             HEAD_flags=True   all-greek-in-_NO_LATIN_TWIN=True
+   6/14  <U+03C9>arn              HEAD_flags=True   all-greek-in-_NO_LATIN_TWIN=True
+   7/14  <U+039B>ogin             HEAD_flags=True   all-greek-in-_NO_LATIN_TWIN=True
+   8/14  <U+03A0>assword          HEAD_flags=True   all-greek-in-_NO_LATIN_TWIN=True
+   9/14  <U+03A3>ecret            HEAD_flags=True   all-greek-in-_NO_LATIN_TWIN=True
+  10/14  <U+03BE>fil              HEAD_flags=True   all-greek-in-_NO_LATIN_TWIN=True
+  11/14  <U+03C0>ost              HEAD_flags=True   all-greek-in-_NO_LATIN_TWIN=True
+  12/14  <U+03A6>ile              HEAD_flags=True   all-greek-in-_NO_LATIN_TWIN=True
+  13/14  <U+03B4>isregard         HEAD_flags=True   all-greek-in-_NO_LATIN_TWIN=True
+  14/14  <U+03B4>o not tell       HEAD_flags=True   all-greek-in-_NO_LATIN_TWIN=True
+      ( 14 of 14 TOKENS: HEAD flags, clause 3 under the enumerated denylist clears )
+      ( those 14 tokens carry 9 distinct CODE POINTS; separately, all 13 code
+        points the finding's prose names are inside the enumerated denylist: True )
+```
+
+**14 of 14 tokens**, over **9 distinct code points**; and, checked separately,
+**13 of 13** of the code points the finding's prose names are inside the
+enumerated denylist. (Row 14 is a three-word string; the token the scanner
+flags in it is `<U+03B4>o`.) No reconstruction required for either half: the
+HEAD column is the shipped scanner, and the clear column is set membership
+against a list the amendment itself enumerates. **The finding stands, on a
+count one larger than my first draft of this Response reported.**
+
+**The correction I owe on my own arithmetic.** An earlier draft of this
+disposition wrote "I ran all thirteen tokens", footed a nine-row block "13 of
+13 tokens", and so printed a table that did not reconcile with its own total —
+having taken the review's *code-point* figure for its *token* figure. That is
+precisely the failure this Response indicts the amendment for below, under *A
+third contradiction* — "the set was never reconciled against either of its own
+figure tables": **a set asserted without being reconciled against its own
+published figures.** Saying so here is cheaper than having the next reviewer say it,
+and it is the same lesson in both directions — the derivation-not-curation
+recommendation at the end of this Response applies to the Response as well as
+to the amendment.
+
+**Where the finding over-reads, and it matters for how the amendment is
+repaired.** The review frames all thirteen **code points** as "declared twinned
+by the first passage and untwinned by the second". That framing holds firmly
+for exactly **two** of the thirteen code points, and rests on an inference for
+the other eleven:
+
+* **Pinned by the proposal's own *measured* output**: U+03B3 and U+03C9. The
+  base proposal publishes a seven-token residual false-positive list, and two
+  of those seven lead with U+03B3 and U+03C9 respectively. A token only stays
+  in the residual if its leading Greek letter is *in* the base's
+  `_CONFUSABLE_GREEK`. So the base rule classifies both as confusable, and the
+  amendment's enumeration classifies both as untwinned. That is a measured
+  contradiction, not a reading.
+* **Not pinned**: the other eleven code points. The base's parenthetical — "A
+  Greek letter with no Latin twin (`Δ`, `λ`, `σ`, `θ`, `φ`, `ψ`, `β`, `μ`,
+  `Ω`)" — is an illustrative list of *letters*, case-loose and nowhere claimed
+  exhaustive. The base proposal never enumerates its 32 code points, so what it
+  thought of U+039B or U+03BE is unknown. Those eleven code points are
+  falsifiers **against HEAD**, which is what the criterion actually says, but
+  they are not evidence of an internal contradiction.
+
+**A third contradiction, opposite in direction, that the review did not
+find.** The amendment's enumerated denylist **omits β (and its symbol variant)
+and μ** — yet the amendment's own *Named residual, deliberately accepted*
+section requires β to be untwinned (that is the entire reason the β family is
+still missed), and its 14/83 scientific figure requires it too (both β-leading
+tokens must clear to match the proposal-as-written). The base proposal names β
+and μ untwinned explicitly. So the "~25-entry" enumeration is short in **both**
+directions: it contains letters the base's measurements call confusable, and
+omits letters the amendment's own measurements require it to contain. The set
+was never reconciled against either of its own figure tables.
+
+**An amplification I measured: a denylist entry is not one silent clear, it is
+a family.** The amendment adds NFD folding so a precomposed accented vowel
+cannot bypass. Correct — but folding also propagates every denylist entry
+across the Greek Extended row. Of the 218 assigned letters in `_SCRIPT_RANGES`
+row `("greek", 0x1F00, 0x1FFF)`
+(`templates/modules/team-gated/content_scan.py`, line 159), **42** fold under
+NFD onto a base that the enumerated denylist contains, and are therefore
+cleared by it. Each entry costs far more than its own code point.
+
+**What reproduced exactly.** The amendment's structural figures are right, and
+I re-measured them: the two Greek rows span **400** code points carrying
+**347** assigned letters, **129** of them in the Greek and Coptic block.
+
+**One correction to my own earlier text, found while checking this.** The base
+proposal says "Clause 1 closes five of those six" against a sweep whose output
+is `34/40 missed=[6 tokens]` then `39/40 missed=[one two-character token]`.
+Those numbers require all **six** to close, with the net gain being five after
+the two-character carve-out gives one back. The prose is off by one against
+its own output.
+
+**Classification: within-contract.** It corrects an artifact the proposal
+already describes, against figures the proposal already publishes. The repair
+is not mine to prejudge beyond that — see the split recommendation.
+
+#### [I2] ACCEPTED -- reproduced on the real tree, with one of its two arguments now weakened by a change since the review, and the substance untouched
+
+I did not use the reviewer's reconstruction. I swept **all 227 tracked `.md`
+files at HEAD `005a8dd`** for the tokens a script-general clause 1 would newly
+reach — single-script, non-Latin, three or more letters — and then applied the
+shipped `_parse_suppressions` to see which survive an existing `homoglyph`
+marker:
+
+```
+files containing such tokens                        : 2
+  dev/proposals/2026-08-03-claude-content-scan-detectors.md  (30 tokens, all inside
+      existing cairn-accept: homoglyph blocks -> unsuppressed lines: [])
+  dev/proposals/archive/2026-08-03-claude-byline-classification.md
+      unsuppressed new-flag lines: [575, 576, 921]
+```
+
+The reviewer's three line numbers reproduce **exactly**, from an independent
+sweep. And HEAD's blindness reproduces: whole-script Cyrillic, whole-script
+fullwidth and whole-script Greek all return `_token_scripts` of length 1 and
+raise nothing.
+
+**What changed since the review was written, and it cuts one way only.**
+`byline-classification` has been accepted and archived — the proposal now sits
+at `dev/proposals/archive/2026-08-03-claude-byline-classification.md` with a
+plan at `dev/plans/byline-classification.md`. `filter_sources`
+(`scripts/link_check.py`, line 503) drops `dev/**/archive/` from
+`scripts/check_cairn.py`'s default set, and I confirmed the current baseline:
+
+```
+$ ~/conda_envs/lhm/bin/python3.13 scripts/check_cairn.py
+check_cairn: 2 issue(s) across 176 file(s); 48 external link(s) not probed.
+      (both issues pre-existing [path] flags in bootstrap/PROVENANCE.md)
+```
+
+**That absolute pair is already stale, and the invariant is the delta, not the
+pair.** A concurrent session has since rewritten `bootstrap/PROVENANCE.md`, and
+the same command now returns `check_cairn: OK -- 177 Markdown file(s) scanned;
+no issues; 56 external link(s) not probed.` The two `[path]` flags were never
+this proposal's and are gone. So **do not read the absolute count anywhere in
+this Response as a figure that will reproduce in another tree at another
+hour** — the pre-existing baseline is owned by other work and moves under both
+of us. What is invariant, and what the Maintainer is actually being asked to
+rule on, is the **delta this proposal contributes: +2 flags, both permanently
+unclearable** (established below under *What neither review found*). Whatever
+the baseline happens to be when Change 1 lands, Change 1 moves it by +2 and
+there is no path to move it back. That delta is stated as a live invariant, not
+a snapshot: if it is ever not +2, the corpus reasoning below is wrong.
+
+So the **tripwire half** of the finding no longer fires: under reading (a) the
+one changing file is outside check_cairn's set today. The **substantive half**
+is entirely untouched — the proposal's corpus claim is stated over "all 218
+tracked `.md` files", not over check_cairn's filtered set, and under reading
+(a) that claim is false. More to the point, a rule that flags a collaborator's
+name is the postdoc-first failure this proposal exists to prevent, one script
+over, and archiving a file does not answer it.
+
+I also confirm the reviewer's aside: under reading (b), whole-script fullwidth
+Latin stays open, and that one has **no** natural-language cost in an English
+tree at all. It can be closed script-generally even if Cyrillic is held — a
+third option neither the proposal nor the review names, and I have put it in
+the closing section rather than taking it.
+
+**Classification: beyond-contract.** Choosing script-general changes behaviour
+on a class of content the proposal never described (non-Latin proper nouns in
+an English document), falsifies the proposal's own corpus prediction, and
+trades against a now-accepted sibling's headline claim. That is a design
+ruling, not a correction.
+
+#### [I3] ACCEPTED -- and I can prove the mechanism against the shipped scanner, so it does not rest on a reconstruction at all
+
+The finding is demonstrated with a reconstruction, but it does not need one:
+the conflation is a property of the **existing** suppression grammar plus the
+proposal's one-id decision. `_parse_suppressions`
+(`templates/modules/team-gated/content_scan.py`, line 240) maps
+`pattern_id -> set of line numbers`; a block marker on line M with a matching
+end on line K suppresses that id across `[M, K]` — **regardless of which code
+point raised the hit**. I proved it at HEAD using an id that exists today:
+
+```
+A. no marker                                        -> [(1,'unicode-zero-width'),
+                                                        (2,'unicode-zero-width')]
+B. one block marker written for the BENIGN code point,
+   a DIFFERENT code point of the same id inside the block -> []
+```
+
+A good-faith marker for one code point silences every other code point sharing
+its id inside the block. Route the whole PRECIS set through one id and that is
+exactly case C in the finding.
+
+The same-line masking amplifier is also pre-existing behaviour, not a
+speculative property of the new detector — `_scan_unicode`
+(`templates/modules/team-gated/content_scan.py`, line 295) `break`s after the
+first hit per line per family:
+
+```
+C. two distinct covered code points on ONE line -> 1 flag: 'zero-width character U+200B'
+```
+
+One flag, naming the first character only, with no count. The proposal's own
+edge-case note ("reported once, under the existing id") commits the new
+detector to that same shape.
+
+**On the two suggested remedies, which split cleanly.** Remedy 2 — put the
+count and the distinct code points in the message — is **within-contract**, and
+I would fold it in regardless of anything else: I read `_flag_fingerprint`
+(`templates/modules/team-gated/content_scan_runner.py`, line 291) and it hashes
+`relpath:pattern_id:sha256(stripped line)`, so enriching a message churns no
+residual fingerprint. Remedy 1 — a separate `unicode-tag` id — adds a pattern
+id to the **shipped contract** adopters write markers against and the module
+docstring publishes. That is not mine.
+
+**Classification: beyond-contract**, on remedy 1. It is in the closing section.
+
+#### [I4] ACCEPTED, and the hole is larger than the finding states
+
+Direct from `unicodedata`, no reconstruction:
+
+```
+$ ~/conda_envs/lhm/bin/python3.13 -c "..."
+python 3.13.13 UCD 15.1.0
+U+0034F  Mn   COMBINING GRAPHEME JOINER
+U+0115F  Lo   HANGUL CHOSEONG FILLER
+U+017B4  Mn   KHMER VOWEL INHERENT AQ
+U+03164  Lo   HANGUL FILLER
+U+0FE0F  Mn   VARIATION SELECTOR-16
+U+0FFA0  Lo   HALFWIDTH HANGUL FILLER
+U+E0100  Mn   VARIATION SELECTOR-17
+      ( 10 of 10 sampled Default_Ignorable code points: none is category Cf )
+```
+
+`Default_Ignorable_Code_Point` is not general category `Cf`, so a `Cf` sweep
+cannot guard the rows that carry those members. **And it is worse than the six
+ignorable rows the finding names**: I checked the other half of the constant
+too —
+
+```
+noncharacter categories: ['Cn']   count: 66
+any noncharacter is Cf: False
+total Cf code points in UCD 15.1.0: 170
+```
+
+Every one of the 66 noncharacters is `Cn`. So the proposed sentinel guards
+**none of the 18 noncharacter rows either** — not six of seventeen rows, but
+six of seventeen *plus all eighteen*. The evidence sentence is claimed for
+`Default_Ignorable ∪ Noncharacter` and measured over a 170-code-point set that
+intersects neither the named ignorable rows nor any noncharacter row. The
+review's stdlib-only remedy — keep the `Cf` sweep and add an explicit positive
+assertion over the known non-`Cf` members — is right, and must extend to the
+noncharacter rows as well.
+
+**Classification: within-contract.** It corrects a test and an evidence
+sentence the proposal already specifies.
+
+#### [I5] ACCEPTED -- the test is vacuous, confirmed
+
+```
+input unchanged after scan_text : True   (str is immutable)
+```
+
+Python `str` is immutable, so *Tests required* #7 passes against any
+implementation, including one that strips ignorables — the behaviour the
+proposal forbids most emphatically. The testable half is the `scan_file` bytes
+assertion. Swap it, or keep both.
+
+**Classification: within-contract.** It corrects a test the proposal already
+lists.
+
+#### [I6] ACCEPTED -- direction and remedy reproduced independently; my multiplier differs from the reviewer's and I report mine
+
+This is the one finding I could not reach without building something, so I
+built my own: 17 default-ignorable rows plus 18 noncharacter rows (the shapes
+the proposal states), a naive per-character linear scan, over the concatenation
+of all 227 tracked `.md` files — 5.16 MB, 80 008 lines — best of three:
+
+```
+  HEAD    _scan_unicode        : 0.201 s
+  HEAD    _scan_homoglyph      : 0.511 s
+  naive   _scan_ignorable      : 2.263 s     (11.3x the existing unicode pass)
+  guarded _scan_ignorable      : 0.099 s     (below HEAD's unicode pass)
+  lowest code point in the two tables: U+00AD
+  guarded agrees with naive: True
+```
+
+My multiplier is **11.3x**, not the review's ~33x; the row layout, the corpus
+and the machine all differ, and neither number is the interesting one. What
+reproduces across both independent implementations is the claim that matters:
+the naive shape **dominates the whole scan**, and a one-line ASCII
+short-circuit at U+00AD removes it entirely at an identical hit set. I also
+confirmed the consequence: `_MAX_WALL_SECONDS = 120.0`
+(`templates/modules/team-gated/content_scan_runner.py`, line 83) with a
+fail-closed exit 2, whose own docstring is "A per-file or aggregate breach is a
+distinct LOUD failure (exit 2), never a skip."
+
+**Classification: within-contract.** The guard produces byte-identical output
+and corrects a cost characterization the proposal already makes.
+
+#### [I7] ACCEPTED on its first bullet -- which needs no reconstruction either -- and DECLINED on its second
+
+**Bullet 1, ACCEPTED and decisive.** Derived from the amendment's own
+enumeration, against the seven-token residual the proposal commits the module
+doc to publishing:
+
+<!-- cairn-accept: homoglyph reason="The residual-list tokens ARE the measurement: this is the published false-positive list whose size is the finding, and rewriting them to ASCII would delete the result. Block-scoped, so a homoglyph planted elsewhere in this file still flags." reviewer="Claude (author)" date=2026-08-03 -->
+```
+of the 7 published residual shapes, still flagging under the enumerated
+denylist: 5  ['νmax', 'κeff', 'αlevel', 'ηeff', 'αdecay']
+      cleared by the denylist entries U+03C9 and U+03B3: 'ωopt', 'γray'
+```
+<!-- cairn-accept-end: homoglyph -->
+
+Five, not seven. The *Documentation / doctrine surface* section commits the
+module doc to "the seven residual shapes that still flag", and publishing seven
+would document two limits that do not exist. This is the benign-direction
+shadow of [I1] and it moves with however [I1] resolves. **Within-contract.**
+
+**Bullet 2, DECLINED as stated.** The 423-file figure is not stale. It sits
+inside an evidence block that dates itself — "All figures below are dated
+snapshots measured at `3292f21`" — and at that commit the tree holds exactly
+423:
+
+```
+3292f21  md=207  md/txt/py=423    <- the base proposal's snapshot
+292e2c6  md=218  md/txt/py=434    <- the amendment's snapshot
+af4b2ee  md=218  md/txt/py=434    <- the Internal review's snapshot
+005a8dd  md=227  md/txt/py=443    <- today
+```
+
+Every figure is correct at its own stated commit, including the reviewer's.
+Under Cairn's numeric-claim discipline a decision-irrelevant count is *dated*,
+not chased; re-pinning it to 434 would have been wrong within hours, as the
+last row shows. What I accept underneath the finding, and it is the part with
+teeth: any figure the **module doc** publishes must be measured at execution
+time, not carried from any of these rows.
+
+### What neither review found: Change 1 no longer costs this tree zero, and the counterexample is in this file
+
+I swept all 443 tracked `.md` / `.txt` / `.py` files at HEAD `005a8dd` with the
+reconstructed tables. Eleven lines carry a code point in them. Nine are already
+owned by `unicode-zero-width` or `unicode-bidi` — test fixtures and two
+`link_check.py` copies — and the proposal's skip rule excludes them by design.
+**Two are not**, and both are in *this proposal file*:
+
+```
+dev/proposals/2026-08-03-claude-content-scan-detectors.md:1248
+      U+FE0F VARIATION SELECTOR-16 (x2)   already-covered-by-existing-id=False
+dev/proposals/2026-08-03-claude-content-scan-detectors.md:1432
+      U+00AD SOFT HYPHEN                  already-covered-by-existing-id=False
+```
+
+Line 1248 is the Internal review's own **[I3]** prose, where the benign
+emoji-plus-variation-selector example is written with real emoji. Line 1432 is
+the Internal review's own **[I6]** remedy, where the guard is written as a code
+span containing a **raw SOFT HYPHEN**. So:
+
+1. The proposal's "**0** new flags across all 423 tracked files" is correct
+   as_of `3292f21` and **false as_of today**.
+2. The review that certified "**0** new `unicode-ignorable` flags across all
+   434, which independently confirms the proposal's central no-cost claim"
+   introduced the counterexample in the same section that certified it.
+3. Change 1 moves `check_cairn.py`'s flag count by **+2**, from whatever its
+   pre-existing baseline is — that delta, not any absolute pair, is the
+   invariant. (The absolute has already moved once while this Response was
+   being written: a concurrent session's `bootstrap/PROVENANCE.md` rewrite took
+   it from `2 issues across 176 file(s)` to `OK -- 177 Markdown file(s)
+   scanned; no issues`. The +2 is unchanged by that and by anything else.) Any
+   non-zero movement trips the proposal's own signal-the-change-is-wrong
+   tripwire ("flag count moves at all ... any movement means the corpus
+   comparison was wrong") — here with a fully known cause.
+4. The review's [I6] remedy also violates the convention the proposal's *Tests
+   required* sets for exactly this reason: "built with `\uXXXX` escape forms —
+   never raw invisible characters".
+
+**The structural finding, which outlives this file.** Those two flags cannot be
+cleared. Suppression is line- or block-scoped and a block opens *before* its
+hits, so no section appended to the end of this file reaches line 1248 or 1432;
+the deliberation record is append-only, so the reviewer's section is not mine
+to edit; and `scripts/check_cairn.py` composes `content_scan.scan_file`
+directly and never reads `templates/modules/team-gated/content_scan_residuals.txt`,
+so the residual-baseline escape hatch is not on Cairn's own self-scan path.
+Once Change 1 ships, **any raw default-ignorable code point already committed
+to an append-only record is permanently unclearable by the marker grammar.**
+That is a contract question this proposal's fence does not reach, and it is in
+the closing section.
+
+### Beyond the numbered findings
+
+* **The RFC citation is now verified by me, not only by a same-type reviewer.**
+  I fetched the published RFC 8264 this session: § 9.13 is
+  `PrecisIgnorableProperties (M)`, defined as "M: Default_Ignorable_Code_Point(cp)
+  = True or Noncharacter_Code_Point(cp) = True". Matches the proposal exactly.
+  The review reports the same fetch, and I record mine separately because a
+  Response should not close a plan obligation on a reviewer's fetch alone. That
+  obligation can be struck.
+* **The severity-ordering section is right, and the surface it points at now
+  exists.** My earlier Response said "none of the seven opened today claims that
+  surface" for the preset-roster question. That is out of date:
+  `dev/proposals/2026-08-03-claude-default-security-stance.md` has since been
+  opened. So the reviewer's "settle [I2] and [I3] *before* the roster change
+  lands" now has a concrete sibling to be sequenced against rather than a
+  hypothetical one, which strengthens their point rather than weakening it.
+* **On the review's standing statement.** It is accurate and it made the right
+  call anchoring its two load-bearing findings on prose. I would add the
+  empirical result of this pass: of the seven findings, six turned out to be
+  reachable from a primary source without any reconstruction, and all six held.
+  The one that needed a reconstruction ([I6]) held in direction and remedy while
+  its headline constant moved by 3x between two independent implementations —
+  which is roughly the right prior for how much weight to put on each kind.
+* **Still unrun by me, unchanged as plan obligations**: `python -m pytest
+  bootstrap/tests` (another session is live in this tree), `vermin` / the ≥3.11
+  floor, Bandit over the patched file, and `python scripts/content_scan.py
+  <file>` in a scaffolded tree (the adopter's own path, as the proposal's
+  *Examples / smoke checks* section names it).
+
+The review's *Not covered* list carries two further items that are **not** in
+that carry-forward, because they are closable now rather than at plan time.
+Both are disposed here so no named surface is left without an owner.
+
+* **The install contract — the review's "I accepted the proposal's 'no engine
+  change, therefore no re-anchor obligation' claim without independently
+  testing it". I tested it, and the claim is *mostly* right and *partly
+  wrong*.** Three of the four surfaces the review names are genuinely
+  untouched, and one is not:
+  * **Install manifest / mapping: untouched, confirmed.** The scanner installs
+    through a single row, `InstallSpec("team-gated/content_scan.py",
+    "scripts/content_scan.py", verbatim=True)`
+    (`bootstrap/_scaffold/config.py`, line 634). `install_manifest`
+    (`bootstrap/_scaffold/install.py`, line 1359) emits `(source,
+    destination, verbatim)` triples and no content digest, and `python
+    bootstrap/scaffold.py --manifest` prints
+    `scripts/content_scan.py<TAB>modules/team-gated/content_scan.py<TAB>verbatim`.
+    A content-only edit changes no row. Confirmed by running the manifest.
+  * **AST attestation baseline: untouched, confirmed.** The baseline
+    (`bootstrap/tests/fixtures/scaffold_ast_baseline.json`) keys engine
+    symbols and is verified against `bootstrap/_scaffold/`
+    (`bootstrap/tests/test_ast_attest.py`, lines 20–21).
+    `templates/modules/team-gated/content_scan.py` is template payload, not
+    engine code, and appears nowhere in it. No re-anchor.
+  * **Lockfile: untouched as a *schema* matter.** An adopter's
+    `dev/.cairn/cairn-lock.yml` records a per-file `hash`, so a content edit
+    to the template is detected on the adopter's next upgrade — which is
+    exactly the drift detection the lockfile exists for, not an obligation on
+    this proposal. No schema field, no new record.
+  * **The *gate manifest* is NOT untouched, and this one is a real obligation
+    the proposal does not name.** `templates/modules/team-gated/content_scan.py`
+    is in the gate manifest's **frozen** set — pinned by content digest in
+    `bootstrap/tests/fixtures/gate_manifest.json` and asserted frozen in
+    `bootstrap/tests/test_gate_manifest.py`, line 67 ("shipped scanner /
+    security-gate implementations ARE frozen"). I checked the live file's
+    sha256 against the pinned value and they match exactly at HEAD, which is
+    the point: **any** content edit to this file breaks that equality and
+    makes gate verification report `FROZEN-MODIFIED`. And re-pinning it is not
+    a test-fixture refresh: `bootstrap/tests/_gate_reanchor.py` makes the
+    manifest advance a **two-stage supervised act** — Stage A gathers evidence
+    in an isolated tree, Stage B is data-only, executes no candidate code, and
+    advances a single designated trusted ref by compare-and-swap, described in
+    that module's own header as "the Maintainer's supervised act — guarded by
+    explicit confirmation". `bootstrap/REANCHOR_RUNBOOK.md` carries the manual
+    `_gate_manifest.py produce` bootstrap for first use, gated on out-of-band
+    hash review and an external anchor check. Either way it is Maintainer work
+    with a ceremony attached, not something an implementing agent does in
+    passing.
+  * *So the correct statement of the claim* is: no **engine** change and no
+    **install-mapping** change, therefore no *AST* re-anchor and no manifest-row
+    churn — but a **gate-manifest re-pin is required**, by both Change 1 and
+    Change 2, on the supervised path. **Classification: within-contract, and a
+    missing plan obligation.** It adds no surface and changes no behaviour; it
+    is work the plan must schedule and sequence with the Maintainer, and the
+    proposal's *Evidence / verification plan* does not currently list it. This
+    is a correction to the proposal, not a question for the Maintainer, so it
+    is disposed here rather than in the closing section. (Ordinary
+    `python -m pytest bootstrap/tests` does **not** catch it: the committed
+    fixture is consumed by the gate-control path — `_gate_preflight.py`,
+    `_gate_reanchor.py` — while `test_gate_manifest.py` verifies a
+    freshly-*produced* manifest. So this would have surfaced at gate time, not
+    at test time.)
+* **UTS #39 confusables data — the review could not consult it, and neither
+  can the derivation I recommend. Naming that honestly, because it is
+  load-bearing against my own recommendation.** The base proposal says
+  `_CONFUSABLE_GREEK` was "curated from the shape correspondences in UTS #39's
+  confusables data", and my recommendation below replaces curation with an
+  exhaustive twinned/untwinned classification of the 347 assigned letters. That
+  recommendation needs an **oracle** to perform the classification, and I did
+  not name one. I checked what is reachable:
+  * `unicodedata` at the canonical interpreter (UCD 15.1.0) exposes
+    `bidirectional`, `category`, `combining`, `decomposition`,
+    `east_asian_width`, `name`, `normalize`, `numeric` and friends — and **no**
+    confusables, skeleton, script, or identifier-status accessor. I probed for
+    each by name; all absent.
+  * Nothing in this repository carries the table either. I swept the tree for
+    `confusab`: every hit is prose, a comment, a docstring, or
+    `_CONFUSABLE_GREEK`'s own name. No data file, no mapping.
+  * `decomposition` / NFKC reach the *compatibility* variants (the theta/phi/pi
+    symbol forms fold onto their base letters) but carry **no Greek-to-Latin
+    shape correspondence** at all — U+03B4 has no decomposition toward `d`. So
+    the stdlib gets the symbol-variant half of the classification and none of
+    the half that matters.
+  * **Conclusion: the recommendation has an unresolved oracle dependency, and
+    it is one of the things a returning Change 2 must settle, not something I
+    have settled here.** The only real oracle is UTS #39's `confusables.txt`
+    (or `intentional.txt`), an external Unicode data file. Runtime use is
+    excluded outright — zero runtime dependencies, standard-library-only. That
+    leaves generating the classification **offline** and committing only the
+    result, which keeps runtime stdlib-only but raises three questions Change 2
+    would have to answer and I am not answering: where the generator lives and
+    how a reviewer reproduces it; which UCD version the table is pinned to and
+    what happens when the interpreter's `unidata_version` moves past it; and
+    whether a versioned external dataset entering the tree is compatible with
+    the dependency budget's provenance expectations. **Classification:
+    beyond-contract if the answer is a vendored data file** (the proposal's
+    fence says "No new file"), **within-contract if the answer is an in-module
+    table**; that fence question is itself put to the Maintainer in the closing
+    section. Until it is answered, "derive rather than curate" is a *direction*
+    with a named gap, not a ready remedy — and the honest form of my
+    recommendation is that Change 2 cannot be re-specified without settling it
+    first.
+
+### On the reviewer's split recommendation -- the author's recommendation, not a decision
+
+The Maintainer decides this; what follows is my recommendation and my honest
+disagreement with parts of the reviewer's reasoning.
+
+**I recommend the split, and I agree the curated set has failed twice for the
+same reason.** Round one: a 32-entry allowlist asserted against a domain of 347
+assigned letters; 15 bypasses, found by me *after* the External pass had
+endorsed the bound. Round two: a ~25-entry denylist asserted against the same
+domain; **14 tokens** over **9 code points** that HEAD flags and the denylist
+clears, found by the Internal reviewer and re-measured above — and, this pass,
+three letters missing from the denylist that the
+amendment's own figures require it to contain. Three separate reconciliations
+against the artifact's own published numbers, three failures. The mechanism is
+identical every time: **a set was curated by judgment and asserted, never swept
+against its own domain.**
+
+**Where I go further than the reviewer.** A third round of curation is not the
+fix, and "an adversarial sweep by someone who did not write it" only buys
+another round of the same. The failure is procedural, not judgmental. If Change
+2 returns, I recommend it return with a **derivation** rather than a curation:
+enumerate every assigned letter in the two `_SCRIPT_RANGES` Greek rows — 347 of
+them, a number the amendment already publishes and I re-measured — classify each
+explicitly as twinned or untwinned, commit the classification as data, and add
+a test that fails if any assigned code point in those ranges is unclassified.
+That converts the failure mode from "someone's judgment was incomplete", which
+is unfalsifiable until a reviewer happens to guess the right token, into "the
+table does not cover its domain", which is a test. It also dissolves the
+polarity argument the amendment rests on: an exhaustive classification has no
+omissions in either direction, so which way it fails open stops mattering.
+
+**Classification of that recommendation, and it is deliberately two-sided.**
+"Commit the classification **as data**" is ambiguous against the proposal's own
+fence — its *Proposal* section reads "No new file, no new tool, no new
+configuration surface", and Change 1 stresses "There is no data file and no new
+dependency". So: **within-contract if "as data" means an in-module table** — a
+347-entry mapping literal replacing `_CONFUSABLE_GREEK` inside
+`content_scan.py`, which adds no file, no tool and no adopter-visible surface,
+and is the reading I intend by default. **Beyond-contract if it means a
+separate data file** — a shipped `content_scan_confusables.txt` or similar
+would add an install-manifest row, a lockfile record, a gate-manifest frozen
+entry, and a fifth `scripts/` artifact an adopter must not hand-edit; that
+crosses the fence three times over and is not mine to take. I recommend the
+in-module reading and put the choice to the Maintainer in the closing section,
+because the oracle question above may force the file reading whether or not the
+fence would have preferred otherwise.
+
+**Where I go less far than the reviewer.** The recommendation describes Change
+1's residue as "additive fixes with named one-line or one-table remedies".
+[I4], [I5] and [I6] are exactly that. **[I3] is not** — its principal remedy
+adds a pattern id to the shipped contract, which is a fence question, not a
+one-liner. And my own finding above means Change 1 no longer lands at zero
+corpus cost on Cairn's own tree, and cannot be made to without either standing
+flags or an edit to an append-only record. Change 1 is still far closer to
+landable than Change 2 and I still recommend the split; I do not want it
+recorded as "fold in three one-liners and go".
+
+**On the tier.** The reviewer is right that the External tier has effectively
+not happened for the half of this change that removes flags: all three of the
+External pass's swept lenses ran the scanner at HEAD, and the Internal pass is
+my own agent type. I would not send Change 2 to a plan on the current numbers.
+
+**Recommendation, in one line**: land Change 1 with [I4], [I5], [I6] and [I3]'s
+message half folded in, the gate-manifest re-pin added to the plan's
+obligations, and questions 1 and 3 below answered; return Change 2 to a further
+revision that resolves [I1] and [I2], answers question 4 below and the oracle
+gap it turns on, and replaces curation with derivation, then to an External
+round — not to a plan. (Question 2 is Change 1's and has to be answered either
+way.) If the Maintainer prefers a single round over a split, the reviewer's
+fallback (hold the whole proposal, re-measure both token sets, send it back to
+External) is the one I would take — with the token set re-measured as
+**fourteen tokens over nine code points**, not thirteen of anything.
+
+### Findings the Decision did not see
+
+This proposal has **no Decision** — the `## Decision` placeholder above is still
+unfilled. So these are not items a Decision passed over; they are items **the
+Maintainer has not yet been asked**. They are listed here undecided and
+unfolded, and none is mine to settle. Each changes behaviour the proposal never
+described, adds to *Touches*, or needs a design ruling.
+
+**1. Split the Tag block into its own pattern id ([I3], remedy 1).**
+
+* *What it changes*: adds a second pattern id to the shipped contract —
+  the surface adopters write `cairn-accept` markers against and the module
+  docstring publishes. The proposal's fence says "no new configuration
+  surface"; this adds one id, one docstring line, and one module-doc line.
+* *Case for*: the PRECIS set spans the benign-and-common (variation selectors
+  in emoji) and the never-benign (a Tag-block shadow alphabet). One id over
+  both means a good-faith accept marker for the first blesses the second inside
+  its block — demonstrated above against the *shipped* scanner, not a
+  reconstruction. Cairn's own tree now contains a real instance of the benign
+  case (line 1248), so this is no longer hypothetical.
+* *Case against*: it widens a fence the proposal drew deliberately; it is a
+  partial fix, since the same conflation persists between a soft hyphen and a
+  noncharacter under whichever id remains; and two ids are two things an
+  adopter must learn about a detector that is supposed to be a simple witness.
+* *What is lost if refused*: Change 1 ships a detector whose documented remedy
+  for its most common false positive is also a working bypass for its
+  highest-severity true positive — the proposal's own alarm-fatigue argument,
+  reproduced inside its own new detector.
+
+**2. The clause-1 predicate for the five non-Greek scripts, and the non-Latin
+proper noun ([I2]).**
+
+* *What it changes*: whether clause 1 is script-general or Greek-only. The
+  proposal's prose says script-general; its measurements assume Greek-only. The
+  plan cannot execute both.
+* *Case for script-general*: whole-script Cyrillic is the most available
+  homoglyph attack — Cyrillic supplies near-complete ASCII look-alikes — and
+  this repository has a demonstrated Cyrillic instance in the
+  `identity-not-name` lineage. HEAD misses it and Greek-only continues to miss
+  it. Under the Maintainer's default-security direction this becomes shipped
+  default behaviour rather than an opt-in module's.
+* *Case against*: it flags legitimate non-Latin personal names in an English
+  document — measured, 3 lines in
+  `dev/proposals/archive/2026-08-03-claude-byline-classification.md`, including
+  the sentence stating that now-accepted proposal's zero-international-name-cost
+  claim. It falsifies this proposal's own "0 files change" corpus prediction. And
+  a rule that flags a collaborator's name is the postdoc-first failure this
+  proposal exists to prevent, one script over.
+* *A third option neither the proposal nor the review names*: **fullwidth Latin
+  can be split from the name question.** Fullwidth carries no proper-noun cost
+  in an English tree at all, so whole-script fullwidth can be closed
+  script-generally even if Cyrillic is held under a Greek-only reading. That is
+  a pure-loss case closed at zero natural-language cost.
+* *What is lost if refused (Greek-only)*: clause 1's "This closes a pre-existing
+  hole" is true only for Greek and must say so in the clause text and the module
+  doc; whole-script Cyrillic and fullwidth stay open; and the "strictly better
+  detection" claim needs the same qualifier.
+
+**3. Two raw ignorable code points are already committed to this file, and the
+record is append-only.** (Found this pass; neither review raised it.)
+
+* *What it changes*: whether Change 1 ships with a standing, permanently
+  unclearable flag delta on Cairn's own tree — **`check_cairn.py` gaining +2
+  flags over whatever its baseline is at the time** — and whether the
+  append-only rule bends to avoid it. (Stated as the delta deliberately: the
+  absolute baseline is owned by other work and has already moved once during
+  this Response, from 2 issues to 0. The +2 is the invariant and the only part
+  this proposal contributes.)
+* *Case for accepting the standing flags*: append-only is a bright line; a
+  witness detector reporting two genuine ignorable code points in a
+  deliberation file is the tool doing its job; and the delta is documented and
+  sourced, so the tripwire fires with a known cause rather than an unknown one.
+* *Case against*: the proposal's stated tripwire is "flag count moves at all
+  ... any movement means the corpus comparison was wrong". Shipping a known
+  non-zero delta blunts a signal the proposal relies on, and there is no path to
+  clear it — no appended marker reaches backwards, and Cairn's self-scan never
+  reads the residual baseline.
+* *What is lost if refused* (that is, if the record is edited to remove the two
+  code points): the append-only guarantee, spent on a cosmetic gate result.
+* *The general form, which is the part worth deciding*: once Change 1 ships,
+  any raw default-ignorable code point already committed anywhere in an
+  append-only record is unclearable by the marker grammar. Whether that wants a
+  file-scoped exemption (the `claim-check-allow` shape), a residual-baseline
+  path on the self-scan, or nothing at all, is a contract question outside this
+  proposal's fence.
+
+**4. Does "commit the classification as data" mean an in-module table or a
+shipped data file?** (Raised by my own recommendation above; no review reached
+it, because the recommendation did not exist when either review was written.)
+
+* *What it changes*: whether a re-specified Change 2 stays inside the fence the
+  proposal drew — "No new file, no new tool, no new configuration surface", and
+  Change 1's "There is no data file and no new dependency" — or crosses it. The
+  two readings are not cosmetic: a **separate data file** adds an
+  install-manifest row, a lockfile record, a gate-manifest frozen entry, and a
+  fifth `scripts/` artifact the adopter must not hand-edit. An **in-module
+  table** adds none of those.
+* *Case for the in-module table (within-contract)*: it is a literal inside
+  `content_scan.py`, invisible to the install contract, and the exhaustiveness
+  test that makes the derivation falsifiable works identically either way. This
+  is the reading I recommend.
+* *Case for the data file (beyond-contract)*: 347 classified code points is a
+  large literal to carry in a scanner whose whole argument is that it stays
+  small and auditable; and if the classification is **generated** from UTS #39
+  rather than hand-written, a file is the natural artifact for a generated,
+  version-pinned table with recorded provenance.
+* *The coupling that makes this a real question and not a style choice*: the
+  oracle gap disposed above. There is **no stdlib oracle** for Greek-to-Latin
+  twinning — `unicodedata` at UCD 15.1.0 exposes no confusables, skeleton,
+  script or identifier-status accessor, and compatibility decomposition reaches
+  only the symbol variants. So a genuine derivation has to come from UTS #39's
+  `confusables.txt` offline, and a generated table wants provenance,
+  a pinned UCD version, and a reproducible generator — all of which push toward
+  the file reading. The Maintainer may therefore be choosing between *staying
+  inside the fence with a hand-classified in-module table* (which is curation
+  again, one layer up, with only the exhaustiveness test as the new guarantee)
+  and *crossing the fence to get a real derivation*.
+* *What is lost if refused (fence held, in-module only)*: the derivation
+  degrades to "exhaustive but still judged" — better than today, because
+  incompleteness becomes a test failure rather than a silent gap, but the
+  judgment calls themselves stay unattested to any external oracle.
+
+## Maintainer direction -- 2026-08-03
+
+**This section records direction, not a Decision.** The `## Decision` block above
+remains a placeholder and is the Maintainer's to write. Three of the five
+questions this Response put to the Maintainer were answered; each answer is
+quoted as selected, and the fourth and fifth are resolved as a consequence.
+
+**[I3] remedy 1 — the Tag block gets its own pattern id.** Selected: *"Yes,
+separate id."* So a `cairn-accept` marker written for an emoji variation
+selector can no longer silence a Tag-block shadow-alphabet payload. The evidence
+that decided it is in this file: the benign case is **not hypothetical** — this
+proposal's own record carried two real instances of it (see the repair note
+below), so markers against that id were certain to be written, and a shared id
+would have armed the bypass in practice rather than in theory. Change 1 accepts
+one additional pattern id in the shipped contract, against its own "no new
+configuration surface" fence; the fence is held everywhere else.
+
+**[I2] — clause 1's predicate is Greek-only, and fullwidth is closed
+separately.** Selected: *"Greek-only + close fullwidth."* This resolves the
+contradiction the review found — the proposal's prose claimed script-general
+while its measurements assumed Greek-only — in favour of what was actually
+measured. Two obligations follow and are not optional:
+
+* The clause text and the module doc must say **"for Greek"**. The sentence
+  "This closes a pre-existing hole" is false without that qualifier, and
+  shipping it unqualified would be the same claim-outruns-implementation defect
+  this proposal exists to close.
+* **Whole-script fullwidth Latin is closed script-generally.** It carries no
+  legitimate proper-noun cost in an English tree, so it is a pure-loss vector
+  closable at zero natural-language cost — the third option neither the proposal
+  nor the review named.
+
+Whole-script **Cyrillic stays open here**, which is defensible on a fact this
+Response did not have to argue: the severe consequence of a Cyrillic homoglyph
+in this repository is *authority granting* — a byline flipping from `ai` to
+`human` — and that path is closed independently by `byline-classification`,
+which is accepted, planned, externally reviewed and implemented. What this
+clause would have added is prose *detection*, not authority protection. The
+international-name cost is therefore not worth paying here, and a decision to
+pay it later should be made against a measured corpus of its own.
+
+**AUTHOR-NEW-1 / the append-only ignorables — repaired, and recorded.**
+Selected: *"Edit them to escaped form, and record it."* Performed in this commit,
+and disclosed here because the file is append-only and an undisclosed edit to it
+would be worse than the flags:
+
+| Line | Was | Now |
+|---|---|---|
+| 1248 | two literal check/cross glyphs each carrying a raw `U+FE0F` | the code points named as text, `U+2714`/`U+2716` … `U+FE0F` |
+| 1432 | a raw `U+00AD` inside a Python string literal in a code span | ``"\u00ad"``, the escaped form |
+
+**Nothing substantive changed.** Both edits are to *illustrative notation*
+inside the Internal review's own examples; the review's argument, findings and
+figures read identically. Verified after the edit: zero raw default-ignorable or
+format code points remain anywhere in this file. The alternative — a permanent,
+known-cause flag delta on Cairn's own tree — would have handed the proposal's
+own "flag count moves at all" tripwire a standing exception on the day it
+shipped, which is the alarm-fatigue failure the proposal argues against.
+
+**The fifth question — the general form — is answered by convention, not by
+tooling.** A review demonstrating an invisible character writes it as
+`U+00AD`, never as the raw byte. That costs nothing, prevents recurrence, and
+needs no change to the marker grammar or the self-scan. A file-scoped exemption
+shape reaching backwards over committed lines is therefore **not** pursued; the
+sweep behind this decision found the whole exposure to be three occurrences in
+one file, all planted by the review that certified their absence, so the
+systemic case for a tool change was never made.
+
+**Still undecided and not folded in**: everything under *Findings the Decision
+did not see*, including the split recommendation itself and the "as data" fence
+question. The Decision remains the Maintainer's.
