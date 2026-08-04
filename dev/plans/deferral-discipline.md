@@ -1,7 +1,7 @@
 # Plan: deferral discipline — the archive precondition routes, not only preserves
 
 **Source proposal**: [`dev/proposals/archive/2026-08-04-claude-deferral-discipline.md`](../proposals/archive/2026-08-04-claude-deferral-discipline.md)
-**Status**: awaiting-plan-review
+**Status**: executing
 **Plan review**: required(Internal) — ratified in the Decision (`6e349b3`)
 **Last update**: 2026-08-04
 **Opened**: 2026-08-04
@@ -736,3 +736,175 @@ agent.*
 ## Lasting-truth migration
 
 *Filled in at archive time.*
+
+---
+
+## Response to the Internal plan review -- Claude (Strategy) -- 2026-08-04
+
+**Model**: claude-opus-5
+
+Ten findings, accepted in full. Two ([P1], [P2]) are load-bearing enough that the
+Sequence is revised below rather than patched in place.
+
+**[P1]** accept -- and it falsifies three sentences of this plan's own
+author-accounting. Reproduced independently: `tools/lifecycle_planner.py:631` is
+a **live conditional** --
+`re.search(r"^\s*Follow-ups migrated to\s*:", text, re.MULTILINE)` -- feeding a
+violation branch at `:798-801` that emits *"status is 'archived' but no
+'Follow-ups migrated to:' block is present (archive precondition)"*. So the
+string C1 renames is **load-bearing in shipped code**, not documentation. The
+plan's claims that Chunk E touches "only two message strings", that "every
+failure in this plan is a prose defect, which fails *open*", and that there is
+"no public code path" are **all three false and are retracted**. There are
+**five** bound sites per copy (`:631`, `:800`, `:880`, `:1013`, `:1025`), across
+two copies.
+
+The design decision this forces, which the plan never surfaced: **the recognizer
+must accept both spellings.** Six archived artifacts satisfy the old form today
+and are append-only; a rename that invalidates them would make the shipped
+adopter-facing scan report historically-correct records as violations. Chunk E
+becomes backward-compatible by construction -- `Follow-ups migrated to:` **or**
+`Dispositions:` -- which is the only option that does not corrupt the existing
+record.
+
+**[P2]** accept -- the plan **under-delivers the Decision**, and it under-delivers
+precisely the Maintainer's own contribution. C3 (`defer` needs a quoted
+authorization) and C5 (archive-preparation as the serialization point) were
+sequenced only into `doctrine/lifecycle-contract.md:137`, so the canonical
+`doctrine/lifecycle.md` section and all four adopter templates would have shipped
+the disposition **vocabulary without the backpressure** -- a strictly worse
+artifact than today, because it makes declining easy and never introduces the
+gate that was the point. C3 and C5 move into Chunk A (canonical) and Chunk C
+(templates). D3 (the solo-profile statement) gains an explicit row rather than
+living only in *Edge cases*.
+
+**[P3]** accept -- all three verified and corrected. `dev/plans/_template.md`'s
+archive-precondition prose is at **`:284-292`**, not `:261-269`; the wrong range
+was copied from C2f without re-checking, and the two files differ in length (295
+vs 272 lines). `doctrine/plans.md:602-609` carries one of the four canonical
+statements of the block form and was cited by **no** row. The
+`templates/core/dev/proposals/_template.md` citation is off by one. This is the
+third citation defect in this artifact's history and the second caused by
+carrying a range across files.
+
+**[P4]** accept -- verified: `_DISPOSITION_BUCKETS` at
+`templates/modules/default-on/_lifecycle_metrics/subsystems.py:88-94` is a
+five-token tuple with no `guard`, and `_normalize_disposition_token` returns `''`
+for an unrecognized token, which the caller drops. So the new token would be
+**silently invisible** to the metrics report -- the exact silent-drop hazard the
+proposal's Response cited [I2] to avoid, reappearing because the token is new.
+`guard` is added to the bucket tuple, and the `_lifecycle_metrics` twin pair
+joins the surface set.
+
+**[P5]** accept -- Chunk E bundled the one *guarded* twin pair while Chunks C and
+D split the three *unguarded* mirror pairs, which is backwards: the pairs a test
+protects can safely ride together, the ones nothing protects are where a split
+review earns its keep. Re-split below.
+
+**[P6]** accept -- acceptance criteria were not falsifiable. Added: the changed-
+file set of the implementing commits must equal the surface set named in the
+Sequence, verified by `git diff --stat` against the list, so "done while a
+surface went unedited" is detectable rather than assertable.
+
+**[P7]** accept, and the reviewer is right that the no-new-test justification was
+sound for the prose and **unsound for Chunk E**. It is not scope relief in the
+prose chunks -- a doctrine sentence genuinely has no behavioral surface -- but
+[P1] establishes that Chunk E has one. Three assertions are added, named in the
+revised Chunk E.
+
+**[P8]** accept -- seven in-flight artifacts pre-declare the old block form.
+Backward compatibility ([P1]) covers them with no edit, which is why it is the
+right design rather than merely the compatible one.
+
+**[P9], [P10]** accept -- folded into the revision.
+
+**Second round** not run, per the reviewer's own recommendation that a separate
+pass is not warranted. Every finding's satisfier is a scope correction or a named
+assertion; none re-opens the design.
+
+## Sequence revision 2026-08-04
+
+Supersedes the original Sequence. Surface count corrected from **fifteen to
+nineteen**: the planner pair carries five bound sites each (not two), and the
+`_lifecycle_metrics` twin pair joins.
+
+```
+1. Chunk A  -- doctrine/lifecycle.md: C1, C2, C4 AND C3 + C5        [pending]
+2. Chunk B  -- the four sibling doctrine files (+ plans.md:602-609) [pending]
+3. Chunk C  -- the four adopter templates, incl. C3/C5 backpressure [pending]
+4. Chunk D  -- the four self-hosted mirrors                         [pending]
+5. Chunk E' -- the planner twins: 5 sites x 2 copies, BOTH spellings
+               accepted, + 3 new assertions                          [pending]
+6. Chunk E''-- the _lifecycle_metrics twins: `guard` bucket          [pending]
+7. Chunk F  -- CHANGELOG + open the D1 successor                     [pending]
+```
+
+### Chunk A (revised) — the canonical rule, with the gate
+
+| # | File | Change |
+|---|------|--------|
+| A1 | `doctrine/lifecycle.md` > "Archive precondition" | **C1** — satisfied by a recorded disposition token; `Follow-ups migrated to:` **or** `Dispositions:` accepted |
+| A2 | same | **C2** — define `guard`; the entry names the node (`path::node`); comments explicitly ineligible |
+| A3 | same | **C4** — the two eligibility rules; no required ordering |
+| A4 | same | **C3 + C5** *(moved here per [P2])* — `defer` requires a quoted Maintainer authorization; archive-preparation is the serialization point |
+| A5 | same | **D3** *(new row per [P2])* — on a solo profile the gate is a written self-justification: weaker, not vacuous |
+| A6 | same | All three invariants are documentary; enforcer is a reviewer opening both files |
+
+### Chunk B (revised)
+
+| # | File | Change |
+|---|------|--------|
+| B1 | `doctrine/proposals.md:450-458` | Add `guard` to the grammar; note it governs archive-time dispositions |
+| B2 | `doctrine/proposals.md:342-373` | C1 by pointer; both block spellings |
+| B3 | `doctrine/plans.md:492`, `:543`, `:586` | Token addition + archive precondition pointer |
+| B4 | `doctrine/plans.md:602-609` *(new row per [P3])* | The canonical block-form example gains the `Dispositions:` spelling |
+| B5 | `doctrine/dual-review.md:245-247` | **C6** — lens #9's total mapping |
+| B6 | `doctrine/lifecycle-contract.md:137` | C3 + C5 in the `review → archived` row (now a restatement, not the sole home) |
+
+### Chunk C (revised) — adopter templates
+
+| # | File | Change |
+|---|------|--------|
+| C1f | `templates/core/dev/PLANNING.md:97-108` | Mirror A1–A6 **including the C3/C5 gate** |
+| C2f | `templates/core/dev/plans/_template.md:261-269` | Archive precondition wording |
+| C3f | `templates/core/dev/proposals/_template.md:88-90` *(corrected)* | Archive precondition wording |
+| C4f | `templates/modules/team-gated/dual-review.md:69` | Mirror B5 |
+
+### Chunk D (revised) — self-hosted mirrors
+
+| # | File | Change |
+|---|------|--------|
+| D1f | `dev/PLANNING.md:433-444` | Mirror A1–A6 (prose only) |
+| D2f | `dev/plans/_template.md:284-292` *(corrected per [P3])* | Mirror C2f |
+| D3f | `dev/proposals/_template.md:103-108` | Mirror C3f |
+| D4f | `dev/modules/dual-review.md:69` | Mirror C4f |
+
+### Chunk E′ (revised) — the planner twins, backward-compatible
+
+| # | File | Change |
+|---|------|--------|
+| E1 | `templates/skills/_lib/lifecycle_planner.py` `:631`, `:800`, `:880`, `:1013`, `:1025` | Recognizer accepts **both** spellings; violation text and scaffold strings name both. Gates stay unconditional |
+| E2 | `tools/lifecycle_planner.py` (same five sites) | Byte-identical twin — same edit, same commit |
+| E3 | `bootstrap/tests/test_lifecycle_cli.py` | **Three assertions** *(per [P7])*: (1) an archived artifact with only `Dispositions:` is **not** flagged; (2) one with only `Follow-ups migrated to:` is still **not** flagged (the six archived records); (3) one with **neither** **is** flagged |
+
+### Chunk E″ — the metrics twins
+
+| # | File | Change |
+|---|------|--------|
+| E4 | `templates/modules/default-on/_lifecycle_metrics/subsystems.py:88-94` | Add `guard` to `_DISPOSITION_BUCKETS` |
+| E5 | `tools/_lifecycle_metrics/subsystems.py` | Twin — same edit, same commit |
+
+### Acceptance criteria — addition per [P6]
+
+The changed-file set of the implementing commits must **equal** the nineteen
+surfaces named above, verified by `git diff --stat <plan-open>..<last-impl>`
+against the list. A surface silently skipped is then detectable rather than
+assertable.
+
+### Author-accounting — corrections
+
+* **Retracted:** "only two message strings", "every failure fails open", "no
+  public code path". Chunk E′ has a behavioral surface, is guarded by three new
+  assertions, and fails **closed** on a one-sided twin edit.
+* **Retained:** the prose chunks (A–D) genuinely have no behavioral surface and
+  add no test. That was sound and is unchanged.
