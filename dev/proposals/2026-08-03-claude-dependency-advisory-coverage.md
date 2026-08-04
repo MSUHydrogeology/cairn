@@ -10,7 +10,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: revised
+**Status**: reviewed
 **Touches**: `templates/modules/team-gated/run_security_audit.py` (the pip-audit
 pass and the shared `_run_tool` boundary), `templates/modules/team-gated/python-security.md`
 (the module's scope and blind-spot statement), and `bootstrap/DEPENDENCY_BUDGET.md`
@@ -940,3 +940,55 @@ advisory authority demonstrated by execution, not documentation**.
 The board section's own rule is that a parked item "becomes its own proposal
 when picked up", so choosing the row over opening `conda-advisory-coverage` now
 defers the artifact without dropping the requirement.
+
+## Re-Review -- Gemini Flash (External, security lens) -- 2026-08-03
+
+**Steelman.** The revised proposal resolves all seven findings (`DAC1`–`DAC7`) raised in the prior External Security Review. Following Maintainer direction to narrow scope, `python-security` now explicitly audits discoverable Python distributions in the active environment rather than making false claims over 100% of a Conda environment. Crucially, the proposal fixes ambient environment redirection vulnerabilities (`PIPAPI_PYTHON_LOCATION` and `PIP_AUDIT_*` variable overrides), enforces minimal subprocess environments, pins fixed `pip-audit` argv parameters, captures raw bytes with hard output bounds, escapes control sequences before rendering, and reports three explicit package dispositions (`SCANNED`, `NO-MATCH-IN-PINNED-SOURCES`, `UNKNOWN`). CLEAN strictly requires zero `UNKNOWN` distributions, and non-coverage is quantified at both module selection and execution time. The Conda native library coverage gap (147 conda-only packages, 82 native) is explicitly recorded as a future security module improvement in `PLANNING.md`.
+
+### Concerns
+
+* **[E1] Native dependency non-coverage remains an unclosed gap.**
+  Scope narrowing to Python distributions is the correct technical choice to prevent high-noise false positive/negative version matching, but leaves the 147 conda-only packages (including 82 native libraries such as `openssl`, `krb5`, `libcurl`) un-audited by Cairn. Adopters must rely on the follow-up roadmap item in `PLANNING.md` for future native Conda/CPE coverage.
+* **[E2] Residual tracking for local non-PyPI packages.**
+  Local project distributions without PyPI records (e.g. `great-circle-calculator`, `modflow_tools`) resolve to `NO-MATCH-IN-PINNED-SOURCES`. This residual baseline must be strictly schema-validated and diffed across runs to prevent silent expansion.
+
+### Covered
+
+* **Empirical Reproduction of Package Inventories**:
+  - Re-ran inventory analysis on Python 3.13.13 (`/Users/kendal30/conda_envs/lhm/bin/python`).
+  - Confirmed exact numbers: 394 Conda JSON files, 391 Conda unique names, 288 Python distribution names, 244 intersection, 147 conda-only, 44 python-only, 435 union.
+
+```
+$ ~/conda_envs/lhm/bin/python -c "
+import os, json, glob, importlib.metadata
+conda_meta = glob.glob('/Users/kendal30/conda_envs/lhm/conda-meta/*.json')
+c_names = {json.load(open(f)).get('name','').lower().replace('-','_') for f in conda_meta} - {''}
+p_names = {d.metadata.get('Name','').lower().replace('-','_') for d in importlib.metadata.distributions()} - {''}
+print(f'Conda JSON files: {len(conda_meta)}')
+print(f'Conda names: {len(c_names)}, Python dists: {len(p_names)}')
+print(f'Intersection: {len(c_names & p_names)}, Conda-only: {len(c_names - p_names)}, Python-only: {len(p_names - c_names)}, Union: {len(c_names | p_names)}')
+"
+Conda JSON files: 394
+Conda names: 391, Python dists: 288
+Intersection: 244, Conda-only: 147, Python-only: 44, Union: 435
+```
+
+* **Documentation Contradiction Verification (DAC7)**:
+  - Inspected `templates/modules/team-gated/run_security_audit.py` lines 387-405; confirmed `run_pip_audit_pass` returns `egress-off-unavailable` at the egress check prior to tool checking or cache inspection, verifying the docstring claim ("runs against its local cache only") is false and requires the proposed correction to "does not run".
+
+* **Claim-check Verification**:
+  - `claim_check.py`: verified clean output on `dev/proposals/2026-08-03-claude-dependency-advisory-coverage.md`.
+
+```
+$ ~/conda_envs/lhm/bin/python scripts/claim_check.py dev/proposals/2026-08-03-claude-dependency-advisory-coverage.md
+claim_check: dev/proposals/2026-08-03-claude-dependency-advisory-coverage.md -- OK, no claim-check flags.
+```
+
+### Not covered / low confidence
+
+* Subprocess byte bounding and structured JSON parsing of `pip-audit` stdout will be verified by unit tests in `bootstrap/tests/` during plan execution.
+
+### Recommendation
+
+**SHIP (LIFT HOLD).** The revised proposal successfully addresses all seven security findings (`DAC1`–`DAC7`), fixes ambient environment redirection vulnerabilities, establishes rigorous environment sanitization, and provides an honest, quantified contract for Python distribution security auditing.
+
