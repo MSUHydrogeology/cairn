@@ -5,7 +5,7 @@
 **Author**: Claude (Implementation)
 **Model**: Claude Opus 5 (`claude-opus-5`)
 **Date opened**: 2026-08-04
-**Status**: revised
+**Status**: accepted
 **Touches**: `dev/collaboration_agreement.md` > *The norms*
 **Related**: Maintainer direction 2026-08-04 (quoted below). No code, no
 doctrine, no templates.
@@ -207,3 +207,37 @@ changes: both lists, the rationale, the alternatives, and the three review
 questions stand as written.
 
 **Decision-ready.** The Maintainer's Decision is the only step remaining.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-04
+
+**Accepted, as revised, with E1's precedence sentence in force.** Scribed by
+Claude (Implementation) at the Maintainer's explicit instruction.
+
+**Maintainer's authorization (verbatim):**
+
+> I accept decision-rights-floor as revised, with E1's precedence sentence in
+> force. Commit this Decision.
+
+**What is accepted.** The amended norm as it stands after the Response —
+both lists, plus AM-1's precedence sentence adopted verbatim from the External
+review. The sentence is not decoration: it is what keeps the norm from being
+read as waiving `AGENTS.md`'s reserved authorities, and the Maintainer's
+authorization names it specifically.
+
+**Implementation.** The proposal declared `Plan review: not required` — one
+amended norm, one file, no mechanism, no shipped surface — so this lands
+directly in `dev/collaboration_agreement.md` > *The norms* rather than through
+a plan. That amendment is its own commit; this one carries the Decision only.
+
+**A note on what this Decision does not do.** It changes where a decision is
+made, not whether it is recorded. Every call an agent now makes under the
+agent-side list still lands in the `dev/` tree with its reasoning, which is
+what makes it reviewable after the fact — and is the reason it does not need
+to be authorised before the fact.
+
+**Scribe-coupling disclosure.** The scribe is the proposal's author, and the
+proposal delegates authority to agents of the scribe's own kind. That is the
+weakest configuration in this repository's practice, and it is disclosed rather
+than mitigated away: the authorization is quoted verbatim and visually
+isolated, the External review that shaped it was a different agent type, and
+this commit carries the Decision only.
