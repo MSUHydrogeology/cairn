@@ -5,7 +5,7 @@
 **Author**: Codex (Strategy, from the Security Review role)
 **Model**: OpenAI Codex (GPT-5)
 **Date opened**: 2026-08-03
-**Status**: reviewed
+**Status**: revised
 **Touches**: `bootstrap/_scaffold/config.py`, `templates/core/AGENTS.md`, the
 default-on and team-gated module catalogs under `templates/modules/`,
 `bootstrap/DEPENDENCY_BUDGET.md`, `bootstrap/SAFETY.md`, the install manifest /
@@ -713,3 +713,205 @@ replace the remote-mutation and shared-activation portions, narrow its proposed
 paths, and record the new dependency. The activation proposal and the
 reciprocal `portable-security-sweeps` amendment will each land as their own
 lifecycle commits.
+
+## Revised proposal -- local evidence and Maintainer-owned passive deployment -- 2026-08-03
+
+This section supersedes the original proposal wherever the two conflict. It
+implements the author response to AW1-AW5 at `7125de4`. Unchanged portions of
+the original contract -- explicit denial matrices, strict schemas, lockfile
+coverage, redaction, hosting observations, cloud-posture separation, omissions,
+and standard-library-only scope -- remain in force.
+
+### Revised scope and dependency
+
+This artifact now owns only two selectable capability modules:
+
+* `api-access-security` owns local cross-principal authorization evidence and a
+  separate Maintainer-run passive deployed probe.
+* `web-hosting-security` owns local fixture posture evidence and a separate
+  Maintainer-run passive deployed probe.
+
+The default-on dispatcher, aggregate result, `AGENTS.md` command, and activation
+doctrine move to `security-verification-activation`, opened at `af9863c`. This
+proposal depends on acceptance of that activation contract and does not modify
+`templates/core/AGENTS.md` or create a default-on module itself. Its narrower
+proposed path set is:
+
+Proposed paths:
+- `templates/modules/team-gated/api-access-security.md` -- actor-separated API authorization threat model and operating procedure.
+- `templates/modules/team-gated/api_access_security.py` -- standard-library local and Maintainer-passive API probe.
+- `templates/modules/team-gated/api_access_policy_stub.json` -- strict, initially INCOMPLETE local/deployed API policy.
+- `templates/modules/team-gated/web-hosting-security.md` -- actor-separated hosting posture threat model and operating procedure.
+- `templates/modules/team-gated/web_hosting_security.py` -- standard-library local and Maintainer-passive hosting probe.
+- `templates/modules/team-gated/web_hosting_policy_stub.json` -- strict, initially INCOMPLETE local/deployed hosting policy.
+- `dev/modules/api-access-security.md` -- adopter-tree API module doctrine.
+- `dev/modules/web-hosting-security.md` -- adopter-tree hosting module doctrine.
+- `scripts/api_access_security.py` -- adopter-tree API probe.
+- `scripts/web_hosting_security.py` -- adopter-tree hosting probe.
+- `dev/.cairn/api-access-policy.json` -- adopter-owned, lockfile-covered API policy generated from the stub.
+- `dev/.cairn/web-hosting-policy.json` -- adopter-owned, lockfile-covered hosting policy generated from the stub.
+- `bootstrap/tests/test_api_access_security.py` -- public-path authorization, actor-boundary, and network-safety tests.
+- `bootstrap/tests/test_web_hosting_security.py` -- public-path HTTP/TLS, actor-boundary, and network-safety tests.
+
+The activation Decision precedes this capability Decision. Implementation may
+coordinate the fixed local registry entries with these modules, but this
+proposal cannot claim its local legs are standing checks until the activation
+entry and deletion-mutant test exist.
+
+### One script, two non-interchangeable entry points
+
+Each capability script exposes exactly two subcommands:
+
+* `local`, the only entry point the activation dispatcher may invoke; and
+* `deployed-passive`, a direct Maintainer-owned command that the dispatcher
+  cannot invoke.
+
+There is no `deployed` dispatcher mode and no `--allow-mutation` option. The
+scripts share parsing and transport hardening, but the subcommands have separate
+policy sections, credential namespaces, allowed methods, and preflight checks.
+The fixed activation registry names only the exact `local` argv.
+
+This is structural command separation, not actor authentication. A shell
+process cannot prove whether its caller is the Maintainer. The enforced safety
+property is narrower: invoking the agent-facing path cannot reach a
+non-loopback peer, cannot select the deployed policy section, and cannot look
+up a deployed credential. The Maintainer-only designation governs direct use
+of `deployed-passive`; the code independently limits that use to passive
+requests so a mistaken caller still cannot cause a remote write through this
+runner.
+
+### Local API evidence
+
+`python scripts/api_access_security.py local` accepts only a policy-configured
+loopback fixture. Every resolved address and the connected peer must be
+loopback, and every redirect is refused. The runner checks those properties
+before reading a local fixture credential.
+
+The local policy may include `GET`, `HEAD`, `POST`, `PUT`, `PATCH`, and
+`DELETE` cases because the target is a disposable loopback fixture. It retains
+the original positive/negative, two-principal ownership, function-level,
+property-level, and list/search assertions. Local credential values may come
+only from environment-variable names in the local policy section. Those names
+must not duplicate or alias a name reserved by the deployed section.
+
+Loopback does not prove harmlessness: a local service could proxy to another
+system. Module doctrine therefore requires a disposable project-owned fixture,
+forbids production credentials in the local process, and calls local mutation
+evidence invalid if the fixture has any upstream route. The runner can enforce
+address and credential namespace; it cannot attest the fixture's internals.
+
+### Deployed API evidence is always passive
+
+The direct command is:
+
+```text
+python scripts/api_access_security.py deployed-passive --authorize-base-url https://exact.example
+```
+
+The argument must byte-for-byte equal the normalized exact base URL in the
+deployed policy section. Mismatch, non-HTTPS, embedded credentials, forbidden
+port or address, a redirect outside the exact allowlist, or peer-address drift
+refuses before deployed credential lookup or the first request.
+
+Only declared `GET` and `HEAD` cases may run. The policy schema rejects every
+other method in its deployed section regardless of environment label. The
+classification field remains useful report context but grants no method,
+target, redirect, or credential authority. Changing a production label to
+staging therefore cannot enable a write, and no historical-label database is
+needed for the v1 safety property.
+
+The passive matrix may still test object, property, list, and read-function
+denials across principals. It does not test remote create/update/delete
+authorization. Projects must retain application-owned integration or policy
+unit tests for those operations; CLEAN reports the omitted mutation coverage
+explicitly.
+
+Deployed credential values come only from environment-variable names in the
+deployed policy section and are outside the agent-run leg's authority. The
+local subcommand validates policy shape without reading those variables. The
+deployed command reads a value only after policy/lockfile integrity, exact URL,
+DNS, and connection authority checks have passed, and never prints request or
+response secrets.
+
+### Hosting follows the same actor boundary
+
+`python scripts/web_hosting_security.py local` contacts only a controlled
+loopback HTTP/TLS fixture. It lets the standing workflow verify configured
+redirect, header, cookie, TLS, parser, and report expectations without egress.
+It is not evidence about the deployed site's current posture.
+
+The direct Maintainer command is:
+
+```text
+python scripts/web_hosting_security.py deployed-passive --authorize-base-url https://exact.example
+```
+
+It is unauthenticated in v1, sends only `GET` and `HEAD`, performs no crawl,
+and sends no attack payload. The exact-URL argument, HTTPS requirement, DNS and
+connected-peer checks, redirect allowlist, TLS validation, response caps, and
+redaction all precede or constrain network evidence as in the original
+proposal. A selected module whose deployed check has not been Maintainer-run
+must not present local CLEAN as deployed CLEAN.
+
+### Network-client evidence is a blocking plan gate
+
+Both scripts are high-risk network clients despite their standard-library-only
+dependency surface. Their plan may leave review only after public-path socket
+fixtures execute at least these cases:
+
+* DNS answers change between validation and connection;
+* the connected peer disagrees with every validated address;
+* redirects target loopback, private, link-local, multicast, unspecified,
+  reserved, and mixed public/private answer sets;
+* a redirect attempts credential and cookie carry-over or a method change;
+* redirect loops, connection reuse, partial reads, oversized bodies and
+  headers, invalid UTF-8/JSON, and timeout boundaries;
+* TLS hostname, chain, expiry, and protocol failure;
+* hostile paths, headers, certificate names, and bodies attempt terminal or
+  report injection; and
+* every policy, lockfile, target, and actor-boundary refusal occurs before DNS,
+  socket creation, local/deployed credential lookup, or child execution as
+  applicable.
+
+The fixture must record the actual peer, method, request target, headers,
+redirect sequence, and transmitted bytes. Parser-only tests and mocked
+`urlopen` calls do not establish these transport properties. A deletion mutant
+for each peer, redirect, credential, and method guard must make the relevant
+public-path test fail.
+
+### Revised install and reporting contract
+
+Selecting either capability installs its doctrine, runner, and generated
+lockfile-covered policy as one complete mapping group. Untouched stubs are
+INCOMPLETE. Summary and install output name the local aggregate command, the
+separate Maintainer-owned deployed command, exact target re-authorization, and
+the fact that no deployed credential is read during install or local evidence.
+
+The default-on activation module's universal reach is owned and reviewed in
+`security-verification-activation`; this proposal changes only adopters that
+select at least one of these capability modules. Neither selection nor a local
+CLEAN result claims that the Maintainer's deployed check ran.
+
+The original cloud-posture separation remains unchanged. Cloud credentials,
+provider APIs, active scanners, authenticated website crawling, remote
+mutation, and automated CI edits remain outside v1.
+
+### Review gate
+
+AW1 and AW2 are closed by removing remote mutation and denying deployed reach
+from the local dispatcher path, not by trusting a stronger environment label.
+AW3 is closed on this side by the activation split and explicit Decision order.
+AW4 becomes an execution-backed plan gate. AW5 moves to the artifact that owns
+the universal install change.
+
+The reciprocal `portable-security-sweeps` dependency remains to be appended in
+that artifact's next author response, which must also adjudicate its open PS8
+and PS9 findings; this revision does not write around that pending review.
+
+This revised proposal returns for focused External Security re-review. The
+reviewer should attack the local/deployed command boundary, confirm by
+execution that non-loopback mutation is unreachable under every policy shape,
+and assess whether the network-client evidence list is sufficient before a
+plan is opened.
+
+<!-- link-check-allow: ../../bootstrap/tests/test_security_verification.py, ../../bootstrap/tests/test_api_access_security.py, ../../bootstrap/tests/test_web_hosting_security.py -->
