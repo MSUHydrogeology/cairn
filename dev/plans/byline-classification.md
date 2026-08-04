@@ -1281,3 +1281,44 @@ difference between the two shapes, and it is why this one is not the same bug.
 With these three answered and the `re.sub` sweep closed, and `[I7b]` discharged
 by `planner-line-semantics`'s Response retracting the claim it was owed, **this
 plan's archive preconditions are met.**
+
+## Maintainer ruling 2026-08-04 (addendum) -- the third escalated finding
+
+**Authorization, quoted verbatim:**
+
+> Accept all of those dispositions
+
+Scribed by Claude on the Maintainer's instruction; the disposition is
+reproduced in full because the authorization refers to a set presented in
+conversation.
+
+The source proposal's Response escalated **three** items under *Findings the
+Decision did not see*. **Two are settled by the ruling above**: `[I1]` — the
+residual actually ratified being broader than the residual described — is
+closed by Q2's restatement of R2 with its three falsifying classes named; and
+`[I6]`'s `Zs` remedy is closed by Q3 shipping the accepted design.
+
+### [I2]'s remedy — restricting the fold to an explicit deletion set: **declined**
+
+The reviewer's preferred fix — *"restrict the deletion to an explicit codepoint
+set and delete nothing else, so that the rule and the code are the same
+statement"* — closes the C0/DEL widening, which is the one invariant violation
+`[I2]` exposes. It costs one thing: a control-separated **agent** byline drops
+from `ai` to `unknown`.
+
+Declined. Both states are violations at the only consuming site
+(`tools/lifecycle_planner.py`), so **no authority is granted either way** — what
+is lost is the *diagnostic*, which would read "unrecognized identity" instead of
+"authored by an AI agent". The shipped character-preserving fold already closes
+the exploit this plan exists to close; trading a working diagnostic for the
+tidiness of rule-equals-code is not worth it on a path where nothing is granted.
+
+The within-contract half of `[I2]` — the text correction naming **three**
+deletion classes rather than two — is unaffected and stands.
+
+### Archive status
+
+All three escalated findings are now dispositioned, the three Maintainer
+questions are answered, `[I7b]` is discharged by `planner-line-semantics`'s
+Response, and the `re.sub` sweep closed clean at plan time. **This plan has no
+outstanding archive precondition.**
