@@ -221,10 +221,15 @@ line, `source_licenses` from its `license:` block — and are
 is not a byte-for-byte copy), not attestations of checkout origin or
 installed-file licensing. A fork with a stale or false `CITATION.cff`
 produces a stale or false declaration; the fields' authority is
-exactly that of the file they were derived from, no more. Signed tags
-and Maintainer-approved release commits, the observed `cairn_commit`,
-and the per-file hashes remain the lockfile's actual origin/integrity
-controls (see [`PROVENANCE.md`](PROVENANCE.md)'s "Controls" section).
+exactly that of the file they were derived from, no more. **Signed,
+name-bound release tags** (from `v0.4.0` onward), the observed
+`cairn_commit`, and the per-file hashes remain the lockfile's actual
+origin/integrity controls (see [`PROVENANCE.md`](PROVENANCE.md)'s
+"Controls" section, and its bootstrap procedure for how to check the
+tag). The second branch of that control — an unsigned release commit
+vouched for by author metadata and by branch protection — was
+**retired**: a git author field is free text, branch protection is
+invisible from a clone, and neither is something an adopter can run.
 
 ## A note on secrets
 

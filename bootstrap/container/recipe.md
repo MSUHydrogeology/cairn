@@ -41,16 +41,27 @@ a convenient Python carrier.
 
 ### Phase 1 — acquire + verify (networked, read-only)
 
-1. Acquire a **pinned** Cairn checkout (tag or commit), and **verify** it:
+1. Acquire a **pinned** Cairn checkout, and **verify** it. Establish the
+   checkout's authenticity *first*, with the out-of-band bootstrap in
+   `bootstrap/PROVENANCE.md` — system `git`, a workspace you created, and a key
+   fingerprint you compared on two independent channels. `verify-ref.sh` lives
+   *inside* the checkout, so running it is already executing candidate bytes; it
+   is a convenience downstream of that bootstrap, never a replacement for it.
 
    ```sh
-   bootstrap/container/verify-ref.sh /path/to/cairn <tag-or-commit>
+   bootstrap/container/verify-ref.sh --signers ~/.config/cairn/release-signers \
+       /path/to/cairn <tag>
    ```
 
-   `verify-ref.sh` **refuses a mutable branch ref** and accepts only a release
-   tag or an immutable commit pin (composing with `bootstrap/PROVENANCE.md`). A
-   dirty working tree is reported (advisory) — a built image then will not
-   byte-match the pin.
+   Provenance mode is the default: it requires a **signed, name-bound annotated
+   tag** and a trusted roster from outside the candidate, and exits `0`
+   (`PROVENANCED`). It **refuses a mutable branch ref**, an abbreviated SHA, and
+   a **dirty or untracked build surface** — the last is a refusal, not an
+   advisory, because a built image would not byte-match the pin.
+
+   A development checkout has no signed release tag. Pass `--unprovenanced` for
+   that case: it accepts an immutable commit pin, exits `3`, and states in its
+   own output that **no signature was checked**.
 
 2. Build the engine image. The **base image is pinned by digest** in the
    `Dockerfile`; the build **emits the Cairn identity** as OCI labels

@@ -52,18 +52,44 @@ command -v "$OCI" >/dev/null 2>&1 || skip "configured runtime '$OCI' not found o
 note "OCI runtime: $OCI ($($OCI --version 2>&1 | head -1))"
 
 # --- 1. Phase 1 (acquire + verify): refuse a mutable / unverified ref, emit identity
-"$SCRIPT_DIR/verify-ref.sh" "$REPO" || fail "ref verification refused the build (Phase 1)."
+#
+# This harness builds from a LIVE DEVELOPMENT CHECKOUT, which carries no signed
+# release tag, so every call below runs verify-ref.sh in `--unprovenanced` mode:
+# an INTEGRITY pin (exit 3), no signature checked, and the word "release" nowhere
+# in the output. The provenance path is therefore NEVER exercised here — it is
+# exercised by bootstrap/tests/test_verify_ref.py, which builds its own signed
+# tag and roster (plan `release-authenticity`, Chunk D5 and its stated limit).
+#
+# --- BEGIN PIN-HELPERS ---
+# Run verify-ref.sh capturing BOTH its output and its exit code, without tripping
+# `set -e`. Every pin below then asserts on the exit code AND the refusal reason:
+# a negative assertion that passes for any refusal is not a control (P3).
+vr() {
+  VR_OUT="$("$SCRIPT_DIR/verify-ref.sh" "$@" 2>&1)" && VR_RC=0 || VR_RC=$?
+}
+# --- END PIN-HELPERS ---
+
+vr --unprovenanced "$REPO"
+[ "$VR_RC" -eq 3 ] || { printf '%s\n' "$VR_OUT" >&2
+  fail "verify-ref did not accept the build as an integrity pin (exit $VR_RC, expected 3)."; }
 COMMIT="$(git -C "$REPO" rev-parse HEAD)"
 REF="$(git -C "$REPO" describe --tags --always 2>/dev/null || echo "$COMMIT")"
-note "verified Cairn ref: $REF ($COMMIT)"
-# Negative: a mutable branch ref must be REFUSED (Codex S5).
+note "pinned (NOT provenanced) Cairn ref: $REF ($COMMIT)"
 BRANCH="$(git -C "$REPO" branch --show-current 2>/dev/null || true)"
+# --- BEGIN PIN mutable-branch ---
+# Negative: a mutable branch ref must be REFUSED (Codex S5), and refused FOR THAT
+# REASON — under `--unprovenanced` a bare "it refused" would also be satisfied by
+# a script that refused everything.
 if [ -n "$BRANCH" ]; then
-  if "$SCRIPT_DIR/verify-ref.sh" "$REPO" "$BRANCH" >/dev/null 2>&1; then
-    fail "verify-ref accepted a mutable branch ref '$BRANCH' (must refuse)"
-  fi
-  ok "verify-ref refuses a mutable branch ref ('$BRANCH')"
+  vr --unprovenanced "$REPO" "$BRANCH"
+  [ "$VR_RC" -eq 1 ] || fail "verify-ref accepted a mutable branch ref '$BRANCH' (exit $VR_RC; must refuse with 1)"
+  case "$VR_OUT" in
+    *"mutable branch"*) ;;
+    *) fail "verify-ref refused '$BRANCH' for the wrong reason: $VR_OUT" ;;
+  esac
+  ok "verify-ref refuses a mutable branch ref ('$BRANCH'), naming the reason"
 fi
+# --- END PIN mutable-branch ---
 
 # --- 2. materialize two SOURCE trees (A, B) FROM THE VERIFIED COMMIT OBJECT
 note "materializing source trees A and B from commit $COMMIT under $WORK"
@@ -76,13 +102,27 @@ DR="$WORK/dirty-probe"; mkdir -p "$DR"
   && mkdir -p bootstrap/_scaffold templates && echo x > bootstrap/scaffold.py \
   && echo 'version: "0.0.0"' > CITATION.cff && echo y > bootstrap/_scaffold/__init__.py \
   && git add -A && git commit -q -m base )
-"$SCRIPT_DIR/verify-ref.sh" "$DR" >/dev/null 2>&1 || fail "verify-ref refused a CLEAN build surface"
+# --- BEGIN PIN dirty-build-surface ---
+vr --unprovenanced "$DR"
+[ "$VR_RC" -eq 3 ] || fail "verify-ref did not accept a CLEAN build surface as an integrity pin (exit $VR_RC, expected 3)"
 echo "tampered" >> "$DR/bootstrap/scaffold.py"
-"$SCRIPT_DIR/verify-ref.sh" "$DR" >/dev/null 2>&1 && fail "verify-ref accepted a tracked-DIRTY build surface"
+vr --unprovenanced "$DR"
+[ "$VR_RC" -eq 1 ] || fail "verify-ref accepted a tracked-DIRTY build surface (exit $VR_RC; must refuse with 1)"
+case "$VR_OUT" in
+  *"uncommitted or untracked"*) ;;
+  *) fail "verify-ref refused a tracked-DIRTY build surface for the wrong reason: $VR_OUT" ;;
+esac
 git -C "$DR" checkout -- bootstrap/scaffold.py
 echo "evil" > "$DR/bootstrap/_scaffold/injected.py"   # untracked, inside the build surface
-"$SCRIPT_DIR/verify-ref.sh" "$DR" >/dev/null 2>&1 && fail "verify-ref accepted an UNTRACKED build-surface file"
-ok "verify-ref refuses a dirty / untracked build surface (clean accepted)"
+vr --unprovenanced "$DR"
+[ "$VR_RC" -eq 1 ] || fail "verify-ref accepted an UNTRACKED build-surface file (exit $VR_RC; must refuse with 1)"
+case "$VR_OUT" in
+  *"uncommitted or untracked"*) ;;
+  *) fail "verify-ref refused an UNTRACKED build-surface file for the wrong reason: $VR_OUT" ;;
+esac
+rm -f "$DR/bootstrap/_scaffold/injected.py"
+ok "verify-ref refuses a dirty / untracked build surface, naming the reason (clean accepted as an integrity pin)"
+# --- END PIN dirty-build-surface ---
 
 # The build context is the COMMIT OBJECT (not the working tree): `git archive`
 # extracts exactly the recipe's COPY set at $COMMIT, so the image bytes provably

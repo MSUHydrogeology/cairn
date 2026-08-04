@@ -55,6 +55,14 @@ export CAIRN="$(pwd)"   # the rest of this recipe refers to $CAIRN
 ```
 <!-- cairn-accept-end: suspicious-url -->
 
+> **This clone is the trust decision.** Everything below runs code from
+> it.  Before you install Cairn into anything you care about, verify the
+> release tag you checked out against a signing-key fingerprint you
+> compared on two independent channels — the procedure is in
+> `bootstrap/PROVENANCE.md` > "Verifying a release".  For this
+> throwaway shakedown you can skip it; for a real project you should
+> not.
+
 ```bash
 # Create the disposable target repo somewhere else:
 mkdir -p /tmp/cairn-quickstart && cd /tmp/cairn-quickstart

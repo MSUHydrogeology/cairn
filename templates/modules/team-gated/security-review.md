@@ -165,11 +165,11 @@ model — and these are real, landed controls the module's
 "automate what a tool can check" guidance now points at concretely:
 
 * **Layer 1 — release provenance.**
-  `cairn/bootstrap/PROVENANCE.md`: named
-  releases, signed tags / maintainer-approved release commits, a
-  derived install manifest (`scaffold.py --manifest`), and "scaffold
-  from releases, not arbitrary branches" (with a tool-side provenance
-  warning).
+  `cairn/bootstrap/PROVENANCE.md`: named releases, **signed,
+  name-bound release tags** verified against a key fingerprint the
+  adopter compared out of band, a derived install manifest
+  (`scaffold.py --manifest`), and "scaffold from releases, not
+  arbitrary branches" (with a tool-side provenance warning).
 * **Layer 4 — executable hardening.**
   The scaffold engine — the thin launcher + facade `cairn/bootstrap/scaffold.py`
   over a private `_scaffold/` engine package under `cairn/bootstrap/` (loaded
