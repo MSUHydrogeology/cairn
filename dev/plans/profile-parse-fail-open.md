@@ -959,3 +959,28 @@ plans archive only after every deferred follow-up has a durable home outside the
 plan.
 
 This section is append-only once written.
+
+## Plan review -- Gemini Flash (External, security lens) -- 2026-08-03
+
+**Steelman.** This plan provides a robust, closed line-grammar specification (L1–L8) for Cairn's zero-dependency profile parser (`_minimal_yaml_parse`). It replaces a fragile best-effort parser with a strict recognizer that either yields an exact match to PyYAML's `yaml.safe_load` or refuses fail-closed with clear error messages and formatting rewrites. Furthermore, Chunk C's refusal on unrecognized profile keys closes the silent key-dropping defect completely.
+
+### Concerns
+
+* **[E1] Oracle independence in parity tests (banned-oracle avoidance).**
+  Chunk B correctly forbids using `_yaml_load` as its own oracle in tests (which would reduce to comparing a function against itself when PyYAML is missing). The plan's canary test (`isinstance(yaml.safe_load("d: 2024-01-01")["d"], datetime.date)`) is a vital tripwire ensuring that PyYAML is genuinely loaded as the independent oracle during test execution.
+* **[E2] Coordinated AST re-anchor with `fork-advisory-semantics`.**
+  Chunk M is Maintainer-only and batched with `fork-advisory-semantics`. The plan correctly accounts for exactly 2 CHANGED symbols in `bootstrap/_scaffold/config.py` (`FunctionDef:_minimal_yaml_parse` and `FunctionDef:load_config`).
+
+### Covered
+
+* **Grammar & refusal specification audit**:
+  Verified that the L1–L8 grammar, plain-scalar admissibility rules, comment conventions, reserved `schema` key handling, and derived key whitelist (`RECOGNIZED_PROFILE_KEYS`) fully satisfy the single acceptance contract across both PyYAML and fallback execution paths.
+
+### Not covered / low confidence
+
+* Unrecognized profile *values* (e.g. valid syntax specifying a non-existent module name) are explicitly out of scope for this plan and rely on downstream module validation.
+
+### Recommendation
+
+**READY FOR IMPLEMENTATION.** The plan's closed line grammar, strict refusal mechanics, documentation drift gate (Chunk D), and Maintainer re-anchor boundaries (Chunk M) are verified and sound.
+
