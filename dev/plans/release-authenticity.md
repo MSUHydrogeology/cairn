@@ -1074,3 +1074,65 @@ in Chunk M step 1: both are parametric in the key type (`principal <keytype>
 procedure. Whether that warrants a sentence in Chunk M step 1's confirmation —
 which the plan already flags as *"the fact this scope most expects to be
 corrected"* — is a Maintainer call, and I have not made it here.
+
+
+## Code review -- Antigravity (External, security lens) -- 2026-08-04
+
+**Steelman.** The implementation commit `b93f8e9` executes Chunks A–G of `release-authenticity.md` with exemplary precision and security rigor. The core defect (tag substitution via ref manipulation) is closed by anchoring resolution strictly to the asked-for ref (`rev-parse --verify --quiet 'refs/tags/<ref>^{tag}'`), parsing and header-bounding the signed tag payload to verify that the internal signed name equals the asked-for ref, and verifying the tag object ID in an isolated temporary bare workspace (`mktemp -d`) against a roster supplied strictly from outside the candidate repository. The implementation adds a third distinct refusal class for unsigned tags (`carries NO SIGNATURE`), avoiding deceptive roster refusal error messages when no signature was checked. The 64-node test suite (`test_verify_ref.py`) exercises all negative paths, mutation perturbations, and document-extracted commands.
+
+### Concerns
+
+* **[E1] Chunk M (Maintainer-only trust root publication and signing) is unexecuted.**
+  As explicitly stated in the commit message and plan readiness condition, Chunk M has not been run. The fingerprint is not published across independent channels and `v0.4.0` has not been signed with `git tag -s`. Consequently, while the verification script, container recipe, and documentation are fully implemented and tested, **the trust root is documented and tested but NOT ESTABLISHED**. If `v0.4.0` is tagged prior to Chunk M execution, the release assurance collapses to unprovenanced.
+* **[E2] Restraint on candidate-supplied roster containment check (RA5).**
+  The containment check in `verify-ref.sh` (`B2`) checks whether the supplied roster path resides within the candidate repository working tree or git directory. As documented in the plan, this is enforced as a *path* property (realpath comparison); hardlinked roster files or concurrent in-place writes to an external roster file remain an unmonitored TOCTOU vector.
+
+### Covered
+
+* **Empirical Test Suite Execution**:
+  - Executed `bootstrap/tests/test_verify_ref.py` using Python 3.13.13 (`/Users/kendal30/conda_envs/lhm/bin/python`).
+  - Confirmed all 64 test nodes passed in 7.09s.
+
+```
+$ ~/conda_envs/lhm/bin/python -m pytest bootstrap/tests/test_verify_ref.py
+============================== 64 passed in 7.09s ==============================
+```
+
+* **Full Pytest Suite Verification**:
+  - Ran `python -m pytest bootstrap/tests`; verified 1710 passed, 0 failed, 0 skipped.
+
+```
+$ ~/conda_envs/lhm/bin/python -m pytest bootstrap/tests
+============================= 1710 passed in 41.20s ============================
+```
+
+* **Inspection of Refusal Classes in `verify-ref.sh`**:
+  - Verified lines 391–408 of `bootstrap/container/verify-ref.sh`:
+    - Refusal 1: `carries NO SIGNATURE` (`NO_SIGNATURE=1`) when `verify-tag` outputs `no signature found`.
+    - Refusal 2: `did not verify against the trusted roster` when `VERDICT_REACHED=1` but verification failed.
+    - Refusal 3: `COULD NOT BE PERFORMED` when git reached no verdict (tool failure / unwritable workspace).
+
+```
+$ grep -A 15 "VERDICT_REACHED=0" bootstrap/container/verify-ref.sh
+VERDICT_REACHED=0
+NO_SIGNATURE=0
+case "$VERIFY_OUT" in
+  *'no signature found'*)            VERDICT_REACHED=1; NO_SIGNATURE=1 ;;
+  *'Good "git" signature'*)          VERDICT_REACHED=1 ;;
+  *'No principal matched'*)          VERDICT_REACHED=1 ;;
+  *'Could not verify signature'*)    VERDICT_REACHED=1 ;;
+  *'Signature verification failed'*) VERDICT_REACHED=1 ;;
+esac
+if [ "$VERIFY_RC" -ne 0 ] && [ "$NO_SIGNATURE" -eq 1 ]; then
+  refuse "tag '$TAGNAME' (object $OBJ) carries NO SIGNATURE — nothing was compared against the roster ($SIGNERS), which is not the problem here"
+fi
+```
+
+### Not covered / low confidence
+
+* Live hardware SSH key signing (YubiKey / PKCS#11) remains un-exercised, as tests rely on software Ed25519 keys generated in temporary directories.
+
+### Recommendation
+
+**SHIP / PASS CODE REVIEW.** The code implementation of Chunks A–G is complete, correct, and thoroughly tested. The Maintainer must perform Chunk M prior to tagging `v0.4.0`.
+
