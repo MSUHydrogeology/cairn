@@ -1,0 +1,657 @@
+<!-- cairn-internal-ref-allow: doctrine/plans.md doctrine/dual-review.md doctrine/lifecycle.md doctrine/coordination.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
+
+# Plan: the two separators nothing detects — `U+2028` / `U+2029`
+
+**Source proposal**: [`dev/proposals/2026-08-03-claude-separator-detection.md`](../proposals/2026-08-03-claude-separator-detection.md)
+(accepted 2026-08-03 by Maintainer Decision, *as revised*). It sits under
+`dev/proposals/` today and moves to `dev/proposals/archive/` when it archives.
+**Status**: open
+**Plan review**: required(**External**, security lens) — carried from the
+proposal header and re-declared by the Decision's *Next transition* line, which
+routes the tier into the plan "in its own right". The content scanner is a
+shipped security control and its pattern-id set is an adopter-facing contract.
+**No implementation commit lands before an External `## Plan review` section is
+in the tree** (`doctrine/plans.md` > plan-review precondition). See
+[*Plan review — the brief*](#plan-review--the-brief) for what the Internal round
+about to run does and does not discharge.
+**Last update**: 2026-08-04
+**Opened**: 2026-08-04
+
+## Source proposal
+
+The proposal settles one contract: **a raw `U+2028` (LINE SEPARATOR) or `U+2029`
+(PARAGRAPH SEPARATOR) in scanned text produces at least one flag naming the code
+point, under its own pattern id `unicode-line-separator`, suppressible only by a
+marker written against that id.** The Decision additionally accepts the
+precondition the author's revision established — `_scan_unicode` **yields** its
+pattern id instead of the caller re-deriving one by substring-matching the
+human-readable message — because without it the detector's flags are labelled
+`unicode-zero-width` and the promised marker matches nothing.
+
+The proposal ran an External security review (SHIP), an author Response that
+found the dispatch defect and moved the artifact to `revised`, an External
+re-review that independently reproduced the defect (SHIP), and a second author
+Response fixing the sequencing against `content-scan-detectors`. This plan
+executes that decision and does not re-litigate it.
+
+### Glossary — every term glossed on first use
+
+* **Pattern id** — the first field of a `Flag`, e.g. `unicode-zero-width`. It is
+  the key an adopter writes in a `cairn-accept` suppression marker, so the id set
+  is an **adopter-facing contract**, not an implementation detail.
+* **`_scan_unicode`** — the generator at
+  `templates/modules/team-gated/content_scan.py:295`. It runs two per-line loops
+  (zero-width, then bidi), each breaking after its first hit on that line.
+* **The dispatch defect** — the ternary at
+  `templates/modules/team-gated/content_scan.py:402`, which reads the message
+  text to choose an id. `_scan_unicode` is the **only** generator whose caller
+  re-derives its id; every other call site in `scan_text` passes a literal.
+* **Frozen file** — a file whose sha256 is pinned in
+  `bootstrap/tests/fixtures/gate_manifest.json`. Both files this plan edits are
+  frozen; re-pinning is a supervised Maintainer act.
+* **Perturbation** — a deliberate change to repository state that a test is
+  claimed to detect. This repository accepts a test only when its author can name
+  a state in which it fails **and has run** the change producing that state.
+  **Perturbing a test's own body validates the test; only perturbing the hazard
+  validates the claim** — every perturbation below edits production code, never
+  the assertion.
+
+## The measurements — taken for this plan, at HEAD `eacb7dd`
+
+All figures below were measured on 2026-08-04 under the canonical interpreter
+`~/conda_envs/lhm/bin/python3.13` (Python 3.13.13, UCD 15.1.0), against the real
+scanner loaded by path. **No repository file was modified**: the "after" figures
+come from two throwaway copies of `content_scan.py` in the session scratch
+directory, never in the tree.
+
+### The gap, re-measured rather than carried forward
+
+```
+python 3.13.13 UCD 15.1.0
+U+2028 cat=Zl ws=True flags=0
+U+2029 cat=Zp ws=True flags=0
+fixture flags: []          # "## Status: open<U+2028>## Injected header" + a U+2029 paragraph
+```
+
+Zero flags, and both carry `White_Space=Yes` — which is why the RFC 8264
+`Default_Ignorable_Code_Point` derivation `content-scan-detectors` adopts
+excludes them **by construction**, not by oversight.
+
+One fact worth recording because it bounds the blast radius: `scan_text` splits
+on `"\n"` only (`templates/modules/team-gated/content_scan.py:390`), **not**
+`splitlines()`. Measured on the fixture above: `splitlines()` → 5 lines,
+`split("\n")` → 4. So a `U+2028` does **not** shift the scanner's reported line
+numbers, and the flag lands on the physical line a human reading a diff sees.
+That is the opposite of the planner's problem, which is why the parser fix and
+this detector are genuinely separate controls.
+
+### Alarm fatigue — the measurement the proposal requires before landing
+
+The proposal's first *Signals the change is wrong* entry, and its named failure
+mode, is that legitimate tracked files already carry these and the rule ships as
+noise. Swept the whole tracked corpus:
+
+```
+tracked files read: 494 of 494
+files with raw U+2028/U+2029: 0
+```
+
+**Zero, over 494 tracked files, `as_of 2026-08-04`** — every tracked file, not
+only Markdown, so `templates/`, `bootstrap/`, `scripts/`, `docs/` and `dev/` are
+all inside it. The rule ships silent on today's corpus. The signal to reconsider
+did not fire; recorded here as the dated figure the proposal asks for, and
+re-taken at implementation rather than quoted from here.
+
+An External reviewer should re-run this sweep rather than trust it — it is the
+one measurement that decides whether the tripwire trains people to ignore it.
+
+### The dispatch defect and its fix, both reproduced against real objects
+
+Two scratch copies of the scanner: `cs_naive` adds the detector loop and leaves
+the call site alone; `cs_fixed` applies the accepted revision (yielded ids, no
+ternary). Same input, three scanners:
+
+```
+HEAD  plain U+2028 : []
+NAIVE plain U+2028 : ['unicode-zero-width']              <- MISLABELLED
+NAIVE zw-marker    : []                                  <- silently suppressed
+NAIVE sep-marker   : ['unicode-zero-width']              <- marker matches nothing
+FIXED plain U+2028 : ['unicode-line-separator']
+FIXED plain U+2029 : ['unicode-line-separator']
+FIXED zw-marker    : ['unicode-line-separator']          <- NOT suppressed
+FIXED sep-marker   : []                                  <- suppressed
+```
+
+The two middle NAIVE lines are the Decision's stated defect, executed rather than
+argued: a `cairn-accept: unicode-zero-width` marker written in good faith for a
+benign emoji joiner **silently clears an injected section header**, and the
+marker an adopter is told to write does nothing. This is why the signature change
+is a precondition and not a tidy-up.
+
+Two further facts fall out and are used below:
+
+```
+FIXED tri-fixture  : ['unicode-bidi', 'unicode-line-separator', 'unicode-zero-width']
+HEAD  tri-fixture  : ['unicode-bidi', 'unicode-zero-width']
+FIXED two-sep line : [(1, 'unicode-line-separator', 'unicode line/paragraph separator U+2028')]
+```
+
+The first pair is the coexistence test the Decision requires both plans to carry,
+red at HEAD and green after. The second is the Decision's **declared limit**
+executed: two separators on one line flag once, and the flag names the first.
+
+### The refactor is behaviour-preserving, checked rather than asserted
+
+The existing suite was run against `cs_fixed` by pointing a scratch copy of the
+test module at it:
+
+```
+24 passed, 1 deselected in 0.03s
+```
+
+Baseline for that file at HEAD: **25 passed** (`as_of 2026-08-04`). The one
+deselection is `test_content_security_module_installs_scanner_verbatim`, which
+compares installed bytes against `CONTENT_SCAN_SRC` and is meaningless when that
+constant points outside the tree — it is not a result this plan may claim, and
+the implementing agent runs it for real. Five direct probes (`U+202E`, `U+200B`,
+`U+2060`, leading BOM, non-leading BOM) returned **identical** id sets on HEAD
+and on `cs_fixed`.
+
+Bandit over `cs_fixed`: `errors: []`, zero findings at any severity.
+
+## Scope
+
+Executes the accepted contract across two implementation chunks and **two
+files** — exactly the proposal's *Touches* line:
+
+* `templates/modules/team-gated/content_scan.py`
+* [`bootstrap/tests/test_content_scan.py`](../../bootstrap/tests/test_content_scan.py)
+
+Within `content_scan.py` the Response named three sites, and all three are
+verified present at HEAD: the module-docstring pattern-id list (the
+`unicode-bidi` bullet ends at
+`templates/modules/team-gated/content_scan.py:45`), the detector loops in
+`_scan_unicode`, and the call site at
+`templates/modules/team-gated/content_scan.py:401`.
+
+Verified rather than assumed: `grep -rln "unicode-zero-width"` over the tracked
+tree outside `dev/proposals/` and `dev/plans/` returns exactly those two files,
+`as_of 2026-08-04`. In particular `templates/modules/team-gated/content-security.md`
+does **not** enumerate pattern ids, and there is no self-hosted `scripts/`
+twin of the scanner — `scripts/check_cairn.py:91`–`94` loads the template file
+directly by path, so no twin-parity obligation is engaged.
+
+**Out of scope, fenced explicitly:**
+
+* **The parser.** `splitlines()` semantics and the planner's line grammar belong
+  to `planner-line-semantics`, already decided. This plan changes no parser.
+* **The orientation-stream escape table.** `agent-context-scrub` owns the output
+  side. Detection and neutralization are different controls.
+* **The ignorable and homoglyph rules.** `content-scan-detectors` owns
+  `unicode-ignorable`, `unicode-tag` and the Greek confusable narrowing. This
+  plan adds a rule **beside** them and edits neither. The one place the two
+  plans meet is the `_scan_unicode` signature, and the Decision assigns it here.
+* **The `Zs` space-separator space.** A different question with a real
+  international-name cost, live as a Maintainer question on
+  `byline-classification`. Not touched.
+* **Changing the per-line `break` convention.** The Decision records one
+  separator flag per line as a **declared limit**. Changing it would alter
+  shipped `unicode-zero-width` and `unicode-bidi` output for every adopter and
+  needs its own proposal. This plan *pins* the limit with a test rather than
+  leaving it implicit.
+* **Re-pinning `bootstrap/tests/fixtures/gate_manifest.json`.** A supervised
+  Maintainer act — see [*Maintainer fence*](#maintainer-fence).
+* **Widening `_BANNED_CODEPOINTS` beyond the two separators.** The test-side
+  hygiene set grows by exactly two entries; the general question of which
+  invisibles the scanner's own source may carry is `content-scan-detectors`'.
+
+### Documentation / doctrine surface
+
+* **Governing layer — none.** No `AGENTS.md` change, no `doctrine/` change. The
+  doctrine-change rate-limit is not engaged.
+* **Adopter-facing contract — yes, and this is the one that matters.** The
+  pattern-id set grows by one. Its single canonical home is the bulleted list in
+  the `content_scan.py` module docstring
+  (`templates/modules/team-gated/content_scan.py:40`–`45` today), which is
+  shipped verbatim into an adopter's own `scripts/` directory. Edited in the same
+  commit as the behaviour it describes (Chunk B), never later.
+* **Descriptive layer — none.** Checked, not assumed: no file under `docs/` or
+  `bootstrap/` enumerates scanner pattern ids
+  (`grep -rln "unicode-zero-width"`, above).
+* **Release-facing — one line, deferred to a serialization point.**
+  `CHANGELOG.md > Unreleased > Added`. `CHANGELOG.md` is a **serialized shared
+  file** (`AGENTS.md` > *Shared communication files*) and this plan does not
+  edit it in an implementation commit. See Chunk C.
+* **Deliberation layer** — this plan, its plan review, its code review, and the
+  one-line `dev/PLANNING.md` row-move that serializes the plan-open.
+
+<!-- cairn:slot documentation-tier-home -->
+**Doc tier home rule** — route doc and doctrine changes by layer per
+[`docs/DOCUMENTATION_PLAN.md`](../../docs/DOCUMENTATION_PLAN.md):
+cross-cutting prescription → governing layer (`AGENTS.md`);
+deliberation about what to build → deliberation layer (`dev/`);
+description of the software as it is → descriptive layer (`docs/`). A
+plan's *Scope* must name the doctrine-surface touched (or an explicit
+"no doctrine surface").
+<!-- cairn:end documentation-tier-home -->
+
+## Maintainer fence
+
+Two items are **not the implementing agent's to perform**, and one of them is the
+reason this plan is batched with its sibling rather than standing alone.
+
+**F1 — the frozen-file re-pin (needs a key and a supervised session).** Both
+files this plan edits are literal keys in the 164-entry `frozen_files` map in
+`bootstrap/tests/fixtures/gate_manifest.json`, verified `as_of 2026-08-04`
+(`templates/modules/**/*.py` and `bootstrap/tests/**/*.py` are both frozen-set
+globs — `bootstrap/tests/_gate_manifest.py:165`–`167`). After this plan lands,
+`python bootstrap/tests/_gate_manifest.py verify` reports **two
+`FROZEN-MODIFIED` entries**. Re-producing the manifest is a supervised
+prerequisite commit under `bootstrap/REANCHOR_RUNBOOK.md`, whose Phase 0 runs
+under a clean child shell with recorded values and a signing backend. The
+implementing agent's whole obligation is to **say so in the final commit body and
+name the two files**.
+
+**F2 — one ceremony for two plans, not two.** `content-scan-detectors` edits the
+**same two files** and is being planned in parallel. Its frozen-file delta is the
+identical pair. The batch rule this plan adopts:
+
+* Neither plan re-pins.
+* Whichever lands second records that **the same two entries** are stale — not a
+  second, different pair.
+* The Maintainer performs **one** supervised re-produce after both have landed.
+* If only one of the two lands (the other is struck or deferred), the surviving
+  plan's commit body is already correct and the ceremony is unchanged.
+
+**No AST re-anchor.** Checked: no file under `bootstrap/_scaffold/` is touched,
+so `bootstrap/tests/fixtures/scaffold_ast_baseline.json` is unaffected and the
+runbook's attestation half is not engaged.
+
+**No active batch window.** The `gate-reanchor-preflight` plan is archived
+(`dev/plans/archive/gate-reanchor-preflight.md`), so the batch-window HOLD-by-
+default on editing a frozen file is not in force. Re-confirm at implementation
+rather than inherit this line.
+
+## Sequence
+
+Chunk order is load-bearing. **Chunk A lands before Chunk B**: if the detector
+arrives first, then at that intermediate commit every separator flag is labelled
+`unicode-zero-width` and any existing zero-width suppression in an adopter tree
+silently hides it. That intermediate state is the exact defect the Decision
+exists to close, so it must never be a commit.
+
+```
+0. plan-open   -- this plan + the dev/PLANNING.md row-move              [commit pending]
+   (plan review) -- required(External, security lens); NO code before it lands
+1. Chunk A -- _scan_unicode yields its own pattern id; the ternary dies [commit pending]
+2. Chunk B -- the unicode-line-separator detector + its contract entry  [commit pending]
+3. Chunk C -- the shared release note, at a serialization point         [deferred]
+```
+
+---
+
+### Chunk A — prose stops being a dispatch key
+
+Behaviour-preserving by construction and by measurement: the two existing ids are
+produced by the same two loops, in the same order, with the same messages. What
+changes is *where the id comes from*.
+
+| # | File | Change |
+|---|------|--------|
+| A1 | `templates/modules/team-gated/content_scan.py` | `_scan_unicode` (at `templates/modules/team-gated/content_scan.py:295`) yields **3-tuples** `(lineno, pattern_id, msg)`. The zero-width loop yields the literal `"unicode-zero-width"`; the bidi loop yields the literal `"unicode-bidi"`. Messages unchanged, byte for byte — an adopter grepping logs for the old wording is unaffected. |
+| A2 | `templates/modules/team-gated/content_scan.py` | The call site at `templates/modules/team-gated/content_scan.py:401`–`403` becomes `for lineno, pid, msg in _scan_unicode(...): raw.append(Flag(pid, lineno, msg))`. **The ternary is deleted, not amended.** A comment states the contract in one line: this generator yields its own id because a message is prose and prose is not a dispatch key. |
+| A3 | `bootstrap/tests/test_content_scan.py` | New `TestUnicodeDispatchContract::test_scan_unicode_yields_its_own_pattern_id`: call the module-private `_scan_unicode` directly on a two-line fixture (a zero-width character on line 1, a bidi override on line 2) and assert the yielded items are exactly `[(1, "unicode-zero-width", <msg>), (2, "unicode-bidi", <msg>)]` on the id field, unpacking as 3-tuples. This is the contract `content-scan-detectors` rebases onto, so it is pinned by a test rather than by a sentence in a Decision. |
+
+**Acceptance criteria — Chunk A.**
+
+* `~/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_content_scan.py -q`
+  → all pass, 0 skipped. Baseline **25 nodes** `as_of 2026-08-04`; collection
+  grows by exactly the new node and drops none.
+* **Behaviour identity, checked against a pre-change capture.** Before A1, write
+  the full `(line, pattern_id, message)` tuple list for a five-probe fixture
+  (`U+202E`, `U+200B`, `U+2060`, leading `U+FEFF`, non-leading `U+FEFF`) to a
+  scratch file **outside the tree**; after A2, assert byte-equal. Simulated for
+  this plan with the predicted result; the baseline must arrive from a
+  pre-change execution, because the artifact under verification cannot supply
+  it.
+* **Perturbation P-A1 — A3 discriminates the shape (hazard-side, RUN).** In
+  `content_scan.py`, restore the 2-tuple yield and the ternary; A3 fails on the
+  unpack. Restore; confirm `git diff templates/modules/team-gated/content_scan.py`
+  is empty.
+* **Perturbation P-A2 — A3 discriminates the *value*, not merely the arity
+  (hazard-side, RUN).** Keep the 3-tuple shape but swap the two yielded
+  literals (zero-width loop yields `"unicode-bidi"` and vice versa); A3 fails on
+  the id field, **and** the pre-existing `test_zero_width_caught` and
+  `test_bidi_control_caught` fail with it. P-A1 alone would pass against a test
+  that only counted tuple elements; P-A2 is what shows the assertion is about
+  identity. Restore; confirm `git diff` empty.
+* **The future state in which A3 fails** is concrete and near: any later author —
+  including `content-scan-detectors`' implementer — who reintroduces id
+  derivation from message text. That is precisely the state the Decision's
+  sequencing rule forbids, and A3 is how the second plan inherits a guard rather
+  than a promise.
+* **Channel note.** Subject: `_scan_unicode` and `scan_text`. Oracle: two id
+  literals typed into the test by a human, and a pre-change capture taken
+  outside the repository. Neither is derived from the code under verification.
+
+---
+
+### Chunk B — the detector, and the id that makes its marker mean something
+
+| # | File | Change |
+|---|------|--------|
+| B1 | `templates/modules/team-gated/content_scan.py` | New module constant `_LINE_SEPARATORS`, beside `_ZERO_WIDTH` (`templates/modules/team-gated/content_scan.py:137`) and `_BIDI` (`:144`), holding `U+2028` and `U+2029` **as `\uXXXX` escape forms with a naming comment each** — never raw. The existing comment block above `_ZERO_WIDTH` already states this rule (trojansource-safe, Bandit B613) and the new constant is placed under it so the rule covers it by adjacency, not by a second copy. |
+| B2 | `templates/modules/team-gated/content_scan.py` | A third per-line loop in `_scan_unicode`, after the bidi loop, yielding `(i, "unicode-line-separator", f"unicode line/paragraph separator U+{ord(ch):04X}")` and breaking after the first hit on that line — **following** the existing per-category-per-line convention, which the Decision fixes as a declared limit. |
+| B3 | `templates/modules/team-gated/content_scan.py` | Module-docstring pattern-id list: a `unicode-line-separator` bullet after the `unicode-bidi` bullet (which ends at `templates/modules/team-gated/content_scan.py:45`). It names both code points, says the detector **flags and never rewrites**, and states the declared limit in one clause. This bullet *is* the adopter-facing contract entry; a hit is only suppressible by a marker naming this id. |
+| B4 | `bootstrap/tests/test_content_scan.py` | Extend `_BANNED_CODEPOINTS` (`bootstrap/tests/test_content_scan.py:48`–`52`) with `0x2028, 0x2029`, so `test_no_raw_banned_codepoints_in_source` now also refuses a raw separator in the scanner's own source. A scanner that smuggles the code point it detects is the exact failure this class of test exists for. |
+| B5 | `bootstrap/tests/test_content_scan.py` | New `TestLineSeparator::test_each_separator_is_caught`: `scan_text` over a fixture carrying a raw `U+2028` and, separately, one carrying a raw `U+2029`; assert each yields exactly one flag with `pattern_id == "unicode-line-separator"` and a message containing `U+2028` / `U+2029` respectively. Escape forms in the test source, matching B4. |
+| B6 | `bootstrap/tests/test_content_scan.py` | New `TestLineSeparator::test_marker_suppresses_only_its_own_id`: a `cairn-accept` marker naming `unicode-line-separator` clears the flag; a marker naming `unicode-zero-width` does **not**. The second half is the regression for the dispatch defect — it is red against the code at HEAD and red against any future reintroduction of the ternary. |
+| B7 | `bootstrap/tests/test_content_scan.py` | New `TestLineSeparator::test_all_three_unicode_ids_trip_independently`: one three-line fixture (zero-width on line 1, bidi on line 2, `U+2028` on line 3); assert the `(line, pattern_id)` set is **exactly** `{(1, "unicode-zero-width"), (2, "unicode-bidi"), (3, "unicode-line-separator")}`. This is the coexistence test the Decision requires **both** plans to carry; whichever lands first turns it green and the second inherits it. |
+| B8 | `bootstrap/tests/test_content_scan.py` | New `TestLineSeparator::test_two_separators_on_one_line_flag_once`: a line carrying `U+2028` then `U+2029` yields exactly one flag, naming `U+2028`. Pins the Decision's **declared limit** so a later author who changes the `break` semantics does so deliberately, against a red test and its own proposal, rather than by accident. |
+
+**Acceptance criteria — Chunk B.**
+
+* `~/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_content_scan.py -q`
+  → all pass, 0 skipped, including
+  `test_content_security_module_installs_scanner_verbatim` run **for real**
+  (this plan's own measurement deselected it; the implementation may not).
+* `~/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests` → the whole suite
+  green, 0 failed / 0 skipped / 0 xfailed. **Take the baseline at implementation
+  start, not from this plan**: the working tree carried other workflows'
+  in-flight edits under `bootstrap/_scaffold/` `as_of 2026-08-04`, so any suite
+  figure measured here would be measuring someone else's change.
+* **The corpus sweep, re-run as the alarm-fatigue gate.**
+  `~/conda_envs/lhm/bin/python3.13 scripts/check_cairn.py` → OK. Baseline
+  **180 Markdown files, no issues**, `as_of 2026-08-04`; the count may only grow
+  and the verdict may not change. Independently, re-run the raw sweep over
+  `git ls-files` and record the count in the commit body as a dated figure — 0
+  of 494 today. **A non-trivial count is a signal to stop and reconsider, not to
+  suppress**; if it fires, the disposition is a Maintainer question, not an
+  inline `cairn-accept`.
+* `~/conda_envs/lhm/bin/python3.13 -m bandit -q -f json
+  templates/modules/team-gated/content_scan.py` → `errors: []`, zero findings.
+  Measured on the prototype for this plan; re-take against the real edit. The
+  file is in the release gate's scan set, so a MEDIUM+ finding here is a release
+  blocker, not a lint nit.
+* `~/conda_envs/lhm/bin/python3.13 scripts/quality_gate.py --sub neutrality` →
+  `fail=95`, `as_of 2026-08-04`. `bootstrap/` is a neutrality scan root, so the
+  test file passes through it; `templates/` is not. The figure must not move —
+  and it is a dated snapshot taken over a dirty tree, so re-take the baseline
+  before the edit rather than diffing against this line.
+* **Perturbation P-B1 — B5 discriminates the detector (hazard-side, RUN).**
+  Delete the B2 loop; B5 fails on both separators, B7 fails on the third pair,
+  B8 fails. Restore; confirm `git diff` empty.
+* **Perturbation P-B2 — B5 discriminates *each member*, not just the loop
+  (hazard-side, RUN).** Remove `U+2029` from `_LINE_SEPARATORS`, leaving
+  `U+2028`; B5's `U+2029` assertion fails **alone** while its `U+2028` assertion
+  stays green. Repeat the other way round. Without this, a single-member
+  constant would pass a loop-level perturbation and ship half the contract.
+* **Perturbation P-B3 — B6 is the dispatch regression (hazard-side, RUN).**
+  Revert Chunk A in place (restore the 2-tuple yield and the ternary) while
+  keeping the B2 loop; B6's `unicode-zero-width`-marker half fails, because the
+  separator flag is labelled `unicode-zero-width` and the foreign marker
+  suppresses it. Reproduced for this plan against a scratch copy: NAIVE
+  zero-width-marker → `[]`, FIXED → `['unicode-line-separator']`. Restore;
+  confirm `git diff` empty.
+* **Perturbation P-B4 — B7 discriminates the id, not the count (hazard-side,
+  RUN).** Change the B2 loop's yielded literal to `"unicode-zero-width"`; B7
+  fails on the set comparison while a hypothetical "three flags appeared" test
+  would have passed. This is why B7 asserts the exact `(line, pattern_id)` set.
+* **Perturbation P-B5 — B8's limit can fire (hazard-side, RUN).** Remove the
+  `break` from the B2 loop; B8 fails with two flags on one line. Restore. This
+  perturbation is also the *proposal* a future author would need: it shows the
+  limit is enforced, not merely described.
+* **Perturbation P-B6 — B4's hygiene guard can fire (hazard-side, RUN,
+  transient).** Write a raw `U+2028` into a comment in `content_scan.py` in the
+  working tree; `test_no_raw_banned_codepoints_in_source` fails naming
+  `0x2028`. Delete it; confirm `git status --short` clean. Never committed.
+* **The future states in which B5–B8 fail**, named because that is the
+  acceptance bar: (i) the detector loop removed or narrowed by a later refactor;
+  (ii) the ternary reintroduced by whichever sibling plan lands second — the
+  state the Decision's sequencing rule exists to forbid; (iii) the yielded id
+  renamed without the docstring contract entry moving with it; (iv) the
+  per-line `break` semantics changed as a rider on some other change.
+* **Channel note.** Subject: `scan_text` through its public path — no stub of
+  the function under test anywhere in B5–B8. Oracles: code-point literals and id
+  strings typed into the test by a human, plus `unicodedata`'s categories quoted
+  in the docstring. Nothing in the oracle is computed from `_LINE_SEPARATORS` or
+  from the detector loop, so a gap cannot move both together.
+
+---
+
+### Chunk C — the shared release note
+
+**Deferred, and deliberately not an implementation commit.** `CHANGELOG.md` is a
+serialized shared file, edited only at a defined serialization point
+(`AGENTS.md` > *Shared communication files*).
+
+| # | File | Change |
+|---|------|--------|
+| C1 | `CHANGELOG.md > Unreleased > Added` | **One** line covering the pattern-id partition, shared with `content-scan-detectors` rather than duplicated: the content scanner's unicode detectors now carry their own pattern ids, and a raw `U+2028` / `U+2029` flags under `unicode-line-separator`. Cross-reference both proposals and both plans **by stem**, per `AGENTS.md`. |
+
+**Acceptance criteria — Chunk C.**
+
+* Written at the next serialization point (a lifecycle archive, the goodnight
+  routine, or explicit Maintainer instruction) — **not** in an implementation
+  commit, and not by an agent holding this plan open mid-flight.
+* **One line for both plans.** If `content-scan-detectors` has already written
+  its line, this plan **amends that line** rather than adding a second. Two
+  adjacent entries describing one pattern-id partition is drift by construction.
+* `~/conda_envs/lhm/bin/python3.13 scripts/claim_check.py CHANGELOG.md` → clean.
+
+## Acceptance criteria
+
+Per-chunk criteria are above; these are the plan-level deliverables.
+
+* **Tests that must pass.**
+  * `~/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests` — the whole
+    suite, green, **0 failed / 0 skipped / 0 xfailed**, under the canonical
+    interpreter (3.13.13). Baseline taken at implementation start, for the
+    reason given in Chunk B.
+  * [`bootstrap/tests/test_content_scan.py`](../../bootstrap/tests/test_content_scan.py)
+    — the dispatch-contract test (A3), the detection pair (B5), the
+    suppression-isolation pair (B6), the coexistence set (B7), the declared
+    limit (B8), and the widened hygiene set (B4). Baseline **25 nodes**
+    `as_of 2026-08-04`; collection grows by exactly the new nodes.
+  * **Every new test shown non-vacuous by a perturbation of the hazard**, with
+    the ledger — the production-code change made, the failure observed with its
+    message, the byte-identical restore confirmed by an empty `git diff <path>`
+    — in the commit body. Six perturbations are specified above and every one of
+    them edits `content_scan.py`; **none** edits an assertion. Where a claim
+    cannot be perturbed, this plan says so rather than implying coverage.
+* **Doc updates that must land.** Hand-authored, one surface: the
+  `unicode-line-separator` bullet in the `content_scan.py` module docstring
+  (B3), landing in the same commit as the behaviour. No generated docs, no
+  snippet-synced blocks. `CHANGELOG.md` is Chunk C, deferred and shared.
+* **Examples / smoke checks required.** `python scripts/check_cairn.py` over the
+  whole tree — the shipped scanner run against Cairn's own corpus, which is
+  simultaneously the doc gate and the live alarm-fatigue re-measurement.
+  `python bootstrap/security_check.py` — expected `PASS`; the edited file is in
+  the release gate's scan set. **N/A**: the runnable example gallery under
+  `examples/` — this change touches nothing it demonstrates.
+* **Inbound path-link updates.** None expected. `dev/PLANNING.md` and
+  `dev/NEXT_SESSION.md` refer to plans by filename stem, not path link, so the
+  archive-move needs no edit there. Confirm at archive time rather than assume.
+
+### Author-accounting — invariants, failure modes, edge cases
+
+* **Invariants, each with the chunk and node that enforces it.**
+  * *A raw `U+2028` or `U+2029` in scanned text produces at least one flag
+    naming the code point.* Enforced by B5 in
+    [`bootstrap/tests/test_content_scan.py`](../../bootstrap/tests/test_content_scan.py),
+    perturbable by P-B1 and — per member — P-B2.
+  * *That flag is suppressible only by a marker naming its own id.* Enforced by
+    B6; the negative half (a `unicode-zero-width` marker does not suppress it)
+    is the dispatch regression, perturbable by P-B3.
+  * *`_scan_unicode` yields its pattern id; no caller derives one from message
+    text.* Enforced by A3, perturbable by P-A1 (shape) and P-A2 (value). This is
+    the invariant `content-scan-detectors` depends on and the reason the
+    signature change is owned here.
+  * *`unicode-zero-width` and `unicode-bidi` keep their exact current meaning,
+    so existing suppressions and residual fingerprints stay valid.* Enforced by
+    the pre-existing nodes at
+    [`bootstrap/tests/test_content_scan.py`](../../bootstrap/tests/test_content_scan.py)
+    staying green, and by the pre-change tuple capture in Chunk A's acceptance.
+    P-A2 shows those nodes can fail.
+  * *One separator flag per line; the flag names the first.* The Decision's
+    declared limit. Enforced by B8, perturbable by P-B5.
+  * *The scanner's own source carries no raw copy of a code point it detects.*
+    Pre-existing invariant, widened by B4, perturbable by P-B6.
+* **Public-path → test mapping.** `scan_text` is the public entry point this
+  plan changes, and B5–B8 exercise it **through its public path** with no stub
+  of it anywhere. `scan_file` is unchanged and reaches the same code by
+  delegation, covered by the pre-existing red-team fixture node. A3 is the one
+  node touching a module-private (`_scan_unicode`) — deliberately, because the
+  thing being pinned *is* an internal signature that a sibling plan must rebase
+  onto; it is named as a private-surface test rather than passed off as a
+  contract test.
+* **Failure modes.**
+  * *Alarm fatigue.* → **Measured, 0 of 494 tracked files, `as_of 2026-08-04`.**
+    Re-measured as a Chunk B gate. If the re-measurement is non-zero, the plan's
+    instruction is to stop and route it to the Maintainer.
+  * *Marker collision (a benign suppression silences an injected header).* →
+    **Closed** by Chunk A + B6, and reproduced as an executed defect above
+    rather than argued.
+  * *Same-line masking (two separators, one flag).* → **Open by decision**, and
+    now pinned rather than implicit (B8). `content-scan-detectors` [I3] disposes
+    of the same behaviour for its own rules; if its resolution changes the
+    convention, that is a shared follow-up, not a rider here.
+  * *A legitimate producer emits a separator (a word-processor paste).* →
+    **Open by design.** That is the tripwire working. The suppression path is
+    per-id and reviewed, which is what the separate pattern id buys.
+  * *The docstring contract entry drifts from the yielded id.* → **Open, no
+    mechanical guard.** No test compares the docstring's bullet list to the id
+    set the code can emit. Named as a known omission rather than implied.
+  * *The sibling plan lands second and reintroduces the ternary.* → **Closed**
+    by A3, which is exactly why A3 exists.
+* **Edge cases handled.** A separator inside a `cairn-accept` marker's own line
+  (line-scope covers the marker's own line — pre-existing semantics, unchanged).
+  A separator at file index 0 (no BOM-style exemption applies; it flags, and it
+  should — unlike `U+FEFF` there is no benign encoding role). A file with no
+  trailing newline (`split("\n")` handles it; unchanged). Line numbering under a
+  separator (measured above: `split("\n")` is unaffected, so reported line
+  numbers stay physical).
+* **Known omissions, stated rather than implied.** (a) No mechanical guard ties
+  the docstring pattern-id list to the ids the code emits — the doc entry is
+  enforced by review, not by test. (b) The plan asserts no full-suite baseline
+  figure, because the working tree was dirty with other workflows' edits when it
+  was written; the implementing agent takes it. (c) `Zs` space separators are
+  untouched and remain a live Maintainer question on `byline-classification`.
+  (d) Whether the per-line `break` convention should change at all is deferred
+  to its own proposal; this plan only makes the current behaviour falsifiable.
+  (e) No human has audited whether any *untracked* or generated artifact in an
+  adopter tree carries these code points — the sweep is over Cairn's tracked
+  corpus only.
+
+## Verification
+
+Run under the canonical interpreter (`~/conda_envs/lhm/bin/python3.13`,
+Python 3.13.13). A different Python minor silently changes both the suite figure
+and the UCD version behind any `unicodedata` cross-check.
+
+<!-- cairn:slot verification-commands -->
+The standing gates Cairn runs before a change lands (the same ones CI
+enforces):
+
+* **Engine suite** — `python -m pytest bootstrap/tests` (the whole
+  suite; scope to `bootstrap/tests/test_<surface>.py` while iterating,
+  but the full suite gates the cut).
+* **Prose integrity** — `python scripts/check_cairn.py` (internal link
+  / anchor resolution + claim-path check over the Markdown tree).
+* **Quality gate** — `python scripts/quality_gate.py` (order-
+  independence + vendor-neutrality + redundancy; `--sub neutrality`
+  alone for a doctrine / template wording change).
+* **Write-time claim check** — `python scripts/claim_check.py <file>` over
+  each proposal / plan / doc the change authored. **One file per
+  invocation** — the checker takes a single path and exits 2 (usage) on
+  more, so loop rather than passing a list.
+
+Plan-specific gates (a security-lint budget, a doc-drift gate, the
+model-selection mapping check `python scripts/check_model_selection.py`)
+are added per plan when the change touches that surface.
+<!-- cairn:end verification-commands -->
+
+**Plan-specific gates, added here because this change touches those surfaces.**
+
+* **The release security gate** — `python bootstrap/security_check.py`.
+  `templates/modules/team-gated/content_scan.py` is a verbatim shipped `.py` and
+  is inside the scan set. Expected `PASS`.
+* **Bandit, file-scoped, while iterating** — `python -m bandit -q -f json
+  templates/modules/team-gated/content_scan.py`. Expected `errors: []` and zero
+  findings; measured on the prototype for this plan.
+* **The alarm-fatigue re-measurement** — the raw sweep over `git ls-files` for
+  `U+2028` / `U+2029`, recorded in the commit body as a dated figure. 0 of 494,
+  `as_of 2026-08-04`.
+* **The behaviour-identity capture** — the pre-change `(line, pattern_id,
+  message)` tuple list for the five-probe fixture, written to the session
+  scratch directory before Chunk A and diffed after.
+* **The perturbation ledgers** — six of them, per chunk, in the commit body: the
+  production-code change made, the failure observed with its message, and the
+  byte-identical restore verified by an empty `git diff <path>`.
+* **The gate-integrity note** — after Chunk B, record in the commit body that
+  `templates/modules/team-gated/content_scan.py` and
+  `bootstrap/tests/test_content_scan.py` now differ from their pinned sha256 in
+  `bootstrap/tests/fixtures/gate_manifest.json`, so a later
+  `_gate_manifest.py verify` reports two `FROZEN-MODIFIED` entries — the **same
+  two** `content-scan-detectors` will report. Do not re-pin; see
+  [*Maintainer fence*](#maintainer-fence).
+
+**Note on doc gates**: drift gates catch **drift**, not **absence** of a new doc
+update. `check_cairn` will not notice if B3's docstring bullet is never written.
+Confirm it by reading, and note that here it doubles as the alarm-fatigue
+measurement, which is a different claim in the same command.
+
+## Plan review — the brief
+
+**Declared tier: `required(External, security lens)`**, carried from the proposal
+header and re-declared by the Decision's *Next transition* line.
+
+**The Internal round about to run does not discharge it.** Cairn's floor for
+Internal is the same agent type in a fresh session; the floor for External is a
+**different agent type, or a human**. The declared tier names External with a
+security lens, so an Internal round — however sharp — leaves the requirement
+open. Stated plainly so it is not discovered at archive time:
+
+* **What the Internal round is for**: sharpening. The chunk boundary, the
+  perturbation set, whether P-B2 and P-B4 really discriminate what they claim,
+  whether the docstring-drift omission deserves a mechanical guard, and whether
+  the batch rule in *Maintainer fence* is the right way to spend one ceremony.
+* **What is still owed before any implementation commit**: an **External**
+  security-lens review appended to this plan. `doctrine/plans.md`'s plan-review
+  precondition binds — a review-required plan does not start implementation
+  until its plan-review section has landed.
+* **What an External reviewer should attack first**, in order: (1) re-run the
+  494-file alarm-fatigue sweep, because it is the one measurement that can
+  invalidate the whole rule; (2) reproduce the NAIVE-vs-FIXED marker table,
+  because it is the argument for spending a signature change; (3) challenge P-B3
+  specifically — it is the only perturbation that requires *reverting a landed
+  chunk*, which is the most awkward one to actually run and therefore the most
+  likely to be waved through.
+
+## Code review
+
+*Filled in after implementation commits land.* See `doctrine/plans.md` >
+"Code review" for the full doctrine: falsification ledger, coverage line,
+reviewer identity (not the implementing agent), and the append-only rule.
+
+## Lasting-truth migration
+
+*Pre-declared here at plan-open; completed at archive time.* Per the
+[Archive preconditions rule](../PLANNING.md#archive-preconditions-proposals-and-plans),
+this plan archives only after every deferred follow-up has a durable home
+outside it. The homes are named now so none of them ends its life as a sentence
+in an archived plan.
+
+| Deferred item | Durable home | Written by |
+|---|---|---|
+| The adopter-facing pattern-id contract (that `unicode-line-separator` exists, what it covers, that it flags and never rewrites) | The `content_scan.py` module-docstring bullet list — the file shipped verbatim to adopters | Chunk B (B3), at implementation |
+| The **declared limit** (one separator flag per line; the flag names the first) | Two homes, deliberately: the same docstring bullet, and the executable pin at B8 | Chunk B (B3 + B8) |
+| The `_scan_unicode` yielded-id contract that `content-scan-detectors` must rebase onto | The test A3 — a guard, not a promise, which is the form the Decision asked for | Chunk A (A3) |
+| The release note | `CHANGELOG.md > Unreleased > Added`, **one shared line** with `content-scan-detectors` | Chunk C, at a serialization point |
+| The frozen-file re-pin obligation (two `FROZEN-MODIFIED` entries, batched with the sibling) | The final commit body, then `bootstrap/tests/fixtures/gate_manifest.json` itself once the Maintainer re-produces it | Implementing agent records; Maintainer discharges |
+| Whether the per-line `break` convention should change at all | Its **own proposal**, not this plan and not a rider. B8 is what makes the current behaviour falsifiable so the future proposal has something to argue against | Not this plan |
+| `Zs` space separators | The open Maintainer question on `byline-classification` | Not this plan |
+| The docstring-vs-emitted-id drift gap (no mechanical guard) | Recorded as a known omission in *Author-accounting* above; if it recurs, the `incident-trackers` module is its home, not a new test bolted on at archive time | This plan, above |
+| The evidence ledger (measurements, perturbation results, the corpus sweep) | The commit bodies and the `## Code review` section of this plan | Implementing agent, then the reviewer |
+
+This section is append-only once written.
