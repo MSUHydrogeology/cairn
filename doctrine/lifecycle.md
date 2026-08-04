@@ -219,7 +219,10 @@ faithful at all three checkpoints of the loop:
    surface references a Cairn-internal-only path (`doctrine/*`) that is neither
    transplanted into the install set nor marked a deliberate citation — a
    reference that resolves in the Cairn source but **dangles once installed**.
-   This is the automatable flagship; its mechanics live in
+   When run: `python scripts/check_cairn.py` — at review time, and in the
+   **maintainer-run** release checklist (`bootstrap/security_check.py` invokes
+   it, when a maintainer runs that). This is the automatable flagship; its
+   mechanics live in
    [`../bootstrap/fidelity-check.md`](../bootstrap/fidelity-check.md) >
    "The loop-fidelity gate".
 3. **Adoption → canonical (#54) — drift surfacing.** A session-start / goodnight
