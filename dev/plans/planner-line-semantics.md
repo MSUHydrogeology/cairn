@@ -2679,3 +2679,42 @@ Maintainer's. **Per R16, `lifecycle_planner.py next` will print `[ok ]` on the
 review gate regardless of any of this**, which is precisely why this paragraph
 is here rather than left to inference. **No implementation commit lands on the
 strength of this Response.**
+
+## Maintainer ruling -- Anthony Kendall -- 2026-08-04 (External REVISE discharged)
+
+**Maintainer's authorization (verbatim):**
+
+> The External REVISE on planner-line-semantics is discharged — both clauses are
+> satisfied by the Responses at 6cb54e6 and 6618e54. The plan is clear to
+> implement. Commit this ruling.
+
+Scribed by Claude (Implementation). Append-only; ruling only.
+
+**What this discharges.** The External review's recommendation carried exactly
+two clauses — *"Add those independent perturbation checks and disposition the
+Internal review's outstanding plan corrections before implementation."* The
+first is satisfied by the Response at `6cb54e6` (nodes **A8**, **A9**, **B6**,
+each with an independent single-site perturbation ledger entry); the second by
+the Response at `6618e54` (amendments **R16-R25**, answering all four blocking
+Internal findings and all four cheap ones).
+
+**Why this ruling is the authorization and the tool's green is not.** Per
+**R16**, `lifecycle_planner.py next` prints `[ok ]` on the review gate for this
+plan regardless of any of the above — the gate clears on the *presence* of a
+`Plan review` section, at either heading level, with an empty body, from any
+reviewer, at any declared tier. It would have printed `[ok ]` before either
+Response existed. **This section, not that output, is what clears the plan.**
+The gate's own repair is owned by `review-gate-enforcement` (Chunk C row C.1).
+
+**Consequences.**
+
+* This plan is **clear to implement**. Status moves to `executing` at the first
+  implementation commit, not here — this ruling records authorization, not
+  progress.
+* **`agent-context-scrub` unblocks.** Its release condition was this plan
+  landing, and the remaining coupling — B4's lockfile-row convention — was
+  settled on the merits in `6618e54`'s **R20**, so no joint call is outstanding.
+  Its A4 already specifies the same disposition, citing the same precedent
+  (`d70dbcb`).
+* The External review's own *Not covered* section is unchanged by this ruling
+  and still applies to whoever implements.
