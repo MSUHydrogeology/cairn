@@ -1136,3 +1136,78 @@ fi
 
 **SHIP / PASS CODE REVIEW.** The code implementation of Chunks A–G is complete, correct, and thoroughly tested. The Maintainer must perform Chunk M prior to tagging `v0.4.0`.
 
+
+## Maintainer ruling -- Anthony Kendall -- 2026-08-04 (Chunk M released, criteria amended)
+
+**Maintainer's authorization (verbatim):**
+
+> Okay, ket's move the v0.4 and Zenodo to PLANNING.md and release those from
+> Chunk M. Amend the plan's acceptance criteria as such.
+
+Scribed by Claude (Implementation). Append-only: the sections above are not
+edited; this section supersedes the specific criteria it names.
+
+### What is released from Chunk M
+
+| Chunk M step | Disposition |
+|---|---|
+| 1 — publish the fingerprint on the named channels | **DONE 2026-08-04**, not released. See below. |
+| 2 — cut `v0.4.0` with `git tag -s` | **Released** to `dev/PLANNING.md`'s public-launch sequence (step 4 there). |
+| 3 — run the bootstrap block cold against the pushed tag | **Released by dependency.** It cannot run without step 2's tag. This is the step that was this scope's acceptance check; see the amendment below. |
+| 4 — Zenodo deposition and the DOI | **Released** to the public-launch sequence (steps 6-7 there). |
+
+**Released, not dropped.** The obligation continues to exist and has a durable
+home: `dev/PLANNING.md`'s public-launch sequence already carries all three
+(revised at `0725dc2`, which also corrected the ordering so the cold run precedes
+Zenodo deposition — the previous ordering would have made the acceptance check
+land after an immutable version record already existed). Nothing here authorizes
+a tag, a deposition, or a DOI; it authorizes this **plan** to stop waiting on
+them.
+
+### Amendment 1 — the archive no longer gates on the cold run
+
+*Acceptance criteria* > *Examples / smoke checks required* reads *"the bootstrap
+block run by hand against the pushed `v0.4.0` tag (Chunk M step 3)"*. **That
+smoke check no longer gates this plan's archive.** It moves with the released
+step, into the public-launch sequence.
+
+**The consequence, recorded plainly rather than softened:** this scope's control
+is **documented and tested but not established**, and on this ruling it stays
+that way until a signed tag exists. Chunks A-G built and tested the verification
+path; no signed tag has ever been verified by it. A reader of this plan should
+not infer an active control from an archived plan.
+
+### Amendment 2 — the signing-key endpoint is now established
+
+*Acceptance criteria* records *"the forge's SSH signing-key endpoint has not been
+verified to be a stable public endpoint for this account"* and names it *"the
+single most likely factual correction in this scope"*. **Measured by the
+Maintainer on 2026-08-04 and it holds.** The forge serves SSH *signing* keys at a
+stable public endpoint, **distinctly** from authentication keys — the two
+endpoints returned disjoint key sets, which is what makes channel 1 load-bearing
+rather than incidental. Channel 1 stands as written; ORCID is **not** promoted;
+no third channel is required. Recorded in `bootstrap/PROVENANCE.md`. The endpoint
+is the forge's REST API path, not a `<account>.keys`-style page — the forge
+publishes no plain-text signing-key path, so a verifier following that assumption
+looks in the wrong place.
+
+### Amendment 3 — the no-network-facts disclosure is now partly false
+
+*Known omissions* item (e) reads *"No network-side fact has been checked: the
+forge's signing-key endpoint, ORCID, and Zenodo are all Chunk M step 1."*
+**Two of the three are now checked.** The forge endpoint is established
+(Amendment 2) and the ORCID record carries the signing key's public-key line as
+of 2026-08-04. **Zenodo remains unchecked** and, on this ruling, will stay
+unchecked until a deposition exists — so channel 3 does not exist today and the
+two-channel comparison rule runs on channels 1 and 2 alone. That is sufficient
+under `bootstrap/PROVENANCE.md`'s stated rule, which requires **at least two**.
+
+### What still blocks this plan's archive
+
+Releasing Chunk M does not archive it. Two preconditions remain, and only the
+first is affected by anything above:
+
+1. ~~the cold run~~ — **released by this ruling**.
+2. **A code review, which has not landed.** `doctrine/plans.md`'s precondition —
+   a plan never archives until a code review has occurred — is untouched here,
+   and the reviewer must not be the implementing agent.

@@ -765,3 +765,17 @@ passes.** Its control is *documented and tested but not established* — no
 fingerprint is published, no signed tag exists, and no network-side fact has
 been checked. Homing Chunk M here gives it a durable home; it does not make the
 plan complete.
+
+**Revised 2026-08-04 — steps 4-7 released from the plan, and the archive no
+longer gates on step 5.** By Maintainer ruling (recorded in the plan), Chunk M's
+tag, cold run and Zenodo deposition are **released to this sequence** and no
+longer block `release-authenticity`'s archive; only a code review does. They are
+released, **not dropped** — the obligation lives here now. Two facts changed
+under the earlier note above and it is superseded to that extent: the signing
+key's fingerprint **is** published (channels 1 and 2, 2026-08-04) and the forge's
+signing-key endpoint **is** established, serving signing keys distinctly from
+authentication keys. Zenodo stays unchecked, so channel 3 does not exist and the
+two-channel rule runs on channels 1 and 2 — sufficient under
+`bootstrap/PROVENANCE.md`, which requires at least two. **The control itself
+remains documented and tested but not established:** no signed tag has ever been
+verified by it, and step 5 is still what would establish it.
