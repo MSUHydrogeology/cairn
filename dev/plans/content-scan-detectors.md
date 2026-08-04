@@ -2189,3 +2189,147 @@ Internal plan review — **landed** (floor, not the tier). Author Response —
 **this section**. External plan review, security lens — **OWED**. Code review —
 not yet due. **No implementation commit lands until the External section is in
 the tree.**
+
+### Figure correction -- Claude -- 2026-08-04
+
+**What this is.** An audit of the Response above reported that two figures it
+states as measurements do not reproduce, one of them written into a binding
+amendment. This section is a **third, independent measurement**: I took no
+number from the Response and no number from the audit, and recomputed both from
+the shipped scanner over a corpus read out of a named git tree object. **No
+disposition moves.** Nothing here accepts, declines, re-opens or withdraws a
+finding. Both figures are corrected; both amendments that carry one keep their
+conclusions, for reasons re-derived below rather than inherited.
+
+**Provenance.** Canonical interpreter `~/conda_envs/lhm/bin/python3.13`
+(CPython 3.13.13), `PYTHONDONTWRITEBYTECODE=1`, `as_of 2026-08-04`. Run at HEAD
+`d01ed4f`. The corpus is read with `git show <commit>:<path>`, which reads the
+committed tree and never the working copy, so concurrent sibling activity in the
+tree cannot reach these numbers. **Scanner drift cannot explain any difference
+here**: `git diff --stat e20b18e HEAD -- templates/modules/team-gated/content_scan.py
+templates/modules/team-gated/content_scan_allowlist.txt` is empty, and
+`git status --short templates/modules/team-gated/` is clean.
+
+#### 1. `BEFORE: 77   AFTER: 77` — the [I7] tripwire baseline (line 1980)
+
+| | figure |
+|---|---|
+| Response | **77 / 77** |
+| Audit | 89 |
+| **This measurement** | **89 / 89** |
+
+Measured by importing `scan_text` from the shipped
+`templates/modules/team-gated/content_scan.py` and running it with its
+documented defaults (`scan_urls=True`) over every tracked `.md` blob at
+`e20b18e` — the Response's own stated measurement commit:
+
+* tracked `.md` at `e20b18e`: **249** — the Response's 249 is correct
+* post-suppression flags: **89**, of which `suspicious-url` **89**
+* the same measurement at HEAD `d01ed4f` (252 tracked `.md`): **89**
+
+**Where the 77 came from.** The shortfall is not noise. Exactly one file,
+`dev/proposals/2026-08-03-codex-api-web-security-modules.md`, contributes
+**12** flags, and 89 − 12 = **77** exactly. The Response's corpus was its own
+corpus minus that single file — consistent with a harness that dropped a file,
+and the stated figure is reproducible the moment that file is excluded.
+
+**AM-14 stays IN FORCE. Its conclusion did not depend on this figure.** What the
+baseline supports is a *delta* (`0 removed / 0 added / 0 files change`), and a
+delta is invariant to the baseline it is measured against. Two independent
+measurements confirm the delta holds:
+
+* post-suppression `homoglyph` flags across tracked `.md` = **0**, at both
+  `e20b18e` and HEAD. This is the load-bearing claim of `[A2]`, and it
+  reproduces exactly.
+* with `scan_urls=False` the same corpus yields **0** flags in total — so all 89
+  are `suspicious-url`, a detector neither change touches. The tripwire is
+  therefore *structurally* unable to move, which states the finding's own point
+  more strongly than the figure did.
+
+The baseline is corrected to 89; the finding it was offered in support of is
+unchanged.
+
+#### 2. "the only file carrying any is the source proposal (73 raw lines)" — AM-14 (line 2141)
+
+| | figure |
+|---|---|
+| Response | **one** file, 73 raw lines |
+| Audit | 3 files, 76 lines |
+| **This measurement** | **3 files, 76 raw lines** |
+
+Raw (pre-suppression) homoglyph lines, from `_scan_homoglyph` called directly on
+each tracked `.md` blob at `e20b18e`. That generator breaks after the first
+mixed-script token on a line, so one raw flag *is* one raw line:
+
+| file | raw homoglyph lines |
+|---|---|
+| `dev/proposals/2026-08-03-claude-content-scan-detectors.md` | **73** |
+| `dev/proposals/2026-08-03-claude-identity-not-name.md` | **2** |
+| `dev/plans/archive/byline-classification.md` | **1** |
+
+The **73** is exact; the count of *files* is not. The source proposal's **23**
+block-scoped `cairn-accept: homoglyph` markers also reproduce exactly. Identical
+at HEAD, so this is not drift.
+
+**AM-14 stays IN FORCE with the figure corrected — its conclusion is
+strengthened, not weakened.** The amendment's claim is that the corpus tripwire
+is null because the artifact under verification is itself supplying the material
+the check runs on, and has suppressed itself. All 76 raw lines, across all three
+files, are suppressed — post-suppression `homoglyph` is 0 tree-wide. Self-
+suppression is thus **broader** than the amendment states and the inference from
+it is untouched. The single word that must change is "only": three files carry
+raw homoglyph lines, not one.
+
+**Neither amendment is withdrawn.** Of the two categories — a conclusion that
+survives a wrong figure, versus a conclusion that depended on it — **both of
+these are the first kind**. Neither `[A2]`'s delta claim nor AM-14's
+self-suppression argument rests on the corrected numbers, and I re-derived each
+rather than taking the audit's word that the conclusions survive.
+
+#### One correction to the audit
+
+The audit lists the third homoglyph-bearing file under its **pre-archive**
+location — the `byline-classification` plan directly under `dev/plans/`. That
+location no longer resolves: the plan was archived mid-session, and the file is
+now `dev/plans/archive/byline-classification.md`. Same file, same single raw
+line — only the audit's path is stale. (Stated this way deliberately: writing
+the dead path as a citation would itself be a broken-path claim, which is what
+`scripts/claim_check.py` exists to catch.)
+
+#### The command
+
+Both figures come from one run, at repository root:
+
+```
+python - <<'PY'
+import importlib.util, subprocess, sys, collections
+spec = importlib.util.spec_from_file_location(
+    "content_scan", "templates/modules/team-gated/content_scan.py")
+cs = importlib.util.module_from_spec(spec)
+sys.modules["content_scan"] = cs
+spec.loader.exec_module(cs)
+REV = "e20b18e"
+files = [p for p in subprocess.run(
+    ["git", "ls-tree", "-r", "--name-only", REV],
+    capture_output=True, text=True, check=True).stdout.splitlines()
+    if p.endswith(".md")]
+flags = collections.Counter(); raw = {}
+for rel in files:
+    t = subprocess.run(["git", "show", f"{REV}:{rel}"],
+                       capture_output=True, check=True
+                       ).stdout.decode("utf-8", "replace")
+    for f in cs.scan_text(t):          # defaults: scan_urls=True
+        flags[f.pattern_id] += 1
+    n = sum(1 for _ in cs._scan_homoglyph(t.split("\n")))
+    if n:
+        raw[rel] = n
+print(len(files), sum(flags.values()), dict(flags))
+print(len(raw), sum(raw.values()), raw)
+PY
+```
+
+**Tier status is unchanged by this section.** External plan review, security
+lens, remains **OWED**. A figure correction to an author Response discharges
+nothing.
+
+This section is append-only once written.
