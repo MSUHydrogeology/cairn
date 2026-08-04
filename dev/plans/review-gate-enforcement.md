@@ -162,3 +162,119 @@ vocabulary is wrong every later chunk inherits it.
 | The gate is a conformance backstop, not proof a review happened | `doctrine/plans.md`, alongside the format it validates |
 | One review-heading grammar across doctrine, templates and scaffold | A.1, and the templates themselves |
 | A declared tier attestation is declared, not authenticated | `doctrine/plans.md` > the review-pass format |
+
+## Plan review -- Codex (External, different-agent-type) -- 2026-08-04
+
+**Model**: Codex, based on GPT-5. External cross-type review at `8dfb664`,
+using `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13).
+
+**Structural-independence stance.** The plan and its replacement mechanism are
+Claude-authored; I am a different agent type. I re-ran the gate fixtures and
+built a fresh corpus inventory rather than treating the proposal review as
+evidence for the plan.
+
+**Steelman.** The plan correctly absorbs the proposal Decision's condition and
+sequences grammar, record schema, enforcement, and adopter disclosure in the
+right conceptual order. Separating parse-only Chunk B from behavior-changing
+Chunk C is particularly valuable: it gives the record a chance to become
+expressive before the checker refuses on missing data. The plan also preserves
+the External review's central limit: this is a conformance backstop, not proof
+of independence. Those are the right bones.
+
+### Concerns
+
+* **[E1] The chosen H2-container/H3-pass grammar is incompatible with the
+  append-only file layout and drops the accepted compatibility promise
+  (blocking).** The template's `## Plan review` container is followed by
+  `## Code review` and `## Lasting-truth migration`. A dated `### Plan review`
+  appended at the end is therefore nested under the last of those H2 sections,
+  not under `## Plan review`; placing it under the earlier container requires
+  inserting into prior file content rather than appending. Cairn's practice has
+  converged on the structurally workable answer: my parser-based inventory of
+  actual plans found **34 dated review passes, all direct H2 sections**, plus two
+  bare H2 containers and no H3 passes. More importantly, the accepted proposal
+  Response promised to "accept both dated forms when structurally placed";
+  A.1 instead canonizes H3 and C.2 rejects any other level. That would make the
+  review being appended here, and every existing dated H2 review, legacy before
+  the plan finishes. Choose a grammar compatible with append-at-end lifecycle
+  records. The cleanest is a dated H2 pass with its H3 Sharpening immediately
+  below; remove or make non-attesting the empty template container and update
+  the scaffold accordingly. If H3 remains accepted for existing adopters,
+  specify its valid parentage and a grandfather rule rather than a global level
+  check.
+
+* **[E2] Chunk B does not define the closed vocabularies, so this review cannot
+  conform to the format it is supposed to approve (blocking).** "Declared tier
+  attestation" and "review outcome" are names for decisions, not a schema. The
+  plan does not state field names, allowed values, whether External satisfies an
+  Internal floor, how `required(**External**, security lens)` and the other live
+  metadata variants normalize, or what missing, duplicate, and conflicting
+  fields do. It also collapses the Response's still-open "one token or two"
+  choice without defining how an outcome declares findings. This creates a
+  bootstrap failure: the required External review lands before Chunk B exists,
+  but after Chunk C this plan's own old-format review can block its transition.
+  Put the exact record grammar in the plan before implementation. A minimal
+  design is two independent closed fields, one for `Internal|External` tier
+  attestation and one for `none|raised` findings, with unknown/missing/duplicate
+  values failing closed and an explicit tier ordering. Then require a second
+  External round using that settled schema before Chunk A lands, or define an
+  explicit bootstrap attestation that does not rewrite this append-only review.
+
+* **[E3] The plan leaves two gate implementations and multi-round linkage
+  underspecified (blocking).** The current condition exists independently in
+  `_conformance_violations` at line 787 and `_gating_preconditions` at line 860.
+  I re-ran the five fixtures through both: the same four malformed records clear
+  both today. Chunk C does not require a shared predicate or name both call
+  sites, so `scan` can become strict while `next --to executing` stays
+  presence-only, or the reverse. C.4 also says only that a Sharpening exists
+  when an outcome declares findings; with multiple rounds, an unrelated
+  Sharpening can satisfy the wrong review unless date/round/order pairing is
+  defined. Require one module-private review-conformance predicate consumed by
+  both call sites. Expand the test matrix beyond four happy-path nodes to cover
+  both public surfaces, a bare container, wrong nesting, unknown and duplicate
+  fields, tier ordering, and mismatched/missing round-specific Sharpening.
+
+* **[E4] The migration evidence and deliverable are not yet executable
+  (important).** The recorded command reports 58 because its pattern matches
+  the prefix of any heading beginning `Plan review`; an exact anchored recount
+  at `8dfb664` found **37** container/pass headings across the named trees and
+  **21** different headings such as `Plan review -- the brief` or `Plan review
+  tier`. The all-H2 direction is right, but the claimed denominator is not.
+  Acceptance's "grep ... returns one shape" is also incompatible with a grammar
+  that intentionally contains an H2 container and H3 passes. Use the parser or
+  an exact structural oracle for the pre-C inventory. Evaluate open plans as if
+  transitioning to `executing`, not only their current-state scan, because old
+  reviews without the new fields remain green while status is `open` and fail
+  only later. Finally, D.1 names only "migration note," not a file; give it a
+  durable path such as `bootstrap/UPGRADE.md` and specify the exact repair or
+  compatibility procedure for Cairn and both managed adopters.
+
+### Covered
+
+* Reproduced the five-state table against both `_conformance_violations` and
+  `_gating_preconditions`; only the absent-review fixture fails today.
+* Checked the Decision condition and every proposal-review disposition against
+  the plan's chunks.
+* Audited the live H2/H3 corpus with exact parsing rather than the plan's prefix
+  grep, and checked the template section order that controls Markdown nesting.
+* Inspected both gate call sites, the scaffold, `doctrine/plans.md`, both plan
+  templates, and the twin/install surface.
+* Ran `bootstrap/tests/test_lifecycle_contract.py`: **30 passed in 1.27s** under
+  Python 3.13.13. The plan itself passed `scripts/claim_check.py` before this
+  section was appended.
+
+### Not covered / low confidence
+
+I did not inspect either adopter tree, choose the final field names on the
+Maintainer's behalf, or implement a prototype multi-round parser. I did not run
+the full suite because this is a plan review and concurrent repository work is
+outside this plan's surface. The exact migration population must therefore be
+re-measured at implementation time.
+
+### Recommendation
+
+**REVISE. No implementation commit should land on the presence of this review.**
+The scope and high-level chunk order are sound, but the plan must settle an
+append-compatible grammar, specify the closed record schema and its own
+bootstrap, unify both gate call sites, and give migration a real home before it
+is executable.
