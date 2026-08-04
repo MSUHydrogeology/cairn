@@ -1227,3 +1227,195 @@ list in *Plan review -- the brief*:
    4 passed.
 
 This section is append-only.
+
+### Figure correction -- Claude -- 2026-08-04
+
+An audit of the Response committed at `8a14a8d` reported two `as_of 2026-08-04`
+figures -- in amendments **A10** and **A12** -- that it could not reproduce. I
+re-measured both from scratch, adopting neither the Response's numbers nor the
+audit's, and I re-derived the conclusion each figure was offered in support of
+rather than inheriting it from either party.
+
+**The two figures do not fare alike.** A12's is false and the audit is right
+about it. A10's is correct as written and the audit's challenge to it does not
+survive. One of these corrections is therefore a correction of the *Response*
+and the other is a correction of the *audit*.
+
+**Nothing here changes a disposition.** Every finding stays accepted,
+accepted-with-modification, or declined exactly as the Response left it. This
+section corrects evidence and states, for each figure, whether the amendment
+carrying it still holds.
+
+#### Method, and the trap in the obvious method
+
+Both disputed figures are **working-tree-sensitive**, and this tree has been
+mutated by concurrent agents all session. So I measured on an isolated
+`git clone --local --no-hardlinks` of this repository, `git checkout --detach
+8a14a8d`, `git status --short` empty -- not on the shared live tree that both
+the Response and the audit read.
+
+That is the obvious method and **on its own it is wrong**, which is worth
+recording because it produces confident third numbers that are pure artifact. A
+fresh clone silently omits every piece of state that is not committed content
+reachable from `refs/heads`, and *both* checks at issue read exactly such state.
+I found three such artifacts and eliminated each before trusting any number:
+
+| # | Omitted by a bare clone | What it fabricated |
+|---|---|---|
+| 1 | `dev/.cairn/local-env.json` -- untracked and gitignored (`.gitignore:7`) | `check_cairn.py` reported **9** issues, all of them `cited path does not resolve: dev/.cairn/local-env.json`, none in `dev/PLANNING.md` |
+| 2 | `refs/cairn/gate-anchor` -- `git clone` copies `refs/heads` and `refs/tags`, not custom ref namespaces | 1 failure in `bootstrap/tests/test_gate_preflight.py:595`, the anchored-roster read fail-closing |
+| 3 | a **sibling repository** beside the checkout -- `test_foldback_suggest.py:295` probes `CAIRN_ROOT.parent / "modflow_tools" / …` | 1 skip, `live ledger not available in this checkout` |
+
+Restoring all three -- copying the one untracked file, `git update-ref
+refs/cairn/gate-anchor e45e1fc`, and replacing the sibling ledger -- reconstructs
+the tree an agent standing at `8a14a8d` would actually have had. Every number
+below is from that reconstruction, with `git status --short` still empty.
+
+Provenance: the Response's own commit is `8a14a8d`; repository HEAD during my
+runs moved `ad401b2` -> `c11a7c4` under other agents; interpreter
+Python 3.13.13 (the canonical interpreter), `PYTHONDONTWRITEBYTECODE=1`.
+
+#### 1. A12's `check_cairn.py` figure -- **false; the audit is right**
+
+**What was claimed.** A12 replaces a Chunk C acceptance criterion and asserts:
+
+> `as_of 2026-08-04` the whole-tree run is **2 issues across 195 files** -- both
+> at `dev/PLANNING.md:886`-`887`, from commit `4573c11`, unreachable from this
+> plan's two files. An absolute "-> OK" here is **not achievable** by an
+> implementing agent who touches only `content_scan.py` and
+> `test_content_scan.py`.
+
+| source | figure |
+|---|---|
+| A12, as written | **2 issues across 195 files**, both at `dev/PLANNING.md:886`-`887` |
+| the audit | **OK -- 0 issues**, 195 files |
+| **mine** | **OK -- 0 issues across 195 file(s)**, `rc 0` |
+
+Command, run in the reconstructed checkout of `8a14a8d`:
+
+```
+~/conda_envs/lhm/bin/python3.13 scripts/check_cairn.py
+  -> check_cairn: OK -- 195 Markdown file(s) scanned; no issues;
+     68 external link(s) not probed.        rc=0
+```
+
+The **file count of 195 is exactly right**; the **2 issues do not exist**. Three
+independent confirmations that this is not drift:
+
+1. Scoped directly at the accused file, in the same checkout:
+   `scripts/check_cairn.py dev/PLANNING.md` -> `OK -- 1 Markdown file(s)
+   scanned; no issues`, `rc 0`.
+2. `git diff 8a14a8d HEAD -- dev/PLANNING.md` is **empty** -- the file is
+   byte-identical to the commit's own tree, so no later edit can have removed a
+   flag that was there.
+3. The cited lines are not a form the checker parses. `dev/PLANNING.md:886`-`887`
+   read `(bootstrap/tests/test_security_lint.py` **lines 12 and 89**`;
+   bootstrap/tests/fixtures/skills/README.md` **lines 16 and 41**`)` -- prose
+   line references, not `path:line` citations, and both paths resolve.
+
+So the figure was wrong when written, not overtaken. The likeliest mechanism is
+the one the audit proposes and my artifact table independently corroborates:
+`check_cairn.py` reads the **working tree, not HEAD**, and a concurrently-
+mutating shared tree supplied the reading, which was then recorded as a durable
+`as_of`-dated claim and attributed to a named commit (`4573c11`) that
+demonstrably does not produce it.
+
+**Does A12 still hold?** **Partly -- it stays in force, with one clause
+withdrawn.** A12 is compound:
+
+* **Retained.** The delta predicate (*"no issue attributable to this change,
+  as a delta against an implementation-start baseline"*) and the requirement
+  that a **scoped** run over the touched files be *clean outright*. These do not
+  rest on the false figure, and my own method section is fresh independent
+  evidence for them: the same command at the same commit returns `OK` or 9
+  issues depending on untracked, gitignored state. A whole-tree verdict is
+  genuinely not a stable function of committed content, so instructing an
+  implementing agent to measure a delta is right.
+* **Withdrawn.** The sentence *"An absolute `-> OK` here is **not achievable**
+  by an implementing agent"* is **refuted, not merely unsupported** -- I
+  achieved exactly that at this plan's own commit, in one run, above. An
+  implementing agent who sees a non-`OK` whole-tree run should read it as a
+  signal to look for untracked or concurrent state, **not** as the expected
+  condition A12 told them to anticipate. Also withdrawn with it: the
+  `dev/PLANNING.md:886`-`887` figure and the attribution to commit `4573c11`.
+
+A13/A14's own rule -- *name the delta, assert no total* -- applies to A12
+verbatim, and the Response did not apply it there. It is applied here.
+
+#### 2. A10's suite figure -- **correct as written; the audit is wrong**
+
+**What was claimed.** A10 records:
+
+> `as_of 2026-08-04` the tree is **1790 passed, 0 failed, 0 skipped, 0 xfailed**
+> (178s) -- clean, but it was 3-failing days earlier, which is exactly why the
+> predicate is a delta and not an absolute.
+
+| source | figure |
+|---|---|
+| A10, as written | **1790 passed, 0 failed, 0 skipped, 0 xfailed** (178s) |
+| the audit | 2 failed, 1788 passed (175.46s) |
+| **mine** | **1790 passed, 0 failed, 0 skipped, 0 xfailed** (160.45s) |
+
+Command, run in the reconstructed checkout of `8a14a8d`:
+
+```
+~/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests -q -rs
+  -> 1790 passed, 3 warnings in 160.45s (0:02:40)
+```
+
+**The audit's challenge does not survive, and I am correcting nothing here.**
+All three parties agree the collected total is **1790**; the dispute is only
+whether two nodes were red. The audit named them --
+`test_gate_manifest.py::test_verify_allows_added_test` and
+`test_gate_manifest.py::test_trusted_verifier_detects_tamper_in_separate_target_tree`
+-- and itself attributed them to *"the churning tree (siblings hold frozen gate
+files dirty)"*. That attribution is correct, and it disqualifies the reading as
+a measurement of this commit. Two confirmations:
+
+1. Both nodes **pass in the reconstructed checkout of `8a14a8d`** (`2 passed`).
+2. Both nodes **pass on the live tree now**, at HEAD `c11a7c4` (`2 passed in
+   1.14s`) -- the sibling edits that reddened them have since been committed or
+   reverted, and nothing in this plan touched them.
+
+The audit performed a real reading of a dirty shared tree and then compared it
+against a figure describing committed content. That is the same category error
+the audit correctly diagnoses in A12 -- here committed by the auditor rather
+than by the Response.
+
+**Does A10 still hold?** **Yes, in force and unamended.** Its figure reproduces
+exactly. Its conclusion is in fact *strengthened* by this episode: A10's whole
+point is that the suite predicate must be a **delta against a baseline captured
+at implementation start**, precisely because an absolute figure is hostage to
+whatever else the tree is carrying. Two independent readers just obtained two
+different absolutes from the same commit within hours. A10 anticipated that and
+is the reason the predicate is already a delta.
+
+#### 3. The audit's third figure, and what I did not re-open
+
+The audit's `[I5]` gate-manifest comparison (Response **17** violations --
+10 `FROZEN-MODIFIED`, 3 `COLLECTION-DROPPED`, 4 `SKIP-XFAIL-NEW`; audit **18**)
+is **not a dispute**: the audit reproduces the Response's 10/3/4 exactly once
+the single sibling-dirty file the Response explicitly excluded is subtracted,
+and confirms the Response's correction of the review. I did not re-measure it,
+and it needs no correction. That the count moved between two readings hours
+apart is further evidence for A13/A14, as the audit says.
+
+I likewise did not re-open the figures the audit re-measured and found to
+reproduce (the 511-file corpus sweep in A19, the 25-node collection baseline in
+A18, `frozen_files` at 164, the `[I6]`/A15 grep scope, the neutrality gate's
+`fail=95` / `info=21`, the `[R1]` silent class-shadowing measurement behind A17,
+and every cited line number). No disposition is re-litigated anywhere above.
+
+#### 4. Net effect on the amendment table
+
+| amendment | figure | status |
+|---|---|---|
+| **A10** | `1790 passed, 0 failed, 0 skipped, 0 xfailed` | **Reproduces. Unamended, in force.** The audit's contrary reading is an artifact of a dirty shared tree. |
+| **A12** | `2 issues across 195 files` at `dev/PLANNING.md:886`-`887`, from `4573c11` | **False.** Figure withdrawn, and with it the derived clause that an absolute `-> OK` is *not achievable*. The delta predicate and the scoped-clean requirement **stay in force** on independent evidence. |
+
+The implementing agent's instructions change in exactly one way: A12 no longer
+tells you to expect a non-`OK` whole-tree run. Measure the delta because the
+verdict is not a stable function of committed content -- not because the tree is
+known dirty.
+
+This section is append-only.
