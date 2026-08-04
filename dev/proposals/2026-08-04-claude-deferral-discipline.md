@@ -371,3 +371,597 @@ template mirrors (item 6); no new document is created.
   30 days after the retro pass, the ratchet was not where this proposal says it
   is. **Recovery:** revisit the per-artifact cap, which this proposal deferred to
   a second wave — and note the irony on the record.
+
+## Internal Review -- Claude (fresh session) -- 2026-08-04
+
+**Model**: claude-opus-5
+**Reviewed at**: `9201ea3` (proposal open); tree at `894e90d`
+**Interpreter for every figure below**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13), the canonical interpreter
+
+### Steelman
+
+The diagnosis is correct and it is the good kind of correct: it names a
+*composition* failure rather than blaming any one rule. Lens #9, the scope
+fence, and the archive precondition are each defensible in isolation; the
+observation that they chain into `review -> finding -> outside the fence ->
+deferred -> must be homed -> board` with no discarding step is a genuine
+structural insight, and I could not find a counterexample to the chain. The
+supporting measurements mostly hold: I independently re-derived **59 items**
+and **430 lines** in `dev/PLANNING.md` > `### Deferred follow-ups (durable
+home)` (lines 500-929), **42.9%** of the 1002-line file, **3** entries under
+`## Active`, **10** items matching `/adopter/i`, and **30** items matching a
+revival-condition/trigger pattern -- every one of those matches the proposal.
+
+**Rung (b) is the real contribution.** "The board row is a strictly *worse*
+trigger: it fires only if a human re-reads 1002 lines during a scrub" is the
+sharpest sentence in the document, and it is the same argument the repo applies
+to gates elsewhere. Moving a mechanically-triggered follow-up to the site where
+its trigger fires is a real increase in the probability it is honoured, and
+nothing in the current doctrine offers that route.
+
+The self-accounting is also unusually honest by the standard of this tree:
+item 7 explicitly refuses to claim the planner gate verifies anything (it does
+not -- `templates/skills/_lib/lifecycle_planner.py:878` is literally
+`gates.append((True,`, confirmed); the governing principle explicitly refuses
+to become a gate; *Known omissions* concedes the (b)/(c)/(d) split is a keyword
+estimate. Three of my findings below are about places where that honesty
+lapses, which is a compliment to the other twenty pages.
+
+Two smaller things that are right and worth keeping on the record: the
+`Dispositions:` block is a strictly better artifact than `Follow-ups migrated
+to:` for the same cost, and the *Signals* section's "declines get
+rubber-stamped -- we have traded visible debt for invisible debt, the strictly
+worse trade" correctly identifies the change's own worst outcome.
+
+---
+
+### [I1] Invariant 3's named enforcer does not enforce invariant 3 -- measured
+
+*Author-accounting > Invariants > 3* states: "*The doctrine and its
+`templates/core/` mirror agree.* **Enforcer:** the loop-fidelity lens plus
+`bootstrap/fidelity-check.md`." Invariants 1 and 2 are correctly marked
+"not a mechanical gate"; invariant 3 is not so marked, so it reads as the one
+invariant with a real enforcer.
+
+I ran the deletion test. I edited `templates/core/dev/PLANNING.md:100-101` so
+the mirror reads *"every explicitly-deferred follow-up it carries **may be
+silently discarded with no record**"* -- a flat contradiction of
+`doctrine/lifecycle.md:407-408`. Results:
+
+* `python scripts/check_cairn.py` -> **rc=0**, "196 Markdown file(s) scanned;
+  no issues".
+* `python -m pytest bootstrap/tests` -> **1916 passed**, 163.40s. Zero
+  failures.
+
+`bootstrap/tests/test_loop_fidelity_gate.py` (117 lines, all of it) checks a
+different property entirely: whether a file under `templates/` carries a
+*dangling reference into `doctrine/`* (`test_backticked_doctrine_ref_flags`,
+`test_markdown_link_target_flags`, `test_check_cairn_exits_nonzero_on_dangling_ref`).
+It says nothing about whether mirrored prose agrees. `bootstrap/fidelity-check.md`
+answers "is what was installed what the profile said should be installed" -- a
+manifest question, not a content question -- and at `:29` it explicitly exempts
+`dev/PLANNING.md` from integrity checking as living state.
+
+This is the `gate-claims-vs-enforcement` pattern, in the author-accounting of a
+proposal whose own item 7 models the correct discipline one page earlier.
+
+**Satisfier** -- either (a) mark invariant 3 documentary like 1 and 2, naming
+the actual enforcer ("a reviewer opening both files at plan review"), or (b)
+add a plan chunk for a real content-parity check over the named doctrine ->
+template pairs, in the shape
+`test_notice_install.py::test_every_self_hosted_twin_stays_byte_identical_to_its_source` (in `bootstrap/tests/`)
+already uses for `.py` twins. (b) also promotes the plan-review tier to
+External per the proposal's own escalation rule, so (a) is the cheaper close.
+
+### [I2] "No doctrine anywhere describes declining a follow-up" is false; rung (c) collides with the existing `wontfix` grammar
+
+The mechanism section rests on: "No step in that chain discards, and **no
+doctrine anywhere describes *declining* a follow-up**." Cairn already has a
+disposition grammar with an explicit non-action token:
+
+* `doctrine/proposals.md:450-458` -- the canonical code-review-Response
+  grammar: `accept (merged at <sha>)` / `accept (rewrote inline)` /
+  `accept (followup commit <sha>)` / `reject` / `defer` -- "to a follow-up plan
+  / proposal" -- / **`wontfix` -- "explicit non-action with rationale."**
+* `doctrine/plans.md:492` (`* **[N4] wontfix** -- <rationale>` in the
+  Sharpening template) and `doctrine/plans.md:543`
+  ("`accept (commit <sha>)` / `defer` / `wontfix` dispositions").
+* `doctrine/consolidation-review.md:98` extends the same token.
+* And decisively: **the sentence item 4 amends already names it.**
+  `doctrine/dual-review.md:246` reads "doc / scope-cut / explicit `wontfix`
+  that would close it."
+
+It is also already mechanized, which the proposal does not mention:
+`templates/modules/default-on/_lifecycle_metrics/subsystems.py:87-127` defines
+`_DISPOSITION_BUCKETS = ('accept', 'accept_with_modification', 'reject',
+'defer', 'wontfix')` and normalizes tokens into them for the lifecycle-metrics
+report.
+
+So four of the five rungs are renamings: (a) ~ `accept`, (c) ~ `wontfix`,
+(d) ~ `defer`, (e) ~ `defer` (whose existing gloss is literally "to a follow-up
+plan / proposal"). Only (b) is new. This is a second vocabulary for one act, in
+the tree whose doc-governance rule is that each rule has one canonical home --
+and `_normalize_disposition_token` **returns `''` for an unrecognized token and
+the caller drops it**, so a record written in rung vocabulary is silently
+invisible to the metrics tool.
+
+**Satisfier** -- map the rungs onto the existing tokens explicitly and amend the
+grammar in place (a=`accept`, b=new token, c=`wontfix`, d=`defer` (board),
+e=`defer` (successor proposal)), **or** state on the record why a parallel
+vocabulary is right and add
+`templates/modules/default-on/_lifecycle_metrics/subsystems.py` (plus its
+`tools/_lifecycle_metrics/` twin) to `Touches`. Either way the Context
+sentence needs correcting: the drain exists, it is called `wontfix`, and the
+real defect is that it is available at code-review-Response time and not at
+archive time. That is a *smaller and more defensible* claim than the one the
+proposal makes, and it survives this finding intact.
+
+### [I3] Rung (b) admits a call-site comment, which does not fire -- the exact defect it is introduced to cure
+
+Rung (b) is defined as "a test, assertion, guard, **or call-site comment** that
+*fires* when the trigger condition is met", approval **none**.
+
+A call-site comment does not fire. `# NOTE: revisit X when scan_targets()
+changes` is a board row relocated into a file that fewer people read than the
+board. The proposal's entire case against board rows -- "it fires only if a
+human re-reads 1002 lines during a scrub" -- applies verbatim to a comment: it
+fires only if a human reads that function. So rung (b) contains both the
+strongest artifact on the ladder (a test node) and an artifact strictly weaker
+than the board row it replaces, under one approval-free label.
+
+Because (b) sits above (c)/(d)/(e) in the ordering rule and costs nothing, it
+is the cheapest exit on the ladder, and the ordering rule *requires* an author
+to argue past it before reaching a rung that costs anything. The declared
+failure mode -- "*Author routes to (b) and writes no code* -- **fail-closed at
+code review**, because rung (b) names a file and a reviewer opens it" -- does
+not cover this: the author *did* write something, the reviewer *does* find it,
+and it still never fires. Applying the review brief's own test: **no test fails
+when a rung-(b) comment is deleted, and none fails when it is never honoured.**
+
+**Satisfier** -- restrict rung (b) to artifacts that execute (a test node, an
+assertion, a guard) and require the routing to name the node, so "which test
+fails if this is never done" has an answer; move "call-site comment" to rung
+(c), where the recorded reason at least makes it reviewable. One sentence in
+the ladder table closes it, and it makes the proposal's strongest claim
+("moved into code, they fire") true rather than aspirational.
+
+### [I4] The "+16 per plan" figure is computed from the wrong population; the cited source says ~4.7
+
+*The governing principle, stated so it is falsifiable* defines the measurable
+form as "a **net effect on the board of <= 0**", then states: "`as_of
+2026-08-04` the six-plan census puts the current figure at roughly **+16 per
+plan**."
+
+The cited source is `dev/PLANNING.md:712-715`, which reads: "**95 candidate
+items, 29 already homed, 38 judged fenced residuals rather than follow-ups, and
+the 28 below with no durable home at all.**" The census's net effect *on the
+board* was **28 rows across 6 plans = 4.67 per plan**. 95/6 = 15.83 is the
+*candidate* rate; 67 of the 95 never became board rows. The proposal's headline
+figure for its own governing metric is **3.4x** the value its own source
+reports for that metric.
+
+The Context table row is correctly labelled "95 **candidate** follow-ups"; the
+governing-principle sentence drops the qualifier and re-labels it as the board
+figure. That matters because 4.67 is a much easier target to bring to <= 0, and
+the difference between "16 per plan" and "under 5 per plan" is the difference
+between a crisis framing and a tractable one -- which bears directly on whether
+the full five-rung ladder is proportionate (see the verdict).
+
+**Satisfier** -- restate as "roughly +4.7 net board rows per plan (28/6), from
+95 candidates, `as_of 2026-08-04`", and re-run the proportionality argument
+against the corrected figure.
+
+### [I5] The thirteen-day "trend" and the six-plan census are the same event, counted twice against the rate-limit gate
+
+*Doctrine-change rate-limit* offers two evidence lines: the census across 6
+plans, and "the rolling-window trend is the 343 -> 1002 line growth over
+thirteen days", concluding "This is a *trend across independent artifacts*,
+which is exactly what the gate asks for and what a single incident is not."
+
+Re-derived (`git show <sha>:dev/PLANNING.md | wc -l`, last commit of each day
+that touched the file):
+
+| date | end-of-day lines |
+|---|---|
+| 2026-06-12 | 333 |
+| 2026-07-13 | 336 |
+| 2026-07-14 | 344 |
+| 2026-07-22 | 344 |
+| 2026-07-31 | 404 |
+| 2026-08-03 | 675 |
+| 2026-08-04 | **1002** |
+
+Two problems.
+
+**(a) The 343 label is wrong.** The proposal's table row reads
+"`dev/PLANNING.md`, **earliest commit on 2026-07-22** | **343 lines**". The
+five commits touching the file that day, oldest first: `57d1daf` 08:41 -> 349;
+`82d24bc` 10:38 -> 344; `1ebafb1` 10:46 -> 350; `cc66d2b` 12:25 -> **343**;
+`c9dc569` 13:32 -> 344. The earliest is **349**, the day closed at **344**, and
+343 is the day's *minimum*, fourth of five. The ratio survives (1002/349 =
+2.87x, still "tripled"); the label does not.
+
+**(b) The trend is the census.** Of the +658 lines from 2026-07-22 to
+2026-08-04, **+598 (91%)** landed in the last four days and **+327 (50%)** on
+2026-08-04 alone, in `4573c11` -- which is the census commit the proposal cites
+as its *other* evidence line. So the rate-limit gate is being shown one
+phenomenon described two ways, not "a trend across independent artifacts" plus
+a recurrence.
+
+I do not think this sinks the gate clearance: the census genuinely spans six
+independently-authored plans, and that alone is recurrence rather than a single
+incident. But the proposal must not claim two independent evidence lines when
+it has one, in a section whose entire purpose is to prove the evidence bar was
+met.
+
+**Satisfier** -- correct the table label (use 349 with "earliest", or 344 with
+"end of day", and say which), and either drop the line-growth trend as
+independent evidence or replace it with a genuinely independent series --
+deferred-item count per archived artifact over the last N archives is
+computable from the tree today and is the right shape.
+
+### [I6] The enumeration is incomplete: at least four more surfaces carry the rule
+
+*Documentation / doctrine surface* asserts "the eleven files are enumerated in
+`Touches` above and itemized in items 1-7." A sweep for the archive-precondition
+prose and the lens-#9 text across `doctrine/`, `templates/`, `dev/`,
+`bootstrap/`, `tools/` and the shipped skills finds four more:
+
+1. **`tools/lifecycle_planner.py:879` and `:1024`** -- a byte-identical twin of
+   `templates/skills/_lib/lifecycle_planner.py` (same git blob `afa702d`),
+   installed by the mapping at `bootstrap/_scaffold/config.py:564`, and the
+   copy **Cairn itself runs** (`.agents/skills/session-start/SKILL.md:19`
+   invokes `python tools/lifecycle.py`). This one *is* caught --
+   `test_notice_install.py::test_every_self_hosted_twin_stays_byte_identical_to_its_source` (in `bootstrap/tests/`)
+   fails on divergence -- but neither the file nor the test node appears in
+   `Touches` or in *Public-path -> test mapping*, which names only
+   `bootstrap/tests/test_lifecycle_cli.py`. I confirmed by grep that **no test
+   asserts the durable-home strings at all**, so `test_lifecycle_cli.py` is not
+   the coverage the mapping claims it is; the twin-parity node is.
+2. **`templates/modules/team-gated/dual-review.md:69`** and
+3. **`dev/modules/dual-review.md:69`** -- both quote lens #9 verbatim,
+   including "explicit `wontfix`". Item 4 amends lens #9 and names only
+   `doctrine/dual-review.md`. Per [I1]'s mutation result, **nothing fails** if
+   these go stale.
+4. **`dev/PLANNING.md:433-444`** -- Cairn's self-hosted copy of the
+   archive-precondition prose, mirroring `templates/core/dev/PLANNING.md:97-108`
+   and pointing at `doctrine/lifecycle.md`. `Touches` lists `dev/PLANNING.md`
+   only as "(retrospective pass)", so the prose edit is unaccounted for.
+
+Secondary, lower confidence: `templates/modules/team-gated/issue-capture.md:97`
+and `dev/modules/issue-capture.md:97` require a promoted issue's closing comment
+to "name the durable home" -- under the ladder, a rung-(c) decline has no
+durable home to name, so that sentence needs a rung-aware phrasing or an
+explicit "unaffected" note.
+
+**Satisfier** -- extend `Touches` to at least fifteen files, and name
+`test_every_self_hosted_twin_stays_byte_identical_to_its_source` in the
+verification plan for item 7.
+
+### [I7] Item 3's serialization point is upstream of where the items arise, and proposals get no ceremony at all
+
+Item 3: "The author presents all rung-(d) candidates as a single list **at plan
+review**, or at archive-preparation **if the plan is review-exempt**."
+
+Plan review runs *before* implementation --
+`doctrine/lifecycle-contract.md:134-135`: `open -> awaiting-plan-review ->
+executing`, and execution does not begin until the plan-review section lands.
+But the population this proposal exists to manage is discovered *after* that:
+`dev/PLANNING.md:711-712` describes the census as "every deferred follow-up
+named in the six plans that reached **code review** on 2026-08-04". Findings
+arrive at code review and during implementation; batching them at plan review
+batches a set that does not exist yet.
+
+The fallback is conditioned on the wrong property, too: archive-preparation is
+offered *only* to review-exempt plans, when the review-required plans are
+precisely the ones that generate findings.
+
+And **proposals have no plan review**. The archive precondition covers
+proposals (`doctrine/proposals.md:344-355`), and a proposal archives *inside*
+the plan-open commit (`doctrine/lifecycle-contract.md:133`: "the plan-open
+commit creates the plan **and** archives the source proposal"). Item 3 names no
+serialization point for that case, so a proposal's rung-(d) batch would have to
+be authorized before a commit that is itself a lifecycle transition. This is the
+lens-7 question -- *who runs this, when, at which ceremony* -- and for the
+proposal half the answer is currently absent.
+
+**Satisfier** -- name **archive-preparation** as the single serialization point
+for every artifact, plan and proposal alike, with plan review as an optional
+early pass for follow-ups already visible at plan time; add one sentence
+covering the proposal-archives-at-plan-open case. Alternatively, scope the
+ladder to plans only and say so explicitly in `Touches` (which would remove
+`doctrine/proposals.md` from the change).
+
+### [I8] The retro pass rewrites the durable home that closed artifacts point at, and archived artifacts are append-only
+
+Item 8 re-routes all 59 rows. Six artifacts cite that section as the home
+against which their archive precondition was discharged:
+
+* `dev/plans/dependency-advisory-coverage.md:945` and `:270`
+* `dev/plans/release-security-bar.md:1279` and `:103`
+* `dev/plans/security-preflight-checklist.md:1086` and `:659`
+* `dev/plans/default-security-stance.md:866`
+* and two **already-archived** plans pointing at `dev/PLANNING.md` rows:
+  `dev/plans/archive/lockfile-provenance-fields.md:407` and
+  `dev/plans/archive/interpreter-trust-root-fallback.md:582`.
+
+The second archived one is already a live instance of the hazard: it records S2
+as homed "at its `dev/PLANNING.md` **Queued** row", and S2 now sits at
+`dev/PLANNING.md:520`, inside `### Deferred follow-ups`. The pointer has already
+drifted once, and the retro pass would move or delete it again -- this time
+possibly to rung (c), at which point an archived, append-only record asserts a
+migration that is no longer true and cannot be corrected in place.
+
+The edge-case inventory covers "*Retro pass on all 59* -- in scope, chunked, and
+explicitly not deferrable" and says nothing about inbound references.
+
+**Satisfier** -- add a rule: a retro re-route of a row named by a *closed*
+artifact's `Follow-ups migrated to:` block is recorded as a forwarding entry in
+the retro pass's own commit body, and such rows are **not** eligible for rung
+(c) without the Maintainer, because declining them retroactively changes an
+archived precondition's truth value. Or scope item 8 to rows with no inbound
+reference and record the remainder as explicitly out of scope. Either closes it;
+silence does not.
+
+### [I9] The ordering rule tilts toward decline -- the gradient the proposal claims the ladder flattens
+
+*Alternatives considered* rejects the approval-gate-only option because "with
+declines free and deferrals costly, a rational author declines what should have
+been deferred, which is the mirror failure and strictly less visible than
+today's. **The ladder's recorded-decline rung is what keeps the gradient flat.**"
+
+It does not flatten it. Under the ladder, (c) *decline* still costs nothing
+("none, but **recorded**") while (d) *defer* costs a Maintainer round-trip --
+and the ordering rule *adds* a second push in the same direction by requiring
+the author to record why (c) did not take a finding before reaching (d). The
+ladder makes decline both cheaper **and** ordered-first. That is a steeper
+gradient than the alternative it rejects, not a flatter one.
+
+Relatedly, (e) -- "a **genuine discovered blocker**" -- sits at the *bottom*, so
+routing a real blocker to its own proposal requires first arguing why it should
+not simply be declined. That ordering is backwards for the one rung reserved for
+serious work.
+
+**Satisfier** -- three options, any one closes it: (1) promote the absorbed
+consequence floor from rung-choice *guidance* into a routing *rule* -- a finding
+that reaches an adopter, blocks a release, or needs a Decision is **ineligible**
+for (c) -- which is the mechanism the *Alternatives* section claims already
+exists; (2) reorder so (e) is not below (d); (3) drop strict ordering and keep
+only "record why the rung you chose is right", which is what the `Dispositions:`
+block delivers anyway.
+
+### [I10] The ladder is not total over lens #9's own satisfier list
+
+Item 4 makes the rung the required satisfier vocabulary for lens #9. Lens #9's
+current list (`doctrine/dual-review.md:245-247`) is five items: **test / guard /
+doc / scope-cut / explicit `wontfix`**. Mapping them onto rungs:
+
+* *test*, *guard* -> rung (b). Fine.
+* *explicit `wontfix`* -> rung (c). Fine (modulo [I2]).
+* **doc** -> no rung. Rung (b) admits "a test, assertion, guard, or call-site
+  comment" -- a documentation change is none of those and does not fire. So an
+  out-of-scope finding whose satisfier is a doc update falls to (c) *decline*,
+  which mislabels "this needs a doc update" as "we are not doing this".
+* **scope-cut** -> no rung. Narrowing the artifact's claim so the finding no
+  longer applies is not a fix, not a code home, not a decline, not a defer, and
+  not a successor proposal. It is arguably the *cleanest* disposition available
+  and the ladder has no slot for it.
+
+The review brief's design-completeness question -- "is there a finding class
+that fits none of them" -- has two answers, and both are named in the sentence
+item 4 is amending.
+
+**Satisfier** -- one paragraph stating which rung absorbs each of lens #9's five
+current satisfiers, adding a rung if the mapping is not total. A doc rung and a
+scope-cut rung are the obvious candidates; declaring doc-under-(b) and
+scope-cut-under-(a) with a sentence of justification would also close it. What
+must not happen is item 4 landing with a five-satisfier list rewritten into a
+five-rung list that is not the same five.
+
+### [I11] "Net effect on the board <= 0" is satisfiable by an artifact that closes nothing
+
+The governing principle is "**An artifact closes more than it opens**",
+operationalized as net board rows <= 0. But four of five rungs reduce board rows
+without closing work: (b) relocates it into a file, (c) declines it, (e) opens a
+successor proposal -- which **increases** total outstanding work while scoring
+zero, or negative if it clears existing rows. Only (a) closes anything. So the
+metric is fully satisfiable by an artifact that closed nothing, using the very
+ladder introduced to satisfy it.
+
+The proposal partly defends this: the target is "a reading heuristic, not a
+gate", and the edge-case inventory exempts census/scoping artifacts whose
+purpose is to open successor work. But rung (e) is that same shape appearing in
+*every ordinary* artifact, and it is not exempted. The principle is stated "so
+it is falsifiable" -- as drawn it is falsifiable in a direction that does not
+track the quantity being managed.
+
+**Satisfier** -- either state the principle over *outstanding follow-ups* rather
+than *board rows*, conceding it is unmeasurable today (which is consistent with
+the section's own refusal to build a checker), or keep the board-row form and add
+one sentence naming rung (e) as a known exception alongside the census case.
+
+---
+
+### On declining to build a mechanical gate
+
+I take the position that **declining the gate is correct, and the way the
+decline is written is not**.
+
+Correct, because the thing being changed is a *routing judgment*. A checker
+could verify that a `Dispositions:` block exists and that every listed item
+names a rung -- but it could not verify that the rung is the right one, and the
+failure mode the *Signals* section already fears ("declines get rubber-stamped
+... uniform, thin, or template-shaped") is precisely the failure a
+presence-checker would certify as passing. A gate that fires green on the exact
+degenerate case is worse than no gate, which is `AGENTS.md` > "Name the trigger,
+check what it checks" applied correctly. The proposal's item 7 gets this exactly
+right.
+
+Not the "stated control with no mechanism" pattern, because
+`gate-claims-vs-enforcement` is about claiming a strength not delivered, not
+about having no mechanism. A rule honestly labelled as a rule is fine; a rule
+labelled as a gate is not. The proposal labels correctly in items 7 and 8 and in
+*Known omissions*.
+
+But it lapses in exactly one place, and that lapse is [I1]: invariant 3 carries a
+named enforcer that does not enforce it, one paragraph after invariants 1 and 2
+are correctly marked documentary. Fix [I1] and the position is coherent
+throughout.
+
+One thing genuinely available and not claimed: `_lifecycle_metrics` already
+buckets `wontfix` ([I2]). If the rungs are expressed in that grammar, the
+**decline rate becomes measurable for free**, which turns the first *Signals*
+entry from "someone notices the prose is template-shaped" into a number on the
+existing metrics report. That is not a gate, and it is a better instrument than
+the one the proposal says does not exist.
+
+---
+
+### Covered
+
+* **#1 Claims** -- re-derived every load-bearing figure. **Confirmed**: 59 items
+  and 430 lines in `dev/PLANNING.md:500-929` (bullet parse + `wc`); 42.9% of
+  1002; 3 entries under `## Active`; 10/59 matching `/adopter/i`; 30/59 matching
+  a revival-condition/trigger pattern; the census's own "95 candidate / 29 homed
+  / 38 fenced / 28 unhomed" at `dev/PLANNING.md:712-715`. **Citations
+  confirmed**: `doctrine/dual-review.md:245` (lens #9) and `:256` (ritual
+  signal); `doctrine/plans.md:249` (scope fence); `dev/plans/_template.md:111`;
+  `doctrine/lifecycle.md:403` (archive precondition heading) and `:423` (removal
+  preconditions); `doctrine/proposals.md:349` (`dev/PLANNING.md` first-named
+  home); `doctrine/lifecycle-contract.md:137` (`review -> archived` row);
+  `templates/core/dev/PLANNING.md:100`;
+  `templates/skills/_lib/lifecycle_planner.py:878` = `gates.append((True,` and
+  `:879`/`:1024` carry the strings. **Refuted**: the +16/plan figure ([I4]); the
+  343/earliest-commit label ([I5a]); "no doctrine anywhere describes declining"
+  ([I2]); "the eleven files" ([I6]).
+* **#2 Production path exercised by tests** -- at proposal-review's staged bar,
+  the question is whether the evidence is promised and scoped. It is, but names
+  the wrong node: `grep -rn "durable home\|Follow-ups migrated" bootstrap/tests/`
+  returns **zero hits**, so `bootstrap/tests/test_lifecycle_cli.py` does not
+  cover the strings item 7 edits. The node that actually governs is
+  `test_notice_install.py::test_every_self_hosted_twin_stays_byte_identical_to_its_source`
+  ([I6.1]).
+* **#3 Design completeness** -- rungs are not disjoint at (b)/(c) ([I3]), not
+  total over lens #9's satisfier list ([I10]), and the ordering rule is
+  mis-signed ([I9]). Edge cases stated but two missing: inbound references from
+  closed artifacts ([I8]), and the proposal-archives-at-plan-open case ([I7]).
+* **#4 Silent failure / fail-closed** -- mutation test: mirror text inverted to
+  "may be silently discarded with no record" at
+  `templates/core/dev/PLANNING.md:100-101` -> `scripts/check_cairn.py` rc=0,
+  `pytest bootstrap/tests` **1916 passed**. Invariant 3 is fail-open with a
+  named enforcer ([I1]). Invariants 1 and 2 are fail-open and *say so* --
+  correctly framed. The "Maintainer unavailable -> archive blocks, work does
+  not" disposition is genuinely fail-closed on the right axis.
+* **#5 Cross-document consistency** -- swept `doctrine/`, `templates/`, `dev/`,
+  `bootstrap/`, `tools/`, `.agents/skills/` for "durable home", "Follow-ups
+  migrated", "wontfix", "scope-cut". Found four unenumerated surfaces ([I6]) and
+  a whole pre-existing disposition grammar ([I2]). `scripts/claim_check.py` on
+  the proposal: clean.
+* **#6 Drift** -- the doctrine <-> `templates/core/` mirror is unguarded ([I1]);
+  the `templates/skills/_lib/` <-> `tools/` twin **is** guarded, by
+  `test_notice_install.py:98-109`. `git ls-files -s` confirms both planner
+  copies at blob `afa702d`.
+* **#7 Lifecycle / process placement** -- item 3's ceremony is upstream of the
+  finding population, and proposals have none ([I7]), verified against
+  `doctrine/lifecycle-contract.md:133-137` and `dev/PLANNING.md:711-712`.
+* **#8 Domain validity & scope** -- rate-limit gate cleared on one phenomenon
+  presented as two ([I5b]); the board-row metric does not track the managed
+  quantity ([I11]); item 8 is a different kind of work from items 1-7 (see
+  verdict).
+* **#9 Name the satisfier** -- every finding above names one; none is a bare
+  observation.
+
+### Not covered / low confidence
+
+* **Same-type reviewer -- no cross-type independence on this pass.** I am
+  Claude reviewing a Claude-authored proposal in a fresh session. That is the
+  Internal floor and nothing more.
+* **I could not reproduce "12 of the 59".** My passes over the section produced
+  4 items whose `*Trigger:*` field names a code-edit event, 5 under a broader
+  code-or-ceremony pattern, 6 under a looser one, and 17 mentioning any `.py`
+  path -- none near 12. Only **18** of the 59 carry an explicit `*Trigger:*`
+  field at all. The proposal concedes in *Known omissions* that the (b)/(c)/(d)
+  split is "an estimate from a keyword pass, not a per-item adjudication" -- but
+  the 12 is stated flatly as measurement in *Context* ("**12 of the 59** name a
+  trigger that is a code or ceremony event") and again in *Rationale* ("Twelve
+  items currently sit on a board where their stated trigger cannot fire"), where
+  it is the entire answer to "what correctness does it improve?". I did not
+  adjudicate the 59 individually and cannot say the true figure is not 12; I can
+  say I could not reach it, and that the load-bearing correctness claim rests on
+  a number the proposal elsewhere disclaims. Not numbered as a finding because I
+  cannot falsify it -- but the author should either re-derive it per-item or
+  soften both sentences to match *Known omissions*.
+* **Did not assess Maintainer load empirically.** Whether batching actually
+  bounds it is an operational question no artifact in the tree answers.
+* **Did not run `bootstrap/scaffold.py --summary --config <profile>`** -- the
+  proposal's third smoke check. No template file changed on this pass, so there
+  was nothing to prove installs; it remains unexercised evidence.
+* **Did not evaluate the solo-profile collapse of rung (d)** beyond reading the
+  proposal's own handling of it. The proposal explicitly invites a reviewer to
+  challenge whether self-authorization is "honest enough"; I have no independent
+  basis to judge it and am leaving it open rather than rubber-stamping it.
+* **The negative-existence claim** ("no item in `dev/` or `doctrine/` tracks
+  this as a problem") I re-ran with a broader pattern and found no
+  counterexample -- but such claims are phrasing-sensitive. Worth noting a near
+  precedent the proposal does not cite: `dev/plans/transition-lint.md:203` and
+  `dev/proposals/2026-07-22-claude-transition-lint.md:910` route "entries
+  accumulate past a handful" to *retiring the tool, not growing the list* --
+  structurally the same governing move, and a useful supporting citation.
+  (I checked whether that rule reached `docs/tool-usage.md`, which the
+  `transition-lint` plan's row F2 proposed; `grep -n whitelist
+  docs/tool-usage.md` returns nothing, so it lives only in the deliberation
+  record. Flagging that as an observation, not a finding of this proposal.)
+
+### Second-round recommendation
+
+**Recommended -- an External (different-agent-type) round before the Decision.**
+Grounded in the negative space above, not in blast radius:
+
+1. My pass is same-type, and the proposal's core is an *incentive-design*
+   argument ([I9]: does a recorded-decline rung flatten or steepen the
+   gradient?). That is exactly the class where a different prior sees first, and
+   where a same-architecture reviewer is most likely to share the author's
+   reasoning.
+2. [I2] is the kind of miss that suggests more of its kind. Neither the author
+   nor I noticed the existing `wontfix` grammar until a targeted sweep; a
+   reviewer who does not share our search habits may find further collisions.
+3. The change alters the archive precondition -- a contract fifteen-plus
+   surfaces and one shipped code path depend on -- and per [I1] essentially
+   nothing mechanical protects it. Prose-only contracts are where a second read
+   is cheapest relative to what it protects.
+
+Against: if the Decision adopts [I2]'s "map onto the existing grammar" satisfier
+and cuts item 8 (below), the residual change becomes a small, well-fenced
+amendment and an Internal-only round is defensible.
+
+Note the proposal's own escalation rule already fires here: satisfying [I1] via
+route (b) adds a mechanical gate, which the *Plan review tier* section says
+"goes to External".
+
+### Verdict
+
+**REVISE.**
+
+Not SPLIT, narrowly. Items 1-7 are one coherent change: doctrine plus its
+template mirrors plus two strings in the shipped planner, held together by
+loop-fidelity -- splitting them would *create* the drift the repo guards
+against. But **item 8 should be cut from this proposal** and carried as its own
+artifact. It is a different kind of work (a 59-item per-item adjudication,
+Maintainer-blocking at unknown batch size, with the archived-pointer hazard of
+[I8]), its routing estimate is unmeasured by the proposal's own admission, and
+`identity-not-name` (`dev/proposals/2026-08-03-claude-identity-not-name.md:344`,
+"**Verdict: REVISE / SPLIT**") is the standing precedent for exactly this
+bundling shape. The proposal's argument that item 8 must stay -- "deferring the
+fix for deferrals would be self-refuting" -- is rhetorically strong but does not
+survive contact: *sequencing* the retro pass as a named successor with a
+committed trigger is rung (e), which is the proposal's own answer to this exact
+situation. Applying its own ladder to itself is the opposite of self-refuting.
+
+REVISE rather than HOLD because the diagnosis holds, rung (b) is a real
+contribution, and every finding above has a satisfier that is prose or a scope
+cut -- none requires new machinery. The blocking set before Decision is
+**[I1]** (an enforcer claim this repo has recorded six times in one week),
+**[I2]** (a parallel vocabulary over an existing mechanized grammar), **[I3]**
+(the substantive rung's escape hatch), and **[I4]** (a 3.4x error in the
+headline metric). [I5]-[I11] are corrections and additions that a Response can
+carry without re-opening the design.
