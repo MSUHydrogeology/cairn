@@ -172,3 +172,127 @@ require a gate re-anchor — only the AST baseline.
 * This proposal does **not** audit the emitters (`_emit_lock_yaml`, `_yaml_dq`,
   `_yaml_sq`). Round-tripping emitted YAML through the stricter parser is a
   reasonable follow-up and is not claimed here.
+
+## Review -- Claude (coordination / sequencing scope only) -- 2026-08-03
+
+**Model**: Claude Opus 5.
+
+**Standing, stated first, because it is unusually weak.** This is the *same
+agent type as the author* and, unlike an Internal review, the *same session* —
+so it carries neither cross-type independence nor the fresh-context reset an
+Internal read is supposed to bring. It is also **deliberately narrow**: it
+examines only whether this proposal's claimed surface collides with work
+already in flight. It is **not** a security review, not a design review, and it
+**does not discharge the `Plan review: required(External, security lens)` line**
+in the header. Read it as a mechanical collision check that happened to be
+cheap to run, and nothing more.
+
+**Steelman.** The finding is real and well-chosen. A loader that selects its
+parser at import time, based on what happens to be installed, makes the
+program's behaviour a function of the environment rather than of the code —
+and the proposal is right that this is the same defect family the
+`gate-reanchor-preflight` rounds kept surfacing. "One parser, always" is also
+the direction the stdlib-only runtime contract already points; the proposal
+applies that contract rather than amending it, which is the cheap kind of
+change to justify. I would want this fixed.
+
+### Concerns
+
+* **[C1] The primary surface is already claimed by an in-flight plan, and this
+  proposal does not mention it.** *Touches* names `_minimal_yaml_parse` and
+  `load_config` in `bootstrap/_scaffold/config.py`. Those are exactly the two
+  symbols `profile-parse-fail-open` claims — its Chunk M pins **"exactly 2
+  CHANGED — `FunctionDef:_minimal_yaml_parse` … and `FunctionDef:load_config`"**.
+  That artifact is an **open plan**, several lifecycle steps ahead of this
+  proposal: accepted, planned, externally reviewed, and with its Response to
+  that review committed today. This proposal's *Related* line cites
+  `gate-reanchor-preflight` but not the plan that owns its main surface, and the
+  string `profile-parse` appears **zero times** in the file. Under the set's
+  one-proposal-in-flight-per-file rule this needs resolving before review, not
+  during it.
+
+* **[C2] Proposal item 2 substantially duplicates work already specified and
+  externally reviewed.** Item 2 asks that `_minimal_yaml_parse` "refuse input
+  outside that subset rather than silently returning a different value." That is
+  `profile-parse-fail-open`'s Chunk B — the closed L1–L8 line grammar that turns
+  the parser into a recognizer which either matches `yaml.safe_load` exactly or
+  refuses fail-closed. Chunk C adds the unrecognized-key refusal. Both cleared
+  an External round that called the grammar "robust" and the plan READY FOR
+  IMPLEMENTATION. Landing item 2 as drafted would either re-do that work or
+  collide with it.
+
+* **[C3] Item 1 deletes one of the two execution paths the in-flight plan's
+  acceptance contract is defined over.** `profile-parse-fail-open`'s contract is
+  a *single* acceptance contract holding **"across both PyYAML and fallback
+  execution paths"** — and its [E1] finding, endorsed by its External reviewer,
+  turns on `yaml.safe_load` being a genuinely *independent* oracle, protected by
+  a canary test that fails if PyYAML is not really loaded. Item 1 drops the
+  PyYAML branch from shipped code. Item 4 keeps PyYAML as test-only, so the
+  oracle itself can survive — but the *second half of the acceptance contract
+  becomes vacuous*, because there is no longer a second path for it to hold
+  over. This is the sharp edge: **the two artifacts are not merely overlapping,
+  they are order-sensitive**, and neither states an order. Landing this first
+  makes the other plan's contract partly meaningless; landing it second means
+  re-opening a contract that has already cleared review.
+
+* **[C4] The batched AST re-anchor has a falsifiable target this would
+  invalidate.** `profile-parse-fail-open`'s Chunk M is Maintainer-only and
+  **batched with `fork-advisory-semantics`**, and its whole value is that the
+  union of CHANGED symbols is pinned in advance — exactly 2 in `config.py`, 3 in
+  the fork plan — so any symbol outside the union is a stop-and-explain. A
+  concurrent change to those same two symbols does not just add to the union; it
+  destroys the measurement's falsifiability, which is the property the ceremony
+  exists to provide. Whatever order is chosen, this proposal must land wholly
+  outside that ceremony's window.
+
+* **[C5] Item 4 introduces a new dev dependency without clearing the dependency
+  budget.** `bootstrap/DEPENDENCY_BUDGET.md` grants dev/test tools by
+  **individually numbered, justified exception** (`vermin` is Exception 2, with
+  scope, capability-gate and no-network-egress analysis, and a graceful
+  `skipif`). Hypothesis appears nowhere in that document, and neither does
+  PyYAML. Item 4 asserts the two have "the same standing as `pytest` and
+  `vermin`" — that standing is *conferred by an exception entry*, not by
+  analogy, so the claim is not yet true. Property-based testing may well earn
+  one; the point is that it has to be applied for.
+
+### Covered
+
+* Read `dev/plans/profile-parse-fail-open.md` — Chunk B, Chunk C, Chunk M, the
+  AST accounting at its lines 267–268, and the External review plus committed
+  Response at its tail.
+* Confirmed the symbol overlap is exact (`_minimal_yaml_parse`, `load_config`),
+  and that `_yaml_load` — this proposal's third named symbol — is **not** among
+  the other plan's CHANGED set. That is the one genuinely uncontested seam.
+* Confirmed `grep -ci 'profile-parse'` returns 0 over this file.
+* Confirmed `bootstrap/DEPENDENCY_BUDGET.md` mentions neither Hypothesis nor
+  PyYAML.
+
+### Not covered / low confidence
+
+Everything else. I did not assess the divergence finding's severity, reproduce
+the two parsers' differing behaviour, evaluate whether dropping PyYAML breaks a
+real adopter profile, check the subset-boundary rules for completeness, or look
+at the security properties of either parser. **No conclusion about this
+proposal's merits should be drawn from this review's silence on them** — the
+scope was one question, and the header's External security round is untouched
+and still owed.
+
+### Recommendation
+
+**REVISE for sequencing before the External round**, so a reviewer is not asked
+to assess a design whose surface may change underneath it. The narrowing that
+looks cleanest on the evidence — offered as one option, not as the answer:
+
+1. Keep **item 1** (`_yaml_load`, the parser-selection defect). It is the
+   uncontested seam, it is the actual finding in the title, and no in-flight
+   artifact claims it.
+2. Route **items 2 and 3** to `profile-parse-fail-open`, which already specifies
+   them and has cleared External review on them.
+3. State an explicit dependency and an order, and place both wholly outside the
+   batched Chunk M / Chunk R re-anchor window.
+4. Split **item 4**'s Hypothesis adoption into its own dependency-budget
+   exception, on its own merits.
+
+If instead the Maintainer prefers one artifact over two, the alternative is to
+fold this finding into `profile-parse-fail-open` as an amendment — at the cost
+of re-opening a plan that is currently ready to implement.
