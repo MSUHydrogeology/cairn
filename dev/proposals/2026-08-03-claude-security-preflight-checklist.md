@@ -5,7 +5,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: proposed
+**Status**: reviewed
 **Touches**: the `### Author-accounting` block in `dev/proposals/_template.md` and
 its shipped twin `templates/core/dev/proposals/_template.md` (a new `####`
 sub-block, about 40 lines); one clause in the same block in `dev/plans/_template.md`
