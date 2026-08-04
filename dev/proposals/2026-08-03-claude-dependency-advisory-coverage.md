@@ -10,7 +10,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: reviewed
+**Status**: revised
 **Touches**: `templates/modules/team-gated/run_security_audit.py` (the pip-audit
 pass and the shared `_run_tool` boundary), `templates/modules/team-gated/python-security.md`
 (the module's scope and blind-spot statement), and `bootstrap/DEPENDENCY_BUDGET.md`
@@ -779,3 +779,143 @@ DAC1/DAC2/DAC6, but Part 2's feasibility now governs the module's declared scope
 and revising the reporting design before that Decision would design a denominator
 for a contract that may be about to shrink. **The Maintainer's answer to DAC3 is
 the next lifecycle event**, not another author revision.
+
+## Maintainer direction 2026-08-03 — narrow the scope
+
+**Quoted verbatim:**
+
+> Let's go scope narrowing
+
+This settles **DAC3** option 1 and unblocks the author revision below. It is a
+direction on content, not a lifecycle Decision: the proposal moves
+`reviewed -> revised` and still needs re-review and a Decision.
+
+**What it settles.** `python-security` declares what it actually audits —
+Python distributions in the named environment — rather than implying the
+environment. The 147 conda-only packages become **declared, quantified
+non-coverage** instead of an invisible gap inside a CLEAN result.
+
+**What it does not settle, stated so it is not quietly lost.** The Maintainer's
+requirement — *"we need Conda coverage"* — is **not** satisfied by this
+revision. Narrowing makes the module honest about a gap it does not close. The
+147 conda-only packages, 82 of them native (`krb5`, `openssl`, `freetype`,
+`icu`, `hdf5`, the `aws-c-*` stack), remain unaudited by anything Cairn ships.
+That need survives this proposal and **must have a durable home before this one
+archives** — see *Successor requirement* below.
+
+## Revised proposal — `python-security` audits Python distributions, and says so
+
+Supersedes Parts 1 and 2 of the original and both prior amendments where they
+conflict. Part 3 stands unchanged except as DAC6 strengthens it.
+
+### 1. Declared scope
+
+The module audits **Python distributions discoverable in the audited
+environment**. It does not audit conda-managed native packages, system packages,
+vendored or statically-linked libraries, or anything outside Python distribution
+metadata.
+
+This is stated in `templates/modules/team-gated/python-security.md` — the
+document an adopter reads when **selecting** the module — not only in a run
+report they read after they already trust it.
+
+### 2. The denominator, and binding it to a real environment
+
+The denominator is the **Python distribution inventory the child actually
+enumerated**, not a count derived from the parent.
+
+DAC1 makes this the load-bearing control rather than a nicety: the narrowed
+contract's entire value is "we audited the Python distributions in *this*
+environment", and `PIPAPI_PYTHON_LOCATION` moved pip-audit's enumeration from 28
+to 288 packages without touching argv. A narrowed claim over an ambient
+environment is exactly as false as the wide one. Therefore:
+
+* a per-tool **minimal environment**: strip `PIPAPI_PYTHON_LOCATION`, every
+  `PIP_AUDIT_*`, and proxy / CA-bundle variables; any pass-through is explicit,
+  printed, and risk-accepted;
+* **fixed argv** pinning service, endpoint policy, format, output destination,
+  cache, and strictness — `--allow-network` must authorize the *documented*
+  service, not an ambient one;
+* the report **binds the child-observed inventory to the named interpreter**,
+  and records `sys.executable` and version as *observations*, with no assertion
+  of equivalence to any project record.
+
+Per **DAC5**, the phrase "the project's recorded interpreter" is withdrawn.
+`dev/.cairn/local-env.json` and `_resolve_interpreter` stay out of scope; no
+second reader is created, and the review tier does not need to rise for this
+surface.
+
+### 3. Dispositions, over the narrowed denominator
+
+Per **DAC3**, `NO-ADVISORY-SOURCE` is withdrawn — it asserted a universal
+negative from a bounded query. Each enumerated distribution resolves to:
+
+| Disposition | Meaning |
+|---|---|
+| **SCANNED** | queried against the pinned sources, result recorded |
+| **NO-MATCH-IN-PINNED-SOURCES** | queried; the pinned sources hold no record. Names every source and version queried. **Accepted non-coverage, not evidence of safety.** |
+| **UNKNOWN** | not enumerated, or the query did not complete |
+
+**CLEAN requires zero UNKNOWN**, and reports the NO-MATCH count alongside. In
+the narrowed scope this set is small and characterisable — editable and local
+project distributions such as `great-circle-calculator` and `modflow_tools`,
+which have no PyPI record by construction — rather than the native layer.
+
+**DAC4 scales down accordingly.** The residual baseline is now a short list of
+locally-built distributions, not a standing exemption over 82 native libraries.
+It still needs a schema, identity tuple (name, version, queried-source set), and
+integrity coverage, and additions must surface as a diff — but it is no longer
+load-bearing for the module's credibility, which is what made the unspecified
+version untenable.
+
+### 4. Non-coverage is quantified at selection and at run
+
+The module states, at selection and in every report, what it did **not** audit —
+with a count, not a caveat. On the canonical environment today that is 147
+conda-only packages, 82 native. An adopter selecting `python-security` on a
+conda environment learns before installing that the native layer is outside the
+contract.
+
+### 5. Documentation / doctrine surface — corrected per DAC7
+
+The original said "No doctrine change". That was wrong by amendment 2: rules for
+when a security leg may return CLEAN, and how non-coverage is declared, are
+**prescriptions**. This revision routes them as **module doctrine** in
+`python-security.md`, and records the rate-limit basis explicitly — the
+Maintainer has classified this surface high-risk, which is the
+`doctrine/rationale.md` high-risk limb, so the gate is cleared rather than
+denied.
+
+Also corrected: `bootstrap/DEPENDENCY_BUDGET.md:46` and
+`run_security_audit.py:392` both claim the default-off pass "runs against its
+local cache only". Verified false — `run_pip_audit_pass` returns at the egress
+check before invoking pip-audit. Both become "does not run", matching the
+runtime message.
+
+### 6. Part 3 — the shared runner, strengthened by DAC6
+
+Unchanged in intent, extended in specifics: capture **bytes** under a hard
+combined-output bound, decode with an explicit error policy, escape controls
+before rendering, parse fixed JSON rather than prose, and map decode failure,
+truncation, malformed output, timeout, and descendant-cleanup failure to
+DEGRADED. A single invalid UTF-8 byte currently raises an uncaught
+`UnicodeDecodeError` before classification — worse than the unsanitized-output
+defect originally described.
+
+### Successor requirement — conda coverage does not die here
+
+**This proposal must not archive until the conda gap has a durable home.** The
+evidence is established and should be carried forward rather than re-derived:
+
+* 147 conda-only packages on the canonical environment, 82 native, `as_of 2026-08-03`;
+* **Trivy** conda coverage is SBOM/license only — vulnerability scanning
+  unsupported (reviewer, primary docs);
+* **OSV-Scanner** does not list Conda among supported ecosystems (same);
+* **Grype/Syft** match by CPE rather than ecosystem and are **unevaluated by
+  either party** — the first candidate a successor should execute;
+* a hand-built name→CPE map would make Cairn the security authority for product
+  identity, which is a commitment, not an adapter.
+
+Recommended form: a successor proposal `conda-advisory-coverage`, or a board row
+under the deferred-questions section. The Decision that accepts this revision
+should also record which, per the archive-precondition rule.
