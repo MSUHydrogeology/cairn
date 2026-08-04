@@ -289,6 +289,101 @@ board by design.
   twin, now mandatory since the lockfile is clean.
 
 
+* **byline-classification residuals** *(plan open 2026-08-03; the rows land at
+  plan-open, not at archive, so they outlive the proposal's readership)* — the
+  character-preserving identity fold and the whole-name exact match closed a
+  demonstrated privilege-widening defect in `IdentityModel.classify`. Six
+  residuals were ratified alongside it, each with a named trigger, plus one
+  pre-existing over-flag recorded so it is not mistaken for a regression. A
+  residual with a named trigger is a decision; one without is debt.
+  * **R1 — the exact-name spoof.** Anyone who can write bytes into the artifact
+    can write the rostered display name exactly; no name matcher fixes this,
+    and the tool attests structure while the operator guarantees authorization.
+    Accepted **as dated**: single maintainer, roster size **1**, `as_of
+    2026-08-03`. *Mechanical expiry:* `human_maintainers` in
+    `dev/.cairn/agent-identities.json` gaining a second entry. *Non-mechanical:*
+    a signing trust root that binds a Decision-introducing commit to a verified
+    signer, at which point this classifier is re-decided as a lint over an
+    authenticated signal rather than the thing standing in for one.
+    *Backstop:* re-state or re-decide 2027-02-03.
+  * **R2 — presentation-fold equivalence, RESTATED.** The granting fold makes
+    two names one key when they differ by **canonical decomposition or full
+    case folding**. The proposal asked the Decision to ratify this as "accent-
+    and case-variants … every member reads as the rostered name to a human";
+    three measured classes falsify that wording, so what is ratified here is
+    the restated form with the classes named: (a) **full case folding**
+    expands ligatures and long-s, so a byline a reader sees as *Kriften Long*
+    keys as the rostered *Kristen Long*; (b) **combining-mark stripping**
+    collapses marks that carry letter identity outside Latin — Vietnamese
+    tone, hiragana KA vs GA, the Devanagari nukta, Cyrillic YE vs YO — so a
+    *different person's* name keys as the rostered one; (c) case. All three are
+    **accepted with the class on the record** and pinned in
+    `bootstrap/tests/test_byline_identity.py`, so a later narrowing is a
+    visible test change, not a silent drift. The original mechanical expiry
+    ("the first demonstrated string that folds to a rostered name and does not
+    read as it") was satisfied *before* ratification and is therefore spent.
+    *Mechanical expiry, re-marked:* a demonstrated member of the class that is
+    **not** in the three named groups. *Non-mechanical:* a granting fold that
+    narrows (drops case folding or mark stripping) — which the pinned test is
+    designed to surface.
+  * **R3 — the independence widening, partially closed.** The independence
+    comparator now folds at `NFKD` and catches the precomposed-accent,
+    mathematical-bold and circled-letter disguises of an author byline — **3 of
+    4** measured variants. The **Cyrillic-homoglyph variant stays open**: a
+    same-agent review spelled with a confusable still satisfies the
+    `independent_review` gate. Not fixed here because every sound fix needs a
+    *reviewer*-identity contract that does not exist, and the only human list
+    that does exist confers Decision authority; reusing it would couple two
+    authorities to buy one fix. The 3-of-4 state is pinned in
+    `bootstrap/tests/test_byline_identity.py`. *Mechanical expiry:* the first
+    `## Review` in this repository authored by a human who is not the
+    Maintainer — the event that makes the gate load-bearing. *Non-mechanical:*
+    any durable list of people who may review but may not decide.
+    *Backstop:* 2026-11-03.
+  * **R4 — the flag is not a detector, CORRECTED.** The `unknown` violation
+    message appends the `ascii()`-escaped byline so a confusable is visible at
+    the moment of failure; it reveals, it does not detect. R4's stated expiry
+    was "when `agent-context-scrub` lands its escaping helper, this call site
+    adopts it rather than keeping a second escaper." Measured against that
+    sibling's accepted design (`c7266d4`): its `_FIELD_ESCAPES` table covers C0
+    and C1 controls, DEL, the two line separators and backslash, and states in
+    terms that ordinary international text passes through untouched. A Cyrillic
+    confusable **is** ordinary international text, so adopting that helper here
+    would produce **no diagnostic at all** — the exact failure this escaper
+    exists to fix. The two escapers serve opposite purposes: one renders a
+    payload inert while preserving international text, the other reveals that
+    international text is present. **The merge is measured as wrong**, and the
+    trigger is re-marked: *a shared helper that takes the reveal mode as a
+    parameter, or nothing.* (This is a correction to a residual's routing, not
+    a design change; flagged for the Maintainer alongside R2's restatement.)
+  * **R5 — the behaviour change for a token-style roster.** A `human_maintainers`
+    entry is now the complete display name, and names are compared
+    separator-for-separator; a fragment-style roster recognizes nobody after
+    this change, and a display name written with a non-ASCII `Zs` separator is
+    recognized *before* it and not after. *Mechanical expiry:* the entry under
+    `CHANGELOG.md` > Unreleased > Fixed reaching the **v0.4.0 release notes**.
+    If v0.4.0 ships without it, R5 is unresolved. Blast radius at ratification
+    is Cairn itself (corrected in the implementing commit) and **zero external
+    adopters**, which is why this is a release note rather than an upgrade
+    note; if an adopter exists by v0.4.0, an upgrade note is required instead.
+  * **R6 — the roster file has no documented home.**
+    `dev/.cairn/agent-identities.json` is read by shipped code, written by no
+    installer, and documented only in a code comment (revised by this change to
+    state the config's grammar). *Mechanical expiry:* one sentence in
+    `bootstrap/UPGRADE.md` or the adopter-facing skills documentation, **no
+    later than v0.4.0 release preparation**. Explicitly fenced out of the
+    implementing plan, which changes the *content* of an installed file, not
+    the set of installed files or their docs.
+  * **Pre-existing: the `Devine` over-flag.** The AI registry matches `devin`
+    as a *prefix*, so the real surname **Devine** classifies `ai` today and
+    after this change — and because the AI leg has precedence, a Maintainer
+    with that name cannot fix it from the roster. Not introduced here, not
+    fixed here, and a genuine postdoc-first hazard; recorded so it is owned
+    rather than rediscovered. *Trigger:* anyone whose display name
+    prefix-matches a registry entry needing to be recognized as human — at
+    which point the AI leg needs a roster-beats-registry escape, which is its
+    own proposal.
+
 ---
 
 ## Status taxonomy
@@ -486,6 +581,40 @@ none blocking.
 * **Model-tier vocab single-source** *(low residual)* — the tier→model
   binding is canonical in `dev/.cairn/model-selection-mapping.yml`; revisit
   only if a project later adds its own metrics-config tier vocab.
+
+**Release authenticity** *(residuals from plan `release-authenticity`)*
+* **RA1 (a) — Cairn's signing authority widens** *(non-mechanical for the
+  adopter, mechanical for Cairn)* — the principal-count warning in
+  `bootstrap/container/verify-ref.sh` counts a roster the *adopter* typed and has
+  no channel back here, so it is adopter hygiene, not a Cairn-side trigger. The
+  mechanical half is a Cairn suite node
+  (`bootstrap/tests/test_verify_ref.py`, `test_cairn_roster_names_one_principal`
+  — exactly 1 principal in `dev/.cairn/allowed_signers`, `as_of 2026-08-03`).
+  Revive when that node fires: the one-signer, two-accounts trust model no
+  longer describes Cairn.
+* **RA1 (b) — transparency-log / keyless verification** — revive when such a
+  verifier is usable without adding an adopter runtime dependency. The
+  zero-dependency budget is the constraint, not the idea.
+* **RA1 (c) — a reported cross-channel fingerprint mismatch** — revive the moment
+  any adopter reports one; the two-channel comparison is the whole trust anchor,
+  and a mismatch means it failed.
+* **RA3 — verifying the tree you build from** — the bootstrap proves a tag object
+  is signed, not that a working tree equals that tag's tree. Revive when the
+  scaffold gains a "verify my source" entry point, or when the lockfile's
+  `cairn_commit` is cross-checked against a verified tag; either makes this an
+  addition rather than a redesign.
+* **RA5 — the candidate-git-config class on OTHER surfaces** — closed for
+  `bootstrap/container/verify-ref.sh` by construction (verification runs in a
+  workspace the script creates, never in the candidate), but **not swept**: no
+  enumeration of every config key that can influence a git verification, and the
+  fetch still runs `upload-pack` inside the candidate. Revive at the next Cairn
+  surface that shells out to `git` against a tree Cairn does not control.
+* **RA6 — install-side provenance** — source-side signing landed; the lockfile's
+  `source_repository` / `source_licenses` stay **declared**, not attested, and
+  `python bootstrap/scaffold.py --manifest` stays unsigned. Revive when an
+  adopter asks "how do I know my installed tree came from the release I
+  verified?", or when the fork-advisory scope reaches the same seam from the
+  other side.
 
 **Adoption UX**
 * **Constructive readiness** — when a Cairn tool finds a project below an

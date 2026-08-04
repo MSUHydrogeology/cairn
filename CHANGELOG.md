@@ -36,6 +36,23 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **A release you can verify from outside the artifact.**
+  `bootstrap/PROVENANCE.md` now publishes an out-of-band bootstrap as the
+  primary path: compare the signing key's fingerprint on at least two
+  independent channels (a mismatch is a refusal, not a retry), write the roster
+  yourself at `~/.config/cairn/release-signers`, then fetch exactly one tag into
+  a bare repository you created and verify the tag *object* with system `git` —
+  no Cairn script runs, because running one would already be executing the bytes
+  under test. The block is extracted from the document and executed by
+  `bootstrap/tests/test_verify_ref.py`, so a document that drifts away from a
+  working procedure fails Cairn's suite rather than an adopter's install. Also
+  documented: the dated control boundary (`v0.2.0` / `v0.3.0` are annotated but
+  unsigned and stay that way — tag objects are immutable), key rotation with
+  `valid-after` / `valid-before`, and the honest limit that validity windows are
+  hygiene, not revocation — a holder of a compromised key can back-date a tag
+  past the boundary, which a residual-pinning test asserts still verifies. Plan
+  `release-authenticity`.
+
 - **A reviewed pre-flight for the supervised gate re-anchor, and a first-use
   trust root.** `REANCHOR_RUNBOOK.md` Phase 0 stated what to verify and nothing
   verified it; the gap had been filled twice by a disposable scratchpad script,
@@ -58,6 +75,75 @@ and a new empty `Unreleased` is started above.
   `gate-reanchor-preflight`; trust root established at `e45e1fc`.
 
 ### Fixed
+
+- **`verify-ref.sh` answered a question nobody asked, and called it a release.**
+  Asked about `v0.4.0` against a mirror whose `v0.4.0` ref had been re-pointed at
+  the genuinely signed `v0.3.0` tag object, it printed `OK — release tag 'ann'`
+  and exited 0: a third tag entirely, with no signature checked anywhere.
+  Resolution now starts from the caller's ref (`rev-parse --verify --quiet
+  'refs/tags/<ref>^{tag}'`, never `git describe` from a commit), the tag object's
+  *signed* name must equal the ref asked for, and the signature is verified over
+  that object id against a roster supplied from outside the candidate. Provenance
+  mode is the default; the unsigned integrity pin is reachable only under
+  `--unprovenanced` and exits 3; and the string `Maintainer-approved`, printed
+  over commits nobody had approved, is deleted. `bootstrap/PROVENANCE.md`'s
+  "signed tags **or** maintainer-approved release commits" control is corrected
+  the same way — an adopter can check neither a free-text author field nor
+  forge-side branch protection, so that branch is retired rather than softened —
+  and the same sentence is corrected in `bootstrap/UPGRADE.md` and in both copies
+  of the security-review module, the shipped one of which handed adopters the
+  retired claim. Archived proposal `2026-08-03-claude-release-authenticity`; plan
+  `release-authenticity`.
+
+- **The release Bandit gate never read two files every adopter runs.**
+  `security_check.scan_targets()` walked two delivery registries by hand and
+  missed `_SKILLS_MAPPINGS`, which ships the two session-lifecycle tools
+  (`tools/lifecycle.py`, `tools/lifecycle_planner.py`) unconditionally to
+  every adoption — and the test named "the anti-drift assertion" derived its
+  expected set from the same registry the code read, so it was `X - (X ∪ …) ==
+  ∅` and stayed green through the whole drift. The scan set is now derived
+  from the published install manifest — every file the scaffold ships
+  byte-for-byte as Python (72 → 74 targets; the install contract unchanged at
+  95 rows) — and the gate fails closed when Bandit reports a file it could not
+  open, which Bandit records in a JSON `errors` array while still exiting 0.
+  The durable guard is a new on-disk oracle the scanned code never reads:
+  under a registry perturbation the manifest-derived test stays green while
+  the on-disk one goes red naming exactly the two files. Accepted proposal
+  `scan-coverage`; plan `scan-coverage`.
+
+- **A byline could be spoofed into the human-Maintainer allowlist by one
+  invisible character.** The lifecycle planner's identity fold deleted every
+  character that was not an ASCII letter or digit — *including every non-ASCII
+  letter* — so a name spelled with a confusable (a Cyrillic letter that renders
+  identically to an ASCII one, `U+0430`) was reduced to a key that matched the
+  roster: a byline that read as an AI agent classified as a recognized human
+  Maintainer, and its Decision passed silently. The fold is now
+  character-preserving — no letter and no digit, in any script, folds to
+  nothing — and the human-Maintainer match is whole-name **exact** rather than
+  per-word containment. Per the accepted proposal
+  (`dev/proposals/archive/2026-08-03-claude-byline-classification.md`) and its
+  plan (`dev/plans/byline-classification.md`); template
+  `templates/skills/_lib/lifecycle_planner.py` and its self-hosted twin.
+
+  **Two behaviour changes for anyone with a configured
+  `dev/.cairn/agent-identities.json`.** Both fail *closed* — an affected byline
+  is reported for review, never silently granted — but both need a roster edit:
+
+  1. **A `human_maintainers` entry is now the complete display name exactly as
+     it appears in the byline, not a name fragment.** A fragment-style roster
+     (`["Ada", "Lovelace"]`) matched any byline *containing* either word, which
+     is the widening this fixes; it now recognizes nobody. Replace it with the
+     full display name (`["Ada Lovelace"]`). The unrecognized-identity report
+     now states this requirement, and appends the `ascii()`-escaped byline
+     whenever it holds a non-ASCII character, so a confusable is visible at the
+     moment of failure rather than rendering identically to the honest name.
+  2. **Display names are compared separator-for-separator.** Words are split on
+     ASCII whitespace only, so a name written with a non-ASCII space separator
+     — NO-BREAK SPACE (`U+00A0`), IDEOGRAPHIC SPACE (`U+3000`), NARROW NO-BREAK
+     SPACE (`U+202F`), and the other Unicode `Zs` separators — is **no longer**
+     recognized against a roster entry typed with an ASCII space. It was
+     before. If your display name carries one, roster it exactly as the byline
+     spells it, or type both with ASCII spaces.
 
 - **The intent post-commit hook warned about agent identity on every human
   commit.** `_auto_release` resolved identity *before* opening the intent
