@@ -1,3 +1,4 @@
+<!-- cairn-internal-ref-allow: doctrine/lifecycle.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 # Module: dual-review
 
 **Selected when:** the team has two agent types, or multiple
@@ -67,7 +68,12 @@ Merged into `dev/agent_collaboration.md`:
 >    earns its existence.
 > 9. **Name the satisfier** — every finding states the test / guard /
 >    doc / scope-cut / explicit `wontfix` that would close it. A finding
->    with no satisfier is an observation, not yet a finding.
+>    with no satisfier is an observation, not yet a finding. At archive
+>    time each satisfier maps onto a disposition token
+>    (`doctrine/lifecycle.md` > "Archive precondition"), and the mapping
+>    is total: *test* → `guard`, *guard* → `guard`, *doc* → `accept`,
+>    *scope-cut* → `accept`, *wontfix* → `wontfix`. Naming the satisfier
+>    and naming who pays for it are then the same act.
 >
 > **Falsifiable coverage, not "checked."** A swept lens is credible only
 > if its claim is *falsifiable* — it cites the file path, test node,

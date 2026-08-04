@@ -258,15 +258,17 @@ sub-heading if used).
 ## Lasting-truth migration
 
 *Filled in at archive time.* See `doctrine/plans.md` > "Lasting-truth
-migration doctrine" for the full rule: acceptable durable homes, the
-`Follow-ups migrated to:` commit-body form, the evidence ledger, and
-the loop-fidelity sign-off.
+migration doctrine" for the full rule: the disposition vocabulary, the
+`Dispositions:` commit-body form, the evidence ledger, and the
+loop-fidelity sign-off.
 
 See also `doctrine/lifecycle.md` > "Loop-fidelity verification" for
 the Decision→implementation fidelity sign-off checkpoint.
 
 Per the [Archive preconditions rule](../PLANNING.md#archive-preconditions-proposals-and-plans),
-plans archive only after every deferred follow-up has a durable home
-outside the plan.
+plans archive only after every deferred follow-up carries a recorded
+disposition — `accept`, `guard`, `wontfix`, or (with the Maintainer's
+quoted authorization) `defer`. Only `defer` needs a durable home
+outside the plan; the other dispositions *are* the home.
 
 This section is append-only once written.
