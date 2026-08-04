@@ -27,84 +27,120 @@ signal+read for coordination-surface files").
 ## Recommended starting point
 
 <!-- cairn:slot next-start -->
-**Task + current state.** **Open plans for the nine proposals accepted
-2026-08-03** — but *check the intent log first*. At handoff a concurrent agent
-(`claude-d8d22f62`) held an active claim on `dev/plans` with action
-`open five plans`, so some of this may already be done. Run
-`python tools/intent.py list` and `python tools/lifecycle.py session-start`
-before writing anything into `dev/plans/`.
+**Task + current state.** **Answer the three Maintainer calls that unblock all
+Wave 1 archival**, then repair Wave 2. Nothing is pushed. Wave 2's
+implementation sits **uncommitted** in the working tree (11 files) because both
+halves returned DEFECTIVE; everything else from the overnight run is committed.
 
-The nine, with what each plan must carry beyond the ordinary:
+**Why this first.** Three calls unblock every archive precondition on the
+board, and none of them is expertise-gated — they are scope and ceremony
+scheduling, not security analysis.
 
-| Proposal | The thing the plan must not lose |
-|---|---|
-| `security-verification-activation` | **Plan this first** — it is the dependency root; the two capability proposals define their invocation contract against it |
-| `portable-security-sweeps` | **Two Maintainer conditions**: build a Gitleaks *version apparatus* (admit / re-measure / retire), and **Cairn adopts the module itself** so the apparatus is exercised |
-| `api-web-security-modules` | The **AW4 adversarial network-client fixtures** are a blocking gate: DNS answer changing between resolution and connection, redirect to every refused address class, connected-peer disagreement, credential carry-over |
-| `separator-detection` | **Owns** the `_scan_unicode` yielded-id signature change; carries the coexistence test that fails against today's code |
-| `content-scan-detectors` | **Rebases onto** the yielded-id form if it implements second; must not reintroduce the ternary |
-| `dependency-advisory-coverage` | Residual baseline admits **locally-built only** (PEP 610 `direct_url.json`), never "public package with no advisory record" |
-| `gate-claims-vs-enforcement` | Row E1's fallback is an **archive precondition**, not prose |
-| `release-security-bar` | Accepting it did **not** fix `verify_integrity.py`; that is a board row |
-| `security-preflight-checklist` | **No plan** — a single implementing commit against the proposal template |
+1. **`release-authenticity` Chunk M.** Needs your signing key. The control is
+   **documented and tested but NOT established** until the cold bootstrap run
+   passes against a pushed tag. Its Decision also carries a flagged condition —
+   *"a scoped External round for the tag-substitution fix"* — which the Gemini
+   Flash plan review arguably already is; strike or confirm it.
+2. **`byline-classification`'s three Maintainer questions.** The only thing
+   between that plan and archive. Its `[I7b]` obligation discharged itself when
+   `planner-line-semantics`'s Response retracted the claim it was owed.
+3. **`scan-coverage`'s four follow-up homes** — the struck registry census, the
+   four `B607` findings, the unguarded monotonicity claim, the stale frozen
+   pins. Mechanical, and mine; deferred only because archival was held for you.
 
-**Why this first.** Nine accepted proposals with no plans is the largest
-unconverted decision backlog the board has carried, and two of them
-(`separator-detection`, `content-scan-detectors`) edit the same three sites in
-`content_scan.py` with a stated ordering rule that only exists in their
-Decisions.
+**Then Wave 2's five blocking findings** (§ *Wave 2* below), then Ceremony 1.
 
-**Effort.** Large; naturally splits per proposal. **Payoff.** Converts a night of
-decisions into executable work. **Risk.** Plan-opening collides with the
-concurrent agent — hence the intent check.
+**Effort.** Calls: minutes. Wave 2 repair: one focused round. Ceremony 1:
+yours, after the repair.
+
+## Wave 2 — what must be fixed before it commits
+
+**`fork-advisory-semantics`** — three blocking:
+* `bootstrap/UPGRADE.md` asserts *"Nothing your lockfile records — not `hash`,
+  not `base_hash`, not a record's `src` — can decide that a facade is clean."*
+  **Demonstrated false by execution:** a genuinely forked facade whose record
+  sets `hash == base_hash` returns `[]`.
+* Node 13's docstring claims a containment half it never asserts.
+* **`bootstrap/_scaffold/upgrade.py` carries a hunk belonging to the batched
+  sibling**, self-labelled `(profile-parse-fail-open Chunk A)`. A path-scoped
+  commit would carry it silently. Fix before any commit.
+* Consequence for Ceremony 1: the isolation claim *"the sibling's edits absent
+  by construction"* is **false** — the copied `upgrade.py` carried the sibling
+  hunk, so the per-plan AST measurement handed over for the union is
+  contaminated and must be retaken.
+
+**`profile-parse-fail-open`** — two blocking:
+* **Unicode-whitespace hole.** `_minimal_yaml_parse` uses `line.strip()`, which
+  removes *every* `str.isspace()` character; YAML's whitespace is only SPACE
+  and TAB, and `_PROFILE_CONTROL_RE` covers C0/C1/`U+2028`/`U+2029`/`U+FEFF`
+  but not `U+00A0`, `U+2000`–`U+200A`, `U+3000`. Four measured inputs return a
+  value **not equal** to `yaml.safe_load`'s and **do not raise** — the third
+  outcome the contract denies. The sharpest is an NBSP-prefixed key, read as
+  `project_name` by the recognizer and `'\xa0project_name'` by PyYAML: exactly
+  Maintainer Amendment 2's own sentence, with a character ordinary copy-paste
+  produces. No test exercises Unicode whitespace.
+* Gate-manifest delta under-reported: `_gate_manifest.py verify --no-collect`
+  **structurally cannot** report collection classes, so a `COLLECTION-DROPPED`
+  entry (the E1 rename) went unreported into a pre-recorded ceremony
+  accounting. Run **with** collection: HOLD is 17, not 10.
+
+Its auditor ran **18 hazard mutations** (13 claimed plus 5 unpriced, hunting a
+predicted third case of test theatre) and all went RED — **no theatre found**.
+The new module is genuinely non-vacuous.
+
+## Decisions still yours, beyond the three above
+
+* **Ceremony 1** — the batched engine AST re-anchor. The union must be formed
+  by you from **per-plan isolated** measurements; see the contamination note.
+* **Ceremony 2** — the `content_scan.py` frozen re-pin. `content-scan-detectors`
+  and `separator-detection` share the file; batch them, or buy two ceremonies.
+* **`identity-not-name` condition 3.** `fork-advisory-semantics` Chunk B **did
+  not execute** — its fence requires a Maintainer amendment that does not
+  exist, so the destructive remediation advice in `format_forked_facade_warning`
+  is unchanged. Correct restraint by the implementer; the call is yours.
+* **The `tools/lifecycle.py` lockfile row convention.** `agent-context-scrub`
+  A4 says re-record `hash` **and** `base_hash`; `byline-classification` set the
+  precedent of `hash` only. Verified to be convention, not correctness — settle
+  by measurement (pick whichever adds no `verify_integrity` line).
+* **The eight remaining escalated findings** — three on `byline-classification`,
+  five on `agent-context-scrub`. Unchanged.
 
 ## Other candidates
 
-**Push, and carry the trust root.** 129 commits and
-`refs/cairn/gate-anchor` at `e45e1fc` are unpushed. A plain `git push` does
-**not** carry custom refs:
+* **External reviews on the twelve open plans.** Every Internal round states in
+  its own first paragraph that it does **not** discharge the declared tier.
+  This is the largest single block of remaining work.
+* **The tier-blind plan-review gate.** `_has_kind(art, "Plan review")` is
+  presence-only: `##`, `###` and an *empty* heading all satisfy it, and nothing
+  reads `required(External)`. So a plan declaring External is cleared to
+  implement by an Internal review that disclaims discharging it. Routed to
+  `gate-claims-vs-enforcement`, which owns the file. One reviewer already
+  worked around it deliberately by filing under `##`.
+* **Update the sequencing note.**
+  `dev/strategy/2026-08-03-claude-security-wave-sequencing.md` was written when
+  the `bootstrap/_scaffold/config.py` cluster looked like two scopes. It is
+  **five**: `profile-parse-fail-open`, `default-security-stance`, and the three
+  Codex module-registration scopes.
 
-```
-git push origin master
-git push origin refs/cairn/gate-anchor:refs/cairn/gate-anchor
-```
+## The pattern worth carrying forward
 
-Needs Maintainer approval. Until then tonight's trust root and the whole
-deliberation record exist on one disk. Pushing also finally makes the
-**SR9 external-anchoring** upgrade available — `_gate_manifest.py verify
---trusted-repo <fresh-clone>` means something only once `P` exists off-machine,
-and `P` now does.
+*The artifact under verification must not supply the material used to verify
+it.* **Seven instances** in this cycle: the anti-drift test whose expected set
+*was* the code's object (green 63 days); `scan-coverage`'s exclusion latch; the
+security test whose unsigned-tag fixture defeated its own oracle;
+`content-scan-detectors`' token sweep drawn from the record's own sets;
+`transition-lint`'s `B15` quantified over the author's own fixtures;
+`stage-commit-patterns`' probes, all unscoped so the scope gate dismissed them
+by construction; and the "isolated" AST worktree that carried the sibling's
+hunk.
 
-**Another session's uncommitted engine work.** At handoff the tree carried
-modified `bootstrap/verify_integrity.py`, `lockfile.py`, `install.py`,
-`upgrade.py`, `test_lockfile_module.py`, `test_verify_integrity.py`, and an
-untracked `bootstrap/tests/test_fork_advisory.py`. **Not mine and not
-abandoned** — establish ownership before touching or running gates over them.
+Reviewers now name it explicitly. Asking *"what supplies the material this
+check runs on?"* has been the highest-yield question in the cycle.
 
-**Two security follow-ups on the board**, both with revival conditions, neither
-urgent:
+## State
 
-* **Conda advisory coverage** — 147 conda-only packages, 82 native, unaudited by
-  anything Cairn ships. Trivy and OSV-Scanner are eliminated on primary docs;
-  **Grype/Syft are unevaluated by anyone** and are the first thing to actually
-  run. Revival is execution-bound on purpose.
-* **Install-integrity trust anchor** — `verify_integrity.py:47` reads expected
-  hashes from the candidate's own lockfile, so a coordinated tamper verifies
-  `OK`. Needs its own threat model, not a patch.
-
-**`SECURITY.md` disclosure channel** (Queued) — the half of the superseded
-`contributor-entry` that survived. Carries finding [I7]: the channel's deciding
-property is whether the forge setting is *actually enabled*, which no reviewer
-can establish. **Maintainer live-verification step**, not a review item.
-
-**A doctrine gap worth one small proposal.** `AGENTS.md` frames orientation as a
-cold-start/context-loss routine and does not name **opening a lifecycle
-artifact** as a trigger. That gap produced a proposal opened 74 minutes after a
-sibling plan claimed the same three symbols, superseded the same night. The fix
-is one sentence; the evidence is in the archived
-`2026-08-03-claude-yaml-parser-divergence`.
-
-**Also unresolved:** there is still **no runbook for the AST baseline
-re-anchor**. `AGENTS.md:335-338` no longer points at the wrong one, but the
-procedure lives only as precedent (`c3d5bd9`) and as prose inside two plans.
-Deferred Maintainer question 4 is marked resolved-with-residual on that point.
+* **12 plans open**, each with an Internal review; none discharges its tier.
+* **Wave 1 committed and green** — `b93f8e9`, `5c91c23`, `1dabe4d`, `cc74385`.
+* Last clean suite: **1710 passed / 0 failed** at `cc74385`. Current dirty
+  tree: **1779 passed / 2 failed**, both the priced `test_ast_attest` nodes.
+* **Nothing pushed.**
