@@ -62,9 +62,10 @@ Before cutting a release, run — and record the output in the release notes:
 
 * **`python bootstrap/security_check.py`** — the **fail-closed** release
   gate. Unlike the dev test (which skips locally when Bandit is absent), this
-  command **fails** if Bandit is missing, errors, or reports any
-  unallowlisted MEDIUM+ finding over the shipped Python surface, and also
-  runs the Markdown self-check. A release must not be cut on a run that
+  command **fails** if Bandit is missing, errors, reports a file it could not
+  open, or reports any unallowlisted MEDIUM+ finding over the shipped Python
+  surface — every file the scaffold ships **byte-for-byte** as Python — and
+  also runs the Markdown self-check. A release must not be cut on a run that
   silently skipped the security gate.
 * `python -m pytest bootstrap/tests/` — green (includes the dev Bandit gate
   and the content / generated-output scans).

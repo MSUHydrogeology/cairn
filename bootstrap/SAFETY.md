@@ -153,14 +153,47 @@ scales **by file class**:
   Layer-4 code reached by the recursive `scripts/` + `bootstrap/` scan; plus
   `link_check.py`, `sync_doc_snippets.py`, and the
   `content-security` / `python-security` apparatus —
-  `content_scan_runner.py`, `run_security_audit.py`) *and* Cairn's own
-  dev tools (`check_cairn.py`, `content_scan.py`, `security_check.py`,
-  `verify_integrity.py`). The Bandit gate derives its scan set from
-  `_MODULE_MAPPINGS` (verbatim scripts) plus `scripts/` + `bootstrap/`, and
-  **recurses the `bootstrap/_scaffold/` engine package** (excluding the
+  `content_scan_runner.py`, `run_security_audit.py`; **plus the two
+  session-lifecycle tools `lifecycle.py` → `tools/lifecycle.py` and
+  `lifecycle_planner.py` → `tools/lifecycle_planner.py`**, which install
+  verbatim and **unconditionally** to every adoption as the command-line
+  backend behind the `session-start` / `session-end` routines) *and* Cairn's
+  own dev tools (`check_cairn.py`, `content_scan.py`, `security_check.py`,
+  `verify_integrity.py`). The Bandit gate derives its scan set from the
+  **published install manifest** — every file the scaffold ships
+  byte-for-byte as Python, the same enumeration behind
+  `scaffold.py --manifest` — plus `scripts/` + `bootstrap/`,
+  and it **recurses the `bootstrap/_scaffold/` engine package** (excluding the
   `bootstrap/tests/` attack fixtures), so a newly-shipped script *or a
   newly-extracted engine module* is covered automatically; a reviewer must
   know a change ships **as code** (Layer 4), not prose.
+  **What that derivation closes, and the residuals it does not.** The manifest
+  unions the four delivery registries that reach it — `_CORE_MAPPINGS`,
+  `_SKILLS_MAPPINGS`, `_ALWAYS_ON_MAPPINGS`, `_MODULE_MAPPINGS` — so a
+  verbatim script added to `_SKILLS_MAPPINGS`, `_ALWAYS_ON_MAPPINGS` or
+  `_MODULE_MAPPINGS`, not `_MODULE_MAPPINGS` alone, is scanned with no gate
+  edit. **Two residuals remain, and both are live rather than theoretical:**
+  * `_CORE_MAPPINGS` reaches the manifest but is emitted
+    `verbatim=False` unconditionally (`install_manifest` builds its rows as
+    `[(src, dst, False) for src, dst in _CORE_MAPPINGS]`), while
+    `scan_targets()` filters on `verbatim and src.endswith('.py')`. A `.py`
+    added there therefore **cannot** be scanned by the gate. Measured
+    2026-08-03: 17 core rows, none verbatim, and no `.py` among them today.
+  * `_OPTIONAL_TEMPLATES` in `bootstrap/_scaffold/config.py` ships axis-gated
+    project-root templates and never reaches the manifest at all (and installs
+    token-substituted, so the `verbatim` filter would drop it even if it did).
+
+  Both residuals are held **by the dev suite, not by the gate** —
+  `test_every_templates_py_on_disk_is_release_scanned` in
+  `bootstrap/tests/test_security_lint.py` globs `templates/` **on disk** and
+  subtracts the scan set, so a shipped-but-unscanned `.py` reddens it wherever
+  it was registered. Verified by perturbation, 2026-08-03: writing a real
+  `.py` under `templates/optional/` reddens that node (with
+  `test_templates_py_count_is_pinned` and
+  `test_the_on_disk_oracle_goes_red_when_a_registry_stops_delivering`), while
+  `test_a_templates_py_no_registry_delivers_is_reported_unscanned` — which
+  builds its own `tmp_path` tree and never reads the real `templates/` —
+  **passes**, and so cannot hold either residual.
 * **Generated instruction files** (a scaffolded `AGENTS.md` / `dev/`
   tree) — strictest overall; see Rule 8.
 

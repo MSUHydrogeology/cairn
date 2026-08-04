@@ -6,21 +6,26 @@ The dev-time Bandit gate (``bootstrap/tests/test_security_lint.py``)
 is not blocked. That is the wrong posture for a **release**: "the security
 gate may have skipped on the machine that cut the release" is not
 acceptable evidence. This command is the release-facing counterpart -- it
-**fails closed**. A missing Bandit, a scanner error, or any unallowlisted
-MEDIUM+ finding is a non-zero exit.
+**fails closed**. A missing Bandit, a scanner error, a requested file the
+scanner could not open, or any unallowlisted MEDIUM+ finding is a non-zero
+exit.
 
 Run from the Cairn repo root, before cutting a release (and record its
 output in the release notes / checklist):
 
     python bootstrap/security_check.py
 
-It scans the same **derived** executable surface as the dev gate (every
-verbatim ``.py`` in ``_MODULE_MAPPINGS`` + Cairn's dev scripts) and runs
-the Markdown self-check (``scripts/check_cairn.py``). Exit 0 only if both
-pass. This module is the single source of the scan-target set and the
-Bandit allowlist; the dev gate imports them (no second drift-prone copy).
+It scans the same **derived** executable surface as the dev gate -- every
+file the scaffold ships **byte-for-byte** as Python, derived from the
+published install manifest (``install_manifest``, the same enumeration
+behind ``scaffold.py --manifest``), plus Cairn's own dev scripts and the
+scaffold engine -- and runs the Markdown self-check
+(``scripts/check_cairn.py``). Exit 0 only if both pass. This module is the
+single source of the scan-target set and the Bandit allowlist; the dev
+gate imports them (no second drift-prone copy).
 
-Security-hardening Chunk 7 / R1.
+Security-hardening Chunk 7 / R1; manifest derivation per the
+``scan-coverage`` plan.
 """
 from __future__ import annotations
 
@@ -36,6 +41,7 @@ from bootstrap._scaffold.config import (  # noqa: E402  (trust anchor: narrowest
     _ALWAYS_ON_MAPPINGS,
     _MODULE_MAPPINGS,
 )
+from bootstrap._scaffold.install import install_manifest  # noqa: E402
 
 _BLOCKING_SEVERITIES = {"MEDIUM", "HIGH"}
 
@@ -56,10 +62,22 @@ ALLOWLIST: dict[tuple[str, str], str] = {
 
 def scan_targets() -> list[str]:
     """The executable surface to scan, derived from Cairn's source of truth:
-    every verbatim ``.py`` in ``_MODULE_MAPPINGS`` (the artifacts shipped to
-    adopters) + Cairn's own dev executables (``scripts/*.py`` + the
-    scaffold), as explicit files. A newly-shipped script is covered
-    automatically; there is no hand-maintained list to drift."""
+    every **verbatim** (byte-for-byte, un-substituted) ``.py`` in the
+    published install manifest -- the artifacts an adopter runs as code --
+    plus Cairn's own dev executables (``scripts/*.py`` + the top-level
+    ``bootstrap/`` tools) and the whole scaffold engine package, as explicit
+    files. A newly-shipped script is covered automatically; there is no
+    hand-maintained list to drift.
+
+    The two registry loops below (``_MODULE_MAPPINGS``, ``_ALWAYS_ON_MAPPINGS``)
+    are strictly redundant once the manifest union lands -- measured, their
+    42 entries are a subset of the manifest's 44 -- and are **retained on
+    purpose**: they are ``set.add`` calls into the same accumulator, so
+    "this change cannot shrink the scanned surface" is true by inspection
+    rather than by measurement. They are defence in depth, not a second
+    guard: what actually catches a shipped ``.py`` falling out of this set is
+    the on-disk oracle in ``bootstrap/tests/test_security_lint.py``, whose
+    input this function never reads."""
     targets: set[str] = set()
     for specs in _MODULE_MAPPINGS.values():
         for spec in specs:
@@ -96,6 +114,21 @@ def scan_targets() -> list[str]:
             str(p.relative_to(CAIRN_ROOT))
             for p in engine_pkg.rglob("*.py")
         )
+    # Every verbatim .py the scaffold ACTUALLY installs, from the published
+    # install manifest -- the same enumeration adopters depend on through
+    # `scaffold.py --manifest`. Two facts here are load-bearing:
+    #   * `modules=None` means the FULL published catalog. A module subset
+    #     would silently shrink the scanned surface, and nothing downstream
+    #     would say so.
+    #   * This is a UNION WITH the two registry loops above, never a
+    #     replacement for them. That framing is what makes "coverage cannot
+    #     shrink" checkable by inspection instead of by measurement.
+    # It closes a real, 63-day-old miss: `_SKILLS_MAPPINGS` ships the two
+    # session-lifecycle tools unconditionally to every adoption and no loop
+    # above reaches them (scan-coverage plan, Chunk B / proposal items 1-2).
+    for src, _dst, verbatim in install_manifest(modules=None):
+        if verbatim and src.endswith(".py"):
+            targets.add(f"templates/{src}")
     return sorted(targets)
 
 
@@ -108,7 +141,18 @@ def _rel(filename: str) -> str:
 
 def run_bandit() -> int:
     """Run Bandit over the derived surface; fail closed on absence/error."""
-    targets = [str(CAIRN_ROOT / t) for t in scan_targets()]
+    # `install_manifest` REFUSES a malformed mapping (duplicate destinations)
+    # by raising ValueError. This wrapper is legibility, not new safety:
+    # main() wraps run_bandit() in no handler, so an uncaught ValueError
+    # already exits non-zero -- it buys a security message instead of a
+    # traceback (scan-coverage plan, Chunk B / proposal item 2).
+    try:
+        scanned = scan_targets()
+    except ValueError as exc:
+        print("security_check: cannot enumerate the shipped surface "
+              f"({exc}) -- FAIL CLOSED.", file=sys.stderr)
+        return 1
+    targets = [str(CAIRN_ROOT / t) for t in scanned]
     try:
         proc = subprocess.run(
             [sys.executable, "-m", "bandit", "-q", "-f", "json", *targets],
@@ -133,6 +177,23 @@ def run_bandit() -> int:
         report = json.loads(proc.stdout)
     except json.JSONDecodeError:
         print("security_check: bandit output was not JSON -- fail closed.",
+              file=sys.stderr)
+        return 1
+    # A file Bandit could not READ is not a file Bandit found clean. Bandit
+    # records such a failure (missing file, unparseable source) in the JSON
+    # `errors` array, scans the rest, and exits 0 -- so the rc branch above
+    # never fires and the run reports clean over a file it never opened.
+    # Fail closed here, BEFORE allowlist filtering, matching the scanner-error
+    # posture above (scan-coverage plan, Chunk A / [I1]).
+    errors = report.get("errors") or []
+    if errors:
+        detail = "\n".join(
+            f"  {_rel(str(e.get('filename', '?')))}: {e.get('reason', '?')}"
+            for e in errors
+        )
+        print("security_check: bandit could not scan "
+              f"{len(errors)} requested file(s) -- fail closed. A file the "
+              "scanner never opened is not a file it found clean.\n" + detail,
               file=sys.stderr)
         return 1
     blocking = [
