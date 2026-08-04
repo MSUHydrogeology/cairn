@@ -1146,6 +1146,104 @@ the time of this amendment an independent re-audit has open findings against
 Chunk E's prose (see the code-review record). Ratifying scope does not ratify
 code.
 
+Maintainer's instruction.
+
+### What this settles
+
+The author's Response to the Internal security review escalated three remedies
+under *Findings the Decision did not see*, with the explicit instruction that
+**"No plan should carry any of them under the current Decision."** This plan
+carries all three anyway — a governance defect found when the escalated list was
+re-read against the plan body, and recorded here rather than quietly absorbed.
+This amendment closes the gap by authorizing what is already implemented:
+
+| Finding | What it does | Where it lives |
+|---|---|---|
+| **[I1]** | `run_bandit()` fails closed when Bandit's JSON `errors` array is non-empty | Chunk A, rows A1–A4 |
+| **[I2]** | `bootstrap/tests/test_security_check.py` enters scope | Chunks A, D |
+| **[I6c]** | the on-disk `.py` count is pinned | Chunk C, row C4 |
+
+### Two consequences the Maintainer is on record as accepting
+
+* **The frozen-file footprint goes from two files to three.** [I2] brings
+  `bootstrap/tests/test_security_check.py` into the gate-manifest frozen set,
+  which enlarges the surface of the next supervised re-anchor. Small, but real,
+  and it was named before this ratification was given.
+* **[I6c] trips on growth by design.** The pinned count turns the dev suite red
+  whenever a `.py` is added under `templates/` — *including when it is added
+  correctly*. That trip-on-growth is the point of the shape, and it is now
+  authorized rather than inferred.
+
+### What this does not settle
+
+Nothing about whether the implementation of these three is **correct**. This
+amendment rules on *scope* — that the plan was entitled to carry them. Their
+implementation is subject to the same verification as every other chunk, and at
+the time of this amendment an independent re-audit has open findings against
+Chunk E's prose (see the code-review record). Ratifying scope does not ratify
+code.
+
 This also closes three of the eleven items escalated across the three Responses
 written on 2026-08-03. The remaining eight — three on `byline-classification`,
 five on `agent-context-scrub` — are unaffected and stay undecided.
+
+
+## Code review -- Antigravity (External, security lens) -- 2026-08-04
+
+**Steelman.** Implementation commit `5c91c23` delivers `scan-coverage.md` Chunks A–E, closing the 63-day defect where `scan_targets()` missed the unconditionally shipped skills tools (`lifecycle.py` and `lifecycle_planner.py`). Chunk A hardens `run_bandit()` in `security_check.py` and `test_no_blocking_security_findings` in `test_security_lint.py` to fail closed when Bandit's JSON `errors` array is non-empty, preventing un-scanned files from reporting a false clean. Chunk B binds `scan_targets()` to `install_manifest(modules=None)` (all verbatim `.py` files in the manifest). Crucially, Chunk C builds an on-disk anti-drift oracle (`_templates_py_on_disk(root)` and `_unscanned_disk_py(root)`) that globs `templates/` independently of the registries, ensuring that registry perturbations or un-scanned files on disk immediately fail tests (`test_every_templates_py_on_disk_is_release_scanned`). Furthermore, `_SCAN_EXCLUSIONS` requires non-empty rationales, disk presence, and absence from `_scan_targets()` to prevent stale exclusion latches.
+
+### Concerns
+
+* **[E1] On-disk oracle sensitivity to un-tracked local scratch files.**
+  Because `_templates_py_on_disk` walks the working tree on disk via `rglob("*.py")` rather than `git ls-files`, an uncommitted scratch `.py` file placed under `templates/` will immediately cause `test_every_templates_py_on_disk_is_release_scanned` to fail. As acknowledged in the plan's residual section, this is an intentional ergonomic tradeoff (forcing explicit decision/exclusion on unwired templates), but developers must be aware of it during local testing.
+* **[E2] Supervised gate manifest re-anchor requirement.**
+  Commit `5c91c23` modifies three frozen files (`bootstrap/security_check.py`, `bootstrap/tests/test_security_lint.py`, `bootstrap/tests/test_security_check.py`). While `pytest` remains 100% green, `_gate_manifest.py verify` flags these files as `FROZEN-MODIFIED`. Re-pinning `gate_manifest.json` remains a Maintainer-supervised step governed by `REANCHOR_RUNBOOK.md`.
+
+### Covered
+
+* **Empirical Verification of Replacement Oracle Perturbation**:
+  - Perturbation P-C1 tested: patched `bootstrap._scaffold.install._SKILLS_MAPPINGS` in memory to strip the two `.py` entries.
+  - Result: `test_every_manifest_verbatim_py_is_scanned_by_some_path` remained GREEN (proving it is only a conformance check), while `test_every_templates_py_on_disk_is_release_scanned` went RED naming `['templates/skills/_lib/lifecycle.py', 'templates/skills/_lib/lifecycle_planner.py']`.
+
+```
+$ ~/conda_envs/lhm/bin/python -c "
+import bootstrap._scaffold.install as install_mod
+from bootstrap.tests.test_security_lint import _unscanned_disk_py, CAIRN_ROOT
+stripped = tuple(row for row in install_mod._SKILLS_MAPPINGS if not row[0].endswith('.py'))
+install_mod._SKILLS_MAPPINGS = stripped
+print('Unscanned on-disk py:', _unscanned_disk_py(CAIRN_ROOT))
+"
+Unscanned on-disk py: ['templates/skills/_lib/lifecycle.py', 'templates/skills/_lib/lifecycle_planner.py']
+```
+
+* **Pytest Suite Verification**:
+  - Ran `pytest bootstrap/tests/test_security_lint.py`: 10 passed in 0.92s.
+  - Ran full test suite `pytest bootstrap/tests`: 1790 passed, 0 failed, 3 warnings in 133.06s.
+
+```
+$ ~/conda_envs/lhm/bin/python -m pytest bootstrap/tests/test_security_lint.py
+============================== 10 passed in 0.92s ==============================
+```
+
+* **Bandit Error Handling Verification**:
+  - Verified `security_check.py:134-142`: `errors = report.get("errors") or []` prints errors to stderr and returns `1` before allowlist filtering.
+
+* **Claim-check Verification**:
+  - `claim_check.py`: verified clean output on `dev/plans/scan-coverage.md`.
+
+```
+$ ~/conda_envs/lhm/bin/python scripts/claim_check.py dev/plans/scan-coverage.md
+claim_check: dev/plans/scan-coverage.md -- 2 path(s) exempted by claim-check-allow:
+  dev/plans/scan-coverage.md: exempted `templates/optional/rogue.py` via claim-check-allow glob `templates/optional/rogue.py`
+  dev/plans/scan-coverage.md: exempted `templates/_probe.py` via claim-check-allow glob `templates/_probe.py`
+claim_check: dev/plans/scan-coverage.md -- OK, no claim-check flags.
+```
+
+### Not covered / low confidence
+
+* Sixteen pre-existing LOW severity subprocess findings (`B404`/`B603`/`B607`) in `lifecycle.py` and `lifecycle_planner.py` remain un-remediated in accordance with the explicit scope fence, and are tracked as deferred follow-ups.
+
+### Recommendation
+
+**SHIP / PASS CODE REVIEW.** The implementation of `scan-coverage.md` is complete, verified by empirical perturbation testing, and robustly closes both defects.
+
