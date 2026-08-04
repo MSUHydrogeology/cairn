@@ -400,25 +400,107 @@ summary. It also keeps the roadmap usable: a roadmap that holds
 only what is open or in flight reads quickly and answers
 "what's live?" cleanly.
 
-## Archive precondition — every deferred follow-up has a durable home
+## Archive precondition — every deferred follow-up carries a disposition
 
 The plan-archive precondition above guards *that review happened*.
 A second precondition guards *that nothing was silently dropped*:
 before a proposal **or** a plan archives, every explicitly-deferred
-follow-up it carries must have a **durable home outside the file** —
-a roadmap item, a topic doc's "Future work" section, or its own
-queued follow-up proposal. The archived artifact is closed; a
-follow-up that lived only inside it would vanish from the live
-surfaces the moment it moved to `archive/`.
+follow-up it carries must carry a **recorded disposition**. The
+archived artifact is closed; a follow-up that lived only inside it
+would vanish from the live surfaces the moment it moved to
+`archive/`.
 
-The migration must be **auditable**. Record where each follow-up
-went in a durable location the team's workflow already preserves —
-the archive commit body, the pull-request description, or the plan's
-closing metadata — as an explicit `Follow-ups migrated to: …` block.
-The *where* is adopter-local (a squash-merge team may keep the audit
-in the PR description rather than a commit body); the requirement is
-that a cold reader can reconstruct, from the durable record alone,
-that every deferral found a home.
+**A disposition is not the same thing as a durable home.** The
+precondition exists so nothing is dropped *silently* — not so
+everything is kept *forever*. An artifact that declines a follow-up
+in writing, with a reason, has dropped nothing silently. Requiring a
+durable home for every deferral instead makes the roadmap the only
+sanctioned outcome, which turns it into a one-way accumulator: review
+promotes observations to findings, the scope fence defers what the
+artifact cannot fix, and this precondition obliges the board to keep
+all of it. There is no discarding step anywhere in that chain unless
+this rule provides one.
+
+### The disposition vocabulary
+
+Use the disposition grammar already defined in `proposals.md` >
+"Response — disposition grammars", extended with one token for the
+archive-time case:
+
+* `accept` — fixed in this artifact's scope. Includes writing the
+  doc the finding asked for, and narrowing the artifact's own claim
+  so the finding no longer applies (a scope-cut).
+* **`guard`** — homed in an artifact that **executes**: a test node,
+  an assertion, a runtime guard. The entry **names the node**
+  (`path::node`). A follow-up whose revival condition is mechanical
+  ("any edit to `parse_config()`") belongs where that condition
+  fires, not on a roadmap that fires only when a human re-reads it.
+  **A comment is not an eligible `guard` artifact** — comments do not
+  fire, and a comment is a roadmap row relocated into a file fewer
+  people read.
+* `wontfix` — explicit non-action, **with a rationale**. Subject to
+  the eligibility rule below.
+* `defer` — deposited on the roadmap board. **Requires the
+  Maintainer's authorization, quoted verbatim** (the attestation form
+  is the one used for scribing a Decision). A deposit on a shared
+  board is a scope decision, and scope is Maintainer-held.
+* `defer` (successor) — opened as its own proposal, for a genuine
+  discovered blocker whose in-scope fix would be the bundling this
+  lifecycle already forbids. Also the Maintainer's call.
+
+**There is no required order.** What is required is that the record
+say why the chosen disposition is the right one. An ordering rule
+would make the cheapest disposition the default, which is the failure
+being fixed rather than a fix for it.
+
+### Two eligibility rules
+
+* A follow-up that **reaches an adopter, blocks a release, or needs a
+  Decision** is **ineligible for `wontfix`**. Consequence, not
+  convenience, decides what may be declined.
+* A follow-up **named by a closed artifact's disposition block** is
+  ineligible for `wontfix` without the Maintainer, and any re-routing
+  of it is recorded as a forwarding entry. An archived record is
+  append-only: when the migration it asserts stops being true, it
+  cannot be corrected in place.
+
+**On a solo profile** — where the author and the Maintainer are the
+same person — the `defer` gate collapses to a written justification
+to oneself. That is **weaker, but not vacuous**: the value is that
+the justification is written into the record at a serialization
+point, where a later reader (or the same person, cold) can see what
+was claimed. That is the same premise the rest of this lifecycle
+rests on.
+
+### Recording it
+
+The record must be **auditable**. Record each follow-up's disposition
+in a durable location the team's workflow already preserves — the
+archive commit body, the pull-request description, or the artifact's
+closing metadata — as an explicit **`Dispositions: …`** block. The
+older `Follow-ups migrated to: …` spelling remains valid and is still
+recognized; artifacts already archived under it are correct as they
+stand and are never rewritten. The *where* is adopter-local (a
+squash-merge team may keep the audit in the PR description rather
+than a commit body); the requirement is that a cold reader can
+reconstruct, from the durable record alone, what happened to every
+deferral.
+
+**Archive-preparation is the serialization point** — for plans and
+proposals alike. `defer` requests are presented as **one batch**
+there, never one at a time; that batching is what keeps the
+Maintainer gate affordable. A plan review may take an early pass at
+follow-ups already visible then, and a proposal that archives inside
+its plan-open commit presents its block at that commit's preparation.
+
+**This precondition is documentary, not mechanical.** Nothing checks
+that a disposition is the *right* one, and nothing checks that the
+`defer` authorization was really given — the enforcer is a reviewer
+opening the artifact at archive-preparation. A checker could confirm
+a block exists and every item names a token; it could not distinguish
+a considered decline from a template-shaped one, and a gate that
+passes the degenerate case is worse than no gate because it is
+silent.
 
 ## Removal preconditions for a roadmap item
 
