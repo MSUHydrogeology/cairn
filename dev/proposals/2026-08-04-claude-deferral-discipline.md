@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5
 **Date opened**: 2026-08-04
-**Status**: proposed
+**Status**: revised
 **Touches**: `doctrine/lifecycle.md` (archive precondition — canonical), `doctrine/proposals.md`, `doctrine/plans.md`, `doctrine/dual-review.md` (lens #9), `doctrine/lifecycle-contract.md` (plan state machine), `templates/core/dev/PLANNING.md`, `templates/core/dev/plans/_template.md`, `templates/core/dev/proposals/_template.md`, `templates/skills/_lib/lifecycle_planner.py`, `dev/plans/_template.md`, `dev/proposals/_template.md`, `dev/PLANNING.md` (retrospective pass)
 **Related**: the 2026-08-04 six-plan census (`4573c11`); `dev/PLANNING.md` > "Archive-time follow-ups — the 2026-08-04 six-plan census"
 **Plan review**: required(Internal) — see *Plan review tier* below for why this is the floor and what escalates it
@@ -965,3 +965,331 @@ cut -- none requires new machinery. The blocking set before Decision is
 (the substantive rung's escape hatch), and **[I4]** (a 3.4x error in the
 headline metric). [I5]-[I11] are corrections and additions that a Response can
 carry without re-opening the design.
+
+---
+
+## Response -- Claude (Strategy) -- 2026-08-04
+
+**Model**: claude-opus-5
+
+Grammar: Proposal-Response (`doctrine/proposals.md:433-444`) -- no implementing
+commit exists.
+
+The review is accepted essentially in full. Four findings are author errors
+rather than design disagreements, and three of those four ([I4], [I5a], and the
+unnumbered "12 of the 59") biased toward the proposal's own conclusion, which is
+the shape that most deserved catching.
+
+**[I1]** accept -- taking satisfier route (a), the cheaper close. Invariant 3 is
+re-marked documentary with its real enforcer named ("a reviewer opening both
+files at archive-preparation"). Route (b) would add a content-parity gate and
+fire the proposal's own External-escalation rule; it is recorded as a candidate
+successor, not taken here. The finding is correct and is the sixth instance of
+this exact shape in a week -- a named enforcer that does not enforce, asserted
+one paragraph after two others were correctly marked documentary.
+
+**[I2]** accept -- and it restructures the proposal. Verified independently:
+`doctrine/proposals.md:458` (`wontfix` -- explicit non-action with rationale),
+`doctrine/plans.md:492` and `:543`, `doctrine/dual-review.md:246`, and the
+mechanization at `templates/modules/default-on/_lifecycle_metrics/subsystems.py`
+(`wontfix` bucketed at `:93`, normalized at `:125-126`). The Context claim "no
+doctrine anywhere describes declining a follow-up" is **false and is retracted**.
+The reviewer's reframing is adopted verbatim as the proposal's new spine: *the
+drain exists, it is called `wontfix`, and the real defect is that it is available
+at code-review-Response time and not at archive time.* Four of five rungs collapse
+into existing tokens; only the code-home rung is new. This makes the change
+substantially smaller and removes the parallel-vocabulary hazard, including the
+silent-drop behaviour of `_normalize_disposition_token`.
+
+**[I3]** accept -- rung (b), now the `guard` token, is restricted to artifacts
+that **execute** (a test node, an assertion, a runtime guard) and must **name the
+node**. "Call-site comment" is removed from it and routed to `wontfix`, where the
+recorded reason makes it reviewable. The finding is right that the cheapest,
+approval-free, ordered-first rung admitted the exact artifact the proposal
+condemns.
+
+**[I4]** accept -- corrected to **+4.67 net board rows per plan** (28/6), from 95
+candidates, `as_of 2026-08-04`. Re-verified against `dev/PLANNING.md:712-716`.
+The 3.4x error was in the proposal's own governing metric, and the corrected
+figure materially changes the framing: this is tractable, not a crisis. The
+proportionality argument is re-run against it below and is part of why the
+revision is smaller.
+
+**[I5]** accept -- (a) the table row is corrected: the earliest 2026-07-22 commit
+is `57d1daf` at **349** lines; 343 was the day's fourth-of-five intra-day
+minimum, selected by an author `sort -u` that destroyed chronological order.
+Re-derived independently and the reviewer's table matches. (b) The line-growth
+trend is **dropped as an independent evidence line** rather than restated -- 91%
+of it landed in the census's own four-day window and 50% in `4573c11` itself, so
+it is one phenomenon described twice. The gate now rests solely on the census's
+six independently-authored plans, which is recurrence on its own.
+
+**[I6]** accept -- `Touches` extended to fifteen surfaces:
+`tools/lifecycle_planner.py` (byte-identical twin at blob `afa702d`, confirmed by
+`cmp`; the copy Cairn actually runs), `templates/modules/team-gated/dual-review.md:69`,
+`dev/modules/dual-review.md:69`, and `dev/PLANNING.md:433-444` (the self-hosted
+prose, distinct from the retro pass). The public-path -> test mapping is
+corrected: `grep` over `bootstrap/tests/` for the durable-home strings returns
+**zero** hits, so `test_lifecycle_cli.py` was never the coverage claimed. The
+governing node is
+[`bootstrap/tests/test_notice_install.py`](../../bootstrap/tests/test_notice_install.py)
+`::test_every_self_hosted_twin_stays_byte_identical_to_its_source`, confirmed
+present at `:98`. The `issue-capture.md` pair is handled by the new
+`Dispositions:` phrasing, which no longer assumes every follow-up has a durable
+home.
+
+**[I7]** accept -- **archive-preparation** becomes the single serialization point
+for every artifact, plan and proposal alike, with plan review as an optional
+early pass for follow-ups already visible then. The proposal-archives-inside-the-
+plan-open-commit case (`doctrine/lifecycle-contract.md:133`) is covered
+explicitly. The finding is correct that batching at plan review batches a
+population that does not exist yet -- the census itself describes findings that
+arrived at *code* review.
+
+**[I8]** accept -- both halves. A retro re-route of a row named by a **closed**
+artifact's migration block is recorded as a forwarding entry, and such rows are
+**ineligible for `wontfix` without the Maintainer**, because declining them
+retroactively changes an archived precondition's truth value in a record that is
+append-only and cannot be corrected in place. The already-drifted pointer at
+`dev/plans/archive/interpreter-trust-root-fallback.md:582` is cited in the
+successor as a worked instance. This rule travels with the retro pass into its
+own artifact (see the split below).
+
+**[I9]** accept -- taking satisfiers (1) and (3) together. The absorbed
+consequence floor is promoted from rung-choice *guidance* into a routing
+**rule**: a follow-up that reaches an adopter, blocks a release, or needs a
+Decision is **ineligible for `wontfix`**. And strict ordering is **dropped** --
+what remains is "record why the disposition you chose is right", which the
+`Dispositions:` block already delivers. That removes the second push toward
+decline and the backwards placement of the successor-proposal disposition in one
+move. The finding is correct that the original ladder made decline both cheaper
+*and* ordered-first, which is a steeper gradient than the alternative it rejected
+-- the *Alternatives* section claimed the opposite and was wrong.
+
+**[I10]** accept -- the mapping over lens #9's five satisfiers is stated
+explicitly and is total: *test* -> `guard`; *guard* -> `guard`; *doc* ->
+`accept` (writing the doc is the fix, performed in scope); *scope-cut* ->
+`accept` (narrowing the artifact's claim is an in-scope edit to the artifact);
+*wontfix* -> `wontfix`. Adopting the existing grammar per [I2] is what makes this
+mapping natural rather than forced -- four of the five satisfiers already share
+its vocabulary.
+
+**[I11]** accept with modification -- the principle is restated over
+**outstanding follow-ups**, not board rows, and the concession that this is
+unmeasurable today is made explicit rather than implied. The reviewer's
+alternative (keep the board-row form, exempt the successor case) is declined
+because it preserves a metric that does not track the managed quantity; naming it
+unmeasurable is more honest than a measurable proxy pointing the wrong way. The
+"An artifact closes more than it opens" slogan is kept as a *statement of intent*
+with its non-measurability stated in the same breath.
+
+**Unnumbered observation -- "12 of the 59"** accept. The reviewer could not
+reproduce it under four patterns (4 / 5 / 6 / 17) and established that only 18 of
+59 carry an explicit `*Trigger:*` field at all. The figure came from an author
+regex over phrasings, not a per-item adjudication, and was stated flatly as
+measurement in *Context* and *Rationale* while *Known omissions* disclaimed the
+same estimate two pages later. **The number is withdrawn.** Both sentences are
+softened to name the code-home route as the contribution without asserting a
+count; the true figure is produced by the retro pass's per-item adjudication,
+which is where it belongs.
+
+**Unnumbered observation -- the `transition-lint` precedent** accept, with
+thanks. `dev/proposals/2026-07-22-claude-transition-lint.md:910` routing "entries
+accumulate past a handful" to *retiring the tool, not growing the list* is
+structurally the same governing move and is now cited in *Rationale* as prior
+art. It strengthens the rate-limit case with a genuinely independent instance,
+which is what [I5b] removed.
+
+**Verdict disposition -- item 8 (the retro pass) is SPLIT OUT.** accept. The
+reviewer's argument defeats the proposal's own: *sequencing* the retro pass as a
+named successor with a committed trigger **is** the successor-proposal
+disposition, so applying the ladder to itself is the opposite of self-refuting.
+The precedent (`identity-not-name`, REVISE/SPLIT) is on point.
+
+**The split is conditioned, and the condition is not negotiable within this
+proposal:** the successor is opened in the **same session** as this proposal's
+Decision, not "when it reaches the top of the board". A retro pass that becomes a
+board row would be this proposal's own thesis failing on its first test. If the
+Maintainer does not want it opened today, the correct outcome is to reject the
+split and keep item 8 in scope -- not to accept the split and let the successor
+float.
+
+**Second round** defer -- to the Maintainer's Decision. The reviewer recommends
+External and names the condition under which Internal suffices ("if the Decision
+adopts [I2]'s map-onto-the-existing-grammar satisfier and cuts item 8, the
+residual change becomes a small, well-fenced amendment"). **Both** of those are
+now adopted, so that condition is met on the record. The author does not get to
+rule on the tier for its own proposal; the facts are stated and the call is the
+Maintainer's.
+
+---
+
+## Revised proposal
+
+**Status**: revised
+
+The spine changes. Cairn already has a disposition grammar with an explicit
+non-action token; this proposal no longer invents a parallel one. What it does is
+**make that grammar available where the accumulation actually happens** and add
+the one disposition the grammar is missing.
+
+### The defect, restated correctly
+
+`doctrine/proposals.md:450-458` defines the code-review-Response grammar:
+`accept` / `reject` / `defer` / `wontfix` ("explicit non-action with rationale").
+It is mechanized -- `_lifecycle_metrics/subsystems.py:87-127` buckets all five
+tokens for the metrics report.
+
+That grammar governs **responses to review findings**. It does **not** govern the
+**archive precondition**, which instead requires (`doctrine/lifecycle.md:403`)
+that every explicitly-deferred follow-up have "a durable home outside the file",
+first-naming `dev/PLANNING.md`. So at the one moment an artifact disposes of
+everything it did not do, the only sanctioned outcome is *preservation*. There is
+a drain in the tree; it is not plumbed to the sink.
+
+### The change
+
+**C1 -- The archive precondition accepts a disposition, not only a home.**
+`doctrine/lifecycle.md` > "Archive precondition" is amended so the precondition is
+satisfied when every explicitly-deferred follow-up carries a **recorded
+disposition token from the existing grammar**. `wontfix` with a rationale
+satisfies it. The `Follow-ups migrated to: …` block becomes **`Dispositions: …`**,
+naming the token for every item. Auditability is unchanged: a cold reader can
+still reconstruct that nothing vanished, and can now also see what was declined
+and why -- which the current block cannot express at all.
+
+**C2 -- One new token: `guard`.** For a follow-up whose home is an artifact that
+**executes** -- a test node, an assertion, a runtime guard. It **must name the
+node** (`path::node`). This is the proposal's substantive contribution and the
+only new vocabulary. Its case is unchanged from the original draft and no finding
+challenged it: a follow-up whose revival condition is "any edit to
+`scan_targets()`" belongs at `scan_targets()`, where the condition fires, not on
+a board that fires only when a human re-reads it. Per [I3], a comment is **not**
+an eligible `guard` artifact -- comments do not fire.
+
+**C3 -- `defer` at archive time requires a quoted Maintainer authorization,** in
+the existing Decision-scribing attestation form (`AGENTS.md` > "Scribing a
+Decision"): the authorizing phrase quoted verbatim and visually isolated. Scope is
+Maintainer-held; a deposit on a shared board is a scope decision.
+
+**C4 -- Eligibility rules, replacing the ordering rule.** There is **no** required
+order. What is required is that the `Dispositions:` block record why the chosen
+token is right. Two eligibility constraints bound it:
+
+* A follow-up that **reaches an adopter, blocks a release, or needs a Decision**
+  is **ineligible for `wontfix`**. (The consequence floor, promoted from guidance
+  to rule per [I9].)
+* A follow-up **named by a closed artifact's migration block** is ineligible for
+  `wontfix` without the Maintainer, and any re-route of it is recorded as a
+  forwarding entry. (Per [I8] -- an archived record is append-only and cannot be
+  corrected in place when the migration it asserts stops being true.)
+
+**C5 -- Archive-preparation is the single serialization point**, for plans and
+proposals alike. Plan review may take an optional early pass at follow-ups
+already visible then. A proposal that archives inside its plan-open commit
+(`doctrine/lifecycle-contract.md:133`) presents its block at that commit's
+preparation.
+
+**C6 -- Lens #9 keeps its five satisfiers and gains the mapping.**
+`doctrine/dual-review.md:245-247` is amended only to state which disposition each
+satisfier lands in: *test* -> `guard`, *guard* -> `guard`, *doc* -> `accept`,
+*scope-cut* -> `accept`, *wontfix* -> `wontfix`. Total, by construction, because
+four of the five already share the grammar's vocabulary. Lens #9's promotion
+function is untouched -- reviewers keep finding things.
+
+**C7 -- The fifteen surfaces carry it.** `doctrine/lifecycle.md` (canonical),
+`doctrine/proposals.md`, `doctrine/plans.md`, `doctrine/dual-review.md`,
+`doctrine/lifecycle-contract.md:137`; `templates/core/dev/PLANNING.md`,
+`templates/core/dev/plans/_template.md`, `templates/core/dev/proposals/_template.md`,
+`templates/modules/team-gated/dual-review.md:69`; `dev/PLANNING.md:433-444`,
+`dev/plans/_template.md`, `dev/proposals/_template.md`, `dev/modules/dual-review.md:69`;
+and the planner string pair in **both** `templates/skills/_lib/lifecycle_planner.py`
+(`:879`, `:1024`) and its byte-identical twin `tools/lifecycle_planner.py`. The
+planner strings stay **unconditional reminders** -- `:878` is literally
+`gates.append((True,` -- and are re-worded, not promoted to checks.
+
+### What is no longer in this proposal
+
+**The 59-item retrospective pass is split out** to its own artifact, opened in the
+same session as this proposal's Decision (see the Response). It carries [I8]'s
+forwarding rule with it. Rationale: it is a per-item adjudication of unknown batch
+size against a Maintainer, over rows that six artifacts -- two of them archived and
+append-only -- cite as their discharged home. That is a different kind of work from
+a prose amendment, and `identity-not-name` is the standing precedent for not
+bundling them.
+
+### Corrected figures
+
+All `as_of 2026-08-04`, HEAD `4573c11`, canonical interpreter:
+
+| Measure | Value |
+|---|---|
+| `dev/PLANNING.md`, **earliest** commit on 2026-07-22 (`57d1daf`, 08:41) | **349 lines** |
+| `dev/PLANNING.md` at HEAD | **1002 lines** (2.87x) |
+| `### Deferred follow-ups (durable home)` | **430 lines, 59 items** -- 42.9% of the file |
+| Items under `## Active` | **3** |
+| Six-plan census: candidates | **95** (29 already homed, 38 fenced residuals) |
+| Six-plan census: **net new board rows** | **28 across 6 plans = +4.67 per plan** |
+
+**Withdrawn:** the "12 of the 59" figure, and the 343-line baseline. **Dropped as
+independent evidence:** the thirteen-day line-growth trend.
+
+### Rate-limit gate, re-argued on the corrected evidence
+
+The gate (`doctrine/rationale.md:313`) asks for recurrence, not a single incident.
+What remains after [I5b] is the census alone -- and it suffices: the same failure
+shape occurred across **six independently-authored plans** in one wave, producing
+28 net board deposits. Six artifacts is recurrence.
+
+Independent supporting instance, per the reviewer: `dev/proposals/2026-07-22-claude-transition-lint.md:910`
+already routes "entries accumulate past a handful" to *retiring the tool, not
+growing the list* -- the same governing move reached independently in a different
+scope. That is the second evidence line [I5b] correctly removed, replaced with one
+that is genuinely independent.
+
+The Maintainer's direct request (2026-08-04) also clears the standing *fix
+defects, build nothing new* gate.
+
+### Proportionality, re-run against +4.67
+
+At +16/plan the original five-rung ladder with strict ordering was arguably
+proportionate. At **+4.67** it is not, and the revision is smaller for that reason
+as much as for [I2]'s: one new token, one relocated grammar, two eligibility
+rules, no ordering rule, no new gate, and the largest chunk of work split out.
+The corrected figure is what makes "adopt the grammar you already have" the right
+size of answer.
+
+### Author-accounting -- corrections
+
+* **Invariant 3 is documentary**, per [I1]. Its enforcer is *a reviewer opening
+  both files at archive-preparation* -- not the loop-fidelity lens, which
+  `test_loop_fidelity_gate.py` shows checks dangling doctrine references, and not
+  `bootstrap/fidelity-check.md`, which answers a manifest question and at `:29`
+  explicitly exempts `dev/PLANNING.md` as living state. The reviewer's mutation
+  test is decisive: inverting the mirror to contradict the doctrine yields
+  `check_cairn` rc=0 and 1916 passing tests. **All three invariants are
+  documentary; none is mechanically enforced.** A content-parity gate over the
+  named doctrine -> template pairs is recorded as a candidate successor, not taken
+  here, because it would fire the External-escalation rule.
+* **Public-path -> test mapping, corrected.** No test asserts the durable-home
+  strings (`grep` over `bootstrap/tests/`: zero hits). The node that governs the
+  planner edit is
+  [`bootstrap/tests/test_notice_install.py`](../../bootstrap/tests/test_notice_install.py)
+  `::test_every_self_hosted_twin_stays_byte_identical_to_its_source` (`:98`),
+  which fails if the two planner copies diverge -- so editing one without the
+  other is caught.
+* **Known omissions, updated.** The (guard/wontfix/defer) routing estimate is
+  withdrawn entirely rather than softened; the retro pass produces the real figure
+  per-item. The "12 of the 59" is withdrawn. The board-row metric is replaced by
+  an explicitly unmeasurable statement over outstanding follow-ups.
+
+### Governing principle, restated
+
+**An artifact closes more than it opens.** Stated over **outstanding follow-ups**,
+not board rows -- and **not measurable today**, which is stated rather than
+implied. The board-row form was falsifiable in a direction that did not track the
+managed quantity ([I11]): four of five dispositions reduce board rows without
+closing work, and the successor-proposal disposition increases outstanding work
+while scoring zero. No checker is proposed, for the reason the reviewer states
+better than the original draft did: a presence-checker would certify green
+exactly the degenerate case the *Signals* section fears.
