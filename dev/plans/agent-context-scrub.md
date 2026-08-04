@@ -348,7 +348,7 @@ one edit and a future third consumer cannot forget.
 | A5 | `bootstrap/tests/test_skills_security.py` | **S6-a, filename cannot forge a survey line.** Fixture: a temp git repo with **two** artifacts under `dev/proposals/`, one benign, one whose *name* ends in `.md` and contains two newlines carrying a forged section header and a forged authority claim. Drive `session-start` **through the CLI in a subprocess** and read stdout as **bytes**. |
 | A6 | `bootstrap/tests/test_skills_security.py` | **S6-b, status prose is bounded and inert.** A status line carrying `ESC [2K` / `ESC [1A` and 4000 filler characters emits one line, under the cap plus its elision marker, with no raw `0x1b` byte anywhere in stdout. |
 | A7 | `bootstrap/tests/test_skills_security.py` | **S6-c, escaping is lossless below the cap.** A unit-level round-trip at `limit=None`, with the oracle **named**: `ast.literal_eval('"' + escaped + '"')`. Fixtures must contain no `"` character and **must** include one backslash-bearing string plus non-ASCII in NFC, NFD and CJK forms. |
-| A8 | `bootstrap/tests/test_skills_security.py` | **S6-d, the capped tail is a residual, and is pinned as one.** Assert that a field truncated mid-escape may end on a lone, unpaired backslash and still carries the `chars elided` marker. This test asserts a known cosmetic defect on purpose, so that a future "narrow the table" fix cannot silently void the losslessness property. |
+| A8 | `bootstrap/tests/test_skills_security.py` | **S6-d, the capped tail is a residual, and is pinned as one.** Assert that a field truncated mid-escape ends on a *partial escape*, and that the field still carries the elision marker **in its literal specified spelling**, `...[+<N> chars elided]`. The partial-escape pin covers the **whole reachable class, all 11 forms** — swept for this plan under the canonical interpreter over **every** character the table escapes at **every** cut offset (68 escaped characters × 15 offsets), which yields seven structural cut positions (`\`, `\x`, `\xN`, `\u`, `\u2`, `\u20`, `\u202`) and, since the 4-character escapes carry five distinct leading hex digits, these eleven concrete forms: `\`, `\x`, `\x0`, `\x1`, `\x7`, `\x8`, `\x9`, `\u`, `\u2`, `\u20`, `\u202`. Enumerating all eleven is the point: a test that stops at the one-backslash instance, or at one offset per escape width, leaves `\u20` and four of the five hex-digit forms unexercised — the same gap this row exists to close. Ten of the eleven raise `SyntaxError` under A7's `ast.literal_eval` oracle (only the lone backslash is benign), so this is the shape class that actually bites an un-escaping consumer. Assert also that the cut introduces **no raw control character and no line separator** into stdout: that is the measured fact which makes this tail cosmetic rather than a hole, and it is asserted rather than assumed. This test asserts a known cosmetic defect on purpose, so that a future "narrow the table" fix cannot silently void the losslessness property. |
 
 **Acceptance criteria — Chunk A**
 
@@ -398,7 +398,23 @@ one edit and a future third consumer cannot forget.
     its backslash-bearing fixture only**. Verified for this plan: without a
     backslash fixture this mutation stays green, which is why A7's fixture list is
     a requirement and not a suggestion;
-  * set `_FIELD_LIMIT = None` → **A6 fails**.
+  * set `_FIELD_LIMIT = None` → **A6 fails**;
+  * reword the elision marker (`chars elided` → `chars omitted`) → **A8 fails**.
+    The marker's spelling is a specification literal in the test, the way the
+    header count is in oracle 1: a signal a stream consumer is told to recognise
+    is only recognisable if its wording cannot drift silently.
+* **The elision marker is a one-way signal, and A8's docstring says so.**
+  Truncation always emits it — measured for this plan across 110 cut offsets:
+  zero cases of a truncated field without the marker, and zero of the marker
+  without truncation on tool-generated input. The converse does not hold from the
+  attacker's side: `prop.md ...[+9999 chars elided]` is 31 printable characters,
+  passes the table byte-identically and is emitted unchanged, so the marker is
+  evidence of truncation only in the same weak sense as anything else printable in
+  this stream — C1's residual, not a new one. Its `N` also counts *escaped*
+  characters, not source ones: 300 raw `ESC` bytes elide as
+  `...[+1000 chars elided]`. Both facts belong in A8's docstring, so that a
+  consumer reading the marker is not handed an authenticated truncation flag it is
+  not.
 * **The narrowed splitter is present before this lands.** A positive check, not a
   comment: `_status_of` uses `planner-line-semantics`'s CR/LF-only splitter and
   not `str.splitlines()`. If it does not, the precondition was violated and Chunk A
@@ -602,8 +618,12 @@ it is enumerated rather than asserted.
   the disposition needs a platform that can build it.
 * *Over-long **status** field* — **open**: truncated at 200 characters with an
   explicit `[+N chars elided]` marker. The marker is the alarm; the full text
-  stays on disk. Note the word *status*: [I6] is right that the unqualified
-  wording is false of the git path.
+  stays on disk. It is a **one-way** alarm, and E1 is the reason that is now
+  written down: truncation always emits it, but nothing stops an untruncated field
+  from *containing* it (measured — 31 printable characters, emitted
+  byte-identically), and its `N` counts escaped rather than source characters.
+  Note the word *status*: [I6] is right that the unqualified wording is false of
+  the git path.
 * *Over-long git-derived line* — **open, by design.** Re-measured for this plan: a
   20000-character commit subject emits a 20016-byte line at HEAD and a 20016-byte
   line patched. Disclosed in C2.
@@ -840,4 +860,121 @@ Escaped string split by newline length: 1
 ### Recommendation
 
 **READY FOR IMPLEMENTATION.** The plan's escaping table, twin-parity enforcement, and producer-side application are sound and verified.
+
+## Response to plan review -- Claude (author) -- 2026-08-03
+
+**Model**: Claude Opus 5
+
+**One finding, accepted; the plan's contract changes in Chunk A.** A
+READY-FOR-IMPLEMENTATION verdict does not make [E1] informational — this
+lifecycle has no severity floor below which a finding stops needing a
+disposition, and the reviewer asked for a property the plan did not actually
+carry. Verified independently before disposing, under the canonical interpreter
+(3.13.13) against the accepted `_safe_field` body: the mid-escape cut is real and
+is **wider** than the reviewer's example; the security-relevant part of "cosmetic"
+holds and is now asserted rather than assumed; and the marker the reviewer wants
+consumers to trust is **forgeable**, which is the part of the ask this plan cannot
+grant and now says so instead.
+
+* **[E1] accept — `_FIELD_LIMIT` truncation tail and the `[+N chars elided]`
+  marker.** The finding: truncating mid-escape can leave a trailing unpaired
+  backslash (`\x0` cut to `\`), which Chunk A8 pins as cosmetic; the reviewer asks
+  that stream consumers be able to recognise `[+N chars elided]` as the truncation
+  marker.
+
+  **Reproduced, and the tail class is bigger than the finding says.** Swept over
+  **every** character the table escapes at **every** cut offset — all 68 entries ×
+  15 offsets = 1020 (character, offset) pairs, covering all three escape widths the
+  table produces (one 2-character `\\`, sixty-five 4-character `\xNN`, two
+  6-character `\uNNNN`):
+
+  ```
+  pad=196  '…aaaaaaaa\x0a...[+50 chars elided]'      escape survives whole
+  pad=197  '…aaaaaaaaa\x0...[+51 chars elided]'      truncated \xNN
+  pad=198  '…aaaaaaaaaa\x...[+52 chars elided]'      truncated \xNN
+  pad=199  '…aaaaaaaaaaa\...[+53 chars elided]'      lone unpaired backslash
+
+  pad=194  '…aaaaaa\u2028...[+50 chars elided]'      escape survives whole
+  pad=195  '…aaaaaaa\u202...[+51 chars elided]'      truncated \uNNNN
+  pad=196  '…aaaaaaaa\u20...[+52 chars elided]'      truncated \uNNNN
+  pad=197  '…aaaaaaaaa\u2...[+53 chars elided]'      truncated \uNNNN
+  pad=198  '…aaaaaaaaaa\u...[+54 chars elided]'      truncated \uNNNN
+  pad=199  '…aaaaaaaaaaa\...[+55 chars elided]'      lone unpaired backslash
+  ```
+
+  The unpaired backslash is one of **seven** structural cut positions — `\`, `\x`,
+  `\xN`, `\u`, `\u2`, `\u20`, `\u202` — and because the table's 4-character
+  escapes carry five distinct leading hex digits (`0` and `1` for C0, `7` for DEL,
+  `8` and `9` for C1), the reachable tail set is **11** concrete forms: `\`, `\x`,
+  `\x0`, `\x1`, `\x7`, `\x8`, `\x9`, `\u`, `\u2`, `\u20`, `\u202`. Every one of the
+  eleven is reachable at the 200-character cap. Two of them are the ones a
+  four-offset sweep misses: `\u20` (`pad=196` on `U+2028`/`U+2029`) exists only
+  because the 6-character escape has more interior offsets than the 4-character
+  one, and `\x1` is what A6's own `ESC` (`0x1b` → `\x1b`) truncates to — so `\x0`
+  is not even the instance this plan's other tests already produce.
+
+  **Nearly the whole class bites a consumer that un-escapes**, not just the `\x`
+  cuts: run `ast.literal_eval` — this plan's own A7 oracle — over the *emitted
+  field* for one representative of each form, and **10 of the 11 raise**
+  `SyntaxError` (`truncated \xXX escape` for the five `\xN` forms and `\x`;
+  `truncated \uXXXX escape` for `\u`, `\u2`, `\u20`, `\u202`). Only the lone
+  backslash survives: the marker's leading `.` makes it `\.`, which parses to a
+  literal backslash-dot with a `SyntaxWarning`. A8 as written ("may end on a lone,
+  unpaired backslash") would be satisfied by a test that only ever exercises the
+  single mildest offset — and it is the only benign one.
+
+  **The "cosmetic" claim is true, and is now measured rather than asserted.** Over
+  110 cut offsets against a payload of `\n`, `\r` and `ESC`, the truncation path
+  emitted **zero** raw control characters and **zero** line separators. That is
+  precisely why the tail is cosmetic and not a hole: the cut only ever *removes*
+  characters, so it cannot re-introduce the bytes the table exists to remove. The
+  plan asserted that conclusion without pinning it; A8 now asserts it.
+
+  **The marker is a one-way signal, and the reviewer's requested property is only
+  half-grantable.** Truncation always emits the marker — 110 offsets, no
+  truncation without it. The converse is false: `prop.md ...[+9999 chars elided]`
+  is 31 printable characters, sits well under the 200-character cap, contains
+  nothing the table touches, and is emitted **byte-identically**. A consumer told
+  to read `[+N chars elided]` as "the tool truncated here" can therefore be lied to
+  by any filename or status line that spells the marker itself. Making the marker
+  *authenticated* means changing the accepted `_safe_field` body (escaping `[`, or
+  building the marker from characters the table escapes) — a design change this
+  plan is not entitled to make, and one I do not think is worth it, since the
+  forged-marker case is exactly the printable-only forgery C1 already discloses:
+  *"A forged line built entirely from ordinary printable characters passes
+  unchanged."* No fourth `SECURITY.md` bullet, and Chunk C's "exactly three
+  bullets, not four" criterion stands untouched. One more measured wrinkle a
+  consumer needs: `N` counts **escaped** characters, not source ones — 300 raw
+  `ESC` bytes elide as `...[+1000 chars elided]`.
+
+  **Plan change — Chunk A only, three edits.**
+  1. **A8 widened and tightened.** It now pins the *partial-escape shape class* in
+     full — all **11** reachable forms (unpaired backslash **and** `\x`, `\x0`,
+     `\x1`, `\x7`, `\x8`, `\x9`, `\u`, `\u2`, `\u20`, `\u202`), requires the
+     marker in its **literal specified spelling** `...[+<N> chars elided]` rather
+     than the loose `chars elided` substring, and adds the assertion that the cut
+     introduces no raw control character and no line separator into stdout.
+  2. **A new Chunk A acceptance criterion** — *"The elision marker is a one-way
+     signal, and A8's docstring says so"* — carries both measured facts (forgeable
+     marker; `N` in escaped units) into A8's docstring, which is the only place a
+     future reader of this stream will meet them.
+  3. **A new mutation-ledger entry** — reword the marker (`chars elided` →
+     `chars omitted`) → **A8 fails** — so the spelling a consumer is told to
+     recognise is a specification literal that cannot drift silently, the same
+     discipline oracle 1 applies to the header count.
+
+  The *Over-long **status** field* failure-mode bullet gains a clause naming the
+  one-way alarm and the escaped-unit `N`, because "the marker is the alarm" was the
+  sentence [E1] correctly pressed on. Nothing outside this plan file changed.
+
+**On "Not covered / low confidence" — terminal rendering quirks.** Genuinely out
+of scope, and already owned: *Known omissions* item 1 states that no test asserts
+a terminal's rendering and that the tests assert emitted bytes only. Worth adding
+that the exposure is bounded rather than merely undeclared — A6 asserts **no raw
+`0x1b` byte anywhere in stdout**, so no terminal can be *driven* by a relayed
+field however it chooses to render an escaped `\x1b`; what remains un-measured is
+whether a given terminal or model re-reads the printable escape as its original
+character, which is a property of the reader, not of this stream. No follow-up row:
+Cairn cannot test other people's terminals, and C1 already discloses the
+model-side half.
 
