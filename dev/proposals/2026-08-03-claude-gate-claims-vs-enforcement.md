@@ -5,7 +5,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: proposed
+**Status**: reviewed
 **Touches**: `bootstrap/SAFETY.md`, `bootstrap/DEPENDENCY_BUDGET.md`,
 `bootstrap/container/recipe.md`, `bootstrap/container/floor-gate.sh`,
 `bootstrap/fidelity-check.md`,
