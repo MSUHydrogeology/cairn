@@ -581,3 +581,234 @@ alarm-fatigue measurement, but the universal rationale is falsified and
 Changes 2-3 currently conflict with established source-of-truth and exact-list
 contracts. Resolve E1-E4 before Decision; none requires a lockfile schema
 change.
+
+## Response -- Claude (author) -- 2026-08-03
+
+**Model**: Claude Opus 5.
+
+All four findings are **accepted**, three of them blocking. I re-derived each
+one from the primary source rather than banking the reviewer's report — the
+standard this proposal asks of everyone else — and every one reproduced. Two
+of them show the proposal was wrong rather than incomplete, and one of those
+is a recommendation I have to withdraw outright.
+
+The review also produced the one measurement this proposal said it did not
+have, and settled a scope question I had flagged as a possible split. Both are
+recorded below.
+
+### [E1] — the universal-selection premise is false. Accepted; the argument is withdrawn and restated.
+
+The proposal listed, under *Signals the change is wrong*: "An External reviewer
+establishes that `content-security`'s selection condition is *not* in fact
+universal over adopters." The reviewer produced exactly that — an adopter whose
+harness receives only operator-attached files, with no automatic discovery of
+`AGENTS.md`, `dev/` artifacts or incoming diffs, while still using
+git-committed files as the durable coordination channel. That is a Cairn
+adoption for which the quoted auto-load predicate is false.
+
+I accept it without qualification. **The tautology argument is withdrawn.** A
+proposal does not get to name its own falsifier and then decline it.
+
+What survives is a weaker and more honest case, and it is worth stating exactly
+because the conclusion may still hold on it:
+
+* **The measured cost is zero.** The reviewer scaffolded all three presets with
+  `content-security` added, committed the generated files, and ran the
+  installed runner: 34 / 39 / 42 audited files, `result: clean (no flags)`,
+  exit 0 on all three. The proposal called a non-trivial flag count on a fresh
+  scaffold "the strongest available refutation of the whole proposal." It came
+  back clean.
+* **The polarity asymmetry never depended on universality.** A tripwire that is
+  not installed fails silently and permanently; one that is installed and noisy
+  fails visibly and tunably. That argument is untouched by [E1].
+* **For the adopter [E1] describes, the control is inert rather than harmful** —
+  six standard-library files and, on the measured evidence, no flags.
+
+So the case moves from *"the predicate is universal, therefore gating it is
+incoherent"* to *"the predicate holds for most adopters, the cost where it does
+not is measured at zero, and the two failure modes are asymmetric."* That is a
+materially weaker claim.
+
+**Whether it is strong enough to carry default-on is a Maintainer call, and I
+am not making it here.** The reviewer's alternative — introduce a real
+selection signal for agent-loaded working-tree text — is coherent, but it adds
+a configuration axis to a profile schema this proposal otherwise leaves alone,
+and it asks adopters to self-assess a property most will get wrong in the
+unsafe direction. Listed below, undecided.
+
+### [E2] — blocking. Accepted, and my recommendation was wrong in both directions.
+
+Verified directly. `templates/modules/team-gated/content_scan.py` lines 20–27
+carry an explicit contract:
+
+> "**Dual role (single-sourced).** This one file serves two callers: Cairn
+> composes it via `scripts/check_cairn.py` over its **own** source prose … and
+> the `content-security` module ships it **verbatim to adopters** … **Same
+> code, no second copy.**"
+
+And `scripts/check_cairn.py` applies the identical `_SRC` + `_load_module`
+pattern to three tools, not one — `claim_check.py` at line 84, `content_scan.py`
+at 91, `link_check.py` at 100.
+
+The proposal called Change 3's resolution "the single most reviewable decision
+in the proposal." It was, and I had it backwards on both limbs:
+
+1. **It does not collapse the twin.** Cairn must retain the template source in
+   order to ship it. Installing the module adds `scripts/content_scan.py`;
+   repointing the import moves which copy is authoritative and removes neither.
+   The twin exists either way.
+2. **It inverts a documented, deliberate pattern** applied uniformly to three
+   tools, and buys the stale window the proposal itself identified — for no
+   gain, since limb 1 means there was nothing to collapse.
+
+**Replacement design**: keep the template source as the executed authority, and
+add an exact-byte parity check binding Cairn's installed `scripts/content_scan.py`
+to it — or require parity *before* either copy is loaded. The three existing
+single-source statements (the file's own docstring, the module doctrine, and
+`bootstrap/SAFETY.md`) then need updating to say what actually holds once Cairn
+installs the module, since "no second copy" stops being literally true.
+
+This makes Change 3 **smaller and safer** than proposed. I record that the
+correction came from the review, not from the author.
+
+### [E3] — blocking. Accepted.
+
+Verified. `dev/.cairn/profile.yml` is the authoritative committed profile and
+says so in its own header: *"This is the file you EDIT to change the profile;
+then regenerate the lockfile with `python bootstrap/scaffold.py upgrade
+--init-lock --target .`"*. It declares no `python_package` — and it is **absent
+from this proposal's *Touches* line**, which named only `dev/.cairn/cairn-lock.yml`.
+
+Change 3 as written would therefore have hand-edited the generated lockfile
+instead of the source profile, inverting the documented workflow and
+contradicting the lockfile's own header (*"tool-owned; regenerate-only; do not
+hand-edit"*). The required-token preflight refuses before installation, so the
+edit would not even have succeeded.
+
+**Corrections:** `dev/.cairn/profile.yml` joins *Touches*; Change 3 edits the
+profile and regenerates the lock rather than writing the lock.
+
+**Left open:** Cairn's `python_package` value. The reviewer suggests
+`bootstrap/_scaffold` and is explicit that the proposal must decide. Cairn's
+source is genuinely mixed — `bootstrap/_scaffold/`, `scripts/`, `tools/`, and
+the verbatim `.py` under `templates/` — and choosing one path silently narrows
+what the gate audits. Listed below rather than settled here.
+
+**Also corrected:** the *Proposed paths* paragraph contradicts itself, saying
+the two destinations "will not resolve here after this lands" and then that
+Change 3 makes them "real local paths." The second is right for Cairn;
+the first is right for the general adopter case. Reworded.
+
+### [E4] — blocking. Accepted.
+
+Verified at `bootstrap/_scaffold/cli.py:320-365`. Three profile shapes, and
+`preset:` + `modules:` together is a hard error:
+
+| Shape | Selection |
+|---|---|
+| `preset:` (+ `modules_add` / `modules_remove`) | `expand_preset` |
+| `modules:` alone | **exact list, taken verbatim** — including `modules: []` |
+| neither | `_DEFAULT_ON_MODULES` |
+
+The proposal's claim that the token condition is *"necessary and sufficient"*
+is **false as written**. Necessary holds — the required-token preflight refuses
+without it. Sufficient does not: under an exact `modules:` list, a declared
+`python_package` must not conscript the module, or exact-list semantics stop
+being exact.
+
+I adopt the reviewer's conservative rule: token-gate the preset-derived and
+default-derived shapes, let `modules_remove` win against a preset, and preserve
+an explicit `modules:` list as exact. All three shapes get pinned, including
+token + `modules: []` and token + preset + `modules_remove: [python-security]`.
+
+**One thing the reviewer did not say, which follows from the same finding:**
+Change 1 has the same boundary. Making `content-security` default-on does **not**
+reach a profile using an exact `modules:` list, and `modules: []` opts out of it
+entirely. The proposal asserted default-on without stating that limit. Stated
+now.
+
+### What the review settles that the proposal had left open
+
+**Change 4 needs no new mechanism, and is withdrawn as a proposed change.** The
+reviewer ran a scratch install followed by `scaffold.py upgrade --plan`: it
+exits 0 and lists both controls under `new modules available (opt-in)`,
+computed from `set(_MODULE_MAPPINGS) - lock_modules`, with adoption gated
+behind an explicit `upgrade --adopt-module <name>`.
+
+The non-silent opt-in this proposal asked for **already ships**. Change 4
+becomes a property to *preserve and pin*, not a mechanism to build — and the
+*Signals the change is wrong* entry about a forced lockfile schema change is
+struck, since no schema change is needed.
+
+### Maintainer direction received after the review, and what it leaves open
+
+Three questions were put to the Maintainer after this review landed. Two now
+have direction. **This section records direction, not a Decision — the
+`## Decision` section remains unwritten and is the Maintainer's.**
+
+**On `python-security`**, the Maintainer said:
+
+> "I'd say let's not make python security default on unless Python is used"
+
+This confirms **Change 2 as drafted** rather than altering it: selection is
+conditional on the `python_package` token, and a non-Python adopter never
+receives the module. Verified behaviour — selecting it without the token exits
+2 with `refusing to install (no files written)`.
+
+**On `content-security` becoming default-on**, the Maintainer answered *"Yes,
+on by default"* to a question that stated the [E1] cost explicitly. So Change 1
+proceeds on the restated argument above — measured-zero cost, loud one-line
+opt-out, and Cairn's own install already assuming the auto-load predicate —
+rather than on the withdrawn tautology.
+
+Two supporting measurements taken for that question, recorded here because they
+were not in the proposal:
+
+* **The opt-out already exists and announces itself.** `modules_remove` drops a
+  default-on module: `solo-greenfield` with `modules_remove: [claim-check]`
+  resolves to five modules, and the summary carries
+  `removed_default_on: ['claim-check']` plus an explicit `[info]` line. The
+  adopter [E1] describes opts out in one line and is told they did.
+* **Cairn's own install already assumes the predicate.**
+  `templates/core/VENDOR.md` exists because "the harness auto-loads — so the
+  tool reads it on entry." Every adopter receives a wrapper whose only purpose
+  is being auto-loaded.
+
+**Consequence for [E3] and Change 3.** Cairn not installing `python-security`
+on itself makes the `python_package` question **moot for Cairn's own tree**.
+Two measurements support leaving it that way, and both are new to this record:
+
+* `bootstrap/security_check.py` already scans **74 targets** — `templates` 44,
+  `scripts` 16, `bootstrap` 14 — so `run_security_audit.py`'s Bandit pass would
+  be a strict *subset* of what Cairn already runs.
+* `validate_python_package` requires a **single contained repo-relative path**
+  and refuses the repo root, while Cairn's source spans four trees. No single
+  value expresses Cairn's layout; every choice silently narrows.
+
+What the module would genuinely add to Cairn is its **integrity preflight**,
+which refuses to run when the apparatus or its policy inputs are not
+lockfile-clean. `bootstrap/security_check.py` has no equivalent. **That is a gap
+in Cairn's existing gate, not a reason to adopt a module sideways**, and it is
+recorded here as a follow-up rather than folded into any scope.
+
+### Still open — not mine to settle
+
+1. **The `content-security` half of Change 3** — the parity test binding Cairn's
+   installed `scripts/content_scan.py` to the template source. It follows from
+   the default-on direction and is cheap, but [E2] shrank Change 3 to this plus
+   a profile edit, which is materially less than the "structural dogfooding" the
+   proposal argued for. It may be better as its own smaller scope.
+2. **The reach limit [E4] exposes.** The Maintainer's original direction was to
+   change the default stance "for all installations." Default-on does not reach
+   a profile using an exact `modules:` list, and `modules: []` opts out
+   entirely. Whether that residual matters is a judgement this Response does not
+   make.
+
+### Status
+
+Four findings, four accepted, none folded into scope beyond the corrections
+named above. The proposal's central measurement — zero of three presets select
+either control — is unchallenged and was independently reproduced by the
+reviewer along with all nine of its numbered claims. What the review changed is
+the *argument* for Change 1, the *direction* of Change 3, the *precision* of
+Change 2, and the *existence* of Change 4.
