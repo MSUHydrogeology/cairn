@@ -12,7 +12,7 @@
 **Source proposal**: `scan-coverage` (accepted 2026-08-03 by Maintainer Decision,
 *"as revised"*). It currently sits under `dev/proposals/` and moves to
 `dev/proposals/archive/` when it archives.
-**Status**: open
+**Status**: archived
 **Plan review**: required(**External**, security lens) — carried from the
 proposal header, where the tier is the *declared trigger* rather than a judgement
 call (`dev/proposals/_template.md`'s triage list names both touched security
