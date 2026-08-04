@@ -134,12 +134,25 @@ the other two (`bootstrap/tests/test_verify_integrity.py`'s edit adds one keywor
 argument to one call and leaves its assertions untouched).
 
 **This plan does not weaken the gate quietly, and it does not reshape the design
-to dodge it.** Chunk C widens the allowed set from `{config}` to
+to dodge it.** Chunk C widens the admitted set from `{config}` to
 `{config, security}`, in the same commit as the import that requires it, with a
 discrimination test that proves the widened assertion still refuses everything
-else. The falsifiable check the Maintainer is owed: the diff on that file adds
-exactly one module name to one allowed set and changes no other assertion, and a
-scratch copy of `lockfile.py` importing `install` still fails the widened test.
+else.
+
+**The shape of that edit, corrected at plan review (per [E1]).** The assertion is
+**not** a set literal — it is a suffix predicate, `assert
+mod.endswith("config")`, so there is no set to add a name to. The falsifiable
+check the Maintainer is owed is therefore: the diff touches **only** that one
+layering assertion, leaves the other six nodes in the file untouched, and the
+widened assertion is written as **membership of the module's final dotted
+component in `{"config", "security"}`** — not as a widened suffix test. The
+distinction is load-bearing and was measured, not reasoned: under the current
+interpreter, `"insecurity".endswith("security")` is `True`, so the suffix form of
+the widening admits a `.insecurity` leaf that is *not* in `{config, security}`,
+which is exactly the over-widening [E1] asks the gate to refuse. The membership
+form incidentally tightens a pre-existing looseness on `config` (a `.fakeconfig`
+leaf passes the assertion **today**); that side effect makes the gate strictly
+narrower, never wider, and is visible in the C7 diff.
 
 **The alternative was considered and is recorded rather than silently passed
 over.** `lockfile.py` could inline three private containment checks instead of
@@ -457,7 +470,7 @@ attack. Everything here lands in `bootstrap/_scaffold/lockfile.py` except C7.
 | C4 | `bootstrap/_scaffold/lockfile.py` | **The target-side operand** (B2 / **F5**): `read_bytes(target / dst_rel)` after C3's checks. The comparison is `disk_bytes == upstream_bytes`, a comparison of two reads. `rec["hash"]`, `rec["base_hash"]` and every other lockfile field are **forbidden** as the target-side operand, and a caller may not pass precomputed hashes in to avoid the read. |
 | C5 | `bootstrap/_scaffold/lockfile.py` | The three note kinds as a **field on the finding**, not a reader's guess: `differs-from-upstream` (names the upstream it compared against), `unconfirmed` (says the difference is from the *install-time baseline* and could not be confirmed against upstream), and the skew annotation line. `src_relabelled` is an **annotation on a finding that already exists** — never a new note (B4 / **R9**). `format_forked_facade_warning` renders all three. |
 | C6 | `bootstrap/_scaffold/lockfile.py` | Residual comment homes, AST-invisible: **R6** at the `_assert_safe_write` call site (write-flavoured guard on a read path; restated trigger per A3), and **R10** at the candidate gate (selection remains lock-derived), alongside R2's existing comment. |
-| C7 | `bootstrap/tests/test_lockfile_module.py` **(frozen file #3)** | The layering assertion widens from `{config}` to `{config, security}` — *Correction 1*. One added module name in one allowed set; **no other assertion touched**. |
+| C7 | `bootstrap/tests/test_lockfile_module.py` **(frozen file #3)** | The layering assertion in `test_lockfile_depends_only_on_stdlib_and_the_config_leaf` widens from `{config}` to `{config, security}` — *Correction 1*. The existing form is a suffix predicate (`mod.endswith("config")`); the widened form is **membership of the module's final dotted component in `{"config", "security"}`**, because the suffix form of the widening admits `.insecurity` (measured, *Correction 1*). Exactly that one assertion; **the other six nodes in the file are not touched**. |
 | C8 | `bootstrap/tests/test_fork_advisory.py` | Nodes **1–6, 11–15, 18**. Detailed with their perturbations below. |
 
 **The node table for Chunk C.** Every row states the future state in which the
@@ -477,7 +490,7 @@ each perturbation, not a claim that it would fail.
 | 13 | Four unsafe **destination** shapes (`dst` absolute; `dst` with `..`; `dst` a symlink; `dst` with a symlinked parent): nothing is read outside `target`, finding retained | Delete C3's guard. Same fixture discipline as node 3: a canary outside `target` byte-identical to the trusted template, so the ungarded read *suppresses* and the node fails |
 | 14 | **F1 golden oracle** — the trusted-upstream finding set is a subset of Chunk A's committed literal. The branch-to-branch assertion is kept as a consistency check and is explicitly **not** labelled the F1 guard | Widen the shared candidate gate. The branch-to-branch assertion stays green; this one goes red. Already demonstrated by construction in the proposal's Response; **re-run here against real code** |
 | 15 | **R9**: a relabelled `src` whose disk bytes match trusted upstream produces **no note at all** — the annotation's reach is exactly the complement of the change's success | Promote `src_relabelled` to a standalone finding kind → a note appears → node fails |
-| 18 | **Correction 1's discrimination test**: the widened layering assertion still refuses anything but the stdlib, `config` and `security` | Add `from .install import install_manifest` to a scratch copy of `lockfile.py` → `test_lockfile_module.py` must still fail. (Run for this plan already, against the *un*-widened assertion, which is how *Correction 1* was found) |
+| 18 | **Correction 1's discrimination test**: the widened layering assertion still refuses anything but the stdlib, `config` and `security` | **Two perturbations, both required.** (a) Add `from .install import install_manifest` to a scratch copy of `lockfile.py` → `test_lockfile_module.py` must still fail. (Run for this plan already, against the *un*-widened assertion, which is how *Correction 1* was found.) (b) Add `from .insecurity import _assert_safe_write` → it must still fail. (b) is the one that discriminates the two candidate widenings: (a) fails under **both** the membership form and the loose suffix form, so (a) alone cannot show the gate was not over-widened, while (b) passes under the suffix form and fails under the membership form — measured for [E1]. A node carrying only (a) is not accepted |
 
 **Acceptance criteria — Chunk C**
 
@@ -490,9 +503,14 @@ each perturbation, not a claim that it would fail.
   the deletion, the observed failure, the byte-identical restore. **A node whose
   deletion-mutant stays green is not accepted**, and is either re-shaped or
   removed with a reason.
-* **C7's falsifiable check**: `git diff bootstrap/tests/test_lockfile_module.py`
-  shows exactly one added module name in one allowed set and no other assertion
-  change; node 18 proves the widened assertion still discriminates.
+* **C7's falsifiable check** (corrected per [E1]): `git diff
+  bootstrap/tests/test_lockfile_module.py` shows a change to
+  `test_lockfile_depends_only_on_stdlib_and_the_config_leaf`'s one layering
+  assertion and **nothing else in the file** — the other six nodes byte-identical.
+  The widened assertion is a **membership test on the module's final dotted
+  component**, not a widened `endswith`; node 18's *two* perturbations prove it
+  still discriminates, and (b) is what proves the widening admitted `security`
+  rather than every leaf whose name ends in it.
 * `python bootstrap/tests/_gate_manifest.py verify --no-collect` reports the 2
   pre-existing holds **plus** `FROZEN-MODIFIED: bootstrap/tests/test_lockfile_module.py`
   and `FROZEN-NEW: bootstrap/tests/test_fork_advisory.py`. Any entry outside that
@@ -576,6 +594,24 @@ each perturbation, not a claim that it would fail.
   AI vendor or model.
 * **Confirm each doc named here was actually updated.** Drift gates catch drift,
   not absence.
+* **The implementing agent stops here, and the stop is a deliverable** (per
+  [E2]). Chunk E touches no engine file, so the suite state must be **unchanged
+  from Chunk D** — `python -m pytest bootstrap/tests` fails exactly the two
+  AST-attestation nodes and nothing else. **Re-run and recorded at this chunk, not
+  inherited from Chunk D**: a doc-only chunk is exactly where an unnoticed failure
+  from the batched sibling would be mistaken for known-red. Any other failing node
+  is a stop.
+* **The readiness condition is written here, because Chunk R is not an agent's to
+  enter.** Chunk R's fence ends the agent's work at "Chunk E plus a stated
+  readiness condition", and Chunk R states what that condition names — but an
+  agent must not perform a step in Chunk R, so the condition is authored in **this
+  chunk's commit body**: this plan's last engine commit sha (Chunk D), the
+  isolated `3 CHANGED / 0 MISSING / 0 DUPLICATE` measurement taken there and the
+  three symbol names, and the statement that the batched ceremony additionally
+  waits on `profile-parse-fail-open`'s last engine commit. **The agent does not
+  measure the union** — the union is formed by the Maintainer at Chunk R from two
+  per-plan isolated measurements, and an agent-measured union would be taken from
+  the shared working tree, which *Correction 5* item 3 forbids.
 
 ### Chunk R (MAINTAINER-ONLY) — the batched re-anchor ceremonies
 
@@ -937,4 +973,186 @@ This section is append-only once written.
 ### Recommendation
 
 **READY FOR IMPLEMENTATION.** The plan's design, containment checks (C2/C3), operand pinning (C4), and Maintainer ceremony boundaries (Chunk R) are verified and sound.
+
+## Response to plan review -- Claude (author) -- 2026-08-03
+
+**Model**: Claude Opus 5
+
+**Both accepted; the plan changed for both.** A `READY FOR IMPLEMENTATION`
+verdict does not make a finding informational — this lifecycle has no severity
+floor below which a finding stops needing a disposition, and the two findings
+here are the two the plan's own review brief nominated as its weakest points
+(question 5, *Correction 1*; and *Correction 5*'s batched red window). Neither
+was disposed as "already covered", because in both cases I went to the code and
+found the plan's contract narrower than its prose implied.
+
+The disposition below is written after independent verification, not after
+reading the review. What the verification changed: **[E1] is not a restatement of
+node 18.** Node 18 as written would have passed while admitting exactly the
+over-widening [E1] asks the gate to refuse. That is the finding.
+
+### [E1] — layering assertion widening — **ACCEPTED**
+
+*The finding.* `bootstrap/_scaffold/lockfile.py` importing
+`bootstrap._scaffold.security` for `_assert_safe_write` widens the leaf
+dependency admitted set from `{config}` to `{config, security}`; C7 / node 18
+must strictly test that `lockfile.py` still refuses imports **outside**
+`{config, security}`.
+
+*What I verified, and why "already covered" would have been wrong.* The plan
+already *states* that requirement — the node 18 row reads "the widened layering
+assertion still refuses anything but the stdlib, `config` and `security`". So the
+lazy disposition was available. It is wrong, because the assertion is not the
+shape the plan says it is. Read at HEAD,
+`bootstrap/tests/test_lockfile_module.py:49-59` is a **suffix predicate**, not an
+allowed set:
+
+```python
+if isinstance(node, ast.ImportFrom):
+    mod = node.module or ""
+    if mod.startswith("bootstrap") or node.level > 0:
+        assert mod.endswith("config"), f"lockfile imports {mod!r} (level={node.level})"
+```
+
+There is no set literal to "add one module name to", so C7's stated falsifiable
+check — *"exactly one added module name in one allowed set"* — was not a check an
+implementing agent could satisfy or a reviewer could run. Worse, the widening the
+prose implies is the suffix form, and I measured what that admits. Running the
+predicate verbatim under the canonical interpreter
+(`/Users/kendal30/conda_envs/lhm/bin/python3.13`), over four synthetic import
+lines, against the current assertion and against the naive
+`endswith(("config", "security"))` widening:
+
+```
+design import   current        -> FAILS (lockfile imports 'security' (level=1))
+design import   naive-widened  -> PASSES
+node 18 pert.   current        -> FAILS (lockfile imports 'install' (level=1))
+node 18 pert.   naive-widened  -> FAILS (lockfile imports 'install' (level=1))
+near-miss       current        -> FAILS (lockfile imports 'insecurity' (level=1))
+near-miss       naive-widened  -> PASSES
+near-miss 2     current        -> PASSES
+near-miss 2     naive-widened  -> PASSES
+```
+
+Three things fall out, and they are the whole finding:
+
+1. **The suffix widening over-widens.** `"insecurity".endswith("security")` is
+   `True`, so a `.insecurity` leaf — not in `{config, security}` — is admitted.
+   That is precisely the failure [E1] names.
+2. **Node 18's perturbation does not discriminate.** Its `from .install import
+   install_manifest` fails under *both* candidate widenings (rows 3 and 4 above).
+   A node that goes red either way cannot show which widening landed. Node 18 as
+   written was therefore a non-answer to [E1] dressed as one.
+3. **A pre-existing looseness, surfaced not fixed.** Row 7: `.fakeconfig` passes
+   the assertion **today**. The membership form removes it as a side effect. This
+   makes the gate strictly narrower, never wider, so it cannot mask a layering
+   violation; I record it rather than let it appear in the C7 diff unexplained.
+   I did not touch the file.
+
+Also confirmed, since the finding rests on them: `_assert_safe_write` exists at
+`bootstrap/_scaffold/security.py:26`, so the design's import is real and not
+hypothetical; and `test_lockfile_module.py`'s seven collected node ids sit in
+`bootstrap/tests/fixtures/gate_manifest.json:780-786`, so *Correction 1*'s
+frozen-set claim holds — this is an edit to a frozen gate file, which is why the
+shape of it matters at all.
+
+*Plan change.* Three amendments, all inside this plan's existing scope:
+
+* **Correction 1** — the "falsifiable check the Maintainer is owed" sentence
+  replaced with a corrected paragraph: the assertion is a suffix predicate, the
+  widened form is **membership of the module's final dotted component in
+  `{"config", "security"}`**, and the `.insecurity` / `.fakeconfig` measurements
+  are stated inline.
+* **Chunk C, row C7** — the change description now names the target node, the
+  existing predicate form, the required membership form and its reason, and pins
+  "the other six nodes in the file are not touched" (7 nodes collected; the
+  scratch run in *Correction 1* shows `1 failed, 6 passed`).
+* **Chunk C, node 18 row and the C7 acceptance criterion** — node 18 now carries
+  **two** perturbations, (a) `.install` and (b) `.insecurity`, with the recorded
+  reason that (a) alone cannot distinguish the two widenings and that a node
+  carrying only (a) is not accepted. The acceptance criterion drops the
+  unsatisfiable "one added module name in one allowed set" and states the diff
+  boundary and the membership requirement instead.
+
+No scope moved. The design is unchanged, the security leaf does not grow, and the
+`{config, security}` disposition *Correction 1* argues for is the same one — only
+its enforcement is now real.
+
+### [E2] — batched Maintainer-only AST re-anchor: stop at Chunk E — **ACCEPTED**
+
+*The finding.* Chunk R is Maintainer-only and batched with
+`profile-parse-fail-open`; implementing agents must stop at Chunk E and verify
+that the only AST failures are the expected engine modifications.
+
+*What I verified.* Most of this is genuinely covered, and I will cite it rather
+than re-accept it. The fence exists — Chunk R opens *"An implementing agent must
+not perform any step in this chunk"*. The known-red invariant exists —
+*Correction 5* item 1: *"between Chunk B and Chunk R, the only failing nodes
+attributable to this plan are the AST-attestation nodes. Any other failure is a
+stop, not a known-red."* And it is enforced at the two engine chunks: Chunk C's
+*"The only failing nodes are the two AST-attestation nodes … Any additional
+failure is a stop, not a known-red"*, and Chunk D's *"All nodes green; the only
+failing nodes remain the two AST-attestation ones"* plus its isolated
+`3 CHANGED / 0 MISSING / 0 DUPLICATE` measurement in a throwaway worktree.
+
+What is **not** covered is the chunk [E2] actually names. I read Chunk E's
+acceptance criteria against the finding: all five bullets are doc gates —
+residual homes, `check_cairn.py`, `claim_check.py`, `--sub neutrality`, and
+"confirm each doc was actually updated". **Chunk E states nothing about the suite
+state and produces no handoff.** So the last chunk an implementing agent runs is
+the one chunk with no red-set check on it. That is a real gap, and it is the
+gap [E2] points at.
+
+It compounds with a second one. Chunk R's fence says the agent's work *"ends at
+Chunk E plus a stated readiness condition"* — but the only text describing that
+condition is **inside Chunk R**, at step 1, which the same fence forbids the agent
+to enter. The plan asked for a deliverable and then put its specification behind
+a door the deliverer may not open.
+
+A doc-only chunk is also the *worst* place to inherit a red set rather than
+re-measure it. Chunk E changes no engine file, so an implementing agent has every
+reason to assume Chunk D's failure list still holds — while the batched sibling
+`profile-parse-fail-open` may have landed engine edits into the shared working
+tree in between. An unrelated failure arriving through that channel is exactly
+what "known-red" would swallow.
+
+*Plan change.* **Chunk E acceptance criteria** gain two bullets:
+
+* the suite state must be **re-run and recorded at Chunk E**, not inherited —
+  exactly the two AST-attestation nodes red, any other failing node a stop, with
+  the sibling named as the reason a doc-only chunk still re-measures;
+* the **readiness condition is authored in Chunk E's commit body** — this plan's
+  last engine commit sha, the isolated 3-CHANGED measurement and its three symbol
+  names, and the statement that the ceremony additionally waits on the sibling's
+  last engine commit. It states explicitly that the agent **does not measure the
+  union**: the union is the Maintainer's at Chunk R, and an agent-measured union
+  would come from the shared working tree, which *Correction 5* item 3 forbids.
+
+Nothing was added to Chunk R, and no step moved out of it. The change makes the
+agent's stopping point produce evidence instead of just stopping.
+
+### On the reviewer's "Not covered / low confidence" note
+
+The note is right, and it is genuinely out of scope rather than a gap: *"[the]
+provenance and authenticity of the caller's trusted upstream checkout itself is
+out of scope for this plan and relies on `release-authenticity`."* That is
+residual **R1**, fenced in *Scope* in the same terms — *"This change moves the
+comparison from target-controlled to caller-controlled; it does not move it to
+cryptographically anchored. That is `release-authenticity`'s job"* — and stated
+again in Chunk C's "Recorded as not established" criterion, which requires the
+limit to appear in the code comment and the commit body. **No new follow-up row is
+needed**: R1 already has three declared durable homes in *Lasting-truth
+migration* (the note string, `bootstrap/UPGRADE.md`, and a `dev/PLANNING.md` row
+opened at plan-open), so it cannot be archived away silently.
+
+One thing the reviewer did not reach, recorded because the plan nominates it as
+its own most likely failure: **review question 4 — "can the trusted map's output
+be influenced by the target?" — remains unattacked**. This External round did not
+attempt it either; its "Covered" section verifies the *signature and operand*
+(that `upstream` is keyword-only and that the target-side operand is
+`read_bytes`), which is F4/F5, not the trusted-map question. The plan already
+states this under *Known omissions* (a), and node 17 plus review remain the only
+enforcement. I am not proposing another round for it — but the code reviewer
+should be pointed at it, and this Response is the record that three reasoners have
+now declined the attack rather than made it.
 
