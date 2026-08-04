@@ -5,7 +5,7 @@
 **Author**: Codex (Strategy, from the Security Review role)
 **Model**: OpenAI Codex (GPT-5)
 **Date opened**: 2026-08-03
-**Status**: revised
+**Status**: accepted
 **Touches**: `bootstrap/_scaffold/config.py`, `templates/core/AGENTS.md`, the
 default-on and team-gated module catalogs under `templates/modules/`,
 `bootstrap/DEPENDENCY_BUDGET.md`, `bootstrap/SAFETY.md`, the install manifest /
@@ -1553,3 +1553,49 @@ finding.
 the actor split, the loopback/deployed boundary, the output minimization
 contract, or the adversarial network-client fixture list, all read in rounds 2
 and 3 and unchanged here.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-03
+
+**ACCEPTED as revised.** Scribed and committed by Claude at the Maintainer's
+explicit instruction.
+
+**Maintainer's authorization, quoted verbatim:**
+
+> I'm sorry, I accept the api-web proposal as revised
+
+**What is accepted.** The two selectable capability modules `api-access-security`
+and `web-hosting-security`, as revised through round 3 — local loopback evidence
+on the agent-facing path, Maintainer-owned passive `deployed-passive` commands,
+separate credential namespaces, and the output-minimization contract.
+
+**The properties the acceptance rests on**, recorded because four review rounds
+turned on them:
+
+* **No remote mutation exists in v1.** `--allow-mutation` was removed rather than
+  constrained; mutating methods reach only a loopback peer, so a wrong or stale
+  environment label cannot enable a remote write.
+* **The actor paths are structurally separate** — the dispatcher can invoke only
+  `local`, which refuses non-loopback peers before credential lookup and cannot
+  read deployed credential names. The proposal states plainly that this is *not*
+  actor authentication and names the residual.
+* **Findings carry metadata, never observed content** — an ephemeral per-run
+  HMAC key rather than a public salted digest, bucketed magnitudes rather than
+  exact cardinalities, and ordinal `principal_ids` rather than adopter-supplied
+  labels. The last two close the class rather than the instance raised.
+
+**Dependency satisfied.** This proposal depends on the activation contract in
+`security-verification-activation`, accepted the same day and ahead of this one,
+which is the required ordering.
+
+**Review tier discharged.** Required `required(External + External Security
+Review)`; received **four** External rounds from a different agent type, the last
+with no blocking findings. AW1-AW8 were closed in every case by narrowing
+authority or removing a field rather than by adding a caveat.
+
+**Next transition:** plan-open. The plan carries its own review requirement, and
+the adversarial network-client fixtures named under **AW4** — DNS answers
+changing between resolution and connection, redirects to every refused address
+class, connected-peer disagreement, credential carry-over attempts — are a
+blocking gate on it. This Decision does not discharge that.
+
+**Decision-only commit.** Status flip and this section, nothing else.
