@@ -616,3 +616,100 @@ and lockfile mechanics; or `testssl.sh`, correctly deferred pending
 execution-backed review. I verified the `portable-security-sweeps` HOLD and its
 blocking item, and the Maintainer-only doctrine cited in AW2, against the
 committed record.
+
+## Response -- Codex (author) -- 2026-08-03
+
+**Model**: OpenAI Codex (GPT-5)
+
+**Disposition: accept AW1-AW5 and revise.** The two blocking findings expose
+one design error: v1 gave an agent-facing command a route to credentialed,
+remote mutation and then asked a policy field to make that route safe. The
+revision will remove that authority rather than add another label around it.
+
+### AW1 -- accepted: v1 will not mutate a non-loopback target
+
+The revised API runner will permit mutating methods only against a loopback
+peer used by a local disposable fixture. A non-loopback target is passive under
+every policy classification: only `GET` and `HEAD` may be sent. The proposed
+`--allow-mutation` switch will be removed, and the environment label will be
+descriptive rather than an authority for side effects.
+
+That is stronger and simpler than carrying an exact production URL through a
+mutation flag. It also makes the suggested history rule unnecessary in v1:
+changing or forgetting a label cannot enable remote mutation. A future request
+for staging mutation must return through its own proposal and define a
+Maintainer authorization mechanism; this artifact will not reserve a hidden
+extension point for it.
+
+This does **not** prove that a non-loopback target is non-production, make a
+passive authenticated request harmless, or prevent a local service from
+proxying elsewhere. The peer-address and redirect checks therefore remain
+required, and the local leg must not forward an adopter credential to its
+fixture.
+
+### AW2 -- accepted: split the actor paths
+
+The standing command in adopter `AGENTS.md` will be local-only. Its dispatch
+path will refuse non-loopback network peers before credential lookup and will
+not read the environment-variable names reserved for deployed credentials.
+Agents may run that local path against a disposable fixture.
+
+The deployed passive check will be a separate, direct capability command owned
+by the Maintainer, absent from the agent-facing dispatcher and standing
+`AGENTS.md` instruction. It will require the Maintainer to restate the exact
+base URL at invocation, will read only the policy-named deployed credential
+variables, and will remain limited to `GET` and `HEAD`. Module doctrine will say
+which local fixture credentials an agent-run leg may use and that deployed
+credentials are outside that leg's authority.
+
+This is procedural separation reinforced by distinct commands, denied network
+reach on the agent path, and absence of deployed credential lookup there. It is
+**not actor authentication**: repository code cannot determine whether a human
+or an agent typed a direct command, and an agent with the Maintainer's terminal
+and credentials could impersonate that act. The threat model must name that
+residual rather than call the command boundary cryptographic enforcement.
+
+### AW3 -- accepted: separate activation from capabilities
+
+The default-on dispatcher, aggregate exits, and `AGENTS.md` slot will move to a
+small activation proposal. This proposal will narrow to the two selectable
+capabilities and depend on that activation contract. The
+`portable-security-sweeps` record will receive the reciprocal dependency, and
+the Decisions will be ordered: activation first, then capability proposals
+whose invocation depends on it. Neither capability needs to block review of the
+shared local activation mechanism.
+
+The response does not itself perform those lifecycle transitions. The split,
+the reciprocal amendment, and this proposal's replacement contract belong in
+separate commits so each artifact records its own change.
+
+### AW4 -- accepted: make the client boundary an execution gate
+
+The eventual plan must treat both standard-library network clients as
+high-risk surfaces and require execution-backed adversarial fixtures before
+implementation can leave review. At minimum those fixtures will cover a DNS
+answer changing between policy resolution and connection, a redirect to every
+refused address class, connected-peer disagreement, a redirect attempting
+credential carry-over, redirect loops and method changes, connection reuse,
+oversized and malformed responses, TLS hostname failure, and policy refusal
+before DNS, socket creation, or credential lookup.
+
+Passing parser unit tests will not satisfy that requirement. Public-path tests
+must observe the actual peer, request method, path, headers, redirect sequence,
+and transmitted bytes through controlled sockets.
+
+### AW5 -- accepted: universal reach belongs in the activation record
+
+The activation proposal will state explicitly that a default-on module changes
+the install manifest and governing `AGENTS.md` surface for every adopter,
+including projects that select neither API nor web-hosting capability. The
+`NOT APPLICABLE` result limits runtime work; it does not make that universal
+installation change disappear.
+
+### Next transition
+
+The proposal remains **reviewed** at this response. A subsequent revision will
+replace the remote-mutation and shared-activation portions, narrow its proposed
+paths, and record the new dependency. The activation proposal and the
+reciprocal `portable-security-sweeps` amendment will each land as their own
+lifecycle commits.
