@@ -2015,3 +2015,531 @@ test is the right call, but only if [I7]'s staleness command is repaired: the
 plan's own reasoning is that the tripwire substitutes for the pin, and a tripwire
 whose surface list is supplied by the artifact it is checking does not.
 
+
+## Response to plan review -- Claude (author) -- 2026-08-04
+
+**Model**: claude-opus-5 (exact id `claude-opus-5`).
+
+> **The single most important fact in this Response, stated before any
+> disposition: the tree moved 61 commits between the review's HEAD `eacb7dd` and
+> this Response's HEAD `6618e54`, and three of those commits are the sibling
+> lineages this plan's register was pinned to as *in flight*.** The review
+> predicted that drift precisely ([I4]) and it has now **landed as commits**.
+> Every figure below was re-measured against `6618e54`; nothing is carried from
+> the review, and where a review figure does not reproduce that is reported as
+> plainly as where it does.
+
+### Standing — what this Response is and is not
+
+I am the plan's author responding to an **Internal** (same-agent-type) plan
+review. This Response **does not discharge the declared `required(External)`
+tier**, and nothing in it should be read as doing so. Its job is narrower and
+stated up front:
+
+* Disposition all thirteen findings, each with mechanical residue.
+* Re-measure every figure the review states, against the live tree.
+* Record the three findings the *tree itself* has produced since the review.
+
+The review's own recommendation was **"Revise, then External."** This Response
+is the revise half. The External half is untouched and remains owed.
+
+---
+
+### Re-measurement — what reproduces, what does not
+
+Run under the canonical interpreter `/Users/kendal30/conda_envs/lhm/bin/python3.13`
+(CPython 3.13.13), `PYTHONDONTWRITEBYTECODE=1`, at HEAD `6618e54`, working tree
+carrying no tracked modifications. All scratch work ran outside the repository.
+
+**Figures that REPRODUCE unchanged.**
+
+| Claim (plan or review) | Re-measured at `6618e54` |
+| --- | --- |
+| `scaffold.py --manifest` → 95 data rows | 96 lines, 1 header → **95** ✓ |
+| `frozen_files` map, 164 entries | **164** ✓ |
+| `bootstrap/verify_integrity.py` the only frozen key among files this plan touches or contemplates | ✓ — and `templates/onboarding/high-rigor-legacy.md`, `SECURITY.md`, `doctrine/runtime-contract.md`, `bootstrap/SAFETY.md`, `CHANGELOG.md`, `dev/PLANNING.md` all **not** frozen ✓ |
+| 68 external links not probed | **68** ✓ |
+| 117 tests in the four enforcer modules (`--collect-only`) | **117** ✓ |
+| B6 reach table, 9 controls × 3 presets | **reproduces exactly — all 27 cells** ✓ |
+| module / manifest counts 6–59, 11–77, 14–80 | ✓ all three |
+| lockfile carries 81 `"dst"` records; `grep 'dev/modules/onboarding'` empty | **81** ✓; grep returns 0 ✓ |
+| `dev/modules/onboarding/` holds 3 installed files | ✓ |
+| onboarding hashes `c829de48…` / `739bb012…` | ✓ both, byte-for-byte |
+| `lifecycle_planner.py` twin byte-identical `f1552fc7…` | ✓ both |
+| F2: `.github/` exists, 7 files, **no `workflows/`** | ✓ — 7 files; `ISSUE_TEMPLATE`, `PULL_REQUEST_TEMPLATE`, `labels.yml` only |
+| `## Plan review — the brief…` is not parsed as a section | ✓ `_HEADER_RE` returns no match |
+| `quality_gate.py --sub neutrality` | exit 0, informational `vendor-ok` entries only, **none** in `templates/onboarding/` ✓ |
+| the seven cited commits `b93f8e9` `5c91c23` `1dabe4d` `0c6d9de` `3a2a201` `18cbf66` `3cda505` | all resolve, all carry the attributed subjects ✓ |
+| `dev/PLANNING.md` R2's three measured classes; R3's **3 of 4** variants, Cyrillic open | ✓ both, at `dev/PLANNING.md:328` and `:348` |
+| `security-review` installs exactly one Markdown file, zero executables | ✓ — `['dev/modules/security-review.md']` |
+| `run_security_audit.py` ships with `python-security`, not `content-security` | ✓ — and `python-security` is selected by **0 of 3** presets |
+| `bootstrap/profiles/high-rigor-legacy.yml` carries no module selection | ✓ — exactly three keys, comments stripped |
+| `_MODULE_MAPPINGS` holds 20 modules | **20** ✓ |
+
+**Figures that DO NOT reproduce.** Reported as findings, not as inconveniences.
+
+| Claim | Stated | Re-measured at `6618e54` |
+| --- | --- | --- |
+| `check_cairn` scans 180 Markdown files | 180 | **195** |
+| tracked Markdown files | 234 | **249** |
+| *"two of the citations below already differ from it by one line"* | 2 | **9 of 28** citations in the plan body no longer resolve to the cited text; 4 are +1 shifts, 3 are a +12 block move, **2 no longer exist** |
+| `_MODULE_MAPPINGS` at `bootstrap/_scaffold/config.py:641` (review [I12]) | :641 | **:713** |
+| `_PRESETS` at `bootstrap/_scaffold/config.py:1205` (review [I3]) | :1205 | **:1277** |
+| `expand_preset` at `bootstrap/_scaffold/config.py:1422` (review [I3]) | :1422 | **:1494** |
+| `modules_add` at `bootstrap/_scaffold/config.py:1154` (review [I3]) | :1154 | key list at **:1213**; the read at **:1529** |
+| `_yaml_load` alias at `config.py:47`–`:53`; `load_config` calls at `:413` (review [I4]) | :47/:413 | **:46**–`:53`; the call at **:485** |
+| the comparison in `bootstrap/PROVENANCE.md` at `:208` (review [I13]) | :208 | **:220** — commit `7bb2072` moved the whole block +12 |
+| the review's six dirty tracked files (review [I5]) | 6 modified | **0 modified** — the tree is clean of tracked modifications at this Response |
+
+Two of those non-reproductions are the review being **right about the direction
+and wrong about the magnitude** — which is the more useful half. The citation
+count is the clear case: the plan said two citations were off by one; the true
+figure against the live tree is nine moved, two of them gone entirely.
+
+**The full citation ledger, re-derived.** Twenty-eight distinct `<file>:<line>`
+citations appear in the plan body (excluding the landed review section). At
+`6618e54`, **19 still resolve to the text the plan cites** and **9 do not**:
+
+```
+MOVED  bootstrap/PROVENANCE.md:202       -> the bind-comment is now :214
+MOVED  bootstrap/PROVENANCE.md:204       -> the awk extraction is now :216
+MOVED  bootstrap/PROVENANCE.md:236       -> the three properties enumerate from :246
+MOVED  bootstrap/_scaffold/config.py:43  -> the fail-open fallback NO LONGER EXISTS
+MOVED  bootstrap/_scaffold/install.py:887   -> :888
+MOVED  bootstrap/_scaffold/install.py:982   -> :983
+MOVED  bootstrap/_scaffold/install.py:1088  -> :1089
+MOVED  bootstrap/verify_integrity.py:47     -> :48
+MOVED  bootstrap/verify_integrity.py:118    -> the target-supplied call NO LONGER EXISTS
+```
+
+**Deciders re-run at `6618e54`, not inherited.**
+
+* **Chunk C row 5 — the coordinated lockfile tamper. STILL REPRODUCES.** Clean
+  `git archive HEAD` extract into scratch → scaffolded `solo-greenfield` →
+  baseline `verify_integrity: OK -- 55 recorded file(s) match
+  dev/.cairn/cairn-lock.yml` → marker appended to `scripts/claim_check.py` →
+  `modified (hash mismatch): scripts/claim_check.py`, exit 1 **[negative
+  control fires]** → that one record's `hash` field rewritten in the target's own
+  lockfile → `verify_integrity: OK -- 55 recorded file(s) match`, exit 0, marker
+  still on disk **[the finding]**. This survives `fork-advisory-semantics`
+  landing in the same module. **The plan's central MET-by-residual row is sound
+  at HEAD.**
+* **[I6] — B2 row 3. FALSIFIES the row, and now by inspection as well as by
+  run.** Two `solo-greenfield` installs into distinct scratch targets; both
+  verifier invocations emit a **byte-identical** line naming
+  `dev/.cairn/cairn-lock.yml`. Confirmed structurally:
+  `bootstrap/verify_integrity.py:139` interpolates only `_LOCKFILE_REL`, a
+  repository-relative constant, while the fail-closed path at
+  `bootstrap/verify_integrity.py:50` interpolates `{_LOCKFILE_REL} under
+  {target}`. The failure path names the object; the success path does not.
+  `--target` is `required=True` at `bootstrap/verify_integrity.py:149`, so there
+  is no silent-CWD variant.
+* **[I1] — the plan-review gate. FALSIFIES the plan's protection, at HEAD.** Two
+  probes on scratch copies outside the repository, status line changed to
+  `executing`:
+
+```
+A. Internal review section REMOVED:
+   lifecycle-planner: VIOLATION: status is 'executing' and 'Plan review:
+     required', but no '## Plan review' section has landed (review-before-implement).
+
+B. the LANDED Internal review section present, nothing else changed:
+   lifecycle-planner: structural conformance: current state is structurally sound.
+   lifecycle-planner: -> review
+```
+
+  The mechanism is exactly as the review describes: `_HEADER_RE`
+  (`tools/lifecycle_planner.py:509`) captures `role` — for the landed heading it
+  captures `'Internal, same-agent-type; security lens'` — and `_has_kind`
+  (`tools/lifecycle_planner.py:693`) compares only `kind`. The gate at
+  `tools/lifecycle_planner.py:787` never reads `role`.
+* **Checkers, both clean at `6618e54`.** `claim_check.py` → OK, exit 0 (5
+  exemption *events* over 4 distinct globs — the review's "4" counted distinct
+  paths, mine counts events; both are right about the same allow-list).
+  `check_cairn.py dev/plans/release-security-bar.md` → OK, exit 0.
+
+---
+
+### What the tree did to this plan while the review was being written
+
+Three sibling lineages the register pins rows to have **landed**, each with its
+own External code review. This is not a finding against the review; it is the
+register going stale in the direction the plan's own edge-case list predicted
+(*"A sibling lineage moves a line this plan quotes"*). It is recorded here
+because a Response that dispositioned thirteen findings and left four register
+rows describing a tree that no longer exists would have failed the same way the
+review's [I4] warns about.
+
+* **`fork-advisory-semantics` landed at `9bd6752`**, code review at `7192224`
+  (Antigravity, External, security lens). `bootstrap/verify_integrity.py:123`–
+  `:124` now reads `forked_facade_findings(target, lock,
+  upstream=trusted_upstream(CAIRN_ROOT))`. **Chunk C row 4's stated flip
+  condition is satisfied** — the change landed *and* its code review confirms
+  the comparison bytes come from the caller's checkout. But that review also
+  records residual **R10**: candidate *selection* remains lock-derived
+  (`hash != base_hash`) even though the *verdict* operand is now caller-supplied.
+  So the row does not flip to clean MET; it becomes decidable, with R10 named.
+* **`profile-parse-fail-open` landed at `e7394cb`**, code review at `89f7b7b`.
+  The fail-open is gone: `_yaml_load` is a compatibility alias at
+  `bootstrap/_scaffold/config.py:46` and `load_config` calls
+  `_minimal_yaml_parse` directly at `bootstrap/_scaffold/config.py:485`. PyYAML
+  is not consulted on the profile path at all. **Chunk E row 4's decider —
+  *"with PyYAML unavailable in a scratch environment"* — no longer describes any
+  code path**, and its stated purpose (establish a before-state for the sibling's
+  fix) is now unreachable: the fix is the state.
+* **`gate-claims-vs-enforcement` completed its entire burndown** — Chunks A–E at
+  `8d23afe`, `1e47c08`, `2244eca`, `d1eb48c`, `84fbef4`, plus an External code
+  review. This is the fact that turns [I2] and produces [R1] below.
+
+---
+
+### Disposition, finding by finding
+
+Thirteen findings. **Thirteen accepted** — eleven in full, two with
+modification. None declined. Every acceptance has a numbered row in *Amendments
+in force*; a finding accepted only in prose would be the failure mode this
+Response exists to avoid.
+
+**[I1] — the plan-review gate cannot distinguish Internal from External.
+ACCEPTED IN FULL, and the remedy has an owner the review could not have known
+about.**
+
+Reproduced at HEAD, both probes, above. The plan's blockquote is wrong on **two**
+counts, not one, and the second is new since the review:
+
+1. *The enforcement claim.* The gate is presence-only. The sentence *"keeps
+   reporting the section missing until a real `###` review sub-heading lands"* is
+   a standing-gate claim for a property nothing enforces — the plan's own **B3**
+   violation, in the plan's own gate-blocking mechanism. The review is exactly
+   right that this is the plan's *perturb-the-hazard* rule turned on itself: the
+   committed probe perturbed the heading's **shape** and never the reviewer's
+   **tier**.
+2. *The prescribed heading shape is itself unbuildable.* Measured for this
+   Response: `dev/plans/review-gate-enforcement.md:307`–`:313` records that
+   appending a `### Plan review` at the end of a plan **nests under the last H2,
+   not under the container**, so putting a pass under the container requires
+   inserting into prior file content — which append-only forbids. That plan's
+   Response revises its own A.1 to a dated `## Plan review -- <reviewer> --
+   <date>` H2 pass. Corpus check at `6618e54`: `grep -rhoE "^#{2,3} Plan review"
+   dev/plans dev/proposals` → **59 headings, all `##`, zero `###`**. My reviewer
+   used `##` and was right to; this plan's instruction to use `###` was wrong.
+
+**The remedy is not mine to apply and is already owned.** `review-gate-enforcement`
+— proposal accepted at `eb1b2b7`, plan opened at `8dfb664`, External plan review
+at `f83f20e`, Response at `eaf1109` — carries a Chunk C.1 node *"declared tier
+satisfied"* (`dev/plans/review-gate-enforcement.md:103`) with a single-property
+falsifier. That is the review's option (b), further along than the review knew.
+
+I take the review's **option (c)** for this plan's own text — delete the
+enforcement claim, keep the rule as an explicitly-unenforced convention, and name
+the lineage that will make it a gate. I decline to take **option (a)**: renaming
+the landed review's heading would edit a prior section (append-only forbids it),
+would be a *silent re-gating* of a section its author committed, and is not the
+author's to do to a reviewer's byline. **The choice between (a), (b) and (c) as
+the durable resolution is the Maintainer's and is in `openQuestions`.**
+Amendments **A1**, **A2**, **A3**.
+
+**[I2] — the ownership vacuum on `templates/onboarding/high-rigor-legacy.md`
+lines 123 / 164. ACCEPTED IN FULL, and materially strengthened since the
+review.**
+
+Re-measured at `6618e54`, every leg reproduces:
+
+* `dev/plans/default-security-stance.md:133` — *"Owned by
+  `gate-claims-vs-enforcement`. Whichever lands second must not re-assert what
+  this one falsifies."* ✓ verbatim, same line.
+* `dev/plans/default-security-stance.md:871` — *"Already owned by
+  `gate-claims-vs-enforcement`; **no migration needed**"* ✓ verbatim, same line.
+* `grep -c "high-rigor-legacy"` over both `dev/plans/gate-claims-vs-enforcement.md`
+  and `dev/proposals/2026-08-03-claude-gate-claims-vs-enforcement.md` → **0 and
+  0** ✓.
+* Both passages still live at `templates/onboarding/high-rigor-legacy.md:123`
+  and `:164`, identical clause ✓.
+
+**What is new:** the named claimant is no longer *silent*, it is **finished**.
+`gate-claims-vs-enforcement` landed all five chunks and an External code review.
+Its actual file surface was `AGENTS.md`, `bootstrap/container/floor-gate.sh`,
+`bootstrap/container/recipe.md`, `bootstrap/DEPENDENCY_BUDGET.md`,
+`doctrine/runtime-contract.md`, `bootstrap/fidelity-check.md`,
+`doctrine/lifecycle.md`, `bootstrap/SAFETY.md` — and never
+`templates/onboarding/`. A lineage that has completed its burndown without
+taking two lines it was believed to own has *demonstrated* it does not own them.
+So `default-security-stance`'s belief is now stale-and-wrong rather than merely
+in conflict, and the vacuum is a fact rather than an inference.
+
+That does **not** license me to take the lines. The plan's own fence — *"an
+agent taking a claimed file to unblock its own bar is exactly how a
+one-proposal-per-file rule dies"* — applies with more force, not less, when the
+evidence favours me. Chunk B is gated on a Maintainer ownership ruling.
+
+The second-order point is accepted too and is live: `default-security-stance` is
+still `**Status**: open` with only an Internal plan review, and its pre-declared
+changelog text (`dev/plans/default-security-stance.md:871`, row 7) would make
+Chunk B's correction false in the opposite direction. Amendments **A4**, **A5**.
+
+**[I3] — NC-B1 is falsified by the tree and names a file that cannot carry the
+edit. ACCEPTED IN FULL; the review's mechanism is right, its line numbers are
+not.**
+
+Both legs reproduce:
+
+* `bootstrap/profiles/high-rigor-legacy.yml`, comments stripped, is exactly
+  `project_name`, `test_command`, `preset` — **no module selection**. The roster
+  lives in `_PRESETS`, read by `expand_preset`.
+* `content-security` ships `['dev/modules/content-security.md',
+  'scripts/content_scan.py', 'scripts/content_scan_runner.py',
+  'scripts/content_scan_roots.txt', 'scripts/content_scan_residuals.txt',
+  'scripts/content_scan_allowlist.txt']` — six files, and
+  **`run_security_audit.py` is not among them**. It ships with `python-security`,
+  which is selected by **0 of 3** presets. So only **2 of 3** rows can flip.
+
+The review's line numbers for the mechanism have all moved (`_PRESETS`
+`:1205`→**`:1277`**, `expand_preset` `:1422`→**`:1494`**, `modules_add`
+`:1154`→ key list **`:1213`** / read **`:1529`**). The amendment carries live
+numbers and says they are volatile. Amendment **A6**.
+
+**[I4] — every citation is pinned to HEAD; every decider is pinned to nothing.
+ACCEPTED IN FULL. This is the finding the tree has since proved.**
+
+The review predicted the working tree would become the subject of runs whose
+verdicts are stated about HEAD. Sixty-one commits later that working tree *is*
+HEAD, and the two rows the review flagged are the two rows whose subject
+changed. The plan's *"two of the citations … differ by one line"* is
+**falsified: nine of twenty-eight**. Amendments **A7**, **A8**, **A15**, **A16**.
+
+**[I5] — Chunk G's restore oracle is wrong against a dirty tree. ACCEPTED IN
+FULL. The instance does not reproduce; the hazard does.**
+
+The review's six dirty tracked files are gone — the tree carries no tracked
+modification at this Response. That is not a refutation. A tracked file
+(`dev/plans/planner-line-semantics.md`) went from modified to committed
+*between two tool calls of this Response*, which is the hazard demonstrating
+itself. `git diff <path>` empty means *matches the index/HEAD*, so "restore
+until `git diff` is empty" remains an instruction to discard whatever a
+concurrent session holds. `git hash-object` captured **before** the perturbation
+is index-independent and correct in both tree states. The review is also right
+that the `## Code review` brief prescribes the same broken oracle against
+`git rev-parse HEAD:<path>`; that is amended too. Amendments **A9**, **A10**,
+**A11**.
+
+**[I6] — B2 row 3 is pre-marked MET and its own decider falsifies it. ACCEPTED
+IN FULL.**
+
+Reproduced by run and confirmed by inspection above. The verdict cell flips to
+**NOT MET**, owner: the `verify_integrity` successor named on the deferred
+ledger. I want to be precise about what is wrong and what is not: the *document*
+sentence at `SECURITY.md:47` is careful and true, exactly as the plan says. It
+is simply not evidence for B2's second clause, which is about the **check's
+output**. The row cited the right sentence for the wrong clause. Amendment
+**A12**.
+
+**[I7] — the staleness mechanism fails B1 reflexively; NC-H1 leg 1 is a
+tautology. ACCEPTED IN FULL.**
+
+Both halves are correct and the first is the sharper one: H2's inputs — the
+surface list *and* the audit date — both live inside the artifact whose
+freshness is being decided, which is B1's property violated by the bar's own
+tripwire, with no independent channel and no stated residual. `%cI` is committer
+date and is rewritable and non-monotonic; commit identity is the right
+comparand. NC-H1 leg 1 compares the command to itself with fewer arguments; leg
+2 is a genuine control and is retained. Amendments **A13**, **A14**.
+
+**[I8] — NC-A1 is a tautological positive control; Set 1 gets no residual.
+ACCEPTED IN FULL.** A plant constructed in the idiom the sweep greps for cannot
+fail. Set 1 is the higher-exposure enumeration precisely because B1 quantifies
+over it explicitly and B3's sweep is scoped by it, so an incomplete Set 1
+shrinks two bar items at once and nothing reports it. NC-A1 takes NC-A3's
+two-leg shape and A4 gains a Set 1 residual. Amendment **A17**.
+
+**[I9] — NC-B2's decider is never defined; its "exactly 2 → 0" is tautological.
+ACCEPTED IN FULL.** The check is load-bearing twice (NC-B2, and Chunk F's
+per-sentence control) and defined nowhere. Building a script for it is fenced
+out, so it is a grep — and a grep derived from the two known-bad sentences is
+guaranteed to return 2 then 0, because the correction deletes the string it
+greps for. Amendment **A18**.
+
+**[I10] — Chunk A is declared first, but four register tables are already drawn.
+ACCEPTED IN FULL, and [I6] is its first casualty exactly as the review says.**
+The sequencing principle is right and the plan does not practise it. Without a
+supersession rule, a table and a decider that disagree resolve in favour of the
+pre-drawn table under time pressure — which is what produced [I6]. Amendment
+**A19**.
+
+**[I11] — the prescribed correction still asserts a standing gate. ACCEPTED IN
+FULL.** Re-measured: `security-review adds: ['dev/modules/security-review.md']`
+— one Markdown document, no executable, no hook, no trigger. Correcting *"the
+high-rigor-legacy profile's content-security + security-review gates apply"* to
+name only `security-review` fixes B6 and leaves B3 broken on the same clause,
+in the plan's only file edit. The retained trailing sentence is the correct
+idiom and the whole clause should converge on it. Amendment **A20**.
+
+**[I12] — NC-A2's monkeypatch rule is over-broad and walks into its own trap.
+ACCEPTED IN FULL; line numbers re-derived.** The rule is correct for
+`_MODULE_MAPPINGS` (defined in `config`, imported by name into `install` at
+`bootstrap/_scaffold/install.py:28`–`:35`, so a `setattr` on `config` is a
+no-op) and wrong for `_PRESETS`, which `expand_preset` reads from its own
+module — so "patch install, never config" produces precisely the silent no-op
+the rule exists to prevent. Live line numbers: `_MODULE_MAPPINGS` at
+`bootstrap/_scaffold/config.py:713` (review said `:641`); `_PRESETS` at
+`bootstrap/_scaffold/config.py:1277` (review said `:1205`). Amendment **A21**.
+
+**[I13] — `bootstrap/PROVENANCE.md:204` is the extraction, not the comparison.
+ACCEPTED WITH MODIFICATION — the finding was right at `eacb7dd` and its
+prescribed fix is now stale.**
+
+Verified against `git show eacb7dd:bootstrap/PROVENANCE.md`: at the review's
+HEAD, `:202` was the bind-comment, `:204` the awk extraction, `:208` the
+comparison. The review was correct. But commit `7bb2072` moved the whole block
+**+12 lines**, so at `6618e54` the plan's `:202` lands on `git init --bare`,
+its `:204` lands on a fetch refspec, and its `:236` lands on *"Discard the
+workspace and report."* The live positions are: bind-comment **`:214`**,
+extraction **`:216`**, comparison **`:220`**, the three-properties enumeration
+from **`:246`**. The modification is that I re-cite to live numbers *and* record
+the block as volatile, rather than applying the review's `:204`→`:208`
+substitution, which would have replaced one stale citation with another.
+Amendment **A22**.
+
+---
+
+### Three findings this Response contributes
+
+These are mine, produced by re-deriving rather than inheriting. They are
+recorded here because a Response that only dispositioned would have left the
+register describing a tree that no longer exists.
+
+**[R1] — Chunk F names two owners, and at HEAD neither owns its row. The
+deadlock the plan designed F3's escape for is not a contingency; it is the
+opening state.**
+
+The plan instructed its own successor to check this — *"re-check whether that
+plan claims this row before recording the disposition"* — so this is the plan
+working, not the plan failing.
+
+* **Row 1, `doctrine/runtime-contract.md:132`** (*"Detects tampered apparatus
+  before it can self-audit"* — still live, still at :132, still falsified by
+  Chunk C's tamper run, which I re-ran). Attributed to
+  `gate-claims-vs-enforcement`. That lineage has now **completed** its burndown.
+  It touched `doctrine/runtime-contract.md` at exactly three places — `:46`,
+  `:185`, `:189`, the *"floor CI check"* naming rows at
+  `dev/plans/gate-claims-vs-enforcement.md:850`–`:852` — and its ledger contains
+  **no** row for `:132`. **UNOWNED.**
+* **Row 2, `SECURITY.md:51`** (*"flagging any post-install modification"* —
+  still live, still at :51). Attributed to `agent-context-scrub`. That plan's
+  `SECURITY.md` surface is three *new residual bullets* about the scrub escape
+  table (`dev/plans/agent-context-scrub.md:492`–`:494`), none of which touches
+  the `:51` clause. The other claimant of that file, `scan-coverage`, claims
+  `SECURITY.md:66` (`dev/plans/scan-coverage.md:611`), not `:51`. **UNOWNED.**
+
+This is load-bearing, not bookkeeping: B1's `verify_integrity` row is
+MET-by-residual **only if** these two sentences are corrected, and with no owner
+for either, the bar's largest row is blocked on nobody. Amendment **A23**.
+
+**[R2] — three register rows are stale in the good direction and one figure pair
+is stale in the bad direction.**
+
+Chunk C row 4 and Chunk E row 4 both describe code that no longer exists
+(above). And the plan's known-omission (e) figure — *"180 of 234"* — is now
+**195 of 249**. The gap is unchanged at 54 files, which is worth saying: the
+coverage *deficit* is stable even though both figures moved, so the deferral is
+still correctly sized. Amendments **A15**, **A16**, **A24**.
+
+**[R3] — the plan's prescribed review-heading shape is the one shape append-only
+cannot produce.** Folded into [I1] above and Amendment **A3**, because it is the
+same sentence.
+
+---
+
+### Amendments in force
+
+Each row names the superseded text **verbatim** and states what replaces it.
+This plan is append-only: the original text stays where it is, and this table is
+what governs at implementation. Where a row supersedes a verdict cell, the
+implementing agent records the new verdict in the register it builds, not by
+editing the pre-drawn table above.
+
+| # | Superseded text (verbatim) | Replaced by | From |
+| --- | --- | --- | --- |
+| **A1** | *"so it is not parsed as a section at all, and the gate at `tools/lifecycle_planner.py:786` keeps reporting the section missing until a real `###` review sub-heading lands"* | **Struck as a false enforcement claim.** The container heading is indeed unparsed — that half is measured and true. The gate at `tools/lifecycle_planner.py:787` reads **only the section *kind***: `_has_kind` (`tools/lifecycle_planner.py:693`) never consults the `role` group `_HEADER_RE` (`tools/lifecycle_planner.py:509`) captures. **Any** section whose kind begins "Plan review" clears it, at `##` or `###`, Internal or External. The tier rule is an **explicitly-unenforced convention** until `review-gate-enforcement` Chunk C.1 (`dev/plans/review-gate-enforcement.md:103`) lands. | [I1] |
+| **A2** | *"**No burndown chunk lands before the `## Plan review` section is in the tree.**"* | *"**No burndown chunk lands before an External plan review is in the tree. This is a convention this repository does not currently enforce** — the gate cleared when the Internal review landed. Until `review-gate-enforcement` gates on the declared tier, the only thing standing between this plan and a premature implementation is a reader."* | [I1] |
+| **A3** | *"**The landed review appends here as a `### Plan review -- <reviewer> -- YYYY-MM-DD` sub-heading**"* | *"The landed review appends as a dated `## Plan review -- <reviewer> -- <date>` H2 pass."* A `###` pass appended at end-of-file nests under the last H2, **not** under the container, so producing one requires inserting into prior content, which append-only forbids — measured and recorded at `dev/plans/review-gate-enforcement.md:307`–`:313`. Corpus at `6618e54`: **59 `##` headings, 0 `###`**. The plan's own reviewer used `##` and was correct. | [I1], [R3] |
+| **A4** | *"**Two false reach passages in `templates/onboarding/high-rigor-legacy.md`** — the only unclaimed file the proposal's hand-off table leaves inside this bar's budget (Chunk B)."* | *"Two false reach passages in `templates/onboarding/high-rigor-legacy.md`, a file **two sibling plans record as owned by a third lineage that does not claim it and has now finished without taking it**. `dev/plans/default-security-stance.md:133` and `:871` assign the lines to `gate-claims-vs-enforcement`; that lineage's plan and proposal return **0** matches for `high-rigor-legacy` and its completed Chunks A–E never touched `templates/`. **Chunk B does not start until the Maintainer rules on ownership.**"* | [I2] |
+| **A5** | *(new criterion — Chunk B)* | **Chunk B acceptance gains a precondition and a sequencing note.** Precondition: a Maintainer ownership ruling. Note: `default-security-stance` (`**Status**: open`, Internal plan review only) pre-declares changelog text at `dev/plans/default-security-stance.md:871` making `content-security` a default install — which would make Chunk B's correction **false in the opposite direction**. Whichever lands second re-checks the other's sentence. | [I2] |
+| **A6** | *"In a scratch copy of `bootstrap/profiles/high-rigor-legacy.yml` outside the repository, add `content-security` to the preset's module selection; re-run the eight-line measurement against the scratch config; confirm the three `content_scan` rows flip from `—` to `yes` for that column only."* | **NC-B1 becomes three legs, because the three rows are `—` for two different reasons.** (i) *Preset-composition leg:* the profile carries **no** module selection — three keys only. Perturb `_PRESETS` (`bootstrap/_scaffold/config.py:1277`, read by `expand_preset` at `:1494`) **in a scratch process**, never a scratch profile. (ii) *Adopter-override leg:* `modules_add` (read at `bootstrap/_scaffold/config.py:1529`) is a different property and is measured separately if at all. (iii) *The third row does not flip and must not be expected to:* `scripts/run_security_audit.py` ships with **`python-security`**, not `content-security`; `python-security` is selected by **0 of 3** presets. Expected result is **2 of 3**, with row 3 flipping only under a `python-security` perturbation. **All line numbers here are `as_of 2026-08-04` and volatile** — `_PRESETS` moved from `:1205` to `:1277` between the review and this Response. | [I3] |
+| **A7** | *"**Every line citation in this plan is a HEAD `eacb7dd` citation for the same reason** — the working tree is not a stable reference this week, and two of the citations below already differ from it by one line."* | *"Every line citation in the plan body is an `eacb7dd` citation. **Re-measured at `6618e54`: 19 of 28 still resolve; 9 do not.** Four are +1 shifts (`install.py:887/982/1088`, `verify_integrity.py:47`), three are a +12 block move in `bootstrap/PROVENANCE.md` from commit `7bb2072`, and **two no longer exist** (`config.py:43`, `verify_integrity.py:118`) because the sibling fixes landed. The implementing agent **re-pins the whole citation baseline to its own opening commit** and does not carry `eacb7dd`."* | [I4], [R2] |
+| **A8** | *(new sentence — Verification)* | **"Every decider runs against a clean checkout of the commit its row cites — `git archive <sha> \| tar -x -C <scratch>` — never against the working tree, and the row records the sha it ran against."** Used for every reproduction in this Response; it costs one command. | [I4] |
+| **A9** | *"**Byte-identical restore, verified.** After each perturbation, `git diff <path>` is empty and `git status --short` shows no residue."* | *"**Byte-identical restore, verified against a pre-perturbation capture.** Record `git hash-object <path>` **before** the perturbation; after restoring, confirm the hash matches. `git diff <path>` emptiness is **rejected** as the oracle: it compares to the index/HEAD, so on a file a concurrent session has modified it is an instruction to destroy that session's uncommitted work."* | [I5] |
+| **A10** | *"*No repository file is modified outside Chunk B.* Enforced by `git status --short` at each chunk end."* | *"No repository file is modified **by this plan** outside Chunk B. Enforced per-path: for every path a chunk touched, `git hash-object <path>` matches its pre-chunk capture. A bare `git status --short` is **not** the enforcer — it reports every concurrent session's work and is not clean at baseline in general."* | [I5] |
+| **A11** | *"**Confirm each perturbation's byte-identical restore** with `git hash-object` against `git rev-parse HEAD:<path>`, not by reading the ledger."* | *"…with `git hash-object` against **the implementing agent's recorded pre-perturbation hash**, not against `git rev-parse HEAD:<path>` — `HEAD:<path>` is not the pre-perturbation state of a file another session had modified, so the auditor's own oracle carried the same defect."* | [I5] |
+| **A12** | *"\| `bootstrap/verify_integrity.py` \| "the recorded install" \| yes, and it says so \| **MET** — the wording at `SECURITY.md:47` … is careful and true as far as B2 goes \|"* | **Verdict flips to NOT MET.** Re-run at `6618e54`: two distinct scratch targets produce **byte-identical** output naming `dev/.cairn/cairn-lock.yml`. The success path (`bootstrap/verify_integrity.py:139`) interpolates only the repo-relative constant `_LOCKFILE_REL`; the fail-closed path (`:50`) interpolates `{_LOCKFILE_REL} under {target}`. B2's second clause — *"its output names what it actually verified"* — fails on the success path. Owner: the `verify_integrity` successor on the deferred ledger. `SECURITY.md:47` stays cited as a **true document sentence that is not evidence for this clause**. | [I6] |
+| **A13** | *"the staleness command that consumes it: `git log -1 --format=%cI -- <surface list>` compared against the dated `### Code review -- <reviewer> -- <date>` heading"* | *"…record `git rev-parse HEAD` at audit time in the register, and report stale **iff `git log <recorded>..HEAD -- <surface list>` is non-empty**. Commit identity, not `%cI`: committer date is rewritable via `GIT_COMMITTER_DATE` and is reset by rebase/cherry-pick, so it is not monotonic with content change. **And the surface list carries a stated residual**: it and the audit date both live inside the artifact whose freshness they decide, which is this bar's own **B1** property violated — a surface omitted from the list is invisible permanently and silently. Stated as a finding in the register, not as a caveat."* | [I7] |
+| **A14** | *"Take the surface list, run the `git log -1` command, and confirm the timestamp it returns is the one `git log -1 --format=%cI -- <one known-recent path>` returns for the most recently touched member."* | **Leg 1 replaced.** That compares the command to itself with a subset of its arguments — the check, not the hazard. Replacement: **in a scratch clone, commit a change to a surface-list member dated after the audit heading and confirm the command reports stale.** Leg 2 (a path with no commits returns empty rather than a false-fresh timestamp) is a genuine control and is **retained unchanged**. | [I7] |
+| **A15** | *"\| The fork advisory \| comparison bytes \| target-supplied at HEAD (`bootstrap/verify_integrity.py:118`); caller-supplied in the uncommitted `fork-advisory-semantics` work \| **in flight** \|"* | **Row is no longer in flight; its stated flip condition is satisfied.** `fork-advisory-semantics` landed at `9bd6752` with an External code review at `7192224`. `bootstrap/verify_integrity.py:123`–`:124` now passes `upstream=trusted_upstream(CAIRN_ROOT)`. **But the row does not become clean MET:** that code review records residual **R10** — candidate *selection* stays lock-derived while the *verdict operand* is caller-supplied. The register dispositions it as MET-by-residual with R10 quoted, or re-derives it against the landed code. | [I4], [R2] |
+| **A16** | *"\| The profile loader's fallback YAML parse — `bootstrap/_scaffold/config.py:43` → `_minimal_yaml_parse` \| **guesses** instead of refusing \| **in flight** — `profile-parse-fail-open` \|"* | **Row's subject no longer exists.** `profile-parse-fail-open` landed at `e7394cb` (code review `89f7b7b`). `_yaml_load` is a compatibility alias at `bootstrap/_scaffold/config.py:46` and `load_config` calls `_minimal_yaml_parse` directly at `:485`; PyYAML is not on the profile path. **Chunk E row 4's decider is void as written** — *"with PyYAML unavailable in a scratch environment"* describes no code path, and the before-state it was to establish is unreachable. The row is re-derived against the closed grammar, or struck with a note saying why. | [I4], [R2] |
+| **A17** | *"add a Markdown file documenting a fabricated verification step in the sweep's idiom; re-run A1's sweep against the scratch root; confirm the planted step appears"* | **NC-A1 takes NC-A3's two-leg shape.** A caught plant **and** a deliberately-missed plant — a verification step written in an idiom the pattern list does not anticipate — with the missing form **quoted into A4**, and **A4 extended to state a Set 1 residual**. A plant built to match the pattern the sweep greps for cannot fail; it shows the sweep is live, not that it is complete. Set 1 is the higher-exposure enumeration: B1 quantifies over it explicitly and B3's sweep is scoped by it, so an incomplete Set 1 shrinks two items at once. | [I8] |
+| **A18** | *"Run the claim-vs-table check against `git show HEAD:templates/onboarding/high-rigor-legacy.md` and confirm it reports **exactly 2** false reach claims; run it against the corrected file and confirm **0**."* | **The check is defined before it is run, or NC-B2 is not run.** Commit the pattern list beside it (as A3 already promises for Set 3), state in terms that it is **idiom-bounded**, and route its miss into **A4's residual** rather than into an acceptance criterion. A pattern derived from the two known-bad sentences returns 2-then-0 *by construction* — the correction deletes the string it greps for — which is perturbing the check dressed as perturbing the document. The claim *"a third passage appearing later is a visible change"* is narrowed to *"a third passage **in the same idiom**"*. **Chunk F's per-sentence control inherits this amendment**, since it is specified as *"exactly as NC-B2 does"*. | [I9] |
+| **A19** | *(new sentence — Chunk A)* | **"Chunk A's enumerations supersede the pre-drawn tables. Any Set member with no row becomes a row or an explicitly stated residual; any pre-drawn row with no Set member is struck; and where a pre-drawn verdict and a run disagree, the run governs and the disagreement is recorded."** Without this, fence-first ordering is asserted rather than practised — and [I6] is the first casualty, a row marked MET before its decider was run. | [I10] |
+| **A20** | *"corrected to name only the gate the preset actually installs (`security-review`, measured `yes` above) and to phrase the scanner as an action the adopter runs rather than a standing gate"* | *"…and **the `security-review` clause converges on the same imperative idiom**. Measured: `security-review` installs `['dev/modules/security-review.md']` — one Markdown document, no executable, no hook, no trigger. Naming only `security-review` fixes **B6** and leaves **B3** broken on the same clause, because *'…security-review gates apply … before it leaves the deployment'* still asserts something fires automatically. The retained trailing sentence — *'Run the scrub scanner on the draft explicitly before submitting'* — is the target shape for the whole clause, not just the scanner half."* | [I11] |
+| **A21** | *"Patch the module that *binds* the registry, not the module that defines it — `bootstrap/_scaffold/install.py` binds by value at import, and patching `bootstrap._scaffold.config` is a silent no-op."* | **Rule is scoped to the object.** For **`_MODULE_MAPPINGS`** the rule holds: defined in `config`, imported by name into `install` (`bootstrap/_scaffold/install.py:28`–`:35`), so `setattr` on `config` is a no-op — patch `install`, or mutate the shared dict. For **`_PRESETS`** it is **inverted**: `expand_preset` reads `_PRESETS` from its own module, so patching `install` cannot reach it and **`config` is the only thing that works**. NC-A2's stated goal is *"one preset gains a row"* — a `_PRESETS` perturbation — so the rule as written walks into the trap it warns about. Live: `_MODULE_MAPPINGS` at `bootstrap/_scaffold/config.py:713`, `_PRESETS` at `:1277`. | [I12] |
+| **A22** | *"`bootstrap/PROVENANCE.md:202` — *"Bind the SIGNED name to the name you asked about"*; the comparison is at `bootstrap/PROVENANCE.md:204`; the three bootstrap properties are enumerated from `bootstrap/PROVENANCE.md:236`."* (and B2's table cell repeating `:204` as *"compares the signed name to the name asked for"*) | **All three citations re-pinned, and the extract/compare split made explicit.** At `6618e54`: bind-comment **`:214`**; awk **extraction** **`:216`**; the **comparison** `[ "$CAIRN_SIGNED_NAME" = "$CAIRN_TAG" ]` at **`:220`**; the three properties from **`:246`**. The review's `:204`→`:208` correction was right at `eacb7dd` and is now itself stale — commit `7bb2072` moved the block **+12**. B2 is the answer-binding item, so its evidence cell must show extract-vs-compare the way the `verify-ref.sh` row already does (`:335` extracts, `:340` refuses — **both still exact at `6618e54`**). **`bootstrap/PROVENANCE.md` is a volatile surface and belongs on Chunk H's staleness surface list.** | [I13] |
+| **A23** | *"\| `doctrine/runtime-contract.md:132` \| … \| `gate-claims-vs-enforcement` (accepted `3a2a201`; its plan was **being opened concurrently** … — re-check whether that plan claims this row before recording the disposition) \| … \|" and "\| `SECURITY.md:51` \| … \| `agent-context-scrub` (plan open) … \| … \|"* | **The re-check the plan asked for was run, and both owner cells are falsified. Both rows are UNOWNED at `6618e54`.** `gate-claims-vs-enforcement` has **completed** Chunks A–E plus an External code review; its `doctrine/runtime-contract.md` surface is `:46`/`:185`/`:189` only (`dev/plans/gate-claims-vs-enforcement.md:850`–`:852`) and its ledger has no `:132` row. `agent-context-scrub`'s `SECURITY.md` surface is three new residual bullets on the scrub escape table (`dev/plans/agent-context-scrub.md:492`–`:494`), not the `:51` clause; `scan-coverage` claims `SECURITY.md:66` (`dev/plans/scan-coverage.md:611`), not `:51`. **Consequence: F3's escape is engaged at the outset, not as a contingency** — B1's `verify_integrity` row is blocked on two sentences nobody owns. Both passages verified still live and still falsified. | [R1] |
+| **A24** | *"(**180 of 234** tracked Markdown files, `as_of 2026-08-04`; the proposal recorded 173 of 218)"* | *"(**195 of 249** tracked Markdown files, `as_of 2026-08-04` at `6618e54`; the review-time figure was 180 of 234 and the proposal recorded 173 of 218). **The deficit is stable at 54 files across all three snapshots**, so the deferral is still correctly sized even though both figures moved. `python scripts/check_cairn.py` → OK over **195** files, 68 external links not probed."* Chunk B's criterion *"`≥180` Markdown files"* was written defensively and **still holds**; it is not amended. | [R2] |
+
+---
+
+### Does this Response clear the plan to implement?
+
+**No.** Stated plainly, because the plan's own machinery cannot say it:
+
+1. **The declared tier is not discharged.** `Plan review: required(**External**)`.
+   What has landed is an **Internal** (same-agent-type) review plus this
+   author's Response. External's floor is a different agent type or a human.
+   Neither the review nor this Response is one. **The tier remains owed.**
+2. **The gate says otherwise, and the gate is wrong.** Measured at `6618e54`:
+   the plan-review gate is **green on this file right now**, and was green from
+   the moment the Internal review landed. Anyone running
+   `tools/lifecycle_planner.py next` on this plan at `executing` gets
+   *"structurally sound"*. That is [I1], and it means **nothing mechanical
+   stands between this plan and a premature implementation**. Amendments A1–A3
+   make the plan say so; they do not make the tree enforce it.
+3. **Three items need a Maintainer ruling before the chunks they gate can run** —
+   [I1]'s remedy choice, [I2]'s ownership ruling (gates Chunk B), and [R1]'s
+   unowned Chunk F rows (which gate B1's largest register row). They are in
+   `openQuestions`.
+4. **The register's own baseline must be re-taken.** Nine of twenty-eight
+   citations have moved and two register rows describe code that no longer
+   exists. Per A7 and A8, the implementing agent re-pins to its own opening
+   commit and runs every decider against a clean checkout of the sha its row
+   cites.
+
+**What this Response does discharge:** the mechanical revision the review asked
+for. All thirteen findings are dispositioned with residue; every figure the
+review stated has been re-measured and reported in both directions; three
+findings the tree produced since the review are recorded. Per the review's own
+recommendation — *"three findings should be dispositioned **before** an External
+reviewer spends their round on them"* — [I1], [I2], [I4] and [I5] are now in the
+amendment table rather than waiting to consume the expensive read.
+
+**What an External reviewer still owes, unchanged by this Response:** whether the
+six properties are the **right six**, and whether the fence is drawn where an
+outsider would draw it. Neither the Internal review nor this Response is the
+instrument for either question, and both say so for the same structural reason.
+
+---
+
+### Verification of this Response
+
+Run at `6618e54` under `/Users/kendal30/conda_envs/lhm/bin/python3.13`
+(3.13.13), `PYTHONDONTWRITEBYTECODE=1`. **No repository file outside this plan
+was modified; no `add`, `mv`, `stash`, `reset` or `push` was performed.** All
+scratch work ran outside the tree.
+
+```
+$ python scripts/claim_check.py dev/plans/release-security-bar.md
+claim_check: dev/plans/release-security-bar.md -- OK, no claim-check flags.   [exit 0]
+
+$ python scripts/check_cairn.py dev/plans/release-security-bar.md
+check_cairn: OK -- 1 Markdown file(s) scanned; no issues.                     [exit 0]
+```
+
+`git diff --numstat` on this file shows **0 deletions** — this Response is
+appended, and no prior section is edited.
