@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5
 **Date opened**: 2026-08-04
-**Status**: revised
+**Status**: accepted
 **Touches**: `doctrine/lifecycle.md` (archive precondition — canonical), `doctrine/proposals.md`, `doctrine/plans.md`, `doctrine/dual-review.md` (lens #9), `doctrine/lifecycle-contract.md` (plan state machine), `templates/core/dev/PLANNING.md`, `templates/core/dev/plans/_template.md`, `templates/core/dev/proposals/_template.md`, `templates/skills/_lib/lifecycle_planner.py`, `dev/plans/_template.md`, `dev/proposals/_template.md`, `dev/PLANNING.md` (retrospective pass)
 **Related**: the 2026-08-04 six-plan census (`4573c11`); `dev/PLANNING.md` > "Archive-time follow-ups — the 2026-08-04 six-plan census"
 **Plan review**: required(Internal) — see *Plan review tier* below for why this is the floor and what escalates it
@@ -1357,3 +1357,46 @@ disqualified D2 from the disposition its author had already quietly chosen. It
 does **not** show the rule is enforced: this block exists because the Maintainer
 asked, not because anything required it. That is the same documentary-not-
 mechanical limit stated throughout, now demonstrated on the proposal itself.
+
+---
+
+## Decision -- Human Maintainer -- 2026-08-04
+
+**ACCEPT as revised.** Plan review tier ratified at **Internal**.
+
+Scribed by Claude (Strategy) at the Maintainer's explicit instruction. The
+authorizing words, verbatim:
+
+> I accept as revised. Please scribe. Internal plan-review tier is fine.
+
+and, on the work that follows:
+
+> Please open this plan, review it internally, then implement + code review
+> and archive independently.
+
+**What this Decision carries.** The Revised proposal as it stands at `8a28d44`
+-- C1 through C7 -- plus the plan-review tier at Internal, which the Response
+had deferred to this Decision rather than the author ruling on its own tier.
+
+**D1 (the retro pass) is carried**, because the split is stated inside the
+Revised proposal and "as revised" is therefore authorization for it. Its
+condition binds the implementing agent: the successor artifact opens in **this
+session**, and its stem is named in a commit body so its absence is visible in
+`git log` rather than only in a reader's memory.
+
+**D2 (the content-parity gate over the doctrine -> `templates/core/` mirrors) is
+NOT carried.** No authorizing words were given for it, and under the proposal's
+own **C4** it is adopter-reaching and therefore ineligible for author
+disposition -- so silence is not consent and the scribe does not supply one. The
+artifact's stated default applies: **C1-C7 land with invariant 3 documented as
+fail-open, and the gate is not built.** Recorded here rather than omitted so a
+later reader can see the gate was considered, requested, and left unauthorized.
+The Maintainer may authorize it at any time; nothing about this Decision
+forecloses it.
+
+**Note on scope narrowing.** This Decision accepts a proposal materially smaller
+than the one opened at `9201ea3` -- one new grammar token rather than a
+five-rung parallel vocabulary, after the Internal review established that
+Cairn's existing `wontfix` disposition already provides the drain and the
+governing metric had been overstated 3.4x. The narrowing is recorded as a
+correction, not a concession.
