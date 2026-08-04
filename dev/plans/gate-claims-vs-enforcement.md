@@ -1057,3 +1057,771 @@ records the verification that it is satisfied. **That verification is re-run at
 archive time, not carried forward from this plan** — the file could move again.
 
 This section is append-only once written.
+
+## Plan review -- Claude (Internal, same-agent-type; security lens) -- 2026-08-03
+
+**Model**: Claude Opus 5.
+
+*Heading date carried verbatim from the review brief. This pass was actually
+run and appended **2026-08-04**, and every figure below is `as_of 2026-08-04`
+under the canonical interpreter (`~/conda_envs/lhm/bin/python3.13`, Python
+3.13.13). Recorded rather than silently relabelled, for the same reason the
+plan's own `Opened:` field records both anchors.*
+
+*Placement note: the plan's own instruction asks a landed review to append as a
+`### Plan review -- <reviewer> -- YYYY-MM-DD` **sub-heading** under the existing
+`## Plan review — the brief…` section. The review brief specified this `##`
+heading. It is not a bare `## Plan review`, so the anti-placeholder shaping the
+plan describes is not defeated; if the Maintainer prefers the sub-heading form,
+demote it — no content changes.*
+
+### Standing
+
+Fresh session, not the implementing agent, **same agent type as the plan's
+author** (Claude Opus 5 reviewing Claude Opus 5). That meets the declared floor
+— `required(Internal)`, whose floor is *the same agent in a fresh session* —
+so **this discharges the plan's declared tier**, and the plan's four
+prerequisites (E1/F1 verified independently, A9 ratified or struck, the B2
+fence answered, the third clause decided) are all answered below.
+
+What it does not buy is independence of *threat model*. There is **no
+cross-type independence here**: the way I decide what counts as an enforcement
+claim, what counts as a trigger, and what counts as "verified" is the author's
+way. A blind spot the author has, I probably share. Concretely: I found the
+defects below by *re-running and opening the named artifacts*, which is the
+plan's own method turned on the plan. I did **not** bring a different method,
+and I cannot tell you what a different method would have found. The plan's
+own *Known omissions* 1 and 2 — the unrun behavioural and third axes — are
+exactly where a same-type read is weakest, and I did not close them.
+
+I also did not touch, stage, or commit any file but this one.
+
+### Steelman
+
+This is the strongest plan I have read in this repository at measuring its own
+claims, and three things in it are exemplary and should survive review intact.
+
+1. **It caught its own source proposal shipping a false claim.** *What changed*
+   > 5 finds that A2's supporting sentence (*"Nothing in the suite or in
+   `scripts/` invokes either script"*) went false between proposal-accept and
+   plan-open because `b93f8e9` landed `bootstrap/tests/test_verify_ref.py`,
+   and it refuses the naive correction that would have shipped a *new* false
+   claim inside the commit that exists to remove false claims. I verified the
+   whole chain: `_extract_marked` (`bootstrap/tests/test_verify_ref.py:999`),
+   `_replay_pin` (`:1008`) and the module's own words at `:1012`, and
+   `test_provenance_path_is_exercised_without_acceptance_sh` at `:1079` with
+   its `assert "--unprovenanced" in ACCEPTANCE.read_text()` at `:1088`. The
+   distinction the plan draws — *the suite replays the assertions, it never
+   runs the gate* — is exactly right.
+2. **It declares its own greens vacuous.** Chunk C states in terms that
+   `check_cairn.py` staying green over a heading rename is worth nothing as
+   evidence because there are zero inbound anchors. I reproduced all four
+   greps (`rc=1` each). Almost nothing in this tree volunteers that a passing
+   check proved nothing; this plan does, unprompted.
+3. **It names where no closed failure mode exists and refuses to invent one.**
+   `grep -rn floor-gate bootstrap/tests/` returns nothing (`rc=1`); `grep -rn
+   SAFETY bootstrap/tests/` returns exactly one hit, a docstring line at
+   `bootstrap/tests/test_generated_output_scan.py:114`. Both reproduce. The
+   plan says the reviewer is the entire guard and adds no decorative test —
+   and its bar for any future prose gate ("derive its oracle from something
+   the subject does not read"; "be shown RED by perturbing the hazard") is the
+   correct bar, stated on the record.
+
+The five *What changed* re-measurements also hold: E1 discharged, F1
+discharged, `bootstrap/SAFETY.md` rebased, both axis-1 sweeps reproducing at
+**17** and **24** files, and the `162 → 164` manifest transition at `e45e1fc`.
+Every one of those I re-ran; every one reproduced. The findings below are what
+survived that.
+
+### Concerns
+
+---
+
+**[I1] — CONFIRMED — Chunk D's acceptance criterion names a guard that does not
+run on either file Chunk D edits, and reads a marker's *presence* as proof a
+lens *governs*. This is the F1 defect reproduced inside the plan's own
+verification.**
+
+The plan says (Chunk D acceptance):
+
+> `check_cairn.py` → green. This chunk is the one place where that command is a
+> **real** check rather than a vacuous one: `bootstrap/fidelity-check.md:42-52`
+> is the document describing the very lens `check_cairn.py` implements, and it
+> carries a live `cairn-internal-ref` marker at line 52 whose text the edit sits
+> next to.
+
+Three things are wrong, in ascending order of weight.
+
+* The marker is at `bootstrap/fidelity-check.md:55`, not 52. Line 52 is prose.
+* It is **not live**. `scripts/check_cairn.py:507-508` gates the lens:
+  `if _is_template_instruction(rel): _check_dangling_internal_refs(...)`, and
+  `_is_template_instruction` (`scripts/check_cairn.py:286`) is
+  `return rel.startswith('templates/')` (`:293`). Neither
+  `bootstrap/fidelity-check.md` nor `doctrine/lifecycle.md` is under
+  `templates/`. The marker's own inline reason text says so: *"fidelity-check.md
+  is bootstrap-internal, not an installed adopter surface."* It exempts nothing,
+  because nothing is being applied.
+* Therefore `check_cairn.py` over Chunk D is **exactly as vacuous as over
+  Chunk C** — the "one place where that command is a real check" claim is
+  false, and it is the only place in the plan where a vacuous green is
+  presented as a guard.
+
+Perturbation, run against the **real** `check_cairn.check_tree` (the fixture
+tree is mine; the checker is not a reconstruction):
+
+```
+templates/x.md -> FLAGS:
+     path | [loop-fidelity] adopter-facing surface references Cairn-internal-only
+            path `doctrine/lifecycle.md` -- it dangles once installed
+bootstrap/y.md -> no flags
+```
+
+Two files, byte-identical bodies, differing only in directory. The lens fires
+under `templates/` and is silent under `bootstrap/`.
+
+Why this is the sharpest finding rather than a citation nit: the plan's own
+argument for the rule's third clause is that *"a path that resolves is not a
+trigger that governs"* — F1 slipped past `claim_check.py` **precisely because
+the path resolved**. Here the plan committed the same-shaped error one level
+up: *a marker that is present is not a lens that runs*. It is the recurring
+failure the review brief asked me to hunt, and it is in the acceptance criteria
+of the chunk that installs the fix for it.
+
+**Fix**: strike the "real check" sentence and give Chunk D the same honest
+disclosure Chunk C already carries — `check_cairn.py` over these two files
+checks links, claim-paths, counts and content, and nothing about the trigger
+clause. If the author wants a real guard here, the only one available is the
+code review opening `bootstrap/security_check.py` and confirming the clause.
+
+---
+
+**[I2] — CONFIRMED — the trigger clause Chunks D and E install names a trigger
+that is itself only a human remembering, which is the sentence the new rule
+exists to force.**
+
+The clause, landing in three places (`doctrine/lifecycle.md`,
+`bootstrap/fidelity-check.md`, and inside Chunk E's `bootstrap/SAFETY.md`
+replacement):
+
+> — when run: `python scripts/check_cairn.py`, at review time and in the release
+> gate (`bootstrap/security_check.py` runs it).
+
+Both halves of the plan's verification table are true — `run_check_cairn()` at
+`bootstrap/security_check.py:214` executes the script, and
+`bootstrap/security_check.py:226` composes it as `run_bandit() |
+run_check_cairn()`. What the table does not ask is the next question the new
+rule makes mandatory: **what runs `security_check.py`?**
+
+Measured: nothing automatic. The two installed hooks are
+`tools/intent.py _precommit_check` and `tools/intent.py _auto_release`
+(`|| true`) — the plan verified this itself and it reproduces. `grep -n
+security_check tools/intent.py` returns nothing. No test, no script, no forge
+config invokes it. `SECURITY.md:63` places it under *"Release security
+checklist — Before cutting a release, run — and record the output in the
+release notes"*. It is a checklist line a person remembers.
+
+The new rule says: *"A check whose only trigger is a human remembering is
+described that way."* Chunk E's prose gets this right ("neither fires on a
+commit"; "Running it is the reviewer's obligation"). **Chunk D's clause does
+not** — "at review time and in the release gate" reads as one manual trigger
+and one automatic one, and a reader who opens `bootstrap/security_check.py`
+finds a function, not a trigger.
+
+**Fix**: one word, in both Chunk D files — *"…and in the maintainer-run release
+gate"* or *"…in the release checklist (`bootstrap/security_check.py` runs it,
+when a maintainer runs that)"*. Cheap, and it is the difference between the
+plan installing its rule and the plan violating it in the commit that installs
+it.
+
+---
+
+**[I3] — CONFIRMED — C1 names a trigger that returns green without checking,
+and the plan's named perturbation validates the author's `PATH` rather than the
+claim.**
+
+C1's replacement: *"It runs only in Cairn's own test suite
+(`bootstrap/tests/test_python_floor.py`, run by `python -m pytest
+bootstrap/tests`)"*.
+
+Measured. `vermin` is **not importable by the canonical interpreter**:
+
+```
+$ ~/conda_envs/lhm/bin/python3.13 -c "import shutil,importlib.util; \
+    print(shutil.which('vermin'), importlib.util.find_spec('vermin') is not None)"
+/Users/kendal30/conda_envs/miniforge3/bin/vermin False
+```
+
+It resolves only because the ambient shell `PATH` carries a *different* conda
+environment. Perturbing the hazard rather than the test:
+
+```
+$ ~/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_python_floor.py -q -rs
+2 passed in 0.69s
+
+$ PATH=/usr/bin:/bin ~/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_python_floor.py -q -rs
+ss
+SKIPPED [1] bootstrap/tests/test_python_floor.py:158: vermin is not installed; ...
+SKIPPED [1] bootstrap/tests/test_python_floor.py:188: vermin is not installed; ...
+2 skipped in 0.02s
+```
+
+So the trigger C1 names **returns success without testing the claimed property**
+in any environment without `vermin` on `PATH` — verbatim the hazard the new
+rule's second half calls *"a worse defect than no tool, because it is silent."*
+`doctrine/runtime-contract.md:193-194` discloses the graceful skip;
+`bootstrap/DEPENDENCY_BUDGET.md`'s Exception-2 body (lines 99-103) does not,
+and C1 is the sentence that names the trigger there.
+
+The plan's acceptance criterion is *"Re-run … and record the result … if it now
+skips, the sentence changes."* That is the artifact-supplies-its-own-oracle
+shape: it measures whether the **author's environment** has `vermin`, not
+whether the sentence is true for the reader it is written for. It would have
+been green on 2026-07-22, is green today, and would be green on a machine where
+the check has never once actually run.
+
+**Fix**: C1 gains the disclosure — e.g. *"…run by `python -m pytest
+bootstrap/tests`, which **skips (green) when `vermin` is not on `PATH`**"*.
+That is the second clause of the plan's own new rule applied to the plan's own
+sentence. And the acceptance criterion should be the two-run form above, not
+the one-run form.
+
+---
+
+**[I4] — CONFIRMED — the frozen-file figure is contaminated by another
+workflow's uncommitted edits, and "nine other commits" is wrong by 3×; the plan
+refuses a suite figure for exactly this reason and then asserts this one.**
+
+The plan reports: *"frozen entries: 164 / mismatches: 9"*, then argues the
+deferral *"does not stop applying because **nine other commits** already drifted
+the map."*
+
+Re-measured, splitting the working tree from HEAD:
+
+```
+frozen entries: 164
+working-tree mismatches: 9      <- reproduces the plan exactly
+HEAD (committed) mismatches: 6
+```
+
+The three that vanish — `bootstrap/tests/test_lockfile_module.py`,
+`bootstrap/tests/test_verify_integrity.py`, `bootstrap/verify_integrity.py` —
+are all in `git status --short` right now as **another workflow's uncommitted
+edits**. They are not drift; they are someone else's open work in progress.
+
+And the committed drift came from **three** commits, not nine:
+
+```
+1dabe4d byline-classification ......... bootstrap/tests/test_lifecycle_contract.py
+5c91c23 scan-coverage ................. bootstrap/security_check.py
+                                        bootstrap/tests/test_security_check.py
+                                        bootstrap/tests/test_security_lint.py
+7066489 quality_gate R6 ............... bootstrap/tests/test_quality_gate_redundancy.py
+                                        scripts/quality_gate.py
+```
+
+"Nine other commits" conflates the unit (files, not commits) *and* inherits the
+contamination. The plan's *Verification* section says, correctly and in bold,
+that **no suite figure is asserted** because *"a suite figure taken in that
+state measures someone else's in-flight work."* The same tree produced this
+figure, and it was asserted. That asymmetry is the finding; the disposition
+(keep A5/A6/A8 deferred) is unaffected and I agree with it — see the answer to
+the plan's question 3 below.
+
+One fact the plan should record while correcting the number: **A5's own file,
+`bootstrap/tests/test_security_lint.py`, is among the committed drift** — the
+sibling `scan-coverage` (`5c91c23`) edited that exact frozen file after the pin
+and did not re-pin it. That does not make working around the HOLD right, but it
+means the "no exception for me" framing is describing a HOLD that was not, in
+fact, held for that file by the lineage that landed hours earlier.
+
+---
+
+**[I5] — CONFIRMED — the proposed `CHANGELOG.md` line overstates by three, in
+the release note whose subject is "Enforcement claims name their trigger."**
+
+The line says: *"Corrected **nine** documented checks that described themselves
+in the vocabulary of an automatic gate — **eight** naming a CI this repository
+does not have."*
+
+Nine is right (A1, A2, A3, A4, A7, A9, B1, C1, C2). Eight is not. Grepping each
+landing row's target line for the standalone `CI` token:
+
+| Row | Line | Names CI? |
+|---|---|---|
+| A1 | `bootstrap/DEPENDENCY_BUDGET.md:101` | yes |
+| A2 | `bootstrap/container/recipe.md:152` | yes |
+| A3 | `bootstrap/container/recipe.md:147` — *"(the F4 acceptance gate runs here)"* | **no** |
+| A4 | `doctrine/runtime-contract.md` lines 46, 185, 189 | yes |
+| A7 | `bootstrap/container/floor-gate.sh:5` | yes |
+| A9 | `bootstrap/DEPENDENCY_BUDGET.md:97` | yes |
+| B1 | `bootstrap/SAFETY.md:120-121` | **no** |
+| C1 | `doctrine/lifecycle.md:218-221` | **no** |
+| C2 | `bootstrap/fidelity-check.md:42-48` | **no** |
+
+**Five**, not eight. "Eight" is the proposal's count of Class-A *instances*
+(A1–A8) — three of which (A5, A6, A8) this plan explicitly **defers**. As
+drafted, the changelog credits the commit with corrections it does not make.
+
+**Fix**: *"— five naming a CI this repository does not have; three further
+instances (`bootstrap/tests/`) are deferred behind the frozen-file manifest."*
+
+---
+
+**[I6] — CONFIRMED — B2's central evidentiary claim is falsified at HEAD, and
+the plan pre-declares carrying it, unmeasured, into a durable board row.**
+
+The proposal's B2 rests on: *"**Neither side has ever used the commit-body form
+the doctrine specifies**"* and *"the structured form appears in zero archive
+commits."* The plan's *Lasting-truth migration* pre-declares the fallback home
+as *"a `dev/PLANNING.md` board row carrying the measurement (… 0 of 9 and 0 of
+12 in commit bodies, `as_of 2026-08-03`)."*
+
+Measured at HEAD:
+
+```
+$ git log --all --grep="Follow-ups migrated to" --format='%h %ad %s' --date=short
+b67fabc 2026-08-03 dev/plans: archive gate-reanchor-preflight (trust root established)
+bd608c9 2026-08-03 dev/proposals: archive the superseded contributor-entry
+9c95653 2026-08-03 dev/proposals: archive the superseded yaml-parser-divergence
+3cda505 2026-08-03 dev/proposals: Maintainer Decision -- ACCEPT release-security-bar
+8f47c76 2026-08-03 dev/proposals: Maintainer Decision -- ACCEPT dependency-advisory-coverage
+a59a6dd 2026-08-03 dev/PLANNING: home the conda advisory gap as a deferred follow-up
+a1f9696 2026-06-04 Fold richer lifecycle-template doctrine up from the modflow_tools adopter
+```
+
+Seven commits carry the structured block; **three of them are genuine archive
+commits** — one plan archive (`b67fabc`) and two proposal archives (`bd608c9`,
+`9c95653`). `bd608c9` and `8f47c76` are both ancestors of HEAD that landed
+*after* the proposal was written. The count is not zero.
+
+This is A2's failure shape recurring: a sibling lineage's number, true when
+measured, false by the time the plan carries it — and this one is scheduled to
+be written into `dev/PLANNING.md`, where a stale figure stops being an `as_of`
+snapshot and starts being the board's current state.
+
+It strengthens the fence rather than weakening it (a weaker evidentiary base is
+more reason for B2 to get its own artifact, not less), but the number must be
+re-measured before it lands anywhere durable. **Fix**: re-run the grep at
+board-row time and record the real ratio, or record "re-measure before
+recording" and nothing else.
+
+---
+
+**[I7] — CONFIRMED — the `dev/plans/_template.md` routing rests on a claim the
+tree contradicts, and the instance count is 7, not 1.**
+
+The plan says of the `verification-commands` slot's *"the same ones CI
+enforces"*:
+
+> The slot is Cairn's own copy of a template block written for adopters, who do.
+
+and, in *Lasting-truth migration*:
+
+> it needs the adopter-vs-Cairn boundary drawn: the sentence is *correct* for an
+> adopter with CI and *false* for Cairn's own copy. That is a real design
+> question, not a typo.
+
+Measured: `templates/core/dev/plans/_template.md:226-231` — the adopter-facing
+slot — is an **unfilled placeholder**: *"(Adopter-specific verification commands
+— the test-runner invocation + expected scope … Fill with the project's
+commands, or replace with `N/A`.)"*. The sentence does not exist in the adopter
+template. And:
+
+```
+$ git ls-files | xargs grep -ln "the same ones CI"
+dev/plans/_template.md
+dev/plans/agent-context-scrub.md
+dev/plans/byline-classification.md
+dev/plans/fork-advisory-semantics.md
+dev/plans/profile-parse-fail-open.md
+dev/plans/release-authenticity.md
+dev/plans/scan-coverage.md
+```
+
+Seven files, all Cairn's own. There is no adopter-vs-Cairn boundary to draw —
+the adopter's copy is a placeholder. It **is** a typo-class Class-A instance in
+Cairn's own filled slot, propagated into six live plans.
+
+Routing it out on the *Touches* ground is still correct and I do not ask for
+the fence to move. But the stated *reason* is a false claim, in a plan whose
+subject is not shipping false claims, and it is the plan's own found instance —
+the one place where "noticing it and not fixing it is the correct move" has to
+be right about what it noticed. **Fix**: replace the reason with the real one
+(outside `Touches`; a template edit that would cascade into six live plans
+needs its own serialization point) and correct the count to 7.
+
+---
+
+**[I8] — CONFIRMED — a live gate-phrased claim about *the same script Chunk B
+is de-gating*, 14 lines below the heading Chunk C renames, in a file already
+inside `Touches`.**
+
+`doctrine/runtime-contract.md:202-210`:
+
+> The `vermin` syntactic check is the unit-suite mechanism. The **release floor
+> gate** is stronger (`bootstrap/container/floor-gate.sh`): … **In the release
+> gate**, an unresolvable `vermin` is an explicit **FAILURE**, never a silent
+> skip-as-pass …
+
+Axis 1 cannot see it — no `CI` token. But it is Class B on the plan's own
+taxonomy ("gate-phrased obligation with no trigger"), and it is about
+`floor-gate.sh`, the *exact* script Chunk B is simultaneously correcting to
+*"run by the maintainer from a Cairn checkout … not by anything automatic
+here."* After Chunk B lands, `bootstrap/container/recipe.md` and
+`doctrine/runtime-contract.md` describe the same script in contradictory
+vocabulary, and Chunk C's commit will touch that file three times without
+touching this.
+
+Consequently the section heading *"One un-ledgered instance, in a file already
+inside `Touches`"* overstates. It is one un-ledgered **axis-1** instance; a
+five-minute axis-2 read of the section Chunk C edits produces another.
+
+**Fix**, cheapest first: (a) qualify the heading to "one un-ledgered axis-1
+instance"; and (b) either add a one-line qualifier at `:203` in the Chunk C
+commit ("the release floor gate — run by the maintainer, not by anything
+automatic"), or record it in *Known omissions* as seen-and-left with a board
+row. Silently leaving it is the one option that reproduces the defect.
+
+---
+
+**[I9] — precision and criterion defects, grouped. None changes a disposition;
+all are one-line fixes and several would otherwise land as text.**
+
+*Citations that do not resolve where the plan says:*
+
+1. **Chunk B row B1 cites `bootstrap/container/recipe.md:152-153`.** The
+   sentence being replaced **begins at line 151** (*"The **floor gate**"*).
+   Line 153 holds the tail of the replaced sentence *and* the head of the
+   Class-D sentence to preserve. A line-anchored edit starting at 152 orphans
+   "The **floor gate** (`bootstrap/container/floor-gate.sh`) and the
+   **acceptance". Cite 151-153.
+2. **`bootstrap/fidelity-check.md` marker is at line 55**, not 52 (see [I1]).
+3. **`scripts/check_cairn.py` "accepts `--no-content-scan` (line 560)"** — 560
+   is the *consumption* site (`content_scan_enabled=not args.no_content_scan`);
+   the flag is declared at `scripts/check_cairn.py:532`.
+4. **`bootstrap/tests/test_skills_security.py` "loads … and scans the canonical
+   skills artifacts (lines 9, 42)"** — line 9 is a docstring line and 42 is a
+   path constant. The load is `scripts`-style `_load(...)` at line **60**; the
+   scans are at lines **71** and **82**.
+5. **"five chunks and eight files"** — the chunk tables name **nine** distinct
+   files (`AGENTS.md`, `recipe.md`, `floor-gate.sh`, `DEPENDENCY_BUDGET.md`,
+   `runtime-contract.md`, `lifecycle.md`, `fidelity-check.md`, `SAFETY.md`,
+   `CHANGELOG.md`). The parenthetical *"of which two (`AGENTS.md`,
+   `CHANGELOG.md`)"* is what gives it away: eight is the proposal's `Touches`
+   count, which does not include `CHANGELOG.md`.
+
+*Acceptance criteria that do not do what they are asked to do:*
+
+6. **Chunk D's clause has no stated insertion point in
+   `bootstrap/fidelity-check.md`, and the two host sentences are not parallel
+   where the plan assumes.** In `doctrine/lifecycle.md:221` the sentence *ends*
+   at *"dangles once installed."*, so the clause appends cleanly. In
+   `bootstrap/fidelity-check.md:47-48` the same phrase is **mid-sentence** —
+   *"…dangles once installed in an adopter — the failure that produced fold-back
+   #57 and the un-shipped 9-lens review roster."* Appending the em-dash clause
+   at end-of-sentence attaches "when run" to *"roster"*, not to *"fails
+   closed"*. Name the insertion point explicitly, or the "same clause in both
+   places" instruction produces a sentence that says the wrong thing.
+7. **Chunk B's "invocation check" is a *mention* grep.** It reproduces exactly
+   (the 8 expected files, verified), and it catches a *new file* referencing
+   either script. It cannot catch **a new invocation added inside a file
+   already on the list** — if `bootstrap/tests/test_verify_ref.py` began
+   running `acceptance.sh` wholesale tomorrow, the grep output is byte-
+   identical and the criterion passes. Add "and read each hit in context" to
+   the criterion; the plan already did that work for
+   `bootstrap/container/Dockerfile:78` and `bootstrap/container/acceptance.sh:8`
+   and got both right, so this is codifying what the author already did.
+8. **Chunk B's `bash -n` is near-vacuous and its "exactly one changed line"
+   criterion has a measured cost.** A `#`-comment edit cannot break bash syntax
+   unless the `#` itself is removed. More usefully: line 5 is currently
+   **80 chars** and the comment block is 80-wrapped; B3's replacement makes it
+   **105 chars**. "Exactly one changed line" therefore forbids re-wrapping and
+   mandates a 105-char line in an 80-wrapped block. State which you want —
+   either is fine, but the criterion as written silently decides it.
+9. **Chunk E's manual-only enumeration under-counts.** The clause says *"Source
+   prose that no scaffolded profile emits — `doctrine/`, `docs/`,
+   `case-studies/`, this document — is reached **only** by that manual run."*
+   `bootstrap/tests/test_generated_output_scan.py` scaffolds three
+   **representative** profiles (minimal, representative team, adversarial), so
+   the manual-only set also includes `on-ramp/`, root `README.md` /
+   `SECURITY.md`, `bootstrap/*.md`, `dimensions/`, `examples/`, and any
+   `templates/modules/` prose those three profiles do not emit. In a security
+   document, an appositive list that reads as exhaustive and understates the
+   uncovered surface errs in the wrong direction. Make it *"including"*.
+10. **Chunk A's acceptance omits `scripts/token_budget.py`** — the one tool
+    whose stated purpose is measuring the always-on prefix Chunk A grows.
+    Today: `AGENTS.md` 5,014 tok of a 5,541-tok always-on manifest (chars/4
+    proxy). The rule adds ~120 tok, ~2%. It is a soft cap and will not block;
+    running it is one line and it is the measurement the surface has.
+
+---
+
+### The security-lens read on Chunk E — the plan's question 2
+
+**Yes, it is a weakening — in one specific, fixable respect, and the plan's own
+recovery line already names the fix.**
+
+Every *factual* claim in the replacement holds. I verified all five
+independently and they are in *Covered* below. The defect is modal, not
+factual.
+
+Current (`bootstrap/SAFETY.md:119-121`): *"…and **must pass** the
+content-integrity scanner…"* — an obligation **with a pass criterion**.
+
+Proposed: *"— and **is scanned with** the content-integrity scanner … Running
+it is the reviewer's obligation, not a mechanism's guarantee."*
+
+The obligation survives, but it has been transferred from *passing* to
+*running*. A reviewer who runs `content_scan.py`, reads the flags, and ships
+has satisfied the new sentence's letter. In an adopter-facing security document
+about a supply chain of agent-executed instructions — where the threat is a
+hidden instruction reaching *"every downstream adopter's agents at once"*
+(`bootstrap/SAFETY.md:114-115`) — that is the wrong direction to move, and it
+is the plan's own named *"Open (degrades)"* failure mode arriving as designed
+rather than as an accident.
+
+The plan's stated recovery is exactly right: *"restore the imperative and add
+the trigger as a separate sentence, keeping 'must' intact."* **Require it up
+front rather than holding it as recovery.** Suggested shape, preserving
+everything the plan gained:
+
+> …and **must pass** the content-integrity scanner (`content_scan.py`, run by
+> [`check_cairn.py`](../scripts/check_cairn.py)). **Two triggers exist and
+> neither fires on a commit**: the suite scans generated output and the skills
+> artifacts on every `pytest` run, and `check_cairn.py` scans every tracked
+> Markdown file when a person runs it (the maintainer-run release gate
+> `security_check.py` runs it). Source prose that no scaffolded profile emits —
+> including `doctrine/`, `docs/`, `case-studies/` and this document — is reached
+> **only** by that manual run. **Running it, and resolving what it flags, is the
+> reviewer's obligation, not a mechanism's guarantee.**
+
+That keeps "must pass", closes [I2] and [I9.9] in the same edit, and restores
+the live link to `../scripts/check_cairn.py` that the plan's replacement silently
+drops (a link `check_cairn.py`'s own link-checker currently resolves).
+
+On the `--no-content-scan` residual the plan surfaces: **leave the clause as
+the plan has it.** The plan is right that the precision buys nothing. But
+`bootstrap/security_check.py:221` invokes the script with **no flags**, so the
+release gate always scans — worth one clause in the plan's record, since that
+is the fact that makes the residual harmless.
+
+---
+
+### Answers to the four questions the plan routes to this review
+
+1. **E1 and F1 — both DISCHARGED. Verified independently, not from the plan.**
+   `bash bootstrap/container/verify-ref.sh . v0.3.0` → `exit=1` with the REFUSED
+   message (captured without a pipeline); `git verify-tag v0.3.0` → *"no
+   signature found"*, exit 1. `bootstrap/PROVENANCE.md:37-41` carries the
+   date-boundary table marking `v0.2.0`/`v0.3.0` unsigned and unverifiable;
+   `:51-60` records the second branch retired outright; `:114` carries the
+   *"Recorded as not established"* disclosure. `AGENTS.md:335-345` at HEAD says
+   the opposite of what F1 quoted, names `_ast_attest._UPDATE_ALLOWLIST` and
+   precedent `c3d5bd9`, and states *"No runbook covers it yet."* Both `b93f8e9`
+   and `58c7ba5` are ancestors of HEAD (`git merge-base --is-ancestor` → yes).
+   **The archive precondition is satisfied**, and the plan's instruction to
+   re-verify at archive time rather than carry this forward is the right
+   handling — `bootstrap/PROVENANCE.md:41` asserts `v0.4.0 and later` are signed
+   and verifiable, and that row becomes a present-tense false claim the moment
+   an unsigned `v0.4.0` ships.
+
+2. **Row A9 — RATIFIED into Chunk C.** It is the same claim, in the same file,
+   **four lines above** the row already accepted; landing A1 and leaving line 97
+   reading *"floor CI check"* ships an internally contradictory document from
+   the commit that exists to remove them. I confirmed the heading rename is
+   anchor-safe: `grep -rn "exception-2" --include="*.md" .` → `rc=1`, and
+   `grep -rn "DEPENDENCY_BUDGET.md#"` → `rc=1`. The plan's refusal to inflate
+   the cleared rate-limit count with it is correct and should stay.
+
+3. **The B2 fence — CONFIRMED, do not lift it.** Three reasons, one of them the
+   plan's and two of them mine. (a) The plan's: no accepted `Touches` line names
+   `doctrine/proposals.md` or `doctrine/plans.md`, and the proposal itself calls
+   the expansion the reviewer's to ratify. (b) The restatement hazard is
+   **real**, and I checked it rather than taking it: `doctrine/lifecycle-contract.md:137`
+   restates the block *and uses the word "auditable"*, and
+   `templates/core/dev/PLANNING.md:105` carries the adopter-facing twin. Editing
+   only two of four surfaces leaves the doctrine disagreeing with itself across
+   an install boundary — which is the loop-fidelity lens, which this plan
+   correctly states it is not engaging. (c) **B2's evidence needs re-measuring
+   before anything is written on its strength** — see [I6]. A doctrine edit whose
+   supporting count is falsified at HEAD is not ready to ride a fenced-out chunk.
+
+4. **The rule's third clause — INCLUDE it**, verbatim as the proposal drafted
+   it. The argument is no longer hypothetical: **[I1] and [I2] are both
+   third-clause findings.** Chunk D's acceptance named a marker that resolves
+   and a lens that does not run; Chunk D's clause named a release gate that
+   exists as a function and not as a trigger. A two-clause rule catches neither,
+   because in both cases the named artifact is *there*. One condition on
+   including it: it applies to this plan's own acceptance criteria from the
+   moment it lands, which is what [I1], [I2] and [I3] are asking for.
+
+5. **The frozen-file deferral (the plan's question 3) — the deferral is
+   CORRECT; its stated basis is not.** Keep A5, A6, A8 deferred: the accepted
+   *Sequencing*'s second conjunct is plainly unmet
+   (`bootstrap/tests/fixtures/gate_manifest.json` exists, carries 164 entries,
+   and all three paths are literal keys), and the plan is right that a lineage
+   does not get to grant itself the exception the ledger it is executing would
+   flag. But the supporting sentence must be corrected per [I4] — **six** files
+   across **three** commits, not nine commits — and the plan should record that
+   A5's own file is one of the six, drifted by the sibling `scan-coverage`
+   without a re-pin. I also confirm the plan's mechanism claim: `test_gate_manifest.py`
+   builds its expectation from `G.produce(_REPO)` on the working tree
+   (`bootstrap/tests/test_gate_manifest.py:33`) and verifies against *that*, so
+   no suite node can redden on committed-map drift. That claim is exact.
+
+### Covered
+
+Everything below was executed in this session against the working tree.
+**HEAD is `eacb7dd`, one commit past the `8f47c76` the plan measured at**;
+`git diff --name-only 8f47c76 HEAD` → `dev/NEXT_SESSION.md` only, so none of
+the plan's measurements are invalidated by the move.
+
+**Mandated checkers.**
+
+```
+$ ~/conda_envs/lhm/bin/python3.13 scripts/claim_check.py dev/plans/gate-claims-vs-enforcement.md
+claim_check: dev/plans/gate-claims-vs-enforcement.md -- OK, no claim-check flags.   (rc=0)
+
+$ ~/conda_envs/lhm/bin/python3.13 scripts/check_cairn.py dev/plans/gate-claims-vs-enforcement.md
+check_cairn: OK -- 1 Markdown file(s) scanned; no issues.                            (rc=0)
+
+$ ~/conda_envs/lhm/bin/python3.13 scripts/check_cairn.py          # tree-wide
+check_cairn: OK -- 180 Markdown file(s) scanned; no issues; 68 external link(s) not probed.
+```
+
+**Reproduced, matching the plan exactly.** Both axis-1 sweeps (**17** Markdown,
+**24** source files); `find .github -type f` → **7**, no workflow; the
+pipeline-file grep → `docs/workflow-role.md` only; all four anchor greps →
+`rc=1`; the Chunk B invocation grep → the 8 expected files, no more; `git
+verify-tag v0.3.0` and `verify-ref.sh . v0.3.0` (exit 1, REFUSED, captured
+without a pipeline); `grep -rn floor-gate bootstrap/tests/` → `rc=1`;
+`grep -rn SAFETY bootstrap/tests/` → one docstring hit at
+`test_generated_output_scan.py:114`; `bash -n bootstrap/container/floor-gate.sh`
+→ 0; manifest `frozen entries: 164`, and `162 → 164` across `e45e1fc`;
+`scripts/sync_doc_snippets.py` and `templates/modules/team-gated/sync_doc_snippets.py`
+byte-identical (`cmp -s` → equal), both carrying the string at line 43;
+`templates/core/AGENTS.md` standalone-`CI` count → **0**; the two installed git
+hooks, verbatim.
+
+**Line and quote citations opened and confirmed correct.**
+`AGENTS.md:248` / `:266` / `:267` / `:269` / `:335-345`;
+`bootstrap/SAFETY.md:120-121` (276-line file) and the `scan-coverage`
+residuals block at `:170-196`; `bootstrap/DEPENDENCY_BUDGET.md` lines 97 and
+101; `doctrine/runtime-contract.md` lines 46, 185, 189 and 191-195;
+`doctrine/lifecycle.md:218-221`; `bootstrap/fidelity-check.md:42-48`;
+`bootstrap/container/recipe.md:147` (and `:151-153`, see [I9.1]);
+`bootstrap/container/floor-gate.sh:5`; `bootstrap/container/Dockerfile:78`
+(a comment, not an invocation); `bootstrap/container/acceptance.sh:8` (about
+the adopter fixture repo — the plan's read is right, and recording the
+near-miss was the right call); `bootstrap/security_check.py` lines 214 and 226;
+`scripts/check_cairn.py` lines 50 and 180; `bootstrap/_scaffold/slotmerge.py:348` and its
+whitespace-collapsed substring semantics; `templates/modules/default-on/claim-check.md`
+declaring **no** `cairn:merge` directives (`rc=1`); `templates/core/AGENTS.md:228-234`
+being the unfilled slot; `bootstrap/tests/test_verify_ref.py` lines 999, 1008,
+1012, 1079 and 1088 (1334-line file);
+`bootstrap/tests/test_generated_output_scan.py` lines 32, 53, 114 and 121;
+`dev/PLANNING.md:279`; `doctrine/proposals.md:370` and `doctrine/plans.md:611`
+(the plan re-measured these correctly from the proposal's 360/602). The
+Decision's quoted fragments all match `dev/proposals/2026-08-03-claude-gate-claims-vs-enforcement.md:1268-1309`
+verbatim, and the Chunk A rule text is byte-identical to the proposal's block
+quote at lines 253-260.
+
+**Perturbations run** (the ones that carry weight, all named in *Concerns*):
+the `templates/` vs `bootstrap/` internal-ref lens split, using the real
+`check_cairn.check_tree` with my own fixture tree; `test_python_floor.py` with
+and without `vermin` on `PATH`; the frozen-manifest hash recomputed separately
+against the working tree and against `git show HEAD:<path>`.
+
+**Scope-boundary checks that came back clean** (no finding, recorded so the
+implementing agent does not re-derive them): the open siblings that name
+`bootstrap/SAFETY.md` — `security-verification-activation`,
+`api-web-security-modules`, `release-security-bar`, `default-security-stance`,
+`content-scan-detectors`, `portable-security-sweeps` — all target **different
+regions** (Rule 7's Layer-4 discussion, new rules), none the clause at
+lines 120-121. No open plan cites `doctrine/lifecycle.md` near line 218
+(`transition-lint` cites `:28-30`). Nothing collides on
+`bootstrap/container/floor-gate.sh`. The plan does **not** absorb a sibling's
+surface and does not widen past its Decision — with the single exception it
+declares and routes (A9), which I have ratified. The active work-intent claim
+(`claude-d8d22f62`, `files=['dev/plans']`) covers this artifact.
+
+### Not covered / low confidence
+
+* **The behavioural axis (axis 2) and the third axis remain unrun**, exactly as
+  the plan's *Known omissions* 1 and 2 say. I did not run a systematic pass on
+  either. [I2] and [I8] are both axis-2/axis-3 findings that fell out of reading
+  four specific artifacts — which is weak evidence that a systematic pass would
+  find more, and no evidence about how much. This is the largest uncovered
+  surface and it is where a same-type reviewer is least useful.
+* **The positive path of `bootstrap/container/verify-ref.sh` is untestable
+  today** — no signed tag exists, so "a shipped checker performs
+  signature-and-name verification" rests on the refusal path plus a code read,
+  not on an observed success. The plan discloses the residual (Chunk M, not
+  performed). I did not read `verify-ref.sh`'s signature logic line by line;
+  that belongs to `release-authenticity`'s review, not this one.
+* **I did not run the full suite.** The working tree carries another workflow's
+  uncommitted edits to `bootstrap/_scaffold/`, `bootstrap/verify_integrity.py`
+  and two test modules, plus untracked `bootstrap/tests/test_fork_advisory.py`.
+  Any figure I took would measure their work — which is the plan's own stated
+  reason for asserting none, and I am holding to it rather than quoting a
+  number. The implementing agent takes the baseline on a clean tree, per the
+  plan's *Verification*.
+* **Chunk A's placement deviation** — I confirmed the mechanism the plan cites
+  is inert today (`claim-check.md` declares no merge directives;
+  `check_slot_fidelity` matches by whitespace-collapsed substring, so appending
+  inside the slot would not redden anything now) and that no test compares
+  `AGENTS.md` against `templates/core/AGENTS.md` structurally. **I have no
+  opinion worth recording on whether outside-the-slot or the proposal's literal
+  placement is better** — it is a judgment about a future merge, the plan
+  reasons about it honestly and invites the strike, and a same-type reviewer
+  adds nothing here. I neither ratify nor strike it; the Maintainer should
+  take it.
+* **`bootstrap/SAFETY.md`'s by-file-class threshold list** — I read lines
+  112-200 and confirmed the clause and the `scan-coverage` block are disjoint
+  surfaces, but I did not audit the list itself for correctness. Out of scope
+  for this plan and unaffected by it.
+
+### Recommendation
+
+**Verdict: SHIP after a Response — no second plan-review round.**
+
+The plan's structure, sequencing, chunk boundaries, fences, deferrals and
+serialization handling are all correct, and I am not asking for any of them to
+move. Every finding above is a correction to *text* — three of them to text
+that would otherwise land ([I2], [I3], [I5]), one to an acceptance criterion
+([I1]), and the rest to the plan's own record. All are one-line fixes with the
+fix stated.
+
+Four of them I ask to be treated as **binding rather than dispositionable**,
+because each would ship a fresh false or weakened claim in the commit that
+exists to remove them — the outcome the plan itself names as the worst
+available:
+
+* **[I1]** — strike the "real check" sentence from Chunk D's acceptance.
+* **[I2]** — qualify the release gate as maintainer-run, in all three places
+  the clause lands.
+* **[I3]** — C1 discloses the skip-as-pass, and its acceptance criterion
+  becomes the two-run form.
+* **Chunk E keeps "must pass"** — the plan's own recovery, applied up front.
+
+[I5] (the changelog count) is equally binding but lands in a serialized file the
+Maintainer or orchestrator writes, so it is a correction to the returned text
+rather than to a commit.
+
+The remainder ([I4], [I6], [I7], [I8], [I9]) should be dispositioned in a
+Response, accepted or refused on the record. A second review round is not
+warranted: the fixes are mechanical, and this plan's **Code review** already
+owes a falsification ledger that re-runs every quoted command and *"opens the
+trigger it names and confirms it does what the sentence says"* — which is the
+correct backstop for [I2] and [I3] specifically, and which will be performed by
+a reviewer who is not the implementing agent.
+
+One thing to carry forward past this plan, because it is the general form of
+[I1], [I2] and [I3] and it is worth more than any of them: **this repository's
+enforcement claims bottom out in `bootstrap/security_check.py`, and nothing
+runs that either.** Chunks D and E are about to make three documents point at
+it. The rule this plan installs does not stop at the first named trigger — it
+recurses until it reaches a human or a machine, and here it reaches a human on
+a checklist in `SECURITY.md`. Saying so plainly, once, is the honest version of
+what this plan is for. Whether that recursion deserves its own artifact is the
+Maintainer's call, not mine.
