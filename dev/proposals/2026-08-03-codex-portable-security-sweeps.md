@@ -974,3 +974,116 @@ This is one version on one platform, not a cross-version proof. The plan remains
 focused External re-review before Decision. That reviewer should attack the
 Gitleaks-to-Git boundary and the claimed completeness of the candidate-config
 matrix first.
+
+## Adoption amendment -- the module must not become shelf apparatus -- 2026-08-03
+
+This section supersedes the original proposal's flat **"not default-on in
+v1"** disposition. It records a Maintainer preference during drafting, not a
+Decision. After the question *"if implemented correctly right now, will it just
+sit and gather dust?"*, I answered that the optional module probably would and
+recommended either a concrete default/activation contract or deferral. The
+Maintainer replied verbatim:
+
+> Yes, I agree with your assessment
+
+That agreement does not authorize an implementation commit or settle the
+mechanism. It does settle what this proposal must establish before asking for a
+Decision: **availability is not adoption**.
+
+### The intended selection policy
+
+Portable sweeps and `python-security` are complementary, not alternatives, so
+there is no "force exactly one" rule:
+
+| Profile / project | Intended security-module selection |
+|---|---|
+| `solo-greenfield` | Portable sweeps remain opt-in in v1. |
+| `collaborative-team` | Portable sweeps are in the preset baseline. |
+| `high-rigor-legacy` | Portable sweeps are in the preset baseline. |
+| Python project using either team/high-rigor preset | Portable sweeps **and** conditionally selected `python-security`, when the required `python_package` token is present. |
+| Non-Python team/high-rigor project | Portable sweeps only; never `python-security`. |
+
+An explicit `modules_remove: [portable-security-sweeps]` is the waiver for a
+preset-derived install. Existing summary behavior already prints every explicit
+remove, so the opt-out is visible before writes. An exact `modules:` list stays
+exact, including `modules: []`; this amendment does not covertly append a module
+to the profile shape whose established contract is literal selection.
+
+### Ownership and sequencing with `default-security-stance`
+
+The sibling `default-security-stance` proposal already owns the generic preset
+and conditional-selection mechanism: `content-security` default posture and
+`python-security` selection when Python is actually configured. This proposal
+must not land a competing second selection engine.
+
+Accordingly, the portable preset rows above are a **coordination requirement**,
+not an independently implemented `_PRESETS` edit yet:
+
+1. `default-security-stance` reaches its Decision first, or explicitly folds
+   these portable rows into its next revision.
+2. This proposal then re-derives its preset changes against that accepted
+   selection contract.
+3. If the sibling declines to own the rows, this proposal may add them in its
+   own plan, but only with explicit ordering and one shared AST-baseline
+   accounting pass over the overlapping `config.py` surface.
+
+The result must preserve the sibling's rule that a Python team/high-rigor
+project can receive **both** modules. Selecting portable sweeps must never be
+used as evidence that Python SAST or dependency auditing ran.
+
+### Selection still is not activation
+
+Adding a module to a preset only installs files. Cairn currently has no
+mechanism that automatically merges a selected module's command into the
+adopter's `AGENTS.md`, edits the adopter's CI, or proves that the command was
+ever run. The module doctrine can print an exact command, but documentation
+alone is the shelf-artifact failure restated politely.
+
+Therefore one further item is **blocking before Decision**, and remains open in
+this amendment:
+
+> Identify and review the standing invocation path that makes
+> `python scripts/run_portable_security_sweeps.py` an expected check for the
+> team/high-rigor profiles that select it, without silently editing arbitrary
+> adopter CI and without running a PATH-selected host binary during scaffold
+> installation.
+
+At minimum the eventual design must make three moments non-silent:
+
+* `scaffold.py --summary` names the exact Gitleaks version prerequisite, the
+  runner command, and the consequence of absence (`5`, INCOMPLETE);
+* successful installation prints the same first-run command and does not claim
+  the security posture is active merely because three files were installed;
+* the installed governing/verification surface places the command in a standing
+  trusted-tree cadence (first run, before release, and after importing history),
+  not only inside a module document an adopter may never open.
+
+An automatic edit to third-party CI is not implied and would need its own trust
+and platform design. Executing Gitleaks during scaffold installation is also not
+accepted by implication: that would move the new executable trust root into the
+installer and requires a separate security adjudication. The activation path
+must be explicit about which of these it chooses or declines.
+
+### Added acceptance tests
+
+The eventual plan must add tests that pin:
+
+* portable sweeps present in collaborative/high-rigor preset expansion and
+  absent from solo unless explicitly added;
+* Python team/high-rigor profiles receiving both modules when
+  `python_package` is configured, and non-Python profiles never receiving
+  `python-security`;
+* `modules_remove` visibly waiving portable sweeps and winning over the preset;
+* literal `modules:` lists remaining exact;
+* summary/install output carrying the prerequisite and first-run command; and
+* the selected standing verification surface actually containing the command,
+  with a deletion mutant that fails its test.
+
+### Disposition after this amendment
+
+**HOLD before Decision.** The Gitleaks adapter boundary is now measured and the
+External findings have a concrete technical response. The adoption question is
+not yet closed: the intended preset policy is stated, but the standing
+invocation path is not designed. If that path is not worth building and
+reviewing, implementation of this module should be deferred rather than shipping
+correct code that Cairn gives adopters no reason to execute.
