@@ -286,7 +286,10 @@ implementation rather than quoted from here.
   `bootstrap/tests/test_security_lint.py`, and — per [I2], the scope call above —
   `bootstrap/tests/test_security_check.py`. All three are literal keys in the
   164-entry `frozen_files` map, `as_of 2026-08-03`. No new file is created, so
-  there is no `FROZEN-NEW` row either.
+  there is no `FROZEN-NEW` row either. **This estimate proved incomplete at
+  implementation** — the two renames and A4's skipif add three further rows in
+  two classes it did not anticipate; the measured accounting is in *Verification
+  > Gate-integrity accounting*, and that is the one to re-pin from.
 * **The frozen map does not gate the suite, and this was checked rather than
   assumed.** `bootstrap/tests/test_gate_manifest.py` verifies against a manifest
   *produced from the live tree at test time*; the committed
@@ -800,6 +803,90 @@ are added per plan when the change touches that surface.
   `_gate_manifest.py verify` will report three `FROZEN-MODIFIED` entries. Do not
   re-pin: that is a supervised act under `bootstrap/REANCHOR_RUNBOOK.md`.
 
+### Gate-integrity accounting — measured, not predicted
+
+The bullet above is a *prediction written before implementation, and it was
+incomplete*: three `FROZEN-MODIFIED` rows are only half of what this plan's work
+puts in front of the re-pin. The measured accounting is below and supersedes it.
+The Maintainer re-pins from **this** table.
+
+Measured by running, after the last edit of this plan's work,
+
+```
+~/conda_envs/lhm/bin/python3.13 bootstrap/tests/_gate_manifest.py verify
+```
+
+`as_of 2026-08-03`, under the canonical interpreter (3.13.13). The command
+reports **`HOLD — 12 gate-integrity violation(s)`** over a working tree that
+carries **three plans' work concurrently**. **Six rows are attributable to
+`scan-coverage`; six are not.** The split is what makes the figure usable — a
+re-pin taken from the raw 12 would silently absorb another agent's changes.
+
+**Attributable to this plan (6 violations):**
+
+| Class | File / node | Origin in this plan |
+|---|---|---|
+| `FROZEN-MODIFIED` | `bootstrap/security_check.py` | A1, B1–B3 |
+| `FROZEN-MODIFIED` | `bootstrap/tests/test_security_lint.py` | A2, B4, C1–C8 |
+| `FROZEN-MODIFIED` | `bootstrap/tests/test_security_check.py` | A3, A4, B5, D1–D3 |
+| `COLLECTION-DROPPED` | `test_security_lint.py::test_scan_targets_cover_all_shipped_scripts` | B4's rename — the stale id |
+| `COLLECTION-DROPPED` | `test_security_check.py::test_scan_targets_are_explicit_files_covering_shipped_surface` | D1's rename — the stale id |
+| `SKIP-XFAIL-NEW` | `test_security_check.py::test_fail_closed_on_a_missing_target_with_real_bandit` | A4's `@pytest.mark.skipif(not _bandit_available())` |
+
+Three qualifications, each measured rather than assumed:
+
+* **The two `COLLECTION-DROPPED` rows are renames, not lost coverage.** The
+  manifest keys on node id and has no rename concept, so a rename registers as a
+  drop plus an add. Both successor ids
+  (`test_every_manifest_verbatim_py_is_scanned_by_some_path`,
+  `test_scan_targets_are_explicit_files_and_name_the_expected_executables`)
+  appear among the **11 `COLLECTION-ADDED` notes** this plan's two files produce
+  — 9 genuinely new nodes (A3, A4, B5, C3–C8) plus those 2 successors. **Net
+  collection change for this plan: +9, and no assertion was retired.** This is
+  the one row class the pre-implementation prediction missed entirely, and it is
+  the class a re-pin must handle explicitly: the two stale ids are removed, not
+  carried.
+* **The `SKIP-XFAIL-NEW` row does not skip here.** Bandit 1.9.4 is installed
+  under the canonical interpreter, so A4 runs and passes; the manifest records
+  the *marker*, not the outcome. Measured: `pytest
+  bootstrap/tests/test_security_check.py bootstrap/tests/test_security_lint.py
+  -q` → **17 passed, 0 skipped**. The marker is the file's existing idiom (the
+  pre-existing `test_run_bandit_clean_with_bandit_present` carries the same one),
+  so it is a new *row*, not a new *practice*.
+* **`FROZEN-NEW`: zero.** This plan creates no file. The two Markdown files it
+  edits (`bootstrap/SAFETY.md`, `SECURITY.md`) are **not** in the 164-entry
+  `frozen_files` map — checked, not assumed — so Chunk E adds no gate row.
+
+**Not attributable — concurrent work in the same tree**, listed so a re-pin
+taken from this plan does not silently absorb it: `FROZEN-MODIFIED` for
+`bootstrap/tests/test_lifecycle_contract.py`,
+`bootstrap/tests/test_quality_gate_redundancy.py` and `scripts/quality_gate.py`,
+plus three `SKIP-XFAIL-NEW` rows under
+`test_quality_gate_redundancy.py::TestR6UnusedDef`. None of those files is in
+this plan's *Scope*.
+
+**The three live sha256, re-measured after every edit** (`shasum -a 256`,
+`as_of 2026-08-03`), against the pins currently in
+`bootstrap/tests/fixtures/gate_manifest.json`. Any earlier-quoted value for these
+files that differs from these is wrong; these were taken last.
+
+```
+bootstrap/security_check.py
+  pinned e937f782325bdf4ce9209f361737daa3fb0de413318a62713eae419bf3c96ec8
+  live   e2d40dc1c6228d61bc91eb8faaa976b2dd24347208c7db1e2522c1fd2e4fe1d4
+bootstrap/tests/test_security_lint.py
+  pinned 15893daadab83ec6e96226aea0df2285ec5e47174d52e2de131786646d529437
+  live   41a483075af8c2a9e007dfe1c2bf084fdc418ee1a44533bf431db22a7c284894
+bootstrap/tests/test_security_check.py
+  pinned fba271da95154044d48eb9924b558db10f3a8612c71cce7d3669d1e200167734
+  live   d1815f0c8195c2af306141c2bc08dde8e226c01ed747ca17c3b494388f2065e1
+```
+
+**Do not re-pin from here.** Re-pinning is a supervised act under
+`bootstrap/REANCHOR_RUNBOOK.md`; the live column is what that act should
+reproduce, and a live value that does **not** match at re-pin time means the
+tree moved between this measurement and the re-pin.
+
 **Note on doc gates**: drift gates (broken references, stale renders,
 snippets that diverged from their source) catch **drift**, not
 **absence** of new doc updates. Confirm each doc named in Acceptance
@@ -1015,3 +1102,50 @@ subset with a real question behind them (`git` invoked by name inside an
 adopter's repository), and the archive-time home is a *recording* obligation, not
 a decision that they are safe. Whether that home is a new proposal or a row on a
 tracker is the Maintainer's call at archive time.
+
+## Maintainer amendment 2026-08-03 -- the three escalated findings, ratified
+
+**Authorization, quoted verbatim:**
+
+> I ratify the three findings the scan-coverage plan already carries: the Bandit errors fail-close [I1], absorbing bootstrap/tests/test_security_check.py into scope [I2], and the pinned count [I6c]. They are within scope as implemented. Record this as a Maintainer amendment on the plan and commit it.
+
+Scribed by Claude on the Maintainer's instruction.
+
+### What this settles
+
+The author's Response to the Internal security review escalated three remedies
+under *Findings the Decision did not see*, with the explicit instruction that
+**"No plan should carry any of them under the current Decision."** This plan
+carries all three anyway — a governance defect found when the escalated list was
+re-read against the plan body, and recorded here rather than quietly absorbed.
+This amendment closes the gap by authorizing what is already implemented:
+
+| Finding | What it does | Where it lives |
+|---|---|---|
+| **[I1]** | `run_bandit()` fails closed when Bandit's JSON `errors` array is non-empty | Chunk A, rows A1–A4 |
+| **[I2]** | `bootstrap/tests/test_security_check.py` enters scope | Chunks A, D |
+| **[I6c]** | the on-disk `.py` count is pinned | Chunk C, row C4 |
+
+### Two consequences the Maintainer is on record as accepting
+
+* **The frozen-file footprint goes from two files to three.** [I2] brings
+  `bootstrap/tests/test_security_check.py` into the gate-manifest frozen set,
+  which enlarges the surface of the next supervised re-anchor. Small, but real,
+  and it was named before this ratification was given.
+* **[I6c] trips on growth by design.** The pinned count turns the dev suite red
+  whenever a `.py` is added under `templates/` — *including when it is added
+  correctly*. That trip-on-growth is the point of the shape, and it is now
+  authorized rather than inferred.
+
+### What this does not settle
+
+Nothing about whether the implementation of these three is **correct**. This
+amendment rules on *scope* — that the plan was entitled to carry them. Their
+implementation is subject to the same verification as every other chunk, and at
+the time of this amendment an independent re-audit has open findings against
+Chunk E's prose (see the code-review record). Ratifying scope does not ratify
+code.
+
+This also closes three of the eleven items escalated across the three Responses
+written on 2026-08-03. The remaining eight — three on `byline-classification`,
+five on `agent-context-scrub` — are unaffected and stay undecided.
