@@ -5,7 +5,7 @@
 **Author**: Codex (Strategy, from the Security Review role)
 **Model**: OpenAI Codex (GPT-5)
 **Date opened**: 2026-08-03
-**Status**: reviewed
+**Status**: revised
 **Touches**: `bootstrap/_scaffold/config.py`, `templates/core/AGENTS.md`, the
 default-on and team-gated module catalogs under `templates/modules/`,
 `bootstrap/DEPENDENCY_BUDGET.md`, `bootstrap/SAFETY.md`, the install manifest /
@@ -1122,3 +1122,171 @@ This response leaves the proposal **reviewed**. The next commit will append the
 governing finding-confidentiality, off-tree-report, residual, and adversarial
 test contracts and return it to `revised` for focused External Security
 re-review.
+
+## Revised proposal, round 2 -- content-free security findings -- 2026-08-03
+
+This section supersedes every earlier output, redaction, diagnostic, and report
+destination statement where they conflict. The local/deployed actor split,
+remote-mutation refusal, network-client contract, capability scope, and other
+unchanged portions of the prior revision remain governing.
+
+### One minimization contract for every outcome
+
+The runners treat all request and response content as potentially sensitive,
+including content that proves a security finding. The same default-deny output
+contract applies to stdout, stderr, deterministic summaries, machine reports,
+HTTP/TLS/timeout diagnostics, CLEAN, INCOMPLETE, FINDINGS, DEGRADED, and process
+exit handling.
+
+Raw or directly derived sensitive content may not enter any output channel.
+Specifically prohibited are:
+
+* credentials, authorization or cookie header values, and request bodies;
+* response bodies, JSON values, body excerpts, and complete response headers;
+* literal fixture/object identifiers substituted into URL paths or queries;
+* redirect query strings, cookie values, certificate subject values, and HTTP
+  reason phrases;
+* exception text or `repr`, library debug output, and raw traceback text; and
+* any unvalidated policy or peer-controlled string rendered without strict
+  length, control-character, and JSON escaping.
+
+The process may hold a bounded response in memory long enough to parse and
+evaluate assertions. It never writes raw request or response bytes to disk and
+never invokes a debug mode that does so.
+
+### API finding schema
+
+An API finding contains only this reviewed shape:
+
+```json
+{
+  "target": "policy target label",
+  "operation_id": "stable policy ID",
+  "case_id": "stable policy ID",
+  "assertion_id": "stable policy ID",
+  "principal_labels": ["owner", "other"],
+  "method": "GET",
+  "status": 200,
+  "json_pointer": "/reviewed/pointer",
+  "expected": "absent",
+  "observed_type": "string",
+  "observed_serialized_bytes": 24,
+  "observation_fingerprint": "hmac-sha256:<hex>"
+}
+```
+
+Every string above is a bounded, control-free value validated from the strict
+policy or a fixed enumeration; no field is copied from the response. A pointer
+is the policy's expected pointer, not one discovered from the body. Structural
+counts are bounded non-negative integers. The fingerprint is optional and is
+used only when two findings in the same run need correlation.
+
+At process start the runner creates a 32-byte random HMAC key with
+`secrets.token_bytes`. For a present observed value it computes HMAC-SHA-256
+over a fixed type tag and canonical JSON serialization. The key is never
+printed, reported, persisted, or reused. This prevents a pasted report from
+serving as a practical dictionary oracle for low-entropy values while allowing
+within-run equality comparison. Failure to obtain randomness is DEGRADED before
+the first request.
+
+An assertion that does not require a fingerprint omits it rather than
+computing extra information. No finding includes a public unsalted hash.
+
+### Hosting observation schema
+
+The hosting report is also relationship-oriented. It names the target label,
+fixed check ID, request method, status class, and the expected directive,
+attribute, or redirect relationship. It reports `present`, `missing`, or
+`invalid` and may name a normalized token from the reviewed expectation set.
+It never echoes a full observed CSP/header, cookie, certificate subject, body,
+redirect URL, or query.
+
+For example, a cookie finding may state `cookie_secure: missing` for a
+policy-named cookie label; it may not print the cookie name/value pair or the
+complete `Set-Cookie` line. A redirect finding names the policy source/destination
+labels and relationship failure, not the peer-supplied `Location` value.
+
+### Error classification, not error relay
+
+The runners catch transport, TLS, HTTP, decode, parse, assertion, timeout, and
+filesystem failures inside the reviewed boundary and map them to fixed error
+codes. Diagnostics contain only the fixed code, policy case ID, phase, and safe
+integer metadata. They do not include `str(exc)`, `repr(exc)`, a traceback,
+raw stderr, URLs assembled with fixture values, or peer-controlled certificate
+and reason strings.
+
+Unexpected internal exceptions are DEGRADED with a fixed
+`internal_error_no_detail` diagnostic. Developer traceback capture is not a v1
+runtime option; reproduction happens against a controlled fixture, not by
+printing live cross-tenant state.
+
+### Off-tree sanitized report only
+
+V1 accepts no user-supplied report path. For each run, the runner creates a
+fixed-prefix directory through `tempfile.mkdtemp`, verifies by `lstat` / real
+path that the resulting directory and ancestors are outside the repository and
+contain no symlink hop, and applies the strongest owner-only permissions the
+platform supports. Failure to establish that shape refuses before the first
+request.
+
+The runner creates exactly one `report.json` leaf exclusively, mode `0600` on
+POSIX, and writes only its deterministic sanitized schema. It prints the
+sanitized result plus that absolute off-tree path. It retains the report for the
+Maintainer to inspect; moving it into a repository is an explicit later act,
+not runner behavior. A custom destination can be proposed later with its own
+path and overwrite contract.
+
+The environment cannot turn this into an in-tree destination silently. Tests
+cover hostile `TMPDIR` / platform temp variables pointing inside the checkout,
+through a symlink, at an existing leaf, and at an unreadable location. The
+runner either obtains a verified private off-tree directory or refuses without
+network or credential lookup.
+
+The report is sanitized, but it remains security evidence and may reveal
+operation names, principal relationships, and failure counts. Module doctrine
+instructs the Maintainer to review it before sharing and to delete it under the
+project's evidence-retention policy.
+
+### Adversarial confidentiality evidence
+
+Public-path fixtures must place a unique high-entropy marker independently in:
+
+* each principal credential and request body;
+* an overexposed JSON property, object ID, array item, and malformed body;
+* every response header, cookie, reason phrase, redirect path/query, and TLS
+  subject field the controlled servers can influence;
+* transport/TLS/HTTP exception text and timeout diagnostics; and
+* a policy label rejected for controls or excessive length.
+
+For every aggregate outcome and failure phase, tests scan stdout bytes, stderr
+bytes, the complete report, temporary-directory contents, and any captured
+descendant output. No marker, raw body fragment, cookie value, credential,
+redirect query, exception string, ANSI control, bidi control, or forged result
+line may occur. The test also proves that the temporary directory contains only
+the sanitized report and no raw response artifact.
+
+Positive tests assert that useful metadata remains: stable IDs, failed
+relationship, safe type/length, status, and same-run HMAC equality. A fresh-run
+test proves the same observed value receives a different fingerprint. Deletion
+mutants for value omission, exception classification, HMAC key freshness,
+off-tree verification, exclusive report creation, and every output-channel scan
+must fail.
+
+### Residual and review status
+
+This contract minimizes persisted and displayed evidence; it is not memory or
+process containment. The running interpreter, a debugger, a core dump, a
+compromised dependency/OS, or another same-user process may observe bounded
+request/response bytes. Maintainer-owned deployed execution accepts that host
+trust boundary; production credentials remain outside the agent-facing leg.
+
+AW7 is closed by the reciprocal activation dependency and revised HOLD basis at
+`353f6c7` and `f0cec1b`. This artifact depends on acceptance of
+`security-verification-activation`; it does not own or delay that proposal's
+independent Decision.
+
+The revised proposal returns for focused External Security re-review. The first
+review target should be whether any finding or failure path still needs a
+peer-controlled value, whether the ephemeral HMAC adds useful correlation
+without creating a dictionary oracle, and whether the off-tree report contract
+is portable enough to plan across POSIX and Windows.
