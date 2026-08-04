@@ -276,6 +276,30 @@ plan does not repeat that error.
     `FunctionDef:_resolve_current_profile` is *not* in the 174-key baseline
     (verified: it is reported today as `note: NEW FunctionDef:_resolve_current_profile`),
     so editing it changes a note, never a pin;
+  * **`0 DUPLICATE` has a mechanism this plan can actually trip, and the
+    stop-the-line rule above would misread it.** The baseline is keyed by **bare
+    symbol name** — its 174 entries carry `digest` / `span` / `type` and **no
+    module field** (verified 2026-08-03) — and `_classify` reports `DUPLICATE`
+    for any *baselined* key found in two files, which is a hard failure (`rc 1`),
+    not a note. So a new top-level helper added to `bootstrap/_scaffold/config.py`
+    under a name already baselined in **another** engine module fails the
+    attestation as *"single-source broken"* — and that is a naming collision, not
+    tamper-evidence. The near-misses are real for this scope: `_yaml_sq`
+    (`bootstrap/_scaffold/upgrade.py:2039`) and `_yaml_dq`
+    (`bootstrap/_scaffold/install.py:636`) are exactly the names Chunk B's
+    single- and double-quoted scalar handling reaches for. Demonstrated this
+    session: appending a `def _yaml_sq` to a scratch copy of `config.py` reports
+    `DUPLICATE FunctionDef:_yaml_sq (defined in 2 files: … — single-source broken)`
+    and `AST attestation FAILED`. **Every new Chunk B / Chunk C top-level name is
+    checked against the 161 baselined `FunctionDef:` / `Assign:` / `ClassDef:`
+    keys before its commit, and a `DUPLICATE` reported on a name this plan's
+    Chunk B or Chunk C introduces is a rename, not a stop-and-explain. Every
+    other `DUPLICATE` stays in the stop-and-explain class.** Note what the
+    pre-commit check implies: it is what makes a collision on one of this plan's
+    own names the case that should not reach the gate at all, so a `DUPLICATE`
+    that surfaces at the ceremony anyway is by construction *not* one of this
+    plan's names — which is exactly the unexplained baseline delta the stop rule
+    is for;
   * NEW notes for the added symbols (`Assign:RECOGNIZED_PROFILE_KEYS`,
     `FunctionDef:unrecognized_profile_keys`, and each top-level grammar helper),
     plus rotated `Import:` keys — reported as notes, never failures.
@@ -511,7 +535,7 @@ identical defect was still shipping 23 days later.
 | D1 | `bootstrap/BOOTSTRAP.md` | An invisible HTML-comment marker above each of the two profile-shaped fenced blocks (`<!-- cairn-parity-corpus: appendix-b-example -->` and `<!-- cairn-parity-corpus: preset-example -->`), with a "marker appears exactly once" assertion carried forward from `_extract_marked_yaml`. Corpus by **explicit marker, not by shape** ([I8]). |
 | D2 | `bootstrap/tests/test_profile_grammar.py` | The `--help` corpus entry anchors on the literal line `# Inline token values (mechanical substitution)` inside `cli.__doc__`, asserted to appear **exactly once** (verified this session: count 1) — **no adopter-visible marker is added to `--help`**. |
 | D3 | `bootstrap/tests/test_profile_grammar.py` | **Both engine writers' real output** in the corpus ([I3]): `_write_init_lock_profile_template` (`bootstrap/_scaffold/upgrade.py:1074`) at one *and* at **zero** installed modules, and `_self_heal_profile_config` (`bootstrap/_scaffold/upgrade.py:2046`) with a `project_name` and a `test_command` **containing an apostrophe**. The writers are **called**, into a temp tree; their output is never reconstructed by the test. |
-| D4 | `bootstrap/tests/test_profile_grammar.py` | The sweep imports `yaml` **directly**, and hard-skips *from inside the test body* (`pytest.skip`), never via a `skipif` marker — because a marker is recorded by the gate manifest's collection identity and produces `SKIP-XFAIL-NEW`. Both canaries from Chunk B ride on this node. |
+| D4 | `bootstrap/tests/test_profile_grammar.py` | The sweep imports `yaml` **directly**, and hard-skips *from inside the test body* (`pytest.skip`), never via a `skipif` marker — because a marker is recorded by the gate manifest's collection identity and produces `SKIP-XFAIL-NEW`. Both canaries from Chunk B ride on this node. The skip **message names its own consequence** — *"PyYAML absent: the parity sweep and both canaries did not run"* — because nothing mechanically enforces the suite's `0 skipped` invariant and the summary line is the only place the loss shows (see criteria). |
 | D5 | `bootstrap/tests/test_profile_grammar.py` | The end-to-end node **under a genuinely forced no-PyYAML interpreter**, reusing the existing subprocess pattern at `bootstrap/tests/test_presets.py:425` (`sys.modules['yaml'] = None` set before `bootstrap.scaffold` is ever imported): the `BOOTSTRAP.md` preset block and the `--help` block each install to trees byte-identical to their PyYAML runs. |
 
 **Acceptance criteria — Chunk D**
@@ -547,10 +571,18 @@ identical defect was still shipping 23 days later.
   A marker-defined corpus admits none of them, and a permanent allowlist is
   exactly the *"the documentation sweep test becomes a nuisance"* signal firing
   before the test is written.
-* **0 skipped stays 0.** PyYAML 6.0.3 is present on the canonical host, so D4's
-  in-body skip does not fire. If it ever does, the suite's `0 skipped` invariant
-  fails loudly — the correct fail-closed direction, and a decision rather than a
-  surprise.
+* **0 skipped stays 0 — and nothing mechanically enforces that.** PyYAML 6.0.3 is
+  present on the canonical host, so D4's in-body skip does not fire. The claim
+  this bullet originally carried — that a fired skip *"fails loudly"* — is
+  **wrong and is corrected here**: verified 2026-08-03, **no suite node, no
+  conftest hook and no CI job enforces a skip count**
+  (`bootstrap/tests/conftest.py` carries only the order-independence shuffle
+  hook, and the repository has no workflow directory). On a PyYAML-less host D4
+  skips, taking the sweep **and both canaries** with it, and `python -m pytest
+  bootstrap/tests` still exits 0. Hence D4's self-describing skip message: the
+  pytest summary line is the only place the loss is visible, and a canary that
+  can be skipped away is the collapse it exists to detect, one level up. Making
+  the invariant mechanical is a residual (G6), not this plan's fence.
 
 ### Chunk E — the two existing tests that contradict the change
 
@@ -623,6 +655,7 @@ archive, and archived proposals are not read.
 | G3 | `dev/PLANNING.md` | Row: **two live tests model the banned `_yaml_load`-as-oracle pattern** (`bootstrap/tests/test_presets.py:292` and `:423`), left standing because they sit in a frozen file and repairing them is not this plan's fence. Trigger: the next change that edits `test_presets.py` for any reason. Mechanical: `grep -n "_yaml_load" bootstrap/tests/test_presets.py`. |
 | G4 | `dev/PLANNING.md` | Row: **the gate manifest's `SKIP-XFAIL-NEW` fires on ordinary new tests** in any module carrying a module-level `pytestmark` skipif — 34 nodes in `test_presets.py` are recorded as "marked" while the suite reports 0 skipped. Trigger: the next supervised ceremony, or the next plan that must add a node to a marked module. Mechanical: `python bootstrap/tests/_gate_manifest.py verify --anchor-ref <P>`. |
 | G5 | `dev/PLANNING.md` | Row: **`_resolve_current_profile`'s lockfile fallback is now audible but still a fallback.** Whether substituting the lockfile profile is the right disposition at all is unexamined. Trigger: the next upgrade-path proposal. |
+| G6 | `dev/PLANNING.md` | Row: **nothing mechanically enforces the suite's `0 skipped` invariant**, so a parity gate that skips itself away (D4 on a PyYAML-less host) costs both canaries and is visible only in the pytest summary line. Trigger: the first suite run reporting a non-zero skip count, or the next change to `bootstrap/tests/conftest.py`. Mechanical: the `skipped` figure in the pytest summary. |
 
 **Acceptance criteria — Chunk G**
 
@@ -947,6 +980,12 @@ measurement and pinned by test B9, so it expires rather than migrating. The
 `--help` and `BOOTSTRAP.md` divergence → closed by the grammar and held by the
 Chunk D sweep, which is the durable home the 2026-07-11 prose remedy lacked.
 
+**Added 2026-08-03, in the author's Response to the External plan review** (an
+addition to the pre-declaration, not a rewrite of it): the **unenforced `0
+skipped` invariant** — a parity gate that skips itself away takes both canaries
+with it, and no node, hook or CI job notices — → a `dev/PLANNING.md` row, Chunk
+G6. The pre-declared range above therefore reads G1–G6.
+
 **Two items that are not residuals and must not be archived away as if they
 were:** the unresolved reading of Maintainer decision point 4 (whether a focused
 Internal round was meant to precede plan-open), which is the Maintainer's to
@@ -983,4 +1022,221 @@ This section is append-only once written.
 ### Recommendation
 
 **READY FOR IMPLEMENTATION.** The plan's closed line grammar, strict refusal mechanics, documentation drift gate (Chunk D), and Maintainer re-anchor boundaries (Chunk M) are verified and sound.
+
+## Response to plan review -- Claude (author) -- 2026-08-03
+
+**Model**: Claude Opus 5
+
+**Both findings accepted; five edits across four sections.** The verdict is
+READY FOR IMPLEMENTATION and both findings are phrased as affirmations of the
+plan's own design. Neither is therefore informational: Cairn's lifecycle has no
+severity floor below which a finding stops needing a disposition, and an
+affirmation is a claim that has to be *checked* before it is banked. I checked
+both against the code and the tooling rather than against the plan's own prose,
+and each check held on its stated subject and turned up one adjacent condition
+under which the plan's surrounding text was wrong. That is what the amendments
+carry. The same rule applies to the review's other two claims, so both are
+dispositioned below rather than inherited: the *Covered* item — the reviewer's
+answer to mandate 1 — is **banked unverified** with the reason stated, and the
+*Not covered* note is corrected on its second clause. Everything measured below was run this session at working-tree HEAD under
+the canonical interpreter (`/Users/kendal30/conda_envs/lhm/bin/python3.13`,
+Python 3.13.13, PyYAML 6.0.3, `PYTHONDONTWRITEBYTECODE=1`).
+
+* **[E1] accept.** The finding: Chunk B correctly bans `_yaml_load` as its own
+  oracle (it reduces to comparing the function under test to itself when PyYAML
+  is absent), and the oracle-identity canary
+  `isinstance(yaml.safe_load("d: 2024-01-01")["d"], datetime.date)` is the
+  tripwire proving PyYAML is genuinely the independent oracle at test time.
+
+  **Verified, on both halves.** The ban's premise is real:
+  `bootstrap/_scaffold/config.py:40`–43 defines, in the `except ImportError`
+  arm, `def _yaml_load(text): return _minimal_yaml_parse(text)` — so
+  `_yaml_load` *is* the function under test on the path Cairn's zero-dependency
+  promise makes normal. The two live models of the banned pattern are where the
+  plan says they are:
+  [`../../bootstrap/tests/test_presets.py`](../../bootstrap/tests/test_presets.py) line 292
+  (`test_flat_schema_parses_identically`, whose body is
+  `_yaml_load(self._PROFILE)` compared with `_minimal_yaml_parse(self._PROFILE)`)
+  and line 423 (`assert _roster(_yaml_load(yaml_text)) == _roster(_minimal_yaml_parse(yaml_text))`
+  inside `test_literal_recipe_yaml_also_parses_via_pyyaml`). The canary measures
+  as claimed: `yaml.safe_load("d: 2024-01-01")["d"]` is `datetime.date(2024, 1, 1)`,
+  `isinstance(..., datetime.date)` **True**; the fallback on the same text
+  returns `{'d': '2024-01-01'}`, a `str`, **False**. The plan's stated
+  perturbation runs and fails as advertised: with `sys.modules['yaml'] = None`
+  set before import, `config._yaml is None` is `True` and the oracle routed
+  through `_yaml_load` yields `'2024-01-01'` → the canary is False. So the
+  tripwire is sound **when it executes**.
+
+  **What checking it turned up.** The reviewer's phrase is "during test
+  execution", and that is exactly the condition the plan cannot currently
+  guarantee. The canary rides on D4, and D4 hard-skips from inside its own body
+  when `import yaml` fails. Chunk D's acceptance criteria answered that with
+  *"If it ever does, the suite's `0 skipped` invariant fails loudly."* **That
+  sentence was false.** Verified: `bootstrap/tests/conftest.py` carries only the
+  order-independence shuffle hook — no `pytest_sessionfinish`, no terminal
+  reporter, no skip accounting — and the repository has no workflow directory at
+  all (`.github/` holds `ISSUE_TEMPLATE`, `PULL_REQUEST_TEMPLATE`, `labels.yml`
+  and nothing else). A grep for skip-count enforcement across `bootstrap/`,
+  `scripts/` and `.github/` returns only unrelated uses of the word. So on a
+  PyYAML-less host D4 skips, the parity sweep **and both canaries** go with it,
+  and `python -m pytest bootstrap/tests` still exits 0. A canary that can be
+  skipped away without a sound is the gate collapse it exists to detect, one
+  level up — the same failure shape the plan names, displaced from the oracle to
+  the node hosting it.
+
+  **Plan change.** Three edits, all minimal. (i) *Chunk D, row D4* — the skip
+  message must **name its own consequence** (*"PyYAML absent: the parity sweep
+  and both canaries did not run"*), so the pytest summary line carries the loss
+  in words rather than as a count a reader has to interpret. (ii) *Chunk D
+  acceptance criteria* — the `0 skipped` bullet is corrected in place: the
+  "fails loudly" claim is retracted, the verification that retracts it is
+  recorded, and the bullet now states plainly that D4's skip is visible only in
+  the summary line. (iii) *Chunk G* — a new **G6** residual row for the
+  unenforced `0 skipped` invariant, with a trigger (the first non-zero skip
+  count, or the next change to `bootstrap/tests/conftest.py`). Making the
+  invariant mechanical is deliberately **not** folded in: it means a conftest
+  hook or a CI job, neither of which is in this plan's fence, and the conftest is
+  a shared surface. The *Lasting-truth migration* pre-declaration gains an
+  appended sentence so its range reads G1–G6.
+
+* **[E2] accept.** The finding: Chunk M is Maintainer-only and batched with
+  `fork-advisory-semantics`, and the plan correctly accounts for exactly 2
+  CHANGED symbols in `bootstrap/_scaffold/config.py`
+  (`FunctionDef:_minimal_yaml_parse` and `FunctionDef:load_config`).
+
+  **Verified against the committed baseline, not against the plan.**
+  `bootstrap/tests/fixtures/scaffold_ast_baseline.json` holds **174** entries;
+  `FunctionDef:_minimal_yaml_parse` carries digest `752c30f3f1220eda` and
+  `FunctionDef:load_config` carries `18c69e0ea95a7a7e` — byte-for-byte the two
+  digests the plan quotes. Running
+  `python bootstrap/tests/_ast_attest.py verify bootstrap/tests/fixtures/scaffold_ast_baseline.json bootstrap/_scaffold/*.py`
+  at HEAD reports `AST attestation OK — 174 baselined symbol(s) accounted for,
+  unchanged`. The three supporting claims hold too: `FunctionDef:_list_item_text`
+  is **absent** from the baseline (nested, so retiring it drops nothing);
+  `FunctionDef:_resolve_current_profile` is **absent** and is emitted today as
+  `note: NEW FunctionDef:_resolve_current_profile (bootstrap/_scaffold/upgrade.py)`,
+  exactly as the plan states; and `_classify` `continue`s past every `Import` /
+  `ImportFrom` / `Docstring` key, so the `cli.py` docstring edit and any import
+  rotation are notes. Disjointness with the sibling holds by inspection of both
+  records: `fork-advisory-semantics` contributes `FunctionDef:forked_facade_findings`,
+  `FunctionDef:format_forked_facade_warning` and `FunctionDef:cmd_upgrade`, none
+  of which this plan touches, and this plan's `upgrade.py` edit lands on a
+  non-baselined symbol.
+
+  **What checking it turned up.** The target's *other* half — `0 MISSING, 0
+  DUPLICATE` — is stated without a mechanism, and there is a real one this plan
+  can trip. The baseline is keyed by **bare symbol name**: its entries carry
+  `digest` / `span` / `type` and **no module field**, so `FunctionDef:load_config`
+  is a package-global key. `_classify` reports `DUPLICATE` for any *baselined*
+  key found in two files, and `DUPLICATE` is a problem line — `rc 1`, `AST
+  attestation FAILED` — not a NEW note. A plan that only *adds* symbols can
+  therefore still fail the attestation, by naming a new `config.py` helper after
+  a symbol already baselined in a different engine module. This is not
+  hypothetical for this scope: `_yaml_sq` lives at
+  `bootstrap/_scaffold/upgrade.py:2039` and `_yaml_dq` at
+  `bootstrap/_scaffold/install.py:636` — precisely the names Chunk B's
+  single-quoted (`''`→`'`) and double-quoted scalar handling reach for.
+  Demonstrated: appending a `def _yaml_sq` to a scratch copy of `config.py` and
+  re-running verify prints
+  `DUPLICATE FunctionDef:_yaml_sq  (defined in 2 files: … — single-source broken)`
+  and `AST attestation FAILED`. The danger is not the failure, it is the
+  *misreading*: the plan's stop rule is written about a **3rd CHANGED symbol**,
+  so an implementer meeting a `DUPLICATE` would escalate a naming collision as
+  engine tamper-evidence — and the batched ceremony is exactly where an
+  unexplained baseline delta is most expensive to misattribute.
+
+  **Plan change.** One edit: *Gate accounting* item (i), the falsifiable
+  pre-re-anchor target, gains a bullet stating the mechanism (bare-name keying,
+  `DUPLICATE` on baselined keys is a hard failure), naming the two concrete
+  near-miss helpers with their homes, recording the demonstration, and setting
+  the disposition — **every new Chunk B / Chunk C top-level name is checked
+  against the 161 baselined `FunctionDef:` / `Assign:` / `ClassDef:` keys before
+  its commit, and a `DUPLICATE` on a name this plan's Chunk B or Chunk C
+  introduces is a rename, not a stop-and-explain; every other `DUPLICATE` stays
+  in the stop-and-explain class.** The scope clause is load-bearing in both
+  directions, and it is the whole content of the edit: the pre-commit check is
+  what makes a collision on one of *this plan's* names the case that should not
+  reach the ceremony, so a `DUPLICATE` that surfaces there anyway is not one of
+  them and is precisely the unexplained delta the stop rule exists for. Nothing
+  here relaxes item (i)'s *"A 3rd CHANGED symbol is a stop-and-explain"* or
+  Chunk M's *"Any symbol outside the union is a stop-and-explain"*; a
+  disposition that removed a hard-failure class from the engine
+  tamper-evidence surface would be a contract change, and this finding did not
+  ask for one. Chunk M itself is unchanged: it stays the Maintainer's, and
+  nothing here moves work across that fence.
+
+**On the reviewer's *Covered* item — banked unverified, and recorded as such.**
+The item reads: the L1–L8 grammar, the plain-scalar admissibility rules, the
+comment conventions, the reserved `schema` handling and `RECOGNIZED_PROFILE_KEYS`
+"fully satisfy the single acceptance contract across both PyYAML and fallback
+execution paths." That is the reviewer's answer to **mandate 1** — part (b),
+totality — which the brief above calls the expensive branch and the reason this
+tier exists at all. By the rule this Response opens with, an affirmation is a
+claim that has to be checked before it is banked, and this one has to be
+dispositioned rather than quietly inherited.
+
+**What I could check: the channel, and it does not hold.** The claim is asserted
+"across both PyYAML and fallback execution paths", which is an execution-path
+claim, and there is no artifact to execute. Verified this session: a
+whole-repository grep for `RECOGNIZED_PROFILE_KEYS` (excluding `.git`) returns
+exactly two files — this plan and
+[`../proposals/archive/2026-08-03-claude-profile-parse-fail-open.md`](../proposals/archive/2026-08-03-claude-profile-parse-fail-open.md)
+— both prose, no code; and `bootstrap/_scaffold/config.py` still carries the
+best-effort parser this plan replaces, nested `_list_item_text` and all. So
+neither the whitelist nor the L1–L8 recognizer exists on *either* path yet, and
+whatever produced the affirmation was a read of this plan's own specification
+prose, not a run against either path. That is precisely the failure mandate 2
+names — a verification whose input arrives by the same channel as the thing
+being verified — and it is a fact about the review's stated basis, not a
+judgment of its conclusion.
+
+**What I did not check, and will not pretend to: totality itself.** Finding a
+line the grammar admits into neither a value nor a refusal is the expensive
+branch, and it is the one thing an author's own re-read cannot settle. I wrote
+the grammar; a structural claim re-read by its author is the [I1] shape the
+brief already names, where a fail-closed property was "verified" against prose
+and turned out unreachable on the path that matters. So the totality claim is
+**banked unverified** — not banked as satisfied, and not converted into a
+residual row either, because its home already exists: it is **Maintainer
+decision point 4**, the recommended focused round on exactly this claim, carried
+unresolved since plan-open and recorded in *What the Decision settled* and in
+*Lasting-truth migration* as a Maintainer item rather than a follow-up. The only
+thing this Response adds is that the External round did not, on the record it
+left, discharge it by execution.
+
+**On the reviewer's *Not covered / low confidence* note.** The note reads:
+unrecognized profile *values* (valid syntax naming a module that does not exist)
+"are explicitly out of scope for this plan and rely on downstream module
+validation." The first clause is right and needs no follow-up row beyond the one
+already written — *Scope* fences the class explicitly (*"A profile listing `-
+not-a-real-module` under `modules:` is accepted at exit 0 today and stays
+accepted"*) and Chunk **G1** already gives it a `dev/PLANNING.md` home with a
+trigger. **The second clause is wrong, and it matters enough to correct rather
+than let stand**: there is no downstream module validation to rely on. Measured
+this session, a profile carrying `modules:` / `- not-a-real-module` runs
+`python bootstrap/scaffold.py --summary` to **exit 0** with `- not-a-real-module`
+printed in the module roster, and `--dry-run` into an empty target likewise
+proceeds, reporting `[dry-run] Modules: ['not-a-real-module']`. The class is
+unvalidated, not validated elsewhere — which is the whole reason G1 exists and
+why its trigger is worded as the first adopter report of a mis-typed module name.
+No new row: G1 already carries it, and widening this plan to close the class
+would reopen `expand_preset`, which *Scope* declines. I am flagging the
+correction only so a later reader does not inherit the reviewer's reassurance as
+a finding of safety.
+
+**Status.** The plan stays `open`. The plan-review gate is **procedurally
+discharged** — a review has landed under the required heading and its findings
+are dispositioned here — but the discharge is not a verified answer to the
+mandate the tier was written for: mandate 1's totality claim came back as an
+affirmation, and this Response banks it **unverified**, for the reason given
+above. Both halves of that sentence are load-bearing, and the second is why the
+plan does not read the gate as settling more than it did. Chunk A does not begin
+before the Maintainer has had the chance to speak to the one item this plan has
+carried unresolved since it opened — **Maintainer decision point 4**, whether the
+focused Internal round on the grammar's totality claim was meant to precede
+plan-open, or whether this External round absorbed it. That question is recorded
+in *What the Decision settled* and in *Lasting-truth migration*; it is not mine
+to answer and nothing in this Response answers it. What this Response does add is
+one fact bearing on it, offered as evidence and not as an answer: the totality
+claim is, as of now, affirmed but unchecked.
 
