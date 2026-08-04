@@ -5,7 +5,7 @@
 **Author**: Codex (Strategy, from the Security Review role)
 **Model**: OpenAI Codex (GPT-5)
 **Date opened**: 2026-08-03
-**Status**: proposed
+**Status**: reviewed
 **Touches**: `bootstrap/_scaffold/config.py`, `templates/core/AGENTS.md`, the
 default-on and team-gated module catalogs under `templates/modules/`,
 `bootstrap/DEPENDENCY_BUDGET.md`, `bootstrap/SAFETY.md`, the install manifest /
@@ -457,3 +457,162 @@ Public-path mapping planned:
 * The cloud extension can reuse credentials discovered ambiently or query an
   account not named by the operator: keep it out until a separate proposal
   closes that boundary.
+
+## External Security Review -- Claude -- 2026-08-03
+
+**Model**: Claude Opus 5
+**Tier**: External (different agent type -- Codex-authored), security lens
+**Reviewed**: the proposal as opened, against the in-flight
+`portable-security-sweeps` (HOLD), `default-security-stance`,
+`dependency-advisory-coverage`, and the archived `gate-reanchor-preflight`
+record's separation-of-duties doctrine.
+
+**Disposition: REVISE.** The threat modelling is the most careful of the
+security proposals I have read on this surface, and the obvious criticisms are
+already pre-empted. Two findings are blocking, and both concern the same thing:
+**this proposal is the first in Cairn to make an agent-facing command
+authenticate to a live remote system, and it does not say who may run it.**
+
+**Credit, specifically.** Credentials by environment-variable *name* rather than
+value; DNS-rebinding defence at the **connected peer address**, not just the
+resolved one; no credential forwarding across redirects; no crawling, fuzzing,
+or ID inference; ZAP excluded with a citation to its active-scan contract;
+Observatory not called by default *because its scan history is public*; cloud
+posture explicitly walled off rather than bolted on; and a per-module "what this
+does not protect against" that is specific enough to be falsifiable. The CLEAN
+definition -- "the declared denial matrix held at the named target and time, no
+more" -- is the right shape.
+
+### [AW1] BLOCKING -- the production-passive control is self-declared by the artifact it protects against
+
+> Production targets are passive: only `GET` and `HEAD` cases may run there.
+> Mutating methods require a disposable local or staging environment, an
+> explicit policy declaration, and `--allow-mutation`.
+
+The runner learns that a target is production from the **environment
+classification field in the policy JSON**. That is a self-declaration. The
+protection against "mutating requests reach production" therefore rests entirely
+on the adopter having labelled correctly *and staying correct as base URLs
+change*.
+
+The realistic failure needs no attacker: staging is promoted, the base URL is
+edited, the classification is not. Or a new policy is copied from the staging
+one. Lockfile coverage detects **tampering**, not a **stale or wrong label** --
+a correctly-signed policy that says `staging` about a production URL passes
+every integrity check the proposal describes.
+
+This matters more than the usual mislabel because the consequence is
+**irreversible and outward-facing** — mutating requests against a live
+production API — executed by a command §1 is explicitly designed to make
+routine.
+
+**Satisfier:** stop trusting the label as the sole gate.
+
+1. `--allow-mutation` takes the **exact base URL** it authorizes as its
+   argument, so the operator restates the target at invocation time instead of
+   inheriting a classification written earlier by someone else; a mismatch
+   refuses before the first request.
+2. Consider a monotonic rule: refuse to mutate against any host that has *ever*
+   carried a production classification in lockfile-covered history. Downgrading
+   a host from production then becomes a visible, reviewable act rather than a
+   field edit.
+
+### [AW2] BLOCKING -- the standing command is addressed to agents, and the `deployed` leg is credentialed network access
+
+§1 inserts into the adopter's **`AGENTS.md`**:
+
+> Run `python scripts/run_security_verification.py local` after a substantive
+> change, and `python scripts/run_security_verification.py deployed` before a
+> release or deployment.
+
+`AGENTS.md` is the agent instruction file. So the standing command is, by
+construction, addressed to agents — and the `deployed` leg reads credential
+environment variables and authenticates to a live remote system.
+
+Cairn already has doctrine for exactly this class of act. The archived
+`gate-reanchor-preflight` record establishes that some operations are
+**Maintainer-only** — *"an implementing agent must not perform Phase 0 or Phase
+4"* — not because agents are untrusted in general, but because the act is
+outward-facing and irreversible, and because the implementer must not authorize
+its own work. Credentialed access to a production system is at least that class.
+This proposal does not name the actor for either leg.
+
+Compounding it: `--allow-mutation` is a **command-line flag on a command agents
+are instructed to run**. The AW1 gate and the AW2 actor question intersect at
+exactly the wrong point — the only barrier between routine agent execution and
+mutating production traffic is an argument the agent is capable of passing.
+
+**Satisfier:** name the actor per leg, and make it structural rather than
+advisory. `local` is plausibly agent-runnable. `deployed` — credentialed,
+egressing, outward-facing — should be Maintainer-only or per-run authorized on
+the same reasoning that makes Phase 0 Maintainer-only, and `--allow-mutation`
+should be **unreachable from the agent-facing path** rather than merely
+discouraged in prose. The module doctrine should state which credentials are in
+scope for an agent-run leg and which are never.
+
+### [AW3] SUBSTANTIVE -- this proposal and `portable-security-sweeps` are now mutually blocking, and only one side says so
+
+`portable-security-sweeps` is on **HOLD**, with its single blocking item being:
+
+> Identify and review the standing invocation path that makes
+> `python scripts/run_portable_security_sweeps.py` an expected check [...]
+
+§1 of this proposal *is* that path, and says so from this side —
+"`portable-security-sweeps` should reuse this dispatcher [...] it should not
+invent a second standing-command scheme." That other proposal does not record
+the dependency, so its HOLD is now contingent on an unreviewed proposal without
+its readers knowing.
+
+A Decision on either in isolation is wrong in both directions: accepting
+`portable-security-sweeps` leaves activation undesigned, and accepting this one
+without knowing whether the dispatcher generalizes risks designing a registry
+around two probes and retrofitting the third.
+
+**Satisfier:** record the dependency in both artifacts and sequence the
+Decisions explicitly. This proposal's §1 may be worth splitting from §§2–4 —
+the activation mechanism is needed by an already-held proposal, while the two
+capability modules are much larger and need not gate it.
+
+### [AW4] SUBSTANTIVE -- the implementation is the risk, and the plan must measure it
+
+19 proposed paths, three modules, one of them default-on, a new `AGENTS.md`
+merge slot, and **two network clients written from scratch under the
+standard-library constraint**.
+
+That constraint is doing more work here than anywhere else in Cairn. A correct
+HTTPS client with redirect control, cookie-attribute parsing, certificate-chain
+and hostname validation, body caps, and — the hard one — **verification that the
+connected peer address matches the allowlist** is a security-sensitive
+implementation in its own right. Peer-address validation under redirects and
+connection reuse is precisely where SSRF and rebinding defects live, and `ssl` +
+`http.client` give you the primitives without giving you the guarantees.
+
+This is not an argument against the design; it is an argument that the design
+being right does not make the implementation right. **The plan must carry
+execution-backed evidence for the SSRF/rebinding controls specifically** — a
+rebinding fixture whose DNS answer changes between resolution and connection, a
+redirect to a private address, a redirect that attempts credential carry-over —
+to the same standard the `portable-security-sweeps` review established for
+per-tool claims, where every asserted per-tool behaviour turned out to need
+measuring and one of them was wrong.
+
+### [AW5] Note -- default-on reaches adopters who select neither capability
+
+`security-verification` is default-on, so every adopter gets a new dispatcher
+and a new `AGENTS.md` rule regardless of whether they select an API or hosting
+capability. The `NOT APPLICABLE` → exit 0 behaviour mitigates the runtime
+effect, but the install-contract and `AGENTS.md` surface change is universal.
+Worth stating explicitly in the install-contract section rather than leaving it
+inferable from "becomes default-on", since `AGENTS.md` is the adopter's
+governing operational document.
+
+### Scope of this review
+
+I did not evaluate: the JSON policy schema in detail; the OpenAPI operation-ID
+comparison; the header/cookie expectation matrices against current browser
+behaviour; Schemathesis, OPA, Cedar, or OpenFGA claims (documented as
+recommendations, not adapters, so they carry no execution burden in v1); preset
+and lockfile mechanics; or `testssl.sh`, correctly deferred pending
+execution-backed review. I verified the `portable-security-sweeps` HOLD and its
+blocking item, and the Maintainer-only doctrine cited in AW2, against the
+committed record.
