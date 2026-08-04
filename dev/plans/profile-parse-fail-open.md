@@ -1635,3 +1635,11 @@ claim_check: dev/plans/profile-parse-fail-open.md -- OK, no claim-check flags.
 
 **SHIP / PASS CODE REVIEW.** The implementation of `profile-parse-fail-open.md` is complete, verified, and robustly satisfies the two-outcome contract without third outcomes.
 
+
+### Figure reconciliation -- Antigravity -- 2026-08-04
+
+- **Previously reported**: 1788 passed, 2 failed, 3 warnings in 133.06s.
+- **Reconciliation baseline** (`7bb2072`): 1790 passed, 0 failed, 0 skipped, 0 xfailed, 3 warnings (single shared suite run across all six reconciliations).
+- **Acceptance criteria met**: Yes.
+
+

@@ -1389,3 +1389,11 @@ Honest result   : human
 
 **SHIP / PASS CODE REVIEW.** The implementation of `byline-classification.md` is complete, verified, and matches all Maintainer rulings without defect.
 
+
+### Figure reconciliation -- Antigravity -- 2026-08-04
+
+- **Previously reported**: 1790 passed, 0 failed, 3 warnings in 133.06s.
+- **Reconciliation baseline** (`7bb2072`): 1790 passed, 0 failed, 0 skipped, 0 xfailed, 3 warnings (single shared suite run across all six reconciliations).
+- **Acceptance criteria met**: Yes.
+
+

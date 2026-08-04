@@ -1211,3 +1211,11 @@ first is affected by anything above:
 2. **A code review, which has not landed.** `doctrine/plans.md`'s precondition —
    a plan never archives until a code review has occurred — is untouched here,
    and the reviewer must not be the implementing agent.
+
+
+### Figure reconciliation -- Antigravity -- 2026-08-04
+
+- **Previously reported**: 1710 passed (pre-Ceremony-1 baseline snapshot).
+- **Reconciliation baseline** (`7bb2072`): 1790 passed, 0 failed, 0 skipped, 0 xfailed, 3 warnings (single shared suite run across all six reconciliations).
+- **Acceptance criteria met**: Yes (whole suite green with 0 skipped / 0 xfailed).
+

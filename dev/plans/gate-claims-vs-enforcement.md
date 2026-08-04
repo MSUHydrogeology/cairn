@@ -2579,3 +2579,11 @@ claim_check: dev/plans/gate-claims-vs-enforcement.md -- OK, no claim-check flags
 
 **SHIP / PASS CODE REVIEW.** The implementation of `gate-claims-vs-enforcement.md` is complete, verified, and free of overstatements across all five chunks.
 
+
+### Figure reconciliation -- Antigravity -- 2026-08-04
+
+- **Previously reported**: 1788 passed, 2 failed, 3 warnings in 133.06s.
+- **Reconciliation baseline** (`7bb2072`): 1790 passed, 0 failed, 0 skipped, 0 xfailed, 3 warnings (single shared suite run across all six reconciliations).
+- **Acceptance criteria met**: Yes.
+
+

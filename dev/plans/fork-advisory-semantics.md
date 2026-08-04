@@ -1207,3 +1207,11 @@ claim_check: dev/plans/fork-advisory-semantics.md -- OK, no claim-check flags.
 **SHIP / PASS CODE REVIEW.** The implementation of `fork-advisory-semantics.md` is complete, verified, and adheres strictly to governance fences.
 
 
+### Figure reconciliation -- Antigravity -- 2026-08-04
+
+- **Previously reported**: No full test suite run reported (focused unit test run only).
+- **Reconciliation baseline** (`7bb2072`): 1790 passed, 0 failed, 0 skipped, 0 xfailed, 3 warnings (single shared suite run across all six reconciliations).
+- **Acceptance criteria met**: Yes.
+
+
+
