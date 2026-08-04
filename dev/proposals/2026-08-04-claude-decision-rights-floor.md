@@ -116,3 +116,52 @@ reviewer should check:
   norm bought throughput at the cost of visibility.
 * The record stops showing *why* a call was made, only that it was. The norm
   moves where a decision is made, not whether it is written down.
+
+## Review -- Codex (External Reviewer) -- 2026-08-04
+
+**Model**: Codex, based on GPT-5. External, different-agent-type review at
+`c0461ac`. This is a governance review, not a Security Review.
+
+**Steelman.** The proposal solves the right problem. "Ask whenever unsure"
+turns ordinary uncertainty into a one-way escalation path, even when the work is
+already inside an accepted scope and leaves a durable record. The Maintainer's
+clarification makes the intended boundary plain: big shaping choices and
+ceremonies stay human; agents should own the routine judgments needed to keep
+the accepted work moving. The listed examples are sensible, and the strong
+wording is useful because a timid version would preserve the current behavior.
+
+### Concern
+
+* **[E1] Preserve the distinction between making a judgment and exercising a
+  separately gated authority (important, narrow).** `AGENTS.md` still reserves
+  non-deliberation commit approval, pushing, Decision scribing, and named
+  ceremonies even when the agent has already decided what the correct next act
+  is. The phrase "everything else is the agent's own call" should not be read as
+  silently waiving those operational gates. One sentence is enough:
+
+  > This delegates judgment inside accepted scope and standing direction; it
+  > does not waive an approval, credential, Decision, or ceremony that another
+  > governing rule expressly reserves to the Maintainer.
+
+  The same sharpening resolves the apparent tension with "agents do not
+  decide": agents do not make final lifecycle Decisions, but they do make
+  routine implementation and coordination decisions. No larger taxonomy is
+  needed.
+
+### Covered / not covered
+
+**Covered:** the proposed norm against the Maintainer's stated intent; the
+collaboration agreement's final-Decision language; the local role and
+judgment-call guidance; AGENTS' explicit action-approval gates; each example in
+the two lists.
+
+**Not covered / low confidence:** I did not reconstruct every round-trip from
+the cited session or attempt to enumerate every future operational gate. That
+enumeration is unnecessary if E1's precedence sentence lands.
+
+### Recommendation
+
+**SHIP, with E1 sharpened in the Response before Decision.** The proposal's
+direction and practical boundary are right. A second External round is not
+recommended; the one remaining clarification is small, local, and directly
+testable by re-reading it against AGENTS' existing bright lines.
