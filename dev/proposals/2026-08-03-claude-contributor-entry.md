@@ -1624,3 +1624,44 @@ Status stays `proposed`; the next transition is a **revised proposal**, and it
 is **blocked on the Maintainer's answer to [I2]**, because that answer
 determines the `Touches` line and therefore what the revision is. After the
 revision, the raised tier requires an **External** round before any Decision.
+
+## Maintainer direction on [I2] -- 2026-08-03
+
+**Quoted verbatim:**
+
+> As for I2, let's go with your recommendation, but don't lose that it needs to
+> be split out
+
+This settles the finding the review said no author response could close, and it
+is direction on content, not a Decision. Status stays `proposed`.
+
+**The recommendation adopted.** Cairn does **not** ship a root `CONTRIBUTING.md`
+in this form. Its shipped doctrine says so in three places, verified:
+
+```
+doctrine/doc-governance.md:375   informational to a solo maintainer who ships no CONTRIBUTING.md
+templates/core/AGENTS.md:272     A solo-maintainer project ships no CONTRIBUTING.md
+templates/core/VENDOR.md:37      ... or CONTRIBUTING.md (human-facing), not here
+```
+
+Cairn **is** solo-maintained, so that doctrine is not wrong. The proposal was
+asking Cairn to contradict its own shipped guidance — and to edit a **core
+template**, changing the gate class from the one its *Plan review tier* section
+argued — in order to solve a problem whose valuable half does not require it.
+
+**The split-out, which the direction explicitly says not to lose.** The
+`SECURITY.md` disclosure gap is real, independently verified, and separable: a
+reporter is told to report "privately to the maintainer" with no mechanism
+named. Fixing that needs no `CONTRIBUTING.md` and no doctrine edit.
+
+**Follow-ups migrated to:** `dev/PLANNING.md` > *Queued* > **`SECURITY.md`
+disclosure channel**. The row carries the verified gap, the reason it separates
+cleanly, and finding **[I7]**'s non-reviewable precondition — the channel's
+deciding property cannot be established by a reviewer and is a Maintainer
+live-verification step.
+
+**What this proposal becomes.** A revision that drops the `CONTRIBUTING.md`
+scope. Its `Touches` line shrinks accordingly, which is what [I2] said would
+happen under either resolution. The tier stays at the raised
+`required(**External**)`; the Internal round already recorded does not discharge
+it, and the revision must be reviewed before any Decision.

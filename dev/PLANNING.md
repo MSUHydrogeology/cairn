@@ -124,6 +124,20 @@ anticipated but not yet in flight. When a queued item grows into
 multi-step work, open a plan under `plans/` and replace the entry
 with the plan's filename stem.
 
+* **`SECURITY.md` disclosure channel** *(split out of `contributor-entry` by
+  Maintainer direction, 2026-08-03)* — `SECURITY.md` tells a reporter to report
+  "privately to the maintainer" and **names no mechanism**. Verified 2026-08-03:
+  no root `CONTRIBUTING.md` exists, and `README.md` carries no *Contributing*
+  heading, so a would-be reporter has no route. This is the half of
+  `contributor-entry` that the I2 decision keeps: the disclosure gap is real and
+  fixing it needs **no** `CONTRIBUTING.md` and no doctrine change, which is
+  precisely why it separates cleanly. Diagnosis of record: a stated control with
+  no mechanism behind it — the same shape as `PROVENANCE.md`'s unchecked
+  signature, catalogued in `gate-claims-vs-enforcement`. Carries one
+  non-reviewable precondition from that proposal's finding [I7]: the channel's
+  deciding property (whether the forge setting is actually enabled) cannot be
+  established by a reviewer and is a **Maintainer live-verification step**.
+
 * **Adopter-entry doc-refresh follow-ups** *(deferred, Jun 2026)* — the
   doc-refresh + prose↔runtime drift-gate shipped (plan
   `adopter-entry-doc-refresh`, archived; from the 2026-06-12
