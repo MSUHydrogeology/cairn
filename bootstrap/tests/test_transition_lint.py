@@ -376,3 +376,162 @@ def _git_vectors(tree: ast.AST) -> list[list[str]]:
                     if isinstance(a, ast.Constant) and isinstance(a.value, str)
                 ])
     return vectors
+
+
+# ---------------------------------------------------------------------------
+# Chunk B -- shape (a): the message claims a transition the diff lacks
+# ---------------------------------------------------------------------------
+
+_HEADER = "# p\n\n**Status**: open\n\nbody\n\n"
+
+
+def _seed(repo: Path, rel: str, tail: str, subject: str) -> str:
+    """Seed *rel* with ``_HEADER + tail`` and return the base rev."""
+    _write(repo, rel, _HEADER + tail)
+    _commit(repo, subject)
+    return _git(repo, "rev-parse", "HEAD")
+
+
+class TestShapeA:
+    """AC-R4: the heuristics, re-pinned against the real corpus."""
+
+    def test_case_insensitive_subjects_produce_the_same_finding(
+        self, tl: ModuleType, repo: Path,
+    ) -> None:
+        # B7.  Perturbation: drop ``re.IGNORECASE`` from ``_CLAIM_RES``.
+        # Red -- the uppercase fixture stops flagging.  The dogfood
+        # cannot catch this: a case-sensitive build also scores zero
+        # false positives, it just produces silent false negatives that
+        # look like passes.  That is why this is a test, not a corpus row.
+        base = _seed(repo, "dev/plans/p.md", "more\n", "dev/plans: p -- seed")
+        _write(repo, "dev/plans/p.md", _HEADER + "more\nagain\n")
+        _commit(repo, "dev/plans: p -- add gemini external review")
+        _write(repo, "dev/plans/p.md", _HEADER + "more\nagain\nthird\n")
+        _commit(repo, "dev/plans: p -- ADD GEMINI EXTERNAL REVIEW")
+        _, _, findings = tl.scan(f"{base}..HEAD", repo, whitelist={})
+        assert len(findings) == 2
+        assert len({(f.shape, f.message) for f in findings}) == 1
+
+    def test_a_review_claim_with_no_added_body_flags(
+        self, tl: ModuleType, repo: Path,
+    ) -> None:
+        # B8.  Reproduces f4a8308.  Perturbation: lower
+        # ``_MIN_EVIDENCE_LINES`` from 3 to 0, i.e. accept
+        # heading-presence.  Red -- the seeded placeholder counts.
+        tail = "## Review -- Reviewer -- 2026-01-01\n\n(Awaiting the review.)\n"
+        base = _seed(repo, "dev/proposals/p.md", tail, "dev/proposals: open p")
+        _write(repo, "dev/proposals/p.md",
+               "<!-- marker one -->\n<!-- marker two -->\n" + _HEADER + tail)
+        _commit(repo, "dev/proposals: add Gemini External Review for p")
+        _, _, findings = tl.scan(f"{base}..HEAD", repo, whitelist={})
+        assert [(f.shape, f.file) for f in findings] == [
+            ("a", "dev/proposals/p.md"),
+        ]
+
+    def test_a_genuine_review_append_does_not_flag(
+        self, tl: ModuleType, repo: Path,
+    ) -> None:
+        # B9.  Reproduces 3ae1d47 -> e31625c: an open commit seeds a
+        # titled review section, then the review commit replaces the
+        # placeholder body and adds **no** ``+## Review`` line.
+        # Perturbation: require an added ``+## <kind>`` heading line.
+        # Red -- the honest commit flags.  Run with B8: the pair is what
+        # kills the naive heading rule.
+        head = "## Review -- Reviewer -- 2026-01-01\n\n"
+        base = _seed(repo, "dev/proposals/p.md", head + "(Awaiting.)\n",
+                     "dev/proposals: open p")
+        body = "".join(f"finding line {n}\n" for n in range(20))
+        _write(repo, "dev/proposals/p.md", _HEADER + head + body)
+        _commit(repo, "dev/proposals: add Internal Review for p")
+        assert _git(repo, "show", "--format=", "--unified=0", "HEAD").count(
+            "\n+## Review") == 0
+        _, _, findings = tl.scan(f"{base}..HEAD", repo, whitelist={})
+        assert findings == []
+
+    def test_hyphen_compounds_do_not_claim(self, tl: ModuleType) -> None:
+        # B10.  Traced to 2432f10.  Perturbation: replace the lookarounds
+        # with a bare ``re.search("review")``.  Red -- all three claim.
+        rules = tl.Rules()
+        for subject in (
+            "dev/plans: review-record-integrity -- Sharpening",
+            "dev/proposals: automated-review-committer -- open",
+            "dev/measurement: review-floor deviations",
+        ):
+            assert tl._claim(subject, rules) is None, subject
+        # And the both-directions half: the bare word still claims.
+        assert tl._claim("dev/plans: p -- add External review", rules) == "review"
+
+    def test_open_is_positionally_anchored(self, tl: ModuleType) -> None:
+        # B11.  The three subjects the Internal panel constructed.
+        # Perturbation: remove the positional anchor, matching ``open``
+        # anywhere.  Red on the first two.  (The plan says "all three";
+        # measured, the third cannot go red under any anchoring, because
+        # ``opening`` is not a token and ``open`` + optional ``s`` does
+        # not match it.  The node is red under the perturbation
+        # regardless -- recorded so the claim is not inherited.)
+        rules = tl.Rules()
+        for subject in (
+            "dev/proposals: transition-lint -- resolve open questions "
+            "from the Internal review",
+            "dev/plans: X -- close out the open acceptance criteria",
+            "dev/plans: transition-lint -- opening sequence step 1",
+        ):
+            assert tl._claim(subject, rules) != "open", subject
+        # Both directions: a real open subject must still claim.
+        assert tl._claim("dev/plans: open planner-line-semantics", rules) == "open"
+
+    def test_a_security_review_section_counts_as_review_evidence(
+        self, tl: ModuleType, repo: Path,
+    ) -> None:
+        # B12.  FP-1, traced to cc8a25d, d0102a6, 3da58c1.  Perturbation:
+        # revert ``_heading_kind``'s exclusive branch to the three-prefix
+        # ``startswith``.  Red -- the section becomes invisible and the
+        # honest commit flags.
+        head = "## Security Review -- Reviewer -- 2026-01-01\n\n"
+        base = _seed(repo, "dev/plans/p.md", head + "(pending)\n",
+                     "dev/plans: p -- seed")
+        body = "".join(f"security finding {n}\n" for n in range(6))
+        _write(repo, "dev/plans/p.md", _HEADER + head + body)
+        _commit(repo, "dev/plans: p -- Add dedicated trust-root Security Review")
+        _, _, findings = tl.scan(f"{base}..HEAD", repo, whitelist={})
+        assert findings == []
+
+    def test_an_h3_response_inside_a_plan_review_counts_as_response_evidence(
+        self, tl: ModuleType, repo: Path,
+    ) -> None:
+        # B13.  FP-2, traced to 31c40a0, 8900e46, 8abd453, 8d876e0,
+        # eb4ec16, ce8e20e, e953095.  Perturbation: restrict
+        # ``_section_spans`` to h2.  Red -- the response body then falls
+        # inside the ``## Plan review`` span with no ``## Response`` h2
+        # present.  The fixture deliberately reproduces the *pre*-
+        # 2026-08-03 plan shape (h3 response, no ``## Response`` h2):
+        # building it from a current plan would hand the test an h2 that
+        # satisfies even the un-widened rule, and it would pass under both.
+        head = ("## Plan review -- Reviewer -- 2026-01-01\n\n[R1] a finding\n\n"
+                "### Response -- Author -- 2026-01-02\n\n")
+        base = _seed(repo, "dev/plans/p.md", head + "(pending)\n",
+                     "dev/plans: p -- seed")
+        body = "".join(f"disposition {n}\n" for n in range(30))
+        _write(repo, "dev/plans/p.md", _HEADER + head + body)
+        _commit(repo, "dev/plans: p -- Response to External review")
+        _, _, findings = tl.scan(f"{base}..HEAD", repo, whitelist={})
+        assert findings == []
+
+    def test_respond_to_a_review_is_not_a_review_claim(
+        self, tl: ModuleType, repo: Path,
+    ) -> None:
+        # B14.  FP-4, traced to 283be88 and to that commit only.  The
+        # plan offers two candidate fixes and leaves the choice to the
+        # plan review; this ships the first (``respond`` as a *response*
+        # token), because it is native to leftmost-wins and does not
+        # interact with B3's exclusive kind-match.  Perturbation: delete
+        # the ``("respond", "response")`` entry.  Red -- the subject then
+        # claims *review*, finds no review section, and flags.
+        head = "## Response -- Author -- 2026-01-01\n\n"
+        base = _seed(repo, "dev/plans/p.md", head + "(pending)\n",
+                     "dev/plans: p -- seed")
+        body = "".join(f"disposition {n}\n" for n in range(6))
+        _write(repo, "dev/plans/p.md", _HEADER + head + body)
+        _commit(repo, "portable-security-sweeps: respond to External security review")
+        _, _, findings = tl.scan(f"{base}..HEAD", repo, whitelist={})
+        assert findings == []

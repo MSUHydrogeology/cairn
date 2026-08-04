@@ -79,6 +79,30 @@ class Finding:
     message: str
 
 
+@dataclass(frozen=True)
+class Rules:
+    """Which amendments to the originally-pinned heuristics are active.
+
+    **Not a suppression surface and not reachable from the CLI.**  It
+    exists so the corpus-regression tier can measure the *shipped* rule
+    against the rule as the accepted proposal pinned it, over a real
+    rev-range -- rather than over the fixtures the author built to
+    demonstrate the amendments.  A property test whose domain is the
+    author's own examples is a green light, not a pin.
+    """
+
+    #: Match h3 headings as well as h2, **additively** (an h3 never
+    #: truncates the enclosing h2).
+    h3_spans: bool = True
+    #: Classify a heading by kind **exclusively** -- a heading starting
+    #: ``Response`` / ``Revised proposal`` / ``Decision`` is that kind and
+    #: is never review-kind evidence.
+    exclusive_kind: bool = True
+    #: Treat ``respond`` as a *response* token so "respond to ... review"
+    #: stops reading as a review claim.
+    respond_token: bool = True
+
+
 #: The narrowing.  A commit is examined only if it adds or modifies a
 #: file under one of these roots.  This -- not a keyword -- is what keeps
 #: the ``dev/strategy/`` and goodnight-handoff carve-in shapes quiet.
@@ -98,6 +122,76 @@ _EXCLUDE_BASENAME = "_template.md"
 #: path traversal.  git itself runs ``shell=False`` regardless; this is
 #: defence in depth.  Re-implemented from ``scripts/measurements.py``.
 _REV_RANGE_RE = re.compile(r"^[0-9A-Za-z._/~^-]+\.\.\.?[0-9A-Za-z._/~^-]+$")
+
+#: Unified-diff hunk header.
+_HUNK_RE = re.compile(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@")
+
+#: Claim tokens -> the transition each claims.  Matched
+#: **case-insensitively** and the comment says why: ``f4a8308``'s subject
+#: is "dev/proposals: add Gemini External **Review** for check_cairn
+#: self-host-compat" -- capital R.  A case-sensitive build produces no
+#: claim, no finding, and silently inverts the headline result.  Each
+#: token is matched with an optional plural ``s`` and a non-word,
+#: non-hyphen boundary on both sides, so a slug like
+#: ``automated-review-committer`` never claims.  **Leftmost match wins**:
+#: at most one claim per subject.
+#:
+#: ``reject`` and ``supersede`` are **dead tokens in v1** and are left
+#: commented out rather than enabled: a reject/supersede Decision is a
+#: rename-only commit, which never triggers, so an active token could
+#: only add noise.
+#:
+#: ``opening`` is absent -- 0 occurrences across all 943 commit subjects
+#: in history (re-measured 2026-08-04).  ``accept`` is retained pending
+#: the Maintainer fence; measured over the same 943 subjects it is the
+#: winning leftmost token on exactly 5, all 5 false positives, because
+#: every genuine Decision subject also carries the word "Decision".
+_CLAIM_TOKENS: tuple[tuple[str, str], ...] = (
+    ("review", "review"),
+    ("response", "response"),
+    ("respond", "response"),
+    ("decision", "decision"),
+    ("accept", "decision"),
+    # ("reject", "decision"),      # dead token in v1
+    # ("supersede", "decision"),   # dead token in v1
+)
+
+_CLAIM_RES: tuple[tuple[re.Pattern[str], str], ...] = tuple(
+    (re.compile(rf"(?<![-\w]){tok}s?(?![-\w])", re.IGNORECASE), kind)
+    for tok, kind in _CLAIM_TOKENS
+)
+
+#: ``open`` counts only as the first word after an optional ``<tree>: ``
+#: subject prefix.  "Open questions" is live Cairn vocabulary
+#: (``templates/core/dev/strategy/_template.md``), so an unanchored match
+#: would demand an added file from every commit that mentions one.
+_OPEN_ANCHOR_RE = re.compile(r"^(?:[\w./ -]+:\s*)?(open)(?![-\w])", re.IGNORECASE)
+
+#: A heading whose title *starts with* one of these words **is** that
+#: kind, and is therefore never review-kind evidence.  Without the
+#: exclusion, ``## Response -- <author> (to External Security Review)``
+#: counts as evidence for a *review* claim -- a false negative bought,
+#: not a false positive fixed.  Measured 2026-08-04: 78 h2 headings under
+#: the two trigger roots contain "review" without matching the three
+#: originally-pinned prefixes, and 52 of the 78 are exactly this shape.
+_EXCLUSIVE_PREFIXES: tuple[tuple[str, str], ...] = (
+    ("response", "response"),
+    ("revised proposal", "revised"),
+    ("decision", "decision"),
+)
+
+#: The three review-section prefixes the accepted proposal pinned.  Kept
+#: because the corpus tier measures the shipped rule against them.
+_PINNED_REVIEW_PREFIXES = ("review", "plan review", "code review")
+
+#: Evidence threshold.  Heading-presence is worthless and this was
+#: measured: a plan-open seeds a *titled* review section, so the genuine
+#: review-append adds zero ``+## Review`` lines
+#: (``git show --format= --unified=0 e31625c | grep -c '^+## Review'``
+#: -> 0, its single hunk being ``@@ -251,6 +251,166 @@``).  A
+#: heading-presence rule flags the honest commit and misses the
+#: dishonest one.  Count *body* lines instead.
+_MIN_EVIDENCE_LINES = 3
 
 
 # ---------------------------------------------------------------------------
@@ -218,6 +312,152 @@ def _triggers(entries: list[tuple[str, str]]) -> list[tuple[str, str]]:
     ]
 
 
+def _blob_lines(root: Path, sha: str, path: str) -> list[str]:
+    """The post-image of *path* at *sha*, as lines.  Empty on any error."""
+    rc, out = _git(root, "show", f"{sha}:{path}")
+    if rc != 0:
+        return []
+    return out.decode("utf-8", errors="replace").splitlines()
+
+
+def _heading_kind(title: str, rules: Rules) -> str | None:
+    """The lifecycle kind a heading *is*, or ``None``."""
+    low = title.strip().lower()
+    if rules.exclusive_kind:
+        for prefix, kind in _EXCLUSIVE_PREFIXES:
+            if low.startswith(prefix):
+                return kind
+        return "review" if "review" in low else None
+    # The rule as originally pinned: three literal prefixes, nothing else.
+    for prefix in _PINNED_REVIEW_PREFIXES:
+        if low.startswith(prefix):
+            return "review"
+    for prefix, kind in _EXCLUSIVE_PREFIXES:
+        if low.startswith(prefix):
+            return kind
+    return None
+
+
+def _section_spans(
+    lines: list[str], kind: str, rules: Rules,
+) -> list[tuple[int, int, str]]:
+    """``(start_line, end_line, heading)`` for every section of *kind*.
+
+    h2 and h3 headings are matched **additively**: an h2 span still runs
+    to the next h2, and an h3 additionally opens its own span running to
+    the next h2-or-h3.  An h3 must never *truncate* the enclosing h2 --
+    a truncating implementation was measured and it creates 16 new
+    shape-(a) findings over one corpus window by pushing evidence out of
+    the h2 span it used to sit in.
+    """
+    heads: list[tuple[int, int, str]] = []  # (level, line_no, title)
+    for idx, line in enumerate(lines, start=1):
+        if line.startswith("### "):
+            if rules.h3_spans:
+                heads.append((3, idx, line[4:]))
+        elif line.startswith("## "):
+            heads.append((2, idx, line[3:]))
+    spans: list[tuple[int, int, str]] = []
+    total = len(lines)
+    for pos, (level, line_no, title) in enumerate(heads):
+        if _heading_kind(title, rules) != kind:
+            continue
+        end = total
+        for later_level, later_line, _ in heads[pos + 1:]:
+            if level == 2 and later_level != 2:
+                continue
+            end = later_line - 1
+            break
+        spans.append((line_no, end, title.strip()))
+    return spans
+
+
+def _added_nonblank_lines(root: Path, sha: str, path: str) -> list[int]:
+    """Post-image line numbers of the non-blank lines *added* to *path*.
+
+    Hunk grammar, pinned explicitly: ``@@ -a[,b] +c[,d] @@``.  A missing
+    ``,d`` means a count of 1; ``+c,0`` is a pure deletion and
+    contributes nothing.  The rename flag matches ``_entries``' -- if the
+    two disagree, the evidence and the trigger disagree about what the
+    file is.
+    """
+    rc, out = _git(
+        root, "show", "--find-renames=100%", "--format=", "--unified=0",
+        sha, "--", path,
+    )
+    if rc != 0 or not out:
+        return []
+    added: list[int] = []
+    cursor = 0
+    for line in out.decode("utf-8", errors="replace").splitlines():
+        m = _HUNK_RE.match(line)
+        if m:
+            cursor = int(m.group(1))
+            continue
+        if line.startswith("+++"):
+            continue
+        if line.startswith("+"):
+            if line[1:].strip():
+                added.append(cursor)
+            cursor += 1
+    return added
+
+
+def _claim(subject: str, rules: Rules) -> str | None:
+    """The transition *subject* claims, leftmost-wins, or ``None``."""
+    best: tuple[int, str] | None = None
+    anchor = _OPEN_ANCHOR_RE.match(subject)
+    if anchor:
+        best = (anchor.start(1), "open")
+    for token, (pattern, kind) in zip(
+        (t for t, _ in _CLAIM_TOKENS), _CLAIM_RES, strict=True,
+    ):
+        if token == "respond" and not rules.respond_token:
+            continue
+        m = pattern.search(subject)
+        if m is None:
+            continue
+        if best is None or m.start() < best[0]:
+            best = (m.start(), kind)
+    return None if best is None else best[1]
+
+
+def _shape_a(
+    root: Path, sha: str, subject: str, triggers: list[tuple[str, str]],
+    rules: Rules,
+) -> list[Finding]:
+    """The subject claims a transition the diff does not contain."""
+    kind = _claim(subject, rules)
+    if kind is None:
+        return []
+    if kind == "open":
+        # The one claim whose evidence is structural rather than
+        # sectional: an ``A`` entry under a trigger root.
+        if any(status == "A" for status, _ in triggers):
+            return []
+        return [Finding(
+            sha, "a", sorted(p for _, p in triggers)[0],
+            "subject claims 'open' but the diff adds no lifecycle file",
+        )]
+    for _, path in triggers:
+        lines = _blob_lines(root, sha, path)
+        if not lines:
+            continue
+        spans = _section_spans(lines, kind, rules)
+        if not spans:
+            continue
+        added = _added_nonblank_lines(root, sha, path)
+        inside = sum(
+            1 for n in added if any(start <= n <= end for start, end, _ in spans)
+        )
+        if inside >= _MIN_EVIDENCE_LINES:
+            return []
+    return [Finding(
+        sha, "a", sorted(p for _, p in triggers)[0],
+        f"subject claims '{kind}' but the diff adds no {kind} section body",
+    )]
+
+
 # ---------------------------------------------------------------------------
 # Scan + CLI
 # ---------------------------------------------------------------------------
@@ -227,13 +467,15 @@ def scan(
     rev_range: str,
     root: Path,
     whitelist: dict[str, str] | None = None,
+    rules: Rules | None = None,
 ) -> tuple[int, int, list[Finding]]:
     """``(scanned, triggered, findings)`` over *rev_range*."""
     suppressed: dict[str, str] = {} if whitelist is None else whitelist
+    active = rules or Rules()
     scanned = 0
     triggered = 0
     findings: list[Finding] = []
-    for sha, _subject in _commits(root, rev_range):
+    for sha, subject in _commits(root, rev_range):
         scanned += 1
         trigs = _triggers(_entries(root, sha))
         if not trigs:
@@ -241,6 +483,7 @@ def scan(
         triggered += 1
         if sha in suppressed:
             continue
+        findings.extend(_shape_a(root, sha, subject, trigs, active))
     return scanned, triggered, findings
 
 
