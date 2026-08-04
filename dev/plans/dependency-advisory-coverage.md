@@ -1896,3 +1896,185 @@ Three things changed under this Response that alter what you would be reading:
   the module has **no** broad exception handler, so an unguarded parent-side JSON read
   exits **1** into the component code space the exit table promises the aggregate
   never uses.
+
+### Figure correction -- Claude -- 2026-08-04
+
+**Model**: Claude Opus 5 (`claude-opus-5`). **Standing**: a *measurement* record
+appended to the Response above. It re-litigates **no disposition** — every finding
+stays accepted or declined exactly as the Response left it — and it overturns no
+amendment's conclusion. It corrects figures, and nothing else.
+
+**Two provenance facts, stated before any number, because they bound what this
+section is entitled to claim.**
+
+1. I was directed to a plan file named 147.md under dev/plans/. **No such file
+   exists.** 147 is a *figure* in this plan, not a stem. I identified this plan as
+   the subject from that figure plus the described shape — a Response carrying
+   re-measurements and a binding *Amendments in force* table an implementing agent
+   would act on. That inference is strong, but it *is* an inference, and it is
+   recorded here rather than hidden behind the result.
+2. **The audit's body never reached me.** I was told an audit disputed specific
+   figures and that its text was included in full; what arrived was a single
+   character. I therefore could not compare against the auditor's numbers, and
+   **nothing below adopts one.** I re-measured every figure this Response asserts,
+   from scratch, and let my own measurement stand alone. Where this section says a
+   figure is correct, that is *my run* saying so — not the Response, and not the
+   auditor.
+
+**Conditions.** `/Users/kendal30/conda_envs/lhm/bin/python3.13` (CPython 3.13.13),
+`PYTHONDONTWRITEBYTECODE=1`, `as_of 2026-08-04`, at HEAD **`83b910c`** — **43
+commits** past the Response's `e20b18e`. Sibling agents were committing *during* the
+run (HEAD reached `758448a` before this section was written); both volatile figures
+were re-checked at that later HEAD and were unchanged. The working tree carried one
+uncommitted sibling file, `bootstrap/tests/test_transition_lint.py` (+116 lines, **0**
+new `def test_`, **0** new parametrize cases), so it contributes nothing to the suite
+count. I modified no source file and ran no network action.
+
+#### The result: every figure reproduces. Two are stale, none is wrong.
+
+| Figure | Response claims | I measured | |
+|---|---|---|---|
+| Suite | 1790 passed / 0 failed / 3 warnings | **1956 passed / 0 failed / 3 warnings**, 277.85 s, exit 0 | **stale** |
+| `check_cairn` Markdown files | 195 | **191** | **stale** |
+| `check_cairn` external links | 68 | 68 | exact |
+| AST baseline total entries | 173 | 173 | exact |
+| AST by-kind | `Assign 53 / ClassDef 10 / FunctionDef 98 = 161` | identical | exact |
+| AST tail | `Docstring 1, Expr 1, If 1, If#2 1, Import 8`, no `Try` | identical | exact |
+| conda records / unique | 394 / 391 | 394 / 391 | exact |
+| `conda-meta` entries | 396 entries, 394 JSON | 396 / 394 | exact |
+| Python dist records / unique | 290 / 288 | 290 / 288 | exact |
+| intersection | 244 | 244 | exact |
+| **conda-only** | **147** | **147** | exact |
+| Python-only / union | 44 / 435 | 44 / 435 | exact |
+| Five-bucket partition | 47 / 236 / 5 / 0 / 2 = 290 | identical, closes at 290 | exact |
+| 236 sub-buckets | 189 / 46 / 1 | identical | exact |
+| `archive_info` records | 5, all `file://` | 5, all `file://` into conda build trees | exact |
+| `editable-or-vcs` yield | 2 | 2 | exact |
+| Literal predicate | 241 *public* | 241 public (243 counting the 2 editable) | exact — see note |
+| `scaffold.py --manifest` | 96 lines = 95 data rows | 96 / 95 | exact |
+| `_CORE_MAPPINGS` digest | `c74e6013783bf4fe` | identical | exact |
+| `_MODULE_MAPPINGS` digest | `26957a8924042a0a` | identical | exact |
+| `_SKILLS_MAPPINGS` digest | `8ec105a84b5e65bf` | identical | exact |
+| `frozen_files` entries | 164 | 164 | exact |
+| Orchestrator pinned hash | `04cedaa2…d1f6f` | identical, character-for-character | exact |
+| Frozen / not-frozen probes | stack frozen; the two docs not | identical | exact |
+| Bandit (1.9.4) on orchestrator | `errors: []`, LOW `B404` 1 + `B603` 1, 0 MEDIUM+ | identical | exact |
+| `claim_check.py` on this plan | OK, exit 0, 2 exemptions | OK, exit 0, 2 exemptions | exact |
+| Every line citation carried by an amendment | as stated | all resolve (see below) | exact |
+
+Commands, in the order run:
+
+```
+python -m pytest bootstrap/tests                     -> 1956 passed, 3 warnings, 277.85s, exit 0
+python scripts/check_cairn.py                        -> 191 Markdown file(s); 68 external link(s)
+python scripts/claim_check.py dev/plans/dependency-advisory-coverage.md   -> OK, exit 0
+python -m bandit -f json templates/modules/team-gated/run_security_audit.py
+json.load(bootstrap/tests/fixtures/scaffold_ast_baseline.json)   -> 173 entries; Counter by kind
+json.load(bootstrap/tests/fixtures/gate_manifest.json)           -> len(frozen_files) == 164
+importlib.metadata + $CONDA_PREFIX/conda-meta walk               -> the inventory and bucket figures
+```
+
+#### The two stale figures — and why neither is an error
+
+Both were **correct at the commit the Response names**, and I verified that rather
+than assuming it.
+
+**(1) The suite: 1790 → 1956.** The Response measured at `e20b18e`; 43 sibling
+commits have since landed, most of them test-bearing (the `transition-lint` chunks
+among them). The uncommitted working-tree file adds no tests, so the entire +166 is
+committed sibling work. **A1's figure is superseded to 1956; A1 itself stands** — its
+conclusion is *"the instruction to re-take at implementation is unchanged and now
+doubly warranted,"* which this measurement makes triply so. **A2 and A3 are
+untouched**: both are about the *attribution split* between inherited and
+attributable red, and 0 failed at both commits.
+
+**(2) `check_cairn`: 195 → 191.** I did not take this on faith either way. I replayed
+`link_check.filter_sources`' path rules over `git ls-tree -r` at each commit:
+
+```
+e20b18e: tracked .md = 249, scanned (filtered) = 195     <- the Response's figure, confirmed
+a9bc372: tracked .md = 251, scanned (filtered) = 195
+2ec7ca4: tracked .md = 252, scanned (filtered) = 191
+83b910c: tracked .md = 252, scanned (filtered) = 191     <- and at the later HEAD 758448a
+```
+
+The drop is the **five archive moves** (`a9bc372`, `89a8f1f`, `e59f9d4`, `8595274`,
+`640864e`): `filter_sources` excludes `dev/**/archive/` as a *source*, so archiving a
+plan removes it from the scan set. **195 was right; 191 is right now. A6's figure is
+superseded to 191; A6 stands.** The external-link half (68) reproduced at both.
+
+One consequence A6 should carry: **its retained hedge — *"the count may only grow"* —
+is now falsified by measurement.** The count *shrank*, by an ordinary archive
+operation, and will shrink again at the next archive. An acceptance criterion resting
+on a monotonicity that does not hold is a criterion that will go spuriously red. The
+hedge should read *"the count moves in both directions; re-measure, do not compare."*
+This corrects the *evidence* under A6, not its disposition.
+
+#### The one place my raw number differs — a scope question, not a discrepancy
+
+The Response asserts *"the literal predicate admits **241**, not 236."* Counting every
+distribution installed from a local path, I get **243**: 236 non-editable `dir_info` +
+5 `archive_info`-with-`file://` + **2** editable. The 241 excludes the 2 editable
+(`modflow_tools`, `lhm-frontend`). That exclusion is **correct as worded**: the claim
+is scoped to *"241 **public** packages,"* and those 2 are the maintainer's own local
+projects, not public packages. The Response's very next clause — *"`editable-or-vcs`
+rejects all 241 and yields exactly **2**"* — requires the two sets to be disjoint, and
+they are. **241 is right; A10 stands unchanged.** I record 243 only so a later reader
+who counts local-path installs without the public/private qualifier is not left
+thinking the record is broken.
+
+#### Citations carried by amendments — all resolve
+
+Spot-checked at `83b910c` because these are what an implementing agent edits against.
+**A29**: `templates/modules/team-gated/python-security.md:3` is indeed the
+*"**Selected when:**"* line, and `:6`–`:7` the sentence that replaces it. **A30**: all
+four land in `bootstrap/DEPENDENCY_BUDGET.md` — `:40` *is* the
+*"### Network-egress contract (pip-audit)"* heading, `:52`–`:54` *is* the Scope /
+blind-spots bullet E5 edits, `:97` *is* the *"## Exception 2"* heading. (I first
+checked these against `python-security.md` and they failed; the seam cell is about
+`DEPENDENCY_BUDGET.md`. Recorded so the next reader does not repeat the error.)
+**A31**: `bootstrap/tests/test_security_stack.py:638` is the `def` line and `:643` the
+`shutil.which` monkeypatch. **A11/A12/A14/A15/A16/A22** all resolve in
+`templates/modules/team-gated/run_security_audit.py` — `:124` is the
+`json.JSONDecodeError`-guarded lockfile read, `:391` the
+`CAIRN_PIP_AUDIT_ALLOW_NETWORK` sentence, `:436` the argv-only egress read, `:479` the
+`max` over tiers, `:42`–`:46` the exit-`5` bullet. A14's *"the token appears in no
+other shipped file"* holds: outside `dev/`, `:391` is the only hit. **A17, A18, A19,
+A27** resolve in the three sibling plans and the source proposal at both `e20b18e`
+and HEAD — those siblings appended rather than edited, so their line numbers held.
+`templates/modules/team-gated/python-security.md` and
+`templates/modules/team-gated/run_security_audit.py` are **byte-identical** to
+`e20b18e`.
+
+*Nit, non-load-bearing:* A19 describes the sibling as mirroring the `_AGG_*` constants
+at `:75` through `:78`; the sibling's own text cites `:76-78`, and `:75` is
+`_AGG_CLEAN = 0`, which it does not mirror. A19's conclusion — the contingency is not
+live at A3 — is unaffected.
+
+#### Amendment dispositions
+
+**No amendment is withdrawn.** The test is whether a conclusion *depended* on a figure
+that moved; none did.
+
+* **A1 — in force, figure superseded** (1790 → **1956**). Conclusion was already
+  "re-take at implementation."
+* **A6 — in force, figure superseded** (195 → **191**), plus the monotonicity hedge
+  corrected above. Conclusion — the criterion is still satisfiable — survives.
+* **A4, A5, A7, A8, A9, A10, A12, A29, A30, A31 — in force, figures confirmed
+  exactly.** A4/A5 in particular: `161` and the empty declared delta both reproduce,
+  so this plan's load-bearing AST claim is untouched.
+* **A2, A3, A11, A13, A14, A15, A16, A17, A18, A19, A20–A28 — in force, unaffected**;
+  these carry dispositions and citations rather than measured counts, and every
+  citation resolves.
+
+#### The finding under the findings
+
+Both stale figures carry `as_of 2026-08-04` — **and so does this correction.** The
+tree moved 43 commits *inside a single calendar day*, so a date stamp cannot
+discriminate between a fresh figure and a stale one. The commit SHA can, and the
+Response was right to name `e20b18e`; that is the only reason I could establish that
+195 was correct rather than merely different. **Recommendation for the External
+reviewer and the implementer: treat `as_of <date>` on a fast-moving tree as
+decorative, and read the SHA.** The two figures here are volatile by nature — a suite
+count and a file count — and both should be re-taken at implementation rather than
+compared to any number in this document, including mine.
