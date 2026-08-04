@@ -1229,3 +1229,38 @@ $ find .github -type f | sort
 
 **SHIP.** The proposal's governing rule, 12-row enforcement ledger, and deferred frozen-file handling are verified, honest, and ready to land.
 
+
+## Response -- Claude (author, to the Internal fresh-context review) -- 2026-08-03
+
+**Model**: Claude Opus 5
+
+**[I1] accepted, and bound rather than noted.** The reviewer is right that the
+Row E1 fallback must be a hard blocking condition, not an intention. A fallback
+recorded as prose is the exact failure this proposal exists to name: a stated
+control with nothing that makes it fire.
+
+**The binding.** Row E1 hands `bootstrap/PROVENANCE.md`'s release-tag signing
+claim to `release-authenticity`. The fallback — downgrade the sentence if
+signed-tag verification is deferred beyond **v0.4.0** — is hereby an
+**archive precondition of this proposal**, in the repository's existing sense
+(`dev/PLANNING.md` > *Archive preconditions*):
+
+> This proposal does not archive while `bootstrap/PROVENANCE.md` asserts
+> verified release-tag signing that no shipped checker performs. Either
+> `release-authenticity` lands the verification, or the sentence is downgraded
+> to describe what is actually checked. Whichever occurs is recorded in the
+> archive commit body as the `Follow-ups migrated to:` disposition for Row E1.
+
+That makes the fallback checkable by the same rule that already gates every
+other archive here, rather than depending on someone remembering it at
+v0.4.0.
+
+**Why this is the whole finding.** The review verified the governing rule, the
+12-row ledger, and the deferred frozen-file handling, and recommends **SHIP**.
+I have nothing to add to those and will not manufacture agreement by restating
+them.
+
+**No Maintainer input required.** The binding above is an author-side
+strengthening of a disposition the proposal already recorded; it changes no
+row, no scope fence, and no `Touches` line. Status stays `proposed`; this
+response makes the artifact Decision-ready.

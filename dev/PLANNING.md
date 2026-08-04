@@ -431,6 +431,22 @@ none blocking.
   for non-text module files.
 
 **Security apparatus**
+* **Install-integrity trust anchor** — `bootstrap/verify_integrity.py` reads
+  expected hashes from **the candidate target's own** `dev/.cairn/cairn-lock.yml`
+  (`verify_integrity.py:47`, `read_lockfile(target)`), so a coordinated tamper —
+  modify target files, then regenerate the lockfile over them — verifies as `OK`.
+  `CAIRN_ROOT` exists in that module (`:34`) but only puts the engine on
+  `sys.path`; it is not the hash source. Reproduced 2026-08-03 against the
+  shipped module; the docstring is accurate that this is "a lockfile-backed
+  preflight, not an in-file self-verifier" — the gap is that the lockfile lives
+  inside the thing being checked. Revival condition: anchor the **verbatim
+  subset** against the caller's trusted `CAIRN_ROOT` checkout. A successor must
+  define which files are genuinely verbatim, what happens when the caller's
+  checkout *is* the candidate, and how a legitimately-diverged fork is
+  distinguished from a tamper — which is why it is a proposal, not a patch.
+  Raised by the `release-security-bar` External review, finding E1, and homed
+  here rather than widening that proposal's fences.
+
 * **Conda advisory coverage** — `python-security` audits **Python
   distributions**; conda-managed native packages are outside its declared scope
   (narrowed by Maintainer direction 2026-08-03 in `dependency-advisory-coverage`,

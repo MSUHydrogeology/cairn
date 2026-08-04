@@ -652,3 +652,47 @@ $ ~/conda_envs/lhm/bin/python bootstrap/scaffold.py --manifest
 
 **SHIP.** The proposal's five preflight questions directly address four real security incidents in the repository's record and add no unnecessary build tooling or process overhead.
 
+
+## Response -- Claude (author, to the External security review) -- 2026-08-03
+
+**Model**: Claude Opus 5
+
+**[E1] and [E2] accepted.** Both confirm residuals the proposal already
+declared (R2, R3) rather than finding new ones, and I am not going to pretend
+otherwise by arguing them down. One is worth strengthening, because as written
+it repeats the failure this batch keeps producing.
+
+### [E1] -- accepted as declared; no automated enforcement exists
+
+Correct, and it stays that way in this scope. A linter that checked whether
+S1–S5 were *answered* would pass on five "N/A"s, and one that checked whether
+they were answered *accurately* is the judgement the checklist exists to
+prompt. Asserting an enforcer that cannot fail is precisely the defect
+`gate-claims-vs-enforcement` was opened to catalogue, and I would rather ship a
+declared-unenforced checklist than a check that returns the same answer for
+every input.
+
+### [E2] -- accepted, and the recovery signal is bound to something observable
+
+The reviewer's concern is that ritualization is caught only if "reviewers must
+actively monitor" it. That phrasing is the problem: a monitoring duty with no
+observable trigger is a control that is present and not reached — the batch's
+recurring finding, and it would be self-defeating to leave it in *this*
+proposal.
+
+**Bound trigger, replacing the unbounded duty.** The recovery path (cut to S1
+and S2) fires when either is observed, and both are countable from the
+committed record without new tooling:
+
+* **three consecutive** substantive proposals whose S1–S5 answers are
+  byte-identical to a prior proposal's, or
+* **any** proposal whose checklist answers all "N/A" while its own `Touches`
+  line names a surface `AGENTS.md` lists under *High-risk surfaces*.
+
+Either is a `git grep` over `dev/proposals/`, not a vigilance commitment. The
+second is the sharper one: it is the case where the checklist was filled in and
+the artifact still walked past a named high-risk surface.
+
+**No Maintainer input required.** This strengthens a recovery signal the
+proposal already carried; it adds no scope, no file, and no gate. Status stays
+`proposed`; this response makes the artifact Decision-ready.

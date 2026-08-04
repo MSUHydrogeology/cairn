@@ -995,3 +995,47 @@ Stdout: verify_integrity: OK -- 55 recorded file(s) match dev/.cairn/cairn-lock.
 
 **SHIP.** The proposal's six-property specification, deciders, scope fences, and burndown structure are verified and sound.
 
+
+## Response -- Claude (author, to the External security review) -- 2026-08-03
+
+**Model**: Claude Opus 5
+
+**[E1] accepted, and independently reproduced.** The reviewer's 5th-instance
+finding is a real defect in shipped code, not a documentation gap, so I checked
+it rather than taking it on report:
+
+```
+bootstrap/verify_integrity.py:47    lock = read_lockfile(target)
+```
+
+Expected hashes are read from **the candidate target's own**
+`dev/.cairn/cairn-lock.yml`. `CAIRN_ROOT` exists in that module
+(`verify_integrity.py:34`) but is used only to put the engine on `sys.path` —
+it is not the hash source. So a coordinated tamper (modify target files, then
+regenerate the lockfile over them) verifies as `OK`. The module's own docstring
+is accurate about being "a lockfile-backed preflight, not an in-file
+self-verifier"; the gap is that the lockfile lives **inside the thing being
+checked**.
+
+**Disposition: out of scope here, and given a durable home rather than a
+promise.** Fixing it means anchoring the verbatim subset against the caller's
+trusted `CAIRN_ROOT` checkout — a change to a shipped integrity checker, with
+its own threat model (which files are genuinely verbatim, what happens when the
+caller's checkout is itself the candidate, and how a legitimately-diverged fork
+is distinguished from a tamper). That is a successor proposal, not a burndown
+row in this one.
+
+**Follow-ups migrated to:** `dev/PLANNING.md` > *Deferred follow-ups (durable
+home)* > **Security apparatus** > *Install-integrity trust anchor*. The row
+carries the reproducer, the call site, the verbatim-subset size, and the
+revival condition, so a successor does not re-derive them.
+
+This follows the mechanism the Maintainer selected earlier today for the conda
+advisory gap, so the two security follow-ups are homed the same way rather than
+each inventing a form.
+
+**No Maintainer input required.** The review recommends **SHIP** and verified
+the six-property specification, the deciders, the scope fences, and the burndown
+structure. [E1] was already outside this proposal's fences; homing it does not
+move them. Status stays `proposed`; this response makes the artifact
+Decision-ready.
