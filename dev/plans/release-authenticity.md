@@ -866,3 +866,46 @@ plans archive only after every deferred follow-up has a durable home outside the
 plan.
 
 This section is append-only once written.
+
+## Plan review -- Gemini Flash (External, security lens) -- 2026-08-03
+
+**Steelman.** This plan provides an exceptionally thorough operational roadmap for establishing an immutable release authenticity trust root in `bootstrap/PROVENANCE.md` and implementing exact signed-tag verification. In particular, Chunk A directly addresses the tag-substitution finding by binding the caller's requested ref name directly to the signed `tag <name>` header inside the OpenPGP/SSH signed tag payload (`cat-file -p <tag_obj>`).
+
+### Concerns
+
+* **[E1] Verification must guard against tag object vs commit object ref resolution.**
+  When `git rev-parse refs/tags/<ref>^{tag}` is run against a unannotated (lightweight) tag, `rev-parse` returns an error or empty string because no annotated tag object exists. Chunk A correctly targets annotated/signed tags, but the resolver must fail closed with a distinct, actionable error if a caller requests verification of an unannotated tag ref rather than raising an uncaught exception or falling back to raw commit verification.
+
+### Covered
+
+* **Tag substitution attack reproduction and fix verification**:
+  Reproduced the tag substitution attack in a bare git repository created under `/tmp`. Created signed tag `v0.3.0`, and then repointed `refs/tags/v0.5.0` to the `v0.3.0` tag object.
+  - Raw `git verify-tag refs/tags/v0.5.0` returned exit code 0 (succumbing to substitution).
+  - The plan's proposed exact-tag name binding logic (`signed_name != asked_ref`) correctly refused `v0.5.0` (exit code 1).
+  - The honest case (`v0.3.0` ref pointing to `v0.3.0` signed tag object) passed with exit code 0.
+
+```
+=== RAW GIT VERIFY-TAG v0.5.0 (SUCCUMBS TO TAG SUBSTITUTION) ===
+STDOUT: 
+STDERR: Good "git" signature for maint@example.org with ED25519 key SHA256:z72TbxMmcikShPxZD9ezY88auzdKb3zS60MjYfsezVA
+EXIT CODE: 0
+
+=== PLAN PROPOSED NAME-BINDING CHECK ===
+Asked ref: 'v0.5.0' | Resolved Object: c43c766bce805634448b4b0ec066c560d92a7561 | Signed Name: 'v0.3.0'
+REFUSED: ref 'v0.5.0' resolves to a tag object whose SIGNED name is 'v0.3.0'
+PLAN PROPOSED EXIT CODE FOR SUBSTITUTION ATTACK: 1
+
+=== HONEST CASE CHECK (v0.3.0) ===
+Asked ref: 'v0.3.0' | Signed Name: 'v0.3.0' | Matches: True
+Crypto Verify Exit Code: 0
+HONEST CASE FINAL EXIT CODE: 0
+```
+
+### Not covered / low confidence
+
+* Live SSH key signature verification over hardware security keys (e.g. YubiKey SSH format) was simulated via software Ed25519 keys in temporary test directory; actual hardware token interaction remains out of test scope.
+
+### Recommendation
+
+**READY FOR IMPLEMENTATION.** The plan's sequencing, acceptance criteria, and exact-tag resolution logic are sound and verified.
+
