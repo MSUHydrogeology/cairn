@@ -2,9 +2,9 @@
 #
 # Cairn contained-kernel recipe — the Move-3 FLOOR GATE (proposal F3 / Codex R8).
 #
-# Runs in CAIRN's CI (not adopter CI). Two legs, because a compile-only check is
-# too weak (R8) — it proves syntax, not that invoked stdlib APIs / filesystem /
-# subprocess behaviour actually work at the floor:
+# Run by the maintainer from a Cairn checkout (not adopter CI). Two legs, because
+# a compile-only check is too weak (R8) — it proves syntax, not that invoked
+# stdlib APIs / filesystem / subprocess behaviour actually work at the floor:
 #
 #   1. `vermin` over the engine — the detected minimum Python must NOT exceed the
 #      declared floor (3.11, doctrine/runtime-contract.md). vermin runs in the

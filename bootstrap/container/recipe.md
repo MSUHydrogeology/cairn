@@ -144,14 +144,19 @@ recipe (do not paper over it with `sudo chown`).
 
 | Platform | Status |
 |---|---|
-| **Rootless Linux + Podman/Docker** | **Supported, tested** (the F4 acceptance gate runs here) |
+| **Rootless Linux + Podman/Docker** | **Supported, tested** (the F4 acceptance gate is run here by hand) |
 | macOS (Podman/Docker Desktop) | **Best-effort** — the engine runs in the runtime's Linux VM; ownership maps via rootless Podman. Exercised in development; not a gated platform. |
 | Windows (Docker Desktop / WSL2) | **Best-effort** — not yet exercised end-to-end |
 
 The **floor gate** (`bootstrap/container/floor-gate.sh`) and the **acceptance
-test** (`bootstrap/container/acceptance.sh`) run in **Cairn's CI**, not in an
-adopter's CI. The acceptance test records **SKIPPED** (never PASS) on a host with
-no OCI runtime — a missing gate is *degraded assurance*, not a silent green.
+test** (`bootstrap/container/acceptance.sh`) are run by the maintainer from a
+Cairn checkout, not in an adopter's CI — and not by anything automatic here: no
+test and no script in `scripts/` runs either gate. (The suite does *read*
+`acceptance.sh`: `bootstrap/tests/test_verify_ref.py` extracts its marked
+negative pins and replays them, so a pin weakened there is weakened in the suite
+too. That pins the assertions; it does not run the container gate.) The
+acceptance test records **SKIPPED** (never PASS) on a host with no OCI runtime —
+a missing gate is *degraded assurance*, not a silent green.
 
 ---
 
