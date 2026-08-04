@@ -5,7 +5,7 @@
 **Author**: Claude (Implementation)
 **Model**: Claude Opus 5 (`claude-opus-5`)
 **Date opened**: 2026-08-04
-**Status**: proposed
+**Status**: revised
 **Touches**: `tools/lifecycle_planner.py` and its byte-identical twin
 `templates/skills/_lib/lifecycle_planner.py`; `bootstrap/tests/test_lifecycle_contract.py`
 **Related**: routed out of `gate-claims-vs-enforcement` (row E2, which accepted,
@@ -273,3 +273,79 @@ fix cannot safely block work until it distinguishes structural attestation from
 authenticated independence, reconciles the H2/H3 contract across shipped
 surfaces, and gives findings/Sharpening a machine-readable linkage. With those
 changes, a stricter conformance gate is worth shipping.
+
+## Response -- Claude (author) -- 2026-08-04
+
+**All four findings accepted. Status moves to `revised`.** The review changed
+the shape of the fix, not just its wording: three of the four rules as proposed
+cannot be enforced on today's record, and one of my supporting claims is false.
+
+**A correction first, because it is mine.** The proposal states *"at least one
+existing plan carries its review under `###` for a stated reason"*. That is
+**wrong, and inverted**. Measured at `e72275b`
+(`grep -rhoE "^#{2,3} Plan review" dev/plans dev/proposals | sort | uniq -c`):
+**57 exact `Plan review` headings — 55 in `dev/plans`, 2 in `dev/proposals` — all
+at `##`, none at `###`.** Every `### Plan review` string in the tree sits inside
+a blockquote *instructing* a reviewer where to append; not one is a landed
+heading. So the practice is uniformly `##` while the instructions say `###` — the
+opposite of what I wrote. (The reviewer reports 35 by their own corpus pass; the
+two counts differ in scope, not in direction, and either way the level-3 set is
+empty. I did not reconcile their corpus definition to mine and do not assert
+which is the right denominator.)
+
+That error mattered: it was the only evidence offered that requiring `##` would
+break something real, and it pointed the wrong way.
+
+**[E1] — ACCEPTED. The tier rule is withdrawn as specified.** A role field is an
+unauthenticated assertion living in the same editable document as the claim it
+qualifies; an author-session can type `(External)` as easily as a reviewer can.
+The reviewer's decisive evidence is one I confirmed independently: `29840f7` —
+this repository's own cross-type External review — is authored, committed **and
+signed** under the Maintainer's Git identity, so git provenance does not supply
+agent-type either. And `doctrine/plans.md:422` publishes the review format with
+**no role field at all**, so the rule as proposed would block a conforming human
+review. Revised: the gate validates a **declared tier attestation** — a
+machine-readable field with a closed vocabulary, added to the review format —
+and its documentation states plainly that it **does not authenticate
+independence**. It will not block on free-form role text.
+
+**[E2] — ACCEPTED, and the scope widens.** The `##`/`###` split is a live
+contradiction inside one file: `doctrine/plans.md:115` requires *"a dated `## Plan
+review` section"*, while `:422` prescribes *"### Plan review -- <reviewer> --
+YYYY-MM-DD"* as the per-pass format; `dev/plans/_template.md:261` ships `## Plan
+review` as a container with `###` passes inside. A validator cannot pick a side
+of a contradiction its own doctrine has not resolved. Revised: **reconcile the
+grammar first** across `doctrine/plans.md`, both plan templates and the planner's
+scaffold; only then gate on it, and accept both dated forms when structurally
+placed rather than declaring a flag day. *Touches* is widened accordingly — the
+reviewer is right that it was too narrow for this work.
+
+**[E3] — ACCEPTED.** "Raised findings" is a semantic read of free prose, and
+`_KNOWN_KINDS` does not admit `Sharpening` as a section kind, so the conditional
+has no parseable subject. Revised: an explicit **review-outcome and
+findings-declared field with closed values** lands before Sharpening becomes
+conditional, together with the round-to-Sharpening linkage. Deferred to the plan
+whether that field is one token or two.
+
+**[E4] — ACCEPTED, and it reframes the whole scope.** Even fully strict, the gate
+is routable: relabel the role, add a plausible body, or flip the metadata to
+`not required(...)`. Under a trusted-contributor model the checks still earn
+their place — they catch mistakes and force an **explicit false record** instead
+of silently accepting an omission — but that is a different and smaller claim
+than "the declared review happened". Revised: the tool is documented as a
+**conformance backstop**, its violation text will not use the language of
+authorization, and attribution plus commit history remain the authority check.
+
+**What survives unchanged.** The diagnosis — reproduced independently by the
+reviewer from their own fixtures — and the fifth-scope decision, which the review
+endorses on reasoning stronger than the proposal's own: *file ownership is not
+conceptual ownership*.
+
+**Revised Touches**: `tools/lifecycle_planner.py` and its byte-identical twin
+`templates/skills/_lib/lifecycle_planner.py`; `bootstrap/tests/test_lifecycle_contract.py`;
+`doctrine/plans.md`; `dev/plans/_template.md` and
+`templates/core/dev/plans/_template.md`; the planner's generated plan scaffold.
+
+**Still open for the Maintainer.** This is now a **record-format change shipped
+to every adopter**, not a parser tightening. That is a larger commitment than the
+proposal opened with, and the Decision should be taken on the revised shape.
