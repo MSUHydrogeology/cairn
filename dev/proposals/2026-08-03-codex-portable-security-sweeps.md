@@ -6,7 +6,7 @@
 **Author**: Codex (Strategy, from the Security Review role)
 **Model**: OpenAI Codex (GPT-5)
 **Date opened**: 2026-08-03
-**Status**: revised
+**Status**: accepted
 **Touches**: `bootstrap/_scaffold/config.py` (module registration only), the
 team-gated module catalog under `templates/modules/team-gated/`,
 `bootstrap/DEPENDENCY_BUDGET.md`, `bootstrap/SAFETY.md`, adopter tool-use
@@ -1621,3 +1621,74 @@ on security grounds.
 
 **Scope:** I did not re-execute the Gitleaks probes, evaluate detection quality,
 or review the activation proposal here.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-03
+
+**ACCEPTED as revised, with two conditions binding on the plan.** Scribed and
+committed by Claude at the Maintainer's explicit instruction.
+
+**Maintainer's authorization, quoted verbatim:**
+
+> I accept this proposal as revised. Disposition this so that the plan builds an
+> apparatus to address the GitLeaks versioning . We should adopt it here so that
+> we can evaluate and test it.
+
+**What is accepted.** The team-gated `portable-security-sweeps` module as
+narrowed in revision: a standard-library orchestrator, a strict JSON policy, a
+fixed adapter registry, the shared aggregate exit contract, and **one** adapter
+— Gitleaks, offline, with no network flag in v1.
+
+### Condition 1 — the plan builds a version apparatus, not a documented fallback
+
+The revision pins **exactly Gitleaks 8.30.1** and, per the round-2 response to
+finding **PS9**, adds a reduced-provenance mode so an unmeasured version cannot
+produce CLEAN. This condition goes further: the plan must build the
+**apparatus** by which a version is *admitted, re-measured, and retired* — the
+mechanism, not a one-off mode.
+
+The finding that motivates it, so the plan does not re-derive it: Gitleaks
+releases frequently, so for any adopter not on the pinned version the steady
+state is INCOMPLETE with no scan performed. Pinning is sound — a broad `8.x`
+range would make built-in rules and CLI behaviour mutable, and therefore make
+the gate's meaning mutable — but the consequence needed owning rather than
+documenting. The reduced-provenance mode is the starting point, not the end
+state.
+
+What the apparatus must make routine rather than heroic: rerunning the hostile
+ambient-config and output-schema matrix against a candidate version, recording
+what was measured, and admitting or refusing that version on evidence.
+
+### Condition 2 — Cairn adopts the module itself
+
+Cairn installs and runs this module on its own tree, so the design is evaluated
+by use rather than by argument. This is consistent with Cairn being its own
+first adopter, and it is the condition that makes Condition 1 testable: Cairn's
+own runs will exercise the version apparatus, including the case where the
+installed Gitleaks is not the pinned one.
+
+Two consequences recorded at Decision time: Cairn takes on Gitleaks as a
+dev/CI dependency of its own (the module still installs no scanner — the
+zero-dependency contract for *shipped runtime* is unchanged), and Cairn's own
+install becomes the first evidence about whether the module is usable rather
+than merely correct.
+
+**This resolves the adoption HOLD.** The proposal's adoption amendment held
+implementation pending a standing invocation path and asked whether the module
+was worth building at all. The path now exists —
+`security-verification-activation`, accepted the same day — and this Decision
+answers the second question affirmatively by directing adoption.
+
+**Review tier discharged.** Required `required(External, security lens)`;
+received a Gemini Flash External round and **three** Claude External rounds, the
+last with no blocking findings. Findings were closed by execution rather than
+argument: the `.gitleaksignore` file loads even when `--gitleaks-ignore-path`
+names a trusted empty file, so the runner refuses before execution; and a
+logging `git` shim recorded **two** Gitleaks invocations rather than one, the
+second (`git ls-remote --quiet --get-url`) absent from all prior evidence
+including the reviewer's.
+
+**Next transition:** plan-open. The plan carries `required(External, security
+lens)` in its own right, and both conditions above are in its scope; this
+Decision does not discharge that review.
+
+**Decision-only commit.** Status flip and this section, nothing else.
