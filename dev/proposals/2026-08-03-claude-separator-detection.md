@@ -5,7 +5,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5.
 **Date opened**: 2026-08-03
-**Status**: reviewed
+**Status**: revised
 **Touches**: `templates/modules/team-gated/content_scan.py` (one detector rule)
 and `bootstrap/tests/test_content_scan.py`. Nothing else.
 **Related**: `planner-line-semantics` (delegates detection here — this proposal
@@ -250,3 +250,86 @@ claim_check: dev/proposals/2026-08-03-claude-separator-detection.md -- OK, no cl
 
 **SHIP.** The proposal addresses a verified tripwire gap with a clean, low-complexity detector addition and dedicated pattern ID.
 
+
+## Response and revision -- Claude (author, to the External review) -- 2026-08-03
+
+**Model**: Claude Opus 5
+
+**Both concerns accepted. [E1] is worse than the review states** — verified, and
+it makes the proposal as written *incorrect*, not merely at risk of colliding.
+Status moves to `revised`.
+
+### [E1] — the pattern id is derived from prose, so this proposal's flags would be mislabelled
+
+The review raised pattern-id coordination with `content-scan-detectors`. The
+underlying mechanism is sharper than "coordinate carefully":
+
+```python
+templates/modules/team-gated/content_scan.py:401-403
+    for lineno, msg in _scan_unicode(lines, leading_bom):
+        pid = "unicode-bidi" if "bidirectional" in msg else "unicode-zero-width"
+        raw.append(Flag(pid, lineno, msg))
+```
+
+`_scan_unicode` is the **only** generator whose caller re-derives the pattern id;
+every other call site passes a fixed literal. The id comes from **substring
+matching on the human-readable message**, with an `else` branch that catches
+everything.
+
+Two consequences for this proposal as written, neither of which the review
+reached:
+
+1. A separator message does not contain `"bidirectional"`, so it falls to the
+   `else` and is labelled **`unicode-zero-width`**. The
+   `cairn-accept: unicode-line-separator` marker this proposal promises would
+   **match nothing**.
+2. Worse, an existing `cairn-accept: unicode-zero-width` marker anywhere in the
+   tree would **silently suppress separator detections** — a reviewed
+   suppression for one class quietly widening to cover another.
+
+`content-scan-detectors`' `unicode-ignorable` lands in the same `else`.
+
+**Revision — the id is yielded, not inferred.** `_scan_unicode` yields
+`(lineno, pattern_id, msg)`; the call site uses the yielded id and the ternary
+is deleted. Prose stops being a dispatch key. This is a small contained change
+that also removes the collision the review was worried about: two categories can
+be added independently because neither has to edit a shared discriminator.
+
+**Ownership, stated so the two accepted proposals do not both attempt it.** This
+proposal owns the pid-derivation change, because its own correctness depends on
+it — `content-scan-detectors` merely benefits, since `unicode-ignorable` would
+be mislabelled the same way. Whichever plan implements second rebases onto the
+yielded-id form rather than re-deriving.
+
+**Added to *Tests required*:** all three unicode pattern ids trip independently
+on a crafted fixture, and each `cairn-accept` marker suppresses **only** its own
+id — with a case asserting that a `unicode-zero-width` marker does *not*
+suppress a separator flag. That last one is the regression for the defect above,
+and it fails against the code as it stands today.
+
+### [E2] — accepted; the per-line convention is kept, and the limit is declared
+
+`_scan_unicode` breaks after the first hit **per category per line** — two
+loops, each with its own `break`. A line with both a zero-width character and a
+bidi control already reports both, because they are separate loops; two
+zero-width characters on one line report once.
+
+This proposal adds a third loop and **follows that convention**: one separator
+flag per line, independent of the other two categories.
+
+Changing the break semantics is deliberately **not** in scope. It would alter
+existing `unicode-zero-width` and `unicode-bidi` output for every adopter, which
+is an adopter-facing behaviour change to two shipped detectors and needs its own
+proposal and review — not a rider on a detector addition. Recorded as a declared
+limit rather than left implicit: **a line carrying two separators flags once,
+and the flag names the first.**
+
+### Scope
+
+`Touches` is unchanged in files: `templates/modules/team-gated/content_scan.py`
+and `bootstrap/tests/test_content_scan.py`. Within `content_scan.py` the
+revision now edits three sites rather than one — the new detector loop, the
+pid-derivation call site, and the pattern-id list in the module docstring
+(lines 40-43). Verified that
+`templates/modules/team-gated/content-security.md` does **not** enumerate
+pattern ids, so it does not change.
