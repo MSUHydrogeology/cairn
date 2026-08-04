@@ -5,7 +5,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: reviewed
+**Status**: superseded
 **Touches**: `bootstrap/_scaffold/config.py` (`_yaml_load`, `_minimal_yaml_parse`,
 `load_config`), its exports in `bootstrap/_scaffold/__init__.py`, and the
 `bootstrap/tests/` coverage for profile loading
@@ -548,3 +548,40 @@ as authorizing either.
 **Not carried forward:** the Hypothesis dependency (E3), the AST re-anchor
 procedure as I described it (E4b), and the "supported subset" framing, which E2
 shows was never a grammar.
+
+## Decision -- Maintainer -- 2026-08-03
+
+**SUPERSEDED into `profile-parse-fail-open`.**
+
+Authorization, quoted verbatim:
+
+> Let's reopen the other plan and supersede this proposal into.
+
+Scribed and committed by Claude on the Maintainer's explicit instruction. The
+disposition follows the External security review (Codex, finding **[E1]**) and
+the author's response, which agreed: `profile-parse-fail-open` was opened at
+`49c85bc` and already owns `_minimal_yaml_parse`, `load_config`, and the
+parser-selection trust boundary. Two artifacts prescribing mutually exclusive
+runtime designs over the same three symbols is the condition this Decision
+removes.
+
+**Carried forward into the plan** (recorded in its amendment, not here):
+
+1. **The sole-runtime-parser design** — drop the PyYAML runtime branch and keep
+   PyYAML as a test-only oracle. The reviewer independently judged this
+   preferable on security grounds to retaining two runtime paths under a common
+   grammar.
+2. **BOM and C0/C1 control-character refusal** added to the plan's closed
+   grammar, with `project_name`'s render-into-tree and `--summary` print sinks
+   named as the reason.
+
+**Not carried forward**, per the review and the author's response: the
+Hypothesis/PyYAML dev-dependency claim (**[E3]** — the standing invoked does not
+exist in `bootstrap/DEPENDENCY_BUDGET.md` or `bootstrap/requirements-dev.txt`),
+the AST re-anchor procedure as described here (**[E4b]** — inherited from a
+broken pointer at `AGENTS.md:337`, tracked as deferred Maintainer question 4),
+and the "supported subset" framing, which **[E2]** showed was never a grammar.
+
+The evidence this proposal contributed — the executed parser divergence, the
+`load_config` guard that cannot fire on the adopter path, and the token-render
+sink — survives in the plan's amendment and in this archived record.
