@@ -5,7 +5,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: proposed
+**Status**: reviewed
 **Touches**: `bootstrap/_scaffold/config.py` (`_yaml_load`, `_minimal_yaml_parse`,
 `load_config`), its exports in `bootstrap/_scaffold/__init__.py`, and the
 `bootstrap/tests/` coverage for profile loading
@@ -427,3 +427,124 @@ Windows behavior, resource-exhaustion limits for very large profiles, the full
 bootstrap suite, or implementation bytes (none exist for this proposal). The
 working tree also contains unrelated concurrent edits, which I did not inspect
 or modify.
+
+## Response to the External security review -- Claude (author) -- 2026-08-03
+
+**Model**: Claude Opus 5
+
+**All four findings accepted. I agree with the recommendation: fold item 1 into
+`profile-parse-fail-open` and supersede this proposal.** The disposition is the
+Maintainer's; on the evidence I would not defend running a second
+implementation and a second AST ceremony over the same three functions.
+
+### E1 -- accepted, and the process failure behind it is worth more than the finding
+
+`dev/plans/profile-parse-fail-open.md` is **open** (`49c85bc`, 20:26). I opened
+this proposal at 21:40 -- **74 minutes later** -- over the same three symbols,
+prescribing a mutually exclusive runtime design.
+
+The mechanism of the miss: I ran `session-start` once, at the top of a long
+session, and never re-ran it before creating a lifecycle artifact roughly ten
+hours later -- in a repository where a concurrent agent was actively opening
+plans, which I knew, having already collided with that agent's work twice.
+Orientation was treated as a session-opening ritual rather than a precondition
+for the specific act of opening a proposal.
+
+That is a generalizable rule, not a one-off apology: **re-check in-flight state
+immediately before opening any lifecycle artifact, not only at session start.**
+`AGENTS.md` > *Session routines* frames orientation as a cold-start/context-loss
+routine; it does not name proposal-opening as a trigger. Recommending that as a
+small doctrine fix is out of scope here, but it is the durable form of this
+finding.
+
+### E2 -- accepted; the reviewer's probes are strictly better than mine
+
+I named four rejected shapes and called it a boundary. It is not a boundary
+until membership in the accepted language is defined, and the reviewer
+demonstrated shapes I did not test: a BOM changing the key, `project_name: a: b`
+accepted where PyYAML refuses, and NUL / ESC / backspace accepted inside a value
+PyYAML rejects with `ReaderError`.
+
+The control-character case is the one I should have found. My own Finding 2
+established that `project_name` is rendered into the adopter's tree -- so I had
+already shown the sink, then tested only the comment case at it. Control
+characters reaching a rendered token and `--summary` output is the same defect,
+strictly worse, and one probe away from where I stopped. The closed L1-L8 grammar
+in the sibling plan is the better starting point, with the BOM and C0/C1 rule
+added.
+
+### E3 -- accepted, and it is the session's own recurring error, again
+
+I wrote that PyYAML and Hypothesis would be "the same standing as `pytest` and
+`vermin` in `bootstrap/DEPENDENCY_BUDGET.md`". Verified against the ledger:
+
+* `bootstrap/requirements-dev.txt` declares **`vermin` only**;
+* `DEPENDENCY_BUDGET.md` mentions Hypothesis **zero** times;
+* `vermin` has a *named* Exception 2; `pytest` is not in the ledger at all.
+
+So the standing I invoked does not exist for either tool, and one of my two
+comparators does not have it either. I asserted a category on the strength of it
+sounding right, and the file was one `grep` away.
+
+This is the same failure the archived `gate-reanchor-preflight` record documents
+five times over -- claiming a protection or a standing at the strength intended
+rather than the strength delivered -- committed in a proposal written *the same
+day* as that plan's closing note about it. Recording it here because the pattern
+evidently does not transfer between surfaces on its own.
+
+The substantive fix is the reviewer's: generate the small closed grammar with
+the standard library, and make an absent PyYAML oracle an explicit non-green
+condition rather than a skip.
+
+### E4 -- both accepted; the second one is not only my error
+
+**(a) Count.** The evidence table has **10** data rows; the text asserts "9 of 9
+diverge". The probe script I ran had nine cases and `strict: false` came from a
+second probe that I folded into the table without re-deriving the count. Under
+this repository's count discipline that is a live-invariant claim stated wrong.
+The reviewer's independent run found 10 of 10.
+
+**(b) AST procedure -- accepted, and the source is a defect in `AGENTS.md`.**
+The reviewer is right that `bootstrap/REANCHOR_RUNBOOK.md` does not govern the
+scaffold AST baseline. Verified: the runbook contains **zero** occurrences of
+`ast_attest`, `AST baseline`, or `scaffold_ast`. It governs
+`refs/cairn/gate-anchor` and nothing else.
+
+I did not invent that pointer. `AGENTS.md:335-338` says:
+
+> **AST attestation baseline.** `bootstrap/tests/test_ast_attest.py` pins the
+> engine package against a committed baseline; after any `bootstrap/_scaffold/`
+> change, re-anchor it per `bootstrap/REANCHOR_RUNBOOK.md` (it does not
+> auto-update).
+
+So the governing operational reference routes a trust-root correction to a
+runbook that does not describe it. Any agent following `AGENTS.md` reaches the
+wrong procedure, which is what happened here. **This warrants its own small
+correction proposal against `AGENTS.md`** -- a broken procedural pointer on a
+trust-root surface is precisely the "control that is present and not reached"
+class, one level up in the doc layer. I have not fixed it here; it is not this
+proposal's scope and `AGENTS.md` is not a deliberation file.
+
+I also accept the missing author-accounting sections; the sibling plan supplies
+most of that negative space already, which is a further argument for folding
+rather than duplicating.
+
+### Recommended disposition
+
+**Supersede this proposal into `profile-parse-fail-open`**, carrying forward
+exactly two things:
+
+1. **Item 1 -- the sole-runtime-parser design**, which the reviewer independently
+   judges preferable on security grounds to retaining two runtime paths under a
+   common grammar; and
+2. **the BOM / C0-C1 control-character refusal rule** added to that plan's closed
+   grammar, with `project_name`'s render-and-print sinks named as the reason.
+
+Everything else in this proposal is either already owned by that plan or wrong
+as written. Amending an accepted plan is a Maintainer act and its amended
+security core needs a focused External re-review; I am not treating this response
+as authorizing either.
+
+**Not carried forward:** the Hypothesis dependency (E3), the AST re-anchor
+procedure as I described it (E4b), and the "supported subset" framing, which E2
+shows was never a grammar.
