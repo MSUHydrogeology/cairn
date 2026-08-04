@@ -1,11 +1,12 @@
 <!-- cairn-internal-ref-allow: doctrine/runtime-contract.md doctrine/rationale.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
+<!-- claim-check-allow: dev/modules/portable-security-sweeps.md, scripts/run_portable_security_sweeps.py, scripts/portable_security_policy.json, bootstrap/tests/test_portable_security_sweeps.py -->
 
 # Portable security sweeps for non-Python and polyglot adopters
 
 **Author**: Codex (Strategy, from the Security Review role)
 **Model**: OpenAI Codex (GPT-5)
 **Date opened**: 2026-08-03
-**Status**: reviewed
+**Status**: revised
 **Touches**: `bootstrap/_scaffold/config.py` (module registration only), the
 team-gated module catalog under `templates/modules/team-gated/`,
 `bootstrap/DEPENDENCY_BUDGET.md`, `bootstrap/SAFETY.md`, adopter tool-use
@@ -721,3 +722,255 @@ The next lifecycle transition will append a revised proposal that:
 closed by prose alone. They close only when the revised proposal carries these
 contracts and a focused External re-review confirms that the narrower design did
 not preserve four-adapter assumptions under a one-adapter label.
+
+## Revised proposal -- one offline adapter with a measured boundary -- 2026-08-03
+
+This section is append-only. Where it conflicts with the original proposal,
+**this revision governs**. The Response above records how the review changed the
+design; this section states the resulting contract without requiring an
+implementer to merge two versions mentally.
+
+### Scope replacement
+
+V1 installs one adapter: **Gitleaks**, answering one question over two views of
+the repository:
+
+* current-tree secrets, including uncommitted and ignored files, via `gitleaks
+  dir`; and
+* committed-history secrets across all locally available refs, via `gitleaks
+  git`.
+
+OSV-Scanner, zizmor, and Trivy are removed from v1. They remain examples of the
+question-oriented extension boundary, not supported adapters and not names the
+policy accepts. Adding any one is a new proposal with its own executable chain,
+ambient-config execution evidence, network/data posture, output schema, and
+offline-CLEAN disposition.
+
+The module remains named `portable-security-sweeps`: its contract and report are
+language-neutral even though v1 contains one sweep. It does not replace or
+broaden `python-security`; it adds secret/current-tree/history coverage that is
+independent of Python package analysis.
+
+### Installed surface and policy
+
+The original three-file complete group remains:
+
+1. `dev/modules/portable-security-sweeps.md` -- threat model, invocation,
+   interpretation, trust roots, suppressions, and residuals;
+2. `scripts/run_portable_security_sweeps.py` -- standard-library runner; and
+3. `scripts/portable_security_policy.json` -- strict, lockfile-covered policy.
+
+The v1 policy has exactly this semantic shape:
+
+```json
+{
+  "schema": 1,
+  "gitleaks": {
+    "fingerprints": []
+  }
+}
+```
+
+`gitleaks` is enabled by selecting the module; there is no redundant enable
+flag. `fingerprints` is the only suppression form. Duplicate JSON keys, unknown
+keys, non-string entries, duplicates, empty/oversized strings, and control
+characters refuse before executable resolution. Policy cannot name a path,
+argument, environment variable, rule/config file, report template, baseline, or
+executable. The runner materializes validated fingerprints one per line in an
+off-tree temporary `.gitleaksignore`; candidate-tree suppression files never
+become policy by discovery.
+
+The Gitleaks TOML configuration is fixed runner-owned text, materialized
+off-tree for each run. It extends the binary's built-in default rules and is
+always named with `--config`. It is not copied from the repository and carries
+no policy-supplied TOML.
+
+### Threat model and complete executable trust set
+
+This is a self-audit of a trusted host and trusted checkout. Candidate-controlled
+tracked and working-tree content is scan input and must not select executable,
+configuration, suppression, argv, environment, or display control. The runner
+does not contain Gitleaks or Git, authenticate either binary, or defend against
+a concurrent trusted-host process racing preflight and execution.
+
+V1 has exactly two external executable trust roots:
+
+* `gitleaks`, invoked by absolute lexical path after lexical/resolved containment,
+  regular-file, and executable checks; and
+* `git`, invoked transitively by Gitleaks for history scanning. The runner
+  resolves and validates it by the same rules, then gives Gitleaks a minimal
+  PATH containing only the verified Git directory.
+
+Package-manager symlinks are allowed only when both lexical and resolved paths
+are outside the repository. The report records both paths and both `--version`
+outputs. A missing binary yields INCOMPLETE; unsafe shape, repository
+containment, version failure, or path drift yields DEGRADED. This is executable
+shape validation, not binary provenance. A project requiring provenance pins
+and verifies these host artifacts outside Cairn.
+
+The v1 adapter accepts **exactly Gitleaks 8.30.1**, the version measured here.
+An installed but unsupported version reports INCOMPLETE without scanning. Adding
+a version is a reviewed adapter-contract change with the live hostile-config and
+output-schema matrix rerun; a broad `8.x` range would quietly make built-in
+rules and CLI behavior mutable.
+
+### Candidate-configuration boundary
+
+The adapter owns the complete argument vector. Policy contributes no argv.
+Both scans include:
+
+* the explicit off-tree `--config` path;
+* the explicit off-tree `--gitleaks-ignore-path`;
+* `--ignore-gitleaks-allow`;
+* `--redact=100`, `--no-color`, and `--no-banner`;
+* `--report-format json` and an off-tree `--report-path`;
+* fixed archive/decode depths of zero in v1; and
+* a Gitleaks timeout shorter than the runner's outer subprocess deadline.
+
+Before either scan, the runner walks the candidate tree without following
+symlinks and refuses if **any** `.gitleaksignore` exists. This refusal is required
+because Gitleaks 8.30.1 loads the target's root ignore file even when an explicit
+ignore path is supplied. A symlink named `.gitleaksignore` also refuses. The
+trusted-checkout model accepts the residual delete/create race and states it.
+
+The history scan additionally owns this exact semantic Git option set through
+`--log-opts`:
+
+```text
+--all --full-history --text --no-textconv --no-ext-diff
+```
+
+`--text` prevents a tracked `.gitattributes` `binary` rule from removing blob
+content from the patch stream. `--no-textconv` and `--no-ext-diff` prevent Git
+diff drivers from extending the scan into executable helpers. The child
+environment is allowlisted, removes `GITLEAKS_CONFIG`,
+`GITLEAKS_CONFIG_TOML`, Git/Python import and prompt variables, and sets
+`GIT_TERMINAL_PROMPT=0`, `GIT_NO_REPLACE_OBJECTS=1`,
+`GIT_CONFIG_NOSYSTEM=1`, `GIT_CONFIG_GLOBAL` pointed at an off-tree empty file,
+and `GIT_OPTIONAL_LOCKS=0`.
+
+The current-tree scan does not follow symlinks; the public-path test includes a
+symlink to an outside secret and requires zero outside bytes scanned. It scans
+an ignored ordinary file, establishing that `.gitignore` does not silently
+narrow current-tree coverage.
+
+### Structured output and report integrity
+
+No child stdout or stderr is printed verbatim. Gitleaks writes redacted JSON to
+an off-tree file. The runner checks its size before reading, parses with the
+standard library, validates the expected result/list and field types, and
+selects only rule ID, repository-relative path, line, commit/fingerprint, and
+scan leg for display. Secret, match, author, email, and commit-message fields
+are never rendered.
+
+Every displayed string is serialized with `json.dumps(..., ensure_ascii=True)`.
+This escapes C0/C1 controls, newlines, ANSI escapes, and bidi/non-ASCII code
+points rather than allowing them to become terminal controls. Bounded stderr is
+escaped as an opaque diagnostic only for tool failure; ordinary Gitleaks chatter
+is not evidence and is not relayed. Oversized output, invalid UTF-8/JSON,
+unknown result shape, missing redaction, or an undocumented exit is DEGRADED,
+never CLEAN or FINDINGS.
+
+The runner writes its own deterministic JSON summary after both legs. The
+human-readable report is a rendering of that validated summary, not of scanner
+text.
+
+### Network, coverage, and aggregate exits
+
+V1 has no network flag or remote-data path. Both Gitleaks legs are offline, so
+CLEAN is reachable under the default invocation.
+
+The shared aggregate meanings remain `0` CLEAN, `5` INCOMPLETE, `10` FINDINGS,
+and `20` DEGRADED/TAMPER, with precedence `20 > 10 > 5 > 0`:
+
+* full current-tree and non-shallow history across all local refs, no findings
+  -> 0;
+* either executable absent, non-Git export, or shallow/incomplete history with
+  no findings -> 5;
+* at least one validated finding and no degraded condition -> 10, including
+  when history completeness is only 5; and
+* unsafe executable, apparatus/policy drift, candidate `.gitleaksignore`, tool
+  failure/timeout, malformed/oversized output, or invalid policy -> 20.
+
+A non-Git export still runs the current-tree leg and reports the history leg
+INCOMPLETE. A shallow repository reports its observed boundary and cannot claim
+full-history coverage. The summary names both legs, file/commit coverage
+available from validated output, versions, executable paths, suppressions used,
+and the absence of network access.
+
+### Revised tests and smoke checks
+
+The proposed `bootstrap/tests/test_portable_security_sweeps.py` now has one
+adapter matrix rather than four shallow matrices:
+
+* strict JSON policy, duplicate-key detection, fingerprint line-injection, and
+  complete three-file module mapping;
+* Gitleaks/Git absent, repository-local, symlinked-outside, non-executable,
+  path-drift-before-invocation, and version-failure paths;
+* exact argv/environment capture for both `dir` and `git`, including the fixed
+  Git option set and both timeout layers;
+* hostile `.gitleaks.toml`, both Gitleaks config environment variables,
+  `gitleaks:allow`, `.gitleaksignore`, `.gitattributes binary`, `.gitignore`,
+  shallow, non-Git, and symlink-escape fixtures;
+* current-only, history-only, both-leg, suppressed-fingerprint, clean, absent,
+  finding, timeout, malformed JSON, invalid UTF-8, oversized report, signal
+  death, and pairwise aggregate-precedence cases;
+* hostile path/result strings carrying ESC, newline + forged CLEAN text, and
+  bidi controls, plus a fake-tool JSON field carrying escaped NUL, with
+  assertions over both machine and human reports; and
+* scaffold install, manifest, complete-group, collision, adopt-module, upgrade,
+  lockfile integrity, SPDX/license, generated-output, Python-floor, and Bandit
+  coverage for the three shipped files.
+
+Fake executables prove runner behavior deterministically. A separately marked
+live-contract test runs only when the exact reviewed Gitleaks version is
+available and states loudly when skipped; before Decision and before release,
+the hostile-config matrix must also be recorded against a real supported
+Gitleaks binary. Fake-tool green does not establish third-party CLI behavior.
+
+The end-to-end smoke check scaffolds a non-Python Git fixture, plants one
+current-tree and one history-only token, verifies both findings with network
+denied, then removes them and requires offline exit 0. It repeats with a shallow
+clone (5), a hostile `.gitleaksignore` (20), and all tooling absent (5).
+
+### Revised residuals and wrong-change signals
+
+Accepted residuals: unauthenticated host Gitleaks/Git binaries; no process
+containment; Gitleaks 8.30.1's built-in rule corpus is trusted as part of that
+binary rather than independently hash-pinned; the preflight/execution race on a
+trusted checkout; finite hostile-config coverage; and incomplete history in
+shallow/non-Git inputs. Every one is printed or documented; none is called
+clean.
+
+The change is wrong if Gitleaks cannot preserve the measured config boundary on
+a supported release, if a candidate-controlled file changes either argv or
+suppression without causing refusal, if CLEAN is not reachable offline, if raw
+tool output reaches the terminal, if supporting version drift requires a
+generic command/config language, or if Git's transitive behavior adds another
+unaccounted executable/config surface. The recovery is to remove the adapter,
+not weaken the boundary.
+
+The existing `python-security` missing-timeout and raw-output defects remain
+separate. This revision neither edits nor excuses them.
+
+### Evidence status and review gate
+
+Measured 2026-08-03 on Darwin arm64 with canonical Python 3.13.13 and
+checksum-verified Gitleaks 8.30.1:
+
+* explicit trusted config defeated `.gitleaks.toml` and hostile config env;
+* `--ignore-gitleaks-allow` defeated inline suppression;
+* explicit ignore path did **not** defeat candidate `.gitleaksignore`, grounding
+  the refusal;
+* `.gitattributes binary` caused a false CLEAN until the fixed `--text
+  --no-textconv --no-ext-diff` options restored the finding;
+* `.gitignore` did not hide an ordinary file from `gitleaks dir`;
+* Gitleaks did not follow the tested outside-tree symlink;
+* hostile filename controls survived JSON parsing but rendered escaped; and
+* debug output exposed the transitive host Git invocation.
+
+This is one version on one platform, not a cross-version proof. The plan remains
+`required(External, security lens)`, and this revised proposal returns for a
+focused External re-review before Decision. That reviewer should attack the
+Gitleaks-to-Git boundary and the claimed completeness of the candidate-config
+matrix first.
