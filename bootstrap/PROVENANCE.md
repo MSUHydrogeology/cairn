@@ -111,13 +111,25 @@ fingerprint out of this file — a fingerprint published inside the
 artifact would be a fingerprint an attacker who rewrote the artifact
 also rewrote.
 
-**Recorded as not established** (`as_of 2026-08-03`): whether the forge
-serves SSH **signing** keys (as distinct from SSH *authentication* keys)
-at a stable public endpoint for this account has **not** been confirmed.
-Confirming it is a maintainer step that precedes the first signed
-release. If it turns out to be false, channel 2 becomes primary and a
-third independent channel is added; the procedure below does not change,
-only the table does.
+**Established** (`as_of 2026-08-04`, by the maintainer): the forge serves
+SSH **signing** keys at a stable public endpoint, **distinctly** from SSH
+*authentication* keys. Measured on both endpoints for this account:
+`https://api.github.com/users/<account>/ssh_signing_keys` returned the
+release signing key, and `https://github.com/<account>.keys` — the
+*authentication* set — returned a **different** key that does not include
+it. The two sets being disjoint is what makes channel 1 usable: an
+authentication key an attacker added would not appear on the signing
+endpoint. Channel 1 therefore stands as written, channel 2 stays
+secondary, and no third channel is required.
+
+Note the endpoint is the **REST API path**, not a `<account>.keys`-style
+page: the forge publishes no plain-text signing-key path. A verifier
+reads the signing key from the API endpoint above.
+
+**No fingerprint is recorded in this file, deliberately** — see the rule
+above. A fingerprint published inside the artifact is one an attacker who
+rewrote the artifact also rewrote. Read it from the channels, never from
+here.
 
 ### Step 2 — write the roster yourself
 
