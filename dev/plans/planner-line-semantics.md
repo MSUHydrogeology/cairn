@@ -2212,3 +2212,470 @@ Decision therefore never weighed.
   whether the loosening direction (a) — a forged `required` that the fix removes —
   is worth a named row in *Failure modes*. Both are calls about what the record
   claims, and the record's claims are the Maintainer's, not the author's.
+
+## Response to plan review -- Claude (author) -- 2026-08-04
+
+**Which review this answers, and a heading collision stated rather than left to
+inference.** This is the **second** `## Response to plan review` section on this
+plan and it carries the same heading text as the first. The first (above)
+answers the **External** round, `## Plan review -- Codex (External, scope-call
+lens) -- 2026-08-04`. **This one answers the Internal round**, `## Plan review --
+Claude (Internal, same-agent-type; security lens) -- 2026-08-03`, and disposes
+the findings that Response left explicitly outstanding. The collision is
+recorded here because a reader citing "the Response" would otherwise have no way
+to tell them apart; the planner parses both as `Response` sections and nothing
+mechanical changes.
+
+**Model**: Claude Opus 5 (`claude-opus-5`). Every figure below was taken this
+session at **`84fbef4`**, under the canonical
+interpreter (`/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13)
+with `PYTHONDONTWRITEBYTECODE=1`. The Internal review was written at `eacb7dd`
+and the plan's own figures at `79df5e5`; **nothing is carried forward from
+either.**
+
+**The tracked tree was clean when the figures were taken, and did not stay that
+way — recorded rather than smoothed over.** At the start of this session
+`git status --short` named only two untracked paths (`.claude/`,
+`dev/measurement/snapshots/`) and no modified tracked file, and every figure in
+the `[I8]` table was taken in that state. Partway through, a **concurrent
+edit to `bootstrap/PROVENANCE.md` appeared in the working tree** — not this
+plan's, not this agent's, and left untouched. Its effect on the figures asserted
+here was **checked rather than assumed**: `verify_integrity --target .`,
+`quality_gate --sub neutrality` and `_gate_manifest.py verify` were all re-run
+after it appeared and returned byte-identical results (2 violations / `fail=95
+info=21` / HOLD — 17: 10 / 3 / 4). The file is neither lockfile-recorded nor
+frozen, and it adds no vendor token. **This is exactly the moving baseline the
+plan warns about: re-measure at the branch tip.** Every line citation was re-checked against the live file. All patched
+and perturbed copies live in a throwaway scratch directory outside this tree;
+**no source file in this tree was modified**, and no file in *In scope* appears
+in `git status`.
+
+**What supplied the material for each check, stated because this is the failure
+this repository keeps repeating.** The gate measurements were taken from the
+gates themselves (`scripts/quality_gate.py`, `bootstrap/tests/_gate_manifest.py`,
+`bootstrap/verify_integrity.py`, `bootstrap/scaffold.py`) run at the live tree,
+never from the plan's recorded figures. The `[I1]` gate result was taken by
+driving `tools/lifecycle_planner.py next` **through the CLI in a subprocess**
+against fixtures built in a throwaway git repo — not by reading `_has_kind` and
+reasoning about it, because a call path is what governs and a supporting
+function is not the call path. The `[I4]` result was taken through the real
+`_compute_upgrade` on this tree, not through `classify_verbatim` in isolation,
+and that distinction is what changes the finding's answer. The `[I2]` line-shift
+was measured by inserting **the proposal's own helper block**, extracted from
+the proposal's fenced example, into scratch copies and re-running the gate's own
+`_scan_neutrality_file` — not by adding the review's stated `+19` to the flagged
+line numbers.
+
+### `[I3]` is discharged. It is confirmed here and not redone
+
+`[I3]` (*the window opens on two surfaces; `session-end` relays the same value*)
+was made a condition of the External round's acceptance of Chunk B's residual
+and was **dispositioned in full** in the Response to the External review above.
+Confirmed rather than assumed: amendments **R9** (the *Glossary* entry),
+**R10** (the *Failure modes* row), **R11** (Chunk B's mandated commit-body
+disclosure, which now fails if it names only `session-start`), **R12** (the
+*Public-path → test mapping* third entry), **R13** (the smoke check runs both
+`session-start` and `session-end --dry-run`) and **R15** (the non-UTF-8 row)
+name `session-end` / `_do_thread_survey` in terms. Re-verified live: the two
+`_in_flight` consumers are still `cmd_session_start`
+(`tools/lifecycle.py:783`) and `_do_thread_survey` (`:1180`), the latter called
+from `cmd_session_end` at `:1206` **before** the `--handoff` branch. **No
+further amendment follows.**
+
+### `[I1]` the review-before-implement gate is presence-only and tier-blind, and gate accounting #14 draws the wrong conclusion -- **ACCEPTED**
+
+*The finding.* The plan's headline procedural safeguard is a gate that checks
+only that a section named `Plan review` exists. Gate accounting #14 measures the
+header regex correctly and then concludes that shaping the brief heading with an
+em dash is what stops an *empty* section opening the gate. It does not.
+
+**Reproduced at the module level and then again end-to-end through the CLI,
+because the module-level result is not the thing an implementing agent sees.**
+The gate is `_has_kind(art, "Plan review")` at
+`tools/lifecycle_planner.py:860` (the `next` advisory) and `:787` (the
+conformance violation); `_has_kind` is
+`any(s.kind.lower().startswith(prefix.lower()) for s in art.sections)`
+(`:693`). Module level, over this plan's own text with the landed review
+sections cut away and the status forced to `awaiting-plan-review`:
+
+```
+as written (no review section)                      _has_kind('Plan review')=False   sections=[]
++ '## Plan review -- Claude (Internal, ...) -- date' _has_kind('Plan review')=True    sections=[(2, 'Plan review')]
++ '### Plan review -- Claude (Internal, ...) -- date' _has_kind('Plan review')=True   sections=[(3, 'Plan review')]
++ an EMPTY '## Plan review' heading                 _has_kind('Plan review')=True    sections=[(2, 'Plan review')]
++ an EMPTY '### Plan review -- X -- 2026-08-03'     _has_kind('Plan review')=True    sections=[(3, 'Plan review')]
+```
+
+and `plan_review` reads `'required(**External**) —'` in **all five** rows —
+the tier string is parsed and then never consulted. End-to-end, driving the
+shipped CLI in a subprocess inside a throwaway git repo:
+
+```
+$ lifecycle_planner.py next dev/plans/x.md      # status: awaiting-plan-review
+
+NO REVIEW SECTION
+   -> executing
+        [MISSING] a '## Plan review' section has landed (+ Sharpening if it raised findings)
+INTERNAL-ONLY (## heading, real body)
+   -> executing
+        [ok ] a '## Plan review' section has landed (+ Sharpening if it raised findings)
+EMPTY PLACEHOLDER (### heading, no body)
+   -> executing
+        [ok ] a '## Plan review' section has landed (+ Sharpening if it raised findings)
+```
+
+**All three of the reviewer's consequences hold, and the third is the one that
+matters.** Heading level is immaterial; an empty `###` placeholder opens the
+gate exactly as an empty `##` does; and the tier is invisible — `requires_review`
+is `art.plan_review.lower().startswith("required")`
+(`tools/lifecycle_planner.py:663`) and nothing reads the word inside the
+parentheses, the reviewer identity, the `(Internal…)` label, or the date. So the
+only mechanical review-before-implement check in this repository prints `[ok ]`
+for a section the plan itself says must not be counted toward the tier. **The
+`###` prescription in the header buys nothing mechanically.** What it does buy
+is real and narrower, and the plan should say *that*: it stops the plan's **own
+brief heading** (`## Plan review — the brief, and why the tier is not
+discharged`) from self-satisfying the gate, because the em dash and comma break
+the regex's kind group.
+
+**What changes, and what deliberately does not.** The header gains the
+disclosure (**R16**) and gate accounting #14 is corrected (**R17**). **The tool
+is not fixed here** — the reviewer fenced that out and so does this Response.
+
+**The tool-side question is no longer unowned, which makes the reviewer's second
+remedy cheaper than when it was written.** The review asked for a
+`dev/PLANNING.md` row for the tool-side question. Since then that question has
+acquired **its own accepted scope**: proposal
+`dev/proposals/2026-08-04-claude-review-gate-enforcement.md`, accepted at
+`eb1b2b7`; plan [`dev/plans/review-gate-enforcement.md`](review-gate-enforcement.md)
+opened at `8dfb664`; its Response to its own External review at `eaf1109`.
+Checked by opening it rather than by matching titles: its Chunk B teaches the
+record to carry a **declared tier attestation** with a closed vocabulary
+(`B.1`/`B.3`), and its Chunk C gates on it — row **C.1**, *"declared tier
+satisfied"*, with the single-property falsifier *"delete the tier comparison →
+this node red, others green"*. That is precisely `[I1]`'s third consequence,
+owned and scoped. Its own status is `open` and its Response records that it
+cannot proceed on its External round's strength, so **the row points at an owner,
+not at a fix that has landed.** The row text is returned serialized rather than
+written (`AGENTS.md` > *Shared communication files*); see *Serialized, not
+written* below.
+
+### `[I2]` "No flag names any of the four files this plan edits" is false, and the differential criterion is unevaluable as written -- **ACCEPTED**
+
+**The `fail` figure reproduces; the claim does not.** Live:
+`python scripts/quality_gate.py --sub neutrality` → `fail=95  info=21`, exit 1
+— and **seven** pre-existing `FAIL` lines name two of the four files in scope,
+at the same line numbers the reviewer measured five commits ago:
+
+```
+FAIL  templates/skills/_lib/lifecycle.py:76:            token `Claude`
+FAIL  templates/skills/_lib/lifecycle.py:526:           token `Claude`
+FAIL  templates/skills/_lib/lifecycle.py:729:           token `Claude`
+FAIL  templates/skills/_lib/lifecycle.py:745:           token `Codex`
+FAIL  templates/skills/_lib/lifecycle.py:1193:          token `Claude`
+FAIL  templates/skills/_lib/lifecycle_planner.py:186:   token `Codex`
+FAIL  templates/skills/_lib/lifecycle_planner.py:505:   token `Antigravity`
+```
+
+**Why the original inspection missed them, established from the gate's own
+corpus definition rather than guessed.** `_NEUTRALITY_FILE_SUFFIXES`
+(`scripts/quality_gate.py:431`) enumerates eight roots — `doctrine`,
+`dimensions`, `on-ramp`, `docs`, `examples`, `bootstrap`, `scripts`,
+`templates` — and **`tools/` is not among them**. Only `templates/` is scanned
+for `.py`. So the two `tools/` twins are outside the corpus by construction and
+can never be flagged, while their `templates/skills/_lib/` twins always can. An
+inspection that read the output looking for `tools/lifecycle*.py` would find
+nothing and conclude correctly about the wrong half of each pair.
+
+**The second half, measured with the proposal's own helper rather than with the
+review's arithmetic.** I extracted the helper block from the proposal's fenced
+example (21 lines) and inserted it plus one blank line at planner line 466 and
+at `lifecycle.py` line 488 — the insertion points A1 and B1 name, both confirmed
+live (`# --- artifact parsing ---` at `templates/skills/_lib/lifecycle_planner.py:466`,
+`# --- in-flight thread survey ---` at `templates/skills/_lib/lifecycle.py:488`)
+— then re-ran the gate's own `_scan_neutrality_file` over the patched copies:
+
+```
+lifecycle_planner.py  BEFORE [(186,'Codex'), (505,'Antigravity')]
+                      AFTER  [(186,'Codex'), (527,'Antigravity')]
+lifecycle.py          BEFORE [(76,'Claude'), (526,'Claude'), (729,'Claude'), (745,'Codex'), (1193,'Claude')]
+                      AFTER  [(76,'Claude'), (548,'Claude'), (751,'Claude'), (767,'Codex'), (1215,'Claude')]
+
+textual (line, token) set identical:  False   (5 removed + 5 added, all naming a file in scope)
+(file, token) multiset identical:     True
+```
+
+**Five of seven shift; a naive before/after diff is indistinguishable from five
+new flags; the line-number-stripped multiset is invariant.** Two of the seven —
+`lifecycle_planner.py:186` and `lifecycle.py:76` — sit above their insertion
+point and do not move.
+
+**One correction to the reviewer, in the direction that strengthens the fix.**
+The review states the insertion adds **19** lines and predicts `505 -> 522`,
+`526 -> 543`, `729 -> 746`, `745 -> 762`, `1193 -> 1210`. Re-derived with the
+proposal's actual block it is **+22**, and the shifted numbers are `527`, `548`,
+`751`, `767`, `1215`. Neither figure is wrong so much as **neither is a property
+of this plan**: the comment block is specified as *"verbatim in substance"*, so
+its length is the implementer's, and any recorded shift magnitude is a number
+the next commit invalidates. That is the argument for the multiset spec, and it
+is why the amendment pins **no** shift figure. **R18** and **R19**.
+
+### `[I4]` B4's tie-break specifies a measurement with no discriminating power -- **ACCEPTED, and the review's own proposed replacement is measured to have none either**
+
+*The finding.* B4 tells the implementer to settle the `hash`-only vs
+`hash`+`base_hash` conflict with `agent-context-scrub` A4 by taking
+`verify_integrity --target .` before and after and choosing the option that adds
+no line. Both options add no line. The review's remedy: *"re-point B4's tie-break
+at `classify_verbatim`/`upgrade`, or settle it on the merits with
+`agent-context-scrub` and say which."*
+
+**I established which by measurement, and the answer is that the re-point does
+not work either.** `verify_integrity` cannot discriminate for a reason that is
+now confirmed structurally: `grep -n base_hash bootstrap/verify_integrity.py`
+returns nothing — the verifier compares on-disk bytes against `hash` alone. But
+`classify_verbatim` (`bootstrap/_scaffold/lockfile.py:287`) checks
+`ours_bytes == theirs_bytes` **first** (`:306`, the fold-back #48 ordering) and
+returns `up-to-date` before the `lock_hash` comparison at `:309` is reachable.
+For Cairn's **self-hosted** tree, `theirs` *is* the twin — and twin parity is a
+suite gate — so `ours == theirs` holds at every commit, including the one that
+lands Chunk B:
+
+```
+SCENARIO 1 -- the commit that lands Chunk B (self-hosted: theirs IS the twin, so ours == theirs)
+   Option 1 (hash only, base_hash stays OLD)   classify_verbatim(ours=NEW, base=OLD, theirs=NEW) = up-to-date
+   Option 2 (hash AND base_hash, both NEW)     classify_verbatim(ours=NEW, base=NEW, theirs=NEW) = up-to-date
+
+SCENARIO 2 -- a LATER upstream that differs from the on-disk copy
+   Option 1 (hash only, base_hash stays OLD)   classify_verbatim(ours=NEW, base=OLD, theirs=+1)  = locally-modified
+   Option 2 (hash AND base_hash, both NEW)     classify_verbatim(ours=NEW, base=NEW, theirs=+1)  = update
+```
+
+**Confirmed through the call path, not through the helper.** Running the real
+`_compute_upgrade` (`bootstrap/_scaffold/upgrade.py:336` is the
+`classify_verbatim` call site) against this tree:
+
+```
+$ scaffold.py upgrade --target . --cairn-root . --plan
+  verbatim-up-to-date   43   (every verbatim row)
+  tools/lifecycle.py            verbatim-up-to-date
+  tools/lifecycle_planner.py    verbatim-up-to-date
+```
+
+**So the re-point is not a fix.** `upgrade --dry-run` on Cairn's own tree
+classifies every one of the 43 `verbatim` rows `verbatim-up-to-date` and never
+reaches the hash comparison under either option. Scenario 2 discriminates, but
+Scenario 2 is a **counterfactual future upstream**, not a state of this tree —
+it can be reasoned about, not measured. **The criterion cannot be settled by any
+measurement of this repository, and B4's "settle it by measurement" is withdrawn
+rather than re-pointed.**
+
+**Settled on the merits, and the merits are already on the record — on this
+exact row.** The convention is not open: the last commit that touched the
+`tools/lifecycle.py` lockfile row, `d70dbcb`
+(`interpreter-trust-root-fallback` Chunk H, 2026-07-31), moved **both**
+`hash` and `base_hash`, and its body states why in terms:
+
+> base_hash was already stale before this plan (still the pre-first-session-
+> survivability value, hash != base_hash -- a silent-fork condition per
+> lockfile.py's own fork-detection semantics), now resolved as a side effect of
+> this refresh.
+
+Read live, the row still carries that resolution — `hash` and `base_hash` are
+**both** `sha256:c77b24c1…` today (read with the engine's own `read_lockfile`,
+not by grep: an `-A6` grep from the `dst` line misses `base_hash`, which sorts
+above it). And `agent-context-scrub` A4 already specifies Option 2 citing the
+same precedent. **Both plans converge, the precedent is on the same row, and
+`classify_verbatim`'s semantics agree**: for a self-hosted tree where the twin
+*is* upstream, `base_hash == hash` is the state that makes a genuine future
+upstream change classify `update` rather than `locally-modified`. Option 1 would
+re-open on this row exactly the silent-fork condition `d70dbcb` closed. **B4
+re-records both** (**R20**). No joint call is needed to reach it — the two plans
+do not disagree — and settling it here unblocks `agent-context-scrub`'s A4
+coordination note as well.
+
+**The asymmetry with A4 is real and is now disclosed rather than implied**
+(**R21**). A4 (the *planner* row) leaves `base_hash` alone, and its `1dabe4d`
+precedent claim is accurate — re-verified: at `1dabe4d^` and at `1dabe4d` the
+planner row's `base_hash` is the same `sha256:2b30639e…` while `hash` moves.
+But the reason the two rows differ is **not** a convention choice: the planner
+row **already** carries `hash != base_hash` (`sha256:f1552fc7…` vs
+`sha256:2b30639e…`, live), i.e. it is already in the state `d70dbcb` named a
+silent-fork condition, and healing it would be a claim about that row's
+provenance this plan has not measured. A4 preserves a pre-existing condition; it
+does not ratify one. Saying so is the difference between a disclosed residual
+and an inconsistency a later reader has to reconstruct.
+
+### The four cheap ones
+
+**`[I5]` A7 is a corpus canary with no source falsifier -- ACCEPTED, and it is
+looser than the review found.** Re-measured over A7's actual corpus (`rglob`
+over `dev/**/*.md`): **119 files, 0 undecodable, 0 carriers, 119/119 identical**
+between the helper and `splitlines()`. Since the corpus contains no carrier, the
+correct helper and the degenerate `return text.splitlines()` produce identical
+results on every file A7 reads, so **no source perturbation reddens A7** — A6's
+positive control remains the only node that can, exactly as the reviewer found,
+and consistently the Chunk-A ledger's four perturbations name every new node
+except A7. **The sharpening:** A7 walks the filesystem rather than
+`git ls-files` (deliberately, so a `git archive` sandbox works), and **5 of the
+119 files it reads today are gitignored** — `dev/reflections/*`, per
+`.gitignore:9`. So A7's corpus is machine-local (a fresh clone sees the 114
+tracked `.md`; this tree sees 119) and its suite-gate coupling extends to
+agent-written files that no commit contains. That makes the reviewer's point
+(b) stronger, not weaker: the policy being chosen is *a raw separator anywhere
+under `dev/`, tracked or not, turns the whole suite red*. **R22** puts (a) and
+(b) plus the gitignore fact in A7's docstring and in *Known omissions*.
+
+**`[I6]` A5's fixture ordering -- ACCEPTED, and the precision is already on the
+record for its sibling node.** `_parse_status` returns the **first** match in
+its `[:60]` window (`tools/lifecycle_planner.py:539-546`), so a glued
+`**Status**: accepted` placed *after* the real status line leaves both HEAD and
+the patched read returning `proposed` and A5's status half cannot fail. Not
+re-derived here: the External Response measured the same ordering property on
+the `_parse_field` side when it specified A8 — *"the ordering is load-bearing
+and is measured: `_parse_field` returns the first match, so with the glued line
+placed after the real one both HEAD and the patched read return the real
+value"*, `HEAD='Anthony Kendall'`, `PATCH='Anthony Kendall'` — and built A5's
+own reproduction with the glued line placed **before** the real one, "the
+discriminating build". A8 states the ordering because it was measured; A5's
+wording is still the ambiguous one. **R23** fixes the wording.
+
+**`[I7]` the prefix windows reach a different amount of text -- ACCEPTED, and it
+is not confined to `_parse_status`.** Reproduced live on a fixture of 30 real
+markdown lines, each carrying one `chr(0x2028)`, ahead of the real status line
+— markdown line 31, `splitlines()` line 61:
+
+```
+markdown line count = 35     splitlines() line count = 65
+HEAD  _parse_status -> ''            (the [:60] window truncated the real status line away)
+PATCH _parse_status -> 'accepted'
+oracle (^-anchored re.MULTILINE)  -> ['**Status**: accepted']
+
+HEAD  _parse_field('Author')  -> ''
+PATCH _parse_field('Author')  -> 'Anthony Kendall'
+```
+
+`_parse_field` shares the `[:60]` scan and is affected identically; `_status_of`
+scans `[:40]` (`tools/lifecycle.py:494`) and is the same class on the lifecycle
+side. Direction is safe — the patched read agrees with the `^`-anchored oracle
+and HEAD's silent "no status" is the worse answer — and it is unreachable at 0
+carriers. **R24** adds the row.
+
+**`[I8]` three gate figures have drifted -- ACCEPTED, and all of them have
+drifted again since the review.** Re-measured live at `84fbef4` on a clean
+tracked tree; none carried forward:
+
+| figure | plan (`79df5e5`) | Internal review (`eacb7dd`) | **live at `84fbef4`** |
+|---|---|---|---|
+| `pytest bootstrap/tests` | 1710 passed / 0 failed / 147.7 s | not run | **1790 passed, 0 failed, 3 warnings, 163.67 s** |
+| `_gate_manifest.py verify` | 6 FROZEN-MODIFIED / 2 / 4 | 15 violations: 9 / 2 / 4 | **HOLD — 17 violations: 10 FROZEN-MODIFIED / 3 COLLECTION-DROPPED / 4 SKIP-XFAIL-NEW**, exit 1 |
+| frozen set | 166 entries | — | **168 entries**; both test modules frozen, none of the four production files |
+| `verify_integrity --target .` | 2 violations + 1 advisory `NOTE` | 2 NOTEs (HEAD engine) / 0 (working tree) | **2 violations, `NOTE` count 0**, exit 1 |
+| `quality_gate --sub neutrality` | fail=95 | fail=95 | **fail=95 info=21**, exit 1 |
+| `quality_gate --sub order-independence` | fail=1 (`seed=0: pytest exit 1`) | not run | **fail=0 info=1** (`seed=0: PASS`) |
+| `quality_gate --sub redundancy` | fail=0 info=2 | — | **fail=0 info=2** |
+| `check_cairn.py` | OK — 181 Markdown files | — | **OK — 195 Markdown file(s); 68 external link(s) not probed** |
+| `security_check.py` | Bandit clean over 74 shipped files, PASS | — | **74 shipped file(s), PASS**, exit 0 |
+| `scaffold.py --manifest` | 96 lines | — | **96 lines** |
+| the three-module run | 63 passed in 3.68 s | 63 | **63 passed in 3.84 s** |
+| tracked files (all UTF-8-decodable, 0 carriers) | 493 | 494 | **511 / 511 identical / 0 carriers** |
+| tracked files under `dev/` | 113 | 114 | **129** |
+| A7's corpus, `rglob dev/**/*.md` | — | 108 | **119** (114 tracked + 5 gitignored) |
+| `dev/proposals` + `dev/plans` `.md`, archives included | 53 | 53 | **68** |
+| live artifacts `scan` walks | 21 (15 proposals + 6 plans) | 25 | **35** (15 proposals + 20 plans) |
+| `scan` tail | `6 of 21 artifact(s)` | — | **`6 of 35 artifact(s) carry structural violations`**, exit 1 |
+
+**The actionable part reproduces and is corrected.** The gate-manifest
+`FROZEN-MODIFIED` list names `bootstrap/tests/test_lifecycle_contract.py`
+(already, from committed drift) and does **not** name
+`bootstrap/tests/test_lifecycle_cli.py` — grep for it over the live output
+returns 0. So this plan's two test-module edits add **one** new
+`FROZEN-MODIFIED` line, not the *"two more"* the plan tells the implementer to
+expect. **The plan's `order-independence fail=1` attribution is confirmed
+correct** — with the concurrent `bootstrap/_scaffold/` work landed and the tree
+clean, that sub-gate is green, which is what the plan predicted. **R25.**
+
+### `[I9]` the cover note misstated the working tree -- ACCEPTED, no plan amendment
+
+The finding is against the author's accompanying report, not the plan body,
+which the reviewer says gets it right. Accepted without argument. The condition
+it described has since cleared: at `84fbef4` `git status --short` names two
+untracked paths (`.claude/`, `dev/measurement/snapshots/`) and **no modified
+tracked file**, and both twin pairs are byte-identical
+(`f1552fc7…` for the planner pair, `c77b24c1…` for the lifecycle pair). The
+plan's standing instruction to **re-measure the baseline at the branch tip**
+stands regardless, and the `[I8]` table is the evidence for why.
+
+### Amendments in force (continuing R1–R15)
+
+The plan is append-only, so the rows, criteria and figures above are not edited.
+**An implementer reads Chunk A, Chunk B, the R1–R15 table above, and this one.**
+Each amendment names the text it supersedes.
+
+| # | Supersedes | Amendment |
+|---|-----------|-----------|
+| R16 | The header, *"**No implementation commit lands before a real `### Plan review -- <reviewer> -- YYYY-MM-DD` sub-heading is in the tree.**"* | Keeps that sentence and adds the disclosure: **the mechanical gate is presence-only and tier-blind.** `_has_kind(art, "Plan review")` clears on any section whose kind starts with "Plan review" — at either heading level, with an empty body, from any reviewer, at any tier. The Internal section at `## Plan review -- Claude (Internal, ...) -- 2026-08-03` already satisfies it, and `lifecycle_planner.py next` prints `[ok ]` for the `executing` transition on that strength alone. **A green gate is not authorization on this plan.** Only a landed External round discharges the declared tier, and that judgement is the Maintainer's, not the tool's. |
+| R17 | *Gate accounting*, the bullet **"The plan-review gate cannot be satisfied by a placeholder"**, in full, including *"so only a real `###` sub-heading registers"* | **Corrected: it can.** An empty `### Plan review -- X -- YYYY-MM-DD` opens the gate exactly as an empty `## Plan review` does; heading level is immaterial to `_has_kind`. What the em-dash-and-comma shaping actually buys — a real property, correctly stated — is that this plan's **own brief heading** (`## Plan review — the brief, …`) is not parsed as a section and therefore cannot self-satisfy the gate. **"Do not rename the heading to a bare `## Plan review`" stands**, for that reason and not the one given. |
+| R18 | *Gate accounting*, *"**No flag names any of the four files this plan edits**, verified by inspection of the full output."* | **Withdrawn as false.** **Seven** pre-existing `FAIL` lines name two of the four files in scope, `as_of 2026-08-04` at `84fbef4`: `templates/skills/_lib/lifecycle.py` at `76`, `526`, `729`, `745`, `1193` (tokens `Claude`, `Claude`, `Claude`, `Codex`, `Claude`) and `templates/skills/_lib/lifecycle_planner.py` at `186`, `505` (`Codex`, `Antigravity`). The two `tools/` twins are outside the corpus by construction — `_NEUTRALITY_FILE_SUFFIXES` (`scripts/quality_gate.py:431`) has no `tools` root — which is how the inspection reached the wrong conclusion about the right output. |
+| R19 | *Gate accounting*, the derived criterion *"no new flag naming a file in scope"* | Re-specified: compare the **multiset of `(file, token)` pairs with line numbers stripped**, before vs. after, and require it unchanged. **A textual diff of the gate output is not an acceptable check here** — measured, inserting the proposal's helper shifts five of the seven flags and a naive diff shows 5 removed + 5 added lines, every one naming a file in scope. The shift magnitude is deliberately **not** recorded: the comment block is specified "verbatim in substance", so its length is the implementer's and any figure recorded here is one the next commit invalidates. |
+| R20 | B4, *"Settle it by measurement — take the `verify_integrity --target .` output before and after and choose the option that adds no line — and record which was chosen and why in the commit body."* | **Withdrawn: no measurement of this tree can settle it.** `verify_integrity` reads `hash` only (no `base_hash` reference in `bootstrap/verify_integrity.py`), and `classify_verbatim` returns `up-to-date` on the `ours == theirs` check (`bootstrap/_scaffold/lockfile.py:306`) before the hash comparison at `:309` is reachable — measured through the real `_compute_upgrade`, which classifies **all 43** `verbatim` rows, both lifecycle rows included, `verbatim-up-to-date`. **Settled on the merits instead: B4 re-records BOTH `hash` and `base_hash`**, matching `agent-context-scrub` A4. Grounds, recorded rather than reasoned: `d70dbcb` moved both on this exact row and its body names `hash != base_hash` there a *"silent-fork condition per lockfile.py's own fork-detection semantics"*; the row still carries that resolution (`hash == base_hash == sha256:c77b24c1…`, live); and for a self-hosted tree where the twin *is* upstream, `base_hash == hash` is what makes a genuine future upstream change classify `update` rather than `locally-modified`. The commit body records the choice **and this reasoning**, not a measurement. |
+| R21 | A4, *"Leave `base_hash` untouched — it already diverges (it records the upstream base) and `byline-classification` set exactly this precedent at `1dabe4d`."* | The `1dabe4d` precedent claim is **accurate** (re-verified: `base_hash` is `sha256:2b30639e…` at `1dabe4d^` and at `1dabe4d`; only `hash` moves). Amended to disclose *why* A4 and B4 differ, so the two are not read as an inconsistency: the **planner** row already carries `hash != base_hash` (`sha256:f1552fc7…` vs `sha256:2b30639e…`, live) — the same condition `d70dbcb` named a silent fork on the lifecycle row — and healing it would assert something about that row's provenance this plan has not measured. **A4 preserves a pre-existing divergence; it does not ratify the convention.** Whether that divergence should be healed is out of this plan's scope and is raised for the Maintainer. |
+| R22 | A7's row; *Known omissions* | A7's **docstring must state** that (a) it asserts a property of the **corpus**, not of the helper — no source perturbation reddens it, and the Chunk-A ledger deliberately names no falsifier for it; and (b) it is a **canary**: its only red trigger is a carrier landing under `dev/`. *Known omissions* gains **#6**: A7 converts the prose *Character convention* into a **hard suite gate over an agent-written directory**, and A7 walks `rglob`, not `git ls-files` — **5 of the 119 files it reads today are gitignored** (`dev/reflections/*`, `.gitignore:9`), so the gate covers files no commit contains and the corpus size is machine-local (114 tracked `.md` in a fresh clone). A future proposal that legitimately commits a raw `U+2028` as a demonstration payload turns the whole suite red. That is a **chosen policy**, recorded as one. |
+| R23 | A5's row, *"plus an earlier glued `**Status**: accepted`"* | Reads: a glued `**Status**: accepted` placed **earlier than the real `**Status**:` line**. The ordering is load-bearing, not stylistic — `_parse_status` returns the **first** match in its `[:60]` window, so with the glued line placed *after* the real one both HEAD and the patched read return `proposed` and A5's status half **cannot fail**. (The same property was measured on `_parse_field` when A8 was specified; see R4 and the Response to the External review.) The ledger entry *"revert `_parse_status` → A5 fails on its status assertion"* is the control that catches a mis-built fixture and stays. |
+| R24 | *Edge-case inventory* | One row added: **the `[:60]` / `[:40]` prefix windows reach a different amount of text after the change.** Narrowing the split does not only change which lines are lines; on a carrier it changes how far into the file the prefix scan reaches. Measured: with 30 markdown lines each carrying one `chr(0x2028)` ahead of the real status line (markdown line 31, `splitlines()` line 61), `HEAD _parse_status` → `''` and the patched read → `'accepted'`, agreeing with the `^`-anchored oracle; `_parse_field` on the same fixture goes `''` → `'Anthony Kendall'`. Applies to `_parse_status` and `_parse_field` (`[:60]`) and to `_status_of` (`[:40]`, `tools/lifecycle.py:493`). Direction is safe and it is unreachable at 0 carriers, but it is a distinct claim from "the split is narrower". |
+| R25 | *Gate accounting* and *Acceptance criteria*, every stale figure: the `1710` suite baseline; *"six pre-existing `FROZEN-MODIFIED` holds, two `COLLECTION-DROPPED` and four `SKIP-XFAIL-NEW`"*; *"Expect this plan's two test-module edits to add **two more** `FROZEN-MODIFIED` lines"*; *"Frozen set: 166 entries"*; *"plus one advisory `NOTE` about the forked `tools/lifecycle_metrics.py` facade"*; *"OK -- 181 Markdown file(s) scanned"*; the `493` / `113` / `53` sweep figures; the `21 tracked artifacts` / `6 of 21` scan figures | Superseded by the `[I8]` table above, `as_of 2026-08-04` at `84fbef4` on a clean tracked tree. **The one actionable correction: expect ONE new `FROZEN-MODIFIED` line, not two** — `bootstrap/tests/test_lifecycle_contract.py` is already on the list from committed drift; `bootstrap/tests/test_lifecycle_cli.py` is not. `verify_integrity` now emits **zero** `NOTE` advisories, so a NOTE appearing after a chunk is a **new** line, not a pre-existing one. Every figure in this table is a snapshot, not an invariant: **re-measure at the branch tip.** The plan's own instruction not to compare against historical digests is reaffirmed — no `scan` / `next` digest is recorded here, deliberately, because a recorded digest is the thing that keeps going stale. |
+
+Nothing in R16–R25 adds a file to *In scope*, adds a test node, or changes any
+production behaviour. R20 changes **one lockfile field** on a row already in
+scope (`dev/.cairn/cairn-lock.yml`, B4). No install-contract row, schema field,
+fidelity-manifest entry or gate-manifest command moves.
+
+### Serialized, not written: the `dev/PLANNING.md` row
+
+Per `AGENTS.md` > *Shared communication files*, the roadmap boards are edited
+only at defined serialization points. The row `[I1]` calls for is **returned as
+text** with this Response and is not written by the authoring agent; it lands at
+the next serialization point, under `## Active`:
+
+> * **review-gate-enforcement owns the tier-blind review gate** *(plan open
+>   2026-08-04; recorded here because two other in-flight plans lean on the gate
+>   it fixes)* — `_has_kind(art, "Plan review")` clears on the **presence** of a
+>   section, at either heading level, with an empty body, from any reviewer, at
+>   any declared tier; nothing reads the word inside `required(<tier>)`.
+>   Measured end-to-end through `lifecycle_planner.py next`: an empty
+>   `### Plan review -- X -- <date>` placeholder prints `[ok ]` for the
+>   `executing` transition, `as_of 2026-08-04` at `84fbef4`. Owned in full by
+>   plan `review-gate-enforcement` (proposal accepted `eb1b2b7`, plan opened
+>   `8dfb664`): its Chunk B teaches the record a declared-tier attestation with a
+>   closed vocabulary, its Chunk C gates on it (row C.1, falsifier *"delete the
+>   tier comparison → this node red, others green"*). **Not yet fixed** — that
+>   plan's Response to its own External round records that it cannot proceed on
+>   that review's strength. Until Chunk C lands, **every plan carrying
+>   `required(External)` is held by prose and Maintainer attention, with a
+>   machine check that reports satisfied in the wrong direction.**
+>   `planner-line-semantics` discloses this in its own header (R16) and
+>   `agent-context-scrub` is review-blocked behind the same gate. *Removal
+>   precondition:* `review-gate-enforcement` archives.
+
+### What this Response does not dispose
+
+* **The tool-side fix for `[I1]`.** Out of scope by the reviewer's own
+  instruction and by this plan's fences. Owned by `review-gate-enforcement`.
+* **The `tools/lifecycle_planner.py` lockfile row's pre-existing
+  `hash != base_hash` divergence** (R21). Disclosed, not healed; raised for the
+  Maintainer.
+* **The undecided item from the Response to the External review** — whether
+  *Sequencing invariant*'s *"Chunk A closes the false attestation route and
+  opens nothing"* should be amended to the measured two-sided statement, and
+  whether the loosening direction deserves a named *Failure modes* row. Still
+  the Maintainer's call about what the record claims; untouched here.
+
+**With `[I3]` discharged above and `[I1]`, `[I2]`, `[I4]` disposed here, the
+Internal review's four blocking findings are answered, and so are all four of
+its cheap ones.** That does **not** clear this plan to implement. The External
+round's recommendation is REVISE; its second clause — *"disposition the Internal
+review's outstanding plan corrections before implementation"* — is what this
+Response satisfies, and the disposition of the External round itself is the
+Maintainer's. **Per R16, `lifecycle_planner.py next` will print `[ok ]` on the
+review gate regardless of any of this**, which is precisely why this paragraph
+is here rather than left to inference. **No implementation commit lands on the
+strength of this Response.**
