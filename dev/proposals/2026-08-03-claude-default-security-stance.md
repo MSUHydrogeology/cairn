@@ -11,7 +11,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5.
 **Date opened**: 2026-08-03
-**Status**: proposed
+**Status**: accepted
 **Touches**: `bootstrap/_scaffold/config.py` (the preset → module table and
 the default-on set), `bootstrap/profiles/*.yml` (the three shipped profile
 documents), `templates/modules/team-gated/content-security.md` and
@@ -812,3 +812,78 @@ either control — is unchallenged and was independently reproduced by the
 reviewer along with all nine of its numbered claims. What the review changed is
 the *argument* for Change 1, the *direction* of Change 3, the *precision* of
 Change 2, and the *existence* of Change 4.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-03
+
+**Accepted, as amended by the author's Response.** Scribed by Claude (Strategy)
+at the Maintainer's explicit instruction.
+
+**Maintainer's authorization (verbatim):**
+
+> I accept default-security-stance as amended by the author's Response. Change 1 lands on the restated argument, not the withdrawn tautology. Change 2 lands as drafted. Change 3 lands narrowed: the template source stays the executed authority per [E2], Cairn does not install python-security, and the content-security parity test lands here. Change 4 is withdrawn — the opt-in mechanism already ships. An explicit modules: list is exact and is never overridden by a default-on module or a token trigger. Scribe the Decision and commit it.
+
+The authorization is quoted rather than paraphrased, per the scribing
+guard-rail: a paraphrase admits semantic drift, condition-softening, or a
+hallucinated approval.
+
+**Scribe-coupling disclosure.** The scribe is the proposal's author — the weaker
+configuration, since the party whose work was reviewed transcribes the ruling on
+it. Mitigations: the authorization is quoted verbatim and visually isolated, and
+this commit carries the Decision only.
+
+### What this settles, change by change
+
+* **Change 1 — `content-security` becomes default-on.** Landing on the
+  **restated** argument only: measured-zero cost (34 / 39 / 42 files scanned,
+  `result: clean (no flags)` on fresh scaffolds of all three presets), a loud
+  one-line `modules_remove` opt-out that announces itself, and Cairn's own
+  install already assuming the auto-load predicate. The **tautology argument is
+  withdrawn** — [E1] falsified it with a counterexample this proposal had named
+  as its own falsifier, and the Decision does not resurrect it.
+* **Change 2 — `python-security` is token-gated**, as drafted. Selection is
+  conditional on `python_package`; a non-Python adopter never receives it, and
+  the installer refuses (`exit 2`, no files written) rather than degrading.
+* **Change 3 — narrowed, and partly reversed.** Per [E2] the **template source
+  stays the executed authority**; `scripts/check_cairn.py` keeps its deliberate
+  source-path composition, matching `claim_check.py` and `link_check.py`. The
+  author's original recommendation to repoint the import is **withdrawn as
+  wrong** — it collapsed no twin (Cairn must retain the source to ship it) and
+  bought a stale window for nothing. **Cairn does not install `python-security`**
+  on itself. The **`content-security` parity test lands here**, binding Cairn's
+  installed `scripts/content_scan.py` to the template source: once Change 1
+  makes the module default-on, Cairn's `preset: collaborative-team` profile
+  resolves to include it, so the second copy arrives mechanically rather than by
+  choice, and nothing else would bind the two.
+* **Change 4 — withdrawn.** `upgrade --plan` already lists new modules under
+  `new modules available (opt-in)`, computed from
+  `set(_MODULE_MAPPINGS) - lock_modules`, adopted only via an explicit
+  `--adopt-module`. The mechanism this proposal asked to build already ships; it
+  becomes a property to preserve and pin, not a change to make. The *Signals the
+  change is wrong* entry predicting a forced lockfile schema change is struck —
+  no schema change is required.
+
+### The selection-precedence rule, settled
+
+**An explicit `modules:` list is exact and is never overridden** — not by a
+default-on module, not by a token trigger. This resolves [E4] and, with it, the
+reach limit the Response left open: an adopter who writes an exact list receives
+exactly that list, and `modules: []` opts out entirely. The residual is
+therefore **correct behaviour rather than a gap**, and the original direction to
+change the stance "for all installations" is satisfied for the preset-derived
+and default-derived profile shapes, which is the whole population that does not
+explicitly ask otherwise. The proposal's "necessary and sufficient" phrasing for
+the token condition was false as written and does not survive into the plan:
+necessary holds, sufficient does not.
+
+### What this Decision does not settle
+
+* **Cairn's `security_check.py` has no integrity preflight.** The module
+  comparison surfaced this — `run_security_audit.py` refuses to run when the
+  apparatus or its policy inputs are not lockfile-clean, and Cairn's own gate has
+  no equivalent. Recorded as a follow-up; **not** a reason to adopt a module
+  sideways, and not folded into this scope.
+* **The false onboarding claim** at `templates/onboarding/high-rigor-legacy.md`
+  lines 123 and 164 stays owned by `gate-claims-vs-enforcement`. Whichever lands
+  second must not re-assert what this one falsifies.
+* **Cairn's `python_package` value** is moot for Cairn's own tree under this
+  Decision and is not chosen here.
