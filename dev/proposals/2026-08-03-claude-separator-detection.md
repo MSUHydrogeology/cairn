@@ -5,7 +5,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5.
 **Date opened**: 2026-08-03
-**Status**: revised
+**Status**: reviewed
 **Touches**: `templates/modules/team-gated/content_scan.py` (one detector rule)
 and `bootstrap/tests/test_content_scan.py`. Nothing else.
 **Related**: `planner-line-semantics` (delegates detection here — this proposal
@@ -333,3 +333,36 @@ pid-derivation call site, and the pattern-id list in the module docstring
 (lines 40-43). Verified that
 `templates/modules/team-gated/content-security.md` does **not** enumerate
 pattern ids, so it does not change.
+
+## Re-Review -- Gemini Flash (External, security lens) -- 2026-08-03
+
+**Steelman.** The author's revision accepts both concerns from the initial External Security Review and uncovers a critical defect in the implementation mechanics: `_scan_unicode` in `content_scan.py` currently derives pattern IDs via substring matching (`"bidirectional"` in message text, defaulting everything else to `unicode-zero-width`). Without updating `_scan_unicode` to yield `(lineno, pattern_id, msg)`, any `unicode-line-separator` detector would have been mislabelled as `unicode-zero-width`, rendering `cairn-accept: unicode-line-separator` suppression markers ineffective while allowing `cairn-accept: unicode-zero-width` markers to silently suppress line separator flags. The revised proposal fixes this by yielding explicit `pattern_id`s directly from `_scan_unicode`, eliminating string-matching dispatch for pattern IDs and ensuring strict isolation between zero-width, bidi, and line separator suppressions.
+
+### Concerns
+
+* **[E1] Coordination of pattern ID refactoring across scanner proposals.**
+  Updating `_scan_unicode` to yield `(lineno, pattern_id, msg)` changes the internal signature of `_scan_unicode`. The revised proposal explicitly claims ownership of this refactor so that sibling proposals (such as `content-scan-detectors`) can rebase onto the yielded-id pattern without duplicate code changes.
+
+### Covered
+
+* **Empirical Verification of Pattern ID Dispatch Defect**:
+  - Inspected `templates/modules/team-gated/content_scan.py` lines 401-403:
+    `pid = "unicode-bidi" if "bidirectional" in msg else "unicode-zero-width"`
+  - Confirmed that adding a new `_scan_unicode` detector without modifying this call site would have assigned `unicode-zero-width` to line separator flags. The proposed change (`_scan_unicode` yielding `pattern_id` directly) cleanly fixes the defect.
+
+* **Claim-check Verification**:
+  - `claim_check.py`: verified clean output on `dev/proposals/2026-08-03-claude-separator-detection.md`.
+
+```
+$ ~/conda_envs/lhm/bin/python scripts/claim_check.py dev/proposals/2026-08-03-claude-separator-detection.md
+claim_check: dev/proposals/2026-08-03-claude-separator-detection.md -- OK, no claim-check flags.
+```
+
+### Not covered / low confidence
+
+* Suppression marker isolation unit tests (`cairn-accept: unicode-line-separator` vs `unicode-zero-width`) will be executed as part of `bootstrap/tests/test_content_scan.py` during implementation.
+
+### Recommendation
+
+**SHIP.** The revision resolves the pattern ID dispatch vulnerability and ensures strict suppression isolation for `unicode-line-separator` detectors.
+
