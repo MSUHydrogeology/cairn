@@ -144,14 +144,14 @@ cross-type statement.
 * Touches multiple files / areas (code + tests + docs).
 * Has multi-stage sequencing (e.g., infrastructure first, then
   per-target rollouts).
-* Carries deferred follow-ups that need durable homes before
+* Carries deferred follow-ups that need a `defer` home before
   archiving.
 
 **Skip the plan when:**
 
 * The implementation is a single commit.
 * The change is single-file or single-area.
-* No follow-ups need a durable home (the proposal's "what's next" is
+* No follow-up needs a `defer` home (the proposal's "what's next" is
   fully captured in the implementing commit message).
 
 When in doubt, open the plan. The cost is low (one file in

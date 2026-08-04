@@ -378,8 +378,9 @@ stand and are never rewritten.
 
 This makes the migration auditable from `git log` alone. The same
 rule applies to plan files in `dev/plans/` when they archive; the
-canonical statement lives at `dev/PLANNING.md > Archive
-preconditions (proposals and plans)`.
+canonical statement lives at `doctrine/lifecycle.md` > "Archive
+precondition", which the roadmap board's own section restates for a
+reader who arrives there first.
 
 **Why**: archived proposals become deliberation history — nobody
 re-reads them looking for outstanding work. Without this rule,

@@ -50,7 +50,8 @@ Open a plan when an accepted proposal's implementation: (a) lands
 across multiple commits, (b) touches multiple files / areas, (c) has
 multi-stage sequencing, or (d) carries deferred follow-ups. Skip the
 plan when the implementation is a single commit, single-file / single-area,
-with no follow-ups needing a durable home.
+with no follow-up needing a `defer` home (a follow-up headed for
+`accept`, `guard` or `wontfix` does not by itself require a plan).
 
 ## Forward-reference paths — `Proposed paths:` marker doctrine
 

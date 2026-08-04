@@ -189,8 +189,10 @@ and a new empty `Unreleased` is started above.
   home* before its artifact could archive, and the roadmap board was the
   first-named home — so review (which promotes observations to findings) and the
   scope fence (which defers what an artifact cannot fix) fed a board with no
-  discarding step anywhere in the chain. Cairn's own board grew 349 → 1002 lines
-  in thirteen days. The precondition now takes a **recorded disposition** from
+  discarding step anywhere in the chain. Measured across six independently-
+  authored plans reviewed on one day: 95 candidate follow-ups, of which **28
+  became new board rows — +4.7 per plan** (`as_of 2026-08-04`). The precondition
+  now takes a **recorded disposition** from
   the grammar Cairn already had — `accept`, `wontfix`, `defer` — plus one new
   token, **`guard`**, for a follow-up homed in something that *executes* and
   names its node, because a follow-up whose revival condition is mechanical

@@ -248,8 +248,11 @@ where this change's bug lives.
    time each satisfier maps onto a disposition token
    (`doctrine/lifecycle.md` > "Archive precondition"), and the mapping
    is total: *test* → `guard`, *guard* → `guard`, *doc* → `accept`,
-   *scope-cut* → `accept`, *wontfix* → `wontfix`. Naming the satisfier
-   and naming who pays for it are then the same act.
+   *scope-cut* → `accept`, *wontfix* → `wontfix`. A finding whose
+   satisfier is **none of the five** — real work that must happen, but
+   not in this artifact — is the `defer` case, and `defer` is the
+   Maintainer's call. Naming the satisfier and naming who pays for it
+   are then the same act.
 
 **Falsifiable coverage, not "checked."** A swept lens is credible only
 if its claim is *falsifiable* — it cites the file path, test node,

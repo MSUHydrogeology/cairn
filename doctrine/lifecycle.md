@@ -424,8 +424,12 @@ this rule provides one.
 ### The disposition vocabulary
 
 Use the disposition grammar already defined in `proposals.md` >
-"Response — disposition grammars", extended with one token for the
-archive-time case:
+"Response — disposition grammars", **minus `reject`, plus `guard`**.
+The subtraction is deliberate: `reject` answers a *review finding*
+("this critique is wrong"), and a follow-up that survived to
+archive-time is not rejected — it is `wontfix` **with a rationale**,
+which is the same act with the reason on the record. The archive-time
+vocabulary is therefore:
 
 * `accept` — fixed in this artifact's scope. Includes writing the
   doc the finding asked for, and narrowing the artifact's own claim
