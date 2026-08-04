@@ -490,6 +490,8 @@ directive ("<quoted directive>"):
 * **[N2] accept (added chunk 1.7)** -- <what was added>
 * **[N3] defer (will land at archive time)** -- <why>
 * **[N4] wontfix** -- <rationale>
+* **[N5] guard (`tests/test_thing.py::test_the_case`)** -- <the node
+  that now fires when this finding's condition recurs>
 
 Verification post-sharpening:
 
@@ -540,7 +542,8 @@ header (or below a `### Code review -- <reviewer> -- YYYY-MM-DD`
 sub-heading if used). The reviewer is typically NOT the implementing
 agent (Internal Reviewer or External Reviewer norms apply, same as
 the proposal Review section). Findings as a numbered list with
-`accept (commit <sha>)` / `defer` / `wontfix` dispositions.
+`accept (commit <sha>)` / `guard (<path>::<node>)` / `defer` /
+`wontfix` dispositions.
 Sharpening fixes land as follow-up commits before the plan archives.
 
 **A clean code review carries a falsification ledger.** Per
@@ -583,8 +586,10 @@ This section is append-only once a reviewer has added findings.
 
 *Filled in at archive time.* Per the archive preconditions rule in
 `doctrine/lifecycle.md` > "Archive precondition", plans archive only
-after every deferred follow-up has a durable home outside the plan.
-Acceptable homes:
+after every deferred follow-up carries a **recorded disposition** —
+`accept`, `guard`, `wontfix`, or (with the Maintainer's quoted
+authorization) `defer`. A `defer` needs a durable home outside the
+plan; the other dispositions are the home. Acceptable `defer` homes:
 
 * `dev/PLANNING.md` — a tier item, a follow-up backlog, or a new
   dedicated subsection.
@@ -599,14 +604,20 @@ at the goodnight routine and on explicit user instruction. A small,
 pickable-cold follow-up goes to `dev/PLANNING.md` here; the goodnight
 scrub then surfaces it into `NEXT_SESSION.md`.
 
-The archive commit body must name where each item went, in the form:
+The archive commit body must name each item's disposition, in the
+form:
 
 ```
-Follow-ups migrated to:
-* <item> -> dev/PLANNING.md > <section>
-* <item> -> CHANGELOG.md > Unreleased > Added
-* <item> -> docs/<topic>.md > Future work
+Dispositions:
+* <item> -> accept (fixed in <chunk>)
+* <item> -> guard (tests/test_thing.py::test_the_case)
+* <item> -> wontfix (<rationale>)
+* <item> -> defer -> dev/PLANNING.md > <section>   [Maintainer: "<quote>"]
 ```
+
+The older `Follow-ups migrated to:` spelling remains valid and is
+still recognized; artifacts archived under it are correct as they
+stand and are never rewritten.
 
 This makes the migration auditable from `git log` alone.
 

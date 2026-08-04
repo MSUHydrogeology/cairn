@@ -343,8 +343,12 @@ holding the proposal open.
 
 Before flipping status to `accepted` / `rejected` / `superseded` and
 moving the file to `archive/`, every **deferred follow-up item**
-named in the proposal must have a durable home outside the proposal
-text. Acceptable homes:
+named in the proposal must carry a **recorded disposition** —
+`accept`, `guard`, `wontfix`, or (with the Maintainer's quoted
+authorization) `defer`. See `doctrine/lifecycle.md` > "Archive
+precondition" for the vocabulary, the two `wontfix` eligibility
+rules, and why a disposition is not the same thing as a durable home.
+A `defer` needs a home outside the proposal text; acceptable homes:
 
 * `dev/PLANNING.md` — a tier item, a follow-up backlog, or a new
   dedicated subsection.
@@ -357,15 +361,20 @@ at the goodnight routine and on explicit user instruction. A small,
 pickable-cold follow-up goes to `dev/PLANNING.md` here; the goodnight
 scrub then surfaces it into `NEXT_SESSION.md`.
 
-The archive commit body must name where each deferred item went, in
-the form:
+The archive commit body must name each deferred item's disposition,
+in the form:
 
 ```
-Follow-ups migrated to:
-* <item> -> dev/PLANNING.md > <subsection> #N
-* <item> -> docs/<topic>.md > Future work
-* <item> -> dev/proposals/<date>-<author>-<title>.md (queued follow-up proposal)
+Dispositions:
+* <item> -> accept (fixed in this proposal's scope)
+* <item> -> guard (tests/test_thing.py::test_the_case)
+* <item> -> wontfix (<rationale>)
+* <item> -> defer -> dev/PLANNING.md > <subsection>   [Maintainer: "<quote>"]
 ```
+
+The older `Follow-ups migrated to:` spelling remains valid and is
+still recognized; proposals archived under it are correct as they
+stand and are never rewritten.
 
 This makes the migration auditable from `git log` alone. The same
 rule applies to plan files in `dev/plans/` when they archive; the
@@ -453,9 +462,18 @@ implementing commit DOES exist and is referenceable by sha):
   different exact diff than the reviewer's.
 * `accept (followup commit <sha>)` — a separate sharpening commit
   addressed the finding.
+* `guard (<path>::<node>)` — homed in an artifact that **executes**:
+  a test node, an assertion, a runtime guard. Names the node. A
+  comment is not eligible — comments do not fire.
 * `reject` — with reason.
 * `defer` — to a follow-up plan / proposal.
 * `wontfix` — explicit non-action with rationale.
+
+This same grammar is the vocabulary of the **archive-time
+disposition** block (`doctrine/lifecycle.md` > "Archive
+precondition"), where `defer` additionally requires the Maintainer's
+quoted authorization and `wontfix` is bounded by the two eligibility
+rules stated there.
 
 The split exists because the proposal-Response context predates any
 implementing commit — there is no `<sha>` to cite when the Response

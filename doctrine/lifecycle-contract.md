@@ -134,7 +134,7 @@ open --> [awaiting-plan-review] --> executing --> review --> archived
 | open → **awaiting-plan-review** | (state) | only when `Plan review: required(<tier>)`; the plan waits for its plan-review section. A `not required(<rationale>)` plan **skips** this state. |
 | → **executing** | author | for a review-required plan, a plan-review section has landed and the plan-open and first-implementation commits are **distinct**; for a `not required` plan, execution may combine with plan-open (fast multi-stage). |
 | executing → **review** | a reviewer | a code-review pass section is appended (append-only). |
-| review → **archived** | author | **the plan-archive precondition holds: a code review has occurred** (the archive commit is distinct from the implementing commits); **and** every explicitly-deferred follow-up has a durable home recorded in an auditable `Follow-ups migrated to: …` block; the loop-fidelity sign-off names the implementing commit and the governing Revised section. |
+| review → **archived** | author | **the plan-archive precondition holds: a code review has occurred** (the archive commit is distinct from the implementing commits); **and** every explicitly-deferred follow-up carries a recorded disposition in an auditable `Dispositions: …` block (the older `Follow-ups migrated to: …` spelling stays valid), presented as one batch at archive-preparation, with any `defer` carrying the Maintainer's quoted authorization; the loop-fidelity sign-off names the implementing commit and the governing Revised section. |
 
 A plan is an execution artifact: `Status:`, progress markers, and commit
 hashes update **in place**. But review-finding and archive sections are
