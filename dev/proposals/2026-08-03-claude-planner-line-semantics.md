@@ -5,7 +5,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: accepted
+**Status**: reviewed
 **Touches**: `tools/lifecycle_planner.py` and `tools/lifecycle.py`, plus their
 byte-identical `templates/skills/_lib/` twins; new test nodes in
 `bootstrap/tests/test_lifecycle_contract.py` and
