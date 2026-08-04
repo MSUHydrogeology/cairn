@@ -5,7 +5,7 @@
 **Author**: Codex (Strategy, from the Security Review role)
 **Model**: OpenAI Codex (GPT-5)
 **Date opened**: 2026-08-03
-**Status**: reviewed
+**Status**: revised
 **Touches**: `bootstrap/_scaffold/config.py`, `templates/core/AGENTS.md`, the
 default-on and team-gated module catalogs under `templates/modules/`,
 `bootstrap/DEPENDENCY_BUDGET.md`, `bootstrap/SAFETY.md`, the install manifest /
@@ -1415,3 +1415,98 @@ policy are the actual boundary.
 This response leaves the proposal **reviewed**. The following commit will
 replace the finding schema and confidentiality tests with the bucketed and
 ordinal forms, then return it to `revised` for focused confirmation.
+
+## Revised proposal, round 3 -- bucketed magnitude and ordinal principals -- 2026-08-03
+
+This section narrowly supersedes the round-2 API finding schema, structural
+measurement language, principal-label fields, and corresponding tests. The
+ephemeral HMAC, off-tree report, output minimization, actor split, and all other
+unchanged contracts remain governing.
+
+### Governing API finding shape
+
+The sanitized finding schema is now:
+
+```json
+{
+  "target": "policy target label",
+  "operation_id": "stable policy ID",
+  "case_id": "stable policy ID",
+  "assertion_id": "stable policy ID",
+  "principal_ids": ["p1", "p2"],
+  "method": "GET",
+  "status": 200,
+  "json_pointer": "/reviewed/pointer",
+  "expected": "absent",
+  "observed_type": "string",
+  "observed_magnitude": "short",
+  "observation_fingerprint": "hmac-sha256:<hex>"
+}
+```
+
+`observed_magnitude` and `observation_fingerprint` are optional. An assertion
+omits either unless it needs that diagnostic or within-run correlation. No
+result schema contains an exact byte length, character length, member count,
+index count, or other exact value-derived cardinality.
+
+Magnitude is a fixed enum computed in memory:
+
+| Enum | Scalar canonical JSON size | Array/object members |
+|---|---:|---:|
+| `empty` | null or semantically empty | 0 |
+| `short` | non-empty, at most 32 bytes | 1-8 |
+| `medium` | 33-256 bytes | 9-64 |
+| `large` | 257-4096 bytes | 65-1024 |
+| `oversized` | more than 4096 bytes | more than 1024 |
+
+The report emits only the enum label, never the thresholds or selected exact
+count. Common fixed-width identifiers, phone numbers, dates, ordinary names,
+and email addresses collapse into `short`. The bounds are source-owned and
+cannot be changed by policy.
+
+### Principal policy and report IDs
+
+Every principal has a unique ordinal ID matching `p[1-9][0-9]{0,2}`. Findings,
+summaries, diagnostics, and report filenames may use only that ordinal. The
+credential environment-variable name is derived exactly as
+`CAIRN_API_P<N>_CREDENTIAL`; policy cannot substitute another name containing a
+person, tenant, email, account, or production username.
+
+Policy may associate the ordinal with a bounded application-role token matching
+`[a-z][a-z0-9_-]{0,31}` for test semantics. The role token is not emitted in
+findings. Module doctrine forbids identity-bearing role, target, operation,
+case, and assertion IDs; syntax rejects obvious email/path/whitespace/control
+forms, while policy review owns semantic enforcement that syntax cannot prove.
+
+The original actor credentials remain environment values, never committed
+policy content. Replacing labels with ordinals does not weaken the requirement
+that positive and negative cases identify the same reviewed principal pair.
+
+### Revised confidentiality evidence
+
+The plan replaces exact-size positive assertions with:
+
+* table tests for every scalar and collection bucket boundary, asserting only
+  fixed enum output;
+* two distinct values of different exact lengths in each non-empty scalar
+  bucket producing byte-identical findings when fingerprinting is omitted;
+* two collections of different exact member counts in each collection bucket
+  producing byte-identical findings;
+* parsed-schema assertions that no output contains a body
+  length/count/cardinality key or corresponding exact numeric value;
+* strict ordinal principal IDs, duplicates, zero/negative/oversized ordinals,
+  email/name/account-shaped attempted labels, and exact derived credential
+  environment names; and
+* marker scans over stdout, stderr, report, diagnostics, and temporary files as
+  already required, now including planted exact-length and identity markers.
+
+Deletion mutants that restore an exact count, emit a role token, accept a
+free-form credential variable, or serialize a principal label must fail the
+public-path suite.
+
+### Review status
+
+AW8 is addressed by removing exact plaintext-derived measurements rather than
+trying to redact their formatting. The revised proposal returns for narrow
+External confirmation of the bucket boundaries and ordinal-principal contract;
+the remainder of the round-2 confidentiality design stands unchanged.
