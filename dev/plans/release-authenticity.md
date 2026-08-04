@@ -377,13 +377,14 @@ contract arrives in Chunk B; the intermediate state is fail-closed).
 
 | # | File | Change |
 |---|------|--------|
-| A1 | `bootstrap/container/verify-ref.sh` | Replace `git describe --exact-match --tags` with `git rev-parse --verify --quiet "refs/tags/<ref>^{tag}" 2>/dev/null` + an explicit `\|\| refuse`; resolution starts from the caller's ref and never from a commit. |
+| A1 | `bootstrap/container/verify-ref.sh` | Replace `git describe --exact-match --tags` with `git rev-parse --verify --quiet "refs/tags/<ref>^{tag}" 2>/dev/null` + an explicit `\|\| refuse`; resolution starts from the caller's ref and never from a commit. The `\|\| refuse` branch **names which of its two collapsed causes fired** — no such ref, versus a ref that exists and points at a **non-tag object** (the case informally called a lightweight tag) — by re-probing the bare `refs/tags/<ref>` on failure. Measured 2026-08-03, git 2.53.0: the peeling form returns rc=1 with empty stdout for *both*, and the mandated `2>/dev/null` discards the one line that distinguished them, so the reason is not recoverable from the resolver's own exit status. |
 | A2 | `bootstrap/container/verify-ref.sh` | Name binding: read the signed payload's `tag` header with a **header-bounded** parse (stop at the first blank line), refuse an empty result, and refuse unless it equals the ref asked for — naming *both* names in the refusal. |
 | A3 | `bootstrap/container/verify-ref.sh` | Verify **the resolved object id**, not the ref name, with the roster pinned by invocation (`-c gpg.ssh.allowedSignersFile=<path>`), plus the defence-in-depth pins on `gpg.ssh.program`, `gpg.program`, `gpg.format`. |
 | A4 | `bootstrap/container/verify-ref.sh` | Verification runs in a **temporary bare repository the script creates** (`mktemp -d`, discarded on exit), fetching `--no-tags` exactly `refs/tags/<ref>` from the candidate — never `git -C <candidate> verify-tag`. |
 | A5 | `bootstrap/tests/test_verify_ref.py` *(new)* | The negative test: a fixture builds a genuine signed tag, an attacker bare mirror re-points a new version name at it, and the substitution must **refuse**; the honest tag must **pass**; an honest tag against a wrong roster must **refuse**. |
 | A6 | `bootstrap/tests/test_verify_ref.py` | The nested-wrap test: an unsigned tag object named `<new>` wrapping the genuine signed object — name check passes, signature check refuses. Asserts *which* half refused, so the two halves stay independently load-bearing. |
 | A7 | `bootstrap/tests/test_verify_ref.py` | The `gpg.ssh.program` test: a hostile candidate whose config names a forging verifier that emits the principal on **stdout** (a stderr forger exits 1 and the test would pass for the wrong reason). Asserts refusal **and** that the forger never executed, via a witness file. |
+| A8 | `bootstrap/tests/test_verify_ref.py` | The resolver-refusal pair: a ref pointing straight at a commit, and a ref that does not exist. Both refuse (exit 1), and each asserts on **its own** reason string — so a resolver that refuses both with one message cannot satisfy both nodes. This lands the Part B class table's *non-tag object* row in Chunk A, where the resolver lands; C5's per-row sweep inherits the node rather than adding a second. |
 
 **Acceptance criteria — Chunk A**
 
@@ -400,6 +401,15 @@ contract arrives in Chunk B; the intermediate state is fail-closed).
   historical defect rather than only against a synthetic mutant.
 * Case (c) — honest tag, wrong roster — refuses. This is the check that the name
   binding has not become the *only* check.
+* A ref pointing at a **non-tag object** and a ref that does not exist both
+  refuse, with **different** reasons, each asserted on the reason and not on exit
+  1 alone (A8). Two reasons rather than one is not cosmetic: it is P3 at the
+  resolver — a node asserting only *"refused"* on the non-tag-object row passes
+  equally against a script that simply could not find the tag, so the row would
+  have an oracle that discriminates nothing. It is also the difference between
+  telling an adopter whose fork tagged with `git tag` that their tag does not
+  exist and telling them it exists but is not an annotated tag object — only the
+  second is something they can act on.
 * No `git describe` remains on any provenance path (`grep` asserted).
 * Suite green under the canonical interpreter, 0 skipped / 0 xfailed, collection
   grown by exactly the new nodes.
@@ -909,3 +919,158 @@ HONEST CASE FINAL EXIT CODE: 0
 
 **READY FOR IMPLEMENTATION.** The plan's sequencing, acceptance criteria, and exact-tag resolution logic are sound and verified.
 
+
+## Response to plan review -- Claude (author) -- 2026-08-03
+
+**Model**: Claude Opus 5
+
+**One finding, accepted — but only one of its three limbs was open.** The verdict
+was READY FOR IMPLEMENTATION; that is not a reason to leave [E1] undisposed, and
+this lifecycle has already produced Decisions landing over reviews whose findings
+were waved through on a favourable verdict. [E1] is answered on the merits below.
+Everything asserted here was measured for this Response on 2026-08-03 under git
+2.53.0, in throwaway repositories under the session scratch directory with
+`GIT_CONFIG_GLOBAL` / `GIT_CONFIG_SYSTEM` neutralised. No key material was used,
+and nothing was written into the Cairn tree outside this plan.
+
+### [E1] ACCEPTED — in one limb of three: the resolver already fails closed and already refuses to fall back; what it does not do is say *which* cause fired
+
+**The finding, restated.** `git rev-parse refs/tags/<ref>^{tag}` errors or returns
+empty when the ref names no annotated tag object. Chunk A targets annotated
+signed tags correctly, but the resolver must fail closed **with a distinct,
+actionable error** when a caller asks about an unannotated (lightweight) tag ref —
+not raise an uncaught exception, and not fall back to raw commit verification.
+
+**Measured first, before disposing.** Three refs in one repository — `lw`
+(pointing straight at a commit), `ann` (a real annotated tag object), and
+`nosuch`:
+
+```
+=== refs/tags/lw -> commit 404c5a31 ===
+  rev-parse --verify         'refs/tags/lw^{tag}'      rc=128  stdout=[]
+      stderr: error: refs/tags/lw^{tag}: expected tag type, but the object
+              dereferences to tree type / fatal: Needed a single revision
+  rev-parse --verify --quiet 'refs/tags/lw^{tag}'      rc=1    stdout=[]
+      stderr: error: ... dereferences to tree type          <-- NOT suppressed
+=== refs/tags/nosuch (no such ref) ===
+  rev-parse --verify --quiet 'refs/tags/nosuch^{tag}'  rc=1    stdout=[]  stderr=[]
+=== refs/tags/ann -> tag object e35406d2 ===
+  rev-parse --verify --quiet 'refs/tags/ann^{tag}'     rc=0    stdout=[e35406d2...]
+```
+
+The reviewer's premise is factually right, and it reproduces the plan's own
+earlier measurement exactly. What the numbers then show is that the finding is
+three claims, not one, and they do not have the same disposition.
+
+**Limb 1 — "not an uncaught exception": ALREADY-COVERED, with a detail the review
+does not carry.** The plan measured this before the review, in the section *The
+finding this plan exists to close*, and specified the guard:
+
+> **Resolver exit codes under `set -euo pipefail`.** `git rev-parse --verify
+> 'refs/tags/<lightweight>^{tag}'` exits **128** without `--quiet` and **1** with
+> it, and `--quiet` does **not** suppress the `dereferences to tree type` line on
+> stderr. So the script needs `--verify --quiet … 2>/dev/null` **and** an explicit
+> `|| refuse` guard, the second because the exit code must be translated to the
+> script's documented `1 = refused` regardless.
+
+Chunk A row A1 carries it into the contract: *"`git rev-parse --verify --quiet
+"refs/tags/<ref>^{tag}" 2>/dev/null` + an explicit `|| refuse`"*. The `|| refuse`
+is there precisely because `set -euo pipefail` would otherwise abort the script on
+the resolver's non-zero exit — which is the uncaught-exception failure the
+reviewer names — and because rc must be translated to the script's documented `1 =
+refused` either way. The detail the review does not have is that `--quiet` leaves
+the `dereferences to tree type` line on stderr, so `2>/dev/null` is load-bearing
+too; a guard without it refuses *and* prints a raw git error at an adopter.
+
+**Limb 2 — "not a fallback to raw commit verification": ALREADY-COVERED, and the
+defect the reviewer is describing is live in the shipped script today.** The
+contract already forbids it in three places: A1 (*"resolution starts from the
+caller's ref and never from a commit"*), C1 (*"Provenance mode becomes the default
+and requires a signed, name-bound annotated tag. The integrity-pin path is
+reachable only under an explicit `--unprovenanced` flag"*), and the plan's
+failure-mode list (*"Non-tag object → refuse"*, and `HEAD` refusing in provenance
+mode per C4). It is worth recording *why* A1 deletes `git describe` rather than
+adjusting it, because the pre-fix behaviour on the reviewer's own input is worse
+than "falls back to the commit". `bootstrap/container/verify-ref.sh` today
+resolves `${REF}^{commit}` (line 41) and then asks `git describe --exact-match
+--tags "$COMMIT"` (line 44) — resolution *from a commit*, which is the shape A1
+removes. Run against the lab repository above:
+
+```
+$ bash bootstrap/container/verify-ref.sh cand lw
+verify-ref: OK — release tag 'ann' -> 404c5a3173cc26e6ffca94784091487b77b48a0a
+rc=0
+```
+
+The caller asked about `lw`; the script answered about **`ann`** — a different tag
+— called it a release tag, and exited 0. That is the [I1] shape again, on the
+lightweight-tag input, and it is another reason the `describe`-from-a-commit path
+is deleted rather than repaired.
+
+**Limb 3 — "a *distinct*, actionable error": OPEN. This is the limb I accept.**
+Nothing in the plan required the refusal to say which cause fired, and the
+measurement above shows the two causes are not separable without a second probe:
+`refs/tags/lw^{tag}` and `refs/tags/nosuch^{tag}` both return rc=1 with empty
+stdout, and the mandated `2>/dev/null` discards the single stderr line that told
+them apart. So a literal reading of A1 yields one refusal message for both. The
+plan's own author-accounting already lists them as *two* failure modes —
+*"Unresolvable ref → refuse. Non-tag object → refuse."* — but no chunk step bound
+the **output** to the distinction, and an acceptance criterion that does not exist
+is not a control.
+
+**Routing it through this plan's stopping rule.** The rule says a finding either
+violates P1–P5 (bounded fix) or names a property outside them (specification
+incomplete, re-sweep every earlier step). This one is **P3, oracle
+discrimination**, at the resolver: a test node asserting only *"refused"* for the
+non-tag-object class-table row passes equally against a script that merely could
+not find the tag, which is exactly P3's *"a negative assertion that passes for any
+refusal reason is not a control"*. So it is the bounded branch — a bug against a
+stated property, fixed inside Chunk A — and it triggers no re-sweep and no new
+acceptance property.
+
+**One thing the finding implies that was already covered, stated so it is not
+double-counted.** The class-table row exists: the proposal's second revision
+retired the old *"lightweight tag"* row and replaced it with *"tag ref resolving
+to a non-tag object (a commit, a tree) | REFUSED | not an object that can carry a
+signature"*, and Chunk C5 mandates *"One test per row of the proposal's Part B
+class table"* with the Chunk C criterion *"Every row of the Part B class table has
+a test, and each test names the row."* The case therefore already had a node
+promised. What it lacked was an oracle strong enough to distinguish it, and a
+resolver obliged to produce one.
+
+**Plan change — three touches, all inside Chunk A, none widening its contract.**
+
+* **Row A1 amended.** After the existing `|| refuse` sentence: the refuse branch
+  **names which of its two collapsed causes fired** — no such ref, versus a ref
+  that exists and points at a non-tag object — by re-probing the bare
+  `refs/tags/<ref>` on failure, with the measurement recorded inline (rc=1, empty
+  stdout, for both; `2>/dev/null` discards the distinguishing line).
+* **Row A8 added** (`bootstrap/tests/test_verify_ref.py`): the resolver-refusal
+  pair — a ref pointing straight at a commit and a ref that does not exist — both
+  refusing, each asserting on **its own** reason string, so one message cannot
+  satisfy both nodes. It states that this lands the class table's *non-tag object*
+  row in Chunk A, where the resolver lands, and that C5's per-row sweep inherits
+  the node rather than adding a second.
+* **One Chunk A acceptance criterion added**, binding the two reasons to the P3
+  argument above rather than leaving "distinct" as a taste preference.
+
+The re-probe is two `git rev-parse` calls against the temporary bare repository
+the script already creates (A4), so it adds no new input channel, no new trusted
+material, and nothing for P1 to rule on. No new file, no manifest row, no gate
+obligation: the gate accounting in *Gate accounting* stands unchanged, and
+collection still only grows.
+
+### The reviewer's "Not covered / low confidence" note
+
+The note records that hardware-token SSH signing (a YubiKey-resident key) was
+simulated with software Ed25519 keys. **Genuinely out of scope for the
+implementing chunks, and no follow-up row is needed for them**: verification
+consumes only the public key text an adopter typed into their own roster, and a
+token participates at *signing* time only — which is Chunk M step 2 and the
+Maintainer's, never an implementing agent's. The one place it could touch this
+scope is the literal example roster line in Chunk E4 and the fingerprint published
+in Chunk M step 1: both are parametric in the key type (`principal <keytype>
+<key>`), so a hardware-backed key changes the literal in the example, not the
+procedure. Whether that warrants a sentence in Chunk M step 1's confirmation —
+which the plan already flags as *"the fact this scope most expects to be
+corrected"* — is a Maintainer call, and I have not made it here.
