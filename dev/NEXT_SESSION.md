@@ -27,95 +27,84 @@ signal+read for coordination-surface files").
 ## Recommended starting point
 
 <!-- cairn:slot next-start -->
-**Task + current state.** Open the plan for **`stage-commit-patterns`** (accepted
-2026-07-22, awaiting plan-open) and implement it. It is the last accepted
-proposal with adopter-facing value still unimplemented, and it is small: the
-audit is already done, so Part 1 is transcription rather than investigation.
+**Task + current state.** **Open plans for the nine proposals accepted
+2026-08-03** — but *check the intent log first*. At handoff a concurrent agent
+(`claude-d8d22f62`) held an active claim on `dev/plans` with action
+`open five plans`, so some of this may already be done. Run
+`python tools/intent.py list` and `python tools/lifecycle.py session-start`
+before writing anything into `dev/plans/`.
 
-*What it fixes:* `_STAGE_COMMIT_PATTERNS` in
-`templates/modules/default-on/_lifecycle_metrics/gitmeta.py` maps commit
-subjects to lifecycle stages. It ships **default-on in every adopter tree** and
-matches **zero of 76** real commit subjects — so every stage-timing metric is
-empty and `stage_timestamp_reliability` reads `Best-effort` on 100% of rows,
-while the tool exits 0 and emits a well-formed report. The vocabulary was never
-Cairn's: an invented grammar validated only against Cairn's own toy examples.
+The nine, with what each plan must carry beyond the ordinary:
 
-*Three ratified plan conditions* (from the Decision — do not re-derive them):
-1. **Scoped `upgrade --finalize`** for `gitmeta.py` and its `__init__.py` twin.
-   This is mandatory, not optional: the lockfile was finalized at `41875e4`, so
-   leaving these records stale now *creates* a fresh mismatch and re-reds
-   `verify_integrity`. (The External review advised the opposite, correctly, on
-   a tree where 41 entries were already stale — that premise is dead.)
-2. **Template + installed-copy byte-parity** across both file pairs.
-3. **No AST re-anchor** — nothing under `bootstrap/_scaffold/` is touched.
+| Proposal | The thing the plan must not lose |
+|---|---|
+| `security-verification-activation` | **Plan this first** — it is the dependency root; the two capability proposals define their invocation contract against it |
+| `portable-security-sweeps` | **Two Maintainer conditions**: build a Gitleaks *version apparatus* (admit / re-measure / retire), and **Cairn adopts the module itself** so the apparatus is exercised |
+| `api-web-security-modules` | The **AW4 adversarial network-client fixtures** are a blocking gate: DNS answer changing between resolution and connection, redirect to every refused address class, connected-peer disagreement, credential carry-over |
+| `separator-detection` | **Owns** the `_scan_unicode` yielded-id signature change; carries the coexistence test that fails against today's code |
+| `content-scan-detectors` | **Rebases onto** the yielded-id form if it implements second; must not reintroduce the ternary |
+| `dependency-advisory-coverage` | Residual baseline admits **locally-built only** (PEP 610 `direct_url.json`), never "public package with no advisory record" |
+| `gate-claims-vs-enforcement` | Row E1's fallback is an **archive precondition**, not prose |
+| `release-security-bar` | Accepting it did **not** fix `verify_integrity.py`; that is a board row |
+| `security-preflight-checklist` | **No plan** — a single implementing commit against the proposal template |
 
-**Standing directions that order everything** (Maintainer, 2026-07-22):
-*postdoc-first* (does it affect the first external adopter's first two weeks?)
-and *fix defects, build nothing new* (any new tool or mechanism needs an
-explicit go-ahead, however well it reviews).
+**Why this first.** Nine accepted proposals with no plans is the largest
+unconverted decision backlog the board has carried, and two of them
+(`separator-detection`, `content-scan-detectors`) edit the same three sites in
+`content_scan.py` with a stated ordering rule that only exists in their
+Decisions.
 
-**Roles to instantiate.** Implementation for the plan; the Human Maintainer for
-the Decision on anything new. A fresh-context reader for the plan review
-(`required(Internal)`).
-
-**Agent-dispatch tier.** Medium — the design is settled and the audit is done;
-this is careful mechanical work plus its tests.
-
-**Reading order.** `AGENTS.md` → this file → `dev/PLANNING.md` (Where the
-project stands) → the accepted proposal `2026-07-22-claude-stage-commit-patterns`
-(read its **Revised proposal** and **Decision** first; they supersede the
-original design).
-
-**First three concrete steps.** (1) `python3 tools/lifecycle.py session-start`
-to orient and heal the skills fan-out. (2) Open the plan (which archives the
-proposal) and get its Internal plan-review. (3) Implement, transcribing the
-verified 28-symbol table rather than re-auditing.
-
-**Environment, non-negotiable.** Run the suite under the **canonical
-interpreter, Python 3.13.x** — on this machine `~/conda_envs/lhm/bin/python`.
-A different minor produces hundreds of *spurious* AST mismatches and silently
-skips `bandit`. Name the interpreter alongside any suite figure you assert.
-See `bootstrap/DEPENDENCY_BUDGET.md` > "The canonical interpreter". The suite
-is currently **fully green: 1446 passed, 0 failed, 0 skipped**.
-<!-- cairn:end next-start -->
+**Effort.** Large; naturally splits per proposal. **Payoff.** Converts a night of
+decisions into executable work. **Risk.** Plan-opening collides with the
+concurrent agent — hence the intent check.
 
 ## Other candidates
 
-Smaller, pickable-cold tasks, each with the context to start it.
+**Push, and carry the trust root.** 129 commits and
+`refs/cairn/gate-anchor` at `e45e1fc` are unpushed. A plain `git push` does
+**not** carry custom refs:
 
-* **`transition-lint`** *(accepted, queued, explicitly not next)* — an advisory
-  check that a commit's message claim is supported by its diff. Accepted
-  2026-07-22 as the explicit go-ahead the build-nothing-new rule requires, but
-  recorded **queued, not next**: it is maintainer-facing apparatus and the
-  standing priority is postdoc-first. Its plan conditions are ratified in the
-  Decision (rename-awareness via `-M`, trigger narrowed to
-  `dev/proposals/`|`dev/plans/`, exception vocabulary bounded to restating
-  `AGENTS.md`'s carve-in, advisory = always exit 0, no silent-clean on an
-  unresolvable rev-range). Do not start this ahead of adopter-path work.
+```
+git push origin master
+git push origin refs/cairn/gate-anchor:refs/cairn/gate-anchor
+```
 
-* **Verify the claude-code skills path** *(small, and it closes a real
-  evidence gap)* — `.claude/skills -> ../.agents/skills` was created this
-  session and both `SKILL.md` files are well-formed, but the Maintainer
-  reported the skills not appearing in their list. Unresolved whether that is
-  discovery-at-startup or `disable-model-invocation: true` behaving as
-  documented. **Either answer is worth recording**: `docs/skills-compatibility.md`
-  currently rates every harness `native-claimed-unverified` — zero verified
-  targets — and the fixture protocol's promotion transcript has never been
-  written. This is the cheapest available move from "claimed" to "tested".
+Needs Maintainer approval. Until then tonight's trust root and the whole
+deliberation record exist on one disk. Pushing also finally makes the
+**SR9 external-anchoring** upgrade available — `_gate_manifest.py verify
+--trusted-repo <fresh-clone>` means something only once `P` exists off-machine,
+and `P` now does.
 
-* **`.claude/` is untracked and not gitignored** *(tree hygiene, Maintainer's
-  call)* — it now holds the skills symlink plus harness `worktrees`. Not
-  gitignored unilaterally this session because `.gitignore` is a shared
-  surface.
+**Another session's uncommitted engine work.** At handoff the tree carried
+modified `bootstrap/verify_integrity.py`, `lockfile.py`, `install.py`,
+`upgrade.py`, `test_lockfile_module.py`, `test_verify_integrity.py`, and an
+untracked `bootstrap/tests/test_fork_advisory.py`. **Not mine and not
+abandoned** — establish ownership before touching or running gates over them.
 
-* **Cite lifecycle artifacts by filename stem, not path** *(recurring defect,
-  two counted instances)* — `AGENTS.md`'s shared-communication-file rule
-  already mandates stems for the boards precisely so an archive-move needs no
-  edit; proposals do not inherit that protection. Two live proposals had path
-  citations broken by legitimate archive-moves this session, each needing
-  claim-marker maintenance. Cheap to state; would prevent a recurring class.
+**Two security follow-ups on the board**, both with revival conditions, neither
+urgent:
 
-* **The 0.4 gates remain outstanding** — the R-H third-party correctness probe
-  (blocked on enrolling a third party, and with no in-tree protocol), and the
-  standing pre-release sweep, which has no v0.4 instance. Both are launch-path,
-  not postdoc-path.
+* **Conda advisory coverage** — 147 conda-only packages, 82 native, unaudited by
+  anything Cairn ships. Trivy and OSV-Scanner are eliminated on primary docs;
+  **Grype/Syft are unevaluated by anyone** and are the first thing to actually
+  run. Revival is execution-bound on purpose.
+* **Install-integrity trust anchor** — `verify_integrity.py:47` reads expected
+  hashes from the candidate's own lockfile, so a coordinated tamper verifies
+  `OK`. Needs its own threat model, not a patch.
+
+**`SECURITY.md` disclosure channel** (Queued) — the half of the superseded
+`contributor-entry` that survived. Carries finding [I7]: the channel's deciding
+property is whether the forge setting is *actually enabled*, which no reviewer
+can establish. **Maintainer live-verification step**, not a review item.
+
+**A doctrine gap worth one small proposal.** `AGENTS.md` frames orientation as a
+cold-start/context-loss routine and does not name **opening a lifecycle
+artifact** as a trigger. That gap produced a proposal opened 74 minutes after a
+sibling plan claimed the same three symbols, superseded the same night. The fix
+is one sentence; the evidence is in the archived
+`2026-08-03-claude-yaml-parser-divergence`.
+
+**Also unresolved:** there is still **no runbook for the AST baseline
+re-anchor**. `AGENTS.md:335-338` no longer points at the wrong one, but the
+procedure lives only as precedent (`c3d5bd9`) and as prose inside two plans.
+Deferred Maintainer question 4 is marked resolved-with-residual on that point.
