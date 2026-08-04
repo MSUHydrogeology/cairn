@@ -643,3 +643,139 @@ decides CLEAN, DAC5 changes scope/review routing, and DAC6-DAC7 close adjacent
 evidence/doctrine defects. The author should respond point-by-point and revise;
 a fresh External security pass should then execute the chosen denominator,
 source, and residual design before Decision.
+
+## Response to the External security review -- Claude (author) -- 2026-08-03
+
+**Model**: Claude Opus 5
+
+**All seven findings accepted.** Two I reproduced independently before
+accepting; the rest I accept on the reviewer's execution evidence and my own
+reading of the shipped code. **HOLD stands**, and one question in DAC3 is a
+Maintainer Decision I will not settle in a response.
+
+### Independently reproduced
+
+**DAC2 reproduces exactly.** Normalized under the canonical interpreter:
+
+| | |
+|---|---:|
+| conda unique names | 391 |
+| Python distribution unique names | 288 |
+| intersection | 244 |
+| conda-only | 147 |
+| **Python-only** | **44** |
+| **union** | **435** |
+
+The Python-only set includes `great-circle-calculator`, `aiosqlite`, `cattrs`,
+Sphinx components — packages installed with pip *after* environment creation,
+which is the ordinary way a scientific environment grows. Amendment 2 widened
+the claim to "100% of the environment accounted for" while keeping **391** — a
+conda-only denominator — as the target. That silently drops 44 packages,
+including the editable project distributions. The denominator must be the
+reconciled union.
+
+**DAC7's contradiction reproduces**, and it is in two authoritative places:
+
+* `bootstrap/DEPENDENCY_BUDGET.md:46` — "pip-audit runs against its local cache only"
+* `templates/modules/team-gated/run_security_audit.py:392` — the same sentence
+
+`run_pip_audit_pass` returns `_AGG_INCOMPLETE` at the egress check **before**
+invoking pip-audit at all. Neither statement is true; only the runtime message
+("the lookup did NOT run") is.
+
+### DAC1 — accepted, and it is the finding I have made against others twice today
+
+`PIPAPI_PYTHON_LOCATION` redirecting pip-audit's enumeration from 28 packages to
+288, and `PIP_AUDIT_VULNERABILITY_SERVICE` / `PIP_AUDIT_OSV_URL` /
+`PIP_AUDIT_OUTPUT` redirecting service, endpoint, and evidence destination — this
+is ambient environment steering a security tool, which is precisely PS8 against
+`portable-security-sweeps` and FUR1/FUR2 in the archived gate-reanchor record.
+
+I read `_run_tool` closely enough to quote its four stripped variables in my own
+proposal, and did not notice that everything else passes through. Worse, my
+Part 1 proposed to *print* `sys.executable` — reporting the parent's identity as
+though it established what the child enumerated. The reviewer's framing is the
+correction: **bind the inventory the child observed to the named interpreter,
+rather than inferring identity from the parent process.**
+
+### DAC3 — accepted, and it puts a Decision to the Maintainer
+
+The epistemic point is right and I will not defend the label. A 404 from PyPI
+means *not found in PyPI*; an empty OSV response means *no associated
+vulnerability in OSV*. Neither establishes that no advisory source exists. I
+named the category `NO-ADVISORY-SOURCE` and let it participate in CLEAN, which
+asserts a universal negative from a bounded query. `NO-MATCH-IN-PINNED-SOURCES`
+is the honest name, it must record every queried source and version, and it is
+**accepted non-coverage, not evidence of safety**.
+
+**The Decision this forces, stated plainly rather than deferred to a plan.** The
+reviewer resolved both candidates I had marked UNVERIFIED, from primary
+documentation: Trivy's Conda coverage supports SBOM and license extraction but
+marks **vulnerability scanning unsupported**, and OSV-Scanner does not list Conda
+among supported ecosystems. If that holds, **no off-the-shelf Conda-native
+advisory authority exists**, and amendment 1's own fallback triggers — narrow
+the module's declared scope and say so at selection.
+
+That sits directly against the Maintainer's requirement that the module
+comprehensively scan. The options, and none is free:
+
+1. **Narrow scope** — `python-security` audits Python distributions, says so at
+   selection, and the 147 conda-only packages become declared non-coverage. The
+   reviewer's recommendation, and honest.
+2. **Build and own a name→CPE map** — which DAC3 correctly says makes Cairn *the
+   security authority for product identity*. That is a much larger commitment
+   than an adapter, with its own review burden and staleness failure mode.
+3. **Evaluate an authority neither party has executed.** Grype/Syft match by CPE
+   rather than ecosystem, and whether their catalogers read `conda-meta` is
+   **unverified by either reviewer or author** — I am naming it as an unevaluated
+   candidate, not as a solution.
+
+This is a scope-and-risk-acceptance Decision, not a technical one, and it is the
+Maintainer's.
+
+### DAC4, DAC5, DAC6 — accepted without qualification
+
+* **DAC4** — I made a reviewed residual load-bearing for CLEAN and specified no
+  artifact, schema, identity tuple, reviewer, expiry, or update authority for
+  it, and omitted it from *Touches*. A residual baseline with no schema is the
+  blanket exemption I claimed it would prevent. Either it becomes a complete
+  policy artifact or the mechanism goes with the scope narrowing.
+* **DAC5** — "the project's recorded interpreter" does resolve to
+  `dev/.cairn/local-env.json`, which `AGENTS.md` registers as a high-risk
+  **executable trust root** with a strict reader. I wrote the phrase without
+  naming the record, the reader, or the consequence, and did not put it in
+  *Touches* or raise the review tier. Either narrow the claim to recording
+  `sys.executable` and version, or add the binding to scope and take the
+  Security Review it requires. I will not create a second `_resolve_interpreter`.
+* **DAC6** — accepted, and the invalid-UTF-8 traceback is worse than the defect I
+  described: `text=True` raises before `_run_tool` can classify anything, so a
+  hostile tree produces an uncaught traceback rather than DEGRADED. Capture
+  bytes, bound the combined output, decode with an explicit error policy, escape
+  before rendering, and parse fixed JSON.
+
+### DAC7 — accepted, including the self-contradiction
+
+I wrote "No doctrine change" and then, across two amendments, wrote a *governing
+rule* for when a security leg may return CLEAN, selection-time semantics, and
+rules for widening a residual. Those are prescriptions, not descriptive
+corrections. The rate-limit gate has a straightforward basis — the Maintainer has
+classified this surface high-risk — and the proposal should state it rather than
+deny that the gate applies.
+
+### Pattern note
+
+Three of these — DAC1, DAC5, DAC7 — are the same failure this session has
+recorded repeatedly against my own work: **asserting a property at the strength
+intended rather than the strength delivered.** DAC1 is the ambient-environment
+finding I raised against two other proposals today and missed in mine. DAC7 is a
+category claim I made about my own document without reading what it had become
+by amendment 2. Recording it again because the count now matters more than any
+individual instance.
+
+### Recommended next step
+
+Do not revise Parts 1 and 3 in isolation. They are sound and get stronger under
+DAC1/DAC2/DAC6, but Part 2's feasibility now governs the module's declared scope,
+and revising the reporting design before that Decision would design a denominator
+for a contract that may be about to shrink. **The Maintainer's answer to DAC3 is
+the next lifecycle event**, not another author revision.
