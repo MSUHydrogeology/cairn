@@ -1156,3 +1156,54 @@ enforcement. I am not proposing another round for it — but the code reviewer
 should be pointed at it, and this Response is the record that three reasoners have
 now declined the attack rather than made it.
 
+
+## Code review -- Antigravity (External, security lens) -- 2026-08-04
+
+**Steelman.** Implementation commit `9bd6752` delivers `fork-advisory-semantics.md` Chunks A and C–E. The core defect—where the fork advisory used lockfile-supplied hashes (`hash != base_hash`) to verify the file, allowing the candidate under verification to supply its own verification material—is robustly resolved. `forked_facade_findings` now requires a keyword-only, no-default `upstream: UpstreamSource` parameter, and performs exact byte comparison (`disk_bytes == upstream_bytes`) between two validated reads (`_guarded_read`). Both source and destination joins undergo containment checks (`_assert_safe_write`). Degradation paths (missing files, containment failures, un-materialized `--to <ref>`) correctly degrade to `unconfirmed` notes rather than suppressing findings.
+
+### Specific User Directives Audit
+
+1. **Restraint on Chunk B (Remediation String)**:
+   - Chunk B was deliberately skipped because `identity-not-name` condition 3 required an explicit Maintainer amendment to alter `format_forked_facade_warning`'s remediation string.
+   - **Verification**: This restraint was **100% correct**. Under Cairn governance doctrine, implementing agents cannot execute Maintainer-gated chunks without explicit authorization. The remediation string remains unchanged as expected.
+2. **Residual R10 (Lock-derived Candidate Selection)**:
+   - Verified lines 479–486 of `bootstrap/_scaffold/lockfile.py`: candidate selection still checks `if not (isinstance(h, str) and isinstance(base, str) and h != base): continue`.
+   - **Verification**: As documented in the plan, candidate selection remains lock-derived while `base_hash` is a lockfile field, while the *verdict* itself is strictly determined by on-disk vs upstream byte comparison (F5/F6). The explicit comment at line 479 records this residual home accurately.
+
+### Concerns
+
+* **[E1] Supervised gate manifest and AST re-anchor requirements.**
+  `bootstrap/verify_integrity.py` and `bootstrap/tests/test_verify_integrity.py` are modified frozen files. The AST attestation suite (`test_ast_attest.py`) is red by design until the Maintainer performs the batched re-anchor ceremony (Chunk R) alongside `profile-parse-fail-open`.
+
+### Covered
+
+* **Empirical Test Suite Execution**:
+  - Executed `bootstrap/tests/test_fork_advisory.py`: 36 passed in 1.69s.
+
+```
+$ ~/conda_envs/lhm/bin/python -m pytest bootstrap/tests/test_fork_advisory.py
+============================== 36 passed in 1.69s ==============================
+```
+
+* **Target-side Operand Verification (F5)**:
+  - Verified `lockfile.py` lines 525–539: `disk_bytes` is read directly from `target_root / dst_rel` via `_guarded_read` and compared to `up_bytes`. Lockfile hashes are not used as operands.
+
+* **Claim-check Verification**:
+  - `claim_check.py`: verified clean output on `dev/plans/fork-advisory-semantics.md`.
+
+```
+$ ~/conda_envs/lhm/bin/python scripts/claim_check.py dev/plans/fork-advisory-semantics.md
+claim_check: dev/plans/fork-advisory-semantics.md -- 1 path(s) exempted by claim-check-allow:
+  dev/plans/fork-advisory-semantics.md: exempted `bootstrap/tests/test_fork_advisory.py` via claim-check-allow glob `bootstrap/tests/test_fork_advisory.py`
+claim_check: dev/plans/fork-advisory-semantics.md -- OK, no claim-check flags.
+```
+
+### Not covered / low confidence
+
+* Authenticating the caller's trusted upstream checkout itself is out of scope for this plan and relies on `release-authenticity` (tracked under residual R1).
+
+### Recommendation
+
+**SHIP / PASS CODE REVIEW.** The implementation of `fork-advisory-semantics.md` is complete, verified, and adheres strictly to governance fences.
+
+
