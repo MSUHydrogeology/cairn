@@ -1,7 +1,7 @@
 # Plan: deferral discipline — the archive precondition routes, not only preserves
 
 **Source proposal**: [`dev/proposals/archive/2026-08-04-claude-deferral-discipline.md`](../proposals/archive/2026-08-04-claude-deferral-discipline.md)
-**Status**: review
+**Status**: archived
 **Plan review**: required(Internal) — ratified in the Decision (`6e349b3`)
 **Last update**: 2026-08-04
 **Opened**: 2026-08-04
@@ -1500,3 +1500,137 @@ assertable.
   assertions, and fails **closed** on a one-sided twin edit.
 * **Retained:** the prose chunks (A–D) genuinely have no behavioral surface and
   add no test. That was sound and is unchanged.
+
+---
+
+### Response to the code review -- Claude (Strategy) -- 2026-08-04
+
+**Model**: claude-opus-5
+
+Grammar: Code-review-Response (`doctrine/proposals.md` > "Response — disposition
+grammars"). Nine findings, all accepted; five closed by the sharpening commit
+`c0525c2`, four answered here.
+
+* **[C1]** accept (rewrote inline) — the acceptance criterion was **unrunnable as
+  written**: a range diff over `3f8ce57~1..791655a` sweeps up three concurrent
+  sessions' commits, so it could never equal the surface set. The criterion is
+  corrected to the **per-commit** form, and the actual set is enumerated in the
+  ledger below: `for c in <shas>; do git show --format="" --name-only $c; done |
+  sort -u` yields **exactly 20 paths** — the 19 surfaces plus the successor
+  proposal. Re-derived at archive time; matches the reviewer's independent count.
+* **[C2]** accept (rewrote inline) — plan row E3 named
+  `bootstrap/tests/test_lifecycle_cli.py`; the three assertions landed in
+  `bootstrap/tests/test_lifecycle_contract.py`, which is where the planner harness
+  and `_load_planner()` live. Both files exist, so nothing flagged it — the same
+  silent-miss class as [C4]. The Sequence is append-only in flight, so the
+  correction is recorded here rather than edited in place.
+* **[C3]** accept (rewrote inline) — and this is the fourth instance in this
+  artifact's history of the house failure mode. Chunk E″'s commit body claimed
+  bucketing `guard` makes the split "measurable for free"; **no CSV column emits
+  it**, so the claim was made at the strength intended rather than delivered. What
+  [P4] actually asked for was that the token not be *silently dropped*, and that
+  **is** delivered — verified by execution. The correction is the complete fix:
+  the claim is restated here at its true strength. **No follow-up is created** —
+  surfacing `guard` as a column would be a CSV-schema change to a shipped module,
+  which is adopter-reaching and would need its own proposal; nobody has proposed
+  it, so it is an unraised idea, not a deferred obligation. Recording the
+  distinction because inventing a follow-up here would inflate the board this
+  plan exists to drain.
+* **[C7]** wontfix — [P5] (re-splitting Chunks C and D along guarded/unguarded
+  lines) was marked `accept` in the Response and then not implemented; the chunks
+  landed as originally split. Re-splitting *after* the commits have landed buys
+  nothing — the review boundary it was meant to improve has already been crossed,
+  and rewriting history to obtain it would be strictly worse. The honest fix is to
+  say the accept was not honoured, which this line does. Eligible for `wontfix`
+  under the new C4 rule: reaches no adopter, blocks no release, needs no Decision.
+
+**[C4], [C5], [C6], [C8], [C9]** accept (followup commit `c0525c2`) — closed by
+the sharpening commit; see its body for what each changed and why.
+
+## Lasting-truth migration
+
+**Archived** 2026-08-04.
+
+### Dispositions
+
+*This plan is archived under the rule it landed — the first artifact to use the
+`Dispositions:` block. Its own code-review findings are the follow-ups being
+dispositioned.*
+
+```
+Dispositions:
+* [C1] acceptance criterion unrunnable      -> accept (corrected inline; set enumerated below)
+* [C2] plan row E3 names the wrong test     -> accept (corrected inline)
+* [C3] E'' commit body over-claims          -> accept (claim restated at true strength)
+* [C4] two canonical homes                  -> accept (commit c0525c2)
+* [C5] `reject` silently dropped            -> accept (commit c0525c2)
+* [C6] triage rule states superseded rule   -> accept (commit c0525c2)
+* [C7] [P5] accepted but not implemented    -> wontfix (post-landing re-split buys nothing)
+* [C8] CHANGELOG leads with withdrawn line  -> accept (commit c0525c2)
+* [C9] lens #9 range has no `defer`         -> accept (commit c0525c2)
+```
+
+**Zero `defer` dispositions**, so this archive needs no Maintainer authorization
+and adds **no row** to `dev/PLANNING.md`. Net board delta: **0** against the
++4.7-per-plan baseline the proposal measured — the governing principle, met on
+the artifact that introduced it.
+
+**The D1 successor is not a deferral of this plan.** It was split by the Decision
+and opened at `791655a` as stem `2026-08-04-claude-board-retro-disposition`,
+status `proposed`. It is a `defer` (successor) the Maintainer authorized in
+advance, not one this archive is requesting.
+
+### Evidence ledger
+
+**Evidence shipped.** Full suite **1959 passed** in 263s under
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13, canonical) —
+independently re-run by the code reviewer at 1959/238s. `check_cairn` OK across
+192 files. Both twin pairs byte-identical by `cmp`. Three new assertions in
+`bootstrap/tests/test_lifecycle_contract.py`, **proven non-vacuous by mutation**
+and independently reproduced by the reviewer, who additionally established that
+the three mutations produce three *different* single-node failures — the
+assertions are orthogonal, not redundant. Backward compatibility proven **on the
+real tree**: old and new planner produce identical `scan --include-archive`
+output across 17 archived artifacts carrying the legacy spelling.
+
+**Evidence deferred.** None.
+
+**Changed-file set (the [C1] criterion, corrected form).** Eight implementing
+commits `3f8ce57`, `5c85274`, `758448a`, `4858c84`, `6ece062`, `8d6ae88`,
+`791655a`, `c0525c2` touch exactly these **20** paths — the 19 named surfaces
+plus the successor proposal, with nothing extra:
+
+`CHANGELOG.md`, `bootstrap/tests/test_lifecycle_contract.py`, `dev/PLANNING.md`,
+`dev/modules/dual-review.md`, `dev/plans/_template.md`,
+`dev/proposals/2026-08-04-claude-board-retro-disposition.md`,
+`dev/proposals/_template.md`, `doctrine/dual-review.md`,
+`doctrine/lifecycle-contract.md`, `doctrine/lifecycle.md`, `doctrine/plans.md`,
+`doctrine/proposals.md`, `templates/core/dev/PLANNING.md`,
+`templates/core/dev/plans/_template.md`,
+`templates/core/dev/proposals/_template.md`,
+`templates/modules/default-on/_lifecycle_metrics/subsystems.py`,
+`templates/modules/team-gated/dual-review.md`,
+`templates/skills/_lib/lifecycle_planner.py`,
+`tools/_lifecycle_metrics/subsystems.py`, `tools/lifecycle_planner.py`.
+
+**Residual risks, stated rather than closed.**
+* **All three invariants are documentary.** Nothing mechanically checks that a
+  disposition is the *right* one, or that a `defer` authorization was really
+  given. This was the Decision's explicit call: D2 (a content-parity gate) was
+  **not authorized**, and the reviewer's mutation test confirms doctrine ↔
+  template prose parity is unguarded across all mirrors.
+* **~15 in-flight plans under `dev/plans/`** still carry the superseded
+  boilerplate. Deliberate: they are other agents' live artifacts, and backward
+  compatibility means none of them breaks by waiting.
+* **The `guard` token is bucketed but not surfaced** in any metrics column
+  ([C3]).
+
+### Loop-fidelity sign-off
+
+The landed implementation commits `3f8ce57..c0525c2` match the accepted
+**`## Revised proposal`** section of
+[`2026-08-04-claude-deferral-discipline`](../proposals/archive/2026-08-04-claude-deferral-discipline.md),
+items **C1–C7**, as ratified by the Decision at `6e349b3`. Two Decision-scoped
+exclusions were honoured and independently verified by the code reviewer: **D2
+was not built** (no checker in any of the 20 changed paths) and **no board row
+was re-routed** (`dev/PLANNING.md` is a single hunk; 1002 + 35 = 1037 exactly).
