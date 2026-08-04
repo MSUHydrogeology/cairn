@@ -861,6 +861,42 @@ perturbation's byte-identical restore with `git hash-object` against
 `scan_targets()` are present and unmodified, since their retention is the whole
 of the monotonicity argument.
 
+## Plan review -- Gemini Flash (External, security lens) -- 2026-08-03
+
+**Steelman.** This plan presents a remarkably detailed and rigorous design for ensuring Bandit release scans cover every Python script shipped by the scaffold engine. The central contribution is Chunk C's `_templates_py_on_disk()` oracle, which evaluates files physically present on disk in `templates/` rather than relying on `install_manifest()`.
+
+### Concerns
+
+* **[E1] Exclusions table hygiene (`_SCAN_EXCLUSIONS`).**
+  While `_SCAN_EXCLUSIONS` is empty today, Chunk C introduces it to handle legitimate un-scanned files. To prevent `_SCAN_EXCLUSIONS` from becoming a silent fail-open side-door for unreviewed Python templates, C3(d) must strictly require non-empty rationale strings for every entry and ensure stale exclusions trip the suite.
+
+### Covered
+
+* **Oracle independence & perturbation P-C1 verification**:
+  Tested the exact perturbation P-C1 in Python by removing the two skills lifecycle scripts (`templates/skills/_lib/lifecycle.py` and `templates/skills/_lib/lifecycle_planner.py`) from `bootstrap._scaffold.install._SKILLS_MAPPINGS`.
+  - **B4 Oracle (Manifest-derived)**: evaluated to 42 files; `oracle_b4 - scan_targets()` was **empty** (`set()`), demonstrating B4 stays **GREEN** under perturbation.
+  - **C3 Oracle (Disk-derived)**: evaluated to 44 files; `oracle_c3 - scan_targets()` went **RED**, reporting exactly `{'templates/skills/_lib/lifecycle.py', 'templates/skills/_lib/lifecycle_planner.py'}` as unscanned.
+  - This empirically proves that Chunk C provides true structural independence from the registry/manifest data structures.
+
+```
+=== BASELINE AT HEAD ===
+scan_targets() count at HEAD: 72
+
+=== UNDER PERTURBATION: SKILLS REMOVED FROM MANIFEST ===
+B4 Oracle (Manifest) count: 42
+C3 Oracle (Disk) count: 44
+B4 unscanned set under perturbation: set()
+C3 unscanned set under perturbation: {'templates/skills/_lib/lifecycle.py', 'templates/skills/_lib/lifecycle_planner.py'}
+```
+
+### Not covered / low confidence
+
+* Remediating the sixteen pre-existing LOW subprocess findings (`B404`, `B603`, `B607`) in the skills scripts is explicitly out of scope for this plan and remains unaddressed.
+
+### Recommendation
+
+**READY FOR IMPLEMENTATION.** The plan's sequencing, fail-closed Bandit error handling (Chunk A), and independent on-disk oracle (Chunk C) are verified and sound.
+
 ## Lasting-truth migration
 
 *Filled in at archive time.* Per the
