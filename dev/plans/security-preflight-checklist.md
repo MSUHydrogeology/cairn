@@ -1097,3 +1097,438 @@ the four template files themselves and the accepted proposal. This plan is not
 a second source for it, which is why Chunk B elides the five bullets.
 
 This section is append-only once written.
+
+## Plan review -- Claude (Internal, same-agent-type; security lens) -- 2026-08-04
+
+**Model**: claude-opus-5.
+
+**Standing — read this before weighting anything below.** I am the **same agent
+type as this plan's author**, in a fresh session. There is **no cross-type
+structural independence** in this round: a blind spot the author has, I most
+likely share. That is not a formality here — two of the findings below ([I1],
+[I2]) are precisely the shape a same-type reader is worst placed to catch by
+reading, and I only caught them by *running* a reconstruction. **This round
+does discharge the plan's declared tier**: the header declares
+`required(**Internal**)`, the proposal set that ceiling, the Decision ratified
+it, and Internal's floor is the same agent in a fresh session. It discharges
+the tier **as declared** and nothing more — it is not an External read, and it
+does not stand in for the code review this plan already routes to a different
+agent.
+
+Everything asserted below was run against the working tree under
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13) with
+`PYTHONDONTWRITEBYTECODE=1`. **No repository file was written**, no
+perturbation was applied inside the tree, and every reconstruction of the
+author's not-yet-written test lives in the session scratch directory and is
+**mine, not the author's code** — it is labelled as such at each use.
+
+**Steelman.** This plan's measured baseline is unusually honest and unusually
+accurate. I re-derived the Chunk B extraction independently — lines 116-158 of
+`dev/proposals/2026-08-03-claude-security-preflight-checklist.md`, `> `
+stripped — and got **43 lines, 4 blank lines**, the stated first and last
+lines, no `{{` sequence, and sha256
+`277daac432cfff21062a9ec58718138238183e79a4f988a8d90aeec62b01852b`: an **exact
+match**. That pin is real, it is the plan's own S1 answer working, and it is
+the single best thing in the artifact. The two-sided oracle argument is also
+**correct on the merits**: when I ran the four assertion groups in isolation
+against a post-change scratch tree, P5 came out `(a)=RED (b)=RED (c)=GREEN` and
+P6 came out `(a)=GREEN (b)=GREEN (c)=RED` — the discriminating pair does
+discriminate, in the direction claimed, and neither half of the oracle is
+redundant. The gap the plan says it is closing is real: the existing twin test
+`test_every_self_hosted_twin_stays_byte_identical_to_its_source` globs `*.py`
+only, so `dev/**/_template.md` twins are genuinely unguarded. The neutrality
+asymmetry is real (`_NEUTRALITY_FILE_SUFFIXES` carries a `templates` entry and
+no `dev` entry). And the figure hygiene is excellent: `164` frozen files,
+`node_count` `1598`, `180` Markdown files, `fail=95 info=21`, `5,541 tok /
+22,317 B`, 95 manifest data rows, all four rows `substituted`, the
+`FROZEN-MODIFIED` message string, the `REANCHOR_RUNBOOK.md` quote, and every
+template anchor line number — **all reproduced exactly**. The collect-only
+figure is now 1749 against the plan's 1746, which is the plan's own dirty-tree
+caveat being right rather than wrong.
+
+So the concerns below are not about rigor. They are about two places where the
+plan's *instrument* does not do what its *analysis* says, and one place where
+it did to itself the thing it warns others against.
+
+### Concerns
+
+**[I1] BLOCKING — `_SECURITY_PREFLIGHT_GATE_PHRASE` does not occur in the bytes
+Chunk B inserts. Groups (a) and (b) fail on a correctly-executed change.**
+
+A1 specifies `_SECURITY_PREFLIGHT_GATE_PHRASE = "no trust boundary added,
+moved, or widened"` as a literal presence assertion. In the hash-pinned source
+the phrase is **wrapped across a line break**:
+
+```
+> `AGENTS.md` names. For every other change, one line — "N/A: no trust boundary
+> added, moved, or widened" — is the correct entry.*
+```
+
+Measured against the extracted 43-line block:
+
+```
+'no trust boundary added, moved, or widened' -> False
+'no trust boundary'                          -> True
+'added, moved, or widened'                   -> True
+'**S1 — Who supplied it?**'                  -> True   (all five headings True)
+```
+
+The five heading literals resolve; the gate phrase does not. Because Chunk B
+inserts those bytes **verbatim under a hash pin**, this is not a
+reflow-at-insertion accident an implementing agent can wrap their way out of —
+the pin forbids the rewrite that would fix it. Confirmed end-to-end: my
+reconstruction of the four groups, applied to a post-change scratch tree, is
+`RED` at baseline with `first failure -> (a) installed proposal template
+missing gate phrase`, and only goes green when I substitute a wrap-tolerant
+check.
+
+Consequences, all stated as satisfiable in the plan and all unsatisfiable as
+written: Chunk A's "exactly one failure" is fine, but its RED is predicted to
+be *a heading* and the residual RED after Chunk B is never anticipated; Chunk
+D's "After the last revert, `pytest bootstrap/tests/test_scaffold.py -q` is
+fully green" cannot be reached; Chunk E's whole-suite `0 failed` cannot be
+reached.
+
+The trap is worth naming because it is exactly the same-type blind spot in the
+standing paragraph: **the plan reproduces the wrapped text in Chunk B, and the
+author read across the wrap.** Sharper still, the plan *already knows this
+hazard* — Chunk C argues `security-preflight` is the right marker because it is
+"short enough that a re-wrap cannot split it across lines" — and applied that
+reasoning to the plan marker only, not to the six-word phrase that is already
+split in the pinned bytes.
+
+Fix, either is one line and neither touches the pinned bytes: (i) pin
+`"no trust boundary"` and `"added, moved, or widened"` as two literals, or
+(ii) normalize whitespace in (a)/(b) before the containment check, as group (d)
+already does. Prefer (i) — it keeps (a)/(b) raw-substring, which is what makes
+P7's code-point argument mean anything.
+
+**[I2] The Chunk D red/green matrix is unobservable under the test structure
+Chunk A specifies, and the plan's own rule forbids the only way to observe it.**
+
+A3 puts **four assertion groups in one node**, and the pseudo-code is plain
+sequential `assert`s. pytest stops a node at the **first** failing assertion.
+So for every perturbation, the groups after the first failure never execute —
+yet Chunk D's table specifies a *"Must stay GREEN"* column per perturbation and
+its acceptance criterion demands "the red/green column is observed to match the
+table **exactly**".
+
+Measured with my reconstruction (**my code, not the author's**), running each
+group standalone to get ground truth, then replaying the same state through one
+node of sequential asserts:
+
+```
+ID   plan table says              TRUE (groups run alone)   observable in ONE node
+P1   (a)+(c) RED, (b)(d) GREEN    a=R b=G c=R d=G           a=R  [unseen: b,c,d]
+P2   (b)+(c) RED, (a)(d) GREEN    a=G b=R c=R d=G           a=G b=R  [unseen: c,d]
+P3   (a)+(d) RED, (b)(c) GREEN    a=R b=G c=G d=R           a=R  [unseen: b,c,d]
+P4   (b)+(d) RED, (a)(c) GREEN    a=G b=R c=G d=R           a=G b=R  [unseen: c,d]
+P5   (a)+(b) RED, (c) GREEN       a=R b=R c=G d=G           a=R  [unseen: b,c,d]
+P6   (c) RED, (a)(b)(d) GREEN     a=G b=G c=R d=G           a=G b=G c=R  [unseen: d]
+P7   (a) RED [table silent on c]  a=R b=G c=R d=G           a=R  [unseen: b,c,d]
+```
+
+**The table's predictions are all correct.** The analysis is right. But the
+plan's headline claim — *P5 is red under the literal oracle and **green under
+parity***, the thing the brief tells the reviewer to reproduce first — is the
+single least observable cell in the matrix: group (c) never runs under P5.
+Same for P1's "(c) RED". The only way to see those cells is to comment out the
+earlier groups, i.e. **perturb the test's own body**, which Chunk D forbids in
+terms ("never to the test's own body") and which the glossary defines as the
+non-validating move.
+
+This matters beyond bookkeeping: the ledger that goes in the commit body is the
+durable evidence that the two oracle halves are independent. As specified, that
+ledger can only be written by predicting the unseen cells — which is the exact
+substitution ("predicted, not run") the plan bans everywhere else.
+
+Fix that preserves every other criterion: have the four groups **accumulate**
+failures into a list and assert once at the end, naming every failing group.
+All four groups then always execute, the ledger becomes observable, and — worth
+saying because Chunk E depends on it — **collection still grows by exactly one
+node**, so the "+1 node" criterion survives. Splitting into four nodes would
+also work but breaks that criterion; the accumulator does not.
+
+**[I3] The plan's own bare `## Plan review` container already reports the
+review-before-implement gate satisfied, with zero reviews landed — the hazard
+its own blockquote warns about.**
+
+The plan carries a bare `## Plan review` heading, then a blockquote warning:
+*"a bare heading would report the gate satisfied before any review existed."*
+The warning is about **renaming** the brief; the plan instead **kept the
+template's container heading above it**, which has the identical effect.
+
+Measured with `tools/lifecycle_planner.py`'s own parser and two controls:
+
+```
+security-preflight-checklist  status='open'  sections ~ "plan review": ['Plan review']
+                              _has_kind("Plan review") -> GATE READS: True
+separator-detection           status='open'  sections ~ "plan review": []   -> False
+transition-lint               status='open'  sections ~ "plan review": []   -> False
+```
+
+`_has_kind` is the whole gate (it is what the `status is 'open' and 'Plan
+review: required' but no '## Plan review' section has landed` check and the
+`open -> executing` precondition both consult). A bare `## Plan review` parses
+with `kind='Plan review'`; `## Plan review — the brief` does not parse as a
+section at all — so the plan's measured claim about the em-dash heading is
+**correct**, and it is the *other* heading that trips the gate.
+
+Scope note, deliberately: the container heading is **inherited from
+`dev/plans/_template.md`** (and its shipped twin), and **16 of the 17 live
+plans stripped it** — this plan is the only one that kept it. So the narrow fix
+here is to drop the bare container and let landed reviews append as
+`## Plan review -- <reviewer> -- <date>` (which parses, and which every sibling
+does). The wider question — that the template ships a heading which pre-
+satisfies its own gate — is **adjacent and not this plan's to fix**;
+`transition-lint` and `planner-line-semantics` are the natural homes, and I am
+not asking this plan to widen.
+
+**[I4] Chunk C's content-scan criterion rests on two facts that do not hold,
+and the check itself is near-vacuous.**
+
+The criterion says a flag "would need a `cairn-accept` directive, and such a
+directive is **forbidden inside `templates/`** (measured in
+`scripts/quality_gate.py`)". Measured:
+
+```
+quality_gate _ANY_DIRECTIVE_RE matches cairn-accept: False
+quality_gate _ANY_DIRECTIVE_RE matches vendor-ok   : True
+pattern: (comment-open) \s* (?: vendor-ok | vendor-ok-begin
+                             | vendor-ok-end | case-study )
+```
+
+(The pattern is transcribed with the literal comment-open elided; see the note
+at the end of this finding for why that elision is load-bearing.)
+
+`cairn-accept` is **not** in the forbidden-directive family — that rule covers
+the `vendor-ok` family plus `case-study`. Worse for the argument,
+`content_scan.py`'s `_CAIRN_MARKER_RE` **explicitly exempts** `cairn-accept`
+comments from the detector everywhere, templates included. So "a flag on the
+shipped side would force a rewording, not a suppression" is false as stated;
+suppression is available.
+
+Second, the plan describes the detector as catching "imperative prose added
+inside an HTML comment". It is not that. `_IMPERATIVE_IN_COMMENT_RE` is a fixed
+prompt-injection lexicon of fourteen alternatives — `ignore`, `disregard`,
+`send`, `email`, `upload`, `post`, `exfiltrate`, `execute`, `run`, `delete`,
+`overwrite`, `reveal`, `leak`, and one two-word confidentiality phrase.
+Measured against both the clause and the existing comment: **no matches**
+(`runs` and `fires` do not hit `\brun\b`). And running the real scanner over my
+post-change scratch copies of all four templates returns `clean` for every one.
+
+**A live demonstration, found by accident while writing this review.** My first
+draft of this section transcribed the two regexes verbatim inside fenced code
+blocks, and `check_cairn.py` over *this plan* returned two flags —
+`imperative-override` and `instruction-html-comment`. The second one is worth
+understanding: the scanner's comment matcher is `DOTALL`, so a bare comment-open
+inside a code fence with no matching close **swallows every following line until
+the next close anywhere in the document**, and the lexicon is then applied to
+that whole span. That is why the transcriptions above are elided rather than
+literal. Two consequences for this plan. First, the check really can fire on
+prose *about* the templates, which makes running it worthwhile — but for a
+reason the plan does not give. Second, Chunk E runs `check_cairn.py` over the
+whole tree, and this plan file is in that tree: a future artifact quoting these
+patterns literally trips the gate. Neither is blocking; both belong in the
+reworded criterion.
+
+Direction is safe — the plan is more conservative than reality — so this is not
+blocking. But a criterion presented as a live risk is one that cannot fire, and
+two wrong facts about the directive rules would be inherited by the next reader
+of this plan. Reword to what is true: the detector is a fixed lexicon, the
+inserted clause contains none of its tokens, the check is cheap and is run as a
+regression tripwire rather than as a mitigation.
+
+**[I5] P7 is confounded: the one-sided em-dash swap turns (a) and (c) red
+together, so it does not isolate the property it claims to prove.**
+
+P7 says only *"Group (a) must go RED on the S1 literal"* and is silent on the
+other three. Measured ground truth for P7: `a=R b=G c=R d=G`. Group (c) goes
+red too, because a one-sided code-point change breaks byte parity. Under Chunk
+D's own criterion — "a perturbation that goes red in a group the table says
+should stay green is a finding against this plan" — silence is not the same as
+a prediction, and an agent recording the ledger has nothing to check (c)
+against.
+
+More substantively: the claim P7 exists to establish is that **the literal pin**
+is code-point-exact. A one-sided swap cannot establish that on its own, because
+an identical red is produced by an assertion (parity) that is not code-point-
+specific to the pin at all. The perturbation that actually isolates it is the
+**two-sided** swap — em dash to hyphen-minus in *both* proposal templates,
+exactly P5's shape — which holds parity green and forces the red to come from
+(a)/(b) alone. Recommend converting P7 to two-sided and adding it to the table
+with an explicit four-column prediction. (This interacts with [I2]: two-sided
+P7 is only observable once the groups accumulate.)
+
+**[I6] The plan-pair parity row does not reproduce as cited — off-by-one on the
+shipped range.**
+
+The baseline table asserts *"Author-accounting block parity, plan pair (`dev`
+216-228 vs shipped 208-221) — **byte-identical**, verified by extraction +
+`diff`"*. Run as written, that diff is **not** empty:
+
+```
+$ diff <(sed -n '216,228p' dev/plans/_template.md) \
+       <(sed -n '208,221p' templates/core/dev/plans/_template.md)
+13a14
+>
+```
+
+The ranges are 13 vs 14 lines; shipped line 221 is a trailing blank outside the
+block. `dev` 216-228 vs shipped **208-220** is byte-identical. The same
+off-by-one is in C2, which cites the shipped comment as "lines 210-221" — the
+comment closes with ` -->` on **220**. The substantive parity claim holds and
+C1's mid-line-223 boundary is correct (shipped's equivalent is mid-line **215**,
+which the plan handles correctly by saying "the same relative offset"). Fix the
+two cited ranges so the stated command reproduces.
+
+**[I7] Chunk A specifies no guard for a missing `dev/`, but Author-accounting
+claims one exists.**
+
+A3 names exactly one guard: `pytest.skip("Cairn templates not available")` when
+`templates/` is absent. The failure-modes list then asserts *"`dev/` absent from
+the checkout → **open**, same skip idiom"*, and S4 repeats it (*"absence of
+`templates/` or `dev/` skips rather than fails"*). As specified, groups (b)-(d)
+read `CAIRN_ROOT/dev/...` with no guard and would raise `FileNotFoundError` —
+an ERROR, not a skip, and not the direction S4 claims. This is the plan's own
+priority-4 question ("the new population") landing as a concrete spec gap: add
+the `dev/`-absent skip to A3, or delete the claim from Author-accounting and
+S4. Note the interaction with the 0-skipped rule either way.
+
+**[I8] Cosmetic but it is the ledger count: "six" vs "seven" perturbations.**
+The Sequence block and the Chunk D heading both say **six**; the acceptance
+criteria, the Author-accounting mapping, S2, and the Verification ledger all
+say **seven**. Seven is right (P1-P7).
+
+### Covered
+
+Verified by running, with the output that verified it:
+
+* **Required gates on this plan, both clean.**
+  `claim_check.py` → `OK, no claim-check flags`;
+  `check_cairn.py` → `OK -- 1 Markdown file(s) scanned; no issues`.
+* **The Chunk B extraction reproduces exactly** — 43 lines, 4 blanks, stated
+  first/last lines, every line conforming to `> ` or `>`, no `{{`, sha256
+  `277daac4...52bc` (full value matches the plan's). `git status` on the
+  proposal is empty, so those are HEAD's bytes.
+* **All five template anchors exact** — proposal pair `### Author-accounting`
+  at 230 / 213, files 400 / 362 lines; `**Prospective only.**` at 265 / 248;
+  plan pair heading at 216 / 208, files 295 / 272 lines. Insertion boundary
+  confirmed: the "reviewed as evidence" paragraph ends 263, `**Prospective
+  only.**` opens 265, `### Tests required` follows.
+* **Proposal-pair block parity holds** — `diff` of `dev` 230-267 vs shipped
+  213-250 is empty.
+* **`grep -c security-preflight` = 0** in both plan templates today.
+* **The clause is word-for-word the proposal's** (lines 233-235 of the source
+  proposal), including the em dash.
+* **Manifest**: 96 lines = 1 header + **95 data rows**; both `_template.md`
+  rows are `substituted`, confirming the no-`{{`-token requirement is real.
+* **`install_core` behaves as the plan assumes** — I ran it into a scratch
+  target: both templates install, the `<!-- Triage-gated ... -->` comment
+  **survives** (the clause's host is not stripped), and installed bytes are
+  **identical to the shipped source** for both files. That independently
+  confirms Chunk D's "deliberately NOT run" entry: no perturbation can make
+  installed diverge from shipped, and group (a) is a shipped-side check routed
+  through install. The plan states this honestly.
+* **Gate accounting exact** — `frozen_files` has **164** entries and contains
+  `bootstrap/tests/test_scaffold.py`; `collection.node_count` = **1598** with
+  1598 `node_ids`; the `FROZEN-MODIFIED: {rel} (gate file edited — sha differs)`
+  message string matches character-for-character.
+* **Sibling-idiom claim exact** — `test_installed_templates_carry_plan_review_line`
+  at line 360, inside `class TestInstallCore` (line 291), using
+  `cairn_root` / `templates_root` / `pytest.skip` / `create_dev_tree` /
+  `install_core` in the order A3 describes.
+* **The twin-parity gap is real** — `test_every_self_hosted_twin_stays_byte_identical_to_its_source`
+  globs `*.py` only, so `dev/**/_template.md` is genuinely uncovered.
+* **The neutrality asymmetry is real** — `_NEUTRALITY_FILE_SUFFIXES` has a
+  `templates` key (`.md .yml .yaml .py .toml`) and no `dev` key;
+  `_NEUTRALITY_SCAN_ROOTS` likewise omits `dev`.
+* **Live figures re-measured**: `check_cairn` whole tree →
+  `180 Markdown file(s) scanned; no issues; 68 external link(s) not probed`
+  (matches). `quality_gate --sub neutrality` → `fail=95 info=21` (matches).
+  `token_budget` → `5,541 tok / 22,317 B` (matches). `--collect-only -q` →
+  **1749**, against the plan's 1746 — the plan flagged this figure as
+  untrustworthy on a dirty tree and was right to.
+* **The `REANCHOR_RUNBOOK.md` quote is faithful** in wording (the source bolds
+  the clause and scopes the prohibition to Phase 0 / Phase 4; the plan's
+  generalization is slightly wider but in the conservative direction).
+* **The em-dash-heading parsing claim is correct** — `## Plan review — the
+  brief` does not parse as a section; a bare `## Plan review` does. Which is
+  what produced [I3].
+* **P5/P6 discriminate as claimed** — run standalone against a post-change
+  scratch tree: P5 `a=R b=R c=G`, P6 `a=G b=G c=R`. The plan's central
+  non-vacuity argument survives contact.
+
+### Not covered / low confidence
+
+* **I did not run the engine suite**, only `--collect-only`. The tree carries
+  eight modified and several untracked files from concurrent workflows; a
+  green/red figure from me would be a snapshot of someone else's work in
+  progress, not a baseline. The plan already says to re-measure at
+  implementation, which is correct.
+* **Everything about the test is a reconstruction.** I wrote my own four
+  groups from A1-A3's prose. [I1] and [I2] follow from the *specification* as
+  written, and I believe they hold for any faithful implementation of it — but
+  if the eventual code normalizes whitespace in (a)/(b) or accumulates
+  failures, both dissolve. That is the fix, not a refutation.
+* **Group (a) via `install_core` was approximated.** For the perturbation
+  sweep I read the shipped source directly rather than re-installing on each
+  perturbation. I justified that with the separate measured finding that
+  installed bytes equal shipped bytes for both files — but it is an
+  approximation, not the author's path.
+* **The extraction-channel question (brief item 3) I cannot answer from
+  outside.** Whether an implementing agent holding both this plan and the
+  proposal in context genuinely re-extracts, or quotes the hash back, is a
+  property of that session, not of this artifact. What I can say is that the
+  mechanism is sound as far as it goes: the five bullets really are absent
+  from the plan, and the hash really does pin the source. I would add one
+  cheap thing — require the ledger to record the **recomputed** digest and the
+  command that produced it, so "quoted back" and "recomputed" leave different
+  traces.
+* **The sdist / vendored-checkout question (brief item 4) I only partly
+  answered.** I confirmed the `dev/` prefix is a new population and that A3
+  has no guard for it ([I7]); I did not establish whether any real packaging
+  path ships `bootstrap/tests/` without `dev/`.
+* **The declared divergence (brief item 1) I did not find fault with.** The
+  three bounds check out: no new file, the assertion is scoped to the added
+  sub-block, and deleting groups (c)/(d) leaves the proposal's specified
+  contract intact. I read it as a fence, not as widening. Low confidence only
+  in the sense that it is a judgement about scope discipline, and I am the
+  same agent type as the author making it.
+* **Heading-level divergence, noted not asserted.** This review is appended at
+  the end as `## Plan review -- ...` per the instruction that commissioned it,
+  while the plan's own blockquote specifies a `### Plan review -- ...`
+  sub-heading under the container. Both parse; the author should reconcile the
+  convention when resolving [I3].
+
+### Recommendation
+
+**Second round required — but a narrow one, and Internal again is the right
+tier.**
+
+[I1] is blocking and must be fixed before any implementation step: as written,
+a correctly-executed change leaves the suite red, so Chunk D and Chunk E cannot
+be discharged. [I2] is not blocking for correctness but is blocking for the
+plan's *evidentiary* claim — the perturbation ledger is the deliverable that
+makes this change more than an assertion, and it is currently unwritable
+without predicting unseen cells. [I3] should be fixed here because it is one
+line and because leaving it makes this plan the one live artifact whose review
+gate self-satisfies; the template-level version of it should **not** be pulled
+into this plan's scope.
+
+[I4]-[I8] are corrections, not redesigns: reword the content-scan criterion to
+what the scanner actually does, make P7 two-sided, fix the two cited ranges,
+close the `dev/`-guard gap, reconcile six/seven.
+
+None of this touches the accepted contract, the five questions, the routing
+decisions, or the declared divergence — the design is sound and the analysis
+underneath it is, where I could measure it, correct. What needs another pass is
+the instrument, not the argument. A revised Chunk A (accumulating groups, two
+literals or normalization for the gate phrase) plus a re-swept Chunk D table
+would, in my judgement, be ready to execute without a third round.
+
+**One thing I want to flag for the eventual code reviewer**, since it is the
+one thing neither this round nor the plan can settle: re-run the corrected P5
+and P7 against the **landed** test, not against any description of it. My P5/P6
+result came from my reconstruction; the property that matters is that the
+shipped code has it.
