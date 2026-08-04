@@ -1473,3 +1473,138 @@ without softening:
    not their execution.
 
 This section is append-only once written.
+
+### Figure correction -- Claude -- 2026-08-04
+
+An audit of the Response committed at `bd661fa` reported one figure in it that
+does not reproduce. I re-measured that figure from scratch, adopting neither
+the Response's number nor the audit's, and I re-derived the conclusion the
+figure was offered in support of rather than inheriting it from either. A
+second number the audit raised as a note rather than a defect is measured here
+as well, because it too is stated as a figure inside an in-force amendment.
+
+**Nothing here changes a disposition.** Every finding stays accepted,
+accepted-with-modification, or declined exactly as the Response left it. This
+section corrects evidence and states, for each corrected figure, whether the
+amendment carrying it survives.
+
+Measurement provenance: the Response's own commit is `bd661fa`; repository HEAD
+when I ran was `4a7d70a`. The working tree carried other agents' uncommitted
+edits throughout, so the two decisive runs below read **tree objects**, not the
+working tree.
+
+#### 1. The `fold-back-ledger` enumeration grep -- amendment **10**, and its twin in the `[I3]` disposition row
+
+**What was claimed.** Amendment 10 declares the prose enumeration surface
+"complete, measured", on this evidence:
+
+> `grep -rl "fold-back-ledger"` across `docs/`, `bootstrap/` and `templates/`
+> returns exactly these three files, the three `bootstrap/profiles/*.yml` (B3)
+> and `templates/modules/README.md` (B5).
+
+That is seven files. The `[I3]` disposition row states the same seven and adds
+*"and I assert that as a measurement."*
+
+**What I measured: seventeen.** Three runs, two of them index- and
+worktree-independent:
+
+| # | Command | Read from | Result |
+|---|---|---|---|
+| 1 | `grep -rl "fold-back-ledger" docs/ bootstrap/ templates/`, run inside a clean `git archive bd661fa \| tar -x` export in scratch | the Response's own commit | **17** |
+| 2 | `git grep -l "fold-back-ledger" bd661fa -- docs bootstrap templates` | the same commit's tree object | **17** |
+| 3 | `git grep -l "fold-back-ledger" HEAD -- docs bootstrap templates` | `4a7d70a` | **17** |
+
+Identical at the Response's commit and at HEAD, so **drift is not the
+explanation** -- the figure was wrong when written, not overtaken.
+
+The ten files beyond the seven the amendment names are
+`bootstrap/_scaffold/config.py`,
+`bootstrap/tests/fixtures/gate_manifest.json`,
+`bootstrap/tests/test_fold_back_ledger_module.py`,
+`bootstrap/tests/test_foldback_ledger_module.py`,
+`bootstrap/tests/test_quickstart_sequence.py`,
+`bootstrap/tests/test_reference_scripts.py`,
+`templates/skills/_lib/lifecycle.py`,
+`templates/core/dev/upstream/README.md`,
+`templates/modules/default-on/fold-back-ledger.md`, and
+`templates/modules/default-on/foldback_export_scan.md`.
+
+**Where seven probably came from, and why it does not rescue the sentence.**
+`grep -rl --include='*.md' "fold-back-ledger" docs/ bootstrap/ templates/` at
+`bd661fa` does return exactly **7** -- but a *different* seven: it picks up the
+three template documents above and drops the three `bootstrap/profiles/*.yml`
+files, which the amendment names explicitly. So no variant of the command as
+written yields the listed set. An implementer or the External reviewer who runs
+the command in the amendment gets 17 and is right to stop there.
+
+**Verdict on this figure: the audit is correct and the Response is wrong.** My
+number is the audit's, arrived at independently and by two methods it did not
+use.
+
+**Does amendment 10 still hold? Yes -- it stays in force, with the figure
+corrected.** Its conclusion is that the *prose enumeration surface* is complete
+once B6 and B7 land; that conclusion does not rest on the grep being exclusive,
+it rests on none of the unlisted hits being a default-on roster enumeration. I
+checked that myself rather than taking it on report. Seven of the ten are code,
+tests, or a fixture. The three that are prose are not roster enumerations:
+`templates/core/dev/upstream/README.md:37` names the module as the installer of
+the fold-back ledger; `templates/modules/default-on/fold-back-ledger.md` hits
+its own title and its own goodnight-step quote; and
+`templates/modules/default-on/foldback_export_scan.md` names the ledger module
+once as the sibling it ships beside (`:12`) and once in a solo-adopter caveat
+(`:164`). None of the three lists the default-on set, so none goes stale when
+`content-security` joins it.
+
+Read amendment 10's last sentence as: the command returns **17** files, of
+which **7** carry default-on roster enumerations -- `docs/quickstart.md`,
+`docs/solo-legacy-recipe.md`, `bootstrap/BOOTSTRAP.md`, the three
+`bootstrap/profiles/*.yml`, and `templates/modules/README.md` -- and those 7
+are the complete enumeration surface after B6/B7. Do **not** read it as an
+exclusivity claim about the grep; the exclusivity claim, and the `[I3]` row's
+*"I assert that as a measurement"*, are withdrawn as stated.
+
+#### 2. Amendment **11**'s "four module-selection sites" -- measured, and it is five
+
+The audit raised this as a note, not a defect. It is a number inside an in-force
+amendment, so I measured it rather than leaving it.
+
+**What was claimed.** Amendment 11: *"`cli.main` has four module-selection
+sites, not three."*
+
+**What I measured: five construction sites**, by reading the two branch
+structures in `bootstrap/_scaffold/cli.py` (byte-identical at `bd661fa` and at
+`4a7d70a` -- `git diff bd661fa HEAD -- bootstrap/_scaffold/cli.py` is empty).
+The `--summary` handler carries two: `:232` (`preset:` present ->
+`format_profile_summary`) and the inline fallback at `:236`-`:239`, whose
+ternary is itself two cases (`modules:` present, else `_DEFAULT_ON_MODULES`).
+The install path carries three: `:330` (`expand_preset`), `:350` (`modules:`
+alone), `:356` (neither key -> `_DEFAULT_ON_MODULES`). Counting construction
+sites gives **5**; counting branch limbs gives **6**.
+
+**Verdict: the audit's count is right and mine agrees with it.** The Response's
+"four" is one low however you slice it.
+
+**Does amendment 11 still hold? Yes -- in force, figure corrected.** Nothing the
+amendment instructs depends on the total: it directs that A6 covers the
+install-path no-key branch, that the `modules:`-alone branch stays untouched,
+and that the `--summary` no-preset fallback gets its own row A7. All three of
+those are site-specific and unaffected. Read the sentence as: `cli.main` builds
+a module roster at **five** sites, of which this plan touches two (`:239` via
+A7, `:356` via A6). The Response's own External brief already flagged that the
+`cli.main` enumeration was unproven; this is that proof, and it moves the
+number.
+
+#### 3. What this correction does not do
+
+* It does not re-open any disposition. `[I1]`--`[I5]`, the accepted nits and the
+  declined `check_cairn.py:100` nit stand as the Response left them.
+* It does not change code, tests, fixtures, templates or docs. One file is
+  written: this plan.
+* It does not touch the amendments the audit reported as reproducing. I did not
+  re-run the twenty-plus figures it verified; I re-ran the one it disputed and
+  the one it flagged, which is the scope of this section.
+* It does not discharge any review tier. The plan still declares
+  `required(**External**, security lens)`, and this section -- like the Response
+  it corrects -- is the author's own hand and clears nothing.
+
+This section is append-only once written.
