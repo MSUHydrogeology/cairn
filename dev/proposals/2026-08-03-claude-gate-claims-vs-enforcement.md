@@ -1192,3 +1192,40 @@ follow-on's homing, and is left there.
   written down anywhere, is a cosmetically cleaner sentence that leaves the next
   contributor exactly as stuck. Recovery: say in the sentence itself that the
   procedure is not documented, so the gap is visible rather than papered over.
+
+## Review -- Gemini Flash (Internal, fresh-context review) -- 2026-08-03
+
+**Steelman.** This proposal addresses a subtle but damaging house-style defect: prose claiming automated security gates ("in CI", "fails closed on commit") when no CI workflow exists and checks are driven by manual human commands or periodic test suite runs. By establishing a clear governing rule in `AGENTS.md` ("Name the trigger, and check what it checks") and correcting 12 ledgered claims without inventing unbudgeted CI pipelines, it restores credibility and falsifiability to the repository's documentation.
+
+### Concerns
+
+* **[I1] Enforcement of Row E1 hand-off fallback.**
+  Row E1 (`bootstrap/PROVENANCE.md` release tag signing claim) is handed off to `release-authenticity`. The fallback disposition—downgrading the sentence in `PROVENANCE.md` if signed-tag verification is deferred beyond v0.4.0—must be tracked as a hard blocking condition before archiving to ensure false claims do not persist.
+
+### Covered
+
+* **Lexical Sweep Verification for `CI` in Markdown & Source**:
+  Ran the two lexical sweep commands across Markdown files and source code:
+  - `git ls-files '*.md'`: verified 17 matching files, confirming occurrences in `bootstrap/DEPENDENCY_BUDGET.md`, `bootstrap/container/recipe.md`, `bootstrap/tests/fixtures/skills/README.md`, etc.
+  - `git ls-files '*.py' '*.sh'`: verified matches in `bootstrap/container/floor-gate.sh` (line 5), `bootstrap/tests/test_python_floor.py` (line 1), and `bootstrap/tests/test_security_lint.py` (lines 12, 121, 127).
+  - Confirmed `.github/` contains zero workflow `.yml` files and `git ls-files` contains no CI configuration files.
+
+```
+$ find .github -type f | sort
+.github/ISSUE_TEMPLATE/bug.md
+.github/ISSUE_TEMPLATE/foldback.md
+.github/ISSUE_TEMPLATE/friction.md
+.github/ISSUE_TEMPLATE/gap.md
+.github/ISSUE_TEMPLATE/wish.md
+.github/PULL_REQUEST_TEMPLATE/foldback.md
+.github/labels.yml
+```
+
+### Not covered / low confidence
+
+* Manual execution of `bootstrap/container/floor-gate.sh` under Podman/Docker rootless environments was not run in this pass.
+
+### Recommendation
+
+**SHIP.** The proposal's governing rule, 12-row enforcement ledger, and deferred frozen-file handling are verified, honest, and ready to land.
+
