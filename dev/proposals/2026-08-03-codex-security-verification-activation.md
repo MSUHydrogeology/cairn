@@ -5,7 +5,7 @@
 **Author**: Codex (Strategy, from the Security Review role)
 **Model**: OpenAI Codex (GPT-5)
 **Date opened**: 2026-08-03
-**Status**: reviewed
+**Status**: revised
 **Touches**: `bootstrap/_scaffold/config.py`, `templates/core/AGENTS.md`, the
 default-on module catalog, `bootstrap/SAFETY.md`, the install manifest /
 lockfile file set, and behavioral tests under `bootstrap/tests/`
@@ -337,3 +337,166 @@ This response leaves the proposal **reviewed**. The following commit will add
 the registry-admission, parent-computed binding, exact no-capability result, and
 composition tests, then return the artifact to `revised`. The architecture and
 SHIP recommendation remain intact.
+
+## Revised proposal -- admitted and bound child evidence -- 2026-08-03
+
+This section strengthens the fixed-registry, result, test, and high-risk
+contracts in response to E1/E2. It does not change the local-only dispatcher,
+universal default-on installation, aggregate precedence, or separation from
+deployed Maintainer commands.
+
+### Registry entries are reviewed capability contracts
+
+The source-owned registry is data inside the dispatcher, not adopter policy.
+Every entry fixes exactly:
+
+```text
+module_id
+runner_repository_path
+argv_mode
+policy_repository_path | null
+child_schema_version
+capability_contract_version
+evidence_mode: offline | loopback
+accepted_process_exits
+result_to_aggregate_mapping
+```
+
+There are no callable hooks, import strings, environment additions, free-form
+arguments, alternate modes, executable paths, or policy-supplied fields. The
+dispatcher invokes the child through the already-running process's absolute
+`sys.executable`, with `-I`, as a fixed argv containing the registry's one
+local/offline mode; it does not resolve a second `python` from PATH.
+
+A new or changed entry is admitted only with all of:
+
+1. an accepted capability proposal naming its executable, network, credential,
+   policy, suppression, and output trust boundaries;
+2. a reviewed implementation plan with public-path execution evidence for the
+   exact `evidence_mode`;
+3. a complete lockfile mapping group covering runner, policy when present, and
+   module doctrine;
+4. child output-schema and exit-precedence tests; and
+5. a Security Review of the registry change and the capability bytes it makes
+   reachable from the standing agent command.
+
+The registry entry cannot precede capability acceptance. A dormant source entry
+for an unaccepted or uninstalled capability is not permitted.
+
+### Parent-computed apparatus binding
+
+Before child execution, the dispatcher validates the installed module roster
+and lockfile, opens the runner and policy as regular non-symlink files, computes
+their SHA-256 values itself, and compares them with the lockfile. It records the
+parent-computed digests, exact argv, registry contract version, and the parent
+interpreter path/version in the aggregate result.
+
+The child emits one bounded strict-UTF-8 JSON document with exactly:
+
+```json
+{
+  "schema": 1,
+  "capability": "portable-security-sweeps",
+  "contract": "portable-security-sweeps/local-v1",
+  "evidence_mode": "offline",
+  "result": "CLEAN",
+  "details": {}
+}
+```
+
+The concrete IDs are fixed by the registry. The child cannot choose a different
+capability, mode, schema, or contract and remain valid. Unknown/missing keys,
+wrong types, control characters, invalid UTF-8, oversized output, process-exit /
+result disagreement, or any ID mismatch is DEGRADED. The parent never accepts
+a child-supplied digest as apparatus evidence; it attaches its own digests after
+validation.
+
+`details` has a separate strict bounded schema per registry entry. The parent
+selects and safely renders only registered fields. It does not relay raw stdout
+or stderr and does not let a child add aggregate categories or terminal text.
+
+This binds the aggregate to the reviewed child path, policy bytes, mode, and
+result contract. It does not authenticate the child, prevent a same-user race
+between verification and execution, or prove that those bytes honored their
+network/credential promise. The trusted-checkout race remains an accepted
+residual; child behavior remains capability-owned evidence.
+
+### CLEAN requires an admitted local evidence contract
+
+A selected capability contributes CLEAN only when:
+
+* its exact registry entry is present and was admitted under the rule above;
+* its runner/policy mapping group and parent-computed digests validate;
+* the fixed local/offline child invocation completes within bounds;
+* process exit and strict result schema agree; and
+* the result's capability, contract, and evidence mode equal the registry.
+
+A child registered as `offline` cannot return `loopback` evidence or vice versa.
+No result from a deployed, credentialed, active, arbitrary, or unknown mode is
+representable in the activation registry. An implementation that needs such a
+mode belongs to a direct Maintainer procedure outside this dispatcher.
+
+The aggregate report labels each leg with its evidence mode and capability-owned
+scope. Parent aggregation does not strengthen `offline`, `loopback`, or CLEAN
+beyond what the accepted child contract established.
+
+### Universal no-capability behavior
+
+When no installed selected module has an admitted local registry entry, the
+dispatcher performs no child execution, opens no socket, performs no DNS or
+credential lookup, and prints exactly one semantic state:
+
+```text
+NOT APPLICABLE: no selected local security capability
+```
+
+It exits 0 because there is no applicable check, but neither human nor machine
+output uses `CLEAN`, `secure`, `passed security`, or equivalent language. The
+machine result records `aggregate: NOT_APPLICABLE`, an empty legs array, and the
+reason. This is distinct from a selected capability that is unconfigured,
+unsupported, missing, or unavailable; those are INCOMPLETE (`5`).
+
+Scaffold summary and successful installation state that the universal module
+installs a verification route but gathers no evidence during scaffold. They
+name selected capability prerequisites and the first-run command without
+calling installation activation or security coverage.
+
+### Strengthened tests
+
+The activation plan must add:
+
+* a table-driven registry-schema test proving no path, argv, environment,
+  executable, or mode can enter from lockfile/policy data;
+* wrong capability, contract, evidence mode, schema, process exit, detail shape,
+  unknown key, invalid UTF-8, oversized output, forged terminal text, and raw
+  stderr child fixtures, all DEGRADED without raw relay;
+* parent-computed runner/policy digest tests, including child-supplied forged
+  digests, mapping-group drift, symlink leaves/parents, path replacement, and
+  the accepted trusted-checkout race stated rather than claimed closed;
+* a deletion mutant for every admission field and a mutant that registers a
+  deployed or unknown mode, each unable to produce CLEAN;
+* composition tests using the accepted portable offline contract and API/web
+  loopback contracts once each exists, proving scope labels survive aggregation
+  and neither can select the other's mode;
+* a deliberately socket-opening fake child demonstrating the parent does not
+  provide network containment; the test verifies that such a child is excluded
+  by registry admission, not falsely blocked by runtime machinery; and
+* no-capability tests across every preset, `modules: []`, module removal,
+  install, upgrade, and adopt paths, asserting exact NOT_APPLICABLE semantics,
+  no child launch, and absence of CLEAN/security-coverage wording.
+
+Capability plans still own execution-backed no-network or loopback proofs. An
+activation-only fake-child test cannot discharge them.
+
+### Governance and review disposition
+
+`templates/core/AGENTS.md` registers the dispatcher, fixed registry, child
+result schema, and every registry entry as high-risk Security Review surfaces.
+A result-schema or admission change cannot land as ordinary aggregator
+maintenance.
+
+The External review's SHIP recommendation remains supported. This revision
+narrows how a child enters and binds to the aggregate without pretending the
+parent is a sandbox. It returns for focused confirmation that the admission
+rule and NOT_APPLICABLE semantics address E1/E2 without creating a second
+capability review inside the dispatcher.
