@@ -1718,3 +1718,596 @@ the Decision only.
 designed to the invariant this lineage named: dropping a character must never
 widen authority. The exact-name spoof remains a recorded residual -- this is a
 structural lint, not authentication.
+
+## Response -- Claude (author, to Internal security review) -- 2026-08-03
+
+**Model**: Claude Opus 5. Proposal-Response grammar (no implementing commits
+exist).
+
+**This Response postdates the Decision, and that is a process failure being
+repaired, not a normal ordering.** The Internal security review above returned
+`REVISE` with seven numbered findings. No author Response was ever written. The
+proposal was then presented to the Maintainer as cycle-complete and accepted on
+2026-08-03 with the words *"I approve each of the seven proposals that you have
+listed as ready to accept, as revised."* So `as revised` landed over findings
+that had never been dispositioned, and over a revision that was never drafted.
+The consequence is already visible downstream: a sibling plan in this cohort had
+to *interpret* what `as revised` covered and fence each interpretation into a
+separately-strikeable chunk. A plan should not have to guess what a Decision
+authorized. This Response supplies the missing disposition so the plan does not
+have to.
+
+**A Response written after a Decision cannot enlarge that Decision, and this one
+does not try to.** Every finding I accept is therefore also *classified*: either
+**within** the accepted contract — a correction to how the accepted change is
+implemented, which the plan may carry — or **beyond** it, meaning it enlarges
+scope or changes behaviour the proposal never described. Every *beyond* item is
+listed again, unresolved, at the end under **Findings the Decision did not
+see**. I do not fold any of them into the accepted scope and I do not decide any
+of them.
+
+**Reproduction discipline.** Every finding was re-run this session before it was
+dispositioned; nothing was accepted on the reviewer's transcript. All runs are
+under the canonical interpreter (`~/conda_envs/lhm/bin/python`, Python 3.13.13)
+with `PYTHONDONTWRITEBYTECODE=1`, at working-tree `HEAD` = `05515df`,
+2026-08-03. Following both prior reviews, the proposal's printed design was
+transcribed verbatim from its *The change, concretely* block into a scratch
+module outside the repository, together with the real 13-entry
+`_AI_AGENT_REGISTRY` copied from `tools/lifecycle_planner.py`. **No file was
+written into the repository.** As at both reviews, no implementing commit
+exists, so nothing here is evidence about code that will ship. The twins remain
+byte-identical at `HEAD` (`sha256:45c5c0ed...`, `shasum -a 256`, both files), as
+the proposal claims.
+
+**Character convention.** This Response keeps the proposal's rule, and the
+review's: no confusable or invisible character is written as a literal. Every
+one is named `chr(0x...)`, and every measured string and key below is printed
+`ascii()`-escaped, so what you read is what the interpreter saw.
+
+*Terms, first use.* **Case folding** is Unicode's aggressive lower-casing, used
+for caseless comparison; Python's `str.casefold()` performs *full* case folding,
+which may replace one character with several. **NFD** is canonical
+decomposition — it separates a letter from its accents and nothing else.
+**NFKD** is compatibility decomposition — it additionally collapses
+presentational variants (mathematical bold, circled, full-width) onto plain
+letters. A **combining mark** is a character that renders attached to the
+preceding one (an accent, a Japanese voicing mark, a Devanagari nukta). A
+**granting** comparison is one whose error confers authority; a **flagging**
+comparison is one whose error only raises a human-reviewable violation. A
+**vacuous test** is one that passes for reasons unrelated to what it claims to
+check.
+
+**Seven findings, seven reproduce. Nothing is rejected and nothing could not be
+reproduced.** Four are wholly within the accepted contract; three carry a
+component beyond it. Two of the review's own *recommended remedies* do not
+survive being tested — [I4]'s replacement invariant is false as worded, and
+[I6]'s `Zs` remedy reverses four rows of the proposal's own security table.
+Those are corrections to the remedies, not to the findings.
+
+* **[I1] accept -- reproduced in all three classes, without qualification; this
+  is the most consequential finding here and the one the Maintainer most needed
+  before deciding.** R2 is a residual the proposal submits *for ratification in
+  this proposal's Decision*. Its text describes the widening it accepts as
+  *"accent- and case-variants"*, defends it with *"every member of the class
+  **reads** as the rostered name to a human (it differs only in case and
+  diacritics)"*, and sets a mechanical expiry: *"the first demonstrated string
+  that folds to a rostered name and does **not** read as it."* Three independent
+  classes fire that trigger before the proposal lands.
+
+  **(1a) Full case folding puts ligature and long-s expansions on the `NFD`
+  granting path.** The proposal's reason for choosing `NFD` over `NFKD` on the
+  granting leg is that *"`NFKD`'s compatibility mappings include sequences --
+  squared-unit glyphs, ligatures -- that spell a name without rendering as
+  it."* True of `NFKD`; but `casefold()` applies those expansions regardless of
+  normal form, and the fold calls `casefold()` between its two normalizations.
+  Measured at both strengths:
+
+  ```
+  chr(0x017f)  LATIN SMALL LETTER LONG S             NFD='s'      NFKD='s'
+  chr(0xfb01)  LATIN SMALL LIGATURE FI               NFD='fi'     NFKD='fi'
+  chr(0xfb03)  LATIN SMALL LIGATURE FFI              NFD='ffi'    NFKD='ffi'
+  chr(0xfb05)  LATIN SMALL LIGATURE LONG S T         NFD='st'     NFKD='st'
+  chr(0x00df)  LATIN SMALL LETTER SHARP S            NFD='ss'     NFKD='ss'
+  chr(0x1e9e)  LATIN CAPITAL LETTER SHARP S          NFD='ss'     NFKD='ss'
+  chr(0x00b5)  MICRO SIGN                            NFD='\u03bc' NFKD='\u03bc'
+  chr(0x0130)  LATIN CAPITAL LETTER I WITH DOT ABOVE NFD='i'      NFKD='i'
+  ```
+
+  Against a roster of `['Kristen Long']`:
+
+  ```
+  plain                'Kristen Long'        -> human  key=('kristen', 'long')
+  chr(0x17f) long s    'Kri\u017ften Long'   -> human  key=('kristen', 'long')
+  chr(0xfb05) st-lig   'Kri\ufb05en Long'    -> human  key=('kristen', 'long')
+  ```
+
+  `chr(0x17f)` renders as a long *s*, which a modern reader reads as **f**. A
+  byline seen as *"Kriften Long"* classifies as the rostered *"Kristen Long"*.
+  That is neither a case variant nor a diacritic variant. (`chr(0xdf)` folding
+  to `ss` is the one member of this class I would defend on R2's own terms --
+  German orthography treats it as equivalent -- which is exactly why the class
+  needs enumerating rather than dismissing.)
+
+  **(1b) Combining-mark stripping collapses *letter-distinguishing* marks, so
+  two different people's names become one key.** `unicodedata.combining(c)` is
+  non-zero for characters that behave as accents in Latin but carry letter
+  identity elsewhere. Measured, granting fold, roster on the left:
+
+  ```
+  Vietnamese tone   roster 'Nguy\u1ec5n'                   key=('nguyen',)
+                    byline 'Nguy\u1ebfn'                   key=('nguyen',)
+                    classify -> human
+  Japanese dakuten  roster '\u304b\u3068\u3046'            key=('\u304b\u3068\u3046',)
+                    byline '\u304c\u3068\u3046'            key=('\u304b\u3068\u3046',)
+                    classify -> human
+  Devanagari nukta  roster '\u0915\u093f\u0930'            key=('\u0915\u093f\u0930',)
+                    byline '\u0915\u093c\u093f\u0930'      key=('\u0915\u093f\u0930',)
+                    classify -> human
+  Cyrillic YE/YO    roster '\u0415\u043b\u043a\u0438\u043d' key=('\u0435\u043b\u043a\u0438\u043d',)
+                    byline '\u0401\u043b\u043a\u0438\u043d' key=('\u0435\u043b\u043a\u0438\u043d',)
+                    classify -> human
+  ```
+
+  Gloss: `chr(0x1ec5)` and `chr(0x1ebf)` are two Vietnamese tones, hence two
+  names; `chr(0x304b)` and `chr(0x304c)` are the syllables KA and GA;
+  `chr(0x93c)` NUKTA turns Devanagari KA into QA; `chr(0x415)` and `chr(0x401)`
+  are the Russian letters YE and YO, and the two surnames they build are
+  different surnames. In each case a **different person's name** classifies as
+  the rostered Maintainer, and a reader looking at the byline sees a different
+  name. The reviewer's own honest framing is right and I adopt it: this class is
+  reachable only *because* the fix makes non-Latin rosters work at all -- today
+  an all-Cyrillic roster entry folds to the empty string and can never match
+  anything -- so the widening is the price of the feature. I would pay it. What
+  cannot stand is R2's **text**, which describes a narrower class than the fold
+  produces, and which was submitted for ratification in that form.
+
+  **Classification: BEYOND the accepted contract**, and it is the reason this
+  Response exists. Correcting R2's wording touches no file and changes no
+  behaviour, so the *editing* is cheap -- but what R2 records is the **risk the
+  Maintainer agreed to carry**, and the true class is materially broader than
+  the one described. `as revised` cannot honestly be read as "and also the
+  ratified residual is wider than it says." Re-listed at the end.
+
+* **[I2] accept -- the partition claim is wrong, reproduced exactly at 66
+  codepoints and three groups; and one of the two undeclared groups produces an
+  invariant violation the review stopped just short of naming.** The proposal's
+  design rule is a partition: *"The fold deletes exactly two things: ASCII
+  punctuation, and combining marks."* Its *Why this tier* section names the
+  mechanical check a reviewer should run: *"name every character class the fold
+  deletes, and show that none of them carries identity."* Run literally, the
+  check fails. Enumerating every ASCII codepoint the fold sends to the empty
+  string, grouped by `unicodedata.category`:
+
+  ```
+  Cc  33   Pc 1   Pd 1   Pe 3   Po 15   Ps 3   Sc 1   Sk 2   Sm 6   Zs 1
+  total ASCII codepoints deleted by the fold: 66
+  ```
+
+  That is 23 punctuation codepoints (the declared group), 1 space (the
+  tokenizer's own separator), and two **undeclared** groups: 33 C0 controls and
+  DEL (`Cc`), of which 5 are the ASCII-whitespace separators, leaving **28
+  deleted mid-word**; and 9 ASCII **symbols** (`Sc`/`Sk`/`Sm` -- dollar, caret,
+  backtick, plus, less-than, equals, greater-than, pipe, tilde), which Unicode
+  classes as symbols, not punctuation. Both numbers match the review.
+
+  Reachability, checked through the real parser rather than asserted --
+  `_parse_sections` is upstream of the only `classify` call site:
+
+  ```
+  plain        parsed name = 'Anthony Kendall'
+  U+2028       parsed name = 'Anthony'
+  U+00a0       parsed name = 'Anthony\xa0Kendall'
+  C0 US 0x1f   parsed name = 'Anthony Ken\x1fdall'
+  C0 FS 0x1c   parsed name = 'Anthony Ken'
+  DEL 0x7f     parsed name = 'Anthony Ken\x7fdall'
+  ```
+
+  `chr(0x1f)` and `chr(0x7f)` survive the parse. Against the corrected roster
+  `['Anthony Kendall']`, under the proposed fold:
+
+  ```
+  'Anthony Ken\x1fdall'      -> human    key=('anthony', 'kendall')
+  'Anthony Ken\x7fdall'      -> human    key=('anthony', 'kendall')
+  'A.n.t.h.o.n.y Kendall'    -> human    key=('anthony', 'kendall')
+  'ANTHONY KENDALL!!!'       -> human    key=('anthony', 'kendall')
+  'Anthony$Kendall'          -> unknown  key=('anthonykendall',)
+  ```
+
+  **The precision I owe the record, which the review under-stated.** The
+  Decision's named invariant is *dropping a character must never widen
+  authority*. For `chr(0x1f)`: with the character kept the key is
+  `('anthony', 'ken\x1fdall')` and the byline is `unknown`; with it dropped the
+  byline is `human`. A character was dropped and authority widened, through the
+  public parse path, using an **invisible** character. The review's own summary
+  -- *"The exploitability result here is negative"* -- is correct on its own
+  terms and I reproduce it: I also could not construct a byline that reads to a
+  human as *not the Maintainer*, uses only these deletions, and classifies
+  `human`, because deletion only merges characters *within* a word and adding a
+  visible extra word needs whitespace, which changes the tuple's length. I
+  confirmed the AI leg is not defeatable this way either -- `_flag_words`
+  applies the same deletions, so an agent name split by `chr(0x1f)`, by
+  `chr(0x7f)`, by ASCII periods or by ASCII symbols still classifies `ai` in
+  every case I tried. So: no exploit, but the *invariant the Maintainer named is
+  not met* for the `Cc` class. The proposal is internally honest about this only
+  at one remove -- it says the invariant *"is not literally unviolatable by
+  construction ... it is enforced for the character classes that carry a name's
+  identity"*. Control characters carry no identity, so the design rule as
+  written is satisfied while the Decision's invariant is not.
+
+  **Classification: split.** Correcting the rule text from two classes to three
+  is **within** the accepted contract -- prose in the proposal and in the
+  `_fold_word` docstring, no behaviour change, and the plan can carry it. The
+  reviewer's *cleaner* alternative -- *"restrict the deletion to an explicit
+  codepoint set and delete nothing else"* -- is a behaviour change to the fold
+  and is **beyond** it. I tested that alternative rather than accepting it on
+  description; results and cost are in the end list.
+
+* **[I3] accept -- the roster-symmetry test is near-vacuous exactly as
+  described, and so is the `0 of 23` headline that rests on it.** The proposal's
+  test is *"a test that calls `classify(x)` with roster `[x]` over the 23-name
+  corpus and asserts `human` for every entry -- symmetry made falsifiable."*
+  `classify(x)` with roster `[x]` compares `_grant_words(x)` against
+  `_grant_words(x)`, which holds for every total function; the only ways it can
+  fail are the AI leg firing or the fold returning empty. Demonstrated against a
+  deliberately destructive fold (each word collapsed to its first letter):
+
+  ```
+  correct fold                     symmetry test: 8/8 human -> PASSES: True
+  BROKEN fold (first letter only)  symmetry test: 8/8 human -> PASSES: True
+  yet under the BROKEN fold: roster ['Anthony Kendall'], byline 'Amos Kim' -> human
+  ```
+
+  A fold that grants Maintainer authority to *Amos Kim* passes the proposed
+  regression guard. The same objection lands on the proposal's headline
+  *"International-name cost: zero ... proposed design flags **0 of 23**"*: that
+  figure is produced by the same procedure with each name rostered under itself,
+  so it is close to guaranteed by construction. It is evidence that the AI leg
+  does not fire on those names and that none folds to empty -- not evidence
+  about the fold. (The `12 of 23` and `17 of 23` figures for the *Amendment's*
+  recipe remain real, because its poison rule is an independent predicate; the
+  `0 of 23` is not comparable to them, and the *Rationale* should not be read as
+  if it were.)
+
+  I also tested the reviewer's recommended replacement -- an **anti-collision**
+  test asserting that distinct corpus names produce distinct keys -- rather than
+  accepting it on description. It has the power claimed:
+
+  ```
+  distinct-name collisions in an 8-name corpus under the correct fold: 0
+  collisions among the [I1] near-pairs: 3/3 -> anti-collision test catches them: True
+  ```
+
+  **Classification: within the accepted contract.** The proposal's `Touches`
+  already covers new nodes under `bootstrap/tests/`, and which tests get written
+  is plan work. **One coupling must be stated, because it is not free:** the
+  anti-collision test passes over the proposal's stated 23-name corpus (whose
+  names are not near-pairs), and only turns red once the corpus is extended with
+  the [I1b] pairs. So the plan cannot both implement this test *at the strength
+  that makes it worth having* and leave R2 ratified as written -- it would be
+  committing a red test. That coupling is [I1]'s to resolve, and [I1] is a
+  *beyond* item.
+
+* **[I4] accept -- the invariant as worded cannot be implemented; and the
+  replacement the review recommends is itself false as worded, which I verified
+  rather than adopted.** The proposal names this as *the* invariant the Decision
+  asked for: *"a test that asserts the fold's output preserves every input
+  character in Unicode categories `L*` and `N*`"*. Taken literally it fails
+  almost everywhere, because case folding and combining-mark stripping both
+  *replace* letters. Measured over exactly the sample the proposal lists:
+
+  ```
+  Latin-1      L*/N*   62  NOT preserved:   58
+  Latin Ext-A  L*/N*  128  NOT preserved:  120
+  Latin Ext-B  L*/N*  208  NOT preserved:  157
+  Greek        L*/N*  129  NOT preserved:   82
+  Cyrillic     L*/N*  248  NOT preserved:  150
+  Arabic       L*/N*  173  NOT preserved:   12
+  Thai         L*/N*   67  NOT preserved:    1
+  Han          L*/N*   49  NOT preserved:    0
+  Math alnum   L*/N*   52  NOT preserved:   52
+  ```
+
+  The reviewer's diagnosis reproduces and is right: the test as worded cannot
+  distinguish intended folding from unintended deletion, so at implementation it
+  would be weakened to something that passes, and whatever that turned out to be
+  would not be the Decision's invariant while the record said it was. The
+  `Han 0/49` line confirms the sharper point -- the one clean result comes from
+  the one script that neither case-folds nor decomposes, so it cannot exercise
+  the mechanism. The Cyrillic line contains `chr(0x401)` folding to
+  `chr(0x435)`, which is [I1b].
+
+  **Correction to the recommended remedy -- this one is mine, not the
+  review's.** The review proposes: *"for every input character in `L*`/`N*`, the
+  fold's output is non-empty."* I implemented it over every `L*`/`N*` codepoint
+  below `U+30000` (roughly 129,000 characters under Python 3.13.13's Unicode
+  tables) and it is **false as stated**:
+
+  ```
+  L*/N* codepoints folding to EMPTY:  NFD (granting leg) = 0 ; NFKD (flagging leg) = 16
+    chr(0xfc5e)..chr(0xfc63)  ARABIC LIGATURE SHADDA WITH ... ISOLATED FORM  (Lo)
+    chr(0xfe70), chr(0xfe72), chr(0xfe74), chr(0xfe76)                       (Lo)
+    chr(0xfe78), chr(0xfe7a), chr(0xfe7c), chr(0xfe7e)                       (Lo)
+    chr(0xff9e), chr(0xff9f)  HALFWIDTH KATAKANA (SEMI-)VOICED SOUND MARK    (Lm)
+  ```
+
+  These are letters (`Lo`/`Lm`) whose `NFKD` decomposition is entirely combining
+  marks, which the fold then strips. The direction is safe -- they vanish only
+  from the *flagging* key, the granting key keeps them, and such a byline
+  therefore classifies `unknown`:
+
+  ```
+  '\uff9e'   flag=()  grant=('\uff9e',)  classify=unknown
+  '\ufe70'   flag=()  grant=('\ufe70',)  classify=unknown
+  ```
+
+  So the honest form of the replacement invariant is **leg-specific**: *on the
+  granting leg (`NFD`), every `L*`/`N*` character folds non-empty* -- which
+  holds at 0 counterexamples and is exactly where it matters -- paired with
+  [I3]'s anti-collision test. Stated as the review worded it, without the leg
+  restriction, the test goes red on 16 real codepoints and gets weakened, which
+  is the very failure [I4] diagnoses.
+
+  **Classification: within the accepted contract.** This is test wording, and
+  the plan writes the tests. Nothing here changes the fold.
+
+* **[I5] accept -- reproduced in both directions, and I confirmed the
+  "today inert" half against the live code rather than the transcription.** The
+  proposal's change 3 says *"Config-supplied registry entries fold through
+  `_flag_words` too."* The AI leg matches a registry entry as a **prefix** of a
+  word (`tools/lifecycle_planner.py:269`), and `"anything".startswith("")` is
+  `True`. Under the proposed fold a punctuation-only config entry folds to the
+  empty string:
+
+  ```
+  entry '-'      -> _flag_words=()  _fold_word(NFKD)=''
+  entry '  .  '  -> _flag_words=()  _fold_word(NFKD)=''
+  with an empty registry token, 'Anthony Kendall' classifies ai: True
+  with an empty registry token, 'Jane Doe'        classifies ai: True
+  ```
+
+  A benign config typo would make **every** byline classify `ai`, flagging every
+  Decision in the tree as AI-authored. The mirror hazard on the human side is
+  real and its severity *changes with the design*: today an empty key is inert
+  because set intersection with an empty set is falsy
+  (`tools/lifecycle_planner.py:314`); under tuple equality `() == ()` is `True`:
+
+  ```
+  roster ['.', 'Anthony Kendall']  byline '.'   -> human
+  roster ['.', 'Anthony Kendall']  byline '-'   -> human
+  ```
+
+  Two additions of my own. First, I verified the "today this is inert" claim
+  against the **live** code rather than the transcription, since it is the claim
+  that makes this a *new* failure mode rather than an existing one. With a
+  config of `human_maintainers: ['-', 'Anthony Kendall']` and
+  `ai_agents: ['-']`, today's `_load_human_maintainers`
+  (`tools/lifecycle_planner.py:293`) does produce an empty-string key, and
+  today's `_load_ai_registry` does admit the literal `'-'`
+  (`tools/lifecycle_planner.py:225`) -- yet every probe byline returns
+  `unknown`, because `_ai_candidate_tokens` drops empty tokens and byline tokens
+  are alphanumeric-only. Inert today, live after the change: confirmed. Second,
+  a punctuation-only byline is **reachable through the real parser** -- a
+  heading of the form `## Decision -- ... -- 2026-08-03` parses to a name of
+  `'...'` -- so this is not a unit-level curiosity. I also tested the
+  recommended fix (both loaders filter on the *folded* value rather than the raw
+  entry) and it closes both directions: a registry built from
+  `['-', '--', 'claude', '  .  ']` becomes `['claude']`, and byline `'.'`
+  returns to `unknown`.
+
+  **Classification: within the accepted contract.** Both loaders are already in
+  `Touches` (`tools/lifecycle_planner.py` and its twin); change 2 names
+  `_load_human_maintainers` explicitly and change 3 names the registry loader by
+  behaviour. This is a one-line guard on each, correcting how an
+  already-accepted change is implemented. The plan can carry it without
+  interpretation.
+
+* **[I6] accept -- the unrecorded cost is real and reproduces; its recommended
+  remedy does not survive testing, and I could not adopt it.** The proposal
+  changes tokenization from `str.split()` (Unicode whitespace) to ASCII
+  whitespace only, and records this solely as an attack mitigation. The same
+  change breaks legitimately-rostered names:
+
+  ```
+  CJK, chr(0x3000) IDEOGRAPHIC SPACE
+     roster '\u5c71\u7530 \u592a\u90ce'       key=('\u5c71\u7530', '\u592a\u90ce')
+     byline '\u5c71\u7530\u3000\u592a\u90ce'  key=('\u5c71\u7530\u3000\u592a\u90ce',)
+     classify -> unknown
+  Latin, chr(0x202f) NARROW NO-BREAK SPACE
+     roster 'Anne Marie Dupont'               key=('anne', 'marie', 'dupont')
+     byline 'Anne\u202fMarie Dupont'          key=('anne\u202fmarie', 'dupont')
+     classify -> unknown
+  ```
+
+  `chr(0x3000)` is the ordinary separator between surname and given name in a
+  Japanese document; `chr(0x202f)` is standard in French typography. The roster
+  JSON would normally be typed with an ASCII space, so the two sides differ. The
+  direction is safe -- it over-flags, it does not grant -- but the proposal's
+  recorded false-positive costs list exactly one item (a curly-versus-straight
+  apostrophe), and this is a second, on the international axis where the
+  proposal claims the cost is **zero**. The 23-name corpus cannot see it for
+  [I3]'s reason: each name is rostered under itself, so both sides carry the
+  same separator. **Recording the cost and adding one corpus case where roster
+  and byline differ only in the separator is within the accepted contract** --
+  prose plus a test row.
+
+  **The remedy is not, and it does not work.** The review offers, as *"one
+  optional design question for the Maintainer, not a finding"*, treating Unicode
+  `Zs` (space separators) as word breaks *"because `Zs` characters are
+  **visible** as spaces."* I implemented it over all 17 `Zs` codepoints and
+  measured it against the proposal's own behaviour table:
+
+  ```
+  byline                          proposal   Zs-variant
+  plain                           human      human
+  U+00a0 NO-BREAK SPACE           unknown    human
+  U+2000 EN QUAD                  unknown    human
+  U+3000 IDEOGRAPHIC SPACE        unknown    human
+  U+202f NARROW NBSP              unknown    human
+  U+2028 LINE SEP (Zl, not Zs)    unknown    unknown
+  U+200b ZERO WIDTH SPACE (Cf)    unknown    unknown
+  U+00ad SOFT HYPHEN (Cf)         unknown    unknown
+  ```
+
+  The `"Anthony" + chr(0x00a0) + "Kendall"` row is in the proposal's own
+  security table as **today `human` -> proposed `unknown`**. The `Zs` variant
+  puts it back to `human`. That is the invariant again, literally: a character
+  is dropped (converted into a break) and authority widens from `unknown` to
+  `human`. The justification also does not hold for the characters that matter
+  -- `chr(0xa0)`, `chr(0x2007)` and `chr(0x202f)` render as ordinary whitespace
+  and are not visually distinguishable from an ASCII space, so "visible as a
+  space" is precisely why they work as an invisible word break. It does restore
+  the CJK and French names (both to `human`), so the trade is real; it is a
+  trade, not a free fix. **Classification: beyond the accepted contract**,
+  re-listed at the end, undecided.
+
+* **[I7] accept -- both parts reproduce; (7a) had moved again by the time I
+  measured it, in the direction the finding predicted, and (7b) is still
+  entirely live.** *(7a) The frozen-file count.* The proposal asserts `162`
+  frozen files and the External Response re-asserts `162`. Measured across
+  `bootstrap/tests/fixtures/gate_manifest.json` (schema
+  `cairn-gate-manifest/v1`):
+
+  ```
+  71abeb4  frozen_files=162
+  292e2c6  frozen_files=162
+  af4b2ee  frozen_files=164
+  HEAD     frozen_files=164        (HEAD = 05515df, 2026-08-03)
+  ```
+
+  The batch grew at `e45e1fc` (*"gate: Phase 0 prerequisite commit -- pin the
+  pre-flight checker"*), which touched only that fixture. The **substantive**
+  claims still hold at `HEAD`, verified file by file:
+  `bootstrap/tests/test_lifecycle_contract.py` is frozen;
+  `tools/lifecycle_planner.py`, `templates/skills/_lib/lifecycle_planner.py` and
+  `dev/.cairn/agent-identities.json` are not. So the finding stands as a
+  *discipline* point, not an error: `162` was correct when written, the figure
+  moved within the same day, and the plan should re-measure rather than carry a
+  number forward.
+
+  *(7b) The sibling states this proposal's behaviour wrongly.*
+  `planner-line-semantics` states, in its *Cross-lineage file collisions*
+  section, that under scope 2 a byline built with `chr(0x2028)` classifies
+  `human` with folded key `'anthonykendall'`, and prescribes *"poison any
+  surviving non-ASCII character, not just letters."* Both describe the
+  **Amendment's** recipe, which this proposal replaced. Measured under the
+  accepted design:
+
+  ```
+  'Anthony\u2028Kendall' -> unknown   key=('anthony\u2028kendall',)
+  ```
+
+  The character is kept, not deleted, and the prescribed remedy is the one this
+  proposal measured and rejected. The sibling's conditional ordering clause --
+  *"or its poison rule is widened first"* -- is void, since this proposal has no
+  poison rule. I confirm the sibling is still `**Status**: proposed` with no
+  `## Review` section at `HEAD`, so nothing has corrected it.
+  **Classification: within the accepted contract for the part this proposal
+  owns** -- appending a pointer in this proposal's *Cross-proposal collisions*
+  section is record hygiene on this artifact. But this Decision cannot bind
+  another artifact's lifecycle: the sibling's correction is the sibling's to
+  make at its own Response. I am recording the obligation, not discharging it.
+
+**What these dispositions do not settle.**
+
+* **No code exists.** Every measurement above is against a scratch transcription
+  of the proposal's *printed* design, not against `tools/lifecycle_planner.py`
+  as it will be changed. The two loaders and the revised `_identity_token` are
+  not shown in the proposal at all, so [I5] remains a finding about a hazard the
+  design creates, not about code that exists. This is the same declared gap in
+  both prior reviews -- now three for three, and it is the gap the plan closes,
+  not this Response.
+* **I did not run the test suite.** The proposal's `1545 passed, 1 skipped`, its
+  9-vs-10 sandbox baseline, and the "exactly one existing failing node" claim
+  are unverified by me. I verified only that the twins are byte-identical at
+  `HEAD`.
+* **The live roster has not been corrected.** `dev/.cairn/agent-identities.json`
+  still reads `["Anthony", "Kendall"]` at `HEAD`. Change 4 is plan work, and
+  until it lands in the same commit as the code change, Cairn's own record
+  starts flagging -- which is why the proposal calls them one atomic change.
+* **My `casefold()` enumeration is not exhaustive either.** [I1a] samples the
+  class of full-case-folding expansions; I did not enumerate `CaseFolding.txt`.
+  There may be worse members than `chr(0x17f)`.
+* **Untouched by any of this**: R1 (the exact-name spoof), R3's Cyrillic case,
+  R4 (the flag is not a detector), and the proposal's *Known omissions* -- the
+  unswept `re.sub` pattern in `tools/lifecycle.py` and under `scripts/`, the
+  synthetic corpus, and the non-exhaustive `NFKD` enumeration. Three reviews
+  have now left the sweep undone.
+* **The design is not re-opened, and I am not asking for it to be.** The
+  `NFD`-for-granting / `NFKD`-for-flagging split survives every probe in this
+  Response, and [I1a] is *not* an argument for `NFKD` everywhere -- `NFKD` has
+  the same `casefold()` behaviour *plus* the full-width class the proposal
+  already measured and rejected.
+* **Most importantly: a Response cannot un-ratify a residual.** R2 was accepted
+  as written. Only the Maintainer can restate it or re-decide its trigger.
+
+### Findings the Decision did not see
+
+Three items below were reviewed but never dispositioned, and the Maintainer
+accepted `as revised` without a revision existing. On no honest reading does
+`as revised` cover them: each either changes a risk the Maintainer agreed to
+carry, or changes behaviour the proposal never described. They are named here,
+**undecided**. A plan may not adopt any of them on the strength of this
+Response, and I am not deciding them.
+
+1. **[I1] -- the residual actually ratified is broader than the residual
+   described.** R2 was submitted for ratification with the defense *"every
+   member of the class reads as the rostered name to a human (it differs only in
+   case and diacritics)"* and the mechanical expiry *"the first demonstrated
+   string that folds to a rostered name and does not read as it."* Three
+   measured classes fire that expiry **before the proposal lands**: full
+   case-folding expansions (`chr(0x17f)`, `chr(0xfb05)`); letter-distinguishing
+   combining marks in Vietnamese, Japanese, Devanagari and Cyrillic; and -- from
+   [I2] -- invisible C0 control characters, which widen `unknown` to `human`
+   through the real parse path. A mechanical expiry already satisfied at the
+   moment of ratification is debt wearing a decision's clothes, which is the
+   exact failure the parent Decision's anti-debt condition was written against.
+   **The Maintainer's call**, in one of two forms: restate R2 as *canonical-
+   decomposition equivalence plus full case folding*, naming the three classes
+   and accepting them with the counterexamples on the record; or re-decide the
+   trigger. **Coupled consequence:** [I3]'s anti-collision test, at the strength
+   that makes it worth writing, goes red on the [I1b] pairs. The plan cannot
+   implement that test at full strength and also keep R2 as ratified.
+
+2. **[I6]'s remedy -- treating Unicode `Zs` as a word break.** A change to the
+   fold's tokenization, which the reviewer itself routed to the Maintainer as
+   *"one optional design question ... not a finding"* -- and the Maintainer
+   decided without seeing it. Tested here rather than taken on description: it
+   restores the two broken international names (CJK with `chr(0x3000)`, French
+   with `chr(0x202f)`, both moving from `unknown` to `human`) but it **reverses
+   four rows of the proposal's own security table**, including
+   `"Anthony" + chr(0xa0) + "Kendall"`, which the proposal lists as today
+   `human` -> proposed `unknown`. That is the Decision's named invariant
+   violated in the same shape it was written to close: a character is dropped
+   and authority widens. The stated justification -- *"`Zs` characters are
+   visible as spaces"* -- does not hold for `chr(0xa0)`, `chr(0x2007)` or
+   `chr(0x202f)`, which render indistinguishably from an ASCII space. **My
+   recommendation, for what it is worth: do not adopt it**, and record the
+   international cost as [I6]'s within-contract half instead. But it is a design
+   question about an accepted design, and it is the Maintainer's.
+
+3. **[I2]'s remedy -- restricting the fold to an explicit deletion set.** The
+   within-contract half of [I2] is the text correction (three deletion classes,
+   not two). The reviewer's preferred fix -- *"restrict the deletion to an
+   explicit codepoint set and delete nothing else, so that the rule and the code
+   are the same statement"* -- changes what the fold deletes, hence behaviour
+   the proposal never described. Tested, deleting only the 23 ASCII punctuation
+   codepoints:
+
+   ```
+   byline                                proposal   explicit-set
+   'Anthony Ken\x1fdall'                 human      unknown
+   'Anthony Ken\x7fdall'                 human      unknown
+   'A.n.t.h.o.n.y Kendall'               human      human
+   'Cl\x1faude scribing for Anthony ...' ai         unknown
+   'Claude-3.5'                          ai         ai
+   ```
+
+   It closes the C0/DEL widening -- the one invariant violation [I2] exposes --
+   and costs one thing: a control-separated agent byline drops from `ai` to
+   `unknown`. Both are violations at the only consuming site
+   (`tools/lifecycle_planner.py:613`), so no authority is granted either way;
+   what is lost is the *diagnostic*, which would read "unrecognized identity"
+   instead of "authored by an AI agent". Whether that trade is worth making --
+   and whether the Decision's invariant should be enforced for the `Cc` class at
+   all, given the negative exploitability result -- is a scope question the
+   Maintainer has not been asked.
