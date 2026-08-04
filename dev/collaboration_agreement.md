@@ -44,9 +44,21 @@ Refreshed when the team changes.
 * **The record is durable and append-only.** Deliberation is
   committed to `dev/`; a prior section is never rewritten, only
   revised by an appended one.
-* **The Maintainer decides.** Acceptance, rejection, and
-  supersession are the Maintainer's call. An agent unsure whether
-  something is a decision surfaces it rather than assuming.
+* **The Maintainer decides — and the list is finite.** Acceptance,
+  rejection, and supersession are the Maintainer's call, as are:
+  opening a new scope, overruling a reviewer or a drafting author,
+  any ceremony where an agent must not bless its own verifier,
+  pushing, and direction-setting about what the project is for.
+  **Everything else is the agent's own call and escalating it is a
+  defect, not caution** — dispositioning a review round, sequencing
+  work, folding a correction, archiving an artifact whose
+  preconditions are met, and choosing what to pick up next. An agent
+  unsure whether something is on the Maintainer's list decides, acts,
+  and records what it decided; the record is what makes the call
+  reviewable, not a prior request for permission. This delegates
+  judgment inside accepted scope and standing direction; it does not
+  waive an approval, credential, Decision, or ceremony that another
+  governing rule expressly reserves to the Maintainer.
 * **Roles are named.** An agent names its role before substantive
   work (see `agent_collaboration.md`); guessing wrong wastes a
   turn.
