@@ -468,7 +468,7 @@
     {
       "base_hash": "sha256:fb1c4d2657ba100fefd8aeb8d2834240c1dee422ec3e0da80b559e6d246af6cd",
       "dst": "tools/_lifecycle_metrics/__init__.py",
-      "hash": "sha256:c0e169e79956e1612501517dfd150c5917cb88de1078ef07c8151b878eaf3db5",
+      "hash": "sha256:15bbc4accf9421b99971063b8f4d4b4544eb112cea831091feb6bd83b550d127",
       "src": "modules/default-on/_lifecycle_metrics/__init__.py",
       "verbatim": true
     },
@@ -496,7 +496,7 @@
     {
       "base_hash": "sha256:3d057d535389c44dc870f5f6ca5d4ebd481c8307cd5abc96dbac4c66875389e8",
       "dst": "tools/_lifecycle_metrics/gitmeta.py",
-      "hash": "sha256:5a47849b9937e4fa17a32d4eb9e28968466d880c454a7813281d2cc7401bf1a0",
+      "hash": "sha256:02c30f731e05ca69a97376dd34ecebfa0d2a269572a40b655fa4407dc9b481fa",
       "src": "modules/default-on/_lifecycle_metrics/gitmeta.py",
       "verbatim": true
     },
