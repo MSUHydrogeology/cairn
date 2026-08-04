@@ -103,9 +103,10 @@ Decision commit itself).
 ## Archive preconditions
 
 See `doctrine/proposals.md` > "Archive preconditions" for the rule that every
-deferred follow-up must have a durable home before archiving, the acceptable
-homes, the required `Follow-ups migrated to:` commit-body form, and guidance
-on deferred-follow-up wording.
+deferred follow-up must carry a recorded disposition before archiving —
+`accept`, `guard`, `wontfix`, or (with the Maintainer's quoted authorization)
+`defer` — the acceptable `defer` homes, the required `Dispositions:`
+commit-body form, and guidance on deferred-follow-up wording.
 
 ## Count claims — the three-kind precision / `as_of` discipline
 

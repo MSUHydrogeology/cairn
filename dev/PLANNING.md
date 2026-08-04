@@ -433,15 +433,50 @@ goodnight scrub.
 ## Archive preconditions (proposals and plans)
 
 Before a proposal or plan moves to `archive/`, every
-**explicitly-deferred follow-up** it carries must have a durable home
-*outside* the file — a board item here, a topic doc's "Future work"
-section, or its own queued follow-up proposal. Record where each went
-in a durable, auditable location the team's workflow preserves (the
-archive commit body, the PR description, or the plan's closing
-metadata) as a `Follow-ups migrated to: …` block, so the migration is
-reconstructible from the durable record alone. See
-`doctrine/lifecycle.md` > "Archive precondition — every deferred
-follow-up has a durable home".
+**explicitly-deferred follow-up** it carries must carry a **recorded
+disposition**. A disposition is not the same thing as a durable home:
+the precondition exists so nothing is dropped *silently*, not so
+everything is kept *forever*. Requiring a home for every deferral
+makes this board the only sanctioned outcome, which turns it into a
+one-way accumulator.
+
+The vocabulary (full rule, including *why*, in
+`doctrine/lifecycle.md` > "Archive precondition"):
+
+* `accept` — fixed in scope. Includes writing the doc, and narrowing
+  the artifact's own claim so the finding no longer applies.
+* `guard (<path>::<node>)` — homed in something that **executes** —
+  a test node, an assertion, a runtime guard — and **names the node**.
+  A comment is *not* eligible: comments do not fire, and a comment is
+  a board row relocated somewhere fewer people read.
+* `wontfix` — explicit non-action, **with a rationale**.
+* `defer` — deposited on this board. **Requires the Maintainer's
+  authorization, quoted verbatim.** A deposit on a shared board is a
+  scope decision.
+
+**No required order** — the record says why the chosen disposition is
+right. Two eligibility rules bound it: a follow-up that **reaches an
+adopter, blocks a release, or needs a Decision** cannot be `wontfix`;
+and one **named by a closed artifact's disposition block** cannot be
+`wontfix` without the Maintainer, because an archived record is
+append-only and cannot be corrected in place.
+
+Record each disposition in a durable, auditable location the team's
+workflow preserves (the archive commit body, the PR description, or
+the plan's closing metadata) as a `Dispositions: …` block, so the
+outcome is reconstructible from the durable record alone. The older
+`Follow-ups migrated to: …` spelling stays valid and is still
+recognized. **Archive-preparation is the serialization point**, and
+`defer` requests are presented there as **one batch** — that batching
+is what keeps the Maintainer gate affordable.
+
+On a **solo profile**, where author and Maintainer are the same
+person, the `defer` gate collapses to a written justification to
+oneself: weaker, but not vacuous — it is on the record at a
+serialization point.
+
+This precondition is **documentary, not mechanical**: a reviewer
+opening the artifact at archive-preparation is the enforcer.
 
 ## Removal preconditions
 

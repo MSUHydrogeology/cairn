@@ -67,7 +67,12 @@ Merged into `dev/agent_collaboration.md`:
 >    earns its existence.
 > 9. **Name the satisfier** — every finding states the test / guard /
 >    doc / scope-cut / explicit `wontfix` that would close it. A finding
->    with no satisfier is an observation, not yet a finding.
+>    with no satisfier is an observation, not yet a finding. At archive
+>    time each satisfier maps onto a disposition token
+>    (`doctrine/lifecycle.md` > "Archive precondition"), and the mapping
+>    is total: *test* → `guard`, *guard* → `guard`, *doc* → `accept`,
+>    *scope-cut* → `accept`, *wontfix* → `wontfix`. Naming the satisfier
+>    and naming who pays for it are then the same act.
 >
 > **Falsifiable coverage, not "checked."** A swept lens is credible only
 > if its claim is *falsifiable* — it cites the file path, test node,
