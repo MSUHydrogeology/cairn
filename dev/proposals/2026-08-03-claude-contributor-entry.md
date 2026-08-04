@@ -5,7 +5,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: proposed
+**Status**: revised
 **Touches**: `CONTRIBUTING.md` (new, repository root), `SECURITY.md`
 (the *Reporting a vulnerability* section only), `README.md` (one pointer),
 `dev/.cairn/profile.yml` (one clarifying comment; no value changes)
@@ -1665,3 +1665,60 @@ scope. Its `Touches` line shrinks accordingly, which is what [I2] said would
 happen under either resolution. The tier stays at the raised
 `required(**External**)`; the Internal round already recorded does not discharge
 it, and the revision must be reviewed before any Decision.
+
+## Revision after the [I2] direction -- Claude (author) -- 2026-08-03
+
+**Model**: Claude Opus 5
+
+**Status moves to `revised`, and the revision is that there is almost nothing
+left.** I set out to write a revision dropping the `CONTRIBUTING.md` scope and
+found that the scope does not survive the removal. Recording that rather than
+producing a husk for an External round to review.
+
+### Part-by-part, after [I2]
+
+| Part | Disposition |
+|---|---|
+| **1.** root `CONTRIBUTING.md` | **Declined** by the [I2] direction |
+| **2.** `SECURITY.md` disclosure channel | **Split out**, homed on `dev/PLANNING.md` > *Queued* |
+| **3.** `README.md` pointer | Exists *to point at* parts 1 and 2. Its `SECURITY.md` half follows part 2 to the Queued row; its `CONTRIBUTING.md` half is declined with part 1 |
+| **4.** `dev/.cairn/profile.yml` comment | **Purpose evaporates.** The comment exists to record that the root `CONTRIBUTING.md` is project-owned rather than the human-team-gated optional template. With no root `CONTRIBUTING.md`, it disambiguates nothing. The proposal already called it "the one element of this proposal a reviewer can cut without weakening anything else" |
+| contribution-readiness | Already declared "a question, not a mechanism" and out of scope; unchanged |
+
+### What that leaves
+
+Nothing that justifies an artifact. Part 4 was the only remaining edit, and its
+rationale was part 1. A proposal whose surviving deliverable is a clarifying
+comment about a file that will not exist is not a proposal.
+
+### Recommended disposition — supersession, not a revision
+
+**I recommend the Maintainer supersede this proposal** rather than accept a
+narrowed one. Both substantive halves are already dispositioned and homed, which
+is what the archive precondition asks for:
+
+* **Part 1** — declined on the record, with the reasoning ([I2]) and the three
+  doctrine locations that made it the wrong change for a solo-maintained Cairn.
+* **Parts 2 and 3** — `dev/PLANNING.md` > *Queued* > **`SECURITY.md` disclosure
+  channel**, now extended to carry the `README.md` pointer, with finding [I7]'s
+  Maintainer live-verification precondition attached.
+
+**What supersession costs, stated so the choice is informed.** The Internal
+review's findings [I1] and [I3] — two named checks that cannot fail — are
+findings about *this artifact's verification section*, and they die with it.
+They are already generalised in `gate-claims-vs-enforcement`, accepted today,
+so nothing is lost that is not recorded elsewhere.
+
+**What it saves.** The tier was raised to `required(External)` on the strength of
+[I2], which was a doctrine-and-core-template collision. With part 1 declined
+there is no such collision, and no External round needs to be spent on a
+clarifying comment.
+
+**The alternative, if the Maintainer prefers to keep the artifact.** Accept it
+narrowed to part 4 alone and drop the tier back to `not required` — a trivial
+single-commit change. I do not recommend it: the comment's stated purpose is
+gone, so it would be shipping a clarification of a decision the reader can no
+longer see.
+
+Status is `revised` because the artifact changed. The disposition is the
+Maintainer's.

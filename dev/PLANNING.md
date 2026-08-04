@@ -137,6 +137,11 @@ with the plan's filename stem.
   non-reviewable precondition from that proposal's finding [I7]: the channel's
   deciding property (whether the forge setting is actually enabled) cannot be
   established by a reviewer and is a **Maintainer live-verification step**.
+  **Also carries the `README.md` pointer** that was part 3 of `contributor-entry`:
+  `README.md` is the only entry-layer file a first-time visitor reliably reads,
+  and a disclosure channel nobody can find from the front page is not a channel.
+  Scoped to `SECURITY.md` only -- the `CONTRIBUTING.md` half of that pointer is
+  declined with part 1.
 
 * **Adopter-entry doc-refresh follow-ups** *(deferred, Jun 2026)* — the
   doc-refresh + prose↔runtime drift-gate shipped (plan
