@@ -1293,3 +1293,67 @@ closing work, and the successor-proposal disposition increases outstanding work
 while scoring zero. No checker is proposed, for the reason the reviewer states
 better than the original draft did: a presence-checker would certify green
 exactly the degenerate case the *Signals* section fears.
+
+---
+
+## Dispositions -- self-applied -- Claude (Strategy) -- 2026-08-04
+
+Raised by the Maintainer immediately after the revision landed at `8a28d44`:
+*"This isn't an example of narrowing scope and creating deferrals is it?"*
+
+It partly is. The audit below applies **C1** to this proposal itself, which is
+both the honest answer and a test of whether the rule is usable: a proposal that
+cannot run its own grammar is evidence against the grammar.
+
+Every forward obligation the Response and Revised proposal create, with its
+token. Nothing here is authorized yet -- **C3 makes `defer` a Maintainer act, and
+this block is the request, not the grant.**
+
+| # | Forward obligation | Token | Status |
+|---|---|---|---|
+| D1 | The 59-item retrospective pass over `### Deferred follow-ups` | `defer` (successor) | **requested** -- conditioned on same-session opening |
+| D2 | A content-parity gate over the doctrine -> `templates/core/` mirrors ([I1] route b) | `defer` (successor) | **requested** -- ineligible for `wontfix` under C4 |
+| D3 | Whether rung-`defer` self-authorization is honest enough on a solo profile | `accept` | in scope -- answered below |
+| D4 | Whether batching actually bounds Maintainer load | `wontfix` | declined -- rationale below |
+| D5 | `bootstrap/scaffold.py --summary` unexercised on this pass | `accept` | in scope -- lands in the plan's verification commands |
+
+**D1 -- the retro pass.** Defensible as written: it is routed to the Decision,
+and the Response names the refusal path (reject the split, keep item 8 in scope).
+But the "same session" condition is **a promise with no mechanism**, which is the
+weaker half of what this proposal criticizes. Strengthened here: if the Decision
+accepts the split, the successor's stem is named *in the Decision commit body*,
+so its absence is visible in `git log` rather than only in a reader's memory.
+
+**D2 -- this one was the defect.** The Response recorded it as "a candidate
+successor, not taken here" -- an author-created forward obligation with no home,
+no trigger and no approval, written into the section that was accepting findings
+about exactly that pattern. It is also **adopter-reaching**: the doctrine ->
+template mirror is the adopter contract, and the reviewer's mutation test showed
+it is fail-open across all fifteen surfaces. Under **C4** that makes it
+ineligible for `wontfix`, so it cannot be disposed of by the author at all. It is
+a `defer` request, and if the Maintainer declines to authorize it, the correct
+outcome is that **C1-C7 land with invariant 3 documented as fail-open and
+nothing more** -- not that the gate quietly floats.
+
+**D3 -- solo-profile self-authorization,** left open by the reviewer rather than
+rubber-stamped. Answered in scope: on a solo profile C3 collapses to a written
+justification to oneself, which is **weaker but not vacuous** -- the value is that
+the justification is *written into the record at a serialization point*, where a
+later reader (or the same person cold) can see what was claimed. Cairn's whole
+premise is that recorded deliberation beats unrecorded conviction even when the
+author and the decider are the same person. This is that premise applied to
+deferral, and it should be stated in the doctrine text rather than left implicit.
+
+**D4 -- Maintainer-load empiricism.** Declined. No artifact in the tree measures
+it, building one would be a new mechanism this proposal explicitly avoids, and
+the *Signals* section already names the failure ("the Maintainer becomes the
+bottleneck") with a recovery. Declining it is only available because it reaches
+no adopter, blocks no release, and needs no Decision -- the C4 eligibility test,
+run rather than asserted.
+
+**What this block demonstrates, and what it does not.** It shows the grammar is
+usable on a live artifact and that the C4 eligibility rule does real work -- it
+disqualified D2 from the disposition its author had already quietly chosen. It
+does **not** show the rule is enforced: this block exists because the Maintainer
+asked, not because anything required it. That is the same documentary-not-
+mechanical limit stated throughout, now demonstrated on the proposal itself.
