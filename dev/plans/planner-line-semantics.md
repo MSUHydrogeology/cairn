@@ -1664,3 +1664,133 @@ I have **not** appended a `### Sharpening` sub-heading: per **[I1]** this sectio
 already registers as a landed `Plan review` section, and I am not going to add
 structure that makes an Internal read look more like a discharged tier than it
 already does.
+
+## Plan review -- Codex (External, scope-call lens) -- 2026-08-04
+
+**Model**: Codex, based on GPT-5. Review executed at `da2d00e` with
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13).
+
+**Steelman.** The plan identifies a real parser-confusion defect and fixes it at
+the point where an authority claim is made. Its central invariant is crisp: a
+Markdown heading, metadata field, or blockquote must not come into existence
+only because Python recognizes more line separators than Markdown does. The
+change is narrow, preserves the ordinary CR/LF behavior, binds both shipped
+files to their self-hosted twins and lockfile rows, and records rather than
+hides the temporary orientation-stream regression in Chunk B. The separate
+detector proposal means the plan does not mistake parser correctness for human
+visibility.
+
+### The scope call
+
+**I agree with fix-the-frame, and I do not regard detection as an alternative
+fix.** A detector can stop a known carrier from landing when that detector runs,
+but it cannot make the attestor's statement true. Leaving `splitlines()` in the
+attestor would preserve a second, private document grammar in which the tool can
+still report structure absent from Markdown. Parser correctness must hold even
+if a detector is skipped, suppressed, invoked on a different corpus, or later
+changes policy.
+
+"Agree with Markdown" is sufficiently well-defined here, provided the claim is
+kept lexical rather than expanded into "implement all of CommonMark." The five
+sites ask different higher-level questions, but every question begins with the
+same primitive: which CR, LF, or CRLF-delimited physical line contains anchored
+Markdown syntax. Status and field readers inspect metadata lines; the section
+reader recognizes headings and computes their bodies; the blockquote reader
+checks line-start quoting within a body; `_status_of` repeats the metadata read
+for the lifecycle survey. The proposed helper gives all five the same physical
+line frame without pretending to be a renderer.
+
+The credible third option is to reject an artifact at parser entry whenever it
+contains any extra `splitlines()` carrier. That would fail closed locally, but
+it couples parser semantics to detector policy, creates an availability failure
+for every consumer, and still does not make the character visible in review or
+diff output elsewhere. It is useful defense in depth, not a substitute. The
+accepted architecture -- correct CR/LF parsing plus a separately governed
+repository detector -- is the stronger division of responsibilities.
+
+Fixing the frame alone does leave human review blind, so the Decision was right
+to condition acceptance on opening `separator-detection`. Chunk B also really
+does relay a raw `U+2028` until `agent-context-scrub` escapes it. I accept that
+dated sequencing residual only with the plan's stated follow-on precondition;
+the Internal review's correction that both session-start and session-end consume
+the survey must be incorporated before implementation.
+
+### Concerns
+
+* **[E1] Two rerouted planner call sites have no carrier-specific RED test
+  (blocking).** A5 discriminates `_parse_status` and `_parse_sections`, but its
+  glued Decision disappears at `_parse_sections` before
+  `_has_isolated_blockquote` can affect the result, and its ordinary metadata
+  does not exercise `_parse_field`. In an executed scratch patch, replacing
+  only `_parse_field` and `_has_isolated_blockquote` with their HEAD
+  implementations left A5's planned outputs unchanged: status `proposed`, no
+  Decision section. Separate fixtures did expose both defects: a glued
+  `**Author**:` was read as `Anthony` at HEAD and absent under the patch; a real
+  Decision body with a `U+2028`-fabricated blank before `>` was accepted as an
+  isolated quote at HEAD and rejected under the patch. Extend A5 or add focused
+  tests for both call sites, with ledger perturbations that revert each site
+  independently. Exercise both `Author` and `Plan review` through
+  `_parse_field`, because they feed different authority decisions.
+
+* **[E2] The lifecycle helper's trailing-line semantics are not pinned
+  (blocking).** A6 imports only `templates/skills/_lib/lifecycle_planner.py`.
+  Deleting the trailing-empty `pop()` from only the lifecycle helper leaves A6
+  green, and B5's status fixture is insensitive to an extra trailing empty
+  element. The plan's claim that planner-side A6 catches a divergent second
+  copy is therefore false; a hand comparison is not the named automated
+  control. Run the same synthetic helper property against both modules, either
+  by parameterizing A6 or adding the assertion to B5, and record a
+  lifecycle-only trailing-pop perturbation that makes that test red.
+
+### Covered
+
+I rebuilt the proposed helpers and five reroutes in memory from the current
+template files; no repository source was modified by the reproductions.
+
+* The retraction reproduces: `classify('Anthony' + chr(0x2028) + 'Kendall')`
+  returns `unknown`, while the complete rostered name returns `human`. Searches
+  of the plan found the old `human` and "one word wide" claims only in the
+  explicit historical retraction and review discussion; no chunk or acceptance
+  criterion reinstates them.
+* The Chunk-B window reproduces. Patched `_status_of` returned
+  `prop\u2028osed -- the rest of the glued line`; `_in_flight` returned two
+  artifacts joined by one real LF, while `str.splitlines()` counted three.
+* `git grep -n 'splitlines()' -- tools/lifecycle_planner.py tools/lifecycle.py`
+  returned exactly eight sites: the five routed sites and the three expressly
+  excluded git/subprocess/gitignore sites. The cited current lines are
+  planner 539, 554, 563, 606, 1176 and 1202, plus lifecycle 494 and 615; the
+  proposal's +142 drift is not inherited.
+* Both twin comparisons returned identical. Their SHA-256 values were
+  `f1552fc7d0ee1d68a60d957389db75b4e5f8d39d8b7cb3561a028b36aa19f808`
+  for the planner pair and
+  `c77b24c152396be9c125ab9826c305eee826efdfeaa94e0b4a016ab04dcb2df9`
+  for the lifecycle pair. Both lockfile rows exist and currently record those
+  values in `hash`; the planner `base_hash` already differs and the lifecycle
+  `base_hash` currently matches.
+* The intended RED causes are: A5, reverting `_parse_status` or
+  `_parse_sections`; A6, using `text.splitlines()` or dropping its trailing
+  adjustment; A7, introducing a carrier into the corpus it polices; B5,
+  reverting `_status_of`; twin parity, changing one twin only. A7 is a corpus
+  canary rather than a helper implementation test, as the Internal review
+  found. E1 and E2 identify the remaining perturbations that currently stay
+  green.
+* The existing focused baseline passed:
+  `test_lifecycle_contract.py`, `test_lifecycle_cli.py`, and
+  `test_notice_install.py` reported **63 passed in 3.00s** under Python 3.13.13.
+
+### Not covered / low confidence
+
+I did not run the full suite; the brief records its two unrelated
+`test_ast_attest` failures from concurrent scaffold work, and I did not use
+those as findings against this plan. I did not test browser-specific Markdown
+renderers, independently review the implementations of `separator-detection`
+or `agent-context-scrub`, or reconstruct the proposal's wider 41-call-site
+triage outside the two tools this plan changes. I also did not validate the
+future lockfile hashes, since they do not exist until implementation.
+
+### Recommendation
+
+**REVISE.** The scope decision and implementation shape are sound, but E1 and
+E2 leave three promised behaviors able to regress while every specified new
+test stays green. Add those independent perturbation checks and disposition the
+Internal review's outstanding plan corrections before implementation.
