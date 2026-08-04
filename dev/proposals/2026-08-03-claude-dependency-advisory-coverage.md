@@ -10,7 +10,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: reviewed
+**Status**: accepted
 **Touches**: `templates/modules/team-gated/run_security_audit.py` (the pip-audit
 pass and the shared `_run_tool` boundary), `templates/modules/team-gated/python-security.md`
 (the module's scope and blind-spot statement), and `bootstrap/DEPENDENCY_BUDGET.md`
@@ -1040,3 +1040,65 @@ unchanged.
 **No Maintainer input required.** This tightens a rule the revision already
 carried; it adds no scope, no file, and no dependency. Status stays `revised`;
 this response makes the artifact Decision-ready.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-03
+
+**ACCEPTED as revised.** Scribed and committed by Claude at the Maintainer's
+explicit instruction. The re-review's disposition was **SHIP (LIFT HOLD)**.
+
+**Maintainer's authorization, quoted verbatim:**
+
+> I accept the dependency-advisory-coverage proposal as revised
+
+**What is accepted.** `python-security` declares that it audits **Python
+distributions in the named environment**, together with the reporting repairs
+and the shared `_run_tool` fixes.
+
+**The properties the acceptance rests on:**
+
+* **The denominator is what the child enumerated**, bound to the named
+  interpreter — not a count derived from the parent. `DAC1` made this
+  load-bearing rather than cosmetic: `PIPAPI_PYTHON_LOCATION` moved pip-audit's
+  enumeration from 28 packages to 288 without touching argv, so a narrowed claim
+  over an ambient environment would be exactly as false as the wide one. A
+  per-tool minimal environment and fixed argv pin the service, endpoint, format
+  and output destination.
+* **Three dispositions, and CLEAN requires zero `UNKNOWN`.** `NO-ADVISORY-SOURCE`
+  was withdrawn as asserting a universal negative from a bounded query;
+  `NO-MATCH-IN-PINNED-SOURCES` names every source queried and is **accepted
+  non-coverage, not evidence of safety**.
+* **The residual baseline is bounded by a mechanical rule**, per the re-review's
+  `[E2]`: an entry qualifies only if **locally built** — a local path or VCS
+  install, exposed by `direct_url.json` (PEP 610) rather than asserted by a
+  human. A distribution that resolves to a public index and merely lacks an
+  advisory record does **not** qualify, which stops the baseline becoming a
+  place to park public packages the sources happen not to cover.
+* **Non-coverage is quantified at selection**, not caveated in a run report.
+
+**What accepting does NOT do.** It does not close the conda gap. 147 conda-only
+packages, 82 of them native, remain unaudited by anything Cairn ships. Narrowing
+made the module honest about that; it did not fix it. The re-review's `[E1]`
+confirms this as the intended consequence of the scope narrowing rather than an
+untended gap.
+
+**Follow-ups migrated to:** `dev/PLANNING.md` > *Deferred follow-ups (durable
+home)* > **Security apparatus** — *Conda advisory coverage* (the 147/82 gap,
+with Trivy and OSV-Scanner eliminated on primary documentation, Grype/Syft named
+as the first unevaluated candidate, and an execution-bound revival condition)
+and *Install-integrity trust anchor*. The successor requirement this proposal
+carried is therefore discharged **ahead of** the Decision rather than at it.
+
+**Also corrected by this acceptance.** `bootstrap/DEPENDENCY_BUDGET.md:46` and
+`run_security_audit.py:392` both claim the default-off pass "runs against its
+local cache only"; verified false — `run_pip_audit_pass` returns at the egress
+check before invoking pip-audit at all.
+
+**Review tier discharged.** Required `required(External, security lens)`;
+received a Codex External round (seven findings, all accepted) and a Gemini Flash
+External re-review returning SHIP with the inventory arithmetic independently
+reproduced.
+
+**Next transition:** plan-open, carrying `required(External, security lens)` in
+its own right.
+
+**Decision-only commit.** Status flip and this section, nothing else.
