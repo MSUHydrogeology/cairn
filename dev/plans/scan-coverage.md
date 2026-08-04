@@ -1,4 +1,5 @@
 <!-- cairn-internal-ref-allow: doctrine/plans.md doctrine/dual-review.md doctrine/lifecycle.md doctrine/rationale.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
+<!-- cairn-accept: instruction-html-comment reason="The comment below is an explanatory note to human readers and to the claim checker about two deliberately non-resolving probe paths; it carries no directive to an agent and names no action to take." reviewer="Claude (author)" date=2026-08-03 -->
 <!-- Two paths below are DELIBERATELY non-resolving: they are the throwaway
      probe files the Chunk C perturbations create and delete (`templates/optional/rogue.py`
      inside a tmp_path tree, `templates/_probe.py` transiently in the working tree).
@@ -498,7 +499,7 @@ All of C lands in `bootstrap/tests/test_security_lint.py`.
 |---|------|--------|
 | C1 | `bootstrap/tests/test_security_lint.py` | Module-level helper `_templates_py_on_disk(root)` returning `{str(p.relative_to(root)) for p in (root / "templates").rglob("*.py")}`, and `_unscanned_disk_py(root)` returning `sorted(_templates_py_on_disk(root) - set(_scan_targets()) - set(_SCAN_EXCLUSIONS))`. Factored as helpers so the perturbation tests can call them directly instead of catching `AssertionError`. |
 | C2 | `bootstrap/tests/test_security_lint.py` | `_SCAN_EXCLUSIONS: dict[str, str]` — declared exclusions, path → mandatory rationale. **Empty today**: disk, manifest-verbatim and `git ls-files` all agree at 44, so the table costs nothing to introduce and fires the moment they disagree. Mirrors the `ALLOWLIST` + `test_allowlist_entries_have_rationale` idiom already in this file rather than inventing a second one. |
-| C3 | `bootstrap/tests/test_security_lint.py` | `test_every_templates_py_on_disk_is_release_scanned`: (a) `assert _templates_py_on_disk(CAIRN_ROOT)` — the non-emptiness guard [I6a] asks for, since empty-minus-anything is empty and a missing `templates/` would make the oracle vacuous; (b) `assert _unscanned_disk_py(CAIRN_ROOT) == []`; (c) the **reverse direction** [I1] asks for — every manifest-verbatim `.py` exists on disk, so a manifest row naming an absent file is caught here as well as by Chunk A; (d) every `_SCAN_EXCLUSIONS` key exists on disk and carries a non-empty rationale, so an exclusion cannot outlive the file it excuses. |
+| C3 | `bootstrap/tests/test_security_lint.py` | `test_every_templates_py_on_disk_is_release_scanned`: (a) `assert _templates_py_on_disk(CAIRN_ROOT)` — the non-emptiness guard [I6a] asks for, since empty-minus-anything is empty and a missing `templates/` would make the oracle vacuous; (b) `assert _unscanned_disk_py(CAIRN_ROOT) == []`; (c) the **reverse direction** [I1] asks for — every manifest-verbatim `.py` exists on disk, so a manifest row naming an absent file is caught here as well as by Chunk A; (d) every `_SCAN_EXCLUSIONS` key exists on disk and carries a non-empty rationale, so an exclusion cannot outlive the file it excuses; (e) every `_SCAN_EXCLUSIONS` key is **absent from** `_scan_targets()`, so an exclusion the scan has since made redundant is deleted rather than left as a latch. (e) is the other half of stale and does not follow from (d): measured for the plan-review Response, an entry that is on disk, rationale'd *and* already scanned passes (a)–(d) unchanged, then silently absorbs a later coverage regression for that same file — the subtraction is a no-op until the moment it is not. |
 | C4 | `bootstrap/tests/test_security_lint.py` | `test_templates_py_count_is_pinned`: `assert len(_templates_py_on_disk(CAIRN_ROOT)) == 44`, with a message naming the deliberate-move path *and* pointing at the sibling pin at `bootstrap/tests/test_notice_install.py:75`, which must move in the same commit. [I6c]'s antidote to a fail-open exclusion table: the count fails loudly when the shipped surface grows, forcing a human to look, exactly as `assert scanned == 9` at `bootstrap/tests/test_upgrade_side_door_parity.py:168` already does for the always-on group. |
 | C5 | `bootstrap/tests/test_security_lint.py` | `test_templates_tree_contains_no_symlink`: `assert not [p for p in (CAIRN_ROOT / "templates").rglob("*") if p.is_symlink()]`. This *enforces* the `recurse_symlinks` decision [I6b] says must be recorded rather than defaulted: `Path.rglob` does not descend symlinked directories in Python 3.13, so "physically present under `templates/`" is glob-scoped, not filesystem-scoped. The choice is to keep the default and assert the condition under which default and filesystem agree. Measured today: `find templates -type l` returns nothing. |
 | C6 | `bootstrap/tests/test_security_lint.py` | `test_the_on_disk_oracle_goes_red_when_a_registry_stops_delivering(monkeypatch)`: `monkeypatch.setattr("bootstrap._scaffold.install._SKILLS_MAPPINGS", <the tuple with both .py entries removed>)`, then assert `_unscanned_disk_py(CAIRN_ROOT) == ["templates/skills/_lib/lifecycle.py", "templates/skills/_lib/lifecycle_planner.py"]`. **The target module is load-bearing and is [I7]'s trap**: `bootstrap/_scaffold/install.py` binds the registry by value at import, so patching `bootstrap._scaffold.config` is a silent no-op. A comment in the test says so, citing `bootstrap/tests/test_scaffold_substrate.py`, which already documents the patch-the-owning-module rule for a different symbol. |
@@ -529,12 +530,15 @@ All of C lands in `bootstrap/tests/test_security_lint.py`.
 * **Perturbation P-C5 — C5's assertion can fire.** `ln -s` a directory containing
   a `.py` under `templates/` in the working tree, run C5, confirm it fails,
   remove the link, confirm `git status --short` is clean.
-* **Perturbation P-C6 — C3(d)'s exclusion guards can fire.** They are **vacuous
-  while the table is empty**, and the plan says so rather than letting an empty
-  loop read as a passing check. Temporarily add `{"templates/does_not_exist.py":
+* **Perturbation P-C6 — C3(d)/(e)'s exclusion guards can fire.** They are
+  **vacuous while the table is empty**, and the plan says so rather than letting an
+  empty loop read as a passing check. Temporarily add `{"templates/does_not_exist.py":
   "probe"}` and confirm the exists-on-disk assertion fails; then `{"<a real
-  path>": ""}` and confirm the rationale assertion fails; revert both. Run, do
-  not ship.
+  path>": ""}` and confirm the rationale assertion fails; then `{"<a real path
+  already in _scan_targets()>": "looks legitimate"}` and confirm the (e)
+  redundancy assertion fails — this third case is the one that passes (a)–(d),
+  so it is the case that proves (e) is carrying weight rather than restating (d).
+  Revert all three. Run, do not ship.
 * **The future states in which C3 fails**, named because that is the acceptance
   bar: (i) today's pre-Chunk-B state — measured, `disk - targets` names exactly
   the two skills files; (ii) the union deleted from `scan_targets()` by a later
@@ -907,3 +911,107 @@ four `B607` findings, the unguarded monotonicity claim, and the stale frozen
 pins.
 
 This section is append-only once written.
+
+## Response to plan review -- Claude (author) -- 2026-08-03
+
+**Model**: Claude Opus 5
+
+**One finding, accepted in part — and the part that was not already covered is
+the more dangerous half.** The reviewer's verdict was READY FOR IMPLEMENTATION;
+that is not a reason to leave [E1] undisposed, and disposing it found a real hole.
+Verified before answering, under the canonical interpreter
+(`~/conda_envs/lhm/bin/python3.13`, 3.13.13), by reconstructing C1's helpers
+verbatim from the plan text and running C3's assertions against candidate
+exclusion tables — against the *post-Chunk-B* target set, since at HEAD the two
+skills files make C3(b) red and mask everything else.
+
+Also confirmed the reviewer independently reproduced P-C1 rather than restating
+the plan's own numbers: their B4-green / C3-red-naming-exactly-two-files result
+matches the plan's simulated prediction. That is the one result the plan asked a
+reviewer to attack first, and it survived an independent run.
+
+### [E1] Exclusions table hygiene (`_SCAN_EXCLUSIONS`) — **ACCEPTED (in part;
+the rest ALREADY-COVERED, cited)**
+
+*The finding.* `_SCAN_EXCLUSIONS` is empty today, but Chunk C introduces it as a
+place to excuse un-scanned files. To stop it becoming a silent fail-open
+side-door, C3(d) must require a non-empty rationale per entry, and a stale
+exclusion — one naming a file that no longer exists, **or one that is now
+scanned** — must trip the suite.
+
+*Two of the three demands were already in the plan, and here is the text.* Chunk
+C3 already reads: *"(d) every `_SCAN_EXCLUSIONS` key exists on disk and carries a
+non-empty rationale, so an exclusion cannot outlive the file it excuses."* That
+is the mandatory rationale and the file-no-longer-exists half of stale, both
+already assertions rather than conventions. C2 already types the table as
+*"path → mandatory rationale"*, and P-C6 already required both guards be shown
+non-vacuous by a **run** perturbation, since an empty table makes them vacuous.
+Reproduced: adding `{"templates/does_not_exist.py": "probe"}` fails the
+exists-on-disk assertion, and `{"<a real path>": ""}` fails the rationale
+assertion. So far the reviewer is describing the plan.
+
+*The third demand is not covered, and it is the one with teeth.* "Is now scanned"
+does not follow from (d). `_unscanned_disk_py` computes
+`disk - scan_targets() - _SCAN_EXCLUSIONS`; if a key is already in
+`scan_targets()`, the exclusion subtraction is a **no-op**, so the entry sits
+there passing every assertion C3 makes. Measured — an entry that is on disk,
+rationale'd, and already scanned:
+
+```
+shipped state: empty table                        -> GREEN
+P-C6 case 1: absent from disk                     -> RED  (d) not on disk
+P-C6 case 2: empty rationale                      -> RED  (d) empty rationale
+THE GAP: on disk, rationale'd, ALREADY SCANNED    -> GREEN
+```
+
+It is not merely untidy. It is a **latch that arms itself silently and fires
+later**, which is precisely the fail-open the reviewer named. With coverage for
+that same file subsequently dropped from `scan_targets()` by a refactor:
+
+```
+regression, empty table          -> ['templates/modules/.../__init__.py']   RED: caught
+regression, stale exclusion live -> []                                      GREEN: SILENT
+```
+
+That second line is the plan's own Defect-2 failure shape — a guard that cannot
+fail — reintroduced through the exclusion table the plan added to be safe.
+
+*The plan change.* **Chunk C3 amended**, adding a fifth assertion: *"(e) every
+`_SCAN_EXCLUSIONS` key is **absent from** `_scan_targets()`, so an exclusion the
+scan has since made redundant is deleted rather than left as a latch"*, with the
+measurement recorded inline so a later reader sees why (e) is not a restatement
+of (d). **Perturbation P-C6 amended** to a third case — a real path already in
+`_scan_targets()`, with a plausible rationale — noted as *the* case that passes
+(a)–(d), so it is the case that proves (e) carries weight. Re-verified against
+the amended assertions: green on the empty shipped table, red on all three probe
+cases, and case 3 fires on (e) alone.
+
+Two things I deliberately did **not** do. I did not touch C2's "mirrors the
+`ALLOWLIST` + `test_allowlist_entries_have_rationale` idiom" sentence, though the
+mirror is now imperfect in Cairn's favour: that existing idiom at
+`bootstrap/tests/test_security_lint.py:127` checks rationale non-emptiness only
+and has no staleness guard at all, so C3(d)/(e) is strictly stronger than the
+thing it copies. Whether the `ALLOWLIST` deserves the same staleness treatment is
+a real question about a different guard, and it belongs in its own proposal, not
+smuggled into this plan's scope. I also did not restate the invariant in
+*Author-accounting* (*"modulo a rationale'd exclusion"*), which (e) strengthens
+without changing.
+
+### On the reviewer's "Not covered / low confidence" note
+
+The note records that the sixteen pre-existing LOW subprocess findings
+(`B404`/`B603`/`B607`) in the two newly-scanned skills scripts remain
+unaddressed. **Genuinely out of scope, and it already has a durable home — no new
+follow-up row needed.** *Scope* fences it explicitly (*"Remediating the sixteen
+LOW subprocess findings … Recorded, not fixed"*, with the reason: bundling a
+code-hardening contract into a coverage contract is what cost `identity-not-name`
+a REVISE/SPLIT verdict), and *Lasting-truth migration* already names *"the four
+`B607` findings"* among the follow-ups that must land somewhere outside the plan
+before it can archive. The reviewer read the fence correctly; the archive
+precondition is the mechanism that stops it being forgotten.
+
+One honest caveat the plan should not lose: the four `B607` findings are the
+subset with a real question behind them (`git` invoked by name inside an
+adopter's repository), and the archive-time home is a *recording* obligation, not
+a decision that they are safe. Whether that home is a new proposal or a row on a
+tracker is the Maintainer's call at archive time.
