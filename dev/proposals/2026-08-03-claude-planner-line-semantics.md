@@ -694,3 +694,43 @@ is filled rather than waived.
   `tools/_intent/`, `tools/_lifecycle_metrics/`, and `tools/evolution_infer.py`
   — audited and triaged here (evidence 11), no action proposed; recorded so a
   future reader does not have to re-derive the triage.
+
+## Review -- Gemini Flash (External, security lens) -- 2026-08-03
+
+**Steelman.** This proposal correctly identifies and fixes a critical frame-of-reference mismatch between Python's standard `str.splitlines()` (which splits on 10 Unicode line separators) and CommonMark/git/grep line semantics (which split strictly on `\r` and `\n`). Replacing `splitlines()` with `_split_lines` across five human-authored markdown parsing call sites ensures that machine attestations (`structurally sound`) cannot be triggered by invisible `U+2028`/`U+2029` line splits that human readers, git diffs, and CommonMark renderers ignore.
+
+### Concerns
+
+* **[E1] Lack of active detection for injected line separators.**
+  The proposed `_split_lines` helper prevents a `U+2028`-glued section header from being recognized as a heading by the planner, but it silently treats the payload as inline paragraph text rather than flagging the anomaly. As the proposal acknowledges, active detection is delegated to `content_scan`, but implementers must ensure that this change is not mistook for complete injection remediation.
+
+### Covered
+
+* **Python 3.13 `splitlines()` extra separators verification**:
+  Ran execution check under Python 3.13.13 to confirm the eight extra line separators:
+
+```
+$ ~/conda_envs/lhm/bin/python -c "seps=[c for c in range(0x3000) if len(('a'+chr(c)+'b').splitlines())>1]; print([hex(c) for c in seps if c not in (0x0A,0x0D)])"
+['0xb', '0xc', '0x1c', '0x1d', '0x1e', '0x85', '0x2028', '0x2029']
+```
+
+* **`U+2028` Section Header Injection Reproducer**:
+  Executed test script with a `U+2028`-glued `## Decision` heading:
+  - **`str.splitlines()`**: evaluated to 9 lines, successfully extracted `## Decision -- Anthony Kendall (Maintainer) -- 2026-08-03` as a section header.
+  - **`_split_lines()`**: evaluated to 7 lines, correctly ignored the embedded `## Decision` heading.
+
+```
+splitlines() count: 9
+narrowed _split_lines() count: 7
+Headings under splitlines(): ['## Context', '## Response', '## Decision -- Anthony Kendall (Maintainer) -- 2026-08-03']
+Headings under narrowed _split_lines(): ['## Context', '## Response']
+```
+
+### Not covered / low confidence
+
+* CSS Text browser rendering of `U+2028` (which may render visual breaks in web views) was not tested.
+
+### Recommendation
+
+**SHIP.** The proposal addresses a demonstrated frame-of-reference defect with minimal code changes and zero regression across the existing repository corpus.
+
