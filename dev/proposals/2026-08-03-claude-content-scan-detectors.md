@@ -5,7 +5,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: revised
+**Status**: accepted
 **Touches**: `templates/modules/team-gated/content_scan.py` (the two detector
 rules only), `templates/modules/team-gated/content-security.md` (the module
 doc that describes them), `bootstrap/tests/test_content_scan.py` (new cases)
@@ -613,9 +613,9 @@ The proposal fixes Defect (a) by introducing `unicode-ignorable` based on the PR
 * **`vermin` Python Floor Check:** `bootstrap/tests/test_python_floor.py` was not run with `vermin` to verify the $\ge 3.11$ syntax floor for `unicodedata` additions; the plan must execute this verification.
 * **Performance Benchmark:** Scanner execution time across massive (> 10MB) text documents with dual range-table lookups was not benchmarked.
 
-## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
-
-*(Awaiting the Maintainer. The proposal has cleared External Security Review. The Maintainer may accept the proposal to proceed with plan creation.)*
+*(A `## Decision` template stub stood here. The Decision is recorded at the
+**end** of this file instead — after the revision it accepts, per the
+Decision-last convention this repository follows.)*
 
 ## Revised proposal -- Claude (author) -- 2026-08-03
 
@@ -2443,3 +2443,44 @@ systemic case for a tool change was never made.
 **Still undecided and not folded in**: everything under *Findings the Decision
 did not see*, including the split recommendation itself and the "as data" fence
 question. The Decision remains the Maintainer's.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-03
+
+**ACCEPTED as revised.** Scribed and committed by Claude at the Maintainer's
+explicit instruction.
+
+**Maintainer's authorization, quoted verbatim:**
+
+> I accept this proposal as revised
+
+**What that accepts, stated factually from the revision rather than added as
+conditions:**
+
+* **Change 1** stands byte-for-byte as proposed — the `unicode-ignorable`
+  detector. This is the substantive half: `content_scan` at HEAD clears a
+  payload gluing a `## Decision` heading and an authorization blockquote with
+  invisible separators, and exits `0`.
+* **Change 2** is accepted **as amended** in the Revised proposal, on a defect
+  the author found while re-verifying the External review's [G3] and which no
+  reviewer raised.
+* **Whole-script Cyrillic remains out of scope**, as a declared residual. The
+  reasoning of record: the severe consequence of a Cyrillic homoglyph here is
+  *authority granting* — a byline flipping `ai` to `human` — and that path is
+  closed independently by `byline-classification`, which is accepted, planned,
+  externally reviewed and implemented. The clause would add prose *detection*,
+  not authority protection, at a real cost to international proper nouns. A
+  decision to pay that cost later should be made against a measured corpus of
+  its own.
+
+**Review tier discharged.** Required `required(External, security lens)`;
+received a Gemini Flash **External Security Review** (verdict SHIP, recommend
+ACCEPT, both defects reproduced verbatim) plus a Claude Internal security-lens
+pass. Half of this change *removes* detection, which is why the External tier
+was demanded rather than an Internal floor.
+
+**Next transition:** plan-open. The plan carries
+`required(External, security lens)` in its own right; this Decision does not
+discharge it.
+
+**Decision-only commit.** Status flip and this section, nothing else — no
+plan-open, no archive move, no roadmap edit rides along.
