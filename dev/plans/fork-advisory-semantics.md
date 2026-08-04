@@ -911,3 +911,30 @@ plans archive only after every deferred follow-up has a durable home outside the
 plan.
 
 This section is append-only once written.
+
+## Plan review -- Gemini Flash (External, security lens) -- 2026-08-03
+
+**Steelman.** This plan successfully closes defect class 1 ("the artifact under verification must not supply the material used to verify it") for the fork advisory detector. By forcing callers to supply a trusted `upstream: UpstreamSource` resolved from caller context rather than reading lockfile `src`/`base_hash` fields, it prevents target-controlled lockfiles from suppressing fork detection.
+
+### Concerns
+
+* **[E1] Layering assertion widening (`bootstrap/tests/test_lockfile_module.py`).**
+  Correction 1 correctly notes that `lockfile.py` importing `bootstrap._scaffold.security` for `_assert_safe_write` widens the leaf dependency allowed set from `{config}` to `{config, security}`. Chunk C7/Node 18 must strictly test that `lockfile.py` still refuses imports outside `{config, security}`.
+* **[E2] Coordinated AST re-anchor with `profile-parse-fail-open`.**
+  As direct by Maintainer decision, Chunk R is Maintainer-only and batched with `profile-parse-fail-open`. Implementing agents must stop at Chunk E and verify that the only AST failures are the expected engine modifications.
+
+### Covered
+
+* **Defect Class 1 Structural Independence Verification**:
+  Verified that `forked_facade_findings` requires keyword-only `upstream: UpstreamSource | None` and reads bytes directly from disk (`read_bytes(target / dst_rel)`) rather than relying on lockfile `hash` or `base_hash` fields.
+* **Falsifiable AST Target Accounting**:
+  Verified that this plan introduces exactly 3 CHANGED symbols in `bootstrap/_scaffold/` (`FunctionDef:forked_facade_findings`, `FunctionDef:format_forked_facade_warning`, `FunctionDef:cmd_upgrade`).
+
+### Not covered / low confidence
+
+* Provenance and authenticity of the caller's trusted upstream checkout itself is out of scope for this plan and relies on `release-authenticity`.
+
+### Recommendation
+
+**READY FOR IMPLEMENTATION.** The plan's design, containment checks (C2/C3), operand pinning (C4), and Maintainer ceremony boundaries (Chunk R) are verified and sound.
+
