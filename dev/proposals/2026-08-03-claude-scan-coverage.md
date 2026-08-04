@@ -1792,3 +1792,426 @@ External pass returned SHIP against item 3 *as originally drafted*; the author
 addendum showing that item's regression guard cannot fail was appended
 afterwards and no External reviewer has read the replacement. It is routed to
 the plan-level External security read, which stays required.
+
+## Response -- Claude (author, to Internal security review) -- 2026-08-03
+
+**Model**: Claude Opus 5. Proposal-Response grammar (no implementing commits
+exist). **Status stays `accepted`** — a Response cannot and does not alter a
+Decision.
+
+### Why this Response postdates the Decision it should have preceded
+
+The Internal security review was appended and committed (`9a491be`) *before* the
+Maintainer's Decision was scribed (`6c6c5f1`). No author Response was written
+between them. The proposal was then carried into the acceptance ledger as
+cycle-complete, and the Maintainer accepted it with the words "as revised" —
+over eight numbered findings that had never been dispositioned by anyone.
+
+That is a process failure, and it is mine: the review's own *Second-round
+recommendation* says of its first finding that it "must be answered before the
+Decision, whatever the disposition," and it was not answered at all. This
+Response supplies the missing disposition, out of order.
+
+Because the proposal is already `accepted`, a disposition here does more work
+than usual and must be more careful. For every finding I accept, I additionally
+classify the remedy:
+
+* **within contract** — a correction to *how* the accepted change is
+  implemented. It touches only files already in the *Touches* line, adds no new
+  mechanism, and changes no behaviour the proposal did not describe. A plan may
+  carry it under this Decision.
+* **beyond contract** — it enlarges scope, adds a file to *Touches*, or changes
+  behaviour the proposal never described. "As revised" does not reach it on any
+  honest reading, because the Maintainer decided without seeing it. Every one is
+  listed, unfolded, at the end under *Findings the Decision did not see*. I am
+  naming them, not deciding them.
+
+*Terms, first use.* A test's **oracle** is the statement of what ought to be
+true; its **subject** is the code being checked (both already defined in the
+addendum, repeated because the classification below turns on them). **Fail
+closed** means an inconclusive or errored check exits non-zero rather than
+passing. A **verbatim** shipped file is copied byte-for-byte with no `{{token}}`
+substitution; a **substituted** one has tokens filled in at install time. A
+**frozen** file is one the gate-integrity manifest pins to a hash, so editing it
+raises a HOLD rather than landing silently.
+
+### How these findings were checked
+
+Everything below was re-run this session at working-tree HEAD `05515df` under
+the canonical interpreter `~/conda_envs/lhm/bin/python` (Python 3.13.13, Bandit
+1.9.4), with `PYTHONDONTWRITEBYTECODE=1`. **No repository file was written**;
+every scratch artifact lives outside the tree. HEAD has moved several commits
+past the review's `b67fabc`, so I re-took each load-bearing measurement rather
+than carrying the review's numbers forward.
+
+I also re-took the two measurements the whole proposal rests on, rather than
+inheriting them across the intervening commits — the two-file scan (16 findings,
+all LOW, 0 MEDIUM-or-higher, test ids `B404`×2, `B603`×10, `B607`×4) and the
+full extended set (72 → 74 targets, zero removals, 113 findings, all LOW, 0
+blocking, `errors` key empty). Both reproduce unchanged.
+
+**All eight findings reproduce.** Nothing here is accepted on the reviewer's
+report; one remedy is narrowed on evidence the review did not take.
+
+* **[I1] accept -- reproduced exactly; the record correction is within contract,
+  the code fix is not.** The *Author-accounting > Failure modes* row claiming a
+  missing shipped file is "**closed** by the pre-existing scanner-error branch"
+  is false, and I withdraw it. Bandit exits 0 on both a missing and an
+  unparseable file, recording each in a JSON `errors` array:
+
+  ```
+  $ printf 'x = 1\n' > ok.py ; printf 'def f(:\n' > broken.py
+  $ ~/conda_envs/lhm/bin/python -m bandit -q -f json ok.py /nonexistent/missing_file.py > out.json; echo RC=$?
+  RC=0
+    errors: [{'filename': '/nonexistent/missing_file.py', 'reason': 'No such file or directory'}]
+    results: 0
+  $ ~/conda_envs/lhm/bin/python -m bandit -q -f json ok.py broken.py > o2.json; echo RC=$?
+  RC=0
+    errors: [{'filename': './broken.py', 'reason': 'syntax error while parsing AST from file'}]
+    results: 0
+  ```
+
+  `rc == 0` never reaches the rc-outside-`{0, 1}` branch at
+  `bootstrap/security_check.py:128`, and nothing in the module reads the
+  `errors` key — `grep -n errors bootstrap/security_check.py` returns no match,
+  and the only report field consumed is `results`, at
+  `bootstrap/security_check.py:141`. Driven through the **real** `run_bandit()`
+  with one phantom target injected:
+
+  ```
+  security_check: Bandit clean over 73 shipped file(s).
+  run_bandit() returned: 0
+  ```
+
+  The count in that message is `len(targets)` at
+  `bootstrap/security_check.py:149` — the number of *requested* targets, not
+  scanned ones — so it cannot distinguish the two states. One consequence I owe
+  the record: the *Examples / smoke checks* line ("Expected: `PASS`, with the
+  Bandit line reporting 74 files rather than 72") is therefore **not evidence
+  that 74 files were scanned**, and must not be cited as the verification of
+  this proposal's central claim.
+
+  *Within contract:* the false row comes out of the failure-mode table and
+  becomes a named residual, and change 2's oracle gains the reverse direction
+  (manifest-minus-disk empty) alongside the forward one. Both land in files
+  already in *Touches*. Measured today, both directions are empty — disk,
+  manifest-verbatim and tracked `.py` under `templates/` are set-equal at 44
+  files each, as_of 2026-08-03.
+
+  *Beyond contract:* fail-closing `run_bandit()` on a non-empty `errors` array.
+  See item 1 of the final list.
+
+* **[I2] accept -- reproduced; the finding is within the record, the remedy adds
+  a file the Decision never saw.** `test_scan_targets_are_explicit_files_covering_shipped_surface`
+  is at `bootstrap/tests/test_security_check.py:28`, and its always-on coverage
+  loop at `bootstrap/tests/test_security_check.py:43` derives its expectation
+  from `_ALWAYS_ON_MAPPINGS` by the same expression the code uses at
+  `bootstrap/security_check.py:74`. Reproduced:
+
+  ```
+  len(expect) = 9
+  expect - scan_targets() = []
+  ```
+
+  Empty for every possible content of that registry — the addendum's own
+  criterion for a tautology, one file over from where the addendum found it. And
+  the test *name* asserts "covering shipped surface", which is precisely the
+  overclaim addendum change 1 exists to retire.
+
+  Two things in fairness to that test, since the review did not say them. Its
+  other assertions are not hollow: six named-literal membership checks and the
+  every-target-ends-in-`.py` check (the no-`-r` footgun) can all fail. Only the
+  registry loop is content-invariant. And the strong twin the addendum praises
+  is still in the tree — `assert scanned == 9` at
+  `bootstrap/tests/test_upgrade_side_door_parity.py:168`.
+
+  The frozen-footprint consequence reproduces too, at current HEAD: 164 frozen
+  entries as_of 2026-08-03, with `bootstrap/security_check.py`,
+  `bootstrap/tests/test_security_lint.py` and
+  `bootstrap/tests/test_security_check.py` all present as literal keys.
+
+  *Beyond contract:* `bootstrap/tests/test_security_check.py` is not in the
+  *Touches* line. Absorbing it adds a file to *Touches* and takes the frozen
+  footprint from two files to three. See item 2 of the final list.
+
+* **[I3] accept -- reproduced; and it settles item 4 in the direction the
+  proposal already pre-authorized.** `_OPTIONAL_TEMPLATES` at
+  `bootstrap/_scaffold/config.py:249` is a live delivery registry, selected at
+  install time at `bootstrap/_scaffold/cli.py:371`, and it does not appear in
+  the manifest. Reproduced:
+
+  ```
+  manifest rows: 95
+  optional/ rows in manifest: []
+  _OPTIONAL_TEMPLATES: (('optional/CONTRIBUTING.md', 'CONTRIBUTING.md', 'human_team',
+                         frozenset({'large-multi', 'small-multi'})),)
+  ```
+
+  It reaches the lockfile on a separate path, at
+  `bootstrap/_scaffold/install.py:1466`, where the next line appends each row
+  with `verbatim` hard-coded `False`. The review's three consequences all hold:
+  no live gap today (the single entry is a `.md`), the census as specified is
+  blind to it (it keys on a `*_MAPPINGS` suffix that `_OPTIONAL_TEMPLATES` does
+  not match), and it is evidence *for* change 2 rather than against it.
+
+  I therefore correct one sentence of item 4 and **strike the rest**. The
+  sentence: item 4 calls the residual "the historical `_ALWAYS_ON_MAPPINGS` side
+  door". It is not historical — a member of that residual is live, in the same
+  file, on the day the census was written. The strike: item 4 goes, and change 2
+  carries the load. I confirmed change 2 does cover this class — the optional
+  templates live under `templates/`, which is what the on-disk oracle globs.
+
+  *Within contract.* Striking item 4 is inside the accepted text, not outside
+  it: the proposal itself names item 4 as "the part of the proposal a reviewer
+  can strike without breaking the primary fix, and it is named as such rather
+  than buried." Had item 4 survived, re-keying its census by *shape* rather than
+  by name — the review's alternative — would have been a new mechanism and
+  therefore beyond contract. It does not survive, so that question does not
+  arise.
+
+* **[I4] accept the record half; narrow the remedy half -- change 2 already does
+  what the review asks.** The finding is right: the new contract is *verbatim*
+  `.py`, not *shipped* `.py`, so `SECURITY.md`'s sentence becomes true-as-of-today
+  rather than true. Reproduced:
+
+  ```
+  manifest verbatim .py   : 44
+  manifest SUBSTITUTED .py: []
+  ```
+
+  The mechanism forecloses nothing: `bootstrap/_scaffold/install.py:1374` stamps
+  `verbatim=False` on every core row unconditionally, and per [I3] on every
+  optional row too. A `.py` with `{{token}}` slots added to either registry
+  would ship to every adoption as executable code and be filtered out of the
+  scan by the `verbatim` guard.
+
+  The sharper half of the finding also holds, and it inverts my own framing.
+  `_manifest_py_sources()` at `bootstrap/tests/test_notice_install.py:43` has
+  **no** `verbatim` filter at all, and pins its count at
+  `bootstrap/tests/test_notice_install.py:75`. So on the one case where the two
+  derivations differ, the *licensing* gate is the stricter one — and the
+  proposal's code comment saying "Same derivation the SPDX licensing gate
+  already uses" is wrong on exactly that case. I withdraw the "the doctrine was
+  right and the code was wrong" flourish in *Documentation / doctrine surface*:
+  the doctrine is looser than the code will be, not tighter.
+
+  **Narrow, on evidence the review did not take.** Its second remedy — "add
+  substituted `.py` to change 2's oracle" — is already satisfied by change 2 as
+  drafted, and needs no edit. The oracle globs *disk*, not the manifest, so a
+  substituted `.py` is in the disk set and absent from the verbatim-filtered
+  `scan_targets()`. Simulated by adding one hypothetical substituted `.py` to
+  the disk set:
+
+  ```
+  change-2 oracle today (disk - post-fix targets): []
+  with one substituted .py on disk               : ['<the hypothetical file>']
+  ```
+
+  So the oracle turns red the first time anyone ships a templated `.py`, which
+  is exactly the "force a decision instead of shipping unscanned" the review
+  asked for. I take the first remedy — say "byte-for-byte" consistently — and
+  decline the second as redundant.
+
+  *Within contract*, with one thing said out loud rather than slipped in. The
+  correction lands in `SECURITY.md` and `bootstrap/SAFETY.md`, both already in
+  *Touches*, adds no mechanism, and *narrows* a security claim rather than
+  widening one; the proposal's own one-line contract statement already says
+  "byte-for-byte Python", so this brings the prose up to the accepted contract
+  rather than changing it. But it **reverses an accepted disposition**: the
+  proposal concluded `SECURITY.md` needs *no* change. Two consequences the plan
+  must carry rather than discover. First, that reversal should be recorded
+  explicitly, not folded into a diff. Second, *Sequencing* justified yielding
+  the `SECURITY.md` collision with `agent-context-scrub` cheaply because "this
+  side of the collision is a no-op edit" — that is no longer true, so the
+  serialization is now a real two-sided edit and the collision must be honored
+  on its own terms rather than on the cheapness argument.
+
+* **[I5] accept -- reproduced, with the discriminating margin measured.** The
+  scenario script rebuilds `scan_targets()` from the real registries and the
+  real `install_manifest`, toggling one loop at a time. At current HEAD:
+
+  ```
+  A post-fix (item1 as drafted)                            |targets|= 74  missing=[]  verdict=GREEN
+  B manifest loop DELETED                                  |targets|= 72  missing=[2 skills files]  verdict=RED
+  C manifest loop DELETED + explicit _SKILLS_MAPPINGS loop |targets|= 74  missing=[]  verdict=GREEN
+  discriminating margin: the two skills files, and nothing else
+  ```
+
+  So the assertion pins "the union of *all* loops covers the manifest", not
+  "`scan_targets()` consumes the manifest" — a weaker property than change 1's
+  proposed name states, with a margin of two files that a third explicit loop
+  closes. That third loop is the "minimal one-liner" *Alternatives considered*
+  rejects but which item 1 deliberately leaves the door open to, by retaining the
+  explicit loops as a defense-in-depth floor.
+
+  The review's finding is the addendum's own standard applied one notch smaller,
+  and it lands. The fix is a docstring sentence, not a redesign: say what the
+  assertion pins — every manifest-verbatim `.py` is scanned by *some* path — and
+  stop implying which path. *Within contract*:
+  `bootstrap/tests/test_security_lint.py` is in *Touches*, and this is a wording
+  correction to a change the addendum already made part of the accepted text.
+
+* **[I6] accept (a) and (b) without qualification; accept (c) as a finding, but
+  its remedy is beyond contract.**
+
+  *(a) Vacuity.* Reproduced: `rglob` over a missing directory returns `[]`, and
+  empty-minus-anything is empty, so the oracle passes vacuously. The existing
+  test carries `assert shipped, ...` at `bootstrap/tests/test_security_lint.py:147`
+  for exactly this reason, and a glob oracle has the same need. Carry the
+  non-emptiness guard over. *Within contract.*
+
+  *(b) Symlink scoping.* Reproduced on the canonical interpreter against a real
+  symlinked directory holding a `.py`:
+
+  ```
+  default   : ['t/templates/real/plain.py']
+  recurse=T : ['t/templates/linkdir/shipped.py', 't/templates/real/plain.py']
+  ```
+
+  `find templates -type l` is empty today, so nothing escapes now. But the
+  addendum's independence argument rests on "a shipped Python file must exist
+  under `templates/` before any registry can reference it", and "exists there"
+  is not the same set as "returned by the default `rglob`". The choice of
+  `recurse_symlinks` must be made explicitly and recorded in the test. *Within
+  contract* — a recorded decision inside a touched file, not a new mechanism.
+
+  *(c) The exclusion table.* The finding is right and it is uncomfortable: change
+  2 proposes "a declared table of exclusions each carrying a rationale", which is
+  a hand-maintained fail-open list — the exact shape the addendum's own level
+  table condemns. An entry once added silences that file forever and nothing goes
+  red when it should not have been there. I accept that as stated.
+
+  The *remedy* — pin a count alongside the oracle — is a different matter. It
+  costs nothing today (44/44/44, as_of 2026-08-03) and the addendum praises the
+  shape elsewhere, but it is a standing assertion the proposal never described,
+  and it deliberately turns the dev suite red on a *correct* action: adding a new
+  shipped `.py` that is properly wired into a registry. That is a new failure
+  mode, so it goes on the final list. It is the smallest of the three items
+  there, and the closest to the line; a narrower reading could place it within
+  contract. I am not going to be the one to decide that.
+
+* **[I7] accept -- reproduced; the trap is real and its severity is honestly
+  low.** `bootstrap/_scaffold/install.py:33` binds `_SKILLS_MAPPINGS` by value at
+  import, so patching the owning module does nothing:
+
+  ```
+  baseline verbatim .py in manifest      : 44
+  after patching config._SKILLS_MAPPINGS : 44   <- perturbation had NO effect
+  after patching install._SKILLS_MAPPINGS: 42   <- perturbation took effect
+  ```
+
+  A no-op perturbation leaves the oracle green, so the acceptance check fails
+  *visibly* and the author notices — this cannot silently certify a hollow
+  guard. But the criterion exists because authors have repeatedly mistaken "I ran
+  something and it did what I expected" for a guard, and this trap sits on the
+  first step of executing it. Naming the monkeypatch target in the plan is a
+  sentence; rediscovering it mid-plan is an afternoon. *Within contract* — a plan
+  note, no file added, no behaviour changed.
+
+* **[I8] accept -- reproduced, and it has held through several further commits.**
+  The plan `gate-reanchor-preflight` (by stem) is Status `archived`, so the
+  premise the External Response used to select its operative branch — "Status
+  `executing`, so the window is open *now*" — no longer holds. The frozen map
+  itself stands at 164 entries as_of 2026-08-03, with all three relevant files
+  present.
+
+  I keep the review's restraint exactly: I am **not** concluding the HOLD stops
+  binding. Whether a frozen entry constrains edits outside an active batch window
+  is a Maintainer question, and I did not find a file that settles it either.
+  What is established is only that the schedule premise moved, so *Sequencing*'s
+  preferred position (land FIRST) is open to be re-decided rather than inherited.
+
+  This changes nothing in the accepted contract, so it is *within* in the trivial
+  sense — but it is properly a Maintainer input, not an author disposition, and
+  it is coupled to the final list: if [I2] is absorbed, the schedule question is
+  about three frozen files, not two.
+
+### What these dispositions do not settle
+
+* **They do not reopen the Decision, and cannot.** The proposal is `accepted` and
+  the Decision commit is the Maintainer's. What this Response can do — the only
+  thing it can do — is refuse to let the beyond-contract items ride in under "as
+  revised" without being seen.
+* **No implementing byte exists.** Nobody in this lifecycle has run an edited
+  `bootstrap/security_check.py`. Every post-fix figure here, in the review, in
+  the addendum and in the External pass is a simulation importing the real
+  objects — faithful to the derivation, not to the diff.
+* **I did not run the full suite.** My constraint this session is no writes into
+  the repository, and `python -m pytest bootstrap/tests` writes artifacts. So the
+  suite is *not* shown green. What is shown: nothing pins the target count at 72
+  (`grep -rn "== 72\|72 shipped"` over `bootstrap/` returns no match), and the
+  four test consumers of `scan_targets` survive 72 → 74 by inspection plus the
+  targeted execution above.
+* **The Internal tier is not discharged by answering it.** That review carries no
+  cross-type independence — same model, same priors, same blind spots as the
+  author. This proposal's `required(External, security lens)` at plan review
+  stands undischarged, and if anything the two beyond-contract items *enlarge*
+  what that read must cover.
+* **Nobody has read the two newly-scanned files for security content.** Bandit's
+  verdict on them (16 LOW, 0 MEDIUM-or-higher, as_of 2026-08-03) has now been
+  reproduced by four parties. A human read of roughly 2500 lines of
+  subprocess-shelling code that runs inside an adopter's git repository is a
+  different exercise and remains undone, as do the four `B607` findings the
+  proposal defers to a separate proposal.
+* **The zero stays a snapshot.** 0 blocking over the 74-target set, `errors` key
+  empty, re-measured at current HEAD — a property of today's bytes, not of these
+  files.
+* **The sibling-collision tables are only partly re-checked.** I verified the
+  `SECURITY.md` consequence of [I4] and nothing else; I did not read
+  `gate-claims-vs-enforcement` or `agent-context-scrub` to confirm their
+  line-level scopes, and the addendum's warning that two changes now touch the
+  *same* docstring is still unrechecked by me.
+* **Whether a frozen entry binds outside an active batch window is unsettled**,
+  by the review and by me.
+
+### Findings the Decision did not see
+
+Three remedies below are **not** covered by "as revised" on any honest reading:
+the Maintainer accepted this proposal without them in front of him, and each
+either adds a file to *Touches* or adds behaviour the proposal never described.
+They are listed, not folded in. **No plan should carry any of them under the
+current Decision.** Each needs an explicit Maintainer call — to authorize, to
+refuse, or to route to its own proposal.
+
+1. **[I1] — fail-close `run_bandit()` on a non-empty Bandit `errors` array.**
+   *What it changes:* a new blocking condition in the release security gate. It
+   is a no-op today (the `errors` key is empty over the 74-target run, as_of
+   2026-08-03), but it turns a currently-green release red the first time a
+   shipped `.py` goes missing or stops parsing.
+   *The case for it:* without it, the accepted contract is not actually
+   delivered — the gate can print "clean over N" over a file it never opened, so
+   "the scan covers every shipped `.py`" is a claim the code still cannot make.
+   *The case against:* the accepted contract is about the *derivation of the
+   target list*; the proposal's only other `run_bandit()` edit (item 2) is
+   explicit that it buys "legibility, not new safety", and this one is new
+   safety. Standing direction is "fix defects, build nothing new."
+   *If refused, nothing is lost from the record:* the within-contract fallback —
+   withdraw the false failure-mode row and name it as an open residual, plus the
+   reverse-direction oracle assertion — needs no Maintainer decision and is
+   already dispositioned above.
+
+2. **[I2] — absorb `bootstrap/tests/test_security_check.py` into scope.** *What
+   it changes:* adds a file to the *Touches* line that neither reviewer nor
+   Maintainer saw in scope, and takes the frozen-file footprint from two files to
+   three. *Why it matters now rather than later:* the review's judgement that
+   this is "cheap to settle, expensive to discover mid-plan" is right, and it is
+   coupled to [I8] — the schedule question is a different question for three
+   frozen files than for two. *The alternative to absorbing it:* record the
+   second tautology as a named defect and open it as its own proposal. That
+   keeps this proposal at its accepted scope and does not lose the finding.
+
+3. **[I6c] — pin a count alongside change 2's on-disk oracle.** *What it
+   changes:* a standing assertion, inside a file already in *Touches*, that turns
+   the dev suite red whenever a `.py` is added under `templates/` — including
+   when it is added correctly and wired into a registry. That trip-on-growth is
+   the *point* of the shape, and it costs nothing today, but the proposal never
+   described it. *Honest note:* this is the smallest of the three and sits
+   closest to the within-contract line. I flag it rather than fold it because the
+   whole reason this Response exists is that a plan should never have to guess
+   what a Decision authorized.
+
+One thing worth stating plainly about this list. The proposal's own thesis is
+that a gate whose stated scope exceeds its real scope is the failure Cairn tells
+adopters to avoid. A Decision whose stated scope ("as revised") exceeds what the
+Maintainer actually saw is the same failure in the deliberation layer, and it is
+the more expensive one — the gate at least fails loudly when someone checks.
