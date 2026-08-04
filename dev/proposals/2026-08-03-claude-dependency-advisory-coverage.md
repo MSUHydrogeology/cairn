@@ -191,3 +191,119 @@ distributions, and removing it would trade a partial control for none.
 * The interpreter check produces false refusals for adopters with legitimate
   multi-environment setups. Recovery: keep it loud and advisory rather than
   blocking.
+
+## Amendment 2026-08-03 — coverage gates CLEAN, and comprehensiveness is the contract
+
+**Maintainer direction, quoted:**
+
+> if we implement the python_security module, I think the expectation is that it
+> should comprehensively scan, not just report a series of holes that it doesn't
+> address. That is a false sense of security
+
+Accepted, and it reorders this proposal. The original draft treated coverage
+reporting as the repair and conda coverage as the gap to close afterwards. That
+is backwards: **honest reporting of a hole is not a control**, because the
+operator reads the exit code, not the caveats. A module named `python-security`
+returning `0` teaches "my dependencies are clean" no matter how carefully the
+body of the report hedges.
+
+### This is Cairn's existing principle, not a new one
+
+`bootstrap/DEPENDENCY_BUDGET.md` already states the rule for the pip-audit pass:
+
+> **Fail-closed reporting.** A denied / offline / failed lookup is reported
+> **unavailable, not clean**.
+
+The module therefore already refuses to call an unavailable *lookup* clean. It
+does not apply the same rule to unknown *coverage* — a lookup that succeeded
+over 62% of the environment returns `0`. Those are the same category of
+ignorance and they should have the same disposition. Extending the rule is
+consistency, not escalation, which also means it needs no doctrine-evolution
+argument.
+
+### The governing rule this proposal now carries
+
+**A leg returns CLEAN only when it has established coverage over the thing it
+names.** The dependency leg names *dependencies* — so its denominator is the
+environment, not the subset it happens to enumerate. Concretely:
+
+* coverage established and no findings → **0 CLEAN**;
+* coverage **not** established, or established as partial → **5 INCOMPLETE**,
+  naming the unscanned count and class;
+* findings → **10**, unchanged;
+* unsafe/failed/timed-out → **20**, unchanged.
+
+**Stated plainly, because it is the point:** on this machine today, a
+correctly-behaving module reports **INCOMPLETE**, not CLEAN — 147 packages
+unscanned, 82 of them native. That is the honest reading of the current state,
+and it is the reading the exit code should have been carrying all along.
+
+### Consequence — Part 2 becomes load-bearing, not optional
+
+Conda coverage stops being an enhancement queued behind the repair. It is what
+makes `0` **reachable** on a conda environment. The proposal's parts reorder
+accordingly: the coverage mechanism is the substance, and the reporting repair
+is what makes its absence visible in the meantime.
+
+### The counter-argument, and where it bites
+
+A gate whose usual result is INCOMPLETE trains its operator to stop reading it —
+which is exactly finding **PS4** in this author's External review of
+`portable-security-sweeps`, so it cannot be waved away here. The resolution is a
+condition, and the plan must hold itself to it:
+
+**INCOMPLETE is acceptable only while it is closable.** If Part 2 establishes a
+mechanism that resolves the native layer, `0` becomes reachable and INCOMPLETE
+is a transient true statement. If no mechanism can, then the module is not
+capable of the contract its name implies, and the correct response is **to shrink
+the module's declared scope to what it can honestly cover** — audit Python
+distributions, say so in the name or the doctrine, and stop implying environment
+coverage — rather than to keep returning INCOMPLETE forever or to keep returning
+CLEAN over a fraction.
+
+That is a Decision the plan must reach explicitly on measured evidence, not a
+residual to carry. Recorded here so the plan cannot quietly settle for
+permanent INCOMPLETE.
+
+### What does not change
+
+The zero-dependency contract stands: Cairn still installs no scanner, and an
+adopter still provides the tools. This amendment constrains what the module may
+**claim**, not what Cairn may **install**. Those were conflated in the original
+draft's closing note, which argued that loud reporting of a missing tool was "the
+design working" — true for a *missing tool*, and not an answer for a *missing
+38% of the environment*.
+
+### The expectation is created at selection, so the contract belongs there
+
+**Maintainer clarification, quoted:**
+
+> I mean if a user selects python_security
+
+This scopes the rule and strengthens it. `python-security` is **opt-in and
+team-gated** — an adopter does not drift into it, they *choose* it, and the
+choice is an affirmative request for Python security coverage. Delivering 62% of
+an environment under that name is not a caveat problem; it is a mismatch between
+what the selection asked for and what the module does.
+
+Two consequences the plan must carry:
+
+1. **The coverage contract is stated in the module's selection doctrine.**
+   `templates/modules/team-gated/python-security.md` is what an adopter reads
+   when deciding, and it must say what the module covers, what it does not, and
+   under what conditions it can return CLEAN — before they install it, not
+   buried in a run report they read after they already trust it.
+
+2. **Partial coverage is discoverable at first run, not on inspection.** An
+   adopter who selects the module on a conda environment should learn
+   immediately, from the aggregate, that coverage is not established — which is
+   what the CLEAN-gating rule above delivers. The failure mode being closed is
+   an adopter who selects a security module, sees `0`, and reasonably concludes
+   their dependencies were audited.
+
+This also disposes of a weaker reading of the zero-dependency contract that the
+original draft leaned on. "Cairn does not install scanners" is a constraint on
+Cairn's runtime, and it is *not* a licence to ship a module whose name promises
+more than its mechanism delivers. If the selection promises comprehensive Python
+security, the module either delivers it on the adopter's real environment or
+says — at selection, and in the exit code — exactly where it stops.
