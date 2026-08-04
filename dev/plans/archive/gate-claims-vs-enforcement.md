@@ -6,7 +6,7 @@
 Maintainer Decision `3a2a201`, *"I accept this proposal as revised"*). It
 currently sits under `dev/proposals/` and moves to `dev/proposals/archive/` when
 it archives.
-**Status**: open
+**Status**: archived
 **Plan review**: required(**Internal**) — carried from the proposal header, which
 argued the tier on the grounds that *"every disposition below except the hand-off
 is a factual correction checkable by re-running one named command against one
