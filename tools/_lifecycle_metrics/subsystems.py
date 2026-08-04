@@ -85,12 +85,16 @@ def _annotation_count_for_stem(
 #: ``accept`` bucket; ``wontfix`` (code-review-Response only) gets its own
 #: bucket so the parser is lossless across both grammars, but is not
 #: surfaced as a proposal-row column (proposals use the 4-token grammar).
+#: ``guard`` is the archive-time token (``doctrine/lifecycle.md`` >
+#: "Archive precondition") -- a follow-up homed in something that
+#: executes; it is bucketed here so it is not silently dropped.
 _DISPOSITION_BUCKETS = (
     'accept',
     'accept_with_modification',
     'reject',
     'defer',
     'wontfix',
+    'guard',
 )
 
 #: Disposition-bullet shape: ``* **[<id>]** <disposition> -- <rationale>``.
@@ -124,6 +128,8 @@ def _normalize_disposition_token(text: str) -> str:
         return 'defer'
     if t.startswith('wontfix'):
         return 'wontfix'
+    if t.startswith('guard'):
+        return 'guard'
     return ''
 
 
