@@ -334,8 +334,15 @@ bootstrap/tests`.
   first proposal under `dev/proposals/`.
 * **AST attestation baseline.** `bootstrap/tests/test_ast_attest.py`
   pins the engine package against a committed baseline; after any
-  `bootstrap/_scaffold/` change, re-anchor it per
-  `bootstrap/REANCHOR_RUNBOOK.md` (it does not auto-update).
+  `bootstrap/_scaffold/` change it must be re-anchored (it does not
+  auto-update). **Not** via `bootstrap/REANCHOR_RUNBOOK.md` — that
+  runbook governs the differential-oracle *gate* anchor and says nothing
+  about this baseline. Self-service repair reaches only the four symbols
+  in `_ast_attest._UPDATE_ALLOWLIST`; anything else is a **Maintainer-run,
+  dry-run-verified direct correction that an implementing agent does not
+  perform** (precedent: `c3d5bd9`). No runbook covers it yet — derive the
+  expected CHANGED set against the committed baseline rather than
+  carrying a figure forward.
 * **Commit hygiene.** Always `git commit <paths>` (never a bare
   `git commit` — the index is shared); see *Git and commit workflow*
   above.

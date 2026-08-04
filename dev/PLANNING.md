@@ -227,12 +227,20 @@ with the plan's filename stem.
      — extending the rule from "name the trigger" to "name the trigger *and check what it
      checks*", on the argument that a purely lexical rule would not have caught the
      `PROVENANCE.md` instance. Outside Theme 3 and outside the brief that produced it.
-  4. **`AGENTS.md` line 337 is a broken pointer** — it sends agents to
+  4. ~~**`AGENTS.md` line 337 is a broken pointer**~~ — **RESOLVED 2026-08-03**,
+     trivial-class as this entry anticipated. The pointer sent agents to
      `bootstrap/REANCHOR_RUNBOOK.md` to re-anchor the AST baseline; that runbook has zero
      mentions of `ast_attest` or `scaffold_ast_baseline` and governs a different gate.
      Demonstrated to propagate: it seeded four freshly-drafted proposals on 2026-08-03
-     before reconciliation caught two. Cheap enough to be trivial-class if the Maintainer
-     wants it that way.
+     before reconciliation caught two — the last of them, `yaml-parser-divergence`,
+     inherited it and was caught at External review (finding E4b). `AGENTS.md` now names
+     the applicable ceremony inline: a Maintainer-run, dry-run-verified direct correction
+     an implementing agent does not perform, precedent `c3d5bd9`.
+     **Residual, deliberately not closed:** there is still no runbook for the AST
+     re-anchor — verified, zero Markdown files under `bootstrap/`, `docs/` or `doctrine/`
+     mention `ast_attest` or `scaffold_ast_baseline`. The procedure lives only as
+     precedent and as prose inside two plans. Whether it earns a runbook of its own is a
+     live question; the pointer is no longer *wrong*, it is merely inline.
 
 *(Otherwise empty at adoption — native proposals populate this board. The
 Cairn roadmap migrated 2026-06-12 from modflow_tools — queued items,
