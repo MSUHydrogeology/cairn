@@ -992,3 +992,51 @@ claim_check: dev/proposals/2026-08-03-claude-dependency-advisory-coverage.md -- 
 
 **SHIP (LIFT HOLD).** The revised proposal successfully addresses all seven security findings (`DAC1`–`DAC7`), fixes ambient environment redirection vulnerabilities, establishes rigorous environment sanitization, and provides an honest, quantified contract for Python distribution security auditing.
 
+
+## Response to the External re-review -- Claude (author) -- 2026-08-03
+
+**Model**: Claude Opus 5
+
+**Both concerns accepted; neither needs a further round.** The re-review lifts
+the HOLD and independently reproduced the inventory numbers — 394 conda JSON
+records, 391 unique conda names, 288 Python distributions, 244 intersection,
+147 conda-only, **44 Python-only**, 435 union — which is the arithmetic the
+narrowed denominator depends on.
+
+### [E1] — accepted as a confirmation; already homed
+
+Native non-coverage remains open, and that is the intended outcome of the
+Maintainer's scope narrowing rather than a gap this proposal leaves untended. It
+has a durable home: `dev/PLANNING.md` > *Deferred follow-ups* > **Security
+apparatus** > *Conda advisory coverage*, carrying the measured gap, the two
+eliminated candidates (Trivy conda is SBOM/license only; OSV-Scanner does not
+list Conda), Grype/Syft as the first unevaluated candidate, and an
+execution-bound revival condition.
+
+Nothing to add. The finding is correct and the disposition is already recorded.
+
+### [E2] — accepted, and the residual set is bounded here rather than left to the plan
+
+Local project distributions with no PyPI record — `great-circle-calculator`,
+`modflow_tools`, and the editables — resolve to `NO-MATCH-IN-PINNED-SOURCES`.
+The revision already scaled DAC4's baseline down to "a short list of
+locally-built distributions"; the re-review is right that *short* is not a
+specification.
+
+**Bounding it, so the plan inherits a rule rather than a judgement:** an entry
+qualifies for the baseline only if it is **locally built** — installed from a
+local path or VCS URL, which `importlib.metadata` exposes via `direct_url.json`
+(PEP 610) rather than requiring a human to assert it. A distribution that
+resolves to a public index and simply has no advisory record does **not**
+qualify; it stays `NO-MATCH-IN-PINNED-SOURCES` and is reported as such, because
+that is a fact about the advisory sources, not about provenance.
+
+That distinction matters: it stops the baseline from becoming a place to park
+public packages the sources happen not to cover, which is exactly the drift the
+diffable-residual requirement exists to catch. The identity tuple, schema,
+integrity coverage and diff-on-addition requirements from the revision are
+unchanged.
+
+**No Maintainer input required.** This tightens a rule the revision already
+carried; it adds no scope, no file, and no dependency. Status stays `revised`;
+this response makes the artifact Decision-ready.

@@ -366,3 +366,45 @@ claim_check: dev/proposals/2026-08-03-claude-separator-detection.md -- OK, no cl
 
 **SHIP.** The revision resolves the pattern ID dispatch vulnerability and ensures strict suppression isolation for `unicode-line-separator` detectors.
 
+
+## Response to the External re-review -- Claude (author) -- 2026-08-03
+
+**Model**: Claude Opus 5
+
+**[E1] accepted.** The re-review independently confirmed the dispatch defect at
+`content_scan.py:401-403` — that a new `_scan_unicode` detector added without
+touching that call site would be assigned the wrong pattern id — which is the
+finding the revision exists to fix.
+
+Its concern is the one the fix creates: changing `_scan_unicode` to yield
+`(lineno, pattern_id, msg)` alters an internal signature that
+`content-scan-detectors` also edits, and that proposal is **accepted** as of
+today.
+
+**Sequencing, stated concretely so neither plan has to infer it.** Both plans
+change the same three sites. The rule:
+
+* **This proposal owns the signature change.** Its own correctness depends on
+  it — without the yielded id its flags are labelled `unicode-zero-width`, its
+  promised marker matches nothing, and an existing zero-width suppression
+  silently hides separator detections. `content-scan-detectors` merely
+  *benefits*: `unicode-ignorable` would be mislabelled the same way, but that
+  proposal is correct with or without the refactor.
+* **Whichever plan implements second rebases onto the yielded-id form.** It does
+  not re-derive an id from message text, and it does not reintroduce the
+  ternary.
+* **Both plans carry the coexistence test.** All three unicode pattern ids trip
+  independently on one fixture, and each `cairn-accept` marker suppresses only
+  its own id — including the case asserting a `unicode-zero-width` marker does
+  **not** suppress a separator flag.
+
+That last test is the shared regression. It fails against the code as it stands
+today, so whichever plan lands first turns it green and the second inherits a
+guard rather than a promise.
+
+**On the re-review's *not covered* note.** Suppression-marker isolation is
+listed as unvalidated because it is untestable before implementation bytes
+exist. It is in *Tests required*, and the coexistence case above is exactly it.
+
+**No Maintainer input required.** Status stays `revised`; this response makes
+the artifact Decision-ready.
