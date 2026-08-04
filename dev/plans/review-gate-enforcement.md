@@ -278,3 +278,90 @@ The scope and high-level chunk order are sound, but the plan must settle an
 append-compatible grammar, specify the closed record schema and its own
 bootstrap, unify both gate call sites, and give migration a real home before it
 is executable.
+
+## Response to plan review -- Claude (author) -- 2026-08-04
+
+**All four findings accepted; two of them correct errors of mine.** The grammar
+in Chunk A is **inverted**, not adjusted, and the corpus figure in *Sequence*
+measured the wrong population. Status stays `open`: `[E2]` establishes this plan
+cannot proceed on this review's strength, and the Response says so below.
+
+**The error worth naming first.** The recorded command
+`grep -rhoE "^#{2,3} Plan review"` is a **prefix match**, and the defect this
+whole plan exists to fix is that `_has_kind` gates on `startswith`. I measured
+the prefix bug using the prefix bug. Exact recount at `f83f20e`, by full
+heading text rather than prefix:
+
+| heading shape | count |
+|---|---|
+| `## Plan review -- <reviewer> -- <date>` — actual dated passes | **35** |
+| `## Plan review` — bare containers | 3 |
+| `## Plan review — the brief…`, `## Plan review tier…` — **different headings** | **21** |
+
+So "58 headings, all `##`" was true as a total and misleading as evidence: only
+35 are review passes. The reviewer's 37 (container + pass, at `8dfb664`)
+reconciles exactly — this plan's own container is the difference. **The
+all-`##` direction survives; the denominator did not.** Chunk C's inventory
+must use the parser or an exact structural oracle, never a prefix grep.
+
+**[E1] — ACCEPTED. Chunk A's grammar is inverted.** The finding is structural
+and I missed it: the template's `## Plan review` container is followed by
+`## Code review` and `## Lasting-truth migration`, so a dated `### Plan review`
+**appended at the end of the file nests under the last H2, not under the
+container**. Putting it under the container requires *inserting into prior file
+content* — which append-only forbids. Practice converged on dated H2 passes
+because H2 is the only shape that works when records are appended, not because
+anyone chose it. My A.1 canonized the shape the lifecycle cannot produce.
+
+Worse, A.1 + C.2 broke a promise this plan inherited: the proposal Response
+undertook to *"accept both dated forms when structurally placed"*, and A.1
+instead made every existing dated H2 review legacy — **including this review**.
+
+Revised A.1: **a dated `## Plan review -- <reviewer> -- <date>` pass, with its
+`### Sharpening` immediately below it.** The empty template container is removed
+or made explicitly non-attesting; the scaffold follows. If H3 stays accepted for
+an adopter, it gets a stated parentage rule and a grandfather clause — not a
+global level check.
+
+**[E2] — ACCEPTED, and it blocks.** "Declared tier attestation" and "review
+outcome" name decisions, not a schema. Adopting the reviewer's minimal design as
+the plan's starting point, to be settled before Chunk A lands: **two independent
+closed fields** — tier `Internal|External`, findings `none|raised` — with
+**unknown, missing and duplicate values failing closed**, and an explicit tier
+ordering (`External` satisfies an `Internal` floor; the reverse does not). The
+plan must also state how live variants such as
+`required(**External**, security lens)` normalize.
+
+**The bootstrap problem is the sharpest part and I had not seen it.** The
+required External review lands *before* Chunk B exists, so it is written in the
+old format — and after Chunk C, this plan's own review could block this plan's
+own transition to `executing`. The record cannot be rewritten to fix that
+without breaking append-only. So the plan needs **an explicit bootstrap rule**
+that admits a pre-schema review without rewriting it. That rule is itself
+reviewable, and per the reviewer a **second External round on the settled
+schema** is required before Chunk A lands. Accepted.
+
+**[E3] — ACCEPTED.** The condition exists twice: `_conformance_violations`
+(`:787`) and `_gating_preconditions` (`:860`). The proposal cited both; the plan
+then wrote chunks against one. Revised: **one module-private review-conformance
+predicate, consumed by both call sites**, with a node asserting both surfaces
+agree — otherwise `scan` can tighten while `next --to executing` stays
+presence-only. The C matrix expands beyond four happy-path nodes to cover both
+public surfaces, a bare container, wrong nesting, unknown and duplicate fields,
+tier ordering, and round-specific Sharpening pairing. C.4 as written lets an
+unrelated Sharpening satisfy the wrong review across multiple rounds; the
+pairing rule is now explicit work, not an assumption.
+
+**[E4] — ACCEPTED.** Beyond the counting error above: the acceptance criterion
+*"a grep … returns one shape"* is incoherent against any grammar with a
+container and passes, and is withdrawn. Open plans must be evaluated **as if
+transitioning to `executing`**, since an old-format review stays green while
+status is `open` and fails only later — a scan of current state would report a
+clean tree and be wrong. D.1 gets a durable home rather than the phrase
+"migration note": `bootstrap/UPGRADE.md`, with the exact repair procedure for
+Cairn and both managed adopters.
+
+**Status.** This plan does **not** advance on this review. `[E2]` requires a
+settled schema and a second External round before Chunk A lands; `[E1]` requires
+the grammar be re-chosen first. No implementation commit lands on this
+Response's strength.
