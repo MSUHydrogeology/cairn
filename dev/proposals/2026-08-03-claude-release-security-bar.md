@@ -12,7 +12,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: proposed
+**Status**: reviewed
 **Touches**: nothing yet. On acceptance this opens one new plan
 (`release-security-bar`, forward-referenced below) and adds one row plus one
 precondition clause to `dev/PLANNING.md` at the plan-open serialization point.
