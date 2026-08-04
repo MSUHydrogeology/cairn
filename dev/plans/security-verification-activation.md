@@ -1347,3 +1347,429 @@ by a different agent type or the Maintainer. [I1] in particular is exactly the
 class of defect a same-type reviewer nearly missed and only caught by running the
 mechanism instead of reading it, which is the argument for the declared tier, not
 against it.
+
+---
+
+## Response to plan review -- Claude (author) -- 2026-08-04
+
+**Model**: Claude Opus 5 (`claude-opus-5`), author role, fresh session.
+
+**Standing — this Response discharges nothing.** The plan declares
+`required(**External**, security lens)`. The landed review is **Internal**, same
+agent type, and says so itself. I am the plan author's own type, so this section
+is a *disposition of an Internal round* — not a review, not a second opinion
+across structural independence, and not a substitute for the declared tier. The
+External security-lens round remains outstanding. See *Does this clear the plan
+to implement?* below, which answers **no**.
+
+**What supplies the material for this Response.** Both the plan and its review
+were written at HEAD `eacb7dd`. This Response was written 61 commits later; HEAD
+moved from `6618e54` through `6b6034e` while it was being written, and
+`bootstrap/_scaffold/config.py` has gained 511 lines since `eacb7dd`. **Every
+figure below was re-derived against the live tree**, not carried forward from
+either artifact. Where a check needed a tree, I named which tree and why:
+
+* **Engine, gate and registry readings** — the live working tree. It carries no
+  engine or template modification (only sibling scopes' `dev/plans/*.md` edits),
+  so no extraction was needed and none was used.
+* **Merge and scaffold behaviour** — four throw-away copies of a `git archive
+  HEAD` extraction in the session scratch directory, each carrying one synthetic
+  variant of A2/A3/A4/B1. **No repository file was modified.**
+* **The historical adjudication of [I5]** — a separate `git archive eacb7dd`
+  extraction, so the plan's and the review's competing figures could be settled
+  at the commit *they* were measured at rather than argued about.
+* **The full suite** — the git repository itself, *not* an extraction. That
+  choice is a finding in its own right; see [R3].
+
+### Disposition summary
+
+| # | Finding | Disposition | Mechanical residue |
+|---|---|---|---|
+| I1 | Slot placeholder makes the merge defer | **Accept with modification** — diagnosis confirmed verbatim; remedy improved and measured | M1, M2, M3, M4, M5, M6 |
+| I2 | A second pinned number in `docs/quickstart.md`; Chunk A commits red | **Accept** — confirmed by an executed RED test | M7, M8, M9 |
+| I3 | The fence's frozen-files claim is false | **Accept** | M10 |
+| I4 | The high-risk designation lands in an adopter-replaced slot | **Accept** | M11, M12 |
+| I5 | Two figures do not reproduce; the quoted block is hand-tidied | **Accept**, with both replacement figures re-derived (the review's own are now stale too) | M13, M14, M15, M16, M17 |
+| I6 | T10's invalid-JSON row has no perturbation | **Accept** | M18 |
+| I6b | No test covers the `conflict-deferred` / `customized` merge outcomes | **Accept with modification** — a test of its own, not a widened T31 | M4 |
+| — | Soft edge: L5 assigns a sibling scope's commit | **Accept** | M19 |
+| R1 | The AST baseline is 173, not 174 | Author-found | M20 |
+| R2 | `Assign:_MODULE_REQUIRED_TOKENS` is not baselined | Author-found | M21 |
+| R3 | The full suite must not be measured from an extraction | Author-found | M22 |
+| R4 | `check_cairn`'s count is a whole-tree reading, so its criterion is fragile | Author-found | M23 |
+
+No finding is declined.
+
+### The findings, one at a time
+
+**[I1] — ACCEPT WITH MODIFICATION. The diagnosis reproduces verbatim; the
+remedy the review proposes is not the cheapest one, and I measured a better.**
+
+The mechanism reading is exactly right. `_slot_is_empty`
+(`bootstrap/_scaffold/slotmerge.py`, line 199) is literally `return body.strip()
+== ""`, its docstring does say placeholder prose *"is fine (it gets overwritten
+on merge)"*, and the two readings contradict each other. `merge_module_into_slot`
+inserts only on the empty branch (line 314); a non-empty, non-matching,
+non-customized body falls to the conflict branch and the side file.
+`run_module_merge_pass` (`bootstrap/_scaffold/install.py`) skips `verbatim`
+specs, so A2 being substituted is load-bearing, as the review says.
+
+I reproduced the end-to-end probe with A4's slot, A2's merge directive, A3's
+registration and B1's default-on append, installing a real `solo-greenfield`
+scaffold into a fresh target. **Placeholder body:**
+
+```
+Module-merge pass:
+  [conflict-deferred] AGENTS.md > security-verification -> .../AGENTS.md.security-verification.cairn-merge-pending
+  [slot-content-stale-or-partial] AGENTS.md > security-verification (fidelity check)
+```
+
+Zero occurrences of the standing command in the installed `AGENTS.md`; the side
+file present in the adopter root; **exit 0**. Every clause of [I1] reproduces,
+including the side file's exact name, which the review did not state.
+
+**Where I diverge.** The review's fix — ship the slot empty — is correct but it
+books a cost it does not have to pay: *"That costs the placeholder guidance,
+which is a real (small) loss worth stating rather than trading silently."* The
+slot **body** is what must be empty; the merge reads only between the marker
+pair. Guidance placed **between the `## Security verification` heading and the
+`cairn:slot` open marker** is outside the body and survives untouched. Measured,
+same probe harness, guidance moved outside the pair:
+
+```
+Module-merge pass:
+  [inserted] AGENTS.md > security-verification
+```
+
+standing command present (1 occurrence), **placeholder guidance retained** (1
+occurrence), no side file, no fidelity warning, and the installed file reads:
+
+```
+## Security verification
+
+(Filled from the `security-verification` default-on module when installed. …)
+
+<!-- cairn:slot security-verification -->
+**Security verification.** … `python scripts/run_security_verification.py local` …
+<!-- cairn:end security-verification -->
+```
+
+So the amendment is *body empty, guidance above the marker*, and the loss the
+review stated is not incurred. I also confirmed the opt-out case: with the module
+**not** installed (the exact Chunk-A state), `check_slot_fidelity` emits nothing,
+because it only walks merges declared by *installed* modules. Shipping the body
+empty therefore costs nothing on the opt-out path either — a fact the fix depends
+on and neither artifact had established.
+
+The review's root-cause framing is also correct and is the sharpest thing in it:
+the plan took the slot's behaviour from the mechanism's own docstring instead of
+running it, which is the artifact under verification supplying the material used
+to verify it. That is the failure this round exists to catch, and it was caught.
+
+**[I2] — ACCEPT. Confirmed, and confirmed harder than the review confirmed it.**
+
+Every component reproduces. `bootstrap/tests/test_quickstart_sequence.py` asserts
+*prose == live* for two figures — the module count and the block-slot count (the
+slot half at lines 242–250, marginally off the review's 240–251).
+`docs/quickstart.md` line 182 states `**21 unfilled block slots**`; a clean
+`solo-greenfield` scaffold reports exactly 21, of which `templates/core/AGENTS.md`
+contributes 4 marker pairs. `find_block_slots` counts open markers in the written
+text and `print_report` (`bootstrap/_scaffold/cli.py` line 581) runs **before**
+`run_module_merge_pass` (line 597).
+
+The review reasoned that the count does not come back down and that Chunk A would
+commit red. I executed both. With the fifth slot present the scaffold reports
+**22** in all three states I built: module not installed (Chunk-A state), module
+installed and merged (`inserted`), and module installed and deferred
+(`conflict-deferred`). Running the real test against a tree in the exact Chunk-A
+state — A2/A3/A4 landed, B1 not:
+
+```
+FAILED bootstrap/tests/test_quickstart_sequence.py::TestLayerAStepsOneThroughThree::test_step3_install_writes_expected_kernel_and_modules
+AssertionError: docs/quickstart.md says '21 unfilled block slots' but the live install reports 22
+```
+
+The module-count half stays green at Chunk A (roster still 6), which is why the
+two figures need **different chunks**: the slot count moves in Chunk A because A4
+moves it, and the module count moves in Chunk B because B1 moves it. The review
+proposed folding the slot count into B3; that would leave Chunk A red. The
+amendment splits them instead.
+
+**[I3] — ACCEPT. The fence's claim is false and the correction is not
+contingent.**
+
+`_frozen_files()` (`bootstrap/tests/_gate_manifest.py`, line 151) globs
+`bootstrap/tests/**/*.py` at line 165. Direct lookup in the committed
+`bootstrap/tests/fixtures/gate_manifest.json` (164 `frozen_files`, reproducing
+exactly) confirms both:
+
+* `bootstrap/tests/test_security_lint.py` — **present in the map** (A6 edits it)
+* `bootstrap/tests/test_notice_install.py` — **present in the map** (A7 edits it)
+
+Two `FROZEN-MODIFIED` rows are guaranteed. I also confirmed the review's
+mitigation rather than taking it: `bootstrap/tests/test_gate_manifest.py` runs
+every one of its verify assertions against a `produced` fixture — a manifest
+regenerated in the test — never the committed fixture against the live tree. So
+this surfaces at the Maintainer's ceremony gate, not as a red suite. The
+`cascade_mutable` note reproduces verbatim: `bootstrap/_scaffold/config.py` is
+governed by *"AST source-motion attest — one predeclared mapping-symbol delta
+only (A/B/C/E)"*, and this plan declares two symbol changes in that file of which
+one is a mapping symbol.
+
+**[I4] — ACCEPT. Measured, and stronger than stated.**
+
+In `templates/core/AGENTS.md` the string "high-risk" occurs **exactly once**, at
+line 253 — *inside* the `project-conventions` slot placeholder, in the sentence
+that tells the adopter this is judgment work they write themselves. There is no
+non-slot high-risk guidance in that template for A4's line to join. A
+Security-Review designation placed there is prose the adopter is instructed to
+overwrite. The durable homes are the module's own merge block (which, after M1,
+lands durably in the adopter's `security-verification` slot and is guarded by
+`check_slot_fidelity` against later drift) and `dev/modules/security-verification.md`.
+Named residual, since the fix should not be oversold: an adopter who marks the
+slot `cairn:customized` opts out of the substring check, and the designation is
+then theirs to keep or drop.
+
+**[I5] — ACCEPT, and both of the review's replacement figures are themselves now
+stale. Adjudicated at `eacb7dd` so the record is settled rather than argued.**
+
+*NEW-line count.* At `eacb7dd`, from a clean extraction, `verify` prints **61**
+`note: NEW` lines — 32 `Import`, 20 `FunctionDef`, 7 `Assign`, 2 `ClassDef`.
+**The review's figure is exactly right and the plan's 21 was wrong.** At the live
+tree the same command prints **78** (32 `Import`, 24 `FunctionDef`, 18 `Assign`,
+4 `ClassDef`). The review's derived observation also checks out and gets stronger:
+the baseline pinned 174 of 235 live top-level symbols at `eacb7dd` and pins 173 of
+251 now, so the attestation is a partial pin and the stop-and-explain discipline
+is doing more work, not less. The conclusion the plan drew from the figure —
+`verify` reports NEW, exits 0, `known_new` binds `update-symbol` only, this plan
+adds no engine symbol — is unaffected and re-confirmed: live `verify` exits **0**.
+
+*Suite figure.* The plan's `1744 passed, 2 failed` does not reproduce. The
+review's `2 failed, 1779 passed` is **unreproducible by construction** — its two
+failures were caused by another scope's *uncommitted* edits, which no longer
+exist and cannot be reconstructed — so I neither confirm nor dispute it and say
+so rather than pretending to have checked. The live figure, run in the repository
+under the canonical interpreter: **`1790 passed` in 171.22s, 0 failed, 0 skipped,
+0 xfailed.** The plan's plan-level target of 0/0/0 is currently *achievable*,
+which is worth recording; its numeric baseline is not, having moved 1746 → 1781 →
+1790 collected inside two days. The review's disposition is right: bind it to a
+commit or drop it as an oracle.
+
+*The hand-tidied block.* Confirmed. Real `grep -n … -A 6` output carries `141:`
+through `146-` prefixes, and line 144 reads `"_CORE_MAPPINGS": "Assign",` with a
+single space. The plan's rendering has neither. In a plan whose standard is
+*quote what you ran*, that is worth fixing.
+
+**[I6] — ACCEPT on T10. The related coverage gap: ACCEPT WITH MODIFICATION.**
+
+T10's reading is correct: two children, one perturbation, and `errors="replace"`
+reds only the UTF-8 row. The invalid-JSON row is unvalidated under the plan's own
+rule, and the review's candidate perturbation targets the hazard properly.
+
+On the coverage gap, I accept the substance and change the shape. The review
+frames it as widening T31. After M1 the `conflict-deferred` path is no longer the
+outcome an adopter gets — but it stays reachable (an adopter who edited the slot
+before re-scaffolding, or `.cairn-merge-pending` residue from a prior install),
+and it is the path on which the plan's headline deliverable silently does not
+land. Folding it into T31 would make one test assert two different outcomes.
+It gets its own test, T31b, and the outcome becomes a named failure mode.
+
+**[Soft edge on L5] — ACCEPT.** A plan cannot bind a sibling scope's commit. L5
+becomes a Maintainer-owned routing item.
+
+### Author-found, not in the review
+
+**[R1] The AST baseline is 173, not 174.** `bootstrap/tests/fixtures/scaffold_ast_baseline.json`
+holds **173** entries at the live tree (`FunctionDef` 98, `Assign` 53, `ClassDef`
+10, `Import` 8, plus `Docstring`/`Expr`/`If`/`If#2`). The `Try` entry the plan's
+Counter shows is **gone** — a re-anchor landed between `eacb7dd` and now, and it
+removed exactly the symbol the plan's second live reading had caught going
+MISSING. The plan's derived figure **161 of the three kinds** is unchanged and
+reproduces. So does every digit that matters: **all four declared digests
+reproduce byte-exact** at the live tree — `Assign:_MODULE_MAPPINGS`
+`26957a8924042a0a`, `Assign:_DEFAULT_ON_MODULES` `2c8ef688f6865487`,
+`FunctionDef:main` `ff5a7441cceda605`, `FunctionDef:format_profile_summary`
+`830aac8b7c3d1bde` — and `_DEFAULT_ON_MODULES` is still in neither
+`_UPDATE_ALLOWLIST` (lines 141–146, exactly four symbols) nor `mapping_symbols`
+(exactly the three registry mappings). **The plan's load-bearing finding survives
+61 commits and a re-anchor intact.** Live `verify` is `AST attestation OK — 173
+baselined symbol(s) accounted for, unchanged.`, exit 0, on a tree with no engine
+modification — so the plan's two transient CHANGED readings were transient
+exactly as it said.
+
+**[R2] `Assign:_MODULE_REQUIRED_TOKENS` is not in the AST baseline** — at
+`eacb7dd` or now. It appears as a NEW note. `verify` cannot report a non-baselined
+symbol CHANGED, so declaring it "not changed" carries no ceremony meaning and
+dilutes a declaration whose whole value is falsifiability. The other eight names
+in that sentence are all baselined and the declaration stands for them.
+
+**[R3] The full suite must not be measured from a `git archive` extraction.** I
+made this mistake deliberately, following the plan's own scratch-extraction
+technique, and it produced **9 false failures and 1 false skip** (`1780 passed, 9
+failed, 1 skipped`) against **`1790 passed, 0 failed, 0 skipped`** in the
+repository at the same commit. Cause, traced rather than guessed: the extraction
+has no `.git`, and `resolve_full_sha("HEAD", repo)` in
+`bootstrap/tests/_oracle_trust.py` raises `TrustError` when `git rev-parse`
+cannot resolve HEAD. The casualties are `bootstrap/tests/test_oracle.py` (7
+nodes), plus one node each in `bootstrap/tests/test_gate_preflight.py`
+(`TestPublicCli` > `test_check_runs_against_the_live_repo_and_reports`) and
+`bootstrap/tests/test_upgrade_module_additions.py`
+(`test_module_additions_under_explicit_to_are_hard_blocked`).
+The plan's extraction technique is right for the narrow AST reading it prescribes
+it for and **wrong for the suite** — the measurement environment itself became
+the contaminant. Plan-level acceptance says the suite is measured *"on a clean
+tree"*, which reads either way; it needs disambiguating before an implementing
+agent books nine phantom regressions.
+
+**[R4] `check_cairn`'s figure is a whole-tree reading, so Chunk B's criterion is
+fragile.** Live: **195** Markdown files, 68 external links not probed — against
+the plan's 180 and a Chunk B criterion of `≥ 181`. Worse than staleness: at the
+moment of writing, `check_cairn` reports **1 issue**, at
+`dev/plans/security-preflight-checklist.md:1747`, in a **sibling scope's
+uncommitted edit**. A criterion phrased as *"`check_cairn.py` → OK"* is therefore
+falsifiable by work this plan does not own. It needs to be phrased against this
+plan's own files.
+
+### Re-measurement ledger
+
+Every figure either artifact states, re-derived. Live values are at HEAD
+`6b6034e` unless noted.
+
+| Figure | Plan | Review | Live | Verdict |
+|---|---|---|---|---|
+| AST baseline entries | 174 | 174 | **173** | Non-reproduction ([R1]) |
+| Baseline, three kinds | 161 | 161 | 161 | Reproduces |
+| `verify` on a clean tree | OK, 174, exit 0 | same | OK, **173**, exit 0 | Reproduces but for the count |
+| `Assign:_MODULE_MAPPINGS` digest | `26957a8924042a0a` | confirmed | `26957a8924042a0a` | Reproduces |
+| `Assign:_DEFAULT_ON_MODULES` digest | `2c8ef688f6865487` | confirmed | `2c8ef688f6865487` | Reproduces |
+| `FunctionDef:main` digest | `ff5a7441cceda605` | confirmed | `ff5a7441cceda605` | Reproduces |
+| `FunctionDef:format_profile_summary` digest | `830aac8b7c3d1bde` | confirmed | `830aac8b7c3d1bde` | Reproduces |
+| `_UPDATE_ALLOWLIST` contents / lines | four symbols | lines 141–146 | four symbols, lines 141–146 | Reproduces |
+| `mapping_symbols` | three registry mappings | same | same three | Reproduces |
+| `note: NEW` lines | 21 | 61 | **61** at `eacb7dd`; **78** live | Review right, plan wrong ([I5]) |
+| Baseline coverage of live symbols | — | 174 of ~235 | 235 at `eacb7dd`; 251 live | Reproduces |
+| Suite | `1744 passed, 2 failed` | `2 failed, 1779 passed` | **1790 passed, 0 failed, 0 skipped** | Plan non-reproduction; review unreproducible by construction |
+| Install manifest data rows | 95 | 95 | 95 | Reproduces |
+| `templates/**/*.py`, three channels | 44 / 44 / 44 | confirmed | 44 / 44 / 44 | Reproduces |
+| `test_security_lint.py` pin | 44 | line 291 | 44 at line 291 | Reproduces |
+| `test_notice_install.py` pin | 44 | line 75 | 44 at line 75 | Reproduces |
+| Release gate | `Bandit clean over 74 shipped file(s).` | confirmed | identical, `PASS` | Reproduces |
+| `check_cairn` | OK, 180 files, 68 links | 180 | **195** files, 68 links, **1 issue in a sibling's edit** | Non-reproduction ([R4]) |
+| Neutrality | `fail=95 info=21`, rc 1 | `fail=95 info=21` | `fail=95 info=21`, rc 1 | Reproduces |
+| Registries | 6 / 20 / 3 | confirmed | 6 / 20 / 3, same preset names | Reproduces |
+| `gate_manifest.json` `frozen_files` | 164 | 164 | 164 | Reproduces |
+| The six files named not-frozen | not frozen | confirmed | none in the map | Reproduces |
+| `test_security_lint.py` frozen? | implied no | **yes** | **yes** | Review right, plan wrong ([I3]) |
+| `test_notice_install.py` frozen? | implied no | **yes** | **yes** | Review right, plan wrong ([I3]) |
+| `config.py` `cascade_mutable` string | — | quoted | verbatim match | Reproduces |
+| Committed manifest vs tree, in-suite | — | not verified in-suite | confirmed: `produced` fixture only | Reproduces |
+| `_slot_is_empty` | assumed permissive | line 199, `body.strip() == ""` | line 199, `body.strip() == ""` | Review right, plan wrong ([I1]) |
+| Placeholder-slot merge outcome | `inserted` implied | `conflict-deferred` + `stale-or-partial`, exit 0 | identical, plus side file `AGENTS.md.security-verification.cairn-merge-pending` | Reproduces |
+| Empty-slot merge outcome | — | `inserted`, no warning | `inserted`, no side file, no warning | Reproduces |
+| Guidance outside the marker pair | — | not tested | `inserted` **and** guidance retained | New measurement ([I1]) |
+| `docs/quickstart.md` module count | 6 | line 129, 6 | line 129, 6 | Reproduces |
+| `docs/quickstart.md` slot count | not named | line 182, 21 | line 182, 21 | Reproduces |
+| Live slot count, clean tree | not named | 21 (4 from `AGENTS.md`) | 21, 4 marker pairs in the template | Reproduces |
+| Live slot count with the new slot | not named | 22, also when merged | **22** in all three states, test RED with the exact message | Reproduces, executed |
+| `print_report` before merge pass | not named | 581 before 597 | 581 before 597 | Reproduces |
+| High-risk prose in the core template | assumed present | only in the slot placeholder | **one** occurrence, line 253, inside the placeholder | Review right, plan wrong ([I4]) |
+| `templates/core/AGENTS.md` claim-check slot | model for A4 | lines 228–234, non-blank | lines 228–234, non-blank | Reproduces |
+| `run_module_merge_pass` skips `verbatim` | A2 substituted | required, not stylistic | confirmed in `install.py` | Reproduces |
+| Exit ladder constants | reused 0/5/10/20 | lines 75–78 | lines 75–78 | Reproduces |
+| `_self_hosted_twins()` discovery-based | yes | line 51 | line 51, discovery-based | Reproduces |
+| `cairn:merge` hits under `templates/modules/` | exactly one, prose | line 92 | exactly one, line 92 | Reproduces |
+| `docs/solo-legacy-recipe.md` roster line | 8-module / six default-on | line 58 | line 58, verbatim | Reproduces |
+| `templates/modules/README.md` default-on rows | four vs six | lines 34–37 | four rows, lines 34–37 | Reproduces |
+| `cli.py` in-`main` module blocks | `model-selection` precedent | 564 / 624 / 660 | 564 / 624 / 660 | Reproduces |
+| `bootstrap/SAFETY.md` Rule 7 | has a home | line 108 | line 108 | Reproduces |
+| `test_doc_governance.py` "Cairn's own" | obligation real | line 285 | test at 282–292; source-side assertion at 226 | Reproduces substantively |
+| `InstallSpec` NamedTuple | well-formed | `config.py` line 555 | `config.py` line **627** | Line drift only |
+| `duplicate_destinations` | the right check | `config.py` line 615 | `config.py` line **687** | Line drift only |
+| `claim_check.py` on this plan | OK | OK, 19 exemptions | OK, **22** exemptions | Verdict reproduces; count does not |
+| Content scan of a slot-text candidate | OK, no flags | could not reproduce | `OK -- 1 file(s) scanned; no flags` on a candidate rendering | Mechanism confirmed; the plan's exact text still unverifiable |
+
+### Amendments in force
+
+Superseded text is quoted **verbatim**; the plan's hard line-wrapping inside a
+quoted passage is collapsed to single spaces so the passage fits a table cell —
+no word is altered. This plan is append-only, so these rows *are* the change:
+where a row conflicts with text above, **this table governs**.
+
+| # | Locus | Superseded text (verbatim) | Replaced by |
+|---|---|---|---|
+| M1 | Chunk A, row A4 | "A new `## Security verification` heading with the `<!-- cairn:slot security-verification -->` / `<!-- cairn:end security-verification -->` pair, placeholder text on the `claim-check` slot's exact model" | A new `## Security verification` heading whose **slot body is empty** — the marker pair with nothing between it. The placeholder guidance is **retained but moved above the open marker**, between the heading and `cairn:slot`, where the merge does not read it. Measured: body-empty + guidance-outside yields `[inserted]`, the standing command in the installed `AGENTS.md`, the guidance retained, no side file, no fidelity warning. A non-empty body yields `conflict-deferred` and the rule never reaches the adopter. |
+| M2 | Chunk B, T30 | "`test_installed_AGENTS_md_carries_the_exact_standing_command` — a real scaffold; the installed `AGENTS.md` contains the exact two-sentence rule between the slot markers." | Same assertion, plus: the merge pass reports the outcome token **`inserted`** for `AGENTS.md > security-verification`, and **no** `AGENTS.md.security-verification.cairn-merge-pending` file exists anywhere in the target root. Second perturbation added alongside the deletion mutant: **restore non-empty prose to the slot body** — outcome flips to `conflict-deferred`, the rule is absent, the side file appears, and the scaffold still exits 0. That second perturbation is the one that would have caught [I1]. |
+| M3 | Chunk B, T31 | "`test_the_merge_pass_reports_the_fill_and_the_fidelity_check_is_clean` — the install's *Module-merge pass* output names `AGENTS.md > security-verification`, and `check_slot_fidelity` returns no warning." | Assert the **outcome token**, not the slot name: `conflict-deferred` also names the slot, so naming alone is a vacuous assertion. Require `[inserted]`, and `check_slot_fidelity` returning no warning **for this slot specifically**. |
+| M4 | Chunk B, new test T31b | *(addition)* | `test_a_prefilled_slot_defers_to_a_side_file_and_warns` — install into a target whose `security-verification` slot body already carries adopter prose; assert outcome `conflict-deferred`, the `.cairn-merge-pending` side file present and named for the slot, a `slot-content-stale-or-partial` fidelity warning, exit 0, and the standing command **absent** from `AGENTS.md`. Perturbation: make `_slot_is_empty` treat any body as empty; the side-file and warning assertions go red. Discharges the review's [I6] coverage gap without overloading T31. |
+| M5 | *Author-accounting* > *Failure modes* | *(addition)* | A non-empty `security-verification` slot body at install time → the module's contributed rule is **not** merged; it is written to `AGENTS.md.security-verification.cairn-merge-pending` in the adopter root, `check_slot_fidelity` warns `slot-content-stale-or-partial`, and the scaffold **exits 0**. The side file is not a manifest row, so the `+2` install-contract accounting does not see it. T30, T31b. |
+| M6 | *Lasting-truth migration*, new row L8 | *(addition)* | `_slot_is_empty`'s docstring in `bootstrap/_scaffold/slotmerge.py` asserts placeholder prose "gets overwritten on merge"; the implementation refuses it. **Routed out of this scope** as a trivial-triage fix in its own commit. Not smuggled in here, and not this plan's to make. |
+| M7 | Chunk A, new row A8 | *(addition)* | `docs/quickstart.md` — the **block-slot count** (`**21 unfilled block slots**`). It moves in **Chunk A**, because A4 is what moves it: measured 21 → 22 with the fifth slot, in the module-not-installed, merged, and deferred states alike. Unlike the module count this figure is not order-contended with `default-security-stance` (that scope adds no slot) — but **re-measure and do not apply the number written here**. |
+| M8 | Chunk A, acceptance criteria, first bullet | "`~/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_security_verification.py bootstrap/tests/test_security_lint.py bootstrap/tests/test_notice_install.py -q` → all pass, 0 skipped." | The same command with **`bootstrap/tests/test_quickstart_sequence.py` added**. Without it Chunk A lands a red commit: executed at the exact Chunk-A state, `test_step3_install_writes_expected_kernel_and_modules` fails with *"docs/quickstart.md says '21 unfilled block slots' but the live install reports 22"*. |
+| M9 | Chunk B, row B3 | "`docs/quickstart.md` \| The `solo-greenfield` count and its enumeration. **Re-measure; do not apply a number from this plan** — see *Order-independence*." | Scoped to the **module** count and its enumeration only; the block-slot count is A8's, in Chunk A. Re-measure rule unchanged and it now applies to both figures in their own chunks. |
+| M10 | *Maintainer fence*, item 3 | "**The gate-manifest re-pin.** No file this plan edits is in the 164-entry `frozen_files` map (measured above), so no `FROZEN-MODIFIED` row is expected — but `bootstrap/tests/test_security_lint.py` and `bootstrap/tests/test_notice_install.py` carry the two `44` pins and **should be re-checked against the map at implementation**, because the map moves." | **Two `FROZEN-MODIFIED` rows are guaranteed, not contingent**: `bootstrap/tests/test_security_lint.py` (A6) and `bootstrap/tests/test_notice_install.py` (A7) are both in the 164-entry map, because `_frozen_files()` globs `bootstrap/tests/**/*.py`. The "measured above" reading covered six *other* files and never these two. Both are expected HOLDs at the ceremony; the implementing agent **records** them and does not re-pin. Adjacent, neither a HOLD: `bootstrap/_scaffold/config.py` is `cascade_mutable`, governed by *"AST source-motion attest — one predeclared mapping-symbol delta only (A/B/C/E)"*, and this plan changes two symbols there of which one is a mapping symbol — reconcile at the ceremony. The new `templates/modules/default-on/run_security_verification.py` lands `FROZEN-NEW` (a note). Mitigation, stated so severity is not overread: no in-suite test compares the committed manifest against the tree, so this surfaces at the Maintainer's gate rather than as a red suite. |
+| M11 | Chunk A, row A4 | "Plus one line in the *Project-specific conventions* guidance naming the dispatcher, its registry, its child result schema, and every registry entry as **high-risk Security Review surfaces**." | **Struck.** `templates/core/AGENTS.md` has no non-slot high-risk guidance to join — the only occurrence of "high-risk" is inside the `project-conventions` slot placeholder the adopter is told to overwrite. The designation moves to **A2's merge-content block** (so it lands durably in the adopter's `security-verification` slot and is guarded by `check_slot_fidelity`) **and to `dev/modules/security-verification.md`** (B2). Named residual: an adopter who marks the slot `cairn:customized` opts out of the substring check. |
+| M12 | *Documentation / doctrine surface*, first bullet | "**Governing layer, adopter-facing — yes.** `templates/core/AGENTS.md` gains one slot and, in its *high-risk surfaces* guidance, the dispatcher." | `templates/core/AGENTS.md` gains **one slot and its above-marker guidance, and nothing else**. It carries no high-risk-surfaces guidance for the dispatcher to join; that designation is A2's and B2's, per M11. |
+| M13 | *The measurement that shapes this plan* | "**174 baseline entries; 161 of the three kinds** (`FunctionDef` 98 + `Assign` 53 + `ClassDef` 10). Measured, not carried forward." | 174 at `eacb7dd`; **173** at `6b6034e` — a re-anchor landed between and removed the `Try` entry, the same symbol this plan's second live reading caught going MISSING. **161 of the three kinds is unchanged**, and all four declared digests still reproduce byte-exact. Re-measure at implementation; the count moves with the cluster. |
+| M14 | *New symbols are not gated; changed ones are* | "confirmed by the clean-HEAD run above, which printed 21 `note: NEW …` lines and still exited 0" | **61** NEW lines at `eacb7dd` (32 `Import`, 20 `FunctionDef`, 7 `Assign`, 2 `ClassDef`); **78** at `6b6034e`. The plan's 21 was wrong; the review's 61 was right for its commit and is now stale. The conclusion is unaffected and re-confirmed at exit 0. Context the corrected figure adds: the baseline pins 173 of 251 live top-level symbols, so the attestation is a **partial** pin. |
+| M15 | *Everything else, dated* | "* **Suite**: `1744 passed, 2 failed` in 159.51s — the two failures are exactly the AST-attest pair above, caused by the concurrent uncommitted engine edits, **not** by anything at HEAD. Re-baseline against a clean tree at implementation." | Live: **`1790 passed` in 171.22s, 0 failed, 0 skipped**, in the repository at `6b6034e` with no engine modification in the tree. Collected node count has moved 1746 → 1781 → 1790 in two days, so **this figure is retired as an oracle**: the plan-level criterion *"collection grows by exactly the new nodes and drops none"* binds to a count re-taken at the implementing commit, not to any number written here. |
+| M16 | *Everything else, dated* | "* **Prose integrity**: `python scripts/check_cairn.py` → OK, **180** Markdown files, 68 external links not probed." | Live: **195** Markdown files, 68 external links not probed. The count grows with every plan committed and is not this plan's to predict. |
+| M17 | *The symbol this plan changes has no surgical path* | the `$ grep -n "_UPDATE_ALLOWLIST" -A 6 bootstrap/tests/_ast_attest.py` block, including the line `    "_CORE_MAPPINGS":   "Assign",` | The block is presented as command output but carries no line-number prefixes and re-aligns one line. Real output prefixes `141:` through `146-`, and line 144 reads `"_CORE_MAPPINGS": "Assign",` with a single space. Re-paste verbatim or drop the `$ grep -n` framing. The four-symbol content and the absence of `_DEFAULT_ON_MODULES` reproduce exactly and are unaffected. |
+| M18 | Chunk A, T10 | "Decode with `errors=\"replace\"`. The invalid-UTF-8 row now parses and reaches CLEAN. Fails." | **One perturbation per row.** (a) invalid-UTF-8 row: decode with `errors="replace"` — the row parses and reaches CLEAN. (b) invalid-JSON row: replace the strict `json.loads` result handling with a `try` / `except` that falls through to CLEAN on a parse error. Without (b) the JSON leg is unvalidated under this plan's own rule. |
+| M19 | *Lasting-truth migration*, row L5 | "A **trivial-triage fix** by whichever cluster scope lands its README row last, recorded in that commit body. It needs no proposal; it needs an owner, and the last row-adder is the natural one." | **Maintainer-owned routing item.** A plan cannot bind a sibling scope's commit. This plan surfaces the drift and proposes the last row-adder as the natural owner; assigning it is the Maintainer's. |
+| M20 | *This plan's declared symbol delta* | "Measured against `bootstrap/tests/fixtures/scaffold_ast_baseline.json` at HEAD `eacb7dd`. **3 CHANGED, 0 NEW, 0 MISSING, 0 DUPLICATE.**" | The delta and all four digests re-verify at `6b6034e` against a **173**-entry baseline. The declaration stands unchanged; only the baseline size moved. Re-measure at implementation and report the baseline size alongside the delta, since the cluster re-anchors it. |
+| M21 | *This plan's declared symbol delta* | "Also declared **not** changed: `FunctionDef:install_manifest`, `FunctionDef:install_modules`, `FunctionDef:write_install_lockfile`, `Assign:KNOWN_TOKENS`, `Assign:_MODULE_REQUIRED_TOKENS`, `Assign:_REFERENCE_SCRIPT_TOKEN`, `Assign:_GITIGNORE_SEEDS`, `Assign:_MODULE_SUPERSEDES`, `Assign:_PRESETS`." | **Strike `Assign:_MODULE_REQUIRED_TOKENS`** — it is not in the AST baseline at `eacb7dd` or now, so `verify` reports it as NEW and can never report it CHANGED. Declaring a non-baselined symbol "not changed" carries no ceremony meaning and weakens a declaration whose value is falsifiability. The other eight are baselined and the declaration stands for them. |
+| M22 | Plan-level acceptance, first bullet | "**measured on a clean tree after the Maintainer's re-anchor**" | **A clean *working tree in the git repository*** — never a `git archive` extraction. Measured: an extraction yields 9 false failures and 1 false skip, because it has no `.git` and `resolve_full_sha("HEAD", …)` in `bootstrap/tests/_oracle_trust.py` raises `TrustError`; the casualties are `bootstrap/tests/test_oracle.py` (7 nodes), plus one node each in `bootstrap/tests/test_gate_preflight.py` (`TestPublicCli` > `test_check_runs_against_the_live_repo_and_reports`) and `bootstrap/tests/test_upgrade_module_additions.py` (`test_module_additions_under_explicit_to_are_hard_blocked`). The extraction technique in *Verification* stays correct **for the AST reading it is prescribed for** and is wrong for the suite. |
+| M23 | Chunk B, acceptance criteria | "* `python scripts/check_cairn.py` → OK; **≥ 181** Markdown files (180 + B2), and the count may only grow." | `check_cairn` is a whole-tree reading, so a bare "→ OK" is falsifiable by a sibling scope's uncommitted edit — it reports 1 issue today, in `dev/plans/security-preflight-checklist.md`, which this plan does not own. Criterion becomes: **no `check_cairn` issue is attributed to a file this plan edits**, and the Markdown-file count is re-measured at the implementing commit rather than predicted (195 at `6b6034e`, +1 for B2). |
+
+Nothing in this table changes the architecture the Decision accepted, adds a
+registry entry, widens the empty-registry contract, moves a Maintainer fence, or
+takes on a sibling scope's surface.
+
+### What this Response does not settle
+
+* **The dispatcher's runtime behavior.** No code exists. T1–T35 remain
+  specifications; the review checked their shape and could not check that any of
+  them will hold, and neither could I.
+* **The Bandit prediction** (75 files, LOW `B404`/`B603`). Unmeasurable before
+  Chunk A. Booked as known omission (e) and it stays booked.
+* **The proposed slot text's content-scan result.** The plan's exact text is not
+  in the tree. I scanned a plausible rendering of the merge block — `OK -- 1
+  file(s) scanned; no flags` — which establishes the mechanism accepts text of
+  this shape, not that the plan's text passes. Re-run over the real file at A2.
+* **Whether the Decision requires `format_profile_summary` at v1.** A
+  Decision-reading question. The plan escalates it as strikeable in one line;
+  I take no position, and neither did the review.
+* **Cross-cluster re-anchor sequencing (L7).** Maintainer-owned. Unchanged by
+  this Response except that M10 gives the ceremony two more facts to work from.
+* **Whether the review's `1779 passed` was right at `eacb7dd`.** Unreproducible
+  by construction; I decline to assert either way.
+
+### Does this Response clear the plan to implement?
+
+**No.**
+
+The declared tier is `required(**External**, security lens)`. What is in the tree
+is an **Internal** round and this **author's Response** to it. Both are the same
+agent type as the plan's author, and neither has the structural independence the
+tier is defined by. **The External security-lens round is undischarged**, and
+under the plan's own standing rule — *"No implementation commit lands before the
+`## Plan review` section is in the tree"*, read with its brief, which says an
+Internal round does not discharge the tier — **no implementation commit may
+land.**
+
+What remains, in order:
+
+1. **The External security-lens round**, by a different agent type or the
+   Maintainer. This is the gate. [I1] is the argument for it: a defect in the
+   headline deliverable that a same-type reviewer caught only by *running* the
+   mechanism rather than reading it, on a plan that had measured everything else.
+2. **Two Maintainer calls surfaced and not decided here** — listed in the
+   handoff, not silently resolved: whether M1's above-marker guidance is
+   acceptable in `templates/core/AGENTS.md`, and whether the two guaranteed
+   `FROZEN-MODIFIED` rows change the ceremony's shape.
+3. **The AST re-anchor ceremony**, unchanged and still the Maintainer's, over a
+   union the Maintainer forms — now against a **173**-entry baseline.
+
+The amendments above make the plan *executable-as-written* once the tier is
+discharged. They do not discharge it, and this Response claims no tier
+satisfied.
