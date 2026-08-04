@@ -20,8 +20,12 @@ carries three claim-marker maintenance notes about exactly this breakage.
 install-contract, doctrine, or security surface is touched"*). See
 [Plan review — the brief](#plan-review--the-brief-and-the-one-question-the-decision-could-not-have-asked)
 for what this round must additionally settle. **No implementation commit lands
-before a `### Plan review` sub-heading is in the tree.**
-**Last update**: 2026-08-04
+before a `### Plan review` sub-heading is in the tree.** Round one landed
+2026-08-04 and returned **REVISE**; the author's revision is recorded at
+[Revision after Internal plan review](#revision-after-internal-plan-review----claude-author----2026-08-04)
+and a **second round is required** — see
+[The second round — the brief](#the-second-round--the-brief-after-the-internal-review-returned-revise).
+**Last update**: 2026-08-04 (revision after Internal plan review)
 **Opened**: 2026-08-04
 
 ## Proposed paths
@@ -70,29 +74,43 @@ that discharges it. All five are also indexed in
 
 | # | Constraint, as pre-registered | Source (sibling, archived) | Discharged by |
 | --- | --- | --- | --- |
-| **R2** | Enumerate changes with `-M` / `--find-renames`. Rename-blind plumbing reports a plan-open's archived proposal as an *added* file carrying `## Review` and `## Decision`, which false-flags the dominant lifecycle commit shape. Add the rename-to-archive case as a must-not-flag test. | `dev/proposals/archive/2026-07-08-claude-review-record-integrity.md:291-302`; carried at `:434-438` | **AC-R2** — Chunk A ships `--find-renames=100%` enumeration; A6 pins `5140e21`/`57d1daf` (plan-open, `R100` + a genuine `A`) as must-trigger-but-not-flag, and E3 pins the archive renames as must-produce-zero-findings. |
-| **R3** | State the load-bearing narrowing (fire only on commits touching `dev/proposals/` \| `dev/plans/`, excluding archive moves); name the exemption source of truth; **bound the vocabulary to restating it**; dogfood over ~30 real commits. | `:303-314`; carried at `:439-441` | **AC-R3** — Chunk A ships the narrowing as module constants; A7 pins the four carve-in commit shapes as never-triggered; the bright line (no exception keyword, no opt-out directive, no new contributor obligation) is a **scope fence**, restated in [Scope](#scope) and tested by A8. Dogfood is 868 commits, not 30. |
+| **R2** | Enumerate changes with `-M` / `--find-renames`. Rename-blind plumbing reports a plan-open's archived proposal as an *added* file carrying `## Review` and `## Decision`, which false-flags the dominant lifecycle commit shape. Add the rename-to-archive case as a must-not-flag test. | `dev/proposals/archive/2026-07-08-claude-review-record-integrity.md:291-302`; carried at `:434-438` | **AC-R2** — Chunk A ships `--find-renames=100%` enumeration; **A15** (not A6, which is the `_triggers` implementation row — corrected at revision) pins `5140e21`/`57d1daf` (plan-open, `R100` + a genuine `A`) as must-trigger-but-not-flag; **A14** pins the rename-to-archive must-not-flag case; and **E4** (not E3, which is the `e31625c~1..57d1daf` window) pins `b064576`/`d789414` as must-SKIP. **A16 is the only red-capable member of this discharge and it is now an explicitly-synthetic hazard test** — see A16 and AC-R2. |
+| **R3** | State the load-bearing narrowing (fire only on commits touching `dev/proposals/` \| `dev/plans/`, excluding archive moves); name the exemption source of truth; **bound the vocabulary to restating it**; dogfood over ~30 real commits. | `:303-314`; carried at `:439-441` | **AC-R3** — Chunk A ships the narrowing as module constants; A17 (not A7, an implementation row) pins the carve-in commit shapes as never-triggered; the bright line (no exception keyword, no opt-out directive, no new contributor obligation) is a **scope fence**, restated in [Scope](#scope) and tested by **A18** (not A8, which is the test-module scaffolding row — corrected at revision). Dogfood is 868 commits, not 30. |
 | **R4** | Part C's rules, exception vocabulary, and home are all deferred and must be **pinned against the real commit corpus** before implementation; evaluate `quality_gate.py --sub transition` versus a standalone script. | `:315-321`; carried at `:442-447` | **AC-R4** — the home is settled (standalone; the Revised proposal's four grounds, one downgraded). The corpus pinning is *re-executed for this plan* against the tree as it stands today, and it **did not hold** — see [The corpus has moved](#the-corpus-has-moved-and-this-is-the-plans-central-finding). That re-derivation, not the proposal's, is what Chunks B and E pin. |
 | **R9** | Replace the speculative dogfood with **corpus-derived** edge cases (plan-open rename, plan-archive + `PLANNING.md` bundle, strategy / goodnight carve-in commits); drop the false "rejected-in-place adds no section" edge case. | `:362-370`; carried at `:475-478` | **AC-R9** — every synthetic fixture in Chunks A–C is traced to a **named real commit** in its table row, and Chunk E pins the real SHAs directly. The false edge case is gone; the Revised proposal reclassified the rejected/superseded case to *Known omissions* and this plan pins it as **must-SKIP**, not must-not-flag. |
 | **R10** | Recast the `quality_gate.py` analogy to its `info` tier; **pin exact exit behaviour (advisory = always exit 0)**; commit to a suppression mechanism (exclusion roots + whitelist + info downgrade). | `:371-378`; carried at `:479-481` | **AC-R10** — Chunk A pins the exit contract with a test asserting `main()` returns 0 on a repo *with* findings. Suppression is exclusion roots (Chunk A) + a populated SHA whitelist (Chunk D). **The third layer — the class-level info downgrade — is dropped, and the Revised proposal says so in terms rather than silently.** This plan carries that disclosure forward as a first-class acceptance criterion (AC-R10b) so the unmet pre-registration cannot go quiet a second time. |
 
 ## The corpus has moved, and this is the plan's central finding
 
-Everything in this section was measured **for this plan**, at HEAD `8f47c76`
-(2026-08-03), under the canonical interpreter
+Everything in this section was measured **for this plan** and **re-measured at
+the revision after the Internal plan review**, under the canonical interpreter
 `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.x), by a throwaway
-prototype of the Revised proposal's pinned heuristics that lives in this
-session's scratch space and is deliberately not committed. Read the third row
-first.
+prototype of the Revised proposal's pinned heuristics that lives in a session
+scratch space and is deliberately not committed. **Every window endpoint below
+is SHA-pinned**; the third row's endpoint used to read `HEAD` and that was the
+defect corrected at revision (see [I8] in the Internal review). Read the third
+row first.
 
 | window | scanned | triggered | findings | true positives | false positives |
 | --- | --- | --- | --- | --- | --- |
-| `<root>..d6646a3` (all history before the self-host) | 415 | 0 | 0 | 0 | 0 |
+| `0f1fc68..d6646a3` (all history before the self-host) | 415 | 0 | 0 | 0 | 0 |
 | `d6646a3..57d1daf` (the proposal's pinned window) | **120** | **52** | **3** | 3 | **0** |
-| `57d1daf..HEAD` (everything since the proposal was written) | **333** | **265** | **20** | 0 | **20** |
+| `57d1daf..8f47c76` (everything since the proposal was written) | **332** | **265** | **20** | 0 | **20** |
 
-`<root>` is `0f1fc68`, the repository's root commit. `A..B` is exclusive of `A`.
-The three windows partition the 868-commit history exactly (415 + 120 + 333).
+`0f1fc68` is the repository's root commit. `A..B` is exclusive of `A`, so the
+three windows cover **867 of the 868 commits** reachable from `8f47c76` — the
+root itself is outside every window. The original wording claimed the windows
+*"partition the 868-commit history exactly (415 + 120 + 333)"*; both halves were
+wrong. Re-measured at revision: `git rev-list --count 57d1daf..8f47c76` → **332**
+(not 333 — 333 holds only at `eacb7dd`, a later commit), and 415 + 120 + 332 =
+**867**. The "868 subjects" denominator used below for the `opening` and `accept`
+token claims is `git rev-list --count 8f47c76` → **868**, which *does* include the
+root; both claims were re-measured at revision and both still hold.
+
+**Window 3's endpoint is now pinned to `8f47c76` and every figure derived from
+it is a snapshot of that commit.** For scale on why: over this plan's own review
+and revision, `57d1daf..HEAD` went **332 → 333 → 335 → 363** (`8f47c76`,
+`eacb7dd`, `8763eb6`, `da2d00e`). A HEAD-relative corpus window is not a window.
 
 **Row 2 reproduces the Revised proposal to the digit** — 120 scanned, 52
 triggered, 3 findings, and the findings are exactly `17b7e5c` twice (shape (b),
@@ -101,52 +119,141 @@ window was the right call and it paid off: nine months of drift later the number
 still land. That is the R2-of-this-proposal fix vindicated.
 
 **Row 3 is the problem.** The heuristics that scored zero false positives across
-the proposal's corpus produce **twenty findings on the 333 commits written
+the proposal's corpus produce **twenty findings on the 332 commits written
 since**, and every one I could classify is a false positive. The trigger rate
-also jumped from 43 % to 80 % — Cairn's commit mix has shifted heavily toward
-deliberation commits, so the narrowing filters far less than it did.
+also jumped from 43 % (52/120) to 80 % (265/332) — Cairn's commit mix has shifted
+heavily toward deliberation commits, so the narrowing filters far less than it
+did.
 
-### The five false-positive classes, each with its cause and its count
+### The six false-positive classes, each with its cause and its count
+
+**Re-derived at revision.** The Internal review classified the same 20 findings
+independently by claim token and got **`decision` 7 / `response` 7 / `review`
+6**; the revision reproduced that split exactly (the 7 `decision` are 5 whose
+winning leftmost token is `accept` plus 2 whose winning token is `decision`).
+Three of the original five rows mis-assigned a commit, so the taxonomy below is
+**six** classes, not five, and three counts moved. The totals still sum to 20 —
+what changed is which class pays for which commit, and therefore what
+[Maintainer fence](#maintainer-fence--the-two-decisions-this-plan-does-not-take)
+item 3 is actually pricing.
 
 | class | count | representative commit | cause |
 | --- | --- | --- | --- |
-| **FP-1 — the evidence-heading vocabulary is incomplete** | 5 | `cc8a25d` *"Add dedicated interpreter trust-root Security Review"* adds `## Security Review -- Codex …` | `## Security Review`, `## Security code review`, `## External Security Review`, `## Plan re-review`, `## Focused External first-use … review` do **not** start with `## Review` \| `## Plan review` \| `## Code review`. Measured: **26** h2 headings under `dev/proposals/` + `dev/plans/` contain "review" and match none of the three pinned prefixes. |
+| **FP-1 — the evidence-heading vocabulary is incomplete** | 3 | `cc8a25d` *"Add dedicated interpreter trust-root Security Review"* adds `## Security Review -- Codex …` | `## Security Review`, `## Security code review`, `## External Security Review`, `## Plan re-review`, `## Focused External first-use … review` do **not** start with `## Review` \| `## Plan review` \| `## Code review`. **Count corrected 5 → 3** at revision: the three genuine members are `cc8a25d`, `d0102a6`, `3da58c1` — exactly the three B12 already traces. `355aedb` and `f3ddc74` were counted here and are not this shape; they moved to FP-6. For the heading-gap measurement that motivates the fix, see B3 — the figure there was also wrong and is restated. |
 | **FP-2 — responses land as `###` sub-headings** | 7 | `31c40a0` *"lockfile-provenance-fields -- Response to External review (Codex)"* adds `### Response -- Claude (author)` inside an existing `## Plan review -- Codex …` h2 | Shape (a)'s span logic scans **h2 sections only**. A plan whose response is an h3 inside the review it answers carries no `## Response` h2 *at that commit*, so the added body falls inside the `## Plan review` span and finds no evidence section. Measured: 7 `### Response` sub-headings across the tree, and — the sharper point — the `## Response to plan review` **h2** convention that would have satisfied the rule did not yet exist when these seven commits landed; all 7 of its instances are dated 2026-08-03, after the last FP-2 commit. The convention changed *inside* the false-positive window. |
 | **FP-3 — `accept` as ordinary English, plus a subject prefix hyphen-suppression eats** | 5 | `7728fc1` *"proposal-response: accept api-web actor boundary findings"* | `proposal-response` is a hyphen compound, so the true `response` claim is suppressed; `accept` then wins leftmost and demands a `## Decision`. **The `accept` token has 0 true positives and 5 false positives across all 868 subjects** — every real Decision subject also carries the word "Decision", which wins leftmost anyway. This is the identical evidence shape that retired `opening`. |
-| **FP-4 — "respond to … review" reads as a review claim** | 2 | `283be88` *"portable-security-sweeps: respond to External security review"* adds `## Response -- Codex (author)` | `respond` is not a token (`responses?` does not match it), so `review` wins leftmost and demands a review section the commit correctly did not add. |
-| **FP-5 — an explicit negation** | 1 | `88fd91f` *"dev/proposals: transition-lint -- record Maintainer sequencing direction (not a Decision)"* | `Decision` matches inside a parenthetical that literally denies the claim. Fittingly, this is a commit on the transition-lint proposal itself. |
+| **FP-4 — "respond to … review" reads as a review claim** | 1 | `283be88` *"portable-security-sweeps: respond to External security review"* adds `## Response -- Codex (author)` | `respond` is not a token (`responses?` does not match it), so `review` wins leftmost and demands a review section the commit correctly did not add. **Count corrected 2 → 1**: `9754635` was traced here and its subject contains neither `respond` nor a claim-side `review` — re-read at revision, it is a bare `decision` match. It moves to FP-5. |
+| **FP-5 — the subject names a transition it is explicitly *not* making** | 2 | `88fd91f` *"dev/proposals: transition-lint -- record Maintainer sequencing direction (not a Decision)"*; `9754635` *"portable-security-sweeps: require an adoption path before Decision"* | `Decision` matches inside a parenthetical that denies the claim (`88fd91f`), or inside a forward reference to a Decision that has not happened yet (`9754635`). **Count corrected 1 → 2, and the class now spans two sub-shapes — negation and forward-reference — which is what a negation guard would have to cover.** Fittingly, `88fd91f` is a commit on the transition-lint proposal itself. |
+| **FP-6 — a claim-side shape: "close / resolve a review" is not "add a review"** | 2 | `355aedb` *"gate-reanchor-preflight: close the first-use exact-byte review (FUR1-FUR5)"*; `f3ddc74` *"gate-reanchor-preflight: resolve the security code review …"* | **New class, split out of FP-1 at revision.** `review` wins leftmost on a subject whose verb is *close* / *resolve*, so the tool demands a review section from a commit that is correctly answering one. This is a **claim-side** defect, not an evidence-heading one, so **no evidence widening fixes it** — measured: `355aedb` survives everything Chunk B ships. It has no proposed fix in this plan and is routed to the fence alongside FP-5. |
 
-Twenty findings, twenty false positives, **zero of them shape (b)**. That
-asymmetry is the second finding and it is good news: across 333 new commits
-including **six** new plan-opens (`7a573d9`, `3900b05`, `4cfa047`, `49c85bc`,
-`05515df`, `9c45d51`), the grammar-marker discriminator produced not one false
-positive. The Revised proposal's shape-(b) extension to plans — `**Status**:
-proposed | open | awaiting-plan-review`, sections `## Review` \| `## Plan review`
-\| `## Code review`, markers `[R<n>]` \| `[E<n>]` \| `**Steelman` \|
-`**Covered**` — validated on two plan-opens and now holds on eight.
+Twenty findings, twenty false positives, **zero of them shape (b)** — *at
+`8f47c76`*. That asymmetry was the plan's second finding and it was read as good
+news. **It did not survive the review, and the correction is the most important
+thing in this revision.**
+
+**Re-derived at revision, over the whole history.** Shape (b) under the pinned
+heuristics:
+
+| range | commits scanned | shape-(b) findings | true positives | false positives |
+| --- | --- | --- | --- | --- |
+| `0f1fc68..8f47c76` (the tree as this plan first measured it) | 867 | 2 | 2 (`17b7e5c` ×2) | **0** |
+| `0f1fc68..da2d00e` (the tree at revision, 2026-08-04) | 898 | 3 | 2 (`17b7e5c` ×2) | **1** |
+
+The one false positive is **`000e480`** — `dev/plans: open planner-line-semantics`,
+which landed *during* the Internal review. Its added blob carries `**Status**:
+open` at line 11 (inside the 60-line bound) and a section
+`## Plan review — the brief, and why the tier is not discharged` whose body cites
+`[E1]` while telling a future reviewer what to do. A grammar marker inside a
+review-kind span at open is exactly what C2 flags, so it flags.
+
+**The discriminator does not separate a baked-in review from a brief that
+instructs a reviewer**, because a brief naturally quotes finding-id grammar. And
+that shape is not rare — it is Cairn's house style, measured at revision:
+
+* **29** plan-opens in history (`A` entries under `dev/plans/`, archive and
+  template excluded).
+* **19 of the 29** already carry a review-kind h2 whose heading contains "brief".
+  (**Correction, made before this revision was committed.** An earlier draft of
+  this section said "25 of the 29". **25 is the count of brief-shaped review-kind
+  h2 *headings*, spread across 19 files** — several plans carry two, e.g. a
+  `## Plan review — the brief` and a `## Code review — the brief`. Numerator was
+  headings, denominator plan-opens. Re-measured two independent ways: the blob at
+  each of the 29 `A` commits, and the current tree. The conclusion survives at
+  19/29 — a majority, so `000e480` is still a class and not one commit — but
+  replacing an unverified figure with another unverified figure is precisely the
+  failure this round exists to prevent, so the provenance is recorded rather than
+  quietly corrected.)
+
+So the previous claim was not merely stale; it was measuring a hazard whose
+population is 19 and whose realised rate happened to be 0. One sentence of
+reviewer-brief prose is the whole distance between silence and a finding.
+**Chunk C's headline, E5's target and the Verification self-test are all
+restated below**, and C2 now ships a second conjunct with its own corpus
+evidence.
+
+The Revised proposal's shape-(b) extension to plans — `**Status**: proposed |
+open | awaiting-plan-review`, sections `## Review` \| `## Plan review` \| `## Code
+review`, markers `[R<n>]` \| `[E<n>]` \| `**Steelman` \| `**Covered**` — was
+validated on two plan-opens and **is now falsified on the twenty-ninth.**
 
 ### What this means for the plan, stated as a scope question and not decided here
 
 The proposal's *Signals the change is wrong* section is explicit: *"It fires on
 a benign commit in ordinary use. Recovery: whitelist the SHA with a written
 reason **and** open a follow-up to fix the heuristic … If entries accumulate
-past a handful, retire the tool."* Twenty entries is not a handful. **Shipping
-the heuristics exactly as pinned and whitelisting twenty SHAs is therefore not
-an option this plan will take** — it is the failure mode the proposal names.
+past a handful, retire the tool."* Twenty-one entries is not a handful (20 in
+window 3 plus `000e480`, the shape-(b) false positive found at review).
+**Shipping the heuristics exactly as pinned and whitelisting twenty-one SHAs is
+therefore not an option this plan will take** — it is the failure mode the
+proposal names.
 
-Three of the five classes are **mechanical widenings of an explicitly-pinned
+Three of the six classes are **mechanical widenings of an explicitly-pinned
 list**: FP-1 adds heading prefixes, FP-2 adds h3 spans, FP-4 adds `respond` (or
-demotes `review` behind it). Widening the *evidence* side can only ever reduce
-findings; it cannot make the tool flag something it did not flag before, so it
-cannot manufacture a new false positive. That is a safe, one-directional change
-and Chunk B ships it.
+demotes `review` behind it). Chunk B ships those three.
 
-Two are not mechanical. **FP-3 requires deleting `accept` from the claim
-vocabulary table the Decision reproduces**, and FP-5 requires either a negation
-guard or an accepted residual. Deleting a token *narrows* the tool, which can
-create a false negative, and the accepted scope quotes that table. This plan
-**does not decide those two**; it ships the evidence and routes them to the plan
-review and the Maintainer — see
+**The claim this plan originally made for them was false, and it is withdrawn
+here rather than softened.** It read: *"Widening the evidence side can only ever
+reduce findings; it cannot make the tool flag something it did not flag before,
+so it cannot manufacture a new false positive. That is a safe, one-directional
+change."* The Internal review manufactured the counterexample by running the
+widening over the corpus instead of over the plan's own fixtures, and the
+revision reproduced it:
+
+* Over `57d1daf..8f47c76` with B3's two widenings applied, findings go
+  **20 → 11 — and one of the 11 is new**: `fd6be5a`, `dev/proposals: open
+  transition-lint`, **shape (b)**, on the h3 heading `### Shape (b) — an open
+  commit whose added file already carries a real review`. Its body is the
+  proposal's own sentence *specifying* the marker set, so the specification of
+  the markers is an instance of the markers.
+* Measured at revision, `fd6be5a` is clean under the pinned rule, clean under the
+  h3 widening alone, clean under the contains widening alone, and flags **only
+  when both are applied** — which is why no single-axis check would have found it.
+
+**The mechanism is structural, not incidental.** B3's span function is used by
+both shapes. In shape (a) it selects **evidence**, and widening it is monotone
+*downward*. In shape (b) — via C2's *"(extended per B3)"* — the same function
+selects the **detector**, and widening it is monotone *upward*. One function,
+two opposite directions. The corrected claim, which is what Chunk B now ships
+against:
+
+> Widening the evidence side is one-directional **for shape (a) only**. For
+> shape (b) it is a widening of the detector and can manufacture findings, so
+> every B3 amendment must be re-measured against shape (b) over a corpus window
+> before it is called safe.
+
+The same run showed the plan's own plan-open commit `6a88501` is clean under the
+pinned rule and **flags under both widenings**, on `### Chunk C — shape (b): …`,
+for the identical reason. Both self-inflicted findings are killed by C2's new
+dated-heading conjunct (measured below); neither is killed by anything in Chunk B.
+
+Three are not mechanical. **FP-3 requires deleting `accept` from the claim
+vocabulary table the Decision reproduces**; **FP-5** (now n=2, spanning negation
+and forward-reference) requires either a negation guard or an accepted residual;
+and **FP-6** (n=2) is a claim-side shape that no evidence widening reaches.
+Deleting or re-scoping a token *narrows* the tool, which can create a false
+negative, and the accepted scope quotes that table. This plan **does not decide
+those three**; it ships the evidence and routes them to the plan review and the
+Maintainer — see
 [Maintainer fence](#maintainer-fence--the-two-decisions-this-plan-does-not-take).
 
 ## Scope
@@ -218,9 +325,22 @@ Nothing ships to an adopter; no manifest row moves.
 * **Deliberation layer** — this plan, its plan review, its code review, and the
   one-line `dev/PLANNING.md` row-move that serializes the plan-open. **Also
   serialized**: the row-move text is returned, not applied.
-* **No shipped template, no module, no install-manifest entry.** Re-verified for
-  this plan: `python bootstrap/scaffold.py --manifest` carries no `scripts/`
-  entry, and Cairn's own `scripts/` tools are repo-local by construction.
+* **No shipped template, no module, no install-manifest entry — but `scripts/`
+  is a shipped destination namespace, which the original wording got wrong.**
+  The retracted claim was *"`python bootstrap/scaffold.py --manifest` carries no
+  `scripts/` entry, and Cairn's own `scripts/` tools are repo-local by
+  construction"*, offered as re-verified. Re-measured at revision: the manifest
+  carries **24** `scripts/`-destination rows — 13 bare `scripts/*.py` (including
+  `claim_check.py`, `link_check.py` and `content_scan.py`, three of the reference
+  checkers `AGENTS.md` says Cairn ships adopters), 3 `scripts/*.txt` data files,
+  and an 8-file `scripts/_onboarding/` package. **The conclusion survives**: the
+  manifest is an explicit list, `transition_lint` appears on **0** rows, and the
+  expected-empty manifest diff still holds. Two consequences the corrected
+  wording must carry: A1's docstring claim is true of the *file*, not the
+  *directory*, and must say **why** (no manifest row); and the `scripts/*.py`
+  frozen glob at `bootstrap/tests/_gate_manifest.py:165-167` is partly shipped
+  and partly repo-local, so a `scripts/*.py` addition sits closer to the install
+  contract than *"no manifest row moves"* on its own conveys.
 
 <!-- cairn:slot documentation-tier-home -->
 **Doc tier home rule** — route doc and doctrine changes by layer per
@@ -237,22 +357,35 @@ plan's *Scope* must name the doctrine-surface touched (or an explicit
 Every figure is a dated snapshot measured for this plan; re-take at
 implementation rather than quoting from here.
 
-* **Suite baseline: 2 failed, 1744 passed, 0 skipped**, `as_of 2026-08-04`, under
-  `/Users/kendal30/conda_envs/lhm/bin/python3.13` with `PYTHONDONTWRITEBYTECODE=1`
-  (206 s). The two failures are the known stale AST-attestation nodes
-  (`test_ast_attest.py::test_committed_baseline_accounted_for_across_the_engine_package`
-  and `::test_ast_gate_passes_over_the_full_scaffold_module_set`, issue #1).
-  **This corrects the proposal's baseline**, which recorded *3 failed, 1408
-  passed, 3 skipped* on 2026-07-22 and named a third node,
-  `test_evolution_infer.py::TestGateEval::test_main_suggests_and_json` — that
-  node passes today. The correct claim is **"the two known failures stay the
-  only failures, 0 skipped stays 0, and collection grows by exactly the new
-  nodes."** **Caveat, disclosed rather than buried:** this figure was taken with
-  several concurrent workflows' edits live in the working tree (`bootstrap/_scaffold/`,
-  `bootstrap/verify_integrity.py`, two new test files, six untracked sibling
-  plans). It is therefore a *working-tree* baseline, not a HEAD baseline, and the
-  implementing agent must re-take it at the plan's own starting commit before
-  asserting any delta.
+* **Suite baseline — the absolute figure is withdrawn; only a procedure and a
+  failure *set* survive.** The plan previously asserted *"2 failed, 1744 passed,
+  0 skipped, `as_of 2026-08-04`"*, attributed the two failures to *"the known
+  stale AST-attestation nodes … issue #1"*, and built an acceptance criterion on
+  both. **The figure reproduces at no tree state and the attribution is wrong.**
+  Re-measured at revision under
+  `/Users/kendal30/conda_envs/lhm/bin/python3.13` with `PYTHONDONTWRITEBYTECODE=1`:
+
+  | tree state | result |
+  | --- | --- |
+  | clean `--no-hardlinks` clone of HEAD `da2d00e` | **1 failed, 1708 passed, 1 skipped** (184 s); sole failure `test_gate_preflight.py::TestPublicCli::test_check_runs_against_the_live_repo_and_reports` |
+  | working tree, `bootstrap/tests/test_ast_attest.py` alone | **2 failed, 27 passed** |
+  | clean clone of `da2d00e`, `bootstrap/tests/test_ast_attest.py` alone | **29 passed, 0 failed** |
+
+  The load-bearing correction: **both AST-attestation nodes PASS at clean HEAD.**
+  Their failure in the working tree is caused by the concurrent workflows'
+  uncommitted `bootstrap/_scaffold/config.py` edits — the failure text names
+  `CHANGED FunctionDef:load_config … NOT pure motion` — not by a stale committed
+  baseline, so the "issue #1" attribution was misapplied to the tree it measured.
+  The clean clone's single failure and single skip may themselves be
+  clone-environment artifacts (that node runs against *"the live repo"* by name),
+  which is exactly why **no absolute figure is carried forward from here.**
+  **The criterion is now procedural**, and stated at
+  [Acceptance criteria](#acceptance-criteria): capture the failure *set* and the
+  collected-node count at the plan's own starting commit, in a clean tree, and
+  assert that the set is unchanged and collection grows by exactly the new nodes.
+  The proposal's own baseline (*3 failed, 1408 passed, 3 skipped*, 2026-07-22,
+  naming `test_evolution_infer.py::TestGateEval::test_main_suggests_and_json`) is
+  equally not carried forward.
 * **No frozen file is modified, and this was checked rather than assumed.**
   `bootstrap/tests/_gate_manifest.py:165-167` globs `scripts/*.py` and
   `bootstrap/tests/**/*.py` into the frozen set, and `:15-16` makes modifying a
@@ -267,12 +400,14 @@ implementation rather than quoting from here.
 * **The install contract must not move.** Expected diff against a pre-change
   `python bootstrap/scaffold.py --manifest` capture: **empty**. A diff means
   something reached the engine and the plan stops.
-* **Doc gates.** `python scripts/check_cairn.py` → OK over **180** Markdown
-  files, `as_of 2026-08-04`; the count may only grow.
+* **Doc gates.** `python scripts/check_cairn.py` → OK over **193** Markdown
+  files, `as_of 2026-08-04` at HEAD `da2d00e` (re-measured at revision; the plan
+  first recorded 180 and the review measured 181 — the tree grows daily, which is
+  why the criterion is *"the count may only grow"* and not an equality).
   `python scripts/quality_gate.py --sub neutrality` → **fail=95, info=21**,
-  `as_of 2026-08-04`. **This corrects the proposal's `fail=99`**, which was
-  accurate on 2026-07-22 and has since moved; the figure must not move *because
-  of this plan*, which is the checkable claim.
+  `as_of 2026-08-04`, re-measured at revision and unchanged. **This corrects the
+  proposal's `fail=99`**, which was accurate on 2026-07-22 and has since moved;
+  the figure must not move *because of this plan*, which is the checkable claim.
 * **`scripts/` file count.** `ls scripts/*.py | wc -l` → **16**, `as_of
   2026-08-04`, matching the Revised proposal. This lands as the **17th and
   18th**. No doctrine tracks script-count growth in `scripts/` — the Revised
@@ -311,7 +446,7 @@ that the fail-tier must never get wired up by accident.
 
 | # | File | Change |
 |---|------|--------|
-| A1 | `scripts/transition_lint.py` | Module docstring: what the tool is, that it is **advisory and never gates**, that it is Cairn-repo-local and **not installed into adopter trees**, and the two-posture git-error rule stated where the code is — *fail-fast on inputs, degrade-quiet on per-commit enumeration*. Stdlib-only imports (`argparse`, `re`, `subprocess`, `sys`, `dataclasses`, `pathlib`). |
+| A1 | `scripts/transition_lint.py` | Module docstring: what the tool is, that it is **advisory and never gates**, that it is Cairn-repo-local and **not installed into adopter trees**, and the two-posture git-error rule stated where the code is — *fail-fast on inputs, degrade-quiet on per-commit enumeration*. Stdlib-only imports (`argparse`, `re`, `subprocess`, `sys`, `dataclasses`, `pathlib`). **Amended at revision ([I7]):** the not-installed claim must be scoped to the **file**, not the directory, and must state **why** — *this file has no row in the install manifest* — since `scripts/` as a directory *is* partly shipped. A docstring that says "`scripts/` is not installed" is false about the directory and would mislead the next reader of the very manifest this plan must not move. |
 | A2 | `scripts/transition_lint.py` | `@dataclass class Finding` carrying exactly `(sha, shape, file, message)` — **no `severity` field**, so there is no fail-tier present to sum. Contrast `scripts/quality_gate.py:91` (which does carry one), its `failed` property at `:117`, and `:833`'s `return 1 if report.failed else 0`. The docstring records that the missing field is *not* the pin — the Revised proposal withdrew "pinned in the type system" — and points at A11 as the actual pin. |
 | A3 | `scripts/transition_lint.py` | Module constants in the shape of `scripts/quality_gate.py:497` / `:500`: `_TRIGGER_ROOTS = ("dev/proposals/", "dev/plans/")`, `_EXCLUDE_SUBSTRING = "/archive/"`, `_EXCLUDE_BASENAME = "_template.md"`. A comment attributes the `/archive/` exclusion to `doctrine/proposals.md` > "File moves" (`:316-320` blesses the plan-open archive bundle; `:322-325` the reject/supersede archive bundle) — **not** to the `AGENTS.md` approval carve-in, per the Revised proposal's retitling. |
 | A4 | `scripts/transition_lint.py` | `_validate_range(rev_range)` — **fail-fast on inputs**. Re-implement the narrow regex from `scripts/measurements.py:54` (`^[0-9A-Za-z._/~^-]+\.\.\.?[0-9A-Za-z._/~^-]+$`), then resolve **both endpoints** with `git rev-parse --verify`. Any failure → a one-line stderr message and `return 2`, matching the usage-error convention at `scripts/quality_gate.py:817-822`. This is the silent-clean fix the Decision ratified: *"A rev-range that parses but does not resolve … must not exit 0 with no output."* Fixed argument vector, `shell=False`, no shell string — the security posture recorded at `scripts/measurements.py:24-27` and implemented at `:142-155`. |
@@ -325,6 +460,16 @@ makes it RED, and the perturbation is on the **hazard**, never on the test's own
 body. *Perturbing a test's own fixture validates the fixture; only perturbing
 the thing the test claims to guard validates the claim.*
 
+**Read the last column honestly.** It is titled *"the perturbation that makes it
+RED"* and **A15's cell says the perturbation leaves it green.** That is deliberate
+and it was true before the review; what the review correctly objected to is that
+a reader skimming the column banks A15 as pinned. So: **A15 is a
+must-not-regress assertion, not a pin** — the only rows in this table whose named
+perturbation has been *run* and observed red are A16 (synthetic, verified at
+revision) and A9–A14, A17–A20 (verified by construction at implementation).
+Where a row cannot be made red, it says so in its own cell rather than borrowing
+the column header's promise.
+
 | test | asserts | the perturbation that makes it RED |
 | --- | --- | --- |
 | **A9** `test_main_returns_zero_on_a_repo_with_findings` | `main([rev_range, "--root", repo])` → `0`, with at least one finding printed to stdout. Deferred to Chunk B for the finding; land in A as an xfail-free stub against a hand-planted stub finding injected through `scan`'s public return. | **Change `main`'s tail to `return 1 if findings else 0`.** This is R10's invariant and A9 is the pin the Revised proposal named when it withdrew the type-system claim. Run it: the test must go red on that one-line edit. |
@@ -334,9 +479,12 @@ the thing the test claims to guard validates the claim.*
 | **A13** `test_census_prints_on_a_clean_run` | A repo with one benign lifecycle commit → stdout contains `scanned 1 commits, 1 triggered, 0 findings`. | Guard the census print behind `if findings:`. Red. A zero-finding run must be positive evidence, not silence. |
 | **A14** `test_a_rename_into_archive_never_triggers` | Fixture: `git mv dev/proposals/<slug>.md dev/proposals/archive/<slug>.md`, subject *"Maintainer Decision — SUPERSEDE thing"*. `triggered == 0`. **Traced to `b064576`** (the tree's only supersession). | **Delete `_EXCLUDE_SUBSTRING` from A3.** The archive destination then reaches the trigger set. Red. |
 | **A15** `test_a_plan_open_triggers_but_the_archived_proposal_does_not` | Fixture: one commit adding `dev/plans/<slug>.md` **and** renaming `dev/proposals/<slug>.md` into `archive/` byte-identically. The plan file triggers; the archive path is excluded. **Traced to `5140e21` and `57d1daf`.** | **Drop `--find-renames=100%` from A5's argument vector.** Verified against the working tree for this plan: `git diff-tree --no-commit-id --name-status -r 5140e21` reports `D dev/proposals/…` + `A dev/proposals/archive/…` where `--find-renames=100%` reports `R100`. The `A` is still excluded by `/archive/`, so this alone stays green — which is why A16 exists. **This is R2's constraint and the pair A15+A16 is what discharges it.** |
-| **A16** `test_a_proposal_derived_plan_is_not_absorbed_into_a_rename` | Fixture: a plan-open whose new `dev/plans/<slug>.md` is a near-copy of the proposal it derives from (Cairn plans are proposal-derived — `dev/plans/archive/review-record-integrity.md:15`, `## Source proposal`) and the proposal is deleted **without** archiving. Asserts the plan enumerates as `A` and the commit triggers. | **Replace `--find-renames=100%` with bare `-M`.** The two files pair at ~96 % similarity, the genuine `A` is absorbed into an `R`, and the commit silently un-triggers. Red. This is the hazard the Revised proposal pinned the threshold against, and the *reason* the threshold is exactly `100%` and not `-M`. |
+| **A16** `test_a_proposal_derived_plan_is_not_absorbed_into_a_rename` **— explicitly synthetic; the one row in Chunks A–C that names no real commit, and AC-R9 is amended to say so** | Fixture: **engineered**, not corpus-derived. One commit deletes `dev/proposals/<slug>.md` and adds a `dev/plans/<slug>.md` whose content is that proposal plus one appended line — i.e. deliberately pushed above git's 50 % default rename threshold. Asserts the plan enumerates as `A` and the commit triggers. | **Replace `--find-renames=100%` with bare `-M`.** Verified at revision in a scratch repo: under `--find-renames=100%` the commit enumerates `A dev/plans/q.md` + `D dev/proposals/p.md`, trigger set `[('A', 'dev/plans/q.md')]`; under `-M` it enumerates a single `R099` and the trigger set is **empty**. Red. |
+| — | **The premise this row used to carry is retracted.** It read: *"The two files pair at ~96 % similarity … This is the hazard the Revised proposal pinned the threshold against, and the reason the threshold is exactly `100%` and not `-M`."* **The ~96 % was never measured and does not reproduce.** Built at revision from the real pair the row cited — `5140e21~1:dev/proposals/2026-07-08-claude-review-record-integrity.md` (654 lines) and `5140e21:dev/plans/review-record-integrity.md` (202 lines) — in a scratch repo with the real filenames: git **never pairs them**, at `-M`, `100%`, `50%`, `30%`, `10%`, or `1%`, with or without `-l0`. Harness control in the same rig: an artificially near-identical pair gives `R099` under `-M`. **Cairn plans cite their proposals; they are not copies of them.** | — |
+| — | **And the hazard has zero instances in the corpus.** Measured at revision across all **898** commits of history, comparing `-M` against `--find-renames=100%` enumeration commit by commit: the two produce **identical trigger sets on 898 of 898 commits**, and a genuine `A` under a trigger root is absorbed into a rename by `-M` on **0**. So the `100%` threshold is a **prophylactic with no measured benefit on this corpus** — which is what the proposal's own `[R4b]` finding already said at n=120 (*"it changes the trigger set on 0 of 120 commits"*), now confirmed at n=898. The threshold stays, because a synthetic fixture shows the hazard is *real in principle* and the cost of the stricter flag is nil; but the plan no longer claims it fixes an observed defect. | — |
 | **A17** `test_a_commit_with_no_lifecycle_A_or_M_never_triggers` | Fixture: a `dev/strategy/`-only commit whose subject reads *"open … review … Decision"*; and a second fixture bundling only `dev/PLANNING.md` + `CHANGELOG.md` + `dev/NEXT_SESSION.md`. `triggered == 0` for both. **Traced to `18707e9`, `d0ba903`, `ebb1d6e`** (strategy carve-in) and the goodnight-handoff shape. | **Add `dev/strategy/` to `_TRIGGER_ROOTS`.** Red. This is **AC-R3**: the narrowing alone discharges the approval carve-in, so the tool needs no exception vocabulary — and this test is what proves the narrowing is doing that work rather than a keyword list quietly doing it. |
-| **A18** `test_the_tool_ships_no_exception_vocabulary` | A source-level assertion over `scripts/transition_lint.py`: the file contains no `skip`/`exempt`/`no-lint`/`transition-lint:` directive token, and `scan` reads nothing from the commit **body** (`%b`) or from `git notes`. | **Add a `# transition-lint: skip` opt-out branch.** Red. The bright line the Decision ratified is *"no exception keyword, no in-message opt-out directive, no new obligation."* A prose fence is not a fence; this makes it mechanical. |
+| **A18** `test_the_tool_ships_no_exception_vocabulary` | A source-level assertion over `scripts/transition_lint.py` that matches a directive **shape**, not a bare token: (i) no match for `#\s*transition-lint:\s*\w+`; (ii) no `argparse` option string whose name contains `skip`/`exempt`/`ignore`/`no-lint`; (iii) `scan` reads nothing from the commit **body** (`%b`) or from `git notes`, asserted by an AST walk over the `git` argument vectors. | **Add a `# transition-lint: skip` opt-out branch.** Red. The bright line the Decision ratified is *"no exception keyword, no in-message opt-out directive, no new obligation."* A prose fence is not a fence; this makes it mechanical. |
+| — | **Why the assertion is shape-based and not the bare token list it used to be.** The row previously asserted the file *"contains no `skip`/`exempt`/`no-lint`/`transition-lint:` directive token"*. That collides head-on with prose this same plan **requires** the module to carry: A5 mandates the degrade-quiet posture be documented, and its own wording is *"the commit is skipped"*; AC-R3 mandates the file **name the exemption source of truth**, and the Revised proposal's section is titled *Exemption model*. A bare-substring assertion therefore goes red on the module's own required docstring, and the pressure at implementation is to keep relaxing it until it asserts nothing — the hollow-guard failure the plan-review brief names by name. **Stated here so the implementing agent does not weaken it by improvisation.** *(Design reading, not a measurement — the file does not exist yet.)* | — |
 | **A19** `test_no_import_crosses_the_scripts_templates_boundary` | AST-walk `scripts/transition_lint.py`: no `Import`/`ImportFrom` naming a `templates` path, no `sys.path` mutation, no `spec_from_file_location` pointing under `templates/`. | **Add `from templates.modules...conflict import _rename_map_via_git`.** Red. Pins the Revised proposal's header scope claim: the `-z` idiom is copied, never imported, because importing would couple a repo-local script to a file `bootstrap/tests/_gate_manifest.py:165-167` byte-freezes. |
 | **A20** `test_empty_range_is_clean_and_zero` | `main(["HEAD..HEAD", "--root", repo])` → `0`, census reads `scanned 0 commits, 0 triggered, 0 findings`. | Make `scan` raise on an empty commit list. Red. |
 
@@ -351,7 +499,9 @@ false positives are answered.
 |---|------|--------|
 | B1 | `scripts/transition_lint.py` | `_claim(subject)` — **case-insensitive (`re.IGNORECASE`)**, each token matched as `(?<![-\w])<token>s?(?![-\w])`, **leftmost match wins**, at most one claim per subject. Case-insensitivity is not optional and the comment says why: `f4a8308`'s subject is *"dev/proposals: add Gemini External **Review** for check_cairn self-host-compat"* — capital `R`. A case-sensitive build produces no claim, no finding, and silently inverts the headline result. |
 | B2 | `scripts/transition_lint.py` | The claim vocabulary. `open` — **positionally anchored** as the first word after the `dev/<tree>: ` prefix. `review`/`reviews`. `response`/`responses`. `decision`, and — pending the Maintainer fence — `accept`. `reject` and `supersede` are retained with an inline comment marking them **dead tokens in v1** (rename-only Decision commits are never examined). `opening` is **not** present: 0 true positives in 868 subjects, re-verified for this plan. |
-| B3 | `scripts/transition_lint.py` | `_section_spans(sha, path, prefixes)` — read the post-image with `git show <sha>:<path>`, find headings, and return `(start_line, end_line, heading)` per matching section. **Amended for FP-1 and FP-2**: match **h2 and h3** headings, and match a section by *containing* its kind rather than by a three-prefix `startswith`. The measured gap, `as_of 2026-08-04`, is **26** h2 headings under `dev/proposals/` + `dev/plans/` that contain "review" and match none of `## Review` \| `## Plan review` \| `## Code review` — of which **24** are genuine review sections (`## Security Review`, `## Security code review`, `## External Security Review` and its round variants, `## Plan re-review` ×5, `## Focused External first-use … review` ×6, `## Re-Review`) and 2 are prose sections whose titles merely contain the word. Plus **7** `### Response` sub-headings whose bodies sit inside a `## Plan review` span. The implementing agent re-derives both figures rather than quoting them. |
+| B3 | `scripts/transition_lint.py` | `_section_spans(sha, path, prefixes)` — read the post-image with `git show <sha>:<path>`, find headings, and return `(start_line, end_line, heading)` per matching section. **Amended for FP-1 and FP-2, with two corrections forced by the Internal review.** (1) Match **h2 and h3** headings, **additively**: an h2 span still runs to the next **h2**, and an h3 additionally opens its own span running to the next h2-or-h3. An h3 must never *truncate* the enclosing h2 — a truncating implementation was tried at revision and it **creates 16 new shape-(a) findings** by pushing evidence out of the h2 span it used to sit in. (2) Match a section by kind **exclusively**, not by bare substring: a heading that `startswith` another kind's prefix (`Response`, `Revised proposal`, `Decision`) is that kind and is **never** review-kind evidence. See the two rows below for the measurements that force both. |
+| — | **The heading-gap figure was wrong and is restated.** B3 previously claimed *"the measured gap … is **26** h2 headings under `dev/proposals/` + `dev/plans/` that contain 'review' and match none of `## Review` \| `## Plan review` \| `## Code review`"*. Re-measured at revision, that specification yields **78**, not 26. The 26 is recovered only by *additionally* discarding headings that start `## Response` (50) or `## Revised proposal` (2) — an exclusion the plan performed and did not disclose. The corrected accounting, `as_of 2026-08-04`: **78** literal, = **52** `Response`/`Revised proposal` + **26** others, of which 24 are genuine review sections (`## Security Review`, `## Security code review`, `## External Security Review` and its round variants, `## Plan re-review` ×4, `## Focused External first-use … review` ×6, `## Re-Review` ×2) and 2 are prose titles that merely contain the word. Plus **7** `### Response` sub-headings whose bodies sit inside a `## Plan review` span. | — |
+| — | **And the undisclosed 52 are exactly what the un-amended rule would absorb, which is why (2) is not cosmetic.** Under a bare-substring match there is no way to tell `## Response -- Claude (author, to External Security Review) -- …` from a review section: it contains "review", so it becomes review-kind **evidence for a review claim**. Measured at revision: that is precisely what silences `f3ddc74` — a **false negative bought, not a false positive fixed**. With the exclusive kind-match shipped, `f3ddc74` correctly returns as a finding and the post-Chunk-B remainder is **11** rather than 10. The plan takes the higher number: a finding it must explain is better than a silence it cannot see. Nothing in this plan measures false negatives at large — known omission (e) already concedes that, and this amendment narrows the gap without closing it. | — |
 | B4 | `scripts/transition_lint.py` | `_added_nonblank_lines(sha, path)` — parse `git show --find-renames=100% --format= --unified=0 <sha> -- <path>` hunk headers for the post-image start, then walk the `+` lines counting non-blank. **Pin the header grammar explicitly**: `@@ -a,b +c,d @@` where a missing `,d` means count 1, and `+c,0` is a pure deletion. Note the flag change — the Revised proposal wrote `-M` here and `--find-renames=100%` for `diff-tree`; the two must agree or the evidence and the trigger disagree about what the file is. |
 | B5 | `scripts/transition_lint.py` | Evidence rule: **≥ 3 non-blank added lines whose post-image line numbers fall inside a matching section's span**. Heading-presence is worthless and the comment records why: `3ae1d47` seeds a titled `## Review …` placeholder at line 249 of the added blob, so the genuine review-append `e31625c` adds **zero** `+## Review` lines — a heading rule flags the honest commit and misses the dishonest one. Verified for this plan: `git show --format= --unified=0 e31625c \| grep -c '^+## Review'` → **0**, and its single hunk is `@@ -251,6 +251,166 @@`, i.e. 166 added lines starting inside the span. |
 | B6 | `scripts/transition_lint.py` | The `open` claim's evidence is an `A` entry under a trigger root — the one claim whose evidence is structural rather than sectional. |
@@ -367,21 +517,41 @@ false positives are answered.
 | **B11** `test_open_is_positionally_anchored` | The three subjects the Internal panel constructed must not flag: `dev/proposals: transition-lint -- resolve open questions from the Internal review`; `dev/plans: X -- close out the open acceptance criteria`; `dev/plans: transition-lint -- opening sequence step 1`. | **Remove the positional anchor**, matching `open` anywhere. All three demand an `A` entry an M-only commit lacks. Red. "Open questions" is live Cairn vocabulary — `templates/core/dev/strategy/_template.md:129` — so this is a real subject shape, not a constructed one. |
 | **B12** `test_a_security_review_section_counts_as_review_evidence` | **FP-1.** Fixture: subject *"Add dedicated interpreter trust-root Security Review"*, body added under `## Security Review -- <reviewer> -- <date>`. No finding. **Traced to `cc8a25d`, `d0102a6`, `3da58c1`.** | **Revert B3 to the three-prefix `startswith`.** The section becomes invisible and the honest commit flags. Red. |
 | **B13** `test_an_h3_response_inside_a_plan_review_counts_as_response_evidence` | **FP-2.** Fixture: a plan carrying `## Plan review -- <reviewer>` with a later `### Response -- <author>` sub-heading receiving 30 added lines. Subject *"dev/plans: X -- Response to External review"*. No finding. **Traced to `31c40a0`, `8900e46`, `8abd453`, `8d876e0`, `eb4ec16`, `ce8e20e`, `e953095`.** | **Restrict B3's span scan to h2.** The fixture's response body then falls inside the `## Plan review` span with no `## Response` h2 present, and the commit flags. Red. The fixture must reproduce the *pre-2026-08-03* plan shape (h3 response, no `## Response` h2) — building it from a current plan would hand the test a `## Response to plan review` h2 that satisfies even the un-widened rule, and the test would pass under both. |
-| **B14** `test_respond_to_a_review_is_not_a_review_claim` | **FP-4.** Subject *"portable-security-sweeps: respond to External security review"* adding a `## Response` section produces no finding. **Traced to `283be88`, `9754635`.** | Two candidate fixes; the plan review chooses. Either add `respond`/`responds` as a **response** token (so leftmost-wins picks it up before `review`), or accept `## Response` as evidence for a review claim. The perturbation for either is deleting it — the subject then claims *review*, finds no review section, and flags. Red. |
-| **B15** `test_the_evidence_widening_cannot_create_a_finding` | A property test over the corpus fixture set: for every fixture in Chunks A–C, the finding set under B3-as-shipped is a **subset** of the finding set under the three-prefix h2-only rule. | Invert one widening so it also *narrows* (e.g. make the kind-match exclusive rather than containing). Red. This is the pin on the claim in [Scope](#what-this-means-for-the-plan-stated-as-a-scope-question-and-not-decided-here) that widening the evidence side is one-directional — asserted there, tested here. |
+| **B14** `test_respond_to_a_review_is_not_a_review_claim` | **FP-4.** Subject *"portable-security-sweeps: respond to External security review"* adding a `## Response` section produces no finding. **Traced to `283be88` — and to that commit only.** The second SHA this row used to trace, `9754635`, is **not** this shape: re-read at revision, its subject *"portable-security-sweeps: require an adoption path before Decision"* contains neither `respond` nor a claim-side `review`, and it is a bare `decision` match. It is FP-5 and is routed to the fence, not fixed here. | Two candidate fixes; the plan review chooses. Either add `respond`/`responds` as a **response** token (so leftmost-wins picks it up before `review`), or accept `## Response` as evidence for a review claim — note the second interacts with B3's exclusive kind-match and must be measured, not assumed. Measured at revision: **either fix leaves the post-Chunk-B remainder at 11** (the set shifts; `283be88` clears and another surfaces). The perturbation for either is deleting it — the subject then claims *review*, finds no review section, and flags. Red. |
+| **B15** `test_the_evidence_widening_does_not_create_a_finding_over_the_corpus` | **Re-specified at revision. It now quantifies over a corpus window, not over this plan's own fixtures.** Over `57d1daf..8f47c76` with the whitelist bypassed: the finding set under B3-as-shipped **plus C2's dated-heading conjunct** is a **subset** of the finding set under the three-prefix h2-only rule. Pinned figures, measured at revision: un-widened **20**; widened **11**; and the 11 are ⊂ the 20. | Delete C2's dated-heading conjunct, leaving B3's widenings alone. The set becomes 11 with **`fd6be5a` newly present and not in the un-widened 20** — the subset property fails. Red. Second, independent perturbation: make B3's h3 handling truncate the enclosing h2 span instead of adding beside it; 16 new shape-(a) findings appear. Red. |
+| — | **Why the old B15 could not have caught either.** It read: *"a property test over the corpus fixture set: for every fixture in Chunks A–C, the finding set under B3-as-shipped is a subset of the finding set under the three-prefix h2-only rule."* It quantified over *the fixtures the author built to demonstrate the widening's intended cases* — **the artifact under verification supplying its own verification material**, which is the exact failure class this plan's own review brief asks a reviewer to hunt for. The counterexample (`fd6be5a`) lives in the tree and no fixture set derived from the intended cases contains it. **A property test whose domain is the author's examples is a green light, not a pin.** | — |
 
 ---
 
 ### Chunk C — shape (b): an open commit whose added file already carries a real review
 
-The chunk that reproduces the original incident. Zero false positives across
-868 commits and eight plan-opens, measured for this plan — the strongest result
-in the whole exercise, and the one Chunk E must keep true.
+The chunk that reproduces the original incident.
+
+**The headline this chunk used to carry is withdrawn.** It read: *"Zero false
+positives across 868 commits and eight plan-opens, measured for this plan — the
+strongest result in the whole exercise, and the one Chunk E must keep true."*
+That was true at `8f47c76` and is false at `da2d00e`. Re-measured at revision
+over the whole history under the pinned heuristics:
+
+* `0f1fc68..8f47c76` — 867 scanned, **2** shape-(b) findings, both `17b7e5c`,
+  both true positives, **0** false positives.
+* `0f1fc68..da2d00e` — 898 scanned, **3** shape-(b) findings; the third is
+  **`000e480`**, a false positive on a plan-open's reviewer *brief*.
+* Population of the hazard: **29** plan-opens in history, **19** of which already
+  carry a review-kind h2 whose heading contains "brief" (25 such *headings*
+  across those 19 files — see the correction note above).
+
+So the honest statement, and the one Chunk E must keep true, is now: **one
+shape-(b) false positive in 898 commits under the pinned discriminator; zero once
+C2's dated-heading conjunct is applied — measured, not projected.** The
+zero-FP claim must not be restated in `docs/tool-usage.md` (F1) in its old form.
 
 | # | File | Change |
 |---|------|--------|
 | C1 | `scripts/transition_lint.py` | For each `A` entry under a trigger root: read the added blob's **first 60 lines** (the header bound the Revised proposal pinned after the panel's negative-space #3 flagged it undefined) and require `**Status**:` to be one of `proposed` \| `open` \| `awaiting-plan-review`. Verified for this plan: across every file under `dev/proposals/` and `dev/plans/` including archives, the deepest `**Status**:` line in a non-template file is **line 31** (this proposal's own, behind a long marker header); the two `_template.md` files sit at 77 and 123 and are excluded by `_EXCLUDE_BASENAME`. 60 has ~29 lines of headroom and the bound is stated in the code, not inferred. |
-| C2 | `scripts/transition_lint.py` | Scan `## Review` \| `## Plan review` \| `## Code review` section bodies (extended per B3) for a **review-grammar marker**: `[R<n>]`, `[E<n>]`, `**Steelman`, `**Covered**`. The marker is the discriminator between a seeded placeholder and a baked-in review — it is what makes shape (b) fire twice on `17b7e5c` and stay silent on `3ae1d47`, `87d3498`, and all six new plan-opens. |
+| C2 | `scripts/transition_lint.py` | Scan `## Review` \| `## Plan review` \| `## Code review` section bodies (extended per B3) for a **review-grammar marker**: `[R<n>]`, `[E<n>]`, `**Steelman`, `**Covered**` — **and require the section's own heading to carry an ISO date (`\d{4}-\d{2}-\d{2}`)**. The second conjunct is new at revision and is what separates a landed, attributed review from a brief that merely *quotes* finding-id grammar. **This amends a discriminator the Decision's accepted scope reproduces, so it is fenced** — see Fence 1 item 4; strikeable in one line, at the cost of restoring the false positive below. |
+| — | **The measurements that force the conjunct, and the ones that price it.** Marker-only (as pinned) over `0f1fc68..da2d00e`: **3** findings — `17b7e5c` ×2 (true) and **`000e480`** (false, on `## Plan review — the brief, and why the tier is not discharged`, whose body cites `[E1]`). Marker **+ dated heading**, same range: **2** findings, both `17b7e5c`, **0** false positives. The conjunct also independently kills the two self-inflicted findings B3's widenings create — `fd6be5a` (`### Shape (b) — …`) and this plan's own plan-open `6a88501` (`### Chunk C — shape (b): …`); with both B3 widenings *and* the conjunct applied, the whole history yields **2** findings, both `17b7e5c`. | — |
+| — | **The false-negative price, measured rather than waved at.** Across `dev/proposals/` + `dev/plans/` including archives there are **150** h2 headings starting with a pinned review prefix: **94 carry an ISO date, 56 do not** — and every one of the 56 is a brief, an empty placeholder, or a template heading (`## Review -- {{reviewer}} -- {{YYYY-MM-DD}}`, `## Plan review`, `## Code review`, `## Plan review — the brief …`), not a landed review. The separation is clean at n=150 today. **What it costs**: a genuinely baked-in review whose heading omits a date would be missed. Two things bound that. First, B3's additive h3 spans mean a dated `### Plan review -- <reviewer> -- <date>` inside an undated `## Plan review` container still opens its own dated span and still fires — verified at revision against `dev/plans/archive/interpreter-trust-root-fallback.md`, whose landed reviews all carry dated headings. Second, this is **n=1 evidence for the fix against n=2 for the true positives**, which is thin, and the plan says so rather than presenting a corpus-clean result as if it were corpus-derived. That thinness is the reason it is fenced and not simply shipped. | — |
 | C3 | `scripts/transition_lint.py` | One `Finding` **per baked-in section**, not per commit — `17b7e5c` must produce two, once per review section. |
 
 **Acceptance criteria — Chunk C.**
@@ -394,6 +564,8 @@ in the whole exercise, and the one Chunk E must keep true.
 | **C7** `test_a_placeholder_plan_review_at_plan_open_does_not_flag` | Fixture reproducing `5140e21` / `57d1daf`: `**Status**: awaiting-plan-review` with **empty** `## Plan review` / `## Code review` placeholders and zero grammar markers. No finding. | Delete the marker check. Red — and this is the false positive C6's widening would otherwise buy, so C6 and C7 are the second discriminating pair. |
 | **C8** `test_a_status_beyond_the_header_bound_is_not_read` | Fixture: an `A` blob whose `**Status**: proposed` sits at line 80 with a baked-in review below. No finding, and the bound is the documented reason. | Raise the bound to the whole file. Green→red is the wrong direction here, so assert the **inverse**: move the status line to line 31 (the real-world deepest) and confirm the finding *appears*. A bound test that only ever asserts silence cannot distinguish "bounded correctly" from "never fires". |
 | **C9** `test_a_template_file_is_never_examined` | Fixture: `A dev/proposals/_template.md` carrying `**Status**: proposed` **inside** the 60-line header bound plus a `## Review` section with grammar markers. No finding. | **Delete `_EXCLUDE_BASENAME`.** Red. **State the honest accounting rather than overclaiming the hazard:** the *real* `dev/proposals/_template.md` carries `**Status**: proposed` at line 123, `## Review -- {{reviewer}}` at line 313, and 7 grammar-marker instances (verified 2026-08-04) — so today the 60-line header bound *already* excludes it and the basename rule is defence in depth. The fixture deliberately places the status inside the bound so that the basename exclusion is the only thing standing between the template and a finding; otherwise the test would pass with `_EXCLUDE_BASENAME` deleted and prove nothing. |
+| **C10** `test_a_reviewer_brief_at_plan_open_does_not_flag` **(new at revision — this is [I1]'s pin)** | Fixture reproducing `000e480`: an `A` blob with `**Status**: open` at line 11 and a section `## Plan review — the brief, and why the tier is not discharged` — **undated heading**, body citing `[E1]` while instructing a future reviewer. **No finding.** | **Delete C2's dated-heading conjunct.** The brief's `[E1]` then reads as a baked-in review and the commit flags. Red — verified against the real commit at revision, where marker-only gives 1 finding on `000e480` and marker-plus-date gives 0. **Run C10 together with C6**: C6 asserts a genuinely baked-in *dated* plan review still flags, so the pair is what distinguishes "the conjunct discriminates" from "the conjunct disabled shape (b) on plans". A conjunct that only ever silences is indistinguishable from deleting the check. |
+| **C11** `test_the_span_widening_cannot_manufacture_a_shape_b_finding` **(new at revision — the shape-(b) half of [I2])** | Over `0f1fc68..8f47c76`, whitelist bypassed: the shape-(b) finding set with B3's widenings applied equals the set without them. Pinned figure: **2**, both `17b7e5c`. | **Delete C2's dated-heading conjunct** and re-run over `0f1fc68..da2d00e`: `fd6be5a` and `6a88501` appear as shape-(b) findings that the un-widened rule does not produce. Red. This is the criterion that would have caught the withdrawn one-directional claim, and it is deliberately a **corpus** assertion, not a fixture one — see B15's row for why. |
 
 ---
 
@@ -410,7 +582,7 @@ half) and **AC-R10b** (the dropped third layer, disclosed).
 | D1 | `scripts/transition_lint_whitelist.py` | `WHITELIST: dict[str, str]` — full 40-character SHA → **mandatory non-empty rationale**. A `dict`, not the `frozenset` of `scripts/quality_gate_unused_def_whitelist.py`, precisely because that file's structure makes a rationale optional (it carries them as free comments, and its own docstring says *"If R6's false-positive rate climbs … add per-symbol comments"* — an aspiration a scanner cannot check). Loading mirrors `scripts/quality_gate.py:70-83`: `spec_from_file_location` by file path, so the CLI works from any cwd. |
 | D2 | `scripts/transition_lint_whitelist.py` | **Ships populated** with the two incident SHAs, each rationale naming the corpus test that keeps asserting them. This reverses the original proposal's "ships empty ... the acid test": the findings are on immutable history and can never be fixed, so leaving them live makes the one documented invocation a permanent three-line wall — the Theme-3.4 *"trains people to ignore it"* failure arriving on day one. The acid test belongs in pytest. |
 | D3 | `scripts/transition_lint.py` | `scan(..., whitelist=None)` — `None` loads `WHITELIST`; an explicit `{}` **bypasses** it. The bypass is what lets Chunk E assert the incident findings while human-facing runs stay quiet. |
-| D4 | `scripts/transition_lint.py` | Module comment recording, in the code and not only in the record, that **R10's third pre-registered layer — the class-level `info` downgrade — is deliberately dropped**, with the Revised proposal's argument: measured 0 false positives across the proposal's corpus meant a class-level suppressor was machinery for a failure that had not occurred, and the *Signals* section routes accumulating entries to **retiring the tool**, not to a third layer. **Row 3 of this plan's corpus table is new evidence against that argument and the code comment must say so** — a recurring false-positive *shape* did in fact appear, twelve days later. See the Maintainer fence. |
+| D4 | `scripts/transition_lint.py` | Module comment recording, in the code and not only in the record, that **R10's third pre-registered layer — the class-level `info` downgrade — is deliberately dropped**, with the Revised proposal's argument: measured 0 false positives across the proposal's corpus meant a class-level suppressor was machinery for a failure that had not occurred, and the *Signals* section routes accumulating entries to **retiring the tool**, not to a third layer. **Row 3 of this plan's corpus table is new evidence against that argument and the code comment must say so** — a recurring false-positive *shape* did in fact appear, twelve days later, and at revision the count of distinct shapes is **six in shape (a) plus one in shape (b)**. See the Maintainer fence. |
 
 **Acceptance criteria — Chunk D.** Modelled directly on `scan-coverage`'s
 `_SCAN_EXCLUSIONS` guards, including the (e)-class one that does not follow from
@@ -441,7 +613,8 @@ review overturns it.
 | E2 | `bootstrap/tests/test_transition_lint.py` | **Window 1** — `d6646a3..57d1daf`, whitelist bypassed: `scanned == 120`, `triggered == 52`, and the finding set is **exactly** `{(17b7e5c, b) ×2, (f4a8308, a)}`. Re-verified for this plan at HEAD `8f47c76`: 120 / 52 / 3, reproducing the Revised proposal to the digit. |
 | E3 | `bootstrap/tests/test_transition_lint.py` | **Window 2** — `e31625c~1..57d1daf`: `scanned == 45`, `triggered == 41`, **0 findings** with the whitelist bypassed. Re-verified: 45 / 41 / 0. The must-not-flag set is asserted by construction (zero findings over a window containing all 20 named SHAs) rather than by 20 separate lookups. |
 | E4 | `bootstrap/tests/test_transition_lint.py` | **Must-SKIP** — `b064576` and `d789414` are never *examined*: `triggered` does not include them. **A correction the plan must carry, verified against the working tree:** the Revised proposal justifies this by quoting `git diff-tree … -M -r b064576` → a single `R091` line, but under the **pinned** `--find-renames=100%` the same commit enumerates as `D dev/proposals/…` + `A dev/proposals/archive/…` (91 % similarity is below the 100 % threshold, because the Decision was appended in the same commit). `d789414` behaves identically. **The conclusion survives — neither commit is examined — but the mechanism is the `/archive/` exclusion, not rename-blindness.** The test asserts the outcome and the comment states the real mechanism. |
-| E5 | `bootstrap/tests/test_transition_lint.py` | **Window 3** — `57d1daf..HEAD`, the corpus written since the proposal. Pinned to whatever finding set the Maintainer fence resolves to; the number to beat is **0**, and the number as-pinned-by-the-proposal is **20**. This node is the one that fails on the day the heuristics drift again, which is the whole point of having it. |
+| E5 | `bootstrap/tests/test_transition_lint.py` | **Window 3** — **`57d1daf..8f47c76`**, SHA-pinned at both ends. **The range used to read `57d1daf..HEAD` and that was a defect**: Chunk E's own acceptance criteria perturb window 1 with `d6646a3..HEAD` precisely to prove *"a HEAD-relative range cannot sneak back in"*, and A12's perturbation is giving the positional a `HEAD~20..HEAD` default. E5 was the thing both forbid. It was not theoretical — `57d1daf..HEAD` measured **332 / 333 / 335 / 363** at `8f47c76` / `eacb7dd` / `8763eb6` / `da2d00e`, i.e. it moved three times between this plan being written and this revision. A node asserting `scanned == N` over a moving range is red on the next commit by anyone; a node asserting only a finding set silently accretes corpus and stops meaning what it says. **Pinned figures at `8f47c76`**: 332 scanned, 265 triggered; **20** findings under the heuristics as the proposal pinned them; **11** after everything Chunk B and C ship. The number to beat is **not 0** — see the fence. |
+| — | **What the remaining 11 are, so the fence is priced on measurement.** Re-derived at revision over `57d1daf..8f47c76` with B3's widenings (additive h3 spans, exclusive kind-match) and C2's dated-heading conjunct: `106347c`, `353f6c7`, `611df5c`, `7728fc1`, `c95464d` (**FP-3**, the `accept` token, 5); `283be88` (**FP-4**, 1); `88fd91f`, `9754635` (**FP-5**, 2); `355aedb`, `f3ddc74` (**FP-6**, 2); `8abd453` (**FP-2 residue**, 1 — its added lines land at post-image ~128–393 while its `### Response` sits at line 905, so no span widening can reach it). **The plan previously implied a remainder of 6** (*"FP-1, FP-2, FP-4 — 14 of the 20"*). The measured remainder is **11**, and Fence 1's cost-benefit is recomputed on that figure. | — |
 
 **Acceptance criteria — Chunk E.**
 
@@ -453,7 +626,15 @@ review overturns it.
   together.
 * **Perturbation, RUN.** Repoint window 1 at `d6646a3..HEAD`. It must fail on the
   scanned count — proving the test pins a *window*, not merely a finding set, and
-  that a HEAD-relative range cannot sneak back in.
+  that a HEAD-relative range cannot sneak back in. **Run the same perturbation
+  against window 3**, which is the one that actually carried the defect until
+  this revision.
+* **A source-level assertion, added at revision.** `bootstrap/tests/test_transition_lint.py`
+  contains no `HEAD`-relative rev-range literal in any corpus-tier node: every
+  pinned range is `<40-hex>..<40-hex>` or `<sha>~1..<sha>`. Perturbation:
+  reintroduce `57d1daf..HEAD` anywhere in the file. Red. Three separate criteria
+  in this plan forbid a HEAD-relative range and the plan still shipped one, which
+  is the argument for making the ban mechanical instead of repeated.
 * **Perturbation, RUN.** Rename one pinned SHA to a non-resolving one. The tier
   must **skip**, not fail. Then break the guard itself and confirm it fails —
   a skip-guard that can only skip is indistinguishable from a disabled test.
@@ -493,16 +674,16 @@ review overturns it.
 Per-chunk criteria are above; these are the plan-level deliverables.
 
 * **The five pre-registered constraints, each explicitly discharged.**
-  * **AC-R2 — rename-awareness.** `--find-renames=100%` enumeration; A15 and A16 together (A15 alone is not sufficient and the plan says so).
-  * **AC-R3 — the narrowing carries the exemption model, and no vocabulary ships.** A17 (narrowing) and A18 (no exception keyword, mechanically asserted).
-  * **AC-R4 — heuristics pinned against the real corpus.** Chunk E, from the **committed** script, over three windows partitioning 868 commits — and the honest report that the proposal's pinning no longer holds on the newest third.
-  * **AC-R9 — corpus-derived edge cases, no speculation.** Every synthetic fixture in Chunks A–C traces to a named real commit in its own table row; `b064576` and `d789414` are **must-SKIP**, not must-not-flag.
+  * **AC-R2 — rename-awareness.** `--find-renames=100%` enumeration; A14, A15 and **A16** together. **Restated at revision so the discharge is not overstated.** A15's named perturbation leaves it green *by its own admission*, and A16's named perturbation was retracted at revision because its premise — a proposal/plan pair at "~96 % similarity" — does not reproduce at any rename threshold down to 1 %. The discharge now rests on **A16 as an explicitly-synthetic hazard test**, whose perturbation was run at revision and observed red (`--find-renames=100%` → trigger set `[('A', 'dev/plans/q.md')]`; `-M` → empty). The plan additionally records that the hazard has **0 instances in 898 commits**, so this criterion is discharged by a *constructed* demonstration that the flag does what it claims — not by evidence the corpus needed it.
+  * **AC-R3 — the narrowing carries the exemption model, and no vocabulary ships.** A17 (narrowing) and A18 (no exception **directive shape**, mechanically asserted — see A18's row for why the bare token list it used to specify could not have held against the module's own required prose).
+  * **AC-R4 — heuristics pinned against the real corpus.** Chunk E, from the **committed** script, over three **SHA-pinned** windows covering 867 of the 868 commits reachable from `8f47c76` — and the honest report that the proposal's pinning no longer holds on the newest third, nor (after revision) on shape (b) either.
+  * **AC-R9 — corpus-derived edge cases, no speculation, with exactly one labelled exception.** Every synthetic fixture in Chunks A–C traces to a named real commit in its own table row **except A16**, which is an explicitly-synthetic hazard fixture and is labelled as one in its own row and here. **The carve-out is deliberate and bounded to that single row**: A16's hazard has no corpus instance to trace to (measured: 0 in 898), so a row that simultaneously claimed corpus derivation and named no commit was the actual R9 violation. Labelling it fixes that; adding a second unlabelled synthetic would re-open it. `b064576` and `d789414` remain **must-SKIP**, not must-not-flag.
   * **AC-R10 — advisory exit contract plus a suppression mechanism.** A9 (`main()` returns 0 on a repo *with* findings, perturbed by wiring the fail-tier), A3 (exclusion roots), D1–D9 (the whitelist and its hygiene).
   * **AC-R10b — the dropped third layer stays disclosed.** The class-level `info` downgrade is not shipped. It is stated in `scripts/transition_lint.py`'s module comment (D4), in `docs/tool-usage.md` (F1), and in the Maintainer fence below — never left to a reader to notice. A pre-registered constraint went silently unmet once in this artifact's history; it does not go quiet twice.
 * **Tests that must pass.** `bootstrap/tests/test_transition_lint.py` in two tiers — synthetic (Chunks A–D) and corpus-regression (Chunk E) — plus the full suite. **Every new test has a named perturbation, and the perturbation is on the hazard, not on the test's own body.** Where a test cannot be made to fail, the plan says so instead of implying a guard exists. The perturbation ledger — the change made, the failure observed with its message, the byte-identical restore verified with `git diff <path>` empty — goes in each chunk's commit body.
-* **Suite figure.** `python -m pytest bootstrap/tests` under `/Users/kendal30/conda_envs/lhm/bin/python3.13` with `PYTHONDONTWRITEBYTECODE=1`. Baseline **2 failed / 1744 passed / 0 skipped**, `as_of 2026-08-04`. The claim is *"the two known AST-attestation failures stay the only failures, 0 skipped stays 0, and collection grows by exactly the new nodes."* Not "the suite stays green" — that is false today.
+* **Suite figure — procedural, because no absolute figure survived re-measurement.** `python -m pytest bootstrap/tests` under `/Users/kendal30/conda_envs/lhm/bin/python3.13` with `PYTHONDONTWRITEBYTECODE=1`. **The criterion is: at the plan's own starting commit, in a clean tree (a `--no-hardlinks` clone, not the working tree), capture the failing-node *set* and the collected-node count; then assert that the set is unchanged and collection grows by exactly the new nodes.** The previously-asserted baseline (*2 failed / 1744 passed / 0 skipped*, attributed to the two AST-attestation nodes) is **withdrawn** — it reproduces at no tree state, and both AST nodes pass at clean HEAD, so the attribution was wrong for the tree it measured; see *Gate accounting*. Not "the suite stays green" either — the clean clone of `da2d00e` had 1 failed / 1 skipped, possibly clone-environment artifacts, which is exactly why the set is captured rather than named here.
 * **Doc updates that must land.** All hand-authored: the `docs/tool-usage.md` section (F1, F2), the `scripts/transition_lint.py` module docstring, the per-entry rationales in `scripts/transition_lint_whitelist.py`, and the `CHANGELOG.md > Unreleased > Added` line (F3, returned not edited). No generated docs, no snippet-synced blocks.
-* **Examples / smoke checks required.** `python scripts/transition_lint.py d6646a3..57d1daf` — the live dogfood from the shipped script, reproducing 120 / 52 and the census. `python scripts/transition_lint.py <plan-open>..<final>` over this plan's own commit series — each must come back clean, the same self-application the sibling used. `python bootstrap/scaffold.py --manifest` — expected **unchanged**, which is the assertion that this plan installs nothing into an adopter tree.
+* **Examples / smoke checks required.** `python scripts/transition_lint.py d6646a3..57d1daf` — the live dogfood from the shipped script, reproducing 120 / 52 and the census. `python bootstrap/scaffold.py --manifest` — expected **unchanged**, which is the assertion that this plan installs nothing into an adopter tree. **The self-application check is restated below rather than asserted here**, because in its old form it was a pre-registration this plan could not have met.
 * **Inbound path-link updates.** None expected. `dev/PLANNING.md` and `dev/NEXT_SESSION.md` refer to plans by filename stem, not path link (`AGENTS.md` > *Shared communication files*), so the archive-move needs no edit there. Confirm at archive time rather than assume.
 
 ### Author-accounting — invariants, failure modes, edge cases
@@ -510,10 +691,10 @@ Per-chunk criteria are above; these are the plan-level deliverables.
 * **Invariants, each with the chunk that enforces it.**
   * *`main()` never returns 1.* Enforced by **A9**, perturbed by wiring `return 1 if findings else 0`. **Not** enforced by `Finding` lacking a `severity` field — the Revised proposal withdrew that claim and this plan does not restore it.
   * *A rev-range that parses but does not resolve never exits 0 silently.* Enforced by **A10**, perturbed by deleting the `rev-parse --verify` call.
-  * *Renames are never treated as additions; a genuine `A` is never absorbed into a rename.* Enforced by **A14**, **A15**, **A16** — the third is the one that pins the `100%` threshold rather than merely the presence of rename detection.
+  * *Renames are never treated as additions; a genuine `A` is never absorbed into a rename.* Enforced by **A14**, **A15**, **A16** — the third is the one that pins the `100%` threshold rather than merely the presence of rename detection, and it is an **explicitly-synthetic** fixture (the hazard has 0 corpus instances in 898 commits). A15 is a must-not-regress assertion, not a pin.
   * *A commit with no `A`/`M` under a trigger root produces no findings regardless of its subject.* Enforced by **A17**.
   * *The tool ships no exception vocabulary.* Enforced by **A18** (source-level) and **A19** (no cross-layer import).
-  * *Widening the evidence vocabulary cannot create a finding.* Enforced by **B15**, the property test — asserted in *Scope*, tested here, because a one-directional-change claim that is only asserted is exactly the class of overclaim this repository kills proposals for.
+  * *Widening the evidence vocabulary cannot create a finding **in shape (a)**, and does not create one in shape (b) over the pinned corpus.* Enforced by **B15** and **C11**, both re-specified at revision to quantify over a **corpus window** rather than over this plan's own fixtures. **The unrestricted form of this invariant is withdrawn**: it was asserted in *Scope*, was false for shape (b) (`fd6be5a`, and this plan's own plan-open `6a88501`), and the old fixture-scoped B15 structurally could not see either. A one-directional-change claim tested only against the author's examples is the overclaim this repository kills proposals for — it just took a corpus run rather than a read to catch it.
   * *The two incident commits keep flagging.* Enforced by **E2** with the whitelist bypassed, so the acid test lives in pytest and not in every human-facing run.
   * *No whitelist entry is stale or unreasoned.* Enforced by **D5**, **D6**, **D7** — and D7 does not follow from D5/D6.
 * **Public-path → test mapping.** `transition_lint.main(argv)` and
@@ -552,9 +733,16 @@ Per-chunk criteria are above; these are the plan-level deliverables.
   reliably generalise across twelve days of *the same* tree. (e) No human has
   read every one of the 265 triggered commits in window 3; twenty findings were
   classified by hand and the remaining 245 clean triggers were not individually
-  audited for **false negatives** — the tool's silence on them is unverified.
-  (f) FP-5 (an explicit negation, *"(not a Decision)"*) has no proposed fix in
-  this plan and is routed to the fence.
+  audited for **false negatives** — the tool's silence on them is unverified, and
+  B3's kind-match widening makes that gap *larger*, which is why B3 ships the
+  **exclusive** match rather than the bare substring that would have bought an
+  extra silence on `f3ddc74`. (f) **FP-5** (n=2 — negation and forward reference)
+  and **FP-6** (n=2 — the claim-side *close* / *resolve* verb) have no proposed
+  fix in this plan and are routed to the fence. (g) **Shape (b)'s discriminator
+  is not corpus-derived the way shape (a)'s now is.** C2's dated-heading conjunct
+  rests on n=1 false positive against n=2 true positives; the Internal review's
+  option (iii) — give shape (b) the same corpus re-derivation Chunk B got — is
+  **not taken here** and is carried to *Lasting-truth migration* as a v2 item.
 
 ## Verification
 
@@ -591,8 +779,31 @@ are added per plan when the change touches that surface.
   d6646a3..57d1daf` → census `scanned 120 commits, 52 triggered, 0 findings`
   (whitelist active). With the bypass, 3 findings. And
   `python scripts/transition_lint.py e31625c~1..57d1daf` → 45 / 41 / 0.
-* **The tool on itself** — over this plan's own commit series, expected clean.
-  A tool that flags its own implementation arc has failed its first real test.
+* **The tool on itself — restated at revision, because the old form was a
+  pre-registration this plan could not have met.** It read: *"over this plan's own
+  commit series, expected clean. A tool that flags its own implementation arc has
+  failed its first real test."* Measured at revision against the real history:
+  this plan's plan-open `6a88501` and its plan-review commit `fc0f52a` are **both
+  clean under the pinned heuristics** — the review commit is an `M`, which shape
+  (b) never examines, so the lifecycle's one-commit-per-transition rule is what
+  keeps it clean. But `6a88501` **flags under Chunk B's widenings** (on
+  `### Chunk C — shape (b): …`, whose body quotes the marker set), and it is clean
+  again only once C2's dated-heading conjunct lands. The restated check:
+  **run the tool over `6a88501~1..<final implementation commit>` with the
+  whitelist bypassed; expected 0 findings, and if the fence strikes C2's
+  conjunct, expected exactly 1 — named in the commit body, not discovered
+  later.** A tool whose own deliberation record trips it is not automatically
+  wrong; a plan that predicts clean and does not check is.
+
+  **The `~1` is load-bearing, and an earlier draft of this revision omitted
+  it.** `A..B` excludes `A` — a rule this plan states in its own *Method*
+  section — so `6a88501..da2d00e` measures **0 findings under the shipped rule
+  and 0 with the conjunct struck**: the check was pre-registered to a range that
+  *cannot* produce the very prediction it was written to test, and would have
+  passed vacuously in both arms. Over `6a88501~1..da2d00e` the prediction holds
+  exactly: 1 finding, `6a88501`, shape (b), on `### Chunk C — shape (b): …`.
+  This is the plan's own hazard — a check that cannot fail — caught inside the
+  round that added the check.
 * **The install-contract assertion** — `python bootstrap/scaffold.py --manifest`
   diffed against a capture at the plan-open commit. **Expected empty.**
 * **The gate-integrity note** — the final commit body records that
@@ -623,42 +834,78 @@ records `FROZEN-NEW` rows rather than `FROZEN-MODIFIED`, and nothing under
 `bootstrap/_scaffold/` changes, so `bootstrap/REANCHOR_RUNBOOK.md` is not
 engaged. The fence is about **scope authority**, not about access.
 
-**Fence 1 — may this plan amend the accepted claim vocabulary?** The Decision's
-*Accepted scope* reproduces the claim-token table, and the Revised proposal says
-of that section *"Everything below is pinned here, not deferred to the plan"* —
-which was the whole reason Part C was split out. This plan's corpus
-re-derivation shows the table now yields 20 false positives in 333 commits.
-Three sub-questions, in descending order of how safe the change is:
+**Fence 1 — may this plan amend the accepted claim vocabulary and the accepted
+shape-(b) discriminator?** The Decision's *Accepted scope* reproduces the
+claim-token table, and the Revised proposal says of that section *"Everything
+below is pinned here, not deferred to the plan"* — which was the whole reason
+Part C was split out. This plan's corpus re-derivation shows the table yields
+**20 false positives in 332 commits**, and the revision adds a fourth
+sub-question the original fence did not contain.
 
-1. **The evidence widenings (FP-1, FP-2, FP-4 — 14 of the 20).** One-directional:
-   they can only reduce findings. Read as within *"execute the decision"*, and
-   Chunk B ships them subject to B15's property test. Strikeable in one line if
-   the Maintainer disagrees.
+**Every figure below was recomputed at revision.** The original fence priced
+itself on *"FP-1, FP-2, FP-4 — 14 of the 20"*, remainder **6**. That arithmetic
+was wrong by 5: three commits were mis-assigned, and the measured remainder after
+everything Chunk B and C ship is **11**. Four sub-questions, in descending order
+of how safe the change is:
+
+1. **The evidence widenings (FP-1 ×3, FP-2 ×7, FP-4 ×1 — 11 of the 20, of which
+   9 actually clear).** **No longer defensible as "one-directional"** — that claim
+   is withdrawn above, because widening B3 also widens shape (b)'s *detector* and
+   demonstrably manufactures `fd6be5a`. What survives is narrower and is what
+   Chunk B now ships against: one-directional **for shape (a)**, and measured
+   non-creating for shape (b) *only in combination with item 4*. Read as within
+   *"execute the decision"*, subject to B15's and C11's corpus property tests.
+   Strikeable in one line.
 2. **Deleting `accept` from the claim vocabulary (FP-3 — 5 of the 20).** This
    **narrows** the tool and edits a table the Decision quotes. The evidence is as
-   clean as the evidence that retired `opening`: **0 true positives and 5 false
-   positives across all 868 subjects**, because every genuine Decision subject
-   also carries the word "Decision", which wins leftmost regardless. Recommended,
-   **not taken here**.
-3. **FP-5, the explicit negation (1 of the 20).** *"(not a Decision)"* claims a
-   Decision. Options: a negation guard (new, unvalidated, n=1 design — exactly the
-   move the Response identified as having produced R2), a single whitelist entry
-   with a rationale, or an accepted residual documented in `docs/tool-usage.md`.
-   The plan's recommendation is the **third**; the fence is that it is a
-   recommendation.
+   clean as the evidence that retired `opening`, and was re-measured at revision:
+   `accept` is the winning leftmost claim token on exactly **5 of 868 subjects**,
+   all 5 are false positives, and `opening` still has **0** occurrences in 868 —
+   because every genuine Decision subject also carries the word "Decision", which
+   wins leftmost regardless. Recommended, **not taken here**.
+3. **FP-5 and FP-6, the claim-side residues — now 4 of the 20, not 1.**
+   **Re-priced at revision**, and this is the item whose inputs moved most.
+   FP-5 is **n=2 spanning two sub-shapes**: an explicit negation (`88fd91f`,
+   *"(not a Decision)"*) and a forward reference (`9754635`, *"require an adoption
+   path before Decision"*). FP-6 is a **new class, n=2** (`355aedb`, `f3ddc74`):
+   *close* / *resolve* a review is a claim-side verb no evidence widening reaches.
+   Options: a negation/verb guard (new, unvalidated, now n=4 rather than n=1 — but
+   spanning three distinct sub-shapes, which is exactly the design the Response
+   identified as having produced R2), four whitelist entries with rationales, or
+   an accepted residual documented in `docs/tool-usage.md`. The plan's
+   recommendation is still the **third**; the fence is that it is a
+   recommendation, and that the price is now 4 lines of standing noise, not 1.
+4. **C2's dated-heading conjunct for shape (b) — new at revision.** The pinned
+   discriminator (grammar marker inside a review-kind span) produces **1 false
+   positive in 898 commits** (`000e480`, on a reviewer *brief*), against a hazard
+   population of **19 of 29 plan-opens** that already carry the brief shape.
+   Adding *"the section's heading must carry an ISO date"* restores **0 false
+   positives across 898** and independently kills the two findings B3's widenings
+   manufacture. But it **amends a discriminator the Decision's accepted scope
+   reproduces**, its supporting evidence is **n=1 against n=2 true positives**,
+   and its false-negative price — a baked-in review with an undated heading goes
+   unseen — is real if bounded (150 pinned-prefix review headings today: 94 dated,
+   all landed reviews; 56 undated, all briefs, placeholders or templates).
+   **Chunk C ships it and it is strikeable in one line**; striking it restores
+   `000e480` as a standing false positive and returns the self-application check
+   to "expected exactly 1".
 
-**If all three are struck**, the tool ships as pinned and the whitelist takes 20
-entries — which the proposal's own *Signals* section names as the trigger to
-**retire the tool to a manual checklist item**. That is a coherent outcome and
-the plan states it plainly rather than letting the alternative pass by default;
-it is the *Alternative #1 re-weighed* question arriving once more, now with the
-number attached.
+**If all four are struck**, the tool ships as pinned and the whitelist takes
+**21** entries — the 20 in window 3 plus `000e480` — which the proposal's own
+*Signals* section names as the trigger to **retire the tool to a manual checklist
+item**. That is a coherent outcome and the plan states it plainly rather than
+letting the alternative pass by default; it is the *Alternative #1 re-weighed*
+question arriving once more, now with the corrected number attached. **If all
+four are accepted**, the standing noise is **11 findings over window 3**, not the
+6 the original fence implied.
 
 **Fence 2 — R10's third suppression layer stays dropped.** The Revised proposal
 argued two layers suffice on the ground that *"the measured false-positive rate
 is 0 across all 538 subjects, so a class-level suppressor would be machinery for
-a failure that has never occurred."* **That premise is now falsified**: five
-distinct false-positive *shapes* appeared within twelve days. The plan still
+a failure that has never occurred."* **That premise is now falsified**: **six**
+distinct false-positive shapes appeared within twelve days in shape (a) — the
+count was five and moved to six at revision when FP-6 was split out of FP-1 — and
+a **seventh, in shape (b)**, appeared during the plan review itself. The plan still
 does not ship the layer — a class-level downgrade would let a bad shape be
 absorbed rather than surfaced, which is the wrong direction for a tool whose
 value is honesty about the record — but the Maintainer should know the argument
@@ -680,19 +927,21 @@ every file is new and repo-local, no manifest row moves, no `bootstrap/_scaffold
 byte changes, no frozen file is modified, and no doctrine or `AGENTS.md` line is
 edited. An External read is welcome and is not required. **What the round must
 additionally do is answer a question the Decision could not have asked**,
-because the corpus it was decided against did not yet contain the 333 commits
+because the corpus it was decided against did not yet contain the 332 commits
 that break it. A reviewer who returns SHIP without engaging Fence 1 has not
 discharged this round.
 
 **The three questions this review should aim at**, in descending weight:
 
 1. **Reproduce row 3 of the corpus table.** Build the Revised proposal's
-   heuristics from its text alone and run them over `57d1daf..HEAD`. If you do
-   not get 20 findings, the plan's central finding is wrong and Chunk B should
-   be struck. If you do, classify them independently — do not re-trust this
-   session's five-class taxonomy. Then answer Fence 1 directly: is amending the
-   pinned vocabulary within *"execute the decision"*, or does it go back to the
-   Maintainer?
+   heuristics from its text alone and run them over **`57d1daf..8f47c76`** (the
+   range read `57d1daf..HEAD` in the first round; that was the defect [I8]
+   caught, and it is corrected here so a second round measures the same corpus).
+   If you do not get 20 findings, the plan's central finding is wrong and Chunk B
+   should be struck. If you do, classify them independently — do not re-trust
+   this session's six-class taxonomy. Then answer Fence 1 directly: is amending
+   the pinned vocabulary within *"execute the decision"*, or does it go back to
+   the Maintainer?
 2. **Attack the perturbation ledger, not the test list.** For each of A9, A10,
    A16, B9, B15, C6, C8 and D7, ask: *does the named perturbation touch the
    hazard, or only the test's own fixture?* Two tests shipped in this repository
@@ -709,6 +958,47 @@ discharged this round.
 Two things a reviewer is invited to **strike** rather than accept: Chunk B's
 evidence widenings, which amend a pinned table; and Chunk E's window 3, which
 pins a finding set the fence has not yet resolved.
+
+### The second round — the brief, after the Internal review returned REVISE
+
+*Added at revision, 2026-08-04. The first round's brief above stands as the
+record of what round one was asked; this is what round two is asked, and it is
+deliberately narrower.*
+
+**Round one's own closing note is the binding instruction: if the second round
+is also Internal, it is bound to re-run, not re-read.** Every finding that
+mattered in round one was produced by executing the heuristics over the corpus,
+and none of them was reachable by reading the plan. The revision was written the
+same way — every disposition below is backed by a run, and the figures are in the
+chunk bodies. So:
+
+1. **Re-run, do not re-trust, the four numbers this revision turns on.** Over
+   `57d1daf..8f47c76`: 20 findings un-widened; **11** after Chunk B and C. Over
+   `0f1fc68..da2d00e`: **3** shape-(b) findings under the pinned discriminator,
+   **2** with C2's dated-heading conjunct. If any of those four does not
+   reproduce from your own reconstruction, say so before anything else — the
+   revision's whole case for amending a pinned discriminator rests on them.
+2. **Attack C2's new conjunct, which is the weakest thing this revision ships.**
+   It is n=1 evidence (`000e480`) for amending a discriminator the Decision
+   reproduces, and it is defended on a separation (94 dated / 56 undated headings)
+   that is a *convention*, not a rule anyone is obliged to follow. Ask: what is
+   the cheapest way to write a genuinely baked-in review that this conjunct
+   misses, and is that cheaper than writing a brief that the un-amended rule
+   flags? If it is, the conjunct is the wrong fix and Fence 1 item 4 should be
+   struck in favour of the Internal review's option (iii) — a full corpus
+   re-derivation of shape (b), deferred to its own round.
+3. **Check that each accepted finding actually changed a chunk, criterion or
+   test — not just a paragraph.** The revision claims C10, C11, a re-specified
+   B15, a re-scoped A16, a shape-based A18 and a SHA-pinned E5 as the mechanical
+   residue of [I1]–[I10]. Verify that each of those rows names a perturbation of
+   the **hazard**, and that A16's synthetic label is carried in *both* its row and
+   AC-R9 rather than only one of them.
+4. **The two dispositions that are partial declines** — [I1]'s self-application
+   half and [I3]'s "no red-capable test" conclusion — are the places the author
+   disagreed with the reviewer on the facts. Both are argued from runs recorded
+   in the revision section. Re-run those two specifically; a partial decline that
+   turns out to be wrong is worse than an accepted finding, because it is now
+   recorded as settled.
 
 > **The landed review appends here as a `### Plan review -- <reviewer> --
 > YYYY-MM-DD` sub-heading** (plus a `### Sharpening` sub-heading if it raised
@@ -747,6 +1037,8 @@ recall** — each follow-up with the home it goes to:
 | **Adopter shipping (v2)** — as a `lifecycle_metrics` subcommand, not a new module; revisit when a second real tree's corpus exists. | A new row on `dev/PLANNING.md`'s deferred board, carrying the corpus-drift evidence (row 3) as the reason the deferral hardened rather than softened. | It is a scope decision awaiting an external trigger, not an open question about this code. |
 | **The rename-only coverage gap (v2 candidate)** — let an `R` into `archive/` trigger shape (a) only, for `decision`/`reject`/`supersede` claims. **Its premise needs correcting first**: under `--find-renames=100%` those commits enumerate `D`+`A`, not `R`. | Its own proposal, opened only if the gap is ever felt. The corrected premise is recorded in Chunk E so the proposal does not start from the wrong enumeration. | New design validated on n=1 is what produced the proposal's own R2; it does not ride in on a plan. |
 | **The symmetric bundling check (v2 candidate)** — flag when ≥ 2 distinct evidence sections each receive ≥ 3 added non-blank lines. Declined for v1; its known collision is the legitimate `## Response` + `## Revised proposal` commit, Cairn's standard shape. | Its own proposal, with the collision written into the opening. | Needs its own corpus pass. |
+| **A corpus re-derivation of shape (b)'s discriminator** — the Internal review's option (iii), not taken here. C2 ships a marker check plus a dated-heading conjunct defended on **n=1** false positive against **n=2** true positives, over a hazard population of 19 of 29 plan-opens. Shape (a) got a 332-commit re-derivation; shape (b) did not. | Its own proposal, opened if the conjunct ever misses or the brief convention shifts again. Until then, `docs/tool-usage.md` (F1) states plainly that shape (b) is validated on 2 true positives and 1 false positive, not on a corpus pass. | The asymmetry is the honest reading of what this plan measured; hiding it behind Chunk B's much stronger evidence is how the first zero-FP headline survived as long as it did. |
+| **False-negative measurement, still absent** — known omission (e), unchanged in kind but larger in consequence after B3's kind-match widening. No acceptance criterion in this plan closes it. | A `dev/PLANNING.md` deferred row, carrying the 245-unaudited-clean-triggers figure. | It is a measurement nobody has taken, not a decision anybody deferred; it needs a home that says so. |
 | **R10's class-level `info` downgrade, dropped** — and the argument for dropping it now falsified (Fence 2). | `docs/tool-usage.md` (the user-visible statement of what suppression exists) **and** a `dev/PLANNING.md` deferred row carrying the falsification. | An unmet pre-registration needs a home a reader reaches without reading an archived plan. |
 | **Whether the corpus-regression tier belongs in pytest** (Open question 2, never explicitly ruled on). | Answered by the plan review; the answer is recorded in `docs/tool-usage.md`'s section on the tool's test posture. | A live posture, not a deferral. |
 | **`dev/reviews/` sits outside every named boundary** (Revised proposal, Open question 5 — 4 committed panel-source files as_of 2026-07-22, 8 as_of 2026-08-04). | **Not this plan's** — it is a gap in the `AGENTS.md` approval carve-in and belongs to the Maintainer. Carried forward as a surfaced note, not a deferral this plan owns. | Naming it here so it is not lost; claiming it would be scope creep into `AGENTS.md`. |
@@ -1313,3 +1605,236 @@ instruction, using the `## Plan review -- <reviewer> -- <date>` heading it
 specified. Per **[I1]**, that heading and placement are themselves what make the
 plan-open commit a shape-(b) finding under the pinned heuristics — recorded here
 because it is evidence, not irony.*
+
+## Revision after Internal plan review -- Claude (author) -- 2026-08-04
+
+**Model**: claude-opus-5 (Claude Opus 5).
+
+**Method, stated first because it is the finding's own instruction.** The review
+closed by binding a second round to *"re-run, not re-read"*. This revision took
+that as binding on the **author** as well: every finding below was re-derived
+from the primary source before disposition — the corpus, the git plumbing, the
+suite, the manifest — not from the review's wording and not from the plan's. That
+mattered. **Two of the ten did not reproduce as stated**, and one reproduced with
+a mechanism and a magnitude the review did not have.
+
+The reconstruction used here is **independent of the reviewer's**: built from the
+Revised proposal's *Shape (a) — claim detection (supersedes)* and *Shape (b) —
+extended to plans (supersedes)* sections, in a session scratch space, not
+committed. Its validation is that it reproduces window 2 to the digit — **120
+scanned / 52 triggered / 3 findings**, identities `17b7e5c` ×2 (shape b) and
+`f4a8308` (shape a) — and window 3 at `8f47c76` at **332 / 265 / 20** with the
+finding set matching the plan's. Interpreter throughout:
+`/Users/kendal30/conda_envs/lhm/bin/python3.13`. Repository HEAD at revision:
+`da2d00e`.
+
+### Dispositions
+
+| # | disposition | what changed |
+| --- | --- | --- |
+| **[I1]** | **Accepted in part; the second half declined on measurement** | Chunk C's headline withdrawn and restated; C2 amended to add a dated-heading conjunct; **C10** and **C11** added; E5's target restated; the Verification self-test restated; Fence 1 gains item **4**. |
+| **[I2]** | **Accepted** | The one-directional claim withdrawn in *Scope* and restated shape-(a)-only; **B15 re-specified** to quantify over a corpus window; **C11** added as the shape-(b) half; the *Author-accounting* invariant restated. |
+| **[I3]** | **Accepted, and strengthened** | A16's premise retracted; A16 relabelled an **explicitly-synthetic hazard test**; **AC-R9 amended** to carve out exactly that one row; **AC-R2 restated**; the A-table gains a stated caveat about its own column header. |
+| **[I4]** | **Accepted** | The taxonomy is now **six** classes; three counts corrected; **FP-6** split out; B14's trace corrected; the measured remainder **11** written into Chunk E and Fence 1. |
+| **[I5]** | **Accepted** | B3's figure restated **26 → 78 literal** with the exclusion disclosed; B3's kind-match changed from bare-substring to **exclusive**; the false negative it was buying named. |
+| **[I6]** | **Accepted** | The absolute suite baseline and its attribution **withdrawn**; the acceptance criterion made **procedural**. |
+| **[I7]** | **Accepted** | The manifest claim corrected to **24 `scripts/` rows**, with the two consequences the corrected wording must carry. |
+| **[I8]** | **Accepted** | Window 3 **SHA-pinned** to `8f47c76`; the partition arithmetic corrected; a **source-level ban** on HEAD-relative ranges added to Chunk E's criteria. |
+| **[I9]** | **Accepted** | Rows R2 and R3 of the pre-registration table repointed: A6 → **A15**, E3 → **E4**, A7 → **A17**, A8 → **A18**. |
+| **[I10]** | **Accepted** | A18 re-specified to assert a directive **shape**, with the collision that forced it stated in its own row. |
+
+### The three the review called blocking, with what re-derivation actually found
+
+**[I1] — accepted on the corpus finding, declined on the self-application
+simulation.**
+
+*The half that reproduces, and it is the important half.* `000e480`
+(`dev/plans: open planner-line-semantics`) produces a **shape-(b) finding under
+the heuristics exactly as pinned** — `**Status**: open` at line 11, and `[E1]`
+inside the span opened by `## Plan review — the brief, and why the tier is not
+discharged`. Confirmed at all four widening settings. Chunk C's *"zero false
+positives across 868 commits and eight plan-opens"* is therefore false, and I
+re-measured the whole history rather than patching the sentence:
+
+* `0f1fc68..8f47c76` — 867 scanned, **2** shape-(b), both `17b7e5c`, **0** false.
+* `0f1fc68..da2d00e` — 898 scanned, **3** shape-(b), **1** false (`000e480`).
+
+I also measured the **population** of the hazard, which the review did not and
+which is the number that decides whether this is one commit or a class: there are
+**29** plan-opens in history, and **19 of them already carry a review-kind h2
+whose heading contains "brief"** (25 such headings in total, since several plans
+carry two). The realised rate was 0 only because the other 18 briefs happen not
+to quote finding-id grammar in their bodies. That is a convention, not a
+property.
+
+*The half that does not reproduce.* The review states that this plan's own
+plan-open flags — *"the plan pre-registers the tool on itself … it fails at commit
+0"* — on a scratch simulation that placed the review section inside the plan-open
+commit. **Measured against the real history, it does not.** The plan-open
+`6a88501` (which had not landed when the review ran) is **clean**, and the
+plan-review commit `fc0f52a` is **clean**. The reason is structural rather than
+lucky: shape (b) examines only `A` entries, the review landed as an `M` in its own
+commit, and *one commit per lifecycle transition* is exactly what keeps them
+apart. A plan-open that carried its own review would be the `17b7e5c` shape — a
+**true** positive, not a false one. The simulation modelled a lifecycle
+violation.
+
+*But the concern underneath it is real, and re-derivation found a sharper form
+than the review had.* `6a88501` **does** flag — not under the pinned rule, but
+**under Chunk B's own widenings**, on `### Chunk C — shape (b): an open commit
+whose added file already carries a real review`, whose body quotes the marker set
+C2 is specifying. So the plan's tool is tripped by the plan's description of the
+tool, exactly as in [I2], and by the same mechanism. That is folded in as the
+restated Verification bullet and as C11.
+
+*What changed, mechanically.* C2 now requires the review-kind section's **heading
+to carry an ISO date** in addition to the grammar marker. Measured over
+`0f1fc68..da2d00e`: marker-only → **3** findings; marker + dated heading → **2**,
+both `17b7e5c`. The conjunct independently kills `fd6be5a` and `6a88501`; with
+both B3 widenings *and* the conjunct, the whole history yields **2**. I also
+priced its cost rather than asserting it is free: of **150** pinned-prefix review
+h2 headings in the tree, **94 are dated and every one is a landed review; 56 are
+undated and every one is a brief, placeholder or template**. And I checked the
+false-negative path the date rule could open — a dated `### Plan review --
+<reviewer> -- <date>` inside an undated `## Plan review` container still opens its
+own dated span under B3's additive h3 rule, verified against
+`dev/plans/archive/interpreter-trust-root-fallback.md`. It is still **n=1 evidence
+for amending a discriminator the Decision reproduces**, which is why it ships
+behind **Fence 1 item 4** and is strikeable in one line, and why the second-round
+brief points a reviewer straight at it.
+
+**[I2] — accepted, reproduced exactly, and the plan's claim is withdrawn rather
+than narrowed quietly.**
+
+Over `57d1daf..8f47c76` with B3's two widenings: **20 → 11, and one is new** —
+`fd6be5a`, shape (b), on `### Shape (b) — an open commit whose added file already
+carries a real review`. The set decomposes as 10 cleared, 10 surviving, 1 new.
+`fd6be5a` is clean under the pinned rule, clean under h3 alone, clean under
+contains alone, and flags **only under both** — so no single-axis check finds it,
+which is worth recording because it is why the plan's reasoning felt safe.
+
+The review's diagnosis is right and I found nothing to add to it except a second
+instance: B3's span function selects **evidence** in shape (a) (monotone down) and
+the **detector** in shape (b) (monotone up), and C2's *"(extended per B3)"* is the
+coupling. The old B15 quantified over *"every fixture in Chunks A–C"* — the
+author's own demonstration set — and structurally could not contain a
+counterexample that lives in the tree.
+
+*One correction to my own first attempt, recorded because it changes what B3 must
+say.* My initial h3 implementation let an h3 **truncate** the enclosing h2 span.
+That produced **16 new shape-(a) findings** and a widened total of 27, not 11.
+The additive reading — h2 spans still run to the next h2; h3s open their own spans
+beside them — reproduces the review's 11 exactly. B3 now **specifies the additive
+rule in terms**, because the two readings differ by 16 findings and the proposal's
+one-sentence spec does not distinguish them. That under-determination was itself
+part of [I2] and is now closed.
+
+**[I3] — accepted, and the re-derivation is more damaging to A16 than the review
+was.**
+
+The premise does not reproduce. Built from the real pair the row cites —
+`5140e21~1:dev/proposals/2026-07-08-claude-review-record-integrity.md` (654 lines)
+and `5140e21:dev/plans/review-record-integrity.md` (202 lines) — in a scratch repo
+with the real filenames: git pairs them at **no threshold**, `-M`, `100%`, `50%`,
+`30%`, `10%`, `1%`, with and without `-l0`. Harness control in the same rig gives
+`R099` under `-M`, so the rig detects renames. **The "~96 %" was never measured.**
+
+Then the question the review left open: does the hazard exist at all? I compared
+`-M` against `--find-renames=100%` enumeration **commit by commit across all 898
+commits of history**. The two produce **identical trigger sets on 898 of 898**,
+and a genuine `A` under a trigger root is absorbed into a rename by `-M` on
+**zero**. The proposal's own `[R4b]` said this at n=120; it now holds at n=898.
+
+So AC-R2's discharge was resting on a test whose perturbation could not fire
+(A16) plus one that admits it does not (A15). Both halves are fixed, and neither
+by inventing a hazard: **A16 becomes an explicitly-labelled synthetic hazard
+test**, and **AC-R9 is amended to carve out exactly that one row** — the carve-out
+is bounded to one, and the reason is stated (there is no corpus instance to trace
+to, so a row claiming corpus derivation while naming no commit was the actual R9
+violation). I verified the synthetic fixture is genuinely red-capable rather than
+assuming it: `--find-renames=100%` → trigger set `[('A', 'dev/plans/q.md')]`;
+`-M` → **empty**. And the plan now says plainly that the `100%` threshold is a
+**prophylactic with no measured benefit on this corpus**, rather than claiming it
+fixes an observed defect.
+
+### The remaining seven, each with the figure I actually measured
+
+**[I4] — accepted.** My independent classification of the 20 by claim token:
+**`decision` 7 / `response` 7 / `review` 6**, which matches the review's
+`accept 5 + decision 2 / response 7 / review 6` exactly. All three re-assignments
+confirmed by reading the primary source: `9754635`'s subject contains neither
+`respond` nor a claim-side `review` (FP-4 → FP-5); `355aedb` and `f3ddc74` are
+claim-side *close* / *resolve* verbs, not evidence-heading gaps (FP-1 → new FP-6);
+`8abd453`'s added lines land at post-image ~128–393 while its `### Response` sits
+at line **905**, so no span widening reaches it. **The measured remainder after
+everything Chunk B and C ship is 11, not 6** — itemised in Chunk E and used to
+recompute Fence 1, which previously priced item 3 at "1 of the 20" and is now
+"4 of the 20" across FP-5 and FP-6.
+
+**[I5] — accepted.** Read literally, B3's specification measures **78**, not 26:
+52 of those start `## Response` (50) or `## Revised proposal` (2), and 26 are the
+rest (24 genuine review sections, 2 prose titles). The plan performed that
+exclusion and did not disclose it. The substantive half matters more than the
+figure: under a bare-substring match, `## Response -- … to External Security
+Review` becomes review-kind **evidence**, which is what silences `f3ddc74` — a
+false negative bought, not a false positive fixed. B3 now ships an **exclusive**
+kind-match. Measured cost of the honest rule: the remainder is **11** rather than
+**10**, because `f3ddc74` correctly returns. The plan takes the higher number.
+
+**[I6] — accepted; the figure is withdrawn rather than replaced.** Re-measured:
+clean `--no-hardlinks` clone of `da2d00e` → **1 failed, 1708 passed, 1 skipped**
+(184 s), sole failure `test_gate_preflight.py::TestPublicCli::test_check_runs_against_the_live_repo_and_reports`.
+`test_ast_attest.py` alone: **29 passed** in the clean clone, **2 failed / 27
+passed** in the working tree, with the failure text naming `CHANGED
+FunctionDef:load_config … NOT pure motion` — i.e. the concurrent workflows'
+uncommitted `bootstrap/_scaffold/config.py` edits, not a stale committed baseline.
+The plan's "2 failed / 1744 passed / 0 skipped" reproduces at no tree state and
+its "issue #1" attribution was wrong for the tree it measured. **I did not
+substitute a new absolute figure** — the clean clone's own 1 failed / 1 skipped
+may be clone-environment artifacts, and asserting it would repeat the defect. The
+criterion is now procedural: capture the failure *set* and collection count at the
+plan's starting commit in a clean tree.
+
+**[I7] — accepted.** `bootstrap/scaffold.py --manifest` carries **24**
+`scripts/`-destination rows (13 `.py`, 3 `.txt`, an 8-file `scripts/_onboarding/`
+package) and **0** rows matching `transition_lint`. The conclusion survives; the
+sentence did not. Both consequences the review named are now written into the
+Scope bullet.
+
+**[I8] — accepted.** `git rev-list --count 57d1daf..8f47c76` → **332**, not 333;
+333 holds only at `eacb7dd`. 415 + 120 + 332 = **867** of the 868 commits
+reachable from `8f47c76`, the root `0f1fc68` falling outside every window. And the
+instability is not hypothetical: `57d1daf..HEAD` measured **332 / 333 / 335 /
+363** at `8f47c76` / `eacb7dd` / `8763eb6` / `da2d00e`. Window 3 is SHA-pinned,
+and because three separate criteria in this plan already forbade a HEAD-relative
+range *and it shipped one anyway*, Chunk E gains a **source-level assertion** that
+no corpus-tier node contains a `HEAD`-relative literal.
+
+**[I9] — accepted.** Confirmed by reading both tables: A6 is `_triggers`, A7 is
+`scan`/`main`, A8 is the test-module scaffolding, E3 is the `e31625c~1..57d1daf`
+window. Repointed to **A15**, **A17**, **A18**, **E4** respectively.
+
+**[I10] — accepted as a design reading.** Confirmed by reading, not measurement
+(the file does not exist). A5's own prose is *"the commit is skipped"* and AC-R3
+requires the file to name the **Exemption model**, so A18's bare-substring
+assertion would go red on the module's required docstring and would then be
+relaxed until it asserted nothing. A18 now asserts a directive **shape**.
+
+### What this revision does not do
+
+* **It does not decide Fence 1**, including its new item 4. The revision changed
+  the fence's inputs — remainder 11 not 6, FP-5/FP-6 at 4 not 1, and a fourth
+  question about shape (b)'s discriminator that did not exist before — and left
+  the decision where it was.
+* **It does not give shape (b) the corpus re-derivation shape (a) got.** C2's
+  conjunct is a targeted fix on n=1, not a re-derivation. That asymmetry is now
+  stated in known omission (g) and homed in *Lasting-truth migration*, rather than
+  covered by Chunk B's much stronger evidence.
+* **It does not close the false-negative gap.** Known omission (e) stands;
+  [I5]'s exclusive kind-match narrows it and does not close it, and no acceptance
+  criterion in this plan measures it. It now has a durable home.
+* **It takes no implementation step.** No source file was touched; every change
+  above is to this plan's chunks, criteria, tests and figures.
+
+*This section is the author's revision record and is append-only once written.
+The review section above it is untouched.*
