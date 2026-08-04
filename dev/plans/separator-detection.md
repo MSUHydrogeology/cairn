@@ -655,3 +655,309 @@ in an archived plan.
 | The evidence ledger (measurements, perturbation results, the corpus sweep) | The commit bodies and the `## Code review` section of this plan | Implementing agent, then the reviewer |
 
 This section is append-only once written.
+
+## Plan review -- Claude (Internal, same-agent-type; security lens) -- 2026-08-04
+
+**Model**: claude-opus-5.
+
+**Standing.** I am the **same agent type as the plan's author**, in a fresh
+session. That is Cairn's *Internal* floor and nothing more: there is **no
+cross-type structural independence** here, so a blind spot the author has I
+most likely share -- in particular any assumption about what a generator
+signature or a suppression grammar "obviously" means, since that is exactly
+the shape of reasoning both of us produce the same way. **This round does not
+discharge the declared `required(External, security lens)` tier.** The plan's
+own *Plan review -- the brief* says so, and I confirm that self-assessment is
+correct rather than merely restating it: an External security-lens section is
+still owed before any implementation commit. Everything below was re-measured
+against the working tree at HEAD `eacb7dd` under
+`~/conda_envs/lhm/bin/python3.13` (3.13.13); where I reconstructed the proposed
+change I say so, and **no repository file was modified** -- all variants live
+in the session scratch directory.
+
+**Steelman.** This is the strongest plan I have reviewed in this tree on the
+axis that matters most for a security control: it *executes* its central
+argument instead of asserting it. The NAIVE-vs-FIXED marker table is the whole
+case for spending a signature change, and it is a table of real scanner output,
+not a narrative. The alarm-fatigue sweep is taken as the dated figure the
+proposal demanded, with an explicit instruction to re-take it rather than quote
+it. The `split("\n")`-vs-`splitlines()` discovery is a genuinely new fact that
+*narrows* the change's claimed blast radius -- an author-adverse finding
+volunteered rather than buried. Chunk ordering is justified by naming the exact
+intermediate commit that would itself be the defect. The perturbation set edits
+production code and never an assertion, which is the discipline most plans get
+backwards. And the known-omissions list names the docstring-drift gap the plan
+could have quietly implied coverage of. My concerns below are almost entirely
+about the *ledger mechanics* of three perturbations and one acceptance
+predicate -- not about the design, which I think is right.
+
+### Concerns
+
+**[I1] P-B3 does not exercise the assertion it is named for, and B6's negative
+half -- the dispatch regression itself -- has no perturbation.** MEASURED, on
+my reconstruction. Under the NAIVE state P-B3 specifies (Chunk A reverted,
+the B2 loop kept), a single-node B6 fails at its **first** assertion, the
+*positive* half: in NAIVE the separator flag is labelled `unicode-zero-width`,
+so a `cairn-accept: unicode-line-separator` marker matches nothing and the
+own-id half fails first. Observed:
+
+```
+E  AssertionError: own-id marker must clear
+E  assert ['unicode-zero-width'] == []
+```
+
+The node aborts there; the `unicode-zero-width`-marker half **never executes**.
+So the plan's stated observation ("B6's `unicode-zero-width`-marker half
+fails") is not what an implementer will record -- and the real cost is that
+**no specified perturbation shows B6's negative half is non-vacuous**. That
+half is the security-critical assertion in the entire plan: a foreign marker
+must not silence a separator flag. Ask: split B6 into two nodes (own-id
+suppresses / foreign-id does not), so P-B3 reports both cleanly; and add the
+one perturbation that fails the negative half *alone* -- widen the final
+filter in `scan_text` to ignore `pattern_id` (i.e. suppress by line only).
+
+**[I2] P-B2's "repeat the other way round" direction does not produce the
+claimed observation.** MEASURED, both directions:
+
+| perturbation | result | B5 fails at |
+|---|---|---|
+| remove U+2029, keep U+2028 | **1 failed, 4 passed** | the U+2029 assertion, after the U+2028 assertion passed |
+| remove U+2028, keep U+2029 | **4 failed, 1 passed** | the **U+2028** assertion -- the U+2029 assertion is never reached; B6, B7 and B8 fail too (all use U+2028 fixtures) |
+
+So "B5's assertion fails *alone* while the other stays green" is true in one
+direction and false in the other, and the reverse direction produces no
+per-member evidence at all. Same structural cause as [I1]: a multi-assertion
+node cannot support a per-assertion perturbation claim. Ask: parametrize B5
+over the two code points so it is two nodes; then both directions are
+symmetric and the per-member claim is actually demonstrated.
+
+**[I3] The new detector is self-suppressible on its own physical line, and the
+plan asserts that is benign without measuring it.** MEASURED against my
+reconstruction of the fixed scanner:
+
+```
+control:  "## Status: open" +U+2028+ "## Injected header"        -> ['unicode-line-separator']
++ marker: ... + ' <!-- cairn-accept: unicode-line-separator
+                     reason="pasted from Word" reviewer="x" date=... -->'  -> []
+that string: split("\n") -> 1 line ;  splitlines() -> 2 lines
+```
+
+`_parse_suppressions` iterates the same `split("\n")` lines
+(`templates/modules/team-gated/content_scan.py:255`, line-scope written at
+`:261` as `{i, i + 1}`). So a payload and its own suppression marker share one
+**suppression** line while occupying two **display** lines in any renderer that
+honours U+2028. The plan's edge-case bullet -- "A separator inside a
+`cairn-accept` marker's own line (line-scope covers the marker's own line --
+pre-existing semantics, unchanged)" -- is true of the *code* and false of the
+*security property*: for zero-width and bidi the marker and the payload also
+share a display line, whereas U+2028 is the **first detected code point that
+makes the display/file line relationship diverge**, which is the entire premise
+of the rule. The plan follows its own headline `split("\n")`-vs-`splitlines()`
+measurement into line *numbering* and stops before the *suppression grammar*.
+The `{i, i + 1}` preceding-line scope compounds it: a marker written to
+annotate what a reviewer sees as the next display line can clear a hit that is
+several display lines away. Ask: give this the B8 treatment -- pin it with a
+node so it is a *declared* limit a future author must argue against, and say so
+in the B3 docstring bullet -- or record an explicit disposition. I am not
+asking for a behaviour change here; I am asking that the one interaction
+between the new code point and the suppression grammar not be the single
+unmeasured assertion in an otherwise fully-executed plan.
+
+**[I4] "The whole suite green, 0 failed / 0 skipped / 0 xfailed" is not
+achievable in the tree this plan was written against.** MEASURED --
+`~/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests` at HEAD `eacb7dd`
+with the current working tree: **3 failed, 1746 passed, 0 skipped, 0 xfailed,
+162s**. The three are, in `bootstrap/tests/test_ast_attest.py`, the nodes
+`test_committed_baseline_accounted_for_across_the_engine_package` and
+`test_ast_gate_passes_over_the_full_scaffold_module_set`; and in
+`bootstrap/tests/test_scaffold.py`, the node
+`TestMinimalYamlParse::test_mixed_indent_list`
+-- all from other workflows' in-flight `bootstrap/_scaffold/` edits, none
+reachable from this plan's two files. The plan anticipated the dirty tree for
+the *figure* ("take the baseline at implementation start") but states the
+*predicate* absolutely. As written the gate is either unachievable or waived by
+judgement -- which is precisely the failure mode the rest of the plan works
+hard to design out. Ask: restate it as a delta -- no failure absent from the
+implementation-start baseline, and no node dropped from collection.
+
+**[I5] F2's "the same two entries" is already false, and the ceremony's blast
+radius is wider than the batch rule describes.** MEASURED --
+`~/conda_envs/lhm/bin/python3.13 bootstrap/tests/_gate_manifest.py verify` on
+the current tree already reports **six** `FROZEN-MODIFIED` entries
+(`bootstrap/tests/test_quality_gate_redundancy.py`,
+`bootstrap/tests/test_security_check.py`,
+`bootstrap/tests/test_security_lint.py`,
+`bootstrap/tests/test_verify_integrity.py`, `bootstrap/verify_integrity.py`,
+`scripts/quality_gate.py`), plus 2 `COLLECTION-DROPPED` and 4
+`SKIP-XFAIL-NEW` -- none of them this plan's. So the commit-body sentence the
+plan mandates ("a later `_gate_manifest.py verify` reports two
+`FROZEN-MODIFIED` entries") will be **false when written**, and "one supervised
+re-produce after both have landed" re-anchors *everything* stale at that
+moment, not the pair. Partial mitigation exists and is worth recording:
+`bootstrap/tests/_gate_preflight.py:784`-`790` HOLDs on uncommitted tracked
+changes, so the ceremony refuses a dirty tree -- but it does not refuse other
+workflows' *committed* frozen-file edits, and
+`bootstrap/REANCHOR_RUNBOOK.md:10`-`11` forbids the implementer performing
+Phase 0 precisely because a re-anchor is an authority act. Ask: have the commit
+body name the two files **this change** makes stale and state plainly that the
+verify output will contain others; and make F2 say the ceremony is scoped to
+whatever is stale at ceremony time -- a Maintainer review item -- rather than
+to this pair.
+
+**[I6] (low) The "exactly two files" scope check used a method that could not
+have found the third coupling.** The plan establishes its two-file scope with
+`grep -rln "unicode-zero-width"`; I re-ran it and it returns exactly
+`templates/modules/team-gated/content_scan.py` and
+`bootstrap/tests/test_content_scan.py`, `as_of 2026-08-04` -- the plan's figure
+is right. But `templates/modules/team-gated/content_scan_runner.py` is coupled
+to the id set **without naming any id**: it builds the reviewed-residual key as
+`f"{rel}:{pattern_id}:{code_hash}"` (`:299`, used at `:403`). A literal-id grep
+structurally cannot see that. The conclusion still holds -- 0 separator flags
+in today's corpus and Chunk A is id-preserving, so no residual baseline churns
+-- but it should be reached by an argument about the fingerprint, not by a grep
+that cannot cover it. This is the plan's own "verified rather than assumed"
+standard turned on the plan.
+
+**[I7] (low) B4 widens the hygiene set but the guard reads only one of the two
+files it now matters for.** `test_no_raw_banned_codepoints_in_source` reads
+`CONTENT_SCAN_SRC` only (`bootstrap/tests/test_content_scan.py:65`); it does
+not scan the test module. After B5-B8 land, `test_content_scan.py` is itself a
+file whose fixtures are separator code points, and B5's "escape forms in the
+test source, matching B4" is a convention with nothing enforcing it. One extra
+line in that node (scan both paths) closes it.
+
+### Covered
+
+Re-measured, not accepted:
+
+* **Every cited line number is exact.** `content_scan.py`: `:295`
+  (`def _scan_unicode`), `:390` (`lines = text.split("\n")`), `:401`-`403`
+  (call site), `:402` (the ternary, character-for-character as the plan and the
+  Decision quote it), `:40`/`:43`-`45` (the `unicode-zero-width` and
+  `unicode-bidi` docstring bullets, the latter ending at 45), `:137`
+  (`_ZERO_WIDTH = {`), `:144` (`_BIDI = (`). `test_content_scan.py:48`-`52` is
+  exactly the `_BANNED_CODEPOINTS` block, and 0x2028/0x2029 are confirmed
+  **absent** from it today ({0x200B-0x200F, 0x2060, 0xFEFF} | 0x202A-0x202E |
+  0x2066-0x2069) -- so P-B6 is sound: the widening, not the pre-existing set,
+  is what would catch an injected raw separator.
+  `bootstrap/tests/_gate_manifest.py:165`-`167` is the frozen-glob tuple with
+  `templates/modules/**/*.py` on 167. `scripts/check_cairn.py:91`-`94` is
+  `_CONTENT_SCAN_SRC`, loaded by path -- the no-twin claim holds.
+* **Every figure.** 494 tracked files (independent sweep: all 494 decode as
+  UTF-8, **0** carry a raw U+2028 or U+2029, `as_of 2026-08-04` -- the
+  stop-signal did not fire, confirmed independently). 25 collected nodes in
+  `test_content_scan.py`. 164 `frozen_files` entries, both target files
+  present. Whole-tree `check_cairn` -> **180 Markdown files, no issues**, 68
+  external links not probed. `quality_gate.py --sub neutrality` -> **fail=95**,
+  info=21.
+* **The NAIVE/FIXED marker table reproduces, all eight rows**, against my own
+  reconstruction of the two variants (not the author's code): HEAD flags
+  nothing; NAIVE mislabels both separators `unicode-zero-width`, is silently
+  cleared by a zero-width marker, and ignores the promised separator marker;
+  FIXED labels both `unicode-line-separator`, is *not* cleared by the
+  zero-width marker, and *is* cleared by its own. The Decision's defect is real
+  and the signature change is the right precondition.
+* **The refactor is behaviour-preserving.** I repointed the *real* 25-node
+  `bootstrap/tests/test_content_scan.py` at my reconstructed FIXED build and at
+  an A-only build: **24 passed, 1 deselected** in both cases, matching the
+  author's figure and each other. The deselected node is the verbatim-install
+  comparison, correctly excluded and correctly flagged as owed for real at
+  implementation.
+* **P-A1** -- confirmed: NAIVE raises `ValueError` on the 3-tuple unpack.
+* **P-A2** -- confirmed, and **under-reported in the safe direction**: swapping
+  the two literals fails not two but **six** pre-existing nodes
+  (`test_scanner_still_detects_after_escaping`,
+  `test_malicious_fixture_is_caught`, `test_zero_width_caught`,
+  `test_bidi_control_caught`, `test_expanded_unicode_controls_caught`,
+  `test_non_leading_bom_flagged`).
+* **P-B1** -- confirmed; also under-reported in the safe direction (B6 fails
+  too, which the plan does not claim).
+* **P-B4** -- confirmed **exactly as argued**, which is the sharpest
+  perturbation in the set. The wrong-id variant yields three flags,
+  `{(1,'unicode-zero-width'), (2,'unicode-bidi'), (3,'unicode-zero-width')}`:
+  a hypothetical "three flags appeared" test passes, and B7's exact-set
+  assertion fails. That is precisely the discrimination the plan claims.
+* **P-B5** -- confirmed exactly: removing the `break` gives
+  `assert 2 == 1` with both separator flags on line 1; **1 failed, 4 passed**.
+  The cleanest perturbation in the plan.
+* **Scope holds against the Decision.** I read the Decision. The signature
+  change is assigned here; the coexistence test is required of both plans; the
+  per-line limit is declared there. Nothing in the plan absorbs
+  `content-scan-detectors`' surface, the parser's, or `agent-context-scrub`'s.
+  B4 and B8 are additions beyond the Decision's literal text, but both are
+  pinning/hygiene rather than behaviour, and B4 is explicitly fenced to exactly
+  two entries.
+* **Self-verification hunt.** The plan already closes the one that would have
+  mattered most -- Chunk A's behaviour-identity baseline must come from a
+  pre-change execution, stated in those words -- and already notes that
+  `check_cairn` doubles as doc gate and alarm-fatigue measurement, "a different
+  claim in the same command". I found no case of the artifact supplying its own
+  oracle. B5's message oracle (`"U+2028"` typed by a human) is independent of
+  `_LINE_SEPARATORS`, since the message is computed via `ord(ch)`; a wrong
+  constant member produces a wrong message and B5 fails.
+* **Required checkers, both clean.**
+  `claim_check.py dev/plans/separator-detection.md` -> "OK, no claim-check
+  flags"; `check_cairn.py dev/plans/separator-detection.md` -> "OK -- 1
+  Markdown file(s) scanned; no issues".
+
+**Direct answers to the three questions the brief poses to this round.**
+(1) *Chunk boundary* -- correct and necessary; the A-only build is
+behaviour-identical (24/24) so A-before-B costs nothing and B-before-A is the
+defect. (2) *Do P-B2 and P-B4 discriminate what they claim* -- P-B4 yes,
+exactly; P-B2 in one direction only, see [I2]. (3) *Does the docstring-drift
+omission deserve a mechanical guard* -- **not in this plan.** An honest guard
+needs a `_PATTERN_IDS` registry constant in the shipped module to compare the
+docstring against, which adds adopter-visible surface this Decision did not
+authorize. But do not leave it as a bare "known omission": its right home is
+`content-scan-detectors`, which adds two more ids and so doubles the drift
+surface, and the plan should say that rather than parking it. (4) *Is the batch
+rule the right way to spend one ceremony* -- the idea is right, the accounting
+is not; see [I5].
+
+### Not covered / low confidence
+
+* **The External tier is not discharged.** Same agent type; no cross-type
+  independence. Anything the author and I both find natural about generator
+  signatures, suppression grammars, or what "line" means is unexamined by this
+  round *by construction*.
+* **My variants are a reconstruction, not the author's code.** Every "MEASURED"
+  claim above about post-change behaviour was taken against scratch builds I
+  wrote from the plan's prose, and against my own reconstruction of nodes
+  A3/B5-B8. Where the implementer writes those nodes differently -- especially
+  if they split them per [I1]/[I2] -- my failure-site observations change. The
+  pre-change measurements (line numbers, figures, HEAD behaviour, the 3-failure
+  suite baseline, the six `FROZEN-MODIFIED` entries) are against the real tree
+  and do not carry that caveat.
+* **I did not run `bootstrap/security_check.py` or Bandit** over a real edit;
+  the plan's own figures there are prototype figures and it says so.
+* **Node-name collision between the two plans, unresolved and untested.** Both
+  plans must carry the coexistence test. If both write
+  `TestLineSeparator::test_all_three_unicode_ids_trip_independently` into the
+  same file, Python silently keeps the last definition -- no error, no warning,
+  one collected node. I did not construct this case, so I am not raising it as
+  a finding, but the plan names no convention for the shared node's identity
+  and "collection grows by exactly the new nodes" would not detect it.
+* **The 494 figure moves before implementation.** This plan and its siblings
+  are untracked today; committing them raises the denominator. Immaterial to
+  the verdict, and the plan already instructs a re-take.
+* **Adopter-tree impact is unmeasured by anyone**, as the plan's omission (e)
+  says. The sweep is Cairn's tracked corpus only.
+
+### Recommendation
+
+**Revise, then send to External -- do not send as-is.** The design is sound and
+I found nothing wrong with it; [I1], [I2] and [I4] are cheap edits to *this
+document* (split two test nodes into four, restate one acceptance predicate as
+a delta) and fixing them first means the External security reviewer spends
+their independent read on the two questions that actually need cross-type
+independence -- **[I3]**, whether the separator's interaction with the
+line-scoped suppression grammar needs a pin or a disposition, and **[I5]**,
+whether one supervised re-pin ceremony can honestly be described as covering
+"the same two entries". I would also ask the External reviewer to keep the
+plan's own attack order, with one substitution: item (3) of its brief,
+"challenge P-B3", is now *known* to be mis-specified -- the useful version is
+to check that the revised B6 split makes the negative half independently
+falsifiable, which is the assertion the whole Decision exists to protect.
+
+**No implementation commit before the External section lands** -- unchanged,
+and this round does not move that line.
