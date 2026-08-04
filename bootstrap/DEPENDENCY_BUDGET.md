@@ -94,13 +94,16 @@ gate. The control is **detective + human**, not preventive-automated:
   it belongs to a later "untrusted-apparatus-change" capability, outside the v1
   self-audit-on-a-trusted-tree scope.)*
 
-## Exception 2 — `vermin`: floor CI check (dev/test-only)
+## Exception 2 — `vermin`: floor check (dev/test-only)
 
 * **Scope:** **dev/test-only**. `vermin` is never in the adopter runtime path,
   never installed by the scaffold, and never a dependency of the scaffold
-  engine itself. It runs only in Cairn's own CI (`bootstrap/tests/test_python_floor.py`)
-  to assert that the engine's detected Python minimum does not exceed the
-  declared floor.
+  engine itself. It runs only in Cairn's own test suite
+  (`bootstrap/tests/test_python_floor.py`, run by
+  `python -m pytest bootstrap/tests`) to assert that the engine's detected
+  Python minimum does not exceed the declared floor. **That test skips — and
+  so passes green — whenever no usable `vermin` executable is found on `PATH`
+  or beside the running interpreter.**
 * **Why the exception is justified:** accurately detecting a codebase's Python
   minimum version requires semantic analysis of the AST — not just syntax
   parsing — to identify stdlib APIs, type annotation forms, and language

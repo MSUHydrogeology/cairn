@@ -43,7 +43,7 @@ engine is split across two surfaces:
 * `bootstrap/_scaffold/` — the **engine** (~6,044 lines): eight owned
   modules in an acyclic DAG (`security`, `slotmerge`, `merge`,
   `config`, `lockfile`, `install`, `upgrade`, `cli`) plus the verifying
-  loader (`_guard`). This is the surface measured for the floor CI check.
+  loader (`_guard`). This is the surface measured for the floor check.
 
 This topology strengthens the "run-it-in-a-container, don't port"
 argument: the engine depth is real, and the contained-kernel recipe
@@ -182,11 +182,11 @@ non-Python team provisioning Python for the contained-kernel recipe.
 
 Declared exceptions to this default are in
 `bootstrap/DEPENDENCY_BUDGET.md`. Dev-only and test-only tools (e.g.,
-`vermin` for the floor CI check) are not adopted-runtime dependencies
+`vermin` for the floor check) are not adopted-runtime dependencies
 and are listed in `bootstrap/requirements-dev.txt`; they are noted in
 the budget ledger but do not affect the stdlib-only runtime contract.
 
-## Floor CI check
+## Floor check
 
 A test in `bootstrap/tests/test_python_floor.py` runs `vermin` over
 the engine (`bootstrap/_scaffold/`) and asserts that the detected
