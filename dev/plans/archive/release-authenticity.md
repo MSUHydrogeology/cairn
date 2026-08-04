@@ -10,7 +10,7 @@
 **Source proposal**: `release-authenticity` (accepted 2026-08-03; the Decision
 commit is `a08ead8`). It currently sits under `dev/proposals/` and moves to
 `dev/proposals/archive/` when it archives.
-**Status**: open
+**Status**: archived
 **Plan review**: required(**External**, security lens) — carried from the
 proposal header, mandated by the superseding `identity-not-name` Decision, and
 **not** discharged by the External round the proposal already had. **No
