@@ -535,3 +535,233 @@ class TestShapeA:
         _commit(repo, "portable-security-sweeps: respond to External security review")
         _, _, findings = tl.scan(f"{base}..HEAD", repo, whitelist={})
         assert findings == []
+
+
+# ---------------------------------------------------------------------------
+# Chunk C -- shape (b): an open commit whose added file carries a review
+# ---------------------------------------------------------------------------
+
+#: Cairn's own history, pinned by full SHA.  Every corpus-tier range is
+#: ``<40-hex>..<40-hex>`` or ``<40-hex>~1..<40-hex>``: a HEAD-relative
+#: range is not a window, and this plan shipped one once already.
+ROOT_SHA = "0f1fc68f48ab734ae1f619aeb0454c84c6fbace3"
+SELF_HOST_SHA = "d6646a37a6166a4d7b65f326cb689d716617a798"
+PROPOSAL_SHA = "57d1dafe7ca5b17e74a148b0d95e7b69ed79f939"
+SNAPSHOT_SHA = "8f47c76618f65ff34e22f32c4d5de30c0c88c110"
+REVIEW_APPEND_SHA = "e31625cdb4263e19f55b67834019d67170b1e3ab"
+INCIDENT_SHA = "17b7e5c6b51fb1ad145921196f930f2a2137504e"
+EMPTY_REVIEW_SHA = "f4a8308dedf4055d53d3a6f22867b64e7fbc1740"
+SUPERSEDE_SHA = "b0645769e963e846b43e2bd9a662f8de4ea15967"
+PLAN_ARCHIVE_SHA = "d789414f1bf975a3235ce7a1d1ed5bc6f21b8191"
+
+_PINNED_SHAS = (
+    ROOT_SHA, SELF_HOST_SHA, PROPOSAL_SHA, SNAPSHOT_SHA, REVIEW_APPEND_SHA,
+    INCIDENT_SHA, EMPTY_REVIEW_SHA, SUPERSEDE_SHA, PLAN_ARCHIVE_SHA,
+)
+
+
+def _corpus_available() -> bool:
+    """Cairn's own history, or not.
+
+    The corpus tier **skips, never fails**, when it is absent: a history
+    rewrite must not redden the suite for a reason unrelated to the code.
+    """
+    if not (REPO_ROOT / ".git").exists():
+        return False
+    for sha in _PINNED_SHAS:
+        out = subprocess.run(
+            ["git", "rev-parse", "--verify", "--quiet", sha + "^{commit}"],
+            cwd=str(REPO_ROOT), capture_output=True,
+        )
+        if out.returncode != 0:
+            return False
+    return True
+
+
+requires_corpus = pytest.mark.skipif(
+    not _corpus_available(), reason="Cairn's own history is not present",
+)
+
+#: The heuristics exactly as the accepted proposal pinned them.
+PINNED_RULES = dict(
+    h3_spans=False, exclusive_kind=False, respond_token=False,
+    dated_heading=False,
+)
+
+
+class TestShapeB:
+    """The chunk that reproduces the original incident."""
+
+    def test_an_open_commit_with_a_baked_in_review_flags_once_per_section(
+        self, tl: ModuleType, repo: Path,
+    ) -> None:
+        # C4.  Reproduces 17b7e5c.  The plan's named perturbation --
+        # delete the grammar-marker check -- is a *widening*, so it
+        # cannot redden a node that asserts a finding IS produced; run at
+        # implementation, it leaves C4 green (and reddens C5, which is
+        # the point of the pair).  C4's own single-property falsifiers,
+        # both RUN and red: `break` after the first section (one Finding
+        # per commit instead of per section -- this is what C3 pins), and
+        # removing the `_shape_b` call from `scan`.
+        base = _git(repo, "rev-parse", "HEAD")
+        _write(repo, "dev/proposals/p.md", _HEADER.replace("open", "proposed")
+               + "## Review -- Internal -- 2026-01-01\n\n[R1] a finding\n\n"
+               + "## Review -- External -- 2026-01-02\n\n[E1] another\n")
+        _commit(repo, "dev/proposals: open p")
+        _, _, findings = tl.scan(f"{base}..HEAD", repo, whitelist={})
+        assert [f.shape for f in findings] == ["b", "b"]
+        assert len({f.message for f in findings}) == 2
+
+    def test_a_seeded_placeholder_review_at_open_does_not_flag(
+        self, tl: ModuleType, repo: Path,
+    ) -> None:
+        # C5.  Reproduces 3ae1d47.  Perturbation: delete the
+        # grammar-marker check, accepting any non-empty section.  Red.
+        base = _git(repo, "rev-parse", "HEAD")
+        _write(repo, "dev/proposals/p.md", _HEADER.replace("open", "proposed")
+               + "## Review -- Reviewer -- 2026-01-01\n\n"
+               + "(Awaiting the Internal review.)\n")
+        _commit(repo, "dev/proposals: open p")
+        _, _, findings = tl.scan(f"{base}..HEAD", repo, whitelist={})
+        assert findings == []
+
+    def test_a_baked_in_plan_review_at_plan_open_flags(
+        self, tl: ModuleType, repo: Path,
+    ) -> None:
+        # C6.  Perturbation: revert ``_OPEN_STATUSES`` to ``proposed``
+        # only -- the original proposal's rule.  No plan ever carries
+        # ``proposed``, so the exact analogue of the 17b7e5c incident
+        # becomes undetectable.  Red.  Run with C10: C6 asserts a
+        # genuinely baked-in *dated* plan review still flags, so the pair
+        # distinguishes "the conjunct discriminates" from "the conjunct
+        # disabled shape (b) on plans".
+        base = _git(repo, "rev-parse", "HEAD")
+        _write(repo, "dev/plans/p.md",
+               "# p\n\n**Status**: awaiting-plan-review\n\n"
+               "## Plan review -- Reviewer -- 2026-01-01\n\n[E1] a finding\n")
+        _commit(repo, "dev/plans: open p")
+        _, _, findings = tl.scan(f"{base}..HEAD", repo, whitelist={})
+        assert [(f.shape, f.file) for f in findings] == [("b", "dev/plans/p.md")]
+
+    def test_a_placeholder_plan_review_at_plan_open_does_not_flag(
+        self, tl: ModuleType, repo: Path,
+    ) -> None:
+        # C7.  Reproduces 5140e21 / 57d1daf.  Perturbation: delete the
+        # marker check.  Red -- and this is the false positive C6's
+        # widening would otherwise buy, so C6/C7 is the second
+        # discriminating pair.
+        base = _git(repo, "rev-parse", "HEAD")
+        _write(repo, "dev/plans/p.md",
+               "# p\n\n**Status**: awaiting-plan-review\n\n"
+               "## Plan review -- 2026-01-01\n\n(Awaiting.)\n\n"
+               "## Code review -- 2026-01-01\n\n(Awaiting.)\n")
+        _commit(repo, "dev/plans: open p")
+        _, _, findings = tl.scan(f"{base}..HEAD", repo, whitelist={})
+        assert findings == []
+
+    def test_a_status_beyond_the_header_bound_is_not_read(
+        self, tl: ModuleType, repo: Path,
+    ) -> None:
+        # C8.  Asserted in **both directions**: a bound test that only
+        # ever asserts silence cannot distinguish "bounded correctly"
+        # from "never fires".  Perturbation: raise ``_HEADER_BOUND`` to
+        # the whole file.  Red on the first half.
+        review = "## Review -- Reviewer -- 2026-01-01\n\n[R1] a finding\n"
+        deep = "filler\n" * 79 + "**Status**: proposed\n\n" + review
+        base = _git(repo, "rev-parse", "HEAD")
+        _write(repo, "dev/proposals/deep.md", deep)
+        _commit(repo, "dev/proposals: open deep")
+        _, _, findings = tl.scan(f"{base}..HEAD", repo, whitelist={})
+        assert findings == []
+
+        shallow = "filler\n" * 30 + "**Status**: proposed\n\n" + review
+        base = _git(repo, "rev-parse", "HEAD")
+        _write(repo, "dev/proposals/shallow.md", shallow)
+        _commit(repo, "dev/proposals: open shallow")
+        _, _, findings = tl.scan(f"{base}..HEAD", repo, whitelist={})
+        assert [f.shape for f in findings] == ["b"]
+
+    def test_a_template_file_is_never_examined(
+        self, tl: ModuleType, repo: Path,
+    ) -> None:
+        # C9.  Perturbation: delete ``_EXCLUDE_BASENAME``.  Red.  The
+        # honest accounting: the *real* dev/proposals/_template.md
+        # carries `**Status**: proposed` at line 123 and its review
+        # heading at line 313 (7 grammar-marker instances, verified
+        # 2026-08-04), so the 60-line header bound already excludes it
+        # and the basename rule is defence in depth.  This fixture
+        # deliberately puts the status inside the bound and dates the
+        # heading, so the basename exclusion is the only thing standing
+        # between the template and a finding.
+        base = _git(repo, "rev-parse", "HEAD")
+        _write(repo, "dev/proposals/_template.md",
+               "# {{title}}\n\n**Status**: proposed\n\n"
+               "## Review -- {{reviewer}} -- 2026-01-01\n\n[R1] {{finding}}\n")
+        _commit(repo, "dev/proposals: refresh the template")
+        _, _, findings = tl.scan(f"{base}..HEAD", repo, whitelist={})
+        assert findings == []
+
+    def test_a_reviewer_brief_at_plan_open_does_not_flag(
+        self, tl: ModuleType, repo: Path,
+    ) -> None:
+        # C10.  Reproduces 000e480, the shape-(b) false positive the
+        # Internal plan review found by running rather than reading.
+        # Perturbation: delete C2's dated-heading conjunct.  Red -- the
+        # brief's [E1] then reads as a baked-in review.
+        base = _git(repo, "rev-parse", "HEAD")
+        _write(repo, "dev/plans/p.md",
+               "# p\n\n" + "meta\n" * 8 + "**Status**: open\n\n"
+               "## Plan review -- the brief, and why the tier is not discharged\n\n"
+               "The round must engage [E1] before returning a recommendation.\n")
+        _commit(repo, "dev/plans: open planner-line-semantics")
+        _, _, findings = tl.scan(f"{base}..HEAD", repo, whitelist={})
+        assert findings == []
+
+
+@requires_corpus
+class TestWideningIsNotCreating:
+    """AC-R4 / the withdrawn one-directional claim, re-tested honestly.
+
+    Both nodes quantify over a **corpus window**, never over this plan's
+    own fixtures.  The old specification quantified over "every fixture
+    in Chunks A-C" -- the author's own demonstration set -- and
+    structurally could not contain the counterexample, which lives in the
+    tree.  A property test whose domain is the author's examples is a
+    green light, not a pin.
+    """
+
+    def test_the_evidence_widening_does_not_create_a_finding_over_the_corpus(
+        self, tl: ModuleType,
+    ) -> None:
+        # B15.  Perturbations, both RUN and red: (1) delete C2's
+        # dated-heading conjunct -- fd6be5a appears and the subset
+        # property fails; (2) make an h3 truncate the enclosing h2 span
+        # instead of adding beside it -- 16 new shape-(a) findings appear.
+        window = f"{PROPOSAL_SHA}..{SNAPSHOT_SHA}"
+        _, _, pinned = tl.scan(
+            window, REPO_ROOT, whitelist={}, rules=tl.Rules(**PINNED_RULES),
+        )
+        _, _, shipped = tl.scan(window, REPO_ROOT, whitelist={})
+        assert len(pinned) == 20
+        assert len(shipped) == 10
+        assert {(f.sha, f.shape, f.file) for f in shipped} <= {
+            (f.sha, f.shape, f.file) for f in pinned
+        }
+
+    def test_the_span_widening_cannot_manufacture_a_shape_b_finding(
+        self, tl: ModuleType,
+    ) -> None:
+        # C11.  Perturbation: delete C2's dated-heading conjunct and
+        # re-run -- fd6be5a and the plan's own plan-open 6a88501 appear
+        # as shape-(b) findings the un-widened rule does not produce.
+        # Deliberately a **corpus** assertion, not a fixture one.
+        window = f"{ROOT_SHA}..{SNAPSHOT_SHA}"
+        _, _, pinned = tl.scan(
+            window, REPO_ROOT, whitelist={}, rules=tl.Rules(**PINNED_RULES),
+        )
+        _, _, shipped = tl.scan(window, REPO_ROOT, whitelist={})
+        pinned_b = {(f.sha, f.file, f.message) for f in pinned if f.shape == "b"}
+        shipped_b = {(f.sha, f.file, f.message) for f in shipped if f.shape == "b"}
+        assert len(pinned_b) == 2
+        assert {sha for sha, _, _ in pinned_b} == {INCIDENT_SHA}
+        assert shipped_b == pinned_b

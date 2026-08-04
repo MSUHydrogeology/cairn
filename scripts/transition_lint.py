@@ -101,6 +101,9 @@ class Rules:
     #: Treat ``respond`` as a *response* token so "respond to ... review"
     #: stops reading as a review claim.
     respond_token: bool = True
+    #: Require a review-kind section's own heading to carry an ISO
+    #: date before its body can read as a *landed* review.
+    dated_heading: bool = True
 
 
 #: The narrowing.  A commit is examined only if it adds or modifies a
@@ -192,6 +195,39 @@ _PINNED_REVIEW_PREFIXES = ("review", "plan review", "code review")
 #: heading-presence rule flags the honest commit and misses the
 #: dishonest one.  Count *body* lines instead.
 _MIN_EVIDENCE_LINES = 3
+
+#: A lifecycle file is a shape-(b) candidate only while it is still
+#: pre-review.  ``proposed`` alone was the original rule; no plan ever
+#: carries it, which made the exact analogue of the 17b7e5c incident
+#: undetectable on plans.
+_OPEN_STATUSES = ("proposed", "open", "awaiting-plan-review")
+
+#: How far into an added blob ``**Status**:`` is looked for.  Measured
+#: 2026-08-04 across every file under both trigger roots including
+#: archives: the deepest ``**Status**:`` in a non-template file is line
+#: **31**; the two ``_template.md`` files sit at 77 and 123 and are
+#: excluded by basename anyway.  60 leaves ~29 lines of headroom, and
+#: the bound is stated here rather than inferred.
+_HEADER_BOUND = 60
+
+_STATUS_RE = re.compile(r"^\*\*Status\*\*:\s*([A-Za-z][A-Za-z-]*)")
+
+#: Review-grammar markers: what a *landed* review's body contains.
+_REVIEW_MARKER_RE = re.compile(r"\[R\d+\]|\[E\d+\]|\*\*Steelman|\*\*Covered\*\*")
+
+#: An attributed, landed review heading carries the date it landed.  This
+#: conjunct is what separates a landed review from a *brief* that merely
+#: quotes finding-id grammar while telling a future reviewer what to do,
+#: and it amends a discriminator the accepted scope reproduces -- so it
+#: is fenced to the Maintainer and strikeable in one line.  Measured over
+#: 0f1fc68..da2d00e: marker-only gives 3 shape-(b) findings, one of them
+#: false (000e480, on a reviewer brief); marker + dated heading gives 2,
+#: both the true 17b7e5c pair.  Priced rather than asserted free: of 161
+#: pinned-prefix review h2 headings in the tree (2026-08-04), 103 carry a
+#: date and 58 do not, and the undated ones are briefs, placeholders and
+#: template headings.  The false-negative cost is real -- a baked-in
+#: review whose heading omits a date goes unseen.
+_ISO_DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
 
 
 # ---------------------------------------------------------------------------
@@ -458,6 +494,37 @@ def _shape_a(
     )]
 
 
+def _shape_b(
+    root: Path, sha: str, triggers: list[tuple[str, str]], rules: Rules,
+) -> list[Finding]:
+    """An open commit whose added file already carries a real review.
+
+    One ``Finding`` **per baked-in section**, not per commit: the
+    incident commit carries two review sections and must produce two.
+    """
+    findings: list[Finding] = []
+    for status, path in triggers:
+        if status != "A":
+            continue
+        lines = _blob_lines(root, sha, path)
+        if not lines:
+            continue
+        declared = None
+        for line in lines[:_HEADER_BOUND]:
+            m = _STATUS_RE.match(line)
+            if m:
+                declared = m.group(1).lower()
+                break
+        if declared not in _OPEN_STATUSES:
+            continue
+        for start, end, heading in _section_spans(lines, "review", rules):
+            if rules.dated_heading and not _ISO_DATE_RE.search(heading):
+                continue
+            if _REVIEW_MARKER_RE.search("\n".join(lines[start:end])):
+                findings.append(Finding(sha, "b", path, heading))
+    return findings
+
+
 # ---------------------------------------------------------------------------
 # Scan + CLI
 # ---------------------------------------------------------------------------
@@ -484,6 +551,7 @@ def scan(
         if sha in suppressed:
             continue
         findings.extend(_shape_a(root, sha, subject, trigs, active))
+        findings.extend(_shape_b(root, sha, trigs, active))
     return scanned, triggered, findings
 
 
