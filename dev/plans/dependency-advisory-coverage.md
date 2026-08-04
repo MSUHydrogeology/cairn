@@ -1410,3 +1410,489 @@ re-planning. None of the ten findings is a reason to reopen the Decision, and I
 found no defect in the plan's cluster accounting, symbol delta, install-contract
 assertion, or measured evidence — the four things a plan in this cluster is most
 likely to get wrong, and the four this one gets right.
+
+## Response to plan review -- Claude (author) -- 2026-08-04
+
+**Model**: Claude Opus 5 (`claude-opus-5`).
+
+**Standing.** This is the plan author's response to the Internal round above. It
+is **not** a review and it does **not** discharge the declared tier. The plan
+requires `required(**External**, security lens)`; the only review in the tree is
+Internal same-agent-type. **The plan-review precondition remains unmet and no
+implementation commit may land.** See *Clearance* at the end, which states this
+in terms rather than leaving it to be inferred.
+
+**How this Response was verified.** The plan was written against HEAD `eacb7dd`;
+the review checked citations against `eacb7dd` and gate figures against a live
+tree. This Response was written against HEAD **`e20b18e`** — **62 commits** past
+`eacb7dd`. Every figure the review states was **re-measured, not inherited**,
+under `/Users/kendal30/conda_envs/lhm/bin/python3.13` (CPython 3.13.13),
+`PYTHONDONTWRITEBYTECODE=1`, `as_of 2026-08-04`. I modified no source file and ran
+no network action. **Three figures did not reproduce**; they are reported first,
+because one of them changes a finding's basis.
+
+### Re-measurement — the three non-reproductions
+
+**(1) The suite is green. [I2]'s evidence does not reproduce.**
+
+The review measured `3 failed, 1746 passed … (1749 collected)`. Live:
+
+```
+python -m pytest bootstrap/tests
+  -> 1790 passed, 3 warnings in 177.12s     exit 0
+  -> 1790 tests collected   (0 failed, 0 skipped, 0 xfailed)
+```
+
+All three failures are closed, and by exactly the mechanism the plan's own
+Maintainer fence 1 describes:
+
+* The two `test_ast_attest` failures were closed by **`3852cf7` — "Ceremony 1 --
+  batched AST baseline re-anchor for Wave 2 (Maintainer-run)"**, which corrected
+  digest and span for five functions across the two Wave 2 plans that touch
+  `bootstrap/_scaffold/`. An implementing agent did not re-anchor; the Maintainer
+  did. **The fence worked.**
+* The third, `TestMinimalYamlParse::test_mixed_indent_list`, was a mid-landing
+  snapshot: `e7394cb` (`profile-parse-fail-open`) **renamed** it to
+  `test_mixed_indent_list_is_refused`. The review caught the tree between the
+  rename and its collection.
+
+The review's inference — *"the plan hands its implementer a bar it cannot clear
+and a fence that stops it from clearing it"* — was true of the tree it measured
+and is **not true of the tree today**. I say so plainly rather than accept the
+finding on its stated evidence. **[I2] is nonetheless accepted, on a different
+basis** — see its disposition.
+
+**(2) The AST baseline moved: 174 → 173 entries.**
+
+`3852cf7` plus `e7394cb` changed the fixture the plan quotes:
+
+```
+                     eacb7dd (plan + review)      e20b18e (live)
+total entries                    174                  173
+Assign/ClassDef/FunctionDef   53/10/98             53/10/98   <- unchanged
+tail        Docstring 1, Expr 1, If 1, If#2 1, Import 8, Try 1
+                                        ->  ... Import 8   (Try dropped)
+digest-changed: _minimal_yaml_parse, cmd_upgrade, forked_facade_findings,
+                format_forked_facade_warning, load_config          (5)
+```
+
+**The plan's load-bearing claim survives intact**: the three-kind count is still
+`53 + 10 + 98 = 161`, and none of the five moved symbols is this scope's — they
+belong to `profile-parse-fail-open` and its Wave 2 sibling. The **empty declared
+delta is still correct**. What is stale is the total and the by-kind tail, both of
+which the review certified as "exact". Amended below.
+
+**(3) `check_cairn` scans 195 Markdown files, not 180.**
+
+```
+check_cairn: OK -- 195 Markdown file(s) scanned; no issues; 68 external link(s) not probed.
+```
+
+The external-link count (**68**) reproduces exactly. The plan hedged this one
+correctly (*"the count may only grow"*), so the criterion is still satisfiable —
+but the figure a reviewer would check against is 15 files stale. Amended.
+
+### Re-measurement — what reproduced
+
+Everything else the review states reproduced **exactly**. Listed so a reader can
+tell measurement from assent:
+
+* **Inventory arithmetic, all six**: conda records 394 / unique **391**; Python
+  distribution records 290 / unique **288**; intersection **244**; conda-only
+  **147**; Python-only **44**; union **435**.
+* **The `direct_url.json` buckets, all four**: editable **2** (`modflow_tools`,
+  `lhm-frontend`); non-editable `dir_info` **236**; `vcs_info` **0**; no
+  `direct_url.json` **47**. Sub-buckets `feedstock_root` **189**, `conda-bld`
+  **46**.
+* **Install contract**: `scaffold.py --manifest` → 96 lines = **95 data rows**.
+  `_CORE_MAPPINGS c74e6013783bf4fe`, `_MODULE_MAPPINGS 26957a8924042a0a`,
+  `_SKILLS_MAPPINGS 8ec105a84b5e65bf` — all three exact.
+* **Gate accounting**: `frozen_files` **164** entries; the orchestrator pinned
+  `04cedaa2cd133fca3042c99f1c25daefd268744273c878b403c31435a60d1f6f`
+  character-for-character; `bootstrap/tests/test_security_stack.py` frozen;
+  `templates/modules/team-gated/python-security.md` and
+  `bootstrap/DEPENDENCY_BUDGET.md` **not** frozen.
+* **Bandit over the orchestrator alone** (bandit 1.9.4): `errors: []`,
+  `{('LOW','B404'): 1, ('LOW','B603'): 1}`, **zero MEDIUM+**.
+* **Every orchestrator citation**: `:43`, `:51`, `:94`, `:255`, `:258`, `:275`,
+  `:277`, `:387`, `:391`, `:392`, `:406`, `:436`, `:470`, `:479`. `_run_tool` has
+  exactly two callers, `:340` and `:413`.
+* **Every test-file and Markdown citation**, including the four the review filed
+  as nits — all four of those reproduce as the review states them.
+* **`claim_check.py`** on this plan → OK, exit 0, two exemptions via the
+  documented `claim-check-allow` directive.
+* **Scope boundary**: among in-flight plans, only `portable-security-sweeps` and
+  `api-web-security-modules` mention pip-audit, and neither claims the leg.
+
+One figure the plan asserts and the review could not reach, I also could not
+reach and did **not** guess: see [I8].
+
+### Dispositions
+
+Ten findings and a nits block. Every acceptance below produces **mechanical
+residue** — a changed row, a new row, a changed criterion — enumerated in
+*Amendments in force*. Nothing is accepted in prose alone.
+
+---
+
+**[I1] — ACCEPTED.** Both falsified surfaces reproduce verbatim at HEAD:
+
+* `templates/modules/team-gated/python-security.md:114` — *"An egress-off run
+  reports the pass **UNAVAILABLE (incomplete coverage → aggregate `5`), not
+  clean**"*, stated unconditionally, sitting inside the pip-audit section that
+  opens at `:104` — the exact section E2 edits.
+* `templates/modules/team-gated/run_security_audit.py:43` — the module-level
+  exit-table bullet whose `5` limb reads *"or pip-audit network egress off (lookup
+  UNAVAILABLE)"*. (The bullet **begins at `:42`**; the review cites its
+  continuation at `:43`, which is where the quoted text sits. Noted for precision,
+  not as a correction.)
+
+C2 makes both false. The plan's own routing rule says code-adjacent prose is
+*"corrected in the same commit as the behaviour they describe, never later."*
+Residue: two new rows, **C3a** and **C3b**, in Chunk C's table. C3b deliberately
+edits a Chunk E file from Chunk C — stated as an intra-plan ordering constraint so
+E2 builds on corrected text rather than racing it.
+
+**[I2] — ACCEPTED WITH MODIFICATION.** The evidence is superseded (suite green,
+above); the **provision is accepted anyway**, and on a stronger basis than the
+review had. Inherited red in this tree is not an incident, it is a *recurring
+state*: five accepted scopes edit `bootstrap/_scaffold/config.py`, and the AST
+baseline goes red again the moment the next one lands an engine symbol —
+`3852cf7` is dated **today**. A plan whose acceptance criterion reads *"the whole
+suite, green, 0 failed"* is therefore correct only between ceremonies. The plan
+already invented the right instrument for the gate manifest (*"split attributable
+from non-attributable rows … do not re-pin"*); pytest gets the identical
+provision. I decline only the review's framing that the bar is *currently*
+unclearable. Residue: an amended plan-level test criterion, a new *pytest
+attribution split* bullet under *Plan-specific gates*, and a re-baselined
+collection figure.
+
+**[I3] — ACCEPTED.** Reproduced exactly, and I can close both gaps with names:
+
+```
+no direct_url.json                47
+dir_info present, NOT editable   236
+neither dir_info nor vcs_info      5   <- the review's missing five
+dir_info EDITABLE                  2
+                                 ---
+                                 290   partition now closes
+```
+
+The five are `ptyprocess`, `protobuf`, `scipy`, `numpy`, `scikit-learn` — exactly
+the names the review lists — each carrying `archive_info` and `url`, and neither
+`dir_info` nor `vcs_info`. The sub-bucket arithmetic: 189 + 46 = 235, and **the
+236th is `jsonschema-specifications`**, whose url is
+`file:///tmp/tmptzik3dqa/src`; the review flagged it as unnamed, and it now has a
+name.
+
+**One sharpening the review did not draw, and it strengthens the plan's own
+argument.** All five `archive_info` records carry a **`file://`** URL into a conda
+build directory. Under the Decision's predicate read literally — *"a local path or
+VCS install, exposed by `direct_url.json`"* — those five qualify too. **The literal
+predicate admits 241, not 236.** The narrowed `editable-or-vcs` predicate rejects
+all 241 and still yields exactly 2. The interpretive step the plan flags is
+therefore *more* necessary than the plan states, not less. Residue: a corrected
+partition, a glossary amendment naming `archive_info`, and a **fourth case in
+D-t4**.
+
+**[I4] — ACCEPTED.** Confirmed structurally against the live module, and the escape
+path is exactly as the review describes. The orchestrator's only exception handlers
+are `OSError` at `:116`, `json.JSONDecodeError` at `:126`, `FileNotFoundError` at
+`:279`, and `AuditDegraded` at `:451` and `:470`. The entry point is
+`raise SystemExit(main())` with **no** wrapper. So an uncaught `JSONDecodeError`
+from a D4 or D5 parent-side read escapes `main()` and exits **1** — a code inside
+the component space the module's own exit table promises the aggregate never
+collides with. That is byte-for-byte the plan's reproduced defect #2, reintroduced
+by the chunk that ships the coverage contract.
+
+Two concrete details the review did not have:
+
+* `<sys.prefix>/conda-meta` holds **396 entries**, not 394: 394 `*.json` plus
+  **`history`** and **`state`**, which are not JSON. An unguarded glob-plus-parse
+  over that directory raises on the first of them. D5's enumeration must be *both*
+  bounded *and* extension-scoped.
+* The module already has the right idiom — `:124` reads the lockfile under
+  `except json.JSONDecodeError`. D4 and D5 need to adopt it, not invent it.
+
+Residue: amended D4 and D5 rows carrying explicit fail-closed dispositions and a
+bound, plus two new perturbations **D-t7** and **D-t8**.
+
+**[I5] — ACCEPTED WITH MODIFICATION.** The two limbs are not the same kind of seam,
+and collapsing them would put a wrong row in the table.
+
+*Limb 1 — accepted, and stronger than stated.* `dev/plans/default-security-stance.md:479`
+reproduces exactly: C3 renames `test_python_security_not_in_any_default_or_preset`
+to `test_python_security_is_never_default_on_or_in_a_preset_baseline` and marks the
+file *"**Frozen file.**"*. I went further than the review: grepping every in-flight
+plan, `bootstrap/tests/test_security_stack.py` is named by **exactly two** — this
+plan and `default-security-stance`. The two the seam table *does* list
+(`api-web-security-modules`, `portable-security-sweeps`) name only *"behavioral
+tests under `bootstrap/tests/`"* generically. **The one plan that names the file by
+path, and lands a rename in it, is the one the table omits.** Residue: an amended
+seam row.
+
+*Limb 2 — accepted as a different type of seam.* `dev/plans/security-verification-activation.md:539`
+reproduces exactly, including *"strict UTF-8"*. But A1 creates a **new** file — a
+`run_security_verification.py` under `templates/modules/default-on/`, which does
+not exist yet — and does not edit this plan's orchestrator. Grepping confirms **no**
+in-flight plan edits `templates/modules/team-gated/run_security_audit.py` besides
+this one. So this is not a file-level co-claim; it is a **contract-level** seam: two
+subprocess boundaries shipping in one release with divergent decode policies.
+Residue: a new seam row **typed as contract-level**, so the External reviewer is
+not sent looking for a file collision that does not exist.
+
+*On the decode divergence itself, I record the plan's position and do not settle it
+unilaterally.* A2's `errors="replace"` plus DEGRADED-on-replacement and the
+sibling's strict UTF-8 reach the **same tier** — both fail closed. They differ in
+what survives: replacement preserves the bytes for the operator (which A4's escaper
+then neutralises), strict discards the output entirely. A2 is strictly more
+informative at the same tier, which is why this plan keeps it. But *which* policy
+ships is a cross-scope call, not this plan's to make alone — flagged to the
+Maintainer, not absorbed.
+
+*A third seam the review did not find, and it softens an existing row.*
+`dev/plans/portable-security-sweeps.md:398` states that its A3 lands with **"No
+subprocess call exists in the file at this commit"** and only *mirrors* the
+`_AGG_*` constants (verified: `templates/modules/team-gated/run_security_audit.py:75`
+through `:78`). This plan's existing row hedges *"If that scope's adapter work turns
+out to modify rather than reuse the boundary…"*; that contingency is measurably not
+live at A3. Recorded.
+
+**[I6] — ACCEPTED**, all four limbs. Each checks out against the live code:
+
+* **A-t3.** The stated perturbation reaches only the byte-capture half. An
+  implementation that captures bytes, decodes with replacement and returns `"ran"`
+  passes it — while *Author-accounting* claims A-t3 enforces *"undecodable bytes is
+  DEGRADED, never clean."* Second perturbation added.
+* **B-t3.** *"Drop one pinned flag"* reaches the flag half; the `os.environ` half —
+  the DAC1-relevant half — has no perturbation. The review's sentinel construction
+  is right; added.
+* **C-t4.** Confirmed at `templates/modules/team-gated/run_security_audit.py:479`:
+  the aggregate is a `max` over the tiers. Replacing it with `min`, or with "last
+  tier wins", **changes no constant** and leaves C-t4 green. Since C-t4 exists to
+  make the "aggregate space untouched" fence checkable rather than promised, the
+  precedence limb gets its own perturbation.
+* **A-t2.** Accepted. A hanging test converts a regression into an unbounded job,
+  and the red is available: sleep past the cap, assert the `"timeout"` status **and**
+  a wall-clock bound. Deleting the timeout argument then fails the bound assertion
+  instead of hanging.
+* **C1's third disposition.** Accepted — C1 names *interpreter observation* as a
+  third disposition and no test asserts it. New **C-t5**.
+
+**[I7] — ACCEPTED WITH MODIFICATION.** The substance is right: the source-lint half
+is a lint on the code under test and is evaded by any indirection, and the
+behavioural half carries the claim without the plan saying how the open is
+intercepted. This is the plan's stated enforcement of DAC5's withdrawal over what
+`AGENTS.md` calls an **executable trust root**, so it should be the strongest test
+in Chunk B.
+
+**One factual correction to the finding.** The review argues the behavioural half is
+*"vacuously true"* on a machine where the path does not exist, *"and Cairn's own tree
+gitignores it."* Measured: `dev/.cairn/local-env.json` **exists** in this tree (65
+bytes; `.gitignore:7` is the ignore rule). So on *this* machine the assertion is not
+vacuous. That makes the defect **worse, not better**: the test's discriminating power
+varies with the presence of an untracked, gitignored file — green-and-meaningful
+here, green-and-meaningless in a fresh clone, with nothing distinguishing them. An
+environment-dependent oracle is a sharper failure than a uniformly vacuous one.
+(Separately confirmed: the orchestrator contains **no** reference to `local-env`
+today — every hit under `templates/` is in `templates/skills/_lib/lifecycle.py` — so
+the lint half is currently green trivially.) Residue: an amended B-t5 row specifying
+the interception and an indirection-proof perturbation.
+
+**[I8] — ACCEPTED.** I reproduced **147** exactly. **82 I did not reproduce, and I
+did not guess** — reporting a number I had invented a definition for would look like
+corroboration, and is the precise failure this Response exists to avoid.
+
+The review's provenance chain checks out and extends one layer further than it went:
+
+* `dev/proposals/2026-08-03-claude-dependency-advisory-coverage.md:636` reproduces
+  exactly — *"classify the asserted 82 native packages"* sits in the External
+  reviewer's **Not covered** list, and the word *"asserted"* is the reviewer's.
+* **No definition of "native" exists in the source proposal either.** Its table at
+  `:54` gives the count and its prose at `:56` gives an *example list* (`krb5`,
+  `freetype`, `icu`, `hdf5`, `geos`, `libabseil`, `bzip2`, the `aws-c-*` stack) —
+  examples, not a predicate. So 82 is unreproduced at **both** layers, and the plan
+  would be carrying it into adopter-installed doctrine at a third.
+* **The 38% denominator does exist** — the source proposal states it at `:51`
+  through `:53` (147 of 391 = 37.6%). It is simply not carried into E5's target
+  text. The review's arithmetic reproduces: 147/391 = 37.6%, 147/435 = 33.8%.
+
+Disposition, taking the review's suggested split: **E3 loses the machine-specific
+counts** — an adopter reading "147 conda-only packages" in their own installed
+doctrine will read it as a property of the module, which it is not — and ships the
+*shape* of the gap. **E5 keeps the numbers**, in Cairn's own descriptive doc where a
+Cairn-environment measurement belongs, **with the denominator named**; and **"82
+native" is dropped** unless re-measured against a stated definition. Dropping an
+unreproduced figure is the author's call and needs no Maintainer.
+
+**[I9] — ACCEPTED.** Reproduced and tightened: `CAIRN_PIP_AUDIT_ALLOW_NETWORK`
+occurs in exactly **two** files tree-wide — the orchestrator at
+`templates/modules/team-gated/run_security_audit.py:391`, and the review's own text
+inside this plan. In shipped code and docs it occurs **once**. The code reads egress
+from argv only (`:436`). The drift is fail-safe in direction, but it advertises an
+*environment-variable path to enabling network egress* — the exact surface DAC1
+closes — one line above the sentence C3 already removes, in the docstring C3 is
+already rewriting. Folded into C3.
+
+**[I10] — ACCEPTED.** The gap is real and I will not paper it: under the fallback,
+D's Channel note (*"Oracle: JSON fixtures captured from a different program in Chunk
+0"*) cannot be satisfied, because the fixture would be authored by the same session
+that writes the parser. Rather than leave it to the implementer, I pre-decide it per
+test, which is what the plan should have done:
+
+| Test | Under the Chunk 0 fallback |
+|---|---|
+| **D-t2** | **Survives, re-expressed.** The "cannot establish" path needs *no* schema: no parseable enumeration → UNKNOWN-unestablished → INCOMPLETE, never CLEAN. The central claim keeps a test. |
+| **D-t3** | **Survives unchanged.** Its input is deliberately non-schema (non-JSON, truncated, decode-replaced). |
+| **D-t1** | **Deferred, not shipped.** "Skipped ≠ scanned" requires a real skipped-set shape. |
+| **D-t6** | **Deferred, not shipped.** Denominator provenance requires a real enumeration key. |
+
+So Chunk 0 is **a hard precondition for D-t1 and D-t6** and a strong preference for
+the rest — stated per test instead of left as a plan-wide preference. Residue: the
+fallback bullet gains this table.
+
+**Nits — all four ACCEPTED**, all reproduced:
+
+* `bootstrap/tests/test_security_stack.py:638` is the `def` line of
+  `test_pip_audit_tool_error_is_degraded_not_findings`; the `monkeypatch` of
+  `shutil.which` that C-t2 cites is at **`:643`**.
+* `default-security-stance`'s `python-security.md` edit: `:3` is the *"**Selected
+  when:**"* line; the *"Team-gated and **opt-in**"* sentence that scope rewrites is
+  at **`:6`** through **`:7`**. Still paragraph-disjoint from `:13` and `:104`, so
+  the seam conclusion holds.
+* Exception 1 in `bootstrap/DEPENDENCY_BUDGET.md` runs `:40` through `:57` (heading
+  at `:40`); the Scope/blind-spots bullet E5 edits is at **`:52`** through
+  **`:54`**, one line past the plan's stated range.
+* `1746 collected` is now **1790** (the review's mid-flight 1749 is also stale).
+
+**One seam the plan flagged is now discharged, which I record rather than leave
+looking open.** `gate-claims-vs-enforcement` **has landed** its
+`bootstrap/DEPENDENCY_BUDGET.md` edit — commit `2244eca`, *"Chunk C -- the
+floor-check names"* — and it touched **Exception 2** (heading at `:97`), not
+Exception 1. The plan's line-level-disjoint prediction held exactly. That
+co-claimant is no longer in flight on this file.
+
+### Amendments in force
+
+Each row names the superseded text **verbatim** and states what replaces it. Where
+the superseded unit is a multi-line block, the row anchors it by its exact first
+line, and the replacement block follows the table.
+
+| # | From | Superseded text (verbatim) | Replacement |
+|---|---|---|---|
+| **A1** | (1) | *"**1746 collected**, `as_of 2026-08-04`, measured against a tree already"* | *"**1790 collected**, `as_of 2026-08-04`, measured against a tree already"* — re-measured at HEAD `e20b18e`. The instruction to re-take at implementation is unchanged and now doubly warranted. |
+| **A2** | [I2] | the whole-suite criterion *"the whole suite, green, **0 failed / 0 skipped / 0 xfailed**, under the canonical interpreter (3.13.13)"* | *"the whole suite, green with **zero red attributable to this plan**, and zero skipped / xfailed attributable to this plan, under the canonical interpreter (3.13.13). Inherited red — an `test_ast_attest` baseline stale from a sibling's engine symbol, a mid-landing rename — is **recorded with its attribution in the commit body and does not block**; red attributable to this plan does block. **Do not re-anchor the AST baseline to reach green** — that is Maintainer fence 1, and it destroys the shared ceremony for five scopes."* Measured at HEAD `e20b18e`: **1790 passed, 0 failed**, exit 0. |
+| **A3** | [I2] | *(addition — no superseded text)* | New bullet under *Plan-specific gates*: **The pytest attribution split.** After every chunk, any red is split into attributable and inherited, with the sibling commit or symbol named for each inherited failure, recorded in the commit body. Same instrument as the gate-integrity split, same prohibition: **do not re-anchor, do not re-pin.** |
+| **A4** | (2) | *"total entries: 174"* | *"total entries: 173"* (`as_of 2026-08-04`, HEAD `e20b18e`). |
+| **A5** | (2) | *"Docstring 1, Expr 1, If 1, If#2 1, Import 8, Try 1"* | *"Docstring 1, Expr 1, If 1, If#2 1, Import 8"* — the `Try` entry was dropped by `e7394cb` (`profile-parse-fail-open`) and the fixture re-anchored by the Maintainer in `3852cf7`. **`Assign 53, ClassDef 10, FunctionDef 98 = 161` is unchanged, so this plan's empty declared delta stands.** Five FunctionDef digests moved (`_minimal_yaml_parse`, `cmd_upgrade`, `forked_facade_findings`, `format_forked_facade_warning`, `load_config`) — none attributable here. |
+| **A6** | (3) | *"**180 Markdown files, 68 external links not probed**, `as_of 2026-08-04`; the count may only grow."* | *"**195 Markdown files, 68 external links not probed**, `as_of 2026-08-04`; the count may only grow."* The external-link figure reproduced exactly; the file count grew, as the plan's own hedge anticipated. |
+| **A7** | [I3] | the four-line measured block beginning *"dir_info EDITABLE:                2   (lhm-frontend, modflow_tools)"* and ending *"no direct_url.json at all:       47"* | Replaced by the five-bucket partition printed below this table, which **closes at 290**. |
+| **A8** | [I3] | *"`file:///home/conda/feedstock_root/build_artifacts/…` (189) and `file:///Users/runner/miniforge3/conda-bld/…` (46)"* | Same, with the third sub-bucket named: `feedstock_root` **189**, `conda-bld` **46**, and **`jsonschema-specifications`** at `file:///tmp/tmptzik3dqa/src` **1** — total 236. |
+| **A9** | [I3] | the glossary entry opening *"**PEP 610 / `direct_url.json`** — a file inside an installed distribution's metadata recording *where it came from*: a local directory (`dir_info`, with an `editable` flag), a version-control checkout (`vcs_info`), or an archive URL."* | Same, with the third shape given a name and a measurement: the archive-URL case is `archive_info`, and on this environment **5** distributions carry `archive_info` with **neither** `dir_info` nor `vcs_info` — a shape D4 must dispose of explicitly. |
+| **A10** | [I3] | D-t4's assertion cell *"editable → qualifies; **non-editable local dir → does not**; no `direct_url.json` → does not"* | Same, plus a **fourth case**: `archive_info` with a `file://` URL → **does not qualify**. The perturbation is unchanged in kind (implement the predicate as the literal Decision wording) and now goes red on **two** shapes, not one — because the literal predicate admits **241**, not 236. |
+| **A11** | [I4] | D4's cell text *"The residual predicate: a distribution qualifies as locally built iff its `direct_url.json` carries `dir_info` with `editable` true, **or** carries `vcs_info`."* | Same, prefixed with a fail-closed disposition: *"An unreadable, undecodable or unparseable `direct_url.json` classifies **UNKNOWN** — never 'does not qualify', never silently skipped. The file is package-controlled input, the same trust class as the tool output this plan hardens. Use the module's existing idiom (the lockfile read at `templates/modules/team-gated/run_security_audit.py:124`, guarded by `except json.JSONDecodeError`), not a bare read."* |
+| **A12** | [I4] | D5's cell text *"When the interpreter's prefix has a `conda-meta` directory, enumerate it and report the count of conda-only names"* | Same, bounded: *"enumerate **`conda-meta/*.json` only** — the directory also holds non-JSON `history` and `state` entries (**396 entries, 394 JSON**, `as_of 2026-08-04`), so an unguarded glob-plus-parse raises. Cap the record count and the per-file size at module constants; exceeding either, or a malformed or unreadable record, contributes **UNKNOWN** and is reported, never silently dropped. Resolve the prefix and refuse a symlinked `conda-meta`."* |
+| **A13** | [I4] | *(addition — no superseded text)* | Two new rows in Chunk D's acceptance table. **D-t7 malformed `direct_url.json`** — a distribution whose metadata file is truncated JSON classifies UNKNOWN; perturbation: wrap the read in a bare catch-all that passes; expected: red, the UNKNOWN count drops and the record classifies as non-residual. **D-t8 hostile `conda-meta`** — a synthetic prefix whose `conda-meta` holds a non-JSON file, a malformed record, and one record over the size cap; the pass returns a tier and never raises; perturbation: remove the extension filter; expected: red, with an uncaught `JSONDecodeError` escaping `main()` and the process exiting **1**. |
+| **A14** | [I1] [I9] | C3's cell text *"`run_pip_audit_pass`'s docstring loses *"pip-audit runs against its local cache only"* … in favour of "does not run", matching the runtime message."* | Same, **plus** the second false sentence in the same docstring: `templates/modules/team-gated/run_security_audit.py:391` documents `CAIRN_PIP_AUDIT_ALLOW_NETWORK=1` as an alternative to `--allow-network`; the code reads egress from argv only (`:436`), and the token appears in no other shipped file. It is removed in the same edit — it advertises an environment-variable path to network egress, the exact surface DAC1 closes. |
+| **A15** | [I1] | *(addition — no superseded text)* | New row **C3a**, `templates/modules/team-gated/run_security_audit.py` (module docstring): the exit-table bullet at `:42` through `:46` assigns *"pip-audit network egress off (lookup UNAVAILABLE)"* to `5`. C2 makes that false when the tool is also absent. Corrected in the same commit as C2, per the plan's own code-adjacent-prose rule. |
+| **A16** | [I1] | *(addition — no superseded text)* | New row **C3b**, `templates/modules/team-gated/python-security.md`: the unconditional sentence at `:114` — *"An egress-off run reports the pass **UNAVAILABLE (incomplete coverage → aggregate `5`), not clean**"* — is corrected to state the tool-absent case. **Ordering constraint, stated rather than left to chance: C3b lands before E2**, and E2's coverage-contract subsection is written against the corrected text. This is adopter-installed doctrine describing an exit an adopter's CI branches on; leaving it false between Chunk C and Chunk E is a shipped-false window. |
+| **A17** | [I5] | in the seam table, the *Also claimed by* cell for `bootstrap/tests/test_security_stack.py`: *"`api-web-security-modules`, `portable-security-sweeps` (both say "behavioral tests under `bootstrap/tests/`")"* | *"`default-security-stance` (**names the file by path and renames a test in it**), plus `api-web-security-modules` and `portable-security-sweeps` (generic — both say only "behavioral tests under `bootstrap/tests/`")"*, with the seam text gaining: *"`default-security-stance` C3 (`dev/plans/default-security-stance.md:479`) renames `test_python_security_not_in_any_default_or_preset` to `test_python_security_is_never_default_on_or_in_a_preset_baseline` and marks the file frozen. That arrives as a **drop plus an add**; the attribution split must expect it."* |
+| **A18** | [I5] | *(addition — no superseded text)* | New seam row, typed **contract-level, not file-level**: `security-verification-activation` A1 (`dev/plans/security-verification-activation.md:539`) ships a **second** subprocess boundary — a new `run_security_verification.py` under `templates/modules/default-on/` — with *"`shell=False`, explicit minimal `env`, `timeout`, byte cap, **strict UTF-8**, strict JSON"* and this orchestrator's `0/5/10/20` ladder. **It does not edit this plan's file** (verified: no in-flight plan besides this one edits the orchestrator), so there is no `FROZEN-MODIFIED` collision. The seam is the **divergent decode policy** — A2's replacement-plus-DEGRADED against the sibling's strict. Both fail closed to the same tier; they differ in whether the operator keeps the bytes. **Flagged to the Maintainer as a cross-scope call; not settled here.** |
+| **A19** | [I5] | the `run_security_audit.py` seam sentence *"If that scope's adapter work turns out to modify rather than reuse the boundary, the two must re-coordinate before either lands."* | Same, with the contingency's current state recorded: *"Measured `as_of 2026-08-04`: that scope's A3 (`dev/plans/portable-security-sweeps.md:398`) states **'No subprocess call exists in the file at this commit'** and only mirrors the `_AGG_*` constants at `templates/modules/team-gated/run_security_audit.py:75` through `:78`. The contingency is **not live at A3**; re-check at its later chunks."* |
+| **A20** | [I6] | A-t3's perturbation cell *"restore `text=True`"* | **Two** perturbations. **(a)** restore `text=True` → red with `UnicodeDecodeError` (already red at HEAD). **(b)** keep the byte capture, decode with replacement, and return `"ran"` → red on the **tier**. Without (b) the test never reaches A2's second clause, while *Author-accounting* claims it enforces *"undecodable bytes is DEGRADED, never clean."* |
+| **A21** | [I6] | B-t3's perturbation cell *"drop one pinned flag"* | **Two** perturbations. **(a)** drop one pinned flag → red, naming it. **(b)** sentinel-stamp every `os.environ` value in the test and have the builder interpolate one → red, the sentinel appears in argv. (b) is the DAC1-relevant half and currently has no perturbation at all. |
+| **A22** | [I6] | C-t4's perturbation cell *"change any constant"* | **Two** perturbations. **(a)** change any constant → red on the set. **(b)** replace the `max` over tiers at `templates/modules/team-gated/run_security_audit.py:479` with `min`, or with "last tier wins" → red on precedence. (b) **changes no constant**, so C-t4 as written stays green through it — which defeats the fence it exists to make checkable. |
+| **A23** | [I6] | A-t2's expected-failure cell *"the test **hangs** — recorded honestly as a hang, since an unbounded wait *is* the defect being closed"* | *"The child sleeps past the cap; the test asserts the `"timeout"` status **and** a wall-clock upper bound. Deleting the timeout argument then fails the **bound assertion** rather than hanging. A hanging test converts a regression into an unbounded job; the red is available, so honesty about the hang is not a reason to accept it."* |
+| **A24** | [I6] | *(addition — no superseded text)* | New row **C-t5 interpreter observation**: C1 names three dispositions — tool availability, egress, **interpreter observation** — and C-t1 asserts two. C-t5 asserts the third is printed, carrying `sys.executable` and its version; perturbation: drop the interpreter line from the report; expected: red. |
+| **A25** | [I7] | B-t5's assertion cell *"the module source contains no reference to `local-env` and opens no such path during a pass"* and its perturbation cell *"add a read of `dev/.cairn/local-env.json`"* | Assertion: *"during a pass, **no open of any path whose name ends `local-env.json` occurs** — intercepted by patching `builtins.open` and `Path.open` and asserting on the argument, not by reading the module's source. The source-text lint is kept as a **secondary** signal and is explicitly **not** the discriminating half."* Perturbation: *"add a read behind an **assembled** path (built from separate components at runtime) → red."* Rationale recorded: `dev/.cairn/local-env.json` **exists** in this tree (65 bytes; `.gitignore:7` is the ignore rule), so the old assertion is not vacuous *here* — it is **environment-dependent**, green-and-meaningful in this tree and green-and-meaningless in a fresh clone, with nothing distinguishing them. |
+| **A26** | [I8] | E3's cell text *"gains the measured figure: **147 conda-only packages, 82 of them native, `as_of 2026-08-03`** on the canonical environment"* | *"gains the **shape** of the gap — that a conda environment contains substantially more than the Python distributions pip-audit enumerates, that the excess is concentrated in the native layer, and that the module does not audit it — **with no machine-specific count**. A count measured on one maintainer's environment installs into every adopter's doctrine and reads there as a property of the module, which it is not."* |
+| **A27** | [I8] | E5's cell text *"gains the same measured figure and `as_of`, replacing "documented blind spots" — which reads as an edge case and is 38% of the packages"* | *"gains the measured figure **with its denominator named** — **147 of 391 unique conda-installed packages (37.6%), `as_of 2026-08-04`** on Cairn's canonical environment — replacing 'documented blind spots', which reads as an edge case. This is Cairn's own descriptive doc, which is where a Cairn-environment measurement belongs. **The '82 native' figure is dropped**: it is not reproducible from any artifact in this lifecycle — no definition of 'native' appears in the plan **or** in the source proposal (which gives an example list, not a predicate), it was never re-measured for the plan, and the proposal's own External reviewer lists *'classify the asserted 82 native packages'* among what was **not** done (`dev/proposals/2026-08-03-claude-dependency-advisory-coverage.md:636`). It returns only with a stated definition and a fresh measurement."* |
+| **A28** | [I10] | the fallback sentence *"Chunks A, B, C and E still land in full, and Chunk D ships the classifier plus the gate with the "cannot establish" path as the live one."* | Same, plus the per-test table in [I10]'s disposition above: **D-t2 survives re-expressed** against the schema-free "cannot establish" path; **D-t3 survives unchanged**; **D-t1 and D-t6 are deferred, not shipped on self-authored fixtures**. Chunk 0 is therefore a **hard precondition for D-t1 and D-t6**. Recorded because D's Channel note requires an oracle *"captured from a different program"*, and under the fallback a fixture would share an author with the parser. |
+| **A29** | nits | the seam cell fragment *"sentence at `templates/modules/team-gated/python-security.md:3`"* | *"sentence at `templates/modules/team-gated/python-security.md:6` through `:7`"* — `:3` is the *"**Selected when:**"* line. Still paragraph-disjoint from `:13` and `:104`; the conclusion is unchanged. |
+| **A30** | nits | the seam cell fragment *"This plan owns the **Exception 1 network-egress contract** (`:44`–`:53`)."* | *"This plan owns the **Exception 1 network-egress contract** (`:40` through `:57`, heading at `:40`; the Scope/blind-spots bullet E5 edits is `:52` through `:54`)."* Also recorded: `gate-claims-vs-enforcement` **has landed** its edit to this file (`2244eca`), in **Exception 2** (heading at `:97`). The line-disjoint prediction held; that co-claimant is discharged. |
+| **A31** | nits | the Channel-note citation *"the idiom already in use at `bootstrap/tests/test_security_stack.py:638`"* | *"the idiom already in use at `bootstrap/tests/test_security_stack.py:643`"* — `:638` is the `def` line of `test_pip_audit_tool_error_is_degraded_not_findings`; the `monkeypatch` of `shutil.which` is at `:643`. |
+
+**Replacement block for A7** — the residual partition, re-measured at HEAD
+`e20b18e`, `as_of 2026-08-04`, over the **290** distribution records:
+
+```
+no direct_url.json at all:       47
+dir_info present, NOT editable: 236   (conda-forge build artifacts)
+archive_info only (neither
+  dir_info nor vcs_info):          5   (ptyprocess, protobuf, scipy,
+                                        numpy, scikit-learn)
+vcs_info:                          0
+dir_info EDITABLE:                 2   (modflow_tools, lhm-frontend)
+                                ----
+                                 290   partition closes
+```
+
+The 236 sub-buckets: `file:///home/conda/feedstock_root/build_artifacts/…` **189**,
+`file:///Users/runner/miniforge3/conda-bld/…` **46**, and
+`jsonschema-specifications` at `file:///tmp/tmptzik3dqa/src` **1**.
+
+**The conclusion is unchanged in direction and stronger in degree.** All five
+`archive_info` records carry a **`file://`** URL into a conda build tree, so they
+too satisfy *"installed from a local path"* read literally. **The literal predicate
+admits 241 public packages, not 236.** `editable-or-vcs` rejects all 241 and yields
+exactly **2**. The interpretive step this plan flags for strike is therefore more
+necessary than the plan's own text argues, and the fallback if it is struck is
+unchanged: **ship no baseline in v1**, not the literal predicate.
+
+### What this Response does *not* change
+
+* **The Decision is not reopened.** No finding required it, and I did not use one as
+  cover to revisit scope.
+* **The residual-predicate question is not settled.** Whether `editable-or-vcs` is
+  faithful execution or a redesign remains the Maintainer's call, exactly as the plan
+  and the Internal reviewer both left it. This Response only sharpens the measurement
+  underneath it: **241**, not 236.
+* **The Chunk C tier change (5 → 20) is not settled.** Still offered for strike, and
+  [I1]'s prose corrections are contingent on it: if C2 is struck, C3a and C3b are
+  struck with it, and only C3's two false sentences remain to be corrected.
+* **The decode-policy divergence is not settled.** Recorded as a cross-scope
+  question, not absorbed.
+* **No test was written and no perturbation was run.** Every amendment above is a
+  change to the *plan*. [I6], [I7] and [I10] remain analytic findings about declared
+  perturbations; none has been observed red.
+
+### Clearance — stated explicitly
+
+**This Response does NOT clear the plan to implement.**
+
+What it discharges: the Internal round is answered, all ten findings have a
+disposition, and every acceptance has mechanical residue in the table above.
+
+What remains, and it is the gate:
+
+1. **`required(External, security lens)` is UNMET.** No External review has landed.
+   The plan requires a `### Plan review -- <reviewer> -- YYYY-MM-DD` sub-heading from
+   a **different agent type or a human**; the tree contains only an Internal
+   same-type `##` section and this author Response. Two independent triggers keep it
+   live — the proposal's Decision, and `AGENTS.md` > *High-risk surfaces*. **No
+   implementation commit lands before that sub-heading is in the tree.** This
+   Response is written by the plan's **author**, and is structurally the least
+   qualified artifact in the tree to discharge an independence requirement.
+2. **Three Maintainer calls are open**, all flagged, none absorbed: the residual
+   predicate narrowing; the Chunk C tier change; and — new from [I5] — the
+   cross-scope decode-policy divergence with `security-verification-activation`.
+3. **Maintainer fence 3 stands.** Chunk 0's network fetch is unapproved and
+   unattempted.
+
+### For the External reviewer
+
+Three things changed under this Response that alter what you would be reading:
+
+* **Do not reproduce the plan's suite, AST-total or `check_cairn` figures as
+  written** — all three are superseded by A1/A2, A4/A5 and A6. The live tree is green
+  at **1790 passed, 0 failed**; the AST baseline is **173** entries; `check_cairn`
+  scans **195** files. The plan's *three-kind* delta claim (161, empty) is unaffected
+  and still correct.
+* **The residual measurement now closes at 290 across five buckets**, and the literal
+  predicate admits **241**. Reproduce that before judging the plan's question 1; it is
+  a stronger version of the argument the plan makes, not a weaker one.
+* **[I4] is a security defect this plan would *introduce*.** It is now dispositioned
+  (A11, A12, A13) but not implemented, and it is the finding worth attacking hardest:
+  the module has **no** broad exception handler, so an unguarded parent-side JSON read
+  exits **1** into the component code space the exit table promises the aggregate
+  never uses.
