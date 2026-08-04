@@ -6,7 +6,7 @@
 **Author**: Codex (Strategy, from the Security Review role)
 **Model**: OpenAI Codex (GPT-5)
 **Date opened**: 2026-08-03
-**Status**: reviewed
+**Status**: revised
 **Touches**: `bootstrap/_scaffold/config.py` (module registration only), the
 team-gated module catalog under `templates/modules/team-gated/`,
 `bootstrap/DEPENDENCY_BUDGET.md`, `bootstrap/SAFETY.md`, adopter tool-use
@@ -1365,3 +1365,215 @@ entry point; no network or credential-bearing route is introduced here.
 This response leaves the proposal **reviewed**. The next commit will append the
 replacement Git-config, version-mode, maintenance, activation, and test
 contracts and return the artifact to `revised` for focused External re-review.
+
+## Revised proposal, round 2 -- measured Git and usable version drift -- 2026-08-03
+
+This section supersedes the earlier revision's threat-model wording, exact-only
+version disposition, Git environment, version tests, adoption HOLD reason, and
+evidence summary wherever they conflict. The one-adapter Gitleaks scope,
+strict policy, two scan questions, safe output, suppression boundary, aggregate
+exits, and other unchanged controls remain governing.
+
+### Expanded candidate surface
+
+Candidate-controlled input includes:
+
+* tracked, untracked, ignored, and working-tree content;
+* tracked attributes and every candidate `.gitleaksignore` path;
+* repository-local `.git/config`, worktree config, refs, replacement refs,
+  remotes, shallow boundaries, and other repository metadata; and
+* strings emitted by Gitleaks or its transitive Git process.
+
+The runner must prevent those inputs from selecting an executable, suppression,
+runner argv, inherited environment, rendered terminal control, or result
+classification. It does not claim to erase all repository-local Git
+configuration. Instead, full-mode support is bounded by named semantic pins,
+an exact measured Git invocation set, selected-field output, and exact Gitleaks
+versions.
+
+### Full-mode Git contract
+
+For Gitleaks 8.30.1, the complete observed transitive Git invocation set is:
+
+```text
+git -C <repo> log -p -U0 --all --full-history --text --no-textconv --no-ext-diff
+git ls-remote --quiet --get-url
+```
+
+The first command supplies history content. The second reads and expands remote
+URL metadata but, under Git's documented `--get-url` behavior, exits without
+contacting a remote. Remote/link fields are not selected into Cairn's report.
+An absent remote may make that metadata lookup fail without invalidating the
+secret result; the runner classifies only the supported Gitleaks contract, not
+raw Git stderr.
+
+The child environment starts from an allowlist and drops every inherited
+`GIT_*`, `GITLEAKS_*`, proxy, Python-import, pager, and prompt variable. It then
+sets the already specified neutral HOME/PATH and these Git values:
+
+```text
+GIT_TERMINAL_PROMPT=0
+GIT_NO_REPLACE_OBJECTS=1
+GIT_CONFIG_NOSYSTEM=1
+GIT_CONFIG_GLOBAL=<off-tree empty file>
+GIT_OPTIONAL_LOCKS=0
+GIT_CONFIG_COUNT=8
+core.useReplaceRefs=false
+core.hooksPath=<os.devnull>
+core.fsmonitor=false
+core.pager=cat
+core.quotePath=false
+diff.external=
+protocol.allow=never
+protocol.file.allow=never
+```
+
+The last eight key/value pairs are encoded in ordered
+`GIT_CONFIG_KEY_0..7` / `GIT_CONFIG_VALUE_0..7` variables. They outrank the
+same named keys in repository-local config. The two protocol denials are
+defense in depth against accidental transport; they do not convert an
+unmeasured future Git argv into a supported one.
+
+The live-contract test places a logging Git shim first on the minimal test PATH,
+executes both finding and clean fixtures, and requires the exact command
+multiset above with no third call. It also plants hostile local values for all
+eight pinned keys and executable sentinels for hooks, fsmonitor, diff, pager,
+and transport. Any sentinel execution, argv drift, network observation, or
+changed result fails the supported-version matrix. The production runner still
+places the verified real Git directory on PATH; the shim is measurement
+instrumentation, not a shipped shell dependency.
+
+### Two version modes
+
+Version parsing is strict ASCII `MAJOR.MINOR.PATCH` with no prefix, suffix,
+whitespace, control, or prerelease text. Policy cannot select a version or mode.
+
+**Reviewed full mode.** A source-owned set of exact versions, initially
+`{"8.30.1"}`, runs both current-tree and history legs. Each member has passed
+the hostile-config, exact-Git-argv, redacted-output, no-network, fixture, and
+end-to-end matrices. Only this mode can return aggregate CLEAN.
+
+**Reduced-provenance current-tree mode.** An installed strict `8.x.y` version
+outside the reviewed set runs `gitleaks dir` only. It receives the same
+runner-owned config, reviewed fingerprint file, suppression override, redaction,
+body/report cap, parser, and inner/outer timeouts. PATH points to an off-tree
+empty directory; Git is neither resolved nor made reachable for this mode.
+
+Reduced mode classifies:
+
+* a validated secret result as FINDINGS (`10`);
+* a validated no-finding result as INCOMPLETE (`5`), explicitly naming
+  unsupported version and missing history evidence;
+* CLI failure, unexpected child activity observable by the harness,
+  invalid/oversized output, or schema drift as DEGRADED (`20`); and
+* a missing binary, another major version, prerelease, or unparsable version as
+  INCOMPLETE without execution (`5`).
+
+Reduced mode never emits CLEAN and never describes itself as offline-verified.
+It executes a host-selected unreviewed scanner binary without containment, so
+absence of new egress or child execution is not established. The report names
+that residual before its current-tree observations. This is accepted as useful
+detection from a declared host trust root, not as evidence equivalent to a
+reviewed adapter.
+
+The aggregate precedence remains 20 > 10 > 5 > 0, so a current-tree finding is
+not hidden by absent history evidence.
+
+### Version-support operating contract
+
+Scaffold summary, successful install output, and module doctrine must state:
+
+* every exact full-mode version;
+* that another 8.x release runs current-tree only and cannot be CLEAN;
+* that other versions do not execute;
+* the exact aggregate command installed by the activation module; and
+* how to pin a supported Gitleaks artifact outside Cairn when full evidence is
+  required immediately.
+
+At each Cairn release, the Maintainer or delegated Security Reviewer evaluates
+the newest candidate Gitleaks 8.x version. A real-adopter reduced-mode report is
+also a support-review trigger. Promotion requires the full live matrix and a
+security-lens review of the recorded evidence. Prior exact versions remain
+supported while their matrix passes; removal requires the same visible contract
+change and migration note. The source-owned set changes only in reviewed Cairn
+code, never through adopter policy or ambient configuration.
+
+This cadence does not promise same-day support for every upstream release.
+During the interval the adopter gets useful current-tree findings but an honest
+INCOMPLETE result, or can pin a named full-mode release. That is the intended
+operational state, not an error message left without a remedy.
+
+### Activation dependency and selection sequence
+
+`security-verification-activation` at `af9863c` now owns the standing local /
+offline invocation path previously missing from this proposal. Its default-on
+dispatcher, summary/install moments, fixed registry, aggregate result, and
+`AGENTS.md` cadence satisfy the adoption shape on this side. The portable
+registry entry is exact and may invoke no network, credential, or arbitrary
+mode.
+
+Decision and implementation order is now:
+
+1. accept `security-verification-activation` or revise this dependency again;
+2. accept the portable capability and its preset ownership after
+   `default-security-stance` establishes the shared selection mechanism; and
+3. land the capability files and activation registry entry in coordinated
+   plans, with the deletion-mutant test proving the standing command includes
+   the selected portable leg.
+
+Thus the former blocker "the standing invocation path is not designed" is
+closed. The proposal remains **HOLD before Decision** while that activation
+contract is only proposed and the reciprocal sequencing is unratified. If the
+activation proposal is rejected, this module returns to deferral rather than
+shipping as shelf apparatus.
+
+### Revised tests and release evidence
+
+In addition to the earlier matrix, the plan must test:
+
+* all inherited `GIT_*` variables dropped and the exact eight counted keys /
+  values reconstructed;
+* hostile local config for every pin, duplicate local/env values, hooks,
+  fsmonitor, external diff, pager, replacement refs, URL rewrites, protocol,
+  and a linked-worktree config fixture;
+* the exact two-command full-mode Git oracle on clean and finding repositories,
+  and zero Git calls from the current-tree leg;
+* strict supported, unsupported-8.x, other-major, prerelease, malformed,
+  version-command failure, and path-drift classifications;
+* reduced mode with an empty PATH, current-tree finding (`10`), no finding
+  (`5`), changed CLI/output (`20`), and proof that history-only secrets remain
+  explicitly uncovered rather than clean;
+* summary/install/doctrine text naming both modes, supported versions, pinning
+  remedy, activation command, and no automatic scanner execution during
+  scaffold; and
+* a release-evidence record containing binary checksum/source, platform,
+  Gitleaks and Git versions, exact argv log, hostile-config outcomes, network
+  observation method, output-schema result, and end-to-end exits for each
+  promoted exact version.
+
+The `dependency-advisory-coverage` artifact independently owns the existing
+`python-security` timeout, bounded decoding, sanitization, and descendant
+cleanup work identified by PS3/PS7 and strengthened by DAC6. No implementation
+or CLEAN claim here depends on that sibling landing.
+
+### Evidence and re-review gate
+
+The 2026-08-03 Darwin arm64 probe now establishes, for Gitleaks 8.30.1 only:
+
+* the exact two Git invocations above for the history leg;
+* no Git invocation for the current-tree leg;
+* named `GIT_CONFIG_COUNT` values winning over hostile local values;
+* protocol denial preserving the supported scan and its no-contact URL lookup;
+* full mode finding the planted token at exit 1; and
+* current-tree mode with an empty PATH finding the token at exit 1 and emitting
+  redacted JSON.
+
+It does not establish cross-platform behavior, complete Git-config
+neutralization, or future 8.x behavior. Those remain explicit review and plan
+burdens.
+
+This revised proposal returns for focused External Security re-review. The
+reviewer should first assess the unexpected `ls-remote --get-url` call, whether
+the eight pins and selected-field parser bound its candidate metadata, and
+whether automatically executing reduced-mode current-tree scans is acceptable
+given the named unmeasured-binary residual.
