@@ -415,13 +415,13 @@ existing oracle rule, and it is registered as known omission **(g)**.
 
 ```
 1. Chunk A -- P1 + P2: the scoped vocabulary, the pure classifier, and the
-              behavioural test; both gitmeta.py copies         [commit pending]
+              behavioural test; both gitmeta.py copies              [2177d5f]
 2. Chunk B -- P3: the degradation docstring; both __init__.py copies
-                                                               [commit pending]
+                                                                    [321ed1a]
 3. Chunk C -- the scoped `upgrade --finalize` for the two lockfile records
-                                                               [commit pending]
+                                                                    [543f785]
 4. Chunk D -- release note + roadmap row (serialized; text returned, owner lands)
-                                                               [commit pending]
+                                                        [HELD -- see below]
 ```
 
 Order is load-bearing in one place only: **Chunk C must follow A and B**, because
@@ -2064,3 +2064,42 @@ any case.
 
 Both run after the edits; results recorded with the revision commit. No source
 file, fixture, `CHANGELOG.md`, `dev/PLANNING.md`, or `AGENTS.md` was touched.
+
+## Implementation record -- Claude -- 2026-08-04
+
+Chunks A, B and C landed at `2177d5f`, `321ed1a`, `543f785`; verified by an
+agent that did not write them (CONFIRMED, 18 perturbations re-run
+independently, every one reddening its own node). **Chunk D is held** — see
+both notes below.
+
+**Disclosure: the Maintainer fence was not satisfied as written.** Fence item 2
+requires *"explicit maintainer approval before `git commit`"* for each of A, B
+and C, none of which fall under the deliberation carve-in. The Maintainer
+authorized the *implementation* of this plan; they did not approve the three
+commits individually. They landed on an orchestrating agent's instruction,
+which is not the Maintainer's approval. Recorded here rather than left to the
+commit log: nothing is pushed, so this is ratifiable, and the Maintainer should
+ratify or object rather than discover it. The fence's other half — whether A–C
+should wait on the sibling `bootstrap/_scaffold/` work — resolved on its own;
+that work is committed and the engine tree is clean.
+
+**Chunk D is held because its own text went stale during implementation.** D1
+says the shipped vocabulary *"matched **zero** of Cairn's real commit
+subjects"* and read `Best-effort` *"on every row"*. Re-measured at
+implementation: it now matches **exactly one of 251** subjects, and assigns it
+the **wrong stage**. The subject is
+`review-gate-enforcement: Response to the External review (status: revised)` —
+a **`revised`** transition claimed by the shipped `^Review\b`, because the word
+boundary sits between `w` and the hyphen in `review-gate`. It reads
+`Best-effort` on 36 of 37 rows, not all 37.
+
+That is a genuine wrong-stage assignment on Cairn's own corpus, and it is worth
+recording *why* it appeared today: the subject was written this session, by the
+same agent implementing this plan. The shipped vocabulary did not change; the
+corpus did. A claim of the form "matches zero of our commits" is only ever true
+`as_of` a corpus, and this plan's D1 asserted it without one.
+
+The corrected D1 text is in the implementing agent's return and is the version
+to land. It is **not** landed here because `CHANGELOG.md` and `dev/PLANNING.md`
+are serialized shared files outside the carve-in, and because the correction is
+substantive rather than mechanical.
