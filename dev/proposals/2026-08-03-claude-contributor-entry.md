@@ -1515,3 +1515,112 @@ framing, the CLA/DCO reasoning, the choice of forge channel, or the decision
 not to fix the presence heuristic here. Those are argued well and I could not
 break them. Nor do I think [I5], [I6], [I9], or [I10] need a round of their
 own — they are implementation constraints and can ride the same revision.
+
+## Response — Claude (author, to the Internal security review) — 2026-08-03
+
+**Model**: Claude Opus 5
+
+**All ten findings accepted.** I reproduced [I1] before accepting it. **[I2] is
+put to the Maintainer**, as the reviewer says, because no author response can
+resolve it. **The tier raise to `required(External)` is accepted**, and I accept
+the reviewer's reason for it rather than the one I had offered.
+
+### The framing correction is right, and it matters
+
+The review opens by establishing that this is the **first** review of this
+artifact, not a second opinion — no `## Review` section existed, and the only
+prior commit is the open. I had been operating as though a prior pass existed.
+Nothing here has been filtered by an earlier reader, which is the right weight
+to give it.
+
+### [I1] — reproduced, and it is worse than the review states
+
+The check I designated as *the negative control that distinguishes this
+proposal from its superseded parent* cannot fail. Verified twice over:
+
+```
+bootstrap/_scaffold/cli.py:200    if args.manifest:
+bootstrap/_scaffold/cli.py:201        sys.stdout.write(format_manifest())
+bootstrap/_scaffold/cli.py:202        return 0
+```
+
+`--manifest` returns **before any axis is resolved**, so its output is
+byte-identical for every profile — the reviewer's point. Additionally,
+`CONTRIBUTING.md` does not appear in the manifest **at all**, so "show the
+install set is unchanged" is not merely input-insensitive; the thing it is
+supposed to detect is absent from what it prints. The parent's Part 4 would
+have passed it, which is exactly what I claimed it would catch.
+
+This is the third instance of the same shape in this batch — after
+`scan-coverage`'s regression guard whose oracle came from the object under
+test, and the FUR-series controls in the archived `gate-reanchor-preflight`
+record. It is the shape I have spent the day finding in **other people's**
+work, committed here in my own verification section. The generalizable rule is
+the one the mutation-testing discipline already states: *ask which run of the
+check would produce a different answer*, and if none would, it is not a check.
+
+### [I2] — the Maintainer's, not mine
+
+The reviewer is correct that this cannot be closed by appending a Response.
+Cairn's shipped doctrine states in two places that a solo project ships no
+`CONTRIBUTING.md`. Either Cairn ships the file and **corrects
+`doctrine/doc-governance.md:375` and the core-template sentence** — which makes
+this a doctrine + core-template change with a different gate class than the one
+my *Plan review tier* section argued — or it does not ship the file in this
+form. Both resolutions change the `Touches` line, so the proposal cannot
+self-resolve it.
+
+**Recorded for the Decision:** this finding was invisible to my own
+collision analysis, which was file-and-section based. The reviewer found it by
+grepping for the filename **outside** the `Touches` set. That is a method
+correction worth keeping independently of how [I2] is decided — a collision
+analysis bounded by the artifact's own declared scope cannot find a collision
+that scope failed to declare.
+
+### Tier — accepted, on the reviewer's reason
+
+I offered the escalation on the grounds that publishing a disclosure channel
+might itself be a security surface. The reviewer took the offer for a different
+and better reason: [I2] falsifies statements in shipped adopter-facing doctrine
+and a core template, *invisibly*, which is squarely inside loop fidelity and is
+the class a same-type Internal read is worst at catching.
+
+`**Plan review**` becomes `required(**External**)`. The Internal round stands as
+recorded; it does not discharge the External one.
+
+### [I3], [I4], [I7], [I8] — accepted
+
+* **[I3]** — a second named enforcer that cannot fail for the reason given. Same
+  class as [I1]; the honest repair is to state "no enforcer today" rather than
+  name one that does not enforce.
+* **[I4]** — R2's reconciliation mechanism does not exist in the engine. The
+  prose asserts a capability; the capability is absent.
+* **[I7]** — the disclosure channel's deciding property is asserted and verified
+  nowhere, *including by the plan's own live check*. A reviewer cannot detect an
+  unenabled forge setting, which makes this a **Maintainer live-verification
+  precondition**, not a review item — the same shape as the
+  `portable-security-sweeps` activation question.
+* **[I8]** — the primary prose gate skips the new file at exactly the moment it
+  would be run. A gate that does not reach the artifact it was cited to protect
+  is the batch's recurring finding, again.
+
+### [I5], [I6], [I9], [I10] — accepted, riding the same revision
+
+Per the reviewer, these are implementation constraints rather than separate
+rounds: the slot content's single-source contradiction and R5's
+under-enumeration; the two-family licence sentence generalised onto a
+three-family repository; the two router statements that are wrong about the
+tree as it stands; and the bound on the `local-env.json` sentence.
+
+### What I am not reopening
+
+The reviewer explicitly did not ask me to revisit the `RULES.md` framing, the
+CLA/DCO reasoning, the forge-channel choice, or the decision not to fix the
+presence heuristic here. I am not reopening them.
+
+### Status and next step
+
+Status stays `proposed`; the next transition is a **revised proposal**, and it
+is **blocked on the Maintainer's answer to [I2]**, because that answer
+determines the `Touches` line and therefore what the revision is. After the
+revision, the raised tier requires an **External** round before any Decision.
