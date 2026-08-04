@@ -649,6 +649,11 @@ plan can archive)*
   re-anchor.
   *Trigger:* the next supervised re-anchor ceremony, which is where this is
   cheapest to fold in. Not mechanical — a re-pin is a Maintainer act.
+  **Maintainer disposition 2026-08-04: fold in** — quoted verbatim, *"SC4 - fold
+  in"*. The re-pin happens at the next supervised ceremony rather than as a
+  standalone act, so it batches with the engine re-anchor that Wave 2 already
+  requires. This is the **last** outstanding precondition on plan
+  `scan-coverage`; everything else it owed now has a durable home above.
 
 **Release authenticity** *(residuals from plan `release-authenticity`)*
 * **RA1 (a) — Cairn's signing authority widens** *(non-mechanical for the
