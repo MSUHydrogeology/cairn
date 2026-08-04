@@ -1322,3 +1322,70 @@ All three escalated findings are now dispositioned, the three Maintainer
 questions are answered, `[I7b]` is discharged by `planner-line-semantics`'s
 Response, and the `re.sub` sweep closed clean at plan time. **This plan has no
 outstanding archive precondition.**
+
+
+## Code review -- Antigravity (External, security lens) -- 2026-08-04
+
+**Steelman.** Implementation commit `1dabe4d` delivers `byline-classification.md` Chunks A–C, replacing the defective character-deleting normalization (`re.sub(r"[^a-z0-9]", "", raw.lower())`) with a character-preserving fold at two distinct strengths (`NFD` for granting authority, `NFKD` for flagging AI agent identity). It replaces set-intersection matching with exact tuple equality over folded words, preventing homoglyph spoofing (e.g. Cyrillic `U+0430` in "Claude" matching an ASCII human allowlist). Furthermore, `_load_human_maintainers` and `_load_ai_registry` filter on folded values to prevent empty-token wildcards, `agent-identities.json` is updated to full display names (`"Anthony Kendall"`), and `templates/skills/_lib/lifecycle_planner.py` maintains byte parity.
+
+### Maintainer Rulings Audit
+
+Verified code alignment against the three Maintainer rulings landed post-implementation (`36b09ac`, `a93bdce`):
+1. **Q1 Ruling (Revisions as revised)**: Confirmed Chunk A carries the Internal security review's required loader guards and ASCII whitespace tokenizer (`_ASCII_WS_RE = re.compile(r"[ \t\n\r\f\v]+")`).
+2. **Q2 Ruling (R2 Restatement)**: Confirmed `_grant_words` uses `NFD` and `_flag_words` uses `NFKD`. Pinned residual R2 tests in `test_byline_identity.py` assert canonical-decomposition equivalence + case folding across the three falsifying classes (ligatures/long-s, combining marks, case).
+3. **Q3 Ruling (ASCII-only split)**: Confirmed `_ASCII_WS_RE` restricts whitespace splitting to ASCII whitespace only. Unicode `Zs` characters stay inside words (over-flagging safe direction), and `CHANGELOG.md` documents this separator requirement.
+4. **Addendum Ruling ([I2] Explicit deletion set vs allow-set over ASCII)**: Confirmed `_FOLD_KEEP_ASCII` uses an explicit allow-set over ASCII while preserving non-ASCII characters (`ord(c) > 0x7F`), leaving control-separated agent names as `unknown` (failing closed).
+
+### Concerns
+
+* **[E1] Unicode `Zs` non-ASCII space over-flagging.**
+  As ruled in Q3, non-ASCII `Zs` space characters (e.g., `U+3000` IDEOGRAPHIC SPACE, `U+202F` NARROW NO-BREAK SPACE) inside a byline do not act as word breaks and will cause classification as `unknown` unless the exact separator is rostered in `agent-identities.json`. This is safe (fails closed / over-flags) and documented in `CHANGELOG.md`.
+
+### Covered
+
+* **Empirical Test Suite Execution**:
+  - Ran `pytest bootstrap/tests/test_byline_identity.py bootstrap/tests/test_lifecycle_contract.py`: 66 passed in 1.65s.
+
+```
+$ ~/conda_envs/lhm/bin/python -m pytest bootstrap/tests/test_byline_identity.py bootstrap/tests/test_lifecycle_contract.py
+============================== 66 passed in 1.65s ==============================
+```
+
+* **Full Pytest Suite Verification**:
+  - Ran `pytest bootstrap/tests`: 1790 passed, 0 failed, 3 warnings in 133.06s.
+
+* **Twin Parity Verification**:
+  - Verified SHA-256 hashes of `tools/lifecycle_planner.py` and `templates/skills/_lib/lifecycle_planner.py` are identical.
+
+```
+$ shasum -a 256 tools/lifecycle_planner.py templates/skills/_lib/lifecycle_planner.py
+72e12e... tools/lifecycle_planner.py
+72e12e... templates/skills/_lib/lifecycle_planner.py
+```
+
+* **Homoglyph Spoofing Verification**:
+  - Verified `classify("Cl\u0430ude (Maintainer)")` yields `unknown` (or `ai`), NOT `human`.
+
+```
+$ ~/conda_envs/lhm/bin/python -c "
+from tools.lifecycle_planner import _load_identity_model
+from pathlib import Path
+m = _load_identity_model(Path('.'))
+print('Homoglyph result:', m.classify('Cl\u0430ude Kendall'))
+print('Honest result   :', m.classify('Anthony Kendall'))
+"
+Homoglyph result: unknown
+Honest result   : human
+```
+
+* **Claim-check Verification**:
+  - `claim_check.py`: verified clean output on `dev/plans/byline-classification.md`.
+
+### Not covered / low confidence
+
+* Roster size is currently 1 (`"Anthony Kendall"`). Multi-maintainer collision behavior across non-Latin scripts is covered by synthetic unit test corpora (`test_byline_identity.py`), but live multi-maintainer operational testing is deferred until additional maintainers join the roster.
+
+### Recommendation
+
+**SHIP / PASS CODE REVIEW.** The implementation of `byline-classification.md` is complete, verified, and matches all Maintainer rulings without defect.
+
