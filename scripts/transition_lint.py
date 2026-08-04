@@ -32,6 +32,23 @@ not generalise unchanged to another tree.
   on one commit, that commit yields an empty entry list and the commit is
   passed over -- one unreadable commit must not abort a 900-commit scan.
 
+**Suppression is two layers, and the third pre-registered layer is
+deliberately not shipped.**  The two that exist: the trigger-root
+narrowing below, and the commit-SHA whitelist in
+``transition_lint_whitelist.py``.  The one that does not: a *class-level
+info downgrade*.  It was dropped on the argument that the measured
+false-positive rate was 0 across the corpus the tool was pinned against,
+so a class-level suppressor would be machinery for a failure that had
+never occurred.  **That argument no longer holds, and this comment exists
+so the unmet pre-registration cannot go quiet**: six distinct
+false-positive shapes in shape (a), plus a seventh in shape (b), appeared
+within twelve days of that measurement.  The layer is still not shipped,
+because a class-level downgrade lets a bad shape be *absorbed* rather
+than surfaced -- the wrong direction for a tool whose whole value is
+honesty about the record.  The honest replacement is the one the accepted
+proposal already named: a recurring false-positive shape is evidence the
+heuristics are wrong, and should surface as a proposal.
+
 **Exemption model.**  There is none in this tool, by construction.  No
 exception keyword, no in-message opt-out directive, no new obligation on
 a contributor.  The only thing that keeps the legitimate no-approval
@@ -52,8 +69,22 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+import importlib.util as _importlib_util
+
 _HERE = Path(__file__).resolve().parent
 _CAIRN_ROOT = _HERE.parent
+
+# Loaded by file path -- as ``scripts/quality_gate.py`` loads its own
+# whitelist -- so the CLI works from any cwd without a package context.
+_whitelist_spec = _importlib_util.spec_from_file_location(
+    "_transition_lint_whitelist", _HERE / "transition_lint_whitelist.py",
+)
+assert _whitelist_spec is not None and _whitelist_spec.loader is not None
+_whitelist_mod = _importlib_util.module_from_spec(_whitelist_spec)
+_whitelist_spec.loader.exec_module(_whitelist_mod)
+
+#: Full 40-character SHA -> mandatory non-empty rationale.
+WHITELIST: dict[str, str] = _whitelist_mod.WHITELIST
 
 
 # ---------------------------------------------------------------------------
@@ -537,7 +568,10 @@ def scan(
     rules: Rules | None = None,
 ) -> tuple[int, int, list[Finding]]:
     """``(scanned, triggered, findings)`` over *rev_range*."""
-    suppressed: dict[str, str] = {} if whitelist is None else whitelist
+    # ``None`` loads the shipped whitelist; an explicit ``{}`` **bypasses**
+    # it.  The bypass is what lets the corpus tier assert the incident
+    # findings while human-facing runs stay quiet.
+    suppressed: dict[str, str] = WHITELIST if whitelist is None else whitelist
     active = rules or Rules()
     scanned = 0
     triggered = 0

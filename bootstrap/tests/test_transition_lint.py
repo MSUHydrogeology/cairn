@@ -765,3 +765,90 @@ class TestWideningIsNotCreating:
         assert len(pinned_b) == 2
         assert {sha for sha, _, _ in pinned_b} == {INCIDENT_SHA}
         assert shipped_b == pinned_b
+
+
+# ---------------------------------------------------------------------------
+# Chunk D -- the suppression whitelist, and its side-door hygiene
+# ---------------------------------------------------------------------------
+
+#: The window the whitelist is measured against.
+PINNED_WINDOW = f"{SELF_HOST_SHA}..{PROPOSAL_SHA}"
+
+
+@requires_corpus
+class TestWhitelistHygiene:
+    """Modelled on `scan-coverage`'s `_SCAN_EXCLUSIONS` guards.
+
+    A whitelist is a fail-open side-door: it can only ever *hide* a
+    finding, so every guard here is about the door not widening quietly.
+    """
+
+    def test_every_whitelist_entry_has_a_nonempty_rationale(
+        self, tl: ModuleType,
+    ) -> None:
+        # D5.  Perturbation: add `{"<a real sha>": ""}`.  Red.
+        assert tl.WHITELIST
+        for sha, reason in tl.WHITELIST.items():
+            assert isinstance(reason, str) and reason.strip(), sha
+
+    def test_every_whitelist_entry_is_a_full_40_char_sha_that_resolves(
+        self, tl: ModuleType,
+    ) -> None:
+        # D6.  Perturbation: add a plausible-looking but non-resolving
+        # SHA.  Red.  Catches a typo'd or rebased-away entry, which is
+        # how a suppression silently widens.
+        for sha in tl.WHITELIST:
+            assert re.fullmatch(r"[0-9a-f]{40}", sha), sha
+            out = subprocess.run(
+                ["git", "rev-parse", "--verify", "--quiet", sha + "^{commit}"],
+                cwd=str(REPO_ROOT), capture_output=True,
+            )
+            assert out.returncode == 0, sha
+
+    def test_no_whitelist_entry_is_stale(self, tl: ModuleType) -> None:
+        # D7.  Perturbation: add an entry for a benign in-window SHA that
+        # flags nothing.  Red.  **This is the "stale entries must trip
+        # the suite" guard** -- an entry suppressing nothing is a latch
+        # waiting to absorb a future regression on that commit.  It is
+        # the direct analogue of scan-coverage's C3(e), and like C3(e) it
+        # does **not** follow from D5/D6: an entry can have a rationale
+        # and resolve and still suppress nothing.
+        _, _, findings = tl.scan(PINNED_WINDOW, REPO_ROOT, whitelist={})
+        flagged = {f.sha for f in findings}
+        for sha in tl.WHITELIST:
+            assert sha in flagged, f"{sha} suppresses nothing in {PINNED_WINDOW}"
+
+    def test_the_whitelist_suppresses_and_the_bypass_restores(
+        self, tl: ModuleType,
+    ) -> None:
+        # D8.  Both directions must be run -- a suppression test that
+        # only checks silence cannot tell suppression from breakage.
+        # Perturbations, both RUN: make `scan` ignore the whitelist
+        # argument (red in the first direction); make it ignore the
+        # bypass (red in the second).
+        _, _, suppressed = tl.scan(PINNED_WINDOW, REPO_ROOT)
+        assert suppressed == []
+        _, _, bypassed = tl.scan(PINNED_WINDOW, REPO_ROOT, whitelist={})
+        assert len(bypassed) == 3
+        assert {f.sha for f in bypassed} == {INCIDENT_SHA, EMPTY_REVIEW_SHA}
+
+    def test_a_whitelist_entry_cannot_suppress_a_different_commit(
+        self, tl: ModuleType,
+    ) -> None:
+        # D9.  Perturbation: make the suppression check `if suppressed:`
+        # -- i.e. any entry silences every commit.  Red.
+        #
+        # The plan names a different perturbation ("key the suppression
+        # on the abbreviated SHA prefix instead of the full 40").  Run at
+        # implementation, that one leaves this node GREEN: the keys are
+        # full 40-hex and no two of Cairn's commits share a 7-character
+        # prefix, so prefix-keying is behaviourally identical here.  The
+        # over-broad mutation above is the reachable falsifier for the
+        # same property, and it is the one that was run.
+        one = {INCIDENT_SHA: "incident only"}
+        _, _, findings = tl.scan(PINNED_WINDOW, REPO_ROOT, whitelist=one)
+        assert [f.sha for f in findings] == [EMPTY_REVIEW_SHA]
+
+        unrelated = {ROOT_SHA: "the root commit, which flags nothing"}
+        _, _, findings = tl.scan(PINNED_WINDOW, REPO_ROOT, whitelist=unrelated)
+        assert len(findings) == 3
