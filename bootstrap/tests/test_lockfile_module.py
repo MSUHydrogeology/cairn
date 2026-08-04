@@ -53,7 +53,7 @@ def test_lockfile_depends_only_on_stdlib_and_the_config_leaf():
         if isinstance(node, ast.ImportFrom):
             mod = node.module or ""
             if mod.startswith("bootstrap") or node.level > 0:
-                assert mod.endswith("config"), f"lockfile imports {mod!r} (level={node.level})"
+                assert mod.rsplit(".", 1)[-1] in {"config", "security"}, f"lockfile imports {mod!r} (level={node.level})"
         if isinstance(node, ast.Import):
             for a in node.names:
                 assert not a.name.startswith("bootstrap"), f"lockfile imports {a.name!r}"

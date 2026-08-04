@@ -213,6 +213,15 @@ rule codifies, not a new invention: it is absent from every fresh
 install, written only by `upgrade --init-lock`, and has coexisted with
 `schema: 1` since it shipped.
 
+**Why `dev/.cairn/profile.yml` takes the opposite disposition.** The lockfile
+tolerates an unknown key because it *carries* a `schema` field: a reader can
+tell "a field I do not know" from "a file written by a newer engine". The
+profile refuses one, because until now it carried no version signal at all —
+so an unknown key there was indistinguishable from a typo, and a typo silently
+dropped whatever it was meant to set. The profile's newly-reserved `schema:`
+key is what buys the lockfile's tolerance later; it does not buy it today
+(see `bootstrap/BOOTSTRAP.md` Appendix B, "Schema rules").
+
 **`source_repository` / `source_licenses` are declared, not
 attested.** Both are read from the source tree's `CITATION.cff` at
 install/upgrade time — `source_repository` from its `repository-code:`
@@ -230,6 +239,75 @@ tag). The second branch of that control — an unsigned release commit
 vouched for by author metadata and by branch protection — was
 **retired**: a git author field is free text, branch protection is
 invisible from a clone, and neither is something an adopter can run.
+
+## The forked-facade advisory, and what each note means
+
+Some tools Cairn installs are **facades**: a thin launcher (`tools/intent.py`)
+over an engine package beside it (`tools/_intent/`). If you edit the launcher
+but keep the engine, you run an un-maintained fork of the launcher while the
+maintained engine sits dormant, and upstream engine fixes never take effect.
+`verify_integrity` and `upgrade` both surface that as a **NOTE**. It is
+**advisory only**: it never blocks, never mutates, and never changes an exit
+code — a genuinely forked facade still passes `verify_integrity`.
+
+**The comparison bytes come from the caller, not from your tree.** For a record
+the advisory examines, the verdict is decided by reading two files and comparing
+them: the installed file under your tree, and the upstream template in the
+**Cairn checkout you ran the command from**. When that comparison cannot be
+made, the note is **kept** and marked `UNCONFIRMED` — never dropped. Once a
+record is examined, nothing it says about itself — not `hash`, not `base_hash`,
+not its `src` — can stand in for that comparison or make a difference go away:
+the **only** thing that drops a note is the two reads coming out
+byte-identical. (The one lockfile field that can *silence* a note already
+raised is `fork_acknowledged`, and only at verify time — see the end of this
+section.) That is why the note prints the root and version it compared against
+(**R1**): the operator can see whose bytes decided it. What it does *not*
+establish is that the checkout is authentic; see
+[`PROVENANCE.md`](PROVENANCE.md) for the controls that do.
+
+**What your lockfile still decides is *which* records get examined.** The
+advisory only looks at a record that is marked `verbatim`, names a `.py`
+destination with an engine package installed beside it, and carries **both** a
+`hash` and a `base_hash` that *differ* — the install-time "this file changed
+since we wrote it" signal. A record that omits either hash, or records the two
+as equal, or drops its `verbatim` mark, is never examined at all, so a fork
+hidden that way produces no note. That is a **known limitation of the
+advisory**, stated rather than discovered: it is what "advisory" means here.
+Closing it would mean not keeping an install-time baseline in the lockfile,
+which is a separate change. So read the absence of a note as *"nothing was
+flagged among the records the advisory examined"*, never as *"every installed
+facade matches upstream"*. Cairn ships no check that makes the stronger
+statement today: `verify_integrity`'s hash attestation compares your files
+against the hashes **your own lockfile** records, which is a different claim
+again.
+
+Three shapes of note:
+
+* **`is forked from upstream`** — the two reads disagreed. The note names the
+  templates root and Cairn version it compared against. This is the one that
+  means what it says.
+* **`UNCONFIRMED`** — the difference is measured against the **install-time
+  baseline in the lockfile**, and could not be checked against upstream. The
+  note says why. `base_hash` ratchets forward on every `--finalize`, so an
+  unconfirmed difference is *not* evidence of an upstream fork; treat it as
+  "not checked", not as "forked". You will see it when: `upgrade --to <ref>` is
+  used, because that ref's templates are not materialized on disk (**R3**); the
+  destination is absent from the trusted install manifest, so no upstream
+  template names it (**R4**); or a file on either side is missing, unreadable,
+  or fails a containment check.
+* **`source-version skew`** — an extra line on a note that already exists,
+  saying the comparison used a different Cairn version than the one your tree
+  records installing from. It is an annotation; it never creates a note.
+
+A fourth line may be appended to a note that already exists: your record's own
+`src` does not name the upstream template the trusted manifest names, so the
+recorded `src` was ignored (**R9**). Like the skew line, it annotates a finding
+rather than creating one — a relabelled `src` whose on-disk bytes actually match
+upstream produces no note at all.
+
+To silence a deliberate long-term fork at verify time, set
+`"fork_acknowledged": true` on its lockfile record. `upgrade` re-surfaces it
+regardless: an upgrade is the active decision point.
 
 ## A note on secrets
 

@@ -41,6 +41,7 @@ from bootstrap._scaffold.lockfile import (  # noqa: E402  (trust anchor: narrowe
     forked_facade_findings,
     read_lockfile,
 )
+from bootstrap._scaffold.install import trusted_upstream  # noqa: E402  (fork-advisory comparison source)
 
 
 def verify(target: Path) -> int:
@@ -115,7 +116,12 @@ def verify(target: Path) -> int:
     # honor the per-record fork_acknowledged opt-out at verify time so a
     # deliberate long-term fork does not re-warn on every pre-commit / CI run.
     # Advisory only: it never adds a violation or changes the exit code.
-    for finding in forked_facade_findings(target, lock):
+    # The comparison bytes come from THIS checkout -- CAIRN_ROOT is resolved
+    # from this script's own on-disk location, never from `target` and never
+    # from the target's lockfile. The note means "differs from the upstream in
+    # the verifier checkout you ran".
+    for finding in forked_facade_findings(
+            target, lock, upstream=trusted_upstream(CAIRN_ROOT)):
         if not finding["acknowledged"]:
             print(format_forked_facade_warning(finding, at_upgrade=False),
                   file=sys.stderr, end="")

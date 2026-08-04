@@ -9,8 +9,10 @@ helpers, and the verbatim-script hash policy (``classify_verbatim``, deferred fr
 Stage 3 because it couples to ``_sha256_hex`` here).
 
 A near-leaf: it imports only the stdlib plus the ``config`` leaf (for
-``PresetError``, raised by the secret-token guard) -- a downward dependency, no
-cycle. It reads/serializes lockfile data and computes hashes but performs no
+``PresetError``, raised by the secret-token guard) and the ``security`` leaf
+(for the one containment primitive the fork advisory's two disk reads route
+through) -- downward dependencies, no cycle. It reads/serializes lockfile data
+and computes hashes but performs no
 adopter-tree writes (the install-time WRITER ``write_install_lockfile`` stays in
 the engine -- it couples to onboarding/install symbols -- and joins install.py at
 Stage 6; ``_lock_file_list`` likewise couples to the manifest). **This module**
@@ -31,9 +33,15 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, NamedTuple
 
 from .config import PresetError  # the secret-token guard raises this (downward dep)
+# The fork advisory reads two files off disk and must not be talked out of
+# either root.  It reuses the engine's ONE containment primitive rather than
+# growing a second, unreviewed copy inside this near-leaf (proposal B7); the
+# layering assertion in bootstrap/tests/test_lockfile_module.py admits exactly
+# {config, security} because of this line.
+from .security import ScaffoldSecurityError, _assert_safe_write
 
 
 _LOCKFILE_REL = "dev/.cairn/cairn-lock.yml"        # tracked machinery (in .cairn/ with its kin)
@@ -317,29 +325,164 @@ def _facade_engine_dir(dst_rel: str) -> str | None:
     return p.with_name("_" + p.stem).as_posix()
 
 
+class UpstreamSource(NamedTuple):
+    """The **caller-supplied** comparison source for the fork advisory.
+
+    The defect class this type exists to close is one sentence: *the artifact
+    under verification must not supply the material used to verify it.* Every
+    field here is resolved by the caller from the caller's **own** on-disk
+    location -- never from the target tree, never from the target's lockfile:
+
+    * ``templates_root`` -- the root of the trusted template checkout whose
+      bytes decide the verdict.
+    * ``src_for_dst`` -- the destination -> source map, built from the engine's
+      own in-memory install registries (``install_manifest``), **never** from a
+      lockfile record's ``src``.
+    * ``ref`` -- a human-readable identifier for that checkout (its Cairn
+      version), printed in the note so an operator can see whose bytes decided
+      it (residual R1).
+
+    **Not established by this type**: containment is a *path* property. A
+    tampered file **inside** ``templates_root``, or a symlinked
+    ``templates_root`` itself, passes every check below by construction.
+    Authenticating the checkout that supplies the comparison bytes is residual
+    **R1** and is `release-authenticity`'s job, not this module's.
+    """
+
+    templates_root: Path
+    src_for_dst: dict[str, str]
+    ref: str | None
+
+
 def forked_facade_findings(
-    target: Path, lock: dict[str, Any],
+    target: Path, lock: dict[str, Any], *,
+    upstream: UpstreamSource | None,
 ) -> list[dict[str, Any]]:
-    """Find ``verbatim`` facades that have **forked** from upstream
-    (``hash != base_hash``) while their engine package ``_<name>/`` sits
-    **installed** under *target* -- a live-but-stale launcher running an
+    """Find ``verbatim`` facades whose **on-disk bytes** differ from the
+    caller's trusted upstream template while their engine package ``_<name>/``
+    sits **installed** under *target* -- a live-but-stale launcher running an
     un-maintained fork while the maintained engine is dormant (rollup #4).
 
     ``verify_integrity`` reports such a tree OK (on-disk == the finalized
-    ``hash``), so the silent fork (``hash != base_hash``) is invisible without
-    this correlation.  Each finding: ``{"dst", "engine", "acknowledged"}`` where
-    ``acknowledged`` mirrors the record's ``fork_acknowledged`` flag (the
-    verify-time opt-out; ``upgrade`` warns regardless).  **Detection only** --
-    it reads, never mutates, never deletes.
+    ``hash``), so the divergence is invisible without this correlation.
+
+    *upstream* is **keyword-only and has no default**: omitting it is a
+    ``TypeError``, because a caller that cannot say where its comparison bytes
+    come from must not get a silent answer. Passing ``None`` is the legal,
+    explicit "I have no trusted upstream" -- every finding then degrades to
+    ``unconfirmed`` and is **retained**.
+
+    Each finding is ``{"dst", "engine", "acknowledged", "kind", "reason",
+    "upstream", "src_relabelled", "skew"}``:
+
+    * ``kind`` is ``"differs-from-upstream"`` (two validated reads disagreed)
+      or ``"unconfirmed"`` (no comparison was possible; the difference is from
+      the *install-time baseline* recorded in the lockfile, which ``--finalize``
+      ratchets, so it is not evidence of an upstream fork).
+    * ``reason`` says why an ``unconfirmed`` finding could not be confirmed.
+    * ``upstream`` names the root and ref that decided (or would have decided).
+    * ``src_relabelled`` / ``skew`` are **annotations on a finding that already
+      exists** -- never a note of their own, so the finding set cannot grow.
+
+    **The only suppression path** is byte-equality between two validated reads
+    (``disk_bytes == upstream_bytes``). ``rec["hash"]``, ``rec["base_hash"]``,
+    ``rec["src"]`` and every other lockfile field are forbidden as the
+    target-side operand, and a caller may not pass precomputed hashes in to
+    avoid the read. Every degradation path -- no trusted upstream, no map row,
+    a missing or unreadable file on either side, a containment refusal on
+    either side -- **retains** the finding as ``unconfirmed``.
+
+    **Detection only** -- it reads, never mutates, never deletes.
     """
+    # F6 / C3: resolve *target* ONCE, here, and use the resolved root for the
+    # containment check, the destination join AND the engine-directory probe --
+    # so containment can never depend on the caller's resolution ordering.
+    unresolvable_target = False
+    try:
+        target_root = Path(target).resolve()
+    except OSError:
+        target_root, unresolvable_target = Path(target), True
+
+    def _guarded_read(root: Path, rel: str, what: str) -> tuple[
+            bytes | None, str | None]:
+        """``(bytes, None)`` for a validated read of ``<root>/<rel>``, else
+        ``(None, reason)``. Three fail-closed checks, in order:
+
+        1. *shape* -- ``rel`` must be a non-empty, repo-relative POSIX path
+           with no ``..`` component;
+        2. *containment* -- ``_assert_safe_write(candidate, root)``: no
+           symlinked destination, no symlinked parent, no escape from ``root``;
+        3. *kind* -- the result must be an existing **regular, non-symlink**
+           file.
+
+        A refusal never suppresses: the caller turns ``reason`` into an
+        ``unconfirmed`` finding that is still reported.
+        """
+        if not isinstance(rel, str) or not rel:
+            return None, f"{what} path is missing from the record"
+        head = rel.split("/", 1)[0]
+        if "\\" in rel or ":" in head:
+            return None, (f"{what} path is not a repo-relative POSIX path: "
+                          f"{rel}")
+        p = Path(rel)
+        if p.is_absolute() or ".." in p.parts:
+            return None, (f"{what} path is not a repo-relative POSIX path: "
+                          f"{rel}")
+        candidate = root / p
+        # R6 -- this is a WRITE-flavoured guard used on a READ path. The three
+        # checks it performs (symlinked destination, symlinked parent, escape
+        # from root) are exactly the ones a read needs, and growing the
+        # security leaf with a read-flavoured sibling for one caller was
+        # deferred by the proposal. Trigger to revisit: a second read-side
+        # caller, or any divergence between what a read and a write must refuse.
+        try:
+            _assert_safe_write(candidate, root)
+        except ScaffoldSecurityError as exc:
+            # Caught HERE, inside this module, on purpose: a malformed trusted
+            # templates tree must degrade the advisory, not abort the verifier
+            # that hosts it. This is the one deliberately-open edge, and it is
+            # on an advisory-only surface.
+            return None, f"{what} failed the containment check ({exc})"
+        if candidate.is_symlink() or not candidate.is_file():
+            return None, f"{what} is not an existing regular file: {rel}"
+        try:
+            return candidate.read_bytes(), None
+        except OSError as exc:
+            return None, f"{what} could not be read ({exc})"
+
+    templates_root: Path | None = None
+    if upstream is not None:
+        try:
+            templates_root = Path(upstream.templates_root).resolve()
+        except OSError:
+            templates_root = None
+
+    # Source-version skew (O9): an annotation, computed once, attached to
+    # findings that already exist. It never creates one.
+    skew: str | None = None
+    if upstream is not None:
+        lock_ref = lock.get("cairn_version")
+        up_ref = upstream.ref
+        if (isinstance(lock_ref, str) and isinstance(up_ref, str)
+                and lock_ref and up_ref and lock_ref != up_ref
+                and "unknown" not in (lock_ref, up_ref)):
+            skew = ("source-version skew: the comparison used Cairn "
+                    f"{up_ref}, while this tree records its install from "
+                    f"Cairn {lock_ref}")
+
     findings: list[dict[str, Any]] = []
     for rec in lock.get("files") or []:
         if not rec.get("verbatim"):
             continue
         h = rec.get("hash")
         base = rec.get("base_hash")
-        # A fork = a verbatim entry whose on-disk/recorded hash diverges from
-        # the upstream base.  No base_hash (or equal) -> not a fork.
+        # R10 -- CANDIDATE SELECTION IS STILL LOCK-DERIVED, and deliberately so
+        # within this scope: `hash`, `base_hash`, `dst` and the engine-directory
+        # probe decide *which* records are examined. A lockfile asserting
+        # `hash == base_hash` evades the advisory entirely. What this change
+        # fixes is the *verdict* (below), which is now decided by two reads off
+        # disk. Selection stays unfixable while `base_hash` is a lockfile field
+        # (R2); revisit together with R2.
         if not (isinstance(h, str) and isinstance(base, str) and h != base):
             continue
         dst_rel = rec.get("dst")
@@ -348,14 +491,63 @@ def forked_facade_findings(
         engine_rel = _facade_engine_dir(dst_rel)
         if engine_rel is None:
             continue
-        engine_dir = target / engine_rel
+        engine_dir = target_root / engine_rel
         # An installed engine = a present package dir carrying ≥1 .py module.
         if not engine_dir.is_dir() or not any(engine_dir.glob("*.py")):
             continue
+
+        kind = "unconfirmed"
+        reason: str | None = None
+        compared: str | None = None
+        relabelled = False
+
+        if upstream is None:
+            reason = "the caller supplied no trusted upstream"
+        elif templates_root is None:
+            reason = "the trusted templates root could not be resolved"
+        elif unresolvable_target:
+            reason = "the target root could not be resolved"
+        else:
+            compared = (f"{templates_root} (Cairn "
+                        f"{upstream.ref or 'unknown'})")
+            # The destination -> source map is the CALLER's. The lockfile's own
+            # `src` is read for one purpose only: to say, as an annotation,
+            # that it disagrees. It never selects the bytes.
+            src_rel = upstream.src_for_dst.get(dst_rel)
+            recorded_src = rec.get("src")
+            if (isinstance(recorded_src, str) and isinstance(src_rel, str)
+                    and recorded_src != src_rel):
+                relabelled = True
+            if not isinstance(src_rel, str):
+                reason = ("this destination is absent from the trusted install "
+                          "manifest, so no upstream template names it")
+            else:
+                up_bytes, why = _guarded_read(
+                    templates_root, src_rel, "the upstream template")
+                if up_bytes is None:
+                    reason = why
+                else:
+                    disk_bytes, why = _guarded_read(
+                        target_root, dst_rel, "the installed file")
+                    if disk_bytes is None:
+                        reason = why
+                    elif disk_bytes == up_bytes:
+                        # THE ONLY SUPPRESSION PATH (F5): byte-equality between
+                        # two validated reads. Nothing the lockfile asserts can
+                        # reach this branch.
+                        continue
+                    else:
+                        kind = "differs-from-upstream"
+
         findings.append({
             "dst": dst_rel,
             "engine": engine_rel,
             "acknowledged": rec.get("fork_acknowledged") is True,
+            "kind": kind,
+            "reason": reason,
+            "upstream": compared,
+            "src_relabelled": relabelled,
+            "skew": skew,
         })
     return findings
 
@@ -366,18 +558,56 @@ def format_forked_facade_warning(
     """One advisory block for a forked-facade finding.  **Advisory only** -- it
     never blocks or mutates; the adopter completes the swap (adopt the thin
     launcher) or removes the dormant engine, or sets ``fork_acknowledged`` to
-    silence it at ``verify`` time (``upgrade`` always re-surfaces it)."""
+    silence it at ``verify`` time (``upgrade`` always re-surfaces it).
+
+    Renders the finding's ``kind`` as a stated fact rather than leaving a reader
+    to guess which comparison produced it, plus the two annotations (source-
+    version skew, relabelled ``src``) when they are present. Reads every field
+    with ``.get`` so a caller holding a bare ``{"dst", "engine",
+    "acknowledged"}`` finding still renders (as ``unconfirmed``)."""
     where = "upgrade" if at_upgrade else "verify_integrity"
+    dst = finding.get("dst")
+    engine = finding.get("engine")
+    compared = finding.get("upstream")
+
+    if finding.get("kind") == "differs-from-upstream":
+        head = (
+            f"{where}: NOTE -- facade {dst!r} is forked from upstream (its "
+            f"on-disk bytes differ from the upstream template) but its engine "
+            f"package {engine!r} is installed.\n"
+        )
+        detail = f"  Compared against {compared}.\n" if compared else ""
+    else:
+        head = (
+            f"{where}: NOTE -- facade {dst!r} differs from its install-time "
+            f"baseline (hash != base_hash) but its engine package {engine!r} "
+            "is installed.\n"
+        )
+        detail = (
+            "  UNCONFIRMED -- this difference is measured against the "
+            "install-time baseline in the lockfile, not against upstream: "
+            f"{finding.get('reason') or 'no comparison was possible'}.\n"
+        )
+        if compared:
+            detail += f"  The upstream that would have decided it: {compared}.\n"
+
+    if finding.get("skew"):
+        detail += f"  {finding['skew']}.\n"
+    if finding.get("src_relabelled"):
+        detail += (
+            "  This record's own \"src\" does not name the upstream template "
+            "the trusted install manifest names; the recorded \"src\" was "
+            "ignored.\n"
+        )
+
     ack_hint = (
         "" if at_upgrade else
         '  Set "fork_acknowledged": true on its lockfile record to silence '
         "this at verify time (upgrade still re-surfaces it).\n"
     )
     return (
-        f"{where}: NOTE -- facade {finding['dst']!r} is forked from upstream "
-        "(hash != base_hash) but its engine package "
-        f"{finding['engine']!r} is installed.\n"
-        "  You are running an un-maintained fork of the launcher while the "
+        head + detail
+        + "  You are running an un-maintained fork of the launcher while the "
         "maintained engine sits dormant; upstream engine fixes will not take "
         "effect.\n"
         "  Complete the swap (adopt the thin launcher) or remove the dormant "

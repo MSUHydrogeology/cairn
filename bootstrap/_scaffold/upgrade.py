@@ -66,6 +66,7 @@ from .install import (
     _lock_file_list,
     fan_out_skills,
     seed_gitignore,
+    trusted_upstream,
 )
 
 
@@ -2201,7 +2202,16 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
     # is the active decision point, so the per-record fork_acknowledged opt-out
     # (which silences verify_integrity) does NOT silence it here.  Advisory
     # only: it never blocks the upgrade.
-    for _ff in forked_facade_findings(target, lock):
+    #
+    # The comparison bytes come from `cairn_root` -- the running upgrade's own
+    # source tree, resolved above from --cairn-root or _cairn_root(), never
+    # from `target` and never from the target's lockfile.  R3: with `--to
+    # <ref>` the upstream templates for that ref are not materialized on disk,
+    # so there is no trusted root to read; pass None and every finding degrades
+    # to `unconfirmed` (retained, never suppressed) rather than silently
+    # comparing against the wrong ref.
+    _upstream = None if args.to is not None else trusted_upstream(cairn_root)
+    for _ff in forked_facade_findings(target, lock, upstream=_upstream):
         print(format_forked_facade_warning(_ff, at_upgrade=True),
               file=sys.stderr, end="")
 

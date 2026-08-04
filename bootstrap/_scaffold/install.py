@@ -54,6 +54,7 @@ from .lockfile import (
     _LIVING_STATE_DSTS,
     _LOCKFILE_REL,
     _LOCK_SCHEMA,
+    UpstreamSource,
     _cairn_commit,
     _cairn_provenance,
     _cairn_version,
@@ -1396,6 +1397,38 @@ def install_manifest(
             f"install manifest destination-ownership conflict: {detail}")
     entries.sort(key=lambda e: (e[1], e[0]))
     return entries
+
+
+def trusted_upstream(cairn_root: Path) -> UpstreamSource:
+    """The fork advisory's comparison source, resolved from *cairn_root* alone.
+
+    *cairn_root* is the caller's **own** Cairn checkout, which each caller
+    resolves from its own on-disk location -- ``verify_integrity``'s
+    ``CAIRN_ROOT`` (from ``__file__``), ``cmd_upgrade``'s ``cairn_root``. The
+    resulting note means *differs from the upstream in the checkout you ran*.
+
+    **A1, the contract, in writing.** ``src_for_dst`` is the destination ->
+    source map of ``install_manifest(modules=None)`` -- the **full published
+    catalog**, four in-memory mapping literals in ``_scaffold/config.py``, zero
+    filesystem reads. This helper therefore **takes no module list**, and must
+    not be given one derived from the tree under check: not its lockfile's
+    profile, not its recorded module set, not its on-disk layout. Narrowing the
+    map by anything the target says would hand the target a lever over which
+    bytes it is compared against, which is the whole defect class
+    ``fork-advisory-semantics`` closes. The target contributes only ``dst``,
+    which is also the path being read off disk, so it cannot select comparison
+    bytes independently of the file it is about.
+
+    **Not established.** This resolves a *caller-controlled* upstream, not a
+    cryptographically anchored one: nothing here attests that ``cairn_root``
+    is a genuine Cairn release. That is residual **R1**.
+    """
+    root = Path(cairn_root)
+    return UpstreamSource(
+        templates_root=root / "templates",
+        src_for_dst={dst: src for src, dst, _verbatim in install_manifest(None)},
+        ref=_cairn_version(root),
+    )
 
 
 def format_manifest(modules: list[str] | None = None) -> str:

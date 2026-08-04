@@ -179,7 +179,7 @@ def test_findings_skip_non_verbatim_and_format_upgrade_branch(tmp_path) -> None:
     rec["verbatim"] = False
     _write_lock(target, [rec])
     lock = read_lockfile(target)
-    assert forked_facade_findings(target, lock) == []
+    assert forked_facade_findings(target, lock, upstream=None) == []
     # The upgrade-time formatting omits the verify-only fork_acknowledged hint.
     msg = format_forked_facade_warning(
         {"dst": "tools/intent.py", "engine": "tools/_intent",

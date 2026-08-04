@@ -86,5 +86,30 @@ write capability is a **behavioral** change, deliberately scoped to a **separate
 follow-on proposal** (RR6/SR6), not this pure-motion split. This split only
 *inventories* them; it does not re-route them.
 
+**Status of the follow-on, as of 2026-08-04 (residual R7 of
+`fork-advisory-semantics`) — OWNED, and R7 discharged.** The RR6/SR6 follow-on
+named above is **claimed by `fork-advisory-semantics` (scope 3)**, by
+Maintainer ruling on 2026-08-04. It lands as additional chunks on that plan
+after its current chunks commit; the plan's scope is not reopened to take it.
+
+*How it got here, since the history is the point of this row.* The superseding
+Decision carried Class C forward "as a candidate for scope 1 or scope 3, at the
+drafting author's judgment", and **each of those two declined it, with a stated
+reason**: `release-authenticity` (scope 1) and `fork-advisory-semantics` (scope
+3). The other two `identity-not-name` successor scopes were never offered it
+and recorded no decline. So it was, for a time, claimed by none of the four —
+which is why R7 existed. Both drafting authors recommended ratifying it as its
+own proposal; the Maintainer instead **ratified the departure and overruled
+scope 3's decline**.
+
+Three triggers discharged this residual, the first to occur: **(a)** the
+Maintainer's ratification at the first successor Decision, which either opens
+Class C as its own proposal or assigns it; **(b)** the next change that adds or
+modifies an adopter-tree write in `upgrade.py` — the condition the closing line
+below already names; **(c)** backstop, v0.4.0 release preparation, at which
+point it is opened cold or explicitly closed as won't-fix with a reason.
+**Trigger (a) fired**: the ruling assigns it. R7 is discharged and no longer
+the only thing holding this item.
+
 **This classification is the SR6 deliverable; Class A is the pinned regression
 surface. Re-take the inventory if a future stage adds an adopter-tree write.**
