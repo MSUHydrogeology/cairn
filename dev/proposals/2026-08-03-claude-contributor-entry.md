@@ -5,7 +5,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: revised
+**Status**: superseded
 **Touches**: `CONTRIBUTING.md` (new, repository root), `SECURITY.md`
 (the *Reporting a vulnerability* section only), `README.md` (one pointer),
 `dev/.cairn/profile.yml` (one clarifying comment; no value changes)
@@ -1722,3 +1722,49 @@ longer see.
 
 Status is `revised` because the artifact changed. The disposition is the
 Maintainer's.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-03
+
+**SUPERSEDED.** Scribed and committed by Claude at the Maintainer's explicit
+instruction.
+
+**Maintainer's authorization, quoted verbatim:**
+
+> Let's mark the contributor-entry one as SUPERSEDE
+
+**Why.** The [I2] direction declined the root `CONTRIBUTING.md`, and the
+proposal's remaining scope did not survive that removal — established in the
+author revision above, not asserted here. Part 4, the only surviving edit,
+exists to record that the root `CONTRIBUTING.md` is project-owned rather than
+the human-team-gated optional template; with no such file it disambiguates
+nothing, and the proposal had already identified it as the one element a
+reviewer could cut without weakening anything else.
+
+This is a supersession by **disposition of its parts**, not into a single
+successor artifact. Each part has a recorded home:
+
+**Follow-ups migrated to:**
+
+| Part | Where it went |
+|---|---|
+| **1.** root `CONTRIBUTING.md` | **Declined** by the [I2] direction, recorded in this file with the three shipped-doctrine locations that made it the wrong change for a solo-maintained Cairn (`doctrine/doc-governance.md:375`, `templates/core/AGENTS.md:272`, `templates/core/VENDOR.md:37`) |
+| **2.** `SECURITY.md` disclosure channel | `dev/PLANNING.md` > *Queued* > **`SECURITY.md` disclosure channel**, with finding [I7]'s Maintainer live-verification precondition attached |
+| **3.** `README.md` pointer | Same Queued row, scoped to `SECURITY.md` only |
+| **4.** `dev/.cairn/profile.yml` comment | **Dropped** — its purpose was part 1 |
+| contribution-readiness | Already declared out of scope as "a question, not a mechanism"; no home needed |
+
+**What dies with this artifact, recorded so it is a decision rather than an
+accident.** The Internal review's findings **[I1]** and **[I3]** — two named
+checks that cannot fail — are findings about *this proposal's own verification
+section*. They do not survive it. Their general form is already carried by
+`gate-claims-vs-enforcement`, accepted today, so the class is retained even
+though these instances are not.
+
+**On the tier.** The raise to `required(**External**)` was granted on the
+strength of [I2], a doctrine-and-core-template collision. With part 1 declined
+that collision does not exist, and no External round is spent on this artifact.
+The Internal round already recorded stands as the review of what was proposed.
+
+**Decision-only commit.** Status flip and this section, nothing else; the
+archive move follows separately, per the scribing rule that no archive work
+rides in a scribed Decision commit.
