@@ -744,10 +744,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_minimal_yaml_parse": {
-    "digest": "752c30f3f1220eda",
+    "digest": "005d00bdf5c596a1",
     "span": [
-      574,
-      630
+      203,
+      457
     ],
     "type": "FunctionDef"
   },
@@ -992,10 +992,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:cmd_upgrade": {
-    "digest": "0b3cf4e1a4ed2ba4",
+    "digest": "3a1480d796d59488",
     "span": [
-      2074,
-      2312
+      2106,
+      2353
     ],
     "type": "FunctionDef"
   },
@@ -1048,18 +1048,18 @@
     "type": "FunctionDef"
   },
   "FunctionDef:forked_facade_findings": {
-    "digest": "a5dc15b9723d502a",
+    "digest": "253b3b52851f9e0e",
     "span": [
-      258,
-      298
+      357,
+      552
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:format_forked_facade_warning": {
-    "digest": "0689eab2a9a1d03e",
+    "digest": "14e4bdf27ff6f1b3",
     "span": [
-      301,
-      323
+      555,
+      615
     ],
     "type": "FunctionDef"
   },
@@ -1144,10 +1144,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:load_config": {
-    "digest": "18c69e0ea95a7a7e",
+    "digest": "903d6f8872beb701",
     "span": [
-      637,
-      646
+      469,
+      504
     ],
     "type": "FunctionDef"
   },
@@ -1382,13 +1382,5 @@
       55
     ],
     "type": "Import"
-  },
-  "Try": {
-    "digest": "078bb9f665a0f257",
-    "span": [
-      86,
-      96
-    ],
-    "type": "Try"
   }
 }
