@@ -296,3 +296,134 @@ looks cleanest on the evidence — offered as one option, not as the answer:
 If instead the Maintainer prefers one artifact over two, the alternative is to
 fold this finding into `profile-parse-fail-open` as an amendment — at the cost
 of re-opening a plan that is currently ready to implement.
+
+## Review -- OpenAI Codex (External, security lens) -- 2026-08-03
+
+**Model**: OpenAI Codex (GPT-5).
+
+**Standing and disposition.** This is the required different-agent-type
+security read. I reproduced the parser split through both direct calls and the
+real scaffold entry point under the canonical interpreter. The defect is real,
+and item 1 contains a useful hardening direction. **HOLD this proposal as a
+parallel implementation**, however: the accepted, open
+`profile-parse-fail-open` plan already owns the same trust boundary, and the two
+artifacts currently prescribe mutually exclusive runtime designs.
+
+### Steelman
+
+Selecting a configuration parser from the ambient environment is a poor trust
+boundary. An adopter should not get a different install because an unrelated
+package happens to be importable. Making the in-tree recognizer the sole runtime
+parser would close that parser-selection defect structurally, while retaining
+PyYAML as a test-only oracle would preserve an independent correctness signal.
+That is a coherent design, and on security grounds I prefer it to retaining two
+runtime execution paths after both have been restricted to the same grammar.
+
+### Findings
+
+* **[E1] BLOCKING - the proposal conflicts with an accepted plan over the exact
+  deciding symbols.** `profile-parse-fail-open` was accepted as revised at
+  `d54f9f4`; its open plan has already cleared an External security-lens review.
+  It changes `_minimal_yaml_parse` and `load_config`, validates a closed L1-L8
+  grammar before dispatch, retains both runtime parsers, refuses unknown keys,
+  makes the upgrade-time swallowed parse error audible, exercises both real
+  profile writers, and batches the resulting AST correction with
+  `fork-advisory-semantics`. This proposal changes the same functions but removes
+  the PyYAML runtime path and explicitly leaves schema/key handling and emitters
+  out of scope. Those are not additive edits. Landing either design changes the
+  other's acceptance contract and invalidates its pre-recorded AST transaction
+  accounting. One artifact must govern before implementation starts.
+
+* **[E2] BLOCKING - the proposed "strict subset" is not yet a security
+  boundary.** Items 2 and 3 name four rejected shapes but do not define the
+  accepted lexical grammar. I reproduced additional shapes that the current
+  fallback accepts differently: a BOM-prefixed `project_name` becomes a
+  different key; `project_name: a: b` is accepted although PyYAML refuses it;
+  and NUL, ESC, and backspace are accepted inside `project_name` although PyYAML
+  raises `ReaderError` for all three. `project_name` is rendered into the
+  generated tree and printed by `--summary`, so control-character refusal is a
+  security requirement. Comments without whitespace, quoting and escapes,
+  duplicate keys, document markers, indentation consistency, numeric/date-like
+  scalars, and line endings likewise need dispositions. Property-based sampling
+  cannot substitute for defining membership in the accepted language. The
+  sibling plan's closed L1-L8 grammar is the stronger starting point, but it too
+  must add an explicit BOM/control-character rule and tests before its invariant
+  can support this proposal's sole-parser design.
+
+* **[E3] BLOCKING - the proposed security regression is unavailable in the
+  declared tool environment.** Hypothesis is absent from the canonical Python
+  3.13.13 environment; `bootstrap/requirements-dev.txt` declares only `vermin`,
+  and `bootstrap/DEPENDENCY_BUDGET.md` grants neither Hypothesis nor PyYAML a
+  dev-tool exception. Calling them "the same standing" as declared tools does
+  not confer that standing. A parity test that skips when its oracle or generator
+  is absent narrows CR coverage but does not gate it. Either generate the small
+  closed grammar with the standard library and make the PyYAML oracle's absence
+  an explicit non-green gate condition, or propose and pin the dev dependencies
+  through the dependency-budget process.
+
+* **[E4] SUBSTANTIVE - two evidence/accounting claims need correction.** The
+  evidence table has ten rows, not nine; all ten diverged in my run. More
+  importantly, `bootstrap/REANCHOR_RUNBOOK.md` does not govern the scaffold AST
+  baseline. The sibling plan already records the applicable Maintainer-only
+  direct-correction procedure and explains why the runbook pointer is wrong.
+  Repeating the wrong procedure on a trust-root change risks blessing an
+  incorrectly scoped baseline. The proposal also omits the current template's
+  high-stakes author-accounting, public-path test map, smoke checks, and explicit
+  signals that the change is wrong; the sibling plan already supplies most of
+  that negative-space accounting.
+
+### Security adjudication of the two designs
+
+**One runtime parser closes the environment-selection defect; it does not by
+itself close the fail-open parser defect.** With a closed grammar, explicit
+control-character/BOM handling, and public-path tests, item 1 is a genuine
+closure: no ambient PyYAML installation can steer runtime behavior. Without
+those controls it merely makes the fallback's current mistakes universal.
+
+The accepted plan's common pre-validation is also a material improvement. It
+structurally closes silently dropped lines and gives both runtime paths one
+acceptance set. But equality of returned values remains a finite-test claim, as
+the plan itself says; retaining two implementations leaves a residual possibility
+that an accepted scalar is interpreted differently. For this small documented
+profile language, that residual has no demonstrated compensating runtime value.
+
+My recommendation is therefore to **fold item 1 into
+`profile-parse-fail-open` before implementation**, keep PyYAML only as the
+independent test oracle, and retain that plan's closed grammar, unknown-key
+refusal, audible upgrade fallback, writer round-trips, and sequencing controls.
+Add BOM and C0/C1 control-character refusal to the grammar. This changes an
+accepted design, so the Maintainer must explicitly reopen/amend the plan and the
+amended security core needs a focused External re-review. Once folded, this
+proposal should be superseded rather than run as a second implementation and a
+second AST ceremony.
+
+### Execution evidence
+
+Run under `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13,
+PyYAML 6.0.3), 2026-08-03:
+
+* Direct comparison: **10 of 10** table rows diverged.
+* Real scaffold, top-level list and empty document: PyYAML refused with zero
+  writes; forced no-PyYAML runs exited 0 and wrote **93 files** using defaults.
+* Real scaffold, scalar comment: both runs exited 0, but the no-PyYAML tree
+  contained `cairn  # the name` in generated files.
+* Additional probes: BOM changed the key; NUL, ESC, and backspace were accepted
+  by `_minimal_yaml_parse` and refused by PyYAML; `a: b` in a plain scalar was
+  accepted only by the fallback.
+* `python -m pytest bootstrap/tests/test_ast_attest.py -q`: **29 passed**. This
+  confirms the current baseline is green; it does not authorize a future
+  correction.
+
+### Covered / not covered
+
+Covered: the whole proposal; the current `_yaml_load`, `_minimal_yaml_parse`,
+and `load_config`; the accepted source proposal and open
+`profile-parse-fail-open` plan; current parser-facing tests; the dependency
+ledger; direct parser probes; and public scaffold runs with PyYAML present and
+forced absent.
+
+Not covered: a complete proof of the proposed grammar, every Unicode code point,
+Windows behavior, resource-exhaustion limits for very large profiles, the full
+bootstrap suite, or implementation bytes (none exist for this proposal). The
+working tree also contains unrelated concurrent edits, which I did not inspect
+or modify.
