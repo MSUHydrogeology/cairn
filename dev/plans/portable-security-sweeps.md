@@ -1737,3 +1737,289 @@ The declared `bootstrap/_scaffold/` symbol delta -- **one CHANGED
 DUPLICATE, 0 non-exempt NEW** -- is **confirmed by re-derivation** and should be
 carried into the shared ceremony as declared. That is the one figure four sibling
 scopes depend on, and it is right.
+
+---
+
+## Response to plan review -- Claude (author) -- 2026-08-04
+
+**Standing, stated first because it bounds everything below.** This is the
+plan author's Response to the **Internal** plan review appended above. It
+**does not discharge the declared tier**. The header declares
+`required(External, security lens)`; the Decision re-imposed it in terms
+(*"this Decision does not discharge that review"*); the reviewer disclaimed
+the tier in their own opening; and I confirm it here as author. **An Internal
+round plus an author Response is not an External round.** No implementation
+commit lands on the strength of this section. What this Response does is
+narrower and worth doing anyway: it disposes of twelve findings so an External
+reviewer does not spend their round rediscovering them, and it re-measures
+every figure both prior artifacts carry.
+
+**Method.** Every figure below was re-derived by execution against the live
+tree under the canonical interpreter (`~/conda_envs/lhm/bin/python3.13`,
+CPython 3.13.13) with `PYTHONDONTWRITEBYTECODE=1`, `as_of 2026-08-04`, at HEAD
+`e20b18e` with a **clean** working tree (only `.claude/` and
+`dev/measurement/snapshots/` untracked). Where I contradict the plan *or the
+review*, the command is named. I inherited no figure from either artifact.
+
+### The headline: the tree moved under both artifacts, and the delta survived
+
+Between the plan's writing, the review's writing, and this Response,
+**`3852cf7` "Ceremony 1 -- batched AST baseline re-anchor for Wave 2
+(Maintainer-run)"** landed and the sibling scopes' uncommitted work was
+committed. Four consequences, all measured:
+
+1. **The AST baseline is 173 entries, not 174.** The `Try` key is gone.
+2. **The live attestation is clean.** `AST attestation OK — 173 baselined
+   symbol(s) accounted for, unchanged` — **0** non-pure-motion symbols. So the
+   plan's three-symbol drift roster **and** the review's six-symbol roster
+   (with its `MISSING Try`) are **both historical**. Neither reproduces.
+3. **`Assign:_MODULE_MAPPINGS`'s baseline digest is unchanged at
+   `26957a8924042a0a`** — verified in both
+   `bootstrap/tests/fixtures/scaffold_ast_baseline.json` and
+   `gate_manifest.mapping_symbols`. **The plan's entire declared engine delta
+   survives the ceremony intact.** That is the one figure four sibling scopes
+   depend on, and it is still right.
+4. **A clean-HEAD suite baseline is now obtainable, and I took it**: `1790
+   passed, 0 failed, 0 skipped, 0 xfailed` in 186.71s. The plan's `1601
+   as_of 2026-08-03` and the review's live `1779 passed, 2 failed` are both
+   superseded.
+
+Point 2 is the strongest possible vindication of [I5]'s *recommendation* even
+though [I5]'s *figure* did not reproduce: a roster of drifting symbols written
+into a plan is stale before it is read. It has now been wrong three times in
+one day, in three different directions. The repair [I5] asks for — a dated
+snapshot plus a re-measure instruction — is accepted in full.
+
+### Reproduction ledger
+
+Reproductions and non-reproductions are reported with equal weight. "Source"
+is where the figure was asserted: **P** = plan, **R** = review.
+
+| Figure | Src | Live re-measurement | Verdict |
+|---|---|---|---|
+| `AST attestation OK — 174 baselined symbol(s) accounted for, unchanged` | P, R | `AST attestation OK — 173 baselined symbol(s) accounted for, unchanged` | **NO** — 173 |
+| Baseline declarable decomposition: `FunctionDef` 98, `Assign` 53, `ClassDef` 10 = 161 | P, R | identical | yes |
+| Remainder 13 = `Import` 8, `Docstring` 1, `Expr` 1, `If` 1, `If#2` 1, `Try` 1 | P, R | remainder **12** = `Import` 8, `If` 2, `Docstring` 1, `Expr` 1; **no `Try` key** | **NO** |
+| `Assign:_MODULE_MAPPINGS` baseline digest `26957a8924042a0a` | P, R | exact, in both the baseline and `gate_manifest.mapping_symbols` | yes |
+| Live tree: `AST attestation FAILED — 3 non-pure-motion symbol(s)` | P | `OK`, 0 non-pure-motion | **NO** |
+| Live tree: `AST attestation FAILED — 6 non-pure-motion symbol(s)` incl. `MISSING Try` | R | `OK`, 0 non-pure-motion | **NO** |
+| `_is_per_module_necessity` (`bootstrap/tests/_ast_attest.py:149-161`) exempts only `Import:` / `ImportFrom:` / `Docstring` | R | exact; `_classify` applies the identical rule baseline-side | yes |
+| `_UPDATE_ALLOWLIST` declared at `bootstrap/tests/_ast_attest.py:141`; `"_MODULE_MAPPINGS": "Assign"` at `:142` | R | exact | yes |
+| `install_manifest(modules=None)` = 95 rows; `scaffold.py --manifest` emits 96 lines | P | 95 / 96 | yes |
+| Three-channel `templates/**/*.py` count = 44 | P, R | `git ls-files` 44, `pathlib` rglob 44, `_manifest_py_sources()` 44 | yes |
+| Pins at `bootstrap/tests/test_notice_install.py:75` (`== 44`), `:145` (`== 95`), `bootstrap/tests/test_security_lint.py:291` (`== 44`) | P, R | all three exact, at those lines | yes |
+| `bootstrap/security_check.py:74` prose *"42 entries are a subset of the manifest's 44"* | P | 33 module + 9 always-on = **42**; manifest `.py` sources **44** | yes |
+| `scan_targets()` = 74 = templates 44 + scripts 16 + bootstrap 14 | P, R | exact; `security_check.py` → `PASS -- release security gate clean`, *"Bandit clean over 74 shipped file(s)"* | yes |
+| No `.json` tracked under `templates/` | P, R | `git ls-files templates \| grep '\.json$'` empty | yes |
+| `gate_manifest.json` carries 164 frozen files | P, R | 164; the three predicted FROZEN-MODIFIED files are all members | yes |
+| `gate_manifest.collection.node_count` = 1598 | R | 1598 | yes |
+| `_frozen_files()` globs = `bootstrap/*.py`, `bootstrap/tests/**/*.py`, `bootstrap/tests/fixtures/**/*`, `scripts/*.py`, `templates/modules/**/*.py` | R | exact (`bootstrap/tests/_gate_manifest.py:165-167`) | yes |
+| The committed gate manifest is not read by the suite | P, R | `_MANIFEST_REL` is referenced only in `_gate_manifest.py` and `_gate_reanchor.py`; no `test_*.py` reads it | yes |
+| `_self_hosted_twins()` discovers 41 twins and is `.py`-keyed in **both** directions | R | 41; `by_dest` filters `src.endswith(".py")` and the walk is `rglob("*.py")` | yes |
+| `_has_header` reads the first 4 lines; twin nodes at `test_notice_install.py:89` and `:98` | R | exact | yes |
+| `test_manifest_matches_actual_install` at `bootstrap/tests/test_manifest.py:68`; `test_manifest_sources_all_exist` at `:61` | R | exact | yes |
+| `install_manifest` raises `ValueError` via `duplicate_destinations` | R | `bootstrap/_scaffold/install.py:1392` calls it, `:1396` raises | yes |
+| `scan-coverage` oracles at `bootstrap/tests/test_security_lint.py:229` and `:285` | R | exact | yes |
+| `_MODULE_REQUIRED_TOKENS` keys = `['python-security']`; `KNOWN_TOKENS` = the five named | P, R | exact | yes |
+| `_MODULE_MAPPINGS` key order ends `content-security, python-security, architecture-review` | R | exact — so `python-security` is **one** entry above an insert before `architecture-review` | yes |
+| `templates/modules/team-gated/python-security.md:1-11`; `run_security_audit.py:76-78`; `dev/.cairn/profile.yml:21-24`; `bootstrap/DEPENDENCY_BUDGET.md:17` and `:97` | P | all four spans are exactly what the plan says they are | yes |
+| `run_security_audit.py`: `[sys.executable, "-I", "-m", ...]` at `:338`/`:412`; `shutil.which()` at `:333`/`:407`; `print(proc.stdout)` at `:283-284` | R | exact | yes |
+| `install.py:235-237` branches on the `verbatim` flag, not on extension | R | exact | yes |
+| `InstallSpec` docstring at `bootstrap/_scaffold/config.py:555-564` | R | content exact; **the span is now `:627-636`** | **NO** (line span) |
+| `_assert_mapping_ownership` at `bootstrap/_scaffold/upgrade.py:502` | R | definition at `:263`; the call is at `:503`; `:502` is the last comment line of its F4 rationale block | **NO** (line) |
+| `_always_on_group_complete` at `bootstrap/_scaffold/upgrade.py:153-165`, scoped to `_ALWAYS_ON_MAPPINGS` | R | exact | yes |
+| No numeric Bandit LOW budget pin; blocking is MEDIUM+ | R | `bootstrap/tests/test_security_lint.py:44` — `_BLOCKING_RANK = _SEVERITY_RANK["MEDIUM"]` | yes |
+| `check_cairn` reports **180** Markdown files | P, R | **195** Markdown files, no issues, 68 external links not probed | **NO** |
+| Suite `1601 passed`, `as_of 2026-08-03` | P | **1790 passed, 0 failed, 0 skipped, 0 xfailed**, clean HEAD `e20b18e` | **NO** |
+| Live-tree suite `1779 passed, 2 failed` | R | **1790 passed, 0 failed** (tree is now clean) | **NO** |
+| `gitleaks` absent from this host's `PATH`; `git version 2.53.0` | P, R | exact — `which gitleaks` → not found; `git --version` → 2.53.0 | yes |
+| `dev/plans/security-verification-activation.md` fences *"Cairn does not self-host the dispatcher"* and reasons from *"would print `NOT APPLICABLE` and gather nothing"* | R | exact, at `:433` and `:436-437` | yes |
+| `claim_check.py dev/plans/portable-security-sweeps.md` → OK, exit 0 | R | OK, exit 0, 39 paths exempted by the allow directive | yes |
+| `bootstrap/_scaffold/config.py` line citations are volatile | P | `_MODULE_MAPPINGS` is now at `:713` (the plan watched it move 365 → 378 while writing) | yes — **and the plan's decision to carry no line citations into that file is vindicated** |
+
+Two review citations slipped a line or a span (`InstallSpec`'s docstring,
+`_assert_mapping_ownership`); in both cases the **substance** the review drew
+from them reproduces exactly, and both slips are the same drift the plan warned
+about for that file family. They are recorded rather than glossed, and they
+change no disposition.
+
+### Disposition of every finding
+
+| # | One-line summary | Disposition | Mechanical residue |
+|---|---|---|---|
+| I1 | The C6 ambient-config node is vacuous under fake executables | **Accept, with modification** — both offered routes taken, for different nodes | M13, M14, M15, M40 |
+| I2 | No positive node makes a secret-bearing field reaching output go red | **Accept** | M16, M17 |
+| I3 | Full mode is entered on a self-reported version string; the recorded SHA-256 gates nothing | **Accept, with modification** — route 2 now, route 1 deferred with a measured reason | M18, M19, M20, M40 |
+| I4 | The "one complete mapping group" invariant has no engine property behind it | **Accept** | M21, M22, M23 |
+| I5 | The drift roster is stale and the stop-rule covers one of four kinds | **Accept in full** — its own figure did not reproduce, which strengthens it | M1, M3, M4, M5, M6 |
+| I6 | The exemption claim over the non-declarable baseline entries is false | **Accept, with modification** — rule correct, arithmetic and counterexample re-derived | M2 |
+| I7 | `scan_targets()` lands at 76, not 75 — Chunk F's twin is omitted | **Accept** | M10, M11 |
+| I8 | The gate-manifest stale-entry enumeration is wrong in three ways | **Accept** | M12 |
+| I9 | `--verify-version-support`'s containment disposition is unstated | **Accept** | M24, M25, M26 |
+| I10 | Cairn's adoption gets the runner but no standing invocation path | **Accept** | M27, M28, M29 |
+| I11 | Three perturbations do not target their node's hazard, plus one sequencing defect | **Accept** (all four) | M30, M31, M32, M33 |
+| I12 | Citation and precision defects | **Accept** (all four) | M7, M8, M9, M34, M35, M36 |
+
+**Nothing is declined.** That is not deference: I looked for a finding to
+decline and the two I probed hardest — [I4]'s engine claim and [I1]'s vacuity
+claim — both got *stronger* under re-measurement, not weaker (below). Three
+further amendments (**M37, M38, M39**) come from this Response's own
+measurement pass and are attributable to no finding.
+
+**[I1] — accepted with modification.** The vacuity argument is correct and I
+accept it as stated: a fake `gitleaks` never spawns Git, so
+`test_hostile_repo_local_config_loses_to_the_counted_keys` cannot observe a
+sentinel firing and passes identically with or without `GIT_CONFIG_COUNT`. An
+enforcer that cannot go red is not an enforcer, and the plan's invariant list
+named this one node as the sole enforcer of PS8's answer. The modification is
+that I take **both** offered routes rather than picking one, because they solve
+different nodes: route 1 (a fake `gitleaks` that itself execs the **real**
+`git` under the child environment the runner constructed) makes the C6 node
+genuinely falsifiable — `git` is present and measured at 2.53.0 — while the
+other four nodes concern what Gitleaks *scans*, which no fake can establish, so
+those take route 2 (rename to the argv/env claim, move the behavioural name to
+Chunk I). One thing route 1 must state and M11 does: it establishes that **the
+environment the runner constructs** neutralizes a hostile repository-local
+config against real Git. It establishes nothing about whether real Gitleaks
+propagates that environment faithfully to its own child. That remains Chunk I's.
+
+**[I3] — accepted with modification.** The finding is right and it is the
+recurring failure this cycle exists to catch: the artifact under verification
+supplies the material used to verify it. Traced through the live plan text, B1
+records the `--version` output, E1 keys full mode on version *strings*, E3
+records a SHA-256, and **nothing in Chunks A-I ever compares that SHA-256
+against the binary resolved at run time**. I confirm that by reading; there is
+no comparison anywhere. I take the review's **second** disposition for v1 —
+state it plainly, and pin the residual with a node so it is visible in the
+suite — and **defer rather than reject** the first, for a measured reason the
+review did not have in front of it: all admission evidence is Darwin arm64
+(known omission (e)), so a source-owned digest would make full mode
+**unreachable on every other platform** and silently demote those adopters to
+reduced mode. That is a behaviour change to the module's central classification
+on a platform Cairn has never measured, and it is not a plan-time convenience.
+M15 records both halves and opens LT-8. The design question — *should full mode
+require a digest at all?* — is routed to the External round as a named
+question rather than settled here.
+
+**[I4] — accepted, and it is stronger than the review stated.** The review
+checked `_always_on_group_complete` and found it `_ALWAYS_ON_MAPPINGS`-scoped.
+I widened the search: `grep -n 'complete.*group\|group.*complete'
+bootstrap/_scaffold/*.py` returns `cli.py:532`, `config.py:658`,
+`install.py:893`, `:894`, `:897`, `:929`, `:1025`, `:1544`, `:1554`, and
+`upgrade.py:153` — **every one of them scoped to the always-on onboarding
+group**. There is no completeness enforcement of any kind for a
+`_MODULE_MAPPINGS` group. So the node as specified cannot be written against
+the engine as it is, and A4's planned engine comment would ship prose that
+outruns the gate two rows above the criterion (A7) that exists to close exactly
+that defect. M16 builds the guard the plan wanted and labels it honestly as a
+**test-side membership pin, not an engine refusal**.
+
+**[I5] and [I6] — the arithmetic is re-derived, the findings stand.** [I5]'s
+recommendation is accepted whole; its roster is superseded by a third reading
+(clean). [I6]'s *rule* reproduces exactly — `_is_per_module_necessity`
+(`bootstrap/tests/_ast_attest.py:149-161`) returns True only for `Import:` /
+`ImportFrom:` prefixes and the `Docstring` key, and `_classify` applies the
+identical predicate baseline-side, so `Expr` and the `If` keys are fully
+enforced. Its *arithmetic* does not: the baseline is now 12 non-declarable
+entries, not 13, so **3 are enforced, not 4**, and its "nine are exempt" holds
+by coincidence (`Import` 8 + `Docstring` 1 = 9 both before and after). Its
+counterexample — *"the live run above reports `MISSING Try` as a hard failure
+line"* — **does not reproduce**: there is no `Try` key in the baseline and the
+live run is clean. The finding survives the loss of its counterexample because
+the predicate is readable directly.
+
+### Amendments in force
+
+Each row names the superseded text **verbatim** (original emphasis marks
+reproduced as written) and states what replaces it. Prior sections are not
+edited; this table is the operative amendment and an implementing agent reads
+it **before** the chunk it amends.
+
+| ID | Location | Superseded text (verbatim) | Replaced by |
+|---|---|---|---|
+| **M1** | *The declared symbol delta — measured, not quoted* | "AST attestation OK — 174 baselined symbol(s) accounted for, unchanged" and "**174 entries total; 161 of the three declarable kinds**" | Re-measured at HEAD `e20b18e` on a clean tree, `as_of 2026-08-04`, after Ceremony 1 (`3852cf7`): **`AST attestation OK — 173 baselined symbol(s) accounted for, unchanged`**. **173 entries total; 161 of the three declarable kinds** — `FunctionDef` 98, `Assign` 53, `ClassDef` 10 (unchanged). The declared delta itself is **unchanged**: one CHANGED `Assign:_MODULE_MAPPINGS`, baseline digest `26957a8924042a0a`, 0 MISSING, 0 DUPLICATE, 0 non-exempt NEW. |
+| **M2** | same section, next sentence | "The remaining 13 are `Import` 8, `Docstring` 1, `Expr` 1, `If` 1, `If#2` 1, `Try` 1, which `bootstrap/tests/_ast_attest.py`'s `_is_per_module_necessity` exempts in both directions." | The remaining **12** are `Import` 8, `If` 2 (`If`, `If#2`), `Docstring` 1, `Expr` 1; the `Try` key was removed by Ceremony 1. Of those 12, `_is_per_module_necessity` (`bootstrap/tests/_ast_attest.py:149-161`) exempts **9** — `Import` 8 plus `Docstring` 1 — and `_classify` applies the identical predicate on the baseline side. **`Expr` and both `If` keys are fully enforced in both directions**; the module docstring says so in terms (*"Executable top-level expressions stay enforced"*). The plan's "0 MISSING" declaration and its shape claim both depend on this, so the correction is load-bearing, not cosmetic. |
+| **M3** | same section, next paragraph | "That verification was run against a **HEAD-only copy** of `bootstrap/_scaffold/*.py` extracted with `git show`, precisely because the live working tree is not clean (below)." | The working tree is **clean** as of this Response, so the figure above was taken directly against `bootstrap/_scaffold/*.py` in place. The HEAD-copy technique remains the correct method whenever the tree is dirty and an implementing agent should reach for it again rather than assume the tree is still clean. |
+| **M4** | *One ceremony, shared with the cluster*, item 3 | "**The working tree is already carrying another scope's delta.** Measured `as_of 2026-08-04` against the live tree, before this plan writes anything: `AST attestation FAILED — 3 non-pure-motion symbol(s)`" — through — "This is exactly the confusion the shared-ceremony framing exists to prevent, and it is recorded here so it is read rather than discovered." | **The tree's drift state is a dated snapshot, never a roster, and must be re-measured at Chunk A start.** It has now read three different ways in one day: `FAILED — 3` when the plan was written, `FAILED — 6` (including a `MISSING Try`) when the review was written, and **`OK — 173 baselined symbol(s) accounted for, unchanged`, 0 non-pure-motion**, at HEAD `e20b18e` with a clean tree as of this Response. **Neither prior enumeration is authoritative and an implementing agent must not "fix" anything on the strength of either.** The standing rule, not the roster: run the attestation before Chunk A; attribute every reported entry to a named sibling scope; an entry attributable to none is a stop-and-explain. |
+| **M5** | Chunk A, *Acceptance criteria*, first bullet | "**A third CHANGED symbol that is not attributable to a named sibling scope is a stop-and-explain, not a re-run.**" | **Any CHANGED, MISSING, DUPLICATE, or non-exempt NEW entry that is not attributable to a named sibling scope is a stop-and-explain, not a re-run.** The stop-rule discriminates on all four kinds because this plan's own delta is declared on all four ("0 MISSING, 0 DUPLICATE, 0 non-exempt NEW"), and because a `MISSING` — the kind the old rule was silent on — was present in this tree earlier today. No fixed count is asserted; the expected *attributable* set is whatever the pre-Chunk-A measurement shows. |
+| **M6** | *Verification*, "The AST attestation" bullet | "Expected between Chunk A and the ceremony: **`AST attestation FAILED — 1 non-pure-motion symbol(s)`** naming `CHANGED Assign:_MODULE_MAPPINGS` and nothing else *attributable to this plan*." | Unchanged in substance and **confirmed** by re-derivation, with the stop-rule widened per M5: any CHANGED / MISSING / DUPLICATE / non-exempt NEW entry not attributable to a named sibling scope is a stop-and-explain. The pre-Chunk-A reading is measured, not predicted. |
+| **M7** | Chunk M, item 4 | "`<N>` stays **174** for this plan's delta alone (a digest rewrite adds no key)" | `<N>` stays at whatever the pre-ceremony baseline carries — **173** `as_of 2026-08-04` — for this plan's delta alone (a digest rewrite adds no key). A sibling adding a top-level symbol moves it, which is that scope's figure to declare. |
+| **M8** | Chunk A, *Acceptance criteria*, first bullet | "Baseline to re-measure at a clean HEAD before starting: **1601 passed, 0 failed, 0 skipped, 0 xfailed**, `as_of 2026-08-03` (measured by the `profile-parse-fail-open` plan; not re-measured here because the live tree carries three sibling scopes' uncommitted work, which would make any figure taken now meaningless)." | Measured at a clean HEAD (`e20b18e`, working tree clean) under the canonical interpreter, `as_of 2026-08-04`: **1790 passed, 0 failed, 0 skipped, 0 xfailed** in 186.71s. The 1601 figure was 189 nodes stale. **The re-measure instruction stands regardless** — the tree moved twice while this plan was under review and will move again; the figure is a sanity anchor, never a target to compare against. |
+| **M9** | *Acceptance criteria* (plan level), first sub-bullet | "Re-measure the baseline at a clean HEAD before Chunk A; the last recorded figure is **1601 passed**, `as_of 2026-08-03`." | The last recorded figure is **1790 passed, 0 failed, 0 skipped, 0 xfailed**, `as_of 2026-08-04`, at clean HEAD `e20b18e`. Re-measure anyway. |
+| **M10** | *Verification*, "The release Bandit gate" bullet | "Expected `PASS`; the shipped-file count moves **74 → 75** (`as_of 2026-08-04`); zero MEDIUM+; **no `B607`**." | Expected `PASS`; zero MEDIUM+; no `B607`. The shipped-file count moves **74 → 75 after Chunk A → 76 after Chunk F**. Measured mechanism, not inference: `scan_targets()` derives its `templates/` members from `_MODULE_MAPPINGS` / `_ALWAYS_ON_MAPPINGS` verbatim `.py` **sources**, so Chunk A's registration alone adds `templates/modules/team-gated/run_portable_security_sweeps.py`; and it derives its `scripts/` members from an **on-disk** `glob("*.py")`, so Chunk F's twin `scripts/run_portable_security_sweeps.py` adds a second. Live composition `as_of 2026-08-04`: 74 = templates 44 + scripts 16 + bootstrap 14. Chunk A's own criterion ("74 `as_of 2026-08-04`; expected **75** after A4") is **correct and unchanged**; it is the plan-level figure that was short by one. |
+| **M11** | Chunk F, *Acceptance criteria* | (addition — Chunk F carried no `scan_targets()` criterion at all) | **New Chunk F criterion.** `~/conda_envs/lhm/bin/python3.13 bootstrap/security_check.py` → `PASS` with `scan_targets()` at **76**; zero MEDIUM+; no `B607`. The twin makes the runner a **second Bandit surface**, so Chunk B's LOW ledger (`B404`, `B603`) is **doubled** here — predicted, not discovered. This is harmless: there is no numeric LOW budget pin (verified — `bootstrap/tests/test_security_lint.py:44` sets `_BLOCKING_RANK = _SEVERITY_RANK["MEDIUM"]` and blocking is measured against a rationale'd `_ALLOWLIST`). `scripts/portable_security_policy.json` is not `.py` and moves no count — the same measured hole F5/F6 close for parity. |
+| **M12** | Chunk M, item 5 | "`FROZEN-MODIFIED` for `bootstrap/security_check.py`, `bootstrap/tests/test_notice_install.py` and `bootstrap/tests/test_security_lint.py`, and `FROZEN-NEW` for `bootstrap/tests/test_portable_security_sweeps.py` and the three shipped module files." | The three FROZEN-MODIFIED entries are **correct** (all three confirmed members of `frozen_files`, 164 entries `as_of 2026-08-04`). The FROZEN-NEW enumeration is replaced. Measured against `_frozen_files()`'s five globs (`bootstrap/*.py`, `bootstrap/tests/**/*.py`, `bootstrap/tests/fixtures/**/*`, `scripts/*.py`, `templates/modules/**/*.py`), this plan creates **three** FROZEN-NEW across its whole span, not four: `templates/modules/team-gated/run_portable_security_sweeps.py` and `bootstrap/tests/test_portable_security_sweeps.py` at Chunk A, and **`scripts/run_portable_security_sweeps.py` at Chunk F**. The `.md` doctrine and the `.json` policy match **no** glob and produce no entry. Two further note classes must also be reported and were unnamed: **`MAPPING-DIGEST-CHANGED: _MODULE_MAPPINGS 26957a8924042a0a -> …`** — the gate-manifest line most directly tied to this change, since that digest *is* the declared delta — and **one `COLLECTION-ADDED` per new node** in `test_portable_security_sweeps.py` (`collection.node_count` = 1598 `as_of 2026-08-04`). The plan's *"not read by the suite"* claim is **verified**: `_MANIFEST_REL` is referenced only by `_gate_manifest.py` and `_gate_reanchor.py`; no `test_*.py` reads the committed fixture, so nothing goes red. "Report every stale entry and re-pin nothing" is only meaningful if the enumeration is complete; this one now is. |
+| **M13** | Chunk C, C8 test table, first column of the `.git/config` row | "`test_hostile_repo_local_config_loses_to_the_counted_keys` — set all eight pinned keys hostilely in `.git/config`, with executable sentinels for hooks, fsmonitor, external diff, pager and transport; assert **no sentinel executed**." | Same name and same assertion, but the node is built on a **fake `gitleaks` that itself execs the real `git`** — measured present at `git version 2.53.0`, and the *second* declared trust root — under exactly the child environment the runner constructed, with a subcommand that would actually consult the sentinel keys (`git log -p` reaches `core.pager`, `diff.external`, `core.hooksPath`, `core.fsmonitor` and the transport keys). Only then is the stated perturbation ("Drop `GIT_CONFIG_COUNT` from C6; a sentinel fires and the test goes red") **runnable**, and the ledger must record it as a RUN. **What this establishes and does not**: it establishes that the environment *the runner constructs* neutralizes a hostile repository-local config against real Git. It establishes **nothing** about whether real Gitleaks propagates that environment faithfully to its own Git child — that stays Chunk I's, and the doctrine must not imply otherwise. |
+| **M14** | Chunk C, C8 test table, four further rows | "`test_a_hostile_gitleaks_toml_does_not_suppress`", "`test_a_tracked_gitattributes_binary_rule_cannot_hide_a_committed_token`", "`test_the_current_tree_leg_does_not_follow_a_symlink_out_of_the_repo`", "`test_a_gitignored_ordinary_file_is_still_scanned`" | Renamed to the claim a fake executable can actually carry — an **argv/environment** claim, not a scanning outcome: `test_the_adapter_config_flag_is_sent_and_a_candidate_toml_is_never_read`, `test_the_history_leg_argv_carries_text_no_textconv_and_no_ext_diff`, `test_the_current_tree_leg_argv_disables_symlink_following`, `test_the_current_tree_leg_argv_adds_no_gitignore_filter`. Their perturbations are unchanged and remain valid (each drops the flag from C1/C5/C7 and the fake records its absence). **The four behavioural names move to Chunk I**, whose Maintainer-gated hostile-config matrix is where a real binary can establish them. Two nodes sharing a name across C8 and Chunk I, one of them vacuous, is the outcome this rename exists to prevent. |
+| **M15** | Chunk C, *Acceptance criteria*, first bullet | "Every C8 node passes with **fake executables**, and the fake tool asserts on the **exact argv and the exact child environment**, not on a substring." | Every C8 node passes with **fake executables** and asserts on the **exact argv and the exact child environment**, not on a substring — **except `test_hostile_repo_local_config_loses_to_the_counted_keys`, which is behavioural against the real `git` per M13 and needs no third-party binary.** Add: **every C8 node's name must state a claim its own oracle can carry.** A node named for a scanning outcome whose oracle is a fake tool's argv log is vacuous by construction, and vacuity of that kind is a stop, not a style note. |
+| **M16** | Chunk D, D7 test table | (addition) | **New D7 node — `test_no_secret_bearing_field_reaches_any_sink`.** Feed a fake report whose `Secret`, `Match`, `Author`, `Email` and `Message` fields carry distinct planted byte sequences; assert **none** of those sequences appears in any of the three sinks: the deterministic JSON summary (D3), the human report (D2/D3), **and** the child document (D6). Hazard perturbation: add one of those fields to D1's selection list; the node goes red on all three sinks. This is the positive counterpart to `test_missing_redaction_is_degraded`, which is a *refusal* node and fires only when the tool's own redaction is absent — as specified, a `.get("Secret")` added to D1's selection list would turn **no** node red anywhere in this plan. It is the one failure mode in which the module is strictly worse than not existing: a secrets scanner that harvests secrets into a JSON artifact and a terminal report. |
+| **M17** | *Author-accounting*, invariant list | "*No raw child output reaches the operator.* Chunk D7's rendering nodes." | Two invariants, not one. (i) *No raw child output reaches the operator.* Chunk D7's rendering nodes. (ii) ***No secret-bearing scanner field reaches any sink — summary, human report, or child document.*** Chunk D7's `test_no_secret_bearing_field_reaches_any_sink` (M16). |
+| **M18** | *Author-accounting*, known omissions, (a) | "(a) **v1 does not authenticate host binaries.** Gitleaks and Git are declared executable trust roots; a project needing provenance pins and verifies them outside Cairn." | (a) **v1 does not authenticate host binaries, and the specific consequence is named rather than left at the level of provenance-in-general: full mode — the only mode that can reach CLEAN — is entered on a version string the unauthenticated binary reports about itself.** E3's recorded SHA-256 is **evidence-only**: it documents which artifact the admission matrix was run against and is **never compared** against the binary resolved at run time. Any binary on `PATH` that prints an admitted version string is classified full mode. Gitleaks and Git remain declared executable trust roots; a project needing provenance pins and verifies them outside Cairn. **The shipped doctrine (A1) and the cadence text (E6) must state this in these terms** — that the recorded digest is evidence, not a gate — because a silently-recorded digest reads to an adopter and to a later reviewer as a control. |
+| **M19** | Chunk E, E7 test table | (addition) | **New E7 node — `test_the_recorded_digest_is_not_a_runtime_gate`.** Admit a version in E1 whose evidence record carries digest X; resolve a fake binary that reports that version string and hashes to Y; assert the run **still selects full mode** and that the report **names the residual in words**. Hazard perturbation: make resolution compare the digest; the node goes red — which is the point. The node exists so the residual is visible **in the suite** rather than implied in a doctrine file an adopter may never open, and so that a future change from evidence-only to gate is a deliberate, red-turning edit rather than a silent one. |
+| **M20** | *Lasting-truth migration* | (addition) | **LT-8 — the full-mode digest gate.** Deferred, not rejected. A source-owned optional digest checked at resolution (mismatch degrading to reduced mode rather than refusing, so `test_reduced_mode_is_reachable_without_any_source_change` survives) is the stronger design, and it is **blocked on cross-platform evidence**: all admission evidence is Darwin arm64 (known omission (e), LT-5), so a source-pinned digest today would make full mode **unreachable on every other platform** and silently demote those adopters to reduced mode. Durable home: `dev/measurement/gitleaks-version-support.md` carries the per-version, per-platform digests as they accumulate; the promotion from evidence-only to gate is its own proposal once more than one platform is admitted. |
+| **M21** | Chunk A, A4 cell | "A comment states the two facts a later reader needs: the three files are **one complete mapping group** (an upgrade cannot advance part of the apparatus), and the module declares **no required token**" | A comment states the two facts a later reader needs: the three files are **registered as one group and pinned as one group by `bootstrap/tests/test_portable_security_sweeps.py`** — **the engine performs no group-completeness refusal for `_MODULE_MAPPINGS` and the comment must not imply one** — and the module declares **no required token**. Measured: `grep -n 'complete.*group\|group.*complete' bootstrap/_scaffold/*.py` returns ten hits (`cli.py:532`, `config.py:658`, `install.py:893`, `:894`, `:897`, `:929`, `:1025`, `:1544`, `:1554`, `upgrade.py:153`) and **every one is scoped to the always-on onboarding group**; `_always_on_group_complete` (`bootstrap/_scaffold/upgrade.py:153-165`) iterates `_ALWAYS_ON_MAPPINGS` and nothing else. What a `_MODULE_MAPPINGS` group actually gets is duplicate-**destination** refusal (`_assert_mapping_ownership`, defined at `upgrade.py:263`, called at `:503`) and the already-adopted-module new-file delivery path — **neither refuses a missing group member**. Shipping an engine comment that asserts a refusal the engine does not perform is the *"prose that outruns the gate"* defect A7 exists to close, two rows above it. |
+| **M22** | Chunk A, A8 test table, second row | "`test_the_three_files_are_one_complete_mapping_group` — assert an upgrade cannot advance the runner without the policy and doctrine." / "Remove the policy spec from A4's group; the group check must refuse." | **`test_the_registration_pins_all_three_specs_as_one_group`** — a **test-side membership pin** over `_MODULE_MAPPINGS["portable-security-sweeps"]`: assert the group contains exactly the three declared `(src, dst, verbatim)` triples, no more and no fewer. Hazard perturbation: **remove the policy spec from A4's registration; this pin goes red — and nothing in the engine refuses, which is precisely why the pin exists.** The node must be distinguishable from `test_the_module_installs_exactly_three_files`: that one drives the scaffold's public install path and observes destinations on disk; this one pins the registration's declared shape. |
+| **M23** | *Author-accounting*, invariant list | "*The three module files are one complete mapping group.* Chunk A8." | *The three module files are **registered and pinned** as one group.* Chunk A8's `test_the_registration_pins_all_three_specs_as_one_group`. **This is a test-side pin, not an engine refusal** — the engine's only group-completeness enforcement is scoped to the always-on onboarding group (M21). Named here as the **second** weakest invariant in this plan, beside the manifest-row invariant the plan already names, and an External reviewer should attack both. |
+| **M24** | Chunk E, E2 cell | "It runs the same hostile-ambient-config fixtures as Chunk C, the same output-schema validation as Chunk D, the Git-invocation oracle, and the end-to-end exits. **It never mutates E1** — admission stays a reviewed human code change." | Unchanged, plus the **containment disposition the design raises and the plan did not answer**: `--verify-version-support` is a public "execute the binary at this path" entry point that ships in every adopter tree selecting the module, and Chunk B's containment rules bind it **in modified form**, because blanket application would break its purpose (the candidate is by definition not yet admitted) and blanket exemption ships an unconstrained exec path. The rules: the candidate path must be **absolute**, a **regular file** with the **executable bit**, and **outside the repository under check** on both its lexical and its resolved path. It is **not** required to be an admitted version — that is the subcommand's whole point. A candidate failing any of those refuses before execution. |
+| **M25** | Chunk E, E7 test table | (addition) | **New E7 node — `test_verify_version_support_refuses_a_candidate_inside_the_repository_under_check`**, in both the lexical and the symlink-resolved form, mirroring B6's `test_a_repo_local_executable_is_refused` and `test_a_symlink_resolving_into_the_repo_is_refused`. Hazard perturbation: delete the containment check from E2; the subcommand executes the planted in-repo binary and the node goes red. |
+| **M26** | Chunk G, test table, third row | "`test_the_registry_cannot_reach_a_network_or_credential_mode` — assert the row names only the offline entry point." | Same name, stronger assertion: pin the row's argv **exactly** against the local/offline entry point, and assert it does **not** name `--verify-version-support`. As written the node was satisfiable by a row naming the admission subcommand, which is *also* offline — so "offline" does not exclude it. A standing agent command must never be able to reach the admission path. Hazard perturbation: point the row's argv at `--verify-version-support`; the node goes red. |
+| **M27** | Chunk F, *Acceptance criteria* | "**Explicitly not done here.** No CI workflow is edited. No scanner is installed. Cairn's standing verification cadence is `security-verification-activation`'s surface, reached through Chunk G." | No CI workflow is edited. No scanner is installed. **And Cairn gets no standing invocation path at v1**: `dev/plans/security-verification-activation.md` fences *"Cairn does not self-host the dispatcher"* (`:433`), so no dispatcher twin lands under Cairn's `scripts/`. Chunk G's registry row therefore makes the portable leg reachable from the standing command **for adopters only**. Condition 2's *"Cairn installs and runs this module on its own tree"* is discharged at v1 by a **hand-typed invocation** of `scripts/run_portable_security_sweeps.py`, and Chunk F's commit-body figure is that run's result. Stated plainly because the alternative is an implementing agent looking for a standing hook that does not exist. |
+| **M28** | *What survived the lifecycle*, Consequence 3 | "**The adoption HOLD is resolved and does not survive into the plan.** The standing invocation path exists — `security-verification-activation`, accepted the same day — and the Decision answers the "worth building at all" question affirmatively by directing adoption." | The adoption HOLD is resolved **for adopters**: the standing invocation path exists in `security-verification-activation`, and the Decision answers the "worth building at all" question affirmatively by directing adoption. **For Cairn itself — the one adopter Condition 2 names — the standing path does not exist at v1**, because that plan declines to self-host the dispatcher (M27). The HOLD survives in that one place, and saying so is more useful than a clean claim. |
+| **M29** | Chunk G / *Lasting-truth migration* | (addition) | **LT-9 — the two plans' Branch-1 interaction, recorded so neither plan can leave it to the other.** `security-verification-activation` justifies not self-hosting partly on the ground that at v1 Cairn's own run *"would print `NOT APPLICABLE` and gather nothing"* (`dev/plans/security-verification-activation.md:436-437`, reproduced exactly). **That premise expires the moment Chunk G admits the portable row and Chunk F makes Cairn an adopter of the module** — which is precisely the combination this plan lands. Chunk G's implementing agent, under either branch, must record this in the commit body and surface it to whichever plan lands second. Durable home: this row, plus a `dev/PLANNING.md` row so it cannot fall between the two plans. |
+| **M30** | Chunk F, F6 test table | "Remove `portable-security-sweeps` from `dev/.cairn/profile.yml` without regenerating; red." | The node reads `dev/.cairn/cairn-lock.yml`; editing `profile.yml` **without regenerating** leaves the lockfile byte-identical, so the node stays **green** and the perturbation as written cannot make it red. Replaced by either of two perturbations that bite: **drop one spec from A4's registration and regenerate the lockfile**, or **remove one of the three records from the lockfile directly**. Name which was run in the ledger. |
+| **M31** | Chunk A, A8 test table | "`test_adopt_module_and_upgrade_carry_the_whole_group` … Drop one file from the lockfile record; the integrity read must not report clean." | That perturbation perturbs `verify_integrity`'s **input** and exercises `verify_integrity`, not the `--adopt-module` / `upgrade` path the node is named for. Replaced: **remove one spec from A4's registration**, then run `--adopt-module portable-security-sweeps` against a tree installed before the module existed; the node's write-set assertion goes red because only two files are written. The hazard is the registration or the adopt write-set, not the lockfile reader. |
+| **M32** | Chunk D, D7 test table | "`test_missing_redaction_is_degraded` … Drop the redaction assertion; red." | Ambiguous between the **runner's** redaction check (the hazard) and the **test's** own assert (self-validating). Replaced: **delete the runner-side branch in D1 that classifies an unredacted secret field as DEGRADED**; the node goes red. Perturbing the test's own body validates the test, not the claim — the plan says so in its own words two tables earlier. |
+| **M33** | Chunk A, A8 test table | "`test_mode_selection_maps_versions_to_modes` … Add `"8.31.0"` to the source-owned full-mode set without an evidence record; Chunk E's admission test (below) goes red, and this test's reduced-mode case goes red too." | Chunk E's bijection node does not exist at Chunk A commit time, so half this perturbation is **not runnable when A's ledger obligation falls due**. Split it: **A's runnable half** is the reduced-mode case — add a strict `8.x.y` to the full-mode set and this node's reduced-mode assertion goes red, run and ledgered at Chunk A. **The bijection half completes at Chunk E** and is ledgered there, in the E7 entry for `test_every_full_mode_version_has_an_evidence_record_in_the_ledger`. State the split in A's ledger rather than claiming a red that could not be observed. |
+| **M34** | *Acceptance criteria* (plan level), fourth sub-bullet | "`bootstrap/tests/test_manifest.py` — unchanged and green; its `test_matches_actual_install` scaffolds **every** module, so it is the node that catches a registration whose sources do not exist or whose destinations collide." | The node is **`test_manifest_matches_actual_install`** (`bootstrap/tests/test_manifest.py:68`), and the two properties are split across **three** mechanisms, not one node: sources-exist is `test_manifest_sources_all_exist` (`:61`); destination collision is refused by **`install_manifest` itself**, which calls `duplicate_destinations` (`bootstrap/_scaffold/install.py:1392`) and raises `ValueError` (`:1396`). That third mechanism is what makes A8's `test_module_destinations_collide_with_nothing` perturbation a real hazard perturbation — verified. |
+| **M35** | *One ceremony*, item 2, and Chunk M, item 3 | "`bootstrap/tests/_ast_attest.py`'s `_UPDATE_ALLOWLIST` (line 141, alongside `_SKILLS_MAPPINGS`, `_CORE_MAPPINGS`, `install_onboarding`)" and "(`bootstrap/tests/_ast_attest.py:141`)" | `:141` is the `_UPDATE_ALLOWLIST` **declaration**; the `"_MODULE_MAPPINGS": "Assign"` entry is line **`:142`**. Cite `:141-146` for the allowlist or `:142` for the entry. The substantive claim — `_MODULE_MAPPINGS` is allowlisted for `update-symbol` alongside `_SKILLS_MAPPINGS`, `_CORE_MAPPINGS` and `install_onboarding`, and `update-symbol` refuses (exit 4) on any unrelated drift — is **correct and re-verified**. |
+| **M36** | Chunk A, A4 cell | "unlike the `"python-security"` key two entries above it" | "unlike the `"python-security"` key **one entry above it**". Measured key order ends `… content-security, python-security, architecture-review`, so an insert before `"architecture-review"` puts `python-security` one entry above. Trivial, but it is a comment destined for the engine. |
+| **M37** | Chunk H, *Acceptance criteria*, first bullet | "**180 Markdown files `as_of 2026-08-04`**; the count may only grow" | **195 Markdown files `as_of 2026-08-04`** — re-measured (`check_cairn: OK -- 195 Markdown file(s) scanned; no issues; 68 external link(s) not probed`). The 180 figure, correct when the plan and review were written, was overtaken the same day. The count may only grow, and the growth arithmetic is unchanged: this plan adds at least three (the plan, the shipped doctrine, the ledger) plus one at Chunk F. **Re-measure; do not assert 195 either.** |
+| **M38** | Chunk A, A7 cell | "The comment at `bootstrap/security_check.py:74` reads *"42 entries are a subset of the manifest's 44"*. Re-measure and correct." | The cited prose is **verified exact**, and so is its arithmetic: the two registry loops yield 33 (`_MODULE_MAPPINGS`) + 9 (`_ALWAYS_ON_MAPPINGS`) = **42**, and `_manifest_py_sources()` = **44**. Predicted after Chunk A: **43 entries, a subset of the manifest's 45** (the registration adds one verbatim `.py` to `_MODULE_MAPPINGS`). **Re-measure and assert; do not apply that arithmetic from this text** — the same rule the plan applies to its count pins. |
+| **M39** | Chunk A, *Acceptance criteria*, the `.json` bullet | "Confirm it installs byte-for-byte (`verbatim=True`)" | Confirm it installs byte-for-byte, **with the measured qualification the plan's own "verify, do not assume" posture asks for**: `verbatim=True` skips substitution and the unfilled-token / block-slot scan (`bootstrap/_scaffold/install.py:235-237`, branching on the flag and **not** on extension — verified, so the `.json` is not filtered out anywhere), but the install path is a **UTF-8 text round-trip**, not a byte copy: `text = src.read_text(encoding="utf-8")` runs *before* the verbatim branch and `dst.write_text(text, encoding="utf-8")` writes it back. Two consequences to assert rather than assume: the source must be **valid UTF-8** (else the install raises), and **universal-newline translation applies**, so a CRLF source would install as LF and would not be byte-identical. Keep the policy source UTF-8 and LF-only. The same qualification bounds F5/F6's twin-parity node. |
+| **M40** | *Plan review — the brief*, "Where the reviewer should look first" | (addition, adopting the Internal reviewer's own recommendation) | **New item 2a — Chunk C's fake-executable boundary.** Whether each C8 node's *name* states a claim its own oracle can carry, and specifically whether `test_hostile_repo_local_config_loses_to_the_counted_keys` as amended by M13 is genuinely falsifiable. The framing question already at item 2 — does *"a measured finite boundary"* survive contact with a second Git subcommand — is unanswerable if the node defending it cannot go red. **New item 6 — the full-mode digest question ([I3] / M18-M20):** is it acceptable for the only CLEAN-capable mode to be selected on a self-reported version string, with the recorded SHA-256 evidence-only? The author's v1 answer is "yes, disclosed and pinned by a node"; the deferral of the stronger design rests on Darwin-arm64-only evidence. **This is a security-lens call and it is put to the External reviewer as a question, not presented as settled.** |
+
+### What this Response clears, and what it does not
+
+**It does not clear the plan to implement.** Stated without hedging:
+
+* The declared tier is **`required(External, security lens)`** and it is
+  **undischarged**. The Internal round did not close it (its author said so;
+  the plan's brief says so; the Decision says so in terms). **An author's
+  Response to an Internal round closes nothing** — it is the same agent type
+  reading its own artifact, twice.
+* **No implementation commit lands before a `## Plan review` section written by
+  a different agent type or a human is in the tree.** The plan's own header
+  rule is unchanged and this Response does not relax it.
+* The plan's remaining open questions are exactly the ones the Internal
+  reviewer identified as the ones they were worst-placed to answer, and I am
+  worse-placed still, being the author: whether eight pinned Git-config keys
+  plus one measured invocation set actually bound the candidate metadata
+  surface, or only the symptoms enumerated so far; whether
+  `--verify-version-support` is an apparatus or a matrix runner with a ledger
+  bolted on; whether automatically executing an unmeasured host binary in
+  reduced mode is acceptable given the named residual; and now, per M40,
+  whether full mode may be entered on a self-report.
+
+**What it does clear.** Forty amendments are in force. Every accepted finding
+has mechanical residue — a renamed node, a rewritten perturbation, a new test
+node, a new or corrected acceptance criterion, a corrected figure, or a new
+`Lasting-truth` row. No finding was accepted in prose alone. Three defects the
+Internal reviewer flagged as the ones that would waste an External round —
+[I1]'s vacuous enforcer, [I2]'s missing positive redaction node, [I3]'s
+recorded-but-unchecked digest — are settled in the plan text, so an External
+reviewer meets an artifact that no longer claims more assurance than its
+specified tests can deliver.
+
+**One thing worth carrying into the ceremony unchanged.** The declared
+`bootstrap/_scaffold/` symbol delta — **one CHANGED `Assign:_MODULE_MAPPINGS`,
+baseline digest `26957a8924042a0a`, 0 MISSING, 0 DUPLICATE, 0 non-exempt NEW**
+— was re-derived a third time today, after Ceremony 1 re-anchored the baseline
+from 174 entries to 173, and it is **unchanged**. The baseline total moved; the
+digest this plan declares did not.
+
+**Verification of this Response.**
+`~/conda_envs/lhm/bin/python3.13 scripts/claim_check.py dev/plans/portable-security-sweeps.md`
+→ OK, no claim-check flags (exit 0). `git diff --numstat` on this file → 0
+deletions (append-only, confirmed before commit).
+
+This section is append-only once written.
