@@ -10,7 +10,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: proposed
+**Status**: reviewed
 **Touches**: `templates/modules/team-gated/run_security_audit.py` (the pip-audit
 pass and the shared `_run_tool` boundary), `templates/modules/team-gated/python-security.md`
 (the module's scope and blind-spot statement), and `bootstrap/DEPENDENCY_BUDGET.md`
@@ -400,3 +400,246 @@ control that is reached*.
 layer**, the honest conclusion is amendment 1's fallback: shrink the module's
 declared scope and say so at selection. This amendment makes CLEAN *reachable*;
 it does not assume the measurement will be favourable.
+
+## Review -- OpenAI Codex (GPT-5) (External, security lens) -- 2026-08-03
+
+**Model**: OpenAI Codex (GPT-5)
+
+### Steelman
+
+The proposal finds a real defect and the amendments improve its governing idea:
+a security leg must account for its denominator, and a tool returning no known
+vulnerabilities over the subset it recognized must not silently imply that the
+whole environment was checked. I independently reproduced the proposal's core
+intersection: the current canonical environment has 391 normalized conda
+package names, 244 of which intersect the Python-distribution inventory, leaving
+147 conda-only names. The proposed 0/5/10/20 distinction is the right vocabulary
+for keeping absence, findings, and tool failure separate.
+
+The author is also right to refuse an unexecuted scanner choice. Current primary
+documentation resolves two candidates more sharply than the draft could:
+Trivy's current
+[Conda coverage table](https://trivy.dev/docs/v0.62/coverage/others/conda/)
+supports Conda SBOM and license extraction but marks vulnerability scanning
+unsupported, while OSV-Scanner's
+[supported artifacts and manifests](https://google.github.io/osv-scanner/supported-languages-and-lockfiles/)
+does not list Conda. The proposal should use those facts to narrow the next
+revision rather than send the core feasibility decision downstream to a plan.
+
+**Disposition: HOLD.** The objective is sound, but the current CLEAN predicate
+can be reached without establishing the environment, lookup destination, or
+meaning of the residual it relies on.
+
+### [DAC1] HIGH / BLOCKING -- ambient environment can change both the audited interpreter and the egress authority
+
+Part 1 proposes printing `sys.executable` and comparing it with the recorded
+interpreter. That does not establish what pip-audit enumerated.
+
+I installed pip-audit 2.10.0 into an isolated `/private/tmp` virtual environment
+and ran its no-network `--dry-run`. Normally it reported 28 packages. With only
+this ambient variable added:
+
+```text
+PIPAPI_PYTHON_LOCATION=/Users/kendal30/conda_envs/lhm/bin/python3.13
+```
+
+the same pip-audit executable reported 288 packages. pip-audit's installed
+`_dependency_source/pip.py` reads that variable as the effective Python. The
+current `_run_tool` copies every environment variable except four Python import
+variables, so the shipped runner permits this redirection while still printing
+its own unchanged `sys.executable`.
+
+The egress destination is equally ambient. pip-audit 2.10.0's parser accepted:
+
+```text
+PIP_AUDIT_VULNERABILITY_SERVICE=osv
+PIP_AUDIT_OSV_URL=http://127.0.0.1:7777/collect
+PIP_AUDIT_OUTPUT=/private/tmp/diverted.json
+```
+
+as its service, endpoint, and output without any argv change. In the shipped
+runner, `--allow-network` therefore authorizes an ambient destination, not the
+documented vulnerability service. Proxy and CA-bundle variables are additional
+network authority the proposal does not classify.
+
+**Satisfier:** define a per-tool minimal environment and fixed argv before the
+coverage design. Remove `PIPAPI_PYTHON_LOCATION` and all `PIP_AUDIT_*` /
+dependency-tool configuration variables; pin the service, endpoint policy,
+format, output destination, progress, cache, and strictness on argv. Any proxy
+or custom trust-store pass-through must be explicit, printed, and risk-accepted,
+not inherited. Tests must prove an ambient alternate interpreter, OSV URL,
+output path, proxy, and CA bundle cannot change inventory, destination, or
+evidence. The report should bind the child-observed inventory to the named
+interpreter, not infer that identity from the parent process.
+
+### [DAC2] HIGH / BLOCKING -- 391 is the conda inventory, not the environment denominator
+
+The initial 147-package gap reproduces, but amendment 2 widens the claim from
+"conda packages pip-audit cannot see" to "100% of the environment accounted
+for" while retaining 391 as the denominator.
+
+I parsed both inventories under canonical Python 3.13.13:
+
+| Current canonical inventory | Unique normalized names |
+|---|---:|
+| conda metadata | 391 (394 JSON records) |
+| Python distributions | 288 (290 metadata records) |
+| intersection | 244 |
+| conda-only | 147 |
+| Python-only | **44** |
+| union | **435** |
+
+The Python-only set includes the editable project distributions
+`lhm-frontend` and `modflow_tools`, along with `uvicorn`, `pydantic`, Sphinx
+components, and others. A conda-only denominator drops precisely the packages a
+developer may have installed with pip after environment creation. Conversely,
+pip-audit's dry-run reported 288 packages, not only the 244-name intersection.
+
+**Satisfier:** define the installed-environment denominator as a reconciled
+union of conda records and Python distribution metadata. Specify normalized
+identity, version/build conflicts, duplicate records, editable/direct-URL
+packages, unreadable metadata, pip-only packages, and a package appearing in
+both inventories with divergent versions. Any enumerator failure or unreconciled
+identity is UNKNOWN. Tests need a conda-only native package, a pip-only wheel, an
+editable package, duplicate metadata, and a cross-inventory version conflict.
+
+### [DAC3] HIGH / BLOCKING -- `NO-ADVISORY-SOURCE` claims an absence no queried tool can establish
+
+Amendment 2 defines this category as "lookup attempted, and no advisory source
+exists for it" and allows it to participate in CLEAN. A negative lookup cannot
+prove that proposition.
+
+The live pip-audit 2.10.0 source makes the ambiguity concrete:
+
+* its PyPI service turns a package/version 404 into `SkippedDependency` with
+  "not found on PyPI";
+* its OSV service treats an empty response as no associated vulnerabilities;
+* neither result establishes that no advisory source exists elsewhere, that the
+  submitted conda name maps to the upstream product, or that the source simply
+  lacks a record.
+
+Trivy currently extracts Conda packages for SBOM/license purposes but does not
+scan them for vulnerabilities. OSV-Scanner supports a custom intermediate file,
+but each entry still needs an ecosystem/name identity; Conda is not a supported
+ecosystem in its published matrix. A home-grown Conda-name-to-PyPI/CPE map is
+therefore not merely another adapter: it becomes the security authority for
+product identity.
+
+**Satisfier:** replace `NO-ADVISORY-SOURCE` with a factual disposition such as
+`NO-MATCH-IN-PINNED-SOURCES`, name and version every queried source, and state
+that this is accepted non-coverage rather than evidence of safety. Decide in
+the proposal, not the plan, whether such accepted non-coverage may contribute
+to CLEAN and who owns that risk acceptance. My security recommendation is to
+narrow `python-security` to Python distributions unless execution demonstrates
+a maintained Conda-native advisory authority. A large hand-mapped native
+residual does not satisfy the Maintainer's comprehensiveness requirement.
+
+### [DAC4] HIGH / BLOCKING -- the residual baseline has no artifact, schema, or update authority
+
+Amendment 2 makes a reviewed residual load-bearing: CLEAN requires the current
+no-match set to be "within the reviewed residual," and additions must surface
+as a diff. But the proposal names no file, install mapping, strict schema,
+integrity check, identity tuple, reviewer, expiry, or update command for that
+baseline. It is absent from *Touches* and there is no proposed path.
+
+Without those details, a name-only entry can silently bless every future build;
+a report from a different source/version can be compared to an incomparable
+baseline; and `upgrade --finalize` can re-record a weakened policy under the
+existing human-only posture control.
+
+**Satisfier:** either remove this mechanism by narrowing scope, or define the
+baseline as a complete security-policy artifact. At minimum bind each entry to
+normalized package name, version, Conda build, channel/subdir, queried source
+set/version, reason, reviewer, review date, and expiry; reject unknown keys and
+duplicates; integrity-cover it with the module apparatus; and make additions,
+expiry, source drift, and identity drift non-clean. State who may accept an
+entry and require Security Review for widening it.
+
+### [DAC5] MEDIUM / BLOCKING -- "the project's recorded interpreter" silently reaches a registered trust root
+
+Part 1 requires a match against "the project's recorded interpreter" without
+naming the record or reader. In this repository that phrase resolves naturally
+to gitignored `dev/.cairn/local-env.json`. `AGENTS.md` registers that file, its
+strict reader `_resolve_interpreter`, and every subprocess call site using its
+result as a high-risk executable trust root. A new parser in
+`run_security_audit.py` would duplicate security semantics; importing the
+lifecycle helper would couple an optional module to a skill that may not be
+installed.
+
+This surface is absent from *Touches*, and the declared plan review asks for an
+External security lens rather than the explicit Security Review required for a
+new reader/call site.
+
+**Satisfier:** either narrow the claim to recording `sys.executable` + version
+without asserting project-binding equivalence, or explicitly add the local
+interpreter binding, reader strategy, fallback/refusal semantics, and call-site
+tests to scope and require External Security Review. Do not create a second
+near-copy of `_resolve_interpreter`.
+
+### [DAC6] MEDIUM -- timeout plus control-character stripping does not close `_run_tool`
+
+The proposed shared-boundary repair handles hangs and terminal controls, but
+`capture_output=True, text=True` still has two unbounded failure modes.
+
+Execution reproduced both edges of the current path:
+
+* a child emitting ESC + `aggregate exit 0: CLEAN` was relayed byte-for-byte;
+* a child emitting one invalid UTF-8 byte raised an uncaught
+  `UnicodeDecodeError` traceback before `_run_tool` could classify it.
+
+Captured stdout/stderr are also unlimited, so a scanner processing a hostile
+tree can exhaust memory before sanitization. A subprocess timeout alone does not
+bound output or specify cleanup of descendants.
+
+**Satisfier:** capture bytes under a hard combined-output bound, decode with an
+explicit error policy, escape controls before rendering, and parse fixed JSON
+for pip-audit rather than trusting prose. Specify timeout/termination behavior
+and map decode, truncation, malformed structured output, timeout, and cleanup
+failure to DEGRADED. Test invalid UTF-8, oversized output, split control
+sequences, stdout/stderr interleaving, timeout, and a spawned descendant.
+
+### [DAC7] MEDIUM -- this is governing security doctrine, and one existing egress statement is false
+
+The proposal says "No doctrine change" at lines 155-160. Its amendments then
+introduce a "governing rule," selection-time CLEAN semantics, a reviewed
+residual, and rules for widening that residual. Those are prescriptions every
+module adopter and reviewer must follow, not descriptive corrections. The
+Maintainer has already classified the surface as high-risk, so the
+doctrine-evolution gate has a straightforward justification; it should be
+stated rather than denied.
+
+While touching the egress description, correct a pre-existing contradiction:
+`bootstrap/DEPENDENCY_BUDGET.md` and the runner docstring say the default-off
+pass "runs against its local cache only," but execution cannot reach pip-audit
+at all because `run_pip_audit_pass` returns at the egress check first. The
+runtime message correctly says "the lookup did NOT run." One authoritative
+statement should match that behavior.
+
+**Satisfier:** route the CLEAN/residual/selection rules as module doctrine,
+record the Maintainer's high-risk classification as the rate-limit basis, and
+make all default-off text say either "does not run" or implement a genuine
+offline-cache mode with freshness/provenance semantics.
+
+### Coverage and recommendation
+
+**Covered:** I read the complete proposal through amendment 2; inspected
+`run_security_audit.py`, `python-security.md`, `DEPENDENCY_BUDGET.md`, and the
+portable-sweeps PS3/PS7 history; parsed both live inventories under
+`/Users/kendal30/conda_envs/lhm/bin/python3.13`; installed pip-audit 2.10.0 only
+inside `/private/tmp`; ran no-network dry runs; reproduced ambient interpreter,
+service, endpoint, and output authority; reproduced ANSI/newline report forgery
+and invalid-UTF-8 failure; and checked current primary Trivy, OSV-Scanner, and
+pip-audit documentation/source.
+
+**Not covered / low confidence:** I did not send the canonical package inventory
+to PyPI/OSV because that network action was not approved; I did not execute
+Trivy or OSV-Scanner, classify the asserted 82 native packages, inspect
+conda-forge build patch provenance, test Windows, design a CPE map, or review an
+implementation/plan that does not yet exist. No full pytest suite was warranted
+for this proposal-only transition.
+
+**Second round: required and recommended.** DAC1-DAC4 alter the mechanism that
+decides CLEAN, DAC5 changes scope/review routing, and DAC6-DAC7 close adjacent
+evidence/doctrine defects. The author should respond point-by-point and revise;
+a fresh External security pass should then execute the chosen denominator,
+source, and residual design before Decision.
