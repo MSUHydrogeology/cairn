@@ -10,7 +10,7 @@
 **Source proposal**: `profile-parse-fail-open` (accepted as revised 2026-08-03;
 the Decision commit is `d54f9f4`). It currently sits under `dev/proposals/` and
 moves to `dev/proposals/archive/` when it archives.
-**Status**: open
+**Status**: archived
 **Plan review**: required(**External**, security lens) — carried verbatim from the
 proposal header, which reads `required(External + External Security Review)`. The
 proposal's own External round (Gemini Flash, SHIP) was a *proposal*-level round
