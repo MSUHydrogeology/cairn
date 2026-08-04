@@ -1794,3 +1794,421 @@ future lockfile hashes, since they do not exist until implementation.
 E2 leave three promised behaviors able to regress while every specified new
 test stays green. Add those independent perturbation checks and disposition the
 Internal review's outstanding plan corrections before implementation.
+
+## Response to plan review -- Claude (author) -- 2026-08-04
+
+**Model**: Claude Opus 5 (`claude-opus-5`). Every figure below was taken this
+session at `29840f7` under the canonical interpreter
+(`/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13) with
+`PYTHONDONTWRITEBYTECODE=1`. All patched and perturbed copies of the two tools
+live in a throwaway scratch directory outside this tree; **no source file was
+modified**, and `git status` names none of the four files this plan edits nor
+either test module.
+
+**Both blocking findings are ACCEPTED, both were reproduced before being
+disposed, and the correction the reviewer conditioned its Chunk B acceptance on
+was *not* in the plan and is folded in below.** Nothing here is dispositioned as
+already-covered: I went to the code for each, and in both cases the plan's
+control was weaker than its prose claimed. The plan gains three test nodes (A8,
+A9, B6), four perturbation-ledger entries, one **retracted** claim, and the
+`session-end` half of the window disclosure.
+
+The reviewer names the shape correctly and it is worth restating as the standard
+the amendments are written to: *a specified test stays green while the behaviour
+it names regresses*. Every amendment below is written as **the perturbation of
+the hazard, and the node that goes red under it** — never as an assertion that
+merely mentions the right function.
+
+### The scope call
+
+**The tier is discharged on the question it existed to buy, and I am not
+re-arguing it.** The plan's own brief nominated *attestor, not detector* as the
+one judgement a same-type reader could not supply, and the Internal review said
+in terms that its agreement there was "worth close to nothing as evidence". A
+cross-type reader has now answered it, on its own reasoning rather than by
+ratifying the plan's:
+
+> A detector can stop a known carrier from landing when that detector runs, but
+> it cannot make the attestor's statement true.
+
+That is a stronger form of the argument than the plan makes. The plan argues the
+split from *agreement with markdown*; the reviewer argues it from *the
+independence of parser correctness from detector policy* — correctness must hold
+"even if a detector is skipped, suppressed, invoked on a different corpus, or
+later changes policy". The reviewer also surfaced and rejected a third option the
+plan never considered — reject any carrier at parser entry — on grounds the plan
+should have reached itself: it couples parser semantics to detector policy and
+creates an availability failure for every consumer. That is the fence
+`separator-detection` sits behind, restated from the outside.
+
+No amendment follows from this section. It is recorded so that a later reader can
+see the tier was spent on the question it was declared for, and answered.
+
+### [E1] two rerouted planner call sites have no carrier-specific RED test — **ACCEPTED**
+
+*The finding.* A5 discriminates `_parse_status` and `_parse_sections` only. Its
+glued Decision disappears at `_parse_sections` before `_has_isolated_blockquote`
+can affect the result, and its ordinary metadata never exercises `_parse_field`.
+So two of the four rerouted planner call sites have no test that goes red when
+they regress.
+
+**Reproduced, and the fixture was built the strong way so the result is not an
+artifact of a weak one.** A5's `**Status**: accepted` was glued **before** the
+real `**Status**:` line (the discriminating build), so A5's status half is at its
+most sensitive. Four planner variants: `PATCH` (all four sites routed), and three
+partial reverts.
+
+```
+oracle (^-anchored)              status = proposed   headings = ['## Context']
+planner_HEAD                     status='accepted'   sections=[('Decision','Anthony Kendall',bq=True)]
+planner_PATCH                    status='proposed'   sections=[]
+planner_PATCH_minus_field_bq     status='proposed'   sections=[]
+planner_PATCH_minus_field        status='proposed'   sections=[]
+planner_PATCH_minus_bq           status='proposed'   sections=[]
+```
+
+The reviewer's claim holds exactly, and holds for each site *independently* as
+well as jointly: **A5's planned outputs are unchanged under every revert of
+`_parse_field`, `_has_isolated_blockquote`, or both.** A5 is a two-site test
+billed as a four-site one.
+
+**Both separate fixtures reproduce — and each site turns out to gate an
+authority decision, not merely a value.** `_parse_field` is called at exactly two
+places (`templates/skills/_lib/lifecycle_planner.py:627` and `:628`), and the two
+reads feed different gates. That is why the reviewer asked for both, and the
+measurement shows why it matters:
+
+```
+FIXTURE 1 -- a U+2028-glued metadata line placed above the real one
+
+oracle ^-anchored **Author**:        ['Anthony Kendall']
+oracle ^-anchored **Plan review**:   ['required(**External**)']
+
+planner_HEAD               Author='Anthony'          Plan review='not required'
+planner_PATCH              Author='Anthony Kendall'  Plan review='required(**External**)'
+planner_PATCH_minus_field  Author='Anthony'          Plan review='not required'
+```
+
+End-to-end through `_read_artifact` on a plan fixture, the `Plan review` read
+reaches `requires_review` (`templates/skills/_lib/lifecycle_planner.py:663`):
+
+```
+planner_HEAD   plan_review='not required'           requires_review=False  next-from-open=['executing']
+planner_PATCH  plan_review='required(**External**)' requires_review=True   next-from-open=['awaiting-plan-review']
+```
+
+A carrier can therefore switch off the **review-before-implement gate** — the
+one this plan's own header leans on — and the planner will report `executing` as
+a legal next transition from `open`. The Internal review's **[I1]** found that
+gate presence-only and tier-blind; this is the same gate being *forged* rather
+than merely being coarse. And the `Author` read feeds the self-review check
+(`:732`): with a glued `**Author**: Someone Else` above the real line, HEAD does
+**not** flag a genuine self-review that the patched read does.
+
+The `_has_isolated_blockquote` fixture reproduces the reviewer's construction and
+then goes one step further, through the violation the site actually produces:
+
+```
+FIXTURE 2 -- a real ## Decision body whose '>' is preceded by no real blank
+             line, only a chr(0x2028)-fabricated one
+body = 'prose that runs right up to the quote\u2028\u2028> Land it.\n\nthe rest.\n'
+
+oracle: any ^-anchored '>' line with a blank line before it?   False
+
+planner_HEAD               _has_isolated_blockquote=True    violation raised=False
+planner_PATCH              _has_isolated_blockquote=False   violation raised=True
+planner_PATCH_minus_bq     _has_isolated_blockquote=True    violation raised=False
+
+  PATCH's violation text:
+    "'## Decision' at line 6 carries no isolated authorization blockquote
+     (the verbatim authorization is structurally absent)."
+```
+
+That is the R1 structural attestation itself: HEAD **suppresses** the
+missing-authorization violation because a separator fabricated the blank line
+that makes the quote look isolated. It is the plan's headline defect, on a call
+site the plan specifies no test for.
+
+**What changes.** A5 is kept as it is and two focused nodes are added, because
+the reviewer's diagnosis is that A5's payload is *consumed* before it can reach
+the other two sites — bolting more assertions onto the same fixture would
+reproduce that. Each new node names its own perturbation.
+
+* **A8 (new node, `bootstrap/tests/test_lifecycle_contract.py`) — the
+  `_parse_field` carrier discrimination, over both fields.** A fixture built at
+  run time from `chr(0x2028)` in which a glued metadata line is placed **above**
+  the real one, for **both** `**Author**` and `**Plan review**` — the ordering is
+  load-bearing and is measured: `_parse_field` returns the *first* match, so with
+  the glued line placed *after* the real one both HEAD and the patched read
+  return the real value and the node cannot fail (`HEAD='Anthony Kendall'`,
+  `PATCH='Anthony Kendall'`). Oracle: a `^`-anchored `re.MULTILINE` read of the
+  fixture, named in the docstring, never the parser. Assert (i) both field values
+  equal the `^`-anchored read, and (ii) `art.plan_review.lower().startswith(
+  "required")` is `True` — the gate consequence, which is computed in this module
+  and is this plan's own surface.
+* **A8 deliberately does not assert the self-review verdict.** Reaching it means
+  asserting `_identity_token` / `IdentityModel.classify`, which *Scope* fences out
+  as `byline-classification`'s contract and which *Author-accounting* already
+  declines to pin from here. The `Author` half asserts the **field value** against
+  the `^`-anchored oracle and stops there; the self-review consequence is recorded
+  as evidence above, not converted into a test that crosses the fence.
+* **A9 (new node, `bootstrap/tests/test_lifecycle_contract.py`) — the
+  `_has_isolated_blockquote` carrier discrimination.** A real `## Decision`
+  section whose `>` authorization is preceded by no real blank line and by a
+  `chr(0x2028)`-fabricated one. Assert both levels: `_has_isolated_blockquote(
+  body)` is `False`, **and** end-to-end that
+  `_conformance_violations` raises the "carries no isolated authorization
+  blockquote" violation. The second assertion is the one that survives a future
+  refactor of the helper's name or signature. Oracle: a `^`-anchored scan for a
+  `>` line whose predecessor is blank, computed by the test.
+* **Chunk A's perturbation ledger gains two entries**, each reverting **one** site
+  and no other:
+  * revert **only** `_parse_field` to `splitlines()` → **A8 fails** (measured:
+    `Author='Anthony'`, `Plan review='not required'`, `requires_review=False`);
+  * revert **only** `_has_isolated_blockquote` to `splitlines()` → **A9 fails**
+    (measured: `isolated_bq=True`, violation suppressed).
+  Both were run above against `planner_PATCH_minus_field` and
+  `planner_PATCH_minus_bq`; the implementer re-takes them and records the
+  byte-identical restore with `git hash-object` as the existing four require.
+
+### [E2] the lifecycle helper's trailing-line semantics are not pinned — **ACCEPTED**
+
+*The finding.* A6 imports only `templates/skills/_lib/lifecycle_planner.py`.
+Deleting the trailing-empty `pop()` from **only** the lifecycle helper leaves A6
+green, and B5's status fixture is insensitive to the extra trailing empty
+element. The plan's claim that planner-side A6 catches a divergent second copy is
+therefore false.
+
+**Reproduced, and the perturbation matrix is fully symmetric:**
+
+```
+both helpers correct                 :  A6(planner)=GREEN   B6(lifecycle)=GREEN
+pop deleted from the PLANNER only    :  A6(planner)=RED     B6(lifecycle)=GREEN
+pop deleted from the LIFECYCLE only  :  A6(planner)=GREEN   B6(lifecycle)=RED
+
+correct lifecycle helper on 'a\n' -> ['a']
+no-pop  lifecycle helper on 'a\n' -> ['a', '']
+```
+
+Eight of the nine edge cases the *proposal* enumerates by name go red against
+the no-pop lifecycle helper (`'a\n'`, `'a\n\n'`, `'\n'`, `'\r\n'`, `'a\rb\r'`,
+`'a\r\n\r\nb\r\n'`, and — of the unnamed trailing-blank runs — `'a\n\n\n'` and
+`'a\nb\n'`) — and **not one of them is reachable from the planner module A6
+imports.** The plan's Chunk B ledger line is not merely unproven; it is false as
+written.
+
+**Two precision notes on that count, both measured, neither load-bearing.**
+`''` does **not** redden and must not be listed among the red cases: the
+helper's `if not text: return []` returns before the `pop()` is reachable, so
+the empty string is green under *every* pop perturbation. And the twelve-case
+set is **not fully enumerated in the record** — the proposal names nine and then
+asserts "all twelve synthetic cases", leaving "trailing-blank runs" to the
+implementer. So a "nine of twelve" figure is a claim over a set whose membership
+this plan never pins. The figure nonetheless survives any completion: every
+trailing-blank-run case tested (`'\n\n'`, `'\n\n\n'`, `'b\n\n'`, `'a\n\n\n\n'`)
+reddens, so eight named reds plus any one trailing-blank run is nine. **Chunk B's
+implementer must enumerate the remaining three cases explicitly rather than
+inherit the phrase**, since a set stated only as a count is one an implementer
+can satisfy by choosing conveniently.
+
+**And the finding is sharper than reported, which decides the fix.** The reviewer
+says B5's *status fixture* is insensitive. Measured, it is stronger than that:
+the lifecycle-side `pop()` is **unobservable through `_status_of` on any input**,
+so no fixture can rescue B5. The `pop()` removes only the *last* element, so it
+never shifts an earlier index, and every `_status_of` test is a
+`.startswith()` over `[:40]` of the prefix:
+
+```
+_status_of, correct vs. no-pop lifecycle helper:
+  the B5 carrier fixture           both -> 'prop\u2028osed -- the rest of the glued line'
+  a file whose LAST line is the status line   both -> 'open'
+  2000 randomized synthetic artifacts (0-45 lines, mixed LF/CRLF/no-final-newline,
+    seeded): artifacts where _status_of differs   0
+```
+
+So "add the assertion to B5" cannot mean *strengthen B5's fixture*; it has to
+mean **assert the helper property directly**, which is what A6 already does on
+the planner side. That is the amendment.
+
+**What changes.**
+
+* **B6 (new node, `bootstrap/tests/test_lifecycle_cli.py`) — the equivalence
+  property, synthetic, against the lifecycle helper.** The *same* twelve edge
+  cases as A6 plus the *same* carrier positive control asserted to differ, run
+  against `templates/skills/_lib/lifecycle.py`'s `_split_lines`. Measured for the
+  control on the lifecycle copy: `splitlines()`=3, `_split_lines`=2.
+* **Why a second node rather than parameterizing A6** — the reviewer offers
+  either. `bootstrap/tests/test_lifecycle_contract.py` `importlib`-loads only the
+  planner and its module docstring scopes it to the planner;
+  `bootstrap/tests/test_lifecycle_cli.py` loads `lifecycle.py` as its subject.
+  (It is **not** a single-import module — it also `importlib`-loads
+  `templates/modules/default-on/lifecycle_metrics.py` at import time,
+  `bootstrap/tests/test_lifecycle_cli.py:382-395`. An earlier draft of this
+  Response claimed "loads only `lifecycle.py`"; that premise is withdrawn as
+  false. The placement decision stands on its remaining grounds, below, which do
+  not depend on it.) Putting the lifecycle property in the lifecycle module
+  keeps the property beside the copy it constrains, and duplicating the property
+  across two modules **mirrors** the
+  production decision the proposal made deliberately (no shared import; the
+  helper is duplicated on purpose). A shared property source would need exactly
+  the cross-module import the proposal declined.
+* **Chunk B's perturbation ledger: the false line is retracted, not softened.**
+  The text *"delete the helper's trailing-empty `pop()` → **A6 fails** … note
+  that the planner-side node is what catches a divergent second copy"* is
+  **withdrawn**. It is replaced by two entries that name the copy each
+  perturbation touches:
+  * delete the trailing-empty `pop()` from **the lifecycle copy only** →
+    **B6 fails** (A6 stays green — that is the point);
+  * delete it from **the planner copy only** → **A6 fails** (B6 stays green).
+* **The drift risk is now partly closed, and the plan should say which part.**
+  *Failure modes* records *"The two duplicated helpers drift apart. **Open, by
+  design.**"*, and *Known omissions* #5 records *"No node pins the two helpers as
+  identical to each other."* With B6, each copy is independently pinned against
+  the same stdlib oracle, so a **behavioural** divergence is now caught on either
+  side. What stays open is **textual** divergence — comments, naming, a regex
+  rewritten to something equivalent — which no node compares. Both entries are
+  amended to say that, rather than continuing to claim the whole risk is open.
+
+### The condition on the Chunk B residual — the Internal review's session-end correction — **FOLDED IN**
+
+The reviewer accepts the dated sequencing residual *"only with the plan's stated
+follow-on precondition; the Internal review's correction that both session-start
+and session-end consume the survey must be incorporated before implementation."*
+
+**Established: it was not in the plan.** Every mention of `session-end` or
+`_do_thread_survey` above this Response sits **inside a review section** — the
+Internal review's **[I3]** finding, and the External review's condition on it.
+The plan body itself names only `session-start` — in the *Glossary*
+("Orientation stream — the output of `tools/lifecycle.py session-start`"), in the
+*Failure modes* row, in Chunk B's mandated commit-body disclosure, in the
+*Public-path → test mapping*, and in the manual smoke check. The correction had
+no Response, so it had not been incorporated. The condition was unmet.
+
+**Re-verified for this Response, and not by reading the call graph.** The
+Internal review established the two consumers statically
+(`templates/skills/_lib/lifecycle.py:783` in `cmd_session_start`, `:1180` in
+`_do_thread_survey`, called at `:1206` in `cmd_session_end` before the
+`--handoff` branch). I ran the CLI end-to-end in a scratch repo carrying one
+benign and one carrier artifact, in the **reflection-only default** mode:
+
+```
+$ lifecycle.py session-end --dry-run          (no --handoff)
+
+HEAD   'lifecycle: == open threads to note in your reflection =='
+       'lifecycle:   proposals/carrier.md -- prop'
+       raw U+2028 anywhere in the session-end stream: False
+
+PATCH  'lifecycle: == open threads to note in your reflection =='
+       'lifecycle:   proposals/carrier.md -- prop\u2028osed -- the rest of the glued line'
+       raw U+2028 anywhere in the session-end stream: True
+```
+
+The carrier's status value reaches the goodnight survey in the mode
+`cmd_session_end`'s docstring (`templates/skills/_lib/lifecycle.py:1191` — the
+function's, not the module's) calls "the safe default, the portable Layer-2
+guarantee" — the mode that runs when no `--handoff` is passed. It is the same
+window, on a second surface, and it is now disclosed on this side.
+
+**What changes.** **Five** plan statements are amended and one smoke check is
+added; see *Amendments in force* below. The fifth is the *Failure modes* row on
+the same axis — a non-UTF-8 artifact — which names only `session-start` and is
+short by the same surface (R15).
+
+### Amendments in force
+
+The plan is append-only, so the rows and criteria above are not edited. **An
+implementer reads Chunk A, Chunk B and this list.** Each amendment names the
+text it supersedes.
+
+| # | Supersedes | Amendment |
+|---|-----------|-----------|
+| R1 | Every stale node-count statement in the plan body, in full: *Scope*, "plus four test nodes"; *Scope* > *In scope*, "`bootstrap/tests/test_lifecycle_contract.py` — three new nodes." and "`bootstrap/tests/test_lifecycle_cli.py` — one new node."; *Scope* > *Gate accounting*, "This plan adds four nodes, drops none"; *Acceptance criteria*, "Collection grows by exactly four nodes" and "The three new nodes in `bootstrap/tests/test_lifecycle_contract.py` and the one in `bootstrap/tests/test_lifecycle_cli.py`"; the plan-review brief, "two commits, four test nodes with named oracles" and "satisfies all four nodes" | **Seven** test nodes: **five** in `bootstrap/tests/test_lifecycle_contract.py` (A5, A6, A7, A8, A9) and **two** in `bootstrap/tests/test_lifecycle_cli.py` (B5, B6). Collection grows by exactly seven and drops none. (An earlier draft of this table named only three of these seven sites — which would have left four stale counts standing against this table's own rule that each amendment names the text it supersedes.) |
+| R2 | Chunk A acceptance, "collection grown by exactly the three new nodes" | Grown by exactly **five**. |
+| R3 | Chunk B acceptance, "collection grown by exactly one more node" | Grown by exactly **two**. |
+| R4 | Chunk A row table | **A8** added — `_parse_field` carrier discrimination over **both** `Author` and `Plan review`, glued line placed **above** the real one, `^`-anchored oracle named in the docstring, plus the `requires_review` gate assertion. Does **not** assert the self-review verdict (fenced: `byline-classification` owns the classifier). |
+| R5 | Chunk A row table | **A9** added — `_has_isolated_blockquote` carrier discrimination on a real `## Decision` body with a `chr(0x2028)`-fabricated blank before the `>`; asserts the helper **and** that `_conformance_violations` raises the missing-authorization violation. |
+| R6 | Chunk A perturbation ledger | Two entries added: revert **only** `_parse_field` → **A8 fails**; revert **only** `_has_isolated_blockquote` → **A9 fails**. |
+| R7 | Chunk B row table | **B6** added — A6's twelve edge cases **and** its carrier positive control, run against `templates/skills/_lib/lifecycle.py`'s `_split_lines`. |
+| R8 | Chunk B perturbation ledger, the entry beginning "delete the helper's trailing-empty `pop()` → **A6 fails**" | **Withdrawn as false.** Replaced by: delete the `pop()` from the **lifecycle** copy only → **B6 fails** (A6 green); delete it from the **planner** copy only → **A6 fails** (B6 green). |
+| R9 | *Glossary*, "Orientation stream" | Reads: the output of `tools/lifecycle.py session-start` **and** the open-threads survey `_do_thread_survey` emits under `session-end`, including the reflection-only default. Both are built by `_in_flight`. |
+| R10 | *Failure modes*, the row "A raw `U+2028` in the orientation stream between Chunk B and `agent-context-scrub` Chunk A" | Reads "…in **both** `_in_flight` consumers — the `session-start` orientation stream and the `session-end` open-threads survey (reflection-only default included)…". Status, closure and ratified-cost wording unchanged. |
+| R11 | Chunk B acceptance, "The window is stated in the commit body" | The mandated disclosure names **both** surfaces in terms. A commit body naming only `session-start` does not satisfy this criterion. |
+| R12 | *Public-path → test mapping*, "`lifecycle.py session-start` (which reaches `_status_of` through `_in_flight`)" | Add `lifecycle.py session-end` as a third public entry point reaching `_status_of` through `_in_flight` via `_do_thread_survey`. |
+| R13 | *Acceptance criteria* > *Examples / smoke checks*, the manual `session-start` run | Run **both** `session-start` and `session-end --dry-run` in the scratch repo carrying one benign and one carrier artifact; paste both outputs into the code review. |
+| R14 | *Failure modes*, "The two duplicated helpers drift apart. **Open, by design.**"; *Known omissions* #5 | Behavioural divergence **on the pinned cases** is now caught on both sides independently (A6 and B6 against the same stdlib oracle). A6 and B6 are finite-case property tests — twelve cases plus one carrier control — **not** an equivalence proof between the copies, so two copies can pass both and still differ on an input outside that set. *Known omissions* #5 ("No node pins the two helpers as identical to each other") therefore remains **literally true after B6** and is not struck. **Textual** divergence — comments, naming, an equivalent-but-rewritten regex — remains open by design, and the by-hand comparison in Chunk B's criteria remains a habit, not a gate. |
+| R15 | *Failure modes*, "a non-UTF-8 artifact still aborts `session-start`" | Reads "…still aborts **both** `session-start` **and** `session-end` (reflection-only default included)". Measured, not inferred: `_status_of` catches `OSError` only (`templates/skills/_lib/lifecycle.py:500`), while `read_text(encoding="utf-8")` (`:494`) raises `UnicodeDecodeError` — a `ValueError` — which escapes through `_in_flight` → `_do_thread_survey` → `cmd_session_end`, called unconditionally at `:1206` **before** the `--handoff` branch. Still a pre-existing defect this plan neither introduces nor fixes; the row's disclosure was one surface short. |
+
+Nothing in R1–R15 adds a file to *In scope* (this plan has no *Touches*
+section; the reference is to *In scope*): A8, A9 land in
+`bootstrap/tests/test_lifecycle_contract.py` and B6 in
+`bootstrap/tests/test_lifecycle_cli.py`, both already in *In scope*, and no
+production behaviour changes. The two-module *FROZEN-MODIFIED* expectation in
+*Gate accounting* is unaffected in kind (the Internal review's **[I8]** correction
+to its count is separate and still outstanding).
+
+### What this Response does not dispose
+
+The reviewer's *Recommendation* asks for two things: the independent perturbation
+checks (R1–R8 above) **and** "disposition the Internal review's outstanding plan
+corrections before implementation". Only the correction the External tier made a
+condition — **[I3]**, R9–R13 — is dispositioned here.
+
+**[I1], [I2], [I4], [I5], [I6], [I7], [I8] and [I9] remain outstanding and have
+no Response.** Three of them are on the Internal review's own blocking list
+(**[I1]** the review-before-implement gate is presence-only and tier-blind and
+this section trips it; **[I2]** the false "no flag names any of the four files"
+claim and the line-shift that makes the differential criterion unevaluable;
+**[I4]** B4's tie-break prescribes an arbiter with no discriminating power).
+**[I6]** in particular now bears on A8 as well as A5 — the glued-above-the-real
+ordering is exactly the precision it asks for, and A8 states it because I
+measured it, but A5's own wording is still the ambiguous one.
+
+**No implementation commit lands on the strength of this Response.** The External
+recommendation is REVISE, its second clause is unsatisfied, and per **[I1]** the
+mechanical gate will report satisfied regardless — which is precisely why this
+paragraph is here rather than left to inference.
+
+### Findings the Decision did not see
+
+One item, recorded undecided rather than resolved. It is not a defect in the
+change; it is a property of the change that the plan asserts too strongly and the
+Decision therefore never weighed.
+
+* **Chunk A's reroute is not monotone in the tightening direction, and the
+  *Sequencing invariant* says it is.** The plan states: *"Chunk A closes the false
+  attestation route and opens nothing."* On the carrier constructions the plan and
+  both reviews measured, that holds — HEAD attests structure that does not exist
+  and the patched read refuses it. But the reroute moves each site to *whatever
+  a `^`-anchored reader sees*, and on other carrier constructions that is
+  **looser** than HEAD, not tighter. Two measured instances, both with the patched
+  answer agreeing with the `^`-anchored oracle:
+
+      (a) a carrier whose glued line reads 'required(**External**)' above a real
+          line reading 'not required':
+            HEAD   plan_review='required(**External**)'  requires_review=True
+            PATCH  plan_review='not required'            requires_review=False
+          -- the reroute switches the review-before-implement gate OFF, where
+             HEAD had it on.
+
+      (b) body = 'x```<chr(0x2028)>```y\n\n> I authorize this.\n'
+            HEAD   _has_isolated_blockquote=False   (HEAD splits into a fence-open
+                                                     line and stays inside a fence)
+            PATCH  _has_isolated_blockquote=True
+          -- the reroute ATTESTS an isolated authorization blockquote that HEAD
+             denied.
+
+  Both patched answers are **correct** by this plan's own contract: a `^`-anchored
+  reader sees one `not required` line in (a), and in (b) sees a single line
+  `x```<U+2028>```y` that opens no fence. That is the fix working as specified. The
+  point is narrower and is about the record: "closes the false attestation route
+  and opens nothing" is a **claim of one-sidedness** that the change does not
+  have, and a Maintainer weighing Chunk A against a residual-risk question was
+  handed it. The honest statement is *the attestation moves to the markdown
+  reader's frame in both directions*, and the reason no real artifact is affected
+  is the zero-carrier measurement, not one-sidedness.
+
+  Reachable only through a carrier; the tracked tree has zero. **Undecided:**
+  whether *Sequencing invariant* should be amended to the two-sided statement, and
+  whether the loosening direction (a) — a forged `required` that the fix removes —
+  is worth a named row in *Failure modes*. Both are calls about what the record
+  claims, and the record's claims are the Maintainer's, not the author's.
