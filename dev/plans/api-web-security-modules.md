@@ -1333,3 +1333,519 @@ plan. This section is append-only once written; the entries below are the
 | `install_modules` warn-and-continue on a missing module source | Its own scope. Recorded at archive as a backlog row in `dev/PLANNING.md`; if it recurs as an incident rather than a known gap, the `incident-trackers` module is the home. |
 | The duplicated engine copy under a both-modules install | `dev/PLANNING.md` backlog row — revisit if Cairn ever gains a module-dependency mechanism. Cost is recorded in both module doctrine files so an adopter is not surprised. |
 | The engine symbol-delta invariant having no automatic enforcement | Raised to the Maintainer with the cluster ceremony; if it should become mechanical, that is a change to `bootstrap/REANCHOR_RUNBOOK.md` and belongs to whoever owns the gate, not to this plan. |
+
+## Plan review -- Claude (Internal, same-agent-type; security lens) -- 2026-08-04
+
+**Model**: Claude Opus 5 (`claude-opus-5`).
+
+**Standing, stated first because it decides what this section is worth.** I am
+the **same agent type as the plan's author** — a fresh Claude session, no
+cross-type structural independence. This is an **Internal** round: a sharpening
+pass, nothing more. **It does not discharge the declared
+`required(External + External Security Review)` tier, and cannot.** The plan
+says so itself under *Plan review — the brief*, and I agree with its reasoning
+without reservation. Everything below is offered as material for the External
+rounds to use or discard, not as a clearance. **Implementation must not start on
+the strength of this section.** See **[I1]**, which is about that sentence being
+mechanically ignorable.
+
+Method: I re-measured every figure the plan asserts against the working tree
+under the canonical interpreter (`~/conda_envs/lhm/bin/python3.13`, 3.13.13) at
+HEAD `eacb7dd`, read the two source proposals for the quoted contract text, and
+executed both required gates. I did not write, run, or design any of the
+proposed code.
+
+### Steelman
+
+This is the strongest plan I have read in this tree, and most of its strength is
+in places that are easy to skip past.
+
+The **declared symbol delta is real work, honestly done.** I re-derived it from
+`bootstrap/tests/fixtures/scaffold_ast_baseline.json` independently: 174
+entries, 98 `FunctionDef` + 53 `Assign` + 10 `ClassDef` = 161. Every one of the
+22 *declared-not-changed* symbols is present in the baseline; Δ1–Δ3 are present;
+Δ4–Δ5 are absent, which is what "NEW" has to mean. The `_UPDATE_ALLOWLIST` in
+`bootstrap/tests/_ast_attest.py` is exactly the four names the plan quotes, and
+the plan's conclusion — that Δ1+Δ2+Δ3 disqualifies the surgical path and the
+cluster needs one supervised re-anchor — follows from the code, not from
+assertion. The `install_manifest` duplicate-destination measurement reproduces
+byte-for-byte (`one src → two dsts: {}`; `two srcs → one dst:
+{'p/x.py': [...]}`). The 95-row manifest reproduces. The 164-entry `frozen_files`
+map, the `cascade_mutable` governance string *"one predeclared mapping-symbol
+delta only"*, the `44` pin, and `_manifest_py_sources()` returning a **list**
+(so a two-destination source counts twice) all reproduce. That is a plan whose
+numbers survive an adversarial re-measure, which is rare.
+
+**The two design choices offered for striking are both correct, and I would
+strike neither.** Routing the notice through `cli.main` rather than
+`format_profile_summary` genuinely preserves `config.py`'s cascade governance —
+I confirmed `main` spans lines 187–698 of `bootstrap/_scaffold/cli.py`, so both
+call sites (the `--summary` print and the post-install `model-selection` block)
+fall inside one already-CHANGED symbol, at a cost of zero additional governed
+surface. And refusing to fix `install_modules`' warn-and-continue is the right
+call for a plan that is one of five editing this package; the two-ended
+compensation (F-4 at build time, A-10 at runtime) is a better trade than a
+shared-path engine edit, and the plan books it as a named open failure mode
+rather than pretending it is closed.
+
+**Contract question 2's answer is right, and has stronger precedent than the
+plan claims for itself.** `_facade_engine_dir` in `bootstrap/_scaffold/lockfile.py`
+does implement exactly the `<dir>/<name>.py` → `<dir>/_<name>` convention, and
+`_MODULE_MAPPINGS` already ships a nested engine package this way (the
+`team-gated/_intent/*` group). Two byte-identical installed copies is a real
+cost, honestly named, and it is much the smaller cost than two independently
+reviewed hand-rolled TLS clients. I would rather review one.
+
+**Contract question 1's default also has an uncited precedent in its favour**:
+`dev/.cairn/model-selection-mapping.yml` is already in `_LIVING_STATE_DSTS`
+(`bootstrap/_scaffold/lockfile.py`, line 84 ff.) for precisely the reason given
+here — adopter-filled configuration whose correct-use state differs from the
+recorded install. And I verified the fourth compensating control actually
+holds: `_GITIGNORE_SEEDS` ignores only specific `dev/.cairn/` *patterns*, never
+the directory, so a filled policy really is a tracked file that shows up in a
+diff. The plan's reasoning about `verify_integrity` is also exactly right,
+including the illegal-opt-out path that F-3 targets.
+
+Finally, the **perturbation discipline is the best part**. The glossary's
+deletion-mutant vs hazard-perturbation distinction is a genuinely useful
+contribution, D-1's "run the deletion mutant *first*, before trusting the
+sweep" is the right ordering, and every *Channel note* correctly identifies an
+oracle the subject does not consume. My concerns below are almost all cases
+where the plan set that bar and then, in one or two rows, did not clear its own
+bar.
+
+### Concerns
+
+#### [I1] This review section mechanically discharges the review-before-implement gate that it explicitly cannot discharge
+
+The plan warns that the lifecycle checker "matches a section *kind*, not a
+review", and defends its brief heading by using an em-dash so it will not parse.
+That defence works — I confirmed it. But it does not cover the case that has now
+occurred: an **Internal** section landing under a *well-formed* heading.
+
+Measured against `templates/skills/_lib/lifecycle_planner.py`:
+
+```
+'## Plan review -- Claude (Internal, same-agent-type; security lens) -- 2026-08-04'
+  -> {'kind': 'Plan review', 'name': 'Claude',
+      'role': 'Internal, same-agent-type; security lens', 'date': '2026-08-04'}
+'## Plan review — the brief, and why the tier is not discharged'
+  -> None
+```
+
+`_HEADER_RE` accepts `#{2,3}`, so the prescribed `### Plan review -- <reviewer>
+-- YYYY-MM-DD` sub-heading form parses identically. `_has_kind(art, "Plan
+review")` is a `startswith` on the *kind* alone — it reads neither the role, nor
+the tier, nor the reviewer's agent type. The conformance check that gates
+implementation therefore now reports satisfied: *"status is 'open' and 'Plan
+review: required', but no '## Plan review' section has landed"* will no longer
+fire on this plan.
+
+This is the plan's own recurring defect class turned on itself — the artifact
+under verification supplying the material that verifies it. The gate is
+satisfied by a token this plan now carries, produced by a round the plan itself
+argues is insufficient.
+
+I was instructed to use this exact heading, so I have; I am not going to
+silently deviate from an instruction and I am not going to hide the
+consequence. **Recommended fix, for the Maintainer, not for me:** rename this
+section to a kind the checker does not key on — `## Sharpening pass -- Claude
+(Internal, same-agent-type; security lens) -- 2026-08-04` — leaving `## Plan
+review` unclaimed until an External round lands under it. Longer-term, the tier
+gap is real for every artifact in this tree, not just this one, and belongs to
+whoever owns `lifecycle_planner.py`.
+
+#### [I2] Chunk F makes the suite red, and the plan-level acceptance criterion says it must be green
+
+*Acceptance criteria* requires "the whole suite, green, **0 failed / 0 skipped /
+0 xfailed**". The *Maintainer fence* forbids the implementing agent from
+re-pinning `scaffold_ast_baseline.json`. Those two cannot both hold after Chunk F.
+
+`bootstrap/tests/test_ast_attest.py` carries two tests —
+`test_committed_baseline_accounted_for_across_the_engine_package` and
+`test_ast_gate_passes_over_the_full_scaffold_module_set` — that both assert
+`A.verify(_BASELINE, modules) == 0` over `bootstrap/_scaffold/*.py`. `verify()`
+returns 1 whenever `_classify` produces any CHANGED entry. Δ1, Δ2 and Δ3 are
+CHANGED entries by construction. So the moment F1/F2/F4 land, those two tests
+fail, and stay failed until the Maintainer's ceremony.
+
+This is not hypothetical — it is the tree's state right now, from the sibling
+scopes' in-flight edits:
+
+```
+AST attestation FAILED — 6 non-pure-motion symbol(s):
+  CHANGED FunctionDef:_minimal_yaml_parse   in bootstrap/_scaffold/config.py
+  CHANGED FunctionDef:cmd_upgrade           in bootstrap/_scaffold/upgrade.py
+  CHANGED FunctionDef:forked_facade_findings in bootstrap/_scaffold/lockfile.py
+  CHANGED FunctionDef:format_forked_facade_warning in bootstrap/_scaffold/lockfile.py
+  CHANGED FunctionDef:load_config           in bootstrap/_scaffold/config.py
+  MISSING Try
+2 failed, 27 passed
+```
+
+The plan carefully establishes the analogous point for the *frozen map* ("The
+frozen map does not gate the suite — `test_gate_manifest.py` verifies against a
+manifest produced from the live tree at test time"), which I confirmed. It then
+does not ask the same question of the AST baseline, which does gate the suite.
+
+**Fix:** state, in *Gate accounting* and in Chunk F's criteria, that from the F1
+commit until the Maintainer's re-anchor the suite carries exactly two known-red
+nodes, name them by node ID, and re-scope the plan-level criterion to "green
+except those two, which are the ceremony's to clear". Without that sentence the
+implementing agent reaches a hard stop with the fence on one side and an
+impossible criterion on the other — and the tempting resolution is the one the
+fence exists to forbid.
+
+#### [I3] `scan-coverage` has already landed, so a third frozen file moves and the two `44` pins diverge for the first time
+
+*What is order-sensitive* frames this conditionally: "If `scan-coverage` has
+landed, this plan moves both; if it has not, this plan moves one." It has
+landed, at `5c91c23`. `bootstrap/tests/test_security_lint.py` is tracked at
+HEAD, clean in the working tree, and already carries the second pin
+(`test_templates_py_count_is_pinned`, `assert len(on_disk) == 44`). Three
+consequences the plan does not carry:
+
+1. **`bootstrap/tests/test_security_lint.py` is a *third* frozen file this scope
+   modifies.** I confirmed it is a literal key in the 164-entry `frozen_files`
+   map. *Gate accounting* names exactly two (`scaffold_ast_known_new.json`,
+   `test_notice_install.py`); F-8's stale-entry report would omit it. Chunk F's
+   file table (F1–F6) does not list the file at all.
+2. **The two pins now move to different numbers, and this scope is what makes
+   them differ.** Measured today: manifest `.py` rows = 44, verbatim `.py` rows
+   = 44, distinct `.py` sources = 44 — all three coincide. This scope adds **10
+   rows** over **6 distinct files**, so `test_notice_install.py` → **54** while
+   `test_security_lint.py`'s on-disk count → **50**. The plan correctly explains
+   *why* the counting rules differ, but never says the two pins stop agreeing.
+3. **Two committed comments assert the agreement that this scope breaks.**
+   `test_security_lint.py`'s own failure message instructs a future editor to
+   update both pins in the same commit because *"the two must agree"*, and its
+   `_SCAN_EXCLUSIONS` docstring rests on "disk, manifest-verbatim and `git
+   ls-files` all agree at 44". Neither is an executable assertion, so nothing
+   goes red — which is worse, not better: the next person to touch either pin
+   inherits guidance that is now false. This scope should retire that guidance
+   in the same commit that falsifies it.
+
+This also resolves the Bandit conditional in the plan's favour: `scan_targets()`
+already unions the verbatim-`.py` manifest, so the six new sources enter the
+release scan automatically. Worth converting from a hedge to a statement — and
+worth flagging that Bandit over a hand-rolled socket/TLS client is where a
+MEDIUM+ stop is *likely*, not merely possible.
+
+#### [I4] Contract question 1 narrows a *different* accepted proposal's contract, and Chunk G contradicts itself about it
+
+The plan opens Contract question 1 with "**The proposal** states the property
+twice" and gives two quotes. They are from two different artifacts:
+
+* *"lockfile-covered, so a candidate change cannot redirect the standing check
+  to a different host without first producing a visible integrity failure"* —
+  this scope's source proposal, `2026-08-03-codex-api-web-security-modules.md`.
+* *"opens the runner and policy as regular non-symlink files, computes their
+  SHA-256 values itself, and compares them with the lockfile"* —
+  `dev/proposals/2026-08-03-codex-security-verification-activation.md`, in its
+  **Parent-computed apparatus binding** section, accepted separately at
+  `4dfcf19`.
+
+That matters because it changes who may resolve the conflict. Framed as one
+proposal contradicting itself, it is this plan's to settle. Framed correctly, it
+is **this plan proposing to narrow an accepted contract that another scope
+owns** — the dispatcher would have to stop digest-binding the policy.
+
+The plan then states both sides of the contradiction:
+
+* *Contract question 1*: "Nothing about the accepted activation contract moves."
+* *Scope* and Chunk G: this chunk "adds two registry entries to a dispatcher
+  that artifact builds and changes none of its logic."
+* G-3: "under the living-state resolution ... the dispatcher does **not**
+  digest-bind the policy."
+
+G-3 is the true one. The first two are not. Dropping half of the parent-computed
+apparatus binding is a logic change, and it is not this plan's logic.
+
+I want to be clear that I think the **default is substantively right** — the
+living-state resolution is correct, the compensating-control argument is sound,
+`--authorize-base-url` genuinely does the work the lockfile digest was asked to
+do, and the `model-selection-mapping.yml` precedent supports it. The defect is
+procedural and it is the kind this tree cares about: an accepted contract being
+narrowed by a sibling plan's default rather than by its owner. **Fix:** name the
+activation artifact explicitly as the second source, state that the resolution
+requires the activation scope to drop the policy half of its digest binding, and
+route that as an agreed cross-scope amendment (or a one-line Maintainer ruling)
+*before* Chunk G — not as a G-3 assertion discovered at implementation.
+
+#### [I5] The `local` leg's rebinding direction — the leg an agent can reach — has no named test
+
+A-1's hazard perturbation is: "a resolver stub returns a public address on the
+validation call and `127.0.0.1` on the connect call." That is the classic
+external→internal rebinding, and it is the **deployed** leg's hazard.
+
+The invariant the whole scope rests on is the other one: *"The agent-facing leg
+cannot reach a non-loopback peer, under any policy shape"* (Author-accounting).
+Its rebinding form is the mirror image — a name that answers **loopback at
+validation and a non-loopback address at connect** — and no criterion names it:
+
+* A-1 is the public→loopback direction.
+* A-2 is generic ("a second bound address absent from the validated set") but
+  never says the second address is non-loopback, and its deletion mutant is "as
+  A-1".
+* B-3 is the right *leg* but the wrong *phase*: every row "must refuse **before
+  DNS**", so B-3 exercises pre-resolution policy validation and by construction
+  cannot reach a post-connect peer check at all.
+
+So the plan's own highest invariant is asserted at B-3 and evidenced at
+A-1/A-2, and the join between them has a hole exactly where the agent-reachable
+leg lives. This is squarely inside the AW4 gate the Decision routed here.
+
+**Fix:** add an explicit `local`-leg row — validated answer `127.0.0.1`,
+connected peer a non-loopback bound address, assert refusal and a recorded peer
+that is closed immediately — with its own deletion mutant. One row; the fixture
+machinery A-2 already needs covers it.
+
+#### [I6] D-2 has neither a deletion mutant nor a hazard perturbation, and can pass vacuously on every channel it names
+
+The plan's own glossary is the standard here: "A test with only a deletion
+mutant has been validated; only a hazard perturbation validates the security
+property," and "a row with only a deletion mutant is not accepted." D-2 has
+neither.
+
+Its stated perturbation is: "re-plant the marker in exactly one channel at a
+time — reason phrase only; redirect query only; certificate subject only;
+exception text only; timeout diagnostic only — and confirm the sweep **still
+reports nothing**." Confirming a green result under a differently-configured
+fixture is the base assertion restated, not a perturbation. And it is *exactly*
+the shape that passes when the channel is never exercised: if the runner never
+reads the reason phrase into any code path that could emit it, the marker
+cannot leak, the sweep reports nothing, and D-2 is green while proving zero
+coverage of that channel.
+
+This is the same failure D-1 is designed to prevent at the whole-sweep level
+("a sweep that stays green with the sanitizer removed is decoration"), reappearing
+per-channel. D-1 protects the aggregate; nothing protects the individual
+channels, and D-2's whole purpose is the individual channels.
+
+**Fix:** make each channel prove **liveness before confidentiality**. Per
+channel: (a) suppress sanitization for that channel only, run, and assert the
+marker **does** appear in the named output — proving the runner reaches it;
+(b) restore, run, assert absence. (a) is the deletion mutant and (b) is the
+claim. Without (a), "no marker found" and "channel never reached" are
+indistinguishable, which is the exact evidential failure the plan's own glossary
+was written to prevent.
+
+#### [I7] A-8's third probe is bypassable, so the "before any credential lookup" half can be satisfied vacuously
+
+A-8 patches `socket.getaddrinfo`, `socket.socket` and `os.environ.get`, feeds a
+policy that must be refused, and asserts all three probes are untouched. The
+first two are good boundaries. The third is not a boundary at all:
+
+* `os.getenv(name)` does not call `os.environ.get`.
+* `os.environ[name]` goes through `__getitem__`, not `get`.
+* A module that binds `from os import environ` at import time, or caches a value
+  at import, evades it as well.
+
+So a runner that reads credentials by any of those routes leaves the probe
+untouched **while performing the credential lookup the criterion claims to have
+excluded**. The perturbation then validates the test, not the hazard — the
+category the plan warns against. A-8's deletion mutant ("move one validation
+below the resolve call") only exercises the first two probes, so nothing catches
+the gap either.
+
+**Fix:** stop probing the accessor and probe the *value*. Set each credential
+environment variable to a unique marker (the D1 machinery already does this for
+B-4), refuse the policy, and assert the marker appears in no request, no output
+channel, and no report — an assertion no access idiom can route around. Keep the
+`getaddrinfo` / `socket.socket` probes as-is; they are sound. Also worth
+stating: patching `os.environ.get` process-wide during a test is itself noisy,
+since pytest and the standard library call it constantly.
+
+#### [I8] Δ2's strikeability is exactly the state the cluster ceremony cannot tolerate, and the alternative's symbols are undeclared
+
+The plan is right that "a delta that quietly changes is worthless" and right to
+promise re-declaration. But the sequencing is the problem, not the honesty. The
+union is "formed **by the Maintainer at ceremony time** from each scope's
+declared delta", and four sibling scopes may re-anchor before Contract question
+1 is settled. A declared delta with a live conditional branch is not a
+discriminator; it is a discriminator with a hole whose shape is unknown.
+
+The alternative branch makes it concrete: an "`upgrade`-side rehash for
+adopter-filled policy files, analogous to the existing `verbatim_rehash`" would
+add at least one new `FunctionDef` and change `cmd_upgrade` — and
+`FunctionDef:cmd_upgrade` in `bootstrap/_scaffold/upgrade.py` is *already* being
+changed by a sibling scope in the current tree (see the CHANGED list in **[I2]**).
+Two scopes silently landing in one symbol is precisely the collision the
+declaration exists to make impossible.
+
+**Fix:** either resolve Contract question 1 before any cluster scope's ceremony
+(cheapest, and [I4] argues it needs a cross-scope ruling anyway), or declare the
+alternative branch's symbols *now*, as a conditional Δ2′/Δ6, so the union is
+well-defined under both resolutions.
+
+#### Minor, not numbered
+
+* **C-1's deletion-mutant expectation reads inverted.** "*Deletion mutant:*
+  remove each check; the corresponding row must stop failing." The fixture row
+  is one that *should* produce a `missing`/`invalid` observation, so removing
+  the check makes the observation disappear and the **test** fail. C-2 states
+  the same idea correctly ("the fixture must go green, which is the failure
+  being prevented"). Worth aligning the wording; in a plan this precise the
+  inversion will be read as intent.
+* **The 1746 collection figure is already stale**, exactly as the plan predicted.
+  I measure **1759** on the same tree today. The two untracked sibling test
+  files account for 71 nodes, so the drift is not a simple add — it is ordinary
+  concurrent churn. No fix needed: the plan already marks the figure
+  low-confidence and instructs a clean re-baseline before Chunk A. Recording it
+  as confirmation that the caution was warranted.
+* **G3's conditional is probably strikeable, but not yet decidable.** The
+  activation *proposal* carries the general clause — `templates/core/AGENTS.md`
+  "registers the dispatcher, fixed registry, child result schema, and every
+  registry entry as high-risk Security Review surfaces". If that lands verbatim,
+  G3 is struck. The plan is right to defer to the landed implementation rather
+  than the proposal text; noting only that the evidence currently points at
+  "strike".
+
+### Covered
+
+Verified by measurement or by reading the cited artifact. Reported as output,
+not as reassurance.
+
+* **AST baseline, re-derived independently from
+  `bootstrap/tests/fixtures/scaffold_ast_baseline.json`:** 174 total entries;
+  `FunctionDef` 98, `Assign` 53, `ClassDef` 10, `Import` 8, and one each of
+  `Docstring`/`Expr`/`If`/`If#2`/`Try`. `FunctionDef + Assign + ClassDef = 161`.
+  **Both plan figures confirmed exactly.**
+* **Declared delta, symbol by symbol.** `Assign:_MODULE_MAPPINGS`,
+  `Assign:_LIVING_STATE_DSTS`, `FunctionDef:main` — all present in the baseline,
+  so CHANGED is the right classification.
+  `Assign:_CAPABILITY_NOTICE_MODULES`, `FunctionDef:capability_install_notice_lines`
+  — both absent, so NEW is right. **All 22** *declared-not-changed* symbols are
+  present in the baseline; zero missing. The delta is **internally correct and,
+  as far as I can measure, complete** — with the [I8] caveat about the
+  conditional branch.
+* **No undeclared Δ from module registration.** I specifically checked the
+  registries a new module could be expected to touch:
+  `_MODULE_REQUIRED_TOKENS` is optional per module (only `python-security` has
+  an entry), `_TEAM_STAFFING_GATES`/`_TEAM_STAFFING_GATED` cover only
+  `dual-review` and `coordination-tiers` (a different concept from the
+  `team-gated/` directory), and `_GITIGNORE_SEEDS`/`_MODULE_SUPERSEDES` need no
+  row. Nothing forces a sixth symbol.
+* **`cli.main` really is the whole surface.** `FunctionDef:main` spans lines
+  187–698 of `bootstrap/_scaffold/cli.py`; `args.summary` /
+  `format_profile_summary(cfg)` and the post-install `model-selection` block are
+  both inside it. Δ3 is one symbol, as declared.
+* **Surgical-path unavailability.** `_UPDATE_ALLOWLIST` in
+  `bootstrap/tests/_ast_attest.py` (line 141 ff.) is exactly
+  `{_MODULE_MAPPINGS, _SKILLS_MAPPINGS, _CORE_MAPPINGS, install_onboarding}`.
+  `update_symbol` requires sole-CHANGED plus complete-set `known_new` equality.
+  The plan's conclusion holds.
+* **Install-contract accounting.** `scaffold.py --manifest` emits 96 lines / 1
+  header / **95 data rows** — confirmed. Of those, 44 are `.py` rows, all 44
+  verbatim, over 44 distinct sources. The plan's arithmetic checks out:
+  +14 rows (2 doctrine + 2 stubs + 2 facades + 8 engine) → 109; +10 `.py` rows
+  over 6 distinct new files. `duplicate_destinations` reproduces the plan's
+  quoted measurement exactly.
+* **Gate manifest.** 164 `frozen_files` entries. `scaffold_ast_known_new.json`
+  and `test_notice_install.py` are frozen; `config.py`, `cli.py`, `lockfile.py`,
+  `install.py` are **not**. `config.py`'s `cascade_mutable` `governed_by` string
+  is verbatim what the plan quotes. `test_gate_manifest.py` does build from the
+  live tree at test time, so the plan is right that the frozen map itself does
+  not gate the suite. **`test_security_lint.py` is also frozen** — see [I3].
+* **`verify_integrity` semantics.** Confirmed line by line: `living_state: true`
+  is honoured only for `_LIVING_STATE_DSTS` members and is otherwise reported as
+  an *illegal living_state opt-out* that fails closed. F-2 and F-3 target real
+  behaviour.
+* **The `dev/.cairn/` policy files will be tracked.** `_GITIGNORE_SEEDS` seeds
+  only `dev/.cairn/.foldback-draft-*.md`, and Cairn's own `.gitignore` names
+  only `local-env.json`, `handoff.lock` and the draft pattern. Contract question
+  1's fourth compensating control (git review) is real, not assumed.
+* **Facade↔engine convention.** `_facade_engine_dir` (line 318 ff. of
+  `bootstrap/_scaffold/lockfile.py`) implements `<dir>/<name>.py` →
+  `<dir>/_<name>`; `_MODULE_MAPPINGS` already ships a nested `team-gated/_intent/*`
+  package. Contract question 2's claim is accurate on both counts.
+* **Decision-side quotes.** `156305f` is the Decision commit; *"ACCEPTED as
+  revised"*, *"as revised through round 3"*, AW4 as *"a blocking gate"* and
+  *"This Decision does not discharge that"* all verify verbatim. The proposal
+  header's *Touches* line does name `templates/core/AGENTS.md`, and the round-1
+  revision does contain the exact words *"does not modify
+  `templates/core/AGENTS.md`"* — so the plan's supersession reading is right.
+  `4dfcf19` is the activation Decision, landed ahead of this one as stated.
+* **No missed doc surface.** I searched for a module catalog that a new module
+  would have to join — `bootstrap/BOOTSTRAP.md`, `docs/`, `templates/modules/README.md`,
+  `templates/core/` — and found none enumerating module names. The plan's
+  documentation-surface list and its `docs/` **N/A** hold.
+* **Both required gates, run as instructed:**
+  `claim_check.py dev/plans/api-web-security-modules.md` → **OK, no flags**
+  (35 paths exempted via `claim-check-allow`, all forward references);
+  `check_cairn.py dev/plans/api-web-security-modules.md` → **OK, 1 file scanned,
+  no issues.** The author's report is accurate.
+
+### Not covered / low confidence
+
+* **The tier is not discharged.** Same agent type, no structural independence.
+  Nothing here substitutes for the External + External Security rounds, and
+  [I1] is about the gate not knowing that.
+* **No code exists, so every claim about runtime behaviour is unverifiable.**
+  Chunk A's peer-address property — the AW4 gate — cannot be reproduced against
+  a plan. I checked whether the *specified tests would establish the claimed
+  properties* ([I5], [I6], [I7]); I could not check whether they *do*. Review
+  question 2 ("reproduce A-1 against the real edited files") is untouched here
+  and remains entirely the code review's.
+* **The confidentiality channel list versus the runners as implemented.** Review
+  question 3 asks whether D1's channel list misses a channel. I cannot answer
+  that without the runners; I could only test the D-2 *method*, which is where
+  [I6] came from. I did not find a missing channel by inspection, and I would
+  not read that as evidence there is none.
+* **D-3 and D-5's exact-cardinality class closure.** "No exact value-derived
+  cardinality key or value" over a parsed schema is a strong formulation and I
+  could not construct a counterexample on paper — but a paper attempt is weak
+  evidence about a class claim. This needs a real schema.
+* **I did not run the full suite.** The tree carries four sibling workflows'
+  uncommitted edits; a suite figure taken here would attribute their state to
+  this plan, which is the plan's own stated reason for not quoting one. I ran
+  only `test_ast_attest.py` (read-only, and the result is reported in [I2]) and
+  a `--collect-only` pass.
+* **Bandit's likely finding profile over a hand-rolled socket/TLS client.** I
+  flagged the risk in [I3] but did not estimate it; that needs the code.
+* **Whether the two-copy engine install has an upgrade-path wrinkle.** Both
+  copies are verbatim and hash-pinned, and `verify_integrity` covers each
+  independently, so drift is caught. I did not trace `cmd_upgrade`'s behaviour
+  when one source feeds two destinations — it looks fine, and `install_manifest`
+  keys on destination throughout, but I did not execute it and would not assert
+  it.
+* **Sequencing across the five-scope cluster.** I verified this plan's own
+  declaration; I made no attempt to reconcile it with the other four scopes'
+  deltas, and [I8]'s `cmd_upgrade` observation is an incidental sighting, not a
+  cluster analysis.
+
+### Recommendation
+
+**Second round: yes — but the second round is the External + External Security
+pair the plan already declares, not a further Internal one.** This plan does not
+need another same-type read; it needs the independent reads it asked for.
+
+Before those rounds open, three items are cheap and would sharpen what they
+review — and two of them are questions only the Maintainer can settle:
+
+1. **[I1] — rename this section** so an Internal round does not hold the gate
+   open. Maintainer's call; one line.
+2. **[I4] — route the activation-contract narrowing** as a cross-scope
+   amendment or a Maintainer ruling, and correct the two sentences that say the
+   activation contract does not move. The *substance* of the living-state
+   default I would keep; it is right.
+3. **[I2] + [I3] — repair the gate accounting**: name the two known-red AST
+   nodes and re-scope the green-suite criterion; add `test_security_lint.py` as
+   the third frozen file, with its pin moving to a *different* number (50) than
+   `test_notice_install.py`'s (54), and retire the two committed comments that
+   assert they agree.
+
+The three evidential findings — **[I5]** (the `local` leg's rebinding
+direction), **[I6]** (D-2 proves nothing per channel), **[I7]** (A-8's third
+probe is bypassable) — are the ones I would most want the External Security
+reviewer to arrive at independently rather than inherit from me. All three are
+one-row fixes; none of them changes the plan's shape. Fixed, the AW4 and
+AW6/AW8 gates say what they claim to say.
+
+On the plan's two explicit invitations to strike: **keep both**. The
+`cli.main` routing and the `install_modules` non-fix are correct trades, and
+Contract question 2's shared engine is the version I would rather review. On
+**G3**, the evidence points at "strike", but the plan is right to decide it by
+reading the landed file. On **E-3**, keep the presence tests — the plan already
+says out loud that they pin existence and never truth, which is the honesty that
+makes a cheap test acceptable.

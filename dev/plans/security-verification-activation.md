@@ -980,3 +980,370 @@ outside it.*
 This section is append-only once written.
 
 ---
+
+## Plan review -- Claude (Internal, same-agent-type; security lens) -- 2026-08-04
+
+**Model**: Claude Opus 5 (`claude-opus-5`), fresh session, security lens.
+
+**Standing — this review does NOT discharge the declared tier.** The plan
+declares `required(**External**, security lens)`, carried from the proposal's
+Decision. I am the **same agent type as this plan's author**, so this read has
+**no cross-type structural independence**. Under the Dual-Review model an
+External round's floor is a different agent type or a human; a fresh-session
+same-type read cannot meet it. The plan's own *Plan review — the brief* says so,
+and it is right. **This is a sharpening pass only. The External security-lens
+round remains outstanding, and no implementation commit may land on the strength
+of this section.** Everything below was measured against the working tree at
+HEAD `eacb7dd`; engine measurements were taken against a clean `git archive HEAD`
+extraction in a scratch directory so the ten concurrently-modified files could
+not contaminate the reading. **No repository file was modified**; the two
+end-to-end merge probes ran against throw-away copies of the tree in the session
+scratch directory.
+
+### Steelman
+
+This is the strongest plan in the current cluster, and its central load-bearing
+finding is **correct on measurement**. `Assign:_DEFAULT_ON_MODULES` really is in
+the AST baseline (digest `2c8ef688f6865487`, confirmed byte-exact) and really is
+in **neither** `_UPDATE_ALLOWLIST` (`bootstrap/tests/_ast_attest.py`, lines
+141–146: exactly `_MODULE_MAPPINGS`, `_SKILLS_MAPPINGS`, `_CORE_MAPPINGS`,
+`install_onboarding`) **nor** `gate_manifest.json`'s `mapping_symbols` (exactly
+the three registry mappings). There is no surgical path, two cluster scopes
+contend for that one symbol, and the plan surfaces this to the Maintainer instead
+of routing around it. All four declared digests reproduce exactly. The
+declared-NOT-changed list, the `44 → 45` atomicity argument, the discovery-based
+twin check that makes declining to self-host legitimate, the empty-registry
+reading derived from Decision ordering plus the admission rule, and the
+`+2`-manifest-row accounting are all verified correct. The perturbation
+discipline is real: 33 of 35 tests name a perturbation that targets the *hazard*
+rather than the test body, T9 correctly avoids the timeout deletion that would
+hang the suite, and T24(b) and T28 declare their non-perturbability honestly
+rather than dressing it up. The Maintainer fence is drawn in the right places and
+the plan genuinely declines to run the ceremony.
+
+The concerns below are all **execution-blocking-as-written but cheap to fix in
+the plan**. None of them touches the architecture the Decision accepted.
+
+### Concerns
+
+**[I1] The slot placeholder in A4 makes the merge defer — the standing rule
+never reaches the adopter's `AGENTS.md`. Measured end-to-end, twice.**
+This is the plan's headline deliverable and it does not land as specified.
+`merge_module_into_slot` (`bootstrap/_scaffold/slotmerge.py`) inserts the
+module's contributed content **only** when the slot body is empty, and
+`_slot_is_empty` (line 199) is literally `body.strip() == ""`. A4 specifies
+placeholder text *"on the `claim-check` slot's exact model"* — and that model
+(`templates/core/AGENTS.md`, lines 228–234) is non-blank prose. A non-blank body
+that differs from the module content falls through to the **conflict path**.
+
+Reproduced against a scratch copy of HEAD with A4's slot (placeholder prose) plus
+A2's merge directive on an installed substituted default-on module, running the
+real scaffold into a fresh target:
+
+```
+Module-merge pass:
+  [conflict-deferred] AGENTS.md > security-verification -> ...cairn-merge-pending
+  [slot-content-stale-or-partial] AGENTS.md > security-verification (fidelity check)
+```
+
+The installed `AGENTS.md` contained **zero** occurrences of the standing command;
+the contributed prose went to a per-slot side file beside `AGENTS.md`; and the
+scaffold still **exited 0**. So:
+
+* **T30 fails as specified** — *"the installed `AGENTS.md` contains the exact
+  two-sentence rule between the slot markers"* is false on a fresh install.
+* **T31 fails as specified** — *"`check_slot_fidelity` returns no warning"* is
+  false; it warns `slot-content-stale-or-partial` on **every** fresh install.
+* The plan's *What lands* promise — the slot *"from which every adopter's own
+  `AGENTS.md` is installed"* — silently does not happen, behind a printed line
+  and a zero exit.
+* An unadvertised adopter-visible artifact (the `.cairn-merge-pending` side file)
+  appears in every adopter root. It is not a manifest row, so the `+2`
+  install-contract accounting does not see it.
+
+Counterfactual, same probe, slot body **empty** (marker pair only):
+
+```
+Module-merge pass:
+  [inserted] AGENTS.md > security-verification
+```
+
+rule present in `AGENTS.md`, no side file, no fidelity warning. **The fix is one
+line of A4: ship the slot empty.** That costs the placeholder guidance, which is
+a real (small) loss worth stating rather than trading silently.
+
+**Root cause, and it is the recurring failure this review was asked to hunt.**
+`_slot_is_empty`'s docstring says *"placeholder prose for adopter agents to fill
+is fine (it gets overwritten on merge)"* — which **contradicts its own
+implementation**. The plan measured everything else in this scope and took this
+one from the mechanism's self-description. That is the artifact under
+verification supplying the material used to verify it. The plan even flagged T30
+as *"the assertion most likely to be silently vacuous"* and then resolved it the
+wrong way. The docstring/code divergence is itself worth a separate trivial-triage
+fix, and should not be smuggled into this plan.
+
+**[I2] `docs/quickstart.md` carries a *second* pinned number the plan never
+names, and A4 turns `test_quickstart_sequence.py` RED from Chunk A.**
+`bootstrap/tests/test_quickstart_sequence.py` (lines 240–251) asserts *prose ==
+live* for **two** figures, not one: the module count **and** `'**(\d+)
+unfilled block slots**'`. `docs/quickstart.md` line 182 states *"**21 unfilled
+block slots**"*. Measured: a real `solo-greenfield` scaffold at clean HEAD
+reports exactly `Block slots requiring agent attention (21)`, of which
+`AGENTS.md` contributes 4. With A4's fifth slot added, the same scaffold reports
+**22**, with `AGENTS.md [cairn:slot security-verification]` in the list.
+
+The tally does **not** come back down when Chunk B fills the slot:
+`find_block_slots` counts *open markers* in the written text
+(`bootstrap/_scaffold/install.py` line 256), and `print_report` (called at
+`bootstrap/_scaffold/cli.py` line 581) runs **before** `run_module_merge_pass`
+(line 597). I confirmed 22 in the merged-successfully case too.
+
+Consequences the plan does not carry:
+* **Chunk A commits a red suite.** Chunk A's acceptance criteria name only three
+  test files, so this would not be noticed until Chunk B — and the plan's
+  Sequence section asserts each chunk is a landable commit.
+* **Chunk B's acceptance is unachievable as written** (*"`test_quickstart_sequence.py`
+  green"*) without also editing `docs/quickstart.md`'s slot count. B3 names only
+  *"The `solo-greenfield` count and its enumeration"*.
+* Unlike the module count, this figure is **not** order-contended with
+  `default-security-stance` (that scope adds no slot), so it is `21 → 22` flatly
+  — but it must still be re-measured, not applied from here.
+
+**[I3] The Maintainer fence's frozen-files claim is false: two files this plan
+edits ARE frozen.** Fence item 3 states *"No file this plan edits is in the
+164-entry `frozen_files` map (measured above), so no `FROZEN-MODIFIED` row is
+expected"*. `_frozen_files()` in `bootstrap/tests/_gate_manifest.py` (line 151)
+globs `bootstrap/tests/**/*.py`, so **every** test file under `bootstrap/tests/`
+is frozen unless cascade/phase-excluded. Direct lookup in the committed
+`gate_manifest.json` confirms both of A6/A7 are present:
+
+* `bootstrap/tests/test_security_lint.py` — **FROZEN** (A6 edits it, `44 → 45`)
+* `bootstrap/tests/test_notice_install.py` — **FROZEN** (A7 edits it, `44 → 45`)
+
+Two `FROZEN-MODIFIED` HOLDs are **guaranteed**, not contingent. The "measured
+above" the fence cites measured six *other* files and never covered these two.
+The fence's hedge (*"should be re-checked ... because the map moves"*) frames a
+present, measurable fact as a future risk, which is precisely backwards for the
+one section whose job is to tell the Maintainer what to expect at the gate.
+
+Mitigating (and worth stating so the severity is not overread): no in-suite test
+verifies the committed manifest against the tree — `_gate_manifest.py verify` is
+a ceremony/preflight tool, so this surfaces at the Maintainer's gate rather than
+as a red suite. That is still exactly where the fence promised nothing would
+appear.
+
+Two adjacent facts the Maintainer should have alongside it, neither a HOLD:
+* `bootstrap/_scaffold/config.py` is **`cascade_mutable`**, governed by
+  *"AST source-motion attest — one predeclared mapping-symbol delta only"*. This
+  plan makes **two** symbol changes in that file, only one of which is a mapping
+  symbol. `CASCADE-CHANGED` is a note, never a HOLD — but the governance string
+  and this plan's delta disagree, and the ceremony is the place to reconcile it.
+* The new `templates/modules/default-on/run_security_verification.py` will land
+  as `FROZEN-NEW` (a note, allowed) and becomes frozen gate surface thereafter.
+
+**[I4] A4's high-risk-surfaces line lands inside a slot the adopter is told to
+replace, so the Security-Review designation does not durably reach adopters.**
+A4 promises *"one line in the *Project-specific conventions* guidance naming the
+dispatcher, its registry, its child result schema, and every registry entry as
+**high-risk Security Review surfaces**"*, and the *Documentation / doctrine
+surface* section says the template gains *"in its *high-risk surfaces* guidance,
+the dispatcher"*. In `templates/core/AGENTS.md`, `## Project-specific
+conventions` (line 250) contains **nothing but** `<!-- cairn:slot
+project-conventions -->` (line 252) and a placeholder (lines 253–257) that reads
+*"This is judgment work: a reasoning agent and the maintainer write the project's
+*real* conventions here"*. There is no non-slot high-risk guidance in that
+template to add a line to. A line placed in that placeholder is transient prose
+the adopter is instructed to overwrite. Under a security lens this is the
+substantive half of [I1]: the module doctrine can be installed correctly and the
+adopter's governing document still carries no durable statement that the
+dispatcher, its registry and every future registry entry are Security-Review
+surfaces. The plan needs to say **where** that designation lives such that it
+survives an adopter filling their own conventions — the module's own merge block
+and `dev/modules/security-verification.md` are the candidates.
+
+**[I5] Two figures in *The measurement that shapes this plan* do not reproduce.**
+The section's authority rests on it being measured rather than carried forward,
+so both matter more than their size.
+* *"printed 21 `note: NEW …` lines"* — re-run on the same clean-HEAD extraction,
+  `verify` prints **61** NEW lines (32 `Import`, 20 `FunctionDef`, 7 `Assign`,
+  2 `ClassDef`); non-`Import` is 29. Neither figure is 21. The **conclusion**
+  survives intact (NEW is reported, exit 0, `known_new` applies only to
+  `update-symbol`, this plan adds no engine symbol). What the corrected figure
+  adds is context the plan would want: the baseline pins 174 of ~235 live
+  top-level symbols, so the attestation is a **partial** pin, which strengthens
+  rather than weakens the plan's argument for the stop-and-explain discipline.
+* *"Suite: `1744 passed, 2 failed` in 159.51s"* — re-measured at the same HEAD
+  under the canonical interpreter: **`2 failed, 1779 passed` in 160.98s**, same
+  two `bootstrap/tests/test_ast_attest.py` node ids. The plan already says to
+  re-baseline; the point is that the figure is cited in plan-level acceptance as
+  the oracle for *"collection grows by exactly the new nodes and drops none"* and
+  is already 35 nodes stale within the same day. Either drop it as an oracle or
+  bind it to a commit rather than a date.
+
+Minor, same section: the `_UPDATE_ALLOWLIST` block is presented as `$ grep -n
+… -A 6` output but carries no line numbers and re-aligns
+`"_CORE_MAPPINGS":   "Assign",` — the source (line 144) has a single space. In a
+plan whose evidentiary standard is *quote what you ran*, a hand-tidied block
+shown as command output is worth correcting.
+
+**[I6] T10's invalid-JSON row has no perturbation.** T10 specifies two children
+(a lone `0x80`, and a bare `{`) and names one perturbation, `errors="replace"`,
+which makes only the **invalid-UTF-8** row red. Nothing is named that makes the
+**invalid-JSON** row red — the JSON leg of that test is unvalidated by the plan's
+own rule. A candidate that targets the hazard: replace the strict `json.loads`
+result-handling with a `try/except` that falls through to CLEAN on a parse error.
+
+Related coverage gap, flowing from [I1]: **no test covers the `conflict-deferred`
+or `customized` merge outcomes for the new slot**, which — as measured — is the
+outcome an adopter actually gets today.
+
+### Covered
+
+Everything in this list was re-measured, not read.
+
+* **AST baseline** — 174 entries; `FunctionDef` 98 / `Assign` 53 / `ClassDef` 10
+  = **161** of the three kinds. Exact.
+* **Clean-HEAD verify** — `AST attestation OK — 174 baselined symbol(s)
+  accounted for, unchanged.`, exit 0. Exact.
+* **All four declared digests reproduce byte-exact** —
+  `Assign:_MODULE_MAPPINGS` `26957a8924042a0a`;
+  `Assign:_DEFAULT_ON_MODULES` `2c8ef688f6865487`;
+  `FunctionDef:main` `ff5a7441cceda605`;
+  `FunctionDef:format_profile_summary` `830aac8b7c3d1bde`.
+* **The load-bearing "no surgical path" finding is CORRECT.**
+  `_UPDATE_ALLOWLIST` (lines 141–146) holds exactly the four named symbols;
+  `_DEFAULT_ON_MODULES` is absent. `gate_manifest.json`'s `mapping_symbols` holds
+  exactly `_CORE_MAPPINGS` / `_MODULE_MAPPINGS` / `_SKILLS_MAPPINGS`.
+  `_DEFAULT_ON_MODULES` is in the baseline and in neither. Full supervised
+  re-anchor is the only path, and `default-security-stance` does contend for the
+  same tuple.
+* **Symbol-delta declaration** — 3 CHANGED / 0 NEW / 0 MISSING / 0 DUPLICATE is
+  consistent with what the three chunks actually edit. The declared-NOT-changed
+  list is sound: no token, no `.gitignore` seed, no supersession, no preset entry,
+  and the literal-path-not-`{{token}}` choice does keep `KNOWN_TOKENS` and
+  `_REFERENCE_SCRIPT_TOKEN` out of the union.
+* **`verify` semantics** — fails on CHANGED / MISSING / DUPLICATE only; NEW is a
+  note; `known_new` complete-set matching applies to `update-symbol`, not verify.
+* **Install contract** — `scaffold.py --manifest` → **95** data rows (96 lines
+  incl. header). `+2 → 97` arithmetic correct; the two destinations
+  (the module doctrine substituted, the dispatcher verbatim) match the
+  `dev/modules/<name>.md` + `scripts/<script>.py` destination pattern every
+  existing default-on module uses; the tab-separated format claim
+  matches the emitted header; `duplicate_destinations` exists
+  (`bootstrap/_scaffold/config.py` line 615) and is the right check.
+* **`InstallSpec`** — `NamedTuple(src, dst, verbatim=False)` at
+  `bootstrap/_scaffold/config.py` line 555. A3's proposed spec is well-formed.
+  A2 being substituted is **required**, not stylistic: `run_module_merge_pass`
+  skips `verbatim` specs outright.
+* **The `44` pins and their atomicity argument** — three channels agree at 44
+  (`git ls-files`, working-tree glob, manifest `.py` sources).
+  `test_templates_py_count_is_pinned` (line 291) pins 44 and its message names
+  the sibling *"line 75 as of 2026-08-03"*;
+  `test_manifest_has_the_expected_py_source_count` asserts at line 75. The
+  "must land in the SAME commit" claim is in the source, not inferred.
+* **Release gate** — `PASS`, `Bandit clean over 74 shipped file(s).` Exact. The
+  74 → 75 prediction is structurally right: `scan_targets()` derives `templates/`
+  targets from registry data, so A3's registration is what makes the dispatcher
+  scanned — which independently corroborates the atomicity argument.
+* **Prose integrity** — `check_cairn.py` → OK, **180** Markdown files, 68
+  external links not probed. Exact.
+* **Neutrality** — `fail=95 info=21`. Exact.
+* **Registries** — `_DEFAULT_ON_MODULES` 6, `_MODULE_MAPPINGS` 20, `_PRESETS` 3
+  (`solo-greenfield`, `collaborative-team`, `high-rigor-legacy`). Exact.
+* **`gate_manifest.json`** — 164 `frozen_files`. The six files the plan names as
+  not-frozen are all genuinely not frozen. `test_quickstart_sequence.py` is
+  frozen **and** derives its expectations live (lines 213–251), so it needs no
+  edit — correct, though see [I2] for the doc it reads.
+* **First live use of the merge mechanism** — `grep -rn "cairn:merge"
+  templates/modules/` returns exactly one hit, a prose mention in
+  `templates/modules/default-on/documentation-plan.md` line 92. Correct.
+* **The exit ladder is reused, not invented** — `_AGG_CLEAN` 0 / `_AGG_INCOMPLETE`
+  5 / `_AGG_FINDINGS` 10 / `_AGG_DEGRADED` 20 at
+  `templates/modules/team-gated/run_security_audit.py` lines 75–78.
+* **The twin check is discovery-based** — `_self_hosted_twins()`
+  (`bootstrap/tests/test_notice_install.py` line 51) enumerates manifest
+  destinations and keeps only those that already exist under `scripts/`/`tools/`.
+  Declining to self-host is genuinely supported, not a gap.
+* **Order-sensitive surfaces all real** — `docs/quickstart.md` line 129 states
+  **6** with the `verify:` marker; `docs/solo-legacy-recipe.md` line 58 says *"an
+  **8-module roster** — the six default-on modules"*; `templates/modules/README.md`
+  lists **4** default-on rows (lines 34–37) against 6 in code. The pre-existing
+  drift is correctly named and correctly **not** adopted as scope.
+* **B2's doc-governance obligation is real** — `bootstrap/tests/test_doc_governance.py`
+  line 285 requires the *"Cairn's own"* link-text prefix on `dev/modules/<name>.md`.
+* **C1's precedent exists** — `bootstrap/_scaffold/cli.py` `main` already carries
+  `if "issue-capture" in modules:` (564), `if "model-selection" in modules:`
+  (624), `if "coordination-tiers" in modules:` (660). C1 is a genuine
+  in-pattern addition, not a new mechanism.
+* **`bootstrap/SAFETY.md` Rule 7 / Layer-4** exists (line 108 ff.) with a
+  documented-residual-risks subsection, so D1 has a real home.
+* **Perturbation discipline** — 33 of 35 name a hazard perturbation rather than a
+  body edit. T9's refusal to delete `timeout=` (which would hang the suite) and
+  T20's explicit *"the hazard is the false-security claim, not the string"* are
+  both the right call. T24(b) and T28 declare non-perturbability honestly.
+  T15/T13/T14 correctly map to the Decision's three named properties.
+* **Scope boundaries** — no sibling scope's surface is absorbed and nothing
+  widens past the Decision. Every contended surface (`config.py`,
+  `_DEFAULT_ON_MODULES`, the README row, the two doc counts) is named as
+  contended. The empty-registry reading is a **narrowing** of the original
+  Proposal, argued from Decision ordering plus the admission rule, and flagged
+  to the External reviewer as attackable — the right handling.
+* **Required checkers, run as instructed, both clean** —
+  `claim_check.py` → OK, no flags (19 paths exempted via `claim-check-allow`);
+  `check_cairn.py` → OK, 1 Markdown file scanned, no issues.
+
+One soft scope edge, not a numbered concern: **L5** assigns the
+`templates/modules/README.md` drift fix to *"whichever cluster scope lands its
+README row last"*. A plan cannot bind a sibling scope's commit; that is a
+Maintainer routing item. Recording it as a Maintainer-owned handoff rather than
+an assignment would keep the fence clean.
+
+### Not covered / low confidence
+
+* **The dispatcher's runtime behavior is unverifiable — no code exists.** T1–T24
+  are specifications. I checked their *shape*, their perturbations, and their
+  channel independence; I could not check that any of them will hold.
+* **The Bandit prediction** (75 files, LOW `B404`/`B603`) cannot be measured
+  before Chunk A. The plan already books it as known omission (e).
+* **The content-scan probe of the proposed slot text** — I could not reproduce
+  it; the exact text is not in the tree. Taken on the plan's word.
+* **T29's upgrade paths** — I confirmed `upgrade --plan`'s *"new modules
+  available (opt-in)"* emission and the `--adopt-module` wiring exist in
+  `bootstrap/_scaffold/upgrade.py`; I did not execute either.
+* **Whether the Decision requires `format_profile_summary` at v1** is a
+  Decision-reading question, not a measurable one. The plan escalates it as
+  strikeable-in-one-line, which is the right disposition; I take no position.
+* **Cross-cluster re-anchor sequencing (L7)** — Maintainer-owned. The plan is
+  right not to answer it, and I add only the `cascade_mutable` note in [I3].
+* **The `_slot_is_empty` docstring/implementation divergence** — I did not check
+  whether other slots or modules depend on the docstring's reading. That belongs
+  in whatever scope picks it up, not here.
+
+### Recommendation
+
+**Second round required — revise, then take the External security-lens round.**
+
+[I1] and [I2] are measured, reproducible, and block execution as written; [I3]
+and [I4] mis-set what the Maintainer and the adopter respectively will get. All
+four are plan-text fixes that touch no architecture:
+
+1. **[I1]** — A4 ships the `security-verification` slot **empty** (marker pair
+   only); T30/T31 re-specified against the `inserted` outcome; the
+   `.cairn-merge-pending` side-file possibility named as a failure mode; the
+   `_slot_is_empty` docstring divergence routed out of this scope.
+2. **[I2]** — B3 gains `docs/quickstart.md`'s block-slot count as a second
+   re-measured figure, and Chunk A's acceptance either runs
+   `test_quickstart_sequence.py` or the chunk boundary moves so no commit lands
+   red.
+3. **[I3]** — fence item 3 rewritten to state the two guaranteed
+   `FROZEN-MODIFIED` rows as fact, plus the `cascade_mutable` governance note.
+4. **[I4]** — the plan names a durable home for the high-risk-surface
+   designation outside the adopter-replaced `project-conventions` slot.
+5. **[I5]/[I6]** — correct the two figures and the quoted block; add the
+   invalid-JSON perturbation to T10.
+
+After the revision, the **External security-lens round still has to happen** —
+by a different agent type or the Maintainer. [I1] in particular is exactly the
+class of defect a same-type reviewer nearly missed and only caught by running the
+mechanism instead of reading it, which is the argument for the declared tier, not
+against it.
