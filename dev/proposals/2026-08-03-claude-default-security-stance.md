@@ -445,3 +445,139 @@ Repeat with and without a `python_package` token and assert
   condition is *not* in fact universal over adopters — that there is a
   plausible Cairn adopter whose agents do not auto-load working-tree text.
   That would undercut Change 1's central argument.
+
+## Review -- OpenAI Codex (GPT-5) (External, security lens) -- 2026-08-03
+
+**Model**: OpenAI Codex (GPT-5)
+
+**Steelman.** The measured shipping gap is real, and the low-cost half of the
+proposal has unusually favorable evidence. Both controls are already packaged,
+neither reaches a shipped preset, and fresh installs with `content-security`
+added scanned 34 / 39 / 42 files with zero flags. A standard-library advisory
+tripwire with required roots, an empty residual baseline, and clean first-run
+behavior is a credible conservative default even though it is not a proof of
+safety. Token-gating the Python-only apparatus is also directionally sound: an
+absent token refuses installation, and a declared but nonexistent package
+degrades loudly rather than reporting clean. Existing upgrade machinery can
+keep newly available modules opt-in without a lockfile schema change.
+
+### Concerns
+
+* **[E1] (substantive) The universal-selection premise is false.** A plausible
+  Cairn adopter can use a vendor-neutral or locally built agent harness that
+  receives only files explicitly attached by the operator, with no automatic
+  discovery of `AGENTS.md`, `dev/` artifacts, or incoming diffs. Git-committed
+  files can still be that team's durable coordination channel; the human can
+  select and provide the relevant artifact at each step. That is a Cairn
+  adoption, but the quoted auto-load predicate is false. The proposal itself
+  registers this result as a signal the change is wrong, so it cannot retain
+  the tautology argument. This does not prove `content-security` should remain
+  opt-in: the clean scaffold measurements support a different, narrower case
+  based on conservative coverage and low default cost. Revise Change 1 to make
+  that case honestly, or introduce a real selection signal for agent-loaded
+  working-tree text.
+
+* **[E2] (blocking) Change 3 does not collapse the twin and reverses a
+  documented source-of-truth choice.** Cairn must retain
+  `templates/modules/team-gated/content_scan.py` in order to ship it. Installing
+  the module creates `scripts/content_scan.py`; changing which path
+  `check_cairn.py` imports does not remove either copy. More importantly, the
+  source file's own "Dual role" contract says Cairn composes that template
+  source and ships it verbatim, "Same code, no second copy"; the module doctrine
+  repeats that the source-path composition prevents drift. `check_cairn.py`
+  uses the same deliberate source-path pattern for `claim_check.py` and
+  `link_check.py`, and `bootstrap/SAFETY.md` records its fixed,
+  script-relative `exec_module` calls as deliberate dogfood composition. The
+  proposed installed-copy authority therefore creates the identified stale
+  window while leaving the physical twin in place. Keep the template source as
+  the executed authority and add an exact-byte parity check for Cairn's
+  installed copy, or require parity *before* loading either copy. Update the
+  three existing single-source statements as part of whichever design lands.
+
+* **[E3] (blocking) Cairn cannot install `python-security` from the scoped
+  authoritative profile.** `dev/.cairn/profile.yml` is the committed source of
+  truth, contains no `python_package`, and is absent from **Touches**. Editing
+  only `dev/.cairn/cairn-lock.yml` would invert the documented workflow: the
+  profile is edited first and `upgrade --init-lock` regenerates the lock.
+  Because the module's required-token preflight refuses before installation,
+  Change 3 needs to include the profile, name and justify Cairn's single package
+  path (likely `bootstrap/_scaffold`, but the proposal must decide), then
+  regenerate rather than hand-edit the lock. The Proposed-paths paragraph also
+  says the two destinations will not resolve in Cairn after landing, while the
+  next sentence says Change 3 makes both real local paths; reconcile that
+  contradiction.
+
+* **[E4] (blocking) Token-trigger precedence is underspecified against the
+  exact-list contract.** The current selector has three distinct profile
+  shapes: preset expansion with add/remove overrides; `modules:` as an exact
+  list (including `modules: []`); and neither key, which receives defaults.
+  Automatically adding `python-security` after every `python_package` token
+  breaks exact-list semantics. Respecting the exact list means the proposal's
+  "present iff the token is declared" and "necessary and sufficient" claims
+  are false. The design must state which contract wins. The conservative rule
+  is: token-gate the preset/default-derived shapes, let `modules_remove` win for
+  presets, and preserve an explicit `modules:` list as exact. Pin all three
+  shapes in tests, including token + `modules: []` and token + preset +
+  `modules_remove: [python-security]`.
+
+### Covered
+
+All executions below used
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13) on
+2026-08-03. I independently reran all nine numbered measurements:
+
+* A direct `expand_preset({'preset': name})` probe returned 6 / 11 / 14
+  modules for `solo-greenfield` / `collaborative-team` /
+  `high-rigor-legacy`; both security memberships were false in all three.
+  `_DEFAULT_ON_MODULES` contained six entries and neither security module.
+* Direct mapping inspection returned six `content-security` specs and two
+  `python-security` specs, with `_MODULE_REQUIRED_TOKENS` exactly
+  `{'python-security': ('python_package',)}`.
+* Parsing `dev/.cairn/cairn-lock.yml` after removing its comment preface
+  returned 81 files and 14 modules, with neither security module. The three
+  policy files had 0 / 3 / 7 non-comment lines; the latter two values were the
+  stated three domains and seven roots.
+* `rg` located `_CONTENT_SCAN_SRC` / its load at `scripts/check_cairn.py:91`
+  and `:136`, both onboarding claims at lines 123 and 164, and zero relevant
+  matches across the 483-line `dev/PLANNING.md`. These reproduce measurements
+  7-9 as well as the author's reported line drift from approximate `:93`.
+
+I then scaffolded each shipped preset in a temporary git repository with
+`modules_add: [content-security]`, committed the generated files so the scanner
+could enumerate them, and invoked the installed content-scan runner. The three
+runs exited 0, reported 34 / 39 / 42 audited text files, and each printed
+`result: clean (no flags)`.
+
+For `python-security`, selecting it without `python_package` made scaffold exit
+2 with `refusing to install (no files written)`. Supplying
+`python_package: does-not-exist` allowed installation, but the installed audit
+exited 20 and printed `preflight: DEGRADED (fail-closed; no passes ran)`; it did
+not report clean. I found no preset or shipped token default that selects the
+module today.
+
+Finally, a scratch solo install followed by `scaffold.py upgrade --plan`
+exited 0 and listed both controls under `new modules available (opt-in)`.
+Source inspection confirms upgrade computes that list from
+`set(_MODULE_MAPPINGS) - lock_modules` and adoption is an explicit
+`upgrade --adopt-module <name>` action. The old lock's module roster is
+therefore enough to preserve non-silent, opt-in adoption without a schema
+change; the plan should preserve this behavior rather than invent a new lock
+field.
+
+### Not covered / low confidence
+
+No implementation of the new selection rule or parity mechanism exists, so I
+could not execute those proposed branches or assess their eventual tests. I did
+not rerun the full bootstrap suite, the known neutrality/check-cairn baselines,
+or evaluate detector quality already owned by the sibling security plans. The
+upgrade exercise used a clean scratch install and `--plan`; I did not execute a
+real historical adopter's stage/apply cycle. I also did not establish the best
+single `python_package` value for Cairn's mixed source layout.
+
+### Recommendation
+
+**REVISE.** The default content scanner remains plausible and now has a clean
+alarm-fatigue measurement, but the universal rationale is falsified and
+Changes 2-3 currently conflict with established source-of-truth and exact-list
+contracts. Resolve E1-E4 before Decision; none requires a lockfile schema
+change.
