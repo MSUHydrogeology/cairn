@@ -2023,3 +2023,187 @@ digest this plan declares did not.
 deletions (append-only, confirmed before commit).
 
 This section is append-only once written.
+
+### Figure correction -- Claude -- 2026-08-04
+
+**What this is.** An audit of the Response above (commit `5a817ff`) reported
+that two figures it labels *"Measured:"* / *"verified"* do not reproduce, and
+that three narrative sentences cite the wrong amendment row. This section is a
+**third, independent measurement**: I took no number from the Response and no
+number from the audit, re-ran every disputed figure from scratch by two
+methods, and record the commands and the commits. **No disposition moves.**
+Nothing here accepts, declines, re-opens or withdraws a finding; two amendments
+carry a corrected figure and both keep their conclusions, for reasons I
+re-derived rather than inherited.
+
+**Provenance of every run below.** Canonical interpreter
+`~/conda_envs/lhm/bin/python3.13` (CPython 3.13.13),
+`PYTHONDONTWRITEBYTECODE=1`, `as_of 2026-08-04`. Live-tree runs were executed
+at HEAD `9052b09` and repeated at `e59f9d4` and `640864e` as sibling commits
+landed under me — identical results at all three. **Tree drift cannot explain
+any difference here**: `bootstrap/_scaffold/` is byte-identical between
+`e20b18e` — the Response's own stated measurement HEAD — and every HEAD I ran
+at (`git diff --stat e20b18e <HEAD> -- bootstrap/_scaffold/` is empty), and
+`git status --short bootstrap/_scaffold/` is clean throughout. Both figures
+were *also* taken against the `e20b18e` **tree object** with `git grep`, which
+reads the committed tree and never the working copy, and both agree with the
+live-tree runs exactly.
+
+#### 1. The [I4] widened grep — M21, and the narrative that introduces it
+
+| | figure |
+|---|---|
+| Response (`5a817ff`) | **ten hits** |
+| Audit | 23 |
+| **This measurement** | **23** |
+
+Two commands, neither piped into anything that could truncate:
+
+* live tree, HEAD `9052b09` —
+  `grep -n 'complete.*group\|group.*complete' bootstrap/_scaffold/*.py | wc -l`
+  → **23**
+* committed tree at the Response's own stated HEAD —
+  `git grep -n -e 'complete.*group' -e 'group.*complete' e20b18e -- 'bootstrap/_scaffold/*.py' | wc -l`
+  → **23**
+
+Per file: `cli.py` 1, `config.py` 1, `install.py` 7, `upgrade.py` **14**. The
+thirteen hits the Response omitted are all in `upgrade.py`: `:157`, `:196`,
+`:593`, `:608`, `:612`, `:615`, `:616`, `:720`, `:726`, `:1526`, `:1527`,
+`:1532`, `:1534`.
+
+**Why ten, specifically.** Re-running the command against an explicitly sorted
+file list (`$(ls bootstrap/_scaffold/*.py | sort)`) and taking the first twelve
+lines shows that the ten recorded hits are, byte-identically and in order, the
+**first ten lines** of the command's output: `cli.py:532`, `config.py:658`,
+`install.py` × 7, `upgrade.py:153`. A ten-line default `head` is the only
+mechanism I can construct that yields exactly that prefix. The boundary is the
+reader's, not the code's — `upgrade.py:157` is the docstring of the very
+function whose `def` line at `:153` is the tenth hit.
+
+**Does M21 still hold? YES — in force, figure corrected.** Its conclusion never
+depended on the count, and I re-derived that conclusion rather than assuming
+it: I read all 23 hits with their surrounding code, and every one is scoped to
+the always-on launcher+engine group. `_always_on_group_complete`
+(`bootstrap/_scaffold/upgrade.py:153-165`) is
+`all(... for spec in _ALWAYS_ON_MAPPINGS)` — read, not quoted; its only two
+call sites (`upgrade.py:612`, `:1532`) are both guarded by
+`always_on_dsts = {spec.dst for spec in _ALWAYS_ON_MAPPINGS}` (`:611`,
+`:1523`); `install.py`'s seven and `cli.py:532` are the R4 always-on onboarding
+group; `config.py:658` documents *"the launcher + the eight engine members"*. I
+also widened past the Response's vocabulary — `grep -n 'incomplete'
+bootstrap/_scaffold/*.py` — and the hits that are **not** always-on are profile
+completeness (`upgrade.py:225`, `:256`, `:1172`) and a merge-section note
+(`config.py:1401`); none is a mapping-group refusal. So M21's operative
+instruction to A4 — *"the engine performs no group-completeness refusal for
+`_MODULE_MAPPINGS` and the comment must not imply one"* — is unchanged, and now
+rests on 23 hits read rather than ten inherited from a truncated pipe.
+
+**Correction to the text.** In M21 and in the [I4] narrative, read **"returns
+twenty-three hits"**, with the thirteen `upgrade.py` lines above added to the
+ten already listed. Everything else in M21 stands.
+
+#### 2. `_MANIFEST_REL` — M12's closing evidence, and the reproduction-ledger row
+
+Claimed: *"`_MANIFEST_REL` is referenced only in `_gate_manifest.py` and
+`_gate_reanchor.py`; no `test_*.py` reads it"* (ledger row, verdict `yes`) and
+*"the plan's `not read by the suite` claim is **verified**: `_MANIFEST_REL` is
+referenced only by `_gate_manifest.py` and `_gate_reanchor.py`; no `test_*.py`
+reads the committed fixture"* (M12).
+
+Measured — `grep -rn '_MANIFEST_REL' bootstrap/ scripts/` (live, HEAD
+`9052b09`) and `git grep -n '_MANIFEST_REL' e20b18e -- bootstrap scripts`,
+identical sets: **six modules, 40 reference lines, three of them `test_*.py`.**
+
+| module | reference lines | note |
+|---|---|---|
+| `bootstrap/tests/_gate_manifest.py` | 5 | **defines** the constant at `:72` |
+| `bootstrap/tests/_gate_preflight.py` | 9 | **defines** it at `:54` |
+| `bootstrap/tests/_gate_reanchor.py` | 5 | **defines** it at `:60` |
+| `bootstrap/tests/test_gate_manifest.py` | 4 | `test_*.py` |
+| `bootstrap/tests/test_gate_preflight.py` | 7 | `test_*.py` |
+| `bootstrap/tests/test_gate_reanchor.py` | 10 | `test_*.py` |
+
+**Does M12 still hold? YES — in force, evidence corrected.** M12's substantive
+content — three FROZEN-MODIFIED confirmed, three FROZEN-NEW not four, the two
+unnamed note classes (`MAPPING-DIGEST-CHANGED`, per-node `COLLECTION-ADDED`) —
+is untouched by this and I re-checked none of it here. Its closing conclusion,
+*"nothing goes red"*, also survives, but on a **different and stronger basis**
+that I derived myself: no test reads the **committed** fixture. Every
+`test_*.py` use of the constant addresses a synthetic repo — `_write(repo,
+P._MANIFEST_REL, ...)`, `(repo / R._MANIFEST_REL).write_text(...)`, and in
+`test_gate_manifest.py` a `tmp_path` target at `:166` and `:197`. The one
+live-tree assertion, `test_gate_manifest.py:65`
+(`assert G._MANIFEST_REL not in frozen`), reads `frozen =
+produced["frozen_files"]` where `produced` is the module-scoped fixture
+`G.produce(_REPO)` (`:30-33`, `:48-49`) — a manifest **recomputed at run
+time**, not the committed artifact — and asserts only that the manifest path is
+absent from `frozen_files`, which a stale manifest does not disturb. A search
+for readers of the fixture path itself (`grep -rn "fixtures/gate_manifest"
+--include="*.py" bootstrap scripts templates`) returns only the three `_gate_*`
+helpers' own definitions and `_gate_manifest.py`'s docstring.
+
+**Correction to the text.** In M12 and in the ledger row's middle column,
+replace *"referenced only by `_gate_manifest.py` and `_gate_reanchor.py`; no
+`test_*.py` reads it"* with: **the constant is defined in three helpers
+(`_gate_manifest.py:72`, `_gate_preflight.py:54`, `_gate_reanchor.py:60`) and
+referenced by six modules, three of them `test_*.py`; no test reads the
+committed fixture — every `test_*.py` use targets a synthetic temp repo, and
+`test_gate_manifest.py:65` asserts only non-membership in a freshly *produced*
+`frozen_files`.** The ledger verdict stays `yes` for the *plan's* claim ("the
+committed gate manifest is not read by the suite"), which is what that row
+adjudicates; it is the evidence column that was false.
+
+#### 3. Three narrative cross-references — verified, table unaffected
+
+These are not figures, and I checked them by reading the amendment table in
+this same section rather than by accepting the audit's mapping:
+
+| narrative sentence | names | content actually lives in |
+|---|---|---|
+| *"One thing route 1 must state and **M11** does"* | M11 | **M13** — which carries *"What this establishes and does not"* verbatim. M11 is Chunk F's new `scan_targets()` = 76 criterion. |
+| *"**M15** records both halves and opens LT-8"* | M15 | **M18** (both halves of [I3]) and **M20** (which opens LT-8), with **M19** pinning the residual as an E7 node. M15 is Chunk C's acceptance criteria. |
+| *"**M16** builds the guard the plan wanted … a test-side membership pin"* | M16 | **M22** — which carries *"a **test-side membership pin**"* verbatim. M16 is the D7 `test_no_secret_bearing_field_reaches_any_sink` node. |
+
+All three amendment **rows are correct where they sit**; only the sentences
+pointing at them are wrong. Under this Response's own rule — the table *"is the
+operative amendment and an implementing agent reads it before the chunk it
+amends"* — no amendment changes. An implementing agent following the narrative
+should read **M13**, **M18/M19/M20**, and **M22** respectively.
+
+#### Where this measurement differs from the audit
+
+Confirmed exactly, by independent runs: **23**; the thirteen omitted
+`upgrade.py` line numbers; the head-ten-prefix explanation; **six** modules and
+**three** `test_*.py`; and the `M11 → M13` and `M16 → M22` corrections.
+
+One correction **to the audit**. It names `bootstrap/tests/_gate_preflight.py:54`
+as *"where `_MANIFEST_REL` is DEFINED"* and says *"the module that defines the
+constant is not named at all"*. There is no single definition site: the
+constant is defined independently, with the same string literal, in **three**
+modules — `_gate_manifest.py:72`, `_gate_preflight.py:54`,
+`_gate_reanchor.py:60`. The Response named two of those three; the definer it
+missed is `_gate_preflight.py`. The defect is real and its size is unchanged —
+the false parts are "referenced only by two modules" and "no `test_*.py`" — but
+a reader should not take "the definer" to be singular. One extension: for the
+`M15` sentence the audit gives M18 + M20; **M19** belongs with them, since the
+[I3] disposition row's own residue column reads "M18, M19, M20, M40" and M19 is
+the node that makes the residual visible in the suite.
+
+#### Standing
+
+**This section corrects figures only.** No disposition moves. **No amendment is
+withdrawn**: M21's and M12's conclusions are each independent of the figure that
+was wrong, and each was re-derived here from the code rather than carried
+forward. The declared tier remains **`required(External, security lens)`** and
+**undischarged**; this section discharges nothing and no implementation commit
+lands on its strength. The lesson is the one this cycle keeps finding, in a new
+place: *what supplied the material this check ran on?* — here, twice, a reader
+that stopped early, in a Response whose own method paragraph claims every figure
+was re-derived by execution.
+
+**Verification of this section.**
+`~/conda_envs/lhm/bin/python3.13 scripts/claim_check.py dev/plans/portable-security-sweeps.md`
+→ OK, no flags (exit 0). `git diff --numstat` on this file → **0 deletions**
+(append-only, confirmed before commit). Path-scoped commit, this file only.
+
+This section is append-only once written.
