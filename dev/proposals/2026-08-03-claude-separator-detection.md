@@ -5,7 +5,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5.
 **Date opened**: 2026-08-03
-**Status**: proposed
+**Status**: reviewed
 **Touches**: `templates/modules/team-gated/content_scan.py` (one detector rule)
 and `bootstrap/tests/test_content_scan.py`. Nothing else.
 **Related**: `planner-line-semantics` (delegates detection here — this proposal
@@ -191,3 +191,62 @@ suppression path must be per-id and reviewed.
 * An External reviewer establishes that `Zl`/`Zp` in a Markdown artifact have a
   legitimate use frequent enough that per-file suppression becomes routine, at
   which point the tripwire trains people to ignore it.
+
+## Review -- Gemini Flash (External, security lens) -- 2026-08-03
+
+**Steelman.** This proposal addresses a subtle but important gap in Unicode security detection. `planner-line-semantics` updates heading parsing logic, `agent-context-scrub` handles orientation-stream output escaping, and `content-scan-detectors` covers RFC 8264 ignorable characters (`Default_Ignorable_Code_Point` / `Cf` category). However, `U+2028` (LINE SEPARATOR, category `Zl`) and `U+2029` (PARAGRAPH SEPARATOR, category `Zp`) carry `White_Space=Yes` and are excluded from RFC 8264 ignorable sets by construction. Consequently, raw `U+2028` and `U+2029` characters in scanned Markdown pass through `content_scan.py` with zero flags. Adding a dedicated `unicode-line-separator` pattern ID to `content_scan.py` closes this tripwire detection gap and prevents suppression collision with other zero-width/ignorable Unicode security flags.
+
+### Concerns
+
+* **[E1] Pattern ID coordination with in-flight scanner proposals.**
+  `content-scan-detectors` is also modifying pattern ID structures in `content_scan.py`. Care must be taken during implementation to ensure `unicode-line-separator` is registered without pattern ID conflicts or suppression collision with sibling detector additions.
+* **[E2] Single-flag per line reporting behavior.**
+  As acknowledged in Author Accounting, `_scan_unicode` in `content_scan.py` breaks after the first hit per line per family. A line containing both a `U+2028` separator and another Unicode security anomaly will raise a single tripwire flag. For tripwire scanner purposes this is sufficient to trigger human review, but line-level reporting should align with decisions made in `content-scan-detectors` [I3].
+
+### Covered
+
+* **Empirical Reproduction of `content_scan` Missing `U+2028`/`U+2029`**:
+  - Ran `content_scan.scan_text` on test strings containing raw `U+2028` and `U+2029` using Python 3.13.13 (`~/conda_envs/lhm/bin/python`); confirmed 0 flags reported.
+  - Verified `unicodedata.category` for `U+2028` (`Zl`) and `U+2029` (`Zp`).
+
+```
+$ ~/conda_envs/lhm/bin/python -c "
+import sys
+sys.path.insert(0, 'templates/modules/team-gated')
+import content_scan, unicodedata
+
+for cp in ['\u2028', '\u2029']:
+    print(f'U+{ord(cp):04X} category={unicodedata.category(cp)} flags={len(content_scan.scan_text(f\"test{cp}string\"))}')
+"
+U+2028 category=Zl flags=0
+U+2029 category=Zp flags=0
+```
+
+* **Corpus Scan for Existing `U+2028`/`U+2029` Occurrences**:
+  - Scanned all tracked files in the repo for raw `U+2028`/`U+2029`; confirmed 0 occurrences exist, proving zero false-alarm noise on existing tracked repository content.
+
+```
+$ git ls-files | xargs ~/conda_envs/lhm/bin/python -c "
+import sys
+hits = [p for p in sys.argv[1:] if '\u2028' in open(p, errors='ignore').read() or '\u2029' in open(p, errors='ignore').read()]
+print(f'Tracked files with raw U+2028/U+2029: {len(hits)}')
+"
+Tracked files with raw U+2028/U+2029: 0
+```
+
+* **Claim-check Verification**:
+  - Ran `scripts/claim_check.py` on `dev/proposals/2026-08-03-claude-separator-detection.md`; output OK with 0 flags.
+
+```
+$ ~/conda_envs/lhm/bin/python scripts/claim_check.py dev/proposals/2026-08-03-claude-separator-detection.md
+claim_check: dev/proposals/2026-08-03-claude-separator-detection.md -- OK, no claim-check flags.
+```
+
+### Not covered / low confidence
+
+* Multi-pattern ID suppression behavior (`cairn-accept unicode-line-separator`) will be validated by unit tests in `bootstrap/tests/test_content_scan.py` during implementation.
+
+### Recommendation
+
+**SHIP.** The proposal addresses a verified tripwire gap with a clean, low-complexity detector addition and dedicated pattern ID.
+
