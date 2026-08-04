@@ -12,7 +12,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: reviewed
+**Status**: accepted
 **Touches**: nothing yet. On acceptance this opens one new plan
 (`release-security-bar`, forward-referenced below) and adds one row plus one
 precondition clause to `dev/PLANNING.md` at the plan-open serialization point.
@@ -1039,3 +1039,59 @@ the six-property specification, the deciders, the scope fences, and the burndown
 structure. [E1] was already outside this proposal's fences; homing it does not
 move them. Status stays `proposed`; this response makes the artifact
 Decision-ready.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-03
+
+**ACCEPTED.** Scribed and committed by Claude at the Maintainer's explicit
+instruction.
+
+**Maintainer's authorization, quoted verbatim:**
+
+> I accept this proposal as revised.
+
+**Scribe's note, kept separate from the quoted words.** As with
+`gate-claims-vs-enforcement`, this artifact carries **no** `## Revised proposal`
+section: the lifecycle ran open -> External review -> author Response. The
+review returned SHIP and its single concern was dispositioned in the Response
+rather than by amending the proposal. The accepted state is the proposal as
+opened plus that Response.
+
+**What is accepted.** The six-property release specification, its named
+deciders, the scope fences, and the burndown structure — all verified by the
+reviewer.
+
+**What accepting does NOT do, recorded because it is the substantive residual.**
+Finding [E1] is a live defect in shipped code, independently reproduced before
+acceptance:
+
+```
+bootstrap/verify_integrity.py:47    lock = read_lockfile(target)
+```
+
+Expected hashes are read from **the candidate target's own**
+`dev/.cairn/cairn-lock.yml`. `CAIRN_ROOT` (`verify_integrity.py:34`) only puts
+the engine on `sys.path` and is not the hash source, so a coordinated tamper —
+modify target files, then regenerate the lockfile over them — verifies as `OK`.
+The module docstring is accurate that this is "a lockfile-backed preflight, not
+an in-file self-verifier"; the gap is that the lockfile lives inside the thing
+being checked.
+
+That was already outside this proposal's scope fences and remains so. Fixing it
+means anchoring the verbatim subset against the caller's trusted `CAIRN_ROOT`
+checkout, which needs its own threat model — which files are genuinely verbatim,
+what happens when the caller's checkout *is* the candidate, and how a
+legitimately-diverged fork is distinguished from a tamper.
+
+**Follow-ups migrated to:** `dev/PLANNING.md` > *Deferred follow-ups (durable
+home)* > **Security apparatus** > *Install-integrity trust anchor*, carrying the
+reproducer, the call sites, and the three questions a successor must answer.
+Same mechanism selected earlier today for the conda advisory gap, so both
+security follow-ups are homed alike rather than each inventing a form.
+
+**Review tier discharged.** Required `required(External)`; received **Gemini
+Flash, External security lens**. Verdict SHIP.
+
+**Next transition:** plan-open. The plan carries `required(External)` in its own
+right; this Decision does not discharge it.
+
+**Decision-only commit.** Status flip and this section, nothing else.
