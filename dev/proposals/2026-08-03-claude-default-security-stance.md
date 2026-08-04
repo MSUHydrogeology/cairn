@@ -1,6 +1,12 @@
 <!-- claim-check-allow: scripts/content_scan.py, scripts/run_security_audit.py -->
 <!-- ^ Two ADOPTER-TREE DESTINATION paths. They are where these controls land
      in an installed target; they do not resolve in the Cairn source tree and
+<!-- claim-check-allow: dev/plans/byline-classification.md -->
+<!-- ^ Archived 2026-08-04; the plans moved to dev/plans/archive/. These are
+     historical citations in append-only or logged content, so the path is
+     exempted rather than rewritten -- editing a prior section to chase a
+     file move is what AGENTS.md's cite-by-stem convention exists to avoid. -->
+
      are not forward references to files this repository will create (unless
      Change 3 lands, which is itself what this proposal puts to review). Same
      directive and same two paths as `release-security-bar`, for the same

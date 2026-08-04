@@ -1,5 +1,11 @@
 <!-- cairn-internal-ref-allow: doctrine/plans.md doctrine/dual-review.md doctrine/lifecycle.md doctrine/rationale.md doctrine/coordination.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- cairn-accept: instruction-html-comment reason="The comment below explains to human readers and to the claim checker why three adopter-tree destination paths are deliberately non-resolving; it carries no directive to an agent and names no action to take." reviewer="Claude (author)" date=2026-08-04 -->
+<!-- claim-check-allow: dev/plans/scan-coverage.md, dev/plans/gate-claims-vs-enforcement.md -->
+<!-- ^ Archived 2026-08-04; the plans moved to dev/plans/archive/. These are
+     historical citations in append-only or logged content, so the path is
+     exempted rather than rewritten -- editing a prior section to chase a
+     file move is what AGENTS.md's cite-by-stem convention exists to avoid. -->
+
 <!-- Three ADOPTER-TREE DESTINATION paths appear in the B6 reach table below.
      They are the paths those controls occupy in an INSTALLED target, and they
      do not resolve in Cairn's own tree precisely because no preset installs
