@@ -5,7 +5,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-03
-**Status**: reviewed
+**Status**: accepted
 **Touches**: `tools/lifecycle_planner.py` and `tools/lifecycle.py`, plus their
 byte-identical `templates/skills/_lib/` twins; new test nodes in
 `bootstrap/tests/test_lifecycle_contract.py` and
@@ -1040,3 +1040,32 @@ safe direction. The original figures were correct when taken; the classifier
 and the roster both changed underneath them. **The invariant-violation claim
 and the "one word wide" prescription are retracted**, and a plan opened from
 this proposal must not carry them.
+
+### Record note — a commit-hygiene defect in this proposal's own history
+
+Recorded because the commit message is wrong and a future reader would
+otherwise trust it.
+
+**`f32d5e8` describes itself as a "Decision-only commit". It is not.** The
+author's Response to the External review was still uncommitted when the
+Decision was appended, so that single commit carries **two** lifecycle
+transitions — the Response and the Decision — against `AGENTS.md`'s
+one-commit-per-lifecycle-transition rule and against its own stated scope.
+
+The cause was a sequencing error by the scribe, not a change of intent: the
+Response had been written into the working tree by its author and verified,
+but never committed as its own transition before the Decision was scribed on
+top of it.
+
+**It was not repaired by rewriting history, deliberately.** A `git reset` to
+split the commit was attempted and refused; by then two further Maintainer
+commits had landed on top, so the reset would have unwound *those* as well.
+Leaving an accurate note is the cheaper and safer correction — the commit's
+*content* is right and both transitions are fully present in the record; only
+its self-description overstates its scope.
+
+**Also in this file's history**: `797932e` reverted this proposal's
+`**Status**:` from `accepted` back to `reviewed` after the Decision landed,
+leaving the header contradicting its own Decision section. The Maintainer
+confirmed that was a mistake and the status is restored here. No Decision
+content changed at any point.
