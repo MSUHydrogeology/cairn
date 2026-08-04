@@ -1532,3 +1532,350 @@ one thing neither this round nor the plan can settle: re-run the corrected P5
 and P7 against the **landed** test, not against any description of it. My P5/P6
 result came from my reconstruction; the property that matters is that the
 shipped code has it.
+
+## Response to plan review -- Claude (author) -- 2026-08-04
+
+**Model**: claude-opus-5. **Role**: plan author, dispositioning the Internal
+plan review that landed above. Append-only: nothing earlier in this file is
+edited. Every superseded string is quoted verbatim in *Amendments in force*
+below, and that table governs where it conflicts with earlier text.
+
+**Method, stated because the review's own standing paragraph makes it
+load-bearing.** I re-derived every figure the review asserts against the **live
+working tree** at `6618e54`, under
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13) with
+`PYTHONDONTWRITEBYTECODE=1`. **No repository file was written**; every
+perturbation ran against a scratch copy of the tree under the session scratch
+directory. The reconstruction of the not-yet-written test is **mine, not the
+reviewer's and not this plan's** — it is labelled at each use. One improvement
+on the reviewer's method: the reviewer approximated group (a) by reading the
+shipped source, justified by a separate measurement. I did not approximate — my
+group (a) drives the **real `install_core`** against a scratch `templates/`
+root on every perturbation, which is the path the plan actually specifies.
+
+The review was written five commits ago. **Six of its figures no longer
+reproduce**, and one of those is a live change to this plan's blast radius that
+neither the plan nor the review could have known. Those come first, because
+they are findings in their own right.
+
+### Re-measurement: what reproduced
+
+Each verified by running, at `6618e54`.
+
+| Claim (plan and/or review) | Live result |
+|---|---|
+| Chunk B extraction: proposal lines 116-158, `> ` stripped → 43 lines, 4 blanks | **exact** — 43 lines, 4 blanks, every line conforms to `> ` or `>` |
+| Extraction sha256 `277daac432cfff21062a9ec58718138238183e79a4f988a8d90aeec62b01852b` | **exact match**; `git status` on the source proposal is empty, so these are HEAD's bytes |
+| First / last extracted line, and no `{{` sequence | **exact** |
+| All five `**S<n> — …**` heading literals present in the extracted block | **all five True** |
+| Five template anchors: proposal `### Author-accounting` 230 / 213; `**Prospective only.**` 265 / 248; plan heading 216 / 208 | **all exact** |
+| Template line counts 400 / 362 / 295 / 272 | **all exact** |
+| Proposal-pair block parity, `dev` 230-267 vs shipped 213-250 | **empty diff** |
+| `grep -c security-preflight` = 0 in both plan templates | **0 / 0** |
+| Clause is word-for-word the proposal's lines 233-235, em dash included | **exact** |
+| Manifest: 96 lines = 1 header + 95 data rows; both `_template.md` rows `substituted` | **exact** |
+| `quality_gate.py --sub neutrality` → `fail=95 info=21` | **exact** |
+| `frozen_files` has 164 entries and contains `bootstrap/tests/test_scaffold.py` | **exact** |
+| `collection.node_count` = 1598, with 1598 `node_ids` | **exact** |
+| `FROZEN-MODIFIED: {rel} (gate file edited — sha differs)` message string | **character-for-character** (`bootstrap/tests/_gate_manifest.py:364`) |
+| `REANCHOR_RUNBOOK.md` quote | **faithful** (`bootstrap/REANCHOR_RUNBOOK.md:9`; the source scopes the prohibition to Phase 0 / Phase 4, so this plan's generalization is wider in the conservative direction) |
+| The `dev/**/_template.md` twin-parity gap is real | **real** — `_self_hosted_twins` yields **41 pairs, every destination suffix `.py`**, prefixes `scripts/` and `tools/` only; zero `dev/` pairs (`bootstrap/tests/test_notice_install.py:98`) |
+| The neutrality asymmetry is real | **real, and I confirmed it through the governing enumerator** rather than the constant — see the *dead citation* note below |
+| Install fidelity: installed bytes == shipped bytes, post-change | **True for both templates**; the `Triage-gated` comment survives install, so the clause's host is not stripped |
+| P5 / P6 discriminate as the plan claims | **yes** — see the full matrix under [I1] |
+| `## Plan review — the brief` does not parse as a section; a bare `## Plan review` does | **exact** |
+| `claim_check.py` over this plan | `OK, no claim-check flags` |
+| No gate-batch window is open (`gate-reanchor-preflight` archived) | **confirmed** — it is under `dev/plans/archive/` |
+
+### Re-measurement: what did NOT reproduce
+
+Reported as plainly as the reproductions. Five are ordinary drift; **the fifth
+is material and the sixth is a citation defect in the review itself.**
+
+| # | Asserted | Live at `6618e54` |
+|---|---|---|
+| N1 | Sibling node `test_installed_templates_carry_plan_review_line` at **line 360**, `class TestInstallCore` at **291** (plan A3; review confirmed both) | **371** and **302**. `e7394cb` (`profile-parse-fail-open`) landed after the review and added 11 lines above. The *relative* instruction ("immediately after the sibling node") is unaffected — which is why it was written as an anchor-plus-name. The figure is stale. |
+| N2 | `check_cairn.py` whole tree → **180** Markdown files | **195** Markdown files; still `no issues; 68 external link(s) not probed`. The plan predicted this ("may only grow") and was right. |
+| N3 | `token_budget.py` always-on total **5,541 tok / 22,317 B** | **5,737 tok / 23,108 B** (`AGENTS.md` 5,210 / 20,993; `CLAUDE.md` 527 / 2,115). The plan's *argument* is untouched — the proposal template is read on demand, so the added block still costs nothing against the always-on budget. |
+| N4 | `--collect-only -q` → **1746** (plan) / **1749** (review) | **1790**. The plan flagged this figure as untrustworthy on a dirty tree; it was right twice over. |
+| N5 | **"After this lands, `_gate_manifest.py verify` reports `FROZEN-MODIFIED: bootstrap/tests/test_scaffold.py`"** | **It reports it already, before this plan touches anything.** Pinned sha `0bfe766099c04cf4b7c308ee56ebf9469d6037fcb7734b4799c7e1b706b3106b`; live sha `5c9ff86357d1b1b7028f734c18487241cd577fbaf489a426235bf525b24b496e`. `e7394cb` edited the frozen file after the manifest was pinned. This plan would be the **second** contributor to an already-open HOLD, not its cause. Amended below; it also sharpens the standing Maintainer question. |
+| N6 | Review [I3]'s corroborating controls, and its population figure | Both **expired**. `separator-detection` and `transition-lint` now read `_has_kind → True` because each acquired a landed `## Plan review -- …` pass on 2026-08-04; they no longer discriminate. And *"16 of the 17 live plans stripped it — this plan is the only one that kept it"* does not hold: there are **20** live plans, **two** carry the bare container (this one and `review-gate-enforcement`), and **both plan templates ship it** — four files in `dev/` + `templates/` total. The review's *core* [I3] claim survives; see the disposition. |
+
+**A dead citation, worth naming because it is this repository's recurring
+failure in miniature.** The review corroborates the neutrality asymmetry with
+*"`_NEUTRALITY_SCAN_ROOTS` likewise omits `dev`"*. That constant is defined at
+`scripts/quality_gate.py:208` and **consulted nowhere** — a repo-wide grep
+returns only its own definition. It governs nothing. The live enumerator is
+`_walk_neutrality_files` (`scripts/quality_gate.py:443-463`), which iterates
+`_NEUTRALITY_FILE_SUFFIXES` — the structure the *plan* cited. Measured through
+that path: 165 files scanned; both shipped templates scanned; **neither `dev/`
+twin scanned; zero `dev/` paths scanned at all**. So the plan's claim is correct
+and correctly sourced, and the review's extra citation is to dead code. This is
+the "follow the call path, not the first symbol that supports the claim"
+discipline, applied to a reviewer who was otherwise right.
+
+### Dispositions
+
+**[I1] — ACCEPTED, blocking. Reproduced exactly, and it is worse than one
+group.**
+
+The gate phrase is split across a line break inside the hash-pinned bytes, so
+the literal in A1 cannot occur in either template. Measured against my own
+re-derivation of the 43-line block:
+
+```
+'no trust boundary added, moved, or widened' -> False
+'no trust boundary'                          -> True
+'added, moved, or widened'                   -> True
+all five heading literals                    -> True
+```
+
+Run end-to-end through the real `install_core` against a post-change scratch
+tree, with **no perturbation applied**, my reconstruction of the four groups
+reports:
+
+```
+BASELINE (correct change, nothing perturbed)   a=R b=R c=G d=G
+  first failure -> (a) installed proposal template missing gate phrase
+```
+
+Both (a) **and** (b) are red on a correctly-executed change. Chunk D's *"After
+the last revert … fully green"* and Chunk E's whole-suite `0 failed` are
+unreachable as written. I take the reviewer's preferred remedy (i), two
+literals, for the reason given — it keeps (a)/(b) raw-substring, which is what
+makes the code-point argument mean anything. **Verified, not predicted:** with
+the two-literal form, baseline is `a=G b=G c=G d=G`, and the entire Chunk D
+matrix then reproduces the plan's table exactly:
+
+```
+                                                    ground truth   first failure in a
+ID   plan table says                                (all 4 run)    sequential-assert node
+P1   (a)+(c) RED, (b)(d) GREEN                      a=R b=G c=R d=G   (a)  [unseen: b,c,d]
+P2   (b)+(c) RED, (a)(d) GREEN                      a=G b=R c=R d=G   (b)  [unseen: c,d]
+P3   (a)+(d) RED, (b)(c) GREEN                      a=R b=G c=G d=R   (a)  [unseen: b,c,d]
+P4   (b)+(d) RED, (a)(c) GREEN                      a=G b=R c=G d=R   (b)  [unseen: c,d]
+P5   (a)+(b) RED, (c) GREEN                         a=R b=R c=G d=G   (a)  [unseen: b,c,d]
+P6   (c) RED, (a)(b)(d) GREEN                       a=G b=G c=R d=G   (c)  [unseen: d]
+P7   (a) RED [table silent on (c)]                  a=R b=G c=R d=G   (a)  [unseen: b,c,d]
+P7'  two-sided em-dash swap ([I5] remedy)           a=R b=R c=G d=G   (a)  [unseen: b,c,d]
+```
+
+Every one of the plan's six table predictions is **correct**. The analysis was
+right; only the instrument was wrong.
+
+**[I2] — ACCEPTED. Reproduced exactly; the right-hand column above is the
+evidence.**
+
+Four sequential assertion groups in one node means pytest stops at the first
+failure, so the *"Must stay GREEN"* column is unobservable for every
+perturbation whose first failure precedes it. The plan's headline claim — P5 is
+red under the literal oracle and **green under parity** — is the single least
+observable cell: group (c) never runs under P5. Writing that ledger would
+require predicting unseen cells, which is the substitution this plan bans
+everywhere else.
+
+I take the accumulator remedy. It is verified by construction: my
+reconstruction accumulates and evaluates all four groups on every run, which is
+how the ground-truth column above exists at all. And the reviewer's caveat
+holds — **collection still grows by exactly one node**, so Chunk E's "+1"
+criterion survives; splitting into four nodes would have broken it.
+
+**[I3] — Finding ACCEPTED; prescribed remedy DECLINED and RE-ROUTED, with the
+reasons and one correction.**
+
+The core claim reproduces. Against the plan **as opened** (`4020b76`), zero
+reviews landed, using the planner's own parser:
+
+```
+status='open'   bare '## Plan review' in text: True   landed '## Plan review -- ': False
+parsed sections matching 'plan review': [('Plan review', line 967)]
+_has_kind(art, 'Plan review')  ->  True     # the gate reads SATISFIED
+```
+
+So the exposure was real during the open→review window. Nothing was
+implemented in that window, so it caused no harm — but the gate did read
+satisfied on a container, exactly as the finding says.
+
+I decline to strike the heading **in this Response**, on three grounds, none of
+which is disagreement:
+
+1. **Append-only forbids it here.** This Response may not delete a prior
+   section; a deletion in this commit would violate the rule the plan is
+   governed by. The reviewer's own note — that it appended at `##` because the
+   container is followed by `## Code review` and `## Lasting-truth migration`,
+   so an inserted `###` pass is impossible without editing prior content — is
+   the same constraint seen from the other side.
+2. **The remedy is now moot for this artifact.** The landed review at line 1101
+   parses with `kind='Plan review'` on its own. `_has_kind` is True for a true
+   reason today; striking the container changes no gate reading.
+3. **A different open plan owns it, and has already dispositioned it.**
+   `review-gate-enforcement` exists precisely to fix
+   `tools/lifecycle_planner.py:787` gating on presence, and its **revised A.1**
+   — accepted after its External review — reads: *"The empty template container
+   is removed or made explicitly non-attesting; the scaffold follows."*
+   Striking it here would pre-empt an open plan's accepted scope, and the two
+   live options (remove vs. make non-attesting) are that plan's call, not mine.
+
+**Correction to the review's routing.** [I3] names `transition-lint` and
+`planner-line-semantics` as the natural homes for the template-level version.
+Live measurement says the owner is **`review-gate-enforcement`** — it names the
+exact gate, the exact line, the bare container, and both plan templates in its
+in-scope list. Residue: residual **R6** below, pointing at that plan.
+
+**[I4] — ACCEPTED WITH MODIFICATION. Both wrong facts reproduce as wrong; the
+modification is to the replacement, not to the finding.**
+
+Measured through the call path rather than the first symbol:
+
+* `_ANY_DIRECTIVE_RE` (`scripts/quality_gate.py:221-223`) covers exactly
+  `vendor-ok`, `vendor-ok-begin`, `vendor-ok-end`, `case-study`. It does **not**
+  match `cairn-accept`. Its only consumer is the templates branch of
+  `_scan_neutrality_file` (`scripts/quality_gate.py:259-266`), which is the
+  neutrality **exemption-directive** rule — a different family from the
+  content-scan suppression marker. So "forbidden inside `templates/`" is false
+  of `cairn-accept`.
+* `_CAIRN_MARKER_RE` (`templates/modules/team-gated/content_scan.py:170-185`)
+  lists `cairn(?::slot|:end|-accept)` and is applied to the comment
+  **interior** at `content_scan.py:366`. Probed against the interior — the
+  subject the code actually passes — `cairn-accept` **is** exempt, everywhere,
+  templates included. (My first probe passed the raw comment instead of the
+  interior and returned `False`; correcting my own subject is the same
+  discipline this Response applies to the review.)
+* `_IMPERATIVE_IN_COMMENT_RE` (`content_scan.py:186-190`) is a fixed lexicon of
+  exactly **14 alternatives**: `ignore, disregard, send, email, upload, post,
+  exfiltrate, execute, run, delete, overwrite, reveal, leak`, plus one
+  confidentiality phrase, **elided here** — see A-10, because transcribing it
+  literally trips a *different* detector and this Response did exactly that on
+  its first pass. The review calls that phrase "two-word"; it is three. Neither
+  the clause nor the existing comment matches any of the 14 (`runs` and `fires`
+  do not hit `\brun\b`).
+* Running the **exact call `check_cairn.py:393` composes** —
+  `content_scan.scan_file` — over all four post-change templates returns
+  **0 findings**, and over the four unchanged in-repo templates likewise **0**.
+  The criterion cannot fire from this insertion.
+* The reviewer's incidental discovery reproduces: `_HTML_COMMENT_RE` is
+  `DOTALL` and `scan_file` runs it over the whole document with no fence
+  awareness, so an unclosed comment-open inside a fence swallows following
+  prose and the lexicon is applied to the whole span. I reproduced it in
+  scratch and it is why every pattern in this Response is described rather than
+  transcribed.
+
+**The modification.** The reviewer says "reword to what is true". I accept that
+and add one thing the review's replacement still omits: the reworded criterion
+must cite the **governing** surface (`content_scan.py:364-368` plus the
+lexicon), not the neutrality directive rule, or the next reader inherits the
+same family confusion in a shorter form.
+
+**[I5] — ACCEPTED. Reproduced, and the proposed remedy is verified to work.**
+
+One-sided P7 measures `a=R b=G c=R d=G` — group (c) goes red too, and the plan
+is silent on it, so the ledger has nothing to check (c) against. More
+substantively the red is confounded: parity is not code-point-specific to the
+pin, so a one-sided swap cannot isolate the property P7 exists to prove. The
+two-sided swap does: `P7'` measures `a=R b=R c=G d=G` — **parity green, the red
+comes from (a)/(b) alone**. Converting P7 to two-sided and giving it a
+four-column prediction row keeps the ledger at **seven**.
+
+**[I6] — ACCEPTED. Reproduced exactly.**
+
+```
+$ diff <(sed -n '216,228p' dev/plans/_template.md) \
+       <(sed -n '208,221p' templates/core/dev/plans/_template.md)
+13a14
+> 
+```
+
+Shipped line 221 is a trailing blank outside the block; `dev` 216-228 vs
+shipped **208-220** is byte-identical (empty diff, re-run). The comment itself
+is `dev` 218-228 and shipped **210-220**, so C2's "210-221" is the same
+off-by-one. C1's mid-line-223 boundary is **correct**, and shipped's equivalent
+is mid-line 215 — the plan's "same relative offset" phrasing already handles it.
+
+**[I7] — ACCEPTED. Reproduced; I take the add-the-guard branch.**
+
+As A3 is specified, groups (b)-(d) read `CAIRN_ROOT/dev/…` with no guard.
+Measured with `dev/` removed from a scratch root: `FileNotFoundError`, which
+pytest reports as an **ERROR** — not a skip, and not the direction
+Author-accounting and S4 both claim. The reviewer offers two branches; I take
+**add the guard** rather than delete the claim, because the plan's stated
+intent is the skip idiom, and the suite-level 0-skipped rule then converts a
+fired skip into a gate failure — which is the closed direction S4 asserts. The
+claim and the specification end up agreeing instead of one being deleted.
+
+**[I8] — ACCEPTED. Reproduced.** Lines 279 and 506 say *six*; lines 554, 707,
+838 and 921 say *seven*. Seven is right, and stays seven after [I5] converts
+P7 rather than adding an eighth.
+
+### Amendments in force
+
+This table governs. Each row quotes the superseded text verbatim; where a span
+is long, the quoted opening and closing are exact and the elision is marked.
+
+| # | Superseded text (verbatim) | Replaced by |
+|---|---|---|
+| **A-1** ([I1]) | ``_SECURITY_PREFLIGHT_GATE_PHRASE = "no trust boundary added, moved, or widened"`` (Chunk A, row A1) | **Two literals, both raw substrings:** ``_SECURITY_PREFLIGHT_GATE_PHRASE_HEAD = "no trust boundary"`` and ``_SECURITY_PREFLIGHT_GATE_PHRASE_TAIL = "added, moved, or widened"``. Groups (a) and (b) assert **both** are present. No whitespace normalization is introduced in (a)/(b) — they stay raw-substring so P7's code-point argument keeps its force. The pinned bytes are **not** rewritten; the hash in Chunk B stands. |
+| **A-2** ([I2]) | "Four assertion groups, below." (Chunk A, row A3) | "Four assertion groups, below. **The node accumulates failures**: each group appends a descriptive string to a list rather than asserting inline, and the node ends with a single `assert not failures` naming every failing group. All four groups therefore execute on every run, which is what makes Chunk D's red/green column observable. Collection still grows by **exactly one** node." |
+| **A-3** ([I2]) | "The red/green column is observed to match the table **exactly**." (Chunk D acceptance criteria) | Unchanged in force, and now **satisfiable**: with A-2 in effect the accumulated failure list reports all four groups on every perturbation, so each cell is observed rather than predicted. The ledger records the accumulated list verbatim, not a first-failure message. |
+| **A-4** ([I5]) | The Chunk D prose bullet opening "**P7 — the code-point pin.** In `templates/core/dev/proposals/_template.md`, replace the em dash (`U+2014`) in the S1 heading with an ASCII hyphen-minus, changing nothing else." … and closing "Revert; confirm `git diff` empty." | **P7 becomes two-sided and moves into the table** as a seventh row: *replace the em dash (`U+2014`) in the S1 heading with an ASCII hyphen-minus in **both** proposal templates, identically.* Prediction, all four columns: **(a) RED, (b) RED, (c) GREEN, (d) GREEN** — measured. Parity stays green because both sides agree, so the red is forced to come from the literal pin alone, which is the property P7 exists to prove. The one-sided variant is **not** run: it is confounded (measured `a=R b=G c=R d=G`) and proves less. |
+| **A-5** ([I8]) | "Chunk D -- six hazard-side perturbations, each RUN" (Sequence block) and "### Chunk D — six hazard-side perturbations, each RUN" (chunk heading) | **seven** in both places. P1-P7, matching the acceptance criteria, the Author-accounting mapping, S2 and the Verification ledger, all of which already say seven. |
+| **A-6** ([I6]) | "\| Author-accounting block parity, plan pair (`dev` 216-228 vs shipped 208-221) \| **byte-identical**, verified by extraction + `diff` \| yes \|" (measured-baseline table) | Shipped range **208-220**. Re-run live: `dev` 216-228 vs shipped 208-220 is an empty diff. Shipped 221 is a trailing blank outside the block. |
+| **A-7** ([I6]) | "lines 210-221, `as_of 2026-08-04`" (Chunk C, row C2) | "lines **210-220**, `as_of 2026-08-04`" — the comment closes with ` -->` on 220. C1's `dev` range 218-228 and its mid-line-223 boundary are correct as written; shipped's equivalent boundary is mid-line **215**. |
+| **A-8** ([I7]) | "`pytest.skip(\"Cairn templates not available\")` when `templates/` is absent" (Chunk A, row A3) | "…when `templates/` is absent, **and a second guard — `pytest.skip(\"Cairn dev/ tree not available\")` when `CAIRN_ROOT/dev/proposals/_template.md` or `CAIRN_ROOT/dev/plans/_template.md` is absent — before groups (b)-(d) read them.** Without it those groups raise `FileNotFoundError`, which pytest reports as an ERROR, contradicting both the Author-accounting failure-mode row and S4. Either guard firing on the canonical host is a 0-skipped-rule gate failure, which is the intended direction." |
+| **A-9** ([I4]) | The Chunk C acceptance bullet opening "The comment still closes with ` -->` and `python scripts/check_cairn.py`" … and closing "That is the correct direction and it is better to find it in this chunk than at the gate." | **Reworded to what the scanner does.** The comment still closes with ` -->`, and `python scripts/check_cairn.py` over both plan templates reports no `instruction-html-comment` flag. The detector is **not** "imperative prose in an HTML comment": it is `_IMPERATIVE_IN_COMMENT_RE` (`templates/modules/team-gated/content_scan.py:186-190`), a fixed 14-alternative prompt-injection lexicon, applied at `content_scan.py:364-368` to comment interiors that are not Cairn-marker comments. The inserted clause contains none of the 14 tokens; measured, `content_scan.scan_file` returns **0 findings** over all four post-change templates. Two corrections carried in: `cairn-accept` is **not** in `_ANY_DIRECTIVE_RE`'s forbidden family (that rule covers `vendor-ok*` and `case-study`), and `_CAIRN_MARKER_RE` **exempts** `cairn-accept` everywhere including `templates/` — so suppression *is* available and the "must reword, cannot suppress" claim is withdrawn. The check is run as a **cheap regression tripwire**, not as a mitigation for a live risk. |
+| **A-10** ([I4], incidental) | *(new criterion — nothing superseded)* | **Describe the scanner's patterns; do not transcribe them.** Two mechanisms, both reproduced. (i) `_HTML_COMMENT_RE` is `DOTALL` and `scan_file` is not fence-aware, so a bare comment-open inside a fenced block swallows every following line to the next close anywhere in the document, and the comment lexicon is applied to that whole span. (ii) The `imperative-override` detector (`content_scan.py:274-279`) runs over **every line of prose**, fences included — so quoting one of its phrases verbatim, even to document it, is itself a flag. **This Response tripped (ii) on its first pass** by transcribing the confidentiality phrase from the comment lexicon; `check_cairn.py` returned `[content] [imperative-override]` on the offending line, and the phrase is now elided. Chunk E runs `check_cairn.py` over the whole tree and this plan is in that tree, so the constraint binds the plan, the commit body, and the eventual code review alike. |
+| **A-11** (N1) | "(line 360, `as_of 2026-08-04`)" (Chunk A, row A3) | "(line **371**, `class TestInstallCore` at line **302**, `as_of 2026-08-04` at `6618e54`)". `e7394cb` moved both by +11 after the plan review landed. **Re-derive by name at implementation, not by line** — the anchor is the sibling node, not the number. |
+| **A-12** (N5) | "**The consequence, and it is Maintainer-facing.** After this lands, `_gate_manifest.py verify` reports `FROZEN-MODIFIED: bootstrap/tests/test_scaffold.py (gate file edited — sha differs)`" | "**The consequence, and it is Maintainer-facing — and it is already open.** Measured at `6618e54`: the pinned sha for `bootstrap/tests/test_scaffold.py` is `0bfe7660…3106b` and the live sha is `5c9ff863…b496e`, so `_gate_manifest.py verify` reports that `FROZEN-MODIFIED` **today**, before this plan touches anything. `e7394cb` edited the frozen file after the manifest was pinned. This change is the **second** contributor to a HOLD it does not cause. The implementing agent still does **not** re-pin, and the commit body says the pin was *already* stale rather than implying this change made it so." |
+| **A-13** (N2, N3, N4) | "`OK -- 180 Markdown file(s) scanned…`"; "`5,541 tok / 22,317 B`"; "**1746 collected**" (measured-baseline table) | Live at `6618e54`: **195** Markdown files (same `no issues; 68 external link(s) not probed`); **5,737 tok / 23,108 B**; **1790** collected. All three were flagged in the plan as tree-dependent; all three are to be re-measured at implementation and none is a baseline. The token-budget *argument* is unaffected — the proposal template is not always-on. |
+| **A-14** ([I3]) | *(new residual — nothing superseded)* | **R6** is added to the residual set and to the Chunk F `dev/PLANNING.md` row: *the plan's bare `## Plan review` container satisfies `_has_kind` on presence, so the review-before-implement gate reads satisfied with zero reviews landed.* Measured against the plan as opened at `4020b76`: `_has_kind → True`. Not fixed here — the durable owner is **`review-gate-enforcement`**, whose revised A.1 removes or makes non-attesting the empty template container in both plan templates. Trigger: that plan landing. Live scope, re-measured: 20 live plans, **two** carry the bare container (this one and `review-gate-enforcement`), plus both plan templates. |
+
+### Does this Response clear the plan to implement?
+
+**The declared tier is discharged. The plan is cleared to implement, subject to
+three preconditions stated below.** Precisely:
+
+* **Tier.** The plan header declares `required(**Internal**)`; the proposal set
+  that ceiling and the Decision ratified it. The landed Internal round says in
+  terms that it *"does discharge the plan's declared tier"*, and Internal's
+  floor is the same agent in a fresh session, which it was. **No External tier
+  is claimed, and none is discharged.** The code review this plan routes to a
+  different agent is untouched and still owed.
+* **The reviewer's own bar for skipping a third round** was explicit: *"A
+  revised Chunk A (accumulating groups, two literals or normalization for the
+  gate phrase) plus a re-swept Chunk D table would … be ready to execute
+  without a third round."* Amendments A-1, A-2, A-3, A-4 and A-5 are exactly
+  that, and — unlike the review, which reasoned from the specification — the
+  amended instrument has been **run**: baseline all-green, and all seven
+  perturbations reproducing the plan's predictions through the real
+  `install_core`. I do not request a second Internal round.
+* **What remains, and must not be skipped.** (i) Every figure in *The measured
+  baseline* is stale or suspect and is **re-measured at implementation**, not
+  quoted — N1 through N4 are the demonstrated cases and A-11/A-13 carry them.
+  (ii) The Chunk A RED is still to be observed on the real tree with the
+  amended literals; my RED came from my own reconstruction, not from the
+  author's code, and the plan's own rule is that the observation is the
+  evidence. (iii) The seven-row perturbation ledger is written from the
+  accumulated failure lists of the **landed** test, not from the matrix in this
+  Response.
+
+**Two things this Response does not settle**, both raised to the Maintainer
+rather than decided: the already-stale frozen pin (N5), which is now a live
+condition this plan did not create; and whether striking the bare `## Plan
+review` container from this plan is worth a separate one-line commit before
+`review-gate-enforcement` lands. Neither blocks implementation.
+
+### Returned for serialization — additions to Chunk F
+
+`CHANGELOG.md` and `dev/PLANNING.md` are shared communication files and are
+**not** written by this Response. Chunk F's returned text stands, with one
+addition: the consolidated residual row gains **R6**, to be appended inside the
+existing `**Security-preflight residuals (R1-R5)**` bullet, whose label becomes
+`(R1-R6)`:
+
+```
+**R6**: the plan's bare `## Plan review` container satisfies the planner's
+`_has_kind` presence check, so the review-before-implement gate reads satisfied
+with zero reviews landed (measured against the plan as opened at 4020b76) --
+trigger is the `review-gate-enforcement` plan landing, whose revised A.1 removes
+or makes explicitly non-attesting the empty container in both plan templates.
+Live scope as of 2026-08-04: two live plans and both plan templates carry it.
+```
