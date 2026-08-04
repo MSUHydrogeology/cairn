@@ -5,7 +5,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5.
 **Date opened**: 2026-08-03
-**Status**: reviewed
+**Status**: accepted
 **Touches**: `templates/modules/team-gated/content_scan.py` (one detector rule)
 and `bootstrap/tests/test_content_scan.py`. Nothing else.
 **Related**: `planner-line-semantics` (delegates detection here — this proposal
@@ -408,3 +408,62 @@ exist. It is in *Tests required*, and the coexistence case above is exactly it.
 
 **No Maintainer input required.** Status stays `revised`; this response makes
 the artifact Decision-ready.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-03
+
+**ACCEPTED as revised.** Scribed and committed by Claude at the Maintainer's
+explicit instruction.
+
+**Maintainer's authorization, quoted verbatim:**
+
+> I accept the separator-detection proposal as revised
+
+**What is accepted.** A `unicode-line-separator` detector for `U+2028` /
+`U+2029` in `templates/modules/team-gated/content_scan.py`, **and** the
+pattern-id derivation fix the revision established as a precondition for it.
+
+**The defect this closes, recorded because it is not the one the proposal opened
+with.** `content_scan.py:401-403` derives the pattern id by substring-matching
+the human-readable message:
+
+```python
+pid = "unicode-bidi" if "bidirectional" in msg else "unicode-zero-width"
+```
+
+`_scan_unicode` is the only generator whose caller re-derives its id; every
+other call site passes a literal. A separator message falls to the `else`, so
+without this fix the detector's flags would be labelled `unicode-zero-width` —
+the promised `cairn-accept: unicode-line-separator` marker would match nothing,
+and an existing `unicode-zero-width` suppression anywhere in the tree would
+**silently hide separator detections**. The revision replaces the ternary with
+an explicitly yielded id, so prose stops being a dispatch key.
+
+**Sequencing with `content-scan-detectors`**, accepted the same day over the
+same sites:
+
+* this proposal **owns** the signature change, because its correctness depends
+  on it while `content-scan-detectors` merely benefits;
+* whichever plan implements second **rebases onto the yielded-id form** and does
+  not reintroduce the ternary;
+* **both** plans carry the coexistence test — all three unicode pattern ids trip
+  independently, each marker suppresses only its own id, and a
+  `unicode-zero-width` marker does *not* suppress a separator flag. That test
+  fails against the code as it stands, so whichever plan lands first turns it
+  green and the second inherits a guard rather than a promise.
+
+**Declared limit.** One separator flag per line, following the existing
+per-category-per-line convention. Changing that convention would alter shipped
+`unicode-zero-width` and `unicode-bidi` output for every adopter and needs its
+own proposal.
+
+**Lineage.** Discharges the detection follow-up condition on the
+`planner-line-semantics` Decision.
+
+**Review tier discharged.** Required `required(External, security lens)`;
+received a Gemini Flash External round and an External re-review, both **SHIP**,
+with the dispatch defect independently reproduced.
+
+**Next transition:** plan-open, carrying `required(External, security lens)` in
+its own right.
+
+**Decision-only commit.** Status flip and this section, nothing else.
