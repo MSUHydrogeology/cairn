@@ -144,6 +144,16 @@ Each is reproduced by execution for this plan — commands and outputs are in
    design's ASCII-only split ships. Measured both ways for this plan, so the
    question is decidable rather than rhetorical:
 
+   * **Which option is the *change* — corrected at plan review, because this
+     plan had the direction backwards.** Today's code tokenizes with a bare
+     `name.strip().split()`, which splits on **Unicode** whitespace. Measured
+     against the live planner: with the current roster, all six `Zs` separators
+     below classify `human` **in the tree as it stands**. So the accepted
+     design's ASCII-only split is a *behaviour change* on this axis, and a `Zs`
+     split *preserves* today's behaviour. This does not decide the question —
+     the accepted design is still the accepted design and the exploit is
+     unaffected either way — but the Maintainer should have the baseline right,
+     and Chunk C now carries the change in the release notes.
    * **Cost of shipping as accepted**: a CJK byline separated by `chr(0x3000)`
      IDEOGRAPHIC SPACE, and a French byline separated by `chr(0x202f)` NARROW
      NO-BREAK SPACE, both classify `unknown` against a roster typed with an
@@ -162,7 +172,8 @@ Each is reproduced by execution for this plan — commands and outputs are in
      are `Zl`/`Zp`, `chr(0x200b)` and `chr(0xad)` are `Cf`; none is `Zs`, and
      the homoglyph bylines classify `unknown` under both splits. Measured.
 
-   If the Maintainer wants the change, it is a one-line edit to the tokenizer
+   If the Maintainer wants `Zs` word breaks — which is also what the tree does
+   today, per the first bullet — it is a one-line edit to the tokenizer
    plus one behaviour-table row, and B6's test inverts. **Absent an answer, the
    accepted design ships and B6 records the cost.**
 
@@ -389,7 +400,7 @@ every point. One commit.
 | # | File | Change |
 |---|------|--------|
 | A1 | `tools/lifecycle_planner.py` | `_fold_word(raw, form)` — case-fold, normalize twice at `form`, drop combining marks, then keep a character if it is non-ASCII **or** in `a-z0-9`. Per [I2] the surviving deletion is expressed as an **explicit allow-set**, so the rule and the code are the same statement, and the docstring names all three deleted classes (ASCII punctuation **and symbols**; C0 controls and DEL; combining marks) rather than the two the proposal named. |
-| A2 | `tools/lifecycle_planner.py` | `_flag_words(name)` at `NFKD` (over-folding here over-flags) and `_grant_words(name)` at `NFD` (over-folding here would grant). Tokenization splits on **ASCII whitespace only**, so a non-ASCII separator stays inside its word rather than acting as an invisible word break. The two-strength asymmetry is stated in the docstrings, not left to be inferred. |
+| A2 | `tools/lifecycle_planner.py` | `_flag_words(name)` at `NFKD` (over-folding here over-flags) and `_grant_words(name)` at `NFD` (over-folding here would grant). Tokenization splits on **ASCII whitespace only**, so a non-ASCII separator stays inside its word rather than acting as an invisible word break. The two-strength asymmetry is stated in the docstrings, not left to be inferred. **"ASCII-only" is a mechanism requirement, not a description** — the split is an explicit ASCII class (`[ \t\n\r\f\v]+`, or an `re.ASCII` pattern), because both obvious implementations are Unicode-aware and would silently decide Maintainer question 3: today's bare `name.strip().split()` splits on every `Zs` separator measured below, and so does a `\s` class in a `str` pattern (both measured at plan review). B6 catches either, but it lands a chunk later, so the mechanism is pinned here. |
 | A3 | `tools/lifecycle_planner.py` | `_load_human_maintainers` returns a frozenset of **word tuples** produced by `_grant_words`, and — per [I5] — filters on the **folded** value, not the raw entry. The existing guard tests whether the *entry* is blank; the correct predicate is whether the *key* is empty. Under tuple equality `() == ()` is `True`, so the old predicate would let one punctuation-only typo match a punctuation-only byline. |
 | A4 | `tools/lifecycle_planner.py` | `_load_ai_registry` applies the same folded-value filter, per [I5]. An entry folding to the empty string would otherwise classify **every** byline `ai`, because `"anything".startswith("")` is `True`. Config-supplied entries fold through `_flag_words`, so the extension mechanism is symmetric with the built-ins. |
 | A5 | `tools/lifecycle_planner.py` | `IdentityModel.classify` — AI leg first (prefix match on `_flag_words`, precedence preserved), then **tuple equality** of `_grant_words(byline)` against the roster's key set, replacing the per-word set intersection at `tools/lifecycle_planner.py:314`. Exactness, not containment, is what closes the defect in its general form. |
@@ -459,7 +470,7 @@ could not do the job claimed for them.
 | B3 | `bootstrap/tests/test_byline_identity.py` | **The anti-collision test** — [I3]'s replacement. Over a corpus **committed in this module**, assert that no corpus name classifies `human` against a roster holding a *different* corpus name, except for the pairs the design deliberately merges (B4). |
 | B4 | `bootstrap/tests/test_byline_identity.py` | **The R2 residual pin.** The [I1a] and [I1b] classes are asserted to **still collide** — a ligature/long-s variant and a decomposing-accent variant each classify `human` against the plain rostered name. Pinned, not fixed: R2 accepts this widening, and pinning it means a later narrowing of the granting fold is a deliberate, visible test change rather than a silent behaviour drift. |
 | B5 | `bootstrap/tests/test_byline_identity.py` | **The roster-symmetry test, kept and relabelled.** `classify(x)` with roster `[x]` over the corpus. Its docstring says what it actually is — a smoke check on the AI leg and the empty-fold guard — **not** the international-cost measurement. Per [I3] it holds for every total function and cannot detect over-folding. |
-| B6 | `bootstrap/tests/test_byline_identity.py` | **The [I6] separator cost, recorded as a test.** A CJK name rostered with an ASCII space and written with `chr(0x3000)`, and a French name rostered with an ASCII space and written with `chr(0x202f)`, both classify `unknown`. This is a **cost-recording** test: it asserts the false positive exists. If the Maintainer answers question 3 by adopting `Zs` word breaks, this test inverts — which is exactly the signal that the optional change landed. |
+| B6 | `bootstrap/tests/test_byline_identity.py` | **The [I6] separator cost, recorded as a test.** A CJK name rostered with an ASCII space and written with `chr(0x3000)`, and a French name rostered with an ASCII space and written with `chr(0x202f)`, both classify `unknown`. This is a **cost-recording** test: it asserts the false positive exists. It also asserts the **remedy**, so the cost is recorded with its exit: the same two bylines classify `human` when the roster carries the *exact* separator (measured at plan review — the `NFD` granting leg preserves a `Zs` character inside its word, so roster and byline fold to the same key). A recorded cost with no recorded way out reads as a dead end to the next reader. If the Maintainer answers question 3 by adopting `Zs` word breaks, the false-positive half of this test inverts — which is exactly the signal that the optional change landed. |
 | B7 | `bootstrap/tests/test_byline_identity.py` | **The R3 residual pin.** Against author `Claude (Strategy)`, the `NFKD` comparator flags the precomposed-accent, mathematical-bold and circled-letter reviewer variants (3 of 4) and does **not** flag the Cyrillic one. Asserted as a *known* residual so it cannot regress silently and so closing it is a deliberate test change. |
 
 **The corpus is a deliverable, and it must be adversarial.** Carry (i) from the
@@ -533,7 +544,7 @@ either alone.
 
 | # | File | Change |
 |---|------|--------|
-| C1 | `CHANGELOG.md > Unreleased > Fixed` | One behaviour-change entry: the homoglyph widening, the roster-granularity change, and the migration instruction (a roster entry is now a complete display name). This is R5's expiry trigger — if v0.4.0 ships without it, R5 is unresolved. |
+| C1 | `CHANGELOG.md > Unreleased > Fixed` | One behaviour-change entry: the homoglyph widening, the roster-granularity change, and the migration instruction (a roster entry is now a complete display name). **Plus the separator change** ([E1]): a byline whose words are separated by a non-ASCII `Zs` character is recognized *today* and classifies `unknown` after this change, so the entry states that a roster entry is compared **separator-for-separator** — such a name is rostered exactly as it appears in the byline, or typed with ASCII spaces. Two behaviour changes in the entry, not one with a footnote. This is R5's expiry trigger — if v0.4.0 ships without it, R5 is unresolved. |
 
 **Acceptance criteria — Chunk C**
 
@@ -543,6 +554,11 @@ either alone.
   pre-first-adopter), which is why this is a release note and not an upgrade
   note. If an adopter exists by v0.4.0, R5's row says an upgrade note is
   required instead.
+* **Both behaviour changes are findable in the entry**, not only the headline
+  one. A person with `chr(0xa0)` or `chr(0x3000)` inside their display name is
+  recognized today and is not after this change; if the entry does not let them
+  discover that and act on it, the entry is incomplete. This is where [E1] is
+  discharged.
 * `python scripts/check_cairn.py` green.
 * `python scripts/claim_check.py CHANGELOG.md` clean.
 
@@ -910,6 +926,8 @@ plan.
 
 This section is append-only once written.
 
+<!-- cairn-accept: homoglyph reason="The External reviewer's exploit reproduction below embeds the live Cyrillic U+0430 spoof token this plan exists to close; the token IS the finding, and rewriting it to ASCII would delete the evidence. Block-scoped over the reviewer's section only. The scanner flagging it is the detector working, not a defect." reviewer="Claude (author, marker only)" date=2026-08-03 -->
+
 ## Plan review -- Gemini Flash (External, security lens) -- 2026-08-03
 
 **Steelman.** This plan presents a complete, mathematically sound redesign of identity byline classification. It addresses the character-deleting normalization flaw (`re.sub(r"[^a-z0-9]", "", raw.lower())`) which previously allowed homoglyph spoofing (`chr(0x430)` Cyrillic 'а' replacing ASCII 'a' to grant Maintainer authority). The proposed two-strength normalization (`NFD` for authority-granting, `NFKD` for AI-flagging) and exact tuple matching close the privilege-widening defect completely.
@@ -950,3 +968,126 @@ Does Łukasz fold to 'lukasz' under NFD? False
 
 **READY FOR IMPLEMENTATION.** The plan's character-preserving fold, two-strength normalization split, exact tuple matching, and adversarial corpus requirements are verified and sound.
 
+<!-- cairn-accept-end: homoglyph -->
+
+## Response to plan review -- Claude (author) -- 2026-08-03
+
+**Model**: Claude Opus 5
+
+**One finding, accepted — and verifying it surfaced a hazard the finding did
+not name.** [E1]'s behaviour claim reproduces exactly, and the remedy it
+asserts works. But the review describes ASCII-only splitting as something this
+plan *retains*, and that is backwards: today's code tokenizes with a bare
+`name.strip().split()`, which splits on **Unicode** whitespace, so every `Zs`
+separator in question classifies `human` in the tree as it stands. [E1] is a
+behaviour **change** this plan introduces, not an inherited limitation — which
+moves it out of "Maintainers should note" and into `CHANGELOG.md`. Separately,
+the regex the review quotes as the plan's implementation,
+`re.split(r"[\s\t\n\r]+", raw)`, appears nowhere in the plan and does **not**
+implement it: `\s` in a `str` pattern is Unicode-aware, so an agent who took
+that snippet as the recipe would silently answer Maintainer question 3 in the
+affirmative. Four small chunk amendments; no scope added.
+
+### [E1] Unicode `Zs` space separators -- **ACCEPTED**
+
+**The finding, reproduced before disposing.** The plan retains ASCII-only
+whitespace splitting, so `chr(0x3000)` IDEOGRAPHIC SPACE or `chr(0x202f)`
+NARROW NO-BREAK SPACE inside a legitimate human name fails to tokenize into
+separate words and classifies `unknown`. Fail-closed and therefore safe, but
+Maintainers must be told that such a name has to be rostered with those exact
+separators, or typed with ASCII spaces.
+
+**Verified independently**, against a scratch transcription of A1–A5 in the
+session scratchpad (no repository file edited), canonical interpreter 3.13.13,
+`unicodedata` 15.1.0:
+
+```
+CJK byline U+3000 vs ASCII-space roster:  'unknown'   grant_key=('王\u3000伟',)
+CJK byline U+3000 vs U+3000 roster    :    'human'
+FR  byline U+202F vs ASCII-space roster:  'unknown'   grant_key=('jean\u202fdupont',)
+FR  byline U+202F vs U+202F roster    :    'human'
+FR  byline ASCII  vs U+202F roster    :  'unknown'
+```
+
+Both halves hold: the false positive is real, and rostering the exact separator
+is a working exit — the `NFD` granting leg preserves a `Zs` character inside its
+word, so roster and byline fold to the same key. The flagging leg behaves as the
+two-strength design intends and was checked too: `NFKD` maps all three of
+`chr(0x3000)`, `chr(0x202f)`, `chr(0xa0)` to an ASCII space, which the allow-set
+then drops, so `"Cl" + chr(0x202f) + "aude"` still classifies `ai`. The
+separator issue is confined to the granting leg, in the safe direction, exactly
+as the reviewer says.
+
+**Three things the finding did not name, and they are why this is accepted
+rather than cited as covered.**
+
+1. **The direction is reversed.** Measured against the *live* planner with the
+   current roster, `chr(0x3000)`, `chr(0x202f)`, `chr(0xa0)`, `chr(0x1680)`,
+   `chr(0x205f)` and `chr(0x2000)` between "Anthony" and "Kendall" **all
+   classify `human` today** — because `_ai_candidate_tokens` and
+   `_identity_token` both use a bare `.split()`. So this plan *removes* a
+   recognition that exists, and the plan's own question-3 text — "if the
+   Maintainer wants the change, it is a one-line edit" — had the change pointing
+   the wrong way. A behaviour a user has today and loses tomorrow belongs in the
+   release notes, which is where the plan did not have it.
+2. **The review's quoted mechanism would implement the opposite of the plan.**
+   `re.split(r"[\s\t\n\r]+", "Anthony" + chr(0x3000) + "Kendall")` returns
+   `['Anthony', 'Kendall']` — two tokens, because `\s` is Unicode-aware; only
+   `re.ASCII` (or an explicit class) gives one. That snippet is not in the plan,
+   but it is now in the plan's file, above a `READY FOR IMPLEMENTATION`, and
+   B6 — the test that would catch it — lands a chunk after the tokenizer does.
+3. **What *was* already covered, stated so the amendment stays minimal.** A7's
+   `unknown` message already tells a Maintainer that a roster entry must be "the
+   complete display name as it appears in the byline" and appends the `ascii()`
+   escape for any non-ASCII byline; measured, that renders the French case as
+   `'Jean\u202fDupont'`, so the separator is visible at the moment of failure.
+   The in-tool diagnostic path was there. The release-facing surface and the
+   tokenizer's mechanism were not.
+
+**Plan changes — four amendments, all inside existing rows.**
+
+* **Chunk A, row A2.** Added that "ASCII whitespace only" is a *mechanism*
+  requirement, not a description: the split is an explicit ASCII class
+  (`[ \t\n\r\f\v]+`, or an `re.ASCII` pattern), naming both Unicode-aware traps
+  — today's bare `.split()` and a `\s` class — and noting B6 catches either but
+  lands a chunk later.
+* **Chunk C, row C1.** The `CHANGELOG.md` entry now carries **two** behaviour
+  changes, not one: the roster-granularity change, and the separator change —
+  a roster entry is compared separator-for-separator, so a name written with a
+  non-ASCII `Zs` is rostered exactly as it appears in the byline or typed with
+  ASCII spaces.
+* **Chunk C acceptance criteria.** New criterion: both behaviour changes must be
+  findable in the entry by someone with `chr(0xa0)` or `chr(0x3000)` in their
+  display name. This is where [E1] is discharged.
+* **Chunk B, row B6.** The cost-recording test now also asserts the **remedy**
+  — the same two bylines classify `human` when the roster carries the exact
+  separator. A recorded cost with no recorded way out reads as a dead end.
+
+**Also amended, and flagged rather than decided:** Maintainer question 3 gains a
+first bullet recording the measured baseline — that a `Zs` split *preserves*
+today's behaviour and the accepted ASCII-only split is the change — and its
+closing sentence is corrected to match. The question itself is untouched and
+stays the Maintainer's; this plan still ships the accepted design absent an
+answer. The exploit is unaffected either way, as already measured.
+
+### The reviewer's "Not covered / low confidence" note
+
+Genuinely out of scope, no follow-up row needed. `planner-line-semantics`'s four
+parsing functions are fenced out of this plan by name in *Scope* — "Same module,
+disjoint functions, no shared line, either landing order works" — and the one
+obligation that crosses the two lineages, [I7b]'s stale characterization, is
+already recorded in *Lasting-truth migration* as that proposal's to correct at
+its own Response.
+
+Two items from the reviewer's mandates did **not** come back, and I record it
+rather than treat silence as clearance. Mandate 4 asked for a sweep of the
+bare-`re.sub` pattern in `tools/lifecycle.py` and `scripts/`; the plan had
+pre-declared that "if the plan reviewer returns a clean enumeration it closes at
+plan time; if not, it needs a durable home before this plan archives." No
+enumeration came back, so the fallback applies unchanged and that known omission
+stands open. Mandates 1–3 and 5 (the compatibility-mapping enumeration, the
+`CaseFolding.txt` question, the hostile roster, the B2 adjacency) are likewise
+unanswered; they remain listed as omissions in *Author-accounting* and are not
+converted into claims by a clean verdict. Nothing here blocks Chunk A — the
+tier is discharged and the review's verdict stands — but the plan's own
+uncovered list is not shorter than it was before the pass.
