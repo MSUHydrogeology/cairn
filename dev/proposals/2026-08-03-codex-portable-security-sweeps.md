@@ -575,3 +575,149 @@ confirming the module layout, `default-security-stance` interaction, or the
 proposal's test list for completeness. I verified the exit-code contract, the
 `python-security` execution boundary, the output-rendering path, and the
 default-egress disposition by reading the shipped runner.
+
+## Response -- Codex (author) -- 2026-08-03
+
+**Model**: OpenAI Codex (GPT-5).
+
+All seven findings are **accepted**. PS1 and PS2 are blocking, and execution
+made both stronger than the review stated. The four-adapter v1 is withdrawn.
+The revision will carry one adapter, Gitleaks, only with the controls established
+below; OSV-Scanner, zizmor, and Trivy return to separately reviewed future
+increments.
+
+### [PS1] Accepted -- this is a new executable-trust class
+
+The review is correct and my "matching `python-security`" framing was false.
+Re-reading `_run_tool` confirmed that the existing runner executes
+`[sys.executable, "-I", "-m", ...]`; `which()` is only a presence check. It
+does not delegate execution authority to a PATH-selected scanner binary.
+
+The narrowed v1 still has **two**, not one, host executable trust roots:
+
+1. `gitleaks`, resolved once by the Cairn runner and then invoked by absolute
+   path; and
+2. `git`, which Gitleaks itself locates and invokes for history scanning.
+
+The second is a correction beyond the review's four-binary enumeration. A live
+Gitleaks 8.30.1 debug run showed `/opt/homebrew/bin/git -C <repo> log ...`.
+The revised trust set will name both executables, verify both lexical and
+resolved paths outside the repository, record both versions, and give the child
+a PATH containing the verified Git directory rather than the inherited PATH.
+This is shape and containment validation, not provenance or containment; the
+residual says so without analogizing it to `python-security`.
+
+### [PS2] Accepted -- measured for Gitleaks; the other three adapters are removed
+
+None of the four per-tool claims had execution evidence. I downloaded the
+official Gitleaks 8.30.1 Darwin arm64 release, verified the archive SHA-256
+`b40ab0ae55c505963e365f271a8d3846efbc170aa17f2607f13df610a9aeb6a5`
+against the publisher's `gitleaks_8.30.1_checksums.txt`, and ran hostile fixtures
+under the canonical Python 3.13.13 host. The measured boundary is narrower than
+I proposed:
+
+* A candidate `.gitleaks.toml` suppressed the planted GitLab token and returned
+  0. Supplying an explicit trusted `--config` restored the finding at exit 1.
+  The explicit path also won over a hostile `GITLEAKS_CONFIG_TOML`; the runner
+  will additionally remove both Gitleaks config environment variables.
+* A candidate `gitleaks:allow` comment suppressed the finding. Adding
+  `--ignore-gitleaks-allow` restored it.
+* A candidate `.gitleaksignore` suppressed the finding **even when**
+  `--gitleaks-ignore-path` named a trusted empty file. Debug output showed both
+  files loaded. Gitleaks 8.30.1 exposes no observed switch that disables the
+  target file, so the runner must recursively detect and **refuse before
+  execution** when the target tree carries any `.gitleaksignore`. Reviewed
+  fingerprint suppressions are materialized from the lockfile-covered JSON
+  policy into an off-tree temporary ignore file.
+* A tracked `.gitattributes` containing `secret.txt binary` made the default
+  history scan return 0 on a committed token. Fixed
+  `--log-opts="--all --full-history --text --no-textconv --no-ext-diff"`
+  restored the finding. Those options become adapter-owned argv, not policy.
+* Gitleaks runs offline, so no network permission or advisory cache is needed.
+
+The revised environment also sets `GIT_TERMINAL_PROMPT=0`,
+`GIT_NO_REPLACE_OBJECTS=1`, `GIT_CONFIG_NOSYSTEM=1`, and a null global Git
+config, and does not inherit candidate-selected Git/Gitleaks variables. A
+shallow repository remains INCOMPLETE, not clean. The trusted-checkout threat
+model does not claim to contain a concurrent process racing these preflights.
+
+This establishes the Gitleaks-specific route by execution. It establishes
+nothing for OSV-Scanner, zizmor, or Trivy, which is why they leave v1 rather than
+riding on the Gitleaks evidence by analogy.
+
+### [PS3] Accepted -- no raw tool output reaches the operator
+
+The existing runner prints child output verbatim, exactly as cited. That is a
+pre-existing defect and not a pattern the new runner may copy.
+
+The revision requires Gitleaks JSON output with full redaction. The runner
+parses a bounded JSON document, rejects unknown top-level/result shapes, selects
+only the documented fields needed for the report, and renders every string via
+JSON escaping with `ensure_ascii=True`. Raw stdout and stderr are never relayed;
+on tool failure, bounded diagnostics are escaped before display.
+
+The hostile-filename probe used a filename containing ESC, a newline, and the
+forged text `[portable] CLEAN`. Gitleaks emitted valid JSON; parsing recovered
+the controls, while `json.dumps(..., ensure_ascii=True)` rendered them as
+`\u001b` and `\n`. That becomes a required public-path regression, alongside
+forged status text in stderr.
+
+The equivalent existing-runner defect is recorded but does not ride this
+proposal. It belongs with PS7 in a focused hardening proposal for
+`python-security`.
+
+### [PS4] Accepted -- narrow v1 makes offline CLEAN reachable
+
+The four-adapter draft did not own its likely steady state. Gitleaks alone needs
+neither advisory data nor policy-bundle downloads, so a complete, configured
+offline run can return 0. The revision states that as an invariant and removes
+`--allow-network` from v1 entirely. A future network/data-backed adapter must
+show how offline CLEAN is reached or make its expected INCOMPLETE posture a new
+Decision; it cannot inherit either silently.
+
+### [PS5] Accepted -- one adapter in v1
+
+The review's scope recommendation is adopted. The question-oriented contract,
+strict JSON policy, fixed registry, aggregate semantics, and trust-boundary
+tests remain. Only the secret/history question and Gitleaks adapter ship. This
+reduces four direct scanner trust roots to one, removes advisory/network state,
+and turns three unverified per-tool contracts into future proposals.
+
+The live probes above also show why "one adapter" must mean one adapter with its
+transitive Git dependency and candidate-config behavior accounted for, not one
+binary name in a table.
+
+### [PS6] Accepted as a provenance check; the quotation is confirmed
+
+I re-read the session transcript. Both Maintainer quotations in *Context* are
+verbatim, including "How about command line tools for those without python?"
+and "Could you please write this up as a proposal?" They are drafting
+authorization only, not a Decision, as the proposal already says. No text
+change is required, but the confirmation belongs in the record.
+
+### [PS7] Accepted -- separate existing-runner defect
+
+`_run_tool` has no `timeout=` and can hang indefinitely. Confirmed at
+`run_security_audit.py:275-278`. The portable runner retains both its own
+subprocess timeout and Gitleaks's fixed `--timeout` as defense in depth. Adding
+the missing timeout and safe structured/escaped output to `python-security` is
+a separate defect proposal; neither change is bundled here.
+
+### Revision direction
+
+The next lifecycle transition will append a revised proposal that:
+
+* narrows v1 to Gitleaks while preserving the question-oriented extension
+  boundary;
+* names Gitleaks and Git as the complete executable residual trust set;
+* replaces the four ambient-config assertions with the measured Gitleaks argv,
+  environment, `.gitleaksignore` refusal, and `.gitattributes` countermeasure;
+* parses and safely renders structured redacted output only;
+* removes all network behavior and makes offline CLEAN an acceptance criterion;
+  and
+* splits existing `python-security` timeout/output hardening out of scope.
+
+**Decision readiness: not yet.** The blocking findings are accepted here, not
+closed by prose alone. They close only when the revised proposal carries these
+contracts and a focused External re-review confirms that the narrower design did
+not preserve four-adapter assumptions under a one-adapter label.
