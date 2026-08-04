@@ -1032,3 +1032,93 @@ and the absence of any finding-payload redaction rule by reading both artifacts.
 The adversarial network-client fixtures listed under AW4 are the right set; I did
 not attempt to extend it, and their sufficiency is a plan-review question once
 implementation bytes exist.
+
+## Response to External Security Review, round 2 -- Codex (author) -- 2026-08-03
+
+**Model**: OpenAI Codex (GPT-5)
+
+**Disposition: accept AW6 and AW7.** AW6 identifies a real confidentiality
+failure in the proposed contract. A security finding is not permission to
+reproduce the data whose exposure proved the finding. AW7 was also correct at
+review time; the separately committed portable response and revision have now
+closed the inaccurate interval.
+
+### [AW6] Accepted -- findings carry metadata, never observed content
+
+The original redaction language was credential-oriented and did not govern
+failed assertion diagnostics. That is insufficient for a cross-principal
+authorization probe. The revision will apply one output-minimization contract
+to stdout, stderr, the deterministic summary, the machine report, exception
+diagnostics, timeout/TLS/HTTP errors, and every CLEAN/INCOMPLETE/FINDINGS /
+DEGRADED path.
+
+An API finding may report only:
+
+* stable policy identifiers: target label, operation ID, case ID, assertion ID,
+  principal **labels**, and JSON pointer;
+* request method and response status;
+* expected relationship and observed JSON type;
+* bounded structural measurements such as serialized byte length, array/object
+  member count, or presence/absence; and
+* when correlation is needed, an HMAC-SHA-256 fingerprint under a fresh random
+  per-run key that is never printed or persisted.
+
+It may not report a response value, body excerpt, header value, credential,
+cookie, literal object identifier, resolved path parameter, exception `repr`,
+or raw library diagnostic. A keyed one-run fingerprint is preferable to a
+public salted digest for low-entropy personal data: without the key, a pasted
+report cannot be dictionary-tested, while equal observations can still be
+correlated inside one run.
+
+The hosting probe follows the same default-deny output rule. It reports which
+reviewed security directive or cookie attribute is present, missing, or
+invalid, not complete response headers, `Set-Cookie` values, arbitrary bodies,
+or redirect query strings. Where a policy comparison needs a directive value,
+the report names the normalized expected token and pass/fail relation rather
+than echoing the complete observed header.
+
+Raw request and response bytes remain bounded in memory and are never written
+to a report or temporary file. The default machine report is a sanitized JSON
+artifact created with exclusive permissions in a newly created off-tree
+temporary directory. An explicit report destination must be absolute,
+symlink-free, outside the repository, and created exclusively; the runner
+refuses an in-tree or existing-file destination. The terminal prints only the
+sanitized summary and the off-tree report path.
+
+The plan will carry a distinctive-marker fixture for every output and error
+path. A deliberately overexposed cross-tenant marker, credential marker, cookie
+marker, redirect-query marker, and forged terminal-control marker must appear
+nowhere in stdout, stderr, the machine report, exception diagnostics, temporary
+files, or descendant output. Tests will also assert that no raw-response file
+is created.
+
+This protects report handling, not the live process memory. A debugger, core
+dump, compromised interpreter, or same-user process may still observe bounded
+response bytes while assertions execute. The module is not process
+containment, and the revised residual will say so.
+
+### [AW7] Accepted and now closed in the reciprocal artifact
+
+The review accurately described `portable-security-sweeps` at `a17a7e7`: its
+adoption amendment still called activation undesigned. The promised independent
+transition subsequently landed in two author commits:
+
+* `353f6c7` records `security-verification-activation` at `af9863c` as the owner
+  of the default-on local/offline dispatcher and keeps the capability on HOLD
+  until that contract is accepted; and
+* `f0cec1b` replaces the stale HOLD basis with explicit Decision and
+  implementation sequencing, including the exact portable registry entry and
+  deletion-mutant requirement.
+
+The portable artifact now contains reciprocal references to
+`security-verification-activation` and states that the old blocker "the standing
+invocation path is not designed" is closed. Its remaining HOLD is dependency
+ratification, not absence of a design. No further edit to that artifact is
+needed for AW7.
+
+### Next transition
+
+This response leaves the proposal **reviewed**. The next commit will append the
+governing finding-confidentiality, off-tree-report, residual, and adversarial
+test contracts and return it to `revised` for focused External Security
+re-review.
