@@ -1,7 +1,7 @@
 # Plan: deferral discipline — the archive precondition routes, not only preserves
 
 **Source proposal**: [`dev/proposals/archive/2026-08-04-claude-deferral-discipline.md`](../proposals/archive/2026-08-04-claude-deferral-discipline.md)
-**Status**: executing
+**Status**: review
 **Plan review**: required(Internal) — ratified in the Decision (`6e349b3`)
 **Last update**: 2026-08-04
 **Opened**: 2026-08-04
@@ -829,14 +829,14 @@ nineteen**: the planner pair carries five bound sites each (not two), and the
 `_lifecycle_metrics` twin pair joins.
 
 ```
-1. Chunk A  -- doctrine/lifecycle.md: C1, C2, C4 AND C3 + C5        [pending]
-2. Chunk B  -- the four sibling doctrine files (+ plans.md:602-609) [pending]
-3. Chunk C  -- the four adopter templates, incl. C3/C5 backpressure [pending]
-4. Chunk D  -- the four self-hosted mirrors                         [pending]
+1. Chunk A  -- doctrine/lifecycle.md: C1, C2, C4 AND C3 + C5        [commit 3f8ce57]
+2. Chunk B  -- the four sibling doctrine files (+ plans.md:602-609) [commit 5c85274]
+3. Chunk C  -- the four adopter templates, incl. C3/C5 backpressure [commit 758448a]
+4. Chunk D  -- the four self-hosted mirrors                         [commit 4858c84]
 5. Chunk E' -- the planner twins: 5 sites x 2 copies, BOTH spellings
-               accepted, + 3 new assertions                          [pending]
-6. Chunk E''-- the _lifecycle_metrics twins: `guard` bucket          [pending]
-7. Chunk F  -- CHANGELOG + open the D1 successor                     [pending]
+               accepted, + 3 new assertions                          [commit 6ece062]
+6. Chunk E''-- the _lifecycle_metrics twins: `guard` bucket          [commit 8d6ae88]
+7. Chunk F  -- CHANGELOG + open the D1 successor                     [commit 791655a]
 ```
 
 ### Chunk A (revised) — the canonical rule, with the gate
