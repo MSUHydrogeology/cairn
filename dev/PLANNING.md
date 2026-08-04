@@ -601,6 +601,55 @@ none blocking.
   binding is canonical in `dev/.cairn/model-selection-mapping.yml`; revisit
   only if a project later adds its own metrics-config tier vocab.
 
+**Scan coverage** *(residuals from plan `scan-coverage`, homed 2026-08-04 so the
+plan can archive)*
+
+* **SC1 — the registry census was struck, and the census shape is the reason.**
+  The proposal's name-keyed census (`*_MAPPINGS`) is blind on the day it is
+  written: `_OPTIONAL_TEMPLATES` (`bootstrap/_scaffold/config.py:249`, verified
+  at HEAD 2026-08-04) is a live delivery registry that never reaches the
+  manifest and whose name does not match the pattern. A census that enumerates
+  by name cannot see a registry that declines to be named that way.
+  *Trigger:* a **shape-based** key — one that finds delivery registries by what
+  they are rather than what they are called — or the first new delivery
+  registry added under any name. Until then the gate's coverage claim is
+  bounded by `install_manifest()`, which `bootstrap/SAFETY.md` now states in
+  terms.
+
+* **SC2 — four `B607` findings, recorded and not fixed.** `git` invoked by name
+  rather than absolute path, in `templates/skills/_lib/lifecycle.py` and
+  `templates/skills/_lib/lifecycle_planner.py`. Re-measured 2026-08-04: those
+  two files carry **16 LOW findings — `B404`×2, `B603`×10, `B607`×4** — and the
+  `B607` four run inside *an adopter's own repository*, which is a real
+  question rather than a formality. Deliberately deferred: bundling a
+  code-hardening contract into a coverage contract is what cost
+  `identity-not-name` a REVISE/SPLIT verdict.
+  *Trigger:* an adopter reporting a `PATH`-resolution surprise, or any decision
+  to lower the blocking threshold to LOW — which would turn the gate red on 113
+  findings, only 16 of them newly visible.
+
+* **SC3 — the union-vs-replacement monotonicity claim is unguarded.** Chunk B
+  makes `scan_targets()` a *union* with the manifest rather than a replacement,
+  and the plan's own author-accounting records that **no test guards that
+  directly**. Verified 2026-08-04: zero tests in
+  `bootstrap/tests/test_security_lint.py` mention it. The failure state is
+  concrete — a later refactor deletes the union and the scan silently narrows.
+  The on-disk oracle (`test_every_templates_py_on_disk_is_release_scanned`)
+  catches it *if* the narrowing drops a file that exists on disk, which is the
+  usual case but not the claim.
+  *Trigger:* any edit to `scan_targets()`, at which point the guard is one
+  assertion and should be written rather than re-deferred.
+
+* **SC4 — three frozen pins are stale, and the re-pin timing is a Maintainer
+  question.** Verified 2026-08-04, `_gate_manifest.py verify` reports
+  `FROZEN-MODIFIED` on `bootstrap/security_check.py`,
+  `bootstrap/tests/test_security_check.py` and
+  `bootstrap/tests/test_security_lint.py`. The plan raises and explicitly does
+  **not** answer whether re-pinning happens now or at the next supervised
+  re-anchor.
+  *Trigger:* the next supervised re-anchor ceremony, which is where this is
+  cheapest to fold in. Not mechanical — a re-pin is a Maintainer act.
+
 **Release authenticity** *(residuals from plan `release-authenticity`)*
 * **RA1 (a) — Cairn's signing authority widens** *(non-mechanical for the
   adopter, mechanical for Cairn)* — the principal-count warning in
