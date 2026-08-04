@@ -2763,3 +2763,45 @@ the Decision only.
 high-risk engine obligations and a Maintainer-run AST baseline re-anchor.
 **Batch it** with `profile-parse-fail-open` so that ceremony is paid once.
 The Class C follow-on this scope declined is deferred, not dropped.
+
+## Class C ruling -- Anthony Kendall (Maintainer) -- 2026-08-04
+
+**Ratified, and scope 3's decline is overruled.** This resolves the question the
+*Class C* section put to the Maintainer and left open at the Decision above --
+the one the closing line records as "deferred, not dropped". Scribed by Claude
+(Implementation) at the Maintainer's explicit instruction.
+
+**Maintainer's authorization (verbatim):**
+
+> I ratify the departure and overrule scope 3's decline: fork-advisory-semantics
+> absorbs the SECURITY_MUTATIONS.md Class C follow-on. Class C lands as
+> additional chunks on that plan after its current chunks commit, not by
+> reopening its scope now. Commit this Decision.
+
+**What this decides.** The *Class C* section presented three options and both
+drafting authors proposed **option 1** (open Class C as its own proposal). The
+Maintainer chose **option 2**: `fork-advisory-semantics` absorbs the follow-on --
+the six `upgrade`-family commands (`cmd_update_profile`, `cmd_init_lock`,
+`cmd_rebase`, `cmd_verify`, `cmd_drift`, `cmd_complete_merge`) that write into an
+adopter tree without routing through the `_assert_safe_write` containment guard.
+The cost scope 3's decline named is accepted with the ruling, not waived: two
+contracts and two gate sets in one plan, on the successor already carrying two
+`FROZEN-MODIFIED` HOLDs and an AST re-anchor, and a longer External security
+read.
+
+**Sequencing, as instructed.** The scope is **not** reopened now. Class C lands
+as *additional chunks* on the existing plan after its current chunks commit, so
+the verified work already in flight -- and the batched AST re-anchor ceremony it
+gates -- is not held behind a six-command write-capability redesign.
+
+**Consequence for residual R7.** R7 held the follow-on precisely because it was
+unowned, and its trigger (a) is "the Maintainer's ratification at the **first**
+successor Decision, which either opens Class C as its own proposal or assigns
+it". This ruling **assigns** it, so trigger (a) is discharged here.
+`SECURITY_MUTATIONS.md` records the discharge separately; R7's row is not edited
+in place.
+
+**Scribe-coupling disclosure.** The scribe is an agent of the same type as the
+proposal's author. The authorization is quoted verbatim and visually isolated
+rather than paraphrased, per the scribing guard-rail, and this commit carries the
+ruling only -- no implementation, no plan amendment, no roadmap row.
