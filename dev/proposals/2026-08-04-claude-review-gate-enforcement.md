@@ -5,7 +5,7 @@
 **Author**: Claude (Implementation)
 **Model**: Claude Opus 5 (`claude-opus-5`)
 **Date opened**: 2026-08-04
-**Status**: revised
+**Status**: accepted
 **Touches**: `tools/lifecycle_planner.py` and its byte-identical twin
 `templates/skills/_lib/lifecycle_planner.py`; `bootstrap/tests/test_lifecycle_contract.py`
 **Related**: routed out of `gate-claims-vs-enforcement` (row E2, which accepted,
@@ -349,3 +349,54 @@ conceptual ownership*.
 **Still open for the Maintainer.** This is now a **record-format change shipped
 to every adopter**, not a parser tightening. That is a larger commitment than the
 proposal opened with, and the Decision should be taken on the revised shape.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-04
+
+**Accepted, as revised, with one condition.** Scribed by Claude
+(Implementation) at the Maintainer's explicit instruction.
+
+**Maintainer's authorization (verbatim):**
+
+> I accept `review-gate-enforcement` as revised, on the condition that the plan
+> reconciles the ##/### grammar across doctrine, both plan templates and the
+> planner scaffold before gating on it, and treats the adopter-facing
+> record-format change as in scope. Commit this Decision.
+
+**Maintainer's context, supplied with the authorization and quoted separately
+because it informs the condition rather than granting it:**
+
+> There are only two (internal) adopters managed by me. We're okay
+
+**The condition, restated as the plan's obligation.** The plan does not gate on
+heading level until the `##`/`###` grammar is reconciled across
+`doctrine/plans.md`, `dev/plans/_template.md`,
+`templates/core/dev/plans/_template.md` and the planner's generated scaffold;
+and the adopter-facing record-format change is in scope, not a consequence
+disclosed after the fact.
+
+**What the adopter-scale context changes, and what it does not.** The External
+review's `[E2]` warned that requiring `##` would be "an adopter flag day" whose
+blast radius is unknown because adopter repositories were not inventoried. With
+two internal adopters under the Maintainer's own control, that risk is
+**coordinated rather than broadcast** — a migration is a task, not an
+unbounded compatibility surface, and the review's own caveat (*"I did not
+inventory adopter repositories, so their exact H2/H3 breakage is unknown"*) is
+answered by the population being small and known. It does **not** dissolve the
+condition: the `##`/`###` contradiction is a defect *inside `doctrine/plans.md`*
+(`:115` requires `##`, `:422` prescribes `###`), and a validator that picks a
+side of an unresolved contradiction is wrong independently of how many trees it
+breaks. The reconciliation is required on correctness grounds, not migration
+grounds.
+
+**Tier.** `Plan review: required(**External**)` stands, as declared and as the
+review's `[E1]`, `[E3]` and `[E4]` make necessary: the replacement mechanism —
+a declared tier attestation with a closed vocabulary — was authored after the
+External round and has not itself been read by a different agent type. The plan
+is where it gets that read.
+
+**Scribe-coupling disclosure.** The scribe is the proposal's author — the weaker
+configuration, the party whose work was reviewed transcribing the ruling on it.
+Mitigations: the authorization is quoted verbatim and visually isolated rather
+than paraphrased, the Maintainer's context is quoted separately from the
+authorizing words so a reader can tell what was granted, and this commit carries
+the Decision only.
