@@ -875,3 +875,673 @@ implementing session has to decide them mid-flight.
    grounds to reopen anything. But the Maintainer should see the number before
    implementation, and if they read it as changing the trade, that is a new
    proposal — not an amendment made inside this plan.
+
+## Plan review -- Claude (Internal, same-agent-type; security lens) -- 2026-08-04
+
+**Model**: Claude Opus 5 (`claude-opus-5`).
+
+*Placement note.* The `## Plan review — the brief` block above asks for a
+`### Plan review -- <reviewer> -- YYYY-MM-DD` sub-heading under that section;
+this round was directed to append at the end of the file. Relocating this
+section under that heading is a pure move and loses nothing. Dated `2026-08-04`
+to match the plan's own `**Opened**` and `as_of` — a review dated before the
+artifact it reviews is a record defect.
+
+**Standing — no cross-type independence.** Same agent type as the plan's author
+(both Claude). This is the Internal floor `doctrine/dual-review.md` sets — the
+same agent in a fresh session — and nothing more. The threat model I bring is
+the author's, and a blind spot they have I probably share. Concretely: the
+author and I both reason about this classifier as an artifact of *Cairn's own*
+commit corpus. The one finding below that steps outside that frame (**[I1]**)
+came from deliberately hunting the gap the brief pointed at, not from an
+independent instinct; a different-agent-type reader would likely have reached it
+sooner, and may reach others I did not.
+
+**Does this discharge the declared tier? Yes.** The proposal declared
+`required(Internal)`, the Decision ratified it, and the plan attached an
+*execution* obligation rather than a reading one. That obligation is discharged:
+every headline figure, all four ablations, all twelve tests' named
+perturbations, three synthetic-repo tests, both required checkers, and the full
+engine suite were **run**. Real output is in `### Covered`. Nothing below asks
+to reopen the Decision, and I explicitly decline the invitation in brief-question
+1 (see the reply to it at the end of `### Covered`).
+
+### Steelman
+
+This is the most honestly-measured plan I have read in this tree, and it is
+strong on precisely the axis the Decision told it to be strong on. The
+re-measurement section is not decoration: three figures moved materially since
+2026-07-22, and the author put the one that cuts *against* the change — the
+price of the ratified narrowing going from one tier to roughly seventeen — at
+the top, in its own labelled subsection, with a Maintainer-fence item attached,
+rather than leaving a reviewer to discover it. I reproduced all four pipeline
+figures and all three named ablations to the digit; nothing in that section is
+wrong.
+
+The transcription framing is the right instrument for the right failure mode.
+This chunk's realistic defect is a one-character regex drift that every test
+shipping alongside it would pass, so turning P1 into a 30-row checklist keyed to
+numbered source lines — and telling the Code review to read it character by
+character — is proportionate, not ceremony. Every one of those 30 rows resolves
+correctly against `dev/proposals/2026-07-22-claude-stage-commit-patterns.md`; I
+checked all of them.
+
+The **oracle rule** ("every expected value is a hand-written literal in the test
+file… A test whose expected set is the subject's own data structure is green
+forever") is stated once, binding, and is exactly the right answer to this
+repository's recurring failure — the artifact under verification supplying the
+material used to verify it. Chunk C carries the same discipline without a test
+to hide behind: its acceptance names a shell hash and a before/after violation
+list, both produced outside the tool. And the plan repeatedly labels its own
+weak vectors (T4b, T8, T12) rather than letting them pass as coverage. The
+findings below are, in large part, an argument that it should apply that same
+labelling discipline in four more places where it currently does not.
+
+### Concerns
+
+---
+
+**[I1] — The scope gate is the entire safety argument, and every probe
+supporting the "zero wrong-stage" claim is one the gate disposes of by
+construction. The residual — *scoped* subjects that are not lifecycle
+transitions — is unmeasured and untested.**
+
+The plan asserts, in its own voice and as re-measured evidence: *"The narrowing
+bought what it was ratified to buy — zero wrong-stage assignments, and 9 of the
+panel's 10 adopter-plausible probes to `None`."* The failure-mode ledger repeats
+it: a wrong stage at `Exact` is *"the one failure mode worse than the status
+quo, which is why the scope gate, the phrase restriction, the hyphen guard and
+the priority order each have their own perturbation-verified test (T2, T4, T5,
+T6)."*
+
+The evidence base for that claim is two things, and neither reaches the
+residual:
+
+1. **The panel's 10 adopter probes are all *un*scoped.** Not one matches
+   `_STAGE_SCOPE_PREFIX_RE`, so `if match is None: return None` disposes of them
+   before the vocabulary is consulted. They test that the gate exists. They
+   cannot test what happens *inside* it.
+2. **Cairn's own 246-subject corpus is clean only by convention.** Cairn's
+   non-lifecycle commits that touch proposal files happen not to carry the
+   prefix (`claim-marker maintenance: …`, `agent-context-scrub: the Internal
+   Response that should have preceded the Decision`), and the one that does —
+   `proposals: repair four check_cairn issues introduced by the landed reviews`
+   — escapes only because `reviews` is plural and `\breview\b` fails on the
+   trailing `s`. That is a coincidence, not a guard.
+
+Inside the gate the vocabulary is as loose as the panel found it: `\breview\b`
+anywhere in the stage phrase, `\bresponse\b` anywhere, `maintainer\s+decision`
+anywhere in the body. I ran 14 scoped-but-not-a-transition probes through the
+transcribed classifier. **10 of 14 receive a stage** — each of which would stamp
+a wrong timestamp and be reported at `Exact`:
+
+| probe | classified |
+|---|---|
+| `dev/proposals: widget -- still awaiting the maintainer decision on scope` | `decision` |
+| `dev/proposals: foo -- Maintainer Decision pending, do not merge` | `decision` |
+| `dev/proposals: fix a typo in the review section heading` | `reviewed` |
+| `dev/proposals: foo -- fix a broken link in the Review section` | `reviewed` |
+| `dev/proposals: foo -- rename the file after the review` | `reviewed` |
+| `dev/proposals: foo -- drop the stale review checklist` | `reviewed` |
+| `dev/proposals: foo -- correct a claim-check finding in the review record` | `reviewed` |
+| `dev/proposals: foo -- add the missing Response heading placeholder` | `revised` |
+| `dev/proposals: foo -- update responses table formatting` | `revised` |
+| `dev/proposals: opening statement rewritten for clarity` | `open` |
+| `dev/proposals: reformat all tables -- no content change` | `None` |
+| `dev/proposals: archive the superseded contributor-entry` | `None` |
+| `dev/proposals: foo -- revert the accidental revision` | `None` |
+| `proposals: repair four check_cairn issues introduced by the landed reviews` | `None` |
+
+The sharp edge is the scope fence's own rule: **"No commit-message convention is
+created."** The fix's safety therefore rests on a subject convention that the
+plan explicitly refuses to document. Cairn keeps that convention by habit; an
+adopter who installs `lifecycle-metrics` has been told nothing and has no reason
+to. For them, "matches the scope prefix" is not a proxy for "is a lifecycle
+transition" — it is a proxy for "touched a proposal file".
+
+**Not a design objection, and not grounds to reopen.** The 10 above are a *strict
+subset* of what the bare fallback would misclassify, so the ratified narrowing is
+still the right call and I am not asking to change a regex. What I am asking is
+that the plan stop stating a guarantee its evidence does not reach, and pin the
+residual instead:
+
+* **Add a T2b vector class** to `bootstrap/tests/test_lifecycle_stage_patterns.py`:
+  ~8 scoped-but-not-a-transition subjects with hand-written literal
+  expectations — recording the misclassifying ones as *accepted, documented*
+  outcomes exactly as T2 already does for `review: tighten the recharge bounds`,
+  and the `None` ones as real assertions. Same oracle rule, no new mechanism, no
+  Decision surface. Perturbation that reds it: any widening of the scoped
+  `reviewed` / `revised` patterns.
+* **Soften the two claims.** "Zero wrong-stage assignments" → "zero wrong-stage
+  assignments *on Cairn's own corpus*, whose scoped subjects are lifecycle
+  transitions by convention". And in the failure-mode ledger, note that T2/T4/T5/
+  T6 pin the gate, the guard, the priority order and the Decision arms — but that
+  nothing pins vocabulary looseness *inside* the gate.
+* **Add a `(g)` to "Known omissions"**: the residual above, with the count.
+
+---
+
+**[I2] — Chunk C's two lockfile line citations point at the `dst` lines, not the
+`hash` lines. An implementer following the acceptance criterion literally reads
+a false negative on a Decision-mandated write.**
+
+The plan states: *"`dev/.cairn/cairn-lock.yml:498` records `sha256:5a47849b…`
+for `tools/_lifecycle_metrics/gitmeta.py` and `:470` records `sha256:c0e169e7…`
+for `tools/_lifecycle_metrics/__init__.py`"*, and Chunk C's acceptance requires
+*"`git diff dev/.cairn/cairn-lock.yml` touches **exactly two lines**, both
+`"hash":`, in the records at `:470` and `:498`."*
+
+Measured at `HEAD` `eacb7dd`:
+
+```
+470:       "dst": "tools/_lifecycle_metrics/__init__.py",
+471:       "hash": "sha256:c0e169e79956e1612501517dfd150c5917cb88de1078ef07c8151b878eaf3db5",
+498:       "dst": "tools/_lifecycle_metrics/gitmeta.py",
+499:       "hash": "sha256:5a47849b9937e4fa17a32d4eb9e28968466d880c454a7813281d2cc7401bf1a0",
+```
+
+`:470` and `:498` are `dst` lines. The hashes are at `:471` and `:499`. The
+finalize will change 471 and 499 and leave 470 and 498 untouched — so an
+implementer checking the criterion as written observes the named lines
+*unchanged* and, on the plan's own stated rule ("a different number means the
+scope did not bind and the change is reverted, not committed"), has grounds to
+revert a correct write. Two-character fix; it is in the one chunk the Decision
+made mandatory and the one with no test behind it.
+
+*(The record-anchored reading — "the records at :470 and :498" — is defensible in
+the acceptance criterion, but the earlier sentence says the line "records
+`sha256:…`", which is not.)*
+
+---
+
+**[I3] — The Maintainer fence's gate-manifest check names a field that does not
+exist in the file it names, and the state that *does* hold the anchor is
+non-null.**
+
+The plan asserts twice — in the re-measurement section and in Maintainer fence
+item 1 — that *"the committed fixture's `anchor_ref` is `null`"*, and instructs:
+*"**Re-check `anchor_ref` immediately before Chunk A.**"*
+
+`bootstrap/tests/fixtures/gate_manifest.json` has **no `anchor_ref` key**. Its
+top-level keys are `cascade_mutable`, `collection`, `frozen_files`,
+`gate_commands`, `interpreter`, `mapping_symbols`, `phase_mutable`, `schema`.
+`anchor_ref` is a *parameter* to `bootstrap/tests/_gate_manifest.py`'s
+`verify()`, supplied by the CLI or the re-anchor flow. The durable anchor state
+is the git ref `refs/cairn/gate-anchor`, and in this repository it **exists and
+points at `e45e1fcc`** — the opposite signal from the one the fence's phrasing
+leads a reader to expect.
+
+**The plan's conclusion is nonetheless correct, and I verified it
+independently**: no pytest test reads the committed fixture against the live
+tree. `bootstrap/tests/test_gate_manifest.py` produces a fresh manifest
+(`G.produce(_REPO)`, `:33`) and only ever calls `verify()` on `tmp_path`
+manifests; grep over `bootstrap/tests/*.py` finds no other consumer of the
+committed artifact. Editing the two shipped files does stale exactly two
+`frozen_files` digests (`bootstrap/tests/fixtures/gate_manifest.json:2766` and
+`:2770`, both verified) and the `tools/` twins are not in `frozen_files` at all,
+so the blast radius is two entries and no gate.
+
+So this is a *wrong instrument, right answer*. Rewrite the fence to name the
+check that can actually be performed — `git for-each-ref refs/cairn/gate-anchor`
+plus "is a supervised re-anchor batch in flight per
+`bootstrap/REANCHOR_RUNBOOK.md`" — because a fence item an implementer cannot
+execute will either be skipped or improvised, and this one gates a
+Maintainer-only trust-root ceremony.
+
+---
+
+**[I4] — The engine suite is RED on today's tree, and one of the four failures is
+`test_ast_attest.py` — the plan's own instrument for its "no AST re-anchor"
+invariant.**
+
+`~/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests -q` at `HEAD`
+`eacb7dd`, canonical interpreter 3.13.13:
+
+```
+FAILED bootstrap/tests/test_ast_attest.py::test_committed_baseline_accounted_for_across_the_engine_package
+FAILED bootstrap/tests/test_ast_attest.py::test_ast_gate_passes_over_the_full_scaffold_module_set
+FAILED bootstrap/tests/test_profile_grammar.py::TestResolveCurrentProfileIsAudible::test_unreadable_profile_names_what_it_swallowed
+FAILED bootstrap/tests/test_profile_grammar.py::TestResolveCurrentProfileIsAudible::test_ungrammatical_profile_names_what_it_swallowed
+4 failed, 1777 passed, 3 warnings in 144.00s
+```
+
+The AST failures are **not this plan's** — they are other workflows' uncommitted
+`bootstrap/_scaffold/` edits (`note: NEW FunctionDef:_assert_mapping_ownership
+(upgrade.py)`, `assert_always_on_complete` / `missing_always_on_sources`
+(install.py), `missing_required_tokens` (config.py)). `git status --short` shows
+nine modified engine files and two untracked test files.
+
+But three of the plan's acceptance criteria are written as unconditional greens:
+
+* Chunk A: *"`pytest bootstrap/tests -q` → green, 0 failed / 0 skipped"*
+* Chunk B: *"`pytest bootstrap/tests -q` → green"*
+* Plan-level: *"`bootstrap/tests/test_ast_attest.py` — unchanged and green,
+  **confirming no re-anchor was triggered**."*
+
+None is achievable today. The third is the dangerous one: the plan's scope fence
+claims "no AST re-anchor" and cites `test_ast_attest.py` as what confirms it. An
+implementer who runs it, sees red, and files the redness as "pre-existing, not
+mine" has just retired the exact instrument that would catch an unintended
+engine change. That is the recurring failure pattern in a new dress — the check
+disarmed by a condition it was not designed to distinguish.
+
+Two fixes, both cheap: (a) record a **named pre-existing-failure baseline** in
+the plan (these four node IDs, at this HEAD, from these workflows) and restate
+the criteria as "no *new* failures relative to that baseline, and the four named
+ones unchanged"; (b) for the AST invariant specifically, replace "green" with a
+check that survives a red neighbour — `git diff HEAD --stat -- bootstrap/_scaffold/`
+shows no line attributable to this plan, plus the `verify()` note list contains
+no symbol from `_lifecycle_metrics`. Also worth naming in Maintainer fence item
+2: Chunks A/B may need to wait on the `_scaffold` work landing, which is a
+sequencing decision, not an implementer's call.
+
+*(For the record: `0 skipped` does hold today — the run reports no skips.)*
+
+---
+
+**[I5] — Arm 2 of the `decision` pattern is in exactly the position the plan
+flags for the hyphen guard — zero corpus effect, constructed probes only — and
+the plan gives it a *stronger* justification than the corpus supports. It is one
+of at least six such literals; singling out the guard misleads.**
+
+The plan is scrupulous at **(b)**: the hyphen guard *"now has zero measured
+effect on the live corpus"*, *"pinned **only by constructed probes**, and Chunk A
+says so in the test docstring rather than implying corpus evidence it does not
+have."* Reproduced: **0 flips over 246**.
+
+Transcription row 16 justifies arm 2 as: *"the R2 repair; without arm 2, **two of
+the three real Decision forms** misclassify"*, and T6 asserts *"all three **real**
+Decision forms"*. Measured:
+
+* Ablating arm 2 (`|(?<!-)\bmaintainer\s+decision\b(?!-)`) flips **0 of 246**
+  corpus subjects.
+* `-- Maintainer Decision` (the slug-first form) occurs **0 times** in the
+  246-subject corpus **and 0 times in the entire repository log**. All 36
+  `Maintainer Decision` subjects in the repo are the head-first form
+  `dev/proposals: Maintainer Decision…`, which arm **1** matches.
+
+So `dev/proposals: licensing -- Maintainer Decision -- ACCEPT` and
+`dev/proposals: transition-lint -- Maintainer Decision -- ACCEPT (post Internal
+review)` are **constructed probes**, not real forms. They do discriminate
+(verified: `None` and `reviewed` respectively under the arm-2 ablation) — the
+perturbation is sound. The word **"real"** is what is wrong, in the one document
+whose stated discipline is not implying corpus evidence it does not have.
+
+Nor is the guard alone. Per-literal ablation over all 246 subjects:
+
+| literal | corpus flips |
+|---|---|
+| hyphen guards `(?<!-)` / `(?!-)` | **0** *(plan flags this)* |
+| `decision` arm 2 | **0** |
+| `(?:dev/)?` optional prefix segment | **0** |
+| `(?:ing)?` in `^open(?:ing)?\b` | **0** |
+| U+2013 / U+2014 separators (ASCII `--` only) | **0** |
+| `revise` token | **0** |
+| `respond\s+to` token | **0** |
+| `responses` token | 2 |
+| `revised` token | 3 |
+| `response` token | 13 |
+
+Brief-question 2 asks whether the hyphen guard earns its place with no corpus
+evidence. **The honest answer is that it earns exactly as much as six siblings,
+and the plan should say so** — one sentence in **(b)** listing them, so the
+guard is not framed as uniquely unsupported when it is representative. Under the
+security lens this also reframes the residual: each zero-effect literal is a
+widening surface with no live constraint, and arm 2 is the widest of them
+(`decision` matches the phrase *anywhere* in the body, not at its head) — which
+is why two of **[I1]**'s worst probes are arm-2 hits.
+
+Keep every literal — they are transcribed from a ratified design and removing one
+is a Decision-level change. Just label them the way the guard is labelled.
+
+---
+
+**[I6] — T8's power against the shipped patterns is weaker than the invariant
+ledger claims: the new scoped vocabulary *shadows* three of the four shipped
+patterns, so a deletion of them is invisible to it.**
+
+The Author-accounting states: *"`_STAGE_COMMIT_PATTERNS` is byte-unchanged…
+pinned in one direction by T7b and T8. Not guarded by a test that fails when a
+future author edits it — **T8 catches a *deletion***, not a widening."*
+
+T8 catches *some* deletions. Because the new `_STAGE_SCOPE_PREFIX_RE` accepts
+`proposals?` (singular), every shipped legacy form that begins `proposal:` is now
+re-matched by the scoped vocabulary. Measured, by dropping each shipped pattern
+and re-classifying:
+
+| dropped shipped pattern | legacy form | detected by T8? |
+|---|---|---|
+| `open` | `Open proposal: README tagline` | yes (`open` → `None`) |
+| `open` | `Open proposal alice thing` | yes |
+| `open` | `opening proposal widget` | yes |
+| `open` | `proposal: open widget` | **no — shadowed, stays `open`** |
+| `revised` | `Revised proposal for widget` | yes |
+| `revised` | `proposal: respond to review` | **no — shadowed, stays `revised`** |
+| `revised` | `proposal: revise the thing` | **no — shadowed, stays `revised`** |
+| `decision` | `Decision: accept widget` | yes |
+| `decision` | `proposal: Decision accept widget` | **no — shadowed, stays `decision`** |
+| `reviewed` | `Review of the widget proposal` | yes |
+
+Deleting the **entire** shipped `revised` pattern is invisible to both of its
+`proposal:`-prefixed vectors. This does not change behaviour today (the shipped
+loop runs first, so shadowing is unobservable while both exist) and does not
+weaken backward compatibility — which really is guaranteed by construction. It
+weakens **T8 as evidence**, and the plan cites T8 as the deletion guard.
+
+The plan already states honestly that T8 is green before *and* after this diff.
+Add the second half: for the `proposal:`-prefixed forms it stays green even if the
+shipped pattern is *removed*, so T8 pins the `^Open proposal` / `opening
+proposal` / `^Decision[:–—-]` / `Revised proposal` / `^Review` arms and nothing
+else. If a real guard is wanted it is one line — assert `_STAGE_COMMIT_PATTERNS`
+against a hand-written literal tuple of the four pattern strings — but that is a
+new oracle and I agree it sits outside this scope fence.
+
+---
+
+**[I7] — T3 carries a vector its own named perturbation cannot red, and unlike
+T4b / T8 / T12 the plan does not label it.**
+
+T3's assertion set includes `dev/plans: archive review-record-integrity (Chunk C
+pointer + lifecycle close)` → `None`. Under T3's named perturbation (re-add
+`plans?` to `_STAGE_SCOPE_PREFIX_RE`), measured:
+
+```
+baseline           -> None
+plans? re-add      -> None      <-- inert under T3's own perturbation
+noguard            -> None
+plans? + noguard   -> reviewed
+```
+
+It falls only under the *conjunction*, which is structurally the same weakness
+the plan labels for T4b and then labels again for T8 and T12. The rest of T3 is
+strong (16 corpus flips `None → open`, reproduced exactly; the `Code review`
+probe flips `None → reviewed`, reproduced). This is a one-clause docstring fix,
+and it matters because the archive vector is the very subject the plan names at
+**(b)** as the hyphen guard's sole historical justification — so its status
+should not be left to a reader to infer.
+
+*(Verified separately: the `dev/plans: <slug> -- Code review (fresh-context,
+disclosed scribe)` probe is a real subject form — 9 occurrences in the repository
+log — templated with a placeholder slug. The plan does not claim it is in the
+proposal corpus, and it is not. That framing is correct.)*
+
+---
+
+**[I8] — Two test specifications will bite the implementer as written.**
+
+*T10 must not assert truthiness.* The spec is *"all three `hours_*` non-empty and
+`>= 0`."* I built the synthetic four-commit repo (`open` / review / response /
+decision, scoped subjects) and ran the public path:
+
+```
+tier: Exact
+hours_open_to_reviewed = 0.0
+hours_reviewed_to_revised = 0.0
+hours_revised_to_decision = 0.0
+```
+
+All three are `0.0` — non-empty and `>= 0`, so the spec is met, but
+`assert row['hours_open_to_reviewed']` fails on a falsy float. The plan *already
+knows this*: P3 correction 2 exists precisely because a batch-committed session
+yields exactly `0.0` (re-verified: three real proposals do). Wire that knowledge
+into T10's spec — `!= ''` / `isinstance(v, float)`, never truthiness — so the
+implementer does not have to rediscover it.
+
+*T11's perturbation is described too broadly.* The plan says an unconditional
+`parts[1]` gives *"`IndexError` on every separator-less subject."* Measured, it
+raises on 3 of T11's 6 listed vectors — the scope-prefixed ones (the prefix-only
+subject, the non-ASCII subject, the 500-char subject). `''`, `'   '` and a separator-only
+subject return `None` at `if match is None: return None`, before the split. The
+test still reds, so the perturbation is valid; the sentence is not.
+
+---
+
+**[I9] — P3 corrects one of two falsely-exhaustive cause lists in this module,
+and Chunk B's grep is scoped so it cannot see the other.**
+
+Chunk B's premise is right: *"every clause of its cause list is false of the
+failure actually observed."* The same defect sits one file away, in the function
+whose behaviour R12c *is*. `templates/modules/default-on/_lifecycle_metrics/gitmeta.py:33-37`:
+
+> Returns an empty list when git is not available, the repo is not a git
+> checkout, or the path has no history
+
+That list omits the transient-failure path at `gitmeta.py:50-51`
+(`if result.returncode != 0: return []`) — which is exactly R12c, the hazard the
+plan defers and the reason every corpus verification here runs on a quiet tree.
+Chunk B's acceptance grep is `"the default branch is named"`, which matches only
+`__init__.py:75` in both copies (verified — it does run correctly as a
+single-line grep; the wrap in the plan text is cosmetic), so it structurally
+cannot see the sibling.
+
+**I am not asking to widen P3** — that would edit a file outside the ratified
+change set. I am asking that the deferred-R12c bullet and the corresponding
+`## Lasting-truth migration` row name the *docstring* alongside the behaviour, so
+the `dev/PLANNING.md > Queued` entry that eventually homes R12c covers both and
+the second false cause list is not orphaned by the archive.
+
+---
+
+**[I10] — Chunk A's "the install manifest does not move" criterion cannot fail
+from a byte edit; it belongs on the plan's own non-falsifiable list.**
+
+Criterion: *"`bootstrap/scaffold.py --manifest | grep gitmeta` → **unchanged**.
+Capture before the edit, diff after."* Measured, the entire matching output is:
+
+```
+tools/_lifecycle_metrics/gitmeta.py	modules/default-on/_lifecycle_metrics/gitmeta.py	verbatim
+```
+
+`dst`, `src`, mode — no digest, no size. A content change to `gitmeta.py` cannot
+move that row; only a mapping change could, and a mapping change is already
+foreclosed by the scope fence. The check is correct to keep (it guards the
+mapping), but it is structurally green, exactly like T8 and T12. The plan earns
+credit for labelling those two; this one should join them rather than reading as
+a third independent guard.
+
+---
+
+**[I11] — Chunk C will execute a finalize engine that is itself another
+workflow's uncommitted work-in-progress, and the plan names the concurrency only
+for the dirty-tree rationale.**
+
+The plan correctly reasons that a *scoped* finalize is exempt from the #56
+dirty-tree guard, and correctly notes that other workflows are editing
+`bootstrap/_scaffold/` concurrently. What it does not name is that **the finalize
+engine is among the modified files**: `bootstrap/_scaffold/upgrade.py` and
+`bootstrap/_scaffold/lockfile.py` both carry uncommitted changes, and
+`cmd_upgrade` reaches the new, unlanded `trusted_upstream(...)` /
+`forked_facade_findings(..., upstream=...)` path *before* the `--finalize`
+dispatch.
+
+Verified in the plan's favour, so this is a sequencing note rather than a defect:
+
+* `_cmd_finalize_lockfile` itself is byte-unchanged from `HEAD`; the scope filter
+  matches on `dst`, which is exactly the two paths the plan names.
+* `_emit_lock_yaml(read_lockfile(...))` round-trips the committed lockfile
+  **byte-identically** today, so "exactly two lines" is achievable.
+* The `base_hash` preserve branch is a genuine no-op — both records already
+  carry `base_hash` (`:469`, `:497`).
+* The `core/VENDOR.md` rename-resolution branch, which runs *before* the scope
+  filter and could silently rewrite a third line, is inert here: that record's
+  `dst` is already `CLAUDE.md` and the file exists.
+* The expected message format is real: `upgrade.py` builds
+  `f"Finalized {_LOCKFILE_REL}: advanced {changed} hash(es){scope} …"` with
+  `scope = f" (scoped to {len(matched)} path(s))"`.
+
+Add one line to Chunk C: **re-run the round-trip and no-op checks immediately
+before finalizing**, because every one of the five bullets above was verified
+against a tree state that is not committed and can change under the plan.
+
+---
+
+### Covered — what I ran, with output
+
+All under `~/conda_envs/lhm/bin/python3.13` (Python 3.13.13), `HEAD` `eacb7dd`,
+`as_of 2026-08-04`, no concurrent load during the git-dependent measurements.
+
+**Required checkers — both clean.**
+
+```
+$ … scripts/claim_check.py dev/plans/stage-commit-patterns.md
+claim_check: dev/plans/stage-commit-patterns.md -- 12 path(s) exempted by claim-check-allow
+claim_check: dev/plans/stage-commit-patterns.md -- OK, no claim-check flags.   exit=0
+
+$ … scripts/check_cairn.py dev/plans/stage-commit-patterns.md
+check_cairn: OK -- 1 Markdown file(s) scanned; no issues.                       exit=0
+```
+
+**Reconstruction, and what it is.** `_stage_for_subject` does not exist yet, so I
+extracted proposal lines `833-869` verbatim, spliced them into a **scratch copy**
+of `tools/_lifecycle_metrics/` outside the repository, and applied P2's loop
+replacement there. **This is a reconstruction from the plan's own cited source,
+not the author's code**; a transcription drift in the real Chunk A would not
+show up in it. Nothing in the repository was modified.
+
+**Corpus and headline figures — every one reproduces exactly.**
+
+| measure | plan | measured |
+|---|---|---|
+| proposal files | 35 | **35** |
+| distinct `--follow` subjects | 246 | **246** |
+| classified by the shipped patterns | 0 | **0** |
+| classified by the revised design | 115 (33/12/34/36) | **115** — `open` 33, `reviewed` 12, `revised` 34, `decision` 36 |
+| pipeline, shipped | 35/35 `Best-effort` | **`Best-effort` 35** |
+| pipeline, revised | 12 `Exact` / 23 `Good` / 0 `Best-effort` | **`Exact` 12, `Good` 23** |
+| pipeline, bare fallback | 29 / 6 / 0 | **`Exact` 29, `Good` 6** |
+| negative `hours_*` deltas | 0 | **0** |
+| `Exact`-with-empty-hours row | `…-r6-unused-def-blindspot` | **confirmed, that row only** |
+| `plans?` ablation | 16 flips, all `None → open` | **16, `Counter({(None,'open'): 16})`** |
+| hyphen-guard ablation | 0 flips / 246 | **0** |
+| P2 fall-through | 0 of 35 file histories differ | **0 of 35** |
+
+**P3's two live examples re-verified.** `hours_reviewed_to_revised == 0.0` for
+`2026-07-22-claude-interpreter-trust-root-fallback`, `…-lockfile-provenance-fields`
+and `…-transition-lint`. The four 2026-07-11 proposals carry
+`hours_revised_to_decision` of `116.474 / 116.459 / 116.459 / 116.459` beside
+`days_revised_to_decision = 11`.
+
+**Perturbations — all twelve run against the reconstruction; all discriminate.**
+T2 (8 of 9 `None` expectations flip, matching the plan exactly); T3 (16 + the
+`Code review` probe — see **[I7]** for the inert vector); T4 (both probes
+`None → reviewed`); T4b (`open` under baseline, noguard-only and reorder-only;
+`reviewed` only under the conjunction — the plan's four-way claim is exact);
+T4c (`open → revised`); T5 (both `revised → reviewed`); T6 (`None` and
+`reviewed` respectively — see **[I5]** on "real"); T7a (`reviewed → None`);
+T7b (`None → reviewed`); T8 (see **[I6]**); T11 (see **[I8]**).
+
+**Synthetic-repo tests built and run.** T9: two commits, `open` = commit 1,
+`revised` is `None`; under a restored fall-through loop `revised` takes commit 2
+— the perturbation reds it. T10: four commits, `Exact` and three populated
+`hours_*` (see **[I8]**). T12: no `.git` → `Best-effort`, all three empty.
+
+**Environment and gate posture.** `verify_integrity.py --target .` → exit 1,
+**exactly 2** violations (`AGENTS.md`, `dev/modules/security-review.md`) — as
+stated. `security_check.py`'s `scan_targets()` → **74** targets, both
+`templates/modules/default-on/_lifecycle_metrics/gitmeta.py` and `…/__init__.py`
+present. **18** shipped template `.py` files carry non-ASCII. Both twin pairs
+byte-identical (`5a47849b…`, `c0e169e7…`). The template launcher
+`templates/modules/default-on/lifecycle_metrics.py` re-exports
+`_resolve_stage_commits` / `proposal_rows` / `_STAGE_COMMIT_PATTERNS` and
+resolves to the **template** engine copy — so A4's load idiom reaches the edited
+file, as claimed.
+
+**Line citations.** Every `proposal :<n>` in the 30-row transcription table
+resolves correctly (`:833` prefix, `:835` separator, `:837-838` comment, `:839`
+list, `:840` open, `:842-843` decision arms, `:844-846` revised, `:847`
+reviewed, `:850` head-anchored, `:853-854` signature, `:856-858` shipped-first,
+`:859-861` the `return None`, `:863-864` split, `:865-868` per-stage target).
+`gitmeta.py:9 / 17-25 / 18-19 / 21 / 24 / 50-51 / 81-85 / 108-121`,
+`__init__.py:74-78`, `extract.py:41-83`, `test_ast_attest.py:20`,
+`test_notice_install.py:98`, `test_lifecycle_metrics_config.py:13-16` and
+`:27-36`, `test_reference_scripts.py:443-457` and `:476`, `docs/quickstart.md:240`
+(correctly updated from the proposal's stale `:231`), and
+`gate_manifest.json:2766` / `:2770` all resolve. The two lockfile citations do
+not — **[I2]**.
+
+**Decision quotations.** All five checked verbatim against
+`dev/proposals/2026-07-22-claude-stage-commit-patterns.md` `:1219-1281`: *"as
+revised"*, the bare-fallback sentence, *"One reliability tier was surrendered"*,
+*"OQ3 — the plan-review tier stays `required(Internal)`"*, and the scoped-finalize
+condition. The four ratified plan conditions the `## Lasting-truth migration`
+sign-off enumerates match the Decision's four exactly. No quotation is a
+paraphrase.
+
+**Scope boundaries hold.** No sibling surface is absorbed:
+`scripts/transition_lint.py` is named once, inside the fence, only to record that
+it is not built. Nothing new appears against the Decision's stopping rule — no
+CLI, config key, output column, exported helper, or mandated commit convention.
+`PROPOSAL_COLUMNS` is untouched. The one mild widening is editorial: the Chunk D
+`dev/PLANNING.md` row carries the contested ~17-tier observation onto a
+serialized board, which is stylistically consistent with that board's existing
+discursive rows but does put a review-open question into shared state. The
+Maintainer may prefer it stay in the plan.
+
+**Brief-question 1 — my answer.** Confirmed both ways to the digit (12/23/0 vs
+29/6/0). **The plan's position is right and I concur: the design is not
+reopened.** Two reasons the re-pricing is less alarming than the raw number.
+First, it is not a *regression* — the bare-fallback arm buys its 17 tiers by
+classifying subjects it cannot read, which is the wrong-stage-at-`Exact` hazard
+R1 blocked, and **[I1]** shows that hazard is *larger* today than at Decision
+time, not smaller, because the 2026-08-03 wave writes looser subjects. Second,
+`Good` is the honest tier for a row the vocabulary cannot read; trading 17 honest
+`Good`s for 17 possibly-wrong `Exact`s is the trade the Decision already rejected
+at n=1, and n=17 strengthens it. The number should still reach the Maintainer —
+the fence item is correct — but as *evidence the narrowing is working*, not as
+grounds to revisit. I would say that in the fence item rather than leaving it
+neutral.
+
+### Not covered / low confidence
+
+* **The transcription itself.** I verified the plan's 30-row table against the
+  proposal, and I ran a reconstruction — but the reconstruction is *my* splice of
+  the cited block, not the implementer's. A one-character drift in the landed code
+  is invisible to everything I did, and to every test that ships with it. The
+  Code-review obligation to read the landed block character-by-character against
+  `:833-869` is the only control, and it remains load-bearing.
+* **Adopter corpora.** I extended the probe set (**[I1]**) but constructed it
+  myself, from the same hydrogeology frame the panel used. Known omission (b)
+  stands and my probes do not retire it.
+* **`bootstrap/security_check.py` (Bandit) was not run.** I confirmed both files
+  are in `scan_targets()` but did not execute the gate; the change adds compiled
+  regexes and a pure string function, so I have no reason to expect a finding, but
+  I did not verify that.
+* **`scripts/quality_gate.py`** was not run over the plan.
+* **Chunk C was not executed**, by design — it writes the lockfile. My round-trip,
+  scope-matching, `base_hash` and VENDOR-branch checks are static reads of the
+  engine, not a dry run, and per **[I11]** they were taken against uncommitted
+  engine bytes.
+* **The four pre-existing suite failures** were diagnosed to other workflows'
+  `_scaffold` edits from the failure text; I did not confirm by reverting, since
+  the tree is not mine to mutate.
+* **Same-agent-type blind spot.** Per the standing paragraph — nothing here
+  substitutes for a cross-type read, and the plan's own tier does not call for
+  one. If the Maintainer wants an independent read of **[I1]**'s framing
+  specifically (whether an adopter-facing safety claim can rest on an
+  undocumented subject convention), that is the question a different agent type
+  would be worth spending on.
+
+### Recommendation
+
+**Revise and proceed — no second review round.** Eleven findings, none of which
+reopens the Decision, and none of which asks for a regex change. Ten are plan-text
+and test-specification corrections the author can land in a `### Sharpening`
+revision; one (**[I1]**) adds a vector class to Chunk A under the existing oracle
+rule and mechanism, which is inside the scope fence.
+
+Ordered by what should block an implementing commit:
+
+* **Blocking on implementation**: **[I2]** (wrong line for a Decision-mandated
+  write), **[I4]** (the suite gate and the AST instrument are unachievable as
+  written on today's tree — this needs a Maintainer sequencing call, not an
+  implementer's judgement), **[I3]** (a fence check that cannot be performed).
+* **Blocking on the plan's own honesty standard**: **[I1]** (the guarantee
+  overstates its evidence; add T2b), **[I5]** (drop "real", list the six
+  zero-evidence literals), **[I6]** and **[I7]** (label two more weak vectors the
+  way T4b/T8/T12 are labelled).
+* **Land with the revision**: **[I8]**, **[I9]**, **[I10]**, **[I11]**.
+
+If the author's Response instead concludes that **[I1]** warrants changing the
+scoped vocabulary — it does not, in my reading — that is a new proposal, not an
+amendment inside this plan, exactly as Maintainer fence item 3 says of the
+re-priced trade.
