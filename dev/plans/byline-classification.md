@@ -1188,3 +1188,96 @@ unanswered; they remain listed as omissions in *Author-accounting* and are not
 converted into claims by a clean verdict. Nothing here blocks Chunk A — the
 tier is discharged and the review's verdict stands — but the plan's own
 uncovered list is not shorter than it was before the pass.
+
+## Maintainer ruling 2026-08-04 -- the three questions, answered
+
+**Authorization, quoted verbatim:**
+
+> Q1 - Yes
+>
+> Q2 - Restatement is confirmed
+>
+> Q3 - Ship as accepted
+
+Scribed by Claude on the Maintainer's instruction. This is a **ruling on an
+already-accepted plan**, not a Decision; the source proposal's Decision stands
+unchanged.
+
+### Q1 — "as revised" carries the Internal review's revisions
+
+Answered **yes**. Chunk A's contents stand as planned. The Internal review
+preceded the Decision and its revisions were on the record when the accept was
+given, so the narrow reading would have ratified a version that no longer
+existed. This also closes, for this plan, the thread that produced the
+2026-08-03 repair — three Decisions found resting on undispositioned reviews.
+
+### Q2 — R2 lands in its restated form
+
+Confirmed. R2 is ratified as **canonical-decomposition equivalence plus full
+case folding**, with the three falsifying classes named on the record:
+
+* **full case folding** expands ligatures and long-s, so a byline a reader sees
+  as *Kriften Long* keys as the rostered *Kristen Long*;
+* **combining-mark stripping** collapses marks that carry letter identity in
+  Vietnamese, Japanese, Devanagari and Cyrillic — so **a different person's**
+  name can key as the rostered one;
+* case.
+
+The wording originally submitted for ratification — *"every member reads as the
+rostered name to a human"* — is **not** what is ratified. Its mechanical expiry
+was already satisfied at the moment it was put forward, which is debt wearing a
+decision's clothes. The restated form is pinned in
+`bootstrap/tests/test_byline_identity.py`, so a later narrowing is a visible
+test change rather than silent drift.
+
+### Q3 — ship the accepted ASCII-only split; `Zs` is not adopted
+
+Confirmed. The accepted design ships and the international cost is recorded as
+a known residual rather than paid for by widening the `human` leg.
+
+The deciding evidence is the counterexample this plan found and the review did
+not: **`U+1680` OGHAM SPACE MARK** is category `Zs` but renders as a visible
+stem segment in Ogham-aware fonts and as blank elsewhere. Its visibility is
+**font-dependent** — precisely the property the "a `Zs` character is visible as
+a space" argument needs to exclude.
+
+Recorded honestly, because the plan corrected its own direction here: today's
+code uses a bare `.split()`, which already splits on Unicode whitespace, so the
+accepted ASCII-only design is the **behaviour change** on this axis and a `Zs`
+split would have *preserved* today's behaviour. Chunk C carries that change in
+the release notes. The known cost stands: a CJK byline separated by `U+3000`,
+or a French one by `U+202F`, classifies `unknown` against an ASCII-space
+roster. Both are legitimate spellings; the direction is safe (it over-flags, it
+never grants).
+
+### The fourth archive blocker, closed by measurement
+
+The plan's *Lasting-truth migration* lists a third non-residual: **the unswept
+`re.sub` normalization pattern** in `tools/lifecycle.py` and `scripts/`, which
+"closes at plan time" if the plan reviewer returns a clean enumeration and
+otherwise needs a durable home. Neither review returned one, so it was swept
+here. Measured 2026-08-04:
+
+| Site | Shape | Deletes? | Authority path? |
+|---|---|---|---|
+| `tools/lifecycle.py:270`, `:303` | `re.sub(r"[^A-Za-z0-9._-]", "-", raw)` | no — **replaces** with `-` | no (slug builder) |
+| `scripts/link_check.py:175` | strips markdown link syntax | no | no |
+| `scripts/link_check.py:176` | `re.sub(r'[^\w\s-]', '', s)` | **yes** | no (anchor slug) |
+| `tools/_lifecycle_metrics/extract.py:340` | `re.sub(r'_', '-', ...)` | no | no |
+| `tools/_lifecycle_metrics/parse.py:54` | drops a leading `(Round N)` | yes, deliberate | no |
+
+**No bare-`re.sub` deleting shape sits on an identity or authority path outside
+the one this plan fixes.** The single deleting instance that could have carried
+the defect — `link_check.py:176` — uses `\w`, which is **Unicode-aware**:
+measured, `Ünïcödé Ndër-Score` survives it unchanged, where the byline defect's
+`[^a-z0-9]` reduced the same string to `ncdndrscore`. That is the whole
+difference between the two shapes, and it is why this one is not the same bug.
+
+**The enumeration is clean, so the item closes at plan time as specified** — no
+`dev/PLANNING.md` row is owed.
+
+### Archive status
+
+With these three answered and the `re.sub` sweep closed, and `[I7b]` discharged
+by `planner-line-semantics`'s Response retracting the claim it was owed, **this
+plan's archive preconditions are met.**
