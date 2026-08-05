@@ -16,6 +16,7 @@ Run from the cairn repo root:
 
 from __future__ import annotations
 
+import ast
 import importlib.util
 import sys
 from pathlib import Path
@@ -47,12 +48,17 @@ _scan_unicode = _content_scan._scan_unicode
 
 REDTEAM = Path(__file__).resolve().parent / "fixtures" / "redteam"
 
+#: The two line/paragraph separators. Split out from _BANNED_CODEPOINTS
+#: because the guard below applies them to a second file -- see there.
+_SEPARATOR_CODEPOINTS = {0x2028, 0x2029}
+
 #: The invisible code points the scanner detects -- and must NOT itself
 #: carry as raw characters (trojansource / bandit B613 hygiene).
 _BANNED_CODEPOINTS = (
     {0x200B, 0x200C, 0x200D, 0x200E, 0x200F, 0x2060, 0xFEFF}
     | set(range(0x202A, 0x202F))
     | set(range(0x2066, 0x206A))
+    | _SEPARATOR_CODEPOINTS
 )
 
 
@@ -69,6 +75,19 @@ class TestSourceCarriesNoRawInvisibles:
         text = CONTENT_SCAN_SRC.read_text(encoding="utf-8")
         hits = sorted({hex(ord(c)) for c in text if ord(c) in _BANNED_CODEPOINTS})
         assert hits == [], f"raw banned code points in content_scan.py: {hits}"
+        # This module is now itself a file whose fixtures ARE separator code
+        # points, so "escape forms in the test source" needs an enforcer and
+        # not just a convention. Scoped to _SEPARATOR_CODEPOINTS, NOT the full
+        # banned set: this module already carries six of the older code points
+        # raw and on purpose (see test_bidi_control_caught and its neighbours,
+        # which embed literal controls with a U+XXXX label). Widening to the
+        # full set here would fail on that pre-existing, deliberate choice --
+        # revisiting it is a separate question, not this test's.
+        own = Path(__file__).resolve().read_text(encoding="utf-8")
+        own_hits = sorted(
+            {hex(ord(c)) for c in own if ord(c) in _SEPARATOR_CODEPOINTS})
+        assert own_hits == [], (
+            f"raw separator code points in test_content_scan.py: {own_hits}")
 
     def test_scanner_still_detects_after_escaping(self) -> None:
         # Escaping the source must not change behavior at runtime.
@@ -90,7 +109,8 @@ class TestUnicodeDispatchContract:
 
     def test_scan_unicode_yields_its_own_pattern_id(self) -> None:
         # Line 1: zero-width space.  Line 2: right-to-left override.
-        lines = ["a​b", "c‮d"]
+        # Built with chr() so this source carries neither code point raw.
+        lines = ["a" + chr(0x200B) + "b", "c" + chr(0x202E) + "d"]
         items = list(_scan_unicode(lines, leading_bom=False))
         # Unpacks as 3-tuples -- a 2-tuple yield fails here, on the shape.
         got = [(lineno, pid) for lineno, pid, _msg in items]
@@ -291,3 +311,126 @@ class TestPlanReviewRefinements:
 
     def test_load_url_allowlist_missing_file(self, tmp_path: Path) -> None:
         assert load_url_allowlist(tmp_path / "nope.txt") == set()
+
+
+# ---------------------------------------------------------------------------
+# The two separators nothing detected: U+2028 / U+2029
+# (dev/plans/separator-detection.md, Chunk B)
+#
+# Class names are plan-specific by convention, binding on both this plan and
+# content-scan-detectors: a duplicate top-level class name SHADOWS the whole
+# earlier class, silently, with no error and no warning. The convention is
+# backed by the mechanical guard at the end of this file, because a convention
+# cannot protect against a failure that produces no error.
+#
+# Fixtures build the separators with chr(0x2028) / chr(0x2029) rather than raw
+# characters. The literals are the oracle -- typed here by a human, never read
+# back from the scanner's own _LINE_SEPARATORS.
+# ---------------------------------------------------------------------------
+
+_ACCEPT_SEP = ('<!-- cairn-accept: unicode-line-separator reason="{r}" '
+               'reviewer=alice date=2026-08-05 -->')
+
+
+class TestSeparatorDetection:
+    @pytest.mark.parametrize("cp", [0x2028, 0x2029])
+    def test_each_separator_is_caught(self, cp: int) -> None:
+        flags = scan_text("## Status: open" + chr(cp) + "## Injected header\n")
+        assert [f.pattern_id for f in flags] == ["unicode-line-separator"], flags
+        assert f"U+{cp:04X}" in flags[0].message, flags[0].message
+
+    def test_own_id_marker_suppresses(self) -> None:
+        # The associable form: the marker precedes the separator on the file
+        # line, so it renders on the same display line as the hit.
+        text = (_ACCEPT_SEP.format(r="reviewed word-processor paste")
+                + chr(0x2028) + "trailing prose\n")
+        assert scan_text(text) == [], scan_text(text)
+
+    def test_foreign_id_marker_does_not_suppress(self) -> None:
+        # THE security-critical assertion: a zero-width acceptance written in
+        # good faith for a benign emoji joiner must not clear an injected
+        # section header. Before the yielded-pattern-id contract it did.
+        text = ('<!-- cairn-accept: unicode-zero-width reason="benign emoji '
+                'joiner" reviewer=alice date=2026-08-05 -->'
+                + chr(0x2028) + "## Injected header\n")
+        assert [f.pattern_id for f in scan_text(text)] == [
+            "unicode-line-separator"], scan_text(text)
+
+    def test_two_separators_on_one_line_flag_once(self) -> None:
+        # The DECLARED LIMIT, pinned so a later author who changes the per-line
+        # `break` does so against a red test and their own proposal.
+        flags = scan_text("a" + chr(0x2028) + "b" + chr(0x2029) + "c\n")
+        assert [f.pattern_id for f in flags] == ["unicode-line-separator"], flags
+        assert "U+2028" in flags[0].message, flags[0].message
+
+    def test_cross_separator_acceptance_refused_same_file_line(self) -> None:
+        # Marker AFTER the separator: same file line, different display line.
+        # Refused -- the flag survives.
+        text = ("## Injected header" + chr(0x2028)
+                + _ACCEPT_SEP.format(r="looks adjacent in a raw diff") + "\n")
+        assert [f.pattern_id for f in scan_text(text)] == [
+            "unicode-line-separator"], scan_text(text)
+
+    def test_cross_separator_acceptance_refused_preceding_line(self) -> None:
+        # The {i, i+1} preceding-line scope crossed with a separator: file line
+        # 2 renders as four display lines, so a marker on file line 1 would
+        # clear a hit a reviewer never saw next to it. Refused.
+        text = (_ACCEPT_SEP.format(r="annotates the line below") + "\n"
+                + "one" + chr(0x2028) + "two" + chr(0x2028) + "three"
+                + chr(0x2028) + "## Injected header\n")
+        flags = scan_text(text)
+        assert [(f.line, f.pattern_id) for f in flags] == [
+            (2, "unicode-line-separator")], flags
+
+    def test_same_display_line_acceptance_is_honoured(self) -> None:
+        # The accept path survives: the refusal above is a narrowing, not a
+        # conversion of this id to unsuppressible.
+        text = (_ACCEPT_SEP.format(r="cited in prose, reviewed")
+                + chr(0x2029) + "and the paragraph continues\n")
+        assert scan_text(text) == [], scan_text(text)
+
+
+class TestSeparatorDetectionCoexistence:
+    """The three unicode ids trip independently. Shared with
+    content-scan-detectors by intent; the class name is NOT."""
+
+    def test_all_three_unicode_ids_trip_independently(self) -> None:
+        text = ("zero" + chr(0x200B) + "width\n"
+                "bidi" + chr(0x202E) + "override\n"
+                "sep" + chr(0x2028) + "header\n")
+        got = {(f.line, f.pattern_id) for f in scan_text(text)}
+        assert got == {(1, "unicode-zero-width"),
+                       (2, "unicode-bidi"),
+                       (3, "unicode-line-separator")}, got
+
+
+class TestSeparatorDetectionCollectionIntegrity:
+    """Two sibling plans append to this file. A duplicate top-level class name
+    removes the earlier class from collection entirely, and a duplicate method
+    name removes the earlier method -- silently, no error, no warning, so a
+    collected-node COUNT cannot see it either. This fires inside the file, at
+    the moment the collision is written.
+
+    Named residual: the guard lives in the file it judges, so a duplicate of
+    *its own* class name would shadow the guard itself. The independent catcher
+    is the --collect-only node-id set captured outside the tree by a person.
+    """
+
+    def test_no_duplicate_test_class_or_method_names(self) -> None:
+        tree = ast.parse(Path(__file__).resolve().read_text(encoding="utf-8"))
+        problems: list[str] = []
+        seen_classes: set[str] = set()
+        for node in tree.body:
+            if not isinstance(node, ast.ClassDef):
+                continue
+            if node.name in seen_classes:
+                problems.append(f"duplicate top-level class: {node.name}")
+            seen_classes.add(node.name)
+            seen_methods: set[str] = set()
+            for sub in node.body:
+                if not isinstance(sub, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    continue
+                if sub.name in seen_methods:
+                    problems.append(f"duplicate method {node.name}.{sub.name}")
+                seen_methods.add(sub.name)
+        assert problems == [], problems

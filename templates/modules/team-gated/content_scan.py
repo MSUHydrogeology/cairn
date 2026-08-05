@@ -43,6 +43,22 @@ What it flags (each a ``pattern_id`` usable in a suppression marker):
 * ``unicode-bidi`` -- bidirectional-control characters (U+202A-202E,
   U+2066-2069), the "innocent to a human, instruction to a parser"
   vector.
+* ``unicode-line-separator`` -- a raw U+2028 LINE SEPARATOR or U+2029
+  PARAGRAPH SEPARATOR.  Both are ``White_Space=Yes`` and so are excluded
+  by construction from the ignorable-code-point derivations; nothing else
+  here catches them.  The detector **flags and never rewrites**.
+  *Declared limit*: one separator flag per line, and the flag names the
+  first separator on that line.  **Suppression is narrower for this id
+  than for any other**, because it is the first detected code point for
+  which a *file* line and a *display* line differ: (i) an acceptance is
+  honoured only when the marker renders on the **same display line** as
+  the separator it accepts -- in practice, the marker is written *before*
+  that separator on the file line; and (ii) the **block form**
+  (``cairn-accept`` ... ``cairn-accept-end`` spanning the hit) does
+  **not** suppress this id.  An acceptance on the preceding file line, or
+  later on the same file line, is refused rather than honoured -- it
+  would annotate a hit a human reading rendered text never sees beside
+  it.
 * ``homoglyph`` -- a single token that mixes scripts (e.g. Latin +
   Cyrillic/Greek).  Evaluated **per contiguous alphanumeric token**, not
   per line, so a Latin word beside a Cyrillic word does not false-flag.
@@ -129,7 +145,8 @@ _EGRESS_RE = re.compile(
 
 _URL_RE = re.compile(r"https?://([^/\s)\"'>]+)", re.I)
 
-# Zero-width + bidi control characters.  Members are literal control
+# Zero-width, bidi-control and line/paragraph-separator characters.
+# Members are literal control
 # chars (with a naming comment each), as **escape forms** (\uXXXX), never raw characters, so this scanner
 # carries none of the invisible code points it detects (trojansource-safe,
 # bandit B613); the per-char comment names each.  Coverage expanded per
@@ -146,6 +163,13 @@ _BIDI = (
     | {chr(c) for c in range(0x2066, 0x206A)}  # U+2066-2069 isolates
     | {"\u200e", "\u200f"}                    # LRM / RLM marks
 )
+# The two separators nothing else here detects: both carry
+# White_Space=Yes, so every Default_Ignorable_Code_Point derivation
+# excludes them by construction.
+_LINE_SEPARATORS = {
+    "\u2028",  # line separator
+    "\u2029",  # paragraph separator
+}
 
 # Script ranges for the per-token homoglyph check. Mixing any two of these
 # (or any of them with Latin) inside one token is a classic homoglyph
@@ -318,6 +342,11 @@ def _scan_unicode(lines: list[str], leading_bom: bool):
                 yield (i, "unicode-bidi",
                        f"bidirectional-control character U+{ord(ch):04X}")
                 break
+        for ch in line:
+            if ch in _LINE_SEPARATORS:
+                yield (i, "unicode-line-separator",
+                       f"unicode line/paragraph separator U+{ord(ch):04X}")
+                break
 
 
 # RV5 -- narrow scientific-unit homoglyph allowance. A Greek micro sign
@@ -385,6 +414,38 @@ def _scan_html_comments(text: str, lines: list[str]):
 # --------------------------------------------------------------------------
 # scan_text / scan_file
 
+def _separator_accept_is_associable(line: str) -> bool:
+    """True when *line* carries a valid ``unicode-line-separator``
+    acceptance that renders on the **same display line** as the first
+    separator on it -- i.e. the marker is written *before* that separator.
+
+    Suppression line-scope is *file*-line scope.  U+2028 / U+2029 are the
+    first detected code points for which a file line and a display line
+    differ, so an acceptance on the preceding file line, or later on the
+    same file line, annotates something a human reading rendered text never
+    sees beside the hit.  Such an acceptance is refused -- the caller
+    re-emits the flag -- and so is the block form, which is even less
+    reliably associable.  The marker that works goes before the separator.
+
+    Validity is the same rule ``_parse_suppressions`` applies: the marker
+    must name this ``pattern_id`` and carry a non-empty ``reason=``.
+    """
+    sep_idx = min(
+        (line.index(ch) for ch in _LINE_SEPARATORS if ch in line),
+        default=None,
+    )
+    if sep_idx is None:
+        return False
+    for m in _ACCEPT_RE.finditer(line):
+        if m.end() > sep_idx:
+            continue  # not before the separator -- different display line
+        if m.group("pid") != "unicode-line-separator":
+            continue
+        if _attrs(m.group("attrs")).get("reason", "").strip():
+            return True
+    return False
+
+
 def scan_text(
     text: str,
     *,
@@ -419,7 +480,20 @@ def scan_text(
     for lineno, msg in _scan_html_comments(text, lines):
         raw.append(Flag("instruction-html-comment", lineno, msg))
 
-    return [f for f in raw if f.line not in suppressed.get(f.pattern_id, set())]
+    out: list[Flag] = []
+    for f in raw:
+        if f.line not in suppressed.get(f.pattern_id, set()):
+            out.append(f)
+            continue
+        # Suppressed by the per-id file-line scope.  For every pattern id but
+        # one, that is the whole rule.  `unicode-line-separator` is narrower:
+        # the acceptance must render on the same *display* line as the
+        # separator it accepts, so an unassociable acceptance is refused and
+        # the flag is re-emitted.  No other id's path changes here.
+        if (f.pattern_id == "unicode-line-separator"
+                and not _separator_accept_is_associable(lines[f.line - 1])):
+            out.append(f)
+    return out
 
 
 def scan_file(
