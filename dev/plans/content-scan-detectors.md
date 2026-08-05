@@ -3351,3 +3351,19 @@ the edited scanner. The repo-wide neutrality subcheck remains at its existing
 and D-ON-2 remain **NOT MET** and Maintainer-only. Chunk E5 remains deliberately
 unlanded until the shared `CHANGELOG.md` serialization point. No default-on
 selection, frozen-manifest re-pin, AST ceremony, Decision, or push was performed.
+
+## Maintainer disposition -- default-on consequence -- 2026-08-05
+
+The Maintainer's authorizing instruction, quoted verbatim and visually isolated:
+
+> I accept content-security as default-on despite the documented whole-script Cyrillic residual and international-proper-noun tradeoff. I authorize Codex to scribe and commit this disposition in both content-scan-detectors and default-security-stance.
+
+This disposition names and accepts the consequence Gate D-ON required the
+Maintainer to own. It therefore satisfies **D-ON-2** and, by the governing
+gate's explicit Maintainer-disposition route, **D-ON-1**. **D-ON-3** is already
+met by the 74 named parametrized corpus rows landed in `8fea3f6` and verified
+under the canonical suite in `7dd73a0`.
+
+**Gate D-ON is MET.** This authorizes the default-on implementation described by
+the reciprocal plans. It does not authorize a frozen-manifest re-pin, AST
+re-anchor, credential use, signing, pushing, or any other Maintainer ceremony.
