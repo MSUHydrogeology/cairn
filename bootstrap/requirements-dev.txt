@@ -1,19 +1,28 @@
 # Development and test-only dependencies for Cairn's bootstrap engine.
 #
 # These are NEVER part of the runtime path and are NEVER packaged for
-# adopters. They are dev-only tools that gate the CI floor checks and
-# support development workflows.
+# adopters. They are dev-only tools that the floor check and the security
+# gates need, plus development-workflow support.
 #
 # Install with:
 #   pip install -r bootstrap/requirements-dev.txt
 #
+# Cairn has NO CI. Every check below is run by a person or an agent typing a
+# command -- `python -m pytest bootstrap/tests` for the suite-resident ones,
+# `python bootstrap/security_check.py` for the fail-closed release run. A tool
+# missing from this environment does not fail somewhere else; it fails, or
+# skips, right here.
+#
 # See bootstrap/DEPENDENCY_BUDGET.md for the dependency-budget ledger.
 # See doctrine/runtime-contract.md for the runtime contract and floor
-# CI check details.
+# check details.
 
-# vermin: Python minimum-version detector used by the floor CI check
+# vermin: Python minimum-version detector used by the floor check
 # (bootstrap/tests/test_python_floor.py). Dev/test-only; never in the
 # adopter runtime path. See DEPENDENCY_BUDGET.md Exception 2.
+# Absent, that test SKIPS -- ordinary for a contributor, but the release
+# command runs the suite in release mode where a skip is refused, so a
+# release cannot be cut without it.
 vermin>=1.8.0
 
 # bandit: static analysis, run by bootstrap/security_check.py as

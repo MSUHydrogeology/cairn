@@ -11,11 +11,15 @@ fails the build if the committed matrix drifts from the generator output.
 
 A target's **level** is `claimed-pending-fixture` until a fixture actually
 exercises install + invoke on that harness and promotes it to `native-tested`.
-CI cannot drive a proprietary external harness (Claude Code, Cursor, ...), so:
+**Cairn has no CI**, and no automated trigger of any kind can drive a
+proprietary external harness (Claude Code, Cursor, ...), so:
 
-* The **mechanism** tiers are CI-proven here and in `test_skills_fanout.py` /
-  `test_skills_install.py`: alias (canonical read-path), symlink + copy-fallback
-  fan-out, install + lockfile provenance.
+* The **mechanism** tiers are **suite-proven** here and in
+  `test_skills_fanout.py` / `test_skills_install.py`: alias (canonical
+  read-path), symlink + copy-fallback fan-out, install + lockfile provenance.
+  "Suite-proven" names an exact trigger — these are test nodes inside `python
+  -m pytest bootstrap/tests`, which a person or an agent types, and which the
+  release run (`python bootstrap/security_check.py`, phase 3) also executes.
 * A **per-target native invocation** fixture (does this harness actually load
   and run the skill?) is a maintainer / release-time step. As each lands, flip
   that target's `level` in the table to `native-tested` and drop a fixture
@@ -38,4 +42,12 @@ CI cannot drive a proprietary external harness (Claude Code, Cursor, ...), so:
 Per-target effort to promote: write a minimal repo fixture that installs the
 skill into the target's read-path and asserts the harness loads it; wire it as a
 `native-tested` row. Roughly an afternoon per harness, dominated by standing up
-the harness in CI (or a recorded transcript where CI cannot run it).
+the harness at all.
+
+**Where the suite cannot run the harness, the evidence is a recorded
+native-harness transcript** — the session output showing that harness loading
+and running the skill — **committed beside this README and read by a human.**
+That is the whole trigger: a person runs the harness, saves the transcript,
+reviews it, and flips the `level`. There is no automated substitute and this
+file does not pretend otherwise; a `native-tested` row with no transcript
+beside it is an unbacked claim.

@@ -1,8 +1,17 @@
-"""Floor CI check: vermin-based Python minimum-version assertion.
+"""Floor check: vermin-based Python minimum-version assertion.
 
 Verifies that the scaffold engine (``bootstrap/_scaffold/``) does not
 require a Python version **higher** than the declared supported minimum
 (>=3.11).
+
+**What triggers it.** Cairn has no CI. This is a test node inside
+``python -m pytest bootstrap/tests`` -- a command a person or an agent
+types -- and inside the release run
+(``python bootstrap/security_check.py``, phase 3), which is where the
+graceful skip below stops being acceptable: that phase sets
+``CAIRN_RELEASE_GATE_ACTIVE`` and ``bootstrap/tests/conftest.py`` refuses
+a skipped outcome, so a release cannot be cut on a machine without
+``vermin``.
 
 The measured syntactic floor via ``vermin 1.8.0`` is 3.7; the declared
 supported minimum is 3.11 (3.7–3.9 are all EOL; 3.8 reached end-of-life
@@ -12,7 +21,8 @@ inadvertently raises the floor above the declared support line.
 
 The check skips gracefully when ``vermin`` is not importable or not
 on PATH; vermin is a dev/test-only dependency (install via
-``pip install -r bootstrap/requirements-dev.txt``).
+``pip install -r bootstrap/requirements-dev.txt``). That graceful skip is
+for the ordinary contributor run only -- see *What triggers it* above.
 
 A container-pinned compile check (compiling the engine inside a
 container pinned to exactly Python 3.11) is a noted future enhancement

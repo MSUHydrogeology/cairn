@@ -200,14 +200,26 @@ python3 -m pytest bootstrap/tests/test_python_floor.py -v
 ```
 
 The `vermin` syntactic check is the unit-suite mechanism. The
-**release floor gate** is stronger (`bootstrap/container/floor-gate.sh`):
-it runs `vermin` **plus** a runtime conformance slice (CLI help, a clean
-install, and a controlled upgrade) in a floor/compat image pinned to the
-declared floor (3.11), so a **runtime-only** incompatibility fails too,
-not just raised syntax — and a deliberately-raised (3.12-only) syntax
-probe must fail closed. In the release gate, an unresolvable `vermin` is
-an explicit **FAILURE**, never a silent skip-as-pass (the unit suite's
-graceful skip is for the ordinary test run only).
+**Maintainer-run contained floor check** is stronger
+(`bootstrap/container/floor-gate.sh`): it runs `vermin` **plus** a runtime
+conformance slice (CLI help, a clean install, and a controlled upgrade) in
+a floor/compat image pinned to the declared floor (3.11), so a
+**runtime-only** incompatibility fails too, not just raised syntax — and a
+deliberately-raised (3.12-only) syntax probe must fail closed. Inside
+*that command*, an unresolvable `vermin` is an explicit **FAILURE**, never
+a silent skip-as-pass (the unit suite's graceful skip is for the ordinary
+test run only).
+
+**Its trigger is a human typing it.** Cairn has no CI, and nothing
+dispatches this script: `python bootstrap/security_check.py` — the
+fail-closed release command — runs Bandit, the Markdown self-check, the
+engine suite and the quality gate, and does **not** invoke
+`floor-gate.sh`. Nor does the suite: `bootstrap/tests/test_python_floor.py`
+runs `vermin` directly on the host. So the container slice is a
+Maintainer-run check whose scheduling is a person's memory, and calling it
+a "gate" overstated what enforces it. What the release command *does*
+enforce is that the host-side `vermin` check cannot skip: phase 3 runs the
+suite in release mode, where a skipped outcome is refused.
 
 ## The contained-kernel recipe — running Cairn without host Python
 
