@@ -270,10 +270,10 @@ board by design.
   | Cluster | Current lifecycle owners | Next boundary |
   |---|---|---|
   | **[BND] Input, execution, containment** | `fork-advisory-semantics`, `api-web-security-modules` | profile-authority consolidation; Class C no later than v0.4 preparation |
-  | **[VER] Verification and coverage** | `content-scan-detectors` + `separator-detection`; `security-verification-activation`; `portable-security-sweeps`; `api-web-security-modules`; `security-preflight-checklist` | settle activation binding mode, then admit capability entries; one scanner batch |
+  | **[VER] Verification and coverage** | `content-scan-detectors` + `separator-detection`; `security-verification-activation`; `portable-security-sweeps`; `api-web-security-modules`; `security-preflight-checklist` | scanner reviews SHIP: reconcile the live frozen-file union, run one supervised re-pin, archive the pair; then repair the two portable-sweep code-review findings |
   | **[TRU] Trust roots and provenance** | `fork-advisory-semantics`; the live gate-reanchor posture below | trusted-source boundary after the release bar settles required source/install claims |
   | **[REC] Deliberation authority, identity, context, record integrity** | `review-gate-enforcement`; byline residuals below | one identity-authority consolidation when a trigger fires, not one proposal per Unicode row |
-  | **[REL] Release evidence and ceremonies** | `release-security-bar`; the landed Maintainer-run release command; the scheduled frozen-file union | finish the finite register, then run one re-derived supervised ceremony |
+  | **[REL] Release evidence and ceremonies** | `release-security-bar`; the landed Maintainer-run release command; the scheduled frozen-file union | serialize the SHIP-reviewed release register; derive every ceremony from the live held set, then run one reviewed supervised union |
 
 * **[TRU-5] gate-reanchor-preflight posture** *(plan archived 2026-08-03; this entry
   survives because its commitments are live, not completed)* — the trust root is

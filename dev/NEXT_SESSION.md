@@ -1,146 +1,95 @@
 <!-- cairn-internal-ref-allow: doctrine/coordination.md doctrine/session-routines.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
-# Next-session candidates — Cairn
+# Next-session candidates -- Cairn
 
-`NEXT_SESSION.md` carries the **cold-pickup handoff**: the
-recommended next task and a queue of candidates, each with enough
-context — file paths, scope, effort, payoff, risks — to begin
-without the prior session's conversation.
-
-It complements `PLANNING.md`: `PLANNING.md` says *what* is queued;
-`NEXT_SESSION.md` says *how to actually pick it up*.
-
-`NEXT_SESSION.md` is **rewritten from scratch** by the full-
-handoff owner at each goodnight — the physical action is "open
-a blank file and write," not "edit the previous version."
-Anything in the previous goodnight's version that does not
-earn its place in the next session's orientation is dropped;
-durable claims migrate to their proper home (doctrine, the
-roadmap, a proposal) **before** the rewrite. See
-`doctrine/session-routines.md` > "The next-session starting
-plan: written from scratch each goodnight" for the load-bearing
-reasoning.
-
-The required-signal-read discipline on shared communication
-files applies (`doctrine/coordination.md` > "Required
-signal+read for coordination-surface files").
+`NEXT_SESSION.md` is the cold-pickup handoff. It is rewritten from scratch by
+the full-handoff owner; durable roadmap truth remains in `dev/PLANNING.md` and
+the security strategy.
 
 ## Recommended starting point
 
 <!-- cairn:slot next-start -->
-**Task + current state.** **Answer the three Maintainer calls that unblock all
-Wave 1 archival**, then repair Wave 2. Nothing is pushed. Wave 2's
-implementation sits **uncommitted** in the working tree (11 files) because both
-halves returned DEFECTIVE; everything else from the overnight run is committed.
+**Reconcile the frozen-manifest ledger, then prepare one supervised re-pin.**
+The paired `content-scan-detectors` and `separator-detection` implementations
+are complete and independently security-reviewed SHIP. The final canonical
+boundary is **2514 passed** under Python 3.13.13, and the template/self-hosted
+scanner twins are byte-identical at SHA-256
+`677d07fdb93a3978339b90f4415803069169028f7165f4c2d45641b0d2dd8ae7`.
 
-**Why this first.** Three calls unblock every archive precondition on the
-board, and none of them is expertise-gated — they are scope and ceremony
-scheduling, not security analysis.
+Do not begin by asking the Maintainer to run the two-file ceremony described in
+the plans. A read-only verify against `e45e1fc` reports substantial older
+frozen drift, and `scripts/content_scan.py` is now part of the discovered
+script set. The ceremony must be derived from current output, not inherited
+from an earlier path count.
 
-1. **`release-authenticity` Chunk M.** Needs your signing key. The control is
-   **documented and tested but NOT established** until the cold bootstrap run
-   passes against a pushed tag. Its Decision also carries a flagged condition —
-   *"a scoped External round for the tag-substitution fix"* — which the Gemini
-   Flash plan review arguably already is; strike or confirm it.
-2. **`byline-classification`'s three Maintainer questions.** The only thing
-   between that plan and archive. Its `[I7b]` obligation discharged itself when
-   `planner-line-semantics`'s Response retracted the claim it was owed.
-3. **`scan-coverage`'s four follow-up homes** — the struck registry census, the
-   four `B607` findings, the unguarded monotonicity claim, the stale frozen
-   pins. Mechanical, and mine; deferred only because archival was held for you.
+1. Run the anchored gate-manifest verifier from the trusted checkout, using
+   the runbook's current trusted-repository form.
+2. Reduce its output to held paths and collection regressions. Map every item
+   to an implemented, independently reviewed plan; new files and added nodes
+   are notes, not modified-file authorization.
+3. Stop on any unreviewed or unattributable held item. Otherwise record the
+   exact reviewed union and prepare the Maintainer's supervised re-pin command.
+4. After the re-pin verifies clean, archive both scanner plans together and
+   serialize the roadmap transition.
 
-**Then Wave 2's five blocking findings** (§ *Wave 2* below), then Ceremony 1.
+The Maintainer should only be brought in for the final prepared command. No
+security-design choice remains for them in this scanner batch.
 
-**Effort.** Calls: minutes. Wave 2 repair: one focused round. Ceremony 1:
-yours, after the repair.
+## Next engineering work
 
-## Wave 2 — what must be fixed before it commits
+**1. Repair `portable-security-sweeps`.** Its Codex External security code
+review is REVISE with three executable findings:
 
-**`fork-advisory-semantics`** — three blocking:
-* `bootstrap/UPGRADE.md` asserts *"Nothing your lockfile records — not `hash`,
-  not `base_hash`, not a record's `src` — can decide that a facade is clean."*
-  **Demonstrated false by execution:** a genuinely forked facade whose record
-  sets `hash == base_hash` returns `[]`.
-* Node 13's docstring claims a containment half it never asserts.
-* **`bootstrap/_scaffold/upgrade.py` carries a hunk belonging to the batched
-  sibling**, self-labelled `(profile-parse-fail-open Chunk A)`. A path-scoped
-  commit would carry it silently. Fix before any commit.
-* Consequence for Ceremony 1: the isolation claim *"the sibling's edits absent
-  by construction"* is **false** — the copied `upgrade.py` carried the sibling
-  hunk, so the per-plan AST measurement handed over for the union is
-  contaminated and must be retaken.
+* detached reachable `HEAD` is classified as no history, allowing a partial
+  scan to aggregate CLEAN;
+* `probe_version()` and `screen_local_config()` execute trust roots without the
+  immediate path-and-digest revalidation required by the accepted race bound;
+* linked worktrees are rejected because config origin is compared to the
+  `.git` file rather than Git's validated common/config directory.
 
-**`profile-parse-fail-open`** — two blocking:
-* **Unicode-whitespace hole.** `_minimal_yaml_parse` uses `line.strip()`, which
-  removes *every* `str.isspace()` character; YAML's whitespace is only SPACE
-  and TAB, and `_PROFILE_CONTROL_RE` covers C0/C1/`U+2028`/`U+2029`/`U+FEFF`
-  but not `U+00A0`, `U+2000`–`U+200A`, `U+3000`. Four measured inputs return a
-  value **not equal** to `yaml.safe_load`'s and **do not raise** — the third
-  outcome the contract denies. The sharpest is an NBSP-prefixed key, read as
-  `project_name` by the recognizer and `'\xa0project_name'` by PyYAML: exactly
-  Maintainer Amendment 2's own sentence, with a character ordinary copy-paste
-  produces. No test exercises Unicode whitespace.
-* Gate-manifest delta under-reported: `_gate_manifest.py verify --no-collect`
-  **structurally cannot** report collection classes, so a `COLLECTION-DROPPED`
-  entry (the E1 rename) went unreported into a pre-recorded ceremony
-  accounting. Run **with** collection: HOLD is 17, not 10.
+Add real-Git regressions for detached/unborn repositories and linked
+worktrees, plus replacement-before-probe/config tests. Re-run the focused suite
+and a fresh broad boundary, then obtain a different-agent correction review.
 
-Its auditor ran **18 hazard mutations** (13 claimed plus 5 unpriced, hunting a
-predicted third case of test theatre) and all went RED — **no theatre found**.
-The new module is genuinely non-vacuous.
+**2. Repair `review-gate-enforcement`.** Its Codex External code review is
+REVISE with two parser-language bypasses: permissive spacing/trailing-space
+headings pass despite S1, and any parsed kind beginning with `Response` can
+disposition findings. Give the gate a raw-line grammar equivalent to S1 and
+match only the exact `Response to plan review` house form. Add positive and
+negative fixtures, preserve planner-twin identity, and obtain an independent
+correction review.
 
-## Decisions still yours, beyond the three above
+## Ready or queued behind them
 
-* **Ceremony 1** — the batched engine AST re-anchor. The union must be formed
-  by you from **per-plan isolated** measurements; see the contamination note.
-* **Ceremony 2** — the `content_scan.py` frozen re-pin. `content-scan-detectors`
-  and `separator-detection` share the file; batch them, or buy two ceremonies.
-* **`identity-not-name` condition 3.** `fork-advisory-semantics` Chunk B **did
-  not execute** — its fence requires a Maintainer amendment that does not
-  exist, so the destructive remediation advice in `format_forked_facade_warning`
-  is unchanged. Correct restraint by the implementer; the call is yours.
-* **The `tools/lifecycle.py` lockfile row convention.** `agent-context-scrub`
-  A4 says re-record `hash` **and** `base_hash`; `byline-classification` set the
-  precedent of `hash` only. Verified to be convention, not correctness — settle
-  by measurement (pick whichever adds no `verify_integrity` line).
-* **The eight remaining escalated findings** — three on `byline-classification`,
-  five on `agent-context-scrub`. Unchanged.
+* `release-security-bar` has an External SHIP plan review. Its missing
+  serialized register row and later Maintainer-owned ref/audit remain explicit;
+  SHIP did not satisfy them.
+* `api-web-security-modules` and `security-verification-activation` agree on
+  `policy_binding_mode: living_state`. Implement the unfenced chunks first;
+  retain the ratified policy-byte boundary and the Maintainer fences exactly.
+* `fork-advisory-semantics` carries an External SHIP code review, but its plan
+  remains open around ceremony/serialization and the deliberately skipped
+  remediation-string chunk. Reconcile it with the current AST and frozen-gate
+  state before archiving.
+* `stage-commit-patterns`, `transition-lint`, `security-preflight-checklist`,
+  and the remaining release/security work stay on the active board. Prefer
+  closing reviewed implementation before opening another scope.
 
-## Other candidates
+## Stable state
 
-* **External reviews on the twelve open plans.** Every Internal round states in
-  its own first paragraph that it does **not** discharge the declared tier.
-  This is the largest single block of remaining work.
-* **The tier-blind plan-review gate.** `_has_kind(art, "Plan review")` is
-  presence-only: `##`, `###` and an *empty* heading all satisfy it, and nothing
-  reads `required(External)`. So a plan declaring External is cleared to
-  implement by an Internal review that disclaims discharging it. Routed to
-  `gate-claims-vs-enforcement`, which owns the file. One reviewer already
-  worked around it deliberately by filing under `##`.
-* **Update the sequencing note.**
-  `dev/strategy/archive/2026-08-03-claude-security-wave-sequencing.md` was written when
-  the `bootstrap/_scaffold/config.py` cluster looked like two scopes. It is
-  **five**: `profile-parse-fail-open`, `default-security-stance`, and the three
-  Codex module-registration scopes.
+* HEAD at handoff includes Antigravity's separator correction review
+  `1c77b8d`; no push was performed.
+* Last fresh full suite: **2514 passed, 0 failed, 0 skipped/xfail/xpass**, three
+  third-party deprecation warnings, Python 3.13.13.
+* Scanner review chain: content detectors SHIP `8ea8fad`; separator original
+  review REVISE `1df178b`; correction `0d02d5d`; twin `e131b33`; correction
+  review SHIP `1c77b8d`.
+* No active work intents, no aging fold-back candidates, and no rate-limit
+  suggestions were reported by the 2026-08-05 full-handoff routine.
+* Pre-existing untracked `.claude/` and measurement material are not handoff
+  work. Inspect ownership before touching them.
 
-## The pattern worth carrying forward
+## Review habit to retain
 
-*The artifact under verification must not supply the material used to verify
-it.* **Seven instances** in this cycle: the anti-drift test whose expected set
-*was* the code's object (green 63 days); `scan-coverage`'s exclusion latch; the
-security test whose unsigned-tag fixture defeated its own oracle;
-`content-scan-detectors`' token sweep drawn from the record's own sets;
-`transition-lint`'s `B15` quantified over the author's own fixtures;
-`stage-commit-patterns`' probes, all unscoped so the scope gate dismissed them
-by construction; and the "isolated" AST worktree that carried the sibling's
-hunk.
-
-Reviewers now name it explicitly. Asking *"what supplies the material this
-check runs on?"* has been the highest-yield question in the cycle.
-
-## State
-
-* **12 plans open**, each with an Internal review; none discharges its tier.
-* **Wave 1 committed and green** — `b93f8e9`, `5c91c23`, `1dabe4d`, `cc74385`.
-* Last clean suite: **1710 passed / 0 failed** at `cc74385`. Current dirty
-  tree: **1779 passed / 2 failed**, both the priced `test_ast_attest` nodes.
-* **Nothing pushed.**
+Ask what supplies the material a check runs on, and execute the adversarial
+case through the governing call path. This session's multi-separator bypass
+and omitted scanner twin were both invisible to a narrower green result.
