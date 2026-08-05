@@ -372,9 +372,10 @@ bootstrap/tests`.
   about this baseline. Self-service repair reaches only the four symbols
   in `_ast_attest._UPDATE_ALLOWLIST`; anything else is a **Maintainer-run,
   dry-run-verified direct correction that an implementing agent does not
-  perform** (precedent: `c3d5bd9`). No runbook covers it yet — derive the
-  expected CHANGED set against the committed baseline rather than
-  carrying a figure forward.
+  perform** (precedent: `c3d5bd9`). The procedure is
+  [`bootstrap/AST_BASELINE_RUNBOOK.md`](bootstrap/AST_BASELINE_RUNBOOK.md) —
+  still derive the expected CHANGED set against the committed baseline
+  rather than carrying a figure forward, including from that runbook.
 * **Commit hygiene.** Always `git commit <paths>` (never a bare
   `git commit` — the index is shared); see *Git and commit workflow*
   above.
