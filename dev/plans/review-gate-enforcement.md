@@ -365,3 +365,32 @@ Cairn and both managed adopters.
 settled schema and a second External round before Chunk A lands; `[E1]` requires
 the grammar be re-chosen first. No implementation commit lands on this
 Response's strength.
+
+## Plan review -- Codex (External) -- 2026-08-05
+
+**Verdict: REVISE.** I treated the authored Response as evidence of intended
+changes, not as a replacement for the plan's executable contract. The declared
+External tier remains undischarged.
+
+**[E5] The settled schema required by [E2] is still absent from the plan.**
+Chunk B.1 does not define the two fields' concrete grammar, normalization of
+the existing `required(External, security lens)` form, duplicate detection,
+review-to-Sharpening pairing, or the bootstrap exception. Those details appear
+only as future work in the Response. Consequently there is nothing sufficiently
+settled for this round to attest, and a future implementation could choose a
+different vocabulary while still claiming to follow the plan. Put the complete
+grammar, its fail-closed behavior, and the exact grandfather rule in the
+operative plan text (or a clearly binding amendment), then obtain the promised
+second External read before Chunk A.
+
+**[E6] The two closed vocabularies are reasonable only when they are parser
+fields, not inferences from a reviewer's free-text role.** A human reviewer or
+an agent whose byline does not advertise its type must be able to declare the
+field explicitly; the checker should validate the declaration and the plan's
+required tier, rather than guess identity from a name. The bootstrap rule must
+say which already-recorded review is admitted and why, so the exception cannot
+quietly become a permanent alternative grammar.
+
+I inspected the current Chunk A--D contract and the appended Response, including
+both named call sites. I did not run an implementation test because the Response
+correctly says the shared predicate and schema changes have not yet been made.
