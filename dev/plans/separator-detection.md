@@ -18,7 +18,24 @@ shipped security control and its pattern-id set is an adopter-facing contract.
 in the tree** (`doctrine/plans.md` > plan-review precondition). See
 [*Plan review — the brief*](#plan-review--the-brief) for what the Internal round
 about to run does and does not discharge.
-**Last update**: 2026-08-04
+**Review disposition**: the External round-2 `## Plan review` section (Codex,
+2026-08-05, verdict **REVISE**) is in the tree, and the Maintainer has disposed
+of that REVISE. The authorizing instruction, quoted verbatim:
+
+> Go ahead with implementation once you've revised these. I don't want another review round
+
+That disposition covers **the review round only**. It is not a bypass of the
+plan-review precondition — the required External section exists, and the
+Maintainer holds the standing to dispose of its findings, which is the escape the
+round-2 verdict itself contemplates. It supplies **no** Maintainer credential, no
+signing ref, no AST re-anchor ceremony, and **no approval to push**; the
+Maintainer fence below is untouched by it. The revision it conditions on is the
+inline fold recorded in *Sharpening — Claude (author) — 2026-08-05 (the inline
+fold of A1–A33)* at the end of this file: **A1–A33 are folded into the operative
+chunk rows and acceptance criteria, and the amendment tables are marked folded.
+The chunk table is now the executable contract — read it, not the amendment
+tables.**
+**Last update**: 2026-08-05
 **Opened**: 2026-08-04
 
 ## Source proposal
@@ -96,15 +113,19 @@ mode, is that legitimate tracked files already carry these and the rule ships as
 noise. Swept the whole tracked corpus:
 
 ```
-tracked files read: 494 of 494
 files with raw U+2028/U+2029: 0
 ```
 
-**Zero, over 494 tracked files, `as_of 2026-08-04`** — every tracked file, not
-only Markdown, so `templates/`, `bootstrap/`, `scripts/`, `docs/` and `dev/` are
-all inside it. The rule ships silent on today's corpus. The signal to reconsider
-did not fire; recorded here as the dated figure the proposal asks for, and
-re-taken at implementation rather than quoted from here.
+**Zero hits, and this plan states no denominator** (amendment A33, folded).
+Every tracked file was read, not only Markdown, so `templates/`, `bootstrap/`,
+`scripts/`, `docs/` and `dev/` are all inside the sweep. The rule ships silent on
+today's corpus and the signal to reconsider did not fire. Re-derived at revision
+`ec57bf0`, `as_of 2026-08-05`: **0 hits**, every tracked file decoding as UTF-8.
+The load-bearing claim is the **hit count**, which is a stop-signal predicate; the
+denominator is a moving count of unrelated commits and three different values
+(494, 511, 520) were written into this plan for the same unchanged verdict across
+three days — a fourth would be measured today. The implementing agent re-runs the
+sweep and records **the hit count and the date**, never a denominator.
 
 An External reviewer should re-run this sweep rather than trust it — it is the
 one measurement that decides whether the tripwire trains people to ignore it.
@@ -171,19 +192,43 @@ files** — exactly the proposal's *Touches* line:
 * `templates/modules/team-gated/content_scan.py`
 * [`bootstrap/tests/test_content_scan.py`](../../bootstrap/tests/test_content_scan.py)
 
-Within `content_scan.py` the Response named three sites, and all three are
-verified present at HEAD: the module-docstring pattern-id list (the
-`unicode-bidi` bullet ends at
-`templates/modules/team-gated/content_scan.py:45`), the detector loops in
-`_scan_unicode`, and the call site at
-`templates/modules/team-gated/content_scan.py:401`.
+Within `content_scan.py` there are **four** sites, all verified present at
+revision `ec57bf0`: the module-docstring pattern-id list (the `unicode-bidi`
+bullet ends at `templates/modules/team-gated/content_scan.py:45`), the detector
+loops in `_scan_unicode` (`templates/modules/team-gated/content_scan.py:295`),
+the call site at `templates/modules/team-gated/content_scan.py:401`, and — added
+by finding [E1] — the final suppression filter at
+`templates/modules/team-gated/content_scan.py:409` plus the new helper placed
+above `scan_text` (`templates/modules/team-gated/content_scan.py:376`). The
+fourth site is a **suppression-grammar** change scoped to the new pattern id; it
+is inside the plan's two-file *Touches* line but beyond the Decision's literal
+text, and it is named here rather than folded in silently.
 
 Verified rather than assumed: `grep -rln "unicode-zero-width"` over the tracked
 tree outside `dev/proposals/` and `dev/plans/` returns exactly those two files,
-`as_of 2026-08-04`. In particular `templates/modules/team-gated/content-security.md`
-does **not** enumerate pattern ids, and there is no self-hosted `scripts/`
-twin of the scanner — `scripts/check_cairn.py:91`–`94` loads the template file
-directly by path, so no twin-parity obligation is engaged.
+re-derived at revision `ec57bf0` (`as_of 2026-08-05`). In particular
+`templates/modules/team-gated/content-security.md` does **not** enumerate pattern
+ids, and there is no self-hosted `scripts/` twin of the scanner —
+`scripts/check_cairn.py:91`–`94` loads the template file directly by path, so no
+twin-parity obligation is engaged.
+
+**And the grep is not what carries the conclusion**, because a literal-id grep
+structurally cannot see a coupling that names no id.
+`templates/modules/team-gated/content_scan_runner.py` builds its reviewed-residual
+key as `f"{rel}:{pattern_id}:{code_hash}"`
+(`templates/modules/team-gated/content_scan_runner.py:299`, consumed at
+`templates/modules/team-gated/content_scan_runner.py:403`), so it is coupled to
+the **id set** while containing no id. That file is untouched here and no residual
+baseline churns — because Chunk A is id-preserving for both existing ids (the
+pre-change tuple capture in Chunk A's acceptance is what establishes that, taken
+before the edit) and the corpus carries **0** separator hits. The conclusion is
+reached by that argument about the fingerprint, not by the grep. The same failure
+mode applies to `bootstrap/security_check.py`: `grep -n "content_scan"` over it
+returns **nothing**, yet executing `scan_targets()`
+(`bootstrap/security_check.py:63`, which walks the module specs rather than a
+literal list) puts both `content_scan.py` and `content_scan_runner.py` in the scan
+set. A name-matching probe cannot see a set built by construction — establish
+membership by executing the call path, never by grep.
 
 **Out of scope, fenced explicitly:**
 
@@ -246,26 +291,61 @@ reason this plan is batched with its sibling rather than standing alone.
 
 **F1 — the frozen-file re-pin (needs a key and a supervised session).** Both
 files this plan edits are literal keys in the 164-entry `frozen_files` map in
-`bootstrap/tests/fixtures/gate_manifest.json`, verified `as_of 2026-08-04`
-(`templates/modules/**/*.py` and `bootstrap/tests/**/*.py` are both frozen-set
-globs — `bootstrap/tests/_gate_manifest.py:165`–`167`). After this plan lands,
-`python bootstrap/tests/_gate_manifest.py verify` reports **two
-`FROZEN-MODIFIED` entries**. Re-producing the manifest is a supervised
+`bootstrap/tests/fixtures/gate_manifest.json`, verified at revision `ec57bf0`
+(`as_of 2026-08-05`; `templates/modules/**/*.py` and `bootstrap/tests/**/*.py` are
+both frozen-set globs — `bootstrap/tests/_gate_manifest.py:165`–`167`). After this
+plan lands, `python bootstrap/tests/_gate_manifest.py verify` reports **these two
+files among its `FROZEN-MODIFIED` entries**. **Name the two files; state no
+total** (amendment A14, folded) — the total is other workflows' to move and is
+stale by the time it is read. Re-producing the manifest is a supervised
 prerequisite commit under `bootstrap/REANCHOR_RUNBOOK.md`, whose Phase 0 runs
 under a clean child shell with recorded values and a signing backend. The
 implementing agent's whole obligation is to **say so in the final commit body and
 name the two files**.
 
-**F2 — one ceremony for two plans, not two.** `content-scan-detectors` edits the
-**same two files** and is being planned in parallel. Its frozen-file delta is the
-identical pair. The batch rule this plan adopts:
+**F2 — one ceremony for two plans, and only if it can be bounded to them.**
+`content-scan-detectors` edits the **same two files** and is being planned in
+parallel; its frozen-file delta is the identical pair. Per finding [E2], a shared
+ceremony is **not** authorized by that coincidence alone: it is authorized only
+over an exact, reviewed set owned by these two plans. The batch rule this plan
+adopts:
 
 * Neither plan re-pins.
-* Whichever lands second records that **the same two entries** are stale — not a
-  second, different pair.
-* The Maintainer performs **one** supervised re-produce after both have landed.
+* Whichever lands second records **the same two files** as the pair *this change*
+  makes stale, and states plainly that `_gate_manifest.py verify` will report
+  **others belonging to other workflows** — the plan asserts no total.
+* **The shared ceremony is conditional, and the condition is checked before it
+  runs.** It is authorized **only** over the exact set
+  `{templates/modules/team-gated/content_scan.py,
+  bootstrap/tests/test_content_scan.py}`. Before the re-produce, the Maintainer
+  enumerates the `FROZEN-MODIFIED` / `COLLECTION-DROPPED` / `SKIP-XFAIL-NEW` paths
+  from `python bootstrap/tests/_gate_manifest.py verify`; **if any member falls
+  outside that set, the shared ceremony is off** and each unrelated surface takes
+  its own disposition first. A blanket re-produce would bless concurrently-landed
+  frozen-surface changes nobody reviewed.
+* **What runs that enumeration is a human, and nothing else.** Checked by opening
+  the artifacts rather than by citing them: `bootstrap/tests/_gate_preflight.py`
+  derives the blessing scope as bare **counts** —
+  `bootstrap/tests/_gate_preflight.py:1164`–`1170` builds
+  `{"modified": …, "added": …, "removed": …, "collection_before": …,
+  "collection_after": …}` by `sum(1 for …)` and `draft_message` prints those
+  counts. It names **no paths** and has **no refusal path** for an unexpected
+  member. Only `bootstrap/tests/_gate_manifest.py:364` names paths, and only in
+  `verify` output a human reads. So the condition above is discharged by the
+  Maintainer reading the enumeration; **this plan does not build a gate and must
+  not be read as implying one** (adding the refusal is `_gate_preflight.py`'s
+  surface — outside this plan's two files and inside
+  `bootstrap/REANCHOR_RUNBOOK.md`'s Maintainer-only territory).
+* **The state being blessed moves faster than any figure written here.** The
+  enumeration is taken **at ceremony time** and this plan quotes no violation
+  count: successive readings of the same command gave 17 (2026-08-04), 60
+  (2026-08-05 morning) and a materially larger set at revision `ec57bf0` the same
+  afternoon, **none of them this plan's**. The invariant, not the number, is what
+  binds: *every member of the enumeration is inside the two-file set, or the
+  shared ceremony is off.*
 * If only one of the two lands (the other is struck or deferred), the surviving
-  plan's commit body is already correct and the ceremony is unchanged.
+  plan's commit body is already correct and the ceremony is unchanged — still
+  subject to the bounding condition above.
 
 **No AST re-anchor.** Checked: no file under `bootstrap/_scaffold/` is touched,
 so `bootstrap/tests/fixtures/scaffold_ast_baseline.json` is unaffected and the
@@ -286,11 +366,22 @@ exists to close, so it must never be a commit.
 
 ```
 0. plan-open   -- this plan + the dev/PLANNING.md row-move              [commit pending]
-   (plan review) -- required(External, security lens); NO code before it lands
+   (plan review) -- required(External, security lens): round 1 landed 0deeac0,
+                    round 2 landed e1b2e30 (REVISE), Maintainer-disposed and
+                    folded inline -- see the header's Review disposition
 1. Chunk A -- _scan_unicode yields its own pattern id; the ternary dies [commit pending]
-2. Chunk B -- the unicode-line-separator detector + its contract entry  [commit pending]
+2. Chunk B -- the detector, the acceptance-association refusal (B10),
+              the collection-integrity guard (B11), + the contract entry [commit pending]
 3. Chunk C -- the shared release note, at a serialization point         [deferred]
 ```
+
+**Cross-plan ordering, binding on both plans.** Whichever of
+`separator-detection` / `content-scan-detectors` lands second **re-reads
+`bootstrap/tests/test_content_scan.py` rather than appending blind**, and uses
+test-class names specific to its own plan. This is not a courtesy: a duplicate
+top-level class name silently removes the earlier class from collection, with no
+error and no warning. The convention is stated in full — and backed by the
+mechanical guard **B11** — under Chunk B.
 
 ---
 
@@ -308,16 +399,28 @@ changes is *where the id comes from*.
 
 **Acceptance criteria — Chunk A.**
 
-* `~/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_content_scan.py -q`
-  → all pass, 0 skipped. Baseline **25 nodes** `as_of 2026-08-04`; collection
-  grows by exactly the new node and drops none.
-* **Behaviour identity, checked against a pre-change capture.** Before A1, write
-  the full `(line, pattern_id, message)` tuple list for a five-probe fixture
+* **Command**: `~/conda_envs/lhm/bin/python3.13 -m pytest
+  bootstrap/tests/test_content_scan.py -q` → all pass, 0 skipped.
+  **Invariant, not a count** (amendment A18, folded): capture the collected
+  **node-id set** with `--collect-only -q` **before** the edit and again after,
+  and require the after-set to be a **strict superset** of the before-set. Assert
+  the set, never its size — a count check cannot distinguish "n nodes added" from
+  "n+k added, k silently shadowed away", which is the hazard B11 exists for. Store
+  the before-capture outside the tree; it cannot be regenerated once the edit
+  lands. **What runs this**: a person typing the command. There is no CI in this
+  repository, and the two installed git hooks (`tools/intent.py`, pre-commit
+  intent-claim check and post-commit auto-release) run no tests — nothing fires
+  this gate unless a human or a reviewer types it.
+* **Behaviour identity, checked against a pre-change capture.** Before row A1,
+  write the full `(line, pattern_id, message)` tuple list for a five-probe fixture
   (`U+202E`, `U+200B`, `U+2060`, leading `U+FEFF`, non-leading `U+FEFF`) to a
-  scratch file **outside the tree**; after A2, assert byte-equal. Simulated for
-  this plan with the predicted result; the baseline must arrive from a
-  pre-change execution, because the artifact under verification cannot supply
-  it.
+  scratch file **outside the tree**; after row A2, assert byte-equal. **The
+  material for this check cannot come from the artifact under test**: once rows
+  A1–A2 land, the pre-change tuple list is unrecoverable from the working tree, so
+  a baseline "reconstructed" afterwards would be the edited scanner describing
+  itself. Take it first or the criterion is unsatisfiable — do not substitute a
+  post-hoc reconstruction, and do not carry this plan's simulated figures as the
+  baseline.
 * **Perturbation P-A1 — A3 discriminates the shape (hazard-side, RUN).** In
   `content_scan.py`, restore the 2-tuple yield and the ternary; A3 fails on the
   unpack. Restore; confirm `git diff templates/modules/team-gated/content_scan.py`
@@ -342,61 +445,139 @@ changes is *where the id comes from*.
 
 ### Chunk B — the detector, and the id that makes its marker mean something
 
+**Production rows: B1, B2, B3, B10. Test rows: B4, B5, B6a, B6b, B7, B8, B9a,
+B9b, B9c, B11.** Rows are listed in label order, not landing order; the whole
+chunk lands as one commit, so no intermediate state ships a detector without its
+refusal or its tests.
+
+**Test-class naming, binding on both plans** (folded from amendment A32, which
+superseded A17). Every test class this chunk adds carries a name specific to
+*this* plan — `TestSeparatorDetection` for the detection, suppression and refusal
+nodes, `TestSeparatorDetectionCoexistence` for the shared coexistence node,
+`TestSeparatorDetectionCollectionIntegrity` for the guard — and
+`content-scan-detectors` uses its own distinct class names. Whichever plan lands
+second **re-reads the file rather than appending blind**. This is not style: a
+duplicate top-level class name **shadows the entire earlier class**. Measured on
+standalone hazard modules — a 5-method class followed by a 1-method class of the
+same name collects **1** node; a class with a duplicated method collects **2** of
+3 — silently in both cases, no error, no warning. The convention is **backed by
+B11**, because a convention cannot protect against a failure that produces no
+error; the guard reports the collision, it does not resolve it, so the habit is
+retained alongside it.
+
 | # | File | Change |
 |---|------|--------|
 | B1 | `templates/modules/team-gated/content_scan.py` | New module constant `_LINE_SEPARATORS`, beside `_ZERO_WIDTH` (`templates/modules/team-gated/content_scan.py:137`) and `_BIDI` (`:144`), holding `U+2028` and `U+2029` **as `\uXXXX` escape forms with a naming comment each** — never raw. The existing comment block above `_ZERO_WIDTH` already states this rule (trojansource-safe, Bandit B613) and the new constant is placed under it so the rule covers it by adjacency, not by a second copy. |
 | B2 | `templates/modules/team-gated/content_scan.py` | A third per-line loop in `_scan_unicode`, after the bidi loop, yielding `(i, "unicode-line-separator", f"unicode line/paragraph separator U+{ord(ch):04X}")` and breaking after the first hit on that line — **following** the existing per-category-per-line convention, which the Decision fixes as a declared limit. |
-| B3 | `templates/modules/team-gated/content_scan.py` | Module-docstring pattern-id list: a `unicode-line-separator` bullet after the `unicode-bidi` bullet (which ends at `templates/modules/team-gated/content_scan.py:45`). It names both code points, says the detector **flags and never rewrites**, and states the declared limit in one clause. This bullet *is* the adopter-facing contract entry; a hit is only suppressible by a marker naming this id. |
-| B4 | `bootstrap/tests/test_content_scan.py` | Extend `_BANNED_CODEPOINTS` (`bootstrap/tests/test_content_scan.py:48`–`52`) with `0x2028, 0x2029`, so `test_no_raw_banned_codepoints_in_source` now also refuses a raw separator in the scanner's own source. A scanner that smuggles the code point it detects is the exact failure this class of test exists for. |
-| B5 | `bootstrap/tests/test_content_scan.py` | New `TestLineSeparator::test_each_separator_is_caught`: `scan_text` over a fixture carrying a raw `U+2028` and, separately, one carrying a raw `U+2029`; assert each yields exactly one flag with `pattern_id == "unicode-line-separator"` and a message containing `U+2028` / `U+2029` respectively. Escape forms in the test source, matching B4. |
-| B6 | `bootstrap/tests/test_content_scan.py` | New `TestLineSeparator::test_marker_suppresses_only_its_own_id`: a `cairn-accept` marker naming `unicode-line-separator` clears the flag; a marker naming `unicode-zero-width` does **not**. The second half is the regression for the dispatch defect — it is red against the code at HEAD and red against any future reintroduction of the ternary. |
-| B7 | `bootstrap/tests/test_content_scan.py` | New `TestLineSeparator::test_all_three_unicode_ids_trip_independently`: one three-line fixture (zero-width on line 1, bidi on line 2, `U+2028` on line 3); assert the `(line, pattern_id)` set is **exactly** `{(1, "unicode-zero-width"), (2, "unicode-bidi"), (3, "unicode-line-separator")}`. This is the coexistence test the Decision requires **both** plans to carry; whichever lands first turns it green and the second inherits it. |
-| B8 | `bootstrap/tests/test_content_scan.py` | New `TestLineSeparator::test_two_separators_on_one_line_flag_once`: a line carrying `U+2028` then `U+2029` yields exactly one flag, naming `U+2028`. Pins the Decision's **declared limit** so a later author who changes the `break` semantics does so deliberately, against a red test and its own proposal, rather than by accident. |
+| B3 | `templates/modules/team-gated/content_scan.py` | Module-docstring pattern-id list: a `unicode-line-separator` bullet after the `unicode-bidi` bullet (which ends at `templates/modules/team-gated/content_scan.py:45`). It names both code points, says the detector **flags and never rewrites**, and states the declared limit (one separator flag per line; the flag names the first) in one clause. Two further clauses are required, and they are the adopter-visible half of [E1] (folded from amendments A9 → A24): **(i)** an acceptance for this id is honoured **only when the marker renders on the same display line as the separator it accepts** — suppression scope is *file*-line scope, and `U+2028` is the first detected code point for which a file line and a display line differ; **(ii)** the **block form** (`cairn-accept` … `cairn-accept-end` spanning the hit) does **not** suppress this id — measured, not inferred. This bullet *is* the adopter-facing contract entry. |
+| B4 | `bootstrap/tests/test_content_scan.py` | Extend `_BANNED_CODEPOINTS` (`bootstrap/tests/test_content_scan.py:48`–`52`) with `0x2028, 0x2029`, **and widen `TestSourceCarriesNoRawInvisibles::test_no_raw_banned_codepoints_in_source` to read both `CONTENT_SCAN_SRC` and the test module's own path** — today it reads `CONTENT_SCAN_SRC` only (`bootstrap/tests/test_content_scan.py:65`). Folded from amendment A16. After B5–B9c the test module is itself a file whose fixtures are separator code points, and "escape forms in the test source" is otherwise a convention with nothing enforcing it. A scanner that smuggles the code point it detects is the exact failure this class of test exists for. Verified the widening is what does the work, not the pre-existing set: with a raw `U+2028` planted in a source comment, `_BANNED_CODEPOINTS` as it stands reports **no hits** and the widened set reports `0x2028`. |
+| B5 | `bootstrap/tests/test_content_scan.py` | New `TestSeparatorDetection::test_each_separator_is_caught`, **parametrized** — `@pytest.mark.parametrize("cp", [0x2028, 0x2029])` — so each code point is its **own collected node** asserting exactly one flag with `pattern_id == "unicode-line-separator"` and `f"U+{cp:04X}"` in the message. Folded from amendment A4: a per-member claim requires a per-member node, and the un-parametrized form cannot support the per-member perturbation P-B2 in both directions. Escape forms in the test source, matching B4. |
+| B6a | `bootstrap/tests/test_content_scan.py` | New `TestSeparatorDetection::test_own_id_marker_suppresses`: a `cairn-accept` marker naming `unicode-line-separator`, **written before the separator on the same file line** (the associable form B10 honours), clears the flag. Folded from amendment A1, which split the original single-node B6. |
+| B6b | `bootstrap/tests/test_content_scan.py` | New `TestSeparatorDetection::test_foreign_id_marker_does_not_suppress`: a marker naming `unicode-zero-width` does **not** clear a separator flag; asserts `[f.pattern_id for f in scan_text(fixture)] == ["unicode-line-separator"]`. This is the regression for the dispatch defect and **the security-critical assertion in the whole plan**, so it is a node of its own: a shared node cannot be independently falsifiable, and under the P-B3 state a single-node B6 aborts at its positive half so the negative half never executes. Its perturbation is P-B7 (two-site — see the acceptance criteria), **not** P-B3. |
+| B7 | `bootstrap/tests/test_content_scan.py` | New `TestSeparatorDetectionCoexistence::test_all_three_unicode_ids_trip_independently`: one three-line fixture (zero-width on line 1, bidi on line 2, `U+2028` on line 3); assert the `(line, pattern_id)` set is **exactly** `{(1, "unicode-zero-width"), (2, "unicode-bidi"), (3, "unicode-line-separator")}`. This is the coexistence test the Decision requires **both** plans to carry; whichever lands first turns it green and the second inherits it. The class name is plan-specific by the convention above — `content-scan-detectors` must **not** reuse it. |
+| B8 | `bootstrap/tests/test_content_scan.py` | New `TestSeparatorDetection::test_two_separators_on_one_line_flag_once`: a line carrying `U+2028` then `U+2029` yields exactly one flag, naming `U+2028`. Pins the Decision's **declared limit** so a later author who changes the `break` semantics does so deliberately, against a red test and its own proposal, rather than by accident. |
+| B9a | `bootstrap/tests/test_content_scan.py` | New `TestSeparatorDetection::test_cross_separator_acceptance_refused_same_file_line`: payload, then a separator, then an own-id `cairn-accept` marker, **all on one file line**; assert `[f.pattern_id for f in scan_text(fixture)] == ["unicode-line-separator"]` — the acceptance is **refused**. Folded from amendments A6 → A20: the previous B9 *pinned* this waiver, and [E1] is right that "pinning that behavior makes the exception durable; it does not make it safe". **Do not build the pinning B9.** Measured against a build carrying B10: green; against a build without B10: fails. |
+| B9b | `bootstrap/tests/test_content_scan.py` | New `TestSeparatorDetection::test_cross_separator_acceptance_refused_preceding_line`: an own-id marker on file line 1, the hit on file line 2 spanning four display lines; assert the flag **survives**. This is the `{i, i + 1}` preceding-line scope (`templates/modules/team-gated/content_scan.py:261`) crossed with a separator — a reviewer who writes a marker believing it annotates "the line just below" would otherwise clear an injected header several display lines away. |
+| B9c | `bootstrap/tests/test_content_scan.py` | New `TestSeparatorDetection::test_same_display_line_acceptance_is_honoured`: an own-id marker written **before** the separator on the same file line; assert `scan_text(fixture) == []`. This is the "tests for both paths" half [E1] asks for, and it is what stops B10 being a silent conversion of the rule to *unsuppressible*. Measured: green against builds with **and** without B10. |
+| B10 | `templates/modules/team-gated/content_scan.py` | **Production.** Folded from amendment A21 — the [E1] refusal, taken in the reviewer's first branch. A module-level helper `_separator_accept_is_associable(line)` placed immediately above `scan_text` (`templates/modules/team-gated/content_scan.py:376`): it locates the first `_LINE_SEPARATORS` member in the file line and returns `True` only if `_ACCEPT_RE` (`templates/modules/team-gated/content_scan.py:193`) finds a marker **before** that index whose `pid` is `unicode-line-separator` and whose `reason` attribute is non-empty — the same validity rule `_parse_suppressions` applies (`templates/modules/team-gated/content_scan.py:240`, reason check at `:259`). The final filter at `templates/modules/team-gated/content_scan.py:409` becomes an explicit loop: a flag suppressed by the existing per-id line scope is **re-emitted** when `f.pattern_id == "unicode-line-separator"` and the helper returns `False`. `_parse_suppressions` is **not** modified and **no other pattern id's path changes** — measured: the real test module repointed at this build is byte-identical in outcome to the build without it, so no marker any adopter has already written changes meaning. Two consequences stated rather than left to discovery: the **block form** spanning the hit is also refused (a block acceptance is even less reliably associable than a preceding-line one), and the accept path survives (B9c), so this is a narrowing inside the Decision's *"suppressible only by a marker written against that id"* bound, not a conversion to unsuppressible. |
+| B11 | `bootstrap/tests/test_content_scan.py` | New `TestSeparatorDetectionCollectionIntegrity::test_no_duplicate_test_class_or_method_names`: parse **this module's own source** with the standard-library `ast` (no new dependency — `bootstrap/DEPENDENCY_BUDGET.md` unaffected) and assert that (i) no two top-level `ClassDef` nodes share a name and (ii) within each class, no two `FunctionDef` / `AsyncFunctionDef` nodes share a name. Folded from amendments A30 and A32: this is [E3]'s mechanical guard, because "a naming convention cannot protect against the known silent class shadowing failure". It fires **inside the file** at the moment a second plan appends a colliding class, where a collection-count check fires only after nodes have already vanished. Measured at revision `ec57bf0`: the guard returns clean against `bootstrap/tests/test_content_scan.py` as it stands, and flags `duplicate top-level class: <name>` and `duplicate method <Class>.<name>` on hazard modules. **Named residual — the guard lives in the file it judges**: a duplicate of *its own* class name would shadow the guard itself, silently. Two mitigations, both stated because neither alone closes it: the class name is plan-specific by the convention above (A30 proposed the generic `TestCollectionIntegrity`; the convention that A32 makes binding forbids a generic name here, so the plan-specific name is used and the deviation is recorded in the Sharpening), and the **independent** catcher is Chunk A's node-id-set criterion, whose before-capture is taken outside the tree by a person and therefore is not supplied by the module under test. |
 
 **Acceptance criteria — Chunk B.**
 
-* `~/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_content_scan.py -q`
-  → all pass, 0 skipped, including
+**Every gate below is triggered by a person typing the command.** There is no CI
+in this repository. The only installed git hooks are `tools/intent.py`'s
+pre-commit intent-claim check and its post-commit auto-release; neither runs
+pytest, neither runs a checker, and neither can fail this chunk. Nothing here is
+enforced by machinery on a push.
+
+* **Focused module** — `~/conda_envs/lhm/bin/python3.13 -m pytest
+  bootstrap/tests/test_content_scan.py -q` → all pass, 0 skipped, including
   `test_content_security_module_installs_scanner_verbatim` run **for real**
   (this plan's own measurement deselected it; the implementation may not).
-* `~/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests` → the whole suite
-  green, 0 failed / 0 skipped / 0 xfailed. **Take the baseline at implementation
-  start, not from this plan**: the working tree carried other workflows'
-  in-flight edits under `bootstrap/_scaffold/` `as_of 2026-08-04`, so any suite
-  figure measured here would be measuring someone else's change.
-* **The corpus sweep, re-run as the alarm-fatigue gate.**
-  `~/conda_envs/lhm/bin/python3.13 scripts/check_cairn.py` → OK. Baseline
-  **180 Markdown files, no issues**, `as_of 2026-08-04`; the count may only grow
-  and the verdict may not change. Independently, re-run the raw sweep over
-  `git ls-files` and record the count in the commit body as a dated figure — 0
-  of 494 today. **A non-trivial count is a signal to stop and reconsider, not to
-  suppress**; if it fires, the disposition is a Maintainer question, not an
-  inline `cairn-accept`.
+  **The invariant is the node-id set, not a node count** (amendment A18, folded):
+  capture `--collect-only -q` before and after and require the after-set to be a
+  **strict superset** of the before-set. No frozen denominator appears in this
+  criterion, deliberately — the reviewer's sharpening on the round-2 verdict says
+  the chunk must "name the command and invariant rather than freeze an incidental
+  denominator", and the counts in this plan's review history are already stale.
+* **Whole suite, as a delta** (amendment A10, folded) —
+  `~/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests`: **no failure
+  present that is absent from a baseline captured at implementation start, no node
+  dropped from collection, no new skip or xfail.** Record both readings in the
+  commit body. The predicate is a delta and **not** an absolute because the
+  absolute is not a stable function of committed content: the same commit read
+  hours apart in this tree has given "3 failed" and "0 failed", and independent
+  readers have obtained different absolutes from one commit. Do **not** carry a
+  suite total out of this plan; take the baseline yourself, before the edit.
+* **The corpus sweep, re-run as the alarm-fatigue gate — and it must not be run
+  by the code under test** (amendment A33, folded). Two different claims, so two
+  different commands, and only one of them is independent:
+  * *Independent measurement of the corpus.* Re-run the raw sweep over
+    `git ls-files` with a script that reads the code points **literally** and does
+    **not** import `content_scan` — record **the hit count and the date** in the
+    commit body. **No denominator**: three have been written into this plan for the
+    same unchanged verdict. **A non-zero hit count is a signal to stop and
+    reconsider, not to suppress**; the disposition is a Maintainer question, never
+    an inline `cairn-accept`.
+  * *Not independent, and useful anyway.* `~/conda_envs/lhm/bin/python3.13
+    scripts/check_cairn.py` runs the **shipped scanner** — i.e. the artifact this
+    chunk edits — over Cairn's own corpus. After B2 lands it is a measurement of
+    the new detector's behaviour, not of whether the corpus contains separators.
+    Treat it as the doc gate and as a smoke test of the detector, never as the
+    alarm-fatigue evidence.
+  * *Predicate for `check_cairn`* (amendment A12, folded, with the clause the
+    Figure correction withdrew left out): **no issue attributable to this change**,
+    as a delta against a baseline captured at implementation start; **and** a run
+    scoped to the two touched files must be clean outright. A non-`OK` whole-tree
+    run is a signal to look for untracked or concurrent state — it is **not** an
+    expected condition, and this plan does not tell you to anticipate one.
 * `~/conda_envs/lhm/bin/python3.13 -m bandit -q -f json
-  templates/modules/team-gated/content_scan.py` → `errors: []`, zero findings.
-  Measured on the prototype for this plan; re-take against the real edit. The
-  file is in the release gate's scan set, so a MEDIUM+ finding here is a release
+  templates/modules/team-gated/content_scan.py` → `errors: []`, zero findings at
+  every severity. Measured on the prototype (including the build carrying B10);
+  **re-take against the real edit** — the prototype is not the artifact.
+  `templates/modules/team-gated/content_scan.py` is inside
+  `bootstrap/security_check.py`'s scan set, established by executing
+  `scan_targets()` (`bootstrap/security_check.py:63`) and **not** by grep, which
+  finds no mention of the file at all. A MEDIUM+ finding here is a release
   blocker, not a lint nit.
 * `~/conda_envs/lhm/bin/python3.13 scripts/quality_gate.py --sub neutrality` →
-  `fail=95`, `as_of 2026-08-04`. `bootstrap/` is a neutrality scan root, so the
-  test file passes through it; `templates/` is not. The figure must not move —
-  and it is a dated snapshot taken over a dirty tree, so re-take the baseline
-  before the edit rather than diffing against this line.
-* **Perturbation P-B1 — B5 discriminates the detector (hazard-side, RUN).**
-  Delete the B2 loop; B5 fails on both separators, B7 fails on the third pair,
-  B8 fails. Restore; confirm `git diff` empty.
+  **invariant: no new `fail` entry attributable to either touched file.**
+  `bootstrap/` is a neutrality scan root, so the test file passes through it;
+  `templates/` is not. Capture the baseline **before** the edit and compare — the
+  reading is tree-sensitive, so a figure quoted from this plan is not a baseline.
+  Snapshot for orientation only, re-derived at revision `ec57bf0`
+  (`as_of 2026-08-05`): `fail=95 info=21`.
+**Perturbation ledgers record which nodes fail, never a pass/fail total.** The
+totals in this plan's review history (`1 failed, 4 passed`, `2 failed, 7 passed`,
+`9 passed`, …) were measured against scratch reconstructions whose node set
+predates this fold — B5 is now two nodes, B6 is two, B9 is three, and B11 is new,
+so those totals do not correspond to anything an implementer will see. **Do not
+copy them into a ledger**; record the *named nodes* that went red and the *named
+nodes* that stayed green, which is the claim that discriminates.
+
+* **Perturbation P-B1 — the detector loop is load-bearing (hazard-side, RUN).**
+  Delete the B2 loop; **both** B5 nodes fail, B7 fails on the third pair, B8
+  fails, and B9a/B9b fail (no flag survives to be refused). B6a and B9c stay
+  green. Restore; confirm `git diff
+  templates/modules/team-gated/content_scan.py` empty.
 * **Perturbation P-B2 — B5 discriminates *each member*, not just the loop
-  (hazard-side, RUN).** Remove `U+2029` from `_LINE_SEPARATORS`, leaving
-  `U+2028`; B5's `U+2029` assertion fails **alone** while its `U+2028` assertion
-  stays green. Repeat the other way round. Without this, a single-member
-  constant would pass a loop-level perturbation and ship half the contract.
-* **Perturbation P-B3 — B6 is the dispatch regression (hazard-side, RUN).**
-  Revert Chunk A in place (restore the 2-tuple yield and the ternary) while
-  keeping the B2 loop; B6's `unicode-zero-width`-marker half fails, because the
-  separator flag is labelled `unicode-zero-width` and the foreign marker
-  suppresses it. Reproduced for this plan against a scratch copy: NAIVE
-  zero-width-marker → `[]`, FIXED → `['unicode-line-separator']`. Restore;
-  confirm `git diff` empty.
+  (hazard-side, RUN, both directions)** (amendment A5, folded). Remove `U+2029`
+  from `_LINE_SEPARATORS`, leaving `U+2028`: the **`0x2029` node** fails and the
+  `0x2028` node stays green. Then repeat the other way round: remove `U+2028`,
+  leaving `U+2029`, and the **`0x2028` node** fails alone. **The second direction
+  only works because B5 is parametrized** — on the un-parametrized single node it
+  aborted at the `U+2028` assertion so the `U+2029` assertion never ran, and
+  B6/B7/B8 failed with it because their fixtures use `U+2028`. Without a
+  per-member node a single-member constant would pass a loop-level perturbation
+  and ship half the contract. Restore; confirm `git diff` empty.
+* **Perturbation P-B3 — B6a is the dispatch regression (hazard-side, RUN)**
+  (amendment A2, folded). Revert Chunk A in place (restore the 2-tuple yield and
+  the ternary) while keeping the B2 loop; **B6a** fails — the own-id marker
+  matches nothing, because the flag is labelled `unicode-zero-width`. Measured
+  under this exact state on a scratch reconstruction: `AssertionError: own-id
+  marker must clear` / `assert ['unicode-zero-width'] == []`. **P-B3 says nothing
+  about B6b**, which in the single-node form never executed under this state at
+  all; **B6b's perturbation is P-B7**. Restore; confirm `git diff` empty.
 * **Perturbation P-B4 — B7 discriminates the id, not the count (hazard-side,
   RUN).** Change the B2 loop's yielded literal to `"unicode-zero-width"`; B7
   fails on the set comparison while a hypothetical "three flags appeared" test
@@ -408,18 +589,71 @@ changes is *where the id comes from*.
 * **Perturbation P-B6 — B4's hygiene guard can fire (hazard-side, RUN,
   transient).** Write a raw `U+2028` into a comment in `content_scan.py` in the
   working tree; `test_no_raw_banned_codepoints_in_source` fails naming
-  `0x2028`. Delete it; confirm `git status --short` clean. Never committed.
-* **The future states in which B5–B8 fail**, named because that is the
+  `0x2028`. Repeat in `bootstrap/tests/test_content_scan.py` itself, which the
+  B4 widening brings into the guard's scope — it must fail there too, and on the
+  pre-widening guard it would not. Delete both; confirm `git status --short`
+  clean. Never committed.
+* **Perturbation P-B7 — B6b's negative half is non-vacuous (hazard-side, RUN,
+  TWO-SITE)** (amendments A3 → A26, folded). **The single-site form must not be
+  carried forward: it stopped working once B10 landed.** Widening the final filter
+  (`templates/modules/team-gated/content_scan.py:409`) alone to suppress by line
+  while ignoring `pattern_id` leaves **every node green** — B10's own pid check
+  independently keeps the foreign marker from clearing the flag, so the
+  perturbation never reaches the assertion it exists to falsify. A one-line
+  version of this perturbation is therefore a **false ledger entry**. Perturb
+  **both** id checks: (1) the final filter suppresses by line ignoring
+  `pattern_id`, **and** (2) `_separator_accept_is_associable` accepts any valid
+  `cairn-accept` marker regardless of its `pid`. Measured on a scratch
+  reconstruction: exactly `test_foreign_id_marker_does_not_suppress` (B6b) goes
+  red and nothing else does. **This is the only perturbation that falsifies the
+  plan's security-critical assertion; without it that assertion ships
+  unfalsified.** Restore both sites; confirm `git diff
+  templates/modules/team-gated/content_scan.py` empty.
+* **Perturbation P-B8 — the [E1] refusal can fire (hazard-side, RUN)**
+  (amendments A7 → A25, folded). Delete the B10 re-emit branch from the final
+  filter, restoring the plain per-id line filter, while keeping every test node;
+  **B9a and B9b go red and B9c stays green**, and only those three are implicated.
+  `_parse_suppressions` is untouched by this perturbation, so it discriminates the
+  refusal itself rather than the line scope. (The superseded form of this
+  perturbation narrowed `{i, i + 1}` to `{i}` at
+  `templates/modules/team-gated/content_scan.py:261`; that no longer targets the
+  mechanism, because under B10 the preceding-line case is already refused. **Do
+  not run the superseded form.**) Restore; confirm `git diff` empty.
+* **Perturbation P-B9 — B11 can fire (hazard-side, RUN, transient)**
+  (amendment A31, folded). Append a second `class
+  TestSeparatorDetectionCollectionIntegrity` carrying one method to
+  `bootstrap/tests/test_content_scan.py`; B11 fails naming `duplicate top-level
+  class: TestSeparatorDetectionCollectionIntegrity`. Repeat with a duplicate
+  **method** name inside one class; B11 fails naming `duplicate method
+  <Class>.<name>`. Delete both; confirm `git status --short` clean. **This is the
+  one perturbation whose subject is the test module rather than production code,
+  and that is correct, not an exception**: the hazard [E3] names *is* a property of
+  the test module's own source, so perturbing that source is perturbing the
+  hazard, not softening an assertion. Re-measured at revision `ec57bf0` on
+  standalone hazard modules: a 5-method class followed by a 1-method class of the
+  same name collects **1** node, and a class with a duplicated method collects
+  **2** of 3 — silently in both cases, no error and no warning, which is exactly
+  why a collection **count** check cannot see it and why Chunk A's criterion
+  asserts the node-id **set**.
+* **The future states in which B5–B9c and B11 fail**, named because that is the
   acceptance bar: (i) the detector loop removed or narrowed by a later refactor;
   (ii) the ternary reintroduced by whichever sibling plan lands second — the
   state the Decision's sequencing rule exists to forbid; (iii) the yielded id
   renamed without the docstring contract entry moving with it; (iv) the
-  per-line `break` semantics changed as a rider on some other change.
+  per-line `break` semantics changed as a rider on some other change; (v) the B10
+  re-emit branch dropped or its pid check widened, restoring the waiver [E1]
+  refuses; (vi) a colliding test-class or method name appended by the sibling plan,
+  which B11 catches inside the file and Chunk A's node-id-set capture catches
+  across the merge.
 * **Channel note.** Subject: `scan_text` through its public path — no stub of
-  the function under test anywhere in B5–B8. Oracles: code-point literals and id
+  the function under test anywhere in B5–B9c. Oracles: code-point literals and id
   strings typed into the test by a human, plus `unicodedata`'s categories quoted
-  in the docstring. Nothing in the oracle is computed from `_LINE_SEPARATORS` or
-  from the detector loop, so a gap cannot move both together.
+  in the docstring. Nothing in the oracle is computed from `_LINE_SEPARATORS`,
+  from the detector loop, or from `_separator_accept_is_associable`, so a gap
+  cannot move both together. **B11 is the one node whose subject is a repository
+  file rather than a function**, and its oracle — "no two names collide" — is a
+  property of the AST, not a value the module computes about itself; its named
+  residual (the guard sits in the file it judges) is recorded in the B11 row.
 
 ---
 
@@ -431,7 +665,7 @@ serialized shared file, edited only at a defined serialization point
 
 | # | File | Change |
 |---|------|--------|
-| C1 | `CHANGELOG.md > Unreleased > Added` | **One** line covering the pattern-id partition, shared with `content-scan-detectors` rather than duplicated: the content scanner's unicode detectors now carry their own pattern ids, and a raw `U+2028` / `U+2029` flags under `unicode-line-separator`. Cross-reference both proposals and both plans **by stem**, per `AGENTS.md`. |
+| C1 | `CHANGELOG.md > Unreleased > Added` | **One** line covering the pattern-id partition, shared with `content-scan-detectors` rather than duplicated: the content scanner's unicode detectors now carry their own pattern ids, and a raw `U+2028` / `U+2029` flags under `unicode-line-separator`. **The same line must state the acceptance-association rule** (amendment A27, folded): a `unicode-line-separator` acceptance is honoured only when it renders on the same display line as the separator it accepts, and the block form does not suppress it. That is the adopter-visible half of [E1], and a release note that omits it ships a surprise. Cross-reference both proposals and both plans **by stem**, per `AGENTS.md`. |
 
 **Acceptance criteria — Chunk C.**
 
@@ -448,31 +682,48 @@ serialized shared file, edited only at a defined serialization point
 Per-chunk criteria are above; these are the plan-level deliverables.
 
 * **Tests that must pass.**
-  * `~/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests` — the whole
-    suite, green, **0 failed / 0 skipped / 0 xfailed**, under the canonical
-    interpreter (3.13.13). Baseline taken at implementation start, for the
-    reason given in Chunk B.
+  * `~/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests` — under the
+    canonical interpreter (3.13.13), **as the delta defined in Chunk B**: no new
+    failure, no dropped node, no new skip or xfail, against a baseline captured at
+    implementation start (amendment A11, folded). **No absolute suite figure is
+    asserted anywhere in this plan**, and none may be carried out of it.
   * [`bootstrap/tests/test_content_scan.py`](../../bootstrap/tests/test_content_scan.py)
-    — the dispatch-contract test (A3), the detection pair (B5), the
-    suppression-isolation pair (B6), the coexistence set (B7), the declared
-    limit (B8), and the widened hygiene set (B4). Baseline **25 nodes**
-    `as_of 2026-08-04`; collection grows by exactly the new nodes.
+    — the dispatch-contract test (Chunk A row A3), the detection **pair of nodes**
+    (B5, parametrized), the two suppression-isolation nodes (B6a, B6b), the
+    coexistence set (B7), the declared limit (B8), the three acceptance-association
+    nodes (B9a, B9b, B9c), the collection-integrity guard (B11), and the widened
+    hygiene set (B4). **Command plus invariant, not a count**: capture the
+    `--collect-only -q` node-id set before and after and require a strict superset
+    (amendment A18, folded). A collected-node **count** is not the predicate,
+    because a count cannot see nodes silently shadowed away.
   * **Every new test shown non-vacuous by a perturbation of the hazard**, with
-    the ledger — the production-code change made, the failure observed with its
-    message, the byte-identical restore confirmed by an empty `git diff <path>`
-    — in the commit body. Six perturbations are specified above and every one of
-    them edits `content_scan.py`; **none** edits an assertion. Where a claim
-    cannot be perturbed, this plan says so rather than implying coverage.
+    the ledger — the change made, the **named nodes** observed red and green, and
+    the byte-identical restore confirmed by an empty `git diff <path>` — in the
+    commit body. **Eleven** perturbations are specified above: P-A1, P-A2, and
+    P-B1 through P-B9. Nine of them edit `templates/modules/team-gated/content_scan.py`;
+    **P-B6 and P-B9 edit `bootstrap/tests/test_content_scan.py`**, which is
+    correct rather than an exception, because in both cases the hazard *is* a
+    property of that file's source (a smuggled raw code point, a colliding name) —
+    **none** of the eleven edits an assertion to make it pass. Record named nodes,
+    never pass/fail totals: the totals in this plan's review history predate the
+    node-set changes this fold makes. Where a claim cannot be perturbed, this plan
+    says so rather than implying coverage.
 * **Doc updates that must land.** Hand-authored, one surface: the
   `unicode-line-separator` bullet in the `content_scan.py` module docstring
-  (B3), landing in the same commit as the behaviour. No generated docs, no
-  snippet-synced blocks. `CHANGELOG.md` is Chunk C, deferred and shared.
+  (B3), landing in the same commit as the behaviour — and it must carry the
+  acceptance-association clause and the block-form clause, because after B10 the
+  docstring is the only place an adopter learns which markers work. No generated
+  docs, no snippet-synced blocks. `CHANGELOG.md` is Chunk C, deferred and shared.
 * **Examples / smoke checks required.** `python scripts/check_cairn.py` over the
-  whole tree — the shipped scanner run against Cairn's own corpus, which is
-  simultaneously the doc gate and the live alarm-fatigue re-measurement.
-  `python bootstrap/security_check.py` — expected `PASS`; the edited file is in
-  the release gate's scan set. **N/A**: the runnable example gallery under
-  `examples/` — this change touches nothing it demonstrates.
+  whole tree — the doc gate, **and after B2 it is the shipped scanner run against
+  Cairn's own corpus, i.e. the artifact under test measuring the corpus.** It is
+  therefore a smoke test of the detector and **not** the alarm-fatigue evidence;
+  that evidence comes from the independent raw sweep specified in Chunk B, which
+  must not import `content_scan`. `python bootstrap/security_check.py` — expected
+  `PASS`; both edited-adjacent scanner files are in the release gate's scan set,
+  established by executing `scan_targets()` (`bootstrap/security_check.py:63`).
+  **N/A**: the runnable example gallery under `examples/` — this change touches
+  nothing it demonstrates.
 * **Inbound path-link updates.** None expected. `dev/PLANNING.md` and
   `dev/NEXT_SESSION.md` refer to plans by filename stem, not path link, so the
   archive-move needs no edit there. Confirm at archive time rather than assume.
@@ -484,13 +735,28 @@ Per-chunk criteria are above; these are the plan-level deliverables.
     naming the code point.* Enforced by B5 in
     [`bootstrap/tests/test_content_scan.py`](../../bootstrap/tests/test_content_scan.py),
     perturbable by P-B1 and — per member — P-B2.
-  * *That flag is suppressible only by a marker naming its own id.* Enforced by
-    B6; the negative half (a `unicode-zero-width` marker does not suppress it)
-    is the dispatch regression, perturbable by P-B3.
+  * *That flag is suppressible only by a marker naming its own id.* The positive
+    half is enforced by **B6a**, perturbable by P-B3. The negative half (a
+    `unicode-zero-width` marker does not suppress it) is the dispatch regression
+    and the security-critical assertion in this plan; it is enforced by **B6b** as
+    a node of its own, perturbable **only** by the two-site P-B7 — P-B3 does not
+    reach it, and a one-site P-B7 does not either.
+  * *A `unicode-line-separator` hit is cleared **only** by an own-id marker that
+    renders on the same display line as the separator it accepts; an acceptance
+    separated from its payload by a separator — on the preceding file line, later
+    on the same file line, or in `cairn-accept` / `cairn-accept-end` block form —
+    is **refused**.* Folded from amendments A9 → A24, and the disposition of [E1]
+    in the reviewer's first branch. Enforced by B9a / B9b / B9c over B10,
+    perturbable by P-B8.
+  * *No two test classes, and no two methods within a class, share a name in
+    `bootstrap/tests/test_content_scan.py`.* Enforced by B11, perturbable by P-B9.
+    The violation removes nodes from collection with no error and no warning, so
+    the invariant is what stands between the two sibling plans and a silently
+    shrinking suite.
   * *`_scan_unicode` yields its pattern id; no caller derives one from message
-    text.* Enforced by A3, perturbable by P-A1 (shape) and P-A2 (value). This is
-    the invariant `content-scan-detectors` depends on and the reason the
-    signature change is owned here.
+    text.* Enforced by Chunk A row A3, perturbable by P-A1 (shape) and P-A2
+    (value). This is the invariant `content-scan-detectors` depends on and the
+    reason the signature change is owned here.
   * *`unicode-zero-width` and `unicode-bidi` keep their exact current meaning,
     so existing suppressions and residual fingerprints stay valid.* Enforced by
     the pre-existing nodes at
@@ -502,20 +768,33 @@ Per-chunk criteria are above; these are the plan-level deliverables.
   * *The scanner's own source carries no raw copy of a code point it detects.*
     Pre-existing invariant, widened by B4, perturbable by P-B6.
 * **Public-path → test mapping.** `scan_text` is the public entry point this
-  plan changes, and B5–B8 exercise it **through its public path** with no stub
-  of it anywhere. `scan_file` is unchanged and reaches the same code by
-  delegation, covered by the pre-existing red-team fixture node. A3 is the one
-  node touching a module-private (`_scan_unicode`) — deliberately, because the
-  thing being pinned *is* an internal signature that a sibling plan must rebase
-  onto; it is named as a private-surface test rather than passed off as a
-  contract test.
+  plan changes, and B5, B6a, B6b, B7, B8 and B9a–B9c exercise it **through its
+  public path** with no stub of it anywhere. `scan_file` is unchanged and reaches
+  the same code by delegation, covered by the pre-existing red-team fixture node.
+  Two nodes deliberately do not go through the public path, and both are named as
+  such rather than passed off as contract tests: **Chunk A row A3** touches the
+  module-private `_scan_unicode`, because the thing being pinned *is* an internal
+  signature a sibling plan must rebase onto; and **B11** has no runtime subject at
+  all — its subject is `bootstrap/tests/test_content_scan.py`'s own AST.
+  `_separator_accept_is_associable` (B10) is private and is **not** tested
+  directly: every assertion about it is made through `scan_text`, so the contract
+  under test is the observable suppression behaviour, not the helper's signature.
 * **Failure modes.**
-  * *Alarm fatigue.* → **Measured, 0 of 494 tracked files, `as_of 2026-08-04`.**
-    Re-measured as a Chunk B gate. If the re-measurement is non-zero, the plan's
-    instruction is to stop and route it to the Maintainer.
+  * *Alarm fatigue.* → **Measured: 0 hits across the tracked corpus, re-derived
+    at revision `ec57bf0`, `as_of 2026-08-05`. This plan states no denominator**
+    (amendment A33, folded) — three were written for the same unchanged verdict and
+    each was stale within a day. Re-measured as a Chunk B gate, by the independent
+    raw sweep and not by `check_cairn`. If the re-measurement is non-zero, the
+    plan's instruction is to stop and route it to the Maintainer.
   * *Marker collision (a benign suppression silences an injected header).* →
-    **Closed** by Chunk A + B6, and reproduced as an executed defect above
+    **Closed** by Chunk A + B6b, and reproduced as an executed defect above
     rather than argued.
+  * *An adopter with a legitimate word-processor paste finds their marker
+    refused.* → **Open by design, and narrower than it looks** (amendment A24,
+    folded). The working form is documented in the B3 docstring bullet — the marker
+    goes **before** the separator on the same display line — and 0 tracked files
+    exercise the rule today. If the refusal proves noisy in an adopter tree, that
+    is a Maintainer question, not an inline widening of B10.
   * *Same-line masking (two separators, one flag).* → **Open by decision**, and
     now pinned rather than implicit (B8). `content-scan-detectors` [I3] disposes
     of the same behaviour for its own rules; if its resolution changes the
@@ -528,8 +807,18 @@ Per-chunk criteria are above; these are the plan-level deliverables.
     set the code can emit. Named as a known omission rather than implied.
   * *The sibling plan lands second and reintroduces the ternary.* → **Closed**
     by A3, which is exactly why A3 exists.
-* **Edge cases handled.** A separator inside a `cairn-accept` marker's own line
-  (line-scope covers the marker's own line — pre-existing semantics, unchanged).
+* **Edge cases handled.** A separator inside a `cairn-accept` marker's scope
+  (amendments A8 → A23, folded) — line-scope is **file**-line scope, and `U+2028`
+  is the first detected code point for which a file line and a display line differ.
+  For every **pre-existing** pattern id that divergence is left exactly as it is
+  (out of scope, and 0 tracked files can exercise it). For `unicode-line-separator`
+  it is **closed**: B10 refuses an acceptance that does not render on the same
+  display line as the separator it accepts. Measured, un-remedied build vs remedied
+  build: marker-after-separator `[]` → `['unicode-line-separator']`;
+  preceding-file-line marker `[]` → `['unicode-line-separator']`; marker before the
+  separator on the same display line `[]` → `[]`. **The previous form of this
+  bullet asserted the divergence was benign and the previous B9 pinned it — both
+  are superseded; do not build the pin.**
   A separator at file index 0 (no BOM-style exemption applies; it flags, and it
   should — unlike `U+FEFF` there is no benign encoding role). A file with no
   trailing newline (`split("\n")` handles it; unchanged). Line numbering under a
@@ -537,15 +826,29 @@ Per-chunk criteria are above; these are the plan-level deliverables.
   numbers stay physical).
 * **Known omissions, stated rather than implied.** (a) No mechanical guard ties
   the docstring pattern-id list to the ids the code emits — the doc entry is
-  enforced by review, not by test. (b) The plan asserts no full-suite baseline
-  figure, because the working tree was dirty with other workflows' edits when it
-  was written; the implementing agent takes it. (c) `Zs` space separators are
-  untouched and remain a live Maintainer question on `byline-classification`.
+  enforced by review, not by test. An honest guard needs a `_PATTERN_IDS` registry
+  constant in the shipped module to compare the docstring against, which is
+  adopter-visible surface this Decision did not authorize; **its home is
+  `content-scan-detectors`**, which adds two more ids and so doubles the drift
+  surface, and it is named there rather than parked here. (b) The plan asserts
+  **no** absolute suite figure and no collected-node count anywhere; every such
+  predicate is a delta the implementing agent captures. (c) `Zs` space separators
+  are untouched and remain a live Maintainer question on `byline-classification`.
   (d) Whether the per-line `break` convention should change at all is deferred
   to its own proposal; this plan only makes the current behaviour falsifiable.
   (e) No human has audited whether any *untracked* or generated artifact in an
   adopter tree carries these code points — the sweep is over Cairn's tracked
-  corpus only.
+  corpus only. (f) **B11 sits in the file it judges**, so a duplicate of its own
+  class name would silence it; the independent catcher is Chunk A's node-id-set
+  capture, taken outside the tree. A guard covering all of `bootstrap/tests/`
+  rather than one module is the better instrument and is **not** built here — it is
+  outside this plan's two-file scope. (g) **The folded B9a–B9c / B10 refusal and
+  the bounded-ceremony contract have had no post-fold External read.** The round-2
+  External review asked for "a focused External confirmation of the folded B9/B10
+  refusal and ceremony contract"; the Maintainer disposed of the round instead —
+  *"Go ahead with implementation once you've revised these. I don't want another
+  review round"* — so that confirmation is **dispositioned, not performed**, and
+  this plan does not claim it as coverage.
 
 ## Verification
 
@@ -575,6 +878,14 @@ model-selection mapping check `python scripts/check_model_selection.py`)
 are added per plan when the change touches that surface.
 <!-- cairn:end verification-commands -->
 
+**A correction to the slot above, because the trigger matters more than the
+list.** The templated line "the same ones CI enforces" is boilerplate: **Cairn has
+no CI.** The only automation installed in this repository is `tools/intent.py`'s
+pre-commit intent-claim check and its post-commit auto-release hook, and neither
+runs pytest or any checker. Every gate in this plan fires when a **person types
+the command** — an implementing agent before committing, or a reviewer. Nothing
+listed here is enforced by machinery on a push.
+
 **Plan-specific gates, added here because this change touches those surfaces.**
 
 * **The release security gate** — `python bootstrap/security_check.py`.
@@ -584,26 +895,44 @@ are added per plan when the change touches that surface.
   templates/modules/team-gated/content_scan.py`. Expected `errors: []` and zero
   findings; measured on the prototype for this plan.
 * **The alarm-fatigue re-measurement** — the raw sweep over `git ls-files` for
-  `U+2028` / `U+2029`, recorded in the commit body as a dated figure. 0 of 494,
-  `as_of 2026-08-04`.
+  `U+2028` / `U+2029`, by a script that reads the code points **literally and does
+  not import `content_scan`**, recorded in the commit body as **the hit count and
+  the date, with no denominator** (amendment A33, folded). Re-derived at revision
+  `ec57bf0` (`as_of 2026-08-05`): **0 hits**. The `check_cairn` run is a different
+  claim in the same neighbourhood and is **not** a substitute — after Chunk B it
+  runs the edited scanner, so it measures the detector, not the corpus.
 * **The behaviour-identity capture** — the pre-change `(line, pattern_id,
   message)` tuple list for the five-probe fixture, written to the session
-  scratch directory before Chunk A and diffed after.
-* **The perturbation ledgers** — six of them, per chunk, in the commit body: the
-  production-code change made, the failure observed with its message, and the
-  byte-identical restore verified by an empty `git diff <path>`.
+  scratch directory **before** Chunk A and diffed after. It cannot be reconstructed
+  afterwards: the only source of the pre-change tuples is the pre-change scanner.
+* **The node-id-set capture** — `--collect-only -q` over
+  `bootstrap/tests/test_content_scan.py` before and after, stored outside the tree.
+  The predicate is a strict superset of node ids, not a count.
+* **The perturbation ledgers** — **eleven** of them (P-A1, P-A2, P-B1…P-B9), per
+  chunk, in the commit body: the change made, the **named nodes** observed red and
+  the named nodes observed green, and the byte-identical restore verified by an
+  empty `git diff <path>` (or `git status --short` clean for the two transient
+  ones). **Record named nodes, not pass/fail totals** — the totals in this plan's
+  review history were measured against a node set this fold has changed.
 * **The gate-integrity note** — after Chunk B, record in the commit body that
   `templates/modules/team-gated/content_scan.py` and
   `bootstrap/tests/test_content_scan.py` now differ from their pinned sha256 in
   `bootstrap/tests/fixtures/gate_manifest.json`, so a later
-  `_gate_manifest.py verify` reports two `FROZEN-MODIFIED` entries — the **same
-  two** `content-scan-detectors` will report. Do not re-pin; see
-  [*Maintainer fence*](#maintainer-fence).
+  `_gate_manifest.py verify` reports **these two files among its**
+  `FROZEN-MODIFIED` entries — the **same two** `content-scan-detectors` will
+  report. **Name the two files; state no total** (amendment A14, folded): the total
+  is other workflows' to move and is stale by the time it is read. Do not re-pin;
+  see [*Maintainer fence*](#maintainer-fence), whose F2 bounding condition now
+  gates the shared ceremony.
 
 **Note on doc gates**: drift gates catch **drift**, not **absence** of a new doc
-update. `check_cairn` will not notice if B3's docstring bullet is never written.
-Confirm it by reading, and note that here it doubles as the alarm-fatigue
-measurement, which is a different claim in the same command.
+update. `check_cairn` will not notice if B3's docstring bullet is never written —
+nor its acceptance-association and block-form clauses, which are the adopter-visible
+half of the [E1] refusal. Confirm by reading. And do not let the one command stand
+for two claims: `check_cairn` is the doc gate, and after Chunk B it is also the
+edited scanner running over Cairn's corpus. **The artifact under verification may
+not supply the material** — the alarm-fatigue evidence comes from the independent
+raw sweep above, never from this command.
 
 ## Plan review — the brief
 
@@ -657,8 +986,10 @@ in an archived plan.
 | `Zs` space separators | The open Maintainer question on `byline-classification` | Not this plan |
 | The docstring-vs-emitted-id drift gap (no mechanical guard) | Recorded as a known omission in *Author-accounting* above; if it recurs, the `incident-trackers` module is its home, not a new test bolted on at archive time | This plan, above |
 | The evidence ledger (measurements, perturbation results, the corpus sweep) | The commit bodies and the `## Code review` section of this plan | Implementing agent, then the reviewer |
+| The display-line association rule for `unicode-line-separator` acceptances — an acceptance is honoured only when it renders on the same display line as the separator it accepts, and the block form does not suppress it | The B9a / B9b / B9c pins plus the B3 docstring clause | Chunk B (B3 + B9a–B9c + B10) |
 
-This section is append-only once written.
+This section is append-only once written. The final row was **appended** under that
+rule as the residue of amendment A24; no prior entry was edited.
 
 ## Plan review -- Claude (Internal, same-agent-type; security lens) -- 2026-08-04
 
@@ -1167,27 +1498,27 @@ node's identity. Residue: **A17-A18**.
 Every row below is a mechanical change to this plan. Rows marked *(added)*
 introduce text where none stood; all others quote the superseded text verbatim.
 
-| # | Superseded text (verbatim) | Replaced by |
-|---|---|---|
-| A1 | Chunk B row **B6**, verbatim: `New TestLineSeparator::test_marker_suppresses_only_its_own_id: a cairn-accept marker naming unicode-line-separator clears the flag; a marker naming unicode-zero-width does **not**. The second half is the regression for the dispatch defect — it is red against the code at HEAD and red against any future reintroduction of the ternary.` | **Two nodes, not one.** `B6a` -- `TestLineSeparator::test_own_id_marker_suppresses`: a `cairn-accept` marker naming `unicode-line-separator` clears the flag. `B6b` -- `TestLineSeparator::test_foreign_id_marker_does_not_suppress`: a marker naming `unicode-zero-width` does **not** clear it; asserts `[f.pattern_id for f in scan_text(fixture)] == ["unicode-line-separator"]`. B6b is the dispatch regression and **must be independently falsifiable**, which a shared node cannot be. |
-| A2 | `* **Perturbation P-B3 — B6 is the dispatch regression (hazard-side, RUN).** Revert Chunk A in place (restore the 2-tuple yield and the ternary) while keeping the B2 loop; B6's `unicode-zero-width`-marker half fails, because the separator flag is labelled `unicode-zero-width` and the foreign marker suppresses it.` | `* **Perturbation P-B3 — B6a is the dispatch regression (hazard-side, RUN).** Revert Chunk A in place (restore the 2-tuple yield and the ternary) while keeping the B2 loop; **B6a** fails -- the own-id marker matches nothing because the flag is labelled `unicode-zero-width`. Measured under this exact state: `AssertionError: own-id marker must clear / assert ['unicode-zero-width'] == []`. **P-B3 says nothing about B6b**, which does not execute in a single-node form and is not exercised by this perturbation; P-B7 is B6b's perturbation.` |
-| A3 | *(added)* | `* **Perturbation P-B7 — B6b's negative half is non-vacuous (hazard-side, RUN).** In `scan_text`, widen the final filter (`templates/modules/team-gated/content_scan.py:409`) to suppress by line while ignoring `pattern_id`; **B6b fails alone** -- measured 1 failed, 4 passed, failing at the foreign-marker assertion. This is the only perturbation that falsifies the plan's security-critical assertion, and without it that assertion ships unfalsified. Restore; confirm `git diff templates/modules/team-gated/content_scan.py` empty.` |
-| A4 | Chunk B row **B5**, verbatim: `New TestLineSeparator::test_each_separator_is_caught: scan_text over a fixture carrying a raw U+2028 and, separately, one carrying a raw U+2029; assert each yields exactly one flag with pattern_id == "unicode-line-separator" and a message containing U+2028 / U+2029 respectively. Escape forms in the test source, matching B4.` | **Parametrized into two nodes.** `TestLineSeparator::test_each_separator_is_caught` gains `@pytest.mark.parametrize("cp", [0x2028, 0x2029])`, so each code point is its own collected node asserting exactly one flag with `pattern_id == "unicode-line-separator"` and `f"U+{cp:04X}"` in the message. Escape forms in the test source, matching B4. A per-member claim requires a per-member node. |
-| A5 | `Remove `U+2029` from `_LINE_SEPARATORS`, leaving `U+2028`; B5's `U+2029` assertion fails **alone** while its `U+2028` assertion stays green. Repeat the other way round.` | `Remove `U+2029` from `_LINE_SEPARATORS`, leaving `U+2028`; the `0x2029` **node** fails and the `0x2028` node stays green (measured on a single-node B5: 1 failed, 4 passed). Repeat the other way round: with B5 parametrized, the `0x2028` node fails alone. **On the un-parametrized node this direction does not work** -- measured 4 failed, 1 passed, with B5 aborting at its `U+2028` assertion so the `U+2029` assertion never runs, and B6/B7/B8 failing too because their fixtures use `U+2028`. A4 is what makes both directions symmetric.` |
-| A6 | *(added)* | New Chunk B row **B9**, in `bootstrap/tests/test_content_scan.py`: `TestLineSeparator::test_separator_and_its_marker_share_one_scanned_line` — pin the measured interaction between the new code point and the line-scoped suppression grammar. (i) A payload and a `cairn-accept: unicode-line-separator` marker on **one** `split("\n")` line: the flag is cleared, though the two occupy two *display* lines. (ii) A marker on file line 1 clearing a hit on file line 2 that occupies four display lines. Both assert the **current** behaviour, so the node is a declared-limit pin in B8's sense, not a behaviour change. |
-| A7 | *(added)* | `* **Perturbation P-B8 — B9's limit can fire (hazard-side, RUN).** Narrow the line-scope at `templates/modules/team-gated/content_scan.py:261` from `{i, i + 1}` to `{i}`; B9's second half fails because the preceding-line marker no longer clears the hit. Restore; confirm `git diff` empty. This perturbation is also the *proposal* a future author would need to change the grammar.` |
-| A8 | `A separator inside a `cairn-accept` marker's own line (line-scope covers the marker's own line — pre-existing semantics, unchanged).` | `A separator inside a `cairn-accept` marker's own line — line-scope is **file**-line scope, and `U+2028` is the first detected code point for which a file line and a display line differ, so a marker and the payload it clears can be several display lines apart. Measured: a marker on file line 1 clears a `unicode-line-separator` hit on file line 2 spanning four display lines. Pre-existing semantics, **unchanged by this plan and now pinned by B9** rather than asserted benign.` |
-| A9 | *(added)* | Two entries. **Invariant**: *A `unicode-line-separator` hit is cleared by an own-id marker on its own **file** line or the file line above, even when those are several display lines apart.* Enforced by B9, perturbable by P-B8. **Lasting-truth row**, deferred item *"The file-line-vs-display-line divergence in the suppression grammar"*, durable home *"The B9 pin plus the B3 docstring clause"*, written by *"Chunk B (B3 + B9)"*. Also: B3's docstring bullet gains one clause stating that suppression is scoped to **file** lines, which a separator can make differ from what a renderer shows. |
-| A10 | `* `~/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests` → the whole suite green, 0 failed / 0 skipped / 0 xfailed. **Take the baseline at implementation start, not from this plan**: the working tree carried other workflows' in-flight edits under `bootstrap/_scaffold/` `as_of 2026-08-04`, so any suite figure measured here would be measuring someone else's change.` | `* `~/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests` → **as a delta against a baseline captured at implementation start**: no failure present that is absent from the baseline, no node dropped from collection, no new skip or xfail. Record both figures in the commit body. `as_of 2026-08-04` the tree is **1790 passed, 0 failed, 0 skipped, 0 xfailed** (178s) -- clean, but it was 3-failing days earlier, which is exactly why the predicate is a delta and not an absolute.` |
-| A11 | `  * `~/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests` — the whole suite, green, **0 failed / 0 skipped / 0 xfailed**, under the canonical interpreter (3.13.13). Baseline taken at implementation start, for the reason given in Chunk B.` | `  * `~/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests` — under the canonical interpreter (3.13.13), **as the delta defined in Chunk B**: no new failure, no dropped node, no new skip/xfail against a baseline captured at implementation start.` |
-| A12 | `` `~/conda_envs/lhm/bin/python3.13 scripts/check_cairn.py` → OK. Baseline **180 Markdown files, no issues**, `as_of 2026-08-04`; the count may only grow and the verdict may not change.`` | `` `~/conda_envs/lhm/bin/python3.13 scripts/check_cairn.py` → **no issue attributable to this change**, as a delta against an implementation-start baseline. `as_of 2026-08-04` the whole-tree run is **2 issues across 195 files** — both at `dev/PLANNING.md:886`-`887`, from commit `4573c11`, unreachable from this plan's two files. An absolute "→ OK" here is **not achievable** by an implementing agent who touches only `content_scan.py` and `test_content_scan.py`. Additionally run `scripts/check_cairn.py` scoped to the files this change touches, which must be clean outright.`` |
-| A13 | `* Whichever lands second records that **the same two entries** are stale — not a second, different pair.` `* The Maintainer performs **one** supervised re-produce after both have landed.` | `* Whichever lands second records **the same two files** as the pair *this change* makes stale, and states plainly that `_gate_manifest.py verify` will report **others belonging to other workflows** — the plan asserts no total. Measured `as_of 2026-08-04`, before either plan lands: **HOLD, 17 violations — 10 `FROZEN-MODIFIED`, 3 `COLLECTION-DROPPED`, 4 `SKIP-XFAIL-NEW`**, none of them this plan's.` `* The Maintainer performs **one** supervised re-produce after both have landed, **scoped to whatever is stale at ceremony time** — which is a Maintainer review item, not a two-entry formality, and is a wider authority act than a two-file re-pin. `bootstrap/tests/_gate_preflight.py` refuses a dirty tree, but does not refuse other workflows' *committed* frozen-file edits.` |
-| A14 | `so a later `_gate_manifest.py verify` reports two `FROZEN-MODIFIED` entries — the **same two** `content-scan-detectors` will report.` | `so a later `_gate_manifest.py verify` reports these two files among its `FROZEN-MODIFIED` entries — the **same two** `content-scan-detectors` will report. **Name the two files; do not state a total**, which is other workflows' to move and is stale by the time it is read.` |
-| A15 | `Verified rather than assumed: `grep -rln "unicode-zero-width"` over the tracked tree outside `dev/proposals/` and `dev/plans/` returns exactly those two files, `as_of 2026-08-04`.` | Unchanged as a figure (it reproduces), **plus** this qualification: a literal-id grep cannot see a coupling that names no id. `templates/modules/team-gated/content_scan_runner.py` builds its reviewed-residual key as `f"{rel}:{pattern_id}:{code_hash}"` (`:299`, consumed at `:403`), so it is coupled to the **id set** without containing any id. That file is untouched here and no residual baseline churns, because Chunk A is id-preserving for both existing ids (measured: HEAD, A-only and FIXED produce byte-identical `(line, pattern_id, message)` tuples across the five probes) and the corpus carries **0** separator flags. The conclusion is reached by that argument, not by the grep. |
-| A16 | `Extend `_BANNED_CODEPOINTS` (`bootstrap/tests/test_content_scan.py:48`–`52`) with `0x2028, 0x2029`, so `test_no_raw_banned_codepoints_in_source` now also refuses a raw separator in the scanner's own source.` | `Extend `_BANNED_CODEPOINTS` (`bootstrap/tests/test_content_scan.py:48`–`52`) with `0x2028, 0x2029`, **and widen the guard to read both `CONTENT_SCAN_SRC` and the test module's own path** (today it reads `CONTENT_SCAN_SRC` only, `bootstrap/tests/test_content_scan.py:65`). After B5–B9 the test module is itself a file whose fixtures are separator code points, and "escape forms in the test source" is otherwise a convention with nothing enforcing it. Verified the widening does the work: with a raw `U+2028` planted in a source comment, the pre-existing set reports no hits and the widened set reports `0x2028`.` |
-| A17 | *(added, Sequence + Chunk B)* | **Shared-node naming convention, binding on both plans.** The coexistence node lives in a class named for its owning plan — `TestSeparatorDetectionCoexistence` here, and `content-scan-detectors` uses its own distinct class name. Measured hazard: a duplicate `class TestLineSeparator` in one module **shadows the entire earlier class** — a 5-method class followed by a 1-method class of the same name collects **1 test**, silently, no error, no warning. Whichever plan lands second must re-read the file rather than append blind. |
-| A18 | `Baseline **25 nodes** `as_of 2026-08-04`; collection grows by exactly the new nodes.` | `Baseline **25 nodes** `as_of 2026-08-04` (re-measured; all 25 pass at HEAD). **Assert the collected node-id set, not its size**: capture `--collect-only -q` before and after and require the new set to be a strict superset of the old. A count check cannot distinguish "n nodes added" from "n+k added, k shadowed away" — see A17.` |
-| A19 | `**Zero, over 494 tracked files, `as_of 2026-08-04`**` (and the two further occurrences of the 494 denominator, at the Chunk B sweep gate and the *Failure modes* alarm-fatigue bullet) | `**Zero, over 511 tracked files, `as_of 2026-08-04`** — re-measured at HEAD `6618e54`: 511 listed, 511 decode as UTF-8, **0** carry a raw `U+2028` or `U+2029`. The verdict is unchanged; only the denominator grew, as the review predicted. Re-take at implementation rather than quoting either figure. |
+| # | Superseded text (verbatim) | Replaced by | Folded into (2026-08-05) |
+|---|---|---|---|
+| A1 | Chunk B row **B6**, verbatim: `New TestLineSeparator::test_marker_suppresses_only_its_own_id: a cairn-accept marker naming unicode-line-separator clears the flag; a marker naming unicode-zero-width does **not**. The second half is the regression for the dispatch defect — it is red against the code at HEAD and red against any future reintroduction of the ternary.` | **Two nodes, not one.** `B6a` -- `TestLineSeparator::test_own_id_marker_suppresses`: a `cairn-accept` marker naming `unicode-line-separator` clears the flag. `B6b` -- `TestLineSeparator::test_foreign_id_marker_does_not_suppress`: a marker naming `unicode-zero-width` does **not** clear it; asserts `[f.pattern_id for f in scan_text(fixture)] == ["unicode-line-separator"]`. B6b is the dispatch regression and **must be independently falsifiable**, which a shared node cannot be. | **FOLDED** -> Chunk B rows **B6a** and **B6b** |
+| A2 | `* **Perturbation P-B3 — B6 is the dispatch regression (hazard-side, RUN).** Revert Chunk A in place (restore the 2-tuple yield and the ternary) while keeping the B2 loop; B6's `unicode-zero-width`-marker half fails, because the separator flag is labelled `unicode-zero-width` and the foreign marker suppresses it.` | `* **Perturbation P-B3 — B6a is the dispatch regression (hazard-side, RUN).** Revert Chunk A in place (restore the 2-tuple yield and the ternary) while keeping the B2 loop; **B6a** fails -- the own-id marker matches nothing because the flag is labelled `unicode-zero-width`. Measured under this exact state: `AssertionError: own-id marker must clear / assert ['unicode-zero-width'] == []`. **P-B3 says nothing about B6b**, which does not execute in a single-node form and is not exercised by this perturbation; P-B7 is B6b's perturbation.` | **FOLDED** -> Chunk B acceptance, perturbation **P-B3** |
+| A3 | *(added)* | `* **Perturbation P-B7 — B6b's negative half is non-vacuous (hazard-side, RUN).** In `scan_text`, widen the final filter (`templates/modules/team-gated/content_scan.py:409`) to suppress by line while ignoring `pattern_id`; **B6b fails alone** -- measured 1 failed, 4 passed, failing at the foreign-marker assertion. This is the only perturbation that falsifies the plan's security-critical assertion, and without it that assertion ships unfalsified. Restore; confirm `git diff templates/modules/team-gated/content_scan.py` empty.` | **SUPERSEDED by A26**, folded -> Chunk B acceptance, perturbation **P-B7** (two-site) |
+| A4 | Chunk B row **B5**, verbatim: `New TestLineSeparator::test_each_separator_is_caught: scan_text over a fixture carrying a raw U+2028 and, separately, one carrying a raw U+2029; assert each yields exactly one flag with pattern_id == "unicode-line-separator" and a message containing U+2028 / U+2029 respectively. Escape forms in the test source, matching B4.` | **Parametrized into two nodes.** `TestLineSeparator::test_each_separator_is_caught` gains `@pytest.mark.parametrize("cp", [0x2028, 0x2029])`, so each code point is its own collected node asserting exactly one flag with `pattern_id == "unicode-line-separator"` and `f"U+{cp:04X}"` in the message. Escape forms in the test source, matching B4. A per-member claim requires a per-member node. | **FOLDED** -> Chunk B row **B5** (parametrized) |
+| A5 | `Remove `U+2029` from `_LINE_SEPARATORS`, leaving `U+2028`; B5's `U+2029` assertion fails **alone** while its `U+2028` assertion stays green. Repeat the other way round.` | `Remove `U+2029` from `_LINE_SEPARATORS`, leaving `U+2028`; the `0x2029` **node** fails and the `0x2028` node stays green (measured on a single-node B5: 1 failed, 4 passed). Repeat the other way round: with B5 parametrized, the `0x2028` node fails alone. **On the un-parametrized node this direction does not work** -- measured 4 failed, 1 passed, with B5 aborting at its `U+2028` assertion so the `U+2029` assertion never runs, and B6/B7/B8 failing too because their fixtures use `U+2028`. A4 is what makes both directions symmetric.` | **FOLDED** -> Chunk B acceptance, perturbation **P-B2** |
+| A6 | *(added)* | New Chunk B row **B9**, in `bootstrap/tests/test_content_scan.py`: `TestLineSeparator::test_separator_and_its_marker_share_one_scanned_line` — pin the measured interaction between the new code point and the line-scoped suppression grammar. (i) A payload and a `cairn-accept: unicode-line-separator` marker on **one** `split("\n")` line: the flag is cleared, though the two occupy two *display* lines. (ii) A marker on file line 1 clearing a hit on file line 2 that occupies four display lines. Both assert the **current** behaviour, so the node is a declared-limit pin in B8's sense, not a behaviour change. | **SUPERSEDED by A20**, folded -> Chunk B rows **B9a / B9b / B9c** |
+| A7 | *(added)* | `* **Perturbation P-B8 — B9's limit can fire (hazard-side, RUN).** Narrow the line-scope at `templates/modules/team-gated/content_scan.py:261` from `{i, i + 1}` to `{i}`; B9's second half fails because the preceding-line marker no longer clears the hit. Restore; confirm `git diff` empty. This perturbation is also the *proposal* a future author would need to change the grammar.` | **SUPERSEDED by A25**, folded -> Chunk B acceptance, perturbation **P-B8** |
+| A8 | `A separator inside a `cairn-accept` marker's own line (line-scope covers the marker's own line — pre-existing semantics, unchanged).` | `A separator inside a `cairn-accept` marker's own line — line-scope is **file**-line scope, and `U+2028` is the first detected code point for which a file line and a display line differ, so a marker and the payload it clears can be several display lines apart. Measured: a marker on file line 1 clears a `unicode-line-separator` hit on file line 2 spanning four display lines. Pre-existing semantics, **unchanged by this plan and now pinned by B9** rather than asserted benign.` | **SUPERSEDED by A23**, folded -> *Author-accounting* > **Edge cases handled** |
+| A9 | *(added)* | Two entries. **Invariant**: *A `unicode-line-separator` hit is cleared by an own-id marker on its own **file** line or the file line above, even when those are several display lines apart.* Enforced by B9, perturbable by P-B8. **Lasting-truth row**, deferred item *"The file-line-vs-display-line divergence in the suppression grammar"*, durable home *"The B9 pin plus the B3 docstring clause"*, written by *"Chunk B (B3 + B9)"*. Also: B3's docstring bullet gains one clause stating that suppression is scoped to **file** lines, which a separator can make differ from what a renderer shows. | **SUPERSEDED by A24**, folded -> *Author-accounting* invariant + failure-mode bullet, Chunk B row **B3**, and the appended *Lasting-truth migration* row |
+| A10 | `* `~/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests` → the whole suite green, 0 failed / 0 skipped / 0 xfailed. **Take the baseline at implementation start, not from this plan**: the working tree carried other workflows' in-flight edits under `bootstrap/_scaffold/` `as_of 2026-08-04`, so any suite figure measured here would be measuring someone else's change.` | `* `~/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests` → **as a delta against a baseline captured at implementation start**: no failure present that is absent from the baseline, no node dropped from collection, no new skip or xfail. Record both figures in the commit body. `as_of 2026-08-04` the tree is **1790 passed, 0 failed, 0 skipped, 0 xfailed** (178s) -- clean, but it was 3-failing days earlier, which is exactly why the predicate is a delta and not an absolute.` | **FOLDED** -> Chunk B acceptance, **Whole suite, as a delta** (figure not carried; predicate only) |
+| A11 | `  * `~/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests` — the whole suite, green, **0 failed / 0 skipped / 0 xfailed**, under the canonical interpreter (3.13.13). Baseline taken at implementation start, for the reason given in Chunk B.` | `  * `~/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests` — under the canonical interpreter (3.13.13), **as the delta defined in Chunk B**: no new failure, no dropped node, no new skip/xfail against a baseline captured at implementation start.` | **FOLDED** -> plan-level *Acceptance criteria* > **Tests that must pass**, first sub-bullet |
+| A12 | `` `~/conda_envs/lhm/bin/python3.13 scripts/check_cairn.py` → OK. Baseline **180 Markdown files, no issues**, `as_of 2026-08-04`; the count may only grow and the verdict may not change.`` | `` `~/conda_envs/lhm/bin/python3.13 scripts/check_cairn.py` → **no issue attributable to this change**, as a delta against an implementation-start baseline. `as_of 2026-08-04` the whole-tree run is **2 issues across 195 files** — both at `dev/PLANNING.md:886`-`887`, from commit `4573c11`, unreachable from this plan's two files. An absolute "→ OK" here is **not achievable** by an implementing agent who touches only `content_scan.py` and `test_content_scan.py`. Additionally run `scripts/check_cairn.py` scoped to the files this change touches, which must be clean outright.`` | **FOLDED** -> Chunk B acceptance, **Predicate for `check_cairn`** sub-bullet; the clause the *Figure correction* withdrew is **not** carried |
+| A13 | `* Whichever lands second records that **the same two entries** are stale — not a second, different pair.` `* The Maintainer performs **one** supervised re-produce after both have landed.` | `* Whichever lands second records **the same two files** as the pair *this change* makes stale, and states plainly that `_gate_manifest.py verify` will report **others belonging to other workflows** — the plan asserts no total. Measured `as_of 2026-08-04`, before either plan lands: **HOLD, 17 violations — 10 `FROZEN-MODIFIED`, 3 `COLLECTION-DROPPED`, 4 `SKIP-XFAIL-NEW`**, none of them this plan's.` `* The Maintainer performs **one** supervised re-produce after both have landed, **scoped to whatever is stale at ceremony time** — which is a Maintainer review item, not a two-entry formality, and is a wider authority act than a two-file re-pin. `bootstrap/tests/_gate_preflight.py` refuses a dirty tree, but does not refuse other workflows' *committed* frozen-file edits.` | **SUPERSEDED by A29**, folded -> *Maintainer fence* > **F2** bullets |
+| A14 | `so a later `_gate_manifest.py verify` reports two `FROZEN-MODIFIED` entries — the **same two** `content-scan-detectors` will report.` | `so a later `_gate_manifest.py verify` reports these two files among its `FROZEN-MODIFIED` entries — the **same two** `content-scan-detectors` will report. **Name the two files; do not state a total**, which is other workflows' to move and is stale by the time it is read.` | **FOLDED** -> *Maintainer fence* > **F1** and *Verification* > **the gate-integrity note** |
+| A15 | `Verified rather than assumed: `grep -rln "unicode-zero-width"` over the tracked tree outside `dev/proposals/` and `dev/plans/` returns exactly those two files, `as_of 2026-08-04`.` | Unchanged as a figure (it reproduces), **plus** this qualification: a literal-id grep cannot see a coupling that names no id. `templates/modules/team-gated/content_scan_runner.py` builds its reviewed-residual key as `f"{rel}:{pattern_id}:{code_hash}"` (`:299`, consumed at `:403`), so it is coupled to the **id set** without containing any id. That file is untouched here and no residual baseline churns, because Chunk A is id-preserving for both existing ids (measured: HEAD, A-only and FIXED produce byte-identical `(line, pattern_id, message)` tuples across the five probes) and the corpus carries **0** separator flags. The conclusion is reached by that argument, not by the grep. | **FOLDED** -> *Scope*, the fingerprint paragraph (*"And the grep is not what carries the conclusion"*) |
+| A16 | `Extend `_BANNED_CODEPOINTS` (`bootstrap/tests/test_content_scan.py:48`–`52`) with `0x2028, 0x2029`, so `test_no_raw_banned_codepoints_in_source` now also refuses a raw separator in the scanner's own source.` | `Extend `_BANNED_CODEPOINTS` (`bootstrap/tests/test_content_scan.py:48`–`52`) with `0x2028, 0x2029`, **and widen the guard to read both `CONTENT_SCAN_SRC` and the test module's own path** (today it reads `CONTENT_SCAN_SRC` only, `bootstrap/tests/test_content_scan.py:65`). After B5–B9 the test module is itself a file whose fixtures are separator code points, and "escape forms in the test source" is otherwise a convention with nothing enforcing it. Verified the widening does the work: with a raw `U+2028` planted in a source comment, the pre-existing set reports no hits and the widened set reports `0x2028`.` | **FOLDED** -> Chunk B row **B4** |
+| A17 | *(added, Sequence + Chunk B)* | **Shared-node naming convention, binding on both plans.** The coexistence node lives in a class named for its owning plan — `TestSeparatorDetectionCoexistence` here, and `content-scan-detectors` uses its own distinct class name. Measured hazard: a duplicate `class TestLineSeparator` in one module **shadows the entire earlier class** — a 5-method class followed by a 1-method class of the same name collects **1 test**, silently, no error, no warning. Whichever plan lands second must re-read the file rather than append blind. | **SUPERSEDED by A32**, folded -> Chunk B **Test-class naming** note + *Sequence* **Cross-plan ordering** note |
+| A18 | `Baseline **25 nodes** `as_of 2026-08-04`; collection grows by exactly the new nodes.` | `Baseline **25 nodes** `as_of 2026-08-04` (re-measured; all 25 pass at HEAD). **Assert the collected node-id set, not its size**: capture `--collect-only -q` before and after and require the new set to be a strict superset of the old. A count check cannot distinguish "n nodes added" from "n+k added, k shadowed away" — see A17.` | **FOLDED** -> Chunk A acceptance (node-id set), Chunk B acceptance **Focused module**, and plan-level *Acceptance criteria* |
+| A19 | `**Zero, over 494 tracked files, `as_of 2026-08-04`**` (and the two further occurrences of the 494 denominator, at the Chunk B sweep gate and the *Failure modes* alarm-fatigue bullet) | `**Zero, over 511 tracked files, `as_of 2026-08-04`** — re-measured at HEAD `6618e54`: 511 listed, 511 decode as UTF-8, **0** carry a raw `U+2028` or `U+2029`. The verdict is unchanged; only the denominator grew, as the review predicted. Re-take at implementation rather than quoting either figure. | **SUPERSEDED by A33**, folded -> *The measurements* > alarm fatigue, Chunk B sweep criterion, and *Failure modes* |
 
 ### Does this Response clear the plan to implement?
 
@@ -1662,22 +1993,22 @@ Rows marked *(added)* introduce text where none stood; all others quote the
 superseded text **verbatim** -- where a row supersedes an earlier amendment, the
 quoted text is that amendment's in-force replacement cell.
 
-| # | Superseded text (verbatim) | Replaced by |
-|---|---|---|
-| A20 | **A6**, verbatim: New Chunk B row **B9**, in `bootstrap/tests/test_content_scan.py`: `TestLineSeparator::test_separator_and_its_marker_share_one_scanned_line` — pin the measured interaction between the new code point and the line-scoped suppression grammar. (i) A payload and a `cairn-accept: unicode-line-separator` marker on **one** `split("\n")` line: the flag is cleared, though the two occupy two *display* lines. (ii) A marker on file line 1 clearing a hit on file line 2 that occupies four display lines. Both assert the **current** behaviour, so the node is a declared-limit pin in B8's sense, not a behaviour change. | **Three nodes in `bootstrap/tests/test_content_scan.py`, pinning the refusal and the accept path — "tests for both paths" per [E1].** `B9a` — `TestSeparatorDetection::test_cross_separator_acceptance_refused_same_file_line`: payload, then a separator, then an own-id `cairn-accept` marker, all on one file line; assert `[f.pattern_id for f in scan_text(fixture)] == ["unicode-line-separator"]` (the acceptance is **refused**). `B9b` — `TestSeparatorDetection::test_cross_separator_acceptance_refused_preceding_line`: an own-id marker on file line 1, the hit on file line 2 spanning four display lines; assert the flag **survives**. `B9c` — `TestSeparatorDetection::test_same_display_line_acceptance_is_honoured`: an own-id marker written **before** the separator on the same file line; assert `scan_text(fixture) == []`. Measured against the remedied build: all three green; against a build without the refusal, B9a and B9b fail and B9c stays green. |
-| A21 | *(added — new Chunk B production row)* | New Chunk B row **B10**, in `templates/modules/team-gated/content_scan.py`: a module-level helper `_separator_accept_is_associable(line)` placed immediately above `scan_text`, which locates the first `_LINE_SEPARATORS` member in the file line and returns `True` only if `_ACCEPT_RE` finds a marker **before** that index whose `pid` is `unicode-line-separator` and whose `reason` attribute is non-empty (the same validity rule `_parse_suppressions` applies). The final filter at `templates/modules/team-gated/content_scan.py:409` becomes an explicit loop: a flag suppressed by the existing per-id line scope is **re-emitted** when `f.pattern_id == "unicode-line-separator"` and the helper returns `False`. `_parse_suppressions` is **not** modified, and no other pattern id's path changes — measured: the real 25-node module against this build is **24 passed, 1 deselected**, byte-identical to the build without it. |
-| A22 | `Within `content_scan.py` the Response named three sites, and all three are verified present at HEAD: the module-docstring pattern-id list (the `unicode-bidi` bullet ends at `templates/modules/team-gated/content_scan.py:45`), the detector loops in `_scan_unicode`, and the call site at `templates/modules/team-gated/content_scan.py:401`.` | `Within `content_scan.py` there are now **four** sites, all verified present at HEAD: the module-docstring pattern-id list (the `unicode-bidi` bullet ends at `templates/modules/team-gated/content_scan.py:45`), the detector loops in `_scan_unicode` (`:295`), the call site at `:401`, and — added by [E1] — the final suppression filter at `:409` plus the new helper above `scan_text`. The fourth site is a **suppression-grammar** change scoped to the new pattern id; it is inside the plan's two-file *Touches* line but beyond the Decision's literal text, and it is named here rather than folded in silently.` |
-| A23 | **A8**, verbatim: A separator inside a `cairn-accept` marker's own line — line-scope is **file**-line scope, and `U+2028` is the first detected code point for which a file line and a display line differ, so a marker and the payload it clears can be several display lines apart. Measured: a marker on file line 1 clears a `unicode-line-separator` hit on file line 2 spanning four display lines. Pre-existing semantics, **unchanged by this plan and now pinned by B9** rather than asserted benign. | A separator inside a `cairn-accept` marker's scope — line-scope is **file**-line scope, and `U+2028` is the first detected code point for which a file line and a display line differ. For every **pre-existing** pattern id that divergence is left exactly as it is (out of scope, and 0 tracked files can exercise it). For `unicode-line-separator` it is **closed**: B10 refuses an acceptance that does not render on the same display line as the separator it accepts. Measured, un-remedied build vs remedied build: marker-after-separator `[]` -> `['unicode-line-separator']`; preceding-file-line marker `[]` -> `['unicode-line-separator']`; marker before the separator on the same display line `[]` -> `[]`. |
-| A24 | **A9**, verbatim: Two entries. **Invariant**: *A `unicode-line-separator` hit is cleared by an own-id marker on its own **file** line or the file line above, even when those are several display lines apart.* Enforced by B9, perturbable by P-B8. **Lasting-truth row**, deferred item *"The file-line-vs-display-line divergence in the suppression grammar"*, durable home *"The B9 pin plus the B3 docstring clause"*, written by *"Chunk B (B3 + B9)"*. Also: B3's docstring bullet gains one clause stating that suppression is scoped to **file** lines, which a separator can make differ from what a renderer shows. | Three entries. **Invariant**: *A `unicode-line-separator` hit is cleared **only** by an own-id marker that renders on the same display line as the separator it accepts; an acceptance separated from its payload by a separator — on the preceding file line, later on the same file line, or in `cairn-accept` / `cairn-accept-end` block form — is refused.* Enforced by B9a/B9b/B9c, perturbable by the new P-B8. **Failure mode** (new bullet in *Author-accounting*): *An adopter with a legitimate word-processor paste finds the marker refused.* -> **Open by design, and narrower than it looks**: the working form is documented (marker before the separator on the same display line) and 0 tracked files exercise the rule today; if the refusal proves noisy in an adopter tree that is a Maintainer question, not an inline widening. **Lasting-truth row**, deferred item *"The display-line association rule for `unicode-line-separator` acceptances"*, durable home *"The B9a/B9b/B9c pins plus the B3 docstring clause"*, written by *"Chunk B (B3 + B9a-c + B10)"*. Also: B3's docstring bullet gains one clause stating that an acceptance for this id must render on the same display line as the separator, **and that the block form does not suppress it** — measured, not inferred. |
-| A25 | **A7**, verbatim: `* **Perturbation P-B8 — B9's limit can fire (hazard-side, RUN).** Narrow the line-scope at `templates/modules/team-gated/content_scan.py:261` from `{i, i + 1}` to `{i}`; B9's second half fails because the preceding-line marker no longer clears the hit. Restore; confirm `git diff` empty. This perturbation is also the *proposal* a future author would need to change the grammar.` | `* **Perturbation P-B8 — the refusal can fire (hazard-side, RUN).** Delete the B10 re-emit branch from the final filter (restoring the plain per-id line filter) while keeping every test node; **B9a and B9b fail and B9c stays green** — measured **2 failed, 7 passed**, and only those two. `_parse_suppressions` is untouched by this perturbation, so it discriminates the refusal itself rather than the line scope. Restore; confirm `git diff templates/modules/team-gated/content_scan.py` empty.` |
-| A26 | **A3**, verbatim: `* **Perturbation P-B7 — B6b's negative half is non-vacuous (hazard-side, RUN).** In `scan_text`, widen the final filter (`templates/modules/team-gated/content_scan.py:409`) to suppress by line while ignoring `pattern_id`; **B6b fails alone** -- measured 1 failed, 4 passed, failing at the foreign-marker assertion. This is the only perturbation that falsifies the plan's security-critical assertion, and without it that assertion ships unfalsified. Restore; confirm `git diff templates/modules/team-gated/content_scan.py` empty.` | `* **Perturbation P-B7 — B6b's negative half is non-vacuous (hazard-side, RUN, TWO-SITE).** The single-site form specified before **no longer works once B10 lands** and must not be carried forward: widening the final filter alone to suppress by line while ignoring `pattern_id` yields **9 passed** — B10's own pid check independently keeps the foreign marker from clearing the flag, so the perturbation never reaches the assertion. Perturb **both** id checks: (1) the final filter suppresses by line ignoring `pattern_id`, **and** (2) `_separator_accept_is_associable` accepts any valid `cairn-accept` marker regardless of its `pid`. Measured: **1 failed, 8 passed**, failing exactly `test_foreign_id_marker_does_not_suppress`. Recorded as a caution: the pid-blind association edit **alone** yields 9 passed, so a one-line version of this perturbation is a false ledger entry. Restore both; confirm `git diff templates/modules/team-gated/content_scan.py` empty.` |
-| A27 | `**One** line covering the pattern-id partition, shared with `content-scan-detectors` rather than duplicated: the content scanner's unicode detectors now carry their own pattern ids, and a raw `U+2028` / `U+2029` flags under `unicode-line-separator`. Cross-reference both proposals and both plans **by stem**, per `AGENTS.md`.` | `**One** line covering the pattern-id partition, shared with `content-scan-detectors` rather than duplicated: the content scanner's unicode detectors now carry their own pattern ids, and a raw `U+2028` / `U+2029` flags under `unicode-line-separator`. **The same line must state the acceptance-association rule** — a `unicode-line-separator` acceptance is honoured only when it renders on the same display line as the separator, and the block form does not suppress it — because that is the adopter-visible half of [E1] and a release note that omits it ships a surprise. Cross-reference both proposals and both plans **by stem**, per `AGENTS.md`.` |
-| A28 | `**F2 — one ceremony for two plans, not two.** `content-scan-detectors` edits the **same two files** and is being planned in parallel. Its frozen-file delta is the identical pair. The batch rule this plan adopts:` | `**F2 — one ceremony for two plans, and only if it can be bounded to them.** `content-scan-detectors` edits the **same two files** and is being planned in parallel; its frozen-file delta is the identical pair. Per [E2], a shared ceremony is **not** authorized by that coincidence alone: it is authorized only over an exact, reviewed set owned by these two plans. The batch rule this plan adopts:` |
-| A29 | **A13**, verbatim: `* Whichever lands second records **the same two files** as the pair *this change* makes stale, and states plainly that `_gate_manifest.py verify` will report **others belonging to other workflows** — the plan asserts no total. Measured `as_of 2026-08-04`, before either plan lands: **HOLD, 17 violations — 10 `FROZEN-MODIFIED`, 3 `COLLECTION-DROPPED`, 4 `SKIP-XFAIL-NEW`**, none of them this plan's.` `* The Maintainer performs **one** supervised re-produce after both have landed, **scoped to whatever is stale at ceremony time** — which is a Maintainer review item, not a two-entry formality, and is a wider authority act than a two-file re-pin. `bootstrap/tests/_gate_preflight.py` refuses a dirty tree, but does not refuse other workflows' *committed* frozen-file edits.` | `* Whichever lands second records **the same two files** as the pair *this change* makes stale, and states plainly that `_gate_manifest.py verify` will report **others belonging to other workflows** — the plan asserts no total.` `* **The shared ceremony is conditional, and the condition is checked before it runs.** It is authorized **only** over the exact set `{templates/modules/team-gated/content_scan.py, bootstrap/tests/test_content_scan.py}`. Before the re-produce, the Maintainer enumerates the `FROZEN-MODIFIED` / `COLLECTION-DROPPED` / `SKIP-XFAIL-NEW` paths from `bootstrap/tests/_gate_manifest.py verify`; **if any member falls outside that set, the shared ceremony is off** and each unrelated surface takes its own disposition first. A blanket re-produce would bless concurrently-landed frozen-surface changes nobody reviewed.` `* **No mechanism enforces that condition today, and this plan does not build one.** Measured: `bootstrap/tests/_gate_preflight.py:1163`-`1170` derives the blessing scope as bare **counts** (`modified` / `added` / `removed`, plus collection before/after) and `draft_message` prints those counts; it names **no paths** and refuses nothing. Only `bootstrap/tests/_gate_manifest.py:364` names paths, in `verify` output a human reads. Adding a refusal is `_gate_preflight.py`'s surface — outside this plan's two files and inside `bootstrap/REANCHOR_RUNBOOK.md`'s Maintainer-only territory — so the condition is discharged by the Maintainer reading the enumeration, and the plan says so instead of implying a gate.` `* **The state being blessed is moving fast.** Measured `as_of 2026-08-04`: 17 violations. Re-measured `as_of 2026-08-05`, before either plan lands: **13 `FROZEN-MODIFIED`, 3 `COLLECTION-DROPPED`, 44 `SKIP-XFAIL-NEW` = 60**, none of them this plan's. Any count written here is stale when read; the enumeration is taken **at ceremony time**, not quoted from this plan.` |
-| A30 | *(added — new Chunk B test row)* | New Chunk B row **B11**, in `bootstrap/tests/test_content_scan.py`: `TestCollectionIntegrity::test_no_duplicate_test_class_or_method_names` — parse **this module's own source** with the standard-library `ast` (no new dependency; `bootstrap/DEPENDENCY_BUDGET.md` unaffected) and assert that (i) no two top-level `ClassDef` nodes share a name and (ii) within each class, no two `FunctionDef`/`AsyncFunctionDef` nodes share a name. This is [E3]'s mechanical guard: it fires **inside the file** at the moment a second plan appends a colliding class, where a collection-count check fires only after nodes have already vanished. Measured: the prototype returns `clean` against `bootstrap/tests/test_content_scan.py` at HEAD today. |
-| A31 | *(added — new perturbation)* | `* **Perturbation P-B9 — B11 can fire (hazard-side, RUN, transient).** Append a second `class TestSeparatorDetection` carrying one method to `bootstrap/tests/test_content_scan.py`; B11 fails naming `duplicate top-level class: TestSeparatorDetection`. Repeat with a duplicate **method** name inside one class; B11 fails naming `duplicate method <Class>.<name>`. Delete both; confirm `git status --short` clean. **This is the one perturbation in the plan whose subject is the test module rather than production code, and that is correct, not an exception**: the hazard [E3] names *is* a property of the test module's own source, so perturbing that source is perturbing the hazard, not softening an assertion. Measured on standalone hazard modules: a 5-method class followed by a 1-method class of the same name collects **1** node, and a class with a duplicated method collects **2** of 3 — in both cases silently, with no error and no warning, which is exactly why a count check cannot see it.` |
-| A32 | **A17**, verbatim: **Shared-node naming convention, binding on both plans.** The coexistence node lives in a class named for its owning plan — `TestSeparatorDetectionCoexistence` here, and `content-scan-detectors` uses its own distinct class name. Measured hazard: a duplicate `class TestLineSeparator` in one module **shadows the entire earlier class** — a 5-method class followed by a 1-method class of the same name collects **1 test**, silently, no error, no warning. Whichever plan lands second must re-read the file rather than append blind. | **Shared-node naming convention, binding on both plans — and now enforced, not merely agreed.** The coexistence node lives in a class named for its owning plan — `TestSeparatorDetectionCoexistence` here, and `content-scan-detectors` uses its own distinct class name; whichever plan lands second re-reads the file rather than appending blind. Per [E3] the convention is **backed by B11**, which fails on a duplicate class name *or* a duplicate method name within a class, because a convention cannot protect against a failure that produces no error. Measured hazard, both shapes: a 5-method class followed by a 1-method class of the same name collects **1 test**; a class with a duplicated method collects **2** of 3 — silently in both cases. The habit is retained because the guard reports the collision, it does not resolve it. |
-| A33 | **A19**, verbatim: **Zero, over 511 tracked files, `as_of 2026-08-04`** — re-measured at HEAD `6618e54`: 511 listed, 511 decode as UTF-8, **0** carry a raw `U+2028` or `U+2029`. The verdict is unchanged; only the denominator grew, as the review predicted. Re-take at implementation rather than quoting either figure. | **Zero tracked files carry a raw `U+2028` or `U+2029` — and the plan states no denominator, anywhere.** Three denominators have now been written into this plan for the same unchanged verdict: **494** (`as_of 2026-08-04`), **511** (`as_of 2026-08-04`, later that day), **520** (`as_of 2026-08-05`, this Response: 520 listed, 520 read, 0 non-UTF-8, **0** hits). A13/A14's own rule — *name the delta, assert no total* — applies here and was not applied: the load-bearing claim is **"0 hits"**, which is a stop-signal predicate, and the denominator is a moving count of unrelated commits. The implementing agent re-runs the sweep and records **the hit count and the date** in the commit body; a non-zero hit count is a Maintainer question, not an inline `cairn-accept`. |
+| # | Superseded text (verbatim) | Replaced by | Folded into (2026-08-05) |
+|---|---|---|---|
+| A20 | **A6**, verbatim: New Chunk B row **B9**, in `bootstrap/tests/test_content_scan.py`: `TestLineSeparator::test_separator_and_its_marker_share_one_scanned_line` — pin the measured interaction between the new code point and the line-scoped suppression grammar. (i) A payload and a `cairn-accept: unicode-line-separator` marker on **one** `split("\n")` line: the flag is cleared, though the two occupy two *display* lines. (ii) A marker on file line 1 clearing a hit on file line 2 that occupies four display lines. Both assert the **current** behaviour, so the node is a declared-limit pin in B8's sense, not a behaviour change. | **Three nodes in `bootstrap/tests/test_content_scan.py`, pinning the refusal and the accept path — "tests for both paths" per [E1].** `B9a` — `TestSeparatorDetection::test_cross_separator_acceptance_refused_same_file_line`: payload, then a separator, then an own-id `cairn-accept` marker, all on one file line; assert `[f.pattern_id for f in scan_text(fixture)] == ["unicode-line-separator"]` (the acceptance is **refused**). `B9b` — `TestSeparatorDetection::test_cross_separator_acceptance_refused_preceding_line`: an own-id marker on file line 1, the hit on file line 2 spanning four display lines; assert the flag **survives**. `B9c` — `TestSeparatorDetection::test_same_display_line_acceptance_is_honoured`: an own-id marker written **before** the separator on the same file line; assert `scan_text(fixture) == []`. Measured against the remedied build: all three green; against a build without the refusal, B9a and B9b fail and B9c stays green. | **FOLDED** -> Chunk B rows **B9a / B9b / B9c** (the pinning B9 is deleted, not amended) |
+| A21 | *(added — new Chunk B production row)* | New Chunk B row **B10**, in `templates/modules/team-gated/content_scan.py`: a module-level helper `_separator_accept_is_associable(line)` placed immediately above `scan_text`, which locates the first `_LINE_SEPARATORS` member in the file line and returns `True` only if `_ACCEPT_RE` finds a marker **before** that index whose `pid` is `unicode-line-separator` and whose `reason` attribute is non-empty (the same validity rule `_parse_suppressions` applies). The final filter at `templates/modules/team-gated/content_scan.py:409` becomes an explicit loop: a flag suppressed by the existing per-id line scope is **re-emitted** when `f.pattern_id == "unicode-line-separator"` and the helper returns `False`. `_parse_suppressions` is **not** modified, and no other pattern id's path changes — measured: the real 25-node module against this build is **24 passed, 1 deselected**, byte-identical to the build without it. | **FOLDED** -> Chunk B row **B10** (production) |
+| A22 | `Within `content_scan.py` the Response named three sites, and all three are verified present at HEAD: the module-docstring pattern-id list (the `unicode-bidi` bullet ends at `templates/modules/team-gated/content_scan.py:45`), the detector loops in `_scan_unicode`, and the call site at `templates/modules/team-gated/content_scan.py:401`.` | `Within `content_scan.py` there are now **four** sites, all verified present at HEAD: the module-docstring pattern-id list (the `unicode-bidi` bullet ends at `templates/modules/team-gated/content_scan.py:45`), the detector loops in `_scan_unicode` (`:295`), the call site at `:401`, and — added by [E1] — the final suppression filter at `:409` plus the new helper above `scan_text`. The fourth site is a **suppression-grammar** change scoped to the new pattern id; it is inside the plan's two-file *Touches* line but beyond the Decision's literal text, and it is named here rather than folded in silently.` | **FOLDED** -> *Scope*, the **four sites** paragraph |
+| A23 | **A8**, verbatim: A separator inside a `cairn-accept` marker's own line — line-scope is **file**-line scope, and `U+2028` is the first detected code point for which a file line and a display line differ, so a marker and the payload it clears can be several display lines apart. Measured: a marker on file line 1 clears a `unicode-line-separator` hit on file line 2 spanning four display lines. Pre-existing semantics, **unchanged by this plan and now pinned by B9** rather than asserted benign. | A separator inside a `cairn-accept` marker's scope — line-scope is **file**-line scope, and `U+2028` is the first detected code point for which a file line and a display line differ. For every **pre-existing** pattern id that divergence is left exactly as it is (out of scope, and 0 tracked files can exercise it). For `unicode-line-separator` it is **closed**: B10 refuses an acceptance that does not render on the same display line as the separator it accepts. Measured, un-remedied build vs remedied build: marker-after-separator `[]` -> `['unicode-line-separator']`; preceding-file-line marker `[]` -> `['unicode-line-separator']`; marker before the separator on the same display line `[]` -> `[]`. | **FOLDED** -> *Author-accounting* > **Edge cases handled** |
+| A24 | **A9**, verbatim: Two entries. **Invariant**: *A `unicode-line-separator` hit is cleared by an own-id marker on its own **file** line or the file line above, even when those are several display lines apart.* Enforced by B9, perturbable by P-B8. **Lasting-truth row**, deferred item *"The file-line-vs-display-line divergence in the suppression grammar"*, durable home *"The B9 pin plus the B3 docstring clause"*, written by *"Chunk B (B3 + B9)"*. Also: B3's docstring bullet gains one clause stating that suppression is scoped to **file** lines, which a separator can make differ from what a renderer shows. | Three entries. **Invariant**: *A `unicode-line-separator` hit is cleared **only** by an own-id marker that renders on the same display line as the separator it accepts; an acceptance separated from its payload by a separator — on the preceding file line, later on the same file line, or in `cairn-accept` / `cairn-accept-end` block form — is refused.* Enforced by B9a/B9b/B9c, perturbable by the new P-B8. **Failure mode** (new bullet in *Author-accounting*): *An adopter with a legitimate word-processor paste finds the marker refused.* -> **Open by design, and narrower than it looks**: the working form is documented (marker before the separator on the same display line) and 0 tracked files exercise the rule today; if the refusal proves noisy in an adopter tree that is a Maintainer question, not an inline widening. **Lasting-truth row**, deferred item *"The display-line association rule for `unicode-line-separator` acceptances"*, durable home *"The B9a/B9b/B9c pins plus the B3 docstring clause"*, written by *"Chunk B (B3 + B9a-c + B10)"*. Also: B3's docstring bullet gains one clause stating that an acceptance for this id must render on the same display line as the separator, **and that the block form does not suppress it** — measured, not inferred. | **FOLDED** -> *Author-accounting* invariant + failure-mode bullet, Chunk B row **B3**, and the appended *Lasting-truth migration* row |
+| A25 | **A7**, verbatim: `* **Perturbation P-B8 — B9's limit can fire (hazard-side, RUN).** Narrow the line-scope at `templates/modules/team-gated/content_scan.py:261` from `{i, i + 1}` to `{i}`; B9's second half fails because the preceding-line marker no longer clears the hit. Restore; confirm `git diff` empty. This perturbation is also the *proposal* a future author would need to change the grammar.` | `* **Perturbation P-B8 — the refusal can fire (hazard-side, RUN).** Delete the B10 re-emit branch from the final filter (restoring the plain per-id line filter) while keeping every test node; **B9a and B9b fail and B9c stays green** — measured **2 failed, 7 passed**, and only those two. `_parse_suppressions` is untouched by this perturbation, so it discriminates the refusal itself rather than the line scope. Restore; confirm `git diff templates/modules/team-gated/content_scan.py` empty.` | **FOLDED** -> Chunk B acceptance, perturbation **P-B8** |
+| A26 | **A3**, verbatim: `* **Perturbation P-B7 — B6b's negative half is non-vacuous (hazard-side, RUN).** In `scan_text`, widen the final filter (`templates/modules/team-gated/content_scan.py:409`) to suppress by line while ignoring `pattern_id`; **B6b fails alone** -- measured 1 failed, 4 passed, failing at the foreign-marker assertion. This is the only perturbation that falsifies the plan's security-critical assertion, and without it that assertion ships unfalsified. Restore; confirm `git diff templates/modules/team-gated/content_scan.py` empty.` | `* **Perturbation P-B7 — B6b's negative half is non-vacuous (hazard-side, RUN, TWO-SITE).** The single-site form specified before **no longer works once B10 lands** and must not be carried forward: widening the final filter alone to suppress by line while ignoring `pattern_id` yields **9 passed** — B10's own pid check independently keeps the foreign marker from clearing the flag, so the perturbation never reaches the assertion. Perturb **both** id checks: (1) the final filter suppresses by line ignoring `pattern_id`, **and** (2) `_separator_accept_is_associable` accepts any valid `cairn-accept` marker regardless of its `pid`. Measured: **1 failed, 8 passed**, failing exactly `test_foreign_id_marker_does_not_suppress`. Recorded as a caution: the pid-blind association edit **alone** yields 9 passed, so a one-line version of this perturbation is a false ledger entry. Restore both; confirm `git diff templates/modules/team-gated/content_scan.py` empty.` | **FOLDED** -> Chunk B acceptance, perturbation **P-B7** |
+| A27 | `**One** line covering the pattern-id partition, shared with `content-scan-detectors` rather than duplicated: the content scanner's unicode detectors now carry their own pattern ids, and a raw `U+2028` / `U+2029` flags under `unicode-line-separator`. Cross-reference both proposals and both plans **by stem**, per `AGENTS.md`.` | `**One** line covering the pattern-id partition, shared with `content-scan-detectors` rather than duplicated: the content scanner's unicode detectors now carry their own pattern ids, and a raw `U+2028` / `U+2029` flags under `unicode-line-separator`. **The same line must state the acceptance-association rule** — a `unicode-line-separator` acceptance is honoured only when it renders on the same display line as the separator, and the block form does not suppress it — because that is the adopter-visible half of [E1] and a release note that omits it ships a surprise. Cross-reference both proposals and both plans **by stem**, per `AGENTS.md`.` | **FOLDED** -> Chunk C row **C1** |
+| A28 | `**F2 — one ceremony for two plans, not two.** `content-scan-detectors` edits the **same two files** and is being planned in parallel. Its frozen-file delta is the identical pair. The batch rule this plan adopts:` | `**F2 — one ceremony for two plans, and only if it can be bounded to them.** `content-scan-detectors` edits the **same two files** and is being planned in parallel; its frozen-file delta is the identical pair. Per [E2], a shared ceremony is **not** authorized by that coincidence alone: it is authorized only over an exact, reviewed set owned by these two plans. The batch rule this plan adopts:` | **FOLDED** -> *Maintainer fence* > **F2** heading and preamble |
+| A29 | **A13**, verbatim: `* Whichever lands second records **the same two files** as the pair *this change* makes stale, and states plainly that `_gate_manifest.py verify` will report **others belonging to other workflows** — the plan asserts no total. Measured `as_of 2026-08-04`, before either plan lands: **HOLD, 17 violations — 10 `FROZEN-MODIFIED`, 3 `COLLECTION-DROPPED`, 4 `SKIP-XFAIL-NEW`**, none of them this plan's.` `* The Maintainer performs **one** supervised re-produce after both have landed, **scoped to whatever is stale at ceremony time** — which is a Maintainer review item, not a two-entry formality, and is a wider authority act than a two-file re-pin. `bootstrap/tests/_gate_preflight.py` refuses a dirty tree, but does not refuse other workflows' *committed* frozen-file edits.` | `* Whichever lands second records **the same two files** as the pair *this change* makes stale, and states plainly that `_gate_manifest.py verify` will report **others belonging to other workflows** — the plan asserts no total.` `* **The shared ceremony is conditional, and the condition is checked before it runs.** It is authorized **only** over the exact set `{templates/modules/team-gated/content_scan.py, bootstrap/tests/test_content_scan.py}`. Before the re-produce, the Maintainer enumerates the `FROZEN-MODIFIED` / `COLLECTION-DROPPED` / `SKIP-XFAIL-NEW` paths from `bootstrap/tests/_gate_manifest.py verify`; **if any member falls outside that set, the shared ceremony is off** and each unrelated surface takes its own disposition first. A blanket re-produce would bless concurrently-landed frozen-surface changes nobody reviewed.` `* **No mechanism enforces that condition today, and this plan does not build one.** Measured: `bootstrap/tests/_gate_preflight.py:1163`-`1170` derives the blessing scope as bare **counts** (`modified` / `added` / `removed`, plus collection before/after) and `draft_message` prints those counts; it names **no paths** and refuses nothing. Only `bootstrap/tests/_gate_manifest.py:364` names paths, in `verify` output a human reads. Adding a refusal is `_gate_preflight.py`'s surface — outside this plan's two files and inside `bootstrap/REANCHOR_RUNBOOK.md`'s Maintainer-only territory — so the condition is discharged by the Maintainer reading the enumeration, and the plan says so instead of implying a gate.` `* **The state being blessed is moving fast.** Measured `as_of 2026-08-04`: 17 violations. Re-measured `as_of 2026-08-05`, before either plan lands: **13 `FROZEN-MODIFIED`, 3 `COLLECTION-DROPPED`, 44 `SKIP-XFAIL-NEW` = 60**, none of them this plan's. Any count written here is stale when read; the enumeration is taken **at ceremony time**, not quoted from this plan.` | **FOLDED** -> *Maintainer fence* > **F2** bullets (violation counts dropped per A29's own rule) |
+| A30 | *(added — new Chunk B test row)* | New Chunk B row **B11**, in `bootstrap/tests/test_content_scan.py`: `TestCollectionIntegrity::test_no_duplicate_test_class_or_method_names` — parse **this module's own source** with the standard-library `ast` (no new dependency; `bootstrap/DEPENDENCY_BUDGET.md` unaffected) and assert that (i) no two top-level `ClassDef` nodes share a name and (ii) within each class, no two `FunctionDef`/`AsyncFunctionDef` nodes share a name. This is [E3]'s mechanical guard: it fires **inside the file** at the moment a second plan appends a colliding class, where a collection-count check fires only after nodes have already vanished. Measured: the prototype returns `clean` against `bootstrap/tests/test_content_scan.py` at HEAD today. | **FOLDED** -> Chunk B row **B11** |
+| A31 | *(added — new perturbation)* | `* **Perturbation P-B9 — B11 can fire (hazard-side, RUN, transient).** Append a second `class TestSeparatorDetection` carrying one method to `bootstrap/tests/test_content_scan.py`; B11 fails naming `duplicate top-level class: TestSeparatorDetection`. Repeat with a duplicate **method** name inside one class; B11 fails naming `duplicate method <Class>.<name>`. Delete both; confirm `git status --short` clean. **This is the one perturbation in the plan whose subject is the test module rather than production code, and that is correct, not an exception**: the hazard [E3] names *is* a property of the test module's own source, so perturbing that source is perturbing the hazard, not softening an assertion. Measured on standalone hazard modules: a 5-method class followed by a 1-method class of the same name collects **1** node, and a class with a duplicated method collects **2** of 3 — in both cases silently, with no error and no warning, which is exactly why a count check cannot see it.` | **FOLDED** -> Chunk B acceptance, perturbation **P-B9** |
+| A32 | **A17**, verbatim: **Shared-node naming convention, binding on both plans.** The coexistence node lives in a class named for its owning plan — `TestSeparatorDetectionCoexistence` here, and `content-scan-detectors` uses its own distinct class name. Measured hazard: a duplicate `class TestLineSeparator` in one module **shadows the entire earlier class** — a 5-method class followed by a 1-method class of the same name collects **1 test**, silently, no error, no warning. Whichever plan lands second must re-read the file rather than append blind. | **Shared-node naming convention, binding on both plans — and now enforced, not merely agreed.** The coexistence node lives in a class named for its owning plan — `TestSeparatorDetectionCoexistence` here, and `content-scan-detectors` uses its own distinct class name; whichever plan lands second re-reads the file rather than appending blind. Per [E3] the convention is **backed by B11**, which fails on a duplicate class name *or* a duplicate method name within a class, because a convention cannot protect against a failure that produces no error. Measured hazard, both shapes: a 5-method class followed by a 1-method class of the same name collects **1 test**; a class with a duplicated method collects **2** of 3 — silently in both cases. The habit is retained because the guard reports the collision, it does not resolve it. | **FOLDED** -> Chunk B **Test-class naming** note + *Sequence* **Cross-plan ordering** note |
+| A33 | **A19**, verbatim: **Zero, over 511 tracked files, `as_of 2026-08-04`** — re-measured at HEAD `6618e54`: 511 listed, 511 decode as UTF-8, **0** carry a raw `U+2028` or `U+2029`. The verdict is unchanged; only the denominator grew, as the review predicted. Re-take at implementation rather than quoting either figure. | **Zero tracked files carry a raw `U+2028` or `U+2029` — and the plan states no denominator, anywhere.** Three denominators have now been written into this plan for the same unchanged verdict: **494** (`as_of 2026-08-04`), **511** (`as_of 2026-08-04`, later that day), **520** (`as_of 2026-08-05`, this Response: 520 listed, 520 read, 0 non-UTF-8, **0** hits). A13/A14's own rule — *name the delta, assert no total* — applies here and was not applied: the load-bearing claim is **"0 hits"**, which is a stop-signal predicate, and the denominator is a moving count of unrelated commits. The implementing agent re-runs the sweep and records **the hit count and the date** in the commit body; a non-zero hit count is a Maintainer question, not an inline `cairn-accept`. | **FOLDED** -> *The measurements* > alarm fatigue, Chunk B sweep criterion, *Failure modes*, and *Verification* |
 
 ### Gate audit -- what is satisfied today, and what is not
 
@@ -1780,3 +2111,150 @@ The current canonical-interpreter focused baseline is 104 passing tests across
 count cited in review history is already stale because of unrelated landed
 work. That does not change this verdict, but it illustrates why the chunk should
 name the command and invariant rather than freeze an incidental denominator.
+
+### Sharpening -- Claude (author) -- 2026-08-05 (the inline fold of A1--A33)
+
+**Model**: claude-opus-5. **Standing**: plan author, performing the inline fold
+the round-2 External verdict requires. Written at revision `ec57bf0` under
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13),
+`PYTHONDONTWRITEBYTECODE=1`.
+
+**Maintainer disposition of the REVISE round.** The authorizing instruction,
+quoted verbatim and visually isolated:
+
+> Go ahead with implementation once you've revised these. I don't want another review round
+
+That instruction disposes of **the review round**, which is exactly the escape
+this plan's own fence contemplates ("the External reviewer, *or the Maintainer*,
+disposes of the REVISE"). It is **not** a bypass of the plan-review precondition:
+the required External section is in the tree, and the Maintainer holds the
+standing to dispose of its findings. Read narrowly, as it must be: it supplies
+**no** Maintainer credential, **no** signing ref, **no** AST re-anchor ceremony,
+and **no** approval to push. The re-pin fence (F1) and the bounded-ceremony
+condition (F2) are untouched by it and remain Maintainer-only. The one thing it
+closes beyond the round itself is the "focused External confirmation of the folded
+B9/B10 refusal and ceremony contract" the verdict asked for — that is
+**dispositioned, not performed**, and it is recorded as known omission (g) rather
+than claimed as coverage.
+
+**Doctrine basis for editing chunk cells in place.** `doctrine/plans.md:202`--`207`
+makes chunk-table cell text mutable in place **pre-implementation only** (plan
+status `open`; no commits in flight against the chunks being edited), and says
+inline edits driven by accepted plan-review findings land there with a Sharpening
+subsection naming which cells changed and why. This plan's status is `open` and it
+has no implementation commit, so the premise the previous Response worked
+under — that append-only forbade the fold — was false. **All 33 amendment rows are
+now folded**; each row in both amendment tables carries a `Folded into (2026-08-05)`
+column naming the cell that carries it. That column was **appended**, so every
+existing amendment cell is byte-identical to what was committed (verified by
+diffing the row prefixes). No `## Plan review`, `## Response to plan review`,
+`## Code review`, `### Sharpening` or `### Figure correction` text was rewritten.
+
+**Cells changed, and why.**
+
+* **Header** — added a `**Review disposition**` field carrying the quoted
+  authorization and the narrow reading, plus the instruction to read the chunk
+  table rather than the amendment tables. `Last update` -> 2026-08-05.
+* **Sequence** — the plan-review line now records both External rounds by commit
+  and the Maintainer disposition; the Chunk B line names B10 and B11; a
+  **Cross-plan ordering** note carries A17 -> A32's binding re-read rule.
+* **The measurements > alarm fatigue** — A19 -> A33: the denominator is gone from
+  the figure, the code block, and the prose. Only the hit count and its date
+  remain.
+* **Scope** — A22: three sites -> **four**, naming the final filter at
+  `content_scan.py:409` and the new helper. A15: the grep figure is re-derived and
+  explicitly demoted — the conclusion now rests on the `content_scan_runner.py`
+  fingerprint argument, with `bootstrap/security_check.py`'s `scan_targets()`
+  added as a second case where grep would have falsified a true claim.
+* **Maintainer fence** — A14 applied to **F1** (name the two files, state no
+  total). A28 rewrote **F2**'s heading and preamble; A29 replaced its bullets with
+  the bounded-ceremony condition, the *checked-by-opening-it* finding that
+  `_gate_preflight.py:1164`--`1170` computes counts and refuses nothing, and the
+  explicit statement that **this plan builds no gate**.
+* **Chunk A acceptance** — A18: the `25 nodes` count is replaced by a node-id-set
+  superset invariant with a named command. The behaviour-identity bullet now states
+  why the material cannot come from the artifact under test.
+* **Chunk B** — the chunk that carried the reviewer's named contradiction.
+  * Row **B3** gained A9 -> A24's two docstring clauses (display-line association;
+    the block form does not suppress).
+  * Row **B4** gained A16 (both code points **and** the widened guard reading the
+    test module's own path).
+  * Row **B5** gained A4 (parametrized into two nodes).
+  * Row **B6** is **replaced** by **B6a** and **B6b** (A1); B6b is marked as the
+    security-critical assertion whose only perturbation is the two-site P-B7.
+  * Rows **B9a / B9b / B9c** replace the pinning **B9** (A6 -> A20). **This is the
+    contradiction the reviewer named, and it is gone**: the cells now *refuse* the
+    cross-separator acceptance and pin the honoured path, and each says in so many
+    words *do not build the pin*.
+  * Row **B10** is new (A21) — the production refusal.
+  * Row **B11** is new (A30) — the AST duplicate-name guard, covering duplicate
+    **classes and methods**.
+  * A **Test-class naming** note carries A32 and names which rows are production.
+* **Chunk B acceptance** — A10 (suite delta, no absolute), A18 (node-id set), A12
+  (`check_cairn` delta plus scoped-clean, **without** the clause the Figure
+  correction withdrew), A33 (independent sweep, no denominator), A5 (P-B2 both
+  directions), A2 (P-B3 -> B6a only), A26 (P-B7 two-site, with the explicit warning
+  that the one-site form is a false ledger entry), A25 (P-B8 -> the refusal, with
+  the superseded `{i, i+1}` form marked *do not run*), A31 (P-B9). The
+  future-states and channel-note bullets now cover B9a--B9c, B10 and B11.
+* **Chunk C** — row **C1** gained A27 (the release note must state the
+  acceptance-association rule and the block-form refusal).
+* **Plan-level acceptance** — A11 (delta), A18, the new node list, and the
+  perturbation count corrected from **six to eleven** with the two test-source
+  perturbations named and justified rather than glossed.
+* **Author-accounting** — A23 (edge case: divergence closed for this id, and the
+  superseded pin called out), A24 (the association invariant, the refused-marker
+  failure mode), A1 (B6a/B6b invariant split), A30/A31 (collection-integrity
+  invariant), A33 (alarm-fatigue bullet), plus known omissions (a) rehomed to
+  `content-scan-detectors`, (f) B11's residual, (g) the dispositioned confirmation.
+* **Verification** — A33 (sweep with no denominator, and *not* via `check_cairn`),
+  A14 (gate-integrity note), the node-id-set capture added, "six perturbations"
+  -> eleven with the record-named-nodes rule, and a correction of the templated
+  slot's "the same ones CI enforces" wording.
+* **Lasting-truth migration** — one row **appended** (A24's residue). No existing
+  entry edited; the section's own rule is append-only and that is what was done.
+
+**Figures re-derived at revision `ec57bf0`, `as_of 2026-08-05`** (nothing carried
+forward):
+
+| Figure | Previously stated | Measured now | Disposition |
+|---|---|---|---|
+| Corpus sweep hits / denominator | 0 of 494; 0 of 511; 0 of 520 | **0 hits**, all tracked files decoding as UTF-8 | verdict holds; **denominator deleted** everywhere (A33) |
+| `test_content_scan.py` collection | 25 nodes | 25 collected, 25 passed | **count removed from every criterion**; replaced by a node-id-set superset invariant |
+| Focused pair `test_content_scan.py` + `test_security_stack.py` | 104 (reviewer's sharpening) | **104 passed** | reproduces; **not** written into any cell — it is not this plan's surface and would be another frozen denominator |
+| `quality_gate.py --sub neutrality` | `fail=95` `as_of 2026-08-04` | `fail=95 info=21` | reproduces; predicate restated as a delta, figure kept only as a labelled orientation snapshot |
+| `frozen_files` entries | 164, both target files present | **164**, both present | reproduces |
+| Whole-tree `check_cairn` | 180 files / 195 files / 176 files | `OK -- 177 Markdown file(s); no issues; 48 external link(s) not probed` | **fourth distinct count in four readings**; no count written into any cell, verdict-only predicate retained |
+| `_gate_manifest.py verify` violations | 17 (08-04) -> 60 (08-05 am) | materially larger again the same afternoon | **count deleted from F2** per A29's own rule; the enumeration is taken at ceremony time |
+| Cited line numbers: `content_scan.py` `:45` `:137` `:144` `:193` `:240` `:259` `:261` `:295` `:376` `:390` `:401`--`403` `:409`; `test_content_scan.py` `:48`--`52` `:65`; `_gate_manifest.py` `:165`--`167` `:364`; `check_cairn.py` `:91`--`94`; `content_scan_runner.py` `:299` `:403`; `security_check.py` `:63` | various | **all resolve**, character-for-character where quoted; the ternary is still at `content_scan.py:402` | reproduce |
+| `_gate_preflight.py` blessing scope is counts-only | `:1163`--`1170` | **`:1164`--`1170`** is the `scope = {...}` dict of `sum(1 for ...)` counts; names no paths, refuses nothing | citation corrected by one line; the finding is unchanged |
+| AST duplicate-name guard prototype | clean on the real module; flags both hazard shapes | **clean** on `test_content_scan.py`; on a 4-line hazard module (one class defining `test_one` twice plus `test_two`) the prototype flags `duplicate method <Class>.test_one` and pytest collects **2 of 3** nodes silently | reproduces. The hazard module was a scratch file, not a tree artifact; construct it to re-check |
+
+**Three figures I deliberately did not restate rather than carry.** (1) Every
+perturbation pass/fail total in the review history — they were measured against a
+node set this fold changes (B5 -> 2 nodes, B6 -> 2, B9 -> 3, B11 new), so the cells
+now specify **which named nodes** go red and green. (2) Any absolute whole-suite
+figure — the predicate is a delta and running the 1700-node suite here would only
+mint a fourth stale number. (3) The security-stack count the reviewer flagged as
+stale; the reviewer's own point is that a chunk should not freeze it.
+
+**One deviation from an amendment's literal text, recorded rather than slipped
+in.** A30 names the guard's class `TestCollectionIntegrity`. A32 makes
+plan-specific test-class names **binding on both plans**, and B11's own residual is
+that a duplicate of its class name silently shadows the guard itself — a generic
+name is the most likely collision in the tree. The two amendments conflict, so the
+fold applies the later binding one: the class is
+`TestSeparatorDetectionCollectionIntegrity`. Named in the B11 cell and here.
+
+**Verification post-sharpening.**
+
+* `~/conda_envs/lhm/bin/python3.13 scripts/claim_check.py
+  dev/plans/separator-detection.md` -> clean, no hard flags.
+* `~/conda_envs/lhm/bin/python3.13 scripts/check_cairn.py
+  dev/plans/separator-detection.md` -> OK, no issues.
+* The plan re-reads coherently end-to-end, and the chunk table now stands alone:
+  an implementer who reads only Chunks A--C executes the post-[E1] contract, builds
+  the refusal instead of the waiver, and runs no perturbation this fold has
+  invalidated.
+
+This subsection is append-only.
