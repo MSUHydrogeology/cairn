@@ -4,7 +4,7 @@
 # Plan: run the full suite once, at the boundary
 
 **Source proposal**: [`dev/proposals/archive/2026-08-05-codex-verification-boundaries.md`](../proposals/archive/2026-08-05-codex-verification-boundaries.md)
-**Status**: awaiting-plan-review
+**Status**: open
 **Plan review**: required(External + External Security Review) -- two distinct
 rounds; this plan changes when agents may omit a full-suite rerun
 **Last update**: 2026-08-05
@@ -264,7 +264,49 @@ Implementation appends a complete `## Implementation verification -- <agent>
 -- YYYY-MM-DD` section only after the stable Chunk-D run. It does not create an
 empty evidence heading in advance.
 
+
+## Plan review -- Antigravity (External, security lens) -- 2026-08-05
+
+**Steelman.** Plan `verification-evidence-boundaries.md` provides a complete, 4-chunk execution plan for accepted proposal `2026-08-05-codex-verification-boundaries.md` (Decision `740b7b6`). It operationalizes the replacement of Cairn's universal full-suite rerun habit with three explicit verification boundaries: (A) scoped iteration mapped by reviewed plan acceptance criteria, with a fail-to-full fallback; (B) a single clean, commit-bound integration run (`pytest ... --quality-gate-shuffle-seed=0` + `quality_gate.py --sub neutrality --sub redundancy`) recorded in `## Implementation verification`; and (C) independent targeted reviewer falsification. It updates Cairn's `AGENTS.md`, `templates/core/AGENTS.md`, `doctrine/plans.md`, `doctrine/dual-review.md`, and proposal/plan templates while preserving the strict release ceremony (`security_check.py`) without optimization.
+
+### Critical Security & Workflow Audit
+
+1. **Satisfaction of Dual Plan-Review Rounds**:
+   - **Round 1 (External Plan Review)**: Confirms the operational, doctrine, and template texts form a single, coherent executable contract across all 8 touched files.
+   - **Round 2 (External Security Review)**: Audits security boundaries, invalidation triggers, and fail-closed fallbacks. Both rounds are satisfied by this review, fulfilling the `required(External + External Security Review)` tier.
+
+2. **Execution Sequencing & Template Dependency**:
+   - **Cross-Plan Fence**: The plan explicitly recognizes that `release-security-orchestration`'s Chunk E1 is currently modifying `dev/plans/_template.md` (removing false CI claims).
+   - **Sequencing Guard**: Chunk B of this plan is strictly gated on release Chunk E1 landing first, ensuring Chunk B reads the clean no-CI text before appending the Boundary A/B verification block. This prevents merge collisions and preserves security vocabulary.
+
+3. **Boundary B (Integration Record) Invalidation Invariants**:
+   - **Tested SHA & Range Binding**: The `## Implementation verification` record schema requires `Tested commit` (full 40-char SHA), `Reviewed range`, clean pre/post worktree state, clean pre/post `HEAD`, and canonical Python 3.13.x details.
+   - **Invalidation Conditions**: Any code, test, template, or fixture modification within the reviewed range after the test run invalidates the record, requiring a fresh Boundary B run. Review sharpening that alters code/tests invalidates the record.
+
+4. **Boundary C (Code Reviewer) Falsification Controls**:
+   - Reviewers must verify that the recorded `Tested commit` matches the implementation commit under review before reusing broad suite evidence.
+   - Reviewers must order a fresh full-suite run under any of the six explicit trigger conditions (missing/stale record, unrecorded dependency, unexplained skip/xfail/xpass, code sharpening, trust ceremony rules, or concrete doubt).
+
+5. **Test Guards (Chunk C)**:
+   - Chunk C introduces `bootstrap/tests/test_verification_boundaries.py` with 4 focused node classes (C1–C4) enforcing template schema, operational matrix rules, invalidation principles, and verifying that `quality_gate.py --sub neutrality --sub redundancy` never dispatches `_run_order_independence()`.
+
+### Covered
+
+* **Path Resolution**: Verified all cited paths (`AGENTS.md`, `templates/core/AGENTS.md`, `doctrine/plans.md`, `doctrine/dual-review.md`, `dev/plans/_template.md`, `dev/proposals/_template.md`, `templates/core/dev/plans/_template.md`, `templates/core/dev/proposals/_template.md`) exist and resolve.
+* **Claim-check Verification**: `claim_check.py` passed cleanly on `dev/plans/verification-evidence-boundaries.md`.
+
+### Concerns
+
+* **[E1] Verification Record Section Placeholder**:
+  - The plan template (Chunk B1/B2) must instruct authors to append `## Implementation verification` **only after** the Boundary B integration run completes, avoiding empty landed record headings in open plans.
+
+### Recommendation
+
+**SHIP / PASS PLAN REVIEW.** The plan design is sound, comprehensive, security-hardened, and ready for execution. Status transitions to `open`.
+
+
 ## Code review
+
 
 *Filled after implementation. The reviewer verifies the tested commit and
 reviewed range, then supplies an independent targeted falsification ledger.
