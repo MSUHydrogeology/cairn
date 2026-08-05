@@ -803,12 +803,19 @@ class TestOrchestrator:
         # (usage / env / network error) is degraded, never reported as findings.
         # Force "tool present" so the classification (not the absent branch) runs.
         monkeypatch.setattr(orch.shutil, "which", lambda _n: "/usr/bin/pip-audit")
+        monkeypatch.setattr(orch, "active_pip_audit_version",
+                            lambda: orch._PIP_AUDIT_SCHEMA_VERSION)
         monkeypatch.setattr(orch, "_run_tool",
                             lambda *a, **k: orch.ToolRun(2, "ran", "", ""))
         status, tier = orch.run_pip_audit_pass(tmp_path, allow_egress=True)
         assert tier == orch._AGG_DEGRADED and "error" in status
+        vulnerable = (
+            '{"dependencies": [{"name": "demo", "version": "1.0", '
+            '"vulns": [{"id": "CVE-2099-0001", '
+            '"fix_versions": ["1.1"]}]}], "fixes": []}')
         monkeypatch.setattr(orch, "_run_tool",
-                            lambda *a, **k: orch.ToolRun(1, "ran", "", ""))
+                            lambda *a, **k: orch.ToolRun(
+                                1, "ran", vulnerable, ""))
         status2, tier2 = orch.run_pip_audit_pass(tmp_path, allow_egress=True)
         assert tier2 == orch._AGG_FINDINGS
 
@@ -1069,14 +1076,17 @@ def test_a_t6_descendants_do_not_outlive_the_timeout(orchb, tmp_path,
     child = (
         "import subprocess, sys, time\n"
         "subprocess.Popen([sys.executable, '-I', '-c',\n"
-        "    \"import time, pathlib; time.sleep(5); \"\n"
+        "    \"import signal, time, pathlib; \"\n"
+        "    \"signal.signal(signal.SIGTERM, signal.SIG_IGN); \"\n"
+        "    \"time.sleep(3); \"\n"
         f"    \"pathlib.Path(r'{sentinel}').write_text('survived')\"])\n"
         "time.sleep(120)\n"
     )
     monkeypatch.setattr(orchb, "_TOOL_TIMEOUT_S", 1.5)
+    monkeypatch.setattr(orchb, "_TOOL_KILL_GRACE_S", 0.5)
     run = orchb._run_tool(_probe(child), label="spawner")
     assert run.status.startswith("timeout"), run.status
-    time.sleep(7)
+    time.sleep(4)
     assert not sentinel.exists(), "grandchild outlived the timeout"
 
 
@@ -1251,6 +1261,9 @@ _PA_ONE_SKIPPED = (
 _PA_ALL_RESOLVED = (
     '{"dependencies": [{"name": "requests", "version": "2.31.0", "vulns": []}, '
     '{"name": "jinja2", "version": "3.1.2", "vulns": []}], "fixes": []}')
+_PA_VULNERABLE = (
+    '{"dependencies": [{"name": "demo", "version": "1.0", "vulns": '
+    '[{"id": "CVE-2099-0001", "fix_versions": ["1.1"]}]}], "fixes": []}')
 _PA_ABSENT_NAMES = (
     '{"dependencies": ['
     '{"name": "cairn-probe-not-installed-a", "version": "0.0.1", "vulns": []}, '
@@ -1270,6 +1283,8 @@ def _only_child_reported_unknowns(orch, monkeypatch):
                         lambda *a, **k: orch.LocalBuilds(0, 0, 0, ()))
     monkeypatch.setattr(orch, "conda_non_coverage",
                         lambda *a, **k: orch.CondaScope(False, 0, 0, 0))
+    monkeypatch.setattr(orch, "active_pip_audit_version",
+                        lambda: orch._PIP_AUDIT_SCHEMA_VERSION)
 
 
 def test_d_t1_a_skipped_distribution_is_never_scanned(orchb):
@@ -1364,6 +1379,58 @@ def test_d_t2b_an_unreadable_enumeration_fails_closed(orchb):
         shape = orchb.classify_pip_audit_output(hostile, schema_established=True)
         assert shape.established is False, hostile
         assert "dependencies" in shape.note, hostile
+
+
+def test_d_t2c_schema_binding_uses_the_active_interpreter_version(
+        orchb, tmp_path, monkeypatch):
+    _only_child_reported_unknowns(orchb, monkeypatch)
+    monkeypatch.setattr(orchb.shutil, "which", lambda _n: "/usr/bin/pip-audit")
+    calls = []
+    monkeypatch.setattr(
+        orchb, "_run_tool",
+        lambda *a, **k: calls.append((a, k)) or
+        orchb.ToolRun(0, "ran", _PA_ALL_RESOLVED, ""))
+
+    monkeypatch.setattr(orchb, "active_pip_audit_version", lambda: "99.0.0")
+    status, tier = orchb.run_pip_audit_pass(tmp_path, allow_egress=True)
+    assert tier == orchb._AGG_INCOMPLETE and "version" in status
+    assert calls == [], "an unestablished parser must not launch the lookup"
+
+    monkeypatch.setattr(orchb, "active_pip_audit_version",
+                        lambda: orchb._PIP_AUDIT_SCHEMA_VERSION)
+    status, tier = orchb.run_pip_audit_pass(tmp_path, allow_egress=True)
+    assert tier == orchb._AGG_CLEAN, status
+    assert len(calls) == 1
+
+
+def test_d_t2d_report_findings_and_exit_code_cannot_contradict(
+        orchb, tmp_path, monkeypatch):
+    # The vulnerable payload was emitted by pip-audit 2.10.1's JsonFormat from
+    # a ResolvedDependency + VulnerabilityResult, using output_desc=False and
+    # output_aliases=False. It is formatter evidence, not a parser-authored
+    # shape.
+    _only_child_reported_unknowns(orchb, monkeypatch)
+    monkeypatch.setattr(orchb.shutil, "which", lambda _n: "/usr/bin/pip-audit")
+
+    def _run(code, report):
+        monkeypatch.setattr(
+            orchb, "_run_tool",
+            lambda *a, **k: orchb.ToolRun(code, "ran", report, ""))
+        return orchb.run_pip_audit_pass(tmp_path, allow_egress=True)
+
+    status, tier = _run(0, _PA_VULNERABLE)
+    assert tier == orchb._AGG_FINDINGS and "findings" in status
+    status, tier = _run(1, _PA_VULNERABLE)
+    assert tier == orchb._AGG_FINDINGS and "findings" in status
+    status, tier = _run(1, _PA_ALL_RESOLVED)
+    assert tier == orchb._AGG_DEGRADED and "contradictory" in status
+
+    malformed = (
+        '{"dependencies": [{"name": "demo", "version": "1.0", '
+        '"vulns": [{"id": "CVE-2099-0001"}]}], "fixes": []}')
+    coverage = orchb.classify_pip_audit_output(malformed)
+    assert coverage.vulnerabilities == 0
+    assert coverage.scanned == 0 and coverage.unknown == 1
 
 
 def test_d_t3_malformed_output_is_never_clean(orchb):

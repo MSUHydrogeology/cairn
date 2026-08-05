@@ -26,7 +26,7 @@ security lens)` in its own right"*) and independently triggered: `AGENTS.md` >
 Internal round — see *Plan review — the brief*. **No implementation commit lands
 before a `### Plan review -- <reviewer> -- YYYY-MM-DD` sub-heading is in the
 tree.**
-**Last update**: 2026-08-04
+**Last update**: 2026-08-05
 **Opened**: 2026-08-04
 
 ## Source proposal
@@ -2648,3 +2648,37 @@ Maintainer AST/gate ceremonies, or serialized E7. Concurrent content-scan edits
 were not examined.
 
 This section is append-only once written.
+
+## Corrective implementation -- Codex (implementation role) -- 2026-08-05
+
+CR1--CR3 are implemented. This section records the response but does **not**
+clear the reviewing Codex section above: because Codex supplied both those
+findings and these corrective bytes, an independent reviewer or the Maintainer
+must re-run the named attacks before the plan can leave `review`.
+
+* **CR1 -- closed in code.** `active_pip_audit_version()` reads distribution
+  metadata from the same `sys.executable` that the fixed `-I -m pip_audit` argv
+  uses. Missing, unreadable, or non-`2.10.1` metadata prevents the lookup from
+  launching and returns INCOMPLETE; a valid-looking adjacent JSON document
+  cannot license that version mismatch. The regression exercises mismatch and
+  exact-match directions and asserts that only the latter reaches the child.
+* **CR2 -- closed in code.** The classifier validates each vulnerability's
+  formatter-required `id` and `fix_versions`, counts validated vulnerabilities,
+  and makes CLEAN require zero findings as well as zero UNKNOWN. A structured
+  finding dominates an erroneous exit 0; exit 1 with an established zero-
+  finding document is contradictory evidence and degrades. The positive
+  fixture was emitted by pip-audit 2.10.1's own `JsonFormat` from a
+  `ResolvedDependency` and `VulnerabilityResult`, not authored from this
+  parser's expected shape.
+* **CR3 -- closed in code.** `_run_tool` captures the new session's process-
+  group id at creation. Cleanup now observes group existence independently of
+  the leader, grants TERM its bounded grace, then sends KILL to a surviving
+  group. Failure to establish group exit preserves the existing
+  `cleanup-failed` suffix. A grandchild that explicitly ignores TERM no longer
+  writes its post-escalation sentinel.
+
+**Verification so far.** Canonical Python 3.13.13 with
+`PYTHONDONTWRITEBYTECODE=1`: `bootstrap/tests/test_security_stack.py` reports
+**98 passed**; direct Bandit over `run_security_audit.py` reports zero
+MEDIUM/HIGH findings; `py_compile` and `git diff --check` are clean. The broad
+suite and gate attribution are recorded after the stable corrective commit.

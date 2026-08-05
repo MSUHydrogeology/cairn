@@ -399,7 +399,26 @@ def _wait_bounded(proc, out_p: Path, err_p: Path, timeout_s: float,
             return True, False
 
 
-def _kill_tree(proc) -> bool:
+def _process_group_alive(process_group: int) -> bool:
+    """Return whether a POSIX process group still has a live member."""
+    try:
+        os.killpg(process_group, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def _wait_process_group_exit(process_group: int, deadline: float) -> bool:
+    while time.monotonic() < deadline:
+        if not _process_group_alive(process_group):
+            return True
+        time.sleep(_TOOL_POLL_S)
+    return not _process_group_alive(process_group)
+
+
+def _kill_tree(proc, process_group: int | None = None) -> bool:
     """Terminate, then kill, the child **and its descendants**.
 
     On POSIX the child is started in its own session/process group, so the
@@ -407,24 +426,46 @@ def _kill_tree(proc) -> bool:
     timeout through a detached helper is the failure this closes. Windows has
     no equivalent here and is a **named residual**, not a claim. Returns
     ``False`` if cleanup could not be completed -- reported, never silent."""
-    for sig in (signal.SIGTERM, _SIGKILL):
+    if not _POSIX:  # pragma: no cover -- Windows residual
         try:
-            if _POSIX:
-                os.killpg(os.getpgid(proc.pid), sig)
-            else:  # pragma: no cover -- Windows residual
-                proc.kill()
-        except ProcessLookupError:
-            break
-        except OSError:
-            return False
-        try:
+            proc.kill()
             proc.wait(timeout=_TOOL_KILL_GRACE_S)
-            break
-        except subprocess.TimeoutExpired:
-            continue
-    else:
+            return True
+        except ProcessLookupError:
+            return True
+        except (OSError, subprocess.TimeoutExpired):
+            return False
+
+    group = proc.pid if process_group is None else process_group
+    try:
+        os.killpg(group, signal.SIGTERM)
+    except ProcessLookupError:
+        return True
+    except OSError:
         return False
-    return True
+
+    # The leader may exit immediately while a descendant ignores SIGTERM.
+    # Group existence, not leader status, decides whether escalation is owed.
+    if _wait_process_group_exit(
+            group, time.monotonic() + _TOOL_KILL_GRACE_S):
+        try:
+            proc.wait(timeout=0)
+        except (ProcessLookupError, subprocess.TimeoutExpired):
+            pass
+        return True
+
+    try:
+        os.killpg(group, _SIGKILL)
+    except ProcessLookupError:
+        return True
+    except OSError:
+        return False
+    try:
+        proc.wait(timeout=_TOOL_KILL_GRACE_S)
+    except (ProcessLookupError, subprocess.TimeoutExpired):
+        pass
+    return _wait_process_group_exit(
+        group, time.monotonic() + _TOOL_KILL_GRACE_S)
 
 
 def _read_capped(path: Path, cap: int) -> tuple[bytes, bool]:
@@ -505,6 +546,7 @@ def _run_tool(argv: list[str], *, label: str,
                     stdin=subprocess.DEVNULL,
                     stdout=handle_out, stderr=handle_err, **popen_kwargs,
                 )
+                process_group = proc.pid if _POSIX else None
             finally:
                 handle_out.close()
                 handle_err.close()
@@ -512,7 +554,7 @@ def _run_tool(argv: list[str], *, label: str,
                                                   budget, limit)
             cleanup_ok = True
             if timed_out or overflowed:
-                cleanup_ok = _kill_tree(proc)
+                cleanup_ok = _kill_tree(proc, process_group)
             else:
                 proc.wait()
             out_raw, out_over = _read_capped(out_p, limit)
@@ -740,6 +782,9 @@ class Coverage(NamedTuple):
     #: enumeration substituted for it is visible by name and not only by
     #: arithmetic.
     names: tuple[str, ...] = ()
+    #: Count of validated vulnerability entries in the child's structured
+    #: report. CLEAN requires this to be zero independently of the exit code.
+    vulnerabilities: int = 0
 
 
 class LocalBuilds(NamedTuple):
@@ -807,6 +852,30 @@ def pip_audit_argv(*, cache_dir: Path) -> list[str]:
     ]
 
 
+def active_pip_audit_version() -> str | None:
+    """Return pip-audit's version in the interpreter used by ``-m``.
+
+    The console script on ``PATH`` is deliberately irrelevant: the fixed argv
+    executes ``sys.executable -I -m pip_audit``, so the matching distribution
+    metadata must come from that same interpreter.
+    """
+    try:
+        return importlib.metadata.version("pip-audit")
+    except (importlib.metadata.PackageNotFoundError, OSError, ValueError):
+        return None
+
+
+def _valid_pip_audit_vulnerability(value: object) -> bool:
+    """Validate the 2.10.1 JSON fields needed to count a finding."""
+    if not isinstance(value, dict):
+        return False
+    vuln_id = value.get("id")
+    fix_versions = value.get("fix_versions")
+    return (isinstance(vuln_id, str) and bool(vuln_id.strip())
+            and isinstance(fix_versions, list)
+            and all(isinstance(item, str) for item in fix_versions))
+
+
 def classify_pip_audit_output(
     text: str, *, schema_established: bool | None = None,
 ) -> Coverage:
@@ -852,7 +921,7 @@ def classify_pip_audit_output(
             "child enumerated is UNKNOWN. A shape this parser was not measured "
             "against fails closed rather than being read optimistically. "
             f"(top level seen: {sorted(report)[:8] if isinstance(report, dict) else type(report).__name__})")
-    scanned = unknown = 0
+    scanned = unknown = vulnerabilities = 0
     names: list[str] = []
     for entry in entries:
         if not isinstance(entry, dict):
@@ -867,7 +936,14 @@ def classify_pip_audit_output(
             unknown += 1
         elif isinstance(entry.get("version"), str) \
                 and isinstance(entry.get("vulns"), list):
-            scanned += 1
+            vulns = entry["vulns"]
+            if all(_valid_pip_audit_vulnerability(vuln) for vuln in vulns):
+                scanned += 1
+                vulnerabilities += len(vulns)
+            else:
+                # A malformed vulnerability entry makes the distribution's
+                # disposition unknown; it is never silently counted as clean.
+                unknown += 1
         else:
             # Neither established shape -- counted, never dropped.
             unknown += 1
@@ -877,7 +953,7 @@ def classify_pip_audit_output(
         f"and queried, {unknown} UNKNOWN (unresolved by the tool or not matching "
         f"the schema established against pip-audit {_PIP_AUDIT_SCHEMA_VERSION}). "
         f"{_DISPOSITION_NO_MATCH} is {_NO_MATCH_NOT_OBSERVABLE}.",
-        tuple(names))
+        tuple(names), vulnerabilities)
 
 
 def local_build_disposition(raw: str | None) -> str:
@@ -1090,6 +1166,18 @@ def run_pip_audit_pass(repo_root: Path, *, allow_egress: bool,
         return ("+".join(name for name, _ in blockers),
                 max(tier for _, tier in blockers))
 
+    observed_version = active_pip_audit_version()
+    if observed_version != _PIP_AUDIT_SCHEMA_VERSION:
+        seen = observed_version if observed_version is not None else "unreadable"
+        print("\n[pip-audit] COVERAGE NOT ESTABLISHED -- the active "
+              f"interpreter provides pip-audit {seen}, but this parser was "
+              f"established against {_PIP_AUDIT_SCHEMA_VERSION}. The lookup "
+              "will not run and this pass cannot return CLEAN.",
+              file=sys.stderr)
+        return "pip-audit:schema-version-unestablished", _AGG_INCOMPLETE
+    print(f"[pip-audit] schema binding: active interpreter distribution "
+          f"matches established pip-audit {_PIP_AUDIT_SCHEMA_VERSION}.")
+
     with tempfile.TemporaryDirectory(prefix="cairn-pip-audit-cache-") as cache:
         run = _run_tool(pip_audit_argv(cache_dir=Path(cache)),
                         label="pip-audit",
@@ -1109,7 +1197,8 @@ def run_pip_audit_pass(repo_root: Path, *, allow_egress: bool,
     unknown_total = coverage.unknown + builds.unknown + scope.unknown
     print(f"\n[pip-audit] coverage over the {len(coverage.names)} "
           f"distribution(s) THE TOOL ITSELF REPORTED: {_DISPOSITION_SCANNED} "
-          f"{coverage.scanned}, {_DISPOSITION_UNKNOWN} {unknown_total} "
+          f"{coverage.scanned}, VULNERABILITIES {coverage.vulnerabilities}, "
+          f"{_DISPOSITION_UNKNOWN} {unknown_total} "
           f"(sources queried: {', '.join(_PINNED_ADVISORY_SOURCES)} -- accepted "
           "non-coverage, NOT evidence of safety).")
     print(f"[pip-audit] {_DISPOSITION_NO_MATCH}: {_NO_MATCH_NOT_OBSERVABLE}.")
@@ -1125,8 +1214,17 @@ def run_pip_audit_pass(repo_root: Path, *, allow_egress: bool,
           " local environment would make an unrepresentative classification"
           " look like a portable security fact.")
 
-    if run.code == 1:
+    if coverage.vulnerabilities:
+        if run.code == 0:
+            print("[pip-audit] EXIT/REPORT CONTRADICTION -- exit 0 accompanied "
+                  "a structured report containing vulnerabilities; the report "
+                  "is authoritative for the positive finding.", file=sys.stderr)
         return "pip-audit:findings", _AGG_FINDINGS
+    if run.code == 1:
+        print("[pip-audit] EXIT/REPORT CONTRADICTION -- exit 1 reported "
+              "findings but the established structured report contains none; "
+              "refusing to classify contradictory evidence.", file=sys.stderr)
+        return "pip-audit:contradictory-report", _AGG_DEGRADED
     if not coverage.established or unknown_total:
         return "pip-audit:coverage-unknown", _AGG_INCOMPLETE
     return "pip-audit:clean", _AGG_CLEAN
