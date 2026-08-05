@@ -2351,3 +2351,110 @@ all, which is a smaller authorization than a venv plus an index fetch. **It was
 not run.** "Probably local" is not the same as local, the fence is about network
 activity rather than about installs, and an implementing agent guessing at that
 distinction is exactly the failure the fence prevents.
+
+### Chunk 0 -- 0c and 0d completed, also with no network action -- 2026-08-05
+
+**The fence was drawn around the wrong thing, and the previous evidence
+sub-section inherited that.** It recorded 0c as *"Unmeasured. It needs a real
+audit run, which contacts the vulnerability service."* That is false for what 0c
+actually asks. 0c asks for the **shape** of `--format json` output -- three keys.
+A shape is a property of the *formatter*, and the formatter is installed source
+code on this machine. Reading it is not a network action, and it is not the
+`--dry-run` gamble the previous section flagged to the Maintainer either. Neither
+`--dry-run` nor any audit was run. The fence stands unbreached and is now
+**discharged by a cheaper route than it anticipated**: the pinned version's own
+source.
+
+Command, and it is the whole method:
+
+```
+python3.13 -I -c "import inspect; from pip_audit._format import json as J; print(inspect.getsource(J))"
+```
+
+**0c -- the JSON schema, established.** From
+`pip_audit/_format/json.py` (`JsonFormat.format`, `_format_dep`) at the pinned
+**2.10.1**:
+
+```
+top level                {"dependencies": [...], "fixes": [...]}      <- exactly two keys
+resolved distribution    {"name", "version", "vulns": [...]}
+skipped  distribution    {"name", "skip_reason"}
+```
+
+* **The key holding enumerated distributions**: `dependencies`.
+* **The key holding vulnerabilities per distribution**: `vulns`, per resolved
+  entry -- *not* a top-level collection.
+* **Whether a skipped/unresolved set is exposed at all**: **yes, and this is the
+  load-bearing finding.** It is exposed **inline in `dependencies`**, with **no
+  separate top-level key**. A skipped entry is discriminated only by carrying
+  `skip_reason` in place of `version`/`vulns`. `_format_dep` branches on
+  `dep.is_skipped()` and returns one of the two shapes into the same list.
+
+**Why that finding is worth the chunk.** Chunk 0 said *"Chunk D's UNKNOWN count
+depends entirely on 0c"*, and it does. The natural implementation -- read a
+top-level `skipped` array, count its length -- finds **no such key**, gets zero,
+and reports **zero UNKNOWN**. That is not a wrong number in a report; it is
+**CLEAN becoming reachable on a run where the tool silently failed to resolve
+part of the dependency set**, which is the precise fail-open this leg's
+fail-closed default exists to prevent. The correct derivation is to partition
+`dependencies` on the presence of `skip_reason` and count that partition.
+
+**No such defect is in the tree.** `_PIP_AUDIT_SCHEMA_ESTABLISHED` is `False` and
+no JSON parse path was ever written, so the hazard above is a statement about
+what an implementer *would* have written from a guessed schema -- which is the
+argument for measuring first, made concrete. The fenced discipline worked.
+
+**0d -- ambient re-confirmation, established, and the answer is "both, still".**
+Read from installed source, no execution:
+
+* `PIPAPI_PYTHON_LOCATION` **still redirects enumeration** in 2.10.1 --
+  `pip_audit/_dependency_source/pip.py:87` (`os.environ.get("PIPAPI_PYTHON_LOCATION", sys.executable)`),
+  and its vendored `pip_api/_call.py:7` does the same.
+* `PIP_AUDIT_*` **still parse as configuration**, and more sharply than 0d
+  assumed: they are argparse **`default=` values**, so an ambient variable
+  silently changes a *flag's default* rather than being read at some later
+  point. `pip_audit/_cli.py` shows `PIP_AUDIT_FORMAT` (`:235`),
+  `PIP_AUDIT_VULNERABILITY_SERVICE` (`:244`), `PIP_AUDIT_OSV_URL` (`:256`) and
+  `PIP_AUDIT_LOGLEVEL` (`:53`).
+
+**So 0d's conditional does not fire.** It said that if a later version had closed
+these levers, Chunk B's tests stay but the finding is downgraded. The levers are
+open, so there is nothing to downgrade. What matters is that the boundary never
+depended on the answer: `_ENV_ALLOWLIST` in `run_security_audit.py` is a
+**closed allowlist** naming 15 variables plus the `LC_` prefix, and its own
+comment names `PIPAPI_PYTHON_LOCATION` and every `PIP_AUDIT_*` among what is
+dropped. Verified by reading the construction in `build_child_env` rather than by
+trusting the comment: the child environment is built by *inclusion* from that
+tuple. A denylist would have had to enumerate `PIP_AUDIT_OSV_URL` to stop it;
+the allowlist stops it without knowing its name.
+
+**One residual, in scope and small.** `pip_audit_argv` pins `--format`,
+`--vulnerability-service`, `--progress-spinner` and `--cache-dir`, and
+deliberately omits `--osv-url`. With the closed allowlist that is safe --
+`PIP_AUDIT_OSV_URL` cannot reach the child -- so the endpoint falls to
+`OsvService.DEFAULT_OSV_URL`, a constant inside the installed tool. But
+`pip_audit_argv`'s own docstring gives the principle that everything load-bearing
+is *"pinned here, in argv, because a narrowed claim over an ambient environment
+is"* weaker. `_PINNED_ADVISORY_SOURCES` claims osv.dev; today that claim rests on
+the tool's default constant rather than on our argv. Pinning `--osv-url`
+explicitly would make the claim ours. Recorded as a sharpening, not a defect.
+
+**What this unlocks.** 0a--0d are now all established against a named version, by
+local reads only, with the network fence unbreached:
+
+* `_PIP_AUDIT_SCHEMA_ESTABLISHED` may become `True`, with the schema above as its
+  warrant and 2.10.1 as its scope.
+* The leg can reach CLEAN, so the pre-decided fail-closed fallback is **not** what
+  ships, and the archive note's conditional row for it does not fire.
+* D-t1 and D-t6 become shippable, and their fixtures are built from the shape
+  above -- both partitions present, including a `skip_reason` entry, because a
+  fixture with only resolved entries cannot fail the way the hazard predicts.
+* The version is the scope of every claim here. A pip-audit upgrade re-opens 0c
+  and 0d; the schema is read from the installed tool, so a bump is a
+  re-measurement, not an assumption.
+
+Method note, since this plan is about not asserting what was not executed: every
+statement above came from `inspect.getsource` or a `grep` over installed files
+under `site-packages`, on the canonical interpreter
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13), `as_of`
+2026-08-05. No pip-audit run, no `--dry-run`, no venv, no index fetch.
