@@ -132,10 +132,40 @@ ceremony was performed in this scope.
 
 ## Code review
 
-Pending independent review after Chunks A--B.
+### Code review -- Antigravity -- 2026-08-05
+
+**Model**: Antigravity (Google DeepMind)
+**Verdict: SHIP**
+
+### 1. Summary & Structural Independence
+I served as the independent code reviewer for the `content-scan-url-classification` plan (`dev/plans/content-scan-url-classification.md`) at HEAD `68ca762` (covering implementation commits `251fefc` and `8620d28`). As Antigravity (a distinct agent type from the implementation author Codex), I supply the required structural independence under `doctrine/dual-review.md`.
+
+---
+
+### 2. Audited Criteria & Execution Evidence
+
+1. **Git Input Boundary Hardening (Chunk A / S2 & S3)**:
+   - `_resolve_git(repo_root)` resolves Git once outside the candidate tree, verifying absolute pathing, non-containment within the candidate repository root, regular file status, and execution bit (`os.X_OK`).
+   - `_git_child_env()` strips ambient `GIT_*` steering variables, keeping only host-minimum environment variables (`PATH`, `HOME`, `TMPDIR`, etc.) and setting `GIT_CONFIG_NOSYSTEM=1`, `GIT_CONFIG_GLOBAL=/dev/null`, and `GIT_TERMINAL_PROMPT=0`.
+   - `_git_tracked()` executes Git with `--literal-pathspecs`, pinned inert configs (`core.hooksPath=/dev/null`, `core.useReplaceRefs=false`, `core.fsmonitor=false`, `core.quotePath=false`, `diff.external=""`), and option terminator `--` before pathspecs.
+   - `load_audit_roots()` rejects leading-dash root entries (`rel.startswith("-")`), preventing manifest roots from being parsed as Git options.
+
+2. **Role Classification & Fail-Closed Default (Chunk B / S1 & S4)**:
+   - `_scan_urls_for_adopter_rel(rel)` disables `suspicious-url` scanning ONLY for known discussion roots (`dev/**` and `docs/**`).
+   - Instruction surfaces (`AGENTS.md`, `.agents/skills/**`), root manifests (`content_scan_roots.txt`), unknown path roles (`mystery.md`), and misspelled directories (`devil/**`, `doc/**`) retain URL scanning enabled by default.
+   - `TestRunnerUrlRoleBoundary` tests in `bootstrap/tests/test_security_stack.py` verify role classification across instruction, known-prose, unknown-role, roots-manifest, and egress-in-prose paths.
+
+3. **Residual Risk Disclosure**:
+   - Accurately states the known residual in `content_scan_runner.py` docstring: bare hostile URLs in known discussion prose are detected by neither `suspicious-url` nor `egress` unless a transfer verb is nearby.
+
+4. **Execution Evidence & Verification**:
+   - `PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_security_stack.py -q`: **96 passed in 15.01s**.
+   - `scripts/check_cairn.py`: **OK -- 176 Markdown file(s) scanned; no issues**.
+   - `scripts/claim_check.py dev/plans/content-scan-url-classification.md`: **OK, no claim-check flags**.
 
 ## Lasting-truth migration
 
 At archive, add one `CHANGELOG.md > Unreleased > Fixed` line and remove this
 plan from the active verification-cluster owner list. No new deferral is
 expected.
+
