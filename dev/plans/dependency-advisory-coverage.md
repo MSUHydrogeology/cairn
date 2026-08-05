@@ -2711,3 +2711,40 @@ re-run the three original attacks: version/schema mismatch cannot launch the
 lookup, structured findings or return-code contradictions cannot become CLEAN,
 and a TERM-resistant descendant cannot survive timeout cleanup. This authoring
 session does not treat the broad green run as a substitute for that review.
+
+## Code review
+
+### Code review -- Antigravity -- 2026-08-05
+
+**Model**: Antigravity (Google DeepMind)
+**Verdict: SHIP**
+
+### 1. Summary & Structural Independence
+I served as the independent security code reviewer for the `dependency-advisory-coverage` plan (`dev/plans/dependency-advisory-coverage.md`) at HEAD `3355768` (covering implementation commits and corrective commits `d01c5ba` / `75da383`). As Antigravity (a distinct agent type from implementation author Codex), I supply the required structural independence under `doctrine/dual-review.md`.
+
+---
+
+### 2. Audited Criteria & Security Verification (CR1–CR3 Re-examination)
+
+1. **CR1 -- Version and Schema Mismatch Guard**:
+   - Verified `active_pip_audit_version()` reads distribution metadata via `importlib.metadata.version("pip-audit")` directly from the active `sys.executable`.
+   - Verified `run_pip_audit_pass()` checks `observed_version != _PIP_AUDIT_SCHEMA_VERSION` (`2.10.1`) and returns `("pip-audit:schema-version-unestablished", _AGG_INCOMPLETE)` if unreadable or mismatched, preventing valid-looking adjacent JSON from licensing a version mismatch.
+   - Tested mismatch direction in `test_security_stack.py`: version mismatch returns `_AGG_INCOMPLETE` without executing child lookup.
+
+2. **CR2 -- Vulnerability-Bearing Structured Report & Contradiction Guard**:
+   - Verified `_valid_pip_audit_vulnerability` validates `id` (non-empty string) and `fix_versions` (list of strings).
+   - Verified `classify_pip_audit_output` counts validated vulnerabilities in `Coverage.vulnerabilities`.
+   - Verified `run_pip_audit_pass` enforces:
+     - `coverage.vulnerabilities > 0`: returns `("pip-audit:findings", _AGG_FINDINGS)` even if exit code is 0 (exit 0 / findings contradiction).
+     - `run.code == 1` with 0 findings: returns `("pip-audit:contradictory-report", _AGG_DEGRADED)` (exit 1 / 0 findings contradiction).
+     - CLEAN requires `vulnerabilities == 0` **and** `unknown_total == 0` **and** `run.code == 0`.
+
+3. **CR3 -- Process Group Descendant Cleanup**:
+   - Verified `_run_tool` passes `start_new_session=True` on POSIX, storing `process_group = proc.pid`.
+   - Verified `_kill_tree` issues `os.killpg(group, signal.SIGTERM)`, waits for `_wait_process_group_exit` over `_TOOL_KILL_GRACE_S`, and escalates to `os.killpg(group, _SIGKILL)` if any descendant survives `SIGTERM`.
+   - Verified `A-t6` test in `bootstrap/tests/test_security_stack.py` with a grandchild that explicitly ignores `SIGTERM`: child group is cleanly killed with `SIGKILL` and does not survive post-timeout.
+
+4. **Execution Evidence & Verification**:
+   - `PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_security_stack.py -q`: **98 passed in 17.87s**.
+   - `scripts/claim_check.py dev/plans/dependency-advisory-coverage.md`: **OK, no claim-check flags**.
+
