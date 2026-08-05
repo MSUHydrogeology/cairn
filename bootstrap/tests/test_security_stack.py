@@ -24,10 +24,13 @@ Run from the cairn repo root:
 """
 from __future__ import annotations
 
+import builtins
 import importlib.util
+import os
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -277,6 +280,11 @@ _HAS_GIT = shutil.which("git") is not None
 #: never silently requires Bandit (re-review P2 #1).
 _HAS_BANDIT = (shutil.which("bandit") is not None
                or importlib.util.find_spec("bandit") is not None)
+#: pip-audit availability. Cairn does NOT install it (adopter dependency,
+#: DEPENDENCY_BUDGET Exception 1), so the end-to-end expectation is derived
+#: from presence rather than assumed -- an absent required tool is DEGRADED.
+_HAS_PIP_AUDIT = (shutil.which("pip-audit") is not None
+                  or importlib.util.find_spec("pip_audit") is not None)
 
 
 def _load(name: str, path: Path):
@@ -627,10 +635,16 @@ class TestOrchestrator:
         status, tier = orch.run_adopted_executable_gate(root, lock)
         assert tier == orch._AGG_DEGRADED and "tamper" in status
 
-    def test_pip_audit_egress_off_is_incomplete_not_clean(self, orch, tmp_path):
-        # P1 #3 / SR-5: egress off (default) -> the lookup did not run ->
-        # UNAVAILABLE -> incomplete, never a clean contribution.
+    def test_pip_audit_egress_off_is_incomplete_not_clean(self, orch, tmp_path,
+                                                          monkeypatch):
+        # C-t2 (re-expression of the original egress-off contract). P1 #3 /
+        # SR-5: egress off with the tool PRESENT -> the lookup did not run ->
+        # UNAVAILABLE -> incomplete, never a clean contribution. The tool is
+        # forced present so this pins the egress limb alone; the tool-absent
+        # limb is C-t3's, and on a machine without pip-audit the unforced call
+        # is now DEGRADED (an absent required tool dominates).
         root, _ = self._adopter(tmp_path)
+        monkeypatch.setattr(orch.shutil, "which", lambda _n: "/usr/bin/pip-audit")
         status, tier = orch.run_pip_audit_pass(root, allow_egress=False)
         assert "unavailable" in status
         assert tier == orch._AGG_INCOMPLETE and tier != orch._AGG_CLEAN
@@ -642,11 +656,11 @@ class TestOrchestrator:
         # Force "tool present" so the classification (not the absent branch) runs.
         monkeypatch.setattr(orch.shutil, "which", lambda _n: "/usr/bin/pip-audit")
         monkeypatch.setattr(orch, "_run_tool",
-                            lambda argv, *, label: (2, "ran"))  # error exit
+                            lambda *a, **k: orch.ToolRun(2, "ran", "", ""))
         status, tier = orch.run_pip_audit_pass(tmp_path, allow_egress=True)
         assert tier == orch._AGG_DEGRADED and "error" in status
         monkeypatch.setattr(orch, "_run_tool",
-                            lambda argv, *, label: (1, "ran"))  # real vulns
+                            lambda *a, **k: orch.ToolRun(1, "ran", "", ""))
         status2, tier2 = orch.run_pip_audit_pass(tmp_path, allow_egress=True)
         assert tier2 == orch._AGG_FINDINGS
 
@@ -686,11 +700,14 @@ class TestOrchestrator:
         r = subprocess.run(
             [sys.executable, "scripts/run_security_audit.py"],
             cwd=str(root), capture_output=True, text=True, env=env)
-        # A default both-modules run with bandit present is INCOMPLETE (5):
-        # pip-audit egress is off, so its pass is unavailable. (No findings, no
-        # tamper.) Gate on bandit so the base suite never silently requires it
-        # (P2 #8): without bandit the bandit pass is degraded -> 20.
-        expected = 5 if _HAS_BANDIT else 20
+        # A default both-modules run reports EVERY blocking reason (Chunk C).
+        # With bandit AND pip-audit present it is INCOMPLETE (5): egress is off,
+        # so the lookup is unavailable. With either tool ABSENT it is DEGRADED
+        # (20) -- the shipped exit table already assigns "a required tool was
+        # absent" to 20, and the pass no longer returns at the first blocker,
+        # so it now reaches that branch. Gate on presence so the base suite
+        # never silently requires either tool (P2 #8).
+        expected = 5 if (_HAS_BANDIT and _HAS_PIP_AUDIT) else 20
         assert r.returncode == expected, r.stdout + r.stderr
         # Tamper an apparatus file -> preflight DEGRADED (exit 20), no bandit
         # needed (the preflight short-circuits before any pass).
@@ -763,3 +780,433 @@ class TestModuleMatrix:
         rc = s.main(["upgrade", "--target", str(tmp_path), "--plan",
                      "--cairn-root", str(CAIRN_ROOT)])
         assert rc == 0
+
+
+# ---------------------------------------------------------------------------
+# dependency-advisory-coverage -- Chunks A/B/C/D.
+#
+# MODULE LEVEL, deliberately outside the git-gated TestOrchestrator class:
+# these drive _run_tool, the child-environment builder, the argv builder and
+# the coverage classifiers directly, so they need neither git nor an installed
+# adopter tree and add no skip row to the gate manifest. None of them needs a
+# real pip-audit either -- Cairn does not install it, and a test that required
+# it would be silently skipped on the machine that ships this code.
+#
+# CHANNEL NOTE. Subject: the orchestrator. Oracles: a *separate child
+# process's* observed behaviour (A-t1..A-t6, B-t1/B-t2), literal constants and
+# raw bytes the test itself authors (A-t3..A-t5, B-t3, C-t4, D-t*), and
+# synthetic metadata trees the test builds. No oracle is derived from the code
+# under test, and no fixture is a schema this session invented and then parsed
+# with a parser it also wrote (see D-t2b).
+# ---------------------------------------------------------------------------
+
+_orch_mod = _load("run_security_audit_boundary", _ORCH_SRC)
+
+
+@pytest.fixture(scope="module")
+def orchb():
+    return _orch_mod
+
+
+def _probe(source: str) -> list[str]:
+    """A child argv that runs `source` under the same isolation real tools get."""
+    return [sys.executable, "-I", "-c", source]
+
+
+def _child_env_view(orch) -> dict:
+    """What a child process ACTUALLY sees -- read from the child, not from the
+    builder. A different process is the oracle; asking the builder what it
+    built would be the artifact under verification supplying its own evidence."""
+    import json as _json  # noqa: PLC0415
+    run = orch._run_tool(
+        _probe("import os,sys,json; sys.stdout.write(json.dumps(dict(os.environ)))"),
+        label="env-probe")
+    assert run.status == "ran", run.stderr
+    return _json.loads(run.stdout)
+
+
+# --- Chunk A: the shared runner boundary -----------------------------------
+
+_AMBIENT_STEERING = {
+    "PIPAPI_PYTHON_LOCATION": "/some/other/python",
+    "PIP_AUDIT_VULNERABILITY_SERVICE": "osv",
+    "PIP_AUDIT_OSV_URL": "http://127.0.0.1:7777/collect",
+    "HTTPS_PROXY": "http://127.0.0.1:8888",
+    "REQUESTS_CA_BUNDLE": "/tmp/evil.pem",
+}
+
+
+def test_a_t1_boundary_failure_status_is_degraded_never_clean(orchb, tmp_path,
+                                                              monkeypatch):
+    # A-t1. A boundary status other than "ran" means the tool produced no
+    # trustworthy evidence -> DEGRADED at the pass, never CLEAN. Oracle: the
+    # literal tier constants; the subject is the pass's status->tier mapping,
+    # driven with a stubbed boundary so this node does not depend on the
+    # deadline mechanism A-t2 owns.
+    pkg = tmp_path / "pkg"
+    pkg.mkdir()
+    for status in ("timeout", "truncated", "undecodable", "timeout+cleanup-failed"):
+        monkeypatch.setattr(orchb, "_run_tool",
+                            lambda *a, _s=status, **k: orchb.ToolRun(0, _s, "", ""))
+        monkeypatch.setattr(orchb.shutil, "which", lambda _n: "/usr/bin/bandit")
+        st, tier = orchb.run_bandit_pass(pkg, tmp_path)
+        assert tier == orchb._AGG_DEGRADED, f"{status} mapped to {tier}"
+        assert tier != orchb._AGG_CLEAN
+
+
+def test_a_t2_timeout_is_enforced_and_bounded(orchb, monkeypatch):
+    # A-t2. The timeout EXISTS: a child that sleeps far past the cap is killed,
+    # the boundary reports "timeout", and the call returns inside a wall-clock
+    # bound. Asserting the bound (rather than settling for a hang) keeps a
+    # regression from turning this into an unbounded job.
+    monkeypatch.setattr(orchb, "_TOOL_TIMEOUT_S", 1.5)
+    started = time.monotonic()
+    run = orchb._run_tool(_probe("import time; time.sleep(25)"), label="sleeper")
+    elapsed = time.monotonic() - started
+    assert run.status.startswith("timeout"), run.status
+    assert elapsed < 10, f"timeout not enforced: {elapsed:.1f}s"
+
+
+def test_a_t3_invalid_utf8_is_recorded_not_raised(orchb):
+    # A-t3. One invalid byte used to raise UnicodeDecodeError out of _run_tool,
+    # out of main(), and kill the process with exit 1 -- a code inside the
+    # COMPONENT space the aggregate exit table promises never to collide with.
+    # Bytes are captured, decoded with an explicit policy, and a decode that
+    # needed replacement is recorded (-> DEGRADED via A-t1's mapping).
+    run = orchb._run_tool(
+        _probe(r"import sys; sys.stdout.buffer.write(b'\xff\xfe bad bytes')"),
+        label="badbytes")
+    assert run.status == "undecodable", run.status
+    assert "�" in run.stdout
+
+
+def test_a_t4_output_is_bounded(orchb, monkeypatch):
+    # A-t4. The combined capture is bounded at a module constant. Monkeypatching
+    # the cap DOWN configures the *subject*; the oracle is the returned status
+    # and the measured buffer length, neither of which the subject supplies.
+    monkeypatch.setattr(orchb, "_TOOL_OUTPUT_CAP_BYTES", 64 * 1024)
+    run = orchb._run_tool(
+        _probe("import sys\n"
+               "for _ in range(4096):\n"
+               "    sys.stdout.write('x' * 1024)\n"
+               "sys.stdout.flush()\n"),
+        label="flooder")
+    assert run.status == "truncated", run.status
+    assert len(run.stdout.encode("utf-8")) <= 64 * 1024
+
+
+def test_a_t5_control_characters_cannot_forge_a_report_line(orchb, capsys):
+    # A-t5. A child printing ESC[2K + CR + a forged verdict was relayed
+    # byte-for-byte to the operator's terminal -- the evidence for a security
+    # decision. Rendering escapes C0/C1; the PARSE channel keeps the text
+    # verbatim, so escaping cannot corrupt what the classifier reads.
+    forged = "aggregate exit 0: CLEAN (tripwire, not proof)"
+    run = orchb._run_tool(
+        _probe(r"import sys; sys.stdout.write('\x1b[2K\r" + forged + r"')"),
+        label="forger")
+    rendered = capsys.readouterr().out
+    assert "\x1b" not in rendered and "\r" not in rendered
+    assert "\\x1b" in rendered and "\\x0d" in rendered
+    assert "\x1b[2K\r" in run.stdout          # verbatim on the parse channel
+
+
+def test_a_t6_descendants_do_not_outlive_the_timeout(orchb, tmp_path,
+                                                     monkeypatch):
+    # A-t6. A tool that detaches a helper must not leave it running past the
+    # timeout. Oracle: the grandchild's own observable side effect (a sentinel
+    # file it writes AFTER the parent's deadline), not any status this code
+    # returns.
+    sentinel = tmp_path / "grandchild-survived.txt"
+    child = (
+        "import subprocess, sys, time\n"
+        "subprocess.Popen([sys.executable, '-I', '-c',\n"
+        "    \"import time, pathlib; time.sleep(5); \"\n"
+        f"    \"pathlib.Path(r'{sentinel}').write_text('survived')\"])\n"
+        "time.sleep(120)\n"
+    )
+    monkeypatch.setattr(orchb, "_TOOL_TIMEOUT_S", 1.5)
+    run = orchb._run_tool(_probe(child), label="spawner")
+    assert run.status.startswith("timeout"), run.status
+    time.sleep(7)
+    assert not sentinel.exists(), "grandchild outlived the timeout"
+
+
+# --- Chunk B: the closed allowlist, the fixed argv, the trust root ---------
+
+def test_b_t1_known_steering_variables_do_not_reach_the_child(orchb, monkeypatch):
+    # B-t1. Interpreter selection, vulnerability service, endpoint, proxy and
+    # trust store were all ambient: the old denylist stripped four PYTHON*
+    # names and passed everything else through.
+    for name, value in _AMBIENT_STEERING.items():
+        monkeypatch.setenv(name, value)
+    seen = _child_env_view(orchb)
+    leaked = sorted(n for n in _AMBIENT_STEERING if n in seen)
+    assert leaked == [], f"ambient steering variables reached the tool: {leaked}"
+
+
+def test_b_t2_the_allowlist_is_closed_to_novel_names(orchb, monkeypatch):
+    # B-t2. THE discriminating test. A denylist strips the names someone
+    # thought of; this asserts a name the code has never heard of is dropped
+    # too. Re-implement B1 as a denylist of the KNOWN names and B-t1 stays
+    # green while this goes red -- that pair is the whole argument for the
+    # allowlist shape.
+    monkeypatch.setenv("PIP_AUDIT_FUTURE_KNOB", "1")
+    monkeypatch.setenv("A_TOOL_NOBODY_HAS_HEARD_OF", "1")
+    seen = _child_env_view(orchb)
+    assert "PIP_AUDIT_FUTURE_KNOB" not in seen
+    assert "A_TOOL_NOBODY_HAS_HEARD_OF" not in seen
+
+
+def test_b_t3_pip_audit_argv_is_fixed_and_environment_free(orchb, monkeypatch,
+                                                           tmp_path):
+    # B-t3. Two halves. (a) every pinned flag is present. (b) NO element is
+    # derived from os.environ -- every environment value is sentinel-stamped,
+    # so an interpolated one is visible in argv. Oracle: literals typed here.
+    for name in list(os.environ):
+        monkeypatch.setenv(name, "CAIRN-ENV-SENTINEL-8f21")
+    argv = orchb.pip_audit_argv(cache_dir=tmp_path)
+    assert argv[:4] == [sys.executable, "-I", "-m", "pip_audit"]
+    for flag, value in (("--format", "json"),
+                        ("--vulnerability-service", "osv"),
+                        ("--progress-spinner", "off"),
+                        ("--cache-dir", str(tmp_path))):
+        assert flag in argv, f"pinned flag {flag} missing"
+        assert argv[argv.index(flag) + 1] == value
+    assert "--output" not in argv          # stdout, never a path
+    assert not any("CAIRN-ENV-SENTINEL-8f21" in element for element in argv)
+
+
+def test_b_t4_environment_pass_through_is_never_silent(orchb, monkeypatch):
+    # B-t4. A closed allowlist can break a tool that legitimately needs an
+    # unlisted variable (a corporate trust store is the realistic case), so an
+    # explicit opt-in exists -- and the report NAMES every variable it passed.
+    monkeypatch.setenv("REQUESTS_CA_BUNDLE", "/corp/ca.pem")
+    line = orchb.describe_child_env(("REQUESTS_CA_BUNDLE",))
+    assert "REQUESTS_CA_BUNDLE" in line
+    assert "REQUESTS_CA_BUNDLE" not in orchb.describe_child_env(())
+    assert orchb.build_child_env(("REQUESTS_CA_BUNDLE",))["REQUESTS_CA_BUNDLE"] \
+        == "/corp/ca.pem"
+    assert "REQUESTS_CA_BUNDLE" not in orchb.build_child_env(())
+    assert orchb.parse_pass_env(["--pass-env", "REQUESTS_CA_BUNDLE"]) \
+        == ("REQUESTS_CA_BUNDLE",)
+
+
+def test_b_t5_no_local_env_trust_root_is_read(orchb, monkeypatch, tmp_path):
+    # B-t5. DAC5's withdrawal, ENFORCED rather than intended: the orchestrator
+    # creates no second reader of dev/.cairn/local-env.json, which AGENTS.md
+    # calls an executable trust root. The DISCRIMINATING half intercepts the
+    # open and asserts on the argument -- a source-text lint is evaded by any
+    # assembled path, and "did not open it" is vacuous wherever the file is
+    # absent, which makes a source lint an environment-dependent oracle.
+    opened: list[str] = []
+    real_open, real_path_open = builtins.open, Path.open
+
+    def spy_open(file, *a, **k):
+        opened.append(str(file))
+        return real_open(file, *a, **k)
+
+    def spy_path_open(self, *a, **k):
+        opened.append(str(self))
+        return real_path_open(self, *a, **k)
+
+    monkeypatch.setattr(builtins, "open", spy_open)
+    monkeypatch.setattr(Path, "open", spy_path_open)
+    monkeypatch.setattr(orchb.shutil, "which", lambda _n: None)
+    monkeypatch.setattr(orchb.importlib.util, "find_spec", lambda _n: None)
+    orchb.run_pip_audit_pass(tmp_path, allow_egress=False)
+    monkeypatch.undo()
+    hits = [p for p in opened if p.endswith("local-env.json")]
+    assert hits == [], f"the orchestrator read the local interpreter binding: {hits}"
+    # Secondary signal only -- NOT the discriminating half.
+    assert "local-env" not in _ORCH_SRC.read_text(encoding="utf-8")
+
+
+# --- Chunk C: every blocking reason, and the worst-applicable tier ---------
+
+def _force_tool_absent(orch, monkeypatch):
+    monkeypatch.setattr(orch.shutil, "which", lambda _n: None)
+    monkeypatch.setattr(orch.importlib.util, "find_spec", lambda _n: None)
+
+
+def test_c_t1_every_blocking_reason_is_reported(orchb, tmp_path, monkeypatch,
+                                                capsys):
+    # C-t1. The pass used to return at the FIRST blocker, so an egress-off run
+    # never mentioned that the tool was absent at all. Both reasons are now
+    # evaluated independently, both printed, and both carried in the status.
+    _force_tool_absent(orchb, monkeypatch)
+    status, _ = orchb.run_pip_audit_pass(tmp_path, allow_egress=False)
+    out = capsys.readouterr()
+    text = out.out + out.err
+    assert "tool-absent" in status and "egress-off-unavailable" in status
+    assert "NOT INSTALLED" in text and "network egress OFF" in text
+
+
+def test_c_t3_absent_tool_dominates_egress_off(orchb, tmp_path, monkeypatch):
+    # C-t3. The tier is the WORST applicable reason, not the first one found.
+    # The egress disposition is evaluated FIRST, so a first-wins implementation
+    # returns 5 and this test discriminates -- an ordering where the worst
+    # reason happens to be found first would make it unfalsifiable.
+    _force_tool_absent(orchb, monkeypatch)
+    status, tier = orchb.run_pip_audit_pass(tmp_path, allow_egress=False)
+    assert status.split("+")[0] == "egress-off-unavailable"
+    assert tier == orchb._AGG_DEGRADED
+    assert tier != orchb._AGG_INCOMPLETE
+
+
+def test_c_t4_aggregate_space_and_precedence_are_unchanged(orchb):
+    # C-t4. A cheap tripwire making the "aggregate exit space untouched" fence
+    # checkable rather than promised. (a) the space. (b) the PRECEDENCE --
+    # replacing max with min, or with last-tier-wins, changes no constant and
+    # would otherwise slip through.
+    assert {orchb._AGG_CLEAN, orchb._AGG_INCOMPLETE,
+            orchb._AGG_FINDINGS, orchb._AGG_DEGRADED} == {0, 5, 10, 20}
+    assert orchb.aggregate_tier([]) == 0
+    assert orchb.aggregate_tier([0, 5]) == 5
+    assert orchb.aggregate_tier([20, 10, 5, 0]) == 20      # not last-wins
+    assert orchb.aggregate_tier([0, 5, 10, 20]) == 20      # not min
+
+
+def test_c_t5_interpreter_observation_is_reported(orchb, tmp_path, monkeypatch,
+                                                  capsys):
+    # C-t5. C1's third disposition. The interpreter is recorded as an
+    # OBSERVATION of the environment audited -- never an assertion that it
+    # matches a project record (DAC5).
+    _force_tool_absent(orchb, monkeypatch)
+    orchb.run_pip_audit_pass(tmp_path, allow_egress=False)
+    text = capsys.readouterr().out
+    version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+    assert sys.executable in text and version in text
+    assert "OBSERVATION" in text
+
+
+# --- Chunk D: the denominator, the dispositions, and the CLEAN gate --------
+
+def test_d_t2_unestablished_coverage_is_incomplete_never_clean(orchb, tmp_path,
+                                                               monkeypatch):
+    # D-t2 -- THE CENTRAL CLAIM, in the schema-free form that survives the
+    # unexecuted tool probe: the tool ran and exited 0 with no vulnerabilities,
+    # but the orchestrator could not establish WHICH distributions it
+    # enumerated -> UNKNOWN -> INCOMPLETE. A leg never returns CLEAN with a
+    # non-zero UNKNOWN count.
+    assert orchb._PIP_AUDIT_SCHEMA_ESTABLISHED is False
+    assert orchb.classify_pip_audit_output("anything at all").established is False
+    monkeypatch.setattr(orchb.shutil, "which", lambda _n: "/usr/bin/pip-audit")
+    monkeypatch.setattr(orchb, "_run_tool",
+                        lambda *a, **k: orchb.ToolRun(0, "ran", "{}", ""))
+    status, tier = orchb.run_pip_audit_pass(tmp_path, allow_egress=True)
+    assert tier == orchb._AGG_INCOMPLETE and tier != orchb._AGG_CLEAN
+    assert "unknown" in status
+
+
+def test_d_t2b_a_parsed_report_is_still_unknown_while_unpinned(orchb):
+    # D-t2b -- the Chunk 0 fence, made executable. Even a well-formed JSON
+    # report leaves the enumeration UNKNOWN while no enumeration key has been
+    # pinned against a MEASURED tool version. The alternative -- guessing a
+    # schema in order to reach CLEAN -- is the error the whole lifecycle was
+    # written to avoid.
+    parsed = orchb.classify_pip_audit_output(
+        '{"dependencies": [{"name": "x", "version": "1", "vulns": []}]}',
+        schema_established=True)
+    assert parsed.established is False
+    assert "pinned" in parsed.note
+
+
+def test_d_t3_malformed_output_is_never_clean(orchb):
+    # D-t3. A parse failure fails CLOSED. The fallback this rules out --
+    # "assume clean on parse failure" -- is a distinct code path from D-t2's
+    # unpinned-schema path, so each has its own single-property falsifier.
+    for hostile in ("not json at all",
+                    '{"dependencies": [',                 # truncated
+                    '{"dependencies": [�]}'):        # decode-replaced
+        result = orchb.classify_pip_audit_output(hostile, schema_established=True)
+        assert result.established is False, hostile
+        assert "not parseable JSON" in result.note, hostile
+
+
+def test_d_t4_residual_predicate_rejects_public_build_artifacts(orchb):
+    # D-t4. Read literally -- "installed from a local path or a VCS checkout" --
+    # the Decision's predicate admits every conda-forge build artifact: 241
+    # public packages on the environment this was measured on, against 2 the
+    # rule is actually for. The predicate is editable-or-VCS. Four PEP 610
+    # shapes, including archive_info, whose file:// URL the literal reading
+    # also admits.
+    editable = '{"dir_info": {"editable": true}, "url": "file:///home/me/proj"}'
+    conda_forge = ('{"dir_info": {}, "url": '
+                   '"file:///home/conda/feedstock_root/build_artifacts/x"}')
+    archive = ('{"archive_info": {"hash": "sha256=deadbeef"}, "url": '
+               '"file:///Users/runner/miniforge3/conda-bld/x.tar.bz2"}')
+    vcs = '{"vcs_info": {"vcs": "git", "commit_id": "abc"}, "url": "https://h/r"}'
+    assert orchb.local_build_disposition(editable) == "residual"
+    assert orchb.local_build_disposition(vcs) == "residual"
+    assert orchb.local_build_disposition(conda_forge) == "not-residual"
+    assert orchb.local_build_disposition(archive) == "not-residual"
+    assert orchb.local_build_disposition(None) == "not-residual"
+
+
+def test_d_t7_unreadable_direct_url_is_unknown_not_skipped(orchb):
+    # D-t7. direct_url.json is package-controlled input -- the same trust class
+    # as the tool output this plan hardens. An unparseable payload is UNKNOWN
+    # (which gates CLEAN), never "does not qualify", never silently skipped.
+    assert orchb.local_build_disposition('{"dir_info": {"edit') == "unknown"
+    assert orchb.local_build_disposition("[1, 2, 3]") == "unknown"
+
+    class _FakeDist:
+        def __init__(self, payload):
+            self._payload = payload
+            self.metadata = {"Name": "fake"}
+
+        def read_text(self, name):
+            return self._payload if name == "direct_url.json" else None
+
+    survey = orchb.survey_local_builds([_FakeDist('{"dir_info": {"edit')])
+    assert survey.unknown == 1 and survey.residual == 0 and survey.not_residual == 0
+
+
+def _conda_prefix(root: Path, records: dict) -> Path:
+    meta = root / "conda-meta"
+    meta.mkdir(parents=True)
+    for filename, body in records.items():
+        (meta / filename).write_text(body, encoding="utf-8")
+    return root
+
+
+def test_d_t5_non_coverage_is_the_set_difference_not_the_raw_count(orchb,
+                                                                   tmp_path):
+    # D-t5. Quantified non-coverage: the number reported is what this leg did
+    # NOT audit -- conda names MINUS the Python distributions it did. Reporting
+    # the raw conda count would overstate the gap and, worse, would make the
+    # two inventories look like one.
+    prefix = _conda_prefix(tmp_path / "env", {
+        "numpy-2.0-py313.json": '{"name": "numpy", "version": "2.0"}',
+        "libgeos-3.12-h1.json": '{"name": "libgeos", "version": "3.12"}',
+        "krb5-1.21-h2.json": '{"name": "krb5", "version": "1.21"}',
+    })
+    scope = orchb.conda_non_coverage(prefix, {"numpy"})
+    assert scope.applicable is True
+    assert scope.records == 3
+    assert scope.conda_only == 2, "expected the set difference, not the raw count"
+    assert scope.unknown == 0
+
+
+def test_d_t8_hostile_conda_meta_is_bounded_and_fails_closed(orchb, tmp_path):
+    # D-t8. The directory is derived from sys.prefix and its records are
+    # package-controlled. An unguarded glob-plus-parse raises on the non-JSON
+    # `history` / `state` entries every conda prefix carries -- and an uncaught
+    # JSONDecodeError escapes main() (the module has no broad handler) and
+    # exits 1, into the COMPONENT code space the exit table promises the
+    # aggregate never uses. Extension-scoped, size-capped, and every unreadable
+    # record counted as UNKNOWN rather than dropped.
+    prefix = _conda_prefix(tmp_path / "env", {
+        "good-1.0-h0.json": '{"name": "good"}',
+        "history": "==> 2026-08-05 <==\n+ not json\n",
+        "state": "{not json either",
+        "broken-1.0-h0.json": '{"name": "broken"',
+        "big-1.0-h0.json": '{"name": "big", "pad": "' + "z" * 4096 + '"}',
+    })
+    scope = orchb.conda_non_coverage(prefix, set(), max_record_bytes=1024)
+    assert scope.applicable is True
+    assert scope.records == 3, "non-JSON siblings must not be enumerated at all"
+    assert scope.unknown == 2, "the malformed and the oversized record are UNKNOWN"
+    assert scope.conda_only == 1
+    # A prefix that is not a conda environment is simply not applicable.
+    assert orchb.conda_non_coverage(tmp_path / "nope", set()).applicable is False
