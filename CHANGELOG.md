@@ -42,13 +42,17 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
-- **Content scanning now covers the invisible Unicode channels its earlier
-  tables missed.** New `unicode-ignorable` and `unicode-tag` findings cover the
-  reviewed PRECIS ranges while keeping Tag characters isolated from ordinary
-  ignorable suppressions. Findings remain bounded to one per line per category.
-  Upgrade consequence: variation selectors now trigger `unicode-ignorable`, so
-  an adopter tree with previously clean emoji-bearing lines can gain findings
-  on upgrade. Plan `content-scan-detectors`.
+- **Content scanning now covers the invisible Unicode channels and separators
+  its earlier tables missed.** New `unicode-ignorable` and `unicode-tag`
+  findings cover the reviewed PRECIS ranges while keeping Tag characters
+  isolated from ordinary ignorable suppressions; raw U+2028/U+2029 now flag as
+  `unicode-line-separator`. Each Unicode detector supplies its own pattern id,
+  and findings remain bounded to one per line per category. A line-separator
+  acceptance is honoured only when its marker renders on the same display line
+  before the separator; the block form does not suppress it. Upgrade
+  consequence: variation selectors now trigger `unicode-ignorable`, so an
+  adopter tree with previously clean emoji-bearing lines can gain findings on
+  upgrade. Plans `content-scan-detectors` and `separator-detection`.
 
 - **A release you can verify from outside the artifact.**
   `bootstrap/PROVENANCE.md` now publishes an out-of-band bootstrap as the

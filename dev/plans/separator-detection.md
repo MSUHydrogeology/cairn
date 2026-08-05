@@ -9,7 +9,7 @@
 **Source proposal**: [`dev/proposals/archive/2026-08-03-claude-separator-detection.md`](../proposals/archive/2026-08-03-claude-separator-detection.md)
 (accepted 2026-08-03 by Maintainer Decision, *as revised*). It sits under
 `dev/proposals/` today and moves to `dev/proposals/archive/` when it archives.
-**Status**: open
+**Status**: review
 **Plan review**: required(**External**, security lens) — carried from the
 proposal header and re-declared by the Decision's *Next transition* line, which
 routes the tier into the plan "in its own right". The content scanner is a
@@ -2342,3 +2342,42 @@ one-line-for-both-plans rule also wants `content-scan-detectors`' state, which
 had not landed.
 
 This section is append-only.
+
+## Implementation record -- Codex -- 2026-08-05
+
+Chunks A and B were already implemented in `8a7fb86` and `a23be80`, with the
+comment-only repair `83d5b9b` and the test-only collection-integrity extension
+`d5909b4`. The implementation follows the folded contract: `_scan_unicode`
+supplies literal pattern ids; U+2028/U+2029 emit
+`unicode-line-separator`; own-id suppression is accepted only before the
+separator on the same display line; later, preceding-line, and block-form
+acceptances are refused; and duplicate top-level functions, classes, or methods
+are detected in the shared test module.
+
+Chunk C is now complete at the shared changelog serialization point. The single
+Added entry covers both scanner plans, names the raw separators and their own
+pattern id, states the same-display-line acceptance rule and block-form refusal,
+and preserves the variation-selector upgrade consequence.
+
+The implementation commits carry the complete P-A1/P-A2 and P-B1--P-B9
+perturbation ledgers, including the two-site P-B7 result: changing only either
+suppression site remains green, while changing both makes the foreign-id marker
+test red. The B11 extension separately proves that duplicate top-level function
+names evade its predecessor while the extended guard catches them. Restores
+were verified byte-identical in those commits.
+
+**Stable evidence.** The canonical real-environment boundary at
+`75da38349e0f804209234ef668aedbbd909caef1` includes all four implementation
+commits and passed **2513 tests**, with zero failures, skips, xfails, or xpasses
+under CPython 3.13.13. Rechecked after the three independent reviews and archive
+serialization: `test_content_scan.py` reports **198 passed**;
+`test_security_stack.py` reports **98 passed**; `scripts/check_cairn.py` is clean
+over 173 Markdown files; and this plan's claim check is clean.
+
+The plan enters `review`. The independent security code reviewer should cover
+`8a7fb86`, `a23be80`, `83d5b9b`, `d5909b4`, the later
+`content-scan-detectors` coexistence changes, the implementation note's
+block-form coverage finding, and this changelog serialization. The two frozen
+files remain deliberately unpinned. Only after this review ships may the
+Maintainer evaluate the exact-path bounded shared ceremony with the
+already-SHIP-reviewed `content-scan-detectors` plan.
