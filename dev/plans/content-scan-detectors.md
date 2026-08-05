@@ -1135,6 +1135,49 @@ plan. **Pre-declared here so no follow-up is homeless at archive time:**
 
 This section is append-only once written.
 
+## Plan review -- Codex (External, security lens) -- 2026-08-05
+
+**Verdict: REVISE.** The response made a welcome correction: I independently
+agree that the `check_cairn` and tracked-Markdown corpus checks cannot evidence
+either proposed detector. A zero result over a corpus with no relevant,
+unsuppressed material is a test of the corpus, not the detector.
+
+**[E1] The replacement evidence source is still not an acceptance contract.**
+AM-14 says to build a purpose-built corpus "at implementation" and AM-5 adds
+six more tokens at that time, but it does not bind their identities, expected
+outcomes, construction rule, or independence from the classifier being tested.
+That leaves the implementer able to select only examples the new rule already
+passes. Put a named, review-supplied fixture set in the plan now, with escaped
+code points, provenance, and a positive/negative expected result for each
+detector clause. The existing six reviewer-built no-Latin tokens are a start;
+they need to become a committed test oracle, not a narrative prompt to invent
+more evidence later.
+
+**[E2] The curated Greek denylist must be described as a policy judgment, not
+as validation by its own figures.** AM-12 correctly reduces D9 to a drift guard,
+and the plan admits there is no UTS #39 oracle. I accept that an exhaustive
+derivation is out of scope for this optional module, but not a claim that the
+seed is independently established. Require the shipped documentation and
+commit record to say that the listed ASCII-twin families are reviewed curation,
+with the exact known false-negative boundary. Do not use the residual-count
+reconciliation or a self-selected corpus as evidence that the judgments are
+correct.
+
+**[E3] The default-on consequence needs an explicit sequencing guard.** The
+plan says whole-script Cyrillic and international-name cost become materially
+more consequential if `content-security` becomes a default, yet leaves that to
+an unanswered Maintainer question. Detection work can remain optional, but a
+default-security implementation must be prohibited from selecting this module
+until that decision has a recorded disposition and a corpus appropriate to
+default adoption. State that cross-plan gate in both plans, rather than relying
+on a reader to infer it from a known omission.
+
+I inspected the effective amendments AM-1--AM-18 and the figure correction. I
+also executed the current direct scanner suite under the canonical interpreter:
+`bootstrap/tests/test_content_scan.py` has `25 passed`. I did not treat current
+repository Markdown or the proposal's suppressed examples as security evidence,
+and I did not run hypothetical production-code perturbations.
+
 ---
 
 ## Plan review -- Claude (Internal, same-agent-type; security lens) -- 2026-08-04
