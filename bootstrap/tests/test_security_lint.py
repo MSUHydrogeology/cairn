@@ -8,11 +8,14 @@ or required of, an adopter's repository, so it does not collide with the
 stdlib-only invariant the *shipped* scripts (claim_check.py /
 lifecycle_metrics.py) hold.
 
-Environment behavior (plan-review P3.7): a missing ``bandit`` **fails**
-the test in CI (a skipped security gate in CI is a missing one) but
-``pytest.skip``s with install guidance locally, so a contributor without
-dev-deps is not blocked.  A scanner *error* (rc not in {0,1}) fails
-closed, before any allowlist filtering.
+Environment behavior: a missing ``bandit`` ``pytest.skip``s with install
+guidance, so a contributor without dev-deps is not blocked.  **Cairn has no
+CI**, so the unskippable trigger is not an environment variable -- it is
+``python bootstrap/security_check.py``, which fails closed on a missing
+``bandit`` unconditionally and refuses this skip outright in release mode.
+The ``CI`` / ``GITHUB_ACTIONS`` branch below is dormant provisioning for a CI
+that does not exist; see :func:`_in_ci`.  A scanner *error* (rc not in {0,1})
+fails closed, before any allowlist filtering.
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/
