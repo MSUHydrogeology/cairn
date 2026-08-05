@@ -2307,3 +2307,314 @@ I inspected the response's operative AM13--AM19 changes and its explicit tier
 status. The current `bootstrap/tests/test_security_stack.py` baseline was run
 under the canonical interpreter (`57 passed`); no candidate API/web runner code
 exists to execute or independently test yet.
+
+## Response to plan review -- Claude (author) -- 2026-08-05
+
+**Model**: Claude Opus 5 (`claude-opus-5`).
+
+**What this section is.** The author's disposition of the **External security-lens
+review by Codex, dated 2026-08-05, verdict REVISE**. It **does not discharge** the
+declared `required(External + External Security Review)` tier, it does not clear
+the REVISE verdict, and nothing below should be read as clearing implementation.
+See *Does this Response clear the plan?* at the end, which says plainly that it
+does not and names what remains. An author's Response is the least independent
+read available; it can accept findings and produce residue, and that is all.
+
+**Method.** Every figure the review states, and every figure this Response
+asserts, was re-derived against the live tree at HEAD `6bcd2d3` under the
+canonical interpreter (`~/conda_envs/lhm/bin/python3.13`, CPython 3.13.13,
+`PYTHONDONTWRITEBYTECODE=1`), from the artifacts themselves rather than from the
+review's, the plan's, or the prior Response's text. Tracked files are clean; the
+only untracked paths are `.claude/` and a `dev/measurement/` scratch tree, neither
+of which is on any measured surface. I read the review, the plan, and the
+2026-08-04 Internal review and Response in full before writing.
+
+**One briefing premise did not reproduce, and it is recorded first because a
+reader could otherwise mis-locate the review.** I was briefed that the External
+section was *inserted before the existing Internal sections, not appended at the
+end*. It was not. Measured: `git show f6d2ec2 -- dev/plans/api-web-security-modules.md`
+is a single hunk `@@ -2269,3 +2269,41 @@`, **38 insertions, 0 deletions** — a pure
+end-of-file append. `## Plan review -- Codex (External, security lens) --
+2026-08-05` is the **last** `##` heading in the file. The append-only invariant
+was not violated by the reviewer, and no prior section was displaced. I checked
+this rather than assume it, and I report the non-reproduction rather than quietly
+act on the corrected fact.
+
+### Re-measurement — what reproduced and what did not
+
+Every figure the External review states, plus every figure this Response asserts
+and every figure carried forward from AM1–AM24 that this round depends on.
+
+| Figure (stated by) | Stated | Live at `6bcd2d3` | Verdict |
+|---|---|---|---|
+| `bootstrap/tests/test_security_stack.py` under the canonical interpreter (review) | `57 passed` | **57 passed** in 3.34 s | **reproduces exactly** |
+| "no candidate API/web runner code exists to execute or independently test yet" (review) | none | `templates/modules/team-gated/_security_net/__init__.py` absent, as is its parent directory; no `api_access_security.py` / `web_hosting_security.py` anywhere in the tree | **reproduces** |
+| AM16 covers rebinding in the `local` direction (review) | yes | A-11 present in AM16, `127.0.0.1`-at-validate → non-loopback-at-connect | **reproduces** |
+| AM17 removes the accessor-specific env probe (review) | yes | AM17(c) deletes the `os.environ.get` probe outright | **reproduces** |
+| AM19 supplies channel liveness (review) | yes | AM19 phase (a) is the per-channel liveness mutant | **reproduces** |
+| AM13/AM15 blocking and **unresolved** (review) | unresolved | `dev/plans/security-verification-activation.md` is `**Status**: open`; **zero** occurrences of `living_state` in it | **reproduces** |
+| A living-state lockfile record still carries `hash` (AM13) | yes | `bootstrap/_scaffold/install.py` builds `rec` with `"hash": "sha256:" + …` and adds `living_state` afterwards at line 1634 | reproduces |
+| `_LIVING_STATE_DSTS` membership | 5 | 5, `bootstrap/_scaffold/lockfile.py` line 84 | reproduces |
+| AST baseline total entries (AM1/AM3) | 173 | **173** | reproduces |
+| `FunctionDef`+`Assign`+`ClassDef` | 161 | 161 (98 / 53 / 10) | reproduces |
+| Δ1–Δ3 present, Δ4–Δ5 absent from the baseline | as declared | as declared | reproduces |
+| `scaffold_ast_known_new.json` pinned keys (AM4) | 28 | 28 | reproduces |
+| `frozen_files` map size (AM7) | 164 | 164 | reproduces |
+| `test_notice_install.py` / `test_security_lint.py` / `scaffold_ast_known_new.json` frozen | all three | all three | reproduces |
+| Published manifest rows (Gate accounting) | 95 data / 96 lines | 95 / 96 | reproduces |
+| `_MODULE_MAPPINGS` keys (AM21) | 20 | 20 | reproduces |
+| `templates/modules/README.md` (AM21) | 49 lines, 12 module rows | 49 lines; 13 pipe rows = header + **12** data rows | reproduces |
+| `test_ast_attest.py` (AM11 premise) | 29 passed | **29 passed**, 0 failed | reproduces |
+| `dev/PLANNING.md` carries no row for this plan ([N3]) | none | none | reproduces |
+| Cited commits `eacb7dd` `3852cf7` `9bd6752` `e7394cb` `5c91c23` `156305f` `4dfcf19` `f6d2ec2` | resolve | all resolve | reproduces |
+| **Suite collection (AM10)** | 1790 | **1959** | **NOT reproduced** — see R3 |
+| **Full suite (AM10)** | 1790 passed / 185.9 s | **1959 passed, 0 failed, 0 skipped, 0 xfailed, 305.13 s** | **NOT reproduced** — see R3 |
+| `claim_check.py` over this plan | OK | **OK, no claim-check flags** | reproduces |
+
+**R3 — the suite figure has moved a fourth time in three days.** 1746 (plan,
+2026-08-04) → 1759 (Internal review, same day) → 1790 (prior Response, same day)
+→ **1959** today. That is +169 in one day, from sibling scopes landing. The
+figure is amended (**AM33**) and the plan's standing instruction — take a clean
+baseline immediately before Chunk A, never carry a number from this document —
+is reaffirmed with a fourth data point behind it. No figure in this file is a
+constant; each is a dated snapshot, and this is the one that decays fastest.
+
+**A note on the review's own evidence.** `bootstrap/tests/test_security_stack.py`
+is not a file this plan touches, creates, or depends on — it is a pre-existing
+suite last moved at `5cb7026`, unrelated to this scope. Its `57 passed`
+reproduces exactly and I record that, but it is a **tree-health datum, not
+evidence about this plan**. The reviewer is explicit that no candidate code
+exists to test, so the review is a design read, and the three findings below are
+design findings. That is the correct thing for it to be at this stage; I record
+the distinction so nobody later reads `57 passed` as coverage of anything here.
+
+### Findings — disposition
+
+Every finding is dispositioned, and every acceptance produces a numbered row in
+*Amendments in force* that changes an operative chunk row, criterion, gate, or
+ledger entry. Nothing is "accepted" here that changes no row — a Response is
+evidence of intended changes, never a replacement for the plan's executable
+contract, and the contract is the chunk tables and the criteria, not this prose.
+
+#### [E1] AM13/AM15 blocking and unresolved. **ACCEPTED, WIDENED, and corroborated from the owning scope.**
+
+Reproduced on every limb, and the reviewer is right that the prior round stopped
+one step short: AM13/AM15 *named* the cross-scope amendment and made it blocking,
+but never said **what the amendment must contain**. A blocking precondition whose
+content is unspecified is a promise to have an argument later, not a gate.
+
+**Corroboration the review did not have, and I did not either until I looked.**
+`dev/plans/security-verification-activation.md` received its own External
+security-lens review on the same day, also **REVISE**, whose **[E1]** is this
+finding from the owning side: it requires a *closed binding mode* in the registry
+schema (immutable-policy-hash versus explicitly-living-policy), the fields and
+failure behaviour for each, and tests that an entry cannot silently change modes,
+omit required binding fields, or treat a living policy as immutable — and it ends
+*"This amendment must land here before a capability registry entry can land
+there."* Two independent External reads, from opposite ends of the same seam,
+arrived at the same blocking condition and the same owner. That is the strongest
+form this finding could take, and it removes any remaining ambiguity about whose
+amendment it is: **not this plan's**.
+
+**Where I widen the finding beyond what AM15 fenced.** The reviewer writes *"no
+registry entry **or installer work** for this module may land."* AM15 fenced only
+Chunk **G** (the registry entry). Installer work is Chunk **F**, and specifically
+row **F2** — Δ2, adding the two `dev/.cairn/*-policy.json` destinations to
+`_LIVING_STATE_DSTS`. F2 is the act that *creates* the living-state condition the
+dispatcher has no defined mode for. Landing F2 first would ship the hazard and
+leave the contract that must handle it unwritten. The plan's *What is
+order-sensitive* section says the opposite in terms — *"If activation has not
+landed when Chunks A–F are ready, A–F still land and G waits"* — and that
+sentence is now wrong. **A–E still land; F2 does not.** Residue: **AM25**
+(AM15 superseded, field-level specification), **AM26** (the order-sensitive
+bullet superseded), **AM27** (row F2 itself carries the fence, so an agent
+reading only the chunk table hits it).
+
+**One clause I accept with modification, because it is not measurable as
+written.** The reviewer requires the amendment to state *"which fields continue
+to bind runner, policy, principal, and scope."* Measured: the lockfile record
+shape written by `bootstrap/_scaffold/install.py` is `src` / `dst` / `verbatim` /
+`hash`, plus optional `living_state` / `base_cache` / `base_hash` — no principal,
+no scope. The Chunk G registry entry schema (row G1) is `module_id` /
+`runner_repository_path` / `argv_mode` / `policy_repository_path` /
+`child_schema_version` / `capability_contract_version` / `evidence_mode` /
+`accepted_process_exits` / `result_to_aggregate_mapping` — also no principal, no
+scope. So two of the four named bindings **have no field to continue binding**.
+AM25 carries the runner and policy halves as stated, and carries principal and
+scope as an explicit question the activation amendment must answer — introduce
+the fields, or record that the four-way list resolves to two. I am not going to
+write a criterion that reads satisfied because nobody noticed two of its four
+subjects do not exist.
+
+#### [E2] A test design is not evidence about a runner that does not exist. **ACCEPTED.**
+
+The reviewer's confirmations reproduce (AM16, AM17, AM19 are all present and say
+what he says they say), and the finding survives them: AM16's hazard is driven by
+a **resolver stub**, and a stubbed resolver plus an assertion about a refusal
+cannot prove that the *socket implementation* honoured the decision. The plan
+already forbids mocked transport in terms (*"No `urlopen` is mocked anywhere in
+this file"*, A5) and already tells the code review to *"Confirm no test mocks a
+transport call"* — but a prohibition on mocking is not the same artifact as a
+positive recording of the peer actually connected to, and the plan has the first
+and not the second.
+
+**"Before any ref movement" is precise in this repository, and I checked rather
+than paraphrased it.** `bootstrap/tests/_gate_reanchor.py` line 64 fixes
+`_DESIGNATED_REF = "refs/cairn/gate-anchor"`, and the runbook's promote step
+*"atomically advances `refs/cairn/gate-anchor` `P → N` by expected-old CAS."* So
+the ref movement the reviewer means is the AST re-anchor ceremony this plan
+already fences as a Maintainer act. The finding is therefore not just "add a
+test" — it is **an ordering constraint on the ceremony**, and that is the half
+with teeth. Residue: **AM28** adds criterion **A-12**, a live end-to-end
+transport proof over a real socket with the connected peer recorded out-of-process
+and every populated credential marker asserted absent from each exercised output
+and report channel; **AM29** fences the ceremony behind it, so the Maintainer is
+never asked to move the ref on the strength of a design.
+
+#### [E3] The first-use bootstrap must be pinned to an exact reviewable artifact. **ACCEPTED, with the mechanical half routed rather than claimed.**
+
+This is the strongest finding of the three and it is the repository's own
+recurring failure shape, arriving on a surface nobody had pointed it at. I
+derived the mechanism independently rather than accept the reviewer's framing:
+`bootstrap/_scaffold/install.py` writes each lockfile record as `"hash":
+"sha256:" + _sha256_hex(would)`, where `would` is the substituted template bytes
+the installer is about to write. **The lockfile hash is computed from the very
+bytes it protects.** The activation dispatcher then re-computes the runner's
+digest and compares it to that record — so the whole chain attests that the
+installed bytes equal the installed bytes. It is trust-on-first-install, and it
+answers the question *"has this changed since install?"*, never *"is this what
+the Maintainer reviewed?"* The artifact under verification supplies the material
+used to verify it, which is exactly the defect class this tree has spent the
+cycle chasing.
+
+**The repository already has the correct shape, so this is not an invention.**
+`bootstrap/REANCHOR_RUNBOOK.md` § *"First use is different"* solves the identical
+problem for the gate verifier: the Maintainer reviews the exact bytes out-of-band,
+records the sha256 of each enumerated authority module *at the reviewed commit*
+in the supervised commit message, and the loader aborts with *"REFUSE: extracted
+bytes do not match the reviewed first-use set"* on any mismatch. Its own
+anti-circularity argument is stated in terms — the pins are trusted because
+step 1's out-of-band hashes equal step 2's produced pins, *"not because it
+asserted its own trust."* AM30 models this scope's artifact on that precedent
+directly rather than inventing a parallel ceremony.
+
+**Where I modify, and why the modification is a narrowing rather than a
+softening.** The reviewer asks for the files, the hash set, the producer, and the
+abort rule. Three of the four are squarely this plan's: the file set is this
+plan's ten installed destinations, the producer is the Maintainer from the
+reviewed Cairn commit (never the installer, never the runner under review), and
+the comparison is a documented Maintainer procedure in module doctrine and
+`bootstrap/SAFETY.md`. The fourth — making the **abort mechanical**, i.e. having
+the dispatcher refuse a leg whose runner bytes do not match a Maintainer-recorded
+set — is dispatcher logic this plan does not own, and it is the *same* seam as
+[E1]. So AM30 lands the recorded artifact and the documented compare-and-abort
+procedure here, and folds the mechanical-abort question into the AM25 amendment
+rather than asserting a behaviour change in another scope's code from the
+outside. That is precisely the procedural error [I4] caught last round; I am not
+going to repeat it one section later in the same file.
+
+I want to be plain about the residual this leaves: **a documented compare-and-abort
+is a human step, and a human step under pressure is the control the reviewer is
+sceptical of.** AM30 says so in its own text rather than letting "the Maintainer
+compares the hashes" read as a mechanism.
+
+#### Nothing is declined
+
+All three findings are accepted; two carry modifications, both narrowing scope to
+what this plan owns rather than weakening what is required. The prior round's one
+declined item ([I8]'s speculative Δ2′/Δ6) is untouched and stays declined for the
+reason recorded there.
+
+### Amendments in force
+
+Each row names the superseded text **verbatim** and states what replaces it. This
+plan is append-only: the rows below **govern** the earlier text, and where the two
+disagree an implementing agent follows the row. Rows AM1–AM24 from the 2026-08-04
+Response remain in force except where superseded here (AM15 by AM25; AM10 by AM33).
+
+| # | Superseded text (verbatim) | Replacement / addition | From |
+|---|---|---|---|
+| **AM25** | AM15's replacement text: "Gated on **two** preconditions: (a) `security-verification-activation`'s dispatcher exists, and (b) the AM13 cross-scope amendment (or Maintainer ruling) on the policy digest binding has landed. **(b) is blocking regardless of (a).** As of 2026-08-04 neither holds: `dev/plans/security-verification-activation.md` is `**Status**: open`." | "Gated on **two** preconditions, of which (b) is now specified at field level rather than named. **(a)** `security-verification-activation`'s dispatcher exists. **(b)** A cross-scope amendment has landed **in `dev/plans/security-verification-activation.md`** — not here, and not as a local exception in Chunk G — establishing a **closed binding mode** for registry entries, and stating **all four** of: (i) which fields bind the **runner** and which bind the **policy** under each mode; (ii) how a **missing or extra** binding field fails, by fixed code; (iii) the exact behaviour on an **altered policy** under the living mode (it must not read as CLEAN, and it must not read as a digest pass); and (iv) whether **principal** and **scope** acquire binding fields at all — measured `as_of 2026-08-05`, neither the lockfile record shape (`src`/`dst`/`verbatim`/`hash`, plus optional `living_state`/`base_cache`/`base_hash`, per `bootstrap/_scaffold/install.py`) nor the G1 registry entry schema has a principal or scope field, so the amendment must either introduce them or record that the four-way binding list resolves to two. **(b) is blocking regardless of (a).** Independently required from the owning side: that plan's own External security review (2026-08-05, REVISE) demands the same closed binding mode and states *'This amendment must land here before a capability registry entry can land there.'* As of 2026-08-05 neither precondition holds: that plan is `**Status**: open` and contains **zero** occurrences of `living_state`." | [E1] |
+| **AM26** | "* **Chunk G cannot land before `security-verification-activation`'s dispatcher exists.** That is the one hard inter-scope ordering edge, and it is one-directional: activation is harmless without the capabilities, the reverse is not. If activation has not landed when Chunks A–F are ready, A–F still land and G waits; the capabilities are then directly invocable but not standing checks, and the module doctrine must say so rather than claim otherwise." | "* **The inter-scope ordering edge reaches Chunk F, not only Chunk G.** It remains one-directional — activation is harmless without the capabilities, the reverse is not — but the fence is wider than this plan first drew it. **Chunk F row F2 (Δ2) is blocked by the AM25 precondition, exactly as Chunk G is**: F2 is the installer act that *creates* the living-state policy record for which the dispatcher has no defined binding mode, so landing it first ships the hazard and leaves the contract that must handle it unwritten. **Chunks A–E still land unblocked** (they touch no `bootstrap/_scaffold/` file); **F1, F3–F6 may land** with F2 held, provided the Chunk-F commit body records F2 as deferred and why; **F2 and G wait on AM25**. If A–E have landed and AM25 has not, the capabilities are directly invocable but neither integrity-classified nor standing checks, and the module doctrine must say so rather than claim otherwise." | [E1] |
+| **AM27** | Chunk F row **F2**, verbatim: `\| F2 \| `bootstrap/_scaffold/lockfile.py` \| **Δ2**, contingent on *Contract question 1*: add the two `dev/.cairn/*-policy.json` destinations to `_LIVING_STATE_DSTS`, with the reasoning inline — adopter-filled configuration, tracked for upgrade, excluded from the tamper check, and **not** the integrity anchor for the deployed leg. \|` | F2's change column becomes: "**Δ2 — BLOCKED until AM25 lands. Do not write this row on the strength of this plan alone.** Contingent on *Contract question 1*; add the two `dev/.cairn/*-policy.json` destinations to `_LIVING_STATE_DSTS`, with the reasoning inline — adopter-filled configuration, tracked for upgrade, excluded from the tamper check, and **not** the integrity anchor for the deployed leg. **This is the installer act that creates the living-state policy record**, and the External security review's fence is *'no registry entry or installer work for this module may land'* until the activation-side binding-mode amendment is specified and reviewed. An implementing agent who reaches F2 with AM25 unlanded **stops and reports**; F1 and F3–F6 may proceed with F2 deferred and the deferral recorded in the commit body." | [E1] |
+| **AM28** | Chunk A's closing criterion: "* **Channel note.** Subject: the engine modules. Oracles: a recording socket server (a different process's view of what was sent) and probe objects patched over the standard library (an assertion about what was *not* called). Neither is derived from the code under test." | Unchanged, **plus a new criterion A-12**: "**A-12 Live end-to-end transport proof — the runner, not the design.** *Claim:* the socket implementation as built obeys the address decision, and no populated credential reaches any channel, in a run where nothing in the transport path is stubbed. *Required form, and it is a post-implementation criterion by construction:* execute each of the four public entry points against a **real** loopback socket with **no resolver stub, no patched `socket`, no patched `ssl`** anywhere in the path; record the **connected peer address as observed by the listening fixture** (a different process's view, not the runner's own bookkeeping); and, with every credential environment variable populated with a distinct marker, assert each marker absent from raw stdout bytes, raw stderr bytes, the complete report file, and every file in the temporary directory. **A-1/A-2/A-11 remain resolver-stub tests and remain required — they establish the *decision*; A-12 establishes that the *implementation* obeyed it, and neither substitutes for the other.** *Deletion mutant:* delete the post-connect peer check; A-12 must go red independently of A-1/A-2/A-11. **Why this row exists:** the External security review's finding is that AM16/AM17/AM19 'remain a test design, not evidence about the runner that does not yet exist', and a stubbed resolver cannot prove the socket obeyed the decision. Recorded in the Chunk-A commit body with the observed peer values verbatim." | [E2] |
+| **AM29** | *The Maintainer fence*, item 1's bright line: "(c) stop. **No implementing agent runs `update_symbol`, `_gate_manifest.py` re-pin, or `_gate_reanchor.py prepare\|promote` under this plan.**" | "(c) stop. **No implementing agent runs `update_symbol`, `_gate_manifest.py` re-pin, or `_gate_reanchor.py prepare\|promote` under this plan.** **And a fourth obligation, on when the ceremony may be *requested*: the Maintainer is not asked to move the ref until the live-runner evidence exists.** Measured: `bootstrap/tests/_gate_reanchor.py` line 64 fixes `_DESIGNATED_REF = \"refs/cairn/gate-anchor\"`, and promote *'atomically advances `refs/cairn/gate-anchor` `P → N` by expected-old CAS'* — so the ceremony **is** the ref movement. **Before this scope's delta is submitted for any ceremony, two ledgers must be recorded in landed commit bodies: (1) A-12's live end-to-end transport proof, with the observed connected-peer values; and (2) AM19's per-channel phase (a) liveness results for every D1 channel, including any channel recorded as *uncovered*.** A ceremony requested on a design rather than on executed evidence is the failure the External security review names; the fence against performing the ceremony was already here, and this is the fence against *asking for* it prematurely." | [E2] |
+| **AM30** | "* **G-4 Registry admission preconditions are met and recorded.** The commit body states, for each entry, where the five admission conditions are satisfied: accepted proposal (`156305f`), this reviewed plan, the complete mapping group (F-4), the child schema and precedence tests (G2), and the Security Review of the registry change (the plan's own External Security round, or a focused follow-on if the registry entries changed after it)." | "* **G-4 Registry admission preconditions are met and recorded — now six, not five.** The commit body states, for each entry, where each condition is satisfied: (1) accepted proposal (`156305f`); (2) this reviewed plan, **with both declared rounds landed and no REVISE verdict outstanding**; (3) the complete mapping group (F-4); (4) the child schema and precedence tests (G2); (5) the Security Review of the registry change (the plan's own External Security round, or a focused follow-on if the registry entries changed after it); and **(6) the first-use trust artifact, new — see G-5.**" — **and a new criterion G-5**: "**G-5 The first-use trust artifact.** *The defect it closes, measured rather than asserted:* `bootstrap/_scaffold/install.py` writes each lockfile record as `\"hash\": \"sha256:\" + _sha256_hex(would)`, where `would` is the substituted template bytes the installer is about to write — **the recorded hash is computed from the very bytes it protects**. The dispatcher's parent-computed binding then compares the runner against that record, so the chain attests that the installed bytes equal the installed bytes. It answers *'has this changed since install?'* and never *'is this what the Maintainer reviewed?'*, and initial installation necessarily precedes the protection Chunk G relies on. *Required artifact, modelled on `bootstrap/REANCHOR_RUNBOOK.md` § 'First use is different', which solves the identical problem for the gate verifier:* **(a) Exact file set** — the ten installed destinations of this scope's six template `.py` sources — `scripts/api_access_security.py`, `scripts/web_hosting_security.py`, and both four-member engine copies, whose `net.py` members are `scripts/_api_access_security/net.py` and `scripts/_web_hosting_security/net.py` and whose three siblings install beside each. Policy stubs and doctrine are excluded: they are not executable. **(b) Producer** — the **Maintainer**, computing SHA-256 over the reviewed template sources at the reviewed Cairn commit, by absolute-path utility, out-of-band. **Never the installer, never the runner under review, never an implementing agent** — a hash produced by the artifact it attests is the defect, not the control. **(c) Recording** — the hash set and the reviewed commit sha go in the supervised commit message, alongside who compared them, exactly as the runbook records its authority-module hashes. **(d) Abort rule** — on any mismatch between a recorded hash and the adopter's installed destination, the capability is **not admitted to the registry and not run**; the resolution is to re-review the bytes, **never to re-record the hash from the installed tree**, which would restore the circularity. **(e) The residual, stated rather than hidden** — under this criterion the comparison is a *documented Maintainer procedure* in module doctrine and `bootstrap/SAFETY.md`, not dispatcher code. **A human step under pressure is a weaker control than a mechanical one, and this row does not pretend otherwise.** Making the abort mechanical is dispatcher logic this plan does not own; it is the **same seam as AM25** and is folded into that amendment as a fifth question the activation-side binding mode must answer." | [E3] |
+| **AM31** | *The Maintainer fence*'s opening: "Three classes of act in or around this plan are **not** an implementing agent's to perform. Each is fenced here rather than left to be discovered at the moment it is convenient to cross." | "**Four** classes of act in or around this plan are **not** an implementing agent's to perform. Each is fenced here rather than left to be discovered at the moment it is convenient to cross. The fourth, added 2026-08-05: **4. Producing or recording the first-use trust hash set (G-5).** The Maintainer computes it out-of-band over the reviewed template sources and records it in the supervised commit message. An implementing agent may **report** the installed destinations and may **report** a mismatch; it never produces the authorized hashes, never re-records them from an installed tree, and never treats its own computation as the reviewed set — that is the circularity G-5 exists to break." | [E3] |
+| **AM32** | *Lasting-truth migration* — the table, as already extended by AM24 | **Adds two further rows.** (4) *'The first-use trust artifact for a security-capability install — the lockfile hash is generated from the bytes it protects, so it attests change-since-install and not reviewed-ness'* → `bootstrap/SAFETY.md` (Chunk H1) **and** both module doctrine files (the adopter must know what their integrity check does not mean), **plus** a `dev/PLANNING.md` backlog row at archive for the mechanical-abort question if AM25 does not absorb it. (5) *'A registry entry's binding mode for adopter-owned living policy'* → `dev/plans/security-verification-activation.md`, now independently required there by that plan's own External security review; **blocking on Chunk F2 and Chunk G**, and it does not archive with this plan. Row (2) added by AM24 is superseded by this row (5), which states the same item at the specificity AM25 now requires." | [E3] |
+| **AM33** | "* **Suite collection: 1790 tests collected, and the full suite is 1790 passed / 0 failed / 0 skipped / 0 xfailed in 185.9 s**, `as_of 2026-08-04`, HEAD post-`3852cf7`, clean tree." | "* **Suite collection: 1959 tests collected, and the full suite is 1959 passed / 0 failed / 0 skipped / 0 xfailed in 305.13 s**, `as_of 2026-08-05`, HEAD `6bcd2d3`, tracked files clean, canonical interpreter. The prior figures were 1746 (plan), 1759 (Internal review), 1790 (first Response) — **four values in three days, +169 in the last day alone.** The clean baseline immediately before Chunk A is not optional bookkeeping; every figure in this document has now been wrong within 24 hours of being written." | R3 |
+| **AM34** | The plan header, verbatim: "**No implementation commit lands before a review section is in the tree.**" | "**No implementation commit lands before *both* declared rounds — External **and** External Security Review — have landed under `## Plan review`, and no landed round's verdict is outstanding.** The superseded sentence is **weaker than the tier it summarises** and, as of 2026-08-05, reads *satisfied* while the tier is not: one External security-lens section is in the tree, so a reader following the header alone would conclude implementation may begin. It may not. A **REVISE** verdict is cleared by the reviewer's re-read or by the Maintainer — **never by an author's Response**, and this Response does not clear it. The same correction applies to the *Sequence*'s step 0 (*'NO code before it lands'*) and to the brief's *'a review section written by a different agent type or a human has landed under this heading'*: both are satisfied by **one** round and the tier requires **two**." | gate audit |
+
+### Gate audit — every gate in this plan, and whether it is satisfied today
+
+Measured at HEAD `6bcd2d3`, `as_of 2026-08-05`. Reported because two gates in
+this tree were breached yesterday by agents who did not read them.
+
+| # | Gate | Where it is declared | Satisfied today? |
+|---|---|---|---|
+| G-a | Declared tier `required(External + External Security Review)` — **two** rounds | Plan header; *Plan review — the brief*; *Sequence* step 0 | **NO.** One round landed (Codex, External, security lens, 2026-08-05). The **External (non-security)** round remains owed — the reviewer says so in his own first paragraph. |
+| G-b | "No implementation commit lands before a review section is in the tree" | Plan header | **Literally yes, and that is the defect** — see **AM34**, which replaces it with the two-round form. The header sentence is weaker than the tier it summarises. |
+| G-c | Landed verdict outstanding | The External review's `**Verdict: REVISE.**` | **NO.** REVISE stands. An author Response never clears it. |
+| G-d | Decision condition — AW4 adversarial network-client fixtures, routed here as *"a blocking gate"*, `156305f`: *"This Decision does not discharge that."* | Source proposal Decision | **NO.** No runner code exists; A-1…A-12 are unexecuted. |
+| G-e | AM25 (was AM15) — the activation binding-mode amendment | AM15 → AM25 | **NO.** `dev/plans/security-verification-activation.md` is `**Status**: open`, has **zero** `living_state` occurrences, and carries its own REVISE. |
+| G-f | AM26/AM27 — Chunk **F2** blocked, not only Chunk G | new this round | **NO** (blocked by G-e). F1, F3–F6 and A–E are unblocked. |
+| G-g | Maintainer fence 1 — no agent runs `update_symbol` / `_gate_manifest.py` re-pin / `_gate_reanchor.py prepare\|promote` | *The Maintainer fence* | **Not breached.** No ceremony has been run for this scope; `test_ast_attest.py` is **29 passed** and this scope's Δ1–Δ5 are unlanded. |
+| G-h | Maintainer fence 2 — no credential value requested or accepted; no `deployed-passive` against a non-loopback target | *The Maintainer fence* | **Not breached.** No runner exists; no credential has been handled in any round. |
+| G-i | Maintainer fence 3 — `--authorize-base-url` is a human act | *The Maintainer fence* | **Not breached**, not yet reachable. |
+| G-j | Maintainer fence 4 (new) — first-use hash set is Maintainer-produced | AM31 | **Not breached**, not yet reachable. |
+| G-k | AM29 — no ceremony *requested* before A-12 and AM19 phase-(a) ledgers are recorded | new this round | **NO.** Neither ledger can exist; no code. |
+| G-l | AM11 — exactly two known-red AST nodes after F1/F2/F4; any third is a stop-and-explain | AM11 | **N/A today** — suite is **1959 passed, 0 failed**. Becomes live at Chunk F. |
+| G-m | F-8 — report stale frozen / cascade entries, **do not re-pin** | Chunk F | **Not breached**, not yet reachable. |
+| G-n | AM23 — the lifecycle checker does **not** distinguish an Internal section from an External one | AM23 | **Still true.** The gate remains mechanically pre-satisfied; the fence is prose plus the Maintainer. `review-gate-enforcement` owns the general defect. |
+
+**Two Maintainer decisions remain open**, unchanged from the prior round and
+neither resolvable by an author: whether to rename the Internal section (AM23),
+and whether to strike the *Contract question 1* living-state default (which would
+drop Δ2, change the declared delta before any ceremony, and moot much of AM25).
+
+### Does this Response clear the plan to implement?
+
+**No.** Stated flatly and first, because a Response is exactly the artifact that
+gets mistaken for a clearance, and because this plan's own history shows how
+easily a "gate satisfied" reading survives contact with a document that says
+otherwise.
+
+* **The tier is not discharged. One of two declared rounds has landed.** The
+  External security-lens round is in the tree; the **External (non-security)**
+  round is owed, and the reviewer states that himself rather than leaving it to
+  be inferred. **An author Response never discharges an External tier, and this
+  one does not discharge the security round either** — accepting a finding is not
+  the same act as an independent reader confirming the acceptance holds.
+* **The landed verdict is REVISE and remains outstanding.** It is cleared by the
+  reviewer's re-read or by the Maintainer. Nothing in this section clears it.
+* **One blocking precondition is unresolved and is not this plan's to resolve.**
+  AM25: the activation-side closed binding mode. Measured today — that plan is
+  `open`, contains no `living_state` handling, and carries its own REVISE whose
+  [E1] independently requires the amendment to land *there* before a capability
+  registry entry lands *here*. **This plan cannot self-serve that precondition,
+  and AM26/AM27 now hold Chunk F2 behind it as well as Chunk G.**
+* **The evidence [E2] demands cannot exist yet.** A-12 is a post-implementation
+  criterion by construction. Adding it does not satisfy it, and AM29 now blocks
+  the ceremony request on it.
+* **The schema [E1] demands is still not in this plan, and should not be.** The
+  binding-mode schema belongs to the activation scope. AM25 specifies what it must
+  contain; it does not contain it, and a plan that wrote that schema locally would
+  be committing the exact defect [I4] identified last round.
+
+**What this Response does establish**, so the owed External round does not re-do
+it: the review's `57 passed` and its no-code-exists premise both reproduce
+exactly; every engine figure this plan depends on still reproduces at
+`6bcd2d3` (173 / 161 / 28 / 164 / 95 / 20 / 12) except the suite figure, which has
+moved a fourth time and is amended; the E1 blocking condition is now specified at
+field level and corroborated from the owning scope's own External review; the
+[E3] circularity was re-derived from `bootstrap/_scaffold/install.py` rather than
+inherited, and has an existing in-tree precedent to model on; and the fence that
+was drawn around Chunk G is now correctly drawn around Chunk F2 as well.
+
+**What remains genuinely open, and what I would most want the owed External round
+to attack rather than inherit:** whether AM30's *documented* compare-and-abort is
+worth anything at all against a solo Maintainer under pressure, or whether the
+mechanical abort must be a precondition rather than a folded question; and
+whether AM26's split — A–E and F1/F3–F6 land, F2 and G wait — is a real seam or a
+convenience that leaves a half-registered capability in an adopter tree. I have
+argued both are sound. Neither has been read by anyone but me.
