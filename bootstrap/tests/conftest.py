@@ -1,9 +1,32 @@
 """Pytest conftest for Cairn's bootstrap test suite.
 
-Carries the **order-independence shuffle hook** that
-``scripts/quality_gate.py``'s order-independence sub-gate dispatches
-to.  Pure stdlib (``random.Random``), so no third-party pytest
-plugin is required.
+Carries two mechanisms, both stdlib-only and both inert unless
+explicitly activated: the **order-independence shuffle hook** and the
+**release-mode outcome rule**.
+
+Release mode (``CAIRN_RELEASE_GATE_ACTIVE``)
+--------------------------------------------
+
+``bootstrap/security_check.py`` sets this variable, at exactly one
+recognized value, on the pytest children whose result it reports as
+release evidence.  While it is set, an actual ``skipped`` /
+``xfailed`` / ``xpassed`` outcome makes the session **non-zero**: "the
+security gate may have skipped on the machine that cut the release" is
+not acceptable release evidence, and a suite that exits 0 after a skip
+says nothing about the code that did not run.
+
+Three boundaries, each deliberate:
+
+* **Without the token -- including at any other value -- contributor
+  behaviour is unchanged.**  A local skip is a feature for someone
+  without dev-deps installed; only a release run refuses it.
+* It is an **outcome rule, not a marker census**.  An *inactive*
+  ``skipif`` marker (condition false, test ran normally) does not fail
+  a release for existing.  Counting markers would refuse a release for
+  a skip that never happened.
+* An **already-failing or interrupted session stays at its own exit
+  code**.  Overwriting a ``2`` (interrupted) with a ``1`` would hide
+  the more serious outcome behind the less serious one.
 
 When pytest is invoked without ``--quality-gate-shuffle-seed``
 (the normal case), the hook is a no-op and tests run in the
@@ -19,7 +42,35 @@ per seed" contract (the sub-gate spawns a subprocess per seed).
 """
 from __future__ import annotations
 
+import os
 import random
+import sys
+
+#: The release-mode token and its **one** recognized value.  Duplicated as
+#: literals here rather than imported from ``bootstrap.security_check``: this
+#: module is loaded by pytest as a plugin before ``sys.path`` is guaranteed to
+#: reach the repository root, and a conftest that fails to import takes the
+#: whole suite with it.  The two sides are held together by
+#: ``bootstrap/tests/test_security_check.py``
+#: (``test_the_conftest_recognizes_the_same_token_pair``), which loads this
+#: file and compares both strings -- not by hope.
+RELEASE_GATE_ENV = "CAIRN_RELEASE_GATE_ACTIVE"
+RELEASE_GATE_VALUE = "1"
+
+#: ``{outcome: {nodeid, ...}}`` for the current session.  A set, so a node
+#: reporting the same refused outcome in more than one phase is one offender.
+_REFUSED: dict[str, set[str]] = {}
+
+
+def _release_mode() -> bool:
+    """True only for the exact recognized pair.
+
+    Equality, not truthiness: ``CAIRN_RELEASE_GATE_ACTIVE=0`` must **not**
+    activate release mode, and neither must a stray non-empty value left in a
+    shell.  A release posture that switches on by accident is one a
+    contributor learns to work around.
+    """
+    return os.environ.get(RELEASE_GATE_ENV) == RELEASE_GATE_VALUE
 
 
 def pytest_addoption(parser):
@@ -54,3 +105,54 @@ def pytest_collection_modifyitems(config, items):
         return
     rng = random.Random(seed)
     rng.shuffle(items)
+
+
+def pytest_runtest_logreport(report):
+    """Record the release-refused outcomes as they actually happen.
+
+    Reading the report rather than the marker is the whole point: ``skipped``
+    with a ``wasxfail`` attribute is an *xfail*, ``passed`` with one is an
+    *xpass*, and ``skipped`` without one is a real skip -- in any phase
+    (a ``skipif`` fires in setup, a ``pytest.skip()`` call in the test body).
+    An inactive marker produces none of these and is invisible here, which is
+    what makes this an outcome rule.
+    """
+    if not _release_mode():
+        return
+    if hasattr(report, "wasxfail"):
+        outcome = "xpassed" if report.passed else "xfailed"
+    elif report.skipped:
+        outcome = "skipped"
+    else:
+        return
+    _REFUSED.setdefault(outcome, set()).add(report.nodeid)
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """Refuse a release session that produced incomplete evidence.
+
+    The report is printed whenever there is one -- an operator repairing a
+    failing release run needs to see the skips too, not discover them on the
+    next pass. Only the *exit code* is conditional: a session that already
+    ended non-zero keeps its own code (see the module docstring).
+    """
+    if not _release_mode():
+        return
+    refused = {k: sorted(v) for k, v in _REFUSED.items() if v}
+    if not refused:
+        return
+    total = sum(len(v) for v in refused.values())
+    lines = [
+        f"RELEASE MODE ({RELEASE_GATE_ENV}={RELEASE_GATE_VALUE}): "
+        f"{total} outcome(s) are incomplete release evidence. A suite that "
+        f"exits 0 after a skip says nothing about the code that did not run.",
+    ]
+    for outcome in sorted(refused):
+        lines.append(f"  {outcome}:")
+        lines.extend(f"    {nodeid}" for nodeid in refused[outcome])
+    lines.append(
+        "  Install the missing dev dependency, or make the guarded condition "
+        "hold, and re-run. Outside release mode these are ordinary skips.")
+    print("\n".join(lines), file=sys.stderr)
+    if exitstatus == 0:
+        session.exitstatus = 1

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -488,6 +489,185 @@ def test_main_reports_the_full_head_on_a_clean_pass(monkeypatch, capsys) -> None
     assert security_check.main() == 0
     out = capsys.readouterr().out
     assert "PASS" in out and head in out
+
+
+# ---------------------------------------------------------------------------
+# Chunk C -- the release-mode outcome rule, and R1.3's decisive half
+#
+# The subject here is a **conftest plugin**, so it can only be exercised by an
+# actual pytest session. Every test below copies the REAL
+# ``bootstrap/tests/conftest.py`` into a throwaway tree and runs a child
+# pytest over it: a re-implementation of the hooks in a fixture would be a
+# check verified by a second copy of the thing it judges.
+# ---------------------------------------------------------------------------
+
+_CLEAN = "def test_ok():\n    assert True\n"
+_SKIPPED = 'import pytest\n\n\ndef test_s():\n    pytest.skip("fixture skip")\n'
+_SKIPIF_ACTIVE = (
+    'import pytest\n\n\n@pytest.mark.skipif(True, reason="fixture")\n'
+    "def test_si():\n    assert True\n")
+_SKIPIF_INACTIVE = (
+    'import pytest\n\n\n@pytest.mark.skipif(False, reason="fixture")\n'
+    "def test_si():\n    assert True\n")
+_XFAILED = ('import pytest\n\n\n@pytest.mark.xfail(reason="fixture")\n'
+            "def test_xf():\n    assert False\n")
+_XPASSED = ('import pytest\n\n\n@pytest.mark.xfail(reason="fixture")\n'
+            "def test_xp():\n    assert True\n")
+
+
+def _fixture_tree(tmp_path: Path, body: str) -> Path:
+    """A throwaway tree carrying the real conftest plus one test module."""
+    tests = tmp_path / "bootstrap" / "tests"
+    tests.mkdir(parents=True)
+    shutil.copy(CAIRN_ROOT / "bootstrap" / "tests" / "conftest.py",
+                tests / "conftest.py")
+    (tests / "test_fixture_outcome.py").write_text(body, encoding="utf-8")
+    return tmp_path
+
+
+def _child_pytest(root: Path, token: str | None) -> subprocess.CompletedProcess:
+    env = dict(os.environ)
+    env.pop(security_check.RELEASE_GATE_ENV, None)
+    if token is not None:
+        env[security_check.RELEASE_GATE_ENV] = token
+    return subprocess.run(
+        [sys.executable, "-m", "pytest", "bootstrap/tests", "-q",
+         "-p", "no:cacheprovider"],
+        cwd=str(root), env=env, capture_output=True, text=True, check=False,
+    )
+
+
+def test_the_conftest_recognizes_the_same_token_pair() -> None:
+    """The token is a two-file contract and the conftest holds its own literals
+    (it must import before ``sys.path`` reaches the repo root). This is what
+    keeps the two sides equal."""
+    import importlib.util
+
+    path = CAIRN_ROOT / "bootstrap" / "tests" / "conftest.py"
+    spec = importlib.util.spec_from_file_location("_cairn_conftest_probe", path)
+    assert spec is not None and spec.loader is not None
+    probe = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(probe)      # a fresh module object: pytest
+    # registers plugins by identity, so this does not double-register hooks.
+    assert probe.RELEASE_GATE_ENV == security_check.RELEASE_GATE_ENV
+    assert probe.RELEASE_GATE_VALUE == security_check.RELEASE_GATE_VALUE
+
+
+@pytest.mark.parametrize("body,label", [
+    (_SKIPPED, "skipped"), (_SKIPIF_ACTIVE, "skipped"),
+    (_XFAILED, "xfailed"), (_XPASSED, "xpassed"),
+])
+def test_release_mode_refuses_incomplete_evidence(tmp_path, body, label) -> None:
+    root = _fixture_tree(tmp_path, body)
+    proc = _child_pytest(root, security_check.RELEASE_GATE_VALUE)
+    assert proc.returncode != 0, proc.stdout + proc.stderr
+    assert "RELEASE MODE" in proc.stderr
+    assert label in proc.stderr
+
+
+@pytest.mark.parametrize("body", [_SKIPPED, _SKIPIF_ACTIVE, _XFAILED, _XPASSED])
+@pytest.mark.parametrize("token", [None, "", "0", "true", "yes", "2"])
+def test_contributor_behaviour_is_unchanged_without_the_exact_token(
+        tmp_path, body, token) -> None:
+    """Invariant 2. Absent, empty, falsy, and plausible-but-wrong values all
+    leave ordinary skip semantics alone -- a release posture that switches on
+    by accident is one a contributor learns to work around."""
+    root = _fixture_tree(tmp_path, body)
+    proc = _child_pytest(root, token)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert "RELEASE MODE" not in proc.stderr
+
+
+def test_release_mode_leaves_an_inactive_skipif_marker_alone(tmp_path) -> None:
+    """An outcome rule, NOT a marker census: a ``skipif`` whose condition is
+    false ran normally and is not incomplete evidence. A census would refuse a
+    release for a skip that never happened."""
+    root = _fixture_tree(tmp_path, _SKIPIF_INACTIVE)
+    proc = _child_pytest(root, security_check.RELEASE_GATE_VALUE)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert "RELEASE MODE" not in proc.stderr
+
+
+def test_release_mode_passes_a_fully_clean_session(tmp_path) -> None:
+    root = _fixture_tree(tmp_path, _CLEAN)
+    proc = _child_pytest(root, security_check.RELEASE_GATE_VALUE)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+
+
+def test_release_mode_does_not_overwrite_an_interrupted_exit_code(
+        tmp_path) -> None:
+    """A session that already ended non-zero keeps **its own** code. Collapsing
+    pytest's 2 (interrupted) into 1 would report the more serious outcome as
+    the less serious one -- and an interrupted session's skips are not the
+    reason it must not ship."""
+    root = _fixture_tree(tmp_path, _SKIPPED + (
+        "\n\ndef test_interrupt():\n    raise KeyboardInterrupt\n"))
+    proc = _child_pytest(root, security_check.RELEASE_GATE_VALUE)
+    assert proc.returncode == 2, (
+        f"expected pytest's INTERRUPTED (2), got {proc.returncode}\n"
+        + proc.stdout + proc.stderr)
+    assert "RELEASE MODE" in proc.stderr, (
+        "the refusal report must still print -- an operator repairing a failing "
+        "release run needs to see the skips too")
+
+
+def test_release_mode_reports_skips_alongside_a_real_failure(tmp_path) -> None:
+    root = _fixture_tree(tmp_path, _SKIPPED + (
+        "\n\ndef test_f():\n    assert False\n"))
+    proc = _child_pytest(root, security_check.RELEASE_GATE_VALUE)
+    assert proc.returncode == 1
+    assert "RELEASE MODE" in proc.stderr
+
+
+def _quality_gate_tree(tmp_path: Path, body: str) -> Path:
+    """A throwaway tree carrying the real conftest AND the real quality gate."""
+    root = _fixture_tree(tmp_path, body)
+    scripts = root / "scripts"
+    scripts.mkdir()
+    for name in ("quality_gate.py", "quality_gate_unused_def_whitelist.py"):
+        shutil.copy(CAIRN_ROOT / "scripts" / name, scripts / name)
+    return root
+
+
+@pytest.mark.parametrize("body,expect_refusal", [
+    (_SKIPPED, True), (_XFAILED, True), (_XPASSED, True), (_CLEAN, False),
+])
+def test_the_release_token_survives_the_real_grandchild_launcher(
+        tmp_path, monkeypatch, body, expect_refusal) -> None:
+    """**R1.3, the decisive half.** The chain under test is the real one:
+
+    ``security_check.run_quality_gate()`` -> ``scripts/quality_gate.py`` ->
+    ``pytest`` -> ``bootstrap/tests/conftest.py``
+
+    The middle link launches pytest with **no** ``env=`` of its own
+    (``quality_gate.py``, argv bound to ``cmd`` then ``subprocess.run(cmd,
+    ...)``), so the token reaches the grandchild by *inheritance* through a
+    process ``security_check`` handed an explicit environment. Nothing in
+    ``test_the_release_token_reaches_both_direct_children`` would notice that
+    link being broken -- a correct dict handed to a child that strips it
+    satisfies the direct check and fails the release gate silently.
+
+    Every part is genuine except the tree: the real quality gate, the real
+    conftest, a real pytest, and ``run_quality_gate()``'s own environment
+    construction."""
+    root = _quality_gate_tree(tmp_path, body)
+    monkeypatch.setattr(security_check, "CAIRN_ROOT", root)
+    monkeypatch.delenv(security_check.RELEASE_GATE_ENV, raising=False)
+    rc = security_check.run_quality_gate()
+    assert rc == (1 if expect_refusal else 0)
+
+
+def test_the_grandchild_is_clean_without_the_token(tmp_path, monkeypatch) -> None:
+    """The other direction of the same chain, and the guard against a test that
+    passes for the wrong reason: with the token removed from the child
+    environment builder, the identical skipping fixture is *accepted*. So the
+    refusal above is the token's doing, not the fixture merely being red."""
+    root = _quality_gate_tree(tmp_path, _SKIPPED)
+    monkeypatch.setattr(security_check, "CAIRN_ROOT", root)
+    monkeypatch.setattr(security_check, "_release_child_env",
+                        lambda: {k: v for k, v in os.environ.items()
+                                 if k != security_check.RELEASE_GATE_ENV})
+    assert security_check.run_quality_gate() == 0
 
 
 @pytest.mark.skipif(not _bandit_available(), reason="bandit not installed")
