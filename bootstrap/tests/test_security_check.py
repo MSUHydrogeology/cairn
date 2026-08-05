@@ -166,6 +166,77 @@ def test_postflight_passes_when_nothing_moved(repo) -> None:
     assert security_check.repo_state_postflight(head) == 0
 
 
+def test_detached_checkout_excludes_an_ignored_pytest_override(
+        repo, capsys) -> None:
+    """CR1's reproduced false pass, through real Git and real pytest.
+
+    The source checkout is clean according to the production preflight even
+    though an ignored root plugin can override the release hook at ``trylast``.
+    The detached committed checkout must omit that plugin, so the identical
+    release-mode child refuses the skip.
+    """
+    tests = repo / "bootstrap" / "tests"
+    tests.mkdir(parents=True)
+    shutil.copy(CAIRN_ROOT / "bootstrap" / "tests" / "conftest.py",
+                tests / "conftest.py")
+    (tests / "test_skipped.py").write_text(_SKIPPED, encoding="utf-8")
+    _setup_git("add", "bootstrap/tests", cwd=repo)
+    _setup_git("commit", "-q", "-m", "release fixture", cwd=repo)
+
+    (repo / ".git" / "info" / "exclude").write_text(
+        "/conftest.py\n", encoding="utf-8")
+    (repo / "conftest.py").write_text(
+        "import pytest\n\n"
+        "@pytest.hookimpl(trylast=True)\n"
+        "def pytest_sessionfinish(session, exitstatus):\n"
+        "    session.exitstatus = 0\n",
+        encoding="utf-8",
+    )
+    rc, head = security_check.repo_state_preflight()
+    assert rc == 0 and head is not None
+    assert _child_pytest(repo, security_check.RELEASE_GATE_VALUE).returncode == 0
+
+    with security_check._detached_checkout(head) as checkout:
+        assert not (checkout / "conftest.py").exists()
+        proc = _child_pytest(checkout, security_check.RELEASE_GATE_VALUE)
+        assert proc.returncode != 0, proc.stdout + proc.stderr
+        assert "RELEASE MODE" in proc.stderr
+    capsys.readouterr()
+
+
+def test_detached_checkout_avoids_checkout_filter_execution(
+        repo, tmp_path) -> None:
+    """The detached checkout is populated from blobs, not through filters.
+
+    A repository-local smudge filter runs during ``git worktree add`` and can
+    transform tracked bytes while the index still names the original blob. The
+    release checkout uses ``--no-checkout`` plus ``cat-file`` so the candidate
+    program never executes and the committed payload is preserved.
+    """
+    filter_script = tmp_path / "smudge.py"
+    marker = tmp_path / "smudge-ran"
+    filter_script.write_text(
+        "import pathlib, sys\n"
+        f"pathlib.Path({str(marker)!r}).write_text('ran')\n"
+        "sys.stdout.buffer.write(sys.stdin.buffer.read().replace(b'1', b'9'))\n",
+        encoding="utf-8",
+    )
+    (repo / ".gitattributes").write_text(
+        "tracked.py filter=fixture\n", encoding="utf-8")
+    _setup_git("add", ".gitattributes", cwd=repo)
+    _setup_git("commit", "-q", "-m", "filter attribute", cwd=repo)
+    _setup_git("config", "filter.fixture.smudge",
+               f"{sys.executable} {filter_script}", cwd=repo)
+    _setup_git("config", "filter.fixture.clean", "cat", cwd=repo)
+    head = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        capture_output=True, text=True, check=True).stdout.strip()
+
+    with security_check._detached_checkout(head) as checkout:
+        assert (checkout / "tracked.py").read_text(encoding="utf-8") == "x = 1\n"
+    assert not marker.exists(), "candidate-controlled smudge filter executed"
+
+
 def test_state_git_calls_are_sterile(repo, monkeypatch) -> None:
     """A2: the steering environment is stripped and execution-bearing config is
     disabled on the state check itself -- the check that decides whether a
@@ -361,6 +432,8 @@ def test_the_release_token_reaches_both_direct_children(monkeypatch) -> None:
             f"{call['cmd']}")
         assert env[security_check.RELEASE_GATE_ENV] == \
             security_check.RELEASE_GATE_VALUE
+        assert env["PYTHONDONTWRITEBYTECODE"] == "1"
+        assert env["PYTEST_ADDOPTS"] == "-p no:cacheprovider"
         # A superset of the operator's environment: the quality gate's
         # order-independence sub-gate launches pytest as a grandchild with no
         # env= of its own, so anything dropped here never reaches it.
@@ -403,6 +476,16 @@ def test_suite_fails_closed_when_the_interpreter_cannot_be_spawned(
     assert "cannot run the suite" in capsys.readouterr().err
 
 
+def test_check_cairn_fails_closed_when_the_interpreter_cannot_be_spawned(
+        monkeypatch, capsys) -> None:
+    def _boom(*_a, **_k):
+        raise OSError("Exec format error")
+
+    monkeypatch.setattr(security_check.subprocess, "run", _boom)
+    assert security_check.run_check_cairn() == 1
+    assert "cannot run check_cairn" in capsys.readouterr().err
+
+
 def test_quality_gate_fails_closed_when_the_script_is_absent(
         tmp_path, monkeypatch, capsys) -> None:
     (tmp_path / "scripts").mkdir()
@@ -438,24 +521,55 @@ def test_main_attempts_every_phase_after_the_first_failure(monkeypatch,
     monkeypatch.setattr(security_check, "run_check_cairn", _phase("cairn", 0))
     monkeypatch.setattr(security_check, "run_suite", _phase("suite", 1))
     monkeypatch.setattr(security_check, "run_quality_gate", _phase("qg", 0))
-    monkeypatch.setattr(security_check, "repo_state_preflight",
-                        lambda: (0, "a" * 40))
     monkeypatch.setattr(security_check, "repo_state_postflight", lambda _h: 0)
 
-    assert security_check.main() == 1
+    assert security_check._run_bound_phases("a" * 40) == 1
     assert ran == ["bandit", "cairn", "suite", "qg"]
     err = capsys.readouterr().err
     assert "phase bandit did not pass" in err
     assert "phase release-mode suite did not pass" in err
 
 
+def test_phase_exception_is_labelled_and_later_phases_and_postflight_run(
+        monkeypatch, capsys) -> None:
+    ran: list[str] = []
+
+    def _boom():
+        ran.append("bandit")
+        raise RuntimeError("fixture boom")
+
+    monkeypatch.setattr(security_check, "run_bandit", _boom)
+    monkeypatch.setattr(
+        security_check, "run_check_cairn",
+        lambda: (ran.append("cairn"), 0)[1])
+    monkeypatch.setattr(
+        security_check, "run_suite", lambda: (ran.append("suite"), 0)[1])
+    monkeypatch.setattr(
+        security_check, "run_quality_gate", lambda: (ran.append("qg"), 0)[1])
+    monkeypatch.setattr(
+        security_check, "repo_state_postflight",
+        lambda _h: (ran.append("postflight"), 0)[1])
+
+    assert security_check._run_bound_phases("a" * 40) == 1
+    assert ran == ["bandit", "cairn", "suite", "qg", "postflight"]
+    err = capsys.readouterr().err
+    assert "phase bandit raised RuntimeError" in err
+    assert "fixture boom" in err
+
+
+def test_phase_interrupt_is_not_normalized(monkeypatch) -> None:
+    monkeypatch.setattr(
+        security_check, "run_bandit",
+        lambda: (_ for _ in ()).throw(KeyboardInterrupt()))
+    with pytest.raises(KeyboardInterrupt):
+        security_check._run_bound_phases("a" * 40)
+
+
 def test_main_refuses_when_only_the_postflight_fails(monkeypatch, capsys) -> None:
-    monkeypatch.setattr(security_check, "run_bandit", lambda: 0)
-    monkeypatch.setattr(security_check, "run_check_cairn", lambda: 0)
-    monkeypatch.setattr(security_check, "run_suite", lambda: 0)
-    monkeypatch.setattr(security_check, "run_quality_gate", lambda: 0)
     monkeypatch.setattr(security_check, "repo_state_preflight",
                         lambda: (0, "b" * 40))
+    monkeypatch.setattr(security_check, "_run_in_detached_checkout",
+                        lambda _h: 0)
     monkeypatch.setattr(security_check, "repo_state_postflight", lambda _h: 1)
     assert security_check.main() == 1
     assert "FAIL" in capsys.readouterr().err
@@ -479,14 +593,14 @@ def test_main_stops_at_a_failed_preflight_and_runs_no_phase(monkeypatch) -> None
 def test_main_reports_the_full_head_on_a_clean_pass(monkeypatch, capsys) -> None:
     """A3: release notes have to be able to bind the run to a commit id."""
     head = "c" * 40
-    monkeypatch.setattr(security_check, "run_bandit", lambda: 0)
-    monkeypatch.setattr(security_check, "run_check_cairn", lambda: 0)
-    monkeypatch.setattr(security_check, "run_suite", lambda: 0)
-    monkeypatch.setattr(security_check, "run_quality_gate", lambda: 0)
+    detached: list[str] = []
     monkeypatch.setattr(security_check, "repo_state_preflight",
                         lambda: (0, head))
+    monkeypatch.setattr(security_check, "_run_in_detached_checkout",
+                        lambda bound: (detached.append(bound), 0)[1])
     monkeypatch.setattr(security_check, "repo_state_postflight", lambda _h: 0)
     assert security_check.main() == 0
+    assert detached == [head]
     out = capsys.readouterr().out
     assert "PASS" in out and head in out
 
@@ -513,6 +627,11 @@ _XFAILED = ('import pytest\n\n\n@pytest.mark.xfail(reason="fixture")\n'
             "def test_xf():\n    assert False\n")
 _XPASSED = ('import pytest\n\n\n@pytest.mark.xfail(reason="fixture")\n'
             "def test_xp():\n    assert True\n")
+_IMPORTORSKIP_AT_COLLECTION = (
+    'import pytest\npytest.importorskip("cairn_missing_release_fixture")\n')
+_MODULE_SKIP_AT_COLLECTION = (
+    'import pytest\npytest.skip("fixture module skip", '
+    'allow_module_level=True)\n')
 
 
 def _fixture_tree(tmp_path: Path, body: str) -> Path:
@@ -563,6 +682,37 @@ def test_release_mode_refuses_incomplete_evidence(tmp_path, body, label) -> None
     assert proc.returncode != 0, proc.stdout + proc.stderr
     assert "RELEASE MODE" in proc.stderr
     assert label in proc.stderr
+
+
+@pytest.mark.parametrize("body", [
+    _IMPORTORSKIP_AT_COLLECTION,
+    _MODULE_SKIP_AT_COLLECTION,
+])
+def test_release_mode_refuses_collection_time_skips(tmp_path, body) -> None:
+    """CR2: collection reports do not pass through runtest_logreport."""
+    root = _fixture_tree(tmp_path, body)
+    tests = root / "bootstrap" / "tests"
+    (tests / "test_passing_control.py").write_text(
+        _CLEAN, encoding="utf-8")
+    proc = _child_pytest(root, security_check.RELEASE_GATE_VALUE)
+    assert proc.returncode != 0, proc.stdout + proc.stderr
+    assert "RELEASE MODE" in proc.stderr
+    assert "skipped" in proc.stderr
+
+
+@pytest.mark.parametrize("body", [
+    _IMPORTORSKIP_AT_COLLECTION,
+    _MODULE_SKIP_AT_COLLECTION,
+])
+def test_collection_time_skips_remain_ordinary_without_the_token(
+        tmp_path, body) -> None:
+    root = _fixture_tree(tmp_path, body)
+    tests = root / "bootstrap" / "tests"
+    (tests / "test_passing_control.py").write_text(
+        _CLEAN, encoding="utf-8")
+    proc = _child_pytest(root, None)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert "RELEASE MODE" not in proc.stderr
 
 
 @pytest.mark.parametrize("body", [_SKIPPED, _SKIPIF_ACTIVE, _XFAILED, _XPASSED])
@@ -815,6 +965,27 @@ def test_a_malformed_report_fails_closed_with_a_message(
     assert "Bandit clean" not in captured.out, (
         "the clean line must never print over a report the command could not "
         "validate")
+
+
+@pytest.mark.parametrize("errors,because", [
+    ([1], "errors[0] is int, not an object"),
+    ([{}], "errors[0] is missing required field"),
+    ([{"filename": None, "reason": "nope"}],
+     "errors[0].filename is not a string"),
+])
+def test_malformed_bandit_error_entries_fail_closed(
+        monkeypatch, capsys, errors, because) -> None:
+    class _Proc:
+        returncode = 0
+        stdout = json.dumps({"errors": errors, "results": []})
+        stderr = ""
+
+    monkeypatch.setattr(security_check.subprocess, "run",
+                        lambda *a, **k: _Proc())
+    assert security_check.run_bandit() == 1
+    err = capsys.readouterr().err
+    assert "not a usable report" in err
+    assert because in err
 
 
 def test_an_unknown_severity_is_unclassifiable_not_low(monkeypatch,

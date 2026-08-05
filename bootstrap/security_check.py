@@ -23,6 +23,14 @@ evidence about bytes nobody can fetch. The same state is re-checked after the
 phases, and the full ``HEAD`` is printed in the summary so release notes can
 bind the run to the tagged commit.
 
+The checking phases do not execute from that operator checkout. The parent
+creates a detached temporary worktree at the preflight commit, verifies every
+leaf against the commit's Git blob id (and rejects extra ignored leaves), then
+executes the committed checker there. The bytes are verified again before the
+temporary worktree is removed. Thus an ignored pytest plugin or bytecode file
+cannot influence the verdict, and repository-local checkout filters are never
+executed while constructing the evidence tree.
+
 **Four phases**, and every phase after the preflight is *attempted* even once
 an earlier one has failed, so one run yields a complete repair list:
 
@@ -48,10 +56,11 @@ scaffold engine. This module is the
 single source of the scan-target set and the Bandit allowlist; the dev
 gate imports them (no second drift-prone copy).
 
-**What this command does not do**, stated rather than implied: it does not
-authenticate its own bytes or process, and nothing binds its output to a
-release tag. Running it, reading it, and recording it in the release notes is
-the Maintainer's act -- see ``SECURITY.md`` and ``bootstrap/PROVENANCE.md``.
+**What this command does not do**, stated rather than implied: the parent
+process that establishes and launches the committed checkout is not
+authenticated, and nothing cryptographically binds its output to a release
+tag. Running it, reading it, and recording it in the release notes is the
+Maintainer's act -- see ``SECURITY.md`` and ``bootstrap/PROVENANCE.md``.
 
 Security-hardening Chunk 7 / R1; manifest derivation per the
 ``scan-coverage`` plan; four-phase orchestration per the
@@ -59,12 +68,17 @@ Security-hardening Chunk 7 / R1; manifest derivation per the
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import shutil
+import stat
 import subprocess
 import sys
+import tempfile
+from contextlib import contextmanager
 from collections.abc import Callable, Mapping
+from collections.abc import Iterator
 from pathlib import Path
 
 CAIRN_ROOT = Path(__file__).resolve().parent.parent
@@ -94,6 +108,7 @@ _KNOWN_SEVERITIES = frozenset({"UNDEFINED", "LOW", "MEDIUM", "HIGH"})
 #: Fields every finding must carry for the rules below to mean anything.
 _REQUIRED_FINDING_FIELDS = ("filename", "test_id", "issue_severity",
                             "line_number", "issue_text")
+_REQUIRED_ERROR_FIELDS = ("filename", "reason")
 
 #: The release-mode token, and its **one** recognized value (Binding
 #: amendment R1). ``bootstrap/tests/conftest.py`` reads exactly this pair and
@@ -190,8 +205,8 @@ def _sterile_git_env() -> dict[str, str]:
     return env
 
 
-def _git(*args: str) -> subprocess.CompletedProcess:
-    """Run one read-only git subcommand against ``CAIRN_ROOT``, sterilised."""
+def _git_at(repo_root: Path, *args: str) -> subprocess.CompletedProcess:
+    """Run one text-producing Git command against *repo_root*, sterilised."""
     git = shutil.which("git")
     if git is None:
         raise _RepoStateError("git was not found on PATH")
@@ -200,9 +215,33 @@ def _git(*args: str) -> subprocess.CompletedProcess:
         overrides += ["-c", f"{key}={value}"]
     try:
         return subprocess.run(
-            [git, "-C", str(CAIRN_ROOT), *overrides, *args],
+            [git, "-C", str(repo_root), *overrides, *args],
             capture_output=True, text=True, check=False,
             env=_sterile_git_env(),
+        )
+    except OSError as exc:
+        raise _RepoStateError(f"could not run git ({exc})") from None
+
+
+def _git(*args: str) -> subprocess.CompletedProcess:
+    """Run one Git command against ``CAIRN_ROOT``."""
+    return _git_at(CAIRN_ROOT, *args)
+
+
+def _git_bytes_at(repo_root: Path, *args: str,
+                  input_bytes: bytes | None = None) -> subprocess.CompletedProcess:
+    """Binary-output counterpart used for NUL-delimited tree records."""
+    git = shutil.which("git")
+    if git is None:
+        raise _RepoStateError("git was not found on PATH")
+    overrides: list[str] = []
+    for key, value in _STERILE_GIT_CONFIG.items():
+        overrides += ["-c", f"{key}={value}"]
+    try:
+        return subprocess.run(
+            [git, "-C", str(repo_root), *overrides, *args],
+            capture_output=True, text=False, check=False,
+            env=_sterile_git_env(), input=input_bytes,
         )
     except OSError as exc:
         raise _RepoStateError(f"could not run git ({exc})") from None
@@ -298,6 +337,242 @@ def repo_state_postflight(head: str) -> int:
               f"{_format_dirty(dirty)}", file=sys.stderr)
         return 1
     return 0
+
+
+def _blob_oid(data: bytes, hex_length: int) -> str:
+    """Hash one worktree payload with Git's blob framing."""
+    framed = b"blob " + str(len(data)).encode("ascii") + b"\0" + data
+    if hex_length == 40:
+        # The repository's object format chooses this algorithm; this code is
+        # reproducing an existing Git oid, not selecting SHA-1 for a new
+        # security protocol.
+        return hashlib.sha1(framed, usedforsecurity=False).hexdigest()
+    if hex_length == 64:
+        return hashlib.sha256(framed).hexdigest()
+    raise _RepoStateError(
+        f"unsupported Git object-id width {hex_length}; cannot verify checkout")
+
+
+def _committed_blobs(repo_root: Path, head: str) -> dict[str, tuple[str, str]]:
+    """Return ``path -> (mode, oid)`` for every committed blob at *head*."""
+    proc = _git_bytes_at(repo_root, "ls-tree", "-r", "-z", "--full-tree", head)
+    if proc.returncode != 0:
+        detail = os.fsdecode(proc.stderr or b"").strip()
+        raise _RepoStateError(
+            f"could not enumerate committed tree {head} "
+            f"({detail or 'git ls-tree failed'})")
+    entries: dict[str, tuple[str, str]] = {}
+    for record in (proc.stdout or b"").split(b"\0"):
+        if not record:
+            continue
+        try:
+            metadata, raw_path = record.split(b"\t", 1)
+            raw_mode, raw_kind, raw_oid = metadata.split(b" ", 2)
+        except ValueError as exc:
+            raise _RepoStateError(
+                "git ls-tree returned a malformed NUL-delimited record") from exc
+        rel = os.fsdecode(raw_path)
+        path = Path(rel)
+        if path.is_absolute() or not path.parts or ".." in path.parts:
+            raise _RepoStateError(
+                f"committed tree contains unsafe path {rel!r}")
+        if raw_kind != b"blob":
+            raise _RepoStateError(
+                f"committed path {rel!r} is {os.fsdecode(raw_kind)!r}, not a "
+                "self-contained blob (submodules are not release evidence)")
+        if rel in entries:
+            raise _RepoStateError(f"committed tree repeats path {rel!r}")
+        entries[rel] = (raw_mode.decode("ascii"), raw_oid.decode("ascii"))
+    if not entries:
+        raise _RepoStateError("committed tree contains no blobs")
+    return entries
+
+
+def _checkout_leaf_paths(repo_root: Path) -> set[str]:
+    """Enumerate every non-directory worktree object except Git metadata."""
+    leaves: set[str] = set()
+    try:
+        for base, dirs, files in os.walk(repo_root, followlinks=False):
+            base_path = Path(base)
+            if base_path == repo_root:
+                dirs[:] = [name for name in dirs if name != ".git"]
+                files = [name for name in files if name != ".git"]
+            for name in list(dirs):
+                candidate = base_path / name
+                if candidate.is_symlink():
+                    leaves.add(str(candidate.relative_to(repo_root)))
+                    dirs.remove(name)
+            for name in files:
+                leaves.add(str((base_path / name).relative_to(repo_root)))
+    except OSError as exc:
+        raise _RepoStateError(
+            f"could not enumerate detached checkout bytes ({exc})") from None
+    return leaves
+
+
+def _read_committed_payloads(
+        repo_root: Path,
+        entries: Mapping[str, tuple[str, str]]) -> dict[str, bytes]:
+    """Read every requested blob in one ``git cat-file --batch`` exchange."""
+    ordered = list(entries.items())
+    request = b"".join(oid.encode("ascii") + b"\n"
+                       for _rel, (_mode, oid) in ordered)
+    proc = _git_bytes_at(
+        repo_root, "cat-file", "--batch", input_bytes=request)
+    if proc.returncode != 0:
+        detail = os.fsdecode(proc.stderr or b"").strip()
+        raise _RepoStateError(
+            f"could not read committed blobs ({detail or 'git cat-file failed'})")
+    output = proc.stdout or b""
+    cursor = 0
+    payloads: dict[str, bytes] = {}
+    for rel, (_mode, expected_oid) in ordered:
+        line_end = output.find(b"\n", cursor)
+        if line_end < 0:
+            raise _RepoStateError("git cat-file returned a truncated header")
+        header = output[cursor:line_end].split(b" ")
+        if len(header) != 3:
+            raise _RepoStateError(
+                f"git cat-file returned a malformed header for {rel!r}")
+        raw_oid, raw_kind, raw_size = header
+        try:
+            size = int(raw_size)
+        except ValueError as exc:
+            raise _RepoStateError(
+                f"git cat-file returned a malformed size for {rel!r}") from exc
+        cursor = line_end + 1
+        end = cursor + size
+        if end >= len(output) or output[end:end + 1] != b"\n":
+            raise _RepoStateError(
+                f"git cat-file returned a truncated payload for {rel!r}")
+        if raw_oid.decode("ascii") != expected_oid or raw_kind != b"blob":
+            raise _RepoStateError(
+                f"git cat-file returned the wrong object for {rel!r}")
+        payloads[rel] = output[cursor:end]
+        cursor = end + 1
+    if cursor != len(output):
+        raise _RepoStateError("git cat-file returned unexpected trailing bytes")
+    return payloads
+
+
+def _materialize_committed_checkout(repo_root: Path, head: str) -> None:
+    """Populate a ``--no-checkout`` worktree directly from committed blobs.
+
+    Normal checkout invokes configured smudge filters before any verifier can
+    inspect their result. Reading objects with ``cat-file`` avoids executing
+    those repository-local programs at all.
+    """
+    entries = _committed_blobs(repo_root, head)
+    payloads = _read_committed_payloads(repo_root, entries)
+    root = repo_root.resolve(strict=True)
+    for rel, (mode, _oid) in entries.items():
+        path = root / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        data = payloads[rel]
+        if mode == "120000":
+            target = Path(os.fsdecode(data))
+            if target.is_absolute():
+                raise _RepoStateError(
+                    f"committed symlink {rel!r} has an absolute target")
+            resolved = (path.parent / target).resolve(strict=False)
+            if resolved != root and root not in resolved.parents:
+                raise _RepoStateError(
+                    f"committed symlink {rel!r} resolves outside the detached "
+                    "checkout")
+            os.symlink(os.fsdecode(data), path)
+        elif mode in {"100644", "100755"}:
+            path.write_bytes(data)
+            path.chmod(0o755 if mode == "100755" else 0o644)
+        else:
+            raise _RepoStateError(
+                f"committed path {rel!r} has unsupported mode {mode!r}")
+
+
+def _verify_committed_checkout(repo_root: Path, head: str) -> None:
+    """Require the checkout to contain exactly *head*'s blob bytes.
+
+    ``git worktree add`` can apply configured checkout filters, and ordinary
+    status honors ignore rules. Neither is an exact-byte oracle. This verifier
+    compares every leaf to the object id in ``ls-tree`` using Git's blob hash,
+    rejects extra ignored leaves, and refuses symlinks that resolve outside the
+    detached tree.
+    """
+    try:
+        root = repo_root.resolve(strict=True)
+    except OSError as exc:
+        raise _RepoStateError(
+            f"detached checkout root cannot be resolved ({exc})") from None
+    expected = _committed_blobs(root, head)
+    actual = _checkout_leaf_paths(root)
+    expected_paths = set(expected)
+    if actual != expected_paths:
+        missing = sorted(expected_paths - actual)[:5]
+        extra = sorted(actual - expected_paths)[:5]
+        raise _RepoStateError(
+            "detached checkout does not contain exactly the committed paths "
+            f"(missing={missing}, extra={extra})")
+
+    for rel, (mode, oid) in expected.items():
+        path = root / rel
+        try:
+            metadata = path.lstat()
+            if mode == "120000":
+                if not stat.S_ISLNK(metadata.st_mode):
+                    raise _RepoStateError(
+                        f"committed symlink {rel!r} is not a symlink on disk")
+                data = os.fsencode(os.readlink(path))
+                resolved = path.resolve(strict=True)
+                if resolved != root and root not in resolved.parents:
+                    raise _RepoStateError(
+                        f"committed symlink {rel!r} resolves outside the "
+                        "detached checkout")
+            elif mode in {"100644", "100755"}:
+                if not stat.S_ISREG(metadata.st_mode):
+                    raise _RepoStateError(
+                        f"committed file {rel!r} is not a regular file on disk")
+                is_executable = bool(metadata.st_mode & stat.S_IXUSR)
+                if is_executable != (mode == "100755"):
+                    raise _RepoStateError(
+                        f"committed file {rel!r} has the wrong executable mode")
+                data = path.read_bytes()
+            else:
+                raise _RepoStateError(
+                    f"committed path {rel!r} has unsupported mode {mode!r}")
+        except _RepoStateError:
+            raise
+        except (OSError, RuntimeError) as exc:
+            raise _RepoStateError(
+                f"could not read detached checkout path {rel!r} ({exc})") from None
+        if _blob_oid(data, len(oid)) != oid:
+            raise _RepoStateError(
+                f"detached checkout path {rel!r} does not match commit {head}")
+
+
+@contextmanager
+def _detached_checkout(head: str) -> Iterator[Path]:
+    """Yield an exact-byte detached worktree for *head*, then remove it."""
+    with tempfile.TemporaryDirectory(prefix="cairn-release-") as parent:
+        checkout = Path(parent) / "checkout"
+        added = False
+        try:
+            proc = _git("worktree", "add", "--detach", "--no-checkout",
+                        str(checkout), head)
+            if proc.returncode != 0:
+                raise _RepoStateError(
+                    "could not create detached release checkout "
+                    f"({(proc.stderr or '').strip() or 'git worktree add failed'})")
+            added = True
+            _materialize_committed_checkout(checkout, head)
+            _verify_committed_checkout(checkout, head)
+            yield checkout
+            _verify_committed_checkout(checkout, head)
+        finally:
+            if added:
+                proc = _git("worktree", "remove", "--force", str(checkout))
+                if proc.returncode != 0:
+                    raise _RepoStateError(
+                        "could not remove detached release checkout "
+                        f"({(proc.stderr or '').strip() or 'git worktree remove failed'})")
 
 
 def scan_targets() -> list[str]:
@@ -426,12 +701,27 @@ def validate_report(report: object, returncode: int) -> str | None:
         if not isinstance(report[field], list):
             return (f"{field!r} is {type(report[field]).__name__}, not a list "
                     f"-- a mapping-valued {field!r} reads as 'nothing found'")
+    for i, error in enumerate(report["errors"]):
+        if not isinstance(error, dict):
+            return f"errors[{i}] is {type(error).__name__}, not an object"
+        missing = [k for k in _REQUIRED_ERROR_FIELDS if k not in error]
+        if missing:
+            return f"errors[{i}] is missing required field(s) {missing}"
+        for field in _REQUIRED_ERROR_FIELDS:
+            if not isinstance(error[field], str):
+                return f"errors[{i}].{field} is not a string"
     for i, finding in enumerate(report["results"]):
         if not isinstance(finding, dict):
             return f"results[{i}] is {type(finding).__name__}, not an object"
         missing = [k for k in _REQUIRED_FINDING_FIELDS if k not in finding]
         if missing:
             return f"results[{i}] is missing required field(s) {missing}"
+        for field in ("filename", "test_id", "issue_severity", "issue_text"):
+            if not isinstance(finding[field], str):
+                return f"results[{i}].{field} is not a string"
+        if (not isinstance(finding["line_number"], int)
+                or isinstance(finding["line_number"], bool)):
+            return f"results[{i}].line_number is not an integer"
         severity = finding["issue_severity"]
         if severity not in _KNOWN_SEVERITIES:
             return (f"results[{i}] has issue_severity {severity!r}, outside "
@@ -568,8 +858,13 @@ def run_check_cairn() -> int:
         print(f"security_check: {script} missing -- fail closed.",
               file=sys.stderr)
         return 1
-    return subprocess.run([sys.executable, str(script)],
-                          cwd=str(CAIRN_ROOT), check=False).returncode
+    try:
+        return subprocess.run([sys.executable, str(script)],
+                              cwd=str(CAIRN_ROOT), check=False).returncode
+    except OSError as exc:
+        print(f"security_check: cannot run check_cairn ({exc}) -- fail "
+              "closed.", file=sys.stderr)
+        return 1
 
 
 def _release_child_env() -> dict[str, str]:
@@ -592,6 +887,12 @@ def _release_child_env() -> dict[str, str]:
     """
     env = dict(os.environ)
     env[RELEASE_GATE_ENV] = RELEASE_GATE_VALUE
+    # The detached checkout is exact before phases and must stay exact between
+    # them. Pytest's cache provider and Python bytecode are execution byproducts,
+    # not release inputs; suppress them instead of teaching the verifier to
+    # tolerate uncommitted files.
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+    env["PYTEST_ADDOPTS"] = "-p no:cacheprovider"
     return env
 
 
@@ -673,7 +974,89 @@ def _phases() -> tuple[tuple[str, Callable[[], int]], ...]:
     )
 
 
-def main() -> int:
+def _run_bound_phases(head: str) -> int:
+    """Run every checking phase and the checkout postflight.
+
+    Ordinary phase exceptions become labelled failures so later phases still
+    produce a repair list. ``KeyboardInterrupt`` and ``SystemExit`` are not
+    ``Exception`` subclasses and retain their control-flow semantics.
+    """
+    rc = 0
+    for label, phase in _phases():
+        try:
+            phase_rc = phase()
+        except Exception as exc:  # noqa: BLE001 -- phase failure is evidence
+            print(f"security_check: phase {label} raised "
+                  f"{type(exc).__name__}: {exc} -- FAIL CLOSED; continuing "
+                  "the remaining phases.", file=sys.stderr)
+            rc = 1
+            continue
+        if phase_rc != 0:
+            print(f"security_check: phase {label} did not pass.",
+                  file=sys.stderr)
+            rc = 1
+    if repo_state_postflight(head) != 0:
+        rc = 1
+    return rc
+
+
+_BOUND_HEAD_ARG = "--_cairn-bound-head"
+
+
+def _bound_main(expected_head: str) -> int:
+    """Internal child entry: run phases only in the detached checkout."""
+    rc, head = repo_state_preflight()
+    if rc or head is None:
+        print("security_check: detached checkout preflight failed -- FAIL "
+              "CLOSED.", file=sys.stderr)
+        return 1
+    if head != expected_head:
+        print(f"security_check: detached checkout resolved {head}, expected "
+              f"{expected_head} -- FAIL CLOSED.", file=sys.stderr)
+        return 1
+    rc = _run_bound_phases(head)
+    if rc == 0:
+        print(f"security_check: committed-checkout phases clean at {head}.")
+    return rc
+
+
+def _run_in_detached_checkout(head: str) -> int:
+    """Execute this checker from an exact-byte detached checkout of *head*."""
+    try:
+        with _detached_checkout(head) as checkout:
+            checker = checkout / "bootstrap" / "security_check.py"
+            env = dict(os.environ)
+            env["PYTHONDONTWRITEBYTECODE"] = "1"
+            try:
+                proc = subprocess.run(
+                    [sys.executable, str(checker), _BOUND_HEAD_ARG, head],
+                    cwd=str(checkout), env=env, check=False,
+                )
+            except OSError as exc:
+                print("security_check: cannot launch the detached committed "
+                      f"checker ({exc}) -- FAIL CLOSED.", file=sys.stderr)
+                return 1
+            if proc.returncode != 0:
+                print("security_check: detached committed-checkout phases did "
+                      f"not pass (rc={proc.returncode}).", file=sys.stderr)
+                return 1
+    except _RepoStateError as exc:
+        print("security_check: detached committed checkout could not be "
+              f"established or preserved ({exc}) -- FAIL CLOSED.",
+              file=sys.stderr)
+        return 1
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = [] if argv is None else list(argv)
+    if args:
+        if len(args) == 2 and args[0] == _BOUND_HEAD_ARG:
+            return _bound_main(args[1])
+        print("security_check: unexpected argument(s) -- FAIL CLOSED.",
+              file=sys.stderr)
+        return 1
+
     rc, head = repo_state_preflight()
     # `head is None` is unreachable on an rc == 0 path; folded into the same
     # branch so the narrowing is a fail-closed guard rather than an assert
@@ -682,13 +1065,8 @@ def main() -> int:
         print("security_check: FAIL -- resolve the above before release.",
               file=sys.stderr)
         return rc or 1
-    for label, phase in _phases():
-        # Normalised to 0/1 rather than OR-ed: a phase's raw exit code is not
-        # a bit field (1 | 2 == 3), and the only contract here is clean vs not.
-        if phase() != 0:
-            print(f"security_check: phase {label} did not pass.",
-                  file=sys.stderr)
-            rc = 1
+    if _run_in_detached_checkout(head) != 0:
+        rc = 1
     if repo_state_postflight(head) != 0:
         rc = 1
     if rc == 0:
@@ -701,4 +1079,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":  # pragma: no cover
-    raise SystemExit(main())
+    raise SystemExit(main(sys.argv[1:]))

@@ -107,16 +107,8 @@ def pytest_collection_modifyitems(config, items):
     rng.shuffle(items)
 
 
-def pytest_runtest_logreport(report):
-    """Record the release-refused outcomes as they actually happen.
-
-    Reading the report rather than the marker is the whole point: ``skipped``
-    with a ``wasxfail`` attribute is an *xfail*, ``passed`` with one is an
-    *xpass*, and ``skipped`` without one is a real skip -- in any phase
-    (a ``skipif`` fires in setup, a ``pytest.skip()`` call in the test body).
-    An inactive marker produces none of these and is invisible here, which is
-    what makes this an outcome rule.
-    """
+def _record_refused_report(report) -> None:
+    """Record one runtime or collection report when release mode is active."""
     if not _release_mode():
         return
     if hasattr(report, "wasxfail"):
@@ -126,6 +118,29 @@ def pytest_runtest_logreport(report):
     else:
         return
     _REFUSED.setdefault(outcome, set()).add(report.nodeid)
+
+
+def pytest_runtest_logreport(report):
+    """Record release-refused test outcomes as they actually happen.
+
+    Reading the report rather than the marker is the whole point: ``skipped``
+    with a ``wasxfail`` attribute is an *xfail*, ``passed`` with one is an
+    *xpass*, and ``skipped`` without one is a real skip -- in any phase
+    (a ``skipif`` fires in setup, a ``pytest.skip()`` call in the test body).
+    An inactive marker produces none of these and is invisible here, which is
+    what makes this an outcome rule.
+    """
+    _record_refused_report(report)
+
+
+def pytest_collectreport(report):
+    """Record collection-time skips, which never reach runtest_logreport.
+
+    Module-level ``pytest.importorskip`` and ``pytest.skip(...,
+    allow_module_level=True)`` produce collection reports. They are incomplete
+    release evidence for the same reason as a runtime skip.
+    """
+    _record_refused_report(report)
 
 
 def pytest_sessionfinish(session, exitstatus):
