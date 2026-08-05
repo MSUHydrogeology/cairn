@@ -1,3 +1,6 @@
+<!-- claim-check-allow: dev/proposals/2026-08-05-claude-content-scan-url-classification.md -->
+<!-- ^ The source proposal moved to dev/proposals/archive/ when its plan opened;
+     this citation is in an append-only author Response. -->
 # Plan: one honest release-security command
 
 **Source proposal**: [`dev/proposals/archive/2026-08-05-codex-release-security-orchestration.md`](../proposals/archive/2026-08-05-codex-release-security-orchestration.md)
