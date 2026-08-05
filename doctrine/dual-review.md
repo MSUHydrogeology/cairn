@@ -186,6 +186,38 @@ structural-independence axis as any other review here — an Internal-floor
 read for an ordinary plan, a different-agent-type External round for a
 high-risk or contract-touching one.
 
+### Boundary C — targeted falsification after broad verification
+
+Independent review does not mean independently repeating every command the
+implementer ran. For a plan with a valid Boundary B Implementation verification
+record (`doctrine/plans.md`), the reviewer first checks that the full tested
+revision and reviewed range cover the implementation under review, that the
+named paths and interpreter/runtime are credible, and that clean pre/post state
+and all outcomes are dispositioned. The reviewer then chooses tests and probes
+for the review's own falsification ledger: changed public paths, negative or
+edge cases, cross-surface assumptions, and claims whose evidence is doubtful.
+Copying the implementation's broad command does not satisfy that ledger.
+
+A fresh full-suite run is required when any of these six triggers applies:
+
+1. no valid Boundary B record exists;
+2. review discovers an unrecorded cross-surface dependency;
+3. a skip, xfail, or xpass lacks an adequate disposition;
+4. review sharpening changes implementation, tests, executable templates, or
+   fixtures in the reviewed range;
+5. the accepted plan governs a trust ceremony that explicitly requires
+   independent full execution; or
+6. the reviewer has a concrete reason to distrust or falsify the broad result.
+
+Review-only prose appended after a valid run does not trigger another broad run.
+A replacement run binds the final changed implementation. A later unrelated
+commit cannot cite the old record as evidence for its own bytes.
+
+This reuse rule is not authentication, malicious-committer protection, or a
+release optimization. Release ceremonies keep their own accepted commands and
+evidence rules. The independence comes from a different reviewer choosing a
+different attack, not from duplicate execution with the same blind spots.
+
 ## Review expectations — the clean-pass trap
 
 A review that finds zero issues — or only minor style nits — on a

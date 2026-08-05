@@ -228,11 +228,31 @@ roster is in `dev/agent_collaboration.md`.
   only at defined serialization points (a lifecycle archive, the
   goodnight routine, explicit instruction).  Refer to proposals
   and plans by filename stem, not path link.
-* Run the test suite after any substantive change:
-  `python -m pytest bootstrap/tests` — under the **canonical interpreter
-  (Python 3.13.x)**. A different minor silently changes the result, so
-  name the interpreter alongside any suite figure you assert; see
-  `bootstrap/DEPENDENCY_BUDGET.md` > "The canonical interpreter".
+* **Verification boundaries.** Verification has three jobs; do not pay for the
+  same broad run at every one (full doctrine: `doctrine/plans.md` and
+  `doctrine/dual-review.md`).
+  * **A — scoped iteration.** During implementation, run the tests and public-
+    path probes mapped by the reviewed plan, plus standing gates for every
+    touched surface. If a substantive code surface has no reviewed mapping, or
+    its effects cannot be bounded confidently, run the full suite.
+  * **B — stable integration evidence.** After the final implementation commit
+    and before code review, run one full suite against a clean, unchanged commit
+    under the **canonical interpreter (Python 3.13.x)**. Cairn's ordinary pair
+    is `python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0` followed
+    by `python scripts/quality_gate.py --sub neutrality --sub redundancy`.
+    Append the tested SHA/range, interpreter, clean pre/post state, commands,
+    outcomes, timing, non-pass disposition, and known omissions to the plan as
+    `## Implementation verification -- <agent> -- YYYY-MM-DD`.
+  * **C — independent review.** The code reviewer verifies that record against
+    the reviewed range, then runs independent targeted falsification; copying
+    Boundary B's broad command is not a falsification ledger. Missing or stale
+    evidence, unexplained non-pass outcomes, newly discovered coupling, changed
+    implementation/test/executable-template/fixture bytes, a stronger trust-
+    ceremony rule, or concrete doubt requires a fresh full run.
+  Prose-only work runs its applicable claim, link, snippet, and neutrality
+  gates unless its plan maps it to pytest. Release verification remains a
+  separate strict ceremony. Name the interpreter alongside every suite figure;
+  see `bootstrap/DEPENDENCY_BUDGET.md` > "The canonical interpreter".
 * **Keep commit bodies concise.** The body is a *snapshot* — what
   shipped and how it was verified — not a restatement of the proposal,
   plan, or changelog (those are the durable audit trail). Target 15–30

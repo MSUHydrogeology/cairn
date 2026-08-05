@@ -211,8 +211,28 @@ roster is in `dev/agent_collaboration.md`.
   only at defined serialization points (a lifecycle archive, the
   goodnight routine, explicit instruction).  Refer to proposals
   and plans by filename stem, not path link.
-* Run the test suite after any substantive change:
-  `{{test_command}}`.
+* **Verification boundaries.** Verification has three jobs; do not pay for the
+  same broad run at every one (full doctrine: `doctrine/plans.md` and
+  `doctrine/dual-review.md`).
+  * **A — scoped iteration.** During implementation, run the tests and public-
+    path probes mapped by the reviewed plan, plus standing gates for every
+    touched surface. If a substantive code surface has no reviewed mapping, or
+    its effects cannot be bounded confidently, run the configured full suite.
+  * **B — stable integration evidence.** After the final implementation commit
+    and before code review, run the configured full suite once against a clean,
+    unchanged commit under the project's configured interpreter/runtime. Append
+    the tested revision/range, runtime, clean pre/post state, commands, outcomes,
+    timing, non-pass disposition, and known omissions to the plan as
+    `## Implementation verification -- <agent> -- YYYY-MM-DD`.
+  * **C — independent review.** The code reviewer verifies that record against
+    the reviewed range, then runs independent targeted falsification; copying
+    Boundary B's broad command is not a falsification ledger. Missing or stale
+    evidence, unexplained non-pass outcomes, newly discovered coupling, changed
+    implementation/test/executable-template/fixture bytes, a stronger trust-
+    ceremony rule, or concrete doubt requires a fresh full run.
+  Prose-only work runs its applicable documentation and policy gates unless its
+  plan maps it to the test suite. A project's release verification remains a
+  separate strict ceremony.
 * **Keep commit bodies concise.** The body is a *snapshot* — what
   shipped and how it was verified — not a restatement of the proposal,
   plan, or changelog (those are the durable audit trail). Target 15–30

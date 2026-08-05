@@ -234,6 +234,80 @@ archived proposals).
 
 ---
 
+## Implementation verification boundaries
+
+A plan maps verification to three boundaries. This keeps iteration useful,
+integration evidence exact, and review independent without treating repeated
+execution of one broad command as a second opinion.
+
+### Boundary A — scoped iteration
+
+Each chunk's acceptance criteria map the changed invariants and public paths to
+their affected tests and standing surface gates. The implementer runs that
+reviewed scope while iterating and adds a newly discovered dependency to the
+plan before relying on it. There is no permanent "fast suite": speed does not
+establish coverage. If a substantive code surface has no reviewed mapping, or
+its effects cannot be bounded confidently, the full project suite is the
+fail-closed fallback.
+
+Work confined to ordinary prose or deliberation records runs the applicable
+claim, link, snippet, schema, and neutrality gates rather than an unrelated
+engine suite. Executable snippets, generated or frozen fixtures, gate
+manifests, and contracts whose plans name test coverage are not ordinary prose.
+
+### Boundary B — one stable integration record
+
+After the final implementation commit and before code review, the implementer
+runs the full project suite once against a clean, stable commit using the
+configured canonical interpreter/runtime. The plan receives an append-only
+record only after the run completes:
+
+```markdown
+## Implementation verification -- <agent> -- YYYY-MM-DD
+
+**Tested commit**: <full revision ID>
+**Reviewed range**: <base revision>..<tested endpoint>
+**Interpreter/runtime**: <path and version>
+**Pre-run state**: <clean tree; HEAD = tested commit>
+**Post-run state**: <clean tree; HEAD = tested commit>
+
+| Command | Exit | Outcomes | Elapsed |
+|---|---:|---|---:|
+| <full suite and standing integration commands> | <code> | <pass/fail/skip/xfail/xpass counts> | <time> |
+
+**Non-pass disposition**: <explicit disposition; ordinarily none>
+**Plan-specific acceptance commands**: <commands and results>
+**Known omissions**: <what this evidence did not exercise>
+```
+
+Do not place an empty Implementation verification heading in a newly opened
+plan: an empty section looks like landed evidence. The record is committed in a
+later plan-only commit, so live `HEAD` may advance without changing the tested
+implementation bytes.
+
+The record is valid only when the tested commit contains the entire reviewed
+range, pre/post `HEAD` both equal the full tested revision, and the tree is clean
+before and after. A later review or record-only commit does not invalidate it.
+A later unrelated implementation commit neither falsifies what the record says
+about its named tree nor gains coverage from it. Any later commit included in
+the review that changes implementation, tests, executable templates, or
+fixtures in the reviewed range requires a replacement Boundary B record.
+
+This is a human-readable process attestation under a trusted-contributor model,
+not a signed receipt or parser-enforced claim. It does not authenticate the
+author or prove the commands ran. Release verification is a separate ceremony:
+an implementation record never satisfies or shortens a release gate.
+
+### Boundary C — review reuse
+
+Code review may reuse a valid Boundary B broad result only after checking the
+tested revision, reviewed range, path validity, clean-state assertions, command
+results, and non-pass disposition. The reviewer then chooses independent
+targeted falsification under `doctrine/dual-review.md`; repeating the broad
+author command by default is not structural independence.
+
+---
+
 ## The planning handshake
 
 Before heavy implementation, the team converges on a short set of
