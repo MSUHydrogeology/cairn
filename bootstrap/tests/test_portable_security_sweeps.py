@@ -539,6 +539,25 @@ def test_a_repo_local_executable_is_refused(
     assert read_log(tmp_path / "log.jsonl") == [], "the planted binary was invoked"
 
 
+def test_a_repo_local_symlink_to_an_outside_binary_is_refused(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """The mirror case, and the one that makes the LEXICAL check load-bearing:
+    the name found on the child path lives **inside** the tree under check but
+    resolves **outside** it.  The resolved-path check alone accepts this --
+    measured: deleting the lexical check reddens this node and no other."""
+    cellar = tmp_path / "cellar"
+    cellar.mkdir()
+    real = fake_tool(cellar / "gitleaks-real", log=tmp_path / "log.jsonl")
+    (sweep_target / "gitleaks").symlink_to(real)
+    runner = runner_copy(tmp_path)
+    rc, summary, out = run_runner(runner, sweep_target, path_env=str(sweep_target))
+    assert rc == 20, out
+    reason = leg(summary, "adapter")["reason"]
+    assert "lexical path" in reason and "inside the tree under check" in reason, reason
+    assert read_log(tmp_path / "log.jsonl") == []
+
+
 def test_a_symlink_resolving_into_the_repo_is_refused(
     tmp_path: Path, sweep_target: Path
 ) -> None:
