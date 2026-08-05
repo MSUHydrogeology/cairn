@@ -466,6 +466,21 @@ def _ascii_hint(name: str) -> str:
 
 # --- artifact parsing --------------------------------------------------------
 
+# Markdown, git, grep, and re.MULTILINE recognize CR, LF, and CRLF as line
+# endings. str.splitlines() adds eight separators those readers do not, which
+# can manufacture structural headings that no human-facing reader sees.
+_LINE_ENDING_RE = re.compile(r"\r\n?|\n")
+
+
+def _split_lines(text: str) -> List[str]:
+    """Split on markdown line endings with ``str.splitlines`` tail semantics."""
+    if not text:
+        return []
+    lines = _LINE_ENDING_RE.split(text)
+    if lines[-1] == "":
+        lines.pop()
+    return lines
+
 
 class Section:
     """A parsed ``##``/``###`` section header from an artifact.
@@ -643,7 +658,7 @@ def _detect_kind(path: Path) -> str:
 
 def _parse_status(text: str) -> str:
     """Best-effort read of the ``**Status**:`` / ``Status:`` line."""
-    for line in text.splitlines()[:60]:
+    for line in _split_lines(text)[:60]:
         stripped = line.strip()
         low = stripped.lower()
         if low.startswith("**status**:") or low.startswith("status:"):
@@ -658,7 +673,7 @@ def _parse_field(text: str, field: str) -> str:
     """Read a ``**<field>**:`` metadata line value (empty if absent)."""
     pat = re.compile(rf"^\s*\*?\*?{re.escape(field)}\*?\*?\s*:\s*(.+?)\s*$",
                      re.IGNORECASE)
-    for line in text.splitlines()[:60]:
+    for line in _split_lines(text)[:60]:
         m = pat.match(line)
         if m:
             return m.group(1).strip()
@@ -667,7 +682,7 @@ def _parse_field(text: str, field: str) -> str:
 
 def _parse_sections(text: str) -> List[Section]:
     """Parse all ``##``/``###`` headers into Section records, with bodies."""
-    lines = text.splitlines()
+    lines = _split_lines(text)
     headers: List[Tuple[int, Section]] = []
     for i, line in enumerate(lines):
         m = _HEADER_RE.match(line)
@@ -710,7 +725,7 @@ def _has_isolated_blockquote(body: str) -> bool:
     authorization (R1)."""
     in_fence = False
     prev_blank = True  # start-of-body counts as a preceding blank line
-    for line in body.splitlines():
+    for line in _split_lines(body):
         stripped = line.strip()
         if stripped.startswith("```") or stripped.startswith("~~~"):
             in_fence = not in_fence

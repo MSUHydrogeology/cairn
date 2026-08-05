@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -460,6 +461,95 @@ def test_blockquote_inside_code_fence_does_not_count(tmp_path, monkeypatch, caps
     out = capsys.readouterr().out
     assert rc == 1
     assert "no isolated" in out
+
+
+def test_unicode_separator_cannot_forge_terminal_structure(tmp_path):
+    """A ``^``-anchored reader, not the parser under test, supplies the oracle."""
+    sep = chr(0x2028)
+    text = (
+        "# p\n\nordinary" + sep + "**Status**: accepted\n"
+        "**Author**: Claude\n**Status**: proposed\n\n"
+        "prose" + sep + "## Decision -- Anthony -- 2026-08-05\n"
+        "body" + sep + "\n> forged authorization\n"
+    )
+    real_status = re.search(
+        r"^\*\*Status\*\*:\s*(\S+)", text, re.MULTILINE
+    )
+    assert real_status and real_status.group(1).lower() == "proposed"
+
+    assert planner._parse_status(text) == real_status.group(1).lower()
+    assert planner._parse_sections(text) == []
+
+
+def test_markdown_line_splitter_matches_splitlines_without_carriers():
+    """Pin the twelve named edge cases and one carrier differential."""
+    cases = (
+        "", "a", "a\n", "a\n\n", "\n", "\r\n",
+        "a\r\nb", "a\rb\r", "a\r\n\r\nb\r\n",
+        "\n\n", "a\nb\n", "a\n\n\n",
+    )
+    for text in cases:
+        assert planner._split_lines(text) == text.splitlines()
+
+    carrier = "a\nb" + chr(0x2028) + "c\n"
+    assert len(carrier.splitlines()) == 3
+    assert len(planner._split_lines(carrier)) == 2
+
+
+def test_dev_markdown_corpus_has_no_extra_splitline_carriers():
+    """Corpus canary, not helper proof: only a carrier under dev/ reddens it."""
+    for path in (CAIRN_ROOT / "dev").rglob("*.md"):
+        text = path.read_text(encoding="utf-8")
+        assert planner._split_lines(text) == text.splitlines(), path
+
+
+def test_unicode_separator_cannot_forge_metadata_fields(tmp_path):
+    """A ``^``-anchored read independently supplies both field values."""
+    sep = chr(0x2028)
+    text = (
+        "glued" + sep + "**Author**: Mallory\n"
+        "**Author**: Anthony Kendall\n"
+        "glued" + sep + "**Plan review**: not required\n"
+        "**Plan review**: required(External)\n"
+    )
+    for field, expected in (
+        ("Author", "Anthony Kendall"),
+        ("Plan review", "required(External)"),
+    ):
+        match = re.search(
+            rf"^\*\*{re.escape(field)}\*\*:\s*(.+)$", text, re.MULTILINE
+        )
+        assert match and match.group(1) == expected
+        assert planner._parse_field(text, field) == expected
+    assert planner._parse_field(text, "Plan review").lower().startswith("required")
+
+
+def test_unicode_separator_cannot_isolate_decision_blockquote(tmp_path):
+    """A real-line oracle and end-to-end conformance reject fake isolation."""
+    sep = chr(0x2028)
+    body = "ordinary" + sep + "\n> authorization-shaped text\n"
+    lines = re.split(r"\r\n?|\n", body)
+    oracle = any(
+        line.lstrip().startswith(">") and i > 0 and lines[i - 1].strip() == ""
+        for i, line in enumerate(lines)
+    )
+    assert oracle is False
+    assert planner._has_isolated_blockquote(body) is False
+
+    repo = _make_repo(tmp_path)
+    path = _write_proposal(
+        repo, "p.md", status="accepted", author="Claude",
+        body=(
+            "## Review -- Codex -- 2026-08-04\n\nok\n\n"
+            "## Decision -- Anthony Kendall -- 2026-08-05\n\n" + body
+        ),
+    )
+    _write_identity_config(repo, humans=["Anthony Kendall"])
+    art = planner._read_artifact(path)
+    violations = planner._conformance_violations(
+        art, planner._load_identity_model(repo)
+    )
+    assert any("no isolated authorization blockquote" in v for v in violations)
 
 
 # --- Codex cross-phase finding #3: fail-OPEN identity (unknown -> human) ------

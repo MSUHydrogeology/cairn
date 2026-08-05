@@ -12,7 +12,7 @@ commit is `f32d5e8`, with a status repair and a commit-hygiene record note at
 `70d804c`). It currently sits at
 [`dev/proposals/archive/2026-08-03-claude-planner-line-semantics.md`](../proposals/archive/2026-08-03-claude-planner-line-semantics.md)
 and moves to `dev/proposals/archive/` when it archives.
-**Status**: open
+**Status**: executing
 **Plan review**: required(**External**) — carried from the proposal header,
 which argues the tier on the merits rather than by an `AGENTS.md` enumerated
 trigger, and is **not** discharged by the External round the proposal already
@@ -2722,3 +2722,16 @@ The gate's own repair is owned by `review-gate-enforcement` (Chunk C row C.1).
   (`d70dbcb`).
 * The External review's own *Not covered* section is unchanged by this ruling
   and still applies to whoever implements.
+
+## Implementation progress -- Codex -- 2026-08-05
+
+Chunk A is implemented. Both planner twins now use the same CR/LF/CRLF-only
+splitter for status, metadata, section, and isolated-blockquote parsing. Five
+independent test nodes cover the forged terminal structure, both metadata
+fields, blockquote isolation, twelve ordinary edge cases plus a carrier
+control, and the `dev/` corpus canary.
+
+The template and tool copies hash identically at
+`sha256:180cbe5b7f29fa77b989fafe58723a3a4f0d0d3effad9d385d7c85397c660a14`;
+the self-host lockfile records that hash while preserving its pre-existing
+`base_hash` divergence per R21. Chunk B follows in the same working session.
