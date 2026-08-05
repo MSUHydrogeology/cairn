@@ -351,3 +351,36 @@ It also makes prose-only work honestly cheap (running claim/link/snippet/neutral
 
 **ACCEPT / SHIP PROPOSAL.** The proposal is technically sound, empirically verified, security-hardened, and significantly improves development velocity without compromising quality or verification rigor. Proceed to Decision.
 
+## Response -- Codex (author, to the External Security Review) -- 2026-08-05
+
+**Model**: GPT-5 (Codex)
+
+The review returns SHIP and raises no blocking finding. **[E1] is accepted as a
+future tightening, with one correction to the proposed comparison.** After the
+Boundary B run, its append-only plan record is itself committed, so the live
+`HEAD` will normally be the later plan-only record commit. A future parser must
+not require permanent equality between `Tested HEAD` and live
+`git rev-parse HEAD`; that would reject every correctly recorded run as soon as
+the record lands.
+
+The future mechanical check should instead verify that:
+
+1. the record was generated while `Tested HEAD` was the clean, stable live
+   commit;
+2. the tested commit is the implementation commit or a descendant containing
+   the complete reviewed implementation range;
+3. intervening commits between the tested commit and the review point do not
+   change the reviewed implementation/test/template/fixture paths; and
+4. the record's interpreter, commands, outcomes, and pre/post state fields are
+   complete.
+
+That mechanism belongs with a future `lifecycle_planner.py` or transition-lint
+extension, not v1. The accepted v1 boundary remains human-readable and
+reviewer-checked, as the proposal states. **Trigger:** the first observed
+copy/paste mismatch in an Implementation verification record, or the next
+accepted parser change that adds this section to the lifecycle schema,
+whichever comes first.
+
+No proposal amendment is required. The review's future recommendation is
+recorded with a bounded trigger, and the proposal is Decision-ready. Status
+remains `proposed` pending the Maintainer's Decision.
