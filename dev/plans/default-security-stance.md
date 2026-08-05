@@ -19,7 +19,7 @@
 **Source proposal**: `default-security-stance` (accepted 2026-08-03 by
 Maintainer Decision, *"as amended by the author's Response"*). It currently sits
 under `dev/proposals/` and moves to `dev/proposals/archive/` when it archives.
-**Status**: executing
+**Status**: review
 **Plan review**: required(**External**, security lens) — carried verbatim from
 the proposal header, where the tier is a *declared trigger* rather than a
 judgement call: this is an install-contract change on a surface `AGENTS.md`
@@ -2463,3 +2463,24 @@ rows quote the old live-count annotation; current descriptive documentation is
 already correct. Neither changes the four-key AST handoff, and the release
 checker cannot return PASS before this AST correction because it now runs the
 full suite in release mode.
+
+## Maintainer ceremony result -- 2026-08-05
+
+The Maintainer ran the prepared direct-correction script with `--commit` and
+authored `b42b4e5`. The commit changes only
+`bootstrap/tests/fixtures/scaffold_ast_baseline.json`; its diff is exactly the
+four digest/span replacements declared above, with no key added or removed.
+
+Independent read-back after the commit:
+
+* `bootstrap/tests/test_ast_attest.py` -- **29 passed**.
+* Full canonical suite with loopback access -- **2490 passed**, 3 dependency
+  warnings, **0 failed**.
+* The working tree carries no tracked residue from the ceremony. The unrelated
+  pre-existing untracked `.claude/` and `dev/measurement/` paths remain
+  untouched.
+
+Chunks A--D and R are complete. The plan is now in **review**, not archive: the
+append-only `## Code review` section still needs a reviewer other than the
+implementing agent, and the lasting-truth migration table is completed only at
+the archive serialization point.
