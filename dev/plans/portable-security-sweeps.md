@@ -2619,3 +2619,79 @@ registration data to the engine.
 (append-only, confirmed before commit). Path-scoped commit, this file only.
 
 This section is append-only once written.
+
+## Code review -- Codex -- 2026-08-05
+
+**Verdict: REVISE.** I reviewed the implemented Chunks A--E at the current
+working-tree bytes, with a security lens. I treated the authored Response as
+the intended contract and attacked the real runner through its executable
+paths. Three blocking gaps remain.
+
+### [CR1] HIGH -- a reachable detached `HEAD` is classified as no history, so a partial scan can report CLEAN
+
+`_history_discovery()` infers whether a commit exists from `packed-refs` or
+`.git/refs/heads/**`. That inference is false for a valid repository whose
+reachable commit is held only by detached `HEAD`. I created a real repository,
+committed `history-only-commit`, detached `HEAD`, and deleted its only branch.
+`git log --oneline -1` still returned the commit, while the production function
+returned `has_refs: False`. Passing that discovery through the production branch
+and aggregate gives a CLEAN current-tree leg plus a history
+`NOT_APPLICABLE`, aggregate **0**. The committed history was never scanned.
+
+This violates the central invariant that a leg which did not run never renders
+as CLEAN, and the plan explicitly lists detached `HEAD` as handled. Determine
+commit applicability from Git's object model, not the presence of branch-ref
+files. A hardened, revalidated Git query such as verification of `HEAD^{commit}`
+is the direct answer; account for the added runner-owned invocation in the live
+oracle. Add real-Git regressions for both a detached reachable commit (history
+leg runs) and an unborn repository (history is genuinely not applicable).
+
+### [CR2] HIGH -- B5 revalidation does not guard two pre-scan executable invocations
+
+`revalidate()` is called only inside `_adapter_seam()`. `probe_version()` runs
+the adapter without it, and `screen_local_config()` runs Git without it. I
+resolved and hashed a fake adapter, replaced its bytes, then called the real
+`probe_version()`; the changed digest was not noticed and the changed program
+executed, returning `MUTATED EXECUTED`. I repeated the probe with fake Git:
+after resolution and replacement, the real configuration screen returned an
+empty accepted listing and the replacement wrote its execution marker.
+
+The accepted residual is described as the narrow race between immediate
+revalidation and `exec`; the implementation instead leaves the full interval
+from initial resolution through preflight and mode selection unguarded. Apply
+the same path-and-digest revalidation immediately before **every** subprocess
+invocation of either trust root, including the version probe and configuration
+screen. Tests must mutate each executable after initial resolution and prove
+the replacement is not executed. Keep the unavoidable post-check race as the
+already accepted residual.
+
+### [CR3] MEDIUM -- the deny-by-default config screen rejects every linked worktree
+
+The screen defines the permitted origin root as `(target / ".git").resolve()`.
+In a linked worktree `.git` is a file pointing into the main repository's
+worktree metadata, while ordinary local config originates from the main
+repository's `.git/config`. I created a linked worktree with host Git and ran
+the production screen; it degraded on the inert
+`core.repositoryformatversion` because that legitimate origin was outside the
+`.git` *file*. This contradicts the plan's claim that linked worktrees are
+handled and creates the over-refusal pressure the plan itself identifies as a
+security-control failure mode.
+
+Use hardened Git discovery to identify and validate the repository's actual
+common/config directory for both regular repositories and linked worktrees;
+do not parse the candidate-controlled gitfile ad hoc. Preserve the
+include-origin refusal outside that discovered boundary. Add a real linked-
+worktree acceptance fixture and retain the external-include negative fixture.
+
+### Verification and bounds
+
+The detached-HEAD, executable-replacement, and linked-worktree results above
+were executed under `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13)
+with `PYTHONDONTWRITEBYTECODE=1`. The focused module suite reached **150 passed,
+8 failed**; all eight failures are admission-canary tests whose loopback socket
+creation is prohibited by this review sandbox (`PermissionError: [Errno 1]`),
+so I do not attribute them to the implementation. I did not run a real Gitleaks
+binary, the Maintainer-gated Chunk I matrix, the full bootstrap suite, or
+unimplemented Chunks F--I. The concurrent content-scan edits were not examined.
+
+This section is append-only once written.
