@@ -141,6 +141,61 @@ gate. The control is **detective + human**, not preventive-automated:
   adopter-facing capability. Absence causes the floor check test to be skipped
   and is reported as such.
 
+## Exception 3 — `portable-security-sweeps`: an **external-tool adapter**
+
+A different *category* from Exceptions 1 and 2, not a longer list of the same
+kind. Exception 1 admits Python **packages** the scaffold installs into the
+adopter's environment; Exception 2 admits a **dev-only** package. This admits a
+**host executable the scaffold never installs and never runs** — the dependency
+is acquired by the adopter, out of band, and the scaffold's only relationship to
+it is that an installed script may later invoke it.
+
+Four things it must state, each checkable:
+
+* **What is assumed installed.** **Gitleaks**, at a
+  `(version, platform, architecture)` the admitted-artifact set records, and
+  **Git**, which the runner invokes for its pre-execution configuration screen
+  and which Gitleaks invokes **transitively** for the history leg. Two host
+  executables, enumerated in
+  `templates/modules/team-gated/run_portable_security_sweeps.py` as
+  `TRUST_ROOTS` and in the module doctrine as an auditable list.
+* **What happens when it is absent.** **INCOMPLETE, exit `5`, loudly** — never
+  clean, and never a silent skip. This is the opposite posture from Exception 2,
+  where an absent `vermin` *skips* the floor check and the skip reads as a pass.
+  Verified by `test_absent_gitleaks_is_incomplete_not_clean` and
+  `test_cairns_own_run_with_gitleaks_absent_is_incomplete` in
+  `bootstrap/tests/test_portable_security_sweeps.py`, run by a person typing
+  `python -m pytest bootstrap/tests` — **Cairn has no CI**, so nothing runs them
+  automatically.
+* **Why this is not a new dependency.** The scaffold **installs no scanner and
+  executes none during installation** — doing so would move an executable trust
+  root into the installer, which the module refuses by design. The shipped
+  runtime stays **standard-library-only**: the runner imports nothing outside
+  the standard library. The tool is an adopter-selected **dev/CI** dependency
+  acquired only by selecting a team-gated, opt-in module that no preset selects.
+* **No network path, and this is where it differs from Exception 1.** Exception
+  1's `pip-audit` has an egress path (opt-in). This adapter has **none**: there
+  is no `--allow-network`, no remote-data path and no advisory cache, and the
+  child environment drops every inherited proxy variable by building from an
+  allowlist. Re-introducing egress would be a new Decision, not a flag.
+
+**What Cairn itself took on.** Under the accepting Decision's Condition 2, Cairn
+installs and runs this module on its own tree, so **Cairn now carries Gitleaks
+as a dev/CI tool of its own**. That does **not** change the zero-dependency
+contract for shipped runtime — both halves are true at once, and this is where
+they become checkable. Measured `as_of 2026-08-05`: `gitleaks` is **not** on this
+host's `PATH`, so Cairn's own first run reports aggregate **5** with the absent
+binary named. An honest INCOMPLETE is the contract working.
+
+**Licence disposition of the three shipped files**, stated rather than left for
+the first `.json` under `templates/` to set an unexamined precedent:
+
+| File | Family |
+|---|---|
+| `run_portable_security_sweeps.py` | **code — MIT**, SPDX header in the first four lines |
+| `portable-security-sweeps.md` | **document template — CC BY 4.0** |
+| `portable_security_policy.json` | **code — MIT.** A data asset with no comment syntax, so it carries **no header**; it is a machine-read policy input to an MIT script, not prose. |
+
 ## The canonical interpreter — Python 3.13.x
 
 Every gate in this record assumes one interpreter. The gate manifest pins it

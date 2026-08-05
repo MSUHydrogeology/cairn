@@ -217,6 +217,65 @@ entry that suppresses nothing is a latch, and the suite fails on one. If
 entries accumulate past a handful, that is the signal to **retire the tool**
 to a manual checklist item, not to grow the list.
 
+## scripts/run_portable_security_sweeps.py — one measured offline secret sweep *(team-gated: portable-security-sweeps)*
+
+**Installation check.** The module installs three files as one group:
+`scripts/run_portable_security_sweeps.py`,
+`scripts/portable_security_policy.json`, and
+`dev/modules/portable-security-sweeps.md`. If they are not there, the module is
+not selected in your profile.
+
+**It installs no scanner.** You supply **Gitleaks** on `PATH` yourself. `git`
+must also be present — the runner calls it for a pre-execution configuration
+screen, and Gitleaks calls it transitively for the history leg.
+
+```bash
+python scripts/run_portable_security_sweeps.py --target .
+python scripts/run_portable_security_sweeps.py --json    # deterministic summary
+python scripts/run_portable_security_sweeps.py --security-verification
+```
+
+**Offline by default, and there is no other mode.** No network flag exists; the
+child environment drops every inherited proxy variable.
+
+**Two version modes.** **full** requires the resolved binary's SHA-256 to match a
+digest the project's admission ceremony recorded for your exact
+`(version, platform, architecture)`; only full mode can report `0`. **reduced** is
+what you get otherwise: real current-tree findings, and an honest `INCOMPLETE`
+instead of a clean result it has not earned. A **recorded** digest that does not
+match is a contradiction, not an absence, and degrades.
+
+**How to read the exit code.**
+
+| Exit | Meaning | What to do |
+|---|---|---|
+| `0` | CLEAN — every leg ran in full mode and found nothing | nothing; it is a tripwire that did not trip, not a proof |
+| `5` | INCOMPLETE — a leg did not fully run | read the named reason: absent binary, shallow clone, non-Git export, or an unadmitted version |
+| `10` | FINDINGS | triage each; suppress only by adding a **reviewed fingerprint** to the policy |
+| `20` | DEGRADED — a refusal, or a result the runner will not trust | do not treat as clean; the reason names the control that fired |
+
+Precedence is `20 > 10 > 5 > 0`, so a finding is never hidden behind an
+incomplete sibling leg. `NOT APPLICABLE` is distinct from `INCOMPLETE` and never
+weakens another leg.
+
+**Suppressions.** The policy carries reviewed fingerprints and nothing else — no
+path, argv, environment variable, executable, config file, baseline, digest or
+version. A `.gitleaksignore` found *inside* the tree under check is a **refusal**
+(exit `20`), not a suppression source.
+
+**Admitting a new adapter version** — an operator act, never part of a sweep and
+never reachable from a standing command:
+
+```bash
+python scripts/run_portable_security_sweeps.py \
+    --verify-version-support /abs/path/to/candidate \
+    --confirm-executing-an-unadmitted-binary
+```
+
+It **executes a binary the project has not admitted**, says so in its first line
+of output, and emits an evidence record. It never admits anything itself:
+admission is a reviewed source change.
+
 ## See also
 
 * The advisory transition check — `scripts/transition_lint.py` above, and the

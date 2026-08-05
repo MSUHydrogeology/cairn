@@ -275,6 +275,59 @@ applied to the substitution surface.
 
 ---
 
+## Rule 10 — A shipped script that invokes a host executable declares its
+trust roots, and `PATH` resolution *is* execution authority
+
+The `portable-security-sweeps` module installs a script
+(`scripts/run_portable_security_sweeps.py`) that invokes **host executables**.
+That is a new boundary in this module family, and the distinction matters: the
+existing `python-security` runner executes `[sys.executable, "-I", "-m", …]` — a
+known interpreter — and uses `which()` only as *presence detection*. This runner
+executes **whatever `PATH` resolves**, so **`PATH` resolution is execution
+authority**, not a lookup.
+
+1. **The trust roots are enumerated, never generalized.** Exactly two:
+   **`gitleaks`** (the adapter) and **`git`** — invoked by the runner for its
+   pre-execution configuration screen, and invoked **transitively by Gitleaks**
+   for the history leg. The second fact was found by *executing a logging shim*,
+   not by reading documentation, and it was absent from the first enumeration of
+   this module's trust set.
+2. **Validation is shape and containment, never provenance.** Absolute path;
+   regular file; executable bit; and **neither the lexical nor the resolved path
+   inside the tree under check** — a package-manager symlink is fine, a symlink
+   whose target resolves into the candidate tree is refused. Both paths are
+   checked, because each catches a case the other passes.
+3. **The only CLEAN-capable mode requires a digest match.** The resolved
+   executable is hashed immediately before invocation and compared against the
+   admitted-artifact set. A **recorded** digest that does not match is a
+   contradiction → DEGRADED. **No** recorded digest for this
+   `(version, platform, architecture)` is the ordinary unadmitted case → the
+   reduced path, which can never report clean.
+4. **Everything under the candidate's `.git/` is candidate-controlled input** —
+   repository-local configuration, refs, shallow boundaries, remote metadata,
+   `.gitattributes`, and any `.gitleaksignore`. Two controls, and their honest
+   descriptions differ:
+   * a **deny-by-default pre-execution screen** over the *include-expanded*
+     repository-local key set, which is what actually bounds the configuration
+     surface; and
+   * **counted Git config keys** on the child, which are **defence in depth over
+     the keys they name and not a boundary** — measured, a candidate steps around
+     them with one `include.path` line or one `includeIf`, and Git offers no way
+     to disable the repository-local tier at all.
+5. **The accepted residual is printed, not only documented.** Both
+   pre-execution screens are **snapshots**: a same-user delete/create race
+   between the screen and `exec` on a trusted checkout is accepted and named in
+   the runner's own report, not left in a doctrine file an adopter may never open.
+6. **No child output is relayed.** Adapter stdout and stderr never reach the
+   operator verbatim; every displayed string is rendered
+   `ensure_ascii=True`; and no secret-bearing result field is selected into any
+   sink.
+
+**Any future shipped script that resolves an executable from `PATH` takes the
+same treatment**, and the change takes a Security Review.
+
+---
+
 ## Self-check before committing any bootstrap output
 
 Before committing bootstrap-generated or bootstrap-customized
