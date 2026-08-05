@@ -107,15 +107,20 @@ What it flags (each a ``pattern_id`` usable in a suppression marker):
   *credential* token still flags.
 
   **Two declared limits, both priced rather than overlooked.**
-  ``_NO_LATIN_TWIN`` is **reviewed curation, not a derivation** -- no
-  external oracle attests it and ``unicodedata`` exposes none.  And a
-  spoof the old script-blind rule caught is cleared **only** when every
-  Greek character it contains lies in the 32-code-point NFD-fold closure
-  of that table, **or** it is the two-character Latin-plus-Greek shape,
-  **or** RV5 already cleared it.  **Whole-script Cyrillic does not flag**
-  -- a residual the accepted Decision priced explicitly, on the reasoning
-  that the severe case (authority granting) is closed elsewhere and an arm
-  here would cost international proper nouns.
+  ``_NO_LATIN_TWIN`` is **reviewed curation, not a derivation**: no
+  external oracle attests it and ``unicodedata`` exposes none.  The exact
+  known false-negative boundary is a spoof the old script-blind rule caught
+  being cleared **only** when every Greek character it contains lies in the
+  32-code-point NFD-fold closure ``U+0394 U+03A9 U+03B2 U+03B8 U+03BB
+  U+03BC U+03C3 U+03C6 U+03C8 U+03D1 U+03D5 U+03D6 U+038F
+  U+1F68-U+1F6F U+1FA8-U+1FAF U+1FFA-U+1FFC``, **or** it is the
+  two-character Latin-plus-Greek shape, **or** RV5 already cleared it.  NFD
+  folding **widens clearing** under this denylist: the 20 capital-omega
+  variants after the first twelve entries are reached only through the
+  fold.  **Whole-script Cyrillic does not flag** -- a residual the accepted
+  Decision priced explicitly, on the reasoning that the severe case
+  (authority granting) is closed elsewhere and an arm here would cost
+  international proper nouns.
 * ``instruction-html-comment`` -- an HTML comment carrying an imperative
   verb.  Cairn's own ``<!-- cairn:slot ... -->`` / ``cairn:end`` and the
   ``cairn-accept`` markers are recognized and exempt; the rest flag.

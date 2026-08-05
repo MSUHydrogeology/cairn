@@ -17,6 +17,7 @@ Run from the cairn repo root:
 from __future__ import annotations
 
 import ast
+import hashlib
 import importlib.util
 import sys
 import unicodedata
@@ -46,12 +47,21 @@ scan_text = _content_scan.scan_text
 #: an internal signature a sibling plan must rebase onto, so it is pinned by
 #: a test rather than by a sentence in a Decision.
 _scan_unicode = _content_scan._scan_unicode
+_IGNORABLE_RANGES = _content_scan._IGNORABLE_RANGES
+_NONCHARACTER_RANGES = _content_scan._NONCHARACTER_RANGES
+_TAG_RANGE = _content_scan._TAG_RANGE
+_ASCII_GUARD = _content_scan._ASCII_GUARD
 
 REDTEAM = Path(__file__).resolve().parent / "fixtures" / "redteam"
 
 #: The two line/paragraph separators. Split out from _BANNED_CODEPOINTS
 #: because the guard below applies them to a second file -- see there.
 _SEPARATOR_CODEPOINTS = {0x2028, 0x2029}
+
+def _expand_ranges(
+        ranges: tuple[tuple[int, int], ...]) -> set[int]:
+    return {cp for lo, hi in ranges for cp in range(lo, hi + 1)}
+
 
 #: The invisible code points the scanner detects -- and must NOT itself
 #: carry as raw characters (trojansource / bandit B613 hygiene).
@@ -60,6 +70,7 @@ _BANNED_CODEPOINTS = (
     | set(range(0x202A, 0x202F))
     | set(range(0x2066, 0x206A))
     | _SEPARATOR_CODEPOINTS
+    | _expand_ranges((*_IGNORABLE_RANGES, *_NONCHARACTER_RANGES, _TAG_RANGE))
 )
 
 
@@ -465,12 +476,6 @@ class TestSeparatorDetectionCollectionIntegrity:
 # the hand-written tables under test.
 # ---------------------------------------------------------------------------
 
-_IGNORABLE_RANGES = _content_scan._IGNORABLE_RANGES
-_NONCHARACTER_RANGES = _content_scan._NONCHARACTER_RANGES
-_TAG_RANGE = _content_scan._TAG_RANGE
-_ASCII_GUARD = _content_scan._ASCII_GUARD
-
-
 class TestUnicodeIgnorable:
     """B6 -- the two new ids fire on the channel that produced ZERO flags
     before, and ordinary prose still produces neither."""
@@ -608,6 +613,72 @@ class TestUnicodeAsciiGuard:
     def test_guard_is_the_lowest_covered_codepoint_exactly(self) -> None:
         rows = (*_IGNORABLE_RANGES, *_NONCHARACTER_RANGES, _TAG_RANGE)
         assert min(lo for lo, _hi in rows) == ord(_ASCII_GUARD)
+
+
+class TestUnicodeTableCoverage:
+    """Chunk C -- independent sentinels for all three table families.
+
+    The range tables do not read either oracle used here: the running UCD's
+    category data and a reviewed list of non-Cf default ignorables.
+    """
+
+    # These Cf ranges are intentionally outside PrecisIgnorableProperties:
+    # prepended concatenation marks, interlinear annotations, and Egyptian
+    # hieroglyph formatting controls. Keeping the exclusions explicit makes
+    # a UCD change visible instead of silently weakening the sweep.
+    _CF_EXCLUDED_RANGES = (
+        (0x0600, 0x0605), (0x06DD, 0x06DD), (0x070F, 0x070F),
+        (0x0890, 0x0891), (0x08E2, 0x08E2),
+        (0xFFF9, 0xFFFB),
+        (0x110BD, 0x110BD), (0x110CD, 0x110CD),
+        (0x13430, 0x1343F),
+    )
+
+    def test_cf_sweep_is_covered(self) -> None:
+        covered = _expand_ranges(
+            (*_IGNORABLE_RANGES, *_NONCHARACTER_RANGES, _TAG_RANGE))
+        excluded = _expand_ranges(self._CF_EXCLUDED_RANGES)
+        all_cf = {
+            cp for cp in range(sys.maxunicode + 1)
+            if unicodedata.category(chr(cp)) == "Cf"
+        }
+        assert all_cf - covered == excluded
+
+    def test_non_cf_default_ignorables_are_covered(self) -> None:
+        # Representative non-Cf members from every affected row family:
+        # combining marks, Hangul fillers (Lo), Khmer inherent vowels,
+        # Mongolian variation selectors, and both VS blocks.
+        codepoints = (
+            0x034F, 0x115F, 0x1160, 0x17B4, 0x17B5,
+            0x180B, 0x180C, 0x180D, 0x3164,
+            *range(0xFE00, 0xFE10),
+            0xFFA0, 0xE0100,
+        )
+        for cp in codepoints:
+            flags = scan_text("a" + chr(cp) + "b\n", scan_urls=False)
+            assert "unicode-ignorable" in _ids(flags), f"U+{cp:04X}: {flags}"
+
+    def test_every_noncharacter_row_is_covered(self) -> None:
+        codepoints = {0xFDD0, 0xFDDF, 0xFDEF}
+        for plane in range(17):
+            codepoints.update({(plane << 16) | 0xFFFE,
+                               (plane << 16) | 0xFFFF})
+        for cp in sorted(codepoints):
+            flags = scan_text("a" + chr(cp) + "b\n", scan_urls=False)
+            assert "unicode-ignorable" in _ids(flags), f"U+{cp:04X}: {flags}"
+
+    def test_scan_file_leaves_the_file_bytes_unchanged(
+            self, tmp_path: Path) -> None:
+        # A scan_text immutability assertion is vacuous because Python str is
+        # immutable; it stays green even if scan_file writes normalized text.
+        # Hashing the actual file before and after detects that forbidden edit.
+        path = tmp_path / "invisible.txt"
+        path.write_text("emoji " + chr(0xFE0F) + " marker\n", encoding="utf-8")
+        before = hashlib.sha256(path.read_bytes()).digest()
+        flags = scan_file(path, scan_urls=False)
+        after = hashlib.sha256(path.read_bytes()).digest()
+        assert "unicode-ignorable" in _ids(flags)
+        assert after == before
 
 
 # ---------------------------------------------------------------------------

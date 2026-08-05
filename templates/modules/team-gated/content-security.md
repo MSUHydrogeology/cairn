@@ -14,7 +14,8 @@ in a contributor's PR, a pasted-in spec, a vendored README. A
 **static-content variant of prompt injection** rides those files:
 imperative-override phrases, egress instructions, instruction-bearing HTML
 comments, and *invisible* obfuscation (zero-width characters, bidi controls,
-homoglyph/mixed-script tokens) that a human skims past but a parser ingests.
+default-ignorable characters, and homoglyph/mixed-script tokens) that a human
+skims past but a parser ingests.
 This module ships the scanner that flags them **before** an agent reads the
 file.
 
@@ -27,8 +28,9 @@ Merged into the project's docs guide:
 > docs — are scanned by `python scripts/content_scan.py <files>` for
 > prompt-injection and
 > obfuscation patterns (imperative overrides, egress-to-URL, suspicious
-> URLs, zero-width / bidi / homoglyph unicode, instruction-bearing HTML
-> comments) before an agent is pointed at them. A hit is a **tripwire that
+> URLs, zero-width / bidi / default-ignorable / homoglyph Unicode,
+> instruction-bearing HTML comments) before an agent is pointed at them. A
+> hit is a **tripwire that
 > forces human review, not a proof of compromise**; a reviewed, legitimate
 > hit is cleared with an inline `cairn-accept <pattern-id> reason=…` marker.
 
@@ -135,13 +137,39 @@ Multi-tenant / user-content hosts (code-forge, content-sharing) stay flagged
 as residuals — the scanner matches whole domains with no path scoping, so a
 blanket allow there would also bless a future malicious URL on the same host.
 
-### Scientific-unit homoglyph allowance
+### Scientific-notation homoglyph allowance
 
-The `homoglyph` detector carries a narrow, exact-token **scientific-unit
-allowance** (RV5): micro / ohm unit shapes (`µs`, `µmol`, `kΩ`, …) are
-structurally mixed-script in scientific prose and are cleared, while a
-mixed-script *credential* token still flags. The allowance is exact-token and
-tightly bounded; it does not weaken the detector for any non-unit token.
+The `homoglyph` detector now flags a token when it combines two non-Latin
+confusable scripts, is a whole-script Greek or fullwidth-Latin confusable, or
+mixes Latin with a confusable character from another script. Ordinary Greek
+scientific notation clears when its Greek characters have no ASCII-Latin twin,
+while the exact-token RV5 allowance retains the micro / ohm unit shapes (`µs`,
+`µmol`, `kΩ`, ...) and mixed-script credential tokens still flag.
+
+Measured against the landed scanner, seven of the 42 published scientific
+shapes still flag: `U+03BD + max`, `U+03C9 + opt`, `U+03BA + eff`,
+`U+03B1 + level`, `U+03B7 + eff`, `U+03B3 + ray`, and `U+03B1 + decay`.
+The beta family remains clear because beta is judged to read as beta,
+not Latin `b`; this is a deliberate precision tradeoff, not an oracle-backed
+confusability result. A two-character Latin-plus-Greek token also clears because
+that shape cannot carry an instruction on its own. Whole-script Cyrillic remains
+an explicit residual: the authority-granting consequence is closed by the
+separate byline-classification control, while flagging the whole script would
+cost legitimate international names.
+
+`_NO_LATIN_TWIN` is **reviewed curation, not a derivation**: no external oracle
+attests it and `unicodedata` exposes none. The exact known false-negative
+boundary is a spoof the old script-blind rule caught being cleared **only** when
+every Greek character it contains lies in the 32-code-point NFD-fold closure
+`U+0394 U+03A9 U+03B2 U+03B8 U+03BB U+03BC U+03C3 U+03C6 U+03C8 U+03D1 U+03D5
+U+03D6 U+038F U+1F68-U+1F6F U+1FA8-U+1FAF U+1FFA-U+1FFC`, **or** it is the
+two-character Latin-plus-Greek shape, **or** RV5 already cleared it. NFD folding
+**widens clearing** under this denylist: the 20 capital-omega variants after the
+first twelve entries are reached only through the fold.
+
+The default-ignorable range table is a pinned snapshot of UCD 15.1.0, not a
+live derivation. A code point added by a later Unicode release is therefore a
+silent gap until the table and its independent sentinels are reviewed together.
 
 ## Single-sourced with Cairn's own self-check
 
