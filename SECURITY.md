@@ -75,8 +75,12 @@ complete repair list:
 
 1. **Repository state.** The invocation must name the checkout root, the
    worktree must be clean of tracked **and untracked** changes, and `HEAD`
-   must resolve to a full commit id. Re-checked after the phases, so a
-   candidate that changed mid-run cannot be reported as clean.
+   must resolve to a full commit id. The checking phases execute from a
+   temporary detached worktree materialized directly from that commit's Git
+   blobs and byte-verified before and after use, so ignored repository files
+   and checkout filters cannot influence the verdict. The operator checkout
+   is re-checked after the phases, so a candidate that changed mid-run cannot
+   be reported as clean.
 2. **Bandit + `check_cairn`.** Unlike the dev test (which skips locally when
    Bandit is absent), this **fails** if Bandit is missing, errors, reports a
    file it could not open, reports any unallowlisted MEDIUM+ finding over the
