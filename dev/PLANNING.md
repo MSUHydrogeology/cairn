@@ -213,39 +213,6 @@ with the plan's filename stem.
   migration hint, and decide the fail-open / fail-closed disposition — its
   own proposal, on its own review tier.
 
-* **Scoped test execution for iterative agent work** *(queued 2026-08-03,
-  Maintainer-raised)* — the full suite is **1560 tests in 128s** (`as_of
-  2026-08-03`, canonical Python 3.13.13). Run once at a commit boundary that is
-  fine; run it mid-iteration in a multi-agent loop — where several agents each
-  verify, several times — and it dominates wall-clock. **The cost is spread, not
-  concentrated:** the slowest 20 tests total ~28s, about 22% of the run, so there
-  is no hot spot to mark `slow` and no single test to fix. It is ~1560 tests
-  averaging ~82ms, most of them installing scaffold trees into temp dirs and
-  shelling out. The problem is also **growing**: 1471 → 1560 tests in one
-  session as gate-preflight Chunk A landed.
-
-  Three candidate directions, none chosen — this entry is the problem statement,
-  not the design:
-  (a) **Parallel execution.** 14 cores available, zero used. `pytest -n auto`
-  (xdist) is dev-only, which the dependency budget already permits by the
-  `vermin` precedent (`bootstrap/requirements-dev.txt`). Biggest single lever,
-  but needs a parallel-safety audit first — tests sharing the AST baseline, the
-  gate manifest, or fixed temp paths may not be isolated.
-  (b) **A change→surface test map.** `AGENTS.md` already tells an agent to
-  "route by file (`test_<surface>.py`) and by node when scoping a change", but
-  ships no mapping, so an agent with no way to know which subset covers its edit
-  conservatively runs everything. This is the closest thing to the actual ask.
-  (c) **A named fast tier** for mid-iteration, with the full suite reserved for
-  commit and review boundaries.
-
-  **The build-nothing-new gate is cleared:** the Maintainer raised this directly
-  and asked for it, which is the explicit go-ahead that standing direction
-  requires. Recorded here so a later reader does not re-litigate it.
-  **Open question for whoever picks this up:** any fast tier is a claim about
-  what it is safe *not* to run, and a green fast tier that misses a real
-  regression is worse than a slow suite — so the design has to say what evidence
-  backs the subset, not just how much time it saves.
-
 * **Four deferred Maintainer questions** *(deferred 2026-08-03, Maintainer-instructed
   to record)* — set aside during the 2026-08-03 Decision round with an explicit "don't
   forget them". Recorded here rather than left in a chat log, because a deferred item
@@ -648,6 +615,14 @@ authority. Completed rows leave this file at their lifecycle serialization
 point rather than being copied into another backlog.
 
 **Lifecycle apparatus**
+* **[REC-3 / VER-3] Implementation-verification record conformance** *(deferred
+  2026-08-05 from `verification-evidence-boundaries` External finding [E1])* —
+  the v1 contract instructs authors to append a dated, field-complete record
+  only after the stable Boundary B run, but lifecycle parsing does not prove the
+  section is nonempty or schema-complete. Trigger: the first malformed record
+  that reaches code review, or the next lifecycle-parser conformance expansion.
+  A successor must validate the settled record schema without mistaking heading
+  presence for evidence or rewriting append-only history.
 * **[REC-3] Structural line-reader follow-ups** *(plans
   `planner-line-semantics` and `agent-context-scrub`, archived 2026-08-05)* —
   three measured edges share one home: `_gitignore_status` still uses

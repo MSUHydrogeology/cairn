@@ -1,10 +1,11 @@
 <!-- cairn-internal-ref-allow: doctrine/dual-review.md doctrine/plans.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- claim-check-allow: dev/proposals/archive/2026-08-05-codex-verification-boundaries.md, bootstrap/tests/test_verification_boundaries.py -->
+<!-- Historical sections cite the former live plan path after archive. -->
+<!-- claim-check-allow: dev/proposals/archive/2026-08-05-codex-verification-boundaries.md, bootstrap/tests/test_verification_boundaries.py, dev/plans/verification-evidence-boundaries.md -->
 
 # Plan: run the full suite once, at the boundary
 
-**Source proposal**: [`dev/proposals/archive/2026-08-05-codex-verification-boundaries.md`](../proposals/archive/2026-08-05-codex-verification-boundaries.md)
-**Status**: review
+**Source proposal**: [`dev/proposals/archive/2026-08-05-codex-verification-boundaries.md`](../../proposals/archive/2026-08-05-codex-verification-boundaries.md)
+**Status**: archived
 **Plan review**: required(External + External Security Review) -- two distinct
 rounds; this plan changes when agents may omit a full-suite rerun
 **Last update**: 2026-08-05
@@ -593,3 +594,26 @@ for unrelated later code. It does not clear Cairn's neutrality debt. The
 independent code reviewer must review the implementation bytes, test at least
 one Boundary A/B/C failure direction, and explicitly accept or reject both
 Chunk D corrections before this plan can archive.
+
+## Archive -- Codex -- 2026-08-05
+
+The accepted Decision maps cleanly to the implementation. Boundary A's scoped
+iteration and fail-to-full fallback live in `AGENTS.md`, its adopter twin, and
+`doctrine/plans.md`; Boundary B's stable, commit-bound evidence schema lives in
+the self-hosted and adopter plan/proposal templates; Boundary C's independent
+targeted falsification and six fresh-run triggers live in
+`doctrine/dual-review.md` and the aligned templates. Commits `5f6eccc`,
+`0ad58c2`, `b51f633`, and `b2f1e19` carry those changes.
+
+The implementation record binds the full-suite evidence to `b2f1e19` and
+reports the inherited static-quality exit 1 without calling it green. The
+independent Antigravity review at `7eedb01` returned **SHIP**, re-ran the 13
+focused guards, and explicitly accepted both Chunk D corrections and their
+base/endpoint identity comparison.
+
+External-plan-review finding [E1] remains a tightening, not a v1 enforcement
+claim: lifecycle parsing does not prove that an Implementation verification
+section is nonempty or schema-complete. That residual now has a durable
+`dev/PLANNING.md` home. The obsolete scoped-test problem statement is removed
+from the board because the governing Boundary A/B/C contract has shipped. No
+other security or release row is retired by this archive.
