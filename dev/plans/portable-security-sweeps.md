@@ -2249,3 +2249,351 @@ was re-derived by execution.
 (append-only, confirmed before commit). Path-scoped commit, this file only.
 
 This section is append-only once written.
+
+## Response to plan review -- Claude (author) -- 2026-08-05
+
+**Standing, stated first because it bounds everything below.** This is the plan
+author's Response to the **External (security lens)** plan review appended
+above -- Codex, 2026-08-05, verdict **REVISE**. Three facts about what that
+does and does not mean, stated without hedging:
+
+* **An author Response never discharges an External tier by itself.** The tier
+  was *exercised*; the reviewer asked for changes; whether the amended artifact
+  satisfies them is the reviewer's call or the Maintainer's, and it is
+  structurally not the author's. I am the same agent type that wrote the plan.
+* **A REVISE verdict is not converted by a Response.** What a Response can do
+  is make the next read land on an artifact that carries the changes, and say
+  plainly which of the reviewer's words it did not take.
+* **This Response does not clear the plan to implement.** The reasoning is in
+  *What this Response clears, and what it does not*; the *Gate audit* below is
+  the evidence rather than the assertion.
+
+**Where this section sits in the file.** The External review was **inserted
+before** the 2026-08-04 Internal review and the 2026-08-04 Response, not
+appended at the end. Reading order in this file is therefore not chronological.
+Chronological order is: Internal (2026-08-04) -> Response + Figure correction
+(2026-08-04) -> External (2026-08-05) -> this section. An implementing agent
+reads the amendment tables of **both** Responses, M1--M40 then M41--M59, in
+that order; where they collide, the later row wins and says so.
+
+**Method.** Every figure below was re-derived by execution against the live
+tree under the canonical interpreter (`~/conda_envs/lhm/bin/python3.13`,
+CPython 3.13.13) with `PYTHONDONTWRITEBYTECODE=1`, `as_of 2026-08-05`. **I
+inherited no figure from the plan, from either review, or from the prior
+Response.** HEAD moved under me during the pass -- `6bcd2d3` -> `b8ab678` ->
+`da1de65` -- and where that changed a reading I record both readings and the
+commit that moved it, rather than reporting the convenient one. Working tree
+clean throughout except three untracked paths (`.claude/`,
+`dev/measurement/collision_log.md`, `dev/measurement/snapshots/`).
+
+### Gate audit -- what this plan's own fences say, and which are satisfied today
+
+Read before anything else. This repository breached two such gates on
+2026-08-04 because nobody enumerated them.
+
+| # | Gate | Where it is written | Satisfied today? |
+|---|---|---|---|
+| G1 | **Declared tier `required(External, security lens)`** | plan header; re-imposed by the Decision *"The plan carries `required(External, security lens)` in its own right … this Decision does not discharge that review."* | **EXERCISED, NOT CLEARED.** An External security-lens section is in the tree (Codex, 2026-08-05, `976b402`). Its verdict is **REVISE**. A REVISE is not a discharge, and this Response is not one either. |
+| G2 | **"No implementation commit lands before the `## Plan review` section is in the tree."** | plan header | **SATISFIED AS A FLOOR** -- the section landed at `976b402`. It is a *floor*, not a clearance: satisfying the literal wording answers nothing about the REVISE. Treating G2's satisfaction as permission to implement would be the precise failure this audit exists to prevent. |
+| G3 | **"An Internal round does not discharge this tier."** | plan header; *Plan review -- the brief* | **HOLDS.** The Internal round (2026-08-04) and both author Responses are same-agent-type reads and discharge nothing. |
+| G4 | **Decision Condition 1 -- the version-admission *mechanism*, not a one-off mode** | *What survived the lifecycle*, Consequence 1; Chunk E | **IN SCOPE, UNBUILT.** Amended by this Response ([E1] -> M41--M47). Nothing in Chunk E exists on disk. |
+| G5 | **Decision Condition 2 -- Cairn installs and runs the module on its own tree** | Consequence 2; Chunk F | **IN SCOPE, UNBUILT.** M27/M28 already record that Cairn gets **no standing invocation path** at v1; that remains true and is unchanged here. |
+| G6 | **Maintainer fence 1** -- no Chunk M step; no `bootstrap/tests/_ast_attest.py update-symbol`, no `_gate_manifest.py produce`, no `_gate_reanchor.py`, "under any circumstance" | *The Maintainer fence* | **IN FORCE; NOT BREACHED BY THIS RESPONSE.** The only attestation command run here is `_ast_attest.py verify`, which is the read-only verification the plan itself prescribes in *Verification*. No baseline, manifest or anchor was written. |
+| G7 | **Maintainer fence 2** -- an implementing agent must not download, fetch, or install a Gitleaks binary | *The Maintainer fence*, second fence | **IN FORCE; NOT BREACHED.** Measured: `which gitleaks` -> not found. No fetch was attempted. Every probe in this Response used the **host `git`** (2.53.0) only, which is already a declared trust root and required no acquisition. |
+| G8 | **Chunk I is Maintainer-gated** -- "No implementing agent starts this chunk." | Chunk I | **IN FORCE, UNSTARTED.** No live-contract evidence exists and this Response claims none. |
+| G9 | **Chunk G is order-sensitive; Branch 1 requires the dispatcher to exist** | Chunk G | **BRANCH 2 TODAY.** Measured: `git ls-files \| grep -i security-verification` returns only the plan and the archived proposal, and `grep -rl 'security-verification' templates/ scripts/ bootstrap/` returns nothing. No dispatcher, no registry. Chunk G does not land as written; LT-2 carries it. |
+| G10 | **Sequence step 0 -- "plan-open -- this plan + the `dev/PLANNING.md` row-move"** | *Sequence* | **HALF-DONE, and this is a real open gap.** The plan file is tracked. But `dev/PLANNING.md` carries **no row for `portable-security-sweeps`** -- measured, `grep -i portable dev/PLANNING.md` returns nothing, and the same is true for the sibling cluster plans. The board is a serialized shared file and I do not edit it; **surfaced to the Maintainer rather than fixed here.** |
+
+**The one gate whose *content* moved under me, reported because it changes an
+acceptance criterion.** Chunk A and *Verification* both require
+`bootstrap/security_check.py` -> `PASS`. Measured at HEAD `6bcd2d3`:
+**`security_check: FAIL`**, on a `check_cairn` content-scan finding in a
+sibling scope's proposal (`[content] [instruction-html-comment]`). Measured
+again at `b8ab678`: **`PASS`**. The mechanism is not remediation -- the
+flagged text is still present, verbatim, in
+`dev/proposals/archive/2026-08-04-claude-board-drain-guards.md`; the file
+**moved under `dev/proposals/archive/`** at `da1de65`, and `check_cairn`
+excludes `dev/**/archive/` unless `--include-archives` is passed
+(`scripts/check_cairn.py:535-538`). **So "`security_check` -> `PASS`" is not a
+stable property of HEAD in a cluster this busy**, and an implementing agent who
+meets a FAIL must attribute it before treating it as their own -- exactly the
+discipline the plan already applies to AST drift.
+
+### Reproduction ledger -- every figure the External review states
+
+Reproductions and non-reproductions are reported with equal weight.
+
+| Figure or claim the review states | Live re-measurement | Verdict |
+|---|---|---|
+| *"M18/M19 deliberately make the SHA-256 record evidence-only"* | Exact. M18 replaces known-omission (a) with *"E3's recorded SHA-256 is **evidence-only** … and is **never compared** against the binary resolved at run time"*; M19's node `test_the_recorded_digest_is_not_a_runtime_gate` asserts a digest-mismatched binary **"still selects full mode"** | **yes** |
+| *"any host binary that prints an admitted version can enter full mode and produce CLEAN"* | Exact, traced end to end: B1 records the `--version` output; E1 is a set of version **strings**; `test_mode_selection_maps_versions_to_modes` maps the string to the mode; D5 lets full mode reach `0`. **No digest comparison exists anywhere in Chunks A--I** -- re-read, not inherited | **yes** |
+| *"The Maintainer already supplies a checksum-verified binary for the real admission matrix"* | Exact -- Chunk I, first bullet | **yes** |
+| *"the eight-key list"* / *"The plan pins selected keys and command arguments"* | Exact -- C6 sets `GIT_CONFIG_COUNT=8` and names exactly eight keys (`core.useReplaceRefs`, `core.hooksPath`, `core.fsmonitor`, `core.pager`, `core.quotePath`, `diff.external`, `protocol.allow`, `protocol.file.allow`) | **yes** |
+| *"a repository-controlled Git configuration can introduce an unanticipated include or behavior that the eight-key list does not name"* | **Reproduces, and is now executed rather than argued** -- probes P2, P3 and P5 below. This was the review's strongest finding and it is correct on the mechanism, not merely on the framing | **yes** |
+| *"M24/M25 sensibly refuse candidate paths inside the repository and symlink escapes"* | Exact -- M24 requires absolute / regular file / executable bit / outside the repository on **both** lexical and resolved path; M25 adds the node in both forms | **yes** |
+| *"It still executes an arbitrary external file supplied to the command"* | Exact -- E2 as amended by M24 constrains *where* the candidate may live and refuses nothing about *what it is*; there is **no** confirmation gate, and no report text stating that an unadmitted binary was executed | **yes** |
+| *"No Gitleaks binary is available on this host, so I did not claim real-tool behavior from the fake-executable tests"* | Exact -- `which gitleaks` -> not found. The reviewer's abstention is correct and I make the same one | **yes** |
+| *"I inspected the response's effective M14--M25 security amendments"* | The range exists and is the security-relevant span (M13--M26 is arguably the fuller one; M13's real-`git` node and M26's registry-argv pin sit one row outside the stated range on each side) | **yes, with a note** |
+
+### Reproduction ledger -- every figure this Response and its predecessors assert
+
+| Figure | Src | Live re-measurement `as_of 2026-08-05` | Verdict |
+|---|---|---|---|
+| `AST attestation OK -- 173 baselined symbol(s) accounted for, unchanged` | R(2026-08-04) | Exact, at HEAD `b8ab678`, clean tree, run in place against `bootstrap/_scaffold/*.py` | **yes** |
+| Baseline 173 total; 161 declarable = `FunctionDef` 98 + `Assign` 53 + `ClassDef` 10 | R | Exact | **yes** |
+| Remainder **12** = `Import` 8, `Docstring` 1, `Expr` 1, `If` 1, `If#2` 1; no `Try` key | R | Exact | **yes** |
+| `Assign:_MODULE_MAPPINGS` baseline digest `26957a8924042a0a` | P, R | Exact, in **both** `bootstrap/tests/fixtures/scaffold_ast_baseline.json` (`type` `AnnAssign`, key `Assign:`) and `gate_manifest.mapping_symbols`. **The plan's entire declared engine delta survives a fourth re-derivation** | **yes** |
+| `install_manifest(modules=None)` = 95 rows; `scaffold.py --manifest` emits 96 lines | P | 95 / 96 | **yes** |
+| Three-channel `templates/**/*.py` = 44 | P, R | `git ls-files` 44, `pathlib` rglob 44, on-disk 44 | **yes** |
+| No `.json` tracked under `templates/` | P, R | Empty | **yes** |
+| `gate_manifest.json` = 164 frozen files; `collection.node_count` = 1598 | P, R | 164 / 1598 | **yes** |
+| `_UPDATE_ALLOWLIST` declared at `bootstrap/tests/_ast_attest.py:141`; `"_MODULE_MAPPINGS": "Assign"` at `:142` | R, M35 | Exact | **yes** |
+| `_is_per_module_necessity` at `bootstrap/tests/_ast_attest.py:149-161`, exempting only `Import:` / `ImportFrom:` / `Docstring` | R, M2 | Exact | **yes** |
+| `bootstrap/security_check.py:74` prose *"42 entries are a subset of the manifest's 44"* | P, M38 | Exact, at that line | **yes** |
+| `gitleaks` absent from `PATH`; `git version 2.53.0` | P, R | Exact | **yes** |
+| `claim_check.py dev/plans/portable-security-sweeps.md` -> OK, exit 0 | R, prior Response | OK, exit 0 | **yes** |
+| **`scan_targets()` = 74 = templates 44 + scripts 16 + bootstrap 14** | P, R, **M10, M11** | **76** = templates 44 + **scripts 18** + bootstrap 14. `security_check` reports *"Bandit clean over 76 shipped file(s)"*. Cause, measured by `git log --diff-filter=A`: **`scripts/transition_lint.py` (`ed0800b`) and `scripts/transition_lint_whitelist.py` (`4a7d70a`)** landed 2026-08-04 from the `transition-lint` sibling scope, and `scan_targets()` derives its `scripts/` members from an on-disk glob | **NO** -- see M56 |
+| **`check_cairn` reports 195 Markdown files** | **M37** | **176** Markdown files, no issues, 48 external links not probed. (The plan's own superseded figure was 180; M37 raised it to 195; the live reading is 176. Three readings in two days, all taken honestly, none durable -- the archive moves at `de50fb8`/`da1de65` alone move it) | **NO** -- see M57 |
+| **`security_check.py` -> `PASS`** | P (Chunk A, *Verification*) | **`FAIL` at `6bcd2d3`, `PASS` at `b8ab678`** -- see the gate-audit note above | **CONDITIONAL** |
+| Suite baseline **1790 passed, 0 failed, 0 skipped, 0 xfailed** at clean HEAD `e20b18e` | **M8, M9** | See M58 -- re-measured at clean HEAD on 2026-08-05 | **NO** -- superseded |
+
+**Nothing in the plan's declared engine delta moved.** That is the fourth
+independent re-derivation of `CHANGED Assign:_MODULE_MAPPINGS`, digest
+`26957a8924042a0a`, 0 MISSING / 0 DUPLICATE / 0 non-exempt NEW, and it is still
+right. Every figure that moved is a *count of the surrounding tree*, and every
+one of them moved because a sibling scope landed something -- which is the
+plan's own standing lesson applied to the plan's own numbers.
+
+### The probe behind [E2] -- executed, not argued
+
+[E2] is the review's strongest finding and it deserved measurement rather than
+concession. Built a throwaway Git repository off-tree, planted a hostile
+repository-local configuration, and ran six probes against the **host `git`
+2.53.0** -- no Gitleaks, no download, fence G7 intact. Results, all reproduced
+twice:
+
+| # | Probe | Result |
+|---|---|---|
+| **P1** | A key **named** in the eight-key `GIT_CONFIG_COUNT` pin, set hostilely in `.git/config` | Pin wins. `core.pager` reads `cat`, not the planted sentinel. **C6's premise is correct** |
+| **P2** | A key **not named** in the pin, injected through `[include] path = …` in `.git/config`, read under the same eight-key pin | **Survives.** `cairnprobe.injected` -> `YES_FROM_INCLUDE`. The pin outranks the eight keys it names and nothing else |
+| **P3** | The same through `[includeIf "gitdir:**"]` | **Survives.** `cairnprobe2.injected` -> `YES_FROM_INCLUDEIF` |
+| **P4** | Is there a local-tier escape hatch? `GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null GIT_CONFIG_LOCAL=/dev/null` | **No.** The planted `core.pager` still reads back. Git has no `GIT_CONFIG_LOCAL`; the repository-local tier cannot be switched off, only outranked key by key |
+| **P5** | Would a pre-execution screen built on `git config --list --local` see the injections? | **No -- and this is the trap.** Without `--includes` the listing shows `include.path=../hostile.inc` and **neither** injected key. A screen written the obvious way is silently defeated |
+| **P6** | `git config --list --local --includes --show-origin -z`, run under the sterilized child environment with output captured | **Sees both injections and names their origin file.** `rc 0`. And the planted `core.pager` sentinel **did not execute** -- verified by an absent sentinel log file, so the screen's own Git call does not hand control to candidate configuration |
+
+**What the probe settles.** [E2] is right on the mechanism, not merely on the
+framing: eight pinned keys are an enumeration of *symptoms*, and `include.path`
+is a general escape from it that needs no new Git version and no exotic key.
+The plan's sentence *"This is a measured finite boundary, not complete
+Git-config sterilization"* was **honest about being finite and wrong about
+being a boundary** -- a boundary that an attacker-chosen key can step around is
+not one.
+
+**What the probe also settles, and is the constructive half.** P6 shows the
+structural control the plan was missing is *available today*: the
+include-expanded local key set is enumerable before execution, cheaply, without
+executing candidate configuration. That converts [E2]'s ask from "report a
+degraded residual" into "refuse deny-by-default", which is strictly stronger
+and is the same shape as C3's existing `.gitleaksignore` pre-execution refusal.
+M48--M52 build it.
+
+### Disposition of every finding
+
+| # | One-line summary | Disposition | Mechanical residue |
+|---|---|---|---|
+| **E1** | Full/CLEAN mode must bind the executed binary to the admitted artifact | **Accept, with modification** -- the security requirement in full; the *location* of the digest and the *absence-vs-mismatch* split are modified, with reasons | M41, M42, M43, M44, M45, M46, M47, M59 |
+| **E2** | The candidate Git-configuration boundary remains enumeration-based | **Accept, with modification** -- accepted on measured evidence, and answered with a deny-by-default pre-execution screen rather than only a disclosed residual | M48, M49, M50, M51, M52, M59 |
+| **E3** | `--verify-version-support` is a deliberate execution surface and needs a human-facing friction boundary | **Accept in full** | M53, M54, M55 |
+
+**Nothing is declined outright. One clause inside [E1] is declined, named as
+such, and argued -- see below.** Three further amendments (**M56, M57, M58**)
+come from this Response's own measurement pass and are attributable to no
+finding.
+
+**[E1] -- accepted, with two modifications, one of which is a partial
+decline.**
+
+The finding is correct and it is the same failure the Internal round's [I3]
+identified and the prior Response's M18--M20 **disclosed rather than closed**.
+I re-traced it rather than inheriting it: full mode is entered on a version
+string the unauthenticated binary prints about itself, and the SHA-256 the
+admission ceremony records is never read again. M19 makes that *worse than
+undisclosed* -- it ships a test node whose whole content is an assertion that
+the digest does **not** gate. The reviewer is right that this changes the
+meaning of a security result rather than leaving coverage incomplete, and right
+that the CLEAN-capable mode is the one place that matters.
+
+**Accepted in full:** full mode -- and therefore CLEAN -- becomes unreachable
+without a digest match against an artifact the admission ceremony actually
+measured. The resolved executable is hashed **immediately before invocation**,
+in the same re-validation moment B5 already establishes for path drift.
+
+**Modification 1, and this is a decline of one clause.** The review says
+*"record its digest in the admitted-version **policy**"*. I decline the policy
+as the location and put the digest in the **source-owned admitted-artifact set
+(E1)** instead. The reason is a security one, not a convenience: the policy is
+the *adopter-editable JSON document*, and the plan's hardest invariant is that
+it names no executable, path, argv, environment variable, version or mode --
+A8's `test_policy_refuses_every_named_malformation` and
+`test_policy_cannot_select_a_version_or_mode` exist to enforce exactly that. A
+digest carried in the policy would let a file an attacker who can write the
+adopter's tree may reach *admit their own binary*, which is strictly weaker
+than today's self-reported string. I read the review's word "policy" as *the
+admitted-version record*, which is what E1 is; **if the reviewer meant the JSON
+policy literally, that is a disagreement and I want it back as a finding, not
+resolved by my reading of one word.**
+
+**Modification 2 -- the absence/mismatch split.** The review says a mismatch
+must be *"DEGRADED (20), never reduced/full/CLEAN"*. I accept that for a
+**mismatch** and distinguish an **absence**:
+
+* **Mismatch** -- a digest *is* recorded for this `(version, platform, arch)`
+  and the resolved binary does not match it. That is a contradiction: the
+  binary claims a version whose artifact Cairn measured on this platform and is
+  not that artifact. **DEGRADED (20)**, exactly as asked. This is the
+  look-alike case the finding is about.
+* **Absence** -- no digest is recorded for this `(version, platform, arch)`.
+  That is not a mismatch; it is the ordinary *unadmitted* case, and it takes
+  the existing reduced-mode path, which **never emits CLEAN**.
+
+The split is what keeps [E1]'s requirement from bricking every platform Cairn
+has not measured: all admission evidence is Darwin arm64 (known omission (e),
+LT-5), so a set of Darwin digests treated as mismatches elsewhere would make
+the module DEGRADED-always on Linux. Under the split, **full mode and CLEAN are
+reachable only on a digest match** -- which is the binding the finding asked
+for -- while an unmeasured platform degrades to honest reduced mode rather than
+to noise. **If the reviewer intends absence to be DEGRADED too, say so and I
+will take it**; it is a defensible harder line and the cost is stated above,
+not hidden.
+
+**Consequence for the prior Response, stated because it is a reversal.** M20
+opened **LT-8** deferring the digest gate on cross-platform grounds. That
+deferral is **withdrawn** -- M46 closes LT-8 as superseded and replaces it with
+LT-10, which carries only the narrower live obligation (accumulating
+per-platform digests in the ledger). The External round overturned the author's
+deferral, which is what the tier is for.
+
+**[E2] -- accepted, with a modification that strengthens rather than softens.**
+
+Accepted on the measurement, not on the argument: P2 and P3 above show an
+unlisted key entering through `include.path` / `includeIf` and surviving the
+eight-key pin, and P4 shows Git offers no way to disable the repository-local
+tier. The plan's *"measured finite boundary"* framing does not survive that and
+M50 retires it.
+
+The modification is that I do **not** take the review's fallback (*"report that
+as an explicit degraded residual rather than as a finite key-set guarantee"*)
+as the whole answer, because P6 shows a better one is available: enumerate the
+**include-expanded** repository-local key set before execution and **refuse
+deny-by-default** on anything outside a named inert allowlist. That is the same
+control shape as C3's `.gitleaksignore` refusal, it needs no third-party
+binary, and it converts an enumeration of symptoms into a refusal on the
+unenumerated. The residual is *also* stated (M50) -- the screen is a snapshot
+subject to the same preflight/execution race C3 already accepts, and the
+eight-key pin stays as defence in depth rather than as a boundary claim.
+
+**Two couplings this creates, recorded rather than discovered later.** (i) A
+screen built on `git config --list --local` **without** `--includes` is
+silently defeated (P5), so M49 pins that with its own node. (ii) The screen is
+itself a **runner-owned Git invocation**, which changes the Git-invocation
+multiset Chunk I's oracle expects from two calls to three -- M52 declares it,
+because an undeclared third call would turn the Chunk I oracle red and look
+like a Gitleaks defect.
+
+**[E3] -- accepted in full.** `--verify-version-support` ships in every adopter
+tree that selects the module and executes an operator-supplied file by design.
+M24 constrained *where* that file may live and said nothing about friction. All
+three asks are taken: it stays out of ordinary sweep flow and out of anything a
+standing agent command can reach (M55 strengthens M26's argv pin to name the
+subcommand as forbidden rather than relying on "offline" to exclude it); it
+requires an explicit confirmation argument and refuses without one (M53); and
+both its emitted record and its human report state in words that an
+**unadmitted** binary was executed (M53), so it cannot read as a harmless
+verification read.
+
+### Amendments in force
+
+Each row names the superseded text **verbatim** (original emphasis marks
+reproduced as written) and states what replaces it. Prior sections are not
+edited; this table is the operative amendment, it is read **together with
+M1--M40** and **after** them, and where a row here supersedes an earlier M-row
+it says so by number.
+
+| ID | Location | Superseded text (verbatim) | Replaced by |
+|---|---|---|---|
+| **M41** | Chunk E, E1 cell | "The **source-owned** full-mode version set, initially `{\"8.30.1\"}`, with each member carrying the identifier of its evidence record. Not policy-controlled, not environment-controlled, not adopter-editable without editing reviewed code." | The **source-owned admitted-artifact set**: members are keyed by `(version, platform, arch)` and each carries **the SHA-256 of the artifact the admission matrix was run against** plus the identifier of its evidence record. Initially **empty** -- `8.30.1` enters only when Chunk I emits a record against a Maintainer-supplied, checksum-verified binary, which is the state Chunk I's own acceptance criterion already contemplates (*"**or** E1's set is empty and the module ships reduced-mode-only"*). Still **not policy-controlled, not environment-controlled, not adopter-editable without editing reviewed code** -- and the digest's location is load-bearing: see M44 for why it is not in the JSON policy. |
+| **M42** | Chunk B, B5 cell | "Re-validate the resolved path immediately before `subprocess` invocation and record that the accepted residual is a same-user race on a trusted checkout, not a containment claim." | Unchanged, **plus**: in the same re-validation moment, **compute the SHA-256 of the resolved executable** and compare it against M41's admitted-artifact set for the reported `(version, platform, arch)`. The read is bounded and streamed. The accepted residual is unchanged in kind -- a same-user race on a trusted checkout between hash and exec, not a containment claim -- and it is now **narrower** than the residual it replaces, because a swapped binary must also reproduce a measured digest. |
+| **M43** | Chunk D, D5 cell | "The reduced-mode classification: validated finding → **10**; validated no-finding → **5**, naming unsupported version and missing history evidence; CLI/output-schema drift → **20**; missing binary / other major / prerelease / unparsable → **5 without execution**. **Reduced mode never emits CLEAN and never describes itself as offline-verified.**" | Unchanged, **plus the mode-selection rule the digest gate introduces, stated as two distinct cases so they cannot be collapsed**: (i) **digest MISMATCH** -- a digest is recorded for this `(version, platform, arch)` and the resolved binary does not match it -> **DEGRADED (20), without execution**, never reduced, never full, never CLEAN; the report names the mismatch and both digests in abbreviated form. (ii) **digest ABSENT** -- no digest is recorded for this `(version, platform, arch)` -> the version is **not admitted on this platform**, which is the ordinary unadmitted case and takes the existing **reduced-mode** path (never CLEAN). **Full mode, and therefore exit `0`, is reachable only on a digest match.** The distinction is the whole design: a contradiction is degradation, an absence of admission is not. |
+| **M44** | Chunk A, A8 test table, policy-refusal row | "`test_policy_refuses_every_named_malformation` — parametrized: unknown top-level key, unknown key under `gitleaks`, duplicate JSON key, non-string fingerprint, duplicate fingerprint, empty fingerprint, oversized fingerprint, control character in a fingerprint, a newline in a fingerprint (the ignore-file line-injection case), an unsupported `schema`, and any attempt to name a path / argv / environment variable / executable / config file / baseline." | Unchanged, **plus one further parametrized case: any attempt to name a digest, hash, checksum, or admitted artifact**. Stated as an amendment because the External review asks for the digest to be *"record[ed] … in the admitted-version policy"* and **this plan puts it in the source-owned set instead (M41), deliberately**: the policy is the adopter-editable JSON document, and a digest an adopter (or anything with write access to their tree) can edit would let a candidate **admit its own binary** -- strictly weaker than the self-reported version string it was meant to replace. The refusal is now pinned by a node so the weaker design cannot be reached by accident. **This is the one clause of [E1] that is declined, and it is declined on that ground alone.** |
+| **M45** | Chunk E, E7 test table -- **supersedes M19 in full** | "**New E7 node — `test_the_recorded_digest_is_not_a_runtime_gate`.** Admit a version in E1 whose evidence record carries digest X; resolve a fake binary that reports that version string and hashes to Y; assert the run **still selects full mode** and that the report **names the residual in words**." | **M19's node is withdrawn -- it now asserts the opposite of the contract.** Replaced by three E7 nodes: **`test_a_digest_mismatch_is_degraded_without_execution`** (admitted `(version, platform, arch)` with digest X; resolve a fake binary reporting that version and hashing to Y; assert exit **20**, assert **zero subprocess invocations of the candidate**, and assert the report names the mismatch -- hazard perturbation: delete the comparison from M42; the run reaches full mode and the node goes red); **`test_an_unadmitted_platform_is_reduced_not_degraded`** (same version, a `(platform, arch)` with no recorded digest; assert reduced mode, and assert the run can still reach `10` and can never reach `0`; hazard perturbation: map absence onto the mismatch branch and the node goes red, which is the guard on Modification 2 of the [E1] disposition); and **`test_full_mode_is_unreachable_without_a_digest_match`** (parametrized over absent set, absent platform, mismatched digest, unparsable version -- **assert exit `0` is unreachable in every case**; hazard perturbation: restore string-only mode selection and every case goes red). **This last node is the one that carries [E1]'s claim** and it belongs in the invariant list beside `test_reduced_mode_never_emits_clean`. |
+| **M46** | *Lasting-truth migration*, LT-8 (opened by M20) -- **supersedes M20** | "**LT-8 — the full-mode digest gate.** Deferred, not rejected. A source-owned optional digest checked at resolution (mismatch degrading to reduced mode rather than refusing, so `test_reduced_mode_is_reachable_without_any_source_change` survives) is the stronger design, and it is **blocked on cross-platform evidence**" | **LT-8 is CLOSED as superseded: the deferral is withdrawn and the gate lands in v1** (M41--M43, M45). Two corrections to what LT-8 said, both material: the mismatch disposition is **DEGRADED (20)**, not "degrading to reduced mode" -- the External round rejected the softer disposition in terms (*"never reduced/full/CLEAN"*) -- and the cross-platform objection is answered by the **absence/mismatch split** (M43) rather than by deferral, so `test_reduced_mode_is_reachable_without_any_source_change` survives unharmed on an unadmitted platform. **New LT-10** carries the only live remainder: `dev/measurement/gitleaks-version-support.md` accumulates one digest per `(version, platform, arch)` as platforms are admitted, and admitting a second platform is ledger work under the existing Chunk E cadence, **not a new proposal**. |
+| **M47** | *Author-accounting*, invariant list -- **extends M17** | "*A full-mode version exists only with a recorded evidence record.* Chunk E7's bijection node." | Two invariants, not one. (i) *A full-mode version exists only with a recorded evidence record.* Chunk E7's bijection node. (ii) ***Full mode -- the only CLEAN-capable mode -- is reachable only when the resolved executable's SHA-256 matches a digest the admission ceremony recorded for this `(version, platform, arch)`.*** Chunk E7's `test_full_mode_is_unreachable_without_a_digest_match` (M45), with `test_a_digest_mismatch_is_degraded_without_execution` as its refusal half. **This is now the plan's second central claim beside "a leg that did not run never renders as CLEAN", and it should be attacked with the same energy.** |
+| **M48** | Chunk C, table (new row **C9**) | (addition) | **C9 -- the repository-local configuration screen, deny-by-default, before execution.** In `templates/modules/team-gated/run_portable_security_sweeps.py`: before either leg runs, enumerate the candidate's **include-expanded** repository-local configuration with `git config --list --local --includes --show-origin -z`, executed under the **same** sterilized child environment C6 constructs and with output captured (measured: run this way a hostile `core.pager` does **not** execute -- probe P6). **Refuse before execution with DEGRADED (20)** on: any key outside a named, reviewed **inert allowlist**; any `include.path` / `includeIf` whose origin file resolves outside the candidate's `.git/` directory; a listing that fails, times out, or exceeds a byte cap. The allowlist is source-owned, not policy-controlled. **This is the same control shape as C3's `.gitleaksignore` refusal** and it exists because the eight-key pin cannot bound what it does not name. |
+| **M49** | Chunk C, C8 test table | (addition) | **Five new C8 nodes.** `test_an_unlisted_hostile_local_config_key_refuses_before_execution` -- plant a key outside the allowlist; assert exit **20** and **zero subprocess invocations of the adapter** (hazard perturbation: delete C9's screen; the run proceeds and the invocation-count assertion goes red). `test_an_include_path_injection_refuses` and `test_an_includeif_injection_refuses` -- the two forms measured as P2 and P3; **each is the negative case the External review asked for by name**. `test_the_screen_expands_includes` -- assert the screen's own command carries `--includes`; hazard perturbation: **drop `--includes`**, and the include-injected key becomes invisible and the two injection nodes go green while the hazard is live -- **measured as P5, and the reason this node exists as its own pin rather than as a comment**. `test_the_screen_does_not_execute_candidate_configuration` -- plant an executable sentinel as `core.pager` in `.git/config`; assert the sentinel did not run (measured as P6). All five run against the **real host `git`**, which is a declared trust root and needs no acquisition -- the same technique M13 established. |
+| **M50** | Chunk C, *Why C6 pins keys rather than symptoms* | "`GIT_CONFIG_NOSYSTEM` and `GIT_CONFIG_GLOBAL` neutralize the system and global config tiers. They do **not** neutralize the **repository-local** tier — the only one the candidate controls. `GIT_CONFIG_COUNT` entries behave like `-c` and outrank repository-local config, which matters precisely because *Gitleaks* spawns Git, so the runner cannot pass `-c` itself. **This is a measured finite boundary, not complete Git-config sterilization**, and the doctrine must say so in those terms." | The first three sentences are **verified by execution and stand** (probes P1 and P4: the pin does outrank repository-local config for a key it names, and Git offers **no** way to disable the local tier -- there is no `GIT_CONFIG_LOCAL`, and `GIT_CONFIG_NOSYSTEM` + `GIT_CONFIG_GLOBAL` + `GIT_CONFIG_SYSTEM` together leave it live). **The final sentence is withdrawn.** The eight-key pin is **not a boundary of any kind** -- it is defence in depth over eight named keys, and a candidate steps around it with one `include.path` line (P2) or one `includeIf` (P3), no new Git version required. **What bounds the candidate configuration surface is C9's deny-by-default screen (M48), and the doctrine must say *that* in those terms** -- with the residual named in the same breath: the screen is a **snapshot**, subject to the same preflight/execution race C3 already accepts and prints, and it bounds *configuration*, not everything a candidate repository controls. |
+| **M51** | *Author-accounting*, invariant list | "*Repository-local `.git/config` cannot steer the transitive Git process on any of the eight pinned keys.* Chunk C8's `test_hostile_repo_local_config_loses_to_the_counted_keys`. **Bounded, not complete**: it pins eight named keys against a measured invocation set, and the doctrine says so." | *Repository-local configuration cannot introduce **any** key the runner has not reviewed: an unenumerated key, an `include.path` or an `includeIf` **refuses before execution** (DEGRADED 20).* Chunk C9 (M48), enforced by C8's five nodes (M49); the eight pinned keys (C6) remain as **defence in depth over the keys they name**, enforced by `test_hostile_repo_local_config_loses_to_the_counted_keys` as amended by M13. **Bounded, and the bound is now the allowlist rather than the enumeration** -- the residual is the preflight/execution race and the fact that this bounds configuration only. **The claim that eight pinned keys bound the candidate metadata surface is retired; it was measured false** (M50, probes P2/P3). |
+| **M52** | Chunk I, live-contract bullet | "the logging-`git`-shim invocation oracle (expecting exactly `git -C <repo> log -p -U0 --all --full-history --text --no-textconv --no-ext-diff` and `git ls-remote --quiet --get-url`, and **zero** Git calls from the current-tree leg)" | The expected multiset gains a **third, runner-owned** call and must be declared before the oracle is run, or the oracle goes red and reads as a Gitleaks defect: **`git config --list --local --includes --show-origin -z`**, issued by C9's screen (M48) **before** either leg, from the runner itself rather than from Gitleaks. The Gitleaks-attributed expectation is unchanged (`git -C <repo> log -p -U0 --all --full-history --text --no-textconv --no-ext-diff` and `git ls-remote --quiet --get-url`), and **zero Git calls from the current-tree leg** is likewise unchanged -- the screen is a preflight, not part of a leg. The oracle must therefore distinguish **runner-owned** from **adapter-owned** invocations rather than counting a flat total. |
+| **M53** | Chunk E, E2 cell -- **extends M24** | "**`--verify-version-support <path-to-candidate-binary>`** — a public subcommand that runs the admission matrix against a candidate binary in throwaway fixtures and emits a structured evidence record to stdout." | Unchanged in purpose, **plus the human-facing friction boundary the External review requires**, on top of M24's containment rules. Three parts, each refusable: (i) **an explicit confirmation argument is mandatory** -- the subcommand refuses, before any resolution or execution, when it is absent, and the refusal text says what the flag authorizes; the flag's name states the act in words rather than reading as a verbosity switch. (ii) **The emitted record (E3) carries an explicit field recording that an unadmitted binary was executed**, with the candidate path and its SHA-256, so a record cannot be mistaken for an admission. (iii) **The human report opens with that statement** -- that this command executed an external file that Cairn has not admitted, at the operator's instruction. The subcommand is **absent from ordinary sweep flow**: no ordinary run reaches it, and no standing agent command may name it (M55). |
+| **M54** | Chunk E, E7 test table | (addition) | **Three new E7 nodes.** `test_verify_version_support_refuses_without_the_confirmation_argument` -- assert exit is a refusal and **zero subprocess invocations of the candidate**; hazard perturbation: make the flag optional and the invocation-count assertion goes red. `test_the_emitted_record_states_that_an_unadmitted_binary_was_executed` -- assert the field is present, non-empty, and carries the candidate path and digest; hazard perturbation: delete the field from E3's emitter and the node goes red. `test_the_human_report_opens_with_the_unadmitted_execution_statement` -- assert on the report's first rendered block, not on a substring anywhere; hazard perturbation: move the statement to the end and the node goes red, because a friction statement a reader meets after the result is not friction. |
+| **M55** | Chunk G, test table -- **supersedes M26** | "Same name, stronger assertion: pin the row's argv **exactly** against the local/offline entry point, and assert it does **not** name `--verify-version-support`." | Same name, same exact-argv pin, **and the exclusion is widened from one flag to the whole admission surface**: assert the row's argv names **neither** `--verify-version-support` **nor** its confirmation argument (M53), in any position, and that no argv element is operator-supplied. M26's form excluded one literal flag; a row could still have named the confirmation argument alone, or a future admission alias. **A standing agent command must not be able to reach any path that executes an unadmitted binary** -- that is the property, and the node now states the property rather than one instance of it. Hazard perturbation unchanged in kind: point the row's argv at any admission-surface element; the node goes red. |
+| **M56** | *Verification*, "The release Bandit gate" bullet -- **supersedes M10 and M11's figures** | "The shipped-file count moves **74 → 75 after Chunk A → 76 after Chunk F**." (M10) and "`scan_targets()` at **76**" (M11) | Re-measured `as_of 2026-08-05`: the **baseline is 76**, not 74 -- `security_check` reports *"Bandit clean over 76 shipped file(s)"*, composed of templates 44 + **scripts 18** + bootstrap 14. Cause, measured by `git log --diff-filter=A` and not inferred: **`scripts/transition_lint.py` and `scripts/transition_lint_whitelist.py`** landed 2026-08-04 from the `transition-lint` sibling scope, and `scan_targets()` derives its `scripts/` members from an on-disk glob. So the arithmetic is **76 -> 77 after Chunk A -> 78 after Chunk F**. **M10's and M11's mechanism is correct and unchanged; only their base moved.** Chunk A's own criterion (*"`scan_targets()` is **74** `as_of 2026-08-04`; expected **75** after A4"*) is superseded by the same arithmetic. **Re-measure and assert; do not apply 77/78 from this text either** -- this base has moved twice in two days. |
+| **M57** | Chunk H, *Acceptance criteria*, first bullet -- **supersedes M37** | "**195 Markdown files `as_of 2026-08-04`** — re-measured (`check_cairn: OK -- 195 Markdown file(s) scanned; no issues; 68 external link(s) not probed`)." | Re-measured `as_of 2026-08-05`: `check_cairn: OK -- **176** Markdown file(s) scanned; no issues; **48** external link(s) not probed`. **The count went *down*, which the plan's own "the count may only grow" rule does not admit** -- and the rule is what is wrong, not the measurement: `check_cairn` scans `git ls-files '*.md'` minus `dev/**/archive/` and `dev/reflections/`, so every proposal or plan **archive move** removes a file from the scan set. Fourteen archive moves plus `de50fb8` and `da1de65` are enough to explain the direction. **Replace the rule**: the figure is a dated snapshot to re-measure, never a monotone invariant, and the only assertion Chunk H should carry is `check_cairn` -> **OK with zero issues**. Three readings in two days -- 180, 195, 176 -- none of them wrong when taken. |
+| **M58** | Chunk A and plan-level *Acceptance criteria* -- **supersedes M8 and M9** | "Measured at a clean HEAD (`e20b18e`, working tree clean) under the canonical interpreter, `as_of 2026-08-04`: **1790 passed, 0 failed, 0 skipped, 0 xfailed** in 186.71s." | Re-measured `as_of 2026-08-05` under the canonical interpreter with `PYTHONDONTWRITEBYTECODE=1`, started at HEAD `b8ab678` with a working tree clean but for three untracked non-source paths: **1959 passed, 0 failed, 0 skipped, 0 xfailed, 3 warnings** in 308.53s. **One caveat stated rather than buried**: sibling scopes landed commits *during* the 308-second run (HEAD reached `06f89e1`, with two tracked files modified in the working tree by the time it finished), so this is a snapshot of a moving tree, not a HEAD-pinned figure. **The instruction, which is the durable part, is unchanged and is now three-for-three:** the plan's 1601, M8/M9's 1790 and this 1959 are each a sanity anchor with a date, never a target to compare against -- re-measure at the clean HEAD you actually start from. |
+| **M59** | *Plan review — the brief*, "Where the reviewer should look first" -- **extends M40** | (addition) | **The next External round's look-here list, rewritten around what this round changed.** **(1) The digest gate is new and central** (M41--M47): whether the absence/mismatch split is the right line, or whether an absence of platform evidence should also degrade; whether hashing at B5's re-validation moment leaves a race worth naming separately from the path-drift one. **(2) C9's screen is a new control with its own threat model** (M48--M52): whether a deny-by-default allowlist over the include-expanded local key set is complete against `includeIf` condition forms this Response did not enumerate (`gitdir/i`, `onbranch`, `hasconfig:remote.*.url`), and whether refusing on an unenumerated key is *operationally* survivable on real repositories or will be disabled by adopters -- the over-refusal failure mode B6 already guards against elsewhere. **(3) The third Git invocation** (M52): whether a runner-owned preflight `git config` call is acceptable inside a boundary whose whole premise is that the runner cannot pass `-c` to Gitleaks' own child. **(4) Carried forward, still unanswered by any round:** whether automatically executing an unmeasured host binary in reduced mode is acceptable given the named residual. **(5)** M40's items 2a and 6 are **retained**; item 6's question is now answered by M41--M47 rather than open, and the reviewer should check the answer rather than the question. |
+
+### What this Response clears, and what it does not
+
+**It does not clear the plan to implement.** Stated without hedging, and with
+the gate audit above as the evidence rather than the assertion:
+
+* **The declared tier `required(External, security lens)` is exercised but
+  not cleared.** The External round returned **REVISE**. A REVISE is answered
+  by a revised artifact and then **re-read** -- by the reviewer, or by the
+  Maintainer taking the call. **An author Response never discharges an External
+  tier by itself**, and this one does not.
+* **Three of the nineteen amendments change a security control's design, not
+  its accounting.** M41--M47 make full mode reachable only on a digest match;
+  M48--M52 add a pre-execution refusal surface that did not exist when the
+  reviewer read the plan; M53--M55 add a confirmation gate. **The reviewer has
+  not seen any of them.** Sending an unread control design to implementation on
+  the strength of the author's own Response is the failure this repository has
+  been chasing all cycle.
+* **One clause of [E1] is declined** (M44 -- the digest does not go in the
+  adopter-editable JSON policy). A declined clause is a **live disagreement**,
+  not a closed finding, and it is the reviewer's to accept or press.
+* **One question is put back to the reviewer**: whether *absence* of a recorded
+  digest for a platform should degrade (M43, Modification 2). I chose reduced;
+  the harder line is defensible and the cost of it is stated.
+* **G10 is an open lifecycle gap outside this Response's reach**: the plan-open
+  `dev/PLANNING.md` row was never landed, and the board is a serialized shared
+  file I do not edit. Surfaced to the Maintainer.
+
+**What it does clear.** Nineteen amendments (**M41--M59**) are in force, and
+every accepted finding has **mechanical residue** -- a changed chunk row, a new
+or withdrawn test node, a rewritten perturbation, a changed classification
+rule, a retired invariant, a corrected figure, or a closed `Lasting-truth` row.
+**No finding is accepted in prose alone**, and the two places where a prior
+prose acceptance had produced a node that asserted the *opposite* of the
+contract (M19) or a boundary that measurement falsified (the eight-key
+framing) are the two the External round found -- which is the tier working.
+
+**Three amendments are reversals of the author's own prior Response, and they
+are the point of the tier.** M45 withdraws M19's node. M46 closes M20's LT-8
+deferral. M50 retires the *"measured finite boundary"* sentence the plan
+defended through three rounds. Each was defended by the author and overturned
+by a structurally independent read.
+
+**One thing carried into the ceremony unchanged.** The declared
+`bootstrap/_scaffold/` symbol delta -- **one CHANGED `Assign:_MODULE_MAPPINGS`,
+baseline digest `26957a8924042a0a`, 0 MISSING, 0 DUPLICATE, 0 non-exempt NEW**
+-- was re-derived a **fourth** time, at HEAD `b8ab678` against a clean tree, and
+is unchanged. Nothing in this Response touches the engine delta: C9's screen,
+the digest gate and the confirmation flag all land in the runner, which is
+registration data to the engine.
+
+**Verification of this section.**
+`~/conda_envs/lhm/bin/python3.13 scripts/claim_check.py dev/plans/portable-security-sweeps.md`
+-> OK, no claim-check flags (exit 0). `git diff --numstat` on this file -> **0 deletions**
+(append-only, confirmed before commit). Path-scoped commit, this file only.
+
+This section is append-only once written.
