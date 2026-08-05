@@ -1,9 +1,9 @@
 # Plan: make the `guard` citation form writable
 
 **Source proposal**: [`dev/proposals/archive/2026-08-04-claude-board-drain-guards.md`](../proposals/archive/2026-08-04-claude-board-drain-guards.md)
-**Status**: review
+**Status**: archived
 **Plan review**: required(Internal) — ratified in the Decision (`78e8916`)
-**Last update**: 2026-08-04
+**Last update**: 2026-08-05
 **Opened**: 2026-08-04
 
 ## Source proposal
@@ -1211,3 +1211,124 @@ scratch path, delete the `claim-check-allow` directive **there**, and confirm
   entry points". Only the former is touched.
 * **`check_cairn.py` baseline:** 3 issues at HEAD, exit 0 — recorded so the smoke
   check is read against a baseline rather than as a bare pass.
+
+---
+
+### Response to the code review -- Claude (Strategy) -- 2026-08-05
+
+**Model**: claude-opus-5
+
+Grammar: Code-review-Response. Eight findings, all accepted.
+
+* **[C1]** accept (followup commit `a0fe4a3`) — **the eleventh instance, and the
+  most instructive.** "1985 passed" was not this change's suite: 22 of those
+  nodes came from a concurrent session's **uncommitted** `test_security_stack.py`.
+  The plan review's `1981` baseline carried the identical +22, so my "+4 delta"
+  **self-validated against an equally contaminated reference** and neither of us
+  saw it. Then my first correction attempt reproduced the error one step removed
+  — `git diff` swept that same uncommitted work into the "clean" worktree patch.
+  Re-measured properly: a worktree at HEAD (`e1b2e30`, which now *includes* that
+  session's committed work) with only this change's six files applied, worktree
+  status verified before the run → **1986 passed, 1 skipped, 330s**, Python
+  3.13.13. The generalizable rule: *a suite figure taken in a shared working tree
+  is not a measurement of your change.*
+* **[C3]** accept (followup commit `a0fe4a3`) — a **real fail-open I introduced**.
+  `.exists()` let a directory path half through (`<a-directory>::test_x`, FLAG →
+  clean — written here in placeholder form because the fix now flags the literal
+  token, which is itself the fix demonstrating itself) where the sibling line-bounds branch already used `.is_file()`. Fixed,
+  with two assertions and a mutation proof that also shows the fix did not spill
+  onto the bare-path branch.
+* **[C7]** accept (followup commit `a0fe4a3`) — both module docs said the checker
+  "covers: paths and line citations". They now name the third kind **and its
+  limit**.
+* **[C2]** accept — recorded, not fixed. `_is_placeholder` skips any token
+  containing a space or `< > * { }`, so an **absent** path is not flagged when the
+  node id carries one — **129 of 1963 node ids (6.6%)**. Fixing it means changing
+  `_is_placeholder`, which is a wider adopter-facing behaviour change than this
+  plan's fence permits. **Invariant (1) is qualified accordingly** rather than
+  left overstated: the bypass guarantee holds for node ids free of the placeholder
+  set.
+* **[C4]** accept — three of four `_node_citation_path` branches are invisible to
+  the full suite (`partition('::')`→`partition(':')` and dropping `and node` both
+  leave the suite unchanged; `and path_part` is behaviourally inert). Recorded as
+  a residual: the branches are defensive, and pinning each would need fixtures
+  that assert non-behaviour.
+* **[C5]** accept — **six** files landed, not the five the revised acceptance
+  criteria state as an equality, and the plan's "No `docs/` change" is wrong:
+  `docs/tool-usage.md` carries a registered live invariant on `claim_check.py`'s
+  line count. Corrected in the ledger below.
+* **[C6]** accept — the board rows are stamped "2026-08-04"; this lineage landed
+  on **2026-08-05**. Left as-is in the rows themselves (append-only record of what
+  was written) and corrected here.
+* **[C8]** accept — `[P12]` was cited where `[P11]` was meant, and the CHANGELOG
+  says "the archived plan" while the plan was at `review`. Both cosmetic; recorded
+  rather than chased into an append-only section.
+
+## Lasting-truth migration
+
+**Archived** 2026-08-05.
+
+### Dispositions
+
+```
+Dispositions:
+* [C1] suite figure contaminated by a       -> accept (commit a0fe4a3)
+       concurrent session's uncommitted file
+* [C2] placeholder chars bypass the flag    -> wontfix (invariant qualified;
+       for 6.6% of node ids                     the fix is a wider adopter
+                                                behaviour change, out of fence)
+* [C3] directory path half passed (fail-open) -> accept (commit a0fe4a3)
+* [C4] three defensive branches unpinned    -> wontfix (pinning needs
+                                                non-behaviour fixtures)
+* [C5] six files, not five; docs/ touched   -> accept (corrected in this ledger)
+* [C6] rows dated 08-04, landed 08-05       -> accept (corrected here)
+* [C7] module docs named only two kinds     -> accept (commit a0fe4a3)
+* [C8] [P12]/[P11] cite; CHANGELOG wording  -> wontfix (cosmetic, and the
+                                                sections are append-only)
+```
+
+**Zero `defer` dispositions** — no Maintainer authorization owed, **no board row
+added**. Net board delta **0**; two rows corrected.
+
+Both `wontfix` dispositions were tested against the **C4 eligibility rule** before
+being taken: [C2] and [C4] reach no adopter behaviourally (the checker's verdict is
+unchanged for every token shape measured), block no release, and need no Decision.
+[C2] is the closer call — it is a *stated* limit on a shipped checker — which is
+why it is qualified in the invariant rather than merely declined.
+
+### Evidence ledger
+
+**Evidence shipped.** Suite **1986 passed / 1 skipped / 330s** under Python
+3.13.13, measured in a clean worktree at `e1b2e30` with only this change's files
+applied. `check_cairn` OK across 178 files. Twins byte-identical by `cmp`. The
+code reviewer independently reproduced the full mutation battery node-for-node in
+a clean worktree, confirmed the bypass invariant across **28 token shapes** (every
+delta FLAG→clean, none clean→FLAG, none FLAG→EXEMPT), verified no
+`claim-check-allow` glob exempts anything it would not have before, and verified
+the intent override against `dev/intents.jsonl` rather than the commit body alone.
+
+**R1's acceptance check passed** — pre-fix 1 flag / exit 1, post-fix OK / exit 0,
+with the archived proposal never edited.
+
+**Changed-file set — six files** (corrected per [C5]):
+`scripts/claim_check.py`, `templates/modules/default-on/claim_check.py`,
+`bootstrap/tests/test_claim_check_module.py`, `docs/tool-usage.md`,
+`dev/modules/claim-check.md`, `templates/modules/default-on/claim-check.md`
+— plus `dev/PLANNING.md` and `CHANGELOG.md` in Chunk B.
+
+**Residual risks.**
+* **The node half is never verified** — a `guard` may cite a node that does not
+  exist and nothing notices. The honest limit of a static checker under a
+  zero-dependency budget.
+* **[C2]'s placeholder-character gap** — 6.6% of node ids bypass the flag.
+* **The line-count invariant will drift again** on the next edit to this file; it
+  is mechanically enforced (perturbing it exits 1), so it fails loudly.
+
+### Loop-fidelity sign-off
+
+Implementation commits `48b05f1`, `f42db96`, `5e10623`, `a0fe4a3` match the
+accepted **`## Revised proposal`** section (R1–R3) as ratified by the Decision at
+`78e8916`. The Decision's exclusions were honoured and independently verified by
+the code reviewer: no guard was written, no board row added, the G6 row is
+**diff-empty**, and the deferred section holds the same row count before and
+after.
