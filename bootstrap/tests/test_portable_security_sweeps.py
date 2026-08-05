@@ -1983,8 +1983,14 @@ def test_the_human_report_opens_with_the_unadmitted_execution_statement(
     runner = runner_copy(tmp_path)
     rc, _record, out = _admit_cmd(runner, cand, sweep_target)
     assert rc == 0, out
-    first = out.splitlines()[0]
+    lines = out.splitlines()
+    first = lines[0]
     assert "executed an external file that Cairn has NOT admitted" in first, first
+    # The report must carry other lines the statement outranks; without one, an
+    # insert-at-front and an append are indistinguishable and this node would be
+    # vacuous with respect to position -- measured, then fixed.
+    assert any("admission matrix: repository under check" in ln
+               for ln in lines[1:]), lines
 
 
 def test_verify_version_support_refuses_a_candidate_inside_the_repository_under_check(

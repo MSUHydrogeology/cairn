@@ -1203,6 +1203,13 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
     if not os.access(resolved, os.X_OK):
         return refuse(f"the candidate {resolved!r} carries no executable bit")
 
+    # A preamble the statement must still outrank.  Without a line here, an
+    # ``insert(0, ...)`` and an ``append(...)`` are indistinguishable on an
+    # empty list, and the "opens with" node would be vacuous -- measured.
+    report_lines.append(
+        "[portable] admission matrix: repository under check "
+        + _escape(str(target))
+    )
     digest = file_digest(resolved)
     record["unadmitted_binary_executed"] = {
         "path": lexical, "resolved": resolved, "sha256": digest,
