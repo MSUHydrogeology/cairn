@@ -482,6 +482,87 @@ Priority labels:
   strictly a blocker.
 * `(nit)` — clarity / polish; defer-OK.
 
+### The record schema — what a pass must carry
+
+A review pass is a **record**, and the gate reads the record rather than
+inferring from prose. Seven rules, each with a stated failure direction.
+**No condition yields a silent pass, and neither field has a default.**
+
+**The pass heading.** H2, exactly
+`## Plan review -- <reviewer> -- YYYY-MM-DD`, with an optional
+` (round <n>)` suffix. A `(<role>)` parenthetical inside the reviewer
+name is permitted and informational. The date must be a **real** date,
+not merely date-shaped: it is parsed strictly, so `2026-99-99`,
+`2026-02-30` and `0000-00-00` are each a **`malformed date`** violation
+while `2028-02-29` is accepted. A shape-only check is not a date
+contract.
+
+**The two attestation lines.** Inside the pass body, one line each,
+full-line anchored:
+
+```
+**Tier**: <Internal|External>
+**Findings**: <none|raised>
+```
+
+Comparison is case-insensitive; the spellings above are canonical.
+
+**Three fail-closed directions**, for either field:
+
+| condition | violation |
+|---|---|
+| value outside the vocabulary | `unrecognized <field> value` |
+| field absent from the pass body | `missing <field>` |
+| field occurs more than once | `duplicate <field>` — **even when the occurrences agree** |
+
+Agreeing duplicates are still refused, because deciding that two
+occurrences "agree well enough" is a judgement a conformance backstop
+must not make.
+
+**Declared, never inferred.** The tier is read from the `**Tier**:`
+line and from nowhere else — not from the reviewer's name, not from the
+`(<role>)` parenthetical, not from an agent registry. A reviewer who is
+in fact a different agent type but declares `Internal` has declared
+`Internal`. **The gate checks recorded conformance, not authenticity:**
+it cannot know whether the named reviewer performed the pass, and it
+does not claim to.
+
+**Tier ordering.** Total order `External > Internal`; a pass satisfies
+the floor iff `declared >= required`. `External` satisfies a required
+`Internal`; `Internal` does not satisfy a required `External`. There is
+no third tier and no `Maintainer` tier — a human review declares
+`External`.
+
+**Normalizing the required tier.** Read from the **first parenthesised
+group only** of the header's `**Plan review**:` field: match
+`required(...)`, strip `*`, `_` and backticks, take the first alphabetic
+word, case-fold, and require `internal` or `external`. Text after the
+closing paren is ignored; text after the first word *inside* the group
+is a **lens annotation** — preserved in the record, ignored by the
+comparison, so `required(**External**, security lens)` and
+`required(External + External Security Review)` both resolve to
+`external`. Negations fail closed: `required(not External)` is a
+violation, not an External requirement.
+
+**Sharpening pairing is positional.** When a pass declares
+`**Findings**: raised`, a `### Sharpening` heading must occur **inside
+that pass's body** — between its heading and the next H2. Positional,
+not date-matched: a neighbouring round's Sharpening cannot satisfy a
+different round. When `**Findings**: none`, a Sharpening in the body is
+permitted and not required.
+
+**The legacy population is enumerated, not dated.** Passes that predate
+this schema are exempt from the attestation rules by **membership in a
+fixed, generated manifest** keyed by plan stem, not by comparing their
+heading date to a cutoff. This is deliberate and load-bearing: a date in
+a heading is author-written text *inside the artifact the gate judges*,
+so a dated cutoff lets the gated party buy a permanent exemption by
+typing a smaller number. An enumeration is bulkier and cannot be widened
+from a plan — only by editing a committed constant, which is visible in
+review. The manifest is produced by a generator that does **not** use
+the gate's own predicates: the population a gate exempts must not be
+defined by the gate.
+
 ### Sharpening (response to findings)
 
 When findings are addressed, append a Sharpening subsection under the
