@@ -303,3 +303,51 @@ review. The same run also satisfies the ordinary seed-0 order check instead of
 being repeated inside `quality_gate.py`. Reviewers spend their time attacking
 the change, while Cairn retains a full integration backstop and an independent,
 strict release run.
+
+
+## External review -- Antigravity (External, security lens) -- 2026-08-05
+
+**Steelman.** Proposal `2026-08-05-codex-verification-boundaries.md` resolves a critical efficiency and duplication bottleneck in Cairn's verification workflow. Today, Cairn's operational rule requires running the full test suite (`python -m pytest bootstrap/tests`) after every substantive edit, and `scripts/quality_gate.py`'s default `order-independence` sub-gate runs the entire test suite a second time under shuffle seed 0. With 1,987 tests taking ~251 seconds (~4.2 minutes) per run, a single iteration pays ~8.4 minutes in duplicate test executions without increasing coverage. The proposal replaces the universal rerun rule with three explicit verification boundaries:
+1. **Boundary A (Scoped Iteration)**: During plan chunk development, run mapped tests, acceptance criteria probes, and surface-specific gates. Fail closed to the full suite if mapping is absent or surface is uncertain.
+2. **Boundary B (One Integration Record)**: Upon completing implementation, run **one** full integration pass using the deduplicated pair:
+   ```text
+   python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0
+   python scripts/quality_gate.py --sub neutrality --sub redundancy
+   ```
+   This satisfies engine suite + seed-0 order independence in a single pytest run, followed by non-pytest quality sub-gates. The result is recorded in an append-only `## Implementation verification` plan section bound to the tested commit SHA.
+3. **Boundary C (Independent Code Review)**: The reviewer verifies the Boundary B record matches `HEAD`, then performs targeted falsification testing over changed surfaces and edge cases rather than rerunning the full suite by default (unless invalid record, code sharpening, or ceremony rules require it).
+
+It also makes prose-only work honestly cheap (running claim/link/snippet/neutrality gates instead of pytest) while keeping the Maintainer release ceremony (`security_check.py`) strictly separate and un-compromised.
+
+### Critical Security Audit & Analysis
+
+1. **Deduplication Mechanics & CLI Verification (`quality_gate.py`)**:
+   - **Empirical Check**: Inspected `scripts/quality_gate.py:779-799`. Passing `--sub neutrality --sub redundancy` sets `sub_gates = ["neutrality", "redundancy"]`. Because `"order-independence"` is omitted from `sub_gates`, `_run_order_independence()` is skipped entirely.
+   - **Verification**: `python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0` executes all 1,987 tests under seed 0 shuffling in a single pass. Combining this with `quality_gate.py --sub neutrality --sub redundancy` eliminates 100% of redundant pytest executions while preserving full test and quality coverage.
+
+2. **Commit SHA Binding & Evidence Invalidation (Boundary B)**:
+   - **Security Invariant**: A verification record is only valid if it names the exact full commit SHA (`HEAD`) of the tested implementation state, verified clean pre-run and post-run.
+   - **Invalidation Rule**: If any implementation code, test file, template, or fixture byte changes after the test run, the Boundary B record becomes invalid and must be re-run against the new `HEAD`. Reviewers (Boundary C) must explicitly assert that the recorded SHA matches the implementation commit under review.
+
+3. **Fail-Closed Fallback Invariants**:
+   - **Boundary A Fallback**: If an agent cannot confidently bound the affected test surface or lacks a reviewed test mapping, the fallback is to execute the full suite. "Uncertain scope" never permits un-tested commits.
+   - **Boundary C Invalidation**: Any code change made during review sharpening invalidates the prior Boundary B record, requiring a fresh Boundary B integration run before final landing.
+
+4. **Release Gate Boundary Preservation**:
+   - The proposal explicitly fences out `bootstrap/security_check.py` and the Maintainer release ceremony. Release-mode verification retains its strict full-suite run with skip/xfail/xpass refusals.
+
+### Covered
+
+* **Empirical CLI Audit**: Verified `quality_gate.py` argument parsing and sub-gate execution logic.
+* **Claim-check Verification**: `claim_check.py` passed cleanly on `dev/proposals/2026-08-05-codex-verification-boundaries.md`.
+* **Path Resolution**: All cited paths (`AGENTS.md`, `dev/plans/_template.md`, `dev/proposals/_template.md`, `templates/core/AGENTS.md`, `doctrine/plans.md`, `doctrine/dual-review.md`) resolve accurately.
+
+### Concerns
+
+* **[E1] Future Machine Parsing of Implementation Verification Records**:
+  - While Markdown text records are sufficient for v1, future tooling (`lifecycle_planner.py` or transition linters) should mechanically validate that the `Tested HEAD` in `## Implementation verification` matches `git rev-parse HEAD`, preventing human or agent copy-paste errors.
+
+### Recommendation
+
+**ACCEPT / SHIP PROPOSAL.** The proposal is technically sound, empirically verified, security-hardened, and significantly improves development velocity without compromising quality or verification rigor. Proceed to Decision.
+
