@@ -855,37 +855,47 @@ def test_c7_external_satisfies_an_internal_floor_and_a_human_declares_it(
 # C.8 -- S12: one predicate, both call sites, no drift.
 
 
-@pytest.mark.parametrize("body,conforming", [
-    (_pass_block(tier="External", findings="none"), True),
-    ("## Plan review\n\n(a bare container)\n", False),
-    (_pass_block(tier="Internal"), False),
-    (_pass_block(findings="raised"), False),
+@pytest.mark.parametrize("body", [
+    _pass_block(tier="External", findings="none"),
+    "## Plan review\n\n(a bare container)\n",
+    _pass_block(tier="Internal"),
+    _pass_block(findings="raised"),
 ])
 def test_c8_scan_and_the_executing_gate_agree_on_the_same_record(
-        tmp_path, body, conforming):
+        tmp_path, body):
     """`scan` cannot tighten while `next --to executing` stays presence-only.
 
     The same record is put to both public surfaces: `_conformance_violations`
     (what `scan` reports for a plan already `executing`) and
     `_gating_preconditions(..., "executing")` (what `next --to executing`
     requires of a plan still `awaiting-plan-review`).  Status is the only
-    difference between the two fixtures; the verdict must be the same."""
+    difference between the two fixtures.
+
+    **This node asserts AGREEMENT, never a particular verdict.**  Deliberately:
+    a node that also pinned what the verdict should be would redden whenever
+    any *other* rule changed, so its falsifier would stop being single-property
+    and the drift it exists to catch would be buried in the noise.  What the
+    verdict should be is C.1-C.9c's business; that the two surfaces reach the
+    same one is this node's."""
     identity = planner.IdentityModel(frozenset(), frozenset())
-    scanned = planner._conformance_violations(
-        _plan_art(tmp_path, body, status="executing"), identity)
-    gates = planner._gating_preconditions(
-        _plan_art(tmp_path, body, status="awaiting-plan-review"),
-        "executing", identity)
+    art_executing = _plan_art(tmp_path, body, status="executing")
+    art_awaiting = _plan_art(tmp_path, body, status="awaiting-plan-review")
+    expected = planner.review_record_violations(art_executing)
+    # The record reads the same whatever the status -- status selects WHEN the
+    # predicate is consulted, never WHAT it finds.
+    assert planner.review_record_violations(art_awaiting) == expected
+    # `scan` reports exactly the predicate's list -- not a subset, not a
+    # re-worded summary.
+    assert planner._conformance_violations(art_executing, identity) == expected
+    gates = planner._gating_preconditions(art_awaiting, "executing", identity)
     review_gates = [g for g in gates if "Plan review" in g[1]]
     assert len(review_gates) == 1, gates
-    met = review_gates[0][0]
-    assert met is conforming
-    assert (scanned == []) is conforming
-    # The verdicts are not merely both-truthy: the gate reports the same
-    # violations it withheld the transition for.
-    if not conforming:
-        for msg in scanned:
-            assert msg in review_gates[0][1]
+    met, desc = review_gates[0]
+    assert met is (expected == [])
+    # And the gate names what it withheld the transition for, so the operator
+    # is not sent to `scan` to find out why.
+    for msg in expected:
+        assert msg in desc
 
 
 # C.9a/b/c -- S9: the legacy population is ENUMERATED, not dated.
@@ -926,11 +936,20 @@ def test_c9b_re_appending_an_admitted_heading_is_refused_at_count_plus_one(
     assert n >= 2, (
         "the fixture must exercise n + 1 on a count > 1, not the 1 -> 2 edge; "
         f"the manifest now admits {dig} {n} time(s) at {stem}")
+    # The fence itself, at the boundary: occurrences 1..n are admitted and
+    # n + 1 is not.  Asserted directly on `_is_legacy` so the count property
+    # has a check that no change to the S2/S3 messages can move.
+    for k in range(1, n + 2):
+        assert planner._is_legacy(stem, dig, {dig: k}) is (k <= n), k
     legacy = f"{heading}\n\nan old-format record, no Tier/Findings lines.\n\n"
     # Exactly n occurrences: all admitted, and they satisfy the floor by
     # presence exactly as they did before the schema existed.
     assert _violations(tmp_path, legacy * n, stem=stem) == []
-    # One more: occurrence n + 1 is not admitted and must conform.
+    # One more: occurrence n + 1 is not admitted and must conform.  Its
+    # refusal is CARRIED BY S3's missing-field violation -- there is no other
+    # signal a non-admitted duplicate can produce, since the n admitted passes
+    # already satisfy the floor by presence.  So silencing S3 also silences
+    # this half; the boundary assertion above is the part that cannot be.
     over = _violations(tmp_path, legacy * (n + 1), stem=stem)
     assert any("missing Tier" in msg for msg in over), over
 
