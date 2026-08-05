@@ -821,18 +821,29 @@ The homes are pre-declared here so archive time is bookkeeping rather than recal
 
 * The three disclosed residuals (plain-text forgery; the uncapped git stream and
   the two unescaped relays; the non-UTF-8 abort) → `SECURITY.md`, Chunk C.
-* **[I2]** (the `UnicodeDecodeError` total suppression) → **no `dev/PLANNING.md`
-  row is owed.** The 2026-08-04 ruling gave it a named owner that lands first
-  (`planner-line-semantics`, which owns `_status_of`), and a board row exists to
-  stop an unowned residual disappearing — not to duplicate an owned one. If that
-  plan archives without the fix, the row becomes owed again; say so at its
-  archive, since that is the moment the claim could silently lapse.
-* **[I4]** (the vendor-target relay) → **no row owed either, for the opposite
-  reason: it is fixed here**, at A9, and pinned by A10. A fix needs a changelog
-  line, not a backlog row. What migrates instead is the *correction* — the
+* **[I2]** (the `UnicodeDecodeError` total suppression) and **[I4]** (the
+  vendor-target relay) → a `dev/PLANNING.md` row each, because a disclosure is not
+  a fix and an accepted proposal archives out of sight. Neither is claimed by any
+  in-flight proposal today.
+
+**Superseding entry, appended 2026-08-05 — the two rows above are no longer
+owed.** The entry above is left exactly as written because Lasting-truth
+migration entries are append-only once written (`doctrine/plans.md` > Mutability
+rule); this bullet supersedes it rather than editing it. The 2026-08-04 ruling
+changed both items:
+
+* **[I2]** has a named owner that lands first — `planner-line-semantics`, which
+  owns `_status_of`. A board row exists to stop an *unowned* residual
+  disappearing, not to duplicate an owned one. **The row becomes owed again if
+  that plan archives without the fix**, and its archive is the moment to check,
+  because that is when the claim could silently lapse.
+* **[I4]** is **fixed here**, at A9, and pinned by A10. A fix needs a changelog
+  line, not a backlog row. What migrates instead is the *correction*: the
   accepted Proposal's Context enumerated three externally-sourced fields and
   there are four. That correction outlives both artifacts and belongs in
   `SECURITY.md` alongside C2, phrased so it does not imply four is provably all.
+* The sentence "Neither is claimed by any in-flight proposal today" was true when
+  written and is now false for [I2]. That is the reason this is an append.
 * **[I7]**'s CRLF residual, including the measured fact that the reviewer's
   suggested remedy re-opens the CR forgery → a `dev/PLANNING.md` row. This one
   must not be lost: the next person to read [I7] will otherwise implement it.
