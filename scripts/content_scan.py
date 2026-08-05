@@ -79,10 +79,12 @@ What it flags (each a ``pattern_id`` usable in a suppression marker):
   the separator it accepts -- in practice, the marker is written *before*
   that separator on the file line; and (ii) the **block form**
   (``cairn-accept`` ... ``cairn-accept-end`` spanning the hit) does
-  **not** suppress this id.  An acceptance on the preceding file line, or
-  later on the same file line, is refused rather than honoured -- it
-  would annotate a hit a human reading rendered text never sees beside
-  it.
+  **not** suppress this id.  A file line carrying multiple separators is
+  also unsuppressible: one marker cannot be associated with every display-
+  line boundary.  An acceptance on the preceding file line, later on the
+  same file line, or before only the first of several separators is refused
+  rather than honoured -- it would annotate a hit a human reading rendered
+  text never sees beside it.
 * ``homoglyph`` -- a single token in which **a character imitates a Latin
   letter**.  Note what changed: a flag no longer means merely *this token
   contains Greek*, it means *something here has an ASCII-Latin
@@ -774,17 +776,20 @@ def _separator_accept_is_associable(line: str) -> bool:
     same file line, annotates something a human reading rendered text never
     sees beside the hit.  Such an acceptance is refused -- the caller
     re-emits the flag -- and so is the block form, which is even less
-    reliably associable.  The marker that works goes before the separator.
+    reliably associable.  A line with multiple separators is refused too:
+    the detector emits one flag naming the first, and accepting that first
+    boundary must not hide a later one.  The marker that works goes before
+    the line's only separator.
 
     Validity is the same rule ``_parse_suppressions`` applies: the marker
     must name this ``pattern_id`` and carry a non-empty ``reason=``.
     """
-    sep_idx = min(
-        (line.index(ch) for ch in _LINE_SEPARATORS if ch in line),
-        default=None,
-    )
-    if sep_idx is None:
+    separator_indexes = [
+        idx for idx, ch in enumerate(line) if ch in _LINE_SEPARATORS
+    ]
+    if len(separator_indexes) != 1:
         return False
+    sep_idx = separator_indexes[0]
     for m in _ACCEPT_RE.finditer(line):
         if m.end() > sep_idx:
             continue  # not before the separator -- different display line
