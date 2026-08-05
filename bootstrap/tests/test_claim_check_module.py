@@ -397,3 +397,71 @@ class TestCountSoftFlagRetired:
         rc = cc.main([str(doc), "--root", str(tmp_path)])
         assert rc == 0
         assert "OK, no claim-check flags" in capsys.readouterr().out
+
+
+# --- `path::node` node citations (board-drain-guards R1/R2) -------------------
+#
+# `doctrine/lifecycle.md` > "Archive precondition" mandates `path::node` as the
+# citation form for a `guard` disposition. Before this fix the checker resolved
+# the whole token and hard-flagged every such citation, so the token's mandated
+# form was unwritable in any claim-checked file.
+#
+# The load-bearing assertion is NOT that valid citations pass -- it is
+# `test_node_citation_with_absent_path_is_still_flagged`: the fix must not have
+# become a bypass.
+
+
+def _hard(cc: ModuleType, tmp_path: Path, body: str) -> list:
+    """Scan a one-line doc against the REAL repo root; return hard flags."""
+    doc = tmp_path / "probe.md"
+    doc.write_text(body, encoding="utf-8")
+    return cc.check_file(doc, CAIRN_ROOT).hard_flags
+
+
+def test_node_citation_with_existing_path_is_not_flagged(cc, tmp_path):
+    """`path::node` resolves on its path half -- the guard citation form."""
+    hard = _hard(
+        cc, tmp_path,
+        "A guard cites `bootstrap/tests/test_claim_check_module.py::test_x`.\n",
+    )
+    assert hard == [], [f.message for f in hard]
+
+
+def test_node_citation_with_absent_path_is_still_flagged(cc, tmp_path):
+    """LOAD-BEARING: the fix must not become a bypass.
+
+    A `::` suffix must not launder a path that does not exist.
+    """
+    hard = _hard(
+        cc, tmp_path,
+        "A guard cites `bootstrap/tests/no_such_file_here.py::test_x`.\n",
+    )
+    assert len(hard) == 1, [f.message for f in hard]
+    assert "does not resolve" in hard[0].message
+
+
+def test_line_bounds_citation_is_unchanged_by_the_node_fix(cc, tmp_path):
+    """The `:N` dispatch branch stays intact and unswallowed."""
+    ok = _hard(
+        cc, tmp_path,
+        "See `bootstrap/tests/test_claim_check_module.py:1`.\n",
+    )
+    assert ok == [], [f.message for f in ok]
+    out_of_range = _hard(
+        cc, tmp_path,
+        "See `bootstrap/tests/test_claim_check_module.py:999999`.\n",
+    )
+    assert len(out_of_range) == 1, [f.message for f in out_of_range]
+
+
+def test_parametrised_node_id_is_not_flagged(cc, tmp_path):
+    """Guards plan-review [P7]: the first assertion must not be passing
+    via the placeholder exemption. Brackets are NOT in
+    ``_PLACEHOLDER_CHARS``, so a parametrised id genuinely reaches the
+    check rather than being waived upstream."""
+    assert not any(c in "[]" for c in cc._PLACEHOLDER_CHARS)
+    hard = _hard(
+        cc, tmp_path,
+        "A guard cites `bootstrap/tests/test_claim_check_module.py::test_x[a-b]`.\n",
+    )
+    assert hard == [], [f.message for f in hard]

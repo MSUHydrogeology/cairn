@@ -26,6 +26,12 @@ subset (broken repo paths, out-of-bounds line citations).
   that does not exist is a hard flag.  The top-level set is derived
   by listing the repo root, so root landmark files are first-class
   and the set never goes stale.
+* **Node citations.**  A backticked ``path::node`` token -- the form
+  ``doctrine/lifecycle.md`` > "Archive precondition" mandates for a
+  ``guard`` disposition -- is resolved on its **path half only**.  The
+  node half is **never verified**: this module does not collect tests,
+  so a ``guard`` may name a node that does not exist and nothing here
+  will notice.  A missing *path* is still a hard flag.
 * **Line-bounds claims.**  A backticked ``path:N`` / ``path:N-M``
   token is checked: the file must exist and have at least ``M``
   lines.  An out-of-range citation is a hard flag.  This is a
@@ -462,6 +468,28 @@ def _is_default_exempt(token: str) -> bool:
     )
 
 
+def _node_citation_path(token: str) -> str:
+    """The path half of a ``path::node`` citation, or the token itself.
+
+    ``path::node`` is the citation form ``doctrine/lifecycle.md`` >
+    "Archive precondition" mandates for a ``guard`` disposition -- the
+    follow-up is homed in something that *executes*, and the entry names
+    the node.  Only the **path** half is resolvable here: a static
+    checker does not collect tests, so **the node half is never
+    verified**.  A ``guard`` may cite a node that does not exist and
+    nothing in this module notices.
+
+    Splits on the *first* ``::`` (pytest node ids nest:
+    ``t.py::Class::test``).  A token with an empty path half (``::x``) or
+    an empty node half (``t.py::``) is not a node citation and falls
+    through to the ordinary path check.
+    """
+    path_part, sep, node = token.partition('::')
+    if sep and node and path_part:
+        return path_part
+    return token
+
+
 def check_path_token(
     token: str, lineno: int, repo_root: Path, top_level: set[str],
 ) -> Flag | None:
@@ -472,12 +500,13 @@ def check_path_token(
     the token is not a repo-path claim, is a default-exempt runtime
     path, or resolves cleanly.
     """
-    first = token.split('/', 1)[0]
+    target = _node_citation_path(token)
+    first = target.split('/', 1)[0]
     if first not in top_level:
         return None  # not a repo-path claim -- nothing to check
-    if _is_default_exempt(token):
+    if _is_default_exempt(target):
         return None  # gitignored / generated framework runtime path; absent by design
-    if (repo_root / token).exists():
+    if (repo_root / target).exists():
         return None
     return Flag(
         lineno, 'path', 'hard', token,
