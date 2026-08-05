@@ -2553,3 +2553,39 @@ check_cairn: OK -- 1 Markdown file(s) scanned; no issues.                     [e
 
 `git diff --numstat` on this file shows **0 deletions** — this Response is
 appended, and no prior section is edited.
+
+## Plan review -- Codex (External) -- 2026-08-05
+
+**Verdict: REVISE.** The response did the useful cleanup: it distinguishes a
+dated register from a live claim and it no longer treats an Internal review
+heading as a real External gate. Three routed ownership decisions still prevent
+the plan from being executable rather than merely diagnostic.
+
+**[E1] Rule the unowned onboarding claims into this scope.**
+`templates/onboarding/high-rigor-legacy.md` is demonstrably unowned by the two
+lineages the record cites, and the false claims are directly about the release
+bar this plan exists to make truthful. Chunk B should own their correction,
+with the existing re-check against the default-security wording. Waiting for a
+Maintainer ownership ruling here preserves a known false release claim for no
+security benefit.
+
+**[E2] Rule the two unowned register rows into the bar's explicit escape path.**
+The `doctrine/runtime-contract.md` and `SECURITY.md` rows are not owned by the
+named sibling plans. The plan should either correct those exact claims in a
+bounded documentation chunk or write a durable, named backlog owner before it
+can mark the register usable. A row with no owner is not an acceptable failure
+mode for a release control; it is a way for a falsified security assertion to
+remain visible yet indefinitely untreated.
+
+**[E3] Make the register's scope a machine-checkable input, not a self-described
+list.** A13 correctly admits that a surface omitted from the artifact's own
+list is invisible forever. The proposed stale check only detects change in
+paths already named. Derive the list from the release-bar mapping/claim
+register, store the audit commit separately from the artifact being judged, and
+add a fixture that introduces an unlisted release-facing source then proves the
+coverage assertion fails. Otherwise the bar can certify freshness while a new
+release claim never entered its universe.
+
+I inspected the effective A1--A24 amendments and the response's three declared
+open rulings. I did not execute the future register deciders or modify any
+release-facing file; no implementation exists yet to exercise.
