@@ -51,6 +51,18 @@ config, literal pathspecs, and an option terminator. A missing / empty /
 unresolvable required-root manifest fails closed (exit 2). The runner makes
 **no profile-derived-completeness claim**: it scans exactly what the manifest
 names.
+
+URL-detector role boundary
+--------------------------
+
+``suspicious-url`` is enabled for instruction and unknown roles. Only the
+known discussion roots ``dev/**`` and ``docs/**`` disable it; a new, misspelled
+or otherwise unclassified path therefore defaults to the stricter posture.
+Other detectors remain enabled everywhere. One residual is accepted and stated
+plainly: a bare hostile URL in known discussion prose is detected by neither
+``suspicious-url`` nor ``egress`` because egress requires a supported transfer
+verb near the destination. This trusted-tree scanner is a human-review tripwire,
+not a proof that prose is safe.
 """
 from __future__ import annotations
 
@@ -72,6 +84,7 @@ _ROOTS_MANIFEST = _HERE / "content_scan_roots.txt"
 _RESIDUAL_BASELINE = _HERE / "content_scan_residuals.txt"
 
 _AUDIT_TEXT_EXTS = (".md", ".txt")
+_DISCUSSION_ROOTS = frozenset({"dev", "docs"})
 
 # Documented, NARROW exclusions (P1 #2): the vendored base-cache (scanned
 # upstream in Cairn) and frozen archives. The live, project-authored
@@ -447,6 +460,19 @@ def load_residual_baseline_checked(path: Path = _RESIDUAL_BASELINE):
 # The scan
 # --------------------------------------------------------------------------
 
+def _scan_urls_for_adopter_rel(rel: str) -> bool:
+    """Whether *rel* receives the strict URL detector in an adopter tree.
+
+    The exception is deliberately narrower than the enabled class: only known
+    discussion roots disable URL scanning. Everything else, including an
+    unknown role, a typo such as ``doc/``, the roots manifest, and root-level
+    instruction files, stays enabled. This mapping is adopter-layout-specific;
+    Cairn's source-tree caller correctly keeps its separate ``templates/**``
+    classifier.
+    """
+    parts = Path(rel).parts
+    return not parts or parts[0] not in _DISCUSSION_ROOTS
+
 def _load_content_scan():
     spec = importlib.util.spec_from_file_location("content_scan", _CONTENT_SCAN)
     mod = importlib.util.module_from_spec(spec)
@@ -468,7 +494,12 @@ def run_content_scan(files: list[Path], repo_root: Path = _REPO_ROOT,
     (P2 #6): it cannot interrupt a single pathological file mid-scan (that would
     need a killable subprocess; out of v1 scope), but a one-file overrun is
     caught on the post-file check and fails closed (exit 2) rather than
-    completing and reporting clean. Exceeding it is a resource-budget failure."""
+    completing and reporting clean. Exceeding it is a resource-budget failure.
+
+    URL scanning is disabled only for known ``dev/**`` and ``docs/**``
+    discussion prose. Unknown roles fail closed to URL scanning enabled. The
+    accepted bare-URL prose blind spot is stated in the module contract above.
+    """
     baseline_ok, baseline, why = load_residual_baseline_checked(baseline_path)
     if not baseline_ok:
         print(f"content_scan: BASELINE UNAVAILABLE -- {why}. Failing the audit "
@@ -491,7 +522,9 @@ def run_content_scan(files: list[Path], repo_root: Path = _REPO_ROOT,
             if _over_budget():                       # before the file
                 return 2, [], [], []
             rel = str(p.relative_to(repo_root))
-            for fl in cs.scan_file(p, scan_urls=True, url_allowlist=allow):
+            for fl in cs.scan_file(
+                    p, scan_urls=_scan_urls_for_adopter_rel(rel),
+                    url_allowlist=allow):
                 fp = _flag_fingerprint(repo_root, rel, fl.line, fl.pattern_id)
                 all_flags.append((rel, fl, fp))
             if _over_budget():                       # after the file (P2 #6)

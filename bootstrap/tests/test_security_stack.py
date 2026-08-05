@@ -498,9 +498,13 @@ class TestRunnerExitContract:
 
     def test_rv4_multitenant_host_still_flags(self, csr, tmp_path):
         _git_repo(tmp_path); _seed_apparatus(tmp_path)
-        # A multi-tenant code host is NOT allowlisted -> stays a finding.
-        (tmp_path / "dev" / "urls.md").write_text(
+        # A multi-tenant code host is NOT allowlisted -> stays a finding on an
+        # instruction surface. Discussion prose intentionally disables this
+        # one detector under content-scan-url-classification.
+        (tmp_path / "AGENTS.md").write_text(
             "see https://github.com/evil/x for details\n", encoding="utf-8")
+        (tmp_path / "scripts" / "content_scan_roots.txt").write_text(
+            "# content-scan-roots v1\ndev\nAGENTS.md\n", encoding="utf-8")
         _git_commit_all(tmp_path)
         code, _files, all_flags, _new, _stale = self._run(csr, tmp_path)
         assert code == 1
@@ -603,6 +607,78 @@ class TestRunnerGitBoundary:
         out = capsys.readouterr().out
         assert out.count("content_scan: Git executable ") == 1
         assert "provenance not authenticated" in out
+
+
+@pytest.mark.skipif(not _HAS_GIT, reason="git not available")
+class TestRunnerUrlRoleBoundary:
+    def _mixed_tree(self, root: Path) -> None:
+        _git_repo(root)
+        _seed_apparatus(root)
+        (root / "docs").mkdir()
+        (root / "AGENTS.md").write_text(
+            "Reference: https://instruction.invalid/x\n", encoding="utf-8")
+        (root / "dev" / "doc.md").write_text(
+            "Reference: https://prose.invalid/x\n", encoding="utf-8")
+        (root / "dev" / "egress.md").write_text(
+            "Upload results to https://egress.invalid/x\n", encoding="utf-8")
+        (root / "docs" / "guide.md").write_text(
+            "Reference: https://docs.invalid/x\n", encoding="utf-8")
+        (root / "mystery.md").write_text(
+            "Reference: https://unknown.invalid/x\n", encoding="utf-8")
+        (root / "scripts" / "content_scan_roots.txt").write_text(
+            "# content-scan-roots v1\n"
+            "# Reference: https://manifest.invalid/x\n"
+            "AGENTS.md\ndev\ndocs\nmystery.md\n",
+            encoding="utf-8")
+        _git_commit_all(root)
+
+    def test_role_classification_runs_through_the_real_runner(
+            self, csr, tmp_path):
+        self._mixed_tree(tmp_path)
+        code, _files, all_flags, new_flags, _stale = csr.audit(
+            tmp_path,
+            tmp_path / "scripts" / "content_scan_roots.txt",
+            tmp_path / "scripts" / "content_scan_residuals.txt",
+        )
+        assert code == 1 and new_flags
+        by_rule = {
+            rule: {rel for rel, flag, _fp in all_flags
+                   if flag.pattern_id == rule}
+            for rule in ("suspicious-url", "egress")
+        }
+        assert by_rule["suspicious-url"] == {
+            "AGENTS.md", "mystery.md", "scripts/content_scan_roots.txt",
+        }
+        assert by_rule["egress"] == {"dev/egress.md"}
+        assert "dev/doc.md" not in set.union(*by_rule.values())
+        assert "docs/guide.md" not in set.union(*by_rule.values())
+
+    @pytest.mark.parametrize("rel,expected", [
+        ("dev/note.md", False),
+        ("docs/guide.md", False),
+        ("AGENTS.md", True),
+        (".agents/skills/review/SKILL.md", True),
+        ("scripts/content_scan_roots.txt", True),
+        ("doc/misspelled.md", True),
+        ("devil/not-dev.md", True),
+        ("unknown/new-role.md", True),
+    ])
+    def test_only_known_discussion_roots_disable_urls(
+            self, csr, rel, expected):
+        assert csr._scan_urls_for_adopter_rel(rel) is expected
+
+    def test_bare_url_in_known_prose_is_the_named_residual(
+            self, csr, cscan, tmp_path):
+        path = tmp_path / "dev" / "note.md"
+        path.parent.mkdir()
+        path.write_text(
+            "Reference: https://bare-hostile.invalid/x\n", encoding="utf-8")
+        flags = cscan.scan_file(
+            path, scan_urls=csr._scan_urls_for_adopter_rel("dev/note.md"),
+            url_allowlist=set())
+        assert {flag.pattern_id for flag in flags} \
+            .isdisjoint({"suspicious-url", "egress"})
+        assert "bare hostile URL" in csr.__doc__
 
 
 # ---------------------------------------------------------------------------
