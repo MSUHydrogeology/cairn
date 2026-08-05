@@ -4,7 +4,7 @@
 # Plan: run the full suite once, at the boundary
 
 **Source proposal**: [`dev/proposals/archive/2026-08-05-codex-verification-boundaries.md`](../proposals/archive/2026-08-05-codex-verification-boundaries.md)
-**Status**: executing
+**Status**: review
 **Plan review**: required(External + External Security Review) -- two distinct
 rounds; this plan changes when agents may omit a full-suite rerun
 **Last update**: 2026-08-05
@@ -495,3 +495,74 @@ asked for its verdict.
 Because this revision changes the evidence used to license code review, the
 independent code reviewer must adjudicate it explicitly. The author does not
 treat this section as self-clearing.
+
+## Chunk D execution correction 2 -- Codex -- 2026-08-05
+
+The first replacement criterion was still too coarse: its second limb rejected
+an inherited finding whenever the containing file changed, even when the
+implementation did not touch the finding. That would reject the pre-existing
+neutrality finding at `doctrine/dual-review.md:57`, although this plan's only
+change to that file begins after line 188 and adds the Boundary C contract.
+
+For Chunk D's static-quality comparison, criterion 2 is therefore superseded
+by this narrower rule: **no endpoint failure may be introduced, altered, or
+touched by this plan's changed hunks**. A finding in a changed file remains
+dispositionable only when its normalized identity (path, rule/message, and
+offending token or symbol, excluding line number) is present at the base and
+the implementation diff does not overlap the finding. Criteria 1, 3, and 4
+remain unchanged. An ambiguous mapping fails closed.
+
+This is not a path exemption. It distinguishes an inherited finding from a
+finding changed by the implementation, while preserving the requirement to run
+the real gate and report its nonzero result. The independent code reviewer must
+adjudicate this correction together with the preceding one.
+
+## Implementation verification -- Codex -- 2026-08-05
+
+**Tested commit:** `b2f1e192e66efe7e673d0be356d5e9e46e17cca8`
+
+**Reviewed range:**
+`a23be80a989f868f1a116ca9d7bc3e58bba5d7bb..b2f1e192e66efe7e673d0be356d5e9e46e17cca8`.
+The implementation commits are `5f6eccc`, `0ad58c2`, `b51f633`, and
+`b2f1e19`; the range also contains concurrent work, so the code reviewer must
+review the named implementation surfaces rather than attribute the whole range
+to this plan.
+
+**Runtime:** `/Users/kendal30/conda_envs/lhm/bin/python3.13`, CPython 3.13.13,
+with `PYTHONDONTWRITEBYTECODE=1` for pytest and repository checks. Detached base
+and endpoint checkouts were clean before and after verification, and their HEADs
+remained the full SHAs above.
+
+| Command | Result | Time |
+|---|---|---:|
+| `python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0` | exit 0, **2510 passed**, 0 skipped / xfailed / xpassed in the ordinary same-commit checkout | not retained |
+| detached repetition of the same suite | exit 0, **2509 passed, 1 skipped** | 350.59 s |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` at the base | exit 1: neutrality **96 fail / 21 info**; redundancy **2 fail / 2 info** | 0.83 s |
+| same static command at the endpoint | exit 1: neutrality **96 fail / 21 info**; redundancy **0 fail / 2 info** | 0.90 s |
+| `python -m pytest bootstrap/tests/test_verification_boundaries.py -q` | exit 0, **13 passed** | 0.03 s |
+| `python scripts/check_cairn.py` | exit 0, **179 Markdown files, 0 issues** | not separately timed |
+| `python scripts/claim_check.py dev/plans/verification-evidence-boundaries.md` | exit 0, no flags | not separately timed |
+
+**Skip disposition.** The detached repetition's one skip is
+`test_foldback_suggest`'s optional live-ledger dogfood smoke: a checkout under
+`/private/tmp` has no sibling `modflow_tools` repository. The ordinary checkout
+at the same commit exercised that node and passed all 2510 tests. There were no
+xfails or xpasses.
+
+**Static non-pass disposition.** Comparing complete normalized failure
+identities, every one of the endpoint's 96 failures exists at the base. The two
+base-only redundancy findings (`platform_key` and `select_mode` in
+`run_portable_security_sweeps.py`) disappeared. No new or changed failure
+exists. One inherited neutrality finding is in a file this plan changes:
+`doctrine/dual-review.md` names `Claude` at line 57 in both snapshots. Its
+finding identity is unchanged, and the plan's hunk begins after line 188. The
+endpoint static command therefore remains a real **exit 1**, dispositioned as
+inherited debt under the two appended Chunk D corrections; it is not PASS or
+green.
+
+**Known omissions.** This record does not authenticate the test process, prove
+malicious-committer resistance, replace a release ceremony, or license reuse
+for unrelated later code. It does not clear Cairn's neutrality debt. The
+independent code reviewer must review the implementation bytes, test at least
+one Boundary A/B/C failure direction, and explicitly accept or reject both
+Chunk D corrections before this plan can archive.
