@@ -862,3 +862,34 @@ concurrent content-scan edits, which preflight correctly refuses. Chunk G is
 not implemented and was not reviewed.
 
 This section is append-only once written.
+
+## Implementation disposition -- Codex (handoff implementer) -- 2026-08-05
+
+**CR1--CR3 accepted.** I am changing roles from the External Security Reviewer
+who found these defects to the implementer repairing them after the author-agent
+handoff. This does not weaken or discharge the REVISE verdict: a different
+reviewer must independently assess the resulting bytes before Chunk G or
+archive.
+
+### Sequence revision -- review corrections precede serialization
+
+The original Chunks A--F remain unchanged. The following corrective chunk is
+inserted before the existing Chunk G serialization point:
+
+| # | File | Change |
+|---|------|--------|
+| R1 | `bootstrap/security_check.py`, `bootstrap/tests/test_security_check.py` *(frozen)* | Run repository-executing phases against a detached temporary worktree of the preflight commit. Keep host toolchain/process authentication as the accepted residual, but permit no ignored or otherwise uncommitted repository-local byte to influence the verdict. Pin the reproduced ignored-root-plugin override through real Git and real pytest. |
+| R2 | `bootstrap/tests/conftest.py`, `bootstrap/tests/test_security_check.py` *(frozen)* | Feed skipped collection reports into the same release-only refused-outcome set. Pin both module-level `pytest.importorskip()` and `pytest.skip(..., allow_module_level=True)` beside a passing test. |
+| R3 | `bootstrap/security_check.py`, `bootstrap/tests/test_security_check.py` *(frozen)* | Isolate ordinary phase exceptions into labelled non-zero outcomes, continue the repair-list phases, and always attempt postflight; preserve `KeyboardInterrupt` / `SystemExit`. Validate or safely render Bandit `errors` entries and normalize a `check_cairn` launch failure. |
+
+Revised tail:
+
+```
+7. Chunk R -- CR1--CR3 release-evidence corrections               [pending]
+8. Chunk G -- CHANGELOG + board retirement at serialization      [blocked on an independent passing code review]
+```
+
+Chunk R re-runs the focused falsifiers and review suite. The full suite and
+release command remain final-boundary evidence after the independent code
+review, avoiding a redundant release-scale run if that review finds another
+correction.
