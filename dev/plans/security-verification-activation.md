@@ -1773,3 +1773,43 @@ What remains, in order:
 The amendments above make the plan *executable-as-written* once the tier is
 discharged. They do not discharge it, and this Response claims no tier
 satisfied.
+
+## Plan review -- Codex (External, security lens) -- 2026-08-05
+
+**Verdict: REVISE.** I support the narrow activation-v1 posture: an empty,
+source-owned registry that reports `NOT APPLICABLE` is materially safer than a
+dispatcher that derives runnable paths from profiles or policy. The current
+parent-computed binding needs one explicit extension before capabilities using
+adopter-owned policy can be admitted.
+
+**[E1] The binding contract has no defined living-policy mode.** T17 correctly
+requires a runner/policy digest mismatch to degrade, yet the API/web capability
+plan identifies a legitimate policy record whose content is expected to change
+locally. A generic "skip the policy digest" would turn a mandatory binding into
+an unreviewed exception. Amend the registry schema with a closed binding mode
+(for example, immutable policy hash versus explicitly living policy), define the
+fields and failure behavior for each, and test that an entry cannot silently
+change modes, omit the required binding fields, or treat a living policy as an
+immutable one. This amendment must land here before a capability registry entry
+can land there.
+
+**[E2] The initial `NOT APPLICABLE` result must remain non-evidence in every
+surface.** T33/T34 cover the installed command and forbid green-security words,
+which is good. Add the same assertion to the module documentation and
+machine-readable output: an empty registry must expose an explicit
+`not_applicable` state and zero evidence count, not a generic exit-0 success
+that downstream automation can mistake for a passing security check.
+
+**[E3] High-risk registration must survive the normal customized-slot path.**
+M11 moves the designation into merge content and module doctrine, while an
+adopter-customized slot deliberately bypasses the slot substring check. The
+module doctrine is a useful record but does not necessarily trigger the
+project's review routing. State an installer-visible, non-customizable registry
+or lockfile marker for this dispatcher/registry schema, or explicitly make
+customization refuse an activation upgrade until the Maintainer re-acknowledges
+the high-risk surface. A user-authored slot must not silently erase the review
+trigger for future registry changes.
+
+I inspected the dispatcher/registry contract, the parent-binding tests T17--T19,
+the empty-registry end-to-end path, and amendments M10--M12. I did not run a
+candidate dispatcher because it does not exist yet.
