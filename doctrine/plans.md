@@ -306,6 +306,17 @@ results, and non-pass disposition. The reviewer then chooses independent
 targeted falsification under `doctrine/dual-review.md`; repeating the broad
 author command by default is not structural independence.
 
+A fresh full-suite run replaces reuse when any of these six conditions holds:
+
+1. no valid Boundary B record exists;
+2. review discovers an unrecorded cross-surface dependency;
+3. a skip, xfail, or xpass lacks an adequate disposition;
+4. review sharpening changes implementation, tests, executable templates, or
+   fixtures in the reviewed range;
+5. the accepted plan governs a trust ceremony that explicitly requires
+   independent full execution; or
+6. the reviewer has a concrete reason to distrust or falsify the broad result.
+
 ---
 
 ## The planning handshake

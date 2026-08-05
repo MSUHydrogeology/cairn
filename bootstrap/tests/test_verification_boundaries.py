@@ -21,6 +21,15 @@ PLANS_DOCTRINE = ROOT / "doctrine" / "plans.md"
 REVIEW_DOCTRINE = ROOT / "doctrine" / "dual-review.md"
 QUALITY_GATE = ROOT / "scripts" / "quality_gate.py"
 
+FRESH_RUN_TRIGGERS = (
+    "no valid Boundary B record exists",
+    "unrecorded cross-surface dependency",
+    "skip, xfail, or xpass",
+    "review sharpening changes implementation, tests, executable templates, or",
+    "trust ceremony that explicitly requires",
+    "concrete reason to distrust or falsify",
+)
+
 
 def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
@@ -148,12 +157,7 @@ def _review_violations(text: str) -> list[str]:
     required = (
         "targeted falsification",
         "Copying the implementation's broad command does not satisfy",
-        "no valid Boundary B record exists",
-        "unrecorded cross-surface dependency",
-        "skip, xfail, or xpass",
-        "review sharpening changes implementation, tests, executable templates, or",
-        "trust ceremony that explicitly requires",
-        "concrete reason to distrust or falsify",
+        *FRESH_RUN_TRIGGERS,
         "not authentication, malicious-committer protection, or a",
         "release optimization",
     )
@@ -162,6 +166,12 @@ def _review_violations(text: str) -> list[str]:
 
 def test_review_doctrine_requires_targeted_falsification_and_six_triggers() -> None:
     assert _review_violations(_read(REVIEW_DOCTRINE)) == []
+
+
+def test_plan_and_review_doctrine_share_fresh_run_triggers() -> None:
+    for path in (PLANS_DOCTRINE, REVIEW_DOCTRINE):
+        normalized = " ".join(_read(path).split())
+        assert not [token for token in FRESH_RUN_TRIGGERS if token not in normalized], path
 
 
 def test_review_reuse_guard_detects_unconditional_reuse() -> None:
