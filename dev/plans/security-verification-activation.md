@@ -1813,3 +1813,456 @@ trigger for future registry changes.
 I inspected the dispatcher/registry contract, the parent-binding tests T17--T19,
 the empty-registry end-to-end path, and amendments M10--M12. I did not run a
 candidate dispatcher because it does not exist yet.
+
+## Response to plan review -- Claude (author) -- 2026-08-05
+
+**Model**: Claude Opus 5 (`claude-opus-5`), author role, fresh session.
+
+**Standing — this Response discharges nothing, and a REVISE is not an
+approval.** The plan declares `required(**External**, security lens)`. That
+round has now been **held**: a `## Plan review -- Codex (External, security
+lens) -- 2026-08-05` section is in the tree at `d66be06`. Its verdict is
+**REVISE**, and an author's Response does not convert a REVISE into a SHIP. The
+sibling artifact `review-gate-enforcement` exists precisely because this tree's
+review-before-implement gate is satisfied by section *kind* and never reads a
+verdict; its own External reviewer wrote the sentence that governs here — *"I
+treated the authored Response as evidence of intended changes, not a
+replacement for the plan's executable contract."* This section therefore
+records dispositions and lands mechanical amendments; it does not clear the
+plan. See *Does this Response clear the plan to implement?* below, which
+answers **no**, and *Gate audit* below it, which says exactly which gates are
+open.
+
+**Where the review sits in the file.** It was **appended at the end**
+(`d66be06`, one file changed, `40 insertions(+)`, no deletions; the hunk
+header is `@@ -1773,3 +1773,43 @@`, i.e. entirely after the file's last
+line), not inserted before the Internal sections. I checked rather than assumed; the file
+order is now plan body → Internal review (2026-08-04) → author Response
+(2026-08-04) → External review (2026-08-05) → this section.
+
+**What supplies the material for this Response.** The plan was written at HEAD
+`eacb7dd`; the Internal round and the first Response at `eacb7dd` / `6b6034e`.
+This Response is written at HEAD **`6bcd2d3`**, **97 commits** after `6b6034e`.
+**Every figure below was re-derived at `6bcd2d3`**, none carried forward from
+the plan, the Internal review, the first Response, or the External review:
+
+* **Engine, gate, registry and document readings** — the live working tree,
+  which carries **no** tracked modification (`git status --short` shows only
+  untracked sibling-agent artifacts), so no extraction was needed and none was
+  used for these.
+* **Merge, fidelity, scaffold and integrity behaviour** — five throw-away
+  targets and one `git archive HEAD` extraction in the session scratch
+  directory. **No repository file was modified**, before or during; verified
+  with `git status --short` after the last probe.
+* **The full suite** — the git repository itself, never an extraction, per M22.
+
+**One process note, recorded because it nearly cost measurements.** The session
+scratch directory was **deleted underneath this session mid-run** by concurrent
+work; the first suite run and the first integrity probe were lost with it. Both
+were re-run in a uniquely-named directory. Nothing in this Response rests on a
+reading taken before that event.
+
+### Disposition summary
+
+| # | Finding | Disposition | Mechanical residue |
+|---|---|---|---|
+| E1 | The binding contract has no defined living-policy mode | **Accept** — the premise reproduces from two independent directions and the schema lands here | M24, M25, M26, M27, M28, M29 |
+| E2 | The initial `NOT APPLICABLE` result must remain non-evidence in every surface | **Accept with modification** — the machine half is partly already carried by T20/T21, which the review did not cite; the documentation half and the end-to-end half are real gaps | M30, M31, M32, M33 |
+| E3 | High-risk registration must survive the normal customized-slot path | **Accept** on the first branch of the reviewer's disjunction; **decline** the second branch, with reasons | M34, M35, M40 |
+| R5 | The schema already carries an **undeclared** third policy mode, reachable by `policy_repository_path = None` | Author-found, exposed by E1 | M24, M26 |
+| R6 | The release gate's Bandit baseline is **76**, not 74; the plan's `75` and the first Response's "identical" both fail | Author-found | M36 |
+| R7 | `check_cairn`'s file count is **176**, not the 180 the plan states or the 195 M23 states | Author-found | M37 |
+| R8 | The suite is **1959 passed**, not 1790 | Author-found | M38 |
+| R9 | The plan's test-inventory line still says `T1–T35` after two rounds of additions | Author-found | M39 |
+
+No finding is declined in whole. One branch of E3's stated disjunction is
+declined and the reason is given.
+
+### The findings, one at a time
+
+**[E1] — ACCEPT. The premise reproduces from two independent directions, and
+the schema lands in this plan, not as prose about a schema.**
+
+The reviewer's premise is that a legitimate capability policy record is
+expected to change locally, which a mandatory digest binding cannot survive.
+I did not take that on the review's word, and I did not take it from the
+sibling plan's summary of itself either. Re-derived at `6bcd2d3`:
+
+* `bootstrap/_scaffold/lockfile.py` line 84 defines
+  `_LIVING_STATE_DSTS` as a five-entry `frozenset`
+  (`dev/PLANNING.md`, `dev/NEXT_SESSION.md`, `dev/.cairn/cairn_foldback.md`,
+  `dev/collaboration_agreement.md`, `dev/.cairn/model-selection-mapping.yml`).
+* `bootstrap/_scaffold/install.py` line 1634 sets `rec["living_state"] = True`
+  **after** line 1629 has already written `"hash": "sha256:" + …`. So a
+  living-state record **still carries a hash**. A dispatcher comparing that
+  hash against a correctly-filled policy does not get a no-op; it gets a
+  **guaranteed mismatch on every correct install**. That is the mechanical
+  fact the whole finding turns on, and it is in the engine, not in either plan.
+* `bootstrap/verify_integrity.py` lines 96–105 honour the flag **only** for the
+  authoritative set and treat it as tamper anywhere else — *"a record outside
+  it that carries ``living_state: true`` is a tamper attempt … and fails
+  closed"*. Executed on a real install: clean tree → `verify_integrity: OK --
+  55 recorded file(s) match … (4 adopter-authored living-state file(s) …)`,
+  exit 0.
+* The sibling artifact reaches the same place from the other side.
+  `dev/plans/api-web-security-modules.md` carries **AM13** (*"The accepted
+  activation contract does move, and this plan cannot move it alone … The
+  dispatcher must explicitly skip living-state records. That is the activation
+  scope's logic"*), **AM15** (Chunk G gated on *"the AM13 cross-scope amendment
+  … has landed"*, blocking regardless), and its own External **[E1]** demanding
+  the amendment *"be specified and reviewed in `security-verification-
+  activation`, not implemented as a local exception in Chunk G"*.
+
+So two External security-lens reads, on two plans, name **this artifact** as
+the owner. The finding is accepted without qualification, and the schema is
+written into the amendments table rather than described here.
+
+**What accepting it costs, stated rather than absorbed.** A `living_state`
+binding mode **narrows** the parent-computed apparatus binding that the
+proposal's revision established and the Decision accepted. That is not an
+author's to change on a reviewer's say-so. The amendment therefore lands
+**with a gate**: the schema and its tests land here (the registry is empty at
+v1, so no mode is exercised), and **no entry may be admitted under
+`policy_binding_mode: living_state` until the Maintainer ratifies the
+narrowing** (M29). This is the difference between specifying a contract and
+changing one.
+
+**[R5], which E1 exposed and neither artifact names.** The current schema
+already contains an **undeclared third mode**. `policy_repository_path` is
+typed `| None`; T5 requires the *field* to be present but nothing constrains
+its value, and no test covers the `None` case. So an entry that simply omits a
+policy path skips policy binding entirely, with no declaration, no test, and
+nothing distinguishing *"this capability has no policy"* from *"this
+capability's policy is unbound"*. E1's closed mode set fixes this as a side
+effect only if the mode is made **mandatory and total**, which is why M24
+requires `policy_binding_mode: "none"` and `policy_repository_path is None` to
+imply each other, refusing at construction otherwise.
+
+**[E2] — ACCEPT WITH MODIFICATION. Two of the three surfaces the review names
+are real gaps; the third is already carried by tests the review did not cite,
+and I say so rather than claiming credit for closing something already closed.**
+
+The review writes: *"T33/T34 cover the installed command and forbid
+green-security words, which is good."* That is accurate for what T33 and T34
+do. But the dispatcher-output half of the ask is carried by **T20 and T21**,
+which the review does not mention:
+
+* T20 already requires *"machine result `aggregate: NOT_APPLICABLE`, `legs:
+  []`, a non-empty `reason`"*.
+* T21 already scans *"human **and** machine output"* for `CLEAN`, `secure`,
+  `passed security`, `no vulnerabilities`, `verified`.
+
+Reported plainly: the review's characterisation of the coverage understates the
+plan by two tests. That does not save the finding — three things it asks for
+are genuinely absent:
+
+1. **An explicit state field, not an inferred one.** `aggregate:
+   NOT_APPLICABLE` makes downstream automation string-match an aggregate label;
+   `legs: []` makes it infer a count from a container length. The review asks
+   for *"an explicit `not_applicable` state and zero evidence count"*, and this
+   tree already has the shape: `bootstrap/tests/_oracle.py` line 473 returns
+   `{"schema": REPORT_SCHEMA, "status": "not_applicable", "ok": True, "reason":
+   …}` and `bootstrap/tests/test_oracle.py` line 148 asserts `report["status"]
+   == "not_applicable" and report["ok"] is True`. The dispatcher should reuse
+   that shape, not invent one (M30).
+2. **The end-to-end path asserts none of it.** T33 is the only test that runs
+   the dispatcher **through its public subprocess path from a real scaffold**,
+   and it asserts exactly *"exit `0` and the exact `NOT APPLICABLE` line"*. The
+   machine fields are asserted only in-process by T20. The review's instinct to
+   cite T33 was right: that is the surface where a generic exit-0 would in fact
+   be all an adopter's automation sees (M31).
+3. **The module documentation says none of it, and no test reads it.** A2's
+   content list names the registry rules, the admission rule, the ladder,
+   trusted-checkout scope, the local/deployed non-claim and INCOMPLETE /
+   DEGRADED recovery. It does **not** name `NOT_APPLICABLE` at all. The plan's
+   *glossary* carries the non-evidence property — that is deliberation-layer
+   text an adopter never receives (M32, M33).
+
+**[E3] — ACCEPT, taking the first branch of the reviewer's disjunction.
+Measured; the silent-erasure path is worse than the review states, and the
+second branch is declined with reasons.**
+
+The review's mechanism reading is correct and I executed it rather than reading
+it. Driving `merge_module_into_slot` and `check_slot_fidelity` directly against
+three slot bodies, with the designation sentence as merge content:
+
+```
+empty          status=inserted             cmd=True  highrisk=True  side=[]
+customized     status=customized           cmd=False highrisk=False side=[]
+adopter-prose  status=conflict-deferred    cmd=False highrisk=False side=['AGENTS-adopter-prose.md.security-verification.cairn-merge-pending']
+```
+
+```
+empty          fidelity warnings=[]
+customized     fidelity warnings=[]
+adopter-prose  fidelity warnings=[('AGENTS-adopter-prose.md', 'security-verification', 'stale-or-partial')]
+```
+
+**The `customized` row is the finding, and it is worse than `conflict-deferred`.**
+A deferred slot at least leaves a `.cairn-merge-pending` side file and a
+`stale-or-partial` fidelity warning. A customized slot leaves **nothing**: the
+designation is absent, no side file exists, and `check_slot_fidelity` returns
+an **empty list**. `_slot_is_customized` (`bootstrap/_scaffold/slotmerge.py`
+line 206) drives both — `merge_module_into_slot` returns `customized` and
+preserves the adopter's content (line 312), and the fidelity walk `continue`s
+past it (line 379). So M11's *"guarded by `check_slot_fidelity`"* is true for
+one of the three reachable body states and false for the one an adopter
+deliberately opts into. The residual M11 named was real; its severity was
+understated.
+
+**The first branch — an installer-visible, non-customizable marker — already
+exists and this plan already installs two of them.** Measured on a real
+`solo-greenfield` install from the repository:
+
+* Clean install → `verify_integrity: OK -- 55 recorded file(s) match
+  dev/.cairn/cairn-lock.yml (4 adopter-authored living-state file(s) tracked
+  for upgrade but excluded from the tamper check).`, **exit 0**.
+* Append one line to `dev/modules/claim-check.md` (the exact structural
+  stand-in for B2's `dev/modules/security-verification.md`) →
+  `modified (hash mismatch): dev/modules/claim-check.md`, **exit 1**.
+* Append one line to `scripts/claim_check.py` (the structural stand-in for the
+  verbatim dispatcher) → **both** rows reported, **exit 1**.
+* Confirmed by reading the lockfile of that install: the four `living_state:
+  true` records are the four authoritative adopter-authored files; **no
+  `dev/modules/*.md` record and no `scripts/*.py` record carries the flag**, so
+  both are inside the tamper check by construction, not by choice.
+
+So the durable home for the designation is **three channels, two of them
+tamper-evident**: A2's merge block (customizable — the residual), B2's
+`dev/modules/security-verification.md` (lockfile-recorded, non-living-state),
+and the **dispatcher source itself** (verbatim, hash-pinned, and additionally
+flagged `locally-modified` by `classify_verbatim`
+(`bootstrap/_scaffold/lockfile.py` line 287), which never clobbers a fork).
+The third is the strongest
+because it puts the designation in **the same file as the registry it
+designates**: a registry change and the designation are then one reviewed
+artifact, which is precisely the review trigger E3 says must not be erasable
+(M34).
+
+**The second branch is declined, and here is why.** The review offers *"or
+explicitly make customization refuse an activation upgrade until the Maintainer
+re-acknowledges the high-risk surface."* That is new engine mechanism in
+`bootstrap/_scaffold/slotmerge.py` and/or `bootstrap/_scaffold/upgrade.py`.
+Three reasons, none of them "it is inconvenient":
+
+1. It changes the behaviour of `<!-- cairn:customized -->` for **every** slot
+   and **every** module, not just this one. That marker is an accepted
+   disposition in its own right (the module docstring at
+   `bootstrap/_scaffold/slotmerge.py` lines 62–63 records it as "Antigravity
+   P2"), and re-opening it from inside a capability-activation
+   plan is exactly the cross-scope contract narrowing E1 is being accepted to
+   *stop* happening.
+2. It enlarges this plan's declared symbol delta beyond the three symbols the
+   Maintainer's re-anchor union is formed against, into a second engine file no
+   cluster scope has declared. The whole cluster section exists to prevent that.
+3. Neither `slotmerge.py` nor `upgrade.py` is in `gate_manifest.json`'s
+   `frozen_files` map today (re-checked: 164 entries), so the change would land
+   with no gate noticing — the opposite of what the finding wants.
+
+It is a legitimate improvement and it needs its own proposal. Routed to
+*Lasting-truth migration* as L9 (M40), and the residual is **pinned by a
+characterization test** (T43 in M34) rather than left as prose, so a future
+author who closes it has a red test to turn green.
+
+### Author-found, not in the review
+
+**[R6] The release gate's Bandit baseline is 76, not 74.** Live at `6bcd2d3`:
+`security_check: Bandit clean over 76 shipped file(s).` → `security_check: PASS
+-- release security gate clean.` The plan states 74 and predicts **75** after
+Chunk A, in two places; the first Response's re-measurement ledger recorded the
+74 reading as *"identical"* and it no longer is. The prediction's *arithmetic*
+is unaffected — the dispatcher adds exactly one scanned file — so the criterion
+becomes **76 → 77**, and it must be re-taken at the implementing commit rather
+than fixed at 77 (M36).
+
+**[R7] `check_cairn` reports 176 Markdown files, not 180 and not 195.** Live:
+`check_cairn: OK -- 176 Markdown file(s) scanned; no issues; 48 external
+link(s) not probed.` Both figures have moved: files 180 → 195 → **176**,
+external links 68 → **48**. The cause is traceable and it is **not** a change
+to the checker — `f897cda`, which makes `check_cairn` skip `dev/**/archive/`
+by default, is an ancestor of `6b6034e` as well as of `6bcd2d3`, so the same
+rule was in force for both readings. What moved is the *population*: 14
+proposals were archived between the two commits, and archived sources are
+skipped. So the count moves **in both directions** with work this plan does
+not own. This *strengthens* M23
+rather than replacing it: the criterion stays "no issue attributed to a file
+this plan edits", and the figure is now recorded as unpredictable rather than
+merely stale (M37). Worth recording alongside: the one `check_cairn` issue M23
+cited in a sibling's uncommitted edit is **gone** — the tree is clean today.
+
+**[R8] The suite is 1959 passed, 0 failed, 0 skipped** in 307.28s at `6bcd2d3`,
+under the canonical interpreter with `PYTHONDONTWRITEBYTECODE=1`, run in the
+repository. Collected node count has now moved 1744 → 1779 → 1790 → **1959**
+across four readings in two days. M15 already retired this figure as an oracle;
+this reading confirms the retirement was right rather than cautious (M38).
+
+**[R9] The plan's own test inventory is two rounds stale.** Plan-level
+acceptance says *"`bootstrap/tests/test_security_verification.py` — T1–T35"*.
+The first Response added T31b (M4); this one adds T36–T43. A test-file
+inventory that under-states its own contents is the cheapest possible way for a
+new test to be quietly dropped at implementation (M39).
+
+### Re-measurement ledger
+
+Every figure the External review states, every figure this Response asserts,
+and every figure the plan and the first Response state that this Response
+relies on. Live values are at HEAD **`6bcd2d3`**, canonical interpreter,
+`PYTHONDONTWRITEBYTECODE=1`.
+
+| Figure | Plan | First Response | Live at `6bcd2d3` | Verdict |
+|---|---|---|---|---|
+| External review location in file | — | — | appended at end, `d66be06`, `40 insertions(+) 0 deletions` | Checked, not assumed |
+| AST baseline entries | 174 | 173 | **173** | Reproduces (first Response right) |
+| Baseline, three kinds | 161 | 161 | **161** | Reproduces |
+| `Assign:_MODULE_MAPPINGS` digest | `26957a8924042a0a` | same | `26957a8924042a0a` | Reproduces |
+| `Assign:_DEFAULT_ON_MODULES` digest | `2c8ef688f6865487` | same | `2c8ef688f6865487` | Reproduces |
+| `FunctionDef:main` digest | `ff5a7441cceda605` | same | `ff5a7441cceda605` | Reproduces |
+| `FunctionDef:format_profile_summary` digest | `830aac8b7c3d1bde` | same | `830aac8b7c3d1bde` | Reproduces |
+| `Assign:_MODULE_REQUIRED_TOKENS` baselined? | declared not-changed | not baselined | **absent from baseline** | Reproduces (M21 stands) |
+| Suite | `1744 passed, 2 failed` | `1790 passed, 0 failed` | **1959 passed, 0 failed, 0 skipped**, 307.28s | Non-reproduction ([R8]) |
+| Release gate | `Bandit clean over 74 shipped file(s).` | "identical" | **`Bandit clean over 76 shipped file(s).`**, `PASS` | Non-reproduction ([R6]) |
+| `check_cairn` | OK, 180 files, 68 links | 195 files, 68 links, 1 issue | **OK, 176 files, 48 links, 0 issues** | Non-reproduction ([R7]) |
+| Neutrality | `fail=95 info=21`, rc 1 | same | **`fail=95`, `info=21`**, rc 1 | Reproduces |
+| Install manifest data rows | 95 | 95 | **95** | Reproduces |
+| `templates/**/*.py`, three channels | 44 / 44 / 44 | 44 / 44 / 44 | **44 / 44 / 44** (`git ls-files`, `find`, `--manifest` rows) | Reproduces |
+| Registries | 6 / 20 / 3 | 6 / 20 / 3 | **6 / 20 / 3**, same preset names | Reproduces |
+| `gate_manifest.json` `frozen_files` | 164 | 164 | **164** | Reproduces |
+| `test_security_lint.py` frozen? | implied no | yes | **yes** | Reproduces (M10 stands) |
+| `test_notice_install.py` frozen? | implied no | yes | **yes** | Reproduces (M10 stands) |
+| `config.py` `cascade_mutable` string | — | quoted | verbatim: *"AST source-motion attest — one predeclared mapping-symbol delta only (A/B/C/E)"* | Reproduces |
+| Six files named not-frozen | not frozen | confirmed | none in the map | Reproduces |
+| `docs/quickstart.md` module count | 6 | line 129, 6 | **line 129, 6**, with the `verify:` marker | Reproduces |
+| `docs/quickstart.md` slot count | not named | line 182, 21 | **line 182, 21** | Reproduces |
+| Live slot count, clean install | not named | 21 | **21**, 4 from `AGENTS.md` | Reproduces, executed |
+| Live slot count with the new slot | not named | 22 in all three states | **22**, `AGENTS.md [cairn:slot security-verification]` listed, in the `inserted` state | Reproduces, executed |
+| `docs/solo-legacy-recipe.md` roster line | 8-module / six default-on | line 58 | **line 58**, verbatim | Reproduces |
+| `templates/modules/README.md` default-on rows | four vs six | lines 34–37 | **four rows, lines 34–37** | Reproduces |
+| Empty-slot merge outcome | — | `inserted`, no warning | **`inserted`**, designation present, no side file, no warning | Reproduces, executed |
+| Prefilled-slot merge outcome | — | `conflict-deferred` + side file | **`conflict-deferred`**, side file, `stale-or-partial` warning | Reproduces, executed |
+| **Customized-slot merge outcome** | not named | named as a residual | **`customized`**, designation **absent**, **no side file**, **no fidelity warning** | New measurement ([E3]) |
+| `_slot_is_customized` / fidelity skip | — | — | `slotmerge.py` lines 206, 312, 379 | Reproduces |
+| `_LIVING_STATE_DSTS` | not named | not named | **5 entries**, `lockfile.py` line 84 | New measurement ([E1]) |
+| Living-state record still carries `hash` | not named | not named | **yes** — `install.py` writes `hash` at 1630, flag at 1634 | New measurement ([E1]) |
+| `verify_integrity` honours flag only for the set | not named | not named | `verify_integrity.py` lines 92–105, fails closed otherwise | New measurement ([E1]) |
+| Clean install integrity | not named | not named | **OK, 55 recorded files, 4 living-state**, exit 0 | New measurement ([E3]) |
+| `dev/modules/*.md` edit detected? | not named | not named | **yes** — `modified (hash mismatch)`, exit 1 | New measurement ([E3]) |
+| `scripts/*.py` verbatim edit detected? | not named | not named | **yes** — reported alongside, exit 1 | New measurement ([E3]) |
+| In-tree `not_applicable` report shape | not named | not named | `_oracle.py` line 473, `test_oracle.py` line 148 | New measurement ([E2]) |
+| `claim_check.py` on this plan | OK | OK, 22 exemptions | **OK, no flags** | Reproduces |
+
+### Amendments in force
+
+Superseded text is quoted **verbatim**; the plan's hard line-wrapping inside a
+quoted passage is collapsed to single spaces so the passage fits a table cell —
+no word is altered. This plan is append-only, so these rows *are* the change:
+where a row conflicts with text above — including with a row in the
+2026-08-04 amendments table — **this table governs**, and the 2026-08-04 table
+governs everything above it.
+
+| # | Locus | Superseded text (verbatim) | Replaced by |
+|---|---|---|---|
+| M24 | Chunk A, row A1, the registry-schema fragment | "Module-level `_REGISTRY: dict[str, RegistryEntry] = {}` — **empty**, with the nine admission fields as a frozen dataclass/`NamedTuple` (`module_id`, `runner_repository_path`, `argv_mode`, `policy_repository_path \| None`, `child_schema_version`, `capability_contract_version`, `evidence_mode`, `accepted_process_exits`, `result_to_aggregate_mapping`). `evidence_mode` constrained to `frozenset({"offline", "loopback"})` at construction." | Module-level `_REGISTRY: dict[str, RegistryEntry] = {}` — **empty**, with **eleven** admission fields as a frozen dataclass/`NamedTuple`: the nine above **plus `runner_binding_mode` and `policy_binding_mode`**. Every field is **required, has no default, and is not inferable from any other field.** Two closed sets, both constrained at construction, both `frozenset` literals in the dispatcher source: `evidence_mode` ∈ `{"offline", "loopback"}` (unchanged); `runner_binding_mode` ∈ `{"immutable_digest"}` — a deliberately **one-member** set, so a future "living runner" cannot appear by omission but only by a source edit that widens the frozenset, which is a registry-schema change and therefore a Security Review; `policy_binding_mode` ∈ `{"none", "immutable_digest", "living_state"}`. **Agreement rules, each refused at construction with a message naming both fields:** `policy_binding_mode == "none"` **iff** `policy_repository_path is None` (either without the other refuses — this closes the undeclared third mode [R5] names); `"immutable_digest"` and `"living_state"` each require a non-`None` path. **Runtime binding by mode, all failures DEGRADED (`20`) with no child launched, never INCOMPLETE and never CLEAN:** under `"none"` the parent binds the runner only; under `"immutable_digest"` the parent binds the runner **and** compares the policy's SHA-256 with its lockfile record, **and refuses (`20`) if that record carries `living_state: true`** — an immutable declaration over a living record is a misdeclaration, not a pass; under `"living_state"` the parent binds the runner digest unchanged, binds the policy's **existence, regular-file and non-symlink status**, binds the **presence of a lockfile record**, and **refuses (`20`) if that record lacks `living_state: true` or if the policy path is outside the engine's `_LIVING_STATE_DSTS` authoritative set** — the fail-closed mirror of `bootstrap/verify_integrity.py` lines 96–105 — and **does not compare the policy's content digest**. The dropped property is named in A2's doctrine as a residual, not skipped silently. |
+| M25 | Chunk A, T5 | "`test_every_admission_field_is_required` — a deletion mutant per field: nine synthetic entries, each missing one of the nine, each refused at construction with a message naming the field." | Same test, **eleven** deletion mutants over the eleven fields of M24, each refused at construction with a message naming the field. The two new rows are the load-bearing ones: an entry that omits `policy_binding_mode` or `runner_binding_mode` must **refuse**, not default — a defaulted binding mode is the "silently change modes" failure E1 names, reached by omission. *Weakness stated, unchanged:* this pins the **validator**; that the shipped registry is empty is T1's job. |
+| M26 | Chunk A, T17 | "`test_runner_or_policy_digest_mismatch_is_degraded` — write the lockfile, then flip one byte of the runner (and, separately, of the policy); both `20`, no child launched." | Same test, **parametrized by `policy_binding_mode`**, because the assertion is no longer unconditional. Rows: (a) runner byte flipped — `20`, no child launched, **under all three modes**; (b) policy byte flipped under `"immutable_digest"` — `20`, no child launched; (c) policy byte flipped under `"living_state"` — the leg **proceeds** (this is the whole point of the mode) and the report records the policy as `binding: living_state, digest_not_compared`, so the dropped property is **visible in the machine output** rather than invisible; (d) policy byte flipped under `"none"` — unreachable, since the path is `None`; asserted as a construction refusal, not a runtime row. |
+| M27 | Chunk A, new tests T36–T40 | *(addition)* | **T36** `test_policy_binding_mode_is_a_closed_set` — parametrized over `deployed`, `unbound`, `skip`, `living`, `immutable`, `""`, `None`, `"none,living_state"`: construction raises for every row. *Perturbation:* widen the frozenset to include `"unbound"`; that row fails. The exact mirror of T4 for the second closed set. **T37** `test_binding_mode_and_policy_path_must_agree` — four rows: (`"none"`, a path) refuses; (`"immutable_digest"`, `None`) refuses; (`"living_state"`, `None`) refuses; (`"none"`, `None`) constructs. *Perturbation:* drop the agreement check; the first three rows fail. **T38** `test_living_state_mode_requires_the_lockfile_flag_and_the_authoritative_set` — three rows: lockfile record present but **without** `living_state: true` → `20`; record flagged but the path is **outside** `_LIVING_STATE_DSTS` → `20`; both satisfied → the leg proceeds and the policy digest is not compared. *Perturbation:* make the living branch skip the flag check; row one reaches CLEAN. **T39** `test_immutable_mode_refuses_a_living_state_record` — an entry declared `"immutable_digest"` whose policy record carries `living_state: true` → `20`, no child launched. *Perturbation:* treat `living_state` as "skip the comparison"; the row reaches CLEAN. **T38 and T39 together are E1's "cannot treat a living policy as an immutable one", in both directions.** **T40** `test_a_registry_entry_cannot_change_mode_after_construction` — assigning `policy_binding_mode` on a constructed entry raises. *Perturbation:* make the dataclass non-frozen (or use a plain class); the assignment succeeds and the test fails. This is E1's "cannot silently change modes" at the object level, where T36/T37 cover it at the declaration level. |
+| M28 | *Glossary*, the `Admitted` entry | "**Admitted** — a registry entry that cleared the five-part admission rule in the proposal's revision (accepted capability proposal; reviewed plan with execution evidence for that exact mode; complete lockfile mapping group; schema and precedence tests; a Security Review of the registry change). At v1 nothing is admitted, so the registry is empty." | The same five parts, **plus a sixth: the binding mode is part of what is admitted.** An entry is admitted *for a named `policy_binding_mode`*; changing an admitted entry's mode is a registry change and takes its own Security Review, not a follow-up commit. A `"living_state"` entry additionally requires the capability's own plan to carry **execution evidence for the compensating controls that replace the digest** — for `api-web-security-modules` these are the strict schema, the loopback-only local leg and `--authorize-base-url`, and evidence means an executed run, not a design argument. At v1 nothing is admitted, so the registry is empty and no mode is exercised. |
+| M29 | *Maintainer fence*, new item 4 | *(addition)* | **The `living_state` binding mode narrows an accepted contract, and admitting an entry under it is not an implementing agent's to do.** The proposal's revision established parent-computed digest binding over *"the runner and policy"*; `policy_binding_mode: living_state` drops the policy half for a declared class of records. M24–M28 land the **schema and its tests** — which is what the External reviewer required to land here, and which is safe because the v1 registry is empty and no mode is exercised — but **no registry entry may be admitted under `"living_state"` until the Maintainer ratifies the narrowing.** An implementing agent who finds a capability plan asking for such an entry **stops and reports**, exactly as at the AST fence. Recorded for the ceremony: `dev/plans/api-web-security-modules.md` AM13/AM15 already gate its Chunk G on this ruling, so the two artifacts agree on the gate and only the Maintainer can open it. |
+| M30 | Chunk A, T20 | "`test_no_capability_prints_the_exact_not_applicable_line_and_exits_0` — stdout contains exactly `NOT APPLICABLE: no selected local security capability`, exit `0`, machine result `aggregate: NOT_APPLICABLE`, `legs: []`, a non-empty `reason`." | Same test, with the machine result **named and shaped on the in-tree precedent** rather than left informal. The dispatcher emits **one JSON object** on stdout carrying: `schema` (a versioned literal, on the `bootstrap/tests/_oracle.py` line 81 model `"cairn.scaffold_split.oracle/v1"`), `status: "not_applicable"` **as an explicit string state**, `ok: true`, `aggregate: "NOT_APPLICABLE"`, `evidence_count: 0` **as an explicit integer**, `legs: []`, and a non-empty `reason`. Assert all seven. *Rationale, since the addition is redundant on its face:* `legs: []` makes automation infer a count from a container length and `aggregate` makes it string-match a label; E2 asks for a state and a count it can key on directly. *Perturbation unchanged:* make the no-capability path return `CLEAN` — now fails on the literal, on `status`, and on `aggregate`. **Additional perturbation:** drop `evidence_count` from the report; the test fails on a missing key rather than silently passing on a container check. |
+| M31 | Chunk B, T33 | "`test_the_dispatcher_runs_green_from_a_real_fresh_scaffold` — end-to-end: scaffold into `tmp_path`, run `python scripts/run_security_verification.py local` **as a subprocess** from that tree, assert exit `0` and the exact `NOT APPLICABLE` line. The public path, not an import." | Same test, **plus the machine assertions of M30 through the same subprocess**: parse the emitted JSON and assert `schema`, `status == "not_applicable"`, `ok is True`, `aggregate == "NOT_APPLICABLE"`, `evidence_count == 0`, `legs == []`. This is E2's actual surface: T20 drives `main()` in-process, and **T33 is the only test that sees what an adopter's automation sees.** Existing perturbation retained; **second perturbation added:** make the no-capability path emit exit 0 with no machine object at all — the human line still matches, the exit code is still 0, and only the machine assertions go red. That is the *"generic exit-0 success that downstream automation can mistake for a passing security check"* the review names, made mechanical. |
+| M32 | Chunk A, row A2, the doctrine content list | "Module doctrine: the registry rules, the five-part admission rule quoted from the proposal's revision, the aggregate ladder and its precedence, trusted-checkout scope, the local/deployed separation **and its explicit non-claim** (not actor authentication), and recovery from INCOMPLETE / DEGRADED." | The same list, **plus three additions**, because an adopter receives A2 and never receives this plan's glossary: (a) **`NOT_APPLICABLE` is not evidence.** The doctrine states in terms that `NOT_APPLICABLE` is the *absence* of security evidence, not a passing check, that it must not be reported, aggregated, or badged as one, and that its exit `0` means "nothing was asked of me", not "nothing is wrong". (b) The **binding-mode schema of M24**, including the residual that a `"living_state"` policy's bytes are not lockfile-attested and its review channel is git. (c) The **high-risk Security-Review designation of M34**. The five-part admission rule quoted from the revision becomes the **six-part** rule of M28. |
+| M33 | Chunk A, new test T41 | *(addition)* | `test_the_module_doctrine_states_not_applicable_is_not_evidence` — read the **shipped** `templates/modules/default-on/security-verification.md` from `templates/`, not an installed copy; assert it contains the non-evidence statement, that `NOT_APPLICABLE` appears in it at all, and that no green-security phrase (`CLEAN`, `secure`, `passed security`, `no vulnerabilities`, `verified`) occurs in the same paragraph. *Perturbation:* delete the non-evidence sentence from A2's source; the test fails. Precedent for asserting shipped doctrine text: `bootstrap/tests/test_practice_modules.py`. *Channel note:* the oracle is the shipped source read independently; the subject is what an adopter receives. Same class as T1 and T23. |
+| M34 | 2026-08-04 amendments table, row M11, its *Replaced by* cell | "The designation moves to **A2's merge-content block** (so it lands durably in the adopter's `security-verification` slot and is guarded by `check_slot_fidelity`) **and to `dev/modules/security-verification.md`** (B2). Named residual: an adopter who marks the slot `cairn:customized` opts out of the substring check." | The strike of A4's line stands. The designation lands on **three channels, and the guard claim is corrected**: `check_slot_fidelity` guards **one** of the three reachable slot-body states. Measured: `empty` → `inserted`, guarded; `adopter-prose` → `conflict-deferred`, side file **and** a `stale-or-partial` warning; `customized` → status `customized`, designation **absent**, **no side file and no warning at all**. The three channels: (1) **A2's merge block** → the adopter's slot — customizable, and that is the residual, not a guard; (2) **B2 `dev/modules/security-verification.md`** — lockfile-recorded and **not** living-state, so an adopter edit is `modified (hash mismatch)`, exit 1; (3) **the dispatcher source `scripts/run_security_verification.py`** — a module docstring block at the `_REGISTRY` definition site, verbatim and hash-pinned, additionally flagged `locally-modified` by `classify_verbatim` and never clobbered. Channel 3 is the answer to E3: it puts the designation in **the same file as the registry**, so a registry change and its review trigger are one artifact. **Two tests.** **T42** (Chunk B) `test_the_high_risk_designation_survives_on_two_tamper_evident_channels` — read the shipped A2, B2 and dispatcher sources for the designation; scaffold into `tmp_path`; `verify_integrity` → OK; delete the designation from the installed `dev/modules/security-verification.md` and from `scripts/run_security_verification.py`; `verify_integrity` reports `modified (hash mismatch)` for **both** and exits **1**. *Perturbation:* drop the designation from the dispatcher source; the source-read row fails. **T43** (Chunk B) `test_a_customized_slot_silently_drops_the_designation` — a **characterization** test that pins the residual rather than closing it: mark the slot `<!-- cairn:customized -->`, run the merge; assert status `customized`, designation absent from `AGENTS.md`, **`check_slot_fidelity` returns an empty list**, no side file, and the two tamper-evident channels still carry it. *Perturbation:* make `_slot_is_customized` return `False`; the status and no-warning assertions go red. Its docstring says, where a reader will find it, that a green T43 is a **recorded open residual**, not a closed one. |
+| M35 | Chunk D, row D1 | "(d) **command separation is not actor authentication** — a person or agent with shell access can invoke another script directly, and Cairn does not claim to distinguish a human process from an agent process. (d) is the sentence that must not be softened." | (d) unchanged and still the sentence that must not be softened, **plus a fifth recording (e)**: the dispatcher, its source-owned registry, its child result schema, its **binding-mode schema**, and every registry entry are **high-risk Security-Review surfaces**; that designation is carried on three channels of which **two are tamper-evident** (the lockfile-recorded `dev/modules/security-verification.md` and the hash-pinned dispatcher source) and one is not (the adopter's `AGENTS.md` slot, which `<!-- cairn:customized -->` silently exempts from both the merge and the fidelity check); and an adopter who customizes that slot **removes the designation from their governing document with no warning from any Cairn tool**. (e) is a recorded residual, not a claim of coverage. |
+| M36 | Chunk A acceptance criteria, and *Verification* > plan-specific gates | "* `python bootstrap/security_check.py` → `PASS`, Bandit line reporting **75** files (74 + the dispatcher)." **and** "* **The release gate** — `python bootstrap/security_check.py`. Expected `PASS`, Bandit line reporting **75** files. Baseline before Chunk A: 74." | Live baseline at `6bcd2d3` is **76**, not 74: `security_check: Bandit clean over 76 shipped file(s).` → `PASS`. The arithmetic is unaffected — the dispatcher adds exactly one scanned file, because `scan_targets()` derives `templates/` targets from registry data — so the criterion is **`N` → `N+1`, where `N` is re-taken immediately before Chunk A**, currently 76 → 77. **Do not apply 77 from here**; the shipped-file count moves with every cluster scope that adds a shipped file. The MEDIUM+ rule is unchanged: a finding is a code fix inside Chunk A, never an allowlist entry. |
+| M37 | 2026-08-04 amendments table, row M23, its *Replaced by* cell, the parenthetical | "(195 at `6b6034e`, +1 for B2)" | **176** at `6bcd2d3` — `check_cairn: OK -- 176 Markdown file(s) scanned; no issues; 48 external link(s) not probed.` The figure has now moved 180 → 195 → 176 and the external-link count 68 → 48. The cause is **not** a change to the checker: `f897cda`, which makes `check_cairn` skip `dev/**/archive/` by default, is an ancestor of `6b6034e` as well as of `6bcd2d3`, so the same rule governed both readings. What moved is the population — 14 proposals archived between the two commits, and archived sources are skipped. **The count moves in both directions with work this plan does not own, so it is not a criterion in any form.** M23's substantive replacement stands unchanged and is strengthened: the criterion is **"no `check_cairn` issue is attributed to a file this plan edits"**, full stop. Also recorded: the one sibling-scope issue M23 cited is gone; the tree reports **0 issues** today. |
+| M38 | 2026-08-04 amendments table, row M15, its *Replaced by* cell, the live figure | "Live: **`1790 passed` in 171.22s, 0 failed, 0 skipped**, in the repository at `6b6034e` with no engine modification in the tree." | **`1959 passed, 0 failed, 0 skipped` in 307.28s** at `6bcd2d3`, in the repository, under the canonical interpreter with `PYTHONDONTWRITEBYTECODE=1`. Four readings in two days: 1744 → 1779 → 1790 → **1959**. M15's disposition — the figure is **retired as an oracle**, and the plan-level criterion *"collection grows by exactly the new nodes and drops none"* binds to a count re-taken at the implementing commit — stands, and this reading is why. |
+| M39 | Plan-level acceptance criteria, *Tests that must pass*, second bullet | "* `bootstrap/tests/test_security_verification.py` — T1–T35, the plan's own surface. *(Forward reference: the file lands at Chunk A; registered under `Proposed paths:` above.)*" | `bootstrap/tests/test_security_verification.py` — **T1–T43 plus T31b**, the plan's own surface. Chunk A holds T1–T24 and T36–T41; Chunk B holds T25–T33, T31b, T42 and T43; Chunk C holds T34–T35. *(Forward reference unchanged.)* The perturbation-ledger obligation extends to every added test; where a test is a **characterization** rather than a guard — T28, T43 — the ledger says so in those words. |
+| M40 | *Lasting-truth migration*, new rows L9 and L10 | *(addition)* | **L9** — *"`<!-- cairn:customized -->` silently exempts a slot from **both** the module merge and the fidelity check, so an adopter can remove a module's contributed Security-Review designation from their governing document with no warning."* Durable home: **`dev/proposals/` — its own proposal.** Declined for this plan because it changes the marker's behaviour for every slot and every module, re-opens an accepted disposition from inside a capability-activation plan, enlarges this plan's declared symbol delta into a second engine file no cluster scope has declared, and would land in a file (`bootstrap/_scaffold/slotmerge.py`) that is not in the 164-entry `frozen_files` map, so no gate would see it. Pinned meanwhile by T43. **L10** — *"The dispatcher's machine-report schema (M30) is the contract every future capability's automation reads; at v1 no capability exercises it."* Durable home: the **first capability plan to be accepted**, which is the first artifact able to assert the non-`not_applicable` shape end-to-end. |
+
+Nothing in this table adds a registry entry, widens the empty-registry
+contract, changes the aggregate ladder or its precedence, weakens any of the
+Decision's three named properties, moves a Maintainer fence, or takes on a
+sibling scope's surface. One row (M29) **adds** a fence.
+
+### What this Response does not settle
+
+* **The dispatcher's runtime behavior.** No code exists. T1–T43 remain
+  specifications. Both prior rounds said so and it is still true; nothing in
+  this Response could check that any of them will hold.
+* **Whether the Maintainer ratifies the `living_state` narrowing.** M29 is a
+  gate, not a decision. This Response specifies the mode and declines to admit
+  anything under it.
+* **The Bandit profile of the dispatcher.** Unmeasurable before Chunk A; the
+  *baseline* is corrected to 76 (M36), the *prediction* is not.
+* **The proposed slot text's content-scan result.** The plan's exact text is
+  still not in the tree. Unchanged from the first Response.
+* **Whether the Decision requires `format_profile_summary` at v1.** A
+  Decision-reading question. Three rounds have now declined to answer it; it is
+  still strikeable in one line and still the Maintainer's.
+* **Cross-cluster re-anchor sequencing (L7).** Maintainer-owned.
+* **Whether the External reviewer considers E1–E3 discharged.** That is theirs
+  to say, not mine. This Response is the author's disposition of a REVISE.
+
+### Gate audit
+
+Every gate this plan declares, and whether it is satisfied **today**, at
+`6bcd2d3`. Two gates were breached elsewhere in this repository yesterday
+because nobody read them, so this table is written to be read rather than
+skimmed.
+
+| Gate | Where it is declared | Satisfied today? |
+|---|---|---|
+| **Declared review tier** — `required(External, security lens)` | Header, and *Plan review — the brief* | **NO.** The round was **held** — Codex, External, security lens, 2026-08-05 — and returned **REVISE**. A held round with a REVISE verdict is not a discharged tier. |
+| **"No implementation commit lands before the `## Plan review` section is in the tree."** | Header | **Literally yes**, since `d66be06`. **And it is not a licence.** This is the section-*kind* gate that the accepted `review-gate-enforcement` proposal exists to fix: it reads a heading, never a verdict. Treating it as satisfied here would be using a known-defective gate to authorise work its own repair proposal says it cannot authorise. |
+| **Sequence step 0** — "(plan review) -- required(External, security lens); NO code before it lands" | *Sequence* | Same reading as above. The section has landed; the verdict has not cleared. |
+| **Maintainer fence 1** — the AST re-anchor ceremony, after Chunk A and after Chunks B/C | *Maintainer fence* | **Not reached.** No implementation has occurred. The three declared symbols and all four digests re-verify at `6bcd2d3` against a **173**-entry baseline; `_DEFAULT_ON_MODULES` is still in neither `_UPDATE_ALLOWLIST` nor `mapping_symbols`, so there is still no surgical path. |
+| **Maintainer fence 2** — anything needing a key or credential | *Maintainer fence* | **Standing, not reached.** Nothing in this plan needs one; the item exists because the runbook has a signing phase. |
+| **Maintainer fence 3** — the gate-manifest re-pin, as corrected by **M10** | *Maintainer fence* + M10 | **Not reached, and re-verified today.** `gate_manifest.json` still holds **164** `frozen_files`; `bootstrap/tests/test_security_lint.py` and `bootstrap/tests/test_notice_install.py` are **both still in it**, so the two `FROZEN-MODIFIED` rows remain **guaranteed, not contingent**. `bootstrap/_scaffold/config.py` is still `cascade_mutable` under *"AST source-motion attest — one predeclared mapping-symbol delta only (A/B/C/E)"*, verbatim. |
+| **Maintainer fence 4 (new)** — no entry admitted under `policy_binding_mode: living_state` until the Maintainer ratifies the narrowing | M29, this Response | **Open by construction.** It is created here and nothing satisfies it. `api-web-security-modules` AM15 already gates its Chunk G on the same ruling. |
+| **Decision condition** — *"The plan carries `required(External, security lens)` in its own right; this Decision does not discharge it."* | Source proposal, `## Decision -- Anthony Kendall (Maintainer) -- 2026-08-03` | **Holds, verbatim.** Re-read at `dev/proposals/archive/2026-08-03-codex-security-verification-activation.md`. The Decision's ordering clause also still holds: this artifact precedes any Decision on the two capability proposals. |
+| **Plan status** | Header, `**Status**: open` | **Unchanged — `open`.** Recorded rather than edited: the header is a prior section and this plan is append-only, so its `**Last update**: 2026-08-04` field is stale by design and only a serialization-point edit may move it. |
+
+### Does this Response clear the plan to implement?
+
+**No.**
+
+Three independent reasons, any one of which is sufficient:
+
+1. **The External round returned REVISE, and an author Response does not
+   answer a REVISE.** The reviewer required an amendment to *land here* before
+   a sibling's registry entry can land there, and required tests for properties
+   that did not exist. M24–M35 and M40 land them. Whether they land them *correctly* is
+   a question for a reviewer, not for their author. The precedent is in this
+   tree and it is one day old: an External reviewer on a sibling plan wrote
+   that they *"treated the authored Response as evidence of intended changes,
+   not a replacement for the plan's executable contract"*, and returned REVISE
+   a second time.
+2. **M29 opens a Maintainer gate that only the Maintainer can close.** The
+   `living_state` binding mode narrows a property the accepted proposal
+   established and the Decision rests on. The schema lands; the narrowing does
+   not take effect for any entry until it is ratified.
+3. **The plan's own literal gate is the one `review-gate-enforcement` exists to
+   repair.** It is satisfied by a heading. Reading it as authorisation, on the
+   very artifact whose reviewer said REVISE, would be the precise defect that
+   proposal was accepted to stop.
+
+What remains, in order:
+
+1. **A second External security-lens round** — by a different agent type or the
+   Maintainer — reading the plan *with* M24–M40 in force, with E1's schema as
+   the first thing to attack. The reviewer's own framing is the right test:
+   does the schema make it impossible for an entry to silently change mode,
+   omit a binding field, or treat a living policy as immutable? T36–T40 are the
+   claim; only a reviewer with a checkout can falsify them once code exists.
+2. **Three Maintainer calls, surfaced and not resolved here** — carried forward
+   from the first Response and extended by one: whether M1's above-marker
+   guidance is acceptable in `templates/core/AGENTS.md`; whether the two
+   guaranteed `FROZEN-MODIFIED` rows change the ceremony's shape; and **the
+   M29 ratification of the `living_state` narrowing**, which two plans now
+   block on.
+3. **The AST re-anchor ceremony**, unchanged and still the Maintainer's, over a
+   union the Maintainer forms, against a **173**-entry baseline.
+
+The amendments above make the plan executable-as-written on the surfaces the
+External round attacked. **They do not discharge the tier, and this Response
+claims no tier satisfied.**
