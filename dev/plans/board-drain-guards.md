@@ -652,6 +652,427 @@ reason to reopen the Decision. All of them are reasons not to start typing yet.
 
 *Filled in after implementation. Reviewer is not the implementing agent.*
 
+### Code review -- Claude (fresh session) -- 2026-08-05
+
+**Model**: claude-opus-5. Fresh session, no inherited context. Reviewer is **not**
+the implementing agent, per `doctrine/plans.md` > "Code review". Every command
+below ran under `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python
+**3.13.13**, the canonical interpreter). Commits under review: `48b05f1`
+(Chunk A), `f42db96` + `5e10623` (Chunk B), `fc32dd9` (status flip).
+
+**Substrate -- and why it is the finding.** The Maintainer's working tree carries
+a concurrent session's *uncommitted* work, including a heavily modified
+`bootstrap/tests/test_security_stack.py`. So every figure below was measured in a
+**detached git worktree at `fc32dd9`**, plus three more worktrees for the mutation
+battery. All four were restored and removed; `git status --short` was empty in each
+before removal, and the main tree is untouched by this review.
+
+---
+
+**Steelman -- what reproduced exactly, by execution.**
+
+* **The mutation battery is real and fires as the commit body states.** Run
+  independently against both twins in a clean worktree, each mutation applied and
+  restored:
+
+  ```
+  BASELINE (unmutated)                              42 passed
+  M1  revert the check_path_token change         -> 2 failed  (assertions 1 and 4)
+  M2  the `::` branch returns None unconditionally
+      (the faithful bypass mutant)                -> 1 failed  (assertion 2)
+  M3  pre-dispatch strip at the first `:` in _scan-> 2 failed  (assertion 3 plus the
+                                                     pre-existing
+                                                     test_directive_does_not_silence_local_line_bounds)
+  M8  one-sided twin edit (scripts/ side only)   -> 1 failed  (the twin-parity node)
+  RESTORED                                          42 passed, git status clean
+  ```
+
+  This matches `48b05f1`'s stated battery node-for-node, including its honest
+  correction to plan-review [P2] (one pre-existing test *did* pin the dispatch).
+  The load-bearing assertion,
+  `bootstrap/tests/test_claim_check_module.py::test_node_citation_with_absent_path_is_still_flagged`,
+  is the one and only node the bypass mutant reddens.
+* **The bypass invariant holds.** I ran 28 token shapes through the pre-fix and
+  post-fix modules side by side against the real repo root. Every delta is
+  FLAG -> clean; **not one is clean -> FLAG and not one is FLAG -> EXEMPT**. The
+  fix is strictly flag-reducing, which is also true by construction: the only
+  input on which `target.split('/', 1)[0]` differs from `token.split('/', 1)[0]`
+  is a token whose path half has no `/`, and a single-segment path half is in
+  `top_level` only if it exists.
+* **`_token_path_part` being left untouched is verified, not just reasoned.**
+  The [P8] adopter case measured on both modules: a document-scoped
+  `claim-check-allow` glob equal to a full `path::node` token, for an absent path,
+  **still exempts** after the fix. The exempted set cannot grow, because
+  `_scan`'s glob branch runs only on tokens that already flagged, and the flag set
+  shrank. Separately confirmed that the glob still does **not** silence an
+  out-of-range line-bounds citation into a real file.
+* **Twin discipline.** `cmp` byte-identical; `_self_hosted_twins()` yields **41**
+  pairs and the claim-check pair is present; mutation M8 above proves
+  `bootstrap/tests/test_notice_install.py::test_every_self_hosted_twin_stays_byte_identical_to_its_source`
+  catches a one-sided edit.
+* **The live invariant is correct now and cannot drift silently.**
+  `wc -l` on both copies = **869**, and the registry
+  (`scripts/measurements.py:220`) targets
+  `templates/modules/default-on/claim_check.py`, so `docs/tool-usage.md:76` is
+  right. Perturbing it to 870 makes `scripts/check_cairn.py` print
+  `[count-drift] ... doc says 870, measured 869 today -- DRIFT` and **exit 1**.
+  Named trigger, opened and confirmed: a person running `check_cairn` (Cairn has
+  no CI). Restored.
+* **`check_cairn` OK across 177 files reproduces**, and this is worth saying
+  plainly: plan-review [P10] warned that asserting "OK" against a non-clean run
+  would be the ninth instance recurring. It did not recur. Measured `OK, no
+  issues` in the real tree; the 177 count is exact (`check_cairn --root` against a
+  clean `fc32dd9` worktree reports `177 file(s)`).
+* **R1's acceptance check passes exactly as re-specified by [P6].** On a scratch
+  copy of the archived proposal with the directive stripped: pre-fix module -> 1
+  hard flag, exit 1; post-fix -> `OK, no claim-check flags`, exit 0. The committed
+  file with its directive intact is also clean -- the directive is now inert,
+  which is the correct end state for an append-only record. The archived proposal
+  was not edited.
+* **Decision fidelity is clean.** `bootstrap/security_check.py`,
+  `doctrine/lifecycle.md`, `bootstrap/tests/conftest.py` and
+  `bootstrap/tests/test_security_lint.py` are untouched by all three implementing
+  commits. No `guard` disposition was written anywhere. `dev/PLANNING.md` carries
+  **76** top-level rows before and after `5e10623` -- none added, none removed.
+  **G6 is genuinely untouched**: `git diff 99c8d55 fc32dd9 -- dev/PLANNING.md`
+  shows no change in that region, and the row's live text states a *Trigger* and
+  prescribes no remedy, exactly as [P4] established.
+* **The intent override is properly recorded and properly bounded.** Verified
+  against `dev/intents.jsonl`, not just the commit body: session
+  `codex-93c2a217`'s claim at `09:16:47` really does list `dev/PLANNING.md` with
+  the action *"consolidate security strategy and cluster roadmap"*, quoted
+  accurately; the implementing session held its own earlier claim on the same file
+  from `07:58:10`; and `5e10623` released that claim at `09:27:13`. The override
+  was one commit, the concurrent claim was honoured first, the patch was held
+  outside the tree, the file was reverted so the other session was not working
+  around uncommitted edits, and the authorization is quoted verbatim and visually
+  isolated. This is the standard the rest of the record should be held to.
+
+---
+
+**Findings.**
+
+**[C1] (LOAD-BEARING) -- "full suite 1985 passed" is not this change's suite. 22
+of those 1985 tests are a concurrent session's uncommitted work, and the figure
+cannot be reproduced from the committed tree. This is the eleventh instance.**
+
+Measured in a clean detached worktree at `fc32dd9`:
+
+```
+fc32dd9, clean worktree   1963 collected -> 1962 passed, 1 skipped in 299.45s
+da1de65, clean worktree   1959 collected            (the pre-implementation base)
+main working tree         1985 collected
+delta main - fc32dd9      22 nodes, ALL in bootstrap/tests/test_security_stack.py
+                          (uncommitted; mtime 2026-08-05 09:15:03)
+```
+
+Chunk A landed at **09:22:00** -- seven minutes after that file was last written by
+the other session. The 22-node delta is exact and one-directional: `comm` reports
+**0** nodes present in the committed tree but absent from the working tree.
+
+The single skip is
+`bootstrap/tests/test_foldback_suggest.py::TestLiveLedgerSmoke::test_live_ledger_parses_without_error`,
+which skips only because a detached worktree is not sited beside the
+modflow_tools sibling checkout; it **passes** in the main tree. So the honest
+figure for the committed tree is **1963 passed**, not 1985.
+
+Two things make this worse than a transcription slip. First, `1985` cannot be a
+true pytest line for *any* tree state: the working tree collects 1985 and one node
+skips in it too unless the sibling is present, so the number was read from a
+contaminated collection. Second, **the plan review's own baseline carries the
+identical contamination**: `1959 + 22 = 1981`, exactly the *"1981 passed"* it
+recorded at `da1de65`. Both endpoints were off by the same +22, so the `+4` delta
+matching the four new assertions *self-validated*, and that is precisely why
+nobody caught it. A green suite was asserted over 22 tests that are not in this
+repository, and conversely a failure in that other session's unlanded work would
+have blocked this commit for reasons unrelated to it.
+
+*Satisfier.* Correct the figure in the plan's verification record to **1963
+passed under 3.13.13 at `fc32dd9`**, and state the measurement substrate. Standing
+habit worth adopting: when the shared tree is dirty with another session's work,
+measure the suite at the commit (a detached worktree), not in the working tree --
+otherwise "full suite green" is a claim about the machine, not about the change.
+
+**[C2] (important) -- invariant (1) is still stated unqualified, and it has a
+second exception the plan does not record: 129 of this repository's own 1963 test
+node ids are skipped wholesale, path check and all.**
+
+`_is_placeholder` (`templates/modules/default-on/claim_check.py:377`) drops any
+token containing a space or one of `_PLACEHOLDER_CHARS` (`:180`). Real pytest node
+ids carry these constantly. Measured on the fixed module, against the real root,
+for a path that does **not** exist:
+
+```
+bootstrap/tests/no_such_file.py::test_x         -> FLAG   (invariant holds)
+bootstrap/tests/no_such_file.py::test_x[a-b]    -> FLAG   (brackets are safe)
+bootstrap/tests/no_such_file.py::test_x[a b]    -> clean  (space)
+bootstrap/tests/no_such_file.py::test_x[<lambda>] -> clean  (angle brackets)
+bootstrap/tests/no_such_file.py::test_x[{a}]    -> clean  (braces)
+```
+
+I counted the exposure rather than asserting it: of the **1963** node ids this
+suite collects, **129 (6.6%)** contain a space or a placeholder character -- e.g.
+the parametrised ids in `bootstrap/tests/test_fork_advisory.py`. A `guard` citing
+any of those 129 gets **no path check at all**, so the plan's single
+mechanically-enforced invariant -- *"a `path::node` whose path is absent is still
+flagged"* -- is silently inapplicable to them.
+
+Plan-review [P7] measured this exact behaviour and offered two satisfiers: pin the
+fixtures **and** record the hole. The Response took the first and dropped the
+second; assertion 4 proves brackets are safe, which is a different claim. The
+docstring added by A3 says the node half is never verified, and says nothing about
+the node half being able to suppress the *path* half.
+
+*Satisfier.* One Known-omissions line in the plan and one sentence in both copies'
+`_node_citation_path` docstring: a node id containing a space or a
+`_PLACEHOLDER_CHARS` member exempts the whole token upstream, so invariant (1)
+covers node ids free of those characters. Optionally one assertion pinning the
+exemption so it is visible rather than incidental.
+
+**[C3] (important) -- the node branch resolves with `exists()`, so a `path::node`
+whose path half is a *directory* now passes. It flagged before the fix, and the
+sibling line-bounds branch deliberately requires a file.**
+
+Measured, pre-fix vs post-fix, against the real root:
+
+```
+bootstrap/tests::test_x        FLAG  ->  clean     <-- widened by this change
+bootstrap::test_x              clean ->  clean     (top-level dir; unchanged)
+```
+
+`check_path_token` resolves with `(repo_root / target).exists()`
+(`templates/modules/default-on/claim_check.py:509`), while `check_line_citation`
+resolves with `not target.is_file()` (`:534`) precisely because a bounds claim
+against a directory is meaningless. The same reasoning applies here with more
+force: a pytest node id is `file.py::node`, never `dir::node`, so this is a
+fail-open widening in the exact surface the plan exists to police. It is not in
+the plan's edge-case list.
+
+The mutation `exists()` -> `is_file()` leaves both
+`bootstrap/tests/test_claim_check_module.py` and
+`bootstrap/tests/test_notice_install.py` fully green, so nothing pins the
+behaviour in either direction.
+
+*Satisfier.* Require `.is_file()` on the resolution when the token *is* a node
+citation (i.e. when `_node_citation_path` returned a shortened path), leaving the
+plain-path branch on `.exists()` so directory citations keep working, plus one
+assertion that a directory path half is flagged.
+
+**[C4] (important) -- three of the four decision points inside
+`_node_citation_path` are invisible to the full 1963-node suite.**
+
+I ran the **whole** suite under two further mutations, in isolated worktrees:
+
+```
+mutation                                          full suite        silently changes
+partition('::') -> partition(':')                 1962 passed, 1 sk  `bootstrap/tests:junk` FLAG->clean
+                                                                     `<real>.py::`         FLAG->clean
+drop `and node` from the guard (:488)             1962 passed, 1 sk  `<real>.py::`         FLAG->clean
+drop `and path_part` from the guard (:488)        green (targeted)   nothing -- inert clause
+```
+
+Both full-suite runs are byte-identical to the unmutated baseline. So the single
+most important detail of the fix -- that it splits on `::` and not on `:` -- is
+**not pinned by any test**; assertion 3 pins the `_scan` dispatch, which is a
+different property (M3 above fires it; M4 here does not). The empty-node
+behaviour the docstring documents (`t.py::` falls through to the ordinary path
+check, and hard-flags even when the file exists -- measured) is likewise
+unpinned, and the `and path_part` clause is behaviourally inert on every input I
+could construct.
+
+This is not a defect in what shipped; it is the "which test fails when I delete
+it" answer coming back *none* for three of the four branches in the new helper.
+Given the plan's own framing -- a battery stated in advance so a passing test is
+not mistaken for a working one -- the gap belongs on the record.
+
+*Satisfier.* One assertion that a single-colon suffix on a non-line-bounds token
+still flags (kills the `partition(':')` mutant) and one for the empty-node case
+(kills the `and node` mutant); or delete the inert `and path_part` clause and
+record the other two as accepted, unpinned branches.
+
+**[C5] (important) -- the changed-file set is six, the plan says five, and the
+plan also says "No `docs/` change". The deviation is recorded only in commit
+bodies, and the plan is the artifact that gets archived.**
+
+`48b05f1` touched four files including `docs/tool-usage.md`; the revised
+acceptance criteria name five distinct files as an **equality** verified
+per-commit, and the plan's documentation-surface section states *"No `docs/`
+change"*. Both are now false. `48b05f1` and `fc32dd9` both disclose this and say
+it will be *"corrected at archive"* -- which is honest, and is why this is not
+load-bearing. But the Registered-Report discipline judges the implementation
+against the **locked plan**, and a cold reader checking acceptance criteria opens
+the plan, not `git log`. Plan-review [P5] already had to fix this same criterion
+once ("seven paths" matching nothing); it is now wrong again in the same slot.
+
+*Satisfier.* The sharpening/archive commit updates the revised changed-file set to
+the six actual paths and replaces "No `docs/` change" with the registered-invariant
+reason `docs/tool-usage.md` had to move.
+
+**[C6] (nit) -- Chunk B stamps a date on the shared board that matches no commit,
+and the status flip did not bump the plan's own `Last update`.**
+
+Every commit in this lineage landed on **2026-08-05**: `99c8d55` 07:59 (proposal
+open) through `fc32dd9` 09:27. Nothing in it happened on 2026-08-04. Yet the two
+rows `5e10623` wrote into `dev/PLANNING.md` announce **"Remedy corrected
+2026-08-04"**, and `fc32dd9` edited the plan (status, commit hashes) while leaving
+`**Last update**: 2026-08-04` -- a field `doctrine/plans.md` > "Mutability rule"
+names as mutable-in-place alongside `Status`. The lineage-wide 08-04 headers are
+inherited and out of this pass's scope; the board rows are not -- `dev/PLANNING.md`
+is a long-lived shared communication file, and a future reader reconciling those
+rows against `git log` will find no 08-04 commit that touched them.
+
+*Satisfier.* Reword to *"Remedy corrected 2026-08-05 (established by the
+2026-08-04 Internal review)"* at the next serialization point, and bump the plan's
+`Last update` at archive.
+
+**[C7] (nit) -- [P9] was accepted but not satisfied: the adopter-facing module doc
+still understates what the checker accepts.**
+
+`templates/modules/default-on/claim-check.md:28` -- the doc that ships -- and its
+self-hosted counterpart `dev/modules/claim-check.md:28` both still say the
+installed checker covers *"paths and line citations"*, with no mention of node
+citations. The Response answered [P9] with *"the shipped module docstring also
+describes coverage and is updated with A3"*; that is the `.py` module docstring, a
+different artifact from the one [P9] named. [P9] offered two exits -- add the line,
+or state that the existing wording is judged still accurate and why -- and neither
+was taken.
+
+*Satisfier.* One clause in both module docs, or an explicit recorded judgement
+that a `path::node` citation is still "a path claim" and the wording stands.
+
+**[C8] (nit) -- two small record inaccuracies.**
+
+* The plan's corrections section says *"Invariant (1) is qualified per [P12]"*.
+  The root-level finding is **[P11]**; [P12] is the commit-approval carve-out.
+* That qualification's wording -- a root-level `path::node` *"never reaches
+  `check_path_token`'s repo-path branch at all"* -- is no longer true after the
+  fix: `AGENTS.md::test_x` now does reach it and resolves. The *substance* is
+  correct and I verified it (`NOSUCH_ROOT.md::test_x` is clean before and after,
+  so an absent root-level path is still never flagged); only the mechanism
+  sentence went stale against the code that shipped.
+* `CHANGELOG.md` ends the new entry *"From the archived plan
+  `board-drain-guards`"*. The plan is not archived -- it is at
+  `dev/plans/board-drain-guards.md`, status `review`. It is also the only
+  occurrence of that phrasing in the whole changelog, so it is not an existing
+  house convention being followed.
+
+*Satisfier.* Fix the finding number; restate the root-level qualification against
+the shipped code; drop or re-tense "archived" in the changelog line before release.
+
+---
+
+**Falsification ledger.**
+
+* **Surfaces probed.** `_node_citation_path` and `check_path_token` at every
+  branch; the `_scan` dispatch and its allow-glob / `resolves` re-check;
+  `_is_placeholder`; `_is_default_exempt` (which now sees the path half rather
+  than the raw token); `check_line_citation` as the untouched sibling; the twin
+  pair; the `docs/tool-usage.md` registered invariant; the intent ledger; the
+  board diff; the Decision's exclusion list.
+* **Negative / edge-case attempts.** 28 token shapes measured pre-fix vs post-fix
+  against the real repo root, including empty node, empty path, bare `::`, nested
+  `a::b::c`, combined `path:N::node`, trailing `::`, triple colon, root-level
+  present and absent, directory path halves at two depths, bracketed and
+  space/angle/brace-bearing node ids, Windows-style separators, `..` traversal,
+  and a default-exempt prefix with a node suffix. Five glob cases on the
+  exemption path. Every one is tabulated above or in the findings.
+* **Attempts to break the bypass invariant.** I tried to construct a token that a
+  `claim-check-allow` glob exempts *after* the fix but would not have exempted
+  before, and could not -- and the reason is structural, not luck: the glob branch
+  runs only on already-flagged tokens, `_token_path_part` is untouched, and the
+  flag set strictly shrank. I also probed whether the fix widens filesystem reach
+  (an absolute path in the path half, `/etc/passwd::x`, classifies out at
+  `first not in top_level`; a `..` traversal behaves identically pre- and
+  post-fix and is a read-only `exists()`). No new reach.
+* **Verification run.** Full suite x3 (baseline + two full-suite mutants) and one
+  collect-only at `da1de65`, all in clean detached worktrees under 3.13.13;
+  targeted suite x9 for the mutation battery; `check_cairn` in the real tree, in a
+  clean worktree, and under a perturbed invariant; `verify_counts`;
+  `quality_gate.py --sub neutrality` (info lines only, all pre-existing
+  `vendor-ok` blocks in `doctrine/consolidation-review.md`; nothing this change
+  added); `claim_check` on the plan and on the archived proposal; `cmp` on the
+  twins; the R1 scratch-copy check in three configurations.
+* **Consciously not run.** No adopter tree exists here, so [P8]'s
+  forward-compatibility case is proved by synthetic reproduction against the real
+  root, not by installing into a real adopter. I did not re-run the Bandit /
+  release-gate surface -- `bootstrap/security_check.py` is untouched and out of
+  scope by the Decision.
+* **Residual risk.** (a) The node half is never verified, by design -- and the
+  durable record now demonstrates it: the archived proposal's own example token
+  cites `test_thing`, a node that does not exist, and passes clean. (b) An absent
+  **root-level** `path::node` is still never flagged; documented, unpinned by any
+  test. (c) `dev/PLANNING.md` is currently modified in the working tree by session
+  `codex-93c2a217`, whose claim on it is still open; the two corrected rows are
+  present in that working copy, but a future clobber would be silent -- nothing
+  mechanical protects them.
+
+**Covered.**
+
+* *Fix correctness at the boundaries* -- 28 shapes, pre/post, tabulated; four
+  claimed edge cases confirmed, four unclaimed ones found ([C2], [C3], and the
+  directory/root-level pair).
+* *Bypass invariant* -- mutation-proven via the faithful bypass mutant (assertion
+  2 is the sole red), plus the strictly-flag-reducing argument and the glob-path
+  measurements.
+* *Mutation battery, independently* -- M1/M2/M3 reproduce node-for-node
+  (`48b05f1`'s body is accurate, including its correction to [P2]); M4-M8 are mine.
+* *Production path exercised* -- the four new assertions go through
+  `cc.check_file(doc, CAIRN_ROOT)`, the module's public scan entry, not the helper.
+* *Twin discipline* -- `cmp` clean, 41 pairs, parity node mutation-proven (M8).
+* *Live invariant* -- 869 correct; `check_cairn` exits **1** on a perturbation.
+* *Drift* -- commit bodies vs shipped behaviour reconciled line by line; the two
+  that do not reconcile are [C1] and [C5].
+* *Decision fidelity* -- exclusion list re-checked per file; 76 rows before and
+  after; G6 diff-empty across `99c8d55..fc32dd9`.
+* *Lifecycle / process placement* -- intent claim, block, Maintainer release,
+  ledger release event, and the per-commit scope of the override all verified
+  against `dev/intents.jsonl`.
+* *Cross-document consistency* -- module docs swept, which is where [C7] came from.
+
+**Not covered / low confidence.**
+
+* **I am the same agent type as the implementer.** `doctrine/plans.md` sets
+  "not the implementing agent" as the code-review floor and I meet it, but this is
+  not a cross-type read. The specific blind spot: [C1] is again the lineage's known
+  failure mode, so I may be pattern-matching the familiar error class rather than
+  finding an unfamiliar one.
+* **Adopter-tree behaviour is inferred.** No adopter checkout is available; the
+  `claim-check-allow` forward-compatibility case is synthetic.
+* **I did not evaluate the CHANGELOG entry's editorial quality**, only the
+  "archived" tense claim and the absence of a house convention for it.
+* **The 129-node placeholder figure is this repository's suite**, `as_of`
+  `fc32dd9`. It is a measure of exposure in Cairn's own tree, not a general rate.
+* **I did not open the design question behind the known omission** -- whether a
+  cheap partial node check (grepping the cited file for the node name) is worth
+  it. That is a separate proposal if anyone wants it, not a code-review call.
+
+**Recommendation on a second pass.** A cross-type External round is **not**
+warranted before archive. Every finding here was resolved by execution rather than
+judgement, so a different agent type would mostly re-run the same commands; the
+genuine negative space (adopter-tree behaviour, the node-half design question) is
+not what a code review resolves. The plan declared `required(Internal)` for its
+plan review and nothing here escalates the tier.
+
+**Verdict: APPROVE WITH FOLLOW-UPS.**
+
+The fix is correct and I could not break it. The bypass invariant holds under
+every construction I attempted, the edit site is genuinely singular,
+`_token_path_part` was rightly left alone and the reasoning for it checks out
+empirically, the twins are identical and mutation-guarded, R1's end-to-end check
+passes, and the Decision's scope fence is honoured to the file. The intent-override
+handling is the best-recorded thing in this lineage.
+
+What is owed before archive is record repair and two cheap guards, not rework.
+**[C1], [C2] and [C3] are archive-blocking**: a headline verification figure that
+counts another session's unlanded tests, a load-bearing invariant with a
+6.6%-of-suite exception that a reviewer already measured and flagged once, and a
+fail-open widening that lets a directory stand where a test file must. [C4]-[C8]
+are sharpening. That [C1] is the eleventh instance in one day of the same failure
+mode -- a claim asserted at the strength intended rather than delivered -- in a
+plan whose entire subject is that failure mode, is the durable finding here; the
+mechanism this time was not carelessness but a *self-consistent* arithmetic
+(1981 -> 1985, delta +4, four new tests) sitting on a contaminated baseline.
+
 ## Lasting-truth migration
 
 *Filled in at archive time.*
