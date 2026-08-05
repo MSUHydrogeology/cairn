@@ -112,13 +112,13 @@ then.
 ## Sequence
 
 ```
-1. Chunk A -- repository-state preflight (+ its git-hardening reuse)   [pending]
-2. Chunk B -- four-phase orchestration + R1 token propagation          [pending]
-3. Chunk C -- release-only pytest disposition in conftest              [pending]
-4. Chunk D -- self-retiring Bandit allowlist                           [pending]
-5. Chunk E -- trigger-vocabulary corrections (frozen files)            [pending]
-6. Chunk F -- SECURITY.md + PROVENANCE.md: name the human root         [pending]
-7. Chunk G -- CHANGELOG + board retirement at serialization            [pending]
+1. Chunk A -- repository-state preflight (+ its git-hardening reuse)   [done 3647a82]
+2. Chunk B -- four-phase orchestration + R1 token propagation          [done 86346f1]
+3. Chunk C -- release-only pytest disposition in conftest              [done 1ef2b49]
+4. Chunk D -- self-retiring Bandit allowlist                           [done 937f0f0 (D1-D3), bc3e5c5 (D4-D6 release side), baf8128 (D4 dev gate)]
+5. Chunk E -- trigger-vocabulary corrections (frozen files)            [done 0bb4d86 (E1, Maintainer), a29183a (E3/E4/E5), baf8128 + c56c877 (E2)]
+6. Chunk F -- SECURITY.md + PROVENANCE.md: name the human root         [done 745c927]
+7. Chunk G -- CHANGELOG + board retirement at serialization            [pending -- text drafted, awaiting the serialization point]
 ```
 
 ### Chunk A — repository-state preflight
