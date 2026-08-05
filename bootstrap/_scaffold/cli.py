@@ -71,6 +71,7 @@ from .config import (
     missing_required_tokens,
     reference_script_token_defaults,
     select_optional_templates,
+    token_gated_modules,
 )
 from .lockfile import _BASE_CACHE_REL, _LOCKFILE_REL
 from .install import (
@@ -354,6 +355,8 @@ def main(argv: list[str] | None = None) -> int:
         resolved_axes = cfg
     else:
         modules = list(_DEFAULT_ON_MODULES)
+        token_selected = token_gated_modules(cfg)
+        modules.extend(m for m in token_selected if m not in modules)
         resolved_axes = cfg
         print(
             "  [info] profile omits `modules:` and `preset:`; installing the "
@@ -362,6 +365,12 @@ def main(argv: list[str] | None = None) -> int:
             "specific selection.",
             file=sys.stderr,
         )
+        if token_selected:
+            print(
+                "  [info] token-gated additions selected by declared tokens: "
+                f"{', '.join(token_selected)}.",
+                file=sys.stderr,
+            )
 
     # Optional top-level templates (foldback #10): selected by the
     # dimension axes — e.g. the human-team axis selects CONTRIBUTING.md

@@ -14,7 +14,8 @@
 # Resulting module roster (from `preset: high-rigor-legacy` expansion):
 #
 #   Default-on (always): lifecycle-metrics, reflections, claim-check,
-#     fold-back-ledger.
+#     fold-back-ledger, incident-trackers, documentation-plan,
+#     content-security.
 #   Team-gated baseline: legacy-agent, security-review,
 #     dual-language-tests, model-selection, testing-discipline,
 #     doc-drift-prevention (axis-driven), plus the coordination

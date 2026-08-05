@@ -895,7 +895,8 @@ class TestModuleMatrix:
         # content-security not selected -> its runner is absent.
         assert not (tmp_path / "scripts" / "content_scan_runner.py").exists()
 
-    def test_python_security_not_in_any_default_or_preset(self):
+    def test_python_security_is_never_default_on_or_in_a_preset_baseline(self):
+        """Token-gating may select it; no authored baseline does."""
         # Capability-gated: never default-on, never in a preset baseline.
         from bootstrap._scaffold.config import _DEFAULT_ON_MODULES, _PRESETS  # noqa: PLC0415
         assert "python-security" not in _DEFAULT_ON_MODULES

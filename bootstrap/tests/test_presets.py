@@ -89,6 +89,10 @@ class TestExpansion:
         }
 
     def test_default_on_always_present(self) -> None:
+        """Pins expansion consumption, not membership of the table itself.
+
+        Literal membership is owned by test_default_security_stance.py.
+        """
         for name in _PRESETS:
             assert _DEFAULT_ON <= _roster({"preset": name}), name
 
@@ -412,7 +416,7 @@ class TestSoloLegacyRecipe:
 
         modules, summary = expand_preset(parsed)
         assert set(modules) == _DEFAULT_ON | {"legacy-agent", "testing-discipline"}
-        assert len(modules) == 8
+        assert len(modules) == 9
         assert summary["staffability_warnings"] == []
 
     def test_literal_recipe_yaml_also_parses_via_pyyaml(self) -> None:

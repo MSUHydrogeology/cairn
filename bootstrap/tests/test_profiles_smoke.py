@@ -104,7 +104,11 @@ def test_profile_expands_to_expected_roster(
     profiles_dir: Path, yaml_name: str, preset_name: str
 ) -> None:
     """Expanding the preset yields the default-on set + the preset's
-    baseline + any team-staffing-gate additions."""
+    baseline + any team-staffing-gate additions.
+
+    This proves expansion consumes the table; literal membership is pinned by
+    test_default_security_stance.py.
+    """
     cfg = _minimal_yaml_parse((profiles_dir / yaml_name).read_text())
     modules, _summary = expand_preset(cfg)
 

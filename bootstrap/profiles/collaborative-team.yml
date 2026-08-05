@@ -14,7 +14,8 @@
 # Resulting module roster (from `preset: collaborative-team` expansion):
 #
 #   Default-on (always): lifecycle-metrics, reflections, claim-check,
-#     fold-back-ledger.
+#     fold-back-ledger, incident-trackers, documentation-plan,
+#     content-security.
 #   Team-gated baseline: model-selection, testing-discipline,
 #     doc-drift-prevention (axis-driven), plus the coordination
 #     modules (dual-review, coordination-tiers) added through the

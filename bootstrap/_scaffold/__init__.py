@@ -105,6 +105,7 @@ from .config import (  # noqa: F401  (re-exported for the facade)
     _SKILLS_MAPPINGS,
     _TEAM_STAFFING_GATED,
     _TEAM_STAFFING_GATES,
+    _TOKEN_GATED_MODULES,
     _as_str_list,
     _can_staff_module,
     _canonical_order,
@@ -117,6 +118,7 @@ from .config import (  # noqa: F401  (re-exported for the facade)
     reference_script_token_defaults,
     resolve_axes,
     select_optional_templates,
+    token_gated_modules,
 )
 
 

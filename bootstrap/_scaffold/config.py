@@ -87,6 +87,9 @@ _DEFAULT_ON_MODULES: tuple[str, ...] = (
     "fold-back-ledger",
     "incident-trackers",
     "documentation-plan",
+    # Measured-zero install cost, with a loud modules_remove opt-out for an
+    # adopter whose agents ingest only operator-attached content.
+    "content-security",
 )
 
 
@@ -1170,9 +1173,31 @@ _MODULE_REQUIRED_TOKENS: dict[str, tuple[str, ...]] = {
     "python-security": ("python_package",),
 }
 
+# Required tokens and token gates answer opposite questions and must remain
+# separate. The table above says "if selected, this token must be filled";
+# this one says "a filled token selects this module". Merging them would make
+# every future required-token module install itself automatically.
+_TOKEN_GATED_MODULES: dict[str, tuple[str, ...]] = {
+    "python-security": ("python_package",),
+}
+
 #: An inline token whose *value* is still an unfilled ``{{placeholder}}`` --
 #: a token resolved to another token is as unfilled as an absent one.
 _UNFILLED_TOKEN_VALUE = re.compile(r"\{\{\s*[\w.-]+\s*\}\}")
+
+
+def token_gated_modules(cfg: dict[str, object]) -> list[str]:
+    """Return modules selected by fully populated profile tokens."""
+    selected: list[str] = []
+    for module, required in _TOKEN_GATED_MODULES.items():
+        if all(
+            (value := cfg.get(token)) is not None
+            and bool(str(value).strip())
+            and _UNFILLED_TOKEN_VALUE.fullmatch(str(value).strip()) is None
+            for token in required
+        ):
+            selected.append(module)
+    return selected
 
 
 def missing_required_tokens(
@@ -1551,6 +1576,11 @@ def expand_preset(cfg: dict[str, object]) -> tuple[list[str], dict[str, object]]
         if _can_staff_module(mod, resolved_axes):
             baseline.add(mod)
 
+    # Token gates join the baseline before explicit overrides so
+    # modules_remove remains the final authority.
+    token_selected = set(token_gated_modules(cfg))
+    baseline |= token_selected
+
     # Step 3: explicit overrides (validate names first).
     adds = _as_str_list(cfg.get("modules_add"), "modules_add")
     removes = _as_str_list(cfg.get("modules_remove"), "modules_remove")
@@ -1592,6 +1622,7 @@ def expand_preset(cfg: dict[str, object]) -> tuple[list[str], dict[str, object]]
         "modules_add": adds,
         "modules_remove": removes,
         "removed_default_on": removed_default_on,
+        "token_gated": _canonical_order(token_selected & roster),
         "staffability_warnings": warnings,
     }
     return ordered, summary
@@ -1626,6 +1657,11 @@ def format_profile_summary(cfg: dict[str, object]) -> str:
     if s["removed_default_on"]:
         lines.append(
             f"Default-on opted out: {', '.join(s['removed_default_on'])}"  # type: ignore[arg-type]
+        )
+    if s["token_gated"]:
+        lines.append(
+            "Token-gated (selected by a declared token): "
+            f"{', '.join(s['token_gated'])}"  # type: ignore[arg-type]
         )
     if s["staffability_warnings"]:
         lines.append("")

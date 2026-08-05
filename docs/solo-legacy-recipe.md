@@ -55,9 +55,9 @@ modules_add:
 
 Run `python bootstrap/scaffold.py --summary --config profile.yml` from
 a Cairn checkout against a scratch copy of this YAML. It should report
-an **8-module roster** — the six default-on modules
+a **9-module roster** — the seven default-on modules
 (`lifecycle-metrics`, `reflections`, `claim-check`, `fold-back-ledger`,
-`incident-trackers`, `documentation-plan`) plus `legacy-agent` and
+`incident-trackers`, `documentation-plan`, `content-security`) plus `legacy-agent` and
 `testing-discipline` — with **zero staffability warnings**. Confirm your
 own run matches before you hand-copy anything.
 

@@ -107,9 +107,14 @@ From the six-axis profile, select the module set:
 
 2. **Default-on modules** (installed unless a dimension removes
    them): lifecycle-metrics, reflections, claim-check,
-   fold-back-ledger, incident-trackers, documentation-plan. Remove a
+   fold-back-ledger, incident-trackers, documentation-plan,
+   content-security. Remove a
    default-on module only when the dimensional profile gives a specific
    reason — record the reason.
+
+   **Token-gated modules** are selected when their declared profile token is
+   filled; `python_package` selects `python-security`. An explicit `modules:`
+   list is exact and is never widened by a default-on module or token trigger.
 
    **Module-merge mechanics (Proposal B / audit gap #3).** Modules
    ship `<!-- cairn:merge-target: <dst> > <slot> -->` directives
@@ -214,7 +219,8 @@ Module selection
                          session routines
   Default-on (selected): lifecycle-metrics, reflections, claim-check,
                          fold-back-ledger, incident-trackers,
-                         documentation-plan
+                         documentation-plan, content-security
+  Token-gated:           <modules selected by filled declared tokens, or "none">
   Team-gated (selected): <list, or "none">
   Team-gated (deferred): <list with reason, or "none">
   Explicit add/remove:   <modules_add / modules_remove, or "none">
@@ -709,6 +715,7 @@ modules:
   - fold-back-ledger
   - incident-trackers
   - documentation-plan
+  - content-security
   # Team-gated (add from templates/modules/team-gated/ as needed):
   # - dual-review
   # - domain-agents

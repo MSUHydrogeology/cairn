@@ -32,6 +32,7 @@ _MOVED = (
     "select_optional_templates", "reference_script_token_defaults",
     "resolve_axes", "expand_preset", "format_profile_summary", "PresetError",
     "_AXES", "_PRESETS", "_CORE_MAPPINGS", "_GITIGNORE_SEEDS",
+    "_TOKEN_GATED_MODULES", "token_gated_modules",
 )
 
 

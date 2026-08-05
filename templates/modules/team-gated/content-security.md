@@ -1,9 +1,9 @@
 # Module: content-security
 
-**Selected when:** the team's agents **auto-load text files from the
-working tree** (Markdown, `dev/` artifacts, incoming-PR diffs) as context or
-governing instructions, and the team wants a tripwire against
-prompt-injection / obfuscation reaching those agents. Team-gated.
+**Selected when:** installed by default for teams whose agents may ingest text
+from the working tree (Markdown, `dev/` artifacts, incoming-PR diffs). An
+adopter whose agents receive only operator-attached files can opt out explicitly
+with `modules_remove: [content-security]`.
 **Adds to:** a content-integrity note in the docs guide (and a
 cross-reference from `dev/agent_collaboration.md`), **plus a runnable,
 stdlib-only scanner** the scaffold installs verbatim as `content_scan.py`

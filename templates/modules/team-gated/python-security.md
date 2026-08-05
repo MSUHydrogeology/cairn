@@ -3,8 +3,8 @@
 **Selected when:** the adopter ships **Python** and wants a self-audit gate
 over their own package — a dependency-vulnerability check, a static-analysis
 contract, and a source-integrity scan of the Python files agents adopt.
-Team-gated and **opt-in**: never default-on, and never installed for a
-non-Python adopter.
+**Token-gated**: selected automatically when the adopter declares a filled
+`python_package` token, and never installed for a non-Python adopter.
 
 **Adds to:** the adopter's `dev/modules/` doctrine set (this file), plus the
 Python gate stack the module installs. The gate scans the adopter's own
