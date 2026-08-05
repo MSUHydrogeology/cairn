@@ -568,12 +568,12 @@ rediscovered:
 wrong in both directions and is retracted)*. Two different questions, kept apart
 because conflating them is how the first enumeration went wrong:
 
-* **Artifacts naming *this section*, `as_of 2026-08-04`:** **1** archived plan
+  * **Artifacts naming *this section*, `as_of 2026-08-04`:** **1** archived plan
   (`interpreter-trust-root-fallback`) and **3** archived proposals.
   `lockfile-provenance-fields` is *not* one — its row is under `## Queued`
   (`dev/PLANNING.md` > "Queued"), which is what the accepted Response promised to
   drop and this line now does.
-* **Commit bodies carrying a migration/disposition block anywhere:** **37** by
+  * **Commit bodies carrying a migration/disposition block anywhere:** **37** by
   `git log --all --grep='Follow-ups migrated to:\|Dispositions:'`; **30** if the
   marker must start at column 0. Of these, **7** name this section and 13 name
   `dev/PLANNING.md` at all. The method matters more than the number, so the
