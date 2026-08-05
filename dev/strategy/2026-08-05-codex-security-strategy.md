@@ -380,7 +380,7 @@ ceremonies or human acts remain irreducible?
   the independent end-of-line audit. It decides readiness; this strategy does
   not.
 * [REL-2] **One honest local command.** Proposed
-  [`release-security-orchestration`](../proposals/2026-08-05-codex-release-security-orchestration.md)
+  [`release-security-orchestration`](../proposals/archive/2026-08-05-codex-release-security-orchestration.md)
   consolidates clean-commit binding, Bandit and prose checks, release-only
   zero-skip pytest, quality gates, allowlist liveness, and false-CI/floor-gate
   wording. Its External Security Review recommends ship; Maintainer Decision
