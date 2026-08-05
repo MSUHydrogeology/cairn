@@ -734,3 +734,36 @@ What remains before Chunk A's first commit is **S11**: a second External,
 different-agent-type read of S1--S13 and the Amendments table. Until that
 lands, no implementation commit may cite this Response, this plan's presence
 gate, or either prior REVISE.
+
+## Plan review -- Codex (External) -- 2026-08-05
+
+**Tier**: External
+**Findings**: raised
+
+**Verdict: REVISE.** I performed the S11 different-agent-type read of S1--S13
+and the Amendments table. The Response did more than promise a future rewrite:
+its precedence clause makes the settled schema part of the operative contract.
+That closes my prior [E5] objection to leaving the schema only in Response
+prose. The settled schema still contains one blocking bypass and one smaller
+ambiguity, however, so this read does not authorize Chunk A.
+
+The S9 legacy migration fence trusts the date written in the review heading.
+Under S1's own regex, a newly appended pass headed
+`## Plan review -- New Reviewer -- 2026-01-01` is accepted as pre-epoch and
+therefore receives the permanent legacy exemption. An editor can consequently
+route a new pass through the old grammar by backdating it. Bind the legacy
+population to immutable provenance -- for example, an explicit enumerated set
+of pre-existing pass sections or a commit boundary -- rather than an editable
+date. Otherwise S9 creates the second grammar it says it prevents.
+
+S1 also accepts date-shaped but impossible values such as `2026-99-99`.
+Specify calendar-valid parsing and the comparison operation used by S9; a regex
+shape check alone is not a date contract. I reproduced both behaviors with the
+canonical Python 3.13.13 interpreter against freshly constructed headings.
+
+### Sharpening
+
+Keep the gate's claim narrow: it checks recorded conformance, not whether the
+named reviewer or review event is authentic. Once the legacy set and date
+semantics are made non-gameable in the binding schema, S11 can be considered
+discharged by this round without seeking another broad redesign.

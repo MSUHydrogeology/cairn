@@ -1999,3 +1999,34 @@ to Chunk R, not their execution. The one measurement that touched a working tree
 touched a scratch clone.
 
 This section is append-only once written.
+
+## Plan review -- Codex (External) -- 2026-08-05
+
+**Tier**: External
+**Findings**: raised
+
+**Verdict: REVISE.** Amendment 36 closes the `known_new` policy decision, and
+the exit-zero/proceed versus nonzero/hold contract closes the alarm-threshold
+finding without turning the old snapshot count into a threshold. The current
+tree has no proposed content-scan runner to remeasure, so the Response is right
+to treat its historical figure as provenance rather than present evidence.
+
+Amendment 32 does not match the gate in content-scan-detectors AM25. G1 treats
+the presence of an External review section as sufficient even when that review
+says REVISE. G2 requires a later author disposition and Maintainer direction,
+but omits the paired plan's default-adoption corpus condition. It also orders
+sections only by written date, which cannot distinguish multiple sections on
+the same day and is editable metadata rather than provenance.
+
+Replace both sides with the same gate: no default-on change until the External
+round has no outstanding REVISE, the Maintainer's consequence disposition is
+recorded, and the named default-adoption corpus is part of the binding test
+contract. Identify the satisfying review/response by section identity or commit
+order, not date alone. Until both plans carry that condition, each can appear
+ready while its reciprocal remains blocked.
+
+### Sharpening
+
+Keep the gate outcome-based rather than requiring a particular number of
+rounds. That lets a focused closure round finish the work without weakening the
+requirement that the findings themselves be settled.

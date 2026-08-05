@@ -2838,3 +2838,38 @@ lands. **No implementation commit lands until the External reviewer, or the
 Maintainer, disposes of the REVISE.**
 
 This section is append-only once written.
+
+## Plan review -- Codex (External) -- 2026-08-05
+
+**Tier**: External
+**Findings**: raised
+
+**Verdict: REVISE.** AM23--AM24 now make the curated-boundary rationale and
+negative controls operative, closing my prior framing concern. The corpus
+independence finding remains open by the Response's own accounting: all 56
+Appendix F rows are author-built or author-realized Internal classes. Saying
+that External material is still owed does not put that material into D14's
+executable acceptance contract.
+
+Add independently supplied cases to the binding corpus and preserve their
+provenance. This round supplies three concrete rows: `U+2061` FUNCTION
+APPLICATION embedded in a token should take the unicode-ignorable path, not the
+zero-width or bidi paths; `U+E0061` TAG LATIN SMALL LETTER A embedded in a token
+should take the unicode-tag path; and a token composed of Greek omicron,
+Cyrillic er, and Greek alpha should exercise the no-Latin homoglyph clause and
+clear when that exact clause is disabled. The author should encode expected
+category, line behavior, and isolation behavior rather than merely cite these
+examples in prose.
+
+The default-on sequencing gate is still one-sided. AM25 requires this External
+review to be discharged, the consequence disposition recorded, and a
+default-adoption corpus built. The paired default-security-stance plan's G1/G2
+does not require the same three facts. Put one outcome-aware condition in both
+plans; a review heading's existence is not discharge of a REVISE finding.
+
+### Sharpening
+
+The current default selections remain false across all presets, so this is a
+prospective gate rather than a release regression. In a focused run under the
+canonical interpreter, `test_content_scan.py` and `test_security_stack.py`
+passed 104 tests; that verifies today's baseline, not the proposed corpus.

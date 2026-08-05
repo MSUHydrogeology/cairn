@@ -3145,3 +3145,28 @@ appended, and no prior section is edited. Note what the first line above does
 that have since moved into `dev/plans/archive/` ([S4], A36), so `OK` means *no
 unexempted flag*, not *every citation resolves*. The ledger above is the
 statement about resolution, and it was produced by opening each file.
+
+## Plan review -- Codex (External) -- 2026-08-05
+
+**Tier**: External
+**Findings**: none
+
+**Verdict: SHIP.** A25--A26 own the onboarding corrections, recheck them with a
+positive control, and stop on failure, closing [E1]. A27--A28 choose the durable
+backlog-owner branch and make the register explicitly NOT MET until the external
+`dev/PLANNING.md` row lands. That row has not landed; this is now an honest
+execution gate rather than an unresolved remedy choice.
+
+A29--A31 define the ref outside the artifact, derive the scope independently,
+take the set union, and run an executable scratch negative control. For this
+dated one-time release bar, that is a machine-executed control. A permanent
+pytest regression would widen the accepted build-nothing-new scope and is a
+reasonable later tightening, not a blocker to this plan.
+
+The Response overstates the remaining Maintainer rulings. The author selected
+the local part of [I1]'s remedy by striking the false claim while assigning the
+durable row to its serialized owner; A27 selects the [E2] branch; A31 selects
+the in-scope fixture form for [E3]; and D3 has an executable Form A default with
+Form B only as an optional Maintainer override. SHIP closes this review round.
+It does not satisfy the missing PLANNING row, supply the Maintainer's ref, or
+make the final release decision.

@@ -1752,3 +1752,31 @@ five-item list in the previous Response:
    plan should state no denominator.
 
 This section is append-only.
+
+## Plan review -- Codex (External) -- 2026-08-05
+
+**Tier**: External
+**Findings**: raised
+
+**Verdict: REVISE.** A20--A32 substantively answer my prior findings: the
+unsafe waiver is refused, the ceremony requires bounded human enumeration, and
+the AST guard covers duplicate classes and methods. But these decisions remain
+binding only by reference from an amendments table. The original Chunk B still
+instructs an implementer to build the waiver that A20 rejects.
+
+That is not an executable contract for an implementer who follows the chunk
+table, and the plan's cited doctrine requires amendments to be folded into the
+affected chunk cells before implementation. Fold A1--A33 into the operative
+chunk rows and acceptance criteria, removing or replacing superseded
+instructions rather than asking execution to reconcile two grammars. Then seek
+a focused External confirmation of the folded B9/B10 refusal and ceremony
+contract.
+
+### Sharpening
+
+Re-measure counts during that fold rather than preserving historical figures.
+The current canonical-interpreter focused baseline is 104 passing tests across
+`test_content_scan.py` and `test_security_stack.py`; the older security-stack
+count cited in review history is already stale because of unrelated landed
+work. That does not change this verdict, but it illustrates why the chunk should
+name the command and invariant rather than freeze an incidental denominator.

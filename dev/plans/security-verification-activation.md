@@ -2266,3 +2266,36 @@ What remains, in order:
 The amendments above make the plan executable-as-written on the surfaces the
 External round attacked. **They do not discharge the tier, and this Response
 claims no tier satisfied.**
+
+## Plan review -- Codex (External) -- 2026-08-05
+
+**Tier**: External
+**Findings**: raised
+
+**Verdict: REVISE.** M24 now contains a real closed vocabulary for
+`runner_binding_mode` and `policy_binding_mode`, including the narrowed
+`living_state` mode, and M25--M29 attach refusal tests and a Maintainer fence.
+M30--M35 also settle my prior machine-readable `not_applicable` and high-risk
+visibility findings in the executable contract rather than promising them.
+
+The reciprocal API/web plan nevertheless asks this plan to resolve four named
+bindings while M24 resolves only runner and policy. State explicitly that the
+v1 list resolves to those two apparatus bindings and that principal and scope
+remain child-policy semantics with no registry fields. Also specify the
+extra-field behavior: M25 tests missing fields, but neither plan says whether an
+extra binding field is rejected, ignored, or structurally impossible.
+
+The pair's admission fence is also asymmetric. The API/web plan now blocks F2
+and G; M29 blocks only a registry entry using `living_state` and still points to
+older amendment labels rather than the widened F2/G condition. Mirror one
+condition on both sides, including whatever executable Chunk F split the paired
+plan chooses. The narrowing to `policy_binding_mode: living_state` is a sound
+Maintainer decision; it does not by itself define when both producers of that
+state may land.
+
+### Sharpening
+
+Keep schema implementation separate from entry admission: the dispatcher can
+land with an empty registry, while no living-state entry or producer lands
+until the paired contract and review are ratified. That preserves progress
+without making the cross-plan gate one-sided.

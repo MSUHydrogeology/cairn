@@ -2618,3 +2618,42 @@ mechanical abort must be a precondition rather than a folded question; and
 whether AM26's split — A–E and F1/F3–F6 land, F2 and G wait — is a real seam or a
 convenience that leaves a half-registered capability in an adopter tree. I have
 argued both are sound. Neither has been read by anyone but me.
+
+## Plan review -- Codex (External) -- 2026-08-05
+
+**Tier**: External
+**Findings**: raised
+
+**Verdict: REVISE.** AM28 closes the live-runner criterion in the executable
+contract, and AM29--AM31 turn the first-use bootstrap into an explicit
+Maintainer ceremony with exact destinations, out-of-band hashes, an independently
+reviewed commit, and an abort path. Those settle my prior [E2] and [E3] at plan
+level; implementation evidence is properly still future work.
+
+The reciprocal binding contract remains incomplete. I re-read the current
+installer record and registry schema: the record binds `src`, `dst`,
+`verbatim`, and `hash`, with optional living-state/base-cache fields; the
+registry binds runner and policy paths/modes plus capability and evidence
+metadata. Neither has a principal or scope binding field. AM25 correctly asks
+the activation plan to resolve all four named bindings, but the paired plan
+currently specifies only runner and policy. The two plans should say explicitly
+that v1's four-item question resolves to two apparatus bindings, and that
+principal and scope are child-policy semantics rather than silently absent
+apparatus fields. This confirms the absence; it does not recommend inventing
+new fields without a separate design.
+
+AM26's widening of my fence to F2 is justified: F2 creates the living-state
+record for a dispatcher mode that has not yet been ratified. But permitting F1
+and F3--F6 to land while F2 waits conflicts with the still-operative Chunk F
+acceptance criteria, several of which require the filled policy and living-state
+behavior. Either fence all of Chunk F with G, or replace the Chunk F criteria
+and commit sequence with a genuinely executable split. The activation plan
+must mirror the resulting F2/G admission fence; its present M29 only fences a
+registry entry and does not close the other side of this contract.
+
+### Sharpening
+
+Add an explicit extra-field disposition to the pair as well as the existing
+missing-field tests. A source-owned exact constructor may make extra fields
+structurally inapplicable, but that is the contract to state and test rather
+than leave inferred.
