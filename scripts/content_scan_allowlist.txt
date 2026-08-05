@@ -1,0 +1,24 @@
+# content_scan URL allowlist (shipped default -- minimal)
+#
+# One domain per line (`#` comments + blanks ignored, case-insensitive,
+# subdomain-aware: `acm.org` also clears `dl.acm.org`). Read by
+# content_scan.py's `suspicious-url` detector to clear benign citation links
+# in agent-loaded prose.
+#
+# POLICY (RV4 -- this is a NOISE policy, NOT a trust boundary). Allowlist
+# only TRUSTED-PUBLICATION / standards / named-reference hosts -- editorial
+# sources you cite. Do NOT allowlist multi-tenant, user-controlled code or
+# content hosts (github.com, gitlab.*, researchgate.net, ...): the scanner
+# matches whole domains with no path scoping, so a blanket allow there would
+# also bless a future malicious URL on the same host. Those stay visible as
+# reviewed residuals in content_scan_residuals.txt -- a human eyeballs each
+# new hit. Prefer leaving a host OUT and reviewing its residuals over a broad
+# allow that hides a later malicious edit.
+#
+# This shipped default is deliberately MINIMAL; add the trusted-publication
+# hosts your project actually cites.
+
+# --- Universal documentation / standards / DOI references ---
+doi.org
+keepachangelog.com
+semver.org

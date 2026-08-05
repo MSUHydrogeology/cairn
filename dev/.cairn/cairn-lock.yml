@@ -598,11 +598,55 @@
       "hash": "sha256:e2ae83943fa4bbe05c0e4597ba1d5cb133914d89b72b3cc45afec4ddcfaad1b1",
       "src": "modules/team-gated/portable_security_policy.json",
       "verbatim": true
+    },
+    {
+      "base_cache": "dev/.cairn/base/dev/modules/content-security.md",
+      "base_hash": "sha256:be93184eb37dc179983ae6d4fd7b4935156bc1e527fe662f1d696a85a1f5ac0f",
+      "dst": "dev/modules/content-security.md",
+      "hash": "sha256:be93184eb37dc179983ae6d4fd7b4935156bc1e527fe662f1d696a85a1f5ac0f",
+      "src": "modules/team-gated/content-security.md",
+      "verbatim": false
+    },
+    {
+      "base_hash": "sha256:1bc6a1135ec5a47d9c82e26d5c539d224f3dae3378d0885d6ae0e6c0c6af04eb",
+      "dst": "scripts/content_scan.py",
+      "hash": "sha256:1bc6a1135ec5a47d9c82e26d5c539d224f3dae3378d0885d6ae0e6c0c6af04eb",
+      "src": "modules/team-gated/content_scan.py",
+      "verbatim": true
+    },
+    {
+      "base_hash": "sha256:b1744477a729f468712576896b378b435550984556c4933c340402a5882a2318",
+      "dst": "scripts/content_scan_runner.py",
+      "hash": "sha256:b1744477a729f468712576896b378b435550984556c4933c340402a5882a2318",
+      "src": "modules/team-gated/content_scan_runner.py",
+      "verbatim": true
+    },
+    {
+      "base_hash": "sha256:bd7a820a5b41533854e486a344d3ada898b3a12c6b8fcfdae235de1a2b89db53",
+      "dst": "scripts/content_scan_roots.txt",
+      "hash": "sha256:bd7a820a5b41533854e486a344d3ada898b3a12c6b8fcfdae235de1a2b89db53",
+      "src": "modules/team-gated/content_scan_roots.txt",
+      "verbatim": true
+    },
+    {
+      "base_hash": "sha256:49ba1709fe519dd52205c1a64e36e14e723135bef3a358e1a7464d8c814146cd",
+      "dst": "scripts/content_scan_residuals.txt",
+      "hash": "sha256:49ba1709fe519dd52205c1a64e36e14e723135bef3a358e1a7464d8c814146cd",
+      "src": "modules/team-gated/content_scan_residuals.txt",
+      "verbatim": true
+    },
+    {
+      "base_hash": "sha256:0b7dbb33a5bf3271bb4c0883c5c20d5f343aae649ffe95abcf07af8958194afd",
+      "dst": "scripts/content_scan_allowlist.txt",
+      "hash": "sha256:0b7dbb33a5bf3271bb4c0883c5c20d5f343aae649ffe95abcf07af8958194afd",
+      "src": "modules/team-gated/content_scan_allowlist.txt",
+      "verbatim": true
     }
   ],
   "migrated": true,
   "modules": [
     "claim-check",
+    "content-security",
     "coordination-tiers",
     "doc-drift-prevention",
     "documentation-plan",

@@ -113,6 +113,30 @@ def test_every_self_hosted_twin_stays_byte_identical_to_its_source():
     assert not mismatches, "twin parity broken:\n" + "\n".join(mismatches)
 
 
+@pytest.mark.parametrize(
+    ("destination", "source"),
+    [
+        (
+            "scripts/content_scan.py",
+            "templates/modules/team-gated/content_scan.py",
+        ),
+        (
+            "scripts/content_scan_runner.py",
+            "templates/modules/team-gated/content_scan_runner.py",
+        ),
+    ],
+    ids=("scanner", "runner"),
+)
+def test_content_scan_twin_is_present_and_byte_identical(
+    destination: str,
+    source: str,
+):
+    """Pin required twins independently of the presence-derived sweep."""
+    pair = (destination, source)
+    assert pair in _self_hosted_twins(), f"required self-hosted twin missing: {pair}"
+    assert (CAIRN_ROOT / destination).read_bytes() == (CAIRN_ROOT / source).read_bytes()
+
+
 def test_own_only_dev_scripts_carry_spdx_header():
     """Cairn's own non-shipped dev tooling -- own-repo MIT hygiene, not
     adopter self-propagation (plan-review R3's second population)."""

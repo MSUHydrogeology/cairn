@@ -1,0 +1,23 @@
+# content-scan-residual-baseline v1
+# content_scan reviewed-residual baseline (shipped template -- starts empty).
+#
+# The reviewed trust anchor that separates a NEW finding from a known,
+# human-reviewed one. `content_scan_runner.py` requires this file to be
+# present and to OPEN with the exact canonical sentinel line above (matched by
+# exact equality); a missing, zero-byte, whitespace-only, or sentinel-less
+# file FAILS the scan (exit 2) -- a truncated trust anchor must never degrade
+# to a clean pass. This shipped template is a deliberately-empty,
+# sentinel-bearing baseline: a fresh adopter with no reviewed residuals yet.
+#
+# One non-comment line per REVIEWED-ACCEPTABLE flag occurrence:
+#   <fingerprint>  # [tag] rationale @ relpath:line
+# fingerprint = relpath:pattern_id:sha256(stripped line)[:12].
+#
+# Compared as a MULTISET: a duplicate of a reviewed line surfaces the extra
+# copy as NEW; a baseline entry with no live occurrence surfaces as STALE and
+# FAILS the scan (exit 3) -- a stale fingerprint can preauthorize a replay, so
+# it must be deleted before the baseline is current. Each entry carries a
+# rationale tag, e.g. [multi-tenant-url] [editorial-url] [security-example]
+# [sci-unit] [doctrine-comment]. Review EVERY NEW finding regardless of class.
+#
+# See dev/modules/content-security.md > Reviewed-residual baseline.

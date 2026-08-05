@@ -239,11 +239,22 @@ def main(argv: list[str] | None = None) -> int:
                     if "modules" in summary_cfg
                     else list(_DEFAULT_ON_MODULES)
                 )
+                token_selected = (
+                    [] if "modules" in summary_cfg
+                    else token_gated_modules(summary_cfg)
+                )
+                mods.extend(m for m in token_selected if m not in mods)
                 project = str(summary_cfg.get("project_name") or "<project_name>")
                 out = [f"## Dimension profile -- {project}", "",
                        "Preset: (none -- literal module list)", "",
                        "Module roster (to install):"]
                 out.extend(f"  - {m}" for m in mods)
+                if token_selected:
+                    out.extend([
+                        "",
+                        "Token-gated (selected by a declared token): "
+                        + ", ".join(token_selected),
+                    ])
                 out.append("")
                 out.append(
                     "Does this profile look right before I install anything?"
