@@ -71,8 +71,8 @@ The initial synthesis read and cross-checked:
 * the current security-wave sequencing note;
 * every open plan under `dev/plans/` whose contract is security-facing or whose
   review tier carries a security lens;
-* the proposed `release-security-orchestration` artifact and its External
-  Security Review;
+* the `release-security-orchestration` artifact and its External Security
+  Reviews;
 * every `dev/PLANNING.md` section for work meeting the security-relevance test,
   including lifecycle apparatus, lockfile, scaffold-engine, scan-coverage,
   release-authenticity, profile-parser, fork-advisory, byline, and gate-claims
@@ -172,7 +172,7 @@ home.
 
 | Theme 3 item | Current disposition |
 |---|---|
-| T3.1 -- Bandit/CI posture | **Partly resolved, proposed owner [REL-2].** The scanner and release command exist, but the trigger is human and several live texts still overstate CI. `release-security-orchestration` proposes one honest Maintainer-run command and corrections. |
+| T3.1 -- Bandit/CI posture | **Resolved for the local release boundary.** `bootstrap/security_check.py` is the honest Maintainer-run trigger, binds evidence to committed repository bytes, and the live CI/floor vocabulary now matches actual enforcement. Human omission, host-process authentication, and tag binding remain accepted release residuals rather than false automation claims. |
 | T3.2 -- release scan misses daily session code | **Implemented at `5c91c23`.** `scan_targets()` now unions the published install manifest and carries independent on-disk coverage. Remaining scan residuals are broader coverage questions under [VER-5], not the original omission. |
 | T3.3 -- profile parser divergence and unknown keys | **Core implemented at `e7394cb`; residuals remain under [BND-1].** Unknown keys and parser divergence now refuse, while unknown module values, forward-compatibility cost, self-oracle tests, fallback precedence, and the totality claim remain open. |
 | T3.4 -- R6 false-flags imported live code | **Implemented at `7066489`.** The AST reader now accounts for `from X import Y`; stale gate-manifest pins remain ceremony debt under [REL-3]. |
@@ -444,8 +444,8 @@ the public has a working private disclosure route.
 4. Land `api-web-security-modules`, `portable-security-sweeps`, and
    `dependency-advisory-coverage` against the activation contract they actually
    inherit.
-5. If accepted, land `release-security-orchestration` as the final release-gate
-   scope before the shared supervised re-anchor.
+5. Preserve the landed `release-security-orchestration` command as the final
+   release-gate scope before the shared supervised re-anchor.
 6. Run one re-derived, Maintainer-supervised ceremony for the complete frozen
    union. `release-security-bar` may progress in parallel because its register
    is its principal surface.

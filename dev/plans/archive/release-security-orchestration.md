@@ -1,10 +1,11 @@
-<!-- claim-check-allow: dev/proposals/2026-08-05-claude-content-scan-url-classification.md -->
+<!-- claim-check-allow: dev/proposals/2026-08-05-claude-content-scan-url-classification.md, dev/plans/release-security-orchestration.md -->
 <!-- ^ The source proposal moved to dev/proposals/archive/ when its plan opened;
-     this citation is in an append-only author Response. -->
+     that citation and the former live plan path occur in append-only review
+     records, so archive preserves rather than rewrites them. -->
 # Plan: one honest release-security command
 
-**Source proposal**: [`dev/proposals/archive/2026-08-05-codex-release-security-orchestration.md`](../proposals/archive/2026-08-05-codex-release-security-orchestration.md)
-**Status**: executing
+**Source proposal**: [`dev/proposals/archive/2026-08-05-codex-release-security-orchestration.md`](../../proposals/archive/2026-08-05-codex-release-security-orchestration.md)
+**Status**: archived
 **Plan review**: required(External + External Security Review) — as declared and ratified; **this plan's author cannot supply either tier** (see *Plan review* below)
 **Last update**: 2026-08-05
 **Opened**: 2026-08-05
@@ -1060,3 +1061,43 @@ three frozen CI-wording corrections, the plan-template CI claim, the contained
 floor-gate vocabulary, and the missing-human-trigger row. Their implementations
 remain durable in the release checker, release-only pytest hook, corrected
 templates/doctrine, `SECURITY.md`, and `bootstrap/PROVENANCE.md`.
+
+## Archive record -- Codex -- 2026-08-05
+
+### Dispositions and lasting-truth migration
+
+The plan leaves no deferred item homeless. The local release boundary lives in
+`bootstrap/security_check.py`; release-only skip/xfail/xpass refusal lives in
+`bootstrap/tests/conftest.py`; the human trigger and evidence-recording duty
+live in `SECURITY.md`; tag ordering lives in `bootstrap/PROVENANCE.md`; and the
+contained Python-floor distinction lives in `doctrine/runtime-contract.md`.
+The six completed board rows were retired in Chunk G.
+
+Three accepted residuals remain explicit rather than returning to the board:
+the Maintainer can omit the command, the checker does not authenticate its host
+Git/Python process, and its printed commit is not cryptographically bound to a
+later tag. Their recorded expiry conditions remain a second release
+Maintainer, untrusted release-path contributions, forge publication automation,
+or one missed check in practice. Publication of Cairn's nonstandard trust-root
+refs remains separately owned by `[TRU-7]`; the frozen-file union remains
+scheduled for the next supervised ceremony; neither is re-decided here.
+
+### Evidence ledger
+
+Chunks A--F landed across `3647a82`, `86346f1`, `1ef2b49`, `937f0f0`,
+`bc3e5c5`, `0bb4d86`, `a29183a`, `baf8128`, `c56c877`, and `745c727`.
+Corrective Chunk R landed at `3970edf`, its public-checklist correction at
+`7fe55b9`, and the detached-index correction at `052d303`. The independent
+Antigravity review at `d1b0d85` returned PASS after 111 focused security tests
+and the 2511-test canonical suite. Chunk G landed at `e4ea9f1`.
+
+### Loop-fidelity sign-off
+
+The implementation matches the accepted proposal: one Maintainer-run command
+preflights a clean commit, runs all local machine-checkable release phases from
+commit-bound repository bytes, fails on incomplete evidence, continues after
+ordinary phase failures to produce a repair list, and postflights the operator
+checkout. Bandit allowlist liveness shares the governing blocking predicate;
+collection-time skips are refused; frozen CI wording was corrected without
+inventing automation; and the human root remains named. The release bar's
+manual and host-specific checks were not absorbed or represented as automated.
