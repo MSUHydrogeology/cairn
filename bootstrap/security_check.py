@@ -64,7 +64,7 @@ import os
 import shutil
 import subprocess
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from pathlib import Path
 
 CAIRN_ROOT = Path(__file__).resolve().parent.parent
@@ -77,6 +77,23 @@ from bootstrap._scaffold.config import (  # noqa: E402  (trust anchor: narrowest
 from bootstrap._scaffold.install import install_manifest  # noqa: E402
 
 _BLOCKING_SEVERITIES = {"MEDIUM", "HIGH"}
+
+#: The **closed** set of severities a Bandit report may carry. Read from the
+#: scanner's own source -- ``bandit.core.constants.RANKING`` under Bandit 1.9.4
+#: -- not guessed, and hard-coded rather than imported because this module must
+#: load on a machine with no Bandit installed (that is the whole point of the
+#: fail-closed absence branch below).
+#:
+#: A value outside this set is **unclassifiable evidence**, not a
+#: low-severity finding. Both severity predicates in this repository treat an
+#: unknown value as "below MEDIUM", so a renamed or added Bandit severity would
+#: be neither blocking nor liveness-confirming -- silently. Rejecting the report
+#: at validation is one rule instead of teaching every predicate a fallback.
+_KNOWN_SEVERITIES = frozenset({"UNDEFINED", "LOW", "MEDIUM", "HIGH"})
+
+#: Fields every finding must carry for the rules below to mean anything.
+_REQUIRED_FINDING_FIELDS = ("filename", "test_id", "issue_severity",
+                            "line_number", "issue_text")
 
 #: The release-mode token, and its **one** recognized value (Binding
 #: amendment R1). ``bootstrap/tests/conftest.py`` reads exactly this pair and
@@ -365,6 +382,74 @@ def _rel(filename: str) -> str:
         return filename
 
 
+def is_blocking(finding: Mapping[str, object]) -> bool:
+    """**The** blocking predicate over one Bandit finding.
+
+    Exported and called by every consumer -- the release command's suppression
+    filter and its allowlist-liveness set here, and (intended) the dev gate in
+    ``bootstrap/tests/test_security_lint.py``, which today re-spells severity
+    through its own ``_SEVERITY_RANK`` table. The single-sourcing comment on
+    that import has always been true of the *data* (``ALLOWLIST``,
+    ``scan_targets``) and silent about the *predicate*: two spellings of "is
+    this finding blocking" that agree only by having been copied.
+    """
+    return finding.get("issue_severity") in _BLOCKING_SEVERITIES
+
+
+def finding_key(finding: Mapping[str, object]) -> tuple[str, str]:
+    """The allowlist key of one finding -- the other half of the rule that was
+    spelled twice. Normalization lives here, once."""
+    return (_rel(str(finding["filename"])), str(finding["test_id"]))
+
+
+def validate_report(report: object, returncode: int) -> str | None:
+    """Semantic validation of a Bandit report. ``None`` means usable.
+
+    "Successfully parsed" must mean a *validated* report, not merely valid
+    JSON. Measured against this module's own bytes at ``745c927``, five
+    malformations all produced release evidence: ``{}`` with rc 0,
+    ``{"errors": [], "results": []}`` with **rc 1**, and
+    ``{"errors": [], "results": {}}`` with rc 0 each printed
+    ``Bandit clean over 78 shipped file(s)`` and returned 0; ``[]`` and
+    ``null`` raised ``AttributeError`` -- non-zero, but a traceback rather than
+    a security message. A scanner failure or an incompatible Bandit could
+    therefore become release ``PASS``.
+
+    This is semantic checking of a shape the scanner already produces, not a
+    schema dependency: nothing is imported to do it.
+    """
+    if not isinstance(report, dict):
+        return (f"top-level JSON is {type(report).__name__}, not an object")
+    for field in ("errors", "results"):
+        if field not in report:
+            return f"required key {field!r} is absent"
+        if not isinstance(report[field], list):
+            return (f"{field!r} is {type(report[field]).__name__}, not a list "
+                    f"-- a mapping-valued {field!r} reads as 'nothing found'")
+    for i, finding in enumerate(report["results"]):
+        if not isinstance(finding, dict):
+            return f"results[{i}] is {type(finding).__name__}, not an object"
+        missing = [k for k in _REQUIRED_FINDING_FIELDS if k not in finding]
+        if missing:
+            return f"results[{i}] is missing required field(s) {missing}"
+        severity = finding["issue_severity"]
+        if severity not in _KNOWN_SEVERITIES:
+            return (f"results[{i}] has issue_severity {severity!r}, outside "
+                    f"the known set {sorted(_KNOWN_SEVERITIES)} -- "
+                    f"unclassifiable evidence, not a low-severity finding")
+    # An exit code that contradicts its own report. Bandit exits 1 when it has
+    # findings to report, so 1 with nothing in `results` AND nothing in
+    # `errors` means the exit code and the body disagree, and one of them is
+    # wrong. Only this direction is refused: the converse (rc 0 with findings
+    # present) is legitimate under Bandit's severity-threshold flags, and
+    # refusing it would be a false refusal rather than a closed hole.
+    if returncode == 1 and not report["results"] and not report["errors"]:
+        return ("bandit exited 1 -- which it does when it has findings to "
+                "report -- with zero results and zero errors; the exit code "
+                "and the report contradict each other")
+    return None
+
+
 def run_bandit() -> int:
     """Run Bandit over the derived surface; fail closed on absence/error."""
     # `install_manifest` REFUSES a malformed mapping (duplicate destinations)
@@ -405,6 +490,17 @@ def run_bandit() -> int:
         print("security_check: bandit output was not JSON -- fail closed.",
               file=sys.stderr)
         return 1
+    # Validation comes BEFORE the errors check, liveness, and suppression --
+    # every rule below reads fields this establishes are present and
+    # classifiable. A report the command cannot validate is not a report that
+    # came back clean.
+    problem = validate_report(report, proc.returncode)
+    if problem is not None:
+        print(f"security_check: bandit output is not a usable report "
+              f"({problem}) -- FAIL CLOSED. A report the command cannot "
+              f"validate is not a report that came back clean.",
+              file=sys.stderr)
+        return 1
     # A file Bandit could not READ is not a file Bandit found clean. Bandit
     # records such a failure (missing file, unparseable source) in the JSON
     # `errors` array, scans the rest, and exits 0 -- so the rc branch above
@@ -422,26 +518,27 @@ def run_bandit() -> int:
               "scanner never opened is not a file it found clean.\n" + detail,
               file=sys.stderr)
         return 1
-    results = report.get("results") or []
+    # `results` is a list of field-complete findings with classifiable
+    # severities: validate_report() established that above, so `.get(... ) or
+    # []` defaulting -- which is what let a mapping-valued `results` read as
+    # "nothing found" -- is gone.
+    results = report["results"]
     blocking = [
         f"  [{f['test_id']} {f['issue_severity']}] {_rel(f['filename'])}:"
         f"{f['line_number']}  {f['issue_text']}"
         for f in results
-        if f.get("issue_severity") in _BLOCKING_SEVERITIES
-        and (_rel(f["filename"]), str(f["test_id"])) not in ALLOWLIST
+        if is_blocking(f) and finding_key(f) not in ALLOWLIST
     ]
     # Allowlist liveness. Derived from the **successfully parsed** report only
     # -- every earlier fail-closed branch has already returned, so a partial or
     # unreadable scan can never retire an entry by making its finding "absent".
     #
-    # Blocking severity only, because that is the sole thing the allowlist
-    # filters: an entry whose finding Bandit reports at LOW suppresses nothing,
-    # and calling it live would be the fail-open this rule exists to close.
-    observed = {
-        (_rel(f["filename"]), str(f["test_id"]))
-        for f in results
-        if f.get("issue_severity") in _BLOCKING_SEVERITIES
-    }
+    # The predicate and the key rule are the SAME functions suppression uses one
+    # line above, not a second spelling of them: a liveness set that could
+    # disagree with the filter it is meant to describe is how an entry gets
+    # called live while suppressing nothing. Blocking severity only, because
+    # that is the sole thing the allowlist filters.
+    observed = {finding_key(f) for f in results if is_blocking(f)}
     stale = sorted(key for key in ALLOWLIST if key not in observed)
     rc = 0
     if blocking:

@@ -769,6 +769,114 @@ def test_blocking_findings_and_stale_entries_are_reported_together(
     assert "does not report at MEDIUM+" in err
 
 
+# ---------------------------------------------------------------------------
+# Chunk D5/D6 -- "successfully parsed" must mean VALIDATED, not merely JSON
+#
+# The five shapes below were reproduced against this module's own bytes at
+# 745c927 before the fix: three printed "Bandit clean over 78 shipped file(s)"
+# and returned 0; two raised AttributeError -- non-zero, but a traceback where
+# a security message was owed. Once D1 emptied the ALLOWLIST, liveness is
+# vacuous, so report validation is the only thing between a malformed report
+# and release PASS.
+# ---------------------------------------------------------------------------
+
+_WELL_FORMED_LOW = {
+    "errors": [],
+    "results": [{"filename": "scripts/check_cairn.py", "test_id": "B404",
+                 "issue_severity": "LOW", "line_number": 1,
+                 "issue_text": "subprocess import"}],
+}
+
+
+@pytest.mark.parametrize("stdout,rc,because", [
+    ("{}", 0, "required key 'errors' is absent"),
+    ('{"errors": [], "results": []}', 1, "contradict"),
+    ('{"errors": [], "results": {}}', 0, "not a list"),
+    ("[]", 0, "not an object"),
+    ("null", 0, "not an object"),
+    ('{"errors": [], "results": [{"test_id": "B1"}]}', 1, "missing required"),
+    ('{"errors": {}, "results": []}', 0, "not a list"),
+    ('{"errors": [], "results": [1]}', 1, "not an object"),
+])
+def test_a_malformed_report_fails_closed_with_a_message(
+        monkeypatch, capsys, stdout, rc, because) -> None:
+    class _Proc:
+        returncode = rc
+        stdout = ""
+        stderr = ""
+
+    _Proc.stdout = stdout
+    monkeypatch.setattr(security_check.subprocess, "run",
+                        lambda *a, **k: _Proc())
+    assert security_check.run_bandit() == 1
+    captured = capsys.readouterr()
+    assert "not a usable report" in captured.err
+    assert because in captured.err
+    assert "Bandit clean" not in captured.out, (
+        "the clean line must never print over a report the command could not "
+        "validate")
+
+
+def test_an_unknown_severity_is_unclassifiable_not_low(monkeypatch,
+                                                       capsys) -> None:
+    """The fail-open both severity predicates in this repository share: a value
+    in neither table reads as "below MEDIUM", so a renamed or added Bandit
+    severity would be neither blocking nor liveness-confirming -- silently.
+    Validation refuses the report instead."""
+    body = json.loads(json.dumps(_WELL_FORMED_LOW))
+    body["results"][0]["issue_severity"] = "CRITICAL"
+
+    class _Proc:
+        returncode = 1
+        stdout = json.dumps(body)
+        stderr = ""
+
+    monkeypatch.setattr(security_check.subprocess, "run",
+                        lambda *a, **k: _Proc())
+    assert security_check.run_bandit() == 1
+    err = capsys.readouterr().err
+    assert "issue_severity 'CRITICAL'" in err
+    assert "unclassifiable evidence" in err
+
+
+def test_the_known_severity_set_matches_bandits_own_ranking() -> None:
+    """Read from the scanner, not from expectation: the closed set is
+    ``bandit.core.constants.RANKING``. Skipped rather than asserted-from-memory
+    when Bandit is absent -- the module must import without it, which is why the
+    set is hard-coded in the first place."""
+    bandit_constants = pytest.importorskip("bandit.core.constants")
+    assert set(bandit_constants.RANKING) == set(
+        security_check._KNOWN_SEVERITIES)
+
+
+def test_a_well_formed_low_only_report_still_passes(monkeypatch, capsys) -> None:
+    """The positive control, without which validation could be satisfied by
+    refusing everything. Bandit exits **1** on Cairn's real surface today (125
+    LOW findings, measured 2026-08-05), so rc=1 with findings present must
+    remain clean -- only rc=1 with *nothing* in the report is a contradiction."""
+    class _Proc:
+        returncode = 1
+        stdout = json.dumps(_WELL_FORMED_LOW)
+        stderr = ""
+
+    monkeypatch.setattr(security_check.subprocess, "run",
+                        lambda *a, **k: _Proc())
+    assert security_check.run_bandit() == 0
+    assert "Bandit clean" in capsys.readouterr().out
+
+
+def test_the_blocking_predicate_and_key_rule_are_single_functions() -> None:
+    """D4, release-side half. Suppression and liveness must not be able to
+    disagree about what "blocking" and "this finding's allowlist key" mean."""
+    high = {"filename": str(CAIRN_ROOT / "scripts/check_cairn.py"),
+            "test_id": "B999", "issue_severity": "HIGH"}
+    assert security_check.is_blocking(high)
+    assert not security_check.is_blocking(dict(high, issue_severity="LOW"))
+    assert not security_check.is_blocking(dict(high, issue_severity="UNDEFINED"))
+    assert not security_check.is_blocking({})
+    assert security_check.finding_key(high) == ("scripts/check_cairn.py", "B999")
+
+
 def test_the_shipped_allowlist_is_empty_after_the_b310_retirement() -> None:
     """D1. Measured 2026-08-05 under Bandit 1.9.4 / Python 3.13.13: the sole
     entry's finding was absent from the report. It was deleted rather than left
