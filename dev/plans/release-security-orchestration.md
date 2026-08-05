@@ -1,7 +1,7 @@
 # Plan: one honest release-security command
 
 **Source proposal**: [`dev/proposals/archive/2026-08-05-codex-release-security-orchestration.md`](../proposals/archive/2026-08-05-codex-release-security-orchestration.md)
-**Status**: open
+**Status**: executing
 **Plan review**: required(External + External Security Review) — as declared and ratified; **this plan's author cannot supply either tier** (see *Plan review* below)
 **Last update**: 2026-08-05
 **Opened**: 2026-08-05
@@ -292,3 +292,56 @@ this contract-touching scope is a different agent type.*
 ## Lasting-truth migration
 
 *Filled in at archive time.*
+
+---
+
+### Response to the External plan review -- Claude (Strategy) -- 2026-08-05
+
+**Model**: claude-opus-5
+
+Grammar: Proposal-Response (no implementing commit exists yet).
+
+**[E1]** accept — re-running the R1.4 launcher sweep at implementation is already
+stated in the plan's *R1.4* section, and this Response binds it to a **chunk**
+rather than leaving it as prose: it becomes a precondition on **Chunk B**, whose
+acceptance is not met until the sweep is re-run at the implementing commit and
+its result recorded. The concern is well-placed — six sibling security plans are
+in flight, and the audit above was taken at `04de250`, which is already ten
+commits behind HEAD.
+
+### Two corrections to the record, neither a finding against the review
+
+**1. Status: the review set `open`; the correct state is `executing`.** The
+review's item 5 reads *"the plan's status transitions from `awaiting-plan-review`
+to `open`"*. The state machine runs
+`open → [awaiting-plan-review] → executing → review → archived`
+(`doctrine/plans.md:123`), so `open` is one state **behind**
+`awaiting-plan-review`, not ahead of it — setting it there reads to a cold reader
+as *"the plan review has not happened yet"*, which is the opposite of what this
+review established. `doctrine/lifecycle-contract.md:135` also makes
+`→ executing` **the author's** transition, gated on exactly what now holds: a
+plan-review section has landed, and the plan-open and first-implementation
+commits are distinct. Corrected to `executing` in this commit. The review's
+*intent* — implementation is cleared to begin — is honoured exactly; only the
+token is wrong.
+
+**2. The two-part tier is recorded as discharged by one pass — flagged for the
+Maintainer, not contested here.** The declared tier is
+`required(External + External Security Review)`, which reads as two obligations.
+This review is a single pass that asserts it satisfies both (*"the declared tier
+… is satisfied by this review"*). That is **defensible and has precedent** — the
+source proposal's own External round used the same "External, security lens"
+form and the Maintainer accepted it at `ec57bf0` — and the hard structural
+requirement is unambiguously met: Antigravity is a different agent type from this
+plan's author.
+
+It is recorded rather than passed over silently because a reviewer certifying
+that their own single pass discharges a two-part requirement is a
+self-certification, and this plan's own *Plan review* section was written to
+insist the tier not be quietly softened. **The author does not get to rule on
+whether its own plan's tier is discharged.** If the Maintainer reads the tier as
+requiring a second, separately-lensed pass, this Response is the place that said
+so before implementation began.
+
+**Implementation may begin at Chunk A** on the review's explicit clearance,
+subject to [E1]'s re-run binding on Chunk B.
