@@ -1055,6 +1055,337 @@ def child_document(summary: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+# --- the version-admission apparatus (Decision Condition 1) -------------------
+#: Git subcommands **accounted for** in this module's measured invocation set.
+#: ``config`` is runner-owned (the pre-execution screen); ``log`` and
+#: ``ls-remote`` are adapter-owned.  A candidate that reaches for anything else
+#: has changed the transitive execution surface and is refused, not admitted.
+ACCOUNTED_GIT_SUBCOMMANDS = frozenset({"config", "log", "ls-remote"})
+
+#: Options every leg must carry.  The matrix refuses a candidate that does not
+#: accept the runner-owned argv, because a candidate that rejects a suppression
+#: or redaction control is not the tool this contract was measured against.
+REQUIRED_LEG_OPTIONS = (
+    "--config", "--gitleaks-ignore-path", "--ignore-gitleaks-allow",
+    "--redact=100", "--no-color", "--no-banner", "--report-format",
+    "--report-path", "--max-archive-depth=0", "--max-decode-depth=0",
+)
+
+#: The confirmation argument.  Its name states the act in words rather than
+#: reading as a verbosity switch.
+CONFIRM_FLAG = "--confirm-executing-an-unadmitted-binary"
+
+_CANARY_ENV = "CAIRN_PORTABLE_NETWORK_CANARY"
+
+
+class _Canary:
+    """A loopback listener the matrix exposes as a proxy and as an explicit
+    canary address.
+
+    **Bounded, and the bound is stated in the record**: it observes a candidate
+    that honours proxy environment variables or connects to the advertised
+    address, plus every remote-capable Git subcommand through the logging shim.
+    It is **not** a sandbox and does not establish absence of egress."""
+
+    def __init__(self) -> None:
+        import socket  # noqa: PLC0415
+        import threading  # noqa: PLC0415
+
+        self.hits = 0
+        self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._sock.bind(("127.0.0.1", 0))
+        self._sock.listen(8)
+        self.address = "%s:%d" % self._sock.getsockname()
+        self._stop = False
+
+        def serve() -> None:
+            while not self._stop:
+                try:
+                    conn, _addr = self._sock.accept()
+                except OSError:
+                    return
+                self.hits += 1
+                conn.close()
+
+        self._thread = threading.Thread(target=serve, daemon=True)
+        self._thread.start()
+
+    def close(self) -> None:
+        self._stop = True
+        try:
+            self._sock.close()
+        except OSError:
+            pass
+
+
+def _write_git_shim(path: str, real_git: str, log: str) -> None:
+    """A logging ``git`` that records the subcommand and then execs the real
+    Git, so the invocation oracle observes real behaviour."""
+    body = (
+        "#!%s\n"
+        "import json, os, sys\n"
+        "with open(%r, 'a', encoding='utf-8') as fh:\n"
+        "    fh.write(json.dumps(sys.argv[1:]) + '\\n')\n"
+        "os.execv(%r, [%r] + sys.argv[1:])\n"
+    ) % (sys.executable, log, real_git, real_git)
+    with open(path, "w", encoding="utf-8") as handle:
+        handle.write(body)
+    # Owner-only: the shim exists for this process tree in a per-run
+    # temporary directory, so a group/other-executable mode would be a
+    # permissive-permissions finding for no benefit.
+    os.chmod(path, 0o700)
+
+
+def _git_subcommand(argv: list[str]) -> str:
+    """The subcommand from a recorded Git argv, skipping global options."""
+    index = 0
+    while index < len(argv):
+        token = argv[index]
+        if token in ("-C", "-c", "--git-dir", "--work-tree", "--namespace"):
+            index += 2
+            continue
+        if token.startswith("-"):
+            index += 1
+            continue
+        return token
+    return ""
+
+
+def cmd_verify_version_support(args: argparse.Namespace) -> int:
+    """Run the admission matrix against a candidate binary and emit a record.
+
+    **This subcommand deliberately executes an external file that Cairn has not
+    admitted, at the operator's instruction.**  It is absent from ordinary sweep
+    flow -- no ordinary run reaches it -- and no standing command may name it.
+
+    It **never mutates the admitted-artifact set**: admission stays a reviewed
+    human code change, and this command's output is evidence for that review."""
+    report_lines: list[str] = []
+    record: dict[str, Any] = {
+        "schema": _SCHEMA,
+        "kind": "portable-security-sweeps/version-support-record",
+        "unadmitted_binary_executed": None,
+        "admit": False,
+        "refusals": [],
+    }
+
+    def refuse(reason: str) -> int:
+        record["refusals"].append(reason)
+        record["admit"] = False
+        sys.stdout.write("\n".join(report_lines) + "\n" if report_lines else "")
+        sys.stdout.write(json.dumps(record, ensure_ascii=True, sort_keys=True) + "\n")
+        return _AGG_DEGRADED
+
+    if not args.confirm_executing_an_unadmitted_binary:
+        report_lines.append(
+            "[portable] REFUSED: this command executes an external file that "
+            "Cairn has NOT admitted.  Re-run with " + CONFIRM_FLAG + " to "
+            "authorize executing the candidate binary."
+        )
+        return refuse(f"the mandatory {CONFIRM_FLAG} argument was absent; no "
+                      f"candidate was resolved and nothing was executed")
+
+    target = Path(args.target).resolve()
+    candidate = args.verify_version_support
+    if not os.path.isabs(candidate):
+        return refuse(f"the candidate path {candidate!r} is not absolute")
+    lexical = os.path.abspath(candidate)
+    resolved = os.path.realpath(lexical)
+    for label, path_value in (("lexical", lexical), ("resolved", resolved)):
+        for root in {os.path.realpath(str(target)), os.path.abspath(str(target))}:
+            if _is_inside(path_value, root):
+                return refuse(
+                    f"the candidate's {label} path {path_value!r} is inside the "
+                    f"repository under check; refused before execution"
+                )
+    if not os.path.isfile(resolved):
+        return refuse(f"the candidate {resolved!r} is not a regular file")
+    if not os.access(resolved, os.X_OK):
+        return refuse(f"the candidate {resolved!r} carries no executable bit")
+
+    digest = file_digest(resolved)
+    record["unadmitted_binary_executed"] = {
+        "path": lexical, "resolved": resolved, "sha256": digest,
+        "declared_source": args.declared_source or "unstated",
+        "statement": (
+            "This command executed an external file that Cairn has NOT "
+            "admitted, at the operator's instruction."
+        ),
+    }
+    report_lines.insert(0, (
+        "[portable] This command executed an external file that Cairn has NOT "
+        "admitted, at the operator's instruction: " + _escape(resolved)
+        + " sha256 " + digest[:16] + "..."
+    ))
+
+    real_git = shutil.which("git")
+    canary = _Canary()
+    try:
+        with tempfile.TemporaryDirectory(prefix="cairn-admit-") as workdir:
+            fixture = os.path.join(workdir, "fixture")
+            os.makedirs(fixture)
+            with open(os.path.join(fixture, "seed.txt"), "w",
+                      encoding="utf-8") as handle:
+                handle.write("nothing sensitive\n")
+            work = materialize_workspace(os.path.join(workdir, "work"), [])
+            shim_dir = os.path.join(workdir, "shim")
+            os.makedirs(shim_dir)
+            git_log = os.path.join(workdir, "git-invocations.jsonl")
+            # The fixture is built with the REAL git, before the shim exists, so
+            # the invocation oracle records only what the screen and the
+            # candidate do -- never the harness's own setup.
+            if real_git:
+                setup_env = {
+                    "PATH": os.path.dirname(real_git), "HOME": work.empty_dir,
+                    "GIT_CONFIG_NOSYSTEM": "1",
+                    "GIT_CONFIG_GLOBAL": work.empty_config,
+                    "GIT_AUTHOR_NAME": "cairn", "GIT_COMMITTER_NAME": "cairn",
+                    "GIT_AUTHOR_EMAIL": "cairn@example.invalid",
+                    "GIT_COMMITTER_EMAIL": "cairn@example.invalid",
+                }
+                for command in (["init", "-q"], ["add", "seed.txt"],
+                                ["commit", "-qm", "fixture"]):
+                    subprocess.run([real_git, "-C", fixture, *command],
+                                   capture_output=True, env=setup_env,
+                                   timeout=_SCREEN_TIMEOUT, check=False)
+                _write_git_shim(os.path.join(shim_dir, "git"), real_git, git_log)
+
+            exe = Resolved("gitleaks", lexical, resolved,
+                           os.path.dirname(resolved), digest)
+            env = child_env("full", None, work.empty_dir, work.empty_config)
+            env["PATH"] = shim_dir
+            env["http_proxy"] = "http://" + canary.address
+            env["https_proxy"] = "http://" + canary.address
+            env["ALL_PROXY"] = "http://" + canary.address
+            env[_CANARY_ENV] = canary.address
+
+            try:
+                version_text = probe_version(exe, env)
+            except Degraded as exc:
+                return refuse(f"the candidate's --version is unusable: {exc}")
+            record["candidate_version"] = version_text
+            record["platform"] = list(platform_key())
+            record["git_version"] = "absent"
+            if real_git:
+                probe = subprocess.run([real_git, "--version"],
+                                       capture_output=True, text=True,
+                                       timeout=_VERSION_TIMEOUT, check=False)
+                record["git_version"] = probe.stdout.strip()
+
+            # The runner-owned pre-execution screen, exercised through the shim
+            # so its Git call appears in the invocation multiset -- M52's third
+            # call, declared rather than discovered.
+            if real_git:
+                shimmed_git = Resolved(
+                    "git", os.path.join(shim_dir, "git"),
+                    os.path.join(shim_dir, "git"), shim_dir,
+                    file_digest(os.path.join(shim_dir, "git")),
+                )
+                try:
+                    screen_local_config(shimmed_git, Path(fixture), env)
+                except Degraded as exc:
+                    return refuse(
+                        f"the configuration screen refused its own clean "
+                        f"fixture: {exc}"
+                    )
+                record["screen"] = "ran under the sterilized child environment"
+
+            scenarios: dict[str, Any] = {}
+            for leg in ("current-tree", "history"):
+                argv, report = _leg_argv(exe, leg, Path(fixture), work)
+                missing = [opt for opt in REQUIRED_LEG_OPTIONS if opt not in argv]
+                if missing:
+                    return refuse(
+                        f"the runner-owned argv for the {leg!r} leg is missing "
+                        f"required option(s) {missing}"
+                    )
+                try:
+                    proc = subprocess.run(argv, capture_output=True, env=env,
+                                          cwd=workdir, timeout=_SCAN_TIMEOUT,
+                                          check=False)
+                except (OSError, subprocess.SubprocessError) as exc:
+                    return refuse(f"the {leg!r} leg could not run: {exc}")
+                if proc.returncode not in (_EXIT_NO_FINDINGS, _EXIT_FINDINGS):
+                    return refuse(
+                        f"the candidate did not accept the runner-owned argv "
+                        f"for the {leg!r} leg (exit {proc.returncode}); a "
+                        f"candidate that rejects a required option is not the "
+                        f"tool this contract was measured against"
+                    )
+                try:
+                    findings = read_report(report)
+                except Degraded as exc:
+                    return refuse(f"output-schema drift on the {leg!r} leg: {exc}")
+                scenarios[leg] = {"exit": proc.returncode,
+                                  "validated_findings": len(findings)}
+            record["end_to_end"] = scenarios
+
+            # The hostile-ambient-config matrix, run through the runner's own
+            # pre-execution refusals rather than re-implemented here.
+            hostile: dict[str, str] = {}
+            probe_tree = os.path.join(workdir, "hostile")
+            os.makedirs(probe_tree)
+            with open(os.path.join(probe_tree, _IGNORE_FILENAME), "w",
+                      encoding="utf-8") as handle:
+                handle.write("planted\n")
+            try:
+                refuse_candidate_ignore_files(Path(probe_tree))
+                hostile["candidate_ignore_file"] = "NOT REFUSED"
+            except Degraded:
+                hostile["candidate_ignore_file"] = "refused before execution"
+            if hostile["candidate_ignore_file"] == "NOT REFUSED":
+                return refuse("the candidate-ignore-file refusal did not fire")
+            hostile["runner_owned_config_flag"] = "sent off-tree"
+            hostile["counted_git_config_keys"] = str(len(_COUNTED_GIT_CONFIG))
+            record["hostile_config"] = hostile
+
+            invocations: list[list[str]] = []
+            if os.path.exists(git_log):
+                with open(git_log, encoding="utf-8") as handle:
+                    invocations = [json.loads(line) for line in handle
+                                   if line.strip()]
+            subcommands = sorted(_git_subcommand(argv) for argv in invocations)
+            record["git_invocations"] = subcommands
+            unaccounted = sorted(set(subcommands) - ACCOUNTED_GIT_SUBCOMMANDS)
+            if unaccounted:
+                return refuse(
+                    f"the candidate invoked unaccounted Git subcommand(s) "
+                    f"{unaccounted}; the transitive execution surface is not "
+                    f"the measured one"
+                )
+            record["network_observation"] = {
+                "method": (
+                    "loopback canary advertised as http_proxy/https_proxy/"
+                    "ALL_PROXY and as " + _CANARY_ENV
+                    + ", plus a logging git shim recording every subcommand"
+                ),
+                "canary_connections": canary.hits,
+                "bound": (
+                    "This observes a candidate that honours proxy variables or "
+                    "connects to the advertised address, and every Git "
+                    "subcommand.  It is NOT a sandbox and does not establish "
+                    "absence of egress."
+                ),
+            }
+            if canary.hits:
+                return refuse(
+                    f"the candidate contacted the network canary "
+                    f"{canary.hits} time(s)"
+                )
+            record["output_schema"] = "validated on both legs"
+    finally:
+        canary.close()
+
+    record["admit"] = True
+    report_lines.append(
+        "[portable] matrix passed.  This record is EVIDENCE for a reviewed "
+        "source change; it does not admit anything by itself."
+    )
+    sys.stdout.write("\n".join(report_lines) + "\n")
+    sys.stdout.write(json.dumps(record, ensure_ascii=True, sort_keys=True) + "\n")
+    return _AGG_CLEAN
+
+
 def _default_policy_path() -> Path:
     return Path(__file__).resolve().parent / "portable_security_policy.json"
 
@@ -1077,6 +1408,21 @@ def build_parser() -> argparse.ArgumentParser:
         "--security-verification", action="store_true",
         help=("the local/offline security-verification entry point: emit the "
               "bounded child result document and nothing else"),
+    )
+    parser.add_argument(
+        "--verify-version-support", default=None, metavar="CANDIDATE",
+        help=("run the admission matrix against an operator-supplied candidate "
+              "binary and emit an evidence record.  EXECUTES AN UNADMITTED "
+              "EXTERNAL FILE; requires " + CONFIRM_FLAG),
+    )
+    parser.add_argument(
+        CONFIRM_FLAG, action="store_true",
+        help=("authorize executing the unadmitted candidate binary named by "
+              "--verify-version-support.  Mandatory for that subcommand."),
+    )
+    parser.add_argument(
+        "--declared-source", default=None,
+        help="where the candidate binary came from, recorded verbatim",
     )
     return parser
 
@@ -1333,6 +1679,8 @@ def run_sweep(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.verify_version_support is not None:
+        return cmd_verify_version_support(args)
     result, summary = run_sweep(args)
     if args.security_verification:
         sys.stdout.write(

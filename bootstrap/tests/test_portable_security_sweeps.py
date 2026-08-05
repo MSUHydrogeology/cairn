@@ -1736,3 +1736,317 @@ def test_a_digest_match_is_the_only_route_to_full_mode(
                                              admissions="admit", findings=[])
     assert summary["mode"] == "full", out
     assert leg(summary, "current-tree")["result"] == 0, out
+
+
+# --- E7: the version-admission apparatus ---------------------------------------
+
+LEDGER = CAIRN_ROOT / "dev/measurement/gitleaks-version-support.md"
+
+
+def _ledger_sections(heading: str) -> list[str]:
+    """Parse the ledger independently of the runner's source set: the oracle for
+    the bijection must not be computed from the thing it judges."""
+    text = LEDGER.read_text(encoding="utf-8")
+    sections: list[str] = []
+    inside = False
+    for line in text.splitlines():
+        if line.startswith("## "):
+            inside = line.strip() == heading
+            continue
+        if inside and line.startswith("### "):
+            sections.append(line[4:].strip())
+    return sections
+
+
+def test_every_full_mode_version_has_an_evidence_record_in_the_ledger() -> None:
+    """The node that makes Condition 1's apparatus binding rather than
+    decorative: a bijection between the source-owned admitted-artifact set and
+    the ledger's active sections.
+
+    Its trigger is a person typing ``python -m pytest bootstrap/tests``.  Cairn
+    has no CI, so nothing runs it automatically."""
+    runner = load_runner()
+    from_source = sorted(a.evidence for a in runner._ADMITTED_ARTIFACTS.values())
+    from_ledger = sorted(_ledger_sections("## Admitted artifacts"))
+    assert from_source == from_ledger, (
+        f"source-owned admissions {from_source} do not match the ledger's "
+        f"active sections {from_ledger}"
+    )
+
+
+def test_the_ledger_names_no_version_absent_from_the_source_set() -> None:
+    """The reverse direction: a retired triple moves to the retirement log
+    rather than lingering as an active section."""
+    runner = load_runner()
+    evidence = {a.evidence for a in runner._ADMITTED_ARTIFACTS.values()}
+    for section in _ledger_sections("## Admitted artifacts"):
+        assert section in evidence, (
+            f"the ledger lists {section!r} as active but the source set does "
+            f"not carry it; a retired triple belongs in the retirement log"
+        )
+
+
+def test_the_ledger_states_the_empty_set_consequence() -> None:
+    """An empty admitted set means reduced-provenance-only, and the ledger says
+    so in those terms rather than leaving a reader to infer it."""
+    text = LEDGER.read_text(encoding="utf-8")
+    assert "reduced-provenance-only" in text
+    assert "Cairn has no CI" in text
+    assert "not a sandbox" in text
+
+
+def _admit_cmd(runner: Path, candidate: Path, target: Path, *,
+               confirm: bool = True, extra: list[str] | None = None):
+    argv = [sys.executable, str(runner), "--target", str(target),
+            "--verify-version-support", str(candidate)]
+    if confirm:
+        argv.append("--confirm-executing-an-unadmitted-binary")
+    argv += extra or []
+    parts = [os.path.dirname(REAL_GIT)] if REAL_GIT else []
+    proc = subprocess.run(
+        argv, capture_output=True, text=True, timeout=300,
+        env={"PATH": os.pathsep.join(parts) or "/nonexistent",
+             "HOME": str(target), "LC_ALL": "C",
+             "PYTHONDONTWRITEBYTECODE": "1"},
+    )
+    record = {}
+    for line in reversed(proc.stdout.splitlines()):
+        if line.startswith("{"):
+            record = json.loads(line)
+            break
+    return proc.returncode, record, proc.stdout + proc.stderr
+
+
+def test_verify_version_support_emits_a_complete_record(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """Against a **fake** candidate that satisfies the matrix: every declared
+    field is present and non-empty."""
+    cand = fake_tool(tmp_path / "candidate-bin", findings=[])
+    runner = runner_copy(tmp_path)
+    rc, record, out = _admit_cmd(runner, cand, sweep_target,
+                                 extra=["--declared-source", "test fixture"])
+    assert rc == 0, out
+    assert record["admit"] is True, record
+    for field in ("schema", "kind", "candidate_version", "platform",
+                  "git_version", "end_to_end", "hostile_config",
+                  "network_observation", "output_schema",
+                  "unadmitted_binary_executed"):
+        assert field in record, f"missing record field {field!r}"
+        assert record[field] not in (None, "", [], {}), field
+    # The invocation multiset may legitimately be empty for a candidate that
+    # shells nothing; what must be present is the field, and the runner-owned
+    # screen call the fixture's real Git makes.
+    assert isinstance(record["git_invocations"], list)
+    assert "config" in record["git_invocations"], record["git_invocations"]
+    executed = record["unadmitted_binary_executed"]
+    assert executed["sha256"] == hashlib.sha256(cand.read_bytes()).hexdigest()
+    assert executed["declared_source"] == "test fixture"
+    assert record["platform"] == list(platform_triple("x")[1:])
+    assert sorted(record["end_to_end"]) == ["current-tree", "history"]
+
+
+def test_verify_version_support_refuses_a_candidate_that_invokes_an_unaccounted_git_subcommand(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """A fake candidate that shells a third Git call."""
+    cand = fake_tool(
+        tmp_path / "candidate-bin", findings=[],
+        extra="import subprocess\n"
+              "subprocess.run(['git', 'rev-list', '--all'], "
+              "capture_output=True)\n",
+    )
+    runner = runner_copy(tmp_path)
+    rc, record, out = _admit_cmd(runner, cand, sweep_target)
+    assert rc == 20, out
+    assert record["admit"] is False
+    assert any("unaccounted Git subcommand" in r for r in record["refusals"]), (
+        record["refusals"]
+    )
+    assert "rev-list" in " ".join(record["refusals"])
+
+
+def test_verify_version_support_refuses_a_candidate_that_drops_a_required_option(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """A candidate that rejects a runner-owned option is not the tool this
+    contract was measured against."""
+    cand = fake_tool(
+        tmp_path / "candidate-bin", findings=[],
+        extra="if '--ignore-gitleaks-allow' in sys.argv:\n"
+              "    raise SystemExit(2)\n",
+    )
+    runner = runner_copy(tmp_path)
+    rc, record, out = _admit_cmd(runner, cand, sweep_target)
+    assert rc == 20, out
+    assert any("did not accept the runner-owned argv" in r
+               for r in record["refusals"]), record["refusals"]
+
+
+def test_verify_version_support_refuses_a_candidate_that_contacts_a_remote(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """A fake candidate that opens a socket to the advertised canary."""
+    cand = fake_tool(
+        tmp_path / "candidate-bin", findings=[],
+        extra="import socket\n"
+              "addr = os.environ.get('CAIRN_PORTABLE_NETWORK_CANARY', '')\n"
+              "if addr:\n"
+              "    host, port = addr.rsplit(':', 1)\n"
+              "    s = socket.create_connection((host, int(port)), 5)\n"
+              "    s.close()\n",
+    )
+    runner = runner_copy(tmp_path)
+    rc, record, out = _admit_cmd(runner, cand, sweep_target)
+    assert rc == 20, out
+    assert any("network canary" in r for r in record["refusals"]), (
+        record["refusals"]
+    )
+
+
+def test_verify_version_support_refuses_a_candidate_with_an_output_schema_drift(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    cand = fake_tool(tmp_path / "candidate-bin", report_body='{"results": []}')
+    runner = runner_copy(tmp_path)
+    rc, record, out = _admit_cmd(runner, cand, sweep_target)
+    assert rc == 20, out
+    assert any("output-schema drift" in r for r in record["refusals"]), (
+        record["refusals"]
+    )
+
+
+def test_verify_version_support_cannot_mutate_the_source_version_set(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """Two halves, and the second is the one that matters: a mutation reverted
+    before the assertion would pass a file-compare alone."""
+    cand = fake_tool(tmp_path / "candidate-bin", findings=[], version="8.29.0")
+    runner = runner_copy(tmp_path)
+    before = runner.read_bytes()
+    rc, record, out = _admit_cmd(runner, cand, sweep_target)
+    assert rc == 0, out
+    assert record["admit"] is True
+    assert runner.read_bytes() == before, "the subcommand rewrote its own source"
+    assert RUNNER_SRC.read_bytes() != b"", "sanity"
+
+    bd = tmp_path / "bin2"
+    bd.mkdir()
+    fake_tool(bd / "gitleaks", version="8.29.0", findings=[])
+    parts = [str(bd)]
+    if REAL_GIT:
+        parts.append(os.path.dirname(REAL_GIT))
+    rc2, summary, out2 = run_runner(runner, sweep_target,
+                                    path_env=os.pathsep.join(parts))
+    assert summary["mode"] == "reduced", out2
+    assert rc2 != 0
+
+
+def test_verify_version_support_refuses_without_the_confirmation_argument(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """The friction boundary: refused before any resolution or execution, with
+    **zero** invocations of the candidate."""
+    log = tmp_path / "log.jsonl"
+    cand = fake_tool(tmp_path / "candidate-bin", findings=[], log=log)
+    runner = runner_copy(tmp_path)
+    rc, record, out = _admit_cmd(runner, cand, sweep_target, confirm=False)
+    assert rc == 20, out
+    assert read_log(log) == [], "the candidate was invoked without confirmation"
+    assert record["unadmitted_binary_executed"] is None
+    assert any("mandatory" in r and "absent" in r for r in record["refusals"]), (
+        record["refusals"]
+    )
+    assert "--confirm-executing-an-unadmitted-binary" in out
+
+
+def test_the_emitted_record_states_that_an_unadmitted_binary_was_executed(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    cand = fake_tool(tmp_path / "candidate-bin", findings=[])
+    runner = runner_copy(tmp_path)
+    rc, record, out = _admit_cmd(runner, cand, sweep_target)
+    assert rc == 0, out
+    executed = record["unadmitted_binary_executed"]
+    assert executed is not None
+    assert executed["path"] == str(cand)
+    assert len(executed["sha256"]) == 64
+    assert "has NOT" in executed["statement"] and "admitted" in executed["statement"]
+
+
+def test_the_human_report_opens_with_the_unadmitted_execution_statement(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """Asserted on the report's **first** rendered line: a friction statement a
+    reader meets after the result is not friction."""
+    cand = fake_tool(tmp_path / "candidate-bin", findings=[])
+    runner = runner_copy(tmp_path)
+    rc, _record, out = _admit_cmd(runner, cand, sweep_target)
+    assert rc == 0, out
+    first = out.splitlines()[0]
+    assert "executed an external file that Cairn has NOT admitted" in first, first
+
+
+def test_verify_version_support_refuses_a_candidate_inside_the_repository_under_check(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """Both forms, mirroring the sweep's own containment nodes."""
+    log = tmp_path / "log.jsonl"
+    inside = fake_tool(sweep_target / "candidate", findings=[], log=log)
+    runner = runner_copy(tmp_path)
+    rc, record, out = _admit_cmd(runner, inside, sweep_target)
+    assert rc == 20, out
+    assert any("lexical" in r and "inside the repository under check" in r
+               for r in record["refusals"]), record["refusals"]
+    assert read_log(log) == []
+
+    real = fake_tool(sweep_target / "tools_real", findings=[], log=log)
+    link = tmp_path / "linked-candidate"
+    link.symlink_to(real)
+    rc2, record2, out2 = _admit_cmd(runner, link, sweep_target)
+    assert rc2 == 20, out2
+    assert any("resolved" in r and "inside the repository under check" in r
+               for r in record2["refusals"]), record2["refusals"]
+    assert read_log(log) == []
+
+
+def test_verify_version_support_refuses_a_relative_candidate_path(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    runner = runner_copy(tmp_path)
+    proc = subprocess.run(
+        [sys.executable, str(runner), "--target", str(sweep_target),
+         "--verify-version-support", "candidate",
+         "--confirm-executing-an-unadmitted-binary"],
+        capture_output=True, text=True, timeout=120,
+        env={"PATH": "/nonexistent", "HOME": str(sweep_target), "LC_ALL": "C",
+             "PYTHONDONTWRITEBYTECODE": "1"},
+    )
+    assert proc.returncode == 20, proc.stdout
+    assert "is not absolute" in proc.stdout
+
+
+def test_reduced_mode_is_reachable_without_any_source_change(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """The PS9 failure the Decision named *shelf apparatus with extra steps*: an
+    unlisted strict ``8.x.y`` must still execute the current-tree leg."""
+    rc, summary, out, log = _run_with_tool(
+        tmp_path, sweep_target, version="8.29.7", findings=[],
+    )
+    assert summary["mode"] == "reduced", out
+    scans = [e for e in read_log(log) if e["kind"] == "scan"]
+    assert scans, "the current-tree leg did not run for an unlisted version"
+    assert leg(summary, "current-tree")["result"] == 5
+    assert rc == 5
+
+
+def test_the_accounted_git_subcommand_set_is_the_declared_one() -> None:
+    """M52: the screen adds a **third, runner-owned** Git call, and it must be
+    declared before Chunk I's oracle runs or the oracle reads as an adapter
+    defect."""
+    runner = load_runner()
+    assert runner.ACCOUNTED_GIT_SUBCOMMANDS == frozenset(
+        {"config", "log", "ls-remote"}
+    )
+    assert "config" in runner._SCREEN_ARGV_TAIL
