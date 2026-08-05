@@ -17,8 +17,56 @@ proposal header and restated in the Decision (*"The plan carries
 discharge it."*). **No implementation commit lands before a review section is in
 the tree.** See *Plan review — the brief* for why the Internal round about to run
 is a floor and not the tier.
-**Last update**: 2026-08-04
+**Last update**: 2026-08-05
 **Opened**: 2026-08-04
+
+## Folded, not amended — how to read this plan
+
+**An implementing agent who reads only the chunk tables and their acceptance
+criteria executes the current spec.** The review-driven decisions of the two
+2026-08-05 Responses, and of the 2026-08-05 External round, are folded into the
+operative rows below rather than bound by reference from an amendment table.
+`doctrine/plans.md:202-207` makes chunk-table cell text mutable in place while a
+plan's status is `open` with no commits in flight against the chunks being edited
+— this plan's exact state: status `open`, zero implementation commits.
+
+The `## Plan review`, `## Response to plan review`, `## Lasting-truth migration`
+and `Sharpening` sections are **untouched and stay append-only**. The fold ledger
+in `### Sharpening — the 2026-08-05 fold pass` at the end of this file names every
+amendment row now carried by a cell **and every row that is not folded**.
+
+**Where a folded cell and an amendment row disagree, the cell governs.** In
+particular the shared *Gate D-ON* block supersedes **AM-25**'s fence item 4 in its
+entirety.
+
+## Maintainer disposition of the 2026-08-05 External review round
+
+The 2026-08-05 External round (`## Plan review -- Codex (External) -- 2026-08-05`,
+introduced by `e1b2e30`) returned **REVISE**, and this plan's own fence read *"No
+implementation commit lands until the External reviewer, or the Maintainer,
+disposes of the REVISE."* The Maintainer has disposed of it. The authorizing
+instruction, quoted verbatim and visually isolated:
+
+> Go ahead with implementation once you've revised these. I don't want another review round
+
+**What it disposes of.** The **review round**: the REVISE no longer fences
+implementation, and no round-2 External section is owed. This is a disposition,
+**not a bypass** — the round's two findings are *closed in the operative text*
+(the shared *Gate D-ON* block under *The Maintainer fence*, and the
+reviewer-supplied corpus rows folded into Chunk D's D14), not waived.
+
+**What it does not supply, enumerated so nothing further is read into it.**
+
+* **No Maintainer credential, key, token or signing ref.** Nothing in this plan
+  needs one — stated so its absence is a checked fact rather than an omission.
+* **No gate-manifest re-pin and no AST re-anchor ceremony.** *The Maintainer
+  fence* item 1 stands exactly as written.
+* **No approval to push.** Pushing takes its own approval (`AGENTS.md` > *Git and
+  commit workflow*); the deliberation-layer carve-in covers `git commit` only.
+* **No disposition of the default-on consequence.** That is a different question —
+  the whole-script-Cyrillic and international-proper-noun cost *under default
+  adoption* — and **Gate D-ON condition D-ON-2 is NOT MET**, which keeps D-ON-1
+  unmet with it. See *The Maintainer fence* > *Gate D-ON*.
 
 ## Notation convention — this plan file is letter-ASCII by construction
 
@@ -285,14 +333,27 @@ contains four separate instances of a carried figure going stale within hours,
 and the module doc's published residual list is under the same rule (item 11
 above).
 
-* **Suite collection: 1746 nodes**, `python -m pytest bootstrap/tests
-  --collect-only -q`. Collection may only grow; a dropped node or a new
-  skip/xfail marker is a HOLD class. (The proposal's `1556 passed` and the
-  sibling `scan-coverage` plan's `1601` are both older snapshots; other work has
-  landed since. Re-measure, do not carry.)
-* **`python scripts/check_cairn.py` → `OK -- 180 Markdown file(s) scanned; no
-  issues; 68 external link(s) not probed.`** The predicted delta from this plan
-  is **zero new flags**, and the tripwire below applies to any movement.
+* **Suite collection is a procedure, not a constant.** Capture `python -m pytest
+  bootstrap/tests --collect-only -q` immediately before the first chunk, record it
+  in that chunk's commit body, and require the final count to exceed **that
+  captured number** by exactly this plan's new nodes and drop none; a dropped node
+  or a new skip/xfail marker is a HOLD class. **Do not compute a delta against any
+  number written in this file.** Provenance only: **1987 nodes**, `as_of
+  2026-08-05` at `66ce8c0`, canonical interpreter. The plan's original **1746 no
+  longer reproduces** — it was 1749 within hours, and the reciprocal plan's
+  Responses recorded 1790 and then 1959 on successive days. Four different totals
+  in three days is why the criterion is the delta.
+* **`python scripts/check_cairn.py` — assert `OK` and no *new* flag, never a file
+  count.** Re-measured `as_of 2026-08-05` at `66ce8c0`: **178 file(s) scanned; 48
+  external link(s) not probed; 2 issue(s)** — both `[path]` flags in
+  `dev/plans/review-gate-enforcement.md` from a concurrent scope's **uncommitted**
+  work, neither of them this plan's. The 180 / 68 figures no longer reproduce, and
+  the count gates nothing in either direction: `filter_sources`
+  (`scripts/link_check.py:503`) drops `dev/**/archive/`, `dev/modules/`,
+  `dev/.cairn/` and `dev/reflections/` as *sources*, so a correct archive
+  **lowers** it. Capture the flag **set** immediately before the first chunk and
+  compare sets. *Verification* says why this check cannot evidence either
+  detector.
 * **Change 1's corpus cost on Cairn's own tree is zero, re-measured.** Sweeping
   all 452 tracked `.md` / `.txt` / `.py` files against the 17 ignorable rows and
   18 noncharacter rows: **9 lines** carry a covered code point and **0** of them
@@ -331,18 +392,29 @@ above).
   --manifest` emits 96 lines (1 header + 95 data rows), `as_of 2026-08-04`.
   Expected diff after this plan: **empty**. A non-empty diff means
   `install_manifest()` was edited rather than merely read — stop and re-review.
-* **`vermin` is not installed in this environment**, so
-  `bootstrap/tests/test_python_floor.py` **skips gracefully** rather than
-  verifying the >= 3.11 floor for the new code. This is an unrun plan obligation
-  the proposal, the External round and the Internal round all left open; it stays
-  open and is fenced below rather than reasoned away.
+* **`vermin` IS installed, and the Python-floor fence is retired.** Re-measured
+  `as_of 2026-08-05` at `64e8b7c`: `vermin` is on PATH at
+  `/Users/kendal30/conda_envs/miniforge3/bin/vermin`, and `python -m pytest
+  bootstrap/tests/test_python_floor.py -q` reports **2 passed, 0 skipped** — it
+  does not skip. The `import vermin` probe that this plan, the Internal round and
+  the External round all used is **not the trigger that test consults**:
+  `_vermin_cmd()` shells the binary. Separately that test scopes to
+  `bootstrap/_scaffold/`, so it verifies nothing about
+  `templates/modules/team-gated/content_scan.py` either way. The obligation is an
+  **implementing-agent scoped run**, not a Maintainer act: `vermin --backport
+  dataclasses --backport typing templates/modules/team-gated/content_scan.py`,
+  pre-change baseline `Minimum required versions: 3.7` on the record, recorded in
+  the Chunk B commit body. **Do not let the old "graceful skip" sentence read as
+  an open obligation; it was never true.**
 * **Bandit 1.9.4 is available** at the canonical interpreter, so the
   Bandit-over-the-edited-file obligation is dischargeable in-session.
 
 ### The Maintainer fence
 
-Three items in this plan are **not an implementing agent's to perform**. They are
-listed here rather than discovered at gate time.
+**Four** items are **not an implementing agent's to perform** — numbered 1-4, of
+which **item 2 is retired**. The numbering is kept so the Gate-audit
+cross-references in the append-only Responses still resolve. Listed here rather
+than discovered at gate time.
 
 1. **The gate-manifest re-pin. Supervised, and the batching is the point.**
    After the last chunk lands, `_gate_manifest.py verify` reports
@@ -372,18 +444,124 @@ listed here rather than discovered at gate time.
    batch-window HOLD-by-default is no longer in force; the re-pin is schedulable
    rather than blocked.
 
-2. **The `vermin` / Python-floor verification.** `vermin` is a dev-only
-   dependency and is absent here, so `test_python_floor.py` skips rather than
-   verifying. The amendment adds `unicodedata.normalize` and the detector adds
-   `unicodedata.name`, neither of which moves the floor **by reasoning** — and
-   reasoning is not a `vermin` run. Either the Maintainer installs the dev
-   dependency and the run is recorded, or the >= 3.11 floor claim for the new
-   code ships **unverified and labelled as such**. Do not let the graceful skip
-   read as a pass.
+2. **RETIRED — the `vermin` / Python-floor verification is not a Maintainer act.**
+   Its premise (*"`vermin` is absent, so `test_python_floor.py` skips"*) is false
+   and was measured false; see *Gate accounting*. The obligation is an
+   implementing-agent scoped `vermin` run over the edited file, recorded in the
+   Chunk B commit body. **Nothing here waits on the Maintainer.**
 
 3. **Any decision to close whole-script Cyrillic.** Out of scope by the Decision,
    with recorded reasoning. Chunk D pins it open with a characterization test; if
    that test goes red, the correct response is a Decision, never a test edit.
+
+4. **The default-on admission gate.** No default-on selection of
+   `content-security`, and no Cairn self-adoption of it, lands until **Gate D-ON**
+   below holds in full. The gate is stated *identically* in this plan and in
+   `dev/plans/default-security-stance.md`. **No chunk of this plan flips a default
+   selection** — measured `as_of 2026-08-05` at `66ce8c0`: `content-security` is
+   absent from the 6-entry `_DEFAULT_ON_MODULES` and is selected by **none** of the
+   three shipped presets (`solo-greenfield`, `collaborative-team`,
+   `high-rigor-legacy`), and `bootstrap/_scaffold/config.py` has no
+   `_TOKEN_GATED_MODULES`. So this is a **prospective** gate, not a release
+   regression: in this file it binds no chunk of its own; it binds the reciprocal
+   plan's Chunk A (row A1) and Chunk D, and it is carried here so both sides read
+   one condition rather than two different ones.
+
+### Gate D-ON — the default-on admission gate
+
+**This block is shared, verbatim, with the reciprocal plan
+(`content-scan-detectors` <-> `default-security-stance`). A change to it lands
+in both files in the same commit, or it has not landed.** Identical copies are
+what stop either plan from reporting ready while its reciprocal is blocked.
+
+No chunk that flips a default selection from false to true lands until all
+three conditions hold. Each names *how it is determined*, and none is
+determined by a date or a position written inside the plan.
+
+* **D-ON-1 — the governing External round carries no outstanding REVISE.**
+  Determined by: enumerate every `## Plan review` section in this file whose
+  body carries `**Tier**: External`; for each, take the commit that introduced
+  it (`git log --format='%h %ad' --date=short -S '<its exact heading line>' --
+  <this file>`); the **governing** round is the one with the latest introducing
+  commit. Its verdict must not be REVISE. *The existence of a review section is
+  not discharge of a finding* — a SHIP, or a Maintainer disposition recorded
+  under D-ON-2, is.
+  **Why not file order, and why not the heading date.** Neither is provenance.
+  File position is editable and is already non-monotonic in this tree:
+  `dev/plans/portable-security-sweeps.md` carries its newest External section
+  (introduced by `e1b2e30`) at a *lower* line than the Response it answers, and
+  above an older External section introduced by `976b402`. The heading date is
+  author-written text inside the artifact under gate, so reading it lets the
+  gated party choose its own gate.
+* **D-ON-2 — the Maintainer's disposition of the default-on consequence is
+  recorded.** Determined by: a section in this plan that quotes the authorizing
+  instruction **verbatim and visually isolated** and names the consequence being
+  disposed of. Absent that quoted authorization the gate is NOT MET, whatever an
+  author Response asserts.
+* **D-ON-3 — the named default-adoption corpus is in the binding test
+  contract.** Determined by: each named corpus row exists as a parametrized case
+  in the named test file, and the suite passes with those cases present. Prose
+  that *cites* an example does not satisfy this; a row that is not in the test
+  file does not count, including a row named in an amendments table.
+
+D-ON is outcome-based, not round-counting: a single focused closure round may
+satisfy D-ON-1. It does not weaken the requirement that the findings themselves
+be settled.
+
+**Plan-local notes on applying D-ON.** Not part of the shared block. The
+reciprocal plan carries the same four notes.
+
+* **D-ON-1's enumeration, run here.** Sections in this file matching `^## Plan
+  review` whose body carries `**Tier**: External`: **exactly one** — the section
+  headed `## Plan review -- Codex (External) -- 2026-08-05`, introduced by
+  **`e1b2e30`** (2026-08-05). Measured `as_of 2026-08-05` at `66ce8c0` with `git
+  log --format='%h %ad' --date=short -S '## Plan review -- Codex (External) --
+  2026-08-05' -- dev/plans/content-scan-detectors.md`. The governing round is
+  therefore that section, and its verdict is **REVISE**. **Cited by heading text
+  rather than by line number, deliberately:** a line citation into the same file
+  that carries it shifts on every edit, including the edit that writes it.
+* **A standing obligation the enumeration creates.** Every future External section
+  in either plan **must** carry a `**Tier**: External` line. The two earlier
+  External sections — this file's `## Plan review -- Codex (External, security
+  lens) -- 2026-08-05` and the reciprocal plan's section of the same name — do
+  **not** carry one, so a round that omits the marker is invisible to the
+  enumeration, and an older *marked* section would then be read as governing. That
+  is a gate an author could walk through by forgetting a line.
+* **D-ON status today, stated so nobody reads discharge into the fold pass.**
+  **D-ON-1 — NOT MET.** The governing verdict is REVISE. D-ON-1 admits only two
+  discharges: a SHIP, or *"a Maintainer disposition recorded under D-ON-2"*. The
+  Maintainer's 2026-08-05 instruction disposes of the **review round** and is
+  recorded in *Maintainer disposition of the 2026-08-05 External review round*; it
+  is **not** a D-ON-2 disposition, because it does not name the default-on
+  consequence. Since the Maintainer has declined a further round, the only
+  remaining route to D-ON-1 is a D-ON-2 disposition, which discharges both at
+  once. **D-ON-2 — NOT MET**, and it is the load-bearing one. **D-ON-3 — NOT MET
+  today, satisfied by Chunk D**: the named corpus and the named test file are
+  Chunk D's *The default-adoption corpus* and `bootstrap/tests/test_content_scan.py`
+  (`test_appendix_f_fixture_contract`, row D14), and no such parametrized cases
+  exist in that file yet — checked, `as_of 2026-08-05` at `64e8b7c`.
+* **A measured correction to the shared block's rationale, reported rather than
+  silently fixed.** The block's *"Why not file order"* paragraph says
+  `dev/plans/portable-security-sweeps.md` carries its newest External section
+  *"above an older External section introduced by `976b402`"*. **That clause does
+  not reproduce.** Measured `as_of 2026-08-05` at `64e8b7c`: the `976b402` section
+  is at `dev/plans/portable-security-sweeps.md:1153` and the `e1b2e30` section is
+  at `:2253` — the newest is **below** the older one. The load-bearing half of the
+  paragraph *does* reproduce: the `e1b2e30` section at `:2253` sits at a **lower**
+  line than the Response at `:2275` that it re-reviews, and that Response was
+  introduced by `38858f1`, an **earlier** commit than `e1b2e30` (`976b402` 08:02 →
+  `38858f1` 09:00 → `e1b2e30` 10:02, same day). File position is therefore
+  non-monotonic in introducing-commit order in that tree, exactly as the block
+  claims, and the determination rule is unaffected. The block is left
+  **byte-identical in both plans** rather than reworded, because byte-identity is
+  the property that stops the two sides drifting; the correction lives here and in
+  *Sharpening*.
+
+**The reciprocal obligation AM-25 left open is discharged by this commit.** AM-25
+recorded the gate as *"half-stated"* and routed the other half to a *Lasting-truth
+migration* row that *"does not archive as discharged until both plans carry it"*.
+Both plans now carry the identical block, landed in one commit, so no new migration
+row is owed. The append-only migration table is untouched.
 
 ## Sequencing against `separator-detection`
 
@@ -429,7 +607,14 @@ documents that publish the contract.
 
 ```
 0. plan-open   -- this plan + the dev/PLANNING.md row-move            [commit pending]
-   (plan review) -- required(External, security lens); NO code before it lands
+   (plan review) -- required(External, security lens). Internal landed 2026-08-04;
+                    External landed 2026-08-05 with verdict REVISE, disposed of by
+                    the Maintainer (see the disposition section). No round 2 owed.
+   (gate D-ON)   -- no default-on flip of content-security and no Cairn
+                    self-adoption of it until D-ON-1..3 all hold. NO chunk of THIS
+                    plan is fenced by it; it fences the reciprocal plan's A1 and D.
+   Both gate lines have exactly one trigger: a person reading them. No test, no
+   hook, no CI -- Cairn has no CI.
 1. Chunk A -- the pattern id stops being inferred from prose          [commit pending]
 2. Chunk B -- unicode-tag + unicode-ignorable, guarded and legible    [commit pending]
 3. Chunk C -- the drift sentinel that can actually fail               [commit pending]
@@ -497,16 +682,19 @@ blesses the second inside its block — demonstrated in the record against the
 | B7 | `bootstrap/tests/test_content_scan.py` | `test_tag_id_is_not_suppressed_by_an_ignorable_marker` — a **block-scoped** `cairn-accept: unicode-ignorable` written for a variation-selector line does **not** silence a Tag-block payload planted inside the same block. This is the test that pins the Maintainer's direction. |
 | B8 | `bootstrap/tests/test_content_scan.py` | `test_existing_ids_keep_their_meaning` — a ZWSP line yields `unicode-zero-width` and **not** `unicode-ignorable`; a bidi line yields `unicode-bidi` only; a leading BOM stays exempt; a non-leading BOM still flags `unicode-zero-width`. |
 | B9 | `bootstrap/tests/test_content_scan.py` | `test_message_names_every_distinct_codepoint_on_the_line` — a line carrying a benign `U+FE0F` **before** a Tag-block payload produces a message naming **both** code points and a count. This is the same-line masking case. |
-| B10 | `bootstrap/tests/test_content_scan.py` | `test_ascii_guard_can_never_skip_a_detected_codepoint` — assert `min(lo for lo, _ in _IGNORABLE_RANGES + _NONCHARACTER_RANGES + [_TAG_RANGE]) >= 0x00AD`. Not a timing test; it pins the *precondition* the performance guard rests on. |
+| B10 | `bootstrap/tests/test_content_scan.py` | `test_ascii_guard_can_never_skip_a_detected_codepoint` — assert `min(lo for lo, _ in (*_IGNORABLE_RANGES, *_NONCHARACTER_RANGES, _TAG_RANGE)) >= ord(_ASCII_GUARD)`. **Two corrections, both required:** the tuple/list concatenation in the original form raises `TypeError` before it can assert anything, and the bound must be **the module's own guard constant**, never a hard-coded `0x00AD` — otherwise a future author who raises the guard leaves B10 green. B3 therefore names the guard character as a module constant `_ASCII_GUARD` (an escape form, never the raw character) and uses it in both loops. Not a timing test; it pins the *precondition* the performance guard rests on. |
 
 **Acceptance criteria — Chunk B.**
 
 * `python -m pytest bootstrap/tests/test_content_scan.py -q` → all pass, 0 skipped.
-* `python scripts/check_cairn.py` → **flag count unchanged**. The predicted delta
-  is zero and it is re-measured for this plan at zero (*Gate accounting*). **Any
-  movement means the corpus sweep was wrong; re-measure, do not suppress the new
-  flag** — that is the proposal's own signal-the-change-is-wrong tripwire, and it
-  is at full strength again now that the `+2` exposure has been repaired.
+* `python scripts/check_cairn.py` → **flag set unchanged**. **This check is
+  structurally incapable of moving for Change 1** and must not be cited as evidence
+  the detector works: `check_cairn` scans tracked Markdown only
+  (`scripts/check_cairn.py:50`, `:182`, `:393`) and **zero** tracked `.md` lines
+  carry any covered code point — all nine live in `.py` files. It is a guard
+  against someone planting a raw code point in Markdown, nothing more. Run it,
+  expect no movement, and if it moves, **re-measure, do not suppress the new
+  flag**.
 * **Perturbation P-B1, RUN, per-row and hazard-side.** Delete the
   `U+E0000`-`U+E007F` row; confirm B6's Tag case goes RED. Delete the
   `U+00AD` row; confirm B6's soft-hyphen case goes RED. Delete the `U+FDD0`-`U+FDEF`
@@ -521,8 +709,12 @@ blesses the second inside its block — demonstrated in the record against the
   skip; confirm **B8 goes RED** with a ZWSP line double-flagging.
 * **Perturbation P-B4 — the message, RUN.** Revert B5's message to naming only the
   first character; confirm **B9 goes RED**.
-* **Perturbation P-B5 — the guard's precondition, RUN.** Add a table row below
-  `U+00AD` (e.g. `(0x0000, 0x0008)`); confirm **B10 goes RED**. Restore.
+* **Perturbation P-B5 — the guard's precondition, RUN, both halves.** (i) Add a
+  table row below the guard (e.g. `(0x0000, 0x0008)`); confirm **B10 goes RED**.
+  Restore. (ii) Leave the tables alone and **raise `_ASCII_GUARD`** (e.g. to
+  `U+0100`); confirm **B10 goes RED again**. Restore. Half (ii) is what proves B10
+  reads the module's constant rather than a literal, and it is the half the
+  original form could not do.
 * **The performance number, recorded in the commit body, not asserted as a test.**
   Measured for this plan over the tracked `.md` corpus (89 445 lines, 5.59 MB),
   best of three: HEAD `_scan_unicode` 0.218 s; a naive per-character table walk
@@ -617,8 +809,13 @@ treats it as a letter: it sits **inside** a word without even splitting the toke
 Change 2, as amended, under the Maintainer's Greek-only + close-fullwidth
 direction and the Decision's Cyrillic residual.
 
-**The three clauses. A token flags when any holds:**
+**The four clauses. A token flags when any holds:**
 
+0. **Two or more distinct non-Latin confusable scripts in one token always flags.**
+   Latin is excluded from the count; the clause is HEAD's script-blind rule
+   restricted to the no-Latin case, so it removes no flag HEAD has and adds none.
+   Measured free: all 37 published scientific false positives carry exactly one
+   non-Latin script. Clauses 1-3 are evaluated after it.
 1. **Whole-script confusable — Greek only, plus fullwidth Latin closed
    separately.** *Greek arm*: the token has no Latin characters, all its letters
    are Greek, it has at least three letters, and **every** letter is confusable
@@ -629,7 +826,9 @@ direction and the Decision's Cyrillic residual.
    direction calls it a pure-loss vector closable at zero natural-language cost.
    **Whole-script Cyrillic is deliberately not an arm here.**
 2. **Non-Greek confusable script mixed with Latin always flags.** Cyrillic,
-   Armenian, Cherokee, Coptic, fullwidth. Unchanged behaviour from HEAD.
+   Armenian, Cherokee, Coptic, fullwidth. **Unchanged behaviour from HEAD for any
+   token containing a Latin character**; the no-Latin case is clause 0's, and
+   without clause 0 this sentence is false.
 3. **Greek mixed with Latin where a Greek character is confusable.** NFD-fold each
    Greek character, then test membership in `_NO_LATIN_TWIN`. The one exception is
    the two-character variable-plus-subscript shape: exactly one Latin letter,
@@ -688,8 +887,11 @@ performed:
   benign-direction shadow of the same defect.
 * **13 of [I1]'s 14 tokens close.** The fourteenth is `U+03B4`+`o`, a
   two-character token — the shape the proposal explicitly names and carves out.
-  So the proposal's own falsifying criterion (*"a spoof that HEAD catches and the
-  patch clears, other than the named two-character shape"*) **no longer fires**.
+  So the proposal's own falsifying criterion fires only on a class the plan can
+  name: **no spoof HEAD catches is cleared except the two-character shape and the
+  seven seeded-letter families (`U+0394`, `U+03BB`, `U+03C6`, `U+03A9`, `U+03B2`
+  x2, `U+03BC`), whose ASCII-twin status is asserted by judgment and unattested to
+  any external oracle.** That sentence is checkable; *"no longer fires"* was not.
 * Every one of the nine seeded letters appears in the proposal's 42-token set in
   **exactly the case the parenthetical names**, which is strong evidence the
   parenthetical was read off the measured residual case-exactly in the first
@@ -713,13 +915,23 @@ derivation. That converts "someone's judgment was incomplete" into "the table
 disagrees with its own published figures", which is a test — but it does not
 convert it into "the table covers its domain", which is not.
 
+**Binding on the commit record.** The implementing commit body must state that the
+ASCII-twin judgments are **reviewed curation** and must reproduce the exact
+false-negative boundary that rows **E2** and **E3** publish. **Neither D9's
+residual reconciliation nor any corpus-derived zero — Cairn's tree, the proposal's
+token sets, or the default-adoption corpus below — may be cited as evidence that
+the judgments are correct.** D9 is a drift guard; the corpus is a regression
+contract; neither is an oracle. A commit body offering a measured zero as
+correctness evidence is the External round's finding, committed.
+
 | # | File | Change |
 |---|------|--------|
-| D1 | `templates/modules/team-gated/content_scan.py` | `_NO_LATIN_TWIN`, a `frozenset` of Greek code points **written as `\uXXXX` escapes or integer literals**, each with a comment naming why it has no ASCII twin. Seeded and admitted per the rule above. |
-| D2 | `templates/modules/team-gated/content_scan.py` | `_is_confusable_greek(ch)` — NFD-fold, then test non-membership in `_NO_LATIN_TWIN`. |
-| D3 | `templates/modules/team-gated/content_scan.py` | `_scan_homoglyph` rewritten to the three clauses. Clause 1's comment and the code both say **"for Greek"**; the fullwidth arm is separate and commented as the bijection case. A comment records that **whole-script Cyrillic is a declared residual of the Decision**, with the one-line reason (authority granting is closed by `byline-classification`) so a future reader meets a priced decision rather than an oversight. |
+| D1 | `templates/modules/team-gated/content_scan.py` | `_NO_LATIN_TWIN`, a `frozenset` of **single-character `str` members written as `\uXXXX` escapes. Integer literals are forbidden** — the int form invites `ord(normalize("NFD", ch))`, which raises on 217 of the 218 Greek Extended letters. Seeded and admitted per the rule above, and **each of the nine seeded letters carries its own per-code-point justification comment** under the same admission rule as the three admitted variants: inheritance from the base proposal is **not** sufficient. Each comment states whether the letter is **pinned by a published figure** (`U+0394`, `U+03BB`, `U+03C3`, `U+03B8`, `U+03C6`, `U+03C8`, `U+03B2`, `U+03A9` — these move the residual count) or **figure-unconstrained** (`U+03BC`: dropping it leaves both decisive figures bit-identical, because the 42-token set's micro tokens are `U+00B5` MICRO SIGN, not `U+03BC`; its new exposure is longer tokens such as `U+03BC`+`pload`, since RV5 already clears short micro-prefixed ones at HEAD). |
+| D2 | `templates/modules/team-gated/content_scan.py` | `_is_confusable_greek(ch)` — take `unicodedata.normalize("NFD", ch)[0]` (**the arity is pinned: NFD of a Greek Extended letter is a multi-character string**), then test non-membership in `_NO_LATIN_TWIN`. |
+| D3 | `templates/modules/team-gated/content_scan.py` | `_scan_homoglyph` rewritten to the **four** clauses. **Clause 0 is evaluated first** and its comment states the measured zero-cost basis (37/37 published scientific false positives carry exactly one non-Latin script). Clause 1's comment and the code both say **"for Greek"**; the fullwidth arm is separate and commented as the bijection case. A comment records that **whole-script Cyrillic is a declared residual of the Decision**, with the one-line reason (authority granting is closed by `byline-classification`) so a future reader meets a priced decision rather than an oversight. |
 | D4 | `bootstrap/tests/test_content_scan.py` | `test_scientific_notation_does_not_flag` — the cleared shapes, by code point: `U+0394`+`G`, `U+03BB`+`max`, `U+03C3`+`y`, `U+03C1`+`w`, `K`+`U+03B1`, `U+03B5`+`r`, `U+03B2`+`sheet`, `U+03B8`+`r`, `U+03C6`+`p`, `U+03A9`+`n`. |
-| D5 | `bootstrap/tests/test_content_scan.py` | `test_spoofs_still_flag` — `p`+`U+0430`+`ssword` (Cyrillic), `U+0391`+`dmin`, `U+03C1`+`assword`, `s`+`U+03BF`+`urce`, `k`+`U+03B5`+`y`, plus **all 14 of [I1]'s tokens except the named two-character shape**. This is the [I1] regression and the reason the falsifying criterion stops firing. |
+| D5 | `bootstrap/tests/test_content_scan.py` | `test_spoofs_still_flag` — `p`+`U+0430`+`ssword` (Cyrillic), `U+0391`+`dmin`, `U+03C1`+`assword`, `s`+`U+03BF`+`urce`, `k`+`U+03B5`+`y`, plus **all 14 of [I1]'s tokens except the named two-character shape**. This is the [I1] regression and the reason the falsifying criterion narrows to the named class. |
+| D5b | `bootstrap/tests/test_content_scan.py` | `test_no_latin_multi_script_flags` — clause 0's own test, carrying **corpus rows NL-1..NL-12 by code point** (`U+0455 U+0435 U+0455 U+0455 U+0456 U+043E U+0578`; `U+0580 U+043E U+0578 U+0456 U+0578`; `U+043E U+2C9F U+0580`; `U+03C1 U+0430 U+0455 U+0455`; `U+0430 U+0501 U+0574 U+0456 U+0578`; `U+043E U+03C1 U+0435 U+0578`; `U+13A0 U+0430 U+0440`; `U+2C85 U+0578 U+0455`; `U+FF32 U+043E U+043E U+0442`; `U+0574 U+03B1 U+0456 U+0578`; `U+0561 U+0455 U+0455`; `U+13D2 U+03BF U+043A U+0435 U+0578`) plus **RX-3**, all written as `\uXXXX` escapes, each asserted **flagged**. The docstring records the provenance key per row — the English glosses in the record are commentary and are **not** the specification. |
 | D6 | `bootstrap/tests/test_content_scan.py` | `test_whole_script_greek_flags` — `U+03C4 U+03BF U+03BA U+03B5 U+03B7`, the variant-letterform form with `U+03F0` substituted, and the lunate-sigma word with `U+03F2`. |
 | D7 | `bootstrap/tests/test_content_scan.py` | `test_whole_script_fullwidth_flags` — a fullwidth-Latin token of at least three letters flags; a two-letter one does not. |
 | D8 | `bootstrap/tests/test_content_scan.py` | `test_declared_residuals_stay_open` — the **characterization** test. Whole-script Cyrillic does **not** flag; a Cyrillic personal name does **not** flag; the beta family does **not** flag; the two-character carve-out does **not** flag. Its docstring says what it is for: these are limits the Decision **priced**, and if this test goes red the correct response is a Decision, never a test edit. |
@@ -727,6 +939,81 @@ convert it into "the table covers its domain", which is not.
 | D10 | `bootstrap/tests/test_content_scan.py` | `test_no_latin_twin_is_bounded_and_in_domain` — every member is inside the two Greek `_SCRIPT_RANGES` rows (`U+0370`-`U+03FF`, `U+1F00`-`U+1FFF`), no member is a dead entry, and the set's size is **pinned** so a silent addition fails loudly. Verified for this plan: those two rows span 400 code points carrying **347** assigned letters, 129 in Greek and Coptic and 218 in Greek Extended. |
 | D11 | `bootstrap/tests/test_content_scan.py` | `test_rv5_scientific_units_still_clear` — the micro and ohm unit shapes, unchanged. |
 | D12 | `bootstrap/tests/test_content_scan.py` | The existing `TestHomoglyphExpandedScripts::test_expanded_confusable_scripts_flagged` (at `bootstrap/tests/test_content_scan.py:81`) must pass **unmodified**. Clause 2 is unchanged behaviour and an edit to that test would be the tell that it is not. |
+| D13 | `bootstrap/tests/test_content_scan.py` | `test_scan_text_survives_every_greek_letter` — `scan_text` **does not raise** across all **347** assigned letters in the two Greek `_SCRIPT_RANGES` rows (`U+0370`-`U+03FF`, `U+1F00`-`U+1FFF`), each alone and each in a token with a Latin neighbour. D10 pins the table's members; D13 pins the function against its domain. |
+| D14 | `bootstrap/tests/test_content_scan.py` | `test_appendix_f_fixture_contract` — a **parametrized, table-driven** test over the whole **default-adoption corpus** defined immediately below: all **71** Appendix F ids **plus** the **three External-reviewer-supplied rows `RX-1`-`RX-3`** = **74 cases**, each asserting the **exact pattern-id set** its fixture produces. It replaces no row (D4-D13 stay); it is the row that makes the corpus executable rather than narrative. **This is the "named test file" and the binding test contract that Gate D-ON condition D-ON-3 refers to.** |
+
+#### The default-adoption corpus — D14's binding acceptance contract
+
+**This subsection is the "named default-adoption corpus" of Gate D-ON condition
+D-ON-3, and `bootstrap/tests/test_content_scan.py` is its named test file.** The
+corpus is **frozen**: the implementer may **add** rows and may **not** remove,
+alter, or re-measure away an existing one. A row whose measured result disagrees
+with its `required` column is a **stop**, not a row to adjust. **Prose that cites
+an example does not satisfy D-ON-3, and a row that is not a parametrized case in
+that test file does not count** — including a row named only in an amendments
+table.
+
+**Part 1 — Appendix F, read as written.** Tables F1-F6 of `## Response to plan
+review -- Claude (author) -- 2026-08-05` are the pinned part of the corpus and are
+not re-litigated here. **Row count re-derived for this fold pass** by extracting
+the ids from the file (`as_of 2026-08-05` at `64e8b7c`): **71 fixture ids, zero
+duplicates** — F1 `IG-1..IG-15` (15), F2 `NL-1..NL-12` (12), F3 `WS-1..WS-5` +
+`MX-1..MX-9` (14), F4 `SC-1..SC-10` + `RS-1..RS-4` (14), F5 `FN-1..FN-14` (14),
+F6 `GE-1`/`GE-2` (2). **The "56 rows" figure that AM-22 and Appendix F's own
+*Totals* line carry is the homoglyph-family subset only** — F2+F3+F4+F5+F6 =
+12+14+14+14+2 = 56 — because those are the rows the author's reconstruction could
+measure. It **excludes F1's 15 ignorable / tag rows**, which are specification-only
+(no detector exists yet). **D14 covers all 71**: `IG-13` and `IG-14` are the
+Maintainer's id-split cases, exactly the rows a homoglyph-only reading would drop.
+
+**Part 2 — the three External-reviewer-supplied rows.** Provenance:
+**supplied by the External reviewer in `## Plan review -- Codex (External) --
+2026-08-05`. Author-built: no. Author-realized: no.** They are the only rows in the
+corpus with independent provenance, and the provenance is part of the contract —
+D14's parametrize table carries a `prov` field per row and `RX-1`-`RX-3` carry
+`"external-reviewer"`, so a later relabel is visible in the diff. Every `HEAD`
+column below is a **measurement of the shipped scanner** taken for this fold pass:
+canonical interpreter, `scan_text(text, scan_urls=False)`, `as_of 2026-08-05` at
+`64e8b7c`.
+
+| id | fixture (own line, by code point) | cat | HEAD (measured) | required after | line behaviour | isolation behaviour | prov |
+|---|---|---|---|---|---|---|---|
+| RX-1 | `a a` `U+2061` `b b` — FUNCTION APPLICATION embedded mid-token | `Cf` | **no flag** (detector does not exist yet) | **`unicode-ignorable`** | **exactly one** flag on that line, and no flag on any other line of the fixture (one flag per line per category, B3) | **not** `unicode-zero-width` and **not** `unicode-bidi`. Measured: `U+2061` is in **neither** `_ZERO_WIDTH` nor `_BIDI`, so B4's skip rule does not divert it. A `cairn-accept: unicode-tag` marker on the line does **not** suppress it | external-reviewer |
+| RX-2 | `a a` `U+E0061` `b b` — TAG LATIN SMALL LETTER A embedded mid-token | `Cf` | **no flag** (detector does not exist yet) | **`unicode-tag`** | **exactly one** flag on that line | **not** `unicode-ignorable` — B2 carves `U+E0000`-`U+E007F` out of the ignorable set — and not `unicode-zero-width` / `unicode-bidi`. A **block-scoped** `cairn-accept: unicode-ignorable` does **not** suppress it: B7's property, now asserted on a reviewer-supplied row | external-reviewer |
+| RX-3 | `U+03BF U+0440 U+03B1` — Greek omicron + Cyrillic er + Greek alpha | `Ll`/`Ll`/`Ll` | **`homoglyph`**, measured — HEAD's `len(_token_scripts(token)) > 1` rule fires on `{cyrillic, greek}` | **`homoglyph`**, and **from clause 0** | **exactly one** flag on that line; the token is **one** token (`_TOKEN_RE` does not split it) | **clears when clause 0 alone is disabled**, and stays clear under clauses 1-3 — measured in the fold-pass reconstruction: clause 0 ON → FLAG, clause 0 OFF → clear. No other clause reaches it: there is no Latin character, so clauses 2 and 3 cannot fire, and the letters are not all Greek, so clause 1's Greek arm cannot | external-reviewer |
+
+**What the measurement found, including what the reviewer's framing does not
+predict.** All three rows take the paths the reviewer named, and RX-3's HEAD
+column reproduces its prediction exactly. Two things the reviewer's wording does
+not cover, both measured:
+
+* **Both invisibles split the token.** `_TOKEN_RE` over `"aa" + U+2061 + "bb"`
+  yields **two** tokens (`'aa'`, `'bb'`), not one; likewise for `U+E0061`. So
+  *"embedded in a token"* is true of the **line**, not of the tokenizer, and these
+  rows are unlike `IG-6` (`U+3164` HANGUL FILLER, category `Lo`, which does **not**
+  split). It does not change either expected flag — the ignorable and tag detectors
+  scan characters per line and never consult `_TOKEN_RE` — and **D14 asserts the
+  token split explicitly** so the distinction is pinned rather than assumed.
+* **RX-1 and RX-2 flag nothing at HEAD, and that is the point.** Their `HEAD`
+  column is a measurement of *absence*; their `required` column is specification.
+  Their membership in `_IGNORABLE_RANGES` / `_TAG_RANGE` is **not** evidenced by
+  D14 at all. Both are general category **`Cf`** (measured), so the row that pins
+  their presence in the tables is **C1** (`test_cf_sweep_is_covered`), whose oracle
+  is `unicodedata` — a channel the tables do not read. **C1 does not exist at
+  HEAD**: checked `as_of 2026-08-05` at `64e8b7c`,
+  `bootstrap/tests/test_content_scan.py` carries **no** `Cf` sweep. Until Chunk C
+  lands, nothing verifies table membership, and D14 alone would not notice.
+
+**What supplies the material — stated because it is the finding this corpus
+answers.** RX-1's and RX-2's post-implementation measurements will be produced by
+the detectors under test, so **D14 alone cannot evidence that the detectors are
+correct; it is a regression contract.** Three parts are independent of the code
+under test and are what the contract rests on: the **reviewer** chose the code
+points (not the author); `unicodedata` supplies the categories and C1/C2/C3 supply
+table coverage from it; and RX-3's `HEAD` column is a measurement of the *shipped*
+scanner taken before any code changed. **No corpus-derived zero from this table may
+be cited as evidence the judgments are right** — see *Binding on the commit record*
+above.
 
 **Acceptance criteria — Chunk D.**
 
@@ -761,7 +1048,30 @@ convert it into "the table covers its domain", which is not.
   record before anyone needs it.
 * **Perturbation P-D6 — RV5 still carries weight, RUN.** Delete the
   `_is_scientific_unit` call from `_scan_homoglyph`; confirm **D11 RED**.
-* **The falsifying sweep must be RUN, not reasoned.** Over the union of every
+* **Perturbation P-D7 — clause 0 is load-bearing, RUN.** Delete clause 0; confirm
+  **D5b goes RED** on NL-1..NL-12 and on RX-3, and confirm **D4's scientific set
+  stays green**. Restore; confirm `git diff` empty.
+* **Perturbation P-D8 — the NFD arity is pinned, RUN.** Replace D2's pinned `[0]`
+  with the bare `normalize(...)` inside `ord(...)`; confirm **D13 goes RED** with
+  `TypeError: ord() expected a character, but string of length 2 found`. Restore.
+* **Perturbation P-D9 — a silently-shrunk corpus is a red test, RUN.** Delete any
+  single row from D14's parametrize table and confirm the run reports a
+  **missing-row** failure: D14 asserts the row-id set against a literal, typed
+  manifest of all **74** ids, so a deletion fails on the manifest instead of
+  quietly passing with fewer cases. Restore; confirm `git diff
+  bootstrap/tests/test_content_scan.py` empty.
+* **Perturbation P-D10 — the reviewer's three rows each bite, RUN, per row.**
+  RX-1: delete whichever `_IGNORABLE_RANGES` row covers `U+2061`; confirm **RX-1
+  RED, RX-2 green**. RX-2: delete `_TAG_RANGE` and let the general table cover the
+  block; confirm **RX-2 RED** (it now reports `unicode-ignorable`) **and RX-1
+  green**. RX-3: covered by P-D7. Restore after each and verify byte-identically.
+  *A row that cannot be made to fail is not acceptance evidence.*
+* **The falsifying sweep must be RUN, not reasoned.** **The record's token sets
+  cannot find the no-Latin multi-script class — no set in the record contains such
+  a token, so the sweep's answer over the record alone is fixed by construction.**
+  The sweep therefore runs the record's sets **plus the whole default-adoption
+  corpus above**, RX-1..RX-3 included, before any sweep result is treated as
+  evidence. Over the union of every
   token set in the proposal's record — 42 + 83 scientific, and the 21 hand-built,
   153 single-substitution, 40 maximal-substitution, 41-token and 51-token spoof
   sets — enumerate **every** token that HEAD flags and the implementation clears.
@@ -772,23 +1082,32 @@ convert it into "the table covers its domain", which is not.
   `missed=` set from the run** — the record establishes it moves under any change
   to the denylist, and `U+03C1 U+03BF U+03C3 U+03B9` is predicted to stay missed
   because `U+03C3` is seeded untwinned.
-* **NFD folding — measure it, and report what it does.** Under a denylist,
-  NFD folding **widens clearing** rather than closing a bypass; that polarity
-  inverted when the set inverted, and the amendment carried the mechanism over
-  without restating its effect. Under the case-exact seed, **no** precomposed or
-  Greek Extended form appears to fold onto a seeded base, which would make the
-  folding inert. Measure it: report how many of the 218 assigned Greek Extended
-  letters fold onto a `_NO_LATIN_TWIN` member, and whether any of them is itself
-  ASCII-confusable. If the number is zero, say so in the code comment and keep the
-  fold as declared defence for a future denylist addition; if it is not zero, the
-  cleared set must be listed and put to the plan reviewer. **Do not ship a
-  mechanism described as a guard without a number saying what it guards.**
-* **Channel note.** Subject: `_scan_homoglyph` and `_NO_LATIN_TWIN`. D4-D8 and D11's
-  oracle is code-point literals typed into the test by a human from the proposal's
-  published token sets — not derived from the table. D9's oracle is the
-  proposal's own **published figures**, an artifact written before the
-  implementation existed. D10's oracle is `_SCRIPT_RANGES` plus `unicodedata`
-  category data, which the denylist does not read.
+* **NFD folding widens clearing, and the number is 20 — measured, not predicted.**
+  Under a denylist the fold **widens clearing** rather than closing a bypass; that
+  polarity inverted when the set inverted. The plan's original prediction of zero
+  fold-reachable forms is **wrong**: the number is **20**, all capital-omega
+  variants — `U+038F` (in Greek and Coptic, a block the original question did not
+  even scope), `U+1F68`-`U+1F6F` (8), `U+1FA8`-`U+1FAF` (8), `U+1FFA`-`U+1FFC` (3)
+  — and `U+038F`+`mega`, `U+1F68`+`mega`, `U+1FFB`+`mega` are flag-at-HEAD →
+  cleared-by-the-rule. **The code comment beside the fold must carry the number 20
+  and list the set**, and the module doc must state that the fold widens clearing
+  under a denylist. Re-derive the 20 against the landed `_NO_LATIN_TWIN` rather
+  than copying it from here; if it moves, the listed set and the published boundary
+  move with it. **Do not ship a mechanism described as a guard without a number
+  saying what it guards.**
+* **Channel note.** Subject: `_scan_homoglyph` and `_NO_LATIN_TWIN`. D4-D8, D5b and
+  D11's oracle is code-point literals typed into the test by a human from the
+  record's published token sets and from the corpus above — not derived from the
+  table. **D9 is a *drift* guard, not an independence check:** the case-exact seed
+  was selected **because** it reproduces the published residual count, so D9 cannot
+  fail for the seed as selected; it fails when the table drifts from what the module
+  doc publishes, which is what P-D1 perturbs and what makes it worth having. Read
+  the *Author-accounting* invariant *"`_NO_LATIN_TWIN` agrees with the figures the
+  module doc publishes"* as a consistency check between two descriptions of one
+  judgment, **never** as a check that the judgment is right. D10's oracle is
+  `_SCRIPT_RANGES` plus `unicodedata` category data, which the denylist does not
+  read. D14's independence is bounded and stated in *The default-adoption corpus*
+  above.
 
 ---
 
@@ -801,10 +1120,10 @@ exists to close.
 | # | File | Change |
 |---|------|--------|
 | E1 | `templates/modules/team-gated/content_scan.py` module docstring | The bulleted pattern-id list (lines 29-55 at HEAD) gains **`unicode-tag`** and **`unicode-ignorable`**, each with a one-line description and the PRECIS / RFC 8264 § 9.13 citation. The `unicode-zero-width` and `unicode-bidi` entries gain a clause stating their meaning is **unchanged** and that a character they own is skipped by the new detectors. |
-| E2 | `templates/modules/team-gated/content_scan.py` module docstring | The `homoglyph` entry (line 46 at HEAD) is rewritten to describe the confusability rule: what a flag now means (*a character here imitates a Latin letter*, not *this token contains Greek*), the three clauses with clause 1 stated **"for Greek"** and the fullwidth arm named separately, and the retained RV5 allowance. |
-| E3 | `templates/modules/team-gated/content-security.md` | The *Scientific-unit homoglyph allowance* section (lines 138-144 at HEAD) becomes *Scientific-notation homoglyph allowance*: the rule in two sentences; the residual shapes that still flag — **measured at execution, never carried from this plan or from the proposal**; the beta-family limit and the one-line reason it was priced that way; the two-character carve-out; and the declared whole-script-Cyrillic residual with its reason. It must also state the limit C2 names: the ignorable table is a **pinned snapshot** of UCD 15.1.0, not a live derivation. |
+| E2 | `templates/modules/team-gated/content_scan.py` module docstring | The `homoglyph` entry (line 46 at HEAD) is rewritten to describe the confusability rule: what a flag now means (*a character here imitates a Latin letter*, not *this token contains Greek*), the **four** clauses with clause 0 stated first, clause 1 stated **"for Greek"** and the fullwidth arm named separately, and the retained RV5 allowance. It must also carry, in the same words as E3: **`_NO_LATIN_TWIN` is reviewed curation, not a derivation** — no external oracle attests it and `unicodedata` exposes none — and the **exact known false-negative boundary**: a spoof HEAD catches is cleared **only** when every Greek character it contains lies in the 32-code-point NFD-fold closure of `_NO_LATIN_TWIN` (`U+0394 U+03A9 U+03B2 U+03B8 U+03BB U+03BC U+03C3 U+03C6 U+03C8 U+03D1 U+03D5 U+03D6`, plus the 20 fold-reachable capital-omega variants `U+038F`, `U+1F68`-`U+1F6F`, `U+1FA8`-`U+1FAF`, `U+1FFA`-`U+1FFC`), **or** it is the two-character Latin-plus-Greek shape, **or** RV5 already cleared it. **Re-derive the closure against the landed table** — the record's exhaustive verification (12 492 constructed tokens; 1 306 flag-at-HEAD tokens clear; 0 outside the boundary) was measured against a reconstruction, not against code. |
+| E3 | `templates/modules/team-gated/content-security.md` | The *Scientific-unit homoglyph allowance* section (lines 138-144 at HEAD) becomes *Scientific-notation homoglyph allowance*: the rule in two sentences; the residual shapes that still flag — **measured at execution, never carried from this plan or from the proposal**; the beta-family limit and the one-line reason it was priced that way; the two-character carve-out; and the declared whole-script-Cyrillic residual with its reason. It must also state the limit C2 names: the ignorable table is a **pinned snapshot** of UCD 15.1.0, not a live derivation. **And it carries the same two sentences as E2**: that `_NO_LATIN_TWIN` is **reviewed curation, not a derivation**, and the **exact known false-negative boundary** with its 32-code-point closure, re-derived against the landed table. It must also say that the NFD fold **widens clearing** under a denylist. |
 | E4 | `templates/modules/team-gated/content-security.md` | The *Template content* blockquote (lines 25-33 at HEAD) lists the flagged families for an adopter's docs guide; add the invisible / default-ignorable family so the adopter-facing sentence matches the shipped detector set. |
-| E5 | `CHANGELOG.md > Unreleased` | **`Added`** — the `unicode-ignorable` and `unicode-tag` detectors over the PRECIS set. **`Changed`** — the `homoglyph` detector is confusability-aware; scientific Greek notation no longer flags. **`Fixed`** — the pattern id is no longer inferred from message prose (shared with `separator-detection`; whichever lands second does not duplicate the line). Cross-reference the proposal and plan **by filename stem, not path link**. Written at the serialization point, not mid-chunk. |
+| E5 | `CHANGELOG.md > Unreleased` | **`Added`** — the `unicode-ignorable` and `unicode-tag` detectors over the PRECIS set, **with its own upgrade-consequence sentence, symmetric with `Changed`**: *"`unicode-ignorable` fires on variation selectors, so a previously-clean adopter tree containing emoji gains flags on upgrade."* The bound is stated as a **rule, not a density figure** — one flag **per line per category**, so the cost is bounded by emoji-bearing *lines* — with a worked example in `content-security.md`. **Cairn's own corpus is unusable as evidence here**: zero `U+FE0F` across its tracked files is the house escape-form convention, not a fact about adopters, and a density figure against a named external corpus with a stated sampling frame is a Maintainer call, not this plan's to invent. **`Changed`** — the `homoglyph` detector is confusability-aware; scientific Greek notation no longer flags. **`Fixed`** — the pattern id is no longer inferred from message prose (shared with `separator-detection`; whichever lands second does not duplicate the line). Cross-reference the proposal and plan **by filename stem, not path link**. Written at the serialization point, not mid-chunk. |
 
 **Acceptance criteria — Chunk E.**
 
@@ -841,14 +1160,18 @@ exists to close.
 Per-chunk criteria are above; these are the plan-level deliverables.
 
 * **Tests that must pass.**
-  * `python -m pytest bootstrap/tests` — the whole suite, green, **0 failed /
-    0 skipped beyond the pre-existing `vermin` skip / 0 xfailed**, under the
-    canonical interpreter (3.13.13) with `PYTHONDONTWRITEBYTECODE=1`. Collection
-    baseline **1746 nodes `as_of 2026-08-04`**; it grows by exactly the new nodes
-    and drops none.
+  * `python -m pytest bootstrap/tests` — the whole suite, green, **0 failed / 0
+    skipped / 0 xfailed**, under the canonical interpreter (3.13.13) with
+    `PYTHONDONTWRITEBYTECODE=1`. *There is no pre-existing `vermin` skip:*
+    `test_python_floor.py` passes (2 passed, 0 skipped), re-measured `as_of
+    2026-08-05` at `64e8b7c`. **The collection baseline is a procedure, not a
+    constant** — capture it immediately before the first chunk and compare against
+    that capture; it grows by exactly the new nodes and drops none. **Do not
+    compute a delta against any number written in this file.**
   * [`bootstrap/tests/test_content_scan.py`](../../bootstrap/tests/test_content_scan.py)
-    — every new case A3, B6-B10, C1-C5, D4-D12, and the existing 15 assertions
-    unmodified.
+    — every new case A3, B6-B10, C1-C5, D4-D14 (D5b included), and every existing
+    assertion unmodified. `TestHomoglyphExpandedScripts` in particular is untouched
+    (D12).
   * **Every new test shown non-vacuous by a RUN perturbation of the hazard**, with
     the ledger — the change made, the failure observed with its message, the
     byte-identical restore verified against `git diff <path>` — in the commit body.
@@ -874,6 +1197,20 @@ Per-chunk criteria are above; these are the plan-level deliverables.
 * **Inbound path-link updates.** None expected. `dev/PLANNING.md` and
   `dev/NEXT_SESSION.md` refer to plans by filename stem, not path link, so the
   archive-move needs no edit there. Confirm at archive time rather than assume.
+* **The code-review heading is defective, and the archive gate does not notice.**
+  The landed code review **must** append as a `### Code review -- <reviewer> --
+  YYYY-MM-DD` sub-heading under the `## Code review` placeholder, and **the bare
+  placeholder must not be treated as satisfying anything.** Opened and confirmed
+  for this fold pass in `templates/skills/_lib/lifecycle_planner.py`: `_has_kind`
+  (at `:697`) is a `startswith` on the section *kind* alone, and it is consumed by
+  the archive-time conformance check `if not _has_kind(art, "Code review")` (at
+  `:797`) and by the gate list (at `:880`). So `_has_kind(art, "Code review")`
+  returns **True today**, satisfied by the **empty** section, and the archive-time
+  check would pass with **no code review having occurred**. The *Plan review — the
+  brief* heading already carries this warning inline; nothing carried it for
+  `## Code review`, and that placeholder is an append-only review surface, so this
+  fold pass homed the warning here instead of annotating it there. **The trigger is
+  a human reading this bullet** — no test, no hook, and Cairn has no CI.
 
 ### Author-accounting — invariants, failure modes, edge cases
 
@@ -999,16 +1336,28 @@ enforces):
 * **The adopter path** — scaffold a throwaway tree with the `content-security`
   module and run `python scripts/content_scan.py <file>` inside it. The installed
   copy must be byte-identical to the template and behave identically.
-* **The corpus tripwire, at full strength.** `python scripts/check_cairn.py` flag
-  count **must not move**. Re-measured for this plan at a predicted delta of
-  **zero**, now that the two raw ignorable code points in the proposal file have
-  been repaired to escaped form. Any movement means the corpus comparison was
-  wrong: **re-measure before proceeding, do not suppress the new flag.**
+* **The corpus tripwire is NULL for both changes, and this is the plan's own
+  recurring-failure class.** Change 1: **zero** tracked `.md` lines carry a covered
+  code point — all nine live in `.py` files. Change 2: there are **zero unsuppressed
+  `homoglyph` flags in the entire tracked Markdown tree**; the only file carrying
+  any is the source proposal (73 raw lines, all silenced by its own 23 block-scoped
+  `cairn-accept: homoglyph` markers), so a measured 0-removed / 0-added is an
+  artifact of the proposal having suppressed itself. **The artifact under
+  verification is supplying the material the check runs on.** Run
+  `python scripts/check_cairn.py`, require the flag **set** not to move, and **do
+  not cite the result as evidence either detector is correct.**
+* **The informative run instead** — the `.py`/`.txt` half of the tracked sweep,
+  plus the **default-adoption corpus** in Chunk D, which by construction contains
+  the newly-covered code points and the no-Latin multi-script tokens, and whose
+  provenance is stated per row. That corpus is a regression contract, not an oracle;
+  its independence is bounded and the bound is written in Chunk D.
 * **The file-by-file flag-set comparison** — for each tracked `.md`, compare the
-  full `(pattern_id, line)` set before and after. Predicted: **0 files change**.
-  Do this over the full tracked set, not `check_cairn`'s filtered set: the two
-  differ (`filter_sources` in `scripts/link_check.py` drops archived deliberation
-  files), and the proposal's prediction is stated over the full set.
+  full `(pattern_id, line)` set before and after. Predicted: **0 files change**, and
+  the prediction is near-vacuous for the reasons above. Do it over the full tracked
+  set, not `check_cairn`'s filtered set: the two differ (`filter_sources` at
+  `scripts/link_check.py:503` drops `dev/**/archive/`, `dev/modules/`,
+  `dev/.cairn/` and `dev/reflections/` as sources), and the proposal's prediction is
+  stated over the full set.
 * **The falsifying sweep** (Chunk D acceptance) — the single most important run in
   this plan. Its output goes in the commit body verbatim.
 * **The perturbation ledgers** — per chunk, in the commit body: the change made,
@@ -2873,3 +3222,95 @@ The current default selections remain false across all presets, so this is a
 prospective gate rather than a release regression. In a focused run under the
 canonical interpreter, `test_content_scan.py` and `test_security_stack.py`
 passed 104 tests; that verifies today's baseline, not the proposed corpus.
+
+### Sharpening — the 2026-08-05 fold pass
+
+**What this is.** The inline, in-place fold that `doctrine/plans.md:202-207`
+authorises for a plan at status `open` with no commits in flight, driven by the
+accepted findings of the 2026-08-05 External round and by the two author Responses
+whose amendments were binding *by reference* rather than folded. Doctrine requires
+this subsection to name which cells changed and why; it does that, and it also
+names every amendment row that is **not** folded, so the fold's coverage is a
+checkable fact rather than a claim.
+
+**Authority for the pass, and its limit.** The Maintainer's 2026-08-05 instruction
+(quoted verbatim in *Maintainer disposition of the 2026-08-05 External review
+round*) disposes of the REVISE **round**. It authorises revision-then-implementation
+and nothing else. No `## Plan review`, `## Response to plan review`,
+`## Lasting-truth migration` or `Sharpening` section was edited; the fold ledger
+below points at the cell that now carries each amendment rather than annotating the
+append-only tables.
+
+**Reciprocity.** This file and `dev/plans/default-security-stance.md` land in **one
+commit**, because the shared *Gate D-ON* block requires it in terms: *"A change to
+it lands in both files in the same commit, or it has not landed."* The block is
+byte-identical in the two files, spliced from a single source rather than retyped.
+
+#### Cells changed, and why
+
+| cell / region | change | why |
+|---|---|---|
+| *(new)* `## Folded, not amended` | reading rule: the chunk tables are the current spec | the External round's own diagnosis — binding by reference left two grammars |
+| *(new)* `## Maintainer disposition of the 2026-08-05 External review round` | records the disposition, quoted verbatim and visually isolated; enumerates what it does **not** supply | the plan's implementation fence names *"the External reviewer, or the Maintainer"*; the scribing guard-rail requires the verbatim quote |
+| *The Maintainer fence*, intro | "Three items" → four, item 2 marked RETIRED, numbering preserved | AM-25 adds item 4; AM-18 retires item 2; the append-only Gate audits cross-reference the numbers |
+| *The Maintainer fence*, item 2 | retired, with the false premise named | AM-18, re-measured this pass |
+| *The Maintainer fence*, item 4 + `### Gate D-ON` | the shared block, verbatim, plus four plan-local application notes | External finding 1 — the gate was one-sided. Supersedes AM-25's fence-item-4 wording |
+| *Gate accounting*, suite-collection bullet | count → procedure, provenance re-measured to 1987 | AM-17; the figure has produced four different totals in three days |
+| *Gate accounting*, `check_cairn` bullet | 180 / 68 / no-issues → 178 / 48 / 2 issues, re-measured; count demoted to non-gate | the old figures do not reproduce; `filter_sources` makes the count fall on a correct archive |
+| *Gate accounting*, `vermin` bullet | "not installed / skips" → installed, test passes | AM-18 |
+| *Sequence* block | adds the gate lines and names their only trigger (a person reading them) | the plan asserted a fence with no named trigger; Cairn has no CI |
+| Chunk D, clause list | three clauses → **four**, clause 0 first; clause 2's HEAD-parity sentence qualified | AM-1, AM-2. Without this fold an implementer reading only the table ships three clauses and D5b/RX-3 fail |
+| Chunk D, falsifying-criterion sentence | *"no longer fires"* → the named, checkable class | AM-11 |
+| Chunk D, *Binding on the commit record* | new paragraph | AM-24 |
+| Chunk D rows **D1**, **D2**, **D3** | escapes-only + per-seed justification; pinned NFD arity; four clauses | AM-7, AM-10, AM-8, AM-3 |
+| Chunk D row **D5**, new row **D5b** | clause 0's own test, NL-1..NL-12 by code point plus RX-3 | AM-4 superseded by AM-21 |
+| Chunk D, new rows **D13**, **D14** | the Greek-domain survival test; the parametrized corpus contract | AM-9, AM-22 — and D14 is what makes D-ON-3 satisfiable |
+| Chunk D, new *The default-adoption corpus* subsection | the binding contract: Appendix F **re-counted at 71 ids** plus the three reviewer-supplied rows with provenance, expected category, line behaviour and isolation behaviour | External finding 2 — corpus independence. AM-19, AM-20 fold in here |
+| Chunk D acceptance | adds P-D7, P-D8, P-D9, P-D10; sweep widened to the corpus; NFD number folded in at **20**; channel note rewritten | AM-5, AM-6, AM-12 |
+| Chunk B row **B10** | the assertion form that actually runs, bound to `_ASCII_GUARD` | AM-16 |
+| Chunk B acceptance, `check_cairn` bullet + **P-B5** | check declared structurally null for Change 1; P-B5 gains the guard-raising half | AM-13, AM-16 |
+| Chunk E rows **E2**, **E3**, **E5** | curation sentence + 32-code-point boundary in both docs; `Added` gains its upgrade-consequence sentence | AM-23, AM-15 |
+| *Acceptance criteria*, tests block | collection baseline → procedure; test list extended to D14; the phantom `vermin` skip removed | AM-17, AM-18, AM-9, AM-22 |
+| *Verification*, tripwire bullets | tripwire declared **null** for both changes, with the informative run named | AM-14 |
+| *Acceptance criteria*, new final bullet | the placeholder-cannot-satisfy warning for `## Code review`, with the checker re-opened at its current line numbers | AM-26. **Homed here, not under `## Code review`** — that placeholder is an append-only review surface and this pass does not annotate it |
+
+#### Amendment rows NOT folded, and why
+
+| row | status |
+|---|---|
+| **AM-25** | **Superseded**, not folded. Its fence-item-4 wording is replaced by the shared *Gate D-ON* block. Its *Lasting-truth migration* row is **moot**: it said the gate *"does not archive as discharged until both plans carry it"*, and both plans now carry it in one commit |
+| **AM-19** (provenance limit) | Folded **in substance and corrected**. AM-19 says *"no row is External-reviewer-supplied … the independence [E1] asks for is owed, not held."* That is no longer true: RX-1..RX-3 are External-reviewer-supplied. The frozen-corpus rule and the stop-on-disagreement rule are folded verbatim in substance |
+| **AM-21** | Folded into **D5b**, with RX-3 added to it |
+| **AM-22** | Folded into **D14**, with its row count corrected from 56 to **71 + 3 = 74** — see below |
+| all others (AM-1..AM-18, AM-20, AM-23, AM-24, AM-26) | Folded; each named in the table above |
+
+#### Figures re-derived in this pass, and two that did not reproduce
+
+Measured under `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13,
+UCD 15.1.0) with `PYTHONDONTWRITEBYTECODE=1`. HEAD moved twice during the pass;
+each figure names the revision it was taken at.
+
+| figure | stated | measured | verdict |
+|---|---|---|---|
+| suite collection | 1746 `as_of 2026-08-04` | **1987** `as_of 2026-08-05` at `66ce8c0` | **does not reproduce** — converted to a procedure |
+| `check_cairn` | `OK -- 180 file(s); no issues; 68 links` | **178 file(s); 48 links; 2 issue(s)** at `66ce8c0` (both flags a concurrent scope's uncommitted work) | **does not reproduce** — count demoted to a non-gate |
+| `vermin` / `test_python_floor.py` | "not installed; skips" | on PATH; **2 passed, 0 skipped** at `64e8b7c` | AM-18 reproduces; the plan's original claim was false |
+| `content-security` default selections | false across all presets | **false** in all three presets; absent from the **6**-entry `_DEFAULT_ON_MODULES`; no `_TOKEN_GATED_MODULES` — at `66ce8c0` | reproduces — the gate is prospective |
+| focused security suite | 104 tests (External round) | **104 passed** (`test_content_scan.py` + `test_security_stack.py`) at `66ce8c0` | reproduces |
+| Appendix F size | "56 rows" | **71 fixture ids** total; 56 is the homoglyph-family subset (F2+F3+F4+F5+F6), excluding F1's 15 | **undercount** — D14 binds all 71 |
+| RX-3 at HEAD | reviewer: exercises the no-Latin clause, clears when it is disabled | **flags `homoglyph` at HEAD**; amended rule clause 0 ON → FLAG, OFF → clear | reproduces exactly |
+| RX-1 / RX-2 at HEAD | reviewer: `unicode-ignorable` / `unicode-tag` path | **no flag at HEAD** (detectors do not exist); `Cf`; in neither `_ZERO_WIDTH` nor `_BIDI`; both **split the token** | paths confirmed; the token split is a measured addition the reviewer's framing did not state |
+| `portable-security-sweeps` non-monotonicity | shared block: newest External *"above an older External section introduced by `976b402`"* | `976b402`'s section at `:1153`, `e1b2e30`'s at `:2253` — the newest is **below** the older | **one clause does not reproduce**; the load-bearing half (position vs commit order, via the `:2275` Response introduced by the earlier `38858f1`) does. Reported, not silently reworded — see *The Maintainer fence* > plan-local notes |
+
+#### What this pass did not close
+
+* **Gate D-ON is not satisfied.** D-ON-1 and D-ON-2 are **NOT MET** and only the
+  Maintainer can move them; D-ON-3 is **NOT MET until Chunk D lands D14**. The
+  fold makes the gate determinable and reciprocal; it does not open it.
+* **The seed's ASCII-twin judgment is still unattested** to any external oracle,
+  and no fold pass changes that. E2/E3 and the commit record now say so.
+* **Sequence step 0 has still not landed** — `dev/PLANNING.md` carries no row for
+  this plan. That file is serialized and is out of this pass's scope.
+* **The 32-code-point boundary and the 12 492-token verification** were measured
+  against a reconstruction, not against code. E2/E3 now require re-derivation
+  against the landed table.

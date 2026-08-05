@@ -24,10 +24,74 @@ under `dev/proposals/` and moves to `dev/proposals/archive/` when it archives.
 the proposal header, where the tier is a *declared trigger* rather than a
 judgement call: this is an install-contract change on a surface `AGENTS.md`
 names high-risk, and it changes what every adopter receives. **No implementation
-commit lands before the `## Plan review` section is in the tree.** See
-*Plan review — the brief*.
-**Last update**: 2026-08-04
+commit lands before all three of the following hold.** (i) A dated `## Plan
+review` section is in the tree — **satisfied**, `2077a25`. (ii) The findings it
+raised are dispositioned in a dated section — `doctrine/plans.md:114`-`:117` makes
+the disposition the *second limb* of the plan-review precondition, and the
+mechanical helper (`_has_kind` in `templates/skills/_lib/lifecycle_planner.py`)
+checks only the first, so this limb is carried by a human reader. (iii) **Gate
+D-ON** is satisfied for any chunk it fences. The 2026-08-05 External verdict was
+REVISE and the **Maintainer has disposed of the round** — see *Maintainer
+disposition of the 2026-08-05 External review round*. See also *Plan review — the
+brief*.
+**Last update**: 2026-08-05
 **Opened**: 2026-08-04
+
+## Folded, not amended — how to read this plan
+
+**An implementing agent who reads only the chunk tables and their acceptance
+criteria executes the current spec.** Amendments 1-44, which the two author
+Responses bound *by reference*, are folded into the operative rows.
+`doctrine/plans.md:202-207` makes chunk-table cell text mutable in place while a
+plan's status is `open` with no commits in flight against the chunks being edited
+— this plan's exact state: status `open`, zero implementation commits.
+
+The `## Plan review`, `## Response to plan review`, `## Lasting-truth migration`
+and `Sharpening` sections are **untouched and stay append-only**. The fold ledger
+in `### Sharpening — the 2026-08-05 fold pass` at the end of this file names every
+amendment row now carried by a cell **and every row that is not folded**.
+
+**Where a folded cell and an amendment row disagree, the cell governs.** In
+particular the shared *Gate D-ON* block supersedes **amendment 32**'s `G1`/`G2` in
+their entirety.
+
+**Notation — `[E#]` is overloaded in this file, and the two populations must not be
+confused.** Bare `[E1]` / `[E2]` / `[E3]` in the plan body always mean the *source
+proposal's* External reviewer. The 2026-08-05 plan review's findings are cited as
+`[PR-E1]` / `[PR-E2]` / `[PR-E3]`. The Internal round's findings keep `[I1]`-`[I5]`;
+the 2026-08-04 Response's own additions keep `[R1]`-`[R5]`; the 2026-08-05
+Response's are `[S1]`-`[S7]`.
+
+## Maintainer disposition of the 2026-08-05 External review round
+
+The 2026-08-05 External round (`## Plan review -- Codex (External) -- 2026-08-05`,
+introduced by `e1b2e30`) returned **REVISE**. The Maintainer has disposed of it.
+The authorizing instruction, quoted verbatim and visually isolated:
+
+> Go ahead with implementation once you've revised these. I don't want another review round
+
+**What it disposes of.** The **review round**: the REVISE no longer fences
+implementation, and no round-2 External section is owed. This is a disposition,
+**not a bypass** — the round's finding is *closed in the operative text* (the shared
+*Gate D-ON* block, which replaces `G1`/`G2` and is byte-identical to the copy in
+`dev/plans/content-scan-detectors.md`), not waived.
+
+**What it does not supply, enumerated so nothing further is read into it.**
+
+* **No Maintainer credential, key, token or signing ref.** Nothing in this plan
+  needs one — already stated as a checked fact in *Chunk R*.
+* **No AST re-anchor ceremony and no gate-manifest re-pin.** *Chunk R* is
+  untouched: an implementing agent still does not enter it.
+* **No approval to push.** Pushing takes its own approval (`AGENTS.md` > *Git and
+  commit workflow*); the deliberation-layer carve-in covers `git commit` only.
+* **No disposition of the default-on consequence.** That is the separate question
+  Gate D-ON condition **D-ON-2** names — the whole-script-Cyrillic and
+  international-proper-noun cost *under default adoption* — and it is **NOT MET**.
+  **So Gate D-ON is still closed, and it fences Chunk A, Chunk B, Chunk C and
+  Chunk D. In practice that is this whole plan.** The Maintainer's instruction
+  unblocks *revision-then-implementation* in general; it does not open this gate.
+* **No ratification of D3's 52-flag HOLD.** That trigger is firing on its own
+  terms; see Chunk D row D3.
 
 ## Source proposal
 
@@ -331,9 +395,14 @@ is a contract change this scope did not declare.
 Each figure is a dated snapshot measured for this plan, to be re-taken at
 implementation rather than quoted from here.
 
-* **Suite baseline: 1744 passed / 2 failed** (both the AST nodes, from the
-  in-flight sibling), 165s, `as_of 2026-08-04`. Collection may only grow by this
-  plan's new nodes; a dropped node or a new skip/xfail marker is a HOLD class.
+* **The suite criterion is an invariant; the number is provenance only.**
+  Invariant: **0 failed / 0 skipped / 0 xfailed**, and **collection grows by
+  exactly this plan's new nodes and drops none**, established by a **same-session
+  before/after pair** — never against a figure quoted from this file. A dropped node
+  or a new skip/xfail marker is a HOLD class. Provenance: **1987 nodes collected**,
+  `as_of 2026-08-05` at `66ce8c0`. The frame has now moved four times in three days
+  (**1744 → 1790 → 1959 → 1987**), which is exactly why the criterion is the delta
+  and not the count.
 * **Frozen files modified: four**, all in `bootstrap/tests/`, all literal keys in
   the 164-entry `frozen_files` map (`as_of 2026-08-04`) —
   `test_notice_install.py` (C2), `test_security_stack.py` (C3),
@@ -348,22 +417,152 @@ implementation rather than quoted from here.
 * **`scripts/check_cairn.py` is frozen and is not touched** — zero bytes, per the
   Decision. That is checkable with `git diff scripts/check_cairn.py` returning
   empty at every commit.
-* **Prose integrity** — `python scripts/check_cairn.py` → `OK -- 180 Markdown
-  file(s) scanned; no issues; 68 external link(s) not probed`, `as_of
-  2026-08-04`. Chunk D adds `dev/modules/content-security.md`, so the count grows
-  by one plus whatever `dev/` artifacts this lifecycle itself contributes.
-* **The release Bandit gate** — `scan_targets()` returns **74** targets,
-  `as_of 2026-08-04`. After Chunk D it returns **76**: Cairn's own
-  `scripts/*.py` glob picks up `scripts/content_scan.py` and
-  `scripts/content_scan_runner.py`, whose template twins were already in the
-  manifest-derived set. Both new targets are byte-identical to files Bandit
-  already reads, so the severity histogram must not gain a MEDIUM+.
+* **Prose integrity** — `python scripts/check_cairn.py` → **`OK`, and
+  `dev/modules/content-security.md` is in the scanned set after Chunk D. The
+  "non-decreasing count" criterion is withdrawn as unsound**, and the "+1" with it.
+  `check_cairn.main` filters `git ls-files '*.md'` through `link_check.filter_sources`
+  (`scripts/link_check.py:503`), which drops `dev/**/archive/`, `dev/modules/`,
+  `dev/.cairn/` and `dev/reflections/` **as sources** — so archiving a plan or
+  proposal *decreases* the count, and a non-decreasing gate would fire on a correct
+  archive. Note the interaction: because `dev/modules/` is excluded, Chunk D's
+  installed module doc is scanned by `content_scan_runner.py` (whose `!dev` root has
+  no such exclusion) but **not** by `check_cairn`, so it never raises that count at
+  all. Re-measured `as_of 2026-08-05` at `66ce8c0`: **178 file(s) scanned; 48
+  external link(s) not probed; 2 issue(s)** — both `[path]` flags in
+  `dev/plans/review-gate-enforcement.md` from a concurrent scope's **uncommitted**
+  work, neither this plan's. **Assert `OK` and assert membership where membership is
+  what matters — never a count, never a direction.**
+* **The release Bandit gate — assert the delta, never the absolute.**
+  `scan_targets()` returns **76** targets, re-measured `as_of 2026-08-05` at
+  `64e8b7c`, **not the 74 this plan and both review rounds recorded**:
+  `scripts/transition_lint.py` and `scripts/transition_lint_whitelist.py` were added
+  by an unrelated scope at `4a7d70a`, which means the old "74 → 76" criterion is
+  *already satisfied by someone else's work and gates nothing*. **Re-measure
+  immediately before Chunk D and assert exactly +2 targets, naming the two new paths
+  as `scripts/content_scan.py` and `scripts/content_scan_runner.py`** (expected 78
+  if the base is still 76). Both new targets are byte-identical to template files
+  Bandit already reads — confirmed at `64e8b7c`, where the manifest-derived set
+  already contains `templates/modules/team-gated/content_scan.py` and
+  `templates/modules/team-gated/content_scan_runner.py` — so the severity histogram
+  must not gain a MEDIUM+.
 * **Cairn's lockfile** — `dev/.cairn/cairn-lock.yml` records **81 files / 14
-  modules**, `as_of 2026-08-04`. After Chunk D: **87 files / 15 modules**. Five
-  records currently carry legitimate customization drift (`AGENTS.md`,
+  modules** with **41** `scripts/` + `tools/` `.py` twin records, all re-measured
+  `as_of 2026-08-05` at `64e8b7c` by parsing the lock (the plan's 2026-08-04 figures
+  reproduce). After Chunk D: **87 files / 15 modules / 43 twins**. Five records
+  currently carry legitimate customization drift (`AGENTS.md`,
   `dev/NEXT_SESSION.md`, `dev/PLANNING.md`, `dev/collaboration_agreement.md`,
-  `dev/modules/security-review.md`); **all 41 existing `scripts/` + `tools/`
-  twins are hash-clean**, which is the invariant Chunk D must not break.
+  `dev/modules/security-review.md`); **every one of the 41 twins is hash-clean**,
+  which is the invariant Chunk D must not break. **Re-derive by parsing the lock at
+  implementation, not by trusting these numbers.**
+
+### Gate D-ON — the default-on admission gate
+
+**This block is shared, verbatim, with the reciprocal plan
+(`content-scan-detectors` <-> `default-security-stance`). A change to it lands
+in both files in the same commit, or it has not landed.** Identical copies are
+what stop either plan from reporting ready while its reciprocal is blocked.
+
+No chunk that flips a default selection from false to true lands until all
+three conditions hold. Each names *how it is determined*, and none is
+determined by a date or a position written inside the plan.
+
+* **D-ON-1 — the governing External round carries no outstanding REVISE.**
+  Determined by: enumerate every `## Plan review` section in this file whose
+  body carries `**Tier**: External`; for each, take the commit that introduced
+  it (`git log --format='%h %ad' --date=short -S '<its exact heading line>' --
+  <this file>`); the **governing** round is the one with the latest introducing
+  commit. Its verdict must not be REVISE. *The existence of a review section is
+  not discharge of a finding* — a SHIP, or a Maintainer disposition recorded
+  under D-ON-2, is.
+  **Why not file order, and why not the heading date.** Neither is provenance.
+  File position is editable and is already non-monotonic in this tree:
+  `dev/plans/portable-security-sweeps.md` carries its newest External section
+  (introduced by `e1b2e30`) at a *lower* line than the Response it answers, and
+  above an older External section introduced by `976b402`. The heading date is
+  author-written text inside the artifact under gate, so reading it lets the
+  gated party choose its own gate.
+* **D-ON-2 — the Maintainer's disposition of the default-on consequence is
+  recorded.** Determined by: a section in this plan that quotes the authorizing
+  instruction **verbatim and visually isolated** and names the consequence being
+  disposed of. Absent that quoted authorization the gate is NOT MET, whatever an
+  author Response asserts.
+* **D-ON-3 — the named default-adoption corpus is in the binding test
+  contract.** Determined by: each named corpus row exists as a parametrized case
+  in the named test file, and the suite passes with those cases present. Prose
+  that *cites* an example does not satisfy this; a row that is not in the test
+  file does not count, including a row named in an amendments table.
+
+D-ON is outcome-based, not round-counting: a single focused closure round may
+satisfy D-ON-1. It does not weaken the requirement that the findings themselves
+be settled.
+
+**Plan-local notes on applying D-ON.** Not part of the shared block. The
+reciprocal plan (`dev/plans/content-scan-detectors.md`) carries the same four
+notes.
+
+* **What D-ON fences in this plan, and it is more than amendment 32 said.**
+  **Chunk A** — row A1 *is* the flip from false to true. **Chunk B** — its prose
+  asserts A1's behaviour, so it cannot truthfully land first. **Chunk C** — pins
+  C1a, C1b and C1h assert A1's behaviour and are red without it. **Chunk D** — the
+  self-adoption. **In practice Gate D-ON fences this entire plan**, which is the
+  reviewer's finding taken at face value rather than softened. Amendment 32
+  considered splitting the token-gate half (A2-A6, which flips no *default*
+  selection) out and landing it early and **declined**: a half-landed engine change
+  parked in a five-scope `config.py` window is a new hazard, and narrowing a gate an
+  External reviewer set is the author's least defensible move. **The Maintainer may
+  narrow it; the author does not.**
+* **D-ON-1's enumeration, run here.** Sections in this file matching `^## Plan
+  review` whose body carries `**Tier**: External`: **exactly one** — the section
+  headed `## Plan review -- Codex (External) -- 2026-08-05`, introduced by
+  **`e1b2e30`** (2026-08-05). Measured `as_of 2026-08-05` at `66ce8c0` with `git
+  log --format='%h %ad' --date=short -S '## Plan review -- Codex (External) --
+  2026-08-05' -- dev/plans/default-security-stance.md`. The governing round is
+  therefore that section and its verdict is **REVISE**. **Cited by heading text
+  rather than by line number, deliberately:** a line citation into the same file
+  that carries it shifts on every edit, including the edit that writes it. **A
+  standing obligation follows:** every future External section in either plan
+  **must** carry a `**Tier**: External` line — the two earlier External sections,
+  each headed `## Plan review -- Codex (External, security lens) -- 2026-08-05`,
+  one in each plan, do **not**, so a round that omits the marker is invisible to
+  the enumeration and an older *marked* section would be read as governing. That is
+  a gate an author could walk through by forgetting a line.
+* **D-ON status today.** **D-ON-1 — NOT MET.** The governing verdict is REVISE, and
+  D-ON-1 admits only two discharges: a SHIP, or *"a Maintainer disposition recorded
+  under D-ON-2"*. The Maintainer's 2026-08-05 instruction disposes of the **review
+  round** and is recorded above; it is **not** a D-ON-2 disposition, because it does
+  not name the default-on consequence. With a further round declined, the only
+  remaining route to D-ON-1 is a D-ON-2 disposition, which discharges both at once.
+  **D-ON-2 — NOT MET**, and it is the load-bearing one: the question is the
+  whole-script-Cyrillic and international-proper-noun cost *under default adoption*,
+  which `dev/plans/content-scan-detectors.md`'s own *Known omissions* (e) raises and
+  does not answer. **D-ON-3 — NOT MET today, satisfied by that plan's Chunk D**: the
+  named corpus is its *The default-adoption corpus* subsection (Appendix F's 71
+  fixture ids plus three External-reviewer-supplied rows `RX-1`-`RX-3`), and the
+  named test file is `bootstrap/tests/test_content_scan.py`
+  (`test_appendix_f_fixture_contract`, its row D14). Checked `as_of 2026-08-05` at
+  `64e8b7c`: no such parametrized cases exist in that file yet.
+* **A measured correction to the shared block's rationale, reported rather than
+  silently fixed.** The block's *"Why not file order"* paragraph says
+  `dev/plans/portable-security-sweeps.md` carries its newest External section
+  *"above an older External section introduced by `976b402`"*. **That clause does
+  not reproduce.** Measured `as_of 2026-08-05` at `64e8b7c`: the `976b402` section
+  is at `dev/plans/portable-security-sweeps.md:1153` and the `e1b2e30` section is at
+  `:2253` — the newest is **below** the older. The load-bearing half *does*
+  reproduce: the `e1b2e30` section at `:2253` sits at a **lower** line than the
+  Response at `:2275` that it re-reviews, and that Response was introduced by
+  `38858f1`, an **earlier** commit than `e1b2e30` (`976b402` 08:02 → `38858f1` 09:00
+  → `e1b2e30` 10:02, same day). File position is therefore non-monotonic in
+  introducing-commit order in that tree, exactly as the block claims, and the
+  determination rule is unaffected. The block is left **byte-identical in both
+  plans** rather than reworded, because byte-identity is the property that stops the
+  two sides drifting; the correction lives here and in *Sharpening*.
+
+**The reciprocal obligation is discharged by this commit.** Amendment 32 recorded
+the sibling half as *"an obligation on that plan's author"* and routed it to
+migration row 10; the reciprocal plan's own AM-25 recorded the gate as
+*"half-stated"*. Both plans now carry the identical block, landed in one commit, so
+migration row 10 is **moot** and no new row is owed. The append-only migration table
+is untouched.
 
 ## Sequence
 
@@ -374,7 +573,13 @@ looked.
 
 ```
 0. plan-open -- this plan + the dev/PLANNING.md row-move            [commit pending]
-   (plan review) -- required(External, security lens); NO code before it lands
+   (plan review) -- required(External, security lens). Internal landed 2026-08-04;
+                    External landed 2026-08-05, verdict REVISE, disposed of by the
+                    Maintainer (see the disposition section). No round 2 owed.
+   (gate D-ON)   -- Gate D-ON, in "The cluster constraint". NO Chunk A, NO Chunk B,
+                    NO Chunk C, NO Chunk D before D-ON-1..3 all hold.
+   Both gate lines have exactly one trigger: a person reading them. No test, no
+   hook, no CI enforces either -- Cairn has no CI.
 1. Chunk A -- engine: default-on + the token gate                   [commit pending]
 2. Chunk B -- the doctrine and prose the engine change falsifies    [commit pending]
 3. Chunk C -- the selection contract, pinned with literal names     [commit pending]
@@ -385,6 +590,12 @@ looked.
 ---
 
 ### Chunk A — engine: `content-security` default-on, `python-security` token-gated
+
+> **FENCED BY GATE D-ON.** Row **A1 is the default-on flip itself**, so no part of
+> this chunk lands until D-ON-1, D-ON-2 and D-ON-3 all hold (*The cluster
+> constraint* > *Gate D-ON*). All three are **NOT MET** today. The token-gate half
+> (A2-A6) flips no *default* selection and could in principle be split out; the
+> author **declined** to narrow the gate that way, and only the Maintainer may.
 
 | # | File | Change |
 |---|------|--------|
@@ -422,6 +633,10 @@ looked.
 
 ### Chunk B — the doctrine and prose the engine change falsifies
 
+> **FENCED BY GATE D-ON.** Every sentence this chunk writes *asserts A1's
+> behaviour*, so it cannot truthfully land before A1. The fence is therefore the
+> same one, not a weaker one.
+
 Every quoted sentence below is quoted from the tree at plan-authoring time.
 **Re-read each file before editing**; siblings may have moved them.
 
@@ -435,8 +650,11 @@ Every quoted sentence below is quoted from the tree at plan-authoring time.
 
 **Acceptance criteria — Chunk B.**
 
-* `~/conda_envs/lhm/bin/python3.13 scripts/check_cairn.py` → OK; the Markdown
-  count may only grow.
+* `~/conda_envs/lhm/bin/python3.13 scripts/check_cairn.py` → **`OK` and no new
+  flag. The "count may only grow" criterion is withdrawn as unsound** —
+  `link_check.filter_sources` drops archived, `dev/modules/`, `dev/.cairn/` and
+  `dev/reflections/` sources, so a correct archive *lowers* the count. Assert `OK`
+  and compare the flag set, never the count.
 * `~/conda_envs/lhm/bin/python3.13 scripts/quality_gate.py --sub neutrality` →
   unchanged. `templates/` and `bootstrap/*.md` are both inside its scan roots,
   so every edit above passes through it; the figure must not move.
@@ -455,6 +673,9 @@ Every quoted sentence below is quoted from the tree at plan-authoring time.
 ---
 
 ### Chunk C — the selection contract, pinned with literal names
+
+> **FENCED BY GATE D-ON.** Pins **C1a**, **C1b** and **C1h** assert A1's behaviour
+> and are red without it, so this chunk does not land ahead of A either.
 
 The heart of the plan, and the chunk a reviewer should read first. **Every
 existing guard over the default-on roster derives its oracle from
@@ -543,6 +764,9 @@ body.
 
 ### Chunk D — Cairn adopts `content-security` on its own tree
 
+> **FENCED BY GATE D-ON**, and additionally **HELD by D3's own stop trigger**
+> (below), which is already firing on a pre-implementation measurement.
+
 Order-sensitive; see *The cluster constraint*. This is the half that answers the
 Maintainer's direction directly, and under the Decision it is much smaller than
 the proposal drafted.
@@ -551,25 +775,36 @@ the proposal drafted.
 |---|------|--------|
 | D1 | `python bootstrap/scaffold.py upgrade --adopt-module content-security --target .` | The **adopter-facing** mechanism, deliberately — Cairn dogfoods the same opt-in path an existing adopter uses. It installs each spec's `dst` that is missing on disk and records six lockfile entries: `dev/modules/content-security.md` (substituted → `base_cache` + `base_hash`), `scripts/content_scan.py`, `scripts/content_scan_runner.py`, and the three `content_scan_*.txt` policy files (all verbatim). **Not a hand-edit of `dev/.cairn/cairn-lock.yml`** — that file is tool-owned and regenerate-only, and [E3] is on record that hand-editing it inverts the documented workflow. |
 | D2 | `dev/.cairn/profile.yml` | **No edit, and that is a decision rather than an omission.** Cairn's profile is `preset: collaborative-team`, which after Chunk A resolves to include `content-security` mechanically. Adding `modules_add: [content-security]` would be redundant *and* actively harmful: it would mask the default-on path, so a regression that dropped the module from `_DEFAULT_ON_MODULES` would leave Cairn's own tree silently unaffected — the repository would stop being its own first adopter for exactly the property under test. And per the Decision, no `python_package` token is added. |
-| D3 | `scripts/content_scan_residuals.txt` | Run `python scripts/content_scan_runner.py` once over Cairn's tree and **record the flag count in the commit body**. The three REQUIRED roots (`AGENTS.md`, `.agents/skills`, `dev`) all exist in Cairn — verified `as_of 2026-08-04` — so the runner will not fail closed on a missing root. If flags appear, each residual added carries its own reviewed rationale; a blanket suppression is the alarm-fatigue failure the proposal names and is not acceptable here. **If the count is non-trivial, that is a *Signals the change is wrong* trigger: stop and put it to the Maintainer rather than curating it away.** |
+| D3 | `scripts/content_scan_residuals.txt` | **The measurement, and a threshold with no judgment in it.** Run `python scripts/content_scan_runner.py` once over Cairn's tree and **record the exit code and the flag count in the commit body**. The three REQUIRED roots (`AGENTS.md`, `.agents/skills`, `dev`) all exist in Cairn — re-verified `as_of 2026-08-05` at `64e8b7c` by running the scanner, which scanned the audited set and exited **1** rather than failing closed at 2. **The decision rule, and the implementer applies no other: exit 0 → proceed; any non-zero exit → HOLD and put it to the Maintainer.** No count appears in the rule, because the shipped `content_scan_residuals.txt` is a sentinel-only empty baseline, so every flag is NEW and *"any unsuppressed finding"* and *"exit non-zero"* are the same condition. **The pre-measured baseline this compares against, re-measured for the fold pass** in a scratch `git clone` at `64e8b7c` with the five shipped `content_scan*` files copied verbatim into `scripts/`: **80 audited files, 52 flags, 52 NEW, exit 1**, all 52 `[suspicious-url]`, concentrated in `dev/strategy/` and `docs/further-reading.md`. (The 2026-08-05 Response recorded 78 files / 52 flags at `b8ab678`; the flag count reproduces, the file count has grown.) **So the HOLD is already triggered before implementation** — Chunk D will not exit 0 on a clean adoption, and the implementer is not the one who decides what to do about it. **The implementer adds no residual and no allowlist entry.** Whether these editorial-citation hits are cleared by trusted-publication entries in `content_scan_allowlist.txt`, by reviewed `[editorial-url]` residual entries, or by neither, is a **policy decision under D3's own escalation trigger and it is the Maintainer's**. A blanket suppression remains the alarm-fatigue failure the proposal names and is not acceptable at any volume. **Expect ≥ 52, not = 52**: `--adopt-module` writes `dev/modules/content-security.md` inside the audited `!dev` root, and this lifecycle's own `dev/` artifacts are audited too. |
 | D4 | — | Confirm the twin invariant Chunk D must not break: all `scripts/` + `tools/` `.py` lockfile records stay hash-clean (41 today, 43 after). |
 
 **Acceptance criteria — Chunk D.**
 
 * `~/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_notice_install.py -q` → green, **including C2's two named pins**, which were red before this chunk. That transition is the acceptance evidence.
-* `~/conda_envs/lhm/bin/python3.13 bootstrap/security_check.py` → `PASS`, target
-  count **76** (from 74). Both new targets are byte-identical to template files
-  Bandit already reads, so the severity histogram gains **no MEDIUM+**; a
-  MEDIUM+ appearing is a stop.
-* `~/conda_envs/lhm/bin/python3.13 scripts/check_cairn.py` → OK, count +1 for
-  `dev/modules/content-security.md`.
+* `~/conda_envs/lhm/bin/python3.13 bootstrap/security_check.py` → `PASS`, with
+  **the target count exactly +2 against a pre-chunk measurement taken in the same
+  session**, and the two added paths identified as `scripts/content_scan.py` and
+  `scripts/content_scan_runner.py`. **The literal "76 (from 74)" is struck**: the
+  base is already **76** at `64e8b7c`, so the old criterion is satisfied by an
+  unrelated scope's work and gates nothing. Both new targets are byte-identical to
+  template files Bandit already reads, so the severity histogram gains **no
+  MEDIUM+**; a MEDIUM+ appearing is a stop.
+* `~/conda_envs/lhm/bin/python3.13 scripts/check_cairn.py` → **OK**. **The "+1" is
+  struck**: `dev/modules/` is excluded from `check_cairn`'s scan set by
+  `link_check.filter_sources`, so the installed module doc does **not** raise that
+  count at all, and a concurrent archive can lower it. The assertion is `OK` and no
+  new flags.
 * **The lockfile moved exactly as predicted**: 81 → **87** files, 14 → **15**
   modules. Re-derive rather than trust: parse the lock and count. The five
   pre-existing customization-drifted records are unchanged in number.
-* **The content-scan measurement is recorded, not just passed.** The flag count
-  from D3 goes in the commit body as a number, even when it is zero — that
-  number is this plan's alarm-fatigue budget and the External reviewer's
-  34 / 39 / 42-file clean runs are the comparison.
+* **The content-scan measurement is recorded, and the exit code is the gate.** The
+  exit code **and** the flag count from D3 go in the commit body, even when the
+  count is zero. **The comparison is the pre-measured Cairn baseline in D3 — 80
+  audited files / 52 flags / exit 1 at `64e8b7c` — not the proposal reviewer's
+  34 / 39 / 42-file clean runs**, which were taken on fresh scaffolds with no
+  bibliography and do not predict a tree that cites literature. **Acceptance is
+  `exit 0`; any non-zero exit is a HOLD to the Maintainer**, not a number for the
+  implementer to weigh.
 * **The obligation this chunk creates is stated in its own commit body**: any
   later edit to `templates/modules/team-gated/content_scan.py` must re-sync
   `scripts/content_scan.py` and re-finalize its lockfile record in the same
@@ -603,11 +838,24 @@ the proposal drafted.
    of this plan's four is among them, and it refuses on more than one CHANGED
    symbol by construction. **The union is the Maintainer's to form** from each
    cluster scope's declared delta; a symbol outside the union is a stop.
-3. **The `known_new` manifest.** The two NEW keys —
-   `Assign:_TOKEN_GATED_MODULES` and `FunctionDef:token_gated_modules` — need
-   digest pins in `bootstrap/tests/fixtures/scaffold_ast_known_new.json`,
-   measured at ceremony time against the landed bodies. Their **key set** is
-   declared in advance; their digests cannot be.
+3. **The `known_new` manifest — decided now, and the decision is: do not touch
+   it.** **This scope does not edit, re-pin, or add entries to
+   `bootstrap/tests/fixtures/scaffold_ast_known_new.json`.** Settled ahead of the
+   ceremony rather than during it, on measured grounds: `verify` is
+   `verify(baseline_path, module_paths)` in `bootstrap/tests/_ast_attest.py` and
+   never reads the manifest; `known_new` is `update_symbol`'s keyword parameter, and
+   `update-symbol` is unavailable to this scope on two independent grounds already
+   established above; and — decisively — `verify` at `b8ab678` emitted **78 `note:
+   NEW` keys, 45 of them non-`Import:` / non-`Docstring`, and still returned rc
+   0**, so an unpinned NEW symbol is a note and not a failure. Those 45 survived
+   Ceremony 1 unpinned; this scope's two join them on identical terms.
+   **Re-derive the NEW-key report at ceremony time rather than carrying those
+   counts forward.** <br> **What the implementing agent does instead:** declare the
+   **exact NEW-key set — `Assign:_TOKEN_GATED_MODULES` and
+   `FunctionDef:token_gated_modules`, and nothing else** — and stop. **Any third
+   NEW non-`Import:` / non-`Docstring` key attributable to this scope, established
+   as the set difference of the before/after `verify` pair, STOPS THE CEREMONY.** No
+   digest is pre-declared, because none is needed.
 4. **The frozen-set decision.** Four frozen files are modified and one is
    `FROZEN-NEW`; `bootstrap/tests/fixtures/gate_manifest.json` also carries a
    `cascade_mutable` entry for `bootstrap/_scaffold/config.py` and a
@@ -626,10 +874,14 @@ Per-chunk criteria are above; these are the plan-level deliverables.
 
 * **Tests that must pass.**
   * `~/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests` — the whole
-    suite, **0 failed / 0 skipped / 0 xfailed** after Chunk R, under the
-    canonical interpreter (3.13.13) with `PYTHONDONTWRITEBYTECODE=1`. Baseline
-    **1744 passed / 2 failed**, `as_of 2026-08-04` (the 2 are the in-flight
-    sibling's). Collection grows by exactly this plan's new nodes and drops none.
+    suite, **0 failed / 0 skipped / 0 xfailed** after Chunk R, under the canonical
+    interpreter (3.13.13) with `PYTHONDONTWRITEBYTECODE=1`. **The criterion is the
+    delta, established by a same-session before/after pair; the number is
+    provenance only** (**1987 collected**, `as_of 2026-08-05` at `66ce8c0`; the
+    plan's 1744 does not reproduce and neither do the two AST failures, which were
+    a sibling's uncommitted work). Collection grows by exactly this plan's new
+    nodes and drops none. **Do not compute a delta against any number written in
+    this file.**
   * `bootstrap/tests/test_default_security_stance.py` *(new; a `Proposed paths:`
     entry until Chunk C)* — the twelve selection-contract pins.
   * [`bootstrap/tests/test_notice_install.py`](../../bootstrap/tests/test_notice_install.py)
@@ -789,13 +1041,19 @@ are added per plan when the change touches that surface.
   `FunctionDef:` / `Assign:` / `ClassDef:` keys. A `DUPLICATE` on one of this
   plan's names is a rename; every other `DUPLICATE` is a stop.
 * **The release Bandit gate** — `python bootstrap/security_check.py` → `PASS`,
-  74 targets before Chunk D and 76 after, with no MEDIUM+ appearing.
+  **target count +2 across Chunk D against a same-session pre-chunk measurement**
+  (base **76** at `64e8b7c`; the absolute is not pinned, and the plan's original
+  "74 before" is stale), the two added paths named, and no MEDIUM+ appearing.
 * **The lockfile assertion** — parse `dev/.cairn/cairn-lock.yml` and count:
   81 → 87 files, 14 → 15 modules; all `scripts/` + `tools/` `.py` records
-  hash-clean (41 → 43).
+  hash-clean (41 → 43). The pre-chunk side (81 / 14 / 41) re-measured `as_of
+  2026-08-05` at `64e8b7c`; **re-derive it again immediately before Chunk D rather
+  than trusting the figure.**
 * **The content-scan measurement** — `python scripts/content_scan_runner.py` on
-  Cairn's tree after Chunk D; the flag count recorded as a number in the commit
-  body.
+  Cairn's tree after Chunk D. **Exit 0 → pass; any non-zero exit → HOLD to the
+  Maintainer.** The exit code and the flag count are both recorded in the commit
+  body, against the pre-measured baseline in D3 (80 audited files / 52 flags /
+  exit 1 at `64e8b7c`).
 * **The frozen-file note** — after the last implementation chunk, record in the
   commit body that four frozen entries are now stale and one file is
   `FROZEN-NEW`, naming all five. **Do not re-pin**: that is Chunk R.
@@ -2030,3 +2288,90 @@ ready while its reciprocal remains blocked.
 Keep the gate outcome-based rather than requiring a particular number of
 rounds. That lets a focused closure round finish the work without weakening the
 requirement that the findings themselves be settled.
+
+### Sharpening — the 2026-08-05 fold pass
+
+**What this is.** The inline, in-place fold that `doctrine/plans.md:202-207`
+authorises for a plan at status `open` with no commits in flight, driven by the
+2026-08-05 External round's finding and by amendments 1-44, which the two author
+Responses bound *by reference* rather than folding. Doctrine requires this
+subsection to name which cells changed and why; it does that, and it also names
+every amendment row that is **not** folded.
+
+**Authority for the pass, and its limit.** The Maintainer's 2026-08-05 instruction
+(quoted verbatim in *Maintainer disposition of the 2026-08-05 External review
+round*) disposes of the REVISE **round** and authorises revision-then-
+implementation. It supplies no credential, no ceremony, no push approval, and **no
+disposition of the default-on consequence** — so Gate D-ON stays closed. No
+`## Plan review`, `## Response to plan review`, `## Lasting-truth migration` or
+`Sharpening` section was edited.
+
+**Reciprocity.** This file and `dev/plans/content-scan-detectors.md` land in **one
+commit**, because the shared *Gate D-ON* block requires it in terms: *"A change to
+it lands in both files in the same commit, or it has not landed."* The block is
+byte-identical in the two files, spliced from a single source rather than retyped.
+
+#### Cells changed, and why
+
+| cell / region | change | why |
+|---|---|---|
+| header, *Plan review* line | one-limb fence → the three-limb fence, naming Gate D-ON and the disposition | amendment 30; the old wording is satisfied by a section's mere presence |
+| *(new)* `## Folded, not amended` | reading rule + the `[E#]` notation note | the External round's diagnosis (two grammars); amendment 43 |
+| *(new)* `## Maintainer disposition of the 2026-08-05 External review round` | records the disposition verbatim and visually isolated; enumerates what it does **not** supply, including that Gate D-ON stays closed | the plan's fence names the Maintainer as a disposing party; the scribing guard-rail requires the verbatim quote |
+| *The cluster constraint*, new `### Gate D-ON` | the shared block, **verbatim**, plus four plan-local application notes and the discharge of the reciprocal obligation | the External finding — the gate was one-sided. **Supersedes amendment 32's `G1`/`G2` entirely** |
+| *Gate accounting*, suite bullet | `1744 passed / 2 failed` → invariant-plus-provenance, re-measured to **1987** | amendment 40; the frame moved four times in three days |
+| *Gate accounting*, prose-integrity bullet | 180 / 68 → **178 / 48 / 2 issues**; "non-decreasing count" withdrawn as unsound | amendment 41, re-measured |
+| *Gate accounting*, Bandit bullet | "74 → 76" → **assert +2 against a same-session base** (base 76 today) | amendment 37, re-measured |
+| *Gate accounting*, lockfile bullet | figures re-measured and marked re-derive-at-implementation | discipline: measure or delete |
+| *Sequence* block | adds the D-ON gate line, fences A/B/C/D, and names the only trigger (a person reading it) | amendment 31; Cairn has no CI |
+| Chunk **A**, **B**, **C**, **D** headings | each gains an explicit `FENCED BY GATE D-ON` block quote | amendment 32 fenced A and D by reference; B and C are fenced *in fact* because their content asserts A1's behaviour, and that was unstated |
+| Chunk D row **D3** | prose "non-trivial" threshold → **exit-code rule**, with the baseline re-measured at **80 files / 52 flags / exit 1** and the HOLD declared already-firing | amendment 33, re-measured |
+| Chunk D acceptance, Bandit + `check_cairn` + content-scan bullets | absolutes struck; delta and exit-code criteria substituted | amendments 34, 38, 42 |
+| Chunk R item **3** | `known_new` pins required → **do not touch `known_new`**, with the NEW-key set declared and any third key a ceremony stop | amendment 36 (which itself superseded amendment 26) |
+| *Acceptance criteria*, suite bullet | baseline number → same-session delta, provenance re-measured | amendment 40 |
+| Chunk B acceptance, `check_cairn` bullet | "count may only grow" withdrawn | amendment 41 |
+| *Verification*, Bandit + lockfile + content-scan bullets | delta assertions and the exit-code gate | amendments 35, 39 |
+
+#### Amendment rows NOT folded, and why
+
+| row | status |
+|---|---|
+| **32** | **Superseded**, not folded. `G1`/`G2` are replaced by the shared *Gate D-ON* block: `G1` treated a review section's presence as sufficient even at REVISE, `G2` omitted the corpus condition, and both ordered sections by written date. Its "the sibling side is not this plan's to write" clause is **discharged** — both plans now carry the block in one commit |
+| **26** | Already superseded by **36** before this pass; folded via 36 |
+| **5**, **8** | Already superseded by **40** and **41**; folded via those |
+| **44** | **Moot for row 10** (the reciprocal gate half is discharged by this commit, so no `dev/PLANNING.md` deferred row is owed for it). **Row 11 stands**: the allowlist-versus-reviewed-residual policy for Cairn's 52 editorial-citation `[suspicious-url]` hits is a Maintainer decision under D3's escalation trigger and outlives this plan. It is **not** folded into a chunk because no chunk may decide it |
+| **43** | Folded into `## Folded, not amended` as a notation note |
+| all others (1-31, 33-42) | Folded; each named in the table above |
+
+#### Figures re-derived in this pass
+
+Measured under `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13)
+with `PYTHONDONTWRITEBYTECODE=1`. HEAD moved twice during the pass; each figure
+names the revision it was taken at.
+
+| figure | stated | measured | verdict |
+|---|---|---|---|
+| suite | 1744 passed / 2 failed `as_of 2026-08-04` | **1987 collected** at `66ce8c0`; the two AST failures were a sibling's uncommitted work and are gone | **does not reproduce** — criterion is now the delta |
+| `check_cairn` | `OK -- 180 file(s); no issues; 68 links` | **178 file(s); 48 links; 2 issue(s)** at `66ce8c0`, both a concurrent scope's uncommitted work | **does not reproduce**; the count criterion is withdrawn as unsound |
+| Bandit `scan_targets()` | 74 (plan) / 76 (amendment 37) | **76** at `64e8b7c` | amendment 37 reproduces; the plan's 74 is stale |
+| lockfile | 81 files / 14 modules / 41 twins | **81 / 14 / 41** at `64e8b7c` | reproduces |
+| `content_scan_runner.py` on Cairn's tree | 78 audited / 52 flags / exit 1 at `b8ab678` | **80 audited / 52 flags / 52 NEW / exit 1** at `64e8b7c` (scratch clone, five shipped files copied verbatim) | flag count reproduces; **file count grew 78 → 80**. The HOLD is still firing |
+| `content-security` default selections | false across all presets | **false** in all three presets; absent from the **6**-entry `_DEFAULT_ON_MODULES`; no `_TOKEN_GATED_MODULES` — at `66ce8c0` | reproduces — Gate D-ON is prospective, not a release regression |
+| `portable-security-sweeps` non-monotonicity | shared block: newest External *"above an older External section introduced by `976b402`"* | `976b402`'s section at `:1153`, `e1b2e30`'s at `:2253` — the newest is **below** the older | **one clause does not reproduce**; the load-bearing half (position vs commit order) does. Reported, not silently reworded — see *Gate D-ON* > plan-local notes |
+
+#### What this pass did not close
+
+* **Gate D-ON is not satisfied, and it fences this entire plan.** D-ON-1 and
+  D-ON-2 are **NOT MET** and only the Maintainer can move them; D-ON-3 waits on the
+  reciprocal plan's Chunk D. The fold makes the gate determinable, reciprocal and
+  honest about its blast radius; it does not open it.
+* **D3's HOLD is firing on a pre-implementation measurement** — 52 flags, exit 1.
+  Under D3 that is a Maintainer question, and no fold pass answers it.
+* **Amendment 44 row 11** (the editorial-citation policy) has no chunk home by
+  construction and still needs its `dev/PLANNING.md` deferred row at the
+  serialization point. That file is serialized and out of this pass's scope.
+* **`## Verification`'s slot text still says the standing gates are "the same ones
+  CI enforces".** Cairn has **no CI**. The text sits inside a
+  `<!-- cairn:slot verification-commands -->` block that is template-owned rather
+  than plan-owned, so this pass did not edit it; it is raised here because a plan
+  that names a trigger must be able to open it, and this one cannot.
