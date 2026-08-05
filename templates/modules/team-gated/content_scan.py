@@ -39,10 +39,34 @@ What it flags (each a ``pattern_id`` usable in a suppression marker):
   domain per line) so a legitimate domain is added without editing code.
 * ``unicode-zero-width`` -- zero-width characters (U+200B-200D, U+FEFF).
   A leading U+FEFF at file index 0 is a benign byte-order mark and is
-  ignored there; it flags only *after* the first character.
+  ignored there; it flags only *after* the first character.  **Meaning
+  unchanged** by the ignorable/tag detectors below: a character this id
+  owns is skipped by both of them, so an existing ``cairn-accept:
+  unicode-zero-width`` marker and an existing residual fingerprint keep
+  their exact prior effect.
 * ``unicode-bidi`` -- bidirectional-control characters (U+202A-202E,
   U+2066-2069), the "innocent to a human, instruction to a parser"
-  vector.
+  vector.  **Meaning unchanged**, on the same skip rule.
+* ``unicode-tag`` -- a code point in the Unicode **Tag block**
+  (U+E0000-U+E007F), a complete shadow ASCII alphabet that renders as
+  nothing: re-encoding a sentence into it produces text a human cannot
+  see, ``git diff`` does not show, and a model reads normally.  It has
+  its **own** id rather than sharing ``unicode-ignorable`` so a
+  good-faith acceptance written for a benign emoji variation selector
+  cannot silence a shadow-alphabet payload in the same block.  Never
+  benign in agent-loaded Markdown.  **Detects, never rewrites.**
+* ``unicode-ignorable`` -- a code point in RFC 8264 (PRECIS) § 9.13
+  ``PrecisIgnorableProperties``: ``Default_Ignorable_Code_Point`` union
+  ``Noncharacter_Code_Point``, held as hard-coded numeric range tables
+  and **minus** the Tag block above.  Covers the invisible channel the
+  three ids above do not -- SOFT HYPHEN inside a word, the variation
+  selectors, HANGUL FILLER (general category ``Lo``, so it sits inside a
+  token without even splitting it), the noncharacters.  The flag names
+  the **count and every distinct code point on the line**, not only the
+  first.  *Declared limit*: the tables are a pinned snapshot of one
+  Unicode version, not a live derivation -- a code point added by a
+  later UCD is a silent gap until the tables move.  **Detects, never
+  rewrites.**
 * ``unicode-line-separator`` -- a raw U+2028 LINE SEPARATOR or U+2029
   PARAGRAPH SEPARATOR.  Both are ``White_Space=Yes`` and so are excluded
   by construction from the ignorable-code-point derivations; nothing else
@@ -59,13 +83,39 @@ What it flags (each a ``pattern_id`` usable in a suppression marker):
   later on the same file line, is refused rather than honoured -- it
   would annotate a hit a human reading rendered text never sees beside
   it.
-* ``homoglyph`` -- a single token that mixes scripts (e.g. Latin +
-  Cyrillic/Greek).  Evaluated **per contiguous alphanumeric token**, not
-  per line, so a Latin word beside a Cyrillic word does not false-flag.
+* ``homoglyph`` -- a single token in which **a character imitates a Latin
+  letter**.  Note what changed: a flag no longer means merely *this token
+  contains Greek*, it means *something here has an ASCII-Latin
+  look-alike*, so ordinary scientific notation (``λmax``, ``ΔG``,
+  ``σy``) is no longer reported as a prompt-injection attempt.
+  Evaluated **per contiguous alphanumeric token**, not per line, so a
+  Latin word beside a Cyrillic word does not false-flag.  Four clauses,
+  any one of which flags:
+
+  0. two or more distinct non-Latin confusable scripts in one token;
+  1. a **whole-script** confusable token -- **for Greek** (at least three
+     letters, every one of them ASCII-confusable), plus a *separate*
+     fullwidth-Latin arm (U+FF21-U+FF5A is a bijection onto ASCII, so it
+     needs no confusability table and closes script-generally);
+  2. a non-Greek confusable script mixed with Latin (Cyrillic, Armenian,
+     Cherokee, Coptic, fullwidth) -- unchanged behaviour;
+  3. Greek mixed with Latin where a Greek character is ASCII-confusable.
+
   A narrow, exact-token **scientific-unit allowance** (RV5) clears the
   micro / ohm unit shapes (``µs``, ``µmol``, ``kΩ``, ...) that are
   structurally mixed-script in scientific prose; a mixed-script
   *credential* token still flags.
+
+  **Two declared limits, both priced rather than overlooked.**
+  ``_NO_LATIN_TWIN`` is **reviewed curation, not a derivation** -- no
+  external oracle attests it and ``unicodedata`` exposes none.  And a
+  spoof the old script-blind rule caught is cleared **only** when every
+  Greek character it contains lies in the 32-code-point NFD-fold closure
+  of that table, **or** it is the two-character Latin-plus-Greek shape,
+  **or** RV5 already cleared it.  **Whole-script Cyrillic does not flag**
+  -- a residual the accepted Decision priced explicitly, on the reasoning
+  that the severe case (authority granting) is closed elsewhere and an arm
+  here would cost international proper nouns.
 * ``instruction-html-comment`` -- an HTML comment carrying an imperative
   verb.  Cairn's own ``<!-- cairn:slot ... -->`` / ``cairn:end`` and the
   ``cairn-accept`` markers are recognized and exempt; the rest flag.
@@ -100,6 +150,7 @@ from __future__ import annotations
 import argparse
 import re
 import sys
+import unicodedata
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -170,6 +221,73 @@ _LINE_SEPARATORS = {
     "\u2028",  # line separator
     "\u2029",  # paragraph separator
 }
+
+# --------------------------------------------------------------------------
+# The PRECIS ignorable set (RFC 8264 \u00a7 9.13 PrecisIgnorableProperties):
+# Default_Ignorable_Code_Point union Noncharacter_Code_Point.
+#
+# Held as **numeric ranges, never raw characters**, so this scanner carries
+# none of the invisible code points it detects (trojansource-safe; the
+# TestSourceCarriesNoRawInvisibles invariant depends on it).
+#
+# `Default_Ignorable_Code_Point` is a **derived** property, NOT general
+# category `Cf`: its members span `Cf`, `Mn`, `Lo` and `Cn`, so a `Cf` sweep
+# reaches neither six of the rows below nor any noncharacter.  Verified
+# against the authoritative DerivedCoreProperties-15.1.0.txt: the 17 rows
+# below cover the property **exactly** -- 4174 code points, zero on either
+# side of the difference.
+_IGNORABLE_RANGES: tuple[tuple[int, int], ...] = (
+    (0x00AD, 0x00AD),      # SOFT HYPHEN (Cf)
+    (0x034F, 0x034F),      # COMBINING GRAPHEME JOINER (Mn)
+    (0x061C, 0x061C),      # ARABIC LETTER MARK (Cf)
+    (0x115F, 0x1160),      # HANGUL CHOSEONG/JUNGSEONG FILLER (Lo)
+    (0x17B4, 0x17B5),      # KHMER VOWEL INHERENT AQ/AA (Mn)
+    (0x180B, 0x180F),      # MONGOLIAN free variation selectors + vowel sep
+    (0x200B, 0x200F),      # ZWSP..RLM (Cf)
+    (0x202A, 0x202E),      # bidi embeddings / overrides (Cf)
+    (0x2060, 0x206F),       # WJ, invisible operators, isolates, deprecated
+    (0x3164, 0x3164),      # HANGUL FILLER (Lo -- does NOT split a token)
+    (0xFE00, 0xFE0F),      # VARIATION SELECTOR-1..16 (Mn)
+    (0xFEFF, 0xFEFF),      # ZERO WIDTH NO-BREAK SPACE / BOM (Cf)
+    (0xFFA0, 0xFFA0),      # HALFWIDTH HANGUL FILLER (Lo)
+    (0xFFF0, 0xFFF8),      # reserved (Cn)
+    (0x1BCA0, 0x1BCA3),    # SHORTHAND FORMAT letters (Cf)
+    (0x1D173, 0x1D17A),    # MUSICAL SYMBOL BEGIN BEAM..END PHRASE (Cf)
+    (0xE0000, 0xE0FFF),    # tag block + variation selectors supplement +
+                           # reserved.  The Tag block is carved OUT of this
+                           # row by _TAG_RANGE below and gets its own id;
+                           # the remainder (notably U+E0100-U+E01EF,
+                           # VARIATION SELECTOR-17..256) stays here.
+)
+
+# Permanently-reserved code points, never assignable.  All are `Cn`, so the
+# `Cf` sweep reaches none of them -- these 18 rows are guarded only here.
+_NONCHARACTER_RANGES: tuple[tuple[int, int], ...] = (
+    (0xFDD0, 0xFDEF),      # the Arabic Presentation Forms-A block reserve
+    # U+nFFFE / U+nFFFF on every plane 0-16.
+    (0x0FFFE, 0x0FFFF), (0x1FFFE, 0x1FFFF), (0x2FFFE, 0x2FFFF),
+    (0x3FFFE, 0x3FFFF), (0x4FFFE, 0x4FFFF), (0x5FFFE, 0x5FFFF),
+    (0x6FFFE, 0x6FFFF), (0x7FFFE, 0x7FFFF), (0x8FFFE, 0x8FFFF),
+    (0x9FFFE, 0x9FFFF), (0xAFFFE, 0xAFFFF), (0xBFFFE, 0xBFFFF),
+    (0xCFFFE, 0xCFFFF), (0xDFFFE, 0xDFFFF), (0xEFFFE, 0xEFFFF),
+    (0xFFFFE, 0xFFFFF), (0x10FFFE, 0x10FFFF),
+)
+
+#: The Unicode Tag block -- a complete shadow ASCII alphabet.  Carved out of
+#: the U+E0000-U+E0FFF ignorable row above and given its **own** pattern id,
+#: so a good-faith `cairn-accept: unicode-ignorable` written for an emoji
+#: variation selector cannot silence a Tag-block payload inside its block.
+_TAG_RANGE: tuple[int, int] = (0xE0000, 0xE007F)
+
+#: Performance guard, and an **invariant**, not a heuristic: every code point
+#: in every table above is >= this character, so skipping anything below it
+#: can never skip a detected code point.  A naive per-character table walk
+#: over the whole corpus is ~26x the cost of the pre-existing unicode pass;
+#: with this guard it is *below* it, with an identical hit set.  The scanner's
+#: composing caller runs under a fail-closed wall-clock budget, so this is a
+#: correctness guard on a timeout, not a micro-optimisation.  Pinned by a
+#: test that reads THIS constant, never a hard-coded literal.
+_ASCII_GUARD = "\u00ad"  # SOFT HYPHEN -- the lowest covered code point
 
 # Script ranges for the per-token homoglyph check. Mixing any two of these
 # (or any of them with Latin) inside one token is a classic homoglyph
@@ -317,6 +435,33 @@ def _scan_urls(lines: list[str], allowlist: set[str]):
                 yield i, f"non-allowlisted external URL: {m.group(0)}"
 
 
+def _in_ranges(o: int, ranges: tuple[tuple[int, int], ...]) -> bool:
+    for lo, hi in ranges:
+        if lo <= o <= hi:
+            return True
+    return False
+
+
+def _codepoint_summary(counts: dict[str, int], what: str) -> str:
+    """Render the flag message for a per-line ignorable/tag hit.
+
+    Names the **count and every distinct code point on the line**, not only
+    the first.  A benign variation selector earlier on a line must not mask
+    a Tag-block payload later on it, and a reader who cannot see any of the
+    characters has only this message to go on.
+
+    ``unicodedata.name`` is called in its **two-argument** form: a reserved
+    or unassigned code point has no name, and a missing name must never
+    suppress a flag.
+    """
+    total = sum(counts.values())
+    parts = []
+    for ch, n in counts.items():
+        label = f"U+{ord(ch):04X} ({unicodedata.name(ch, 'unnamed / reserved')})"
+        parts.append(f"{label} x{n}" if n > 1 else label)
+    return f"{total} {what} code point(s) on this line: " + ", ".join(parts)
+
+
 def _scan_unicode(lines: list[str], leading_bom: bool):
     """Yield ``(lineno, pattern_id, message)`` -- **not** ``(lineno,
     message)`` like the other detectors.
@@ -347,6 +492,42 @@ def _scan_unicode(lines: list[str], leading_bom: bool):
                 yield (i, "unicode-line-separator",
                        f"unicode line/paragraph separator U+{ord(ch):04X}")
                 break
+        # The Tag block -- its own id, per the id-split rule at _TAG_RANGE.
+        tag_hits: dict[str, int] = {}
+        for ch in line:
+            # The ASCII short-circuit.  INVARIANT: every code point in
+            # _IGNORABLE_RANGES, _NONCHARACTER_RANGES and _TAG_RANGE is
+            # >= _ASCII_GUARD, so this can never skip a detected code point.
+            # Pinned by a test that reads _ASCII_GUARD, not a literal.
+            if ch < _ASCII_GUARD:
+                continue
+            if _in_ranges(ord(ch), (_TAG_RANGE,)):
+                tag_hits[ch] = tag_hits.get(ch, 0) + 1
+        if tag_hits:
+            yield i, "unicode-tag", _codepoint_summary(tag_hits,
+                                                       "unicode Tag-block")
+        # The rest of the PRECIS ignorable set + the noncharacters.
+        ign_hits: dict[str, int] = {}
+        for ch in line:
+            if ch < _ASCII_GUARD:
+                continue
+            # THE SKIP RULE.  A character an existing id already owns keeps
+            # its exact current meaning: it is reported under that id and
+            # never doubled here, so no existing `cairn-accept` marker and
+            # no existing residual fingerprint is invalidated.  U+FEFF is a
+            # member of _ZERO_WIDTH, so the leading-BOM exemption above is
+            # preserved on this path too -- a BOM never reaches this loop.
+            if ch in _ZERO_WIDTH or ch in _BIDI or ch in _LINE_SEPARATORS:
+                continue
+            o = ord(ch)
+            if _in_ranges(o, (_TAG_RANGE,)):
+                continue  # owned by unicode-tag above
+            if _in_ranges(o, _IGNORABLE_RANGES) or _in_ranges(
+                    o, _NONCHARACTER_RANGES):
+                ign_hits[ch] = ign_hits.get(ch, 0) + 1
+        if ign_hits:
+            yield i, "unicode-ignorable", _codepoint_summary(
+                ign_hits, "default-ignorable")
 
 
 # RV5 -- narrow scientific-unit homoglyph allowance. A Greek micro sign
@@ -374,19 +555,182 @@ def _is_scientific_unit(token: str) -> bool:
     return bool(_SCI_UNIT_RE.match(token))
 
 
+def _char_script(ch: str) -> str | None:
+    """The script name for one character, or ``None`` for a non-letter (a
+    digit) and for anything outside the curated ranges."""
+    o = ord(ch)
+    if (("a" <= ch <= "z") or ("A" <= ch <= "Z")
+            or (0x00C0 <= o <= 0x024F)):  # Latin + Latin Extended
+        return "latin"
+    for name, lo, hi in _SCRIPT_RANGES:
+        if lo <= o <= hi:
+            return name
+    return None
+
+
 def _token_scripts(token: str) -> set[str]:
+    # Written without an assignment expression on purpose: this file ships
+    # verbatim to adopters, and the walrus form raises its measured syntactic
+    # floor 3.7 -> 3.8 for no benefit.
     scripts: set[str] = set()
     for ch in token:
-        o = ord(ch)
-        if (("a" <= ch <= "z") or ("A" <= ch <= "Z")
-                or (0x00C0 <= o <= 0x024F)):  # Latin + Latin Extended
-            scripts.add("latin")
-            continue
-        for name, lo, hi in _SCRIPT_RANGES:
-            if lo <= o <= hi:
-                scripts.add(name)
-                break
+        name = _char_script(ch)
+        if name is not None:
+            scripts.add(name)
     return scripts
+
+
+# --------------------------------------------------------------------------
+# Confusability: which Greek letters actually have an ASCII-Latin look-alike.
+#
+# **Polarity is the whole design.**  This is a **denylist of NON-confusables**,
+# not an allowlist of confusables.  An omission from an allowlist of
+# confusables is a *silently missed spoof*; an omission from this denylist is
+# a *visible false positive* an adopter reports.  One failure mode is
+# discoverable and one is not, so erring toward the SMALLER set here is the
+# safe direction -- a smaller denylist means more flagging.
+#
+# **This is reviewed curation, not a derivation.**  No external oracle
+# attests it: `unicodedata` exposes no confusables, skeleton, script or
+# identifier-status accessor, so the ASCII-twin judgments below are human
+# judgment recorded per code point.  Membership is **never inherited from a
+# base letter** -- each entry carries its own justification against the ASCII
+# alphabet.  That single rule admits the theta/phi/pi *symbol* variants (none
+# has an ASCII twin) and **refuses** the lunate sigma U+03F2, which is a
+# variant of a seeded letter but reads as Latin `c`; inheritance would have
+# admitted it and reopened a known bypass family.
+# Members are **single-character `str` written as escape forms**.  Integer
+# literals are forbidden: the int form invites `ord(normalize("NFD", ch))`,
+# which raises on 217 of the 218 Greek Extended letters.  Escapes rather than
+# raw letters because the raw forms of the entries below are mutually
+# near-indistinguishable on screen -- U+03C6 vs U+03D5 is exactly the
+# confusability this table is about, so a raw table is one a reviewer cannot
+# audit.
+_NO_LATIN_TWIN = frozenset({
+    # -- Seeded, and pinned by a published figure: dropping any of these
+    #    moves the published scientific-residual count, so each is checkable
+    #    against the module doc rather than only asserted.
+    "\u0394",  # GREEK CAPITAL LETTER DELTA -- no ASCII letter is a triangle
+    "\u03bb",  # GREEK SMALL LETTER LAMDA -- no ASCII twin
+    "\u03c3",  # GREEK SMALL LETTER SIGMA -- ASCII `o` has no descender/hook
+    "\u03b8",  # GREEK SMALL LETTER THETA -- crossed bowl; no ASCII twin
+    "\u03c6",  # GREEK SMALL LETTER PHI -- no ASCII twin
+    "\u03c8",  # GREEK SMALL LETTER PSI -- trident; no ASCII twin
+    "\u03b2",  # GREEK SMALL LETTER BETA -- reads as beta, not Latin `b`
+               #   (ascender rises left of the bowl; it has a descender)
+    "\u03a9",  # GREEK CAPITAL LETTER OMEGA -- no ASCII twin
+    # -- Seeded, and figure-unconstrained: dropping it leaves both decisive
+    #    published figures bit-identical, because the scientific token set's
+    #    micro tokens are U+00B5 MICRO SIGN, not U+03BC.  Recorded as
+    #    judgment, not as a figure-pinned entry, so nobody reads a
+    #    reconciliation test as attesting it.  Its exposure is longer tokens
+    #    such as U+03BC + "pload"; RV5 already clears the short unit shapes.
+    "\u03bc",  # GREEK SMALL LETTER MU -- reads as micro, not Latin `u`
+    # -- Admitted variants, each on its OWN justification (not inherited
+    #    from the seeded base letter it resembles).  The same rule REFUSES
+    #    U+03F2 GREEK LUNATE SIGMA SYMBOL, a variant of seeded U+03C3 that
+    #    reads as Latin `c`.
+    "\u03d1",  # GREEK THETA SYMBOL -- script theta; no ASCII twin
+    "\u03d5",  # GREEK PHI SYMBOL -- no ASCII twin
+    "\u03d6",  # GREEK PI SYMBOL -- no ASCII twin
+})
+
+#: Fullwidth Latin.  A **bijection** onto ASCII A-Z/a-z by construction, so it
+#: needs no confusability table at all, and it carries no legitimate
+#: proper-noun cost in an English tree -- a pure-loss vector, closable
+#: script-generally at zero natural-language cost.
+_FULLWIDTH_LATIN = (0xFF21, 0xFF5A)
+
+
+def _is_confusable_greek(ch: str) -> bool:
+    """True when *ch* has an ASCII-Latin look-alike, i.e. it is NOT in the
+    curated no-twin denylist.
+
+    NFD-folds first, so an accented or breathed form is judged by its base
+    letter.  **The arity is pinned**: ``normalize("NFD", ch)`` of a Greek
+    Extended letter is a *multi-character* string, so the ``[0]`` is
+    load-bearing -- an ``ord(normalize(...))`` form raises ``TypeError`` on
+    217 of the 218 Greek Extended letters.
+
+    *Named consequence of the polarity*: under a **denylist** the fold
+    **widens clearing** rather than closing a bypass.  It reaches 20 further
+    code points, all capital-omega variants -- U+038F, U+1F68-U+1F6F,
+    U+1FA8-U+1FAF, U+1FFA-U+1FFC -- which makes the effective no-twin closure
+    32 code points, not 12.  Re-derived against this table, not carried.
+    """
+    return unicodedata.normalize("NFD", ch)[0] not in _NO_LATIN_TWIN
+
+
+def _has_two_non_latin_scripts(scripts: set[str]) -> bool:
+    """CLAUSE 0 -- two or more distinct non-Latin confusable scripts in one
+    token, Latin excluded from the count.
+
+    Extracted as its own named predicate so it can be disabled *by itself*
+    in a test.  A test that only shows a token flagging cannot distinguish
+    "clause 0 caught it" from "some other clause caught it"; disabling this
+    one function and re-running is what makes that attributable.
+    """
+    return "latin" not in scripts and len(scripts - {"latin"}) >= 2
+
+
+def _token_is_confusable(token: str) -> bool:
+    """The four-clause confusability rule.  A token flags when ANY holds.
+
+    A flag now means *a character here imitates a Latin letter*, not merely
+    *this token contains Greek* -- which is why ordinary scientific notation
+    stops being reported as a prompt-injection attempt.
+    """
+    scripts = _token_scripts(token)
+    has_latin = "latin" in scripts
+    non_latin = scripts - {"latin"}
+
+    # CLAUSE 0, evaluated first.  This is the pre-existing script-blind rule
+    # restricted to the no-Latin case, so it removes no flag and adds none:
+    # measured zero-cost, because all 37 published scientific false
+    # positives carry exactly ONE non-Latin script.
+    if _has_two_non_latin_scripts(scripts):
+        return True
+
+    letters = [ch for ch in token if ch.isalpha()]
+
+    # CLAUSE 1 -- whole-script confusable, **for Greek**, plus a separate
+    # fullwidth arm.  Whole-script CYRILLIC is deliberately NOT an arm: it is
+    # a declared residual, priced by the accepted Decision.  The severe
+    # consequence of a Cyrillic homoglyph in a Cairn tree is *authority
+    # granting* (a byline flipping `ai` to `human`), and that path is closed
+    # independently by byline classification; an arm here would add prose
+    # detection at a real cost to international proper nouns.  A future
+    # change to this is a Decision, not a code tidy-up.
+    if (not has_latin and non_latin == {"greek"} and len(letters) >= 3
+            and all(_is_confusable_greek(ch) for ch in letters)):
+        return True
+    # The fullwidth arm, separate and script-general (see _FULLWIDTH_LATIN).
+    if len(letters) >= 3 and all(
+            _FULLWIDTH_LATIN[0] <= ord(ch) <= _FULLWIDTH_LATIN[1]
+            for ch in letters):
+        return True
+
+    # CLAUSE 2 -- a non-Greek confusable script mixed with Latin always
+    # flags (Cyrillic, Armenian, Cherokee, Coptic, fullwidth).  Unchanged
+    # behaviour for any token containing a Latin character; the no-Latin
+    # case is clause 0's, and without clause 0 this sentence is false.
+    if has_latin and (non_latin - {"greek"}):
+        return True
+
+    # CLAUSE 3 -- Greek mixed with Latin, where a Greek character actually
+    # has an ASCII twin.
+    if has_latin and "greek" in non_latin:
+        greek = [ch for ch in letters if _char_script(ch) == "greek"]
+        latin = [ch for ch in letters if _char_script(ch) == "latin"]
+        # The declared two-character carve-out: exactly one Latin letter,
+        # exactly one Greek letter, total length two.  This is the shape
+        # scientific variable-plus-subscript notation takes, and a
+        # two-character token cannot carry an instruction on its own.
+        if len(latin) == 1 and len(greek) == 1 and len(token) == 2:
+            return False
+        if any(_is_confusable_greek(ch) for ch in greek):
+            return True
+    return False
 
 
 def _scan_homoglyph(lines: list[str]):
@@ -395,7 +739,7 @@ def _scan_homoglyph(lines: list[str]):
             token = m.group(0)
             if _is_scientific_unit(token):
                 continue  # RV5: curated scientific-unit allowance
-            if len(_token_scripts(token)) > 1:
+            if _token_is_confusable(token):
                 yield i, f"mixed-script token (possible homoglyph): {token!r}"
                 break
 
