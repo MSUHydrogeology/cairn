@@ -21,8 +21,9 @@ plans that discovered them has made the roadmap accurate but difficult to steer.
 This document is the current organizing strategy. It does three jobs:
 
 1. records what remains from Theme 3 and what has already shipped;
-2. places every current security plan, proposal, and roadmap residual into one
-   of five stable clusters; and
+2. places every security-relevant roadmap liability -- including enabling
+   studies, authority decisions, plans, proposals, and triggered residuals --
+   into one of five stable clusters; and
 3. supplies sequencing and stopping rules so new findings strengthen an
    existing boundary instead of automatically opening another scope.
 
@@ -41,6 +42,21 @@ This is a **living reference**, inline-revised as the portfolio changes.
 * This strategy owns the cluster taxonomy, cross-scope dependencies, threat
   posture, priorities, and the test for whether two findings belong together.
 
+A roadmap item is security-relevant when failure could change what Cairn reads,
+writes, executes, treats as authority, reports as assurance, or permits to move
+through a release or deliberation ceremony. Placement under a general roadmap
+heading does not put it outside this strategy. Coverage does not require every
+item to become active implementation work: each receives one primary cluster
+and a disposition to fix, gate on evidence, retain behind a trigger, accept as
+a dated residual, or decline explicitly.
+
+A broader product, documentation, or productivity task is not absorbed whole
+merely because it touches one of these boundaries. Its owning artifact keeps
+the non-security work; this strategy records the security condition that work
+must preserve. For example, a scoped-test facility remains productivity work,
+but cannot substitute for required security evidence without independently
+demonstrated coverage.
+
 Do not copy full plan designs here. Do not make `PLANNING.md` repeat them either.
 At a lifecycle serialization point, update the task's cluster entry and link its
 owning artifact. At a strategy refresh, remove completed work and retain only
@@ -57,8 +73,10 @@ The initial synthesis read and cross-checked:
   review tier carries a security lens;
 * the proposed `release-security-orchestration` artifact and its External
   Security Review;
-* the security, scan-coverage, release-authenticity, profile-parser,
-  fork-advisory, byline, and gate-claims rows in `dev/PLANNING.md`; and
+* every `dev/PLANNING.md` section for work meeting the security-relevance test,
+  including lifecycle apparatus, lockfile, scaffold-engine, scan-coverage,
+  release-authenticity, profile-parser, fork-advisory, byline, and gate-claims
+  rows; and
 * the implementing history for the six Theme 3 findings.
 
 Claims marked implemented were checked against code or commits, not inferred
@@ -181,10 +199,10 @@ executes, or treats as configuration authority?
   is a v0.4 backstop item and must not disappear behind another plan's scope
   fence.
 * [BND-3] **Filesystem and executable shape.** Facade-loader symlink hardening,
-  side-door install surfaces, module destination renames/binary files, the
-  local-interpreter check/use race, and the recorded `B607` PATH-resolution
-  findings. Address on the next matching write/exec boundary, not through a
-  generic hardening sweep.
+  failed facade-import cleanup in `sys.modules`, side-door install surfaces,
+  module destination renames/binary files, the local-interpreter check/use
+  race, and the recorded `B607` PATH-resolution findings. Address on the next
+  matching write/exec boundary, not through a generic hardening sweep.
 * [BND-4] **Untrusted context rendering.** Plan
   [`agent-context-scrub`](../plans/agent-context-scrub.md) owns newline/control
   injection into the orientation stream and sequences after
@@ -194,6 +212,12 @@ executes, or treats as configuration authority?
   shared hardened client, credential containment, loopback agent-facing checks,
   and Maintainer-only passive deployed checks. Its activation binding amendment
   belongs in [VER-3], not as a local exception.
+* [BND-6] **Lockfile shape and version authority.** The deferred
+  validate-on-read row owns strict `_LOCK_SCHEMA` interpretation, migration
+  guidance, and the fail-open/fail-closed disposition before `upgrade` or
+  `verify_integrity` relies on new schema semantics. It is distinct from
+  [TRU-1]. BND-6 decides whether the input is structurally admissible; TRU-1
+  decides whether its expected values come from an authentic source.
 
 **Exit condition:** every adopter-controlled path or value reaches one named
 validator before authority use; containment refusal cannot suppress a finding;
@@ -221,7 +245,9 @@ each check inspect, and can coverage silently narrow?
   owns the default-on narrowing dispatcher. It is the dependency root for
   portable and API/web capability admission. Before either registry entry
   lands, it must settle the reviewed closed binding mode for runner and policy
-  material.
+  material. Its typed result vocabulary is also the owner for constructive
+  readiness: a security tool that finds a missing capability or unmet bar names
+  the safe next action without strengthening `INCOMPLETE` into `CLEAN`.
 * [VER-4] **Language and dependency capabilities.** Plans
   [`portable-security-sweeps`](../plans/portable-security-sweeps.md) and
   [`dependency-advisory-coverage`](../plans/dependency-advisory-coverage.md)
@@ -232,11 +258,17 @@ each check inspect, and can coverage silently narrow?
   conda-name-to-CPE authority map casually.
 * [VER-5] **Coverage residuals.** Shape-based discovery of delivery registries
   (SC1), recorded LOW `B607` findings (SC2), the corrected monotonicity claim
-  (SC3), and Bandit allowlist liveness (SC5). [REL-2] is SC5's proposed owner.
+  (SC3), the queued `shipped_executables()` authority unification, and Bandit
+  allowlist liveness (SC5). [REL-2] is SC5's proposed owner.
 * [VER-6] **Author-side security accounting.** Plan
   [`security-preflight-checklist`](../plans/security-preflight-checklist.md)
   adds five design-time security questions to the proposal templates and a twin
   parity check. It guides review; it is not a substitute for a Security Review.
+* [VER-7] **Cross-language security conformance.** The deferred
+  language-neutral fixtures and golden vectors must pin security refusals,
+  containment, lockfile shape, and exit semantics before a non-Python engine
+  can claim parity with the Python reference. This is evidence for a future
+  implementation boundary, not a reason to build that implementation now.
 
 **Exit condition:** every shipped executable class has a derivation-backed scan
 path; every capability states inspected material, network behavior, authority,
@@ -253,7 +285,9 @@ authorized identities," and how did the operator establish trust in it?
 * [TRU-1] **Install-integrity anchor.** `verify_integrity.py` currently trusts
   the target's own lockfile. A successor must anchor the verbatim subset in an
   operator-trusted Cairn checkout, distinguish a legitimate fork from tamper,
-  and define the self-checkout case.
+  and define the self-checkout case. Cairn's own 38-file lockfile reconciliation
+  is operational debt on this trust material: it remains a reviewed,
+  freshly-remeasured batch rather than a hand-edited hash refresh.
 * [TRU-2] **Fork-advisory source.** Plan
   [`fork-advisory-semantics`](../plans/fork-advisory-semantics.md) has landed its
   identity-bound byte comparison, but FA-R1 remains: an arbitrary
@@ -262,10 +296,15 @@ authorized identities," and how did the operator establish trust in it?
   RA6: prove the working tree being built equals the verified release and make
   install-side provenance more than unsigned declarations. These share the
   trusted-source boundary with [TRU-1] and [TRU-2].
-* [TRU-4] **Checker integrity.** Cairn's release checker cannot authenticate its
-  own candidate bytes. Keep this separate from merely running more checks; a
-  trusted-source launcher or anchored execution is required if the threat model
-  demands closure.
+* [TRU-4] **Checker and frozen-set integrity.** Cairn's release checker cannot
+  authenticate its own candidate bytes. This owner also carries the end-gate
+  decision about whether the A/B/C engine packages join `frozen_files`, and the
+  `_ast_attest` refusal for a mismatched `<kind>:` prefix. Keep these questions
+  separate from merely running more checks: frozen coverage needs an explicit
+  authority-set decision, and self-authentication needs a trusted-source
+  launcher or anchored execution if the threat model demands closure. The
+  missing AST-attestation re-anchor runbook and the dormant two-stage `promote`
+  mechanism live here as trust-maintenance triggers, not active implementation.
 * [TRU-5] **Gate-anchor and interpreter trust roots.** The gate preflight's
   trusted-contributor posture, first-use exact-byte bootstrap, external-anchor
   option, no-nonce replay residual, and the untracked local interpreter binding
@@ -285,10 +324,11 @@ trusted bytes.
 but never what counts as clean; every trust root has an acquisition story, an
 expiry trigger, and a statement of what it does not authenticate.
 
-### [REC] Identity, context, and assurance-record integrity
+### [REC] Deliberation authority, identity, context, and record integrity
 
-**Question:** Can untrusted presentation or incomplete record structure be
-mistaken for authorization, independent review, or trusted tool output?
+**Question:** Can a mechanism or untrusted presentation mutate deliberation
+state, create a commit, or be mistaken for authorization, independent review,
+or trusted tool output?
 
 **Current lifecycle owners**
 
@@ -304,14 +344,28 @@ mistaken for authorization, independent review, or trusted tool output?
   [`review-gate-enforcement`](../plans/review-gate-enforcement.md) reconciles the
   review schema and gates on declared tier/outcome. It remains a conformance
   backstop, not authentication that the declared reviewer performed the work.
+  `transition-lint`, the planner's artifact/status cross-checks, the round-suffix
+  regression, and the open `Touches`-header mutability decision are the same
+  class of record-conformance work; each stays advisory or separately reviewed
+  at the strength its own artifact declares.
 * [REC-4] **Archive evidence claims.** The archive-commit-body auditability
   correction and its re-measured figure belong to lifecycle record integrity,
   not release scanning. The unfinished gate-claims axis-2/axis-3 sweep belongs
   under [REL-5].
+* [REC-5] **Lifecycle mutation authority.** The Maintainer-run dogfood study is
+  the evidence gate for typed lifecycle mutation. It must earn or decline the
+  mutation arm by prevented failure and preserved assurance. A later commit arm
+  is a separate privilege and Security-Review surface; version one prints the
+  exact command rather than exercising that privilege. The study and mechanism
+  share an authority question, but remain two ordered deliverables. Later
+  lifecycle-routine skill payloads inherit the same authority boundary before
+  they may perform proposal, review, Decision, or archive transitions.
 
 **Exit condition:** every automated result says whether it checks syntax,
 presentation, provenance, or authorization; untrusted data cannot imitate the
-tool's grammar; no classifier is described as stronger than its oracle.
+tool's grammar; no classifier is described as stronger than its oracle; and no
+lifecycle mutation or commit occurs without a named authority and independently
+reviewed privilege boundary.
 
 ### [REL] Release evidence, disclosure, and ceremonies
 
@@ -344,7 +398,9 @@ ceremonies or human acts remain irreducible?
 * [REL-5] **Claims versus enforcement.** Finish the behavioral/trigger sweep
   only as a bounded inventory. Live false-CI wording and the release-command
   recursion are [REL-2]; archive auditability is [REC-4]. Do not reopen already
-  corrected lexical claims.
+  corrected lexical claims. The deferred governing-layer question -- whether
+  an agent must name both a trigger and what it checks -- belongs to this owner,
+  not to a free-standing doctrine change.
 * [REL-6] **Security disclosure channel.** `SECURITY.md` needs a real private
   reporting route plus a front-page pointer, with Maintainer live verification
   that the forge setting exists. A stated private channel with no mechanism is
@@ -388,6 +444,19 @@ because both carry a security consequence.
    settles which source/install claims must hold for v0.4.0.
 3. **Class C containment** -- [BND-2], no later than v0.4.0 preparation unless
    the Maintainer explicitly accepts it as a registered release residual.
+
+### Queued authority work
+
+* **Lifecycle mutation authority** -- [REC-5]. Run the Maintainer-owned dogfood
+  study first. Open the typed mutation mechanism only if that evidence supports
+  it; treat any commit capability as a later, separately reviewed privilege.
+* **Lockfile schema authority** -- [BND-6]. Open on the next lockfile contract
+  change, or earlier if [TRU-1]'s trusted-source design needs schema rejection.
+  Do not let another provenance-field addition silently widen the reader.
+* **Checker and facade residuals** -- [TRU-4] owns the end-gate frozen-set
+  decision and attestation kind-prefix refusal; [BND-3] owns failed-import
+  cleanup. Resolve each on the next matching authority or facade change rather
+  than recombining them because they once shared a roadmap bullet.
 
 ### Triggered, not standing work
 
@@ -443,8 +512,9 @@ When a new security finding arrives:
 
 The strategy is working when:
 
-* every security item in `dev/PLANNING.md` carries one cluster ID and one owner
-  or trigger;
+* every security-relevant item in `dev/PLANNING.md` carries one primary cluster
+  ID and one disposition: active owner, evidence gate, revival trigger, dated
+  residual, or explicit decline;
 * no active security plan is absent from the current portfolio;
 * one shared ceremony replaces several plan-local ceremonies over the same
   frozen union;

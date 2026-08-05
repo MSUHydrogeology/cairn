@@ -152,7 +152,7 @@ with the plan's filename stem.
   trivial path); (b) extend the `verify:` count guard to **other
   adopter-facing counts** beyond the quickstart's two. Each → its own
   proposal when revived.
-* **Transition-lint** *(queued, accepted 2026-07-22)* — an **advisory**
+* **[REC-3] Transition-lint** *(queued, accepted 2026-07-22)* — an **advisory**
   check that a commit's message claim is supported by its diff: a subject
   claiming a review / response / decision transition whose diff adds no such
   section, and a proposal-*open* commit whose file already carries reviews.
@@ -169,7 +169,7 @@ with the plan's filename stem.
   (rename-awareness, narrowed trigger, carve-in-bounded exceptions, advisory
   exit 0, no silent-clean) are ratified in the Decision. → plan-open when it
   reaches the top.
-* **Self-host lockfile reconciliation** *(deferred, Jul 2026)* —
+* **[TRU-1] Self-host lockfile reconciliation** *(deferred, Jul 2026)* —
   `python bootstrap/scaffold.py upgrade --target . --cairn-root . --plan`
   currently reports **38** files as "no recoverable base (review-only
   diff)" against the base cache, each needing a by-hand `--stage`/`--apply`
@@ -182,7 +182,7 @@ with the plan's filename stem.
   `--plan` fresh, confirming the current file list, and scoping the
   reconciliation pass (likely several small, reviewed `--finalize` batches
   rather than one large `--apply`).
-* **Lockfile schema validate-on-read** *(deferred, Jul 2026)* — the
+* **[BND-6] Lockfile schema validate-on-read** *(deferred, Jul 2026)* — the
   `lockfile-provenance-fields` proposal (plan `lockfile-provenance-fields`)
   adds two provenance fields to the install lockfile without bumping
   `_LOCK_SCHEMA` or teaching `read_lockfile` to validate on read — a
@@ -238,11 +238,11 @@ with the plan's filename stem.
      declined the never-opened Class C follow-on, with reasons, and neither claims it.
      Recommendation on the record in both: ratify it as its own proposal and extend the
      `identity-not-name` archive condition to cover it.
-  2. **Is the `Touches` header line mutable?** `Status` already is treated as mutable.
+  2. **[REC-3] Is the `Touches` header line mutable?** `Status` already is treated as mutable.
      Append-only protects what was believed at open time, but a stale `Touches` line
      breaks the discovery index siblings grep against. Raised by `fork-advisory-semantics`
      finding I5; the author declined to decide it alone.
-  3. **An `AGENTS.md` governing-layer edit** proposed inside `gate-claims-vs-enforcement`
+  3. **[REL-5] An `AGENTS.md` governing-layer edit** proposed inside `gate-claims-vs-enforcement`
      — extending the rule from "name the trigger" to "name the trigger *and check what it
      checks*", on the argument that a purely lexical rule would not have caught the
      `PROVENANCE.md` instance. Outside Theme 3 and outside the brief that produced it.
@@ -255,7 +255,7 @@ with the plan's filename stem.
      inherited it and was caught at External review (finding E4b). `AGENTS.md` now names
      the applicable ceremony inline: a Maintainer-run, dry-run-verified direct correction
      an implementing agent does not perform, precedent `c3d5bd9`.
-     **Residual, deliberately not closed:** there is still no runbook for the AST
+     **[TRU-4] Residual, deliberately not closed:** there is still no runbook for the AST
      re-anchor — verified, zero Markdown files under `bootstrap/`, `docs/` or `doctrine/`
      mention `ast_attest` or `scaffold_ast_baseline`. The procedure lives only as
      precedent and as prose inside two plans. Whether it earns a runbook of its own is a
@@ -288,10 +288,10 @@ board by design.
   | **[BND] Input, execution, containment** | `fork-advisory-semantics`, `agent-context-scrub`, `api-web-security-modules` | profile-authority consolidation; Class C no later than v0.4 preparation |
   | **[VER] Verification and coverage** | `content-scan-detectors` + `separator-detection`; `default-security-stance`; `security-verification-activation`; `portable-security-sweeps`; `dependency-advisory-coverage`; `api-web-security-modules`; `security-preflight-checklist` | settle activation binding mode, then admit capability entries; one scanner batch |
   | **[TRU] Trust roots and provenance** | `fork-advisory-semantics`; the live gate-reanchor posture below | trusted-source boundary after the release bar settles required source/install claims |
-  | **[REC] Identity, context, record integrity** | `agent-context-scrub`; `review-gate-enforcement`; byline residuals below | one identity-authority consolidation when a trigger fires, not one proposal per Unicode row |
+  | **[REC] Deliberation authority, identity, context, record integrity** | `agent-context-scrub`; `review-gate-enforcement`; byline residuals below | one identity-authority consolidation when a trigger fires, not one proposal per Unicode row |
   | **[REL] Release evidence and ceremonies** | `release-security-bar`; proposed `release-security-orchestration`; the scheduled frozen-file union | decide orchestration, finish the finite register, then run one re-derived supervised ceremony |
 
-* **gate-reanchor-preflight posture** *(plan archived 2026-08-03; this entry
+* **[TRU-5] gate-reanchor-preflight posture** *(plan archived 2026-08-03; this entry
   survives because its commitments are live, not completed)* — the trust root is
   established at `e45e1fc` and the pre-flight is in the anchor, so every ceremony
   from here runs the anchored loader. What remains open is the **dated
@@ -323,7 +323,7 @@ board by design.
   twin, now mandatory since the lockfile is clean.
 
 
-* **byline-classification residuals** *(plan open 2026-08-03; the rows land at
+* **[REC-1] byline-classification residuals** *(plan open 2026-08-03; the rows land at
   plan-open, not at archive, so they outlive the proposal's readership)* — the
   character-preserving identity fold and the whole-name exact match closed a
   demonstrated privilege-widening defect in `IdentityModel.classify`. Six
@@ -543,9 +543,11 @@ near the top of this file.
   graphics/figures in the adopter-facing docs + quickstart (lower the
   "doctrine-heavy at first contact" friction); a comment-cleanup pass
   (strip blow-by-blow comments; keep the *why*) before public adopters
-  fork the code; and the shipped-executable-authority unification (one
-  `shipped_executables()` traversal for install / manifest / security
-  scan / upgrade).
+  fork the code.
+* **[VER-5] Shipped-executable authority unification** *(queued for 0.4,
+  not launch-blocking)* — one `shipped_executables()` traversal for install,
+  manifest, security scan, and upgrade, so delivery and scan coverage cannot
+  drift through parallel registries.
 
 ### Deferred follow-ups (durable home)
 
@@ -608,10 +610,10 @@ reason to open another scope.
 
 | Cluster | Detailed homes in this board |
 |---|---|
-| **[BND] Input, execution, containment** | queued Class C; interpreter race; scaffold/engine path residuals; `fork-advisory-semantics` identity-warning, `base_hash`, and `_infer_init_lock_axes` rows; profile G1/G2/G3/G5/totality rows |
-| **[VER] Verification and coverage** | Security apparatus conda row; Scan coverage SC1-SC3/SC5; profile G6; capability plans in the Active table |
-| **[TRU] Trust roots and provenance** | install-integrity anchor; Release authenticity RA1/RA3/RA5/RA6; fork advisory FA-R1; gate-reanchor posture |
-| **[REC] Identity, context, record integrity** | byline residuals and four archive follow-ups; gate-claims archive-auditability rows; `agent-context-scrub` and `review-gate-enforcement` in Active |
+| **[BND] Input, execution, containment** | queued Class C; lockfile schema validate-on-read; interpreter race; scaffold/engine path residuals; `fork-advisory-semantics` identity-warning, `base_hash`, and `_infer_init_lock_axes` rows; profile G1/G2/G3/G5/totality rows |
+| **[VER] Verification and coverage** | Security apparatus conda row; Scan coverage SC1-SC3/SC5; shipped-executable authority unification; profile G6; cross-language conformance fixtures; capability plans in the Active table |
+| **[TRU] Trust roots and provenance** | self-host lockfile reconciliation; install-integrity anchor; end-gate frozen-set decision; attestation kind-prefix validation; AST re-anchor runbook; Release authenticity RA1/RA3/RA5/RA6; fork advisory FA-R1; gate-reanchor posture |
+| **[REC] Deliberation authority, identity, context, record integrity** | lifecycle mutation/commit arm, dogfood study, and later routine skills; transition and planner conformance; byline residuals and four archive follow-ups; gate-claims archive-auditability rows; `agent-context-scrub` and `review-gate-enforcement` in Active |
 | **[REL] Release evidence and ceremonies** | SC4 and all stale frozen pins; profile G4 and manifest delta; release-authenticity archive/Zenodo rows; gate-claims trigger/CI rows; disclosure channel |
 
 The strategy is the cluster authority; this board remains the task and trigger
@@ -619,17 +621,17 @@ authority. Completed rows leave this file at their lifecycle serialization
 point rather than being copied into another backlog.
 
 **Lifecycle apparatus**
-* **Lifecycle mutation/commit arm** — the typed-mutation ops (decision /
+* **[REC-5] Lifecycle mutation/commit arm** — the typed-mutation ops (decision /
   review / open / archive) + commit the read-only planner deferred; gated on
   the dogfood study *and* its own Security Review (commit is a separate
   privilege; print-the-command in v1).
-* **Lifecycle mechanization dogfood study** — the multi-session,
+* **[REC-5] Lifecycle mechanization dogfood study** — the multi-session,
   Maintainer-run measurement that earns (or declines) the mutation arm; rank
   by prevented-failure / preserved-assurance, not frequency.
-* **Planner cross-checks** — `next` surfaces "review status undetermined" on
+* **[REC-3] Planner cross-checks** — `next` surfaces "review status undetermined" on
   an absent/malformed plan-review line (E-#1); assert the artifact resolves
   under `dev/` (E-#2).
-* **`_agent_of` round-suffix regression test** — pin the `## Review (Round
+* **[REC-3] `_agent_of` round-suffix regression test** — pin the `## Review (Round
   N)` header shape in the Cairn tree.
 * **[BND-3 / TRU-5] Interpreter trust-root check/use race (S2)** *(deferred, Jul 2026)* —
   the `interpreter-trust-root-fallback` proposal's dedicated Security Review
@@ -646,20 +648,22 @@ point rather than being copied into another backlog.
   review tier given the security surface.
 
 **[BND] Scaffold / engine**
-* **Facade-loader symlink hardening (C-#3)** — refuse any engine submodule
+* **[BND-3] Facade-loader symlink hardening (C-#3)** — refuse any engine submodule
   that is a symlink or resolves out-of-tree, across all three facades.
-* **End-gate frozen-set decision (C-#4)** — whether the A/B/C engine
+* **[TRU-4] End-gate frozen-set decision (C-#4)** — whether the A/B/C engine
   packages fold into the gate manifest's `frozen_files`.
-* **Facade residuals (B-#1/2)** — clean a partial `sys.modules` entry on a
-  failed mid-load; reject a mismatched `<kind>:` prefix in `_ast_attest`.
-* **Side-door non-executable surfaces** — disposition for the onboarding
+* **[BND-3] Facade failed-load cleanup (B-#1)** — clean a partial
+  `sys.modules` entry on a failed mid-load.
+* **[TRU-4] Attestation kind-prefix validation (B-#2)** — reject a mismatched
+  `<kind>:` prefix in `_ast_attest`.
+* **[BND-3] Side-door non-executable surfaces** — disposition for the onboarding
   activation log, preset sources, and issue-capture forge starters.
-* **Module destination renames / binary module files** — relocation
+* **[BND-3] Module destination renames / binary module files** — relocation
   classification when a module's destination changes; byte-preserving staging
   for non-text module files.
 
 **[TRU / VER] Security apparatus**
-* **Install-integrity trust anchor** — `bootstrap/verify_integrity.py` reads
+* **[TRU-1] Install-integrity trust anchor** — `bootstrap/verify_integrity.py` reads
   expected hashes from **the candidate target's own** `dev/.cairn/cairn-lock.yml`
   (`verify_integrity.py:47`, `read_lockfile(target)`), so a coordinated tamper —
   modify target files, then regenerate the lockfile over them — verifies as `OK`.
@@ -675,7 +679,7 @@ point rather than being copied into another backlog.
   Raised by the `release-security-bar` External review, finding E1, and homed
   here rather than widening that proposal's fences.
 
-* **Conda advisory coverage** — `python-security` audits **Python
+* **[VER-4] Conda advisory coverage** — `python-security` audits **Python
   distributions**; conda-managed native packages are outside its declared scope
   (narrowed by Maintainer direction 2026-08-03 in `dependency-advisory-coverage`,
   finding DAC3). The gap is measured, not estimated: on the canonical
@@ -695,7 +699,7 @@ point rather than being copied into another backlog.
   other; and vendored/statically-linked code has no record in any inventory.
 
 **Stack-neutrality**
-* **Language-neutral conformance fixtures + golden vectors (Move 5)** — for
+* **[VER-7] Language-neutral conformance fixtures + golden vectors (Move 5)** — for
   the extrication seam (exit semantics, path containment, lockfile schema,
   slot parsing, 3-way merge, security refusals), generated from the Python
   reference. The seam architecture shipped; the executable fixtures are
@@ -718,7 +722,7 @@ point rather than being copied into another backlog.
 **[VER / REL] Scan coverage** *(residuals from plan `scan-coverage`, homed 2026-08-04 so the
 plan can archive)*
 
-* **SC1 — the registry census was struck, and the census shape is the reason.**
+* **[VER-5] SC1 — the registry census was struck, and the census shape is the reason.**
   The proposal's name-keyed census (`*_MAPPINGS`) is blind on the day it is
   written: `_OPTIONAL_TEMPLATES` (`bootstrap/_scaffold/config.py:249`, verified
   at HEAD 2026-08-04) is a live delivery registry that never reaches the
@@ -730,7 +734,7 @@ plan can archive)*
   bounded by `install_manifest()`, which `bootstrap/SAFETY.md` now states in
   terms.
 
-* **SC2 — four `B607` findings, recorded and not fixed.** `git` invoked by name
+* **[BND-3] SC2 — four `B607` findings, recorded and not fixed.** `git` invoked by name
   rather than absolute path, in `templates/skills/_lib/lifecycle.py` and
   `templates/skills/_lib/lifecycle_planner.py`. Re-measured 2026-08-04: those
   two files carry **16 LOW findings — `B404`×2, `B603`×10, `B607`×4** — and the
@@ -742,7 +746,7 @@ plan can archive)*
   to lower the blocking threshold to LOW — which would turn the gate red on 113
   findings, only 16 of them newly visible.
 
-* **SC3 — the union-vs-replacement monotonicity claim is unguarded.** Chunk B
+* **[VER-5] SC3 — the union-vs-replacement monotonicity claim is unguarded.** Chunk B
   makes `scan_targets()` a *union* with the manifest rather than a replacement,
   and the plan's own author-accounting records that **no test guards that
   directly**. Verified 2026-08-04: zero tests in
@@ -763,7 +767,7 @@ plan can archive)*
   refactor. Anyone writing this guard writes that claim, not the one this row
   used to prescribe.
 
-* **SC4 — three frozen pins are stale, and the re-pin timing is a Maintainer
+* **[REL-3] SC4 — three frozen pins are stale, and the re-pin timing is a Maintainer
   question.** Verified 2026-08-04, `_gate_manifest.py verify` reports
   `FROZEN-MODIFIED` on `bootstrap/security_check.py`,
   `bootstrap/tests/test_security_check.py` and
@@ -783,7 +787,7 @@ plan can archive)*
   removal condition is the ceremony running, not a decision.
 
 **[TRU / REL] Release authenticity** *(residuals from plan `release-authenticity`)*
-* **RA1 (a) — Cairn's signing authority widens** *(non-mechanical for the
+* **[TRU-6] RA1 (a) — Cairn's signing authority widens** *(non-mechanical for the
   adopter, mechanical for Cairn)* — the principal-count warning in
   `bootstrap/container/verify-ref.sh` counts a roster the *adopter* typed and has
   no channel back here, so it is adopter hygiene, not a Cairn-side trigger. The
@@ -792,24 +796,24 @@ plan can archive)*
   — exactly 1 principal in `dev/.cairn/allowed_signers`, `as_of 2026-08-03`).
   Revive when that node fires: the one-signer, two-accounts trust model no
   longer describes Cairn.
-* **RA1 (b) — transparency-log / keyless verification** — revive when such a
+* **[TRU-6] RA1 (b) — transparency-log / keyless verification** — revive when such a
   verifier is usable without adding an adopter runtime dependency. The
   zero-dependency budget is the constraint, not the idea.
-* **RA1 (c) — a reported cross-channel fingerprint mismatch** — revive the moment
+* **[TRU-6] RA1 (c) — a reported cross-channel fingerprint mismatch** — revive the moment
   any adopter reports one; the two-channel comparison is the whole trust anchor,
   and a mismatch means it failed.
-* **RA3 — verifying the tree you build from** — the bootstrap proves a tag object
+* **[TRU-3] RA3 — verifying the tree you build from** — the bootstrap proves a tag object
   is signed, not that a working tree equals that tag's tree. Revive when the
   scaffold gains a "verify my source" entry point, or when the lockfile's
   `cairn_commit` is cross-checked against a verified tag; either makes this an
   addition rather than a redesign.
-* **RA5 — the candidate-git-config class on OTHER surfaces** — closed for
+* **[TRU-6] RA5 — the candidate-git-config class on OTHER surfaces** — closed for
   `bootstrap/container/verify-ref.sh` by construction (verification runs in a
   workspace the script creates, never in the candidate), but **not swept**: no
   enumeration of every config key that can influence a git verification, and the
   fetch still runs `upload-pack` inside the candidate. Revive at the next Cairn
   surface that shells out to `git` against a tree Cairn does not control.
-* **RA6 — install-side provenance** — source-side signing landed; the lockfile's
+* **[TRU-3] RA6 — install-side provenance** — source-side signing landed; the lockfile's
   `source_repository` / `source_licenses` stay **declared**, not attested, and
   `python bootstrap/scaffold.py --manifest` stays unsigned. Revive when an
   adopter asks "how do I know my installed tree came from the release I
@@ -817,19 +821,19 @@ plan can archive)*
   other side.
 
 **Adoption UX**
-* **Constructive readiness** — when a Cairn tool finds a project below an
+* **[VER-3] Constructive readiness** — when a Cairn tool finds a project below an
   expected bar, it should *offer and drive the path to readiness* (scaffold
   the missing pieces, guide the next action), not emit a bare "not ready"
   verdict. Generative about adoption, not only diagnostic.
 
 **Lower-priority**
-* **Container P3s** — acceptance credential-residue leg (note/drop); `--user`
+* **[BND-5] Container P3s** — acceptance credential-residue leg (note/drop); `--user`
   on a future Docker acceptance leg; pin the `git` apt version for image
   byte-reproducibility.
-* **Differential-oracle two-stage `promote`** — future-use mechanism for a
+* **[TRU-4] Differential-oracle two-stage `promote`** — future-use mechanism for a
   Cairn-engine refactor needing behavior-preservation promotion (trust root
   established, nothing pending; see `bootstrap/REANCHOR_RUNBOOK.md`).
-* **Lifecycle-routine skill payloads (post-v1)** — additional episodic skills
+* **[REC-5] Lifecycle-routine skill payloads (post-v1)** — additional episodic skills
   (proposal-open, review-append, decision-scribe, plan-archive); promote
   harness skill targets to native-tested as fixtures prove them.
 
@@ -844,27 +848,27 @@ one was merged into its duplicate). A plan does not archive
 until its items here are landed -- that is this section's whole purpose.
 
 *From `byline-classification` (4) — [REC]:*
-* **byline-classification, uncovered — the NFKD compatibility mappings are
+* **[REC-1] byline-classification, uncovered — the NFKD compatibility mappings are
   unpinned.** The `NFD`-granting / `NFKD`-flagging split rests on a
   *representative*, not exhaustive, enumeration of NFKD's compatibility
   mappings; B2 pins only the ASCII deletion set. Plan-review mandate 1,
   returned unanswered. *Trigger:* the first demonstrated compatibility
   mapping that folds a non-rostered name onto a rostered one, or a UCD
   version bump under the canonical interpreter.
-* **Author-accounting omission (d): "`casefold()` was sampled, not
+* **[REC-1] Author-accounting omission (d): "`casefold()` was sampled, not
   enumerated against the full case-folding table — [I1a] shows the class
   reaches the granting path and there may be worse members than
   `chr(0x17f)`." Plan-review mandate 2 asked for the enumeration and
   returned unanswered.** *(census produced no drafted row; text is the
   plan's own wording)*
-* **byline-classification, uncovered — no hostile roster has been
+* **[REC-1] byline-classification, uncovered — no hostile roster has been
   tested.** `dev/.cairn/agent-identities.json` is lockfile-untracked and
   written by no installer; both proposal reviews and the External plan
   review probed benign typos only, so a deliberately hostile config
   remains an unexplored threat model on the granting leg. Plan-review
   mandate 3, returned unanswered. *Trigger:* any change to how the roster
   file is written, installed or trusted — or the first external adopter.
-* **byline-classification, undecided — the B2 adjacency.** B2's expected
+* **[REC-1] byline-classification, undecided — the B2 adjacency.** B2's expected
   deletion set is the allow-set literal in `_fold_word`'s own docstring,
   so the pin proves self-consistency rather than correctness; the plan
   named the remedy (move the literal into the test module, docstring cites
@@ -873,7 +877,7 @@ until its items here are landed -- that is this section's whole purpose.
   move.
 
 *From `scan-coverage` (1) — [VER / REL]:*
-* **SC5 — the Bandit `ALLOWLIST` has no staleness guard, only a rationale
+* **[VER-5] SC5 — the Bandit `ALLOWLIST` has no staleness guard, only a rationale
   guard.** `test_allowlist_entries_have_rationale`
   (`bootstrap/tests/test_security_lint.py:183`) asserts a non-empty
   rationale and nothing else; the sole live entry
@@ -896,14 +900,14 @@ until its items here are landed -- that is this section's whole purpose.
   accordingly; whoever owns that surface owns this.
 
 *From `release-authenticity` (2) — [REL]:*
-* **`release-authenticity` — the Decision's flagged condition,
+* **[REL-4] `release-authenticity` — the Decision's flagged condition,
   undispositioned** — the approved ledger entry read *"Accept, conditioned
   on a scoped External round for the tag-substitution fix only"*, but the
   Maintainer's quoted words said only *"as revised"*. Either strike it in
   one line or name what discharges it (the 2026-08-03 Gemini Flash
   External plan review is the candidate, per `dev/NEXT_SESSION.md`).
   Blocks the plan's archive until dispositioned.
-* **`release-authenticity` — channel 3 (Zenodo) is a documented channel
+* **[REL-4] `release-authenticity` — channel 3 (Zenodo) is a documented channel
   with nothing in it** — `bootstrap/PROVENANCE.md`'s channel table lists
   the per-version deposition as channel 3, but no fingerprint has ever
   been recorded in a deposition and no public-launch step names it. At
@@ -911,7 +915,7 @@ until its items here are landed -- that is this section's whole purpose.
   correct the table row to say channel 3 is prospective.
 
 *From `fork-advisory-semantics` (5) — [BND / TRU / REL]:*
-* **FA-R1 — the fork advisory's comparison bytes are caller-trusted, not
+* **[TRU-2] FA-R1 — the fork advisory's comparison bytes are caller-trusted, not
   anchored** *(residual R1 of plan `fork-advisory-semantics`)* — the
   upstream operand is read from the checkout hosting the verifier, **or
   from any directory an operator names with `--cairn-root`, which may
@@ -919,7 +923,7 @@ until its items here are landed -- that is this section's whole purpose.
   Revive when `release-authenticity` lands an out-of-band trust bootstrap,
   or on the first Cairn install verified from a checkout the adopter did
   not obtain themselves.
-* **Two frozen pins stale from `7066489`** *(surfaced by plan `fork-
+* **[REL-3] Two frozen pins stale from `7066489`** *(surfaced by plan `fork-
   advisory-semantics`, Correction 2; unclaimed)* — `_gate_manifest.py
   verify --no-collect` HOLDs on
   `bootstrap/tests/test_quality_gate_redundancy.py` and
@@ -927,7 +931,7 @@ until its items here are landed -- that is this section's whole purpose.
   with no re-pin. Seam with `gate-claims-vs-enforcement`, which
   inventories them but does not claim them. Trigger: the next supervised
   re-anchor ceremony, where the re-pin is cheapest to fold in.
-* **`identity-not-name` condition 3 is unlanded** *(Maintainer call; plan
+* **[TRU-2] `identity-not-name` condition 3 is unlanded** *(Maintainer call; plan
   `fork-advisory-semantics` Chunk B is fenced on it)* —
   `format_forked_facade_warning` still advises "remove the dormant engine
   package", which makes `tools/intent.py`'s `_load_engine()` raise
@@ -935,14 +939,14 @@ until its items here are landed -- that is this section's whole purpose.
   trivial commit now + own ceremony, (2) trivial commit now + re-anchor at
   Chunk R, or (3) amend condition 3 and let Chunk B run inside the
   already-red window.
-* **Sweep the other consumers of `base_hash`** *(known omission (c) of
+* **[BND-1] Sweep the other consumers of `base_hash`** *(known omission (c) of
   plan `fork-advisory-semantics`; named in the proposal and never
   measured)* — `base_hash` ratchets forward on every `--finalize`, and the
   fork advisory was one consumer that treated the ratchet as an upstream
   signal. No enumeration exists of the other readers of the field or of
   which inherit the same wrong inference. Trigger: the next change to
   `--finalize`'s backfill, or any new detector keyed on `base_hash`.
-* **`_infer_init_lock_axes` guesses `human_team` from a filename**
+* **[BND-1] `_infer_init_lock_axes` guesses `human_team` from a filename**
   *(orphaned residual: routed by `fork-advisory-semantics` to scope 4,
   whose supersession Decision did not carry it; also fenced by `profile-
   parse-fail-open`. **Second provenance, merged in 2026-08-04:** the same
@@ -959,27 +963,27 @@ until its items here are landed -- that is this section's whole purpose.
   --init-lock` in a tree with no committed `dev/.cairn/profile.yml`.
 
 *From `profile-parse-fail-open` (8, was 9 — one row merged 2026-08-04) — [BND / VER / REL]:*
-* **Profile key with an unrecognized *value*** *(residual from plan
+* **[BND-1] Profile key with an unrecognized *value*** *(residual from plan
   `profile-parse-fail-open`, G1)* — a profile listing `- not-a-real-
   module` under `modules:` is accepted at exit 0 and printed in the
   roster; measured 2026-08-03, there is **no** downstream module
   validation to catch it. *Trigger:* the first adopter report of a mis-
   typed module name, or the next proposal touching `expand_preset`.
-* **Profile forward-compatibility cost is argued, not measured**
+* **[BND-1] Profile forward-compatibility cost is argued, not measured**
   *(residual from plan `profile-parse-fail-open`, G2)* — unknown profile
   keys now refuse; the reserved `schema` key rescues no already-released
   engine, so the disposition is free only while the adopter set is empty.
   *Trigger:* the first genuine older-engine/newer-profile break. *Remedy:*
   a follow-up proposal reversing the disposition — never a quiet
   loosening.
-* **Two `test_presets.py` nodes use `_yaml_load` as its own oracle**
+* **[BND-1] Two `test_presets.py` nodes use `_yaml_load` as its own oracle**
   *(residual from plan `profile-parse-fail-open`, G3)* —
   `bootstrap/tests/test_presets.py:293` and `:423` compare the parser
   against itself whenever PyYAML is absent; left standing because the file
   is frozen. *Trigger:* the next change that edits `test_presets.py` for
   any reason. *Mechanical:* `grep -n "_yaml_load"
   bootstrap/tests/test_presets.py`.
-* **`_gate_manifest.py`'s `SKIP-XFAIL-NEW` over-reports** *(residual from
+* **[REL-3] `_gate_manifest.py`'s `SKIP-XFAIL-NEW` over-reports** *(residual from
   plan `profile-parse-fail-open`, G4)* — the check reads
   `get_closest_marker("skipif")`, which resolves a module-level
   `pytestmark`, so any node added to such a module registers as newly
@@ -987,26 +991,26 @@ until its items here are landed -- that is this section's whole purpose.
   reports 0 skipped. *Trigger:* the next supervised ceremony, or the next
   plan needing a node in a marked module. *Mechanical:* `python
   bootstrap/tests/_gate_manifest.py verify --anchor-ref <P>`.
-* **`_resolve_current_profile`'s lockfile fallback is audible but
+* **[BND-1] `_resolve_current_profile`'s lockfile fallback is audible but
   unexamined** *(residual from plan `profile-parse-fail-open`, G5)* —
   Chunk A made the swallowed exception print to stderr; whether
   substituting the lockfile profile is the right disposition at all was
   never examined. *Trigger:* the next upgrade-path proposal.
-* **Nothing enforces the suite's `0 skipped` invariant** *(residual from
+* **[VER-5] Nothing enforces the suite's `0 skipped` invariant** *(residual from
   plan `profile-parse-fail-open`, G6)* — `bootstrap/tests/conftest.py`
   carries only the order-independence shuffle hook and there is no CI, so
   a node that skips itself away (the parity sweep plus both canaries, on a
   PyYAML-less host) still exits 0. *Trigger:* the first suite run
   reporting a non-zero skip count, or the next change to
   `bootstrap/tests/conftest.py`.
-* **`profile-parse-fail-open` decision point 4 — the totality claim is
+* **[BND-1] `profile-parse-fail-open` decision point 4 — the totality claim is
   affirmed but unchecked** *(Maintainer question, carried since plan-open
   2026-08-03)* — the recommended focused Internal round on the closed
   grammar's totality claim never ran; the External round affirmed it from
   the plan's own specification prose and the author's Response banks it
   **unverified**. Implementation landed anyway at `e7394cb`. *Decide:*
   strike it as absorbed, or run the round against the landed code.
-* **`profile-parse-fail-open`'s gate-manifest delta awaits a supervised
+* **[REL-3] `profile-parse-fail-open`'s gate-manifest delta awaits a supervised
   ceremony** *(residual, 2026-08-04)* — one `FROZEN-MODIFIED` on
   `bootstrap/tests/test_scaffold.py` plus one `COLLECTION-DROPPED` from
   the `test_mixed_indent_list` → `..._is_refused` rename; the plan
@@ -1021,14 +1025,14 @@ routed it here. Both provenances are preserved on the surviving row;
 nothing was dropped.)*
 
 *From `gate-claims-vs-enforcement` (7) — [REC / REL]:*
-* **Gate-claims A5/A6/A8 — three CI-wording corrections deferred behind
+* **[REL-2] Gate-claims A5/A6/A8 — three CI-wording corrections deferred behind
   the frozen-file manifest**
   (`bootstrap/tests/test_security_lint.py` lines 12 and 89;
   `bootstrap/tests/fixtures/skills/README.md` lines 16 and 41;
   `bootstrap/tests/test_python_floor.py:1`) — *Trigger:* the manifest is
   retired, **or** the next supervised re-pin ceremony (SC4's "fold in")
   carries them with Maintainer assent.
-* **Gate-claims B2 — the archive-commit-body auditability claim is
+* **[REC-4] Gate-claims B2 — the archive-commit-body auditability claim is
   falsified** (`doctrine/proposals.md` > "Archive preconditions" and
   `doctrine/plans.md` > "Lasting-truth migration doctrine":
   *"This makes the migration auditable from `git log` alone"*) — keep the
@@ -1036,31 +1040,31 @@ nothing was dropped.)*
   proposal, because the block is restated at `doctrine/lifecycle-
   contract.md:137` and `templates/core/dev/PLANNING.md:105`, which engages
   the loop-fidelity lens.
-* **B2's evidentiary figure is re-measured at pickup, never carried** —
+* **[REC-4] B2's evidentiary figure is re-measured at pickup, never carried** —
   the proposal's *"zero archive commits"* is falsified; measured
   2026-08-04 at HEAD `da2d00e`: plan archives **1 of 10** (`b67fabc`),
   proposal archives **2 of 21** (`bd608c9`, `9c95653`). Re-run the
   enumeration before writing any number.
-* **`dev/plans/_template.md`'s `verification-commands` slot claims the
+* **[REL-2] `dev/plans/_template.md`'s `verification-commands` slot claims the
   gates are "the same ones CI enforces"; Cairn has no CI** — a Class-A
   instance in Cairn's own filled slot (the adopter template is an unfilled
   placeholder, so nothing is correct-for-adopters here). *Trigger:* its
   own serialization point, because the fix cascades into every live plan —
   re-run `git ls-files | xargs grep -ln "the same ones CI"` rather than
   trusting a count.
-* **Gate-claims B3 — `doctrine/runtime-contract.md:202-211` calls
+* **[REL-2] Gate-claims B3 — `doctrine/runtime-contract.md:202-211` calls
   `bootstrap/container/floor-gate.sh` "the **release floor gate**" and "In
   the release gate"** — gate vocabulary (Class B, axis 2, un-ledgered) for
   a script only the maintainer runs by hand, and it now directly
   contradicts `bootstrap/container/recipe.md` as corrected by `1e47c08`.
-* **Cairn's enforcement claims bottom out in
+* **[REL-2] Cairn's enforcement claims bottom out in
   `bootstrap/security_check.py`, and nothing invokes it** —
   `doctrine/lifecycle.md`, `bootstrap/fidelity-check.md` and
   `bootstrap/SAFETY.md` now all name it as the trigger;
   `SECURITY.md:59-63` is a release checklist a person remembers. Candidate
   proposal; whether that recursion deserves its own artifact is a
   Maintainer call.
-* **The gate-claims audit's axis 2 (behavioural — run the artifact that
+* **[REL-5] The gate-claims audit's axis 2 (behavioural — run the artifact that
   would check the stated control) and axis 3 (does the named trigger
   contain the procedure) were never swept systematically** — `gate-claims-
   vs-enforcement` sampled both; two ledger rows fell out of a single ad-
