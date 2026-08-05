@@ -878,6 +878,49 @@ argument** and that `scripts/check_cairn.py` carries zero bytes of change.
 
 This section is append-only once written.
 
+## Plan review -- Codex (External, security lens) -- 2026-08-05
+
+**Verdict: REVISE.** The exact-list boundary, `modules_remove` precedence, and
+the previously missed no-preset summary shape are now specified with useful
+public-path tests. I also agree with the later correction that selection has
+five construction sites, not four. Defaulting a scanner is nevertheless a
+behavioral commitment to every new adopter, so its dependencies and ceremony
+choices need to be settled before the engine changes land.
+
+**[E1] Default adoption is not gated on the scanner's unresolved security
+posture.** This plan makes `content-security` unavoidable for presets and the
+no-key path while the sibling content-scan plan still records an unpriced
+whole-script/Cyrillic boundary and lacks an External security disposition on
+its test material. An explicit modules list remains an opt-out, but most new
+adopters will never exercise it. Add a hard sequencing condition: no default-on
+selection or Cairn self-adoption until `content-scan-detectors` has its required
+External security review and the default-on consequence has a recorded
+disposition. This is not a request to solve that detector scope here; it keeps a
+high-blast default from overtaking its security evidence.
+
+**[E2] The `known_new` choice must be decided before, not during, the ceremony.**
+The response correctly establishes that `verify` does not consume
+`scaffold_ast_known_new.json` and the direct-correction path is unavailable.
+That is sufficient to make the plan's original pin requirement inapplicable:
+do not edit or re-pin `known_new` for this scope. Leave a named, exact NEW-key
+set in the declaration and require any unexpected NEW key to stop the ceremony.
+Asking the Maintainer to decide the mechanism while performing a trust-root
+ceremony turns a technical ambiguity into pressured operator judgment.
+
+**[E3] The alarm-fatigue stop needs a measurable escalation threshold.** D3 says
+to stop on a "non-trivial" flag count but supplies neither a baseline fixture
+nor a decision rule. A default-on scanner cannot safely rely on an implementer
+to intuit when an unfamiliar warning volume is material. Define the comparison
+(including the roots and committed tree it is measured from) and a small,
+actionable hold condition such as any unsuppressed finding or any count above
+the independently recorded baseline; route exceptional expected findings to
+review rather than a commit-body judgment.
+
+I inspected the operative chunks, the Internal review/Response/amendments, and
+the two later figure corrections. I did not execute a proposed engine delta or
+an adoption command, because no implementation is present and the review is of
+the plan rather than a candidate tree.
+
 ## Plan review -- Claude (Internal, same-agent-type; security lens) -- 2026-08-04
 
 **Model**: Claude Opus 5 (`claude-opus-5`).
