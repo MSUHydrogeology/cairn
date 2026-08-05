@@ -2432,3 +2432,41 @@ refused. I did not run the frozen re-pin, alter Maintainer refs, test a GUI
 renderer's Unicode line-breaking, or independently replay every historical
 P-A/P-B mutation. The broad 2513-test record predates the correction now
 required and will be invalidated when executable/test bytes change.
+
+## Corrective implementation -- Codex -- 2026-08-05
+
+CR1 is corrected in `0d02d5d`, with the self-hosted twin synchronized in
+`e131b33`. `_separator_accept_is_associable` now requires exactly one member of
+`_LINE_SEPARATORS` on the file line before it considers a marker. The existing
+single-separator acceptance remains valid; a line with two or more separators
+retains the one declared flag naming the first, so accepting that first boundary
+cannot hide a later display line.
+
+`TestSeparatorDetection::test_second_separator_cannot_piggyback_on_accepted_first`
+is the direct regression: valid own-id marker, accepted U+2028, benign text,
+second U+2028, injected header. It failed against the reviewed production
+behavior (`scan_text` returned `[]`) and passes against the correction with
+`[(1, "unicode-line-separator")]`. The shipped module docstring and shared
+changelog entry state that multi-separator file lines are unsuppressible.
+
+**Focused verification.** Canonical Python 3.13.13 with
+`PYTHONDONTWRITEBYTECODE=1`: `test_content_scan.py` **199 passed**;
+`test_security_stack.py` **98 passed**; `test_notice_install.py` **12 passed**;
+Bandit reported zero findings in the template scanner; and `check_cairn` was
+clean. `scripts/content_scan.py` and
+`templates/modules/team-gated/content_scan.py` are byte-identical at SHA-256
+`677d07fdb93a3978339b90f4415803069169028f7165f4c2d45641b0d2dd8ae7`.
+
+**Broad-boundary ledger.** The first shuffled full run after `0d02d5d` reported
+**2512 passed, 2 failed** in 341.36 seconds. Both failures were twin-parity
+guards identifying the omitted `scripts/content_scan.py` synchronization; no
+behavioral node failed. After `e131b33`, the same canonical command completed
+with **2514 passed, 0 failed, 0 skipped, 0 xfailed, 0 xpassed**, plus three
+third-party deprecation warnings, in 339.59 seconds. HEAD and tracked files were
+unchanged during the final run.
+
+This implementation does not self-clear the Codex review. A different-agent-
+type or human correction review must reproduce the two-separator attack against
+`e131b33`, confirm the one-separator acceptance remains green, and verify the
+source/self-hosted twin identity. The bounded frozen re-pin remains unperformed
+until that review returns SHIP.
