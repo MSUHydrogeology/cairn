@@ -893,3 +893,34 @@ Chunk R re-runs the focused falsifiers and review suite. The full suite and
 release command remain final-boundary evidence after the independent code
 review, avoiding a redundant release-scale run if that review finds another
 correction.
+
+### Chunk R implementation record -- Codex -- 2026-08-05
+
+Implemented at `3970edf`; the matching public-checklist correction is
+`7fe55b9`. This is an implementation record, not a review disposition.
+
+* The parent preflights the operator checkout, then creates a detached
+  `--no-checkout` worktree at that exact commit. It materializes files directly
+  through `git cat-file --batch`, avoiding checkout-filter execution, and
+  compares every leaf and Git blob id before and after the committed checker
+  runs there. Extra ignored files fail the comparison.
+* The release pytest plugin now records skipped collection reports as well as
+  runtime reports. Real child sessions pin both `pytest.importorskip()` and
+  module-level `pytest.skip(..., allow_module_level=True)` beside a passing
+  control.
+* Each ordinary phase exception becomes a labelled failure while later phases
+  and postflight still run. Interrupt control flow is preserved. Bandit error
+  entries are validated before rendering, and a `check_cairn` launch error is
+  normalized to a security refusal.
+
+Verification under canonical Python 3.13.13: **110 focused release/security-
+lint tests passed**; the pre-fix selection produced **9 failures / 2 passes**;
+the real Cairn committed snapshot materialized and verified **540 leaves**;
+`scripts/check_cairn.py` reported **182 Markdown files, 0 issues**. The
+gate-manifest static check remains HOLD on the security cluster's existing
+supervised re-pin (26 modified frozen surfaces at this boundary); no ceremony
+was performed here.
+
+Chunk G remains blocked on an independent code review of `3970edf` and
+`7fe55b9`. The post-review full suite and release-command run remain pending by
+the sequencing rule above.
