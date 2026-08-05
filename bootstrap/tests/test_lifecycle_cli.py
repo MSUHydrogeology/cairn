@@ -135,6 +135,56 @@ def test_session_start_surfaces_in_flight_threads(repo, monkeypatch, capsys):
     assert "_template.md" not in out  # the template is not an in-flight thread
 
 
+def test_status_reader_uses_markdown_line_boundaries(repo):
+    """The expected status comes from an independent ``^``-anchored regex."""
+    proposals = repo / "dev" / "proposals"
+    proposals.mkdir(parents=True)
+    sep = chr(0x2028)
+    hostile = proposals / "hostile.md"
+    hostile.write_text(
+        "prefix" + sep + "**Status**: proposed -- glued text\n"
+        "**Status**: open\n",
+        encoding="utf-8",
+    )
+    benign = proposals / "benign.md"
+    benign.write_text("**Status**: accepted\n", encoding="utf-8")
+
+    text = hostile.read_text(encoding="utf-8")
+    match = re.search(r"^\*\*Status\*\*:\s*(.+)$", text, re.MULTILINE)
+    assert match and match.group(1) == "open"
+    assert lifecycle._status_of(hostile) == match.group(1)
+    assert lifecycle._in_flight(repo) == [
+        "proposals/benign.md -- accepted",
+        "proposals/hostile.md -- open",
+    ]
+
+
+def test_lifecycle_line_splitter_matches_splitlines_without_carriers():
+    """Pin this deliberately duplicated helper independently of the planner."""
+    cases = (
+        "", "a", "a\n", "a\n\n", "\n", "\r\n",
+        "a\r\nb", "a\rb\r", "a\r\n\r\nb\r\n",
+        "\n\n", "a\nb\n", "a\n\n\n",
+    )
+    for text in cases:
+        assert lifecycle._split_lines(text) == text.splitlines()
+    carrier = "a\nb" + chr(0x2028) + "c\n"
+    assert len(carrier.splitlines()) == 3
+    assert len(lifecycle._split_lines(carrier)) == 2
+
+
+def test_status_reader_treats_invalid_utf8_as_unavailable(repo):
+    """One malformed artifact cannot suppress either lifecycle survey."""
+    proposals = repo / "dev" / "proposals"
+    proposals.mkdir(parents=True)
+    path = proposals / "invalid.md"
+    path.write_bytes(b"**Status**: open\n\xff")
+    assert lifecycle._status_of(path) == "(no status line)"
+    assert lifecycle._in_flight(repo) == [
+        "proposals/invalid.md -- (no status line)"
+    ]
+
+
 def test_session_start_skips_absent_intent_tool(repo, monkeypatch, capsys):
     # intent.py is not a sibling of the template module, so the active-intent
     # read is skipped with a note rather than crashing.

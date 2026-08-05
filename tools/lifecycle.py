@@ -487,17 +487,29 @@ def _resolve_interpreter(root: Path) -> Tuple[str, str]:
 
 # --- in-flight thread survey -------------------------------------------------
 
+_LINE_ENDING_RE = re.compile(r"\r\n?|\n")
+
+
+def _split_lines(text: str) -> List[str]:
+    """Split on markdown line endings with ``str.splitlines`` tail semantics."""
+    if not text:
+        return []
+    lines = _LINE_ENDING_RE.split(text)
+    if lines[-1] == "":
+        lines.pop()
+    return lines
+
 
 def _status_of(path: Path) -> str:
     """Best-effort read of a proposal/plan ``**Status**:`` line for the survey."""
     try:
-        for line in path.read_text(encoding="utf-8").splitlines()[:40]:
+        for line in _split_lines(path.read_text(encoding="utf-8"))[:40]:
             stripped = line.strip()
             low = stripped.lower()
             if low.startswith("**status**:") or low.startswith("status:"):
                 value = stripped.split(":", 1)[1].strip().strip("*").strip()
                 return value or "(unspecified)"
-    except OSError:
+    except (OSError, UnicodeError):
         pass
     return "(no status line)"
 

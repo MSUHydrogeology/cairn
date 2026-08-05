@@ -2735,3 +2735,14 @@ The template and tool copies hash identically at
 `sha256:180cbe5b7f29fa77b989fafe58723a3a4f0d0d3effad9d385d7c85397c660a14`;
 the self-host lockfile records that hash while preserving its pre-existing
 `base_hash` divergence per R21. Chunk B follows in the same working session.
+
+Chunk B is implemented. Both lifecycle twins use the same line grammar in
+`_status_of`; direct and `_in_flight` tests pin the carrier behavior, and a
+second helper-property node independently constrains the lifecycle copy. The
+Maintainer-routed malformed UTF-8 defect is also closed: an unreadable status
+now degrades to `(no status line)` instead of suppressing either survey.
+
+This commit opens the recorded short-lived window on both consumers: a raw
+`U+2028` in a status can now reach `session-start` and the reflection-only
+`session-end` survey. The tracked `dev/` corpus has no carriers. The next commit
+in this session is `agent-context-scrub` Chunk A, which escapes that value.
