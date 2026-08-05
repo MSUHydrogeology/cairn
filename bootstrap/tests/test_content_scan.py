@@ -406,10 +406,20 @@ class TestSeparatorDetectionCoexistence:
 
 class TestSeparatorDetectionCollectionIntegrity:
     """Two sibling plans append to this file. A duplicate top-level class name
-    removes the earlier class from collection entirely, and a duplicate method
-    name removes the earlier method -- silently, no error, no warning, so a
-    collected-node COUNT cannot see it either. This fires inside the file, at
-    the moment the collision is written.
+    removes the earlier class from collection entirely, a duplicate method
+    name removes the earlier method, and a duplicate top-level *function* name
+    removes the earlier function -- silently in all three cases, no error, no
+    warning, so a collected-node COUNT cannot see any of them. This fires
+    inside the file, at the moment the collision is written.
+
+    The third form is covered here beyond the letter of the plan's B11 cell,
+    which enumerated classes and methods only. It is the same hazard and this
+    file is exposed to it: it carries a top-level `def test_...` of its own
+    (`test_content_security_module_installs_scanner_verbatim`), and the sibling
+    plan appends here. Measured on standalone hazard modules under the
+    canonical interpreter, `as_of` 2026-08-05: three top-level test functions
+    with two names among them collect **2** nodes, against **3** for the
+    control -- silently.
 
     Named residual: the guard lives in the file it judges, so a duplicate of
     *its own* class name would shadow the guard itself. The independent catcher
@@ -419,6 +429,13 @@ class TestSeparatorDetectionCollectionIntegrity:
     def test_no_duplicate_test_class_or_method_names(self) -> None:
         tree = ast.parse(Path(__file__).resolve().read_text(encoding="utf-8"))
         problems: list[str] = []
+        seen_functions: set[str] = set()
+        for node in tree.body:
+            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            if node.name in seen_functions:
+                problems.append(f"duplicate top-level function: {node.name}")
+            seen_functions.add(node.name)
         seen_classes: set[str] = set()
         for node in tree.body:
             if not isinstance(node, ast.ClassDef):
