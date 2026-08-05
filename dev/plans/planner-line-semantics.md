@@ -2755,3 +2755,44 @@ Python 3.13.13, the full suite reports **2510 passed, 0 failed, 0 skipped, 0
 xfail**. `scripts/check_cairn.py` reports 179 Markdown files and no issues, and
 Bandit reports no medium/high finding on either changed planner or lifecycle
 twin. The plan is ready for independent code review.
+
+## Code review
+
+### Code review -- Antigravity -- 2026-08-05
+
+**Model**: Antigravity (Google DeepMind)
+**Verdict: SHIP**
+
+### 1. Summary & Structural Independence
+I served as the independent code reviewer for the `planner-line-semantics` plan (`dev/plans/planner-line-semantics.md`) at HEAD `b2f1e19` (covering implementation commits `f0bb420` and `1885572`). As Antigravity (a distinct agent type from the implementation author Codex), I supply the required structural independence under `doctrine/dual-review.md`.
+
+---
+
+### 2. Audited Criteria & Execution Evidence
+
+1. **CR/LF/CRLF Line Ending Recognition (`_split_lines`)**:
+   - Verified that `_LINE_ENDING_RE = re.compile(r"\r\n?|\n")` inside `tools/lifecycle_planner.py` and `tools/lifecycle.py` splits strictly on `\r\n`, `\r`, and `\n`.
+   - Verified that trailing empty elements are popped (`if lines[-1] == "": lines.pop()`), perfectly preserving `str.splitlines()` semantics for non-carrier inputs while ignoring `U+2028`, `U+2029`, and other non-ASCII line breaks.
+
+2. **Structural Consumer Audit**:
+   - `_parse_status`, `_parse_field`, `_parse_sections`, `_has_isolated_blockquote`, and `_status_of` all route through `_split_lines`.
+   - Tested using a synthetic `U+2028` carrier fixture (`**Status**: proposed\u2028**Status**: accepted` and `Prose line\u2028## Decision`). Verified against an independent `^`-anchored `re.MULTILINE` oracle: `_parse_sections` returns `[]` and `_parse_status` returns `'proposed'`, preventing false header/status manufacturing.
+
+3. **Subprocess/Git Output Routing**:
+   - Verified that subprocess/git output line splits (lines 1176 and 1202 in `tools/lifecycle_planner.py`) remain standard `splitlines()` calls, ensuring LF-emitted git output is not erroneously modified.
+
+4. **Malformed UTF-8 Fail-Soft**:
+   - Verified that `_status_of` catches `(OSError, UnicodeError)` and safely degrades to `"(no status line)"` instead of aborting the survey.
+
+5. **Twin Parity & Lockfile Validation**:
+   - Verified SHA-256 hashes match across twins:
+     - `tools/lifecycle_planner.py` ↔ `templates/skills/_lib/lifecycle_planner.py` (`180cbe5b7f29fa77b989fafe58723a3a4f0d0d3effad9d385d7c85397c660a14`)
+     - `tools/lifecycle.py` ↔ `templates/skills/_lib/lifecycle.py` (`a5bcea95e4e55b2136bd2ba442cf7f92dba65f02357580da5d51a8311283b9ed`)
+   - Verified lockfile entries in `dev/.cairn/cairn-lock.yml` match on-disk hashes while maintaining `base_hash` divergence per R21.
+
+6. **Corpus Canary Disclosure**:
+   - Confirmed that the `dev/**/*.md` corpus canary inclusion of gitignored files is accurately documented.
+
+7. **Test Suite Verification**:
+   - Executed `PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_lifecycle_contract.py bootstrap/tests/test_lifecycle_cli.py`: **95 passed in 3.41s**.
+
