@@ -1,17 +1,17 @@
 <!-- cairn-internal-ref-allow: doctrine/plans.md doctrine/dual-review.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
+<!-- claim-check-allow: ../../docs/DOCUMENTATION_PLAN.md, ../../bootstrap/tests/test_skills_security.py, ../../bootstrap/tests/test_lifecycle_cli.py, ../../bootstrap/tests/test_notice_install.py, ../PLANNING.md, dev/plans/agent-context-scrub.md -->
 
 # Plan: escape what the orientation stream relays
 
-**Source proposal**: `agent-context-scrub` (accepted 2026-08-03 *as revised*; the
-Decision commit is `c7266d4`). It currently sits under `dev/proposals/` and moves
-to `dev/proposals/archive/` when it archives.
-**Status**: review
+**Source proposal**: [`agent-context-scrub`](../../proposals/archive/2026-08-03-claude-agent-context-scrub.md)
+(accepted 2026-08-03 *as revised*; Decision commit `c7266d4`).
+**Status**: archived
 **Plan review**: required(**External**, security lens) — carried from the
 proposal header, argued there on the merits rather than by an `AGENTS.md`
 enumerated trigger, and ratified at Decision. **No implementation commit lands
 before a `### Plan review -- <reviewer> -- YYYY-MM-DD` sub-heading is in the
 tree.**
-**Last update**: 2026-08-03
+**Last update**: 2026-08-05
 **Opened**: 2026-08-03
 
 ## Source proposal
@@ -1250,3 +1250,50 @@ I served as the independent security code reviewer for the `agent-context-scrub`
 7. **Twin Parity & Lockfile Validation**:
    - Verified matching SHA-256 hashes for `tools/lifecycle.py` and `templates/skills/_lib/lifecycle.py` (`a5bcea95e4e55b2136bd2ba442cf7f92dba65f02357580da5d51a8311283b9ed`) and lockfile alignment in `dev/.cairn/cairn-lock.yml`.
 
+## Archive record -- Codex -- 2026-08-05
+
+The independent Antigravity security code review at `68ca762` returned **SHIP**
+after exercising the full escape table, all reachable truncation tails, every
+external producer in scope, the byte-decoding order, ordinary international
+filenames, and twin/lockfile parity.
+
+### Dispositions and lasting-truth migration
+
+Dispositions:
+
+* **Shape-versus-meaning boundary -- accept.** `SECURITY.md` records that
+  printable instructions remain legible and that escaping removes forged
+  stream shape, not semantic influence.
+* **Partial relay coverage and uncapped git lines -- accept/defer.** The current
+  boundary is disclosed in `SECURITY.md`. The distinct sub-tool relay contract
+  now has one clustered `dev/PLANNING.md` follow-up rather than being implied to
+  be solved here.
+* **Malformed artifact status [I2] -- fixed.** `planner-line-semantics` landed
+  the fail-soft reader at `1885572`; its independent review confirmed the
+  survey continues.
+* **Vendor-target relay [I4] -- fixed.** Chunk A escaped it at `5acbcea`, and the
+  lasting disclosure no longer claims only three external fields.
+* **CRLF boundary [I7] -- guard.** The shipped pairs-only normalization is
+  pinned by tests. A clustered board row preserves why lone CR must remain
+  escaped rather than promoted to a line ending.
+* **Truncated escape tails [I5] -- accept.** All eleven reachable forms are
+  pinned, remain one-line and control-free, and carry an explicit elision
+  marker; no unescaping contract is claimed.
+* **Homoglyph/default-selection premise -- superseded.** `content-security` is
+  now default-on under the Maintainer's recorded disposition; its declared
+  whole-script residual remains owned by the scanner plans, not this archive.
+
+### Evidence ledger
+
+Chunks A--C landed at `5acbcea`, `6a59fcb`, and `7ceed78`. Canonical Python
+3.13.13 reported 2510 full-suite tests passing at implementation close. The
+independent security review at `68ca762` then re-ran hostile controls, Unicode
+round trips, subprocess ordering, and integrity checks before returning SHIP.
+
+### Loop-fidelity sign-off
+
+The implementation matches the accepted security posture: externally sourced
+fields cannot manufacture lifecycle lines or section structure; ordinary
+international text survives; invalid bytes stay visible without aborting the
+survey; and the documented residuals do not overclaim prompt-injection safety
+or relay exhaustiveness.

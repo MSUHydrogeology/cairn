@@ -302,10 +302,10 @@ board by design.
 
   | Cluster | Current lifecycle owners | Next boundary |
   |---|---|---|
-  | **[BND] Input, execution, containment** | `fork-advisory-semantics`, `agent-context-scrub`, `api-web-security-modules` | profile-authority consolidation; Class C no later than v0.4 preparation |
+  | **[BND] Input, execution, containment** | `fork-advisory-semantics`, `api-web-security-modules` | profile-authority consolidation; Class C no later than v0.4 preparation |
   | **[VER] Verification and coverage** | `content-scan-detectors` + `separator-detection`; `content-scan-url-classification`; `security-verification-activation`; `portable-security-sweeps`; `dependency-advisory-coverage`; `api-web-security-modules`; `security-preflight-checklist` | settle activation binding mode, then admit capability entries; one scanner batch |
   | **[TRU] Trust roots and provenance** | `fork-advisory-semantics`; the live gate-reanchor posture below | trusted-source boundary after the release bar settles required source/install claims |
-  | **[REC] Deliberation authority, identity, context, record integrity** | `agent-context-scrub`; `review-gate-enforcement`; byline residuals below | one identity-authority consolidation when a trigger fires, not one proposal per Unicode row |
+  | **[REC] Deliberation authority, identity, context, record integrity** | `review-gate-enforcement`; byline residuals below | one identity-authority consolidation when a trigger fires, not one proposal per Unicode row |
   | **[REL] Release evidence and ceremonies** | `release-security-bar`; the landed Maintainer-run release command; the scheduled frozen-file union | finish the finite register, then run one re-derived supervised ceremony |
 
 * **[TRU-5] gate-reanchor-preflight posture** *(plan archived 2026-08-03; this entry
@@ -640,7 +640,7 @@ reason to open another scope.
 | **[BND] Input, execution, containment** | queued Class C; lockfile schema validate-on-read; interpreter race; scaffold/engine path residuals; `fork-advisory-semantics` identity-warning, `base_hash`, and `_infer_init_lock_axes` rows; profile G1/G2/G3/G5/totality rows |
 | **[VER] Verification and coverage** | Security apparatus conda row; Scan coverage SC1-SC3; shipped-executable authority unification; cross-language conformance fixtures; capability plans in the Active table |
 | **[TRU] Trust roots and provenance** | self-host lockfile reconciliation; install-integrity anchor; end-gate frozen-set decision; attestation kind-prefix validation; AST re-anchor runbook; Release authenticity RA1/RA3/RA5/RA6; fork advisory FA-R1; gate-reanchor posture |
-| **[REC] Deliberation authority, identity, context, record integrity** | lifecycle mutation/commit arm, dogfood study, and later routine skills; transition and planner conformance; byline residuals and four archive follow-ups; gate-claims archive-auditability rows; `agent-context-scrub` and `review-gate-enforcement` in Active |
+| **[REC] Deliberation authority, identity, context, record integrity** | lifecycle mutation/commit arm, dogfood study, and later routine skills; transition and planner conformance; byline residuals and four archive follow-ups; gate-claims archive-auditability rows; lifecycle text-boundary follow-ups; `review-gate-enforcement` in Active |
 | **[REL] Release evidence and ceremonies** | SC4 and all stale frozen pins; profile G4 and manifest delta; release-authenticity archive/Zenodo rows; gate-claims trigger/CI rows; disclosure channel |
 
 The strategy is the cluster authority; this board remains the task and trigger
@@ -648,6 +648,29 @@ authority. Completed rows leave this file at their lifecycle serialization
 point rather than being copied into another backlog.
 
 **Lifecycle apparatus**
+* **[REC-3] Structural line-reader follow-ups** *(plans
+  `planner-line-semantics` and `agent-context-scrub`, archived 2026-08-05)* —
+  three measured edges share one home: `_gitignore_status` still uses
+  `splitlines()` on `.gitignore` membership before its repair write; 25 class-D
+  `splitlines()` sites in onboarding, intent, lifecycle-metrics, and evolution
+  were audited as non-authoritative and need no speculative rewrite; and the
+  two private CR/LF helpers have behavioral test parity but no textual-parity
+  gate. *Triggers:* the next gitignore-repair change; a class-D site becoming an
+  authority/structure reader; or a change to either private helper.
+* **[BND-4 / REC-2] Relayed sub-tool stream boundary** *(deferred by
+  `agent-context-scrub`, 2026-08-05)* — session routines relay structured stdout
+  from intent, metrics, and evolution tools. Newline is legitimate data there,
+  so field escaping cannot establish the same one-line authority boundary as it
+  does for filenames and git metadata. A successor must define framing and
+  trust for relayed tool output before changing bytes. *Trigger:* the next
+  session-stream format change, or a demonstrated forged `lifecycle:` line from
+  one of these relays.
+* **[BND-4] CRLF-pairs-only relay contract** *(accepted guard from
+  `agent-context-scrub`, 2026-08-05)* — `_git` normalizes CRLF pairs before
+  escaping, but a lone CR remains payload and must not become a line ending;
+  splitting on `\r\n|\r|\n` reopens the reproduced author-name forgery. The
+  regression tests are the guard. *Trigger:* any change to `_git` decoding,
+  `_safe_stream`, or Windows line-ending handling.
 * **[REC-5] Lifecycle mutation/commit arm** — the typed-mutation ops (decision /
   review / open / archive) + commit the read-only planner deferred; gated on
   the dogfood study *and* its own Security Review (commit is a separate

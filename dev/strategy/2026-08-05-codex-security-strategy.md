@@ -203,10 +203,11 @@ executes, or treats as configuration authority?
   module destination renames/binary files, the local-interpreter check/use
   race, and the recorded `B607` PATH-resolution findings. Address on the next
   matching write/exec boundary, not through a generic hardening sweep.
-* [BND-4] **Untrusted context rendering.** Plan
-  [`agent-context-scrub`](../plans/agent-context-scrub.md) owns newline/control
-  injection into the orientation stream and sequences after
-  `planner-line-semantics` on the shared lifecycle twin.
+* [BND-4] **Untrusted context rendering.** The archived
+  `planner-line-semantics` and `agent-context-scrub` plans closed structural
+  line manufacture in the orientation stream. The remaining boundary is
+  narrower: framed relays from sibling tools and the pairs-only CRLF guard are
+  clustered in `dev/PLANNING.md` rather than reopened as separate proposals.
 * [BND-5] **Network client and hosted/API boundaries.** Plan
   [`api-web-security-modules`](../plans/api-web-security-modules.md) owns the
   shared hardened client, credential containment, loopback agent-facing checks,
@@ -450,10 +451,10 @@ the public has a working private disclosure route.
    union. `release-security-bar` may progress in parallel because its register
    is its principal surface.
 
-`agent-context-scrub` follows `planner-line-semantics` on the lifecycle twin.
-`review-gate-enforcement` follows the settled review schema and its required
-External plan round. Neither should be pulled into the scanner ceremony merely
-because both carry a security consequence.
+`planner-line-semantics` and `agent-context-scrub` landed in the required order
+and are archived. `review-gate-enforcement` follows the settled review schema
+and its required External plan round; it should not be pulled into the scanner
+ceremony merely because it carries a security consequence.
 
 ### Open next, after the current cluster
 

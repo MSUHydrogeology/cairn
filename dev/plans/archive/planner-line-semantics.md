@@ -1,5 +1,5 @@
 <!-- cairn-internal-ref-allow: doctrine/plans.md doctrine/dual-review.md doctrine/lifecycle-contract.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- claim-check-allow: ../proposals/2026-08-03-claude-planner-line-semantics.md, ../proposals/2026-08-03-claude-separator-detection.md, dev/proposals/2026-08-03-claude-separator-detection.md, dev/proposals/2026-08-04-claude-review-gate-enforcement.md -->
+<!-- claim-check-allow: ../proposals/2026-08-03-claude-planner-line-semantics.md, ../proposals/2026-08-03-claude-separator-detection.md, ../proposals/archive/2026-08-03-claude-separator-detection.md, ../../docs/DOCUMENTATION_PLAN.md, ../../bootstrap/tests/test_lifecycle_contract.py, ../../bootstrap/tests/test_lifecycle_cli.py, ../../bootstrap/tests/test_notice_install.py, ../PLANNING.md, dev/plans/planner-line-semantics.md, dev/plans/agent-context-scrub.md, dev/proposals/2026-08-03-claude-separator-detection.md, dev/proposals/2026-08-04-claude-review-gate-enforcement.md -->
 <!-- ^ Source/sibling proposals archived 2026-08-04. These citations sit in
      append-only sections, so the path is exempted rather than rewritten. -->
 
@@ -10,9 +10,8 @@
 on the detection follow-up being opened, condition discharged; the Decision
 commit is `f32d5e8`, with a status repair and a commit-hygiene record note at
 `70d804c`). It currently sits at
-[`dev/proposals/archive/2026-08-03-claude-planner-line-semantics.md`](../proposals/archive/2026-08-03-claude-planner-line-semantics.md)
-and moves to `dev/proposals/archive/` when it archives.
-**Status**: review
+[`dev/proposals/archive/2026-08-03-claude-planner-line-semantics.md`](../../proposals/archive/2026-08-03-claude-planner-line-semantics.md).
+**Status**: archived
 **Plan review**: required(**External**) — carried from the proposal header,
 which argues the tier on the merits rather than by an `AGENTS.md` enumerated
 trigger, and is **not** discharged by the External round the proposal already
@@ -20,7 +19,7 @@ had, nor by the Internal review being run on this plan. See *Plan review — the
 brief, and why the tier is not discharged*. **No implementation commit lands
 before a real `### Plan review -- <reviewer> -- YYYY-MM-DD` sub-heading is in
 the tree.**
-**Last update**: 2026-08-03
+**Last update**: 2026-08-05
 **Opened**: 2026-08-03
 
 ## Source proposal
@@ -2796,3 +2795,40 @@ I served as the independent code reviewer for the `planner-line-semantics` plan 
 7. **Test Suite Verification**:
    - Executed `PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_lifecycle_contract.py bootstrap/tests/test_lifecycle_cli.py`: **95 passed in 3.41s**.
 
+## Archive record -- Codex -- 2026-08-05
+
+The independent Antigravity code review at `389b31a` returned **SHIP** after
+executing the carrier fixtures, checking every structural consumer, confirming
+malformed-UTF-8 fail-soft behavior, and running 95 focused tests. The parser and
+lifecycle twins remain byte-identical at the hashes recorded in that review.
+
+### Dispositions and lasting-truth migration
+
+Dispositions:
+
+* **Detection follow-up -- guard.** `separator-detection` remains the active
+  owner of raw `U+2028` / `U+2029` detection; opening it discharged the source
+  Decision's condition, and its own plan governs whether that detector ships.
+* **Three structural-reader edges -- defer.** The `.gitignore` membership read,
+  the audited class-D `splitlines()` sites, and textual drift between the two
+  private helpers now share one clustered `dev/PLANNING.md` row. Its triggers
+  preserve the plan's measured distinctions without opening three proposals.
+* **Sequencing window -- fixed.** `agent-context-scrub` Chunk A followed in the
+  same implementation session at `5acbcea`, escaping the raw carrier before
+  either orientation consumer emits it.
+* **Superseded release-scan premise -- accept.** `scan-coverage` already closed
+  the premise at `5c91c23`; no second backlog row is owed.
+
+### Evidence ledger
+
+Implementation landed at `f0bb420` and `1885572`; the paired context fix landed
+at `5acbcea`. Canonical Python 3.13.13 reported 2510 full-suite tests passing at
+implementation close. The independent review then re-ran the 95 focused
+lifecycle tests and returned SHIP at `389b31a`.
+
+### Loop-fidelity sign-off
+
+The implementation matches the accepted proposal: structural markdown readers
+split only on CR, LF, and CRLF; git/subprocess output retains its existing line
+contract; malformed artifact bytes cannot suppress the survey; no detector was
+quietly added; and both shipped twins and lockfile records agree.
