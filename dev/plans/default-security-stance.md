@@ -19,7 +19,7 @@
 **Source proposal**: `default-security-stance` (accepted 2026-08-03 by
 Maintainer Decision, *"as amended by the author's Response"*). It currently sits
 under `dev/proposals/` and moves to `dev/proposals/archive/` when it archives.
-**Status**: open
+**Status**: executing
 **Plan review**: required(**External**, security lens) — carried verbatim from
 the proposal header, where the tier is a *declared trigger* rather than a
 judgement call: this is an install-contract change on a surface `AGENTS.md`
@@ -2391,3 +2391,75 @@ under the canonical suite in `7dd73a0`.
 **Gate D-ON is MET.** This authorizes the default-on implementation described by
 the reciprocal plans. It does not authorize a frozen-manifest re-pin, AST
 re-anchor, credential use, signing, pushing, or any other Maintainer ceremony.
+
+## Implementation record -- Codex -- 2026-08-05
+
+Chunks A--D landed in `e57947e` and `91cbeaa`. Cairn now selects
+`content-security` by default, selects `python-security` only from a filled
+`python_package` token, preserves exact-list and `modules_remove` authority,
+and has adopted the content-security module through the scaffold's real
+`upgrade --adopt-module` path.
+
+The reviewed no-preset summary amendment was initially absent from the Chunk A
+implementation. Chunk D's final pass reproduced the disagreement -- the summary
+omitted `python-security` while the install wrote it -- and repaired the fourth
+selection site before the adoption commit. The structural pin now compares the
+printed roster with literal filesystem sentinels rather than with the selector
+or registry it tests.
+
+### Execution evidence
+
+* The lockfile moved **84 -> 90 files**, **15 -> 16 modules**, and **42 -> 44**
+  Python twins against the immediately preceding commit. The two new twins are
+  byte-identical to their template sources and hash-clean.
+* The old D3 measurement (**52 URL flags / exit 1**) no longer reproduces. The
+  current scanner does not apply `suspicious-url` to known discussion roots.
+  On the committed tree it scanned **83 audited files**, reported **0 flags**,
+  and exited **0**.
+* The Bandit-derived target set moved **79 -> 81**, exactly
+  `scripts/content_scan.py` and `scripts/content_scan_runner.py`.
+* All C1 selection mutants were run and rejected. Deleting the installed
+  scanner makes the named twin pin fail while the presence-derived generic
+  sweep stays green; appending one byte makes both fail. Every mutated source
+  was restored to its pre-perturbation digest.
+* The unrestricted canonical suite is **2488 passed / 2 failed**, with 3
+  dependency warnings. The only failures are the two AST-attestation ceremony
+  nodes. A restricted run additionally blocked eight loopback-canary tests;
+  the unrestricted rerun cleared all eight.
+
+### Maintainer AST handoff
+
+The Chunk R readiness condition is met. The live AST delta is exactly:
+
+| key | baseline -> live digest |
+|---|---|
+| `Assign:_DEFAULT_ON_MODULES` | `2c8ef688f6865487` -> `79ae883be0136a90` |
+| `FunctionDef:expand_preset` | `6bd2e6caa83f4017` -> `6b0fb24cf58e02c8` |
+| `FunctionDef:format_profile_summary` | `830aac8b7c3d1bde` -> `a4f3d98d2f8f6733` |
+| `FunctionDef:main` | `ff5a7441cceda605` -> `d3dc4b4e5ea6e4fd` |
+
+There are **0 MISSING** and **0 DUPLICATE** keys. This scope's informational
+NEW-key set is exactly `Assign:_TOKEN_GATED_MODULES` and
+`FunctionDef:token_gated_modules`; `scaffold_ast_known_new.json` is not touched.
+
+`/private/tmp/reanchor_default_security_stance.py` is the one-off
+Maintainer-run direct-correction script. Its dry run under canonical Python
+3.13.13 matched all four preimages, simulated only those four digest/span
+updates, and returned `AST attestation OK -- 173 baselined symbol(s) accounted
+for, unchanged`; it did not write the baseline. The Maintainer runs the dry run,
+then `--commit`, then commits the resulting baseline change. The implementing
+agent does not enter that step.
+
+### Concurrent gate follow-ups
+
+Two findings are recorded without misattributing them to this implementation.
+First, the newly implemented release checker creates a `--no-checkout`
+worktree, materializes committed blobs, but leaves that worktree's index empty;
+its child preflight therefore reports all **1096** committed paths as deleted
+and fails closed. This belongs to `release-security-orchestration` Chunk R and
+needs a different-agent review before its serialization chunk. Second,
+`check_cairn` reports two count drifts because append-only historical amendment
+rows quote the old live-count annotation; current descriptive documentation is
+already correct. Neither changes the four-key AST handoff, and the release
+checker cannot return PASS before this AST correction because it now runs the
+full suite in release mode.
