@@ -1843,6 +1843,36 @@ exactly **2**. The interpretive step this plan flags for strike is therefore mor
 necessary than the plan's own text argues, and the fallback if it is struck is
 unchanged: **ship no baseline in v1**, not the literal predicate.
 
+## Plan review -- Codex (External, security lens) -- 2026-08-05
+
+**Verdict: SHIP.** I agree with the plan's conservative v1 boundary: **ship no
+stored residual baseline.** A baseline derived from a single mutable conda/pip
+environment would make an unrepresentative local classification look like a
+portable security fact. The live report's UNKNOWN/INCOMPLETE path is the honest
+result until a separately designed, integrity-covered artifact has a stable
+input contract.
+
+The amended partition closes the population and, more importantly, makes the
+literal `editable-or-vcs` reading visibly unacceptable rather than quietly
+adopting it. Keep the documented fallback: if the external-tool probe cannot
+establish the schema required for D-t1/D-t6, those tests and the baseline remain
+out of v1; CLEAN must remain unreachable whenever the selected advisory leg has
+UNKNOWN coverage. This does not protect against vulnerabilities in conda/native
+packages, malicious advisory data, or an operator enabling network egress; it
+prevents the tool from representing those unobserved areas as clean.
+
+I also accept the egress-off tier change only as the amended contract states it:
+it is a visible incomplete/degraded outcome, never a success substitute. The
+new code-adjacent documentation rows are therefore part of the security fix,
+not release-note polish. The conda metadata enumeration is acceptable as a
+bounded, fail-closed count/reporting input; it must not become a package lookup
+or vulnerability classifier without a new proposal.
+
+I inspected the operative chunks and the response/amendment table, including
+the corrected five-bucket partition, and ran the current direct suite under the
+canonical interpreter: `bootstrap/tests/test_security_stack.py` reports
+`57 passed`. I did not fetch the advisory tool or execute a networked scan.
+
 ### What this Response does *not* change
 
 * **The Decision is not reopened.** No finding required it, and I did not use one as
