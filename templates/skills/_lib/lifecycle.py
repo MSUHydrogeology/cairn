@@ -99,6 +99,32 @@ def _emit(message: str) -> None:
     print(f"{_PREFIX} {message}")
 
 
+_FIELD_ESCAPES = {
+    **{c: "\\x%02x" % c for c in range(0x20)},
+    0x7F: "\\x7f",
+    **{c: "\\x%02x" % c for c in range(0x80, 0xA0)},
+    0x2028: "\\u2028",
+    0x2029: "\\u2029",
+    0x5C: "\\\\",
+}
+_FIELD_LIMIT = 200
+
+
+def _safe_field(value, *, limit=_FIELD_LIMIT):
+    """Render one externally sourced single-line value inert for the stream."""
+    text = str(value).translate(_FIELD_ESCAPES)
+    if limit is not None and len(text) > limit:
+        return text[:limit] + "...[+%d chars elided]" % (len(text) - limit)
+    return text
+
+
+def _safe_stream(text: str) -> str:
+    """Render a multi-line relay inert while preserving its real line breaks."""
+    # split("\n"), never splitlines(): the latter recognizes the separators
+    # this helper escapes and would turn attacker-controlled data into lines.
+    return "\n".join(_safe_field(line, limit=None) for line in text.split("\n"))
+
+
 def _emit_section(title: str) -> None:
     """Print a section header so the relayed output is legibly grouped."""
     print(f"\n{_PREFIX} == {title} ==")
@@ -528,7 +554,10 @@ def _in_flight(root: Path) -> List[str]:
         for path in sorted(base.glob("*.md")):
             if path.name == "_template.md":
                 continue
-            lines.append(f"{kind}/{path.name} -- {_status_of(path)}")
+            lines.append(
+                f"{kind}/{_safe_field(path.name)} -- "
+                f"{_safe_field(_status_of(path))}"
+            )
     return lines
 
 
@@ -767,7 +796,7 @@ def cmd_session_start(args: argparse.Namespace) -> int:
         _emit("symlink-tier skills read-paths already current (no change).")
     else:
         for name, tier, st in healed:
-            _emit(f"{name}: {tier} -> {st}")
+            _emit(f"{_safe_field(name)}: {tier} -> {st}")
 
     _emit_section(f"commits since last '{marker}' handoff")
     last_handoff = _git(

@@ -5,7 +5,7 @@
 **Source proposal**: `agent-context-scrub` (accepted 2026-08-03 *as revised*; the
 Decision commit is `c7266d4`). It currently sits under `dev/proposals/` and moves
 to `dev/proposals/archive/` when it archives.
-**Status**: open
+**Status**: executing
 **Plan review**: required(**External**, security lens) — carried from the
 proposal header, argued there on the merits rather than by an `AGENTS.md`
 enumerated trigger, and ratified at Decision. **No implementation commit lands
@@ -1158,3 +1158,17 @@ enumeration; `[I7]` adds CRLF-pairs-only normalization inside `_git` ahead of
 escaping. Both need a test whose named perturbation actually reddens it, and
 the `SECURITY.md` bullet must not read as exhaustive. `[I2]` leaves this plan
 entirely. `[I5]` stays a residual.
+
+## Implementation progress -- Codex -- 2026-08-05
+
+Chunk A is implemented immediately after `planner-line-semantics` Chunk B. The
+accepted escape table now renders artifact filenames, status values, and vendor
+target names inert in both lifecycle twins. Five security nodes exercise the
+two subprocess-visible producers, bounded hostile status text, Unicode-safe
+round trips, and all eleven reachable truncated-escape tails.
+
+This closes the raw-`U+2028` relay window opened by the preceding commit for
+both `session-start` and the reflection-only `session-end` survey. The twins are
+byte-identical at
+`sha256:1249ee2f00b38dbb92b09cae143b4c0c52ef21338c80200b9f728e7235abf8a7`,
+and both self-host lockfile hashes record that value.
