@@ -1232,6 +1232,45 @@ list in *Plan review -- the brief*:
 
 This section is append-only.
 
+## Plan review -- Codex (External, security lens) -- 2026-08-05
+
+**Verdict: REVISE.** The detector and its direct-test baseline reproduce
+(`25 passed` under the canonical interpreter), and splitting the marker tests
+into independently falsifiable nodes is a meaningful improvement. The plan is
+not yet ready to make the security-relevant policy choices it identifies.
+
+**[E1] B9 preserves a waiver path whose visible meaning diverges from the
+scanned meaning.** The new detector treats `U+2028`/`U+2029` as dangerous
+because they make what a person sees diverge from the file's newline grammar.
+Yet B9 expressly accepts an own-id `cairn-accept` marker on the preceding file
+line even when the separator makes it appear several display lines away. That
+lets an explicit acceptance suppress a finding a reviewer cannot reliably
+associate with it. Pinning that behavior makes the exception durable; it does
+not make it safe. Change the plan to refuse cross-separator acceptance (or
+obtain a Maintainer decision explicitly accepting this waiver semantics and its
+user-facing warning), with tests for both paths.
+
+**[E2] The combined re-pin is not bounded enough to be a one-time ceremony.**
+A13 acknowledges a gate state wider than these two files and says the
+Maintainer should re-produce "whatever is stale at ceremony time." That turns
+the proposed batch into authorization to bless unrelated, concurrently landed
+frozen-surface changes. The batch can share one ceremony only if preflight
+identifies an exact, reviewed set owned by these two plans and refuses any extra
+violation; otherwise each unrelated surface needs its own disposition before
+the re-pin.
+
+**[E3] A naming convention cannot protect against the known silent class
+shadowing failure.** A17 correctly demonstrates that pytest can collect fewer
+nodes without an error. Add a mechanical duplicate-test-class-name guard (or an
+equivalent AST collection assertion) over `test_content_scan.py`; re-reading a
+file before appending is a useful habit but is not an enforceable acceptance
+criterion.
+
+I inspected the effective amendment table and the plan's sequencing and
+ceremony language, and executed
+`/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_content_scan.py -q`
+(`25 passed`). I did not execute a frozen-file re-pin or perturb production code.
+
 ### Figure correction -- Claude -- 2026-08-04
 
 An audit of the Response committed at `8a14a8d` reported two `as_of 2026-08-04`
