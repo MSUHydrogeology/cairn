@@ -660,23 +660,60 @@ _DISPOSITION_SCANNED = "SCANNED"
 _DISPOSITION_NO_MATCH = "NO-MATCH-IN-PINNED-SOURCES"
 _DISPOSITION_UNKNOWN = "UNKNOWN"
 
-#: Whether pip-audit's ``--format json`` schema has been **established by
-#: execution** against a pinned tool version. It has NOT: the measurement needs
-#: a network fetch of a tool this project does not install and must not install
-#: into its own environment. Until it is established, the child's enumeration
-#: cannot be read, so the audited set is UNKNOWN and this leg **cannot return
-#: CLEAN** -- the fail-closed default, and a shippable outcome rather than a
-#: guessed schema.
-_PIP_AUDIT_SCHEMA_ESTABLISHED = False
+#: The pip-audit version whose ``--format json`` schema this parser was
+#: established against. **A version bump re-opens the measurement**: the schema
+#: below is a property of *that* release's formatter, not a contract the tool
+#: publishes, so a different version is a re-measurement rather than an
+#: assumption. The parser therefore also validates the *shape* at runtime and
+#: fails closed (UNKNOWN, never CLEAN) when it does not match.
+_PIP_AUDIT_SCHEMA_VERSION = "2.10.1"
+
+#: Whether pip-audit's ``--format json`` schema has been established against a
+#: pinned tool version. It **has**, at 2.10.1, by reading that release's own
+#: formatter (``pip_audit/_format/json.py`` -- ``JsonFormat.format`` and
+#: ``_format_dep``); a shape is a property of the formatter, so the warrant is
+#: the formatter's source rather than a guess:
+#:
+#:     top level              {"dependencies": [...], "fixes": [...]}
+#:     resolved distribution  {"name", "version", "vulns": [...]}
+#:     skipped  distribution  {"name", "skip_reason"}
+#:
+#: **The load-bearing fact.** The skipped set is exposed **inline in**
+#: ``dependencies`` with **no separate top-level key**, discriminated only by
+#: carrying ``skip_reason`` in place of ``version``/``vulns``. An implementation
+#: that reads a top-level ``skipped`` array finds nothing, reports **zero
+#: UNKNOWN**, and makes CLEAN reachable on a run where the tool silently failed
+#: to resolve part of the dependency set. The UNKNOWN count is therefore derived
+#: by partitioning ``dependencies`` on the presence of ``skip_reason``.
+_PIP_AUDIT_SCHEMA_ESTABLISHED = True
 _PIP_AUDIT_SCHEMA_NOTE = (
-    "pip-audit's --format json schema has NOT been established by execution "
-    "against a pinned tool version, so the child's enumeration cannot be read. "
-    "The audited set is therefore UNKNOWN and this leg cannot return CLEAN.")
+    "pip-audit's --format json schema is treated as NOT established for this "
+    "run, so the child's enumeration cannot be read. The audited set is "
+    "therefore UNKNOWN and this leg cannot return CLEAN.")
 
 #: Advisory sources this leg pins, named in the NO-MATCH disposition so the
 #: disposition states what was queried rather than asserting a universal
 #: negative.
 _PINNED_ADVISORY_SOURCES = ("osv.dev (pip-audit --vulnerability-service osv)",)
+
+#: **NO-MATCH-IN-PINNED-SOURCES is not observable at the established schema
+#: version, and that is reported rather than printed as a zero.** A resolved
+#: entry carries ``"vulns": []`` both when the pinned source holds a record with
+#: no vulnerabilities *and* when it holds no record for that name at all; the
+#: schema exposes no field distinguishing the two. So the count would be a
+#: structural zero, and a printed ``NO-MATCH 0`` reads as "every distribution
+#: had a record", which is the universal negative DAC3 withdrew. It does not
+#: move any tier -- NO-MATCH never gated the verdict, only UNKNOWN does -- so
+#: what is lost is report precision, not fail-closed behaviour. Stated here and
+#: in the run's own output so a reader cannot mistake the silence for coverage.
+_NO_MATCH_NOT_OBSERVABLE = (
+    "NOT OBSERVABLE at pip-audit " + _PIP_AUDIT_SCHEMA_VERSION + ": a resolved "
+    "entry reports an empty vulnerability list both when the pinned source "
+    "holds a record with no vulnerabilities and when it holds no record for "
+    "that name, and the schema exposes no field separating them. A SCANNED "
+    "disposition here therefore means 'the pinned sources were queried and "
+    "returned no vulnerabilities for this name' -- it does NOT establish that "
+    "those sources carry a record for it")
 
 #: Bounds on the conda-metadata enumeration (D5). The directory is derived from
 #: ``sys.prefix`` and its records are package-controlled input, so the read is
@@ -698,6 +735,11 @@ class Coverage(NamedTuple):
     no_match: int
     unknown: int
     note: str
+    #: The distribution names **the child reported**, in report order. This is
+    #: the denominator itself rather than a count of it, so a parent-side
+    #: enumeration substituted for it is visible by name and not only by
+    #: arithmetic.
+    names: tuple[str, ...] = ()
 
 
 class LocalBuilds(NamedTuple):
@@ -728,15 +770,25 @@ def pip_audit_argv(*, cache_dir: Path) -> list[str]:
     here, in argv, because a narrowed claim over an ambient environment is
     exactly as false as a wide one.
 
-    **What is verified, and what is not.** Every flag above was confirmed to
-    exist, with the value used among its accepted choices, against **pip-audit
-    2.10.1** by reading that version's own ``--help`` -- a purely local read of
-    an installed package, no index fetch. What remains **unverified** is the
-    *shape of the JSON* the tool emits (see
-    ``_PIP_AUDIT_SCHEMA_ESTABLISHED``): establishing that needs a real audit
-    run, which contacts the vulnerability service. A flag a *different* version
-    rejects surfaces as a tool usage error -> DEGRADED, which is loud and
-    fail-closed.
+    **What is verified, and how.** Every flag above was confirmed to exist, with
+    the value used among its accepted choices, against **pip-audit 2.10.1** by
+    reading that version's own ``--help``; the *shape of the JSON* it emits was
+    established against the same version by reading its formatter's source (see
+    ``_PIP_AUDIT_SCHEMA_ESTABLISHED``). Both are purely local reads of an
+    installed package -- no index fetch, no audit run. A flag a *different*
+    version rejects surfaces as a tool usage error -> DEGRADED, and a JSON shape
+    a different version changes fails closed to UNKNOWN; both are loud.
+
+    **One thing is not pinned here, and it is named rather than implied.** The
+    OSV *endpoint* is not in this argv: ``--osv-url`` exists in 2.10.1 and is
+    deliberately unused, so the endpoint falls to the tool's own default
+    constant. What keeps that safe is the closed allowlist in
+    :func:`build_child_env` -- ``PIP_AUDIT_OSV_URL`` is an argparse *default* in
+    pip-audit's CLI, so an ambient value would silently redirect the lookup, and
+    the allowlist stops it without having to know its name. The pinned-sources
+    claim is therefore exactly as wide as the flag pinned above
+    (``--vulnerability-service osv``) and no wider: it names the service this
+    argv selects, not a URL this argv fixes.
 
     ``--strict`` is deliberately **not** pinned, and that version's help text
     confirms the reason rather than merely suggesting it: it *"fail[s] the
@@ -760,11 +812,24 @@ def classify_pip_audit_output(
 ) -> Coverage:
     """Classify the child's report into the three accepted dispositions.
 
-    **The denominator is the distribution set the child reported.** Where that
-    enumeration cannot be read -- an unpinned schema, non-JSON, truncated or
-    decode-replaced output -- the enumeration is *not established*, which is
-    UNKNOWN, which is never CLEAN. The alternative (assume clean on parse
-    failure) is the single defect this contract exists to prevent."""
+    **The denominator is the distribution set the child reported** -- the
+    ``dependencies`` array of pip-audit's own ``--format json`` output. The
+    orchestrator never enumerates distributions itself and assumes the child saw
+    the same ones; a parent-derived denominator is an assumption, not evidence.
+
+    **The partition is on ``skip_reason``, and that choice is the whole point.**
+    A skipped distribution is one pip-audit could not resolve, so nothing about
+    it was looked up: it is UNKNOWN. It appears **inline in ``dependencies``**
+    with no separate top-level key (see ``_PIP_AUDIT_SCHEMA_ESTABLISHED``), so a
+    reader that looks for a ``skipped`` collection finds none, counts zero
+    UNKNOWN, and reaches CLEAN on a run where part of the set was never audited.
+
+    Where the enumeration cannot be read -- an unestablished schema, non-JSON,
+    truncated or decode-replaced output, or a top-level shape that is not the
+    established one -- it is *not established*, which is UNKNOWN, which is never
+    CLEAN. Individual entries that match neither the resolved nor the skipped
+    shape count UNKNOWN rather than being dropped. The alternative (assume clean
+    on parse failure) is the single defect this contract exists to prevent."""
     established = (_PIP_AUDIT_SCHEMA_ESTABLISHED if schema_established is None
                    else schema_established)
     if not established:
@@ -777,13 +842,42 @@ def classify_pip_audit_output(
             f"the tool's report is not parseable JSON ({exc}); the enumeration "
             "is NOT established, so the audited set is UNKNOWN -- a parse "
             "failure is never read as a clean scan.")
+    entries = report.get("dependencies") if isinstance(report, dict) else None
+    if not isinstance(entries, list):
+        return Coverage(
+            False, 0, 0, 0,
+            "the tool's report parsed, but its top level does not carry the "
+            "'dependencies' array the schema established against pip-audit "
+            f"{_PIP_AUDIT_SCHEMA_VERSION} requires, so which distributions the "
+            "child enumerated is UNKNOWN. A shape this parser was not measured "
+            "against fails closed rather than being read optimistically. "
+            f"(top level seen: {sorted(report)[:8] if isinstance(report, dict) else type(report).__name__})")
+    scanned = unknown = 0
+    names: list[str] = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            unknown += 1
+            names.append("<malformed>")
+            continue
+        name = entry.get("name")
+        names.append(name if isinstance(name, str) and name.strip()
+                     else "<unnamed>")
+        if "skip_reason" in entry:
+            # Reported by the child as unresolved: nothing was looked up.
+            unknown += 1
+        elif isinstance(entry.get("version"), str) \
+                and isinstance(entry.get("vulns"), list):
+            scanned += 1
+        else:
+            # Neither established shape -- counted, never dropped.
+            unknown += 1
     return Coverage(
-        False, 0, 0, 0,
-        "the tool's report parsed, but no enumeration key has been pinned "
-        "against a measured tool version, so which distributions the child "
-        "actually enumerated is still UNKNOWN. Pinning it is the plan's "
-        "Chunk 0, which needs a network fetch this install has not performed. "
-        f"(report keys seen: {sorted(report)[:8] if isinstance(report, dict) else type(report).__name__})")
+        True, scanned, 0, unknown,
+        f"the child reported {len(entries)} distribution(s); {scanned} resolved "
+        f"and queried, {unknown} UNKNOWN (unresolved by the tool or not matching "
+        f"the schema established against pip-audit {_PIP_AUDIT_SCHEMA_VERSION}). "
+        f"{_DISPOSITION_NO_MATCH} is {_NO_MATCH_NOT_OBSERVABLE}.",
+        tuple(names))
 
 
 def local_build_disposition(raw: str | None) -> str:
@@ -1013,11 +1107,12 @@ def run_pip_audit_pass(repo_root: Path, *, allow_egress: bool,
     coverage = classify_pip_audit_output(run.stdout)
     builds = survey_local_builds()
     unknown_total = coverage.unknown + builds.unknown + scope.unknown
-    print(f"\n[pip-audit] coverage: {_DISPOSITION_SCANNED} "
-          f"{coverage.scanned}, {_DISPOSITION_NO_MATCH} {coverage.no_match} "
+    print(f"\n[pip-audit] coverage over the {len(coverage.names)} "
+          f"distribution(s) THE TOOL ITSELF REPORTED: {_DISPOSITION_SCANNED} "
+          f"{coverage.scanned}, {_DISPOSITION_UNKNOWN} {unknown_total} "
           f"(sources queried: {', '.join(_PINNED_ADVISORY_SOURCES)} -- accepted "
-          f"non-coverage, NOT evidence of safety), {_DISPOSITION_UNKNOWN} "
-          f"{unknown_total}.")
+          "non-coverage, NOT evidence of safety).")
+    print(f"[pip-audit] {_DISPOSITION_NO_MATCH}: {_NO_MATCH_NOT_OBSERVABLE}.")
     if not coverage.established:
         print(f"[pip-audit] COVERAGE NOT ESTABLISHED -- {coverage.note}",
               file=sys.stderr)

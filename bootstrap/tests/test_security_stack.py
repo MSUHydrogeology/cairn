@@ -1081,34 +1081,86 @@ def test_c_t5_interpreter_observation_is_reported(orchb, tmp_path, monkeypatch,
 
 # --- Chunk D: the denominator, the dispositions, and the CLEAN gate --------
 
-def test_d_t2_unestablished_coverage_is_incomplete_never_clean(orchb, tmp_path,
-                                                               monkeypatch):
-    # D-t2 -- THE CENTRAL CLAIM, in the schema-free form that survives the
-    # unexecuted tool probe: the tool ran and exited 0 with no vulnerabilities,
-    # but the orchestrator could not establish WHICH distributions it
-    # enumerated -> UNKNOWN -> INCOMPLETE. A leg never returns CLEAN with a
-    # non-zero UNKNOWN count.
-    assert orchb._PIP_AUDIT_SCHEMA_ESTABLISHED is False
-    assert orchb.classify_pip_audit_output("anything at all").established is False
+# --- pip-audit report fixtures: WHAT SUPPLIES THE MATERIAL --------------------
+#
+# The three payloads below were **emitted by pip-audit's own JsonFormat**, not
+# hand-written to match the parser. Method, reproducible and egress-free: build
+# `pip_audit._service.ResolvedDependency` / `SkippedDependency` values, call
+# `JsonFormat(output_desc=False, output_aliases=False).format(result, [])` on the
+# canonical interpreter, and paste the returned bytes verbatim. pip-audit 2.10.1,
+# as_of 2026-08-05. No audit ran and no network was contacted -- a JSON shape is
+# a property of the formatter, so the formatter is the oracle.
+#
+# They are pasted as literals rather than generated at test time on purpose:
+# Cairn does not install pip-audit, so a test that imported it would be silently
+# skipped on the machines that ship this code.
+_PA_ONE_SKIPPED = (
+    '{"dependencies": [{"name": "requests", "version": "2.31.0", "vulns": []}, '
+    '{"name": "jinja2", "version": "3.1.2", "vulns": []}, '
+    '{"name": "modflow-tools", "skip_reason": "Dependency not found on PyPI '
+    'and could not be audited: modflow-tools (0.1.0)"}], "fixes": []}')
+_PA_ALL_RESOLVED = (
+    '{"dependencies": [{"name": "requests", "version": "2.31.0", "vulns": []}, '
+    '{"name": "jinja2", "version": "3.1.2", "vulns": []}], "fixes": []}')
+_PA_ABSENT_NAMES = (
+    '{"dependencies": ['
+    '{"name": "cairn-probe-not-installed-a", "version": "0.0.1", "vulns": []}, '
+    '{"name": "cairn-probe-not-installed-b", "version": "0.0.2", "vulns": []}, '
+    '{"name": "cairn-probe-not-installed-c", "skip_reason": "Dependency not '
+    'found on PyPI and could not be audited: cairn-probe-not-installed-c '
+    '(0.0.3)"}], "fixes": []}')
+
+
+def _only_child_reported_unknowns(orch, monkeypatch):
+    """Zero the OTHER two UNKNOWN contributors -- the residual survey and the
+    conda enumeration -- so a tier assertion is a statement about the child's
+    reported enumeration alone. Both are *inputs* to the tier arithmetic here,
+    never the oracle, and leaving them live would couple the central claim to
+    whatever the machine running the suite happens to have installed."""
+    monkeypatch.setattr(orch, "survey_local_builds",
+                        lambda *a, **k: orch.LocalBuilds(0, 0, 0, ()))
+    monkeypatch.setattr(orch, "conda_non_coverage",
+                        lambda *a, **k: orch.CondaScope(False, 0, 0, 0))
+
+
+def test_d_t2_one_unknown_gates_clean(orchb, tmp_path, monkeypatch):
+    # D-t2 -- THE CENTRAL CLAIM OF THE PROPOSAL. The tool ran, exited 0 and
+    # reported no vulnerabilities at all; one distribution it could not resolve
+    # is enough to deny CLEAN. Both halves are asserted, because the first alone
+    # would also pass if the leg could never be CLEAN: an always-INCOMPLETE leg
+    # is a test that cannot fail, not a gate.
+    _only_child_reported_unknowns(orchb, monkeypatch)
     monkeypatch.setattr(orchb.shutil, "which", lambda _n: "/usr/bin/pip-audit")
-    monkeypatch.setattr(orchb, "_run_tool",
-                        lambda *a, **k: orchb.ToolRun(0, "ran", "{}", ""))
-    status, tier = orchb.run_pip_audit_pass(tmp_path, allow_egress=True)
-    assert tier == orchb._AGG_INCOMPLETE and tier != orchb._AGG_CLEAN
+
+    def _run(report):
+        # NOTE: _run_tool is stubbed, so allow_egress=True egresses nothing.
+        monkeypatch.setattr(orchb, "_run_tool",
+                            lambda *a, **k: orchb.ToolRun(0, "ran", report, ""))
+        return orchb.run_pip_audit_pass(tmp_path, allow_egress=True)
+
+    status, tier = _run(_PA_ONE_SKIPPED)
+    assert tier == orchb._AGG_INCOMPLETE and tier != orchb._AGG_CLEAN, status
     assert "unknown" in status
+    status, tier = _run(_PA_ALL_RESOLVED)
+    assert tier == orchb._AGG_CLEAN, f"the gate does not discriminate: {status}"
 
 
-def test_d_t2b_a_parsed_report_is_still_unknown_while_unpinned(orchb):
-    # D-t2b -- the Chunk 0 fence, made executable. Even a well-formed JSON
-    # report leaves the enumeration UNKNOWN while no enumeration key has been
-    # pinned against a MEASURED tool version. The alternative -- guessing a
-    # schema in order to reach CLEAN -- is the error the whole lifecycle was
-    # written to avoid.
-    parsed = orchb.classify_pip_audit_output(
-        '{"dependencies": [{"name": "x", "version": "1", "vulns": []}]}',
-        schema_established=True)
-    assert parsed.established is False
-    assert "pinned" in parsed.note
+def test_d_t2b_an_unreadable_enumeration_fails_closed(orchb):
+    # D-t2b. Two guards, each its own single-property falsifier. (i) a schema
+    # treated as unestablished is UNKNOWN even for a perfectly well-formed
+    # report -- the pre-decided fail-closed fallback, kept reachable now that
+    # the schema IS established at a pinned version. (ii) a top level that is
+    # not the measured shape fails closed instead of being read optimistically.
+    unestablished = orchb.classify_pip_audit_output(_PA_ALL_RESOLVED,
+                                                    schema_established=False)
+    assert unestablished.established is False
+    assert unestablished.scanned == 0 and unestablished.names == ()
+    for hostile in ('{"fixes": []}',
+                    '{"dependencies": {"requests": "2.31.0"}}',
+                    '[]'):
+        shape = orchb.classify_pip_audit_output(hostile, schema_established=True)
+        assert shape.established is False, hostile
+        assert "dependencies" in shape.note, hostile
 
 
 def test_d_t3_malformed_output_is_never_clean(orchb):

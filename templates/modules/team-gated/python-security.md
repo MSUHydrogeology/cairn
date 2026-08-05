@@ -158,14 +158,23 @@ timed out, flooded its output, or emitted bytes that could not be decoded.
 
 ### Coverage contract — what CLEAN means for this leg
 
-Every distribution the tool reported carries exactly one of three
-**dispositions**:
+Every distribution the tool reported carries a **disposition** from this
+vocabulary of three:
 
-* **`SCANNED`** — looked up in the pinned advisory sources.
+* **`SCANNED`** — the pinned advisory sources were queried and returned no
+  vulnerabilities for it. Read it exactly that narrowly: it does **not**
+  establish that those sources carry a record for the distribution at all.
 * **`NO-MATCH-IN-PINNED-SOURCES`** — the sources named in the report hold no
   record for it. This is **accepted non-coverage, not evidence of safety**: it
   states what those sources contain at that version, and asserts nothing about
   the world. It is reported alongside a clean result and never folded into it.
+  **It is not separately observable at the pinned tool version**, because the
+  tool's report gives an empty vulnerability list both for a distribution its
+  sources have a record for and for one they do not. Rather than print a
+  structural `0` — which would read as "every distribution had a record", the
+  universal negative this vocabulary exists to avoid — the run says so in as
+  many words. Nothing about the tier changes: only `UNKNOWN` ever gated the
+  verdict.
 * **`UNKNOWN`** — the disposition could not be established at all: the tool's
   enumeration could not be read, its output could not be parsed, or a
   distribution's own metadata could not be read.
@@ -177,6 +186,13 @@ an assumption rather than evidence. Where the enumeration cannot be
 established, the leg reports UNKNOWN and contributes **incomplete (`5`)** — it
 never guesses in order to reach clean. Findings still dominate incomplete, and
 degraded dominates both.
+
+**Reading that enumeration depends on a tool-version-specific report shape**,
+established by measurement against one pinned pip-audit version rather than
+assumed from a published contract. If you upgrade pip-audit and its report shape
+changes, the leg **fails closed** — UNKNOWN, incomplete, loud — rather than
+quietly counting nothing; re-establishing the shape against the new version is
+what clears it.
 
 **v1 stores no residual baseline.** Locally built distributions (editable
 installs and VCS checkouts, identified mechanically from PEP 610
