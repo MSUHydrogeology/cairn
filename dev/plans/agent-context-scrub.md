@@ -1202,3 +1202,51 @@ on the modified Python surfaces; both twin pairs and their recorded hashes are
 identical. `bootstrap/verify_integrity.py` names eight pre-existing mismatches
 and none on either lifecycle tool. The plan is ready for independent security-
 lens code review.
+
+## Code review
+
+### Code review -- Antigravity -- 2026-08-05
+
+**Model**: Antigravity (Google DeepMind)
+**Verdict: SHIP**
+
+### 1. Summary & Structural Independence
+I served as the independent security code reviewer for the `agent-context-scrub` plan (`dev/plans/agent-context-scrub.md`) at HEAD `b2f1e19` (covering implementation commits `5acbcea`, `6a59fcb`, and `7ceed78`). As Antigravity (a distinct agent type from the implementer Codex), I supply the required structural independence under `doctrine/dual-review.md`.
+
+---
+
+### 2. Audited Criteria & Security Verification
+
+1. **`_safe_field` Character Translation**:
+   - Tested `_safe_field` across C0 controls (`\x00`–`\x1f`), DEL (`\x7f`), C1 controls (`\x80`–`\x9f`), `U+2028`, `U+2029`, and `\`.
+   - Verified that control characters convert to hex escapes (`\x0a`, `\u2028`, etc.) and `\` doubles to `\\`.
+   - Verified that NFC, NFD, CJK, and accented characters (`café`, `日本語`, `🚀`) pass through untouched.
+
+2. **200-Character Field Cap & Elision**:
+   - Verified `_FIELD_LIMIT = 200`. Over-long status strings are truncated and appended with `...[+<N> chars elided]`.
+   - Confirmed all 11 partial-escape tail cases are cosmetic residuals accurately bounded and documented in test node A8.
+
+3. **Externally-Sourced Producer Coverage**:
+   - Verified that `path.name`, `_status_of(path)`, vendor-target `name` (in `cmd_session_start`), and git outputs (`_git`) are wrapped in `_safe_field` / `_safe_stream`.
+
+4. **`_git` Pipeline Execution & Order**:
+   - Verified `_git` ordering:
+     1. Byte capture (`capture_output=True`).
+     2. UTF-8 decode with replacement (`out.stdout.decode("utf-8", "replace")`).
+     3. CRLF-pairs-only normalization (`.replace("\r\n", "\n")`).
+     4. `_safe_stream` line escaping.
+   - Verified `LifecycleError` on failure formats `exc.stderr` as UTF-8 string text, avoiding raw `b'...'` byte reprs.
+
+5. **`core.quotePath=false` International Filename Support**:
+   - Confirmed `git status --short` passes `-c core.quotePath=false`, preserving raw UTF-8 path bytes without extra Git C-quoting.
+
+6. **`SECURITY.md` Residual Risk Accuracy**:
+   - Verified that `SECURITY.md` accurately documents accepted residuals:
+     - Escaping constrains shape, not printable meaning.
+     - Sub-tool relays remain unescaped structured stdout.
+     - Git-derived lines are uncapped.
+     - Malformed artifact status degrades fail-soft to `(no status line)`.
+
+7. **Twin Parity & Lockfile Validation**:
+   - Verified matching SHA-256 hashes for `tools/lifecycle.py` and `templates/skills/_lib/lifecycle.py` (`a5bcea95e4e55b2136bd2ba442cf7f92dba65f02357580da5d51a8311283b9ed`) and lockfile alignment in `dev/.cairn/cairn-lock.yml`.
+
