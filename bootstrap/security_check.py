@@ -488,6 +488,22 @@ def _materialize_committed_checkout(repo_root: Path, head: str) -> None:
                 f"committed path {rel!r} has unsupported mode {mode!r}")
 
 
+def _populate_committed_index(repo_root: Path, head: str) -> None:
+    """Make Git's status baseline describe *head* without checking files out.
+
+    ``worktree add --no-checkout`` creates an empty per-worktree index. The
+    exact-byte materializer writes the committed files itself, so leaving that
+    index empty makes the child preflight report every path as deleted. A plain
+    ``read-tree`` updates only the index; it does not run checkout filters or
+    replace the blob materialization and verification below.
+    """
+    proc = _git_at(repo_root, "read-tree", "--reset", head)
+    if proc.returncode != 0:
+        raise _RepoStateError(
+            "could not populate detached checkout index "
+            f"({(proc.stderr or '').strip() or 'git read-tree failed'})")
+
+
 def _verify_committed_checkout(repo_root: Path, head: str) -> None:
     """Require the checkout to contain exactly *head*'s blob bytes.
 
@@ -562,6 +578,7 @@ def _detached_checkout(head: str) -> Iterator[Path]:
                     "could not create detached release checkout "
                     f"({(proc.stderr or '').strip() or 'git worktree add failed'})")
             added = True
+            _populate_committed_index(checkout, head)
             _materialize_committed_checkout(checkout, head)
             _verify_committed_checkout(checkout, head)
             yield checkout

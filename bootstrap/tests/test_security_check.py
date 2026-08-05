@@ -204,6 +204,27 @@ def test_detached_checkout_excludes_an_ignored_pytest_override(
     capsys.readouterr()
 
 
+def test_detached_checkout_has_a_clean_index_for_the_child_preflight(
+        repo, monkeypatch, capsys) -> None:
+    """The exact files must also have the index baseline the child governs.
+
+    Removing ``_populate_committed_index`` leaves the manually materialized
+    files intact and byte-correct, but the real preflight reports every tracked
+    path as deleted because ``worktree add --no-checkout`` starts with an empty
+    per-worktree index.
+    """
+    head = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        capture_output=True, text=True, check=True).stdout.strip()
+
+    with security_check._detached_checkout(head) as checkout:
+        with monkeypatch.context() as child:
+            child.setattr(security_check, "CAIRN_ROOT", checkout)
+            rc, observed = security_check.repo_state_preflight()
+        assert (rc, observed) == (0, head)
+    assert "preflight OK -- clean worktree" in capsys.readouterr().out
+
+
 def test_detached_checkout_avoids_checkout_filter_execution(
         repo, tmp_path) -> None:
     """The detached checkout is populated from blobs, not through filters.

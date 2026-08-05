@@ -924,3 +924,47 @@ was performed here.
 Chunk G remains blocked on an independent code review of `3970edf` and
 `7fe55b9`. The post-review full suite and release-command run remain pending by
 the sequencing rule above.
+
+### Chunk R correction -- detached index baseline -- Codex -- 2026-08-05
+
+The exact-byte checkout in `3970edf` materialized every committed blob but left
+the `--no-checkout` worktree's per-worktree index empty. The outer verifier was
+green because it compares disk leaves directly with Git objects; the committed
+child's governing `repo_state_preflight()` was not. It read the empty index as
+every committed path deleted and failed closed before any release phase ran.
+This is the independently reproduced defect recorded by
+`default-security-stance`'s implementation handoff, not a new trust-policy
+choice.
+
+The correction populates only that index with sterile
+`git read-tree --reset <bound-head>` before writing any worktree file. It does
+not perform a checkout, run a smudge filter, trust index bytes as the payload
+oracle, or weaken the exact pre/post blob verification. The index is solely the
+status baseline used by the child preflight; `_verify_committed_checkout`
+continues to establish the executable bytes independently from `ls-tree` and
+Git blob ids.
+
+The new real-Git regression enters `_detached_checkout`, points the production
+preflight at that checkout, and requires `(0, bound_head)`. Deleting only the
+new population call makes the node fail with `(1, None)` and names the tracked
+fixture as deleted; restoring it returns the focused release/security-lint pair
+to **111 passed**. The ignored-plugin and checkout-filter regressions remain
+green. Against Cairn's actual committed snapshot, the same production path
+reported `preflight OK -- clean worktree` at
+`89193f123cbba74c60914a3a07202831a12b46d2`.
+
+The canonical broad run is **2491 passed**, zero failures/skips/xfails and three
+dependency warnings in 305.12 seconds, with loopback access for the portable-
+sweeps canaries. A first restricted run reached **2483 passed / 8 failed**; all
+eight failures were those canaries stopping at `socket.bind(127.0.0.1)` with
+`PermissionError`, and the correctly provisioned rerun cleared the same region.
+Bandit reports zero MEDIUM/HIGH findings on `bootstrap/security_check.py`; its
+eight LOW findings are the existing B404/B603 subprocess surface this release
+gate already classifies below its blocking threshold.
+
+This remains an implementation correction under the standing **REVISE**. It
+does not clear the independent code-review gate, implement Chunk G, re-pin the
+frozen manifest, authenticate the host Git/Python process, authorize a push, or
+make the final release decision. The next reviewer should remove or bypass the
+index-population call, re-run the named node, and confirm that no checkout
+filter executes on either the index-only operation or blob materialization.
