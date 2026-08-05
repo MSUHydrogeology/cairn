@@ -915,6 +915,29 @@ def _has_disposition(art: Artifact, pass_sec: Section) -> bool:
     return False
 
 
+def _near_miss_headings(art: Artifact) -> List[str]:
+    """Every heading that begins `Plan review` but is **not** an S1 pass.
+
+    S8 requires the refusal to *quote* these: an author who wrote
+    ``### Plan review -- R -- 2026-05-01`` (H3), ``## Plan review -- R``
+    (undated), a bare ``## Plan review`` container, or ``## Plan reviewers``
+    is told which heading did not count, instead of being left to guess which
+    of the near-miss shapes they hit.  A pass that *is* S1-conforming but
+    declares too low a tier is **not** a near miss -- it counted, and the
+    floor sentence covers it.
+    """
+    lines = art.text.split("\n")
+    pass_lines = {sec.line_no for sec, _dig in _pass_headings(art)}
+    out: List[str] = []
+    for sec in art.sections:
+        if not sec.kind.strip().lower().startswith("plan review"):
+            continue
+        if sec.line_no in pass_lines:
+            continue
+        out.append(lines[sec.line_no - 1].strip())
+    return out
+
+
 def _is_legacy(stem: str, dig: str, seen: Dict[str, int]) -> bool:
     """S9(b) -- is this the k-th occurrence of `dig`, with k <= manifest count?"""
     admitted = _LEGACY_PASSES.get(stem, {}).get(dig, 0)
@@ -941,14 +964,22 @@ def review_record_violations(art: Artifact) -> List[str]:
     satisfied = False
     for sec, dig in _pass_headings(art):
         seen[dig] = seen.get(dig, 0) + 1
+        # S1 IS CHECKED BEFORE THE S9 FENCE, and the order is load-bearing.
+        # The enumeration exempts a pass from S2, S3 and S7 (S9(b)) -- never
+        # from S1.  With the fence first, an exemption keyed on the heading
+        # swallows the date contract, which is exactly how the replaced dated
+        # epoch failed: `0000-00-00` sorts before every epoch, so the
+        # impossible value bought the exemption *and* silenced the
+        # malformed-date violation.  Checking S1 first leaves no fence,
+        # present or future, able to swallow it.
+        ok_date, date_violation = _parse_pass_date(sec.date)
+        if date_violation:
+            v.append(f"'{sec.kind} -- {sec.name}': {date_violation}")
         if _is_legacy(stem, dig, seen):
             # Exempt from S2/S3/S7; satisfies the floor by presence, as the
             # Maintainer accepted these records before the schema existed.
             satisfied = True
             continue
-        ok_date, date_violation = _parse_pass_date(sec.date)
-        if date_violation:
-            v.append(f"'{sec.kind} -- {sec.name}': {date_violation}")
         tier, tv = _parse_one_field(sec.body, _TIER_LINE_RE, _TIERS, "Tier")
         find, fv = _parse_one_field(
             sec.body, _FINDINGS_LINE_RE, _FINDINGS, "Findings")
@@ -969,11 +1000,14 @@ def review_record_violations(art: Artifact) -> List[str]:
                 and tier_satisfies(tier, required):
             satisfied = True
     if required and not satisfied:
+        near = _near_miss_headings(art)
+        quoted = ("; near misses that do NOT count: "
+                  + ", ".join(repr(h) for h in near)) if near else ""
         v.append(
             f"'Plan review: required({required})' but no conforming pass "
             f"satisfies it. A heading that is not an exact "
             f"'## Plan review -- <reviewer> -- YYYY-MM-DD' is not a pass and "
-            f"cannot clear the floor.")
+            f"cannot clear the floor{quoted}.")
     return v
 
 
@@ -1066,12 +1100,24 @@ def _conformance_violations(art: Artifact, identity: "IdentityModel") -> List[st
                 "'not required(<rationale>)'; a missing line is a finding)."
             )
         requires_review = art.plan_review.lower().startswith("required")
-        if s in ("executing", "review", "archived") and requires_review \
-                and not _has_kind(art, "Plan review"):
-            v.append(
-                f"status is {s!r} and 'Plan review: required', but no "
-                "'## Plan review' section has landed (review-before-implement)."
-            )
+        if s in ("executing", "review", "archived") and requires_review:
+            # S12 -- ONE predicate, BOTH call sites.  This was
+            # `not _has_kind(art, "Plan review")`: a PREFIX PRESENCE test that
+            # cleared on a bare `## Plan review` container, an undated heading,
+            # an H3 pass, `## Plan reviewers`, and an `Internal`-only pass on an
+            # `External` floor.  `_gating_preconditions(art, "executing")` calls
+            # the same predicate on the same record, so `scan` cannot tighten
+            # while `next --to executing` stays presence-only.
+            #
+            # The status condition is unchanged and deliberate: this arm asserts
+            # that the CURRENT status is structurally supported, and an `open`
+            # plan awaiting its review is not a violation.  The
+            # evaluate-as-if-transitioning read ([E4]) is the other call site's,
+            # reached from `open` / `awaiting-plan-review`.
+            #
+            # Conformance only: the record's shape is checked, never that the
+            # review happened or that the declared tier is true (R1 / [E4]).
+            v.extend(review_record_violations(art))
         if s == "archived":
             if not _has_kind(art, "Code review"):
                 v.append(
@@ -1141,9 +1187,20 @@ def _gating_preconditions(art: Artifact, target: str,
                           "straight to executing)"))
         elif target == "executing":
             if requires_review:
-                gates.append((_has_kind(art, "Plan review"),
-                              "a '## Plan review' section has landed (+ "
-                              "Sharpening if it raised findings)"))
+                # S12 -- the SAME predicate `_conformance_violations` uses, so
+                # the two gate surfaces cannot drift.  Was
+                # `_has_kind(art, "Plan review")`, which cleared on presence.
+                problems = review_record_violations(art)
+                detail = "" if not problems else "  UNMET: " + "; ".join(problems)
+                gates.append((not problems,
+                              "a CONFORMING '## Plan review' pass has landed: an "
+                              "exact '## Plan review -- <reviewer> -- YYYY-MM-DD' "
+                              "heading with a calendar-valid date, carrying one "
+                              "'**Tier**:' and one '**Findings**:' line, a "
+                              "disposition when it declares findings raised, and a "
+                              "declared tier that meets the required floor "
+                              "(conformance only -- the tool attests that a tier "
+                              "was DECLARED, never that it was true)" + detail))
                 gates.append((True,
                               "the plan-open and first-implementation commits "
                               "stay distinct."))

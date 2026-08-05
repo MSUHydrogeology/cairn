@@ -585,3 +585,371 @@ def test_archived_plan_with_neither_block_is_flagged(
     """Neither spelling present -- the precondition still fails closed."""
     out = _scan_archived_plan(tmp_path, monkeypatch, capsys, "")
     assert _ARCHIVE_PRECONDITION_MSG in out
+
+
+# --- the review-record gate (review-gate-enforcement, Chunk C: C.1-C.9c) ------
+#
+# The gate used to clear on the PRESENCE of a section whose heading merely
+# starts with "Plan review".  It now clears on the record's conformance to the
+# schema in `doctrine/plans.md` (the plan's S1-S9), through ONE predicate,
+# `review_record_violations`, consumed by BOTH call sites (S12).
+#
+# Each node below carries a single-property falsifier -- a mutation that
+# reddens THAT node and no other -- demonstrated (applied, run, reverted) and
+# recorded in the plan's implementation-verification section, not asserted
+# here.  The only thing that runs these nodes is a person typing
+# `python -m pytest bootstrap/tests`; Cairn has no CI.
+#
+# Conformance only, in every node: the gate attests that a tier was DECLARED,
+# never that a review happened or that the declaration is true.
+
+_GATE_STEM = "gate-fixture"   # deliberately NOT a key in `_LEGACY_PASSES`
+
+
+def _pass_block(*, reviewer: str = "R", date: str = "2026-05-01",
+                tier: str | None = "External", findings: str | None = "none",
+                sharpening: bool = False, level: str = "##",
+                response: bool = False) -> str:
+    """One review pass in the S1/S2 shape, with each part independently
+    omittable so a node can vary exactly one property."""
+    out = f"{level} Plan review -- {reviewer} -- {date}\n\n"
+    if tier is not None:
+        out += f"**Tier**: {tier}\n"
+    if findings is not None:
+        out += f"**Findings**: {findings}\n"
+    out += "\nthe reading.\n\n"
+    if sharpening:
+        out += "### Sharpening\n\nthe disposition.\n\n"
+    if response:
+        out += "## Response to plan review -- A -- 2026-05-02\n\nthe reply.\n\n"
+    return out
+
+
+def _plan_art(tmp_path: Path, body: str, *, status: str = "executing",
+              plan_review: str = "required(External)",
+              stem: str = _GATE_STEM):
+    """Parse a plan fixture into an Artifact (the predicate's input)."""
+    d = tmp_path / "dev" / "plans"
+    d.mkdir(parents=True, exist_ok=True)
+    path = d / f"{stem}.md"
+    path.write_text(
+        f"# {stem}\n\n"
+        f"**Status**: {status}\n"
+        f"**Plan review**: {plan_review}\n\n"
+        f"## Scope\n\nx\n\n{body}",
+        encoding="utf-8")
+    return planner._read_artifact(path)
+
+
+def _violations(tmp_path: Path, body: str, **kw) -> list:
+    return planner.review_record_violations(_plan_art(tmp_path, body, **kw))
+
+
+# C.1 -- S8 floor: at least one S1 pass must satisfy S5.
+
+
+def test_c1_floor_requires_a_conforming_pass_that_meets_the_declared_tier(
+        tmp_path):
+    """S8: the floor is not cleared by presence, and not by a lower tier.
+
+    Two directions, both of which the presence gate cleared: no S1 pass at all
+    (only a bare container), and an S1 pass whose declared tier is BELOW the
+    required floor.  The tier comparison is what separates the second from a
+    clean record."""
+    # (a) a conforming External pass on an External floor clears.
+    assert _violations(tmp_path, _pass_block(tier="External")) == []
+    # (b) no S1 pass at all -> the floor violation, quoting the near miss.
+    only_container = _violations(tmp_path, "## Plan review\n\n(awaiting)\n")
+    assert len(only_container) == 1
+    assert "no conforming pass satisfies it" in only_container[0]
+    # (c) an Internal pass does not satisfy an External floor.
+    too_low = _violations(tmp_path, _pass_block(tier="Internal"))
+    assert len(too_low) == 1
+    assert "no conforming pass satisfies it" in too_low[0]
+    # ... and the same pass on an Internal floor does clear, so (c) is the
+    # comparison failing and not the pass being malformed.
+    assert _violations(tmp_path, _pass_block(tier="Internal"),
+                       plan_review="required(Internal)") == []
+
+
+# C.2 -- S1 heading match: H2, `--` separators, an ISO-shaped date.
+
+
+@pytest.mark.parametrize("near_miss", [
+    "### Plan review -- R -- 2026-05-01\n\n**Tier**: External\n"
+    "**Findings**: none\n",                      # H3: the wrong level
+    "## Plan review -- R\n\n**Tier**: External\n**Findings**: none\n",  # undated
+    "## Plan review\n\n(awaiting a reviewer)\n",                        # bare
+    "## Plan review tier -- R -- 2026-05-01\n\n**Tier**: External\n"
+    "**Findings**: none\n",                      # prefix collision
+    "## Plan reviewers -- R -- 2026-05-01\n\n**Tier**: External\n"
+    "**Findings**: none\n",                      # prefix collision
+])
+def test_c2_a_near_miss_heading_is_not_a_pass_and_fails_closed(
+        tmp_path, near_miss):
+    """S1/S8: each of these cleared the presence gate; none is a pass now.
+
+    And the refusal is the FLOOR sentence -- "no conforming pass has landed" --
+    never "a pass with problems": a near miss must not be parsed as a pass and
+    then reported for missing fields it was never asked for.  The refusal
+    quotes the offending heading so the author is not left guessing which
+    near-miss shape they hit."""
+    v = _violations(tmp_path, near_miss)
+    assert len(v) == 1, v
+    assert "no conforming pass satisfies it" in v[0]
+    assert "near misses that do NOT count" in v[0]
+    assert near_miss.splitlines()[0] in v[0]
+
+
+# C.3 -- S1 date: calendar-valid, not merely date-shaped.
+
+
+@pytest.mark.parametrize("bad", ["2026-99-99", "2026-02-30", "0000-00-00"])
+def test_c3_a_date_shaped_impossible_value_is_a_malformed_date(tmp_path, bad):
+    """The heading regex accepts these; `date.fromisoformat` refuses them.
+
+    A shape check is not a date contract, and the fail-closed direction is the
+    one that matters: an impossible date must not pass silently."""
+    v = _violations(tmp_path, _pass_block(date=bad))
+    assert any("malformed date" in msg and bad in msg for msg in v), v
+
+
+def test_c3_a_real_leap_date_is_accepted(tmp_path):
+    """The parse is a real date parse, not a stricter regex: 2028-02-29 exists."""
+    assert _violations(tmp_path, _pass_block(date="2028-02-29")) == []
+
+
+# C.4 -- S7: the disposition pairing is POSITIONAL.
+
+
+def test_c4_findings_raised_requires_a_disposition_in_that_pass(tmp_path):
+    """S7, both house forms, and the positional bound.
+
+    The tree uses both `### Sharpening` (inside the pass body) and
+    `## Response to plan review` (after the pass, before the next one), so the
+    gate accepts either; what it must not accept is a NEIGHBOURING round's
+    disposition standing in for this one."""
+    # (a) raised + a Sharpening inside its own body -> clean.
+    assert _violations(
+        tmp_path, _pass_block(findings="raised", sharpening=True)) == []
+    # (b) raised + a `## Response to plan review` before the next pass -> clean.
+    assert _violations(
+        tmp_path, _pass_block(findings="raised", response=True)) == []
+    # (c) raised with no disposition at all -> violation.
+    bare = _violations(tmp_path, _pass_block(findings="raised"))
+    assert len(bare) == 1
+    assert "no disposition follows it" in bare[0]
+    # (d) the sibling case: round 1 raised findings and has nothing of its own;
+    # round 2's Sharpening sits in round 2's body and must not satisfy round 1.
+    sibling = _violations(
+        tmp_path,
+        _pass_block(reviewer="R1", findings="raised")
+        + _pass_block(reviewer="R2", date="2026-05-02", findings="raised",
+                      sharpening=True))
+    assert len(sibling) == 1
+    assert "R1" in sibling[0] and "no disposition follows it" in sibling[0]
+
+
+# C.5 -- S3's three fail-closed directions, on both fields.
+
+
+@pytest.mark.parametrize("field,body,expected", [
+    ("Tier", _pass_block(tier="Reviewer"), "unrecognized Tier value"),
+    ("Tier", _pass_block(tier=None,
+                         reviewer="Anthony Kendall (Maintainer)"),
+     "missing Tier"),
+    ("Tier", _pass_block(tier="External")
+     + "", "duplicate Tier"),           # body patched below
+    ("Findings", _pass_block(findings="some"), "unrecognized Findings value"),
+    ("Findings", _pass_block(findings=None), "missing Findings"),
+    ("Findings", _pass_block(findings="none"), "duplicate Findings"),
+])
+def test_c5_each_s3_direction_is_a_violation_not_a_silent_pass(
+        tmp_path, field, body, expected):
+    """Unrecognized, missing and duplicate each fail closed, per field.
+
+    Unrecognized alone would leave the other two silent, which is the
+    fail-open direction that matters.  The DUPLICATE fixtures use two
+    **agreeing** occurrences: agreement is a judgement a conformance backstop
+    must not make, so agreeing duplicates are still refused.
+
+    The `missing Tier` fixture carries a `(Maintainer)` role parenthetical and
+    a human byline, which pins S4 as well: the tier is read from the
+    `**Tier**:` line and from NOWHERE else -- not the byline, not the role."""
+    if expected.startswith("duplicate"):
+        line = f"**{field}**: " + ("External" if field == "Tier" else "none")
+        body = body.replace(line + "\n", line + "\n" + line + "\n", 1)
+    v = _violations(tmp_path, body)
+    assert any(expected in msg for msg in v), (expected, v)
+
+
+# C.6 -- S6 normalization of the required tier.
+
+
+def _generator():
+    """The legacy-pass generator, loaded as the corpus oracle.
+
+    It supplies the population; the planner is the code under test.  The
+    generator deliberately does not import the gate (its own anchored regex),
+    so the forms are not enumerated by the predicate that must resolve them."""
+    spec = importlib.util.spec_from_file_location(
+        "cairn_gen_legacy_passes", CAIRN_ROOT / "scripts" / "gen_legacy_passes.py")
+    assert spec and spec.loader
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_c6_every_live_required_form_resolves_to_exactly_one_tier():
+    """The live invariant, re-enumerated at every run rather than pinned.
+
+    The count of distinct `required(...)` forms moves with the tree (it was 6,
+    then 7, then 9 inside three days); what does not move is that **every**
+    review-required artifact resolves to exactly one of `internal` /
+    `external`, and none resolves by accident."""
+    gen = _generator()
+    forms = set()
+    for path in gen.artifacts(CAIRN_ROOT):
+        rec = gen.scan(path)
+        value = str(rec["required"])
+        if value.lower().startswith("required"):
+            forms.add(value)
+    assert forms, "no review-required artifact found -- the oracle is not reading"
+    for value in sorted(forms):
+        tier, violation = planner.normalize_required_tier(value)
+        assert violation is None, (value, violation)
+        assert tier in ("internal", "external"), (value, tier)
+
+
+@pytest.mark.parametrize("field", [
+    "required(not External)",   # a negation must not read as its own opposite
+    "required()",              # nothing inside the group
+    "required",                # no group at all
+])
+def test_c6_a_form_that_does_not_name_a_tier_fails_closed(field):
+    """S6 fails closed: no default tier, and no accidental resolution."""
+    tier, violation = planner.normalize_required_tier(field)
+    assert tier is None
+    assert violation
+
+
+# C.7 -- S5 ordering: the order is an ORDER, not an equality.
+
+
+def test_c7_external_satisfies_an_internal_floor_and_a_human_declares_it(
+        tmp_path):
+    """`declared >= required`, so External clears an Internal floor.
+
+    This also runs `[E1]`'s sharpest case: the published format had no role
+    field, so a rule keyed on one would have blocked a human review.  Under S4
+    a human declares `**Tier**: External` in the same line-shape an agent does,
+    and the gate reads that line and nothing else."""
+    assert planner.tier_satisfies("External", "internal") is True
+    assert planner.tier_satisfies("Internal", "internal") is True
+    assert planner.tier_satisfies("Internal", "external") is False
+    human = _pass_block(reviewer="Anthony Kendall (Maintainer)", tier="External")
+    assert _violations(tmp_path, human, plan_review="required(Internal)") == []
+    assert _violations(tmp_path, human, plan_review="required(External)") == []
+
+
+# C.8 -- S12: one predicate, both call sites, no drift.
+
+
+@pytest.mark.parametrize("body,conforming", [
+    (_pass_block(tier="External", findings="none"), True),
+    ("## Plan review\n\n(a bare container)\n", False),
+    (_pass_block(tier="Internal"), False),
+    (_pass_block(findings="raised"), False),
+])
+def test_c8_scan_and_the_executing_gate_agree_on_the_same_record(
+        tmp_path, body, conforming):
+    """`scan` cannot tighten while `next --to executing` stays presence-only.
+
+    The same record is put to both public surfaces: `_conformance_violations`
+    (what `scan` reports for a plan already `executing`) and
+    `_gating_preconditions(..., "executing")` (what `next --to executing`
+    requires of a plan still `awaiting-plan-review`).  Status is the only
+    difference between the two fixtures; the verdict must be the same."""
+    identity = planner.IdentityModel(frozenset(), frozenset())
+    scanned = planner._conformance_violations(
+        _plan_art(tmp_path, body, status="executing"), identity)
+    gates = planner._gating_preconditions(
+        _plan_art(tmp_path, body, status="awaiting-plan-review"),
+        "executing", identity)
+    review_gates = [g for g in gates if "Plan review" in g[1]]
+    assert len(review_gates) == 1, gates
+    met = review_gates[0][0]
+    assert met is conforming
+    assert (scanned == []) is conforming
+    # The verdicts are not merely both-truthy: the gate reports the same
+    # violations it withheld the transition for.
+    if not conforming:
+        for msg in scanned:
+            assert msg in review_gates[0][1]
+
+
+# C.9a/b/c -- S9: the legacy population is ENUMERATED, not dated.
+
+
+@pytest.mark.parametrize("date", ["2020-01-01", "0000-00-00", "2026-05-01"])
+def test_c9a_a_pass_outside_the_manifest_gets_no_exemption_whatever_its_date(
+        tmp_path, date):
+    """The S11 finding, pinned closed.
+
+    Under the replaced design a pass dated before an epoch was exempt from
+    S2/S3/S7 **and** satisfied the floor by presence -- so appending
+    `## Plan review -- Any Name -- 2020-01-01` bought a permanent exemption by
+    typing a smaller number, and `0000-00-00` sorts below every achievable
+    epoch.  There is no date comparison left in the gate: admission is
+    membership in a committed enumeration, and this stem is not in it."""
+    assert _GATE_STEM not in planner._LEGACY_PASSES
+    v = _violations(tmp_path, _pass_block(date=date, tier=None, findings=None))
+    assert v, f"a non-manifest pass dated {date} was exempted"
+
+
+def test_c9b_re_appending_an_admitted_heading_is_refused_at_count_plus_one(
+        tmp_path):
+    """The occurrence COUNT closes the duplicate-append hole.
+
+    A set-valued manifest would admit an admitted digest forever, so copying a
+    heading byte-identical to a legacy one would reopen the bypass.  The
+    multiset admits exactly the passes that existed when it was generated.
+    This plan's own record is the worked example: the same
+    `## Plan review -- Codex (External) -- 2026-08-05` heading appears twice,
+    byte-identical, so the boundary exercised is `n + 1` rather than the
+    `1 -> 2` edge."""
+    stem = "review-gate-enforcement"
+    admitted = planner._LEGACY_PASSES[stem]
+    heading = "## Plan review -- Codex (External) -- 2026-08-05"
+    dig = hashlib.sha256(heading.encode("utf-8")).hexdigest()[:16]
+    n = admitted[dig]
+    assert n >= 2, (
+        "the fixture must exercise n + 1 on a count > 1, not the 1 -> 2 edge; "
+        f"the manifest now admits {dig} {n} time(s) at {stem}")
+    legacy = f"{heading}\n\nan old-format record, no Tier/Findings lines.\n\n"
+    # Exactly n occurrences: all admitted, and they satisfy the floor by
+    # presence exactly as they did before the schema existed.
+    assert _violations(tmp_path, legacy * n, stem=stem) == []
+    # One more: occurrence n + 1 is not admitted and must conform.
+    over = _violations(tmp_path, legacy * (n + 1), stem=stem)
+    assert any("missing Tier" in msg for msg in over), over
+
+
+def test_c9c_every_manifest_entry_is_re_derived_by_the_generator():
+    """S9(c)/(f): the manifest is generated, not hand-editable.
+
+    Subset direction ONLY, deliberately: a pass appended after the manifest was
+    generated legitimately exists and legitimately is not in it, so an equality
+    check would redden the suite on the next review that lands.  So this node
+    catches a FABRICATED entry and manifest drift; it does not catch an entry
+    added for a real new pass, and it cannot catch a defect in the generator's
+    own regex -- a producer cannot falsify its own output.  Those two residual
+    risks are covered by review of a code diff, which is the actual control."""
+    live = _generator().build_manifest(CAIRN_ROOT)
+    for stem, digests in sorted(planner._LEGACY_PASSES.items()):
+        for dig, count in sorted(digests.items()):
+            found = live.get(stem, {}).get(dig, 0)
+            assert found >= count, (
+                f"_LEGACY_PASSES[{stem!r}][{dig!r}] admits {count} pass(es) but "
+                f"the generator finds {found} in the tree -- a fabricated or "
+                "stale manifest entry")
