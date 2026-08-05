@@ -577,9 +577,33 @@ Each lettered item is one proposal-sized piece of work. Items marked
 *(doctrine)* change methodology rules and so must clear the
 doctrine-change bar on their own evidence.
 
+**Strikethrough status, added 2026-08-05.** A struck item is **implemented and
+code-reviewed**, established by one test rather than by recollection: a plan of
+that name exists in `dev/plans/archive/`, and a plan cannot archive until a code
+review has occurred (`doctrine/plans.md` > "The plan-archive precondition"). Four
+items pass it: **A1**, **A3**, **A4**, **A7**.
+
+**The unstruck items are not all outstanding — they are unverified**, and the
+distinction matters more than a tidy page. Several have partial or probable
+coverage that this pass deliberately did not claim:
+
+* **B2** is *partly* done — `scan-coverage` archived, which is the
+  derive-targets-from-the-installer's-file-lists half. Its other half is **not**:
+  Cairn still has **no CI**, so every "fails in CI" claim B2 asked to either
+  automate or reword remains live. Striking B2 would assert a security-story fix
+  that has not happened.
+* **A2**, **A6**, **B1** plausibly overlap `review-record-integrity` and
+  `adopter-entry-doc-refresh` (both archived), but neither maps to the item
+  one-to-one, and a name that merely *sounds* like a match is not the archived-plan
+  test.
+* **A5**, **B3**, **B4** have no corresponding proposal at all.
+
+Anyone continuing this: apply the archived-plan test per item rather than
+extending the strikethroughs by resemblance.
+
 **Phase A — before the postdoc installs** *(days of work; highest stakes)*
 
-* **A1. Repair the record** (Theme 1): append a dated, honest
+* ~~**A1. Repair the record**~~ — **IMPLEMENTED**, `record-corrections` plan archived. (Theme 1): append a dated, honest
   correction to the showcase proposal explaining how those commits
   actually happened; publish a correction of the v0.3.0 release-notes
   claim; write the missing adoption-decision note (or repoint the two
@@ -590,7 +614,7 @@ doctrine-change bar on their own evidence.
   passages in the solo starter guide, and add an automated check that
   no shipped guide ever again equates fresh-session self-review with
   independent review.
-* **A3. Build the solo-legacy recipe** (Theme 5.1, 5.3–5.5): a preset
+* ~~**A3. Build the solo-legacy recipe**~~ — **IMPLEMENTED**, `solo-legacy-adopter-path` plan archived. (Theme 5.1, 5.3–5.5): a preset
   (or a documented path) that actually reaches the
   existing-codebase modules; the corrected Appendix B example plus a
   warning when a hand-written module list omits defaults; the
@@ -598,7 +622,7 @@ doctrine-change bar on their own evidence.
   *(doctrine)*; the deadline escape hatch written into the installed
   template; "make an assumptions document your first proposal" promoted
   from appendix footnote to the standing recipe.
-* **A4. The licensing package** (Theme 4): notice file, license
+* ~~**A4. The licensing package**~~ — **IMPLEMENTED**, `adopter-licensing-compliance` plan archived. (Theme 4): notice file, license
   headers, the bootstrap-guide paragraph, the contributions sentence —
   plus your decision on the "keeping the notice file is all you owe"
   clause.
@@ -611,7 +635,7 @@ doctrine-change bar on their own evidence.
   tag a v0.3.1 so tag-based installs include the quickstart fixes.
 * **A6. The two honest paragraphs** (Theme 5.6–5.7): "your record is
   not a performance review" and "here is how to scale down or leave."
-* **A7. First-session survivability** (Theme 5.10): show the skipped
+* ~~**A7. First-session survivability**~~ — **IMPLEMENTED**, `first-session-survivability` plan archived. (Theme 5.10): show the skipped
   session-tools step in the install report with its one-line remedy;
   remove the phantom command from the report; make a vanished Python
   path a warning-with-fallback instead of a fatal error; make the
