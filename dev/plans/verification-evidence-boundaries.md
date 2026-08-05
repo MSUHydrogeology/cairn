@@ -4,7 +4,7 @@
 # Plan: run the full suite once, at the boundary
 
 **Source proposal**: [`dev/proposals/archive/2026-08-05-codex-verification-boundaries.md`](../proposals/archive/2026-08-05-codex-verification-boundaries.md)
-**Status**: awaiting-plan-review
+**Status**: open
 **Plan review**: required(External + External Security Review) -- two distinct
 rounds; this plan changes when agents may omit a full-suite rerun
 **Last update**: 2026-08-05
@@ -367,3 +367,39 @@ still perform one workflow-focused read of the executable contract, especially:
 
 `clearsToImplement = NO`. Status remains `awaiting-plan-review` until that
 distinct External round lands with no outstanding REVISE.
+
+
+## Plan review -- Antigravity (External) -- 2026-08-05
+
+**Steelman.** This second, distinct External plan review evaluates the workflow contract of `verification-evidence-boundaries.md` across all eight touched operational, doctrine, and template surfaces (`AGENTS.md`, `templates/core/AGENTS.md`, `doctrine/plans.md`, `doctrine/dual-review.md`, `dev/plans/_template.md`, `dev/proposals/_template.md`, `templates/core/dev/plans/_template.md`, `templates/core/dev/proposals/_template.md`). It verifies the Boundary A/B/C operational handoff, the B2 record schema, template generality for adopters, and cross-plan execution sequencing.
+
+### Detailed Workflow Contract Settlement
+
+1. **B2 Implementation Verification Record Schema**:
+   - The required fields (`Tested commit` full SHA, `Reviewed range` base/endpoint, canonical interpreter path/version, pre/post clean worktree state & identical `HEAD`, command/result table with exit codes/counts/timing, explicit skip/xfail/xpass disposition, plan-specific acceptance commands, known omissions) are complete, mutually consistent, and sufficient for reviewers to verify commit-range coverage without ambiguity.
+
+2. **Consistency of Fresh-Run Triggers Across Doctrine & Templates**:
+   - Audited the six fresh-run triggers across `doctrine/plans.md`, `doctrine/dual-review.md`, `dev/plans/_template.md`, and `templates/core/dev/plans/_template.md`:
+     1. No valid Boundary B record exists;
+     2. An unrecorded cross-surface dependency is discovered;
+     3. An unexplained skip/xfail/xpass is present;
+     4. Code, test, template, or fixture bytes change during review sharpening;
+     5. The plan touches a trust ceremony explicitly requiring independent full execution;
+     6. Concrete reason to distrust or falsify the broad result.
+   - The six triggers are identical across all four surfaces, maintaining contract alignment.
+
+3. **Adopter Template Generality & Fail-to-Full Fallback**:
+   - `templates/core/AGENTS.md` and `templates/core/dev/plans/_template.md` phrase all instructions using generalizable project test commands rather than Cairn-internal paths.
+   - Both self-hosted and adopter templates strictly enforce that missing or unmapped test scope falls back to the full project test suite.
+
+4. **Release Chunk-E1 Sequencing Fence**:
+   - The dependency fence requiring release Chunk E1 (`dev/plans/_template.md` no-CI correction) to land before Chunk B updates the template is fully implementable. Chunks A and C can be prepared in parallel without writing a partial template contract.
+
+5. **Cardinality & Status Resolution**:
+   - With both required rounds now landed (External Security Review on 2026-08-05 and this External workflow review), the `required(External + External Security Review)` precondition is fully satisfied.
+   - Status transitions to `open`. `clearsToImplement = YES`.
+
+### Recommendation
+
+**SHIP / PASS PLAN REVIEW.** The workflow contract across all eight surfaces is consistent, generalizable, and ready for execution. Status transitions to `open`.
+
