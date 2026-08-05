@@ -5,7 +5,7 @@
 **Author**: Codex (Strategy)
 **Model**: GPT-5 (Codex)
 **Date opened**: 2026-08-05
-**Status**: proposed
+**Status**: accepted
 **Touches**: `bootstrap/security_check.py`, its tests and release-only pytest
 policy; `SECURITY.md` and the release-cut description in
 `bootstrap/PROVENANCE.md`; the live false-CI and floor-gate wording in
@@ -454,3 +454,13 @@ does not make every unrelated test helper part of the release protocol. The
 review returned SHIP, its sole concern is now part of the executable contract,
 and the proposal is Decision-ready. Status remains `proposed` pending the
 Maintainer's Decision.
+
+
+## Decision -- 2026-08-05
+
+**Maintainer authorization, quoted verbatim:**
+
+> Please scribe my decisions as ACCEPT as revised.
+
+Scribed by Antigravity on explicit Maintainer instruction. Proposal `2026-08-05-codex-release-security-orchestration.md` is **accepted as revised** (incorporating Author Response and Binding Amendment R1). Status changed from `proposed` to `accepted`.
+
