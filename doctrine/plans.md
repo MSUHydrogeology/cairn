@@ -416,10 +416,18 @@ resolved during proposal review.
 
 ### Format
 
-Each review pass gets its own dated subsection:
+Each review pass is its own dated **H2 section** -- not a subsection of a
+container. One grammar, and this is it: the pass heading is `##`, and the
+`### Sharpening` that dispositions its findings is `###` *inside the pass
+body*. An earlier revision of this section prescribed `###` for the pass
+itself, which contradicted the `##` required above; practice followed the
+`##` form, so that is the form kept.
 
 ```
-### Plan review -- <reviewer> -- YYYY-MM-DD
+## Plan review -- <reviewer> -- YYYY-MM-DD
+
+**Tier**: <Internal|External>
+**Findings**: <none|raised>
 
 **Model**: <model or tier when known; "unknown" if not>
 
@@ -513,7 +521,7 @@ Each subsequent review pass gets its own dated subsection with a round
 suffix:
 
 ```
-### Plan review -- <reviewer> -- YYYY-MM-DD (round 2)
+## Plan review -- <reviewer> -- YYYY-MM-DD (round 2)
 ...
 ### Sharpening -- <author> -- YYYY-MM-DD (round 2)
 ...

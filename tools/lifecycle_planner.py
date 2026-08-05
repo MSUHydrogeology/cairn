@@ -983,7 +983,9 @@ def _scaffold(art: Artifact, target: str, date: str) -> Tuple[str, str, List[str
                 ]
                 return ("open", "awaiting-plan-review", manifest)
             block = (
-                "### Plan review -- <reviewer> -- " + date + "\n\n"
+                "## Plan review -- <reviewer> -- " + date + "\n\n"
+                "**Tier**: <Internal|External>\n"
+                "**Findings**: <none|raised>\n\n"
                 "**Model**: <model or tier>\n\n"
                 "<orientation> **Findings:** ... **Coverage + second-round "
                 "recommendation:** ...\n\n"

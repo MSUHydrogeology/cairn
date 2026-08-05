@@ -236,12 +236,23 @@ snippets that diverged from their source) catch **drift**, not
 **absence** of new doc updates. Confirm each doc named in Acceptance
 was actually updated; the gates don't enforce that.
 
-## Plan review
+<!-- Each review pass is its own dated H2 section, appended below this
+     comment as:
 
-*Optional; pre-implementation.* See `doctrine/plans.md` > "Plan review"
-for the full doctrine: when to use it, reviewer identity, format,
-sharpening, multi-round review, and the distinction from
-discovery-driven plan revision.
+       ## Plan review -- <reviewer> -- YYYY-MM-DD
+
+       **Tier**: <Internal|External>
+       **Findings**: <none|raised>
+
+     with its `### Sharpening` at H3 inside the pass body. There is no
+     `## Plan review` container heading: an empty container reads as a
+     landed review, and a review is what the `**Plan review**:` metadata
+     line makes *mandatory* -- `doctrine/plans.md` requires that line with
+     "no silent default", so this section is not optional. Whether a *pass*
+     is required is what `required(<tier>)` vs `none` on that line decides.
+     See `doctrine/plans.md` > "Plan review" for reviewer identity, format,
+     sharpening, multi-round review, and the distinction from
+     discovery-driven plan revision. -->
 
 ## Code review
 
