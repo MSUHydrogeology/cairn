@@ -2258,3 +2258,87 @@ fold applies the later binding one: the class is
   invalidated.
 
 This subsection is append-only.
+
+## Implementation note -- Claude -- 2026-08-05
+
+**Scope, stated first so this is not mistaken for the plan's implementation
+record.** Chunks A and B were implemented and verified by a **sibling session**
+(`8a7fb86`, `a23be80`, `83d5b9b`). This section records **one** follow-on commit
+of mine plus **one** finding, and nothing else. It is **not** the plan's
+`## Implementation verification` record and does not discharge the code-review
+tier.
+
+### The commit -- B11's guard covered two of three silent-shadowing forms
+
+`d5909b4`. B11's cell enumerates *(i)* duplicate top-level `ClassDef` and
+*(ii)* duplicate method within a class. A **duplicate top-level function**
+shadows exactly as silently, and this file is exposed to it: it carries a
+top-level `def test_content_security_module_installs_scanner_verbatim`, and
+`content-scan-detectors` appends here. The guard now checks top-level
+`FunctionDef` / `AsyncFunctionDef` names too, reporting `duplicate top-level
+function: <name>` -- **all** top-level functions, not only `test_*`, because a
+shadowed `_ids` helper breaks the file the same way.
+
+**This is beyond the letter of the B11 cell and is recorded here so the plan
+text is not narrower than the code.** It adds no node, no class, and no shipped
+byte: the existing node got stronger. Test-only, and trivially revertible if the
+Maintainer would rather the cell bound the code.
+
+Perturbation ledger -- hazard-side, all RUN under
+`~/conda_envs/lhm/bin/python3.13` (3.13.13), `PYTHONDONTWRITEBYTECODE=1`,
+`as_of 2026-08-05`; restore verified byte-identical by `git hash-object`
+against a copy held outside the tree, not by `git diff`, because the change was
+uncommitted at perturbation time:
+
+| # | Mutation | Red | Green |
+|---|---|---|---|
+| P1 | duplicate top-level function appended | B11 **alone**, naming it | 35 |
+| P2 | the same hazard against the **pre-extension** guard | none -- 36 passed | — |
+| P3 | duplicate top-level class (`TestSeparatorDetection`) | B11 alone | 28 |
+| P4 | duplicate method in that class | B11 alone | 35 |
+
+P2 is the half that shows the extension does the work rather than the
+pre-existing checks. P3/P4 confirm the two original forms still fire after the
+loop refactor.
+
+**One measurement worth keeping.** Under P1 collection stays at **36** either
+way -- the shadowed node is lost and the shadowing one gained, so the totals
+match. The plan asserts this as its reason for making the criterion the node-id
+**set**; it is now demonstrated *in this file* rather than on a standalone
+hazard module.
+
+### Finding -- B3 clause (ii) is true, and has no independent falsifier
+
+The shipped docstring tells adopters the **block form** (`cairn-accept` …
+`cairn-accept-end` spanning the hit) does not suppress `unicode-line-separator`.
+**Measured true** against the shipped `scan_text` (`as_of 2026-08-05`): a block
+opened on file line 1, hit on line 3, closed on line 5 still yields
+`[(3, "unicode-line-separator")]`; the associable case (marker before the
+separator on the hit's own line) still returns `[]`.
+
+**But no node pins it, and none usefully can.** Clause (ii) and the
+preceding-line half of clause (i) are **one mechanism**, not two: the re-emit
+branch asks only whether the *hit's own file line* carries an associable
+marker, and in both cases it does not. Every mutation that reddens a
+block-form node also reddens **B9b** -- deleting the B10 branch (P-B8) reddens
+B9a and B9b; making re-emission conditional on the hit line carrying any marker
+reddens B9b as well. So a block-form node would add a green light without
+adding discrimination, which is the "test that could not fail alone" shape this
+plan is otherwise careful about. **No node was added.**
+
+The plan's own rule applies -- *"Where a claim cannot be perturbed, this plan
+says so rather than implying coverage"* -- and B3's *"measured, not inferred"*
+currently reads as independent coverage. Recorded here rather than fixed in the
+cell, because the cell is post-review text and the correction is a wording call
+for the Maintainer or the code reviewer.
+
+### Not done
+
+**Chunk C is untouched and remains deferred**, on its own terms: `CHANGELOG.md`
+is a serialized shared file, the cell says the line is *"deliberately not an
+implementation commit"*, and a standalone `CHANGELOG.md` edit is outside the
+no-approval carve-in in `AGENTS.md` > *Git and commit workflow*. Its
+one-line-for-both-plans rule also wants `content-scan-detectors`' state, which
+had not landed.
+
+This section is append-only.
