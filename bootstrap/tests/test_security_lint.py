@@ -37,11 +37,20 @@ from bootstrap._scaffold.install import install_manifest  # noqa: E402
 # them so the two never drift (security-hardening Chunk 2 / R2 + Chunk 7).
 from bootstrap.security_check import (  # noqa: E402
     ALLOWLIST as _ALLOWLIST,
+    _rel as _rel,
+    finding_key as _finding_key,
+    is_blocking as _is_blocking,
     scan_targets as _scan_targets,
 )
 
-_SEVERITY_RANK = {"LOW": 0, "MEDIUM": 1, "HIGH": 2}
-_BLOCKING_RANK = _SEVERITY_RANK["MEDIUM"]
+# What used to live here: a `_SEVERITY_RANK` / `_BLOCKING_RANK` pair and a
+# second, byte-identical `_rel`. The single-sourcing comment above was true of
+# the DATA (`ALLOWLIST`, `scan_targets`) and silent about the PREDICATE -- both
+# halves of the key rule were spelled twice, agreeing only by having been
+# copied, and sharing a fail-open: an `issue_severity` in neither table read as
+# "below MEDIUM", so it was neither blocking here nor liveness-confirming in the
+# release command. `is_blocking` / `finding_key` are now imported like the data
+# (release-security-orchestration, D4).
 
 #: Declared exclusions from the on-disk oracle below: repo-relative path ->
 #: MANDATORY rationale. **Empty today** -- disk, manifest-verbatim and
@@ -83,6 +92,20 @@ def _unscanned_disk_py(root: Path) -> list[str]:
 
 
 def _in_ci() -> bool:
+    """**Dormant provisioning.** Cairn has NO CI: no workflow file, no runner,
+    nothing that sets ``CI`` or ``GITHUB_ACTIONS`` for this suite. This branch
+    is provisioning for a CI that does not exist yet, kept so the posture is
+    already correct if one is ever added -- it is not a trigger today.
+
+    Today's fail-closed trigger for the Bandit gate is
+    ``python bootstrap/security_check.py`` (``run_bandit``), a Maintainer-run
+    release command: a missing Bandit is a non-zero exit there, unconditionally,
+    with no environment variable involved. The local skip below is deliberate
+    and stays -- a contributor without dev-deps is not blocked -- and it is the
+    release command, not this variable, that makes the gate unskippable when it
+    matters. In release mode (phase 3) the skip itself is refused by
+    ``bootstrap/tests/conftest.py``, so it cannot reach a release either way.
+    """
     return bool(os.getenv("CI") or os.getenv("GITHUB_ACTIONS"))
 
 
@@ -95,13 +118,6 @@ def _run_bandit() -> tuple[int, str, str]:
         cmd, capture_output=True, text=True, cwd=str(CAIRN_ROOT), check=False,
     )
     return proc.returncode, proc.stdout, proc.stderr
-
-
-def _rel(filename: str) -> str:
-    try:
-        return str(Path(filename).resolve().relative_to(CAIRN_ROOT))
-    except ValueError:
-        return filename
 
 
 def test_no_blocking_security_findings() -> None:
@@ -118,13 +134,15 @@ def test_no_blocking_security_findings() -> None:
     if bandit_absent:
         if _in_ci():
             pytest.fail(
-                "bandit is not installed but this is CI -- a skipped "
+                "bandit is not installed but a CI marker is set -- a skipped "
                 "security gate is a missing one. Install dev deps "
                 "(e.g. pip install bandit)."
             )
         pytest.skip(
             "bandit not installed locally; install it to run the security "
-            "gate (pip install bandit). Fails (not skips) in CI."
+            "gate (pip install bandit). The unskippable trigger is "
+            "`python bootstrap/security_check.py`, which fails closed on a "
+            "missing bandit and refuses this skip in release mode."
         )
 
     # Scanner-failure semantics: rc 0 (clean) / 1 (findings) are normal;
@@ -161,9 +179,9 @@ def test_no_blocking_security_findings() -> None:
 
     blocking: list[str] = []
     for f in report.get("results", []) or []:
-        if _SEVERITY_RANK.get(f.get("issue_severity", "LOW"), 0) < _BLOCKING_RANK:
+        if not _is_blocking(f):
             continue
-        key = (_rel(f["filename"]), str(f["test_id"]))
+        key = _finding_key(f)
         if key in _ALLOWLIST:
             continue
         blocking.append(
@@ -182,9 +200,68 @@ def test_no_blocking_security_findings() -> None:
 
 def test_allowlist_entries_have_rationale() -> None:
     """Every allowlist entry carries a non-empty rationale -- a
-    suppression without a reason is how the discipline rots."""
+    suppression without a reason is how the discipline rots.
+
+    Vacuous while ``ALLOWLIST`` is empty (it is, since D1's B310 retirement).
+    Kept because it costs nothing and fires the moment an entry returns; the
+    condition that is *not* vacuous today is liveness, in the release command.
+    """
     for key, rationale in _ALLOWLIST.items():
         assert rationale.strip(), f"empty rationale for {key}"
+
+
+def test_one_predicate_governs_both_allowlist_consumers() -> None:
+    """D4. This gate and the release command are the two consumers of one
+    ``ALLOWLIST``, and the release command's liveness rule is bound to *its*
+    spelling of "blocking". A second spelling here could agree with the filter
+    and disagree with liveness -- calling an entry live while suppressing
+    nothing, or the reverse.
+
+    So the object identity is the assertion: this module must be *calling the
+    release command's functions*, not holding an equivalent copy. Behavioural
+    equality would pass for a copy that later drifts, which is exactly the
+    failure mode.
+
+    **Identity of the imports is not enough**, and this was measured rather
+    than reasoned: re-spelling the severity test *inline at the call site*
+    (``f.get("issue_severity") in {"MEDIUM", "HIGH"}``) leaves the imports
+    untouched and the namespace clean, and an identity-only version of this
+    test stayed green against that mutation. So the gate's own AST is checked
+    too."""
+    import ast
+
+    from bootstrap import security_check as sc
+
+    assert _is_blocking is sc.is_blocking
+    assert _finding_key is sc.finding_key
+    assert _rel is sc._rel
+    # And no second severity table survives in this module's namespace.
+    module = sys.modules[__name__]
+    leftovers = [n for n in vars(module)
+                 if "SEVERITY" in n.upper() or "BLOCKING_RANK" in n.upper()]
+    assert leftovers == [], (
+        f"a second severity spelling reappeared in the dev gate: {leftovers}")
+
+    # The call site itself: the gate must DECIDE by calling the imported
+    # functions, with no inline re-spelling of severity beside them.
+    gate = next(
+        node for node in ast.parse(
+            Path(__file__).read_text(encoding="utf-8")).body
+        if isinstance(node, ast.FunctionDef)
+        and node.name == "test_no_blocking_security_findings")
+    called = {n.func.id for n in ast.walk(gate)
+              if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
+    assert {"_is_blocking", "_finding_key"} <= called, (
+        f"the gate must decide via the imported predicate and key rule; the "
+        f"names it calls are {sorted(called)}")
+    inline = [ast.unparse(n) for n in ast.walk(gate)
+              if isinstance(n, (ast.Set, ast.List, ast.Tuple, ast.Dict))
+              and any(isinstance(c, ast.Constant)
+                      and c.value in ("MEDIUM", "HIGH", "LOW")
+                      for c in ast.walk(n))]
+    assert inline == [], (
+        f"an inline severity spelling reappeared at the gate's call site -- "
+        f"the imports are single-sourced but the decision is not: {inline}")
 
 
 def test_every_manifest_verbatim_py_is_scanned_by_some_path() -> None:
