@@ -422,3 +422,34 @@ plan-open, both review rounds, and first implementation remain separate commits.
 `clearsToImplement = YES`. Chunks A and C may proceed. Chunk B remains gated on
 `release-security-orchestration` Chunk E1 landing first, exactly as the plan
 already requires.
+
+## Chunk D attempted -- Codex -- 2026-08-05
+
+Chunk D did not produce an Implementation verification record. A detached,
+clean worktree at tested commit
+`3a155c1948dc0c963fc61293d7f8f9c7b1dc3502` exposed two independent blockers;
+the failed attempt is recorded rather than normalized into green evidence.
+
+The shuffled suite completed in 350.59 seconds with **2509 passed and one
+explained environment skip**. The skipped node is the optional live-ledger
+dogfood smoke test: it searches for an LHM sibling relative to the Cairn
+checkout, which a `/private/tmp` detached worktree does not have. The ordinary
+checkout's same-commit full run passed all 2510 nodes. This skip is explicit and
+does not block by itself under Chunk D's "no unexplained skip" rule.
+
+The prescribed static command is not green and was not green before this plan:
+neutrality returned **96 failures and 21 informational findings**; redundancy
+returned **0 failures and 2 informational findings**. The same result reproduces
+in the configured primary checkout, so it is not caused by detachment. Chunk
+D's rule says any non-clean gate invalidates the run; that rule therefore cannot
+be satisfied until the pre-existing neutrality baseline is either cleared or
+the accepted contract is explicitly revised. This implementation does neither
+silently.
+
+The clean worktree also exposed a concrete portability defect in `claim_check`:
+citations to gitignored `dev/.cairn/local-env.json` hard-failed when that runtime
+binding was absent. The exact path now joins the shipped default-exempt runtime
+set in both twins, with a suffix regression proving that
+`local-env.json.bak` remains a hard failure. This is an implementation
+correction required for the prescribed clean-clone evidence commands; it does
+not dispose the neutrality blocker.

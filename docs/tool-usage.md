@@ -73,7 +73,7 @@ status), never a silent pass; an **unregistered** key is **refused**.
 
 Worked example (the number and its annotation share one physical line, per RR1):
 
-> Cairn's `claim_check` watch file is currently 877 lines `<!-- verify: claim_check_watch_file_lines -->`.
+> Cairn's `claim_check` watch file is currently 878 lines `<!-- verify: claim_check_watch_file_lines -->`.
 
 The count-soft-flag retirement shrank it from ~876; `verify_counts` re-measures it
 and flags that line if the two ever diverge.

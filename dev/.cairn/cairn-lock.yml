@@ -368,9 +368,9 @@
       "verbatim": true
     },
     {
-      "base_hash": "sha256:6fcef29017b3ad71b3984f24fbc179c00b84d4742218e6e01cab2a854f71304c",
+      "base_hash": "sha256:87fe356efedd96cbe0335ac76bdcb65686d469aae018b23593fcc61fb07e2549",
       "dst": "scripts/claim_check.py",
-      "hash": "sha256:86674ec440083a308ce202ccaf0bb8b54de3e68dac36c5d9e2d57dc212f9bec9",
+      "hash": "sha256:87fe356efedd96cbe0335ac76bdcb65686d469aae018b23593fcc61fb07e2549",
       "src": "modules/default-on/claim_check.py",
       "verbatim": true
     },

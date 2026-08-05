@@ -428,6 +428,7 @@ def _is_marker_block_continuation(text: str) -> bool:
 _DEFAULT_EXEMPT_PATHS: frozenset[str] = frozenset({
     "dev/intents.jsonl",                        # work-intent log (gitignored)
     "dev/intent-config.json",                   # work-intent config (legacy path)
+    "dev/.cairn/local-env.json",                # interpreter binding (gitignored)
     "dev/.cairn/intent-config.json",            # work-intent config (canonical)
     "dev/.cairn/metrics-config.json",           # lifecycle-metrics config (optional)
     "dev/.cairn/foldback_export_denylist.txt",  # foldback export-scan denylist (optional)

@@ -300,9 +300,17 @@ class TestDefaultExemptFrameworkPaths:
     def test_exact_machine_state_path_exempt(self, cc, tmp_path):
         _make_repo(tmp_path)
         text = ("config `dev/.cairn/metrics-config.json`, "
+                "binding `dev/.cairn/local-env.json`, "
                 "log `dev/measurement/collision_log.md`")
         hard, _soft = cc.check_text(text, tmp_path)
         assert hard == []
+
+    def test_local_env_exemption_does_not_cover_a_suffix(self, cc, tmp_path):
+        _make_repo(tmp_path)
+        hard, _soft = cc.check_text(
+            "stale backup `dev/.cairn/local-env.json.bak`", tmp_path
+        )
+        assert [f.token for f in hard] == ["dev/.cairn/local-env.json.bak"]
 
     def test_generated_subtree_prefix_exempt(self, cc, tmp_path):
         _make_repo(tmp_path)
