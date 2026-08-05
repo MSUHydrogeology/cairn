@@ -117,7 +117,7 @@ The new module is genuinely non-vacuous.
   `gate-claims-vs-enforcement`, which owns the file. One reviewer already
   worked around it deliberately by filing under `##`.
 * **Update the sequencing note.**
-  `dev/strategy/2026-08-03-claude-security-wave-sequencing.md` was written when
+  `dev/strategy/archive/2026-08-03-claude-security-wave-sequencing.md` was written when
   the `bootstrap/_scaffold/config.py` cluster looked like two scopes. It is
   **five**: `profile-parse-fail-open`, `default-security-stance`, and the three
   Codex module-registration scopes.

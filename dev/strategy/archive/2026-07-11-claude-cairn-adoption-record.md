@@ -4,7 +4,10 @@
 
 **Author**: Claude (Implementation)
 **Date**: 2026-07-11
-**Status**: reconstruction, not a contemporaneous record
+**Status**: reconstruction, not a contemporaneous record — **archived 2026-08-05**
+on Maintainer instruction. Its direction was adopted: the reconstruction it
+carries is cited from `dev/.cairn/profile.yml` and `dev/PLANNING.md`, so it is a
+living reference read for historical context, not current direction.
 
 ## What this document is
 

@@ -8,7 +8,11 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5.
 **Date**: 2026-08-03
-**Status**: working note — supersede or delete once the last wave lands.
+**Status**: **archived 2026-08-05** — retired on Maintainer instruction. Its
+sequencing was superseded by `2026-08-05-codex-security-strategy.md`, which
+consolidated the security cluster; the collision constraints it computed were
+consumed by the waves that have since landed. Historical context only — not
+current direction (see `../README.md` > "Archive trigger").
 
 A scheduling note, not a decision. It answers one question: **given what each
 accepted proposal touches, what can run at the same time without two agents
