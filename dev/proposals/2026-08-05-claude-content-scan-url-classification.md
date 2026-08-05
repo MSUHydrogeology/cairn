@@ -1,7 +1,7 @@
 # Proposal: classify by file class in the adopter-facing content-scan runner
 
 **Author**: Claude (Implementation)
-**Status**: proposed
+**Status**: accepted
 **Opened**: 2026-08-05
 **Review**: required(External Security Review) — this changes a detector's reach
 on a security surface adopters install
@@ -423,3 +423,72 @@ determine whether the file set being classified is the right one at all, and
 routing them would leave the classification resting on a redirectable set. The
 scope fence above is amended accordingly — this proposal now covers the git
 launcher and the root grammar in addition to role classification.
+
+## Decision -- Maintainer -- 2026-08-05: ACCEPTED
+
+**Authorization, quoted verbatim and visually isolated:**
+
+> Please scribe my acceptance of the dev/proposals/2026-08-05-claude-content-scan-url-classification.md proposal
+
+Scribed by Claude on the Maintainer's explicit instruction. **This is a scribed
+Decision, not an authored one** -- the disposition is the Maintainer's; the
+scribing is mechanical.
+
+**On the referent.** The Maintainer first instructed *"Please scribe my acceptance
+of that proposal"* and then restated it naming this file explicitly; the quoted
+form above is the explicit one, so the record identifies its own subject without a
+future reader reconstructing it from a conversation they cannot see. The two
+agree: at the time of the first instruction this was the **only** artifact in
+`dev/proposals/` at status `proposed`, verified by reading the `**Status**:` line
+of every file in that directory.
+
+### What is accepted
+
+**The proposal as revised**, which is not the proposal as first written. Three
+layers, and the later ones govern:
+
+* **The opening sections** -- the defect: `content_scan_runner.py` applies the
+  `suspicious-url` detector to every file in the audited roots, outside the scope
+  the detector's own docstring declares ("use for executed templates; off for
+  discussion prose").
+* **Revision 1** -- which **withdrew the original mechanism** and **withdrew
+  point 1 entirely**. Reusing `check_cairn.py`'s `startswith('templates/')`
+  predicate would have set `scan_urls=False` in every adopter tree and silently
+  killed the detector everywhere it ships. Classification is by **file role in
+  the tree being scanned**, and the predicate is **not** single-sourced between
+  the two callers, because they scan two trees with two layouts.
+* **The Response to the External Security Review** -- which accepted all four
+  findings and **widened the scope**. Accepting this proposal accepts that wider
+  scope:
+  * **[S1]** the role classification is **fail-closed**: known discussion roots
+    (`dev/**`, `docs/**`) may disable URL scanning; **every other role, including
+    unknown and misspelled paths, keeps it enabled**;
+  * **[S2]** a runner-local git launcher that drops ambient `GIT_*`, because
+    `_git_tracked` currently inherits the process environment and `GIT_DIR`
+    overrides its own `-C`;
+  * **[S3]** reject leading-dash manifest roots and pass `--` before pathspecs;
+  * **[S4]** the prose blind spot stated as docstring contract.
+
+### What this Decision does NOT do
+
+Enumerated so nothing further is read into it:
+
+* **It flips no default selection.** `content-security` remains team-gated.
+  Whether it becomes default-on is `default-security-stance`'s question, fenced
+  by **Gate D-ON**, and **D-ON-2 remains undisposed**. This Decision is not that
+  disposition and must not be cited as it.
+* **It supplies no review tier.** The External Security Review returned REVISE;
+  this acceptance is the Maintainer's disposition of that REVISE, not a claim
+  that the finding was withdrawn or that a further round occurred.
+* **It authorizes no push, no credential, and no ceremony.**
+
+### Sequencing this Decision makes possible
+
+[S2] and [S3] are the load-bearing half. Until they land, the audited set can be
+redirected to a different repository **before** role classification runs, which
+would make any classification a statement about the wrong tree. They land first;
+the classification claim is only meaningful after them.
+
+**Next lifecycle step**, deliberately *not* taken in this commit (a scribed
+Decision carries the disposition and nothing else): triage for a plan, then the
+plan-open-and-archive commit.
