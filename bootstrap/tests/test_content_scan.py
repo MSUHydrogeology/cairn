@@ -40,6 +40,10 @@ Flag = _content_scan.Flag
 load_url_allowlist = _content_scan.load_url_allowlist
 scan_file = _content_scan.scan_file
 scan_text = _content_scan.scan_text
+#: Module-private, and deliberately reached: the yielded-pattern-id shape is
+#: an internal signature a sibling plan must rebase onto, so it is pinned by
+#: a test rather than by a sentence in a Decision.
+_scan_unicode = _content_scan._scan_unicode
 
 REDTEAM = Path(__file__).resolve().parent / "fixtures" / "redteam"
 
@@ -71,6 +75,26 @@ class TestSourceCarriesNoRawInvisibles:
         assert "unicode-bidi" in _ids(scan_text("legit\u202etext"))
         assert "unicode-zero-width" in _ids(scan_text("legit\u200bword"))
         assert "unicode-zero-width" in _ids(scan_text("a\u2060b"))  # word joiner
+
+
+class TestUnicodeDispatchContract:
+    """`_scan_unicode` names its own `pattern_id`; no caller derives one by
+    substring-matching the human-readable message.
+
+    The id set is an adopter-facing contract (it is what a `cairn-accept`
+    marker names), so a caller that re-derives the id from prose mislabels
+    every hit whose message the substring test does not anticipate.  Pinned
+    here because a sibling plan adds detectors to this same generator and
+    inherits a guard rather than a promise.
+    """
+
+    def test_scan_unicode_yields_its_own_pattern_id(self) -> None:
+        # Line 1: zero-width space.  Line 2: right-to-left override.
+        lines = ["a​b", "c‮d"]
+        items = list(_scan_unicode(lines, leading_bom=False))
+        # Unpacks as 3-tuples -- a 2-tuple yield fails here, on the shape.
+        got = [(lineno, pid) for lineno, pid, _msg in items]
+        assert got == [(1, "unicode-zero-width"), (2, "unicode-bidi")], got
 
 
 class TestHomoglyphExpandedScripts:

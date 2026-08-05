@@ -269,7 +269,8 @@ def _parse_suppressions(lines: list[str]) -> dict[str, set[int]]:
 
 
 # --------------------------------------------------------------------------
-# Detectors (each yields (lineno, message))
+# Detectors (each yields (lineno, message); _scan_unicode is the one
+# exception -- it yields (lineno, pattern_id, message), see its docstring)
 
 def _scan_imperative_override(lines: list[str]):
     for i, line in enumerate(lines, start=1):
@@ -293,6 +294,16 @@ def _scan_urls(lines: list[str], allowlist: set[str]):
 
 
 def _scan_unicode(lines: list[str], leading_bom: bool):
+    """Yield ``(lineno, pattern_id, message)`` -- **not** ``(lineno,
+    message)`` like the other detectors.
+
+    This generator covers more than one ``pattern_id``, so it names its own
+    id rather than leaving the caller to guess one from the message text.  A
+    message is prose and prose is not a dispatch key: a caller that derives
+    the id by substring-matching the message labels every hit with whichever
+    branch the substring happens to select, and an adopter's suppression
+    marker then names an id the scanner never emits.
+    """
     for i, line in enumerate(lines, start=1):
         for idx, ch in enumerate(line):
             if ch in _ZERO_WIDTH:
@@ -300,11 +311,12 @@ def _scan_unicode(lines: list[str], leading_bom: bool):
                 # col 0) is a benign BOM -- ignore it there only.
                 if ch == "\ufeff" and i == 1 and idx == 0 and leading_bom:
                     continue
-                yield i, f"zero-width character U+{ord(ch):04X}"
+                yield i, "unicode-zero-width", f"zero-width character U+{ord(ch):04X}"
                 break
         for ch in line:
             if ch in _BIDI:
-                yield i, f"bidirectional-control character U+{ord(ch):04X}"
+                yield (i, "unicode-bidi",
+                       f"bidirectional-control character U+{ord(ch):04X}")
                 break
 
 
@@ -398,8 +410,9 @@ def scan_text(
     if scan_urls:
         for lineno, msg in _scan_urls(lines, allowlist):
             raw.append(Flag("suspicious-url", lineno, msg))
-    for lineno, msg in _scan_unicode(lines, leading_bom):
-        pid = "unicode-bidi" if "bidirectional" in msg else "unicode-zero-width"
+    # This generator yields its own pattern id because a message is prose
+    # and prose is not a dispatch key.
+    for lineno, pid, msg in _scan_unicode(lines, leading_bom):
         raw.append(Flag(pid, lineno, msg))
     for lineno, msg in _scan_homoglyph(lines):
         raw.append(Flag("homoglyph", lineno, msg))
