@@ -253,10 +253,13 @@ archived proposal or plan is immutable and is never retro-fitted with it.
 ### Tests required
 
 <!-- cairn:slot tests-tier-home -->
-(Adopter-specific test-tier taxonomy — name the project's test
-directories and speed / environment markers so the author can route
-the required tests by tier and by name. Fill from the project's test
-plan, or replace with `N/A: no tiered test layout`.)
+(Adopter-specific test taxonomy — name the project's **test homes**, affected
+behavioral nodes, and **public paths** that must be exercised through their real
+entry points. Record speed / environment tiers where they exist, but **speed
+alone does not establish affected coverage**. The eventual plan owns a reviewed
+change-specific mapping, not a permanent fast set; **unknown or uncertain scope
+falls back to the full suite**. Fill from the project's test plan, or replace
+with `N/A: no test layout` plus the project's full-test fallback.)
 <!-- cairn:end tests-tier-home -->
 
 ### Examples / smoke checks

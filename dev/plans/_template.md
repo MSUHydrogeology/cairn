@@ -233,24 +233,38 @@ archived plan is never retro-fitted. See `doctrine/dual-review.md` >
 The concrete commands the implementation must pass.
 
 <!-- cairn:slot verification-commands -->
-The standing gates Cairn runs before a change lands:
+Before implementation, make Boundary A a **reviewed mapping**: for each changed
+invariant and public path, name the exact affected test node/file and every
+standing non-pytest gate for the touched surface. Run that scope while
+iterating. There is no permanent fast tier; if a substantive code surface has
+no reviewed mapping or cannot be bounded confidently, run the full suite.
 
-* **Engine suite** — `python -m pytest bootstrap/tests` (the whole
-  suite; scope to `bootstrap/tests/test_<surface>.py` while iterating,
-  but the full suite gates the cut).
-* **Prose integrity** — `python scripts/check_cairn.py` (internal link
-  / anchor resolution + claim-path check over the Markdown tree).
-* **Quality gate** — `python scripts/quality_gate.py` (order-
-  independence + vendor-neutrality + redundancy; `--sub neutrality`
-  alone for a doctrine / template wording change).
-* **Write-time claim check** — `python scripts/claim_check.py <file>` over
-  each proposal / plan / doc the change authored. **One file per
-  invocation** — the checker takes a single path and exits 2 (usage) on
-  more, so loop rather than passing a list.
+After the final implementation commit, Boundary B runs once against a clean,
+unchanged commit under the canonical interpreter:
 
-Plan-specific gates (a security-lint budget, a doc-drift gate, the
-model-selection mapping check `python scripts/check_model_selection.py`)
-are added per plan when the change touches that surface.
+* **Engine + seed-0 order coverage** — `python -m pytest bootstrap/tests
+  --quality-gate-shuffle-seed=0`.
+* **Static quality legs** — `python scripts/quality_gate.py --sub neutrality
+  --sub redundancy` (does not dispatch pytest again).
+* **Prose integrity** — `python scripts/check_cairn.py`.
+* **Write-time claim check** — `python scripts/claim_check.py <file>` once for
+  each authored proposal, plan, or doc.
+* **Plan-specific acceptance commands** — the mapped tests, security budgets,
+  doc-drift gates, public-path smokes, and other commands named above.
+
+Only after that stable run, append a dated section named
+`Implementation verification -- <agent> -- YYYY-MM-DD` at H2. Do not place an
+empty heading in a new plan. The record uses these exact fields:
+
+* **Tested commit** — full SHA.
+* **Reviewed range** — base and tested endpoint.
+* **Interpreter/runtime** — canonical path and version.
+* **Pre-run state** and **Post-run state** — clean tree and identical tested
+  `HEAD`.
+* A command table with **Command**, **Exit**, **Outcomes**, and **Elapsed**
+  columns, including pass/fail/skip/xfail/xpass counts where applicable.
+* **Non-pass disposition**, **Plan-specific acceptance commands**, and
+  **Known omissions**.
 <!-- cairn:end verification-commands -->
 
 **Note on doc gates**: drift gates (broken references, stale renders,
@@ -282,6 +296,20 @@ was actually updated; the gates don't enforce that.
 "Code review" for the full doctrine: falsification ledger, coverage
 line, reviewer identity (not the implementing agent), and the
 append-only rule.
+
+Before reusing Boundary B, verify its Tested commit, Reviewed range, path
+validity, pre/post clean state, command results, and non-pass disposition.
+Then run an independent targeted falsification ledger; copying Boundary B's
+broad command is not independent review. Require a fresh full-suite run when:
+
+1. no valid Boundary B record exists;
+2. review discovers an unrecorded cross-surface dependency;
+3. a skip, xfail, or xpass lacks an adequate disposition;
+4. review sharpening changes implementation, tests, executable templates, or
+   fixtures in the reviewed range;
+5. the accepted plan governs a trust ceremony that explicitly requires
+   independent full execution; or
+6. the reviewer has a concrete reason to distrust or falsify the broad result.
 
 Begin with `**Model**: <model or tier when known; "unknown" if not. Do not
 copy-paste old model labels from past templates or archives; query and

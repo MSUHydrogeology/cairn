@@ -270,7 +270,7 @@ archived proposal or plan is immutable and is never retro-fitted with it.
 ### Tests required
 
 <!-- cairn:slot tests-tier-home -->
-Cairn's tests are behavioral and live in two homes:
+Cairn's behavioral **test homes** are:
 
 * **`bootstrap/tests/`** — the engine suite (the scaffold, the module
   merge, the upgrade path, the security stack, the gates). Fast,
@@ -282,11 +282,13 @@ Cairn's tests are behavioral and live in two homes:
   `examples/scientific-minimal/test_water_budget.py`, which prove the
   shipped runnable examples still run.
 
-There is no separate slow / networked tier — Cairn is methodology, not
-a numerical library, so behavioral tests stay scoped to the engine and
-the examples. Prose-integrity and quality gates (below) are not pytest
-tests; name them under *Examples / smoke checks* and the plan's
-verification commands.
+For the proposed change, name the affected test homes, exact behavioral nodes,
+and public paths that must be exercised through their real entry points. Record
+any speed or environment tiers that exist, but **speed alone does not establish
+affected coverage**. The eventual plan owns a reviewed change-specific mapping,
+not a permanent fast set; **unknown or uncertain scope falls back to the full
+suite**. Prose-integrity and quality gates (below) are not pytest tests; name
+them under *Examples / smoke checks* and the plan's verification commands.
 <!-- cairn:end tests-tier-home -->
 
 ### Examples / smoke checks

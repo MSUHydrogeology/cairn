@@ -225,10 +225,34 @@ archived plan is never retro-fitted. See `doctrine/dual-review.md` >
 The concrete commands the implementation must pass.
 
 <!-- cairn:slot verification-commands -->
-(Adopter-specific verification commands — the test-runner invocation +
-expected scope, the doc-link / schema-render / snippet-drift gates, the
-security-lint budget, and any plan-specific gate. Fill with the
-project's commands, or replace with `N/A`.)
+Before implementation, make Boundary A a **reviewed mapping**: for each changed
+invariant and public path, name the exact affected test node/file and every
+standing non-test gate for the touched surface. Run that scope while iterating.
+There is no permanent fast tier; if a substantive code surface has no reviewed
+mapping or cannot be bounded confidently, run the configured full suite.
+
+After the final implementation commit, Boundary B runs the configured full
+suite and standing integration gates once against a clean, unchanged commit
+under the project's canonical interpreter/runtime. List those concrete commands
+here, including test outcomes and every plan-specific acceptance command.
+
+Only after that stable run, append a dated section named
+`Implementation verification -- <agent> -- YYYY-MM-DD` at H2. Do not place an
+empty heading in a new plan. The record uses these exact fields:
+
+* **Tested commit** — full revision ID.
+* **Reviewed range** — base and tested endpoint.
+* **Interpreter/runtime** — canonical path and version.
+* **Pre-run state** and **Post-run state** — clean tree and identical tested
+  revision.
+* A command table with **Command**, **Exit**, **Outcomes**, and **Elapsed**
+  columns, including pass/fail/skip/xfail/xpass counts where applicable.
+* **Non-pass disposition**, **Plan-specific acceptance commands**, and
+  **Known omissions**.
+
+Also name the project's documentation, schema, snippet, security, and smoke
+gates here. If none applies, record `N/A` with a reason rather than omitting the
+surface silently.
 <!-- cairn:end verification-commands -->
 
 **Note on doc gates**: drift gates (broken references, stale renders,
@@ -260,6 +284,20 @@ was actually updated; the gates don't enforce that.
 "Code review" for the full doctrine: falsification ledger, coverage
 line, reviewer identity (not the implementing agent), and the
 append-only rule.
+
+Before reusing Boundary B, verify its Tested commit, Reviewed range, path
+validity, pre/post clean state, command results, and non-pass disposition.
+Then run an independent targeted falsification ledger; copying Boundary B's
+broad command is not independent review. Require a fresh full-suite run when:
+
+1. no valid Boundary B record exists;
+2. review discovers an unrecorded cross-surface dependency;
+3. a skip, xfail, or xpass lacks an adequate disposition;
+4. review sharpening changes implementation, tests, executable templates, or
+   fixtures in the reviewed range;
+5. the accepted plan governs a trust ceremony that explicitly requires
+   independent full execution; or
+6. the reviewer has a concrete reason to distrust or falsify the broad result.
 
 Begin with `**Model**: <model or tier when known; "unknown" if not. Do not
 copy-paste old model labels from past templates or archives; query and

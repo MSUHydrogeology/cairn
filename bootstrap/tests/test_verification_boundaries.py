@@ -20,6 +20,12 @@ ADOPTER_AGENTS = ROOT / "templates" / "core" / "AGENTS.md"
 PLANS_DOCTRINE = ROOT / "doctrine" / "plans.md"
 REVIEW_DOCTRINE = ROOT / "doctrine" / "dual-review.md"
 QUALITY_GATE = ROOT / "scripts" / "quality_gate.py"
+SELF_PLAN_TEMPLATE = ROOT / "dev" / "plans" / "_template.md"
+ADOPTER_PLAN_TEMPLATE = ROOT / "templates" / "core" / "dev" / "plans" / "_template.md"
+SELF_PROPOSAL_TEMPLATE = ROOT / "dev" / "proposals" / "_template.md"
+ADOPTER_PROPOSAL_TEMPLATE = (
+    ROOT / "templates" / "core" / "dev" / "proposals" / "_template.md"
+)
 
 FRESH_RUN_TRIGGERS = (
     "no valid Boundary B record exists",
@@ -178,3 +184,72 @@ def test_review_reuse_guard_detects_unconditional_reuse() -> None:
     text = _read(REVIEW_DOCTRINE)
     mutated = text.replace("no valid Boundary B record exists", "a record exists", 1)
     assert "no valid Boundary B record exists" in _review_violations(mutated)
+
+
+RECORD_FIELDS = (
+    "Tested commit",
+    "Reviewed range",
+    "Interpreter/runtime",
+    "Pre-run state",
+    "Post-run state",
+    "Command",
+    "Exit",
+    "Outcomes",
+    "Elapsed",
+    "Non-pass disposition",
+    "Plan-specific acceptance commands",
+    "Known omissions",
+)
+
+
+def _plan_template_violations(text: str) -> list[str]:
+    verification = text.split("<!-- cairn:slot verification-commands -->", 1)[1]
+    verification = verification.split("<!-- cairn:end verification-commands -->", 1)[0]
+    normalized_verification = " ".join(verification.split())
+    normalized_all = " ".join(text.split())
+    verification_required = (
+        "Implementation verification -- <agent> -- YYYY-MM-DD",
+        "reviewed mapping",
+        "full suite",
+        *RECORD_FIELDS,
+    )
+    review_required = (
+        "targeted falsification",
+        *FRESH_RUN_TRIGGERS,
+    )
+    return [
+        *[token for token in verification_required if token not in normalized_verification],
+        *[token for token in review_required if token not in normalized_all],
+    ]
+
+
+def test_both_plan_templates_carry_record_and_review_contract() -> None:
+    for path in (SELF_PLAN_TEMPLATE, ADOPTER_PLAN_TEMPLATE):
+        text = _read(path)
+        assert _plan_template_violations(text) == [], path
+        assert not any(
+            line.startswith("## Implementation verification")
+            for line in text.splitlines()
+        ), path
+
+
+def test_plan_template_guard_detects_removed_reviewed_range() -> None:
+    text = _read(SELF_PLAN_TEMPLATE)
+    mutated = text.replace("Reviewed range", "Change description", 1)
+    assert "Reviewed range" in _plan_template_violations(mutated)
+
+
+def test_both_proposal_templates_reject_speed_as_coverage() -> None:
+    for path in (SELF_PROPOSAL_TEMPLATE, ADOPTER_PROPOSAL_TEMPLATE):
+        normalized = " ".join(_read(path).split())
+        required = (
+            "speed alone does not establish affected coverage",
+            "unknown or uncertain scope falls back to the full suite",
+            "test homes",
+            "public paths",
+        )
+        assert not [token for token in required if token not in normalized], path
+
+    assert "There is no separate slow / networked tier" not in _read(
+        SELF_PROPOSAL_TEMPLATE
+    )
