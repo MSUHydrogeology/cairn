@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5
 **Date opened**: 2026-08-04
-**Status**: revised
+**Status**: accepted
 **Touches**: `bootstrap/tests/test_security_lint.py`, `bootstrap/tests/conftest.py`, `dev/PLANNING.md` > "Deferred follow-ups"
 **Related**: corrects the scope error in `2026-08-04-claude-board-retro-disposition` (archived); executes the `guard` token introduced by `2026-08-04-claude-deferral-discipline` (archived)
 **Plan review**: required(Internal) — writes assertions into an already-`FROZEN-MODIFIED` gate file
@@ -975,3 +975,49 @@ not the rule, so the rule does not move.
   node that does not exist and nothing notices. That is the honest limit of a
   static checker, and it means `guard`'s enforcement is weaker than the parent
   proposal implied.
+
+---
+
+## Decision -- Human Maintainer -- 2026-08-04
+
+**ACCEPT as revised** — R1 (the `claim_check` `path::node` fix + its twin), R2
+(three mutation-proven assertions), R3 (the three board-row corrections). Plan
+review tier ratified **as declared: required(Internal)**.
+
+Scribed by Claude (Strategy) at the Maintainer's explicit instruction. The
+authorizing words, verbatim:
+
+> I accept as is, please scribe my acceptance. Then proceed to implementation
+
+and, on the scope this ratifies, chosen from three options earlier in the same
+session:
+
+> Checker fix + board corrections
+
+**What this Decision carries.** The `## Revised proposal` section as it stands at
+`b8ab678`. The Internal review's **SPLIT** verdict is honoured in full: all three
+Class A guards and the whole of Class B are **out of scope and not parked**.
+Nothing is deferred, no successor artifact is owed, and no board row is added.
+
+**What it does not carry.**
+* **Writing any `guard`.** SC3's assertion is vacuous as the row words it, SC5's
+  is red before it is written, and G6 is a policy question — all three
+  established by execution in the Internal review.
+* **Removing the stale `ALLOWLIST` entry.** Real, and it edits
+  `bootstrap/security_check.py` — the release-gate single source. It belongs to
+  whoever owns that surface, and its absence from this proposal's `Touches` is
+  precisely why it is excluded rather than smuggled in.
+* **Any doctrine change.** `doctrine/lifecycle.md`'s `path::node` requirement is
+  correct; the checker is what is wrong.
+
+**Plan review stands at Internal, not waived.** *"Proceed to implementation"* is
+read as authorizing the work, **not** as skipping the gate the proposal declared.
+Under the triage rule this change is not a trivial accept — it touches a shipped
+adopter-facing checker, its byte-identical twin, a test module and the roadmap
+board, across more than one commit. Recorded explicitly because the temptation to
+read a "proceed" as a waiver is exactly how a declared tier gets silently
+downgraded, which `doctrine/dual-review.md` names as its own failure mode.
+
+**R1's acceptance check is stated in the artifact itself:** removing the
+`claim-check-allow` directive this proposal needed in order to cite the defective
+token must leave the file clean.
