@@ -313,6 +313,26 @@ authorized identities," and how did the operator establish trust in it?
   cross-channel fingerprint mismatch, transparency/keyless availability, and
   candidate git-config influence on future verification surfaces remain
   trigger-driven rather than standing implementation work.
+* [TRU-7] **The gate anchor is unpublished, and no document says to publish it.**
+  Added 2026-08-05; mirrors the `dev/PLANNING.md` deferral row of the same date.
+  Measured: `refs/cairn/gate-anchor` exists locally at `e45e1fc`, and
+  `git ls-remote origin 'refs/cairn/*'` returns **nothing**. No ordinary push can
+  change that — git's default refspec is `refs/heads/*`, so `refs/cairn/*` is
+  skipped by `git push`, by `git push origin master`, by `--all` (heads only) and
+  by `--tags`; there is no configured `remote.origin.push` or `push.default`.
+  Publishing takes an explicit `git push origin
+  refs/cairn/gate-anchor:refs/cairn/gate-anchor`, and a collaborator needs a
+  matching fetch refspec. **`bootstrap/REANCHOR_RUNBOOK.md` contains zero
+  occurrences of `git push`** — it documents advancing the anchor locally via
+  `git update-ref` and requires "local write access to `refs/cairn/gate-anchor`
+  itself", but never publication. `refs/cairn/gate-authorization`, which the
+  runbook resolves `A` from, has the same problem and is not present locally
+  between ceremonies. So the differential-oracle trust root is **single-machine
+  by construction**: a fresh clone has no anchor, and re-establishing a lost one
+  is a Maintainer ceremony under a runbook silent on how it travels. This belongs
+  to [TRU-5]'s surface but is a *distribution* gap rather than a trust-acquisition
+  one, which is why it is its own row. It is a runbook gap, not a defect in the
+  gate.
 
 **Next consolidation:** one **trusted-source boundary** proposal may join
 [TRU-1], [TRU-2], and [TRU-3] if it uses one operator-established verified

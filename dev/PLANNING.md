@@ -124,6 +124,23 @@ anticipated but not yet in flight. When a queued item grows into
 multi-step work, open a plan under `plans/` and replace the entry
 with the plan's filename stem.
 
+* **[TRU-7] the gate anchor is unpublished, and no document says to publish it**
+  *(deferred 2026-08-05 from `release-security-orchestration`, which recorded the
+  measurement out of its declared scope; mirrored in
+  `2026-08-05-codex-security-strategy` > [TRU] as [TRU-7])* — `refs/cairn/gate-anchor`
+  exists locally at `e45e1fc`; `git ls-remote origin 'refs/cairn/*'` returns nothing.
+  **No ordinary push can publish it**: git's default refspec is `refs/heads/*`, so
+  `refs/cairn/*` is skipped by `git push`, `git push origin master`, `--all` and
+  `--tags`, and no `remote.origin.push` is configured. It takes an explicit
+  `git push origin refs/cairn/gate-anchor:refs/cairn/gate-anchor`, plus a matching
+  fetch refspec on the other side. **`bootstrap/REANCHOR_RUNBOOK.md` contains zero
+  occurrences of `git push`** — it covers advancing the anchor locally and requires
+  local write access to the ref, but never publication.
+  `refs/cairn/gate-authorization` has the same gap. Consequence: the
+  differential-oracle trust root is single-machine by construction, a fresh clone
+  has no anchor, and recovering a lost one is a Maintainer ceremony under a runbook
+  silent on how the anchor travels. A runbook gap, not a defect in the gate.
+
 * **[REL-6] `SECURITY.md` disclosure channel** *(split out of `contributor-entry` by
   Maintainer direction, 2026-08-03)* — `SECURITY.md` tells a reporter to report
   "privately to the maintainer" and **names no mechanism**. Verified 2026-08-03:
