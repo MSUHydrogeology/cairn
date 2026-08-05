@@ -1019,6 +1019,32 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         InstallSpec("team-gated/run_security_audit.py",
                     "scripts/run_security_audit.py", verbatim=True),
     ],
+    # Portable offline security sweeps (portable-security-sweeps, 2026-08-05):
+    # a team-gated, opt-in cross-language secret-exposure tripwire.  The module
+    # **installs no scanner**: it ships a stdlib orchestrator + a strict JSON
+    # policy and drives one host adapter (Gitleaks, offline, no network flag)
+    # over two scan questions.  The scaffold executes no scanner during
+    # installation -- that would move an executable trust root into the
+    # installer.
+    #
+    # The three specs are **registered as one group and pinned as one group by
+    # bootstrap/tests/test_portable_security_sweeps.py**.  The engine performs
+    # no group-completeness refusal for _MODULE_MAPPINGS (its only
+    # completeness enforcement is scoped to the always-on onboarding group), so
+    # the pin is test-side and the comment must not imply otherwise.
+    #
+    # The module declares **no required token** -- unlike the "python-security"
+    # key one entry above, whose gate needs {{python_package}}.  Its doctrine
+    # is substituted; the runner and the policy are verbatim assets (the policy
+    # is the first .json Cairn ships under templates/).
+    "portable-security-sweeps": [
+        InstallSpec("team-gated/portable-security-sweeps.md",
+                    "dev/modules/portable-security-sweeps.md"),
+        InstallSpec("team-gated/run_portable_security_sweeps.py",
+                    "scripts/run_portable_security_sweeps.py", verbatim=True),
+        InstallSpec("team-gated/portable_security_policy.json",
+                    "scripts/portable_security_policy.json", verbatim=True),
+    ],
     # Architecture-review (modflow_tools doctrine-parity fold, 2026-06-01):
     # a triggered remediation / on-ramp module for an adopter whose
     # architecture accreted rather than was deliberately designed.  Ships
