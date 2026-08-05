@@ -7,19 +7,50 @@
 **Plan review**: required(**External**) — carried from the proposal header and
 re-affirmed in the Decision: *"the replacement mechanism … was authored after the
 External round and has not been read by a different agent type. The plan is
-where it gets that read."*
-**Last update**: 2026-08-04
+where it gets that read."* **Discharged**: see *Review disposition* below.
+**Last update**: 2026-08-05
 **Opened**: 2026-08-04
+
+## How to read this plan — precedence
+
+**The operative contract is the plain plan text: *Scope*, *Review disposition*,
+*The settled record schema*, *Sequence*, *Acceptance criteria*, *Verification*.
+An implementer who reads only those sections executes the current spec.** The
+review-driven decisions of both External rounds are **folded into those
+sections in place**, which `doctrine/plans.md:202-207` permits while a plan's
+status is `open` with no commits in flight against the chunks being edited —
+both true of this plan (status `open`; `git log` shows no implementation commit
+against Chunks A–D).
+
+**This supersedes the 2026-08-05 Response's precedence clause** (*"where a row
+and the text it supersedes disagree, the row governs"*). That clause existed
+because the Response believed append-only forbade editing chunk cells; it does
+not. The *Amendments in force* table is now a **folded ledger** — a record of
+how the operative text was reached, with each row marked with the cell that
+carries it. Where a row and the operative text disagree, **the operative text
+governs**; a row marked `SUPERSEDED` was changed again by the 2026-08-05 S11
+round and its "In force" column is history, not instruction.
+
+The `## Plan review`, `## Code review`, `## Lasting-truth migration` and every
+landed review / Response section are **append-only and untouched**.
 
 ## Source proposal
 
-The gate at `tools/lifecycle_planner.py:787` clears on the *presence* of a
-section named "Plan review", not on the review its own doctrine describes. Four
+The gate in `tools/lifecycle_planner.py` clears on the *presence* of a section
+named "Plan review", not on the review its own doctrine describes. Four
 documented promises — the declared tier, the `##` heading level, the date, and a
 `### Sharpening` subsection when findings were raised — are unenforced. Accepted
 as revised on 2026-08-04 with one condition, quoted in *Scope* below. The
 External review reduced the fix from "enforce the four rules" to "make the
 record able to carry them, then enforce what it carries".
+
+**Cite by symbol, not by line** (folds Amendment row 12). The proposal's
+`:787` was correct at `8dfb664` and is stale: the defect lives in `_has_kind`
+and in its two callers `_conformance_violations` and `_gating_preconditions`.
+Re-measured `as_of 2026-08-05` at `ec57bf0`: `_has_kind` at `:697`, the two
+gating `_has_kind(art, "Plan review")` calls at `:791` and `:865`. Those line
+numbers are a convenience and **will move again** — S12 names the symbols, and
+the symbols are what an implementer greps for.
 
 ## Scope
 
@@ -38,6 +69,13 @@ record able to carry them, then enforce what it carries".
 * `tools/lifecycle_planner.py` and its byte-identical twin
   `templates/skills/_lib/lifecycle_planner.py`.
 * `bootstrap/tests/test_lifecycle_contract.py` — the new nodes.
+* `scripts/gen_legacy_passes.py` — **new file**, the legacy-manifest generator
+  required by S9(c). Does not exist yet; it is a Chunk C deliverable.
+  <!-- claim-check-allow: scripts/gen_legacy_passes.py -->
+* `bootstrap/UPGRADE.md` — the adopter-facing disclosure home (D.1). Exists
+  today (18,170 bytes `as_of 2026-08-05` at `ec57bf0`), with a
+  `## Migrating a tree installed before upgrade support` section at `:170` as
+  precedent.
 
 ### Out of scope, fenced
 
@@ -52,6 +90,311 @@ record able to carry them, then enforce what it carries".
   (Decision context). This plan ships the migration *note*; running it is the
   Maintainer's.
 
+## Review disposition — the External round is closed
+
+**This section is the operative implementation gate.** It folds Amendment row 3,
+which superseded the `## Plan review` container's sentence *"Implementation does
+not start until a review has landed under this heading."* That sentence is
+withdrawn as the gate: **"under this heading" describes a nesting the
+append-only lifecycle cannot produce** — an appended `###` pass nests under the
+file's *last* H2, never under an earlier container — and it is the wording that
+let this plan's presence gate clear on two REVISE verdicts. The container is a
+landed section and is **not edited**; it is simply no longer the gate. The three
+conditions below are.
+
+**D1 — a conforming External pass has landed.**
+`## Plan review -- Codex (External) -- 2026-08-05`, introduced by `e1b2e30` — the
+**second** occurrence in this file of heading digest `01bf85bb1d9a5d18`, cited by
+digest and occurrence rather than by line because folding moves lines and does
+not move digests — is the S11 different-agent-type read of S1–S13 and
+the Amendments table. It is the **first pass in this file that carries the S2
+attestation lines** (`**Tier**: External`, `**Findings**: raised`) with a
+`### Sharpening` inside its own body — so it conforms to the schema it reviewed.
+*Determined by reading the pass, not by running the tool.* The tool cannot
+supply this: measured at `ec57bf0`, `_conformance_violations` returns `[]` for
+this file and would clear it on presence alone, which is the defect under
+repair. **The artifact under verification must not supply the material used to
+verify it**, and here the tool is that artifact.
+
+Confirmed mechanically against S1/S2/S7 *as written above* — an independent
+walk of this file's H2 sections, not the gate — `as_of 2026-08-05`: of the three
+S1 passes, **exactly one** carries `**Tier**` and `**Findings**` with a
+`### Sharpening` in its own body, and it is this one. The other two are legacy by
+S10's manifest rows. So this plan's own bootstrap is not an argument; it is a
+measured property of the file.
+
+**D2 — the reviewer's own stated condition for discharge is met.** The S11 round
+closed its prior `[E5]` objection (*"its precedence clause makes the settled
+schema part of the operative contract"*) and raised two findings. Its Sharpening
+states the discharge condition:
+
+> Once the legacy set and date semantics are made non-gameable in the binding
+> schema, S11 can be considered discharged by this round without seeking another
+> broad redesign.
+
+Both named changes are in force in *The settled record schema* below:
+**S9 (replacement)** removes the date from admission entirely — the legacy
+population becomes a closed, generated enumeration keyed by plan stem, with
+occurrence counts — and **S1 (amended)** requires the captured date to parse
+under `datetime.date.fromisoformat`. The condition is met **as the reviewer
+worded it**; this is not an author assertion that the findings were minor. They
+were the sharpest findings in the round: a plan that repairs the review gate had
+a forgeable review-record schema.
+
+**D3 — the Maintainer has disposed of the REVISE round.** This plan's fences
+read *"the External reviewer, **or the Maintainer**, disposes of the REVISE."*
+The Maintainer's authorizing instruction, verbatim and visually isolated:
+
+> Go ahead with implementation once you've revised these. I don't want another review round
+
+That instruction **is** that disposition, cited as such and not as a bypass: the
+findings are folded into the operative text *before* any implementation commit,
+which is the "once you've revised these" clause. It is bounded — it disposes of
+**the review round only**. It does **not** supply a Maintainer credential, a
+signing ref, an AST re-anchor ceremony, or approval to push. Anything in Chunks
+A–D that needs one of those still waits on the Maintainer.
+
+**What is consequently in force.**
+
+* **S11 is discharged.** No further External round is sought for this plan.
+* **The "before Chunk A's first commit" precondition stated in S11 — and relied
+  on by S10 — is MET**, by `e1b2e30` together with D2 and D3. Chunk A may take
+  its first commit.
+* The two REVISE verdicts (2026-08-04; 2026-08-05 first round) stand as
+  **history**. No implementation commit cites a REVISE, the presence gate, or an
+  author Response as its authority; it cites this section.
+
+## The settled record schema — operative plan text
+
+**This section is the schema.** It carries S1–S13 with the S11 round's two
+findings folded in. Identically-numbered clauses inside the 2026-08-05 Response
+are the append-only record of how the schema was *authored*; **this section
+governs**, and where the two differ (S1, S9, S10) the difference is the fix and
+is called out below.
+
+**S1 — the pass heading.** A *plan-review pass* is a heading matching exactly
+
+```
+^## Plan review -- (?P<reviewer>[^\n]+?) -- (?P<date>\d{4}-\d{2}-\d{2})(?: \(round (?P<n>\d+)\))?$
+```
+
+H2, because H2 is the only level an appended record can produce under a template
+whose last H2 is `## Lasting-truth migration`. The `(<role>)` parenthetical that
+`_HEADER_RE` already accepts inside `<reviewer>` stays **permitted and
+informational** — see S4.
+
+**S1 is amended by the S11 round: the date must be a real date.** The regex
+gives the *shape* only. The captured value must then parse under
+`datetime.date.fromisoformat` (stdlib, strict). A shape match whose value does
+not parse is a violation, **`malformed date`** — not a legacy exemption, and not
+a silent pass. Measured directly, `as_of 2026-08-05` under
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13):
+
+| value | `^\d{4}-\d{2}-\d{2}$` | `date.fromisoformat` |
+|---|---|---|
+| `2026-99-99` | matches | `ValueError: month must be in 1..12` |
+| `2026-02-30` | matches | `ValueError: day is out of range for month` |
+| `0000-00-00` | matches | `ValueError: year 0 is out of range` |
+| `2027-02-29` | matches | `ValueError: day is out of range for month` |
+| `2028-02-29` | matches | accepted — `datetime.date(2028, 2, 29)` |
+
+The low direction was the dangerous one under the old S9: `0000-00-00` sorts
+before every real epoch under a string comparison. S9's replacement removes the
+comparison, and this amendment removes the impossible value as well, so the two
+fixes are independent rather than one covering for the other.
+
+**S2 — the attestation lines.** Inside a pass body (after the S1 heading, before
+the next H2), exactly one line each, full-line anchored:
+`**Tier**: <Internal|External>` and `**Findings**: <none|raised>`.
+Value comparison is case-insensitive; the canonical spellings are `Internal`,
+`External`, `none`, `raised`.
+
+**S3 — closed vocabulary, three fail-closed directions.**
+
+| condition | verdict |
+|---|---|
+| value outside the vocabulary | violation: `unrecognized <field> value` |
+| field absent from the pass body | violation: `missing <field>` |
+| field occurs more than once in one pass body | violation: `duplicate <field>` — **even when the occurrences agree**; agreement is a judgement a conformance backstop must not make |
+
+No condition yields a silent pass. There is no default value for either field.
+
+**S4 — declared, never inferred.** The checker reads the tier from the
+`**Tier**:` line and from nowhere else. It must **not** derive it from the
+reviewer name, the `(role)` parenthetical, `_load_ai_registry`, the
+human-maintainer roster, or byline classification. A human reviewer declares
+`**Tier**: External` in the same shape an agent does. The `(role)` parenthetical
+remains free text and is **not read by the gate** — stated explicitly so it
+cannot drift into a second, softer source of truth. Violation text never uses
+the language of authorization: the tool attests that a tier was *declared*,
+never that it was *true*.
+
+**S5 — tier ordering.** Total order `External > Internal`. A pass satisfies the
+floor iff `declared >= required`. `External` satisfies a required `Internal`;
+`Internal` does not satisfy a required `External`. There is no third tier and no
+`Maintainer` tier — a human review declares `External`.
+
+**S6 — normalizing the required tier.** Defined on the **first parenthesised
+group only** of the `**Plan review**:` field:
+
+1. match `^required\s*\(([^)]*)\)` case-insensitively; no match → violation
+   `tier not declared`;
+2. delete every `*`, `_` and backtick from the group;
+3. take the **first alphabetic word** (`^[A-Za-z][A-Za-z-]*`);
+4. case-fold; it must be `internal` or `external`, else violation.
+
+Text after the closing `)` is ignored (every live review-required plan has
+some). Text after the first word *inside* the group is a **lens annotation** —
+preserved in the record, ignored by the tier comparison. Negations fail closed:
+`required(not External)` → step 3 yields `not`, which is outside the vocabulary →
+violation. `not required(<rationale>)` disables the gate, unchanged. The live
+`required(...)` forms this must resolve are **re-enumerated at the gating
+commit**, not carried from the Response — see Chunk C's C.6 cell for the
+population, the invariant, and the measured fact that a comma-splitting
+normalizer rejects three of them.
+
+**S7 — Sharpening pairing is positional.** When a pass declares
+`**Findings**: raised`, a heading matching `^### Sharpening\b` must occur
+**inside that pass's body** — between its S1 heading and the next H2.
+Positional, not date-matched: a sibling round's Sharpening cannot satisfy
+another round. When `**Findings**: none`, a Sharpening in the body is permitted
+and not required. `Sharpening` enters `_KNOWN_KINDS`; verified absent at
+`ec57bf0` (`_KNOWN_KINDS` = `{review, response, revised, decision, plan, code}`,
+`tools/lifecycle_planner.py:519`), which is why the scaffold's own emitted block
+parses to nothing.
+
+**S8 — what the gate decides.** For a plan whose field is `required(<tier>)`:
+every S1-matching pass must satisfy S2, S3 and S7 (each failure is a violation);
+**and** at least one S1-matching pass must satisfy S5. Both conditions must
+hold. A heading beginning `Plan review` that does not match S1 is neither a pass
+nor a violation — and can no longer clear anything, because clearing now
+requires an S1 match. **Near misses fail closed as "no conforming pass has
+landed", never as "a pass with problems"**, and the violation text must quote
+the near-miss heading so the author is not left guessing.
+
+### S9 (replacement) — the legacy population is enumerated, not dated
+
+**This replaces the dated-epoch S9 in the 2026-08-05 Response entirely.** That
+version exempted a pass dated **strictly before** `_REVIEW_SCHEMA_EPOCH`,
+reading the date from the S1 heading — *author-written text inside the artifact
+the gate judges*. So appending `## Plan review -- Any Name -- 2020-01-01` bought
+a permanent exemption from S2/S3/S7 **and** satisfied the review floor by
+presence. The old S9(d) asserted "it cannot become a second grammar"; as written
+it **was** the second grammar, reachable by typing a smaller number. There is no
+`_REVIEW_SCHEMA_EPOCH` in this plan any more.
+
+* **(a) A closed manifest, not a threshold.** `_LEGACY_PASSES` in
+  `lifecycle_planner.py`: a module-private mapping from **plan stem** to a
+  multiset (`dict[str, dict[str, int]]`) of `sha256(heading_line)` hex digests
+  truncated to 16 chars, with the count of occurrences admitted for each digest.
+  Keyed by *stem*, not path, so an archive move — the same stem relocating from
+  `dev/plans/` to `dev/plans/archive/` — does not drop a file out of the
+  exemption.
+* **(b) The fence.** A pass is *legacy* — exempt from S2, S3 and S7, satisfying
+  the floor by presence exactly as today — **iff** its stem is in the manifest
+  and this is the k-th occurrence of its heading digest in that file with
+  `k <= manifest_count`. Every other pass, **whatever its date**, gets no
+  exemption.
+  * **The duplicate-append hole is closed by the count.** Re-appending a heading
+    byte-identical to an admitted one yields occurrence `manifest_count + 1`,
+    which is **not** legacy. Without the count, copying an admitted heading
+    would reopen the bypass; with it, the manifest admits exactly the passes that
+    existed when it was generated and no more.
+  * **This is not hypothetical — this plan is the worked example.** Measured
+    `as_of 2026-08-05` at `ec57bf0`, this file carries **three** S1 passes with
+    only **two** distinct digests: `## Plan review -- Codex (External) --
+    2026-08-05` appears **twice**, byte-identical (digest `01bf85bb1d9a5d18`,
+    occurrences 1 and 2). A set-valued manifest would admit that digest forever;
+    the multiset admits it exactly twice and refuses a third. Cited by digest and
+    occurrence, never by line: a fold moves lines and leaves digests fixed, which
+    is the property the manifest is keyed on.
+  * **Editing an admitted heading fails closed.** Its digest leaves the
+    manifest, so it stops being legacy and must then satisfy S2/S3/S7. That is
+    the correct direction, and append-only already forbids the edit.
+* **(c) Generated once, by something that is not the checker.** A committed
+  generator, `scripts/gen_legacy_passes.py`, run once at Chunk C, walks
+  `dev/plans/`, `dev/plans/archive/`, `dev/proposals/` and
+  `dev/proposals/archive/` with an **exact-anchored regex of its own** and emits
+  the manifest literal. **It must not call `_pass_headings`, `_has_kind`, or any
+  other predicate under repair** — the population the gate exempts cannot be
+  defined by the gate. Chunk C's commit message records the totals the generator
+  found; **no count is frozen into this plan**, because the corpus moves faster
+  than the plan does (see C.0).
+* **(d) Why it cannot become a second grammar — now true.** The manifest is a
+  **closed literal**. Widening it requires editing a committed constant, which
+  shows up as a code diff in review; **there is no value an author can type into
+  a *plan* that adds a pass to it.** Three pinning nodes, all in
+  `bootstrap/tests/test_lifecycle_contract.py` (C.9a–C.9c):
+  1. a pass whose heading is not in the manifest is refused without S2 fields,
+     **whatever its date** — including a date decades in the past;
+  2. re-appending an admitted heading a second time is refused, exercised at
+     exactly `manifest_count + 1`;
+  3. the manifest is re-derived by re-running the generator and compared —
+     **subset direction only**, see the honesty note below.
+  `bootstrap/UPGRADE.md` states that the exemption is a **fixed enumeration of
+  pre-existing records**, not a dated grace period.
+* **(e) The date plays no part in admission.** It remains *required syntax*
+  under S1 (and must now be calendar-valid) and is **informational only**.
+  Nothing in the gate compares it to anything, so there is no comparison
+  operation left to specify — the S11 finding *"specify … the comparison
+  operation used by S9"* is answered by **removing the comparison**, not by
+  defining it.
+* **(f) What (d)(3) does and does not catch — stated, not implied.** Re-running
+  the generator at test time asserts that **every manifest entry corresponds to
+  a heading actually present at that stem, with at least that many
+  occurrences**. The reverse direction is *deliberately not asserted*: a pass
+  appended after Chunk C legitimately exists in the tree and legitimately is not
+  in the manifest, so an equality check would redden the suite on the next
+  review that lands. Consequently (d)(3) catches a **fabricated** manifest entry
+  and manifest drift; it does **not** catch a manifest entry added for a real,
+  newly-appended pass, and it does **not** catch a defect in the generator's own
+  regex — the generator is the manifest's producer, and a producer cannot
+  falsify its own output. Those two residual risks are covered by human review
+  of a code diff, which is (d)'s actual control, and by reviewing the
+  generator's regex at Chunk C against S1 as written here. Recorded so no reader
+  mistakes (d)(3) for provenance it does not supply.
+
+**S10 — this plan's own bootstrap, named.** The three passes below are admitted
+as legacy **by manifest entry**, not by date, and without rewriting them (which
+append-only forbids). They are ordinary members of the enumeration
+`scripts/gen_legacy_passes.py` produces; **no file-specific carve-out exists or
+is needed.**
+
+| pass heading | occurrences | digest |
+|---|---|---|
+| `## Plan review -- Codex (External, different-agent-type) -- 2026-08-04` | 1 | `26f5c121f879971d` |
+| `## Plan review -- Codex (External) -- 2026-08-05` | **2** (the 2026-08-05 first round, and the S11 round from `e1b2e30`) | `01bf85bb1d9a5d18` |
+
+The Response's sentence *"All are dated strictly before any achievable epoch"*
+is **superseded — there is no epoch.** Its third bullet, "the S11 round,
+whenever it lands", is resolved: the S11 round landed in `e1b2e30` and is the
+second occurrence of digest `01bf85bb1d9a5d18`. Line numbers and digests here
+are `as_of 2026-08-05` at `ec57bf0` and are **re-derived by the generator at
+Chunk C**, never transcribed from this table into the manifest literal.
+
+**S11 — the second External round: DISCHARGED.** Required by `[E2]`, re-demanded
+by `[E5]`, performed at `e1b2e30` as a read of S1–S13 and the Amendments table.
+See *Review disposition* > D1–D3 for what discharged it and for the exact bounds
+of the Maintainer's instruction. Its own pass is legacy-admitted by S10's
+manifest row. **No further External round is sought.**
+
+**S12 — one predicate, both call sites.** A single module-private pair —
+`_review_conformance(art) -> List[str]` and `_review_satisfies_floor(art) -> bool`
+— consumed by **both** `_conformance_violations` and `_gating_preconditions`. A
+node asserts both surfaces return the same verdict on the same fixture, so
+`scan` cannot tighten while `next --to executing` stays presence-only. Cited by
+symbol per row 12; `as_of 2026-08-05` at `ec57bf0` the duplicated
+`_has_kind(art, "Plan review")` calls sit at `tools/lifecycle_planner.py:791`
+and `:865`, and `_has_kind` itself at `:697`.
+
+**S13 — the twin.** Every change lands identically in
+`tools/lifecycle_planner.py` and `templates/skills/_lib/lifecycle_planner.py`.
+Verified by `test_every_self_hosted_twin_stays_byte_identical_to_its_source` in
+`bootstrap/tests/test_notice_install.py:98` — run by a person typing
+`python -m pytest bootstrap/tests`. **Cairn has no CI**; nothing runs this on a
+push, and the repository's only `pre-commit` hook runs the intent check, not the
+suite.
+
 ## Sequence
 
 ### Chunk A — reconcile the grammar (no behaviour change)
@@ -61,22 +404,21 @@ The blocker `[E2]` named: `doctrine/plans.md` contradicts itself. `:115` require
 <reviewer> -- YYYY-MM-DD"* as the per-pass format. Both plan templates ship a
 `## Plan review` container with `###` passes inside.
 
-**Measured, `as_of 2026-08-04` at plan-open** —
-`grep -rhoE "^#{2,3} Plan review" dev/plans dev/proposals | sort | uniq -c`:
-**58 headings, all `##`, none `###`** (56 in `dev/plans`, 2 in `dev/proposals`).
-Practice follows `:115`; the instructions say `:422`.
-
-*One of those 58 is this plan's own `## Plan review` container* — the corpus
-includes the artifact measuring it. The figure was 57 before this file existed
-and will move again as plans open, which is why it carries an `as_of` and is not
-registered as an invariant. Chunk C's corpus table must be re-measured at the
-commit that gates, never carried forward from here.
+**No corpus figure is carried in this section** (folds Amendment row 11). The
+figure that stood here — `grep -rhoE "^#{2,3} Plan review" …` reporting `58
+headings, all ##` — is **withdrawn as evidence**: it is a *prefix* match, and
+`_has_kind` gating on `startswith` is the very defect under repair, so the
+measurement used the bug to measure the bug. It survives verbatim in the folded
+ledger (row 11) as history. Every inventory in this plan uses the **exact
+structural oracle** of S1, and is re-measured at the commit that gates — see
+**C.0**. Practice follows `:115`; the instructions say `:422`; that direction
+never depended on the count.
 
 | # | File | Change |
 |---|------|--------|
-| A.1 | `doctrine/plans.md` | State **one** grammar: an `## Plan review` container, with each pass a dated `### Plan review -- <reviewer> -- YYYY-MM-DD` inside it. Reconcile `:115` and `:422` to it. |
-| A.2 | `dev/plans/_template.md`, `templates/core/dev/plans/_template.md` | Make both agree with A.1. They must stay in step — a template that disagrees with doctrine reproduces this defect for every adopter. |
-| A.3 | The planner's generated plan scaffold | Emit the A.1 shape. |
+| A.1 | `doctrine/plans.md` | State **one** grammar per **S1**: a dated `## Plan review -- <reviewer> -- YYYY-MM-DD` **pass at H2**, with its `### Sharpening` at H3 inside it. `doctrine/plans.md:115` (`##`) and `:116` (`### Sharpening`) are **already correct and stay**; `:422` is the line that changes, from `###` to `##`. Verified `as_of 2026-08-05` at `ec57bf0`: `:115` reads "`executing` only after a dated `## Plan review` section lands: the review", `:116` reads "**and**, when it raised findings, a dated `### Sharpening` subsection", `:422` reads "`### Plan review -- <reviewer> -- YYYY-MM-DD`". |
+| A.2 | `dev/plans/_template.md`, `templates/core/dev/plans/_template.md` | Make both agree with A.1. They must stay in step — a template that disagrees with doctrine reproduces this defect for every adopter. **Also reconcile the "Optional" contradiction**: both templates call the section "*Optional; pre-implementation.*" (`dev/plans/_template.md:264`, `templates/core/dev/plans/_template.md:241`, verified `as_of 2026-08-05` at `ec57bf0`) while `doctrine/plans.md:113` makes the metadata line mandatory with "**no silent default**". The empty `## Plan review` container is removed or made **explicitly non-attesting** — an empty container must not read as a landed review. |
+| A.3 | The planner's generated plan scaffold | Emit the A.1 shape **and the S2 fields**. Today `tools/lifecycle_planner.py:986-990` emits `### Plan review -- <reviewer> -- <date>` followed by `### Sharpening -- <author> -- <date>` — **a block its own parser discards**: verified, a document of exactly that shape parses to `[(2, 'Plan review')]`, because `sharpening` is not in `_KNOWN_KINDS`. The scaffold must emit an H2 pass carrying `**Tier**:` and `**Findings**:` lines with an H3 `### Sharpening` inside the pass body. |
 
 **No gating in this chunk.** It lands green and changes no verifier behaviour.
 
@@ -87,9 +429,9 @@ read. A role field is free text — and the published format has none.
 
 | # | File | Change |
 |---|------|--------|
-| B.1 | `doctrine/plans.md` | Add to the review-pass format a **declared tier attestation** and a **review outcome**, both with **closed vocabularies**. Document in terms that the attestation is *declared, not authenticated*. |
-| B.2 | both templates + scaffold | Carry B.1's fields. |
-| B.3 | `tools/lifecycle_planner.py` + twin | Parse the two fields. Admit `Sharpening` to `_KNOWN_KINDS` — `[E3]` established it is absent today, so the conditional currently has no parseable subject. **Parse only; gate nothing yet.** |
+| B.1 | `doctrine/plans.md` | Implement **S1–S6** exactly: field names `**Tier**` and `**Findings**`, vocabularies `Internal\|External` and `none\|raised`, the three fail-closed directions of S3, the S4 no-inference rule, the S5 ordering, and the S6 normalizer. **Also document the S1 date amendment** — the value must parse under `datetime.date.fromisoformat`, and a shape-only match is `malformed date`. The *declared, not authenticated* framing is carried by S4 and must appear in the doctrine text, not only here. |
+| B.2 | both templates + scaffold | Carry B.1's fields, in the S1/S2 shape (H2 pass, `**Tier**:` and `**Findings**:` lines, H3 `### Sharpening` inside the body). |
+| B.3 | `tools/lifecycle_planner.py` + twin | Parse the S2 fields, the S1 date (via `date.fromisoformat`), and the S6-normalized required tier. Admit `Sharpening` to `_KNOWN_KINDS` — verified absent at `ec57bf0` (`:519`), which is why **the scaffold's own emitted block** (`:986-990`) parses to nothing. **Parse only; gate nothing yet.** |
 
 ### Chunk C — gate on what the record now carries
 
@@ -98,49 +440,135 @@ falsifier**: a mutation that reddens that node and **no other**. Five tests that
 could not fail were found in this repository this cycle; the plan that guards
 reviews will not add a sixth.
 
+**Every node below lives in `bootstrap/tests/test_lifecycle_contract.py`, and the
+only thing that runs it is a person typing `python -m pytest bootstrap/tests`.**
+Opened and confirmed: that command collects this file (33 nodes collected from it
+`as_of 2026-08-05` at `ec57bf0`, `33 passed in 1.86s` under
+`/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13).
+**Cairn has no CI** — there is no `.github/workflows/`, and the only
+`pre-commit` hook runs `tools/intent.py _precommit_check`, not the suite. Nothing
+runs these nodes on a push or a merge. **The baseline is re-measured immediately
+before the gating commit, not carried from here**: it was reported as `30` on
+2026-08-04 and is `33` now, i.e. it has already moved once within this plan's
+lifetime.
+
 | # | Rule | Node | Single-property falsifier |
 |---|------|------|---------------------------|
-| C.1 | declared tier satisfied | new | delete the tier comparison → this node red, others green |
-| C.2 | heading level per A.1 | new | accept any level → red |
-| C.3 | dated | new | make the date group optional in the check → red |
-| C.4 | `### Sharpening` when outcome declares findings | new | drop the conditional → red |
+| C.1 | S8 floor: at least one S1 pass satisfies S5 | new | delete the tier comparison → this node red, others green |
+| C.2 | S1 heading match (H2, `--` separator, ISO-shaped date) | new | accept H3 → red; accept an undated pass → red; accept `## Plan review tier` / `## Plan reviewers` → red. Each falsifier reddens C.2 and no other node. |
+| C.3 | S1 date is **calendar-valid**, not merely date-shaped | new | drop the `date.fromisoformat` parse and keep only the shape regex → red. Fixtures: `2026-99-99`, `2026-02-30` and `0000-00-00` each yield `malformed date`; `2028-02-29` (a real leap date) is **accepted**. The negative fixtures pin the fail-closed direction; the leap fixture pins that the parse is not merely a stricter regex. |
+| C.4 | **S7 positional** pairing: a `### Sharpening` inside *that pass's* body when it declares `**Findings**: raised` | new | drop the conditional → red; **and** move a sibling round's Sharpening outside the pass body → red (a neighbouring round's Sharpening must not satisfy this one) |
+| C.5 | S3 three directions | new | unknown / missing / duplicate `**Tier**` or `**Findings**` → violation, **one falsifier each**. The duplicate case uses two *agreeing* occurrences, since agreeing duplicates are the case a backstop must still refuse. |
+| C.6 | S6 normalization | new | every live `required(...)` form in the tree resolves; `required(not External)` and `required()` fail closed (measured: they normalize to `not` and to nothing, neither of which is in the vocabulary). **The form list is enumerated at the gating commit** by the C.0 oracle, *not* copied from this plan: the Response measured **6** distinct forms across **31** plans, and re-measurement `as_of 2026-08-05` at `ec57bf0` gives **7** forms across **32** plans — a new unbolded `External + External Security Review` variant appeared. The invariant, which does not move: **every review-required plan in the tree resolves to exactly one of `internal` / `external`, and no form resolves by accident.** Falsifier: substitute a comma-splitting normalizer → red, because it rejects **3** of the 7 live forms (both `+` forms and `**External cross-type**`). S6's first-alphabetic-word rule resolves all 7, verified directly. |
+| C.7 | S5 ordering | new | `Internal` on an `External` floor → red; `External` on an `Internal` floor → green |
+| C.8 | S12 one predicate, both call sites | new | both `_conformance_violations` and `_gating_preconditions` return the same verdict on the same fixture; making one strict alone → red |
+| C.9a | S9(b) — non-manifest pass gets no exemption | new | a pass whose heading digest is **not** in `_LEGACY_PASSES` is refused without S2 fields **whatever its date**, including a date decades in the past (`2020-01-01`) and `0000-00-00`. Removing the manifest lookup and restoring any date comparison → red. **This is the node that pins the S11 finding closed.** |
+| C.9b | S9(b) — the occurrence count | new | re-appending a heading byte-identical to an admitted one is refused at exactly `manifest_count + 1`. Fixture uses a stem whose manifest count is **2**, so the node exercises the boundary rather than the `1 → 2` edge; this plan's own `## Plan review -- Codex (External) -- 2026-08-05` (digest `01bf85bb1d9a5d18`, count 2) is that shape. Changing the multiset to a set → red. |
+| C.9c | S9(c)/(f) — the manifest is not hand-editable | new | re-run `scripts/gen_legacy_passes.py` and assert **every manifest entry corresponds to a heading present at that stem with at least that many occurrences** (subset direction). Adding a fabricated entry → red. **Asserting equality instead → red on the next legitimate review that lands**, which is why the direction is one-way; see S9(f) for what this node does *not* catch. |
 
+**C.0 — the pre-C inventory, a deliverable of this chunk and not a note.**
 **Before C lands, run the reconciled gate over every artifact in `dev/` and
 record which newly violate.** A gate that reddens the existing tree needs that
-disclosed up front, not discovered. That table is a deliverable of this chunk,
-not a note.
+disclosed up front, not discovered. Folding Amendment row 15, `[E4]`'s addition
+is binding: **evaluate open plans as if transitioning to `executing`**, not only
+in their current state — an old-format review stays green while status is `open`
+and fails only later, so a current-state scan reports a clean tree and is wrong.
+
+*What supplies the material, stated because it matters twice here:*
+
+* **The corpus inventory** (how many S1 passes, bare containers and near-miss
+  headings exist, and their `required(...)` forms) is produced by the **exact
+  anchored regex of S1**, run by `scripts/gen_legacy_passes.py --report` over
+  `dev/plans/`, `dev/plans/archive/`, `dev/proposals/` and
+  `dev/proposals/archive/`. Never by `_has_kind`, never by a prefix grep. The
+  generator is deliberately **not** the gate (S9(c)), so the population is not
+  defined by the predicate under repair.
+* **No corpus figure is stated in this plan, by decision.** The measured record:
+  the loose `^#{2,3} Plan review` count went **58** (`8dfb664`, 2026-08-04) →
+  **71** (`da1de65`, 2026-08-05) → **79** (`ec57bf0`, 2026-08-05), and it moved
+  *twice inside a single session*. Under the exact S1 oracle at `ec57bf0` the
+  same trees give **52** dated passes, **5** bare containers, **22** unrelated
+  `Plan review*` headings across 75 files — three figures that will be wrong by
+  the time Chunk C runs. What is stable is the **invariant**: *every dated pass
+  in the corpus is H2 and there are zero H3 dated passes* (0 at `8dfb664`, 0 at
+  `da1de65`, 0 at `ec57bf0`). Assert the invariant; re-measure the counts at the
+  gating commit; carry nothing forward.
+* **The violation inventory itself is produced by the code under test** — it must
+  be, since the question *is* what the new gate refuses. It is therefore a
+  **disclosure, not a verification**: it shows what the new gate does to the
+  live tree, and it is not evidence that the new gate is correct. That evidence
+  comes only from C.1–C.9c and their demonstrated falsifiers.
 
 ### Chunk D — the adopter-facing disclosure
 
 | # | File | Change |
 |---|------|--------|
-| D.1 | migration note | State the record-format change, the two affected fields, and what an adopter must do. The twin is a `verbatim` manifest source installed as `tools/lifecycle_planner.py`, so behaviour and policy ship together. |
+| D.1 | **`bootstrap/UPGRADE.md`** | State the record-format change, the two affected fields, and what an adopter must do. Its **durable home** is `bootstrap/UPGRADE.md` — which exists, and already carries a `## Migrating a tree installed before upgrade support` section (`:170`) as precedent. It must state the two field names (`**Tier**`, `**Findings**`), the S6 normalizer, the S1 calendar-valid date rule, and that the legacy exemption is a **fixed enumeration of pre-existing records — not a dated grace period and not an epoch**. **There is no `_REVIEW_SCHEMA_EPOCH` value to publish**; that construct was removed by S9's replacement, and an UPGRADE note that names an epoch is wrong. The twin is a `verbatim` manifest source installed as `tools/lifecycle_planner.py`, so behaviour and policy ship together. |
 | D.2 | `CHANGELOG.md` > Unreleased | One line. **Serialized: text returned, not edited in-agent.** |
 
 ## Acceptance criteria
 
-* `doctrine/plans.md`, both templates and the scaffold state **one** grammar; a
-  grep for the review heading across all four surfaces returns one shape.
-* The twins stay byte-identical (`test_every_self_hosted_twin_stays_byte_identical_to_its_source`).
-* Four new nodes in `bootstrap/tests/test_lifecycle_contract.py`, each with its
-  single-property falsifier **demonstrated**, not asserted — the falsifier is run
-  and the red/green matrix recorded.
+* `doctrine/plans.md`, both templates and the scaffold state **one** grammar,
+  verified by an **exact structural oracle** over all four surfaces — never a
+  grep. The old criterion *"a grep … returns one shape"* is **withdrawn**: it is
+  incoherent against a grammar that deliberately contains an H2 pass and an H3
+  Sharpening, and a prefix grep is the very defect under repair.
+* The twins stay byte-identical —
+  `test_every_self_hosted_twin_stays_byte_identical_to_its_source`, in
+  `bootstrap/tests/test_notice_install.py:98`, run by `python -m pytest
+  bootstrap/tests`. True now: `md5 457b51c7772da181e838f99a2205d933` for both
+  `tools/lifecycle_planner.py` and `templates/skills/_lib/lifecycle_planner.py`,
+  `as_of 2026-08-05` at `ec57bf0`.
+* **The coverage set C.1–C.9c** in `bootstrap/tests/test_lifecycle_contract.py`,
+  each with its single-property falsifier **demonstrated** — the falsifier is run
+  and the red/green matrix recorded, not asserted. The count "four" is
+  **withdrawn**; the set is the criterion.
 * Suite: **no *new* failure relative to a baseline measured immediately before
   the commit on a quiet tree**, `0 skipped`. Not "green" unconditionally: the
-  tree carries concurrent work.
-* The `dev/` corpus table from Chunk C is in the record before C commits.
-* No violation text uses the language of authorization (`[E4]`).
+  tree carries concurrent work. The `test_lifecycle_contract.py` figure is
+  **`33 passed` `as_of 2026-08-05` at `ec57bf0`** and is a *snapshot, not the
+  baseline* — it was `30` on 2026-08-04, so re-measure at the gating commit and
+  state the revision beside the number.
+* **The tree is not quiet, and that is disclosed with the baseline, not
+  discovered after it.** HEAD moved `6bcd2d3` → `da1de65` → `ec57bf0` across the
+  two sessions that produced this plan's schema, and a plan file changed between
+  two measurement runs inside one session.
+* C.0's inventory — both the corpus measurement and the newly-violating
+  artifacts — is in the record **before C commits**, with the disclosure that the
+  violation list is produced by the code under test.
+* No violation text uses the language of authorization: the tool attests that a
+  tier was *declared*, never that it was *true*, and never that a review
+  *happened*.
+* **`_REVIEW_SCHEMA_EPOCH` appears nowhere** in the module, the twin, the tests,
+  the doctrine or `bootstrap/UPGRADE.md`. A grep for it returning any hit means
+  the replaced S9 leaked into the implementation.
 
 ## Verification
 
-* Reproduce the proposal's five-state table against the **post-change** module;
-  the four rows that clear today must not all clear after Chunk C.
-* Confirm the tier attestation is parsed from the closed vocabulary and that an
-  **unrecognized** value is a violation rather than a silent pass — the fail-open
-  direction is the one that matters.
+* Reproduce the proposal's five-state table against the **post-change** module,
+  and against **both** call sites, since S12 unifies them. The four shapes
+  measured to clear the presence gate today are: an H3 dated pass, an undated
+  named pass, a bare `## Plan review` container, and an `Internal`-only pass on
+  an `External` floor. Add the two prefix collisions — `## Plan review tier` and
+  `## Plan reviewers` — which also clear today and which S1 rejects.
+* Confirm the tier attestation is parsed from the closed vocabulary and that
+  **all three** S3 directions are violations rather than silent passes:
+  **unrecognized**, **missing**, and **duplicate**. Unrecognized alone leaves the
+  other two silent, which is the fail-open direction that matters. Add the S6
+  rejections (`required(not External)`, `required()`).
+* Confirm the **S1 date contract** independently of the shape regex: a
+  date-shaped impossible value (`2026-99-99`, `2026-02-30`, `0000-00-00`) yields
+  `malformed date`, and a real leap date (`2028-02-29`) is accepted. A regex
+  shape check alone is not a date contract.
+* Confirm the **legacy manifest cannot be widened from a plan file**: construct a
+  pass dated `2020-01-01` whose heading is not in `_LEGACY_PASSES` and confirm it
+  is refused without S2 fields. This is the direct reproduction of the S11
+  finding, and it must be run against the post-change module rather than
+  reasoned about.
 * Confirm a conforming **human** review passes. `[E1]`'s sharpest case: the
   published format had no role field, so the original rule would have blocked
-  one.
+  one. Under S4 a human declares `**Tier**: External` in the same line-shape an
+  agent does, and the gate reads that line and nothing else.
 
 ## Plan review
 
@@ -688,23 +1116,23 @@ space, and where the superseded text *is* a table cell the surrounding `|`
 delimiters are omitted (they are container syntax, not content). No other
 character is altered.
 
-| # | Anchor | Superseded text (verbatim) | In force |
-|---|---|---|---|
-| 1 | A.1, Change cell (`:77`) | State **one** grammar: an `## Plan review` container, with each pass a dated `### Plan review -- <reviewer> -- YYYY-MM-DD` inside it. Reconcile `:115` and `:422` to it. | State **one** grammar per **S1**: a dated `## Plan review -- <reviewer> -- YYYY-MM-DD` **pass at H2**, with its `### Sharpening` at H3 inside it. `doctrine/plans.md:115` (`##`) and `:116` (`### Sharpening`) are **already correct and stay**; `:422` is the line that changes, from `###` to `##`. |
-| 2 | C.2 row (`:104`) | C.2 \| heading level per A.1 \| new \| accept any level → red | C.2 \| S1 heading match (H2, `--` separator, ISO date) \| new \| accept H3 → red; accept an undated pass → red; accept `## Plan review tier` / `## Plan reviewers` → red. Each falsifier reddens C.2 and no other node. |
-| 3 | `## Plan review` section (`:147-148`) | *Required — **External**. Implementation does not start until a review has landed under this heading.* | Required — **External**. Implementation does not start until a review satisfying **S1--S8** has landed **as a dated H2 pass in this file**. "Under this heading" is withdrawn: it describes a nesting the append-only lifecycle cannot produce, and it is the wording that let this plan's presence gate clear on two REVISE verdicts. |
-| 4 | B.1, Change cell (`:90`) | Add to the review-pass format a **declared tier attestation** and a **review outcome**, both with **closed vocabularies**. Document in terms that the attestation is *declared, not authenticated*. | Implement **S1--S6** exactly: field names `**Tier**` and `**Findings**`, vocabularies `Internal\|External` and `none\|raised`, the three fail-closed directions of S3, the S4 no-inference rule, the S5 ordering, and the S6 normalizer validated against the 6 live `required(...)` forms. The *declared, not authenticated* framing is retained by S4. |
-| 5 | B.3, Change cell (`:92`) | Parse the two fields. Admit `Sharpening` to `_KNOWN_KINDS` — `[E3]` established it is absent today, so the conditional currently has no parseable subject. **Parse only; gate nothing yet.** | Unchanged in intent, sharpened in evidence: `Sharpening` is absent from `_KNOWN_KINDS`, so **the scaffold's own emitted block** (`:986-990`) parses to nothing — verified, a scaffold-shaped document yields `[(2, 'Plan review')]`. Also parse the S2 fields and the S6-normalized required tier. **Parse only; gate nothing yet.** |
-| 6 | C.4 row (`:106`) | C.4 \| `### Sharpening` when outcome declares findings \| new \| drop the conditional → red | C.4 \| **S7 positional** pairing: a `### Sharpening` inside *that pass's* body when it declares `**Findings**: raised` \| new \| drop the conditional → red; **and** move a sibling round's Sharpening outside the pass body → red (a neighbouring round's Sharpening must not satisfy this one). |
-| 7 | Chunk C table (addition; attaches after C.4 — no superseded text) | *(none — this is an addition)* | **C.5** unknown / missing / duplicate `**Tier**` or `**Findings**` → violation, per S3, one falsifier each. **C.6** S6 normalization: all 6 live forms resolve; `required(not External)` and `required()` fail closed. **C.7** S5 ordering: `Internal` on an `External` floor → red; `External` on an `Internal` floor → green. **C.8** S12: both call sites return the same verdict on the same fixture; making one strict alone → red. **C.9** S9: a pass dated on/after `_REVIEW_SCHEMA_EPOCH` without S2 fields → refused; a pass dated before → admitted. |
-| 8 | Acceptance criteria (`:122-123`) | * `doctrine/plans.md`, both templates and the scaffold state **one** grammar; a grep for the review heading across all four surfaces returns one shape. | `doctrine/plans.md`, both templates and the scaffold state **one** grammar, verified by an **exact structural oracle** over all four surfaces — never a grep. The "returns one shape" criterion is **withdrawn**: it is incoherent against any grammar with an H2 pass and an H3 Sharpening, and a prefix grep is the very defect under repair. |
-| 9 | Acceptance criteria (`:125-127`) | * Four new nodes in `bootstrap/tests/test_lifecycle_contract.py`, each with its single-property falsifier **demonstrated**, not asserted — the falsifier is run and the red/green matrix recorded. | The **coverage set C.1--C.9** in `bootstrap/tests/test_lifecycle_contract.py`, each with its single-property falsifier **demonstrated** — run, with the red/green matrix recorded. The count "four" is withdrawn; the set is the criterion. The baseline is re-measured at the gating commit, **not** carried from here (`33 passed` at `da1de65`). |
-| 10 | D.1, Change cell (`:117`) | State the record-format change, the two affected fields, and what an adopter must do. The twin is a `verbatim` manifest source installed as `tools/lifecycle_planner.py`, so behaviour and policy ship together. | Same content, with a **durable home: `bootstrap/UPGRADE.md`** (which exists, and already carries a "Migrating a tree installed before upgrade support" precedent). It must state the two field names, the S6 normalizer, the `_REVIEW_SCHEMA_EPOCH` value, and that the exemption is **dated, not permanent**. The twin sentence stands. |
-| 11 | *Sequence* (`:64-66`) | **Measured, `as_of 2026-08-04` at plan-open** — `grep -rhoE "^#{2,3} Plan review" dev/plans dev/proposals \| sort \| uniq -c`: **58 headings, all `##`, none `###`** (56 in `dev/plans`, 2 in `dev/proposals`). | The figure **reproduces exactly** and is retained as history. It is superseded **as evidence**: the command is a prefix match, and the exact split at `8dfb664` is **34** dated passes / **3** bare containers / **21** unrelated headings. At `da1de65` it is **44 / 5 / 22**. Any inventory uses the exact oracle. |
-| 12 | *Source proposal* (`:16-17`) | The gate at `tools/lifecycle_planner.py:787` clears on the *presence* of a section named "Plan review", not on the review its own doctrine describes. | Correct at `8dfb664`; at `da1de65` the two call sites are `:791` (`_conformance_violations`) and `:865` (`_gating_preconditions`), with `_has_kind` at `:697`. Both are named, and S12 replaces them with one predicate. Cite by **symbol**, not line, from here on. |
-| 13 | *Verification* (`:136-137`) | * Reproduce the proposal's five-state table against the **post-change** module; the four rows that clear today must not all clear after Chunk C. | Reproduce it against **both** call sites, since S12 unifies them. The four shapes measured to clear today are: H3 dated pass, undated named pass, bare container, and Internal-only pass on an External floor. Add the two prefix collisions found here — `## Plan review tier` and `## Plan reviewers` — which also clear today and which S1 rejects. |
-| 14 | *Verification* (`:138-140`) | * Confirm the tier attestation is parsed from the closed vocabulary and that an **unrecognized** value is a violation rather than a silent pass — the fail-open direction is the one that matters. | Retained and widened to **all three** S3 directions — unrecognized, **missing**, and **duplicate** — plus the S6 rejections. Unrecognized alone leaves two silent passes open. |
-| 15 | Chunk C pre-inventory (`:108-111`) | **Before C lands, run the reconciled gate over every artifact in `dev/` and record which newly violate.** A gate that reddens the existing tree needs that disclosed up front, not discovered. That table is a deliverable of this chunk, not a note. | **Upheld**, with `[E4]`'s addition made binding: evaluate open plans **as if transitioning to `executing`**, not only in their current state — an old-format review stays green while status is `open` and fails only later, so a current-state scan reports a clean tree and is wrong. Population at `da1de65`: 31 review-required plans, 44 dated passes. |
+| # | Anchor | Superseded text (verbatim) | In force | Folded into — added 2026-08-05, see *How to read this plan* |
+|---|---|---|---|---|
+| 1 | A.1, Change cell (`:77`) | State **one** grammar: an `## Plan review` container, with each pass a dated `### Plan review -- <reviewer> -- YYYY-MM-DD` inside it. Reconcile `:115` and `:422` to it. | State **one** grammar per **S1**: a dated `## Plan review -- <reviewer> -- YYYY-MM-DD` **pass at H2**, with its `### Sharpening` at H3 inside it. `doctrine/plans.md:115` (`##`) and `:116` (`### Sharpening`) are **already correct and stay**; `:422` is the line that changes, from `###` to `##`. | FOLDED → Chunk A, A.1 Change cell. |
+| 2 | C.2 row (`:104`) | C.2 \| heading level per A.1 \| new \| accept any level → red | C.2 \| S1 heading match (H2, `--` separator, ISO date) \| new \| accept H3 → red; accept an undated pass → red; accept `## Plan review tier` / `## Plan reviewers` → red. Each falsifier reddens C.2 and no other node. | FOLDED → Chunk C, C.2 row. |
+| 3 | `## Plan review` section (`:147-148`) | *Required — **External**. Implementation does not start until a review has landed under this heading.* | Required — **External**. Implementation does not start until a review satisfying **S1--S8** has landed **as a dated H2 pass in this file**. "Under this heading" is withdrawn: it describes a nesting the append-only lifecycle cannot produce, and it is the wording that let this plan's presence gate clear on two REVISE verdicts. | FOLDED → *Review disposition*, opening paragraph. The `## Plan review` container is **not** edited; it is simply no longer the gate. |
+| 4 | B.1, Change cell (`:90`) | Add to the review-pass format a **declared tier attestation** and a **review outcome**, both with **closed vocabularies**. Document in terms that the attestation is *declared, not authenticated*. | Implement **S1--S6** exactly: field names `**Tier**` and `**Findings**`, vocabularies `Internal\|External` and `none\|raised`, the three fail-closed directions of S3, the S4 no-inference rule, the S5 ordering, and the S6 normalizer validated against the 6 live `required(...)` forms. The *declared, not authenticated* framing is retained by S4. | FOLDED → Chunk B, B.1 Change cell. |
+| 5 | B.3, Change cell (`:92`) | Parse the two fields. Admit `Sharpening` to `_KNOWN_KINDS` — `[E3]` established it is absent today, so the conditional currently has no parseable subject. **Parse only; gate nothing yet.** | Unchanged in intent, sharpened in evidence: `Sharpening` is absent from `_KNOWN_KINDS`, so **the scaffold's own emitted block** (`:986-990`) parses to nothing — verified, a scaffold-shaped document yields `[(2, 'Plan review')]`. Also parse the S2 fields and the S6-normalized required tier. **Parse only; gate nothing yet.** | FOLDED → Chunk B, B.3 Change cell (and A.3, which owns the scaffold emit). |
+| 6 | C.4 row (`:106`) | C.4 \| `### Sharpening` when outcome declares findings \| new \| drop the conditional → red | C.4 \| **S7 positional** pairing: a `### Sharpening` inside *that pass's* body when it declares `**Findings**: raised` \| new \| drop the conditional → red; **and** move a sibling round's Sharpening outside the pass body → red (a neighbouring round's Sharpening must not satisfy this one). | FOLDED → Chunk C, C.4 row. |
+| 7 | Chunk C table (addition; attaches after C.4 — no superseded text) | *(none — this is an addition)* | **C.5** unknown / missing / duplicate `**Tier**` or `**Findings**` → violation, per S3, one falsifier each. **C.6** S6 normalization: all 6 live forms resolve; `required(not External)` and `required()` fail closed. **C.7** S5 ordering: `Internal` on an `External` floor → red; `External` on an `Internal` floor → green. **C.8** S12: both call sites return the same verdict on the same fixture; making one strict alone → red. **C.9** S9: a pass dated on/after `_REVIEW_SCHEMA_EPOCH` without S2 fields → refused; a pass dated before → admitted. | FOLDED + **SUPERSEDED** → Chunk C, rows C.5–C.9c. This row's **C.9** gates on `_REVIEW_SCHEMA_EPOCH`; that construct no longer exists. Read C.9a–C.9c in the chunk table, never this cell. |
+| 8 | Acceptance criteria (`:122-123`) | * `doctrine/plans.md`, both templates and the scaffold state **one** grammar; a grep for the review heading across all four surfaces returns one shape. | `doctrine/plans.md`, both templates and the scaffold state **one** grammar, verified by an **exact structural oracle** over all four surfaces — never a grep. The "returns one shape" criterion is **withdrawn**: it is incoherent against any grammar with an H2 pass and an H3 Sharpening, and a prefix grep is the very defect under repair. | FOLDED → *Acceptance criteria*, bullet 1. |
+| 9 | Acceptance criteria (`:125-127`) | * Four new nodes in `bootstrap/tests/test_lifecycle_contract.py`, each with its single-property falsifier **demonstrated**, not asserted — the falsifier is run and the red/green matrix recorded. | The **coverage set C.1--C.9** in `bootstrap/tests/test_lifecycle_contract.py`, each with its single-property falsifier **demonstrated** — run, with the red/green matrix recorded. The count "four" is withdrawn; the set is the criterion. The baseline is re-measured at the gating commit, **not** carried from here (`33 passed` at `da1de65`). | FOLDED + **SUPERSEDED** → *Acceptance criteria*, bullets 3–6. The set is now **C.1–C.9c**, and `33 passed` is re-anchored to `ec57bf0` with re-measurement required at the gating commit. |
+| 10 | D.1, Change cell (`:117`) | State the record-format change, the two affected fields, and what an adopter must do. The twin is a `verbatim` manifest source installed as `tools/lifecycle_planner.py`, so behaviour and policy ship together. | Same content, with a **durable home: `bootstrap/UPGRADE.md`** (which exists, and already carries a "Migrating a tree installed before upgrade support" precedent). It must state the two field names, the S6 normalizer, the `_REVIEW_SCHEMA_EPOCH` value, and that the exemption is **dated, not permanent**. The twin sentence stands. | FOLDED + **SUPERSEDED** → Chunk D, D.1 Change cell. This row requires UPGRADE.md to state "the `_REVIEW_SCHEMA_EPOCH` value"; that requirement is **void** — S9's replacement removed the constant, and an UPGRADE note naming an epoch would be wrong. |
+| 11 | *Sequence* (`:64-66`) | **Measured, `as_of 2026-08-04` at plan-open** — `grep -rhoE "^#{2,3} Plan review" dev/plans dev/proposals \| sort \| uniq -c`: **58 headings, all `##`, none `###`** (56 in `dev/plans`, 2 in `dev/proposals`). | The figure **reproduces exactly** and is retained as history. It is superseded **as evidence**: the command is a prefix match, and the exact split at `8dfb664` is **34** dated passes / **3** bare containers / **21** unrelated headings. At `da1de65` it is **44 / 5 / 22**. Any inventory uses the exact oracle. | FOLDED → Chunk A preamble, and Chunk C > C.0. The 58/34/3/21 and 44/5/22 figures are **withdrawn from operative text**, not restated: see C.0 for why counts are not carried and what invariant replaces them. |
+| 12 | *Source proposal* (`:16-17`) | The gate at `tools/lifecycle_planner.py:787` clears on the *presence* of a section named "Plan review", not on the review its own doctrine describes. | Correct at `8dfb664`; at `da1de65` the two call sites are `:791` (`_conformance_violations`) and `:865` (`_gating_preconditions`), with `_has_kind` at `:697`. Both are named, and S12 replaces them with one predicate. Cite by **symbol**, not line, from here on. | FOLDED → *Source proposal*, closing paragraph. |
+| 13 | *Verification* (`:136-137`) | * Reproduce the proposal's five-state table against the **post-change** module; the four rows that clear today must not all clear after Chunk C. | Reproduce it against **both** call sites, since S12 unifies them. The four shapes measured to clear today are: H3 dated pass, undated named pass, bare container, and Internal-only pass on an External floor. Add the two prefix collisions found here — `## Plan review tier` and `## Plan reviewers` — which also clear today and which S1 rejects. | FOLDED → *Verification*, bullet 1. |
+| 14 | *Verification* (`:138-140`) | * Confirm the tier attestation is parsed from the closed vocabulary and that an **unrecognized** value is a violation rather than a silent pass — the fail-open direction is the one that matters. | Retained and widened to **all three** S3 directions — unrecognized, **missing**, and **duplicate** — plus the S6 rejections. Unrecognized alone leaves two silent passes open. | FOLDED → *Verification*, bullet 2. |
+| 15 | Chunk C pre-inventory (`:108-111`) | **Before C lands, run the reconciled gate over every artifact in `dev/` and record which newly violate.** A gate that reddens the existing tree needs that disclosed up front, not discovered. That table is a deliverable of this chunk, not a note. | **Upheld**, with `[E4]`'s addition made binding: evaluate open plans **as if transitioning to `executing`**, not only in their current state — an old-format review stays green while status is `open` and fails only later, so a current-state scan reports a clean tree and is wrong. Population at `da1de65`: 31 review-required plans, 44 dated passes. | FOLDED → Chunk C, C.0. |
 
 Additions to *Lasting-truth migration*: **(i)** the tier and findings fields are
 parser fields, never inferred from a byline → `doctrine/plans.md`, beside the
@@ -772,3 +1200,121 @@ Keep the gate's claim narrow: it checks recorded conformance, not whether the
 named reviewer or review event is authentic. Once the legacy set and date
 semantics are made non-gameable in the binding schema, S11 can be considered
 discharged by this round without seeking another broad redesign.
+
+## Response to plan review -- Claude (author) -- 2026-08-05 (fold round)
+
+**Both findings accepted, and the second one is mine to own twice over.** A plan
+whose entire purpose is to stop a gate clearing on the *presence* of a review
+shipped a schema whose legacy exemption cleared on a *number the author types*.
+S9(d) asserted "it cannot become a second grammar" while being the second
+grammar. That is the same failure in a new dress: **the artifact under
+verification supplied the material used to verify it.**
+
+**What changed structurally: this revision folds, it does not append.** The
+2026-08-05 Response bound its decisions "by reference" from an *Amendments in
+force* table, on the stated premise that append-only forbade editing chunk
+cells. **That premise was wrong and I did not check it.**
+`doctrine/plans.md:202-207` makes chunk-table cell text mutable in place
+"pre-implementation only (plan status `open`; no commits in flight against the
+chunks being edited)" and says inline edits driven by accepted plan-review
+findings land there "with the Sharpening subsection naming which cells changed
+and why". Both conditions hold. So the schema and every amendment now live in
+operative plan text, and the amendments table is a **folded ledger** with a
+`Folded into` column added per row. An implementer who reads only the operative
+sections executes the current spec; there is no longer a second grammar to
+reconcile. The review and Response sections are untouched — verified
+mechanically: all 15 amendment rows are byte-identical prefixes of their new
+lines, and no deleted line in this commit's diff falls inside a landed review
+section.
+
+### Sharpening
+
+**Cells changed, and why. S9's replacement and the S1 date amendment were
+authored in the revision round and folded here; the re-verification below is
+mine.**
+
+| Cell / section | Change | Driven by |
+|---|---|---|
+| Header `**Plan review**` field | Points at *Review disposition* for discharge; `Last update` → 2026-08-05 | D1–D3 |
+| **NEW** *How to read this plan — precedence* | Names the operative sections and **inverts** the Response's precedence clause: the operative text governs, the table is a ledger | the fold remedy |
+| *Source proposal* | Stale `:787` replaced by symbol citation; re-measured `:697`/`:791`/`:865` at `ec57bf0` | row 12 |
+| *Scope* > In scope | Adds `scripts/gen_legacy_passes.py` (new, does not exist yet) and `bootstrap/UPGRADE.md` | S9(c), row 10 |
+| **NEW** *Review disposition* (D1–D3) | Folds row 3; records the reviewer's discharge condition and the Maintainer's disposition, quoted verbatim and isolated; states the bounds | rows 3, S11 |
+| **NEW** *The settled record schema* | S1–S13 promoted to operative text; **S1 amended**, **S9 replaced**, **S10 rewritten**, **S11 marked discharged**, **S12 re-cited by symbol** | S11 round + the fold remedy |
+| Chunk A preamble | The prefix-grep corpus figure **withdrawn from operative text** | row 11 |
+| A.1 / A.2 / A.3 | H2 grammar per S1; the templates' "*Optional*" contradiction; the scaffold emits a block its own parser discards | rows 1, 5 |
+| B.1 / B.2 / B.3 | S1–S6 named exactly, plus the date amendment | rows 4, 5 |
+| Chunk C table | C.1–C.4 rewritten; **C.3 is now the calendar-valid date node**; C.5–C.8 added; **C.9 (epoch) replaced by C.9a–C.9c (manifest)** | rows 2, 6, 7 + S11 |
+| **NEW** Chunk C > C.0 | Pre-inventory; the exact oracle; the "no figure carried" decision; the disclosure that the violation list comes from the code under test | row 15 |
+| D.1 | Durable home `bootstrap/UPGRADE.md`; the epoch requirement voided | row 10 |
+| *Acceptance criteria* | Grep criterion withdrawn; set is C.1–C.9c; baseline re-anchored; adds the `_REVIEW_SCHEMA_EPOCH`-absence criterion | rows 8, 9 |
+| *Verification* | Both call sites; all three S3 directions; **two new bullets** for the date contract and the backdating reproduction | rows 13, 14 + S11 |
+| *Amendments in force* | `Folded into` column appended; rows 7, 9, 10 marked **SUPERSEDED** | the fold remedy |
+
+**Rows 7, 10 and 9 needed more than folding.** Each embedded
+`_REVIEW_SCHEMA_EPOCH` or a figure the S11 round invalidated. Had they been
+folded as written, the epoch would have re-entered through the amendments table
+after being removed from S9 — which is exactly the "two grammars" hazard folding
+exists to prevent. Their `Folded into` cells say so and point at the chunk table.
+
+**The table's line anchors (`:77`, `:104`, …) are now stale** by construction:
+folding moved the cells they point at. They are append-only text and are left
+as written; the `Folded into` column names the destination by section, which does
+not move.
+
+### Re-derived figures — nothing carried forward
+
+Measured `as_of 2026-08-05` at `ec57bf0` under
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13).
+
+| Figure | Stated | Re-measured | Verdict |
+|---|---|---|---|
+| `date.fromisoformat` strictness | rejects `2026-99-99`, `2026-02-30`, `0000-00-00`; accepts `2028-02-29` | all four confirmed, plus `2027-02-29` rejected (non-leap) | **reproduces** |
+| `test_lifecycle_contract.py` | `30` (2026-08-04), then `33` (`da1de65`) | **33 passed in 1.86s**; 33 nodes collected by `python -m pytest bootstrap/tests` | **33 holds at HEAD**; snapshot, not baseline |
+| twins byte-identical | `md5 457b51c7772da181e838f99a2205d933` | identical for both paths | **reproduces** |
+| `_KNOWN_KINDS`, `Sharpening` absent | absent | `{review, response, revised, decision, plan, code}` at `:519` | **reproduces** |
+| gate call sites | `:791`, `:865`, `_has_kind` `:697` at `da1de65` | same three at `ec57bf0` | **reproduces**, and cited by symbol regardless |
+| `doctrine/plans.md` `:115`/`:116`/`:422` | `##` / `### Sharpening` / `###` | all three exact | **reproduces** |
+| template "*Optional*" lines | `:264` / `:241` | both exact | **reproduces** |
+| scaffold emit | `:986-990` | exact | **reproduces** |
+| `bootstrap/UPGRADE.md` | exists, 18,170 bytes | exists, 18,170 bytes, `## Migrating a tree installed before upgrade support` at `:170` | **reproduces** |
+| corpus, loose `^#{2,3} Plan review` | 58 (`8dfb664`) → 71 (`da1de65`) | **79** at `ec57bf0` | **moved again** — no figure carried; C.0 asserts the invariant instead |
+| corpus, exact S1 oracle | 44 dated / 5 bare / 22 other at `da1de65` | **52 / 5 / 22** across 75 files | **moved again**; same disposition |
+| S6: "6 live forms across 31 plans" | 6 / 31 | **7 distinct `required(...)` groups across 32 review-required plans** (34 plan files scanned, incl. archive); a new unbolded `External + External Security Review` appeared | **does not reproduce — moved.** No figure carried into S6; C.6 names the population, the command and the invariant |
+| S6: "a comma-split normalizer rejects the last two" | 2 rejected | **3** of the 7 rejected — both `+` forms *and* `**External cross-type**`; S6's first-alphabetic-word rule resolves all 7 | **understated by the Response.** Corrected in C.6, which now uses the comma-split as the explicit falsifier |
+| S6 negatives fail closed | asserted | `required(not External)` → `not`; `required()` → no word. Neither is in the vocabulary | **reproduces**, and is now stated as a mechanism rather than a promise |
+
+### One thing neither review nor the fix text had measured
+
+**This plan already contains the duplicate-append case S9(b)'s occurrence count
+exists for.** Under the exact S1 oracle this file carries **three** passes but
+only **two** distinct heading digests:
+`## Plan review -- Codex (External) -- 2026-08-05` appears **twice,
+byte-identical** — occurrence 1 is the first 2026-08-05 round, occurrence 2 is
+the S11 round from `e1b2e30` — digest `01bf85bb1d9a5d18`. Both cited by
+occurrence, not by line, because this very commit moved both of those lines by
+**+419** and left the digests untouched. A set-valued `_LEGACY_PASSES` would admit
+that heading forever, so *this very file* would have been the vehicle for the
+bypass the multiset closes. Folded into S9(b) and S10 as the worked example, and
+into C.9b as the fixture shape: the count-boundary node uses a stem whose
+manifest count is **2**, which exercises `manifest_count + 1` rather than the
+easier `1 → 2` edge.
+
+### What I could not close, stated rather than smoothed over
+
+**S9(d)(3) does not supply the provenance it reads as supplying, and S9(f) now
+says so.** Re-running the generator can only assert the **subset** direction —
+every manifest entry corresponds to a heading really present at that stem. The
+equality direction is unavailable: a review appended after Chunk C legitimately
+exists in the tree and legitimately is not in the manifest, so an equality
+assertion would redden the suite on the next review that lands. So (d)(3) catches
+a fabricated entry and manifest drift, and catches **neither** an entry added for
+a real newly-appended pass **nor** a defect in the generator's own regex — a
+producer cannot falsify its own output. The actual control is (d)'s: widening the
+manifest is a code diff a human reviews. That is weaker than a machine check and
+is recorded as such rather than described as provenance.
+
+**No implementation commit rides on this Response.** It rides on *Review
+disposition* > D1–D3. And the Maintainer's instruction is bounded there: it
+disposes of the review round, and supplies no Maintainer credential, signing ref,
+AST re-anchor ceremony, or approval to push.
