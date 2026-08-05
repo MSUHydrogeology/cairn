@@ -180,60 +180,101 @@ def test_policy_accepts_the_shipped_v1_document() -> None:
     assert accepted == {"schema": 1, "gitleaks": {"fingerprints": []}}
 
 
-_MALFORMATIONS = {
-    "unknown_top_level_key": '{"schema": 1, "gitleaks": {"fingerprints": []}, "extra": 1}',
-    "unknown_gitleaks_key": '{"schema": 1, "gitleaks": {"fingerprints": [], "other": 1}}',
-    "duplicate_json_key": '{"schema": 1, "schema": 1, "gitleaks": {"fingerprints": []}}',
-    "non_string_fingerprint": '{"schema": 1, "gitleaks": {"fingerprints": [7]}}',
-    "duplicate_fingerprint": '{"schema": 1, "gitleaks": {"fingerprints": ["aa", "aa"]}}',
-    "empty_fingerprint": '{"schema": 1, "gitleaks": {"fingerprints": [""]}}',
-    "oversized_fingerprint":
-        '{"schema": 1, "gitleaks": {"fingerprints": ["' + "a" * 400 + '"]}}',
-    "control_char_fingerprint":
-        '{"schema": 1, "gitleaks": {"fingerprints": ["a\\u0007b"]}}',
-    "newline_fingerprint":
-        '{"schema": 1, "gitleaks": {"fingerprints": ["a\\nb"]}}',
-    "unsupported_schema": '{"schema": 2, "gitleaks": {"fingerprints": []}}',
-    "names_a_path": '{"schema": 1, "gitleaks": {"fingerprints": []}, "path": "/x"}',
-    "names_argv": '{"schema": 1, "gitleaks": {"fingerprints": []}, "argv": []}',
-    "names_an_env_var": '{"schema": 1, "gitleaks": {"fingerprints": []}, "env": {}}',
-    "names_an_executable":
-        '{"schema": 1, "gitleaks": {"fingerprints": []}, "executable": "x"}',
-    "names_a_config_file":
-        '{"schema": 1, "gitleaks": {"fingerprints": []}, "config": "x"}',
-    "names_a_baseline":
-        '{"schema": 1, "gitleaks": {"fingerprints": []}, "baseline": "x"}',
-    "names_a_digest":
-        '{"schema": 1, "gitleaks": {"fingerprints": []}, "digest": "x"}',
-    "names_a_hash": '{"schema": 1, "gitleaks": {"fingerprints": []}, "hash": "x"}',
-    "names_a_checksum":
-        '{"schema": 1, "gitleaks": {"fingerprints": []}, "checksum": "x"}',
-    "names_an_admitted_artifact":
-        '{"schema": 1, "gitleaks": {"fingerprints": []}, "admitted_artifact": "x"}',
+def _fp(*items: str) -> str:
+    return '{"schema": 1, "gitleaks": {"fingerprints": [%s]}}' % ", ".join(items)
+
+
+def _top(extra_key: str, value: str = '"x"') -> str:
+    return ('{"schema": 1, "gitleaks": {"fingerprints": []}, "%s": %s}'
+            % (extra_key, value))
+
+
+#: ``case -> (document, the refusal reason fragment that names its branch)``.
+#:
+#: Each case pins **both** that the document is refused **and** which branch
+#: refused it.  That is not belt-and-braces: the fingerprint charset check
+#: alone would refuse an empty, control-charactered or newline-bearing
+#: fingerprint, so a node asserting refusal only would stay green after its own
+#: branch was deleted.  Pinning the reason is what makes deleting one branch
+#: redden exactly the node that names it.
+_MALFORMATIONS: dict[str, tuple[str, str]] = {
+    "unknown_top_level_key": (_top("extra", "1"), "unknown top-level policy key"),
+    "missing_top_level_key": ('{"schema": 1}', "missing top-level policy key"),
+    "unknown_gitleaks_key": (
+        '{"schema": 1, "gitleaks": {"fingerprints": [], "other": 1}}',
+        "unknown key\\(s\\) under 'gitleaks'",
+    ),
+    "duplicate_json_key": (
+        '{"schema": 1, "schema": 1, "gitleaks": {"fingerprints": []}}',
+        "duplicate JSON key",
+    ),
+    "not_json": ("{not json", "not valid JSON"),
+    "top_level_not_an_object": ("[]", "top level must be a JSON object"),
+    "gitleaks_not_an_object": (
+        '{"schema": 1, "gitleaks": []}', "'gitleaks' must be a JSON object",
+    ),
+    "fingerprints_not_a_list": (
+        '{"schema": 1, "gitleaks": {"fingerprints": "aa"}}',
+        "'gitleaks.fingerprints' must be a list",
+    ),
+    "non_string_fingerprint": (_fp("7"), "fingerprint is not a string"),
+    "duplicate_fingerprint": (_fp('"aa"', '"aa"'), "duplicate fingerprint"),
+    "empty_fingerprint": (_fp('""'), "fingerprint is empty"),
+    "oversized_fingerprint": (_fp('"' + "a" * 400 + '"'), "exceeds 200 characters"),
+    "control_char_fingerprint": (_fp('"a\\u0007b"'), "control character"),
+    "newline_fingerprint": (_fp('"a\\nb"'), "may never become two"),
+    "disallowed_char_fingerprint": (_fp('"a b"'), "disallowed character"),
+    "unsupported_schema": (
+        '{"schema": 2, "gitleaks": {"fingerprints": []}}',
+        "unsupported policy schema",
+    ),
 }
 
 
 @pytest.mark.parametrize("case", sorted(_MALFORMATIONS))
 def test_policy_refuses_every_named_malformation(case: str) -> None:
-    """One node per malformation, so deleting one validator branch fails
-    exactly the case(s) that branch owns rather than a lump."""
+    """One node per malformation, each pinned to the branch that owns it, so
+    deleting one validator branch reddens exactly that node."""
     runner = load_runner()
-    with pytest.raises(runner.PolicyError):
-        runner.parse_policy(_MALFORMATIONS[case])
+    document, reason = _MALFORMATIONS[case]
+    with pytest.raises(runner.PolicyError, match=reason):
+        runner.parse_policy(document)
 
 
-@pytest.mark.parametrize(
-    "case", ["names_a_version", "names_a_mode", "names_versions"]
-)
-def test_policy_cannot_select_a_version_or_mode(case: str) -> None:
-    """A policy naming a version or a mode refuses.  Admission is a reviewed
-    source change; nothing an adopter-editable document says can reach it."""
+#: Every surface the policy may never name.  These are *also* caught by the
+#: closed-key rule, so the node asserts the refusal **names the class** --
+#: otherwise deleting the forbidden-name check would redden nothing.
+_FORBIDDEN_NAMES = [
+    "path", "argv", "env", "executable", "command", "config", "baseline",
+    "digest", "hash", "checksum", "artifact", "admitted_binary", "url",
+    "network",
+]
+
+
+@pytest.mark.parametrize("key", _FORBIDDEN_NAMES)
+def test_policy_refuses_a_key_that_names_a_forbidden_surface(key: str) -> None:
+    """The policy carries reviewed fingerprint suppressions and nothing else:
+    no path, argv, environment variable, executable, config file, baseline, or
+    -- per the digest design -- digest, hash, checksum or admitted artifact.
+
+    A digest an adopter could edit would let a candidate *admit its own
+    binary*, which is strictly weaker than the self-reported version string it
+    was meant to replace.  That is why the digest lives in source."""
     runner = load_runner()
-    key = {"names_a_version": "version", "names_a_mode": "mode",
-           "names_versions": "versions"}[case]
-    doc = ('{"schema": 1, "gitleaks": {"fingerprints": []}, "%s": "8.30.1"}' % key)
-    with pytest.raises(runner.PolicyError):
-        runner.parse_policy(doc)
+    with pytest.raises(runner.PolicyError,
+                       match="names a surface the policy does not own"):
+        runner.parse_policy(_top(key))
+
+
+@pytest.mark.parametrize("key", ["version", "versions", "mode"])
+def test_policy_cannot_select_a_version_or_mode(key: str) -> None:
+    """A policy naming a version or a mode refuses, and the refusal says so.
+    Admission is a reviewed source change; nothing an adopter-editable document
+    says can reach it."""
+    runner = load_runner()
+    with pytest.raises(runner.PolicyError,
+                       match="names a surface the policy does not own"):
+        runner.parse_policy(_top(key, '"8.30.1"'))
 
 
 def test_policy_refusal_precedes_every_side_effect(tmp_path: Path) -> None:
