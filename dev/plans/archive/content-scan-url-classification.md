@@ -1,7 +1,11 @@
+<!-- Historical review prose cites the live plan path, which ceases to resolve
+     when this completed record moves to archive. -->
+<!-- claim-check-allow: dev/plans/content-scan-url-classification.md -->
+
 # Plan: classify URL scanning by adopter file role
 
-**Source proposal**: [`dev/proposals/archive/2026-08-05-claude-content-scan-url-classification.md`](../proposals/archive/2026-08-05-claude-content-scan-url-classification.md)
-**Status**: review
+**Source proposal**: [`dev/proposals/archive/2026-08-05-claude-content-scan-url-classification.md`](../../proposals/archive/2026-08-05-claude-content-scan-url-classification.md)
+**Status**: archived
 **Plan review**: not required -- the accepted proposal already contains the
 External Security Review's four exact remedies and this plan introduces no new
 security design; an independent code review remains required before archive
@@ -169,3 +173,29 @@ At archive, add one `CHANGELOG.md > Unreleased > Fixed` line and remove this
 plan from the active verification-cluster owner list. No new deferral is
 expected.
 
+## Archive -- Codex -- 2026-08-05
+
+Implementation landed in `251fefc` and `8620d28`. The independent Antigravity
+code review at `3355768` examined both commits, re-ran the focused security
+tests and repository checks, and returned **SHIP** without a finding.
+
+The post-review stable-boundary run at
+`75da38349e0f804209234ef668aedbbd909caef1` used CPython 3.13.13 and
+`PYTHONDONTWRITEBYTECODE=1`:
+
+`python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0` completed with
+**2513 passed, 0 failed, 0 skipped, 0 xfailed, 0 xpassed**, plus three
+third-party deprecation warnings, in 329.44 seconds. The tracked worktree and
+HEAD were unchanged across the run.
+
+The accepted posture is now the lasting one: only known `dev/**` and `docs/**`
+discussion prose omits `suspicious-url`; every unknown or instruction-like role
+keeps the strict default. A bare hostile URL in known discussion prose remains
+the disclosed detector residual unless a supported egress verb is nearby. Git
+is validated for shape and containment but remains an operator trust root, with
+the documented post-validation execution race. Review accepted both residuals.
+
+The `CHANGELOG.md > Unreleased > Fixed` entry landed in `b92fa6c`. This archive
+removes the plan from the active verification-cluster owner list. No new
+deferral was created, and no AST or gate-manifest ceremony belongs to this
+scope.
