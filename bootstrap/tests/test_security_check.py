@@ -308,6 +308,188 @@ def test_fail_closed_when_the_manifest_refuses(monkeypatch, capsys) -> None:
     assert "FAIL CLOSED" in err
 
 
+# ---------------------------------------------------------------------------
+# Phases 3-4 -- the release-mode suite, the quality gate, and R1 propagation
+# ---------------------------------------------------------------------------
+
+def _spy_run(monkeypatch, rc: int = 0):
+    """Replace ``subprocess.run`` inside the subject and record every call."""
+    calls: list[dict] = []
+
+    class _Proc:
+        returncode = rc
+
+    def _fake(cmd, **kwargs):
+        calls.append({"cmd": list(cmd), "env": kwargs.get("env"),
+                      "cwd": kwargs.get("cwd")})
+        return _Proc()
+
+    monkeypatch.setattr(security_check.subprocess, "run", _fake)
+    return calls
+
+
+def test_the_release_token_name_and_value_are_pinned_literals() -> None:
+    """The token is a **cross-file contract** -- ``bootstrap/tests/conftest.py``
+    recognizes this exact pair -- so it needs an oracle that is not the constant
+    itself.
+
+    Measured while building this file: mutating ``RELEASE_GATE_VALUE`` to
+    ``"true"`` left every *other* node here green, because they read the
+    expected value from the subject. Two hand-typed literals close that."""
+    assert security_check.RELEASE_GATE_ENV == "CAIRN_RELEASE_GATE_ACTIVE"
+    assert security_check.RELEASE_GATE_VALUE == "1"
+
+
+def test_the_release_token_reaches_both_direct_children(monkeypatch) -> None:
+    """**R1.3, direct half.** Both phase-3 and phase-4 children are handed the
+    token EXPLICITLY and at the EXACT recognized value.
+
+    This half is necessary and **not sufficient**: an implementation that built
+    a correct dict here and still stripped the token from the real child would
+    pass. The sufficient check is
+    ``test_a_skipping_grandchild_makes_the_quality_gate_phase_nonzero``, which
+    drives the genuine ``quality_gate -> pytest`` grandchild path."""
+    calls = _spy_run(monkeypatch, rc=0)
+    assert security_check.run_suite() == 0
+    assert security_check.run_quality_gate() == 0
+    assert len(calls) == 2
+    for call in calls:
+        env = call["env"]
+        assert env is not None, (
+            "the child environment must be passed EXPLICITLY, not inherited -- "
+            f"{call['cmd']}")
+        assert env[security_check.RELEASE_GATE_ENV] == \
+            security_check.RELEASE_GATE_VALUE
+        # A superset of the operator's environment: the quality gate's
+        # order-independence sub-gate launches pytest as a grandchild with no
+        # env= of its own, so anything dropped here never reaches it.
+        assert set(os.environ) - {security_check.RELEASE_GATE_ENV} <= set(env)
+
+
+def test_setting_the_token_does_not_leak_into_this_process(monkeypatch) -> None:
+    """R1.1: built from a **copy**. A mutation of ``os.environ`` would make the
+    parent's own pytest session release-mode too, and would survive into the
+    Bandit and check_cairn phases that must not see it."""
+    monkeypatch.delenv(security_check.RELEASE_GATE_ENV, raising=False)
+    _spy_run(monkeypatch, rc=0)
+    security_check.run_suite()
+    assert security_check.RELEASE_GATE_ENV not in os.environ
+
+
+def test_a_nonzero_suite_exit_is_a_refusal(monkeypatch, capsys) -> None:
+    """Including the exits that are not test failures: pytest 4 is a usage
+    error and 5 is "no tests collected" -- absent evidence, not a clean gate."""
+    for rc in (1, 4, 5):
+        _spy_run(monkeypatch, rc=rc)
+        assert security_check.run_suite() == 1, rc
+        assert f"exited {rc}" in capsys.readouterr().err
+
+
+def test_suite_fails_closed_when_the_tests_directory_is_absent(
+        tmp_path, monkeypatch, capsys) -> None:
+    monkeypatch.setattr(security_check, "CAIRN_ROOT", tmp_path)
+    assert security_check.run_suite() == 1
+    assert "fail closed" in capsys.readouterr().err
+
+
+def test_suite_fails_closed_when_the_interpreter_cannot_be_spawned(
+        monkeypatch, capsys) -> None:
+    def _boom(*_a, **_k):
+        raise OSError("Exec format error")
+
+    monkeypatch.setattr(security_check.subprocess, "run", _boom)
+    assert security_check.run_suite() == 1
+    assert "cannot run the suite" in capsys.readouterr().err
+
+
+def test_quality_gate_fails_closed_when_the_script_is_absent(
+        tmp_path, monkeypatch, capsys) -> None:
+    (tmp_path / "scripts").mkdir()
+    monkeypatch.setattr(security_check, "CAIRN_ROOT", tmp_path)
+    assert security_check.run_quality_gate() == 1
+    assert "missing -- fail closed" in capsys.readouterr().err
+
+
+def test_a_nonzero_quality_gate_exit_is_a_refusal(monkeypatch, capsys) -> None:
+    _spy_run(monkeypatch, rc=1)
+    assert security_check.run_quality_gate() == 1
+    assert "quality_gate exited 1" in capsys.readouterr().err
+
+
+def test_main_names_all_four_phases_in_order() -> None:
+    assert [label for label, _fn in security_check._phases()] == [
+        "bandit", "check_cairn", "release-mode suite", "quality_gate"]
+
+
+def test_main_attempts_every_phase_after_the_first_failure(monkeypatch,
+                                                           capsys) -> None:
+    """B1: one run yields a COMPLETE repair list. Short-circuiting on the first
+    failure would make a Maintainer re-run the whole gate per defect."""
+    ran: list[str] = []
+
+    def _phase(name, rc):
+        def _fn():
+            ran.append(name)
+            return rc
+        return _fn
+
+    monkeypatch.setattr(security_check, "run_bandit", _phase("bandit", 1))
+    monkeypatch.setattr(security_check, "run_check_cairn", _phase("cairn", 0))
+    monkeypatch.setattr(security_check, "run_suite", _phase("suite", 1))
+    monkeypatch.setattr(security_check, "run_quality_gate", _phase("qg", 0))
+    monkeypatch.setattr(security_check, "repo_state_preflight",
+                        lambda: (0, "a" * 40))
+    monkeypatch.setattr(security_check, "repo_state_postflight", lambda _h: 0)
+
+    assert security_check.main() == 1
+    assert ran == ["bandit", "cairn", "suite", "qg"]
+    err = capsys.readouterr().err
+    assert "phase bandit did not pass" in err
+    assert "phase release-mode suite did not pass" in err
+
+
+def test_main_refuses_when_only_the_postflight_fails(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(security_check, "run_bandit", lambda: 0)
+    monkeypatch.setattr(security_check, "run_check_cairn", lambda: 0)
+    monkeypatch.setattr(security_check, "run_suite", lambda: 0)
+    monkeypatch.setattr(security_check, "run_quality_gate", lambda: 0)
+    monkeypatch.setattr(security_check, "repo_state_preflight",
+                        lambda: (0, "b" * 40))
+    monkeypatch.setattr(security_check, "repo_state_postflight", lambda _h: 1)
+    assert security_check.main() == 1
+    assert "FAIL" in capsys.readouterr().err
+
+
+def test_main_stops_at_a_failed_preflight_and_runs_no_phase(monkeypatch) -> None:
+    """A1: the preflight *stops the command*. Scanning a dirty tree and then
+    reporting the dirt would waste a five-minute run and, worse, print scanner
+    output an operator could mistake for release evidence."""
+    ran: list[str] = []
+    for name in ("run_bandit", "run_check_cairn", "run_suite",
+                 "run_quality_gate"):
+        monkeypatch.setattr(security_check, name,
+                            (lambda n: lambda: (ran.append(n), 0)[1])(name))
+    monkeypatch.setattr(security_check, "repo_state_preflight",
+                        lambda: (1, None))
+    assert security_check.main() == 1
+    assert ran == []
+
+
+def test_main_reports_the_full_head_on_a_clean_pass(monkeypatch, capsys) -> None:
+    """A3: release notes have to be able to bind the run to a commit id."""
+    head = "c" * 40
+    monkeypatch.setattr(security_check, "run_bandit", lambda: 0)
+    monkeypatch.setattr(security_check, "run_check_cairn", lambda: 0)
+    monkeypatch.setattr(security_check, "run_suite", lambda: 0)
+    monkeypatch.setattr(security_check, "run_quality_gate", lambda: 0)
+    monkeypatch.setattr(security_check, "repo_state_preflight",
+                        lambda: (0, head))
+    monkeypatch.setattr(security_check, "repo_state_postflight", lambda _h: 0)
+    assert security_check.main() == 0
+    out = capsys.readouterr().out
+    assert "PASS" in out and head in out
+
+
 @pytest.mark.skipif(not _bandit_available(), reason="bandit not installed")
 def test_fail_closed_on_a_missing_target_with_real_bandit(tmp_path, monkeypatch) -> None:
     """The same fail-close, with the verdict coming from **real Bandit**

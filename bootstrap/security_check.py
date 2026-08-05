@@ -23,17 +23,39 @@ evidence about bytes nobody can fetch. The same state is re-checked after the
 phases, and the full ``HEAD`` is printed in the summary so release notes can
 bind the run to the tagged commit.
 
-It scans the same **derived** executable surface as the dev gate -- every
+**Four phases**, and every phase after the preflight is *attempted* even once
+an earlier one has failed, so one run yields a complete repair list:
+
+1. the repository-state preflight above;
+2. Bandit over the derived shipped surface, plus the Markdown self-check
+   (``scripts/check_cairn.py``);
+3. the whole engine suite (``bootstrap/tests``) in **release mode** -- see
+   :data:`RELEASE_GATE_ENV`: a skipped, xfailed or xpassed outcome is
+   incomplete release evidence and makes the session non-zero;
+4. ``scripts/quality_gate.py`` (order-independence + vendor-neutrality +
+   redundancy).
+
+``PASS`` requires both state checks and all three checking phases clean. A
+phase that *failed*, *errored*, was *unavailable*, produced *incomplete
+evidence*, or ran against a *changed candidate* is non-zero -- an absent tool
+must never read as a pass.
+
+The Bandit surface is the same **derived** one as the dev gate -- every
 file the scaffold ships **byte-for-byte** as Python, derived from the
 published install manifest (``install_manifest``, the same enumeration
 behind ``scaffold.py --manifest``), plus Cairn's own dev scripts and the
-scaffold engine -- and runs the Markdown self-check
-(``scripts/check_cairn.py``). Exit 0 only if both pass. This module is the
+scaffold engine. This module is the
 single source of the scan-target set and the Bandit allowlist; the dev
 gate imports them (no second drift-prone copy).
 
+**What this command does not do**, stated rather than implied: it does not
+authenticate its own bytes or process, and nothing binds its output to a
+release tag. Running it, reading it, and recording it in the release notes is
+the Maintainer's act -- see ``SECURITY.md`` and ``bootstrap/PROVENANCE.md``.
+
 Security-hardening Chunk 7 / R1; manifest derivation per the
-``scan-coverage`` plan.
+``scan-coverage`` plan; four-phase orchestration per the
+``release-security-orchestration`` plan.
 """
 from __future__ import annotations
 
@@ -55,6 +77,15 @@ from bootstrap._scaffold.config import (  # noqa: E402  (trust anchor: narrowest
 from bootstrap._scaffold.install import install_manifest  # noqa: E402
 
 _BLOCKING_SEVERITIES = {"MEDIUM", "HIGH"}
+
+#: The release-mode token, and its **one** recognized value (Binding
+#: amendment R1). ``bootstrap/tests/conftest.py`` reads exactly this pair and
+#: refuses skipped / xfailed / xpassed outcomes when it matches; any other
+#: value -- including the variable being absent -- leaves ordinary contributor
+#: behaviour untouched. The pair lives here because this command is the only
+#: thing that sets it.
+RELEASE_GATE_ENV = "CAIRN_RELEASE_GATE_ACTIVE"
+RELEASE_GATE_VALUE = "1"
 
 #: Triaged-acceptable Bandit findings, keyed by (repo-relative file,
 #: test_id), each with a mandatory rationale. The single source of truth
@@ -408,13 +439,105 @@ def run_check_cairn() -> int:
                           cwd=str(CAIRN_ROOT), check=False).returncode
 
 
-#: The phases attempted after the preflight passes, in order. Every one is
-#: attempted even after an earlier failure, so a single run yields a complete
-#: repair list rather than the first thing that broke.
-_PHASES: tuple[tuple[str, Callable[[], int]], ...] = (
-    ("bandit", run_bandit),
-    ("check_cairn", run_check_cairn),
-)
+def _release_child_env() -> dict[str, str]:
+    """The child environment for phases 3 and 4 (**R1.1**).
+
+    Built from a **copy** of ``os.environ`` and passed **explicitly** to both
+    subprocesses. Three properties, each load-bearing:
+
+    * a *copy*, so setting the token cannot leak into this process or into a
+      sibling phase that must not see it;
+    * *explicit*, so the token's arrival does not depend on inheritance being
+      left undisturbed by a future edit;
+    * a *superset* of the operator's environment, because the quality gate's
+      order-independence sub-gate launches pytest as a **grandchild** with no
+      ``env=`` of its own (``scripts/quality_gate.py``, argv bound at the
+      ``cmd`` assignment, ``subprocess.run`` immediately below). It reaches
+      that grandchild by inheritance alone -- which is why the decisive
+      regression in ``bootstrap/tests/test_security_check.py`` drives the real
+      child path rather than reading this dict back.
+    """
+    env = dict(os.environ)
+    env[RELEASE_GATE_ENV] = RELEASE_GATE_VALUE
+    return env
+
+
+def run_suite() -> int:
+    """Phase 3: the whole engine suite, in release mode.
+
+    Output is not captured: the operator records this run in the release
+    notes, so the evidence has to be visible while it happens.
+    """
+    tests = CAIRN_ROOT / "bootstrap" / "tests"
+    if not tests.is_dir():
+        print(f"security_check: {tests} is missing -- fail closed. A release "
+              f"cannot be cut on a suite that is not there.", file=sys.stderr)
+        return 1
+    print(f"security_check: running the engine suite in release mode "
+          f"({RELEASE_GATE_ENV}={RELEASE_GATE_VALUE}) -- skipped, xfailed and "
+          f"xpassed outcomes are incomplete release evidence.")
+    try:
+        proc = subprocess.run(
+            [sys.executable, "-m", "pytest", "bootstrap/tests", "-q"],
+            cwd=str(CAIRN_ROOT), env=_release_child_env(), check=False,
+        )
+    except OSError as exc:
+        print(f"security_check: cannot run the suite ({exc}) -- fail closed.",
+              file=sys.stderr)
+        return 1
+    # Every non-zero pytest exit is a refusal, including the ones that are not
+    # test failures: 4 (usage error) and 5 (no tests collected) are absent
+    # evidence, and absent evidence must not read as a clean gate.
+    if proc.returncode != 0:
+        print(f"security_check: the release-mode suite exited "
+              f"{proc.returncode} -- fail closed.", file=sys.stderr)
+        return 1
+    return 0
+
+
+def run_quality_gate() -> int:
+    """Phase 4: ``scripts/quality_gate.py`` -- in no release checklist before
+    this plan, though it owns the vendor-neutrality gate that protects every
+    adopter-facing template."""
+    script = CAIRN_ROOT / "scripts" / "quality_gate.py"
+    if not script.is_file():
+        print(f"security_check: {script} missing -- fail closed.",
+              file=sys.stderr)
+        return 1
+    try:
+        proc = subprocess.run(
+            [sys.executable, str(script)],
+            cwd=str(CAIRN_ROOT), env=_release_child_env(), check=False,
+        )
+    except OSError as exc:
+        print(f"security_check: cannot run the quality gate ({exc}) -- fail "
+              f"closed.", file=sys.stderr)
+        return 1
+    if proc.returncode != 0:
+        print(f"security_check: quality_gate exited {proc.returncode} -- fail "
+              f"closed.", file=sys.stderr)
+        return 1
+    return 0
+
+
+def _phases() -> tuple[tuple[str, Callable[[], int]], ...]:
+    """The phases attempted after the preflight passes, in order. Every one is
+    attempted even after an earlier failure, so a single run yields a complete
+    repair list rather than the first thing that broke.
+
+    A **function**, not a module constant, on purpose: a module-level tuple
+    binds each runner *by value at import*, so repointing
+    ``security_check.run_suite`` -- the ordinary way to isolate one phase --
+    would be a silent no-op. That exact trap is documented against
+    ``_SKILLS_MAPPINGS`` in ``bootstrap/tests/test_security_lint.py``; the
+    globals are resolved here at call time instead.
+    """
+    return (
+        ("bandit", run_bandit),
+        ("check_cairn", run_check_cairn),
+        ("release-mode suite", run_suite),
+        ("quality_gate", run_quality_gate),
+    )
 
 
 def main() -> int:
@@ -426,7 +549,7 @@ def main() -> int:
         print("security_check: FAIL -- resolve the above before release.",
               file=sys.stderr)
         return rc or 1
-    for label, phase in _PHASES:
+    for label, phase in _phases():
         # Normalised to 0/1 rather than OR-ed: a phase's raw exit code is not
         # a bit field (1 | 2 == 3), and the only contract here is clean vs not.
         if phase() != 0:
