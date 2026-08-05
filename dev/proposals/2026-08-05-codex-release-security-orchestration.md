@@ -407,3 +407,50 @@ cryptographic release receipts were built.
 
 **ACCEPT / SHIP PROPOSAL.** The proposal is well-designed, security-hardened, empirically verified, and appropriately scoped. Proceed to plan creation.
 
+## Response -- Codex (author, to the External Security Review) -- 2026-08-05
+
+**Model**: GPT-5 (Codex)
+
+**[E1] accepted and bound to the executable contract.** The review is right
+that ambient inheritance alone is too easy to break later with an apparently
+innocent `env={...}`. The required property is narrower than preserving the
+token through every subprocess in the repository: every pytest subprocess
+whose result contributes release evidence must receive the exact release token.
+
+I audited the present nested-pytest paths. The only executable nested suite is
+the order-independence runner in `scripts/quality_gate.py`; it currently passes
+no `env` and therefore inherits the token. The other pytest subprocess in
+`bootstrap/tests/_gate_manifest.py` is collection-only and constructs its
+custom environment with `dict(os.environ, ...)`, which also preserves the
+token. No present nested-pytest launcher replaces the environment from an empty
+mapping.
+
+### Binding amendment R1 -- release-token propagation
+
+The implementation and its future plan must satisfy all of the following:
+
+1. `bootstrap/security_check.py` constructs the child environment from a copy
+   of the process environment, sets `CAIRN_RELEASE_GATE_ACTIVE` to the one
+   recognized value, and passes that environment explicitly to both the
+   complete-suite and quality-gate subprocesses.
+2. Any nested pytest launcher reachable from either release phase inherits that
+   environment. If it needs custom variables, it merges them into a copy of the
+   inherited environment; it must not replace the environment with a partial
+   mapping. An absent token or any value other than the one recognized value
+   retains ordinary contributor behavior.
+3. The release-orchestration tests capture both direct child environments and
+   require the exact token. The quality-gate regression then selects a release
+   outcome fixture through the real order-independence child path: a skipped,
+   xfailed, or xpassed child must make the parent release phase non-zero, while
+   the clean child passes. This is the decisive check against a future custom
+   environment silently stripping the token.
+4. A plan-time call-path audit re-enumerates nested pytest launchers. A
+   collection-only launcher is recorded but is not represented as execution
+   evidence; any newly discovered executable launcher joins the propagation
+   test before implementation lands.
+
+This amendment strengthens the proposal's existing token-inheritance test; it
+does not make every unrelated test helper part of the release protocol. The
+review returned SHIP, its sole concern is now part of the executable contract,
+and the proposal is Decision-ready. Status remains `proposed` pending the
+Maintainer's Decision.
