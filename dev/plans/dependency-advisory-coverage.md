@@ -18,7 +18,7 @@
 Maintainer Decision, *"I accept the dependency-advisory-coverage proposal as
 revised"*). It currently sits under `dev/proposals/` and moves to
 `dev/proposals/archive/` when it archives.
-**Status**: executing
+**Status**: review
 **Plan review**: required(**External**, security lens) — carried from the
 proposal's Decision (*"Next transition: plan-open, carrying `required(External,
 security lens)` in its own right"*) and independently triggered: `AGENTS.md` >
@@ -2682,3 +2682,32 @@ must re-run the named attacks before the plan can leave `review`.
 **98 passed**; direct Bandit over `run_security_audit.py` reports zero
 MEDIUM/HIGH findings; `py_compile` and `git diff --check` are clean. The broad
 suite and gate attribution are recorded after the stable corrective commit.
+
+## Corrective stable-boundary verification -- Codex -- 2026-08-05
+
+The corrective implementation is commit `d01c5ba`. A clean detached checkout
+of those bytes ran the canonical shuffled suite and produced **2511 passed, 1
+failed, 1 skipped** in 272.06 seconds. Both non-passes are environment-boundary
+effects, not normalized into a green result: the clone had no local
+`refs/cairn/gate-anchor`, so the public pre-flight smoke refused without the
+word `bootstrap`; and it had no sibling `modflow_tools` checkout, so the
+optional live-ledger dogfood node skipped. All 98 security-stack tests passed in
+that detached run, including the CR1--CR3 regressions.
+
+The same implementation bytes were then exercised through the repository's
+real local trust roots at stable HEAD
+`75da38349e0f804209234ef668aedbbd909caef1`. The tracked worktree and HEAD were
+unchanged before and after the command; three pre-existing user-owned untracked
+measurement/configuration paths remained present and untouched.
+
+`PYTHONDONTWRITEBYTECODE=1
+/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests
+--quality-gate-shuffle-seed=0` completed with **2513 passed, 0 failed, 0
+skipped, 0 xfailed, 0 xpassed**, plus three third-party deprecation warnings, in
+329.44 seconds under CPython 3.13.13.
+
+The plan now waits in `review`. An independent reviewer or the Maintainer must
+re-run the three original attacks: version/schema mismatch cannot launch the
+lookup, structured findings or return-code contradictions cannot become CLEAN,
+and a TERM-resistant descendant cannot survive timeout cleanup. This authoring
+session does not treat the broad green run as a substitute for that review.

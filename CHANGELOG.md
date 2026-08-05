@@ -117,6 +117,14 @@ and a new empty `Unreleased` is started above.
 
 ### Fixed
 
+- **The Python dependency audit now proves what it covered before reporting
+  CLEAN.** It binds parsing to the active pip-audit version, validates and
+  counts structured vulnerabilities, reports every blocking reason, and gates
+  CLEAN on zero unknown dependencies and zero findings. Its shared process
+  boundary also has bounded output capture, escaped diagnostics, a timeout,
+  and process-group cleanup. Proposal and plan
+  `dependency-advisory-coverage`.
+
 - **Adopter URL scanning now distinguishes discussion prose from instruction
   surfaces without trusting ambient Git state.** Only known `dev/**` and
   `docs/**` paths omit the template-specific suspicious-URL detector; unknown,
