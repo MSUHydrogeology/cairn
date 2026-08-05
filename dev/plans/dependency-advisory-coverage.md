@@ -2458,3 +2458,123 @@ statement above came from `inspect.getsource` or a `grep` over installed files
 under `site-packages`, on the canonical interpreter
 `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13), `as_of`
 2026-08-05. No pip-audit run, no `--dry-run`, no venv, no index fetch.
+
+### Chunk 0 residuals discharged -- the schema flip, D-t1 and D-t6 -- 2026-08-05
+
+**Model**: Claude Opus 5 (`claude-opus-5`). **Standing**: an append-only
+evidence record by the implementing agent, under the Maintainer's disposition of
+the REVISE (*"Go ahead with implementation once you've revised these. I don't
+want another review round"*) — which the fence names as an alternative to the
+External reviewer's, and which supplies no signing ref, no AST re-anchor
+ceremony, and no approval to push. It amends no earlier conclusion.
+
+**Two commits.** `9aea3af` (the schema flip + the classifier + the two
+re-expressed nodes + the adopter-doctrine correction) and `d24c589` (D-t1,
+D-t6).
+
+**`_PIP_AUDIT_SCHEMA_ESTABLISHED` is now `True`, scoped to 2.10.1**, with the
+0c/0d schema as its warrant and `_PIP_AUDIT_SCHEMA_VERSION` naming the version a
+bump would re-open. The UNKNOWN count is derived by **partitioning
+`dependencies` on the presence of `skip_reason`**, because the skipped set has no
+top-level key. So:
+
+* **The archive note's conditional row for the fail-closed fallback does not
+  fire.** The fallback is not what ships; the leg can reach CLEAN, and D-t2's
+  second half proves the gate discriminates rather than being vacuously
+  always-INCOMPLETE.
+* **The Chunk 0 hard precondition in A28 is discharged**, so D-t1 and D-t6
+  landed. Their fixtures were **emitted by pip-audit 2.10.1's own `JsonFormat`**
+  and pasted verbatim — the formatter is the oracle, not the session that wrote
+  the parser — and no test imports pip-audit, so they still run where the tool
+  is absent. **No test egresses**: all three `allow_egress=True` call sites in
+  `bootstrap/tests/test_security_stack.py` monkeypatch `_run_tool` first
+  (verified by reading each). No pip-audit run, no `--dry-run`, no venv, no
+  index fetch — **Maintainer fence 3 remains unbreached**, and the whole
+  measurement was local `inspect.getsource` / formatter calls.
+
+**One finding execution exposed, and it is not in the plan.**
+**`NO-MATCH-IN-PINNED-SOURCES` is not observable at 2.10.1.** A resolved entry
+carries `"vulns": []` both when the pinned source holds a record with no
+vulnerabilities *and* when it holds no record for that name; the schema exposes
+no field separating them. The disposition vocabulary therefore has three terms
+and two reachable states. **No tier moves** — NO-MATCH never gated the verdict,
+only UNKNOWN does — so what is lost is report precision, not fail-closed
+behaviour. Printing a structural `NO-MATCH 0` would have read as *"every
+distribution had a record"*, which is the universal negative `DAC3` withdrew, so
+the run says so in words instead, and `python-security.md`'s coverage contract
+was corrected in the **same commit as the behaviour** (A16), including that
+SCANNED means only *"queried, no vulnerabilities returned"*.
+
+**The `--osv-url` sharpening from 0d: reported, not applied.** B3's declared
+surface enumerates the service, format, destination, cache, progress and
+strictness — not the endpoint — and 0b recorded `--osv-url` as deliberately
+unused. Pinning it would add a hardcoded egress URL to adopter-installed code,
+which is a security surface deserving its own review rather than a residual
+folded into an implementation commit. What landed instead is the honest
+statement, in `pip_audit_argv`'s docstring: the endpoint falls to the tool's own
+default constant, the closed allowlist is what keeps `PIP_AUDIT_OSV_URL` (an
+argparse *default* in pip-audit's CLI) from reaching the child, and the
+pinned-sources claim is exactly as wide as the flag this argv pins and no wider.
+**Left for the Maintainer** to pin if the wider claim is wanted.
+
+**Falsifiers — five, each RUN against the hazard in the orchestrator, each
+reverted byte-identical** (`git hash-object` `27efb8ea…` after every revert),
+each run against the whole of `test_security_stack.py`. **Every one reddened a
+single node**:
+
+| Mutation | Red |
+|---|---|
+| drop the zero-UNKNOWN gate (`or unknown_total`) | D-t2 alone (1F/78P) |
+| ignore the `established` flag unless the text is empty | D-t2b alone (1F/78P) |
+| read a missing `dependencies` key as `[]` | D-t2b alone (1F/78P) |
+| count a skipped entry as SCANNED *as well as* UNKNOWN | D-t1 alone (1F/80P) |
+| return a parent `importlib.metadata` enumeration as the reported names | D-t6 alone (1F/80P) |
+
+D-t1 and D-t6 were **split by property on purpose** — D-t1 owns the partition
+counts, D-t6 owns the names — because while D-t1 asserted both, no mutation
+could redden either alone.
+
+**Measured figures, re-derived** under
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (CPython 3.13.13),
+`PYTHONDONTWRITEBYTECODE=1`, `as_of 2026-08-05`:
+
+| | measured |
+|---|---|
+| `test_security_stack.py` | **81 passed** (79 → 81; +2 nodes) |
+| `test_security_stack.py` + `test_gate_manifest.py` + `test_lockfile_provenance.py`, at `afe7573` | **107 passed** |
+| Full suite, run at `d24c589` | **2062 passed, 3 failed, 0 skipped, 0 xfailed** — **zero red attributable to this scope** (A2) |
+| Bandit over the orchestrator | `errors: []`, LOW `B404` ×1 + `B603` ×1, **zero MEDIUM+** — identical to the pre-change baseline |
+| `git status --short bootstrap/_scaffold/` | **empty** at both commits; the declared symbol delta stays the empty set |
+| `scaffold.py --manifest` | 99 lines = **98 data rows** (the plan's 95 is stale — `8daecd2`, a sibling, registered three files). **Zero rows attributable here**: neither commit opens `config.py`, and both manifest rows naming this scope's files pre-exist. |
+| `claim_check.py` on `python-security.md` | OK |
+| `quality_gate.py --sub neutrality` | 96 FAILs repo-wide, all pre-existing, **zero in either edited file** |
+
+**The three full-suite reds, attributed.** Two are
+`test_ast_attest.py` — the baseline names `CHANGED Assign:_MODULE_MAPPINGS` in
+`bootstrap/_scaffold/config.py` plus four NEW engine symbols
+(`ProfileGrammarError`, `ScaffoldLoaderError`, `_assert_mapping_ownership`,
+`assert_always_on_complete`), none of them this scope's; `8daecd2` is the
+config.py commit. **Not re-anchored** — Maintainer fence 1. The third,
+`test_gate_manifest.py::test_verify_clean_tree_is_ok`, is a **concurrency
+artifact**: it builds a manifest from the live tree and then verifies it, and
+**eight sibling commits landed during the five-minute run**. It passes at
+`afe7573`. Read the total as an attribution statement, not a stable figure —
+this tree moved under the run.
+
+**Gate-integrity split at `d24c589`, not re-pinned.** `FROZEN-MODIFIED` **22
+total, 2 attributable** (`templates/modules/team-gated/run_security_audit.py`,
+`bootstrap/tests/test_security_stack.py`); `COLLECTION-ADDED` **543 total, 24
+attributable** (the earlier 22 plus D-t1 and D-t6); `SKIP-XFAIL-NEW` **74 total,
+24 attributable**, all from the file's pre-existing module-level `pytestmark`
+(implementation-record defect 2), and **none skips**; `FROZEN-NEW` **12 total, 0
+attributable** — this scope created no file; `COLLECTION-DROPPED` **3 total, 0
+attributable**. That last row needs a caveat rather than a clean bill: this
+scope **did rename two nodes** (`test_d_t2_unestablished_coverage_is_incomplete_never_clean`
+→ `test_d_t2_one_unknown_gates_clean`, and `test_d_t2b_a_parsed_report_is_still_unknown_while_unpinned`
+→ `test_d_t2b_an_unreadable_enumeration_fails_closed`), and the renames register
+as adds with **no matching drops**, because both nodes were themselves added
+after the manifest's anchor. A re-pin driven by the drop list alone would not
+see them.
+
+**E7 (`CHANGELOG.md`) is still unwritten by this session** — a serialized shared
+file; its text is returned to the Maintainer.
