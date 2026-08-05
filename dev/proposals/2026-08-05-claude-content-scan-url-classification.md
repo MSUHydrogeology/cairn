@@ -335,3 +335,91 @@ mapping. No detector code needs to move. Require focused tests proving
 `check_cairn.py` still applies URL scanning to `templates/**` and the runner
 applies the fail-closed role rule above. With that separation, the proposed
 runner change cannot alter Cairn's existing caller behavior.
+
+## Response to the External Security Review -- Claude (author) -- 2026-08-05
+
+**All four findings accepted. Scope widened to carry S2 and S3 rather than defer
+them.** This Response does not discharge the tier; the reviewer's REVISE stands
+until they or the Maintainer disposes of it.
+
+**The review is a genuine Security Review, on the test I proposed earlier today.**
+It performed the input-class triage — `_git_tracked`'s argv roots classified
+TRUSTED-INPUT, its ambient `GIT_*` environment classified USER-CONTROLLED — rather
+than reading with a security mindset. That is the distinction, and it did it.
+
+### [S1] accepted, and I should have proposed it
+
+Inverted as specified: enumerate the **narrower exception**. Known discussion
+roots (`dev/**`, `docs/**`) may use `scan_urls=False`; **every other role,
+including unknown and misspelled paths, uses `scan_urls=True`.** Tests pin an
+unknown synthetic path and the roots manifest itself.
+
+I named this failure mode against my own design in Revision 1 — *"a NEW
+instruction surface nobody adds to the list defaults to prose and loses URL
+detection silently"* — and then did not fix it. Naming a hazard is not
+remediating it. The cost the reviewer names is accepted: a newly added prose root
+produces URL noise until classified, which is a visible maintenance cost instead
+of a silent lost detector.
+
+### [S2] accepted — and it is worse than the defect I opened this proposal to fix
+
+Confirmed by reading, not just by the reviewer's reproduction:
+`content_scan_runner.py:169-174` calls
+`subprocess.run(["git", "-C", str(repo_root), "ls-files", "-z", *roots], ...)`
+with **no `env=`**, so the child inherits the process environment, and `GIT_DIR`
+overrides `-C`. The audited set can be redirected to another repository **before
+role classification runs** — which makes every downstream classification, mine
+included, a statement about the wrong tree.
+
+The sharpest part: the sibling module in the same directory,
+`run_security_audit.py`, already solves exactly this with a **closed** env
+allowlist (`build_child_env`, 15 names plus `LC_`) whose own comment names
+`PIPAPI_PYTHON_LOCATION` and every `PIP_AUDIT_*` among what it drops. That
+boundary was never applied to this runner's own git call. The remedy is a
+runner-local git launcher on the same closed-allowlist principle, resolving and
+reporting the git executable once.
+
+### [S3] accepted
+
+Confirmed: the argv has **no `--` terminator**, and `load_audit_roots` validates
+absoluteness, `..` segments, containment and symlinks (`:147`, `:157`) but
+**nothing rejects a leading `-`**. So a manifest root of `--others` is handed to
+git as an *option*, and the reviewer observed `audited_text_files()` returning an
+untracked file — contradicting the git-tracked-set contract in its own name. The
+manifest is TRUSTED-INPUT, so this is not an injection claim; it is an unsafe
+parser/subprocess composition on trusted policy. Remedy: reject leading-dash
+roots, pass `--` before pathspecs, test the rejection.
+
+### [S4] accepted
+
+The blind spot goes in the runner's docstring as contract, not as a discovered
+surprise: **a bare hostile URL in a known discussion root is detected by neither
+`suspicious-url` nor `egress`**, because `egress` requires a transfer verb near a
+destination. The reviewer reproduced both halves.
+
+### My figures were wrong three times, and the reason is the same each time
+
+| figure | I said | actual | why mine was wrong |
+|---|---|---|---|
+| audited corpus | 141 files | **82** | I hand-rolled a root walk instead of calling the runner's own `audited_text_files()` |
+| as-shipped findings | 79, then 80 | **54** at this commit (reviewer: 53 at `9bf3524`) | same reimplementation, inflated denominator |
+| unknown-role files | not measured | **1** (the roots manifest itself) | my walk had no notion of role, so it could not surface the unknown class |
+
+Every one is the same error: **I supplied my own material instead of using the
+artifact's.** Revision 1 already recorded that error against the classifier and I
+repeated it against the file set in the same document. The reviewer's figures are
+authoritative because they came from the runner's own function; mine are
+withdrawn. Nothing downstream is carried forward — the numbers are re-measured at
+the implementing commit.
+
+Note the reviewer's own caution holds against them too: 53 at `9bf3524`, **54**
+at `ab70660`. Snapshots, not invariants.
+
+### Revised scope
+
+S2 and S3 are pre-existing defects the reviewer offered to route elsewhere. They
+are **taken here**: they live in the same function this proposal edits, they
+determine whether the file set being classified is the right one at all, and
+routing them would leave the classification resting on a redirectable set. The
+scope fence above is amended accordingly — this proposal now covers the git
+launcher and the root grammar in addition to role classification.
