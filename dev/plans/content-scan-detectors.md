@@ -1,10 +1,14 @@
 <!-- cairn-internal-ref-allow: doctrine/plans.md doctrine/dual-review.md doctrine/lifecycle.md doctrine/rationale.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
+<!-- claim-check-allow: dev/proposals/2026-08-03-claude-content-scan-detectors.md, dev/proposals/2026-08-03-claude-default-security-stance.md, dev/proposals/2026-08-03-codex-api-web-security-modules.md -->
+<!-- ^ Source/sibling proposals archived 2026-08-04. These citations sit in
+     append-only sections, so the path is exempted rather than rewritten. -->
+
 
 # Plan: the scanner's character model — an invisible channel it cannot see, and a script it cannot tell from a spoof
 
 **Source proposal**: `content-scan-detectors` (accepted 2026-08-03 by Maintainer
 Decision, *"as revised"*). It sits at
-`dev/proposals/2026-08-03-claude-content-scan-detectors.md` and moves to
+`dev/proposals/archive/2026-08-03-claude-content-scan-detectors.md` and moves to
 `dev/proposals/archive/` when it archives.
 **Status**: open
 **Plan review**: required(**External**, security lens) — carried from the

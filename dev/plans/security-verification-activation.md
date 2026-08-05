@@ -16,7 +16,7 @@
 
 **Source proposal**: `security-verification-activation` (accepted 2026-08-03 by
 Maintainer Decision, *"I accept this proposal as revised"*). It currently sits at
-`dev/proposals/2026-08-03-codex-security-verification-activation.md` and moves to
+`dev/proposals/archive/2026-08-03-codex-security-verification-activation.md` and moves to
 `dev/proposals/archive/` when it archives.
 **Status**: open
 **Plan review**: required(**External**, security lens) — carried from the

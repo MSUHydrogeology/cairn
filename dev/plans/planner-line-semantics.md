@@ -1,4 +1,8 @@
 <!-- cairn-internal-ref-allow: doctrine/plans.md doctrine/dual-review.md doctrine/lifecycle-contract.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
+<!-- claim-check-allow: ../proposals/2026-08-03-claude-planner-line-semantics.md, ../proposals/2026-08-03-claude-separator-detection.md, dev/proposals/2026-08-03-claude-separator-detection.md, dev/proposals/2026-08-04-claude-review-gate-enforcement.md -->
+<!-- ^ Source/sibling proposals archived 2026-08-04. These citations sit in
+     append-only sections, so the path is exempted rather than rewritten. -->
+
 
 # Plan: the lifecycle tools read a line the way markdown does
 
@@ -6,7 +10,7 @@
 on the detection follow-up being opened, condition discharged; the Decision
 commit is `f32d5e8`, with a status repair and a commit-hygiene record note at
 `70d804c`). It currently sits at
-[`dev/proposals/2026-08-03-claude-planner-line-semantics.md`](../proposals/2026-08-03-claude-planner-line-semantics.md)
+[`dev/proposals/archive/2026-08-03-claude-planner-line-semantics.md`](../proposals/archive/2026-08-03-claude-planner-line-semantics.md)
 and moves to `dev/proposals/archive/` when it archives.
 **Status**: open
 **Plan review**: required(**External**) — carried from the proposal header,
@@ -242,7 +246,7 @@ recovery. It is not handled. After this plan lands, the forged artifact still
 scans clean; what changes is that the planner stops attesting it.
 
 **Detection is owned by `separator-detection`**
-([`dev/proposals/2026-08-03-claude-separator-detection.md`](../proposals/2026-08-03-claude-separator-detection.md),
+([`dev/proposals/2026-08-03-claude-separator-detection.md`](../proposals/archive/2026-08-03-claude-separator-detection.md),
 opened at `c40c959`), which the Decision names as the discharge of its
 condition. That proposal claims one detector rule under a new pattern id and
 nothing else.

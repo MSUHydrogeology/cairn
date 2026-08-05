@@ -18,7 +18,7 @@
 **Source proposal**: `portable-security-sweeps` (accepted 2026-08-03 by
 Maintainer Decision, *"as revised, with two conditions binding on the plan"*).
 It currently sits under `dev/proposals/` as
-`dev/proposals/2026-08-03-codex-portable-security-sweeps.md` and moves to
+`dev/proposals/archive/2026-08-03-codex-portable-security-sweeps.md` and moves to
 `dev/proposals/archive/` when it archives.
 **Status**: open
 **Plan review**: required(**External**, security lens) — carried from the

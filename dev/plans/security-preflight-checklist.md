@@ -1,10 +1,14 @@
 <!-- cairn-internal-ref-allow: doctrine/dual-review.md doctrine/plans.md doctrine/rationale.md doctrine/lifecycle.md doctrine/coordination.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
+<!-- claim-check-allow: dev/proposals/2026-08-03-claude-security-preflight-checklist.md -->
+<!-- ^ Source/sibling proposals archived 2026-08-04. These citations sit in
+     append-only sections, so the path is exempted rather than rewritten. -->
+
 
 # Plan: five security-preflight questions land on four template files, and a test proves the twins did not drift
 
 **Source proposal**: `security-preflight-checklist` (accepted 2026-08-03 by
 Maintainer Decision). It currently sits at
-`dev/proposals/2026-08-03-claude-security-preflight-checklist.md` and moves to
+`dev/proposals/archive/2026-08-03-claude-security-preflight-checklist.md` and moves to
 `dev/proposals/archive/` when it archives. The path is cited once, in full,
 because Chunk B extracts bytes from it mechanically.
 **Status**: open

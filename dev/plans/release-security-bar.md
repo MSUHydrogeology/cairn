@@ -2,6 +2,10 @@
 <!-- cairn-accept: instruction-html-comment reason="The comment below explains to human readers and to the claim checker why three adopter-tree destination paths are deliberately non-resolving; it carries no directive to an agent and names no action to take." reviewer="Claude (author)" date=2026-08-04 -->
 <!-- claim-check-allow: dev/plans/scan-coverage.md, dev/plans/gate-claims-vs-enforcement.md -->
 <!-- ^ Archived 2026-08-04; the plans moved to dev/plans/archive/. These are
+<!-- claim-check-allow: dev/proposals/2026-08-03-claude-gate-claims-vs-enforcement.md -->
+<!-- ^ Source/sibling proposals archived 2026-08-04. These citations sit in
+     append-only sections, so the path is exempted rather than rewritten. -->
+
      historical citations in append-only or logged content, so the path is
      exempted rather than rewritten -- editing a prior section to chase a
      file move is what AGENTS.md's cite-by-stem convention exists to avoid. -->

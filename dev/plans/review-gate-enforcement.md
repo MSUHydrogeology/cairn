@@ -2,7 +2,7 @@
 
 # Plan: the review-before-implement gate checks the review, not its presence
 
-**Source proposal**: `dev/proposals/2026-08-04-claude-review-gate-enforcement.md`
+**Source proposal**: `dev/proposals/archive/2026-08-04-claude-review-gate-enforcement.md`
 **Status**: open
 **Plan review**: required(**External**) — carried from the proposal header and
 re-affirmed in the Decision: *"the replacement mechanism … was authored after the

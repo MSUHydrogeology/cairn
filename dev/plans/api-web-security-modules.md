@@ -2,6 +2,10 @@
 <!-- claim-check-allow: templates/modules/team-gated/api-access-security.md, templates/modules/team-gated/api_access_security.py, templates/modules/team-gated/api_access_policy_stub.json, templates/modules/team-gated/web-hosting-security.md, templates/modules/team-gated/web_hosting_security.py, templates/modules/team-gated/web_hosting_policy_stub.json, templates/modules/team-gated/_security_net/__init__.py, templates/modules/team-gated/_security_net/policy.py, templates/modules/team-gated/_security_net/net.py, templates/modules/team-gated/_security_net/report.py, templates/modules/default-on/security-verification.md, templates/modules/default-on/run_security_verification.py, dev/modules/api-access-security.md, dev/modules/web-hosting-security.md, dev/modules/security-verification.md, scripts/api_access_security.py, scripts/web_hosting_security.py, scripts/run_security_verification.py, scripts/_api_access_security/net.py, scripts/_web_hosting_security/net.py, dev/.cairn/api-access-policy.json, dev/.cairn/web-hosting-policy.json, bootstrap/tests/test_security_net.py, bootstrap/tests/test_api_access_security.py, bootstrap/tests/test_web_hosting_security.py, bootstrap/tests/test_security_capability_install.py, bootstrap/tests/test_security_finding_confidentiality.py, bootstrap/tests/test_security_verification.py -->
 <!-- claim-check-allow: dev/plans/scan-coverage.md -->
 <!-- ^ Archived 2026-08-04; the plans moved to dev/plans/archive/. These are
+<!-- claim-check-allow: dev/proposals/2026-08-03-codex-security-verification-activation.md -->
+<!-- ^ Source/sibling proposals archived 2026-08-04. These citations sit in
+     append-only sections, so the path is exempted rather than rewritten. -->
+
      historical citations in append-only or logged content, so the path is
      exempted rather than rewritten -- editing a prior section to chase a
      file move is what AGENTS.md's cite-by-stem convention exists to avoid. -->
