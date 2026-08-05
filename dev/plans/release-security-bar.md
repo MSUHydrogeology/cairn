@@ -2589,3 +2589,559 @@ release claim never entered its universe.
 I inspected the effective A1--A24 amendments and the response's three declared
 open rulings. I did not execute the future register deciders or modify any
 release-facing file; no implementation exists yet to exercise.
+
+## Response to plan review -- Claude (author) -- 2026-08-05
+
+**Model**: claude-opus-5 (exact id `claude-opus-5`).
+
+> **Stated before any disposition, because it changes what the rest of this
+> Response can claim: an External plan review has now landed (`a5b0f34`,
+> 2026-08-05, Codex), and its verdict is REVISE. That satisfies the *presence*
+> half of `required(External)` and nothing else.** The same reviewer, the same
+> day, on the sibling plan `review-gate-enforcement`, wrote the standard this
+> Response is held to: *"I treated the authored Response as evidence of intended
+> changes, not as a replacement for the plan's executable contract. The declared
+> External tier remains undischarged"* (`dev/plans/review-gate-enforcement.md:371`–`:373`).
+> So every acceptance below lands as a numbered amendment row, and the answer to
+> *does this clear the plan to implement* is **no**.
+
+### Standing — what this Response is and is not
+
+I am the plan's author responding to an **External** (different-agent-type) plan
+review whose verdict is **REVISE**. Its job:
+
+* Disposition all three findings (E1, E2, E3), each with mechanical residue.
+* Re-measure every figure the review states **and every figure my own prior
+  Response asserts**, against the live tree at HEAD `4385813`.
+* Record the findings the tree has produced since `6618e54` — 100 commits.
+* Audit the plan's own gates and say which are satisfied today.
+
+**This Response does not discharge the External tier and does not clear the plan
+to implement.** An author's Response never discharges a tier it is answering; a
+REVISE verdict is a request for a further round, and the reviewer said so in
+terms on a sibling plan the same day.
+
+---
+
+### Where the External review actually sits — the briefing's placement claim, re-derived
+
+I was told the External review was *inserted before the existing Internal
+sections, not appended at the end*. **That does not reproduce.** Measured:
+
+```
+$ git show a5b0f34 --numstat --format=
+36      0       dev/plans/release-security-bar.md          # 36 insertions, 0 deletions
+
+$ grep -n '^## ' dev/plans/release-security-bar.md | tail -3
+1304: ## Plan review -- Claude (Internal, same-agent-type; security lens) -- 2026-08-04
+2029: ## Response to plan review -- Claude (author) -- 2026-08-04
+2557: ## Plan review -- Codex (External) -- 2026-08-05
+```
+
+The diff hunk header is `@@ -2553,3 +2553,39 @@` — a pure end-of-file append,
+zero deletions, and the External section **is** the last section. There is
+exactly one `## Plan review -- … (External)` heading in the file. Recorded
+because a Response that had "verified" a re-ordering nobody performed would be
+the same defect as a finding accepted in prose: an assertion with no measurement
+under it.
+
+---
+
+### Re-measurement — what reproduces, what does not
+
+Run under the canonical interpreter `/Users/kendal30/conda_envs/lhm/bin/python3.13`
+(CPython 3.13.13), `PYTHONDONTWRITEBYTECODE=1`, at HEAD `4385813`. All scratch
+work ran outside the repository. **100 commits** separate `6618e54` (my prior
+Response) from `4385813`.
+
+**Figures that REPRODUCE unchanged.**
+
+| Claim (plan, review, or my prior Response) | Re-measured at `4385813` |
+| --- | --- |
+| `scaffold.py --manifest` → 95 data rows | 96 lines, 1 header → **95** ✓ |
+| `frozen_files` map, 164 entries | **164** ✓ |
+| `bootstrap/verify_integrity.py` the only frozen key among files this plan touches or contemplates | ✓ — `templates/onboarding/high-rigor-legacy.md`, `SECURITY.md`, `doctrine/runtime-contract.md`, `bootstrap/SAFETY.md`, `CHANGELOG.md`, `dev/PLANNING.md` all **not** frozen ✓ |
+| 117 tests in the four enforcer modules (`--collect-only`) | **117** ✓ |
+| B6 reach table, 9 controls × 3 presets | **reproduces exactly — all 27 cells** ✓ (but only after the API repair in [S1]) |
+| module / manifest counts 6–59, 11–77, 14–80 | ✓ all three |
+| `content-security` selected by 0 of 3 presets; `python-security` selected by 0 of 3 | ✓ both |
+| `security-review` installs exactly `['dev/modules/security-review.md']` — one Markdown file, zero executables | ✓ |
+| `run_security_audit.py` ships with `python-security`, not `content-security` | ✓ |
+| `_MODULE_MAPPINGS` holds 20 modules | **20** ✓ |
+| lockfile carries 81 `"dst"` records; `grep 'dev/modules/onboarding'` returns 0 | **81** ✓; **0** ✓ |
+| `dev/modules/onboarding/` holds 3 installed files | ✓ |
+| no `dev/modules/onboarding/*` destination appears in `install_manifest(modules=None)` | ✓ — **the Set 2 under-count finding still holds at HEAD** |
+| onboarding hashes `c829de48…` / `739bb012…` | ✓ both, byte-for-byte |
+| `bootstrap/profiles/high-rigor-legacy.yml` carries no module selection | ✓ — exactly three keys, comments stripped |
+| `.github/` exists, 7 files, **no `workflows/`** | ✓ — `ISSUE_TEMPLATE`, `PULL_REQUEST_TEMPLATE`, `labels.yml` |
+| `quality_gate.py --sub neutrality` | exit 0, informational `vendor-ok` entries only, **none** in `templates/onboarding/` ✓ |
+| both passages live at `templates/onboarding/high-rigor-legacy.md:123` / `:164`, identical clause | ✓ |
+| `doctrine/runtime-contract.md:132` — *"Detects tampered apparatus before it can self-audit"* | ✓ still live, still at `:132` |
+| `SECURITY.md:47` careful wording / `SECURITY.md:51` overstatement, four lines apart | ✓ both |
+| `dev/PLANNING.md` R2's three classes at `:328`; R3's **3 of 4** at `:348` | ✓ both |
+| `_MODULE_MAPPINGS` `:713`, `_PRESETS` `:1277`, `expand_preset` `:1494`, `modules_add` key list `:1213` / read `:1529` | ✓ all five, unmoved since `6618e54` |
+| `_yaml_load` compatibility alias at `bootstrap/_scaffold/config.py:46`; `load_config` calls `_minimal_yaml_parse` at `:485` | ✓ both |
+| `bootstrap/verify_integrity.py` — `read_lockfile(target)` `:48`, fail-closed naming the target `:50`, `upstream=trusted_upstream(CAIRN_ROOT)` `:123`–`:124`, `--target` `required=True` `:149` | ✓ all four |
+| `bootstrap/PROVENANCE.md` live positions: bind-comment `:214`, awk extraction `:216`, comparison `:220` | ✓ all three |
+| `bootstrap/container/verify-ref.sh:335` extracts header-bounded, `:340` refuses on mismatch, `:354` pins the roster | ✓ all three |
+| `tools/lifecycle_planner.py:509` `_HEADER_RE` | ✓ **unmoved** |
+| `templates/skills/_lib/lifecycle.py:387` `_resolve_interpreter` | ✓ unmoved; the shipped *"shape validator, not an authenticator"* sentence at `:398`–`:402` |
+| `bootstrap/tests/_gate_preflight.py:597` `anchored_roster` | ✓ |
+| `bootstrap/security_check.py:129` / `:188`; `test_security_lint.py:229` / `:317` | ✓ all four |
+| E1's ownership legs: `dev/plans/default-security-stance.md:133` and `:871` verbatim; `grep -c high-rigor-legacy` over the `gate-claims-vs-enforcement` plan **and** proposal → **0 and 0** | ✓ all four |
+| [R1]'s legs: `gate-claims-vs-enforcement`'s `doctrine/runtime-contract.md` surface is `:46`/`:185`/`:189` only; `agent-context-scrub`'s `SECURITY.md` surface is three residual bullets; `scan-coverage` claims `SECURITY.md:66` | ✓ all three |
+| [I1]'s mechanism — the plan-review gate is presence-only | ✓ **re-measured both directions today**, below |
+
+**Figures that DO NOT reproduce.** Reported as plainly as the ones that do.
+
+| Claim | Stated | Re-measured at `4385813` |
+| --- | --- | --- |
+| `check_cairn` scans **195** Markdown files (my prior Response, A24) | 195 | **176** |
+| `check_cairn` — **68** external links not probed | 68 | **48** by default; **68** only under `--include-archives` |
+| tracked Markdown files | 249 | **254** (196 outside `/archive/`, 58 inside) |
+| *"The deficit is stable at 54 files across all three snapshots"* (A24) | 54 | **78** (176 of 254). **Falsified.** On the comparable non-archive basis it is **20** (176 of 196) |
+| plan-body citations that no longer resolve (A7) | 9 of 28 | **10 of 28** — and the composition changed |
+| `_has_kind` at `tools/lifecycle_planner.py:693` (review [I1], my A1) | :693 | **:697** — `:693` is now `_decisions` |
+| the plan-review gate at `tools/lifecycle_planner.py:786` / `:787` | :786/:787 | **:790**–**:791** |
+| the archive preconditions at `tools/lifecycle_planner.py:792`–`:806` | :792–:806 | **:797** (code review), **:802**–**:805** (follow-ups), **:808**–**:810** (fidelity) |
+| `bootstrap/_scaffold/install.py:1088` *"reads `templates/onboarding/<preset_name>.md`"*; A7 re-pinned it to `:1089` | :1088 / :1089 | the read is **`src = templates_root / "onboarding" / f"{preset_name}.md"` at `:1085`**; `:1088`–`:1089` are the *warn* string. A7's "+1 shift" characterization does not reproduce |
+| `bootstrap/_scaffold/install.py:982` — A7 re-pinned it to `:983` | :983 | **`:982`** still heads the docstring item *"D. Copy the full preset source file"*; A7's shift does not reproduce |
+| `lifecycle_planner.py` twin byte-identical at `f1552fc7…` | `f1552fc7…` | **`e428c8c8…`** — the *property* (byte-identical twins) holds; the *figure* is stale |
+| the three sibling plan/proposal citations behind A23 | un-archived plan paths | the files **moved to `dev/plans/archive/`**; line numbers hold (`:850`–`:852`, `:611`) |
+| `bootstrap/PROVENANCE.md` three-properties enumeration at `:246` (A22) | :246 | the sentence spans **`:245`–`:246`**; the enumeration proper begins **`:248`** |
+
+**The full citation ledger, re-derived rather than inherited.** Extracted every
+distinct backticked `` `<file>:<line>` `` citation from the plan **body** (lines
+1–1303, excluding all review and Response sections) and opened each one:
+**28 distinct citations, 18 resolve to the cited text, 10 do not.**
+
+```
+RESOLVES (18)  SECURITY.md:47 :51 | verify-ref.sh:335 :340 :354 |
+               security_check.py:129 :188 | _gate_preflight.py:597 |
+               test_security_lint.py:229 :317 | verify_integrity.py:34 |
+               runtime-contract.md:132 | high-rigor-legacy.md:123 :164 |
+               skills/_lib/lifecycle.py:387 | lifecycle_planner.py:245 :248 |
+               install.py:982
+
+FAILS (10)     PROVENANCE.md:202  -> `git init --quiet --bare …`   (bind-comment is :214)
+               PROVENANCE.md:204  -> a fetch refspec               (extraction :216, comparison :220)
+               PROVENANCE.md:236  -> "# 6. Discard the workspace"  (three properties :245-:248)
+               config.py:43       -> `_yaml = None`                (the fail-open fallback NO LONGER EXISTS)
+               install.py:887     -> a comment                     (_ONBOARDING_DOC_NAMES is :888)
+               install.py:1088    -> a warn string                 (the read is :1085)
+               verify_integrity.py:47  -> `def verify(target)…`    (read_lockfile is :48)
+               verify_integrity.py:118 -> a comment                (the call is :123-:124, WITH upstream=)
+               lifecycle_planner.py:786 -> a different message     (the gate is :790-:791)
+               lifecycle_planner.py:792 -> `v.append(`             (the code-review gate is :797)
+```
+
+The two `tools/lifecycle_planner.py` failures are **new since my prior
+Response** — they are the citations A1, A2 and the plan's own gate-accounting
+rest on, and both moved while the amendment table asserting them sat in the
+file. That is the [I4] hazard reproducing against the amendments themselves.
+
+**Deciders re-run at `4385813`, not inherited.**
+
+* **[I1] — the plan-review gate is still presence-only. RE-MEASURED, BOTH
+  DIRECTIONS.** Two scratch copies outside the repository, status line changed
+  to `executing`:
+
+```
+A. full file (both review sections present):
+   lifecycle-planner: current state: executing
+   lifecycle-planner: structural conformance: current state is structurally sound.
+   lifecycle-planner: -> review
+
+B. same file truncated at line 1303 (both review sections removed):
+   lifecycle-planner: VIOLATION: status is 'executing' and 'Plan review:
+     required', but no '## Plan review' section has landed (review-before-implement).
+```
+
+  The gate at `tools/lifecycle_planner.py:790`–`:791` calls `_has_kind(art,
+  "Plan review")` (`:697`), which reads only the section *kind*. `_HEADER_RE`
+  (`:509`) captures `role` and nothing consults it. **The gate could not tell
+  that an External review landed today — it was green before `a5b0f34` and is
+  green after, for the same reason.** `review-gate-enforcement`'s Chunk C.1
+  (*"declared tier satisfied"*, `dev/plans/review-gate-enforcement.md:103`) has
+  **not** landed: that plan is `**Status**: open` and now carries its own
+  REVISE External review (`04b0fa6`).
+* **B6 reach table — REPRODUCES, all 27 cells**, after repairing the producing
+  command (see [S1]). Module/manifest counts 6–59, 11–77, 14–80 reproduce.
+* **The E1 ownership sweep — REPRODUCES, and is now broader.** A repository-wide
+  sweep (`grep -rln "onboarding/high-rigor-legacy" dev/plans dev/proposals`,
+  live **and** archived) returns nine files. Only two are claim-bearing:
+  `dev/plans/default-security-stance.md` (which *defers* the lines at `:133` and
+  `:871`) and this plan. The named claimant returns **0** in both its plan and
+  its proposal. **No lineage in the repository claims those two lines.**
+* **The E2/[R1] ownership sweep — REPRODUCES, and is now broader.** A sweep for
+  `runtime-contract.md:132` / *"Detects tampered apparatus"* and for
+  `SECURITY.md:51` / *"flagging any post-install"* across every live and
+  archived plan and proposal returns **only this plan and its own source
+  proposal** as claimants of either row. **Both rows are still UNOWNED at
+  `4385813`.**
+* **The E3 anchor form — DEMONSTRATED.** `refs/cairn/gate-anchor` is a real ref
+  in this repository (`bootstrap/tests/_gate_preflight.py:53`), so an
+  out-of-artifact audit anchor has precedent rather than needing invention. The
+  amended staleness form runs today:
+
+```
+$ git log --oneline refs/cairn/gate-anchor..HEAD -- \
+      SECURITY.md doctrine/runtime-contract.md templates/onboarding/high-rigor-legacy.md
+2244eca gate-claims-vs-enforcement: Chunk C -- the floor-check names
+5c91c23 scan-coverage: the release scan reaches every shipped .py, …
+      # non-empty => STALE, which is the verdict the amended command returns
+```
+
+* **Checkers, both clean at `4385813`.** `claim_check.py
+  dev/plans/release-security-bar.md` → OK, exit 0. `check_cairn.py
+  dev/plans/release-security-bar.md` → OK, exit 0.
+
+---
+
+### Disposition, finding by finding
+
+Three findings. **Two accepted with modification, one accepted.** None declined.
+Every acceptance has a numbered row in *Amendments in force*; where a
+modification exists it is because the branch the review named crosses a fence
+the Decision set, and that is stated rather than absorbed.
+
+**[E1] — rule the unowned onboarding claims into this scope. ACCEPTED WITH
+MODIFICATION.**
+
+The review is right on the substance and I re-verified every leg at `4385813`,
+plus a wider sweep the prior Response did not run. No lineage in this repository
+claims `templates/onboarding/high-rigor-legacy.md:123` / `:164`. The named
+claimant finished its burndown without touching `templates/`. The only other
+mention is a sibling that *defers* to that finished claimant. The review's
+consequence-of-waiting argument is correct: an open Maintainer question is not a
+neutral state — it holds a **false release claim** in a shipped, adopter-installed,
+lockfile-uncovered document, in the release the bar exists to gate.
+
+So I restore Chunk B's ownership of the two passages and strike A4's
+open-ended Maintainer precondition.
+
+**The modification, and why it is not a softening.** "Proceed on measurement"
+must not become "proceed on the author's conviction" — that is the failure the
+plan's own fence names (*"an agent taking a claimed file to unblock its own bar
+is exactly how a one-proposal-per-file rule dies"*). So the precondition is
+replaced by a **mechanical** one, not deleted:
+
+1. Chunk B re-runs the ownership measurement **at its own opening commit** and
+   pastes the output into the register (**NC-B3**, with a positive control that
+   proves the check can see a claim when one exists).
+2. If any leg returns a claim, Chunk B **stops and escalates** rather than
+   editing.
+3. Chunk B **keeps its commit-approval gate**. It edits a file outside `dev/`,
+   so it loses the deliberation carve-in and the Maintainer sees the diff before
+   it lands (`AGENTS.md > Git and commit workflow`). The oversight E1 wanted to
+   remove from the *front* of the chunk is still on its *back*, where it costs
+   nothing and blocks nothing.
+
+Residual, stated: `default-security-stance` is still `**Status**: open` and now
+carries its own **REVISE** External review (`2077a25`). Its pre-declared
+changelog text (`dev/plans/default-security-stance.md:871`, row 7) would make
+Chunk B's correction false in the opposite direction. A5's sequencing note
+governs and is unchanged. Amendments **A25**, **A26**.
+
+**[E2] — rule the two unowned register rows into the bar's explicit escape path.
+ACCEPTED.**
+
+The review offers two branches. I take the second and say why the first is not
+mine to take.
+
+* *Branch 1 — "correct those exact claims in a bounded documentation chunk"*
+  means editing `SECURITY.md` and `doctrine/runtime-contract.md`. Both are
+  fenced out of this plan's Scope, and that fence came from the **accepted
+  proposal**, which handed both rows off with *"hand off, this file is
+  claimed"*. Widening a plan to edit two more shipped documents is a scope
+  change past the Decision, which is the Maintainer's, not the author's. It
+  stays available and is in `openQuestions`.
+* *Branch 2 — "write a durable, named backlog owner before it can mark the
+  register usable"* — **taken.** This is fully inside the plan's authority, and
+  the review's framing is the sharper half: *"A row with no owner is not an
+  acceptable failure mode for a release control."*
+
+Mechanically: F3's escape is the wrong shape for the situation and is
+superseded. It was written as *escalate if an owning lineage stalls*; there is
+no owning lineage, so its trigger can never fire. It is replaced by a **standing
+requirement**: the register may not be reported complete or usable while any row
+carries an empty owner cell; an empty owner cell is **NOT MET with a named
+block**, never *in flight*; and the block clears only when a
+`dev/PLANNING.md` > *Deferred follow-ups (durable home)* > **Security
+apparatus** row exists naming both sentences with an owner, a revival condition
+and an expiry trigger.
+
+**The material for that row does not come from this plan.** `dev/PLANNING.md` is
+a serialized shared file, so the text is **returned** below, not written; and
+until it lands there, both rows stay NOT MET. That ordering is deliberate — a
+backlog owner recorded only inside the artifact whose completeness it licenses
+would be this bar's own B1 violation, which is the very defect E3 names one
+finding later. Amendments **A27**, **A28**, plus the returned text.
+
+**[E3] — make the register's scope a machine-checkable input. ACCEPTED WITH
+MODIFICATION.**
+
+The finding is correct and is the sharpest of the three: A13 admitted the
+residual and then left the mechanism unchanged, so the admission did no work.
+The proposed staleness check reads a list the artifact writes about itself and a
+date the artifact writes about itself, and can therefore certify freshness over
+a universe that never contained the new claim. Three sub-asks, dispositioned
+separately:
+
+* **"Store the audit commit separately from the artifact being judged" —
+  ACCEPTED IN FULL.** The audit anchor becomes a repository ref,
+  `refs/cairn/release-bar-audit`, created by the Maintainer at the commit that
+  lands the `## Code review` section. Precedent is in the tree
+  (`refs/cairn/gate-anchor`, `bootstrap/tests/_gate_preflight.py:53`) and the
+  form is demonstrated running above. Ref creation joins the Chunk M fence.
+* **"Derive the list from the release-bar mapping/claim register" — ACCEPTED IN
+  FULL, and widened, because derivation alone does not fix the hole.** A list
+  derived from the register still only sees paths the register named. So the
+  surface list becomes the **union** of (i) a committed extraction over the
+  register's own evidence cells and (ii) Chunk A's Set 1/2/3 enumerations,
+  which are produced by sweeps that read **the tree**. Chunk A's sweeps are the
+  independent channel; the register is not. And a second assertion is added
+  alongside staleness — **coverage: every Set member has a register row** — with
+  a Set member lacking a row recorded as a NOT MET row, not an omission.
+* **"Add a fixture that introduces an unlisted release-facing source then proves
+  the coverage assertion fails" — ACCEPTED AS A COMMITTED NEGATIVE CONTROL
+  (NC-H2); the *standing automated* form is routed to the Maintainer.** The
+  perturbation, both directions, and the discrimination leg all land as
+  recorded runs — the same instrument every other row in this plan uses, and
+  it is the leg that makes the coverage assertion mean something. What I cannot
+  do is ship it as a standing test: *"Building any checker for the bar"* and
+  *"Adding a test that pins the B6 reach table"* are both fenced out of Scope on
+  the accepted proposal's standing *build nothing new* direction. Turning
+  NC-H2 into a pytest is a scope widening past the Decision. It is in
+  `openQuestions`, and if the Maintainer rules it required the plan needs a
+  proposal-level amendment, not an author's.
+
+Amendments **A29**, **A30**, **A31**, **A32**.
+
+---
+
+### Findings this Response contributes
+
+Produced by re-deriving rather than inheriting. Each has an amendment.
+
+**[S1] — the plan's B6 and Set 2 producing commands are void against the current
+engine API. The table survives; the command does not.**
+
+The plan specifies Set 2 as
+`install_manifest(modules=expand_preset(load_config(<preset>)))` and B6's
+measurement as *"the eight-line `load_config` → `expand_preset` →
+`install_manifest` measurement per preset"*. At `4385813`:
+
+```
+bootstrap/_scaffold/config.py:1494
+    def expand_preset(cfg) -> tuple[list[str], dict[str, object]]      # returns a 2-TUPLE
+bootstrap/_scaffold/install.py
+    def install_manifest(modules=None) -> list[tuple[str, str, bool]]  # rows are TUPLES, not dicts
+
+$ install_manifest(modules=expand_preset(load_config(p)))
+TypeError: unhashable type: 'list'
+```
+
+An implementing agent executing the plan's stated measurement literally gets a
+`TypeError`, and the Internal review's own reconstruction (`r['dst']`) would
+raise `TypeError: tuple indices must be integers`. Repaired — unpack
+`(mods, summary)` and read `row[1]` — **the B6 table reproduces exactly, all 27
+cells**, and the module/manifest counts hold. This is worth more than a citation
+fix: it is the plan's *decider* going stale, not its evidence, and no citation
+checker would ever have reported it. A new selection construct,
+`_DEFAULT_ON_MODULES` (`bootstrap/_scaffold/config.py:83`), now feeds
+`expand_preset`; a Set 2 enumeration that does not account for it is measuring
+the wrong roster. Amendment **A33**.
+
+**[S2] — the citation baseline moved again, and this time it moved under the
+amendment table.** 18 of 28 body citations resolve; 10 do not. A7 said 9 of 28
+and its per-citation characterizations for `install.py:982` / `:1088` do not
+reproduce. Two of the new failures are `tools/lifecycle_planner.py:786` and
+`:792` — the gate citations A1 and A2 assert. Amendment **A34**.
+
+**[S3] — A24's stability claim is falsified.** *"The deficit is stable at 54
+files across all three snapshots"* is now **78** (176 of 254). The mechanism is
+visible and matters: `check_cairn` excludes `dev/**/archive/` by default
+(`scripts/check_cairn.py --include-archives`), and 58 Markdown files moved into
+archives across the 100 commits — so the *scanned* count fell from 195 to 176
+while the *tracked* count rose from 249 to 254. On the comparable non-archive
+basis the deficit is **20** (176 of 196). A24's `68` external links reproduces
+only under `--include-archives`; the default is `48`. Chunk B's defensively
+written criterion *"`≥180` Markdown files"* **no longer holds** at 176 and must
+be re-derived, not carried. Amendment **A35**.
+
+**[S4] — A23's supporting citations now point into `dev/plans/archive/`, and the
+file's own allow-list hides it.** `gate-claims-vs-enforcement` and
+`scan-coverage` archived; their line numbers hold at the new paths. The plan's
+`claim-check-allow` directive (line 3) exempts both stems, so `claim_check.py`
+returns OK **while silently passing over two stale paths** — a correct
+exemption doing exactly what an exemption does, recorded because a reader
+seeing `claim_check: OK` should not read it as *these citations resolve*.
+Amendment **A36**.
+
+**[S5] — the archive preconditions moved, and they are the plan's only genuinely
+mechanical gate.** `:792`–`:806` → `:797` (code review), `:802`–`:805`
+(follow-ups), `:808`–`:810` (fidelity sign-off). The *mechanism* is unchanged
+and still fires; only the citations are stale. Folded into Amendment **A34**
+with the rest of the planner re-pin.
+
+---
+
+### Amendments in force
+
+Continues the prior Response's table; **A1–A24 remain in force unchanged except
+where a row below supersedes one.** Each row names the superseded text
+**verbatim**. This plan is append-only: the original text stays where it is, and
+this table is what governs at implementation.
+
+| # | Superseded text (verbatim) | Replaced by | From |
+| --- | --- | --- | --- |
+| **A25** | *"**Chunk B does not start until the Maintainer rules on ownership.**"* (Amendment A4) | **Struck. Chunk B owns the correction.** No lineage in this repository claims `templates/onboarding/high-rigor-legacy.md:123` / `:164` — re-verified at `4385813` by a repository-wide sweep over live **and** archived plans and proposals: nine files mention the document, only `dev/plans/default-security-stance.md` is claim-bearing and it *defers* (`:133`, `:871`), and the deferral's target returns **0** in both its plan (`dev/plans/archive/gate-claims-vs-enforcement.md`) and its proposal. Waiting preserves a false release claim in a shipped, lockfile-uncovered document for no security benefit. **Three bounded conditions replace the ruling:** (i) Chunk B re-runs the ownership measurement at its own opening commit and pastes the output (**NC-B3**, A26); (ii) any leg returning a claim **stops the chunk and escalates**; (iii) Chunk B keeps its commit-approval gate — it edits outside `dev/`, loses the deliberation carve-in, and the Maintainer sees the diff before it lands. A5's sequencing note against `default-security-stance` is **unchanged and now more live**: that plan carries its own REVISE External review (`2077a25`) and is still `**Status**: open`. | [E1] |
+| **A26** | *(new criterion — Chunk B)* | **NC-B3 — the ownership re-check, RUN, both directions.** Positive leg (the hazard is the claim record, not the grep): `grep -rln "onboarding/high-rigor-legacy" dev/plans dev/proposals` and `grep -c "high-rigor-legacy"` over the deferral target's plan and proposal — expected **0 and 0**, with the full file list pasted. Control leg, so the check is not vacuous: run the identical grep shape against a lineage that **does** claim a file — `dev/plans/archive/scan-coverage.md:611` claims `SECURITY.md:66` — and confirm it returns non-zero. A sweep that returns 0 for every input decides nothing. | [E1] |
+| **A27** | *"The **escape**, written before it is needed: if an owning lineage has not landed its correction when the register is otherwise complete, the row is **escalated to the Maintainer**, not taken. The bar does not edit a file another lineage claims, and it does not mark the row MET."* (Chunk F, row F3) | **F3's trigger can never fire and is replaced by a standing requirement.** F3 assumed an owning lineage that stalls; re-verified at `4385813`, a sweep for `runtime-contract.md:132` / *"Detects tampered apparatus"* and `SECURITY.md:51` / *"flagging any post-install"* across every live and archived plan and proposal returns **only this plan and its own source proposal**. There is no lineage to stall. **Replacement:** the register may not be reported complete or usable while any row carries an empty owner cell. An empty owner cell is **NOT MET with a named block**, never *in flight*. The block clears only when a `dev/PLANNING.md` > *Deferred follow-ups (durable home)* > **Security apparatus** row exists naming **both** sentences with an owner, a revival condition and an expiry trigger — **outside this plan**, because a backlog owner recorded only in the artifact whose completeness it licenses is this bar's own **B1** violation. Returned text below. The alternative branch the review offered — correcting `SECURITY.md` and `doctrine/runtime-contract.md` in a bounded documentation chunk — is a scope widening past the Decision and is in `openQuestions`. | [E2] |
+| **A28** | *"The roll-up table: six items, rows, MET / MET-by-residual / in flight / NOT MET, with the date each was last decided."* (Chunk H, row H1) | *"…**plus an owner column**. The roll-up may not report the register complete or usable while any owner cell is empty; an empty owner cell renders its row **NOT MET with a named block**. **And the roll-up reports the coverage assertion (A30) and the staleness verdict (A29) as two separate cells**, because a fresh-but-incomplete universe and a stale-but-complete one fail differently and a single 'audit OK' cell hides both."* | [E2], [E3] |
+| **A29** | *"…record `git rev-parse HEAD` at audit time in the register, and report stale **iff `git log <recorded>..HEAD -- <surface list>` is non-empty**."* (Amendment A13) | **The audit commit moves out of the artifact.** The Maintainer creates **`refs/cairn/release-bar-audit`** at the commit that lands the `## Code review` section; staleness is `git log refs/cairn/release-bar-audit..HEAD -- <surface list>`, non-empty ⇒ stale. Commit identity, not `%cI`, is retained from A13. Precedent: `refs/cairn/gate-anchor` is a real ref in this repository (`bootstrap/tests/_gate_preflight.py:53`), so this reuses an existing pattern rather than inventing one. Demonstrated running in *Re-measurement* above. **Ref creation is Maintainer-only** and joins the Chunk M fence as item 8; an agent creates no `refs/cairn/*`. Recording the sha *only* inside the register is struck: the artifact under verification must not supply the material used to verify it, which is the property this bar's **B1** asserts about everyone else. | [E3] |
+| **A30** | *"**The register's surface list** — the explicit set of paths the register's rows depend on — plus the staleness command that consumes it"* (Chunk H, row H2) | **The surface list is derived and unioned, and gains a second assertion.** (i) *Derived leg:* a committed extraction command over the register's own evidence cells, so no path is hand-maintained. (ii) *Independent leg:* **unioned with Chunk A's Set 1 / Set 2 / Set 3 enumerations**, which are produced by sweeps that read the tree — the register is not an independent channel for its own scope, and Chunk A's sweeps are. (iii) *The coverage assertion, new and separate from staleness:* **every Set member has a register row**; a Set member with no row is recorded as a **NOT MET row**, never an omission. A13's stated residual is retained but narrowed — it now covers only what **Chunk A's sweeps** miss (the residual NC-A1/NC-A3 already quote), not everything the plan forgot to list. | [E3] |
+| **A31** | *(new criterion — Chunk H)* | **NC-H2 (the coverage assertion can fail), RUN.** In a scratch checkout outside the repository, plant an **unlisted release-facing source** — one adopter-installed Markdown file asserting a security control, and one `templates/**/*.py` — re-run Chunk A's sweeps and the coverage assertion, and confirm the assertion goes **red** naming the planted paths. *Negative control:* an unperturbed scratch checkout must report the assertion **green**, or it fails for every tree and decides nothing. *Discrimination leg:* a modification to a path **already** in the surface list must be caught by the **staleness** command (A29) and **not** by the coverage assertion — the two mechanisms measure different hazards and a run that cannot separate them is measuring one thing twice. Invisible code points in any planted file are written as `U+…`, per Chunk E. | [E3] |
+| **A32** | *(new criterion — Chunk H)* | **Four surfaces measured volatile this cycle are named into the surface list explicitly**, independently of whatever the derivation returns: `bootstrap/_scaffold/config.py`, `bootstrap/_scaffold/install.py`, `bootstrap/PROVENANCE.md`, `tools/lifecycle_planner.py`. Each moved a citation the register depends on between `eacb7dd`, `6618e54` and `4385813`. | [E3], [S2] |
+| **A33** | *"**Set 2 table** — `install_manifest(modules=expand_preset(load_config(<preset>)))` per shipped preset"* (Chunk A, row A2) and *"**The B6 reproduction** — the eight-line `load_config` → `expand_preset` → `install_manifest` measurement per preset"* (Verification) | **Both producing commands are void as written against the current engine API and are re-derived at the implementing commit.** At `4385813`: `expand_preset` (`bootstrap/_scaffold/config.py:1494`) returns a **2-tuple** `(ordered_modules, summary)`, and `install_manifest` returns `list[tuple[str, str, bool]]` — `(src, dst, verbatim)`, **not** dicts. The plan's expression raises `TypeError: unhashable type: 'list'`; the Internal review's `r['dst']` raises `TypeError: tuple indices must be integers`. Repaired (unpack `(mods, _summary)`; read `row[1]`), **the B6 table reproduces exactly — all 27 cells** — and the counts 6–59 / 11–77 / 14–80 hold. **Set 2 must also account for `_DEFAULT_ON_MODULES` (`bootstrap/_scaffold/config.py:83`)**, a selection construct that did not exist when the plan was written and that `expand_preset` now feeds from. **No citation checker reports this class**: it is the decider going stale, not the evidence. | [S1] |
+| **A34** | *"**Re-measured at `6618e54`: 19 of 28 still resolve; 9 do not.**"* (Amendment A7) | *"**Re-measured at `4385813`: 18 of 28 resolve; 10 do not.**"* New failures since A7: `tools/lifecycle_planner.py:786` (the gate is **`:790`**–**`:791`**) and `:792` (the code-review gate is **`:797`**) — the two citations A1 and A2 themselves rest on. A7's per-citation characterizations for `bootstrap/_scaffold/install.py:982`→`:983` and `:1088`→`:1089` **do not reproduce**: `:982` still heads the docstring item, and the template read is at **`:1085`** (`:1088`–`:1089` are the *warn* string). Also re-pinned: `_has_kind` `:693`→**`:697`**; the archive preconditions `:792`–`:806`→**`:797`** / **`:802`**–**`:805`** / **`:808`**–**`:810`**; `_HEADER_RE` **`:509` unmoved**; `bootstrap/PROVENANCE.md` three-properties **`:245`–`:246`**, enumeration from **`:248`** (A22 said `:246`). The `lifecycle_planner.py` twin hash is now **`e428c8c8…`** (A-row figure `f1552fc7…` stale; the byte-identical *property* holds). **The mechanisms behind every one of these are unchanged** — only the coordinates moved, which is exactly why A7 and A8 are the amendments that matter most. | [S2], [S5] |
+| **A35** | *"**The deficit is stable at 54 files across all three snapshots**, so the deferral is still correctly sized even though both figures moved. `python scripts/check_cairn.py` → OK over **195** files, 68 external links not probed."* (Amendment A24) | **Falsified.** At `4385813`: `check_cairn` → OK over **176** files, **48** external links not probed; `git ls-files '*.md'` → **254** (196 outside `/archive/`, 58 inside). The deficit is **78**, not 54 — and on the comparable non-archive basis it is **20**. Mechanism, so the next re-measurement is not surprised: `check_cairn` excludes archived sources (`dev/**/archive/`) from its scan by default — `--include-archives` re-includes them and reports 254 files, 68 external links, 95 issues — and 58 Markdown files moved into archives across the 100 commits, so the scanned count fell while the tracked count rose. **A24's ruling that Chunk B's `≥180` criterion "still holds" is withdrawn: 176 < 180.** The criterion is re-derived at the implementing commit, not carried, and the deficit figure is a dated snapshot with its scan basis named — never a "stable" invariant. | [S3] |
+| **A36** | *"…its `doctrine/runtime-contract.md` surface is `:46`/`:185`/`:189` only (`dev/plans/gate-claims-vs-enforcement.md:850`–`:852`) … `scan-coverage` claims `SECURITY.md:66` (`dev/plans/scan-coverage.md:611`), not `:51`."* (Amendment A23) | **Paths re-pinned; the finding is unchanged.** Both plans archived: `dev/plans/archive/gate-claims-vs-enforcement.md:850`–`:852` and `dev/plans/archive/scan-coverage.md:611`. **Line numbers hold at the new paths** — verified by opening them. Recorded because this file's `claim-check-allow` directive (line 3) exempts both stems, so `claim_check.py` prints **OK** while passing silently over two stale paths: a correct exemption behaving correctly, and therefore a place where a green checker must not be read as *these citations resolve*. | [S4] |
+
+---
+
+### Returned text for a serialization point — the E2 backlog row
+
+`dev/PLANNING.md` is a serialized shared communication file. The text below is
+**returned**, not written, and it lands at a serialization point. **Until it
+lands, both Chunk F bar-contributed rows are NOT MET and the register is not
+complete** (A27).
+
+For `dev/PLANNING.md` > *Deferred follow-ups (durable home)* > **Security
+apparatus** (the group heading is at `dev/PLANNING.md:535` / `:625`), as a new
+row **beside** the existing *Install-integrity trust anchor* row rather than
+inside it — the two are different failures with different revival conditions:
+
+```
+* **Two falsified integrity claims in shipped prose, unowned** — the
+  coordinated-lockfile-tamper finding falsifies two sentences that no
+  lineage claims: `doctrine/runtime-contract.md:132` ("Detects tampered
+  apparatus before it can self-audit") and `SECURITY.md:51` ("flagging any
+  post-install modification"). Measured 2026-08-05 at `4385813`: a sweep
+  over every live and archived plan and proposal returns only the
+  `release-security-bar` plan and its own proposal; the previously named
+  owners (`gate-claims-vs-enforcement`, `agent-context-scrub`,
+  `scan-coverage`) each claim other lines in those files and never these.
+  The neighbouring sentence at `SECURITY.md:47` is careful and true; the
+  overstatement is four lines later, so the remedy is two sentences, not a
+  document. Owner: unassigned — this row IS the owner of record until a
+  lineage takes it. Revival condition: whichever comes first of (a) the
+  `verify_integrity` lockfile-anchor successor above, which would make both
+  sentences true rather than needing them softened, or (b) the next change
+  to either file by any lineage, which must take these two lines with it.
+  Expiry trigger: the v0.4.0 tag — the release security bar reports both
+  rows NOT MET while this row is open, so the tag is blocked on it.
+```
+
+Its arrival is what clears A27's block, and it must be verified **by reading
+`dev/PLANNING.md`**, not by reading this plan.
+
+---
+
+### Gate audit — what this plan gates on, and what is satisfied today
+
+Read the gates rather than assumed them. Each row names where the gate is
+written.
+
+| Gate | Where | Satisfied at `4385813`? |
+| --- | --- | --- |
+| **Declared tier `required(External)`** | plan header; re-stated by the Decision (*"The plan carries `required(External)` in its own right; this Decision does not discharge it"*) | **Presence: yes** — an External review landed (`a5b0f34`, Codex, 2026-08-05). **Clearance: no** — the verdict is **REVISE**, and the same reviewer's standing position that same day is that an authored Response is *"evidence of intended changes, not … a replacement for the plan's executable contract"* and that the tier *"remains undischarged"* (`dev/plans/review-gate-enforcement.md:371`–`:373`). **A second External read is owed.** |
+| *"**No burndown chunk lands before the `## Plan review` section is in the tree.**"* | plan header | **Literally satisfied** (two review sections are in the tree). Amended by **A2** to *"before an External plan review is in the tree"* — also literally satisfied. **Neither is mechanical**; both are conventions a reader enforces. |
+| *"No burndown chunk lands until an External review has landed under this heading, and an Internal round landing first does not change that."* | *Plan review — the brief* | **Literally satisfied.** It does not say *until the External review is cleared*, and a REVISE verdict means it is not. Read together with the row above, the honest statement is: the sentence is now spent, and what blocks implementation is the verdict, not the sentence. |
+| **The lifecycle plan-review gate** | `tools/lifecycle_planner.py:790`–`:791`, via `_has_kind` (`:697`) | **Green — and was green before the External review landed.** Re-measured both directions today. It reads only the section *kind*; `_HEADER_RE` (`:509`) captures `role` and nothing consults it. **This gate cannot tell that an External review arrived, and could not have told that one had not.** ([I1], A1–A3.) |
+| **Archive preconditions** — `## Code review`, `Follow-ups migrated to:`, loop-fidelity sign-off | `tools/lifecycle_planner.py:797`, `:802`–`:805`, `:808`–`:810` | **Not satisfied, and they do fire.** No `## Code review` section exists. **These are the only mechanically-enforced gates this plan has**, which is why the end-of-line audit is homed there. |
+| **Chunk M (Maintainer-only), items 1–7** — the `dev/PLANNING.md` row and precondition clause, the `CHANGELOG.md` line, commissioning the end-of-line audit, reopening D4, F3's escape, the launch sequence, every signing key | Chunk M | **None satisfied.** In particular the returned `## Active` plan-open row has **never landed**: the only `release-security-bar` mention in `dev/PLANNING.md` is at `:640`, and it belongs to the **proposal's** External review finding E1 (the install-integrity trust anchor) — a *different* E1 from this review's, worth flagging so a successor does not read that row as this finding's home. |
+| **Chunk M item 8 (new, A29)** — create `refs/cairn/release-bar-audit` at the audit commit | Amendment A29 | Not satisfied; not yet due. |
+| **D3 — what the audit blocks (Form A tag-only vs Form B tag + repo-public flip)** | *What the Decision settled*; *The `dev/PLANNING.md` … text this plan returns* | **Unresolved.** Form A remains the plan's assumption absent instruction. |
+| **D4 — reopening the `verify_integrity` verbatim-subset anchor** | Chunk M item 4 | **Not reopened** — correct. The Decision's routing to the deferred ledger stands and is visible at `dev/PLANNING.md:626`–`:640`. |
+| **F3's escape** | Chunk F, row F3 | **Superseded by A27.** Its trigger (an owning lineage stalls) can never fire, because there is no owning lineage. |
+| **[I1]'s remedy choice (a / b / c)** | Amendment A1, `openQuestions` | **Unresolved.** `review-gate-enforcement` is `**Status**: open`, its Chunk C.1 (`dev/plans/review-gate-enforcement.md:103`) has not landed, and it now carries its own REVISE External review (`04b0fa6`). |
+| **Chunk B's commit-approval gate** | `AGENTS.md > Git and commit workflow`; *Commit-approval note* | **Stands, unchanged, and is now the live Maintainer checkpoint for E1** (A25). Chunk B edits `templates/onboarding/high-rigor-legacy.md`, loses the deliberation carve-in, and re-triggers per-commit approval. Pushing needs approval in every case. |
+
+**Two gates were satisfiable-in-appearance and are called out so nobody reads
+them as clearance:** the lifecycle gate (green since the *Internal* review) and
+the *"no burndown chunk before an External review is in the tree"* sentence
+(satisfied by a REVISE). Neither says the plan may implement.
+
+---
+
+### Does this Response clear the plan to implement?
+
+**No.** Four reasons, in descending weight:
+
+1. **The External verdict is REVISE and an author's Response does not convert
+   it.** The tier's *presence* half is now met; its *clearance* half is not. The
+   reviewer's own standard, written the same day on a sibling plan, is that a
+   Response is evidence of intent and not a replacement for the executable
+   contract, and that the tier remains undischarged. **A second External read is
+   owed**, and it should be pointed at the amendment table, not at the original
+   text.
+2. **E3's full form is a schema this plan still does not contain and cannot
+   contain by an author's hand.** A standing automated coverage fixture crosses
+   two of this plan's Scope fences, both inherited from the accepted proposal.
+   NC-H2 (A31) is a real negative control and it is what I can ship; it is not
+   the standing check the review asked for, and calling it one would be the
+   overclaim this bar exists to prevent.
+3. **Three Maintainer decisions gate work that is otherwise ready.** E2's branch
+   (backlog owner — taken — versus a scope widening to correct `SECURITY.md`
+   and `doctrine/runtime-contract.md`), E3's fixture form, and D3's Form A/B.
+   [I1]'s remedy remains open behind a sibling plan that is itself in REVISE.
+   And E2's own acceptance is **not self-discharging**: it clears only when a
+   row lands in `dev/PLANNING.md`, which is not this plan's file to write.
+4. **The register's baseline must be re-taken for the third time.** 10 of 28
+   body citations no longer resolve, two of them the gate citations the
+   amendment table itself asserts; and the B6 / Set 2 **producing commands**
+   are void against the current engine API ([S1]) — a class no checker in this
+   repository reports. Per A7, A8 and A33 the implementing agent re-pins to its
+   own opening commit and re-derives both commands before running anything.
+
+**What this Response does discharge:** the mechanical revision the External
+round asked for. All three findings are dispositioned with numbered residue;
+every figure the review states and every figure my own prior Response asserts
+has been re-measured and reported in both directions, including four
+non-reproductions in my own amendment table (A7, A22, A23, A24); and five
+findings the tree produced since `6618e54` are recorded with amendments.
+
+**What an External reviewer still owes, unchanged:** whether the six properties
+are the **right six**, and whether the fence is drawn where an outsider would
+draw it. The landed External round engaged ownership and scope-completeness —
+which is the more useful half of what it could reach without an implementation
+to exercise, and it said so — but neither of those two questions is answered
+yet.
+
+---
+
+### Verification of this Response
+
+Run at `4385813` under `/Users/kendal30/conda_envs/lhm/bin/python3.13`
+(CPython 3.13.13), `PYTHONDONTWRITEBYTECODE=1`. **No repository file outside
+this plan was modified; no `add`, `mv`, `stash`, `reset` or `push` was
+performed.** All scratch work — the two lifecycle-planner probes, the B6
+re-measurement, the citation ledger, the ownership sweeps — ran outside the
+tree, and the two probes were taken on copies, never on the tracked file.
+
+```
+$ python scripts/claim_check.py dev/plans/release-security-bar.md
+claim_check: dev/plans/release-security-bar.md -- OK, no claim-check flags.   [exit 0]
+
+$ python scripts/check_cairn.py dev/plans/release-security-bar.md
+check_cairn: OK -- 1 Markdown file(s) scanned; no issues.                     [exit 0]
+```
+
+`git diff --numstat` on this file shows **0 deletions** — this Response is
+appended, and no prior section is edited. Note what the first line above does
+**not** establish: the file's `claim-check-allow` directive exempts two paths
+that have since moved into `dev/plans/archive/` ([S4], A36), so `OK` means *no
+unexempted flag*, not *every citation resolves*. The ledger above is the
+statement about resolution, and it was produced by opening each file.
