@@ -1150,6 +1150,48 @@ plan.
 
 This section is append-only once written.
 
+## Plan review -- Codex (External, security lens) -- 2026-08-05
+
+**Verdict: REVISE.** The planned containment checks, refusal of candidate
+`.gitleaksignore`, and separation between fake-tool argv evidence and real-tool
+behavior are strong. I decline one residual because it changes the meaning of a
+security result rather than merely leaving coverage incomplete.
+
+**[E1] Full/CLEAN mode must bind the executed binary to the admitted artifact.**
+M18/M19 deliberately make the SHA-256 record evidence-only: any host binary
+that prints an admitted version can enter full mode and produce CLEAN. An
+attacker or compromised host PATH can therefore replace the scanner with a
+look-alike that self-reports that version. Path containment and an executable
+bit do not establish identity. The Maintainer already supplies a
+checksum-verified binary for the real admission matrix, so record its digest in
+the admitted-version policy and hash the resolved executable immediately before
+execution. A mismatch must be DEGRADED (20), never reduced/full/CLEAN. This
+does not authenticate the host OS or Git, but it binds the result to the binary
+the ceremony actually reviewed.
+
+**[E2] The candidate Git configuration boundary remains enumeration-based.**
+The plan pins selected keys and command arguments, but a repository-controlled
+Git configuration can introduce an unanticipated include or behavior that the
+eight-key list does not name. Before claiming the candidate configuration is
+bounded, specify the actual configuration isolation for each Git invocation,
+including system/global config and the repository-local config that Gitleaks
+uses transitively; test an unlisted hostile key or include as a negative case.
+If local configuration cannot be isolated without losing the required history
+semantics, report that as an explicit degraded residual rather than as a finite
+key-set guarantee.
+
+**[E3] `--verify-version-support` is a deliberate execution surface and needs a
+human-facing friction boundary.** M24/M25 sensibly refuse candidate paths inside
+the repository and symlink escapes. It still executes an arbitrary external
+file supplied to the command. Keep it absent from ordinary sweep flow, require
+an explicit confirmation argument, and make its report say that it executes an
+unadmitted binary. That preserves its maintenance purpose without presenting it
+as a harmless verification read.
+
+I inspected the response's effective M14--M25 security amendments and the
+binary/config execution boundaries. No Gitleaks binary is available on this
+host, so I did not claim real-tool behavior from the fake-executable tests.
+
 ---
 
 ## Plan review -- Claude (Internal, same-agent-type; security lens) -- 2026-08-04
