@@ -543,9 +543,9 @@
       "verbatim": true
     },
     {
-      "base_hash": "sha256:1249ee2f00b38dbb92b09cae143b4c0c52ef21338c80200b9f728e7235abf8a7",
+      "base_hash": "sha256:a5bcea95e4e55b2136bd2ba442cf7f92dba65f02357580da5d51a8311283b9ed",
       "dst": "tools/lifecycle.py",
-      "hash": "sha256:1249ee2f00b38dbb92b09cae143b4c0c52ef21338c80200b9f728e7235abf8a7",
+      "hash": "sha256:a5bcea95e4e55b2136bd2ba442cf7f92dba65f02357580da5d51a8311283b9ed",
       "src": "skills/_lib/lifecycle.py",
       "verbatim": true
     },

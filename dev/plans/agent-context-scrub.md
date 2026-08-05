@@ -1172,3 +1172,13 @@ both `session-start` and the reflection-only `session-end` survey. The twins are
 byte-identical at
 `sha256:1249ee2f00b38dbb92b09cae143b4c0c52ef21338c80200b9f728e7235abf8a7`,
 and both self-host lockfile hashes record that value.
+
+Chunk B is implemented. The `_git` chokepoint now decodes bytes with visible
+replacement, normalizes CRLF pairs without promoting lone carriage returns,
+and escapes each real output line. `git status --short` disables `quotePath` so
+ordinary international filenames remain ordinary text before escaping. Six
+tests pin lone-CR author and subject metadata, CRLF-pairs-only normalization,
+accented paths, textual failure details, and hash identity.
+
+Both lifecycle copies and both lockfile hashes now carry
+`sha256:a5bcea95e4e55b2136bd2ba442cf7f92dba65f02357580da5d51a8311283b9ed`.

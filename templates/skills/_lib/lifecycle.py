@@ -220,14 +220,15 @@ def _git(args: List[str], root: Path) -> str:
             ["git", *args],
             cwd=str(root),
             capture_output=True,
-            text=True,
             check=True,
             env=_git_env(),
         )
     except subprocess.CalledProcessError as exc:
-        detail = (exc.stderr or "").strip() or f"git {' '.join(args)} failed"
+        detail = (exc.stderr or b"").decode("utf-8", "replace").strip()
+        detail = detail or f"git {' '.join(args)} failed"
         raise LifecycleError(detail) from exc
-    return out.stdout
+    text = out.stdout.decode("utf-8", "replace").replace("\r\n", "\n")
+    return _safe_stream(text)
 
 
 def _intent_whoami(root: Path, *, session_token: bool = False) -> Optional[str]:
@@ -817,7 +818,7 @@ def cmd_session_start(args: argparse.Namespace) -> int:
     print(log if log else f"{_PREFIX} (no commits in range)")
 
     _emit_section("working-tree state (git status --short)")
-    status = _git(["status", "--short"], root).strip()
+    status = _git(["-c", "core.quotePath=false", "status", "--short"], root).strip()
     print(status if status else f"{_PREFIX} (clean working tree)")
 
     _emit_section("in-flight threads (open proposals / plans)")
