@@ -146,11 +146,11 @@ _EGRESS_RE = re.compile(
 _URL_RE = re.compile(r"https?://([^/\s)\"'>]+)", re.I)
 
 # Zero-width, bidi-control and line/paragraph-separator characters.
-# Members are literal control
-# chars (with a naming comment each), as **escape forms** (\uXXXX), never raw characters, so this scanner
-# carries none of the invisible code points it detects (trojansource-safe,
-# bandit B613); the per-char comment names each.  Coverage expanded per
-# code-review P3 (word joiner U+2060; LRM U+200E / RLM U+200F).
+# Members are literal control chars (with a naming comment each), written as
+# **escape forms** (\uXXXX) and never raw, so this scanner carries none of the
+# invisible code points it detects (trojansource-safe, bandit B613); the
+# per-char comment names each.  Coverage expanded per code-review P3 (word
+# joiner U+2060; LRM U+200E / RLM U+200F).
 _ZERO_WIDTH = {
     "\u200b",  # zero-width space
     "\u200c",  # zero-width non-joiner
