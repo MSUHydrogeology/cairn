@@ -881,12 +881,12 @@ leaves, so no forwarding entry is owed; the allowlist edit is out of scope).
 ### The reviewer's bonus finding becomes the proposal
 
 <!-- claim-check-allow: bootstrap/tests/test_security_lint.py::test_thing -->
-<!-- ^ THE DEFECT, DEMONSTRATING ITSELF. This directive exists because the
-     token below -- the `guard` citation form that `doctrine/lifecycle.md`
-     mandates -- is hard-flagged by the very checker this proposal fixes. The
-     proposal describing the bug cannot be committed without working around the
-     bug. Delete this directive once R1 lands; it should then be unnecessary,
-     and that is R1's acceptance check. -->
+
+**The directive immediately above is the defect demonstrating itself.** The
+token cited below is the `guard` citation form `doctrine/lifecycle.md` mandates,
+and it is hard-flagged by the very checker this proposal fixes — so the proposal
+describing the bug cannot be committed without working around the bug. **R1's
+acceptance check is that removing that directive leaves this file clean.**
 
 Reproduced independently: `python scripts/claim_check.py` over a file citing
 `bootstrap/tests/test_security_lint.py::test_thing` hard-flags it as *"cited path
