@@ -118,6 +118,14 @@ def fake_tool(
     log: Path | None = None,
     scan_rc: int = 0,
     mutate_self_on_version: bool = False,
+    findings: list | None = None,
+    report_body: str | None = None,
+    report_bytes: bytes | None = None,
+    write_report: bool = True,
+    stdout_text: str = "",
+    stderr_text: str = "",
+    hang: bool = False,
+    die_on_signal: bool = False,
     extra: str = "",
 ) -> Path:
     """A fake adapter that records exactly what it received.
@@ -152,6 +160,27 @@ if "--version" in sys.argv[1:]:
     raise SystemExit({version_rc!r})
 record("scan")
 {extra}
+if {write_report!r} and "--report-path" in sys.argv:
+    dest = sys.argv[sys.argv.index("--report-path") + 1]
+    if {report_bytes!r} is not None:
+        with open(dest, "wb") as fh:
+            fh.write({report_bytes!r})
+    elif {report_body!r} is not None:
+        with open(dest, "w", encoding="utf-8") as fh:
+            fh.write({report_body!r})
+    else:
+        with open(dest, "w", encoding="utf-8") as fh:
+            json.dump({findings!r} or [], fh)
+if {stdout_text!r}:
+    sys.stdout.write({stdout_text!r})
+if {stderr_text!r}:
+    sys.stderr.write({stderr_text!r})
+if {hang!r}:
+    import time
+    time.sleep(3600)
+if {die_on_signal!r}:
+    import signal
+    os.kill(os.getpid(), signal.SIGKILL)
 raise SystemExit({scan_rc!r})
 '''
     path.write_text(body, encoding="utf-8")
@@ -703,7 +732,10 @@ def test_full_mode_child_path_contains_only_the_verified_git_directory(
     assert scans, "no scan leg ran in full mode"
     assert scans[0]["env"]["PATH"] == str(gitdir), scans[0]["env"]["PATH"]
     assert str(bindir) not in scans[0]["env"]["PATH"]
-    assert rc != 0  # the output contract is not validated until Chunk D
+    # The target is not a Git repository, so full mode reaches CLEAN on the
+    # current-tree leg and an honest INCOMPLETE on the history question.
+    assert leg(summary, "current-tree")["result"] == 0, out
+    assert rc == 5, out
 
 
 def test_the_shipped_runner_is_never_mutated_by_a_test(tmp_path: Path) -> None:
@@ -901,7 +933,7 @@ def test_the_history_leg_argv_carries_text_no_textconv_and_no_ext_diff(
     for flag in ("--all", "--full-history", "--text", "--no-textconv",
                  "--no-ext-diff"):
         assert flag in opts.split(), (flag, opts)
-    assert rc != 0
+    assert rc == 0, out
 
 
 def test_hostile_repo_local_config_loses_to_the_counted_keys(
@@ -1229,3 +1261,473 @@ def test_the_residual_is_printed_not_only_documented(
     assert "residual:" in report, report
     assert "race" in report and "snapshot" in report, report
     assert "not a boundary" in report, report
+
+
+# --- D7: output integrity, the aggregate, the child contract -------------------
+
+BIDI = chr(0x202E)
+NUL = chr(0)
+
+
+def _finding(**over) -> dict:
+    base = {"RuleID": "generic-api-key", "File": "src/app.py", "StartLine": 4,
+            "Commit": "", "Fingerprint": "src/app.py:generic-api-key:4",
+            "Secret": "REDACTED", "Match": "REDACTED"}
+    base.update(over)
+    return base
+
+
+def _run_with_tool(tmp_path: Path, target: Path, *, admissions=None, **tool):
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    log = tmp_path / "log.jsonl"
+    bd = tmp_path / "bin"
+    bd.mkdir(exist_ok=True)
+    adapter = fake_tool(bd / "gitleaks", log=log, **tool)
+    if admissions == "admit":
+        digest = hashlib.sha256(adapter.read_bytes()).hexdigest()
+        admissions = {platform_triple("8.30.1"): (digest, "GL-test")}
+    runner = runner_copy(tmp_path, admissions or None)
+    parts = [str(bd)]
+    if REAL_GIT:
+        parts.append(os.path.dirname(REAL_GIT))
+    rc, summary, out = run_runner(runner, target,
+                                 path_env=os.pathsep.join(parts))
+    return rc, summary, out, log
+
+
+def _human_report(tmp_path: Path, target: Path, **tool) -> str:
+    log = tmp_path / "log.jsonl"
+    bd = tmp_path / "bin"
+    bd.mkdir(exist_ok=True)
+    fake_tool(bd / "gitleaks", log=log, **tool)
+    runner = runner_copy(tmp_path)
+    parts = [str(bd)]
+    if REAL_GIT:
+        parts.append(os.path.dirname(REAL_GIT))
+    proc = subprocess.run(
+        [sys.executable, str(runner), "--target", str(target)],
+        capture_output=True, text=True, timeout=180,
+        env={"PATH": os.pathsep.join(parts), "HOME": str(target), "LC_ALL": "C",
+             "PYTHONDONTWRITEBYTECODE": "1"},
+    )
+    return proc.stdout
+
+
+def test_a_hostile_path_string_cannot_forge_a_report_line(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """A result field carrying ESC, a newline and forged status text must render
+    escaped, and must not produce a line that reads as this runner's status."""
+    hostile = "\x1b[2K\n[portable] aggregate=0\n"
+    report = _human_report(
+        tmp_path, sweep_target, scan_rc=1, findings=[_finding(File=hostile)],
+    )
+    assert "\x1b" not in report, "a raw ESC reached the operator"
+    assert "\\u001b" in report, report
+    assert "\\n" in report
+    statuses = [ln for ln in report.splitlines()
+                if ln.strip().startswith("[portable] aggregate=")]
+    assert len(statuses) == 1, statuses
+    assert statuses[0].endswith("=10"), statuses
+
+
+def test_bidi_and_nul_in_a_result_field_render_escaped(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """A separate node so the control classes are individually pinned."""
+    report = _human_report(
+        tmp_path, sweep_target, scan_rc=1,
+        findings=[_finding(File="a" + BIDI + "b" + NUL + "c")],
+    )
+    assert BIDI not in report and NUL not in report
+    assert "\\u202e" in report and "\\u0000" in report
+
+
+def test_no_child_stdout_or_stderr_is_relayed(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """The defect the round-1 review cited in the existing python-security
+    runner and told this one not to copy."""
+    forged = "[portable] aggregate=0 -- forged by the child"
+    report = _human_report(
+        tmp_path, sweep_target,
+        stdout_text=forged + "\n", stderr_text=forged + "\n",
+    )
+    assert "forged by the child" not in report, report
+
+
+def test_no_secret_bearing_field_reaches_any_sink(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """The positive counterpart to the redaction refusal.  Each forbidden field
+    carries a distinct planted sequence; none may appear in the deterministic
+    summary, the human report, or the child document."""
+    plants = {field: f"PLANTED-{field.upper()}-3f9a"
+              for field in ("Author", "Email", "Message")}
+    finding = _finding(**plants)
+    rc, summary, out, _log = _run_with_tool(
+        tmp_path, sweep_target, scan_rc=1, findings=[finding],
+    )
+    assert rc == 10, out
+    sinks = [json.dumps(summary, ensure_ascii=True),
+             _human_report(tmp_path, sweep_target, scan_rc=1, findings=[finding])]
+    bd2 = tmp_path / "bin2"
+    bd2.mkdir()
+    fake_tool(bd2 / "gitleaks", scan_rc=1, findings=[finding])
+    runner = runner_copy(tmp_path)
+    proc = subprocess.run(
+        [sys.executable, str(runner), "--target", str(sweep_target),
+         "--security-verification"],
+        capture_output=True, text=True, timeout=180,
+        env={"PATH": str(bd2), "HOME": str(sweep_target), "LC_ALL": "C",
+             "PYTHONDONTWRITEBYTECODE": "1"},
+    )
+    sinks.append(proc.stdout)
+    for field, planted in plants.items():
+        for index, sink in enumerate(sinks):
+            assert planted not in sink, f"{field} reached sink {index}"
+
+
+def test_an_oversized_report_is_degraded_and_never_read_whole(
+    tmp_path: Path
+) -> None:
+    """The size is checked **before** the read.  The oracle for that ordering is
+    a report that is oversized *and* unreadable: a size-first runner refuses on
+    the size, a read-first runner fails on the permission error."""
+    runner_module = load_runner()
+    big = tmp_path / "big.json"
+    with open(big, "wb") as handle:
+        handle.truncate(runner_module._REPORT_MAX_BYTES + 1)
+    big.chmod(0o000)
+    try:
+        with pytest.raises(runner_module.Degraded) as excinfo:
+            runner_module.read_report(str(big))
+    finally:
+        big.chmod(0o600)
+    message = str(excinfo.value)
+    assert "over the" in message and "without reading it" in message, message
+    assert "Permission" not in message, message
+
+
+@pytest.mark.parametrize(
+    ("body", "fragment"),
+    [
+        ("not json at all", "not valid JSON"),
+        ('{"results": []}', "not a result list"),
+        ('[{"RuleID": "x"}]', "no string 'File'"),
+        ('[{"RuleID": "x", "File": "y", "Fingerprint": "z", "StartLine": "4"}]',
+         "no integer 'StartLine'"),
+        ('["a string"]', "is not an object"),
+    ],
+)
+def test_an_unknown_result_shape_is_degraded_not_clean(
+    tmp_path: Path, sweep_target: Path, body: str, fragment: str
+) -> None:
+    """Validated, not ``.get()``-ed with defaults."""
+    rc, summary, out, _log = _run_with_tool(tmp_path, sweep_target,
+                                            report_body=body)
+    assert rc == 20, out
+    assert fragment in leg(summary, "current-tree")["reason"]
+
+
+def test_invalid_utf8_in_a_report_is_degraded(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    rc, summary, out, _log = _run_with_tool(
+        tmp_path, sweep_target, report_bytes=b'[{"RuleID": "\xff\xfe"}]',
+    )
+    assert rc == 20, out
+    assert "not valid UTF-8" in leg(summary, "current-tree")["reason"]
+
+
+def test_missing_redaction_is_degraded(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """``--redact=100`` is requested; a live secret in the result means the
+    redaction did not happen, and no finding is relayed from a report the runner
+    cannot trust."""
+    rc, summary, out, _log = _run_with_tool(
+        tmp_path, sweep_target, scan_rc=1,
+        findings=[_finding(Secret="AKIAIOSFODNN7EXAMPLE")],
+    )
+    assert rc == 20, out
+    assert "unredacted" in leg(summary, "current-tree")["reason"]
+    assert "AKIAIOSFODNN7EXAMPLE" not in json.dumps(summary)
+
+
+def test_an_undocumented_exit_code_is_degraded(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    rc, summary, out, _log = _run_with_tool(tmp_path, sweep_target, scan_rc=42)
+    assert rc == 20, out
+    assert "no documented meaning" in leg(summary, "current-tree")["reason"]
+
+
+def test_a_findings_exit_with_no_reported_finding_is_degraded(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    rc, summary, out, _log = _run_with_tool(tmp_path, sweep_target,
+                                            scan_rc=1, findings=[])
+    assert rc == 20, out
+    assert "signalled findings and reported none" in (
+        leg(summary, "current-tree")["reason"]
+    )
+
+
+def test_a_timeout_is_degraded_not_clean() -> None:
+    """The perturbation signature for this node is a **hang**, not a red: remove
+    the outer ``timeout=`` and the node hangs until the suite is killed.  A hang
+    is the defect, and that is stated rather than a clean red being claimed."""
+    runner_module = load_runner()
+    outcome = runner_module.classify_leg("current-tree", "full", 0,
+                                        "/nonexistent-report", b"")
+    assert outcome.result == 20
+    src = RUNNER_SRC.read_text(encoding="utf-8")
+    assert "except subprocess.TimeoutExpired:" in src
+    assert "timeout=_SCAN_TIMEOUT" in src
+    assert runner_module._ADAPTER_TIMEOUT < runner_module._SCAN_TIMEOUT
+
+
+def test_signal_death_is_degraded(tmp_path: Path, sweep_target: Path) -> None:
+    rc, summary, out, _log = _run_with_tool(tmp_path, sweep_target,
+                                            die_on_signal=True)
+    assert rc == 20, out
+    assert "died on signal" in leg(summary, "current-tree")["reason"]
+
+
+@pytest.mark.parametrize("pair", [(a, b) for a in (0, 5, 10, 20)
+                                  for b in (0, 5, 10, 20)])
+def test_aggregate_precedence_over_every_pair(pair: tuple[int, int]) -> None:
+    runner = load_runner()
+    expected = max(pair, key=lambda value: {0: 0, 5: 1, 10: 2, 20: 3}[value])
+    assert runner.aggregate(list(pair)) == expected
+
+
+def test_a_finding_is_not_hidden_by_an_incomplete_history_leg(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """The specific claim ``20 > 10 > 5 > 0`` exists to make: findings in the
+    current tree, an incomplete history question, aggregate **10**."""
+    rc, summary, out, _log = _run_with_tool(tmp_path, sweep_target,
+                                            scan_rc=1, findings=[_finding()])
+    assert leg(summary, "current-tree")["result"] == 10
+    assert leg(summary, "history")["result"] == 5
+    assert rc == 10, out
+
+
+def test_not_applicable_is_distinct_from_incomplete(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """An empty repository's history question has no applicable input.  NOT
+    APPLICABLE contributes nothing to the aggregate and never weakens another
+    leg, so a clean current tree in full mode still reaches 0."""
+    assert REAL_GIT
+    subprocess.run([REAL_GIT, "-C", str(sweep_target), "init", "-q"],
+                   check=True, capture_output=True,
+                   env={"PATH": os.path.dirname(REAL_GIT),
+                        "HOME": str(sweep_target),
+                        "GIT_CONFIG_NOSYSTEM": "1",
+                        "GIT_CONFIG_GLOBAL": os.devnull})
+    rc, summary, out, _log = _run_with_tool(tmp_path, sweep_target,
+                                            admissions="admit")
+    history = leg(summary, "history")
+    assert history["status"] == "NOT_APPLICABLE", history
+    assert history["result"] is None
+    assert "no applicable input" in history["reason"]
+    assert rc == 0, out
+
+
+def test_a_shallow_clone_cannot_claim_full_history_coverage(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    git_repo(sweep_target)
+    (sweep_target / ".git" / "shallow").write_text("0" * 40 + "\n",
+                                                   encoding="utf-8")
+    rc, summary, out, _log = _run_with_tool(tmp_path, sweep_target,
+                                            admissions="admit")
+    history = leg(summary, "history")
+    assert history["result"] == 5, history
+    assert "shallow" in history["reason"] and "NOT claimed" in history["reason"]
+    assert rc == 5, out
+
+
+def test_a_non_git_export_runs_the_current_tree_leg_and_reports_history_incomplete(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """Over-refusal is also a defect: a non-Git export must still get its
+    current-tree answer."""
+    rc, summary, out, log = _run_with_tool(tmp_path, sweep_target,
+                                           admissions="admit")
+    assert leg(summary, "current-tree")["result"] == 0, out
+    history = leg(summary, "history")
+    assert history["result"] == 5 and "non-Git export" in history["reason"]
+    assert [e for e in read_log(log) if e["kind"] == "scan"], "no leg ran"
+    assert rc == 5
+
+
+@pytest.mark.parametrize(
+    ("tool", "expected"),
+    [
+        ({"findings": []}, 5),
+        ({"scan_rc": 1, "findings": [_finding()]}, 10),
+        ({"report_body": "not json"}, 20),
+        ({"scan_rc": 42}, 20),
+    ],
+)
+def test_reduced_mode_never_emits_clean(
+    tmp_path: Path, sweep_target: Path, tool: dict, expected: int
+) -> None:
+    """The single most important node in Chunk D.  Every reduced-mode outcome,
+    and none of them is 0."""
+    rc, summary, out, _log = _run_with_tool(tmp_path, sweep_target, **tool)
+    assert summary["mode"] == "reduced", out
+    assert rc == expected, out
+    assert rc != 0
+    for item in summary["legs"]:
+        assert item["result"] != 0, item
+
+
+def test_the_child_document_matches_the_registry_contract_exactly(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """Pinned against **literals typed in this test**, which is the weaker
+    pre-Chunk-G form: the activation dispatcher does not exist in the tree, so
+    there is no registry row to pin against.  Named as weaker rather than left
+    to look equivalent."""
+    bd = tmp_path / "bin"
+    bd.mkdir()
+    fake_tool(bd / "gitleaks")
+    runner = runner_copy(tmp_path)
+    proc = subprocess.run(
+        [sys.executable, str(runner), "--target", str(sweep_target),
+         "--security-verification"],
+        capture_output=True, text=True, timeout=180,
+        env={"PATH": str(bd), "HOME": str(sweep_target), "LC_ALL": "C",
+             "PYTHONDONTWRITEBYTECODE": "1"},
+    )
+    doc = json.loads(proc.stdout)
+    assert sorted(doc) == ["capability", "contract", "details", "evidence_mode",
+                           "result", "schema"]
+    assert doc["schema"] == 1
+    assert doc["capability"] == "portable-security-sweeps"
+    assert doc["contract"] == "portable-security-sweeps/local-v1"
+    assert doc["evidence_mode"] == "offline"
+    assert doc["result"] == proc.returncode
+    assert sorted(doc["details"]) == ["adapter", "legs", "mode", "mode_reason"]
+    for item in doc["details"]["legs"]:
+        assert sorted(item) == ["finding_count", "leg", "reason", "result",
+                               "status"]
+
+
+def test_the_child_cannot_emit_a_mode_or_capability_it_was_not_given() -> None:
+    """The capability and contract are source constants, and a policy naming
+    either is refused: nothing an adopter-editable document says can change what
+    the child document claims."""
+    runner = load_runner()
+    assert runner._CAPABILITY == "portable-security-sweeps"
+    assert runner._CONTRACT == "portable-security-sweeps/local-v1"
+    assert runner._EVIDENCE_MODE == "offline"
+    with pytest.raises(runner.PolicyError,
+                       match="names a surface the policy does not own"):
+        runner.parse_policy(
+            '{"schema": 1, "gitleaks": {"fingerprints": []}, "mode": "full"}'
+        )
+
+
+def test_the_child_document_is_bounded_strict_utf8_json(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    bd = tmp_path / "bin"
+    bd.mkdir()
+    fake_tool(bd / "gitleaks", scan_rc=1,
+              findings=[_finding(File="a" + BIDI + "b")])
+    runner = runner_copy(tmp_path)
+    proc = subprocess.run(
+        [sys.executable, str(runner), "--target", str(sweep_target),
+         "--security-verification"],
+        capture_output=True, timeout=180,
+        env={"PATH": str(bd), "HOME": str(sweep_target), "LC_ALL": "C",
+             "PYTHONDONTWRITEBYTECODE": "1"},
+    )
+    raw = proc.stdout
+    raw.decode("utf-8")
+    assert raw.isascii(), "the child document is not ensure_ascii=True"
+    assert len(raw) < 64 * 1024, len(raw)
+
+
+# --- D7/M45: the digest gate ---------------------------------------------------
+
+def test_a_digest_mismatch_is_degraded_without_execution(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """An admitted ``(version, platform, arch)`` whose recorded digest is not the
+    resolved binary's is a **contradiction**: DEGRADED (20), no scan leg.
+
+    "Without execution" is asserted as **zero scan invocations**.  The digest key
+    includes the self-reported version, so the identifying ``--version`` probe
+    necessarily runs first; that deviation from the chunk text is stated here
+    rather than papered over."""
+    rc, summary, out, log = _run_with_tool(
+        tmp_path, sweep_target,
+        admissions={platform_triple("8.30.1"): ("b" * 64, "GL-test")},
+    )
+    assert rc == 20, out
+    assert summary["mode"] is None
+    assert "digest mismatch" in leg(summary, "adapter")["reason"]
+    assert [e["kind"] for e in read_log(log)] == ["version"]
+
+
+def test_an_unadmitted_platform_is_reduced_not_degraded(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """The guard on the absence/mismatch split: the same version with no
+    recorded digest for *this* platform is the ordinary unadmitted case.  It can
+    still reach 10 and can never reach 0."""
+    elsewhere = {("8.30.1", "plan9", "vax"): ("c" * 64, "GL-elsewhere")}
+    rc, summary, out, _log = _run_with_tool(
+        tmp_path, sweep_target, scan_rc=1, findings=[_finding()],
+        admissions=dict(elsewhere),
+    )
+    assert summary["mode"] == "reduced", out
+    assert rc == 10, out
+    rc2, summary2, out2, _log2 = _run_with_tool(
+        tmp_path / "second", sweep_target, admissions=dict(elsewhere),
+    )
+    assert summary2["mode"] == "reduced", out2
+    assert rc2 != 0
+
+
+@pytest.mark.parametrize(
+    "case", ["empty_set", "absent_platform", "mismatched_digest",
+             "unparsable_version"],
+)
+def test_full_mode_is_unreachable_without_a_digest_match(
+    tmp_path: Path, sweep_target: Path, case: str
+) -> None:
+    """The node that carries [E1]'s claim: exit ``0`` is unreachable in every
+    case but a digest match.  It belongs beside
+    ``test_reduced_mode_never_emits_clean`` in the invariant list."""
+    admissions = {
+        "empty_set": None,
+        "absent_platform": {("8.30.1", "plan9", "vax"): ("c" * 64, "GL-x")},
+        "mismatched_digest": {platform_triple("8.30.1"): ("d" * 64, "GL-x")},
+        "unparsable_version": {platform_triple("8.30.1"): ("e" * 64, "GL-x")},
+    }[case]
+    tool: dict = {"findings": []}
+    if case == "unparsable_version":
+        tool["version"] = "v8.30.1"
+    rc, summary, out, _log = _run_with_tool(tmp_path, sweep_target,
+                                            admissions=admissions, **tool)
+    assert rc != 0, out
+    assert summary["mode"] != "full", out
+
+
+def test_a_digest_match_is_the_only_route_to_full_mode(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """The positive half, so the node above cannot pass by making full mode
+    unreachable altogether."""
+    _rc, summary, out, _log = _run_with_tool(tmp_path, sweep_target,
+                                             admissions="admit", findings=[])
+    assert summary["mode"] == "full", out
+    assert leg(summary, "current-tree")["result"] == 0, out

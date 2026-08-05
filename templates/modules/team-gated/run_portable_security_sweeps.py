@@ -30,11 +30,18 @@ than a best effort:
 
 A clean run is a **tripwire, not a proof**.
 
-Chunk A of ``portable-security-sweeps`` lands the CLI, the strict policy
-loader, the strict version parser, the admitted-artifact mode selector, the
-aggregate and the deterministic summary.  The adapter-execution seam returns
-INCOMPLETE with a named reason until the executable trust boundary lands; there
-is deliberately **no** ``subprocess`` import in this file at that commit.
+Two pre-execution refusals run **before any adapter invocation at all**: a
+candidate ``.gitleaksignore`` anywhere in the tree, and a deny-by-default screen
+over the candidate's *include-expanded* repository-local Git configuration.  The
+counted Git config keys forced onto the child are **defence in depth over the
+keys they name, not a boundary** -- measured, an ``include.path`` line steps
+around them.
+
+Every displayed string is rendered through ``json.dumps(..., ensure_ascii=True)``
+so a hostile path cannot become a terminal control or forge a status line, and
+**no child stdout or stderr is ever relayed verbatim**.  No secret-bearing
+adapter field -- ``Secret``, ``Match``, ``Author``, ``Email``, ``Message`` -- is
+selected into any sink.
 """
 from __future__ import annotations
 
@@ -732,34 +739,212 @@ def screen_local_config(
     return pairs
 
 
-def _adapter_seam(context: dict[str, Any]) -> list[LegOutcome]:
-    """Execute the adapter's legs.
+# --- the output contract ------------------------------------------------------
+_REPORT_MAX_BYTES = 8 * 1024 * 1024
+_MAX_FINDINGS = 5000
+_STDERR_DIAGNOSTIC_BYTES = 512
 
-    Chunk B lands the execution boundary; the **output contract** -- parsing,
-    validation, escaping, the aggregate -- lands in Chunk D, so a leg that runs
-    reports INCOMPLETE with a named reason until then.  It is never CLEAN."""
+#: The **only** fields selected out of an adapter result.  Secret, Match,
+#: Author, Email, Message and Date are never selected -- a secrets scanner that
+#: harvests secrets into a JSON artifact and a terminal report is the one
+#: failure mode in which this module would be strictly worse than not existing.
+_SELECTED_FIELDS = ("RuleID", "File", "StartLine", "Commit", "Fingerprint")
+
+#: Fields that must never appear in any sink -- the summary, the human report or
+#: the child document.  They are simply never **selected**; their presence in
+#: the adapter's own output is ordinary and is not itself a defect.
+FORBIDDEN_RESULT_FIELDS = ("Secret", "Match", "Author", "Email", "Message")
+
+#: The subset that ``--redact=100`` is supposed to have emptied.  A live value
+#: here means the redaction did not happen, which is a report the runner cannot
+#: trust -- distinct from the fields above, which are metadata rather than
+#: secrets and are excluded by selection rather than by refusal.
+_MUST_BE_REDACTED = ("Secret", "Match")
+
+#: Adapter exit codes this runner has a documented meaning for.  Anything else
+#: is DEGRADED: an undocumented exit is not a clean scan.
+_EXIT_NO_FINDINGS = 0
+_EXIT_FINDINGS = 1
+
+_REDACTION_OK = re.compile(r"\A(REDACTED|\*+)\Z", re.IGNORECASE)
+
+
+def _redaction_is_intact(value: Any) -> bool:
+    """``--redact=100`` is requested; a result carrying a live secret means the
+    redaction did not happen, and a report the runner cannot trust is DEGRADED
+    rather than passed through."""
+    if value is None or value == "":
+        return True
+    if not isinstance(value, str):
+        return False
+    return bool(_REDACTION_OK.match(value))
+
+
+def read_report(path: str) -> list[dict[str, Any]]:
+    """Read and validate an adapter report.
+
+    The file's **size is checked before the read**, so an oversized report is
+    refused rather than loaded; the parse is the standard library's; the
+    result-list shape and field types are validated rather than ``.get()``-ed
+    with defaults; and only :data:`_SELECTED_FIELDS` are carried forward."""
+    if not os.path.exists(path):
+        raise Degraded(f"the adapter wrote no report at {path!r}")
+    try:
+        size = os.path.getsize(path)
+    except OSError as exc:
+        raise Degraded(f"the adapter report is unreadable: {exc}") from None
+    if size > _REPORT_MAX_BYTES:
+        raise Degraded(
+            f"the adapter report is {size} bytes, over the "
+            f"{_REPORT_MAX_BYTES}-byte cap; refused without reading it"
+        )
+    try:
+        with open(path, "rb") as handle:
+            raw = handle.read(_REPORT_MAX_BYTES + 1)
+    except OSError as exc:
+        raise Degraded(f"the adapter report could not be read: {exc}") from None
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError:
+        raise Degraded("the adapter report is not valid UTF-8") from None
+    if not text.strip():
+        return []
+    try:
+        doc = json.loads(text)
+    except ValueError as exc:
+        raise Degraded(f"the adapter report is not valid JSON: {exc}") from None
+    if not isinstance(doc, list):
+        raise Degraded(
+            f"the adapter report is a {type(doc).__name__}, not a result list; "
+            f"an unknown shape is degraded, never clean"
+        )
+    if len(doc) > _MAX_FINDINGS:
+        raise Degraded(
+            f"the adapter reported {len(doc)} results, over the "
+            f"{_MAX_FINDINGS} cap; refused"
+        )
+    findings: list[dict[str, Any]] = []
+    for index, item in enumerate(doc):
+        if not isinstance(item, dict):
+            raise Degraded(f"adapter result {index} is not an object")
+        for field in ("RuleID", "File", "Fingerprint"):
+            if not isinstance(item.get(field), str):
+                raise Degraded(
+                    f"adapter result {index} has no string {field!r}; the "
+                    f"result shape is not the one this runner validated"
+                )
+        if not isinstance(item.get("StartLine"), int) or isinstance(
+            item.get("StartLine"), bool
+        ):
+            raise Degraded(f"adapter result {index} has no integer 'StartLine'")
+        for field in _MUST_BE_REDACTED:
+            if field in item and not _redaction_is_intact(item[field]):
+                raise Degraded(
+                    f"adapter result {index} carries an unredacted {field!r}; "
+                    f"the report is not trustworthy and no finding is relayed"
+                )
+        findings.append({
+            "rule": item["RuleID"],
+            "path": item["File"],
+            "line": item["StartLine"],
+            "commit": item["Commit"] if isinstance(item.get("Commit"), str) else "",
+            "fingerprint": item["Fingerprint"],
+        })
+    return findings
+
+
+def _diagnostic(raw: bytes) -> str:
+    """A **bounded, escaped, opaque** diagnostic.  No child stdout or stderr is
+    ever relayed verbatim: forged status text on either stream must not be able
+    to read as this runner's own output."""
+    return _escape(raw[:_STDERR_DIAGNOSTIC_BYTES].decode("utf-8", "replace"))
+
+
+def _history_discovery(target: Path) -> dict[str, Any]:
+    """Filesystem-only discovery for the history question -- deliberately no
+    extra Git invocation, because the runner-owned Git call count is part of
+    the Chunk I oracle."""
+    git_dir = target / ".git"
+    heads = git_dir / "refs" / "heads"
+    has_refs = (git_dir / "packed-refs").exists() or (
+        heads.is_dir() and any(heads.rglob("*"))
+    )
+    return {
+        "git_dir_present": git_dir.exists(),
+        "shallow": (git_dir / "shallow").exists(),
+        "has_refs": bool(has_refs),
+    }
+
+
+def classify_leg(
+    leg: str, mode: str, returncode: int, report_path: str, stderr: bytes,
+) -> LegOutcome:
+    """Map one leg's exit code and report onto the aggregate space.
+
+    Reduced mode can reach ``10`` and ``20``; it can **never** reach ``0`` and
+    never describes itself as offline-verified."""
+    if returncode < 0:
+        return LegOutcome(leg, _AGG_DEGRADED, "DEGRADED",
+                          f"the adapter died on signal {-returncode}; "
+                          f"diagnostic {_diagnostic(stderr)}")
+    if returncode not in (_EXIT_NO_FINDINGS, _EXIT_FINDINGS):
+        return LegOutcome(leg, _AGG_DEGRADED, "DEGRADED",
+                          f"the adapter exited {returncode}, which this runner "
+                          f"has no documented meaning for; diagnostic "
+                          f"{_diagnostic(stderr)}")
+    try:
+        findings = read_report(report_path)
+    except Degraded as exc:
+        return LegOutcome(leg, _AGG_DEGRADED, "DEGRADED", str(exc))
+    if findings:
+        return LegOutcome(
+            leg, _AGG_FINDINGS, "FINDINGS",
+            f"{len(findings)} validated finding(s)", tuple(findings),
+        )
+    if returncode == _EXIT_FINDINGS:
+        return LegOutcome(leg, _AGG_DEGRADED, "DEGRADED",
+                          "the adapter signalled findings and reported none; "
+                          "the result is not trustworthy")
+    if mode == "reduced":
+        return LegOutcome(
+            leg, _AGG_INCOMPLETE, "INCOMPLETE",
+            "no finding, but the adapter version is not admitted on this "
+            "platform: reduced provenance cannot report CLEAN, and this run is "
+            "not offline-verified",
+        )
+    return LegOutcome(leg, _AGG_CLEAN, "CLEAN", "no validated finding")
+
+
+def _adapter_seam(context: dict[str, Any]) -> list[LegOutcome]:
+    """Execute the adapter's legs and classify each one."""
     exe: Resolved = context["adapter"]
     target: Path = context["target"]
     env: dict[str, str] = context["env"]
+    mode: str = context["mode"]
     legs: list[LegOutcome] = []
-    for leg, argv in context["legs"]:
+    for leg, argv, report in context["legs"]:
         try:
             revalidate(exe, target)
         except Degraded as exc:
             legs.append(LegOutcome(leg, _AGG_DEGRADED, "DEGRADED", str(exc)))
             continue
         try:
-            subprocess.run(argv, capture_output=True, env=env,
-                           cwd=context["cwd"], timeout=_SCAN_TIMEOUT,
-                           check=False)
+            proc = subprocess.run(argv, capture_output=True, env=env,
+                                  cwd=context["cwd"], timeout=_SCAN_TIMEOUT,
+                                  check=False)
+        except subprocess.TimeoutExpired:
+            legs.append(LegOutcome(
+                leg, _AGG_DEGRADED, "DEGRADED",
+                f"the adapter exceeded the {_SCAN_TIMEOUT}s outer deadline; a "
+                f"scan that did not finish is not a clean scan",
+            ))
+            continue
         except (OSError, subprocess.SubprocessError) as exc:
             legs.append(LegOutcome(leg, _AGG_DEGRADED, "DEGRADED",
                                    f"adapter invocation failed: {exc}"))
             continue
-        legs.append(LegOutcome(
-            leg, _AGG_INCOMPLETE, "INCOMPLETE",
-            "adapter output contract not yet validated",
-        ))
+        legs.append(classify_leg(leg, mode, proc.returncode, report,
+                                 proc.stderr or b""))
     return legs
 
 
@@ -1093,28 +1278,51 @@ def run_sweep(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
             adapter, "current-tree", target, work
         )
         facts["current_tree_report"] = current_report
-        legs_to_run = [("current-tree", current_argv)]
+        legs_to_run = [("current-tree", current_argv, current_report)]
         pending: list[LegOutcome] = []
-        if choice.mode == "full" and git is not None:
-            history_argv, history_report = _leg_argv(
-                adapter, "history", target, work
-            )
-            facts["history_report"] = history_report
-            legs_to_run.append(("history", history_argv))
+        discovery = _history_discovery(target)
+        facts["history_discovery"] = discovery
+        if not discovery["git_dir_present"]:
+            pending.append(LegOutcome(
+                "history", _AGG_INCOMPLETE, "INCOMPLETE",
+                "the target is a non-Git export, so the history question could "
+                f"not be asked; discovery {_escape(discovery)}",
+            ))
+        elif not discovery["has_refs"]:
+            # A conditional leg with no applicable input.  NOT APPLICABLE is
+            # distinct from INCOMPLETE and contributes nothing to the aggregate.
+            pending.append(LegOutcome(
+                "history", None, _NOT_APPLICABLE,
+                "the repository carries no commit, so the history question has "
+                f"no applicable input; discovery {_escape(discovery)}",
+            ))
         elif git is None:
             pending.append(LegOutcome(
                 "history", _AGG_INCOMPLETE, "INCOMPLETE",
                 git_reason or "git is absent; the history question was not asked",
             ))
-        else:
+        elif choice.mode != "full":
             pending.append(LegOutcome(
                 "history", _AGG_INCOMPLETE, "INCOMPLETE",
                 "reduced provenance: Git is unreachable from the child "
                 "environment, so the history question was not asked",
             ))
+        elif discovery["shallow"]:
+            pending.append(LegOutcome(
+                "history", _AGG_INCOMPLETE, "INCOMPLETE",
+                "the repository is a shallow clone; the observed boundary is "
+                "reported and full-history coverage is NOT claimed; discovery "
+                f"{_escape(discovery)}",
+            ))
+        else:
+            history_argv, history_report = _leg_argv(
+                adapter, "history", target, work
+            )
+            facts["history_report"] = history_report
+            legs_to_run.append(("history", history_argv, history_report))
         outcomes = _adapter_seam({
             "adapter": adapter, "target": target, "env": environment,
-            "cwd": workdir, "legs": legs_to_run,
+            "cwd": workdir, "legs": legs_to_run, "mode": choice.mode,
         })
         summary = summarize(
             target, policy_path, outcomes + pending, choice.mode,
