@@ -80,11 +80,19 @@ similar and are not.
 * **Evidence mode** — `offline` or `loopback`, and nothing else. The mode is a
   property of the *registry entry*, not of anything the child says. A child
   registered `offline` that returns `loopback` evidence is DEGRADED.
-* **Admitted** — a registry entry that cleared the five-part admission rule in
-  the proposal's revision (accepted capability proposal; reviewed plan with
-  execution evidence for that exact mode; complete lockfile mapping group; schema
-  and precedence tests; a Security Review of the registry change). At v1 nothing
-  is admitted, so the registry is empty.
+* **Admitted** — a registry entry that cleared the **six**-part admission rule:
+  the five parts in the proposal's revision (accepted capability proposal;
+  reviewed plan with execution evidence for that exact mode; complete lockfile
+  mapping group; schema and precedence tests; a Security Review of the registry
+  change) **plus a sixth — the binding mode is part of what is admitted.** An
+  entry is admitted *for a named `policy_binding_mode`*; changing an admitted
+  entry's mode is a registry change and takes its own Security Review, not a
+  follow-up commit. A `"living_state"` entry additionally requires the
+  capability's own plan to carry **execution evidence for the compensating
+  controls that replace the digest** — for `api-web-security-modules` those are
+  the strict schema, the loopback-only local leg and `--authorize-base-url`, and
+  *evidence* means an executed run, not a design argument. At v1 nothing is
+  admitted, so the registry is empty and no mode is exercised.
 * **Aggregate exit ladder** — `0` CLEAN / `5` INCOMPLETE / `10` FINDINGS / `20`
   DEGRADED-or-TAMPER, precedence `20 > 10 > 5 > 0`. **Not new to Cairn**: the
   shipped `templates/modules/team-gated/run_security_audit.py` already defines
@@ -476,7 +484,7 @@ plan's *Scope* must name the doctrine-surface touched (or an explicit
 
 ## Maintainer fence
 
-**Three things in this plan are not an implementing agent's to do.** They are
+**Four things in this plan are not an implementing agent's to do.** They are
 listed together, before the chunks, so no chunk can quietly absorb one.
 
 1. **The AST re-anchor ceremony.** After Chunk A and again after Chunks B/C, the
@@ -492,16 +500,107 @@ listed together, before the chunks, so no chunk can quietly absorb one.
    signing, no publish, no token. It is stated because the ceremony in
    `bootstrap/REANCHOR_RUNBOOK.md` has a signing phase, and an agent following
    the runbook to "finish the job" would walk into it. Do not.
-3. **The gate-manifest re-pin.** No file this plan edits is in the 164-entry
-   `frozen_files` map (measured above), so no `FROZEN-MODIFIED` row is expected —
-   but `bootstrap/tests/test_security_lint.py` and
-   `bootstrap/tests/test_notice_install.py` carry the two `44` pins and **should be
-   re-checked against the map at implementation**, because the map moves. If either
-   turns out frozen, the implementing agent **records** the stale entry in the commit
-   body and does not re-pin.
+3. **The gate-manifest re-pin. Two `FROZEN-MODIFIED` rows are GUARANTEED, not
+   contingent.** Measured at `d73d436`: `gate_manifest.json` holds **164**
+   `frozen_files` entries and **both** files this plan edits for the `44 → 45`
+   pins — `bootstrap/tests/test_security_lint.py` and
+   `bootstrap/tests/test_notice_install.py` — **are in that map.** So the earlier
+   reading in *The measurement that shapes this plan* ("no file this plan edits is
+   frozen") does not hold, and the conditional phrasing it produced ("if either
+   turns out frozen") is replaced by this statement of fact. The implementing agent
+   **records both stale entries in the commit body and does not re-pin.**
+   `bootstrap/_scaffold/config.py` remains `cascade_mutable` under *"AST
+   source-motion attest — one predeclared mapping-symbol delta only"*. Re-check the
+   map at implementation anyway — it moves — but expect two rows, not zero.
+4. **Ratifying the living-state narrowing — the B3 admission fence.** `policy_binding_mode:
+   living_state` narrows a property the accepted proposal established: the
+   revision established parent-computed digest binding over *"the runner and
+   policy"*, and this mode drops the policy half for a declared class of records.
+   **The schema and its tests land** — A1, A2, T5, T17, T36–T40, T44 — **and that
+   is safe precisely because the v1 registry is empty and no mode is exercised.**
+   What waits is the **living-state entry and every producer of it**: no entry
+   using `policy_binding_mode: living_state`, and no chunk that writes the
+   living-state record, lands until the Maintainer ratifies the narrowing. **This
+   is one condition, stated identically in the reciprocal plan** — see *The binding
+   contract, and the admission fence it shares* (B3) below; it is not a registry
+   fence here and a chunk fence there. An implementing agent who finds a
+   capability plan asking for such an entry **stops and reports**, exactly as at
+   the AST fence. The Maintainer's disposition of the 2026-08-05 review round is
+   **not** this ratification.
 
 An additional standing rule for this plan: the Maintainer's serialization points
 (`dev/PLANNING.md`, `CHANGELOG.md`) are edited at the defined moments only.
+
+### Folded, not amended — how to read this plan
+
+**An implementing agent who reads only the chunk tables and their acceptance
+criteria executes the current spec.** The review-driven decisions are folded
+into the operative rows below rather than bound by reference from an amendment
+table. `doctrine/plans.md:202-207` makes chunk-table cell text mutable in place
+while a plan's status is `open` with no commits in flight against the chunks
+being edited — this plan's exact state: status `open`, zero implementation
+commits. The `## Plan review`, `## Response to plan review` and `Sharpening`
+sections are **untouched and stay append-only**; the fold ledger in
+`### Sharpening — the 2026-08-05 fold pass` at the end of this file names every
+amendment row now carried by a cell.
+
+**Where the shared block below and an earlier amendment row disagree, the block
+governs.** It supersedes **M29**'s registry-entry-only fence, and it is
+the condition M29's Maintainer-fence item 4 now points at.
+
+**The 2026-08-05 External REVISE round is disposed of by the Maintainer.** The
+authorizing instruction, verbatim:
+
+> Go ahead with implementation once you've revised these. I don't want another review round
+
+Recorded in full at `## Maintainer disposition of the 2026-08-05 External review
+round` below. **It disposes of the review round and nothing else** — it is not a
+bypass of the round, and it supplies no Maintainer credential, no signing ref, no
+AST re-anchor ceremony, no ratification of the B3 narrowing below, and no
+approval to push.
+
+### The binding contract, and the admission fence it shares
+
+**This block is shared, verbatim, with the reciprocal plan
+(`api-web-security-modules` <-> `security-verification-activation`). A change to
+it lands in both files in the same commit, or it has not landed.**
+
+**B1 — v1's four named bindings resolve to two apparatus bindings.** The v1
+question named four: runner, policy, principal, scope. Exactly two are
+apparatus-level: `runner_binding_mode` and `policy_binding_mode`, both in the
+registry's closed vocabulary. **Principal and scope are child-policy semantics
+and have no apparatus field, by decision and not by oversight.** Verified
+against the tree rather than asserted: the installer record binds `src`, `dst`,
+`verbatim` and `hash` plus optional living-state / base-cache fields, and
+`bootstrap/_scaffold/install.py` contains no `principal` field and no `scope`
+binding field — its only occurrences of "scope" are a destination-set comment
+and the base-template-cache docstring. Inventing either field is out of scope
+for this pair and takes its own design.
+
+**B2 — extra-field disposition.** An unrecognized key in a registry entry or an
+installer record is **refused**, not ignored: the reader is a closed-vocabulary
+validator and an unknown key is a violation naming the key. Two tests, not one:
+the existing missing-field refusal, plus an extra-field refusal. If a
+source-owned exact constructor makes an extra field structurally unreachable,
+*that* is the contract to state and to test — a structural impossibility is
+asserted by a test that tries it, never inferred.
+
+**B3 — the admission fence, one condition on both sides.** The dispatcher and
+the registry schema may land with an **empty registry**. What waits is the
+*living-state entry and every producer of it*: no entry using
+`policy_binding_mode: living_state`, and no chunk that writes the living-state
+record, lands until the Maintainer ratifies the narrowing and this shared block
+is in force in both files. This is one fence stated identically on both sides,
+not a registry fence on one side and a chunk fence on the other.
+
+**B4 — the Chunk F split is replaced, because the old one contradicted its own
+criteria.** Fencing F2 while letting F1 and F3--F6 land left Chunk F's
+acceptance criteria requiring filled-policy and living-state behavior that F2
+was fenced from producing. Chunk F's criteria are rewritten to the B3 line: the
+landing part asserts dispatcher-plus-empty-registry behavior only, and every
+criterion that needs a filled policy or a living-state record moves to the
+fenced part with F2 and Chunk G.
+
 
 ## Sequence
 
@@ -536,11 +635,11 @@ unregistered*.
 
 | # | File | Change |
 |---|---|---|
-| A1 | `templates/modules/default-on/run_security_verification.py` *(new)* | The dispatcher. Standard library only. Module-level `_REGISTRY: dict[str, RegistryEntry] = {}` — **empty**, with the nine admission fields as a frozen dataclass/`NamedTuple` (`module_id`, `runner_repository_path`, `argv_mode`, `policy_repository_path \| None`, `child_schema_version`, `capability_contract_version`, `evidence_mode`, `accepted_process_exits`, `result_to_aggregate_mapping`). `evidence_mode` constrained to `frozenset({"offline", "loopback"})` at construction. Aggregate constants reuse the ladder already in `templates/modules/team-gated/run_security_audit.py` (`0/5/10/20`) plus `NOT_APPLICABLE`. Child invocation: `[sys.executable, "-I", <registry runner path>, <registry argv_mode>]`, `shell=False`, explicit minimal `env`, `timeout`, byte cap, strict UTF-8, strict JSON. SPDX header, matching every other shipped twin. |
-| A2 | `templates/modules/default-on/security-verification.md` *(new)* | Module doctrine: the registry rules, the five-part admission rule quoted from the proposal's revision, the aggregate ladder and its precedence, trusted-checkout scope, the local/deployed separation **and its explicit non-claim** (not actor authentication), and recovery from INCOMPLETE / DEGRADED. Carries the `<!-- cairn:merge-target: AGENTS.md > security-verification -->` directive and the paired content block holding the exact standing command. Substituted (`verbatim=False`), so the merge pass reads it. |
+| A1 | `templates/modules/default-on/run_security_verification.py` *(new)* | The dispatcher. Standard library only. Module-level `_REGISTRY: dict[str, RegistryEntry] = {}` — **empty**, with **eleven** admission fields as a frozen dataclass/`NamedTuple`: `module_id`, `runner_repository_path`, `argv_mode`, `policy_repository_path \| None`, `child_schema_version`, `capability_contract_version`, `evidence_mode`, `accepted_process_exits`, `result_to_aggregate_mapping`, **`runner_binding_mode`**, **`policy_binding_mode`**. **Every field is required, has no default, and is not inferable from any other field.** **No twelfth field, and in particular no `principal` and no `scope`** — per **B1** those are child-policy semantics with no apparatus field, and adding one is a registry-schema change with its own design and its own Security Review. **Three closed sets, all `frozenset` literals in this source, all constrained at construction:** `evidence_mode` ∈ `{"offline", "loopback"}`; `runner_binding_mode` ∈ `{"immutable_digest"}` — a deliberately **one-member** set, so a future "living runner" cannot appear by omission but only by a source edit widening the frozenset, which is a registry-schema change and therefore a Security Review; `policy_binding_mode` ∈ `{"none", "immutable_digest", "living_state"}`. **Agreement rules, each refused at construction with a message naming both fields:** `policy_binding_mode == "none"` **iff** `policy_repository_path is None` (either without the other refuses — this closes the undeclared third mode); `"immutable_digest"` and `"living_state"` each require a non-`None` path. **B2's extra-field disposition, in the constructor and in the lockfile-record reader:** an unrecognized key is **refused, not ignored** — construction with a twelfth field raises (a source-owned exact constructor, so this is structural, and **T44 asserts it by trying it** rather than inferring it from frozenness), and the parent's **lockfile-record reader is a closed-vocabulary validator** over `{src, dst, verbatim, hash}` plus the optional `living_state` / `base_cache` / `base_hash`, refusing an unrecognized key with **DEGRADED (`20`)** and a message naming the key. *Recorded, because it is why this reader exists here:* measured at `d73d436`, `bootstrap/verify_integrity.py:63-111` reads records with `rec.get(...)` and **ignores** an unrecognized key, so this dispatcher is where B2's refusal is actually implemented; the `verify_integrity` half is a lasting truth neither plan in this pair closes. **Runtime binding by mode, all failures DEGRADED (`20`) with no child launched, never INCOMPLETE and never CLEAN:** under `"none"` the parent binds the runner only; under `"immutable_digest"` the parent binds the runner **and** compares the policy's SHA-256 with its lockfile record, **and refuses (`20`) if that record carries `living_state: true`** — an immutable declaration over a living record is a misdeclaration, not a pass; under `"living_state"` the parent binds the runner digest unchanged, binds the policy's **existence, regular-file and non-symlink status**, binds the **presence** of a lockfile record, **refuses (`20`) if that record lacks `living_state: true` or if the policy path is outside the engine's `_LIVING_STATE_DSTS` authoritative set** — the fail-closed mirror of `bootstrap/verify_integrity.py:96-105` — and **does not compare the policy's content digest**, recording the policy in the machine report as `binding: living_state, digest_not_compared` so the dropped property is visible in the output rather than invisible. The dropped property is named in A2's doctrine as a residual, not skipped silently. **The high-risk Security-Review designation is carried in this file too** — a module docstring block at the `_REGISTRY` definition site, verbatim and hash-pinned, so a registry change and its review trigger are one artifact (see A4 and T42). Aggregate constants reuse the ladder already in `templates/modules/team-gated/run_security_audit.py` (`0/5/10/20`) plus `NOT_APPLICABLE`. Child invocation: `[sys.executable, "-I", <registry runner path>, <registry argv_mode>]`, `shell=False`, explicit minimal `env`, `timeout`, byte cap, strict UTF-8, strict JSON. SPDX header, matching every other shipped twin. |
+| A2 | `templates/modules/default-on/security-verification.md` *(new)* | Module doctrine: the registry rules, the five-part admission rule quoted from the proposal's revision, the aggregate ladder and its precedence, trusted-checkout scope, the local/deployed separation **and its explicit non-claim** (not actor authentication), and recovery from INCOMPLETE / DEGRADED. **The admission rule is the SIX-part rule** — the five quoted from the revision plus *the binding mode is part of what is admitted* (see the glossary's `Admitted` entry). **Three further contents, because an adopter receives this file and never receives this plan:** (a) **`NOT_APPLICABLE` is not evidence** — it is the *absence* of security evidence, must not be reported, aggregated, or badged as a passing check, and its exit `0` means "nothing was asked of me", not "nothing is wrong"; (b) **the binding-mode schema of A1**, including the residual that a `"living_state"` policy's bytes are **not** lockfile-attested and its review channel is git; (c) **the high-risk Security-Review designation** of the dispatcher, its registry, its child result schema, its binding-mode schema and every registry entry. Carries the `<!-- cairn:merge-target: AGENTS.md > security-verification -->` directive and the paired content block holding the exact standing command. Substituted (`verbatim=False`), so the merge pass reads it. **Residual, stated not hidden:** an adopter who marks the installed slot `<!-- cairn:customized -->` drops the designation from their `AGENTS.md` with **no side file and no warning from any Cairn tool** — pinned by T43 as a characterization, not closed. |
 | A3 | `bootstrap/_scaffold/config.py` | One new key in `_MODULE_MAPPINGS`: `"security-verification": [InstallSpec("default-on/security-verification.md", "dev/modules/security-verification.md"), InstallSpec("default-on/run_security_verification.py", "scripts/run_security_verification.py", verbatim=True)]`. **The only engine edit in this chunk.** Symbol delta: `Assign:_MODULE_MAPPINGS`. |
-| A4 | `templates/core/AGENTS.md` | A new `## Security verification` heading with the `<!-- cairn:slot security-verification -->` / `<!-- cairn:end security-verification -->` pair, placeholder text on the `claim-check` slot's exact model (*"If security-verification is not installed, replace with `N/A: security-verification not installed`. An unfilled slot is a review finding."*). Plus one line in the *Project-specific conventions* guidance naming the dispatcher, its registry, its child result schema, and every registry entry as **high-risk Security Review surfaces**. |
-| A5 | `bootstrap/tests/test_security_verification.py` *(new)* | The dispatcher suite, T1–T24 below. |
+| A4 | `templates/core/AGENTS.md` | A new `## Security verification` heading with the `<!-- cairn:slot security-verification -->` / `<!-- cairn:end security-verification -->` pair, placeholder text on the `claim-check` slot's exact model (*"If security-verification is not installed, replace with `N/A: security-verification not installed`. An unfilled slot is a review finding."*). Plus one line in the *Project-specific conventions* guidance naming the dispatcher, its registry, its child result schema, **its binding-mode schema**, and every registry entry as **high-risk Security Review surfaces**. **This is channel 1 of three, and it is the one that is NOT a guard.** The designation lands on three channels: (1) **this slot** — customizable, and an adopter who marks it `<!-- cairn:customized -->` gets status `customized`, the designation **absent**, **no side file and no fidelity warning at all**; (2) **`dev/modules/security-verification.md`** (B2) — lockfile-recorded and **not** living-state, so an adopter edit is `modified (hash mismatch)`, exit 1; (3) **the dispatcher source** `templates/modules/default-on/run_security_verification.py` (A1) — a module docstring block at the `_REGISTRY` definition site, verbatim and hash-pinned, additionally flagged `locally-modified` by `classify_verbatim` and never clobbered. **Channels 2 and 3 are the tamper-evident ones**; channel 3 exists so that a registry change and its review trigger are one artifact. T42 asserts 2 and 3; T43 pins channel 1's silent-drop residual as a characterization. |
+| A5 | `bootstrap/tests/test_security_verification.py` *(new)* | The dispatcher suite: **T1–T24, T36–T41 and T44** below. |
 | A6 | `bootstrap/tests/test_security_lint.py` | `test_templates_py_count_is_pinned`: `44` → `45`. Its own message already instructs moving the sibling in the same commit. |
 | A7 | `bootstrap/tests/test_notice_install.py` | `test_manifest_has_the_expected_py_source_count`: `44` → `45`. |
 
@@ -566,7 +665,7 @@ entry through adopter data — that is what T2 forbids.**
 | T2 | `test_no_lockfile_or_policy_field_can_enter_the_registry` — table-driven over `runner`, `argv`, `env`, `executable`, `mode`, `python`, `shell`, `cwd`, `timeout`: for each, a crafted lockfile / policy carrying that key, asserting the dispatched call is unaffected and the key is never read. | In A1, make the entry resolver fall back to `lock_entry.get("runner")` when the registry lacks a path. Fails on the `runner` row. |
 | T3 | `test_unknown_selected_capability_is_unsupported_not_executed` — a lockfile roster naming `made-up-security`; expect INCOMPLETE (`5`), `subprocess.run` never called. | Replace the registry lookup with a permissive `templates/modules/**/run_{module}.py` derivation. Fails — a child launches. |
 | T4 | `test_no_deployed_or_credentialed_mode_is_representable` — parametrized over `deployed`, `credentialed`, `active`, `remote`, `""`, `None`, `"offline,loopback"`: constructing an entry with any of them raises at construction. | Widen the `evidence_mode` frozenset to include `"deployed"`. The `deployed` row fails. **This is the Decision's first named property**, so its perturbation is the one a reviewer should reproduce first. |
-| T5 | `test_every_admission_field_is_required` — a deletion mutant per field: nine synthetic entries, each missing one of the nine, each refused at construction with a message naming the field. | Give any field a default. That field's row fails. *Weakness stated:* this pins the **validator**; that the shipped registry is empty is T1's job, not this one's. |
+| T5 | `test_every_admission_field_is_required` — a deletion mutant per field: **eleven** synthetic entries, each missing one of A1's eleven fields, each refused at construction with a message naming the field. **The two new rows are the load-bearing ones:** an entry that omits `policy_binding_mode` or `runner_binding_mode` must **refuse**, not default — a defaulted binding mode is the *silently change modes* failure, reached by omission. | Give any field a default. That field's row fails. *Weakness stated, unchanged:* this pins the **validator**; that the shipped registry is empty is T1's job, not this one's. |
 
 *Dispatch and subprocess behavior.*
 
@@ -588,7 +687,7 @@ entry through adopter data — that is what T2 forbids.**
 | T | Test | Hazard perturbation → RED |
 |---|---|---|
 | T16 | `test_parent_computes_digests_and_ignores_child_supplied_ones` — child emits `details.runner_sha256 = "deadbeef…"`; assert the report carries the parent's own SHA-256 of the runner bytes and the forged string appears nowhere in the output. | Read the digest from `details`. Fails. |
-| T17 | `test_runner_or_policy_digest_mismatch_is_degraded` — write the lockfile, then flip one byte of the runner (and, separately, of the policy); both `20`, no child launched. | Skip the comparison. Both rows fail. |
+| T17 | `test_runner_or_policy_digest_mismatch_is_degraded` — **parametrized by `policy_binding_mode`**, because the assertion is no longer unconditional. Rows: (a) runner byte flipped — `20`, no child launched, **under all three modes**; (b) policy byte flipped under `"immutable_digest"` — `20`, no child launched; (c) policy byte flipped under `"living_state"` — the leg **proceeds** (that is the mode's whole point) and the report records the policy as `binding: living_state, digest_not_compared`, so the dropped property is **visible in the machine output** rather than invisible; (d) policy byte flipped under `"none"` — unreachable, since the path is `None`; asserted as a construction refusal, not a runtime row. | Skip the runner comparison: (a) fails under all three modes. Skip the policy comparison: (b) fails. Drop the `digest_not_compared` annotation: (c) fails on a missing key rather than passing silently. |
 | T18 | `test_symlinked_runner_or_policy_is_refused` — three rows: symlinked leaf, symlinked parent directory, and a runner replaced by a symlink between the digest read and the launch (the latter asserted as a **named residual**, not as closed). | Open with plain `open()` and no `is_symlink()` / regular-file check. The first two rows fail; the third is documented as the accepted trusted-checkout race the proposal states rather than claims closed. |
 | T19 | `test_missing_lockfile_record_for_a_registered_runner_is_degraded` — registry entry present, lockfile record absent; `20`. | Treat a missing record as "unlocked, proceed". Fails. |
 
@@ -596,21 +695,39 @@ entry through adopter data — that is what T2 forbids.**
 
 | T | Test | Hazard perturbation → RED |
 |---|---|---|
-| T20 | `test_no_capability_prints_the_exact_not_applicable_line_and_exits_0` — stdout contains exactly `NOT APPLICABLE: no selected local security capability`, exit `0`, machine result `aggregate: NOT_APPLICABLE`, `legs: []`, a non-empty `reason`. | Make the no-capability path return `CLEAN`. Fails on both the literal and the machine field. *The hazard is the false-security claim, not the string* — a string-only perturbation would be a body edit and is not the one recorded. |
+| T20 | `test_no_capability_prints_the_exact_not_applicable_line_and_exits_0` — stdout contains exactly `NOT APPLICABLE: no selected local security capability`, exit `0`, and **one JSON object** on stdout carrying seven asserted members: `schema` (a versioned literal, on the `bootstrap/tests/_oracle.py:81` model `"cairn.scaffold_split.oracle/v1"`), `status: "not_applicable"` **as an explicit string state**, `ok: true`, `aggregate: "NOT_APPLICABLE"`, `evidence_count: 0` **as an explicit integer**, `legs: []`, and a non-empty `reason`. *Why the explicit state and count, since they look redundant:* `legs: []` makes automation infer a count from a container length and `aggregate` makes it string-match a label; automation needs a state and a count it can key on directly. | Make the no-capability path return `CLEAN`. Fails on the literal, on `status`, and on `aggregate`. **Second perturbation:** drop `evidence_count` from the report; the test fails on a missing key rather than silently passing on a container check. *The hazard is the false-security claim, not the string* — a string-only perturbation would be a body edit and is not the one recorded. |
 | T21 | `test_no_capability_output_uses_no_security_coverage_wording` — human **and** machine output scanned for `CLEAN`, `secure`, `passed security`, `no vulnerabilities`, `verified`; none present. | Same hazard as T20. Also fails if a later author adds a friendly *"all clear"* line. |
 | T22 | `test_no_capability_opens_no_socket_and_does_no_dns` — `subprocess.run`, `socket.socket`, `socket.create_connection`, `socket.getaddrinfo`, `urllib.request.urlopen` all monkeypatched to raise; run; exit `0`. | Add a socket open on the no-capability path. Fails. |
 | T23 | `test_dispatcher_source_reads_no_deployed_credential_variable` — an **AST scan of the dispatcher source file**, asserting every `os.environ` / `os.getenv` read resolves to the declared allowlist and no deployed-credential variable name appears as a literal. | Add `os.getenv("AWS_SECRET_ACCESS_KEY")` to A1. Fails. **Channel note**: the oracle is the source text; the subject is the runtime behavior. Independent — the dispatcher never reads its own source. |
 | T24 | `test_a_socket_opening_child_is_excluded_by_admission_not_blocked_at_runtime` — the proposal's specific ask, in two halves. (a) A fixture child that calls `socket.socket()` and binds `("127.0.0.1", 0)` — no outbound traffic — cannot be admitted, because admission requires an accepted capability contract and the shipped registry is empty. (b) Force-injected into `_REGISTRY`, the parent **does** run it and **does not** prevent the bind; the test asserts that, documenting the residual honestly. | For (a): remove the admission check so an arbitrary path becomes reachable; (a) fails. For (b) there is deliberately **no** perturbation that makes the parent block the socket — that is the finding, and the test's docstring says so where a reader will find it. |
+
+*Binding-mode closure — the reciprocal-contract surface. Every row here exists
+because a mode that can be omitted, widened, mutated, or misdeclared is the
+failure the closed vocabulary was written to prevent.*
+
+| T | Test | Hazard perturbation → RED |
+|---|---|---|
+| T36 | `test_policy_binding_mode_is_a_closed_set` — parametrized over `deployed`, `unbound`, `skip`, `living`, `immutable`, `""`, `None`, `"none,living_state"`: construction raises for every row. The exact mirror of T4 for the second closed set. | Widen the frozenset to include `"unbound"`; that row fails. |
+| T37 | `test_binding_mode_and_policy_path_must_agree` — four rows: (`"none"`, a path) refuses; (`"immutable_digest"`, `None`) refuses; (`"living_state"`, `None`) refuses; (`"none"`, `None`) constructs. | Drop the agreement check; the first three rows fail. |
+| T38 | `test_living_state_mode_requires_the_lockfile_flag_and_the_authoritative_set` — three rows: lockfile record present but **without** `living_state: true` → `20`; record flagged but the path is **outside** `_LIVING_STATE_DSTS` → `20`; both satisfied → the leg proceeds and the policy digest is not compared. | Make the living branch skip the flag check; row one reaches CLEAN. |
+| T39 | `test_immutable_mode_refuses_a_living_state_record` — an entry declared `"immutable_digest"` whose policy record carries `living_state: true` → `20`, no child launched. **T38 and T39 together are "cannot treat a living policy as an immutable one", in both directions.** | Treat `living_state` as "skip the comparison"; the row reaches CLEAN. |
+| T40 | `test_a_registry_entry_cannot_change_mode_after_construction` — assigning `policy_binding_mode` on a constructed entry raises. Mode-immutability at the object level, where T36/T37 cover it at the declaration level. | Make the dataclass non-frozen (or use a plain class); the assignment succeeds and the test fails. |
+| T41 | `test_the_module_doctrine_states_not_applicable_is_not_evidence` — read the **shipped** `templates/modules/default-on/security-verification.md` from `templates/`, not an installed copy; assert it contains the non-evidence statement, that `NOT_APPLICABLE` appears in it at all, and that no green-security phrase (`CLEAN`, `secure`, `passed security`, `no vulnerabilities`, `verified`) occurs in the same paragraph. Precedent for asserting shipped doctrine text: `bootstrap/tests/test_practice_modules.py`. *Channel note:* the oracle is the shipped source read independently; the subject is what an adopter receives. Same class as T1 and T23. | Delete the non-evidence sentence from A2's source; the test fails. |
+| T44 | `test_an_unrecognized_key_is_refused_and_named` — **B2, in two halves, and the impossibility is asserted by trying it.** (a) *Entry side:* constructing `RegistryEntry` with a twelfth keyword — parametrized over `principal`, `scope`, `runner`, `env`, and one arbitrary name — raises at construction, and the test asserts the **key it tried** appears in the message. This is a source-owned exact constructor, so the refusal is structural; **the test attempts it rather than inferring it from the dataclass being frozen.** (b) *Lockfile-record side:* a record carrying an unrecognized key → **`20`, no child launched**, message naming the key. *Channel note:* (b)'s material is a record the **test** writes, never one the dispatcher wrote, so the check is not verified by the artifact it judges. *Recorded gap, not covered by this test:* `bootstrap/verify_integrity.py:63-111` ignores the same key; that is the paired plan's F5(b) characterization and a lasting truth for neither plan to close silently. | (a) Give the constructor `**kwargs`; every row fails. (b) Make the reader `rec.get(...)`-based like `verify_integrity`; the row reaches CLEAN. |
 
 **Acceptance criteria — Chunk A.**
 
 * `~/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_security_verification.py bootstrap/tests/test_security_lint.py bootstrap/tests/test_notice_install.py -q` → all pass, 0 skipped.
 * **Install-contract movement, as a contract change with its own criteria** — not
   a side effect:
-  * `python bootstrap/scaffold.py --manifest` → **97** data rows (95 + 2).
-    Diffed against a capture taken at the plan-open commit; the diff must be
-    **exactly two added lines** and **zero modified or removed** lines. A modified
-    row means an existing destination moved — stop and re-review.
+  * `python bootstrap/scaffold.py --manifest` → **`N + 2` data rows, where `N` is
+    re-taken at the plan-open commit.** `N = 95` measured at `d73d436` under
+    `/Users/kendal30/conda_envs/lhm/bin/python3.13` — a starting point, **not a
+    constant**: every sibling scope that adds module files moves it, so the
+    assertion is on the diff. Diffed against a capture taken at the plan-open
+    commit; the diff must be **exactly two added lines** and **zero modified or
+    removed** lines. A modified row means an existing destination moved — stop and
+    re-review.
   * The two rows are `dev/modules/security-verification.md` (substituted) and
     `scripts/run_security_verification.py` (verbatim), in that tab-separated
     format.
@@ -619,18 +736,31 @@ entry through adopter data — that is what T2 forbids.**
   * A fresh scaffold's lockfile records **both** files with hashes — the complete
     mapping group — verified by reading `dev/.cairn/cairn-lock.yml` in a
     `tmp_path` install, not by asserting the writer was called.
-* `python bootstrap/security_check.py` → `PASS`, Bandit line reporting **75**
-  files (74 + the dispatcher). **The dispatcher is newly scanned Layer-4 code**;
-  if it produces a MEDIUM+ finding the gate goes red and the fix is the code, not
-  the allowlist. Expect LOW `B404`/`B603` from the `subprocess` family, matching
-  `run_security_audit.py`'s existing profile.
-* The two `44 → 45` pins move **together**, in this commit.
+* `python bootstrap/security_check.py` → `PASS`, Bandit line reporting **`N + 1`
+  shipped files, where `N` is re-taken immediately before this chunk.** Measured
+  at `d73d436`: `security_check: Bandit clean over 76 shipped file(s)` → `PASS`.
+  **Do not apply 77 from here** — the shipped-file count moves with every cluster
+  scope that adds a shipped file; the arithmetic (`+1`, because `scan_targets()`
+  derives `templates/` targets from manifest data and the dispatcher adds exactly
+  one scanned file) is what is asserted. **The dispatcher is newly scanned Layer-4
+  code**; if it produces a MEDIUM+ finding the gate goes red and the fix is the
+  code, **never** an allowlist entry. Expect LOW `B404`/`B603` from the
+  `subprocess` family, matching `run_security_audit.py`'s existing profile.
+* The two `44 → 45` pins move **together**, in this commit —
+  `bootstrap/tests/test_notice_install.py:75` (manifest `.py` sources) and
+  `bootstrap/tests/test_security_lint.py:291` (distinct `.py` on disk under
+  `templates/`). Both values verified `44` at `d73d436`. **Cross-scope hazard,
+  named:** `api-web-security-modules` moves the same two pins *and* a third
+  (`bootstrap/tests/test_notice_install.py:145`, the `95` manifest-row pin);
+  whoever lands second **re-measures and applies no number from either plan.**
 * **AST**: `_ast_attest.py verify` reports exactly **one** CHANGED symbol,
   `Assign:_MODULE_MAPPINGS`, baseline `26957a8924042a0a` → measured value. Any
   second symbol is a stop-and-explain. **Then stop** — the fence.
-* **Perturbation ledger in the commit body**: for each of T1–T24, the change made,
-  the failure observed with its message, and `git diff <path>` empty after
-  restore. T24(b)'s deliberate non-perturbation is recorded as such.
+* **Perturbation ledger in the commit body**: for each of **T1–T24, T36–T41 and
+  T44**, the change made, the failure observed with its message, and
+  `git diff <path>` empty after restore. T24(b)'s deliberate non-perturbation is
+  recorded as such. Where a test is a **characterization** rather than a guard,
+  the ledger says so **in those words**.
 * **Channel note.** The dispatcher's subject is its own runtime behavior; the
   oracles are fixture children written by the test (T6–T22, T24), the shipped
   source text read independently (T1, T23), and the lockfile plus on-disk bytes
@@ -650,7 +780,7 @@ from a real module for the first time.
 | B2 | `dev/modules/security-verification.md` *(new)* | Cairn's own rendering of A2, matching all six existing default-on modules under `dev/modules/`. Carries the `Cairn's own` prefix on any further-reading link, per the rule in `bootstrap/tests/test_doc_governance.py`. |
 | B3 | `docs/quickstart.md` | The `solo-greenfield` count and its enumeration. **Re-measure; do not apply a number from this plan** — see *Order-independence*. |
 | B4 | `docs/solo-legacy-recipe.md` | The roster sentence. Same rule. |
-| B5 | `bootstrap/tests/test_security_verification.py` | T25–T33 below. |
+| B5 | `bootstrap/tests/test_security_verification.py` | **T25–T33, T31b, T42 and T43** below. |
 
 | T | Test | Hazard perturbation → RED |
 |---|---|---|
@@ -662,7 +792,10 @@ from a real module for the first time.
 | T30 | `test_installed_AGENTS_md_carries_the_exact_standing_command` — a real scaffold; the installed `AGENTS.md` contains the exact two-sentence rule between the slot markers. | **The deletion mutant the proposal names**: delete the `cairn:merge-content` block from A2's source. The slot installs with its placeholder, the assertion fails. Run it — this is the mechanism's first live use and the assertion most likely to be silently vacuous. |
 | T31 | `test_the_merge_pass_reports_the_fill_and_the_fidelity_check_is_clean` — the install's *Module-merge pass* output names `AGENTS.md > security-verification`, and `check_slot_fidelity` returns no warning. | Change one word inside the merge-content block after install (simulating adopter edit without the customized marker); the fidelity check warns. Confirms the check is live rather than always-silent. |
 | T32 | `test_composition_no_capability_one_capability_many` — three synthetic rosters over injected registry entries: none, one, two. Assert no duplicate leg, no leg silently delegated to another, and each leg's `evidence_mode` label survives aggregation unchanged. | Make aggregation collapse legs sharing a runner path. The two-capability row fails. |
-| T33 | `test_the_dispatcher_runs_green_from_a_real_fresh_scaffold` — end-to-end: scaffold into `tmp_path`, run `python scripts/run_security_verification.py local` **as a subprocess** from that tree, assert exit `0` and the exact `NOT APPLICABLE` line. The public path, not an import. | Break the lockfile read path (point `_LOCKFILE` at a non-existent relative location). Fails with DEGRADED rather than 0 — proving the test exercises the real file layout, not a stub of it. |
+| T33 | `test_the_dispatcher_runs_green_from_a_real_fresh_scaffold` — end-to-end: scaffold into `tmp_path`, run `python scripts/run_security_verification.py local` **as a subprocess** from that tree, assert exit `0` and the exact `NOT APPLICABLE` line — **plus every machine assertion of T20 through the same subprocess**: parse the emitted JSON and assert `schema`, `status == "not_applicable"`, `ok is True`, `aggregate == "NOT_APPLICABLE"`, `evidence_count == 0`, `legs == []`. The public path, not an import. **T20 drives `main()` in-process; T33 is the only test that sees what an adopter's automation sees.** | Break the lockfile read path (point `_LOCKFILE` at a non-existent relative location). Fails with DEGRADED rather than 0 — proving the test exercises the real file layout, not a stub of it. **Second perturbation:** make the no-capability path emit exit 0 with **no machine object at all** — the human line still matches, the exit code is still 0, and only the machine assertions go red. That is the generic-exit-0-mistaken-for-a-passing-security-check hazard, made mechanical. |
+| T31b | `test_a_prefilled_slot_defers_to_a_side_file_and_warns` — install into a target whose `security-verification` slot body already carries adopter prose; assert outcome `conflict-deferred`, the `.cairn-merge-pending` side file present and named for the slot, a `slot-content-stale-or-partial` fidelity warning, exit 0, and the standing command **absent** from `AGENTS.md`. | Make `_slot_is_empty` treat any body as empty; the side-file and warning assertions go red. |
+| T42 | `test_the_high_risk_designation_survives_on_two_tamper_evident_channels` — read the shipped A2, B2 and **dispatcher** sources for the designation; scaffold into `tmp_path`; `verify_integrity` → OK; delete the designation from the installed `dev/modules/security-verification.md` **and** from `scripts/run_security_verification.py`; `verify_integrity` reports `modified (hash mismatch)` for **both** and exits **1**. | Drop the designation from the dispatcher source; the source-read row fails. |
+| T43 | `test_a_customized_slot_silently_drops_the_designation` — a **characterization** test that pins the residual rather than closing it: mark the slot `<!-- cairn:customized -->`, run the merge; assert status `customized`, designation absent from `AGENTS.md`, **`check_slot_fidelity` returns an empty list**, no side file, and the two tamper-evident channels still carry it. Its docstring says, where a reader will find it, that **a green T43 is a recorded open residual, not a closed one.** | Make `_slot_is_customized` return `False`; the status and no-warning assertions go red. |
 
 **Acceptance criteria — Chunk B.**
 
@@ -673,19 +806,28 @@ from a real module for the first time.
   green — it asserts *prose == live*, so B3 is correct only if this passes.
   `python scripts/measurements.py` likewise, for the
   `solo_greenfield_module_count` invariant.
-* `python scripts/check_cairn.py` → OK; **≥ 181** Markdown files (180 + B2), and
-  the count may only grow.
-* `python scripts/quality_gate.py --sub neutrality` → `fail` unchanged at **95**.
-  `templates/modules/*.md` and `docs/*.md` are inside its scan roots, so B2/B3/B4
-  pass through it and the figure moving is a finding.
+* `python scripts/check_cairn.py` → **OK, and no reported issue attributed to a
+  file this plan edits.** That is the whole criterion. **The Markdown file count
+  is deliberately not a criterion in any form**: it read **177** at `d73d436` and
+  **178** at `d2f82e0` a few commits later, and across four days it has read
+  180 → 195 → 176 → 177 → 178 — the checker did not change, the *population* did
+  (archived sources are skipped), so the count moves in **both** directions with
+  work this plan does not own.
+* `python scripts/quality_gate.py --sub neutrality` → `fail` unchanged at **95**
+  (verified `fail=95 info=21` at `d73d436`). `templates/modules/*.md` and
+  `docs/*.md` are inside its scan roots, so B2/B3/B4 pass through it and the
+  figure moving is a finding. **Re-take the number immediately before this chunk**
+  rather than trusting this line: it is a same-run comparison, not a constant.
 * The new module doctrine passes the content scanner:
   `python templates/modules/team-gated/content_scan.py
   templates/modules/default-on/security-verification.md` → no flags. Already
   probed for the slot text; re-run over the full file.
 * **AST**: exactly **one** new CHANGED symbol, `Assign:_DEFAULT_ON_MODULES`,
   baseline `2c8ef688f6865487`. Report; do not re-anchor.
-* **Perturbation ledger** for T25–T33 in the commit body, T30's deletion mutant
-  called out by name.
+* **Perturbation ledger** for **T25–T33, T31b, T42 and T43** in the commit body,
+  T30's deletion mutant called out by name. **T28 and T43 are characterization
+  tests, and the ledger says so in those words** — a green characterization test
+  is a recorded residual, not a closed one.
 
 ---
 
@@ -719,14 +861,18 @@ that is true and testable at v1.
 
 | # | File | Change |
 |---|---|---|
-| D1 | `bootstrap/SAFETY.md` | The four recordings the proposal names, sited in Rule 7's Layer-4 discussion and the self-check: (a) the scaffold now ships a file that **executes a child process** in an adopter tree; (b) that dispatch is gated on lockfile integrity and parent-computed digests; (c) the child's environment is reduced from ambient, with proxies and credential-bearing variables stripped; (d) **command separation is not actor authentication** — a person or agent with shell access can invoke another script directly, and Cairn does not claim to distinguish a human process from an agent process. (d) is the sentence that must not be softened. |
+| D1 | `bootstrap/SAFETY.md` | The four recordings the proposal names, sited in Rule 7's Layer-4 discussion and the self-check: (a) the scaffold now ships a file that **executes a child process** in an adopter tree; (b) that dispatch is gated on lockfile integrity and parent-computed digests; (c) the child's environment is reduced from ambient, with proxies and credential-bearing variables stripped; (d) **command separation is not actor authentication** — a person or agent with shell access can invoke another script directly, and Cairn does not claim to distinguish a human process from an agent process. (d) is the sentence that must not be softened. **Plus a fifth recording (e):** the dispatcher, its source-owned registry, its child result schema, **its binding-mode schema**, and every registry entry are **high-risk Security-Review surfaces**; that designation is carried on three channels of which **two are tamper-evident** (the lockfile-recorded `dev/modules/security-verification.md` and the hash-pinned dispatcher source) and **one is not** (the adopter's `AGENTS.md` slot, which `<!-- cairn:customized -->` silently exempts from both the merge and the fidelity check); and an adopter who customizes that slot **removes the designation from their governing document with no warning from any Cairn tool.** (e) is a recorded residual, **not** a claim of coverage. |
 | D2 | `templates/modules/README.md` | One `default-on` row. Re-read first — `default-security-stance` adds one too. |
 | D3 | `CHANGELOG.md > Unreleased > Added` | One line: a default-on local security-verification dispatcher and its `AGENTS.md` standing rule; registry ships empty, so a no-capability install reports `NOT APPLICABLE` and gathers nothing. Cross-reference proposal and plan **by stem**. Written at its serialization point. |
 
 **Acceptance criteria — Chunk D.**
 
-* `python scripts/check_cairn.py` → OK.
-* `python scripts/quality_gate.py --sub neutrality` → `fail=95`, unchanged.
+* `python scripts/check_cairn.py` → OK, with **no issue attributed to a file this
+  chunk edits**. No file-count criterion — see Chunk B.
+* `python scripts/quality_gate.py --sub neutrality` → **unchanged against a
+  capture taken immediately before D1**. Verified `fail=95 info=21` at `d73d436`;
+  the comparison is same-run, and the number is re-taken rather than trusted from
+  this line.
 * `python scripts/claim_check.py <file>` over each edited Markdown file, **one
   file per invocation** — the checker takes a single path and exits 2 on more.
 * **Verify the quoted sentences before editing.** D1 and D2 quote surfaces
@@ -747,13 +893,19 @@ Per-chunk criteria are above; these are the plan-level deliverables.
   * `~/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests` — the whole suite,
     green, **0 failed / 0 skipped / 0 xfailed**, under the canonical interpreter,
     with `PYTHONDONTWRITEBYTECODE=1`, **measured on a clean tree after the
-    Maintainer's re-anchor**. Baseline `1744 passed, 2 failed`, `as_of 2026-08-04`,
-    where the two failures are the AST pair caused by a concurrent scope's
-    uncommitted edits — re-baseline before comparing. Collection grows by exactly
-    the new nodes and drops none.
-  * `bootstrap/tests/test_security_verification.py` — T1–T35, the plan's own
-    surface. *(Forward reference: the file lands at Chunk A; registered under
-    `Proposed paths:` above.)*
+    Maintainer's re-anchor**. **No baseline total is stated here, deliberately.**
+    The figure is **retired as an oracle**: it has read 1744 → 1779 → 1790 → 1959
+    across three days, and this fold pass did **not** re-measure it rather than
+    add a fifth reading that dates as fast. The binding criterion is
+    **"collection grows by exactly the new nodes and drops none"**, against a
+    count **re-taken on a clean tree at the implementing commit**.
+  * `bootstrap/tests/test_security_verification.py` — **T1–T44 including T31b**,
+    the plan's own surface. **Chunk A** holds T1–T24, T36–T41 and T44; **Chunk B**
+    holds T25–T33, T31b, T42 and T43; **Chunk C** holds T34–T35. The
+    perturbation-ledger obligation extends to every one of them, and where a test
+    is a **characterization** rather than a guard — T28, T43 — the ledger says so
+    in those words. *(Forward reference: the file lands at Chunk A; registered
+    under `Proposed paths:` above.)*
   * [`bootstrap/tests/test_security_lint.py`](../../bootstrap/tests/test_security_lint.py)
     — the `45` pin and the on-disk oracle, which now covers the dispatcher.
   * [`bootstrap/tests/test_notice_install.py`](../../bootstrap/tests/test_notice_install.py)
@@ -779,8 +931,10 @@ Per-chunk criteria are above; these are the plan-level deliverables.
   `docs/solo-legacy-recipe.md`, `CHANGELOG.md > Unreleased > Added`. **No
   generated docs, no snippet-synced blocks.**
 * **Examples / smoke checks required.** `python bootstrap/scaffold.py --manifest`
-  → 97 rows, diffed to exactly two additions. `python bootstrap/security_check.py`
-  → `PASS` over 75 files. A fresh `tmp_path` scaffold followed by `python
+  → `N + 2` rows, diffed to exactly two additions (`N = 95` at `d73d436`, re-taken
+  at the plan-open commit). `python bootstrap/security_check.py`
+  → `PASS` over `N + 1` shipped files (`N = 76` at `d73d436`, re-taken before
+  Chunk A). A fresh `tmp_path` scaffold followed by `python
   scripts/run_security_verification.py local` → exit 0 and the exact
   `NOT APPLICABLE` line (T33). **N/A**: the `examples/` gallery — this change
   touches nothing the runnable examples demonstrate.
@@ -897,11 +1051,14 @@ are added per plan when the change touches that surface.
 **Plan-specific gates, added because this change touches those surfaces.**
 
 * **The release gate** — `python bootstrap/security_check.py`. Expected `PASS`,
-  Bandit line reporting **75** files. Baseline before Chunk A: 74.
+  Bandit line reporting **`N + 1`** shipped files, where `N` is **re-taken
+  immediately before Chunk A**. Measured at `d73d436`: `N = 76`, `PASS`. Do not
+  apply a number from this plan; the arithmetic is what is asserted.
 * **The install-contract diff** — `python bootstrap/scaffold.py --manifest`
   captured at the plan-open commit into the session scratch directory, diffed
   after Chunk A. **Expected: exactly two added lines, zero modified, zero
-  removed.** 95 → 97 data rows.
+  removed.** `N` → `N + 2` data rows, `N` re-taken at the plan-open commit
+  (`N = 95` measured at `d73d436`).
 * **The three-channel agreement on the `.py` count** — `git ls-files templates |
   grep '\.py$' | wc -l`, the working-tree glob, and
   `install_manifest(modules=None)` verbatim `.py`. All **44** before Chunk A, all
@@ -2299,3 +2456,132 @@ Keep schema implementation separate from entry admission: the dispatcher can
 land with an empty registry, while no living-state entry or producer lands
 until the paired contract and review are ratified. That preserves progress
 without making the cross-plan gate one-sided.
+
+## Maintainer disposition of the 2026-08-05 External review round
+
+The 2026-08-05 `## Plan review -- Codex (External)` section above returned
+**REVISE**. This plan fences implementation behind the External reviewer, **or
+the Maintainer**, disposing of that REVISE. The Maintainer disposed of it. The
+authorizing instruction, **verbatim**:
+
+> Go ahead with implementation once you've revised these. I don't want another review round
+
+**What that authorization does.** It disposes of the review round: the REVISE
+verdict on the 2026-08-05 External section is closed by the Maintainer, and no
+further review round is required to open implementation on the *unfenced* work —
+which for this plan is the schema and its tests, with the registry empty. It is a
+disposition, **not a bypass**: the round happened, its findings are closed by the
+fold recorded below, and the Maintainer exercised the authority this plan's own
+fence names.
+
+**What it does not do**, stated so no later reader can stretch it:
+
+* It is **not** the ratification of the `living_state` narrowing. Maintainer-fence
+  item 4 and **B3** stand: no living-state entry, and no producer of the
+  living-state record, lands on this instruction. An agent that cites it as
+  ratification has breached the fence.
+* It supplies **no** Maintainer credential and **no** signing ref.
+* It authorizes **no** AST re-anchor ceremony. Fence items 1–3 are untouched, and
+  the two guaranteed `FROZEN-MODIFIED` rows are still the Maintainer's to re-pin.
+* It is **not** approval to push. Pushing needs its own approval, every time.
+
+### Sharpening — the 2026-08-05 fold pass
+
+Inline chunk-cell edits driven by the accepted plan-review findings, under
+`doctrine/plans.md:202-207` (status `open`, no implementation commit, nothing in
+flight against the edited chunks). **The reciprocal plan
+`api-web-security-modules` carries the identical shared block and lands in the
+same commit** — B3's own requirement, not a convenience.
+
+**Cells changed, and why.**
+
+| Cell | Change | Why |
+|---|---|---|
+| *Glossary*, `Admitted` | Five-part rule → **six**-part: the binding mode is part of what is admitted | A2's doctrine list now cites the six-part rule; the definition had to exist operatively |
+| *Maintainer fence*, opening + item 3 + new item 4 | Three things → four; item 3's "no file this plan edits is frozen" conditional replaced by the measured fact that **both** pin files are in the 164-entry map; item 4 is B3 | Item 3 contradicted this plan's own later measurement, and B3 needed an operative home in the fence an implementer reads |
+| Chunk A row **A1** | Nine fields → **eleven**; three closed vocabularies; the agreement rules; the per-mode runtime binding with `digest_not_compared` in the report; **B2's closed-vocabulary lockfile-record reader**; no `principal`, no `scope`; the hash-pinned designation docstring | Finding 1 (B1), finding 2 (B2), and the schema that finding 3's fence is drawn around |
+| Chunk A row **A2** | Six-part admission rule; `NOT_APPLICABLE`-is-not-evidence; the binding-mode schema and its residual; the high-risk designation; the customized-slot residual | An adopter receives A2 and never receives this plan |
+| Chunk A row **A4** | Names the **three** designation channels, which two are tamper-evident, and that this slot is the one that is **not** a guard | The earlier cell implied the fidelity check guarded it |
+| Chunk A row **A5** | Suite is T1–T24, **T36–T41, T44** | The rows existed only in an amendment table |
+| Chunk A test **T5** | Nine deletion mutants → **eleven** | A defaulted binding mode is the omission failure |
+| Chunk A test **T17** | Parametrized by `policy_binding_mode`, four rows, three perturbations | The unconditional assertion is false under `living_state` |
+| Chunk A test **T20** | Seven asserted machine members incl. explicit `status` and `evidence_count`; second perturbation | Automation must key on a state and a count, not a container length |
+| Chunk A tests **T36–T41**, new **T44** | Added as operative rows | T36–T41 existed only in the amendment table; **T44 is new in this pass** and is finding 2's test — the extra-field impossibility asserted **by trying it** |
+| Chunk A criteria | Manifest `N + 2` with `N` re-taken; Bandit `N + 1` with `N = 76` measured; the two `44` pins cited by line with the cross-scope hazard named; ledger extended to T36–T41 and T44 | Every figure re-derived at `d73d436`, and the `75`/`74` pair no longer reproduces |
+| Chunk B row **B5** | T25–T33, **T31b, T42, T43** | T31b and T42/T43 existed only in amendment tables |
+| Chunk B test **T33** | Adds T20's machine assertions through the same subprocess; second perturbation | T33 is the only test that sees what an adopter's automation sees |
+| Chunk B tests **T31b, T42, T43** | Added as operative rows; T43's characterization status stated in the cell | A characterization test read as a guard is worse than no test |
+| Chunk B criteria | Markdown file count **deleted as a criterion**; neutrality re-verified at 95 with a re-take instruction; ledger extended | The count has read 180 → 195 → 176 → 177 and moves with work this plan does not own |
+| Chunk D row **D1** | Adds the fifth recording (e): the designation's three channels and the silent-drop residual | It was a recorded residual with no operative home |
+| Chunk D criteria | `check_cairn` criterion is "no issue attributed to a file this chunk edits"; neutrality same-run comparison | Same reason as Chunk B |
+| Plan-level criteria | Suite baseline figure **deleted, not updated**; test surface is T1–T44 incl. T31b, distributed by chunk | Four readings in three days; a fifth would date as fast |
+| *Verification* > plan-specific gates + examples | `75`/`74`/`97` replaced by `N + 1` / `N + 2` with `N` measured at `d73d436` | The stated figures no longer reproduce |
+
+**Amendment rows now folded.** Superseded as **operative instructions** — the cell
+named carries them. Their text is untouched and stays part of the record; nothing
+in this pass rewrites an amendment, a review, a Response, or a Lasting-truth
+entry.
+
+| Row | Folded into | Note |
+|---|---|---|
+| M4 | Chunk B test T31b | |
+| M10 | Maintainer fence item 3 | the two `FROZEN-MODIFIED` rows are now stated as guaranteed, re-measured at `d73d436` |
+| M24 | Chunk A row A1 | |
+| M25 | Chunk A test T5 | |
+| M26 | Chunk A test T17 | |
+| M27 | Chunk A tests T36–T40 | |
+| M28 | *Glossary*, `Admitted` | |
+| M29 | Maintainer fence item 4 | **superseded by B3**: one condition on both sides, not a registry-entry-only fence; the older amendment labels it cited are replaced by B3 |
+| M30 | Chunk A test T20 | |
+| M31 | Chunk B test T33 | |
+| M32 | Chunk A row A2 | |
+| M33 | Chunk A test T41 | |
+| M34 | Chunk A rows A1/A4 + Chunk B tests T42/T43 | |
+| M35 | Chunk D row D1 | |
+| M36 | Chunk A criteria + *Verification* | figure re-derived, not carried: `N = 76` at `d73d436` |
+| M37 | Chunk B criteria | the file count is **deleted** as a criterion rather than re-stated |
+| M38 | Plan-level criteria | the suite figure is **deleted**, not updated |
+| M39 | Plan-level criteria | extended to T44 |
+
+**Figures re-derived at `d73d436` under
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13).** Nothing below
+is carried forward from an earlier revision of this plan. **Measurement
+conditions, stated because they matter:** HEAD was `d73d436` and no tracked file
+in any measured surface was modified in the working tree at read time, but
+untracked files were present and **concurrent sessions moved HEAD to `d2f82e0`
+before this commit landed.** Every row below is a **dated snapshot, not a
+constant**.
+
+| Figure | Stated before | Measured now | Disposition |
+|---|---|---|---|
+| Manifest data rows | 95 (→ 97) | **95** | folded as `N` → `N + 2`, `N` re-taken |
+| Bandit shipped files | 74 (→ 75); 76 in an amendment row | **76**, `PASS` | folded as `N` → `N + 1`, `N` re-taken |
+| `check_cairn` Markdown files | 180 → 195 → 176 | **177** at `d73d436`, 0 issues, 48 links unprobed — and **178** at `d2f82e0` within the same session, with only concurrent scopes' work in between | **deleted as a criterion.** Five readings in four days, moving in both directions, is the argument |
+| neutrality | `fail=95` | **`fail=95 info=21`** | reproduces; kept as a same-run comparison |
+| AST baseline entries | 173 | **173** | reproduces |
+| `Assign:_MODULE_MAPPINGS` digest | `26957a8924042a0a` | **`26957a8924042a0a`** | reproduces |
+| `Assign:_DEFAULT_ON_MODULES` digest | `2c8ef688f6865487` | **`2c8ef688f6865487`** | reproduces |
+| `FunctionDef:main` digest | `ff5a7441cceda605` | **`ff5a7441cceda605`** | reproduces |
+| `frozen_files` entries | 164 | **164**, and **both** pin files are members | folded into fence item 3 as a guaranteed pair |
+| `44` pins | 44 / 44 | **44** at `test_notice_install.py:75` and `test_security_lint.py:291` | folded with citations |
+| `_oracle.py` schema-literal citation | line 81 | **line 81** (`REPORT_SCHEMA`) | reproduces; kept in T20 |
+| Suite total | 1744 → 1779 → 1790 → 1959 | **not re-measured** | **deleted**, not updated. The criterion is the growth-by-exactly-the-new-nodes rule against a count re-taken at the implementing commit |
+
+**What this pass did not fold, and why.**
+
+* **The plan header's review-gate sentence** (*"No implementation commit lands
+  before the `## Plan review` section is in the tree"*). It reads a heading, never
+  a verdict — the defect `review-gate-enforcement` exists to repair. It is not
+  chunk-table cell text, so this pass left it. The Maintainer's disposition above
+  is what closes the landed REVISE; **the header sentence is not, and never was,
+  the thing that closed it.**
+* **`## The measurement that shapes this plan`, the cluster section, `## Scope`,
+  *Author-accounting*, and the Lasting-truth table.** Prose or append-only
+  surfaces, not chunk cells. Their amendment rows remain operative for them — with
+  one exception recorded explicitly: item 3 of the Maintainer fence now
+  **contradicts** the older frozen-file reading in *The measurement that shapes
+  this plan*, and the fence is the operative statement of the two.
+* **`bootstrap/verify_integrity.py`'s extra-key tolerance.** Measured, and B2's
+  refusal is implemented in the **dispatcher's** reader instead (A1, T44). Changing
+  `verify_integrity` is outside this plan's declared symbol delta; it is a lasting
+  truth for the archive, not a silent widening.
