@@ -468,8 +468,8 @@ def _is_default_exempt(token: str) -> bool:
     )
 
 
-def _node_citation_path(token: str) -> str:
-    """The path half of a ``path::node`` citation, or the token itself.
+def _node_citation_path(token: str) -> str | None:
+    """The path half of a ``path::node`` citation, or ``None``.
 
     ``path::node`` is the citation form ``doctrine/lifecycle.md`` >
     "Archive precondition" mandates for a ``guard`` disposition -- the
@@ -487,7 +487,7 @@ def _node_citation_path(token: str) -> str:
     path_part, sep, node = token.partition('::')
     if sep and node and path_part:
         return path_part
-    return token
+    return None
 
 
 def check_path_token(
@@ -500,13 +500,21 @@ def check_path_token(
     the token is not a repo-path claim, is a default-exempt runtime
     path, or resolves cleanly.
     """
-    target = _node_citation_path(token)
+    node_path = _node_citation_path(token)
+    target = token if node_path is None else node_path
     first = target.split('/', 1)[0]
     if first not in top_level:
         return None  # not a repo-path claim -- nothing to check
     if _is_default_exempt(target):
         return None  # gitignored / generated framework runtime path; absent by design
-    if (repo_root / target).exists():
+    resolved = repo_root / target
+    # A node citation names a test node, which lives in a FILE -- a
+    # directory path half (``bootstrap/tests::test_x``) is not a valid
+    # ``path::node`` and must still flag.  The bare-path branch keeps
+    # ``.exists()``, because a directory IS a legitimate path claim.
+    # Mirrors the line-bounds branch, which is ``.is_file()`` for the
+    # same reason.
+    if resolved.is_file() if node_path is not None else resolved.exists():
         return None
     return Flag(
         lineno, 'path', 'hard', token,

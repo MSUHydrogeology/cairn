@@ -25,7 +25,8 @@ Most check-before-you-assert claims are about *what a thing **is***
 — does this attribute exist, what does this function return, what
 does this file contain — and a quick read or a grep settles them.
 That is the mechanically-checkable subset, and it is exactly what
-the installed checker covers: paths and line citations.
+the installed checker covers: paths, line citations, and `path::node`
+citations (resolved on the path half only -- the node half is never verified).
 
 A distinct, **costlier** class is about *what a call **does** at run
 time*: its side-effects, ordering, atomicity or concurrency

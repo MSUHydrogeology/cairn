@@ -465,3 +465,18 @@ def test_parametrised_node_id_is_not_flagged(cc, tmp_path):
         "A guard cites `bootstrap/tests/test_claim_check_module.py::test_x[a-b]`.\n",
     )
     assert hard == [], [f.message for f in hard]
+
+
+def test_node_citation_whose_path_half_is_a_directory_is_flagged(cc, tmp_path):
+    """Code-review [C3]: a node citation names a test node, which lives in
+    a FILE. `.exists()` let a directory path half through, which is a
+    fail-open widening the bare-path branch does not have."""
+    hard = _hard(cc, tmp_path, "A guard cites `bootstrap/tests::test_x`.\n")
+    assert len(hard) == 1, [f.message for f in hard]
+
+
+def test_bare_directory_path_is_still_accepted(cc, tmp_path):
+    """The [C3] fix must not spill onto the bare-path branch: a directory
+    is a legitimate path claim when cited without a `::node`."""
+    hard = _hard(cc, tmp_path, "See `bootstrap/tests`.\n")
+    assert hard == [], [f.message for f in hard]
