@@ -82,6 +82,18 @@ and a new empty `Unreleased` is started above.
 
 ### Fixed
 
+- **`claim_check` rejected the citation form Cairn's own doctrine mandates.**
+  The `guard` disposition (`doctrine/lifecycle.md` > "Archive precondition")
+  requires a follow-up homed in something that executes to **name its node** as
+  `path::node`. `claim_check` resolved the whole token, so every such citation
+  was a hard flag — the mandated form was unwritable in any claim-checked file,
+  in Cairn's tree and in every adopter's, since the checker ships. It went
+  unnoticed because no real `guard` had been written yet; the first one would
+  have failed the gate. `check_path_token` now resolves a `path::node` token on
+  its **path half**. The node half is **never verified** — a static checker does
+  not collect tests — and both copies' docstrings say so rather than implying
+  coverage. From the archived plan `board-drain-guards`.
+
 - **The shipped lifecycle-stage commit vocabulary read essentially nothing.**
   `_STAGE_COMMIT_PATTERNS` in the default-on `lifecycle-metrics` module matched
   exactly **one** of the 251 real commit subjects in Cairn's proposal corpus —
