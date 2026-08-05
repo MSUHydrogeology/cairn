@@ -878,6 +878,43 @@ def _pass_headings(art: Artifact) -> List[Tuple[Section, str]]:
     return out
 
 
+def _has_disposition(art: Artifact, pass_sec: Section) -> bool:
+    """S7 -- does a disposition follow `pass_sec`, in either house form?
+
+    Cairn disposition sections come in two shapes and the tree uses **both**,
+    measured `as_of` 2026-08-05 across ``dev/plans`` + ``dev/plans/archive``:
+    **28** ``## Response to plan review`` against **25** ``### Sharpening``.
+    Neither is the convention.  A gate that accepted only one would redden
+    roughly half the existing dispositions while enforcing a house style the
+    project does not actually hold, so this accepts either:
+
+    * a ``### Sharpening`` **inside this pass's own body**, or
+    * a ``## Response to plan review`` section positioned **after this pass and
+      before the next pass**.
+
+    Positional in both cases, which is what `[E3]` asked for: a *neighbouring
+    round's* disposition cannot satisfy this one.  The `### Sharpening` search is
+    scoped to this pass's body; the `## Response` search is bounded by the next
+    S1 pass heading.
+    """
+    if _SHARPENING_RE.search(pass_sec.body):
+        return True
+    later_pass_lines = [
+        s.line_no for s in art.sections
+        if s.level == 2 and s.kind.strip().lower() == "plan review"
+        and s.line_no > pass_sec.line_no
+    ]
+    ceiling = min(later_pass_lines) if later_pass_lines else None
+    for sec in art.sections:
+        if sec.level != 2 or sec.line_no <= pass_sec.line_no:
+            continue
+        if ceiling is not None and sec.line_no >= ceiling:
+            continue
+        if sec.kind.strip().lower().startswith("response"):
+            return True
+    return False
+
+
 def _is_legacy(stem: str, dig: str, seen: Dict[str, int]) -> bool:
     """S9(b) -- is this the k-th occurrence of `dig`, with k <= manifest count?"""
     admitted = _LEGACY_PASSES.get(stem, {}).get(dig, 0)
@@ -918,13 +955,16 @@ def review_record_violations(art: Artifact) -> List[str]:
         for problem in (tv, fv):
             if problem:
                 v.append(f"'{sec.kind} -- {sec.name} -- {sec.date}': {problem}")
-        if find == "raised" and not _SHARPENING_RE.search(sec.body):
-            # S7 -- positional: a sibling round's Sharpening cannot satisfy this
-            # one, because the search is scoped to this pass's own body.
+        if find == "raised" and not _has_disposition(art, sec):
+            # S7 -- positional, and it accepts EITHER house form.  See
+            # _has_disposition: the tree uses both, roughly evenly, so a gate
+            # that demanded one would redden half the existing dispositions
+            # while enforcing a convention the project does not hold.
             v.append(
                 f"'{sec.kind} -- {sec.name} -- {sec.date}' declares "
-                "'**Findings**: raised' but carries no '### Sharpening' "
-                "inside its own body.")
+                "'**Findings**: raised' but no disposition follows it -- "
+                "expected a '### Sharpening' inside its own body, or a "
+                "'## Response to plan review' section before the next pass.")
         if ok_date and tier and find and required \
                 and tier_satisfies(tier, required):
             satisfied = True
