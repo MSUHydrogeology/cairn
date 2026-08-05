@@ -1318,3 +1318,203 @@ is recorded as such rather than described as provenance.
 disposition* > D1–D3. And the Maintainer's instruction is bounded there: it
 disposes of the review round, and supplies no Maintainer credential, signing ref,
 AST re-anchor ceremony, or approval to push.
+
+## Implementation verification -- Claude -- 2026-08-05
+
+**Unit**: Chunk C (the wiring + the C.1–C.9c nodes) and Chunk D. Chunks A and B
+had landed in `eaf9d7b`, `9bf3524`, `ab70660`, `1b17b85`; re-checked here rather
+than assumed — A.1 (`doctrine/plans.md:513` is H2), A.2 (both templates carry the
+H2 pass shape, the S2 fields, and the "no container heading" reconciliation), A.3
+(the scaffold emits the H2 pass with both attestation lines and an H3 Sharpening
+inside the body), B.1–B.3 all present.
+
+**Commits**: `dd91ccb` (the wiring + the node set), `cc26bdb` (the C.8 redesign
+the falsifier run forced), `fd296fb` (Chunk D). Interpreter for every figure
+below: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13), with
+`PYTHONDONTWRITEBYTECODE=1` throughout — stale bytecode has produced false
+greens in this repository.
+
+**The tree was not quiet, and that is disclosed with the figures rather than
+after them.** HEAD moved `a23be80` → `07afef1` → `dd91ccb` → `cc26bdb` →
+`fd296fb` → `170255d` during this unit, and two sibling sessions held
+uncommitted edits in the working tree for the whole run.
+
+### What Chunk C changed
+
+* **S12, both call sites.** `_conformance_violations`' plan arm and
+  `_gating_preconditions`' `executing` target both call
+  `review_record_violations` — the presence test `_has_kind(art, "Plan review")`
+  is gone from both. The `executing` gate line now *names* the violations it
+  withheld on, so an operator is not sent to `scan` to find out why.
+* **The status condition is unchanged**, deliberately: `_conformance_violations`
+  asserts that the *current* status is structurally supported, and an `open` plan
+  awaiting its review is not a violation. `[E4]`'s evaluate-as-if-transitioning
+  read is the *other* call site's job, reached from `open` /
+  `awaiting-plan-review`.
+* **Two corrections the test design surfaced**, both inside the predicate:
+  * **S8's quoted near miss was unimplemented.** S8 requires the refusal to
+    quote the near-miss heading; the message did not. Wiring an unactionable
+    refusal into the gate an adopter installs is worse than not wiring it, so
+    `_near_miss_headings` now names the headings that did not count.
+  * **S1 is now checked *before* the S9 fence.** The enumeration exempts a pass
+    from S2/S3/S7 (S9(b)) — never from S1. With the fence first, any
+    heading-keyed exemption swallows the date contract, which is exactly how the
+    replaced dated epoch failed: `0000-00-00` sorts below every achievable
+    epoch, so the impossible value bought the exemption *and* silenced the
+    `malformed date` violation. No live verdict changes (no admitted heading
+    carries an unparseable date); the ordering means no future fence can swallow
+    it either.
+
+### C.0 — the inventory, as a differential, and what supplied it
+
+The violation list is **produced by the code under test** — it must be, since
+the question *is* what the new gate refuses — so it is a **disclosure, not a
+verification**. The evidence that the gate is *correct* is C.1–C.9c and their
+falsifiers, below. To keep the disclosure from resting on the same artifact
+twice, it is stated as a **differential against the pre-wiring module**
+extracted from `dd91ccb~1` and run over the same corpus:
+
+| `scan --include-archive`, 77 artifacts | flagged artifacts | review-record lines |
+|---|---|---|
+| pre-wiring module (`dd91ccb~1`) | 39 | 0 |
+| post-wiring (`fd296fb`) | 41 | 2 |
+
+The delta is exactly two lines, both `'…no conforming pass satisfies it…'`:
+`dev/plans/archive/board-drain-guards.md` and
+`dev/plans/archive/deferral-discipline.md`, each carrying a bare
+`## Plan review` container and no pass. The other 61 flagged lines are
+pre-existing violations of other rules and are untouched by this change.
+**Default `scan` (live `dev/proposals/` + `dev/plans/`, 18 artifacts) exits 0.**
+
+Corpus inventory by the exact S1 oracle (`scripts/gen_legacy_passes.py
+--report`, which does not import the gate), `as_of 2026-08-05` at `fd296fb`: 77
+artifacts, **56** conforming passes, **4** bare containers, **23** near-miss
+headings, **63** review-required artifacts, **9** distinct `required(...)`
+groups, **0** that fail to resolve. The invariant, not the counts, is what
+holds: every dated pass in the corpus is H2, and zero are H3.
+
+**The live-violation state at the wiring commit, checked rather than carried.**
+At `dd91ccb` the review-required plans under `dev/plans/` were **16 clean / 1
+violating** — `release-security-orchestration`, a true positive (a Security
+Review declaring `**Findings**: raised` with nothing dispositioning it). Its
+Response landed from a sibling session between `dd91ccb` and `fd296fb`, and at
+`fd296fb` the same measurement is **17 clean / 0 violating**. So the gate was
+wired while one live plan violated, and the violation was a real one that the
+sibling's Response then cleared; no live transition is blocked by this change.
+
+### The falsifier matrix — 17 mutations, applied and reverted
+
+Each mutation was applied to **both twins** (so S13 parity was never broken),
+run against `bootstrap/tests/test_lifecycle_contract.py`, then reverted from
+pristine copies with the revert verified **byte-identical by md5**. Baseline and
+post-revert: **64 passed, 0 skipped**.
+
+| mutation | reddens |
+|---|---|
+| C.1 drop the tier comparison from the `satisfied` condition | C.1 only |
+| C.2a `_pass_headings` accepts H3 | C.2 only |
+| C.2b `_pass_headings` accepts an undated pass | C.2 only |
+| C.2c `_pass_headings` prefix-matches the heading kind | C.2 only |
+| C.2d the floor refusal stops quoting the near miss | C.2 only |
+| C.3 drop the `date.fromisoformat` parse, keep the shape regex | C.3 only |
+| C.4a drop the raised-findings conditional | C.4 only |
+| C.4b the Sharpening search stops being positional | C.4 only |
+| C.5a an out-of-vocabulary value passes through | C.5 only |
+| C.5b an absent field is silent | C.5 **and C.9b** — see below |
+| C.5c agreeing duplicates are accepted | C.5 only |
+| C.6 a comma-splitting normalizer replaces first-alphabetic-word | C.6 only |
+| C.7 tier ordering becomes an equality | C.7 only |
+| C.8 the `executing` gate reverts to a presence test | C.8 only |
+| C.9a a date comparison is restored beside the manifest fence | C.9a only |
+| C.9b the occurrence multiset becomes a set | C.9b only |
+| C.9c a fabricated manifest entry | C.9c only |
+
+**The run found a real defect in the node set, which is why it was run.** C.8 as
+first written pinned *what* each fixture's verdict should be, so C.1's and C.4a's
+mutations reddened it too: its falsifier had stopped being single-property, and
+the drift it exists to catch would have been buried in that noise. `cc26bdb`
+rewrote it to assert **agreement only** — both public surfaces against
+`review_record_violations` and against each other — which also made it stronger:
+`_conformance_violations` must now return the predicate's list *exactly*, and the
+gate line must contain every violation it withheld on.
+
+**The one remaining coupling is structural and is recorded, not smoothed.**
+Silencing S3's absent-field direction (C.5b) also reddens C.9b's end-to-end half,
+because a non-admitted duplicate's *only* refusal signal **is** the missing-field
+violation — the `n` admitted passes already satisfy the floor by presence, so
+there is nothing else for the `n+1`-th to trip. C.9b therefore also asserts the
+fence directly over occurrences `1..n+1` via `_is_legacy`, which no S2/S3 message
+change can move, and C.9b's own falsifier (multiset → set) isolates cleanly.
+
+### Reproduced through the public CLI, not only the predicate
+
+The five-state table, run against `tools/lifecycle_planner.py next --to
+executing` on a scratch repository: the H3 dated pass, the undated named pass,
+the bare `## Plan review` container, `## Plan reviewers -- R -- 2026-08-05`, and
+an `Internal` pass on an `External` floor each report **MISSING**. The scaffold's
+**own emitted block**, with its placeholders filled, reports **ok** and `scan`
+exits 0 on it — the shape the tool hands an operator is a shape the gate accepts,
+which was not true of the pre-A.3 scaffold (its `### Plan review` +
+`### Sharpening` block parsed to nothing).
+
+### Suite
+
+`python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0`, at `fd296fb`,
+344.73s: **4 failed, 2256 passed, 0 skipped**. All four are pre-existing or
+concurrent, none in this unit's surface:
+
+* `test_ast_attest.py` ×2 — the committed AST baseline versus **NEW** symbols in
+  `bootstrap/_scaffold/config.py` (`_IF_RE`, `_PROFILE_*_RE`), another session's
+  work. This unit touched no file under `bootstrap/_scaffold/`. Re-anchoring is a
+  Maintainer-run correction (`AGENTS.md` > *Operational pitfalls*).
+* `test_portable_security_sweeps.py` ×2 — a sibling session's **uncommitted**
+  edits to `templates/modules/team-gated/run_portable_security_sweeps.py`; the
+  same file re-measured minutes later gave 20 failures, i.e. it was mid-edit.
+
+`bootstrap/tests/test_lifecycle_contract.py` alone: **33 → 64 passed, 0
+skipped** (the 33 baseline re-measured at `a23be80` immediately before the
+wiring, not carried from this plan's earlier snapshot).
+`python scripts/quality_gate.py --sub neutrality --sub redundancy`: neutrality
+`fail=96` (pre-existing corpus-wide; **zero** hits in `doctrine/plans.md` or
+`bootstrap/UPGRADE.md`), redundancy `fail=0`. `scripts/claim_check.py` clean on
+both edited prose files. `_REVIEW_SCHEMA_EPOCH` appears nowhere in the module,
+the twin, the tests, the doctrine or `bootstrap/UPGRADE.md` — the only hits in
+the repository are in this plan's own append-only record of its removal.
+
+### Chunk D, and the doctrine sentence it exposed
+
+`bootstrap/UPGRADE.md` gained a migration section stating the record-format
+change, both field names, the three fail-closed directions, declared-never-
+inferred, the calendar-valid date rule, the first-parenthesised-group
+normalizer, and the legacy exemption as a **fixed enumeration of pre-existing
+records — not a dated grace period and not an epoch**, including that there is
+no epoch constant to publish and that a note naming one describes a design that
+was refused and removed. It also tells an adopter the thing Cairn's own manifest
+does not do for them: **Cairn's enumeration covers Cairn's records, not
+theirs**, so every review-required plan in their tree is judged by the full
+schema at upgrade — with `scan --include-archive` as the read-only pre-flight
+and an appended new pass (never an edit to a landed one) as the repair.
+
+`doctrine/plans.md` was **stricter than the shipped gate**: its
+disposition-pairing paragraph named `### Sharpening` only, while the predicate
+has accepted either house form since `1b17b85`. Both forms are now stated with
+the positional bound kept as the strict part; re-measured over `dev/plans/` +
+`dev/plans/archive/` `as_of 2026-08-05` at `cc26bdb`: **25** `### Sharpening`
+against **29** `## Response to plan review`.
+
+### Known omissions, stated rather than smoothed over
+
+* **D.2 (`CHANGELOG.md` > Unreleased) is not written here** — it is a serialized
+  shared file; its exact line was returned to the Maintainer instead.
+* **Two archived plans now report a violation** under `scan --include-archive`
+  (the C.0 delta above). They are append-only records; the disposition is the
+  Maintainer's, and it is recorded as a new deferral in `dev/PLANNING.md` and
+  the security strategy note rather than decided here.
+* **This plan's own `## Status` still reads `open`** while Chunks A–D have
+  landed. That predates this unit (implementation commits landed against `open`
+  from `eaf9d7b` onward); the status flip and its `dev/PLANNING.md` row-move are
+  a lifecycle transition left explicit rather than performed silently inside an
+  implementation unit.
+* **What this gate still cannot do**, unchanged and fenced by `[E4]`: it attests
+  that a tier was *declared*. It cannot establish that the review happened, that
+  the named reviewer performed it, or that the declaration is true.
