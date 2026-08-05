@@ -142,3 +142,15 @@ path):
   rebinding resolver could change the answer between the check and
   `urllib`'s own connect. The probe is opt-in/off-by-default and blind (HEAD,
   response discarded); the residual is documented on the flag.
+* **Lifecycle orientation escaping constrains shape, not meaning.** Externally
+  sourced fields cannot create control sequences or imitate the stream's line
+  and section grammar, but printable text is unchanged. An escaped payload is
+  still legible, and an AI model may still interpret instructions contained in
+  that one-line string.
+* **Lifecycle relay coverage is deliberately partial.** The known sub-tool
+  stdout relays remain unescaped because they carry another tool's structured
+  stream, and git-derived lines are escaped but not length-capped. This is the
+  set found during review, not a claim that every future relay is enumerated.
+  Invalid UTF-8 from git is rendered with replacement characters; invalid
+  UTF-8 in an artifact status degrades to `(no status line)` so it cannot abort
+  the remainder of either lifecycle survey.

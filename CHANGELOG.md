@@ -94,6 +94,15 @@ and a new empty `Unreleased` is started above.
 
 ### Fixed
 
+- **Lifecycle orientation output now keeps repository-controlled text in data
+  shape.** Artifact filenames and status values, vendor target names, and git
+  metadata are C-escaped before relay; lone carriage returns no longer become
+  forged lines, CRLF pairs remain real line endings, and ordinary international
+  filenames remain readable. Structural lifecycle parsing now recognizes only
+  CR, LF, and CRLF, matching markdown and anchored readers, and malformed UTF-8
+  status files no longer suppress the survey. Plans `planner-line-semantics`
+  and `agent-context-scrub`.
+
 - **`claim_check` rejected the citation form Cairn's own doctrine mandates.**
   The `guard` disposition (`doctrine/lifecycle.md` > "Archive precondition")
   requires a follow-up homed in something that executes to **name its node** as

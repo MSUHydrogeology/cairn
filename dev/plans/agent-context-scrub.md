@@ -1182,3 +1182,12 @@ accented paths, textual failure details, and hash identity.
 
 Both lifecycle copies and both lockfile hashes now carry
 `sha256:a5bcea95e4e55b2136bd2ba442cf7f92dba65f02357580da5d51a8311283b9ed`.
+
+Chunk C is implemented with one correction to the planned disclosure. C3's
+claim that malformed UTF-8 still aborts the survey is superseded by the
+Maintainer-routed fix in `planner-line-semantics` Chunk B; publishing that
+claim in `SECURITY.md` would now be false. The residual instead states the live
+behavior: malformed artifact status is visible as unavailable, while malformed
+git output uses replacement decoding. The shape-versus-meaning boundary,
+non-exhaustive sub-tool relay coverage, and uncapped git stream remain recorded
+as accepted residuals.
