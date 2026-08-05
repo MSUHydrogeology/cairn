@@ -82,6 +82,20 @@ and a new empty `Unreleased` is started above.
 
 ### Fixed
 
+- **The shipped lifecycle-stage commit vocabulary read essentially nothing.**
+  `_STAGE_COMMIT_PATTERNS` in the default-on `lifecycle-metrics` module matched
+  exactly **one** of the 251 real commit subjects in Cairn's proposal corpus —
+  and that one it assigned the *wrong* stage — so `hours_open_to_reviewed`,
+  `hours_reviewed_to_revised` and `hours_revised_to_decision` came back empty
+  and `stage_timestamp_reliability` read `Best-effort` on 36 of 37 rows, while
+  the tool exited 0 and emitted a well-formed report. The reader now consults a
+  second, **scope-gated** vocabulary when the shipped one declines, and
+  classification is a pure function of the subject: 13 rows reach `Exact`, 24
+  `Good`, none `Best-effort`, with no negative interval. Deliberately narrow:
+  an un-scoped subject still classifies as nothing, so the new vocabulary never
+  mislabels a commit at `Exact`. Accepted proposal stem `stage-commit-patterns`;
+  plan stem `stage-commit-patterns`.
+
 - **`verify-ref.sh` answered a question nobody asked, and called it a release.**
   Asked about `v0.4.0` against a mirror whose `v0.4.0` ref had been re-pointed at
   the genuinely signed `v0.3.0` tag object, it printed `OK — release tag 'ann'`
