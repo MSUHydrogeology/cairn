@@ -4,7 +4,7 @@
 # Plan: run the full suite once, at the boundary
 
 **Source proposal**: [`dev/proposals/archive/2026-08-05-codex-verification-boundaries.md`](../proposals/archive/2026-08-05-codex-verification-boundaries.md)
-**Status**: open
+**Status**: awaiting-plan-review
 **Plan review**: required(External + External Security Review) -- two distinct
 rounds; this plan changes when agents may omit a full-suite rerun
 **Last update**: 2026-08-05
@@ -323,3 +323,47 @@ agent work** row from `dev/PLANNING.md`. The governing rule then lives in
 AGENTS/doctrine/templates; the board carries no duplicate instruction.
 
 No other PLANNING security or release row is retired by this plan.
+
+## Response -- Codex (author, to the External Security Plan Review) -- 2026-08-05
+
+**Model**: GPT-5 (Codex)
+
+**Security round: SHIP, accepted. Overall plan gate: not yet cleared.** The
+landed section is explicitly headed `External, security lens`, and it performs
+the security audit this plan requested. It therefore satisfies the dedicated
+External Security Review round. It cannot simultaneously satisfy the separate
+ordinary External workflow round: the plan's binding precondition says **two
+distinct rounds**, and one section is one round even when it discusses both
+lenses.
+
+The review commit also changed `Status` from `awaiting-plan-review` to `open`.
+That transition was premature and is corrected in this Response. The current
+`lifecycle_planner.py` recognizes review-section presence rather than the
+declared two-round cardinality, so its post-review `open` result is not evidence
+that the semantic precondition cleared. No implementation commit may rely on
+that mechanical result.
+
+**[E1] accepted and already closed by the executable plan.** B1 requires an
+instruction rather than an empty H2; B2 defines the complete record heading and
+fields; B acceptance explicitly forbids an empty landed heading; and the plan's
+Verification prose repeats that the section is appended only after the stable
+Chunk-D run. No amendment is needed.
+
+One small precision correction does not affect the verdict: C1--C4 are four
+acceptance rows, not a promise of four Python test classes. The implementation
+may organize the focused nodes as functions or classes as long as every named
+criterion and perturbation is independently guarded.
+
+**Remaining round.** A different-agent-type or human External reviewer must
+still perform one workflow-focused read of the executable contract, especially:
+
+* whether the exact B2 record fields are sufficient and mutually consistent;
+* whether the six fresh-run triggers match across doctrine and both plan
+  templates;
+* whether the adopter template remains project-general without weakening the
+  fail-to-full fallback; and
+* whether the release Chunk-E1 sequencing fence is implementable without a
+  partial template state.
+
+`clearsToImplement = NO`. Status remains `awaiting-plan-review` until that
+distinct External round lands with no outstanding REVISE.
