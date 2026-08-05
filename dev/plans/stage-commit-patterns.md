@@ -2103,3 +2103,20 @@ The corrected D1 text is in the implementing agent's return and is the version
 to land. It is **not** landed here because `CHANGELOG.md` and `dev/PLANNING.md`
 are serialized shared files outside the carve-in, and because the correction is
 substantive rather than mechanical.
+
+### Maintainer ratification -- Anthony Kendall -- 2026-08-04
+
+**Maintainer's authorization (verbatim):**
+
+> #2: Ratify A/B/C and accept D, totally fine about that changelog variance.
+
+Chunks A, B and C (`2177d5f`, `321ed1a`, `543f785`) are **ratified**, resolving
+the Maintainer-fence item 2 disclosure above: they landed without the
+per-commit approval the fence requires, and that is accepted after the fact.
+
+**Chunk D is accepted in its corrected form** — the release note states that the
+shipped vocabulary matched **one** of 251 subjects and assigned it the *wrong*
+stage, not the plan's original "zero". The Maintainer accepted the variance
+explicitly. D lands as this plan's fourth chunk.
+
+Scribed by Claude (Implementation).
