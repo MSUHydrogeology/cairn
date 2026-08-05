@@ -22,3 +22,4 @@ modules_add:
   - issue-capture            # GitHub Issues for gap/friction capture
   - security-review          # real trust boundary: file I/O, path handling, YAML/module parsing
   - examples-gallery         # examples/ ships runnable code; others adopt Cairn
+  - portable-security-sweeps # takes on two host executable trust roots: gitleaks + git

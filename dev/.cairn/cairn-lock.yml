@@ -576,6 +576,28 @@
       "hash": "sha256:ae779b8915e3ad67a212b73a56ea553a8c29ac4e3d1a38a7f0091169c747dbde",
       "src": "modules/default-on/prune_reflections.py",
       "verbatim": true
+    },
+    {
+      "base_cache": "dev/.cairn/base/dev/modules/portable-security-sweeps.md",
+      "base_hash": "sha256:f5921c8a5c3df85386486f4af0aacf66c8450a6b0a7fa1591bf66c0dc83c8d6e",
+      "dst": "dev/modules/portable-security-sweeps.md",
+      "hash": "sha256:f5921c8a5c3df85386486f4af0aacf66c8450a6b0a7fa1591bf66c0dc83c8d6e",
+      "src": "modules/team-gated/portable-security-sweeps.md",
+      "verbatim": false
+    },
+    {
+      "base_hash": "sha256:7e2b2a2bd36b9c9dacdd65c50fe18b270ba1a91f819ddf56aebf1b7d88815464",
+      "dst": "scripts/run_portable_security_sweeps.py",
+      "hash": "sha256:7e2b2a2bd36b9c9dacdd65c50fe18b270ba1a91f819ddf56aebf1b7d88815464",
+      "src": "modules/team-gated/run_portable_security_sweeps.py",
+      "verbatim": true
+    },
+    {
+      "base_hash": "sha256:e2ae83943fa4bbe05c0e4597ba1d5cb133914d89b72b3cc45afec4ddcfaad1b1",
+      "dst": "scripts/portable_security_policy.json",
+      "hash": "sha256:e2ae83943fa4bbe05c0e4597ba1d5cb133914d89b72b3cc45afec4ddcfaad1b1",
+      "src": "modules/team-gated/portable_security_policy.json",
+      "verbatim": true
     }
   ],
   "migrated": true,
@@ -591,6 +613,7 @@
     "issue-capture",
     "lifecycle-metrics",
     "model-selection",
+    "portable-security-sweeps",
     "reflections",
     "security-review",
     "testing-discipline"

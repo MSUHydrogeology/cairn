@@ -2056,3 +2056,83 @@ def test_the_accounted_git_subcommand_set_is_the_declared_one() -> None:
         {"config", "log", "ls-remote"}
     )
     assert "config" in runner._SCREEN_ARGV_TAIL
+
+
+# --- F6: Cairn's own adoption (Decision Condition 2) ---------------------------
+
+RUNNER_TWIN = CAIRN_ROOT / "scripts/run_portable_security_sweeps.py"
+POLICY_TWIN = CAIRN_ROOT / "scripts/portable_security_policy.json"
+DOCTRINE_TWIN = CAIRN_ROOT / "dev/modules/portable-security-sweeps.md"
+
+
+def test_the_policy_twin_is_byte_identical_to_its_template_source() -> None:
+    """This node exists because the suite's generic twin-parity helper globs
+    ``*.py`` only -- a real, measured gap, not a hypothetical.  The ``.json``
+    policy is the first non-``.py`` verbatim asset Cairn ships, so nothing else
+    would notice it diverging from its source.
+
+    The install path is a UTF-8 text round-trip rather than a byte copy, so the
+    source must be valid UTF-8 and LF-only for this to hold; both are asserted."""
+    assert POLICY_TWIN.is_file(), "Cairn's own policy twin is not installed"
+    assert POLICY_TWIN.read_bytes() == POLICY_SRC.read_bytes()
+    assert b"\r" not in POLICY_SRC.read_bytes(), "a CRLF source would install as LF"
+    POLICY_SRC.read_text(encoding="utf-8")
+
+
+def test_the_runner_twin_is_byte_identical_to_its_template_source() -> None:
+    assert RUNNER_TWIN.is_file(), "Cairn's own runner twin is not installed"
+    assert RUNNER_TWIN.read_bytes() == RUNNER_SRC.read_bytes()
+    head = RUNNER_TWIN.read_text(encoding="utf-8").splitlines()[:4]
+    assert any("SPDX-License-Identifier: MIT" in line for line in head), head
+
+
+def test_cairns_own_install_records_all_three_files_in_the_lockfile() -> None:
+    """Reads ``dev/.cairn/cairn-lock.yml``.  The recorded hash must match the
+    file on disk, so drift between the record and the tree reddens this node --
+    the lockfile is regenerated, never hand-edited."""
+    lock = read_lockfile(CAIRN_ROOT)
+    assert lock is not None
+    assert MODULE in lock.get("modules", []), lock.get("modules")
+    records = {rec["dst"]: rec for rec in lock.get("files", [])}
+    for _src, dst, verbatim in EXPECTED_GROUP:
+        assert dst in records, f"{dst} is not recorded in Cairn's own lockfile"
+        assert records[dst]["verbatim"] is verbatim, dst
+        digest = hashlib.sha256((CAIRN_ROOT / dst).read_bytes()).hexdigest()
+        assert records[dst]["hash"] == "sha256:" + digest, (
+            f"{dst}: the lockfile record and the file on disk disagree"
+        )
+
+
+def test_cairns_own_doctrine_copy_is_installed() -> None:
+    assert DOCTRINE_TWIN.is_file()
+    assert "portable-security-sweeps" in DOCTRINE_TWIN.read_text(encoding="utf-8")
+
+
+def test_cairns_own_run_with_gitleaks_absent_is_incomplete(tmp_path: Path) -> None:
+    """The node that turns Condition 2 into evidence.
+
+    Measured ``as_of 2026-08-05``: ``gitleaks`` is **not** on this host's
+    ``PATH``, so **5** is Cairn's actual first-run result.  The plan says so
+    rather than implying a clean first run."""
+    empty = tmp_path / "nobin"
+    empty.mkdir()
+    proc = subprocess.run(
+        [sys.executable, str(RUNNER_TWIN), "--target", str(CAIRN_ROOT), "--json"],
+        capture_output=True, text=True, timeout=300,
+        env={"PATH": str(empty), "HOME": str(tmp_path), "LC_ALL": "C",
+             "PYTHONDONTWRITEBYTECODE": "1"},
+    )
+    assert proc.returncode == 5, proc.stdout + proc.stderr
+    summary = json.loads(proc.stdout)
+    assert summary["result"] == 5
+    assert summary["mode"] is None
+    reason = leg(summary, "adapter")["reason"]
+    assert "gitleaks" in reason and "not found" in reason, reason
+    assert summary["policy"] == str(POLICY_TWIN), summary["policy"]
+
+
+def test_the_twin_resolves_its_policy_sibling_not_the_template() -> None:
+    """The installed runner must read the installed policy beside it, so an
+    adopter's edited suppressions are the ones in force."""
+    runner = load_runner(RUNNER_TWIN)
+    assert runner._default_policy_path() == POLICY_TWIN
