@@ -113,8 +113,9 @@ line above is mandatory — `required(<tier>)` or `not required(<rationale>)`,
 with **no silent default**. The author states it; the Maintainer ratifies.
 When `required`, the plan opens in **`awaiting-plan-review`** and reaches
 `executing` only after a dated `## Plan review` section lands: the review
-**and**, when it raised findings, a dated `### Sharpening` subsection
-dispositioning them. Its plan-open and first-implementation commits stay
+**and**, when it raised findings, a disposition (see *The record schema*
+below for the two accepted forms and their positional bound).
+Its plan-open and first-implementation commits stay
 **distinct** (implementation cannot front-run the review). When
 `not required`, the rationale is on the record and the plan may combine
 plan-open with first implementation.
@@ -629,12 +630,24 @@ comparison, so `required(**External**, security lens)` and
 `external`. Negations fail closed: `required(not External)` is a
 violation, not an External requirement.
 
-**Sharpening pairing is positional.** When a pass declares
-`**Findings**: raised`, a `### Sharpening` heading must occur **inside
-that pass's body** — between its heading and the next H2. Positional,
-not date-matched: a neighbouring round's Sharpening cannot satisfy a
-different round. When `**Findings**: none`, a Sharpening in the body is
-permitted and not required.
+**Disposition pairing is positional, and either house form counts.**
+When a pass declares `**Findings**: raised`, a disposition must follow
+it, in one of two shapes:
+
+* a `### Sharpening` heading **inside that pass's body** — between its
+  heading and the next H2; or
+* a `## Response to plan review` section positioned **after that pass
+  and before the next pass**.
+
+Both are in live use and neither is *the* convention (measured over
+`dev/plans/` + `dev/plans/archive/`, `as_of 2026-08-05` at `cc26bdb`:
+**25** `### Sharpening` against **29** `## Response to plan review`), so
+a gate that accepted only one would refuse roughly half the existing
+dispositions while enforcing a house style the project does not hold.
+Pairing is **positional** in both cases, and that is the part the gate
+is strict about: a neighbouring round's disposition cannot satisfy a
+different round. When `**Findings**: none`, a disposition is permitted
+and not required.
 
 **The legacy population is enumerated, not dated.** Passes that predate
 this schema are exempt from the attestation rules by **membership in a
