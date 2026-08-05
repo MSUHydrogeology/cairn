@@ -546,10 +546,14 @@ and **withdrawn at Internal review**. Two findings are worth carrying, because
 they will otherwise be rediscovered:
 
   1. **A hand-read sample found reproducers, measured figures and named revival
-     conditions — genuine obligations, not the deferral ratchet's residue.** The
-     ratchet diagnosis that produced the new precondition governs *future*
-     artifacts; it is not an indictment of what is already here. The board is
-     long because the work is real.
+     conditions.** Bounded, and the bound matters: the sample (~12 rows) came
+     **entirely from the census half**, which is the best-documented part of the
+     section. Measured across all 58, **29 carry no revival condition**, and the
+     shortfall concentrates in the ~31 rows imported from another repository,
+     several of which are short stubs with no reproducer. So the defensible claim
+     is *"the census rows are genuine obligations"*, **not** *"nothing here is
+     clearable"* — the imported half has not been assessed and may well contain
+     rows that should be closed.
   2. **Editing only this file cannot dispose of these rows.** The vocabulary's
      two useful tokens — `accept` (fix it) and `guard` (home it in something
      that executes) — both require touching the thing the row is *about*. A
@@ -557,16 +561,25 @@ they will otherwise be rediscovered:
      rule bars `wontfix` for anything adopter-reaching, so such a pass would
      **lengthen** this section, not drain it.
 
-**Inbound references — who points at these rows** *(re-derived 2026-08-04;
-the proposal's original "six artifacts, two of them archived" was wrong in both
-directions and is retracted)*. As of 2026-08-04: **3** archived plans and **3**
-archived proposals cite this section by name, and **30** commit bodies across
-the repository carry a `Follow-ups migrated to:` / `Dispositions:` block. The
-commit bodies dominate and are the **most immutable** record of all — no
-artifact-level enumeration reaches them. Consequence for anyone re-routing a row
-here: the closed-record set you might falsify is larger than the file tree
-suggests, which is why a row a closed artifact names is ineligible for `wontfix`
-without the Maintainer.
+**Inbound references — what could be falsified by re-routing a row** *(re-derived
+2026-08-04; the proposal's original "six artifacts, two of them archived" was
+wrong in both directions and is retracted)*. Two different questions, kept apart
+because conflating them is how the first enumeration went wrong:
+
+* **Artifacts naming *this section*, `as_of 2026-08-04`:** **1** archived plan
+  (`interpreter-trust-root-fallback`) and **3** archived proposals.
+  `lockfile-provenance-fields` is *not* one — its row is under `## Queued`
+  (`dev/PLANNING.md` > "Queued"), which is what the accepted Response promised to
+  drop and this line now does.
+* **Commit bodies carrying a migration/disposition block anywhere:** **37** by
+  `git log --all --grep='Follow-ups migrated to:\|Dispositions:'`; **30** if the
+  marker must start at column 0. Of these, **7** name this section and 13 name
+  `dev/PLANNING.md` at all. The method matters more than the number, so the
+  command is recorded rather than the figure alone.
+
+Commit bodies are the **most immutable** record of all and no artifact-level
+enumeration reaches them — which is the real reason a row a closed artifact names
+is ineligible for `wontfix` without the Maintainer.
 
 **Lifecycle apparatus**
 * **Lifecycle mutation/commit arm** — the typed-mutation ops (decision /
@@ -780,7 +793,8 @@ Every deferred follow-up named in the six plans that reached code review
 on 2026-08-04, homed here so they survive the archive. Produced by a per-
 plan census that verified each claimed home by opening it: 95 candidate
 items, 29 already homed, 38 judged fenced residuals rather than follow-
-ups, and the 28 below with no durable home at all. A plan does not archive
+ups, and the 28 below with no durable home at all (**27 as of 2026-08-04** —
+one was merged into its duplicate). A plan does not archive
 until its items here are landed -- that is this section's whole purpose.
 
 *From `byline-classification` (4):*
@@ -885,10 +899,13 @@ until its items here are landed -- that is this section's whole purpose.
   multi` from the mere presence of a root `CONTRIBUTING.md` and `solo`
   otherwise, so the engine's heuristic can read a project's declared axis
   back wrong. Named upgrade path: read the manifest's `optional_templates`
-  block instead of file presence. Reachable only on a first `upgrade
+  block instead of file presence. *Trigger (carried in from the merged
+  duplicate, 2026-08-04):* the next proposal touching
+  `bootstrap/_scaffold/upgrade.py`'s init-lock axis inference. Reachable only
+  on a first `upgrade
   --init-lock` in a tree with no committed `dev/.cairn/profile.yml`.
 
-*From `profile-parse-fail-open` (9):*
+*From `profile-parse-fail-open` (8, was 9 — one row merged 2026-08-04):*
 * **Profile key with an unrecognized *value*** *(residual from plan
   `profile-parse-fail-open`, G1)* — a profile listing `- not-a-real-
   module` under `modules:` is accepted at exit 0 and printed in the
@@ -959,11 +976,9 @@ nothing was dropped.)*
   retired, **or** the next supervised re-pin ceremony (SC4's "fold in")
   carries them with Maintainer assent.
 * **Gate-claims B2 — the archive-commit-body auditability claim is
-  falsified** (`doctrine/proposals.md:379` and `doctrine/plans.md:622`:
-  *"This makes the migration auditable from `git log` alone"*; re-pointed
-  2026-08-04 — `deferral-discipline`'s Chunk B `5c85274` moved the block
-  above these sentences without editing them, and both named checks passed
-  over the stale citation) — keep the
+  falsified** (`doctrine/proposals.md` > "Archive preconditions" and
+  `doctrine/plans.md` > "Lasting-truth migration doctrine":
+  *"This makes the migration auditable from `git log` alone"*) — keep the
   "must", name the trigger, correct the consequence claim; its own
   proposal, because the block is restated at `doctrine/lifecycle-
   contract.md:137` and `templates/core/dev/PLANNING.md:105`, which engages
