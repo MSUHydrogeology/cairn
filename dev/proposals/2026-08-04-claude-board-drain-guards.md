@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5
 **Date opened**: 2026-08-04
-**Status**: proposed
+**Status**: revised
 **Touches**: `bootstrap/tests/test_security_lint.py`, `bootstrap/tests/conftest.py`, `dev/PLANNING.md` > "Deferred follow-ups"
 **Related**: corrects the scope error in `2026-08-04-claude-board-retro-disposition` (archived); executes the `guard` token introduced by `2026-08-04-claude-deferral-discipline` (archived)
 **Plan review**: required(Internal) — writes assertions into an already-`FROZEN-MODIFIED` gate file
@@ -822,3 +822,156 @@ read."*
 
 Of the three assertions, one is one assertion, one is red before it is written,
 and one cannot be written in the vocabulary at all.
+
+---
+
+## Response -- Claude (Strategy) -- 2026-08-04
+
+**Model**: claude-opus-5
+
+Grammar: Proposal-Response. Eleven findings, accepted in full. The verdict is
+**SPLIT** and the split is taken: **all three Class A guards and the whole of
+Class B are removed from scope**, and the reviewer's bonus finding becomes the
+proposal.
+
+**[I1]** accept — *"`conftest.py` is not frozen"* is **false**, verified
+independently: it is one of **164** entries in `frozen_files`
+(`bootstrap/tests/fixtures/gate_manifest.json`). I inferred "not pinned" from
+"not listed as `FROZEN-MODIFIED`", which only means *unmodified*. Reading an
+absence of violation as an absence of a pin.
+
+**[I2]** accept — SC5's second assertion is **red before it is written**: the
+sole `ALLOWLIST` entry is stale (`link_check.py` no longer reaches `urlopen`).
+So SC5 was never a write-a-guard job; it is a remove-a-stale-entry job that edits
+`bootstrap/security_check.py` — the release-gate single source, `FROZEN-MODIFIED`,
+and **absent from this proposal's `Touches`**. Removed from scope.
+
+**[I3]** accept — SC3 as worded is **vacuous**: the registry is a subset of the
+manifest, so deleting the union is a pure no-op (76 targets either way, 10/10
+green). Only a re-specified claim is provable. Removed from scope; the board row
+is corrected instead, because the row's *own stated remedy* is the defect.
+
+**[I4]** accept — G6 is a session hook plus a skip *policy* over 91 skip sites,
+against a documented 3-skipped configuration, and `conftest.py` collects zero
+nodes so it could not satisfy `guard`'s `path::node` requirement anyway. Removed.
+
+**[I5]** accept — *"a `guard` whose node does not exist fails collection"* is
+**false**. That sentence was this proposal's claim to carry *"the first invariant
+in this lineage with a real mechanical enforcer."* It has none. **The eighth
+instance** of this lineage's failure mode, in the *same Author-accounting slot*
+where `deferral-discipline`'s [I1] caught the identical error twelve hours
+earlier. Retracted without replacement — no invariant here is mechanically
+enforced.
+
+**[I6]**, **[I7]**, **[I8]** accept — Class B is removed entirely. Its population
+was wrong (>=10 of the "~31 imported" are Cairn-native plan residuals), its
+central operation was undefined for **18 of 31** rows (no stated condition to
+check), and it re-opened what the predecessor's **landed Decision** explicitly
+declined to park. The Maintainer's quoted direction authorized the *focused*
+half; Class B was not it.
+
+**[I9]** accept — three history corrections. The predecessor was **accepted as
+revised**, not "withdrawn"; **[C4] is its code review**, not the review that
+produced the narrowing; and **[I3] noticed the SC3/SC5 text first**, so the
+Context section's account of who saw what is wrong.
+
+**[I10]**, **[I11]** accept — both moot under the revised scope (no board row
+leaves, so no forwarding entry is owed; the allowlist edit is out of scope).
+
+### The reviewer's bonus finding becomes the proposal
+
+<!-- claim-check-allow: bootstrap/tests/test_security_lint.py::test_thing -->
+<!-- ^ THE DEFECT, DEMONSTRATING ITSELF. This directive exists because the
+     token below -- the `guard` citation form that `doctrine/lifecycle.md`
+     mandates -- is hard-flagged by the very checker this proposal fixes. The
+     proposal describing the bug cannot be committed without working around the
+     bug. Delete this directive once R1 lands; it should then be unnecessary,
+     and that is R1's acceptance check. -->
+
+Reproduced independently: `python scripts/claim_check.py` over a file citing
+`bootstrap/tests/test_security_lint.py::test_thing` hard-flags it as *"cited path
+does not resolve"* and exits 1.
+
+`doctrine/lifecycle.md` > "Archive precondition", landed this morning, **requires**
+a `guard` to name its node as `path::node`. The checker rejects that form. So the
+token's mandated citation is **unwritable in any claim-checked file** — every
+proposal, plan and doc in the tree, and in every adopter tree, since
+`claim_check.py` ships. The tree is green today only because no real `guard` has
+ever been written; the first one fails the gate.
+
+That is a defect in something that shipped hours ago, it blocks the token from
+ever being used, and it outranks draining any board row.
+
+**Maintainer direction, 2026-08-04**, choosing this scope over two larger
+options: *"Checker fix + board corrections"* — ship the checker fix with the full
+arc, correct the three board rows whose stated remedies are now known wrong, and
+write no new guard.
+
+---
+
+## Revised proposal
+
+**Status**: revised
+
+**Restated:** *Make the `guard` token's mandated citation form writable, and
+correct three board rows that prescribe the wrong remedy.*
+
+### R1 — `claim_check` accepts `path::node`
+
+`scripts/claim_check.py` already strips a `:N` / `:N-M` line-bounds suffix before
+resolving (`_token_path_part`). Add the parallel case: a token containing `::`
+resolves on its **path part only**. The node half is not verified — a static
+checker cannot collect, and claiming otherwise would be a ninth instance.
+
+**Twin discipline:** `templates/modules/default-on/claim_check.py` is
+**byte-identical** (verified by `cmp`). Both copies move in one commit.
+
+### R2 — tests, mutation-proven
+
+In `bootstrap/tests/test_claim_check_module.py`:
+
+* `path::node` where the path **exists** → no flag.
+* `path::node` where the path **does not** exist → still flagged (the fix must
+  not become a bypass — this is the assertion that matters).
+* the existing `:N` line-bounds behaviour is unchanged.
+
+Each mutation-proven: revert the fix, confirm assertion 1 fails; weaken the fix
+to strip everything after any `:`, confirm assertion 3 fails.
+
+### R3 — correct the three board rows
+
+Each row's *own text* prescribes a remedy now known to be wrong. Leaving that
+uncorrected is what caused this proposal's error, and would cause the next
+reader's.
+
+| Row | Correction |
+|---|---|
+| **SC3** | "the guard is one assertion" → the union assertion is **vacuous** (registry is a subset of the manifest); name the provable claim instead |
+| **SC5** | "two assertions" → the entry is **already stale**; this is a `security_check.py` edit, not a guard |
+| **G6** | "one assertion" → a session hook + skip policy over 91 sites, against a documented 3-skipped config |
+
+### Explicitly not in scope
+
+* **Writing any guard.** All three Class A rows removed per [I2]–[I4].
+* **Class B**, entirely, per [I6]–[I8].
+* **Removing the stale `ALLOWLIST` entry** — real, but it edits the release-gate
+  single source and belongs to whoever owns that surface.
+
+### Documentation / doctrine surface
+
+**No doctrine change.** The `path::node` requirement is **correct as written** —
+naming the node is what makes a `guard` verifiable. The defect is in the checker,
+not the rule, so the rule does not move.
+
+### Author-accounting — corrected
+
+* **Invariants.** (1) *The fix does not become a bypass* — a `path::node` whose
+  path is absent is still flagged. **Enforcer: R2's second assertion**, a real
+  mechanical enforcer stated at exactly the strength it delivers: it guards the
+  path half and nothing about the node half.
+* **Failure modes.** An over-broad split (stripping at the first `:`) would
+  swallow line-bounds citations — fails **open**, which R2's third assertion pins.
+* **Known omissions.** **The node half is never verified.** A `guard` may cite a
+  node that does not exist and nothing notices. That is the honest limit of a
+  static checker, and it means `guard`'s enforcement is weaker than the parent
+  proposal implied.
