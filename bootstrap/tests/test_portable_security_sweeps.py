@@ -13,8 +13,11 @@ Run from the cairn repo root:
 """
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
+import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -63,6 +66,134 @@ def load_runner(path: Path | None = None):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+_ADMISSIONS_LINE = (
+    "_ADMITTED_ARTIFACTS: dict[tuple[str, str, str], Admission] = {}"
+)
+
+
+def platform_triple(version: str) -> tuple[str, str, str]:
+    import platform  # noqa: PLC0415
+    return (version, platform.system().lower(), platform.machine().lower())
+
+
+def runner_copy(tmp_path: Path, admissions: dict | None = None) -> Path:
+    """A copy of the shipped runner in *tmp_path*, optionally with the
+    admitted-artifact block replaced.
+
+    Editing that block **is** the admission path -- it is a reviewed source
+    change by construction, which is why a test that needs an admitted version
+    edits a copy of the source rather than reaching a policy, an environment
+    variable or a flag.  The shipped file is never touched; a node below
+    asserts that."""
+    text = RUNNER_SRC.read_text(encoding="utf-8")
+    assert text.count(_ADMISSIONS_LINE) == 1
+    if admissions:
+        entries = ", ".join(
+            f'({k[0]!r}, {k[1]!r}, {k[2]!r}): Admission({v[0]!r}, {v[1]!r})'
+            for k, v in admissions.items()
+        )
+        text = text.replace(
+            _ADMISSIONS_LINE,
+            "_ADMITTED_ARTIFACTS: dict[tuple[str, str, str], Admission] = "
+            "{%s}" % entries,
+        )
+    dest_dir = tmp_path / "runner"
+    dest_dir.mkdir(exist_ok=True)
+    dest = dest_dir / RUNNER_SRC.name
+    dest.write_text(text, encoding="utf-8")
+    (dest_dir / POLICY_SRC.name).write_text(
+        POLICY_SRC.read_text(encoding="utf-8"), encoding="utf-8"
+    )
+    return dest
+
+
+def fake_tool(
+    path: Path,
+    *,
+    version: str = "8.30.1",
+    version_rc: int = 0,
+    log: Path | None = None,
+    scan_rc: int = 0,
+    mutate_self_on_version: bool = False,
+    extra: str = "",
+) -> Path:
+    """A fake adapter that records exactly what it received.
+
+    The oracle is the *log this tool writes*, never anything the runner
+    computes.  The shebang is an absolute interpreter path on purpose: the
+    child ``PATH`` the runner builds contains no ``/usr/bin``, so a
+    ``#!/usr/bin/env python3`` shebang would not resolve."""
+    body = f'''#!{sys.executable}
+import json, os, sys
+LOG = {str(log) if log is None else repr(str(log))}
+def record(kind):
+    if LOG is None:
+        return
+    with open(LOG, "a", encoding="utf-8") as fh:
+        probe = []
+        for part in os.environ.get("PATH", "").split(os.pathsep):
+            try:
+                probe.append([part, sorted(os.listdir(part))])
+            except OSError:
+                probe.append([part, None])
+        fh.write(json.dumps({{"kind": kind, "argv": sys.argv[1:],
+                              "env": dict(os.environ),
+                              "path_probe": probe,
+                              "cwd": os.getcwd()}}) + "\\n")
+if "--version" in sys.argv[1:]:
+    record("version")
+    if {mutate_self_on_version!r}:
+        with open(__file__, "a", encoding="utf-8") as fh:
+            fh.write("# swapped between validation and invocation\\n")
+    sys.stdout.write({version!r} + "\\n")
+    raise SystemExit({version_rc!r})
+record("scan")
+{extra}
+raise SystemExit({scan_rc!r})
+'''
+    path.write_text(body, encoding="utf-8")
+    path.chmod(0o755)
+    return path
+
+
+def read_log(log: Path) -> list[dict]:
+    if not log.exists():
+        return []
+    return [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()
+            if line.strip()]
+
+
+def run_runner(
+    runner: Path, target: Path, *, path_env: str, extra_argv: list[str] | None = None,
+    expect_json: bool = True,
+) -> tuple[int, dict, str]:
+    argv = [sys.executable, str(runner), "--target", str(target)]
+    argv += extra_argv if extra_argv is not None else ["--json"]
+    proc = subprocess.run(
+        argv, capture_output=True, text=True, timeout=180,
+        env={"PATH": path_env, "HOME": str(target), "LC_ALL": "C",
+             "PYTHONDONTWRITEBYTECODE": "1"},
+    )
+    payload: dict = {}
+    if expect_json and proc.stdout.strip():
+        payload = json.loads(proc.stdout)
+    return proc.returncode, payload, proc.stdout + proc.stderr
+
+
+def leg(summary: dict, name: str) -> dict:
+    matches = [item for item in summary["legs"] if item["leg"] == name]
+    assert matches, f"no {name!r} leg in {[i['leg'] for i in summary['legs']]}"
+    return matches[0]
+
+
+@pytest.fixture()
+def sweep_target(tmp_path: Path) -> Path:
+    target = tmp_path / "candidate"
+    target.mkdir()
+    (target / "README.md").write_text("hello\n", encoding="utf-8")
+    return target
 
 
 def _profile(tmp_path: Path, modules: list[str]) -> Path:
@@ -356,3 +487,223 @@ def test_the_shipped_admitted_artifact_set_is_empty_until_a_record_exists() -> N
     means reduced-provenance-only -- honest INCOMPLETE, never CLEAN."""
     runner = load_runner()
     assert runner._ADMITTED_ARTIFACTS == {}
+
+
+# --- B6: the executable trust boundary ---------------------------------------
+
+def test_absent_gitleaks_is_incomplete_not_clean(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """The plan's canonical "did not run must not read as clean" node: with no
+    adapter anywhere on the child path the aggregate is **5**, and the report
+    names the absence."""
+    runner = runner_copy(tmp_path)
+    empty = tmp_path / "nobin"
+    empty.mkdir()
+    rc, summary, out = run_runner(runner, sweep_target, path_env=str(empty))
+    assert rc == 5, out
+    assert summary["result"] == 5
+    assert summary["mode"] is None
+    reason = leg(summary, "adapter")["reason"]
+    assert "gitleaks" in reason and "not found" in reason, reason
+
+
+def test_absent_git_is_incomplete_for_the_history_leg(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """The adapter is present and Git is not: the history question is
+    INCOMPLETE, never optional-and-clean."""
+    bindir = tmp_path / "bin"
+    bindir.mkdir()
+    log = tmp_path / "log.jsonl"
+    fake_tool(bindir / "gitleaks", log=log)
+    runner = runner_copy(tmp_path)
+    rc, summary, out = run_runner(runner, sweep_target, path_env=str(bindir))
+    assert rc == 5, out
+    history = leg(summary, "history")
+    assert history["result"] == 5 and history["status"] == "INCOMPLETE"
+    assert "git" in history["reason"].lower()
+
+
+def test_a_repo_local_executable_is_refused(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """An executable planted **inside** the tree under check, first on the
+    child path, is refused: the candidate tree may not choose the executable."""
+    fake_tool(sweep_target / "gitleaks", log=tmp_path / "log.jsonl")
+    runner = runner_copy(tmp_path)
+    rc, summary, out = run_runner(runner, sweep_target, path_env=str(sweep_target))
+    assert rc == 20, out
+    reason = leg(summary, "adapter")["reason"]
+    assert "inside the tree under check" in reason, reason
+    assert read_log(tmp_path / "log.jsonl") == [], "the planted binary was invoked"
+
+
+def test_a_symlink_resolving_into_the_repo_is_refused(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """The case the lexical check alone lets through: a symlink **outside** the
+    tree whose target resolves **inside** it."""
+    inner = sweep_target / "tools"
+    inner.mkdir()
+    fake_tool(inner / "gitleaks-real", log=tmp_path / "log.jsonl")
+    bindir = tmp_path / "bin"
+    bindir.mkdir()
+    (bindir / "gitleaks").symlink_to(inner / "gitleaks-real")
+    runner = runner_copy(tmp_path)
+    rc, summary, out = run_runner(runner, sweep_target, path_env=str(bindir))
+    assert rc == 20, out
+    reason = leg(summary, "adapter")["reason"]
+    assert "resolved path" in reason and "inside the tree under check" in reason
+    assert read_log(tmp_path / "log.jsonl") == []
+
+
+def test_a_package_manager_symlink_outside_the_repo_is_accepted_and_both_paths_recorded(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """The over-refusal guard.  A legitimate package-manager symlink -- both
+    paths outside the tree -- is accepted, and both are recorded.  Over-refusal
+    is the failure mode that gets a security control switched off."""
+    cellar = tmp_path / "cellar"
+    cellar.mkdir()
+    real = fake_tool(cellar / "gitleaks-8.30.1", log=tmp_path / "log.jsonl")
+    bindir = tmp_path / "bin"
+    bindir.mkdir()
+    (bindir / "gitleaks").symlink_to(real)
+    runner = runner_copy(tmp_path)
+    rc, summary, out = run_runner(runner, sweep_target, path_env=str(bindir))
+    assert rc != 20, out
+    facts = summary["adapter_facts"]
+    assert facts["adapter_lexical"] == str(bindir / "gitleaks")
+    assert facts["adapter_resolved"] == str(real)
+    assert facts["adapter_lexical"] != facts["adapter_resolved"]
+
+
+def test_a_non_executable_file_is_degraded(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    bindir = tmp_path / "bin"
+    bindir.mkdir()
+    tool = fake_tool(bindir / "gitleaks")
+    tool.chmod(0o644)
+    runner = runner_copy(tmp_path)
+    rc, summary, out = run_runner(runner, sweep_target, path_env=str(bindir))
+    # shutil.which() itself screens on the executable bit, so the observable is
+    # a refusal either way; what this node pins is that it is NOT clean and NOT
+    # a silent skip.
+    assert rc in (5, 20), out
+    assert summary["result"] != 0
+    assert summary["mode"] is None
+
+
+def test_a_version_command_failure_is_degraded_not_incomplete(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """*Absent* is 5; *present but unsound* is 20.  The distinction is the
+    contract, so a failing ``--version`` must not borrow the absence code."""
+    bindir = tmp_path / "bin"
+    bindir.mkdir()
+    fake_tool(bindir / "gitleaks", version_rc=3, log=tmp_path / "log.jsonl")
+    runner = runner_copy(tmp_path)
+    rc, summary, out = run_runner(runner, sweep_target, path_env=str(bindir))
+    assert rc == 20, out
+    assert "present but unsound" in leg(summary, "adapter")["reason"]
+
+
+def test_path_drift_between_validation_and_invocation_is_degraded(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """The fake adapter rewrites itself during the ``--version`` probe, so the
+    binary validated is not the binary about to be invoked."""
+    bindir = tmp_path / "bin"
+    bindir.mkdir()
+    log = tmp_path / "log.jsonl"
+    fake_tool(bindir / "gitleaks", log=log, mutate_self_on_version=True)
+    runner = runner_copy(tmp_path)
+    rc, summary, out = run_runner(runner, sweep_target, path_env=str(bindir))
+    assert rc == 20, out
+    reasons = " ".join(item["reason"] for item in summary["legs"])
+    assert "drifted between validation and invocation" in reasons, reasons
+    assert [entry["kind"] for entry in read_log(log)] == ["version"], (
+        "a scan leg ran against a binary that had drifted"
+    )
+
+
+def test_reduced_mode_child_path_is_an_empty_off_tree_directory(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """The node that proves reduced mode **cannot reach Git**: its child
+    ``PATH`` is a single empty directory outside the tree under check."""
+    bindir = tmp_path / "bin"
+    bindir.mkdir()
+    log = tmp_path / "log.jsonl"
+    fake_tool(bindir / "gitleaks", log=log)
+    # git IS resolvable here, so the empty PATH is a choice, not an accident.
+    (bindir / "git").symlink_to(fake_tool(bindir / "git-real", log=log))
+    runner = runner_copy(tmp_path)
+    rc, summary, out = run_runner(runner, sweep_target, path_env=str(bindir))
+    assert summary["mode"] == "reduced", out
+    scans = [entry for entry in read_log(log) if entry["kind"] == "scan"]
+    assert scans, "the current-tree leg did not run"
+    child_path = scans[0]["env"]["PATH"]
+    assert os.pathsep not in child_path, child_path
+    # The oracle is what the child observed, recorded by the fake tool at
+    # invocation time -- the directory is a per-run temporary and is gone by
+    # the time this assertion runs.
+    probe = scans[0]["path_probe"]
+    assert probe == [[child_path, []]], probe
+    assert not child_path.startswith(str(sweep_target.resolve())), (
+        "the child PATH dir is inside the tree under check"
+    )
+    assert rc != 0
+
+
+def test_full_mode_child_path_contains_only_the_verified_git_directory(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """Full mode gets the verified Git directory and nothing else -- never the
+    inherited path."""
+    bindir = tmp_path / "bin"
+    bindir.mkdir()
+    gitdir = tmp_path / "gitbin"
+    gitdir.mkdir()
+    log = tmp_path / "log.jsonl"
+    adapter = fake_tool(bindir / "gitleaks", log=log)
+    fake_tool(gitdir / "git", log=log)
+    digest = hashlib.sha256(adapter.read_bytes()).hexdigest()
+    runner = runner_copy(tmp_path, {
+        platform_triple("8.30.1"): (digest, "GL-8.30.1-test"),
+    })
+    rc, summary, out = run_runner(
+        runner, sweep_target,
+        path_env=os.pathsep.join([str(bindir), str(gitdir)]),
+    )
+    assert summary["mode"] == "full", out
+    scans = [entry for entry in read_log(log) if entry["kind"] == "scan"]
+    assert scans, "no scan leg ran in full mode"
+    assert scans[0]["env"]["PATH"] == str(gitdir), scans[0]["env"]["PATH"]
+    assert str(bindir) not in scans[0]["env"]["PATH"]
+    assert rc != 0  # the output contract is not validated until Chunk D
+
+
+def test_the_shipped_runner_is_never_mutated_by_a_test(tmp_path: Path) -> None:
+    """The admission path is a source edit, and the tests exercise it by
+    editing a **copy**.  This node pins that the shipped file is byte-identical
+    across a copy-with-admissions -- a content snapshot, not `git status`,
+    because a legitimately-modified working tree is not the property at issue."""
+    before = RUNNER_SRC.read_bytes()
+    copied = runner_copy(tmp_path, {platform_triple("8.30.1"): ("a" * 64, "x")})
+    assert RUNNER_SRC.read_bytes() == before, "the shipped runner was mutated"
+    assert copied.read_bytes() != before, "the copy carries no admission"
+
+
+def test_the_trust_roots_are_enumerated_not_generalized() -> None:
+    """The doctrine must name the two host executables as a list a reader can
+    audit, and must say plainly that this is shape and containment validation
+    rather than provenance."""
+    runner = load_runner()
+    assert runner.TRUST_ROOTS == ("gitleaks", "git")
+    doctrine = DOCTRINE_SRC.read_text(encoding="utf-8")
+    assert "`gitleaks`" in doctrine and "`git`" in doctrine
+    assert "shape and containment" in doctrine
+    assert "not provenance" in doctrine or "never for provenance" in doctrine

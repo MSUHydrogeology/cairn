@@ -39,10 +39,15 @@ is deliberately **no** ``subprocess`` import in this file at that commit.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
 import platform
 import re
+import shutil
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any, NamedTuple
 
@@ -374,16 +379,207 @@ def _escape(value: Any) -> str:
     return json.dumps(value, ensure_ascii=True, sort_keys=True)
 
 
-def _adapter_seam(_context: dict[str, Any]) -> LegOutcome:
-    """The adapter-execution seam.
+# --- the executable trust boundary -------------------------------------------
+#: The complete set of host executables this module trusts.  Enumerated rather
+#: than generalized, so a reader can audit it: the adapter, and Git -- which the
+#: runner invokes for the pre-execution configuration screen and which the
+#: adapter invokes **transitively** for the history leg.
+TRUST_ROOTS = ("gitleaks", "git")
 
-    Chunk A ships this file with **no** ``subprocess`` import: the executable
-    trust boundary is not yet in the tree, so the honest answer is INCOMPLETE
-    with a named reason.  It is never CLEAN."""
-    return LegOutcome(
-        "adapter", _AGG_INCOMPLETE, "INCOMPLETE",
-        "adapter execution not yet enabled",
-    )
+#: Cap on the bytes hashed when digesting a resolved executable.
+_DIGEST_MAX_BYTES = 512 * 1024 * 1024
+_DIGEST_CHUNK = 1024 * 1024
+
+#: Outer deadlines.  The adapter's own ``--timeout`` is set strictly shorter
+#: than the outer scan deadline: equal deadlines make the inner timeout
+#: unobservable.
+_VERSION_TIMEOUT = 30
+_SCAN_TIMEOUT = 900
+_ADAPTER_TIMEOUT = _SCAN_TIMEOUT - 60
+_SCREEN_TIMEOUT = 60
+
+
+class MissingExecutable(Exception):
+    """The executable is not on the trusted host path.  **INCOMPLETE (5)** --
+    absence is never clean, and it is never DEGRADED either: *absent* versus
+    *present but unsound* is the contract."""
+
+
+class Degraded(Exception):
+    """A refusal, or a result the runner cannot trust.  **DEGRADED (20)**."""
+
+
+class Resolved(NamedTuple):
+    name: str
+    lexical: str
+    resolved: str
+    directory: str
+    digest: str
+
+
+def _is_inside(candidate: str, root: str) -> bool:
+    try:
+        return os.path.commonpath([candidate, root]) == root
+    except ValueError:  # different roots, or relative-vs-absolute
+        return False
+
+
+def file_digest(path: str) -> str:
+    """SHA-256 of *path*, streamed and bounded.  A file larger than the cap is
+    a refusal, never a truncated hash."""
+    digest = hashlib.sha256()
+    read = 0
+    with open(path, "rb") as handle:
+        while True:
+            chunk = handle.read(_DIGEST_CHUNK)
+            if not chunk:
+                break
+            read += len(chunk)
+            if read > _DIGEST_MAX_BYTES:
+                raise Degraded(
+                    f"executable {path!r} exceeds {_DIGEST_MAX_BYTES} bytes; "
+                    f"refusing rather than hashing a prefix"
+                )
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def resolve_executable(name: str, target: Path, path_env: str | None) -> Resolved:
+    """Resolve *name* from the **trusted host environment** and validate its
+    shape and containment.
+
+    Validated: absolute; a regular file; the executable bit set; and **neither
+    the lexical nor the resolved path inside the tree under check**.  A
+    package-manager symlink is fine when both paths are outside; a symlink
+    whose target resolves into the candidate tree is refused -- exactly the case
+    the lexical check alone lets through.
+
+    This is **shape and containment validation, not provenance**."""
+    found = shutil.which(name, path=path_env)
+    if not found:
+        raise MissingExecutable(
+            f"{name!r} was not found on the trusted host path; the scan did "
+            f"not run"
+        )
+    lexical = os.path.abspath(found)
+    resolved = os.path.realpath(lexical)
+    roots = {os.path.realpath(str(target)), os.path.abspath(str(target))}
+    for label, candidate in (("lexical", lexical), ("resolved", resolved)):
+        if not os.path.isabs(candidate):
+            raise Degraded(f"{name!r} {label} path is not absolute: {candidate!r}")
+        for root in roots:
+            if _is_inside(candidate, root):
+                raise Degraded(
+                    f"{name!r} {label} path {candidate!r} is inside the tree "
+                    f"under check ({root!r}); the candidate tree may not "
+                    f"choose the executable"
+                )
+    if not os.path.isfile(resolved):
+        raise Degraded(
+            f"{name!r} resolves to {resolved!r}, which is not a regular file"
+        )
+    if not os.access(resolved, os.X_OK):
+        raise Degraded(f"{name!r} at {resolved!r} carries no executable bit")
+    return Resolved(name, lexical, resolved, os.path.dirname(resolved),
+                    file_digest(resolved))
+
+
+def revalidate(exe: Resolved, target: Path) -> None:
+    """Re-validate immediately before invocation.
+
+    The accepted residual is a **same-user race on a trusted checkout** between
+    this moment and ``exec``, not a containment claim -- and it is narrower than
+    the residual it replaces, because a swapped binary must also reproduce a
+    measured digest."""
+    again = resolve_executable(exe.name, target, os.path.dirname(exe.lexical))
+    if again.resolved != exe.resolved:
+        raise Degraded(
+            f"{exe.name!r} path drifted between validation and invocation: "
+            f"{exe.resolved!r} -> {again.resolved!r}"
+        )
+    if again.digest != exe.digest:
+        raise Degraded(
+            f"{exe.name!r} content drifted between validation and invocation: "
+            f"{exe.digest[:12]}... -> {again.digest[:12]}..."
+        )
+
+
+def probe_version(exe: Resolved, env: dict[str, str]) -> str:
+    """Record the adapter's ``--version`` output.
+
+    A ``--version`` that fails, times out or emits nothing is **present but
+    unsound**: DEGRADED (20), not INCOMPLETE."""
+    try:
+        proc = subprocess.run(
+            [exe.resolved, "--version"], capture_output=True, env=env,
+            timeout=_VERSION_TIMEOUT, check=False,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise Degraded(f"{exe.name!r} --version could not be run: {exc}") from None
+    if proc.returncode != 0:
+        raise Degraded(
+            f"{exe.name!r} --version exited {proc.returncode}; the adapter is "
+            f"present but unsound"
+        )
+    try:
+        text = proc.stdout.decode("utf-8")
+    except UnicodeDecodeError:
+        raise Degraded(f"{exe.name!r} --version output is not valid UTF-8") from None
+    first = text.splitlines()[0].strip() if text.strip() else ""
+    if not first:
+        raise Degraded(f"{exe.name!r} --version emitted nothing")
+    return first
+
+
+def child_env(mode: str, git: Resolved | None, empty_dir: str) -> dict[str, str]:
+    """Build the child environment from an **allowlist**, never a denylist.
+
+    **Full mode** gets a minimal ``PATH`` containing *only* the verified Git
+    directory -- the adapter needs Git for the history leg and nothing else.
+    **Reduced mode** gets an **off-tree empty directory**, so Git is neither
+    resolved nor reachable: that is what makes reduced mode structurally unable
+    to answer the history question rather than merely declining to."""
+    if mode == "full" and git is not None:
+        path = git.directory
+    else:
+        path = empty_dir
+    return {
+        "PATH": path,
+        "HOME": empty_dir,
+        "LC_ALL": "C",
+        "TZ": "UTC",
+    }
+
+
+def _adapter_seam(context: dict[str, Any]) -> list[LegOutcome]:
+    """Execute the adapter's legs.
+
+    Chunk B lands the execution boundary; the **output contract** -- parsing,
+    validation, escaping, the aggregate -- lands in Chunk D, so a leg that runs
+    reports INCOMPLETE with a named reason until then.  It is never CLEAN."""
+    exe: Resolved = context["adapter"]
+    target: Path = context["target"]
+    env: dict[str, str] = context["env"]
+    legs: list[LegOutcome] = []
+    for leg, argv in context["legs"]:
+        try:
+            revalidate(exe, target)
+        except Degraded as exc:
+            legs.append(LegOutcome(leg, _AGG_DEGRADED, "DEGRADED", str(exc)))
+            continue
+        try:
+            subprocess.run(argv, capture_output=True, env=env,
+                           cwd=context["cwd"], timeout=_SCAN_TIMEOUT,
+                           check=False)
+        except (OSError, subprocess.SubprocessError) as exc:
+            legs.append(LegOutcome(leg, _AGG_DEGRADED, "DEGRADED",
+                                   f"adapter invocation failed: {exc}"))
+            continue
+        legs.append(LegOutcome(
+            leg, _AGG_INCOMPLETE, "INCOMPLETE",
+            "adapter output contract not yet validated",
+        ))
+    return legs
 
 
 def summarize(
@@ -447,6 +643,10 @@ def render_report(summary: dict[str, Any]) -> str:
         f"[portable] target={_escape(summary['target'])}",
         f"[portable] mode-reason: {_escape(summary['mode_reason'])}",
     ]
+    for name in sorted(summary["adapter_facts"]):
+        lines.append(
+            f"[portable] fact {name}={_escape(summary['adapter_facts'][name])}"
+        )
     for leg in summary["legs"]:
         status = leg["status"]
         result = "n/a" if leg["result"] is None else str(leg["result"])
@@ -515,24 +715,123 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _leg_argv(exe: Resolved, leg: str, target: Path) -> list[str]:
+    """The runner-owned argv for one leg.  Chunk C hardens it; the policy
+    contributes **no** argv element, ever."""
+    subcommand = "dir" if leg == "current-tree" else "git"
+    return [exe.resolved, subcommand, str(target)]
+
+
 def run_sweep(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
-    """The ordinary sweep.  Policy refusal precedes every side effect."""
+    """The ordinary sweep, in the order the contract requires.
+
+    Policy refusal precedes every side effect.  Executable resolution and
+    containment precede any execution.  The identifying ``--version`` probe is
+    the only adapter invocation that precedes mode selection; **no scan leg
+    runs** until a mode is selected."""
     target = Path(args.target).resolve()
     policy_path = (
         Path(args.policy).resolve() if args.policy else _default_policy_path()
     )
+    facts: dict[str, Any] = {}
+
+    # 1. Policy -- before any executable is resolved and before any temporary
+    #    file is materialized.
     try:
         load_policy(policy_path)
     except PolicyError as exc:
         legs = [LegOutcome("policy", _AGG_DEGRADED, "DEGRADED", str(exc))]
         return _AGG_DEGRADED, summarize(
-            target, policy_path, legs, None, "policy refused before any side effect"
+            target, policy_path, legs, None,
+            "policy refused before any side effect", facts,
         )
-    outcome = _adapter_seam({"target": target})
-    summary = summarize(
-        target, policy_path, [outcome], None,
-        "mode selection is not reachable until the adapter seam executes",
-    )
+
+    # 2. The two trust roots -- resolution and containment only, no execution.
+    try:
+        adapter = resolve_executable("gitleaks", target, os.environ.get("PATH"))
+    except MissingExecutable as exc:
+        legs = [LegOutcome("adapter", _AGG_INCOMPLETE, "INCOMPLETE", str(exc))]
+        return _AGG_INCOMPLETE, summarize(
+            target, policy_path, legs, None,
+            "the adapter is absent; absence is never clean", facts,
+        )
+    except Degraded as exc:
+        legs = [LegOutcome("adapter", _AGG_DEGRADED, "DEGRADED", str(exc))]
+        return _AGG_DEGRADED, summarize(
+            target, policy_path, legs, None,
+            "the adapter failed shape or containment validation", facts,
+        )
+    facts["adapter_lexical"] = adapter.lexical
+    facts["adapter_resolved"] = adapter.resolved
+    facts["adapter_digest"] = adapter.digest
+
+    git: Resolved | None = None
+    git_reason = ""
+    try:
+        git = resolve_executable("git", target, os.environ.get("PATH"))
+        facts["git_lexical"] = git.lexical
+        facts["git_resolved"] = git.resolved
+    except MissingExecutable as exc:
+        git_reason = str(exc)
+    except Degraded as exc:
+        legs = [LegOutcome("git", _AGG_DEGRADED, "DEGRADED", str(exc))]
+        return _AGG_DEGRADED, summarize(
+            target, policy_path, legs, None,
+            "the transitive Git trust root failed validation", facts,
+        )
+
+    with tempfile.TemporaryDirectory(prefix="cairn-portable-") as workdir:
+        empty_dir = os.path.join(workdir, "empty")
+        os.mkdir(empty_dir)
+
+        # 3. The identifying probe, then the digest gate and mode selection.
+        probe_environment = child_env("reduced", None, empty_dir)
+        try:
+            version_text = probe_version(adapter, probe_environment)
+        except Degraded as exc:
+            legs = [LegOutcome("adapter", _AGG_DEGRADED, "DEGRADED", str(exc))]
+            return _AGG_DEGRADED, summarize(
+                target, policy_path, legs, None,
+                "the adapter is present but unsound", facts,
+            )
+        facts["adapter_version_output"] = version_text
+
+        choice = select_mode(version_text, adapter.digest, platform_key())
+        if choice.mode is None:
+            status = "DEGRADED" if choice.result == _AGG_DEGRADED else "INCOMPLETE"
+            legs = [LegOutcome("adapter", choice.result, status, choice.reason)]
+            return choice.result, summarize(
+                target, policy_path, legs, None, choice.reason, facts,
+            )
+
+        # 4. The legs.  Reduced mode cannot reach Git, so it asks only the
+        #    current-tree question and reports the history question INCOMPLETE.
+        environment = child_env(choice.mode, git, empty_dir)
+        facts["child_path"] = environment["PATH"]
+        facts["empty_path_dir"] = empty_dir
+        legs_to_run = [("current-tree", _leg_argv(adapter, "current-tree", target))]
+        pending: list[LegOutcome] = []
+        if choice.mode == "full" and git is not None:
+            legs_to_run.append(("history", _leg_argv(adapter, "history", target)))
+        elif git is None:
+            pending.append(LegOutcome(
+                "history", _AGG_INCOMPLETE, "INCOMPLETE",
+                git_reason or "git is absent; the history question was not asked",
+            ))
+        else:
+            pending.append(LegOutcome(
+                "history", _AGG_INCOMPLETE, "INCOMPLETE",
+                "reduced provenance: Git is unreachable from the child "
+                "environment, so the history question was not asked",
+            ))
+        outcomes = _adapter_seam({
+            "adapter": adapter, "target": target, "env": environment,
+            "cwd": workdir, "legs": legs_to_run,
+        })
+        summary = summarize(
+            target, policy_path, outcomes + pending, choice.mode,
+            choice.reason, facts,
+        )
     return summary["result"], summary
 
 
