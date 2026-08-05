@@ -776,3 +776,86 @@ proposal. Not touched here.** Three interactions, recorded rather than acted on:
   plan -- an unstarted chunk with a full spec, not a deferral -- and the
   gate-anchor publication gap recorded earlier in this file was homed in both
   required places at `8124add`.
+
+## Code review -- Codex (External Security Review) -- 2026-08-05
+
+**Verdict: REVISE.** I reviewed implemented Chunks A--F through the real
+release-mode pytest path and production helpers. Bandit report validation and
+the single blocking predicate close S1/S2 as designed. Three implementation
+gaps remain, including two false-pass paths.
+
+### [CR1] HIGH -- ignored repository files can execute during a “clean commit” run and override its verdict
+
+The state check uses `git status --porcelain --untracked-files=all`, which does
+not report ignored files. The later phases execute and discover files from the
+working tree. I created a committed fixture with Cairn's real release conftest
+and a skipped test, ignored a root `conftest.py` through `.git/info/exclude`,
+and made that plugin set `session.exitstatus = 0` at `trylast`. The production
+preflight returned 0 and named the commit; the real release hook reported the
+skip, but the ignored plugin overrode it and `run_suite()` returned 0; the
+production postflight also returned 0. None of the executing plugin bytes were
+in the named commit.
+
+This is not merely the accepted statement that the command does not
+authenticate its own process. It contradicts Chunk A's reason for refusing
+untracked files: phase evidence must describe fetchable commit bytes. Ignored
+Python bytecode, pytest plugins/configuration, tests, and files reached by the
+on-disk scan globs remain outside that binding.
+
+Run the checking phases against a clean detached temporary worktree of the
+preflight commit, or establish an equivalently complete committed-input
+boundary. A finite denylist of pytest filenames is not enough: ignored `.pyc`
+and phase-specific discovery produce the same class of gap. Add a real-Git
+regression with the ignored `trylast` plugin above and require that it cannot
+change the phase result. Preserve the accepted residual accurately: host
+toolchain/process authentication remains out of scope; repository-local bytes
+outside the named commit do not.
+
+### [CR2] HIGH -- collection-time skips are invisible to the release outcome hook
+
+`pytest_runtest_logreport()` sees setup/call/teardown reports, but a module-level
+`pytest.importorskip()` produces a skipped **collection** report. I ran a
+fixture carrying the real conftest, one passing test, and one module that calls
+`pytest.importorskip()` at import. Under the exact release token pytest reported
+`1 passed, 1 skipped` and exited **0**, with no release refusal. The release
+command therefore accepts incomplete evidence despite Chunk C's “any actual
+skipped” contract.
+
+Record skipped collection reports through the appropriate pytest hook and feed
+them into the same refused-outcome set. Add real child-pytest cases for
+`pytest.importorskip()` and module-level `pytest.skip(...,
+allow_module_level=True)`, each paired with a passing test so pytest's no-tests
+exit cannot make the regression pass accidentally. The existing runtime-skip,
+xfail, xpass, and inactive-marker cases remain required.
+
+### [CR3] MEDIUM -- an unexpected phase exception aborts the remaining phases and postflight
+
+`main()` calls each phase without an exception boundary. Executing it with a
+first phase that raises `RuntimeError` produced the exception and the observed
+call list `['bandit']`: `check_cairn`, the suite, `quality_gate`, and postflight
+were never attempted. A malformed Bandit `errors` entry can currently reach
+this shape through the unvalidated `.get()` calls, and `run_check_cairn()` also
+does not catch launch `OSError`.
+
+Normalize an ordinary phase exception to a labelled non-zero phase result,
+continue the remaining repair-list phases, and always perform postflight.
+Interrupts should retain their normal semantics. Validate the Bandit `errors`
+entries used for rendering or render them without assuming a mapping. Add one
+main-path regression proving a raised phase still yields later phase calls and
+postflight, plus direct malformed-error and check-cairn launch cases.
+
+### Verification and bounds
+
+The focused security-check and security-lint suite passed: **98 passed, 3
+warnings** under `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13) with
+`PYTHONDONTWRITEBYTECODE=1`; this includes the real
+`security_check -> quality_gate -> pytest` nested path. A fresh AST launcher
+sweep classified the production pytest calls as the direct release-suite call,
+the variable-bound executable call in `scripts/quality_gate.py`, and
+`_gate_manifest.py`'s collection-only call; the additional direct call in the
+test fixture is evidence code, not a release launcher. I did not run the full
+suite or the release command end to end because the shared worktree carries
+concurrent content-scan edits, which preflight correctly refuses. Chunk G is
+not implemented and was not reviewed.
+
+This section is append-only once written.
