@@ -1,7 +1,7 @@
 # Plan: make the `guard` citation form writable
 
 **Source proposal**: [`dev/proposals/archive/2026-08-04-claude-board-drain-guards.md`](../proposals/archive/2026-08-04-claude-board-drain-guards.md)
-**Status**: executing
+**Status**: review
 **Plan review**: required(Internal) — ratified in the Decision (`78e8916`)
 **Last update**: 2026-08-04
 **Opened**: 2026-08-04
@@ -732,8 +732,8 @@ Supersedes the original Sequence. **One edit site, not two. Five files, not
 seven. B3 removed.**
 
 ```
-1. Chunk A -- R1 + R2: check_path_token in BOTH copies, with its tests  [pending]
-2. Chunk B -- R3: two board-row corrections + CHANGELOG                 [pending]
+1. Chunk A -- R1 + R2: check_path_token in BOTH copies, with its tests  [commit 48b05f1]
+2. Chunk B -- R3: two board-row corrections + CHANGELOG                 [commits f42db96, 5e10623]
 ```
 
 ### Chunk A (revised)
