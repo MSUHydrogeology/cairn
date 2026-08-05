@@ -90,16 +90,22 @@ RELEASE_GATE_VALUE = "1"
 #: Triaged-acceptable Bandit findings, keyed by (repo-relative file,
 #: test_id), each with a mandatory rationale. The single source of truth
 #: for both this release command and the dev gate.
-ALLOWLIST: dict[tuple[str, str], str] = {
-    ("templates/modules/team-gated/link_check.py", "B310"): (
-        "urllib.request.urlopen in link_check._probe_external is the OPT-IN "
-        "external-link probe (off unless --check-external) and is SSRF-guarded: "
-        "http(s)-only, manual redirects with per-hop host validation (is_global "
-        "allowlist; non-public IPs refused), and no proxy/auth/netrc handlers. "
-        "Cairn's own check_cairn composes this shipped tool, so the finding "
-        "lives here."
-    ),
-}
+#:
+#: **Self-retiring.** ``run_bandit`` fails closed on any key here that the
+#: scan does not actually report at blocking severity. A suppression that no
+#: longer suppresses anything is not harmless: it is a standing permission for
+#: a *future* finding at that (file, test_id), granted by a rationale written
+#: about code that has since changed, and nothing would say so. Rationale
+#: stays mandatory; liveness is an **additional** condition, not a substitute.
+#:
+#: Empty as of 2026-08-05: the sole entry
+#: (``templates/modules/team-gated/link_check.py``, ``B310``) was measured
+#: absent from the report -- Bandit 1.9.4 under Python 3.13.13 reports only
+#: LOW findings there -- and was deleted rather than left as a latch. Its
+#: rationale (the opt-in, SSRF-guarded external-link probe) is preserved in
+#: that module and in ``SECURITY.md``'s documented residual risks; it is not
+#: lost by the deletion.
+ALLOWLIST: dict[tuple[str, str], str] = {}
 
 
 # ===========================================================================
@@ -413,18 +419,45 @@ def run_bandit() -> int:
               "scanner never opened is not a file it found clean.\n" + detail,
               file=sys.stderr)
         return 1
+    results = report.get("results") or []
     blocking = [
         f"  [{f['test_id']} {f['issue_severity']}] {_rel(f['filename'])}:"
         f"{f['line_number']}  {f['issue_text']}"
-        for f in (report.get("results") or [])
+        for f in results
         if f.get("issue_severity") in _BLOCKING_SEVERITIES
         and (_rel(f["filename"]), str(f["test_id"])) not in ALLOWLIST
     ]
+    # Allowlist liveness. Derived from the **successfully parsed** report only
+    # -- every earlier fail-closed branch has already returned, so a partial or
+    # unreadable scan can never retire an entry by making its finding "absent".
+    #
+    # Blocking severity only, because that is the sole thing the allowlist
+    # filters: an entry whose finding Bandit reports at LOW suppresses nothing,
+    # and calling it live would be the fail-open this rule exists to close.
+    observed = {
+        (_rel(f["filename"]), str(f["test_id"]))
+        for f in results
+        if f.get("issue_severity") in _BLOCKING_SEVERITIES
+    }
+    stale = sorted(key for key in ALLOWLIST if key not in observed)
+    rc = 0
     if blocking:
         print("security_check: unallowlisted MEDIUM+ Bandit finding(s):\n"
               + "\n".join(blocking), file=sys.stderr)
-        return 1
-    print(f"security_check: Bandit clean over {len(targets)} shipped file(s).")
+        rc = 1
+    if stale:
+        print("security_check: ALLOWLIST entr(ies) the scan does not report at "
+              "MEDIUM+ -- fail closed. A suppression that suppresses nothing is "
+              "a standing permission for a future finding, granted by a "
+              "rationale written about code that has since changed. Delete "
+              "it:\n"
+              + "\n".join(f"  {path}  {test_id}" for path, test_id in stale),
+              file=sys.stderr)
+        rc = 1
+    if rc:
+        return rc
+    print(f"security_check: Bandit clean over {len(targets)} shipped file(s) "
+          f"({len(ALLOWLIST)} live allowlist entr(ies)).")
     return 0
 
 

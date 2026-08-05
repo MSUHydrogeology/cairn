@@ -670,6 +670,113 @@ def test_the_grandchild_is_clean_without_the_token(tmp_path, monkeypatch) -> Non
     assert security_check.run_quality_gate() == 0
 
 
+# ---------------------------------------------------------------------------
+# Chunk D -- the self-retiring allowlist
+#
+# The plan cell put these in ``test_security_lint.py``; that file carried
+# another session's uncommitted edit at implementation time, and a path-scoped
+# commit naming it would have taken their work under this message. Homed here
+# instead -- ``run_bandit()``'s liveness rule lives in ``security_check.py``,
+# which is this file's subject.
+# ---------------------------------------------------------------------------
+
+def _bandit_report(monkeypatch, results: list[dict]) -> None:
+    class _Proc:
+        returncode = 1 if results else 0
+        stdout = json.dumps({"errors": [], "results": results})
+        stderr = ""
+
+    monkeypatch.setattr(security_check.subprocess, "run",
+                        lambda *a, **k: _Proc())
+
+
+def _finding(rel: str, test_id: str, severity: str) -> dict:
+    return {"filename": str(CAIRN_ROOT / rel), "test_id": test_id,
+            "issue_severity": severity, "line_number": 1,
+            "issue_text": "fixture finding"}
+
+
+def test_a_live_allowlist_entry_passes(monkeypatch, capsys) -> None:
+    """Direction 1: the entry names a MEDIUM+ finding the scan reports, so the
+    suppression is doing work and the gate is clean."""
+    key = ("scripts/check_cairn.py", "B999")
+    monkeypatch.setattr(security_check, "ALLOWLIST", {key: "fixture rationale"})
+    _bandit_report(monkeypatch, [_finding(*key, "MEDIUM")])
+    assert security_check.run_bandit() == 0
+    assert "1 live allowlist entr" in capsys.readouterr().out
+
+
+def test_an_absent_allowlist_entry_fails_closed(monkeypatch, capsys) -> None:
+    """Direction 2, the one this chunk adds: the scan reports nothing at that
+    (file, test_id), so the entry is a standing permission for a future finding
+    and the gate refuses until it is deleted."""
+    key = ("scripts/check_cairn.py", "B999")
+    monkeypatch.setattr(security_check, "ALLOWLIST", {key: "fixture rationale"})
+    _bandit_report(monkeypatch, [])
+    assert security_check.run_bandit() == 1
+    err = capsys.readouterr().err
+    assert "does not report at MEDIUM+" in err
+    assert "scripts/check_cairn.py  B999" in err
+
+
+def test_an_entry_matched_only_at_low_severity_is_not_live(monkeypatch,
+                                                           capsys) -> None:
+    """The subtle half. An entry whose finding Bandit reports at LOW filters
+    nothing -- ``blocking`` never consults the allowlist below MEDIUM -- so
+    counting it live would be exactly the fail-open the rule closes."""
+    key = ("scripts/check_cairn.py", "B404")
+    monkeypatch.setattr(security_check, "ALLOWLIST", {key: "fixture rationale"})
+    _bandit_report(monkeypatch, [_finding(*key, "LOW")])
+    assert security_check.run_bandit() == 1
+    assert "does not report at MEDIUM+" in capsys.readouterr().err
+
+
+def test_liveness_never_derives_from_a_partially_scanned_report(monkeypatch,
+                                                                capsys) -> None:
+    """An unreadable target must not retire an entry by making its finding
+    'absent'. The ``errors`` branch returns first, so the refusal is the scan
+    error -- not a stale-entry verdict computed over a report that is missing
+    the file the entry names."""
+    key = ("scripts/check_cairn.py", "B999")
+    monkeypatch.setattr(security_check, "ALLOWLIST", {key: "fixture rationale"})
+
+    class _Proc:
+        returncode = 0
+        stdout = json.dumps({
+            "errors": [{"filename": "/gone.py", "reason": "No such file"}],
+            "results": [],
+        })
+        stderr = ""
+
+    monkeypatch.setattr(security_check.subprocess, "run",
+                        lambda *a, **k: _Proc())
+    assert security_check.run_bandit() == 1
+    err = capsys.readouterr().err
+    assert "could not scan" in err
+    assert "does not report at MEDIUM+" not in err
+
+
+def test_blocking_findings_and_stale_entries_are_reported_together(
+        monkeypatch, capsys) -> None:
+    """One run, a complete repair list -- the same posture as main()'s phases."""
+    stale = ("scripts/check_cairn.py", "B999")
+    monkeypatch.setattr(security_check, "ALLOWLIST", {stale: "fixture"})
+    _bandit_report(monkeypatch, [_finding("bootstrap/scaffold.py", "B888",
+                                          "HIGH")])
+    assert security_check.run_bandit() == 1
+    err = capsys.readouterr().err
+    assert "unallowlisted MEDIUM+" in err
+    assert "does not report at MEDIUM+" in err
+
+
+def test_the_shipped_allowlist_is_empty_after_the_b310_retirement() -> None:
+    """D1. Measured 2026-08-05 under Bandit 1.9.4 / Python 3.13.13: the sole
+    entry's finding was absent from the report. It was deleted rather than left
+    as a latch, and this pins that -- re-adding an entry has to come with a
+    finding the scan actually reports, which the liveness rule then enforces."""
+    assert security_check.ALLOWLIST == {}
+
+
 @pytest.mark.skipif(not _bandit_available(), reason="bandit not installed")
 def test_fail_closed_on_a_missing_target_with_real_bandit(tmp_path, monkeypatch) -> None:
     """The same fail-close, with the verdict coming from **real Bandit**
