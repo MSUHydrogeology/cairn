@@ -716,8 +716,17 @@ plan can archive)*
   The on-disk oracle (`test_every_templates_py_on_disk_is_release_scanned`)
   catches it *if* the narrowing drops a file that exists on disk, which is the
   usual case but not the claim.
-  *Trigger:* any edit to `scan_targets()`, at which point the guard is one
-  assertion and should be written rather than re-deferred.
+  *Trigger:* any edit to `scan_targets()`.
+  **Remedy corrected 2026-08-04** *(plan `board-drain-guards`, Internal review)*:
+  this row previously read *"the guard is one assertion and should be written
+  rather than re-deferred"*, and that assertion is **vacuous**. Measured: the
+  registry (42 entries) is a **subset** of the manifest (44), so deleting the
+  union is a pure no-op — 76 scan targets either way, 10/10 nodes green. An
+  assertion on "is a union" passes whether or not the property holds. The
+  **provable** claim is narrower: *`scan_targets()` consumes `install_manifest`*,
+  demonstrable by a sentinel monkeypatch that reddens under a hand-rolled-mapping
+  refactor. Anyone writing this guard writes that claim, not the one this row
+  used to prescribe.
 
 * **SC4 — three frozen pins are stale, and the re-pin timing is a Maintainer
   question.** Verified 2026-08-04, `_gate_manifest.py verify` reports
@@ -840,9 +849,16 @@ until its items here are landed -- that is this section's whole purpose.
   deliberately deferred in that plan's Response to plan review
   (2026-08-03) as belonging in its own proposal. *Trigger:* any edit to
   `ALLOWLIST`, or the next change to
-  `bootstrap/tests/test_security_lint.py` — at which point the guard is
-  two assertions (key still on disk; key still produced by a live Bandit
-  finding).
+  `bootstrap/tests/test_security_lint.py`.
+  **Remedy corrected 2026-08-04** *(plan `board-drain-guards`, Internal review)*:
+  this row previously prescribed *"two assertions (key still on disk; key still
+  produced by a live Bandit finding)"*. The second is **red before it is
+  written** — measured: 0 MEDIUM+ Bandit findings across the 76-file surface, and
+  no `B310` for `link_check.py`, whose `_probe_external` now uses
+  `build_opener`/`Request` rather than `urlopen`. So **the entry is stale, not
+  the scanner**, and this is not a write-a-guard job: it is a
+  `bootstrap/security_check.py` edit — the release-gate single source. Re-scoped
+  accordingly; whoever owns that surface owns this.
 
 *From `release-authenticity` (2):*
 * **`release-authenticity` — the Decision's flagged condition,
