@@ -289,8 +289,77 @@ this plan corrects across five surfaces.
 
 ## Code review
 
-*Filled in after implementation. Reviewer is not the implementing agent, and for
-this contract-touching scope is a different agent type.*
+### Code review -- Antigravity (External, independent review) -- 2026-08-05
+
+**Model**: Antigravity (Google DeepMind)
+**Verdict: PASS**
+
+### 1. Summary & Structural Independence
+I served as the independent code reviewer for the `release-security-orchestration` plan (`dev/plans/release-security-orchestration.md`) at HEAD `b2f1e19` (including implementation commits `3647a82`, `86346f1`, `1ef2b49`, `937f0f0`, `bc3e5c5`, `0bb4d86`, `a29183a`, `baf8128`, `c56c877`, `745c727` and corrective Chunk R commits `3970edf`, `052d303`). The implementation was performed by Codex (Implementation / Strategy / Handoff implementer), so my distinct agent type supplies the required structural independence under `doctrine/dual-review.md`. 
+
+The review evaluated the operative code additions across `bootstrap/security_check.py`, `bootstrap/tests/test_security_check.py`, `bootstrap/tests/conftest.py`, `bootstrap/tests/test_security_lint.py`, `SECURITY.md`, `bootstrap/PROVENANCE.md`, `doctrine/runtime-contract.md`, and `dev/plans/_template.md`.
+
+---
+
+### 2. Settled Findings & Audited Criteria
+
+1. **[CR1] Ignored Repository Files & Detached Checkout Isolation**:
+   - `_detached_checkout(head)` creates a temporary detached worktree at preflight commit SHA with `--no-checkout`.
+   - `_materialize_committed_checkout(checkout, head)` populates only committed blobs from `git cat-file --batch` based on `_committed_blobs(repo_root, head)`.
+   - `_populate_committed_index(checkout, head)` executes `git read-tree --reset head` to populate the per-worktree index cleanly without running checkout filters.
+   - `_verify_committed_checkout(checkout, head)` validates every leaf against `ls-tree` blob OIDs via `_blob_oid()`.
+   - Untracked or ignored files outside the commit (such as `.git/info/exclude` overrides or untracked `.pyc` files) do not exist in the temporary detached checkout, ensuring ignored local files cannot alter the release verdict.
+
+2. **[CR2] Collection-Stage Skips & Outcome Enforcement**:
+   - `bootstrap/tests/conftest.py` implements pytest hooks `pytest_runtest_logreport` and `pytest_collectreport`.
+   - When `CAIRN_RELEASE_GATE_ACTIVE=1`, both test-level skips and collection-level skips (such as `pytest.importorskip()` or module-level `pytest.skip(..., allow_module_level=True)`) cause the release session to fail closed with a non-zero exit (`session.exitstatus = 1`).
+   - Pinned by child pytest tests in `bootstrap/tests/test_security_check.py`.
+
+3. **[CR3] Exception Isolation & Postflight Completion**:
+   - In `bootstrap/security_check.py`, `_run_bound_phases(head)` wraps each phase invocation in a `try...except Exception as exc:` block.
+   - If a phase raises an unexpected `Exception`, it logs `security_check: phase <label> raised <exc> -- FAIL CLOSED; continuing the remaining phases.`, sets `rc = 1`, and proceeds to run all remaining checking phases and postflight state verification (`repo_state_postflight`).
+   - `KeyboardInterrupt` and `SystemExit` inherit from `BaseException` (not `Exception`), preserving explicit user interruption control flow.
+
+4. **Allowlist Liveness & Report Validation ([S1], [S2] / Chunk D4-D6)**:
+   - `validate_report()` strictly validates Bandit JSON structure, confirming top-level dictionary shape, presence/types of `errors` and `results`, required fields per error and result item, valid `issue_severity` in `_KNOWN_SEVERITIES`, and absence of returncode/report contradictions (rc=1 with zero errors & zero results).
+   - `is_blocking()` filters findings for MEDIUM and HIGH severity.
+   - `ALLOWLIST` liveness check (`stale = sorted(key for key in ALLOWLIST if key not in observed)`) uses the exact same `finding_key` and `is_blocking` predicate, refusing stale entries that no longer suppress any MEDIUM+ finding.
+
+5. **Classified Launcher Audit (Section R1.4 / [E1])**:
+   - Audited all `.py` files across `scripts/`, `bootstrap/`, `templates/`, and `tools/`.
+   - Verified that `scripts/quality_gate.py:164` is the single executable nested pytest launcher (`subprocess.run` inheriting process env); `_gate_manifest.py:202` is collection-only.
+
+6. **Preflight & Postflight Dirt Refusal**:
+   - Verified `repo_state_preflight()` fails closed when untracked files are present (`.claude/skills`, `dev/measurement/collision_log.md`), confirming that preflight enforces a clean worktree.
+
+---
+
+### 3. Execution Evidence & Verification
+
+- **Focused Security Suite**:
+  ```bash
+  PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_security_check.py bootstrap/tests/test_security_lint.py
+  # Result: 111 passed in 18.64s
+  ```
+
+- **Full Pytest Engine Suite**:
+  ```bash
+  PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests
+  # Result: 2511 passed, 3 warnings in 315.24s (0:05:15)
+  ```
+
+- **Live Preflight Refusal Check**:
+  ```bash
+  PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 bootstrap/security_check.py
+  # Result: Failed closed (rc=1) on untracked worktree files as expected.
+  ```
+
+---
+
+### 4. Verdict & Archive Readiness
+
+**Verdict: PASS.** All implementation chunks (A--F and R) are complete, independently verified, and fully tested. The plan is ready for archive serialization.
+
 
 ## Lasting-truth migration
 
