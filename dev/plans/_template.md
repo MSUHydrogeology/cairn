@@ -233,8 +233,7 @@ archived plan is never retro-fitted. See `doctrine/dual-review.md` >
 The concrete commands the implementation must pass.
 
 <!-- cairn:slot verification-commands -->
-The standing gates Cairn runs before a change lands (the same ones CI
-enforces):
+The standing gates Cairn runs before a change lands:
 
 * **Engine suite** — `python -m pytest bootstrap/tests` (the whole
   suite; scope to `bootstrap/tests/test_<surface>.py` while iterating,
