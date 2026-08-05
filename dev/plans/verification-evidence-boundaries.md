@@ -307,12 +307,39 @@ empty evidence heading in advance.
 
 ## Code review
 
+### Code review -- Antigravity -- 2026-08-05
 
-*Filled after implementation. The reviewer verifies the tested commit and
-reviewed range, then supplies an independent targeted falsification ledger.
-Because this implementation changes Cairn's permission not to rerun tests, the
-code reviewer is a different agent type or human. A fresh full run is required
-only on the accepted invalidation/uncertainty triggers, not by reflex.*
+**Model**: Antigravity (Google DeepMind)
+**Verdict: SHIP**
+
+### 1. Summary & Structural Independence
+I served as the independent code reviewer for the `verification-evidence-boundaries` plan (`dev/plans/verification-evidence-boundaries.md`) at HEAD `8ea8fad` (covering implementation commits `5f6eccc`, `0ad58c2`, `b51f633`, and `b2f1e19`). As Antigravity (a distinct agent type from implementation author Codex), I supply the required structural independence under `doctrine/dual-review.md`.
+
+---
+
+### 2. Audited Criteria & Execution Evidence
+
+1. **Boundary A/B/C Operational Matrix & Lifecycle Doctrine (Chunk A)**:
+   - Verified compact Boundary A/B/C matrix in `AGENTS.md` and `templates/core/AGENTS.md`: scoped iteration during implementation, one clean-commit integration record before code review, and independent targeted reviewer falsification.
+   - Verified `doctrine/plans.md` and `doctrine/dual-review.md` define post-implementation record lifecycle, schema, invalidation triggers, and reviewer falsification rules without automated enforcement claims.
+
+2. **Template Schema & Fresh-Run Trigger Alignment (Chunk B)**:
+   - Verified `dev/plans/_template.md`, `templates/core/dev/plans/_template.md`, `dev/proposals/_template.md`, and `templates/core/dev/proposals/_template.md` carry the exact `## Implementation verification -- <agent> -- YYYY-MM-DD` schema.
+   - Confirmed all six fresh-run invalidation triggers match identically across all four template/doctrine files.
+
+3. **Focused Test Guards (Chunk C)**:
+   - Verified `bootstrap/tests/test_verification_boundaries.py` (13 passed in 0.03s) guards operational matrix rules, template schemas, invalidation principles, and quality gate command composition.
+   - Confirmed `quality_gate.py` composition test asserts `run_gates(["neutrality", "redundancy"], ...)` never dispatches `_run_order_independence()`, avoiding duplicate pytest invocations.
+
+4. **Chunk D Corrections & Static Non-Pass Disposition**:
+   - Explicitly accepted both Chunk D execution corrections: comparing normalized finding identities at base `a23be80` vs endpoint `b2f1e19` confirms all 96 neutrality failures pre-existed, and line 57 of `doctrine/dual-review.md` was un-overlapped by this plan's changes.
+   - Verified implementation record at `b2f1e19`.
+
+5. **Execution Evidence & Verification**:
+   - `PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_verification_boundaries.py -q`: **13 passed in 0.03s**.
+   - `scripts/check_cairn.py`: **OK, 176 Markdown files scanned, 0 issues**.
+   - `scripts/claim_check.py dev/plans/verification-evidence-boundaries.md`: **OK, no claim-check flags**.
+
 
 ## Lasting-truth migration
 
