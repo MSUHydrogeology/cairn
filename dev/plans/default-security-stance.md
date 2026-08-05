@@ -2484,3 +2484,80 @@ Chunks A--D and R are complete. The plan is now in **review**, not archive: the
 append-only `## Code review` section still needs a reviewer other than the
 implementing agent, and the lasting-truth migration table is completed only at
 the archive serialization point.
+
+## Code review -- Antigravity (External, independent review) -- 2026-08-05
+
+**Model**: Antigravity (Google DeepMind)
+**Verdict: PASS**
+
+### 1. Summary & Structural Independence
+I served as the independent code reviewer for the `default-security-stance` plan (`dev/plans/default-security-stance.md`) at HEAD `8366a00`. The implementation was authored and performed by Codex (Implementation / Strategy), so my distinct agent type supplies the required structural independence under `doctrine/dual-review.md`. 
+
+The review evaluated the operative code additions across `bootstrap/_scaffold/config.py`, `bootstrap/_scaffold/cli.py`, `bootstrap/_scaffold/__init__.py`, `bootstrap/tests/test_default_security_stance.py`, `bootstrap/tests/test_notice_install.py`, `bootstrap/tests/test_security_stack.py`, `bootstrap/tests/test_presets.py`, `bootstrap/tests/test_profiles_smoke.py`, and `bootstrap/tests/test_config_module.py`, as well as the Maintainer-run AST baseline re-anchor commit `b42b4e5`.
+
+---
+
+### 2. Settled Findings & Audited Criteria
+
+1. **Default Selection (`content-security` & `python-security`)**:
+   - `_DEFAULT_ON_MODULES` in [`bootstrap/_scaffold/config.py`](file:///Users/kendal30/Code/cairn/bootstrap/_scaffold/config.py#L83-L93) explicitly includes `"content-security"` (7 entries total).
+   - Presets `solo-greenfield`, `collaborative-team`, and `high-rigor-legacy` expand to include `content-security` when evaluated via `expand_preset({})`.
+   - `_TOKEN_GATED_MODULES` maps `"python-security"` to `("python_package",)`.
+   - `token_gated_modules(cfg)` returns `["python-security"]` iff `python_package` is present and filled (tested with empty string `""`, whitespace `"   "`, and placeholder `"{{python_package}}"` in `test_an_unfilled_python_package_token_does_not_select`).
+
+2. **Selection Precedence & Opt-Out Authority**:
+   - An explicit `modules:` list remains exact and is never widened by default-on modules or token triggers (`test_an_exact_modules_list_is_never_widened_by_the_default_on_module`).
+   - `modules: []` acts as a complete opt-out even when a `python_package` token is declared (`test_modules_empty_list_opts_out_entirely`).
+   - `modules_remove: [content-security]` and `modules_remove: [python-security]` override defaults and token selections (`test_the_token_gate_does_not_override_modules_remove`, `test_content_security_opts_out_loudly`).
+   - `expand_preset()` joins token-selected modules into `baseline` *before* applying `modules_add` and `modules_remove`, ensuring `modules_remove` remains the final authority.
+
+3. **Summary & Install Roster Agreement**:
+   - `format_profile_summary()` displays `Token-gated (selected by a declared token): python-security` when `python_package` is set.
+   - Attack on test oracle: `test_the_summary_and_the_install_agree_on_the_roster_for_a_no_preset_profile` extracts summary output and compares it against actual target-tree files written to disk (`NO_PRESET_MODULE_SENTINELS`), confirming the test evaluates disk output rather than comparing internal config data structures to themselves.
+
+4. **Existing-Adopter Upgrade Behavior**:
+   - `upgrade --plan` on an existing install with an explicit `modules:` list reports `content-security` under `new modules available (opt-in)` without writing `scripts/content_scan.py` (`test_a_new_default_on_module_stays_opt_in_for_an_existing_adopter`).
+
+5. **Cairn Self-Adoption & Twin Parity**:
+   - Scaffold adopted `content-security` onto Cairn's tree via `upgrade --adopt-module content-security --target .`.
+   - `dev/.cairn/cairn-lock.yml` expanded from 84 to 90 files, 15 to 16 modules, and 42 to 44 Python twins.
+   - Named twin parity test `test_content_scan_twin_is_present_and_byte_identical` in `bootstrap/tests/test_notice_install.py` (C2) verifies that `scripts/content_scan.py` and `scripts/content_scan_runner.py` match their template sources.
+   - Deleting an installed twin causes C2's named pin to fail while the presence-derived generic sweep remains green, proving C2 is a true discriminating oracle.
+
+6. **AST Ceremony & Baseline Integrity (`b42b4e5`)**:
+   - Executed `_ast_attest.py verify bootstrap/tests/fixtures/scaffold_ast_baseline.json bootstrap/_scaffold/*.py` under Python 3.13.13 (`PYTHONDONTWRITEBYTECODE=1`), returning **OK — 173 baselined symbol(s) accounted for, unchanged**.
+   - Verified commit `b42b4e5` updated exactly the 4 baselined symbol digests:
+     - `Assign:_DEFAULT_ON_MODULES` (`2c8ef688f6865487` -> `79ae883be0136a90`)
+     - `FunctionDef:expand_preset` (`6bd2e6caa83f4017` -> `6b0fb24cf58e02c8`)
+     - `FunctionDef:format_profile_summary` (`830aac8b7c3d1bde` -> `a4f3d98d2f8f6733`)
+     - `FunctionDef:main` (`ff5a7441cceda605` -> `d3dc4b4e5ea6e4fd`)
+   - 0 MISSING, 0 DUPLICATE. 2 NEW informational keys (`Assign:_TOKEN_GATED_MODULES`, `FunctionDef:token_gated_modules`). `scaffold_ast_known_new.json` was not modified.
+
+---
+
+### 3. Execution Evidence & Verification
+
+- **Focused Test Suite**:
+  ```bash
+  PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_default_security_stance.py bootstrap/tests/test_notice_install.py bootstrap/tests/test_security_stack.py bootstrap/tests/test_presets.py bootstrap/tests/test_profiles_smoke.py bootstrap/tests/test_config_module.py
+  # Result: 188 passed in 15.66s
+  ```
+
+- **Full Pytest Engine Suite**:
+  ```bash
+  PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests
+  # Result: 2490 passed, 3 warnings in 287.84s (0:04:47)
+  ```
+
+- **AST Attestation Verification**:
+  ```bash
+  PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 bootstrap/tests/_ast_attest.py verify bootstrap/tests/fixtures/scaffold_ast_baseline.json bootstrap/_scaffold/*.py
+  # Result: AST attestation OK — 173 baselined symbol(s) accounted for, unchanged.
+  ```
+
+---
+
+### 4. Verdict & Archive Readiness
+
+**Verdict: PASS.** All implementation chunks (A, B, C, D, R) are complete, independently verified, and fully tested. The plan is ready for archive serialization.
+
