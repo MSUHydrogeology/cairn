@@ -313,14 +313,24 @@ board by design.
   `gate-reanchor-preflight`; eleven findings closed across seven reviews (CR1,
   FUR1-FUR10).
 
-* **stage-commit-patterns** *(accepted 2026-07-22, awaiting plan-open)* — the
+* **stage-commit-patterns** *(plan open 2026-08-04; accepted 2026-07-22)* — the
   reader fix: `_STAGE_COMMIT_PATTERNS` matched **zero of 76** real commit
   subjects, leaving every stage-timing metric empty at `Best-effort` while the
   tool exited 0. Accepted with the design narrowed (no bare-subject fallback)
   so no commit is ever mislabelled at `Exact`. Part 1 is **transcription, not
   audit** — the 28-symbol table is verified in the Revised proposal. Plan
   carries a scoped `upgrade --finalize` for `gitmeta.py` and its `__init__.py`
-  twin, now mandatory since the lockfile is clean.
+  twin, now mandatory since the lockfile is clean. **Chunks A–C landed
+  2026-08-04 (`2177d5f`, `321ed1a`, `543f785`) past the plan's own per-commit
+  approval fence, ratified after the fact by the Maintainer; D remains.** Plan
+  review `required(Internal)` carried an execution obligation (re-run the corpus
+  ablations, not a read-only pass) — landed, REVISE, all findings dispositioned.
+  Three things the plan surfaces rather than settles: the ratified narrowing
+  costs ~17 reliability tiers on the live corpus, not the one measured at
+  Decision time; the scope gate's safety rests on a subject convention the fix
+  deliberately does not document; and the *shipped*, unedited vocabulary now
+  produces one wrong-stage assignment on Cairn's own corpus, because a subject
+  written this session matches `^Review\b` across a hyphen.
 
 
 * **[REC-1] byline-classification residuals** *(plan open 2026-08-03; the rows land at
