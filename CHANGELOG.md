@@ -49,7 +49,8 @@ and a new empty `Unreleased` is started above.
   `unicode-line-separator`. Each Unicode detector supplies its own pattern id,
   and findings remain bounded to one per line per category. A line-separator
   acceptance is honoured only when its marker renders on the same display line
-  before the separator; the block form does not suppress it. Upgrade
+  before the line's only separator; multi-separator lines and the block form do
+  not suppress it. Upgrade
   consequence: variation selectors now trigger `unicode-ignorable`, so an
   adopter tree with previously clean emoji-bearing lines can gain findings on
   upgrade. Plans `content-scan-detectors` and `separator-detection`.

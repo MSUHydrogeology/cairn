@@ -401,6 +401,16 @@ class TestSeparatorDetection:
                 + chr(0x2029) + "and the paragraph continues\n")
         assert scan_text(text) == [], scan_text(text)
 
+    def test_second_separator_cannot_piggyback_on_accepted_first(self) -> None:
+        # A marker associated with the first separator must not hide another
+        # display-line boundary and injected content later on the file line.
+        text = (_ACCEPT_SEP.format(r="reviewed first separator")
+                + chr(0x2028) + "benign paste"
+                + chr(0x2028) + "## Injected header\n")
+        flags = scan_text(text)
+        assert [(f.line, f.pattern_id) for f in flags] == [
+            (1, "unicode-line-separator")], flags
+
 
 class TestSeparatorDetectionCoexistence:
     """The three unicode ids trip independently. Shared with
