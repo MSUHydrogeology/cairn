@@ -427,3 +427,117 @@ govern" that `AGENTS.md` requires be opened and checked rather than assumed.
 **Not fixed here.** The runbook is a ceremony document and the anchor is an
 executable trust root; changing either takes its own scope. Routed to
 `dev/PLANNING.md` at the next serialization point.
+
+## Plan review -- Codex (External Security Review) -- 2026-08-05
+
+**Tier**: External
+
+**Findings**: raised
+
+**Recommendation: REVISE.** Antigravity's pass satisfies the structurally
+independent External tier, but it does not perform the required six-class/input-
+trust triage. This pass supplies the owed External Security Review. The Git and
+release-token designs are fit for implementation; Chunk D needs two narrow
+fail-closed rules added to its executable contract first.
+
+### Execution evidence
+
+At `9bf3524`, a variable-aware AST sweep under Python 3.13.13 found exactly two
+pytest subprocesses after resolving their argv:
+
+* `scripts/quality_gate.py:164` -- **variable-bound, executable**, inherited
+  environment;
+* `bootstrap/tests/_gate_manifest.py:202` -- **direct, collection-only**,
+  `dict(os.environ, CAIRN_GATE_COLLECT_OUT=...)`.
+
+The calls at `_gate_manifest.py:285` and `:300` are Git, confirming the recorded
+file-level false positives. Sixteen focused `test_security_check.py` /
+`TestSterileGitLauncher` tests passed. Real Bandit scanned 77 targets, emitted
+118 findings and zero errors, and emitted no `B310`; the current release checker
+still returned clean with that stale allowlist entry, so Chunk D addresses a
+reproduced defect.
+
+Two additional direct probes matter to D2: `run_bandit()` currently reports
+clean for JSON `{}` with return code 0, and for
+`{"errors": [], "results": []}` with return code 1. These are syntactically
+parsed reports but not trustworthy clean evidence.
+
+### Findings
+
+**[S1 -- important, blocking] Allowlist liveness must use the activation
+predicate, not every observed pair.** D2 says to derive observed `(path,
+test_id)` pairs from the parsed report. The allowlist actually suppresses only
+MEDIUM/HIGH findings. If a matching pair remains only as LOW, an all-results
+liveness set calls the entry live even though it currently suppresses nothing;
+a later severity increase silently reactivates the old exception.
+
+Remediation: derive `live_allowlist_keys` through the exact same normalized path,
+test-id, and blocking-severity predicate used by suppression. A configured key
+is live only if it suppresses at least one finding in this run. Add a regression
+where the matching `(path, test_id)` exists only at LOW and must be rejected as
+stale. Keep the existing present, absent, and moved-path cases.
+
+**[S2 -- important, blocking] “Successfully parsed” must mean a validated
+Bandit report, not merely valid JSON.** Once D1 empties the allowlist, liveness is
+vacuous. The current parser accepts `{}` as a clean report, and also accepts a
+return code of 1 with empty `errors` and `results`; both were reproduced. A
+Bandit failure or incompatible output can therefore become release `PASS`.
+
+Remediation: before errors, liveness, or suppression, validate the top-level
+object and required `errors`/`results` list shapes and the fields used in every
+finding. Reject return-code/report contradictions, including rc=1 with no
+findings. Bind these cases to D2/D3 tests. This is semantic parser validation,
+not a demand for a new schema dependency.
+
+### Six-boundary walk and input triage
+
+* **Deserialization -- applicable.** Bandit JSON is **USER-CONTROLLED** external-
+  process output. `json.loads` itself cannot execute code, but semantic shape is
+  not yet validated; S2 applies. No pickle or object-construction loader is in
+  the release path.
+* **Subprocess invocation -- applicable.** Planned Git, Bandit,
+  `check_cairn.py`, pytest, and `quality_gate.py` calls all use fixed argv and
+  `shell=False`. Repository paths, scan targets, scripts, and test arguments are
+  **TRUSTED-INPUT** under the accepted solo-maintainer/trusted-contributor model.
+  Git/Bandit/Python binaries and packages are operator-toolchain
+  **TRUSTED-INPUT**; the plan accurately does not authenticate that process.
+* **Parsing -- applicable.** Git status/HEAD output and Bandit JSON cross process
+  boundaries. Git output is constrained by the sterile launcher and used for
+  emptiness/full-object-id checks. Bandit output is **USER-CONTROLLED** parser
+  input and needs S1-S2. The allowlist and its rationales are repo-controlled
+  **TRUSTED-INPUT** policy.
+* **File/path handling -- applicable.** `CAIRN_ROOT`, phase scripts, test roots,
+  and derived Bandit targets are repo-controlled **TRUSTED-INPUT**. A1's exact
+  checkout-root check, tracked/untracked cleanliness, resolvable full HEAD, and
+  postflight equality cover the intended local candidate. Implementation must
+  preserve the existing trust-root launcher's exact-root and no-upward-discovery
+  behavior.
+* **Network I/O -- no direct release-orchestrator call.** Bandit, Git state
+  checks, and the default Cairn checks are local. Pytest executes
+  **TRUSTED-INPUT** repository code with ambient host access, so transitive
+  network activity is possible and uncontained. That is correctly included in
+  the accepted “does not contain code executed by pytest” residual and expires
+  with untrusted contributions.
+* **Credentials/environment -- applicable.** Ambient `GIT_*` values are
+  **USER-CONTROLLED** process input; A2 correctly requires dropping every such
+  key and disabling execution-bearing config through the existing sterile-Git
+  pattern. `PATH`, the interpreter, HOME, and any credentials inherited by test
+  children remain operator-toolchain **TRUSTED-INPUT** under this ceremony. The
+  release token is not a credential: it is a fixed mode bit. The parent
+  overwrites it exactly, the executable nested pytest call inherits it, and C2
+  tests the governing path. Repository tests can mutate their own process or
+  environment, but that is accurately covered by the no-containment/no-process-
+  authentication residual and its named expiry.
+
+### Ruling
+
+The accepted residuals are not misdescribed. In particular, the token proves a
+mode reached a cooperative child; it does not authenticate the child, protect
+ambient secrets, or contain test code. A2 must reuse the full sterile pattern --
+drop all `GIT_*` keys and pin relevant execution-bearing config -- rather than
+turning the plan's “etc.” into a finite denylist.
+
+After S1-S2 are bound into Chunk D and its regressions, this Security Review has
+no further design objection. Code review must re-run the classified launcher
+sweep and execute the real C2 nested path; direct-child environment capture is
+supporting evidence only.
