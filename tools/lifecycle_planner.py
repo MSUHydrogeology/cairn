@@ -518,7 +518,113 @@ _HEADER_RE = re.compile(
 #: ``Revised proposal``, ``Plan review``, ``Code review`` all match).
 _KNOWN_KINDS = {
     "review", "response", "revised", "decision", "plan", "code",
+    # `sharpening` was absent, which is why the scaffold's OWN emitted
+    # review block parsed to nothing (S7).  A document of exactly the shape
+    # the planner emitted yielded [(2, 'Plan review')] -- the Sharpening
+    # heading was discarded, so nothing could pair a raised finding with its
+    # disposition.
+    "sharpening",
 }
+
+# --- the review-pass record schema (S1-S7) -----------------------------------
+#
+# Parsing only.  Nothing here gates a transition: Chunk B reads the record,
+# Chunk C decides on it.  The split is deliberate -- a parser that also gates
+# cannot be landed green.
+
+#: S2 -- the two attestation lines, full-line anchored inside a pass body.
+_TIER_LINE_RE = re.compile(r"^\*\*Tier\*\*:\s*(?P<value>.*?)\s*$", re.M)
+_FINDINGS_LINE_RE = re.compile(r"^\*\*Findings\*\*:\s*(?P<value>.*?)\s*$", re.M)
+
+#: S2 -- the closed vocabularies.  Comparison is case-insensitive; these are
+#: the canonical spellings.
+_TIERS = ("Internal", "External")
+_FINDINGS = ("none", "raised")
+
+#: S5 -- total order, External > Internal.  `declared >= required` satisfies
+#: the floor.  There is no third tier and no `Maintainer` tier: a human review
+#: declares External.
+_TIER_RANK = {"internal": 1, "external": 2}
+
+#: S7 -- a Sharpening heading, matched positionally inside a pass body.
+_SHARPENING_RE = re.compile(r"^###\s+Sharpening\b", re.M)
+
+#: S6 step 1 -- the first parenthesised group of the `**Plan review**:` field.
+_REQUIRED_TIER_RE = re.compile(r"^required\s*\(([^)]*)\)", re.I)
+
+#: S6 step 3 -- the first alphabetic word inside that group.
+_FIRST_WORD_RE = re.compile(r"^[A-Za-z][A-Za-z-]*")
+
+
+def _parse_one_field(body: str, pattern: "re.Pattern[str]",
+                     vocabulary: Tuple[str, ...], field: str
+                     ) -> Tuple[Optional[str], Optional[str]]:
+    """Read one S2 attestation line -> ``(canonical_value, violation)``.
+
+    Implements S3's three fail-closed directions, and **no condition yields a
+    silent pass**: absent -> ``missing``, out-of-vocabulary ->
+    ``unrecognized``, repeated -> ``duplicate`` *even when the occurrences
+    agree*, because agreement is a judgement a conformance backstop must not
+    make.  There is no default value for either field.
+    """
+    found = pattern.findall(body)
+    if not found:
+        return None, f"missing {field}"
+    if len(found) > 1:
+        return None, f"duplicate {field}"
+    raw = found[0].strip()
+    for canonical in vocabulary:
+        if raw.casefold() == canonical.casefold():
+            return canonical, None
+    return None, f"unrecognized {field} value: {raw!r}"
+
+
+def _parse_pass_date(raw: str) -> Tuple[bool, Optional[str]]:
+    """S1 -- the captured date must be a **real** date, not date-shaped.
+
+    ``_HEADER_RE`` matches the *shape* ``\\d{4}-\\d{2}-\\d{2}``, which accepts
+    ``2026-99-99``, ``2026-02-30`` and ``0000-00-00``.  ``date.fromisoformat``
+    is strict and rejects all three while accepting a real leap date.  A shape
+    match whose value does not parse is a violation, never a silent pass --
+    and, under S9's enumerated legacy manifest, never an exemption either.
+    """
+    if not raw:
+        return False, None
+    try:
+        _dt.date.fromisoformat(raw)
+    except ValueError:
+        return False, f"malformed date: {raw!r}"
+    return True, None
+
+
+def normalize_required_tier(field: str) -> Tuple[Optional[str], Optional[str]]:
+    """S6 -- normalize the `**Plan review**:` field -> ``(tier, violation)``.
+
+    Defined on the **first parenthesised group only**.  Text after the closing
+    paren is ignored (every live plan has some); text after the first word
+    *inside* the group is a **lens annotation** -- preserved in the record by
+    the caller, ignored by the tier comparison.  Negations fail closed:
+    ``required(not External)`` is a violation, not an External requirement.
+    """
+    m = _REQUIRED_TIER_RE.match(field.strip())
+    if not m:
+        return None, "tier not declared"
+    group = m.group(1)
+    for ch in "*_`":
+        group = group.replace(ch, "")
+    word = _FIRST_WORD_RE.match(group.strip())
+    if not word:
+        return None, "tier not declared"
+    tier = word.group(0).casefold()
+    if tier not in _TIER_RANK:
+        return None, f"unrecognized required tier: {word.group(0)!r}"
+    return tier, None
+
+
+def tier_satisfies(declared: str, required: str) -> bool:
+    """S5 -- ``declared >= required`` under the total order External > Internal."""
+    return _TIER_RANK.get(declared.casefold(), 0) >= _TIER_RANK.get(
+        required.casefold(), 0)
 
 
 def _detect_kind(path: Path) -> str:
