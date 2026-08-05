@@ -539,11 +539,13 @@ The permanent, tracked home for Cairn work parked with revival conditions
 no adopter specifics). Imported from the modflow_tools-side batch ledgers;
 none blocking.
 
-**These rows are recorded work, not a backlog to be cleared** *(established
-2026-08-04, proposal `2026-08-04-claude-board-retro-disposition`)*. A pass to
-mass-adjudicate them under the new archive-precondition vocabulary was proposed
-and **withdrawn at Internal review**. Two findings are worth carrying, because
-they will otherwise be rediscovered:
+**This section cannot be drained from this file — and half of it is unassessed**
+*(established 2026-08-04, proposal `2026-08-04-claude-board-retro-disposition`)*.
+A pass to mass-adjudicate these rows under the new archive-precondition
+vocabulary was proposed and **withdrawn at Internal review**. That withdrawal is
+a finding about *method and evidence*, **not** a ruling that the section should
+stay this long. Two findings are worth carrying, because they will otherwise be
+rediscovered:
 
   1. **A hand-read sample found reproducers, measured figures and named revival
      conditions.** Bounded, and the bound matters: the sample (~12 rows) came
