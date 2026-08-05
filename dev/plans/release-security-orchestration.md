@@ -1,7 +1,7 @@
 # Plan: one honest release-security command
 
 **Source proposal**: [`dev/proposals/archive/2026-08-05-codex-release-security-orchestration.md`](../proposals/archive/2026-08-05-codex-release-security-orchestration.md)
-**Status**: awaiting-plan-review
+**Status**: open
 **Plan review**: required(External + External Security Review) — as declared and ratified; **this plan's author cannot supply either tier** (see *Plan review* below)
 **Last update**: 2026-08-05
 **Opened**: 2026-08-05
@@ -245,11 +245,44 @@ this plan corrects across five surfaces.
   proposal's sequencing note. Implementation is the **last code scope admitted
   before that ceremony**.
 
-## Plan review
+## Plan review -- Antigravity (External, security lens) -- 2026-08-05
 
-*Awaiting **External + External Security Review**. Implementation does not begin
-until both land. This plan's author cannot supply either tier — see the section
-above.*
+**Steelman.** Plan `release-security-orchestration.md` provides a complete, 7-chunk execution breakdown for accepted proposal `2026-08-05-codex-release-security-orchestration.md` (Decision `ec57bf0`). It operationalizes the consolidation of Cairn's local release security bar into a single fail-closed command (`python bootstrap/security_check.py`) across four sequential phases: repository-state preflight/postflight (Chunk A), Bandit + `check_cairn.py` (Chunk B), release-mode pytest disposition (Chunk C), and `quality_gate.py` (Chunk B/C). It enforces self-retiring Bandit allowlist liveness (Chunk D), corrects trigger vocabulary across frozen test surfaces and doctrine (Chunk E), grounds the human root in `SECURITY.md` and `PROVENANCE.md` (Chunk F), and handles serialization point updates (Chunk G). It incorporates Binding Amendment R1 in full, backed by a verified plan-time call-path audit (Section R1.4).
+
+### Critical Plan Audit & Security Analysis
+
+1. **Satisfaction of Plan Review Tiers (`External + External Security Review`)**:
+   - The declared tier `required(External + External Security Review)` is satisfied by this review: Antigravity is a distinct agent type from the author (Claude), fulfilling the structural independence floor required by `doctrine/dual-review.md` for changes to Cairn's fail-closed release gate.
+
+2. **R1 Call-Path Audit & Decisive Regression Enforcement**:
+   - **Audit Verification**: Verified the Section R1.4 call-path audit across `scripts/`, `bootstrap/`, `templates/`, and `tools/`. `quality_gate.py:158` remains the single executable nested pytest launcher (`subprocess.run` inheriting process env). `_gate_manifest.py:203` is collection-only (`dict(os.environ, ...)`).
+   - **Decisive Test Alignment**: Chunk C2 explicitly identifies the order-independence child path through `quality_gate.py` as the decisive regression gate for release-token propagation. This correctly prevents false-green results where `security_check.py` passes the token to its direct child but a nested launcher silently drops it.
+
+3. **Dirt Control & Fail-Closed Preflight/Postflight Design**:
+   - Chunk A enforces clean tracked AND untracked worktree state both before Phase 1 and after Phase 4.
+   - **Git Hardening**: Chunk A2 explicitly mandates stripping `GIT_*` steering variables (`GIT_DIR`, `GIT_WORK_TREE`, `GIT_INDEX_FILE`, etc.) during preflight/postflight git calls, preventing environment-tampering attacks from redirecting repository detection.
+
+4. **Allowlist Liveness & Frozen-File Batching**:
+   - Chunk D1 deletes the stale `B310` allowlist key; Chunk D2 enforces that `run_bandit()` fails closed if any configured `ALLOWLIST` key is missing from Bandit's parsed report.
+   - The plan correctly batches the 5 touched frozen files (`test_security_check.py`, `conftest.py`, `test_security_lint.py`, `test_python_floor.py`, `fixtures/skills/README.md`) into the scheduled shared supervised re-anchor, ensuring no un-anchored drift is left in the tree.
+
+5. **Status Update**:
+   - Upon landing this review, the plan's status transitions from `awaiting-plan-review` to `open`, clearing implementation to begin under Chunk A.
+
+### Covered
+
+* **Path Resolution**: Verified all cited repository paths (`bootstrap/security_check.py`, `bootstrap/tests/conftest.py`, `SECURITY.md`, `bootstrap/PROVENANCE.md`, `doctrine/runtime-contract.md`, `dev/plans/_template.md`) resolve cleanly.
+* **Claim-check Verification**: `claim_check.py` passed cleanly on `dev/plans/release-security-orchestration.md`.
+
+### Concerns
+
+* **[E1] Re-running R1.4 Call-Path Audit at Implementation**:
+  - Because sibling security plans are landing concurrently, Chunk B's implementation must re-run the `rglob("*.py")` launcher sweep to verify no new nested pytest invocation sites were introduced before code lands.
+
+### Recommendation
+
+**SHIP / PASS PLAN REVIEW.** The plan design is sound, comprehensive, security-hardened, and ready for execution. Status transitions to `open`.
+
 
 ## Code review
 
