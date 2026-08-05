@@ -461,6 +461,11 @@ that is itself reported below.
 (2026-08-04) → **71** at `da1de65` (2026-08-05). Within *this session* it moved
 again — between two of my own runs, bare containers went 4 → 5 and the loose
 count 70 → 71 as `dev/plans/board-drain-guards.md` opened, and HEAD advanced
+<!-- claim-check-allow: dev/plans/board-drain-guards.md -->
+<!-- Archived 2026-08-05 to dev/plans/archive/. A historical citation inside an
+     append-only review section: it was true when written, and rewriting a prior
+     section to chase a file move is what the cite-by-stem convention exists to
+     avoid. Exempted, not edited. -->
 `6bcd2d3` → `da1de65` under me. *Sequence*'s rule — "Chunk C's corpus table
 must be re-measured at the commit that gates, never carried forward from here"
 — is **upheld unchanged** and is now evidenced rather than argued.
