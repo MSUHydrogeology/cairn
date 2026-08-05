@@ -363,8 +363,8 @@ concurrently-rewritten roster is not covered.
 These controls are coupled to the release-cut mechanics (tagging the
 release, recording the version, minting the archival DOI). The cut
 itself is a separate, maintainer-run step; this document states the
-provenance posture the cut is expected to satisfy. Two ordering
-constraints follow from the sections above, and both are the
+provenance posture the cut is expected to satisfy. Three ordering
+constraints follow from the sections above, and all are the
 maintainer's:
 
 * The fingerprint is published on the channels **before** the tag is
@@ -373,6 +373,25 @@ maintainer's:
   permanent, citable pointer that travels with the provenance claim
   attached and none of this repository's controls attached; an unsigned
   tag archived beside a claim of signing is not correctable in place.
+* **The security gate runs against the clean commit first; the tag is
+  signed second, naming that same commit.** `python
+  bootstrap/security_check.py` (see [`SECURITY.md`](../SECURITY.md) >
+  *Release security checklist*) refuses a dirty or moved worktree and
+  prints the full `HEAD` it checked. Sign the tag on **that** commit id,
+  and record the id with the gate output in the release notes. The
+  reverse order — tag, then check — produces a signed tag whose tree was
+  never the tree that passed, and nothing downstream can tell.
+
+**What that ordering does not establish.** The binding is a human
+transcription, not a control: nothing signs the gate result, and the tag
+signature attests the tag object only. An adopter who verifies the tag
+learns *which* Cairn they have, not that Cairn's release gate was run
+against it. That is the same class of residual as the two below in *What
+this is not* — accepted under a single-maintainer, trusted-contributor
+model, and expiring the moment there is a second release maintainer,
+release-path contributions from outside the trusted set, or forge
+automation able to cut or publish a tag (`SECURITY.md` states the same
+expiry, canonically).
 
 ## Install-side provenance — the lockfile
 

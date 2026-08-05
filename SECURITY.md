@@ -58,17 +58,68 @@ downstream adopter's agents. Include a reproducer where possible.
 
 ## Release security checklist
 
-Before cutting a release, run — and record the output in the release notes:
+**One command, and its output belongs in the release notes.**
 
-* **`python bootstrap/security_check.py`** — the **fail-closed** release
-  gate. Unlike the dev test (which skips locally when Bandit is absent), this
-  command **fails** if Bandit is missing, errors, reports a file it could not
-  open, or reports any unallowlisted MEDIUM+ finding over the shipped Python
-  surface — every file the scaffold ships **byte-for-byte** as Python — and
-  also runs the Markdown self-check. A release must not be cut on a run that
-  silently skipped the security gate.
-* `python -m pytest bootstrap/tests/` — green (includes the dev Bandit gate
-  and the content / generated-output scans).
+```
+python bootstrap/security_check.py
+```
+
+This is the **fail-closed** release gate. It is the whole **locally
+machine-checkable** bar — not a first item in a list a Maintainer then has to
+remember the rest of. (It is not the *whole* release bar: the contained floor
+check `bootstrap/container/floor-gate.sh`, the release-authenticity ceremony,
+and the by-hand review items are separate Maintainer-run steps that this
+command does **not** dispatch.) Four phases; phase 1 stops the command, and
+phases 2–4 are all attempted even after one fails, so a single run yields a
+complete repair list:
+
+1. **Repository state.** The invocation must name the checkout root, the
+   worktree must be clean of tracked **and untracked** changes, and `HEAD`
+   must resolve to a full commit id. Re-checked after the phases, so a
+   candidate that changed mid-run cannot be reported as clean.
+2. **Bandit + `check_cairn`.** Unlike the dev test (which skips locally when
+   Bandit is absent), this **fails** if Bandit is missing, errors, reports a
+   file it could not open, reports any unallowlisted MEDIUM+ finding over the
+   shipped Python surface — every file the scaffold ships **byte-for-byte** as
+   Python — or carries an allowlist entry the scan no longer reports at
+   MEDIUM+ (a suppression that suppresses nothing is deleted, not kept).
+3. **The engine suite in release mode.** `bootstrap/tests` with
+   `CAIRN_RELEASE_GATE_ACTIVE` set, where a **skipped, xfailed or xpassed**
+   outcome makes the session non-zero. A suite that exits 0 after a skip says
+   nothing about the code that did not run. (Outside release mode a local skip
+   stays a local skip — contributor behaviour is unchanged.)
+4. **`python scripts/quality_gate.py`** — order-independence,
+   vendor-neutrality, redundancy.
+
+A phase that failed, errored, was **unavailable**, produced **incomplete
+evidence**, or ran against a **changed candidate** is non-zero. An absent tool
+never reads as a pass.
+
+**Record the full `HEAD` the command prints**, alongside its output, in the
+release notes. That commit id is what binds the evidence to something a reader
+can fetch; without it the run is a screenshot of an unnamed tree.
+
+### What this command does not do — the residual, and when it expires
+
+The command is machine-checkable. **Running it, reading it, and recording it
+are not.** Three residuals are accepted deliberately, not overlooked:
+
+* **Omission is possible.** Nothing forces the command to be run before a tag
+  is cut. Its only trigger is a Maintainer typing it; Cairn has no CI, no
+  mandatory hook, and no tag wrapper.
+* **No self-authentication.** The command does not verify its own bytes or its
+  own process. A modified `bootstrap/security_check.py` reports whatever it
+  was modified to report.
+* **No cryptographic binding to the tag.** The printed `HEAD` is copied into
+  the release notes by hand. Nothing signs the gate result, and nothing ties
+  it to the signed tag object beyond that transcription.
+
+Cairn will not pretend to mechanize the Maintainer's act, so these are named
+rather than papered over with machinery that would only move the trust one
+step. **They expire — and this becomes a real gap needing real
+machinery — on any of:** a second release Maintainer; accepting release-path
+contributions from outside the trusted set; adding forge automation that can
+cut or publish a tag; or a check being missed in practice even once.
 
 ## Documented residual risks (consciously accepted)
 
