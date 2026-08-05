@@ -531,8 +531,16 @@ def probe_version(exe: Resolved, env: dict[str, str]) -> str:
     return first
 
 
-def child_env(mode: str, git: Resolved | None, empty_dir: str) -> dict[str, str]:
+def child_env(
+    mode: str, git: Resolved | None, empty_dir: str,
+    empty_config: str | None = None,
+) -> dict[str, str]:
     """Build the child environment from an **allowlist**, never a denylist.
+
+    Because the base is an allowlist, **every** inherited ``GIT_*``,
+    ``GITLEAKS_*``, proxy, Python-import, pager and prompt variable is dropped
+    by construction rather than by name -- a denylist that misses one is the
+    failure mode this shape removes.
 
     **Full mode** gets a minimal ``PATH`` containing *only* the verified Git
     directory -- the adapter needs Git for the history leg and nothing else.
@@ -543,12 +551,185 @@ def child_env(mode: str, git: Resolved | None, empty_dir: str) -> dict[str, str]
         path = git.directory
     else:
         path = empty_dir
-    return {
+    env = {
         "PATH": path,
         "HOME": empty_dir,
         "LC_ALL": "C",
         "TZ": "UTC",
+        "GIT_TERMINAL_PROMPT": "0",
+        "GIT_NO_REPLACE_OBJECTS": "1",
+        "GIT_CONFIG_NOSYSTEM": "1",
+        "GIT_CONFIG_GLOBAL": empty_config or os.devnull,
+        "GIT_OPTIONAL_LOCKS": "0",
+        "GIT_CONFIG_COUNT": str(len(_COUNTED_GIT_CONFIG)),
     }
+    for index, (key, value) in enumerate(_COUNTED_GIT_CONFIG):
+        env[f"GIT_CONFIG_KEY_{index}"] = key
+        env[f"GIT_CONFIG_VALUE_{index}"] = value
+    return env
+
+
+# --- the candidate-configuration boundary ------------------------------------
+#: Counted Git config keys forced onto every child.  ``GIT_CONFIG_COUNT``
+#: entries behave like ``-c`` and outrank repository-local config, which matters
+#: precisely because *the adapter* spawns Git, so the runner cannot pass ``-c``
+#: itself.
+#:
+#: **This is defence in depth over the keys it names.  It is NOT a boundary.**
+#: Measured: a candidate steps around it with one ``include.path`` line, or one
+#: ``includeIf``, needing no new Git version and no exotic key; and Git offers
+#: **no** way to disable the repository-local tier -- there is no
+#: ``GIT_CONFIG_LOCAL``, and ``GIT_CONFIG_NOSYSTEM`` + ``GIT_CONFIG_GLOBAL`` +
+#: ``GIT_CONFIG_SYSTEM`` together leave it live.  What bounds the configuration
+#: surface is :func:`screen_local_config`.
+_COUNTED_GIT_CONFIG: tuple[tuple[str, str], ...] = (
+    ("core.useReplaceRefs", "false"),   # refs/replace/<sha> forges history
+    ("core.hooksPath", os.devnull),     # a hook is candidate-supplied execution
+    ("core.fsmonitor", "false"),        # a monitor program runs during status
+    ("core.pager", "cat"),
+    ("core.quotePath", "false"),
+    ("diff.external", ""),
+    ("protocol.allow", "never"),
+    ("protocol.file.allow", "never"),
+)
+
+#: The screen's own command.  ``--includes`` is load-bearing: **measured**, a
+#: listing without it shows ``include.path=...`` and *neither* injected key, so
+#: a screen written the obvious way is silently defeated.
+_SCREEN_ARGV_TAIL = (
+    "config", "--list", "--local", "--includes", "--show-origin", "-z",
+)
+_SCREEN_MAX_BYTES = 256 * 1024
+
+#: The **source-owned** inert allowlist for repository-local configuration.
+#: Deny-by-default: anything not named here refuses before execution.  Not
+#: policy-controlled.
+_INERT_LOCAL_KEYS = frozenset({
+    "core.repositoryformatversion", "core.filemode", "core.bare",
+    "core.logallrefupdates", "core.ignorecase", "core.precomposeunicode",
+    "core.symlinks", "core.sharedrepository",
+})
+#: Inert key *families* an ordinary repository carries.  Refusing these would
+#: make the screen unusable on real trees, which is the over-refusal failure
+#: mode that gets a security control switched off.  None of them is a program
+#: reference: transport is pinned inert by ``protocol.allow=never`` and no leg
+#: fetches.
+_INERT_LOCAL_PATTERNS = (
+    re.compile(r"\Aextensions\.[a-z0-9]+\Z"),
+    re.compile(r"\Aremote\.[^.]+\.(url|fetch|pushurl|mirror|tagopt)\Z"),
+    re.compile(r"\Abranch\.[^.]+\.(remote|merge|rebase)\Z"),
+)
+
+_IGNORE_FILENAME = ".gitleaksignore"
+
+
+def _key_is_inert(key: str) -> bool:
+    if key in _INERT_LOCAL_KEYS:
+        return True
+    return any(pattern.match(key) for pattern in _INERT_LOCAL_PATTERNS)
+
+
+def refuse_candidate_ignore_files(target: Path) -> None:
+    """Refuse **before execution** when the candidate tree carries a
+    ``.gitleaksignore`` anywhere -- regular file or symlink, at any depth.
+
+    Required because the adapter loads the target's ignore file *even when*
+    ``--gitleaks-ignore-path`` names a trusted empty file, and exposes no
+    observed switch to disable that.  The walk does **not** follow symlinks."""
+    for root, dirnames, filenames in os.walk(str(target), followlinks=False):
+        for name in list(dirnames) + list(filenames):
+            if name == _IGNORE_FILENAME:
+                raise Degraded(
+                    f"the candidate tree carries {os.path.join(root, name)!r}; "
+                    f"the adapter loads it even when a trusted empty ignore "
+                    f"path is named, so the run is refused before execution"
+                )
+
+
+def parse_screen_output(raw: bytes) -> list[tuple[str, str]]:
+    """Parse ``git config --list --local --includes --show-origin -z`` into
+    ``(origin, key)`` pairs.  An unexpected shape is a refusal, never a
+    best-effort parse."""
+    if not raw:
+        return []
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError:
+        raise Degraded("the configuration listing is not valid UTF-8") from None
+    fields = text.split("\0")
+    if fields and fields[-1] == "":
+        fields.pop()
+    if len(fields) % 2 != 0:
+        raise Degraded(
+            f"the configuration listing has an unexpected shape "
+            f"({len(fields)} fields); refusing rather than guessing"
+        )
+    pairs: list[tuple[str, str]] = []
+    for index in range(0, len(fields), 2):
+        origin = fields[index]
+        key = fields[index + 1].split("\n", 1)[0]
+        pairs.append((origin, key))
+    return pairs
+
+
+def screen_local_config(
+    git: Resolved, target: Path, env: dict[str, str]
+) -> list[tuple[str, str]]:
+    """**Deny-by-default pre-execution screen** over the candidate's
+    *include-expanded* repository-local configuration.
+
+    Refuses on any key outside the source-owned inert allowlist, on any origin
+    file that resolves outside the candidate's ``.git/`` directory (which is how
+    an ``include.path`` or ``includeIf`` injection presents), and on a listing
+    that fails, times out or exceeds a byte cap.
+
+    Runs under the **same** sterilized child environment the legs get.
+    Measured: run this way a hostile ``core.pager`` does **not** execute, so the
+    screen's own Git call does not hand control to candidate configuration.
+
+    The residual is the same **snapshot** race the ignore-file refusal accepts,
+    and the screen bounds *configuration* -- not everything a candidate
+    repository controls."""
+    git_dir = (target / ".git").resolve()
+    argv = [git.resolved, "-C", str(target), *_SCREEN_ARGV_TAIL]
+    try:
+        proc = subprocess.run(argv, capture_output=True, env=env,
+                              timeout=_SCREEN_TIMEOUT, check=False)
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise Degraded(f"the configuration screen could not run: {exc}") from None
+    if proc.returncode != 0:
+        raise Degraded(
+            f"the configuration screen exited {proc.returncode}; refusing "
+            f"rather than running with an unscreened configuration"
+        )
+    if len(proc.stdout) > _SCREEN_MAX_BYTES:
+        raise Degraded(
+            f"the configuration listing exceeds {_SCREEN_MAX_BYTES} bytes; "
+            f"refused"
+        )
+    pairs = parse_screen_output(proc.stdout)
+    for origin, key in pairs:
+        if not origin.startswith("file:"):
+            raise Degraded(
+                f"configuration key {key!r} has a non-file origin {origin!r}"
+            )
+        origin_path = origin[len("file:"):]
+        candidate = Path(origin_path)
+        if not candidate.is_absolute():
+            candidate = target / origin_path
+        resolved_origin = candidate.resolve()
+        if not _is_inside(str(resolved_origin), str(git_dir)):
+            raise Degraded(
+                f"configuration key {key!r} comes from {str(resolved_origin)!r}, "
+                f"outside the candidate's .git/ directory -- an include or "
+                f"includeIf injection; refused before execution"
+            )
+        if not _key_is_inert(key):
+            raise Degraded(
+                f"repository-local configuration key {key!r} is not on the "
+                f"reviewed inert allowlist; refused before execution"
+            )
+    return pairs
 
 
 def _adapter_seam(context: dict[str, Any]) -> list[LegOutcome]:
@@ -715,11 +896,81 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _leg_argv(exe: Resolved, leg: str, target: Path) -> list[str]:
-    """The runner-owned argv for one leg.  Chunk C hardens it; the policy
-    contributes **no** argv element, ever."""
-    subcommand = "dir" if leg == "current-tree" else "git"
-    return [exe.resolved, subcommand, str(target)]
+#: The history leg's fixed ``--log-opts``.  ``--text`` defeats a tracked
+#: ``.gitattributes`` ``binary`` rule that otherwise made a committed token
+#: invisible; ``--no-textconv`` and ``--no-ext-diff`` keep Git diff drivers from
+#: extending the scan into executable helpers.
+_LOG_OPTS = "--all --full-history --text --no-textconv --no-ext-diff"
+
+
+class Workspace(NamedTuple):
+    """The runner-owned, **off-tree** files one run materializes.  Nothing here
+    is ever copied from, or written into, the candidate tree."""
+
+    config: str
+    ignore: str
+    report_dir: str
+    empty_dir: str
+    empty_config: str
+
+
+def materialize_workspace(workdir: str, fingerprints: list[str]) -> Workspace:
+    """Write the runner-owned adapter config and the reviewed-suppression
+    ignore file **off-tree**.
+
+    The config extends the binary's built-in rules and carries no
+    policy-supplied TOML.  Reviewed fingerprints go in one per line; a
+    fingerprint carrying a newline was already refused by the policy validator,
+    because one fingerprint may never become two ignore-file lines."""
+    empty_dir = os.path.join(workdir, "empty")
+    os.makedirs(empty_dir, exist_ok=True)
+    report_dir = os.path.join(workdir, "reports")
+    os.makedirs(report_dir, exist_ok=True)
+    config = os.path.join(workdir, "cairn-adapter.toml")
+    with open(config, "w", encoding="utf-8") as handle:
+        handle.write(
+            'title = "cairn-portable-security-sweeps"\n\n'
+            "[extend]\nuseDefault = true\n"
+        )
+    ignore = os.path.join(workdir, "cairn-reviewed.gitleaksignore")
+    with open(ignore, "w", encoding="utf-8") as handle:
+        for fingerprint in fingerprints:
+            handle.write(fingerprint + "\n")
+    empty_config = os.path.join(workdir, "empty.gitconfig")
+    with open(empty_config, "w", encoding="utf-8"):
+        pass
+    return Workspace(config, ignore, report_dir, empty_dir, empty_config)
+
+
+def _leg_argv(
+    exe: Resolved, leg: str, target: Path, work: Workspace,
+) -> tuple[list[str], str]:
+    """The **runner-owned** argv for one leg, and that leg's report path.
+
+    The policy contributes **no** argv element, ever.  Every path the adapter
+    is told to read or write is off-tree."""
+    report = os.path.join(work.report_dir, f"{leg}.json")
+    argv = [exe.resolved, "dir" if leg == "current-tree" else "git", str(target)]
+    if leg == "history":
+        argv += ["--log-opts", _LOG_OPTS]
+    else:
+        # The current-tree leg does not follow symlinks, and adds no
+        # .gitignore filter: a .gitignore'd ordinary file is still scanned.
+        argv += ["--follow-symlinks=false"]
+    argv += [
+        "--config", work.config,
+        "--gitleaks-ignore-path", work.ignore,
+        "--ignore-gitleaks-allow",
+        "--redact=100",
+        "--no-color",
+        "--no-banner",
+        "--report-format", "json",
+        "--report-path", report,
+        "--max-archive-depth=0",
+        "--max-decode-depth=0",
+        f"--timeout={_ADAPTER_TIMEOUT}s",
+    ]
+    return argv, report
 
 
 def run_sweep(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
@@ -738,7 +989,7 @@ def run_sweep(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
     # 1. Policy -- before any executable is resolved and before any temporary
     #    file is materialized.
     try:
-        load_policy(policy_path)
+        policy = load_policy(policy_path)
     except PolicyError as exc:
         legs = [LegOutcome("policy", _AGG_DEGRADED, "DEGRADED", str(exc))]
         return _AGG_DEGRADED, summarize(
@@ -781,11 +1032,40 @@ def run_sweep(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
         )
 
     with tempfile.TemporaryDirectory(prefix="cairn-portable-") as workdir:
-        empty_dir = os.path.join(workdir, "empty")
-        os.mkdir(empty_dir)
+        work = materialize_workspace(
+            workdir, policy["gitleaks"]["fingerprints"]
+        )
+        empty_dir = work.empty_dir
+        facts["adapter_config"] = work.config
+        facts["reviewed_ignore_file"] = work.ignore
 
-        # 3. The identifying probe, then the digest gate and mode selection.
-        probe_environment = child_env("reduced", None, empty_dir)
+        # 3. Two pre-execution refusals, BEFORE any adapter invocation --
+        #    including the identifying --version probe -- so that "refused
+        #    before execution" is literally true of the adapter.
+        try:
+            refuse_candidate_ignore_files(target)
+        except Degraded as exc:
+            legs = [LegOutcome("preflight", _AGG_DEGRADED, "DEGRADED", str(exc))]
+            return _AGG_DEGRADED, summarize(
+                target, policy_path, legs, None,
+                "a candidate suppression file refused the run before execution",
+                facts,
+            )
+        if git is not None and (target / ".git").exists():
+            screen_env = child_env("reduced", None, empty_dir, work.empty_config)
+            try:
+                pairs = screen_local_config(git, target, screen_env)
+            except Degraded as exc:
+                legs = [LegOutcome("preflight", _AGG_DEGRADED, "DEGRADED", str(exc))]
+                return _AGG_DEGRADED, summarize(
+                    target, policy_path, legs, None,
+                    "the repository-local configuration screen refused the run "
+                    "before execution", facts,
+                )
+            facts["screened_local_config_keys"] = sorted({key for _o, key in pairs})
+
+        # 4. The identifying probe, then the digest gate and mode selection.
+        probe_environment = child_env("reduced", None, empty_dir, work.empty_config)
         try:
             version_text = probe_version(adapter, probe_environment)
         except Degraded as exc:
@@ -804,15 +1084,23 @@ def run_sweep(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
                 target, policy_path, legs, None, choice.reason, facts,
             )
 
-        # 4. The legs.  Reduced mode cannot reach Git, so it asks only the
+        # 5. The legs.  Reduced mode cannot reach Git, so it asks only the
         #    current-tree question and reports the history question INCOMPLETE.
-        environment = child_env(choice.mode, git, empty_dir)
+        environment = child_env(choice.mode, git, empty_dir, work.empty_config)
         facts["child_path"] = environment["PATH"]
         facts["empty_path_dir"] = empty_dir
-        legs_to_run = [("current-tree", _leg_argv(adapter, "current-tree", target))]
+        current_argv, current_report = _leg_argv(
+            adapter, "current-tree", target, work
+        )
+        facts["current_tree_report"] = current_report
+        legs_to_run = [("current-tree", current_argv)]
         pending: list[LegOutcome] = []
         if choice.mode == "full" and git is not None:
-            legs_to_run.append(("history", _leg_argv(adapter, "history", target)))
+            history_argv, history_report = _leg_argv(
+                adapter, "history", target, work
+            )
+            facts["history_report"] = history_report
+            legs_to_run.append(("history", history_argv))
         elif git is None:
             pending.append(LegOutcome(
                 "history", _AGG_INCOMPLETE, "INCOMPLETE",

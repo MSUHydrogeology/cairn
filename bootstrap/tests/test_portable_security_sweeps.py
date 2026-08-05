@@ -17,6 +17,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -726,3 +727,480 @@ def test_the_trust_roots_are_enumerated_not_generalized() -> None:
     assert "`gitleaks`" in doctrine and "`git`" in doctrine
     assert "shape and containment" in doctrine
     assert "not provenance" in doctrine or "never for provenance" in doctrine
+
+
+# --- C8: the candidate-configuration boundary ---------------------------------
+
+REAL_GIT = shutil.which("git")
+
+
+def git_repo(target: Path) -> Path:
+    """A real Git repository with one commit.  Real Git, not a fixture of one:
+    the configuration screen's whole claim is about what real Git reports."""
+    assert REAL_GIT, "git is a declared trust root and must be present"
+    env = {"PATH": os.path.dirname(REAL_GIT), "HOME": str(target),
+           "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": os.devnull,
+           "GIT_AUTHOR_NAME": "T", "GIT_AUTHOR_EMAIL": "t@example.invalid",
+           "GIT_COMMITTER_NAME": "T", "GIT_COMMITTER_EMAIL": "t@example.invalid"}
+    subprocess.run([REAL_GIT, "-C", str(target), "init", "-q"],
+                   check=True, capture_output=True, env=env)
+    (target / "tracked.txt").write_text("content\n", encoding="utf-8")
+    subprocess.run([REAL_GIT, "-C", str(target), "add", "tracked.txt"],
+                   check=True, capture_output=True, env=env)
+    subprocess.run([REAL_GIT, "-C", str(target), "commit", "-qm", "seed"],
+                   check=True, capture_output=True, env=env)
+    return target
+
+
+def git_shim(path: Path, log: Path) -> Path:
+    """A logging ``git`` that records argv/env and then **execs the real git**,
+    so the node observes the real command and the real behaviour."""
+    body = f'''#!{sys.executable}
+import json, os, sys
+with open({str(log)!r}, "a", encoding="utf-8") as fh:
+    fh.write(json.dumps({{"kind": "git", "argv": sys.argv[1:],
+                          "env": dict(os.environ)}}) + "\\n")
+os.execv({REAL_GIT!r}, [{REAL_GIT!r}] + sys.argv[1:])
+'''
+    path.write_text(body, encoding="utf-8")
+    path.chmod(0o755)
+    return path
+
+
+@pytest.fixture()
+def bindir(tmp_path: Path) -> Path:
+    d = tmp_path / "bin"
+    d.mkdir(exist_ok=True)
+    return d
+
+
+def scan_argv(log: Path, leg_index: int = 0) -> list[str]:
+    scans = [e for e in read_log(log) if e["kind"] == "scan"]
+    assert len(scans) > leg_index, f"only {len(scans)} scan invocation(s)"
+    return scans[leg_index]["argv"]
+
+
+def _sweep(tmp_path: Path, target: Path, *, admissions=None, extra_path=()):
+    log = tmp_path / "log.jsonl"
+    bd = tmp_path / "bin"
+    bd.mkdir(exist_ok=True)
+    fake_tool(bd / "gitleaks", log=log)
+    parts = [str(bd), *[str(p) for p in extra_path]]
+    if REAL_GIT and not extra_path:
+        parts.append(os.path.dirname(REAL_GIT))
+    runner = runner_copy(tmp_path, admissions)
+    rc, summary, out = run_runner(runner, target, path_env=os.pathsep.join(parts))
+    return rc, summary, out, log
+
+
+def test_the_adapter_config_flag_is_sent_and_a_candidate_toml_is_never_read(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """An argv/environment claim, which is what a fake executable can carry: the
+    runner-owned ``--config`` is sent and points **off-tree**, so a candidate
+    ``.gitleaks.toml`` is never the config in force.  What the real adapter then
+    does with it is Chunk I's, not this node's."""
+    (sweep_target / ".gitleaks.toml").write_text("# hostile\n", encoding="utf-8")
+    _rc, summary, out, log = _sweep(tmp_path, sweep_target)
+    argv = scan_argv(log)
+    assert "--config" in argv, out
+    config = argv[argv.index("--config") + 1]
+    assert not config.startswith(str(sweep_target)), config
+    assert config == summary["adapter_facts"]["adapter_config"]
+
+
+def test_both_gitleaks_config_env_vars_are_dropped(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """The child environment is built from an allowlist, so an inherited
+    ``GITLEAKS_CONFIG`` cannot survive.  A denylist that missed one would."""
+    log = tmp_path / "log.jsonl"
+    bd = tmp_path / "bin"
+    bd.mkdir()
+    fake_tool(bd / "gitleaks", log=log)
+    runner = runner_copy(tmp_path)
+    argv = [sys.executable, str(runner), "--target", str(sweep_target), "--json"]
+    proc = subprocess.run(
+        argv, capture_output=True, text=True, timeout=180,
+        env={"PATH": str(bd), "HOME": str(sweep_target), "LC_ALL": "C",
+             "GITLEAKS_CONFIG": "/hostile.toml",
+             "GITLEAKS_CONFIG_TOML": "hostile",
+             "PYTHONDONTWRITEBYTECODE": "1"},
+    )
+    assert proc.returncode != 0, proc.stdout
+    child = [e for e in read_log(log) if e["kind"] == "scan"][0]["env"]
+    assert "GITLEAKS_CONFIG" not in child
+    assert "GITLEAKS_CONFIG_TOML" not in child
+
+
+def test_the_ignore_gitleaks_allow_flag_is_sent(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """Named for the claim its oracle can carry: the flag is in the argv.  That
+    an inline allow comment then fails to suppress is a behavioural claim only a
+    real binary can establish."""
+    _rc, _summary, out, log = _sweep(tmp_path, sweep_target)
+    assert "--ignore-gitleaks-allow" in scan_argv(log), out
+
+
+def test_a_candidate_gitleaksignore_refuses_before_execution(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """Asserted on the **invocation count**, not only the exit code: an exit 20
+    reached *after* execution is a different, weaker control."""
+    (sweep_target / ".gitleaksignore").write_text("abc\n", encoding="utf-8")
+    rc, summary, out, log = _sweep(tmp_path, sweep_target)
+    assert rc == 20, out
+    assert read_log(log) == [], "the adapter was invoked despite the refusal"
+    assert ".gitleaksignore" in leg(summary, "preflight")["reason"]
+
+
+def test_a_gitleaksignore_symlink_also_refuses(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    outside = tmp_path / "elsewhere.txt"
+    outside.write_text("abc\n", encoding="utf-8")
+    (sweep_target / ".gitleaksignore").symlink_to(outside)
+    rc, _summary, out, log = _sweep(tmp_path, sweep_target)
+    assert rc == 20, out
+    assert read_log(log) == []
+
+
+def test_a_nested_gitleaksignore_refuses(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    deep = sweep_target / "a" / "b" / "c"
+    deep.mkdir(parents=True)
+    (deep / ".gitleaksignore").write_text("abc\n", encoding="utf-8")
+    rc, _summary, out, log = _sweep(tmp_path, sweep_target)
+    assert rc == 20, out
+    assert read_log(log) == []
+
+
+def test_the_history_leg_argv_carries_text_no_textconv_and_no_ext_diff(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """``--text`` defeats a tracked ``.gitattributes binary`` rule; the two
+    ``--no-*`` options keep Git diff drivers from extending the scan into
+    executable helpers."""
+    git_repo(sweep_target)
+    bd = tmp_path / "bin"
+    bd.mkdir()
+    log = tmp_path / "log.jsonl"
+    adapter = fake_tool(bd / "gitleaks", log=log)
+    digest = hashlib.sha256(adapter.read_bytes()).hexdigest()
+    runner = runner_copy(tmp_path, {platform_triple("8.30.1"): (digest, "GL-test")})
+    rc, summary, out = run_runner(
+        runner, sweep_target,
+        path_env=os.pathsep.join([str(bd), os.path.dirname(REAL_GIT)]),
+    )
+    assert summary["mode"] == "full", out
+    history = [e for e in read_log(log) if e["kind"] == "scan"][1]["argv"]
+    assert "--log-opts" in history, history
+    opts = history[history.index("--log-opts") + 1]
+    for flag in ("--all", "--full-history", "--text", "--no-textconv",
+                 "--no-ext-diff"):
+        assert flag in opts.split(), (flag, opts)
+    assert rc != 0
+
+
+def test_hostile_repo_local_config_loses_to_the_counted_keys(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """Behavioural, against the **real** ``git`` -- the second declared trust
+    root -- under exactly the child environment the runner constructs, with a
+    subcommand that would actually consult the sentinel keys.
+
+    What this establishes: the environment *the runner constructs* neutralizes a
+    hostile repository-local config on the keys it names.  What it does **not**
+    establish: that the real adapter propagates that environment faithfully to
+    its own Git child.  That stays Chunk I's.
+
+    It calls ``child_env`` directly because the sweep's own screen now *refuses*
+    these keys before execution -- the counted keys are defence in depth behind
+    that refusal, and this node is what keeps the depth honest."""
+    git_repo(sweep_target)
+    fired = tmp_path / "sentinel-fired"
+    sentinel = tmp_path / "sentinel.sh"
+    sentinel.write_text(f"#!/bin/sh\necho fired > {fired}\n", encoding="utf-8")
+    sentinel.chmod(0o755)
+    hooks = tmp_path / "hooks"
+    hooks.mkdir()
+    config = sweep_target / ".git" / "config"
+    config.write_text(
+        config.read_text(encoding="utf-8")
+        + f"\tuseReplaceRefs = true\n"
+        + f"\thooksPath = {hooks}\n"
+        + f"\tfsmonitor = {sentinel}\n"
+        + f"\tpager = {sentinel}\n"
+        + "\tquotePath = true\n"
+        + f"[diff]\n\texternal = {sentinel}\n"
+        + "[protocol]\n\tallow = always\n",
+        encoding="utf-8",
+    )
+    runner = load_runner()
+    work_dir = tmp_path / "work"
+    work_dir.mkdir()
+    work = runner.materialize_workspace(str(work_dir), [])
+    env = runner.child_env("full", None, work.empty_dir, work.empty_config)
+    proc = subprocess.run(
+        [REAL_GIT, "-C", str(sweep_target), "log", "-p", "-U0", "--all"],
+        capture_output=True, env=env, timeout=60, check=False,
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert not fired.exists(), "a candidate-configured sentinel executed"
+    values = {env[f"GIT_CONFIG_KEY_{i}"]: env[f"GIT_CONFIG_VALUE_{i}"]
+              for i in range(int(env["GIT_CONFIG_COUNT"]))}
+    got = subprocess.run(
+        [REAL_GIT, "-C", str(sweep_target), "config", "--get", "core.pager"],
+        capture_output=True, text=True, env=env, timeout=60, check=False,
+    )
+    assert got.stdout.strip() == "cat", got.stdout
+    assert values["core.pager"] == "cat"
+
+
+def test_every_inherited_git_variable_is_dropped(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    log = tmp_path / "log.jsonl"
+    bd = tmp_path / "bin"
+    bd.mkdir()
+    fake_tool(bd / "gitleaks", log=log)
+    runner = runner_copy(tmp_path)
+    seeded = {
+        "GIT_DIR": "/hostile/.git", "GIT_WORK_TREE": "/hostile",
+        "GIT_INDEX_FILE": "/hostile/index", "GIT_EXTERNAL_DIFF": "/hostile/diff",
+        "GIT_SSH_COMMAND": "/hostile/ssh", "GIT_ALTERNATE_OBJECT_DIRECTORIES": "/x",
+        "GIT_PAGER": "/hostile/pager", "GIT_ASKPASS": "/hostile/ask",
+        "http_proxy": "http://hostile", "HTTPS_PROXY": "http://hostile",
+        "PYTHONPATH": "/hostile", "PYTHONSTARTUP": "/hostile/start.py",
+        "PAGER": "/hostile/pager",
+    }
+    proc = subprocess.run(
+        [sys.executable, str(runner), "--target", str(sweep_target), "--json"],
+        capture_output=True, text=True, timeout=180,
+        env={"PATH": str(bd), "HOME": str(sweep_target), "LC_ALL": "C",
+             "PYTHONDONTWRITEBYTECODE": "1", **seeded},
+    )
+    assert proc.returncode != 0, proc.stdout
+    child = [e for e in read_log(log) if e["kind"] == "scan"][0]["env"]
+    for name in seeded:
+        assert name not in child, f"{name} survived into the child environment"
+
+
+def test_the_current_tree_leg_argv_disables_symlink_following(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    _rc, _summary, out, log = _sweep(tmp_path, sweep_target)
+    assert "--follow-symlinks=false" in scan_argv(log), out
+
+
+def test_the_current_tree_leg_argv_adds_no_gitignore_filter(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """A ``.gitignore``d ordinary file is still in scope, so the runner adds no
+    gitignore-respecting filter to the argv."""
+    _rc, _summary, out, log = _sweep(tmp_path, sweep_target)
+    argv = scan_argv(log)
+    assert not [a for a in argv if "gitignore" in a.lower()], argv
+
+
+def test_policy_fingerprints_reach_an_off_tree_ignore_file_only(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """A suppression file discovered inside the candidate tree never becomes
+    policy; reviewed fingerprints are materialized off-tree."""
+    policy = tmp_path / "policy.json"
+    policy.write_text(
+        '{"schema": 1, "gitleaks": {"fingerprints": ["abc:def:1"]}}',
+        encoding="utf-8",
+    )
+    log = tmp_path / "log.jsonl"
+    bd = tmp_path / "bin"
+    bd.mkdir()
+    fake_tool(bd / "gitleaks", log=log)
+    runner = runner_copy(tmp_path)
+    proc = subprocess.run(
+        [sys.executable, str(runner), "--target", str(sweep_target),
+         "--policy", str(policy), "--json"],
+        capture_output=True, text=True, timeout=180,
+        env={"PATH": str(bd), "HOME": str(sweep_target), "LC_ALL": "C",
+             "PYTHONDONTWRITEBYTECODE": "1"},
+    )
+    summary = json.loads(proc.stdout)
+    argv = scan_argv(log)
+    assert "--gitleaks-ignore-path" in argv
+    ignore = argv[argv.index("--gitleaks-ignore-path") + 1]
+    assert not ignore.startswith(str(sweep_target)), ignore
+    assert ignore == summary["adapter_facts"]["reviewed_ignore_file"]
+
+
+def test_a_fingerprint_cannot_inject_a_second_ignore_line(tmp_path: Path) -> None:
+    """Belt and braces with the A8 parametrized case: a fingerprint carrying a
+    newline is refused, so one reviewed suppression can never become two
+    ignore-file lines."""
+    runner = load_runner()
+    with pytest.raises(runner.PolicyError, match="may never become two"):
+        runner.parse_policy(
+            '{"schema": 1, "gitleaks": {"fingerprints": ["good\\nsecond-line"]}}'
+        )
+
+
+def test_the_gitleaks_timeout_is_strictly_inside_the_outer_deadline(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """Equal deadlines make the inner timeout unobservable."""
+    runner = load_runner()
+    assert runner._ADAPTER_TIMEOUT < runner._SCAN_TIMEOUT
+    _rc, _summary, out, log = _sweep(tmp_path, sweep_target)
+    argv = scan_argv(log)
+    sent = [a for a in argv if a.startswith("--timeout=")]
+    assert sent == [f"--timeout={runner._ADAPTER_TIMEOUT}s"], (sent, out)
+
+
+# --- C8/M49: the deny-by-default repository-local configuration screen ---------
+
+def test_an_unlisted_hostile_local_config_key_refuses_before_execution(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    git_repo(sweep_target)
+    config = sweep_target / ".git" / "config"
+    config.write_text(
+        config.read_text(encoding="utf-8") + "\tpager = /hostile/pager\n",
+        encoding="utf-8",
+    )
+    rc, summary, out, log = _sweep(tmp_path, sweep_target)
+    assert rc == 20, out
+    assert read_log(log) == [], "the adapter ran despite an unscreened key"
+    reason = leg(summary, "preflight")["reason"]
+    assert "core.pager" in reason and "inert allowlist" in reason, reason
+
+
+def test_an_include_path_injection_refuses(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """Measured as probe P2: an unlisted key entering through ``include.path``
+    survives the counted-key pin.  The screen refuses it before execution."""
+    git_repo(sweep_target)
+    (sweep_target / "hostile.inc").write_text(
+        "[cairnprobe]\n\tinjected = YES\n", encoding="utf-8"
+    )
+    config = sweep_target / ".git" / "config"
+    config.write_text(
+        config.read_text(encoding="utf-8") + "[include]\n\tpath = ../hostile.inc\n",
+        encoding="utf-8",
+    )
+    rc, summary, out, log = _sweep(tmp_path, sweep_target)
+    assert rc == 20, out
+    assert read_log(log) == []
+    reason = leg(summary, "preflight")["reason"]
+    assert "hostile.inc" in reason or "include" in reason, reason
+
+
+def test_an_includeif_injection_refuses(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """Measured as probe P3, the ``includeIf`` form."""
+    git_repo(sweep_target)
+    (sweep_target / "hostile2.inc").write_text(
+        "[cairnprobe2]\n\tinjected = YES\n", encoding="utf-8"
+    )
+    config = sweep_target / ".git" / "config"
+    config.write_text(
+        config.read_text(encoding="utf-8")
+        + '[includeIf "gitdir:**"]\n\tpath = ../hostile2.inc\n',
+        encoding="utf-8",
+    )
+    rc, summary, out, log = _sweep(tmp_path, sweep_target)
+    assert rc == 20, out
+    assert read_log(log) == []
+
+
+def test_the_screen_expands_includes(tmp_path: Path, sweep_target: Path) -> None:
+    """Its own pin, not a comment: measured as probe P5, a listing **without**
+    ``--includes`` shows ``include.path=...`` and *neither* injected key, so the
+    two injection nodes above would go green while the hazard was live.  The
+    node observes the real argv through a logging shim that execs real git."""
+    git_repo(sweep_target)
+    log = tmp_path / "log.jsonl"
+    gitdir = tmp_path / "gitshim"
+    gitdir.mkdir()
+    git_shim(gitdir / "git", log)
+    bd = tmp_path / "bin"
+    bd.mkdir()
+    fake_tool(bd / "gitleaks", log=log)
+    runner = runner_copy(tmp_path)
+    run_runner(runner, sweep_target,
+               path_env=os.pathsep.join([str(bd), str(gitdir)]))
+    screens = [e for e in read_log(log)
+               if e["kind"] == "git" and "config" in e["argv"]]
+    assert screens, "the screen never ran"
+    assert "--includes" in screens[0]["argv"], screens[0]["argv"]
+    assert "--show-origin" in screens[0]["argv"]
+    assert "--local" in screens[0]["argv"]
+
+
+def test_the_screen_does_not_execute_candidate_configuration(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """Measured as probe P6: run under the sterilized child environment with
+    output captured, a hostile ``core.pager`` does not execute -- the screen's
+    own Git call does not hand control to candidate configuration."""
+    git_repo(sweep_target)
+    fired = tmp_path / "sentinel-fired"
+    sentinel = tmp_path / "sentinel.sh"
+    sentinel.write_text(f"#!/bin/sh\necho fired > {fired}\n", encoding="utf-8")
+    sentinel.chmod(0o755)
+    config = sweep_target / ".git" / "config"
+    config.write_text(
+        config.read_text(encoding="utf-8") + f"\tpager = {sentinel}\n",
+        encoding="utf-8",
+    )
+    rc, _summary, out, log = _sweep(tmp_path, sweep_target)
+    assert rc == 20, out          # refused on the unlisted key
+    assert not fired.exists(), "the screen executed candidate configuration"
+    assert read_log(log) == []
+
+
+def test_the_screen_accepts_an_ordinary_repository(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """The over-refusal guard for the screen: a plain ``git init`` + commit, and
+    a remote, must pass.  A control that refuses ordinary trees gets disabled."""
+    git_repo(sweep_target)
+    subprocess.run(
+        [REAL_GIT, "-C", str(sweep_target), "remote", "add", "origin",
+         "https://example.invalid/x.git"],
+        check=True, capture_output=True,
+        env={"PATH": os.path.dirname(REAL_GIT), "HOME": str(sweep_target),
+             "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": os.devnull},
+    )
+    rc, summary, out, log = _sweep(tmp_path, sweep_target)
+    assert rc != 20, out
+    assert "screened_local_config_keys" in summary["adapter_facts"]
+    keys = summary["adapter_facts"]["screened_local_config_keys"]
+    assert "remote.origin.url" in keys, keys
+    assert [e for e in read_log(log) if e["kind"] == "scan"], "no leg ran"
+
+
+def test_the_residual_is_printed_not_only_documented(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """A residual that exists only in a doctrine file an adopter may never open
+    is the shelf-artifact failure restated, so the runner's own human report
+    names the accepted preflight/execution race."""
+    log = tmp_path / "log.jsonl"
+    bd = tmp_path / "bin"
+    bd.mkdir()
+    fake_tool(bd / "gitleaks", log=log)
+    runner = runner_copy(tmp_path)
+    proc = subprocess.run(
+        [sys.executable, str(runner), "--target", str(sweep_target)],
+        capture_output=True, text=True, timeout=180,
+        env={"PATH": str(bd), "HOME": str(sweep_target), "LC_ALL": "C",
+             "PYTHONDONTWRITEBYTECODE": "1"},
+    )
+    report = proc.stdout
+    assert "residual:" in report, report
+    assert "race" in report and "snapshot" in report, report
+    assert "not a boundary" in report, report
