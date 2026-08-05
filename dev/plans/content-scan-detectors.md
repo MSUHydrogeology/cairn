@@ -10,7 +10,7 @@
 Decision, *"as revised"*). It sits at
 `dev/proposals/archive/2026-08-03-claude-content-scan-detectors.md` and moves to
 `dev/proposals/archive/` when it archives.
-**Status**: open
+**Status**: executing
 **Plan review**: required(**External**, security lens) — carried from the
 proposal header and restated in the Decision (*"The plan carries
 `required(External, security lens)` in its own right; this Decision does not
@@ -3314,3 +3314,40 @@ each figure names the revision it was taken at.
 * **The 32-code-point boundary and the 12 492-token verification** were measured
   against a reconstruction, not against code. E2/E3 now require re-derivation
   against the landed table.
+
+## Implementation record -- Codex -- 2026-08-05
+
+**Chunks C and E2-E4 landed in `7dd73a0`.** Chunk C now has independent
+sentinels over the running UCD's `Cf` category, the reviewed non-`Cf`
+default-ignorable samples, all eighteen noncharacter rows, the scanner source's
+raw-code-point hygiene, and `scan_file`'s byte immutability. E2-E4 publish the
+exact 32-code-point NFD-fold closure, the seven measured scientific residual
+shapes, the two priced homoglyph limits, the whole-script-Cyrillic residual, and
+the pinned-UCD limit in both shipped documentation surfaces.
+
+The plan's deliberate breakage checks all discriminated as required:
+
+* deleting each of `U+FE00-U+FE0F`, `U+034F`, and `U+3164` left C1 green and
+  made C2 red on the removed member;
+* deleting the plane-1 noncharacter row left C1 green and made C3 red on
+  `U+1FFFE`;
+* planting raw `U+00AD` in the scanner source made C4 red; and
+* making `scan_file` rewrite its input made C5 red, while the retired
+  `scan_text` string-immutability form still passed against that same module.
+
+The landed implementation re-derived the published boundary against the real
+table: the 42-token reconciliation and the 20-member NFD expansion both pass.
+The apparent D14 collection discrepancy is closed: the class collects 74 named
+corpus rows plus two manifest-integrity tests, for 76 nodes total.
+
+**Verification.** Canonical Python 3.13.13 with
+`PYTHONDONTWRITEBYTECODE=1`: `2472 passed`, zero failures/skips/xfails and three
+pre-existing `stevedore` deprecation warnings; `test_content_scan.py` alone is
+`198 passed`; `check_cairn` is clean over 182 Markdown files; Bandit is clean on
+the edited scanner. The repo-wide neutrality subcheck remains at its existing
+96-failure baseline; this chunk introduced no vendor token.
+
+**Gate accounting.** D-ON-3 is **MET** by the landed 74-row D14 corpus. D-ON-1
+and D-ON-2 remain **NOT MET** and Maintainer-only. Chunk E5 remains deliberately
+unlanded until the shared `CHANGELOG.md` serialization point. No default-on
+selection, frozen-manifest re-pin, AST ceremony, Decision, or push was performed.
