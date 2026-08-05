@@ -294,7 +294,10 @@ def scan_targets() -> list[str]:
 
     The two registry loops below (``_MODULE_MAPPINGS``, ``_ALWAYS_ON_MAPPINGS``)
     are strictly redundant once the manifest union lands -- measured, their
-    42 entries are a subset of the manifest's 44 -- and are **retained on
+    43 entries are a subset of the manifest's 45 (``as_of`` 2026-08-05; both
+    are dated snapshots that move with every module registration, and no test
+    pins either, so re-measure rather than trust them -- what is durable is
+    the **subset relation**, not the pair of counts) -- and are **retained on
     purpose**: they are ``set.add`` calls into the same accumulator, so
     "this change cannot shrink the scanned surface" is true by inspection
     rather than by measurement. They are defence in depth, not a second
