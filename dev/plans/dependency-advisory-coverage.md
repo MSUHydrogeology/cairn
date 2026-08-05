@@ -2293,3 +2293,61 @@ anyway); the Chunk C tier change (5 -> 20 on a tool-absent machine, now live and
 described in adopter doctrine); and the decode-policy divergence with
 `security-verification-activation` (this scope shipped `errors="replace"` plus
 DEGRADED-on-replacement, and did not settle the cross-scope question).
+
+### Chunk 0 -- partial evidence, obtained with no network action -- 2026-08-05
+
+**A premise this plan and both of its reviewers measured is now stale.** *What
+was measured for this plan* records `shutil.which("pip-audit")` and
+`importlib.util.find_spec("pip_audit")` as both `None`, and every later section
+reasons from "pip-audit is not installed here". Re-measured today on the
+canonical environment:
+
+```
+shutil.which("pip-audit")            -> None            (no console script)
+importlib.util.find_spec("pip_audit") -> ModuleSpec(...)  <- RESOLVES
+importlib.metadata.version("pip-audit") -> 2.10.1
+```
+
+**pip-audit 2.10.1 is importable in the canonical environment.** The
+orchestrator's presence test is `which is None AND find_spec is None`, so it
+reports the tool **present**, and a default run's aggregate now comes from the
+egress-off limb (INCOMPLETE) rather than the tool-absent limb. This is why
+`test_end_to_end_clean_then_tamper` derives its expectation from measured
+presence instead of a constant.
+
+**What that unlocks without touching the network.** The fence exists because
+Chunk 0's measurement was believed to need a throwaway environment and an index
+fetch. With the tool already installed, two of its four deliverables need
+neither, and both were taken:
+
+* **0a -- pinned version: `2.10.1`.** (The reviewer's 2.10.0 was close; the plan
+  was right not to assume it.)
+* **0b -- flag inventory**, from `python -I -m pip_audit --help` (a local
+  argparse dump; no index, no venv, no install, no egress). **All four pinned
+  flags exist and every pinned value is among the accepted choices**:
+  `-f/--format` (choices include `json`), `-s/--vulnerability-service` (choices
+  `osv, pypi, esms`; default `pypi`, so pinning `osv` is load-bearing),
+  `--progress-spinner {on,off}`, `--cache-dir`. Also present and deliberately
+  unused: `-o/--output` (destination stays stdout), `-d/--dry-run`,
+  `--no-deps`, `-l/--local`, `--skip-editable`, `--osv-url`, `--timeout`.
+  **`-S/--strict` exists and its own help text confirms this plan's reason for
+  omitting it** -- *"fail the entire audit if dependency collection fails on any
+  dependency"*, which would give an unresolvable dependency the same exit code
+  as a vulnerability report. Residue: `pip_audit_argv`'s docstring no longer
+  claims its flags are unverified, because they no longer are.
+
+**What is still fenced, and it is the load-bearing half.**
+
+* **0c -- the JSON schema.** Unmeasured. It needs a real audit run, which
+  contacts the vulnerability service. `_PIP_AUDIT_SCHEMA_ESTABLISHED` stays
+  `False`, CLEAN stays unreachable for this leg, and D-t1 / D-t6 stay unshipped.
+* **0d -- ambient re-confirmation.** Unmeasured for the same reason.
+
+**A cheaper route for the Maintainer to consider than the plan's.** `-d/--dry-run`
+is documented as *"collect all dependencies but do not perform the auditing
+step"* -- i.e. the **enumeration** half of 0c without the lookup. If that is
+genuinely egress-free it would establish the enumeration key with no network at
+all, which is a smaller authorization than a venv plus an index fetch. **It was
+not run.** "Probably local" is not the same as local, the fence is about network
+activity rather than about installs, and an implementing agent guessing at that
+distinction is exactly the failure the fence prevents.

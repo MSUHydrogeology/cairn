@@ -728,16 +728,24 @@ def pip_audit_argv(*, cache_dir: Path) -> list[str]:
     here, in argv, because a narrowed claim over an ambient environment is
     exactly as false as a wide one.
 
-    **Named residual -- these flags are UNVERIFIED.** The plan's Chunk 0 (a
-    throwaway environment plus a package fetch from a public index) is the step
-    that establishes which flags the pinned tool version actually accepts, and
-    it has **not been run**. A flag this version rejects surfaces as a tool
-    usage error -> DEGRADED, which is loud and fail-closed, but it is a
-    residual and is recorded as one rather than presented as a verified
-    contract. ``--strict`` is deliberately **not** pinned: it makes an
-    unresolvable dependency share an exit code with a vulnerability report,
-    which would conflate non-coverage with findings -- the precise confusion
-    this leg exists to prevent."""
+    **What is verified, and what is not.** Every flag above was confirmed to
+    exist, with the value used among its accepted choices, against **pip-audit
+    2.10.1** by reading that version's own ``--help`` -- a purely local read of
+    an installed package, no index fetch. What remains **unverified** is the
+    *shape of the JSON* the tool emits (see
+    ``_PIP_AUDIT_SCHEMA_ESTABLISHED``): establishing that needs a real audit
+    run, which contacts the vulnerability service. A flag a *different* version
+    rejects surfaces as a tool usage error -> DEGRADED, which is loud and
+    fail-closed.
+
+    ``--strict`` is deliberately **not** pinned, and that version's help text
+    confirms the reason rather than merely suggesting it: it *"fail[s] the
+    entire audit if dependency collection fails on any dependency"*, which
+    makes an unresolvable dependency share an exit code with a vulnerability
+    report -- conflating non-coverage with findings, the precise confusion this
+    leg exists to prevent. Non-coverage is reported through the disposition
+    counts instead. ``-o/--output`` exists and is deliberately unused: the
+    destination is stdout, never a path."""
     return [
         sys.executable, "-I", "-m", "pip_audit",
         "--format", "json",
