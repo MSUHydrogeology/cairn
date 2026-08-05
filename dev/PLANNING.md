@@ -270,7 +270,7 @@ board by design.
   | Cluster | Current lifecycle owners | Next boundary |
   |---|---|---|
   | **[BND] Input, execution, containment** | `fork-advisory-semantics`, `api-web-security-modules` | profile-authority consolidation; Class C no later than v0.4 preparation |
-  | **[VER] Verification and coverage** | `content-scan-detectors` + `separator-detection`; `security-verification-activation`; `portable-security-sweeps`; `dependency-advisory-coverage`; `api-web-security-modules`; `security-preflight-checklist` | settle activation binding mode, then admit capability entries; one scanner batch |
+  | **[VER] Verification and coverage** | `content-scan-detectors` + `separator-detection`; `security-verification-activation`; `portable-security-sweeps`; `api-web-security-modules`; `security-preflight-checklist` | settle activation binding mode, then admit capability entries; one scanner batch |
   | **[TRU] Trust roots and provenance** | `fork-advisory-semantics`; the live gate-reanchor posture below | trusted-source boundary after the release bar settles required source/install claims |
   | **[REC] Deliberation authority, identity, context, record integrity** | `review-gate-enforcement`; byline residuals below | one identity-authority consolidation when a trigger fires, not one proposal per Unicode row |
   | **[REL] Release evidence and ceremonies** | `release-security-bar`; the landed Maintainer-run release command; the scheduled frozen-file union | finish the finite register, then run one re-derived supervised ceremony |
@@ -688,6 +688,22 @@ point rather than being copied into another backlog.
   for non-text module files.
 
 **[TRU / VER] Security apparatus**
+* **[VER-4 / TRU-3] Dependency-advisory evidence tightening** *(deferred
+  2026-08-05 from `dependency-advisory-coverage`)* — v1 reports the complete
+  validated partition for each run but stores no integrity-covered residual
+  baseline for run-over-run diffs. Its OSV source claim also relies on
+  pip-audit 2.10.1's default endpoint constant rather than an explicit
+  `--osv-url` argv pin; the closed child environment prevents ambient override.
+  Trigger: a requirement for historical drift evidence, a pip-audit version
+  bump, or any widening of the pinned-source claim. A successor must bind the
+  baseline into the install/integrity contract rather than trust an adjacent
+  editable file.
+* **[BND-3] Security-runner resource containment** *(deferred 2026-08-05 from
+  `dependency-advisory-coverage`)* — POSIX timeout cleanup now kills a surviving
+  process group, but Windows descendant cleanup remains unverified and child
+  disk growth is not bounded. Trigger: Windows support for this runner, adding
+  a tool that writes candidate-controlled volumes, or the first cleanup/disk
+  incident. Keep these as containment limits, not advisory-parser defects.
 * **[VER-4] Cairn security-check integrity preflight** *(deferred Aug 2026 from
   `default-security-stance`)* — `run_security_audit.py` refuses to run when its
   apparatus or policy inputs are not lockfile-clean; Cairn's own
@@ -829,6 +845,14 @@ plan can archive)*
   This row is not an open follow-up: it carries a quoted Maintainer disposition
   and a named ceremony. It stays on the board as a *scheduled* item, and its
   removal condition is the ceremony running, not a decision.
+
+* **[REL-3] Dependency-audit frozen pins await the scheduled ceremony**
+  *(plan `dependency-advisory-coverage`, archived 2026-08-05)* —
+  `templates/modules/team-gated/run_security_audit.py` and
+  `bootstrap/tests/test_security_stack.py` are attributable
+  `FROZEN-MODIFIED` entries. They join the already-scheduled supervised frozen
+  union; no standalone re-pin is authorized. Removal condition: the ceremony
+  verifies and records these exact paths.
 
 **[TRU / REL] Release authenticity** *(residuals from plan `release-authenticity`)*
 * **[TRU-6] RA1 (a) — Cairn's signing authority widens** *(non-mechanical for the

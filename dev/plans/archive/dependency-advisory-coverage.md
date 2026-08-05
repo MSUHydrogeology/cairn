@@ -1,7 +1,8 @@
 <!-- cairn-internal-ref-allow: doctrine/rationale.md doctrine/plans.md doctrine/dual-review.md doctrine/coordination.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- claim-check-allow: scripts/run_security_audit.py -->
 <!-- ^ ADOPTER-TREE DESTINATION path -- where the orchestrator lands in an installed
-<!-- claim-check-allow: dev/proposals/2026-08-03-claude-dependency-advisory-coverage.md, dev/plans/default-security-stance.md -->
+<!-- Historical sections cite the former live plan path and its live-board link. -->
+<!-- claim-check-allow: dev/proposals/2026-08-03-claude-dependency-advisory-coverage.md, dev/plans/default-security-stance.md, dev/plans/dependency-advisory-coverage.md, ../PLANNING.md -->
 <!-- ^ The source proposal and cited default-security plan are archived. These
      citations sit in
      append-only sections, so the path is exempted rather than rewritten. -->
@@ -18,7 +19,7 @@
 Maintainer Decision, *"I accept the dependency-advisory-coverage proposal as
 revised"*). It currently sits under `dev/proposals/` and moves to
 `dev/proposals/archive/` when it archives.
-**Status**: review
+**Status**: archived
 **Plan review**: required(**External**, security lens) — carried from the
 proposal's Decision (*"Next transition: plan-open, carrying `required(External,
 security lens)` in its own right"*) and independently triggered: `AGENTS.md` >
@@ -2748,3 +2749,33 @@ I served as the independent security code reviewer for the `dependency-advisory-
    - `PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_security_stack.py -q`: **98 passed in 17.87s**.
    - `scripts/claim_check.py dev/plans/dependency-advisory-coverage.md`: **OK, no claim-check flags**.
 
+## Archive -- Codex -- 2026-08-05
+
+The implementation and corrective chain is complete. Chunks A--E landed through
+`355b49d`, `6cfb9c3`, `9aea3af`, and `d24c589`; correction `d01c5ba` binds the
+parser to the active pip-audit version, makes structured findings authoritative,
+and completes process-group cleanup independently of the leader process.
+
+The stable real-environment boundary at
+`75da38349e0f804209234ef668aedbbd909caef1` passed **2513 tests** with zero
+failures, skips, xfails, or xpasses under CPython 3.13.13. The independent
+Antigravity security review at `aac6ac2` returned **SHIP**, re-ran all 98
+security-stack tests, and specifically re-examined CR1--CR3. The earlier
+unexplained end-to-end transient did not reproduce in either the stable suite or
+the review run.
+
+The Decision-to-implementation mapping holds: the leg audits Python
+distributions only; reports SCANNED and UNKNOWN from the validated formatter
+partition; makes CLEAN require zero UNKNOWN and zero validated vulnerabilities;
+ships no stored residual baseline in v1; and keeps the shared subprocess
+boundary fail-closed. The conditional fail-closed-fallback archive row does not
+fire because the locally inspected 2.10.1 schema was established and the active
+version is now checked at runtime. The conditional Chunk C tier-change row also
+does not fire.
+
+The lasting residuals are homed in `dev/PLANNING.md`: conda/native advisory
+coverage; a future integrity-covered run-over-run baseline and explicit OSV
+endpoint pin; Windows descendant cleanup and child-disk exhaustion; and the two
+frozen files awaiting the already-scheduled supervised gate ceremony. The
+changelog serialization landed at `9b2f526`. No AST re-anchor, gate re-pin,
+credential use, network fetch, or push was performed by this plan.

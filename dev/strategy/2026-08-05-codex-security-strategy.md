@@ -251,7 +251,7 @@ each check inspect, and can coverage silently narrow?
   the safe next action without strengthening `INCOMPLETE` into `CLEAN`.
 * [VER-4] **Language and dependency capabilities.** Plans
   [`portable-security-sweeps`](../plans/portable-security-sweeps.md) and
-  [`dependency-advisory-coverage`](../plans/dependency-advisory-coverage.md)
+  [`dependency-advisory-coverage`](../plans/archive/dependency-advisory-coverage.md)
   own one measured offline non-Python sweep and honest Python-distribution
   advisory coverage. The accepted dependency v1 stores no vulnerability
   baseline. Conda-native advisory coverage remains triggered research; Grype
