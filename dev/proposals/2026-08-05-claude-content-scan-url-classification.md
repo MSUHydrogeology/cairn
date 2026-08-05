@@ -224,3 +224,114 @@ Not the numbers — the mechanism, twice over now:
    no coverage was lost; that argument is narrower than it sounded, and the
    residual gap should be named in the runner's docstring rather than left for a
    reader to discover.
+
+## Review -- Codex (External Security Review) -- 2026-08-05
+
+**Tier**: External
+
+**Findings**: raised
+
+**Recommendation: REVISE.** Revision 1 correctly withdraws the cross-tree
+classifier. The replacement still defaults an unknown role to the less
+protective class, and the runner has two independently reproduced Git-input
+channels that its current trust statement does not account for.
+
+### Reproduction
+
+Re-run under `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13), at
+`9bf3524`, using `audited_text_files()` for the file set and the shipped scanner
+and allowlist for findings. The current corpus is **82** files, not 141: 4 known
+instruction files, 77 known prose files, and 1 unknown file (the roots manifest
+itself). As shipped, URL scanning produces **53** findings, all
+`suspicious-url`; the proposed enumeration produces 0. The figures in the
+proposal were snapshots, not invariants, and should not be carried forward.
+
+The behavioral probes also reproduce the named residual: a bare
+`https://evil.example/x` in prose produces no finding with `scan_urls=False`,
+while the same destination preceded by a supported transfer verb still
+produces `egress`.
+
+### Findings
+
+**[S1 -- important, blocking] Unknown roles fail open.** The proposed
+classification enumerates instruction surfaces and therefore makes every new,
+misspelled, or otherwise unrecognized path prose. That silently disables URL
+detection on the exact future surface the classifier did not anticipate.
+
+Remediation: enumerate the narrower exception instead. Known discussion roots
+(`dev/**` and `docs/**`) may use `scan_urls=False`; every other role, including
+unknown files, uses `scan_urls=True`. Pin an unknown synthetic path and the
+roots manifest in tests. The cost is deliberate: a newly added prose root may
+produce URL noise until it is explicitly classified. That visible maintenance
+cost is preferable to silently losing a detector on a new agent-loaded file.
+
+**[S2 -- important, pre-existing] Ambient Git environment can redirect the
+audited set.** At `templates/modules/team-gated/content_scan_runner.py:172`,
+`_git_tracked()` inherits the process environment. With `GIT_DIR` pointed at a
+second repository, I observed `_git_tracked(repo_a, ["dev"])` return
+the alternate repository's path rather than the target repository's path. The
+call's argv roots are **TRUSTED-INPUT** under the v1 self-audit model; its
+ambient `GIT_*` environment is **USER-CONTROLLED** process input. An altered
+environment can therefore shrink or redirect the set before role classification
+occurs.
+
+Remediation: use one runner-local Git launcher that drops every ambient
+`GIT_*` key, restores only the values it deliberately needs, disables relevant
+execution-bearing repository config, and resolves/reports the Git executable
+once. This is a pre-existing runner defect rather than a consequence of role
+classification; it may be repaired here or routed to a named security record,
+but it should not remain implicit.
+
+**[S3 -- important, pre-existing] Manifest roots are accepted as Git options.**
+The same call constructs `git ls-files -z *roots` without an option terminator,
+while `load_audit_roots()` permits a relative root beginning with `-`. In a
+temporary repository, a manifest root of `--others` made
+`audited_text_files()` include an untracked `untracked.md`, contradicting its
+git-tracked-set contract. The manifest is **TRUSTED-INPUT**, so this is not an
+untrusted-PR injection claim; it is an unsafe parser/subprocess composition on
+trusted policy with no stated rationale.
+
+Remediation: reject leading-dash roots and pass `--` before pathspecs. Test the
+rejection. Both controls are cheap and make the parser's path grammar match the
+subprocess grammar.
+
+**[S4 -- important] The prose blind spot must be part of the contract.** A bare
+hostile URL in known discussion prose is detected by neither `suspicious-url`
+nor `egress`. This is acceptable in the present self-audit, human-review threat
+model: prose legitimately carries citations, and the scanner is a witness, not
+a proof. The runner docstring and a regression must nevertheless state and pin
+that exact residual; “egress covers the prose threat” is too broad.
+
+### Six-boundary walk and input triage
+
+* **Deserialization -- not applicable.** No object-bearing format is loaded.
+  The dynamic import at `content_scan_runner.py:358-363` executes the shipped
+  scanner as **TRUSTED-INPUT** apparatus, which is acceptable under the stated
+  v1 model and must not be represented as containment.
+* **Subprocess invocation -- applicable.** `_git_tracked()` uses `shell=False`,
+  but combines **TRUSTED-INPUT** manifest roots with **USER-CONTROLLED** ambient
+  Git environment. Findings S2-S3 apply.
+* **Parsing -- applicable.** The roots manifest, residual baseline, URL
+  allowlist, and scanned repository text are all **TRUSTED-INPUT** in this
+  self-audit design. Sentinel, containment, and malformed-input refusals are
+  sound; role parsing needs S1, and path-to-argv parsing needs S3.
+* **File/path handling -- applicable.** Roots and audited files are
+  **TRUSTED-INPUT**. Absolute paths, `..`, symlink escapes, non-regular files,
+  and size budgets are refused. The manifest's self-inclusion is useful drift
+  evidence, but it cannot authenticate a hostile manifest that also narrows the
+  roots or changes the apparatus; that limitation is accurately accepted by
+  the v1 trusted-apparatus threat model.
+* **Network I/O -- not applicable.** The scanner lexically recognizes URLs but
+  performs no fetch.
+* **Credentials/environment -- applicable.** No credential is read or logged.
+  Ambient Git variables are **USER-CONTROLLED** and security-relevant; S2
+  applies. The allowlist and baseline are **TRUSTED-INPUT** policy, not secrets.
+
+### Cross-caller ruling
+
+Revision 1's separation is correct. `scripts/check_cairn.py` must retain its
+private Cairn-source-layout predicate; the adopter runner must own its role
+mapping. No detector code needs to move. Require focused tests proving
+`check_cairn.py` still applies URL scanning to `templates/**` and the runner
+applies the fail-closed role rule above. With that separation, the proposed
+runner change cannot alter Cairn's existing caller behavior.
