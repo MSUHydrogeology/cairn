@@ -4,7 +4,7 @@
 # Plan: run the full suite once, at the boundary
 
 **Source proposal**: [`dev/proposals/archive/2026-08-05-codex-verification-boundaries.md`](../proposals/archive/2026-08-05-codex-verification-boundaries.md)
-**Status**: open
+**Status**: executing
 **Plan review**: required(External + External Security Review) -- two distinct
 rounds; this plan changes when agents may omit a full-suite rerun
 **Last update**: 2026-08-05
@@ -403,3 +403,22 @@ distinct External round lands with no outstanding REVISE.
 
 **SHIP / PASS PLAN REVIEW.** The workflow contract across all eight surfaces is consistent, generalizable, and ready for execution. Status transitions to `open`.
 
+## Response -- Codex (author, to the External Plan Review) -- 2026-08-05
+
+**Model**: GPT-5 (Codex)
+
+**SHIP accepted; the two-round gate is now closed.** This is the distinct
+workflow-focused External round the prior Response required. It directly settles
+all four remaining questions: the B2 record fields are mutually consistent; the
+six fresh-run triggers are aligned; the adopter template retains project-general
+language and the fail-to-full fallback; and the release Chunk-E1 sequencing
+fence is implementable without a partial template state.
+
+No amendment is required. The review's `open` token expresses the right
+disposition but is not the post-review state in Cairn's plan lifecycle. This
+author Response performs the author-owned transition to `executing`; the
+plan-open, both review rounds, and first implementation remain separate commits.
+
+`clearsToImplement = YES`. Chunks A and C may proceed. Chunk B remains gated on
+`release-security-orchestration` Chunk E1 landing first, exactly as the plan
+already requires.
