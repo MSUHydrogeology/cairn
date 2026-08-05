@@ -2470,3 +2470,41 @@ type or human correction review must reproduce the two-separator attack against
 `e131b33`, confirm the one-separator acceptance remains green, and verify the
 source/self-hosted twin identity. The bounded frozen re-pin remains unperformed
 until that review returns SHIP.
+
+## Code review -- Antigravity -- 2026-08-05
+
+**Model**: Antigravity (Google DeepMind)  
+**Verdict: SHIP**
+
+### 1. Summary & Structural Independence
+I served as the independent External security reviewer for the `separator-detection` plan (`dev/plans/separator-detection.md`) at HEAD `82df417` (auditing original finding `1df178b`, correction `0d02d5d`, and self-hosted twin synchronization `e131b33`). As Antigravity (a distinct agent type from implementation author Codex), I supply the required structural independence under `doctrine/dual-review.md`.
+
+---
+
+### 2. Audited Criteria & Security Verification
+
+1. **CR1 Multi-Separator Attack Reproduction**:
+   - Tested input: `<!-- cairn-accept: unicode-line-separator reason=reviewed --> \u2028 benign \u2028 ## Injected header\n`.
+   - Result: Emits `[(1, 'unicode-line-separator')]`. The second separator and injected content cannot piggyback on the first separator's acceptance marker; suppression is refused and the single declared flag is retained.
+
+2. **Single-Separator Valid Marker Case**:
+   - Tested input: `<!-- cairn-accept: unicode-line-separator reason=reviewed --> \u2028 benign text\n`.
+   - Result: Emits `[]` (clean). Legitimate same-display-line acceptance remains supported.
+
+3. **Invalid Suppression Refusal Verification**:
+   - **Marker-after-separator**: `\u2028 <!-- cairn-accept: unicode-line-separator reason=reviewed --> benign\n` → flag retained `[(1, 'unicode-line-separator')]`.
+   - **Preceding-line marker**: `<!-- cairn-accept... -->\n\u2028 benign\n` → flag retained `[(2, 'unicode-line-separator')]`.
+   - **Block-form marker**: `<!-- cairn-accept... -->\n\u2028\n<!-- cairn-accept-end -->` → flag retained `[(2, 'unicode-line-separator')]`.
+   - **Foreign-id marker**: `<!-- cairn-accept: unicode-zero-width reason=reviewed --> \u2028 benign\n` → flag retained `[(1, 'unicode-line-separator')]`.
+
+4. **Source & Self-Hosted Twin Parity**:
+   - SHA-256 hashes of `scripts/content_scan.py` and `templates/modules/team-gated/content_scan.py` are byte-identical (`677d07fdb93a3978339b90f4415803069169028f7165f4c2d45641b0d2dd8ae7`).
+
+5. **CR1 Resolution & Contract Assessment**:
+   - Requiring `len([ch for ch in line if ch in _LINE_SEPARATORS]) == 1` inside `_separator_accept_is_associable(line)` closes CR1 by rendering multi-separator file lines unsuppressible.
+   - The core `_scan_unicode` generator continues to emit at most one `unicode-line-separator` flag per file line for any line containing 1 or more separators. The contract of one flag per file line is fully preserved without weakening detection or allowing marker piggybacking.
+
+6. **Execution Evidence & Verification**:
+   - `PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_content_scan.py -q`: **199 passed in 0.27s**.
+   - `scripts/claim_check.py dev/plans/separator-detection.md`: **OK, no claim-check flags**.
+
