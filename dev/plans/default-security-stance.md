@@ -1651,3 +1651,351 @@ number.
   it corrects -- is the author's own hand and clears nothing.
 
 This section is append-only once written.
+
+## Response to plan review -- Claude (author) -- 2026-08-05
+
+**Model**: Claude Opus 5 (`claude-opus-5`).
+
+**Standing and scope.** I am the plan's author, responding to the **External
+(cross-agent-type, security-lens) plan review by Codex dated 2026-08-05**,
+committed at `2077a25`. This Response **dispositions findings and amends the
+plan**; it discharges **no** review tier. An author's Response is not a review
+of any tier, and the External tier is not something its subject can sign off.
+See *Gate audit* and *Clearance* — the answer is **NO**.
+
+**Read this before anything else — the `[E#]` labels are overloaded in this
+file.** The plan body already cites `[E1]`, `[E2]` and `[E3]` **six times**
+(measured, not estimated: lines 46, 85, 101, 430, 552, 744), and every one of
+those refers to the **source proposal's** External review, not to the plan
+review being answered here — *Source proposal* Change 3 (*"Per [E2] the
+**template source stays the executed authority**"*), *The argument this plan is
+allowed to make* twice (*"[E1] falsified it with a counterexample"*,
+*"Untouched by [E1]"*), Chunk B's B1 cell (*"that is the [E1] adopter"*),
+Chunk D's D1 cell (*"[E3] is on record that hand-editing it inverts the
+documented workflow"*), and *Author-accounting*'s known omissions (*"the
+residual [E1] adopter population"*). The 2026-08-05 plan review reuses the same
+three labels for three unrelated findings. **In this Response the plan-review findings are
+`[PR-E1]`, `[PR-E2]`, `[PR-E3]`; a bare `[E1]`/`[E2]`/`[E3]` anywhere in this
+file continues to mean the proposal's reviewer.** Amendment 43 puts that
+convention in the plan so an implementer does not resolve a label to the wrong
+finding.
+
+**Where the plan review sits in the file — it is not the last section.** The
+External section was **inserted before** the existing Internal review and the
+2026-08-04 Response rather than appended at the end. Reading order by date is
+therefore: Internal (2026-08-04) → Response + Figure correction (2026-08-04) →
+**External (2026-08-05)** → this Response. Anyone re-deriving from "the last
+section" reads the wrong round.
+
+**Method.** Every figure below was re-derived at repository HEAD **`b8ab678`**
+under the canonical interpreter (`~/conda_envs/lhm/bin/python3.13`, CPython
+3.13.13) with `PYTHONDONTWRITEBYTECODE=1`. Engine, `scripts/` and `templates/`
+are byte-identical between `6bcd2d3` and `b8ab678` (`git diff --stat 6bcd2d3
+b8ab678 -- bootstrap/ scripts/ templates/` is empty), so measurements taken
+across that window are comparable. The content-scan measurement was taken in a
+**`git clone` of this repository into the session scratch directory**, with the
+five shipped policy/apparatus files copied verbatim into the clone's `scripts/`
+— never in the repository. **No repository file was modified, added, moved,
+staged or committed; the only path this Response writes is
+`dev/plans/default-security-stance.md`.** `as_of 2026-08-05` at `b8ab678`
+throughout unless stated.
+
+**Working-tree provenance for the suite figure**, because the Internal round was
+right that a passed-count taken over sibling work is contaminated. The suite run
+started and finished with **no tracked file modified** in the working tree
+(checked at the start, and confirmed afterwards by mtime: the two sibling edits
+present by the end of this session — `bootstrap/tests/test_security_stack.py`
+and `templates/modules/team-gated/run_security_audit.py` — were both written
+*after* the run completed). The figure is therefore a committed-tree figure, not
+a contaminated one.
+
+### The headline: the alarm-fatigue number exists, it can be taken before Chunk D, and it is 52
+
+The Internal round recorded that D3's measurement *"is unmeasured … only Chunk D
+can [take it]"*, and my own 2026-08-04 Response repeated that it *"cannot be
+taken by any reviewer"*. **Both are false, and I falsified them by taking it.**
+
+Copying the five shipped files (`content_scan.py`, `content_scan_runner.py`, and
+the three `content_scan_*.txt` policy files — exactly the set
+`--adopt-module content-security` installs under `scripts/`) into a scratch
+clone at `b8ab678` and running the runner from the clone root:
+
+```
+content_scan runner: scanned 78 audited text file(s) from content_scan_roots.txt
+result: 52 flag(s), 52 NEW -- ADVISORY (human-review tripwire, not a gate).
+exit 1
+```
+
+Run twice, identical both times. Composition, measured rather than characterized:
+
+* **All 52 are `[suspicious-url]`.** Zero homoglyph flags, zero invisible-character
+  flags, zero of any other pattern id.
+* **They live in five files**: 27 in one `dev/strategy/` document, 17 in another,
+  3 in `docs/further-reading.md`, 3 in `dev/plans/api-web-security-modules.md`,
+  2 in `dev/plans/dependency-advisory-coverage.md`. The `dev/strategy/` and
+  `docs/` hits are academic-publisher, standards-body and research-infrastructure
+  citation hosts in bibliographies; the two `dev/plans/` sets are loopback
+  addresses and single-letter placeholder hosts inside worked security examples.
+* **Nothing failed closed.** Exit 1, not 2 — so D3's claim that *"the three
+  REQUIRED roots … all exist in Cairn … so the runner will not fail closed on a
+  missing root"* **reproduces**.
+
+Four consequences, each of which lands as an amendment rather than as prose here:
+
+1. **D3's stop trigger fires today, before any implementation.** D3 says *"If the
+   count is non-trivial, that is a *Signals the change is wrong* trigger: stop and
+   put it to the Maintainer rather than curating it away."* 52 is non-trivial by
+   any reading. This is now a Maintainer question, not an implementer judgment,
+   and it is a second independent reason this Response does not clear the plan.
+2. **Chunk D's stated comparison is inapt and is struck.** *"the External
+   reviewer's 34 / 39 / 42-file clean runs are the comparison"* — those were
+   **fresh scaffolds**: template prose with no bibliography. Cairn's tree is 78
+   audited files including a deliberation record and two strategy documents with
+   reference lists. A fresh-scaffold zero does not predict an adopter's number,
+   and Cairn — the first adopter — is the counterexample.
+3. **The plan's surviving-argument limb 1 needs its scope stated.** *"**The
+   measured cost is zero.**"* is true **of a fresh scaffold** and does not
+   generalize. I am not withdrawing the limb: the flags are a single tunable
+   class with a documented tuning path (the module's own allowlist policy
+   distinguishes trusted-publication hosts from multi-tenant hosts, and the
+   residual baseline ships an `[editorial-url]` tag for exactly this). But the
+   honest statement is "zero on a fresh scaffold; tunable and non-zero on a tree
+   that cites literature", and Chunk D must carry that.
+4. **D3's residual-only remedy is incomplete.** D3 contemplates only
+   `content_scan_residuals.txt`. 52 editorial-citation flags are the case the
+   shipped allowlist policy is written for, and the plan's *Out of scope* fence
+   already treats the three `.txt` policy files as adopter-tunable by design. The
+   allowlist-versus-residual split for these 52 is a **policy decision**, and
+   under D3's own rule it is the Maintainer's.
+
+**The post-Chunk-D number will be ≥ 52, not = 52.** `--adopt-module` also writes
+`dev/modules/content-security.md` (substituted) **inside the audited `!dev`
+root**, and this lifecycle's own `dev/` artifacts are audited too. The number is
+a floor measured on a tree that does not yet contain the installed doc.
+
+### Three in-force figures moved again, and one in-force *criterion* is unsound
+
+Reported as plainly as the reproductions.
+
+1. **Suite: 1959, not 1790.** `python -m pytest bootstrap/tests` at `b8ab678` →
+   **1959 passed, 0 failed, 0 skipped**, 296.63s. Amendment 5 pinned **1790** at
+   `6618e54` one day ago and instructed a re-take; the collection grew by **169
+   nodes in a day**. This is the *third* suite frame in three days (1744 → 1790 →
+   1959). Amendment 40 restates the criterion as an invariant with a re-measure
+   instruction, and keeps a dated number only as provenance.
+2. **`scan_targets()` returns 76 *today*, before Chunk D.** The plan says 74
+   before and 76 after; the Internal round confirmed 74; my own 2026-08-04
+   Response confirmed 74 at `6618e54`. At `b8ab678` it is **76**, and the two
+   additions are attributable: `scripts/transition_lint.py` and
+   `scripts/transition_lint_whitelist.py`, added by the `transition-lint` scope
+   (`4a7d70a`, 2026-08-04). **Chunk D's acceptance criterion `PASS, target count
+   76 (from 74)` is therefore satisfiable by doing nothing** — the gate has
+   already been walked past its own expected value. Expected after Chunk D:
+   **78**, re-measured immediately before the chunk. Amendments 37–39.
+3. **`check_cairn.py`'s scanned count went *down*, and the criterion that says it
+   cannot is unsound by construction.** At `b8ab678`: `OK -- 176 Markdown file(s)
+   scanned; no issues; 48 external link(s) not probed`. Amendment 8 pinned **195**
+   and 68, and asserts *"the assertion is `OK` and a **non-decreasing count**"*.
+   **176 < 195.** The mechanism is not drift, it is design:
+   `check_cairn.main` collects `git ls-files '*.md'` and passes it through
+   `link_check.filter_sources` (`scripts/link_check.py:503`), which drops
+   `dev/**/archive/`, `dev/modules/`, `dev/.cairn/` and `dev/reflections/`.
+   Measured: **255** tracked Markdown files, **176** after the filter. **Archiving
+   a plan or proposal removes it from the scanned set**, so the count falls every
+   time this repository does the thing its lifecycle exists to do. A
+   non-decreasing-count gate would fire on a correct archive. Amendment 41
+   replaces it with a membership assertion, which is what Chunk D actually needs.
+
+None of the three changes a disposition. All three are the same failure the
+2026-08-04 Response's *Clearance* item 4 raised and the External round did not
+address: **a count asserted without a mechanism is stale on arrival in a
+nine-scope repository.** Three more instances in one day is enough evidence to
+stop asserting counts where an invariant will do, and amendments 40–42 do that
+rather than substituting today's numbers.
+
+### Disposition of every finding
+
+`[PR-E1]`–`[PR-E3]` are the 2026-08-05 External review's findings (see the
+notation warning above).
+
+| # | Disposition | Reasoning | Mechanical residue |
+|---|---|---|---|
+| **[PR-E1]** — default adoption is not gated on the scanner's unresolved security posture | **ACCEPT WITH MODIFICATION** — the *instruction* is accepted unmodified; the modification is to the finding's premise and to how each limb is made checkable | **The instruction is right and I am adopting it whole**: a default-on flip that reaches every new adopter must not overtake the security evidence for the thing being defaulted. It is also **independently demanded from the other side**: the sibling plan's own External review (`b80bcd0`, 2026-08-05 07:58 — **two minutes before this one**) says in its [E3] *"a default-security implementation must be prohibited from selecting this module until that decision has a recorded disposition and a corpus appropriate to default adoption. State that cross-plan gate in both plans."* And `dev/plans/content-scan-detectors.md:1128` already routes the whole-script-Cyrillic cost as *"Sequenced against `default-security-stance`, not against this plan"* — so the sibling has been pointing at this plan for the gate, and this plan has been silent. **Premise correction, measured**: the finding says the sibling *"lacks an External security disposition on its test material"*. `dev/plans/content-scan-detectors.md:1138` **does** carry `## Plan review -- Codex (External, security lens) -- 2026-08-05`, landed before this review was written. What is missing is the **disposition**: that plan's newest section is dated 2026-08-04, so its External [E1] on the test-material fixture set is undispositioned. Under the "disposition" reading the finding is exactly right; under a "no External review exists" reading it is not. The gate below is written against the reading that measures true. **Also measured, and it cuts in the plan's favour**: none of Cairn's own 52 flags is a homoglyph or invisible-character flag, so the detectors under dispute contribute **zero** of Cairn's current noise — the gate is about the adopter population, not about Cairn's own measurement. | Amendments **30**, **31**, **32**; migration row **10** (amendment 44) |
+| **[PR-E2]** — the `known_new` choice must be decided before, not during, the ceremony | **ACCEPT** | The finding closes [R4], which my 2026-08-04 Response left routed to the Maintainer, and it closes it in the direction the code supports. Re-derived at `b8ab678`, three ways: (i) `verify` is `def verify(baseline_path, module_paths)` (`bootstrap/tests/_ast_attest.py:204`) — two parameters, no `known_new`; (ii) `known_new` is a keyword parameter of `update_symbol` (`bootstrap/tests/_ast_attest.py:230`) and is supplied only by the `--known-new` flag on the update-symbol subparser; (iii) **the decisive one, which neither round had run**: `verify` at HEAD emits **78** `note: NEW …` lines — **45** of them non-`Import:` / non-`Docstring` — and **still returns rc 0** (`AST attestation OK — 173 baselined symbol(s) accounted for, unchanged`). An unpinned NEW key is a *note*, not a failure. So the 45 standing unpinned NEW symbols survived the Maintainer-run **Ceremony 1** re-anchor untouched, and this scope's two would join them on identical terms. **Asking the Maintainer to decide a pin that no consumer reads, while performing a trust-root ceremony, is exactly the pressured-operator-judgment failure the finding names.** The archived `ast-known-new-repin` plan reached the same conclusion independently by reading the signature (`dev/plans/archive/ast-known-new-repin.md:248`). | Amendment **36** (supersedes amendment 26, which superseded Chunk R item 3) |
+| **[PR-E3]** — the alarm-fatigue stop needs a measurable escalation threshold | **ACCEPT WITH MODIFICATION** | The finding is correct that *"non-trivial"* is not a decision rule and that a default-on scanner cannot rely on an implementer to intuit when warning volume is material. **Modified on two points, both because I took the measurement the finding asks for instead of instructing the implementer to take it.** (a) The finding offers *"any count above the independently recorded baseline"* as one option — there was no independently recorded baseline for Cairn's tree, so I recorded one: **52 flags / 52 NEW / exit 1 over 78 audited files at `b8ab678`**, taken in a scratch clone, which satisfies the "measured from a committed tree, not from the artifact under verification" discipline by construction. (b) That measurement makes the *simpler* of the finding's two suggested rules the correct one and the baseline-comparison rule the wrong one: the shipped residual baseline is empty by design (sentinel line only), so **every** flag is NEW and the rule collapses to **exit code 0 or HOLD**. The threshold is therefore mechanical with no count in it at all: `content_scan_runner.py` exit 0 → proceed; any non-zero → HOLD. Curation of the 52 — allowlist entries versus reviewed residuals — is routed to the Maintainer, per D3's own trigger, and is explicitly **not** an implementer decision. | Amendments **33**, **34**, **35**; migration row **11** (amendment 44) |
+| *Framing* — *"I also agree with the later correction that selection has five construction sites, not four"* | **CONFIRMED, no residue needed** | Re-derived rather than inherited, by reading both branch structures in `bootstrap/_scaffold/cli.py` at `b8ab678`: `--summary` carries `:232` (preset → `format_profile_summary`) and the inline fallback at `:236`–`:239` (a ternary, two limbs); the install path carries `:330` (`expand_preset`), `:350` (`modules:` alone) and `:356` (neither key → `_DEFAULT_ON_MODULES`). **Five construction sites, six branch limbs.** The figure correction of 2026-08-04 stands. | None |
+
+### Findings I am adding on my own re-measurement
+
+* **[S1] The D3 measurement was reachable all along.** Recorded above as the
+  headline. Two rounds asserted it could only be taken by Chunk D; a clone plus
+  five `cp`s takes it. The general lesson is the one this repository keeps
+  paying for: *"structurally deferred to implementation"* deserves one attempt
+  at falsification before it is written down.
+* **[S2] `scan_targets()` is 76 before Chunk D**, so Chunk D's Bandit criterion
+  is already satisfied by an unrelated scope's work. A gate that passes without
+  the change it gates is worse than no gate. Amendments 37–39.
+* **[S3] `check_cairn.py`'s count is non-monotone by construction.** Amendment
+  8's non-decreasing criterion cannot hold in a repository that archives.
+  Amendments 41–42.
+* **[S4] The suite figure moved 169 nodes in a day.** Third frame in three days.
+  Amendment 40.
+* **[S5] The `[E#]` label collision.** **Six** live citations in the plan body
+  (lines 46, 85, 101, 430, 552, 744) use `[E1]`/`[E2]`/`[E3]` for the
+  *proposal's* reviewer; the plan review reuses all three. Amendment 43.
+* **[S6] The plan's own gate sentence understates the doctrine gate, and the
+  mechanical check is weaker than both.** `doctrine/plans.md:114`–`:117` states
+  the plan-review precondition as: a review-required plan reaches `executing`
+  *"only after a dated `## Plan review` section lands: the review **and**, when
+  it raised findings, a dated `### Sharpening` subsection dispositioning them"*.
+  The plan header says only *"No implementation commit lands before the `##
+  Plan review` section is in the tree"* — one limb of two. And the mechanical
+  helper is weaker still: `templates/skills/_lib/lifecycle_planner.py:865` gates
+  the `open → executing` transition on `_has_kind(art, "Plan review")`, which is
+  a **section-name prefix test** (`:697`–`:698`) — it checks that a section
+  whose kind starts with "Plan review" exists, and checks **nothing** about a
+  Sharpening subsection or about whether findings were dispositioned. Following
+  the AGENTS.md rule to open a named trigger rather than trust it: the trigger
+  exists, and it verifies presence, not disposition. Two further observations,
+  reported rather than repaired because repairing either would require editing a
+  prior section: **(a)** the plan's `**Status**` field reads `open` and never
+  moved to `awaiting-plan-review`, which is the status doctrine assigns a
+  review-required plan between opening and review; **(b)** doctrine's named
+  disposition vehicle is a `### Sharpening` subsection **with the chunk-table
+  cells edited inline** (*"Chunk-table cells are edited inline when sharpening
+  accepts a finding"*), whereas this plan and its cluster siblings use an
+  append-only `## Response` section with an amendments table. The amendments
+  table is this plan's only mutation channel and every row supersedes a verbatim
+  span, but an implementer must be told to read the chunk tables *through* the
+  amendments — see *Reading order* below. Both belong to the Maintainer, not to
+  an author's Response.
+* **[S7] The cross-plan gate has no mechanical enforcement, and I am saying so
+  rather than implying one.** Nothing in `bootstrap/tests`, no git hook, and no
+  CI (Cairn has none) can check that `content-scan-detectors` has a recorded
+  disposition before this plan's Chunk A lands. Its trigger is **a human reading
+  the plan header and the Sequence block** — that is what amendments 30 and 31
+  put those lines there for, and the honest description of the check is "a
+  person reads it", not "a gate enforces it".
+
+### Review claims I re-ran and confirmed exactly
+
+Each was **run** at `b8ab678`, not read:
+
+1. **`verify` never consumes `known_new`, and an unpinned NEW key is not a
+   failure.** Signature `verify(baseline_path, module_paths)` at
+   `bootstrap/tests/_ast_attest.py:204`; `known_new` is `update_symbol`'s keyword
+   parameter at `:230`. Live run: rc **0**, `173 baselined symbol(s) accounted
+   for, unchanged`, with **78** NEW notes of which **45** are
+   non-`Import:` / non-`Docstring`.
+2. **The AST baseline composition — amendment 3 reproduces exactly.** 173
+   entries; **161** of the three kinds (**98** `FunctionDef:` / **53** `Assign:` /
+   **10** `ClassDef:`); **12** exempt (8 `Import:`, 1 `Docstring`, 1 `Expr`, 2
+   `If`-prefixed). No `Try:` key.
+3. **The `DUPLICATE` pre-check.** Neither `_TOKEN_GATED_MODULES` nor
+   `token_gated_modules` collides with any of the 161 baselined three-kind names.
+4. **The install contract does not move.** `scaffold.py --manifest` → **96**
+   lines.
+5. **Lockfile accounting — exact.** **81** files, **14** modules, **41**
+   `scripts/` + `tools/` `.py` records.
+6. **`scaffold_ast_known_new.json` holds 28 keys**, all named-symbol type.
+7. **Every load-bearing line citation resolves.** `bootstrap/_scaffold/cli.py:236`–`:239`
+   is the `mods = … else list(_DEFAULT_ON_MODULES)` ternary and `:356` is the
+   install-path no-key branch; `bootstrap/tests/test_presets.py:415` is
+   `assert len(modules) == 8`; `scripts/check_cairn.py:84` / `:91` / `:100` are
+   the three `_SRC` assignments, so the declined nit stays declined.
+8. **D3's REQUIRED-roots claim.** The runner scanned 78 files and exited 1, not
+   2 — the three REQUIRED roots resolve and contribute.
+9. **The sibling plan's External round exists and asks for the same gate.**
+   `dev/plans/content-scan-detectors.md:1138`, committed `b80bcd0` at
+   2026-08-05 07:58; this plan's External review is `2077a25` at 08:00.
+
+### Amendments in force
+
+Continuing the numbering of the 2026-08-04 Response (rows 1–29). Every row
+supersedes the quoted text **verbatim**, with the plan's line wrapping
+normalized to single spaces; each quote was verified by whitespace-normalized
+substring match against the plan file before commit. Where a superseded span is
+a chunk-table row, its cell separators appear as `\|` so this table renders; the
+*words* are verbatim.
+
+**Reading order for the implementer.** The chunk tables and acceptance criteria
+are **superseded by** amendments 1–44; read the chunk through its amendments,
+never alone. Three rows are amended twice — where that happens the **later row
+wins**: Chunk R item 3 (row 26 → **row 36**), the suite baseline (row 5 →
+**row 40**), and the prose-integrity criterion (row 8 → **row 41**).
+
+| # | Superseded text (verbatim) | Replaced by |
+|---|---|---|
+| **30** | *"**No implementation commit lands before the `## Plan review` section is in the tree.**"* | **No implementation commit lands before all three of the following hold.** (i) A dated `## Plan review` section is in the tree — **satisfied**, `2077a25`. (ii) The findings it raised are dispositioned in a dated section — `doctrine/plans.md:114`–`:117` makes the disposition the *second limb* of the plan-review precondition, and the mechanical helper (`templates/skills/_lib/lifecycle_planner.py:865`) checks only the first, so this limb is carried by a human reader. (iii) **The cross-plan gate below is satisfied.** The verdict on the External round is **REVISE**; whether the amended shape needs a round-2 External section before implementation is the **Maintainer's** call, and an author's Response never makes it. |
+| **31** | *"(plan review) -- required(External, security lens); NO code before it lands"* *(the Sequence block's second line, quoted without its leading indentation)* | `(plan review) -- required(External, security lens); NO code before it lands` <br> `(cross-plan gate) -- G1 + G2 below; NO Chunk A, NO Chunk D before both hold` <br> The two gate lines are the implementer's stop sign, and the *only* trigger either has is a person reading them (**[S7]**) — no test, hook or CI enforces them, and Cairn has no CI. |
+| **32** | *(insertion, no superseded text — a new subsection at the end of* The cluster constraint*)* | **### The cross-plan gate ([PR-E1])** — **Neither Chunk A nor Chunk D may land until G1 and G2 both hold.** Chunk A is fenced as well as Chunk D because A1 is the default-on flip itself; the token-gate half (A2–A7) could in principle be split out and landed early, and I considered that and **declined it** — a half-landed engine change parked in a five-scope `config.py` window is a new hazard, and narrowing a gate an External reviewer set is the author's least defensible move. The Maintainer may narrow it; the author does not. <br> **G1 — the sibling scope has its required External security review.** Checked by: `dev/plans/content-scan-detectors.md` carries a dated `## Plan review -- … (External, security lens)` section. **SATISFIED**, measured `as_of 2026-08-05` at `b8ab678`: the section is at `:1138`, committed `b80bcd0`. <br> **G2 — the default-on consequence has a recorded disposition.** Checked by **both**: (i) `dev/plans/content-scan-detectors.md` carries an author disposition of its own 2026-08-05 External findings — a section dated **after** 2026-08-05 that dispositions them; **and** (ii) the Maintainer has recorded a Decision or an explicit direction on the whole-script-Cyrillic and international-proper-noun cost **under default adoption** — the question that plan's own *Known omissions* (e) raises and does not answer, and that its migration table routes to *"a new proposal … Sequenced against `default-security-stance`"*. **NOT SATISFIED**, measured `as_of 2026-08-05` at `b8ab678`: the sibling plan's newest section is dated 2026-08-04. <br> **The sibling side of the gate is not this plan's to write.** That plan's own External [E3] asks for the gate to be *"state[d] … in both plans"*; this amendment is this plan's half. The other half is an obligation on that plan's author, recorded as migration row 10 so it is not lost. |
+| **33** | *"\| D3 \| `scripts/content_scan_residuals.txt` \| Run `python scripts/content_scan_runner.py` once over Cairn's tree and **record the flag count in the commit body**. The three REQUIRED roots (`AGENTS.md`, `.agents/skills`, `dev`) all exist in Cairn — verified `as_of 2026-08-04` — so the runner will not fail closed on a missing root. If flags appear, each residual added carries its own reviewed rationale; a blanket suppression is the alarm-fatigue failure the proposal names and is not acceptable here. **If the count is non-trivial, that is a *Signals the change is wrong* trigger: stop and put it to the Maintainer rather than curating it away.** \|"* | **D3 — the measurement, and a threshold with no judgment in it.** Run `python scripts/content_scan_runner.py` once over Cairn's tree and **record the exit code and the flag count in the commit body**. The three REQUIRED roots (`AGENTS.md`, `.agents/skills`, `dev`) all exist in Cairn — **re-verified `as_of 2026-08-05` at `b8ab678` by running the scanner, which scanned 78 files and exited 1 rather than failing closed at 2**. <br> **The decision rule, and the implementer applies no other:** **exit 0 → proceed. Any non-zero exit → HOLD and put it to the Maintainer.** No count appears in the rule, because the shipped `content_scan_residuals.txt` is a sentinel-only empty baseline, so every flag is NEW and "any unsuppressed finding" and "exit non-zero" are the same condition. <br> **The pre-measured baseline this compares against.** In a scratch `git clone` at `b8ab678`, with the five shipped files copied verbatim into `scripts/`: **78 audited files, 52 flags, 52 NEW, exit 1**, all 52 `[suspicious-url]`, in five files. **So the HOLD is already triggered as of this Response** — Chunk D will not exit 0 on a clean adoption, and the implementer is not the one who decides what to do about it. <br> **The implementer adds no residual and no allowlist entry.** Whether these 52 editorial-citation hits are cleared by trusted-publication entries in `content_scan_allowlist.txt`, by reviewed `[editorial-url]` residual entries, or by neither, is a **policy decision under D3's own escalation trigger and it is the Maintainer's**. A blanket suppression remains the alarm-fatigue failure the proposal names and is not acceptable at any volume. <br> **Expect ≥ 52, not = 52**: `--adopt-module` writes `dev/modules/content-security.md` inside the audited `!dev` root, and this lifecycle's own `dev/` artifacts are audited too. |
+| **34** | *"* **The content-scan measurement is recorded, not just passed.** The flag count from D3 goes in the commit body as a number, even when it is zero — that number is this plan's alarm-fatigue budget and the External reviewer's 34 / 39 / 42-file clean runs are the comparison."* | **The content-scan measurement is recorded, and the exit code is the gate.** The exit code **and** the flag count from D3 go in the commit body, even when the count is zero. **The comparison is the pre-measured Cairn baseline in D3 — 78 audited files / 52 flags / exit 1 at `b8ab678` — not the proposal reviewer's 34 / 39 / 42-file clean runs**, which were taken on fresh scaffolds with no bibliography and do not predict a tree that cites literature. **Acceptance is `exit 0`; any non-zero exit is a HOLD to the Maintainer**, not a number for the implementer to weigh. |
+| **35** | *"* **The content-scan measurement** — `python scripts/content_scan_runner.py` on Cairn's tree after Chunk D; the flag count recorded as a number in the commit body."* | **The content-scan measurement** — `python scripts/content_scan_runner.py` on Cairn's tree after Chunk D. **Exit 0 → pass; any non-zero exit → HOLD to the Maintainer.** The exit code and the flag count are both recorded in the commit body, against the pre-measured baseline in D3 (78 files / 52 flags / exit 1 at `b8ab678`). |
+| **36** | *"**3. The `known_new` manifest — declared, but its necessity is an open Maintainer question.** The two NEW keys are `Assign:_TOKEN_GATED_MODULES` and `FunctionDef:token_gated_modules`; their **key set** is declared in advance and their digests cannot be. **Whether they need pins in `bootstrap/tests/fixtures/scaffold_ast_known_new.json` is unresolved**: `known_new` is read **only** by `update_symbol` (`bootstrap/tests/_ast_attest.py:230`) and never by `verify`, and this plan establishes on two independent grounds that `update-symbol` is unavailable to this scope. Either the pins are unnecessary here, or the ceremony mechanism is not the direct-correction script this plan names. **The Maintainer decides at ceremony time**; the implementing agent declares the key set and stops."* *(amendment 26's replacement text, itself superseding Chunk R item 3)* | **3. The `known_new` manifest — decided now, and the decision is: do not touch it.** **This scope does not edit, re-pin, or add entries to `bootstrap/tests/fixtures/scaffold_ast_known_new.json`.** Settled ahead of the ceremony rather than during it, per [PR-E2], on measured grounds: `verify` is `verify(baseline_path, module_paths)` (`bootstrap/tests/_ast_attest.py:204`) and never reads the manifest; `known_new` is `update_symbol`'s keyword parameter (`:230`), and `update-symbol` is unavailable to this scope on two independent grounds already established; and — decisively — `verify` at `b8ab678` emits **78 `note: NEW` keys, 45 of them non-`Import:` / non-`Docstring`, and still returns rc 0**, so an unpinned NEW symbol is a note and not a failure. Those 45 survived Ceremony 1 unpinned; this scope's two join them on identical terms. <br> **What the implementing agent does instead:** declare the **exact NEW-key set — `Assign:_TOKEN_GATED_MODULES` and `FunctionDef:token_gated_modules`, and nothing else** — and stop. **Any third NEW non-`Import:` / non-`Docstring` key attributable to this scope, established as the set difference of amendment 14, STOPS THE CEREMONY.** No digest is pre-declared, because none is needed. |
+| **37** | *"* **The release Bandit gate** — `scan_targets()` returns **74** targets, `as_of 2026-08-04`. After Chunk D it returns **76**: Cairn's own `scripts/*.py` glob picks up `scripts/content_scan.py` and `scripts/content_scan_runner.py`, whose template twins were already in the manifest-derived set. Both new targets are byte-identical to files Bandit already reads, so the severity histogram must not gain a MEDIUM+."* | **The release Bandit gate** — `scan_targets()` returns **76** targets `as_of 2026-08-05` at `b8ab678`, **not the 74 this plan and both prior rounds recorded**: `scripts/transition_lint.py` and `scripts/transition_lint_whitelist.py` were added by the `transition-lint` scope at `4a7d70a`. **Re-measure immediately before Chunk D and assert the delta, never the absolute**: Cairn's `scripts/*.py` glob picks up `scripts/content_scan.py` and `scripts/content_scan_runner.py`, so the assertion is **exactly +2 targets, and the two new paths are those two**. Expected **78** if the base is still 76. Both new targets are byte-identical to files Bandit already reads, so the severity histogram must not gain a MEDIUM+. |
+| **38** | *"* `~/conda_envs/lhm/bin/python3.13 bootstrap/security_check.py` → `PASS`, target count **76** (from 74). Both new targets are byte-identical to template files Bandit already reads, so the severity histogram gains **no MEDIUM+**; a MEDIUM+ appearing is a stop."* | `~/conda_envs/lhm/bin/python3.13 bootstrap/security_check.py` → `PASS`, with **the target count exactly +2 against a pre-chunk measurement taken in the same session**, and the two added paths identified as `scripts/content_scan.py` and `scripts/content_scan_runner.py`. **The literal "76 (from 74)" is struck**: the base is already **76** at `b8ab678`, so the old criterion is satisfied by an unrelated scope's work and gates nothing (**[S2]**). Both new targets are byte-identical to template files Bandit already reads, so the severity histogram gains **no MEDIUM+**; a MEDIUM+ appearing is a stop. |
+| **39** | *"* **The release Bandit gate** — `python bootstrap/security_check.py` → `PASS`, 74 targets before Chunk D and 76 after, with no MEDIUM+ appearing."* | **The release Bandit gate** — `python bootstrap/security_check.py` → `PASS`, **target count +2 across Chunk D against a same-session pre-chunk measurement** (base **76** at `b8ab678`; the absolute is not pinned), the two added paths named, and no MEDIUM+ appearing. |
+| **40** | *"**Suite baseline: 1790 passed / 0 failed / 0 skipped**, 186.73s, `as_of 2026-08-04` at `6618e54`. Collection may only grow by this plan's new nodes; a dropped node or a new skip/xfail marker is a HOLD class. **Re-take this figure at implementation** — it moved by 46 nodes in the day between plan-open and this Response."* *(amendment 5's replacement text)* | **The suite criterion is an invariant; the number is provenance only.** Invariant: **0 failed / 0 skipped / 0 xfailed**, and **collection grows by exactly this plan's new nodes and drops none**, established by a same-session before/after pair — never against a figure quoted from this file. Provenance: **1959 passed / 0 failed / 0 skipped**, 296.63s, `as_of 2026-08-05` at `b8ab678`. The frame has now moved three times in three days (**1744 → 1790 → 1959**, the last a 169-node jump), which is why the criterion is the delta and not the count. |
+| **41** | *"**Prose integrity** — `python scripts/check_cairn.py` → `OK`, `as_of 2026-08-04` at `6618e54` the count read **195** Markdown files and 68 unprobed external links. **The assertion is `OK` and a non-decreasing count, not a literal figure**: this repository adds Markdown daily (180 → 195 in one day), so a pinned count is stale on arrival. Chunk D must grow it by at least one (`dev/modules/content-security.md`)."* *(amendment 8's replacement text)* | **Prose integrity** — `python scripts/check_cairn.py` → **`OK`, and `dev/modules/content-security.md` is in the scanned set after Chunk D**. **The "non-decreasing count" criterion is withdrawn as unsound.** `check_cairn.main` filters `git ls-files '*.md'` through `link_check.filter_sources` (`scripts/link_check.py:503`), which drops `dev/**/archive/`, `dev/modules/`, `dev/.cairn/` and `dev/reflections/` — **so archiving a plan or proposal *decreases* the count, and a non-decreasing gate would fire on a correct archive**. Measured at `b8ab678`: **255** tracked Markdown files, **176** after the filter, and `OK -- 176 Markdown file(s) scanned; no issues; 48 external link(s) not probed` — **down from the 195 / 68 this amendment previously asserted**. Note the interaction: `dev/modules/` is *excluded* from `check_cairn`'s scan set, so Chunk D's installed module doc is scanned by `content_scan_runner.py` (whose `!dev` root has no such exclusion) but **not** by `check_cairn`. Assert `OK`, and assert membership where membership is what matters — never a count, never a direction. |
+| **42** | *"* `~/conda_envs/lhm/bin/python3.13 scripts/check_cairn.py` → OK, count +1 for `dev/modules/content-security.md`."* | `~/conda_envs/lhm/bin/python3.13 scripts/check_cairn.py` → **OK**. **The "+1" is struck**: `dev/modules/` is excluded from `check_cairn`'s scan set by `link_check.filter_sources`, so the installed module doc does **not** raise that count at all, and concurrent archiving can lower it (amendment 41). The assertion is `OK` and no new flags. |
+| **43** | *(insertion, no superseded text — a notation note, to be read wherever a bracketed `[E#]` label appears)* | **Notation — `[E#]` is overloaded in this file, and the two populations must not be confused.** **Bare `[E1]` / `[E2]` / `[E3]` in the plan body always mean the *source proposal's* External reviewer** — **six** live citations, at lines 46 (*Source proposal*, Change 3), 85 and 101 (*The argument this plan is allowed to make*), 430 (Chunk B, B1), 552 (Chunk D, D1) and 744 (*Author-accounting*, known omissions). **The 2026-08-05 plan review's findings are cited as `[PR-E1]` / `[PR-E2]` / `[PR-E3]`** throughout the 2026-08-05 Response and this amendments table. The Internal round's findings keep `[I1]`–`[I5]`, and that Response's own additions keep `[R1]`–`[R5]`; this Response's additions are `[S1]`–`[S7]`. |
+| **44** | *(insertion, no superseded text — two rows appended to* Lasting-truth migration*)* | **Row 10 — the sibling half of the cross-plan gate.** `content-scan-detectors`'s own External [E3] requires the gate to be stated *"in both plans"*; amendment 32 is this plan's half, and the other half is an obligation on that plan's author, which this plan cannot discharge and must not silently assume. Durable home: `dev/PLANNING.md > Deferred follow-ups`, added at the archive / goodnight serialization point, naming both stems. **Row 11 — Cairn's 52 editorial-citation flags.** The allowlist-versus-reviewed-residual policy for the `[suspicious-url]` hits in `dev/strategy/`, `docs/further-reading.md` and two `dev/plans/` files is a Maintainer decision under D3's escalation trigger, and it outlives this plan whether or not Chunk D lands. Durable home: `dev/PLANNING.md > Deferred follow-ups` if the Maintainer defers it; the Chunk D commit body and this plan's archive record if it is settled inside this lifecycle. |
+
+### Gate audit — every gate this plan declares, and whether it holds today
+
+Measured `as_of 2026-08-05` at `b8ab678`. This repository breached two declared
+gates yesterday because nobody enumerated them, so they are enumerated.
+
+| Gate | Declared where | What it requires | Holds today? |
+|---|---|---|---|
+| **Review tier** | Plan header; *Plan review — the brief* | `required(**External**, security lens)`; *"An Internal round does not discharge it"* | **Section present, tier NOT discharged.** The External section is in the tree (`2077a25`) and its verdict is **REVISE**. This Response is the author's disposition; an author's Response discharges nothing. Whether the amended shape needs a round-2 External section is the Maintainer's call. |
+| **Implementation fence (plan's wording)** | Plan header; *Plan review — the brief* | *"No implementation commit lands before the `## Plan review` section is in the tree"* | **Satisfied literally** — and it understates the doctrine gate; superseded by amendment 30. |
+| **Implementation fence (doctrine)** | `doctrine/plans.md:114`–`:117` | `## Plan review` **plus** a dated disposition of its findings; status `awaiting-plan-review` → `executing`; plan-open and first-implementation commits distinct | **Partly.** Limb 1 satisfied; limb 2 is this Response (form differs from doctrine's inline `### Sharpening` — **[S6]**). The plan's `**Status**` still reads `open` and never moved to `awaiting-plan-review`. The mechanical helper checks limb 1 only. |
+| **Cross-plan gate G1** | Amendment 32 (new) | sibling scope carries its External security review | **SATISFIED** — `dev/plans/content-scan-detectors.md:1138`, `b80bcd0`. |
+| **Cross-plan gate G2** | Amendment 32 (new) | recorded disposition of the default-on consequence | **NOT SATISFIED** — the sibling plan's newest section is dated 2026-08-04; no Maintainer disposition of the default-adoption cost exists. **This alone blocks Chunk A and Chunk D.** |
+| **D3 alarm-fatigue stop** | Chunk D, D3 | non-trivial flag count → stop, put it to the Maintainer | **FIRING NOW.** 52 flags / exit 1 measured before implementation. Under amendment 33 the rule is exit-code-based and the HOLD is already triggered. |
+| **Chunk R Maintainer fence** | *Sequence*; Chunk R | *"An implementing agent does not enter this chunk"*; work ends at Chunk D plus a stated readiness condition | **Not yet reached**, and unbreached. Amendment 36 removes the one open ceremony-design question ([R4]) that would otherwise have landed on the operator mid-ceremony. |
+| **Decision condition** | Plan header; *Source proposal* | executes the **Decision**, not the proposal body; the withdrawn tautology argument must not be restated; `scripts/check_cairn.py` carries zero bytes of change | **In force, untested** — no implementation exists. Nothing in this Response restates the tautology, and no source file was touched. |
+| **Serialized shared files** | *Scope > Serialized shared files* | no chunk edits `CHANGELOG.md`, `dev/PLANNING.md`, `AGENTS.md`, `docs/DOCUMENTATION_PLAN.md`, `bootstrap/REANCHOR_RUNBOOK.md` | **Satisfied.** This Response writes one path: this plan. |
+| **Archive precondition** | *Lasting-truth migration* | every deferred follow-up has a durable home before archive | **Pre-declared and current** — rows 1–9 plus rows 10 and 11 (amendment 44). |
+
+### Clearance
+
+**This Response does NOT clear the plan to implement.** Three independent
+blockers, none of which an author can clear:
+
+1. **The External round returned REVISE, and no author Response discharges an
+   External tier.** The tier is `required(**External**, security lens)`; the
+   tree holds one External section, dated 2026-08-05, whose verdict is REVISE.
+   This Response is the disposition doctrine's plan-review precondition asks
+   for, authored by the plan's author. Whether the amended shape requires a
+   round-2 External section before Chunk A is the **Maintainer's** decision, and
+   I am not treating silence as a yes.
+2. **Cross-plan gate G2 is unmet, by this Response's own new amendment.**
+   Accepting [PR-E1] means Chunk A and Chunk D are fenced until the default-on
+   consequence has a recorded disposition. It does not today. Two External
+   reviewers, on two plans, two minutes apart, asked for the same gate from
+   opposite sides; it would be a poor answer to write the gate and then step
+   over it.
+3. **D3's own stop trigger is already firing.** Cairn's tree produces **52
+   flags, exit 1** under the module this plan would make default-on. Under D3 —
+   unamended and amended alike — that is a Maintainer question, not an
+   implementer's. It is also the first hard evidence that the "measured cost is
+   zero" limb does not survive contact with a tree that cites literature, and
+   the Maintainer should see that before the flip, not after.
+
+**What is *not* blocking, stated so the Maintainer sees a real cost of delay.**
+The engine design survived direct falsification three times now — the symbol
+delta, A4's placement / C1g, and C2's discriminating perturbation all reproduced
+exactly across two rounds and two independent re-derivations, and this round
+adds nothing against them. [PR-E2] is closed rather than deferred. The plan's
+executable contract is in better shape than it has been. What blocks it is
+evidence and authority, not design.
+
+**Nothing in this Response changes code.** No source file, test, fixture,
+template or doc was modified; the amendments are instructions to Chunks A–D and
+to Chunk R, not their execution. The one measurement that touched a working tree
+touched a scratch clone.
+
+This section is append-only once written.
