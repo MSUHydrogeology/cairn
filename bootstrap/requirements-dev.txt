@@ -15,3 +15,17 @@
 # (bootstrap/tests/test_python_floor.py). Dev/test-only; never in the
 # adopter runtime path. See DEPENDENCY_BUDGET.md Exception 2.
 vermin>=1.8.0
+
+# bandit: static analysis, run by bootstrap/security_check.py as
+# `sys.executable -m bandit`.  That gate FAILS CLOSED without it, so a clone
+# following this file alone had a release gate that could not pass.  Already
+# sanctioned as DEPENDENCY_BUDGET.md Exception 1; listed here because Cairn's
+# own gate requires it, not only an adopter's.
+bandit>=1.9.0
+
+# pip-audit: dependency CVE check, the other half of Exception 1.  Needed to
+# MEASURE the tool's real argv and JSON schema rather than assume them
+# (dev/plans/dependency-advisory-coverage.md, Chunk 0).  Note its presence
+# changes what bootstrap/tests/test_security_stack.py asserts -- see the
+# `_HAS_BANDIT and _HAS_PIP_AUDIT` branch at :710.
+pip-audit>=2.10.0
