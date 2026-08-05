@@ -7,6 +7,8 @@ release check **fails closed** -- release evidence must be unskippable (R1).
 from __future__ import annotations
 
 import json
+import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -24,6 +26,178 @@ def _bandit_available() -> bool:
     except ImportError:
         return False
     return True
+
+
+# ---------------------------------------------------------------------------
+# Phase 1 -- repository-state preflight / postflight
+#
+# The oracle for these is **real git**, run over a throwaway repository, with
+# ``security_check.CAIRN_ROOT`` repointed at it. A stub of ``git status`` would
+# be a fixture written by the same understanding the subject encodes, and the
+# specific fail-open being closed here (an untracked file reading as clean) is
+# a fact about git's porcelain defaults, not about Cairn's code.
+# ---------------------------------------------------------------------------
+
+def _setup_git(*args: str, cwd: Path) -> None:
+    """Drive the FIXTURE repository. Deliberately not ``security_check._git``:
+    that helper is the subject, and building the fixture with it would let a
+    broken subject construct the state it is then asked to judge."""
+    proc = subprocess.run(
+        ["git", "-c", "user.name=Fixture", "-c", "user.email=fixture@example",
+         "-c", "commit.gpgsign=false", "-c", "init.defaultBranch=master",
+         "-C", str(cwd), *args],
+        capture_output=True, text=True, check=False,
+    )
+    assert proc.returncode == 0, f"fixture git {args}: {proc.stderr}"
+
+
+@pytest.fixture()
+def repo(tmp_path, monkeypatch) -> Path:
+    """A one-commit throwaway repository, with the subject pointed at it."""
+    root = tmp_path / "candidate"
+    root.mkdir()
+    _setup_git("init", "-q", cwd=root)
+    (root / "tracked.py").write_text("x = 1\n", encoding="utf-8")
+    _setup_git("add", "tracked.py", cwd=root)
+    _setup_git("commit", "-q", "-m", "fixture", cwd=root)
+    monkeypatch.setattr(security_check, "CAIRN_ROOT", root)
+    return root
+
+
+def test_preflight_passes_on_a_clean_checkout_and_returns_the_real_head(repo) -> None:
+    rc, head = security_check.repo_state_preflight()
+    assert rc == 0
+    expected = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"],
+                              capture_output=True, text=True, check=True)
+    assert head == expected.stdout.strip()
+    assert head is not None and len(head) == 40
+
+
+def test_preflight_refuses_a_modified_tracked_file(repo, capsys) -> None:
+    (repo / "tracked.py").write_text("x = 2\n", encoding="utf-8")
+    rc, head = security_check.repo_state_preflight()
+    assert (rc, head) == (1, None)
+    assert "worktree is not clean" in capsys.readouterr().err
+
+
+def test_preflight_refuses_an_untracked_file(repo, capsys) -> None:
+    """The reproduced fail-open: ``git status --porcelain`` with git's default
+    ``--untracked-files=normal`` DOES list untracked files, but the tracked-only
+    check this command grew from (``--untracked-files=no``, the shape used by the
+    gate-ceremony preflight) does not -- and an untracked ``.py`` under a scanned
+    root is a file the release scan may open and no adopter can fetch."""
+    (repo / "rogue.py").write_text("import os\n", encoding="utf-8")
+    rc, head = security_check.repo_state_preflight()
+    assert (rc, head) == (1, None)
+    err = capsys.readouterr().err
+    assert "worktree is not clean" in err
+    assert "rogue.py" in err
+
+
+def test_preflight_refuses_an_untracked_file_inside_an_untracked_directory(
+        repo, capsys) -> None:
+    """``--untracked-files=all`` rather than ``normal``: git's ``normal`` mode
+    collapses an untracked directory to the directory name, which is still
+    non-empty, so this pins the *listing* rather than only the refusal -- an
+    operator has to see the file to fix it."""
+    (repo / "sub").mkdir()
+    (repo / "sub" / "rogue.py").write_text("import os\n", encoding="utf-8")
+    rc, _head = security_check.repo_state_preflight()
+    assert rc == 1
+    assert "sub/rogue.py" in capsys.readouterr().err
+
+
+def test_preflight_refuses_a_subdirectory_of_the_checkout(repo, monkeypatch,
+                                                          capsys) -> None:
+    """``git -C`` discovers upward: pointed at a subdirectory, every check below
+    would answer about the enclosing repository, and the run would pass against
+    a commit the invocation never named."""
+    sub = repo / "nested"
+    sub.mkdir()
+    monkeypatch.setattr(security_check, "CAIRN_ROOT", sub)
+    rc, head = security_check.repo_state_preflight()
+    assert (rc, head) == (1, None)
+    err = capsys.readouterr().err
+    assert "not the top level of a git worktree" in err
+    assert "FAIL CLOSED" in err
+
+
+def test_preflight_refuses_when_there_is_no_repository(tmp_path, monkeypatch,
+                                                        capsys) -> None:
+    bare = tmp_path / "no-repo"
+    bare.mkdir()
+    monkeypatch.setattr(security_check, "CAIRN_ROOT", bare)
+    rc, head = security_check.repo_state_preflight()
+    assert (rc, head) == (1, None)
+    assert "FAIL CLOSED" in capsys.readouterr().err
+
+
+def test_preflight_fails_closed_when_git_is_unavailable(repo, monkeypatch,
+                                                         capsys) -> None:
+    monkeypatch.setattr(security_check.shutil, "which", lambda _n: None)
+    rc, head = security_check.repo_state_preflight()
+    assert (rc, head) == (1, None)
+    err = capsys.readouterr().err
+    assert "git was not found on PATH" in err
+    assert "FAIL CLOSED" in err
+
+
+def test_postflight_refuses_a_head_that_moved_mid_run(repo, capsys) -> None:
+    rc, head = security_check.repo_state_preflight()
+    assert rc == 0 and head is not None
+    (repo / "tracked.py").write_text("x = 3\n", encoding="utf-8")
+    _setup_git("commit", "-q", "-a", "-m", "candidate changed", cwd=repo)
+    assert security_check.repo_state_postflight(head) == 1
+    assert "HEAD moved during the run" in capsys.readouterr().err
+
+
+def test_postflight_refuses_a_worktree_dirtied_mid_run(repo, capsys) -> None:
+    rc, head = security_check.repo_state_preflight()
+    assert rc == 0 and head is not None
+    (repo / "appeared.py").write_text("y = 1\n", encoding="utf-8")
+    assert security_check.repo_state_postflight(head) == 1
+    assert "modified during the run" in capsys.readouterr().err
+
+
+def test_postflight_passes_when_nothing_moved(repo) -> None:
+    rc, head = security_check.repo_state_preflight()
+    assert rc == 0 and head is not None
+    assert security_check.repo_state_postflight(head) == 0
+
+
+def test_state_git_calls_are_sterile(repo, monkeypatch) -> None:
+    """A2: the steering environment is stripped and execution-bearing config is
+    disabled on the state check itself -- the check that decides whether a
+    release may be cut must not be steerable by in-repo config or by the
+    environment it inherits."""
+    monkeypatch.setenv("GIT_DIR", "/elsewhere/.git")
+    monkeypatch.setenv("GIT_CONFIG_GLOBAL", "/elsewhere/gitconfig")
+    monkeypatch.setenv("GIT_EXTERNAL_DIFF", "/bin/false")
+    seen: dict = {}
+    real_run = subprocess.run
+
+    def _spy(cmd, **kwargs):
+        seen["cmd"] = list(cmd)
+        seen["env"] = dict(kwargs.get("env") or {})
+        return real_run(cmd, **kwargs)
+
+    monkeypatch.setattr(security_check.subprocess, "run", _spy)
+    assert security_check._dirty_entries() == []
+
+    assert seen["cmd"][0].startswith("/"), (
+        "git must be invoked by absolute path -- a partial path resolves "
+        f"through PATH: {seen['cmd'][0]}")
+    for key, value in security_check._STERILE_GIT_CONFIG.items():
+        token = f"{key}={value}"
+        assert token in seen["cmd"], f"missing -c {token}"
+        assert seen["cmd"][seen["cmd"].index(token) - 1] == "-c"
+    leaked = sorted(k for k in seen["env"]
+                    if k.startswith("GIT_") and k != "GIT_TERMINAL_PROMPT")
+    assert leaked == [], f"GIT_* steering variables reached git: {leaked}"
+    assert seen["env"]["GIT_TERMINAL_PROMPT"] == "0"
+    assert seen["env"]["PATH"] == os.environ["PATH"], (
+        "the operator's PATH is deliberately preserved -- dropping it would "
+        "break git's own helper lookup")
 
 
 def test_scan_targets_are_explicit_files_and_name_the_expected_executables() -> None:

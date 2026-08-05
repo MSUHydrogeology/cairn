@@ -15,6 +15,14 @@ output in the release notes / checklist):
 
     python bootstrap/security_check.py
 
+**A repository-state preflight runs first and stops the command on failure**:
+the invocation must name the checkout root, the worktree must be clean of
+tracked *and untracked* changes, and ``HEAD`` must resolve to a full commit id.
+A release security run is evidence about a *commit*; over a dirty tree it is
+evidence about bytes nobody can fetch. The same state is re-checked after the
+phases, and the full ``HEAD`` is printed in the summary so release notes can
+bind the run to the tagged commit.
+
 It scans the same **derived** executable surface as the dev gate -- every
 file the scaffold ships **byte-for-byte** as Python, derived from the
 published install manifest (``install_manifest``, the same enumeration
@@ -30,8 +38,11 @@ Security-hardening Chunk 7 / R1; manifest derivation per the
 from __future__ import annotations
 
 import json
+import os
+import shutil
 import subprocess
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 CAIRN_ROOT = Path(__file__).resolve().parent.parent
@@ -58,6 +69,181 @@ ALLOWLIST: dict[tuple[str, str], str] = {
         "lives here."
     ),
 }
+
+
+# ===========================================================================
+# Phase 1 -- repository-state preflight / postflight
+# ===========================================================================
+#
+# A release security run is evidence ABOUT A COMMIT. Run over a dirty tree it
+# is evidence about nothing citable: the bytes that were scanned are not the
+# bytes anyone can fetch. So the command establishes three facts before any
+# scanner runs -- this invocation names the checkout root, the worktree is
+# clean of tracked AND untracked changes, and HEAD resolves to a full commit
+# id -- and re-establishes the first two afterwards, so a candidate that
+# changed mid-run cannot be reported as clean.
+#
+# Untracked files are refused, not tolerated. Cairn's own tree reproduced the
+# fail-open on 2026-08-05: an untracked `.py` under a scanned root is a file
+# the release scan may open and no adopter can fetch.
+
+
+class _RepoStateError(RuntimeError):
+    """A repository fact the command could not establish.
+
+    Never converted into "the fact does not hold" -- an unestablishable state
+    is a fail-closed condition of its own, which is why every raiser reports
+    the git stderr rather than returning a bare False.
+    """
+
+
+#: Git config forced onto every invocation below. Same posture -- and the
+#: same reasons, each verified against a real attack in that module's review
+#: rounds -- as ``bootstrap/tests/_gate_preflight._STERILE_CONFIG``: an
+#: in-repo ``.git/config`` key must not be able to steer, or execute during,
+#: the state check that decides whether a release may be cut. Command-line
+#: ``-c`` outranks system, global, repository and worktree config.
+#:
+#: Deliberately a NARROW SECOND INSTANCE rather than an import. The trust-root
+#: pattern lives in ``bootstrap/tests/`` and pulls in ``_gate_manifest`` and
+#: ``_gate_reanchor``; importing the test package into the release command
+#: would make Cairn's release gate depend on its own gate-ceremony tooling and
+#: invert the dependency direction. What is reused is the pattern, named here
+#: so the two can be compared by a reader.
+_STERILE_GIT_CONFIG: dict[str, str] = {
+    "core.useReplaceRefs": "false",   # refs/replace/<sha> forges `show` output
+    "core.hooksPath": os.devnull,     # a hook is candidate-supplied execution
+    "core.fsmonitor": "false",        # a monitor program runs during `status`
+    "core.quotePath": "false",        # non-ASCII paths must read back raw
+    "diff.external": "",
+    "core.pager": "cat",
+}
+
+
+def _sterile_git_env() -> dict[str, str]:
+    """The child environment for the state-check git calls.
+
+    Every ``GIT_*`` variable is **dropped** rather than denylisted by name.
+    The steering set is large (``GIT_DIR``, ``GIT_WORK_TREE``,
+    ``GIT_INDEX_FILE``, ``GIT_CONFIG_*``, ``GIT_EXTERNAL_DIFF``,
+    ``GIT_OBJECT_DIRECTORY``, the pathspec flags) and grows between releases,
+    so dropping the prefix and putting back what is needed fails safe where an
+    enumerated denylist does not. The rest of the environment is the
+    operator's and is left alone -- a scope statement, not a trust claim.
+    """
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    env["GIT_TERMINAL_PROMPT"] = "0"
+    return env
+
+
+def _git(*args: str) -> subprocess.CompletedProcess:
+    """Run one read-only git subcommand against ``CAIRN_ROOT``, sterilised."""
+    git = shutil.which("git")
+    if git is None:
+        raise _RepoStateError("git was not found on PATH")
+    overrides: list[str] = []
+    for key, value in _STERILE_GIT_CONFIG.items():
+        overrides += ["-c", f"{key}={value}"]
+    try:
+        return subprocess.run(
+            [git, "-C", str(CAIRN_ROOT), *overrides, *args],
+            capture_output=True, text=True, check=False,
+            env=_sterile_git_env(),
+        )
+    except OSError as exc:
+        raise _RepoStateError(f"could not run git ({exc})") from None
+
+
+def _require_checkout_root() -> None:
+    """Refuse unless ``CAIRN_ROOT`` is the top level of the worktree.
+
+    ``git -C <path>`` **discovers upward**, so "a repository answered" is not
+    "the repository this command names answered": run from a copy of the tree
+    nested under some other checkout, every state check below would report on
+    that outer repository and the run would pass against a commit the operator
+    never named.
+    """
+    p = _git("rev-parse", "--show-toplevel")
+    top = (p.stdout or "").strip()
+    if p.returncode != 0 or not top:
+        raise _RepoStateError(
+            f"{CAIRN_ROOT} is not inside a git repository "
+            f"({(p.stderr or '').strip() or 'git rev-parse failed'})")
+    if Path(top).resolve() != CAIRN_ROOT.resolve():
+        raise _RepoStateError(
+            f"{CAIRN_ROOT} is not the top level of a git worktree -- git "
+            f"discovered {Path(top).resolve()} by walking upward")
+
+
+def _head_commit() -> str:
+    """The full 40-hex id of ``HEAD``, or raise."""
+    p = _git("rev-parse", "--verify", "--end-of-options", "HEAD^{commit}")
+    sha = (p.stdout or "").strip()
+    if p.returncode != 0 or len(sha) != 40 or any(
+            c not in "0123456789abcdef" for c in sha):
+        raise _RepoStateError(
+            f"HEAD does not resolve to a full commit id "
+            f"({(p.stderr or '').strip() or sha!r})")
+    return sha
+
+
+def _dirty_entries() -> list[str]:
+    """Porcelain status lines for tracked **and untracked** changes."""
+    p = _git("status", "--porcelain", "--untracked-files=all")
+    if p.returncode != 0:
+        raise _RepoStateError(
+            f"could not read the worktree status "
+            f"({(p.stderr or '').strip() or 'git status failed'})")
+    return [ln for ln in (p.stdout or "").splitlines() if ln.strip()]
+
+
+def _format_dirty(entries: list[str]) -> str:
+    shown = ", ".join(ln[3:] for ln in entries[:5])
+    more = f" (+{len(entries) - 5} more)" if len(entries) > 5 else ""
+    return shown + more
+
+
+def repo_state_preflight() -> tuple[int, str | None]:
+    """Phase 1. Returns ``(rc, head)``; ``head`` is None on any refusal."""
+    try:
+        _require_checkout_root()
+        head = _head_commit()
+        dirty = _dirty_entries()
+    except _RepoStateError as exc:
+        print(f"security_check: repository state could not be established "
+              f"({exc}) -- FAIL CLOSED. A release security run must name the "
+              f"commit it is evidence about.", file=sys.stderr)
+        return 1, None
+    if dirty:
+        print(f"security_check: worktree is not clean ({len(dirty)} tracked or "
+              f"untracked change(s)) -- FAIL CLOSED. The bytes scanned must be "
+              f"the bytes the tagged commit carries: "
+              f"{_format_dirty(dirty)}", file=sys.stderr)
+        return 1, None
+    print(f"security_check: preflight OK -- clean worktree at {head}.")
+    return 0, head
+
+
+def repo_state_postflight(head: str) -> int:
+    """Phase 1, second half: the candidate must not have moved mid-run."""
+    try:
+        now = _head_commit()
+        dirty = _dirty_entries()
+    except _RepoStateError as exc:
+        print(f"security_check: repository state could not be re-established "
+              f"after the phases ({exc}) -- FAIL CLOSED.", file=sys.stderr)
+        return 1
+    if now != head:
+        print(f"security_check: HEAD moved during the run ({head} -> {now}) "
+              f"-- FAIL CLOSED. The phases above measured a candidate that is "
+              f"no longer checked out.", file=sys.stderr)
+        return 1
+    if dirty:
+        print(f"security_check: the worktree was modified during the run "
+              f"({len(dirty)} change(s)) -- FAIL CLOSED. "
+              f"{_format_dirty(dirty)}", file=sys.stderr)
+        return 1
+    return 0
 
 
 def scan_targets() -> list[str]:
@@ -222,10 +408,36 @@ def run_check_cairn() -> int:
                           cwd=str(CAIRN_ROOT), check=False).returncode
 
 
+#: The phases attempted after the preflight passes, in order. Every one is
+#: attempted even after an earlier failure, so a single run yields a complete
+#: repair list rather than the first thing that broke.
+_PHASES: tuple[tuple[str, Callable[[], int]], ...] = (
+    ("bandit", run_bandit),
+    ("check_cairn", run_check_cairn),
+)
+
+
 def main() -> int:
-    rc = run_bandit() | run_check_cairn()
+    rc, head = repo_state_preflight()
+    # `head is None` is unreachable on an rc == 0 path; folded into the same
+    # branch so the narrowing is a fail-closed guard rather than an assert
+    # (which `python -O` strips out of the one command that must not skip).
+    if rc or head is None:
+        print("security_check: FAIL -- resolve the above before release.",
+              file=sys.stderr)
+        return rc or 1
+    for label, phase in _PHASES:
+        # Normalised to 0/1 rather than OR-ed: a phase's raw exit code is not
+        # a bit field (1 | 2 == 3), and the only contract here is clean vs not.
+        if phase() != 0:
+            print(f"security_check: phase {label} did not pass.",
+                  file=sys.stderr)
+            rc = 1
+    if repo_state_postflight(head) != 0:
+        rc = 1
     if rc == 0:
-        print("security_check: PASS -- release security gate clean.")
+        print(f"security_check: PASS -- release security gate clean at {head}. "
+              f"Record this commit id with the run in the release notes.")
     else:
         print("security_check: FAIL -- resolve the above before release.",
               file=sys.stderr)
