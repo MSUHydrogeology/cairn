@@ -1639,8 +1639,11 @@ def test_the_child_document_is_bounded_strict_utf8_json(
 ) -> None:
     bd = tmp_path / "bin"
     bd.mkdir()
-    fake_tool(bd / "gitleaks", scan_rc=1,
-              findings=[_finding(File="a" + BIDI + "b")])
+    # The child document carries no adapter *result* field, so a hostile File
+    # value never reaches it -- measured: flipping ensure_ascii there reddened
+    # nothing.  The reachable non-ASCII path is the adapter's self-reported
+    # version, which the mode-selection reason quotes back.
+    fake_tool(bd / "gitleaks", version="8.30." + chr(0x0661))
     runner = runner_copy(tmp_path)
     proc = subprocess.run(
         [sys.executable, str(runner), "--target", str(sweep_target),
@@ -1651,6 +1654,8 @@ def test_the_child_document_is_bounded_strict_utf8_json(
     )
     raw = proc.stdout
     raw.decode("utf-8")
+    assert chr(0x0661).encode("utf-8") not in raw, "a raw non-ASCII byte escaped"
+    assert b"\\u0661" in raw, raw
     assert raw.isascii(), "the child document is not ensure_ascii=True"
     assert len(raw) < 64 * 1024, len(raw)
 
