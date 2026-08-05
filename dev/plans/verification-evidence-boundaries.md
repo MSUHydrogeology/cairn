@@ -204,9 +204,9 @@ contract. It must name `T`, not the later record commit.
 
 * **Tests that must pass:**
   * Boundary A while iterating: the affected nodes in
-    [`bootstrap/tests/test_verification_boundaries.py`](../../bootstrap/tests/test_verification_boundaries.py),
-    plus unchanged `bootstrap/tests/test_quality_gate_order_independence.py`
-    when validating the seed/default behavior.
+    `bootstrap/tests/test_verification_boundaries.py`, plus unchanged
+    `bootstrap/tests/test_quality_gate_order_independence.py` when validating
+    the seed/default behavior.
   * Boundary B: one complete shuffled engine suite under canonical Python
     3.13.x, recorded per Chunk D.
 * **Docs that must land:** the two AGENTS operational surfaces, two doctrine
@@ -260,9 +260,9 @@ Chunk D performs the one complete integration run and records it. A plan or
 security reviewer may require additional targeted probes; neither review tier
 is discharged by these author-run commands.
 
-<!-- Implementation appends a complete `## Implementation verification --
-     <agent> -- YYYY-MM-DD` section only after the stable Chunk-D run. Do not
-     create an empty evidence heading. -->
+Implementation appends a complete `## Implementation verification -- <agent>
+-- YYYY-MM-DD` section only after the stable Chunk-D run. It does not create an
+empty evidence heading in advance.
 
 ## Code review
 
