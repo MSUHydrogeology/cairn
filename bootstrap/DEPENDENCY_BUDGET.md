@@ -43,15 +43,24 @@ declared exception — that the doctrine will codify around.
 and constrained:
 
 * **Default off.** An unconfigured `run_security_audit.py` run does **not**
-  egress; pip-audit runs against its local cache only.
+  egress, and the lookup **does not run at all** — the pass returns before
+  pip-audit is invoked, so nothing is checked, not even against a local cache.
 * **Opt-in.** `--allow-network` enables the remote lookup. Only package
-  **names + versions** are sent to pip-audit's vulnerability service — never
-  repository source, scientific data, credentials, or other IP.
+  **names + versions** are sent to the **pinned** vulnerability service named
+  in the orchestrator's fixed argument vector — never repository source,
+  scientific data, credentials, or other IP. The tool runs with a
+  closed-allowlist child environment, so `--allow-network` authorizes *that
+  documented service* rather than whatever an environment variable points at.
 * **Fail-closed reporting.** A denied / offline / failed lookup is reported
-  **unavailable, not clean**.
-* **Scope / blind spots.** pip-audit audits the **active interpreter's
-  pip-visible distributions only**; conda-managed and locked-but-not-installed
-  dependencies are documented blind spots.
+  **unavailable, not clean**; so is a coverage set the run could not establish.
+  A clean result from this leg requires zero `UNKNOWN` dispositions.
+* **Scope / blind spots.** pip-audit audits the **active interpreter's Python
+  distributions only**. Conda-managed and locked-but-not-installed dependencies
+  are outside that scope, and on Cairn's own canonical environment the gap is
+  **147 of 391 unique conda-installed packages (37.6%), `as_of 2026-08-04`** —
+  not an edge case. The orchestrator counts and reports them as *not audited*;
+  it never looks any of them up. Closing that gap is tracked as a deferred
+  follow-up, not by this module.
 * **Finding policy.** A pip-audit vulnerability finding is **blocking** — it
   fails the orchestrator aggregate at the FINDINGS tier (`10`), like a bandit
   finding. (Only the content-scan injection pass is advisory; a CVE is not.)
@@ -62,7 +71,12 @@ The orchestrator records the **active interpreter** (`sys.executable`) and the
 repo root as audit evidence, and runs every tool with a trusted subprocess
 boundary: `shell=False`, a fixed argument vector, a `--` terminator before file
 arguments (with refusal of option-shaped paths), resolved + contained targets,
-and a neutral working directory. The audit is only as trustworthy as the
+and a neutral working directory. The child environment is a **closed
+allowlist**, not a denylist, so a variable nobody has heard of cannot steer a
+tool; the boundary also imposes a timeout, captures output as bounded bytes
+with an explicit decode policy, and escapes control characters before rendering
+so tool output cannot forge a report line. Any of those failing makes the pass
+**degraded**, never clean. The audit is only as trustworthy as the
 interpreter/tool environment it ran in, so that environment is part of the
 record.
 
