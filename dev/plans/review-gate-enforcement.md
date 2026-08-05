@@ -1518,3 +1518,69 @@ against **29** `## Response to plan review`.
 * **What this gate still cannot do**, unchanged and fenced by `[E4]`: it attests
   that a tier was *declared*. It cannot establish that the review happened, that
   the named reviewer performed it, or that the declaration is true.
+
+## Code review -- Codex -- 2026-08-05
+
+**Model**: GPT-5 (Codex)
+
+**Verdict: REVISE.** I reviewed the implemented Chunks A--D as an External
+different-agent-type reviewer. The focused contract and twin tests are green
+(74 passed), and both public gate surfaces reach `review_record_violations`.
+Two independently constructed fixtures nevertheless reproduce fail-open
+behaviour that contradicts the gate's settled schema.
+
+### Findings
+
+1. **[CR1, blocking] The gate does not enforce S1's exact raw-heading
+   grammar.** `tools/lifecycle_planner.py::_pass_headings` selects sections
+   already accepted by the older permissive `_HEADER_RE`; it never matches the
+   raw line against S1. I exercised the predicate, current-state conformance,
+   and the `executing` precondition with each of these headings:
+
+   ```text
+   ##   Plan review -- R -- 2026-08-05
+   ## Plan review  --  R  --  2026-08-05
+   ## Plan review -- R -- 2026-08-05<THREE TRAILING SPACES>
+   ```
+
+   All three returned no violations and cleared both gate surfaces, although
+   none matches the exact S1 regex. The inverse mismatch also reproduces:
+   `## Plan review -- Jane (Lab) Smith -- 2026-08-05` matches S1's
+   `[^\n]+?` reviewer field but the generic parser rejects it. C.2 covers
+   level, date absence, and prefix collisions, but not parser-language
+   equivalence. Repair by giving the gate a dedicated raw-line S1 regex (or a
+   parser demonstrably equivalent to the generator's independent regex), then
+   add positive and negative equivalence fixtures. The gate and generator
+   should remain independently implemented; the test may compare their
+   classifications over reviewer/spacing/round variants without making either
+   the other's oracle.
+
+2. **[CR2, blocking] Any H2 whose parsed kind starts with `Response` satisfies
+   a raised-finding disposition.** `_has_disposition` uses
+   `sec.kind.strip().lower().startswith("response")`, while the documented
+   second house form is specifically `## Response to plan review`. Against a
+   conforming External pass with `**Findings**: raised`, both
+   `## Response -- Author -- 2026-08-05` and
+   `## Response to proposal review -- Author -- 2026-08-05` removed every
+   violation and cleared the `executing` gate. With no following section, the
+   same fixture correctly refused. Match the documented section kind exactly
+   (case-insensitively) and add both unrelated-response fixtures as negatives;
+   retain the existing positional bound and the exact
+   `Response to plan review` positive.
+
+### Verification and bounds
+
+* `PYTHONDONTWRITEBYTECODE=1 .../python3.13 -m pytest
+  bootstrap/tests/test_lifecycle_contract.py
+  bootstrap/tests/test_notice_install.py -q` -- **74 passed**.
+* The planner twins are byte-identical (`cmp` exit 0).
+* Both findings were reproduced against `review_record_violations`,
+  `_conformance_violations`, and `_gating_preconditions(..., "executing")`,
+  not inferred from source text.
+* I did not run the full suite after finding the two blocking gate bypasses; a
+  post-fix review needs the focused falsifiers and a stable broad result. I did
+  not examine unrelated lifecycle rules, the authenticity of review bylines,
+  or the accepted legacy-manifest human-review residual.
+
+`clearsToArchive = NO`. The two repairs and their executable negative controls
+need to land before the next code-review round.
