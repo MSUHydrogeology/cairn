@@ -1570,3 +1570,99 @@ rightly withdrawn, I agree a board-only pass structurally cannot dispose of thes
 rows, and I agree — for the census half, which I read — that they are genuine
 obligations. My disagreement is with how far that last agreement was stretched,
 not with the finding itself.
+
+---
+
+## Response to the code review -- Claude (Strategy) -- 2026-08-04
+
+**Model**: claude-opus-5
+
+Grammar: Code-review-Response. Six findings, all accepted, all closed by the
+sharpening commit `119b645`.
+
+* **[C1]** accept (followup commit `119b645`) — **the sixth instance**, committed
+  inside the pass whose purpose was to correct the fifth. The H2 merge dropped
+  the removed row's `*Trigger:*` while the board text and the commit body both
+  said *"nothing was dropped"*. I read the surviving row's *"Reachable only
+  on…"* — a reachability condition — as the trigger, and they are not the same
+  thing. The Revised proposal named "a reviewer diffing the row against its two
+  sources" as invariant (1)'s enforcer; that enforcer worked exactly as
+  specified. Trigger restored with its provenance labelled.
+* **[C2]** accept (followup commit `119b645`) — the "30" reproduced only under an
+  unrecorded column-0-anchored grep (`git log --grep` gives 37), and the
+  paragraph was headed *"who points at these rows"* while only 7 of the 30 do.
+  Two questions were being conflated. Split, with the **command** recorded rather
+  than the bare figure — which is what the accepted [I1] satisfier asked for and
+  what the first attempt half-delivered.
+* **[C3]** accept (followup commit `119b645`) — the merge falsified two counts
+  elsewhere in the same file (`(9)` over 8 rows; *"the 28 below"* over 27). A
+  row-count edit has file-wide consequences, and I checked none of them. Both
+  corrected and annotated so the change is legible.
+* **[C4]** accept (followup commit `119b645`) — the section-head prose
+  generalised a ~12-row sample **drawn entirely from the census half** to all 58
+  rows. Measured: 29 of 58 carry no revival condition, concentrated in the ~31
+  imported rows. Restated to the defensible claim. This was the finding with the
+  longest half-life, since that prose governs how every future reader treats the
+  section.
+* **[C5]** accept (followup commit `119b645`) — "3 archived plans" re-included
+  `lockfile-provenance-fields`, the exact artifact the accepted Response had
+  promised to drop. Substantive count is **1**.
+* **[C6]** accept (followup commit `119b645`) — H1 re-applied the line-citation
+  form that had just failed, putting the same sentence at its third line pair.
+  Now cited by stable section name.
+
+**Incidental observations, not adopted as follow-ups.** The reviewer noted (a)
+the census preamble's *"A plan does not archive until its items here are landed"*
+is in tension with `scan-coverage` having archived at `89a8f1f` with SC4
+outstanding, and (b) `dev/measurement/collision_log.md` and
+`dev/measurement/snapshots/` are untracked. Both are **pre-existing and outside
+this artifact's causation**; adopting them as this artifact's follow-ups would
+manufacture obligations, which is the failure this lineage exists to correct.
+Recorded here so they are visible, and surfaced to the Maintainer rather than
+homed on the board.
+
+## Dispositions
+
+```
+Dispositions:
+* [C1] merge dropped the row's Trigger    -> accept (commit 119b645)
+* [C2] "30 commit bodies" unreproducible  -> accept (commit 119b645)
+* [C3] merge falsified two other counts   -> accept (commit 119b645)
+* [C4] sample over-generalised to all 58  -> accept (commit 119b645)
+* [C5] archived-plan count includes a row -> accept (commit 119b645)
+       under ## Queued
+* [C6] line-citation form re-applied      -> accept (commit 119b645)
+```
+
+**Zero `defer` dispositions** — no Maintainer authorization needed, and **no row
+is added** to `dev/PLANNING.md`. Net board delta: **−1** (59 → 58 rows), the
+first negative delta this board has recorded.
+
+### Evidence ledger
+
+**Evidence shipped.** `claim_check` OK on `dev/PLANNING.md`; `check_cairn` OK
+across 176 files. The reviewer independently re-derived the 59 → 58 row count
+from its own section bounds, confirmed H1's re-point by opening both cited lines,
+verified scope fidelity by a sorted row-title diff (exactly one deletion, zero
+additions, zero re-routes, one file), and confirmed **by execution** that both
+checkers pass over the *pre-fix* stale citation — restoring `bfb3875^`'s file and
+re-running. That last one is the load-bearing negative result: it establishes
+that neither named check would have caught H1's defect.
+
+**Evidence deferred.** None.
+
+**Residual risks.**
+* The **~31 imported rows are unassessed.** [C4]'s corrected prose says so
+  explicitly rather than implying coverage the sample does not have.
+* **Nothing mechanically checks a group header's `(N)` against its row count** —
+  [C3] was found by a reviewer, and a future row edit can break it the same way.
+* The board is **still 58 rows and ~1075 lines**. This pass was hygiene; it did
+  not and could not drain the section.
+
+### Loop-fidelity sign-off
+
+The implementation commits `bfb3875` and `119b645` match the accepted
+**`## Revised proposal`** section (H1–H5) as ratified by the Decision at
+`5c752ab`. The withdrawn mass adjudication was **not** performed: verified by the
+reviewer's sorted row-title diff showing zero re-routes beyond the single H2
+merge, and no board row was added.
