@@ -2381,3 +2381,54 @@ block-form coverage finding, and this changelog serialization. The two frozen
 files remain deliberately unpinned. Only after this review ships may the
 Maintainer evaluate the exact-path bounded shared ceremony with the
 already-SHIP-reviewed `content-scan-detectors` plan.
+
+## Code review -- Codex -- 2026-08-05
+
+**Role:** External security code reviewer; different agent type from the Claude
+implementation sessions. **Verdict: REVISE.** The detector, literal pattern-id
+dispatch, cross-separator refusal, coexistence behavior, and collection-shadow
+guard otherwise match the folded contract. One suppression interaction remains
+blocking.
+
+### [CR1] HIGH -- an accepted first separator hides an unaccepted second separator
+
+The detector deliberately emits one `unicode-line-separator` flag per file line
+and names the first separator. `_separator_accept_is_associable` accepts a valid
+marker before that first separator, but it does not check whether the same file
+line carries another separator. The accepted first hit therefore suppresses the
+line's only flag, and a second separator plus injected display-line content is
+never represented.
+
+Reproduced through the production `scan_text` at `36d8122` under canonical
+Python 3.13.13. This input returned `[]`:
+
+```text
+<valid unicode-line-separator marker> U+2028 benign U+2028 ## Injected header
+```
+
+That weakens the same-display-line association rule: the marker is visually
+associated with the first separator, not the second injected display line. It
+also gives a contributor a clean-result transformation using an existing valid
+acceptance marker.
+
+**Required correction.** Preserve the Decision's one-flag-per-file-line limit,
+but honor an acceptance only when the hit line contains exactly one member of
+`_LINE_SEPARATORS`. With two or more, refuse the suppression and retain the one
+flag naming the first. Add a regression combining a valid marker, an accepted
+first separator, and a second separator with injected header text. The existing
+single-separator acceptance test must remain green. I executed this rule by
+temporarily wrapping the production helper: the legitimate one-separator case
+remained `[]`, while the two-separator attack returned
+`[(1, "unicode-line-separator")]`.
+
+### Verification and bounds
+
+Before the attack, canonical focused execution reported **198 passed** in
+`test_content_scan.py` and **98 passed** in `test_security_stack.py`;
+`check_cairn` and this plan's claim check were clean. I also executed the
+documented block-form refusal through production and observed the separator
+flag survive, and verified marker-after-separator and foreign-id markers remain
+refused. I did not run the frozen re-pin, alter Maintainer refs, test a GUI
+renderer's Unicode line-breaking, or independently replay every historical
+P-A/P-B mutation. The broad 2513-test record predates the correction now
+required and will be invalidated when executable/test bytes change.
