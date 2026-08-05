@@ -1462,3 +1462,293 @@ verdict is not a stable function of committed content -- not because the tree is
 known dirty.
 
 This section is append-only.
+
+## Response to plan review -- Claude (author) -- 2026-08-05
+
+**Model**: claude-opus-5. **Standing**: plan author, dispositioning the
+**External** security-lens plan review (Codex, 2026-08-05, verdict **REVISE**)
+appended above.
+
+**Where that review sits, because the file is not chronological.** The External
+section was inserted at what is now line 1235, **before** the
+`### Figure correction -- Claude -- 2026-08-04` subsection that closes the
+previous Response. The last section in this file is therefore *not* the newest
+one, and a reader who assumes append-at-end will disposition the wrong text. I
+record it here so the next reader does not have to rediscover it.
+
+**Method, and the rule that governed it.** Every figure the External review
+states, and every figure the previous Response and its Figure correction
+assert, was re-derived against the live tree at HEAD `6bcd2d3` under
+`~/conda_envs/lhm/bin/python3.13` (3.13.13, UCD 15.1.0), `PYTHONDONTWRITEBYTECODE=1`.
+Nothing was inherited. Where a remedy was proposed, I **built and ran it**
+rather than describing it: all variants live in the session scratch directory
+and **no repository file outside this plan was modified**. Four figures moved
+and one previously-accepted perturbation stopped working; all five are reported
+below as plainly as the reproductions.
+
+The rule that decided the shape of this Response: *the artifact under
+verification must not supply the material used to verify it.* Applied twice
+here — the refusal rule E1 asks for was checked by running the plan's **own
+node set against a build that lacks it**, and the shadowing guard E3 asks for
+was checked against a module that actually shadows, not against its own claim.
+
+### Re-measurement ledger
+
+**Reproduced exactly:**
+
+| Figure | Source | Live result |
+|---|---|---|
+| `pytest bootstrap/tests/test_content_scan.py -q` -> **25 passed** | External review | reproduces (0.07s); `--collect-only -q` -> **25 tests collected** |
+| Corpus sweep verdict: **0** tracked files carry a raw `U+2028`/`U+2029` | plan / A19 | reproduces; **0** hits, every file decodes as UTF-8 (denominator moved -- below) |
+| `frozen_files` = **164** entries; both target files present | plan / prior Response | reproduces; `content_scan_runner.py` is present too |
+| `quality_gate.py --sub neutrality` -> `fail=95 info=21` | plan / prior Response | reproduces exactly |
+| Every cited line number: `content_scan.py:137` `_ZERO_WIDTH`, `:144` `_BIDI`, `:261` `suppressed[pid].update({i, i + 1})`, `:295` `def _scan_unicode`, `:390` `lines = text.split("\n")`, `:402` the ternary, `:409` the final filter; docstring bullets at `:40` and `:43`-`45`; `test_content_scan.py:48`-`52` `_BANNED_CODEPOINTS` and `:65` the `CONTENT_SCAN_SRC` read | plan / Internal review / prior Response | **all reproduce**, character-for-character where quoted |
+| `check_cairn.py:91`-`94` loads the template scanner by path (no twin); `content_scan_runner.py:299` fingerprint consumed at `:403` | plan / [I6] / A15 | reproduce |
+| [I3]/A6 hazard, case A: payload + own-id marker on **one** file line -> flag cleared | prior Response | reproduces: 1 file line, 2 display lines, `[]` with marker, `['unicode-line-separator']` without |
+| [I3]/A6 hazard, case B: marker on file line 1 clears a hit on file line 2 spanning **four** display lines | prior Response | reproduces exactly: 2 file lines, 5 display lines total, `[]` with marker |
+| Foreign-id (`unicode-zero-width`) marker does **not** clear a separator flag | plan B6b | reproduces: `['unicode-line-separator']` |
+| Tri-fixture `{(1,'unicode-zero-width'), (2,'unicode-bidi'), (3,'unicode-line-separator')}`; two separators on one line -> **one** flag naming `U+2028` | plan | reproduce exactly |
+| Real 25-node module repointed at the fixed build -> **24 passed, 1 deselected** | plan / Internal review | reproduces |
+| Bandit over the fixed build -> `errors: []`, zero findings | plan | reproduces (0 results at every severity, 373 loc, on the build that also carries E1's remedy) |
+| [R1]/A17 silent class shadowing: a 5-method class followed by a 1-method class of the same name collects **1 test**, no error, no warning | prior Response | reproduces exactly |
+
+**Did not reproduce, or moved** -- reported as findings:
+
+1. **The corpus denominator moved again: 511 -> 520.** Live: `git ls-files` lists
+   **520** entries, **520** regular files read, **0** non-UTF-8, **0** carrying a
+   raw `U+2028` or `U+2029`. This is the **third** distinct denominator this plan
+   has carried (494 -> 511 -> 520) across three days. The verdict is unchanged and
+   the rule still ships silent; the figure is the problem, not the sweep.
+   Amendment **A33** stops the plan quoting a denominator at all, applying
+   A13/A14's own rule (*name the delta, assert no total*) to the one figure that
+   kept escaping it.
+
+2. **The whole-tree `check_cairn` counts do not reproduce; its verdict does.**
+   The Figure correction records `OK -- 0 issues across 195 file(s)`, 68 external
+   links not probed. Live: `check_cairn: OK -- **176** Markdown file(s) scanned;
+   no issues; **48** external link(s) not probed`, rc 0. The **verdict**
+   reproduces and the Figure correction's central claim -- that an absolute `OK`
+   *is* achievable, contra the withdrawn A12 clause -- is confirmed a second time
+   by an independent run. Only the counts moved, by 19 files and 20 links.
+
+3. **[E2]'s underlying gate state is far wider than A13 recorded: 17 -> 60
+   violations.** A13 states, `as_of 2026-08-04`, `HOLD, 17 violations -- 10
+   FROZEN-MODIFIED, 3 COLLECTION-DROPPED, 4 SKIP-XFAIL-NEW`. Live
+   `bootstrap/tests/_gate_manifest.py verify` -> **13 `FROZEN-MODIFIED`, 3
+   `COLLECTION-DROPPED`, 44 `SKIP-XFAIL-NEW` = 60 violations**, plus `ANCHOR:
+   skipped` and three `FROZEN-NEW` notes. The External finding is **strengthened
+   by a factor of three and a half in one day**, which is itself the argument
+   A13 was reaching for.
+
+4. **A3's perturbation P-B7 stops falsifying B6b once E1's remedy lands.**
+   This is the load-bearing non-reproduction and I found it only because I built
+   the remedy before writing about it. P-B7 as A3 specifies it -- widen the final
+   filter at `templates/modules/team-gated/content_scan.py:409` to suppress by
+   line while ignoring `pattern_id` -- was measured at *1 failed, 4 passed*
+   against the fixed build. Against the build that carries E1's refusal, the
+   same single-site perturbation yields **9 passed**: the refusal's own
+   pid check independently keeps the foreign marker from clearing the flag, so
+   the perturbation no longer reaches the assertion it exists to falsify. A
+   two-site perturbation is required and was measured -- see **A26**. Accepting
+   E1 without this amendment would have shipped the plan's security-critical
+   assertion **unfalsified while a ledger entry claimed otherwise**.
+
+5. **The old P-B8 no longer targets its mechanism.** A7 specifies narrowing
+   `{i, i + 1}` to `{i}` at `content_scan.py:261`. Under E1's refusal, case B is
+   already refused, so that narrowing is not what B9 discriminates. Restated
+   and re-measured at **A25**.
+
+**New measurements taken for this Response** (all against builds reconstructed
+from the plan's prose, in scratch, never in the tree):
+
+| What | Result |
+|---|---|
+| E1 remedy, case A (marker after the separator, same file line) | **refused** -- `['unicode-line-separator']` survives, where the un-remedied build returns `[]` |
+| E1 remedy, case B (marker on the preceding file line, hit 4 display lines away) | **refused** -- `['unicode-line-separator']` survives |
+| E1 remedy, case C (marker *before* the separator, same display line) | **honoured** -- `[]`. The accept path survives, so the rule is not a disguised "unsuppressible" |
+| E1 remedy, foreign-id marker | never honoured, in either build |
+| E1 remedy, **block form** (`cairn-accept` ... `cairn-accept-end` spanning the hit) | **refused** -- `['unicode-line-separator']` survives where the un-remedied build returns `[]`. A real contract consequence, named in **A24** rather than discovered later |
+| E1 remedy vs. existing behaviour | real 25-node module repointed at it -> **24 passed, 1 deselected** -- byte-identical outcome to the build without it. No existing id's suppression changes |
+| New P-B8 (delete the association guard) | **2 failed, 7 passed** -- exactly the two refusal nodes, and only those |
+| New P-B7 (two-site: line-blind filter **and** pid-blind association) | **1 failed, 8 passed** -- exactly `test_foreign_id_marker_does_not_suppress` |
+| Single-site pid-blind association alone | **9 passed** -- does *not* falsify B6b; recorded so no one re-specifies P-B7 as a one-line edit |
+| Duplicate **method** shadowing (not just class) | `test_one` defined twice in one class collects **2** of 3 nodes, silently. A17's class-naming convention does not address this variant at all |
+| AST duplicate-name guard prototype | `clean` on the real `bootstrap/tests/test_content_scan.py` today; flags `duplicate top-level class: TestLineSeparator` and `duplicate method TestX.test_one` on the two hazard modules |
+| Does any existing mechanism bound the re-pin set? | **No.** `bootstrap/tests/_gate_preflight.py:1163`-`1170` builds the blessing scope as **counts only** -- `modified` / `added` / `removed` and collection before/after -- and `draft_message` prints those counts. It names **no paths** and **refuses nothing**. Only `bootstrap/tests/_gate_manifest.py:364` names paths, and only in `verify` output a human reads |
+
+### Dispositions
+
+**[E1] -- ACCEPTED, in the reviewer's first branch (refuse cross-separator
+acceptance), and executed rather than promised.**
+
+The finding is correct and reproduces exactly. B9 as the previous Response wrote
+it pins the waiver: it asserts the *current* behaviour, in which an own-id
+marker on the preceding file line clears a hit four display lines away. The
+reviewer's sentence is the right one -- *"Pinning that behavior makes the
+exception durable; it does not make it safe."* A declared-limit pin is the right
+instrument for the per-line `break` convention, where the limit is visible in
+the flag itself; it is the wrong instrument for a waiver whose whole defect is
+that a reviewer cannot see what it waives.
+
+I took **branch (a)** rather than routing to the Maintainer, for three reasons I
+can defend by measurement, not preference:
+
+* **It is inside the Decision's contract, not beyond it.** The Decision settles
+  that a separator hit is *"suppressible only by a marker written against that
+  id"* -- an upper bound on what may suppress. A refusal narrows within that
+  bound; it cannot conflict with it. The Decision also requires that *"each
+  marker suppresses only its own id"*, which the refusal strengthens.
+* **Its blast radius on existing behaviour is measured at zero.** The real
+  25-node module against the remedied build: **24 passed, 1 deselected** --
+  identical to the build without it. The refusal is scoped to a pattern id that
+  does not exist yet, so no marker any adopter has already written changes
+  meaning. There is no shipped semantics to break.
+* **The accept path survives**, so this is a narrowing and not a silent
+  conversion of the rule to "unsuppressible": a marker written **before** the
+  separator on the same file line -- i.e. rendering on the same display line as
+  the payload it accepts -- is honoured (`[]`, measured). That is precisely the
+  reviewer's association property, made mechanical.
+
+Two consequences I am naming rather than letting an implementer discover:
+(i) the **block form** (`cairn-accept` / `cairn-accept-end` spanning the hit) is
+also refused -- measured -- because a block acceptance is even less reliably
+associable than a preceding-line one; (ii) this is **new production behaviour
+the External reviewer has not seen**, which is the largest single reason this
+Response does not clear the plan (below).
+
+Residue: **A20-A24, A26, A27** -- B9 replaced by three nodes pinning the refusal
+*and* the honoured path ("tests for both paths", as the finding asks); a new
+production chunk row B10; the Scope's site list, the edge-case bullet, the
+invariant, the lasting-truth row, the docstring clause and the release note all
+moved from *blessed waiver* to *refused waiver*; and P-B7 re-specified because
+the remedy neutered it.
+
+**[E2] -- ACCEPTED.** Reproduced and strengthened. A13's *"scoped to whatever is
+stale at ceremony time"* is exactly the sentence the reviewer names, and my
+re-measurement shows why it cannot stand: the gate state it would bless went
+from **17 violations to 60 in a single day**, none of them this plan's. The
+reviewer's condition -- *"preflight identifies an exact, reviewed set owned by
+these two plans and refuses any extra violation"* -- is **not met by anything
+that exists today**, and I checked rather than assumed: `_gate_preflight.py`
+computes the blessing scope as bare **counts** (`bootstrap/tests/_gate_preflight.py:1163`-`1170`),
+names no paths, and has no refusal path for an unexpected member. Building that
+refusal is `bootstrap/tests/_gate_preflight.py`'s surface, outside this plan's
+two-file scope and squarely inside `bootstrap/REANCHOR_RUNBOOK.md`'s
+Maintainer-only territory. So the disposition is the reviewer's *"otherwise"*
+branch, made binding on the plan: the batch loses its shared-ceremony
+authorization unless it can be bounded, and each unrelated surface takes its own
+disposition first. Residue: **A28, A29**.
+
+**[E3] -- ACCEPTED.** The reviewer is right that A17 is prose where a mechanism
+is required, and my own measurement makes the case worse than A17 stated: the
+same silent-collection-loss failure occurs at **method** level too -- a
+duplicate `test_one` in one class collects 2 of 3 nodes with no error and no
+warning -- which a class-naming convention does not touch at all. The guard is
+cheap, stdlib-only (`ast`, inside the dependency budget), and its subject is the
+test module's own AST rather than pytest's collection, so it does not ask the
+artifact under verification to supply its own oracle. Prototype measured: clean
+on the real file today, and it flags both hazard shapes. Residue: **A30, A31,
+A32**. **A18 stays in force unamended** -- the collected-node-id-set assertion
+and the duplicate-name guard are complementary, not alternatives: the guard
+catches the cause inside one file, A18 catches the effect across a merge.
+
+**Nothing is declined.** All three External findings are accepted, two of them
+in the reviewer's own preferred branch.
+
+### Amendments in force
+
+Every row below is a mechanical change to this plan, continuing the A-series.
+Rows marked *(added)* introduce text where none stood; all others quote the
+superseded text **verbatim** -- where a row supersedes an earlier amendment, the
+quoted text is that amendment's in-force replacement cell.
+
+| # | Superseded text (verbatim) | Replaced by |
+|---|---|---|
+| A20 | **A6**, verbatim: New Chunk B row **B9**, in `bootstrap/tests/test_content_scan.py`: `TestLineSeparator::test_separator_and_its_marker_share_one_scanned_line` — pin the measured interaction between the new code point and the line-scoped suppression grammar. (i) A payload and a `cairn-accept: unicode-line-separator` marker on **one** `split("\n")` line: the flag is cleared, though the two occupy two *display* lines. (ii) A marker on file line 1 clearing a hit on file line 2 that occupies four display lines. Both assert the **current** behaviour, so the node is a declared-limit pin in B8's sense, not a behaviour change. | **Three nodes in `bootstrap/tests/test_content_scan.py`, pinning the refusal and the accept path — "tests for both paths" per [E1].** `B9a` — `TestSeparatorDetection::test_cross_separator_acceptance_refused_same_file_line`: payload, then a separator, then an own-id `cairn-accept` marker, all on one file line; assert `[f.pattern_id for f in scan_text(fixture)] == ["unicode-line-separator"]` (the acceptance is **refused**). `B9b` — `TestSeparatorDetection::test_cross_separator_acceptance_refused_preceding_line`: an own-id marker on file line 1, the hit on file line 2 spanning four display lines; assert the flag **survives**. `B9c` — `TestSeparatorDetection::test_same_display_line_acceptance_is_honoured`: an own-id marker written **before** the separator on the same file line; assert `scan_text(fixture) == []`. Measured against the remedied build: all three green; against a build without the refusal, B9a and B9b fail and B9c stays green. |
+| A21 | *(added — new Chunk B production row)* | New Chunk B row **B10**, in `templates/modules/team-gated/content_scan.py`: a module-level helper `_separator_accept_is_associable(line)` placed immediately above `scan_text`, which locates the first `_LINE_SEPARATORS` member in the file line and returns `True` only if `_ACCEPT_RE` finds a marker **before** that index whose `pid` is `unicode-line-separator` and whose `reason` attribute is non-empty (the same validity rule `_parse_suppressions` applies). The final filter at `templates/modules/team-gated/content_scan.py:409` becomes an explicit loop: a flag suppressed by the existing per-id line scope is **re-emitted** when `f.pattern_id == "unicode-line-separator"` and the helper returns `False`. `_parse_suppressions` is **not** modified, and no other pattern id's path changes — measured: the real 25-node module against this build is **24 passed, 1 deselected**, byte-identical to the build without it. |
+| A22 | `Within `content_scan.py` the Response named three sites, and all three are verified present at HEAD: the module-docstring pattern-id list (the `unicode-bidi` bullet ends at `templates/modules/team-gated/content_scan.py:45`), the detector loops in `_scan_unicode`, and the call site at `templates/modules/team-gated/content_scan.py:401`.` | `Within `content_scan.py` there are now **four** sites, all verified present at HEAD: the module-docstring pattern-id list (the `unicode-bidi` bullet ends at `templates/modules/team-gated/content_scan.py:45`), the detector loops in `_scan_unicode` (`:295`), the call site at `:401`, and — added by [E1] — the final suppression filter at `:409` plus the new helper above `scan_text`. The fourth site is a **suppression-grammar** change scoped to the new pattern id; it is inside the plan's two-file *Touches* line but beyond the Decision's literal text, and it is named here rather than folded in silently.` |
+| A23 | **A8**, verbatim: A separator inside a `cairn-accept` marker's own line — line-scope is **file**-line scope, and `U+2028` is the first detected code point for which a file line and a display line differ, so a marker and the payload it clears can be several display lines apart. Measured: a marker on file line 1 clears a `unicode-line-separator` hit on file line 2 spanning four display lines. Pre-existing semantics, **unchanged by this plan and now pinned by B9** rather than asserted benign. | A separator inside a `cairn-accept` marker's scope — line-scope is **file**-line scope, and `U+2028` is the first detected code point for which a file line and a display line differ. For every **pre-existing** pattern id that divergence is left exactly as it is (out of scope, and 0 tracked files can exercise it). For `unicode-line-separator` it is **closed**: B10 refuses an acceptance that does not render on the same display line as the separator it accepts. Measured, un-remedied build vs remedied build: marker-after-separator `[]` -> `['unicode-line-separator']`; preceding-file-line marker `[]` -> `['unicode-line-separator']`; marker before the separator on the same display line `[]` -> `[]`. |
+| A24 | **A9**, verbatim: Two entries. **Invariant**: *A `unicode-line-separator` hit is cleared by an own-id marker on its own **file** line or the file line above, even when those are several display lines apart.* Enforced by B9, perturbable by P-B8. **Lasting-truth row**, deferred item *"The file-line-vs-display-line divergence in the suppression grammar"*, durable home *"The B9 pin plus the B3 docstring clause"*, written by *"Chunk B (B3 + B9)"*. Also: B3's docstring bullet gains one clause stating that suppression is scoped to **file** lines, which a separator can make differ from what a renderer shows. | Three entries. **Invariant**: *A `unicode-line-separator` hit is cleared **only** by an own-id marker that renders on the same display line as the separator it accepts; an acceptance separated from its payload by a separator — on the preceding file line, later on the same file line, or in `cairn-accept` / `cairn-accept-end` block form — is refused.* Enforced by B9a/B9b/B9c, perturbable by the new P-B8. **Failure mode** (new bullet in *Author-accounting*): *An adopter with a legitimate word-processor paste finds the marker refused.* -> **Open by design, and narrower than it looks**: the working form is documented (marker before the separator on the same display line) and 0 tracked files exercise the rule today; if the refusal proves noisy in an adopter tree that is a Maintainer question, not an inline widening. **Lasting-truth row**, deferred item *"The display-line association rule for `unicode-line-separator` acceptances"*, durable home *"The B9a/B9b/B9c pins plus the B3 docstring clause"*, written by *"Chunk B (B3 + B9a-c + B10)"*. Also: B3's docstring bullet gains one clause stating that an acceptance for this id must render on the same display line as the separator, **and that the block form does not suppress it** — measured, not inferred. |
+| A25 | **A7**, verbatim: `* **Perturbation P-B8 — B9's limit can fire (hazard-side, RUN).** Narrow the line-scope at `templates/modules/team-gated/content_scan.py:261` from `{i, i + 1}` to `{i}`; B9's second half fails because the preceding-line marker no longer clears the hit. Restore; confirm `git diff` empty. This perturbation is also the *proposal* a future author would need to change the grammar.` | `* **Perturbation P-B8 — the refusal can fire (hazard-side, RUN).** Delete the B10 re-emit branch from the final filter (restoring the plain per-id line filter) while keeping every test node; **B9a and B9b fail and B9c stays green** — measured **2 failed, 7 passed**, and only those two. `_parse_suppressions` is untouched by this perturbation, so it discriminates the refusal itself rather than the line scope. Restore; confirm `git diff templates/modules/team-gated/content_scan.py` empty.` |
+| A26 | **A3**, verbatim: `* **Perturbation P-B7 — B6b's negative half is non-vacuous (hazard-side, RUN).** In `scan_text`, widen the final filter (`templates/modules/team-gated/content_scan.py:409`) to suppress by line while ignoring `pattern_id`; **B6b fails alone** -- measured 1 failed, 4 passed, failing at the foreign-marker assertion. This is the only perturbation that falsifies the plan's security-critical assertion, and without it that assertion ships unfalsified. Restore; confirm `git diff templates/modules/team-gated/content_scan.py` empty.` | `* **Perturbation P-B7 — B6b's negative half is non-vacuous (hazard-side, RUN, TWO-SITE).** The single-site form specified before **no longer works once B10 lands** and must not be carried forward: widening the final filter alone to suppress by line while ignoring `pattern_id` yields **9 passed** — B10's own pid check independently keeps the foreign marker from clearing the flag, so the perturbation never reaches the assertion. Perturb **both** id checks: (1) the final filter suppresses by line ignoring `pattern_id`, **and** (2) `_separator_accept_is_associable` accepts any valid `cairn-accept` marker regardless of its `pid`. Measured: **1 failed, 8 passed**, failing exactly `test_foreign_id_marker_does_not_suppress`. Recorded as a caution: the pid-blind association edit **alone** yields 9 passed, so a one-line version of this perturbation is a false ledger entry. Restore both; confirm `git diff templates/modules/team-gated/content_scan.py` empty.` |
+| A27 | `**One** line covering the pattern-id partition, shared with `content-scan-detectors` rather than duplicated: the content scanner's unicode detectors now carry their own pattern ids, and a raw `U+2028` / `U+2029` flags under `unicode-line-separator`. Cross-reference both proposals and both plans **by stem**, per `AGENTS.md`.` | `**One** line covering the pattern-id partition, shared with `content-scan-detectors` rather than duplicated: the content scanner's unicode detectors now carry their own pattern ids, and a raw `U+2028` / `U+2029` flags under `unicode-line-separator`. **The same line must state the acceptance-association rule** — a `unicode-line-separator` acceptance is honoured only when it renders on the same display line as the separator, and the block form does not suppress it — because that is the adopter-visible half of [E1] and a release note that omits it ships a surprise. Cross-reference both proposals and both plans **by stem**, per `AGENTS.md`.` |
+| A28 | `**F2 — one ceremony for two plans, not two.** `content-scan-detectors` edits the **same two files** and is being planned in parallel. Its frozen-file delta is the identical pair. The batch rule this plan adopts:` | `**F2 — one ceremony for two plans, and only if it can be bounded to them.** `content-scan-detectors` edits the **same two files** and is being planned in parallel; its frozen-file delta is the identical pair. Per [E2], a shared ceremony is **not** authorized by that coincidence alone: it is authorized only over an exact, reviewed set owned by these two plans. The batch rule this plan adopts:` |
+| A29 | **A13**, verbatim: `* Whichever lands second records **the same two files** as the pair *this change* makes stale, and states plainly that `_gate_manifest.py verify` will report **others belonging to other workflows** — the plan asserts no total. Measured `as_of 2026-08-04`, before either plan lands: **HOLD, 17 violations — 10 `FROZEN-MODIFIED`, 3 `COLLECTION-DROPPED`, 4 `SKIP-XFAIL-NEW`**, none of them this plan's.` `* The Maintainer performs **one** supervised re-produce after both have landed, **scoped to whatever is stale at ceremony time** — which is a Maintainer review item, not a two-entry formality, and is a wider authority act than a two-file re-pin. `bootstrap/tests/_gate_preflight.py` refuses a dirty tree, but does not refuse other workflows' *committed* frozen-file edits.` | `* Whichever lands second records **the same two files** as the pair *this change* makes stale, and states plainly that `_gate_manifest.py verify` will report **others belonging to other workflows** — the plan asserts no total.` `* **The shared ceremony is conditional, and the condition is checked before it runs.** It is authorized **only** over the exact set `{templates/modules/team-gated/content_scan.py, bootstrap/tests/test_content_scan.py}`. Before the re-produce, the Maintainer enumerates the `FROZEN-MODIFIED` / `COLLECTION-DROPPED` / `SKIP-XFAIL-NEW` paths from `bootstrap/tests/_gate_manifest.py verify`; **if any member falls outside that set, the shared ceremony is off** and each unrelated surface takes its own disposition first. A blanket re-produce would bless concurrently-landed frozen-surface changes nobody reviewed.` `* **No mechanism enforces that condition today, and this plan does not build one.** Measured: `bootstrap/tests/_gate_preflight.py:1163`-`1170` derives the blessing scope as bare **counts** (`modified` / `added` / `removed`, plus collection before/after) and `draft_message` prints those counts; it names **no paths** and refuses nothing. Only `bootstrap/tests/_gate_manifest.py:364` names paths, in `verify` output a human reads. Adding a refusal is `_gate_preflight.py`'s surface — outside this plan's two files and inside `bootstrap/REANCHOR_RUNBOOK.md`'s Maintainer-only territory — so the condition is discharged by the Maintainer reading the enumeration, and the plan says so instead of implying a gate.` `* **The state being blessed is moving fast.** Measured `as_of 2026-08-04`: 17 violations. Re-measured `as_of 2026-08-05`, before either plan lands: **13 `FROZEN-MODIFIED`, 3 `COLLECTION-DROPPED`, 44 `SKIP-XFAIL-NEW` = 60**, none of them this plan's. Any count written here is stale when read; the enumeration is taken **at ceremony time**, not quoted from this plan.` |
+| A30 | *(added — new Chunk B test row)* | New Chunk B row **B11**, in `bootstrap/tests/test_content_scan.py`: `TestCollectionIntegrity::test_no_duplicate_test_class_or_method_names` — parse **this module's own source** with the standard-library `ast` (no new dependency; `bootstrap/DEPENDENCY_BUDGET.md` unaffected) and assert that (i) no two top-level `ClassDef` nodes share a name and (ii) within each class, no two `FunctionDef`/`AsyncFunctionDef` nodes share a name. This is [E3]'s mechanical guard: it fires **inside the file** at the moment a second plan appends a colliding class, where a collection-count check fires only after nodes have already vanished. Measured: the prototype returns `clean` against `bootstrap/tests/test_content_scan.py` at HEAD today. |
+| A31 | *(added — new perturbation)* | `* **Perturbation P-B9 — B11 can fire (hazard-side, RUN, transient).** Append a second `class TestSeparatorDetection` carrying one method to `bootstrap/tests/test_content_scan.py`; B11 fails naming `duplicate top-level class: TestSeparatorDetection`. Repeat with a duplicate **method** name inside one class; B11 fails naming `duplicate method <Class>.<name>`. Delete both; confirm `git status --short` clean. **This is the one perturbation in the plan whose subject is the test module rather than production code, and that is correct, not an exception**: the hazard [E3] names *is* a property of the test module's own source, so perturbing that source is perturbing the hazard, not softening an assertion. Measured on standalone hazard modules: a 5-method class followed by a 1-method class of the same name collects **1** node, and a class with a duplicated method collects **2** of 3 — in both cases silently, with no error and no warning, which is exactly why a count check cannot see it.` |
+| A32 | **A17**, verbatim: **Shared-node naming convention, binding on both plans.** The coexistence node lives in a class named for its owning plan — `TestSeparatorDetectionCoexistence` here, and `content-scan-detectors` uses its own distinct class name. Measured hazard: a duplicate `class TestLineSeparator` in one module **shadows the entire earlier class** — a 5-method class followed by a 1-method class of the same name collects **1 test**, silently, no error, no warning. Whichever plan lands second must re-read the file rather than append blind. | **Shared-node naming convention, binding on both plans — and now enforced, not merely agreed.** The coexistence node lives in a class named for its owning plan — `TestSeparatorDetectionCoexistence` here, and `content-scan-detectors` uses its own distinct class name; whichever plan lands second re-reads the file rather than appending blind. Per [E3] the convention is **backed by B11**, which fails on a duplicate class name *or* a duplicate method name within a class, because a convention cannot protect against a failure that produces no error. Measured hazard, both shapes: a 5-method class followed by a 1-method class of the same name collects **1 test**; a class with a duplicated method collects **2** of 3 — silently in both cases. The habit is retained because the guard reports the collision, it does not resolve it. |
+| A33 | **A19**, verbatim: **Zero, over 511 tracked files, `as_of 2026-08-04`** — re-measured at HEAD `6618e54`: 511 listed, 511 decode as UTF-8, **0** carry a raw `U+2028` or `U+2029`. The verdict is unchanged; only the denominator grew, as the review predicted. Re-take at implementation rather than quoting either figure. | **Zero tracked files carry a raw `U+2028` or `U+2029` — and the plan states no denominator, anywhere.** Three denominators have now been written into this plan for the same unchanged verdict: **494** (`as_of 2026-08-04`), **511** (`as_of 2026-08-04`, later that day), **520** (`as_of 2026-08-05`, this Response: 520 listed, 520 read, 0 non-UTF-8, **0** hits). A13/A14's own rule — *name the delta, assert no total* — applies here and was not applied: the load-bearing claim is **"0 hits"**, which is a stop-signal predicate, and the denominator is a moving count of unrelated commits. The implementing agent re-runs the sweep and records **the hit count and the date** in the commit body; a non-zero hit count is a Maintainer question, not an inline `cairn-accept`. |
+
+### Gate audit -- what is satisfied today, and what is not
+
+Read before implementing. Two gates were breached elsewhere in this repository
+yesterday because nobody opened them.
+
+| Gate | Where declared | Satisfied today? |
+|---|---|---|
+| Declared review tier `required(External, security lens)` | plan header; Decision *Next transition*: `plan-open, carrying required(External, security lens) in its own right` (`dev/proposals/archive/2026-08-03-claude-separator-detection.md:466`-`467`) | **Routing satisfied.** The tier is correctly carried and an External security-lens section is in the tree (commit `0deeac0`). |
+| *"No implementation commit lands before an External `## Plan review` section is in the tree"* | plan header | **Literally satisfied** — the section exists. **But not sufficient**: see the next two rows. |
+| `doctrine/plans.md:114`-`117` — a review-required plan reaches `executing` only after the review **and**, when it raised findings, a dated dispositioning subsection | `doctrine/plans.md` | **Not satisfied.** The External review raised E1-E3; this Response is the disposition, but doctrine names the artifact a `### Sharpening` subsection under the review heading, and this is an H2 `## Response` following the plan's own established form. Flagged, not silently reconciled. |
+| `doctrine/plans.md:503` — *"Chunk-table cells are edited inline when sharpening accepts a finding; the Sharpening subsection NAMES which cells changed and why"* | `doctrine/plans.md` | **Not satisfied, and this is the important one.** This Response was authored under an append-only constraint, so the chunk tables at Chunk A/B/C still read as they did before A1-A33. The amendments are binding by reference, **but the plan's executable contract has not been folded in place**, and doctrine's stated reason is exactly the risk here: *"the implementer reads the corrected chunk, not the obsolete one"*. An agent authorized to edit in place (the Maintainer, or the implementer at implementation start) must fold A1-A33 into the chunk cells **before** any code lands. An implementer who reads only Chunk B will build the waiver-pinning B9 that [E1] rejects. |
+| Plan status token | plan header: `**Status**: open` | **Not satisfied.** `doctrine/plans.md:114` says a review-required plan opens in `awaiting-plan-review`. The header carries `open`. A lifecycle flip is not this Response's to make. |
+| Sequence step 0 — *"plan-open -- this plan + the dev/PLANNING.md row-move [commit pending]"* | *Sequence* | **Not satisfied.** `dev/PLANNING.md` carries **no row for `separator-detection`** — verified by grep over the whole board today; the three `separator` hits are unrelated `byline-classification` text at `dev/PLANNING.md:368` and `:380`-`381`. The plan-open serialization is incomplete. `dev/PLANNING.md` is a serialized shared file and this Response does not edit it. |
+| Maintainer fence **F1** — the frozen-file re-pin | *Maintainer fence* | **Not due yet, correctly not discharged.** Both target files are in the 164-entry `frozen_files` map (verified today); the re-pin is post-landing and Maintainer-only. |
+| Maintainer fence **F2** — one ceremony for two plans | *Maintainer fence*, as amended by A13 and now **A28/A29** | **Not satisfied, and now conditional.** Its precondition (an exact, reviewed, bounded set) has no mechanical enforcement — measured above — and the ambient gate state is 60 violations wide. |
+| *"No active batch window"* — the batch-window HOLD-by-default | *Maintainer fence* | **Satisfied.** `dev/plans/archive/gate-reanchor-preflight.md` exists, so the plan is archived and the HOLD is not in force. Re-confirm at implementation, per the plan's own instruction. |
+| Decision conditions — signature change owned here; both plans carry the coexistence test; whichever lands second rebases onto the yielded-id form | Decision, `dev/proposals/archive/2026-08-03-claude-separator-detection.md:441`-`452` | **Satisfied as planned**, and unchanged by this Response. B7 carries the coexistence test; A32 keeps its class name distinct; A21's refusal narrows *within* *"each marker suppresses only its own id"* rather than against it. |
+
+### Does this Response clear the plan to implement?
+
+**No.** Four reasons, in descending order of how badly each would bite an
+implementer who started today.
+
+1. **The plan's executable contract has not been amended in place.** A1-A33 are
+   binding by reference, but Chunk A/B/C still read as written. Doctrine
+   requires the inline fold precisely so *"the implementer reads the corrected
+   chunk, not the obsolete one"* (`doctrine/plans.md:503`). An author Response
+   is **evidence of intended changes, not a replacement for the plan's
+   executable contract** — and here the gap is not cosmetic: an implementer
+   reading only Chunk B builds the B9 that pins the waiver [E1] rejects, and
+   runs a P-B7 that I have measured **no longer falsifies anything**.
+2. **[E1]'s remedy is new production behaviour the External reviewer has not
+   seen.** The reviewer asked for a refusal and I built one; but a suppression-
+   grammar change to a shipped security control, added *after* the security-lens
+   read, is exactly the material that read exists to examine.
+   `doctrine/plans.md:391`-`393` treats a revision that materially expands scope
+   as warranting a review pass before chunks land. A **round-2 External
+   confirmation** is owed, scoped to A20-A24 and A26 — and specifically to
+   whether *"renders on the same display line"* is the right association
+   predicate, and whether refusing the block form is acceptable.
+3. **[E2] is dispositioned but not dischargeable by any agent.** The bounded
+   ceremony A29 mandates has no mechanical enforcement, and the enumeration it
+   turns on is a Maintainer act. The plan may not land its second chunk on the
+   assumption that the ceremony will be available.
+4. **Two lifecycle gates are open**: the plan's status token is `open` where
+   doctrine requires `awaiting-plan-review`, and `dev/PLANNING.md` has no row
+   for this plan at all. Both are serialization-point acts, not this Response's.
+
+**An author Response never discharges a review tier.** The External tier's
+round-1 findings are dispositioned here; the tier is *not* thereby closed, and
+nothing in this section moves the *"no implementation commit lands before"* line
+in the plan header.
+
+**What the round-2 External reviewer should attack first**, superseding the
+five-item list in the previous Response:
+
+1. **A20/A21/A24 — the association predicate.** Is *"the marker renders on the
+   same display line as the separator"* the right rule, or should the id be
+   unsuppressible outright? Check the block-form refusal, which I measured but
+   did not ask anyone about.
+2. **A26 — the two-site perturbation.** Verify that the single-site P-B7 really
+   yields 9 passed against the remedied build. If it does not, my whole account
+   of why the remedy neuters the old perturbation is wrong, and that is the
+   cheapest thing in this Response to falsify.
+3. **A29 — whether a conditional ceremony is a gate or a wish**, given that
+   nothing refuses an out-of-set member and the set moved 17 -> 60 in a day.
+4. **A30/A31 — whether an in-file AST guard is the right instrument**, or
+   whether the guard belongs across `bootstrap/tests/` rather than in the one
+   file two plans happen to collide in.
+5. **Re-run the corpus sweep** (0 hits today) and confirm A33's rule that the
+   plan should state no denominator.
+
+This section is append-only.
