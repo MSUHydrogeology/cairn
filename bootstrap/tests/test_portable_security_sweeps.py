@@ -1162,6 +1162,31 @@ def test_the_screen_does_not_execute_candidate_configuration(
     assert read_log(log) == []
 
 
+def test_a_config_origin_outside_the_git_directory_refuses(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """The node that makes the **origin** check load-bearing.
+
+    Measured: an ``include.path`` injection is already refused by the inert-key
+    check, because ``include.path`` is itself not an inert key -- so deleting the
+    origin check reddened nothing.  This is the case only the origin check
+    catches: ``.git/config`` is itself a symlink to a file outside the
+    repository's ``.git/``, carrying **only inert keys**.  Git reports the
+    origin as ``.git/config`` and the runner resolves it, so the escape is
+    visible."""
+    git_repo(sweep_target)
+    config = sweep_target / ".git" / "config"
+    outside = tmp_path / "outside.config"
+    outside.write_text(config.read_text(encoding="utf-8"), encoding="utf-8")
+    config.unlink()
+    config.symlink_to(outside)
+    rc, summary, out, log = _sweep(tmp_path, sweep_target)
+    assert rc == 20, out
+    assert read_log(log) == []
+    reason = leg(summary, "preflight")["reason"]
+    assert "outside the candidate's .git/ directory" in reason, reason
+
+
 def test_the_screen_accepts_an_ordinary_repository(
     tmp_path: Path, sweep_target: Path
 ) -> None:
