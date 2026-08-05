@@ -453,3 +453,45 @@ set in both twins, with a suffix regression proving that
 `local-env.json.bak` remains a hard failure. This is an implementation
 correction required for the prescribed clean-clone evidence commands; it does
 not dispose the neutrality blocker.
+
+## Chunk D execution correction -- Codex -- 2026-08-05
+
+The failed run exposed a contradiction in this plan's own dogfood contract,
+not in the Boundary A/B/C implementation. Boundary B deliberately records a
+`Non-pass disposition`, and Boundary C treats an **unexplained** non-pass as an
+invalidation trigger. This plan nevertheless said *any* non-clean standing gate
+invalidates the record, making the disposition field unusable against Cairn's
+known neutrality debt. That stricter sentence is superseded for Chunk D's
+static-quality command only.
+
+### Binding replacement criterion
+
+The neutrality and redundancy legs still run; they are not waived, filtered, or
+converted to exit zero. Chunk D compares their **complete finding identities**
+at the reviewed-range base `a23be80a989f868f1a116ca9d7bc3e58bba5d7bb`
+and tested endpoint `b2f1e19`, under the same canonical interpreter and clean
+detached state. The endpoint result is dispositionable only when all of these
+hold:
+
+1. every endpoint failure is present at the base, by finding identity rather
+   than count alone;
+2. no endpoint failure names a file changed by this plan;
+3. the record prints the real nonzero exit and calls it a pre-existing baseline,
+   never PASS or green; and
+4. any new, changed, or unclassifiable failure invalidates Boundary B.
+
+A disappeared base finding is an improvement and does not invalidate the run;
+it is still listed in the comparison. The shuffled full suite, `check_cairn`,
+and authored-file claim checks retain their original clean requirements. The
+record's `Non-pass disposition` carries the exact static comparison and the
+code reviewer must falsify at least one limb before accepting reuse.
+
+This correction does not weaken the release ceremony. The Maintainer-run
+release command continues to apply its own accepted quality-gate policy and
+cannot consume this implementation record. It also does not normalize Cairn's
+neutrality debt: those findings remain failures everywhere the quality gate is
+asked for its verdict.
+
+Because this revision changes the evidence used to license code review, the
+independent code reviewer must adjudicate it explicitly. The author does not
+treat this section as self-clearing.
