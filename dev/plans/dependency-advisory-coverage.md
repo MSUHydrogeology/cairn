@@ -2578,3 +2578,72 @@ see them.
 
 **E7 (`CHANGELOG.md`) is still unwritten by this session** — a serialized shared
 file; its text is returned to the Maintainer.
+
+### Code review -- Codex (External, security lens) -- 2026-08-05
+
+**Verdict: REVISE.** I reviewed the implemented dependency leg and shared tool
+boundary through production functions. The v1 choice to ship **no stored
+residual baseline** is implemented correctly and should stand. Three blocking
+runtime gaps remain.
+
+#### [CR1] HIGH -- the 2.10.1 schema claim is never bound to the executed pip-audit version
+
+`_PIP_AUDIT_SCHEMA_VERSION` records `2.10.1`, and the documentation says a
+version bump re-opens the measurement, but ordinary execution never reads or
+compares the installed distribution version. I made the production pass observe
+pip-audit `99.0.0`, returned a superficially compatible JSON document from the
+tool boundary, and received `('pip-audit:clean', 0)` while the report continued
+to describe the schema and dispositions as 2.10.1.
+
+Bind the module actually executed by `[sys.executable, "-I", "-m",
+"pip_audit"]` to the established version before licensing this parser. A
+missing, unreadable, or different version means the schema is unestablished and
+must not reach CLEAN; report it as INCOMPLETE or the plan's chosen harder tier
+without pretending the 2.10.1 measurement applies. Add a mismatch regression
+whose valid-looking 2.10.1-shaped output cannot produce 0, plus a matching-
+version positive control. The check must use the active interpreter's
+distribution metadata, not an unrelated console script found on `PATH`.
+
+#### [CR2] HIGH -- a vulnerability-bearing structured report can produce CLEAN when the child exits 0
+
+The classifier validates that each resolved entry carries a `vulns` list but
+does not inspect whether that list is empty. `run_pip_audit_pass()` derives the
+findings tier solely from the process return code. I returned code 0 with one
+resolved dependency carrying `[{"id": "CVE-2099-0001"}]`; the production pass
+reported SCANNED 1 / UNKNOWN 0 and returned `('pip-audit:clean', 0)`.
+
+Derive or cross-check the findings disposition from the validated structured
+report. At minimum, non-empty vulnerability lists with rc 0 and rc 1 with no
+reported vulnerabilities are return-code/report contradictions and cannot be
+clean; using the structured count as the positive FINDINGS oracle is stronger.
+Validate the vulnerability-entry shape needed for that decision. Add both
+contradiction directions and a real formatter-shaped vulnerable fixture so the
+clean path is proved to require zero UNKNOWN **and** zero vulnerabilities.
+
+#### [CR3] MEDIUM -- timeout cleanup stops when the leader exits, leaving a signal-resistant descendant alive
+
+`_kill_tree()` sends `SIGTERM` to the process group and breaks as soon as
+`proc.wait()` observes the leader exit. It does not establish that the group is
+empty and therefore never sends `SIGKILL` to a surviving descendant. I ran the
+real `_run_tool()` with a parent that spawned a grandchild which ignored
+`SIGTERM`. The boundary returned status `timeout`, then the grandchild wrote its
+post-timeout sentinel: `grandchild_survived=True`.
+
+Capture the process-group identity at creation and complete group cleanup
+independently of the leader's return status. After the grace period, signal any
+surviving group with `SIGKILL`; an inability to establish cleanup remains the
+existing `cleanup-failed` degradation. Extend A-t6 with a grandchild that
+explicitly ignores `SIGTERM`; the current cooperative child is not a sufficient
+falsifier for the terminate-then-kill claim.
+
+#### Verification and bounds
+
+`bootstrap/tests/test_security_stack.py` passed **81 tests** under
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13) with
+`PYTHONDONTWRITEBYTECODE=1`. Each finding above was reproduced by executing the
+production function, without network access or a real advisory lookup. I did
+not run pip-audit against OSV, the full bootstrap suite, Windows cleanup, the
+Maintainer AST/gate ceremonies, or serialized E7. Concurrent content-scan edits
+were not examined.
+
+This section is append-only once written.
