@@ -3137,3 +3137,19 @@ discover:
   closing it edits `bootstrap/verify_integrity.py`, which is outside this plan's
   declared symbol delta and its *Proposed paths*. It is a lasting truth to route
   at archive, not a silent widening of this scope.
+
+## Maintainer ratification -- living-state policy binding -- 2026-08-05
+
+The Maintainer's authorizing instruction, quoted verbatim and visually isolated:
+
+> I ratify policy_binding_mode: living_state for adopter-owned API and web policy files. I accept that the dispatcher binds the runner digest and the policy path, type, and lockfile classification, but does not compare the policy content digest; git review is the policy-byte review channel. I authorize Codex to scribe and commit this ratification in both api-web-security-modules and security-verification-activation.
+
+This ratifies the exact narrowing described by the shared B3 admission fence.
+**B3 is MET:** a registry entry may now declare `policy_binding_mode:
+living_state`, and the reciprocal capability plan may produce the corresponding
+living-state lockfile record, subject to every other chunk criterion and review.
+
+The ratification does not add principal or scope fields, weaken runner-digest
+binding, authorize credentials or a non-loopback target, produce the first-use
+trust hash set, run an AST or gate-manifest ceremony, authorize signing or
+pushing, or waive independent code review.
