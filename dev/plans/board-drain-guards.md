@@ -1,7 +1,7 @@
 # Plan: make the `guard` citation form writable
 
 **Source proposal**: [`dev/proposals/archive/2026-08-04-claude-board-drain-guards.md`](../proposals/archive/2026-08-04-claude-board-drain-guards.md)
-**Status**: awaiting-plan-review
+**Status**: executing
 **Plan review**: required(Internal) — ratified in the Decision (`78e8916`)
 **Last update**: 2026-08-04
 **Opened**: 2026-08-04
@@ -655,3 +655,138 @@ reason to reopen the Decision. All of them are reasons not to start typing yet.
 ## Lasting-truth migration
 
 *Filled in at archive time.*
+
+---
+
+## Response to the Internal plan review -- Claude (Strategy) -- 2026-08-04
+
+**Model**: claude-opus-5
+
+Twelve findings, accepted in full. The reviewer did **not** contest the design —
+the defect reproduces, the fix is right, and the scope fence was checked row-by-
+row against the Decision's exclusion list and holds. What failed is the
+specification *around* the fix, and it failed in eight places.
+
+**[P1]** accept — **the mutation battery's first entry is false, and it is the
+same error I made twelve hours earlier.** `bootstrap/tests/test_claim_check_module.py:42`
+loads `templates/modules/default-on/claim_check.py` — **not** `scripts/`. Verified:
+replacing `scripts/claim_check.py` with a bare `raise` leaves **28 tests passing**.
+This morning's Chunk E′ made the identical mistake in the opposite direction
+(mutating `tools/lifecycle_planner.py` when the test loaded the
+`templates/skills/_lib/` copy). The generalizable error is assuming the copy that
+*looks* primary is the copy under test. A1/A2 are also **swapped** relative to the
+twin pair's `(dst, src)` direction.
+
+**[P2]** accept — mutation 3 is false. `_scan` dispatches on the **full token**, so
+a `:N` citation never reaches `check_path_token`; stripping at the first `:` there
+changes nothing and all three assert-3 cases stay green. The "fails open" defence
+is held by **the dispatch**, not by assertion 3, and nothing currently pins the
+dispatch. The real mutation is a pre-dispatch strip in `_scan`.
+
+**[P3]** accept — mutation 2 under its literal reading ("delete the existence
+check") fires assertion **1**, not 2. Only the *bypass* mutant — returning `None`
+for any `::` token — fires assertion 2.
+
+**[P4]** accept — **the tenth instance.** Chunk row B3 proposed to correct the
+phrase *"one assertion"* in the G6 row. **The G6 row does not contain that
+phrase.** Verified: the board carries exactly two such phrases, SC3 (`:720`) and
+SC5 (`:844`), both quoted correctly; G6 states a *trigger* and prescribes no
+remedy at all. The phrase came from **my own Class A table in the proposal**,
+which invented a remedy G6 never claimed — and then this plan proposed to
+"correct" the board to match. B3 is **removed**: there is nothing there to fix.
+
+**[P5]** accept — "seven paths" matches neither the row count (8) nor the distinct
+files (5). Stated as an equality, so it was unsatisfiable as written. Corrected to
+the enumerated set below.
+
+**[P6]** accept — R1's acceptance check as worded asks for a **subtractive edit to
+an append-only archived proposal**, which the claim-marker carve-out
+(additive-only) does not permit. Re-specified: prove it on a **scratch copy**. The
+directive in the archived file simply goes inert once the fix lands, which is the
+correct end state for an append-only record.
+
+**[P7]** accept — assertion 1 goes **vacuous** if the fixture's node id contains a
+`_PLACEHOLDER_CHARS` member: such a token is exempted upstream for an unrelated
+reason and would never reach the check. `[` and `]` are safe; space, `<`, `>`,
+`{`, `}` are not. The fixtures pin a plain id **and** a bracketed parametrised id,
+and deliberately avoid the placeholder set.
+
+**[P8]** accept — `_token_path_part` is **the wrong target**. Its single call site
+(`_scan`, glob matching) is not in the resolution path, so the proposal's premise
+that it "strips before resolving" mis-describes the mechanism. Worse, touching it
+is a **latent adopter regression**: a full-token `claim-check-allow` glob for a
+not-yet-created node would go from clean to hard-flagged. Removed from scope; the
+edit is **one site**, `check_path_token`.
+
+**[P9]–[P12]** accept — the shipped module docstring also describes coverage and
+is updated with A3; the `check_cairn.py` smoke check has **no baseline** (3 issues
+at HEAD, exit 0) so it is recorded with its baseline rather than as a pass/fail;
+three unlisted edge cases are added, including that a **root-level** `path::node`
+(no `/`) is never checked at all, which qualifies invariant (1); and neither chunk
+falls under the deliberation commit-approval carve-out, so both are ordinary
+approval-gated commits.
+
+## Sequence revision 2026-08-04
+
+Supersedes the original Sequence. **One edit site, not two. Five files, not
+seven. B3 removed.**
+
+```
+1. Chunk A -- R1 + R2: check_path_token in BOTH copies, with its tests  [pending]
+2. Chunk B -- R3: two board-row corrections + CHANGELOG                 [pending]
+```
+
+### Chunk A (revised)
+
+| # | File | Change |
+|---|------|--------|
+| A1 | `templates/modules/default-on/claim_check.py` | **The copy the tests load** (`test_claim_check_module.py:42`). `check_path_token` resolves a `path::node` token on its path part. **This is the only edit site** — `_token_path_part` is untouched per [P8] |
+| A2 | `scripts/claim_check.py` | The byte-identical twin — same edit, same commit |
+| A3 | both copies' module docstring | State that the node half is **never verified** |
+| A4 | `bootstrap/tests/test_claim_check_module.py` | Four assertions — see below |
+
+### Chunk B (revised)
+
+| # | File | Change |
+|---|------|--------|
+| B1 | `dev/PLANNING.md` SC3 (`:720`) | "the guard is one assertion" → vacuous as worded; name the provable claim |
+| B2 | `dev/PLANNING.md` SC5 (`:844`) | "two assertions" → the entry is already stale; a `security_check.py` edit |
+| B3 | ~~G6~~ | **REMOVED** per [P4] — the row prescribes no remedy; the phrase was invented by the proposal |
+| B4 | `CHANGELOG.md > Unreleased > Fixed` | One line |
+
+### Acceptance criteria (revised)
+
+Four assertions in `bootstrap/tests/test_claim_check_module.py`:
+
+1. `path::node`, path **exists**, plain node id → no flag.
+2. `path::node`, path **absent** → **still flagged**. The load-bearing one.
+3. `path:N` line-bounds behaviour **unchanged**.
+4. `path::node[param]` — a bracketed parametrised id → no flag *(guards [P7]:
+   proves assertion 1 is not passing via placeholder exemption)*.
+
+**The corrected mutation battery**, each targeting the copy the tests actually
+load:
+
+| Mutation (in `templates/modules/default-on/claim_check.py` unless noted) | Fires |
+|---|---|
+| revert the `check_path_token` change | assertion 1 (and 4) |
+| make the `::` branch return `None` unconditionally (the bypass mutant) | **assertion 2** |
+| add a pre-dispatch strip at the first `:` in `_scan` | assertion 3 |
+
+**Changed-file set — five distinct files**, verified per-commit:
+`templates/modules/default-on/claim_check.py`, `scripts/claim_check.py`,
+`bootstrap/tests/test_claim_check_module.py`, `dev/PLANNING.md`, `CHANGELOG.md`.
+
+**R1's acceptance check, re-specified per [P6]:** copy the archived proposal to a
+scratch path, delete the `claim-check-allow` directive **there**, and confirm
+`claim_check` reports clean. The archived file itself is never edited.
+
+### Author-accounting — corrections
+
+* **Invariant (1) is qualified per [P12]:** a **root-level** `path::node` (no `/`)
+  never reaches `check_path_token`'s repo-path branch at all, so the bypass
+  invariant covers tokens with a path separator only.
+* **Retracted:** "`check_path_token` **and `_token_path_part`** are the touched
+  entry points". Only the former is touched.
+* **`check_cairn.py` baseline:** 3 issues at HEAD, exit 0 — recorded so the smoke
+  check is read against a baseline rather than as a bare pass.
