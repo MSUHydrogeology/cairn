@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5
 **Date opened**: 2026-08-04
-**Status**: revised
+**Status**: accepted
 **Touches**: `dev/PLANNING.md` > "Deferred follow-ups (durable home)" (the 59 rows); inbound `Follow-ups migrated to:` references in six artifacts, two of them archived
 **Related**: split out of `2026-08-04-claude-deferral-discipline` as **D1** by its Decision (`6e349b3`); the [I8] hazard is that proposal's Internal-review finding
 **Plan review**: required(Internal) — the adjudication is per-item judgment over records other artifacts point at, which is where a second read is worth most
@@ -994,3 +994,50 @@ revision does not appear to leave them standing.
 * **Known omissions.** The 59 rows are **not** adjudicated and the board does not
   measurably shrink. That is the honest outcome of accepting [I3] and the
   reviewer's necessity position: the board is long because the work is real.
+
+---
+
+## Decision -- Human Maintainer -- 2026-08-04
+
+**ACCEPT as revised** — the hygiene scope (H1–H5). The mass adjudication of the
+59 rows is **withdrawn, not deferred**.
+
+Scribed by Claude (Strategy) at the Maintainer's explicit instruction. The
+authorizing words, verbatim:
+
+> Honestly, I'm not going to assess how correct this proposal is. If you and the
+> reviewer agree, I accept your decision. Please scribe this acceptance and
+> proceed through implementation. This isn't mission critical, but is worth care.
+> But it's not something that should slow us down.
+
+**The condition is met, and what it ratifies is smaller than what was opened.**
+The Internal review returned **REVISE**, not SHIP. The agreement between author
+and reviewer is not that the proposal was right — it is that its central premise
+was **wrong** and its scope had to be withdrawn. Recorded plainly so no later
+reader mistakes this for an acceptance of the opened scope:
+
+* **[I3]** — the declared scope structurally forecloses `accept` and `guard`, so
+  the pass could only have produced a re-`defer` batch and a **longer** board.
+* **The necessity finding** — a hand-read of ~12 rows found reproducers, measured
+  figures and named revival conditions. The 59 are **genuine obligations, not
+  ratchet artifacts**. The parent's diagnosis governs *future* artifacts; it does
+  not indict the existing board.
+* Two of the proposal's own factual claims were **retracted as false**.
+
+**Plan review tier — superseded, no plan.** The header carries
+`required(Internal)`, written for the withdrawn scope. Under the triage rule
+(`doctrine/plans.md` > "Plan triage rule", as amended today) the revised scope is
+a **trivial accept**: single-area (`dev/PLANNING.md`), one implementing commit,
+and **no follow-up needing a `defer` home**. It therefore skips the plan and
+archives at the implementing commit. This is the triage rule applied, not a
+shortcut taken because the work was wanted quickly — and it is worth noting that
+the rule reaching this verdict is one this same lineage amended hours earlier.
+
+**Care that is still taken**, per *"worth care"*: the implementing change edits a
+**shared communication file**, so it gets an independent read before the archive
+even though no plan-archive precondition compels one.
+
+**What is not carried.** No `defer`, no successor artifact, no board row. The
+withdrawn adjudication is **not** parked for later revival — the reviewer's
+necessity finding is the reason it should not happen, and preserving it as a
+future obligation would re-commit the error this lineage exists to correct.
