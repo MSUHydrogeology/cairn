@@ -17,7 +17,7 @@
 Maintainer Decision, *"I accept the dependency-advisory-coverage proposal as
 revised"*). It currently sits under `dev/proposals/` and moves to
 `dev/proposals/archive/` when it archives.
-**Status**: open
+**Status**: executing
 **Plan review**: required(**External**, security lens) — carried from the
 proposal's Decision (*"Next transition: plan-open, carrying `required(External,
 security lens)` in its own right"*) and independently triggered: `AGENTS.md` >
@@ -2112,3 +2112,184 @@ reviewer and the implementer: treat `as_of <date>` on a fast-moving tree as
 decorative, and read the SHA.** The two figures here are volatile by nature — a suite
 count and a file count — and both should be re-taken at implementation rather than
 compared to any number in this document, including mine.
+
+## Implementation record -- Claude -- 2026-08-05
+
+**Model**: Claude Opus 5 (`claude-opus-5`). **Standing**: an append-only
+evidence record written by the implementing agent. It re-litigates no
+disposition and amends no earlier section's conclusion. It states what landed,
+what did **not**, and three things the plan itself got wrong that only
+execution could reveal.
+
+**Clearance under which this landed.** The `### Plan review -- Codex (External,
+security lens) -- 2026-08-05` round returned **SHIP** with zero findings,
+discharging `required(External, security lens)`. Recorded for a later reader:
+that round sits under a `##` heading, not the `###` sub-heading the *Plan
+review -- the brief* names as the gate. The substance is what the gate asks for
+-- a different agent type, security lens, landed in the tree -- so it is treated
+as met; the heading level is a formatting note, not a second opinion.
+
+### What landed, and what did not
+
+| Chunk | Commit | State |
+|---|---|---|
+| A, B, C, D | `355b49d` | Landed in full, with the Chunk 0 fallback as the live path |
+| E | `6cfb9c3` | Landed in full (E7 excepted -- see below) |
+| 0 | -- | **NOT ATTEMPTED.** Maintainer fence 3 is unlifted: no network fetch, no throwaway environment, no package install from any index. |
+
+**Chunk 0's fallback is what shipped, and it is visible in the code rather than
+implied.** `_PIP_AUDIT_SCHEMA_ESTABLISHED = False` is a module constant with the
+reason beside it; `classify_pip_audit_output` returns `established=False` on that
+constant alone, so the leg reports UNKNOWN-unestablished and contributes
+INCOMPLETE. **CLEAN is unreachable for this leg until Chunk 0 runs.** That is the
+intended conservative v1 boundary the External reviewer endorsed in terms, not a
+gap.
+
+Per amendment A28: **D-t2 shipped re-expressed** against the schema-free
+"cannot establish" path; **D-t3 shipped unchanged**; **D-t1 and D-t6 were not
+shipped** -- their oracles need a real enumeration / skipped-set shape, and a
+fixture authored by the session that wrote the parser is not an oracle. One node
+was **added** beyond the plan, `D-t2b`, which asserts that even a well-formed
+JSON report leaves the enumeration UNKNOWN while no key is pinned: it makes the
+fence's consequence executable instead of documentary.
+
+**E7 (`CHANGELOG.md`) was not written by this session.** It is a serialized
+shared file; its text was returned to the Maintainer for the serialization
+point rather than edited here.
+
+### Three plan defects execution exposed
+
+1. **C-t3 as the plan specified it could not fail.** The plan's perturbation is
+   *"take the first reason rather than the worst"*. With tool-availability
+   evaluated before egress, the first blocker found **is** the worst one, so the
+   perturbation is a no-op and the test stayed green through it -- measured, not
+   reasoned: the mutation run returned `79 passed`. Fixed in the **subject**, not
+   the test: the egress disposition is now evaluated first (the lower tier), so a
+   first-wins regression shows up in the tier. Re-run: red on C-t3.
+2. **`SKIP-XFAIL-NEW: avoid where possible` was unachievable in this file.**
+   *Gate accounting* expected module-level tests outside `TestOrchestrator` to
+   add no skip row. They add one each: `bootstrap/tests/test_security_stack.py`
+   carries a **module-level** `pytestmark = pytest.mark.skipif(...)`, which
+   applies to every node in the file regardless of class. All **22** new nodes
+   therefore register `SKIP-XFAIL-NEW`. None carries a marker this scope wrote,
+   and none skips: the full suite reports **0 skipped**. The alternative -- a new
+   test file -- trades 22 skip rows for a `FROZEN-NEW` row, which the plan
+   declared as zero. Recorded rather than worked around.
+3. **A16's ordering constraint was violated.** A16 requires C3b (the
+   `python-security.md` exit sentence) to land **before** E2. The Chunk C code
+   commit landed first, so that sentence was false in the tree between `355b49d`
+   and `6cfb9c3`. Same session, no intervening release, no adopter exposure --
+   but it is the shipped-false window A16 exists to prevent, and it happened.
+
+### Perturbation ledger -- every falsifier RUN
+
+Thirty perturbations across 22 nodes, each a mutation of the **hazard in the
+orchestrator**, never of a test body; each applied, run against the whole of
+`bootstrap/tests/test_security_stack.py` (79 nodes), reverted, and the revert
+verified byte-identical with `git hash-object` against the pre-mutation blob.
+Every node has at least one falsifier that reddens **it alone**:
+
+* **Single-node reds** (the falsifier reddens exactly its target): A-t1, A-t3
+  (both), A-t4, A-t5, A-t6, B-t2, B-t3 (both), B-t4 (both), B-t5, C-t1
+  (status-keeps-first), C-t2, C-t4 (both), C-t5, D-t2, D-t2b, D-t3, D-t4, D-t5,
+  D-t7, D-t8 (both).
+* **Multi-node reds, and why** -- recorded rather than presented as clean:
+  * *A-t2* (ignore the timeout budget) also reddens **A-t6**: both rest on the
+    same deadline. A-t2 owns the mechanism; A-t1 is deliberately driven with a
+    stubbed boundary so the classification is separable from it.
+  * *B-t1* (restore the four-name denylist) also reddens **B-t2** and **B-t4**:
+    it removes the whole mechanism. The discriminating pair the plan asks a
+    reviewer to reproduce first is the other one -- a denylist of the **known**
+    names leaves **B-t1 green and B-t2 red**, measured exactly so.
+  * *C-t1* in the plan's own wording (restore the early return) also reddens
+    **C-t3** and the end-to-end node; the sharper single-property variant
+    (status keeps only the first reason) reddens C-t1 alone. Both were run.
+  * *C-t3* (first-wins instead of `max`) also reddens the end-to-end node,
+    whose aggregate drops 20 -> 5. That is the same defect observed twice.
+  * *C-t4a* changes a tier **constant**; a constant change is global by nature.
+    Measured: it reddens C-t4 only, because every other node asserts tiers
+    through the symbol rather than the literal.
+
+### Measured figures -- re-derived, not inherited
+
+Under `/Users/kendal30/conda_envs/lhm/bin/python3.13` (CPython 3.13.13),
+`PYTHONDONTWRITEBYTECODE=1`, `as_of 2026-08-05`.
+
+| | measured |
+|---|---|
+| Suite **baseline**, detached worktree at HEAD `f42db96` (taken immediately before the first commit) | **1962 passed, 1 skipped, 0 failed** |
+| Suite **after**, at HEAD `6cfb9c3` | **1985 passed, 0 failed, 0 skipped, 0 xfailed** |
+| Node delta | **+22**, exactly this scope's new nodes |
+| Bandit over the orchestrator (1.9.4) | `errors: []`, LOW `B404` x1 + `B603` x1, **zero MEDIUM+** -- identical to the pre-change baseline |
+| `bootstrap/security_check.py` | **PASS** -- Bandit clean over 76 shipped files |
+| `scaffold.py --manifest` | **96 lines = 95 data rows**, unchanged; no adopter file added |
+| `git status --short bootstrap/_scaffold/` | **empty** at every commit |
+| `check_cairn.py` | 1 issue across **178** files -- a sibling's uncommitted `dev/strategy/` file, broken `[BND-6]` target; both edited Markdown files clean |
+| `quality_gate.py --sub neutrality` | exit 1, **86 FAILs across 32 files**, all pre-existing, **zero** in any file this scope touched |
+| `claim_check.py` per edited Markdown file | OK |
+
+**Two corrections to figures asserted elsewhere in this session.** (a) `355b49d`'s
+commit body says *"+20 new nodes here + 3 sibling nodes"*; the true split is
+**+22 new nodes here and 0 sibling nodes** between baseline and commit -- the node
+count is 22, not 20. (b) The plan's *Figure correction* records `check_cairn` at
+**191** files; it is now **178**, which confirms that section's own closing
+recommendation: the count moves in both directions, so re-measure rather than
+compare.
+
+**One transient, recorded because it has not been explained.** The first
+full-suite run after Chunk A-D showed a single red in
+`TestOrchestrator::test_end_to_end_clean_then_tamper`. It has not reproduced --
+two subsequent full-suite runs are green, as are roughly thirty-five single-file
+runs during mutation testing. Its assertion message would have carried the
+subprocess output and was lost to an over-narrow `tail`. It is named here rather
+than dismissed: an unexplained transient in the node that runs the whole
+orchestrator end-to-end is exactly the kind of thing a code reviewer should try
+to reproduce.
+
+### The three Maintainer fences -- what each still needs
+
+1. **AST attestation re-anchor.** Nothing from this scope. The declared
+   `bootstrap/_scaffold/` symbol delta is the **empty set**, verified by an empty
+   `git status --short bootstrap/_scaffold/` at both commits and by this scope
+   opening no file in that package. Nothing was re-anchored; the baseline
+   fixture and the runbook were not touched. If any engine symbol appears in a
+   ceremony diff attributed here, that is a defect in this scope, not a widening
+   of the union.
+2. **Gate-manifest re-pin.** Not performed. Attribution split, measured at
+   `6cfb9c3`: **FROZEN-MODIFIED** 18 total, **2 attributable**
+   (`templates/modules/team-gated/run_security_audit.py`,
+   `bootstrap/tests/test_security_stack.py`); **COLLECTION-ADDED** 390 total,
+   **22 attributable**; **SKIP-XFAIL-NEW** 70 total, **22 attributable** (all
+   from the file's pre-existing module-level `pytestmark`, see defect 2 above);
+   **FROZEN-NEW** 8 total, **0 attributable**; **COLLECTION-DROPPED** 3 total,
+   **0 attributable** -- this scope renamed and removed no test. `ANCHOR` was
+   skipped for want of `--anchor-ref`, which is the runbook's business, not this
+   scope's.
+3. **Chunk 0's network fetch.** Unapproved and unattempted. What it needs, and
+   the exact commands it would run if egress were granted:
+
+   ```
+   /Users/kendal30/conda_envs/lhm/bin/python3.13 -m venv /private/tmp/cairn-pipaudit-probe
+   /private/tmp/cairn-pipaudit-probe/bin/python -m pip install --no-input pip-audit
+   /private/tmp/cairn-pipaudit-probe/bin/python -m pip show pip-audit          # 0a: the pinned version
+   /private/tmp/cairn-pipaudit-probe/bin/python -m pip_audit --help            # 0b: the flag inventory
+   /private/tmp/cairn-pipaudit-probe/bin/python -m pip_audit --format json --progress-spinner off
+                                                                               # 0c: the real schema
+   PIPAPI_PYTHON_LOCATION=<other-python> .../bin/python -m pip_audit --format json
+                                                                               # 0d: ambient re-confirmation
+   ```
+
+   The second line is the only one that touches the network. Nothing here needs
+   a credential or a key; if a step appears to, the plan has drifted and stops.
+   Until 0b lands, **every flag in `pip_audit_argv` is unverified** and is
+   marked as such in its docstring; until 0c lands,
+   `_PIP_AUDIT_SCHEMA_ESTABLISHED` stays `False` and D-t1 / D-t6 stay unshipped.
+
+### Three open Maintainer calls, unchanged by implementation
+
+The residual-predicate narrowing (implemented as `editable-or-vcs`, strikeable
+in one line -- the fallback is to ship no baseline, which is what v1 does
+anyway); the Chunk C tier change (5 -> 20 on a tool-absent machine, now live and
+described in adopter doctrine); and the decode-policy divergence with
+`security-verification-activation` (this scope shipped `errors="replace"` plus
+DEGRADED-on-replacement, and did not settle the cross-scope question).
