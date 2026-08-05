@@ -2380,3 +2380,461 @@ lens, remains **OWED**. A figure correction to an author Response discharges
 nothing.
 
 This section is append-only once written.
+
+## Response to plan review -- Claude (author) -- 2026-08-05
+
+**Model**: Claude Opus 5 (`claude-opus-5`), queried at response time, not copied
+from a prior label.
+
+**Standing, and what this Response is not.** I am the plan's author responding to
+the **External** round (Codex, security lens, 2026-08-05, verdict **REVISE**).
+Two things follow and neither is negotiable. An author Response **never
+discharges an External tier** — the tier is discharged by the reviewer, and a
+**REVISE is not a SHIP**. And an amendment is a *specification*: it is the thing
+the next round attacks, not evidence that the attack succeeded. Section 7 states
+the clearance answer plainly.
+
+**Placement note, because the file no longer reads in chronological order.** The
+External section was **inserted at line 1138, ahead of** the Internal round
+(1183) and the earlier Response (1777). An agent that reads "the last section" to
+find the newest review will read the 2026-08-04 Response and miss the 2026-08-05
+External round entirely. Nothing in the lifecycle gate depends on the order
+(measured in section 6), but the reading hazard is real and is stated here rather
+than left for the next reader to discover. The header's `**Last update**:
+2026-08-04` is likewise stale; that line is prior text and this Response is
+append-only, so it is reported rather than edited.
+
+Every figure below is a run at `/Users/kendal30/conda_envs/lhm/bin/python3.13`
+(Python 3.13.13, UCD 15.1.0), `PYTHONDONTWRITEBYTECODE=1`, working tree at HEAD
+`6bcd2d3`. **No repository file was modified to produce any of them.** The
+shipped scanner supplied every `HEAD` column; the `rule` column is **my
+reconstruction of the plan's clause prose as amended by AM-1..AM-18**, living in
+a scratch directory outside the repository, and it is labelled as such at every
+use. Both mandated checkers were run over this file:
+
+```
+claim_check: dev/plans/content-scan-detectors.md -- OK, no claim-check flags.   (exit 0)
+check_cairn: OK -- 176 Markdown file(s) scanned; no issues; 48 external link(s)
+             not probed.                                                        (exit 0)
+```
+
+**Headline.** Three findings: **three accepted**, **zero declined**, one of them
+with a named limit the author cannot discharge. Every acceptance carries
+mechanical residue in *Amendments in force* (**AM-19** through **AM-26**) — a
+superseded row, a new test row, a new fence item, or a new perturbation. [E1]'s
+residue is the substantive one: a **56-row fixture table, pinned by code point in
+this file, measured**, replacing three separate "build it at implementation"
+promises. A fourth item ([A3]) is an author finding the gate audit turned up: the
+plan's own `## Code review` heading is the bare form its sibling heading warns
+against, and an **empty** section already satisfies the archive gate — measured,
+not reasoned.
+
+### 1. Re-measurement: the External review's own figures and premises
+
+| the review states | live tree, HEAD `6bcd2d3` | verdict |
+|---|---|---|
+| `bootstrap/tests/test_content_scan.py` has **`25 passed`** | **25 passed** in 0.07s, 0 skipped | **exact** |
+| "I inspected the effective amendments **AM-1--AM-18** and the figure correction" | **18** amendment rows, ids `AM-1` .. `AM-18` contiguous; the `### Figure correction` sub-section is present | **exact** |
+| [E1]: AM-14 says to build a purpose-built corpus "at implementation" | AM-14 ends *"build it at implementation and state its provenance."* | **exact** |
+| [E1]: "AM-5 adds six more tokens at that time" | AM-5 reads *"plus at least six more built at implementation time"* | **exact** |
+| [E1]: the six reviewer-built no-Latin tokens are named in AM-4 but not bound | AM-4 names them **in prose only** — six English glosses, **zero code points** anywhere in the file | **exact** |
+| [E2]: "AM-12 correctly reduces D9 to a drift guard" | AM-12 reads *"D9 is a **drift** guard, not an independence check"* | **exact** |
+| [E2]: "the plan admits there is no UTS #39 oracle" | *Scope* fence, Chunk D, and *Known omissions* (d) each say so | **exact** |
+| [E3]: the plan leaves the default-on consequence "to an unanswered Maintainer question" | *Known omissions* (e), verbatim: *"that sequencing is a Maintainer question this plan raises and does not answer"* | **exact** |
+| [E3]: `content-security` is not yet a default | `expand_preset` over all three presets -> **not selected**; `_DEFAULT_ON_MODULES` has **6** entries, none of them `content-security` | **exact** |
+
+**All nine reproduce.** The review did not state a figure I could not confirm.
+
+### 2. Re-measurement: the plan's own figures, re-derived not inherited
+
+| the plan / a prior section states | live tree | verdict |
+|---|---|---|
+| Suite collection **1746** (plan) / **1749** (Internal) / **1790** (Response) | **1959** | drifted again — AM-17 vindicated a third time |
+| `check_cairn` **180 / 68** (plan) -> **195 / 68** (Response) | **176 / 48** | drifted **down**; see below |
+| tracked `.md` **234** -> **249** | **254** | drifted |
+| tracked `.md`/`.txt`/`.py` **452** -> **469** | **478** | drifted |
+| `dev/modules/` holds **18** files, no `content-security` mirror | **17** files; still no mirror | count drifted, fence holds |
+| `scaffold.py --manifest` **96** lines | **96** | **exact** |
+| **164**-entry `frozen_files`; both edited files present, sha256 matching the live tree | 164; both present; **both match** | **exact** |
+| `content-security.md` **not** frozen | not frozen | **exact** |
+| `collection.node_count = 1598`, 1598 `node_ids` | **1598 / 1598** | **exact** |
+| the ternary at `content_scan.py:402` | verbatim at `:402`; `separator-detection` has **not** landed, so Chunk A is still this plan's to perform | **exact** |
+| **347** assigned Greek letters across the two `_SCRIPT_RANGES` rows | **347** | **exact** |
+| [I2]'s **20** fold-only code points | **20**: `U+038F`, `U+1F68`-`U+1F6F`, `U+1FA8`-`U+1FAF`, `U+1FFA`-`U+1FFC` | **exact** |
+| **217 of 218** Greek Extended letters decompose to >1 char; the int form raises | 217/218; `TypeError: ord() expected a character, but string of length 2 found` | **exact** |
+| HEAD flags **37** of the published scientific tokens; the case-exact seed leaves **7** | **37/37** flag; **7** residuals, token-for-token the named seven | **exact** |
+| the 42-token set carries **exactly one** non-Latin script per token (AM-1's zero-cost basis) | `Counter({1: 37})` over the published false-positive list | **exact** |
+
+**On the `check_cairn` movement, stated rather than waved at.** The count fell
+**195 -> 176** because `filter_sources` in `scripts/link_check.py` drops
+`dev/**/archive/` sources by default (read at that function's docstring) and this
+session archived a batch of proposals. It is not a regression and it is not
+evidence about this change; it is the same "owned by other work and moves"
+property AM-17 already names for the collection baseline. **The external-link
+figure moved too (68 -> 48), which no prior section anticipated.** Neither number
+belongs in an acceptance criterion as a constant.
+
+### 3. Disposition
+
+#### [E1] — **ACCEPTED.** The contract is written into this file now. One half of the ask is not the author's to discharge, and that half is named rather than papered over.
+
+The finding is exactly right and it is the sharpest thing said about this plan in
+three rounds. AM-4 names the six tokens **in prose**; AM-5 says "plus at least
+six more built at implementation time"; AM-14 says "build it at implementation
+and state its provenance." Three separate promises, all deferred, none binding an
+identity. Verified against the file: **the six tokens appear nowhere as code
+points** — the record contains English glosses ("Cyrillic+Armenian 'session'")
+and nothing an implementer could fail. An implementer honouring all three
+promises could satisfy every one of them with tokens their own rule already
+passes, and no reviewer could tell.
+
+**Residue: the fixture table in section 4, pinned by code point, measured, and
+frozen.** 56 rows across seven families, each with the clause under test, the
+**measured** HEAD result, and the required post-change result. AM-19, AM-20 and
+AM-21 supersede the three deferral clauses with a pointer to it; AM-22 adds the
+test row (`D14`) that runs the table as a contract; the implementer may **add**
+rows and may **not** remove, alter or re-measure away an existing one.
+
+**The half I cannot discharge, said plainly.** The review asks for a
+**review-supplied** fixture set. I can bind identities, expected results,
+construction rule and provenance — and I have. I **cannot** make an author-built
+table review-supplied by asserting it. Concretely, of the 56 rows:
+
+* **NL-1..NL-6** — the *class* is the Internal reviewer's; the *code points* are
+  mine. The review named the letters in English and never wrote a code point, so
+  these are **author-realized** and are marked so in the provenance column. They
+  are not the reviewer's originals and must not be described as such.
+* **NL-7..NL-12** and everything else — **author-built**.
+* **Zero rows are External-reviewer-supplied.**
+
+So the row that would carry real independence does not exist yet, and this
+Response cannot create it. AM-19 therefore states the gap as a **gate**: the
+External round is invited to add its own tokens, and until it does, the table is
+a *binding* contract with *author* provenance — a strictly better artifact than
+three deferred promises, and strictly weaker than what [E1] asked for.
+
+**What the table does buy, measured.** Over the 12 no-Latin rows: HEAD flags
+**12/12**, the amended rule flags **12/12**, and the rule **with clause 0
+deleted** flags **0/12**. Over the 10 scientific rows the same clause-0 deletion
+changes nothing (0/10 either way). Clause 0 is therefore load-bearing on exactly
+the class it was added for and inert everywhere else — which is the P-D7
+perturbation, run against a reconstruction, before any code exists.
+
+#### [E2] — **ACCEPTED in full.** And the "exact known false-negative boundary" the review asks for is now a measured, enumerable set rather than a promise.
+
+The review is right on the framing and right that AM-12 stopped one sentence
+short: it fixed the *plan's* channel note and left the **shipped documentation**
+and the **commit record** free to present the residual-count reconciliation as
+validation. That is the same defect one layer out.
+
+I accept without argument, and I can do better than restate it, because the
+boundary is computable. Under the amended rule a token containing Latin and Greek
+clears **iff every Greek character in it NFD-folds into `_NO_LATIN_TWIN`**. That
+makes the false-negative boundary an **enumerated 32-code-point closure**:
+
+```
+the NFD-fold closure of _NO_LATIN_TWIN -- 32 code points
+  seeded + admitted variants (12)
+    U+0394 U+03A9 U+03B2 U+03B8 U+03BB U+03BC U+03C3 U+03C6 U+03C8
+    U+03D1 U+03D5 U+03D6
+  reachable only through the fold (20)   <- the [I2] set, all capital-omega variants
+    U+038F U+1F68 U+1F69 U+1F6A U+1F6B U+1F6C U+1F6D U+1F6E U+1F6F
+    U+1FA8 U+1FA9 U+1FAA U+1FAB U+1FAC U+1FAD U+1FAE U+1FAF
+    U+1FFA U+1FFB U+1FFC
+```
+
+**Verified exhaustively, not asserted.** Over **12 492** constructed tokens (every
+one of the 347 assigned Greek letters x 12 word shapes x 3 second-letter
+samples): **1 306** tokens are flag-at-HEAD and cleared-by-the-rule, and
+**0** of them fall outside `closure OR the two-character shape OR RV5`. So the
+boundary is:
+
+> A spoof HEAD catches is cleared by this change **only** when every Greek
+> character it contains lies in the 32-code-point closure above, **or** it is the
+> two-character Latin-plus-Greek shape, **or** RV5 already cleared it at HEAD.
+> That set is **reviewed curation**: no external oracle attests it, and
+> `unicodedata` exposes none.
+
+Residue: **AM-23** (the module doc and the module docstring must carry that
+sentence and the enumerated closure, described as curation), **AM-24** (the
+commit body must carry it too, and neither D9's reconciliation nor **any**
+corpus-derived zero may be cited as evidence the judgments are correct).
+
+Note what AM-23 costs the plan and I am taking the cost deliberately: the
+published boundary is now **32 code points plus two shapes**, not the seven
+residual tokens the module doc was committed to naming. The seven are a *drift*
+figure and stay as one; the 32 are the *security* statement and did not exist in
+any prior draft of this plan.
+
+#### [E3] — **ACCEPTED.** The gate goes in this plan today; the reciprocal half belongs to a file this Response may not write, and it already has a named owner.
+
+Reproduced: the plan's *Known omissions* (e) raises the default-adoption
+consequence and explicitly declines to answer it, and nothing in the plan
+prevents `default-security-stance` from landing first. Measured today,
+`content-security` is selected by **none** of the three presets and is absent
+from the 6-entry `_DEFAULT_ON_MODULES`, so the hole is prospective rather than
+live — which is the only reason this is a sequencing amendment and not a stop.
+
+Residue: **AM-25** adds a **fourth Maintainer-fence item** — no default-on
+selection of `content-security`, and no Cairn self-adoption of it, until (a) this
+plan's External security review is discharged and (b) the whole-script-Cyrillic /
+international-name consequence has a **recorded disposition** and a corpus built
+for default adoption. It also adds the `Lasting-truth migration` row so the
+obligation cannot archive homeless.
+
+**On "state that cross-plan gate in both plans".** I can only write this file;
+`dev/plans/default-security-stance.md` is another plan under concurrent
+authorship and editing it here would be exactly the shared-file collision the
+commit discipline exists to prevent. Two facts make the reciprocal half owned
+rather than lost, and both are measured:
+
+* That plan **already carries the mirror ask from the same reviewer** — its own
+  External round, dated 2026-08-05, opens [E1] with *"Default adoption is not
+  gated on the scanner's unresolved security posture"* and asks for *"a hard
+  sequencing condition: no default-on selection or Cairn self-adoption until
+  `content-scan-detectors` has its required External security review and the
+  default-on consequence has a recorded disposition."* Verified in that file.
+* So the reciprocal statement is that plan's author's to make in that plan's own
+  Response. **It has not landed**, and AM-25 records the gate as **half-stated**
+  until it does. This Response does not claim otherwise, and section 7 counts it
+  against clearance.
+
+#### [A3] — author finding, from the gate audit. The plan's `## Code review` heading is the bare form its own sibling heading warns against, and an empty section already satisfies the gate.
+
+The plan's *Plan review* heading carries an explicit warning:
+
+> *"**Do not rename this heading to a bare `## Plan review`.** The lifecycle
+> checker matches a section *kind*, not a review: with a bare heading, an
+> **empty** section satisfies the gate."*
+
+Correct — and the plan then wrote `## Code review` as exactly that bare form, and
+left it empty. Measured against the checker itself
+(`templates/skills/_lib/lifecycle_planner.py`, `_read_artifact` +
+`_has_kind`):
+
+```
+_has_kind(art, 'Plan review') -> True
+_has_kind(art, 'Code review') -> True      <- satisfied by the EMPTY placeholder at line 1095
+```
+
+The archive-time conformance check is `if not _has_kind(art, "Code review")`, so
+the plan as it stands would clear the code-review archive gate **with no code
+review having occurred**. Residue: **AM-26** reshapes the heading the same way
+its sibling is shaped. Cost: one line. This is the plan's own lesson applied to
+the plan.
+
+### 4. The pinned fixture set — Appendix F, the contract [E1] asks for
+
+**How to read this.** `HEAD` is a **measurement** against the shipped scanner
+today. `required` is the **specification** the implementation must satisfy;
+for the homoglyph families it is also a measurement against my reconstruction of
+the amended clauses (56 rows, **0** expectation-vs-reconstruction mismatches).
+For the Change-1 families no detector exists yet, so `required` there is
+specification only, and each row's Unicode properties were measured to confirm
+the row is in the declared set. Every token is written in `U+XXXX` notation per
+this file's notation convention; the test source uses `\uXXXX` escapes.
+
+**Provenance key.** `IR*` = class named by the Internal reviewer, **code points
+author-realized** (not the reviewer's originals). `A` = author-built. **No row is
+External-reviewer-supplied**; see [E1].
+
+**F1 — Change 1, the ignorable / tag detectors.** Fixture shape: the code point
+embedded mid-word on its own line.
+
+| id | code point | cat | HEAD (measured) | required after | prov |
+|---|---|---|---|---|---|
+| IG-1 | `U+E0041` TAG LATIN CAPITAL LETTER A | `Cf` | no flag | **`unicode-tag`** | A |
+| IG-2 | `U+00AD` SOFT HYPHEN | `Cf` | no flag | **`unicode-ignorable`** | A |
+| IG-3 | `U+FE0F` VARIATION SELECTOR-16 | `Mn` | no flag | **`unicode-ignorable`** | A |
+| IG-4 | `U+FDD0` (noncharacter, unnamed) | `Cn` | no flag | **`unicode-ignorable`**, message carries the reserved-name placeholder | A |
+| IG-5 | `U+1FFFE` (plane-1 noncharacter) | `Cn` | no flag | **`unicode-ignorable`** | A |
+| IG-6 | `U+3164` HANGUL FILLER | `Lo` | no flag | **`unicode-ignorable`**; measured: it does **not** split the token (`_TOKEN_RE` yields one token across it) | A |
+| IG-7 | `U+034F` COMBINING GRAPHEME JOINER | `Mn` | no flag | **`unicode-ignorable`** | A |
+| IG-8 | `U+200B` ZERO WIDTH SPACE | `Cf` | **`unicode-zero-width`** | **unchanged**, and **not** `unicode-ignorable` (the B4 skip rule) | A |
+| IG-9 | `U+202E` RIGHT-TO-LEFT OVERRIDE | `Cf` | **`unicode-bidi`** | **unchanged**, and **not** `unicode-ignorable` | A |
+| IG-10 | `U+FEFF` non-leading | `Cf` | **`unicode-zero-width`** | **unchanged**; leading-BOM exemption preserved on the new path | A |
+| IG-11 | `U+E0100` VARIATION SELECTOR-17 | `Mn` | no flag | **`unicode-ignorable`**, **not** `unicode-tag` — it is outside `U+E0000`-`U+E007F` | A |
+| IG-12 | `U+180E` MONGOLIAN VOWEL SEPARATOR | `Cf` | no flag | **`unicode-ignorable`** | A |
+| IG-13 | `U+E0041` inside a block-scoped `cairn-accept: unicode-ignorable` | — | n/a (no detector) | **`unicode-tag` still fires** — this is the Maintainer's id split | A |
+| IG-14 | `U+FE0F` then `U+E0041` on one line | — | n/a | **two flags**; the `unicode-ignorable` message names `U+FE0F`, the `unicode-tag` message names `U+E0041` | A |
+| IG-15 | ordinary ASCII prose | — | no flag | **no flag** (the negative) | A |
+
+Measured for this Response: `_ZERO_WIDTH` = `U+200B U+200C U+200D U+2060
+U+FEFF`; `_BIDI` = `U+200E U+200F U+202A U+202B U+202C U+202D U+202E U+2066
+U+2067 U+2068 U+2069`. IG-8/9/10 are the only rows intersecting either set,
+which is what makes them the skip-rule negatives.
+
+**F2 — Change 2, clause 0 (no-Latin multi-script).** `no-c0` is the same
+reconstruction with clause 0 deleted — the P-D7 perturbation, run.
+
+| id | token, by code point | HEAD | required | no-c0 | prov |
+|---|---|---|---|---|---|
+| NL-1 | `U+0455 U+0435 U+0455 U+0455 U+0456 U+043E U+0578` (Cyrillic+Armenian) | flag | **flag** | clear | IR* |
+| NL-2 | `U+0580 U+043E U+0578 U+0456 U+0578` (Armenian+Cyrillic) | flag | **flag** | clear | IR* |
+| NL-3 | `U+043E U+2C9F U+0580` (Cyrillic+Coptic+Armenian) | flag | **flag** | clear | IR* |
+| NL-4 | `U+03C1 U+0430 U+0455 U+0455` (Greek+Cyrillic) | flag | **flag** | clear | IR* |
+| NL-5 | `U+0430 U+0501 U+0574 U+0456 U+0578` (Cyrillic+Armenian) | flag | **flag** | clear | IR* |
+| NL-6 | `U+043E U+03C1 U+0435 U+0578` (Cyrillic+Greek+Armenian) | flag | **flag** | clear | IR* |
+| NL-7 | `U+13A0 U+0430 U+0440` (Cherokee+Cyrillic) | flag | **flag** | clear | A |
+| NL-8 | `U+2C85 U+0578 U+0455` (Coptic+Armenian+Cyrillic) | flag | **flag** | clear | A |
+| NL-9 | `U+FF32 U+043E U+043E U+0442` (fullwidth+Cyrillic) | flag | **flag** | clear | A |
+| NL-10 | `U+0574 U+03B1 U+0456 U+0578` (Armenian+Greek+Cyrillic) | flag | **flag** | clear | A |
+| NL-11 | `U+0561 U+0455 U+0455` (Armenian+Cyrillic, 3 letters) | flag | **flag** | clear | A |
+| NL-12 | `U+13D2 U+03BF U+043A U+0435 U+0578` (4 scripts) | flag | **flag** | clear | A |
+
+**12/12 HEAD, 12/12 required, 0/12 without clause 0.**
+
+**F3 — clause 1 (whole-script), clauses 2 and 3 (mixed with Latin).**
+
+| id | token, by code point | clause | HEAD | required | prov |
+|---|---|---|---|---|---|
+| WS-1 | `U+03C4 U+03BF U+03BA U+03B5 U+03B7` | 1 Greek arm | clear | **flag** | A |
+| WS-2 | `U+03C4 U+03BF U+03F0 U+03B5 U+03B7` | 1, variant letterform | clear | **flag** | A |
+| WS-3 | `U+03B5 U+03C7 U+03B5 U+03F2 U+03C5 U+03C4 U+03B5` | 1, lunate sigma | clear | **flag** | A |
+| WS-4 | `U+FF21 U+FF44 U+FF4D U+FF49 U+FF4E` | 1 fullwidth arm | clear | **flag** | A |
+| WS-5 | `U+FF21 U+FF44` | 1, below the 3-letter floor | clear | **clear** | A |
+| MX-1 | `p U+0430 s s w o r d` | 2 | flag | **flag** | A |
+| MX-2 | `U+03C1 a s s w o r d` | 3 | flag | **flag** | A |
+| MX-3 | `U+0391 d m i n` | 3 | flag | **flag** | A |
+| MX-4 | `s U+03BF u r c e` | 3 | flag | **flag** | A |
+| MX-5 | `k U+03B5 y` | 3 | flag | **flag** | A |
+| MX-6..9 | `A U+0561 b c`, `A U+13A0 b c`, `A U+2C80 b c`, `A U+0430 b c` | 2 (D12's retained cases) | flag | **flag** | A |
+
+**F4 — the negatives that must stay negative.**
+
+| id | token, by code point | why | HEAD | required | prov |
+|---|---|---|---|---|---|
+| SC-1..10 | `U+0394 G`, `U+03BB max`, `U+03C3 y`, `U+03C1 w`, `K U+03B1`, `U+03B5 r`, `U+03B2 sheet`, `U+03B8 r`, `U+03C6 p`, `U+03A9 n` | scientific notation, Defect (b) | **10/10 flag** | **0/10 flag** | A |
+| RS-1 | `U+043F U+0430 U+0440 U+043E U+043B U+044C` | whole-script Cyrillic, priced by the Decision | clear | **clear** | A |
+| RS-2 | `U+0418 U+0432 U+0430 U+043D U+043E U+0432` | Cyrillic personal name | clear | **clear** | A |
+| RS-3 | `U+03B2 a n k` | beta family, priced by the amendment | flag | **clear** | A |
+| RS-4 | `U+03B4 o` | the two-character carve-out | flag | **clear** | A |
+
+**F5 — the known false-negative boundary ([E2]).** Every row is flag-at-HEAD and
+cleared-by-the-rule. These are **not** defects to be fixed at implementation;
+they are the priced boundary, and the module doc must publish them.
+
+| id | token, by code point | why it clears |
+|---|---|---|
+| FN-1..7 | `U+0394 elete`, `U+03BB ogin`, `U+03C6 ile`, `U+03A9 mega`, `U+03B2 ank`, `U+03B2 ase64`, `U+03BC pload` | seeded letters, judgment-asserted ASCII-twin absence |
+| FN-8 | `U+03B4 o` | the two-character shape |
+| FN-9..11 | `U+038F mega`, `U+1F68 mega`, `U+1FFB mega` | reachable **only through the NFD fold** — the [I2] class |
+| FN-12..14 | `U+03C3 ecret`, `U+03B8 read`, `U+03C8 ync` | seeded letters |
+
+**14/14 flag at HEAD; 0/14 flag under the amended rule.** Measured.
+
+**F6 — the arity sweep (D13 / AM-9).** `scan_text` over **all 347** assigned
+Greek letters, each alone and each with a Latin neighbour (694 tokens): **0
+raises** under the pinned `normalize("NFD", ch)[0]` form. The unpinned int form
+raises on 217 of the 218 Greek Extended letters — reproduced:
+`TypeError: ord() expected a character, but string of length 2 found`.
+GE-1 `U+1F00 lpha` and GE-2 `U+1FB7` are the two rows carried into the fixture
+table so the sweep has a named entry point.
+
+**Totals.** 56 rows. Expectation-vs-reconstruction mismatches: **0**.
+
+### 5. Amendments in force
+
+Append-only: the rows below **supersede** the quoted text without editing it, and
+extend the AM-1..AM-18 table above rather than replacing it. An implementing
+agent reads the plan **through** both tables.
+
+| # | Superseded text (verbatim) | Replaced by |
+|---|---|---|
+| **AM-19** | AM-5: `Widen the sweep with the six reviewer-built tokens above plus at least six more built at implementation time, before treating any sweep result as evidence.` | *"**The fixture set is Appendix F of the 2026-08-05 Response, pinned by code point and frozen.** The implementer may **add** rows and may **not** remove, alter, or re-measure away an existing one; a row whose measured result disagrees with its `required` column is a **stop**, not a row to adjust. The sweep runs Appendix F **in addition to** the record's token sets. **Provenance limit, binding:** no row is External-reviewer-supplied — NL-1..NL-6 are author-realized code points for classes the Internal reviewer named in prose, everything else is author-built. The External round is invited to add its own tokens, and until it does the independence [E1] asks for is **owed, not held**."* |
+| **AM-20** | AM-14: `build it at implementation and state its provenance.` | *"the purpose-built corpus **is Appendix F of the 2026-08-05 Response** and its provenance is stated there per row. It is no longer an implementation-time construction: it is a committed contract measured before any code existed. The corpus-derived zero remains **inadmissible as evidence the detector is correct** in either direction."* |
+| **AM-21** | AM-4: `Gains a `test_no_latin_multi_script_flags` case carrying the six reviewer-built tokens (Cyrillic+Armenian "session", Armenian+Cyrillic "ronin", Cyrillic+Coptic+Armenian, `U+03C1`+Cyrillic "pass", Cyrillic+Armenian "admin", Cyrillic+Greek "open"), all written as `\uXXXX` escapes, each asserted **flagged**.` | Gains `test_no_latin_multi_script_flags` carrying **Appendix F rows NL-1..NL-12 by code point** (`U+0455 U+0435 U+0455 U+0455 U+0456 U+043E U+0578`; `U+0580 U+043E U+0578 U+0456 U+0578`; `U+043E U+2C9F U+0580`; `U+03C1 U+0430 U+0455 U+0455`; `U+0430 U+0501 U+0574 U+0456 U+0578`; `U+043E U+03C1 U+0435 U+0578`; `U+13A0 U+0430 U+0440`; `U+2C85 U+0578 U+0455`; `U+FF32 U+043E U+043E U+0442`; `U+0574 U+03B1 U+0456 U+0578`; `U+0561 U+0455 U+0455`; `U+13D2 U+03BF U+043A U+0435 U+0578`), all written as `\uXXXX` escapes, each asserted **flagged**. The docstring records the provenance key per row — the English glosses are commentary and are **not** the specification. |
+| **AM-22** | *(new row)* | **D14** — `test_appendix_f_fixture_contract`: a table-driven test over **all 56 Appendix F rows**, asserting the exact pattern-id set each token/line produces. It replaces no existing row (D4-D13 stay); it is the row that makes the fixture set executable rather than narrative. New perturbation **P-D9, RUN**: delete any single Appendix F row from the test table and confirm the run reports a **missing-row** failure, so a silently-shrunk contract is a red test and not a quiet pass. |
+| **AM-23** | Chunk E row **E3**: `the residual shapes that still flag — **measured at execution, never carried from this plan or from the proposal**;` | Unchanged in its demand, and additionally: *"the section must state that `_NO_LATIN_TWIN` is **reviewed curation, not a derivation** — no external oracle attests it and `unicodedata` exposes none — and must publish the **exact known false-negative boundary**: a spoof HEAD catches is cleared **only** when every Greek character it contains lies in the 32-code-point NFD-fold closure of `_NO_LATIN_TWIN` (`U+0394 U+03A9 U+03B2 U+03B8 U+03BB U+03BC U+03C3 U+03C6 U+03C8 U+03D1 U+03D5 U+03D6`, plus the 20 fold-reachable capital-omega variants `U+038F`, `U+1F68`-`U+1F6F`, `U+1FA8`-`U+1FAF`, `U+1FFA`-`U+1FFC`), **or** it is the two-character Latin-plus-Greek shape, **or** RV5 already cleared it. Verified exhaustively for this Response over 12 492 constructed tokens: 1 306 flag-at-HEAD tokens clear, and **0** fall outside that boundary."* The same curation sentence and the same closure go in the module docstring (row **E2**). |
+| **AM-24** | Chunk D: `**What this plan does *not* deliver, said plainly.** This is still a **curated` | Unchanged, and additionally binding on the **commit record**: *"The implementing commit body must state that the ASCII-twin judgments are **reviewed curation** and must reproduce the exact false-negative boundary above. **Neither D9's residual-count reconciliation nor any corpus-derived zero — Cairn's tree, the proposal's token sets, or Appendix F — may be cited as evidence that the judgments are correct.** D9 is a drift guard (AM-12); Appendix F is a regression contract; neither is an oracle. A commit body that offers a measured zero as correctness evidence is the finding [E2] raised, committed."* |
+| **AM-25** | *The Maintainer fence*: `Three items in this plan are **not an implementing agent's to perform**. They are` | *"**Four** items in this plan are **not an implementing agent's to perform"*, the fourth being: **4. The default-on sequencing gate ([E3]).** No default-on selection of `content-security`, and no Cairn self-adoption of it, may land until **(a)** this plan's `required(External, security lens)` review is discharged **and (b)** the whole-script-Cyrillic and international-proper-noun consequence has a **recorded disposition** plus a corpus built for default adoption. Measured today: `content-security` is selected by **none** of the three presets and is absent from the 6-entry `_DEFAULT_ON_MODULES`, so the gate is prospective. **The gate is half-stated:** the reciprocal sentence belongs in `dev/plans/default-security-stance.md`, which this Response may not edit; that plan's own External round already asks for it as its `[E1]`, so it is owned there and unlanded here. A new *Lasting-truth migration* row follows: *"The default-on sequencing gate ([E3]) -> the reciprocal statement in the `default-security-stance` plan; it does not archive as discharged until both plans carry it."* |
+| **AM-26** | *Code review*: `*Filled in after implementation commits land.* The reviewer is not the` | Unchanged, and the heading is reshaped to match its sibling: **the landed code review appends as a `### Code review -- <reviewer> -- YYYY-MM-DD` sub-heading**, and the bare `## Code review` placeholder must not be treated as satisfying anything. Measured for this Response against `templates/skills/_lib/lifecycle_planner.py`: `_has_kind(art, "Code review")` returns **True today**, satisfied by the **empty** section at line 1095, so the archive-time conformance check `if not _has_kind(art, "Code review")` would pass with **no code review having occurred**. The plan's *Plan review* heading already warns about exactly this shape; the warning now applies to both headings. |
+
+### 6. Gate audit — what this plan's gates are, and which hold today
+
+Read against the artifacts, not against memory. **Machine** = enforced by code I
+opened; **doctrinal** = enforced only by a human reading this file.
+
+| gate | where it is written | kind | status today |
+|---|---|---|---|
+| `**Plan review**: required(**External**, security lens)` | header, lines 14-19 | machine (partially) | **parses**: `art.plan_review` starts with `required`, so `requires_review` is `True`. **The checker cannot read the tier** — see below |
+| *"**No implementation commit lands before a review section is in the tree.**"* | header, line 17-18 | doctrinal | **literally satisfied** — two `## Plan review` sections are in the tree |
+| *"Implementation does not start until a review has landed under this heading."* | *Plan review — the brief*, line 1031-1032 | doctrinal | **literally satisfied**; note both rounds landed as `##` sections rather than `###` sub-headings under that brief |
+| Decision condition: *"The plan carries `required(External, security lens)` in its own right; this Decision does not discharge it."* | header, lines 14-17 | doctrinal | **the External round has landed with verdict REVISE.** A REVISE is not a discharge, and this Response cannot supply one |
+| Maintainer fence 1 — the gate-manifest re-pin, batched with `separator-detection` | *The Maintainer fence* | doctrinal | **not yet due** (no chunk has landed). Preconditions re-verified: both files still frozen, both pinned hashes still **match** the live tree, collection pin still 1598/1598 |
+| Maintainer fence 2 — the `vermin` floor | *The Maintainer fence*, item 2 | doctrinal | **retired by AM-18**; the obligation is an implementing-agent scoped run |
+| Maintainer fence 3 — no decision to close whole-script Cyrillic | *The Maintainer fence*, item 3 | doctrinal | **holds**; D8 pins it, RS-1/RS-2 in Appendix F measure it |
+| Maintainer fence 4 — the default-on sequencing gate | **new, AM-25** | doctrinal | **half-stated** — in force here, not yet in the sibling plan |
+| Maintainer strike-line — the case-exact `_NO_LATIN_TWIN` reading | Chunk D | doctrinal | **live and unstruck**; both reviewers declined to strike it |
+| Maintainer strike-line — clause 0 as within-contract | AM-1 note | doctrinal | **live and unstruck** |
+| Archive gate — a `## Code review` section must exist | `lifecycle_planner._has_kind` | **machine** | **already satisfied by an empty placeholder** — see [A3] / AM-26 |
+| Sequence step 0 — the `dev/PLANNING.md` row-move | *Sequence*, line 431 | doctrinal | **still unlanded.** Re-checked: `dev/PLANNING.md` contains **zero** occurrences of `content-scan-detectors` (and zero of `separator-detection`). Raised in the previous Response; unchanged |
+
+**The one thing this audit found that nobody wrote down.** The lifecycle checker
+keys on a section *kind*, so `_has_kind(art, 'Plan review')` is **True** and was
+already True after the **Internal** round landed on 2026-08-04. From `status:
+open` the legal transition set is `['awaiting-plan-review']`, and the gate on the
+subsequent `-> executing` move is *"a `## Plan review` section has landed"* —
+which **the Internal section alone satisfies**. So the machine has been unable to
+tell Internal from External, or SHIP from REVISE, for this entire lifecycle. Every
+tier statement in this file is **doctrinal**, enforced by a human reading it and
+by nothing else. That is not a defect in this plan; it is the fact that makes
+sections 3 and 7 of this Response load-bearing rather than ceremonial, and it is
+exactly how a gate gets breached by an agent that checked the tool instead of the
+sentence.
+
+### 7. Does this Response clear the plan to implement?
+
+**No. The plan is NOT cleared, and this Response does not clear it.** Five
+reasons, each independently sufficient.
+
+1. **The External verdict is REVISE, and only the reviewer can lift it.** The
+   tier `required(External, security lens)` is satisfied by a *discharging*
+   review, not by the presence of a section. An author Response is the weakest
+   instrument in the repository for this, and its weakness is the whole reason
+   the tier exists.
+2. **[E1] is answered with a specification, and its independence half is
+   explicitly undischarged.** Appendix F is a real contract and it is a strictly
+   better artifact than three deferred promises — but **zero of its 56 rows are
+   External-reviewer-supplied**, which is precisely what [E1] asked for. AM-19
+   records that as owed. A fixture set the author both wrote and measured is
+   still the shape that has failed three times in this lifecycle.
+3. **[E3] is half-stated by construction.** The gate is in this plan; the
+   reciprocal sentence is in a file this Response may not write, and it has not
+   landed there. A one-sided sequencing gate is not a sequencing gate.
+4. **Eight new amendments have never been read by anyone but their author.**
+   AM-19 through AM-26 are new text in a security control, including a new
+   published false-negative boundary (AM-23) and a new Maintainer fence item
+   (AM-25). The precedent is one round old: [I1]'s remedy needed correcting on
+   first contact with measurement, and the corrected remedy was not thereby more
+   trustworthy.
+5. **Sequence step 0 has still not landed.** `dev/PLANNING.md` carries no row for
+   this plan. That file is serialized and is not this Response's to edit; it is
+   raised again in the handoff.
+
+**What the next External round should aim at**, revised in light of this one:
+
+1. **Attack Appendix F's coverage, then add rows.** The table is now falsifiable
+   in the way [E1] asked for: name a clause it does not exercise, or a token
+   whose `required` column is wrong. Rows you supply are the only rows in it
+   with independent provenance.
+2. **Attack the 32-code-point boundary (AM-23).** It is exhaustively verified
+   over 12 492 tokens *against my reconstruction of the rule*, not against code.
+   The claim to attack is the **closure characterization** — that a Latin+Greek
+   token clears iff every Greek character folds into `_NO_LATIN_TWIN`.
+3. **The seed's ASCII-twin judgment is still the plan's largest unattested
+   surface.** [E2] now forces the plan to *say* so in the shipped doc and the
+   commit body. It does not make the judgment right, and no author round can.
+4. **Clause 0 has still been reviewed by nobody but its author and the Internal
+   round that proposed a broken version of it.** Appendix F's `no-c0` column is
+   the perturbation evidence; the clause text is not.
+
+**Tier status, stated so no one can read discharge into this section:** Internal
+plan review — **landed** (floor, not the tier). Author Response to Internal —
+landed 2026-08-04. External plan review, security lens — **LANDED 2026-08-05,
+verdict REVISE, tier NOT discharged**. Author Response to External — **this
+section**. Code review — not yet due, and its heading is defective until AM-26
+lands. **No implementation commit lands until the External reviewer, or the
+Maintainer, disposes of the REVISE.**
+
+This section is append-only once written.
