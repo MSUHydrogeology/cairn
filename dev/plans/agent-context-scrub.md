@@ -143,9 +143,9 @@ lands, with the ones this plan cannot resolve marked as such.
 | # | Finding | Disposition in this plan |
 |---|---------|--------------------------|
 | [I1] | Landing order is backwards on the security axis | **Resolved by the Decision** — the recorded order stands. The residual window is disclosed above rather than argued again. |
-| [I2] | A one-byte non-UTF-8 file under `dev/proposals/` crashes `session-start` and blanks the rest of the stream | **Not in the accepted design; disclosed, not fixed.** Re-measured against a patched build for this plan: **it still crashes.** Chunk C discloses it; the `concerns` line raises the one-clause fix to the Maintainer. |
+| [I2] | A one-byte non-UTF-8 file under `dev/proposals/` crashes `session-start` and blanks the rest of the stream | **Routed to `planner-line-semantics` by the 2026-08-04 Maintainer ruling — not declined.** The one-clause fix edits `_status_of`, which this plan declares it does not touch; that sibling plan is accepted (`f32d5e8`), planned, owns `_status_of`, and lands first. It is not this plan's to make and not this plan's to skip. Chunk C **still discloses it** (C3), because the crash is live in every tree until that fix lands. |
 | [I3] | Tests 1 and 3 are vacuous as worded — the block delimiter is attacker-controlled | **Plan territory, taken.** Chunks A and B specify three independent oracles per test, none attacker-controlled, and the vacuity has been re-run for this plan. |
-| [I4] | A **fourth** externally-sourced field (the vendor-target table) forges a section header, and prints *first* | **Not in the accepted design; disclosed, not fixed.** Re-measured against a patched build: **it still forges.** Chunk C's bullet names it so the residual list is not read as exhaustive. |
+| [I4] | A **fourth** externally-sourced field (the vendor-target table) forges a section header, and prints *first* | **Authorized into scope by the 2026-08-04 Maintainer ruling — fixed here, no longer merely disclosed.** Chunk A row A9 wraps the relay in `_safe_field`. The accepted Proposal's Context enumerates *three* externally-sourced fields; **that enumeration is factually wrong** and is corrected to four. The ruling's reason: the alternative is a `SECURITY.md` residual bullet that reads as exhaustive while a fourth forging route stays undisclosed. |
 | [I5] | Test 4 has no sound independent oracle; the truncation path emits an unpaired backslash | **Plan territory, taken.** The oracle is named and justified in Chunk A (A7), and the backslash tail is pinned as a residual (A8). |
 | [I6] | "Over-long field — truncated at 200 characters" is not true of the `_git` path | **Plan territory, taken.** Re-measured: an oversized commit subject stays 20016 bytes with or without the change. Disclosed in Chunk C and in *Known omissions*. |
 | [I7] | Removing `text=True` also removes CRLF normalisation | **Plan territory, taken — and the suggested remedy is declined on measured grounds.** See below. |
@@ -197,11 +197,15 @@ document, and one lockfile row. Three implementation commits.
   is the one function this proposal declines to touch. Chunk A asserts the
   narrowed splitter is *already there*; it does not add or modify it.
 * **The `UnicodeDecodeError` crash in `_status_of` ([I2]).** Same function, same
-  reason, plus: it is a scope extension the accepted design does not carry.
-  Disclosed in Chunk C, raised to the Maintainer, not implemented here.
-* **The vendor-target relay at the skills fan-out emit site ([I4]).** One line and
-  the same helper would close it, and the accepted design does not include it.
-  Disclosed in Chunk C, not implemented here.
+  reason. **Routed, not declined** — the 2026-08-04 ruling assigns the fix to
+  `planner-line-semantics`, which owns `_status_of` and lands first. Still out of
+  scope *here*, and still disclosed in Chunk C, because the crash is live until
+  the sibling plan lands. "Raised to the Maintainer" is superseded: the
+  Maintainer has ruled.
+* ~~**The vendor-target relay at the skills fan-out emit site ([I4]).**~~
+  **No longer out of scope.** The 2026-08-04 ruling authorized it in; it is
+  Chunk A row A9. This fence is superseded and is struck rather than deleted so a
+  reader of the fence list is not left wondering why [I4] appears in Chunk A.
 * **The sub-tool stream relays** — `intent.py list`, the metrics and evolution
   relays, which write another tool's stdout straight through. Same defect class,
   different contract: in a relayed stream a newline is legitimate output, so
@@ -349,6 +353,8 @@ one edit and a future third consumer cannot forget.
 | A6 | `bootstrap/tests/test_skills_security.py` | **S6-b, status prose is bounded and inert.** A status line carrying `ESC [2K` / `ESC [1A` and 4000 filler characters emits one line, under the cap plus its elision marker, with no raw `0x1b` byte anywhere in stdout. |
 | A7 | `bootstrap/tests/test_skills_security.py` | **S6-c, escaping is lossless below the cap.** A unit-level round-trip at `limit=None`, with the oracle **named**: `ast.literal_eval('"' + escaped + '"')`. Fixtures must contain no `"` character and **must** include one backslash-bearing string plus non-ASCII in NFC, NFD and CJK forms. |
 | A8 | `bootstrap/tests/test_skills_security.py` | **S6-d, the capped tail is a residual, and is pinned as one.** Assert that a field truncated mid-escape ends on a *partial escape*, and that the field still carries the elision marker **in its literal specified spelling**, `...[+<N> chars elided]`. The partial-escape pin covers the **whole reachable class, all 11 forms** — swept for this plan under the canonical interpreter over **every** character the table escapes at **every** cut offset (68 escaped characters × 15 offsets), which yields seven structural cut positions (`\`, `\x`, `\xN`, `\u`, `\u2`, `\u20`, `\u202`) and, since the 4-character escapes carry five distinct leading hex digits, these eleven concrete forms: `\`, `\x`, `\x0`, `\x1`, `\x7`, `\x8`, `\x9`, `\u`, `\u2`, `\u20`, `\u202`. Enumerating all eleven is the point: a test that stops at the one-backslash instance, or at one offset per escape width, leaves `\u20` and four of the five hex-digit forms unexercised — the same gap this row exists to close. Ten of the eleven raise `SyntaxError` under A7's `ast.literal_eval` oracle (only the lone backslash is benign), so this is the shape class that actually bites an un-escaping consumer. Assert also that the cut introduces **no raw control character and no line separator** into stdout: that is the measured fact which makes this tail cosmetic rather than a hole, and it is asserted rather than assumed. This test asserts a known cosmetic defect on purpose, so that a future "narrow the table" fix cannot silently void the losslessness property. |
+| A9 | `tools/lifecycle.py` + `templates/skills/_lib/lifecycle.py` | **[I4], authorized into scope by the 2026-08-04 Maintainer ruling.** Wrap the vendor-target relay at the skills fan-out emit site: `_emit(f"{_safe_field(name)}: {tier} -> {st}")`. Verified pre-implementation at `tools/lifecycle.py:758`, which today reads `_emit(f"{name}: {tier} -> {st}")` and relays `name` unescaped **above every other section of the stream**. `tier` and `st` are module-internal literals, not externally sourced, and are deliberately left unwrapped — wrapping them would assert a provenance they do not have. Both twins in the same commit or the twin-parity gate fires, and A4's lockfile rehash covers this edit too. |
+| A10 | `bootstrap/tests/test_skills_security.py` | **S6-e, the fourth field cannot forge either.** The [I4] analogue of A5: a vendor-target name carrying two newlines plus a forged section header, driven through the CLI in a subprocess with stdout read as **bytes**. This row exists because A5 covers the *filename* route only; without it the fix at A9 ships unexercised and a later refactor silently un-wraps it. |
 
 **Acceptance criteria — Chunk A**
 
@@ -490,7 +496,7 @@ determined by what Chunks A and B measurably do *not* close.
 | # | File | Change |
 |---|------|--------|
 | C1 | `SECURITY.md` | **Bullet 1 — shape, not meaning.** The escape table constrains the *shape* of relayed text and never its meaning. A forged line built entirely from ordinary printable characters passes unchanged, and an *escaped* payload is still fully legible on one line: escaping removes authority-by-shape, not words. Per R-3, and per the External review's third negative-space item, this must also say that a model may read instructions inside an escaped string. |
-| C2 | `SECURITY.md` | **Bullet 2 — what the change does not reach.** Two relays in the same stream stay unescaped: the sub-tool stdout relays (deliberately, for the stated contract reason) and the vendor-target name at the skills fan-out emit site ([I4]), which prints *above* every other section. Plus the uncapped git-derived stream ([I6]): the 200-character cap applies to the **status** field only. |
+| C2 | `SECURITY.md` | **Bullet 2 — what the change does not reach.** One relay class in the same stream stays unescaped: the sub-tool stdout relays, deliberately, for the stated contract reason. Plus the uncapped git-derived stream ([I6]): the 200-character cap applies to the **status** field only. **Amended by the 2026-08-04 ruling** — the vendor-target name at the skills fan-out emit site ([I4]) is **no longer** an unreached relay; A9 escapes it, so listing it here would understate the fix. What the bullet must still refuse to claim is exhaustiveness: it says the enumeration is what was *found*, not what exists. |
 | C3 | `SECURITY.md` | **Bullet 3 — a non-UTF-8 artifact aborts the survey ([I2]).** A single invalid byte in any `dev/proposals/*.md` or `dev/plans/*.md` file raises `UnicodeDecodeError` out of `_status_of`, which catches `OSError` only; `session-start` exits 1 with the in-flight body, the work-intents block, **and the resolved-interpreter disclosure** all missing. Re-measured against a patched build for this plan: **unchanged by this fix.** |
 | C4 | `CHANGELOG.md > Unreleased > Fixed` | One line: the orientation stream now C-quotes externally-sourced fields, and a carriage return in git metadata no longer becomes a line break. |
 
@@ -499,7 +505,12 @@ determined by what Chunks A and B measurably do *not* close.
 * **Every bullet names something measured, and the residual list is honest about
   being partial.** The failure this chunk exists to avoid is a residual list that
   *reads* as exhaustive while a fourth forging route stays undisclosed — the same
-  false-assurance outcome the proposal names as the worst available.
+  false-assurance outcome the proposal names as the worst available. **The
+  2026-08-04 ruling changed how this criterion is met, not whether it is.** The
+  fourth route is now *closed* (A9) rather than *disclosed*, so the honesty
+  requirement shifts from "name the fourth route" to "do not imply the
+  enumeration is complete" — four found and fixed is still not a proof that a
+  fifth does not exist, and the bullet must not read as one.
 * **Exactly three bullets, not four.** The fourth (selection-hazard) bullet was
   owed only under the reversed landing order, which the Decision did not choose.
 * **Re-read the *Documented residual risks* list immediately before appending**,
@@ -631,7 +642,10 @@ it is enumerated rather than asserted.
   suppressed. The fail-closed alternative (refuse to list it) was rejected in the
   proposal because it converts a hostile filename into an *invisible* one, and the
   reviewer should press hardest on that call.
-* *A non-UTF-8 artifact* — **open, and total** ([I2]). Disclosed in C3.
+* *A non-UTF-8 artifact* — **open, and total** ([I2]). Disclosed in C3, and
+  **routed to `planner-line-semantics`** by the 2026-08-04 ruling rather than left
+  open-ended: it stays open in *this* plan's tree, with a named owner that lands
+  first.
 * *Plain-text forgery* — **open, and permanent.** Disclosed in C1.
 
 **Edge cases handled.** Empty status value (the existing `(unspecified)` /
@@ -807,10 +821,18 @@ The homes are pre-declared here so archive time is bookkeeping rather than recal
 
 * The three disclosed residuals (plain-text forgery; the uncapped git stream and
   the two unescaped relays; the non-UTF-8 abort) → `SECURITY.md`, Chunk C.
-* **[I2]** (the `UnicodeDecodeError` total suppression) and **[I4]** (the
-  vendor-target relay) → a `dev/PLANNING.md` row each, because a disclosure is not
-  a fix and an accepted proposal archives out of sight. Neither is claimed by any
-  in-flight proposal today.
+* **[I2]** (the `UnicodeDecodeError` total suppression) → **no `dev/PLANNING.md`
+  row is owed.** The 2026-08-04 ruling gave it a named owner that lands first
+  (`planner-line-semantics`, which owns `_status_of`), and a board row exists to
+  stop an unowned residual disappearing — not to duplicate an owned one. If that
+  plan archives without the fix, the row becomes owed again; say so at its
+  archive, since that is the moment the claim could silently lapse.
+* **[I4]** (the vendor-target relay) → **no row owed either, for the opposite
+  reason: it is fixed here**, at A9, and pinned by A10. A fix needs a changelog
+  line, not a backlog row. What migrates instead is the *correction* — the
+  accepted Proposal's Context enumerated three externally-sourced fields and
+  there are four. That correction outlives both artifacts and belongs in
+  `SECURITY.md` alongside C2, phrased so it does not imply four is provably all.
 * **[I7]**'s CRLF residual, including the measured fact that the reviewer's
   suggested remedy re-opens the CR forgery → a `dev/PLANNING.md` row. This one
   must not be lost: the next person to read [I7] will otherwise implement it.
