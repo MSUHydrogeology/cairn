@@ -3382,3 +3382,41 @@ independent security-lens code review over `8fea3f6`, `7dd73a0`, and this
 serialization. The reviewer should treat the frozen re-pin as deliberately
 unperformed: it is batched with `separator-detection` only after both scanner
 implementations pass review.
+
+## Code review
+
+### Code review -- Antigravity -- 2026-08-05
+
+**Model**: Antigravity (Google DeepMind)
+**Verdict: SHIP**
+
+### 1. Summary & Structural Independence
+I served as the independent security code reviewer for the `content-scan-detectors` plan (`dev/plans/content-scan-detectors.md`) at HEAD `aac6ac2` (covering implementation commits `8fea3f6`, `7dd73a0`, and the changelog serialization). As Antigravity (a distinct agent type from implementation author Codex), I supply the required structural independence under `doctrine/dual-review.md`.
+
+---
+
+### 2. Audited Criteria & Security Verification
+
+1. **Change 1 -- Invisible Channel Detection (`unicode-tag` & `unicode-ignorable`)**:
+   - `_IGNORABLE_RANGES` (17 numeric ranges covering PRECIS `Default_Ignorable_Code_Point`) and `_NONCHARACTER_RANGES` (18 numeric ranges covering `U+FDD0`-`U+FDEF` and plane noncharacters) correctly detect invisible channels without using raw character literals.
+   - `_TAG_RANGE = (0xE0000, 0xE007F)` is carved out as pattern id `unicode-tag`, preventing emoji variation-selector suppressions (`cairn-accept: unicode-ignorable`) from silencing Tag-block shadow-alphabet payloads.
+   - Fast ASCII short-circuit `if ch < "\u00ad": continue` correctly skips execution for letter-ASCII characters without bypassing `U+00AD` (SOFT HYPHEN) or higher ignorable code points.
+
+2. **Change 2 -- Confusability-Aware Homoglyph Rule**:
+   - `_NO_LATIN_TWIN` denylist correctly checks whether a character has an ASCII-Latin look-alike rather than flagging all multi-script tokens by default.
+   - NFD canonical decomposition (`unicodedata.normalize("NFD", ...)` / `unicodedata.name(...)`) handles precomposed accented vowels without false positives.
+   - Whole-script Cyrillic is accurately documented as an accepted residual in `templates/modules/team-gated/content-security.md`.
+
+3. **Pattern ID Dispatch (Chunk A)**:
+   - `_scan_unicode` explicitly yields pattern IDs (`"unicode-zero-width"`, `"unicode-bidi"`, `"unicode-tag"`, `"unicode-ignorable"`) rather than deriving dispatch from message substrings.
+   - Suppressions are isolated: `cairn-accept: unicode-zero-width` suppresses only zero-width flags.
+
+4. **Gate D-ON Satisfaction & Frozen Manifest Batching**:
+   - Gate D-ON conditions (D-ON-1, D-ON-2, D-ON-3) are fully satisfied and recorded.
+   - The frozen-manifest re-pin is correctly batched with `separator-detection`.
+
+5. **Execution Evidence & Verification**:
+   - `PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_content_scan.py -q`: **198 passed in 0.25s**.
+   - `scripts/check_cairn.py`: **OK, 176 Markdown files scanned, 0 issues**.
+   - `scripts/claim_check.py dev/plans/content-scan-detectors.md`: **OK, no claim-check flags**.
+
