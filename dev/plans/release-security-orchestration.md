@@ -541,3 +541,238 @@ After S1-S2 are bound into Chunk D and its regressions, this Security Review has
 no further design objection. Code review must re-run the classified launcher
 sweep and execute the real C2 nested path; direct-child environment capture is
 supporting evidence only.
+
+## Response to plan review -- Claude (author) -- 2026-08-05
+
+**Model**: claude-opus-5
+
+**This Response discharges no review tier.** An author's disposition is not a
+review pass. It cannot supply the External tier, it cannot supply the External
+Security Review, and it cannot stand in for the Code review. Codex's pass above
+supplies the owed **External Security Review**; this section records only what
+the author does with its findings, and the plan's own *Plan review* section --
+written to insist the tier not be quietly softened -- applies to this Response
+first of all.
+
+**Grammar.** Status is `executing`, so chunk-table cells are no longer mutable in
+place: `doctrine/plans.md` > *Mutability rule* reads *"Once status flips to
+`executing`, chunk-table edits follow the append-only rule below"*, and that rule
+asks for a **Sequence revision** note rather than edits to entries already in
+flight. The revised Chunk D contract therefore appears below as new cells
+**D4-D6**. The landed D1-D3 cells stand as history and are not rewritten.
+Nothing above this line is altered.
+
+### Evidence re-derived -- no figure carried forward
+
+Interpreter `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13),
+`as_of` 2026-08-05 at **`937f0f0`**. Two method notes, both because this tree has
+several sessions in it:
+
+* The scan surface is obtained by **calling `scan_targets()`**, not by
+  reimplementing its walk. Hand-rolling that derivation is how a sibling
+  measurement reached 141 files where the module's own function said 82.
+* The module bytes come from `git show 937f0f0:bootstrap/security_check.py`,
+  loaded with `__file__` spoofed to the real path so `CAIRN_ROOT` still
+  resolves. A figure read out of a shared working tree is not a measurement of
+  a commit.
+
+| quantity | value at `937f0f0` |
+|---|---|
+| `scan_targets()` | **78** files |
+| Bandit findings | **125** |
+| ... of which blocking (MEDIUM+) | **0** |
+| ... of which LOW | **125** |
+| Bandit `errors` | **0** |
+| `B310` anywhere in the report | **absent** |
+| `ALLOWLIST` | **empty** |
+
+The review's `77` / `118` at `9bf3524` are **not** inputs here: the plan's
+no-carry-forward rule binds, and the surface grew as sibling security plans
+landed shipped Python. Bandit's own exit code is **1** on this clean-by-policy
+report, which matters to [S2] below.
+
+**One of those figures deserves saying twice: the blocking set is empty.** All
+125 findings are LOW. So under the all-results liveness predicate [S1] rejects,
+*every* pair available to confirm an allowlist entry live today is a pair that
+suppresses nothing. [S1]'s failure mode is not hypothetical at Cairn's current
+state -- it is the only state available.
+
+### [S1] accept -- landed, and demonstrated to be a real falsifier
+
+**Accepted in full.** The remediation landed at **`937f0f0`** (*Chunk D --
+self-retiring Bandit allowlist*), and matches what [S1] asked for:
+
+* liveness derives from a set filtered by **the same blocking-severity
+  predicate** suppression uses (`_BLOCKING_SEVERITIES`) and the same
+  `_rel(...)` / `str(test_id)` normalization;
+* `stale` is the configured keys **not** in that set, so a key is live only if
+  it suppresses at least one finding in this run;
+* D1's deletion happened -- `ALLOWLIST` is empty;
+* the LOW-only regression [S1] asked to add exists, and the present, absent and
+  partially-scanned cases are kept.
+
+**Verified by execution, not by reading.** `pytest
+bootstrap/tests/test_security_check.py -k "allowlist or low_severity or b310 or
+liveness"` at `937f0f0`: **5 passed, 70 deselected**, 0.12s.
+
+**And the new regression can fail.** Removing *only* the blocking-severity
+filter from the liveness comprehension -- the all-results design [S1] rejects --
+flips **exactly one** of the four cases (matched-only-at-LOW: refusal `1` becomes
+clean `0`) and leaves the other three unchanged. The mutation was applied to an
+**in-memory copy** of `937f0f0`'s bytes, so the shared working tree was never
+written and no revert was required; a file-level mutation in this tree is how a
+verified-green chunk was destroyed earlier today.
+
+**A correction to D1's rationale, folded into the accept.** The `B310` entry was
+stale in a second sense the review did not need: its rationale names
+`urllib.request.urlopen` in `link_check._probe_external`, and `urlopen` occurs
+**zero** times in `templates/modules/team-gated/link_check.py` at `937f0f0` --
+the probe builds a hardened opener (`build_opener`, then a `Request`) that B310
+does not match. The entry did not merely go dormant; it described a call the code
+no longer makes. That is the strongest possible argument for liveness as a
+standing condition, and it is why D2's rule is worth more than the one deletion.
+
+**One sharpening [S1] earns, still open -- bound as D4.** *"The exact same
+predicate used by suppression"* is under-determined, because this one `ALLOWLIST`
+has **two** suppression consumers and the key-matching rule is spelled twice:
+
+| consumer | severity test | path normalization |
+|---|---|---|
+| `bootstrap/security_check.py` (release command) | `issue_severity in _BLOCKING_SEVERITIES`, a `{"MEDIUM", "HIGH"}` set | its own `_rel` |
+| `bootstrap/tests/test_security_lint.py` (dev gate) | `_SEVERITY_RANK.get(...) < _BLOCKING_RANK` over `{"LOW": 0, "MEDIUM": 1, "HIGH": 2}` | a **second, byte-identical** `_rel` |
+
+The dev gate imports `ALLOWLIST` and `scan_targets` from the release command
+under a comment saying the two are single-sourced "so the two never drift". That
+is true of the **data** and silent about the **predicate**: both halves of the
+key rule are duplicated. Chunk D bound liveness to the first spelling. They agree
+today by the coincidence of having been copied, and they share a fail-open --
+an `issue_severity` value in neither table (a renamed or added Bandit severity)
+is treated as below MEDIUM by both, so it is neither blocking nor
+liveness-confirming.
+
+### [S2] accept -- and it has **not** landed
+
+**Accepted in full, and its premise is now literal.** With `ALLOWLIST` empty
+after D1, liveness is vacuous, so report validation is the only thing standing
+between a malformed Bandit report and release `PASS`.
+
+Reproduced against **`937f0f0`'s own bytes**, `subprocess.run` stubbed per row:
+
+| stubbed Bandit stdout | rc | `run_bandit()` | operator sees |
+|---|---:|---:|---|
+| `{}` | 0 | **0** | `Bandit clean over 78 shipped file(s)` |
+| `{"errors": [], "results": []}` | 1 | **0** | the same clean line, despite rc=1 |
+| `{"errors": [], "results": {}}` | 0 | **0** | the same clean line |
+| `[]` | 0 | `AttributeError` | a traceback |
+| `null` | 0 | `AttributeError` | a traceback |
+
+The review's two probes reproduce exactly. Three observations the remediation
+must also cover:
+
+* **A third degenerate-clean shape.** `report.get("results") or []` accepts any
+  falsy value, so a **mapping**-valued `results` reads as "no findings" and
+  prints the clean line. Same hole as `{}`, reached by a different malformation.
+* **The two tracebacks fail closed, but not legibly.** `main()` wraps no phase
+  in a handler, so an uncaught exception does exit non-zero. It exits without a
+  security message -- the exact distinction this function already draws for
+  itself where it wraps `install_manifest`'s `ValueError` to buy "a security
+  message instead of a traceback". The same courtesy is owed here.
+* **The severity fail-open above is a validation problem, not a predicate
+  problem.** An unrecognized `issue_severity` is unclassifiable evidence.
+  Rejecting the *report* at validation is cleaner than teaching two predicates
+  to treat an unknown value as blocking, which is why D5 owns the closed
+  severity domain and D4 only has to be one predicate.
+
+### The Ruling's two standing obligations
+
+**1. A2 must reuse the full sterile pattern -- measured, satisfied, one delta
+named.** At `937f0f0`, `_sterile_git_env()` drops **every** `GIT_`-prefixed key
+and restores only `GIT_TERMINAL_PROMPT=0`: a prefix drop, not the finite denylist
+the Ruling warns against, and behaviourally identical to `_sterile_env` in
+`bootstrap/tests/_gate_preflight.py`. `_STERILE_GIT_CONFIG` pins **6**
+keys against that module's **7**; the absent one is `gpg.format=ssh` (with the
+preflight's computed `gpg.ssh.program`), which governs signature verification --
+something the release checker never performs, since its calls are `rev-parse` and
+`status`. A scoped omission, not a gap.
+
+One behavioural delta is named rather than left silent: `_git` resolves the
+binary with `shutil.which("git")` plus a `None` check, where
+`_gate_preflight._resolved_binary` additionally refuses a non-absolute path and
+anything not resolving to an executable regular file. By this review's own triage
+the git binary and `PATH` are operator-toolchain **TRUSTED-INPUT**, and
+`_resolved_binary`'s docstring explicitly disclaims being a containment control,
+so this changes **no refusal disposition** and **no chunk is opened for it**. It
+is recorded so a later reviewer can disagree with a fact instead of with a
+silence; if wanted, the remedy is an absoluteness plus executable-regular-file
+check in `_git`, with that in-repo precedent to copy.
+
+**2. Code-review obligations -- accepted as binding.** Restated here because the
+*Acceptance criteria* section predates this review and is not edited: code review
+re-runs the **classified** launcher sweep -- per site, whether the argv is direct
+or variable-bound *and* whether the resolved argv names `pytest`, per the method
+correction recorded above at `96f876b` -- and executes the **real C2 nested
+path**. B3's direct-child environment capture is supporting evidence only.
+
+**The residuals are not contested.** The token is a mode bit and not a
+credential; the command does not authenticate its own process; it does not
+contain code pytest executes; the human root is named, not closed.
+
+### Sequence revision -- Chunk D gains D4-D6 (from [S1], [S2]) -- 2026-08-05
+
+Append-only per the Mutability rule. D1-D3 landed at `937f0f0` and are unchanged;
+these are additional cells, and **Chunk D is not complete until they land.**
+
+| # | File | Change |
+|---|------|--------|
+| D4 | `bootstrap/security_check.py`, `bootstrap/tests/test_security_lint.py` *(frozen)* | **One** exported blocking predicate over a finding -- the normalized path, the `test_id`, and the severity test -- called by the release command, by liveness, and by the dev gate. The dev gate imports it (as it already imports `ALLOWLIST` and `scan_targets`) instead of re-spelling severity via `_SEVERITY_RANK` and carrying a second `_rel`. A test pins that one predicate governs both consumers, so the liveness rule cannot agree with one and disagree with the other |
+| D5 | `bootstrap/security_check.py` | **Validate the report before** the `errors` check, liveness, or suppression: top-level must be a JSON **object**; `errors` and `results` must both be **present** and be **lists**; every finding must carry `filename`, `test_id`, `issue_severity`, `line_number`, `issue_text`; `issue_severity` must be in the **closed** known-severity set. Refuse return-code/report contradictions, `rc=1` with zero findings and zero errors among them. Every rejection returns 1 with a security message naming what was wrong -- **never** a traceback, and never the clean line |
+| D6 | `bootstrap/tests/test_security_check.py` *(frozen)* | Pin all five reproduced shapes -- `{}`/rc0, `{"errors": [], "results": []}`/rc1, `{"errors": [], "results": {}}`/rc0, `[]`, `null` -- each returning 1, each printing a message, none printing `Bandit clean`. Plus a positive control: a well-formed report with `rc=1` and only LOW findings still returns 0, so validation cannot be satisfied by refusing everything |
+
+**The frozen-file delta does not grow.** D4 and D6 touch
+`bootstrap/tests/test_security_lint.py` and
+`bootstrap/tests/test_security_check.py`, both already among the five frozen
+files this plan declared, so the batched supervised re-anchor scope is unchanged.
+`bootstrap/tests/test_security_stack.py` is **not** touched: its `run_bandit_pass`
+belongs to the adopter-facing audit orchestrator
+(`templates/modules/team-gated/run_security_audit.py`), a different function from
+`security_check.run_bandit`, confirmed at `937f0f0`.
+
+**Sequencing, recorded because it should not repeat.** D1-D3 landed at `937f0f0`
+*before* this disposition existed. The code is right and the order was wrong: for
+a stretch of today the record held a blocking finding with no disposition and a
+commit that partly answered it, and a reader could not tell whether [S1] had been
+accepted or ignored. The fix is the ordering rule already in `AGENTS.md` -- one
+commit per lifecycle transition -- applied to dispositions as well as decisions.
+
+### Interaction noted, not owned: `content_scan_runner.py`
+
+The Codex Security Review on
+`dev/proposals/2026-08-05-claude-content-scan-url-classification.md` found two
+**pre-existing** defects in `templates/modules/team-gated/content_scan_runner.py`
+-- `_git_tracked` passing no `env=`, so an ambient `GIT_DIR` outranks its own
+`-C`, and a `git ls-files` argv with no `--` terminator. **Owned by that
+proposal. Not touched here.** Three interactions, recorded rather than acted on:
+
+* **Not in this command's phase-2 path.** `scripts/check_cairn.py` composes
+  `content_scan.py` and `link_check.py` -- the checkers -- not
+  `content_scan_runner.py`, confirmed at `937f0f0`. The release command never
+  executes the defective function.
+* **In this command's Bandit surface, invisibly.** `content_scan_runner.py` *is*
+  one of the 78 `scan_targets()` entries, and it reports at LOW only: a missing
+  `env=` is not a Bandit test. Phase 2 scans the file and cannot see the defect
+  -- an accurate statement of what this bar does and does not establish.
+* **The contrast is the argument for holding A2 literally.**
+  `_sterile_git_env` and `_git_tracked` are the same class of git call written
+  the two opposite ways, one design decision apart.
+
+### What this Response does not do
+
+* It **discharges no review tier**, and does not rule on whether the two-part
+  tier flagged earlier in this file is satisfied. That remains the Maintainer's.
+* It edits **no** chunk-table cell and **no** Sequence marker. Marker upkeep
+  belongs to the implementing session; chunks A, B, C, D and E1 landed while
+  this was being written.
+* It creates **no new deferral**. [S2] is bound to D5-D6 inside this executing
+  plan -- an unstarted chunk with a full spec, not a deferral -- and the
+  gate-anchor publication gap recorded earlier in this file was homed in both
+  required places at `8124add`.
