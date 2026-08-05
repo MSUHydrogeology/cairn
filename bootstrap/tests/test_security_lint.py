@@ -57,7 +57,8 @@ from bootstrap.security_check import (  # noqa: E402
 
 #: Declared exclusions from the on-disk oracle below: repo-relative path ->
 #: MANDATORY rationale. **Empty today** -- disk, manifest-verbatim and
-#: ``git ls-files`` all agree at 44 -- so it costs nothing to introduce and
+#: ``git ls-files`` all agree at 45 (``as_of`` 2026-08-05; re-measure rather
+#: than carrying this figure forward) -- so it costs nothing to introduce and
 #: fires the moment they disagree. Mirrors the ``ALLOWLIST`` +
 #: ``test_allowlist_entries_have_rationale`` idiom already in this file rather
 #: than inventing a second one, and is guarded harder than that idiom: an entry
