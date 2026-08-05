@@ -82,6 +82,15 @@ and a new empty `Unreleased` is started above.
 
 ### Changed
 
+- **One Maintainer-run command now covers Cairn's complete local release
+  security bar.** `python bootstrap/security_check.py` binds its evidence to a
+  clean commit, executes repository-controlled phases from an exact detached
+  snapshot, runs Bandit, `check_cairn`, the release-strict suite, and the
+  quality gate, and refuses dirty, incomplete, skipped, or changed-candidate
+  runs. Its output names the full commit for the release notes; host-process
+  authentication and tag binding remain explicit Maintainer responsibilities.
+  Plan `release-security-orchestration`.
+
 - **New Cairn installations now include content scanning by default.**
   `content-security` is selected for preset-derived and default-derived
   profiles, with a one-line `modules_remove` opt-out; `python-security` is

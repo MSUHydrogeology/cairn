@@ -638,7 +638,7 @@ reason to open another scope.
 | Cluster | Detailed homes in this board |
 |---|---|
 | **[BND] Input, execution, containment** | queued Class C; lockfile schema validate-on-read; interpreter race; scaffold/engine path residuals; `fork-advisory-semantics` identity-warning, `base_hash`, and `_infer_init_lock_axes` rows; profile G1/G2/G3/G5/totality rows |
-| **[VER] Verification and coverage** | Security apparatus conda row; Scan coverage SC1-SC3/SC5; shipped-executable authority unification; profile G6; cross-language conformance fixtures; capability plans in the Active table |
+| **[VER] Verification and coverage** | Security apparatus conda row; Scan coverage SC1-SC3; shipped-executable authority unification; cross-language conformance fixtures; capability plans in the Active table |
 | **[TRU] Trust roots and provenance** | self-host lockfile reconciliation; install-integrity anchor; end-gate frozen-set decision; attestation kind-prefix validation; AST re-anchor runbook; Release authenticity RA1/RA3/RA5/RA6; fork advisory FA-R1; gate-reanchor posture |
 | **[REC] Deliberation authority, identity, context, record integrity** | lifecycle mutation/commit arm, dogfood study, and later routine skills; transition and planner conformance; byline residuals and four archive follow-ups; gate-claims archive-auditability rows; `agent-context-scrub` and `review-gate-enforcement` in Active |
 | **[REL] Release evidence and ceremonies** | SC4 and all stale frozen pins; profile G4 and manifest delta; release-authenticity archive/Zenodo rows; gate-claims trigger/CI rows; disclosure channel |
@@ -923,28 +923,6 @@ until its items here are landed -- that is this section's whole purpose.
   move.
 
 *From `scan-coverage` (1) — [VER / REL]:*
-* **[VER-5] SC5 — the Bandit `ALLOWLIST` has no staleness guard, only a rationale
-  guard.** `test_allowlist_entries_have_rationale`
-  (`bootstrap/tests/test_security_lint.py:183`) asserts a non-empty
-  rationale and nothing else; the sole live entry
-  (`templates/modules/team-gated/link_check.py` / `B310`,
-  `bootstrap/security_check.py:51`) survives unchanged if that file moves
-  or the finding is remediated — the same silent latch `scan-coverage`'s
-  C3(e) added for `_SCAN_EXCLUSIONS`, one guard over. Raised and
-  deliberately deferred in that plan's Response to plan review
-  (2026-08-03) as belonging in its own proposal. *Trigger:* any edit to
-  `ALLOWLIST`, or the next change to
-  `bootstrap/tests/test_security_lint.py`.
-  **Remedy corrected 2026-08-04** *(plan `board-drain-guards`, Internal review)*:
-  this row previously prescribed *"two assertions (key still on disk; key still
-  produced by a live Bandit finding)"*. The second is **red before it is
-  written** — measured: 0 MEDIUM+ Bandit findings across the 76-file surface, and
-  no `B310` for `link_check.py`, whose `_probe_external` now uses
-  `build_opener`/`Request` rather than `urlopen`. So **the entry is stale, not
-  the scanner**, and this is not a write-a-guard job: it is a
-  `bootstrap/security_check.py` edit — the release-gate single source. Re-scoped
-  accordingly; whoever owns that surface owns this.
-
 *From `release-authenticity` (2) — [REL]:*
 * **[REL-4] `release-authenticity` — the Decision's flagged condition,
   undispositioned** — the approved ledger entry read *"Accept, conditioned
@@ -1042,13 +1020,6 @@ until its items here are landed -- that is this section's whole purpose.
   Chunk A made the swallowed exception print to stderr; whether
   substituting the lockfile profile is the right disposition at all was
   never examined. *Trigger:* the next upgrade-path proposal.
-* **[VER-5] Nothing enforces the suite's `0 skipped` invariant** *(residual from
-  plan `profile-parse-fail-open`, G6)* — `bootstrap/tests/conftest.py`
-  carries only the order-independence shuffle hook and there is no CI, so
-  a node that skips itself away (the parity sweep plus both canaries, on a
-  PyYAML-less host) still exits 0. *Trigger:* the first suite run
-  reporting a non-zero skip count, or the next change to
-  `bootstrap/tests/conftest.py`.
 * **[BND-1] `profile-parse-fail-open` decision point 4 — the totality claim is
   affirmed but unchecked** *(Maintainer question, carried since plan-open
   2026-08-03)* — the recommended focused Internal round on the closed
@@ -1071,13 +1042,6 @@ routed it here. Both provenances are preserved on the surviving row;
 nothing was dropped.)*
 
 *From `gate-claims-vs-enforcement` (7) — [REC / REL]:*
-* **[REL-2] Gate-claims A5/A6/A8 — three CI-wording corrections deferred behind
-  the frozen-file manifest**
-  (`bootstrap/tests/test_security_lint.py` lines 12 and 89;
-  `bootstrap/tests/fixtures/skills/README.md` lines 16 and 41;
-  `bootstrap/tests/test_python_floor.py:1`) — *Trigger:* the manifest is
-  retired, **or** the next supervised re-pin ceremony (SC4's "fold in")
-  carries them with Maintainer assent.
 * **[REC-4] Gate-claims B2 — the archive-commit-body auditability claim is
   falsified** (`doctrine/proposals.md` > "Archive preconditions" and
   `doctrine/plans.md` > "Lasting-truth migration doctrine":
@@ -1091,25 +1055,6 @@ nothing was dropped.)*
   2026-08-04 at HEAD `da2d00e`: plan archives **1 of 10** (`b67fabc`),
   proposal archives **2 of 21** (`bd608c9`, `9c95653`). Re-run the
   enumeration before writing any number.
-* **[REL-2] `dev/plans/_template.md`'s `verification-commands` slot claims the
-  gates are "the same ones CI enforces"; Cairn has no CI** — a Class-A
-  instance in Cairn's own filled slot (the adopter template is an unfilled
-  placeholder, so nothing is correct-for-adopters here). *Trigger:* its
-  own serialization point, because the fix cascades into every live plan —
-  re-run `git ls-files | xargs grep -ln "the same ones CI"` rather than
-  trusting a count.
-* **[REL-2] Gate-claims B3 — `doctrine/runtime-contract.md:202-211` calls
-  `bootstrap/container/floor-gate.sh` "the **release floor gate**" and "In
-  the release gate"** — gate vocabulary (Class B, axis 2, un-ledgered) for
-  a script only the maintainer runs by hand, and it now directly
-  contradicts `bootstrap/container/recipe.md` as corrected by `1e47c08`.
-* **[REL-2] Cairn's enforcement claims bottom out in
-  `bootstrap/security_check.py`, and nothing invokes it** —
-  `doctrine/lifecycle.md`, `bootstrap/fidelity-check.md` and
-  `bootstrap/SAFETY.md` now all name it as the trigger;
-  `SECURITY.md:59-63` is a release checklist a person remembers. Candidate
-  proposal; whether that recursion deserves its own artifact is a
-  Maintainer call.
 * **[REL-5] The gate-claims audit's axis 2 (behavioural — run the artifact that
   would check the stated control) and axis 3 (does the named trigger
   contain the procedure) were never swept systematically** — `gate-claims-

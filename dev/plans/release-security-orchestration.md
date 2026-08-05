@@ -1037,3 +1037,26 @@ frozen manifest, authenticate the host Git/Python process, authorize a push, or
 make the final release decision. The next reviewer should remove or bypass the
 index-population call, re-run the named node, and confirm that no checkout
 filter executes on either the index-only operation or blob materialization.
+
+## Review disposition and Chunk G -- Codex -- 2026-08-05
+
+The independent Antigravity review committed at `d1b0d85` returns **PASS** over
+Chunks A--F and corrective Chunk R, including the detached-index correction at
+`052d303`. It reports 111 focused security tests and 2511 full-suite tests
+passing and declares the implementation ready for archive serialization. That
+discharges the standing REVISE and unblocks Chunk G.
+
+The review was inserted into the plan's earlier `## Code review` placeholder
+rather than appended at the file end. That is a record-shape mistake against
+the append-only habit, but not an independence or technical-review failure: the
+Maintainer is permitted to commit a named review, the review identifies its
+tested HEAD and commits, and its verdict and evidence are intact. This section
+records the placement fact without rewriting the review.
+
+Chunk G is complete. `CHANGELOG.md` now names the single Maintainer-run release
+command and its commit-bound refusal boundary. `dev/PLANNING.md` retires the six
+rows the accepted proposal's Board effect assigned here: SC5, profile G6, the
+three frozen CI-wording corrections, the plan-template CI claim, the contained
+floor-gate vocabulary, and the missing-human-trigger row. Their implementations
+remain durable in the release checker, release-only pytest hook, corrected
+templates/doctrine, `SECURITY.md`, and `bootstrap/PROVENANCE.md`.
