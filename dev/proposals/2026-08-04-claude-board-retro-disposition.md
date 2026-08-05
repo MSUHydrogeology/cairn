@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5
 **Date opened**: 2026-08-04
-**Status**: proposed
+**Status**: revised
 **Touches**: `dev/PLANNING.md` > "Deferred follow-ups (durable home)" (the 59 rows); inbound `Follow-ups migrated to:` references in six artifacts, two of them archived
 **Related**: split out of `2026-08-04-claude-deferral-discipline` as **D1** by its Decision (`6e349b3`); the [I8] hazard is that proposal's Internal-review finding
 **Plan review**: required(Internal) — the adjudication is per-item judgment over records other artifacts point at, which is where a second read is worth most
@@ -828,3 +828,169 @@ Not HOLD: nothing here says don't do this. Not SPLIT: the proposal is already
 the split-out half, and splitting it again reproduces the seam it was created to
 avoid. REVISE, with [I1], [I2] and [I3] as blocking and the rest as
 should-fix.
+
+---
+
+## Response -- Claude (Strategy) -- 2026-08-04
+
+**Model**: claude-opus-5
+
+Grammar: Proposal-Response (`doctrine/proposals.md` > "Response — disposition
+grammars"). Ten findings, accepted in full. **[I3] is decisive and re-scopes the
+proposal**; the reviewer's position on necessity is adopted as the proposal's own.
+
+**[I1]** accept — the inherited [I8] enumeration is wrong in both directions and
+is retracted. `lockfile-provenance-fields`' row is under `## Queued`
+(`dev/PLANNING.md:185`), not this section; and the closed-artifact set is
+understated ~5x by omitting six immutable **archive commit bodies** and five
+archived census-source plans. The corrected set is re-derived in the revision
+rather than carried forward, per this repo's own rule about re-measuring rather
+than restating.
+
+**[I2]** accept — *"the pointer has already drifted once"* is **false and is
+retracted**. Verified: at plan-open `3982918` the S2 row was already inside
+`### Deferred follow-ups`; it has never moved. The archived plan's `:582`
+"Queued row" was wrong *when written*, and its own `:913` records the correct
+location. The proposal used a **pre-existing authoring error** as evidence of a
+**drift hazard**, which is a different and much weaker claim. Worth naming: this
+is the same failure as the parent's withdrawn figures — reaching for the reading
+that supports the argument.
+
+**[I3]** accept — **this is the finding that re-scopes the proposal.** The
+declared scope (`dev/PLANNING.md` only, "writes no code") *structurally
+forecloses* `accept` and `guard`: you cannot fix a follow-up or home it in a test
+node while editing only the board. The available vocabulary collapses to
+{`wontfix`, `defer`}, and C4 then bars `wontfix` for anything adopter-reaching,
+release-blocking or Decision-needing. The predicted output of the pass as
+specified is therefore **a large re-`defer` batch and a longer board** — the
+proposal would have *added* rows in the name of draining them. Accepted without
+reservation; the revision below removes the mass-adjudication scope entirely.
+
+**[I4]** accept — no landed rule reaches these rows: C1's precondition is scoped
+to *artifacts that archive*, and these rows are not artifacts. The premise that
+"new doctrine does not clear rows deposited under the old rule" quietly assumed
+the new rule *applies* to them. It does not. The sequencing note is also
+stale-at-write (`4858c84` is an ancestor of `791655a`) and is dropped.
+
+**[I5]** accept — forwarding entries in this pass's own commit body give no
+back-link from the six stale commit bodies. Absorbed: the revision does not
+re-route rows, so no forwarding is needed.
+
+**[I6]** accept — "batches by source artifact" covers 38 of 59; 21 sit in topical
+groups imported from another repository. The proposal assumed a structure the
+board only partly has. Absorbed with the scope change.
+
+**[I7]** accept with modification — the reviewer is right that refusing an
+*estimate* was principled but refusing to *measure the population* was
+over-correction, and right that **27** of 59 carry a revival condition (not the
+18 with an explicit `*Trigger:*` field, which is a narrower thing than the
+proposal implied). The modification: rather than measure the population to size
+an adjudication, the revision drops the adjudication and measures only what the
+hygiene pass acts on.
+
+**[I8]** accept — and this one is self-inflicted. Both named checks are blind:
+bare `check_cairn.py` does not read archives, and `claim_check.py dev/PLANNING.md`
+returns OK over a **live stale citation at `dev/PLANNING.md:927`**, which cites
+`doctrine/proposals.md:370` / `plans.md:611` for text that **the parent's own
+`5c85274` moved** to `:379` / `:622`. Verified at HEAD. So the parent change
+broke a citation on the board and its verification passed anyway — precisely the
+"named trigger that does not check what it claims" pattern. This becomes the
+revision's first deliverable.
+
+**[I9]** accept — the duplicate `_infer_init_lock_axes` rows (`dev/PLANNING.md:845`
+and `:910`, verified at HEAD) and the already-dispositioned `:687` are real board
+defects with no token, and invariant (1) as written made a merge unrecordable.
+
+**[I10]** accept — the 42.9%-of-1002 headline is dated to `4573c11`, a HEAD this
+author's own lineage superseded five commits before the file was written. True
+value at `791655a`: 41.5% of 1037. Corrected.
+
+### On necessity — the reviewer's position is adopted
+
+The reviewer hand-read ~12 rows and found *"reproducers, measured figures, and
+named revival conditions — **genuine obligations, not ratchet artifacts**."*
+
+**That falsifies this proposal's premise, and it is the most valuable thing this
+review produced.** The parent proposal diagnosed a ratchet and implicitly assumed
+the board's contents were its output. For future artifacts the diagnosis holds —
+the composition failure is real and the rule that fixes it has landed. But the
+**existing 59** are not the ratchet's residue. They are recorded work.
+
+This proposal's own *Signals* section named exactly this as the falsifying
+outcome: *"a board of 59 genuine obligations is a resourcing problem, not a
+doctrine problem."* That signal has fired, before implementation rather than
+after, which is what the section was for.
+
+---
+
+## Revised proposal
+
+**Status**: revised
+
+**The mass adjudication is withdrawn.** What remains is the hygiene the reviewer
+identified: cheap, concrete, needing **zero Maintainer decisions**, and fixing
+defects that are demonstrably real rather than presumed.
+
+### H1 — the stale citation the parent change created
+
+`dev/PLANNING.md:927` cites `doctrine/proposals.md:370` and `doctrine/plans.md:611`
+for the sentence *"This makes the migration auditable from `git log` alone"*. The
+parent's Chunk B (`5c85274`) moved that text to `:379` and `:622` while
+deliberately not editing the sentence itself (it belongs to
+`gate-claims-vs-enforcement` B2). The citation now points at unrelated lines —
+`doctrine/proposals.md:370` is a `guard` example this change added. Re-point both.
+
+### H2 — the duplicate row
+
+`dev/PLANNING.md:845` and `:910` record the same `_infer_init_lock_axes` defect
+from two different source plans. Merge into one row naming both provenances.
+
+### H3 — the settled row
+
+`dev/PLANNING.md:687` (SC4) already carries a Maintainer disposition — *"SC4 -
+fold in"*, quoted verbatim in the row — and its trigger is the next supervised
+ceremony. It is a scheduled item, not an undispositioned follow-up. Move it to
+the section that holds scheduled ceremony work, or mark it so it is not
+re-adjudicated.
+
+### H4 — record the corrected inbound-reference set
+
+Re-derive and record which closed artifacts actually name rows in this section —
+including the **archive commit bodies**, which the original enumeration missed
+entirely and which are the most immutable record of all. This is the durable
+correction of [I1]; it is a *record*, not a re-route.
+
+### H5 — correct the two false claims on the record
+
+The "six artifacts / two archived" enumeration and the "already drifted once"
+claim are wrong ([I1], [I2]). They are corrected in the Response above, which is
+append-only and permanent. **No further action** — naming them here so the
+revision does not appear to leave them standing.
+
+### Explicitly NOT in scope
+
+* **Adjudicating the 59 rows.** Withdrawn per [I3] — the scope cannot express
+  `accept` or `guard`, so the pass could only lengthen the board.
+* **Re-routing any row** except the H2 merge and the H3 move.
+* **Any Maintainer `defer` batch.** The revised scope produces none.
+
+### Verification
+
+* `python scripts/claim_check.py dev/PLANNING.md` — must pass, and per [I8] this
+  is known **insufficient**: it returned OK over H1's stale citation. The real
+  check is opening the cited lines, which H1 does.
+* `python scripts/check_cairn.py` — the bare form does not read archives ([I8]);
+  stated so the check is not credited with reach it lacks.
+
+### Author-accounting — revised
+
+* **Invariants.** (1) *No row loses information* — the H2 merge preserves both
+  provenances; enforcer: a reviewer diffing the row against its two sources.
+  Documentary. (2) *No closed artifact's claim is falsified* — satisfied
+  **vacuously**, because nothing is re-routed. Stronger than the original, which
+  needed a forwarding mechanism to achieve it.
+* **Failure modes.** H1 mis-repoints to another wrong line — fails open, caught
+  by opening the line. H2 loses a provenance — fails open, caught by the diff.
+* **Known omissions.** The 59 rows are **not** adjudicated and the board does not
+  measurably shrink. That is the honest outcome of accepting [I3] and the
+  reviewer's necessity position: the board is long because the work is real.
