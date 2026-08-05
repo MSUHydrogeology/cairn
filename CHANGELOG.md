@@ -42,6 +42,14 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **Content scanning now covers the invisible Unicode channels its earlier
+  tables missed.** New `unicode-ignorable` and `unicode-tag` findings cover the
+  reviewed PRECIS ranges while keeping Tag characters isolated from ordinary
+  ignorable suppressions. Findings remain bounded to one per line per category.
+  Upgrade consequence: variation selectors now trigger `unicode-ignorable`, so
+  an adopter tree with previously clean emoji-bearing lines can gain findings
+  on upgrade. Plan `content-scan-detectors`.
+
 - **A release you can verify from outside the artifact.**
   `bootstrap/PROVENANCE.md` now publishes an out-of-band bootstrap as the
   primary path: compare the signing key's fingerprint on at least two
@@ -82,6 +90,12 @@ and a new empty `Unreleased` is started above.
 
 ### Changed
 
+- **The homoglyph detector now asks about confusability, not merely mixed
+  scripts.** Scientific Greek notation that has no reviewed ASCII twin stays
+  clear, while Latin/non-Latin twins and multi-script non-Latin tokens retain
+  coverage. Whole-script Cyrillic and international proper names remain the
+  explicitly accepted boundary. Plan `content-scan-detectors`.
+
 - **One Maintainer-run command now covers Cairn's complete local release
   security bar.** `python bootstrap/security_check.py` binds its evidence to a
   clean commit, executes repository-controlled phases from an exact detached
@@ -102,6 +116,19 @@ and a new empty `Unreleased` is started above.
   Archived plan `default-security-stance`.
 
 ### Fixed
+
+- **Adopter URL scanning now distinguishes discussion prose from instruction
+  surfaces without trusting ambient Git state.** Only known `dev/**` and
+  `docs/**` paths omit the template-specific suspicious-URL detector; unknown,
+  root, manifest, and instruction paths keep the strict default. The runner
+  resolves Git outside the candidate tree, strips ambient `GIT_*` steering,
+  terminates options before literal roots, and rejects option-shaped roots.
+  Plan `content-scan-url-classification`.
+
+- **Unicode findings no longer infer their pattern id from message prose.**
+  Each scanner path yields its literal id, so a new detector cannot silently
+  inherit the zero-width label or suppression namespace. Plans
+  `content-scan-detectors` and `separator-detection`.
 
 - **Lifecycle orientation output now keeps repository-controlled text in data
   shape.** Artifact filenames and status values, vendor target names, and git

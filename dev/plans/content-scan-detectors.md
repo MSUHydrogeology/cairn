@@ -11,7 +11,7 @@
 Decision, *"as revised"*). It sits at
 `dev/proposals/archive/2026-08-03-claude-content-scan-detectors.md` and moves to
 `dev/proposals/archive/` when it archives.
-**Status**: executing
+**Status**: review
 **Plan review**: required(**External**, security lens) — carried from the
 proposal header and restated in the Decision (*"The plan carries
 `required(External, security lens)` in its own right; this Decision does not
@@ -3368,3 +3368,17 @@ under the canonical suite in `7dd73a0`.
 **Gate D-ON is MET.** This authorizes the default-on implementation described by
 the reciprocal plans. It does not authorize a frozen-manifest re-pin, AST
 re-anchor, credential use, signing, pushing, or any other Maintainer ceremony.
+
+## Serialization and code-review entry -- Codex -- 2026-08-05
+
+Chunk E5 is complete at the shared changelog serialization point. `Added` names
+the two new Unicode channels and the variation-selector upgrade consequence;
+`Changed` names the confusability-aware rule and its accepted whole-script /
+proper-name boundary; `Fixed` records the literal pattern-id correction shared
+with `separator-detection`.
+
+All implementation chunks are now complete. The plan enters `review` pending an
+independent security-lens code review over `8fea3f6`, `7dd73a0`, and this
+serialization. The reviewer should treat the frozen re-pin as deliberately
+unperformed: it is batched with `separator-detection` only after both scanner
+implementations pass review.
