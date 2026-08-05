@@ -345,3 +345,85 @@ so before implementation began.
 
 **Implementation may begin at Chunk A** on the review's explicit clearance,
 subject to [E1]'s re-run binding on Chunk B.
+
+### [E1] discharged, and the audit method corrected -- 2026-08-05
+
+**[E1] asked for the `rglob("*.py")` launcher sweep to be re-run before code
+lands, because sibling security plans are landing concurrently. Re-run at
+`67133c4`. Result: no new nested pytest launcher site exists.** The review's
+characterization holds exactly:
+
+| site | kind | env |
+|---|---|---|
+| `scripts/quality_gate.py` — argv literal `:158`, `subprocess.run` `:164` | the **single executable** nested pytest launcher | **inherited** (no `env=` kwarg) |
+| `bootstrap/tests/_gate_manifest.py:202` | collection-only (`--collect-only`) | explicitly set |
+
+**The audit method needs stating, because two obvious ways to run it both fail.**
+This is the sharpening [E1] earns, and it was found by running the sweep rather
+than by reasoning about it.
+
+* **A per-call-node AST sweep gets a false negative on the site that matters.**
+  Walk every `subprocess.{run,Popen,call,check_call,check_output}` call and test
+  whether the call contains a `"pytest"` literal: `quality_gate.py` is **missed
+  entirely**. Its argv is bound to `cmd` at `:157-161` and the call at `:164`
+  unparses to `subprocess.run(cmd, cwd=..., capture_output=True, text=True)` —
+  no `pytest` string anywhere in the call node. Measured: that sweep reports
+  **1** launcher, and it is the collection-only one. A method that finds only
+  the harmless site and misses the executable one is worse than no method,
+  because it reports success.
+* **A file-level sweep over-reports.** Broadening to "any launcher in a file
+  containing a `"pytest"` literal" finds the real site, and also
+  `_gate_manifest.py:285` and `:300`, both `env=INHERITED` — **both are `git`
+  calls** (`git merge-base --is-ancestor`, `git show`) in a file that happens to
+  contain a `pytest` literal elsewhere. Two false positives against one true
+  find.
+* **So Chunk B's re-run must classify, not just count.** For each launcher site
+  report (a) whether the argv is direct or variable-bound, and (b) whether the
+  resolved argv actually names `pytest`. Chunk C2's decisive regression gate
+  targets the *executable* path, so a sweep that cannot distinguish an executable
+  launcher from a collection-only one or from a git call cannot establish C2's
+  premise.
+
+Interpreter `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13),
+`as_of` 2026-08-05 at `67133c4`.
+
+### A publication gap in the gate trust root, found while auditing -- 2026-08-05
+
+Out of this plan's declared scope, recorded here because this plan owns the
+release security bar and the finding is a release-trust-bar fact.
+
+**`refs/cairn/gate-anchor` exists locally and does not exist on `origin`.**
+Measured: `git for-each-ref refs/cairn/` reports one ref, `gate-anchor` at
+`e45e1fc` (which matches the trust root `dev/PLANNING.md` records for
+`gate-reanchor-preflight`). `git ls-remote origin 'refs/cairn/*'` returns
+**nothing**.
+
+**No ordinary push will ever publish it.** Git's default refspec covers
+`refs/heads/*`; `refs/cairn/*` is skipped by `git push`, by `git push origin
+master`, by `git push --all` (heads only) and by `--tags` (tags only). There is
+no configured `remote.origin.push` and no `push.default` to override that.
+Publishing it takes an explicit refspec:
+
+```
+git push origin refs/cairn/gate-anchor:refs/cairn/gate-anchor
+```
+
+**And nothing tells anyone to do that.** `bootstrap/REANCHOR_RUNBOOK.md` contains
+**zero occurrences of `git push`**. It documents advancing the anchor locally via
+`git update-ref` and requires *"local write access to `refs/cairn/gate-anchor`
+itself"*, but says nothing about publishing the ref or about a collaborator
+fetching it — and a fetch needs its own refspec too. The same applies to
+`refs/cairn/gate-authorization`, which the runbook resolves `A` from and which is
+not present locally at all right now (expected between ceremonies, same
+publication problem when it is).
+
+Consequence, stated plainly: **the differential-oracle gate's trust root is
+single-machine by construction.** A fresh clone has no anchor. If this `.git` is
+lost the anchor is gone, and re-establishing it is a Maintainer ceremony under a
+runbook that does not mention publication. That is a gap in the runbook, not a
+defect in the gate — and it is exactly the class of "named trigger that does not
+govern" that `AGENTS.md` requires be opened and checked rather than assumed.
+
+**Not fixed here.** The runbook is a ceremony document and the anchor is an
+executable trust root; changing either takes its own scope. Routed to
+`dev/PLANNING.md` at the next serialization point.
