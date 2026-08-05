@@ -5,7 +5,7 @@
 **Author**: Codex (Strategy)
 **Model**: GPT-5 (Codex)
 **Date opened**: 2026-08-05
-**Status**: proposed
+**Status**: accepted
 **Touches**: the verification contract in `AGENTS.md`,
 `dev/plans/_template.md`, `dev/proposals/_template.md`,
 `templates/core/AGENTS.md`, `templates/core/dev/plans/_template.md`,
@@ -384,3 +384,25 @@ whichever comes first.
 No proposal amendment is required. The review's future recommendation is
 recorded with a bounded trigger, and the proposal is Decision-ready. Status
 remains `proposed` pending the Maintainer's Decision.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-05
+
+**ACCEPTED as reviewed.** Scribed and committed by Codex at the Maintainer's
+explicit instruction.
+
+**Maintainer authorization, quoted verbatim:**
+
+> I accept verification-evidence-boundaries as reviewed and authorize you to commit the Decision and open its plan.
+
+**What is accepted.** Cairn adopts three verification boundaries: reviewed
+plan-specific tests during iteration; one clean, stable, commit-bound full
+integration record before code review; and independent targeted falsification
+during code review without a default duplicate full-suite run. The ordinary
+integration command composes the complete engine suite with shuffle seed 0 and
+runs only the non-pytest quality-gate legs afterward. Missing or uncertain
+scope fails toward the full suite, code-bearing sharpening invalidates the
+record, and the strict release ceremony remains separate and unchanged.
+
+The External Security Review returned ACCEPT / SHIP. Its sole future-tooling
+recommendation is accepted with the Response's corrected comparison and
+bounded trigger; machine parsing is not a v1 precondition.
