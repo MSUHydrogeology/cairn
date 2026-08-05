@@ -126,3 +126,101 @@ adopter's tree is clean, and D-ON's conditions are unchanged by it.
   commit.
 * `python scripts/quality_gate.py --sub neutrality` — no new FAIL in touched
   files.
+
+---
+
+## Revision 1 -- 2026-08-05 -- the proposed mechanism was wrong, and dangerous
+
+Appended, not edited: the section above is what was believed when it was written.
+**Its central conclusion survives. Its proposed mechanism does not, and point 1
+was backwards.**
+
+### The defect in the proposal
+
+`check_cairn.py`'s classifier is, in full:
+
+```python
+def _is_template_instruction(rel: str) -> bool:
+    return rel.startswith('templates/')
+```
+
+That is a predicate about **Cairn's source-repo layout**, where source templates
+live under `templates/`. It is not a statement about file *role*. An adopter tree
+has **no `templates/` directory at all** — the installed instruction surfaces are
+`AGENTS.md`, the renamed vendor wrapper, `.agents/skills/`, `RULES.md`, and the
+`dev/` tree. Cairn's own audited roots contain nothing under `templates/` either.
+
+Measured, `as_of` 2026-08-05: of the 141 tracked files in the runner's declared
+roots, `_is_template_instruction` returns True for **0**.
+
+**So had the proposal been implemented as written, `scan_urls` would have been
+`False` for every file in every tree, and the `suspicious-url` detector would
+have been silently dead everywhere it ships.** That is not narrowing a detector
+to its declared scope; it is deleting it while appearing to configure it.
+
+**And the original measurement could not have revealed this**, which is the part
+worth recording. "Classified: 0 flags" was read as *the prose noise is gone*. It
+actually meant *URL scanning is off for all 141 files*. Both produce zero. The
+measurement I called independent was independent of the **change** while being
+coupled to the **layout** — so it confirmed the conclusion I expected by a
+mechanism I had not checked. This is the recurring invariant landing on me:
+**the artifact under verification must not supply the material used to verify
+it**, and a predicate borrowed from a different tree's layout is exactly such
+material.
+
+### The corrected mechanism
+
+Classification is by **file role in the tree being scanned**, not by a path
+prefix from another tree:
+
+* **instruction class** (`scan_urls=True`) — the agent-loaded instruction
+  surfaces: `AGENTS.md`, the vendor wrapper (`CLAUDE.md` / `GEMINI.md` / …),
+  `RULES.md`, and everything under `.agents/skills/`. In these a live external
+  URL is an instruction to fetch.
+* **prose class** (`scan_urls=False`) — `dev/` deliberation and `docs/`. Here a
+  URL is a citation.
+
+**Point 1 of the proposal is withdrawn.** Single-sourcing the predicate between
+`check_cairn.py` and `content_scan_runner.py` is the **wrong** call: the two
+callers scan two different trees with two different layouts, and one shared
+prefix test cannot be correct for both. What is legitimately shared is the
+*concept* (two classes, and which detector each gets); the *mapping* is
+per-caller and must be stated per caller. `check_cairn.py` keeps its
+`templates/` test, which is right for the tree it scans.
+
+### Re-measurement under the corrected mechanism
+
+Same roots, same allowlist, `as_of` 2026-08-05:
+
+| | files | flags |
+|---|---|---|
+| as shipped (`scan_urls=True` everywhere) | 141 | **80**, all `suspicious-url` |
+| role-based classification | 4 instruction / 137 prose | **0** |
+
+**The conclusion holds, and now for a reason that was checked rather than
+assumed:** all 80 flags fall in the **prose** class, and the 4 instruction-class
+files produce **zero** flags with URL scanning **on**. So the instruction surfaces
+— the ones where the detector genuinely earns its place — are clean, and the
+detector stays live there.
+
+Note the figure moved from **79 to 80** and the file count from 140 to 141
+between two runs inside a single session, as a sibling session landed a file.
+Neither number is carried forward; both are re-measured at the implementing
+commit.
+
+### What the reviewer should attack
+
+Not the numbers — the mechanism, twice over now:
+
+1. **Is the role list complete?** It is an enumeration, and an enumeration of
+   instruction surfaces is exactly the kind of list that goes stale when a new
+   agent-loaded file appears. What happens to a *new* instruction surface nobody
+   adds to the list? It defaults to prose and loses URL detection **silently**.
+   That is the same failure shape as the defect this revision corrects, one level
+   up, and it is the strongest objection available.
+2. **Does `egress` really cover the prose class?** `egress` needs an exfiltration
+   verb *near* a destination. A bare hostile URL in `dev/` prose, with no verb,
+   is flagged by neither detector under this change. The original section argued
+   no coverage was lost; that argument is narrower than it sounded, and the
+   residual gap should be named in the runner's docstring rather than left for a
+   reader to discover.
