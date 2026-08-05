@@ -1123,6 +1123,60 @@ def _only_child_reported_unknowns(orch, monkeypatch):
                         lambda *a, **k: orch.CondaScope(False, 0, 0, 0))
 
 
+def test_d_t1_a_skipped_distribution_is_never_scanned(orchb):
+    # D-t1. A distribution pip-audit could not RESOLVE had nothing looked up
+    # about it, so it is UNKNOWN -- never SCANNED. The hazard is not a rounding
+    # error: fold the skipped partition into SCANNED and the UNKNOWN count drops
+    # to zero, which makes CLEAN reachable on a run where part of the dependency
+    # set was never audited.
+    import json as _json  # noqa: PLC0415
+
+    # The premise, pinned against the tool's own bytes rather than asserted:
+    # there is NO top-level `skipped` key. The skipped set is inline in
+    # `dependencies`, discriminated only by carrying skip_reason.
+    report = _json.loads(_PA_ONE_SKIPPED)
+    assert sorted(report) == ["dependencies", "fixes"]
+    assert "skipped" not in report
+    entries = report["dependencies"]
+    assert sum("skip_reason" in e for e in entries) == 1
+
+    # This node owns the PARTITION; D-t6 owns the names, so each has a mutation
+    # that reddens it alone.
+    coverage = orchb.classify_pip_audit_output(_PA_ONE_SKIPPED)
+    assert coverage.established is True
+    assert coverage.scanned == 2, "the two RESOLVED entries, and only those"
+    assert coverage.unknown == 1, "the entry the tool reported it could not resolve"
+    # The discriminator is the PRESENCE of skip_reason, not the absence of a
+    # version: a skipped entry in the sibling `fixes` array carries name,
+    # version AND skip_reason, so keying on "no version" mis-partitions.
+    assert coverage.scanned + coverage.unknown == len(entries)
+
+
+def test_d_t6_the_denominator_is_the_childs_not_the_parents(orchb):
+    # D-t6. The denominator is the set the CHILD reported enumerating, never a
+    # parent-side count the orchestrator took itself and assumed the child
+    # shared. The fixture makes the two differ by construction: none of its
+    # names is installed in this interpreter, so a parent-derived denominator
+    # cannot coincidentally agree.
+    #
+    # HONEST LIMIT, restated from the plan: this is only *worth* having because
+    # Chunk B pins the child to this interpreter (B-t1/B-t2). Remove that pin
+    # and a child-reported denominator silently describes another environment.
+    coverage = orchb.classify_pip_audit_output(_PA_ABSENT_NAMES)
+    assert coverage.established is True
+    assert coverage.names == ("cairn-probe-not-installed-a",
+                              "cairn-probe-not-installed-b",
+                              "cairn-probe-not-installed-c")
+
+    installed = orchb.installed_distribution_names()
+    assert len(installed) > len(coverage.names) + 10, (
+        "this assertion only discriminates where the parent's inventory is "
+        f"clearly larger than the fixture's; parent has {len(installed)}")
+    assert not (set(coverage.names) & installed), (
+        "the fixture must name nothing installed here, or a parent-derived "
+        "denominator could agree by accident")
+
+
 def test_d_t2_one_unknown_gates_clean(orchb, tmp_path, monkeypatch):
     # D-t2 -- THE CENTRAL CLAIM OF THE PROPOSAL. The tool ran, exited 0 and
     # reported no vulnerabilities at all; one distribution it could not resolve
