@@ -5,7 +5,7 @@
 **Source proposal**: `agent-context-scrub` (accepted 2026-08-03 *as revised*; the
 Decision commit is `c7266d4`). It currently sits under `dev/proposals/` and moves
 to `dev/proposals/archive/` when it archives.
-**Status**: executing
+**Status**: review
 **Plan review**: required(**External**, security lens) — carried from the
 proposal header, argued there on the merits rather than by an `AGENTS.md`
 enumerated trigger, and ratified at Decision. **No implementation commit lands
@@ -1191,3 +1191,14 @@ behavior: malformed artifact status is visible as unavailable, while malformed
 git output uses replacement decoding. The shape-versus-meaning boundary,
 non-exhaustive sub-tool relay coverage, and uncapped git stream remain recorded
 as accepted residuals.
+
+### Verification and review entry
+
+Implementation landed in `5acbcea`, `6a59fcb`, and `7ceed78`, directly after
+the prerequisite parser commits. Under canonical Python 3.13.13, the full suite
+reports **2510 passed, 0 failed, 0 skipped, 0 xfail**. `scripts/check_cairn.py`
+reports 179 Markdown files and no issues; Bandit reports no medium/high finding
+on the modified Python surfaces; both twin pairs and their recorded hashes are
+identical. `bootstrap/verify_integrity.py` names eight pre-existing mismatches
+and none on either lifecycle tool. The plan is ready for independent security-
+lens code review.

@@ -12,7 +12,7 @@ commit is `f32d5e8`, with a status repair and a commit-hygiene record note at
 `70d804c`). It currently sits at
 [`dev/proposals/archive/2026-08-03-claude-planner-line-semantics.md`](../proposals/archive/2026-08-03-claude-planner-line-semantics.md)
 and moves to `dev/proposals/archive/` when it archives.
-**Status**: executing
+**Status**: review
 **Plan review**: required(**External**) — carried from the proposal header,
 which argues the tier on the merits rather than by an `AGENTS.md` enumerated
 trigger, and is **not** discharged by the External round the proposal already
@@ -2746,3 +2746,12 @@ This commit opens the recorded short-lived window on both consumers: a raw
 `U+2028` in a status can now reach `session-start` and the reflection-only
 `session-end` survey. The tracked `dev/` corpus has no carriers. The next commit
 in this session is `agent-context-scrub` Chunk A, which escapes that value.
+
+### Verification and review entry
+
+Implementation landed in `f0bb420` and `1885572`; `agent-context-scrub` closed
+the recorded relay window immediately afterward in `5acbcea`. Under canonical
+Python 3.13.13, the full suite reports **2510 passed, 0 failed, 0 skipped, 0
+xfail**. `scripts/check_cairn.py` reports 179 Markdown files and no issues, and
+Bandit reports no medium/high finding on either changed planner or lifecycle
+twin. The plan is ready for independent code review.
