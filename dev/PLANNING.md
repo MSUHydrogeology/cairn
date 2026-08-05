@@ -303,7 +303,7 @@ board by design.
   | Cluster | Current lifecycle owners | Next boundary |
   |---|---|---|
   | **[BND] Input, execution, containment** | `fork-advisory-semantics`, `agent-context-scrub`, `api-web-security-modules` | profile-authority consolidation; Class C no later than v0.4 preparation |
-  | **[VER] Verification and coverage** | `content-scan-detectors` + `separator-detection`; `default-security-stance`; `security-verification-activation`; `portable-security-sweeps`; `dependency-advisory-coverage`; `api-web-security-modules`; `security-preflight-checklist` | settle activation binding mode, then admit capability entries; one scanner batch |
+  | **[VER] Verification and coverage** | `content-scan-detectors` + `separator-detection`; `content-scan-url-classification`; `default-security-stance`; `security-verification-activation`; `portable-security-sweeps`; `dependency-advisory-coverage`; `api-web-security-modules`; `security-preflight-checklist` | settle activation binding mode, then admit capability entries; one scanner batch |
   | **[TRU] Trust roots and provenance** | `fork-advisory-semantics`; the live gate-reanchor posture below | trusted-source boundary after the release bar settles required source/install claims |
   | **[REC] Deliberation authority, identity, context, record integrity** | `agent-context-scrub`; `review-gate-enforcement`; byline residuals below | one identity-authority consolidation when a trigger fires, not one proposal per Unicode row |
   | **[REL] Release evidence and ceremonies** | `release-security-bar`; proposed `release-security-orchestration`; the scheduled frozen-file union | decide orchestration, finish the finite register, then run one re-derived supervised ceremony |
