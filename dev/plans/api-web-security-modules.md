@@ -2269,3 +2269,41 @@ The three evidential findings [I5], [I6] and [I7] are accepted and amended into
 criteria. They remain the ones I would most want the External Security reviewer
 to arrive at independently rather than inherit — an amended criterion is a
 hypothesis about what will establish a property, not the establishment of it.
+
+## Plan review -- Codex (External, security lens) -- 2026-08-05
+
+**Verdict: REVISE.** This is one independent security-lens read. It does **not**
+claim to discharge the separate required External (non-security) round; that
+second structural read remains owed.
+
+**[E1] AM13/AM15 is correctly identified as blocking but remains unresolved.**
+The proposed living-state policy records cannot retain an ordinary hash check:
+the normal dispatcher would reject every correctly populated record. Conversely,
+skipping the policy digest changes the accepted activation contract and must be
+specified and reviewed in `security-verification-activation`, not implemented
+as a local exception in Chunk G. Require the cross-scope amendment to state
+which fields continue to bind runner, policy, principal, and scope; how a
+missing/extra field fails; and the exact behavior for an altered policy. Until
+then, no registry entry or installer work for this module may land.
+
+**[E2] The amended local-network and confidentiality tests are sounder, but the
+plan must require an actual end-to-end runner proof before any ref movement.**
+AM16 now covers resolver rebinding in the correct `local` direction, AM17 avoids
+an accessor-specific environment probe, and AM19 supplies channel liveness.
+They remain a test design, not evidence about the runner that does not yet
+exist. The plan should require a post-implementation test that records the peer
+actually connected to and proves every populated credential marker is absent
+from each exercised output/report channel; a mocked resolver alone cannot prove
+the socket implementation obeyed the decision.
+
+**[E3] The first-use bootstrap must be pinned to an exact reviewable artifact.**
+Chunk G relies on the activation dispatcher for normal immutable execution, but
+the initial installation necessarily precedes that protection. State the exact
+files and SHA-256 set the Maintainer records for first use, who produces the
+hashes, and the abort rule for a mismatch. "Security review happened" is not a
+substitute for an artifact the solo Maintainer can compare under pressure.
+
+I inspected the response's operative AM13--AM19 changes and its explicit tier
+status. The current `bootstrap/tests/test_security_stack.py` baseline was run
+under the canonical interpreter (`57 passed`); no candidate API/web runner code
+exists to execute or independently test yet.
