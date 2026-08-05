@@ -124,7 +124,7 @@ anticipated but not yet in flight. When a queued item grows into
 multi-step work, open a plan under `plans/` and replace the entry
 with the plan's filename stem.
 
-* **`SECURITY.md` disclosure channel** *(split out of `contributor-entry` by
+* **[REL-6] `SECURITY.md` disclosure channel** *(split out of `contributor-entry` by
   Maintainer direction, 2026-08-03)* — `SECURITY.md` tells a reporter to report
   "privately to the maintainer" and **names no mechanism**. Verified 2026-08-03:
   no root `CONTRIBUTING.md` exists, and `README.md` carries no *Contributing*
@@ -234,7 +234,7 @@ with the plan's filename stem.
   forget them". Recorded here rather than left in a chat log, because a deferred item
   with no durable home is exactly how the `SECURITY_MUTATIONS.md` Class C security
   follow-on was lost for two months.
-  1. **The Class C orphan.** Both `release-authenticity` and `fork-advisory-semantics`
+  1. **[BND-2] The Class C orphan.** Both `release-authenticity` and `fork-advisory-semantics`
      declined the never-opened Class C follow-on, with reasons, and neither claims it.
      Recommendation on the record in both: ratify it as its own proposal and extend the
      `identity-not-name` archive condition to cover it.
@@ -275,6 +275,21 @@ section at the next goodnight scrub — the truth migrates to the
 archived plan / proposal, the implementing commits, and the
 changelog. There is no "completed recently" section on this
 board by design.
+
+* **Security program — clustered current view** *(living strategy opened
+  2026-08-05)* — the canonical taxonomy, threat posture, sequencing rules and
+  cluster exit conditions are in
+  [`strategy/2026-08-05-codex-security-strategy.md`](strategy/2026-08-05-codex-security-strategy.md).
+  This table is the roadmap view: lifecycle artifacts own design detail, and
+  the residual rows farther down retain their original evidence and triggers.
+
+  | Cluster | Current lifecycle owners | Next boundary |
+  |---|---|---|
+  | **[BND] Input, execution, containment** | `fork-advisory-semantics`, `agent-context-scrub`, `api-web-security-modules` | profile-authority consolidation; Class C no later than v0.4 preparation |
+  | **[VER] Verification and coverage** | `content-scan-detectors` + `separator-detection`; `default-security-stance`; `security-verification-activation`; `portable-security-sweeps`; `dependency-advisory-coverage`; `api-web-security-modules`; `security-preflight-checklist` | settle activation binding mode, then admit capability entries; one scanner batch |
+  | **[TRU] Trust roots and provenance** | `fork-advisory-semantics`; the live gate-reanchor posture below | trusted-source boundary after the release bar settles required source/install claims |
+  | **[REC] Identity, context, record integrity** | `agent-context-scrub`; `review-gate-enforcement`; byline residuals below | one identity-authority consolidation when a trigger fires, not one proposal per Unicode row |
+  | **[REL] Release evidence and ceremonies** | `release-security-bar`; proposed `release-security-orchestration`; the scheduled frozen-file union | decide orchestration, finish the finite register, then run one re-derived supervised ceremony |
 
 * **gate-reanchor-preflight posture** *(plan archived 2026-08-03; this entry
   survives because its commitments are live, not completed)* — the trust root is
@@ -583,6 +598,26 @@ Commit bodies are the **most immutable** record of all and no artifact-level
 enumeration reaches them — which is the real reason a row a closed artifact names
 is ineligible for `wontfix` without the Maintainer.
 
+### Security-cluster routing
+
+The detailed rows below preserve their original migration provenance and
+reproducers; this index supplies the operational organization. A new security
+finding receives one primary cluster, one owner or revival trigger, and one
+decisive evidence path. Sharing a source plan or the word "security" is not a
+reason to open another scope.
+
+| Cluster | Detailed homes in this board |
+|---|---|
+| **[BND] Input, execution, containment** | queued Class C; interpreter race; scaffold/engine path residuals; `fork-advisory-semantics` identity-warning, `base_hash`, and `_infer_init_lock_axes` rows; profile G1/G2/G3/G5/totality rows |
+| **[VER] Verification and coverage** | Security apparatus conda row; Scan coverage SC1-SC3/SC5; profile G6; capability plans in the Active table |
+| **[TRU] Trust roots and provenance** | install-integrity anchor; Release authenticity RA1/RA3/RA5/RA6; fork advisory FA-R1; gate-reanchor posture |
+| **[REC] Identity, context, record integrity** | byline residuals and four archive follow-ups; gate-claims archive-auditability rows; `agent-context-scrub` and `review-gate-enforcement` in Active |
+| **[REL] Release evidence and ceremonies** | SC4 and all stale frozen pins; profile G4 and manifest delta; release-authenticity archive/Zenodo rows; gate-claims trigger/CI rows; disclosure channel |
+
+The strategy is the cluster authority; this board remains the task and trigger
+authority. Completed rows leave this file at their lifecycle serialization
+point rather than being copied into another backlog.
+
 **Lifecycle apparatus**
 * **Lifecycle mutation/commit arm** — the typed-mutation ops (decision /
   review / open / archive) + commit the read-only planner deferred; gated on
@@ -596,7 +631,7 @@ is ineligible for `wontfix` without the Maintainer.
   under `dev/` (E-#2).
 * **`_agent_of` round-suffix regression test** — pin the `## Review (Round
   N)` header shape in the Cairn tree.
-* **Interpreter trust-root check/use race (S2)** *(deferred, Jul 2026)* —
+* **[BND-3 / TRU-5] Interpreter trust-root check/use race (S2)** *(deferred, Jul 2026)* —
   the `interpreter-trust-root-fallback` proposal's dedicated Security Review
   (plan `interpreter-trust-root-fallback`) red-teamed
   `_has_symlink_component`'s symlink walk in `templates/skills/_lib/
@@ -610,7 +645,7 @@ is ineligible for `wontfix` without the Maintainer.
   post-walk, or resolve and open atomically) — its own proposal, on its own
   review tier given the security surface.
 
-**Scaffold / engine**
+**[BND] Scaffold / engine**
 * **Facade-loader symlink hardening (C-#3)** — refuse any engine submodule
   that is a symlink or resolves out-of-tree, across all three facades.
 * **End-gate frozen-set decision (C-#4)** — whether the A/B/C engine
@@ -623,7 +658,7 @@ is ineligible for `wontfix` without the Maintainer.
   classification when a module's destination changes; byte-preserving staging
   for non-text module files.
 
-**Security apparatus**
+**[TRU / VER] Security apparatus**
 * **Install-integrity trust anchor** — `bootstrap/verify_integrity.py` reads
   expected hashes from **the candidate target's own** `dev/.cairn/cairn-lock.yml`
   (`verify_integrity.py:47`, `read_lockfile(target)`), so a coordinated tamper —
@@ -680,7 +715,7 @@ is ineligible for `wontfix` without the Maintainer.
   binding is canonical in `dev/.cairn/model-selection-mapping.yml`; revisit
   only if a project later adds its own metrics-config tier vocab.
 
-**Scan coverage** *(residuals from plan `scan-coverage`, homed 2026-08-04 so the
+**[VER / REL] Scan coverage** *(residuals from plan `scan-coverage`, homed 2026-08-04 so the
 plan can archive)*
 
 * **SC1 — the registry census was struck, and the census shape is the reason.**
@@ -747,7 +782,7 @@ plan can archive)*
   and a named ceremony. It stays on the board as a *scheduled* item, and its
   removal condition is the ceremony running, not a decision.
 
-**Release authenticity** *(residuals from plan `release-authenticity`)*
+**[TRU / REL] Release authenticity** *(residuals from plan `release-authenticity`)*
 * **RA1 (a) — Cairn's signing authority widens** *(non-mechanical for the
   adopter, mechanical for Cairn)* — the principal-count warning in
   `bootstrap/container/verify-ref.sh` counts a roster the *adopter* typed and has
@@ -808,7 +843,7 @@ ups, and the 28 below with no durable home at all (**27 as of 2026-08-04** —
 one was merged into its duplicate). A plan does not archive
 until its items here are landed -- that is this section's whole purpose.
 
-*From `byline-classification` (4):*
+*From `byline-classification` (4) — [REC]:*
 * **byline-classification, uncovered — the NFKD compatibility mappings are
   unpinned.** The `NFD`-granting / `NFKD`-flagging split rests on a
   *representative*, not exhaustive, enumeration of NFKD's compatibility
@@ -837,7 +872,7 @@ until its items here are landed -- that is this section's whole purpose.
   enough. Neither reviewer decided. *Trigger:* the decision itself, or the
   move.
 
-*From `scan-coverage` (1):*
+*From `scan-coverage` (1) — [VER / REL]:*
 * **SC5 — the Bandit `ALLOWLIST` has no staleness guard, only a rationale
   guard.** `test_allowlist_entries_have_rationale`
   (`bootstrap/tests/test_security_lint.py:183`) asserts a non-empty
@@ -860,7 +895,7 @@ until its items here are landed -- that is this section's whole purpose.
   `bootstrap/security_check.py` edit — the release-gate single source. Re-scoped
   accordingly; whoever owns that surface owns this.
 
-*From `release-authenticity` (2):*
+*From `release-authenticity` (2) — [REL]:*
 * **`release-authenticity` — the Decision's flagged condition,
   undispositioned** — the approved ledger entry read *"Accept, conditioned
   on a scoped External round for the tag-substitution fix only"*, but the
@@ -875,7 +910,7 @@ until its items here are landed -- that is this section's whole purpose.
   launch step 6, either record the fingerprint beside the deposition or
   correct the table row to say channel 3 is prospective.
 
-*From `fork-advisory-semantics` (5):*
+*From `fork-advisory-semantics` (5) — [BND / TRU / REL]:*
 * **FA-R1 — the fork advisory's comparison bytes are caller-trusted, not
   anchored** *(residual R1 of plan `fork-advisory-semantics`)* — the
   upstream operand is read from the checkout hosting the verifier, **or
@@ -923,7 +958,7 @@ until its items here are landed -- that is this section's whole purpose.
   on a first `upgrade
   --init-lock` in a tree with no committed `dev/.cairn/profile.yml`.
 
-*From `profile-parse-fail-open` (8, was 9 — one row merged 2026-08-04):*
+*From `profile-parse-fail-open` (8, was 9 — one row merged 2026-08-04) — [BND / VER / REL]:*
 * **Profile key with an unrecognized *value*** *(residual from plan
   `profile-parse-fail-open`, G1)* — a profile listing `- not-a-real-
   module` under `modules:` is accepted at exit 0 and printed in the
@@ -985,7 +1020,7 @@ until its items here are landed -- that is this section's whole purpose.
 routed it here. Both provenances are preserved on the surviving row;
 nothing was dropped.)*
 
-*From `gate-claims-vs-enforcement` (7):*
+*From `gate-claims-vs-enforcement` (7) — [REC / REL]:*
 * **Gate-claims A5/A6/A8 — three CI-wording corrections deferred behind
   the frozen-file manifest**
   (`bootstrap/tests/test_security_lint.py` lines 12 and 89;

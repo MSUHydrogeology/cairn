@@ -270,11 +270,13 @@ on one page.
 
 ### Theme 3. The security story is ahead of the security practice
 
-The implemented protections are strong (see the good news). The
-*narrative* around them is ahead of the facts in ways a careful reader
-will catch:
+**Superseded as a current work list on 2026-08-05.** The original findings stay
+visible below, struck through so historical citations still resolve. Their
+implemented, partial, and remaining dispositions now live in
+[`2026-08-05-codex-security-strategy.md`](2026-08-05-codex-security-strategy.md)
+under **Theme 3 migration**. A strike means *migrated*, not necessarily *fixed*.
 
-1. **A promised automatic check isn't wired to anything automatic.**
+1. ~~**A promised automatic check isn't wired to anything automatic.**
    *(Corrected 2026-07-22 — see the correction note below; the original
    claim, that the scanner "runs nowhere", was wrong.)* Several documents
    say the installer engine is guarded by a code-security scanner
@@ -285,34 +287,34 @@ will catch:
    Bandit-dependent tests **do** run there; it also exists in the
    release script, run by hand. The real gap is narrower than first
    stated: the guarantee depends on a human remembering, not on the
-   check being absent.
-2. **The release security scan misses the code that runs most often.**
+   check being absent.~~
+2. ~~**The release security scan misses the code that runs most often.**
    The scan builds its target list from two of the installer's three
    internal file lists. The third list — which ships the session
    tools that write into an adopter's repository *every single working
    day* — is not consulted. So the ~2,400 lines of code an adopter
    executes most frequently are exactly the lines the security gate
    never scans, while `SECURITY.md` says it covers "the shipped Python
-   surface."
-3. **The one place the installer guesses instead of stopping.** The
+   surface."~~
+3. ~~**The one place the installer guesses instead of stopping.** The
    configuration file an adopter writes (the "profile") is the
    installer's main input, and it is the one input handled forgivingly:
    a misspelled keyword is silently ignored (a typo in `preset:` gets
    you a silently different installation), and on machines without the
    optional YAML library, the built-in fallback parser reads certain
    ordinary lines differently than the real parser would — including
-   the example printed by the installer's own `--help`.
-4. **Our dead-code detector cries wolf.** All ten of its current
+   the example printed by the installer's own `--help`.~~
+4. ~~**Our dead-code detector cries wolf.** All ten of its current
    alarms are false — it doesn't recognize one of Python's ordinary
    import styles, so it flags live, security-critical functions and
    advises deleting them. An alarm that is always false trains everyone
-   to ignore it, which buries any real alarm.
-5. **A tools help-text says "read-only" about a command that writes.**
+   to ignore it, which buries any real alarm.~~
+5. ~~**A tools help-text says "read-only" about a command that writes.**
    The daily orientation command's help claims it only reads and that
    every writing command has a preview mode; in fact it repairs links,
    edits `.gitignore`, and moves files at startup, with no preview
-   option.
-6. **New this session — the test suite now fails from the passage of
+   option.~~
+6. ~~**New this session — the test suite now fails from the passage of
    time alone.** One test bakes in June 2026 dates and checks them
    against a 14-day window measured from *today's* clock
    (`templates/modules/default-on/evolution_infer.py:281` uses the real
@@ -320,7 +322,7 @@ will catch:
    now, with zero code changes. For a project preaching "run the tests
    after every change," a suite that turns red on its own is corrosive:
    a permanently red baseline teaches people to stop reading failures.
-   (A ready-to-run fix task was spun off during this review.)
+   (A ready-to-run fix task was spun off during this review.)~~
 
 ### Theme 4. Anyone who adopts Cairn ends up violating our own licenses
 
