@@ -1,7 +1,7 @@
 # Plan: classify URL scanning by adopter file role
 
 **Source proposal**: [`dev/proposals/archive/2026-08-05-claude-content-scan-url-classification.md`](../proposals/archive/2026-08-05-claude-content-scan-url-classification.md)
-**Status**: executing
+**Status**: review
 **Plan review**: not required -- the accepted proposal already contains the
 External Security Review's four exact remedies and this plan introduces no new
 security design; an independent code review remains required before archive
@@ -38,8 +38,8 @@ at archive rather than riding an implementation commit.
 ## Sequence
 
 ```
-1. Chunk A -- bind the audited set to the named repository       [commit pending]
-2. Chunk B -- fail-closed URL role classification + residual    [commit pending]
+1. Chunk A -- bind the audited set to the named repository       [251fefc]
+2. Chunk B -- fail-closed URL role classification + residual    [8620d28]
 3. Code review and archive serialization                        [pending]
 ```
 
@@ -102,6 +102,33 @@ Run with `PYTHONDONTWRITEBYTECODE=1` and
 After implementation, append a code review and a stable-boundary verification
 record before archive. Do not perform any AST or gate-manifest re-anchor in this
 scope.
+
+### Implementation verification -- Codex -- 2026-08-05
+
+Stable code boundary: `8620d28` (Chunk A is `251fefc`). Run with canonical
+Python 3.13.13 and `PYTHONDONTWRITEBYTECODE=1`:
+
+* focused security-stack plus check-cairn content tests: **100 passed**;
+* the production `audited_text_files()` / `audit()` path: **84 files, 0 flags,
+  exit 0**, with Git resolved to
+  `/opt/homebrew/Cellar/git/2.53.0/bin/git`;
+* direct Bandit over the shipped runner: **0 MEDIUM/HIGH**, with only LOW B404
+  and B603;
+* `scripts/check_cairn.py`: **OK**, 182 Markdown files and 0 issues after the
+  archived historical citation was recorded at `107d4e4`;
+* `scripts/claim_check.py dev/plans/content-scan-url-classification.md`: **OK**;
+* neutrality remains a known tree-wide nonzero baseline (**96 FAIL / 21 info**),
+  with no finding in either implementation file touched here.
+
+All five required hazard perturbations reddened the intended tests: ambient
+`GIT_DIR`, removal of literal pathspec / `--`, deletion of the leading-dash
+refusal, enumeration of only known instruction roles (5 failures), and URL
+scanning disabled everywhere (the real-runner classification test failed).
+The exact strict-default runner bytes were restored before the green pass.
+
+The full suite is deliberately left for the post-review stable boundary so a
+review correction does not incur a redundant release-scale run. No AST or gate
+ceremony was performed in this scope.
 
 ## Code review
 
