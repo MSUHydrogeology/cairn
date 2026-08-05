@@ -1041,3 +1041,532 @@ even though no plan-archive precondition compels one.
 withdrawn adjudication is **not** parked for later revival — the reviewer's
 necessity finding is the reason it should not happen, and preserving it as a
 future obligation would re-commit the error this lineage exists to correct.
+
+---
+
+## Code review -- Claude (fresh session) -- 2026-08-04
+
+**Model**: claude-opus-5
+**Tier**: independent read of the implementing commit, per the Decision's *"the
+implementing change edits a **shared communication file**, so it gets an
+independent read before the archive"*
+**Reviewed**: `bfb3875` ("board-retro-disposition: the hygiene pass (H1-H5)"),
+one file, +48/-10, against its parent `5c752ab`
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python
+3.13.13, the canonical interpreter per `bootstrap/DEPENDENCY_BUDGET.md`). The
+ambient `python3` here is 3.12.9; both checkers were run under both and returned
+identical output.
+
+### What reproduced
+
+Before the findings, the figures that hold. All commands re-runnable at
+`bfb3875`.
+
+* **Rows 59 -> 58.** `awk 'NR>=535 && NR<=964'` over `git show
+  bfb3875^:dev/PLANNING.md` piped to `grep -c '^\* '` = **59**;
+  `awk 'NR>=535 && NR<=1002' dev/PLANNING.md | grep -c '^\* '` = **58**. Section
+  bounds derived independently: `### Deferred follow-ups (durable home)` at
+  `:535` running to `### Release path` at `:965` (before) / `:1003` (after).
+* **The sub-bullet claim.** The two explanatory items are `  1.` / `  2.`,
+  indented and numbered; the `^\* ` count is unpolluted. Reproduced. (Under the
+  looser `^\*` pattern the section goes 76 -> 78, but that pattern never equalled
+  the row count — 76 != 59 before — so the commit's claim stands as worded.)
+* **H1 landed on the right lines.** `doctrine/proposals.md:379` and
+  `doctrine/plans.md:622` each carry *"This makes the migration auditable from
+  `git log` alone"* verbatim. `grep -rn "auditable from .git log. alone"
+  doctrine/` returns exactly those two lines and no other doctrine hit. The
+  re-point is correct.
+* **The H1 note about the checkers is true, and I verified it by execution
+  rather than by reading.** I restored `bfb3875^:dev/PLANNING.md` into the
+  working tree and ran both: `claim_check.py dev/PLANNING.md` -> `OK, no
+  claim-check flags`; `check_cairn.py` -> `OK -- 176 Markdown file(s) scanned`.
+  Both pass **over the stale citation**. The commit's account of why (path
+  existence and line bounds, not target content) is accurate. Working tree
+  restored; `git status --short dev/PLANNING.md` clean.
+* **Both checkers at HEAD.** `claim_check.py dev/PLANNING.md` -> OK.
+  `check_cairn.py` -> `OK -- 176 Markdown file(s) scanned; no issues; 48
+  external link(s) not probed`. Both figures reproduce.
+* **Scope fidelity.** I diffed the sorted row-title sets
+  (`grep '^\* ' | sed 's/^\* //' | sort`) before vs after: a single line of
+  difference — the removed `_infer_init_lock_axes` row. **No row was added, none
+  was silently deleted, none was re-routed** beyond the H2 merge. Group
+  membership is unchanged: byline 4, scan 1, release 2, fork 5, gate 7,
+  identical before and after. One file touched.
+* **"3 archived proposals cite this section by name."** Holds, and holds on the
+  substantive criterion too: `dependency-advisory-coverage:930,1084` and
+  `release-security-bar:1028,1085` carry literal `**Follow-ups migrated to:**
+  dev/PLANNING.md > *Deferred follow-ups (durable home)*` blocks; the archived
+  `deferral-discipline` proposal names the section in its D1 disposition row
+  (`:1314`). Verified by opening each.
+* **H3.** The SC4 marking is additive, sits on the existing row, and the
+  Decision's H3 allowed *"Move it ... or mark it"*. Marking is one of the two
+  authorised forms. No finding.
+
+That is real work, correctly done, and the H1 fix in particular is exactly the
+free demonstration the Internal review asked for. Nothing below contradicts any
+of it.
+
+---
+
+### [C1] The H2 merge dropped the removed row's `*Trigger:*`, and both the board and the commit body assert that nothing was dropped -- this lineage's **sixth** recording of its own named failure mode
+
+The removed row (`bfb3875^:dev/PLANNING.md:910-916`) carried four things:
+
+1. provenance — *"was `contributor-entry` R1, which was superseded 2026-08-03
+   without migrating it"*
+2. the co-disclaimers — *"`fork-advisory-semantics` and `profile-parse-fail-open`"*
+3. the defect statement — a root `CONTRIBUTING.md` read as evidence of a human team
+4. **`*Trigger:*` the next proposal touching `bootstrap/_scaffold/upgrade.py`'s
+   init-lock axis inference.**
+
+Items 1-3 survive on the merged row (`dev/PLANNING.md:878-889`). **Item 4 does
+not.** The merged row has no `Trigger` field of any kind:
+
+```
+$ grep -n "init-lock axis inference" dev/PLANNING.md
+  (no match)
+$ grep -rn "init-lock axis inference" dev/ | grep -v '/archive/'
+  (no match)
+$ awk 'NR>=878 && NR<=889' dev/PLANNING.md | grep -i trigger
+  (no match)
+```
+
+The trigger is now reachable only from `bfb3875^` and from archived artifacts.
+
+What the merged row *does* carry — *"Reachable only on a first `upgrade
+--init-lock` in a tree with no committed `dev/.cairn/profile.yml`"* — is a
+**reachability condition** (when the bug bites), not a **trigger** (when to
+revisit the row). They are different fields doing different jobs, and under this
+lineage's own doctrine the trigger is the load-bearing one: it is the revival
+condition that makes a deferred row adjudicable rather than inert. The removed
+row was one of the 18 the Internal review measured as carrying an explicit
+`*Trigger:*`; the surviving row is one of the 29 that carry none.
+
+Now the assertions. The board itself, at `dev/PLANNING.md:950-951`, states:
+
+> *Both provenances are preserved on the surviving row; **nothing was dropped**.*
+
+and the commit body states the same. Both are **false as written**, and the
+board's copy is the durable one — it is the sentence a future reader of this
+section will rely on when deciding whether the merge needs auditing.
+
+This is the repo's named recurring failure mode — a protection asserted at the
+strength intended rather than delivered — landing for the sixth time in this
+lineage, and the third time in a commit body. It is also a direct violation of
+the Revised proposal's own invariant (1): *"No row loses information — the H2
+merge preserves both provenances; enforcer: **a reviewer diffing the row against
+its two sources**."* The invariant's own enforcement mechanism is what caught
+it. The stated failure mode (*"H2 loses a provenance — fails open, caught by the
+diff"*) anticipated the wrong field: provenance survived, the trigger did not.
+
+**Satisfier** — restore the trigger onto the merged row (*"`*Trigger:*` the next
+proposal touching `bootstrap/_scaffold/upgrade.py`'s init-lock axis inference"*),
+**and** narrow the board sentence from *"nothing was dropped"* to what is
+actually true after the restore, e.g. *"both provenances and the trigger are
+preserved on the surviving row."* If the trigger is judged redundant with the
+reachability clause, say **that**, on the record, rather than asserting nothing
+was dropped — the two are not the same field and the record should not imply
+they are. **Blocking.**
+
+---
+
+### [C2] The "30 commit bodies" figure is reproducible only under an unstated, method-sensitive grep, and it counts a population ~4x larger than the paragraph it sits in is about
+
+Board text (`dev/PLANNING.md:560-569`), under the heading **"Inbound references
+— who points at these rows"**:
+
+> As of 2026-08-04: **3** archived plans and **3** archived proposals cite this
+> section by name, and **30** commit bodies across the repository carry a
+> `Follow-ups migrated to:` / `Dispositions:` block. The commit bodies
+> **dominate** and are the **most immutable** record of all [...] the
+> closed-record set you might falsify is larger than the file tree suggests
+
+I re-derived this over all 1013 reachable commits, three ways.
+
+| Method | Result |
+|---|---|
+| Commits with a marker line **anchored at column 0** (`git log --all --format='%b' \| grep -cE '^(Follow-ups migrated to:\|Dispositions:)'`) | **30** |
+| Commits carrying the marker **anywhere in the body** (`git log --all --grep='Follow-ups migrated to:' --grep='Dispositions:' --format=%H \| sort -u \| wc -l`) | **37** |
+| Of the 30, those whose body names **this section** (`Deferred follow-ups` / `Archive-time follow-ups`) | **7** |
+| Of the 30, those whose body names `dev/PLANNING.md` at all | **13** |
+
+Verified with a Python pass over `git log --all --format=%H%x1f%s%x1f%B`; no
+merge commits are in the set (checked via `%p`, zero multi-parent); `--all` and
+HEAD-only agree; adding `--reflog` yields 38, so unreachable objects are not a
+factor; no single body carries two anchored marker lines, so 30 lines is
+genuinely 30 bodies.
+
+Two problems.
+
+**(a) The figure is method-sensitive by 23% and the method is not recorded.**
+30 is the *column-0-anchored* count. The obvious re-derivation — the `--grep`
+form any reader reaches for — returns **37**. A reader who re-derives gets a
+different number and no way to tell which was intended. This is precisely what
+the accepted [I1] satisfier required and did not get: *"Record the count with
+its `as_of` **and its command**."* The `as_of` landed; the command did not. That
+is a scope-fidelity miss against an accepted finding, not a style nit.
+
+**(b) The figure measures a superset of what the paragraph is about.** The
+heading asks *"who points at these rows"*; the conclusion is about *"the
+closed-record set you might falsify"*. Only **7** of the 30 name this section —
+the other 23 are archive commits pointing elsewhere entirely (`2882bab`
+stage-commit-patterns, `d93c0d4` transition-lint, `add3c53` decision-rights-floor,
+and 20 more, 17 of which do not mention `dev/PLANNING.md` at all). So *"the
+commit bodies dominate"* rests on a number that is not counting inbound
+references. On the inbound measure it is 7 commit bodies against 3-6 artifacts —
+roughly parity, not dominance.
+
+The paragraph's **conclusion** survives: the closed-record set is larger than the
+file tree suggests, and commit bodies are the least correctable record. That is
+directionally right and worth having on the board. The figure supporting it is
+not the figure the sentence needs.
+
+**Satisfier** — replace the clause with numbers that answer the heading's own
+question, each with its command inline or footnoted, e.g.: *"7 commit bodies name
+this section (13 name `dev/PLANNING.md`); 30-37 carry a disposition block
+overall, the spread depending on whether the marker is required at column 0 —
+`git log --all --grep=... | sort -u | wc -l`, `as_of` 2026-08-04, HEAD
+`bfb3875`."* Keep the "most immutable" observation; it is the durable point and
+does not depend on which number is used. **Blocking on the recorded-command
+half.**
+
+---
+
+### [C3] The H2 merge falsified two *other* count claims in the same file, and neither was updated
+
+The removed row lived inside the `*From `profile-parse-fail-open` (9):*` group.
+Recounting every group at HEAD:
+
+```
+*From `byline-classification` (4):*        actual rows = 4   ok
+*From `scan-coverage` (1):*                actual rows = 1   ok
+*From `release-authenticity` (2):*         actual rows = 2   ok
+*From `fork-advisory-semantics` (5):*      actual rows = 5   ok
+*From `profile-parse-fail-open` (9):*      actual rows = 8   <-- STALE
+*From `gate-claims-vs-enforcement` (7):*   actual rows = 7   ok
+                                    census total = 27
+```
+
+Every other header matches its row count exactly, which establishes that `(N)`
+is read as the group's row count and that `(9)` is now wrong.
+
+Second, the census preamble at `dev/PLANNING.md:781-784`:
+
+> 95 candidate items, 29 already homed, 38 judged fenced residuals rather than
+> follow-ups, and **the 28 below** with no durable home at all.
+
+There are **27** below. `4+1+2+5+9+7 = 28` before the merge; `4+1+2+5+8+7 = 27`
+after. Both figures were internally consistent before `bfb3875` and are not now.
+
+There is a defensible reading on which `(9)` and `28` are *historical* records of
+what the 2026-08-04 census produced rather than live counts — in which case they
+should not change. But then the merge has silently created a documented
+discrepancy that nothing in the file reconciles, in a shared communication file,
+one paragraph after a sentence asserting *"nothing was dropped."* Either reading
+requires an edit; only the choice of edit differs.
+
+**Satisfier** — either (a) update `(9)` -> `(8)` and *"the 28 below"* -> *"the 27
+below"*, or (b) leave both as historical and add a half-line to the merge
+pointer: *"(the group header's `(9)` and the preamble's `28` record the census as
+taken; one of those rows is now merged above)."* (a) is cheaper and loses nothing
+the pointer paragraph does not already carry. **Blocking** — this is the same
+class of defect the commit exists to fix, introduced by the fix.
+
+---
+
+### [C4] The new section-head prose generalises a sample drawn entirely from the census half to all 58 rows, and it now governs how future readers treat the whole section
+
+I sampled independently rather than deferring to the Internal review's read,
+because this claim is the one that will outlive the commit.
+
+Board text (`dev/PLANNING.md:542-558`): *"**These rows are recorded work, not a
+backlog to be cleared**"*, supported by finding 1: *"A hand-read sample found
+reproducers, measured figures and named revival conditions — **genuine
+obligations, not the deferral ratchet's residue**."*
+
+**Where the claim holds.** I hand-read the security and lifecycle rows and rows
+from every census group. `dev/PLANNING.md:612-626` (install-integrity trust
+anchor) carries a reproduced tamper bypass with file and line
+(`verify_integrity.py:47`), a revival condition, and a stated reason it is a
+proposal rather than a patch. `:628-645` (conda advisory coverage) carries
+measured figures (147 conda-only / 82 native, `as_of 2026-08-03`), four named
+evaluated tools, and inherited watch-outs. `:584-596` (interpreter trust-root S2)
+carries the red-team result and a named revival design. These are unambiguously
+genuine obligations and the claim is right about them. **I agree with the
+conclusion for this half.**
+
+**Where it does not.** The section splits cleanly at the first `*From ...*`
+header: **27 census rows** below, **31 topical rows** above — the latter
+imported, per the section's own preamble, *"from the modflow_tools-side batch
+ledgers"*. Measured over whitespace-normalised row text with a case-insensitive
+`trigger:|revive|revival condition` match:
+
+| | rows | with a trigger / revival condition |
+|---|---|---|
+| topical (imported) | 31 | **13** |
+| census | 27 | 16 |
+| **all** | **58** | **29** |
+
+Half the section carries no revival condition of any kind, and the shortfall is
+concentrated in the imported half. Thirteen topical rows are under 200
+characters with no reproducer, no measurement and no trigger — e.g.
+`dev/PLANNING.md:582-583`: *"**`_agent_of` round-suffix regression test** — pin
+the `## Review (Round N)` header shape in the Cairn tree."* That is a one-line
+`guard` candidate, not a reproducer-bearing obligation. Others in the same class:
+*"Facade residuals (B-#1/2)"*, *"End-gate frozen-set decision (C-#4)"*,
+*"Side-door non-executable surfaces — **disposition for** the onboarding
+activation log..."* (a row naming its own missing disposition), *"Refine the
+intent tool's necessity test"*, *"Move `dev/intent-config.json` -> `dev/.cairn/`"*.
+
+And the sample the claim rests on came from the other half. The Internal review's
+own coverage line says it hand-read *"~12 rows across the **security,
+scan-coverage, profile-parse-fail-open and gate-claims** groups"* — three of
+those four are census groups, and none is in the imported set that [I6]
+separately identified as having no in-repo source artifact at all.
+
+I am not saying the imported rows are ratchet residue; I did not adjudicate them
+and this review claims no routing. I am saying the **warrant as written**
+(*reproducers, measured figures, named revival conditions*) is demonstrably
+absent for 29 of 58 rows, and the sentence asserts it of all of them. Same
+failure shape as [C1] and [C2]: the claim is made at the strength intended, not
+the strength the evidence delivers.
+
+The consequence is real because of where it now lives. A future agent reading
+*"recorded work, not a backlog to be cleared"* at the head of the section is
+being told not to try — including on rows whose own text says the opposite. SC3
+at `:704-705` reads *"the guard is one assertion and **should be written rather
+than re-deferred**"*; SC5 says *"the guard is two assertions."* Those rows want
+`guard`, not protection from adjudication. Finding 2 of the new block is careful
+and correct — it says a **board-only** pass cannot dispose of these rows, which
+is exactly [I3] and is well hedged. The heading above it is not: it converts "a
+board-only pass cannot clear these" into "these are not a backlog," which is a
+different and stronger claim.
+
+**Satisfier** — two narrow edits. (1) Attribute the sample: *"A hand-read sample
+of ~12 rows, drawn from the census groups, found reproducers, measured figures
+and named revival conditions; the imported topical rows above were not sampled,
+and 29 of the 58 carry no revival condition in any form."* (2) Retitle the block
+to what finding 2 actually supports — *"**A board-only pass cannot dispose of
+these rows**"* — leaving open that a scoped `guard`/`accept` pass can and, for
+the one- and two-assertion guards the board itself names, should. **Should-fix
+before archive**; the second edit is the one that prevents the lasting damage.
+
+---
+
+### [C5] "3 archived plans cite this section by name" counts two artifacts' own internal headings, and re-includes the one artifact the accepted Response promised to drop
+
+`grep -rln "Deferred follow-ups\|Archive-time follow-ups" dev/plans/archive/`
+returns exactly three files, which is presumably the source of the 3. Opening
+each match:
+
+* **`lockfile-provenance-fields.md:407`** — the match is the plan's **own section
+  heading**, *"**Deferred follow-ups, per the archive-preconditions rule** —
+  both already homed outside this plan"*. Reading on to `:409-410`: P4 is homed
+  *"at its `dev/PLANNING.md` **'Lockfile schema validate-on-read' Queued row**"*
+  — `dev/PLANNING.md:185`, inside `## Queued` (`:120-268`), **not this section**.
+  This is [I1]'s wrong inclusion, verbatim. The Response accepted it —
+  *"`lockfile-provenance-fields`' row is under `## Queued` (`dev/PLANNING.md:185`),
+  not this section"* — and [I1]'s satisfier said in terms *"**drop
+  `lockfile-provenance-fields` from the list**."* H4 was supposed to be the
+  durable correction of [I1]; it re-committed [I1]'s error into the board.
+* **`interpreter-trust-root-fallback.md:582`** — also its own heading. This plan
+  *is* a genuine inbound reference (S2, confirmed at `:913`), but not via the
+  string that matched.
+* **`deferral-discipline.md:846`** — a genuine mention of `### Deferred
+  follow-ups (durable home)`, but as the object of the parent plan's own work,
+  not as a home its archive precondition was discharged against.
+
+So on the criterion [I1] established and the Response adopted — *artifacts that
+cite this section as the home against which their archive precondition was
+discharged* — the archived-plan count is **1**, not 3. On a bare-grep criterion
+it is 3, but then two of the three are counting the artifacts' own headings and
+the number is not measuring citation at all.
+
+The archived-**proposal** figure of 3 survives both criteria; I verified each by
+opening it. The defect is confined to the plans half.
+
+**Satisfier** — state the criterion alongside the number and apply the one the
+Response accepted: *"1 archived plan (`interpreter-trust-root-fallback`, S2) and
+3 archived proposals name a row in this section as a discharged home;
+`lockfile-provenance-fields`' P4 row is under `## Queued` and is **not** in this
+population (corrected per [I1])."* **Should-fix** — the number is small either
+way, but silently re-including the artifact a review dropped is how a correction
+gets un-corrected.
+
+---
+
+### [C6] H1 re-applied the citation form that had just failed, in a file that already uses a stable alternative
+
+H1 is correct and I verified both new line numbers by opening them. This finding
+is about the *form*, which is the more durable fix.
+
+The same sentence has now been cited at **three** different line pairs across
+this repo's record:
+
+* `dev/proposals/archive/2026-08-03-claude-gate-claims-vs-enforcement.md:1033` —
+  *"`doctrine/proposals.md` line 360 and `doctrine/plans.md` line 602"*.
+  Permanently stale, in an append-only artifact, uncorrectable.
+* `dev/PLANNING.md` before `bfb3875` — `:370` / `:611`. Stale.
+* `dev/PLANNING.md` after `bfb3875` — `:379` / `:622`. Correct today.
+
+Two drifts in one lineage, both caused by edits *above* the sentence rather than
+to it, and neither catchable by `claim_check.py`, which validates bounds and not
+targets (demonstrated above by execution). The third citation is one insertion
+above line 379 away from becoming the fourth.
+
+The alternative is already in use in this exact file. `dev/PLANNING.md` cites by
+section name at `:9`, `:19`, `:444` (`doctrine/lifecycle.md` > "Archive
+precondition" — in the preamble of the very section that governs these rows) and
+`:493`; `AGENTS.md` uses the same form throughout. The target sentences sit under
+stable named headings: `doctrine/proposals.md` > **"Archive preconditions"**
+(`:342`) and `doctrine/plans.md` > **"Lasting-truth migration doctrine"**
+(`:585`). Neither heading moved in this lineage.
+
+**Satisfier** — re-point by section name, optionally keeping the line as a
+navigational aid: *"(`doctrine/proposals.md` > "Archive preconditions" and
+`doctrine/plans.md` > "Lasting-truth migration doctrine" — at `:379` / `:622` as
+of 2026-08-04)"*. Survives insertion above, matches the file's own convention,
+and does not silently rot. **Optional** — H1 as landed is correct; this is a
+robustness upgrade, not a defect.
+
+---
+
+### Falsification ledger
+
+**Probed and found no defect:**
+
+* **Did H1 land on another wrong line?** No. Opened both targets; also ran
+  `grep -rn "auditable from .git log. alone" doctrine/ templates/ dev/` — the
+  sentence exists at exactly two doctrine locations and both are the cited ones.
+  The neighbouring lines (`:375-377`, `:618-620`) are the `Follow-ups migrated
+  to:` back-compat paragraph, so an off-by-a-few would have been visible.
+* **Was any row silently deleted or re-routed?** No. Sorted row-title set diff:
+  exactly one deletion, zero additions, zero modifications to other titles.
+  Per-group counts unchanged except `profile-parse-fail-open`.
+* **Was a new board row added?** No — the Decision's *"no board row"* holds. The
+  three additions are prose blocks and one italic pointer paragraph, none a
+  `^\* ` row.
+* **Did the commit exceed the accepted scope?** One file, `dev/PLANNING.md`. The
+  section-head prose block is beyond the enumerated H1-H5, but the commit body
+  declares it (*"Also recorded at the section head"*) rather than slipping it in,
+  and it transcribes findings the Decision itself recorded. Disclosed, not
+  silent — [C4] is about its content, not its presence.
+* **Commit-authority check.** `dev/PLANNING.md` alone is *not* covered by
+  `AGENTS.md`'s deliberation carve-in (neither a one-line lifecycle row-move nor
+  the goodnight scrub), so this needed explicit authorisation. The Decision
+  carries it verbatim — *"Please scribe this acceptance and proceed through
+  implementation"* — which is also the *"explicit instruction"* serialization
+  point the shared-communication-file rule requires. Clean.
+* **Is the "30" inflated by merge commits, unreachable objects, or this
+  lineage's own commits?** No merge commits (zero multi-parent); `--reflog` adds
+  one; six of the 37 are this lineage's own, which the figure does not exclude
+  but which does not explain the 30/37 gap. The gap is entirely the column-0
+  anchor.
+* **Is 59 -> 58 stated anywhere else that is now stale?** No live artifact
+  outside the proposal itself asserts a row count for this section; the
+  proposal's own "59" figures are in append-only sections and correctly stay.
+* **Body length.** 49 lines against `AGENTS.md`'s *"soft cap ~50"*. Inside the
+  cap, though at it for a single-file hygiene commit. Not a finding.
+* **Pre-existing, not this commit:** the census preamble asserts *"A plan does
+  not archive until its items here are landed"* while `scan-coverage` archived
+  (`89a8f1f`) with SC4 outstanding on the board. That tension predates
+  `bfb3875` and H3's marking makes it more visible rather than causing it.
+  Raised for the record, not as a finding against this commit.
+
+**Failure modes tested:** information loss across the merge (found — [C1]);
+count claims elsewhere in the file invalidated by the row removal (found —
+[C3]); figure reproducibility under alternative methods (found — [C2]);
+citation-target correctness (clean); scope creep by row addition or re-route
+(clean); sample-to-population generalisation in the new prose (found — [C4]);
+re-introduction of an error a prior review retired (found — [C5]).
+
+**Verification run:** `claim_check.py dev/PLANNING.md` and `check_cairn.py` at
+HEAD *and* at `bfb3875^` (by restoring the parent file into the tree, then
+restoring HEAD's), under Python 3.13.13. All four runs OK. `git log --all` sweep
+over 1013 commits, twice, by two independent methods.
+
+**Consciously not run:** `python -m pytest bootstrap/tests`. The commit touches
+one Markdown file and no code; the proposal's *"Tests — N/A"* is correct for the
+revised scope. I therefore assert nothing about suite state.
+
+**Residual risks:**
+
+* I did not adjudicate the 58 rows, and [C4] deliberately makes no routing
+  claim. My topical/census split is by the first `*From ...*` header — a
+  structural proxy for [I6]'s hand classification that does not match it exactly
+  (31/27 vs [I6]'s 21/38, because `Scan coverage` and `Release authenticity` sit
+  above the first `*From` header). The direction — revival conditions
+  concentrated in the census half — holds under either split; the exact figures
+  are mine, at `bfb3875`, and should be re-derived rather than carried forward.
+* My revival-condition regex (`trigger:|revive|revival condition`, case-
+  insensitive, over whitespace-normalised row text) misses any phrasing using
+  none of those words. A first pass that did not normalise line breaks
+  undercounted by three; I caught and corrected it. 29/58 is the corrected
+  figure and is a floor, not a ceiling.
+* Same agent type as the author — a fresh-session Claude read of Claude's work,
+  structurally the Internal floor, not cross-type independence. Everything I
+  found is a reproduction error (re-running a grep, opening a cited line,
+  diffing a removed row), not an error of judgement; I would not claim a
+  different prior on the judgement calls, particularly [C4]'s.
+* `check_cairn.py --include-archives` was not run. [I8] established a 92-issue
+  baseline there; I did not re-derive it or check whether `bfb3875` moved it.
+  The commit adds no archive-facing citations, so I judged the risk low, but the
+  claim is unverified.
+
+### Covered / Not covered
+
+**Covered.** *Claims* — every numeric figure in the commit body and the added
+board prose re-derived independently: 59 -> 58 (reproduced), the sub-bullet
+non-pollution claim (reproduced), `claim_check` / `check_cairn` OK across 176
+files (reproduced, both interpreters), 3 archived proposals (reproduced under
+both criteria), 3 archived plans ([C5]), 30 commit bodies ([C2]). *Citation
+targets* — `doctrine/proposals.md:379` and `doctrine/plans.md:622` opened and
+confirmed verbatim ([C6] on form only). *Information preservation* — removed row
+diffed field-by-field against the survivor ([C1]). *Cross-document consistency
+within the edited file* — all six group headers and the census preamble
+recounted ([C3]). *Scope fidelity* — sorted row-set diff, group-membership diff,
+file count, commit-authority chain: clean. *New governing prose* — sampled
+against the population it governs ([C4]). *Silent failure* — both named checks
+executed against the **pre-fix** file to confirm the commit's own claim that
+they pass over a stale citation; confirmed by execution, not by reading.
+
+**Not covered / low confidence.** No adjudication of the 58 rows. No
+`--include-archives` run. No test suite. No review of the deliberation record
+beyond what establishes the accepted scope (Internal review, Response, Revised
+proposal and Decision read in full; the parent `deferral-discipline` proposal
+consulted only for the archive-precondition rule and its Chunk B commit
+`5c85274`). Same agent type, so no cross-type independence on judgement.
+
+### Verdict
+
+**REVISE.**
+
+The hygiene is real and its hardest-to-fake parts landed: H1 re-points to the
+right lines, H3 is a faithful marking, and the scope held exactly — one row
+removed, nothing added, nothing re-routed, one file touched.
+
+But this is a change to a **shared communication file**, and it leaves four
+statements in that file that are not true as written: *"nothing was dropped"*
+when a trigger was ([C1]); a group header reading `(9)` over 8 rows and a
+preamble reading *"the 28 below"* over 27 ([C3]); a figure headed *"who points at
+these rows"* that counts 30 commit bodies of which 7 do ([C2]); and a count that
+re-includes the artifact its own accepted Response promised to drop ([C5]).
+Three of the four are this lineage's named failure mode — asserting at the
+strength intended rather than delivered — which is why this is REVISE rather
+than APPROVE WITH FOLLOW-UPS: a follow-up leaves the falsehoods on the board
+across the archive, and the archive is what makes them permanent.
+
+[C1], [C2] (the recorded-command half) and [C3] are **blocking**. [C4] and [C5]
+are **should-fix before archive**; [C4]'s second edit is the one I would not
+skip, because *"recorded work, not a backlog to be cleared"* at the head of the
+section is the sentence that will govern the next agent who arrives, and the
+board's own SC3/SC5 rows say the opposite about themselves. [C6] is optional.
+
+Every one of these is a line or two of text. I would expect the whole revision in
+a single follow-up commit, after which this artifact archives cleanly.
+
+On the substance the Decision cared about: I agree the mass adjudication was
+rightly withdrawn, I agree a board-only pass structurally cannot dispose of these
+rows, and I agree — for the census half, which I read — that they are genuine
+obligations. My disagreement is with how far that last agreement was stretched,
+not with the finding itself.
