@@ -1,25 +1,16 @@
 <!-- cairn-internal-ref-allow: doctrine/plans.md doctrine/dual-review.md doctrine/lifecycle.md doctrine/rationale.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- Two populations of non-resolving path, kept separate on purpose.
-     (a) ONE adopter-tree destination -- `scripts/run_security_audit.py`, where
-         python-security's orchestrator lands in a Python adopter's tree. Under
-         this Decision Cairn does NOT install python-security, so it never
-         resolves here: not while the plan is open, not after it archives. It is
-         an allow, never a `Proposed paths:` forward reference. Same directive
-         and same reasoning as the source proposal.
-     (b) SEVEN forward references registered under `Proposed paths:` below --
-         six that materialize when Chunk D adopts content-security into Cairn's
-         own tree, one when Chunk C writes its test module. The marker exempts
-         only its own contiguous block and the chunk tables cite these paths
-         many sections later, so they need the file-scoped directive too. Drop
-         each from this directive as its path lands, per the marker discipline. -->
-<!-- claim-check-allow: scripts/run_security_audit.py, scripts/content_scan.py, scripts/content_scan_runner.py, scripts/content_scan_roots.txt, scripts/content_scan_residuals.txt, scripts/content_scan_allowlist.txt, dev/modules/content-security.md, bootstrap/tests/test_default_security_stance.py -->
+<!-- Two non-resolving paths remain after archive. `scripts/run_security_audit.py`
+     is an adopter-tree destination Cairn deliberately does not install; the
+     live plan path is cited by append-only historical sections and ceased to
+     resolve when this file moved to archive. -->
+<!-- claim-check-allow: scripts/run_security_audit.py, dev/plans/default-security-stance.md -->
 
 # Plan: the default install carries the content scanner, and the Python gate follows its token
 
 **Source proposal**: `default-security-stance` (accepted 2026-08-03 by
-Maintainer Decision, *"as amended by the author's Response"*). It currently sits
-under `dev/proposals/` and moves to `dev/proposals/archive/` when it archives.
-**Status**: review
+Maintainer Decision, *"as amended by the author's Response"*; archived proposal
+stem `2026-08-03-claude-default-security-stance`).
+**Status**: archived
 **Plan review**: required(**External**, security lens) — carried verbatim from
 the proposal header, where the tier is a *declared trigger* rather than a
 judgement call: this is an install-contract change on a surface `AGENTS.md`
@@ -2561,3 +2552,86 @@ The review evaluated the operative code additions across `bootstrap/_scaffold/co
 
 **Verdict: PASS.** All implementation chunks (A, B, C, D, R) are complete, independently verified, and fully tested. The plan is ready for archive serialization.
 
+## Lasting-truth migration
+
+**Archived 2026-08-05.** The Maintainer's standing delegation covers these
+non-shaping disposition choices, and the Maintainer authorized this archive
+pass:
+
+> Please trust yourself to make decisions, and churn through that list. I totally understand about needing me to do the Ceremony, but pretty much everything else I accept your decisions on. Big, shaping decisions are mine, yes. But so many of these are not my purview.
+
+> Go for it!
+
+### Dispositions
+
+```
+Dispositions:
+* security_check.py has no integrity preflight
+    -> defer (dev/PLANNING.md, [VER-4] security-check integrity preflight)
+* templates/modules/README.md is not derived from the selector registries
+    -> defer (dev/PLANNING.md, [VER-3] generated module-catalog parity)
+* optional vendor-wrapper roots are maintained as a hand list
+    -> defer (dev/PLANNING.md, [VER-3 / BND-3] wrapper-root discovery)
+* adopter-owned roots, residuals, and allowlist policy files are not twin-pinned
+    -> accept (intentional living policy; the shipped module states the limit)
+* the frozen gate manifest remains stale after this plan
+    -> defer (existing dev/PLANNING.md [REL-3] SC4 supervised re-pin)
+* high-rigor onboarding claimed content-security before selection made it true
+    -> accept (the landed selector now includes content-security and
+               security-review; expand_preset re-measured at archive)
+* three preset roster comments and docs/solo-legacy-recipe.md could drift
+    -> accept (all four were corrected in scope; future catalog-wide drift is
+               covered by the generated-catalog deferral above)
+* the former 52 editorial-URL findings needed an allowlist/residual policy
+    -> guard (bootstrap/tests/test_security_stack.py::TestRunnerUrlRoleBoundary::test_only_known_discussion_roots_disable_urls)
+* reciprocal Gate D-ON wording remained owed by content-scan-detectors
+    -> accept (both plans received the byte-identical gate in one commit)
+```
+
+The three `defer` deposits are the smallest durable remainder. The frozen-file
+item adds no new row: `[REL-3] SC4` already carries the Maintainer's quoted
+instruction to fold the union into the next supervised ceremony. The URL
+question is no longer a policy choice over 52 warnings: the role classifier
+removes that detector from known discussion prose while retaining it for
+instructions and unknown roles, and the named parametrized node fires on a
+narrowing.
+
+### Evidence ledger
+
+Implementation landed in `e57947e` and `91cbeaa`; the Maintainer's four-symbol
+AST correction landed alone in `b42b4e5`. The implementation record measured
+the lockfile at 90 files / 16 modules / 44 Python twins, the production content
+scan at 83 audited files / 0 flags, and the Bandit target growth at exactly the
+two adopted scanner scripts. Every selection-precedence mutant and both twin
+mutants discriminated.
+
+The independent Antigravity review at `9af04a6` re-ran 188 focused tests, the
+full canonical suite (**2490 passed**, zero failures), and the 173-symbol AST
+verification. It independently checked default and token-gated selection,
+explicit-list and removal precedence, summary/install agreement, existing-
+adopter opt-in behavior, twin parity, and the Maintainer-authored baseline
+change. Its verdict was **PASS** with no finding to disposition.
+
+An explicit `check_cairn.py` run over the still-live plan reports exactly two
+expected `solo_greenfield_module_count` drifts in append-only amendment rows:
+both quote the former six-module state, while the registered live count is now
+seven. The current documentation was corrected by the implementation. Moving
+this completed record under `dev/plans/archive/` removes those historical
+snapshots from the live-document scan without rewriting them.
+
+### Loop-fidelity sign-off
+
+The implementation matches the accepted Decision in
+`2026-08-03-claude-default-security-stance`: `content-security` is default-on;
+`python-security` is selected only by a filled `python_package`; an explicit
+`modules:` list remains exact; `modules_remove` remains final authority; Cairn
+does not install `python-security`; the template scanner remains the executed
+authority; the installed content scanner is twin-pinned; and the pre-existing
+upgrade opt-in mechanism was preserved rather than rebuilt. No landed artifact
+restates the withdrawn tautology argument, and `scripts/check_cairn.py` carries
+no bytes from this implementation.
+
+Residual risks are therefore the ones the Decision and review accepted: default
+adoption trades some international proper-noun false positives for detection,
+whole-script Cyrillic remains outside the detector, and adopter-owned policy
+files are reviewed through Git rather than compared to template digests.

@@ -303,7 +303,7 @@ board by design.
   | Cluster | Current lifecycle owners | Next boundary |
   |---|---|---|
   | **[BND] Input, execution, containment** | `fork-advisory-semantics`, `agent-context-scrub`, `api-web-security-modules` | profile-authority consolidation; Class C no later than v0.4 preparation |
-  | **[VER] Verification and coverage** | `content-scan-detectors` + `separator-detection`; `content-scan-url-classification`; `default-security-stance`; `security-verification-activation`; `portable-security-sweeps`; `dependency-advisory-coverage`; `api-web-security-modules`; `security-preflight-checklist` | settle activation binding mode, then admit capability entries; one scanner batch |
+  | **[VER] Verification and coverage** | `content-scan-detectors` + `separator-detection`; `content-scan-url-classification`; `security-verification-activation`; `portable-security-sweeps`; `dependency-advisory-coverage`; `api-web-security-modules`; `security-preflight-checklist` | settle activation binding mode, then admit capability entries; one scanner batch |
   | **[TRU] Trust roots and provenance** | `fork-advisory-semantics`; the live gate-reanchor posture below | trusted-source boundary after the release bar settles required source/install claims |
   | **[REC] Deliberation authority, identity, context, record integrity** | `agent-context-scrub`; `review-gate-enforcement`; byline residuals below | one identity-authority consolidation when a trigger fires, not one proposal per Unicode row |
   | **[REL] Release evidence and ceremonies** | `release-security-bar`; proposed `release-security-orchestration`; the scheduled frozen-file union | decide orchestration, finish the finite register, then run one re-derived supervised ceremony |
@@ -690,6 +690,25 @@ point rather than being copied into another backlog.
   for non-text module files.
 
 **[TRU / VER] Security apparatus**
+* **[VER-4] Cairn security-check integrity preflight** *(deferred Aug 2026 from
+  `default-security-stance`)* — `run_security_audit.py` refuses to run when its
+  apparatus or policy inputs are not lockfile-clean; Cairn's own
+  `bootstrap/security_check.py` has no equivalent preflight. Do not adopt the
+  Python module sideways: define the authority for the checker's own bytes and
+  policy inputs, then fail closed before any security phase executes when that
+  authority disagrees.
+* **[VER-3] Generated module-catalog parity** *(deferred Aug 2026 from
+  `default-security-stance`)* — derive or executable-check the module catalog in
+  `templates/modules/README.md` against `_MODULE_MAPPINGS`,
+  `_DEFAULT_ON_MODULES`, and token-gated selection. The current hand table omits
+  default-on and team-gated modules. Include the preset roster comments and
+  `docs/solo-legacy-recipe.md` in the same catalog-wide design so the next
+  selector change cannot make those descriptions stale independently.
+* **[VER-3 / BND-3] Vendor-wrapper scan-root discovery** *(deferred Aug 2026 from
+  `default-security-stance`)* — `content_scan_roots.txt` names optional wrapper
+  filenames by hand, so a new vendor wrapper can go unscanned. Prefer deriving
+  the installed wrapper path from trusted lockfile state; retain the current
+  fail-closed handling for missing required roots and option-shaped roots.
 * **[TRU-1] Install-integrity trust anchor** — `bootstrap/verify_integrity.py` reads
   expected hashes from **the candidate target's own** `dev/.cairn/cairn-lock.yml`
   (`verify_integrity.py:47`, `read_lockfile(target)`), so a coordinated tamper —

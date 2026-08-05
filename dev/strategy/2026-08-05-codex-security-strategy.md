@@ -235,8 +235,8 @@ each check inspect, and can coverage silently narrow?
   [`content-scan-detectors`](../plans/content-scan-detectors.md) and
   [`separator-detection`](../plans/separator-detection.md) share one scanner,
   one test surface, and one frozen-file ceremony. Land them as a batch.
-* [VER-2] **Default adoption posture.** Plan
-  [`default-security-stance`](../plans/default-security-stance.md) makes
+* [VER-2] **Default adoption posture.** Archived plan
+  [`default-security-stance`](../plans/archive/default-security-stance.md) makes
   `content-security` default-on, selects `python-security` only for a declared
   Python package, preserves exact explicit module lists, and keeps Cairn's own
   source scanner authoritative.
@@ -439,8 +439,8 @@ the public has a working private disclosure route.
    scanner surface.
 2. Land `security-verification-activation`'s closed binding-mode amendment
    before admitting any API/web or portable registry entry.
-3. Land `default-security-stance` after the scanner content stabilizes; preserve
-   exact explicit module selection.
+3. `default-security-stance` is landed; preserve exact explicit module
+   selection while the remaining scanner work closes.
 4. Land `api-web-security-modules`, `portable-security-sweeps`, and
    `dependency-advisory-coverage` against the activation contract they actually
    inherit.

@@ -80,6 +80,18 @@ and a new empty `Unreleased` is started above.
   proposal `2026-08-03-claude-gate-reanchor-preflight`; plan
   `gate-reanchor-preflight`; trust root established at `e45e1fc`.
 
+### Changed
+
+- **New Cairn installations now include content scanning by default.**
+  `content-security` is selected for preset-derived and default-derived
+  profiles, with a one-line `modules_remove` opt-out; `python-security` is
+  selected only when a filled `python_package` token declares a Python project.
+  Explicit `modules:` lists remain exact, existing adopters see new modules as
+  opt-in during upgrade, and Cairn's installed scanner is byte-pinned to its
+  shipped template. The default-on consequence was explicitly accepted with
+  the documented whole-script-Cyrillic and international-proper-noun residuals.
+  Archived plan `default-security-stance`.
+
 ### Fixed
 
 - **`claim_check` rejected the citation form Cairn's own doctrine mandates.**
