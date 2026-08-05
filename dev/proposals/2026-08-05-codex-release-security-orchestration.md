@@ -362,3 +362,48 @@ binds its output to a clean commit, runs the complete local bar, refuses
 skipped evidence and stale exceptions, and says plainly what remains human.
 Six board rows leave without pretending that CI, self-attestation, or
 cryptographic release receipts were built.
+
+
+## External review -- Antigravity (External, security lens) -- 2026-08-05
+
+**Steelman.** Proposal `2026-08-05-codex-release-security-orchestration.md` addresses a fundamental boundary gap in Cairn's release workflow: today, `bootstrap/security_check.py` is documented as the release gate but runs only Bandit and `scripts/check_cairn.py`, leaving `bootstrap/tests` and `scripts/quality_gate.py` uncoordinated, permitting dirty worktrees, ignoring stale allowlist entries, and relying on inaccurate prose claiming CI enforcement. The proposal consolidates all local pre-release checks into one fail-closed command (`python bootstrap/security_check.py`) executing four sequential phases: (1) repository-state preflight/postflight, (2) Bandit + `check_cairn.py`, (3) `bootstrap/tests` in release mode (refusing skipped/xfail/xpass outcomes via a private environment token in `conftest.py`), and (4) `scripts/quality_gate.py` across all sub-gates. It also enforces allowlist liveness in `run_bandit()`, deletes the stale `B310` allowlist entry, updates trigger documentation across five files, and binds the clean `HEAD` SHA to release notes in `SECURITY.md`.
+
+### Critical Security Audit & Analysis
+
+1. **Fail-Closed Release Pytest Disposition (`conftest.py` & Token Inheritance)**:
+   - **Mechanism**: `security_check.py` sets a private environment variable (`CAIRN_RELEASE_GATE_ACTIVE=1`) before executing subprocesses. `bootstrap/tests/conftest.py` checks this token during `pytest_sessionfinish(session)` and forces a non-zero exit if `skipped`, `xfailed`, or `xpassed` test outcomes are present.
+   - **Subprocess Propagation**: `quality_gate.py:164` calls `subprocess.run(cmd, cwd=str(repo_root), capture_output=True, text=True)`. Because `env` is not overridden in `quality_gate.py`, `os.environ` is inherited automatically, ensuring order-independence shuffled test runs enforce the same strict release disposition.
+   - **Security Edge Case**: In `conftest.py`, the token check must be strict (e.g. checking exact token value) so normal contributor runs without the token permit standard pytest skip behavior. Conversely, if a test script constructs a custom `env` dict for a `pytest` child process, it must forward `os.environ` or explicitly propagate `CAIRN_RELEASE_GATE_ACTIVE` so sub-invocations cannot bypass strictness.
+
+2. **Repository-State Preflight & Postflight Dirt Control**:
+   - **Verification**: `security_check.py` checks git worktree status before Phase 1 and after Phase 4. It requires a clean worktree (zero tracked modifications, zero untracked files) and a resolvable full 40-character `HEAD` SHA.
+   - **Fail-Closed Hazard Analysis**: If any test in Phase 3 or Phase 4 leaves transient untracked artifacts (such as temporary cache files or un-ignored test outputs), the postflight check catches the dirt and fails closed. `security_check.py` itself must be strictly read-only and write zero untracked files.
+   - **Environment Sanitization**: Git sub-commands executed during preflight/postflight must strip `GIT_*` steering variables (`GIT_DIR`, `GIT_WORK_TREE`, `GIT_INDEX_FILE`, etc.) to prevent environment-injection attacks from overriding repository detection.
+
+3. **Allowlist Liveness Enforcement**:
+   - **Empirical Audit**: Executed `bandit -q -f json templates/modules/team-gated/link_check.py` under Python 3.13.13. Bandit 1.9.4 returned 5 LOW findings (B404, B607, B603) and **0 B310 findings**.
+   - **Finding**: The sole entry in `ALLOWLIST`—`("templates/modules/team-gated/link_check.py", "B310")`—is indeed stale.
+   - **Enforcement**: Under the proposed liveness rule, `run_bandit()` parses Bandit's JSON output, collects all observed `(file, test_id)` pairs, and compares them against `ALLOWLIST.keys()`. If any configured key is absent from the report, `run_bandit()` fails closed. Deleting `B310` alongside this change is required and prevents a baseline failure.
+
+4. **Human-Root Grounding & Expiry Triggers**:
+   - The proposal deliberately avoids building tag-creation CLI wrappers or forge CI infrastructure, placing the operational root on the Maintainer running `security_check.py` against a clean `HEAD` and embedding the full commit SHA in `SECURITY.md` release notes before signing the tag.
+   - The explicit expiry triggers for this human-root posture (gaining a second maintainer, untrusted contributions, forge automation, or an un-checked release) provide clear governance boundaries for future architectural transitions.
+
+### Covered
+
+* **Empirical Script Execution**:
+  - `bootstrap/security_check.py`: currently exits 0 with `PASS` over 76 files and 177 Markdown files, but misses pytest, quality gate, git state, and allowlist liveness.
+  - `bandit`: confirmed `B310` is absent from `link_check.py` findings.
+  - `scripts/claim_check.py`: clean output over `dev/proposals/2026-08-05-codex-release-security-orchestration.md`.
+* **Path & Citation Audit**:
+  - Verified all 11 paths in `Touches` exist and resolve accurately.
+
+### Concerns
+
+* **[E1] Pytest Subprocess Isolation in Custom Fixtures**:
+  - The implementation plan must require any fixture or test runner that constructs a custom environment dictionary (`env={...}`) to explicitly preserve `CAIRN_RELEASE_GATE_ACTIVE`, preventing accidental token stripping during nested subprocess invocations.
+
+### Recommendation
+
+**ACCEPT / SHIP PROPOSAL.** The proposal is well-designed, security-hardened, empirically verified, and appropriately scoped. Proceed to plan creation.
+
