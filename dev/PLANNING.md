@@ -539,6 +539,35 @@ The permanent, tracked home for Cairn work parked with revival conditions
 no adopter specifics). Imported from the modflow_tools-side batch ledgers;
 none blocking.
 
+**These rows are recorded work, not a backlog to be cleared** *(established
+2026-08-04, proposal `2026-08-04-claude-board-retro-disposition`)*. A pass to
+mass-adjudicate them under the new archive-precondition vocabulary was proposed
+and **withdrawn at Internal review**. Two findings are worth carrying, because
+they will otherwise be rediscovered:
+
+  1. **A hand-read sample found reproducers, measured figures and named revival
+     conditions — genuine obligations, not the deferral ratchet's residue.** The
+     ratchet diagnosis that produced the new precondition governs *future*
+     artifacts; it is not an indictment of what is already here. The board is
+     long because the work is real.
+  2. **Editing only this file cannot dispose of these rows.** The vocabulary's
+     two useful tokens — `accept` (fix it) and `guard` (home it in something
+     that executes) — both require touching the thing the row is *about*. A
+     board-only pass can reach just `wontfix` and `defer`, and the eligibility
+     rule bars `wontfix` for anything adopter-reaching, so such a pass would
+     **lengthen** this section, not drain it.
+
+**Inbound references — who points at these rows** *(re-derived 2026-08-04;
+the proposal's original "six artifacts, two of them archived" was wrong in both
+directions and is retracted)*. As of 2026-08-04: **3** archived plans and **3**
+archived proposals cite this section by name, and **30** commit bodies across
+the repository carry a `Follow-ups migrated to:` / `Dispositions:` block. The
+commit bodies dominate and are the **most immutable** record of all — no
+artifact-level enumeration reaches them. Consequence for anyone re-routing a row
+here: the closed-record set you might falsify is larger than the file tree
+suggests, which is why a row a closed artifact names is ineligible for `wontfix`
+without the Maintainer.
+
 **Lifecycle apparatus**
 * **Lifecycle mutation/commit arm** — the typed-mutation ops (decision /
   review / open / archive) + commit the read-only planner deferred; gated on
@@ -689,6 +718,10 @@ plan can archive)*
   standalone act, so it batches with the engine re-anchor that Wave 2 already
   requires. This is the **last** outstanding precondition on plan
   `scan-coverage`; everything else it owed now has a durable home above.
+  **DISPOSITIONED AND SCHEDULED — do not re-adjudicate** *(marked 2026-08-04)*.
+  This row is not an open follow-up: it carries a quoted Maintainer disposition
+  and a named ceremony. It stays on the board as a *scheduled* item, and its
+  removal condition is the ceremony running, not a decision.
 
 **Release authenticity** *(residuals from plan `release-authenticity`)*
 * **RA1 (a) — Cairn's signing authority widens** *(non-mechanical for the
@@ -845,7 +878,10 @@ until its items here are landed -- that is this section's whole purpose.
 * **`_infer_init_lock_axes` guesses `human_team` from a filename**
   *(orphaned residual: routed by `fork-advisory-semantics` to scope 4,
   whose supersession Decision did not carry it; also fenced by `profile-
-  parse-fail-open`)* — `bootstrap/_scaffold/upgrade.py` infers `small-
+  parse-fail-open`. **Second provenance, merged in 2026-08-04:** the same
+  defect was independently routed here as `contributor-entry` R1, which was
+  superseded 2026-08-03 without migrating it — that duplicate row is now a
+  pointer to this one.)* — `bootstrap/_scaffold/upgrade.py` infers `small-
   multi` from the mere presence of a root `CONTRIBUTING.md` and `solo`
   otherwise, so the engine's heuristic can read a project's declared axis
   back wrong. Named upgrade path: read the manifest's `optional_templates`
@@ -907,13 +943,12 @@ until its items here are landed -- that is this section's whole purpose.
   measured them and explicitly neither performs nor schedules the re-pin.
   *Trigger:* the next supervised gate ceremony — batch with SC4, which
   carries the same disposition.
-* **`_infer_init_lock_axes` infers `human_team` from a file's mere
-  presence** *(orphaned residual — was `contributor-entry` R1, which was
-  superseded 2026-08-03 without migrating it; disclaimed by `fork-
-  advisory-semantics` and `profile-parse-fail-open`)* — a root
-  `CONTRIBUTING.md` existing is treated as evidence of a human team.
-  *Trigger:* the next proposal touching `bootstrap/_scaffold/upgrade.py`'s
-  init-lock axis inference.
+*(The second `_infer_init_lock_axes` row that stood here was **merged
+2026-08-04** into the row of the same name under *From
+`fork-advisory-semantics`* above — same defect in
+`bootstrap/_scaffold/upgrade.py`, recorded twice because two plans each
+routed it here. Both provenances are preserved on the surviving row;
+nothing was dropped.)*
 
 *From `gate-claims-vs-enforcement` (7):*
 * **Gate-claims A5/A6/A8 — three CI-wording corrections deferred behind
@@ -924,8 +959,11 @@ until its items here are landed -- that is this section's whole purpose.
   retired, **or** the next supervised re-pin ceremony (SC4's "fold in")
   carries them with Maintainer assent.
 * **Gate-claims B2 — the archive-commit-body auditability claim is
-  falsified** (`doctrine/proposals.md:370` and `doctrine/plans.md:611`:
-  *"This makes the migration auditable from `git log` alone"*) — keep the
+  falsified** (`doctrine/proposals.md:379` and `doctrine/plans.md:622`:
+  *"This makes the migration auditable from `git log` alone"*; re-pointed
+  2026-08-04 — `deferral-discipline`'s Chunk B `5c85274` moved the block
+  above these sentences without editing them, and both named checks passed
+  over the stale citation) — keep the
   "must", name the trigger, correct the consequence claim; its own
   proposal, because the block is restated at `doctrine/lifecycle-
   contract.md:137` and `templates/core/dev/PLANNING.md:105`, which engages
