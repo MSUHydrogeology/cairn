@@ -1,7 +1,7 @@
 # Plan: classify URL scanning by adopter file role
 
 **Source proposal**: [`dev/proposals/archive/2026-08-05-claude-content-scan-url-classification.md`](../proposals/archive/2026-08-05-claude-content-scan-url-classification.md)
-**Status**: open
+**Status**: executing
 **Plan review**: not required -- the accepted proposal already contains the
 External Security Review's four exact remedies and this plan introduces no new
 security design; an independent code review remains required before archive
@@ -48,7 +48,7 @@ at archive rather than riding an implementation commit.
 | # | File | Change |
 |---|------|--------|
 | A1 | `templates/modules/team-gated/content_scan_runner.py` | Resolve one absolute executable Git path outside the candidate tree; invoke it through a runner-local launcher whose closed child environment drops ambient `GIT_*` and pins execution-bearing config inert. Print the resolved path once per audited-set resolution. |
-| A2 | same | Pass `--` before every `ls-files` pathspec and reject a manifest root whose post-`!` value starts with `-`. |
+| A2 | same | Select literal pathspec semantics, pass `--` before every `ls-files` pathspec, and reject a manifest root whose post-`!` value starts with `-`. |
 | A3 | `bootstrap/tests/test_security_stack.py` | Real-Git alternate-`GIT_DIR` falsifier, leading-dash rejection, exact argv/environment capture, and resolved-executable report assertion. |
 
 ### Chunk B -- role classification

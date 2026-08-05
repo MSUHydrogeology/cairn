@@ -359,6 +359,14 @@ class TestAuditRootsManifest:
         with pytest.raises(csr.AuditError):
             csr.load_audit_roots(m, tmp_path)
 
+    @pytest.mark.parametrize("entry", ["--others", "!--others"])
+    def test_option_shaped_root_refused(self, csr, tmp_path, entry):
+        m = tmp_path / "roots.txt"
+        m.write_text(
+            f"# content-scan-roots v1\n{entry}\n", encoding="utf-8")
+        with pytest.raises(csr.AuditError, match="Git option"):
+            csr.load_audit_roots(m, tmp_path)
+
     def test_missing_sentinel_refused(self, csr, tmp_path):
         m = tmp_path / "roots.txt"
         m.write_text("dev\n", encoding="utf-8")
@@ -531,6 +539,70 @@ class TestRunnerExitContract:
             tmp_path / "scripts" / "content_scan_residuals.txt",
             deadline=time.monotonic() - 1.0)
         assert code == 2
+
+
+@pytest.mark.skipif(not _HAS_GIT, reason="git not available")
+class TestRunnerGitBoundary:
+    def test_ambient_git_dir_cannot_redirect_the_audited_set(
+            self, csr, tmp_path, monkeypatch):
+        target = tmp_path / "target"
+        other = tmp_path / "other"
+        target.mkdir(); other.mkdir()
+        _git_repo(target); _seed_apparatus(target); _git_commit_all(target)
+        _git_repo(other)
+        (other / "dev").mkdir()
+        (other / "dev" / "redirected.md").write_text(
+            "wrong repository\n", encoding="utf-8")
+        _git_commit_all(other)
+
+        monkeypatch.setenv("GIT_DIR", str(other / ".git"))
+        files = csr.audited_text_files(
+            target, target / "scripts" / "content_scan_roots.txt")
+        rels = {str(path.relative_to(target)) for path in files}
+        assert "dev/doc.md" in rels
+        assert "dev/redirected.md" not in rels
+
+    def test_git_argv_and_environment_are_fixed(
+            self, csr, tmp_path, monkeypatch):
+        observed = {}
+
+        class _Proc:
+            returncode = 0
+            stdout = "dev/doc.md\0"
+            stderr = ""
+
+        def _run(argv, **kwargs):
+            observed["argv"] = argv
+            observed["env"] = kwargs["env"]
+            return _Proc()
+
+        monkeypatch.setenv("GIT_DIR", "/attacker/repository")
+        monkeypatch.setenv("GIT_INDEX_FILE", "/attacker/index")
+        monkeypatch.setattr(csr.subprocess, "run", _run)
+        git = Path("/usr/bin/git")
+        assert csr._git_tracked(tmp_path, [":(exclude)docs", "dev"], git) \
+            == ["dev/doc.md"]
+
+        argv = observed["argv"]
+        assert argv[0] == str(git)
+        assert "--literal-pathspecs" in argv
+        terminator = argv.index("--")
+        assert argv[terminator + 1:] == [":(exclude)docs", "dev"]
+        env = observed["env"]
+        assert env["GIT_CONFIG_NOSYSTEM"] == "1"
+        assert env["GIT_CONFIG_GLOBAL"] == csr.os.devnull
+        assert env["GIT_OPTIONAL_LOCKS"] == "0"
+        assert "GIT_DIR" not in env and "GIT_INDEX_FILE" not in env
+        for key, value in csr._GIT_CONFIG:
+            assert f"{key}={value}" in argv
+
+    def test_resolved_git_is_reported_once(self, csr, tmp_path, capsys):
+        _git_repo(tmp_path); _seed_apparatus(tmp_path); _git_commit_all(tmp_path)
+        csr.audited_text_files(
+            tmp_path, tmp_path / "scripts" / "content_scan_roots.txt")
+        out = capsys.readouterr().out
+        assert out.count("content_scan: Git executable ") == 1
+        assert "provenance not authenticated" in out
 
 
 # ---------------------------------------------------------------------------

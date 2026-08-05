@@ -43,17 +43,22 @@ Audited set (P1 #2 -- the audited-roots manifest)
 The roots come from an explicit, adopter-owned manifest
 (``content_scan_roots.txt``), NOT a hardcoded list or a shell glob. The
 manifest is repo-relative + containment-checked (no absolute paths, no ``..``
-escape, no symlink escape), ships with required Cairn defaults plus project
-extensions, and is **itself in the audited set** (a hostile edit to it is
-scanned). A missing / empty / unresolvable required-root manifest fails closed
-(exit 2). The runner makes **no profile-derived-completeness claim**: it scans
-exactly what the manifest names.
+escape, no symlink escape, no option-shaped leading ``-``), ships with required
+Cairn defaults plus project extensions, and is **itself in the audited set** (a
+hostile edit to it is scanned). Git is resolved once outside the candidate tree
+and invoked with ambient ``GIT_*`` steering removed, inert execution-bearing
+config, literal pathspecs, and an option terminator. A missing / empty /
+unresolvable required-root manifest fails closed (exit 2). The runner makes
+**no profile-derived-completeness claim**: it scans exactly what the manifest
+names.
 """
 from __future__ import annotations
 
 import hashlib
 import importlib.util
+import os
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -81,6 +86,25 @@ _AUDIT_TEXT_EXCLUDE_SEGMENTS = ("/archive/",)
 _MAX_FILE_BYTES = 8 * 1024 * 1024          # 8 MiB per file
 _MAX_TOTAL_BYTES = 128 * 1024 * 1024       # 128 MiB across the audited set
 _MAX_WALL_SECONDS = 120.0                  # whole-run wall-clock ceiling
+
+# The Git query decides which repository bytes are scanned. Its environment is
+# therefore an input boundary, not harmless ambience: GIT_DIR outranks `-C` and
+# can redirect `ls-files` to another repository. Keep only the host minimum,
+# then put back the Git controls this launcher deliberately owns.
+_GIT_ENV_NAMES = frozenset({
+    "PATH", "HOME", "LANG", "TMPDIR", "TEMP", "TMP",
+    "SYSTEMROOT", "SystemRoot", "COMSPEC", "PATHEXT", "USERPROFILE",
+    "APPDATA", "LOCALAPPDATA",
+})
+_GIT_CONFIG = (
+    ("core.useReplaceRefs", "false"),
+    ("core.hooksPath", os.devnull),
+    ("core.fsmonitor", "false"),
+    ("core.quotePath", "false"),
+    ("diff.external", ""),
+    ("core.pager", "cat"),
+)
+_GIT_TIMEOUT_SECONDS = 60
 
 
 class AuditError(Exception):
@@ -144,10 +168,11 @@ def load_audit_roots(manifest_path: Path = _ROOTS_MANIFEST,
         if not rel:
             continue
         p = Path(rel)
-        if p.is_absolute() or ".." in p.parts:
+        if p.is_absolute() or ".." in p.parts or rel.startswith("-"):
             raise AuditError(
                 f"audited root {rel!r} is not a contained repo-relative path "
-                "(absolute or contains '..')")
+                "(absolute, contains '..', or begins with '-' and could be "
+                "parsed as a Git option)")
         # Containment: the (possibly non-existent) target must resolve inside
         # the repo. A symlinked root that points outside is rejected here.
         resolved = (repo_resolved / p).resolve()
@@ -167,17 +192,77 @@ def load_audit_roots(manifest_path: Path = _ROOTS_MANIFEST,
 # Audited file set (git-tracked, contained, budget-checked)
 # --------------------------------------------------------------------------
 
-def _git_tracked(repo_root: Path, roots: list[str]) -> list[str]:
+def _git_child_env() -> dict[str, str]:
+    """Closed environment for the audited-set Git query.
+
+    Every ambient ``GIT_*`` value is absent; only the controls below are put
+    back. Other names are admitted by an explicit host-minimum allowlist rather
+    than inherited wholesale.
+    """
+    env = {
+        name: value for name, value in os.environ.items()
+        if name in _GIT_ENV_NAMES or name.startswith("LC_")
+    }
+    env.update({
+        "GIT_TERMINAL_PROMPT": "0",
+        "GIT_CONFIG_NOSYSTEM": "1",
+        "GIT_CONFIG_GLOBAL": os.devnull,
+        "GIT_OPTIONAL_LOCKS": "0",
+    })
+    return env
+
+
+def _resolve_git(repo_root: Path) -> Path:
+    """Resolve the operator's Git once; validate shape and containment only.
+
+    This is not provenance authentication. Package-manager symlinks are fine
+    when their resolved target is an executable regular file outside the tree
+    being scanned.
+    """
+    found = shutil.which("git", path=os.environ.get("PATH"))
+    if not found:
+        raise AuditError("git is unavailable on the operator PATH")
+    lexical = Path(found)
+    if not lexical.is_absolute():
+        raise AuditError(f"git resolved to a non-absolute path: {found!r}")
     try:
-        out = subprocess.run(
-            ["git", "-C", str(repo_root), "ls-files", "-z", *roots],
-            capture_output=True, text=True, check=True,
-        ).stdout
-    except (FileNotFoundError, subprocess.CalledProcessError) as exc:
+        resolved = lexical.resolve(strict=True)
+        repo_resolved = repo_root.resolve(strict=True)
+    except (OSError, RuntimeError) as exc:
+        raise AuditError(f"git or repository path could not be resolved: {exc}") from exc
+    if resolved == repo_resolved or repo_resolved in resolved.parents:
+        raise AuditError(
+            f"git resolves inside the repository under scan ({resolved}); "
+            "candidate-tree content may not choose the executable")
+    if not resolved.is_file() or not os.access(resolved, os.X_OK):
+        raise AuditError(
+            f"git at {resolved} is not an executable regular file")
+    return resolved
+
+
+def _git_tracked(repo_root: Path, roots: list[str],
+                 git_executable: Path | None = None) -> list[str]:
+    git = _resolve_git(repo_root) if git_executable is None else git_executable
+    argv = [str(git), "--literal-pathspecs"]
+    for key, value in _GIT_CONFIG:
+        argv.extend(("-c", f"{key}={value}"))
+    argv.extend(("-C", str(repo_root), "ls-files", "-z", "--", *roots))
+    try:
+        proc = subprocess.run(
+            argv, capture_output=True, text=True, check=False,
+            env=_git_child_env(), timeout=_GIT_TIMEOUT_SECONDS,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
         raise AuditError(
             f"git ls-files over the audited roots failed ({exc!r}); cannot "
             "resolve a trustworthy audited set") from exc
-    return [rel for rel in out.split("\0") if rel]
+    if proc.returncode != 0:
+        detail = (proc.stderr or "").strip()[:500]
+        raise AuditError(
+            f"git ls-files over the audited roots exited {proc.returncode} "
+            f"({detail or 'no diagnostic'}); cannot resolve a trustworthy "
+            "audited set")
+    return [rel for rel in proc.stdout.split("\0") if rel]
 
 
 def audited_text_files(repo_root: Path = _REPO_ROOT,
@@ -192,6 +277,9 @@ def audited_text_files(repo_root: Path = _REPO_ROOT,
     roots = [rel for rel, _req in root_entries]
     required_roots = [rel for rel, req in root_entries if req]
     repo_resolved = repo_root.resolve()
+    git_executable = _resolve_git(repo_root)
+    print(f"content_scan: Git executable {git_executable} (shape and "
+          "containment validated; provenance not authenticated).")
 
     def _passes_filters(rel: str) -> bool:
         if not rel.endswith(_AUDIT_TEXT_EXTS):
@@ -206,7 +294,10 @@ def audited_text_files(repo_root: Path = _REPO_ROOT,
     # roots resolve to zero tracked text files, the scan did not actually scan
     # the declared surface -> fail closed (exit 2). This is checked BEFORE the
     # manifest self-add, so manifest-self-inclusion cannot mask empty roots.
-    root_rels = {rel for rel in _git_tracked(repo_root, roots) if _passes_filters(rel)}
+    root_rels = {
+        rel for rel in _git_tracked(repo_root, roots, git_executable)
+        if _passes_filters(rel)
+    }
 
     # P1 #5: every REQUIRED root must be present AND contribute >= 1 tracked
     # text file. A missing or empty required root silently shrinks coverage --
@@ -231,7 +322,8 @@ def audited_text_files(repo_root: Path = _REPO_ROOT,
     # the roots' contribution.
     try:
         manifest_rel = str(manifest_path.resolve().relative_to(repo_resolved))
-        if manifest_rel in set(_git_tracked(repo_root, [manifest_rel])):
+        if manifest_rel in set(_git_tracked(
+                repo_root, [manifest_rel], git_executable)):
             tracked.add(manifest_rel)
     except ValueError:
         pass  # manifest outside the repo (unusual); roots-only set
