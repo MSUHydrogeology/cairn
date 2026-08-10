@@ -1676,6 +1676,168 @@ the rejected-input control, both with recorded bucket; the three fold rows
 explicitly labelled MET-by-residual with the residual quoted; no repository file
 modified.
 
+#### Chunk E — RUN, 2026-08-10, Claude
+
+Evidence commit `5010d36`, clean-checkout deciders (A8). **Amendment A16 is
+confirmed and acted on: row 4's subject no longer exists**, and the row is
+re-derived against the closed grammar rather than struck.
+
+**A citation correction that matters for rows 1–3.** The plan cites
+`tools/lifecycle_planner.py:248`. Re-pinned at this commit: `_fold_word` is at
+**`tools/lifecycle_planner.py:249`**, the allow-set at **`:246`**, and the
+keep-rule at **`:284`–`:285`**. More important than the shift: **the enforcer
+tests do not load that file.** `bootstrap/tests/test_byline_identity.py:56` loads
+`templates/skills/_lib/lifecycle_planner.py` — the *shipped twin*. Both copies
+are byte-identical at this commit (`b3997576ecbb8f4a…`, `shasum -a 256`,
+`as_of 2026-08-10` at `5010d36`), so the mechanism is the same; but a register
+row that cited only `tools/` would be naming the copy an adopter never installs,
+and it cost this chunk a wasted perturbation to notice (recorded in G-3).
+
+##### The B5 register
+
+| # | Site | Direction on an input it cannot fully interpret | Verdict |
+| --- | --- | --- | --- |
+| E-1 | `_fold_word`, the identity fold — `tools/lifecycle_planner.py:249`, keep-rule at `:284`–`:285`; shipped twin at `templates/skills/_lib/lifecycle_planner.py` | **neither** — every non-ASCII character survives; only ASCII non-alphanumerics, C0/DEL and combining marks are dropped | **MET-by-residual** (R2 evidenced by run below) |
+| E-2 | The per-word AI-candidate leg — `_is_ai_agent`, prefix match over `_flag_words` | same fold at NFKD; over-flags rather than under-flags, by design | **MET-by-residual** — same lineage |
+| E-3 | The roster-entry normalization — `_load_human_maintainers`, whole-name tuple equality over `_grant_words` | same fold, whole-entry; folded-value filter drops the empty-tuple universal match | **MET-by-residual**, residual R5 |
+| E-4 | The profile loader — `load_config` (`bootstrap/_scaffold/config.py:472`) → `_minimal_yaml_parse` (`:206`) | **refuses**, naming the line and the rewrite | **MET** — re-derived; the fail-open subject is gone |
+| E-5 | `_resolve_interpreter` — `templates/skills/_lib/lifecycle.py:414` | shape validator, not an authenticator | **MET-by-residual** — the `AGENTS.md` sentence is present and quoted below |
+
+##### E-1 to E-3 — the fold's buckets, all four directions in one run
+
+Roster: `human_maintainers: ["Anthony Kendall"]`, `ai_agents: ["testagent"]`, in a
+scratch `dev/.cairn/agent-identities.json` outside the repository. Invisible and
+non-ASCII code points are written as `U+…`, never as raw bytes (the plan's own
+rule — a register that embeds its payload is a payload).
+
+| Input | Granting key (NFD) | Bucket |
+| --- | --- | --- |
+| `Anthony Kendall` — the rostered name | `('anthony', 'kendall')` | **human** |
+| `Jane Roe` — **the rejected input, the control** | `('jane', 'roe')` | **unknown** |
+| rostered name with U+0410 (Cyrillic capital A) for `A` | `('аnthony', 'kendall')` | **unknown** |
+| rostered name with U+1D400 (mathematical bold A) for `A` | `('𝐀nthony', 'kendall')` | **unknown** |
+| punctuation-only byline (`  -  . `) | `()` | **unknown** |
+
+The rejected input is rejected **in the same run** as the widened ones, so
+"the confusable was rejected" is not consistent with a step that rejects
+everything. The homoglyph and mathematical-bold legs are the **promotion defect
+closed**: under the superseded `re.sub(r"[^a-z0-9]", …)` both would have been
+*deleted into* `('nthony', 'kendall')`; they now survive as themselves and miss.
+
+**And the widening that remains, evidenced by run rather than by citation.**
+Three R2 classes, each mapping a **different person's** name onto the rostered
+key:
+
+| Input | Granting key | Bucket | Class |
+| --- | --- | --- | --- |
+| `ANTHONY KENDALL` | `('anthony', 'kendall')` | **human** | full case fold |
+| `Anthöny Kendall` (o + U+0308) | `('anthony', 'kendall')` | **human** | combining-mark strip |
+| `Ánthony Kendall` (U+00C1) | `('anthony', 'kendall')` | **human** | precomposed → NFD → mark strip |
+| `Hans Straße` against a roster entry `Hans Strasse` | `('hans', 'strasse')` | **human** | casefold **expansion** (U+00DF → `ss`) |
+
+The last one is the sharpest instance and is not in the plan's own list: casefold
+*expands* one character into two, so two genuinely different surnames become one
+key. That is a widening on an authorization path, it is ratified with the classes
+named, and it is why E-1 to E-3 are **MET-by-residual and not clean MET**.
+Calling them clean MET would be exactly the overstatement this bar exists to
+prevent.
+
+**E-2's own buckets, same run** — the AI leg errs toward flagging, which is the
+safe direction, and the register records the one case where it does not:
+
+```
+'testagent'      flag key ('testagent',)   -> ai
+'TestAgent-4o'   flag key ('testagent4o',) -> ai      (versioned byline still caught)
+'𝐓estagent'      flag key ('testagent',)   -> ai      (U+1D413 folds at NFKD)
+'тestagent'      flag key ('тestagent',)   -> unknown (U+0442 -- NOT laundered
+                                             into human; lands in the unknown
+                                             residual, which a terminal Decision
+                                             surfaces as a violation)
+```
+
+The last line is worth stating plainly: a Cyrillic-homoglyph agent byline is
+**not** classified `ai`. It is not laundered into `human` either — the human leg
+is a positive allowlist — so the fail direction is toward *unknown*, which the
+conformance check treats as a structural violation. That is the fail-closed
+direction B5 asks for, reached by a different route than the AI registry.
+
+##### E-4 — re-derived, because A16's subject is gone
+
+Confirmed at this commit rather than inferred: `bootstrap/_scaffold/config.py:43`
+binds `_yaml = None`; `_yaml_load` (`:46`) is a compatibility alias whose body
+`return _minimal_yaml_parse(text)` is the same function, verified by running
+both (`_yaml_load('a: b') == _minimal_yaml_parse('a: b')` → `True`); and
+`load_config` calls `_minimal_yaml_parse` directly at `:488`. **PyYAML is not on
+the profile path at all**, so the plan's decider — *"with PyYAML unavailable in a
+scratch environment"* — describes no code path. Re-derived decider: feed the
+loader inputs the closed grammar cannot interpret and record the direction.
+
+```
+valid profile (the ACCEPTED input, the control)  ACCEPTED -> {'project_name': 'X',
+                                                  'test_command': 'pytest',
+                                                  'preset': 'solo-greenfield'}
+nested mapping                     REFUSED (ProfileGrammarError) "a nested mapping;
+                                     the profile schema is flat ..."
+flow mapping `{a: 1}`              REFUSED "an inline `{...}` mapping is not accepted"
+anchor / alias (`&x` / `*x`)       REFUSED "a value starting with `&` is a YAML
+                                     indicator; write the value ..."
+tab indentation                    REFUSED "... rejects them inside plain values"
+unrecognized key                   REFUSED, and prints the recognized set
+`schema: 99`                       REFUSED "this engine understands 1"
+comment-only document              REFUSED "an empty or comment-only profile would
+                                     install a default tree silently"
+```
+
+Eight inputs, one accepted and seven refused, **every refusal naming the file,
+the line and the rewrite** — and no input returning a partial dict. The direction
+on ambiguity is *refusal*, not a guess. **E-4 is MET**, and the row is recorded
+as re-derived rather than carried: the pre-drawn `in flight` verdict describes a
+tree that no longer exists.
+
+##### E-5 — the shape validator accepts a non-Python interpreter, RUN
+
+Scratch root outside the repository; `dev/.cairn/local-env.json` rewritten per
+leg.
+
+```
+absent config                                  ACCEPTED -> (<current>, 'fallback')
+/bin/echo -- absolute, real, executable,
+  NOT a symlink, NOT Python                    ACCEPTED -> ('/bin/echo',
+                                                            'local-env.json')
+a 2-line /bin/sh script that prints
+  "nope", chmod 755, under /private/tmp        ACCEPTED -> (<that script>,
+                                                            'local-env.json')
+relative path (the rejected input, control)    REFUSED  "must be an absolute path"
+symlinked leaf                                 REFUSED  "must not be reached
+                                                 through a symlink"
+parent traversal (`/usr/bin/../bin/echo`)      REFUSED  "must not contain a
+                                                 parent-traversal (..) segment"
+extra JSON key                                 REFUSED  "exactly one key"
+well-shaped but absent path                    DEGRADES -> (<current>,
+                                                 'fallback-stale') + warning
+non-executable regular file                    REFUSED  "is not an executable file"
+```
+
+The second and third legs are the residual, demonstrated: **a shell script that
+is not Python is accepted as the project interpreter and would be executed.**
+(A first attempt at the script leg reported REFUSED; the cause was that macOS
+`/var/folders/…` reaches the file through a symlinked parent, which the validator
+correctly refuses. Re-run under `/private/tmp` — symlink-free — it is accepted.
+Recorded because the first result would have overstated the validator's strength,
+and the register's job is to catch that.)
+
+**The row is MET-by-residual only while the sentence exists**, so the sentence is
+quoted from `AGENTS.md:355`–`:357` at this commit:
+
+> and the reader is a strict *shape* validator, not an authenticator: it
+> checks absoluteness, schema, symlink-freedom and the executable bit,
+> but neither Python identity nor provenance.
+
+Five refusals, one degradation with a visible warning, and three acceptances of
+which two are the documented limit. The direction on an input it *cannot
+interpret* is refusal; the direction on an input it *can* interpret but cannot
+*authenticate* is acceptance — and that is what the sentence discloses.
+
 ---
 
 ### Chunk F — B3: a documented security control names the command that fires it, and that command runs
