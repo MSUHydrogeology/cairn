@@ -3747,3 +3747,219 @@ and these are the evidence that these do not.
   doctrine files say so.
 * **No human has read the two runners line by line for security content.** The
   tests and Bandit are a different thing.
+
+## Implementation verification -- Claude -- 2026-08-10 (Chunks H and D)
+
+**Scope landed in this pass:** Chunk **H** (`5d1e941`) and Chunk **D**
+(`d2a3f4b`). **Deliberately not landed:** **F2** -- and therefore Chunk **G** --
+stopped on a contradiction in the authorization they rest on; see *The F2 stop*
+below. **Still outstanding:** F3, F4, F5.
+
+**Interpreter / runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`,
+CPython **3.13.13**, `PYTHONDONTWRITEBYTECODE=1`. macOS (Darwin 25.5.0).
+`openssl(1)` on `PATH` (required by the hosting-TLS fixtures this pass reuses).
+
+**Pre/post state -- stated exactly rather than asserted clean, because it was
+not.** Throughout this pass the working tree carried other sessions' live work:
+`bootstrap/_scaffold/config.py`, `docs/quickstart.md`,
+`docs/solo-legacy-recipe.md`, and later `bootstrap/tests/test_presets.py`,
+`test_upgrade.py`, `test_default_security_stance.py`,
+`test_security_verification.py`, `test_module_merge_lockfile.py`,
+`dev/plans/corpus-tier-cost.md` and an untracked
+`dev/modules/security-verification.md`. **None was touched, committed, or
+reported here as this scope's.** HEAD moved from `a62a5d2` to `5792298` to
+`d2a3f4b` during the pass; every figure below is a dated snapshot at a named
+commit, not a constant.
+
+**Commands, exits, outcomes, elapsed.**
+
+| Command | Exit | Outcome | Elapsed |
+|---|---|---|---|
+| `python -m pytest bootstrap/tests/test_security_finding_confidentiality.py -q` | 0 | **38 passed**, 0 failed, 0 skipped, 0 xfailed | 19.4 s |
+| `python -m pytest bootstrap/tests/{test_security_lint,test_notice_install,test_security_net,test_api_access_security,test_web_hosting_security}.py -q` | 0 | **201 passed** | 59.0 s |
+| `python scripts/check_cairn.py` (before H) | 0 | OK, **174** Markdown files | -- |
+| `python scripts/check_cairn.py` (after H) | 0 | OK, **175** Markdown files | -- |
+| `python scripts/quality_gate.py --sub neutrality` | 1 | `fail=93 info=21` -- **unchanged** at every point in the pass | -- |
+| `python scripts/quality_gate.py --sub redundancy` | 0 | `fail=0 info=2` -- unchanged | -- |
+| `python scripts/claim_check.py <file>` over each edited `.md`, one per invocation | 0 | OK, no flags | -- |
+
+**Known omission on Boundary B, stated rather than implied.** **No full-suite run
+was performed in this pass.** The tree was never clean for long enough to produce
+a Boundary-B artifact against an unchanged commit -- five other sessions'
+in-flight files were present continuously -- and Chunk D adds a test file that
+moves no pin and ships no template, so its effects are bounded by the scoped runs
+above (Boundary A). **A full suite against `d2a3f4b` alone remains owed** and is
+the strictly correct Boundary-B artifact for this pass.
+
+**check_cairn's one issue at the end of the pass is not this scope's.** After the
+Chunk-D commit, `check_cairn` reports one unresolved-path flag inside the plan
+`corpus-tier-cost` (referred to by stem, and its cited path is deliberately not
+repeated here -- repeating it would import the same flag into this file). That
+plan was another session's live working-tree modification. `check_cairn` was
+**OK on 175 files** immediately after Chunk H.
+
+### Chunk H -- what landed, and the evidence it was checked against behaviour
+
+`bootstrap/SAFETY.md` Rule 11 (ten numbered controls, seven explicit
+non-protections), Rule 5 re-scoped in place with a pointer, a
+`bootstrap/DEPENDENCY_BUDGET.md` **non-exception** section, and one
+`CHANGELOG.md > Unreleased > Added` entry. Chunk H's channel note requires the
+evidence be a reading of the landed runners plus a live run of each installed
+command, not a reading of the prose. Both were done:
+
+| Live probe | Observed |
+|---|---|
+| both capabilities installed to a tmp adopter via `scaffold.py --config … --target` | 14 destinations; `--summary` lists them only under **Explicit add**, satisfying F-5's no-preset property at the public path |
+| `api_access_security.py local` / `web_hosting_security.py local`, untouched stubs | **INCOMPLETE, exit 5**, both |
+| `deployed-passive --authorize-base-url` with five near-misses (trailing slash, `:443`, upper-case host, `http` for `https`, added query) | **DEGRADED (20)**, `policy_refused:authorization_mismatch`, **before any network act** |
+| `local` against a non-loopback policy host | **DEGRADED (20)**, `policy_refused:non_loopback_target`, before DNS |
+| `local` against a loopback fixture, correct then over-permissive | **CLEAN (0)** then **FINDINGS (10)**; report dir `drwx------` holding **only** `report.json` at `-rw-------`; **zero integers** anywhere in the parsed findings; zero credential bytes in any sink |
+
+**One measured correction to the shipped doctrine's worked example, found by
+using it.** The API policy's `environment` field is constrained to
+`("local", "staging", "production")`. A deployed section spelled
+`"environment": "deployed"` -- the obvious guess, and the word the subcommand
+itself uses -- is refused as `policy_refused:bad_expectation`, which reads as a
+malformed policy rather than as an out-of-vocabulary label. Not changed here (it
+is outside Chunk H's file set); recorded as a lasting truth for the archive.
+
+### Chunk D -- the two corrections that change what the sweep can claim
+
+**(1) `_CHANNEL_PASSTHROUGH` is an inert seam.** The engine ships it *for* D-2's
+phase (a), documented as the one-line suppression a throwaway copy needs.
+Measured at `ddffcd6`..`d2a3f4b`: `sanitize_channel` has exactly **two** live call
+sites, and **both attributes they write are written and never read** --
+`Response.reason_withheld` and `Response.redirect_withheld` have no consumer in
+either facade, in any check, in any finding, in the report, in the summary, or in
+the child document. The other **eleven** `CHANNEL_TOKENS` entries have **no call
+site at all**. So suppression cannot make a marker appear in any sink, for any
+channel, and D-2's stated instrument is unusable as written.
+`test_d2_the_channel_passthrough_seam_cannot_demonstrate_liveness` pins the
+measurement and fails the day a consumer is wired up.
+
+**(2) The property is structural absence, so phase (a) is a leak injection.**
+There is no shipped path that writes a peer-supplied or credential string to a
+sink. An absence cannot be deleted. Phase (a) therefore *adds* the emission at
+the site where the raw value is already in scope and requires the sweep to find
+the marker; phase (b) restores the pristine runner and requires absence. This is
+a change of **instrument**, not of purpose: it establishes exactly what D-2 asks
+for -- that the runner really reaches the channel, and that the sweep really
+would catch a leak there -- and it is strictly stronger than a suppression whose
+output nothing reads.
+
+**Per-channel disposition, and the maps are asserted to partition
+`CHANNEL_TOKENS`.** Nine channels carry an end-to-end (a)+(b) row: reason phrase,
+`Location`, an overexposed JSON property, an array member, an undeclared body
+property, a credential, a refused policy label, a response header value, and a
+`Set-Cookie`. Three -- TLS/transport **exception text**, **timeout diagnostics**,
+and the **certificate subject** -- are closed as a *class* at
+`SecurityRefusal.__init__`, which clamps every `reason` to `REASON_TOKENS`, and
+the clamp is tested with a real deletion mutant; the certificate subject is
+additionally pinned by a source-level assertion that no member reads any
+certificate field. **One channel is recorded UNCOVERED**, per D-2's own rule: a
+policy-declared **request body** has no finding, report field, summary line or
+child-document site that takes it, so its absence is asserted and its liveness is
+unproven. `test_d2_every_channel_token_has_a_recorded_disposition` fails if a new
+channel token is added without a disposition, and asserts the three maps do not
+overlap.
+
+**Falsification ledger -- six external mutants.** Each was applied to the tree,
+run, observed RED, then restored **byte-exactly** from a pre-saved copy, with the
+restore proved by `shasum -a 256` equality and a blank `git status --short` on the
+perturbed path.
+
+| # | Mutation | Node | Observed |
+|---|---|---|---|
+| M1 | add a 14th `CHANNEL_TOKENS` entry | `test_d2_every_channel_token_has_a_recorded_disposition` | RED |
+| M2 | add a `getpeercert()` call in `_wrap_tls` | `test_d2_no_engine_member_reads_a_certificate_field` | RED |
+| M3 | `SecurityRefusal(E_TLS_REFUSED, str(exc))` | `test_d2_no_handler_interpolates_an_exception_into_a_refusal` | RED |
+| M4 | `_ORDINAL_RE` -> `^.*$` | `test_d6row_a_non_ordinal_principal_is_refused` | RED **on `[P1]` only** -- see below |
+| M5 | print the fingerprint key at construction | `test_d7_the_key_appears_in_no_sink` | RED |
+| M6 | write `raw-response.bin` beside the report | `test_d3_the_temporary_directory_holds_only_the_report` | RED on `[clean]` and `[findings]` |
+
+**Two defects this file's own falsification found in itself, and both are the
+recurring class.**
+
+1. **A test that could not fail.** The ordinal-principal rows renamed only the
+   principal id, leaving the case's `principal` reference pointing at `p1`. The
+   refusal therefore came from the *unknown-principal-reference* guard, not from
+   the ordinal shape, and M4 left **all eight rows green**. Fixed by renaming the
+   case reference too. **Re-measured: M4 then reddens exactly one row.** The other
+   seven are refused one guard downstream, because the credential variable name is
+   *derived* from the id -- `p0`, `p-1`, `p99999`, `p1x`, an email, a name and an
+   account id all derive a name that is not set and refuse `credential_absent`.
+   Only `P1` derives `CAIRN_API_P1_CREDENTIAL`, a name that *is* set, so only `P1`
+   isolates the ordinal shape. All eight rows are kept -- each still asserts that
+   the run refuses and that the label reaches no sink -- and the narrowness is
+   recorded as a property of the design.
+2. **A row asserting a property its fixture could not exhibit.** The within-run
+   fingerprint row compared an overexposed scalar against an array and measured
+   two *different* fingerprints -- correctly, because a list and a string are not
+   equal observations. Fixed to two declared-absent properties carrying one value.
+   Noted in the test body so it is not "fixed" back.
+
+### The F2 stop -- the authorization for it contradicts itself
+
+**F2 was not landed, and Chunk G is blocked behind it. This is a stop-and-report,
+not an omission of convenience.** The block that unfences F2 --
+`## Maintainer ratification of the B3 living-state narrowing -- Anthony Kendall --
+2026-08-10`, present **verbatim in both plans** of the pair -- says two things
+that cannot both be acted on:
+
+> **What this unfences.** `F2` and **all of Chunk G** in
+> `dev/plans/api-web-security-modules.md` […]
+
+and, in the same block:
+
+> * It does not widen `_LIVING_STATE_DSTS`. Adding a sixth entry is a separate
+>   change to an engine constant and carries its own Security Review.
+
+**F2 is, precisely and only, the addition of a sixth and seventh entry to
+`_LIVING_STATE_DSTS`.** So the enumeration that exists "so nothing further is
+read into it" forbids exactly the row the same block declares unfenced.
+
+Three further facts make choosing an interpretation the wrong move for an
+implementing agent:
+
+* **The Maintainer's own words are one token, `Ratify`.** Every enumerated bullet
+  is the *scribe's* characterization, written by an implementing agent. Reading
+  one bullet as loose and the other as binding is an agent deciding the scope of
+  a Maintainer authorization.
+* **The stated rationale does not cover F2's two files.** The block accepts the
+  narrowing because *"the class is five human-edited coordination documents, not
+  'any policy'"* -- files a human edits continuously, where hash-pinning would
+  report ordinary work as tampering. F2's two files are machine-read **security
+  configuration for a shipped runner**, and its own row asserts the policy is
+  *"**not** the integrity anchor for the deployed leg"* -- a claim that wants a
+  Security Review, not an inference.
+* **The constant is an executable trust boundary.** `_LIVING_STATE_DSTS` is what
+  `verify_integrity` consults to decide which records may skip the tamper check.
+
+What was verified instead of guessed: `bootstrap/_scaffold/lockfile.py` was
+claimed, read at its current state (the `module_merge_directives` /
+`resolve_slot_merge` work has landed, so the earlier collision is genuinely
+resolved), **not edited**, and the claim was released. **Δ2 is absent from the
+engine delta, as F-7 requires.**
+
+**What the Maintainer is asked for:** one sentence saying whether the ratification
+covers F2's two `dev/.cairn/*-policy.json` entries, or whether F2 takes its own
+Security Review. Either answer unblocks; the contradiction is what does not.
+
+### Known omissions after this pass
+
+* **F2, and therefore Chunk G.** See above. Consequence, unchanged and measured
+  in the Chunk-H live probes: a filled policy reports `modified (hash mismatch)`.
+  Chunk G additionally needs G-5's first-use trust hash set, which is the
+  Maintainer's to produce and was not produced.
+* **F3, F4, F5 did not land** -- the capability install notice (Δ4/Δ5), its two
+  `cli.main` call sites (Δ3), and `test_security_capability_install.py`. So F-6,
+  F-11 and F5's three-part B2 field-vocabulary tests remain unsatisfied. This was
+  a budget outcome, not a fence: nothing blocks them.
+* **No Boundary-B full suite for this pass.** Named above with the reason.
+* **`SAFETY.md` Rule 11 was written before Chunk D and refreshed after it**, in
+  the same commit as this record, so its sweep paragraph describes the sweep that
+  now exists rather than the gap that no longer does. It still records the
+  `request_body` channel as uncovered, because it is.
+* **A-12's four-public-entry-point form** and the **successful deployed-request
+  path** remain unexercised, unchanged from the previous pass.
+* **No human has read the two runners line by line for security content.**

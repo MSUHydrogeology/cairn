@@ -480,17 +480,21 @@ reach is worse than no control.**
   fence working as intended, and it means the successful-deployed-request path
   itself is **unexercised by Cairn's suite** — run by a person typing
   `python -m pytest bootstrap/tests`; **Cairn has no CI**.
-* **Point 10 rests on a reading of the code plus partial tests, not on a
-  channel-complete sweep.**  What Cairn's suite asserts today: credential-marker
-  absence across stdout, stderr, the report file and the whole temporary
-  directory; a *structural* assertion that a finding carries no exact integer at
-  all; and per-check value-absence for each check in both runners.  What it does
-  **not** yet assert: a per-channel *liveness-then-absence* ledger — proving each
-  individual channel (peer reason phrase, redirect query, certificate subject,
-  transport and TLS exception text, timeout diagnostic) is actually reached
-  before asserting nothing leaks through it.  Until that exists, "no marker
-  found" and "that channel is never exercised" are not distinguished for the
-  channels the credential sweep does not cover.
+* **Point 10 is held by *structural absence*, not by redaction — and one channel
+  is recorded as uncovered.**  There is no shipped code path that writes a
+  peer-supplied or credential string to stdout, to stderr, or to the report; the
+  sanitizing helper is defence in depth over two fields nothing reads.  The
+  cross-runner sweep (`bootstrap/tests/test_security_finding_confidentiality.py`,
+  run by a person typing `python -m pytest bootstrap/tests` — **Cairn has no
+  CI**) plants a distinct high-entropy marker per channel and, for **nine**
+  channels, proves the runner actually reaches the channel by *injecting* the
+  leak on a throwaway copy and requiring the sweep to find it, before requiring
+  absence from the pristine runner.  Three more — TLS/transport exception text,
+  timeout diagnostics, and the certificate subject — are closed as a **class** at
+  the refusal constructor, which clamps every reason to a closed vocabulary, and
+  that clamp is itself tested with a deletion mutant.  **A policy-declared
+  request body is recorded as uncovered**: no finding, report field or summary
+  line takes it, so its absence is asserted but its liveness is unproven.
 * **Neither capability is a standing check yet.**  As of this rule they are
   **directly invocable only** — no activation-registry entry exists, so nothing
   runs them as part of a standing agent-facing command and neither is
