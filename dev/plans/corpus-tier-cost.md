@@ -767,3 +767,61 @@ call-family count.
 
 Acceptance stays as R6 set it: invocation counts, byte-identical results,
 observed-red mutants. Wall-clock remains context, never a threshold.
+
+## Implementation verification -- Claude -- 2026-08-10
+
+**Range**: `947fa95..857062d`, of which this plan's commits are `3a1b879` (A),
+`bdc5f21` (B), `a489ed1` (C), `fb487ca` (E), `857062d` (D).
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` — Python
+**3.13.13**, the canonical interpreter, on this host.
+**Tree state**: run in a `git clone --shared` of the repository checked out at
+`857062d`, verified clean (`git status --porcelain` empty) before and after
+each run. The live working tree could **not** be used: other agents hold
+uncommitted work in it, so a Boundary-B run there would not have been
+measuring this commit.
+
+### Commands and outcomes
+
+| command | outcome | wall clock |
+|---|---|---|
+| `pytest bootstrap/tests --quality-gate-shuffle-seed=0` @ `857062d` | **6 failed, 2875 passed, 1 skipped** | 382.92 s |
+| `pytest bootstrap/tests --quality-gate-shuffle-seed=0` @ `947fa95` (pre-implementation) | **5 failed, 2820 passed, 1 skipped** | 408.65 s |
+| `quality_gate.py --sub neutrality --sub redundancy` @ `857062d` | `neutrality fail=93 info=21`, `redundancy fail=0 info=2`, exit 1 | — |
+| `quality_gate.py --sub neutrality --sub redundancy` @ `947fa95` | **identical**: `fail=93 info=21` / `fail=0 info=2` | — |
+| `pytest bootstrap/tests/test_transition_lint.py` @ `857062d` | **48 passed** | 18.29 s |
+
+### Non-pass disposition
+
+**This plan touched exactly four files** — `bootstrap/tests/test_transition_lint.py`,
+`dev/plans/corpus-tier-cost.md`, `dev/plans/archive/transition-lint.md`, and
+`dev/proposals/2026-08-10-claude-corpus-tier-cost.md`. None of the six failures
+is in any of them, and `test_transition_lint.py` itself is 48/48.
+
+**The verification window is contaminated by concurrent work, and that is
+stated rather than hidden.** Ten other-agent commits interleave with this
+plan's five in `947fa95..857062d`, so `947fa95` is a *pre-implementation*
+baseline, not a clean counterfactual for this change alone.
+
+| failure | disposition |
+|---|---|
+| `test_ast_attest.py::test_committed_baseline_accounted_for_across_the_engine_package` | **Pre-existing** (fails at `947fa95` too). The gate names six symbols in `bootstrap/_scaffold/{config,cli,slotmerge,install}.py`; `git log` attributes those files in this window to `625c161`, `bf49579`, `237eb7a` — all other agents' commits. This is the documented re-anchor obligation, and it is not this plan's to discharge. |
+| `test_ast_attest.py::test_ast_gate_passes_over_the_full_scaffold_module_set` | **Pre-existing**, same cause. |
+| `test_gate_preflight.py::TestPublicCli::test_check_runs_against_the_live_repo_and_reports` | **Pre-existing** (fails at `947fa95`). Runs the public CLI against the live repository; a `--shared` clone is not that repository. |
+| `test_security_check.py::test_detached_checkout_excludes_an_ignored_pytest_override` | **Pre-existing** (fails at `947fa95`). |
+| `test_verify_ref.py::test_mutation_verifying_inside_the_candidate_runs_the_forger` | **Pre-existing** (fails at `947fa95`). |
+| `test_verify_ref.py::test_candidate_gpg_ssh_program_never_executes` | **The one delta: 5 → 6.** Not a regression — `test_verify_ref.py` is **67/67 in isolation at `857062d`**, so both of its failures are full-suite-only. The mechanism is ordering: `--quality-gate-shuffle-seed=0` permutes the *whole* collection, which grew 2826 → 2882 across this window, so every seed-0 ordering differs and which order-sensitive node fails moves with it. The plan opened already recording this file as showing "one full-suite failure that does not reproduce in isolation". |
+
+`quality_gate` exits 1 on `neutrality fail=93`. That count is **identical at
+both commits**, and no failing line names a file this plan touched — a
+pre-existing condition, unchanged.
+
+### Known omissions
+
+* **No clean-counterfactual run** isolating this plan's five commits from the
+  ten interleaved ones. The available evidence is the file-level attribution
+  above plus `test_transition_lint.py` at 48/48, not a bisect.
+* **The `test_verify_ref.py` order-sensitivity is described, not fixed.** It
+  predates this plan and belongs to that file's owner.
+* Chunk D's dispositions are measurements on **one host on one day**; the
+  ratios (1.09–1.34 against the corpus tier's 5.09) are the durable claim, the
+  seconds are not.
