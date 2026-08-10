@@ -118,25 +118,61 @@ inferred:
 | blocking pass, `**Findings**: raised`, dispositioned before the next pass | **0** |
 | blocking pass overtaken by the next pass before its Response | **1, permanent** |
 
-So a **closure pass that ships costs nothing**, and the current count is stable
-at **2** — the round-2 and round-3 External passes, each overtaken by the
-Security pass that followed it. An earlier revision of this section said the
-count "grows by one with every additional review round"; that was imprecise and
-is corrected here, because the exception below pins the count and the
-Maintainer must pin a number that will not move.
+So a closure pass **that ships** costs nothing — but a closure pass that
+returns `**Findings**: raised` costs one, like any other blocking round. The
+count was 2 after round 3; the round-4 External and round-3 Security passes
+both returned blocking, so it is **4** as of this Response (four occurrences of
+one identical string — the label collision renders all four the same).
+
+The number is therefore **not stable until a round actually ships**, which is
+why the field above pins a *multiset* at a named parent commit rather than a
+figure quoted from prose. An earlier revision said the count "grows by one with
+every additional review round" and a later one implied closure passes were free;
+the first was imprecise, the second assumed an outcome. The rule is: **every
+blocking round costs one permanent violation, every shipping round costs
+none.**
 
 **The exception is the Maintainer's to grant, and is deliberately left
 unfilled here.** It authorizes nothing until every field below is completed by
 the Maintainer:
 
+**Non-circular by construction.** An earlier form of this table asked for the
+plan blob "at authorization" — a value that is part of the bytes being hashed,
+so writing it changes it. Reproduced: blob `fd9fff89…` became `3da899bc…` the
+moment that value was written into the pending cell. It is the same
+self-reference removed from the pilot activation record, reintroduced here in
+the same commit that removed it there. The binding is now to the **parent**.
+
 | Field | Value |
 |---|---|
-| Plan blob (`git hash-object`) at authorization | *pending* |
+| **Pre-attestation** plan blob (parent of the attestation commit) | *pending* |
 | Clearing `External` review commit | *pending* |
 | Clearing `External Security Review` commit | *pending* |
-| Exact expected violation text | *pending* |
-| Exact expected violation **count** | *pending* |
+| Exact expected violation **multiset** (text × count) | *pending* |
 | Authorizing Maintainer, quoted verbatim | *pending* |
+| Attestation commit (bound by the transition record, never by itself) | *pending* |
+
+**The two-commit ceremony**, in order:
+
+1. Both distinct `SHIP` review commits land against the final contract bytes.
+2. A **Maintainer-only, path-scoped attestation commit** fills the two
+   bootstrap rows and the fields above, carries the verbatim authorization in
+   both the plan and the commit body, and changes **no other path and no other
+   plan byte**.
+3. Before the status-only transition, the Maintainer runs and records an
+   **exact-byte preflight** that derives the parent and attested blobs from
+   Git, verifies the attestation commit's diff is allowlisted, confirms the
+   current artifact descends unchanged from that attestation, and reproduces
+   **exactly** the authorized violation multiset with no extras.
+4. The transition record binds the attestation commit — the commit never
+   embeds its own id or blob.
+
+**No pre-Chunk-A code can validate its own authorization.** This is a
+Maintainer-run exact-byte preflight, not a test. Chunk B's later mutation test
+may *replay* this historical ceremony and must still prove that a changed
+field, an extra violation, a broader diff, another artifact, or a repeat
+invocation refuses — but that retrospective test is explicitly **not** the
+control that authorized the earlier transition.
 
 Bounded by construction:
 
@@ -1726,3 +1762,64 @@ alternate-platform filesystem behavior, pilot observations, Code review, or
 the Maintainer re-anchor. Return K1 only for Security closure. This pass is
 blocking and does not fill the bootstrap table's `External Security Review`
 row.
+
+## Response to plan review -- Claude -- 2026-08-10 (round 4 + Security round 3)
+
+**Model**: claude-opus-5 (Claude Opus 5)
+**Reviewed review commits**: `ac7cc4b` (External round 4), `1e3df01`
+(External Security Review round 3)
+**Obligations answered**: neither. Both bootstrap rows stay `pending`.
+**Disposition**: accept [J1] and [K1] — one finding, independently reproduced
+by both passes. H1, H3, T1, T2 and T4 are recorded closed by those passes;
+H2/T3 narrows to this.
+
+### [J1] / [K1] -- accept. I removed this exact circularity and reintroduced it in the same commit.
+
+Reproduced at the byte layer:
+
+```text
+current plan blob                : fd9fff8903b72714a767b876238f51d005494454
+blob after writing that value in : 3da899bcb161f4127e49525a8bc480720c192ab4
+```
+
+The `Plan blob at authorization` cell asked the Maintainer to write a hash of
+bytes that include the cell. That is precisely the self-reference [T2] found in
+`activation_sha` — *"putting a commit's SHA inside its own tracked blob changes
+the commit SHA"* — which I fixed by deriving the enabling commit from Git, and
+then rebuilt three sections later in the attestation table I wrote in the same
+commit. Twice in one document.
+
+Adopted in full, and both passes converge on the same shape: bind the
+**parent's** blob; a Maintainer-only, path-scoped attestation commit that
+changes no other byte; a **Maintainer-run exact-byte preflight** deriving both
+blobs from Git, verifying the allowlisted diff, confirming unchanged descent,
+and reproducing the exact violation multiset with no extras; and the transition
+record binds the attestation commit rather than the commit binding itself.
+
+The security framing is the part worth keeping explicit: no pre-Chunk-A code
+can validate its own authorization, so this is a Maintainer-run preflight, not
+a test. Chunk B's mutation test may replay the historical ceremony but is
+**not** the control that authorized the transition — the plan now says so
+rather than implying it.
+
+### A prediction I got wrong, and the rule that survives it
+
+I told the Maintainer the two closure passes were "mechanically free — the
+count stays at 2." Both returned `**Findings**: raised`, so the count is now
+**4**.
+
+The rule I stated was right; the forecast attached to it was not. Corrected in
+the operative text: **every blocking round costs one permanent violation, every
+shipping round costs none.** A closure pass is only free if it clears, and I
+had no basis for assuming these would.
+
+That is also why the exception now pins a *multiset at a named parent commit*
+rather than a count quoted from prose — a number that moves with each round is
+exactly the wrong thing to have written into a governance override by hand.
+
+### Where this stands
+
+One finding remains between this plan and Chunk A, and it is now a procedure
+rather than a defect: two clearing passes, a Maintainer attestation commit, and
+a recorded exact-byte preflight. Every other finding across seven passes —
+E1--E4, G1--G4, H1--H3, S1--S6, T1--T4 — is closed.
