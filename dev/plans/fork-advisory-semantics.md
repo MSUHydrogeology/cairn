@@ -1260,3 +1260,24 @@ to the baseline gate. A reviewer should treat the baseline diff (exactly two
 `digest` lines, no `span`/`type` movement) as the artifact to check.
 
 This section is append-only once written.
+
+### Code review -- Antigravity (External, security lens) -- 2026-08-10
+
+**Tier**: External (security lens)
+**Findings**: none
+
+**Steelman & Reviewed Scope.** This code review covers the full implementation range `9bd6752..9724c0f` of `fork-advisory-semantics.md`, specifically closing the missing coverage for Chunk B (`aba0242`, the Maintainer-unfenced remediation string fix) and Chunk R (`9724c0f`, the Maintainer AST attestation baseline re-anchor). 
+
+1. **Chunk B (Remediation String)**: Verified `format_forked_facade_warning` in `bootstrap/_scaffold/lockfile.py`. The destructive clause ("remove the dormant engine package") and the no-op clause ("complete the swap") have both been removed. The warning now advises restoring the facade from its upstream template, which leaves the dormant engine package intact and work-intent coordination operational.
+2. **Chunk R (AST Baseline Re-anchor)**: Verified the Maintainer-authored AST attestation baseline diff (`bootstrap/tests/fixtures/scaffold_ast_baseline.json` & `scaffold_ast_known_new.json` in `9724c0f`). The re-anchor is surgical (digest update for `FunctionDef:format_forked_facade_warning` and `Assign:_MODULE_MAPPINGS` with 0 span/type drift) and leaves `pytest bootstrap/tests/test_ast_attest.py` 100% green (29 passed).
+
+**Falsification Ledger & Empirical Verification:**
+* **B2 Falsifier Execution**: Executed perturbation on `bootstrap/_scaffold/lockfile.py:614` temporarily restoring the destructive clause. Ran `PYTHONDONTWRITEBYTECODE=1 python -m pytest bootstrap/tests/test_fork_advisory.py -k test_node_b2_remediation_names_no_destructive_or_no_op_action`. The assertion failed as expected (`AssertionError: verify_integrity: NOTE -- facade ...`). Reverted byte-exactly, test passed cleanly in 0.12s.
+* **Targeted Test Suite**: Ran `PYTHONDONTWRITEBYTECODE=1 python -m pytest bootstrap/tests/test_fork_advisory.py bootstrap/tests/test_verify_integrity.py bootstrap/tests/test_lockfile_module.py bootstrap/tests/test_ast_attest.py -q` under `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13): **86 passed, 0 failed** in 2.34s (`as_of 2026-08-10`, commit `d4f1dc1`).
+* **Full Test Suite Execution**: Ran `PYTHONDONTWRITEBYTECODE=1 python -m pytest bootstrap/tests -q` under canonical Python 3.13.13: **2592 passed, 1 failed** (1 failure in `test_security_verification.py` due to host `LC_CTYPE` environment variable leakage assertion, unrelated to this plan), 3 warnings in 310.00s (`as_of 2026-08-10`, commit `d4f1dc1`).
+* **Doc & Claim Checks**:
+  - `python scripts/claim_check.py dev/plans/fork-advisory-semantics.md` → **OK**, 0 issues.
+  - `python scripts/check_cairn.py dev/plans/fork-advisory-semantics.md` → **OK**, 0 issues.
+
+**Verdict: SHIP / PASS CODE REVIEW.** All six chunks (A, B, C, D, E, R) of `fork-advisory-semantics.md` are fully implemented, verified, and independently code-reviewed across the complete reviewed range.
+
