@@ -276,14 +276,20 @@ slot is a review finding.)
 
 ## Security verification
 
-<!-- cairn:slot security-verification -->
 (Filled from the `security-verification` default-on module when installed —
 the standing dispatcher command and the high-risk Security-Review
 designation of the dispatcher, its registry, its child result schema, its
 binding-mode schema, and every registry entry (see
 `dev/modules/security-verification.md` > "Merged into"). If
-security-verification is not installed, replace with `N/A:
-security-verification not installed`. An unfilled slot is a review finding.)
+security-verification is not installed, put `N/A: security-verification not
+installed` between the markers below. An unfilled slot is a review finding.)
+
+<!-- The guidance above sits OUTSIDE the marker pair on purpose, and the slot
+     body below ships empty: the module-merge pass fills only an empty body, so
+     placeholder prose between the markers resolves `conflict-deferred` and the
+     standing command lands in a `.cairn-merge-pending` side file rather than in
+     the installed AGENTS.md.  See dev/modules/security-verification.md. -->
+<!-- cairn:slot security-verification -->
 <!-- cairn:end security-verification -->
 
 ## Documentation discipline
