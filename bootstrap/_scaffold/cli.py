@@ -694,6 +694,24 @@ def main(argv: list[str] | None = None) -> int:
             "--uninstall. Your onboarding tasks include this step."
         )
 
+    # security-verification-activation Chunk C: the non-silent install.
+    # Adoption must not be silent, and it must not overclaim -- the whole
+    # point of the note is that installing a ROUTE is not gathering
+    # evidence.  Runs no host tool, on the `coordination-tiers` precedent
+    # just above: the scaffold prints a command for the adopter to run and
+    # never runs it (T35 makes that mechanical -- every subprocess the
+    # install makes must be `git`, and none may name the dispatcher).
+    if "security-verification" in modules:
+        print(
+            "\nNOTE (security-verification) -- an evidence ROUTE was\n"
+            "installed, and nothing was inspected. The scaffold ran no host\n"
+            "tool and makes no claim about this repository. Run the\n"
+            "dispatcher yourself to see what it reports:\n"
+            "  python scripts/run_security_verification.py local\n"
+            "Its registry ships EMPTY at v1, so it can only report that a\n"
+            "selected capability has no admitted local evidence leg yet."
+        )
+
     # Write the install lockfile + base-template cache: the upgrade
     # ancestor anchor (dev/.cairn/cairn-lock.yml + dev/.cairn/base/).  Fail-closed
     # if the tree diverges from a clean install (P-1) -- then it points the

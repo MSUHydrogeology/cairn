@@ -1499,3 +1499,97 @@ class TestTheHighRiskDesignationChannels:
         for rel in (DOCTRINE_DST, DISPATCHER_DST):
             flat = " ".join((target / rel).read_text(encoding="utf-8").split())
             assert DESIGNATION_FLAT in flat, rel
+
+
+# ===========================================================================
+# Chunk C -- the non-silent install.  T34, T35.
+# ===========================================================================
+
+class TestTheNonSilentInstall:
+
+    def test_install_output_names_the_first_run_command_and_claims_no_evidence(
+            self, tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
+        """T34.  A real scaffold's output names the first-run command
+        verbatim, AND carries none of the coverage-claiming words.
+
+        The forbidden-word half is asserted over the **whole** install
+        output, not just C1's own block -- measured clean, so the stronger
+        form is the one taken.  If a future module's note legitimately needs
+        one of these words, narrow the scan to C1's block and say so; do not
+        delete the assertion.
+
+        Hazard perturbation: reword C1 to "security verified" -- fails on
+        the forbidden-wording half while the command half still passes.
+        """
+        rc, _target = _scaffold(tmp_path, "preset: solo-greenfield\n")
+        captured = capsys.readouterr()
+        assert rc == 0
+        out = captured.out + captured.err
+
+        assert "NOTE (security-verification)" in out, out
+        assert "python scripts/run_security_verification.py local" in out, out
+
+        for word in ("CLEAN", "secure", "scanned", "verified",
+                     "no vulnerabilities", "security check passed"):
+            assert word not in out, (word, out)
+
+        # The note must also not promise an outcome.  A stock install
+        # actually exits 5 (see T33's characterization), so a note claiming
+        # `NOT APPLICABLE` would be wrong as well as overclaiming.
+        assert "NOT APPLICABLE" not in out
+
+    def test_installation_executes_no_selected_scanner(
+            self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        """T35.  The proposal's *"never claims that installation itself
+        produced security evidence"* as a mechanical guard.
+
+        **Measured correction to the plan's wording.**  The plan says to
+        monkeypatch `subprocess.run` to raise "for the whole install".  Run
+        that way the node fails on a pre-existing, unrelated call: the
+        install shells out to `git -C <cairn-root> rev-parse --short HEAD` to
+        stamp `cairn_commit` into the lockfile.  A blanket raise therefore
+        measures the git-provenance read, not this chunk's property, so the
+        guard is written as an **allowlist of one** -- `git` -- with every
+        other executable a failure, plus a direct assertion that no recorded
+        call names the dispatcher or anything under the target tree.
+
+        Hazard perturbations, both run: make C1 invoke the dispatcher "to
+        show the adopter it works" (the executable is `sys.executable`, not
+        `git`, so it raises), and make C1 invoke it via `git` (the
+        target-path assertion catches it, which is why that second
+        assertion exists rather than trusting the allowlist alone).
+        """
+        import subprocess as sp
+
+        calls: list[list[str]] = []
+        real = {attr: getattr(sp, attr) for attr in
+                ("run", "Popen", "check_output", "check_call", "call")}
+
+        def guard(attr: str):
+            def spy(argv, *args, **kwargs):
+                vector = list(argv) if not isinstance(argv, str) else [argv]
+                calls.append(vector)
+                exe = Path(vector[0]).name if vector else ""
+                if exe != "git":
+                    raise AssertionError(
+                        f"the install executed a non-git subprocess: {vector!r}"
+                    )
+                return real[attr](argv, *args, **kwargs)
+            return spy
+
+        for attr in real:
+            monkeypatch.setattr(sp, attr, guard(attr))
+
+        rc, target = _scaffold(tmp_path, "preset: solo-greenfield\n")
+        assert rc == 0
+
+        # No recorded call may name the dispatcher or reach into the target
+        # tree: `git` on the allowlist must not become a launcher.
+        for vector in calls:
+            joined = " ".join(vector)
+            assert "run_security_verification" not in joined, vector
+            assert str(target) not in joined, vector
+
+        # And the route really was installed -- otherwise every assertion
+        # above would pass for the trivial reason that nothing happened.
+        assert (target / DISPATCHER_DST).is_file()
