@@ -53,9 +53,9 @@ def _load_quality_gate(name: str = "_verification_boundaries_quality_gate") -> M
 def _operational_violations(text: str) -> list[str]:
     text = " ".join(text.split())
     required = {
-        "Boundary A": "scoped iteration",
-        "Boundary B": "stable integration evidence",
-        "Boundary C": "independent review",
+        "Boundary A": "Iteration (scoped)",
+        "Boundary B": "Integration (stable evidence)",
+        "Boundary C": "Falsification (independent)",
         "full fallback": "cannot be bounded confidently",
         "record heading": "## Implementation verification -- <agent> -- YYYY-MM-DD",
         "invalidation": "implementation/test/executable-template/fixture bytes",
@@ -161,7 +161,7 @@ def test_record_schema_guard_detects_removed_reviewed_range() -> None:
 def _review_violations(text: str) -> list[str]:
     text = " ".join(text.split())
     required = (
-        "targeted falsification",
+        "Falsification (targeted, after broad verification)",
         "Copying the implementation's broad command does not satisfy",
         *FRESH_RUN_TRIGGERS,
         "not authentication, malicious-committer protection, or a",
