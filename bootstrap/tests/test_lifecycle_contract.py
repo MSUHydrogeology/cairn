@@ -896,6 +896,48 @@ def test_c4_findings_raised_requires_a_disposition_in_that_pass(tmp_path):
     assert "R1" in sibling[0] and "no disposition follows it" in sibling[0]
 
 
+def test_c4b_one_response_dispositions_the_whole_group(tmp_path):
+    """S7's group rule: one Response answers every pass above it.
+
+    A plan declaring `required(A + B)` is reviewed by two obligations in
+    sequence and answered once. Under the previous next-pass ceiling the first
+    pass of every pair was overtaken before its Response landed, and append-only
+    forbids inserting a disposition between two landed reviews -- so the
+    artifact could never conform and no author action could fix it. The rule is
+    now: a pass is dispositioned iff some `## Response to plan review` follows
+    it, which is exactly "the group above this Response and after the last one".
+    """
+    # (a) two raised passes, ONE Response after both -> both clean.
+    assert _violations(
+        tmp_path,
+        _pass_block(reviewer="R1", findings="raised")
+        + _pass_block(reviewer="R2", date="2026-05-02", findings="raised")
+        + "## Response to plan review -- A -- 2026-05-03\n\nanswers both.\n\n"
+    ) == []
+    # (b) arbitrary N: five raised passes, one Response -> all clean.
+    five = "".join(
+        _pass_block(reviewer=f"R{i}", date=f"2026-05-0{i}", findings="raised")
+        for i in range(1, 6))
+    assert _violations(
+        tmp_path,
+        five + "## Response to plan review -- A -- 2026-05-09\n\nanswers all.\n\n"
+    ) == []
+    # (c) the guard: a pass landing AFTER the Response still owes one.
+    after = _violations(
+        tmp_path,
+        _pass_block(reviewer="R1", findings="raised")
+        + "## Response to plan review -- A -- 2026-05-02\n\nanswered.\n\n"
+        + _pass_block(reviewer="R2", date="2026-05-03", findings="raised"))
+    assert len(after) == 1
+    assert "R2" in after[0] and "no disposition follows it" in after[0]
+    # (d) no Response anywhere -> every raised pass still violates.
+    none = _violations(
+        tmp_path,
+        _pass_block(reviewer="R1", findings="raised")
+        + _pass_block(reviewer="R2", date="2026-05-02", findings="raised"))
+    assert len(none) == 2
+
+
 # CR2 -- S7's second house form is EXACTLY `## Response to plan review`, not
 # any kind that merely starts with "response".  Reproduced by a fresh Codex
 # External code review at `dd91ccb`..`fd296fb`: an unrelated `## Response`

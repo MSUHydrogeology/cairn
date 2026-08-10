@@ -971,13 +971,29 @@ def _has_disposition(art: Artifact, pass_sec: Section) -> bool:
     project does not actually hold, so this accepts either:
 
     * a ``### Sharpening`` **inside this pass's own body**, or
-    * a ``## Response to plan review`` section positioned **after this pass and
-      before the next pass**.
+    * a ``## Response to plan review`` section positioned **anywhere after this
+      pass**.
 
-    Positional in both cases, which is what `[E3]` asked for: a *neighbouring
-    round's* disposition cannot satisfy this one.  The `### Sharpening` search is
-    scoped to this pass's body; the `## Response` search is bounded by the next
-    S1 pass heading.
+    The second form is the **group rule**: one Response dispositions every pass
+    above it and after the previous Response.  Because the *first* Response
+    after a pass is by definition the one with no other Response in between,
+    "some Response exists later" and "the Response closing this pass's group"
+    are the same predicate, so the rule needs no new field or syntax.
+
+    This replaces an earlier next-pass ceiling.  That ceiling made a routine and
+    unavoidable shape permanently non-conforming: when two review obligations
+    are answered in one Response -- the normal case for a plan declaring
+    ``required(A + B)`` -- the first pass of every pair is overtaken by the
+    second before the Response lands, and append-only forbids inserting a
+    disposition between two landed reviews.  The artifact could then never
+    conform, with no author action able to fix it.
+
+    `[E3]`'s property survives, because it was about a *neighbouring round's*
+    disposition standing in for this one: a ``### Sharpening`` is still scoped
+    to its own pass's body and never reaches a sibling, and a pass with **no**
+    Response after it at all is still unsatisfied.  What is now allowed is the
+    author saying, in one section, "these are answered" -- which is what the
+    section already meant.
 
     **CR2.** The documented second house form is specifically
     ``## Response to plan review``, but the earlier check matched any kind
@@ -988,20 +1004,15 @@ def _has_disposition(art: Artifact, pass_sec: Section) -> bool:
     """
     if _SHARPENING_RE.search(pass_sec.body):
         return True
-    later_pass_lines = [
-        s.line_no for s in art.sections
-        if s.level == 2 and s.kind.strip().lower() == "plan review"
-        and s.line_no > pass_sec.line_no
-    ]
-    ceiling = min(later_pass_lines) if later_pass_lines else None
-    for sec in art.sections:
-        if sec.level != 2 or sec.line_no <= pass_sec.line_no:
-            continue
-        if ceiling is not None and sec.line_no >= ceiling:
-            continue
-        if sec.kind.strip().lower() == "response to plan review":
-            return True
-    return False
+    # The group rule.  CR2's exactness is retained: the kind comparison is
+    # exact (case-insensitive), never a prefix, so `## Response -- ...` and
+    # `## Response to proposal review -- ...` still do not discharge S7.
+    return any(
+        sec.level == 2
+        and sec.kind.strip().lower() == "response to plan review"
+        and sec.line_no > pass_sec.line_no
+        for sec in art.sections
+    )
 
 
 def _near_miss_headings(art: Artifact) -> List[str]:
