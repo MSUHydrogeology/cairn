@@ -5,7 +5,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-sonnet-5 (Claude Sonnet 5)
 **Date opened**: 2026-08-10
-**Status**: revised
+**Status**: accepted
 **Touches**: `tools/lifecycle_planner.py` and its byte-identical twin
 `templates/skills/_lib/lifecycle_planner.py` (documented here, **not
 edited** — see the sequencing fence below); potentially
@@ -1437,7 +1437,7 @@ Revision 3 sharpens the `Answers:` field binding: the value must match **exactly
 
 ## Revised proposal -- Revision 3
 
-**Status**: revised
+**Status**: accepted
 
 Revision 3 incorporates the satisfiers for `[R3-E1]` and `[R3-E2]` into Revision 2. This is the final current contract presented for Maintainer Decision.
 
@@ -1459,3 +1459,16 @@ Fold Code-review evaluation into **`review_record_violations`**, which evaluates
 R0 (amendment to `review-efficient-lifecycle`), R1 (corrected diagnosis), R2' (clearing latest pass archive rule), R2'' (document-order recency and `Answers:` field grammar), R3' (anti-replay legacy manifest pinned to baseline commit), R4 (canonical boundary repair for body and ceiling), and R6 (deliberate exclusions) all stand as written.
 
 **Plan review**: required(**External**) -- discharged; joins the accepted `review-efficient-lifecycle` plan.
+
+## Decision -- Anthony Kendall -- 2026-08-10
+
+**Maintainer's authorization (verbatim):**
+
+> Accept Revision 3 of dev/proposals/2026-08-10-claude-code-review-blindness.md
+
+**ACCEPTED as revised.** Revision 3 is accepted in full. The proposal amends the accepted `review-efficient-lifecycle` contract. `tools/lifecycle_planner.py` evaluates Code review through one consolidated predicate (`review_record_violations`) using an explicit effective state (`scan` uses current status, `next`/closeout uses target status), ensuring `ready-to-archive` / `archived` target state unconditionally evaluates Code review regardless of whether Plan review was required. The forward contract requires a clearing latest pass (`SHIP`, `Accept`, `Accept-with-followups`, `PASS`), document-order recency, full-line `Answers:` binding resolving to exactly one prior raw heading, and canonical boundary parsing for both pass body and ceiling. Historical artifacts are grandfathered under an occurrence-count anti-replay legacy manifest.
+
+This proposal joins `review-efficient-lifecycle` in one shared implementation plan under `required(External)`.
+
+Scribed by Antigravity (Implementation).
+
