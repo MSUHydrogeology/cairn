@@ -2097,6 +2097,194 @@ rather than trusting the sibling plan's transcript.
   be made to fail by any in-class perturbation, the register says so plainly and
   the row is NOT MET. That outcome is the item working, not the item failing.
 
+#### Chunk G — RUN, 2026-08-10, Claude
+
+**Every perturbation in this chunk was applied to a clean scratch checkout of
+`5010d36` (`git archive | tar -x`, then `git init` so the fixtures that need a
+repository have one), never to the shared repository.** That is stronger than the
+plan's restore ledger asks for: A9/A10's hazard — destroying a concurrent
+session's uncommitted work — is *structurally* impossible when the mutated tree is
+not the repository. The ledger below still records, per row, a pre-perturbation
+`git hash-object`, a comparison against the **live repository's** blob for the same
+path (so the scratch copy is provably the same bytes the repository ships), and a
+post-restore hash.
+
+**Denominator, derived rather than estimated.** The nine enforcers cited by
+Chunks C–F live in **8 modules collecting 340 tests**
+(`--collect-only -q`, `as_of 2026-08-10` at `6912d52`: `test_verify_ref.py`,
+`test_byline_identity.py`, `test_verify_integrity.py`, `test_gate_preflight.py`,
+`test_profile_grammar.py`, `test_lifecycle_failsafe.py`,
+`test_default_security_stance.py`, `test_notice_install.py`). B4 quantifies over
+the **cited enforcers**, not over all 340; that narrowing is what keeps it finite.
+
+##### The B4 register
+
+Every row: the claimed class quoted from the mechanism the test guards, the
+in-class mutation of the **hazard**, the observed outcome, and the discrimination
+leg (a *different* class of test under the same mutation).
+
+| # | Enforcer test | Hazard mutated | In-class result | Discrimination leg | Verdict |
+| --- | --- | --- | --- | --- | --- |
+| G-1 | `test_verify_ref.py::test_substitution_attack_refused_naming_both_names` (+ `…multi_tag…`) | `verify-ref.sh:340`: `[ "$SIGNED_NAME" = "$TAGNAME" ]` → `[ -n "$SIGNED_NAME" ]` | **2 failed, 2 passed** (was 4 passed) | wrong-roster / empty-roster tests: **2 passed** — indifferent to this mutation | **MET** |
+| G-2 | the whole of `test_verify_ref.py` (64 tests) | `verify-ref.sh:333`+`:335`: the header stop **and** the first-wins guard both removed | **64 passed — GREEN** while the shipped script **PROVENANCES a substituted tag** | n/a | **NOT MET — zero enforcers** |
+| G-3 | `test_byline_identity.py::test_no_letter_or_digit_folds_to_nothing_on_the_granting_leg` | the twin's keep-rule `if ord(c) > 0x7F or c in _FOLD_KEEP_ASCII` → `if c in _FOLD_KEEP_ASCII` (the superseded promotion defect, restored) | **1 failed** | `…fold_deletes_exactly…`: **2 passed** | **MET** |
+| G-4 | `test_byline_identity.py::test_fold_deletes_exactly_the_stated_ascii_set` | `_FOLD_KEEP_ASCII` gains `_` | **2 failed** | `…no_letter_or_digit…`: **1 passed** | **MET** |
+| G-5 | `test_verify_integrity.py::test_tampered_file_fails_closed` | `verify_integrity.py`: `if actual != recorded:` → `if False:` | **1 failed** | `…missing_file…`: **1 passed** | **MET** |
+| G-6 | `test_verify_integrity.py::test_missing_file_fails_closed` | `if not dst.is_file():` → `if False and …` | **1 failed** | `…tampered…`: **1 passed** | **MET** |
+| G-7 | `test_lifecycle_failsafe.py` symlink tests | `templates/skills/_lib/lifecycle.py:495`: `if shape == "symlinked":` → `if False:` | **1 failed, 1 passed** | `…space_in_interpreter…`: **1 passed** | **MET** |
+| G-8 | `test_gate_preflight.py::test_roster_is_read_from_the_anchor_not_the_worktree` | `_gate_preflight.py:597`'s `anchored_roster`: read the candidate **worktree** file instead of the anchor blob | **1 failed** | `…comma_separated…`: **1 passed** | **MET** |
+| G-9 | `test_profile_grammar.py` closed-key-set tests | `config.py:498`: `if unrecognized:` → `if False:` | **9 failed, 1 passed** | `…schema_2_refuses…`: **1 passed** | **MET** |
+| G-10 | `test_default_security_stance.py::test_content_security_is_in_every_shipped_preset_roster` (+ `…no_key_default_shape`) | `config.py`: `content-security` removed from the default-on roster | **4 failed** | `…python_security_is_absent…`: **1 passed** | **MET** |
+| G-11 | `test_notice_install.py::test_every_self_hosted_twin_stays_byte_identical_to_its_source` (`:104`) | `tools/lifecycle_planner.py` only — the twin desynchronized | **1 failed** in a full-suite run | see below | **MET** |
+
+**The discrimination matrix is the part that distinguishes B4 from the weaker
+form.** G-3/G-4 and G-5/G-6 are two pairs where *each* mutation reddens *only* its
+own class and leaves the sibling green. That is what shows the chosen
+perturbations are discriminating rather than incidental: a test that went red
+under any perturbation of the file would have gone red under both.
+
+##### G-2 — the finding: a defense with zero enforcers
+
+This is the row the chunk exists for, and it took three attempts to establish
+honestly.
+
+**Attempt 1 (discarded).** Disabling the header stop alone
+(`/^$/ { stop = 1 }` → a never-matching pattern) left all 64 tests green — which
+*looked* like "no enforcer". It was not evidence: re-running the substituted-tag
+probe against the mutated script still refused, so **the mutation was inert**.
+Cause: awk's `name == ""` guard means the first `tag ` line wins, and a
+well-formed tag object's own header line precedes the message. A green suite under
+an inert mutation says nothing at all, and recording it as a finding would have
+been the exact defect this item is about.
+
+**Attempt 2 (the isolating leg).** Remove the first-wins guard, **keep** the
+header stop:
+
+```
+mutation (a): first-wins removed, header stop KEPT
+   probe: rc=1 | REFUSED - ... whose SIGNED name is 'v0.4.0'
+   test_verify_ref.py: 64 passed
+```
+
+Property intact — so the two guards are **redundant** for this construction, and
+either alone suffices. Worth recording as defence-in-depth rather than as a gap.
+
+**Attempt 3 (both guards removed) — the property breaks:**
+
+```
+mutation (b): header stop AND first-wins both removed
+   probe: rc=0 | verify-ref: PROVENANCED - annotated tag 'v0.5.0' signed by
+                good@example.invalid -> 07b87afb...
+   test_verify_ref.py: 64 passed
+```
+
+`refs/tags/v0.5.0` points at a tag object whose **signed name is `v0.4.0`**, and
+the mutated script reports **PROVENANCED for `v0.5.0`** — because the attacker's
+`tag v0.5.0` line inside the *message body* is read as the signed name. That is
+the tag-substitution attack this whole control exists to stop, executing
+successfully, **and all 64 tests in `bootstrap/tests/test_verify_ref.py` stay
+green.**
+
+**What this does and does not license as a conclusion.**
+
+* It **does** establish that the header-bounded *extraction* half of
+  `verify-ref.sh`'s name binding has **no enforcer**. The suite pins the
+  *comparison* (G-1 goes red) and is blind to the *extraction*.
+* It does **not** say the shipped code is wrong. The shipped code is correct and
+  carries two independent guards.
+* It **does** mean D-2's evidence cell may not cite the header-bounding comment at
+  `:333` as a *closed* row. Per Chunk G's acceptance — *"where a cited test cannot
+  be made to fail by any in-class perturbation, the register says so plainly and
+  the row is NOT MET"* — **the header-bounding sub-property is NOT MET**, and
+  D-2's MET verdict is narrowed to the comparison it actually pins. The register
+  records this rather than quietly resting D-2 on the comment.
+
+The exactly-analogous defect is what the proposal was written about: a control
+that is right today, with nothing that would notice if it stopped being right.
+The remedy is one test and is **out of this plan's scope** (*build nothing new*),
+so it is a finding, not a fix.
+
+##### G-11 — a hypothesis this chunk formed, tested, and had refuted
+
+While re-pinning E-1's citation, the twin question arose: is
+`tools/lifecycle_planner.py` held byte-identical to
+`templates/skills/_lib/lifecycle_planner.py` by anything, or only by habit? Three
+greps found no parity assertion (no test names both paths, and the `tools/` copy
+is not a key in the `frozen_files` map), and the tentative conclusion was
+*no enforcer*.
+
+**Tested rather than reported.** The `tools/` copy was mutated with the superseded
+promotion defect and the **whole scratch suite** run:
+
+```
+$ pytest bootstrap/tests -q            (scratch checkout, tools/ copy mutated)
+3 failed, 2578 passed, 12 skipped, 3 warnings in 248.53s
+FAILED test_notice_install.py::test_every_self_hosted_twin_stays_byte_identical_to_its_source
+FAILED test_gate_preflight.py::TestPublicCli::test_check_runs_against_the_live_repo_and_reports
+FAILED test_gate_preflight.py::TestThreeCommandIntegration::test_a_second_run_refuses_because_the_state_moved
+```
+
+**The hypothesis was wrong: the enforcer exists**, at
+`bootstrap/tests/test_notice_install.py:104`, and it caught the mutation. Recorded
+because three greps returning nothing is *not* a measurement, and a register row
+asserting "no enforcer" on that basis would have been a false finding of exactly
+the kind B4 is supposed to catch — in the register itself.
+
+**The other two failures are scratch-environment artifacts, checked in both
+directions rather than waved off.** Unmutated, the same scratch checkout runs
+`test_notice_install.py` + `test_gate_preflight.py` → **1 failed, 138 passed**,
+the one failure being `test_check_runs_against_the_live_repo_and_reports`; its
+cause is that the scratch tree has no `refs/cairn/gate-anchor` (Maintainer-only,
+Chunk M item 7), so the CLI's refusal text differs from the one the test expects.
+Against the **live repository** the same module is **127 passed**. The third
+failure is state-dependent within the scratch full-suite run and does not
+reproduce on a targeted re-run. **No repository defect is implied by any of the
+three, and none is reported as one.**
+
+##### The restore ledger (G3, A9/A11)
+
+Per row: pre-perturbation blob, live-repository blob for the same path, and the
+post-restore blob. **All eleven rows restored byte-identically, and every scratch
+copy matched the repository's blob before mutation** — which is the assertion that
+the mutations exercised the shipped bytes:
+
+| Path mutated (in scratch) | blob before = repository blob | blob after restore |
+| --- | --- | --- |
+| `bootstrap/container/verify-ref.sh` | `877eccd7f58916a23fff087eef8a0a2d3e270930` ✓ | same ✓ |
+| `templates/skills/_lib/lifecycle_planner.py` | `9dd7a712e47c35261a822f3c35d2e77fb8e07cf6` ✓ | same ✓ |
+| `tools/lifecycle_planner.py` | `9dd7a712e47c35261a822f3c35d2e77fb8e07cf6` ✓ | same ✓ |
+| `bootstrap/verify_integrity.py` | `13c3efd3795842d6a7817a6ea981a46200e8654e` ✓ | same ✓ |
+| `templates/skills/_lib/lifecycle.py` | `9f234563317d44341b720cf1103b5fd120f70383` ✓ | same ✓ |
+| `bootstrap/tests/_gate_preflight.py` | `91bfec29aa2f97ec26799e76eae53ad21f6b0468` ✓ | same ✓ |
+| `bootstrap/_scaffold/config.py` | `c4c90436fffd45f91ef0aaad23ac791191236e8b` ✓ | same ✓ |
+
+(The two `lifecycle_planner.py` copies share a blob because they are byte-identical
+— which is G-11's property, visible in the ledger.)
+
+**No perturbation edited a test's own body.** Every mutation above names a shipped
+mechanism: a shell comparison, an awk guard, a comprehension condition, an `if`,
+a frozenset literal, a registry entry, a blob read. The one file under
+`bootstrap/tests/` that was mutated (`_gate_preflight.py`) is **not a test module**
+— it is the gate's implementation, imported by the tests that assert on it, which
+is why mutating it is a hazard perturbation and not a harness perturbation.
+
+##### The zero-enforcer findings, stated rather than passed vacuously
+
+Chunk G's acceptance requires an item with no enforcers to be recorded as a
+finding. Three:
+
+1. **G-2, the header-bounded extraction** — a live defense with no test, above.
+2. **B6's reach table** — the 12-row control→destination table has **no** pinning
+   test, by the plan's own deliberate fence. But the naive statement *"B6 has zero
+   enforcers"* is **false**, and this register does not make it:
+   `test_default_security_stance.py::test_content_security_is_in_every_shipped_preset_roster`
+   pins one row of it and is live (G-10). The honest statement is that B6's
+   *module-selection* premise is enforced and its *control→destination mapping* is
+   not.
+3. **B3's claims** — zero enforcers, necessarily: F2 established that no security
+   control has any automatic trigger, so there is nothing for a claim-checking
+   test to hook. That is the item working, not the item failing.
+
 ---
 
 ### Chunk H — the burndown roll-up, the staleness command, and the changelog text
