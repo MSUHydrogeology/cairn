@@ -20,7 +20,7 @@ Maintainer Decision, *"as revised, with two conditions binding on the plan"*).
 It currently sits under `dev/proposals/` as
 `dev/proposals/archive/2026-08-03-codex-portable-security-sweeps.md` and moves to
 `dev/proposals/archive/` when it archives.
-**Status**: open
+**Status**: archived
 **Plan review**: required(**External**, security lens) — carried from the
 proposal header *and re-imposed by the Decision in terms*: *"The plan carries
 `required(External, security lens)` in its own right, and both conditions above
@@ -369,7 +369,7 @@ by construction; every later chunk grows the runner in place.
 4. Chunk D -- structured output, the aggregate, the child contract    [commit pending]
 5. Chunk E -- the version apparatus (Decision Condition 1)            [commit pending]
 6. Chunk F -- Cairn adopts the module (Decision Condition 2)          [commit pending]
-7. Chunk G -- the activation registry row (ORDER-SENSITIVE)           [commit pending]
+7. Chunk G -- the activation registry row (ORDER-SENSITIVE)  [NOT LANDED -- Branch 2; deferred to security-verification-activation, LT-2]
 8. Chunk H -- docs, contract records, and the serialized surfaces     [commit pending]
 9. Chunk I -- the live-contract matrix                        [Maintainer-gated]
 M. Chunk M -- MAINTAINER-ONLY: the shared AST re-anchor ceremony      [not an agent's]
@@ -2975,7 +2975,7 @@ exactly (no drift since `cce60a3`).
 **Known omissions.** Did not run a real Gitleaks binary or the
 Maintainer-gated Chunk I matrix (unimplemented by design -- Maintainer
 authority only). Chunk G (the activation registry row) is confirmed
-**not landed** -- `dev/plans/portable-security-sweeps.md:2326` records
+**not landed** -- `dev/plans/archive/portable-security-sweeps.md:2326` records
 Branch 2 as measured at plan-review time, and no `Chunk G` commit exists
 under this plan's stem; LT-2 still carries it, deferred to
 `security-verification-activation`. This run performs no independent
@@ -3020,3 +3020,98 @@ This section is append-only once written.
 * **[CR3] Worktree Common Config Discovery**:
   - Verified `_discover_git_common_dir` queries `git -C <target> rev-parse --path-format=absolute --git-common-dir` (Git >= 2.31 floor), correctly resolving common configuration directory for linked worktrees without path resolution failure.
 
+
+## Archive record -- Claude -- 2026-08-10
+
+**Status: archived.** Maintainer-directed: *"Accept on the LT-2. Move
+portable-security-sweeps to archiving."*
+
+**Chunk G took Branch 2, and the reason is not the one Branch 2 states.** The
+branch choice is the implementing agent's -- *"Neither branch is assumed; the
+implementing agent reads the tree and picks"* -- and the tree was read at
+`9724c0f`. Branch 2's stated condition (*"the dispatcher does not exist yet"*) is
+**false**: `security-verification-activation` landed the dispatcher at `6e3a8ed`
+(`templates/modules/default-on/run_security_verification.py`, 768 lines), and
+`_REGISTRY` exists as a literal `{}` with the runner's own comment recording that
+*"the shipped registry is empty at v1."*
+
+The actual blocker is a **naming-contract mismatch**, measured rather than
+inferred: `_selected_capability_ids` admits only module IDs ending in
+**`-security`** -- its docstring enumerates `content-security`, `python-security`,
+`api-access-security`, `web-hosting-security` -- and this module's ID ends in
+**`-sweeps`**. Measured at `9724c0f` through the engine's own `read_lockfile`:
+**16 modules installed, `portable-security-sweeps` among them**, yet the
+capability roster the dispatcher computes is exactly **`['content-security']`**.
+
+Two consequences, and the second is why this matters more than a deferral:
+
+1. A Branch 1 registry row would be **inert by construction** -- filtered out
+   before `_REGISTRY` is ever consulted.
+2. Chunk G's own required **deletion mutant**
+   (`test_the_standing_command_includes_the_portable_leg`, which must assert that
+   removing the row stops the standing command reaching the portable runner *and
+   that a test fails*) **could not fail**. If the row cannot take effect, removing
+   it changes nothing. That is a vacuous check -- the recurring defect class in
+   this repository -- and it would have landed inside the commit this plan itself
+   names *"the single most review-sensitive commit in the plan."* Branch 2 avoided
+   shipping it.
+
+Per Chunk G's Branch 2 acceptance criteria the section is left in place, the
+Sequence entry is marked **NOT LANDED**, and LT-2 carries it.
+
+**The Maintainer accepted the residual rather than the fix.** Offered three
+resolutions -- widen the filter (Security Review, owned by the sibling plan),
+rename the module ID (Decision-bearing), or accept -- the Maintainer chose to
+accept: portable sweeps runs via its own standing command and not through the
+dispatcher. LT-2 is therefore a **permanent documented residual, not a
+deferral**, with the filter widening recorded as a revival condition should it
+ride along with the sibling's registry-admission chunk.
+
+**Lasting-truth migration -- audited at archive, not assumed.**
+
+| ID | home | verified |
+|---|---|---|
+| LT-1 | new proposal against the `default-security-stance` selection contract | **board row** (`dev/PLANNING.md > Queued`, `5010d36`) -- the proposal is not open, so the row carries the trigger |
+| LT-2 | the sibling plan + a board row | **board row**, now carrying the measured mismatch and the Maintainer's acceptance |
+| LT-3 | `dev/measurement/gitleaks-version-support.md` | **exists** (created Chunk E) |
+| LT-4 | a Queued row naming OSV-Scanner / zizmor / Trivy as a set | **board row**. It states its distinction from the pre-existing conda-advisory row, which cites Trivy and OSV-Scanner as evidence about *conda ecosystem coverage* -- a different question, and the near-miss that made this look already-homed |
+| LT-5 | the LT-3 ledger, as a named per-version gap | **exists** -- the ledger states *"Does not establish: anything about a platform other than the one recorded"* |
+| LT-6 | `DEPENDENCY_BUDGET.md` licence note + a board row | licence note **landed** (`portable_security_policy.json` -> MIT, no header, a data asset with no comment syntax); the `_self_hosted_twins()` question is a **board row** |
+| LT-7 | an existing row from `profile-parse-fail-open` | **resolved outright** rather than homed -- `AGENTS.md` now names `bootstrap/AST_BASELINE_RUNBOOK.md` directly, and the board entry is struck through as RESOLVED |
+
+An audit before this archive found **four of the seven homes did not exist**
+(LT-1, LT-2, LT-4, LT-6); all four landed at `5010d36`. The plan's own rule --
+*plans archive only after every deferred follow-up has a durable home outside the
+plan* -- was unmet until then.
+
+**Chunk H's three serialized surfaces land with this commit**, which is their
+defined serialization point: the `AGENTS.md > High-risk surfaces` bullet naming
+the module's executable trust root (H4, drafted here in the shape of the existing
+*local interpreter binding* entry, with every cited symbol verified to exist --
+`resolve_executable:454`, `revalidate:494`, `child_env:541`), the
+`CHANGELOG.md > Unreleased > Added` line (H5), and this archive row-move (H6).
+
+**Verification at archive.** Full suite **2593 passed, 0 failed** at `9724c0f`
+(Python 3.13.13) -- the first fully green result on this repository today, the two
+`test_ast_attest` nodes having been closed by the Maintainer's re-anchor ceremony.
+`check_cairn` OK. `quality_gate --sub neutrality --sub redundancy` rc 1 at the
+known baseline `fail=93 info=21`, with no fail line in any file this plan owns.
+The code review (`## Code review -- Antigravity (External) -- 2026-08-10`)
+returned **SHIP** on the CR1-CR3 correction round, and its two evidence claims
+that were challenged during this session -- the `probe_version` revalidation
+citation and the `subprocess.run` site count -- were **re-checked and the review
+was right on both**; the challenge was a misreading on the challenger's side, and
+the withdrawal is recorded in `dev/plans/archive/security-preflight-checklist.md`.
+
+**One residual the reviewer's wording obscures, recorded so it is not lost.** The
+review states *"No `subprocess.run` site in the runner remains outside
+`revalidate()`."* Literally that is too strong: three of the runner's eight
+`subprocess.run` sites sit in `cmd_verify_version_support`, the Maintainer-gated
+version-support harness, and `probe_version`'s invocation at line 1381 has no
+`revalidate` before it. Those sites operate on a fixture the harness builds
+itself in a temporary directory, so the scan-path guarantee CR2 established is
+intact and the threat model is far weaker -- but the resolve->setup->execute
+window CR2 closed on the scan path is still open there. Not a scan-path defect,
+not this archive's to fix, and stated here rather than left inside a SHIP.
+
+This section is append-only once written.

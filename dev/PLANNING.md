@@ -146,14 +146,19 @@ with the plan's filename stem.
   dispatcher sees only `['content-security']`. A Branch-1 registry row would be
   **inert by construction**, and worse, Chunk G's required deletion mutant
   (`test_the_standing_command_includes_the_portable_leg`) **could not fail** — the
-  row's presence changes nothing. Three resolutions, and the choice is the
-  Maintainer's: widen the filter (owned by `security-verification-activation`,
-  and a trust-boundary change to what the dispatcher admits → Security Review);
-  rename the module ID to end in `-security` (shipped ID + lockfile + three file
-  paths → Decision-bearing); or accept that portable sweeps runs only via its own
-  standing command and never through the dispatcher, making this a permanent
-  documented residual rather than a deferral. *Trigger:* that plan's
-  registry-admission chunk, which is already unfenced. **LT-4 — the three
+  row's presence changes nothing. **RESOLVED 2026-08-10 — Maintainer accepted the
+  third option** (*"Accept on the LT-2"*): portable sweeps runs via its own
+  standing command and **not** through the dispatcher, so this is a **permanent
+  documented residual, not a deferral**, and it does not gate that plan's
+  archive. The two rejected alternatives are recorded because the residual can be
+  revisited: widening `_selected_capability_ids` (owned by
+  `security-verification-activation`, and a trust-boundary change to what the
+  dispatcher admits → Security Review), or renaming the module ID to end in
+  `-security` (shipped ID + lockfile + three file paths → Decision-bearing).
+  *Revival condition:* the filter widening riding along with that plan's
+  registry-admission chunk, which is already unfenced — at which point the
+  inert-row and vacuous-mutant analysis above is the evidence to re-read, **not**
+  Chunk G's Branch 1 table, which assumes an effective row. **LT-4 — the three
   withdrawn adapters** (OSV-Scanner, zizmor, Trivy), named here as a set so they
   are not silently forgotten. Each arrives as its own proposal per the revision's
   rule: its own executable chain, ambient-config execution evidence, network
@@ -375,7 +380,7 @@ board by design.
   | Cluster | Current lifecycle owners | Next boundary |
   |---|---|---|
   | **[BND] Input, execution, containment** | `fork-advisory-semantics`, `api-web-security-modules` | profile-authority consolidation; Class C no later than v0.4 preparation |
-  | **[VER] Verification and coverage** | `security-verification-activation`; `portable-security-sweeps`; `api-web-security-modules` | `content-scan-detectors` + `separator-detection` archived 2026-08-10 (both SHIP-reviewed), `security-preflight-checklist` archived 2026-08-10 (SHIP; its broad-run evidence is implementer-supplied, see its archive record): reconcile the live frozen-file union and run one supervised re-pin over `content_scan.py` + `test_content_scan.py`, batched per both plans' Maintainer fence; then repair the two portable-sweep code-review findings |
+  | **[VER] Verification and coverage** | `security-verification-activation`; `api-web-security-modules` | `content-scan-detectors` + `separator-detection` archived 2026-08-10 (both SHIP-reviewed), `security-preflight-checklist` archived 2026-08-10 (SHIP; its broad-run evidence is implementer-supplied, see its archive record), `portable-security-sweeps` archived 2026-08-10 (SHIP on the CR1-CR3 correction round; Chunk G took Branch 2 and did NOT land -- see LT-2): reconcile the live frozen-file union and run one supervised re-pin over `content_scan.py` + `test_content_scan.py`, batched per both plans' Maintainer fence; then repair the two portable-sweep code-review findings |
   | **[TRU] Trust roots and provenance** | `fork-advisory-semantics`; the live gate-reanchor posture below | trusted-source boundary after the release bar settles required source/install claims |
   | **[REC] Deliberation authority, identity, context, record integrity** | `code-review-blindness` (proposal, 2026-08-10); byline residuals below — `review-gate-enforcement` **archived 2026-08-10** (SHIP, no findings; its two residuals owned by that proposal) | one identity-authority consolidation when a trigger fires, not one proposal per Unicode row |
   | **[REL] Release evidence and ceremonies** | `release-security-bar`; the landed Maintainer-run release command; the scheduled frozen-file union | serialize the SHIP-reviewed release register; derive every ceremony from the live held set, then run one reviewed supervised union |

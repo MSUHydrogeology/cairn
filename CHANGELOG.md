@@ -42,6 +42,21 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **A team-gated, opt-in cross-language security sweep — and no scanner is
+  bundled.** Selecting the `portable-security-sweeps` module installs a
+  standard-library orchestrator (`run_portable_security_sweeps.py`), a strict
+  machine-read policy (`portable_security_policy.json`), and its module doctrine.
+  One offline adapter ships: Gitleaks, at an admitted exact version, resolved on
+  `PATH` and digest-revalidated immediately before every invocation. Cairn
+  installs and executes **no** scanner — the tool is an adopter-selected dev
+  dependency acquired only by selecting the module, so the runtime stays
+  standard-library-only and zero-dependency. Absence reports `INCOMPLETE`
+  (exit 5) loudly and is never clean; results aggregate `0 / 5 / 10 / 20` by a
+  fixed precedence; there is no network egress and no `--allow-network`. A
+  repository's own `.git/config`, refs and remote metadata are treated as
+  candidate-controlled input. Proposal `portable-security-sweeps`, plan
+  `portable-security-sweeps`.
+
 - **Five questions a security-touching change answers before review.** The
   proposal template's `Author-accounting` block now carries a gated
   `Security preflight` sub-block: who supplied the material a decision is made

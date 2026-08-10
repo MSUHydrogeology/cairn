@@ -357,6 +357,21 @@ bootstrap/tests`.
   but neither Python identity nor provenance. Changes to its schema,
   validation order, fallback disposition, warning visibility, or
   subprocess use take a Security Review.
+* **The portable-sweep executable trust root** — `run_portable_security_sweeps.py`
+  (shipped at `templates/modules/team-gated/`, self-hosted at `scripts/`, kept
+  byte-identical), its `resolve_executable` / `revalidate` pair, and
+  `portable_security_policy.json`. Unlike the interpreter binding above, the
+  authority here is **`PATH` resolution**: the runner locates a host `gitleaks`
+  and executes it, and Gitleaks invokes `git` transitively — two host trust
+  roots the scaffold neither installs nor ships. Resolution digests the binary
+  and `revalidate` re-checks that digest **immediately before every
+  invocation**, so the resolve→execute gap is measured rather than assumed; a
+  repository's own `.git/config`, refs, shallow boundary and remote metadata are
+  treated as **candidate-controlled input**. Absence is `INCOMPLETE` (exit 5),
+  loudly, and never clean; the adapter has **no egress path**. Changes to
+  executable resolution, the revalidation points, the policy schema, the child
+  environment (`child_env`), the exit precedence, or the admitted version set
+  take a Security Review. Fuller treatment in `bootstrap/SAFETY.md`.
 
 **Operational pitfalls.**
 * **Self-host `dev/` citation gotcha.** `scripts/check_cairn.py`'s

@@ -252,7 +252,7 @@ each check inspect, and can coverage silently narrow?
   readiness: a security tool that finds a missing capability or unmet bar names
   the safe next action without strengthening `INCOMPLETE` into `CLEAN`.
 * [VER-4] **Language and dependency capabilities.** Plans
-  [`portable-security-sweeps`](../plans/portable-security-sweeps.md) and
+  [`portable-security-sweeps`](../plans/archive/portable-security-sweeps.md) and
   [`dependency-advisory-coverage`](../plans/archive/dependency-advisory-coverage.md)
   own one measured offline non-Python sweep and honest Python-distribution
   advisory coverage. The accepted dependency v1 stores no vulnerability
