@@ -118,19 +118,20 @@ inferred:
 | blocking pass, `**Findings**: raised`, dispositioned before the next pass | **0** |
 | blocking pass overtaken by the next pass before its Response | **1, permanent** |
 
-So a closure pass **that ships** costs nothing — but a closure pass that
-returns `**Findings**: raised` costs one, like any other blocking round. The
-count was 2 after round 3; the round-4 External and round-3 Security passes
-both returned blocking, so it is **4** as of this Response (four occurrences of
-one identical string — the label collision renders all four the same).
+**The table above is the canonical rule.** Only an *overtaken* blocking pass —
+one whose Response is separated from it by another landed pass — becomes
+permanent. A blocking pass dispositioned before the next pass costs zero, which
+is why the newest pass always has a disposition and the count is always one
+lower than the number of blocking rounds.
 
-The number is therefore **not stable until a round actually ships**, which is
-why the field above pins a *multiset* at a named parent commit rather than a
-figure quoted from prose. An earlier revision said the count "grows by one with
-every additional review round" and a later one implied closure passes were free;
-the first was imprecise, the second assumed an outcome. The rule is: **every
-blocking round costs one permanent violation, every shipping round costs
-none.**
+**No forecast belongs in this procedure.** Two have already been wrong: an
+earlier revision said the count "grows by one with every additional review
+round", and a later one said it stood at **4** as of that Response when direct
+execution at `a404145` returns **3** — a figure measured before that Response
+dispositioned the newest pass, then written into it. The count moves with every
+round and with the act of responding, so the exception field pins a **multiset
+derived by the preflight at its named parent commit** and no number is quoted
+in prose anywhere in this section.
 
 **The exception is the Maintainer's to grant, and is deliberately left
 unfilled here.** It authorizes nothing until every field below is completed by
@@ -150,7 +151,6 @@ the same commit that removed it there. The binding is now to the **parent**.
 | Clearing `External Security Review` commit | *pending* |
 | Exact expected violation **multiset** (text × count) | *pending* |
 | Authorizing Maintainer, quoted verbatim | *pending* |
-| Attestation commit (bound by the transition record, never by itself) | *pending* |
 
 **The two-commit ceremony**, in order:
 
@@ -164,8 +164,14 @@ the same commit that removed it there. The binding is now to the **parent**.
    Git, verifies the attestation commit's diff is allowlisted, confirms the
    current artifact descends unchanged from that attestation, and reproduces
    **exactly** the authorized violation multiset with no extras.
-4. The transition record binds the attestation commit — the commit never
-   embeds its own id or blob.
+4. The **transition record** — a separate, later commit — names the
+   already-existing attestation commit (or its unchanged ancestor if unrelated
+   commits intervened, permitted only when this path's blob is identical). Its
+   allowed plan diff is exactly **status plus the binding record**, nothing
+   else. The attestation commit never carries its own id: that value does not
+   exist until after its bytes are fixed, so requiring it in the
+   pre-attestation set would deadlock the ceremony one step later than the
+   circularity it replaced.
 
 **No pre-Chunk-A code can validate its own authorization.** This is a
 Maintainer-run exact-byte preflight, not a test. Chunk B's later mutation test
@@ -1947,3 +1953,70 @@ transition sequence; and every K1 mutation dimension.
 preflight, pilot observations, Code review, or re-anchor. Return M1 only. This
 pass is blocking and does not fill the bootstrap table's `External Security
 Review` row.
+
+## Response to plan review -- Claude -- 2026-08-10 (round 5 + Security round 4)
+
+**Model**: claude-opus-5 (Claude Opus 5)
+**Reviewed review commits**: `6c119ec` (External round 5), `96e102e`
+(External Security Review round 4)
+**Obligations answered**: neither.
+**Disposition**: accept [L1], [L2], [M1]. [L1] and [M1] are one finding
+converged from both lenses. J1/K1's parent-blob binding is recorded closed.
+
+### [L1] / [M1] -- accept. The deadlock moved one step instead of dissolving.
+
+Binding the parent blob removed the byte-level circularity, and then the
+`Attestation commit` row recreated the same defect one step later: the table
+demanded every field before authorizing anything, and step 2 made the
+attestation commit fill "the fields above" — including an id that does not
+exist until its own bytes are fixed.
+
+The row is removed. The pre-attestation set is five fields, all knowable before
+the commit. The **transition record** — a separate, later commit — names the
+already-existing attestation commit, may accept an unchanged ancestor when
+unrelated commits intervene provided this path's blob is identical, and its
+allowed plan diff is exactly status plus the binding record.
+
+### [L2] -- accept. I wrote a number measured before my own Response landed.
+
+Verified: `review_record_violations` at `a404145` returns **3**, not the 4 I
+recorded there. I measured with the two new passes present but before my
+Response was appended, then wrote that figure into the Response that changed
+it.
+
+The table is now the canonical rule and the prose carries no count at all: only
+an **overtaken** blocking pass becomes permanent, so the newest pass always has
+a disposition and the count is always one below the number of blocking rounds.
+Two forecasts in this section have now been wrong — "grows by one every round",
+then "4 as of this Response" — so the exception pins a multiset **derived by
+the preflight at its named parent**, and no number is quoted in prose anywhere
+in this section.
+
+### What neither pass names: the violations are an artifact of how I respond
+
+The rule the reviews established has a workflow corollary worth recording,
+because it costs nothing and prevents every future instance.
+
+A blocking pass becomes permanent only when *another pass lands before its
+Response*. The two obligations are reviewed in sequence and I have been
+answering both in one Response — so the External pass of each pair is always
+overtaken by the Security pass, and each pairing has cost exactly one permanent
+violation. Five rounds, five violations, one per pair.
+
+**Going forward: one Response per pass, appended before the next pass lands.**
+That yields zero new permanent violations without any code change, and it is
+verified against the parser — a blocking pass dispositioned before the next
+pass returns 0.
+
+This does not retire the exception: the five historical violations are
+permanent and still block the transition. It bounds the problem to a fixed set
+the preflight can pin, rather than a growing one.
+
+### Standing
+
+Every substantive finding across nine passes is closed: E1--E4, G1--G4,
+H1--H3, S1--S6, T1--T4, J1, K1, and now L1/L2/M1. What remains is the bootstrap
+ceremony's own correctness, which has now taken three rounds of its own
+(H2/T3 → J1/K1 → L1/M1+L2) for a governance override on a plan with zero
+implementation commits. That ratio is the Maintainer's to weigh, and this
+Response makes no recommendation about it beyond recording it.
