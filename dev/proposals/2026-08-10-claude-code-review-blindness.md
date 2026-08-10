@@ -5,7 +5,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-sonnet-5 (Claude Sonnet 5)
 **Date opened**: 2026-08-10
-**Status**: proposed
+**Status**: revised
 **Touches**: `tools/lifecycle_planner.py` and its byte-identical twin
 `templates/skills/_lib/lifecycle_planner.py` (documented here, **not
 edited** — see the sequencing fence below); potentially
@@ -703,3 +703,304 @@ the actual Code-review schema for the first time and repair a broader shared
 boundary than the current addendum states. Re-read only the revised schema,
 legacy disposition, canonical boundary rule, and parent-plan fold; the
 diagnosis and rejection of full parity do not need another pass.
+
+## Response to review -- Claude (Opus 5, revising session) -- 2026-08-10
+
+**Model**: claude-opus-5 (Claude Opus 5)
+**Reviewed commit**: `b486b4018b8335dff94b7f07971707b9e73beda8`
+
+**Authorship note.** This proposal was opened by a different Claude session
+running Sonnet 5. This Response and the Revised proposal below are written by a
+separate Opus 5 session at the Maintainer's explicit instruction to revise. I
+am not the original author, I have not edited any prior section, and I do not
+sign as them. Where I correct the original author's claims below, I am
+correcting the record, not disowning it.
+
+Proposal-Response grammar (no implementing commit exists). Every finding is
+accepted; [E1] and [E2] are accepted with one reasoned narrowing. All five were
+re-derived by execution before adoption, and that re-derivation produced three
+corrections the review did not make.
+
+### [E1] -- accept
+
+Correct, and it is the central defect of the original. The proposal proves
+remedy A wrong, concedes remedy B checks the wrong vocabulary, and then routes
+the actual contract to a later plan. A plan cannot decide what constitutes a
+Code-review pass after the Decision has supposedly fixed it. **R2** below
+supplies the schema against all eight required elements.
+
+**One narrowing, argued not assumed.** [E1] and [E2] both require numbered
+finding ids to bind to later dispositions by "exact id/reference association."
+R2 requires a blocking verdict to be *answered*; it does **not** require
+per-finding id matching in v1. A parser can verify that a response section
+exists, is positioned after the pass, and names the pass. It cannot verify that
+the response *addresses* the finding — and a check that reports "all findings
+dispositioned" on the strength of matching `[C3]` in two places is asserting
+semantic completeness it has not established. That is the failure shape
+`AGENTS.md` names: *a tool that returns success without testing the claimed
+property is a worse defect than no tool, because it is silent.* Per-id binding
+is recorded in R6 as a deliberate exclusion with its reason, not deferred.
+
+### [E2] -- accept, and it is the real defect
+
+Reproduced. An archived-plan fixture whose Code review reads
+`**Verdict: REVISE**` with an unresolved blocking finding, carrying otherwise
+conforming archive markers:
+
+```text
+review_record_violations : []
+_conformance_violations  : []
+```
+
+Both predicates clean. The archive arm is `_has_kind(art, "Code review")`
+(`tools/lifecycle_planner.py:1211`, mirrored at `:1305`) -- a prefix presence
+test that reads no verdict, no findings, and no disposition. An implementation
+can archive after a review explicitly says REVISE.
+
+This finding also relocates the proposal's centre of gravity, which is the
+first of the three corrections below.
+
+### [E3] -- accept
+
+Reproduced. A first pass followed by a later S1 heading that `_HEADER_RE`
+cannot parse:
+
+```text
+_pass_headings selects   : 2 pass(es)
+art.sections Plan review : 1
+review_record_violations :
+  - 'Plan review -- First Reviewer -- 2026-08-09': duplicate Tier
+  - 'Plan review -- First Reviewer -- 2026-08-09': duplicate Findings
+```
+
+The first pass swallows the second's attestation lines and reports them as its
+own duplicates. Widening only the ceiling, as the original Scope addendum
+required, leaves this intact. **R4** adopts the canonical-boundary satisfier in
+full.
+
+### [E4] -- accept
+
+Reproduced exactly: 35 non-template plan files, 23 S1-shaped Code-review passes
+across 21 files, and **2** passes carrying the Tier/Findings vocabulary --
+`review-gate-enforcement` (`Findings: none`) and `transition-lint`
+(`Findings: raised`). The original's "the only Code review pass anywhere ...
+that carries a Findings line at all" is false. Corrected in R7.
+
+### [E5] -- accept
+
+Verified: `review-gate-enforcement` archived at `be42ba6`,
+`review-efficient-lifecycle` accepted at `e42f01c` and now `**Status**:
+accepted`. The scope question the original asks the Maintainer to resolve has
+already resolved. R0 replaces it.
+
+### Three corrections the review did not make
+
+**[A1] The headline reproducer is not a governance failure.** The original
+presents `transition-lint`'s Code review as "exactly the condition the gate
+refuses for a `## Plan review` pass." It is not. That pass reads:
+
+```text
+**Tier**: External
+**Findings**: raised
+**Verdict: SHIP**
+```
+
+The reviewer raised observations *and shipped*. For a Plan review,
+`Findings: raised` demands a `### Sharpening` because the pass is an input to a
+decision still pending. For a Code review, the reviewer's own verdict **is** the
+disposition. Nothing is unresolved, and the gate's silence produces the correct
+outcome. The original's reproducer demonstrates that the gate is *blind*; it
+does not demonstrate that the blindness caused harm. [E2]'s fixture does.
+
+**[A2] There are zero historical instances of the governing failure.** I checked
+the latest Code-review round of all 19 archived plans that carry one. Two show a
+blocking latest verdict, and **both are answered**: `record-corrections`
+(`Verdict: Request changes`) by `### Sharpening -- Claude (author) -- 2026-07-22`,
+and `release-security-orchestration` (`Verdict: REVISE`) by
+`## Review disposition and Chunk G -- Codex -- 2026-08-05`. Five more archived
+plans carry no verdict-shaped line at all.
+
+So the defect is **entirely latent**. Every archived plan either cleared or
+answered its review in a section the gate cannot see. That is worth saying
+plainly because it inverts the cost argument: there is no backlog to repair, so
+the migration is the whole cost, and a schema that forces 6 verdictless legacy
+passes to violate would be paying that cost for nothing.
+
+**[A3] The legacy vocabulary is wider than either document assumes.** Across the
+23 passes: six distinct verdict spellings (`SHIP`, `Accept`,
+`Accept-with-followups`, `PASS`, `REVISE`, `Request changes`), six passes with
+no verdict-shaped line, and three distinct disposition shapes answering a
+blocking verdict (`### Sharpening`, `## Review disposition`,
+`## Implementation disposition`). Any mandatory schema needs an enumerated
+legacy set of that size, which R3 supplies.
+
+## Revised proposal
+
+**Status**: revised
+
+### R0 -- what this proposal now is
+
+An **amendment to the accepted `review-efficient-lifecycle` contract**. No
+standalone plan, no interim remedy B. If accepted, both proposals open one
+plan and this artifact contributes the Code-review-record chunk, with its own
+tests and commit inside that plan's one evidence boundary.
+
+### R1 -- the corrected diagnosis
+
+Three distinct narrownesses in one shipped gate:
+
+1. **Selection.** `_S1_PASS_RE` (`tools/lifecycle_planner.py:884-887`) matches
+   the literal `Plan review` only, and `review_record_violations`
+   (`:1036-1100`) iterates exclusively over `_pass_headings`. No `## Code
+   review` pass is ever evaluated.
+2. **Archive.** The archived arm (`:1211`, mirrored `:1305`) is
+   `_has_kind(art, "Code review")` -- presence, not content.
+3. **Boundary.** `_has_disposition`'s ceiling and `_parse_sections`' body ends
+   are both built from `art.sections`, while selection draws from
+   `art.sections` ∪ raw S1 matches ([E3]).
+
+**The governing failure is (2)**, not (1): an archived plan whose latest Code
+review is blocking. (1) is what makes (2) unreachable by the existing gate.
+
+### R2 -- the Code-review pass contract
+
+Answering [E1]'s eight elements in order.
+
+**Heading and pass boundary.** Unchanged from what reviewers already write:
+
+```text
+## Code review -- <reviewer> -- YYYY-MM-DD[ (round N)]
+```
+
+A pass runs from its heading to the next conforming pass heading of either kind
+or the next H1/H2, whichever comes first, computed per R4.
+
+**Mandatory fields**, before the pass's first H3, inheriting the accepted
+parent's four-field review basis (`review-efficient-lifecycle` > "Every review
+names a bounded target"):
+
+```text
+Reviewed commit: <full commit id>
+Target: <code range or operative plan sections>
+Prior findings: <ids being closed, or none>
+Assurance path: <standard | high-assurance>
+```
+
+plus `**Model**:`, `**Verdict**:`, and `**Findings**: none | raised`.
+
+**Verdict vocabulary**, closed, two classes chosen to cover what is already
+written rather than to impose a new dialect:
+
+* **clearing** -- `SHIP`, `Accept`, `Accept-with-followups`, `PASS`
+* **blocking** -- `REVISE`, `Request changes`, `BLOCK`
+
+**Which value blocks archive.** The **latest applicable round** must carry a
+clearing verdict, *or* a blocking verdict answered by a disposition section
+positioned after it. `Findings: raised` with a clearing verdict is a complete
+record and does not block -- per [A1], this is the common case and the schema
+must not criminalise it.
+
+**Latest applicable round.** The last conforming Code-review pass in document
+order; where `(round N)` markers are present on passes sharing a date, the
+highest N. Ties refuse rather than guess.
+
+**Disposition binding.** A blocking verdict is answered by
+`## Response to code review -- <author> -- YYYY-MM-DD`, positioned after the
+pass it answers and naming that pass's reviewer and date. Legacy equivalents
+per R3. Per-finding id association is excluded in v1 -- see R6.
+
+**Contract non-expansion.** For an inherited plan, the parent already requires
+the `Contract non-expansion: VERIFIED | NOT VERIFIED` attestation with its
+`Basis:` line inside code review. This chunk validates its **presence and
+binding shape** when the plan declares inheritance, and treats `NOT VERIFIED`
+as blocking. It does not attempt to validate the semantic claim; the parent is
+explicit that this "remains a semantic human/agent review."
+
+**Malformed / duplicate / absent / legacy.** Malformed field, duplicate field
+within a pass, unparseable date, or an out-of-vocabulary verdict is a
+violation. Absent Code review on an `archived` plan remains the existing
+violation. Legacy records are governed by R3.
+
+**One predicate.** A single `code_review_violations(art)` in
+`tools/lifecycle_planner.py` and its byte-identical twin
+`templates/skills/_lib/lifecycle_planner.py`, consumed by **both** `scan` and
+the archive/closeout readiness arm -- replacing the `_has_kind` presence test at
+both call sites. Two call sites, one predicate, no second opinion.
+
+### R3 -- legacy, enumerated and measured
+
+The contract is **forward-only**. Every Code-review pass existing at the
+implementing commit is grandfathered by an explicit enumeration pinned by
+`(file, reviewer, date)` -- the same device the Plan-review gate already uses --
+because 6 of the 23 carry no verdict line and 21 of 23 carry no attestation
+fields ([A3]). The enumeration is a **closed list generated once and committed**,
+not a rule; a pass added after the implementing commit conforms or violates.
+
+Grandfathered legacy disposition shapes, from the two real answered cases:
+`### Sharpening`, `## Review disposition`, `## Implementation disposition`.
+Forward records use `## Response to code review`.
+
+### R4 -- the canonical boundary repair ([E3])
+
+Build every selected pass body **and** every next-pass ceiling from one
+canonical ordered set of raw conforming pass boundaries of both kinds, unioned
+with ordinary H1/H2 boundaries. Do not reuse a precomputed `Section` body whose
+parser could not see all selected headings.
+
+Two mutations pinned, both currently red and both to be observed red:
+
+* a later pass's `**Tier**` / `**Findings**` must not enter the earlier pass's
+  body (today: reported as the earlier pass's duplicates);
+* a disposition positioned after the later pass must not satisfy the earlier
+  pass.
+
+This subsumes the original Scope addendum, which widened the ceiling only. That
+addendum's own claim -- "0 synthesized-only passes in live artifacts" -- remains
+true and remains the reason no live artifact supplies the fixture, so both
+fixtures are constructed.
+
+### R5 -- blast radius under this contract
+
+Measured at working HEAD, `as_of 2026-08-10`:
+
+| | |
+|---|---|
+| non-template plan files | 35 |
+| S1-shaped Code-review passes / files | 23 / 21 |
+| archived plans carrying a Code review | 19 |
+| archived plans whose latest verdict is blocking | 2 -- **both answered** |
+| archived plans whose latest pass has no verdict line | 5 |
+| **archived after an unanswered blocking review** | **0** |
+
+Under R3's forward-only enumeration, **no existing artifact violates**. The
+contract's entire effect is prospective, which is the correct trade for a defect
+with zero live instances.
+
+### R6 -- deliberate exclusions
+
+* **Per-finding id → disposition association.** Excluded, reasoned in the
+  Response. A parser can confirm a response exists and is positioned and bound;
+  it cannot confirm the response answers the finding. Shipping the id-matching
+  form would print "all findings dispositioned" on evidence that establishes no
+  such thing.
+* **Semantic verification of `Contract non-expansion`.** Excluded by the parent
+  contract's own terms.
+* **Retro-fitting legacy passes.** Excluded; archived records are immutable.
+* **Proposal-level `## Review` sections.** Out of scope; this amendment governs
+  the plan Code-review record only.
+
+### R7 -- corrections to the record above
+
+* The original's *"the only Code review pass anywhere in the corpus that
+  carries a Findings line at all"* is **false**: two do ([E4]).
+  `review-gate-enforcement` carries `Findings: none`.
+* The original's reproducer is **not** a governance failure ([A1]); the
+  governing failure is [E2]'s.
+* `review-gate-enforcement` is archived and `review-efficient-lifecycle` is
+  accepted ([E5]); the *Sequencing fence*, *Scope*, and *Reconciliation*
+  sections describe a coordination state that no longer exists, and R0 replaces
+  their open question.
+* The *Recommended direction* section's remedy B is withdrawn.
+
+**Plan review**: required(**External**) -- unchanged, and now discharged inside
+the parent's one plan.
