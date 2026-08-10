@@ -41,6 +41,7 @@ from .security import (
 )
 from .slotmerge import (
     ModuleMergeResult,
+    apply_module_merges,
     check_slot_fidelity,
     find_block_slots,
     find_unfilled_tokens,
@@ -64,6 +65,50 @@ from .lockfile import (
 )
 
 
+def module_merge_directives(
+    templates_root: Path, installed_modules: list[str],
+) -> list[tuple[str, str, str]]:
+    """The ordered ``(target_rel, slot_name, content)`` merge directives
+    declared by *installed_modules*.
+
+    ``verbatim`` specs are skipped -- a byte-copied asset carries no
+    directives -- and a source absent from ``templates/modules/`` is
+    skipped, matching the install's own tolerance (not every module ships
+    directives yet).
+
+    **Order is significant, and it is the module list's.** The sequence is
+    module order, then that module's spec order, then document order
+    within the module file. It matters because two directives naming the
+    same ``(target, slot)`` with different content resolve first-wins (the
+    second sees a non-empty body and becomes a deferred conflict), so the
+    merged bytes are a function of this sequence, not just of the set. The
+    engine's two consumers are handed the SAME ``modules`` list by the CLI
+    (``run_module_merge_pass(..., modules, ...)`` and
+    ``write_install_lockfile(..., modules=modules, ...)``), which is what
+    makes their two sequences identical.
+
+    **Single source of truth (module-merge lockfile divergence fix).**
+    The live merge (:func:`run_module_merge_pass`) and the lockfile's
+    expected-clean-install computation (:func:`write_install_lockfile`)
+    both derive their directive sequence here, so they cannot drift on
+    *which* merges apply or *in what order* -- the same rule
+    ``_rendered_onboarding_overlay`` states for the ``dev/PLANNING.md``
+    overlay.
+    """
+    out: list[tuple[str, str, str]] = []
+    for name in installed_modules:
+        specs = _MODULE_MAPPINGS.get(name, [])
+        for spec in specs:
+            if spec.verbatim:
+                continue
+            module_src = templates_root / "modules" / spec.src
+            if not module_src.is_file():
+                continue
+            module_text = module_src.read_text(encoding="utf-8")
+            out.extend(parse_module_merge_directives(module_text))
+    return out
+
+
 def run_module_merge_pass(
     templates_root: Path,
     target_root: Path,
@@ -78,29 +123,20 @@ def run_module_merge_pass(
     Returns ``(merge_results, fidelity_warnings)``.  Modules without
     structured merge directives are silently skipped (transitional
     period; not every module ships directives yet).
+
+    The directive sequence comes from :func:`module_merge_directives`,
+    shared with the lockfile writer; this function only applies it.
     """
     results: list[ModuleMergeResult] = []
-    expected: list[tuple[str, str, str]] = []
-    for name in installed_modules:
-        specs = _MODULE_MAPPINGS.get(name, [])
-        for spec in specs:
-            if spec.verbatim:
-                continue
-            module_src = templates_root / "modules" / spec.src
-            if not module_src.is_file():
-                continue
-            module_text = module_src.read_text(encoding="utf-8")
-            for target_rel, slot_name, content in (
-                parse_module_merge_directives(module_text)
-            ):
-                expected.append((target_rel, slot_name, content))
-                results.append(
-                    merge_module_into_slot(
-                        target_root, target_rel, slot_name, content,
-                        non_interactive=non_interactive,
-                        dry_run=dry_run,
-                    )
-                )
+    expected = module_merge_directives(templates_root, installed_modules)
+    for target_rel, slot_name, content in expected:
+        results.append(
+            merge_module_into_slot(
+                target_root, target_rel, slot_name, content,
+                non_interactive=non_interactive,
+                dry_run=dry_run,
+            )
+        )
     warnings = check_slot_fidelity(target_root, expected)
     return results, warnings
 
@@ -1538,6 +1574,14 @@ def write_install_lockfile(
     onboarding-slot substitution + preset metadata write, so the file's
     on-disk content matches the expected ``would`` despite
     ``install_onboarding`` having modified it after ``install_core``.
+
+    ``modules`` plays the same role for the **module-merge pass**, which
+    also runs between ``install_core`` and this writer: the ``would`` for
+    a merge target (e.g. ``AGENTS.md``) includes the merges those modules
+    declare. Without that, any install whose modules actually merge
+    content lost its lockfile AND its base-template cache entirely --
+    no integrity baseline, no upgrade ancestor. See
+    :func:`module_merge_directives`.
     """
     _refuse_secret_tokens(tokens, allow_secret_tokens)
 
@@ -1589,6 +1633,37 @@ def write_install_lockfile(
                 profile.get("axes"),
             )
 
+    # Pre-compute the module-merge overlay, grouped per target file in
+    # directive order, so the `would` calculation below applies the SAME
+    # merges `run_module_merge_pass` performed between `install_core` and
+    # this writer.  Without it, every install whose modules merge content
+    # into a tracked file (`AGENTS.md` is the shipped case) made that file
+    # diverge from the expected clean install, and the fail-closed guard
+    # below refused to write ANY lockfile or base-template cache -- the
+    # adopter finished with no integrity baseline and no upgrade ancestor.
+    # The Maintainer's ruling: editing (or module-merging into) AGENTS.md
+    # must not break the install.
+    #
+    # Same single-source-of-truth rule as the onboarding overlay above:
+    # `module_merge_directives` (which merges apply, in what order) and
+    # `apply_module_merges`/`resolve_slot_merge` (what a merge does to the
+    # bytes) are the ONLY implementations, shared with the live pass, so
+    # the two paths cannot drift.  Order-dependence is real, not assumed
+    # away -- see `module_merge_directives`; both callers receive the same
+    # `modules` list from the CLI, which is what makes the sequences equal.
+    #
+    # Fail-closed is PRESERVED, not weakened: `would` now carries the
+    # *expected* post-merge bytes, so only those bytes match and genuine
+    # tampering of a merge target still lands in `diverged` and still
+    # refuses.
+    merge_overlay: dict[str, list[tuple[str, str]]] = {}
+    for merge_target_rel, merge_slot, merge_content in (
+        module_merge_directives(templates_root, modules)
+    ):
+        merge_overlay.setdefault(merge_target_rel, []).append(
+            (merge_slot, merge_content)
+        )
+
     for src_rel, dst_rel, verbatim in _lock_file_list(modules, optional):
         src = templates_root / src_rel
         if not src.exists():
@@ -1618,6 +1693,13 @@ def write_install_lockfile(
                     substituted, "onboarding-tasks", onboarding_overlay,
                 )
                 substituted = with_overlay if ok else substituted
+            # Applied AFTER the onboarding overlay because that is the live
+            # order too (`install_onboarding` runs before the merge pass),
+            # and a merge into `dev/PLANNING.md` would otherwise see a
+            # different pre-merge text than the live pass did.
+            merges = merge_overlay.get(dst_rel)
+            if merges:
+                substituted = apply_module_merges(substituted, merges)
             would = substituted.encode("utf-8")
         dst_abs = target / dst_rel
         on_disk = dst_abs.read_bytes() if dst_abs.exists() else None

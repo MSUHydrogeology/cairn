@@ -244,6 +244,83 @@ def _write_slot_body(
     )
 
 
+def resolve_slot_merge(
+    text: str, slot_name: str, content: str,
+) -> tuple[str, str | None, str]:
+    """The **pure, text-level** decision for one module-into-slot merge.
+
+    Returns ``(status, merged_text, body)``:
+
+    * ``status`` -- ``missing-slot`` / ``customized`` / ``inserted`` /
+      ``already-current`` / ``conflict``.
+    * ``merged_text`` -- the post-merge text, non-``None`` **only** for
+      ``inserted``, the one status that changes the target's bytes.
+    * ``body`` -- the pre-merge slot body (``""`` when the anchor pair is
+      absent); the conflict side-file needs it.
+
+    **Single source of truth (module-merge lockfile divergence fix).**
+    Both places that need to know what a merge does to a target file's
+    bytes -- the live install (:func:`merge_module_into_slot`) and the
+    lockfile's expected-clean-install computation (via
+    :func:`apply_module_merges`, called by ``write_install_lockfile``) --
+    call this one function, so they cannot silently drift apart on
+    whether a given slot is inserted, preserved, or deferred. This is
+    the same rule the ``dev/PLANNING.md`` onboarding overlay follows
+    (see ``_rendered_onboarding_overlay``): a second implementation that
+    "does the same thing" is exactly the failure mode being closed --
+    when the two disagree, the writer's fail-closed divergence guard
+    refuses to write ANY lockfile and the adopter silently ends up with
+    no integrity baseline and no upgrade ancestor.
+
+    Pure: reads no disk, writes nothing, raises nothing.
+    """
+    found = _slot_body_in_text(text, slot_name)
+    if found is None:
+        return "missing-slot", None, ""
+    _, _, body = found
+    if _slot_is_customized(body):
+        return "customized", None, body
+    if _slot_is_empty(body):
+        return "inserted", _write_slot_body(text, slot_name, content), body
+    if _normalize_for_compare(body) == _normalize_for_compare(content):
+        return "already-current", None, body
+    return "conflict", None, body
+
+
+def apply_module_merges(
+    text: str, merges: list[tuple[str, str]],
+) -> str:
+    """Replay an ordered ``(slot_name, content)`` merge sequence against
+    *text* in memory and return the resulting text.
+
+    The in-memory twin of the live merge pass's net effect on **one**
+    target file: each merge sees the text as the previous merge left it,
+    exactly as :func:`merge_module_into_slot` re-reads the file between
+    merges, and only an ``inserted`` decision changes bytes. Every other
+    status (``missing-slot`` / ``customized`` / ``already-current`` /
+    ``conflict``) leaves the target untouched on the live path, so it
+    leaves *text* untouched here.
+
+    **Order is significant and is the caller's to fix.** Two merges
+    naming the same slot with different content resolve first-wins (the
+    second sees a non-empty body and becomes a deferred conflict), so
+    this function is deterministic *for a given sequence* but not
+    order-independent across sequences. The engine's one producer of that
+    sequence is ``module_merge_directives``, which both callers use.
+
+    Pure: no disk access, no side-file, no ``ModuleMergeResult``. The
+    decision itself comes from :func:`resolve_slot_merge` -- the one
+    function the live path also calls.
+    """
+    for slot_name, content in merges:
+        status, merged_text, _body = resolve_slot_merge(
+            text, slot_name, content,
+        )
+        if status == "inserted" and merged_text is not None:
+            text = merged_text
+    return text
+
+
 @dataclass
 class ModuleMergeResult:
     """Result of one (target, slot, content) merge attempt."""
@@ -288,6 +365,12 @@ def merge_module_into_slot(
     Antigravity P1 disposition); the parameter is plumbed through
     so the interactive branch can be added without an API change
     (Antigravity B-P3 documentation note).
+
+    The decision itself is NOT made here -- it comes from
+    :func:`resolve_slot_merge`, the one function the lockfile writer's
+    expected-clean-install computation also uses. This function owns only
+    the I/O around that decision (containment guard, read, target write,
+    side-file write) and the ``ModuleMergeResult`` reporting.
     """
     del non_interactive  # reserved for future interactive prompt branch
     dst = target_root / target_rel
@@ -305,19 +388,16 @@ def merge_module_into_slot(
     except DuplicateSlotError:
         raise
 
-    found = _slot_body_in_text(text, slot_name)
-    if found is None:
+    status, merged_text, body = resolve_slot_merge(text, slot_name, content)
+    if status == "missing-slot":
         return ModuleMergeResult(target_rel, slot_name, "missing-slot")
-    _, _, body = found
-    if _slot_is_customized(body):
+    if status == "customized":
         return ModuleMergeResult(target_rel, slot_name, "customized")
-    if _slot_is_empty(body):
-        if not dry_run:
-            new_text = _write_slot_body(text, slot_name, content)
-            if new_text is not None:
-                dst.write_text(new_text, encoding="utf-8")
+    if status == "inserted":
+        if not dry_run and merged_text is not None:
+            dst.write_text(merged_text, encoding="utf-8")
         return ModuleMergeResult(target_rel, slot_name, "inserted")
-    if _normalize_for_compare(body) == _normalize_for_compare(content):
+    if status == "already-current":
         return ModuleMergeResult(target_rel, slot_name, "already-current")
     # Conflict.  In this implementation, always defer to side-file
     # (non-interactive is the safe default per Antigravity P1's

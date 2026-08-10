@@ -147,6 +147,7 @@ from .slotmerge import (  # noqa: F401  (re-exported for the facade)
     _slot_is_customized,
     _slot_is_empty,
     _write_slot_body,
+    apply_module_merges,
     check_slot_fidelity,
     find_block_slots,
     find_unfilled_tokens,
