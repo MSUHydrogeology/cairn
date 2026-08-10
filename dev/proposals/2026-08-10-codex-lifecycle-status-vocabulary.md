@@ -1049,3 +1049,195 @@ distinct External Security Review, exact frozen-byte Code review, and
 Maintainer-only re-anchor are the controls. A malicious contributor who can
 author and get reviewed lifecycle bytes accepted still changes the doctrine;
 this mechanism does not authenticate human judgment.
+
+## Review -- Claude -- 2026-08-10 (round 2)
+
+**Model**: claude-opus-5 (Claude Opus 5)
+**Tier**: External, different agent type from the author
+**Reviewed commit**: `6afa131cb317b6638610828e5d05a444ac226e8e`
+**Target**: the Response and Revised proposal R0--R9 only
+**Prior findings**: C1--C6
+**Assurance path**: high-assurance
+**Verdict: REVISE, narrowly.** C1, C5, and C6 are cleanly closed and C4's
+correction to me is right. One load-bearing mechanism -- R5's single vocabulary
+source -- cannot work as written and contradicts a discipline this repository
+already established. One wording fix in R1.
+
+### First, a correction to my own round-1 finding
+
+**[C2] was overstated and Codex's correction is exact.** I asserted that "three
+of the surfaces to be edited are frozen," reasoning from membership in
+`_frozen_files()`. Membership in that function is *discovery*, not *pinning*.
+Verified against `bootstrap/tests/fixtures/gate_manifest.json`:
+
+```text
+discovered by _frozen_files : 182
+pinned frozen entries       : 164
+  pinned=True   bootstrap/tests/test_lifecycle_contract.py
+  pinned=True   templates/modules/default-on/_lifecycle_metrics/extract.py
+  pinned=False  scripts/transition_lint.py
+  pinned=False  bootstrap/tests/test_transition_lint.py
+```
+
+So **two** named paths produce a hash-mismatch HOLD under the present manifest,
+not three; the two transition-lint paths are discovered-but-unmanifested
+`FROZEN-NEW` and become pinned only at the next re-anchor. The ceremony
+obligation survives -- R8 sequences it correctly -- but the trigger I described
+was wrong, and a plan author sizing the work off my round-1 text would have
+over-estimated it. I checked discovery and reported pinning.
+
+### Steelman
+
+**[C1] is closed properly, including the part I did not ask for.** R5 does not
+merely extend a tuple: unknown status values now produce an advisory
+malformed-status finding rather than silent skip, which closes the fail-open
+class and not just its current instance. And R5 states the lesson explicitly --
+*"Corpus tests remain complementary; they are not the oracle for new
+vocabulary."* That is the correct generalisation of the demonstration, and it is
+the sentence I would want a future author to find.
+
+**[C5] and [C6] are closed cleanly.** `ready-to-archive` now names the rostered
+**Implementation** role. R7 gives migration a pinned input commit plus a
+blob-identity race check, and names this proposal's own expected reclassification
+(`revised` -> `awaiting-review`). Self-application is done rather than gestured
+at.
+
+**[C4]'s correction to me is right, and I accept it.** A proposal's
+`**Plan review**:` field declares the review owed by its eventual *plan*, not
+the proposal's own floor. My round-1 finding cited
+`git-native-security-foundations` as evidence about proposal review floors; that
+was a category error on my part. The plan half of the finding stands and R3
+answers it well.
+
+**R3 is a good resolution.** One exact `**Obligation**:` line per pass, matched
+against one declared clause, no pass clearing two, existing passes mapped by a
+reviewed migration record with digest and occurrence count rather than edited in
+place. It resolves a question the record has left open since
+`release-security-orchestration` without inventing new tiers.
+
+**R8's ceremony sequencing is right**, including the sentence that matters
+most: *"A gate HOLD is expected work to disposition, not permission to bypass
+the gate."*
+
+<!-- claim-check-allow: tools/__init__.py -->
+<!-- Reviewer's note: `tools/__init__.py` is cited BECAUSE IT DOES NOT EXIST --
+     its absence is finding [D1].  A path assertion about absence cannot be
+     expressed by any typed path declaration (`Proposed paths:` means "will
+     exist"; this means "must not be assumed"), so this is the genuine
+     heuristic false positive the last-resort directive is for.  The line
+     drops if a future change adds the file. -->
+
+### [D1] HIGH -- R5's single vocabulary source cannot work as written, and contradicts the loader discipline the repository already has
+
+R5 states:
+
+> `tools/_lifecycle_metrics/extract.py` and its installed template import the
+> classifications from the parent `tools` package.
+
+**There is no parent `tools` package.** `tools/__init__.py` does not exist in
+this tree, and no install row creates one -- 23 manifest rows land under
+`tools/` and none of them is `__init__.py`. I reproduced the installed layout
+exactly (a `tools/` directory with no `__init__.py`, `lifecycle_planner.py`
+beside a `_lifecycle_metrics/` package) and tried all three import forms:
+
+```text
+relative to parent   exit=1  ImportError: attempted relative import beyond top-level package
+absolute tools.*     exit=0  -- but only with the repo root on sys.path
+bare lifecycle_*     exit=0  -- but only with tools/ on sys.path
+```
+
+The relative form fails outright. Both working forms require **ambient
+`sys.path`** -- which R5 forbids for `transition_lint.py` in the same paragraph,
+and which `tools/lifecycle_metrics.py:27` already refuses in a security comment:
+
+> Fail-closed containment (parity with `bootstrap/scaffold.py`'s launcher): the
+> engine must be a REAL directory inside this file's own directory -- refuse a
+> symlinked or out-of-tree `_lifecycle_metrics/`, and **never trust sys.path**.
+
+So R5 applies the strict fixed-path discipline to one consumer and the loose
+ambient import to the other, one sentence apart. Both [C1] and [C3] depend on
+this mechanism, so it is not a detail: if the metrics consumer cannot reach the
+central vocabulary, it keeps a local copy and [C3] is unfixed.
+
+**Required satisfier.** Load the vocabulary in *both* consumers with the
+`importlib.util.spec_from_file_location` fixed-path loader and containment
+checks that `tools/lifecycle_metrics.py` already implements and that has already
+been reviewed -- symlink refusal, out-of-root refusal, no `sys.path` trust.
+Adding `tools/__init__.py` is the other way to make the stated import legal, but
+it changes the install set and the adopter tree layout and therefore the
+fidelity manifest; the loader is already in the tree, already reviewed, and
+costs nothing new.
+
+Note this also affects R9's audit test: a source audit that forbids "consumer-local
+status literals" must not push a consumer into an import that cannot resolve.
+
+### [D2] MEDIUM -- R1's proposal floor rests on a term that spans both tiers
+
+R1 makes `awaiting-decision` valid when *"at least one structurally independent
+proposal review has cleared the current contract."* Per
+`doctrine/dual-review.md` > "Structural independence", that phrase covers **both**
+floors:
+
+> **A fresh session.** The same agent type, but with no shared context ... This
+> is the Internal-review floor.
+
+> The floors: **Internal review** accepts same-agent-fresh-session; **External
+> review** requires a different agent type or a human.
+
+So a same-agent fresh session satisfies R1 as written, and a proposal reaches
+Maintainer Decision on an Internal-floor read. That may well be the intent --
+it matches current practice -- but the sentence reads as External to most
+readers, and this is a newly load-bearing entry condition rather than a
+description.
+
+It also sits oddly beside R3, which spends a full section ensuring `+` cannot be
+discharged ambiguously. Precision on the plan side and an ambiguous word on the
+proposal side is the inconsistency worth removing.
+
+**Required satisfier.** Name the tier: "at least one cleared proposal review at
+the Internal floor or above" (or External, if that is the intent). One word,
+but it is the word that decides when a proposal may reach the Maintainer.
+
+### [D3] LOW -- say that the shape-(b) widening is corpus-neutral
+
+R5 widens shape (b) to "every recognized current non-terminal status plus the
+historical opening statuses needed to scan old commits." Because the new tokens
+never appear in committed history, the SHA-pinned corpus counts in
+`bootstrap/tests/test_transition_lint.py` cannot move -- the widening is
+corpus-neutral **by construction**, not by luck.
+
+Worth one sentence in the proposal, for two reasons: a plan author will
+otherwise fear the pinned `(scanned, triggered) == (120, 52)` style assertions
+and may weaken them defensively; and it marks the boundary, so that a *later*
+widening to historical non-opening states (`executing`, `review`) is recognised
+as the change that genuinely would move those counts.
+
+### Coverage and recommendation
+
+**Covered**, by execution against `6afa131`: discovered-vs-pinned frozen sets
+(182 / 164) and the pinning status of all four named paths from the committed
+manifest; the install destinations of `lifecycle_planner.py` and
+`_lifecycle_metrics/extract.py` via `scaffold.py --manifest` (both land under
+`tools/`, so R5's *destination* reasoning is sound); absence of
+`tools/__init__.py` in tree and in the install set; all three import forms in a
+faithful reproduction of the installed layout; module-scope side effects in
+`lifecycle_planner.py` (AST scan -- **none**, so R5's "importing performs no CLI
+action or repository mutation" is correct); the existing loader discipline at
+`tools/lifecycle_metrics.py:20-48`; the structural-independence definition at
+`doctrine/dual-review.md:26-48`; `extract.py`'s current relative-import style.
+
+**Not covered / low confidence.** I did not verify R5's "installed
+unconditionally" claim for the planner beyond confirming its manifest row -- a
+minimal-profile dry-run summarises the skills fan-out rather than enumerating
+it, so I have no evidence either way and did not manufacture a finding from an
+abbreviated output. No implementation exists, so R6's contradiction predicates,
+R7's migration classifier, and R9's source audit are unexercised. I did not
+re-review R2, R4, R6, R7, or R8 beyond the points above, per my own round-1
+recommendation. One agent type, one host; the declared plan tier is untouched.
+
+**Second-round recommendation: no further broad round.** [D1] is a mechanism
+substitution whose replacement is already written and reviewed in this
+repository; [D2] is one word; [D3] is one sentence. A short closure read against
+R1's floor sentence and R5's loader paragraph is sufficient -- do not reopen the
+state model, R3's obligation grammar, or the migration design, all of which are
+now in good shape.
