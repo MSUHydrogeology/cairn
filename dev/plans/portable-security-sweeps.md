@@ -2877,3 +2877,110 @@ its own test file. Chunks F--I remain unimplemented; the concurrent
 content-scan and other in-flight scopes were not examined.
 
 This section is append-only once written.
+
+## Implementation verification -- Claude -- 2026-08-10
+
+**Why this record exists.** The 2026-08-05 Code review (Codex) returned
+REVISE with CR1/CR2/CR3; all three were corrected in the runner and tests
+(`0e8562a`, `16d8e41`) with a Sharpening appended (`cce60a3`). Per
+`doctrine/plans.md:314-315` condition 4 -- *"review sharpening changes
+implementation, tests, executable templates, or fixtures in the reviewed
+range"* -- evidence reuse is unavailable. **No prior `## Implementation
+verification` record exists for this plan at all** (this is the first, not a
+replacement), so this record covers the plan's complete implementation
+range from Chunk A through the Sharpening.
+
+**It does not close the findings.** An independent correction review is
+still owed, by a **different agent type from the fixer** -- the CR1-CR3
+corrections were authored by a Claude agent (the Sharpening), so a Claude
+self-review would be the self-certifying configuration the doctrine
+forbids. Precedent for the shape:
+`dev/plans/archive/separator-detection.md` took Codex review ->
+corrective implementation -> Antigravity review -> archive. Plan status
+stays `open`.
+
+| field | value |
+|---|---|
+| Implementing commits (reviewed range) | `8daecd2`, `c4750e2`, `47ad13a`, `afe7573`, `c01b7ce`, `07afef1`, `27817b6`, `170255d`, `f7eb298`, `d363368`, `b4882e0`, `1fd72e2`, `1f81b14`, `151c33d` (Chunks A-A.3, B-B.2, C-C.2, D-D.2, E-E.2, F, H), `bedde4b` (Code review), `0e8562a`, `16d8e41`, `cce60a3` (CR1-CR3 correction + Sharpening) |
+| Interpreter | `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python **3.13.13** |
+| Command | `PYTHONDONTWRITEBYTECODE=1 python -m pytest bootstrap/tests -q` |
+| Outcome | **2588 passed, 4 failed**, 3 warnings, 360.34s (0:06:00) |
+| Non-pass disposition | all 4 pre-existing and unrelated to this plan -- see below |
+
+**Why "reviewed range" is a commit list, not a `first..last` range.** This
+working tree is shared by several concurrent sessions; `git log --oneline
+8daecd2..cce60a3` returns 109 commits, the large majority belonging to
+other in-flight plans (e.g. `85ed840`, `5f6eccc` in that span touch
+`AGENTS.md` and were authored by unrelated sessions). A `..` range would
+misrepresent those as part of what this record verifies. The table above
+lists exactly the 18 commits carrying this plan's own stem; a targeted
+`git show --stat` over each of the 14 pre-review implementing commits
+confirms none touches `AGENTS.md` or `doctrine/dual-review.md` (the two
+files behind the pre-existing failures below).
+
+**Non-pass disposition, itemized.**
+
+1-2. `test_ast_attest.py::test_committed_baseline_accounted_for_across_the_engine_package`
+and `::test_ast_gate_passes_over_the_full_scaffold_module_set` -- **AST
+attestation RED, but not this plan's.** `_ast_attest._classify` against the
+committed baseline reports exactly **CHANGED 1** (`Assign:_MODULE_MAPPINGS`
+in `bootstrap/_scaffold/config.py`, baseline `4f72dfcb7ce39f20` !=
+current `df43d4d75f55a3e5`), **MISSING 0, DUPLICATE 0, NEW 80**. That
+CHANGED symbol is `security-verification-activation`'s own declared Chunk
+A delta (its `## Implementation verification -- Claude -- 2026-08-10`
+record, this same plan file's sibling, names the identical symbol as "this
+chunk's own declared delta, not re-anchored per the Maintainer fence").
+`git merge-base --is-ancestor 6e3a8ed ae17a51` confirms that commit was
+already 20 commits behind this record's *starting* HEAD -- the scaffold
+was non-clean **before** this measurement began, not something this run
+or this plan introduced. Per the harness task's own instruction, this
+plan's own commits never touch `bootstrap/_scaffold/` (confirmed above,
+and consistent with the Sharpening's own claim: *"This plan's `## The
+declared symbol delta` is unaffected: no `bootstrap/_scaffold/` file
+changed"*). **Correction to this task's own premise:** the dispatching
+instructions stated "No `bootstrap/_scaffold/` edit exists at this point
+in the run" -- that was already false at the recorded starting HEAD
+(`ae17a51`), not merely something that happened mid-run; recorded here
+rather than silently treated as still true.
+3-4. `test_verification_boundaries.py::test_both_operational_surfaces_fail_to_full`
+and `::test_review_doctrine_requires_targeted_falsification_and_six_triggers`
+-- pre-existing gaps in `AGENTS.md` (Cairn's own root) and
+`doctrine/dual-review.md`, unrelated to this plan. Confirmed by commit
+inspection above (none of this plan's 14 implementing commits touches
+either file) and consistent with the same-day sibling record in
+`dev/plans/security-verification-activation.md:2636-2643`, which examined
+the identical two nodes independently and reached the same conclusion.
+
+**Targeted confirmation.** `pytest bootstrap/tests/test_portable_security_sweeps.py -q`
+-> **163 passed, 0 failed**, matching the Sharpening's own claimed count
+exactly (no drift since `cce60a3`).
+
+**State at measurement, stated exactly rather than as "clean".**
+
+* Tracked files: `git status --short` shows zero modified or staged
+  tracked files at both the start (`ae17a51`) and the finish
+  (`f676d7a`) of this pass.
+* Untracked, present throughout and unrelated to this plan's executable
+  or test surface: `.claude/` (a harness skills symlink directory),
+  `dev/measurement/collision_log.md`, `dev/measurement/snapshots/`
+  (measurement-tooling logging, no test reads them).
+* **HEAD advanced during the run**: `ae17a51` at start ->
+  `f676d7a` at finish, via two intervening commits
+  (`b486b40`, three accumulated `dev/PLANNING.md` lifecycle row-moves;
+  `f676d7a`, `code-review-blindness` Response + Revised proposal).
+  `git diff --stat ae17a51 f676d7a -- bootstrap/_scaffold/` is empty --
+  neither commit touches the engine package, so the AST delta and pass
+  count above are unaffected by the mid-run advance.
+
+**Known omissions.** Did not run a real Gitleaks binary or the
+Maintainer-gated Chunk I matrix (unimplemented by design -- Maintainer
+authority only). Chunk G (the activation registry row) is confirmed
+**not landed** -- `dev/plans/portable-security-sweeps.md:2326` records
+Branch 2 as measured at plan-review time, and no `Chunk G` commit exists
+under this plan's stem; LT-2 still carries it, deferred to
+`security-verification-activation`. This run performs no independent
+falsification of CR1/CR2/CR3 beyond what the fixing agent (Claude,
+`cce60a3`) already demonstrated and re-verified itself -- the
+independent correction review named above has not occurred.
+
+This section is append-only once written.
