@@ -89,10 +89,11 @@ from "my session is ending":
 The full scrub happens once per session-day, by one owner — that
 keeps the shared communication files a single-writer surface at
 handoff time. **The handoff commit is part of the routine** — the
-full-handoff owner lands it without per-commit Maintainer approval
-(covered by the deliberation-commit carve-in in
-`templates/core/AGENTS.md` > *Git and commit workflow*; path-scoped,
-listing the routine artifacts). **Pushing always waits on explicit
+full-handoff owner lands it without Maintainer approval — there is no
+per-commit approval gate to clear (`templates/core/AGENTS.md` >
+*Git and commit workflow*), and the handoff is a routine step rather
+than a deviation. It is still **path-scoped**, listing the routine
+artifacts, because the git index is shared. **Pushing always waits on explicit
 Maintainer approval** — the commit makes the handoff durable for the
 next session; the push is the Maintainer's call on cadence.
 

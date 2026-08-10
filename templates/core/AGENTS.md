@@ -116,9 +116,9 @@ author is its committer.
   before substantive work.
 * **Goodnight** — at the end of a session, leave a clean handoff:
   a status summary, a per-agent reflection, and (for the
-  designated owner) a scrub of the roadmap boards. Committing and
-  pushing are never implied by the routine — they wait on explicit
-  maintainer approval.
+  designated owner) a scrub of the roadmap boards. The handoff commit is
+  part of the routine and its owner lands it; **pushing is never implied
+  by the routine** and waits on explicit maintainer approval.
 
 ## Roles
 
@@ -132,25 +132,40 @@ roster is in `dev/agent_collaboration.md`.
 
 ## Git and commit workflow
 
-* **Never commit or push without explicit maintainer approval.**
-  Show what changed first.  Pushing always needs approval.
+* **Implementing an accepted plan, commit your own work.** An agent executing a
+  reviewed, accepted plan commits as it goes — code, tests, templates, docs and
+  deliberation artifacts alike. There is **no per-commit approval gate**.
+  Approval attaches to exactly four things:
+  * **Pushing.** Always, without exception. The plan authorized the change; it
+    did not authorize publishing it.
+  * **A Decision on a proposal** (accept / reject / supersede) — the
+    Maintainer's to make, and theirs to land, bounded by the scribing
+    guard-rail below.
+  * **A deviation from the approved plan** — new scope, a struck chunk revived,
+    a contract the review never saw, an acceptance criterion you cannot meet.
+    *Deviating* is what needs asking; committing is not.
+  * **A plan's own explicit fence.** A chunk marked MAINTAINER-GATED or
+    MAINTAINER-ONLY does not execute without the authorization it names,
+    whatever this rule says. Fences are the mechanism by which a plan places
+    approval where it is actually load-bearing.
 
-  **Exception — deliberation / planning / strategy / upstream-ledger /
-  goodnight-handoff commits proceed without per-commit approval.** A commit
-  touching ONLY files under `dev/proposals/`, `dev/plans/`, `dev/strategy/`, or
-  the `dev/.cairn/` fold-back ledger (any combination) is a deliberation /
-  recording artifact and lands without per-commit approval — as does the single
-  goodnight-handoff commit (its routine artifacts: `dev/NEXT_SESSION.md`, the
-  end-of-day `dev/PLANNING.md` scrub, `CHANGELOG.md` additions, intent-ledger
-  pruning) and the one-line `dev/PLANNING.md` row-move that serializes a
-  lifecycle transition (proposal / plan open, supersession, archive). Three
-  guard-rails, all bright-line: **pushing still needs approval** (the exception
-  covers `git commit` only); the **Decision commit is the Maintainer's**
-  (scribing rules below); and **bundling any non-lifecycle file (code, `docs/`,
-  `AGENTS.md`, …) loses the exception** and re-triggers the approval gate. This
-  compact scope plus the three guard-rails are the operative rule; the
-  deliberation-layer rationale the carve-in serves is in
-  `doctrine/coordination.md`.
+  Report what changed when you report, and keep the commit body a faithful
+  snapshot. **Never a bare `git commit`** — but that rule (below) protects
+  against the *shared index*, not against missing approval; the two are
+  unrelated and only one of them is a gate.
+
+  **Why this is stated positively, and why it must not be re-tightened by
+  reflex.** A blanket *never commit without approval* rule is the common first
+  instinct, and it is the wrong instrument once this apparatus exists. The hazard
+  it addresses — unreviewed agent commits accumulating faster than a human can
+  read them — is real, and it is answered by the lifecycle itself: a proposal, a
+  review across structural independence, an accepted plan with per-chunk
+  acceptance criteria, and fences at the points that genuinely need a human. A
+  per-commit gate layered on top is not additional safety; it is a cruder
+  instrument left running after its replacement was built, and its observed cost
+  is agents stranding verified work uncommitted rather than landing it. If an
+  incident argues for tightening, tighten *the plan's fences* or the review
+  tier — that is where approval binds to something specific.
 * **Scribing a Decision — the guard-rail.** The Maintainer's Decision
   (accept / reject / supersede) is theirs to land; an
   explicitly-instructed agent may *scribe and commit* it, bounded by
