@@ -825,3 +825,31 @@ pre-existing condition, unchanged.
 * Chunk D's dispositions are measurements on **one host on one day**; the
   ratios (1.09–1.34 against the corpus tier's 5.09) are the durable claim, the
   seconds are not.
+
+## Code review -- Antigravity (External, security lens) -- 2026-08-10
+
+**Tier**: External (security lens)
+**Findings**: none
+
+**Method.** Conducted Boundary C independent falsification review under `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13), `PYTHONDONTWRITEBYTECODE=1`, over implementation commits `3a1b879` (A), `bdc5f21` (B), `a489ed1` (C), `fb487ca` (E), `857062d` (D).
+
+1. **Boundary B Verification (`f25ca27`)**: Verified commit range `947fa95..857062d`. Confirmed clean working tree state in a `--shared` clone (`git status --porcelain` empty). Verified baseline failure count (5 failed at `947fa95` vs 6 failed at `857062d`).
+2. **Re-running the Seven A2 Mutants**: Applied exact code perturbations to `bootstrap/tests/test_transition_lint.py` and re-ran pytest for each node:
+   - *Mutant 1* (drop `root` from key): `test_the_repository_root_is_in_the_key` -> **RED** (`AssertionError: assert b'A\x00f3.md\x00' == b''`).
+   - *Mutant 2* (drop `sha` from key): `test_the_sha_operand_is_in_the_key` -> **RED** (`AssertionError: assert b'A\x00f3.md\x00' == b'A\x00f4.md\x00'`).
+   - *Mutant 3* (drop `path` from key): `test_the_path_operand_is_in_the_key` -> **RED** (`AssertionError: assert b'content 1\n' == b'content 2\n'`).
+   - *Mutant 4* (conflate families 4 and 5): `test_the_option_set_distinguishes_families_four_and_five` -> **RED** (`AssertionError: assert (b'content 3\n' != b'content 3\n')`).
+   - *Mutant 5* (bypass `_memo_admits`): `test_argv_outside_the_closed_grammar_is_refused` -> **RED** (`Failed: DID NOT RAISE GitGrammarError`).
+   - *Mutant 6* (cache regardless of `rc`): `test_a_failed_read_is_never_cached` -> **RED** (`AssertionError: assert (1, b'') == (0, b'second')`).
+   - *Mutant 7* (module-scope install): `test_the_install_is_function_scoped_and_does_not_leak` -> **RED** (`AssertionError: install fixture declares scope=['module']`).
+   All 7 mutants are ACTIVE and NON-VACUOUS.
+3. **The `two_roots` Fixture Falsification**: Tested full vs `--depth=3` shallow clone over `file://` URL on git 2.53.0. Confirmed ordinary clones return identical bytes (`b'A\x00f3.md\x00'`) which would leave a root-blind mutant dead; confirmed shallow clone at boundary returns `b""` vs `b'A\x00f3.md\x00'`, discriminating cleanly. Verified stable across `git gc`.
+4. **Key Completeness Audit**: Verified verbatim key `(str(root), argv)`. Audited session-stable ambient assumptions (executable identity, `replace` refs, config, shallowness) as documented in A3.
+5. **Closed Grammar Falsification**: Audited 5 literal argv templates in `_memo_admits` against all 5 `_git` call sites in `scripts/transition_lint.py` (`:293`, `:307`, `:336`, `:384`, `:451`). All map 1:1; no un-admitted call exists.
+6. **Chunk C Narrowing Re-derivation**: Re-derived commit counts (`ROOT..SELF_HOST`: 415, `SELF_HOST..PROPOSAL`: 120, `PROPOSAL..SNAPSHOT`: 332, `ROOT..SNAPSHOT`: 867, `SELF_HOST..SNAPSHOT`: 452). Confirmed C11 assertions yield identical results over both windows. Re-derived `git rev-list --count --full-history ROOT..SELF_HOST -- dev/proposals dev/plans` -> `0`. Verified `dev/proposals` and `dev/plans` pathspecs cover `_TRIGGER_ROOTS`.
+7. **Chunk D Subprocess Census**: Instrumented `subprocess.run` on `test_upgrade.py` during pytest execution. Confirmed total calls = 974, distinct pairs = 852, ratio = 1.14 (exact match to D1 table). Verified `rev-parse --short HEAD` fires 114 times (~1s wall clock). Confirmed declining this cross-file optimization is sound.
+8. **Boundary B 6th Failure Delta**: Ran `pytest bootstrap/tests/test_verify_ref.py` in isolation -> `67 passed in 8.41s`. Confirmed the full-suite failure of `test_candidate_gpg_ssh_program_never_executes` under seed-0 shuffle is collection-level order sensitivity caused by collection size growing from 2826 to 2875 items across 10 interleaved other-agent commits.
+9. **Chunk E R7 Deviation Assessment**: Verified that removing `claim-check-allow: bootstrap/tests/_immutable_git.py` from `dev/proposals/2026-08-10-claude-corpus-tier-cost.md` causes `scripts/claim_check.py` to fail with exit code 1 and 3 hard flags (lines 181, 799, 889). Retaining the directive with an updated comment is sound and honestly recorded.
+
+**Summary: 0 BLOCKING, 0 SUBSTANTIVE, 0 MINOR.**
+
