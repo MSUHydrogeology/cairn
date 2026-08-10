@@ -1959,3 +1959,81 @@ ceremony's own correctness, which has now taken three rounds of its own
 (H2/T3 → J1/K1 → L1/M1+L2) for a governance override on a plan with zero
 implementation commits. That ratio is the Maintainer's to weigh, and this
 Response makes no recommendation about it beyond recording it.
+
+## Plan review -- Codex -- 2026-08-10 (round 6)
+
+**Model**: GPT-5.6-Codex
+**Tier**: External
+**Obligation**: External
+**Reviewed commit**: `7f5682b8d377f171bb1d1afb6225ae2e32ac5d41`
+**Target**: the retired bootstrap exception, six-proposal execution map, and
+the Maintainer-directed gate repair at `286f07d`
+**Prior findings**: L1, L2, and M1; all earlier findings as closed context
+**Assurance path**: high-assurance
+**Maintainer clarification**: the Maintainer explicitly instructed that
+`286f07d` land; its authority is accepted and is not a finding
+**Findings**: raised
+**Verdict: REVISE, focused.** Retiring the exception is correct: direct
+execution now returns zero review-record violations and the executing gate is
+MET. The six-proposal map preserves this plan's scope. One executable-contract
+conflict remains because Chunk B still specifies the disposition behavior that
+the authorized repair deliberately replaced.
+
+### [N1] HIGH -- Chunk B would undo or contradict the pre-landed group-Response rule
+
+`286f07d` makes an exact `## Response to plan review` close the group of
+Plan-review passes above it and after the prior Response. Chunk B still says
+every next-pass ceiling is canonical and B2 requires that "a disposition after
+the later pass must not satisfy the earlier." Executing a fresh fixture proves
+the conflict: R1 declares findings, R2 declares none, and one Response after R2
+produces `[]`; B2's current sentence requires R1 to remain a violation.
+
+The accepted `code-review-blindness` amendment needs the stricter behavior for
+**Code-review** responses through exact `Answers:` binding. It does not require
+undoing the newly authorized grouped semantics for **Plan-review** responses.
+
+**Required satisfier.** Record `286f07d` as a Maintainer-directed, pre-landed
+baseline change and split B1/B2 by record type:
+
+* raw conforming boundaries remain canonical for every pass **body**;
+* Plan-review `## Response to plan review` uses the group rule now tested by
+  c4b, while `### Sharpening` remains scoped to its own pass;
+* Code-review `## Response to code review` must carry the accepted exact
+  `Answers:` binding, so a response bound to a later pass cannot satisfy an
+  earlier one; and
+* B2 keeps separate mutations for those opposite directions instead of one
+  generic "disposition after later pass" assertion.
+
+Name `286f07d` in the final independent Code-review target and Boundary B
+ledger even though it predates the plan's executing transition. Otherwise the
+gate change this plan now relies on sits outside the only final review range.
+
+### [N2] LOW -- the retired-exception account carries two different historical counts
+
+The operative section says nine rounds accrued **five** permanent violations,
+then accurately reports the measured gate delta as **4 -> 0**. Independent
+execution with the old and new modules over the current 37-plan corpus confirms
+only this artifact changes and its old count is four. The initial External pass
+was answered before the first Security pass; only External rounds 2--5 were
+overtaken.
+
+**Required satisfier.** Say four, matching the executed delta. The append-only
+historical Response may remain wrong on the record; only the operative account
+needs correction.
+
+### Closure accounting
+
+L1/M1 close because the entire exception is retired; L2 closes in mechanism
+because no forecast remains authoritative. The sibling-plan map is routing,
+not de-scoping: all P1--P8/A--H work remains here, while the already-separate
+Internal and trust-root plans retain their own gates.
+
+**Covered**: complete plan changes through `7f5682b`; the Maintainer's stated
+authorization; direct old/new corpus comparison over 37 plans (only this plan,
+`4 -> 0`); current gate and transition execution; the adversarial grouped-pass
+fixture; 77 focused lifecycle-contract tests; twin byte identity; accepted
+`code-review-blindness` R2/R4; and the later frozen-manifest ceremony mapping.
+
+**Not covered**: unrelated API/web worktree edits, implementation of A--H,
+full-suite behavior, future Code review, or the Maintainer re-anchor. Return
+N1--N2 only. This pass is blocking and does not clear the External obligation.
