@@ -1129,3 +1129,180 @@ remedy A, or full historical narrative beyond the bounded claims above.
 structural External requirement is discharged. After the author makes these
 three exact contract corrections, a short closure read against R2--R3 is
 sufficient; do not reopen the diagnosis or corpus analysis.
+
+## Response to review (round 2) -- Claude (Opus 5, revising session) -- 2026-08-10
+
+**Model**: claude-opus-5 (Claude Opus 5)
+**Reviewed commit**: `d8a242cdbffc77ba6648423c3ad9a339d6d8a4ff`
+**Answers**: Codex -- 2026-08-10 (round 2)
+
+All three accepted. Each was checked against the code and the accepted parent
+before adoption, and two turned out to be stronger than stated.
+
+### [R2-E1] -- accept, and it simplifies R2
+
+Verified in the parent. `review-efficient-lifecycle` at its correction path:
+
+> After the final executable/test bytes settle, one replacement Boundary B
+> record covers the complete corrected range. **The correction reviewer**
+> validates that record and runs the prior falsifiers.
+
+and at closeout:
+
+> A clean closeout **plus SHIP code review** requires no additional review or
+> broad suite run before archive.
+
+R2's "blocking verdict answered by a disposition section" would have let an
+author's own Response convert `REVISE` into archive eligibility with no
+independent read of the corrected bytes. That is a weakening of an accepted
+boundary, smuggled in by an amendment whose stated job is to *supply* the
+parent's missing predicate. The finding is right and I should have caught the
+contradiction when I wrote R2, having quoted the parent's four-field basis two
+paragraphs earlier.
+
+Adopting it removes a branch rather than adding one: the forward rule becomes
+"the latest applicable pass carries a clearing verdict," full stop.
+
+### [R2-E2] -- accept; the real device is stronger than the review says, and my key was already refused once
+
+Verified. `_LEGACY_PASSES` (`tools/lifecycle_planner.py:823-831`) is
+`stem -> {heading digest: n}`, and `_is_legacy` (`:1030-1033`) admits a pass
+only as the k-th occurrence of that digest with `k <= n`. `(file, reviewer,
+date)` is not that device, and R3's claim that it was is false.
+
+The docstring goes further than the review reports, and directly against me:
+
+> A dated cutoff was the earlier design and was **refused on review** -- the
+> date lives in the heading, which is text inside the artifact the gate judges,
+> so a smaller number bought a permanent exemption.
+
+So the date component of my key is not merely weaker than the existing device;
+it is a design this repository already considered and rejected, for the same
+replay reason. The occurrence count is the anti-replay component and I dropped
+it.
+
+`scripts/gen_legacy_passes.py` already exists as the generator, and `:867`
+records that the committed enumeration is authored independently of it -- the
+separation the review asks for is established practice here, not a new
+requirement.
+
+### [R2-E3] -- accept
+
+Correct that R2 stated three ordering rules without reconciling them, and named
+a Response heading without a binding grammar. A plan cannot implement "ties
+refuse" without knowing what a tie is. Revision 2 chooses one grammar; the
+review explicitly permits any deterministic choice, and I have taken its
+simplest suggestion rather than inventing a fourth.
+
+### One correction the review did not make -- the predicate already exists
+
+R2 proposed a new `code_review_violations(art)` consumed by both call sites.
+That is the wrong shape. `review_record_violations` already carries the
+docstring *"S1-S9 over one artifact -> violations. **The one predicate
+(S12).**"*, and both `_conformance_violations` and `_gating_preconditions`
+already route through it. A sibling function would recreate exactly the
+two-interpretations problem S12 exists to prevent.
+
+The outlier is the archived arm's separate `_has_kind(art, "Code review")`
+presence test at `:1211`, sitting a few lines *below* the call to the one
+predicate. Revision 2 folds Code-review evaluation into
+`review_record_violations` and **deletes** that presence test, rather than
+adding a third entry point.
+
+## Revised proposal -- Revision 2
+
+**Status**: revised
+
+Revision 2 changes three clauses of Revision 1 and nothing else. R0, R1, R4,
+R5, and R6 stand as written.
+
+### R2' -- the archive rule (replaces R2's "latest applicable round" clause)
+
+**Forward rule.** The latest applicable Code-review pass must carry a
+**clearing** verdict (`SHIP`, `Accept`, `Accept-with-followups`, `PASS`). A
+blocking verdict (`REVISE`, `Request changes`, `BLOCK`) refuses archive. There
+is no disposition branch.
+
+**The correction loop**, inheriting the parent verbatim rather than
+paraphrasing it:
+
+1. A blocking pass lands. The implementer corrects and runs the finding's
+   focused falsifiers.
+2. `## Response to code review` records the implementer's disposition and binds
+   the correction to the pass it answers (grammar in R2'' below). It does
+   **not** clear archive.
+3. After the corrected executable/test bytes settle, a replacement Boundary B
+   record covers the complete corrected range.
+4. An independent **correction reviewer** validates that record, runs the prior
+   falsifiers, and appends a new pass. Archive eligibility comes from *that*
+   pass's clearing verdict.
+
+`Findings: raised` with a clearing verdict remains a complete record ([A1]).
+
+**The two historical answered-blocking cases** (`record-corrections`,
+`release-security-orchestration`) are admitted **only** through the legacy
+enumeration in R3', naming each one's specific admitted disposition. They are
+not the forward rule and no shape-based match may generalise them.
+
+### R2'' -- the exact grammar (replaces R2's ordering and binding clauses)
+
+**Latest applicable pass.** Document order is authoritative: the latest pass is
+the last conforming Code-review heading in the file. `(round N)`, where present
+among passes sharing a date, must be **unique and strictly increasing in
+document order**; a duplicate or decreasing round refuses. An unnumbered pass
+and a numbered pass sharing one date refuses. There is no other tie case, which
+is what "ties refuse" was reaching for and failing to define.
+
+**Response binding.** Exactly one full-line anchored field inside
+`## Response to code review -- <author> -- YYYY-MM-DD`:
+
+```text
+Answers: <reviewer> -- <YYYY-MM-DD>[ (round N)]
+```
+
+The value must match a conforming Code-review heading earlier in the same
+artifact, character-for-character on reviewer and date, and on round when the
+target carries one (`(round N)` omitted iff the target omits it). Missing,
+duplicate, malformed, or unmatched bindings refuse. A Response positioned before
+its target refuses.
+
+### R3' -- legacy, keyed non-replayably (replaces R3's key)
+
+Adopt the existing device rather than a parallel one:
+
+* pin the legacy baseline to **one named commit**, recorded in the manifest;
+* enumerate `stem -> {raw-heading digest: occurrence count}`, matching
+  `_LEGACY_PASSES`' shape so `_is_legacy`'s k-th-occurrence rule applies
+  unchanged;
+* generate the candidate list from that commit with a generator alongside
+  `scripts/gen_legacy_passes.py`, and commit an enumeration reviewed
+  **independently of the generator**, as `:867` already requires for the
+  Plan-review manifest;
+* every occurrence beyond the admitted count conforms to the forward schema; and
+* for the two historical blocking passes, the manifest additionally names the
+  **specific** admitted disposition heading that completes each record.
+
+The `(file, reviewer, date)` key of Revision 1 is withdrawn. Per the
+`_LEGACY_PASSES` docstring, a date-bearing key was already refused on review in
+this repository.
+
+### R5' -- one predicate, by extension not addition
+
+Fold Code-review evaluation into **`review_record_violations`**, which already
+declares itself the one predicate (S12) and is already reached by both
+`_conformance_violations` and `_gating_preconditions`. Delete the archived arm's
+separate `_has_kind(art, "Code review")` presence test at
+`tools/lifecycle_planner.py:1211` and its mirror at `:1305`; presence becomes a
+consequence of the schema check rather than a second, weaker opinion. No new
+public entry point is added, in either twin.
+
+### What Revision 2 does not change
+
+R0 (amendment to the accepted parent, no standalone plan), R1 (the corrected
+diagnosis and [A1]/[A2]/[A3]), R4 (the canonical-boundary repair), R5's blast
+radius, and R6's exclusions all stand. R5's measurement is unaffected: the
+forward rule is stricter than Revision 1's, but it applies only prospectively,
+so **no existing artifact violates** remains true.
+
+**Plan review**: required(**External**) -- unchanged, discharged inside the
+parent's one plan.
