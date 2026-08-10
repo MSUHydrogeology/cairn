@@ -1,9 +1,12 @@
 <!-- cairn-internal-ref-allow: doctrine/dual-review.md doctrine/lifecycle.md doctrine/plans.md doctrine/proposals.md doctrine/lifecycle-contract.md doctrine/session-routines.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- claim-check-allow: bootstrap/tests/test_lifecycle_board.py, bootstrap/tests/test_lifecycle_vocabulary.py, scripts/gen_legacy_code_review_passes.py -->
+<!-- claim-check-allow: bootstrap/tests/test_lifecycle_board.py, bootstrap/tests/test_lifecycle_vocabulary.py, scripts/gen_legacy_code_review_passes.py, dev/.cairn/pilot-state.json, tools/__init__.py -->
 <!-- The three paths above are forward references created by Chunks A, C and F.
      They are also registered under `Proposed paths:`; that marker exempts only
      its own contiguous bullet block, so this file-scoped directive covers the
-     chunk tables that name the same paths. Each line drops when its file lands. -->
+     chunk tables that name the same paths. Each line drops when its file lands.
+     `tools/__init__.py` is the opposite case: it is cited BECAUSE it must never
+     exist -- A3/A5's no-package-shortcut clause -- so no typed declaration can
+     express it. -->
 
 # Plan: one lifecycle contract, one evidence boundary
 
@@ -69,10 +72,18 @@ report the floor satisfied by one pass.
 Until Chunk E lands, this table is the enforcement, and the plan stays at
 `open` until both rows are filled:
 
-| Obligation | Review commit | Disposition | Unresolved findings |
+| Obligation | **Clearing** review commit | Verdict | Unresolved findings |
 |---|---|---|---|
-| `External` | `8f37a9b` | REVISE → dispositioned below | none after this Response |
+| `External` | *pending* | *pending* | *pending* |
 | `External Security Review` | *pending* | *pending* | *pending* |
+
+**A row is filled only by a distinct clearing pass.** An author Response is
+evidence of correction, never the clearing review — the opened table recorded
+the blocking pass `8f37a9b` as its own clearance, which is exactly the
+self-clearance it was introduced to prevent. Blocking passes so far:
+`8f37a9b` (External, REVISE), `ef70da8` (External round 2, REVISE),
+`fc96373` (External Security Review, REVISE). Each row needs a later pass
+reading `SHIP` with zero unresolved findings before Chunk A begins.
 
 This attestation is retired by Chunk E, in the same commit that makes its
 multi-obligation predicate active and tested. It adds no review pass; it makes
@@ -85,6 +96,7 @@ Proposed paths:
 - `bootstrap/tests/test_lifecycle_vocabulary.py` — Chunk A's source-audit + shape-(b) matrix.
 - `scripts/gen_legacy_code_review_passes.py` — Chunk C's legacy manifest generator.
 - `bootstrap/tests/test_lifecycle_board.py` — Chunk F's board CLI and encoder tests.
+- `dev/.cairn/pilot-state.json` — P6a's versioned pilot state; written only by the CLI.
 
 ## Scope
 
@@ -148,6 +160,9 @@ E   status vocabulary, transitions, conformance    [commit pending]
 P2  plan readiness, inheritance, expansion refusal [commit pending]
 P3  current-contract revision + withdrawal ledger  [commit pending]
 P4  review-brief + closeout --dry-run              [commit pending]
+P6a pilot engine + state schema (in reviewed range)[commit pending]
+P6b pilot human contract                           [commit pending]
+P6c pilot mutation tests                           [commit pending]
 F   the derived board                              [commit pending]
 G   doctrine, templates, agent teaching            [commit pending]
 H   migration + source-proposal archive            [commit pending]
@@ -157,14 +172,22 @@ CR  independent Code review over that range        [review]
 I   Maintainer re-anchor of the reviewed frozen set[Maintainer]
 B2  Boundary B + closeout on post-ceremony commit  [record]
 --- pilot ----------------------------------------------------------
-P6  pilot activation, reporting, deadline, pauses  [commit pending]
-P7  post-pilot promotion / retirement              [conditional; Maintainer Decision]
+P6d pilot ACTIVATION (data-only, Maintainer-gated)  [record]
+P7  post-pilot promotion / retirement              [conditional; own evidence]
 ```
 
-The pilot runs on the landed contract, so P6 activates after the ceremony and
-P7 is conditional on the Maintainer's promotion Decision at the pilot boundary.
-A corrective byte after `CR` restarts `B1`, `CR`, and `I` for the affected
-range; a corrective byte after `I` restarts `B2` only.
+Only *activation* is post-ceremony. The pilot engine, its state schema, its
+reports and its tests (P6a--P6c) land before `H`, inside the reviewed range.
+Restart cases, split rather than generalized:
+
+1. the ceremony's **reviewed manifest-only** commit proceeds directly to `B2`;
+2. any post-Code-review correction to governed implementation, test,
+   executable-template or fixture bytes restarts `B1` **and** independent Code
+   review;
+3. any correction inside the gate inventory additionally restarts the
+   Maintainer ceremony `I`; and
+4. P6d activation and P7 outcomes follow their own phase evidence above — they
+   never inherit `B1`/`CR`/`I`/`B2` by position.
 
 Two orderings are load-bearing and measured:
 
@@ -184,10 +207,10 @@ Two orderings are load-bearing and measured:
 |---|---|---|
 | A1 | `tools/lifecycle_planner.py` | central declarations: current proposal/plan states, terminal vs non-terminal, legal transitions, historical tokens (migration + metrics only), and the added-artifact set shape (b) consumes |
 | A2 | `templates/skills/_lib/lifecycle_planner.py` | byte-identical twin |
-| A3 | `tools/_lifecycle_metrics/extract.py` | drop `_PLAN_STATUS_ENUM`; load the planner by fixed path from its own resolved location, refusing missing/symlinked/out-of-root; closes the pre-existing `awaiting-plan-review` omission |
+| A3 | `tools/_lifecycle_metrics/extract.py` | drop `_PLAN_STATUS_ENUM`; closes the pre-existing `awaiting-plan-review` omission. Loads the planner under the **complete accepted R5 contract**: fixed `spec_from_file_location` under a private module name; path derived from its own resolved location; **no ambient `sys.path`**; refusal on missing/unreadable, leaf symlink, containing-directory symlink, or out-of-root resolution; sentinel-gated caching of a *fully initialized* module only; a poisoned `sys.modules` entry refused or replaced only after the same identity checks; removal of the private module **and every child it registered** after any execution failure, with a clean retry; import causes no CLI action or repository mutation; every validation `OSError` is a clean refusal, never a traceback or a fallback |
 | A4 | `templates/modules/default-on/_lifecycle_metrics/extract.py` | byte-identical twin; refuses at its source-tree location (no sibling planner there) |
-| A5 | `scripts/transition_lint.py` | drop `_OPEN_STATUSES`; consume the central added-artifact set; unknown status becomes an advisory finding, never silent skip |
-| A6 | `bootstrap/tests/test_lifecycle_vocabulary.py` | source audit rejecting any consumer-local status literal; shape-(b) synthetic matrix over every central state; loader containment, symlink refusal, and the three metrics-location cases |
+| A5 | `scripts/transition_lint.py` | drop `_OPEN_STATUSES`; consume the central added-artifact set; unknown status becomes an advisory finding, never silent skip. Loads the planner under the **identical A3 contract**, stated per-consumer rather than inherited by implication |
+| A6 | `bootstrap/tests/test_lifecycle_vocabulary.py` | source audit rejecting any consumer-local status literal; shape-(b) synthetic matrix over every central state; and **per consumer**: missing path, unreadable path, symlinked leaf, symlinked parent, out-of-root resolution, poisoned-cache entry, partial-child cleanup then successful retry, no-`sys.path` (probed with a decoy planner on the path), no-`tools/__init__.py` shortcut, and absence of import side effects. Plus the three metrics-location cases |
 | A7 | `bootstrap/tests/test_transition_lint.py` | extend for the new opening states |
 
 **Tier: Opus.** Contract authorship plus loader containment; no mechanical
@@ -249,9 +272,9 @@ record left open.
 |---|---|---|
 | F1 | `tools/lifecycle_planner.py` + twin | `board` subcommand: compact rows, `--format json`, filters, `--explain` |
 | F2 | same | terminal encoder, accepted rule verbatim: escape to printable ASCII when (1) `str.isprintable()` is false, (2) the code point is in the planner's `_DISPLAY_UNSAFE_RANGES`, or (3) it is a row/field delimiter, backslash, or syntax character. `_DISPLAY_UNSAFE_RANGES` uses **numeric endpoints only** — no invisible source character embedded raw |
-| F3 | `tools/_intent/cli.py` + `templates/modules/team-gated/_intent/cli.py` | versioned `--format json` for `list` only; existing semantics unchanged |
-| F4 | `tools/lifecycle_planner.py` + twin | optional intent provider: fixed-path sibling `tools/intent.py`, isolated invocation, schema validation, `not-installed`/`error` distinct from "no claim" |
-| F5 | `bootstrap/tests/test_lifecycle_board.py` | rows, ordering, filters, injection, provider failure modes; **directional drift test** expanding every member of content scan's `_ZERO_WIDTH`, `_BIDI`, `_LINE_SEPARATORS` and every code point of `_IGNORABLE_RANGES`, `_NONCHARACTER_RANGES`, `_TAG_RANGE`, `_ASCII_GUARD` and asserting each is escaped; plus a source scan proving no represented invisible is embedded raw |
+| F3 | `tools/_intent/cli.py` + `templates/modules/team-gated/_intent/cli.py` | versioned `--format json` for `list` only, deterministic and ASCII-safe; existing human output, claim/release semantics, conflict rules, log schema, hooks, and activation unchanged |
+| F4 | `tools/lifecycle_planner.py` + twin | optional intent provider, complete accepted contract: **one** bounded query for the whole board; launcher must be a regular, non-symlinked sibling whose resolved parent **is** the expected `tools/` directory; invoked with the running interpreter in **isolated mode, no shell**, under a timeout; versioned JSON only, never scraped human output; complete field, type and path validation of **every** record before **any** is used. Distinct handling for non-zero exit, timeout, malformed JSON, duplicate claim ids, invalid paths, and schema-version mismatch. Missing launcher is `not-installed`; present-but-invalid is `error`, renders no claim authoritative, keeps other safe rows visible, and exits non-zero |
+| F5 | `bootstrap/tests/test_lifecycle_board.py` | rows, ordering, filters, injection; provider tests asserting **exactly one** subprocess per board, exact argv including isolated mode, no shell, timeout enforcement, symlink and parent refusal, deterministic JSON, and no human-output parsing, each failure mode distinct; **directional drift test** expanding every member of content scan's `_ZERO_WIDTH`, `_BIDI`, `_LINE_SEPARATORS` and every code point of `_IGNORABLE_RANGES`, `_NONCHARACTER_RANGES`, `_TAG_RANGE`, `_ASCII_GUARD` and asserting each is escaped; plus a source scan proving no represented invisible is embedded raw |
 
 **Tier: Sonnet for F1/F3/F5, Opus for F2/F4.** The renderer and filters are
 oracle-rich. The encoder rule and provider containment are not — F4 crosses a
@@ -277,14 +300,18 @@ is checkable by `check_cairn` and `claim_check`.
 
 | # | File | Change |
 |---|---|---|
-| H1 | active proposals and plans | evidence-derived status migration over a pinned parent commit; blob-identity re-check before each edit; ambiguous artifacts refuse |
-| H2 | active proposals and plans | exemption-metadata migration: inert headers out, unused globs out, live globs to typed declarations |
+| H1 | active proposals and plans | **dry-run inventory first**, bound to the pinned parent, carrying for each artifact its old blob id, proposed status, evidence basis, and metadata disposition. A reviewer **independent of the inventory generator** admits the exact table by digest before any apply; ambiguity stays refusal. Apply only admitted rows whose blobs still match |
+| H2 | active proposals and plans | exemption-metadata migration: inert headers out, unused globs out, live globs to typed declarations. **Lands atomically with D1--D4** so no suppression disappears before archive resolution and typed declarations govern |
 | H3 | `dev/proposals/*.md` → `archive/` | the four source proposals, after D1 is in the tree |
 | H4 | `dev/PLANNING.md` | row-move for the four |
 
-**Tier: Sonnet to execute, Opus to review the proposed table before it is
-applied.** The mechanics are pinned and blob-checked; the classification of an
-ambiguous artifact is judgment.
+**Tier: Sonnet to generate the inventory; a reviewer independent of that
+generator admits it.** The mechanics are pinned and blob-checked; classifying
+an ambiguous artifact is judgment. **Lifecycle transitions that rely on
+migrated values are frozen until H's commit is inside clearing Code review** —
+a mistaken `ready-to-archive` or `ready-to-implement` changes permitted work
+immediately. Tests mutate table rows, digests, evidence and blobs, and prove
+partial or racing application cannot grant authority.
 
 **H runs last and needs a quiet tree.** It rewrites the `Status:` of every
 active artifact, so concurrent lifecycle commits cause blob-mismatch
@@ -299,19 +326,30 @@ are chunks, not another planning artifact.
 | # | Surface | Change |
 |---|---|---|
 | P1 | `tools/lifecycle_planner.py` + twin, both authoring templates + twins | `Assurance path: standard \| high-assurance` declaration, the mandatory high-assurance trigger set, and the four-field review basis (`Reviewed commit`, `Target`, `Prior findings`, `Assurance path`) required across proposal, plan, and Code-review records |
-| P2 | same, plus `doctrine/dual-review.md` | proposal `Plan readiness: READY \| DISTINCT REVIEW REQUIRED`, exact accepted-commit binding, standard-plan inheritance, expansion invalidation, and the high-assurance refusal |
+| P2 | same, plus `doctrine/dual-review.md` | proposal `Plan readiness: READY \| DISTINCT REVIEW REQUIRED`, exact accepted-commit binding, standard-plan inheritance, expansion invalidation, and the high-assurance refusal. **Semantic triggers are author declarations, not inferences**: scientific-assumption and undeclared cross-surface risk are declared by the author and surfaced to proposal review and `review-brief`; the tooling checks that the record exists and binds, never the truth of the classification |
 | P3 | both authoring templates + twins, planner predicates | complete current-contract revision plus its mandatory `Withdrawn / superseded commitments` ledger |
-| P4 | `tools/lifecycle.py` + installed twin | deterministic `review-brief`; expanded `closeout --dry-run` |
+| P4 | `tools/lifecycle.py` + installed twin | deterministic `review-brief`; expanded `closeout --dry-run`. **Fenced**: P4 does not modify `_resolve_interpreter` (`tools/lifecycle.py:414`), its schema, validation order, fallback disposition, warning visibility, or any subprocess use of the resolved path — the protected local interpreter binding named in `AGENTS.md`. Pinned by a focused exact-function-byte / AST sentinel test. If implementation needs such a change, **stop for a new Security Review**. Both commands stay read-only and execute no artifact content; human output passes through the **same** terminal encoder as F2 (one shared implementation, parity-tested), machine output is versioned ASCII-safe JSON. Control-character, invisible-range, delimiter, malformed-record and mutation-sentinel tests |
 | P5 | planner + `bootstrap/tests/test_lifecycle_contract.py` | the bound `Contract non-expansion: VERIFIED \| NOT VERIFIED` attestation with its `Basis:` line; `NOT VERIFIED` blocks. Validates presence and binding shape only — the parent is explicit that the semantic claim stays human |
-| P6 | `dev/collaboration_agreement.md` + twin, pilot state | Cairn-local pilot: six-plan / 60-day deadline, pause conditions, evidence report |
-| P7 | doctrine + templates | **conditional** post-pilot promotion or retirement, and the three-layer canonical / self-hosted / shipped-template parity contract |
-| P8 | `bootstrap/tests/test_lifecycle_contract.py` | end-to-end standard-READY and high-assurance-refusal fixtures |
+| P6a | `tools/lifecycle.py` + twin, `dev/.cairn/pilot-state.json` | **pilot engine, inside the reviewed range**: versioned state schema (`schema_version`, `activation_sha`, `activation_date`, counted plan stems, pause records); the CLI is the only writer, `review-brief`/`closeout`/`board` are readers; six-plan counting rule = distinct plan stems reaching `ready-to-archive` under the contract; 60-day calculation from `activation_date` inclusive; malformed or unknown-version state **refuses**, never defaults to inactive |
+| P6b | `dev/collaboration_agreement.md` + twin | the pilot's human contract: pause conditions, evidence report shape, and the Maintainer promotion Decision at the boundary |
+| P6c | `bootstrap/tests/test_lifecycle_contract.py` | pilot mutations: absent state, wrong schema version, tampered activation SHA, miscounted stems, boundary-day arithmetic, pause set and cleared |
+| P6d | `dev/.cairn/pilot-state.json` | **activation only** — a data-only, Maintainer-gated record written after B2 that enables already-reviewed machinery. No code lands at activation |
+| P7 | `doctrine/`, both authoring templates + twins, `docs/workflow-role.md`, `docs/getting-started.md`, `docs/tool-usage.md`, `templates/skills/_lib/` | **conditional** post-pilot `promote` / `revise` / `retire`, each with distinct behavior, plus the three-layer canonical / self-hosted / shipped-template parity contract. Executes only after the Maintainer's promotion Decision |
+| P8 | `bootstrap/tests/test_lifecycle_contract.py` | end-to-end standard-READY and high-assurance-refusal fixtures, plus a **row-level assurance matrix**: missing / duplicate / unknown `Assurance path` values (all refuse — **never default to `standard`**); every mechanically recognizable protected-surface trigger; uncertainty resolving **high**; high-assurance and `DISTINCT REVIEW REQUIRED` inheritance refusal; changed proposal / review / Decision SHAs; every named expansion dimension; unresolved findings; stale Boundary B; malformed or missing non-expansion `Basis:`; and a downgrade admitted only through a structurally valid Maintainer Decision |
 
-**Tier: Opus for P1--P3 and P5** (contract authorship on records every future
-artifact inherits). **Sonnet for P4 and P8** (CLI surface and fixtures against a
-fixed contract, both oracle-rich). **P6/P7 are Maintainer-gated**: P6 activates
-after the ceremony, and P7 does not execute until the Maintainer's promotion
-Decision at the pilot boundary.
+**Tier: Opus for P1--P3, P5 and P6a** (contract authorship on records every
+future artifact inherits, plus the pilot state schema). **Sonnet for P4, P6c
+and P8** (CLI surface, mutations and fixtures against a fixed contract, all
+oracle-rich). **P6b/P6d/P7 are Maintainer-gated.**
+
+**Phase separation, inside this plan.** P6a--P6c ship *before* H/B1, so the
+pilot capability is inside the reviewed range and carries the plan's Code
+review and stable evidence. P6d is data-only activation after B2. **P7 carries
+its own evidence**: before it executes it produces an exact changed-path
+manifest, runs the gate-manifest classification over it, and then — if it
+changes any executable, test, template or fixture byte — takes a fresh
+Boundary B and an independent Code review, and if it changes a frozen path,
+another Maintainer ceremony. P7 is not assumed docs-only.
 
 ### Chunk I — Maintainer re-anchor
 
@@ -971,3 +1009,155 @@ review/ceremony falsification work, not grounds to weaken this plan.
 
 Return S1--S6 for a focused Security closure read after inline sharpening. This
 pass does not fill the bootstrap table's Security row.
+
+## Response to plan review -- Claude -- 2026-08-10 (round 2 + Security)
+
+**Model**: claude-opus-5 (Claude Opus 5)
+**Reviewed review commits**: `ef70da8` (External round 2) and `fc96373`
+(External Security Review)
+**Obligations answered**: neither. This Response dispositions findings; it is
+**not** a clearing pass for either obligation, and the bootstrap table's rows
+stay `pending` accordingly.
+**Disposition**: accept [G1]--[G3] and [S1]--[S6]. [G4] records E4 closed.
+Chunks revised inline; status stays `open`.
+
+### [G3] -- accept, and it is the sharpest finding of the pass
+
+The bootstrap table I introduced to prevent self-clearance performed exactly
+that: it recorded the blocking pass `8f37a9b` as its own clearance because I
+treated "dispositioned by my Response" as a filled row. An author Response is
+evidence of correction and never the clearing review — which I had already
+argued in `code-review-blindness` R2', where a Response to a blocking Code
+review explicitly does not clear archive. I then wrote the inverse into this
+plan's own gate three hours later.
+
+Both rows are now `pending`, the three blocking passes are listed as blocking,
+and each row needs a **later** pass reading `SHIP` with zero unresolved
+findings before Chunk A.
+
+The reviewer's execution evidence has since moved, which is worth recording
+rather than quietly inheriting: at `9e99c5a` `review_record_violations`
+returned `[]`. At this commit it returns two violations — the round-2 and
+Security passes are undispositioned until this section lands. The gate is
+working; only the moment of measurement changed.
+
+### [G1] -- accept. Phase separation inside the plan.
+
+P6a--P6c (pilot engine, versioned state schema, report generator, pause
+evaluation, mutation tests) move **before H/B1**, so the capability sits inside
+the reviewed range and carries the plan's Code review and stable evidence. P6d
+is data-only, Maintainer-gated activation after B2 that enables
+already-reviewed machinery. P6a now names the data path, schema version,
+activation SHA and date, the six-plan counting rule, the 60-day calculation,
+the single writer and its readers, and malformed-state refusal.
+
+P7 gains the accepted docs paths (`docs/workflow-role.md`,
+`docs/getting-started.md`, `docs/tool-usage.md`) and
+`templates/skills/_lib/`, outcome-specific `promote` / `revise` / `retire`
+behavior, and — per [S6] — its own changed-path manifest, gate-manifest
+classification, and conditional fresh Boundary B, Code review, and ceremony.
+One plan, phase-separated.
+
+### [G2] -- accept. The unqualified restart rule was wrong.
+
+"A corrective byte after `I` restarts `B2` only" is true only for the
+ceremony's reviewed manifest-only commit. Split into four cases: manifest-only
+proceeds to B2; a governed implementation/test/template/fixture correction
+restarts B1 **and** Code review; a gate-inventory correction additionally
+restarts the ceremony; P6d/P7 follow their own phase evidence rather than
+inheriting by position.
+
+### [S1] -- accept. Labels permitted a weaker loader than the accepted contract.
+
+A3 said "fixed path" plus three refusals; A5 said nothing about loading at all.
+Both now carry the complete accepted R5 contract per consumer, stated rather
+than inherited: private-name `spec_from_file_location`, no ambient `sys.path`,
+leaf **and** parent symlink refusal, out-of-root refusal, sentinel-gated
+caching of fully initialized modules only, poisoned-`sys.modules` handling,
+private-module-and-children cleanup with clean retry, no `tools/__init__.py`
+shortcut, no import side effects, and every validation `OSError` as a clean
+refusal. A6 gains a per-consumer test for each, including a decoy planner on
+`sys.path`.
+
+### [S2] -- accept, with the semantic boundary stated
+
+P8 gains the row-level assurance matrix: missing/duplicate/unknown values all
+refuse and **never default to `standard`**; uncertainty resolves **high**;
+inheritance refusal for high-assurance and `DISTINCT REVIEW REQUIRED`; changed
+SHAs; every expansion dimension; unresolved findings; stale Boundary B;
+malformed non-expansion `Basis:`; downgrade only through a structurally valid
+Maintainer Decision.
+
+P2 now states the distinction the review asked for: mechanical
+protected-surface triggers are inferred; **scientific and cross-surface
+semantics are author declarations** surfaced to proposal review and
+`review-brief`, and the tooling checks that the record exists and binds, never
+the truth of the classification.
+
+### [S3] -- accept
+
+F4 carries the accepted provider mechanism verbatim enough to test: one bounded
+query, regular non-symlinked sibling whose resolved parent is the expected
+`tools/`, running interpreter in isolated mode with no shell under a timeout,
+versioned JSON only, complete validation of every record before any is used,
+and distinct handling of non-zero exit, timeout, malformed JSON, duplicate ids,
+invalid paths, and schema mismatch. F5 asserts exactly one subprocess per
+board, exact argv, and no human-output parsing. The residual is recorded:
+tracked sibling replacement is not authenticated at invocation, and ordinary
+Git review is the byte-integrity channel.
+
+### [S4] -- accept
+
+H1 becomes a dry-run inventory bound to the pinned parent carrying old blob,
+proposed status, evidence basis and metadata disposition; a reviewer
+**independent of the generator** admits the exact table by digest before apply;
+only admitted rows with still-matching blobs apply. H2 lands **atomically with
+D1--D4** so no suppression disappears before archive resolution governs.
+Lifecycle transitions relying on migrated values are frozen until H is inside
+clearing Code review.
+
+### [S5] -- accept
+
+Verified the surface: `_resolve_interpreter` is at `tools/lifecycle.py:414`
+and `AGENTS.md` names the local interpreter binding as a protected executable
+trust root. P4 now fences it explicitly — no change to the resolver, schema,
+validation order, fallback disposition, warning visibility, or subprocess use
+of the resolved path — pinned by an exact-function-byte/AST sentinel, with a
+stop-for-Security-Review clause if implementation needs otherwise. Both
+commands stay read-only and route human output through the **same** encoder as
+F2 with parity tests.
+
+### [S6] -- accept
+
+Folded into P7 above: exact changed-path manifest before execution,
+gate-manifest classification over it, and conditional fresh Boundary B,
+independent Code review, and Maintainer ceremony depending on what classes of
+byte it actually changes. P7 is not assumed docs-only.
+
+### What this Response does not do
+
+It does not clear either obligation. Per [G3] the `External` row needs a
+distinct clearing pass over these sharpened bytes, and per the Security pass's
+own closing line, the `External Security Review` row needs a focused Security
+closure read of S1--S6. Chunk A does not begin until both rows read `SHIP`.
+
+### A live instance of the defect this plan fixes
+
+Recorded rather than worked around. After this section lands,
+`review_record_violations` reports one finding: the **round-2** pass declares
+`Findings: raised` with no disposition *before the next pass*. That is
+structurally true — one Response section cannot sit before the Security pass
+and after it at the same time, and append-only forbids inserting between two
+landed reviews.
+
+Three consecutive passes also all render as the same label,
+`'Plan review -- Codex -- 2026-08-10'`: the rebuilt label drops both the
+`(round 2)` suffix and the `(Security)` parenthetical, so the message cannot
+say which pass it means.
+
+Both are exactly what `code-review-blindness` R2'' (latest-round grammar and
+the anchored `Answers:` binding) and Chunk B's canonical boundaries exist to
+fix. The plan is conformant at `open` — `_conformance_violations` is clean, and
+the review-record check binds at the `executing` transition, which is already
+gated on both obligations clearing. Left visible as evidence for B and C rather
+than reshaped to please a predicate this plan is replacing.
