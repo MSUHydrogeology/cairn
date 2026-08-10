@@ -1898,6 +1898,145 @@ dispositioned row by row; the two standing inspections run with output; the two
 bar-contributed rows recorded as NOT MET with the named owner and the escalation
 condition; no repository file modified.
 
+#### Chunk F — RUN, 2026-08-10, Claude
+
+Evidence commit `5010d36`; the two sentences and the `dev/PLANNING.md` state were
+**re-confirmed at `6912d52`** as well, because both are the block A27 turns on and
+both files are ones other sessions were editing during this burndown.
+
+##### F2 — the two standing inspections, RUN, and a correction to what they find
+
+The plan says these establish *"that **no scheduled trigger exists in this
+repository at all**"*. Run as specified, that overstates what the output supports,
+and the register says so:
+
+```
+$ find .github -type f
+.github/labels.yml
+.github/PULL_REQUEST_TEMPLATE/foldback.md
+.github/ISSUE_TEMPLATE/gap.md
+.github/ISSUE_TEMPLATE/wish.md
+.github/ISSUE_TEMPLATE/friction.md
+.github/ISSUE_TEMPLATE/bug.md
+.github/ISSUE_TEMPLATE/foldback.md                             [7 files, rc=0]
+
+$ git ls-files | grep -Ei '(^|/)(\.github|\.gitlab-ci\.yml|\.circleci|azure-pipelines|Jenkinsfile|\.travis|bitbucket-pipelines|\.woodpecker|\.drone)'
+   -> 12 matches: the 7 above, plus 5 under
+      templates/modules/team-gated/issue-capture/reference/.github/
+
+$ find . -type d -name workflows -not -path './.git/*'
+(no output)
+$ git ls-files | grep -c 'workflows/'
+0
+```
+
+**The corrected finding.** `.github/` **does** exist — so a reader who runs the
+plan's first command and expects an empty result will be surprised, and a
+successor who wrote *"`.github` does not exist"* would be stating a falsehood.
+What is true and is what the eight ledger rows actually turn on: **there is no
+`workflows/` directory anywhere in the tree and zero tracked files under one**,
+so nothing in `.github/` is a trigger. The seven files are issue templates, a PR
+template and a labels file — forge *content*, not automation.
+
+**A third inspection this chunk adds, because the first two do not reach it.** A
+check's trigger can be a git hook, and neither command above would see one:
+
+```
+$ ls .git/hooks/ | grep -v '\.sample'
+post-commit
+pre-commit
+$ git config --get core.hooksPath
+(unset, rc=1)
+$ git ls-files | grep -i 'hooks/'
+(no output -- no hook is tracked, so none ships or installs)
+```
+
+Both hooks exist **only in this clone**, are untracked, and their bodies invoke
+`tools/intent.py` alone (`_precommit_check` and `_auto_release`) — the
+coordination tool, not a security gate. So: **no security control in this
+repository has an automatic trigger — not a pipeline, not a schedule, and not a
+hook.** That is the fact B3 needs, and it now rests on three inspections rather
+than on two that could not have seen the third channel.
+
+##### The two bar-contributed rows, re-verified live
+
+| Location | What it says | Falsified by | Owner | Verdict |
+| --- | --- | --- | --- | --- |
+| `doctrine/runtime-contract.md:132` | *"Detects tampered apparatus before it can self-audit; fail-closed"* | Chunk C leg 1 (coordinated tamper: exit 0, `OK`, marker on disk) | **none** | **NOT MET with a named block** |
+| `SECURITY.md:51` | *"flagging any post-install modification"* | the same run | **none** | **NOT MET with a named block** |
+
+Both citations open to exactly those strings at `5010d36` **and** at `6912d52` —
+verified by opening the files, not by grepping a remembered phrase.
+
+##### The A27 ownership sweep, re-run at this commit — and it does not reproduce
+
+A27 recorded that a sweep *"returns **only this plan and its own source
+proposal**"*. Re-run:
+
+```
+$ grep -rln "Detects tampered apparatus\|flagging any post-install" \
+      dev/plans dev/proposals doctrine SECURITY.md
+dev/plans/release-security-bar.md                                  (this plan)
+dev/proposals/archive/2026-08-03-claude-release-security-bar.md     (its source)
+dev/proposals/archive/2026-07-22-claude-interpreter-trust-root-fallback.md  <- NEW
+doctrine/runtime-contract.md                                       (the subject)
+SECURITY.md                                                        (the subject)
+```
+
+**Three artifacts, not two.** Opened rather than counted: the new file **cites**
+the sentence twice as evidence for its own argument — at `:32` it reasons that
+`verify_integrity` *"does not cover"* `local-env.json`, and at `:241` it records
+the quote as verbatim-exact during a citation audit. Neither is a claim on the
+line for repair. **So A27's finding is unchanged — no lineage owns these two
+sentences — but its measurement is not.** Recorded in both directions because a
+successor re-running the sweep will get three files and must not read the
+difference as an owner having appeared.
+
+##### F3 / A27 — the block, and it has not cleared
+
+A27 replaced F3's unfireable escape with a standing requirement: the block clears
+only when a `dev/PLANNING.md` > *Deferred follow-ups (durable home)* >
+**Security apparatus** row lands naming **both** sentences with an owner, a
+revival condition and an expiry trigger — **and it must be verified by reading
+`dev/PLANNING.md`, not by reading this plan.** Read:
+
+```
+$ git show 6912d52:dev/PLANNING.md | grep -c "Two falsified integrity claims"
+0
+$ grep -c "Two falsified integrity claims" dev/PLANNING.md     # working tree
+0
+```
+
+**The row has not landed, in HEAD or in the working tree.** Consequences, stated
+rather than left to a reader:
+
+1. Both rows above are **NOT MET with a named block**, never *in flight*.
+2. **B1's C-5 row is NOT MET for the same reason** — branch (b) needs the
+   documentation half, and these are the two sentences that would carry it.
+3. **The register may not be reported complete or usable** (A27, A28). Chunk H's
+   roll-up says so in its own cells rather than in a footnote.
+
+`dev/PLANNING.md` is a serialized shared file and is **not** this plan's to write;
+the returned text is already in this artifact under *Returned text for a
+serialization point — the E2 backlog row*. This chunk adds one correction to that
+returned text's premise, from Chunk C: the remedy is **narrower** than it reads,
+because `bootstrap/UPGRADE.md:366`–`:368` already states the honest version of the
+claim, so the two overstating sentences can be brought to an existing correct one
+rather than newly drafted.
+
+##### The delegated rows
+
+The `gate-claims-vs-enforcement` ledger is archived
+(`dev/plans/archive/gate-claims-vs-enforcement.md`) with an External code review,
+and its `doctrine/runtime-contract.md` surface is `:46` / `:185` / `:189` — **not
+`:132`** (A23, re-pinned by A36 and re-confirmed here by opening the file). Its
+rows inside this fence are therefore *delegated and closed by that lineage*, and
+this plan does not re-litigate them. What the bar contributes beyond that ledger
+is the two rows above, and both are blocked.
+
+**No repository file was modified by this chunk** — all three inspections and both
+sweeps are read-only.
+
 ---
 
 ### Chunk G — B4: every test the bar names as an enforcer fails against the drift it is named for
