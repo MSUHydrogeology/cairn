@@ -1977,3 +1977,63 @@ I served as the independent External code reviewer for `dev/plans/transition-lin
    - `PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_transition_lint.py -v`: **40 passed in 98.44s**.
    - `scripts/claim_check.py dev/plans/transition-lint.md`: **OK, no claim-check flags**.
 
+
+### Maintainer ratification of Fence 1 -- Anthony Kendall -- 2026-08-10
+
+**Authorization, quoted verbatim and visually isolated:**
+
+> Okay, yes, I want the decision to move to 10 terms ratified.
+
+Scribed by Claude (Implementation) on the Maintainer's instruction, in response to
+the 2026-08-10 External code review, which resolved Fence 1 as follows:
+
+> Amending pinned vocabulary is a Maintainer-level scope decision. The landed
+> implementation adopts the 10-finding posture backed by whitelist entries for
+> historical false positives, which is coherent and maintainable.
+
+**What is ratified: the 10-finding posture, as landed.** The reviewer
+independently re-derived the progression over `57d1daf..8f47c76` from the
+proposal text alone: pinned rules **20**; `h3_spans` alone **14**;
+`exclusive_kind` alone **17**; both (Chunk B's widenings) **12**; plus
+`respond_token` **11**; plus `dated_heading` (shipped) **10**.
+
+**Referent, resolved by measurement rather than assumption.** "10 terms" could
+have named the claim-token *vocabulary* rather than the finding count, which would
+have made this a ratification of Fence 1 item 2 (deleting `accept`). It does not:
+the shipped vocabulary is **5** tokens -- `review`, `response`, `respond`,
+`decision`, `accept` (`_CLAIM_TOKENS`, measured 2026-08-10) -- so deleting one
+would yield 4, not 10. The only quantity in this plan equal to 10 is the shipped
+finding count the reviewer named, and the authorization arrived directly in answer
+to that sentence.
+
+**What this ratification therefore covers, item by item:**
+
+* **Item 1 (evidence widenings)** -- ratified as shipped, on the narrowed claim
+  the revision substituted for the withdrawn "one-directional" one: one-directional
+  for shape (a), and measured non-creating for shape (b) only in combination with
+  item 4.
+* **Item 3 (FP-5 / FP-6 claim-side residues, 4 of the 20)** -- ratified as
+  shipped. **Note what shipped is not what the plan recommended.** The plan's
+  recommendation was the *third* option, an accepted residual documented in
+  `docs/tool-usage.md`; the reviewer records that the implementation took the
+  *second*, whitelist entries with rationales. The Maintainer is ratifying the
+  landed choice, and this sentence exists so a later reader does not mistake the
+  plan's recommendation for the outcome.
+* **Item 4 (C2's dated-heading conjunct)** -- ratified as shipped.
+
+**What this ratification does NOT do, enumerated so nothing further is read into
+it:**
+
+* **Item 2 is NOT taken, and the table the Decision quotes is UNCHANGED.**
+  Deleting `accept` was the plan's recommendation and remains untaken; `accept` is
+  still one of the 5 shipped tokens, and FP-3's five false positives are covered
+  by whitelist entries rather than by narrowing a table the Decision reproduces.
+  That is the conservative outcome: the accepted claim-token table was never
+  edited. Item 2 stays available as a later, separately-decided narrowing.
+* **It does not discharge a review tier.** The External code review (SHIP) already
+  landed; this ratifies the scope question that review referred upward.
+* **It authorizes no push.** 102 commits remain unpushed.
+
+The tool remains **advisory forever** -- `main` returns 0 on any completed scan and
+nothing here may be wired to a gate -- so the standing cost of the ratified posture
+is printed lines a human reads, not a build failure.
