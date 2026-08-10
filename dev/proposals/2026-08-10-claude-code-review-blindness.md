@@ -1306,3 +1306,107 @@ so **no existing artifact violates** remains true.
 
 **Plan review**: required(**External**) -- unchanged, discharged inside the
 parent's one plan.
+
+## Review -- Codex -- 2026-08-10 (round 3)
+
+**Model**: GPT-5 (Codex)
+**Tier**: External, different agent type from the author
+**Reviewed commit**: `9e120c8d86d54edc2ef11a5f39915ae1c4f5c356`
+**Target**: Revision 2 R2', R2'', R3', and R5' only
+**Prior findings**: R2-E1--R2-E3
+**Assurance path**: high-assurance
+**Verdict: REVISE, one blocker.** R2', R2'', and R3' close the three prior
+findings. R5' deletes the weak archive check before making the shared predicate
+reachable on every archive path, creating a new bypass for plans whose Plan
+review was not required.
+
+### Steelman
+
+The requested corrections are now decisions rather than promises. R2' restores
+the accepted parent's independent correction review and requires the latest
+prospective pass to clear. R2'' makes document order authoritative and gives
+Responses a full-line binding. R3' adopts the existing digest-plus-occurrence
+anti-replay device, pins a baseline commit, separates generation from review,
+and binds the two historical exceptions specifically. Those three clauses are
+ready to ship.
+
+The author's predicate consolidation instinct is also right: Code-review
+presence, verdict, recency, and binding should not have separate opinions in
+conformance and closeout. The defect is call reachability, not the goal of one
+predicate.
+
+### [R3-E1] HIGH -- R5' removes the only Code-review gate on `not required` plans
+
+`review_record_violations(art)` is not currently reached by every archive path.
+In `_conformance_violations`, the call is inside:
+
+```text
+if status in (executing, review, archived) and requires_review:
+```
+
+where `requires_review` means the plan's **Plan review** declaration starts
+with `required`. A `Plan review: not required(...)` artifact never reaches the
+predicate. `_gating_preconditions(..., "archived")` likewise uses the separate
+`_has_kind(art, "Code review")`; it does not call
+`review_record_violations` on that transition.
+
+I executed an independently authored archived fixture carrying
+`Plan review: not required(doc-only)`, valid `Dispositions:` and fidelity text,
+and no Code review under canonical Python 3.13.13:
+
+```text
+review_record_violations       -> []
+current _conformance_violations -> [missing Code review]
+after simulating deletion of the _has_kind check -> []
+archive gating                 -> _has_kind only; no shared-predicate call
+```
+
+R5' explicitly deletes both `_has_kind` uses. As written, that makes the
+fixture archive-clean instead of replacing the weak check with the stronger
+one. This is the same governing failure the proposal exists to close, reached
+through a common legitimate plan declaration.
+
+**Required satisfier.** Make one predicate evaluate an explicit **effective
+state**: current status for `scan`, requested target for `next`/closeout. Call
+it from `_conformance_violations` and `_gating_preconditions` independently of
+whether Plan review was required. Inside the predicate:
+
+* validate Plan-review obligations only when the declaration and effective
+  state require them; and
+* require and validate Code review whenever the effective state is
+  `ready-to-archive` or `archived` (and under any transitional old-state bridge
+  the shared lifecycle-status plan adopts).
+
+Only after both callers use that effective-state predicate should the two
+`_has_kind` checks be deleted. Pin the exact bypass above through both public
+paths: a `not required` plan with no Code review, a blocking latest review, or
+a malformed latest review must refuse in both conformance scan and archive
+readiness. A conforming clearing latest review must pass both.
+
+### [R3-E2] LOW -- duplicate unnumbered headings leave `Answers:` ambiguous
+
+R2'' allows two unnumbered passes on the same date and requires an `Answers:`
+value to match "a" prior heading. If the same reviewer writes both, the field
+matches two identical headings and cannot identify which pass it answers.
+
+Add one clause: the binding must resolve to **exactly one** prior raw heading;
+zero or multiple matches refuse. Match the raw reviewer substring rather than a
+reconstructed parsed name, preserving the parenthetical-role bug already found
+in the Plan-review path. This is a grammar sharpening, not a new review round.
+
+### Coverage and recommendation
+
+**Covered** -- R2' against the accepted correction/SHIP boundary; R2'' ordering
+and Response grammar; R3' against `_LEGACY_PASSES` and `_is_legacy`; both live
+call sites of `review_record_violations`; the current archive presence checks;
+and an executed `not required` archive fixture with the presence check removed.
+
+**Not covered / low confidence** -- no implementation exists, so I did not run
+the future effective-state predicate, Code-review parser, legacy generator, or
+closeout command. I did not re-open R0/R1/R4/R5/R6, corpus measurements, or the
+original diagnosis.
+
+**Further independent review: not recommended.** The External obligation is
+fully discharged after three bounded passes. The author can incorporate the
+effective-state call rule and exactly-one raw binding directly; the Maintainer
+can decide from that revision without commissioning Round 4.
