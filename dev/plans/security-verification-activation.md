@@ -616,7 +616,19 @@ the install message names a command that must already install.
    [LANDED: 6e3a8ed, follow-up 6b488a2, 2026-08-10]
    >>> MAINTAINER FENCE: AST re-anchor #1 (Assign:_MODULE_MAPPINGS) -- RED,
        reported not re-anchored, per this plan's own Maintainer fence #1
+       [CLEARED 2026-08-10 at 9724c0f -- batched ceremony; verify reports
+        173 baselined symbol(s) accounted for, unchanged]
 2. Chunk B -- universality: default-on, the slot fires, the counts   [commit pending]
+   >>> MAINTAINER FENCE (THIRD, NOT ORIGINALLY NAMED HERE -- added 2026-08-10):
+       the DIFFERENTIAL-ORACLE GATE ANCHOR. Chunk B's B1 reddens three
+       bootstrap/tests/test_oracle.py nodes. That anchor is governed by
+       bootstrap/REANCHOR_RUNBOOK.md -- a DIFFERENT ceremony from the AST
+       baseline runbook fence #1 and #2 name, and one with a signing phase an
+       agent must not enter. Measured by the Chunk B preparation run, which
+       reported 122 failures decomposing as 2 fenced AST-attest + 3 oracle +
+       117 the lockfile blocker. Recorded because a fence discovered during
+       execution and left out of the Sequence is a fence the next agent walks
+       straight through.
 3. Chunk C -- the non-silent install                                 [commit pending]
    >>> MAINTAINER FENCE: AST re-anchor #2 (_DEFAULT_ON_MODULES, main)
 4. Chunk D -- SAFETY.md, the catalog row, the changelog              [commit pending]
