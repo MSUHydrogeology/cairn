@@ -679,6 +679,65 @@ def parse_screen_output(raw: bytes) -> list[tuple[str, str]]:
     return pairs
 
 
+def _discover_git_common_dir(
+    git: Resolved, target: Path, env: dict[str, str]
+) -> Path:
+    """Hardened discovery of the repository's actual common/config directory
+    -- CR3.
+
+    A **linked worktree's** ``.git`` is a *file* naming the main repository's
+    per-worktree metadata directory, not the directory that holds the local
+    config the screen must bound; ``(target / ".git").resolve()`` names the
+    wrong boundary for a linked worktree and every legitimate local-config key
+    then reports an origin "outside" it.  Parsing that gitfile ad hoc against
+    candidate-controlled bytes is refused in favour of asking Git, which
+    already resolves the common directory correctly for both an ordinary
+    repository and a linked worktree.
+
+    ``--path-format=absolute`` (Git >= 2.31) removes the remaining ambiguity:
+    without it, a worktree whose ``commondir`` file stores a relative path can
+    report a path relative to the worktree's own git-dir rather than this
+    process's cwd, and re-deriving that relationship by hand would be exactly
+    the ad hoc parsing this function exists to avoid.  A Git older than 2.31
+    refuses the flag, and this function DEGRADES rather than falling back to
+    a weaker computation.
+
+    Revalidates the resolved path and content immediately before this
+    invocation (CR2)."""
+    revalidate(git, target)
+    argv = [git.resolved, "-C", str(target), "rev-parse",
+            "--path-format=absolute", "--git-common-dir"]
+    try:
+        proc = subprocess.run(argv, capture_output=True, env=env,
+                              timeout=_SCREEN_TIMEOUT, check=False)
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise Degraded(
+            f"the git-common-dir discovery could not run: {exc}"
+        ) from None
+    if proc.returncode != 0:
+        raise Degraded(
+            f"the git-common-dir discovery exited {proc.returncode}; "
+            f"refusing rather than guessing the repository's configuration "
+            f"boundary; diagnostic {_diagnostic(proc.stderr or b'')}"
+        )
+    try:
+        text = proc.stdout.decode("utf-8")
+    except UnicodeDecodeError:
+        raise Degraded(
+            "the git-common-dir discovery output is not valid UTF-8"
+        ) from None
+    line = text.splitlines()[0].strip() if text.strip() else ""
+    if not line:
+        raise Degraded("the git-common-dir discovery returned no path")
+    candidate = Path(line)
+    if not candidate.is_absolute():
+        raise Degraded(
+            f"the git-common-dir discovery returned a non-absolute path "
+            f"{line!r}; refusing rather than guessing"
+        )
+    return candidate.resolve()
+
+
 def screen_local_config(
     git: Resolved, target: Path, env: dict[str, str]
 ) -> list[tuple[str, str]]:
@@ -686,9 +745,11 @@ def screen_local_config(
     *include-expanded* repository-local configuration.
 
     Refuses on any key outside the source-owned inert allowlist, on any origin
-    file that resolves outside the candidate's ``.git/`` directory (which is how
-    an ``include.path`` or ``includeIf`` injection presents), and on a listing
-    that fails, times out or exceeds a byte cap.
+    file that resolves outside the repository's **actual common/config
+    directory** -- discovered by :func:`_discover_git_common_dir` so an
+    ordinary repository and a linked worktree are both handled correctly
+    (CR3) -- which is how an ``include.path`` or ``includeIf`` injection
+    presents, and on a listing that fails, times out or exceeds a byte cap.
 
     Runs under the **same** sterilized child environment the legs get.
     Measured: run this way a hostile ``core.pager`` does **not** execute, so the
@@ -697,8 +758,9 @@ def screen_local_config(
     The residual is the same **snapshot** race the ignore-file refusal accepts,
     and the screen bounds *configuration* -- not everything a candidate
     repository controls."""
-    git_dir = (target / ".git").resolve()
+    git_dir = _discover_git_common_dir(git, target, env)
     argv = [git.resolved, "-C", str(target), *_SCREEN_ARGV_TAIL]
+    revalidate(git, target)
     try:
         proc = subprocess.run(argv, capture_output=True, env=env,
                               timeout=_SCREEN_TIMEOUT, check=False)
@@ -861,9 +923,18 @@ def _diagnostic(raw: bytes) -> str:
 
 
 def _history_discovery(target: Path) -> dict[str, Any]:
-    """Filesystem-only discovery for the history question -- deliberately no
-    extra Git invocation, because the runner-owned Git call count is part of
-    the Chunk I oracle."""
+    """Filesystem-only discovery for facts and for the shallow-clone /
+    non-Git-export determination, both of which a ref-file presence check
+    answers correctly.
+
+    **``has_refs`` is advisory only** -- kept in the returned facts for
+    observability, never for classification.  A commit held only by a
+    detached ``HEAD`` whose only branch has been deleted carries no
+    ``refs/heads`` entry and no ``packed-refs`` line, so this heuristic alone
+    misreads a repository that plainly has history as having none (CR1).  The
+    authoritative answer to "does a commit exist at all" is
+    :func:`probe_reachable_commit`, which asks Git's own object model instead
+    of inferring from ref-file presence."""
     git_dir = target / ".git"
     heads = git_dir / "refs" / "heads"
     has_refs = (git_dir / "packed-refs").exists() or (
@@ -874,6 +945,44 @@ def _history_discovery(target: Path) -> dict[str, Any]:
         "shallow": (git_dir / "shallow").exists(),
         "has_refs": bool(has_refs),
     }
+
+
+def probe_reachable_commit(
+    git: Resolved, target: Path, env: dict[str, str]
+) -> bool:
+    """Authoritative determination, from Git's own object model, of whether
+    the candidate has a reachable commit -- CR1.
+
+    ``git rev-parse --verify -q HEAD^{commit}`` answers correctly regardless
+    of *how* a commit is reachable: exit ``0`` means a commit exists (a
+    detached ``HEAD`` with its branch deleted included), exit ``1`` means
+    ``HEAD`` does not resolve to one (an unborn repository -- genuinely no
+    applicable input), and any other outcome is a result this runner does not
+    trust enough to classify either way.
+
+    Revalidates the resolved path and content **immediately** before this
+    invocation -- the runner's third direct use of the Git trust root,
+    alongside the identifying probe and the configuration screen (CR2)."""
+    revalidate(git, target)
+    try:
+        proc = subprocess.run(
+            [git.resolved, "-C", str(target), "rev-parse", "--verify", "-q",
+             "HEAD^{commit}"],
+            capture_output=True, env=env, timeout=_SCREEN_TIMEOUT, check=False,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise Degraded(
+            f"the commit-reachability probe could not run: {exc}"
+        ) from None
+    if proc.returncode == 0:
+        return True
+    if proc.returncode == 1:
+        return False
+    raise Degraded(
+        f"the commit-reachability probe exited {proc.returncode}, which this "
+        f"runner has no documented meaning for; diagnostic "
+        f"{_diagnostic(proc.stderr or b'')}"
+    )
 
 
 def classify_leg(
@@ -1057,10 +1166,12 @@ def child_document(summary: dict[str, Any]) -> dict[str, Any]:
 
 # --- the version-admission apparatus (Decision Condition 1) -------------------
 #: Git subcommands **accounted for** in this module's measured invocation set.
-#: ``config`` is runner-owned (the pre-execution screen); ``log`` and
-#: ``ls-remote`` are adapter-owned.  A candidate that reaches for anything else
-#: has changed the transitive execution surface and is refused, not admitted.
-ACCOUNTED_GIT_SUBCOMMANDS = frozenset({"config", "log", "ls-remote"})
+#: ``config`` and ``rev-parse`` are runner-owned (the pre-execution screen now
+#: makes both: ``rev-parse --git-common-dir`` discovers the screen's boundary
+#: (CR3) before its own ``config`` listing); ``log`` and ``ls-remote`` are
+#: adapter-owned.  A candidate that reaches for anything else has changed the
+#: transitive execution surface and is refused, not admitted.
+ACCOUNTED_GIT_SUBCOMMANDS = frozenset({"config", "log", "ls-remote", "rev-parse"})
 
 #: Options every leg must carry.  The matrix refuses a candidate that does not
 #: accept the runner-owned argv, because a candidate that rejects a suppression
@@ -1283,10 +1394,18 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
             # so its Git call appears in the invocation multiset -- M52's third
             # call, declared rather than discovered.
             if real_git:
+                shim_lexical = os.path.join(shim_dir, "git")
+                # ``resolved`` must be the REALPATH, exactly as
+                # resolve_executable() always constructs it -- CR2's
+                # revalidate() now runs before every use of this tuple, and a
+                # resolved field that skipped realpath (e.g. a workdir under
+                # a symlinked /tmp) would read as drift against its own first
+                # resolution and refuse a clean fixture.
+                shim_resolved = os.path.realpath(shim_lexical)
                 shimmed_git = Resolved(
-                    "git", os.path.join(shim_dir, "git"),
-                    os.path.join(shim_dir, "git"), shim_dir,
-                    file_digest(os.path.join(shim_dir, "git")),
+                    "git", shim_lexical, shim_resolved,
+                    os.path.dirname(shim_resolved),
+                    file_digest(shim_resolved),
                 )
                 try:
                     screen_local_config(shimmed_git, Path(fixture), env)
@@ -1603,8 +1722,14 @@ def run_sweep(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
             facts["screened_local_config_keys"] = sorted({key for _o, key in pairs})
 
         # 4. The identifying probe, then the digest gate and mode selection.
+        #    CR2: revalidate immediately before THIS invocation too -- the
+        #    preflight refusals above (workspace materialization, the
+        #    ignore-file walk, the config screen) run between the adapter's
+        #    initial resolution and this, the adapter's first execution, and
+        #    that interval was previously unguarded.
         probe_environment = child_env("reduced", None, empty_dir, work.empty_config)
         try:
+            revalidate(adapter, target)
             version_text = probe_version(adapter, probe_environment)
         except Degraded as exc:
             legs = [LegOutcome("adapter", _AGG_DEGRADED, "DEGRADED", str(exc))]
@@ -1641,38 +1766,64 @@ def run_sweep(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
                 "the target is a non-Git export, so the history question could "
                 f"not be asked; discovery {_escape(discovery)}",
             ))
-        elif not discovery["has_refs"]:
-            # A conditional leg with no applicable input.  NOT APPLICABLE is
-            # distinct from INCOMPLETE and contributes nothing to the aggregate.
-            pending.append(LegOutcome(
-                "history", None, _NOT_APPLICABLE,
-                "the repository carries no commit, so the history question has "
-                f"no applicable input; discovery {_escape(discovery)}",
-            ))
         elif git is None:
+            # Can't ask Git's object model without Git.  A filesystem
+            # heuristic's guess is not a substitute (CR1), so absence of the
+            # trust root -- not absence of refs -- is what forces INCOMPLETE
+            # here.
             pending.append(LegOutcome(
                 "history", _AGG_INCOMPLETE, "INCOMPLETE",
                 git_reason or "git is absent; the history question was not asked",
             ))
-        elif choice.mode != "full":
-            pending.append(LegOutcome(
-                "history", _AGG_INCOMPLETE, "INCOMPLETE",
-                "reduced provenance: Git is unreachable from the child "
-                "environment, so the history question was not asked",
-            ))
-        elif discovery["shallow"]:
-            pending.append(LegOutcome(
-                "history", _AGG_INCOMPLETE, "INCOMPLETE",
-                "the repository is a shallow clone; the observed boundary is "
-                "reported and full-history coverage is NOT claimed; discovery "
-                f"{_escape(discovery)}",
-            ))
         else:
-            history_argv, history_report = _leg_argv(
-                adapter, "history", target, work
-            )
-            facts["history_report"] = history_report
-            legs_to_run.append(("history", history_argv, history_report))
+            # CR1: the authoritative "does a commit exist" answer, from
+            # Git's own object model rather than ref-file presence -- run
+            # under the same off-tree, sterilized environment the config
+            # screen uses, regardless of the mode chosen above, because this
+            # is a discovery question, not a scan leg.
+            discovery_env = child_env("reduced", None, empty_dir, work.empty_config)
+            try:
+                has_commit: bool | None = probe_reachable_commit(
+                    git, target, discovery_env
+                )
+            except Degraded as exc:
+                pending.append(LegOutcome(
+                    "history", _AGG_DEGRADED, "DEGRADED", str(exc)
+                ))
+                has_commit = None
+            if has_commit is False:
+                # A conditional leg with no applicable input.  NOT APPLICABLE
+                # is distinct from INCOMPLETE and contributes nothing to the
+                # aggregate.
+                pending.append(LegOutcome(
+                    "history", None, _NOT_APPLICABLE,
+                    "the repository carries no commit, so the history "
+                    f"question has no applicable input; discovery "
+                    f"{_escape(discovery)}",
+                ))
+            elif has_commit is True:
+                if choice.mode != "full":
+                    pending.append(LegOutcome(
+                        "history", _AGG_INCOMPLETE, "INCOMPLETE",
+                        "reduced provenance: Git is unreachable from the "
+                        "child environment, so the history question was not "
+                        "asked",
+                    ))
+                elif discovery["shallow"]:
+                    pending.append(LegOutcome(
+                        "history", _AGG_INCOMPLETE, "INCOMPLETE",
+                        "the repository is a shallow clone; the observed "
+                        "boundary is reported and full-history coverage is "
+                        f"NOT claimed; discovery {_escape(discovery)}",
+                    ))
+                else:
+                    history_argv, history_report = _leg_argv(
+                        adapter, "history", target, work
+                    )
+                    facts["history_report"] = history_report
+                    legs_to_run.append(("history", history_argv, history_report))
+            # has_commit is None: the Degraded branch above already appended
+            # the "history" outcome.
         outcomes = _adapter_seam({
             "adapter": adapter, "target": target, "env": environment,
             "cwd": workdir, "legs": legs_to_run, "mode": choice.mode,

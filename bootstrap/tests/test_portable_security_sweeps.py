@@ -678,6 +678,111 @@ def test_path_drift_between_validation_and_invocation_is_degraded(
     )
 
 
+def test_probe_version_is_guarded_by_revalidation(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """CR2: the pre-fix runner called ``probe_version`` with no revalidation
+    at its own call site, so a binary swapped after initial resolution but
+    before the identifying ``--version`` probe would execute unnoticed.  The
+    config screen's own Git call is the only invocation that happens between
+    the runner's initial resolution of gitleaks and this, gitleaks's first
+    execution -- so it is used here as the (real, in-process) mutation hook
+    that lands the swap exactly in that pre-fix gap."""
+    (sweep_target / ".git").mkdir()
+    bindir = tmp_path / "bin"
+    bindir.mkdir()
+    log = tmp_path / "log.jsonl"
+    adapter = fake_tool(bindir / "gitleaks", log=log)
+    original_bytes = adapter.read_bytes()
+    gitdir = tmp_path / "gitbin"
+    gitdir.mkdir()
+    common_dir = str((sweep_target / ".git").resolve())
+    (gitdir / "git").write_text(
+        f'''#!{sys.executable}
+import sys
+with open({str(adapter)!r}, "ab") as fh:
+    fh.write(b"\\n# swapped before the version probe\\n")
+if "rev-parse" in sys.argv[1:]:
+    sys.stdout.write({common_dir!r} + "\\n")
+sys.exit(0)
+''',
+        encoding="utf-8",
+    )
+    (gitdir / "git").chmod(0o755)
+    runner = runner_copy(tmp_path)
+    rc, summary, out = run_runner(
+        runner, sweep_target,
+        path_env=os.pathsep.join([str(bindir), str(gitdir)]),
+    )
+    assert rc == 20, out
+    reasons = " ".join(item["reason"] for item in summary["legs"])
+    assert "drifted between validation and invocation" in reasons, reasons
+    assert read_log(log) == [], "the swapped adapter was executed"
+    assert adapter.read_bytes() != original_bytes, "the mutation hook never fired"
+
+
+def test_the_commit_reachability_probes_git_call_is_guarded_by_revalidation(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """CR1 adds a third runner-owned Git invocation
+    (``probe_reachable_commit``); CR2 requires it to be revalidated
+    immediately before invocation too.  Gitleaks's own identifying
+    ``--version`` probe (which runs strictly before it) is used here as the
+    mutation hook -- gitleaks swaps Git's bytes as a side effect of
+    answering its own version probe, mirroring the node above with the two
+    trust roots' roles reversed."""
+    git_repo(sweep_target)
+    bindir = tmp_path / "bin"
+    bindir.mkdir()
+    gitdir = tmp_path / "gitshim"
+    gitdir.mkdir()
+    log = tmp_path / "log.jsonl"
+    git_fake = git_shim(gitdir / "git", log)
+    adapter = bindir / "gitleaks"
+    adapter.write_text(
+        f'''#!{sys.executable}
+import json, os, sys
+LOG = {str(log)!r}
+def record(kind):
+    with open(LOG, "a", encoding="utf-8") as fh:
+        fh.write(json.dumps({{"kind": kind, "argv": sys.argv[1:]}}) + "\\n")
+if "--version" in sys.argv[1:]:
+    record("version")
+    with open({str(git_fake)!r}, "ab") as fh:
+        fh.write(b"\\n# swapped after the version probe\\n")
+    sys.stdout.write("8.30.1\\n")
+    raise SystemExit(0)
+record("scan")
+if "--report-path" in sys.argv:
+    dest = sys.argv[sys.argv.index("--report-path") + 1]
+    with open(dest, "w", encoding="utf-8") as fh:
+        json.dump([], fh)
+raise SystemExit(0)
+''',
+        encoding="utf-8",
+    )
+    adapter.chmod(0o755)
+    digest = hashlib.sha256(adapter.read_bytes()).hexdigest()
+    runner = runner_copy(
+        tmp_path, {platform_triple("8.30.1"): (digest, "GL-test")}
+    )
+    rc, summary, out = run_runner(
+        runner, sweep_target,
+        path_env=os.pathsep.join([str(bindir), str(gitdir)]),
+    )
+    assert rc == 20, out
+    history = leg(summary, "history")
+    assert history["status"] == "DEGRADED", history
+    assert "drifted between validation and invocation" in history["reason"], (
+        history
+    )
+    git_entries = [e for e in read_log(log) if e.get("kind") == "git"]
+    assert not any("HEAD^{commit}" in e["argv"] for e in git_entries), (
+        "the commit-reachability probe ran against a Git binary that had "
+        "drifted"
+    )
+
+
 def test_reduced_mode_child_path_is_an_empty_off_tree_directory(
     tmp_path: Path, sweep_target: Path
 ) -> None:
@@ -1240,6 +1345,81 @@ def test_the_screen_accepts_an_ordinary_repository(
     assert [e for e in read_log(log) if e["kind"] == "scan"], "no leg ran"
 
 
+def test_a_linked_worktrees_ordinary_local_config_is_accepted(
+    tmp_path: Path,
+) -> None:
+    """CR3: a linked worktree's ``.git`` is a *file* naming the main
+    repository's per-worktree metadata directory, not the directory holding
+    the local config the screen must bound.  Ordinary local config that
+    legitimately originates from the main repository's ``.git/config`` must
+    not be refused merely because it lives outside the *worktree's* ``.git``
+    file -- the over-refusal the pre-fix boundary computation produced for
+    every linked worktree."""
+    main_repo = tmp_path / "main-repo"
+    main_repo.mkdir()
+    git_repo(main_repo)
+    linked = tmp_path / "linked-worktree"
+    env = {"PATH": os.path.dirname(REAL_GIT), "HOME": str(tmp_path),
+           "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": os.devnull}
+    subprocess.run(
+        [REAL_GIT, "-C", str(main_repo), "worktree", "add", str(linked),
+         "-b", "cairn-probe-worktree"],
+        check=True, capture_output=True, env=env,
+    )
+    assert (linked / ".git").is_file(), "fixture is not a linked worktree"
+    rc, summary, out, log = _sweep(tmp_path, linked)
+    assert rc != 20, out
+    assert "screened_local_config_keys" in summary["adapter_facts"]
+    keys = summary["adapter_facts"]["screened_local_config_keys"]
+    assert "core.repositoryformatversion" in keys, keys
+    assert [e for e in read_log(log) if e["kind"] == "scan"], "no leg ran"
+
+
+def test_the_config_screens_second_git_call_is_guarded_by_revalidation(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """CR2: CR3 makes the screen invoke Git **twice** -- the common-dir
+    discovery, then its own config listing.  A Git swapped as a side effect
+    of servicing the first call must not be the Git that services the
+    second."""
+    git_repo(sweep_target)
+    log = tmp_path / "log.jsonl"
+    gitdir = tmp_path / "gitshim"
+    gitdir.mkdir()
+    git_fake = gitdir / "git"
+    git_fake.write_text(
+        f'''#!{sys.executable}
+import json, os, sys
+with open({str(log)!r}, "a", encoding="utf-8") as fh:
+    fh.write(json.dumps({{"kind": "git", "argv": sys.argv[1:]}}) + "\\n")
+if "rev-parse" in sys.argv[1:]:
+    with open(__file__, "a", encoding="utf-8") as fh2:
+        fh2.write("# swapped after servicing rev-parse\\n")
+os.execv({REAL_GIT!r}, [{REAL_GIT!r}] + sys.argv[1:])
+''',
+        encoding="utf-8",
+    )
+    git_fake.chmod(0o755)
+    bd = tmp_path / "bin"
+    bd.mkdir()
+    fake_tool(bd / "gitleaks", log=log)
+    runner = runner_copy(tmp_path)
+    rc, summary, out = run_runner(
+        runner, sweep_target,
+        path_env=os.pathsep.join([str(bd), str(gitdir)]),
+    )
+    assert rc == 20, out
+    reasons = " ".join(item["reason"] for item in summary["legs"])
+    assert "drifted between validation and invocation" in reasons, reasons
+    entries = [e for e in read_log(log) if e.get("kind") == "git"]
+    assert any("rev-parse" in e["argv"] for e in entries), (
+        "the common-dir discovery call itself did not run"
+    )
+    assert not any("config" in e["argv"] for e in entries), (
+        "the config listing ran against a Git binary that had drifted"
+    )
+
+
 def test_the_residual_is_printed_not_only_documented(
     tmp_path: Path, sweep_target: Path
 ) -> None:
@@ -1534,6 +1714,42 @@ def test_not_applicable_is_distinct_from_incomplete(
     assert history["status"] == "NOT_APPLICABLE", history
     assert history["result"] is None
     assert "no applicable input" in history["reason"]
+    assert rc == 0, out
+
+
+def test_a_detached_head_with_its_only_branch_deleted_still_scans_history(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """CR1: a reachable commit held only by a detached ``HEAD``, whose only
+    branch has been deleted, carries no ``refs/heads`` entry and no
+    ``packed-refs`` line -- exactly the reproduction the reviewer used to
+    show the ref-file heuristic misreading real history as NOT_APPLICABLE.
+    The fix asks Git's own object model instead and must run the leg."""
+    git_repo(sweep_target)
+    env = {"PATH": os.path.dirname(REAL_GIT), "HOME": str(sweep_target),
+           "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": os.devnull}
+    branch = subprocess.run(
+        [REAL_GIT, "-C", str(sweep_target), "branch", "--show-current"],
+        check=True, capture_output=True, text=True, env=env,
+    ).stdout.strip()
+    subprocess.run(
+        [REAL_GIT, "-C", str(sweep_target), "checkout", "-q", "--detach", "HEAD"],
+        check=True, capture_output=True, env=env,
+    )
+    subprocess.run([REAL_GIT, "-C", str(sweep_target), "branch", "-D", branch],
+                   check=True, capture_output=True, env=env)
+    heads_dir = sweep_target / ".git" / "refs" / "heads"
+    assert not list(heads_dir.rglob("*")), "a branch ref file is still present"
+    assert not (sweep_target / ".git" / "packed-refs").exists(), (
+        "packed-refs exists; the fixture no longer reproduces the ref-file "
+        "heuristic's blind spot"
+    )
+    rc, summary, out, log = _run_with_tool(tmp_path, sweep_target,
+                                           admissions="admit")
+    history = leg(summary, "history")
+    assert history["status"] != "NOT_APPLICABLE", history
+    scans = [e for e in read_log(log) if e["kind"] == "scan"]
+    assert len(scans) == 2, "the history leg did not run"
     assert rc == 0, out
 
 
@@ -2048,12 +2264,14 @@ def test_reduced_mode_is_reachable_without_any_source_change(
 
 
 def test_the_accounted_git_subcommand_set_is_the_declared_one() -> None:
-    """M52: the screen adds a **third, runner-owned** Git call, and it must be
-    declared before Chunk I's oracle runs or the oracle reads as an adapter
-    defect."""
+    """M52: the screen adds runner-owned Git calls, and each must be declared
+    before Chunk I's oracle runs or the oracle reads as an adapter defect.
+    CR3 added a second runner-owned call (``rev-parse --git-common-dir``,
+    ahead of the screen's own ``config`` listing) to discover the screen's
+    boundary correctly for a linked worktree."""
     runner = load_runner()
     assert runner.ACCOUNTED_GIT_SUBCOMMANDS == frozenset(
-        {"config", "log", "ls-remote"}
+        {"config", "log", "ls-remote", "rev-parse"}
     )
     assert "config" in runner._SCREEN_ARGV_TAIL
 
