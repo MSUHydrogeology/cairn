@@ -29,16 +29,24 @@ and does not grow per chunk:
 
 | Touchpoint | Count | When |
 |---|---|---|
-| Plan review | **2** | Now, before any implementation. The two declared obligations, one pass each. |
+| Plan review | **2** | Before any implementation. The two declared obligations, one pass each. |
 | Boundary A | per chunk | Scoped tests only. Not a review; no sign-off, no section. |
-| Boundary B | **1** | Once, after the final implementation commit, on a clean commit. |
-| Code review | **1** | Once, over the stable range. |
+| Boundary B | **2** | Once on stable pre-review bytes; once on the post-ceremony commit. |
+| Code review | **1** | Once, over the stable pre-ceremony range. |
 | Maintainer ceremony | **1** | One re-anchor for the whole batch. |
 | Archive | **1** | One closeout. |
 
-**Six touchpoints for the whole cluster.** Four separate plans would have cost
-four of each — roughly twenty. That arithmetic is the case for consolidation;
-if this plan ever grows a per-chunk review, it has lost its reason to exist.
+**Seven touchpoints for the whole cluster.** Four separate plans would have
+cost four of each — roughly twenty-eight. That arithmetic is the case for
+consolidation; if this plan ever grows a *per-chunk* review, it has lost its
+reason to exist.
+
+**Two Boundary B records, named as two.** The opened plan budgeted one, which
+contradicted the accepted order this plan's own Chunk I cites: the re-anchor
+rewrites `bootstrap/tests/fixtures/gate_manifest.json`, a fixture inside the
+reviewed range, and the runbook runs the canonical suite **zero** times
+(verified 2026-08-10). Calling two broad executions one would have been a
+budget that reads cheaper than the contract it implements.
 
 Boundary A/B/C are the already-accepted
 [`verification-evidence-boundaries`](archive/verification-evidence-boundaries.md)
@@ -47,7 +55,29 @@ its own deliverables to verify itself.
 
 **No chunk opens a sub-plan.** A discovery that needs its own contract is
 raised to the Maintainer as a scope question, not converted into another
-planning artifact.
+planning artifact. Chunk count is not ceremony; review passes are.
+
+## Bootstrap attestation — the two obligations, recorded manually
+
+This plan's header requires two distinct plan-review passes, but the predicate
+that enforces multi-obligation discharge is Chunk E's deliverable. Verified
+2026-08-10, today's parser normalizes
+`required(**External** + **External Security Review**)` to `('external', None)`
+— the second obligation is **silently dropped**, so current tooling would
+report the floor satisfied by one pass.
+
+Until Chunk E lands, this table is the enforcement, and the plan stays at
+`open` until both rows are filled:
+
+| Obligation | Review commit | Disposition | Unresolved findings |
+|---|---|---|---|
+| `External` | `8f37a9b` | REVISE → dispositioned below | none after this Response |
+| `External Security Review` | *pending* | *pending* | *pending* |
+
+This attestation is retired by Chunk E, in the same commit that makes its
+multi-obligation predicate active and tested. It adds no review pass; it makes
+the two already-declared passes enforceable during their own bootstrap.
+
 
 ## Proposed paths
 
@@ -58,8 +88,19 @@ Proposed paths:
 
 ## Scope
 
-The four accepted contracts, implemented once over one shared surface:
-`tools/lifecycle_planner.py` and its installed twin, the two
+The four accepted contracts, implemented once over one shared surface. The
+opened plan claimed this and mapped only the three amendments; the parent's own
+machinery — assurance paths, the review basis, plan-readiness inheritance, the
+withdrawal ledger, the non-expansion attestation, `review-brief`, `closeout`,
+and the bounded pilot — had no chunk. Verified 2026-08-10: **zero** files under
+`tools/`, `scripts/`, `bootstrap/tests/`, or `templates/skills/` contain any of
+`review-brief`, `Plan readiness`, `Contract non-expansion`,
+`Withdrawn / superseded`, `inherited(`, or `Assurance path`. Chunks P1--P7
+below supply them.
+
+Surfaces: `tools/lifecycle_planner.py` and its installed twin,
+`tools/lifecycle.py` and its installed twin, `doctrine/dual-review.md`,
+`dev/collaboration_agreement.md` and its template twin, the two
 `_lifecycle_metrics/extract.py` copies, `scripts/transition_lint.py`,
 `scripts/claim_check.py` and its twin, the proposal/plan authoring templates
 and their `templates/core/dev/` twins, the lifecycle doctrine files,
@@ -77,9 +118,9 @@ already homed elsewhere:
   `release-security-bar`, `security-verification-activation`) — measured
   disjoint: 92 files across their chunk tables, **zero** naming any surface
   above.
-* `[F1]` from the round-4 review of `lifecycle-status-vocabulary` — pending
-  that proposal's Revision 4. Chunk F implements whichever escaping rule that
-  revision lands; this plan does not pre-empt the choice.
+(The opened plan fenced `[F1]` as "pending Revision 4". That was stale on
+arrival: Revision 4 was accepted at `27f1927`, 48 minutes before this plan
+opened. The accepted rule is now transcribed directly into Chunk F.)
 
 ### Documentation / doctrine surface
 
@@ -97,16 +138,33 @@ Dependency order, not preference. Chunks A and B touch the same four functions
 every later chunk builds on, so they are strictly first.
 
 ```
-A  central vocabulary + contained loaders          [commit pending]
-B  canonical pass boundaries                       [commit pending]
-C  Code-review record schema + legacy manifest     [commit pending]
-D  claim-check archive resolution + registry       [commit pending]
-E  status vocabulary, transitions, conformance     [commit pending]
-F  the derived board                               [commit pending]
-G  doctrine, templates, agent teaching             [commit pending]
-H  migration + source-proposal archive             [commit pending]
-I  Maintainer re-anchor ceremony                   [Maintainer]
+A   central vocabulary + contained loaders         [commit pending]
+B   canonical pass boundaries                      [commit pending]
+P1  assurance paths + four-field review basis      [commit pending]
+C   Code-review record schema + legacy manifest    [commit pending]
+P5  Contract non-expansion attestation             [commit pending]  (binds into C)
+D   claim-check archive resolution + registry      [commit pending]
+E   status vocabulary, transitions, conformance    [commit pending]
+P2  plan readiness, inheritance, expansion refusal [commit pending]
+P3  current-contract revision + withdrawal ledger  [commit pending]
+P4  review-brief + closeout --dry-run              [commit pending]
+F   the derived board                              [commit pending]
+G   doctrine, templates, agent teaching            [commit pending]
+H   migration + source-proposal archive            [commit pending]
+--- stable bytes ---------------------------------------------------
+B1  Boundary B on the pre-review commit            [record]
+CR  independent Code review over that range        [review]
+I   Maintainer re-anchor of the reviewed frozen set[Maintainer]
+B2  Boundary B + closeout on post-ceremony commit  [record]
+--- pilot ----------------------------------------------------------
+P6  pilot activation, reporting, deadline, pauses  [commit pending]
+P7  post-pilot promotion / retirement              [conditional; Maintainer Decision]
 ```
+
+The pilot runs on the landed contract, so P6 activates after the ceremony and
+P7 is conditional on the Maintainer's promotion Decision at the pilot boundary.
+A corrective byte after `CR` restarts `B1`, `CR`, and `I` for the affected
+range; a corrective byte after `I` restarts `B2` only.
 
 Two orderings are load-bearing and measured:
 
@@ -190,14 +248,17 @@ record left open.
 | # | File | Change |
 |---|---|---|
 | F1 | `tools/lifecycle_planner.py` + twin | `board` subcommand: compact rows, `--format json`, filters, `--explain` |
-| F2 | same | terminal-safe encoder per `lifecycle-status-vocabulary` Revision 4 |
+| F2 | same | terminal encoder, accepted rule verbatim: escape to printable ASCII when (1) `str.isprintable()` is false, (2) the code point is in the planner's `_DISPLAY_UNSAFE_RANGES`, or (3) it is a row/field delimiter, backslash, or syntax character. `_DISPLAY_UNSAFE_RANGES` uses **numeric endpoints only** — no invisible source character embedded raw |
 | F3 | `tools/_intent/cli.py` + `templates/modules/team-gated/_intent/cli.py` | versioned `--format json` for `list` only; existing semantics unchanged |
 | F4 | `tools/lifecycle_planner.py` + twin | optional intent provider: fixed-path sibling `tools/intent.py`, isolated invocation, schema validation, `not-installed`/`error` distinct from "no claim" |
-| F5 | `bootstrap/tests/test_lifecycle_board.py` | rows, ordering, filters, injection, provider failure modes, encoder sweep |
+| F5 | `bootstrap/tests/test_lifecycle_board.py` | rows, ordering, filters, injection, provider failure modes; **directional drift test** expanding every member of content scan's `_ZERO_WIDTH`, `_BIDI`, `_LINE_SEPARATORS` and every code point of `_IGNORABLE_RANGES`, `_NONCHARACTER_RANGES`, `_TAG_RANGE`, `_ASCII_GUARD` and asserting each is escaped; plus a source scan proving no represented invisible is embedded raw |
 
 **Tier: Sonnet for F1/F3/F5, Opus for F2/F4.** The renderer and filters are
-oracle-rich. The encoder rule and provider containment are not — F2 is where
-the round-4 finding lives, and F4 crosses a module boundary.
+oracle-rich. The encoder rule and provider containment are not — F4 crosses a
+module boundary. The coupling is deliberately **one-way**: the board may escape
+more than the scanner flags, but may never emit raw a code point the scanner
+recognizes, so a newly added printable invisible fails F5 until the range table
+follows it. Narrowing a detector cannot silently weaken terminal output.
 
 ### Chunk G — doctrine, templates, agent teaching
 
@@ -229,6 +290,28 @@ ambiguous artifact is judgment.
 active artifact, so concurrent lifecycle commits cause blob-mismatch
 re-derivation. Run it when the three open security plans have archived or are
 quiescent.
+
+### Chunks P1--P7 — the parent contract
+
+The accepted parent's machinery, which the opened plan omitted. One plan; these
+are chunks, not another planning artifact.
+
+| # | Surface | Change |
+|---|---|---|
+| P1 | `tools/lifecycle_planner.py` + twin, both authoring templates + twins | `Assurance path: standard \| high-assurance` declaration, the mandatory high-assurance trigger set, and the four-field review basis (`Reviewed commit`, `Target`, `Prior findings`, `Assurance path`) required across proposal, plan, and Code-review records |
+| P2 | same, plus `doctrine/dual-review.md` | proposal `Plan readiness: READY \| DISTINCT REVIEW REQUIRED`, exact accepted-commit binding, standard-plan inheritance, expansion invalidation, and the high-assurance refusal |
+| P3 | both authoring templates + twins, planner predicates | complete current-contract revision plus its mandatory `Withdrawn / superseded commitments` ledger |
+| P4 | `tools/lifecycle.py` + installed twin | deterministic `review-brief`; expanded `closeout --dry-run` |
+| P5 | planner + `bootstrap/tests/test_lifecycle_contract.py` | the bound `Contract non-expansion: VERIFIED \| NOT VERIFIED` attestation with its `Basis:` line; `NOT VERIFIED` blocks. Validates presence and binding shape only — the parent is explicit that the semantic claim stays human |
+| P6 | `dev/collaboration_agreement.md` + twin, pilot state | Cairn-local pilot: six-plan / 60-day deadline, pause conditions, evidence report |
+| P7 | doctrine + templates | **conditional** post-pilot promotion or retirement, and the three-layer canonical / self-hosted / shipped-template parity contract |
+| P8 | `bootstrap/tests/test_lifecycle_contract.py` | end-to-end standard-READY and high-assurance-refusal fixtures |
+
+**Tier: Opus for P1--P3 and P5** (contract authorship on records every future
+artifact inherits). **Sonnet for P4 and P8** (CLI surface and fixtures against a
+fixed contract, both oracle-rich). **P6/P7 are Maintainer-gated**: P6 activates
+after the ceremony, and P7 does not execute until the Maintainer's promotion
+Decision at the pilot boundary.
 
 ### Chunk I — Maintainer re-anchor
 
@@ -291,11 +374,19 @@ implementation parent rather than carrying these figures forward.
 
 * Boundary A per chunk: the tests named in that chunk's table, plus standing
   gates for its touched surfaces.
-* Boundary B once: `python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0`
-  then `python scripts/quality_gate.py --sub neutrality --sub redundancy`,
-  under the canonical interpreter on a clean commit, recorded as
-  `## Implementation verification`.
-* Boundary C: one code review over that range.
+* Boundary B **twice**, same command pair each time — `python -m pytest
+  bootstrap/tests --quality-gate-shuffle-seed=0` then `python
+  scripts/quality_gate.py --sub neutrality --sub redundancy`, canonical
+  interpreter, clean commit — recorded as two dated
+  `## Implementation verification` sections:
+  1. **B1**, on the stable pre-review commit after Chunk H;
+  2. **B2**, on the post-ceremony commit after Chunk I, because the re-anchor
+     rewrites `bootstrap/tests/fixtures/gate_manifest.json` inside the reviewed
+     range and the runbook itself runs the suite zero times.
+* Boundary C: one code review over the B1 range.
+* **Restart rule.** A corrective byte after the code review restarts B1, the
+  code review, and the ceremony for the affected range. A corrective byte after
+  the ceremony restarts B2 only.
 
 **Note on doc gates**: drift gates catch drift, not absence. Chunk G's
 deliverables are confirmed individually.
@@ -478,3 +569,97 @@ executed. I did not independently rederive the plan's 92-file disjointness or
 re-measured at the implementation parent as the plan already requires for
 other corpus figures. This pass discharges only the `External` obligation, not
 the distinct `External Security Review` obligation.
+
+## Response to plan review -- Claude -- 2026-08-10
+
+**Model**: claude-opus-5 (Claude Opus 5)
+**Reviewed review commit**: `8f37a9b98748e0ebe239cc2944d3195e3bf93702`
+**Obligation answered**: `External` (the `External Security Review` obligation
+remains separately owed)
+**Disposition**: accept [E1]--[E4]. Each was verified by execution before
+adoption; all four reproduced. Chunks are revised inline, the plan stays
+`open`.
+
+### [E1] -- accept. The Scope sentence was false and I wrote it.
+
+The plan said "the four accepted contracts, implemented once" and then mapped
+three. Verified:
+
+```text
+review-brief            files=0
+Plan readiness          files=0
+Contract non-expansion  files=0
+Withdrawn / superseded  files=0
+inherited(              files=0
+Assurance path          files=0
+      (tools/, scripts/, bootstrap/tests/, templates/skills/)
+```
+
+Not one of the parent's six named mechanisms exists anywhere in the tools or
+their tests, and none had a chunk here. Added as **P1--P8**: assurance paths
+and the four-field review basis; plan readiness, inheritance, and expansion
+refusal; the current-contract revision plus its withdrawal ledger;
+`review-brief` and `closeout --dry-run`; the bound `Contract non-expansion`
+attestation; the pilot with its six-plan / 60-day deadline and pause
+conditions; the conditional post-pilot promotion and three-layer parity
+contract; and the end-to-end READY / high-assurance-refusal fixtures. Surfaces
+added to Scope: `tools/lifecycle.py` and its twin, `doctrine/dual-review.md`,
+`dev/collaboration_agreement.md` and its twin.
+
+The ruling to keep one plan is followed exactly — these are chunks, not a
+second planning artifact.
+
+### [E2] -- accept. I cited the order in Chunk I and then budgeted against it.
+
+Verified: `bootstrap/REANCHOR_RUNBOOK.md:263` (and again at line 273) writes
+`bootstrap/tests/fixtures/gate_manifest.json`, a fixture inside the reviewed
+range, and the runbook contains **zero** occurrences of `pytest
+bootstrap/tests`. The accepted `lifecycle-status-vocabulary` R8 orders the
+Maintainer ceremony at step 5 and the final Boundary B plus closeout at step 6,
+against the post-ceremony commit. My Chunk I quotes R8; my budget table
+contradicted it two hundred lines earlier.
+
+The budget now reads **Boundary B = 2**, named as two, with the sequence block
+showing `B1 → CR → I → B2` and an explicit restart rule for a corrective byte
+at either stage. Calling two broad executions one would have made this plan's
+headline arithmetic cheaper than the contract it implements — which is the
+failure it exists to prevent.
+
+### [E3] -- accept, and the gap is worse than "not yet implemented"
+
+Verified directly:
+
+```text
+normalize_required_tier("required(**External** + **External Security Review**)")
+  -> ('external', None)
+```
+
+The second obligation is not merely unenforced; it is **silently discarded**.
+Today's tooling would report the External floor satisfied by this single pass.
+A new `## Bootstrap attestation` section now carries the two-row table naming
+each obligation, its review commit, its disposition, and unresolved findings.
+Row one is this pass; row two is pending. The plan stays `open` until both are
+filled, and Chunk E retires the table in the same commit that makes its
+predicate active and tested.
+
+### [E4] -- accept. The fence was stale when I wrote it.
+
+`lifecycle-status-vocabulary` Revision 4 was accepted at `27f1927` (13:29);
+this plan opened at `777dea0` (14:17) — forty-eight minutes later. I fenced a
+decision that had already landed and did not check.
+
+The fence is removed and the accepted rule is transcribed into F2 verbatim:
+escape when `str.isprintable()` is false, **or** the code point is in
+`_DISPLAY_UNSAFE_RANGES`, **or** it is a row/field delimiter, backslash, or
+syntax character; numeric endpoints only, no invisible embedded raw. F5 now
+binds the decisive population — every member of `_ZERO_WIDTH`, `_BIDI`,
+`_LINE_SEPARATORS` and every code point of `_IGNORABLE_RANGES`,
+`_NONCHARACTER_RANGES`, `_TAG_RANGE`, `_ASCII_GUARD` — plus the one-way
+coupling: the board may escape more than the scanner flags, never less.
+
+### What this Response does not discharge
+
+The **External Security Review** obligation is untouched by this pass and
+remains owed. Per the review's own routing it should read the sharpened
+complete plan — loader and provider containment, terminal encoding, migration
+authority, and the trust-ceremony sequencing that [E2] just changed.
