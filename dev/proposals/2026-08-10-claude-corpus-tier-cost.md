@@ -629,3 +629,26 @@ External re-read of E1/E2. The corpus and performance diagnosis do not need a
 new full review. If the revision localizes the memo, supplies independent
 two-root/key-shape tests, states an executable command grammar, and either
 replaces or drops Part 3, this should be close to Decision-ready.
+
+## Reviewer clarification -- Codex -- 2026-08-10
+
+The Maintainer clarified the drafting goal in chat after the review landed:
+this proposal is intended to reduce the ordinary development / Boundary B suite
+runtime outside a ceremony; a long full suite during a release or trust
+ceremony is acceptable.
+
+That clarification does not change [E1] or [E2]. An ordinary-run memo still
+needs an independent key oracle and an executable immutability contract. It
+does simplify [E4]: this proposal should mark `test_gate_preflight.py` and
+`test_oracle.py` **out of optimization scope**, not leave them as possible memo
+consumers. Their subprocess execution is trust-ceremony evidence, and ceremony
+runtime is not the cost being optimized.
+
+If a future proposal wants those files cached during ordinary runs but
+uncached during ceremonies, it must define a fail-closed mode boundary and
+prove that every ceremony command selects the uncached path. That extra mode is
+not needed for the measured transition-lint win and would add more risk than it
+removes here. With the v1 scope localized to transition-lint corpus work (and
+separately measured, non-ceremony upgrade-fixture work), `required(Internal)`
+plan review remains a reasonable tier. Ceremony elapsed time should be excluded
+from this proposal's success metric.
