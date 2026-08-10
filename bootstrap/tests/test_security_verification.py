@@ -1251,12 +1251,25 @@ class TestComposition:
         another, and each leg's `evidence_mode` label survives aggregation
         unchanged.
 
-        The two entries deliberately share NOTHING but their argv mode and
-        differ in `evidence_mode`, so a collapse-by-runner-path aggregation
-        would lose one label.
+        **The hazards, and how this node was corrected to actually detect
+        them.**  The plan named "collapse legs sharing a runner path" as the
+        perturbation.  That mutation is a no-op against this setup -- the two
+        entries have distinct runner paths, and they must, because each
+        child echoes its own `capability` id and one file cannot echo two.
+        A perturbation that cannot fire is not a perturbation, so the two
+        hazards this node is actually run against are:
 
-        Hazard perturbation: make aggregation collapse legs sharing a runner
-        path -- the two-capability row fails.
+        1. `_build_report` **collapsing** legs (deduplicating by any field
+           the two legs share -- both return CLEAN, so a dedupe-by-aggregate
+           reduces two legs to one).  Caught by the `evidence_count` and
+           leg-list assertions.
+        2. `_build_report` **homogenizing** the per-leg `evidence_mode` label
+           to one value.  Caught by the label-list assertions, which is the
+           "each label survives aggregation unchanged" property.
+
+        Both were run and both go RED on the two-capability row only; the
+        no-capability and one-capability rows stay green, which is what makes
+        the failure specific rather than incidental.
         """
         entry_a, records_a = _setup_clean_leg(tmp_path, module_id="alpha-security")
         entry_b, records_b = _setup_clean_leg(tmp_path, module_id="beta-security")
@@ -1290,6 +1303,10 @@ class TestComposition:
             report = mod._build_report(legs) if legs else None
             if report is not None:
                 assert report["evidence_count"] == len(roster)
+                assert len(report["legs"]) == len(roster), report["legs"]
+                assert [
+                    leg["module_id"] for leg in report["legs"]
+                ] == roster, report["legs"]
                 assert [
                     leg["evidence_mode"] for leg in report["legs"]
                 ] == expected_modes
