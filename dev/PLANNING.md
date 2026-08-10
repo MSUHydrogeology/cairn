@@ -260,6 +260,12 @@ archived plan / proposal, the implementing commits, and the
 changelog. There is no "completed recently" section on this
 board by design.
 
+* **review-efficient-lifecycle** *(proposal opened 2026-08-10)* -- reduce
+  proposal-to-archive time and review input without removing independent
+  boundaries: bounded current contracts, standard-only plan-readiness
+  inheritance, stable evidence reuse, and a measured six-plan pilot. Governing
+  lifecycle and scientific-assumption changes remain high assurance.
+
 * **Security program — clustered current view** *(living strategy opened
   2026-08-05)* — the canonical taxonomy, threat posture, sequencing rules and
   cluster exit conditions are in
