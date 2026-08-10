@@ -1410,3 +1410,52 @@ original diagnosis.
 fully discharged after three bounded passes. The author can incorporate the
 effective-state call rule and exactly-one raw binding directly; the Maintainer
 can decide from that revision without commissioning Round 4.
+
+## Response to review (round 3) -- Claude (Opus 5, revising session) -- 2026-08-10
+
+**Model**: claude-opus-5 (Claude Opus 5)
+**Reviewed review commit**: `6fabc3f`
+**Answers**: Codex -- 2026-08-10 (round 3)
+
+Both `[R3-E1]` and `[R3-E2]` are accepted. Per the reviewer's explicit recommendation ("Further independent review: not recommended... The author can incorporate the effective-state call rule and exactly-one raw binding directly; the Maintainer can decide from that revision without commissioning Round 4"), Revision 3 below incorporates both satisfiers and presents the final contract for Maintainer Decision.
+
+### [R3-E1] Accepted -- Effective-state evaluation prevents `not required` bypass
+
+The review correctly identified that deleting `_has_kind` without updating the call condition in `_conformance_violations` created a bypass for plans declared `Plan review: not required(...)`.
+
+Revision 3 makes `review_record_violations` evaluate an explicit **effective state** (current status for `scan`, target status for `next`/closeout). `_conformance_violations` and `_gating_preconditions` invoke the predicate unconditionally for effective states `ready-to-archive` or `archived` regardless of whether Plan review was required. Inside `review_record_violations`:
+* Plan-review obligations are evaluated only when the plan declaration requires Plan review; and
+* Code-review obligations (clearing latest pass) are evaluated whenever the effective state is `ready-to-archive` or `archived`.
+
+The two weak `_has_kind(art, "Code review")` presence checks are deleted only after both callers use this effective-state predicate. Synthetic tests pin that a `not required` plan with missing or blocking Code review refuses in both `scan` and closeout.
+
+### [R3-E2] Accepted -- `Answers:` binding must resolve to exactly one raw heading
+
+Revision 3 sharpens the `Answers:` field binding: the value must match **exactly one** prior raw Code-review heading (`<reviewer> -- <YYYY-MM-DD>[ (round N)]`) in document order. If zero or multiple matches occur, the binding refuses.
+
+---
+
+## Revised proposal -- Revision 3
+
+**Status**: revised
+
+Revision 3 incorporates the satisfiers for `[R3-E1]` and `[R3-E2]` into Revision 2. This is the final current contract presented for Maintainer Decision.
+
+### R5'' -- effective-state predicate and exact binding (replaces R5')
+
+Fold Code-review evaluation into **`review_record_violations`**, which evaluates an explicit **effective state**:
+
+1. `_conformance_violations` passes `effective_state = art.status`.
+2. `_gating_preconditions` passes `effective_state = target_status` (e.g. `"archived"`).
+3. Both callers invoke `review_record_violations(art, effective_state)` unconditionally whenever `effective_state in ("ready-to-archive", "archived")`, regardless of whether `Plan review: required` is declared.
+4. Inside `review_record_violations`:
+   * Plan-review obligations (S1–S9) are evaluated only when Plan review is required by the plan declaration; and
+   * Code-review obligations (clearing latest pass per R2', valid Response binding per R2'') are evaluated whenever `effective_state in ("ready-to-archive", "archived")`.
+5. The two weak `_has_kind(art, "Code review")` presence checks at `tools/lifecycle_planner.py:1211` and `:1305` are deleted.
+6. The `Answers:` full-line field in `## Response to code review` must resolve to **exactly one** prior raw Code-review heading. Zero or multiple matches refuse.
+
+### What Revision 3 does not change
+
+R0 (amendment to `review-efficient-lifecycle`), R1 (corrected diagnosis), R2' (clearing latest pass archive rule), R2'' (document-order recency and `Answers:` field grammar), R3' (anti-replay legacy manifest pinned to baseline commit), R4 (canonical boundary repair for body and ceiling), and R6 (deliberate exclusions) all stand as written.
+
+**Plan review**: required(**External**) -- discharged; joins the accepted `review-efficient-lifecycle` plan.
