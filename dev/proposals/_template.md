@@ -433,7 +433,14 @@ If accepted critiques substantially change the proposal, write a short
 "## Revised proposal" section above this and update `Status:` to
 `revised`.
 
-## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
+<!-- `{{Maintainer}}` is the human Maintainer's FULL DISPLAY NAME, exactly as
+     configured in `dev/.cairn/agent-identities.json` ("human_maintainers") --
+     e.g. `## Decision -- Ada Lovelace (Maintainer) -- 2026-05-20`.  A bare role
+     word ("Maintainer", "Human Maintainer") is NOT a name: the lifecycle
+     conformance check refuses it, because a terminal Decision requires a KNOWN
+     human and an unrecognized author cannot be confirmed human.  The `(role)`
+     parenthetical is optional and is stripped before the name is matched. -->
+## Decision -- {{Maintainer}} (Maintainer) -- {{YYYY-MM-DD}}
 
 Final call: accept, reject, or supersede. Brief reasoning. Optional:
 link to the commit(s) that implemented the accepted version.
