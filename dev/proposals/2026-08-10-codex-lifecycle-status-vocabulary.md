@@ -2024,3 +2024,88 @@ assertion, in a section whose invariant is already agreed. This is the fourth
 External round on this artifact and the diagnosis, state model, loader design,
 and board contract have all stabilised; a fifth full pass would cost more than
 it finds. Fold [F1] into the Revision-4 delta and take it to Decision.
+
+## Response to review -- Codex -- 2026-08-10 (round 4)
+
+**Model**: GPT-5.6-Codex
+**Role**: Strategy / proposal author
+**Reviewed review commit**: `2cda51593deaf8fd0d7ad4955a7925422f67ba86`
+**Disposition**: Accept [F1]. Revision 4 replaces the incomplete category rule
+and widens its test oracle over every content-scan invisible-character set and
+range. No further proposal review is requested, consistent with the review's
+recommendation.
+
+### [F1] Accepted -- no known printable-invisible residual
+
+The category-only rule was incomplete, and its three-set test population could
+not contain the counterexamples. The final contract does not accept the known
+`Mn` / `Lo` residual. It combines `not str.isprintable()` with an explicit
+display-unsafe range table covering the scanner's complete invisible,
+default-ignorable, noncharacter, Tag-block, and ASCII-guard inventories.
+
+This is intentionally a one-way security coupling: the board may escape more
+characters than the content scanner flags, but it may not emit raw any code
+point the scanner recognizes as invisible or display-unsafe. The drift test
+expands all scanner sets and all range endpoints into the population under
+test. A newly added printable invisible therefore fails the board test until
+the renderer's range table follows it; deleting or narrowing a detector does
+not automatically weaken terminal output.
+
+## Revised proposal -- Revision 4
+
+**Status**: revised
+
+Revision 4 retains all prior clauses except that it replaces Revision 3's B4
+and the corresponding Unicode bullet in B7. This is the final current contract
+presented for Maintainer Decision.
+
+### B4 final replacement -- printable rule plus complete unsafe ranges
+
+One terminal encoder handles filenames, lifecycle metadata, Git labels, and
+optional intent fields. For each represented code point it emits a printable
+ASCII code-point escape when any of these is true:
+
+1. `str.isprintable()` is false;
+2. the code point belongs to the planner's `_DISPLAY_UNSAFE_RANGES`; or
+3. it is a row delimiter, field delimiter, backslash, or other syntax character
+   whose raw form could alter the compact representation.
+
+`_DISPLAY_UNSAFE_RANGES` is the board's serialization guard, not a detector
+policy. Its population covers the union represented by content scan's
+`_ZERO_WIDTH`, `_BIDI`, `_LINE_SEPARATORS`, `_IGNORABLE_RANGES`,
+`_NONCHARACTER_RANGES`, `_TAG_RANGE`, and `_ASCII_GUARD`. The range form uses
+numeric endpoints only; no invisible source character is embedded raw. ANSI
+ESC, Unicode formatting controls, noncharacters, Tags, Hangul fillers,
+variation selectors, and combining grapheme joiners are therefore escaped.
+
+The board does not import the conditional content scanner at runtime. The
+duplicated security population is admitted only with the one-way drift guard
+below. Ordinary printable scientific text remains readable, including ASCII
+space, precomposed accented letters, Greek, and CJK. JSON continues to use the
+standard-library encoder with `ensure_ascii=True` and validates its schema
+before rendering provider data.
+
+### B7 final Unicode falsifier
+
+The test oracle must not name only the three finite scanner sets. It imports
+the Cairn content scanner in the test environment, expands every member of the
+three sets, every code point in `_IGNORABLE_RANGES` and
+`_NONCHARACTER_RANGES`, the complete `_TAG_RANGE`, and `_ASCII_GUARD`, then
+asserts that no member survives raw in any compact field position.
+
+An independent sweep asserts that every code point for which
+`str.isprintable()` is false is escaped. Focused probes pin ANSI ESC, NBSP,
+ideographic space, U+034F combining grapheme joiner, U+115F and U+1160 Hangul
+fillers, the Tag block, noncharacters, and both ends of every mirrored range.
+Ordinary printable scientific names and non-ASCII letters remain unescaped.
+
+The drift assertion is directional:
+
+```text
+expanded content-scan display-unsafe population <= board escaped population
+```
+
+This assertion fails if the scanner gains a printable invisible that the board
+does not cover. The test also verifies that the planner and installed planner
+twin carry byte-identical range definitions, and that neither source contains
+the represented invisible characters raw.
