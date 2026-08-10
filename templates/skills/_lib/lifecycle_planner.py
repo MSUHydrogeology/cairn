@@ -184,7 +184,7 @@ def _today() -> str:
 # Several preconditions turn on *who* authored a section: a review is
 # authored by a reviewer (an AI agent or a human), but a Decision is a
 # *human Maintainer* authority.  The model is **three-way and positive**,
-# never a denylist residual (Codex cross-phase finding): an identity is
+# never a denylist residual (a cross-phase review finding): an identity is
 # **known-AI** (on the AI-agent registry), **known-human-Maintainer** (on a
 # project-owned allowlist), or **unknown**.  A denylist alone cannot prove
 # humanity -- a novel/renamed agent would launder into the human residual --
@@ -518,7 +518,7 @@ class Artifact:
         self.has_fidelity_signoff = False
 
 
-#: ``## Review -- Antigravity (External Reviewer) -- 2026-06-08``.  The
+#: ``## Review -- Reviewer A (External Reviewer) -- 2026-06-08``.  The
 #: name and the ``(role)`` and the date are each optional in the tail, so
 #: a partially-formed header still parses (and the missing piece becomes a
 #: reported gap rather than a crash).
@@ -933,7 +933,7 @@ def _pass_headings(art: Artifact) -> List[Tuple[Section, str]]:
     separately, so rebuilding ``f"## Plan review -- {name} -- {date}"``
     silently drops the ``(<role>)`` parenthetical.  For a real heading like
 
-        ## Plan review -- Gemini Flash (External, security lens) -- 2026-08-03
+        ## Plan review -- Reviewer A (External, security lens) -- 2026-08-03
 
     the rebuilt string differs from the line the generator hashed, so **every**
     digest comparison missed and the legacy enumeration was inert -- it would
