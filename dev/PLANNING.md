@@ -342,6 +342,13 @@ board by design.
   atomically. Requires External plus External Security Review and a
   Maintainer-only exact-byte trust-root bootstrap.
 
+* **corpus-tier-cost** *(plan opened 2026-08-10)* -- cut engine-suite
+  wall-clock at its head. The transition-lint corpus tier re-derives a constant:
+  3,829 commit-visits over 867 distinct SHA-pinned commits. A test-local memo
+  over the five verified git call families, with its own two-root key-completeness
+  tests. `required(Internal)`; no shipped surface. Acceptance is invocation
+  reduction plus byte-identical results, never seconds.
+
 * **review-efficient-lifecycle** *(plan opened 2026-08-10)* -- one plan for
   the four accepted lifecycle contracts (`review-efficient-lifecycle` plus the
   `claim-check-exemption-hygiene`, `code-review-blindness`, and
