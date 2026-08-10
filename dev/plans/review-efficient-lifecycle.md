@@ -105,11 +105,25 @@ _gating_preconditions(..., 'executing')  -> UNMET: "a CONFORMING '## Plan review
 
 Every violation is the same shape: a pass declares `**Findings**: raised` and
 its Response falls *after* the next pass, outside the parser's positional
-ceiling. That is structural. Append-only forbids inserting a Response between
-two landed reviews, so **the count grows by one with every additional review
-round** — it was 1, then 2, now 3. Appending later `SHIP` passes therefore
-cannot clear it; more review strictly worsens the gate state. This plan cannot
-reach the chunk that fixes the defect without an explicit exception.
+ceiling. Append-only forbids inserting a Response between two landed reviews,
+so once a blocking pass is overtaken by the next pass, its violation is
+permanent and no later pass removes it.
+
+**Precisely which rounds cost a violation** — measured against the parser, not
+inferred:
+
+| round shape | adds |
+|---|---|
+| clearing pass, `**Findings**: none`, no disposition | **0** |
+| blocking pass, `**Findings**: raised`, dispositioned before the next pass | **0** |
+| blocking pass overtaken by the next pass before its Response | **1, permanent** |
+
+So a **closure pass that ships costs nothing**, and the current count is stable
+at **2** — the round-2 and round-3 External passes, each overtaken by the
+Security pass that followed it. An earlier revision of this section said the
+count "grows by one with every additional review round"; that was imprecise and
+is corrected here, because the exception below pins the count and the
+Maintainer must pin a number that will not move.
 
 **The exception is the Maintainer's to grant, and is deliberately left
 unfilled here.** It authorizes nothing until every field below is completed by
