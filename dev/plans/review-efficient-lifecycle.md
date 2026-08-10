@@ -1,12 +1,15 @@
 <!-- cairn-internal-ref-allow: doctrine/dual-review.md doctrine/lifecycle.md doctrine/plans.md doctrine/proposals.md doctrine/lifecycle-contract.md doctrine/session-routines.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- claim-check-allow: bootstrap/tests/test_lifecycle_board.py, bootstrap/tests/test_lifecycle_vocabulary.py, scripts/gen_legacy_code_review_passes.py, dev/.cairn/pilot-state.json, tools/__init__.py -->
+<!-- claim-check-allow: bootstrap/tests/test_lifecycle_board.py, bootstrap/tests/test_lifecycle_vocabulary.py, scripts/gen_legacy_code_review_passes.py, dev/measurement/pilot-activation.md, dev/measurement/pilot-events.md, dev/.cairn/pilot-state.json, tools/__init__.py -->
 <!-- The three paths above are forward references created by Chunks A, C and F.
      They are also registered under `Proposed paths:`; that marker exempts only
      its own contiguous bullet block, so this file-scoped directive covers the
      chunk tables that name the same paths. Each line drops when its file lands.
      `tools/__init__.py` is the opposite case: it is cited BECAUSE it must never
      exist -- A3/A5's no-package-shortcut clause -- so no typed declaration can
-     express it. -->
+     express it.  `dev/.cairn/pilot-state.json` is a third case: the landed,
+     append-only Security review cites it, and the revision it prompted replaced
+     that path with the two `dev/measurement/` records.  The review section is
+     immutable, so the citation is marked rather than edited. -->
 
 # Plan: one lifecycle contract, one evidence boundary
 
@@ -89,6 +92,54 @@ This attestation is retired by Chunk E, in the same commit that makes its
 multi-obligation predicate active and tested. It adds no review pass; it makes
 the two already-declared passes enforceable during their own bootstrap.
 
+### The gate deadlock, and the one-time exception it needs
+
+Filling both rows above is **not sufficient** to reach Chunk A. Executed under
+the canonical interpreter at this commit:
+
+```text
+review_record_violations(...)            -> 3 violations
+_gating_preconditions(..., 'executing')  -> UNMET: "a CONFORMING '## Plan review'
+                                            pass has landed"
+```
+
+Every violation is the same shape: a pass declares `**Findings**: raised` and
+its Response falls *after* the next pass, outside the parser's positional
+ceiling. That is structural. Append-only forbids inserting a Response between
+two landed reviews, so **the count grows by one with every additional review
+round** — it was 1, then 2, now 3. Appending later `SHIP` passes therefore
+cannot clear it; more review strictly worsens the gate state. This plan cannot
+reach the chunk that fixes the defect without an explicit exception.
+
+**The exception is the Maintainer's to grant, and is deliberately left
+unfilled here.** It authorizes nothing until every field below is completed by
+the Maintainer:
+
+| Field | Value |
+|---|---|
+| Plan blob (`git hash-object`) at authorization | *pending* |
+| Clearing `External` review commit | *pending* |
+| Clearing `External Security Review` commit | *pending* |
+| Exact expected violation text | *pending* |
+| Exact expected violation **count** | *pending* |
+| Authorizing Maintainer, quoted verbatim | *pending* |
+
+Bounded by construction:
+
+* it authorizes **only** the `awaiting-plan-review → executing` transition and
+  the Chunk A/B bootstrap window, for **this artifact only**;
+* it is valid only while **no other** violation exists — one additional
+  violation of any other shape voids it;
+* it **expires when Chunk B lands**, and Chunk B must make this artifact
+  conform with **no** wildcard, path-prefix, date, reviewer-name, or reusable
+  legacy exemption; and
+* a test pins it: changing the plan blob, either review commit, the violation
+  text, or the violation count **refuses**, and every broadened or replayed
+  form of the exemption refuses.
+
+Because it overrides a live governance gate, the authority is the Maintainer's
+alone — no agent fills this table, and no Response substitutes for it.
+
 
 ## Proposed paths
 
@@ -96,7 +147,8 @@ Proposed paths:
 - `bootstrap/tests/test_lifecycle_vocabulary.py` — Chunk A's source-audit + shape-(b) matrix.
 - `scripts/gen_legacy_code_review_passes.py` — Chunk C's legacy manifest generator.
 - `bootstrap/tests/test_lifecycle_board.py` — Chunk F's board CLI and encoder tests.
-- `dev/.cairn/pilot-state.json` — P6a's versioned pilot state; written only by the CLI.
+- `dev/measurement/pilot-activation.md` — P6a's immutable activation record; introduced by P6d.
+- `dev/measurement/pilot-events.md` — P6a's append-only event ledger; counts and pauses are derived from it.
 
 ## Scope
 
@@ -328,12 +380,12 @@ are chunks, not another planning artifact.
 | P1 | `tools/lifecycle_planner.py` + twin, both authoring templates + twins | `Assurance path: standard \| high-assurance` declaration, the mandatory high-assurance trigger set, and the four-field review basis (`Reviewed commit`, `Target`, `Prior findings`, `Assurance path`) required across proposal, plan, and Code-review records |
 | P2 | same, plus `doctrine/dual-review.md` | proposal `Plan readiness: READY \| DISTINCT REVIEW REQUIRED`, exact accepted-commit binding, standard-plan inheritance, expansion invalidation, and the high-assurance refusal. **Semantic triggers are author declarations, not inferences**: scientific-assumption and undeclared cross-surface risk are declared by the author and surfaced to proposal review and `review-brief`; the tooling checks that the record exists and binds, never the truth of the classification |
 | P3 | both authoring templates + twins, planner predicates | complete current-contract revision plus its mandatory `Withdrawn / superseded commitments` ledger |
-| P4 | `tools/lifecycle.py` + installed twin | deterministic `review-brief`; expanded `closeout --dry-run`. **Fenced**: P4 does not modify `_resolve_interpreter` (`tools/lifecycle.py:414`), its schema, validation order, fallback disposition, warning visibility, or any subprocess use of the resolved path — the protected local interpreter binding named in `AGENTS.md`. Pinned by a focused exact-function-byte / AST sentinel test. If implementation needs such a change, **stop for a new Security Review**. Both commands stay read-only and execute no artifact content; human output passes through the **same** terminal encoder as F2 (one shared implementation, parity-tested), machine output is versioned ASCII-safe JSON. Control-character, invisible-range, delimiter, malformed-record and mutation-sentinel tests |
+| P4 | `tools/lifecycle.py` + installed twin | deterministic `review-brief`; expanded `closeout --dry-run`. **Fenced**: P4 does not modify `_resolve_interpreter` (`tools/lifecycle.py:414`), its schema, validation order, fallback disposition, warning visibility, or any subprocess use of the resolved path — the protected local interpreter binding named in `AGENTS.md`. Pinned by a focused exact-function-byte / AST sentinel test. If implementation needs such a change, **stop for a new Security Review**. Both commands stay read-only and execute no artifact content; human output passes through the **same** terminal encoder as F2. **The planner owns it**: the encoder lives in `tools/lifecycle_planner.py` (and its installed twin), and `tools/lifecycle.py` reaches it by the **same A3 contained-loader contract** — fixed `spec_from_file_location`, no ambient `sys.path`, no `tools/__init__.py`, no CLI import with side effects. This adds no install-manifest row: both files already install as siblings under `tools/`. The existing `_safe_field` (`tools/lifecycle.py:113`) is **not** this rule — it translates a fixed escape table and truncates; it applies neither `str.isprintable()` nor `_DISPLAY_UNSAFE_RANGES` — and is replaced, not wrapped. Machine output is versioned ASCII-safe JSON. Control-character, invisible-range, delimiter, malformed-record and mutation-sentinel tests, **plus the full A6 loader matrix for this second consumer** (decoy path, leaf and parent symlink, out-of-root, partial-import cleanup, clean retry) and byte/parity checks for every installed twin |
 | P5 | planner + `bootstrap/tests/test_lifecycle_contract.py` | the bound `Contract non-expansion: VERIFIED \| NOT VERIFIED` attestation with its `Basis:` line; `NOT VERIFIED` blocks. Validates presence and binding shape only — the parent is explicit that the semantic claim stays human |
-| P6a | `tools/lifecycle.py` + twin, `dev/.cairn/pilot-state.json` | **pilot engine, inside the reviewed range**: versioned state schema (`schema_version`, `activation_sha`, `activation_date`, counted plan stems, pause records); the CLI is the only writer, `review-brief`/`closeout`/`board` are readers; six-plan counting rule = distinct plan stems reaching `ready-to-archive` under the contract; 60-day calculation from `activation_date` inclusive; malformed or unknown-version state **refuses**, never defaults to inactive |
+| P6a | `tools/lifecycle.py` + twin, `dev/measurement/pilot-activation.md`, `dev/measurement/pilot-events.md` | **pilot engine, inside the reviewed range**, split so no authority input is a mutable last-writer-wins file. (1) An **immutable tracked activation record** naming `machinery_sha` = the reviewed **B2** commit; the *enabling* commit is derived from Git as the commit that first introduced this exact record, so nothing is self-referential, and `activation_date` is that commit's author date. (2) An **append-only tracked event ledger** — one event per counted plan stem or pause, each bound to its source artifact and commit — from which counts, pauses, and the report are **derived**, never stored. Six-plan rule = distinct plan stems reaching `ready-to-archive` under the contract; 60-day window from the derived activation date inclusive. Every writer: repository containment, regular non-symlink leaf **and** parent, closed bounded schema, atomic replace-or-append with an expected-old check, clean refusal on race or `OSError`. Malformed or unknown-version **refuses**; it never defaults to inactive |
 | P6b | `dev/collaboration_agreement.md` + twin | the pilot's human contract: pause conditions, evidence report shape, and the Maintainer promotion Decision at the boundary |
-| P6c | `bootstrap/tests/test_lifecycle_contract.py` | pilot mutations: absent state, wrong schema version, tampered activation SHA, miscounted stems, boundary-day arithmetic, pause set and cleared |
-| P6d | `dev/.cairn/pilot-state.json` | **activation only** — a data-only, Maintainer-gated record written after B2 that enables already-reviewed machinery. No code lands at activation |
+| P6c | `bootstrap/tests/test_lifecycle_contract.py` | pilot mutations: absent record, wrong schema version, altered prior event, duplicate or conflicting stem, symlink redirection of leaf or parent, interrupted write, stale writer / lost update, boundary-day arithmetic, pause set and cleared, and the exact activation-binding oracle (a record whose `machinery_sha` is not the B2 commit, and a derived-enabling-commit mismatch, both refuse) |
+| P6d | `dev/measurement/pilot-activation.md` | **activation only** — the data-only, Maintainer-gated commit introducing the immutable activation record after B2, enabling already-reviewed machinery. No code lands at activation |
 | P7 | `doctrine/`, both authoring templates + twins, `docs/workflow-role.md`, `docs/getting-started.md`, `docs/tool-usage.md`, `templates/skills/_lib/` | **conditional** post-pilot `promote` / `revise` / `retire`, each with distinct behavior, plus the three-layer canonical / self-hosted / shipped-template parity contract. Executes only after the Maintainer's promotion Decision |
 | P8 | `bootstrap/tests/test_lifecycle_contract.py` | end-to-end standard-READY and high-assurance-refusal fixtures, plus a **row-level assurance matrix**: missing / duplicate / unknown `Assurance path` values (all refuse — **never default to `standard`**); every mechanically recognizable protected-surface trigger; uncertainty resolving **high**; high-assurance and `DISTINCT REVIEW REQUIRED` inheritance refusal; changed proposal / review / Decision SHAs; every named expansion dimension; unresolved findings; stale Boundary B; malformed or missing non-expansion `Basis:`; and a downgrade admitted only through a structurally valid Maintainer Decision |
 
@@ -422,9 +474,13 @@ implementation parent rather than carrying these figures forward.
      rewrites `bootstrap/tests/fixtures/gate_manifest.json` inside the reviewed
      range and the runbook itself runs the suite zero times.
 * Boundary C: one code review over the B1 range.
-* **Restart rule.** A corrective byte after the code review restarts B1, the
-  code review, and the ceremony for the affected range. A corrective byte after
-  the ceremony restarts B2 only.
+* **Restart rule — canonical text lives in `## Sequence` and is not restated
+  here.** This section previously carried an unqualified summary ("a corrective
+  byte after the ceremony restarts B2 only") that contradicted it and would have
+  let a governed correction bypass B1, Code review, and possibly the ceremony.
+  One rule, one home. A summary that can drift is how the weaker reading
+  survives; Chunk G's acceptance includes a check that no second restart rule
+  exists anywhere in this plan.
 
 **Note on doc gates**: drift gates catch drift, not absence. Chunk G's
 deliverables are confirmed individually.
@@ -1401,3 +1457,104 @@ future Git-hook behavior, actual pilot data, or execution of the Maintainer
 ceremony. Return T1--T4 for one focused Security closure pass. This pass is
 blocking and does not fill the bootstrap table's `External Security Review`
 row.
+
+## Response to plan review -- Claude -- 2026-08-10 (round 3 + Security round 2)
+
+**Model**: claude-opus-5 (Claude Opus 5)
+**Reviewed review commits**: `957720d` (External round 3), `a0244c5`
+(External Security Review round 2)
+**Obligations answered**: neither. Both bootstrap rows stay `pending`.
+**Disposition**: accept [H1]--[H3] and [T1]--[T4]. S1--S4 and S5's interpreter
+fence are recorded closed by the Security pass; G1 closed by the round-3 pass.
+
+### [H1] / [T4] -- accept. I fixed one location and left the other.
+
+Verified at line 427: the Verification section still read *"A corrective byte
+after the ceremony restarts B2 only."* I wrote the four-case rule into
+`## Sequence` and left the unqualified summary standing two hundred lines
+later — so the governing verification text still permitted a governed
+correction to bypass B1, Code review, and possibly the ceremony.
+
+There is now **one** restart rule, in `## Sequence`. The Verification section
+carries a pointer and an explicit note that the summary it used to hold was the
+weaker reading. Chunk G's acceptance includes a check that no second restart
+rule exists anywhere in this plan — a duplicated rule is how the weaker one
+survives, and this is the second time in this plan that a summary contradicted
+its own contract.
+
+### [H2] / [T3] -- accept, and the dynamic is worse than either pass states
+
+Reproduced under the canonical interpreter:
+
+```text
+review_record_violations(...)           -> 3
+_gating_preconditions(..., 'executing') -> UNMET
+```
+
+Every violation is one shape: a pass declares `Findings: raised` and its
+Response lands after the *next* pass, outside the positional ceiling.
+Append-only forbids inserting a Response between two landed reviews, so **the
+count rises by one with every review round** — 1, then 2, now 3. Later `SHIP`
+passes cannot remove it.
+
+That means this plan **cannot converge by being reviewed more**. Each
+additional round adds a permanent violation, and the exception that unblocks
+Chunk A must pin the exact count at the moment it is authorized. The review
+cycle is not neutral here; it is the thing deepening the deadlock.
+
+A `### The gate deadlock` subsection now carries the one-time exception in
+exactly the shape both passes require — plan blob, both clearing review
+commits, exact violation text **and count**, quoted Maintainer authorization —
+bounded to this artifact and the A/B window, void if any other violation
+exists, expiring when Chunk B lands with no wildcard or reusable legacy form,
+and pinned by a test that refuses on any changed field or broadened shape.
+
+**Every field is left `pending`.** It overrides a live governance gate, so the
+authority is the Maintainer's alone; no agent fills it and no Response
+substitutes for it.
+
+### [H3] / [T2] -- accept. The circularity was real.
+
+`activation_sha` meaning "the commit containing this record" is
+self-referential — writing a commit's SHA into its own blob changes that SHA.
+And `git check-ignore` confirms `dev/.cairn/pilot-state.json` is not ignored,
+so a repeatedly-rewritten CLI state file would have become a tracked,
+last-writer-wins governance record backing P7's promotion Decision.
+
+Replaced with the shape the review proposed: an **immutable tracked activation
+record** (`dev/measurement/pilot-activation.md`) naming `machinery_sha` = the
+reviewed B2 commit, with the *enabling* commit derived from Git as the one that
+first introduced that exact record and `activation_date` taken from its author
+date — non-circular in both directions; plus an **append-only event ledger**
+(`dev/measurement/pilot-events.md`), each event bound to its source artifact
+and commit, from which counts and pauses are **derived rather than stored**.
+Writers get containment, leaf and parent symlink refusal, bounded closed
+schema, atomic append with expected-old, and clean refusal on race or `OSError`.
+P6c gains lost-update, duplicate-stem, altered-history, symlink-redirection,
+interrupted-write, and activation-oracle mutations. `dev/measurement/` is where
+Cairn already keeps append-only incident records, so this is an existing
+pattern rather than a new mechanism.
+
+### [T1] -- accept. "One shared implementation" named no implementation.
+
+Confirmed the ambiguity is real: `_safe_field` (`tools/lifecycle.py:113`)
+translates a fixed escape table and truncates — it applies neither
+`str.isprintable()` nor `_DISPLAY_UNSAFE_RANGES`, so it is not the F2 rule.
+
+Of the two options the review allows, the plan takes the second: **the planner
+owns the encoder**, and `tools/lifecycle.py` reaches it by the *same* A3
+contained-loader contract. That choice adds **no install-manifest row** — both
+files already install as siblings under `tools/` — where a new shared module
+would have changed the install set. `_safe_field` is replaced, not wrapped, and
+P4 gains the full A6 loader matrix for this second consumer plus twin parity.
+
+### On the review cadence
+
+Recorded because it is now measurable rather than a feeling: this is round 5.
+Rounds 1--4 each found real defects, including two contradictions I introduced
+and one deadlock no reading would have exposed. But [H2] establishes that
+further rounds have a **negative** mechanical effect on this artifact's gate
+state. My recommendation is that the Maintainer take the two closure passes
+these findings warrant and then decide, rather than commissioning a sixth
+round; the remaining findings are local amendments, and the exception that
+unblocks Chunk A is a Maintainer act that no additional review can supply.
