@@ -539,3 +539,56 @@ sequencing could alter scientific results — the reviewer brief's first questio
 have no scientific-domain case in this tree to test it against; every candidate
 here is security or lifecycle. That question needs the declared reviewer, and it
 is the one I would weight highest after F1.
+
+## Review -- Antigravity (External) -- 2026-08-10
+
+**Model**: Antigravity (Google DeepMind)  
+**Standing**: External review (independent agent type from proposal author Codex).
+
+### Steelman
+This proposal accurately diagnoses a growing operational bottleneck in Cairn's development lifecycle: as the repository and deliberation history expand, proposal and plan artifacts accrete significant context repeat and historical amendment tables (e.g. `content-scan-detectors` at ~58k words, `separator-detection` at ~33k words). Reviewers are forced to ingest large context windows that re-verify already-settled history rather than focusing on delta changes and falsification.
+
+The proposal's core architectural ideas are sound and preserve Cairn's core tenets:
+1. **Preserves Registered Report Analogy**: Stage 1 (proposal/plan) still locks questions, boundaries, and evidence contracts before implementation; Stage 2 (code review) verifies execution against that locked contract.
+2. **Clear Maintainer Rights Floor**: The Maintainer retains final Decision authority, risk acceptance, trigger downgrades, and ceremony approvals, while agents handle mechanical preflight and evidence checks.
+3. **Structured Dual-Assurance Triage**: Explicitly separating Standard vs. High-Assurance paths provides a clear, rule-based triage mechanism for when a distinct plan review is strictly necessary vs. when plan readiness can be safely inherited.
+
+---
+
+### Critiques
+
+* **[R1] Pilot Falsifiability & Empty Population Risk (F1)**:
+  - The pilot evaluation specifies promotion/retirement "after six eligible standard plans." However, the high-assurance triggers encompass security boundaries, executable paths, parsers, protected surfaces, CRS/numerical methods, and governing doctrine/lifecycle enforcement changes.
+  - In practice, almost all non-trivial proposals opened in this repository touch high-assurance triggers (e.g., lifecycle tools, security stack, doctrine). The eligible "standard plan" population could remain near zero for extended periods, leaving the pilot in an un-evaluated, un-falsifiable state.
+  - **Suggested Edit**: Time-box the pilot explicitly: *"after six eligible standard plans or 60 days, whichever comes first"*. If 60 days elapse without 6 standard plans, require the pilot report to evaluate whether trigger breadth is over-inclusive or whether the standard path requires re-scoping.
+
+* **[R2] Current-Contract Revisions Require an Explicit Withdrawal Ledger (F2)**:
+  - Section 2 requires an author appending a complete current-contract revision to summarize scope, invariants, public paths, evidence, and omissions.
+  - However, if a revision quietly drops a constraint present in an earlier draft, reviewers diffing only the current contract will miss the dropped requirement.
+  - **Suggested Edit**: Require every complete current-contract revision to carry a dedicated `### Withdrawn / Superseded Commitments` section listing any dropped/modified requirements and the rationale for dropping them.
+
+* **[R3] Code Review Verification of Contract Non-Expansion (F3)**:
+  - Section 3 correctly notes that an inherited plan cannot introduce new scope, invariants, public paths, dispositions, boundaries, or ceremonies. The proposal notes that prose semantic identity cannot be verified by parser alone and relies on independent code review as a backstop.
+  - To ensure this backstop is actively exercised rather than assumed, the code review schema for inherited plans must require an explicit attestation.
+  - **Suggested Edit**: Add a required checklist item to Boundary C code reviews for inherited plans: *"Attestation: Verified that the plan and implementation introduced no undeclared scope items, invariants, public paths, failure dispositions, trust boundaries, or ceremonies beyond the accepted proposal."*
+
+* **[R4] Determinism of `review-brief` and `closeout` Tooling**:
+  - Section 5 and Tool Support specify `tools/lifecycle.py review-brief` and `tools/lifecycle.py closeout --dry-run`.
+  - These CLI tools must remain strictly deterministic standard-library utilities (extracting git diffs, AST/heading structures, and markdown metadata) with zero LLM/API dependencies, maintaining Cairn's zero-runtime-dependency contract (`bootstrap/DEPENDENCY_BUDGET.md`).
+
+---
+
+### Coverage & Recommendation
+
+- **Covered**:
+  - `scripts/claim_check.py dev/proposals/2026-08-10-codex-review-efficient-lifecycle.md`: exit 0 (clean).
+  - `scripts/check_cairn.py dev/proposals/2026-08-10-codex-review-efficient-lifecycle.md`: exit 0 (1 file scanned, clean).
+  - Cross-referenced high-assurance trigger definitions against `AGENTS.md` (high-risk surfaces) and `doctrine/lifecycle.md`.
+  - Verified `dev/proposals/_template.md` and `dev/plans/_template.md` lifecycle rules against proposed current-contract revision structures.
+- **Not covered / low confidence**:
+  - Proposed CLI extensions (`review-brief` and `closeout`) have not yet been implemented on disk in `tools/lifecycle.py`.
+  - Pilot impact on actual scientific data repositories cannot be tested directly in Cairn's self-hosted tree.
+
+**Second-round recommendation**: **RECOMMENDED FOR REVISION / ACCEPTANCE WITH EDITS**.
+The proposal should be revised to incorporate [R1] (time-boxed pilot), [R2] (withdrawal ledger), and [R3] (code review non-expansion attestation) prior to Maintainer Decision.
+
