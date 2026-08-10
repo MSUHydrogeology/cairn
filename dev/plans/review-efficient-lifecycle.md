@@ -2037,3 +2037,72 @@ fixture; 77 focused lifecycle-contract tests; twin byte identity; accepted
 **Not covered**: unrelated API/web worktree edits, implementation of A--H,
 full-suite behavior, future Code review, or the Maintainer re-anchor. Return
 N1--N2 only. This pass is blocking and does not clear the External obligation.
+
+## Plan review -- Codex (Security) -- 2026-08-10 (round 5)
+
+**Model**: GPT-5.6-Codex
+**Tier**: External
+**Obligation**: External Security Review
+**Reviewed commit**: `3005c3971dabe74451cff85c976693f4764dd0bc`
+**Target**: the plan's reliance on the Maintainer-directed `286f07d` gate
+repair and its interaction with the accepted Code-review binding contract
+**Prior findings**: M1; all earlier Security findings as closed context
+**Assurance path**: high-assurance
+**Security lens**: governance-gate fail-closed behavior, response binding,
+review-range completeness, and frozen-manifest disposition
+**Findings**: raised
+**Verdict: REVISE, one security-accounting blocker.** The group-Response repair
+is acceptable under Cairn's structural-not-semantic threat posture and removes
+the false deadlock without a bypass. The plan does not yet protect that
+pre-landed gate change from being contradicted by Chunk B or omitted from the
+final independent Code review.
+
+### [O1] MEDIUM-HIGH -- the gate repair has tests but no binding place in the plan's final review
+
+I attacked `286f07d` directly. An exact later `## Response to plan review`
+closes all Plan-review passes in its group; a pass after the Response still
+refuses; no Response refuses; unrelated Response kinds do not count; the twins
+are byte-identical; and the 77 focused tests pass. Across 37 current plans only
+this artifact changes (`4 -> 0`).
+
+The broader structural residual is accepted: an empty or semantically
+incomplete exact Response can satisfy the parser. That was already true for an
+immediately positioned Response; the tool attests record shape, not whether the
+author answered the prose. Git review remains the semantic channel.
+
+The security gap is instead prospective. B2 currently demands the opposite
+behavior generically, and the one final Code review is described over the A--H
+implementation range even though `286f07d` landed earlier. An implementer can
+follow B2 and restore the false ceiling, or preserve the repair while the final
+reviewer never includes its bytes in the reviewed target.
+
+**Required satisfier.** Apply N1's type split and explicitly include
+`286f07d^..B1` (or an equivalently exact range that includes that commit) in
+the final Code-review target and Boundary B record. Security acceptance depends
+on preserving both rules simultaneously:
+
+* grouped, exact-kind Plan-review Responses with no semantic-authentication
+  claim; and
+* exact `Answers:` binding for Code-review Responses, with malformed,
+  ambiguous, absent, or wrong-pass bindings refusing.
+
+Add opposing mutations so weakening either side reddens independently. Keep
+`bootstrap/tests/test_lifecycle_contract.py` in the later gate-manifest
+classification and Maintainer ceremony exactly as Chunk I already requires.
+
+### Security closure accounting
+
+Retiring the exception closes M1 and removes the entire reusable-bypass risk.
+The contained loaders, terminal encoder, intent subprocess, assurance matrix,
+pilot evidence, migration authority, restart rules, and conditional P7
+ceremony remain closed. The two sibling plans retain separate scopes and trust
+roots; the new map does not merge or weaken their gates.
+
+**Covered**: exact code and tests at `286f07d`; direct current and adversarial
+fixture execution; old/new 37-plan corpus comparison; twin identity; current
+gate preconditions; accepted Code-review `Answers:` contract; and frozen-path
+classification. The Maintainer's authorization is accepted as stated.
+
+**Not covered**: A--H implementation bytes, full-suite behavior, actual final
+Code review, pilot observations, or re-anchor execution. Return O1 only. This
+pass is blocking and does not clear the External Security Review obligation.
