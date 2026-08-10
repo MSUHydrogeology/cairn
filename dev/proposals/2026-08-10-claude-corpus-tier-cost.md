@@ -460,3 +460,172 @@ plan `dev/plans/transition-lint.md` is **open** with an External code
 review appended 2026-08-10. Implementation of Parts 2–3 waits on that
 plan reaching archive, or on its owner's explicit concurrence. Part 1
 and Part 4's measurement pass are unblocked and can proceed first.
+
+## Review -- Codex -- 2026-08-10
+
+**Model**: GPT-5 (Codex)
+**Tier**: External, different agent type from the author
+**Reviewed commit**: `181ce450d2fea7a9762da27a5ac6b776257e0135`
+**Target**: the complete proposal above
+**Prior findings**: none
+**Verdict: REVISE.** The performance opportunity and the decision to preserve
+the historical corpus both hold. The proposed safety oracle does not.
+
+### Steelman
+
+This proposal identifies arithmetic waste rather than treating evidence as the
+waste. The pinned window counts reproduce exactly: 415, 120, 332, and 867
+commits. An independent path-limited query also confirms that the dropped
+`ROOT..SELF_HOST` prefix contains zero commits touching `dev/proposals` or
+`dev/plans`. Most importantly, the repeated-call diagnosis reproduces: my
+independent in-process probe observed 6,509 wrapped `_git` calls and only 1,279
+distinct argument tuples. The proposed optimization can remove substantial
+forking without shrinking the load-bearing post-self-host corpus.
+
+The proposal also makes good scope calls around elapsed-time tests and
+parallelism. A timeout test must spend time, and `pytest-xdist` has a genuinely
+different shared-state/dependency argument. Neither belongs inside the memo
+change merely because both affect wall-clock.
+
+### [E1] HIGH -- the corpus assertions do not enforce cache-key completeness
+
+The proposal makes the existing exact corpus assertions the oracle for a
+complete cache key and requires a perturbation that drops one key component to
+make those assertions red. That claim is false for any component that does not
+vary in the corpus.
+
+I loaded the committed production module, wrapped `tl._git` with a memo keyed
+on `args` alone -- deliberately omitting `root` -- and executed all eleven
+methods in `TestWideningIsNotCreating`, `TestWhitelistHygiene`, and
+`TestCorpusRegression`. **All eleven passed.** The probe observed 6,509 calls,
+1,279 misses, and 5,230 hits. Omitting the root achieved essentially the
+proposal's prototype cache behavior while its proposed oracle remained green.
+
+This directly falsifies both *"complete keys"* and *"drop one component from
+the memo key ... confirm the corpus assertions go red."* Exact result
+assertions can detect a collision only when the test population supplies two
+different inputs for the omitted dimension and those inputs produce different
+outputs.
+
+**Required satisfier.** Give the helper independent contract tests that create
+at least two repository roots with deliberately different outputs and exercise
+every key dimension. A root-omission mutant must collide and go red. Distinct
+argv/call shapes must do the same. If one helper instance can wrap more than one
+callable, callable identity must also be in the key and receive the same
+two-output test; otherwise the API must make one helper instance structurally
+incapable of wrapping two callables. The corpus assertions then prove result
+parity for this consumer, not generic key completeness.
+
+### [E2] HIGH -- the immutable-input boundary does not describe any real call
+
+Part 1 says the helper applies only where *"every argument is a full 40-hex SHA
+or a SHA-pinned rev-range."* Production `_git` receives no such argv. Its real
+read shapes include:
+
+```text
+rev-parse --verify --quiet <sha>^{commit}
+log --format=... <sha>..<sha>
+diff-tree ... <sha>
+show <sha>:<path>
+diff --unified=0 <sha>^ <sha> -- <path>
+```
+
+Commands, options, `sha^`, `sha:path`, and paths are necessary arguments. A
+literal implementation of the proposed rule refuses every useful call; a loose
+implementation has no defined way to distinguish immutable revision operands
+from mutable names or option values. Full SHAs also do not, by themselves,
+describe every input to Git output: executable identity, environment/config,
+replace refs, and repository state are outside `(root, argv)` unless the caller
+fixes or explicitly accepts them.
+
+**Required satisfier.** Replace the prose predicate with an executable closed
+grammar for the exact read-only command shapes this consumer uses, including
+how `sha^{commit}`, `sha^`, `sha:path`, and path operands are validated. State
+which ambient Git inputs are fixed and which are accepted session assumptions.
+Do not call the helper "provably immutable" if its contract is only
+"session-local memo over an unchanged repository and Git environment."
+
+The simpler v1 is preferable: keep a transition-lint-local fixture whose closed
+grammar is exactly the five call families above, cache only successful reads,
+and extract a shared helper only when a second measured consumer has the same
+immutability contract. This keeps a performance helper from becoming a generic
+way to skip subprocess evidence.
+
+### [E3] MEDIUM -- Part 3's replacement guard should not use the rule it replaces
+
+The mechanism claim is correct, but *"assert `_in_scope` rejects every path
+shape present in the dropped prefix"* risks deriving the replacement material
+through the production narrowing under test. It is also unnecessarily
+expensive if it enumerates all 415 commits and every path merely to prove that
+neither trigger root existed.
+
+I ran the independent path-limited query:
+
+```text
+git rev-list --count ROOT_SHA..SELF_HOST_SHA -- dev/proposals dev/plans
+```
+
+It returned `0`. Bind Part 3 to that direct historical predicate (with the
+literal pinned endpoints and trigger-root pathspecs), not to a selected list of
+paths fed back through `_in_scope`. If the plan cannot make that guard
+independent, exercise the proposal's severability and drop Part 3; Parts 1 and
+2 retain most of the benefit.
+
+### [E4] MEDIUM -- the six-file scope mixes three mechanisms and leaves the tier unresolved
+
+Part 4 says each remaining file either applies Part 1's memo or records why it
+cannot. Its expected upgrade-test disposition instead proposes a session-scoped
+baseline tree copied per test, which is neither memoization of immutable Git
+reads nor a cannot-disposition. `test_gate_preflight.py` and `test_oracle.py`
+are then left as possible memo consumers even though the proposal's own
+security analysis says the subprocess execution is the assertion.
+
+Make Part 4 a **measurement and disposition** pass only. A different
+optimization discovered there opens its own scope or is added only after its
+contract is reviewed; this plan does not promise to implement it. Hard-fence
+the two trust-ceremony files from memo adoption here.
+
+My tier ruling follows the resulting scope. A transition-lint-local memo plus
+measurements can retain `required(Internal)` plan review because the tool is
+advisory and unshipped. If a shared helper or any cached path in
+`test_gate_preflight.py` / `test_oracle.py` remains in implementation scope,
+the plan review becomes `required(External, security lens)`. The proposal
+should make that choice rather than route it to the Maintainer as an
+interpretation question.
+
+### [E5] LOW -- wall-clock figures are snapshots, not a stable acceptance oracle
+
+The structural counts reproduce, but two timing statements did not on this
+pass. The eleven corpus nodes completed in **40.98s**, and the complete
+`test_transition_lint.py` file completed **40 passed in 49.79s** (50.50s real),
+against the proposal's 103.32s isolated figure. The proposal's opening commit
+also has **349**, not 341, commits after `SNAPSHOT_SHA`. Concurrent commits can
+explain the second discrepancy; filesystem and Git cache warmth plausibly
+explain the timing difference. Neither undermines the 6,509-to-1,279 repeated
+call result.
+
+Use paired before/after runs under the same conditions and make invocation
+reduction plus byte-identical results the acceptance contract. Treat the 4.66x
+wall ratio and 56% suite share as dated motivation, not a threshold whose
+non-reproduction invalidates an otherwise-correct implementation.
+
+### Coverage and recommendation
+
+**Covered:** pinned-window counts; current post-snapshot count; the real `_git`
+call grammar; all eleven corpus assertions under an intentionally incomplete
+key; independent trigger-root history for the dropped prefix; the focused
+corpus tier; the complete transition-lint file; claim checking and
+`check_cairn` on this proposal.
+
+**Not covered / low confidence:** the six-file suite timing table; the claimed
+full-suite CPU/process-site census; a prototype of the not-yet-written helper;
+the two upgrade-test baseline-copy predictions; macOS/Linux/Windows Git timing
+comparability; any full-suite run. The current working tree contains unrelated
+concurrent edits, but the transition-lint production and test files were
+verified byte-identical to `HEAD` before execution.
+
+**Second-round recommendation:** one focused author revision and a delta-only
+External re-read of E1/E2. The corpus and performance diagnosis do not need a
+new full review. If the revision localizes the memo, supplies independent
+two-root/key-shape tests, states an executable command grammar, and either
+replaces or drops Part 3, this should be close to Decision-ready.
