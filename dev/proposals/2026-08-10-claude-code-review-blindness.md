@@ -476,3 +476,42 @@ is broad enough to have already covered this. If it does, the sequencing
 fence in this proposal (wait for archive) would need to become "this
 IS `review-gate-enforcement`'s unfinished business," which changes who
 owns it.
+
+## Scope addendum -- 2026-08-10 -- the synthesized-pass ceiling basis
+
+Appended before any review pass, to claim a residual that would otherwise archive
+without a home.
+
+`review-gate-enforcement`'s CR1 correction (`38a1ad1`) introduced
+`_synthesize_pass_section`, so `_pass_headings` now recognises S1-conforming
+headings that `_HEADER_RE` cannot parse. **`_has_disposition`'s ceiling was not
+updated to match**: it still derives its later-pass boundary from `art.sections`
+rather than from the union of raw S1 lines `_pass_headings` now recognises. A
+*synthesized-only* later pass therefore does not act as a ceiling, so a
+neighbouring round in that exact shape could satisfy the wrong pass's disposition
+search.
+
+**This is a different defect from the blindness above**, and the distinction is
+why it needs claiming rather than assuming: the blindness is that the ceiling keys
+on `s.kind == "plan review"` and so never sees `## Code review`. This residual is
+that the ceiling's *basis* (`art.sections`) is narrower than the selection's
+(`art.sections` ∪ raw S1 matches). Same function, same computation, two independent
+narrownesses.
+
+**Status: reachable, and safe today.** The 2026-08-10 External code review
+(Antigravity) traced it, **demonstrated reachability in Python**, then scanned all
+36 files across `dev/plans/` and `dev/plans/archive/` and found **0
+synthesized-only passes in live artifacts**. So it cannot currently mis-satisfy
+anything; it is a latent asymmetry, not an active defect.
+
+**Why this proposal owns it.** The change proposed above rewrites
+`_has_disposition`'s ceiling search to consider `## Code review` sections. Any
+implementation that touches that computation should correct its basis in the same
+pass — fixing one narrowness while leaving the other in the same four lines would
+be the exact "strict component over permissive neighbour" shape that produced CR1.
+The implementation must widen the ceiling basis to the same union
+`_pass_headings` selects from, and pin it with a synthesized-only-later-pass
+fixture (which no live artifact supplies, so the fixture must be constructed).
+
+Recorded here so `review-gate-enforcement` can archive with this residual owned
+rather than orphaned.
