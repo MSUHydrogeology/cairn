@@ -799,3 +799,59 @@ the debt this Decision's conditions exist to prevent, and closing it while the
 surrounding work is open costs less than opening it cold later.
 
 **Status**: `revised` → `superseded`.
+
+## Decision AMENDMENT -- Anthony Kendall (Maintainer) -- 2026-08-10 -- condition 3 re-routed into scope 3
+
+**Authorization, quoted verbatim and visually isolated:**
+
+> Let's go with your recommendation, amend condition 3
+
+Scribed by Claude (Implementation). **Append-only: the original Decision and its
+three conditions are untouched above.** This follows the precedent of `3e962b7`,
+which appended a Decision amendment to this same archived-proposal surface in an
+amendment-only commit. The proposal's `superseded` status is unchanged.
+
+**What condition 3 said** (quoted, not paraphrased, so the amendment is legible
+against it):
+
+> 3. **The `bootstrap/_scaffold/lockfile.py` remediation string lands immediately
+>    as trivial-class**, outside all four scopes. It has no design question
+>    attached and it currently advises an action — removing the engine package —
+>    that raises `RuntimeError` in `tools/intent.py` and disables work-intent
+>    coordination outright.
+
+**The amendment.** The remediation-string fix **no longer lands as a standalone
+trivial-class commit outside all four scopes.** It lands as **Chunk B of
+`fork-advisory-semantics`** (scope 3), which the plan had already sequenced as its
+default shape while correctly refusing to execute it without this amendment.
+
+**Why, and the reasoning is the original condition's own.** Condition 3's purpose
+was to get dangerous advice out of the shipped tree without paying ceremony for it.
+Since it was written, `fork-advisory-semantics`' first engine commit put the AST
+attestation baseline into a red window that runs until its Chunk R. Measured
+consequence:
+
+* **Standalone now** — costs a **second Maintainer-run AST re-anchor ceremony** in
+  its own sitting, or extends the red window backwards across a whole External
+  review interval. The original Decision's "paid once" rationale argues against
+  exactly this.
+* **As Chunk B** — one ceremony, **no additional red time**, and Chunk B rewrites
+  the same function (`format_forked_facade_warning`) that Chunk C already rewrites.
+
+So the amendment serves condition 3's intent better than its letter did. The letter
+was written before the red window existed.
+
+**The cost accepted, stated rather than implied.** The dangerous advice — *"remove
+the dormant engine package"*, which disables work-intent coordination if followed —
+**stays shipped until Chunk B lands** rather than dying today. The Maintainer was
+shown this specific trade before amending. It is acceptable because Cairn has no
+adopters yet, so the exposure window is internal only.
+
+**What this amendment does NOT do:**
+
+* It does not weaken conditions 1 or 2, which stand as written.
+* It does not change the fix itself — the destructive branch is still **removed,
+  not reworded**, and the no-op "complete the swap" branch still goes.
+* It does not waive `fork-advisory-semantics`' own AST re-anchor obligation at
+  Chunk R, which remains a Maintainer ceremony.
+* It does not authorize a push.
