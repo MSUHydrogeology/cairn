@@ -1503,6 +1503,110 @@ the question.
 **Acceptance criteria — Chunk D.** Four rows, four substitution runs, four
 negative controls, outputs recorded; no repository file modified.
 
+#### Chunk D — RUN, 2026-08-10, Claude
+
+Evidence commit `5010d36`, same clean-checkout discipline and same throwaway-key
+scratch repository as Chunk C (A8). All four citations in the pre-drawn table
+were re-pinned by opening the files; **three moved and one verdict flips.**
+
+##### The B2 register
+
+| # | Check | Verdict is about | Bound to the name? — re-pinned at `5010d36` | Verdict |
+| --- | --- | --- | --- | --- |
+| D-1 | The documented tag bootstrap | a release version | **yes**, and extract-vs-compare are separate lines: awk **extraction** at `bootstrap/PROVENANCE.md:216`, the **comparison** `[ "$CAIRN_SIGNED_NAME" = "$CAIRN_TAG" ]` at **`:220`** (the plan's `:204` and A22's `:220` — A22 is correct, the body text is not) | **MET** |
+| D-2 | `bootstrap/container/verify-ref.sh` | a release version | **yes** — extraction at `:335`, refusal at `:340`, header-bounding comment at `:333`; all three **unmoved** | **MET for the comparison; see G-2 for what is *not* enforced** |
+| D-3 | `bootstrap/verify_integrity.py` | "the recorded install" | **no** — the success path names only a repo-relative constant | **NOT MET** (A12 reproduces) |
+| D-4 | `tools/lifecycle_planner.py` byline classifier | document structure, not identity | yes | **MET for B2's property**, with R1/R3 cited as B5's business |
+
+##### D-1 and D-2 — the substitution run, RUN
+
+Two genuinely signed tags with the same throwaway key, then
+`git update-ref refs/tags/v0.5.0 <the v0.3.0 tag object>`:
+
+```
+D1a boot  ask for v0.5.0 (substituted)
+   rc=1  | REFUSED: 'v0.5.0' resolves to a tag object whose SIGNED name is 'v0.3.0'
+D1b boot  NEGATIVE CONTROL -- ask for v0.3.0, same repository
+   rc=0  | PROVENANCED: tag 'v0.3.0' (object 53d2ded8...) signed and name-bound
+D2a vref  ask for v0.5.0 (substituted)
+   rc=1  | verify-ref: REFUSED - ref 'v0.5.0' resolves to a tag object whose SIGNED
+            name is 'v0.3.0' - the signature does not answer the question asked
+D2b vref  NEGATIVE CONTROL -- ask for v0.3.0
+   rc=0  | verify-ref: PROVENANCED - annotated tag 'v0.3.0' signed by
+            good@example.invalid -> 53d2ded8...
+```
+
+The pair is the claim: **the same repository** yields REFUSED and PROVENANCED
+depending only on which question was asked. Both success outputs name what was
+verified (the tag, its object, and — for `verify-ref.sh` — the matching
+principal), which is B2's second clause satisfied on these two rows.
+
+**Header-bounding control, RUN.** A tag `v0.4.0` whose *message body* carries a
+literal line `tag v0.5.0`; `refs/tags/v0.5.0` repointed at it; ask for `v0.5.0`:
+
+```
+D2c vref  rc=1  | ... whose SIGNED name is 'v0.4.0' - the signature does not
+                  answer the question that was asked
+D2c boot  rc=1  | REFUSED: 'v0.5.0' resolves to a tag object whose SIGNED name
+                  is 'v0.4.0'
+```
+
+Perturbing the attacker-controlled free text is the hazard here, and both shipped
+implementations refuse. **What this run does *not* establish is deferred to G-2**,
+where the same property is perturbed at the mechanism instead of at the input —
+and the answer there is materially different from what this leg suggests.
+
+##### D-3 — the target-substitution analogue: A12 reproduces, RUN
+
+Two independently scaffolded `solo-greenfield` targets, `<scratch>/tgt_A` and
+`<scratch>/tgt_B`:
+
+```
+$ verify_integrity.py --target <scratch>/tgt_A
+verify_integrity: OK -- 61 recorded file(s) match dev/.cairn/cairn-lock.yml
+  (4 adopter-authored living-state file(s) tracked for upgrade but excluded
+   from the tamper check).                                              [rc=0]
+$ verify_integrity.py --target <scratch>/tgt_B
+   ... identical bytes ...                                              [rc=0]
+$ diff outA.txt outB.txt
+(no output -- BYTE-IDENTICAL; neither output names the target it read)
+```
+
+Mechanism, re-pinned: the success print at `bootstrap/verify_integrity.py:139`
+interpolates only the repo-relative constant `_LOCKFILE_REL`, while the
+fail-closed print at `:50` interpolates `{_LOCKFILE_REL} under {target}`. So the
+tool names what it verified **only when it refuses**. B2's second clause —
+*"its output names what it actually verified"* — fails on the success path.
+**A12 stands; D-3 is NOT MET.** Owner: the `verify_integrity` successor on the
+deferred ledger.
+
+**Negative control, RUN** — and it passes, which is why the row is a *naming*
+finding and not a fail-open one:
+
+```
+$ verify_integrity.py --target <scratch>/tgt_nolock      # no lockfile present
+verify_integrity: no/unparseable dev/.cairn/cairn-lock.yml under
+  <scratch>/tgt_nolock -- FAIL CLOSED (cannot attest integrity without a
+  lockfile).                                                            [rc=1]
+```
+
+It refuses rather than falling back to any other lockfile, **and** the refusal
+names the target — the two-sided evidence the plan asked for. `SECURITY.md:47`
+(*"confirm the installed tree still matches its recorded install"*) stays cited
+as a true document sentence that is **not** evidence for the clause D-3 fails.
+
+##### D-4 — the classifier's verdict is about structure, RUN
+
+`IdentityModel.classify` returns `ai` / `human` / `unknown` for the byline it was
+given; the identity it reports is `_identity_token`'s first flagging-strength
+word of *that* name, not a collapsed enum. Exercised in Chunk E's bucket table
+below (same harness, eight inputs), so it is not re-transcribed here. The row
+cites residuals **R1** (exact-name spoof) and **R3** (the Cyrillic-homoglyph
+variant of the independence comparator) recorded on the `dev/PLANNING.md` board:
+a B2 row that ignored them would claim a binding the tool does not have. The row
+is MET **for B2's property** — the answer is about the byline that was asked
+about — and the two residuals are B5's business, dispositioned in Chunk E.
+
 ---
 
 ### Chunk E — B5: no normalization or parse step on an authorization path may widen authority or guess
