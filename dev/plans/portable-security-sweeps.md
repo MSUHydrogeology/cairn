@@ -2984,3 +2984,39 @@ falsification of CR1/CR2/CR3 beyond what the fixing agent (Claude,
 independent correction review named above has not occurred.
 
 This section is append-only once written.
+
+## Code review -- Antigravity (External) -- 2026-08-10
+
+**Tier**: required(**External**, security lens)
+
+**Findings**: SHIP
+
+### Verification & Falsification Ledger
+
+* **Boundary B/C Verification**:
+  - Interpreter: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13), `PYTHONDONTWRITEBYTECODE=1`.
+  - SHA / Range: `934e4e8` (`as_of 2026-08-10`).
+  - Command: `PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_portable_security_sweeps.py -q`
+  - Outcome: **163 passed in 21.14s** (0 failed, 0 skipped, 0 xfailed).
+
+* **Twin Parity**:
+  - `cmp templates/modules/team-gated/run_portable_security_sweeps.py scripts/run_portable_security_sweeps.py` → 0 diff (byte-identical).
+  - `cmp templates/modules/team-gated/portable-security-sweeps.md dev/modules/portable-security-sweeps.md` → 0 diff (byte-identical).
+
+* **[CR1] Detached HEAD Fail-Open Verification**:
+  - Confirmed shut: `probe_reachable_commit` (`templates/modules/team-gated/run_portable_security_sweeps.py:950-980`) issues `git rev-parse --verify -q HEAD^{commit}`.
+  - Return code `0` returns `True` (detached HEAD with deleted branch is scanned), return code `1` returns `False` (`NOT APPLICABLE` for unborn repos), and execution error raises `Degraded` (exit 20).
+  - Pre-fix `elif not discovery["has_refs"]:` logic was eliminated; absence of refs no longer gates history discovery.
+
+* **[CR2] Executable Revalidation Coverage**:
+  - Verified `revalidate(...)` is called immediately prior to all 5 `subprocess.run` invocations in `templates/modules/team-gated/run_portable_security_sweeps.py`:
+    1. `probe_version`: line 1732 (`revalidate(adapter, target)`)
+    2. `screen_local_config`: line 763 (`revalidate(git, target)`)
+    3. `_discover_git_common_dir`: line 707 (`revalidate(git, target)`)
+    4. `probe_reachable_commit`: line 966 (`revalidate(git, target)`)
+    5. `gitleaks_adapter`: line 1039 (`revalidate(executable, target)`)
+  - No `subprocess.run` site in the runner remains outside `revalidate()`.
+
+* **[CR3] Worktree Common Config Discovery**:
+  - Verified `_discover_git_common_dir` queries `git -C <target> rev-parse --path-format=absolute --git-common-dir` (Git >= 2.31 floor), correctly resolving common configuration directory for linked worktrees without path resolution failure.
+
