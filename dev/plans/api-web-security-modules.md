@@ -3445,3 +3445,46 @@ touches nothing else in the suite, so R1 clears all three and needs no further
 allowance. Arithmetic check on the count: 2674 passed + 3 failed = 2677 =
 the 2593-node baseline plus this chunk's 84 new nodes, so no node was dropped
 and no marker was added — the HOLD class *Gate accounting* names.
+
+## Maintainer authorization of the R1 commit-boundary deviation -- 2026-08-10
+
+**Authorization, quoted verbatim and visually isolated:**
+
+> I'm completely fine with a big commit. We don't need to always have
+> these atomic commits. Let's go R1
+
+**What it authorizes.** The **R1** resolution recorded in
+`## Implementation blocker` above: the implementation commit boundary is set by
+what the standing gates actually permit, **not** by the *Sequence*'s chunk table.
+Chunks A, B, C and E land together with Chunk F's row **F1** (and F6's pin
+moves), because no smaller set leaves the suite green. **R2 -- declaring the four
+engine sources in `_SCAN_EXCLUSIONS` -- is explicitly not taken:** putting a
+suppression into a security gate to preserve a commit boundary is the wrong
+trade, and the Maintainer did not choose it.
+
+**Why the plan was wrong, which is the part worth keeping.** This is a
+mechanism error, not a preference the Maintainer overrode. **AM11**'s premise is
+true and its conclusion does not follow:
+
+* *Premise, true:* Chunks A--E touch no `bootstrap/_scaffold/` file, so they
+  cannot move the AST attestation baseline.
+* *Conclusion, false:* "the baseline stays green through Chunks A--E".
+* *The mechanism it missed:* `bootstrap/tests/test_security_lint.py`'s on-disk
+  oracle gates **`templates/**/*.py` reachability from `install_manifest()`** --
+  physical presence under `templates/`, not membership of `_scaffold/`. A
+  template `.py` that exists without its `_MODULE_MAPPINGS` row is therefore a
+  red node no matter which chunk created it. The same coupling appears a second
+  time in `scripts/quality_gate.py --sub redundancy`, whose R6 rule reds an
+  engine function that has no caller until the facades exist.
+
+The durable rule this yields, stated so a later scope does not rediscover it:
+**a new template `.py` and its `_MODULE_MAPPINGS` row are one commit, always.**
+Any plan that sequences "add the source" before "register it" has an
+unexecutable Sequence, and the defect is invisible until the source is written.
+
+**What this authorization does not do.** It is not approval to push; pushing
+needs its own approval, every time. It does not authorize an AST or
+gate-manifest re-anchor, nor relax the fence against *requesting* one before the
+A-12 and D-2 phase-(a) ledgers exist. It does not supply a credential, a signing
+ref, or the G-5 first-use trust hash set. It does not discharge any review tier,
+and it does not widen the plan's *content* -- only its commit granularity.
