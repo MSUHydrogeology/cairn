@@ -424,3 +424,118 @@ trust boundary, or create irreversible loss. Then attack whether READY can be
 invalidated reliably when a plan adds semantic content that the parser cannot
 recognize. Finally, assess whether the six-plan pilot can detect a safety
 regression with a sample that small.
+
+## Advisory read -- Claude (Implementation) -- 2026-08-10
+
+**This is not the declared review and does not discharge any tier.** It is filed
+under a heading that deliberately does **not** match the review-pass grammar, so
+no gate can read it as satisfying the `required(**External**)` floor. The
+Maintainer has a second, independent review in hand.
+
+**Conflict of interest, stated first because it should discount everything
+below.** I am structurally a different agent type from the author, so I would
+*qualify* as External. I should not count as it: I authored most of the artifacts
+whose scale this proposal measures (including the 3,422-line
+`content-scan-detectors` plan in its evidence), and I have been the party
+enforcing the discipline it relaxes. Both directions of bias are live.
+
+**Recommendation: accept, with F1 fixed before implementation and F2/F3 folded
+in.** The proposal identifies the right cost driver and keeps the boundaries that
+have been paying for themselves.
+
+### What reproduces
+
+Every headline measurement was re-derived independently:
+
+| claim | measured | verdict |
+|---|---|---|
+| six plans total **10,636 lines** `as_of` 2026-08-10 | 10,636 | **exact** |
+| separator pair **32,857 words** | 32,857 | **exact** |
+| `content-scan-detectors` pair **58,160 words** | 58,156 | **reproduces** (4 words; that plan is under concurrent edit) |
+
+A proposal about evidence discipline whose own evidence reproduces. Noted because
+the opposite has been common in this repo: figures went stale within single
+sessions all last week.
+
+### [F1 -- blocking] The pilot's eligible population may be empty, so the evaluation gate never fires
+
+The pilot is defined as "the first six eligible **standard** plans opened after
+implementation," and promotion/retirement is decided "after six eligible plans."
+But the high-assurance triggers include any security trust boundary, executable
+path, untrusted-input parser, protected surface named in `AGENTS.md`, **or a
+governing doctrine or lifecycle-enforcement change**.
+
+Measured against the 11 plans currently in `dev/plans/` — by keyword proxy, which
+is suggestive rather than a classification — **every one** carries heavy trigger
+signal. The two lowest, `transition-lint` and `review-gate-enforcement`, are both
+themselves lifecycle-enforcement changes, which is an explicit trigger.
+
+So the plausible eligible population today is **zero**. The failure mode is not
+"weak evidence" but *no* evidence: the mechanism lands in doctrine, the evaluation
+condition never becomes true, and inheritance sits unmeasured indefinitely. That
+is worse than either adopting or rejecting it, because it looks decided.
+
+**Remedy** — make the condition falsifiable. Either time-box it ("after six
+eligible plans **or 60 days, whichever comes first**", where an empty sample is
+reported as a finding about trigger breadth rather than as silence), or run the
+pilot against a deliberately narrowed trigger set and state which triggers were
+relaxed for the pilot only. As written, "six eligible standard plans" cannot be
+shown to have failed.
+
+### [F2 -- important] The current-contract revision needs a withdrawal ledger
+
+The single complete current-contract revision is the proposal's biggest win. But
+nothing requires it to state **what it drops**. A constraint silently absent from
+the newest revision is invisible unless a reviewer diffs it against every prior
+state — which is exactly the reconstruction cost this proposal exists to remove.
+Append-only preserves the words and loses the signal.
+
+**Remedy** — require the revision to carry an explicit **withdrawn / superseded**
+list: each earlier commitment it drops, and why. Precedent from this repository,
+2026-08-05: `content-scan-url-classification`'s Revision 1 withdrew the
+proposal's point 1 outright, and the *explicit* withdrawal is the only reason its
+reviewer could evaluate the current design rather than an abandoned one. Without
+that line the reviewer would have reviewed a mechanism already dead.
+
+### [F3 -- important] Inheritance invalidation catches declared expansions; the undeclared case is the real risk
+
+The proposal is honest here — *"No parser can prove that a plan's prose is
+semantically identical to a proposal"* — and names independent code review as the
+backstop. The gap is that the backstop is **unbound**: nothing requires the code
+reviewer to affirm the no-expansion property, so "code review is the backstop" is
+true but unexercised.
+
+**Remedy** — make it an attested checklist item: the code reviewer states, with a
+named basis, that the plan introduced no new scope item, invariant, public path,
+failure disposition, trust boundary, or ceremony. That converts an assumed check
+into a recorded one.
+
+This is a failure shape with a fresh precedent worth citing, because it was mine:
+in `review-gate-enforcement` I bound the legacy-manifest *digest* to the raw
+heading line and left the *selection* running through a permissive parser, then
+assumed the strict half covered the loose one. The 2026-08-10 code review
+reproduced three headings that cleared both gate surfaces while matching no exact
+grammar. A strict component does not make a permissive neighbour safe.
+
+### Two smaller notes
+
+* **Dependency chain length.** The tool work correctly sequences behind the exact
+  review-record grammar. That plan carries an open REVISE under active
+  sharpening, so this proposal's benefit sits behind: grammar sharpening → its
+  code review → this implementation. Worth stating in the plan so the delay is
+  expected rather than discovered.
+* **Reconcile with the gate's code-review blindness.** Found 2026-08-10: the
+  shipped review-record gate filters to `## Plan review` and never evaluates
+  `## Code review`, so a code review declaring `**Findings**: raised` with no
+  disposition passes unflagged. This proposal adds a review-basis block to code
+  reviews; if the gate is widened to that section kind, those fields become
+  gate-checkable there. The two changes touch the same predicate and should not
+  be designed independently.
+
+### What I could not assess
+
+Whether the classification boundary holds against a *standard-path* change whose
+sequencing could alter scientific results — the reviewer brief's first question. I
+have no scientific-domain case in this tree to test it against; every candidate
+here is security or lifecycle. That question needs the declared reviewer, and it
+is the one I would weight highest after F1.
