@@ -3,7 +3,7 @@
 # Plan: the review-before-implement gate checks the review, not its presence
 
 **Source proposal**: `dev/proposals/archive/2026-08-04-claude-review-gate-enforcement.md`
-**Status**: open
+**Status**: archived
 **Plan review**: required(**External**) — carried from the proposal header and
 re-affirmed in the Decision: *"the replacement mechanism … was authored after the
 External round and has not been read by a different agent type. The plan is
@@ -590,6 +590,32 @@ vocabulary is wrong every later chunk inherits it.
 | The gate is a conformance backstop, not proof a review happened | `doctrine/plans.md`, alongside the format it validates |
 | One review-heading grammar across doctrine, templates and scaffold | A.1, and the templates themselves |
 | A declared tier attestation is declared, not authenticated | `doctrine/plans.md` > the review-pass format |
+
+**Supplementary migration -- appended 2026-08-10 at archive.** The table above is
+left exactly as written (Lasting-truth entries are append-only once written,
+`doctrine/plans.md` > Mutability rule). Three truths and two residuals accrued
+after it and are homed here:
+
+| Truth / residual | Home | State |
+|---|---|---|
+| The legacy exemption is a fixed enumeration, not a dated grace period, and there is no epoch constant to publish | `bootstrap/UPGRADE.md:240` (Chunk D) | **landed** |
+| The manifest generator must not use the gate's own predicates -- the population a gate exempts cannot be defined by the gate | `scripts/gen_legacy_passes.py` module docstring | **landed** |
+| The gate checks recorded conformance, never authenticity | `doctrine/plans.md` > The record schema | **landed** |
+| **Residual:** `_has_disposition`'s ceiling derives its later-pass boundary from `art.sections`, not the union of raw S1 lines `_pass_headings` now recognises, so a synthesized-only later pass does not act as a ceiling | `dev/proposals/2026-08-10-claude-code-review-blindness.md` > *Scope addendum* (`4d3f85a`), which owns it because its own change rewrites that same computation | **owned, not fixed.** Reachable -- demonstrated in Python by the 2026-08-10 External reviewer -- and safe today: 0 synthesized-only passes exist across all 36 files in `dev/plans/` + `dev/plans/archive/` |
+| **Residual:** the gate filters to `## Plan review` and never evaluates `## Code review`, so a code review declaring `**Findings**: raised` with no disposition passes unflagged | `dev/proposals/2026-08-10-claude-code-review-blindness.md` (`a09542a`) | **owned, not fixed.** Blast radius measured: full schema parity would newly violate 21 of 35 plans, of which 20 only for `Tier`/`Findings` lines never asked of code reviews; the narrow S7-only extension newly violates exactly 1. Argued there as NEW scope, not this plan's contract |
+
+**Loop fidelity, Decision to implementation.** The accepted proposal's condition was
+absorbed and executed: one grammar (A), an expressive record (B), enforcement on
+what the record carries (C), adopter disclosure (D). Two corrections were forced by
+independent review rather than found by the author -- `[E5]`/S11's demand that the
+settled schema be operative rather than Response prose, and the 2026-08-05 code
+review's CR1/CR2. Both landed. The 2026-08-10 External correction review returned
+**SHIP, `**Findings**: none`**.
+
+**What this plan does not claim.** It never established that a named reviewer is
+authentic or that an independent read occurred -- only that a record conforms. That
+limit was the External reviewer's central point at every round and is the reason
+the doctrine states it beside the format.
 
 ## Plan review -- Codex (External, different-agent-type) -- 2026-08-04
 
