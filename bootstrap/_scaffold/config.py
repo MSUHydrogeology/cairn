@@ -1061,6 +1061,21 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         InstallSpec("team-gated/architecture_review_template.md",
                     "dev/architecture_review.md"),
     ],
+    # security-verification-activation Chunk A: the default-on local
+    # security-verification dispatcher.  Registered here (opt-in, via this
+    # mapping only) BEFORE it becomes universal -- Chunk B appends the module
+    # name to _DEFAULT_ON_MODULES separately, so every property is pinned
+    # while the module is still selectable-not-automatic.  The shipped
+    # registry inside the dispatcher itself is EMPTY at v1 (no capability is
+    # admitted yet); this entry only wires the doctrine + the verbatim,
+    # hash-pinned executable into the install/lockfile/manifest/Bandit
+    # authorities -- it grants no runtime capability by itself.
+    "security-verification": [
+        InstallSpec("default-on/security-verification.md",
+                    "dev/modules/security-verification.md"),
+        InstallSpec("default-on/run_security_verification.py",
+                    "scripts/run_security_verification.py", verbatim=True),
+    ],
 }
 
 # Module → the inline command-token whose value should default to the

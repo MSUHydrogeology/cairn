@@ -253,6 +253,18 @@ installed, replace with `N/A: claim-check not installed`. An unfilled
 slot is a review finding.)
 <!-- cairn:end claim-check -->
 
+## Security verification
+
+<!-- cairn:slot security-verification -->
+(Filled from the `security-verification` default-on module when installed —
+the standing dispatcher command and the high-risk Security-Review
+designation of the dispatcher, its registry, its child result schema, its
+binding-mode schema, and every registry entry (see
+`dev/modules/security-verification.md` > "Merged into"). If
+security-verification is not installed, replace with `N/A:
+security-verification not installed`. An unfilled slot is a review finding.)
+<!-- cairn:end security-verification -->
+
 ## Documentation discipline
 
 <!-- cairn:slot documentation-discipline -->

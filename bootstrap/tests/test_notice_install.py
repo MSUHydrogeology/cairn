@@ -72,12 +72,14 @@ def _has_header(path: Path) -> bool:
 
 def test_manifest_has_the_expected_py_source_count():
     sources = _manifest_py_sources()
-    assert len(sources) == 45, (
-        f"expected 45 templates/**/*.py manifest sources, found "
+    assert len(sources) == 46, (
+        f"expected 46 templates/**/*.py manifest sources, found "
         f"{len(sources)} -- if this moved intentionally, update this test. "
         f"Moved 44 -> 45 by portable-security-sweeps Chunk A, which registers "
-        f"templates/modules/team-gated/run_portable_security_sweeps.py; its "
-        f"sibling pin in bootstrap/tests/test_security_lint.py "
+        f"templates/modules/team-gated/run_portable_security_sweeps.py; "
+        f"moved 45 -> 46 by security-verification-activation Chunk A, which "
+        f"registers templates/modules/default-on/run_security_verification.py; "
+        f"its sibling pin in bootstrap/tests/test_security_lint.py "
         f"(test_templates_py_count_is_pinned) moved in the SAME commit"
     )
 
@@ -170,12 +172,16 @@ def test_notice_is_a_core_mapping():
 
 def test_notice_appears_in_manifest_data_row_count():
     rows = install_manifest(modules=None)
-    assert len(rows) == 98, (
-        f"expected 98 manifest rows (94 + NOTICE.md + portable-security-sweeps' "
-        f"three), found {len(rows)} -- if this moved intentionally, update this "
-        f"test. Moved 95 -> 98 by portable-security-sweeps Chunk A: the module "
-        f"registers its doctrine, its runner and its policy as one group, and "
-        f"the install contract grew by exactly three additive rows"
+    assert len(rows) == 100, (
+        f"expected 100 manifest rows (94 + NOTICE.md + portable-security-"
+        f"sweeps' three + security-verification's two), found {len(rows)} "
+        f"-- if this moved intentionally, update this test. Moved 95 -> 98 "
+        f"by portable-security-sweeps Chunk A: the module registers its "
+        f"doctrine, its runner and its policy as one group, and the install "
+        f"contract grew by exactly three additive rows. Moved 98 -> 100 by "
+        f"security-verification-activation Chunk A: the module registers "
+        f"its doctrine + its verbatim dispatcher as one group, two "
+        f"additive rows."
     )
 
 

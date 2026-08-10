@@ -369,13 +369,15 @@ def test_templates_py_count_is_pinned() -> None:
     as ``assert scanned == 9`` for the always-on group in
     ``bootstrap/tests/test_upgrade_side_door_parity.py``."""
     on_disk = _templates_py_on_disk(CAIRN_ROOT)
-    assert len(on_disk) == 45, (
-        f"expected 45 .py under templates/, found {len(on_disk)} -- if this "
+    assert len(on_disk) == 46, (
+        f"expected 46 .py under templates/, found {len(on_disk)} -- if this "
         "moved intentionally, update BOTH this pin and its sibling in "
         "bootstrap/tests/test_notice_install.py "
         "(test_manifest_has_the_expected_py_source_count) in the SAME commit; "
         "the two must agree. Moved 44 -> 45 by portable-security-sweeps "
-        "Chunk A (run_portable_security_sweeps.py)."
+        "Chunk A (run_portable_security_sweeps.py); moved 45 -> 46 by "
+        "security-verification-activation Chunk A "
+        "(run_security_verification.py)."
     )
 
 
