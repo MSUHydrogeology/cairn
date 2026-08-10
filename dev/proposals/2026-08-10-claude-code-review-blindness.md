@@ -1004,3 +1004,128 @@ with zero live instances.
 
 **Plan review**: required(**External**) -- unchanged, and now discharged inside
 the parent's one plan.
+
+## Review -- Codex -- 2026-08-10 (round 2)
+
+**Model**: GPT-5 (Codex)
+**Tier**: External, different agent type from the author
+**Reviewed commit**: `f676d7a1f926d563b4d6f2bfdc6c76ef8476537a`
+**Target**: Revised proposal R0--R7 only
+**Prior findings**: E1--E5
+**Assurance path**: high-assurance
+**Verdict: REVISE, narrowly.** E1--E5 are substantively answered. One new
+archive rule contradicts the accepted parent, and two binding details remain
+too loose for the plan to implement without making policy.
+
+### Steelman and executed checks
+
+The revision is a substantial improvement. R0 settles ownership in the
+accepted `review-efficient-lifecycle` plan. R1 states the real governing
+failure. R2 supplies almost all of the previously missing Code-review schema.
+R4 adopts both halves of the canonical-boundary repair rather than correcting
+only the disposition ceiling. R6 also gives a sound reason not to pretend that
+matching finding ids proves semantic resolution.
+
+I reran the two behavioral probes against the current
+`tools/lifecycle_planner.py` under canonical Python 3.13.13. An independently
+authored archived fixture with `**Verdict: REVISE**`, generic `Dispositions:`,
+and loop-fidelity text still returns `[]` from `_conformance_violations`. A
+normal Plan-review pass followed by the conforming raw heading
+`## Plan review -- Jane (Lab) Smith -- 2026-08-10` selects two passes but lets
+the first body swallow the second pass's Tier and Findings, producing duplicate
+field violations. The diagnosis and both R4 mutations therefore reproduce.
+
+I also re-derived R5 at the reviewed commit rather than current HEAD: 35
+non-template plan files, 23 conforming H2 Code-review passes across 21 files,
+19 archived plans carrying a pass, five archived latest passes without a
+verdict-shaped line, and two archived latest blocking verdicts. Both blocking
+histories carry later implementation/disposition prose. The snapshot supports
+the proposed prospective migration; it does not determine the prospective
+archive rule.
+
+### [R2-E1] HIGH -- an author Response cannot replace the clearing correction review
+
+R2 says the latest applicable round may be a blocking verdict "answered by a
+disposition section." That makes an author's own Response sufficient to turn
+`REVISE` into archive eligibility without another independent reviewer
+examining the corrected bytes.
+
+The accepted parent says the opposite in two places. Its correction path
+requires a replacement Boundary B record and says **the correction reviewer**
+validates that record and runs the prior falsifiers. Its closeout contract says
+archive follows clean closeout **plus SHIP code review**. This revision cannot
+weaken that accepted independent boundary while presenting itself as an
+amendment that supplies the parent's missing predicate.
+
+**Required satisfier.** For prospective records, require the latest applicable
+Code-review pass to carry a clearing verdict. A Response to a blocking pass
+records the implementer's disposition and binds the correction, but it does
+not clear archive. After corrected executable/test bytes settle and the
+replacement Boundary B record lands, an independent correction reviewer
+appends a new clearing pass. The two historical answered-blocking cases may
+remain admitted only through the explicit legacy enumeration; they are not the
+forward rule.
+
+### [R2-E2] IMPORTANT -- the legacy key is replayable as specified
+
+R3 says the enumeration is pinned by `(file, reviewer, date)` and calls that
+"the same device" as the Plan-review gate. It is not the same device. The
+existing `_LEGACY_PASSES` predicate keys a stem to a raw-heading digest **and
+an admitted occurrence count**. The count is what prevents a new pass from
+copying an admitted heading and inheriting its exemption.
+
+A set of `(file, reviewer, date)` tuples lets a post-rollout pass in the same
+file reuse the admitted reviewer and date. It then looks legacy despite being
+new. Literal duplicate headings are possible, especially when multiple rounds
+land on one date.
+
+**Required satisfier.** Pin the legacy baseline to a named commit and enumerate
+each admitted raw heading by file, raw-heading digest, and occurrence count (or
+an equivalently non-replayable ordinal). Generate the candidate list from that
+commit, review the committed enumeration independently of the generator, and
+make every additional occurrence conform to the forward schema.
+
+For the two historical blocking passes, the enumeration must also identify the
+specific admitted disposition that makes each historical record complete. A
+generic later `### Sharpening`, `## Review disposition`, or
+`## Implementation disposition` must not answer an arbitrary legacy pass by
+shape alone.
+
+### [R2-E3] IMPORTANT -- latest-round and Response binding need one exact grammar
+
+R2 first defines latest as the last pass in document order, then says the
+highest `(round N)` wins for passes sharing a date, and finally says ties
+refuse. It does not define whether a higher round written earlier overrides a
+later lower round, what constitutes a tie, or how an unnumbered pass compares
+with a numbered pass on the same date.
+
+Likewise, `## Response to code review -- <author> -- <date>` does not itself
+name the reviewed pass's reviewer and date. R2 requires that binding somewhere
+in the section but gives no field name, delimiter, round component, duplicate
+behavior, or exact-match rule. The plan would still have to invent the parser
+contract E1 asked this proposal to settle.
+
+**Required satisfier.** Choose one deterministic ordering rule. The simplest is
+document order, with `(round N)` required only to be unique and monotonically
+increasing among same-date passes; duplicate or decreasing rounds refuse.
+Then define one full-line anchored Response binding, including reviewer, review
+date, and round or explicit `none`, with missing, duplicate, and unmatched
+bindings refusing. Other exact grammars are acceptable, but the proposal must
+choose one.
+
+### Coverage and recommendation
+
+**Covered** -- prior E1--E5 against R0--R7; current blind archive behavior;
+both synthesized-boundary mutations; accepted-parent correction and closeout
+text; legacy counts at the reviewed commit; and the current Plan-review legacy
+key implementation.
+
+**Not covered / low confidence** -- no revised parser exists, so I did not test
+the future latest-round selector, Response parser, legacy generator, or shared
+`scan`/closeout predicate. I did not re-review the original diagnosis, rejected
+remedy A, or full historical narrative beyond the bounded claims above.
+
+**Second-round recommendation: no additional broad independent round.** The
+structural External requirement is discharged. After the author makes these
+three exact contract corrections, a short closure read against R2--R3 is
+sufficient; do not reopen the diagnosis or corpus analysis.
