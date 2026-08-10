@@ -1260,6 +1260,192 @@ its negative control, both with recorded output; the `verify_integrity` row
 explicitly blocked on Chunk F; no repository file modified; `git status --short`
 unchanged at chunk end.
 
+#### Chunk C — RUN, 2026-08-10, Claude
+
+**Evidence commit: `5010d3618a61c7b5a5197cae8c52b67163d0328a`.** Per Amendment
+A8, every decider in this chunk and in Chunks D–H ran against a clean checkout
+of that commit (`git archive 5010d36 | tar -x -C <scratch>`), never against the
+working tree. Canonical interpreter
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (CPython 3.13.13),
+`PYTHONDONTWRITEBYTECODE=1`.
+
+**HEAD moved during execution** (to `6912d52`; `fork-advisory-semantics` and
+`portable-security-sweeps` archived underneath this work). Checked rather than
+assumed: `git diff --stat 5010d36..6912d52` over the **18 files this burndown's
+rows cite as evidence** — `bootstrap/verify_integrity.py`,
+`bootstrap/container/verify-ref.sh`, `bootstrap/PROVENANCE.md`,
+`tools/lifecycle_planner.py`, `templates/skills/_lib/lifecycle.py`,
+`templates/skills/_lib/lifecycle_planner.py`, `bootstrap/_scaffold/config.py`,
+`bootstrap/_scaffold/install.py`, `bootstrap/tests/_gate_preflight.py`,
+`SECURITY.md`, `doctrine/runtime-contract.md`, and the seven enforcer test
+modules — is **empty**. None of this chunk's evidence moved.
+
+**Every line citation below was re-pinned by opening the file at this commit**
+(A7/A34). Two of the plan's own pre-drawn C-table citations had drifted and are
+corrected in the register: `bootstrap/verify_integrity.py:47` → **`:48`**, and
+`bootstrap/verify_integrity.py:118` → **`:123`–`:124`** (the call now carries
+`upstream=`, which is A15's landed change, so the old citation names both the
+wrong line *and* a superseded mechanism).
+
+##### The B1 register
+
+| # | Step | Trust material | Arrival channel, re-pinned at `5010d36` | Verdict |
+| --- | --- | --- | --- | --- |
+| C-1 | The gate pre-flight signature check | allowed-signers roster | the roster blob is materialized **from the trusted anchor object**, outside the candidate — `anchored_roster`, `bootstrap/tests/_gate_preflight.py:597` (citation **unmoved**) | **MET** |
+| C-2 | The documented tag-verification bootstrap | signer roster | out-of-band, supplied by invocation — the property is stated at `bootstrap/PROVENANCE.md:250` and the mechanism is the `-c gpg.ssh.allowedSignersFile="$CAIRN_ROSTER"` on the `verify-tag` call inside the block | **MET** |
+| C-3 | `bootstrap/container/verify-ref.sh` | signer roster | pinned by invocation at `bootstrap/container/verify-ref.sh:354`, in a workspace the script created | **MET** |
+| C-4 | The fork advisory | comparison bytes | **caller-supplied** — `bootstrap/verify_integrity.py:123`–`:124` passes `upstream=trusted_upstream(CAIRN_ROOT)`, and `CAIRN_ROOT` is resolved from the script's own location at `:34` | **MET-by-residual** (R10, quoted below) |
+| C-5 | `bootstrap/verify_integrity.py` | expected SHA-256 values | **the target's own** `dev/.cairn/cairn-lock.yml` — `lock = read_lockfile(target)`, `bootstrap/verify_integrity.py:48` | **NOT MET with a named block** — see C-5 below; the documentation half is not in the tree |
+
+##### C-2 and C-3 — the attacker-roster construction, RUN
+
+Scratch repository outside the tree; **two throwaway `ed25519` keys generated in
+the scratch directory** (`ssh-keygen -q -t ed25519 -N '' -f <scratch>/good`,
+`…/att`). No run touches `dev/.cairn/allowed_signers`, the Maintainer's signing
+key, or `refs/cairn/gate-anchor` (Chunk M item 7). The candidate repository is
+built **hostile in two independent ways**: an attacker-authored roster is
+committed *inside* the tagged tree at `dev/.cairn/allowed_signers`, **and** the
+candidate's own git config sets `gpg.ssh.allowedSignersFile` to point at it.
+
+The documented bootstrap is not paraphrased — it is **extracted from the shipped
+document and executed**: `awk '/cairn:bootstrap-block start/{f=1;next}
+/cairn:bootstrap-block end/{f=0} f && !/^```/ {print}' bootstrap/PROVENANCE.md`
+→ 72 lines, run as `sh`.
+
+**Judging the exit code, never the text** (the plan's own instruction, and it
+caught a defect in this harness: the first run reported `rc=0` for every leg
+because the exit code was read through a `| tail -1` pipeline. That harness was
+discarded and rebuilt to capture the decider's own status. Recorded because a
+negative control that cannot report a refusal is the vacuous-check defect this
+plan exists to find, and it appeared **inside this chunk**):
+
+```
+C2a boot  attacker-signed v9.9.9, GENUINE roster by invocation
+   rc=1  | REFUSED: the signature on 'v9.9.9' did not verify against <scratch>/roster.good
+C2b boot  NEGATIVE CONTROL -- genuine v0.3.0, genuine roster
+   rc=0  | PROVENANCED: tag 'v0.3.0' (object 53d2ded8...) signed and name-bound
+C2c boot  attacker-signed v9.9.9 with the ATTACKER roster supplied by invocation
+   rc=0  | PROVENANCED: tag 'v9.9.9' (object 23b1e02d...) signed and name-bound
+C3a vref  attacker-signed v9.9.9, genuine roster
+   rc=1  | verify-ref: REFUSED - the signature on tag 'v9.9.9' (object 23b1e02d...)
+            did not verify against the trusted roster (<scratch>/roster.good)
+C3b vref  NEGATIVE CONTROL -- genuine v0.3.0, genuine roster
+   rc=0  | verify-ref: PROVENANCED - annotated tag 'v0.3.0' signed by
+            good@example.invalid -> 53d2ded8...
+```
+
+**What the three legs establish together, and why two would not.** C2a/C3a show
+the refusal; C2b/C3b show the decider is not always-refuse. **C2c is the leg the
+plan did not ask for and the row needs**: the *same* attacker tag, with the
+*attacker's* roster supplied by invocation, is **PROVENANCED**. So the refusal in
+C2a is caused by *which roster arrived by the trusted channel* — not by anything
+intrinsic to the tag, and not by the in-tree roster or the candidate's own
+`gpg.ssh.allowedSignersFile` having any effect at all. Without C2c, "refused with
+the genuine roster" is consistent with "refuses every attacker-signed tag for
+some other reason," and the row would rest on a coincidence.
+
+##### C-4 — the fork advisory, MET-by-residual with R10 quoted
+
+A15's flip condition is satisfied and re-verified against the **landed** code
+rather than a plan status: `bootstrap/verify_integrity.py:123`–`:124` reads
+
+```python
+    for finding in forked_facade_findings(
+            target, lock, upstream=trusted_upstream(CAIRN_ROOT)):
+```
+
+`fork-advisory-semantics` archived at `6912d52` with an External code review at
+`0b46c5c`. The row is **not** clean MET, because that review's residual **R10**
+stands, quoted verbatim from `dev/plans/archive/fork-advisory-semantics.md:331`–
+`:334`:
+
+> **Candidate selection** (residual R10). F5 pins the *verdict* to trusted-vs-disk
+> bytes; `hash`, `base_hash`, `dst` and the engine-directory probe still decide
+> *which* records are examined. A lockfile asserting `hash == base_hash` evades
+> the advisory entirely. Unfixable while `base_hash` is a lockfile field.
+
+**Why this row is MET-by-residual and C-5 is not, which is the distinction the
+whole branch turns on.** Branch (b) requires *the shipped documentation to state
+plainly what the step does not establish*. For C-4 it does, in adopter-facing
+prose, at `bootstrap/UPGRADE.md:339` and `:354`–`:362`:
+
+> **What your lockfile still decides is *which* records get examined.** … A
+> record that omits either hash, or records the two as equal, or drops its
+> `verbatim` mark, is never examined at all, so a fork hidden that way produces
+> no note. That is a **known limitation of the advisory**, stated rather than
+> discovered.
+
+The residual also has a code-side home at `bootstrap/_scaffold/lockfile.py:479`.
+Documented limit + named owner + revival condition ⇒ **MET-by-residual**.
+
+##### C-5 — the coordinated lockfile tamper, RUN, five record types
+
+`solo-greenfield` scaffolded into a **fresh scratch target per leg** outside the
+tree (65 lockfile records; 61 tamper-checked, 4 living-state). Each leg: verify
+clean, tamper, verify again. The full harness is
+`<scratch>/tamper.py`; its output:
+
+```
+chosen records: verbatim-py=scripts/_onboarding/__init__.py
+                token-substituted=.agents/skills/session-end/SKILL.md
+                living_state=dev/.cairn/cairn_foldback.md
+
+LEG 1  coordinated tamper (verbatim .py, recorded hash rewritten to match)
+   pre  rc=0  OK -- 61 recorded file(s) match dev/.cairn/cairn-lock.yml
+   post rc=0  OK -- 61 recorded file(s) match dev/.cairn/cairn-lock.yml
+   marker byte still on disk: True                      <- THE FINDING
+LEG 2  NEGATIVE CONTROL -- same tamper, lockfile untouched
+   post rc=1  The on-disk tree no longer matches its recorded install.
+LEG 3  coordinated tamper, TOKEN-SUBSTITUTED record (verbatim: false)
+   post rc=0  OK -- 61 recorded file(s) match ...        <- same finding
+LEG 4  NEGATIVE CONTROL -- token-substituted, lockfile untouched
+   post rc=1  The on-disk tree no longer matches its recorded install.
+LEG 5  living_state record, lockfile UNTOUCHED
+   post rc=0  OK -- 61 recorded file(s) match ...        <- excluded BY DESIGN
+```
+
+**This closes the proposal's own stated omission.** The proposal recorded the
+finding on **one** record type and said *"the mechanism is record-type-independent
+by inspection … but I have not run it, and the register should."* The register
+ran it: legs 1 and 3 are the two *checked* record classes and both are
+coordinated-tamperable; leg 5 confirms the `living_state` class is excluded from
+the tamper check by design (`bootstrap/verify_integrity.py` skips it and the
+success line says so — *"4 adopter-authored living-state file(s) tracked for
+upgrade but excluded from the tamper check"*), which is a different fact and is
+recorded as such rather than as an exception. Legs 2 and 4 are the controls that
+make legs 1 and 3 mean something: without them, "exit 0" is consistent with a
+verifier that is simply always-OK.
+
+**The row's verdict, and why it is not MET-by-residual.** The mechanism's limit
+is real and its owner is recorded (`dev/PLANNING.md` > *Deferred follow-ups
+(durable home)* > **Security apparatus** > *Install-integrity trust anchor*). But
+branch (b) needs the documentation half, and **the tree does not have it**:
+`SECURITY.md:51` still says the check flags *"any post-install modification"* and
+`doctrine/runtime-contract.md:132` still says it *"Detects tampered apparatus
+before it can self-audit"*. Both are falsified by leg 1. Per Amendment A27 an
+empty-owner row is **NOT MET with a named block**, never *in flight*. **C-5 is
+NOT MET, blocked on the `dev/PLANNING.md` row A27 returns** (Chunk F below
+re-measures that the row has not landed).
+
+**A sharpening this run contributes, not in the plan's framing.** The
+documentation is not uniformly wrong — it is *inconsistent*.
+`bootstrap/UPGRADE.md:366`–`:368` already states the honest version:
+
+> `verify_integrity`'s hash attestation compares your files against the hashes
+> **your own lockfile** records, which is a different claim again.
+
+So one shipped document states the limit correctly while two others overstate it.
+That makes the remedy narrower and cheaper than "correct the documentation": the
+correct sentence already exists in the tree and the two overstating ones can be
+brought to it. Recorded here because it changes the size of Chunk F's ask.
+
+##### Working-tree assertion (A10, per-path, not a bare `git status`)
+
+No repository file was modified by this chunk. Every perturbation and every
+scaffold ran under `<scratch>/`, and the only tracked file this session writes is
+this plan. Per-path evidence is in Chunk G's restore ledger, where the
+perturbations live; this chunk's runs are read-only against the repository.
+
 ---
 
 ### Chunk D — B2: the answer names the thing that was asked about
