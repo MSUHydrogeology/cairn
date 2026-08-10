@@ -266,6 +266,14 @@ board by design.
   inheritance, stable evidence reuse, and a measured six-plan pilot. Governing
   lifecycle and scientific-assumption changes remain high assurance.
 
+* **corpus-tier-cost** *(proposal opened 2026-08-10)* -- cut engine-suite
+  wall-clock at its head: six files are 16% of nodes and 56% of runtime
+  (`as_of 2026-08-10`), and the largest re-derives constants over SHA-pinned
+  history, visiting 867 distinct commits 3,829 times. Proposes a test-only
+  memo for provably-immutable subprocess reads (prototype: 4.66x), changing no
+  assertion. The complementary axis to `verification-evidence-boundaries`,
+  which bounded how *often* the suite runs.
+
 * **Security program — clustered current view** *(living strategy opened
   2026-08-05)* — the canonical taxonomy, threat posture, sequencing rules and
   cluster exit conditions are in
