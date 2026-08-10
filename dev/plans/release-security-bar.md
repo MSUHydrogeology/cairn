@@ -3514,6 +3514,26 @@ separately:
   lands the `## Code review` section. Precedent is in the tree
   (`refs/cairn/gate-anchor`, `bootstrap/tests/_gate_preflight.py:53`) and the
   form is demonstrated running above. Ref creation joins the Chunk M fence.
+  **Publication is part of the ceremony, not an afterthought (added 2026-08-10
+  on Maintainer instruction).** Creating the ref is not sufficient: measured
+  2026-08-10, `refs/cairn/*` is covered by **no default push refspec** — a
+  bare `git push`, `git push origin master`, `git push --all` (heads only) and
+  `--tags` all skip it, and no `remote.origin.push` is configured. So Chunk M
+  item 8 additionally requires
+
+  ```
+  git push origin refs/cairn/release-bar-audit:refs/cairn/release-bar-audit
+  ```
+
+  or the staleness command in this amendment works on the Maintainer's machine
+  and **nowhere else** — a fresh clone resolves no such ref and the check
+  silently has no anchor. This is not hypothetical: `refs/cairn/gate-anchor`
+  sat local-only until it was explicitly pushed, and
+  `bootstrap/REANCHOR_RUNBOOK.md` contains **zero** occurrences of `git push`,
+  which is why the gap is filed as `[TRU-7]` in `dev/PLANNING.md` and the
+  2026-08-05 security strategy. The precedent this amendment reuses carries the
+  defect along with the pattern; item 8 closes it here rather than inheriting
+  it. A collaborator additionally needs a matching **fetch** refspec.
 * **"Derive the list from the release-bar mapping/claim register" — ACCEPTED IN
   FULL, and widened, because derivation alone does not fix the hole.** A list
   derived from the register still only sees paths the register named. So the
