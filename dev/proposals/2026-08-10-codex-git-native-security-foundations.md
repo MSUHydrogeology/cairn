@@ -959,7 +959,7 @@ durable anchor. In each case retain the old mechanism or the local anchor until
 the failed premise is redesigned; do not narrow the assertion to make the gate
 green.
 
-## Decision -- Maintainer -- 2026-08-10
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-10
 
 > Accept Revision 1 of dev/proposals/2026-08-10-codex-git-native-security-foundations.md
 

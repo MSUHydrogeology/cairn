@@ -786,7 +786,7 @@ migration needs to rewrite attributed prose, if the new resolver and migration
 cannot land atomically, if duplicate active/archive identity is accepted, or
 if the plan treats the 19 out-of-scope files as though liveness governed them.
 
-## Decision -- Maintainer -- 2026-08-10
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-10
 
 > Accept Revision 1 of dev/proposals/2026-08-10-codex-claim-check-exemption-hygiene.md
 

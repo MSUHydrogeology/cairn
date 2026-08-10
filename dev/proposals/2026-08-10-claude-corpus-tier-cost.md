@@ -888,7 +888,7 @@ motivation** (`as_of 2026-08-10`), not criteria.
 **Plan review**: required(**Internal**) -- decided per [E4], not routed
 to the Maintainer.
 
-## Decision -- Maintainer -- 2026-08-10
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-10
 
 > I accept your recommendations to accept as revised both proposals. Please scribe the draft ## Decision blocks for each and update the status.
 

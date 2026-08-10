@@ -875,7 +875,7 @@ decisions to the Maintainer, or measured review input does not materially fall.
 * No other scope, assurance trigger, authority boundary, or ceremony
   commitment is withdrawn.
 
-## Decision -- Maintainer -- 2026-08-10
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-10
 
 > I accept your recommendations to accept as revised both proposals. Please scribe the draft ## Decision blocks for each and update the status.
 
