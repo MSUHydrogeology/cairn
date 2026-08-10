@@ -1584,3 +1584,131 @@ behaviour that contradicts the gate's settled schema.
 
 `clearsToArchive = NO`. The two repairs and their executable negative controls
 need to land before the next code-review round.
+
+### Sharpening -- Claude -- 2026-08-10
+
+Both findings accepted; both repaired, in `tools/lifecycle_planner.py` and its
+twin `templates/skills/_lib/lifecycle_planner.py`, with new nodes in
+`bootstrap/tests/test_lifecycle_contract.py`. Interpreter for every figure
+below: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13), with
+`PYTHONDONTWRITEBYTECODE=1` throughout.
+
+**[CR1] -- fixed.** `_pass_headings` no longer derives a pass from a Section
+the older, more permissive `_HEADER_RE` happened to accept. A new
+module-private `_S1_PASS_RE` -- authored independently of
+`scripts/gen_legacy_passes.py`'s own `_PASS_RE`, per the reviewer's
+constraint that the two must never become each other's oracle, even though
+both implement the same published S1 grammar -- is matched against the **raw
+heading line** directly. Most S1-conforming lines already have a Section
+(`_HEADER_RE` is a strict superset of S1's shape), and that Section is
+reused so its precomputed body stays identical to every other parsed
+section's. A raw line that matches S1 but that `_HEADER_RE` cannot parse at
+all -- the reviewer's inverse case, a reviewer field with literal
+parentheses outside the `(<role>)` position -- gets a Section synthesized by
+a new `_synthesize_pass_section`, bounded by the same next-known-kind-H2 rule
+`_parse_sections` uses for every other section, so it is not silently
+dropped. Four new nodes cover both directions: two parametrized on the
+reviewer's exact `##`-extra-spaces and doubled-`--`-separator fixtures, one
+isolating trailing-whitespace-after-the-date, and one asserting the
+parenthetical-reviewer-name heading now counts as a conforming pass.
+
+**[CR2] -- fixed.** `_has_disposition`'s second house-form check changed from
+`sec.kind.strip().lower().startswith("response")` to an exact
+`sec.kind.strip().lower() == "response to plan review"`. Two new nodes,
+parametrized on the reviewer's own `## Response -- Author -- date` and
+`## Response to proposal review -- Author -- date` fixtures, assert a raised
+finding stays unmet against each; a third pins the positive control -- the
+exact documented kind, spelled with different case, still discharges S7 --
+so the repair narrows the kind match without touching S3/S7's
+case-insensitive field reads.
+
+**Falsifiers, demonstrated per finding, not asserted.** Each fix was
+reverted to its pre-fix behavior in both twins, the suite re-run, and the
+revert restored **byte-identical** (`git hash-object` unchanged at
+`4a4b4702f49cf59271a21c7dc0051ff0e735d858` for both files before and after
+each cycle):
+
+| mutation | reddens |
+|---|---|
+| CR1: `_pass_headings` restored to the pre-fix Section-derived form | exactly the 4 CR1 nodes; 72 others green |
+| CR2: `_has_disposition`'s house-form-2 check restored to `.startswith("response")` | exactly the 2 CR2 negative-fixture nodes; 74 others green |
+
+**Reproduced through the public CLI, not only the predicate.** Built scratch
+plan fixtures reproducing the reviewer's own three CR1 heading shapes
+(`##   Plan review -- R -- 2026-08-05`; the Jane-(Lab)-Smith inverse case)
+and the CR2 unrelated-`Response` shape, and ran
+`tools/lifecycle_planner.py next --to executing` directly: the extra-space
+heading now reports `[MISSING]` quoting itself as a near miss; the
+parenthetical-reviewer heading now reports `[ok ]`; the unrelated
+`## Response to proposal review` after a `**Findings**: raised` pass now
+reports `[MISSING]` with "no disposition follows it" -- matching the
+predicate-level results exactly.
+
+**Corpus differential -- zero live-tree regression.** `scan --include-archive`
+output is **byte-identical** before (HEAD `a62a5d2`) and after this fix
+across the full `dev/` tree: no new violation, no newly-cleared violation.
+Re-measured via the independent generator oracle
+(`scripts/gen_legacy_passes.py --report`, which does not import the gate),
+`as_of 2026-08-10`: 78 artifacts scanned, 56 conforming S1 passes, 4 bare
+containers, 23 near-miss headings, 63 review-required artifacts (plans +
+proposals). Narrowed to plans specifically, walked directly against
+`review_record_violations`: **33 review-required plans -- 31 clean, 2
+violating** (11 in `dev/plans`, 20 clean + 2 violating in
+`dev/plans/archive`). The 2 violations are the same pre-existing
+`board-drain-guards` / `deferral-discipline` bare-`## Plan review`-container
+records disclosed in the *Implementation verification* section above as a
+Maintainer-owned deferral; this fix touches neither.
+
+**Suite -- re-derived, not carried from the review's own "74 passed" figure.**
+That figure was measured against `fd296fb`; this fix lands on a tree that has
+moved since, so the honest comparison is a same-commit before/after, not a
+diff against a stale number. Restoring the pre-change
+`bootstrap/tests/test_lifecycle_contract.py` from HEAD (`a62a5d2`) against the
+now-fixed planner and running it together with `test_notice_install.py`
+gives **80 passed, 1 failed** (81 collected); swapping back to this fix's test
+file gives **87 passed, 1 failed** (88 collected) -- a clean **+7**, exactly
+the 4 CR1 + 3 CR2 nodes added, with nothing else moving. `test_lifecycle_contract.py`
+alone: **76 passed**. Twins byte-identical
+(`md5 10566e300259d6d7951f86bf89a86b18` for both `tools/lifecycle_planner.py`
+and `templates/skills/_lib/lifecycle_planner.py`).
+
+**The one failure in both runs is pre-existing and outside this fix's
+surface.** `test_notice_install.py::test_every_self_hosted_twin_stays_byte_identical_to_its_source`
+fails on `scripts/run_portable_security_sweeps.py != templates/modules/team-gated/run_portable_security_sweeps.py`
+-- a sibling session's uncommitted edit to the `templates/` side (`git status`
+confirms it: `M templates/modules/team-gated/run_portable_security_sweeps.py`,
+untouched by this fix), the same class of concurrent-tree noise the
+*Implementation verification* section above disclosed for the same file. Left
+as found, per this repository's rule against reverting another session's
+work.
+
+**Full suite -- Boundary B.** `python -m pytest bootstrap/tests
+--quality-gate-shuffle-seed=0`, on this fix's working tree, 378.54s: **4
+failed, 2517 passed, 0 skipped**. All four failures are in
+`test_portable_security_sweeps.py` (`test_the_accounted_git_subcommand_set_is_the_declared_one`,
+`test_verify_version_support_emits_a_complete_record`,
+`test_verify_version_support_refuses_a_candidate_that_drops_a_required_option`,
+`test_verify_version_support_cannot_mutate_the_source_version_set`) -- the
+same concurrent-edit surface named above, and the failure text itself names
+the cause: `'git' path drifted between validation and invocation:
+'/tmp/cairn-admit-...' -> '/private/tmp/cairn-admit-...'`, a macOS
+`/tmp` -> `/private/tmp` symlink interacting with the sibling session's
+mid-edit `run_portable_security_sweeps.py`. None are in
+`test_lifecycle_contract.py`, `test_notice_install.py`, or any file this fix
+touches.
+`python scripts/quality_gate.py --sub neutrality --sub redundancy`:
+neutrality `fail=96` (pre-existing corpus-wide, unchanged in count and
+verified line-for-line unchanged in `tools/lifecycle_planner.py` and its
+twin -- the three lines the scan flags there, `Codex`/`Antigravity`/`Gemini`,
+are pre-existing docstring citations that moved with this edit's insertion,
+not new hits), redundancy `fail=0`. `scripts/claim_check.py` clean on this
+plan file.
+
+**What I did not re-examine.** `_has_disposition`'s "ceiling" computation
+(the ``later_pass_lines`` search bounding the `## Response to plan review`
+search) still reads `art.sections` rather than the union of raw S1-pass
+lines `_pass_headings` now uses -- so a *synthesized-only* later pass (the
+CR1 inverse case) would not currently act as a ceiling for an earlier pass's
+disposition search. Neither CR1 nor CR2 exercises this combination, no live
+artifact does either (measured above), and reaching for it would be scope
+creep past the two named findings; recorded here rather than smoothed over.
