@@ -4,7 +4,7 @@
 **Author**: Codex (Strategy / Security)
 **Model**: GPT-5 (Codex)
 **Date opened**: 2026-08-10
-**Status**: proposed
+**Status**: revised
 **Touches**: `bootstrap/tests/_gate_preflight.py`,
 `bootstrap/tests/_gate_manifest.py`, `bootstrap/tests/test_gate_preflight.py`,
 `bootstrap/tests/test_gate_manifest.py`, `bootstrap/REANCHOR_RUNBOOK.md`,
@@ -722,3 +722,239 @@ design questions with concrete satisfiers, not rewrites; [C3] is likely a
 sequencing sentence. The factual base needs no re-verification -- it reproduced
 completely. A delta-only re-read of Sections A and C after revision should be
 sufficient to reach Decision.
+
+## Response -- Codex (Strategy / Security) -- 2026-08-10
+
+**Model**: GPT-5 (Codex)
+
+I reproduced the local premises before disposition: the repository object
+format is SHA-1; Git reports `SHA-1: SHA1_DC`; the frozen-file producer and
+verifier use SHA-256; and `git hash-object --stdin` outside a repository exits
+0 with a plausible 40-hex id. At commit `013c221d7867`, the endpoint delta
+from the anchor contains 196 paths, 49 in the 182-path frozen set and 147
+outside it. I could not repeat the read-only GitHub query from the sandbox, so
+[C4]'s remote-ref observation is accepted as independently executed reviewer
+evidence and remains subject to the Maintainer-run real-remote capability probe
+below.
+
+* **[C1]** accept -- manifest v2 will retain SHA-256 and add Git oid, mode, and
+  object format; the proposal no longer trades a 256-bit content digest for a
+  SHA-1 repository identity.
+* **[C2]** accept with modification -- preflight will emit the complete,
+  canonically encoded path-classification report, not only the outside-path
+  list, and the signed checkpoint message will bind that report's SHA-256 so
+  the reviewed object and authorized checkpoint cannot drift independently.
+* **[C3]** accept with modification -- the ceremony will generate and confirm
+  all candidate-executing evidence before the key is loaded, enforce that no
+  candidate subprocess runs after the key-load boundary, and disclose the
+  residual that earlier candidate execution may have left persistence on an
+  uncompartmented Maintainer machine.
+* **[C4]** accept -- the durable anchor is already published; the remaining
+  gap is explicit routine transport, atomic capability verification, and
+  recovery procedure. A Maintainer-run real-remote atomic-capability result is
+  required before [TRU-7] closes.
+* **[C5]** accept -- every native hash call will require an explicit repository
+  argument and run through `git -C <repo>`, with a non-repository negative
+  control proving that no default SHA-1 fallback is accepted.
+
+## Revised proposal -- Revision 1 (binding delta)
+
+This section is the current contract for the reviewed findings. It replaces
+the corresponding terms in Context and Sections A, B, C, D, F, Evidence, and
+Author-accounting. Every original term not contradicted here remains operative.
+
+### R1-A. The checkpoint binds a complete range-review report
+
+Retire `_SIGNING_EPOCH` and per-intermediate-commit signature refusal as
+originally proposed, but do not replace the mechanical tripwire with three
+counts. Before construction, preflight derives one canonical range-review
+report from the trusted anchor and candidate HEAD. Its schema binds:
+
+* schema id, anchor commit, candidate HEAD, candidate tree, branch ref and
+  expected-old branch value;
+* manifest schema and exact manifest SHA-256;
+* the complete endpoint changed-path set from anchor tree to candidate tree,
+  obtained through sterile `git diff-tree` plumbing with `-r`,
+  `--no-commit-id`, `--name-only`, `-z`, and `--no-renames` over the exact
+  trees;
+* for every changed path, exactly one classification: frozen, cascade-mutable,
+  phase-mutable, manifest artifact, or outside manifest path coverage;
+* the complete sorted path list in every class, not only counts; and
+* signed, unsigned, and foreign-signed intermediate commit counts as
+  diagnostic facts.
+
+Git path identity remains raw bytes. Each canonical JSON path entry contains
+the raw bytes as padded base64 plus a deterministic ASCII-only escaped display;
+the implementation verifies that the display is a pure rendering of the bound
+bytes. Ordering is by raw bytes. No locale, filesystem decoding, quotePath
+setting, rename detection, or terminal rendering decides identity. Duplicate,
+unclassifiable, or multiply classified paths refuse. The report's SHA-256 is
+displayed beside the full safely rendered outside-coverage path list and all
+classification counts for Maintainer review.
+
+`apply` re-derives this report in memory from the same exact refs immediately
+before construction. It neither reads nor trusts a handoff file. The
+Maintainer's explicit confirmation names the report digest. The constructed
+checkpoint's fixed audit message includes that digest, anchor, candidate HEAD,
+and candidate tree; `verify_constructed` re-parses the commit object and checks
+the exact message before either ref moves. The checkpoint signature therefore
+binds the reviewed report as well as the complete candidate state.
+
+The report does not assert that every outside-coverage path is dangerous or
+that the Maintainer reviewed every intermediate commit. It makes the state
+being authorized bounded and inspectable. Any ref, tree, manifest, path set,
+classification, or report-byte drift invalidates confirmation and requires a
+fresh derivation.
+
+The old self-grandfathering attack is eliminated, not renamed. There is no
+candidate-editable epoch after this change. Normal ceremonies execute the
+checker from the prior immutable anchor, and changed candidate checker bytes
+remain frozen-path changes governed by the manifest. First use remains the
+separate exact-byte bootstrap in R1-F.
+
+### R1-B. Native object hashing is repository-pinned
+
+Every replacement for `_blob_oid` requires an explicit repository path and
+invokes `git -C <repo> hash-object --stdin` through the sterile Git launcher.
+There is no default repository and no direct `hash-object` call outside that
+launcher. The launcher first establishes that the path resolves to the
+operation's already bound repository, obtains its object format, and validates
+the returned full-width id against it. A missing, non-repository, or mismatched
+operation root refuses; it never falls back to Git's process default SHA-1.
+
+The original prohibitions remain: no `-w`, no path argument, no `--path`, and no
+attribute/filter participation. Candidate-controlled Git configuration remains
+removed and pinned as described in the original Section B.
+
+### R1-C. Manifest v2 adds Git identity without dropping SHA-256
+
+Each tracked frozen entry records all of:
+
+* committed Git mode;
+* full Git blob oid;
+* lowercase SHA-256 over the exact blob bytes; and
+* repository object format at the manifest level.
+
+Cascade-mutable and phase-mutable path records carry the same prior mode, oid,
+and SHA-256 tuple while retaining their existing non-HOLD dispositions.
+Production obtains mode and oid from the candidate commit's raw tree and
+computes SHA-256 independently over the raw blob bytes. Verification computes
+both `git -C <repo> hash-object --stdin` and SHA-256 over the exact worktree
+bytes and compares both plus mode. Trusted-repository verification compares the
+same tuple and refuses object-format mismatch.
+
+Git oid supplies repository-native identity, mode, tracked/untracked state, and
+SHA-1/SHA-256 repository awareness. SHA-256 preserves the existing independent
+content-digest strength. Neither value is described as authenticity; the
+checkpoint signature and pinned roster own that claim.
+
+Manifest v2 does not ship unless a differential corpus proves every v1
+modification/deletion HOLD, addition disposition, cascade/phase exception, and
+collection rule remains at least as strict. A disagreement stops migration and
+retains v1.
+
+### R1-D. Durable transport is a procedure gap, not an unpublished ref
+
+As independently observed by the External reviewer on 2026-08-10, `origin`
+already advertises `refs/cairn/gate-anchor` at the same object id as the local
+anchor. Revise Context and [TRU-7] accordingly: ordinary pushes do not transport
+the custom ref, and the runbook lacks a required atomic publication,
+verification, and recovery procedure.
+
+The original atomic branch-plus-anchor publication contract remains. Before
+[TRU-7] is dispositioned, the Maintainer records a non-mutating capability
+probe, or the first supervised publication result, demonstrating that the real
+remote accepts `--atomic` for the exact branch and custom-ref namespace. A
+local bare-remote test is necessary but not sufficient for this disposition.
+No reviewer or implementation agent pushes to `origin` on the Maintainer's
+behalf, and no two-push fallback is allowed.
+
+### R1-F. Candidate execution ends before key availability
+
+First use remains an exact-byte, Maintainer-only bootstrap, with this ordering:
+
+1. Land implementation and tests without moving Cairn refs.
+2. Obtain the original required External code review and focused exact-byte
+   External Security Review, including SHA-256 set and fixed invocation.
+3. Start the reviewed preflight with the ceremony signing key unavailable to
+   the process and its subprocesses. Re-derive v2 evidence, including pytest
+   collection, the complete range-review report, and every candidate-executing
+   check. Terminate all candidate subprocesses.
+4. Present the full report, digest, reviewed-byte hashes, and a hard phase
+   marker stating that no later operation may execute or import candidate
+   code. The Maintainer confirms them while the key remains unavailable.
+5. Only then load or authorize the ceremony key. The already-running reviewed
+   preflight may execute fixed Git plumbing, construct the signed checkpoint,
+   verify its object and pinned principal, and perform the expected-old local
+   transaction. Crossing back into candidate collection or candidate imports
+   after this boundary refuses.
+6. Perform the original atomic publication and remote verification; leave the
+   authorization ref unpublished and delete it locally by expected-old value.
+
+Normal later ceremonies use the same phase boundary. Tests instrument every
+subprocess/import entry point and fail if a candidate-executing operation occurs
+after the key-load marker.
+
+This sequencing removes simultaneous intentional key availability during
+candidate collection; it is not containment. Candidate code run earlier on the
+same uncompartmented machine may exploit the accepted host-access residual,
+leave persistence, or compromise a later signing process. The posture remains
+dated to the solo trusted-contributor model and expires when contributors are
+not trusted with host-level execution, when the checkout is not solely
+Maintainer-controlled, or when the ceremony key's availability cannot be
+separated operationally. A separate evidence host or hardware-presence key is
+the strengthening path; this proposal does not claim either exists today.
+
+### R1 verification additions
+
+The implementation plan must add these named behavioral obligations to the
+original test inventory:
+
+* range-report determinism, NUL-safe raw-byte path ingestion, base64 identity,
+  ASCII-only display escaping, rename/config independence, exhaustive
+  one-class-per-path partitioning, complete outside-coverage list, and digest
+  change on every bound field;
+* checkpoint-message binding to the exact range-report digest and refusal when
+  the report, anchor, HEAD, tree, manifest, confirmation, or message drifts;
+* proof that changing a candidate `_SIGNING_EPOCH` equivalent is impossible
+  because no epoch exists, while changed checker bytes remain frozen and the
+  deciding checker is loaded from the anchor;
+* v2 entries that compare mode + oid + SHA-256 in SHA-1 and SHA-256
+  repositories, with independent single-field mutations and the complete v1/v2
+  differential corpus;
+* explicit-repository hashing success and non-repository, wrong-format, and
+  omitted-repository refusal; the outside-repository plausible-SHA-1 behavior
+  is the negative control;
+* no candidate execution after the key-load phase marker, including collection,
+  imports, hooks, filters, and subprocess launch; and
+* a recorded Maintainer-run result for the real remote's atomic branch plus
+  `refs/cairn/gate-anchor` capability before closing [TRU-7].
+
+The full canonical suite still runs once at the stable boundary. The focused
+External Security Review must execute the range-report mutations, v1/v2
+differential corpus, key-load phase sentinel, and exact-byte bootstrap; a prose
+inspection does not discharge them.
+
+### R1 revised residual adjudication
+
+The lost second-person signature-status detection is accepted only with the
+mechanically complete, digest-bound range report above. The report does not
+restore contributor identity; it replaces an automatic but identity-weak epoch
+tripwire with a bounded object the Maintainer can actually inspect and sign.
+
+The ceremony-key residual is accepted only in its composed form: candidate code
+runs earlier on the ceremony machine, and late key loading does not erase any
+persistence it may leave. The phase boundary reduces exposure but does not
+claim process or host containment. The expiry and strengthening conditions in
+R1-F are part of the accepted contract, not deferred commentary.
+
+### R1 signals the revision is wrong
+
+Stop if a checkpoint can verify without the exact range-report digest in its
+message, if any changed path is omitted or multiply classified, if report
+rendering can emit terminal control bytes, if v2 drops SHA-256, if hashing can
+run without an explicit repository, if candidate execution occurs after the
+key-load marker, or if the real remote cannot atomically publish the branch and
+durable anchor. In each case retain the old mechanism or the local anchor until
+the failed premise is redesigned; do not narrow the assertion to make the gate
+green.
