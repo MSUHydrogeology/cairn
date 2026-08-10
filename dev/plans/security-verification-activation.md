@@ -612,8 +612,10 @@ the install message names a command that must already install.
 ```
 0. plan-open  -- this plan + the dev/PLANNING.md row-move            [commit pending]
    (plan review) -- required(External, security lens); NO code before it lands
-1. Chunk A -- the dispatcher + its module, registered, not universal [commit pending]
-   >>> MAINTAINER FENCE: AST re-anchor #1 (Assign:_MODULE_MAPPINGS)
+1. Chunk A -- the dispatcher + its module, registered, not universal
+   [LANDED: 6e3a8ed, follow-up 6b488a2, 2026-08-10]
+   >>> MAINTAINER FENCE: AST re-anchor #1 (Assign:_MODULE_MAPPINGS) -- RED,
+       reported not re-anchored, per this plan's own Maintainer fence #1
 2. Chunk B -- universality: default-on, the slot fires, the counts   [commit pending]
 3. Chunk C -- the non-silent install                                 [commit pending]
    >>> MAINTAINER FENCE: AST re-anchor #2 (_DEFAULT_ON_MODULES, main)
@@ -2601,3 +2603,113 @@ The ratification does not add principal or scope fields, weaken runner-digest
 binding, authorize credentials or a non-loopback target, produce the first-use
 trust hash set, run an AST or gate-manifest ceremony, authorize signing or
 pushing, or waive independent code review.
+
+## Implementation verification -- Claude -- 2026-08-10
+
+**Scope of this pass: Chunk A only.** Chunks B, C, D are untouched. Run under
+the canonical interpreter (`~/conda_envs/lhm/bin/python3.13`, Python 3.13.13),
+`PYTHONDONTWRITEBYTECODE=1`.
+
+**Commits.** `6e3a8ed` (A1, A2, A3, A5, A6, A7 -- the dispatcher, its doctrine,
+the `_MODULE_MAPPINGS` registration, the T1-T24/T36-T41/T44 test suite, both
+`.py`-count pins) and `6b488a2` (a same-session follow-up: `docs/quickstart.md`'s
+unfilled-block-slot count, 21 -> 22, driven by A4's new slot; two
+`claim-check-allow` directives for adopter-tree-only forward references). **A4**
+(the `templates/core/AGENTS.md` slot) landed in `6e3a8ed` with placeholder prose
+matching the claim-check slot's model; it is **not exercised** by Chunk A's own
+tests (T30/T31/T42/T43, which check the live merge, are Chunk B's).
+
+**Targeted tests.**
+`pytest bootstrap/tests/test_security_verification.py
+bootstrap/tests/test_security_lint.py bootstrap/tests/test_notice_install.py
+bootstrap/tests/test_quickstart_sequence.py` -> **96 passed, 0 failed** (measured
+after both commits, at HEAD `6b488a2`).
+
+**Full suite, once, between the two commits.**
+`pytest bootstrap/tests` at HEAD `6e3a8ed` -> **2587 passed, 5 failed** (379.98s).
+Of the five: **2 are the expected, fenced AST-attest RED**
+(`test_ast_attest.py::test_committed_baseline_accounted_for_across_the_engine_package`,
+`::test_ast_gate_passes_over_the_full_scaffold_module_set`) -- this chunk's own
+declared delta, not re-anchored per the Maintainer fence. **1**
+(`test_quickstart_sequence.py::...test_step3_install_writes_expected_kernel_and_modules`)
+was this chunk's own quickstart-slot-count miss, fixed in `6b488a2` (confirmed
+green above). **2**
+(`test_verification_boundaries.py::test_both_operational_surfaces_fail_to_full`,
+`::test_review_doctrine_requires_targeted_falsification_and_six_triggers`) are
+**pre-existing and unrelated**: `git diff` shows this session made zero changes to
+`AGENTS.md` (Cairn's own root) or `doctrine/dual-review.md`, the two files these
+tests read, and both tests were still red at the same failing assertions after
+this pass's commits, against files this plan never touches. Not fixed here;
+reported to the Maintainer as a pre-existing gap outside this plan's scope.
+
+**AST delta**, measured against `bootstrap/tests/fixtures/scaffold_ast_baseline.json`
+via `_ast_attest._classify` over the live `bootstrap/_scaffold/*.py` tree at HEAD
+`6b488a2`: **CHANGED 1, MISSING 0, DUPLICATE 0, NEW 80.** The one CHANGED symbol
+is `Assign:_MODULE_MAPPINGS` (`config.py`), matching this plan's own declared A3
+delta exactly. The 80 NEW symbols are **not this plan's** -- `git diff --stat
+bootstrap/_scaffold/` against the pre-session baseline shows exactly one 15-line
+insertion inside the existing `_MODULE_MAPPINGS` dict literal, no new top-level
+symbol; the 80 NEW entries come from other in-flight cluster scopes' already-
+landed or concurrent work in the same shared tree. Per the Maintainer fence: not
+re-anchored, `update_symbol` not run, no ceremony requested.
+
+**Install-contract movement.** `install_manifest(modules=None)`: **98 -> 100**
+data rows (two additive: `dev/modules/security-verification.md` substituted,
+`scripts/run_security_verification.py` verbatim), **45 -> 46** verbatim `.py`
+rows, `duplicate_destinations` -> `{}`. The `44/45 -> 46` `.py`-count pins in
+`test_security_lint.py` and `test_notice_install.py`, and the `98 -> 100`
+manifest-row pin in `test_notice_install.py`, all moved in `6e3a8ed`/`6b488a2` --
+three pins, not two, matching this plan's own warning that
+`api-web-security-modules` shares two of the same three pins and whoever lands
+second re-measures.
+
+**Release gate.** `bootstrap/security_check.py` itself refuses on a dirty
+worktree (by design; a release-only gate), so it was not run end-to-end. Bandit
+run directly over the new file:
+`python -m bandit -q templates/modules/default-on/run_security_verification.py`
+-> **2 LOW** (`B404` subprocess import, `B603` subprocess-without-shell=True),
+**0 MEDIUM+**, matching `run_security_audit.py`'s established profile per this
+plan's own prediction.
+
+**Doc gates.** `scripts/claim_check.py` over each edited/new Markdown file
+(`templates/modules/default-on/security-verification.md`,
+`templates/core/AGENTS.md`, `docs/quickstart.md`) -- OK, 0 hard flags after two
+`claim-check-allow` directives for the two adopter-tree-only forward references
+named above. `scripts/check_cairn.py` -> 4 issues, all attributed to a single
+`dev/plans/` archive-move a concurrent session made in the same shared tree
+while this pass ran, none to a file this plan touches. `scripts/quality_gate.py --sub
+neutrality` -> `fail=96 info=21` (re-taken at `6b488a2`; the plan's own quoted
+`fail=95` baseline is stale, per its own warning) -- zero fail lines attributable
+to a file this plan touches, confirmed by grep.
+
+**Perturbation ledger -- demonstrated, not just described.** Six hazard
+mutations applied to the committed dispatcher source, run, confirmed RED at
+exactly the predicted row(s) and no other, reverted, and confirmed byte-identical
+via `git hash-object` before/after (`9f3a2e2b...`):
+
+| Test | Mutation | Result |
+|---|---|---|
+| T1 | Added a dormant entry to the shipped `_REGISTRY` | RED: `assert fresh._REGISTRY == {}` fails, showing the injected entry |
+| T4 | Widened `_EVIDENCE_MODES` to include `"deployed"` | RED on exactly the `deployed` parametrized row; other 6 rows stayed green |
+| T14 | Disabled the exit/result agreement check (`if False:`) | RED on both `exit0-findings` and `exit1-clean` rows |
+| T18 | Replaced `_is_regular_and_unsymlinked` with plain `path.is_file()` | RED on both `leaf-symlink` and `parent-symlink` rows |
+| T21 | Added a `"...is CLEAN"` line to the NOT_APPLICABLE path | RED on the forbidden-wording assertion; T20 (exact-line assertion) unaffected |
+| T44(b) | Made `_record_keys_ok` always return `None` | RED on the lockfile-record-side row only; T44(a)'s five construction-side rows unaffected |
+
+**Not individually mutation-tested this session** (a stated completeness gap,
+not a claim of coverage): T2, T3, T5, T6-T13, T15-T17, T19, T20, T22-T24,
+T36-T40, T41, T44(a). Each is exercised by the suite's own green run against the
+real hazard named in its own docstring (a real subprocess child, a real
+lockfile record, a real symlink, etc. -- none is a mocked reimplementation of the
+subject), but the mutate-run-revert-confirm cycle was not individually performed
+and demonstrated for each. Completing the remaining ledger is unfinished work,
+named here rather than implied by the green suite above.
+
+**Known omissions.** Chunks B (universality / `_DEFAULT_ON_MODULES`), C
+(non-silent install / `cli.py`), D (`SAFETY.md`, the `templates/modules/README.md`
+row, `CHANGELOG.md`) are entirely untouched -- no file under those chunks was
+created or edited. `api-web-security-modules` (the reciprocal plan) is entirely
+untouched: its Chunk A (the shared `_security_net` engine -- URL normalization,
+SSRF/DNS-rebinding defense, redirect policy, TLS) is the pair's own named
+highest-risk surface and was not attempted in this session; every other chunk in
+that plan depends on it.
