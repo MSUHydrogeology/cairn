@@ -124,6 +124,31 @@ anticipated but not yet in flight. When a queued item grows into
 multi-step work, open a plan under `plans/` and replace the entry
 with the plan's filename stem.
 
+* **Stage-reader tier-semantics defects, and the price of the ratified narrowing**
+  *(migrated 2026-08-10 from plan `stage-commit-patterns` at archive, per its
+  pre-declared Lasting-truth homing)* — three known, pre-existing observations
+  about `_lifecycle_metrics/gitmeta.py`, kept together because they are all
+  tier-semantics claims about one module. **(1) R12c, both halves.** The
+  behaviour: a transient `git log` failure in `_git_log_for_path` returns `[]`
+  and silently downgrades a row with no signal. The documentation half: the same
+  function's docstring carries a second falsely-exhaustive cause list that omits
+  the `returncode != 0` path. Both halves are named because the plan's grep was
+  structurally scoped not to see the second, so an archive that recorded only
+  the behaviour would orphan it. **(2)** `_stage_reliability` emits an `Exact`
+  row with empty `hours_*` when a proposal's dated stage sections are a
+  *non-empty proper subset* of the stages its git history resolves (observed:
+  `present = {'decision'}`, `resolved = {'open','decision'}`). **(3) A Maintainer
+  question, not a defect:** the ratified scope-gate narrowing buys 0
+  false-positive stage assignments at a cost of roughly 17 reliability tiers on
+  the live corpus — materially more than the figure priced at Decision time —
+  and whether that trade warrants revisiting is the Maintainer's call. Opening a
+  proposal for (1) or (2) needs the Maintainer's go-ahead under the standing
+  build-nothing-new rule; until then these are recorded as known pre-existing
+  defects, not scheduled work. **Separately and more urgent than any of the
+  three**: the *shipped* stage vocabulary makes one wrong-stage assignment on
+  Cairn's own corpus because a subject matches `^Review\b` across a hyphen —
+  that one reaches adopters and is described in the archived plan's archive
+  record.
 * **[TRU-7] the gate anchor is unpublished, and no document says to publish it**
   *(deferred 2026-08-05 from `release-security-orchestration`, which recorded the
   measurement out of its declared scope; mirrored in
@@ -334,29 +359,6 @@ board by design.
   a single-use nonce / consumption ledger (SR10). Archived plan
   `gate-reanchor-preflight`; eleven findings closed across seven reviews (CR1,
   FUR1-FUR10).
-
-* **stage-commit-patterns** *(plan open 2026-08-04; accepted 2026-07-22)* — the
-  reader fix: `_STAGE_COMMIT_PATTERNS` matched **zero of 76** real commit
-  subjects, leaving every stage-timing metric empty at `Best-effort` while the
-  tool exited 0. Accepted with the design narrowed (no bare-subject fallback)
-  so no commit is ever mislabelled at `Exact`. Part 1 is **transcription, not
-  audit** — the 28-symbol table is verified in the Revised proposal. Plan
-  carries a scoped `upgrade --finalize` for `gitmeta.py` and its `__init__.py`
-  twin, now mandatory since the lockfile is clean. **Chunks A–C landed
-  2026-08-04 (`2177d5f`, `321ed1a`, `543f785`) past the plan's own per-commit
-  approval fence, ratified after the fact by the Maintainer. **D1 (the CHANGELOG
-  release note) landed 2026-08-04 at `18ea25d`, carrying the corrected figure the
-  Maintainer accepted; D2 is THIS ROW, and it is the plan's last remaining item —
-removed at the next goodnight scrub after archive.** Plan
-  review `required(Internal)` carried an execution obligation (re-run the corpus
-  ablations, not a read-only pass) — landed, REVISE, all findings dispositioned.
-  Three things the plan surfaces rather than settles: the ratified narrowing
-  costs ~17 reliability tiers on the live corpus, not the one measured at
-  Decision time; the scope gate's safety rests on a subject convention the fix
-  deliberately does not document; and the *shipped*, unedited vocabulary now
-  produces one wrong-stage assignment on Cairn's own corpus, because a subject
-  written this session matches `^Review\b` across a hyphen.
-
 
 * **[REC-1] byline-classification residuals** *(plan open 2026-08-03; the rows land at
   plan-open, not at archive, so they outlive the proposal's readership)* — the

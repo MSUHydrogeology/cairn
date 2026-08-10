@@ -27,7 +27,7 @@ Decision, *"as revised"*). It currently sits under `dev/proposals/` and moves to
 `dev/proposals/archive/` when this plan opens. **All `proposal :<n>` line
 citations below are into that file and stay valid across the move**: a proposal
 is append-only, so a section's line numbers never shift once committed.
-**Status**: open
+**Status**: archived
 **Plan review**: required(Internal) — the tier the proposal declared, the Internal
 panel concurred with, and the Decision ratified under *"OQ3 — the plan-review
 tier stays `required(Internal)`."* The review carries an **execution** obligation,
@@ -2214,5 +2214,71 @@ Recorded here because this record's broad run is what surfaced it, and because
 the owning plan is already archived and cannot carry it. It is **not** this
 plan's to fix and does not gate this plan's archive; it is referred to the
 Maintainer for placement.
+
+This section is append-only once written.
+
+## Archive record -- Claude -- 2026-08-10
+
+**Status: archived.** Maintainer-directed: after selecting **"Append record, note
+the gap, archive"** for this plan's missing Boundary B evidence, the Maintainer
+confirmed **"I'm okay with you proceeding on the archive of both plans."**
+
+**Correction to the Boundary B record above (`ad9f30c`), found while verifying
+this archive's loop-fidelity conditions rather than asserting them.** That record
+twice names the wrong module. It says this plan "altered
+`tools/lifecycle_planner.py` and its shipped twin
+`templates/skills/_lib/lifecycle_planner.py`", and its neutrality cell calls
+`templates/skills/_lib/lifecycle_planner.py` "a file this plan touched". **This
+plan never touched `lifecycle_planner.py`.** Its four commits touch exactly:
+
+| commit | files |
+|---|---|
+| `2177d5f` (Chunk A) | `bootstrap/tests/test_lifecycle_stage_patterns.py`, `tools/_lifecycle_metrics/gitmeta.py`, `templates/modules/default-on/_lifecycle_metrics/gitmeta.py` |
+| `321ed1a` (Chunk B) | `tools/_lifecycle_metrics/__init__.py`, `templates/modules/default-on/_lifecycle_metrics/__init__.py` |
+| `543f785` (Chunk C) | `dev/.cairn/cairn-lock.yml` |
+| `18ea25d` (Chunk D1) | `CHANGELOG.md` |
+
+Two consequences, in opposite directions. The record's **conclusion** survives --
+`templates/modules/default-on/_lifecycle_metrics/` ships, so the reviewed bytes
+do reach adopters, which was the point being made. But its **neutrality
+disposition was reasoning about the wrong file**: the three
+`lifecycle_planner.py` vendor-token findings have nothing to do with this plan,
+and the `Gemini` token at `:936` is neither this plan's nor in a file it touched.
+That finding stands on its own -- it belongs to `review-gate-enforcement`
+(`ab70660`, archived `be42ba6`) and is still a live shipped-template neutrality
+defect -- but it is not this plan's residual and never was. Zero neutrality fail
+lines fall in any of the six files above.
+
+**Loop-fidelity sign-off** (`doctrine/lifecycle.md` > "Loop-fidelity
+verification"). All four ratified plan conditions verified at archive, each
+re-derived rather than carried forward:
+
+| condition | verification |
+|---|---|
+| The **scoped** `upgrade --finalize` | `543f785` changes `dev/.cairn/cairn-lock.yml` by exactly **2 insertions / 2 deletions** -- two `hash:` values, one per twinned file. Scoped, not a blanket re-finalize. |
+| **Twin byte-parity on both pairs** | `cmp tools/_lifecycle_metrics/gitmeta.py templates/modules/default-on/_lifecycle_metrics/gitmeta.py` -> identical; same for `__init__.py`. Both pairs byte-identical at archive. |
+| **No AST re-anchor** | `git diff --name-only 2177d5f^ 18ea25d` contains no path under `bootstrap/_scaffold/`. The plan cannot have moved the AST baseline. |
+| **The stopping rule** -- no new CLI, config key, output column, exported helper, or mandated commit convention | The four names Chunk A adds are all underscore-private: `_STAGE_SCOPE_PREFIX_RE`, `_STAGE_PHRASE_SEP_RE`, `_HEAD_ANCHORED_STAGES`, `_stage_for_subject`. The `__init__.py` change is **docstring-only**. No CLI, config key, or output column added; no commit convention mandated -- which is exactly the residual (e)/(g) the code review dispositioned. |
+
+**Evidence ledger -- accepted residuals, carried as record and not as work.**
+
+| residual | disposition |
+|---|---|
+| The **eight transcribed literals** with zero live-corpus constraint (**(b)**, known omission (h)) | Accepted. Every one is transcribed from a ratified design, so narrowing any of them is a Decision-level change, not follow-up work. |
+| **Nothing guards `_STAGE_COMMIT_PATTERNS` against a future *widening* edit** | Accepted. Such a guard is a new test with a new oracle and sits outside this plan's scope fence. |
+| The **scoped-but-not-a-transition** residual -- 10 of 14 measured probes classify inside the gate, and the gate's safety rests on an undocumented subject convention (**(e)**, omission (g)) | Already homed: pinned as documented outcomes in T2b's literal table in `bootstrap/tests/test_lifecycle_stage_patterns.py`. Whether an adopter-facing safety claim may rest on an undocumented convention is a doctrine question and would be a new proposal, not an amendment here. |
+| The **one pre-existing shipped-pattern false positive** (`review: tighten the recharge bounds` -> `reviewed`) | Already homed: an explicitly-labelled expectation in T2's table, whose docstring records that it is inherited, not chosen. |
+| The **transition-lint verdict** | Already homed in the source proposal's `## Decision`. Not re-stated or re-opened here. |
+| **R12c** (both halves), the **`Exact`-with-empty-`hours_*`** tier row, and the **~17-tier price** question | Migrated to `dev/PLANNING.md > Queued` in this commit, as the Lasting-truth table pre-declared. |
+
+**What this plan did not settle, and hands to the Maintainer.** The code review
+judged all three sound; none is a measurement this archive can close. (a) The
+ratified narrowing's reliability-tier cost is the live-corpus figure, not the one
+priced at Decision time. (b) The scope gate's safety rests on a convention the
+fix deliberately declines to document -- and for an adopter with no such habit,
+the honest outcome is silent degradation to `Good`. (c) The **shipped**,
+unedited vocabulary makes one wrong-stage assignment on Cairn's own corpus,
+because a subject matches `^Review\b` across a hyphen. (c) ships to adopters and
+is the one worth a decision.
 
 This section is append-only once written.
