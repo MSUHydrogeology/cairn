@@ -124,6 +124,48 @@ anticipated but not yet in flight. When a queued item grows into
 multi-step work, open a plan under `plans/` and replace the entry
 with the plan's filename stem.
 
+* **Portable-security-sweeps deferred set (LT-1, LT-2, LT-4, LT-6)** *(homed
+  2026-08-10 as that plan's archive precondition; LT-3 and LT-5 live in
+  `dev/measurement/gitleaks-version-support.md`, and LT-7 was resolved outright
+  when `AGENTS.md` began naming `bootstrap/AST_BASELINE_RUNBOOK.md` directly)* —
+  four follow-ups the plan fenced out of its own scope. **LT-1 — preset
+  selection.** The adoption amendment's five-row table (`collaborative-team` and
+  `high-rigor-legacy` baseline; `solo-greenfield` opt-in; a Python team receiving
+  *both* modules; `modules_remove` as the visible waiver; literal `modules:` lists
+  staying exact) is unimplemented. Its home is a **new proposal** against the
+  accepted `default-security-stance` selection contract, not this row alone: it
+  edits `_PRESETS`, a symbol `_ast_attest._UPDATE_ALLOWLIST` does not admit, so it
+  carries its own re-anchor accounting, and it changes what fresh adopters
+  receive — Decision-bearing. *Trigger:* the next change to preset composition.
+  **LT-2 — the activation registry row, and a naming-contract mismatch measured
+  2026-08-10.** Chunk G took **Branch 2** (not landed), but not for the reason
+  Branch 2 states: the dispatcher `run_security_verification.py` **does** exist
+  (`6e3a8ed`). The real blocker is that `_selected_capability_ids` admits only
+  module IDs ending in **`-security`**, and this module's ID ends in `-sweeps` —
+  measured at `9724c0f`, the module *is* installed (16 in the lockfile) yet the
+  dispatcher sees only `['content-security']`. A Branch-1 registry row would be
+  **inert by construction**, and worse, Chunk G's required deletion mutant
+  (`test_the_standing_command_includes_the_portable_leg`) **could not fail** — the
+  row's presence changes nothing. Three resolutions, and the choice is the
+  Maintainer's: widen the filter (owned by `security-verification-activation`,
+  and a trust-boundary change to what the dispatcher admits → Security Review);
+  rename the module ID to end in `-security` (shipped ID + lockfile + three file
+  paths → Decision-bearing); or accept that portable sweeps runs only via its own
+  standing command and never through the dispatcher, making this a permanent
+  documented residual rather than a deferral. *Trigger:* that plan's
+  registry-admission chunk, which is already unfenced. **LT-4 — the three
+  withdrawn adapters** (OSV-Scanner, zizmor, Trivy), named here as a set so they
+  are not silently forgotten. Each arrives as its own proposal per the revision's
+  rule: its own executable chain, ambient-config execution evidence, network
+  posture, output schema, and offline-CLEAN disposition. This is **distinct from**
+  the conda-advisory row elsewhere on this board, which cites Trivy and
+  OSV-Scanner as *evidence about conda ecosystem coverage* — a different question.
+  **LT-6 — the `.json`-under-`templates/` precedent.** The licence half landed
+  (`bootstrap/DEPENDENCY_BUDGET.md`, `portable_security_policy.json` → MIT, no
+  header, being a data asset with no comment syntax). The open question is whether
+  `_self_hosted_twins()` should stop being `.py`-keyed; generalizing that helper
+  changes a gate the plan does not own. *Trigger:* the second non-`.py` verbatim
+  asset under `templates/`.
 * **Stage-reader tier-semantics defects, and the price of the ratified narrowing**
   *(migrated 2026-08-10 from plan `stage-commit-patterns` at archive, per its
   pre-declared Lasting-truth homing)* — three known, pre-existing observations
