@@ -231,11 +231,11 @@ roster is in `dev/agent_collaboration.md`.
 * **Verification boundaries.** Verification has three jobs; do not pay for the
   same broad run at every one (full doctrine: `doctrine/plans.md` and
   `doctrine/dual-review.md`).
-  * **A — scoped iteration.** During implementation, run the tests and public-
+  * **A — Iteration (scoped).** During implementation, run the tests and public-
     path probes mapped by the reviewed plan, plus standing gates for every
     touched surface. If a substantive code surface has no reviewed mapping, or
     its effects cannot be bounded confidently, run the full suite.
-  * **B — stable integration evidence.** After the final implementation commit
+  * **B — Integration (stable evidence).** After the final implementation commit
     and before code review, run one full suite against a clean, unchanged commit
     under the **canonical interpreter (Python 3.13.x)**. Cairn's ordinary pair
     is `python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0` followed
@@ -243,7 +243,7 @@ roster is in `dev/agent_collaboration.md`.
     Append the tested SHA/range, interpreter, clean pre/post state, commands,
     outcomes, timing, non-pass disposition, and known omissions to the plan as
     `## Implementation verification -- <agent> -- YYYY-MM-DD`.
-  * **C — independent review.** The code reviewer verifies that record against
+  * **C — Falsification (independent).** The code reviewer verifies that record against
     the reviewed range, then runs independent targeted falsification; copying
     Boundary B's broad command is not a falsification ledger. Missing or stale
     evidence, unexplained non-pass outcomes, newly discovered coupling, changed

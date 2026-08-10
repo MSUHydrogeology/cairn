@@ -186,7 +186,7 @@ structural-independence axis as any other review here — an Internal-floor
 read for an ordinary plan, a different-agent-type External round for a
 high-risk or contract-touching one.
 
-### Boundary C — targeted falsification after broad verification
+### Boundary C — Falsification (targeted, after broad verification)
 
 Independent review does not mean independently repeating every command the
 implementer ran. For a plan with a valid Boundary B Implementation verification

@@ -241,7 +241,7 @@ A plan maps verification to three boundaries. This keeps iteration useful,
 integration evidence exact, and review independent without treating repeated
 execution of one broad command as a second opinion.
 
-### Boundary A — scoped iteration
+### Boundary A — Iteration (scoped)
 
 Each chunk's acceptance criteria map the changed invariants and public paths to
 their affected tests and standing surface gates. The implementer runs that
@@ -256,7 +256,7 @@ claim, link, snippet, schema, and neutrality gates rather than an unrelated
 engine suite. Executable snippets, generated or frozen fixtures, gate
 manifests, and contracts whose plans name test coverage are not ordinary prose.
 
-### Boundary B — one stable integration record
+### Boundary B — Integration (one stable record)
 
 After the final implementation commit and before code review, the implementer
 runs the full project suite once against a clean, stable commit using the
@@ -299,7 +299,7 @@ not a signed receipt or parser-enforced claim. It does not authenticate the
 author or prove the commands ran. Release verification is a separate ceremony:
 an implementation record never satisfies or shortens a release gate.
 
-### Boundary C — review reuse
+### Boundary C — Falsification (independent, reusing B)
 
 Code review may reuse a valid Boundary B broad result only after checking the
 tested revision, reviewed range, path validity, clean-state assertions, command

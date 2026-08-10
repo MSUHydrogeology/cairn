@@ -214,17 +214,17 @@ roster is in `dev/agent_collaboration.md`.
 * **Verification boundaries.** Verification has three jobs; do not pay for the
   same broad run at every one (full doctrine: `doctrine/plans.md` and
   `doctrine/dual-review.md`).
-  * **A — scoped iteration.** During implementation, run the tests and public-
+  * **A — Iteration (scoped).** During implementation, run the tests and public-
     path probes mapped by the reviewed plan, plus standing gates for every
     touched surface. If a substantive code surface has no reviewed mapping, or
     its effects cannot be bounded confidently, run the configured full suite.
-  * **B — stable integration evidence.** After the final implementation commit
+  * **B — Integration (stable evidence).** After the final implementation commit
     and before code review, run the configured full suite once against a clean,
     unchanged commit under the project's configured interpreter/runtime. Append
     the tested revision/range, runtime, clean pre/post state, commands, outcomes,
     timing, non-pass disposition, and known omissions to the plan as
     `## Implementation verification -- <agent> -- YYYY-MM-DD`.
-  * **C — independent review.** The code reviewer verifies that record against
+  * **C — Falsification (independent).** The code reviewer verifies that record against
     the reviewed range, then runs independent targeted falsification; copying
     Boundary B's broad command is not a falsification ledger. Missing or stale
     evidence, unexplained non-pass outcomes, newly discovered coupling, changed
