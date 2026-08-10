@@ -1215,3 +1215,48 @@ claim_check: dev/plans/fork-advisory-semantics.md -- OK, no claim-check flags.
 
 
 
+
+## Implementation verification -- Claude -- 2026-08-10
+
+**Why this record exists now.** Chunk R -- the batched, Maintainer-only AST
+re-anchor ceremony -- landed at `9724c0f`, closing the deliberate red window this
+plan opened at Chunk B. That makes the plan **implementation-complete for the
+first time**, and it is the first moment a Boundary B record could bind a green
+tree. No prior `## Implementation verification` record exists for this plan.
+
+| field | value |
+|---|---|
+| Tested commit | `9724c0f` |
+| Reviewed range | `9bd6752` (Chunks A, C, D, E), `aba0242` (Chunk B -- the Maintainer-gated remediation string, unfenced by Decision amendment `d13c58a`), `9724c0f` (Chunk R -- the re-anchor ceremony). |
+| Interpreter/runtime | `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python **3.13.13**, `PYTHONDONTWRITEBYTECODE=1` |
+| Pre-run state | The suite was executed at `2cda515` with `bootstrap/tests/fixtures/scaffold_ast_baseline.json` and `scaffold_ast_known_new.json` modified on disk -- Chunk R's content, staged for the Maintainer's commit. **Stated exactly rather than as "clean":** those two files were the only tracked modifications. |
+| Post-run state | The Maintainer committed exactly that fixture content as `9724c0f`. `git diff --name-only 2cda515..HEAD` outside `dev/` prose returns **only those two fixtures**, so the figures below bind `9724c0f`'s bytes rather than a superseded tree. `git status --short` reports **0 modified tracked files** at `9724c0f`. |
+| Command | `python -m pytest bootstrap/tests -q` |
+| Exit | 0 |
+| Outcomes | **2593 passed, 0 failed**, 0 skipped, 0 xfailed, 3 warnings |
+| Elapsed | 358.85s (0:05:58) |
+| Non-pass disposition | **None. There is nothing to disposition.** This is the first fully green full-suite result recorded on this repository today; every earlier record on every sibling plan carried the two `test_ast_attest` nodes as a declared red, and Chunk R is what closed them. Independently re-confirmed at `9724c0f` on a clean tree: `pytest bootstrap/tests/test_ast_attest.py` -> **29 passed**, and `_ast_attest.py verify` -> `AST attestation OK — 173 baselined symbol(s) accounted for, unchanged` (N unmoved at 173, so the ceremony was surgical, not a re-pin). |
+| Plan-specific acceptance commands | `python scripts/check_cairn.py` -> **OK**, 174 Markdown files, no issues, rc **0**. `python scripts/quality_gate.py --sub neutrality --sub redundancy` -> rc **1**; neutrality `fail=93 info=21`, redundancy `fail=0 info=2`. The rc-1 is the known pre-existing neutrality baseline, and it is **93 rather than the 96 recorded earlier today** because `0028b8b6` removed three vendor tokens from `templates/skills/_lib/lifecycle_planner.py`; no fail line falls in any file this plan touches. |
+| Known omissions | **The code review does not cover the whole reviewed range, and this is the material gap.** `## Code review -- Antigravity (External, security lens) -- 2026-08-04` predates Chunk B (`aba0242`, 2026-08-10) and Chunk R (`9724c0f`, 2026-08-10) -- so two of this plan's six chunks, including the one that edits `bootstrap/_scaffold/lockfile.py` and the one that rewrites a trust-artifact baseline, have had no independent read. Under `doctrine/dual-review.md` trigger 4 -- *"review sharpening changes implementation, tests, executable templates, or fixtures in the reviewed range"* -- evidence reuse is unavailable for those two chunks and a fresh review round is owed before archive. This record supplies the broad run that round should validate; it does not substitute for it. |
+
+**What was independently verified about Chunk B, and by whom.** The B2 node's
+required perturbation was run before the chunk was committed: restoring the
+forbidden destructive clause (*"remove the dormant engine package"*) to
+`format_forked_facade_warning` makes
+`test_node_b2_remediation_names_no_destructive_or_no_op_action` **fail**, and the
+file was restored byte-exactly (md5 `46b9728cc53d0b0b4bb8fd1d61fdd162` before and
+after). That establishes the node is not vacuous. It does **not** establish
+independence: the perturbation was run by a Claude agent and Chunk B was authored
+by one, which is the configuration the doctrine forbids from self-certifying.
+
+**Chunk R's own ledger, for the reviewer.** Two CHANGED baselined symbols,
+batched: `Assign:_MODULE_MAPPINGS` (`4f72dfcb7ce39f20` -> `df43d4d75f55a3e5`,
+`8daecd2`, `portable-security-sweeps` Chunk A) via the guarded `update-symbol`
+path; and `FunctionDef:format_forked_facade_warning` (`14e4bdf27ff6f1b3` ->
+`a508f3c7ba8d7232`, `aba0242`, this plan's Chunk B) via Maintainer direct
+correction, since it is not in `_ast_attest._UPDATE_ALLOWLIST`. Known-new
+manifest 78 -> 80 keys, **REKEYED 0** -- no symbol changed logic while invisible
+to the baseline gate. A reviewer should treat the baseline diff (exactly two
+`digest` lines, no `span`/`type` movement) as the artifact to check.
+
+This section is append-only once written.
