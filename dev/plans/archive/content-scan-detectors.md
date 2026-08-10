@@ -1,11 +1,14 @@
 <!-- cairn-internal-ref-allow: doctrine/plans.md doctrine/dual-review.md doctrine/lifecycle.md doctrine/rationale.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- claim-check-allow: dev/proposals/2026-08-03-claude-content-scan-detectors.md, dev/proposals/2026-08-03-claude-default-security-stance.md, dev/proposals/2026-08-03-codex-api-web-security-modules.md, dev/proposals/2026-08-03-claude-identity-not-name.md, dev/plans/default-security-stance.md, dev/plans/content-scan-detectors.md -->
+<!-- claim-check-allow: dev/proposals/2026-08-03-claude-content-scan-detectors.md, dev/proposals/2026-08-03-claude-default-security-stance.md, dev/proposals/2026-08-03-codex-api-web-security-modules.md, dev/proposals/2026-08-03-claude-identity-not-name.md, dev/plans/default-security-stance.md, dev/plans/content-scan-detectors.md, dev/plans/separator-detection.md -->
 <!-- ^ Source/sibling proposals and the default-security plan are archived.
      These citations sit in
      append-only sections, so the path is exempted rather than rewritten.
      This plan's own former (pre-archive) path is exempted the same way --
      historical sections cite the live plan path, which ceases to resolve
-     once this record moves to dev/plans/archive/. -->
+     once this record moves to dev/plans/archive/. The sibling
+     `separator-detection` plan archived after this one did (see its own
+     Archive section); this file's pre-existing citations to its live path
+     are exempted the same way rather than rewritten. -->
 
 
 # Plan: the scanner's character model — an invisible channel it cannot see, and a script it cannot tell from a spoof

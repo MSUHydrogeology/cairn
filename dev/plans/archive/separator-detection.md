@@ -1,15 +1,17 @@
 <!-- cairn-internal-ref-allow: doctrine/plans.md doctrine/dual-review.md doctrine/lifecycle.md doctrine/coordination.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- claim-check-allow: ../proposals/2026-08-03-claude-separator-detection.md -->
+<!-- claim-check-allow: ../proposals/2026-08-03-claude-separator-detection.md, dev/plans/separator-detection.md -->
 <!-- ^ Source/sibling proposals archived 2026-08-04. These citations sit in
-     append-only sections, so the path is exempted rather than rewritten. -->
+     append-only sections, so the path is exempted rather than rewritten.
+     This plan's own former (pre-archive) path is exempted the same way --
+     historical sections cite the live plan path, which ceases to resolve
+     once this record moves to dev/plans/archive/. -->
 
 
 # Plan: the two separators nothing detects — `U+2028` / `U+2029`
 
 **Source proposal**: [`dev/proposals/archive/2026-08-03-claude-separator-detection.md`](../proposals/archive/2026-08-03-claude-separator-detection.md)
-(accepted 2026-08-03 by Maintainer Decision, *as revised*). It sits under
-`dev/proposals/` today and moves to `dev/proposals/archive/` when it archives.
-**Status**: review
+(accepted 2026-08-03 by Maintainer Decision, *as revised*).
+**Status**: archived
 **Plan review**: required(**External**, security lens) — carried from the
 proposal header and re-declared by the Decision's *Next transition* line, which
 routes the tier into the plan "in its own right". The content scanner is a
@@ -2507,4 +2509,49 @@ I served as the independent External security reviewer for the `separator-detect
 6. **Execution Evidence & Verification**:
    - `PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_content_scan.py -q`: **199 passed in 0.27s**.
    - `scripts/claim_check.py dev/plans/separator-detection.md`: **OK, no claim-check flags**.
+
+## Archive -- Claude -- 2026-08-10
+
+The plan-archive precondition (`doctrine/plans.md` > "The plan-archive
+precondition") is met: the independent Antigravity code review above returned
+**SHIP** at HEAD `82df417`, auditing the original CR1 finding (`1df178b`), its
+correction (`0d02d5d`), and the self-hosted twin sync (`e131b33`). The
+multi-separator suppression bypass CR1 found is closed and independently
+reproduced closed; the single-separator legitimate-acceptance case remains
+green; the source and self-hosted scanner twins are byte-identical.
+
+Every row of the *Lasting-truth migration* table above was re-checked against
+the landed tree rather than carried forward: the `unicode-line-separator`
+adopter contract and declared limit are in the shipped
+`content_scan.py` module docstring (including the multi-separator-refusal
+correction CR1 added); the shared release note is in `CHANGELOG.md >
+Unreleased` (`Added` and `Fixed`, landed at the Chunk C serialization); the
+`_scan_unicode` yielded-id contract is pinned by Chunk A's test; and the `Zs`
+space-separator question remains open at `dev/plans/archive/byline-classification.md`
+[I6] (no new row needed here -- that record is itself a durable, git-committed
+home outside this plan).
+
+**Follow-ups migrated to:**
+
+* The frozen-file re-pin (`content_scan.py`, `test_content_scan.py`) and the
+  stale collection-identity pin -> remains a pending **Maintainer-supervised**
+  re-pin under `bootstrap/REANCHOR_RUNBOOK.md`, batched with
+  `content-scan-detectors` (archived `7561f04`) per both plans' identical
+  Maintainer-fence rule. Tracked at `dev/PLANNING.md` > *Security program --
+  clustered current view* > `[VER]`.
+* Whether the per-line `break` convention should change at all -> a new row
+  under `dev/PLANNING.md` > *Security apparatus*, added in this archive
+  commit. Not this plan's or `content-scan-detectors`' to decide; both plans
+  only pinned the current behaviour with a falsifiable test.
+* `Zs` space separators -> already homed, unchanged: the open Maintainer
+  question at `dev/plans/archive/byline-classification.md` [I6].
+* The docstring-vs-emitted-id drift gap (no mechanical guard) -> recorded in
+  this plan's own *Author-accounting* as a known omission; escalates to the
+  `incident-trackers` module only if it recurs.
+* The evidence ledger (measurements, perturbation results, the corpus sweep)
+  -> stays in this plan's own commit bodies and `## Code review` sections;
+  nothing further to migrate.
+
+No AST re-anchor, frozen-manifest re-pin, credential use, or push was
+performed by this archive commit.
 

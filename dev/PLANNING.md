@@ -276,7 +276,7 @@ board by design.
   | Cluster | Current lifecycle owners | Next boundary |
   |---|---|---|
   | **[BND] Input, execution, containment** | `fork-advisory-semantics`, `api-web-security-modules` | profile-authority consolidation; Class C no later than v0.4 preparation |
-  | **[VER] Verification and coverage** | `content-scan-detectors` + `separator-detection`; `security-verification-activation`; `portable-security-sweeps`; `api-web-security-modules`; `security-preflight-checklist` | scanner reviews SHIP: reconcile the live frozen-file union, run one supervised re-pin, archive the pair; then repair the two portable-sweep code-review findings |
+  | **[VER] Verification and coverage** | `security-verification-activation`; `portable-security-sweeps`; `api-web-security-modules`; `security-preflight-checklist` | `content-scan-detectors` + `separator-detection` archived 2026-08-10 (both SHIP-reviewed): reconcile the live frozen-file union and run one supervised re-pin over `content_scan.py` + `test_content_scan.py`, batched per both plans' Maintainer fence; then repair the two portable-sweep code-review findings |
   | **[TRU] Trust roots and provenance** | `fork-advisory-semantics`; the live gate-reanchor posture below | trusted-source boundary after the release bar settles required source/install claims |
   | **[REC] Deliberation authority, identity, context, record integrity** | `review-gate-enforcement`; byline residuals below | one identity-authority consolidation when a trigger fires, not one proposal per Unicode row |
   | **[REL] Release evidence and ceremonies** | `release-security-bar`; the landed Maintainer-run release command; the scheduled frozen-file union | serialize the SHIP-reviewed release register; derive every ceremony from the live held set, then run one reviewed supervised union |
@@ -756,6 +756,15 @@ point rather than being copied into another backlog.
   and flagging the whole script would cost legitimate international names —
   revival needs its own measured corpus, per the Decision. Trigger: either
   question recurring, or a Maintainer call to invest in one.
+* **[VER-1] Content-scanner per-line-per-category flag limit** *(deferred
+  2026-08-10 from `content-scan-detectors` + `separator-detection`, both
+  archived)* — `_scan_unicode` flags at most one hit per category per line
+  (each detector loop `break`s after its first hit on that line); both plans
+  pinned the current behaviour with a falsifiable test rather than changing
+  it. Widening it would alter shipped `unicode-zero-width` / `unicode-bidi` /
+  `unicode-line-separator` / `unicode-ignorable` / `unicode-tag` output for
+  every adopter and needs its own proposal. Trigger: a demonstrated
+  multi-hit-per-line attack the current limit misses.
 * **[VER-4] Conda advisory coverage** — `python-security` audits **Python
   distributions**; conda-managed native packages are outside its declared scope
   (narrowed by Maintainer direction 2026-08-03 in `dependency-advisory-coverage`,
