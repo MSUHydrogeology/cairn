@@ -482,6 +482,377 @@ list. Nothing else in the plan is valid before it lands.
 * **No repository file is modified.** Every leg runs against a scratch copy or a
   scratch process. `git status --short` unchanged at chunk end.
 
+#### Chunk A — RUN, 2026-08-10, Claude
+
+**Opening commit: `dcbb4609a59c813c2d17b574f7ce93fa462bb7d1`** (canonical interpreter
+`/Users/kendal30/conda_envs/lhm/bin/python3.13`, 3.13.13, `PYTHONDONTWRITEBYTECODE=1`).
+Per the plan's own [I4] finding and Amendments A7/A8/A33, every figure below is
+re-derived at this commit rather than carried from an earlier draft; the tree
+is live and shared (three unrelated commits landed on `dev/plans/`,
+`tools/lifecycle_planner.py` and `dev/PLANNING.md` by other sessions during
+this chunk's execution — confirmed by re-diffing the files this chunk actually
+depends on, `bootstrap/_scaffold/`, `SECURITY.md`, `doctrine/runtime-contract.md`,
+`templates/onboarding/`, `bootstrap/PROVENANCE.md`, `bootstrap/profiles/`,
+between the scratch snapshot commit (`7561f04`) and this opening commit:
+**empty diff**, so none of them moved underneath this chunk).
+
+##### Set 2 (computed first; A1 and A3 both quantify over its Markdown destinations)
+
+**Producing command**, repaired per Amendment A33 (`expand_preset` returns a
+2-tuple; `install_manifest` returns `list[tuple[src, dst, verbatim]]`, not dicts):
+
+```python
+import sys; sys.path.insert(0, "bootstrap")
+from pathlib import Path
+from _scaffold.config import load_config, expand_preset
+from _scaffold.install import install_manifest, _ONBOARDING_DOC_NAMES, _ONBOARDING_DOC_DST_DIR_REL
+
+for name in sorted(p.stem for p in Path("bootstrap/profiles").glob("*.yml")):
+    cfg = load_config(Path(f"bootstrap/profiles/{name}.yml"))
+    mods, _summary = expand_preset(cfg)
+    rows = install_manifest(modules=mods)
+    manifest_ext = [f"{_ONBOARDING_DOC_DST_DIR_REL}/{name}.md",
+                     *[f"{_ONBOARDING_DOC_DST_DIR_REL}/{d}" for d in _ONBOARDING_DOC_NAMES]]
+    print(name, "modules:", len(mods), "manifest rows:", len(rows),
+          "union:", len(rows) + len(manifest_ext))
+```
+
+**Output, re-run at `dcbb460`:**
+
+| Preset | Modules selected | `install_manifest` rows | + manifest-external | Set 2 total |
+| --- | --- | --- | --- | --- |
+| `solo-greenfield` | 7 | 65 | 3 | **68** |
+| `collaborative-team` | 12 | 83 | 3 | **86** |
+| `high-rigor-legacy` | 15 | 86 | 3 | **89** |
+
+**A finding this re-derivation surfaces, superseding the plan's own starting
+table (§"What is already true at HEAD").** The plan's own body (written
+2026-08-04, `eacb7dd`) states the module/manifest counts as `6–59, 11–77,
+14–80` and that `content-security in modules: False` for all three presets.
+Both are now **false**, and not from drift in this plan's citations — from a
+**landed proposal**, `default-security-stance` (archived; `dev/plans/archive/default-security-stance.md`).
+Re-measured: `content-security` is now selected by **all three** presets
+(`solo-greenfield`, `collaborative-team`, `high-rigor-legacy`), and
+`python-security` remains selected by **none**. This is load-bearing for
+Chunk B below and is recorded here, at the point it was found, rather than
+silently folded into Chunk B's own text.
+
+**Manifest-external destinations** (`install_onboarding` writes D + E; verified
+absent from `install_manifest(modules=None)` and from a scaffolded target's own
+lockfile — see NC-A2 below):
+
+```
+dev/modules/onboarding/<preset>.md              (write D, per-preset)
+dev/modules/onboarding/agent-team-onboarding.md  (write E, shared)
+dev/modules/onboarding/dev-tour.md               (write E, shared)
+```
+
+**Noted, not counted into Set 2's Markdown-destination union:**
+`install_onboarding` also seeds `dev/.cairn/onboarding-activated.jsonl`
+(write B) outside the manifest — a JSONL data file, not Markdown and not a
+security-control claim, so it is outside Set 1/Set 3's sweep root, but it is
+the *same* manifest-external shape (installed, unlisted, lockfile-uncovered)
+and belongs beside `dev/modules/onboarding/*` in any future closure of this
+residual.
+
+##### Set 1 — every verification step Cairn documents for an adopter to run
+
+**Idiom (structural, not a fixed tool whitelist — so a fabricated/novel-named
+step is visible to the same sweep, per NC-A1):** a runnable invocation
+(`python <path>.py …` or `<path>.sh …`) inside a fenced code block or a
+single-backtick inline span, where a verification-shaped verb (*verify,
+confirm, check, audit, detect, flag, scan*, any inflection) appears in the
+same or an adjacent paragraph.
+
+**Sweep root:** `SECURITY.md`, `bootstrap/PROVENANCE.md`, `bootstrap/SAFETY.md`,
+`bootstrap/BOOTSTRAP.md`, `bootstrap/UPGRADE.md`, `bootstrap/container/recipe.md`,
+`docs/quickstart.md`, plus the 42 Markdown destinations in Set 2's union
+(listed in the sweep script below).
+
+**Producing command**, committed in full (a fixed candidate-path list, not a
+directory walk — Set 1 quantifies over *named* docs, per the proposal):
+
+```python
+import re
+from pathlib import Path
+
+NAMED_DOCS = ["SECURITY.md", "bootstrap/PROVENANCE.md", "bootstrap/SAFETY.md",
+    "bootstrap/BOOTSTRAP.md", "bootstrap/UPGRADE.md",
+    "bootstrap/container/recipe.md", "docs/quickstart.md"]
+SET2_MD = [  # Set 2's markdown destinations, union of all three presets
+    ".agents/skills/session-end/SKILL.md", ".agents/skills/session-start/SKILL.md",
+    "AGENTS.md", "NOTICE.md", "VENDOR.md", "dev/.cairn/cairn_foldback.md",
+    "dev/NEXT_SESSION.md", "dev/PLANNING.md", "dev/README.md",
+    "dev/agent_collaboration.md", "dev/collaboration_agreement.md",
+    "dev/measurement/README.md", "dev/modules/claim-check.md",
+    "dev/modules/content-security.md", "dev/modules/coordination-tiers.md",
+    "dev/modules/doc-drift-prevention.md", "dev/modules/documentation-plan.md",
+    "dev/modules/dual-language-tests.md", "dev/modules/dual-review.md",
+    "dev/modules/fold-back-active-prompt.md", "dev/modules/fold-back-ledger.md",
+    "dev/modules/foldback_export_scan.md", "dev/modules/incident-trackers.md",
+    "dev/modules/incident_log_template.md", "dev/modules/legacy-agent.md",
+    "dev/modules/lifecycle-metrics.md", "dev/modules/model-selection.md",
+    "dev/modules/onboarding/agent-team-onboarding.md",
+    "dev/modules/onboarding/collaborative-team.md",
+    "dev/modules/onboarding/dev-tour.md",
+    "dev/modules/onboarding/high-rigor-legacy.md",
+    "dev/modules/onboarding/solo-greenfield.md", "dev/modules/reflections.md",
+    "dev/modules/security-review.md", "dev/modules/testing-discipline.md",
+    "dev/plans/_template.md", "dev/proposals/_template.md",
+    "dev/reflections/README.md", "dev/rules/README.md",
+    "dev/strategy/README.md", "dev/strategy/_template.md",
+    "dev/upstream/README.md", "dev/upstream/_template.md",
+    "docs/DOCUMENTATION_PLAN.md"]
+
+FENCE_RE = re.compile(r"```([a-zA-Z]*)\n(.*?)```", re.DOTALL)
+INLINE_CMD_RE = re.compile(r"`([^`\n]*\.(?:py|sh)[^`\n]*)`")
+RUNNABLE_RE = re.compile(r"(python[3]?\s+\S+\.py\b[^\n`]*|\S+\.sh\b[^\n`]*)")
+VERB_RE = re.compile(r"\b(verif(?:y|ies|ied|ication)|confirm(?:s|ed|ing)?|"
+    r"check(?:s|ed|ing)?|audit(?:s|ed|ing)?|detect(?:s|ed|ing)?|"
+    r"flag(?:s|ged|ging)?|scan(?:s|ned|ning)?)\b", re.IGNORECASE)
+
+def _paragraph_around(text, start, end):
+    lo = start
+    for _ in range(2):
+        prev = text.rfind("\n\n", 0, lo); lo = prev if prev != -1 else 0
+        if prev == -1: break
+    hi = text.find("\n\n", end); hi = len(text) if hi == -1 else hi
+    return text[lo:hi]
+
+def sweep(root: Path):
+    hits = []
+    for rel in NAMED_DOCS + SET2_MD:
+        p = root / rel
+        if not p.exists(): continue
+        text = p.read_text(encoding="utf-8", errors="replace")
+        for m in FENCE_RE.finditer(text):
+            rm = RUNNABLE_RE.search(m.group(2))
+            if rm and VERB_RE.search(_paragraph_around(text, m.start(), m.end())):
+                hits.append((rel, text[:m.start()].count("\n")+1, "fenced", rm.group(1).strip()))
+        for i, ln in enumerate(text.splitlines(), start=1):
+            for m in INLINE_CMD_RE.finditer(ln):
+                if RUNNABLE_RE.search(m.group(1)) or RUNNABLE_RE.search(ln):
+                    lo, hi = max(0, i-2), i+1
+                    para = "\n".join(text.splitlines()[lo:hi])
+                    if VERB_RE.search(para):
+                        hits.append((rel, i, "inline", m.group(1).strip()))
+    return hits
+```
+
+**Output, re-run at `dcbb460`: 26 hits over 9 files.** Curated (deduped) into
+distinct verification steps below; the full raw output is reproducible by
+running the command above and is not transcribed line-by-line to keep this
+table legible (the recovery the plan's own *edge cases* section
+pre-authorizes: *"collapse to one table … drop the per-item prose"*).
+
+| Verification step (distinct) | Primary citation | Command / procedure | B1? | B2? |
+| --- | --- | --- | --- | --- |
+| `bootstrap/verify_integrity.py --target <repo>` | `SECURITY.md:49` | command | yes | yes (names "the recorded install") |
+| The documented tag-verification bootstrap (6-step `sh` block) | `bootstrap/PROVENANCE.md:166`–`:239` | procedure | yes | yes (binds signed name to name asked about) |
+| `bootstrap/container/verify-ref.sh --signers <path> <cairn> <tag>` | `bootstrap/PROVENANCE.md:312`; also `bootstrap/container/recipe.md:51` | command | yes | yes |
+| `python tools/lifecycle_planner.py scan --include-archive` | `bootstrap/UPGRADE.md:255` | command | yes | no (structural, not identity-bound) |
+| `python scripts/claim_check.py <file>` | `AGENTS.md:270`; canonical doc `dev/modules/claim-check.md:105` | command | yes | yes (names the file it checked) |
+| `python scripts/content_scan.py <files>` | `dev/modules/content-security.md:28` | command | yes | yes (names the files scanned) |
+| `python scripts/link_check.py` | `dev/plans/_template.md:204` | command | yes | no |
+| `python scripts/check_cairn.py` | `dev/plans/_template.md:252`; `dev/proposals/_template.md:350` | command | yes | no |
+
+**A demonstrated sweep-miss — the residual is not only in Set 3.** The
+mechanical sweep, run exactly as specified, **does not** surface
+`SECURITY.md:63`'s `python bootstrap/security_check.py` — the release
+security checklist's own one-command gate, arguably the single most
+important verification step in the fence. Root cause, measured rather than
+guessed: the introducing sentence at `SECURITY.md:61` reads *"One command,
+and its output belongs in the release notes"* — no word in `VERB_RE`'s list
+appears in that paragraph (the nearby "release **gate**" at `:67` is a noun,
+not one of the swept verbs). Added to the table above **by manual reading**,
+not by the mechanical sweep:
+
+| `python bootstrap/security_check.py` | `SECURITY.md:63` (fenced) | command | yes | no (aggregate gate, not a single named identity) |
+
+This is Set 1's own instance of Chunk A's central residual (the same class
+A4 states for Set 3): **a mechanical sweep under-counts relative to a human
+curator's read whenever the prose's verb choice falls outside the pattern
+list**, and the gap is closed here by manual reading, not by widening the
+regex indefinitely (which the proposal's residual argument forbids treating
+as fixable by construction).
+
+##### Set 3 — every sentence asserting a security control is applied
+
+**Pattern list (committed):** `detects?.{0,60}(tamper|modif)`,
+`flags?.{0,60}(modification|tamper|post-install)`, `fail[- ]closed`,
+`gates? apply`, `enforc(es|ed|ing)`, `(the )?gates? (are|is)
+(enforced|required|standing)`, `blocks? the (tag|release)` — each targets a
+**present-tense / standing-application** claim, not an imperative ("run
+this").
+
+**Producing command** (same candidate-path shape as Set 1, over
+`SECURITY.md`, `bootstrap/PROVENANCE.md`, `bootstrap/SAFETY.md`,
+`bootstrap/BOOTSTRAP.md`, `bootstrap/UPGRADE.md`,
+`bootstrap/container/recipe.md`, `docs/quickstart.md`,
+`doctrine/runtime-contract.md`, plus Set 2's 42 Markdown destinations):
+
+```python
+import re
+PATTERNS = [
+    (r"\bdetects?\b[^.]{0,60}\b(tamper|modif)", "detects-tamper"),
+    (r"\bflag(?:s|ging)?\b[^.]{0,60}\b(modification|tamper|post-install)", "flags-modification"),
+    (r"\bfail[- ]closed\b", "fail-closed"),
+    (r"\bgates? apply\b", "gates-apply"),
+    (r"\benforc(?:es|ed|ing)\b", "enforces"),
+    (r"\b(?:the )?gates? (?:are|is) (?:enforced|required|standing)\b", "gate-standing"),
+    (r"\bblocks? the (?:tag|release)\b", "blocks-release"),
+]
+COMPILED = [(re.compile(p, re.IGNORECASE), name) for p, name in PATTERNS]
+# for each file: for each pattern: report every match with an 80-char window
+```
+
+**Output, re-run at `dcbb460`: 39 hits over 15 files.** The two rows Chunk F
+already depends on both reproduce at this commit:
+
+| Sentence | Citation | Pattern hit |
+| --- | --- | --- |
+| *"Detects tampered apparatus before it can self-audit; fail-closed"* | `doctrine/runtime-contract.md:132` | `detects-tamper`, `fail-closed` |
+| *"…flagging any post-install modification"* | `SECURITY.md:51` | `flags-modification` |
+
+Full 39-row output is reproducible by the command above; not transcribed
+line-by-line here for the same legibility reason as Set 1. Most hits are
+**true, self-describing mechanisms** (the sweep enumerates *claims*, it does
+not judge them — that judgment is Chunk F's, decider by decider).
+
+##### A4 — the stated residual (not a caveat)
+
+**NC-A3's deliberate miss, quoted, and what it establishes.** A sentence
+asserting a standing security property in prose that avoids every word in
+the pattern list is invisible to Set 3's sweep. Demonstrated below (NC-A3);
+the missed form: *"Once installed, the safeguard stands watch over every
+commit automatically, with no further action from you."* — a genuine
+standing-application claim (no imperative, present tense, "automatically")
+that trips **none** of the seven patterns.
+
+**What this residual means for the bar, stated plainly rather than
+softened:** Set 3 is not a complete enumeration of security-control claims
+in Cairn's adopter-facing prose. It is a **finite, reproducible catch** of
+one committed idiom. A sentence written in a different idiom — as the
+plan's own *Author-accounting* section already names as the bar's central
+open failure mode — is invisible to Chunk F's decider not because the
+sentence is false but because it was never enumerated. No part of this
+chunk's design closes that gap; Chunk H's staleness/coverage mechanism
+(Amendments A29–A32) narrows it to *paths already named*, not to *idioms
+never matched*.
+
+##### Negative controls, RUN
+
+**NC-A1 — Set 1 sees a planted step, both directions. RUN.**
+
+Two commit-frozen snapshots outside the repository (`git archive` of
+`7561f04`, the commit this chunk's scratch work started from): one clean,
+one with a fabricated paragraph appended to a copy of `docs/quickstart.md`
+("Confirm the deployment widget has not been retargeted: run ` ```\npython
+bootstrap/fabricated_widget_check.py --target <your-repo>\n``` `").
+
+```
+$ sweep(clean archive)     -> 26 hits
+$ sweep(planted archive)   -> 27 hits
+$ diff clean planted
+26a27
+> docs/quickstart.md:380  command (fenced)  python bootstrap/fabricated_widget_check.py --target <your-repo>
+```
+
+Re-run against the clean archive a second time: **byte-identical** output
+(`shasum -a 256` matches, both runs
+`a0a293ae206171ba7f60b0e6bb2e396c45390100b4aa6739cefdd0e6e2b584de`) —
+reproducibility confirmed, not merely asserted.
+
+**NC-A2 — Set 2 sees the manifest-external path, both legs. RUN.**
+
+*Manifest leg (the trap, demonstrated both ways).* A scratch **process**
+(`python`, no repository file touched — `unittest.mock.patch.object`
+reverts the attribute on process exit) that patches
+`_scaffold.config._MODULE_MAPPINGS` (the DEFINING module) by whole-attribute
+replacement, then separately patches `_scaffold.install._MODULE_MAPPINGS`
+(the BINDING module) the same way, calling `install_manifest` after each:
+
+```
+config._MODULE_MAPPINGS IS the patched dict:  True
+install._MODULE_MAPPINGS IS the patched dict: False   <- still points at the OLD object
+  planted dst present via install_manifest(): False   <- SILENT NO-OP, exactly the named trap
+
+  planted dst present via install_manifest(): True    <- patching the BINDING module works
+config._MODULE_MAPPINGS has planted key after revert: False
+install._MODULE_MAPPINGS has planted key after revert: False
+```
+
+Confirms `dev/plans/scan-coverage.md`'s recorded trap reproduces on the
+current engine: `install.py`'s `from .config import _MODULE_MAPPINGS` binds
+by value, so an attribute-replacement patch on `config` is invisible to
+`install_manifest`, and A2's own producing command (which calls
+`install_manifest` directly, the same call the "right" patch exercises) is
+therefore reading the correct object.
+
+*Manifest-external leg.* A real `scaffold.py` run into a scratch target
+outside the repository (`--config <profile: preset: high-rigor-legacy>
+--target <scratch> --cairn-root . --non-interactive --allow-dev`):
+
+```
+$ ls <scratch>/dev/modules/onboarding/
+agent-team-onboarding.md  dev-tour.md  high-rigor-legacy.md
+
+$ python bootstrap/scaffold.py --manifest | grep -c dev/modules/onboarding
+0
+
+$ grep dev/modules/onboarding <scratch>/dev/.cairn/cairn-lock.yml
+(no output)
+```
+
+A2's enumeration (Set 2 = `install_manifest` ∪ manifest-external) reports
+all three; `scaffold.py --manifest` and the scratch target's own lockfile
+report neither — confirming both the under-count and the lockfile-coverage
+gap in the same run, against a real second program's output (the channel
+note's requirement).
+
+**NC-A3 — Set 3 both catches and misses, in one run. RUN.**
+
+One scratch paragraph, two sentences, appended to a commit-frozen copy of
+`docs/quickstart.md`:
+
+```
+CAUGHT-shape: The onboarding activation log enforces write-once semantics
+  on every append.
+MISSED-shape: Once installed, the safeguard stands watch over every commit
+  automatically, with no further action from you.
+```
+
+```
+$ sweep(planted copy) | grep quickstart.md:378
+docs/quickstart.md:378  enforces  …CAUGHT-shape: The onboarding activation
+  log enforces write-once semantics on every append. MISSED-shape: Once
+  installed, the safeguard stands watch over every commit automatically…
+```
+
+Only the `enforces` pattern fires, on the CAUGHT-shape sentence; the
+MISSED-shape sentence is absent from every pattern's hits in the same run —
+both verdicts, one harness, matching the plan's standard for what a
+negative control must show.
+
+**Working-tree cleanliness, verified.** `git status --short` at chunk end:
+unchanged from chunk start (`dev/plans/release-security-bar.md` is the only
+file this chunk's own edit touches; every construction above ran in
+`/private/tmp/…/scratchpad/` or a `git archive` extraction, never against a
+tracked path). No `add`, `mv`, `stash`, `reset`, or `push` was performed.
+
+**Verification of this chunk.**
+
+```
+$ python scripts/claim_check.py dev/plans/release-security-bar.md
+```
+```
+$ python scripts/check_cairn.py dev/plans/release-security-bar.md
+```
+
+(commands committed here; run and their output recorded in this chunk's
+commit body, per the plan's `## Verification` > *"claim_check.py … and
+check_cairn.py … after every burndown chunk"*.)
+
 ---
 
 ### Chunk B — B6: reach measured, and the two false passages corrected
