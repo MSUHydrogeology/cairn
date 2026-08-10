@@ -276,6 +276,13 @@ board by design.
   inheritance, stable evidence reuse, and a measured six-plan pilot. Governing
   lifecycle and scientific-assumption changes remain high assurance.
 
+* **claim-check-exemption-hygiene** *(amendment proposal opened 2026-08-10)* --
+  keep claim-check's useful path discipline while retiring exemption clutter:
+  resolve exact lifecycle archive moves, make typed path declarations reusable
+  and auditable, fail stale active exemptions, and stop copying inert internal-
+  reference headers into Cairn's self-hosted deliberation artifacts. If
+  accepted, joins the `review-efficient-lifecycle` implementation plan.
+
 * **corpus-tier-cost** *(proposal opened 2026-08-10)* -- cut engine-suite
   wall-clock at its head: six files are 16% of nodes and 56% of runtime
   (`as_of 2026-08-10`), and the largest re-derives constants over SHA-pinned
