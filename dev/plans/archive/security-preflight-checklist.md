@@ -11,7 +11,7 @@ Maintainer Decision). It currently sits at
 `dev/proposals/archive/2026-08-03-claude-security-preflight-checklist.md` and moves to
 `dev/proposals/archive/` when it archives. The path is cited once, in full,
 because Chunk B extracts bytes from it mechanically.
-**Status**: open
+**Status**: archived
 **Plan review**: required(**Internal**) — the ceiling the proposal header
 declared (*"If the Maintainer prefers a plan anyway, **Internal** is the
 ceiling"*) and the Decision ratified. **No implementation step runs before the
@@ -2016,5 +2016,60 @@ ambiguous input, and committed it, when the cheap move was to try the two or
 three plausible forms first. "Does not reproduce" is a claim about the artifact;
 until every reasonable derivation has been tried it is only a claim about my own
 attempt.
+
+This section is append-only once written.
+
+## Archive record -- Claude -- 2026-08-10
+
+**Status: archived.** Maintainer-directed: shown the plan's evidence gap and a
+menu that included sending its code review back for a confirmation pass, the
+Maintainer selected **"Append record, note the gap, archive"**, then confirmed
+**"I'm okay with you proceeding on the archive of both plans."** The gap is
+recorded above rather than closed, which is the disposition they chose.
+
+**What landed.** Chunks A-E in one commit, `6c8071c`, over five files: the
+S1-S5 sub-block on both proposal templates, the one-clause pointer on both plan
+templates, and `test_installed_templates_carry_security_preflight_questions` in
+`bootstrap/tests/test_scaffold.py` pinning the shipped side, the self-host side,
+and their parity. Chunk F -- the serialized `CHANGELOG.md` + `dev/PLANNING.md`
+record the plan deliberately withheld from the implementing agent -- lands with
+this archive commit, which is its defined serialization point.
+
+**The plan-level acceptance criterion was NOT met, and is not being quietly
+dropped.** It required the full suite *"green, 0 failed / 0 skipped / 0
+xfailed"*. The Boundary B record above measures **2 failed, 2591 passed**. Both
+failures are the `test_ast_attest` pair, carrying `CHANGED 2`
+(`Assign:_MODULE_MAPPINGS`, `FunctionDef:format_forked_facade_warning`) -- the
+**declared** red window `fork-advisory-semantics` opens at its Chunk B
+(`aba0242`) and closes at its Maintainer-only Chunk R re-anchor. Neither symbol
+is in `_ast_attest._UPDATE_ALLOWLIST`; neither is reachable by this plan, which
+touches no file under `bootstrap/_scaffold/`. The criterion was written before
+that window existed and cannot be satisfied by any plan while it is open.
+Archiving against a documented, foreign, Maintainer-owned red is the deviation;
+pretending the criterion passed would be the defect.
+
+**Residuals -- every one homed outside this plan, per the Lasting-truth table.**
+
+| residual | home at archive |
+|---|---|
+| R1-R5, plus **R6** (added by amendment A-14: the plan's bare `## Plan review` container satisfies `_has_kind` on presence, so the review-before-implement gate reads satisfied with zero reviews landed) | One consolidated row under `dev/PLANNING.md > Deferred follow-ups (durable home)`, landing in this commit. R6's durable owner is **`review-gate-enforcement`**, which archived 2026-08-10 at `be42ba6`; the row names it so the trigger does not die with that plan. |
+| The ritualization-recovery triggers ([E2]) | Same row -- both signals are `git grep`-able by construction, which is why they had to outlive both the proposal and this plan. |
+| The stale frozen pin for `bootstrap/tests/test_scaffold.py` | The implementing commit body plus whatever supervised re-pin consumes it. Explicitly **not** this plan's. |
+| The twin-parity gap for `dev/**/_template.md` | The test's own docstring, which states it covers the added sub-block and not the whole `Author-accounting` block. |
+| The sub-block's **text** | Deliberately does **not** migrate. Its durable home is the four template files and the accepted proposal; this plan is not a second source, which is why Chunk B elides the five bullets. |
+
+**Verification at archive.** The code review
+(`## Code review -- Antigravity (External) -- 2026-08-10`) returned **SHIP**. Its
+one contested claim -- the SHA-256 extraction digest -- was challenged in the
+Boundary B record and then **withdrawn**: the digest reproduces exactly over the
+de-quoted block, both templates carry it verbatim, and the two templates' S1-S5
+regions are byte-identical. See the Correction section above; the review was
+right and the challenge was a measurement error on my side.
+
+**Known omission carried into the archive.** No independent reviewer ever ran
+this plan's broad gates. The full suite, `check_cairn`, and `quality_gate`
+figures above are the implementing side's, produced after the review. A reader
+weighing this plan's assurance should treat its broad-run evidence as
+self-supplied and its targeted falsification as independent -- not both.
 
 This section is append-only once written.

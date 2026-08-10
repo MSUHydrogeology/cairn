@@ -308,7 +308,7 @@ board by design.
   | Cluster | Current lifecycle owners | Next boundary |
   |---|---|---|
   | **[BND] Input, execution, containment** | `fork-advisory-semantics`, `api-web-security-modules` | profile-authority consolidation; Class C no later than v0.4 preparation |
-  | **[VER] Verification and coverage** | `security-verification-activation`; `portable-security-sweeps`; `api-web-security-modules`; `security-preflight-checklist` | `content-scan-detectors` + `separator-detection` archived 2026-08-10 (both SHIP-reviewed): reconcile the live frozen-file union and run one supervised re-pin over `content_scan.py` + `test_content_scan.py`, batched per both plans' Maintainer fence; then repair the two portable-sweep code-review findings |
+  | **[VER] Verification and coverage** | `security-verification-activation`; `portable-security-sweeps`; `api-web-security-modules` | `content-scan-detectors` + `separator-detection` archived 2026-08-10 (both SHIP-reviewed), `security-preflight-checklist` archived 2026-08-10 (SHIP; its broad-run evidence is implementer-supplied, see its archive record): reconcile the live frozen-file union and run one supervised re-pin over `content_scan.py` + `test_content_scan.py`, batched per both plans' Maintainer fence; then repair the two portable-sweep code-review findings |
   | **[TRU] Trust roots and provenance** | `fork-advisory-semantics`; the live gate-reanchor posture below | trusted-source boundary after the release bar settles required source/install claims |
   | **[REC] Deliberation authority, identity, context, record integrity** | `code-review-blindness` (proposal, 2026-08-10); byline residuals below — `review-gate-enforcement` **archived 2026-08-10** (SHIP, no findings; its two residuals owned by that proposal) | one identity-authority consolidation when a trigger fires, not one proposal per Unicode row |
   | **[REL] Release evidence and ceremonies** | `release-security-bar`; the landed Maintainer-run release command; the scheduled frozen-file union | serialize the SHIP-reviewed release register; derive every ceremony from the live held set, then run one reviewed supervised union |
@@ -656,6 +656,35 @@ authority. Completed rows leave this file at their lifecycle serialization
 point rather than being copied into another backlog.
 
 **Lifecycle apparatus**
+* **Security-preflight residuals (R1-R6)** *(deferred, Aug 2026; plan
+  `security-preflight-checklist` archived 2026-08-10)* -- the five-question
+  preflight block ships declared-unenforced, and these are its named expiry
+  triggers. **R1**: plan templates carry a clause, not the block, so a
+  security-touching plan whose source proposal predates the change inherits no
+  answered block -- trigger is the first such plan. **R2**: the
+  security-touching gate is self-judged; nothing checks an "N/A" line --
+  trigger is the *second* review that finds a security-touching change which
+  wrote one. **R3**: nothing mechanical fires at all; enforcement is a reviewer
+  declining to review an unanswered block -- trigger is the `transition-lint`
+  proposal landing a lifecycle linter with somewhere cheap to add a presence
+  check. **R4**: five shapes, not all shapes -- trigger is the first security
+  finding that fits none of the five, at which point the shape has an instance
+  and the recurrence limb applies to adding it. **R5**: the parity test pins
+  only the added sub-block, while the whole `Author-accounting` block is
+  byte-identical across both twins today -- trigger is the first legitimate
+  divergence inside that block (a `cairn:slot` added to one side), which is the
+  moment to decide whether the wider invariant is worth asserting. **R6** *(added
+  by that plan's amendment A-14)*: a plan's bare `## Plan review` container
+  satisfies `_has_kind` on presence, so the review-before-implement gate reads
+  satisfied with **zero reviews landed**; measured `_has_kind -> True` against
+  the plan as opened at `4020b76`. R6's durable owner was
+  `review-gate-enforcement`, **which archived 2026-08-10 at `be42ba6`** -- so the
+  trigger is named here rather than left to die with it: revival is the next
+  change to either plan template's review container. Ritualization recovery (cut
+  to S1 and S2) fires on either of two `git grep`-able signals: three
+  consecutive proposals whose S1-S5 answers are byte-identical to a prior
+  proposal's, or any proposal answering all "N/A" while its own `Touches` line
+  names a surface `AGENTS.md` lists under *High-risk surfaces*.
 * **[REC-3 / VER-3] Implementation-verification record conformance** *(deferred
   2026-08-05 from `verification-evidence-boundaries` External finding [E1])* —
   the v1 contract instructs authors to append a dated, field-complete record

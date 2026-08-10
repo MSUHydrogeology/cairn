@@ -264,7 +264,7 @@ each check inspect, and can coverage silently narrow?
   (SC3), the queued `shipped_executables()` authority unification, and Bandit
   allowlist liveness (SC5). [REL-2] is SC5's proposed owner.
 * [VER-6] **Author-side security accounting.** Plan
-  [`security-preflight-checklist`](../plans/security-preflight-checklist.md)
+  [`security-preflight-checklist`](../plans/archive/security-preflight-checklist.md)
   adds five design-time security questions to the proposal templates and a twin
   parity check. It guides review; it is not a substitute for a Security Review.
 * [VER-7] **Cross-language security conformance.** The deferred

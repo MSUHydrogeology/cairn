@@ -42,6 +42,22 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **Five questions a security-touching change answers before review.** The
+  proposal template's `Author-accounting` block now carries a gated
+  `Security preflight` sub-block: who supplied the material a decision is made
+  from (S1), what one-line mutation makes each enforcing check fail (S2), what
+  command fires the check and over what input set (S3), which side of the
+  boundary each default and fallback lands on when it goes wrong (S4), and
+  which attacker capability still succeeds afterwards (S5). Each traces to a
+  real finding in this repository's record; four instances of S1's shape landed
+  in one week and four different readers -- never the author -- caught them. The
+  plan template gains a one-clause pointer rather than a copy, so the four
+  template files stay a two-pair sync surface instead of a four-way one, and a
+  new test in `bootstrap/tests/test_scaffold.py` pins the shipped side, the
+  self-host side, and their parity. Nothing mechanical checks that a proposal
+  *answers* the questions, and the block says so. Proposal
+  `security-preflight-checklist`, plan `security-preflight-checklist`.
+
 - **Content scanning now covers the invisible Unicode channels and separators
   its earlier tables missed.** New `unicode-ignorable` and `unicode-tag`
   findings cover the reviewed PRECIS ranges while keeping Tag characters
