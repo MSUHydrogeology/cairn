@@ -1,4 +1,11 @@
 <!-- cairn-internal-ref-allow: doctrine/dual-review.md doctrine/rationale.md doctrine/coordination.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
+<!-- claim-check-allow: scripts/run_security_verification.py -->
+<!-- ^ Adopter-tree destination: this is where the dispatcher lands in an
+     ADOPTER's repository (this module's own InstallSpec dst). Cairn itself
+     does not self-host the dispatcher (security-verification-activation's
+     plan, "Cairn does not self-host the dispatcher"), so the path never
+     resolves in Cairn's own tree; the directive travels with the rendered
+     copy so every installed adopter passes its own claim checker too. -->
 # Module: security-verification
 
 **Selected when:** default-on — every adoption receives the dispatcher; an

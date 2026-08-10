@@ -1,4 +1,10 @@
 <!-- cairn-internal-ref-allow: doctrine/ reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
+<!-- claim-check-allow: dev/modules/security-verification.md -->
+<!-- ^ Forward reference: security-verification-activation Chunk B creates
+     Cairn's own self-hosted dev/modules/security-verification.md (matching
+     the other six default-on modules); it does not exist yet at Chunk A.
+     In an ADOPTER's installed tree the path always resolves (the module is
+     default-on). -->
 # AGENTS.md — {{project_name}}
 
 > **Single living reference for AI agents working on this
