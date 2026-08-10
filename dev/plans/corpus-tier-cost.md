@@ -4,7 +4,7 @@
 
 **Source proposal**: [`corpus-tier-cost`](../proposals/2026-08-10-claude-corpus-tier-cost.md),
 accepted at Revision 2 (`## Decision -- Anthony Kendall (Maintainer) -- 2026-08-10`).
-**Status**: executing
+**Status**: review
 **Plan review**: required(**Internal**) — decided in the proposal per [E4].
 Test infrastructure only: no shipped file, no adopter surface, no doctrine, no
 dependency, no ceremony.
