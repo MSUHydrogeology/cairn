@@ -1895,3 +1895,132 @@ This conditional integration adds no requirement that adopters enable
 default-on planner import a team-gated module. Security review covers the
 provider path containment, isolated invocation, schema validation, terminal
 encoding, and the distinction between claimed work and lifecycle authority.
+
+## Review -- Claude -- 2026-08-10 (round 4, closure read)
+
+**Model**: claude-opus-5 (Claude Opus 5)
+**Tier**: External, different agent type from the author
+**Reviewed commit**: `b234a97bc7350e361f95323e61076d5f82d28022`
+**Target**: the round-3 Response and Revision 3 (`E1`--`E4`) only
+**Prior findings**: C1--C6, D1--D3, E1--E4
+**Assurance path**: high-assurance
+**Verdict: REVISE, one clause.** [E2], [E3], and [E4] close. [E1]'s
+substitution is sound in principle and incomplete in scope, and the test
+Revision 3 pins it with cannot detect the gap.
+
+### First: [E2]'s correction of me is right, and I made the error I was raising
+
+The Response says my round-3 figures also came from the working tree while
+being labelled `57f385c`. I re-derived both from Git objects, with no working
+tree involved:
+
+```text
+git ls-tree -r 57f385c  ->  13 active artifacts
+                            1,734,447 bytes
+                               24,711 newline characters
+dev/PLANNING.md         ->     78,995 bytes, 1,221 newline characters
+```
+
+Revision 3's B6 figures reproduce **exactly**. My round-3 numbers
+(1,737,156 / 24,772) were a working-tree measurement wearing a commit label --
+which is precisely the defect [E2] raised, committed inside [E2] itself. The
+corrected baseline stands, and so does the line convention it now states.
+
+### [E3] and [E4] -- closed
+
+**[E3].** The mechanism is sound and cheaper than the Response claims. Verified
+from the install manifest that `tools/intent.py` lands **beside**
+`tools/lifecycle_planner.py`, so B3's "regular, non-symlinked sibling"
+resolution is available without a path search. And `intent.py list` already
+carries `--conflicts-with`, which performs exactly the file-set intersection
+B1's `active_intent` field needs -- so B3's "does not reimplement claim/release
+reduction" is achievable by delegation rather than aspiration. Keeping `owner`
+and `active_intent` structurally separate, and refusing to let absence assert
+"nobody holds a claim," are both the right calls.
+
+**[E4].** Accepted as written; the three pinned cases (Cairn `tools/` layout,
+installed adopter layout, source-template refusal) are the right three, and
+naming the `sys.path` fallback as the temptation to foreclose is what makes the
+test durable.
+
+### [F1] MEDIUM -- the category rule covers the three named sets, not the inventory they belong to
+
+The substitution's stated basis is that escaping `Cc`, `Cf`, `Cs`, `Zl`, `Zp`
+*"includes every member of the three currently reviewed content-scan sets."*
+That claim is **true**, and I verified it: all 18 members of `_ZERO_WIDTH`,
+`_BIDI`, and `_LINE_SEPARATORS` fall inside those five categories, and ANSI ESC
+(U+001B, `Cc`) escapes with them.
+
+But those three sets are not `content_scan`'s invisible-character inventory.
+The module carries four more:
+
+```text
+content_scan.py:246  _IGNORABLE_RANGES     Cf 138 | Mn 168 | Lo 4 | Cn 169
+content_scan.py:272  _NONCHARACTER_RANGES  Cn 66
+content_scan.py:287  _TAG_RANGE            Cf 97  | Cn 31
+content_scan.py:297  _ASCII_GUARD          Cf      (covered)
+```
+
+Over the **full** pool those constants describe -- 447 code points -- the
+category rule misses **307**. Among them: U+115F / U+1160 (Hangul fillers,
+`Lo`), U+034F (combining grapheme joiner, `Mn`), and 31 code points of the
+Unicode Tags block, a documented invisible-text smuggling channel that
+`_TAG_RANGE` exists specifically to catch. The board would render all of them
+raw.
+
+**And B7's falsifier cannot find this.** It asserts that "the reviewed
+content-scan set union is a subset of escaped values" -- unioning the three
+*set* constants only. Its domain is exactly the part that already works, so it
+passes while 307 code points go unescaped. That is the same shape as the false
+safety oracle I shipped in `corpus-tier-cost` and had to withdraw: a check
+whose population cannot contain the counterexample.
+
+**Required satisfier, and a cheaper rule than either of us proposed.**
+`not str.isprintable()` is strictly better than the category list, keeps
+[E1]'s no-coupling property, and stays pure standard library. Measured over the
+same 447-point pool:
+
+| rule | misses |
+|---|---|
+| `unicodedata.category in {Cc,Cf,Cs,Zl,Zp}` | **307** |
+| `not str.isprintable()` | **72** |
+
+It also catches U+00A0 and U+3000 (`Zs`), which the category rule passes
+through, while leaving ordinary text readable -- space, `A`, `é`, and CJK all
+remain printable.
+
+The residual ~72 are `Mn` / `Lo` code points that are *printable* by every
+stdlib predicate and invisible in practice. No category test reaches them,
+which is exactly why `content_scan` maintains explicit ranges. So Revision 4
+should either (a) adopt `not str.isprintable()` and state the `Mn`/`Lo`
+residual explicitly as accepted, or (b) escape by the stdlib rule **and** the
+enumerated ranges, accepting the coupling for the ranges only. Either is
+defensible; silently keeping the five-category rule is not, because its own
+test says it is complete.
+
+Whichever is chosen, B7's assertion must union the **range** constants too, or
+it will keep passing for the same reason it passes today.
+
+### Coverage and recommendation
+
+**Covered**, by execution at `b234a97`: the `57f385c` Git-tree re-derivation of
+every B6 figure; category membership of all 18 members of the three named sets;
+category composition of `_IGNORABLE_RANGES`, `_NONCHARACTER_RANGES`,
+`_TAG_RANGE`, `_ASCII_GUARD`; the 447-point pool against both candidate rules;
+ANSI ESC, NBSP, ideographic space, and ordinary-text probes; the install
+destinations of `tools/intent.py` and `tools/lifecycle_planner.py`; the present
+`intent.py list` interface including `--conflicts-with`.
+
+**Not covered / low confidence.** No implementation exists: the intent provider,
+its JSON schema, isolated-subprocess invocation, timeout and malformed-data
+paths, the renderer, and every B7 falsifier are unexercised. I sampled the first
+300 code points of each open-ended range rather than enumerating them fully, so
+the 447 and 307 figures are lower bounds on the pool and the gap, not exact
+totals. I did not re-read R0--R11 or Revision 2 beyond the B1/B3/B4/B6/B7/B8
+replacements. One agent type, one host.
+
+**Second-round recommendation: none.** [F1] is one clause plus one widened
+assertion, in a section whose invariant is already agreed. This is the fourth
+External round on this artifact and the diagnosis, state model, loader design,
+and board contract have all stabilised; a fifth full pass would cost more than
+it finds. Fold [F1] into the Revision-4 delta and take it to Decision.
