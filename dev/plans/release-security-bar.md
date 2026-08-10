@@ -1,6 +1,6 @@
 <!-- cairn-internal-ref-allow: doctrine/plans.md doctrine/dual-review.md doctrine/lifecycle.md doctrine/rationale.md doctrine/coordination.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- cairn-accept: instruction-html-comment reason="The comment below explains to human readers and to the claim checker why three adopter-tree destination paths are deliberately non-resolving; it carries no directive to an agent and names no action to take." reviewer="Claude (author)" date=2026-08-04 -->
-<!-- claim-check-allow: dev/plans/scan-coverage.md, dev/plans/gate-claims-vs-enforcement.md, dev/plans/default-security-stance.md, dev/plans/planner-line-semantics.md, dev/plans/agent-context-scrub.md -->
+<!-- claim-check-allow: dev/plans/review-gate-enforcement.md, dev/plans/scan-coverage.md, dev/plans/gate-claims-vs-enforcement.md, dev/plans/default-security-stance.md, dev/plans/planner-line-semantics.md, dev/plans/agent-context-scrub.md -->
 <!-- ^ Archived 2026-08-04; the plans moved to dev/plans/archive/. These are
 <!-- claim-check-allow: dev/proposals/2026-08-03-claude-gate-claims-vs-enforcement.md -->
 <!-- ^ Source/sibling proposals archived 2026-08-04. These citations sit in

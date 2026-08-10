@@ -11,7 +11,7 @@
 edited** — see the sequencing fence below); potentially
 `doctrine/plans.md` in a follow-on plan, depending on the scope
 question this proposal asks the Maintainer to resolve.
-**Related**: [`review-gate-enforcement`](../plans/review-gate-enforcement.md)
+**Related**: [`review-gate-enforcement`](../plans/archive/review-gate-enforcement.md)
 (open; owns `_pass_headings` / `_has_disposition`, the exact functions
 this defect lives in); [`review-efficient-lifecycle`](2026-08-10-codex-review-efficient-lifecycle.md)
 (revised, not yet Decided; already names this defect and plans a
@@ -140,7 +140,7 @@ dev/plans/archive/separator-detection.md
 dev/plans/archive/solo-legacy-adopter-path.md
 dev/plans/fork-advisory-semantics.md
 dev/plans/portable-security-sweeps.md
-dev/plans/review-gate-enforcement.md
+dev/plans/archive/review-gate-enforcement.md
 dev/plans/archive/transition-lint.md
 ```
 
@@ -193,7 +193,7 @@ format that was never theirs.
    original defect as: "The gate ... clears on the *presence* of a section
    named 'Plan review' ... Four documented promises — the declared tier,
    the `##` heading level, the date, and a `### Sharpening` subsection when
-   findings were raised — are unenforced" (`dev/plans/review-gate-enforcement.md:39-42`).
+   findings were raised — are unenforced" (`dev/plans/archive/review-gate-enforcement.md:39-42`).
    Every noun in that sentence is Plan-review-specific; Code review is not
    named.
 2. The plan's own `## Scope` section (`:55-84`) lists `doctrine/plans.md`
@@ -202,7 +202,7 @@ format that was never theirs.
    grammar" — again framed around the Plan-review grammar the Decision was
    reacting to. Nothing in Scope or Out-of-scope names Code review.
 3. The plan's own just-landed closing review says so directly. The
-   External Code review at `dev/plans/review-gate-enforcement.md:1766`
+   External Code review at `dev/plans/archive/review-gate-enforcement.md:1766`
    (Antigravity, `2026-08-10`, closing the CR1/CR2 correction) states at
    `:1803`: "Confirmed CR1/CR2 fixes touch only `Plan review` headings and
    dispositions without widening or narrowing `## Code review` section
@@ -242,13 +242,13 @@ re-derive-every-figure discipline):
   in-flight" — the range is no longer under an open reviewer.
 
 The fence is still real, just for a different reason than originally
-stated. `dev/plans/review-gate-enforcement.md`'s own `**Status**:` line
+stated. `dev/plans/archive/review-gate-enforcement.md`'s own `**Status**:` line
 reads `open` (measured `as_of 5173288`), and its `## Lasting-truth
 migration` section is unfilled — the plan has not archived. Per this
 project's own archive-precondition doctrine, a plan's implementation range
 is not the durable record until it archives. **Recommendation: any
 implementation touching `_pass_headings` / `_has_disposition` waits until
-`dev/plans/review-gate-enforcement.md` reaches `archived` status**, so a
+`dev/plans/archive/review-gate-enforcement.md` reaches `archived` status**, so a
 follow-on plan for this proposal opens against those functions' settled,
 historical shape rather than a freshly-landed, not-yet-archived one. This
 is a weaker fence than "wait for the reviewer," and I am flagging that
@@ -427,7 +427,7 @@ corpus today.
   need correcting before implementation, not copied verbatim from S7.
 * **Known omissions**: this proposal does not resolve which remedy ships,
   does not draft the doctrine subsection a schema would need, and does not
-  touch `dev/plans/review-gate-enforcement.md` or
+  touch `dev/plans/archive/review-gate-enforcement.md` or
   `dev/proposals/2026-08-10-codex-review-efficient-lifecycle.md` (both
   explicitly out of scope for this session).
 

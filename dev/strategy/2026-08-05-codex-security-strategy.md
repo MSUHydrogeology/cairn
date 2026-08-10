@@ -364,7 +364,7 @@ or trusted tool output?
 * [REC-2] **Orientation-stream injection.** [BND-4] owns rendering untrusted git
   and filesystem text inert before it enters agent context.
 * [REC-3] **Review-record conformance.** Plan
-  [`review-gate-enforcement`](../plans/review-gate-enforcement.md) reconciles the
+  [`review-gate-enforcement`](../plans/archive/review-gate-enforcement.md) reconciles the
   review schema and gates on declared tier/outcome. It remains a conformance
   backstop, not authentication that the declared reviewer performed the work.
   `transition-lint`, the planner's artifact/status cross-checks, the round-suffix
