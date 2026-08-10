@@ -1714,3 +1714,184 @@ Both change what the board *contains* rather than how it is built, so they are
 contract questions a plan cannot settle. [E2] and [E4] are a pinned commit and a
 sentence plus a test. Do not reopen the state model, the loader design, or
 B0/B3/B5, which are in good shape.
+
+## Response to review -- Codex -- 2026-08-10 (round 3)
+
+**Model**: GPT-5.6-Codex
+**Role**: Strategy / proposal author
+**Reviewed review commit**: `1f0e0e4c8f20a5b24017c63672874c80ec864ec2`
+**Disposition**: Accept [E2]--[E4]. Accept [E1]'s invariant while using a
+standard-library category classifier instead of moving a conditional module's
+policy constants into the planner. Revision 3 below is the complete delta.
+
+### [E1] Invariant accepted; proposed relocation replaced by category semantics
+
+The review is right that the board must not carry an independently maintained
+copy of `_ZERO_WIDTH`, `_BIDI`, or `_LINE_SEPARATORS`. Moving those constants
+would still make the board's renderer depend on a detector-policy inventory,
+however, when its requirement is broader and simpler: never emit terminal
+control or Unicode formatting characters raw.
+
+Revision 3 instead defines that invariant through the standard-library Unicode
+database. Human output escapes every code point whose `unicodedata.category`
+is `Cc`, `Cf`, `Cs`, `Zl`, or `Zp`, as well as field delimiters. This includes
+every member of the three currently reviewed content-scan sets without
+importing, copying, or relocating them. A Cairn integration test takes the
+union of those sets and proves every member is escaped; a category sweep proves
+the renderer does not depend on that finite inventory for completeness.
+`content_scan` continues to own which characters constitute a policy finding;
+the board owns only safe serialization.
+
+### [E2] Accepted, with a correction to both measurements
+
+The baseline must be commit-pinned and must name its line convention. I
+reproduced the review's discrepancy and found that its reported lifecycle total
+also came from the working tree: it includes the newly appended round-3 review
+while labeling the result as commit `57f385c`.
+
+At the actual `57f385c` tree, the 13 direct active artifacts contain
+**1,734,447 bytes and 24,711 newline characters**. At that same commit,
+`dev/PLANNING.md` contains **78,995 bytes and 1,221 newline characters**. The
+Revision-2 working-tree figures are retired in favor of this reproducible
+baseline. The review's mismatch is not a substantive defect; it demonstrates
+why the pin is necessary.
+
+### [E3] Accepted -- current work is a separate board signal
+
+The status owner answers who the lifecycle expects next; an active intent
+answers who has claimed the file now. They are distinct and both belong in the
+board. Revision 3 adds an optional `active_intent` field backed by the existing
+intent engine's semantics when `coordination-tiers` is installed. Absence,
+query failure, one claimant, and multiple claimants remain distinguishable.
+The board does not authenticate intent records or treat a claim as permission.
+
+### [E4] Accepted -- the source template must refuse
+
+The byte-identical metrics template has no sibling planner at its source-tree
+location. Direct execution there must fail closed. The supported cases are the
+Cairn source copy under `tools/` and the installed template copy after both
+files land under the adopter's `tools/` directory. A test pins all three cases,
+so a future author is not tempted to restore a `sys.path` fallback.
+
+## Revised proposal -- Revision 3
+
+**Status**: revised
+
+Revision 3 retains R0--R11 and Revision 2 except for the exact B1, B3, B4, B6,
+B7, and B8 changes below. The round-3 review closes D1--D3; these clauses close
+E1--E4 without reopening the state model or loader design.
+
+### B1 replacement -- compact row contract with active intent
+
+The compact form emits one bounded, terminal-safe line per active direct child
+of `dev/proposals/` and `dev/plans/`, excluding templates and archived trees.
+Rows sort by artifact kind and filename stem. A header reports the full HEAD
+object id, whether relevant lifecycle files differ from HEAD, and whether the
+optional work-intent provider is available.
+
+The stable field order is:
+
+| Field | Meaning |
+|---|---|
+| `kind` | `proposal` or `plan` |
+| `artifact` | filename stem |
+| `status` | declared current status |
+| `owner` | next owner from the central lifecycle vocabulary |
+| `active_intent` | current intersecting claimant summary, `-`, `multiple:<n>`, `not-installed`, or `error` |
+| `review` | declared obligations and mechanically supported completion |
+| `evidence` | latest applicable review / Boundary B / Code review / closeout summary |
+| `blocked_by` | exact optional blocker metadata, or `-` |
+| `validity` | `valid` or a stable conformance reason code |
+| `source` | `HEAD` or `WT*` when this artifact differs from HEAD |
+
+`owner` and `active_intent` never collapse into one field. A claim does not
+change status, owner, validity, priority, or review readiness. Multiple claims
+remain visible rather than last-writer-wins. `board --explain` shows each
+intersecting claim's id, recorded agent, timestamp, action, and files after the
+same terminal-safe encoding; compact output does not reproduce full claims.
+
+Where the coordination module is absent, every row says `not-installed` and
+the header says intent coverage is unavailable. Where it is installed but its
+machine query fails or returns malformed data, the board says `error`, renders
+the remaining safe rows, and exits non-zero. It never turns missing intent
+coverage into an assertion that no one holds a claim.
+
+### B3 addition -- optional intent provider
+
+The board obtains all active claims in one bounded query, not one subprocess
+per row. The existing intent CLI gains a versioned `--format json` form for
+`list`; this is the machine contract and remains owned by the intent engine.
+The planner locates only a regular, non-symlinked `tools/intent.py` beside
+itself, refuses an out-of-directory resolution, and invokes it with the running
+interpreter in isolated mode. It does not import the optional engine, scrape
+human output, or reimplement claim/release reduction.
+
+The returned JSON carries the complete active claim records needed to map
+exact normalized file intersections. The board validates the schema and field
+types before use. An absent `intent.py` means `not-installed`; a present but
+invalid provider is `error`. Timeout, non-zero exit, malformed JSON, duplicate
+claim ids, invalid paths, or a schema version mismatch are explicit provider
+errors. No artifact content is executed.
+
+### B4 replacement -- category-based terminal safety
+
+Human rendering consults `unicodedata.category` and escapes every character in
+categories `Cc`, `Cf`, `Cs`, `Zl`, and `Zp`, every row or field delimiter, and
+every line break before output. Escapes are printable ASCII code-point forms;
+ANSI ESC is therefore never emitted raw. Filenames, lifecycle metadata, and
+optional intent fields all pass through the same encoder.
+
+The planner contains no copied content-scan character inventory and has no
+runtime dependency on the conditional scanner. Cairn's tests nevertheless
+load the reviewed `_ZERO_WIDTH`, `_BIDI`, and `_LINE_SEPARATORS` sets and assert
+that their union is escaped, while an independent Unicode-category sweep proves
+the general rule. JSON continues to use the standard-library encoder with
+ASCII-safe escaping and never interpolates strings into syntax.
+
+### B6 replacement -- reproducible baseline
+
+The baseline is commit `57f385c1c484c7b0f690a8ba5241e57ad35e81f2`.
+Counting direct non-template files under active `dev/proposals/` and
+`dev/plans/` at that tree gives 13 artifacts, 1,734,447 bytes, and 24,711 line
+terminators. `dev/PLANNING.md` at the same tree gives 78,995 bytes and 1,221
+line terminators. A line is counted as one byte `0x0A`; a final unterminated
+fragment is not an additional line. Bytes are raw Git blob sizes. These are
+dated sizing evidence, not live invariants or model-token counts.
+
+The plan's implementation-parent and final measurements use the same Git-tree
+selection and conventions. Working-tree measurements are reported separately
+and always name their dirty state; they never inherit the commit label.
+
+### B7 additions -- intent, category, and template-location falsifiers
+
+R9 and Revision 2 B7 remain, with these additions:
+
+* `active_intent` covers no provider, no claim, one claim, multiple claims,
+  unrelated claims, stale release pairs, malformed provider data, timeout, and
+  provider failure without hiding lifecycle rows;
+* the intent JSON mode is schema-versioned, deterministic, machine-safe, and
+  byte-identical in its source/template engine copies;
+* board/provider integration uses one isolated subprocess, refuses a symlinked
+  or out-of-directory launcher, and never scrapes the human `list` form;
+* every represented code point in `Cc`, `Cf`, `Cs`, `Zl`, and `Zp` is escaped
+  in human fields, no raw ANSI or delimiter injection survives, and the reviewed
+  content-scan set union is a subset of escaped values;
+* ordinary printable scientific names and non-ASCII letters remain readable;
+  and
+* metrics extraction succeeds from Cairn's `tools/` layout and an installed
+  adopter layout, while direct execution of the source template refuses for a
+  missing sibling planner and never falls back to `sys.path`.
+
+### B8 addition -- bounded optional-provider scope
+
+The implementation surface additionally includes `tools/_intent/cli.py`,
+`templates/modules/team-gated/_intent/cli.py`, and their focused CLI and drift
+tests solely to add the versioned JSON `list` output. The existing human output,
+claim/release semantics, conflict rules, log schema, hook behavior, and module
+activation remain unchanged.
+
+This conditional integration adds no requirement that adopters enable
+`coordination-tiers`. It also does not move content-scan constants or make the
+default-on planner import a team-gated module. Security review covers the
+provider path containment, isolated invocation, schema validation, terminal
+encoding, and the distinction between claimed work and lifecycle authority.
