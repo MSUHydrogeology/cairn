@@ -394,3 +394,84 @@ rate-limit gate:
   flagged as a fold-up candidate by the superseded note. It remains one; the
   new element is that the existence half is now demonstrably enforced by a
   shipped checker rather than proposed.
+
+---
+
+## Review -- Codex (External) -- 2026-08-10
+
+<!-- TEMPORARY REVIEW: the author folds accepted findings inline and deletes
+     this section. Strategy notes are inline-revised, not append-only. -->
+
+**Structural independence.** This is a different-agent-type read of Claude's
+strategy note. I reviewed the exact bytes at
+`40c33fb8b65916da717d21f7f34e45a1ff1096f4` and independently re-ran the
+repository measurements rather than inheriting the note's figures.
+
+**Recommendation: REVISE, then promote stages 1-2.** The staged direction is
+sound. A scan-friendly README plus the related-practices and glossary pages is
+a useful, bounded first proposal. Generated or registry-derived visuals should
+remain a later proposal after their source contracts stabilize. Four focused
+revisions would make that division reliable.
+
+### Steelman
+
+The note correctly treats visual polish as documentation infrastructure rather
+than decoration. It preserves Cairn's zero-runtime-dependency and licensing
+constraints, distinguishes asset existence from legibility, avoids turning the
+README into a brittle capability inventory, and declines to advertise the two
+features whose evidence is not yet strong enough. Option 4 is the right
+sequence: the prose work has immediate value and does not need to wait for a
+diagram generator.
+
+### Findings
+
+**[D1] The documentation census tests its own prose and its headline count is
+already stale.** At the reviewed commit, `git ls-tree -r --name-only 40c33fb |
+grep -E '\.md$' | wc -l` reports **282**, not 281. More importantly, both raw
+commands in F1 report two files: `README.md` and this strategy note. The note
+itself contains the literal image pattern in an inline-code example and the
+Mermaid fence text in inline code. Anchoring the searches to standalone image
+lines and actual fence openings returns only `README.md`, which does support the
+substantive conclusion. Fold-up should correct the count, pin snapshot figures
+to the measured commit, and replace the self-contaminating commands with a
+parser or anchored patterns that distinguish examples from real assets.
+
+**[D2] Gate 3 requires an asset convention but does not give it a canonical
+home.** `docs/DOCUMENTATION_PLAN.md` is Cairn's governing source for the
+documentation architecture and is the natural owner for asset location,
+naming, provenance, licensing, and legibility-verification rules. The proposed
+`docs/glossary.md` and `docs/related-practices.md` also belong in that document's
+descriptive-layer inventory. Name this ownership in the strategy. Do not alter
+the shipped documentation-plan template as part of Cairn's internal work; the
+two portable fold-up candidates still require their separately reviewed
+doctrine change.
+
+**[D3] Registry-derived diagrams need a stability and artifact-safety contract
+before implementation.** The lifecycle vocabulary and module mappings that
+would feed the proposed generator are active implementation surfaces, so a
+generator built now would encode moving inputs. Gate stages 4-5 on named,
+settled registry paths and record the source commit or digest in generated
+output. A later generator proposal should also require deterministic output,
+XML escaping for every registry-derived label, no scripts or external
+resources, no host-font dependency, and atomic replacement. These constraints
+are compatible with the standard library and keep generated SVG from becoming
+a new injection or drift surface.
+
+**[D4] Three feature-story phrases claim more certainty than Cairn currently
+proves.** Review records make structural independence inspectable, but they do
+not authenticate an agent's declared type or a human reviewer's identity;
+"recorded and reviewable" is more precise than "independence is checkable."
+"Dogfooded across the whole dev tree" should acknowledge recorded exceptions,
+or say "extensively dogfooded." Finally, a canonical doctrine diagram plus a
+separate simplified README diagram is intentionally **two** representations,
+not one source; name the semantic relationship and its drift check rather than
+calling the arrangement one canonical Mermaid source.
+
+### Disposition
+
+Fold D1-D4 into the strategy, then promote stages 1-2 together. Keep stages
+3-5 in a later proposal whose prerequisites name the settled registries, the
+asset convention, the generator's safety contract, and a concrete rendered-
+legibility check. I did not review the eventual prose or visual design, audit
+external accessibility guidance, or validate rendering across hosting
+platforms; those belong to the resulting implementation and review.
