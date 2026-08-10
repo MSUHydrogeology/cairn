@@ -551,6 +551,77 @@ def upgrade_stderr(target: Path, capsys, *extra: str) -> tuple[int, str]:
 
 
 # ===========================================================================
+# Chunk B node -- the remediation string (MAINTAINER-GATED; unfenced by the
+# identity-not-name Decision amendment of 2026-08-10, which routed it here as
+# scope 3 rather than a standalone trivial-class commit)
+# ===========================================================================
+
+def test_node_b2_remediation_names_no_destructive_or_no_op_action(
+        tmp_path) -> None:
+    """B2 -- Chunk B. ``format_forked_facade_warning``'s remediation string
+    carries neither branch it shipped with pre-Chunk-B: **"remove the dormant
+    engine package"** raises ``RuntimeError`` in ``tools/intent.py``'s
+    ``_load_engine()`` and disables work-intent coordination outright;
+    **"complete the swap (adopt the thin launcher)"** is a no-op, since the
+    thin launcher is what install already places -- there is no swap left to
+    complete.
+
+    Absence of the forbidden text is only half the node (a test that merely
+    forbids the bad string would pass on advice that is equally useless) --
+    the surviving advice is checked by *performing* it against a real
+    installed, forked ``tools/intent.py``: restore the facade from the
+    upstream bytes the note names, then confirm -- through
+    ``forked_facade_findings`` itself, never reimplemented here -- that the
+    finding clears and that the engine package the removed branch would have
+    deleted is untouched and still what ``tools/intent.py``'s own loader
+    would find.
+
+    Perturbation: restore either forbidden clause in a scratch copy of
+    ``format_forked_facade_warning`` -- the forbidden-text assertions fail.
+    """
+    from bootstrap._scaffold.install import trusted_upstream  # noqa: PLC0415
+    from bootstrap._scaffold.lockfile import (  # noqa: PLC0415
+        format_forked_facade_warning,
+        forked_facade_findings,
+    )
+    from bootstrap.scaffold import read_lockfile  # noqa: PLC0415
+
+    target = tmp_path / "t"
+    target.mkdir()
+    install_forked_target(target)
+    upstream = trusted_upstream(CAIRN_ROOT)
+
+    lock = read_lockfile(target)
+    findings = forked_facade_findings(target, lock, upstream=upstream)
+    finding = next(f for f in findings if f["dst"] == "tools/intent.py")
+
+    for at_upgrade in (False, True):
+        text = format_forked_facade_warning(finding, at_upgrade=at_upgrade)
+        lowered = text.lower()
+        assert "remove the dormant engine package" not in lowered, text
+        assert "complete the swap" not in lowered, text
+        # The situation is still stated as fact -- only the *advice* changed.
+        assert "engine package" in lowered, text
+
+    # Perform the surviving advice for real, rather than trust its prose:
+    # restore the facade from the upstream bytes the note names.
+    engine_dir = target / "tools" / "_intent"
+    assert engine_dir.is_dir()  # the advice never touches this
+    src_rel = upstream.src_for_dst["tools/intent.py"]
+    upstream_bytes = (upstream.templates_root / src_rel).read_bytes()
+    (target / "tools" / "intent.py").write_bytes(upstream_bytes)
+
+    lock_after = read_lockfile(target)
+    findings_after = forked_facade_findings(target, lock_after, upstream=upstream)
+    assert not any(f["dst"] == "tools/intent.py" for f in findings_after), (
+        "restoring the facade from upstream must clear the finding -- "
+        "otherwise the surviving advice does not describe a real fix")
+    # The engine package the removed destructive branch would have deleted
+    # is untouched -- the tool is left working, not merely quiet.
+    assert (engine_dir / "__init__.py").is_file()
+
+
+# ===========================================================================
 # Chunk C nodes -- the engine core
 # ===========================================================================
 

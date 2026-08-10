@@ -556,9 +556,10 @@ def format_forked_facade_warning(
     finding: dict[str, Any], *, at_upgrade: bool,
 ) -> str:
     """One advisory block for a forked-facade finding.  **Advisory only** -- it
-    never blocks or mutates; the adopter completes the swap (adopt the thin
-    launcher) or removes the dormant engine, or sets ``fork_acknowledged`` to
-    silence it at ``verify`` time (``upgrade`` always re-surfaces it).
+    never blocks or mutates; the adopter restores the facade from its upstream
+    template to bring it back in sync with the maintained engine, or sets
+    ``fork_acknowledged`` to silence it at ``verify`` time (``upgrade`` always
+    re-surfaces it).
 
     Renders the finding's ``kind`` as a stated fact rather than leaving a reader
     to guess which comparison produced it, plus the two annotations (source-
@@ -610,6 +611,6 @@ def format_forked_facade_warning(
         + "  You are running an un-maintained fork of the launcher while the "
         "maintained engine sits dormant; upstream engine fixes will not take "
         "effect.\n"
-        "  Complete the swap (adopt the thin launcher) or remove the dormant "
-        f"engine package.\n{ack_hint}"
+        "  Restore the facade from its upstream template to bring it back "
+        f"in sync with the maintained engine.\n{ack_hint}"
     )
