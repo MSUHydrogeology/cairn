@@ -1714,8 +1714,8 @@ rule — a register that embeds its payload is a payload).
 | --- | --- | --- |
 | `Anthony Kendall` — the rostered name | `('anthony', 'kendall')` | **human** |
 | `Jane Roe` — **the rejected input, the control** | `('jane', 'roe')` | **unknown** |
-| rostered name with U+0410 (Cyrillic capital A) for `A` | `('аnthony', 'kendall')` | **unknown** |
-| rostered name with U+1D400 (mathematical bold A) for `A` | `('𝐀nthony', 'kendall')` | **unknown** |
+| rostered name with U+0410 (Cyrillic capital A) for `A` | `('<U+0430>nthony', 'kendall')` | **unknown** |
+| rostered name with U+1D400 (mathematical bold A) for `A` | `('<U+1D400>nthony', 'kendall')` | **unknown** |
 | punctuation-only byline (`  -  . `) | `()` | **unknown** |
 
 The rejected input is rejected **in the same run** as the widened ones, so
@@ -1731,9 +1731,9 @@ key:
 | Input | Granting key | Bucket | Class |
 | --- | --- | --- | --- |
 | `ANTHONY KENDALL` | `('anthony', 'kendall')` | **human** | full case fold |
-| `Anthöny Kendall` (o + U+0308) | `('anthony', 'kendall')` | **human** | combining-mark strip |
-| `Ánthony Kendall` (U+00C1) | `('anthony', 'kendall')` | **human** | precomposed → NFD → mark strip |
-| `Hans Straße` against a roster entry `Hans Strasse` | `('hans', 'strasse')` | **human** | casefold **expansion** (U+00DF → `ss`) |
+| `Anth<o+U+0308>ny Kendall` | `('anthony', 'kendall')` | **human** | combining-mark strip |
+| `<U+00C1>nthony Kendall` | `('anthony', 'kendall')` | **human** | precomposed → NFD → mark strip |
+| `Hans Stra<U+00DF>e` against a roster entry `Hans Strasse` | `('hans', 'strasse')` | **human** | casefold **expansion** (U+00DF → `ss`) |
 
 The last one is the sharpest instance and is not in the plan's own list: casefold
 *expands* one character into two, so two genuinely different surnames become one
@@ -1748,8 +1748,8 @@ safe direction, and the register records the one case where it does not:
 ```
 'testagent'      flag key ('testagent',)   -> ai
 'TestAgent-4o'   flag key ('testagent4o',) -> ai      (versioned byline still caught)
-'𝐓estagent'      flag key ('testagent',)   -> ai      (U+1D413 folds at NFKD)
-'тestagent'      flag key ('тestagent',)   -> unknown (U+0442 -- NOT laundered
+'<U+1D413>estagent' flag key ('testagent',)   -> ai      (U+1D413 folds at NFKD)
+'<U+0442>estagent'  flag key ('<U+0442>estagent',) -> unknown (U+0442 -- NOT laundered
                                              into human; lands in the unknown
                                              residual, which a terminal Decision
                                              surfaces as a violation)
@@ -2307,6 +2307,142 @@ finding. Three:
   rather than a false-fresh timestamp — the failure mode that would silently
   pass a stale audit.
 * The changelog line is **returned, not written**.
+
+#### Chunk H — RUN (PARTIAL — NC-H2 does not pass as specified), 2026-08-10, Claude
+
+Evidence commit `5010d36` for the register rows; the roll-up, the surface list and
+the staleness legs were measured at **`6912d52`**, which is where the register as
+committed can be read.
+
+##### H1 — the roll-up
+
+Per A28: an **owner** column, and **staleness** and **coverage** as two separate
+cells, because a fresh-but-incomplete audit and a stale-but-complete one fail
+differently. Every figure below reproduces from the per-item registers above; no
+figure appears only here.
+
+| Item | Rows | MET | MET-by-residual | NOT MET (named block) | Owner of every open row | Last decided |
+| --- | --- | --- | --- | --- | --- | --- |
+| **B1** trust-material provenance | 5 | 3 (C-1, C-2, C-3) | 1 (C-4, R10) | 1 (C-5) | C-5: **unassigned** — A27's `dev/PLANNING.md` row | 2026-08-10 |
+| **B2** answer-binding | 4 | 3 (D-1, D-2 narrowed, D-4) | 0 | 1 (D-3) | D-3: the `verify_integrity` successor on the deferred ledger | 2026-08-10 |
+| **B3** claim honesty (security subset) | 2 bar-contributed (+ delegated rows closed by the archived `gate-claims-vs-enforcement`) | 0 | 0 | 2 | **unassigned** — A27's row | 2026-08-10 |
+| **B4** non-vacuous enforcers | 11 | 10 | 0 | 1 (G-2, zero enforcers) | G-2: unassigned; the remedy is one test, out of scope | 2026-08-10 |
+| **B5** fail-closed direction | 5 | 1 (E-4) | 4 (E-1, E-2, E-3, E-5) | 0 | — | 2026-08-10 |
+| **B6** stated reach | 12 reach rows + 2 passages | table reproduces | — | 2 passages **drafted, not landed** (Chunk B) | Chunk B, pending Maintainer commit approval | 2026-08-10 |
+
+| Cell | Verdict at `6912d52` |
+| --- | --- |
+| **Staleness** (A29) | **not yet applicable** — `refs/cairn/release-bar-audit` does not exist (`git rev-parse --verify` → *"Needed a single revision"*), because no `## Code review` has landed and the ref is Maintainer-only (Chunk M item 8). The command is demonstrated working below. |
+| **Coverage** (A30 iii) | **RED — 49 release-facing sources have no register row.** Measured, below. |
+| **Register complete / usable?** | **NO.** Three independent blocks: A27's `dev/PLANNING.md` row has not landed (Chunk F); the coverage assertion is RED; and Chunk B's correction is drafted but unlanded. |
+
+**The register is therefore NOT usable as a release gate today, and the v0.4.0 tag
+is blocked on it** — which is the bar behaving as designed, not the bar failing.
+
+##### H2 — the surface list, derived and unioned
+
+Per A30, two channels. **(i) Derived leg** — a committed extraction over the
+register's own evidence cells, so no path is hand-maintained:
+
+```python
+PATH_RE = re.compile(r"`([A-Za-z0-9_./-]+\.(?:py|sh|md|json|yml))(?::[0-9]+)?[^`]*`")
+runs = re.split(r"^#### Chunk [A-H] — RUN", plan_text, flags=re.M)[1:]
+surface = {m.group(1) for chunk in runs for m in PATH_RE.finditer(chunk)
+           if (root / m.group(1)).is_file()}
+```
+
+→ **64 paths** at `6912d52`. **(ii) A32's four explicit additions**, named
+independently of whatever the derivation returns because each moved a citation
+this register depends on across `eacb7dd` / `6618e54` / `4385813` / `5010d36`:
+`bootstrap/_scaffold/config.py`, `bootstrap/_scaffold/install.py`,
+`bootstrap/PROVENANCE.md`, `tools/lifecycle_planner.py`. All four are already in
+the derived set, so the union is **64** — the derivation is doing the work and A32
+is a belt, verified rather than assumed.
+
+##### NC-H1 — the staleness command, RUN, three directions
+
+A14's replacement leg 1 (a scratch clone, a real commit to a surface member) plus
+its retained leg 2. Run in `<scratch>/staleclone`, a `git clone` outside the tree;
+`refs/cairn/release-bar-audit` created **in the clone only** (never in the
+repository — Chunk M item 8):
+
+```
+audit ref at HEAD, nothing committed since
+  git log refs/cairn/release-bar-audit..HEAD -- <surface list>   -> 0 commits  FRESH
+commit a change to bootstrap/PROVENANCE.md (a surface member)
+  -> 1 commit   STALE      06faf18 scratch: touch a surface-list member
+re-point the audit ref at HEAD (a fresh audit)
+  -> 0 commits  FRESH
+commit a change to README.md ONLY (not a surface member)
+  -> 0 commits  FRESH     <- discrimination: a non-surface commit must not stale it
+leg 2 (retained): a surface list of one path with no commits
+  git log -1 --format=%H -- no/such/path/ever.md  -> 0 bytes
+  (empty, not a false-fresh timestamp)
+```
+
+**A false-fresh failure mode found while running this, and it is worth more than
+the leg it interrupted.** The first run reported **FRESH after a surface member
+had changed**. Cause: the surface list was passed as an unquoted shell variable
+under `zsh`, which does **not** word-split — so git received one giant path as a
+single pathspec, matched nothing, and returned empty. **An empty result and a
+fresh result are the same output from this command**, so a surface list that
+arrives malformed reports FRESH forever, silently. Whoever runs A29's command must
+pass the list as separate arguments and confirm the pathspec matched — the command
+as written in A13/A29 does not defend itself against this.
+
+##### NC-H2 (A31) — RUN, and it does NOT pass as specified
+
+The coverage assertion is *(independent leg)* − *(surface list)*: a release-facing
+source the tree has and the register never names. Independent leg = Chunk A's Set 3
+sweep root (the 8 named docs + Set 2's 42 Markdown destinations) filtered by Set
+3's committed seven-pattern list, **unioned with every `templates/**/*.py` on
+disk**.
+
+| Leg | A31 requires | Observed at `6912d52` |
+| --- | --- | --- |
+| **Control** — unperturbed scratch checkout | assertion **GREEN** | **RED, 49 unlisted** — **FAILS** |
+| **Positive** — plant one unlisted Markdown claim + one `templates/**/*.py` | **RED naming the planted paths** | **RED 50; names `<scratch>/templates/planted_scanner.py`.** The planted Markdown is **not** named — **PARTIAL** |
+| **Discrimination** — a change to a path already listed | caught by staleness, **not** by coverage | **holds** — demonstrated in NC-H1 above |
+
+**Why the control leg is red, and it is not an artifact of my definition.** The
+first measurement used a wider independent leg (a recursive walk of `dev/modules`,
+`docs` and `templates/onboarding`) and returned **52**. Retightened to Chunk A's
+*faithful* Set 3 root it returns **49**. The finding is stable across both
+definitions: the register names ~25 surfaces and its own declared scope contains
+roughly 50 more. Per A30 (iii) — *"a Set member with no row is recorded as a **NOT
+MET row**, never an omission"* — **the honest disposition is that the coverage
+assertion is RED at 49 and the register is materially incomplete relative to the
+fence Chunk A drew.** Most of the 49 are `templates/modules/**/*.py` files and
+`dev/modules/*.md` documents that no bar item has a decider for; that they are
+unlisted is exactly the residual the proposal named as its largest, now
+**counted** rather than described.
+
+**Why the positive leg is only partial, which is a second finding about A30's
+design.** The planted `<scratch>/templates/planted_scanner.py` **is** caught, because that
+half of the independent leg is a `rglob` — it reads the tree. The planted
+`<scratch>/dev/modules/planted-security-claim.md` is **not** caught, because Set 3
+quantifies over a **fixed candidate-path list** (the proposal's own choice: Set 1
+and Set 3 enumerate *named* docs). So a brand-new adopter-installed Markdown file
+asserting a security control is invisible to the coverage assertion — the same
+enumeration-bounded residual A4 states for Set 3's idiom, now shown to apply to
+Set 3's *root* as well. A30's independent leg is only as independent as the leg
+that walks the tree; the leg that walks a list inherits the list's blind spot.
+
+**Verdict on Chunk H.** H1 and H2 are complete and committed. NC-H1 passes in all
+three directions and contributed a false-fresh finding. **NC-H2 does not pass**:
+its control leg is red and its positive leg catches one of two planted classes.
+Chunk H is therefore recorded as **PARTIAL**, and per the plan's own acceptance
+criteria the roll-up may not report the register usable — which it does not.
+
+##### H3 — the changelog line
+
+**Returned, not written.** The text is already in this artifact under *The
+`dev/PLANNING.md` and `CHANGELOG.md` text this plan returns*; this chunk adds no
+new text and touches neither shared file. One correction to its premise, from this
+burndown: the line as drafted says the audit *"blocks the release tag"*, and
+Chunk M's own *honest limit* paragraph says nothing mechanically prevents a
+`git tag`. Those two sentences should not ship in disagreement — flagged for the
+serialization point, not edited here.
 
 ---
 
