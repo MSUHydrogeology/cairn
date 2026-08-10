@@ -579,16 +579,16 @@
     },
     {
       "base_cache": "dev/.cairn/base/dev/modules/portable-security-sweeps.md",
-      "base_hash": "sha256:f5921c8a5c3df85386486f4af0aacf66c8450a6b0a7fa1591bf66c0dc83c8d6e",
+      "base_hash": "sha256:cba01db05f42625e3d1b2b65a494b7d878b0903ffcc2292befcbaf5fec30fb64",
       "dst": "dev/modules/portable-security-sweeps.md",
-      "hash": "sha256:f5921c8a5c3df85386486f4af0aacf66c8450a6b0a7fa1591bf66c0dc83c8d6e",
+      "hash": "sha256:cba01db05f42625e3d1b2b65a494b7d878b0903ffcc2292befcbaf5fec30fb64",
       "src": "modules/team-gated/portable-security-sweeps.md",
       "verbatim": false
     },
     {
-      "base_hash": "sha256:7e2b2a2bd36b9c9dacdd65c50fe18b270ba1a91f819ddf56aebf1b7d88815464",
+      "base_hash": "sha256:11654a08a99fda47e61bfa0b7807c4555bbd23d67e4967f0c2e30f200ec9baa9",
       "dst": "scripts/run_portable_security_sweeps.py",
-      "hash": "sha256:7e2b2a2bd36b9c9dacdd65c50fe18b270ba1a91f819ddf56aebf1b7d88815464",
+      "hash": "sha256:11654a08a99fda47e61bfa0b7807c4555bbd23d67e4967f0c2e30f200ec9baa9",
       "src": "modules/team-gated/run_portable_security_sweeps.py",
       "verbatim": true
     },

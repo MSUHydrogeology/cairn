@@ -53,10 +53,14 @@ it rather than infer it:
 
 1. **`gitleaks`** — the adapter, resolved from the trusted host environment.
 2. **`git`** — resolved by the identical rules. It is a trust root in its own
-   right for two reasons: the runner itself invokes it for the pre-execution
-   configuration screen, and **Gitleaks invokes it transitively** for the
-   history leg. The transitive invocation was found by execution, not by
-   reading documentation, and it was absent from the first enumeration of this
+   right for three reasons: the runner itself invokes it for the
+   pre-execution configuration screen (which discovers its own configuration
+   boundary with a Git call first, so an ordinary repository and a linked
+   worktree are both handled correctly) and to determine, from Git's own
+   object model, whether the history question has an applicable input at
+   all; and **Gitleaks invokes it transitively** for the history leg. The
+   transitive invocation was found by execution, not by reading
+   documentation, and it was absent from the first enumeration of this
    module's trust set.
 
 Both are validated for **shape and containment, not provenance**:
@@ -132,9 +136,17 @@ and the honest description of what each does:
 1. **A deny-by-default pre-execution screen.** The runner enumerates the
    candidate's **include-expanded** repository-local configuration and
    **refuses** on any key outside a named, reviewed inert allowlist, on any
-   `include` / `includeIf` whose origin file resolves outside the candidate's
-   `.git/` directory, and on a listing that fails, times out or exceeds a byte
-   cap. The allowlist is source-owned, not policy-controlled.
+   `include` / `includeIf` whose origin file resolves outside the
+   repository's *actual* common/config directory, and on a listing that
+   fails, times out or exceeds a byte cap. The allowlist is source-owned, not
+   policy-controlled. The boundary itself is discovered with a hardened
+   `git rev-parse --path-format=absolute --git-common-dir` call rather than
+   assumed from `.git`'s path, because in a **linked worktree** `.git` is a
+   *file* naming the main repository's per-worktree metadata directory, not
+   the directory holding the local config the screen must bound — asking Git
+   is what makes an ordinary repository and a linked worktree both work
+   correctly. `--path-format=absolute` requires Git 2.31 or newer; an older
+   Git refuses the flag and the screen DEGRADES rather than guessing.
 2. **Counted config keys on the child process.** The child environment pins a
    fixed set of Git configuration keys that outrank repository-local config.
 
