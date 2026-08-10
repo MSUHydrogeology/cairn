@@ -303,7 +303,7 @@ board by design.
   | **[BND] Input, execution, containment** | `fork-advisory-semantics`, `api-web-security-modules` | profile-authority consolidation; Class C no later than v0.4 preparation |
   | **[VER] Verification and coverage** | `security-verification-activation`; `portable-security-sweeps`; `api-web-security-modules`; `security-preflight-checklist` | `content-scan-detectors` + `separator-detection` archived 2026-08-10 (both SHIP-reviewed): reconcile the live frozen-file union and run one supervised re-pin over `content_scan.py` + `test_content_scan.py`, batched per both plans' Maintainer fence; then repair the two portable-sweep code-review findings |
   | **[TRU] Trust roots and provenance** | `fork-advisory-semantics`; the live gate-reanchor posture below | trusted-source boundary after the release bar settles required source/install claims |
-  | **[REC] Deliberation authority, identity, context, record integrity** | `review-gate-enforcement`; byline residuals below | one identity-authority consolidation when a trigger fires, not one proposal per Unicode row |
+  | **[REC] Deliberation authority, identity, context, record integrity** | `code-review-blindness` (proposal, 2026-08-10); byline residuals below — `review-gate-enforcement` **archived 2026-08-10** (SHIP, no findings; its two residuals owned by that proposal) | one identity-authority consolidation when a trigger fires, not one proposal per Unicode row |
   | **[REL] Release evidence and ceremonies** | `release-security-bar`; the landed Maintainer-run release command; the scheduled frozen-file union | serialize the SHIP-reviewed release register; derive every ceremony from the live held set, then run one reviewed supervised union |
 
 * **[TRU-5] gate-reanchor-preflight posture** *(plan archived 2026-08-03; this entry
@@ -337,7 +337,10 @@ board by design.
   carries a scoped `upgrade --finalize` for `gitmeta.py` and its `__init__.py`
   twin, now mandatory since the lockfile is clean. **Chunks A–C landed
   2026-08-04 (`2177d5f`, `321ed1a`, `543f785`) past the plan's own per-commit
-  approval fence, ratified after the fact by the Maintainer; D remains.** Plan
+  approval fence, ratified after the fact by the Maintainer. **D1 (the CHANGELOG
+  release note) landed 2026-08-04 at `18ea25d`, carrying the corrected figure the
+  Maintainer accepted; D2 is THIS ROW, and it is the plan's last remaining item —
+removed at the next goodnight scrub after archive.** Plan
   review `required(Internal)` carried an execution obligation (re-run the corpus
   ablations, not a read-only pass) — landed, REVISE, all findings dispositioned.
   Three things the plan surfaces rather than settles: the ratified narrowing
@@ -638,7 +641,7 @@ reason to open another scope.
 | **[BND] Input, execution, containment** | queued Class C; lockfile schema validate-on-read; interpreter race; scaffold/engine path residuals; `fork-advisory-semantics` identity-warning, `base_hash`, and `_infer_init_lock_axes` rows; profile G1/G2/G3/G5/totality rows |
 | **[VER] Verification and coverage** | Security apparatus conda row; Scan coverage SC1-SC3; shipped-executable authority unification; cross-language conformance fixtures; capability plans in the Active table |
 | **[TRU] Trust roots and provenance** | self-host lockfile reconciliation; install-integrity anchor; end-gate frozen-set decision; attestation kind-prefix validation; AST re-anchor runbook; Release authenticity RA1/RA3/RA5/RA6; fork advisory FA-R1; gate-reanchor posture |
-| **[REC] Deliberation authority, identity, context, record integrity** | lifecycle mutation/commit arm, dogfood study, and later routine skills; transition and planner conformance; byline residuals and four archive follow-ups; gate-claims archive-auditability rows; lifecycle text-boundary follow-ups; `review-gate-enforcement` in Active |
+| **[REC] Deliberation authority, identity, context, record integrity** | lifecycle mutation/commit arm, dogfood study, and later routine skills; transition and planner conformance; byline residuals and four archive follow-ups; gate-claims archive-auditability rows; lifecycle text-boundary follow-ups; `review-gate-enforcement` **archived 2026-08-10**, its code-review-blindness and synthesized-pass-ceiling residuals owned by the `code-review-blindness` proposal |
 | **[REL] Release evidence and ceremonies** | SC4 and all stale frozen pins; profile G4 and manifest delta; release-authenticity archive/Zenodo rows; gate-claims trigger/CI rows; disclosure channel |
 
 The strategy is the cluster authority; this board remains the task and trigger
