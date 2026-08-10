@@ -438,8 +438,9 @@ the public has a working private disclosure route.
 
 ### Finish the admitted security cluster
 
-1. Land `content-scan-detectors` with `separator-detection` on their shared
-   scanner surface.
+1. `content-scan-detectors` and `separator-detection` are both landed and
+   archived (SHIP-reviewed, 2026-08-10); their shared frozen-file re-pin
+   remains a pending Maintainer-supervised ceremony.
 2. Land `security-verification-activation`'s closed binding-mode amendment
    before admitting any API/web or portable registry entry.
 3. `default-security-stance` is landed; preserve exact explicit module
