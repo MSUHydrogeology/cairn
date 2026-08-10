@@ -1823,3 +1823,70 @@ One finding remains between this plan and Chunk A, and it is now a procedure
 rather than a defect: two clearing passes, a Maintainer attestation commit, and
 a recorded exact-byte preflight. Every other finding across seven passes —
 E1--E4, G1--G4, H1--H3, S1--S6, T1--T4 — is closed.
+
+## Plan review -- Codex -- 2026-08-10 (round 5)
+
+**Model**: GPT-5.6-Codex
+**Tier**: External
+**Obligation**: External
+**Reviewed commit**: `a404145e01e589ea1fc37a62f5d3038f3c827014`
+**Target**: the complete J1/K1 Response and non-circular bootstrap procedure
+**Prior findings**: J1 and K1
+**Assurance path**: high-assurance
+**Findings**: raised
+**Verdict: REVISE, two local corrections.** Binding the parent plan blob closes
+J1's byte-level circularity. The procedure still requires the attestation
+commit to fill its own commit-id field, and its operative violation count does
+not reproduce.
+
+### [L1] HIGH -- the attestation-commit row leaves a second self-binding deadlock
+
+The table includes `Attestation commit (bound by the transition record, never
+by itself)`, which is the right intended authority. But the surrounding text
+says the exception authorizes nothing until **every field** is completed, and
+step 2 says the attestation commit fills "the fields above." The attestation
+commit cannot fill its own commit id. If the field instead waits for step 4,
+the incomplete-table precondition forbids reaching that transition, and the
+transition is no longer the stated status-only change.
+
+**Required satisfier.** Remove the attestation-commit row from the
+pre-attestation table. Have the later transition record name the already-known
+attestation commit (or its unchanged ancestor when unrelated commits
+intervene), and define that transition's exact allowed plan diff as status plus
+the binding record. The preflight must verify the plan bytes have not changed
+since attestation. This keeps the two commits non-circular without weakening
+the parent-blob or allowlisted-diff checks.
+
+### [L2] MEDIUM -- the claimed violation multiset is four, but execution returns three
+
+Under Python 3.13.13 at the reviewed commit,
+`review_record_violations(...)` returns three occurrences of the one historical
+violation, not four. Round-4 External was overtaken by Security and became
+permanent; round-3 Security is followed directly by the current Response and
+therefore satisfies the table's `dispositioned before the next pass -> 0`
+case. The later sentence "every blocking round costs one permanent violation"
+contradicts that correct table.
+
+**Required satisfier.** Make the table's positional rule canonical: only an
+overtaken blocking pass adds a permanent violation; a blocking pass
+dispositioned before the next pass adds zero. Correct the current measured
+count to three at `a404145`, remove forecasts from the executable procedure,
+and let the preflight derive the exact multiset at its named parent. A future
+Response may note that this External pass itself becomes another permanent
+item once the following Security pass lands; that does not retroactively make
+the reviewed count four.
+
+### Closure accounting
+
+J1's parent-blob binding and Maintainer-run preflight close. H1/H3 and
+T1/T2/T4 remain closed. L1 and L2 are confined to the bootstrap ceremony; no
+implementation chunk, pilot mechanism, encoder contract, or scope item needs
+to move.
+
+**Covered**: the complete `a404145` plan diff; direct parser and executing-gate
+execution; Git blob identity; field-completion order; and the exact append-only
+review/Response sequence.
+
+**Not covered**: implementation bytes, execution of the future preflight,
+pilot observations, Code review, or re-anchor. Return L1--L2 only. This pass is
+blocking and does not fill the bootstrap table's `External` row.
