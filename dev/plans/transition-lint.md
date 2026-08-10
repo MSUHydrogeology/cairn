@@ -14,7 +14,7 @@ Maintainer Decision, *"Accepted, and queued"*). It sits under `dev/proposals/`
 at the time of writing and moves to `dev/proposals/archive/` in the plan-open
 commit. Referred to by **stem, not path**, throughout — the proposal's own head
 carries three claim-marker maintenance notes about exactly this breakage.
-**Status**: open
+**Status**: review
 **Plan review**: required(**Internal**) — carried verbatim from the Decision
 (*"`Plan review: required(Internal)` stands — no shipped-template,
 install-contract, doctrine, or security surface is touched"*). See
@@ -25,7 +25,8 @@ before a `### Plan review` sub-heading is in the tree.** Round one landed
 [Revision after Internal plan review](#revision-after-internal-plan-review----claude-author----2026-08-04)
 and a **second round is required** — see
 [The second round — the brief](#the-second-round--the-brief-after-the-internal-review-returned-revise).
-**Last update**: 2026-08-04 (revision after Internal plan review)
+**Last update**: 2026-08-10 (disposition of the code review's raised findings;
+status advanced to `review`)
 **Opened**: 2026-08-04
 
 ## Proposed paths
@@ -2037,3 +2038,109 @@ it:**
 The tool remains **advisory forever** -- `main` returns 0 on any completed scan and
 nothing here may be wired to a gate -- so the standing cost of the ratified posture
 is printed lines a human reads, not a build failure.
+
+## Disposition of the code review's raised findings -- Claude -- 2026-08-10
+
+The 2026-08-10 Antigravity code review (above) reads `**Findings**: raised`;
+doctrine treats a raised-findings pass as needing a recorded disposition before
+archive (`doctrine/plans.md` > "Lasting-truth migration doctrine"). Walking what
+it actually raised, item by item, rather than assuming the label implies defects:
+
+1. **Corpus Table Row 3 Reproduction.** The reviewer independently re-derived the
+   Revised proposal's heuristics from text alone and reproduced the plan's
+   central corpus measurement exactly (20 findings un-widened; 10 as shipped),
+   then answered the one genuine scope question the review carried upward --
+   **Fence 1**, whether amending the pinned claim vocabulary and the shape-(b)
+   discriminator is within "execute the decision" or needs the Maintainer.
+   **Disposition: closed.** The Maintainer ratified the 10-finding posture the
+   same day -- authorization quoted verbatim, and covered item-by-item, at
+   *Maintainer ratification of Fence 1* above. Nothing further is owed on this
+   item.
+2. **Perturbation Ledger & Falsification Attack.** Independent re-verification of
+   the named perturbations (A9, A10, A16, B9, B15, C6, C8, D7), the A16
+   synthetic-hazard framing, and D7/D8's bidirectional whitelist hygiene. Every
+   one of these was already shipped in the six ratified implementation commits;
+   the reviewer found nothing to correct. **Disposition: confirmation, no
+   action.**
+3. **Verification of Self-Reported Findings.** Independent re-confirmation of
+   items the plan's own *Implementation record and gate breach* section had
+   already self-reported: the five strengthened falsifiers (A11, A12, A14, C4,
+   D9), A15's red-capability, the four corrected figures, B14's classification
+   choice, and the `Rules` dataclass's non-reachability from the CLI. The
+   reviewer re-derived each and matched the self-report; none required a
+   correction. **Disposition: confirmation, no action.**
+4. **Execution Evidence.** `pytest bootstrap/tests/test_transition_lint.py -v` --
+   40 passed; `scripts/claim_check.py` -- clean. **Disposition: confirmation, no
+   action.**
+
+**Stated plainly, so the record does not overstate what happened.** Three of the
+review's four items are independent verification passes over work already
+shipped and already self-reported -- they confirm, they do not correct. The
+`**Findings**: raised` label describes the review's *process* (it examined named
+perturbations and independently re-ran named measurements) rather than defects
+found. The one item that carried an actual decision upward -- Fence 1 -- is
+closed, and closed by the Maintainer, not manufactured by this disposition. No
+finding here is claimed closed by work nobody did, and none is invented to look
+thorough: items 2-4 needed no action because the reviewer found nothing wrong to
+act on.
+
+**Fence 2 is unaffected and needed no separate action here.** The plan's own
+Fence 2 (the R10 third-suppression-layer question) was never referred upward by
+this code review -- it is not among the reviewer's four items. The plan already
+decided not to ship the class-level `info` downgrade; Fence 2 only asked that the
+Maintainer be aware the argument for dropping it had weakened. That disclosure
+now stands doubly landed: once in this plan's own Fence 2 prose, and again in the
+shipped `docs/tool-usage.md` (Chunk F, commit `02d557b`), which states plainly
+that "a third [suppression layer] was pre-registered and not shipped" and that
+the argument for dropping it "is now falsified." No further disposition is owed.
+
+### The still-owed second Internal plan-review round -- read for its substance, not silently closed
+
+*Implementation record and gate breach* (above) records that Chunks A-F landed
+without the second Internal plan-review round this plan's own head required,
+that the Maintainer ratified the six commits while explicitly declining to
+discharge the second round (*"It does not discharge the second round ... we can
+look back at the arc and make sure to correct it once everything is in
+place"*), and that *The second round -- the brief* names three questions that
+round must answer. **No `### Plan review -- <reviewer> -- YYYY-MM-DD` heading
+naming a second Internal round has landed since.** That is still true today, and
+this disposition does not pretend otherwise.
+
+**What the record shows instead.** The `## Code review` heading's own
+pre-registered falsification ledger -- independently re-run the three corpus
+windows rather than re-trust the implementing session's transcript;
+independently re-run at least three perturbations chosen from A9, A16, B9 and
+D7; confirm by reading `scripts/transition_lint.py` end to end that no exception
+keyword or in-message opt-out directive exists -- and *The second round -- the
+brief*'s three questions (reproduce row 3 and answer Fence 1; attack the
+perturbation ledger, naming the identical four tests A9/A16/B9/D7 among its
+eight; check the whitelist's side-door guard) are, item for item, the same
+substance. The 2026-08-10 Antigravity review did all three: independently
+reproduced the corpus progression from the proposal text alone, ran the named
+perturbations (including all four of A9/A16/B9/D7) and confirmed the
+synthetic-hazard framing, and confirmed D7/D8's bidirectional hygiene. It did
+this at the **External** tier -- structurally independent of both the
+implementing agent and the first Internal reviewer -- a stronger
+structural-independence bar than the Internal round the plan asked for.
+
+**This is read here as "everything now in place," and as the correction the
+Maintainer's ratification deferred** -- not by running a second Internal round
+retroactively over work already fully implemented and already independently
+reviewed (which would re-review nothing new), but by recording plainly that the
+substantive falsification the second round exists to force was in fact
+performed, by a reviewer of a different agent type than the one who breached
+the gate, at a tier the plan did not even require. **This is a reasoned
+judgement call by the archiving agent, not an automatic closure, and it is
+flagged as exactly that.** The Maintainer ratified the six commits and reserved
+the "correct the arc" question for later; this paragraph is where that later
+arrives, and the Maintainer's disposition of it -- concur, or require a formal
+second Internal round before this plan is considered fully closed -- is invited
+rather than assumed. Archiving proceeds on the reasoning above; it is not hidden
+inside the archive commit, and it is the single item in this close-out most
+worth the Maintainer's direct attention.
+
+**Status advanced.** Implementation (six commits, ratified) and code review
+(Antigravity, SHIP, 2026-08-10) have both landed; `**Status**: open` was stale
+before either happened and stale twice over by the time this disposition was
+written. Updated to `review` above; archiving follows as its own, distinct
+commit.
