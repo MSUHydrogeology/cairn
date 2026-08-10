@@ -518,3 +518,188 @@ fixture (which no live artifact supplies, so the fixture must be constructed).
 
 Recorded here so `review-gate-enforcement` can archive with this residual owned
 rather than orphaned.
+
+## Review -- Codex -- 2026-08-10
+
+**Model**: GPT-5 (Codex)
+**Tier**: External, different agent type from the author
+**Reviewed commit**: `857c216ddefae49c7422c538a4e0331472f0a845`
+**Verdict: REVISE.** The diagnosis and the rejection of full Plan-review parity
+are sound. The proposal does not yet specify the Code-review contract a plan
+would implement, and its synthesized-pass repair corrects the disposition
+ceiling without correcting the body boundary built from the same narrower
+source.
+
+### Steelman
+
+The central behavioral claim reproduces on an independently authored fixture.
+A plan containing only this review record:
+
+```text
+## Code review -- Independent Human -- 2026-08-10
+
+**Tier**: External
+**Findings**: raised
+```
+
+is parsed as a real `Code review` section, while
+`review_record_violations()` returns `[]`. The proposal correctly locates the
+gap after parsing: `_KNOWN_KINDS` and `_parse_sections` admit the section, but
+`_S1_PASS_RE` and `_pass_headings` select only literal `Plan review` headings.
+
+The cited snapshot mostly reproduces as well. At `5173288`, the corpus contains
+35 non-template plan files, 23 S1-shaped Code-review passes across 21 files;
+full Plan-review parity makes all 21 files violate, while the proposed
+raised-only trigger identifies one file. The conclusion is right: copying the
+Plan-review schema would impose the wrong historical contract and incur a
+large, unnecessary migration.
+
+The scope argument has also resolved in the proposal's favour since drafting.
+`review-gate-enforcement` archived at `be42ba6`, and
+`review-efficient-lifecycle` was accepted at `e42f01c`. The accepted parent
+requires coordinated proposal/plan/Code-review predicates and says a Code
+review carrying findings cannot clear merely because the existing gate filters
+to Plan-review headings. Folding this defect into that one plan is now a
+contract-coupling decision, not a scheduling preference.
+
+### [E1] HIGH -- no proposed remedy is an executable contract
+
+The proposal proves remedy A is wrong, then admits remedy B checks the wrong
+disposition vocabulary, and finally leaves the remedy to the Maintainer or a
+follow-on plan. Its own Author-accounting says a Code review uses numbered
+`accept` / `guard` / `defer` / `wontfix` dispositions rather than
+`### Sharpening` or `## Response to plan review`. Therefore neither measured
+remedy is eligible to implement as written.
+
+This is a proposal-level choice, not an implementation detail. A plan cannot
+decide what constitutes a Code-review pass, finding, response, final verdict,
+or resolved record after the Decision has supposedly fixed the contract.
+"Fold into `review-efficient-lifecycle`" identifies the owner but does not
+supply that owner's missing schema.
+
+**Required satisfier.** Revise this as an explicit amendment to the accepted
+`review-efficient-lifecycle` contract, with no standalone plan, and define:
+
+* the exact Code-review heading and pass boundary;
+* the mandatory review-basis fields inherited from the accepted parent;
+* the verdict vocabulary and which value blocks archive;
+* how numbered finding ids bind to later author dispositions;
+* the positional boundary between multiple Code-review rounds;
+* how the parent's `Contract non-expansion` attestation participates;
+* malformed, duplicate, absent, and legacy-record behavior; and
+* the one predicate consumed by both `scan` and archive/closeout readiness.
+
+The contract may preserve legacy reviews by explicit enumeration, as the
+Plan-review gate does, but it must not infer a new schema from fields reviewers
+borrowed informally.
+
+### [E2] HIGH -- remedy B leaves the ordinary archive path blind
+
+The defect is broader than an opt-in `**Findings**: raised` line. I constructed
+an archived-plan fixture with:
+
+```text
+## Code review -- Independent Human -- 2026-08-10
+
+**Verdict: REVISE**
+
+1. Blocking defect remains unresolved.
+```
+
+and supplied the unrelated generic `Dispositions:` and loop-fidelity markers
+the current archive precondition expects. `_conformance_violations()` returned
+`[]`. The current archive arm checks only `_has_kind(art, "Code review")`; it
+does not read verdict, recency, findings, or whether dispositions answer those
+findings.
+
+That fixture follows the actual Code-review doctrine more closely than remedy
+B's borrowed attestation lines. A raised-only opt-in extension would leave it
+green, along with every ordinary Code review that never adopted the Plan-review
+fields. It therefore narrows one reproducer without closing the governing
+failure: an implementation can archive after a review explicitly says REVISE.
+
+**Required satisfier.** Make the Code-review-specific final verdict and
+unresolved-finding predicate the archive condition. The latest applicable
+round must be mechanically identified; a blocking verdict or undispositioned
+finding refuses. A generic archive `Dispositions:` block cannot satisfy a
+finding without an exact id/reference association.
+
+### [E3] IMPORTANT -- the synthesized-pass residual has two narrower bases
+
+The Scope addendum identifies `_has_disposition`'s ceiling correctly but misses
+the same mismatch in the selected pass's body. `_parse_sections` attaches a
+parsed H2 body's end using only headings `_HEADER_RE` recognized. When a later
+S1 pass is synthesized from a raw heading, an earlier parsed pass's existing
+body already extends through that later pass.
+
+I reproduced this with a normal first pass followed by:
+
+```text
+## Plan review -- Jane (Lab) Smith -- 2026-08-10
+```
+
+The raw S1 selector returns two passes, while `art.sections` contains only the
+first. The first pass swallows the second pass's Tier and Findings lines and
+reports both fields as duplicates. `_has_disposition` also lets a Response
+after the second heading satisfy the first. Widening only
+`later_pass_lines`, as the addendum requires, leaves the swallowed-body defect
+intact.
+
+**Required satisfier.** Build every selected pass body and every next-pass
+ceiling from one canonical ordered set of raw conforming pass boundaries plus
+ordinary H1/H2 boundaries. Do not reuse a precomputed Section body whose parser
+could not see all selected headings. Pin both mutations: later-pass fields do
+not enter the earlier body, and a disposition after the later pass cannot
+satisfy the earlier pass.
+
+### [E4] IMPORTANT -- two corpus statements do not reproduce
+
+At exact snapshot `5173288`, two Code-review passes carry the Tier/Findings
+vocabulary, not one:
+
+* `transition-lint`: `**Findings**: raised`; and
+* `review-gate-enforcement`: `**Findings**: none` in Antigravity's pass.
+
+Thus 21 of 23 passes omit the fields; it is not true that transition-lint is
+"the only Code review pass anywhere ... that carries a Findings line at all,"
+nor that 20 of 21 Code-review passes omitted the vocabulary. The important
+blast-radius results survive: all 21 files fail full parity because
+`review-gate-enforcement` also has an older fieldless pass, and exactly one file
+fails the raised-only check. Correct the supporting statements and denominators
+without changing those two results.
+
+### [E5] IMPORTANT -- the coordination state now has a determinate answer
+
+The sequencing and reconciliation sections still describe
+`review-gate-enforcement` as open and `review-efficient-lifecycle` as revised
+without a Decision; the latter paragraph also duplicates its opening
+`Status:` clause. Both dependencies have since reached terminal decisions.
+
+**Required satisfier.** Replace the open scope question in a revision:
+`review-gate-enforcement` is the settled dependency, and this proposal amends
+the accepted `review-efficient-lifecycle` contract. If accepted, both proposals
+open one plan and this artifact contributes the Code-review record chunk. No
+separate plan or interim remedy B remains.
+
+### Coverage and recommendation
+
+**Covered** -- executed the current parser against an independent blind
+Code-review fixture; executed an archived REVISE fixture through
+`_conformance_violations`; re-derived the 35-file / 23-pass / 21-file corpus at
+`5173288`; inspected the two field-carrying passes; reproduced the
+synthesized-only body and ceiling mismatch; checked the accepted
+`review-efficient-lifecycle` Revision 1 and the archived
+`review-gate-enforcement` state; compared Plan-review and Code-review doctrine.
+
+**Not covered / low confidence** -- no implementation exists, so I did not
+exercise a proposed Code-review parser, legacy manifest, latest-round selector,
+or disposition association. I did not determine the best exact verdict or
+response syntax; that is the contract [E1] requires the author to propose. I
+did not run the full engine suite because this is a proposal-only review with
+focused behavioral probes.
+
+**Second-round recommendation: recommended, narrow.** Revision will introduce
+the actual Code-review schema for the first time and repair a broader shared
+boundary than the current addendum states. Re-read only the revised schema,
+legacy disposition, canonical boundary rule, and parent-plan fold; the
+diagnosis and rejection of full parity do not need another pass.
