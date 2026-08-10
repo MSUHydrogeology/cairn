@@ -8,7 +8,8 @@
 **Author**: Claude (Strategy)
 **Model**: Opus 5
 **Date**: 2026-08-10
-**Status**: draft
+**Status**: revised (External round 1 — Codex, different agent type — folded in
+and removed 2026-08-10; the arc is in `git log`, not this body)
 **Type**: design-exploration
 **Supersedes**: `2026-06-04-claude-documentation-graphics.md` (archived on the
 same commit as this note). That note was authored from **modflow_tools'**
@@ -57,12 +58,17 @@ the table and named below.
 Every figure below is measured against this tree on 2026-08-10, not recalled.
 The commands are given so a reader can falsify them.
 
-* **Visual coverage** — `git ls-files '*.md' | xargs grep -lE '!\[[^]]*\]\('`
-  (true Markdown image embeds, not the `(?<![-\w])` regex fragments a bare
-  `!\[` search false-positives on inside `dev/`), and the same over
-  ` ```mermaid ` fences.
-* **Corpus size** — `git ls-files '*.md' | wc -l`, bucketed by top-level
-  directory; `wc -l` over `doctrine/`, `docs/`, `dimensions/`.
+* **Visual coverage — anchored, so the search cannot match its own
+  documentation.** A naive `grep -lE '!\[[^]]*\]\('` matches the *example*
+  patterns quoted inside this note, and returns this note. The measurements
+  below use line-anchored forms that distinguish a real asset from a quoted
+  one: `git ls-files '*.md' | xargs grep -lE '^[[:space:]]*!\[[^]]*\]\('` for
+  image embeds, and `... grep -l '^```mermaid'` for fence openings at column
+  zero. Both return `README.md` alone.
+* **Corpus size** — `git ls-tree -r --name-only <commit> | grep -E '\.md$' |
+  wc -l`, bucketed by top-level directory. Pinned to a commit rather than the
+  working tree, because the count moves with any commit that adds a file —
+  including this one.
 * **Asset inventory** — `git ls-files 'docs/assets/*'`.
 * **Missing surfaces** — direct `ls` for `CONTRIBUTING.md`,
   `docs/glossary.md`, `docs/related-practices.md`.
@@ -86,8 +92,19 @@ the *ordering* in the Recommendation would not.
 
 ### F1 — The entire visual surface is one file
 
-**281 tracked Markdown files. Exactly one contains an image; exactly one
-contains a diagram. They are the same file: `README.md`.**
+**282 tracked Markdown files** *(as of `d026440`)*. **Exactly one contains an
+image; exactly one contains a diagram. They are the same file: `README.md`.**
+
+*A live demonstration of F4, on this page.* The first draft of this note said
+281, measured minutes before the commit that added the note itself — the figure
+was stale within one commit of being written. The same draft's search commands
+matched the examples quoted in their own Method section and returned this note
+as a second "file with visuals." Both are exactly the class of failure F4 warns
+the README's feature list against: a hand-measured number with no snapshot
+anchor, and an instrument that does not distinguish a real asset from a
+description of one. The conclusion survived both defects, which is the useful
+part — but a reader is entitled to see the correction rather than a tidied
+number.
 
 | Surface | Files | Visuals |
 |---|---|---|
@@ -259,8 +276,8 @@ verification column is the honesty constraint from F4.
 
 | Feature | The one-line version | Evidence status |
 |---|---|---|
-| Review **before** code | The change is argued and reviewed as a written proposal before implementation exists | Shipped; dogfooded across the whole `dev/` tree |
-| Structural independence | The External tier requires a *different agent type or a human* — independence is checkable, not social | Shipped doctrine; measured cross-agent-type review rate exists |
+| Review **before** code | The change is argued and reviewed as a written proposal before implementation exists | Shipped; **extensively** dogfooded across the `dev/` tree — with recorded exceptions, which the incident trackers carry rather than hide |
+| Structural independence | The External tier requires a *different agent type or a human*, and who reviewed what is **recorded and reviewable** rather than asserted | Shipped doctrine; measured cross-agent-type review rate exists. **Limit:** the record makes independence *inspectable*; it does not *authenticate* an agent's declared type or a human reviewer's identity |
 | The record **is** the repository | Append-only, one commit per lifecycle transition; the whole arc replays from `git log` | Shipped |
 | The verification plan is locked first | What would falsify the change is committed before the evidence is gathered (a registered-report shape) | Shipped in the proposal template |
 | Vendor- and stack-neutral by construction | The coordination channel is Markdown in git — swap models or languages without changing the method | Shipped; neutrality is lint-gated |
@@ -316,7 +333,10 @@ shippable and the later ones are where the cost is.
 2. **The two skeptic answers.** `docs/related-practices.md` and
    `docs/glossary.md`, linked from the README. Independently useful, and the
    related-practices page is the single highest-leverage defence against the
-   dismissive compression.
+   dismissive compression. Both are descriptive-layer content, so both are
+   **registered in `docs/DOCUMENTATION_PLAN.md`'s descriptive-layer
+   inventory** as part of this stage — an unregistered page is exactly the
+   drift the placement guide exists to prevent.
 3. **The visual system, gated on two prerequisites** (gate 1, image existence,
    is already closed per F5):
    * **Gate 2 — a legibility pass exists and is named.** Cairn has no CI, so
@@ -325,20 +345,50 @@ shippable and the later ones are where the cost is.
      dark theme and at phone width, and record that each figure is readable,
      scaled, captioned, and not layout-breaking. A check whose only trigger is
      a human remembering must say so.
-   * **Gate 3 — the asset convention is written down first.** Where assets
-     live, how they are named, which license family each lands in, and what
-     provenance line each carries.
+   * **Gate 3 — the asset convention is written down first, in a named
+     home.** Where assets live, how they are named, which license family each
+     lands in, what provenance line each carries, and how gate 2 is
+     discharged. **`docs/DOCUMENTATION_PLAN.md` owns this** — it is already
+     Cairn's governing source for documentation architecture, and an asset
+     convention is documentation placement. It does **not** go in this note,
+     a new file, or a proposal body. *Scope fence:* this is Cairn's own
+     self-hosted instance only. The shipped forkable
+     (`documentation_plan_template.md`) is **not** touched by this work; the
+     two portable fold-up candidates at the end of this note each need their
+     own reviewed doctrine change to reach an adopter.
 4. **The diagrams themselves**, in comprehension-cost order — the doctrine
    pages first, not the README, since the README is already the one file with
    pictures. Candidates: the lifecycle state machine promoted out of the
    README and into `doctrine/lifecycle.md` where it is defined; the
    dimensions→modules selection map; a "where Cairn sits in your workflow"
    figure for `docs/workflow-role.md`. Mermaid unless spatial layout forbids
-   it.
-5. **Only then, and only if two or more diagrams have a registry behind
-   them,** consider the F6 generator. It is stdlib-only or it does not exist.
-   Do not build it speculatively; a hand-drawn Mermaid diagram that is correct
-   today is worth more than a generator for one figure.
+   it. **Gated on the registry question below**: any diagram whose content is
+   derived from an active implementation surface waits for that surface to
+   settle.
+5. **Only then, and only if two or more diagrams have a *settled* registry
+   behind them,** consider the F6 generator. The registries that would feed it
+   — the lifecycle transition vocabulary, the dimension→module mappings — are
+   **active implementation surfaces today**, with lifecycle-vocabulary and
+   module work in flight. A generator built against a moving input encodes the
+   movement, which is worse than a hand-drawn diagram that is simply correct
+   today. Prerequisites, all of which belong in that later proposal rather
+   than here:
+   * the source registry paths are **named and settled**, not in-flight;
+   * generated output **records the source commit or digest** it was derived
+     from, so a stale figure is detectable rather than merely wrong;
+   * the generator is **deterministic** — same input, byte-identical output —
+     so a regeneration is a no-op diff;
+   * every registry-derived label is **XML-escaped**, since a module name or
+     state token flows from a file into markup;
+   * the emitted SVG carries **no scripts, no external resources, and no
+     host-font dependency**, keeping it inert and renderer-portable;
+   * writes are **atomic** (temp-then-replace), so an interrupted run cannot
+     leave a half-written asset in the tree.
+
+   These are all reachable with the standard library, which is what keeps the
+   generator inside Cairn's dependency budget. They exist so a generated asset
+   does not become a new injection or drift surface — the two ways a figure
+   pipeline turns into a liability.
 
 **Residual risk, stated not dissolved.** A visual pass on a methodology
 repository can degrade into decoration, and decoration is a maintenance
@@ -370,11 +420,20 @@ Each is the Maintainer's call; the recommended answer is noted.
    two-directory recommendation was sized for a repository with a plotting
    module.*
 5. **Does the lifecycle diagram move or duplicate?** Promoting it into
-   `doctrine/lifecycle.md` and keeping it in the README means two copies of a
-   state machine that must agree. *Recommended: one canonical Mermaid source
-   in the doctrine, with the README keeping its own deliberately simplified
-   version and the existing "faithful simplification" caveat — the caveat is
-   already there and is what makes two copies honest.*
+   `doctrine/lifecycle.md` and keeping it in the README means two drawings of
+   one state machine. *Recommended: keep both, and be precise that this is
+   **two representations, not one source** — calling it a single canonical
+   source would be a comfortable fiction, since a simplification is by
+   construction different bytes conveying a deliberately smaller claim.* The
+   honest arrangement names three things: the **authoritative** drawing lives
+   in `doctrine/lifecycle.md` and shows every named state and transition; the
+   README's is a **faithful simplification**, defined as introducing no state
+   or transition the authoritative one lacks and contradicting none of them
+   (the caveat already under the README's diagram states exactly this); and
+   the **drift check** is the relationship, not the bytes — a reviewer
+   confirms the simplification's states remain a subset when either changes.
+   Whether that check is a human step at the doctrine-change gate or a
+   mechanical one is a question for the implementing proposal, not this note.
 
 ## Fold-up note
 
@@ -394,84 +453,3 @@ rate-limit gate:
   flagged as a fold-up candidate by the superseded note. It remains one; the
   new element is that the existence half is now demonstrably enforced by a
   shipped checker rather than proposed.
-
----
-
-## Review -- Codex (External) -- 2026-08-10
-
-<!-- TEMPORARY REVIEW: the author folds accepted findings inline and deletes
-     this section. Strategy notes are inline-revised, not append-only. -->
-
-**Structural independence.** This is a different-agent-type read of Claude's
-strategy note. I reviewed the exact bytes at
-`40c33fb8b65916da717d21f7f34e45a1ff1096f4` and independently re-ran the
-repository measurements rather than inheriting the note's figures.
-
-**Recommendation: REVISE, then promote stages 1-2.** The staged direction is
-sound. A scan-friendly README plus the related-practices and glossary pages is
-a useful, bounded first proposal. Generated or registry-derived visuals should
-remain a later proposal after their source contracts stabilize. Four focused
-revisions would make that division reliable.
-
-### Steelman
-
-The note correctly treats visual polish as documentation infrastructure rather
-than decoration. It preserves Cairn's zero-runtime-dependency and licensing
-constraints, distinguishes asset existence from legibility, avoids turning the
-README into a brittle capability inventory, and declines to advertise the two
-features whose evidence is not yet strong enough. Option 4 is the right
-sequence: the prose work has immediate value and does not need to wait for a
-diagram generator.
-
-### Findings
-
-**[D1] The documentation census tests its own prose and its headline count is
-already stale.** At the reviewed commit, `git ls-tree -r --name-only 40c33fb |
-grep -E '\.md$' | wc -l` reports **282**, not 281. More importantly, both raw
-commands in F1 report two files: `README.md` and this strategy note. The note
-itself contains the literal image pattern in an inline-code example and the
-Mermaid fence text in inline code. Anchoring the searches to standalone image
-lines and actual fence openings returns only `README.md`, which does support the
-substantive conclusion. Fold-up should correct the count, pin snapshot figures
-to the measured commit, and replace the self-contaminating commands with a
-parser or anchored patterns that distinguish examples from real assets.
-
-**[D2] Gate 3 requires an asset convention but does not give it a canonical
-home.** `docs/DOCUMENTATION_PLAN.md` is Cairn's governing source for the
-documentation architecture and is the natural owner for asset location,
-naming, provenance, licensing, and legibility-verification rules. The proposed
-`docs/glossary.md` and `docs/related-practices.md` also belong in that document's
-descriptive-layer inventory. Name this ownership in the strategy. Do not alter
-the shipped documentation-plan template as part of Cairn's internal work; the
-two portable fold-up candidates still require their separately reviewed
-doctrine change.
-
-**[D3] Registry-derived diagrams need a stability and artifact-safety contract
-before implementation.** The lifecycle vocabulary and module mappings that
-would feed the proposed generator are active implementation surfaces, so a
-generator built now would encode moving inputs. Gate stages 4-5 on named,
-settled registry paths and record the source commit or digest in generated
-output. A later generator proposal should also require deterministic output,
-XML escaping for every registry-derived label, no scripts or external
-resources, no host-font dependency, and atomic replacement. These constraints
-are compatible with the standard library and keep generated SVG from becoming
-a new injection or drift surface.
-
-**[D4] Three feature-story phrases claim more certainty than Cairn currently
-proves.** Review records make structural independence inspectable, but they do
-not authenticate an agent's declared type or a human reviewer's identity;
-"recorded and reviewable" is more precise than "independence is checkable."
-"Dogfooded across the whole dev tree" should acknowledge recorded exceptions,
-or say "extensively dogfooded." Finally, a canonical doctrine diagram plus a
-separate simplified README diagram is intentionally **two** representations,
-not one source; name the semantic relationship and its drift check rather than
-calling the arrangement one canonical Mermaid source.
-
-### Disposition
-
-Fold D1-D4 into the strategy, then promote stages 1-2 together. Keep stages
-3-5 in a later proposal whose prerequisites name the settled registries, the
-asset convention, the generator's safety contract, and a concrete rendered-
-legibility check. I did not review the eventual prose or visual design, audit
-external accessibility guidance, or validate rendering across hosting
-platforms; those belong to the resulting implementation and review.
