@@ -744,7 +744,18 @@ point rather than being copied into another backlog.
   distinguished from a tamper — which is why it is a proposal, not a patch.
   Raised by the `release-security-bar` External review, finding E1, and homed
   here rather than widening that proposal's fences.
-
+* **[VER-1] Content-scanner homoglyph classification residuals** *(deferred
+  2026-08-10 from `content-scan-detectors`, archived)* — two follow-ups from
+  the confusability-aware `homoglyph` rule, each needing its own proposal
+  rather than a plan rider: (a) an exhaustive UTS #39-derived Greek
+  classification to replace the 12-member curated `_NO_LATIN_TWIN` denylist —
+  unresolved oracle dependency, since `unicodedata` at UCD 15.1.0 exposes no
+  confusables / skeleton / script / identifier-status accessor; (b)
+  whole-script Cyrillic, left an explicit residual because the
+  authority-granting consequence is already closed by `byline-classification`
+  and flagging the whole script would cost legitimate international names —
+  revival needs its own measured corpus, per the Decision. Trigger: either
+  question recurring, or a Maintainer call to invest in one.
 * **[VER-4] Conda advisory coverage** — `python-security` audits **Python
   distributions**; conda-managed native packages are outside its declared scope
   (narrowed by Maintainer direction 2026-08-03 in `dependency-advisory-coverage`,

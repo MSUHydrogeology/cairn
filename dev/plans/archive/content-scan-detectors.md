@@ -1,17 +1,19 @@
 <!-- cairn-internal-ref-allow: doctrine/plans.md doctrine/dual-review.md doctrine/lifecycle.md doctrine/rationale.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- claim-check-allow: dev/proposals/2026-08-03-claude-content-scan-detectors.md, dev/proposals/2026-08-03-claude-default-security-stance.md, dev/proposals/2026-08-03-codex-api-web-security-modules.md, dev/proposals/2026-08-03-claude-identity-not-name.md, dev/plans/default-security-stance.md -->
+<!-- claim-check-allow: dev/proposals/2026-08-03-claude-content-scan-detectors.md, dev/proposals/2026-08-03-claude-default-security-stance.md, dev/proposals/2026-08-03-codex-api-web-security-modules.md, dev/proposals/2026-08-03-claude-identity-not-name.md, dev/plans/default-security-stance.md, dev/plans/content-scan-detectors.md -->
 <!-- ^ Source/sibling proposals and the default-security plan are archived.
      These citations sit in
-     append-only sections, so the path is exempted rather than rewritten. -->
+     append-only sections, so the path is exempted rather than rewritten.
+     This plan's own former (pre-archive) path is exempted the same way --
+     historical sections cite the live plan path, which ceases to resolve
+     once this record moves to dev/plans/archive/. -->
 
 
 # Plan: the scanner's character model — an invisible channel it cannot see, and a script it cannot tell from a spoof
 
 **Source proposal**: `content-scan-detectors` (accepted 2026-08-03 by Maintainer
 Decision, *"as revised"*). It sits at
-`dev/proposals/archive/2026-08-03-claude-content-scan-detectors.md` and moves to
-`dev/proposals/archive/` when it archives.
-**Status**: review
+`dev/proposals/archive/2026-08-03-claude-content-scan-detectors.md`.
+**Status**: archived
 **Plan review**: required(**External**, security lens) — carried from the
 proposal header and restated in the Decision (*"The plan carries
 `required(External, security lens)` in its own right; this Decision does not
@@ -1482,6 +1484,8 @@ plan. **Pre-declared here so no follow-up is homeless at archive time:**
 | The stale gate-manifest pins and collection identity | The supervised re-anchor under `bootstrap/REANCHOR_RUNBOOK.md`, batched with `separator-detection`. Named in the final commit body. |
 | The adopter-side stale-residual consequence of Change 2 (`exit 3`) | `CHANGELOG.md > Unreleased > Changed` (Chunk E5). |
 | The unbenchmarked interaction of the new detector with `content_scan_runner.py`'s `_MAX_WALL_SECONDS` budget on a large adopter tree | This plan's evidence ledger plus the commit body number; escalates to a proposal only if an adopter reports a breach. |
+| **Correction, appended at archive (2026-08-10)** — the `vermin` row above | **Discharged, not outstanding.** AM-18 (folded into *Gate accounting*) retired the premise that this was a Maintainer act: `vermin 1.8.0` was on PATH the whole time, and the scoped run the row's own condition asks for is recorded in Chunk B's commit body (`8fea3f6`): `vermin --backport dataclasses --backport typing templates/modules/team-gated/content_scan.py` -> `Minimum required versions: 3.7`, unchanged from the pre-change baseline. The row's stated condition — *"does not archive as discharged unless it was run"* — is met; no Maintainer action was owed or is outstanding. |
+| **Addendum, appended at archive (2026-08-10)** — the exit-3 stale-residual row above | **The named home exists but is not yet fully populated.** `CHANGELOG.md > Unreleased > Changed`'s `content-scan-detectors` bullet (landed `b92fa6c`) does not carry the exit-3 sentence Chunk E5's own acceptance criteria required (*"An adopter's own `content_scan_residuals.txt` carrying a `homoglyph` fingerprint for a now-cleared line goes STALE and fails their scan at exit 3 until pruned... The `Changed` changelog line must say so"*). The underlying mechanism is documented generally at `templates/modules/team-gated/content-security.md:112-123` (the reviewed-residual baseline's STALE/exit-3 behaviour), but the changelog does not connect it to this specific change. Reported rather than silently marked discharged; a follow-up changelog edit at the next serialization point should add the sentence. |
 
 This section is append-only once written.
 
@@ -3419,4 +3423,46 @@ I served as the independent security code reviewer for the `content-scan-detecto
    - `PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_content_scan.py -q`: **198 passed in 0.25s**.
    - `scripts/check_cairn.py`: **OK, 176 Markdown files scanned, 0 issues**.
    - `scripts/claim_check.py dev/plans/content-scan-detectors.md`: **OK, no claim-check flags**.
+
+## Archive -- Claude -- 2026-08-10
+
+The plan-archive precondition (`doctrine/plans.md` > "The plan-archive
+precondition") is met: the independent Antigravity code review above returned
+**SHIP** over `8fea3f6`, `7dd73a0`, and the `b92fa6c` changelog serialization.
+Gate D-ON is **MET** (the quoted Maintainer disposition, 2026-08-05): D-ON-1 and
+D-ON-2 by that disposition, D-ON-3 by the landed 74-row
+`TestDefaultAdoptionCorpus`. No chunk of *this* plan itself flips a default
+selection -- Gate D-ON authorizes the reciprocal `default-security-stance`
+plan's default-on implementation, which has since landed and archived.
+
+**Follow-ups migrated to:**
+
+* The exhaustive UTS #39-derived Greek classification, and whole-script
+  Cyrillic -> `dev/PLANNING.md` > *Security program* > *Security apparatus*,
+  new rows added in this archive commit. Both need their own future proposal;
+  neither is this plan's to close.
+* The beta-family residual and the pinned-UCD-snapshot limit (both tables and
+  `_NO_LATIN_TWIN`) -> already landed as documented, accepted limits in
+  `templates/modules/team-gated/content-security.md` (Chunk E). No further
+  action pending.
+* The unrun-`vermin` row -> **corrected above**: it was discharged in-session
+  (Chunk B commit body), not a Maintainer obligation. AM-18 already said so;
+  this archive is where the plan's own table catches up to it.
+* The two frozen files (`content_scan.py`, `test_content_scan.py`) and the
+  stale collection-identity pin -> remain a pending **Maintainer-supervised**
+  re-pin under `bootstrap/REANCHOR_RUNBOOK.md`, batched with
+  `separator-detection` per both plans' identical Maintainer-fence rule.
+  Tracked at `dev/PLANNING.md` > *Security program -- clustered current view*
+  > `[VER]`.
+* The adopter-side exit-3 stale-residual sentence Chunk E5 asked the
+  `CHANGELOG.md > Unreleased > Changed` line to carry -> **not fully
+  discharged**, reported above rather than marked done. The general STALE /
+  exit-3 mechanism is documented (`content-security.md:112-123`); the specific
+  connection to this change is the missing piece.
+* The unbenchmarked interaction with `content_scan_runner.py`'s wall-clock
+  budget -> stays this plan's own evidence ledger; escalates to a proposal
+  only on a reported breach.
+
+No AST re-anchor, frozen-manifest re-pin, credential use, or push was
+performed by this archive commit.
 

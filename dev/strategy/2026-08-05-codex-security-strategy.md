@@ -232,10 +232,12 @@ each check inspect, and can coverage silently narrow?
 
 **Current lifecycle owners**
 
-* [VER-1] **Content scanner character model.** Plans
-  [`content-scan-detectors`](../plans/content-scan-detectors.md) and
-  [`separator-detection`](../plans/separator-detection.md) share one scanner,
-  one test surface, and one frozen-file ceremony. Land them as a batch.
+* [VER-1] **Content scanner character model.** Archived plan
+  [`content-scan-detectors`](../plans/archive/content-scan-detectors.md) has
+  landed and archived (SHIP-reviewed). Plan
+  [`separator-detection`](../plans/separator-detection.md) shares the same
+  scanner, test surface, and frozen-file ceremony; the two files' frozen-file
+  re-pin is batched across both plans regardless of which archives first.
 * [VER-2] **Default adoption posture.** Archived plan
   [`default-security-stance`](../plans/archive/default-security-stance.md) makes
   `content-security` default-on, selects `python-security` only for a declared
