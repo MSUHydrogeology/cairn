@@ -4,7 +4,7 @@
 **Author**: Codex (Strategy / Security)
 **Model**: GPT-5 (Codex)
 **Date opened**: 2026-08-10
-**Status**: revised
+**Status**: accepted
 **Touches**: `bootstrap/tests/_gate_preflight.py`,
 `bootstrap/tests/_gate_manifest.py`, `bootstrap/tests/test_gate_preflight.py`,
 `bootstrap/tests/test_gate_manifest.py`, `bootstrap/REANCHOR_RUNBOOK.md`,
@@ -958,3 +958,12 @@ key-load marker, or if the real remote cannot atomically publish the branch and
 durable anchor. In each case retain the old mechanism or the local anchor until
 the failed premise is redesigned; do not narrow the assertion to make the gate
 green.
+
+## Decision -- Maintainer -- 2026-08-10
+
+> Accept Revision 1 of dev/proposals/2026-08-10-codex-git-native-security-foundations.md
+
+Accepted Revision 1. The proposal consolidates Git-native security primitives, replaces per-commit signing with Maintainer-signed checkpoints bound to canonical range-review reports, and eliminates candidate execution during key loading. All External Security Review findings ([C1]–[C5]) are resolved in Revision 1. The resulting plan is `required(**External** + **External Security Review**)`.
+
+Scribed by Antigravity under Maintainer instruction.
+
