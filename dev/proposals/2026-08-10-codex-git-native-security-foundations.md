@@ -494,3 +494,231 @@ The External Security Reviewer should attack four claims by execution:
 The review should explicitly adjudicate the lost second-person detection and
 the ceremony-key residual rather than treating usability as sufficient risk
 acceptance.
+
+## Review -- Claude -- 2026-08-10
+
+**Model**: claude-opus-5 (Claude Opus 5)
+**Tier**: External, different agent type from the author
+**Reviewed commit**: `94c5a6bd1b030c80d228dc33aa9f485cc572a474` (proposal as
+opened); probes executed against working HEAD
+`e7906590be7d3216a365a7bb0869f5def28fbea6`
+**Verdict: REVISE.** The division of responsibility is right and Sections B,
+D, and E survive execution unchanged. Section C contains an undisclosed
+cryptographic downgrade, and Section A retires a mechanical control in favour
+of a human review whose target the proposal never bounds.
+
+### Steelman
+
+**Every factual claim in Context reproduces to the digit.** At the exact cited
+commit `a09542a`: `refs/cairn/gate-anchor..a09542a` is **487 commits**;
+`check_signatures()` splits **186 G / 301 N**; repo-local `commit.gpgsign` is
+`false`; `git reflog exists refs/cairn/gate-anchor` exits 1; the anchor is a
+direct ref (`symbolic-ref -q` exits 1). Pinning those figures to an exact SHA
+rather than to "now" is why they still verify -- the numbers have already moved
+to 492 / 186 G / 307 N at working HEAD, and the proposal is unharmed by that.
+
+**Section B's sterility claim holds under attack.** I attempted to steer
+`git hash-object --stdin` with candidate-controlled configuration -- repo-local
+`core.autocrlf=true`, `core.autocrlf=input`, `core.eol=lf`, and a
+`.gitattributes` declaring `*.bin text eol=lf` -- against CRLF payload bytes.
+All five produced the identical object id; only the `--path` form (which the
+proposal explicitly forbids) diverged. The stated constraint is the right one
+and it is load-bearing.
+
+**Section B is also cheap.** `git fsck --strict --no-dangling` completes in
+**0.62s** on this repository (6.23 MiB pack, 7,537 objects). There is no
+runtime objection to adding it at both acquisition boundaries.
+
+**Section D's mechanism is verified in both directions.** Against a local bare
+remote with a deliberately non-fast-forward branch and a clean fast-forward
+anchor:
+
+```text
+--atomic     : ! [rejected] refs/cairn/gate-anchor (atomic push failed)
+               ! [rejected] main (non-fast-forward)
+               remote anchor unchanged at 954a9ee
+no --atomic  :   954a9ee..1463cde  refs/cairn/gate-anchor -> ...  (ADVANCED)
+               ! [rejected] main (non-fast-forward)
+               remote left with a published anchor and an unpublished branch
+```
+
+The forbidden half-published state is not hypothetical; it is one dropped flag
+away. The prohibition on a two-push fallback is correct and should not be
+softened for convenience.
+
+**`_blob_oid` is described accurately**, including the width-based algorithm
+selection (`security_check.py:342-353`, dispatching on `hex_length` 40/64), and
+**the roster is not candidate-supplied**: `anchored_roster()` materializes
+`dev/.cairn/allowed_signers` from the *anchor object* into a tempdir
+(`_gate_preflight.py:597-618`), not from the worktree. I went looking for a
+circularity in "signature verified against the roster pinned by that anchor"
+and did not find one; it resolves through the chain, with Section F owning
+first use. The module's comments at `:94` and `:103` show this exact class was
+already found and closed once.
+
+### [C1] HIGH -- Section C is an undisclosed digest downgrade, in this repository
+
+The frozen-file leg currently pins **SHA-256 content digests**
+(`_gate_manifest.py:147`, `_sha256()`, used at `:229`, `:359`). This repository's
+object format is **`sha1`** (`git rev-parse --show-object-format`). So "move the
+frozen-file leg to Git object identity" replaces a 256-bit content digest with a
+**160-bit SHA-1 blob id** on the integrity control that decides whether
+gate-affecting code was modified.
+
+The proposal never says this. It reserves SHA-256 for "the out-of-band
+exact-byte first-use review" and "domain records whose contract is a portable
+content digest" -- which shows it understands the distinction, and makes the
+silence on the frozen leg harder to read as an oversight than as an
+unexamined consequence of framing the change as consolidation.
+
+The mitigation is real and should be stated rather than assumed: this Git is
+built with `SHA-1: SHA1_DC` (`git version --build-options`), so known
+chosen-prefix constructions are *detected*. That is a defense against
+recognized attack families, not a 256-bit security level, and it is exactly the
+kind of claim this proposal is otherwise careful to keep separate.
+
+**Required satisfier.** Note what Section C actually buys: **mode**, the
+tracked/untracked distinction, and object-format awareness -- none of which a
+bare SHA-256 digest can express, and all of which are genuine improvements.
+None of them require *discarding* the digest. Have v2 record mode + Git object
+id **alongside** the existing SHA-256, so Git owns identity and mode while the
+digest keeps its strength. If the Maintainer prefers the single-id form, the
+proposal must state the downgrade, its SHA-1DC mitigation, and record the
+acceptance -- not leave a 256-to-160-bit reduction implicit in a consolidation
+argument.
+
+### [C2] HIGH -- Section A retires a mechanical control for a review target it never bounds
+
+Retiring `_SIGNING_EPOCH` removes a refusal that fired without human attention.
+What replaces it is the Maintainer reviewing the preflight result -- and step 2
+specifies that result as signed, unsigned, and foreign-signed **counts**.
+
+Measured at working HEAD, that is what the Maintainer would be authorizing:
+
+| | |
+|---|---|
+| frozen paths pinned | 182 |
+| paths changed over `anchor..HEAD` | 195 |
+| changed **and** frozen | 49 |
+| **changed and outside the gate entirely** | **146** |
+
+The checkpoint's own diff is tightly bound -- `_gate_preflight.py:1304-1308`
+requires the constructed commit to change only the manifest, which is a real
+control and I credit it. But the checkpoint's *tree* is the candidate tree, so
+those 146 paths ride in as authorized state with no per-commit signature
+tripwire, no manifest coverage, and no report naming them.
+
+S5 says *"the Maintainer must catch its content/range before signing."* Over
+492 commits and 146 ungated paths, presented as three integers, that sentence
+is not falsifiable. The proposal is admirably honest that second-person
+detection is lost; the problem is that its replacement is asserted rather than
+built.
+
+**Required satisfier.** Preflight must emit **the changed-path set for
+`anchor..HEAD` that falls outside manifest coverage**, as a report artifact the
+Maintainer signs off against. That turns "reviews the preflight result" into a
+bounded, checkable object and costs one `diff --name-only` plus a set
+difference. Additionally: `_gate_preflight.py:63` records that the epoch
+existed so a checker could not "grandfather its own unsigned commits without
+being caught." The revision should state whether that attack is *eliminated*
+under the checkpoint model or merely no longer named.
+
+### [C3] MEDIUM -- the bootstrap composes two acknowledged residuals and examines neither
+
+Section F step 3 has the Maintainer "generate v2 evidence without trusting a
+handoff artifact." Generating that evidence runs `_gate_manifest.py produce`,
+which executes **pytest collection over the candidate tree as a subprocess**
+(`_gate_manifest.py:126`, `:178-179`). Known omissions states the proposal does
+not "contain candidate collection." S5 states the ceremony key may be
+invocable.
+
+Step 3 therefore runs candidate-controlled Python on the Maintainer's machine
+at the moment of maximum key exposure. Each residual is disclosed; their
+composition is not, and the composition is the interesting one.
+
+**Required satisfier.** Either sequence the ceremony so the signing key is
+loaded *after* evidence generation completes (cheap, and it dissolves the
+composition), or state the composed residual explicitly with its own expiry
+trigger alongside the sole-control assumption.
+
+### [C4] MEDIUM -- the transport premise is stale, in the proposal's favour
+
+Context and [TRU-7] read as though the durable anchor is unpublished. It is
+not. A read-only `git ls-remote origin 'refs/cairn/*'` returns:
+
+```text
+e45e1fcc84ded159ef910b6e7bde15f7b715a5b3	refs/cairn/gate-anchor
+```
+
+-- identical to the local anchor. GitHub accepts the `refs/cairn/*` namespace
+and already carries the ref. The true gap is narrower and should be stated as
+such: **ordinary pushes do not transport it, and the runbook lacks the
+procedure** -- not that transport is unproven.
+
+What remains genuinely untested is whether the real remote advertises the
+`atomic` capability. I verified all-or-nothing semantics against a local bare
+remote only; **I did not push to `origin`**, since publishing is outward-facing
+and not mine to initiate. The plan should record a Maintainer-run result
+against the real remote before [TRU-7] is dispositioned.
+
+### [C5] LOW -- pin the `hash-object` invocation to the repository
+
+`git hash-object --stdin` succeeds **outside any repository**, exiting 0 and
+silently defaulting to SHA-1 (verified from `/tmp`). In a `sha1` repository a
+mis-scoped invocation is coincidentally correct; in a `sha256` repository the
+width mismatch fails closed, so this is not exploitable today. It is still a
+silent fallback in a security path.
+
+**Satisfier.** Pin the invocation explicitly (`git -C <repo>` or an explicit
+`--git-dir`) and add a node asserting that a mis-scoped call refuses rather
+than returning a plausible id.
+
+### Adjudication the brief asked for
+
+**The lost second-person detection.** I accept the trade *conditionally*. The
+old control was already weak on identity -- the proposal is right that agents
+using the Maintainer's key were never distinguishable from the Maintainer. But
+it was strong on *mechanism*: it fired with no human in the loop. The new model
+has no mechanical tripwire at all, and substitutes attention over an unbounded
+diff. Accepting this without [C2]'s satisfier would convert a weak-but-automatic
+control into a strong-sounding-but-unfalsifiable one, which is worse than
+either. With [C2], the trade is sound and I would not object again.
+
+**The ceremony-key residual.** I do not accept it as a merely dated
+assumption. Standing alone -- "a key holder is not a human" -- it is ordinary
+and correctly disclosed. Composed with [C3], it becomes "candidate code
+executes on the ceremony machine while the key is available," which is a
+different statement and is nowhere written down. Usability is not the issue;
+the issue is that the residual as documented is smaller than the residual as
+designed. Either fix it by sequencing or write the real one.
+
+### Covered and recommendation
+
+**Covered** -- each by execution, not reading: the 487-commit range and 186/301
+signature split at `a09542a`; `commit.gpgsign`, reflog absence, and direct-ref
+status; `hash-object --stdin` sterility under four hostile configurations plus
+`.gitattributes`; `hash-object` behavior outside a repository; `fsck --strict
+--no-dangling` cost; atomic vs non-atomic two-ref publication against a local
+bare remote in both outcomes; `refs/cairn/*` presence on the real origin
+(read-only); roster provenance at `_gate_preflight.py:597-618`; the checkpoint
+minimal-diff control at `:1304-1308`; frozen-set size and the changed-path
+partition over `anchor..HEAD`; `_blob_oid` at `security_check.py:342-353`;
+manifest collection execution at `_gate_manifest.py:126`, `:178-179`.
+
+**Not covered / low confidence.** I did not execute the proposed ceremony end
+to end -- Section F's bootstrap is unrunnable before its code exists, and the
+Maintainer steps are not mine to perform. I did not push to `origin`, so the
+`atomic` capability of the real remote is unverified. I did not test SHA-256
+repositories, Windows or non-OpenSSH signing, `fetch.fsckObjects` against a
+hostile pack, or manifest v1-to-v2 migration -- none exists yet. I did not
+audit whether the 146 ungated changed paths contain anything actually
+dangerous; [C2] is about the absence of a report, not a claim of live
+compromise. This is one agent type on one host; the declared plan tier
+(**External + External Security Review**) remains correct and this proposal
+review does not discharge any part of it.
+
+**Second-round recommendation: recommended, and narrow.** [C1] and [C2] are
+design questions with concrete satisfiers, not rewrites; [C3] is likely a
+sequencing sentence. The factual base needs no re-verification -- it reproduced
+completely. A delta-only re-read of Sections A and C after revision should be
+sufficient to reach Decision.
