@@ -16,7 +16,7 @@ question this proposal asks the Maintainer to resolve.
 this defect lives in); [`review-efficient-lifecycle`](2026-08-10-codex-review-efficient-lifecycle.md)
 (revised, not yet Decided; already names this defect and plans a
 review-basis block that touches the same predicate — see *Reconciliation*
-below); [`transition-lint`](../plans/transition-lint.md) (open; the plan
+below); [`transition-lint`](../plans/archive/transition-lint.md) (open; the plan
 that supplies the reproducing evidence)
 **Plan review**: required(**External**) — this is lifecycle-enforcement
 on a shipped gate, the same category `review-gate-enforcement` and
@@ -59,7 +59,7 @@ blindness is specifically in `_pass_headings`'s S1 regex and in
 `_has_disposition`'s ceiling search (`:989-1004`), which also keys only on
 `s.kind.strip().lower() == "plan review"`.
 
-**Reproduced directly.** `dev/plans/transition-lint.md:1938-1944` carries:
+**Reproduced directly.** `dev/plans/archive/transition-lint.md:1938-1944` carries:
 
 ```
 ## Code review -- Antigravity (External) -- 2026-08-10
@@ -79,7 +79,7 @@ PYTHONDONTWRITEBYTECODE=1 python3 -c "
 import sys; sys.path.insert(0, 'tools')
 import lifecycle_planner as lp
 from pathlib import Path
-art = lp._read_artifact(Path('dev/plans/transition-lint.md'))
+art = lp._read_artifact(Path('dev/plans/archive/transition-lint.md'))
 print(lp.review_record_violations(art))"
 ```
 
@@ -138,7 +138,7 @@ dev/plans/archive/solo-legacy-adopter-path.md
 dev/plans/fork-advisory-semantics.md
 dev/plans/portable-security-sweeps.md
 dev/plans/review-gate-enforcement.md
-dev/plans/transition-lint.md
+dev/plans/archive/transition-lint.md
 ```
 
 **(B) A narrow S7-only extension** — require a disposition to follow a
@@ -146,7 +146,7 @@ raised finding *only on a `## Code review` section that already declares a
 `**Findings**:` line* (i.e. never require the line to exist; only close the
 disposition-pairing hole where a reviewer already opted into that
 vocabulary). Measured over the same 23 passes: **exactly 1 of 35 files
-newly violates — `dev/plans/transition-lint.md`**. It is the *only* Code
+newly violates — `dev/plans/archive/transition-lint.md`**. It is the *only* Code
 review pass anywhere in the tree, live or archived, that carries a
 `**Findings**:` line at all; every other Code review author never used
 that vocabulary, so (B) leaves them untouched.
