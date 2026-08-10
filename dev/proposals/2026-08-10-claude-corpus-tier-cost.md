@@ -18,8 +18,8 @@ dominate suite wall-clock. No shipped file, no adopter-facing surface,
 no doctrine, no dependency.
 **Related**: [`verification-evidence-boundaries`](../plans/archive/verification-evidence-boundaries.md)
 (which bounded *how often* the suite runs; this bounds *how long one run
-takes*); [`transition-lint`](../plans/transition-lint.md) (open — owns the
-file this proposal's largest change touches);
+takes*); [`transition-lint`](../plans/archive/transition-lint.md) (archived
+2026-08-10 — owns the file this proposal's largest change touches);
 [`review-efficient-lifecycle`](2026-08-10-codex-review-efficient-lifecycle.md)
 (the adjacent axis — reviewer *context* cost, not suite wall-clock)
 **Plan review**: required(**Internal**) — test infrastructure with no
@@ -260,9 +260,9 @@ infrastructure only, and adopters receive none of these files. Routed
 per `docs/DOCUMENTATION_PLAN.md`: nothing here is prescription or
 description, so nothing leaves the deliberation layer.
 
-The one exception, if Part 3 lands: `dev/plans/transition-lint.md` owns
-the corpus tier's rationale, and a narrowed window is a fact about that
-plan's shipped artifact. The plan's archive record gets an appended
+The one exception, if Part 3 lands: `dev/plans/archive/transition-lint.md`
+owns the corpus tier's rationale, and a narrowed window is a fact about
+that plan's shipped artifact. The plan's archive record gets an appended
 note. That is a record correction, not a doctrine change.
 
 ### Doctrine-change rate-limit
@@ -456,10 +456,10 @@ files are trust-ceremony surfaces.
 ## Sequencing constraint
 
 Parts 2 and 3 touch `bootstrap/tests/test_transition_lint.py`, whose
-plan `dev/plans/transition-lint.md` is **open** with an External code
-review appended 2026-08-10. Implementation of Parts 2–3 waits on that
-plan reaching archive, or on its owner's explicit concurrence. Part 1
-and Part 4's measurement pass are unblocked and can proceed first.
+plan `dev/plans/archive/transition-lint.md` **archived** 2026-08-10 after
+an External code review (SHIP) and the Maintainer's ratification of its
+Fence 1. That clears this constraint: Implementation of Parts 2–3 is
+unblocked, alongside Part 1 and Part 4's measurement pass.
 
 ## Review -- Codex -- 2026-08-10
 

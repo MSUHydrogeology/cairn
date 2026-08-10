@@ -16,8 +16,8 @@ question this proposal asks the Maintainer to resolve.
 this defect lives in); [`review-efficient-lifecycle`](2026-08-10-codex-review-efficient-lifecycle.md)
 (revised, not yet Decided; already names this defect and plans a
 review-basis block that touches the same predicate — see *Reconciliation*
-below); [`transition-lint`](../plans/archive/transition-lint.md) (open; the plan
-that supplies the reproducing evidence)
+below); [`transition-lint`](../plans/archive/transition-lint.md) (archived
+2026-08-10; the plan that supplies the reproducing evidence)
 **Plan review**: required(**External**) — this is lifecycle-enforcement
 on a shipped gate, the same category `review-gate-enforcement` and
 `review-efficient-lifecycle` both declared External for.
@@ -59,7 +59,10 @@ blindness is specifically in `_pass_headings`'s S1 regex and in
 `_has_disposition`'s ceiling search (`:989-1004`), which also keys only on
 `s.kind.strip().lower() == "plan review"`.
 
-**Reproduced directly.** `dev/plans/archive/transition-lint.md:1938-1944` carries:
+**Reproduced directly.** `dev/plans/archive/transition-lint.md:1945-1951` carries
+(line numbers as of the 2026-08-10 archive commit; they were `1938-1944` before
+that commit's header edits shifted the file by 7 lines — the content is
+unchanged, only its position moved):
 
 ```
 ## Code review -- Antigravity (External) -- 2026-08-10
@@ -85,7 +88,7 @@ print(lp.review_record_violations(art))"
 
 prints `[]`). The parser does see both headings in `art.sections` (`'Code
 review'` appears twice — the template stub at line 1009 and the real
-section at line 1938 — confirmed by printing `[s.kind for s in
+section at line 1945 — confirmed by printing `[s.kind for s in
 art.sections]`), which is the direct evidence that the gap is in the
 filter, not the parse.
 
