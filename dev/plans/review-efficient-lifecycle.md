@@ -1,5 +1,5 @@
 <!-- cairn-internal-ref-allow: doctrine/dual-review.md doctrine/lifecycle.md doctrine/plans.md doctrine/proposals.md doctrine/lifecycle-contract.md doctrine/session-routines.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- claim-check-allow: bootstrap/tests/test_lifecycle_board.py, bootstrap/tests/test_lifecycle_vocabulary.py, scripts/gen_legacy_code_review_passes.py, dev/measurement/pilot-activation.md, dev/measurement/pilot-events.md, dev/.cairn/pilot-state.json, tools/__init__.py -->
+<!-- claim-check-allow: bootstrap/tests/test_lifecycle_board.py, bootstrap/tests/test_lifecycle_vocabulary.py, scripts/gen_legacy_code_review_passes.py, dev/measurement/pilot-activation.md, dev/measurement/pilot-events.md, dev/plans/corpus-tier-cost.md, dev/plans/git-native-security-foundations.md, dev/.cairn/pilot-state.json, tools/__init__.py -->
 <!-- The three paths above are forward references created by Chunks A, C and F.
      They are also registered under `Proposed paths:`; that marker exempts only
      its own contiguous bullet block, so this file-scoped directive covers the
@@ -63,139 +63,76 @@ its own deliverables to verify itself.
 raised to the Maintainer as a scope question, not converted into another
 planning artifact. Chunk count is not ceremony; review passes are.
 
-## Bootstrap attestation — the two obligations, recorded manually
+## Bootstrap attestation — retired 2026-08-10, before it was ever used
 
-This plan's header requires two distinct plan-review passes, but the predicate
-that enforces multi-obligation discharge is Chunk E's deliverable. Verified
-2026-08-10, today's parser normalizes
-`required(**External** + **External Security Review**)` to `('external', None)`
-— the second obligation is **silently dropped**, so current tooling would
-report the floor satisfied by one pass.
+This plan carried a two-row obligation table and, beneath it, a one-time
+Maintainer exception authorizing the `executing` transition despite a parser
+violation. Both are **removed**, and the reason is worth keeping.
 
-Until Chunk E lands, this table is the enforcement, and the plan stays at
-`open` until both rows are filled:
+The violation was never a property of this plan. `_has_disposition` bounded a
+`## Response to plan review` by the *next* pass, so when two review obligations
+were answered in one Response — the normal shape for `required(A + B)` — the
+first pass of every pair was overtaken before its Response landed, and
+append-only forbade inserting one between two landed reviews. Nine rounds
+accrued five permanent violations, and three of those rounds (H2/T3, J1/K1,
+L1/M1+L2) were spent perfecting a governance override for a defect in the
+checker rather than in the artifact.
 
-| Obligation | **Clearing** review commit | Verdict | Unresolved findings |
-|---|---|---|---|
-| `External` | *pending* | *pending* | *pending* |
-| `External Security Review` | *pending* | *pending* | *pending* |
+`286f07d` fixed the checker: a pass is dispositioned iff some Response follows
+it, which is exactly the group above that Response and after the previous one.
+Measured across 36 plans, exactly one artifact's count changed — this one, from
+4 to 0. Both `executing` preconditions now report MET.
 
-**A row is filled only by a distinct clearing pass.** An author Response is
-evidence of correction, never the clearing review — the opened table recorded
-the blocking pass `8f37a9b` as its own clearance, which is exactly the
-self-clearance it was introduced to prevent. Blocking passes so far:
-`8f37a9b` (External, REVISE), `ef70da8` (External round 2, REVISE),
-`fc96373` (External Security Review, REVISE). Each row needs a later pass
-reading `SHIP` with zero unresolved findings before Chunk A begins.
+So there is nothing left to grant an exception for. The two review obligations
+still stand and are still discharged by two distinct clearing passes; what is
+gone is the apparatus that existed only to get past a rule that should not have
+refused.
 
-This attestation is retired by Chunk E, in the same commit that makes its
-multi-obligation predicate active and tested. It adds no review pass; it makes
-the two already-declared passes enforceable during their own bootstrap.
+**The lesson this plan pays for.** Three review rounds went into an override
+before anyone asked whether the gate was right. When a gate refuses a shape
+that has no author-side workaround, the gate is the first thing to check.
 
-### The gate deadlock, and the one-time exception it needs
 
-Filling both rows above is **not sufficient** to reach Chunk A. Executed under
-the canonical interpreter at this commit:
+## The six accepted proposals, and where each is executed
 
-```text
-review_record_violations(...)            -> 3 violations
-_gating_preconditions(..., 'executing')  -> UNMET: "a CONFORMING '## Plan review'
-                                            pass has landed"
-```
+One place to see the whole programme. Four proposals are implemented **inside
+this plan**; two keep their own plans because merging them would raise their
+review gate for nothing. Sequencing is stated here so there is a single artifact
+to start from.
 
-Every violation is the same shape: a pass declares `**Findings**: raised` and
-its Response falls *after* the next pass, outside the parser's positional
-ceiling. Append-only forbids inserting a Response between two landed reviews,
-so once a blocking pass is overtaken by the next pass, its violation is
-permanent and no later pass removes it.
+| # | Proposal | Executed in | Plan tier | Depends on |
+|---|---|---|---|---|
+| 1 | `corpus-tier-cost` | `dev/plans/corpus-tier-cost.md` | Internal | nothing — **runnable now** |
+| 2 | `review-efficient-lifecycle` | **this plan**, P1--P8 | External + Ext. Security | — |
+| 3 | `claim-check-exemption-hygiene` | **this plan**, D | External + Ext. Security | A |
+| 4 | `code-review-blindness` | **this plan**, B, C | External + Ext. Security | A |
+| 5 | `lifecycle-status-vocabulary` | **this plan**, A, E, F | External + Ext. Security | A |
+| 6 | `git-native-security-foundations` | `dev/plans/git-native-security-foundations.md` | External + Ext. Security Review | independent trust root |
 
-**Precisely which rounds cost a violation** — measured against the parser, not
-inferred:
+**Why 1 and 6 are not merged in.** `corpus-tier-cost` is `required(Internal)`
+test infrastructure; folding it here would subject a fifteen-line memo change
+to an External Security Review it does not need, and would trap the engine
+suite's runtime fix behind this plan's gate. That risk is not hypothetical —
+this plan took nine review rounds to reach its first implementation commit, and
+the suite meanwhile runs **438s** (measured 2026-08-10, 2,785 nodes).
+`git-native-security-foundations` changes the local trust root, the gate
+manifest schema, and release verification; its Security reviewer should read
+that diff, not a lifecycle refactor's.
 
-| round shape | adds |
-|---|---|
-| clearing pass, `**Findings**: none`, no disposition | **0** |
-| blocking pass, `**Findings**: raised`, dispositioned before the next pass | **0** |
-| blocking pass overtaken by the next pass before its Response | **1, permanent** |
+**Start order.**
 
-**The table above is the canonical rule.** Only an *overtaken* blocking pass —
-one whose Response is separated from it by another landed pass — becomes
-permanent. A blocking pass dispositioned before the next pass costs zero, which
-is why the newest pass always has a disposition and the count is always one
-lower than the number of blocking rounds.
+1. **`corpus-tier-cost` first and in parallel with everything.** It is
+   accepted, unblocked (`transition-lint` archived), Internal-tier, and it is
+   the only one of the six that makes every other chunk's Boundary A cheaper.
+2. **This plan's Chunk A**, once both obligations carry a clearing pass. A is
+   the single vocabulary source every later chunk consumes.
+3. **B--H in the order in `## Sequence`**, then B1 / Code review / re-anchor /
+   B2.
+4. **`git-native-security-foundations`** whenever its own reviews clear; it
+   shares no surface with this plan and is not gated on it.
 
-**No forecast belongs in this procedure.** Two have already been wrong: an
-earlier revision said the count "grows by one with every additional review
-round", and a later one said it stood at **4** as of that Response when direct
-execution at `a404145` returns **3** — a figure measured before that Response
-dispositioned the newest pass, then written into it. The count moves with every
-round and with the act of responding, so the exception field pins a **multiset
-derived by the preflight at its named parent commit** and no number is quoted
-in prose anywhere in this section.
-
-**The exception is the Maintainer's to grant, and is deliberately left
-unfilled here.** It authorizes nothing until every field below is completed by
-the Maintainer:
-
-**Non-circular by construction.** An earlier form of this table asked for the
-plan blob "at authorization" — a value that is part of the bytes being hashed,
-so writing it changes it. Reproduced: blob `fd9fff89…` became `3da899bc…` the
-moment that value was written into the pending cell. It is the same
-self-reference removed from the pilot activation record, reintroduced here in
-the same commit that removed it there. The binding is now to the **parent**.
-
-| Field | Value |
-|---|---|
-| **Pre-attestation** plan blob (parent of the attestation commit) | *pending* |
-| Clearing `External` review commit | *pending* |
-| Clearing `External Security Review` commit | *pending* |
-| Exact expected violation **multiset** (text × count) | *pending* |
-| Authorizing Maintainer, quoted verbatim | *pending* |
-
-**The two-commit ceremony**, in order:
-
-1. Both distinct `SHIP` review commits land against the final contract bytes.
-2. A **Maintainer-only, path-scoped attestation commit** fills the two
-   bootstrap rows and the fields above, carries the verbatim authorization in
-   both the plan and the commit body, and changes **no other path and no other
-   plan byte**.
-3. Before the status-only transition, the Maintainer runs and records an
-   **exact-byte preflight** that derives the parent and attested blobs from
-   Git, verifies the attestation commit's diff is allowlisted, confirms the
-   current artifact descends unchanged from that attestation, and reproduces
-   **exactly** the authorized violation multiset with no extras.
-4. The **transition record** — a separate, later commit — names the
-   already-existing attestation commit (or its unchanged ancestor if unrelated
-   commits intervened, permitted only when this path's blob is identical). Its
-   allowed plan diff is exactly **status plus the binding record**, nothing
-   else. The attestation commit never carries its own id: that value does not
-   exist until after its bytes are fixed, so requiring it in the
-   pre-attestation set would deadlock the ceremony one step later than the
-   circularity it replaced.
-
-**No pre-Chunk-A code can validate its own authorization.** This is a
-Maintainer-run exact-byte preflight, not a test. Chunk B's later mutation test
-may *replay* this historical ceremony and must still prove that a changed
-field, an extra violation, a broader diff, another artifact, or a repeat
-invocation refuses — but that retrospective test is explicitly **not** the
-control that authorized the earlier transition.
-
-Bounded by construction:
-
-* it authorizes **only** the `awaiting-plan-review → executing` transition and
-  the Chunk A/B bootstrap window, for **this artifact only**;
-* it is valid only while **no other** violation exists — one additional
-  violation of any other shape voids it;
-* it **expires when Chunk B lands**, and Chunk B must make this artifact
-  conform with **no** wildcard, path-prefix, date, reviewer-name, or reusable
-  legacy exemption; and
-* a test pins it: changing the plan blob, either review commit, the violation
-  text, or the violation count **refuses**, and every broadened or replayed
-  form of the exemption refuses.
-
-Because it overrides a live governance gate, the authority is the Maintainer's
-alone — no agent fills this table, and no Response substitutes for it.
-
+Nothing here reaches into a sibling plan's contract. This table is a map, not
+an authority: each plan keeps its own scope, gates, and archive.
 
 ## Proposed paths
 
@@ -205,6 +142,8 @@ Proposed paths:
 - `bootstrap/tests/test_lifecycle_board.py` — Chunk F's board CLI and encoder tests.
 - `dev/measurement/pilot-activation.md` — P6a's immutable activation record; introduced by P6d.
 - `dev/measurement/pilot-events.md` — P6a's append-only event ledger; counts and pauses are derived from it.
+- `dev/plans/corpus-tier-cost.md` — sibling plan for proposal 1; opened alongside this one.
+- `dev/plans/git-native-security-foundations.md` — sibling plan for proposal 6; opens when its reviews clear.
 
 ## Scope
 
