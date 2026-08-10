@@ -2346,3 +2346,33 @@ commits gate-compliant; it disposes of the *obligation*, not the history. It
 authorizes no push. It sets no precedent that an External read substitutes for a
 declared Internal round in general — the reasoning here rests on this review having
 answered this brief's specific questions.
+
+## Post-archive note -- C11's window narrowed -- Claude -- 2026-08-10
+
+**Why this note exists.** The Chunk C table above pins C11
+(`test_the_span_widening_cannot_manufacture_a_shape_b_finding`) as running
+"Over `0f1fc68..8f47c76`". That is no longer true. Plan `corpus-tier-cost`,
+Chunk C narrowed the window to `d6646a3..8f47c76` — from 867 commits to 452 —
+so this record would otherwise describe a shipped artifact that no longer
+matches the tree.
+
+**What changed, and what did not.** Only the left endpoint. Every assertion in
+the node is unchanged: `len(pinned_b) == 2`, both `17b7e5c`, and
+`shipped_b == pinned_b`. Verified by running the node at **both** windows
+before the narrowing landed — it passes identically at each, so the dropped
+415-commit prefix contributed nothing to the property.
+
+**Why the prefix cannot contain a counterexample.** It predates Cairn hosting a
+`dev/` tree at all: `git rev-list --count --full-history 0f1fc68..d6646a3 --
+dev/proposals dev/plans` returns `0`. That is not left as an appeal to memory —
+the narrowing ships with a sibling node,
+`test_the_dropped_prefix_contains_no_in_scope_commit`, which measures the
+predicate on every run, calls `subprocess.run` directly rather than routing
+through the memoized `_git`, and reddens when repointed at a window that does
+carry lifecycle commits.
+
+**The honest framing.** A narrowed window is a *suppression*: like the
+whitelist this plan gave its own hygiene chunk, it can only ever hide a
+finding. It is defensible here because the mechanism argument is measured on
+every run rather than asserted once — which is the same standard Chunk D
+applied to `_SCAN_EXCLUSIONS`-style side doors.

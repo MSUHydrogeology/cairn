@@ -1090,7 +1090,15 @@ class TestWideningIsNotCreating:
         # re-run -- fd6be5a and the plan's own plan-open 6a88501 appear
         # as shape-(b) findings the un-widened rule does not produce.
         # Deliberately a **corpus** assertion, not a fixture one.
-        window = f"{ROOT_SHA}..{SNAPSHOT_SHA}"
+        # Narrowed from `ROOT..SNAPSHOT` (867 commits) to
+        # `SELF_HOST..SNAPSHOT` (452) by plan `corpus-tier-cost`, Chunk C.
+        # Argued on the mechanism, never on cost: the dropped 415-commit
+        # prefix predates Cairn hosting a `dev/` tree at all, so it cannot
+        # contain a counterexample.  That is not an appeal to history --
+        # `test_the_dropped_prefix_contains_no_in_scope_commit` below measures
+        # it.  Every assertion in this node is unchanged and was re-derived at
+        # both windows before the narrowing landed.
+        window = f"{SELF_HOST_SHA}..{SNAPSHOT_SHA}"
         _, _, pinned = tl.scan(
             window, REPO_ROOT, whitelist={}, rules=tl.Rules(**PINNED_RULES),
         )
@@ -1100,6 +1108,44 @@ class TestWideningIsNotCreating:
         assert len(pinned_b) == 2
         assert {sha for sha, _, _ in pinned_b} == {INCIDENT_SHA}
         assert shipped_b == pinned_b
+
+    def test_the_dropped_prefix_contains_no_in_scope_commit(self) -> None:
+        """The guard that replaces the 415 commits C11 no longer scans.
+
+        A narrowed window is a *suppression*: it can only ever hide a finding.
+        What keeps it honest is not the cost argument but this predicate --
+        the dropped prefix touches nothing the tool triggers on, so no
+        counterexample can live there.
+
+        Perturbation, RUN: repoint the range at
+        `SELF_HOST_SHA..PROPOSAL_SHA`.  Red -- that window *does* carry
+        lifecycle commits, so a count of 0 is a real measurement and not a
+        pathspec typo silently matching nothing.
+
+        Three deliberate choices:
+
+        * **`subprocess.run`, not `tl._git`.**  `rev-list --count` is a sixth
+          call family, outside the memo's closed grammar; routed through the
+          memoized `_git` this class installs, it would raise.
+        * **`--full-history`.**  The dropped prefix carries 2 merges, so
+          without it the guard would lean on history simplification not hiding
+          a commit.  Measured, every variant returns 0 -- this is hardening,
+          not a correction.
+        * **Literal pathspecs, not `_in_scope`.**  Feeding the predicate back
+          through the code under test would make it agree with itself.  These
+          pathspecs are *broader* than `_in_scope`'s prefixes, so 0 here
+          implies 0 for the narrower predicate.
+        """
+        out = subprocess.run(
+            ["git", "rev-list", "--count", "--full-history",
+             f"{ROOT_SHA}..{SELF_HOST_SHA}", "--", "dev/proposals", "dev/plans"],
+            cwd=str(REPO_ROOT), capture_output=True, text=True,
+        )
+        assert out.returncode == 0, out.stderr
+        assert out.stdout.strip() == "0", (
+            "the dropped prefix touches a trigger root; the narrowed window "
+            "in C11 above can no longer be justified on the mechanism"
+        )
 
 
 # ---------------------------------------------------------------------------
