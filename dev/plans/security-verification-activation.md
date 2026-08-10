@@ -2783,3 +2783,214 @@ living-state record.
   re-anchor ceremony.
 * It does not close the `verify_integrity.py:63-111` extra-key gap, which neither
   plan in this pair owns.
+
+## Implementation verification -- Claude -- 2026-08-10 (module-merge / lockfile divergence fix)
+
+**Scope of this pass: one defect, outside every chunk boundary.** The
+module-merge pass rewrote a *tracked* target file between `install_core` and
+`write_install_lockfile`, so the writer's expected-clean-install `would` no
+longer matched disk, `diverged` was non-empty, and it refused to write **any**
+lockfile or base-template cache. The install still exited 0, so an adopter
+finished with no integrity baseline and no upgrade ancestor. Chunks A, B, C, D
+are otherwise untouched.
+
+**This is an authorized deviation from this plan.** This plan declares
+`FunctionDef:write_install_lockfile` **not changed** (Scope, and M21 in the
+2026-08-05 External round). This pass changes it. Authorization, quoted
+verbatim and visually isolated:
+
+> If an implementer edits their AGENTS.md it should definitely not break their
+> install.
+
+conveyed with the explicit statement that this is authorized as a deviation
+from this plan's declared no-change set for `write_install_lockfile`. Nothing
+else in the declared set was touched: `install_manifest`, `install_modules`,
+`KNOWN_TOKENS`, `_REFERENCE_SCRIPT_TOKEN`, `_GITIGNORE_SEEDS`,
+`_MODULE_SUPERSEDES` and `_PRESETS` are unchanged by this pass, and the
+published manifest is byte-identical (below).
+
+**Why it is this plan's business.** This plan's own accepted [I1] amendment
+(*"body empty, guidance above the marker"*, 2026-08-04 response) makes A4's
+slot merge resolve `inserted` rather than `conflict-deferred`. `inserted` is
+the outcome that destroys the lockfile. So the fix is a **prerequisite** for
+A4 in its accepted form and for Chunk B; without it, T30/T31 as re-specified
+against `inserted` cannot both pass and leave a lockfile behind.
+
+**Tested commit.** `e71abd9f30dbc48b1c3cd562a00b6c00ee5c79a0`.
+
+**Reviewed range.** `d31b735..e71abd9` -- one commit, four files:
+`bootstrap/_scaffold/slotmerge.py`, `bootstrap/_scaffold/install.py`,
+`bootstrap/_scaffold/__init__.py`, `bootstrap/tests/test_module_merge_lockfile.py`.
+
+**Interpreter / runtime.** `~/conda_envs/lhm/bin/python3.13` -- Python 3.13.13
+(conda-forge, Clang 19.1.7), `PYTHONDONTWRITEBYTECODE=1`. macOS 25.5.0
+(arm64). Cairn has no CI; every command below is one a person types.
+
+**Pre-run state.** The shared main worktree was **not** clean -- a concurrent
+session held uncommitted `bootstrap/_scaffold/config.py`,
+`bootstrap/tests/test_notice_install.py`,
+`bootstrap/tests/test_security_lint.py` plus untracked
+`templates/modules/team-gated/` files under its own intent claim. Boundary B
+requires a clean, unchanged commit, so the integration suite was run in a
+dedicated detached `git worktree` at the tested commit:
+`git worktree add --detach <tmp>/wt-clean e71abd9` -> `git status --porcelain`
+**0 paths**. A second worktree at the parent (`e71abd9~1` = `d31b735`, 0 dirty
+paths) was created solely to attribute non-pass outcomes.
+
+**Post-run state.** Both worktrees `git status --porcelain` -> **0 paths**;
+neither run mutated its tree. In the main tree, the four paths this pass owns
+are committed and clean.
+
+**Command / Exit / Outcomes / Elapsed.**
+
+| Command (from the worktree root) | Exit | Outcome | Elapsed |
+|---|---|---|---|
+| `pytest bootstrap/tests --quality-gate-shuffle-seed=0 -q` at `e71abd9` | 1 | **2604 passed, 4 failed, 1 skipped** | 403.33s |
+| `pytest bootstrap/tests --quality-gate-shuffle-seed=0 -q` at `d31b735` (attribution only) | 1 | **2593 passed, 2 failed, 1 skipped** | 395.83s |
+| `python scripts/check_cairn.py` | 1 | 1 issue across 173 files; 48 external links not probed | ~4s |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | 1 | `[neutrality] fail=93 info=21`, `[redundancy] fail=0 info=2` | ~9s |
+| `python bootstrap/scaffold.py --manifest` | 0 | 100 data rows, **byte-identical** to `d31b735` (`diff` empty) | <1s |
+| `pytest bootstrap/tests/test_security_lint.py -q` (the Bandit gate's named trigger) | 0 | 11 passed | 1.29s |
+| `python -m bandit -q -r bootstrap/_scaffold` | 0 | 22 LOW, **0 MEDIUM+** -- identical counts at `d31b735` | ~3s |
+| `pytest bootstrap/tests/test_module_merge_lockfile.py -q` | 0 | 13 passed | 0.27s |
+
+The suite delta is exactly **+13 passed** (2596 -> 2609 collected), which is
+this pass's 13 new tests and nothing else.
+
+**Non-pass disposition.**
+
+* **2 failures, mine, expected and fenced.**
+  `test_ast_attest.py::test_committed_baseline_accounted_for_across_the_engine_package`
+  and `::test_ast_gate_passes_over_the_full_scaffold_module_set`. This pass's
+  own declared AST delta (below). **Not re-anchored** -- re-anchoring is
+  Maintainer-only and `_ast_attest._UPDATE_ALLOWLIST` reaches none of these
+  three symbols.
+* **2 failures, pre-existing, not this pass's.**
+  `test_verify_ref.py::test_mutation_verifying_inside_the_candidate_runs_the_forger`
+  and `::test_candidate_gpg_ssh_program_never_executes`. Both fail identically
+  in the **parent-commit** full suite at `d31b735` (table above) and both
+  **pass in isolation at the tested commit** (`pytest
+  bootstrap/tests/test_verify_ref.py` -> 67 passed). The failure is a
+  full-suite interaction with `git tag -s` / GPG-signing state (exit 128,
+  `CalledProcessError` on the signing subprocess), in an environment with no
+  GPG secret key; nothing this pass touches is reachable from it. Reported,
+  not fixed. Note the *"2593 passed, 0 failed"* baseline this pass was handed
+  is right on the pass count and wrong on the failure count: the verify_ref
+  pair is red in a full-suite run at the parent commit too.
+* `check_cairn.py`'s single issue is
+  `dev/plans/api-web-security-modules.md:3233` citing
+  `templates/modules/team-gated/_security_net/` -- the concurrent session's
+  plan doc and its untracked directory. **Identical at `d31b735`.** Not this
+  pass's.
+* `quality_gate --sub neutrality` `fail=93` is the known pre-existing
+  baseline, unchanged; zero fail lines are attributable to a file this pass
+  touches.
+
+**AST delta**, derived against
+`bootstrap/tests/fixtures/scaffold_ast_baseline.json` with `_ast_attest`'s own
+`_merge_current` / `_classify` (not a reimplementation), and **isolated from
+the concurrent session's uncommitted `config.py`** by classifying a synthetic
+package tree of `HEAD:bootstrap/_scaffold/*` with only this pass's three files
+swapped in: **CHANGED 3, MISSING 0, DUPLICATE 0, NEW 3 (non-import).**
+
+| Symbol | Kind | File | Baseline digest | New digest |
+|---|---|---|---|---|
+| `merge_module_into_slot` | `FunctionDef` (CHANGED) | `slotmerge.py` | `815551a4e7d805b3` | `431cc08ef171c24e` |
+| `run_module_merge_pass` | `FunctionDef` (CHANGED) | `install.py` | `9957a011e2b9f892` | `cbe98d0832d1c69d` |
+| `write_install_lockfile` | `FunctionDef` (CHANGED) | `install.py` | `50a36da0df30225e` | `72e335276655da6a` |
+| `resolve_slot_merge` | `FunctionDef` (NEW) | `slotmerge.py` | -- | -- |
+| `apply_module_merges` | `FunctionDef` (NEW) | `slotmerge.py` | -- | -- |
+| `module_merge_directives` | `FunctionDef` (NEW) | `install.py` | -- | -- |
+
+A **fourth** CHANGED symbol, `Assign:_MODULE_MAPPINGS` (`config.py`,
+`df43d4d75f55a3e5` -> `0f42fa9a794a77da`), is visible in the shared main tree
+and is **not this pass's** -- it is the concurrent `api-web-security-modules`
+session's uncommitted module registration. It is absent from the isolated
+delta above. NEW symbols are permitted by the gate (`note: NEW ...`, exit 0);
+only the three CHANGED rows are the RED, and `_classify` prints those under a
+`CHANGED` prefix, not `note:`.
+
+**Plan-specific acceptance commands.**
+
+* **The defect, reproduced before the fix** (pre-fix engine, `templates/` copy
+  with A4's slot body emptied to its accepted [I1] form):
+  `python bootstrap/scaffold.py --config <profile with security-verification>
+  --target <fresh> --cairn-root <copy> --non-interactive --allow-dev` ->
+  `[warn] dev/.cairn/cairn-lock.yml NOT written: 1 installed file(s) differ
+  from a clean install (AGENTS.md)`, exit 0, lockfile **MISSING**, base cache
+  **0 files**.
+* **The same probe after the fix** -> `[inserted] AGENTS.md >
+  security-verification`, lockfile **EXISTS**, base cache **32 files**, merged
+  standing command present in the installed `AGENTS.md`. This is
+  `test_module_merge_lockfile.py::test_live_install_writes_a_lockfile_when_a_module_merge_lands`,
+  which runs the real `main()` -- a unit test on the writer alone cannot see
+  this defect, and `--dry-run` exits before the writer is reached.
+* **Fail-closed preserved**:
+  `::test_writer_still_refuses_when_a_merge_target_is_tampered` tampers the
+  merge target after a successful install and asserts `write_install_lockfile`
+  returns `None` and writes neither lockfile nor cache; its control,
+  `::test_writer_accepts_the_untampered_merge_target_on_a_rewrite`, proves the
+  re-invocation is not broken for unrelated reasons.
+
+**Perturbation ledger -- demonstrated, all 13 checks, none exempt.** Each
+mutation was applied to the committed source, run, confirmed RED at exactly
+the predicted test(s), then restored with `git checkout -- <paths>` and proved
+byte-exact by `git status --short` returning empty for every mutated path.
+`bootstrap/_scaffold/config.py` was excluded from the driver by an explicit
+guard, because it carries another session's uncommitted work.
+
+| # | One-line mutation | Went RED |
+|---|---|---|
+| R1 | Delete the `substituted = apply_module_merges(substituted, merges)` line in `write_install_lockfile` | the live-install acceptance test, the tamper test, and its untampered control |
+| R2 | In `write_install_lockfile`, accept any bytes for a merge target instead of appending to `diverged` | the tamper test only |
+| R3 | Re-implement the decision inline in `merge_module_into_slot` instead of calling `resolve_slot_merge` | `::test_resolve_slot_merge_is_the_single_merge_decision` |
+| R4 | Replace the `module_merge_directives` call in the writer with an inline `parse_module_merge_directives` loop | `::test_module_merge_directives_is_the_single_directive_producer` |
+| R5 | `modules=modules` -> `modules=sorted(modules)` at the writer's call site in `cli.py` | `::test_cli_hands_both_paths_the_same_module_list` |
+| R6 | Delete the `if spec.verbatim: continue` guard in `module_merge_directives` | `::test_module_merge_directives_skips_verbatim_specs` |
+| R7 | `for name in installed_modules` -> `sorted(installed_modules)` in `module_merge_directives` | `::test_module_merge_directives_order_is_module_then_spec_then_document` |
+| R8 | In `apply_module_merges`, treat a `conflict` decision as a write too | the inserted-only-changes-bytes test and the first-wins order test |
+| R9 | Make `module_merge_directives` return `[]` unconditionally | 4 tests, including the shipped-directive control |
+| R10 | Delete the `if not module_src.is_file(): continue` guard | `::test_module_merge_directives_skips_a_missing_source` |
+| R11 | Append a `cairn:merge-target` block to a default-on module template | `::test_default_on_module_set_declares_no_merge_directives` |
+
+**Order-independence: stated, not assumed.** The merged bytes are **not**
+order-independent, and the fix does not pretend otherwise. Two directives
+naming the same `(target, slot)` with different content resolve **first-wins**
+(the second sees a non-empty body and defers to a side file), so the result is
+a function of the directive *sequence*: module order, then that module's spec
+order, then document order within the module file. What makes the live pass
+and the writer agree is that both derive that sequence from the one
+`module_merge_directives` function over the **same** `modules` list object,
+which `cli.py` hands to both call sites -- pinned structurally by R5's test,
+and pinned as a first-wins behavior by R8's.
+
+**Known omissions.**
+
+* **A4 as landed still deviates from this plan's accepted [I1] amendment**, so
+  the defect this pass fixes is currently *masked* rather than firing.
+  `templates/core/AGENTS.md`'s `security-verification` slot body holds 462
+  characters of placeholder prose, not the empty body [I1] accepted; the merge
+  therefore resolves `conflict-deferred`, writes
+  `AGENTS.md.security-verification.cairn-merge-pending`, emits
+  `slot-content-stale-or-partial`, and leaves the target unwritten -- which is
+  why the lockfile survives a stock install today and why this pass's live
+  tests install from a `templates/` copy with the body emptied. **Not fixed
+  here** (it is A4/Chunk B work with its own tests to move); reported to the
+  Maintainer.
+* **A verbatim merge *destination* is out of scope.** `verbatim` module
+  *sources* are skipped in both paths (constraint kept, R6). But if a module
+  ever declared a merge target whose own install spec is `verbatim=True`, the
+  live pass would still rewrite it while the writer's `would` stays
+  `src.read_bytes()` -- divergence again. No shipped module does this (the one
+  target, `AGENTS.md`, installs substituted from `_CORE_MAPPINGS`), and the
+  overlay deliberately follows the `dev/PLANNING.md` precedent by living in
+  the non-verbatim branch only. Named, not closed.
+* **`validate_unique_slot_names` is not re-run in the writer's replay.** The
+  live pass calls it and `cli.py` returns 2 on `DuplicateSlotError` before the
+  writer is ever reached, so the writer cannot silently accept a duplicate-slot
+  template; the replay stays non-raising by design.
+* Chunks B, C, D of this plan are untouched. No test in this pass covers
+  `check_slot_fidelity`, the side-file contents, or the interactive merge
+  branch.
+* The 2 pre-existing `test_verify_ref` full-suite failures were not
+  investigated beyond attribution.
