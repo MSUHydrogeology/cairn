@@ -885,6 +885,64 @@ point rather than being copied into another backlog.
   row as *"unowned by any active plan"*, so without this entry it would archive
   into a closed document. [TRU-1] already homes the tool half; this homes the
   claim half. Maintainer direction: *"move that to NOT MET row to PLANNING.md"*.
+**Release bar (v0.5)** *(group created 2026-08-10 at `release-security-bar`'s
+archive; the plan's Lasting-truth table pre-declared this home, and its
+End-of-Line Audit cited it as already existing when it did not — so it is created
+here rather than assumed)*
+
+* **[RB5-1] The register's coverage gap — enumerated, and re-derivable.** The bar
+  adjudicated ~25 surfaces; its own declared scope contains substantially more,
+  and the surplus has **no register row**. The plan measured this as a *count*
+  (49 at `6912d52`, or 52 under a wider independent leg) and never enumerated it;
+  the External Audit ruled *"counted-not-enumerated is NOT adequate for
+  archive."* **The count is a moving target — it read 49 this morning and 69 this
+  afternoon** at `32a7b8e`, because the tree grew (`api-web-security-modules`
+  alone added 6 `templates/**/*.py`). So this row records the **producing
+  command**, not the number, following this board's own precedent for derived
+  lists:
+  ```python
+  # independent leg  =  Set 3 claim-bearing docs  ∪  every templates/**/*.py on disk
+  # surface list     =  the committed H2 extraction over the register's Chunk RUN cells
+  # gap              =  independent leg − surface list
+  PATH_RE = re.compile(r"`([A-Za-z0-9_./-]+\.(?:py|sh|md|json|yml))(?::[0-9]+)?[^`]*`")
+  runs    = re.split(r"^#### Chunk [A-H] — RUN", plan_text, flags=re.M)[1:]
+  surface = {m.group(1) for c in runs for m in PATH_RE.finditer(c) if (root/m.group(1)).is_file()}
+  ```
+  **Shape at `32a7b8e`, under a wider-than-faithful independent leg (all
+  `templates/**/*.md` + `dev/modules/*.md`, stated so the figure is reproducible
+  rather than authoritative): 69 = 59 `templates/modules/**/*.py` + 7
+  `dev/modules/*.md` + 3 others** (`templates/core/dev/plans/_template.md`,
+  `templates/core/dev/proposals/_template.md`,
+  `templates/skills/session-end/SKILL.md`). The seven `dev/modules/*.md` are
+  `coordination-tiers`, `dual-review`, `fold-back-active-prompt`,
+  `fold-back-ledger`, `foldback_export_scan`, `incident-trackers`,
+  `lifecycle-metrics`. *Revival condition:* a v0.5 bar, which starts by re-running
+  the command above rather than trusting any figure in this row.
+* **[RB5-2] Set 3 quantifies over a static candidate-path list, not a tree walk.**
+  Its positive control catches a planted `templates/**/*.py` but **not** a planted
+  adopter-installed Markdown security claim, because `A30(ii)` defines Set 3 by a
+  fixed list. The Audit ruled this **acceptable for v0.4.0 as a recorded
+  residual** — so the residual has to actually be recorded, which is this row.
+  *Revival condition:* expanding the independent leg to a dynamic traversal, which
+  is what makes the coverage assertion self-maintaining.
+* **[RB5-3] The five proposal-level v0.5 deferrals**, carried from the plan's
+  Lasting-truth table: token-substituted lockfile anchoring; non-test derived-list
+  integrity; extending the bar to Cairn's own dev tooling (including the
+  `check_cairn` coverage gap); mutation testing as a standing mechanism; and
+  cryptographic attestation. Each returns with a v0.5 bar. The second of these is
+  the general form of **[RB5-4]**.
+* **[RB5-4] B6's reach table is unpinned** — no test keeps it in step with preset
+  composition, so it can go stale silently. *Trigger:* the first time it is found
+  stale by the staleness command, **which has its own defect** — see [RB5-5].
+* **[RB5-5] The staleness command can report FRESH when it matched nothing.**
+  `git log -1 --format=%cI -- <surface list>` with an unquoted list under zsh
+  passes one multi-word pathspec, git matches zero paths, and exit 0 with empty
+  output is indistinguishable from "no commits since the audit". Audited severity:
+  **MEDIUM (operational tooling hazard)** — this is the mechanism that decides
+  whether a release tag waits. *Fix:* explicit array expansion
+  (`"${surfaces[@]}"`) plus a non-zero-match assertion over the surface set, so an
+  empty match is an error rather than a pass.
+
 * **[VER-1] Content-scanner homoglyph classification residuals** *(deferred
   2026-08-10 from `content-scan-detectors`, archived)* — two follow-ups from
   the confusability-aware `homoglyph` rule, each needing its own proposal
