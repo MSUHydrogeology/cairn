@@ -3431,3 +3431,17 @@ No `--authorize-base-url` was typed. No first-use trust hash set was produced.
 No `update_symbol`, `_gate_manifest.py` re-pin or `_gate_reanchor.py` invocation
 was run, and no ceremony was requested. Nothing was pushed. `B3` is ratified, so
 F2 and Chunk G are unfenced — neither was reached.
+
+**Whole-suite confirmation, added after the record above landed at `3ba31c6`.**
+`python -m pytest bootstrap/tests -q` with Chunk A present, canonical
+interpreter, `PYTHONDONTWRITEBYTECODE=1`: **3 failed, 2674 passed, 385.58 s**.
+The red set is **exactly** the three nodes predicted above —
+`test_every_templates_py_on_disk_is_release_scanned`,
+`test_templates_py_count_is_pinned` and
+`test_the_on_disk_oracle_goes_red_when_a_registry_stops_delivering`, all in
+`bootstrap/tests/test_security_lint.py`. **There is no fourth red**, which is the
+part worth recording: the coupling is entirely to the manifest registration and
+touches nothing else in the suite, so R1 clears all three and needs no further
+allowance. Arithmetic check on the count: 2674 passed + 3 failed = 2677 =
+the 2593-node baseline plus this chunk's 84 new nodes, so no node was dropped
+and no marker was added — the HOLD class *Gate accounting* names.
