@@ -17,7 +17,7 @@
 <!-- One further deliberate forward reference: `scripts/transition_lint.py` is the SIBLING
      proposal's proposed path, cited here once inside the scope fence solely to record that
      this plan does not build it. -->
-<!-- claim-check-allow: dev/plans:, scripts/transition_lint.py -->
+<!-- claim-check-allow: dev/plans:, dev/proposals:, scripts/transition_lint.py -->
 
 # Plan: the shipped lifecycle-stage commit vocabulary reads nothing — repair the reader
 

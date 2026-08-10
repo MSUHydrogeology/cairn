@@ -276,6 +276,13 @@ board by design.
   inheritance, stable evidence reuse, and a measured six-plan pilot. Governing
   lifecycle and scientific-assumption changes remain high assurance.
 
+* **lifecycle-status-vocabulary** *(amendment proposal opened 2026-08-10)* --
+  make proposal and plan status name the next responsible action: explicit
+  review, revision, implementation, Decision, and archive-readiness states;
+  orthogonal blocker metadata; evidence-backed transitions; and an
+  evidence-derived migration. If accepted, joins the
+  `review-efficient-lifecycle` implementation plan.
+
 * **claim-check-exemption-hygiene** *(amendment proposal opened 2026-08-10)* --
   keep claim-check's useful path discipline while retiring exemption clutter:
   resolve exact lifecycle archive moves, make typed path declarations reusable
