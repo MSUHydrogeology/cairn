@@ -3,7 +3,7 @@
 **Author**: Codex (Strategy)
 **Model**: GPT-5 (Codex)
 **Date opened**: 2026-08-10
-**Status**: proposed
+**Status**: revised
 **Amends**: `review-efficient-lifecycle`
 **Touches**: `scripts/claim_check.py`, its installed twin,
 `bootstrap/tests/test_claim_check_module.py`, the self-hosted and shipped
@@ -589,3 +589,199 @@ design, and the evidence base needed no correction. An author Response plus the
 Maintainer's read should be enough to reach Decision; spend the second
 structurally-independent pass on the plan instead, where the typed-registry
 parser will be new code.
+
+## Response -- Codex (Strategy) -- 2026-08-10
+
+**Model**: GPT-5 (Codex)
+
+The review's interaction findings reproduce, but two measurements need
+correction. Against a clean export of `857c216`, simulating exact archive
+resolution makes **12**, not seven, live globs redundant across the same four
+artifacts: three in `api-web-security-modules`, seven in
+`release-security-bar`, one in `security-preflight-checklist`, and one in
+`stage-commit-patterns`. The five omitted globs are the
+`release-security-bar` references to `agent-context-scrub`,
+`default-security-stance`, `review-gate-enforcement`, `scan-coverage`, and the
+plan-form `gate-claims-vs-enforcement`.
+
+The Review added one directive containing seven globs. The post-review active
+population is therefore 71 configured globs across nine artifacts, not a 65th
+glob. The review did create another directive instance and strongly confirms
+the recurrence; the unit being counted was simply conflated.
+
+I also cannot reproduce [C4]'s 12-file denominator. At `857c216`, **19**
+non-archived, non-template Markdown files outside `dev/proposals/` and
+`dev/plans/` carry `claim-check-allow`: one changelog, three bootstrap docs,
+three module docs, five strategy docs, one descriptive doc, four doctrine docs,
+and two example READMEs. The asymmetry finding is accepted against that larger
+population.
+
+* **[C1]** accept with modification -- archive resolution, liveness behavior,
+  lifecycle-duplicate enforcement, doctrine/template changes, tests, and the
+  post-resolution migration will land in one implementation commit; the
+  migration inventory is evaluated under the new resolver and therefore names
+  all 12 reproduced archive-redundant globs rather than the review's seven.
+* **[C2]** accept -- a glob made redundant solely by exact lifecycle archive
+  resolution is a non-failing migration diagnostic, never stale-debt assigned
+  to an unrelated artifact owner. Hard liveness remains only for declarations
+  the active artifact owns.
+* **[C3]** accept -- grandfathering follows lifecycle immutability: archived
+  artifacts and proposals with terminal status `accepted`, `rejected`, or
+  `superseded`. Directory location alone does not decide mutability.
+* **[C4]** accept with modification -- the scope fence remains, but the Decision
+  sees the independently reproduced 8 lifecycle versus 19 other-surface
+  baseline at `857c216`, not 8 versus 12.
+
+## Revised proposal -- Revision 1 (binding delta)
+
+This revision replaces Sections 3 through 5, the liveness claims in Rationale,
+and their corresponding verification obligations. Sections 1, 2, and 4's
+self-host-versus-shipped marker distinction remain operative except where the
+atomic migration below sharpens their ordering.
+
+### R1. One atomic claim-check migration
+
+Archive resolution, declaration parsing, liveness classification, the
+active/archive duplicate guard, source/installed checker parity, doctrine and
+template wording, tests, and eligible active-artifact metadata migration land
+in **one path-scoped implementation commit**. The plan may prepare and test the
+work in a shared working tree, but no intermediate commit may contain the new
+resolver without its migration or the hard liveness behavior without its
+grandfather predicate.
+
+The migration derives its inventory by running the new classifier over the
+pre-migration corpus. It classifies each configured glob as:
+
+* `effective` -- suppresses at least one unresolved would-be hard report;
+* `resolved-by-archive` -- every formerly suppressed occurrence now resolves
+  through the exact same-family lifecycle archive rule; or
+* `unused` -- suppresses nothing and has no archive-resolved occurrence.
+
+`resolved-by-archive` is reported with artifact, directive line, glob, and
+resolved archive target, but exits clean. It is never converted into an unused
+hard finding. The implementation commit removes top-level archive-redundant
+globs from mutable active artifacts where doing so changes no attributed prose.
+It does not edit archived or terminal artifacts, and it does not edit the
+reviewer's directive above: that directive remains a visible historical
+instance classified `resolved-by-archive`.
+
+The reproduced 12-glob set is dated migration evidence, not a permanent corpus
+constant. The implementation re-derives the set against its own parent commit
+and records any delta before editing.
+
+### R2. Lifecycle identity has one explicit owner
+
+The exact active-to-archive resolution rule from original Section 1 remains.
+It is paired with a lifecycle identity invariant in
+`tools/lifecycle_planner.py scan` and its installed twin: within each family,
+the same exact filename may not exist both directly under `dev/proposals/` or
+`dev/plans/` and under that family's `archive/`. The scan refuses and names
+both paths.
+
+Claim-check also fails closed if it encounters both candidates while resolving
+a lifecycle token. This is defense in depth; lifecycle planner owns the
+repository-state invariant, while claim-check refuses to guess when consuming
+it. Tests cover same-family duplication, proposal/plan same-name independence,
+an exact archived identity, and a near-match that remains unresolved.
+
+### R3. Liveness follows ownership and mutability
+
+The document-wide typed registry remains exact and reported as original
+Section 2 specifies. On a non-terminal proposal or plan, each typed
+`Proposed`, `Untracked`, or `External-repo` entry must authorize at least one
+occurrence outside its declaration block. A proposed entry whose local path has
+materialized is unused. Those are hard liveness findings because the active
+artifact owns and can retire its declaration.
+
+`claim-check-allow` remains the rare fallback for a genuine heuristic false
+positive. On a non-terminal proposal or plan:
+
+* an `effective` glob remains accepted and every suppression is reported;
+* a `resolved-by-archive` glob is an informational migration diagnostic; and
+* an `unused` glob is a hard directive finding.
+
+This proposal extends the bounded claim-marker-maintenance rule to permit
+**removal of standalone exemption metadata** from a non-terminal artifact when
+the checker proves it unused. The removal changes no path token, prose,
+finding, Response, Decision, or attribution; it lands alone in a labeled
+`claim-marker maintenance:` commit. This is the deletion-side counterpart to
+the existing additive-only insertion rule. It does not authorize rewriting a
+reviewer's text.
+
+Grandfather liveness when the artifact is immutable:
+
+* any file under `dev/proposals/archive/` or `dev/plans/archive/`;
+* a proposal whose strictly parsed status is `accepted`, `rejected`, or
+  `superseded`; or
+* a plan whose strictly parsed status is `archived`.
+
+Grandfathered directives still receive effective/resolved/unused diagnostics,
+but unused metadata does not change the exit code. A missing, duplicate, or
+unrecognized lifecycle status does not silently gain grandfathering.
+
+Exact archive resolution, not liveness, retires the dominant cross-artifact
+failure class. Liveness prevents newly authored local declarations from
+becoming unexplained permanent exceptions. The proposal no longer claims that
+every historical exemption physically deletes itself.
+
+### R4. Other Markdown surfaces remain measured, not silently forgotten
+
+At `857c216`, eight active lifecycle artifacts carry `claim-check-allow`, while
+19 non-archived, non-template Markdown files outside the lifecycle directories
+carry the same mechanism. Revision 1 does not impose lifecycle-status parsing
+or hard liveness on those 19 files: strategy, doctrine, module, bootstrap,
+descriptive, example, and changelog documents have different mutability rules,
+and folding them into this amendment would erase the narrow scope it is meant
+to restore.
+
+The implementation records their exact inventory as negative-space evidence.
+If unused exemptions remain materially costly after the lifecycle migration,
+that evidence may motivate a separately reviewed general document-metadata
+contract. No claim in this proposal treats the eight-file lifecycle rule as
+repository-wide exemption hygiene.
+
+### R5. Shared planning is structural, not merely convenient
+
+If accepted, this amendment still joins the accepted
+`review-efficient-lifecycle` plan. The durable reason is shared ownership: both
+contracts edit the same authoring templates, lifecycle doctrine, lifecycle
+planner, and artifact migration surface. Separate plans could each be correct
+in isolation while applying incompatible intermediate formats to the same
+files. The claim-check code remains its own implementation and code-review
+chunk inside that plan; the atomic constraint is internal to that chunk.
+
+### R1 verification additions
+
+The eventual plan must name nodes that prove:
+
+* a pre-resolution fixture makes archive-backed globs effective, then the new
+  resolver classifies them `resolved-by-archive` rather than `unused` or hard;
+* the resolver-plus-liveness-plus-migration acceptance test runs against one
+  commit-shaped fixture, with no intermediate red state;
+* all exact archive-backed globs in the implementation-parent corpus are
+  inventoried, including the five `release-security-bar` globs omitted from the
+  External review's table;
+* active/archive duplicate identity refuses through lifecycle planner and
+  claim-check, while same filename across proposal and plan families does not;
+* non-terminal unused typed entries and heuristic globs hard-fail;
+* exact archive-resolved globs remain non-failing on non-terminal artifacts;
+* terminal-status and archived-path fixtures report but do not fail unused
+  metadata, and malformed status cannot claim the grandfather;
+* stripping self-host `cairn-internal-ref-allow` remains clean while stripping
+  shipped markers still fails the adopter-facing loop-fidelity gate; and
+* source/installed checker and lifecycle-planner twins retain their required
+  byte identity.
+
+The implementation re-measures both dated populations rather than pinning them
+as future invariants: 64 configured globs with 12 archive-redundant at the
+reviewed baseline, and 19 other-surface files outside liveness scope. It also
+records that the review itself raised the active population to 71 configured
+globs across nine artifacts by adding one seven-glob directive.
+
+### R1 revised signals
+
+Stop if archive-resolved metadata hard-fails, if terminal status is inferred
+from directory alone, if a malformed status gains grandfathering, if the
+migration needs to rewrite attributed prose, if the new resolver and migration
+cannot land atomically, if duplicate active/archive identity is accepted, or
+if the plan treats the 19 out-of-scope files as though liveness governed them.
