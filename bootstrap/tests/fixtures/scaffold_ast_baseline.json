@@ -232,7 +232,7 @@
     "type": "Assign"
   },
   "Assign:_MODULE_MAPPINGS": {
-    "digest": "4f72dfcb7ce39f20",
+    "digest": "df43d4d75f55a3e5",
     "span": [
       298,
       576
@@ -1056,7 +1056,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:format_forked_facade_warning": {
-    "digest": "14e4bdf27ff6f1b3",
+    "digest": "a508f3c7ba8d7232",
     "span": [
       555,
       615

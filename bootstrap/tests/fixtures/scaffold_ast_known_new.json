@@ -47,6 +47,9 @@
   "Assign:_STRUCTURAL_PROFILE_KEYS": [
     "e9ec1e45e8df01a7"
   ],
+  "Assign:_TOKEN_GATED_MODULES": [
+    "34d036b1e185a62b"
+  ],
   "Assign:_UNFILLED_TOKEN_VALUE": [
     "928f0b76439240f6"
   ],
@@ -125,6 +128,9 @@
   "FunctionDef:strip_conditional_regions": [
     "99de9adbb9523ac9"
   ],
+  "FunctionDef:token_gated_modules": [
+    "0826cc41dd939a75"
+  ],
   "FunctionDef:trusted_upstream": [
     "84b5d81edf2e4bf8"
   ],
@@ -182,6 +188,9 @@
   "Import:81abbc7ea41d": [
     "81abbc7ea41d45b8"
   ],
+  "Import:84ab4fbddb0a": [
+    "84ab4fbddb0a5186"
+  ],
   "Import:84d1f0778a37": [
     "84d1f0778a37d587"
   ],
@@ -209,9 +218,6 @@
   "Import:a6948c6ef9fd": [
     "a6948c6ef9fd3034"
   ],
-  "Import:a8745b8e01e8": [
-    "a8745b8e01e843be"
-  ],
   "Import:b15953b84150": [
     "b15953b8415054c7"
   ],
@@ -227,10 +233,10 @@
   "Import:da10787ca958": [
     "da10787ca958786a"
   ],
+  "Import:e448e389dff2": [
+    "e448e389dff2a196"
+  ],
   "Import:f0a8b732f682": [
     "f0a8b732f682850e"
-  ],
-  "Import:f17512062a6a": [
-    "f17512062a6a6d1d"
   ]
 }
