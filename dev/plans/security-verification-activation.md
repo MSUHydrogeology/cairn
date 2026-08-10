@@ -618,7 +618,10 @@ the install message names a command that must already install.
        reported not re-anchored, per this plan's own Maintainer fence #1
        [CLEARED 2026-08-10 at 9724c0f -- batched ceremony; verify reports
         173 baselined symbol(s) accounted for, unchanged]
-2. Chunk B -- universality: default-on, the slot fires, the counts   [commit pending]
+1b. A4 CORRECTION to its accepted [I1] form -- slot body emptied, guidance
+   moved above the open marker                    [LANDED: 5792298, 2026-08-10]
+2. Chunk B -- universality: default-on, the slot fires, the counts
+   [LANDED: 237eb7a, follow-up ef27cc6 (T32 non-vacuity), 2026-08-10]
    >>> MAINTAINER FENCE (THIRD, NOT ORIGINALLY NAMED HERE -- added 2026-08-10):
        the DIFFERENTIAL-ORACLE GATE ANCHOR. Chunk B's B1 reddens three
        bootstrap/tests/test_oracle.py nodes. That anchor is governed by
@@ -629,9 +632,22 @@ the install message names a command that must already install.
        117 the lockfile blocker. Recorded because a fence discovered during
        execution and left out of the Sequence is a fence the next agent walks
        straight through.
-3. Chunk C -- the non-silent install                                 [commit pending]
+       [NOT ENTERED, AND IT SELF-CLEARED -- 2026-08-10. The three nodes were
+        red only while B1 sat UNCOMMITTED: run_oracle compares a materialized
+        baseline_ref="HEAD" engine against the current one over Cairn's own
+        tree, so an uncommitted B1 makes current != HEAD by construction. Once
+        237eb7a landed, HEAD carried B1 and all three went green with no
+        ceremony, no runbook step, and no signing phase entered. Confirmed by
+        the Boundary B suite below: the only failures are the two fenced
+        AST-attest nodes. A future agent should expect this fence to fire
+        during execution and clear at the commit, not to need the runbook.]
+3. Chunk C -- the non-silent install                 [LANDED: bf49579, 2026-08-10]
    >>> MAINTAINER FENCE: AST re-anchor #2 (_DEFAULT_ON_MODULES, main)
-4. Chunk D -- SAFETY.md, the catalog row, the changelog              [commit pending]
+       [RED, REPORTED, NOT RE-ANCHORED -- delta derived below. Exactly the two
+        symbols this plan declared for B1 and C1, and
+        FunctionDef:format_profile_summary did NOT appear.]
+4. Chunk D -- SAFETY.md, the catalog row, the changelog
+                                                     [LANDED: dd15268, 2026-08-10]
 ```
 
 A single ceremony after Chunk C covering all three symbols is equally acceptable
@@ -2994,3 +3010,279 @@ and pinned as a first-wins behavior by R8's.
   branch.
 * The 2 pre-existing `test_verify_ref` full-suite failures were not
   investigated beyond attribution.
+
+## Implementation verification -- Claude -- 2026-08-10 (A4 correction + Chunks B, C, D)
+
+**Scope of this pass.** The A4 correction to its accepted [I1] form, then Chunks
+B, C and D. Chunk A had landed (`6e3a8ed`, `6b488a2`) and the module-merge /
+lockfile divergence fix had landed (`e71abd9`); this pass verified the latter
+before relying on it (`resolve_slot_merge` over the shipped directive against the
+corrected template returns `inserted`, and a live install writes the lockfile --
+measured below).
+
+**Tested commit.** `dd15268350ccbffda2447242e85a6a6562279965`.
+
+**Reviewed range.** `c871519..dd15268`, of which **five commits are this pass's**
+and **15 are other sessions'** in the same shared tree -- so the range is not a
+review unit. This pass's commits, in order:
+
+| Commit | What |
+|---|---|
+| `5792298` | A4 correction: slot body emptied, guidance moved above the open marker |
+| `237eb7a` | Chunk B: B1--B5 plus four pins B1 mechanically invalidated |
+| `ef27cc6` | follow-up: T32's perturbation made to actually fire |
+| `bf49579` | Chunk C: C1 + T34/T35 |
+| `dd15268` | Chunk D: D1, D2, D3 |
+
+**Interpreter / runtime.** `/Users/kendal30/conda_envs/lhm/bin/python3.13` --
+Python **3.13.13**, `PYTHONDONTWRITEBYTECODE=1`, macOS 25.5.0 (arm64). Cairn has
+no CI; every command below is one a person types.
+
+**Pre-run state.** The shared main worktree was **not** clean during
+implementation -- concurrent sessions held `bootstrap/tests/test_transition_lint.py`
+and committed 15 commits across this window. Boundary B therefore ran in a
+dedicated detached worktree at the tested commit:
+`git worktree add --detach <tmp>/wt-clean dd15268` -> `git status --porcelain`
+**0 paths**. **Post-run state:** the same worktree, `git status --porcelain`
+**0 paths** -- no run mutated its tree. In the main tree at the time of writing,
+`git status --short` shows exactly three untracked entries, none this pass's:
+`.claude/`, `dev/measurement/collision_log.md`, `dev/measurement/snapshots/`.
+
+**Command / Exit / Outcomes / Elapsed** (all from the clean worktree root).
+
+| Command | Exit | Outcome | Elapsed |
+|---|---|---|---|
+| `pytest bootstrap/tests -q --quality-gate-shuffle-seed=0` | 1 | **2847 passed, 2 failed, 1 skipped** | 499.07s |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | 1 | `[neutrality] fail=93 info=21`, `[redundancy] fail=0 info=2` | ~1s |
+| `python scripts/check_cairn.py` | 0 | OK -- 175 Markdown files, no issues, 48 external links not probed | ~1s |
+| `python bootstrap/scaffold.py --manifest` | 0 | **114 data rows** | <1s |
+| `python -m bandit -q -r bootstrap/_scaffold` | 0 | **22 LOW, 0 MEDIUM+** | ~3s |
+| `python -m bandit -q templates/modules/default-on/run_security_verification.py` | 0 | **2 LOW** (`B404`, `B603`), 0 MEDIUM+ | ~1s |
+
+**Non-pass disposition.**
+
+* **2 failures, mine, expected and fenced.**
+  `test_ast_attest.py::test_committed_baseline_accounted_for_across_the_engine_package`
+  and `::test_ast_gate_passes_over_the_full_scaffold_module_set`. Fence #2.
+  **Not re-anchored**; `_ast_attest._UPDATE_ALLOWLIST` reaches neither of this
+  pass's two symbols, so there is no small version of the step either.
+* **1 skipped, pre-existing and unrelated.**
+  `test_foldback_suggest.py:297` -- *"live ledger not available in this
+  checkout"*, an environment gate, not a suppression of this pass's surface.
+* **`quality_gate` `fail=93 info=21`** is the known pre-existing baseline,
+  **unchanged** across this pass; zero fail lines are attributable to any file
+  it touches (checked by grepping the fail lines for the touched paths).
+* **The three fenced `test_oracle.py` nodes did NOT fail** at the tested
+  commit. Recorded in the Sequence above with the mechanism: they were red only
+  while B1 sat uncommitted, because `run_oracle` compares a baseline_ref="HEAD"
+  engine against the current one; the fence self-cleared at `237eb7a` and
+  `bootstrap/REANCHOR_RUNBOOK.md` was never opened and its signing phase never
+  entered.
+* **`bootstrap/security_check.py`** (the release-only ceremony) runs the whole
+  suite inside itself and exceeded this session's single-command budget; the
+  Bandit substance it gates was measured directly instead (both rows above),
+  and `pytest bootstrap/tests/test_security_lint.py` -- the gate's own named
+  trigger -- is green inside the full-suite run. Named as an omission, not
+  claimed.
+
+**AST delta -- Fence #2.** Derived with `_ast_attest`'s own `_merge_current` /
+`_classify` over `bootstrap/_scaffold/*.py` (never a reimplementation), against
+`bootstrap/tests/fixtures/scaffold_ast_baseline.json` (**173** entries after the
+`9724c0f` re-anchor). Live tree: **CHANGED 6, MISSING 0, DUPLICATE 0, NEW 83.**
+Attributed by re-classifying a synthetic package tree extracted from
+`ce52116:bootstrap/_scaffold/*` (this session's first engine commit's parent),
+which reads **CHANGED 4, NEW 83** -- so the four below were already red before
+this pass, and **this pass adds exactly two:**
+
+| Symbol | Kind | File | Baseline digest | New digest | Whose |
+|---|---|---|---|---|---|
+| `_DEFAULT_ON_MODULES` | `Assign` | `config.py` | `79ae883be0136a90` | `a4d8c89ca14f122a` | **this pass, B1** |
+| `main` | `FunctionDef` | `cli.py` | `d3dc4b4e5ea6e4fd` | `e1e96fd0027a8e50` | **this pass, C1** |
+| `_MODULE_MAPPINGS` | `Assign` | `config.py` | `df43d4d75f55a3e5` | `0f42fa9a794a77da` | pre-existing (Chunk A + the reciprocal plan's group) |
+| `merge_module_into_slot` | `FunctionDef` | `slotmerge.py` | `815551a4e7d805b3` | `431cc08ef171c24e` | pre-existing (`e71abd9`) |
+| `run_module_merge_pass` | `FunctionDef` | `install.py` | `9957a011e2b9f892` | `cbe98d0832d1c69d` | pre-existing (`e71abd9`) |
+| `write_install_lockfile` | `FunctionDef` | `install.py` | `50a36da0df30225e` | `72e335276655da6a` | pre-existing (`e71abd9`) |
+
+Exactly the two symbols this plan **declared** for B1 and C1, and
+**`FunctionDef:format_profile_summary` did NOT appear** -- the stop-and-explain
+this plan pre-declared did not fire. The 83 NEW keys are identical in both
+readings, so this pass added **zero** new top-level engine symbols and
+`scaffold_ast_known_new.json` is untouched. `NEW` is reported, not failed, by
+`verify`. **Nothing was re-anchored; `update-symbol` was not run; the baseline
+fixture and the runbook were not edited.**
+
+**Plan-specific acceptance commands.**
+
+* **A4's correction, measured on the mechanism rather than argued.**
+  `resolve_slot_merge` over the shipped module's one directive against the
+  corrected `templates/core/AGENTS.md`: **`inserted`** (was `conflict-deferred`),
+  body `'\n'`, the guidance paragraph retained in the merged text, the standing
+  command present exactly once, `find_unpaired_slots` empty, 5 block slots in
+  the file unchanged. A live install prints `[inserted] AGENTS.md >
+  security-verification` **and** `Wrote dev/.cairn/cairn-lock.yml` -- so the
+  `e71abd9` lockfile fix does hold under the `inserted` outcome A4 now produces.
+* **B3 / B4, re-measured, not applied from this plan.** `solo-greenfield` roster
+  **7 -> 8**; the solo-legacy recipe's own literal YAML through a live
+  `scaffold.py --summary` **9 -> 10**. `test_quickstart_sequence.py` (prose ==
+  live) and `scripts/measurements.py` both green. The quickstart's **22**
+  unfilled-block-slot figure is **unchanged**, and that is correct rather than
+  lucky: the tally comes from `_install_one`'s pre-merge scan and counts open
+  markers, so neither emptying the body nor filling it at merge time moves it.
+* **The install contract did not move.** `--manifest` **114 data rows**, the same
+  count before and after this pass -- Chunk B adds no file, and Chunk A's two
+  rows had already landed.
+* **The public path, as a real subprocess from a real fresh scaffold.** Scaffold
+  `solo-greenfield` into a fresh target from the clean worktree, then `python
+  scripts/run_security_verification.py local`.
+
+**FINDING 1 -- T33's acceptance criterion is UNREACHABLE from a real default
+roster, and the plan's order-independence analysis is why it was missed.**
+
+The plan requires exit **0** and the exact `NOT APPLICABLE` line. Measured, a
+stock `solo-greenfield` install exits **5 (INCOMPLETE)**:
+
+```
+INCOMPLETE: 1 capability leg(s) evaluated
+  [INCOMPLETE] content-security: 'content-security' is selected but has no
+               admitted local security-verification registry entry
+```
+
+Cause, isolated by a second probe rather than reasoned: with
+`modules_remove: [content-security]` the same install exits **0** and prints the
+exact line. So the chain is -- `_selected_capability_ids` selects capabilities by
+the **`-security` name suffix**; `content-security` matches it; `content-security`
+became default-on in the sibling `default-security-stance` scope **after** this
+plan was measured (this plan read six default-on modules, none matching); the v1
+registry is empty, so that selected capability has no admitted entry and its leg
+is INCOMPLETE by T3's own contract, which the ladder aggregates to 5.
+
+This falsifies four statements in the accepted record, and they are worth naming
+separately because they are not the same claim: T33's chunk criterion; the
+plan-level acceptance line that repeats it; the *Source proposal* section's
+*"every adopter's first run prints `NOT APPLICABLE`"*; and the Decision's
+recorded property that the no-capability runtime effect is **nil** -- a stock
+install now has a **non-zero-exit default-on script**.
+
+The plan's *Order-independence* section asserted this was safe because *"neither
+`default-security-stance` nor `profile-parse-fail-open` accepts one [a
+capability]"*. That is true and insufficient: **a matching module NAME is
+sufficient to break the contract**, with no capability accepted anywhere. The
+coupling the analysis missed is that the dispatcher infers "is a security
+capability" from adopter-visible module *names* rather than from a source-owned
+set -- which is in tension with this plan's own source-owned-registry doctrine.
+
+**Not resolved here, because each candidate resolution changes either a
+high-risk source-owned surface or an accepted contract:** narrow the filter to a
+second source-owned set of capability ids (it cannot simply be the registry keys,
+or an unadmitted-but-selected capability would go silently unreported and T3's
+property would be lost); or accept INCOMPLETE as the correct v1 outcome and
+amend the contract (honest, but it ships every adopter a permanently-red standing
+command, the same objection the plan raised against a *"spurious DEGRADED"*); or
+exclude `content-security` by name (cheapest, rots fastest). This is a Maintainer
+decision. T33 is landed as a **characterization** that asserts the measured
+contradiction and **goes RED on any resolution**, so it cannot be resolved
+silently, and the caveat is recorded at the `_DEFAULT_ON_MODULES` edit site and
+in `CHANGELOG.md` rather than only here.
+
+**FINDING 2 -- every adopter's `AGENTS.md` now reads `clean-locally-modified` on
+upgrade, with no adopter edit.** The merge pass rewrites `AGENTS.md` after
+`install_core` while the base-template cache under `dev/.cairn/base/` keeps the
+**unmerged** template, so `ours != substitute_tokens(base, tokens)` immediately.
+It is **not** a blocked upgrade -- both kinds are in `_ADVANCING_KINDS`, so the
+file stages and applies identically -- but the label is *inaccurate* for an
+adopter who customized nothing. Found because it reddened
+`test_upgrade.py::TestUpgradeModes::test_clean_untouched_when_ours_equals_base`,
+whose docstring premise (*"ours = substitute_tokens(base, tokens) after a fresh
+install"*) B1 falsified for `AGENTS.md`. That node was re-targeted to `VENDOR.md`
+-- a core file no module merges into, so a valid subject for the untouched
+flavor -- and the consequence pinned as a new characterization node,
+`test_a_merged_slot_makes_AGENTS_md_locally_modified_on_upgrade`. Closing it
+means teaching the base-template cache about the merge overlay, which is engine
+scope neither this plan nor its reviews authorized.
+
+**Four pins B1 mechanically invalidated that this plan's row list does not
+name.** Adjusting them is the same class as Chunk A's `44 -> 45` pins, but they
+are itemized because a reviewer should see each judgment:
+
+| Pin | What B1 did to it | Disposition |
+|---|---|---|
+| `test_presets.py::TestSoloLegacyRecipe::test_literal_recipe_yaml_round_trips_under_the_stdlib_parser` | `assert len(modules) == 9` -> 10 | **Derived** from the live tuple (`len(_DEFAULT_ON) + 2`) rather than re-pinned. The membership assertion above it collapses duplicates, so the length check's real job is catching a duplicated module -- preserved, and mutation-proved (M13). |
+| `test_default_security_stance.py`'s `NO_PRESET_MODULE_SENTINELS` | roster/install agreement broke | One sentinel row added. |
+| `test_module_merge_lockfile.py::test_default_on_module_set_declares_no_merge_directives` | its premise became false -- the default-on set now declares one directive | **Re-specified to an exact-set assertion and RENAMED** to `..._declares_exactly_the_known_merge_directive`. One node renamed, zero coverage dropped: the property that mattered (the overlay must not grow silently) still reddens on a second directive, mutation-proved (M12). |
+| `test_upgrade.py::...test_clean_untouched_when_ours_equals_base` | see Finding 2 | Re-targeted + one characterization node added. |
+
+**Perturbation ledger -- demonstrated, not described.** Every mutation was
+applied to the **committed** source (never a test body), the named node(s) run,
+the failure observed, then `git checkout -- <path>` and `git status --short`
+proved empty for the mutated path. A driver guard refuses any path outside this
+session's intent claim, so no concurrent session's file was touched even
+transiently. **18 of 18 went RED at the predicted node.**
+
+| # | One-line mutation | Went RED |
+|---|---|---|
+| M1 | remove `security-verification` from `_DEFAULT_ON_MODULES` (B1) | T25 (all three preset rows), T28, and the re-specified merge-directive node |
+| M2 | make an explicit `modules:` list absorb the default-on set | T26 and T27 |
+| M3 | rename the `security-verification` key in `_MODULE_MAPPINGS` (A3) | T29 |
+| M4 | delete the `cairn:merge-content` block from the module source (A2) | T30 |
+| M5 | **restore non-empty placeholder prose to A4's slot body -- the [I1] defect, re-introduced** | T30 and T31 |
+| M6 | make `check_slot_fidelity` always return no warnings | T31 and T31b |
+| M7 | make `_slot_is_empty` treat any body as empty | T31b |
+| M8a | make `_build_report` **dedupe** legs by aggregate value | T32, `evidence_count` 1 != 2, two-capability row only |
+| M8b | make `_build_report` **homogenize** every leg's `evidence_mode` | T32, `['offline','offline'] != ['offline','loopback']` |
+| M9 | point the dispatcher's `_LOCKFILE` at a non-existent relative path | T33 |
+| M10 | drop the designation from the dispatcher source (channel 3) | T42 |
+| M11 | make `_slot_is_customized` always return `False` | T43 |
+| M12 | append a second `cairn:merge-target` block to another default-on module | the re-specified merge-directive node |
+| M13 | make `expand_preset` emit a duplicate module | the derived `len()` check in `test_presets` |
+| M14 | teach the base-template cache about the merge overlay (i.e. **close** Finding 2's residual) | the Finding-2 characterization node -- so a green run there is a live residual, not a stale assertion |
+| M15 | reword C1's note to say *"security verified"* | T34, on the forbidden-wording half only |
+| M16 | strip C1's note so it names no command | T34 |
+| M17 | make C1 invoke the dispatcher *"to show the adopter it works"* | T35 |
+| M18 | make C1 reach the dispatcher **through `git`** (allowlist bypass) | T35, on the target-path assertion -- which is why that assertion exists rather than trusting the executable allowlist alone |
+
+**Two tests were found vacuous by this ledger and fixed rather than explained
+away**, both recorded here because a green suite hid both:
+
+* **T32** as first written could not detect its own stated hazard (M8 was a
+  no-op). Corrected in `ef27cc6`; M8a/M8b are the replacements.
+* **T35** as the plan words it (*monkeypatch `subprocess.run` to raise for the
+  whole install*) fails on a **pre-existing** call, `git -C <cairn-root>
+  rev-parse --short HEAD`, which stamps `cairn_commit` into the lockfile. Run
+  blanket it measures the git-provenance read, not this chunk's property. It is
+  written as an allowlist of one (`git`) plus a direct assertion that no
+  recorded call names the dispatcher or reaches into the target tree.
+
+**Characterization vs guard, in those words.** T28, T33, T43 and
+`test_a_merged_slot_makes_AGENTS_md_locally_modified_on_upgrade` are
+**characterization** tests: a green run on any of them records an **open
+residual**, not a closed one. Each says so in its own docstring, where a reader
+will find it.
+
+**Channel note.** The subject is the installed adopter tree and the dispatcher's
+runtime behavior. The oracles are the shipped template sources read
+independently (T30/T31's expected content comes from
+`module_merge_directives` over `templates/`, T41/T42 read the shipped `.md` and
+`.py`), the installed tree on disk, and a real subprocess run of the public path
+(T33). No oracle is derived from the artifact it judges; in particular the
+merged-content assertion does not read the installed `AGENTS.md` to decide what
+the installed `AGENTS.md` should contain.
+
+**Known omissions.**
+
+* **`bootstrap/security_check.py` was not run end-to-end** (above). The Bandit
+  substance was measured directly and its named trigger test is green.
+* **The two AST-attest failures are unresolved by design** (Fence #2), as is
+  the pre-existing four-symbol part of the delta this pass does not own.
+* **Cairn's own lockfile does not record `dev/modules/security-verification.md`.**
+  Cairn now carries the file (B2) and the module is default-on, but
+  `dev/.cairn/cairn-lock.yml` predates it and no gate reddened. Re-finalizing
+  Cairn's own install is a scoped lockfile operation this pass did not perform;
+  named rather than silently left.
+* **T33's contradiction is characterized, not resolved** (Finding 1), and
+  Finding 2's residual is characterized, not closed.
+* **The plan's `_ast_attest` fence-2 ceremony, the gate-manifest re-pin**
+  (`test_security_lint.py` / `test_notice_install.py` remain in
+  `gate_manifest.json`'s frozen map and were **not** edited by this pass, so no
+  new `FROZEN-MODIFIED` row is this pass's), **and pushing** all remain
+  Maintainer work. **Nothing was pushed.**
+* **The reciprocal plan `api-web-security-modules` was not touched.**
