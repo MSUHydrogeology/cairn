@@ -1712,3 +1712,53 @@ CR1 inverse case) would not currently act as a ceiling for an earlier pass's
 disposition search. Neither CR1 nor CR2 exercises this combination, no live
 artifact does either (measured above), and reaching for it would be scope
 creep past the two named findings; recorded here rather than smoothed over.
+
+## Implementation verification -- Claude -- 2026-08-10 (Boundary B, post-correction)
+
+**Why this record exists.** `doctrine/plans.md:314-315` condition 4 — *"review
+sharpening changes implementation, tests, executable templates, or fixtures in the
+reviewed range"* — fired when CR1 and CR2 were corrected: both implementation and
+tests changed inside the reviewed range. So evidence reuse is unavailable and a
+fresh full run replaces it. This is the replacement Boundary B record covering the
+complete corrected range.
+
+**It does not close the findings.** An independent correction review is still owed,
+by a **different agent type from the fixer** — the corrections were authored by a
+Claude agent and verified by Claude, which is the configuration that must not
+self-certify. Precedent for the shape: `dev/plans/archive/separator-detection.md`
+took `## Code review -- Codex` → `## Corrective implementation -- Codex` →
+`## Code review -- Antigravity` before it archived. Plan status stays `open`.
+
+| field | value |
+|---|---|
+| Reviewed range | `a62a5d2..38a1ad1` (correction commits `dcbb460` Sharpening, `38a1ad1` implementation) |
+| Interpreter | `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python **3.13.13** |
+| Command | `PYTHONDONTWRITEBYTECODE=1 python -m pytest bootstrap/tests -q` |
+| Outcome | **2527 passed, 0 failed, 0 skipped**, 3 warnings |
+| Elapsed | 368.17s |
+| Non-pass disposition | none required |
+
+**State at measurement, stated exactly rather than as "clean".** Two deviations
+from a pristine tree, both recorded because a Boundary B record that overstates its
+own conditions is worse than one that admits them:
+
+1. At collection, `dev/plans/release-security-bar.md` was modified-uncommitted by a
+   concurrent session (the five-plan implementation sequence, stage 3). A
+   deliberation artifact; no test reads it for behaviour.
+2. **HEAD advanced during the run** — `38a1ad1` at start, `8d6de61`
+   (`proposal-review: bound optimization outside ceremonies`) at finish. That
+   commit touches a `dev/proposals/` Markdown file only. So the figure is not
+   attributable to a single commit and is reported as spanning that boundary.
+
+Neither deviation touches executable or test bytes, so neither can move the
+outcome. The three warnings are `stevedore`'s `verify_requirements` deprecation,
+reached through `pip-audit`'s transitive chain — non-Cairn, pre-existing, and
+already recorded against `bootstrap/DEPENDENCY_BUDGET.md`.
+
+**Known omissions.** This run establishes integration stability only. It performs
+no independent falsification: the falsifiers demonstrated for CR1 and CR2 were run
+by the fixing agent and re-run by the author, and Boundary C's targeted
+falsification by an independent reviewer has not occurred. The self-reported
+residual in the Sharpening (`_has_disposition`'s ceiling deriving from
+`art.sections` rather than the union of raw S1 lines) is **unverified by anyone but
+the party that disclosed it**.
