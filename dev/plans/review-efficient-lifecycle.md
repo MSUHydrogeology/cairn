@@ -1649,3 +1649,80 @@ contracts.
 preflight, pilot observations, Code review, or the re-anchor ceremony. Return
 J1 only for the next External closure read. This pass is blocking and does not
 fill the bootstrap table's `External` row.
+
+## Plan review -- Codex (Security) -- 2026-08-10 (round 3)
+
+**Model**: GPT-5.6-Codex
+**Tier**: External
+**Obligation**: External Security Review
+**Reviewed commit**: `ac7cc4bf08fa1228a8f6da36a630bef8fbe562e7`
+**Target**: focused Security closure of T1--T4 against the complete revised
+plan; the preceding External pass is context, not this obligation's discharge
+**Prior findings**: T1--T4
+**Assurance path**: high-assurance
+**Security lens**: bootstrap authority, replay scope, contained loading,
+mutable evidence, and trust-root ceremony invalidation
+**Findings**: raised
+**Verdict: REVISE, one blocker.** T1, T2, and T4 close. T3's exception is
+appropriately Maintainer-owned and narrowly scoped, but the value intended to
+bind its authorized bytes cannot exist as specified.
+
+### [K1] HIGH -- the security binding is circular and has no pre-implementation verifier
+
+I independently reproduced J1 at the byte layer: recording the reviewed plan's
+Git blob id inside its own pending `Plan blob` cell produces a different Git
+blob. The field can therefore be left pending, contain a stale value, or be
+treated informally, but it cannot authenticate the completed attestation.
+
+This matters under the security lens because the exception overrides the only
+live gate that refuses implementation. Chunk B's future mutation test cannot
+protect a transition that must happen before Chunk B exists, and no current
+mechanism is named to validate the exception. The current gate is correctly
+fail-closed; the proposed override must not turn that into an honor-system
+bypass.
+
+**Required satisfier.** Use a two-commit, non-circular ceremony:
+
+1. Both distinct SHIP review commits land against the final contract bytes.
+2. A Maintainer-only attestation commit names the **parent's** plan blob and the
+   two clearing commits, fills the two rows, records the exact violation
+   multiset and verbatim authorization, and changes no other path or plan byte.
+3. Before the status-only transition, the Maintainer runs and records an
+   exact-byte preflight that derives the parent and attested blobs from Git,
+   verifies the attestation commit's allowlisted diff, confirms the current
+   artifact descends unchanged from that attestation, and reproduces exactly
+   the authorized violations with no extras.
+4. The transition record binds the attestation commit. The exception expires
+   at B and cannot match another path, blob, review pair, violation multiset,
+   diff, or later invocation.
+
+The later B test may replay and mutation-test this historical ceremony, but the
+plan must not claim that retrospective test as the control authorizing the
+earlier transition.
+
+### Security closure accounting
+
+T1 closes: the planner owns one encoder and the lifecycle consumer uses the
+full contained-loader matrix, with the existing weaker `_safe_field` replaced.
+T2 closes: activation is non-self-referential and immutable; observations are
+source-bound, append-only, schema-bounded, race-checked, and derived rather
+than trusted as mutable counters. T4 closes: one normative restart rule covers
+governed and frozen corrections. T3 remains K1 only.
+
+The event-to-commit handoff and the broader existing `_safe_field` call-site
+regressions are explicit Code-review falsification targets. They do not reopen
+the accepted storage or encoder design. The author-date deadline is also
+acceptable here because activation is Maintainer-gated and reaching the date
+cannot promote automatically; promotion still requires evidence and a
+Maintainer Decision.
+
+**Covered**: exact reviewed plan bytes; Git blob-hash reproduction; current
+two-item violation multiset and failed executing gate under Python 3.13.13;
+encoder ownership/loading; pilot path, schema, mutation, and activation
+bindings; and both restart-rule locations.
+
+**Not covered**: implementation bytes, execution of the future preflight,
+alternate-platform filesystem behavior, pilot observations, Code review, or
+the Maintainer re-anchor. Return K1 only for Security closure. This pass is
+blocking and does not fill the bootstrap table's `External Security Review`
+row.
