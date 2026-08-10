@@ -2713,3 +2713,61 @@ untouched: its Chunk A (the shared `_security_net` engine -- URL normalization,
 SSRF/DNS-rebinding defense, redirect policy, TLS) is the pair's own named
 highest-risk surface and was not attempted in this session; every other chunk in
 that plan depends on it.
+
+## Maintainer ratification of the B3 living-state narrowing -- Anthony Kendall -- 2026-08-10
+
+**Authorization, quoted verbatim and visually isolated:**
+
+> Ratify
+
+**What it answered, recorded so the record stands alone.** The one-word
+authorization was given in direct answer to a question that named this narrowing,
+summarised its effect, and closed *"Ratify, or want me to dig into anything
+first?"* -- so the referent is the **B3 `policy_binding_mode: living_state`
+admission fence** and nothing else. Scribed by Claude (Implementation). This block
+is shared verbatim with the reciprocal plan and lands in both files in the same
+commit, as the shared block requires.
+
+**The narrowing, stated as what it drops.** The accepted proposal's revision
+established parent-computed digest binding over *"the runner and policy"*.
+`policy_binding_mode: living_state` keeps the runner digest binding and **drops the
+policy content-digest comparison** for a declared class of records.
+
+**Why the Maintainer accepted it -- the class is five human-edited coordination
+documents, not "any policy."** `_LIVING_STATE_DSTS`
+(`bootstrap/_scaffold/lockfile.py:84`) is a five-entry `frozenset`:
+`dev/PLANNING.md`, `dev/NEXT_SESSION.md`, `dev/.cairn/cairn_foldback.md`,
+`dev/collaboration_agreement.md`, `dev/.cairn/model-selection-mapping.yml`. Every
+one is a file a human edits continuously; hash-pinning them would report ordinary
+work as tampering. **The boundary is enforced by the verifier, not trusted from the
+lockfile** -- `lockfile.py:80-83` records that `verify_integrity` honours
+`living_state` only for a `dst` in that set and fails closed on any other record
+asserting it, *"so a modified script cannot hide by flipping the flag."* A shipped
+script therefore cannot opt itself into unverified status.
+
+**The risk accepted, named rather than implied.**
+`dev/collaboration_agreement.md` is in that set and it carries decision rights. An
+unnoticed edit to it will not be caught by integrity checking; its protection is
+git history and review, not a hash. The Maintainer was shown this specific
+consequence before ratifying.
+
+**What this unfences.** `F2` and **all of Chunk G** in
+`dev/plans/api-web-security-modules.md`, and registry admission under
+`"living_state"` in `dev/plans/security-verification-activation.md`. An
+implementing agent may now admit such an entry and land the chunk that writes the
+living-state record.
+
+**What it does NOT do, enumerated so nothing further is read into it:**
+
+* It does not widen `_LIVING_STATE_DSTS`. Adding a sixth entry is a separate
+  change to an engine constant and carries its own Security Review.
+* It does not relax `runner_binding_mode`, which remains the one-member set
+  `{"immutable_digest"}`.
+* It does not waive the four refusals already built and tested -- a record lacking
+  `living_state: true`, a path outside the authoritative set, an
+  `immutable_digest` declaration over a living record, and post-construction mode
+  mutation all still fail closed at DEGRADED (20).
+* It does not discharge any review tier, authorize a push, or open the AST
+  re-anchor ceremony.
+* It does not close the `verify_integrity.py:63-111` extra-key gap, which neither
+  plan in this pair owns.
