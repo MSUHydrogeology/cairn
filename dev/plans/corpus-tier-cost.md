@@ -171,6 +171,53 @@ repository, so the perturbation record names the exact file it edited.
 | B1 | `bootstrap/tests/test_transition_lint.py` | attach the fixture to `TestWideningIsNotCreating`, `TestWhitelistHygiene`, `TestCorpusRegression`. **No assertion changes** |
 | B2 | plan record | the paired run: `(scanned, triggered)` integers and finding sets, fixture attached and detached, one host one session |
 
+**B2 record — the paired run.** Host: this machine, 2026-08-10. Interpreter
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13). One session per arm,
+the three corpus classes selected (`-k`), 11 nodes both times. The detached arm
+is the file's own `_GitCounter`; the attached arm is `_GitMemo`.
+
+| arm | nodes | wrapper entries | **delegations to git** | distinct keys | wall clock |
+|---|---|---|---|---|---|
+| detached | 11 passed | 6509 | **6509** | 1279 | 91.61 s |
+| attached | 11 passed | 6509 | **1279** | 1279 | 24.21 s |
+
+**Criterion 1 is about delegations, not wrapper entries, and the first paired
+run is what made that plain.** Wrapper entries are identical in both arms —
+6509 — because the same nodes make the same calls either way; a memo cannot
+change that and never claimed to. What drops is the number of calls that reach
+git: **6509 → 1279, a 5.09× reduction**, exactly the redundancy the proposal
+measured. Criterion 1 now names delegations, and `_GitMemo` carries the counter
+rather than leaving the instrument to reconstruct it.
+
+**Criterion 2 — byte-identical results.** Both arms run the same 11 nodes to
+green. Those nodes assert *exact* integers and *exact* finding sets — `(120, 52)`,
+`(45, 41, [])`, `(332, 265)`, `len(pinned) == 20`, `len(shipped) == 10`,
+`len(pinned_b) == 2`, the `(1, 0, [])` archive pair — so an identical pass set
+across the two arms is a stronger statement than re-transcribing the numbers
+here would be. Wall clock is context, not a threshold.
+
+**The ordering control, and proof that it is a control.** Seeds 0–19 on this
+module, attached: **47 passed** at every seed (23.1–28.5 s). A sweep that cannot
+fail is not evidence, so the leak [I1] described was built and run:
+`_install_git_memo` re-declared `scope="module"` with a direct
+`setattr`/`yield`/restore (the `monkeypatch` form cannot be module-scoped —
+pytest raises `ScopeMismatch`, which is itself a hint the scopes are
+load-bearing). Against that mutant, with the contract nodes deselected:
+
+| ordering | outcome |
+|---|---|
+| natural (no shuffle) | **40 passed** — the defect is invisible |
+| seed 0 | 18 failed, 22 passed |
+| seeds 9 / 11 / 15 / 19 | 19 / 19 / 18 / 16 failed |
+
+So [I1]'s central claim holds and is if anything understated for this module:
+natural order — the ordering every plain `pytest bootstrap/tests/...` uses —
+lands **completely green** over a real defect, while every shuffled ordering
+tried reddens 16–19 nodes. The seed range differs from the review's (it sampled
+the full 2788-item collection; this samples the 47-item module), which is why
+the durable guard is the **order-independent** structural node: against the same
+mutant it fails in 0.54 s with no shuffle at all.
+
 **Naming the detached instrument, because "the count drops" has no other arm.**
 With the fixture detached nothing wraps `_git`, so there is no count to compare
 against and criterion 1 is not executable as written. The detached arm is a
@@ -231,9 +278,11 @@ suppression with nothing to suppress, which is the same latch shape
 
 Per R6 — **not seconds**:
 
-1. **Invocation reduction** — the wrapped-call count drops against the
-   count-only detached arm named in B2, with the distinct-key count reported
-   alongside it in **both** arms.
+1. **Invocation reduction** — the count of calls that **reach git**
+   (*delegations*) drops against the count-only detached arm named in B2, with
+   the distinct-key count reported alongside it in **both** arms. Not
+   *wrapper entries*: those are identical in both arms by construction, so a
+   criterion phrased on them could never be met by any correct memo.
 2. **Byte-identical results** — the three corpus classes produce the same
    integers and the same finding sets, recorded as a paired run.
 3. **All seven A2 mutants observed red**, each naming the file it mutated.

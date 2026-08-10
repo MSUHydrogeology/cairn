@@ -187,7 +187,13 @@ class _GitMemo:
         #: never fall out of the key.
         self._fn = fn
         self.cache: dict[tuple[str, tuple[str, ...]], tuple[int, bytes]] = {}
+        #: Wrapper entries.  Identical in both arms of the paired run by
+        #: construction -- the same tests make the same calls either way.
         self.calls = 0
+        #: Calls that reach git.  **This** is the figure criterion 1 is about;
+        #: `calls` cannot drop, so a paired run that reported only `calls`
+        #: would show no effect at all.
+        self.delegations = 0
 
     def __call__(self, root: Path, *args: str) -> tuple[int, bytes]:
         self.calls += 1
@@ -195,6 +201,7 @@ class _GitMemo:
         key = (str(root), args)
         if key in self.cache:
             return self.cache[key]
+        self.delegations += 1
         rc, out = self._fn(root, *args)
         if rc == 0:
             # Successful reads only.  A failure is a fact about the moment,
@@ -213,12 +220,18 @@ class _GitCounter:
 
     def __init__(self, fn) -> None:
         self._fn = fn
-        self.keys: set[tuple[str, tuple[str, ...]]] = set()
+        self.cache: dict[tuple[str, tuple[str, ...]], None] = {}
         self.calls = 0
+        self.delegations = 0
 
     def __call__(self, root: Path, *args: str) -> tuple[int, bytes]:
         self.calls += 1
-        self.keys.add((str(root), args))
+        _memo_admits(args)
+        # Same key, recorded not consulted -- so both arms report a distinct-key
+        # figure and the pair reads as a redundancy ratio rather than a bare
+        # count.
+        self.cache[(str(root), args)] = None
+        self.delegations += 1
         return self._fn(root, *args)
 
 
@@ -1040,6 +1053,7 @@ class TestShapeB:
 
 
 @requires_corpus
+@pytest.mark.usefixtures("_install_git_memo")
 class TestWideningIsNotCreating:
     """AC-R4 / the withdrawn one-directional claim, re-tested honestly.
 
@@ -1097,6 +1111,7 @@ PINNED_WINDOW = f"{SELF_HOST_SHA}..{PROPOSAL_SHA}"
 
 
 @requires_corpus
+@pytest.mark.usefixtures("_install_git_memo")
 class TestWhitelistHygiene:
     """Modelled on `scan-coverage`'s `_SCAN_EXCLUSIONS` guards.
 
@@ -1181,6 +1196,7 @@ class TestWhitelistHygiene:
 
 
 @requires_corpus
+@pytest.mark.usefixtures("_install_git_memo")
 class TestCorpusRegression:
     """AC-R4 and AC-R9, landing together.
 
