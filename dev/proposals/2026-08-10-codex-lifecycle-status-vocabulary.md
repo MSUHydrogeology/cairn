@@ -392,3 +392,216 @@ N/A because the proposal changes only lifecycle records and tooling.
   routine status selection with authors and reviewers; only
   `awaiting-decision` and existing ceremonies belong to the Maintainer.
 
+
+## Review -- Claude -- 2026-08-10
+
+**Model**: claude-opus-5 (Claude Opus 5)
+**Tier**: External, different agent type from the author
+**Reviewed commit**: `b63691eac92becc53e26ecf00650c1ee7ba2497d`
+**Target**: the complete proposal
+**Prior findings**: none
+**Assurance path**: high-assurance (lifecycle enforcement, shipped templates)
+**Verdict: REVISE.** The state model is right and the diagnosis reproduces
+exactly. The change-surface accounting is incomplete, and the gap is not
+cosmetic: as written, this proposal silently disables a shipped lint's
+detection in a file its `Touches` list does not name.
+
+### Steelman
+
+**Every factual claim reproduces.** All seven non-template files under
+`dev/plans/` carry `**Status**: open` -- api-web-security-modules,
+fork-advisory-semantics, portable-security-sweeps, release-security-bar,
+security-preflight-checklist, security-verification-activation,
+stage-commit-patterns -- while sitting at visibly different evidenced stages.
+`release-security-bar.md:332` independently records the failure before this
+proposal existed: *"plan status is not a reliable signal this week."*
+`doctrine/lifecycle-contract.md` exists as cited. The recurrence argument for
+the doctrine rate-limit is properly earned, not asserted.
+
+**Three design calls are right and non-obvious.** Keeping `Blocked by`
+orthogonal to the state machine, so a release date cannot obscure an
+engineering stage. Rejecting a parallel `Next action:` field because two mutable
+fields can disagree. And §4's rule that status moves with evidence rather than
+in empty label-advancing commits -- including the subtle corollary that a review
+satisfying only part of a declared floor must *not* manufacture a transition.
+
+**Splitting `revising-plan` from `revising-code`** is correct for the stated
+reason: the reader should not have to search the artifact to learn which loop
+is running.
+
+### [C1] HIGH -- the new vocabulary silently disables transition-lint's shape-(b) detection
+
+`scripts/transition_lint.py:234` carries a fourth status vocabulary the proposal
+does not mention:
+
+```python
+_OPEN_STATUSES = ("proposed", "open", "awaiting-plan-review")
+```
+
+consumed at `:549` as `if declared not in _OPEN_STATUSES: continue` -- a
+**fail-open**. Any unrecognised status skips shape-(b) detection silently.
+
+I built a synthetic repository, committed a lifecycle file carrying a baked-in
+review (`**Steelman**`, `[R1]`, `**Covered**`, dated heading), and varied only
+the `**Status**:` line:
+
+```text
+CURRENT vocabulary (control)
+  proposed              -> ['b']
+  open                  -> ['b']
+  awaiting-plan-review  -> ['b']
+PROPOSED vocabulary
+  awaiting-review       -> []   DETECTION LOST
+  revising              -> []   DETECTION LOST
+  ready-to-implement    -> []   DETECTION LOST
+  implementing          -> []   DETECTION LOST
+  revising-plan         -> []   DETECTION LOST
+```
+
+Shape (b) is the detector for the `17b7e5c` incident class -- an open commit
+whose added file already carries a real review. After this migration it would
+fire on nothing.
+
+**And nothing would report the loss.** transition-lint's corpus tier is
+SHA-pinned to history written in the old vocabulary, so all 40 of its nodes stay
+green while live detection is dead. That is precisely the failure `AGENTS.md`
+names: *a tool that returns success without testing the claimed property is a
+worse defect than no tool, because it is silent.*
+
+The coupling is already documented in the tree --
+`bootstrap/tests/test_transition_lint.py:631` carries perturbation **C6** on
+`_OPEN_STATUSES` -- so this is a surface the repository knows is status-sensitive.
+
+**Required satisfier.** Add `scripts/transition_lint.py` to `Touches`; extend
+`_OPEN_STATUSES` in the *same commit* as the vocabulary change, never after; and
+add a node asserting that every new opening status is shape-(b) detectable, with
+the fixture above as its basis. A corpus-only test cannot pin this, so the node
+must be synthetic.
+
+### [C2] HIGH -- three of the surfaces to be edited are frozen, and the proposal never says so
+
+Checked against the live gate manifest (182 frozen paths, `as_of 2026-08-10`):
+
+| surface | frozen? | in `Touches`? |
+|---|---|---|
+| `tools/lifecycle_planner.py` | no | yes |
+| `templates/skills/_lib/lifecycle_planner.py` | no | yes |
+| `tools/_lifecycle_metrics/extract.py` | no | yes |
+| `templates/modules/default-on/_lifecycle_metrics/extract.py` | **FROZEN** | no |
+| `bootstrap/tests/test_lifecycle_contract.py` | **FROZEN** | implied by *Tests required* |
+| `scripts/transition_lint.py` | **FROZEN** | **no** |
+
+`AGENTS.md` treats the gate manifest as a byte-level-stable install contract and
+routes changes to it through a Maintainer-run ceremony. The proposal's `Touches`
+list, `Documentation / doctrine surface`, and verification plan name no gate
+interaction at all -- yet its own *Tests required* section mandates extending a
+frozen test file.
+
+I confirmed frozen-set membership directly; I did **not** run the gate to
+observe the HOLD, so the exact ceremony cost is for the plan to establish.
+
+**Required satisfier.** Name the frozen surfaces, state the re-anchor obligation
+and who performs it, and sequence it. A lifecycle-vocabulary change that
+discovers its trust-ceremony cost mid-implementation will either stall or route
+around the gate.
+
+### [C3] MEDIUM -- five hard-coded vocabularies, and one is already wrong
+
+```text
+tools/lifecycle_planner.py:769,771                       _PROPOSAL_STATES, _PLAN_STATES
+templates/skills/_lib/lifecycle_planner.py:769,771       (byte-identical twin)
+tools/_lifecycle_metrics/extract.py:96                   _PLAN_STATUS_ENUM
+templates/modules/default-on/_lifecycle_metrics/extract.py:96   (twin, frozen)
+scripts/transition_lint.py:234                           _OPEN_STATUSES  (frozen)
+```
+
+Note that `_PLAN_STATUS_ENUM = ('open', 'executing', 'review', 'archived')`
+**already omits `awaiting-plan-review`** -- a pre-existing defect this migration
+would inherit and then double, since §6 requires metrics to carry both the
+historical and the current vocabulary.
+
+**Required satisfier.** Do not edit five tuples. Establish one vocabulary
+module as the single source and have every consumer import it, with a test that
+fails when any consumer re-declares the list locally. Otherwise the sixth
+consumer -- and there will be one -- diverges silently exactly as
+`_OPEN_STATUSES` and `_PLAN_STATUS_ENUM` already have.
+
+### [C4] MEDIUM -- the reviewer is handed a decision the record does not support
+
+§1 makes the *reviewer* select `awaiting-decision`, valid only when *"the
+declared review floor is satisfied."* Two active artifacts declare a two-part
+floor today (`git-native-security-foundations`,
+`api-web-security-modules`: `External + External Security Review`), so the first
+reviewer must decide whether one pass discharges one tier or both.
+
+**That question is explicitly unresolved in the record.**
+`dev/plans/archive/release-security-orchestration.md:843` states the disposition
+there *"does not rule on whether the two-part"* tier is discharged, and `:415`
+routes it to the Maintainer. This proposal makes an open question load-bearing on
+every review commit and resolves it by silence.
+
+Secondary, and real in this repository: `Status:` is a single mutable field that
+two concurrently-landing reviewers would both write. Several sessions have been
+committing to this tree in parallel today.
+
+**Required satisfier.** Either resolve the multi-tier rule inside this proposal
+(a reviewer may select `awaiting-decision` only when their own pass satisfies the
+*last* outstanding declared tier, and otherwise leaves the status unchanged --
+which §1 already half-states), or declare it a precondition and name who rules.
+State the concurrent-write disposition explicitly: last-writer-wins is
+acceptable if said out loud.
+
+### [C5] LOW -- `ready-to-archive` names an owner Cairn does not have
+
+The `Next owner` column reads **"lifecycle owner."** That string appears nowhere
+in `dev/agent_collaboration.md`, `doctrine/`, or `AGENTS.md`. The one state whose
+entire purpose is naming who acts next names an actor with no roster entry. Use a
+rostered role, or define the role in the same change.
+
+### [C6] LOW -- the migration must handle artifacts in flight, including this one
+
+This proposal carries `**Status**: proposed`, which §6 makes invalid for active
+artifacts after migration. Not a design defect -- but the migration will run
+while several proposals sit mid-review, and §6's evidence-derived classifier has
+to place a proposal whose only review is the one arriving in the same window.
+Name that case; it is the migration's most likely refusal.
+
+### Coverage and recommendation
+
+**Covered**, by execution: the seven-plan `Status: open` corpus;
+`release-security-bar:332`; existence of `doctrine/lifecycle-contract.md`; the
+shape-(b) detection matrix across six status values with a working control
+(synthetic repositories, real `transition_lint.scan`); `_OPEN_STATUSES` and its
+fail-open consumption at `:549`; frozen-set membership of six candidate surfaces
+against the live 182-path manifest; all five hard-coded vocabularies and the
+`awaiting-plan-review` omission in `_PLAN_STATUS_ENUM`; `_PLAN_STATES` /
+`_PROPOSAL_STATES` and `_legal_transitions` at `:769-794`; the unresolved
+two-part tier question at `release-security-orchestration.md:415`, `:843`; the
+absence of "lifecycle owner" from the roster; the multi-tier declarations in
+active artifacts.
+
+**Not covered / low confidence.** I did not run the gate to observe a HOLD on a
+frozen edit, so [C2]'s ceremony cost is asserted from manifest membership plus
+`AGENTS.md`, not from execution. I did not exercise `next` or `scan` against
+fixtures in the new vocabulary -- no implementation exists. I did not evaluate
+whether the eight plan states are the *right* eight, only that they are
+well-formed and that their transitions are stated; a reader-comprehension claim
+is not something I can falsify from inside the tree. I did not check adopter
+lockfile or upgrade-path consequences of a changed installed twin. One agent
+type, one host; the declared `required(**External**)` plan tier is untouched by
+this proposal review.
+
+**Second-round recommendation: recommended, narrow.** [C1] and [C2] are
+change-surface omissions rather than design errors, and [C3]'s single-source fix
+is the durable repair for both. Re-read only the corrected surface list, the
+single-vocabulary mechanism, and the multi-tier rule; the state model, the
+`Blocked by` orthogonality, and the evidence-moves-with-status rule do not need
+another pass.
+
+**A note on what [C1] means for the parent plan.** This proposal, the accepted
+`review-efficient-lifecycle`, and the revised `code-review-blindness` all edit
+the same predicates and share one plan. Three amendments converging on
+`lifecycle_planner.py` while a fourth vocabulary sits frozen in
+`transition_lint.py` is precisely the condition under which a silent regression
+ships. Whatever else the plan does, it should establish the single vocabulary
+source ([C3]) **first**, before any of the three lands its own edits.
