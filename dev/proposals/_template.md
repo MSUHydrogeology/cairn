@@ -263,6 +263,50 @@ verified) — "which invariant has no enforcer? which public path has no
 through-test?" — never "the table is present." An empty in-scope block is
 itself a finding.
 
+#### Security preflight — five questions, answered in writing
+
+*Gated to a **security-touching** change: one that adds, moves, or widens a
+trust boundary (deserialization, subprocess invocation, parsing, file and path
+handling, network I/O, credentials and environment — the `security-review`
+module's boundary list), or one that touches a high-risk surface this project's
+`AGENTS.md` names. For every other change, one line — "N/A: no trust boundary
+added, moved, or widened" — is the correct entry.*
+
+Answer all five, one or two sentences each. These are **design questions, asked
+while the design is still movable** — not documentation written after it is
+fixed. An absent answer is a review finding. A *wrong* answer is a falsifiable
+review finding, which is the point: the reviewer checks a stated claim in one
+read instead of hunting for an absence over four rounds.
+
+* **S1 — Who supplied it?** For each step where this change *decides* something
+  (verifies, authenticates, authorizes, classifies, admits), name every input
+  and the channel it arrives by, and say whether any input is supplied —
+  directly or **by reference** — by the thing being decided about. Apply this to
+  every step in the change *and to every step you describe in prose in this
+  document*.
+* **S2 — Can it fail?** For each test or check this change relies on to enforce
+  an invariant, state the one-line mutation that makes it fail, and confirm you
+  ran it. If a check derives what it expects from the same object it is
+  checking, say so plainly — that check cannot fail.
+* **S3 — What fires it, over what?** Name the command that runs the check, what
+  selects it (a preset, a profile, a suite, or nothing), and the exact input set
+  it covers. Then quote the sentence in adopter-facing prose that describes it,
+  and show the two agree.
+* **S4 — Which way does it break?** For each default, fallback, normalization,
+  and parse-error path this change adds or touches, say which side of the
+  boundary it lands on when it goes wrong — and whether that is *more* authority
+  or less.
+* **S5 — Who still wins?** State the attacker capability this change assumes,
+  then name one capability that still succeeds after it. If you cannot name one,
+  say whether the class is closed **by construction** or merely **by
+  enumeration** — enumeration ages.
+
+**What these five do not reach.** They are structural questions about where
+material comes from and what runs. A semantically valid instruction that is
+hostile carries no lexical signature, and no question here finds it. They also
+do not check whether an answer is *true* — they convert a hidden property into a
+written claim a reviewer can falsify.
+
 **Prospective only.** This accounting — and the review sweep that checks it
 (`doctrine/dual-review.md`) — applies to active and future artifacts; an
 archived proposal or plan is immutable and is never retro-fitted with it.

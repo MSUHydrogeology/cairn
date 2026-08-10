@@ -213,12 +213,15 @@ contract / invariant / public path" for routine) — same discipline as the
 proposal template's author-accounting. At PLAN stage the satisfier is
 *sequencing*: each invariant has an enforcing test sequenced into a chunk,
 and each public entry point this plan touches is mapped, in its acceptance
-criteria, to the test that exercises it through its public path. Cite tests
-as relative markdown links so the link checker verifies they exist. Include a
-known-omissions line. Reviewed as evidence — the reviewer challenges a row or
-names the one they sampled, never "table present." Prospective only: an
-archived plan is never retro-fitted. See `doctrine/dual-review.md` >
-"Review expectations — the clean-pass trap". -->
+criteria, to the test that exercises it through its public path. A
+security-touching plan re-answers the five security-preflight questions only
+where its chunking changes an answer — most often S2 (which chunk runs the
+mutation) and S3 (which gate command fires the check). Cite tests as
+relative markdown links so the link checker verifies they exist. Include a
+known-omissions line. Reviewed as evidence — the reviewer challenges a row
+or names the one they sampled, never "table present." Prospective only: an
+archived plan is never retro-fitted. See `doctrine/dual-review.md` > "Review
+expectations — the clean-pass trap". -->
 
 ## Verification
 

@@ -299,6 +299,65 @@ class TestCreateDevTree:
 # Core and module installation
 # ---------------------------------------------------------------------------
 
+# security-preflight-checklist: literals pinning the S1-S5 sub-block (proposal
+# templates) and the pointer clause (plan templates). Each is typed once, at
+# authoring time, from the accepted proposal / this plan -- not derived at run
+# time from a template. The gate phrase is split into HEAD/TAIL because the
+# pinned 43-line extraction wraps it across a line break (plan Response,
+# amendment A-1); both halves stay raw substrings so the code-point pin (P7)
+# keeps its force.
+_SECURITY_PREFLIGHT_HEADINGS = (
+    "S1 — Who supplied it?",
+    "S2 — Can it fail?",
+    "S3 — What fires it, over what?",
+    "S4 — Which way does it break?",
+    "S5 — Who still wins?",
+)
+_SECURITY_PREFLIGHT_GATE_PHRASE_HEAD = "no trust boundary"
+_SECURITY_PREFLIGHT_GATE_PHRASE_TAIL = "added, moved, or widened"
+_SECURITY_PREFLIGHT_OPEN = "#### Security preflight — five questions, answered in writing"
+_SECURITY_PREFLIGHT_CLOSE = "**Prospective only.**"
+_PLAN_CLAUSE_MARKER = "security-preflight"
+_PLAN_CLAUSE_SENTENCE = (
+    "A security-touching plan re-answers the five security-preflight "
+    "questions only where its chunking changes an answer — most often S2 "
+    "(which chunk runs the mutation) and S3 (which gate command fires the "
+    "check)."
+)
+
+
+def _extract_security_preflight(text: str) -> str:
+    """Return the security-preflight sub-block from ``text``.
+
+    Slices from the line equal to ``_SECURITY_PREFLIGHT_OPEN`` up to
+    (exclusive) the first later line starting with ``_SECURITY_PREFLIGHT_CLOSE``.
+    Raises ``AssertionError`` naming the missing marker rather than returning
+    an empty string on a missing marker -- an empty-string return would make
+    a parity comparison of two missing blocks vacuously equal.
+    """
+    lines = text.splitlines()
+    start = None
+    for i, line in enumerate(lines):
+        if line == _SECURITY_PREFLIGHT_OPEN:
+            start = i
+            break
+    if start is None:
+        raise AssertionError(
+            f"missing marker: {_SECURITY_PREFLIGHT_OPEN!r} not found as a whole line"
+        )
+    end = None
+    for j in range(start + 1, len(lines)):
+        if lines[j].startswith(_SECURITY_PREFLIGHT_CLOSE):
+            end = j
+            break
+    if end is None:
+        raise AssertionError(
+            f"missing marker: no line after the open marker starts with "
+            f"{_SECURITY_PREFLIGHT_CLOSE!r}"
+        )
+    return "\n".join(lines[start:end])
+
+
 class TestInstallCore:
     def test_installs_agents_md(self, tmp_path: Path) -> None:
         """install_core writes AGENTS.md to the target root."""
@@ -396,6 +455,148 @@ class TestInstallCore:
                 f"metadata line -- silent regression of the plan-review "
                 f"entry-gate doctrine"
             )
+
+    def test_installed_templates_carry_security_preflight_questions(
+        self, tmp_path: Path
+    ) -> None:
+        """security-preflight-checklist: the proposal template's
+        `### Author-accounting` block carries a gated sub-block of five
+        security-preflight questions (S1-S5) plus the security-touching
+        gate phrase; the plan template carries a one-clause pointer to the
+        same questions. Both are pinned on the shipped/installed side, on
+        the self-hosted side, and (for the proposal sub-block) across the
+        two -- covering the one-sided edit, the two-sided edit, and drift
+        between the two.
+
+        Scope: six-and-a-bit literal strings and one extracted region
+        across four files, nothing else. It does not check whether an
+        author's answers to S1-S5 are present or true -- see the plan's
+        Author-accounting > Known omissions.
+
+        Four assertion groups accumulate into one ``failures`` list rather
+        than asserting inline, so every group runs on every invocation --
+        a sequential first-failure shape would leave later groups
+        unobserved for perturbations whose earlier group already fails
+        (plan Response, amendment A-2 / finding [I2]).
+
+        (a) SHIPPED SIDE, presence -- over the INSTALLED templates.
+        (b) SELF-HOST SIDE, presence -- read from Cairn's own tree.
+        (c) PROPOSAL-PAIR PARITY -- the added sub-block, byte-compared
+            between the self-hosted and shipped proposal templates.
+        (d) PLAN-PAIR PARITY -- the clause sentence, present in both plan
+            templates after collapsing intra-sentence whitespace (the two
+            copies may wrap at different columns; the sentence is the
+            contract, not the wrap).
+
+        Group (c) pins parity of the added security-preflight sub-block
+        only, delimited by ``_SECURITY_PREFLIGHT_OPEN`` /
+        ``_SECURITY_PREFLIGHT_CLOSE``. It does **not** cover the whole
+        `### Author-accounting` block that sub-block sits inside -- the
+        wider dev/**/_template.md twin-parity gap (no test covers those
+        twins at all today; see test_notice_install.py, which covers only
+        the scripts/ and tools/ .py twins) stays open outside this
+        sub-block, by design (plan residual R5).
+        """
+        cairn_root = Path(__file__).resolve().parent.parent.parent
+        templates_root = cairn_root / "templates"
+        if not templates_root.exists():
+            pytest.skip("Cairn templates not available")
+        dev_proposals_template = cairn_root / "dev" / "proposals" / "_template.md"
+        dev_plans_template = cairn_root / "dev" / "plans" / "_template.md"
+        if not dev_proposals_template.exists() or not dev_plans_template.exists():
+            pytest.skip("Cairn dev/ tree not available")
+
+        tokens = {"project_name": "TestProject", "test_command": "pytest"}
+        create_dev_tree(tmp_path)
+        install_core(templates_root, tmp_path, tokens)
+
+        failures: list[str] = []
+
+        # (a) SHIPPED SIDE, presence -- over the INSTALLED templates.
+        installed_proposal = (
+            tmp_path / "dev" / "proposals" / "_template.md"
+        ).read_text()
+        for heading in _SECURITY_PREFLIGHT_HEADINGS:
+            if heading not in installed_proposal:
+                failures.append(
+                    f"(a) installed proposal template missing heading {heading!r}"
+                )
+        if _SECURITY_PREFLIGHT_GATE_PHRASE_HEAD not in installed_proposal:
+            failures.append(
+                f"(a) installed proposal template missing gate phrase head "
+                f"{_SECURITY_PREFLIGHT_GATE_PHRASE_HEAD!r}"
+            )
+        if _SECURITY_PREFLIGHT_GATE_PHRASE_TAIL not in installed_proposal:
+            failures.append(
+                f"(a) installed proposal template missing gate phrase tail "
+                f"{_SECURITY_PREFLIGHT_GATE_PHRASE_TAIL!r}"
+            )
+        installed_plan = (tmp_path / "dev" / "plans" / "_template.md").read_text()
+        if _PLAN_CLAUSE_MARKER not in installed_plan:
+            failures.append(
+                f"(a) installed plan template missing marker {_PLAN_CLAUSE_MARKER!r}"
+            )
+
+        # (b) SELF-HOST SIDE, presence -- read Cairn's own tree directly.
+        self_host_proposal = dev_proposals_template.read_text()
+        for heading in _SECURITY_PREFLIGHT_HEADINGS:
+            if heading not in self_host_proposal:
+                failures.append(
+                    f"(b) self-host proposal template missing heading {heading!r}"
+                )
+        if _SECURITY_PREFLIGHT_GATE_PHRASE_HEAD not in self_host_proposal:
+            failures.append(
+                f"(b) self-host proposal template missing gate phrase head "
+                f"{_SECURITY_PREFLIGHT_GATE_PHRASE_HEAD!r}"
+            )
+        if _SECURITY_PREFLIGHT_GATE_PHRASE_TAIL not in self_host_proposal:
+            failures.append(
+                f"(b) self-host proposal template missing gate phrase tail "
+                f"{_SECURITY_PREFLIGHT_GATE_PHRASE_TAIL!r}"
+            )
+        self_host_plan = dev_plans_template.read_text()
+        if _PLAN_CLAUSE_MARKER not in self_host_plan:
+            failures.append(
+                f"(b) self-host plan template missing marker {_PLAN_CLAUSE_MARKER!r}"
+            )
+
+        # (c) PROPOSAL-PAIR PARITY -- the added sub-block, byte-compared.
+        shipped_proposal_template = (
+            cairn_root / "templates" / "core" / "dev" / "proposals" / "_template.md"
+        ).read_text()
+        self_host_block = None
+        shipped_block = None
+        try:
+            self_host_block = _extract_security_preflight(self_host_proposal)
+        except AssertionError as exc:
+            failures.append(f"(c) self-host extraction failed: {exc}")
+        try:
+            shipped_block = _extract_security_preflight(shipped_proposal_template)
+        except AssertionError as exc:
+            failures.append(f"(c) shipped extraction failed: {exc}")
+        if self_host_block is not None and shipped_block is not None:
+            if self_host_block != shipped_block:
+                failures.append(
+                    "(c) security-preflight sub-block differs between "
+                    "dev/proposals/_template.md and "
+                    "templates/core/dev/proposals/_template.md"
+                )
+
+        # (d) PLAN-PAIR PARITY -- the clause sentence, whitespace-collapsed.
+        shipped_plan_template = (
+            cairn_root / "templates" / "core" / "dev" / "plans" / "_template.md"
+        ).read_text()
+
+        def _collapse(s: str) -> str:
+            return " ".join(s.split())
+
+        collapsed_sentence = _collapse(_PLAN_CLAUSE_SENTENCE)
+        if collapsed_sentence not in _collapse(self_host_plan):
+            failures.append("(d) self-host plan template missing the clause sentence")
+        if collapsed_sentence not in _collapse(shipped_plan_template):
+            failures.append("(d) shipped plan template missing the clause sentence")
+
+        assert not failures, "\n".join(failures)
 
 
 class TestInstallModules:
