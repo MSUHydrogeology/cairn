@@ -260,6 +260,15 @@ archived plan / proposal, the implementing commits, and the
 changelog. There is no "completed recently" section on this
 board by design.
 
+* **git-native-security-foundations** *(proposal opened 2026-08-10)* -- align
+  Cairn's security boundary with Git's native object, signature, graph, and ref
+  primitives: replace incompatible per-agent signing with Maintainer-signed
+  checkpoints, delegate blob ids and strict object validation to Git, migrate
+  the frozen-file leg toward Git object identity without losing collection
+  semantics, add diagnostic reflogs, and publish only the durable gate anchor
+  atomically. Requires External plus External Security Review and a
+  Maintainer-only exact-byte trust-root bootstrap.
+
 * **review-efficient-lifecycle** *(proposal opened 2026-08-10)* -- reduce
   proposal-to-archive time and review input without removing independent
   boundaries: bounded current contracts, standard-only plan-readiness
