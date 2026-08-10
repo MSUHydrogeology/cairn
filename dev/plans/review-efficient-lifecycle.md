@@ -319,3 +319,162 @@ deliverables are confirmed individually.
 *Filled in at archive time.* Per the archive precondition, every deferred
 follow-up carries a recorded disposition — `accept`, `guard`, `wontfix`, or
 (with the Maintainer's quoted authorization) `defer`.
+
+## Plan review -- Codex -- 2026-08-10
+
+**Model**: GPT-5.6-Codex
+**Tier**: External
+**Obligation**: External
+**Reviewed commit**: `777dea04c653f4a918692d94908ed381666d1348`
+**Target**: the complete opened plan against all four accepted source
+contracts
+**Assurance path**: high-assurance
+**Findings**: raised
+**Verdict: REVISE.** The consolidation boundary is right, and it must remain
+one plan. The current executable contract, however, implements the three
+amendments while omitting most of the parent proposal, and its one-Boundary-B
+budget conflicts with both the accepted trust-ceremony order and the parent's
+bounded pilot. Restore those contracts inside this plan; do not split or
+de-scope them.
+
+### Steelman
+
+The dependency ordering among the work that is present is strong. A central
+vocabulary before its consumers, canonical pass boundaries before the new
+Code-review grammar, archive resolution before source-proposal moves, and a
+quiet-tree migration are all defensible. The plan also correctly keeps the two
+review obligations distinct and places the re-anchor behind stable frozen
+bytes and independent Code review.
+
+I reproduced the stated vocabulary drift: the planner and its twin each carry
+`_PROPOSAL_STATES` and `_PLAN_STATES`, both metrics copies carry
+`_PLAN_STATUS_ENUM`, and transition-lint carries `_OPEN_STATUSES`. I also ran
+the current planner over the tree: all 10 active artifacts were structurally
+sound, and this plan's next transition was reported as
+`awaiting-plan-review`. These checks support Chunks A and E; they do not supply
+the omitted parent machinery below.
+
+### [E1] HIGH -- the plan does not implement its primary source proposal
+
+The Scope says all four accepted contracts are implemented once, but A--I map
+the three amendments: vocabulary/board, Code-review blindness, and claim-check
+exemption hygiene. The accepted complete contract in
+`review-efficient-lifecycle` also requires all of the following, none of which
+has a chunk or acceptance row here:
+
+* `standard` / `high-assurance` declaration and the mandatory high-assurance
+  trigger set;
+* the four-field review basis (`Reviewed commit`, `Target`, `Prior findings`,
+  `Assurance path`) across proposal, plan, and Code-review records;
+* complete current-contract revisions and their mandatory
+  `Withdrawn / superseded commitments` ledger;
+* proposal `Plan readiness: READY | DISTINCT REVIEW REQUIRED`, exact accepted
+  commit binding, standard-plan inheritance, expansion invalidation, and the
+  high-assurance refusal;
+* the bound `Contract non-expansion` Code-review attestation;
+* deterministic `review-brief` and expanded `closeout --dry-run` output;
+* the Cairn-local pilot, its six-plan / 60-day deadline, pause conditions,
+  evidence report, and Maintainer promotion Decision; and
+* the explicit post-pilot promotion chunk and three-layer canonical,
+  self-hosted, and shipped-template parity contract.
+
+This is not already implemented. A repository search found no `review-brief`,
+`Plan readiness`, `inherited(...)`, `Contract non-expansion`, or
+`Withdrawn / superseded commitments` mechanism in the lifecycle tools or their
+tests. The plan itself contains none of those terms beyond its source link.
+
+**Required satisfier.** Keep one plan and add executable chunks, paths,
+acceptance criteria, tests, and doctrine/template surfaces for every item
+above. In particular include `doctrine/dual-review.md`,
+`dev/collaboration_agreement.md` and its template twin, the lifecycle CLI and
+its installed twin, end-to-end standard-READY and high-assurance-refusal
+fixtures, pilot activation/reporting state, and the accepted post-pilot docs
+surfaces. Name what lands before the pilot, what remains dormant during it,
+what the Maintainer decides at its boundary, and what the conditional
+promotion/retirement chunk does. A source-proposal link is not an executable
+mapping.
+
+### [E2] HIGH -- the evidence budget runs Boundary B before a fixture-changing ceremony, contrary to the accepted order
+
+The plan budgets one Boundary B after H, then one Code review, then Chunk I's
+re-anchor. That ceremony changes `bootstrap/tests/fixtures/gate_manifest.json`,
+which is a fixture in the reviewed range. Current doctrine says a later fixture
+change requires replacement Boundary B evidence. More directly, accepted
+`lifecycle-status-vocabulary` R8 orders independent Code review, Maintainer
+re-anchor, and then **final Boundary B and closeout checks against the
+post-ceremony commit**.
+
+I opened the re-anchor runbook rather than treating its path as a trigger. Its
+promotion performs gate/static verification; it does not run the canonical
+project suite or the standing integration commands. The ceremony therefore
+does not supply the missing post-ceremony Boundary B.
+
+**Required satisfier.** Preserve the accepted order explicitly:
+
+1. stable implementation bytes and pre-review Boundary B evidence;
+2. independent Code review over that exact range;
+3. Maintainer re-anchor of the reviewed frozen set; and
+4. a fresh full integration record plus closeout checks on the post-ceremony
+   commit.
+
+State how a failure or corrective byte restarts the applicable evidence,
+review, and ceremony legs. Update the touchpoint arithmetic rather than calling
+two broad executions one. Then reconcile this sequence with [E1]'s pilot and
+conditional promotion phase; the accepted experiment may require a second
+stable review boundary inside this same plan.
+
+### [E3] MEDIUM -- this plan bootstraps the two-obligation gate it relies on without recording the bootstrap
+
+The header correctly requires two distinct passes and forbids implementation
+before both. The current planner does not yet implement `**Obligation**:` or
+multi-obligation discharge: it normalizes `required(External + External
+Security Review)` to the first `External` tier. Once the author dispositions
+this pass, current tooling can report the ordinary External floor satisfied
+even though the Security Review has not landed. Chunk E is what eventually
+closes that gap.
+
+**Required satisfier.** Add a one-time pre-Chunk-A bootstrap attestation that
+names the two distinct review commits, their exact obligations, their clearing
+dispositions, and the absence of unresolved findings. Keep the plan at `open`
+until both exist. State that this manual attestation is retired once Chunk E's
+multi-obligation predicate is active and tested. This adds no review pass; it
+makes the already-declared two passes enforceable during their own bootstrap.
+
+### [E4] MEDIUM -- Chunk F points at the accepted encoder but does not carry its decisive oracle
+
+The Scope fence says lifecycle-status-vocabulary [F1] is pending even though
+Revision 4 was accepted before this plan opened. F2 now points to Revision 4,
+but F5 says only `encoder sweep`; it does not bind the final rule or the test
+population that made Revision 4 acceptable.
+
+**Required satisfier.** Remove the stale pending fence and put the accepted
+rule directly in F2/F5: `not str.isprintable()` plus numeric
+`_DISPLAY_UNSAFE_RANGES`; the directional assertion over every member of
+`_ZERO_WIDTH`, `_BIDI`, `_LINE_SEPARATORS`, every code point in
+`_IGNORABLE_RANGES` and `_NONCHARACTER_RANGES`, `_TAG_RANGE`, and
+`_ASCII_GUARD`; twin parity; and a source scan proving no represented invisible
+is embedded raw. This is contract transcription, not new scope.
+
+### Scope ruling and next pass
+
+No de-scoping is recommended. Do not move the parent mechanism, pilot,
+promotion phase, or any amendment into another plan. Revise the operative
+chunks inline while status remains `open`, append the finding dispositions,
+and return for a focused External closure read against E1--E4. The distinct
+External Security Review remains separately owed and should review the
+sharpened complete plan, especially loader/provider containment, terminal
+encoding, migration authority, and trust-ceremony sequencing.
+
+**Covered by execution/inspection**: current lifecycle `scan` and `next`;
+runtime vocabulary declarations across all five named source surfaces; absence
+of the parent mechanism in tools/tests; accepted parent Revision 1; accepted
+lifecycle-status Revision 4 and R8; current Boundary B/C doctrine; the actual
+re-anchor runbook's triggers; and the complete plan at `777dea0`.
+
+**Not covered**: no implementation exists, so no proposed parser, board,
+provider, migration, review-brief, pilot, or closeout behavior could be
+executed. I did not independently rederive the plan's 92-file disjointness or
+12-citation migration counts; neither affects this verdict and both must be
+re-measured at the implementation parent as the plan already requires for
+other corpus figures. This pass discharges only the `External` obligation, not
+the distinct `External Security Review` obligation.
