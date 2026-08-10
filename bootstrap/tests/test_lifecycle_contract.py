@@ -791,6 +791,62 @@ def test_c2_a_near_miss_heading_is_not_a_pass_and_fails_closed(
     assert near_miss.splitlines()[0] in v[0]
 
 
+# CR1 -- the gate must match S1's exact RAW heading grammar, not merely a
+# heading `_HEADER_RE` (the older, more permissive generic parser) happened
+# to accept.  Two independent directions, both reproduced against
+# `review_record_violations` with a fresh Codex External code review at
+# `dd91ccb`..`fd296fb`: shapes `_HEADER_RE` tolerates but S1 does not (must
+# NOT be passes), and a shape S1 accepts but `_HEADER_RE` could not even
+# produce a Section for (must BE a pass).
+
+
+@pytest.mark.parametrize("near_miss", [
+    "##   Plan review -- R -- 2026-05-01\n\n**Tier**: External\n"
+    "**Findings**: none\n",                       # extra spaces after `##`
+    "## Plan review  --  R  --  2026-05-01\n\n**Tier**: External\n"
+    "**Findings**: none\n",                       # doubled `--` separators
+])
+def test_cr1_header_re_whitespace_tolerance_is_not_s1_conformance(
+        tmp_path, near_miss):
+    """`_HEADER_RE`'s `\\s+` around `##` and `--` is looser than S1's single
+    spaces.  Before CR1, `_pass_headings` trusted any Section `_HEADER_RE`
+    produced and never checked the raw line against S1, so both of these
+    cleared the presence gate despite matching no S1 regex."""
+    v = _violations(tmp_path, near_miss)
+    assert len(v) == 1, v
+    assert "no conforming pass satisfies it" in v[0]
+    assert "near misses that do NOT count" in v[0]
+    assert near_miss.splitlines()[0] in v[0]
+
+
+def test_cr1_trailing_whitespace_after_the_date_is_not_a_pass(tmp_path):
+    """Same defect, isolated: `_HEADER_RE`'s trailing `\\s*` before `$`
+    tolerated trailing spaces after the date; S1 has no such allowance.  The
+    near-miss quote is right-stripped by `_near_miss_headings` (as it is for
+    every other near miss), so the containment check compares the stripped
+    form rather than the fixture's own trailing spaces."""
+    near_miss = ("## Plan review -- R -- 2026-05-01   \n\n**Tier**: External\n"
+                "**Findings**: none\n")
+    v = _violations(tmp_path, near_miss)
+    assert len(v) == 1, v
+    assert "no conforming pass satisfies it" in v[0]
+    assert "near misses that do NOT count" in v[0]
+    assert near_miss.splitlines()[0].rstrip() in v[0]
+
+
+def test_cr1_a_reviewer_field_with_literal_parens_is_still_a_conforming_pass(
+        tmp_path):
+    """The INVERSE mismatch: S1's reviewer group (`[^\\n]+?`) accepts literal
+    parentheses, but `_HEADER_RE`'s `(?P<role>[^)\\n]*)` machinery cannot
+    parse a line shaped like this at all -- so before CR1, `_parse_sections`
+    produced no Section for it, and a conforming pass silently failed to
+    count. A synthesized Section must carry a correct body: the `**Tier**:`
+    and `**Findings**:` lines below must still be read from it."""
+    body = ("## Plan review -- Jane (Lab) Smith -- 2026-05-01\n\n"
+           "**Tier**: External\n**Findings**: none\n")
+    assert _violations(tmp_path, body) == []
+
+
 # C.3 -- S1 date: calendar-valid, not merely date-shaped.
 
 
@@ -838,6 +894,41 @@ def test_c4_findings_raised_requires_a_disposition_in_that_pass(tmp_path):
                       sharpening=True))
     assert len(sibling) == 1
     assert "R1" in sibling[0] and "no disposition follows it" in sibling[0]
+
+
+# CR2 -- S7's second house form is EXACTLY `## Response to plan review`, not
+# any kind that merely starts with "response".  Reproduced by a fresh Codex
+# External code review at `dd91ccb`..`fd296fb`: an unrelated `## Response`
+# or `## Response to proposal review` cleared a raised finding it never
+# addressed.
+
+
+@pytest.mark.parametrize("unrelated_kind", [
+    "Response",
+    "Response to proposal review",
+])
+def test_cr2_an_unrelated_response_kind_does_not_satisfy_raised_findings(
+        tmp_path, unrelated_kind):
+    """A kind that only shares the `response` PREFIX with the documented
+    house form must not discharge S7 -- before CR2, `_has_disposition`'s
+    `.startswith("response")` let it."""
+    body = (
+        _pass_block(findings="raised")
+        + f"## {unrelated_kind} -- Author -- 2026-05-02\n\nunrelated.\n\n")
+    v = _violations(tmp_path, body)
+    assert len(v) == 1, v
+    assert "no disposition follows it" in v[0]
+
+
+def test_cr2_the_documented_house_form_still_satisfies_raised_findings(
+        tmp_path):
+    """The positive control for CR2's fix: the EXACT documented kind, spelled
+    with different case, still clears -- S3/S7's field reads stay
+    case-insensitive; only the kind-prefix bug is repaired."""
+    body = (
+        _pass_block(findings="raised")
+        + "## response TO plan review -- Author -- 2026-05-02\n\nreply.\n\n")
+    assert _violations(tmp_path, body) == []
 
 
 # C.5 -- S3's three fail-closed directions, on both fields.

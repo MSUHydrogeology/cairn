@@ -863,15 +863,75 @@ _LEGACY_PASSES: Dict[str, Dict[str, int]] = {
 }
 
 
+#: S1 -- the exact raw-heading grammar the review-pass record schema
+#: defines.  Authored independently of ``scripts/gen_legacy_passes.py``'s own
+#: ``_PASS_RE`` -- the two must never become each other's oracle, even
+#: though both implement the same published S1 grammar and therefore read
+#: alike.
+#:
+#: **CR1.** The earlier ``_pass_headings`` selected *Sections* the older,
+#: more permissive ``_HEADER_RE`` had already accepted, and never checked the
+#: raw line against S1 itself.  ``_HEADER_RE`` is a strict superset of this
+#: shape -- it tolerates arbitrary whitespace after ``##``, around ``--``,
+#: and before end-of-line -- so three shapes that must NOT be passes cleared
+#: the gate anyway: extra spaces after ``##``, doubled ``--`` separators, and
+#: trailing spaces after the date. The inverse also reproduced: a reviewer
+#: field containing literal parentheses (``Jane (Lab) Smith``) matches S1's
+#: permissive ``[^\n]+?`` reviewer group, but ``_HEADER_RE``'s
+#: ``(?P<role>[^)\n]*)`` machinery cannot parse the line at all, so
+#: ``_parse_sections`` produced no Section for it and a conforming pass was
+#: silently invisible. This regex is now the sole authority on what counts.
+_S1_PASS_RE = re.compile(
+    r"^## Plan review -- (?P<reviewer>[^\n]+?) -- "
+    r"(?P<date>\d{4}-\d{2}-\d{2})(?: \(round (?P<round>\d+)\))?$"
+)
+
+
+def _synthesize_pass_section(lines: List[str], line_no: int,
+                             m: "re.Match[str]",
+                             boundaries: List[int]) -> Section:
+    """A Section for an S1 pass line ``_HEADER_RE`` could not parse (CR1).
+
+    Only reached when a raw line matches `_S1_PASS_RE` but has no entry in
+    ``art.sections`` -- e.g. a reviewer field carrying literal parentheses
+    outside the ``(<role>)`` position, which ``_HEADER_RE`` rejects outright.
+    The body is bounded exactly as ``_parse_sections`` bounds every other H2
+    section's: text up to (not including) the next boundary line, where a
+    boundary is either a known-kind Section at level <= 2 or another raw S1
+    pass line -- so two adjacent synthesized passes still get their own
+    bodies rather than swallowing each other's.
+    """
+    end = len(lines)
+    for b in boundaries:
+        if b > line_no:
+            end = b - 1
+            break
+    body = "\n".join(lines[line_no:end])
+    sec = Section(level=2, kind="Plan review", name=m.group("reviewer"),
+                 role="", date=m.group("date"), line_no=line_no)
+    sec.body = body
+    sec.has_isolated_blockquote = _has_isolated_blockquote(body)
+    return sec
+
+
 def _pass_headings(art: Artifact) -> List[Tuple[Section, str]]:
     """Every S1-conforming pass in `art`, paired with its heading digest.
 
-    The digest is taken from the **raw heading line**, read back by line
-    number -- never from a heading *rebuilt* out of the parsed fields.  That
-    distinction is load-bearing and was found by a falsifier rather than by
-    reading: ``_HEADER_RE`` captures ``name`` and ``role`` separately, so
-    rebuilding ``f"## Plan review -- {name} -- {date}"`` silently drops the
-    ``(<role>)`` parenthetical.  For a real heading like
+    Matches the **raw heading line** against `_S1_PASS_RE` directly (CR1) --
+    never derives a pass from a Section the looser `_HEADER_RE` happened to
+    produce. Most S1-conforming lines already have a Section (`_HEADER_RE`
+    is a superset of S1's shape), and that Section is reused so its
+    precomputed body stays identical to every other parsed section's. A raw
+    line that matches S1 but that `_HEADER_RE` could not parse at all gets a
+    Section synthesized by `_synthesize_pass_section`, so it is not silently
+    dropped.
+
+    The digest is taken from the **raw heading line** itself, read directly
+    off the file -- never from a heading *rebuilt* out of parsed fields.
+    That distinction is load-bearing and was found by a falsifier rather
+    than by reading: ``_HEADER_RE`` captures ``name`` and ``role``
+    separately, so rebuilding ``f"## Plan review -- {name} -- {date}"``
+    silently drops the ``(<role>)`` parenthetical.  For a real heading like
 
         ## Plan review -- Gemini Flash (External, security lens) -- 2026-08-03
 
@@ -881,13 +941,20 @@ def _pass_headings(art: Artifact) -> List[Tuple[Section, str]]:
     generator hashes the line; the gate must hash the same line.
     """
     lines = art.text.split("\n")
+    by_line = {sec.line_no: sec for sec in art.sections}
+    matches: List[Tuple[int, str, "Optional[re.Match[str]]"]] = [
+        (i + 1, raw, _S1_PASS_RE.match(raw)) for i, raw in enumerate(lines)
+    ]
+    boundaries = sorted(
+        {sec.line_no for sec in art.sections if sec.level <= 2}
+        | {ln for ln, _raw, m in matches if m})
     out: List[Tuple[Section, str]] = []
-    for sec in art.sections:
-        if sec.level != 2 or sec.kind.strip().lower() != "plan review":
+    for line_no, raw, m in matches:
+        if not m:
             continue
-        if not sec.name or not sec.date:
-            continue          # a bare container or an undated pass is not a pass
-        raw = lines[sec.line_no - 1]
+        sec = by_line.get(line_no)
+        if sec is None:
+            sec = _synthesize_pass_section(lines, line_no, m, boundaries)
         out.append((sec, hashlib.sha256(
             raw.encode("utf-8")).hexdigest()[:16]))
     return out
@@ -911,6 +978,13 @@ def _has_disposition(art: Artifact, pass_sec: Section) -> bool:
     round's* disposition cannot satisfy this one.  The `### Sharpening` search is
     scoped to this pass's body; the `## Response` search is bounded by the next
     S1 pass heading.
+
+    **CR2.** The documented second house form is specifically
+    ``## Response to plan review``, but the earlier check matched any kind
+    whose text merely *started with* ``response`` -- so an unrelated
+    ``## Response -- Author -- date`` or ``## Response to proposal review --
+    Author -- date`` cleared a raised finding it never addressed. The kind
+    comparison below is exact (case-insensitive), never a prefix.
     """
     if _SHARPENING_RE.search(pass_sec.body):
         return True
@@ -925,7 +999,7 @@ def _has_disposition(art: Artifact, pass_sec: Section) -> bool:
             continue
         if ceiling is not None and sec.line_no >= ceiling:
             continue
-        if sec.kind.strip().lower().startswith("response"):
+        if sec.kind.strip().lower() == "response to plan review":
             return True
     return False
 
