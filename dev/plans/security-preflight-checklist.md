@@ -1912,3 +1912,61 @@ Live scope as of 2026-08-04: two live plans and both plan templates carry it.
   - **P6** (Reword sentence inside sub-block in self-host proposal template only): `a=GREEN, b=GREEN, c=RED, d=GREEN` — caught on proposal parity assertion.
   - **P7** (Two-sided em-dash to hyphen code-point swap in S1 heading): `a=RED, b=RED, c=GREEN, d=GREEN` — caught on code-point-exact heading pin.
 
+
+## Implementation verification -- Claude -- 2026-08-10
+
+**Why this record exists, and what it does NOT do.** This plan had **no
+`## Implementation verification` record of any kind** when its
+`## Code review -- Antigravity (External) -- 2026-08-10` was performed. Per
+`doctrine/dual-review.md` trigger 1 -- *"no valid Boundary B record exists"* --
+that obliged the reviewer to run a **fresh full suite** in place of the absent
+record. The review ran a single node
+(`pytest bootstrap/tests/test_scaffold.py -k
+test_installed_templates_carry_security_preflight_questions`, 1 passed in
+0.08s) plus its own P1-P7 perturbations. It did not run the full suite,
+`scripts/check_cairn.py`, or `scripts/quality_gate.py` -- all three of which
+this plan's own `## Verification` section mandates ("the full suite gates the
+cut").
+
+**This record supplies the missing broad evidence AFTER the review, so the
+review neither validated it nor could have.** That is a real shortfall in the
+review's evidentiary basis, not a technicality, and it is recorded here rather
+than closed. The Maintainer was shown this gap explicitly, in a choice that
+included sending the review back for a confirmation pass, and selected
+**"Append record, note the gap, archive"** -- append the Boundary B record,
+state plainly that the code review predates it, and archive on that basis. The
+disposition is theirs; this record's job is to make the shortfall legible to
+anyone reading the archived plan later.
+
+| field | value |
+|---|---|
+| Tested commit | `36a3388` |
+| Reviewed range | `6c8071c` (Chunks A-E; the plan's single implementing commit, 5 files). Confirmed an ancestor of the tested commit via `git merge-base --is-ancestor`. |
+| Interpreter/runtime | `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python **3.13.13**, `PYTHONDONTWRITEBYTECODE=1` |
+| Pre-run state | HEAD `36a3388`. Tracked files clean **except** `dev/proposals/2026-08-10-codex-lifecycle-status-vocabulary.md`, another session's live in-progress proposal. Untracked throughout: `.claude/`, `dev/measurement/collision_log.md`, `dev/measurement/snapshots/`. Stated exactly rather than asserted as "clean". |
+| Post-run state | HEAD advanced to `5eec62e` during the run, via `6afa131`, `6fabc3f`, `5eec62e`. `git diff --name-only 36a3388..HEAD` returns files under `dev/` **only** -- all three are proposal appends, no code, so the figures below are unaffected by the advance. |
+| Command | `python -m pytest bootstrap/tests -q` |
+| Exit | 1 |
+| Outcomes | **2 failed, 2591 passed**, 3 warnings |
+| Elapsed | 362.93s (0:06:02) |
+| Non-pass disposition | Both failures are `test_ast_attest.py` (`::test_committed_baseline_accounted_for_across_the_engine_package`, `::test_ast_gate_passes_over_the_full_scaffold_module_set`) and neither is attributable to this plan, which touches no file under `bootstrap/_scaffold/`. `_classify` reports **CHANGED 2, MISSING 0, DUPLICATE 0**: `Assign:_MODULE_MAPPINGS` (`config.py`, `security-verification-activation` Chunk A) and `FunctionDef:format_forked_facade_warning` (`lockfile.py`, `fork-advisory-semantics` Chunk B at `aba0242`). This is the **declared** red window `fork-advisory-semantics` opens at its Chunk B and closes at its Maintainer-only Chunk R re-anchor ceremony; neither symbol is in `_ast_attest._UPDATE_ALLOWLIST`, so neither is self-service repairable. |
+| Plan-specific acceptance commands | `python scripts/check_cairn.py` -> **OK**, 176 Markdown files scanned, no issues, 48 external links not probed, rc **0**. `python scripts/quality_gate.py --sub neutrality --sub redundancy` -> rc **1**; neutrality `fail=96 info=21`, redundancy `fail=0 info=2`. The rc-1 is the **known pre-existing neutrality baseline**, not a regression: `fail=96 info=21` reproduces the independent re-measurement recorded at `dev/plans/security-verification-activation.md:2681` (taken at `6b488a2`), which also notes that the `fail=95` figure quoted across several plans is stale. Zero fail lines fall in any file this plan touches. |
+| Known omissions | No independent falsification of this plan's own implementation was performed by this record -- that is the code review's job, and the point of this record is that the review's broad-run portion was never performed by anyone. The review's SHA-256 extraction claim is separately contested (see below). Residuals R1-R5 remain deferred. |
+
+**One review claim does not reproduce, and is recorded as unresolved.** The
+code review offers SHA-256
+`277daac432cfff21062a9ec58718138238183e79a4f988a8d90aeec62b01852b` as evidence
+that a 43-line S1-S5 block was extracted byte-identically from
+`dev/proposals/archive/2026-08-03-claude-security-preflight-checklist.md` lines
+116-158 into both proposal templates. Hashing those 43 lines verbatim yields
+`66dc76ac2d031c713b01e09be6296c1a6586f9e6588547eaacdb553b11d6d226`, and the raw
+block is **not** a substring of either template -- necessarily so, because the
+source is blockquoted (`> `-prefixed) proposed text while the templates carry it
+unquoted, meaning a byte-identical substring was never possible. The hash must
+therefore be over some derived form the review does not name. The underlying
+question the hash stood in for -- *is the shipped S1-S5 text a faithful
+reproduction of the accepted proposal's text, and are the two templates
+identical to each other* -- is under independent check; this record does not
+assert either way.
+
+This section is append-only once written.

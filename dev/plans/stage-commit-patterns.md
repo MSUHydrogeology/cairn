@@ -2151,3 +2151,68 @@ Scribed by Claude (Implementation).
 * **Judged After-the-Fact Ratification Record**:
   - **Judged adequate and compliant**: The Maintainer fence required per-commit approval for Chunks A, B, and C. An orchestrating agent committed A, B, and C without per-commit approval. The implementation record explicitly disclosed this non-compliance at lines 2079-2089. The Maintainer Anthony Kendall reviewed the disclosure and explicitly ratified commits `2177d5f`, `321ed1a`, and `543f785` in writing under `## Maintainer ratification -- Anthony Kendall -- 2026-08-04` quoting their verbatim instruction: `"#2: Ratify A/B/C and accept D, totally fine about that changelog variance."` This disclosure and verbatim ratification strictly adhere to Cairn's scribing and audit rules.
 
+
+## Implementation verification -- Claude -- 2026-08-10
+
+**Why this record exists, and what it does NOT do.** This plan had **no
+`## Implementation verification` record of any kind** when its
+`## Code review -- Antigravity (External) -- 2026-08-10` was performed -- its
+2026-08-04 `## Implementation record` is a chunk-landing narrative, not a
+Boundary B integration record, and carries none of the record schema's fields.
+Per `doctrine/dual-review.md` trigger 1 -- *"no valid Boundary B record
+exists"* -- that obliged the reviewer to run a **fresh full suite** in place of
+the absent record. The review ran one file
+(`pytest bootstrap/tests/test_lifecycle_stage_patterns.py -v`, 126 passed in
+0.30s). It did not run the full suite, `scripts/check_cairn.py`, or
+`scripts/quality_gate.py` -- all three of which this plan's own
+`## Verification` section mandates ("the full suite gates the cut").
+
+**This record supplies the missing broad evidence AFTER the review, so the
+review neither validated it nor could have.** That matters more here than for a
+prose-only change: this plan altered `tools/lifecycle_planner.py` and its
+shipped twin `templates/skills/_lib/lifecycle_planner.py`, so the reviewed
+bytes reach adopters. The Maintainer was shown this gap explicitly, in a choice
+that included sending the review back for a confirmation pass on exactly that
+ground, and selected **"Append record, note the gap, archive"** -- append the
+Boundary B record, state plainly that the code review predates it, and archive
+on that basis. The disposition is theirs; this record's job is to make the
+shortfall legible to anyone reading the archived plan later.
+
+| field | value |
+|---|---|
+| Tested commit | `36a3388` |
+| Reviewed range | `2177d5f` (Chunk A), `321ed1a` (Chunk B), `543f785` (Chunk C), `18ea25d` (Chunk D1); Chunk D2 is the `dev/PLANNING.md` row at `b486b40`. All five confirmed ancestors of the tested commit via `git merge-base --is-ancestor`. Listed as commits rather than a `first..last` range because this tree is shared by several concurrent sessions and a `..` span would misrepresent unrelated plans' commits as part of what this record verifies. |
+| Interpreter/runtime | `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python **3.13.13**, `PYTHONDONTWRITEBYTECODE=1` |
+| Pre-run state | HEAD `36a3388`. Tracked files clean **except** `dev/proposals/2026-08-10-codex-lifecycle-status-vocabulary.md`, another session's live in-progress proposal. Untracked throughout: `.claude/`, `dev/measurement/collision_log.md`, `dev/measurement/snapshots/`. Stated exactly rather than asserted as "clean". |
+| Post-run state | HEAD advanced to `5eec62e` during the run, via `6afa131`, `6fabc3f`, `5eec62e`. `git diff --name-only 36a3388..HEAD` returns files under `dev/` **only** -- all three are proposal appends, no code, so the figures below are unaffected by the advance. |
+| Command | `python -m pytest bootstrap/tests -q` |
+| Exit | 1 |
+| Outcomes | **2 failed, 2591 passed**, 3 warnings |
+| Elapsed | 362.93s (0:06:02) |
+| Non-pass disposition | Both failures are `test_ast_attest.py` (`::test_committed_baseline_accounted_for_across_the_engine_package`, `::test_ast_gate_passes_over_the_full_scaffold_module_set`) and neither is attributable to this plan, which touches no file under `bootstrap/_scaffold/`. `_classify` reports **CHANGED 2, MISSING 0, DUPLICATE 0**: `Assign:_MODULE_MAPPINGS` (`config.py`, `security-verification-activation` Chunk A) and `FunctionDef:format_forked_facade_warning` (`lockfile.py`, `fork-advisory-semantics` Chunk B at `aba0242`). This is the **declared** red window `fork-advisory-semantics` opens at its Chunk B and closes at its Maintainer-only Chunk R re-anchor ceremony; neither symbol is in `_ast_attest._UPDATE_ALLOWLIST`, so neither is self-service repairable. |
+| Plan-specific acceptance commands | `python scripts/check_cairn.py` -> **OK**, 176 Markdown files scanned, no issues, 48 external links not probed, rc **0**. `python scripts/quality_gate.py --sub neutrality --sub redundancy` -> rc **1**; neutrality `fail=96 info=21`, redundancy `fail=0 info=2`. The rc-1 is the **known pre-existing neutrality baseline**, not a regression: `fail=96 info=21` reproduces the independent re-measurement recorded at `dev/plans/security-verification-activation.md:2681` (taken at `6b488a2`), which also notes that the `fail=95` figure quoted across several plans is stale. Three neutrality fail lines do fall in `templates/skills/_lib/lifecycle_planner.py`, a file this plan touched, and each was checked individually against the pre-plan tree (`2177d5f^`) rather than assumed: `Codex` (line 187) and `Antigravity` (line 521) are unchanged at count 1 -> 1, so both predate this plan. **`Gemini` (line 936) does not** -- it goes 0 -> 1, and `git log -S` attributes it to `ab70660`, a commit of the **`review-gate-enforcement`** plan (archived 2026-08-10 at `be42ba6`), where it appears inside a docstring quoting a real review heading as an example. So no line is attributable to this plan -- but the third is a live defect belonging to an already-archived plan, recorded in the note below rather than left inside a disposition cell. |
+| Known omissions | No independent falsification of this plan's own implementation was performed by this record -- that is the code review's job, and the point of this record is that the review's broad-run portion was never performed by anyone. The three judgment calls the review dispositioned (the reliability-tier cost of the narrowing, the undocumented commit-subject convention the scope gate relies on, and the single wrong-stage assignment from `^Review\b` matching across a hyphen) are **judgments, not measurements**, and this record re-derives none of them; they are under independent check. R12c remains deferred. The `CHANGELOG.md` variance the Maintainer accepted on 2026-08-04 is unchanged. |
+
+**A live defect surfaced by this record, belonging to another plan.**
+`templates/skills/_lib/lifecycle_planner.py:936` carries the vendor token
+`Gemini`, inside a docstring that quotes a real review heading
+(`## Plan review -- Gemini Flash (External, security lens) -- 2026-08-03`) as a
+worked example. It was introduced by `ab70660` under **`review-gate-enforcement`**,
+which archived on 2026-08-10 at `be42ba6` -- so it landed, passed through that
+plan's review, and archived without the neutrality gate ever being run against
+it.
+
+This is not cosmetic. `AGENTS.md` lists vendor-neutrality as a **high-risk
+surface** and the gate's own message for this path is explicit: *"no exemption
+path; templates must stay clean by construction"* -- unlike `docs/` or
+`doctrine/`, a file under `templates/` cannot be exempted with a `vendor-ok`
+marker, because it ships to adopters. The remedy is to rewrite the docstring
+example with a neutral reviewer name, which changes no behaviour; the token is
+illustrative, not load-bearing.
+
+Recorded here because this record's broad run is what surfaced it, and because
+the owning plan is already archived and cannot carry it. It is **not** this
+plan's to fix and does not gate this plan's archive; it is referred to the
+Maintainer for placement.
+
+This section is append-only once written.
