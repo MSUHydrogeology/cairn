@@ -1970,3 +1970,51 @@ identical to each other* -- is under independent check; this record does not
 assert either way.
 
 This section is append-only once written.
+
+## Correction to the Implementation verification record -- Claude -- 2026-08-10
+
+**The contested SHA-256 reproduces exactly. The preceding record's claim that it
+does not was my own measurement error, and the code review was right.**
+
+The record above (committed at `ad9f30c`) stated that the code review's
+`277daac432cfff21062a9ec58718138238183e79a4f988a8d90aeec62b01852b` "does not
+reproduce" and recorded the extraction's faithfulness as unresolved. That is
+withdrawn. The append-only rule is why this is a new section rather than an edit
+to the cells above.
+
+What I did wrong: I hashed the 43 source lines **as they appear in the
+proposal**, i.e. still carrying their `> ` blockquote prefixes, because the
+block is proposed template text quoted inside a proposal. The review hashed the
+**de-quoted** block -- the form actually inserted into the templates, which is
+the only form for which the claim is even meaningful.
+
+Re-derived at `ad9f30c`, `PYTHONDONTWRITEBYTECODE=1`, Python 3.13.13:
+
+| check | result |
+|---|---|
+| `dev/proposals/archive/2026-08-03-claude-security-preflight-checklist.md` lines 116-158, `> `-prefixes stripped, trailing newline | 43 lines, SHA-256 **`277daac432cfff21...`** -- matches the review's digest |
+| de-quoted block present verbatim in `dev/proposals/_template.md` | **yes** |
+| de-quoted block present verbatim in `templates/core/dev/proposals/_template.md` | **yes** |
+| the two templates' S1-S5 regions compared to each other | **byte-identical** |
+
+So the substantive question the hash stood in for -- *is the shipped S1-S5 text a
+faithful reproduction of the accepted proposal's text, and are the two templates
+identical* -- is answered **yes** on all three counts, independently of the
+review.
+
+**The one fair criticism that survives** is small and is about wording, not
+evidence: the review presents the digest without stating that the block was
+de-quoted before hashing. A reader who re-derives it the literal way gets a
+different digest and concludes the claim is false -- which is precisely what
+happened here. A one-clause note ("hashed after stripping the `> ` prefixes")
+would have prevented it. That is a presentation defect in an otherwise correct
+verification, and it cost a false finding against the reviewer.
+
+**Recorded as a lesson, not just a fix.** The failure was mine and it was
+avoidable: I asserted "does not reproduce" from a single interpretation of an
+ambiguous input, and committed it, when the cheap move was to try the two or
+three plausible forms first. "Does not reproduce" is a claim about the artifact;
+until every reasonable derivation has been tried it is only a claim about my own
+attempt.
+
+This section is append-only once written.
