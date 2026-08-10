@@ -772,3 +772,202 @@ outside the sharpened cells.
 
 Return only G1--G3 for the next External closure read. This pass remains
 blocking and does not fill the bootstrap table's `External` row.
+
+## Plan review -- Codex (Security) -- 2026-08-10
+
+**Model**: GPT-5.6-Codex
+**Tier**: External
+**Obligation**: External Security Review
+**Reviewed commit**: `ef70da8164d11bc2614e4b1c4f1ef70b23cd617d`
+**Target**: the complete sharpened plan under a security lens
+**Prior findings**: E1--E4 and G1--G4 as context; this is a distinct pass
+**Assurance path**: high-assurance
+**Security lens**: governance-integrity gates, executable loaders and
+subprocesses, untrusted terminal data, migration authority, and trust-root
+ceremony ordering
+**Findings**: raised
+**Verdict: REVISE.** The accepted threat posture is viable, and F2/F5's
+display rule plus the two-stage ceremony sequence are directionally sound. The
+plan abbreviates several accepted security controls into labels that permit a
+weaker implementation, and it introduces a plan-review bypass path without the
+fail-closed matrix its source proposal requires.
+
+### Threat model and posture
+
+The reviewed posture is trusted contributors operating on a shared local Git
+tree, with lifecycle Markdown, filenames, intent records, Git metadata, and
+historical records treated as potentially malformed or adversarial inputs.
+Tracked tool bytes are review-controlled but not cryptographically authenticated
+at ordinary invocation. The board is an orientation aid, never authority;
+identity fields and work-intent claims are structural records, not
+authentication. The Maintainer alone performs the gate-anchor ceremony and any
+assurance downgrade or pilot promotion Decision.
+
+Within that posture, the plan must fail closed on malformed records, path
+redirection, poisoned module state, ambiguous migration, and missing assurance
+evidence. It need not claim OS containment, signer authentication, or semantic
+proof of human judgment.
+
+### [S1] HIGH -- Chunk A drops most of the accepted contained-loader contract
+
+A3 says only `fixed path` plus missing/symlink/out-of-root refusal for the
+metrics consumer. A5 does not state how transition-lint loads the planner, and
+A6 names only generic containment and symlink tests. The accepted R5 contract
+is materially stronger for **both** consumers: fixed
+`spec_from_file_location` identity, no ambient `sys.path`, containing-directory
+and leaf symlink refusal, fully initialized sentinel-gated caching, poisoned
+`sys.modules` handling, removal of the private module and children after any
+execution failure, and clean retry. It also forbids turning the `tools`
+directory into a package as a shortcut and requires import to cause no CLI
+action or repository mutation.
+
+Without those clauses, an implementation can satisfy A3/A6 while leaving the
+transition-lint consumer on ambient import state or reusing a partially loaded
+module graph.
+
+**Required satisfier.** Transcribe the complete accepted loader contract into
+A3/A5/A6 for each consumer. Add missing/unreadable path, symlinked leaf and
+parent, out-of-root resolution, poisoned-cache, partial-child cleanup, retry,
+no-`sys.path`, no-package-shortcut, and import-side-effect tests. Every
+filesystem `OSError` on validation is a clean refusal, not an uncaught
+traceback or fallback.
+
+### [S2] HIGH -- standard-plan inheritance can bypass plan review without a fail-closed assurance matrix
+
+P1/P2 name assurance paths, triggers, exact bindings, expansion refusal, and
+the high-assurance prohibition. P8 maps only one standard-READY and one
+high-assurance-refusal end-to-end fixture. The accepted parent requires much
+more: both paths, exact full-commit bindings, changed accepted commits, every
+expansion dimension, malformed review bases, unresolved findings, the
+non-expansion attestation, and stale Boundary B records.
+
+This is the security-critical part of the parent mechanism. A missing,
+unknown, downgraded, or stale `Assurance path` must not default to `standard`
+and thereby remove the distinct plan review. Protected-path triggers can be
+mechanical; scientific semantics and undeclared cross-surface effects cannot
+be. The plan must preserve that distinction rather than imply the parser can
+infer scientific risk.
+
+**Required satisfier.** Add a row-level matrix covering missing/duplicate/
+unknown assurance values; every mechanically recognizable protected-surface
+trigger; uncertainty resolving high; high-assurance and
+`DISTINCT REVIEW REQUIRED` inheritance refusal; changed proposal/review/
+Decision SHAs; every named expansion dimension; unresolved findings; stale
+Boundary B; malformed/missing non-expansion basis; and a downgrade accepted
+only through a structurally valid Maintainer Decision. For semantic triggers,
+require an explicit author declaration surfaced to proposal review and
+`review-brief`; document that tooling checks the record, not the truth of the
+scientific classification.
+
+### [S3] HIGH -- F4's optional provider label permits a weaker subprocess boundary than the accepted contract
+
+F4 currently says `fixed-path sibling`, `isolated invocation`, and `schema
+validation`; F5 says `provider failure modes`. That does not bind the accepted
+mechanism. The provider contract requires one bounded query; a regular,
+non-symlinked sibling launcher whose resolved parent is the expected `tools/`
+directory; the current interpreter with isolated mode and no shell; a timeout;
+versioned JSON rather than scraped human output; complete field/type/path
+validation; and explicit handling of non-zero exit, malformed JSON, duplicate
+claim ids, invalid paths, and schema mismatch.
+
+**Required satisfier.** Put those controls in F3--F5 verbatim enough to be
+testable. Validate all records before using any. A missing provider is
+`not-installed`; a present-but-invalid provider is `error`, renders no claim as
+authoritative, keeps other safe rows visible, and makes the command non-zero.
+Tests assert one subprocess for the whole board, exact argv including isolated
+mode, no shell, timeout, symlink/parent refusal, deterministic JSON, and no
+human-output parsing. Record the residual that tracked sibling replacement is
+not authenticated at invocation; ordinary Git review is the byte-integrity
+channel.
+
+### [S4] MEDIUM-HIGH -- H can change governance authority before its classifications are independently admitted
+
+H1/H2 rewrite statuses and exemption metadata across every active lifecycle
+artifact. Pinning the parent and rechecking blobs closes races, but not a wrong
+classification. `Opus to review the proposed table` does not say who reviews,
+what exact bytes bind the table, or whether other agents may rely on migrated
+statuses before the later Code review. A mistaken `ready-to-archive` or
+`ready-to-implement` value can change permitted work immediately.
+
+**Required satisfier.** Require a dry-run inventory bound to the pinned parent
+and carrying each artifact's old blob, proposed status, evidence basis, and
+metadata disposition. A reviewer independent of the inventory generator
+admits the exact table/digest before apply; ambiguity remains refusal. Apply
+only admitted rows whose blobs still match. Freeze lifecycle transitions that
+rely on migrated values until H's commit is inside clearing Code review. D1--D4
+and H2's metadata removal land atomically so no suppression disappears before
+archive resolution and typed declarations govern. Tests mutate table rows,
+digests, evidence, and blobs, and prove partial/racing application cannot grant
+authority.
+
+### [S5] MEDIUM-HIGH -- P4 touches a protected interpreter-bearing file and renders untrusted data without a mapped encoder
+
+`tools/lifecycle.py` and its installed twin contain the protected local
+interpreter resolver and subprocess call sites named in `AGENTS.md`. P4 adds
+`review-brief` and expands `closeout --dry-run` in those files but does not
+fence `_resolve_interpreter`, its schema/validation/fallback/warning behavior,
+or callers. It also maps deterministic output but not terminal-safe output,
+although both commands report attacker-controlled headings, paths, and finding
+ids.
+
+**Required satisfier.** State that P4 does not modify the interpreter binding,
+resolver, validation order, warning/fallback disposition, or any subprocess use
+of the resolved path; pin that with a focused source/AST or exact-function-byte
+test. If implementation needs such a change, stop for a new Security Review.
+Both commands remain read-only and execute no artifact content. Their human
+output passes through the same accepted terminal encoder as the board (or an
+equivalent single shared implementation with parity tests), and machine output
+uses versioned, ASCII-safe JSON. Add control-character, invisible-range,
+delimiter, malformed-record, and mutation-sentinel tests.
+
+### [S6] MEDIUM -- post-pilot promotion can silently create a second frozen change set
+
+P7 changes doctrine and templates after the one re-anchor. The accepted
+promotion surface includes installed lifecycle-tool sources under
+`templates/skills/_lib/`; if P7 changes any executable template, test, fixture,
+or frozen path, B2 and the earlier anchor cannot cover it.
+
+**Required satisfier.** Give P7 an exact changed-path manifest before execution
+and run the gate-manifest classification over it. Ordinary prose follows the
+phase evidence required by G1; any executable/test/template/fixture change gets
+fresh Boundary B and independent Code review, and any HOLD/frozen change gets
+another Maintainer ceremony. Do not assume promotion is docs-only merely
+because the current row says `doctrine + templates`.
+
+### Accepted controls and residuals
+
+The following are acceptable as specified and need not be redesigned:
+
+* F2/F5's `str.isprintable()` plus numeric unsafe-range encoding and one-way
+  content-scan drift oracle;
+* `active_intent` remaining separate from lifecycle owner and non-authoritative;
+* D1 exact same-family archive fallback with direct-path priority and line
+  bounds checked on the resolved archived file;
+* C's latest clearing Code-review requirement and non-replay legacy key;
+* the Maintainer-only re-anchor after independent review, followed by a fresh
+  post-ceremony integration record; and
+* structural identity/review checks not pretending to authenticate people or
+  prove semantic correctness.
+
+The known residuals are accurately bounded only after S1--S6: tracked local
+tool bytes rely on Git review rather than invocation-time authentication;
+intent records can be stale or dishonest; the display range is duplicated but
+directionally drift-tested; and semantic assurance/non-expansion judgments
+remain human attestations.
+
+### Coverage and recommendation
+
+**Covered**: the full sharpened plan at `ef70da8`; accepted final loader,
+provider, display, assurance, pilot, and verification contracts; current
+loader implementations as evidence for required failure modes; the protected
+interpreter surface in `AGENTS.md`; migration timing; and the actual re-anchor
+trigger. Direct execution reproduced the present one-tier bootstrap bypass;
+there is no implementation for the proposed security paths to execute.
+
+**Not covered**: implementation bytes, Windows path/process behavior, alternate
+Python-minor loader semantics, hostile Git configuration during future board
+source labeling, or the Maintainer's ceremony environment. Those remain Code
+review/ceremony falsification work, not grounds to weaken this plan.
+
+Return S1--S6 for a focused Security closure read after inline sharpening. This
+pass does not fill the bootstrap table's Security row.
