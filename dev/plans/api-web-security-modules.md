@@ -3211,3 +3211,223 @@ living-state record.
   re-anchor ceremony.
 * It does not close the `verify_integrity.py:63-111` extra-key gap, which neither
   plan in this pair owns.
+
+## Implementation blocker — Chunk A cannot land alone — Claude (Implementation), 2026-08-10
+
+**Model**: Claude Opus 5 (`claude-opus-5`). **Interpreter**:
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (CPython 3.13.13),
+`PYTHONDONTWRITEBYTECODE=1`. **Measured at HEAD `ef70da8`**; the baseline suite
+figure below was taken at `caceda5`, six commits earlier, because concurrent
+sessions moved HEAD nine times during this session. Every figure is a dated
+snapshot, not a constant.
+
+**Status: no implementation commit landed.** Chunk A's four engine members and
+its adversarial suite are written and pass, and they are **not committed**,
+because three independent gates make Chunk A un-landable on its own. That is a
+measured falsification of an operative plan claim, so it is recorded here and
+routed to the Maintainer rather than resolved by an implementing agent choosing
+a mitigation.
+
+### What was built and verified
+
+* The four engine members under `templates/modules/team-gated/_security_net/`
+  — `__init__.py`, `policy.py`, `net.py`, `report.py` — A1–A4 complete.
+* `bootstrap/tests/test_security_net.py` — A5, **84 tests, all passing** in
+  ~35 s. No transport call is mocked anywhere in the file: every request crosses
+  a real socket to a real threaded listener, and every "what arrived" assertion
+  reads that listener's record.
+* Every deletion mutant is applied to a **throwaway copy** of the engine in
+  `tmp_path`, not to the tree, and each perturbation anchor is asserted to match
+  exactly once — so a mutant that silently stopped applying fails loudly instead
+  of passing green. There is consequently **nothing to restore**, which is a
+  stronger property than a verified restore.
+* `python -m bandit -r templates/modules/team-gated/_security_net` → **zero
+  issues** (see *Bandit finding, fixed in code* below).
+* A2's schema carries a **positive control** and a 31-row refusal table in which
+  every row is pinned to its own **reason token**, not merely to "a refusal".
+  Pinning the code alone would be satisfied by a schema that refused everything
+  with one generic token, which tells an adopter nothing about their file.
+
+### The blocker, in three independent measurements
+
+**Any new template `.py` must be registered in `_MODULE_MAPPINGS` in the same
+commit that creates it.** Chunk A creates four and registers none — F1 does the
+registering, and F is last.
+
+1. **`bootstrap/tests/test_security_lint.py` — three red nodes.**
+   `test_every_templates_py_on_disk_is_release_scanned` requires *every*
+   `templates/**/*.py` on disk to be reachable from `scan_targets()`, which is
+   derived from `install_manifest()`. Also red:
+   `test_templates_py_count_is_pinned` and
+   `test_the_on_disk_oracle_goes_red_when_a_registry_stops_delivering`.
+2. **`python scripts/quality_gate.py --sub redundancy` — `fail=0` → `fail=8`.**
+   Measured both ways in one session by holding the engine directory aside and
+   restoring it (restore confirmed with `git status --short`). All eight are R6
+   "never referenced in the scanned corpus" over engine functions whose only
+   callers are the Chunk B and Chunk C facades.
+3. **Bandit** was the third, and it is the one an implementing agent *can* fix;
+   see below. It is recorded because it completes the pattern: three of Cairn's
+   four standing gates treat a template `.py` with no caller and no manifest row
+   as a defect.
+
+Gates 1 and 2 both clear only when the facades (B, C), the doctrine and stubs
+(E) and the mapping rows (F1) exist. **The natural commit boundary for this plan
+is therefore A+B+C+E+F1, not A alone.**
+
+**This falsifies AM11's** *"The baseline stays green through Chunks A–E, which
+touch no `bootstrap/_scaffold/` file"*. The premise is true and the conclusion
+does not follow: `test_security_lint.py` gates on-disk template `.py` files, not
+on `bootstrap/_scaffold/`, and the redundancy sub-gate gates callers.
+
+### Figures measured for this pass
+
+| Figure | Plan / amendment says | Measured at `ef70da8` |
+|---|---|---|
+| Manifest data rows | 95 (F-1 pre-capture) | **100** |
+| Manifest verbatim `.py` rows (`test_notice_install.py:75`) | 44 | **46** |
+| Manifest total-row pin (`test_notice_install.py:175`) | 95 | **100** |
+| Distinct `.py` on disk under `templates/` (`test_security_lint.py:372`) | 44 | **46** before Chunk A, **50** with it |
+| `_SCAN_EXCLUSIONS` | not mentioned in this plan | `{}`; its own docstring records disk/manifest/`git ls-files` agreeing at **45** `as_of` 2026-08-05, itself already stale |
+| Bandit shipped-file count baseline (F-9 `N`) | 76 | not re-taken — F-9 is not reachable |
+| Full suite, clean tree | 1959 (AM33) | **2593 passed, 0 failed, 353.94 s** at `caceda5` |
+| `check_cairn.py` | — | **OK**, 173 Markdown files, rc 0 |
+| `quality_gate --sub neutrality --sub redundancy` | — | rc **1**; neutrality is the known pre-existing baseline, redundancy is the Chunk-A regression above |
+
+### The two candidate resolutions, with their measured costs
+
+Stated so the Maintainer can pick in one line. **Neither is adopted here.**
+
+* **R1 — merge the commit boundary.** Land A, B, C, E and F1 as one commit (or a
+  sequence whose intermediate states are not required to be green). Costs: one
+  large commit on the highest-risk surface in the plan; F-1's "capture the
+  manifest at the Chunk-E commit, then diff" loses its capture point and must be
+  taken against the pre-A commit instead; the three frozen pins move once, as F6
+  intends. Keeps *every* other plan invariant, including "exactly one chunk
+  touches `bootstrap/_scaffold/`" and the single AST ceremony.
+* **R2 — declare the interim exclusion.** Add the four engine paths to
+  `_SCAN_EXCLUSIONS` in `bootstrap/tests/test_security_lint.py` with the
+  mandatory rationale, move that file's count pin, and add the eight engine
+  functions to `scripts/quality_gate_unused_def_whitelist.py`; F6 reverses all of
+  it. Costs: edits a **frozen** file outside its planned chunk; moves two pins
+  twice; and leaves a hand-rolled TLS client **outside the release Bandit scan**
+  for the duration — which is the single worst file in the tree to leave
+  unscanned, and is the defect `scan-coverage` was written to close.
+
+R1 is the smaller deviation on the evidence. It is still a deviation from the
+*Sequence*, which is why it is not taken unilaterally.
+
+**Chunk E was checked as an alternative starting point and rejected on evidence,
+not on gates.** The on-disk oracle is `.py`-only — measured by reading it — so
+Chunk E's two doctrine files and two JSON stubs would very likely land green on
+their own. They are not written, because E-1 and E-2 both require *installing
+into a temporary adopter and running each local leg*, which needs the facades and
+the mapping rows; and because both doctrine files must describe how to read the
+output of runners that do not exist yet. Writing prose whose acceptance criteria
+cannot be executed is how the *Channel note* for Chunk H says this goes wrong:
+"the evidence is a reading of the landed runners plus a live run of each
+installed command, not a reading of the prose just written."
+
+### Measured corrections to Chunk A's acceptance criteria
+
+Each was found by executing the criterion, not by reading it. All are recorded
+as corrections to *expectations*, not relaxations of *claims*.
+
+* **A-1/A-2/A-11 — the post-connect check is two independent guards, so a
+  single-guard mutant does not reach the peer.** The plan predicts that deleting
+  the post-connect peer check lets A-1 through. Measured: it does not. The check
+  is `peer not in validated_addresses` **and**
+  `classify_address(peer) not in allow_classes`, and A-1's hazard (public
+  validated, loopback delivered) trips both — delete the set guard and the class
+  guard still refuses, with `peer_class_refused`. Reaching the peer requires
+  deleting **both**. This is a *stronger* result than the plan expected: each
+  guard discriminates alone. Both mutants are landed as separate tests for each
+  of the two directions, so A-1 and A-11 discriminate independently as AM16
+  requires.
+* **A-7 — the `CERT_NONE` mutant is over-broad by exactly one row.** The plan
+  says "all four must fail". Measured: three do (untrusted chain, hostname
+  mismatch, expired). The fourth — a peer that speaks no TLS at all — still
+  refuses, because `CERT_NONE` does not make a non-TLS peer speak TLS. The test
+  pins the accurate version and says so in its docstring. A positive control (a
+  trusted, matching certificate that *is* accepted) was added: without it the
+  four refusals could be "TLS never works in this fixture" rather than "these
+  four shapes are refused".
+* **A-11's mechanism, disclosed rather than glossed.** A-11 substitutes the peer
+  *report* (`getpeername()`) rather than the peer itself, because no non-loopback
+  address is bindable on an arbitrary host — macOS refuses `127.0.0.2`, and a
+  machine may have no external interface — and a security criterion that only
+  fires on a networked host is not a criterion. A-2 covers the
+  genuinely-real-second-peer case with a real `::1` listener and the kernel's own
+  `getpeername()`. The two rows together cover both branches of the check.
+  Likewise the rebinding hazard is driven at the **socket layer** rather than by
+  a second resolver call: the engine resolves exactly once (asserted), and a
+  design that re-resolved at connect time would *be* the rebinding
+  vulnerability.
+* **A-4 gained a liveness half.** The plan's mutant ("make the client follow
+  redirects") has no guard to delete — not following is a structural absence.
+  Replaced with a test-authored naive client that *does* follow and carries its
+  credential, which proves the second fixture is reachable and the assertion can
+  fail. Without it, "the redirect target saw no credential" and "the redirect
+  target is unreachable by this fixture" are indistinguishable.
+* **A-5's connection-isolation row carries a hazard perturbation and no deletion
+  mutant, and says so.** There is no connection pool to delete.
+* **A-9's symlink check is scoped below the platform temporary root.** Walking to
+  `/` and refusing any symlink component would refuse every default macOS
+  configuration (`/var` → `/private/var`) rather than any hostile one. The
+  security property — the report cannot land in the repository — is carried by
+  realpath containment on **both** the literal and the resolved path, and the
+  symlink-into-the-checkout hazard is asserted directly.
+* **The hostile-`TMPDIR` rows drive `tempfile.tempdir`, not `TMPDIR`.**
+  `gettempdir()` caches its answer and **silently falls back** to the next
+  writable candidate when `TMPDIR` is unusable, so a test that only set the
+  variable would exercise the platform default and pass without ever presenting
+  the hazard. Recorded because it is precisely a check that could not fail.
+
+### Bandit finding, fixed in code and not allowlisted
+
+The first Bandit run over the engine reported **B613 `trojansource`, severity
+HIGH**: `report.py`'s bidi-codepoint set was written with literal bidi
+characters, which makes the file that *detects* Trojan Source into a carrier of
+it. F-9 makes MEDIUM+ a stop whose fix is code; the literals were replaced with
+`\uXXXX` escapes. Two Low `B105` false positives (attribute names containing
+"token") were removed by renaming to `reason_withheld` / `redirect_withheld`.
+Post-fix: zero issues over 1597 lines.
+
+### Criteria that are not reachable in Chunk A, and where they go
+
+Named rather than left to read as coverage. Each needs a facade, and the facades
+are Chunks B and C:
+
+* **A-8(b)** credential-marker confidentiality and **A-8(c)** the subprocess
+  ordering oracle. A-8(a)'s two sound socket probes are landed, as is A-8(c)'s
+  precondition — that policy refusal and absent-credential are two distinct
+  fixed codes.
+* **A-10's facade half** (exit 20 / DEGRADED with no policy read). The engine
+  half — a missing member raises `EngineIncomplete` at import — is landed.
+* **A-12's four-public-entry-point form.** The engine-level live transport proof
+  is landed: real loopback socket, `net._RESOLVER is socket.getaddrinfo` and
+  `net._SOCKET_FACTORY is socket.socket` asserted unpatched, and the connected
+  peer read from the listening fixture's own record and compared with the
+  engine's belief. Per the Maintainer fence, **no AST re-anchor ceremony may be
+  requested** until A-12's full form and D-2's per-channel phase-(a) ledger exist
+  in landed commit bodies; neither does.
+
+### One disclosed test seam a code reviewer should look at directly
+
+`report.py` carries `_CHANNEL_PASSTHROUGH: frozenset = frozenset()` — empty in
+shipped source, with no writer: no environment variable, policy field, CLI flag
+or import hook reaches it, and
+the new suite's `test_channel_passthrough_is_empty_in_shipped_source` pins both the value and the literal. It exists so D-2's per-channel *liveness*
+phase can be a genuine one-line source mutation on a throwaway copy. It is
+disclosed here rather than discovered in review, and a reviewer who judges an
+inert seam in a security module unacceptable should say so — the alternative is
+asserting confidentiality over channels the runner may never reach, which D-2
+exists to forbid.
+
+### Fences not approached
+
+No credential value was requested, accepted, or handled. No `deployed-passive`
+path was executed against any non-loopback target; no test contacts a real host.
+No `--authorize-base-url` was typed. No first-use trust hash set was produced.
+No `update_symbol`, `_gate_manifest.py` re-pin or `_gate_reanchor.py` invocation
+was run, and no ceremony was requested. Nothing was pushed. `B3` is ratified, so
+F2 and Chunk G are unfenced — neither was reached.
