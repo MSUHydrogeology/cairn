@@ -342,11 +342,14 @@ board by design.
   atomically. Requires External plus External Security Review and a
   Maintainer-only exact-byte trust-root bootstrap.
 
-* **review-efficient-lifecycle** *(proposal opened 2026-08-10)* -- reduce
-  proposal-to-archive time and review input without removing independent
-  boundaries: bounded current contracts, standard-only plan-readiness
-  inheritance, stable evidence reuse, and a measured six-plan pilot. Governing
-  lifecycle and scientific-assumption changes remain high assurance.
+* **review-efficient-lifecycle** *(plan opened 2026-08-10)* -- one plan for
+  the four accepted lifecycle contracts (`review-efficient-lifecycle` plus the
+  `claim-check-exemption-hygiene`, `code-review-blindness`, and
+  `lifecycle-status-vocabulary` amendments), which three of them require by
+  their own accepted text. Nine chunks over one shared surface with a bounded
+  review budget: two plan-review passes, one Boundary B, one code review, one
+  Maintainer re-anchor, one archive. `git-native-security-foundations` and
+  `corpus-tier-cost` stay separate.
 
 * **lifecycle-status-vocabulary** *(amendment proposal opened 2026-08-10)* --
   make proposal and plan status name the next responsible action: explicit
