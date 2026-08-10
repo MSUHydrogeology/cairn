@@ -1265,3 +1265,139 @@ repository's actual ignore/tracked treatment of `dev/.cairn/`.
 Code review, or the Maintainer ceremony. Return H1--H3 for one focused External
 closure pass. This pass is blocking and does not fill the bootstrap table's
 `External` row.
+
+## Plan review -- Codex (Security) -- 2026-08-10 (round 2)
+
+**Model**: GPT-5.6-Codex
+**Tier**: External
+**Obligation**: External Security Review
+**Reviewed commit**: `957720d79e1fdbbf3d94168048769e8fd5e6013f`
+**Target**: the complete plan after the Response to S1--S6; the ordinary
+round-3 review is context, not a substitute for this pass
+**Prior findings**: S1--S6
+**Assurance path**: high-assurance
+**Security lens**: governance-gate integrity, contained code loading,
+terminal injection, mutable evidence, and trust-root ceremony invalidation
+**Findings**: raised
+**Verdict: REVISE, focused.** S1--S4 are now explicit enough to implement and
+test. S5's interpreter fence is sound, but the newly required shared encoder
+has no named trust path. S6 is still contradicted by the Verification section.
+The pilot state also introduces a mutable authority input whose activation
+binding and write integrity are not yet defined.
+
+### Threat posture
+
+Lifecycle artifacts, headings, paths, Git state, intent output, and pilot
+records are untrusted structured input. Tracked tool bytes rely on Git review,
+not invocation-time authentication. Human identity and semantic assurance
+remain attestations rather than cryptographic facts. Within that accepted
+posture, malformed or redirected input must refuse; no parser, loader, terminal
+renderer, state writer, or ceremony shortcut may silently reduce the required
+review.
+
+### [T1] MEDIUM-HIGH -- the shared terminal encoder has no owner or contained loading contract
+
+P4 now says `tools/lifecycle.py` and the planner use "one shared
+implementation." Today they are separate scripts and `tools/` deliberately is
+not a package. The plan names neither the implementation path nor how each
+consumer reaches it. The existing `_safe_field` in `lifecycle.py` is also not
+the F2 rule: it does not apply the proposed non-printable and
+`_DISPLAY_UNSAFE_RANGES` checks.
+
+An implementer therefore has three plan-compatible but materially different
+choices: ambient-import the planner, import the large lifecycle CLI into the
+planner, or duplicate the encoder and call it shared through parity tests. The
+first two reopen the loader/side-effect class S1 just closed; the third does not
+meet "one shared implementation."
+
+**Required satisfier.** Name the encoder's source and installed paths and its
+loading direction in P4/F2/F5/G. Either place it in a small, unconditionally
+installed standard-library-only module loaded by both consumers under A3's
+contained-loader contract, or make the planner the owner and give
+`lifecycle.py` the same fixed-path contained load. Do not use ambient
+`sys.path`, create `tools/__init__.py`, or import a CLI with side effects.
+Extend tests to both consumers: decoy path, leaf/parent symlink, out-of-root,
+partial import cleanup, clean retry, exact unsafe population, and byte/parity
+checks for every installed twin.
+
+### [T2] HIGH -- the pilot authority record has no achievable activation binding or safe mutation protocol
+
+P6a requires `activation_sha`; P6d says the data-only commit containing that
+record enables the pilot. If `activation_sha` means that enabling commit, the
+contract is self-referential: putting a commit's SHA inside its own tracked
+blob changes the commit SHA. If it instead means B2, the field binds reviewed
+machinery but does not identify when activation occurred. P6c's "tampered
+activation SHA" test has no stated oracle until this meaning is fixed.
+
+The same file later carries counted stems and pause records. It is not
+gitignored, so it will be tracked by default, yet no contract prevents
+symlink/parent redirection, lost updates, history replacement, unknown keys,
+unbounded records, or a reader observing a partial write. Those failures can
+alter whether promotion appears permitted.
+
+**Required satisfier.** Define two non-circular bindings: one field may pin the
+reviewed B2 machinery commit, while the enabling commit is derived from Git as
+the commit that first introduced the exact immutable activation record (or by
+another explicitly non-self-referential construction). State the date oracle.
+Separate that immutable activation record from append-only observations, or
+provide equivalent immutable history. For every writer, require repository
+containment, regular non-symlink leaf and parent checks, closed/bounded schema,
+atomic replacement or append, expected-old/CAS behavior, and clean refusal on
+race or `OSError`. Derive promotion evidence from source-commit-bound events;
+test altered history, duplicate/conflicting stems, symlink redirection,
+interrupted writes, stale writers, and the exact activation-binding oracle.
+
+### [T3] HIGH -- the recorded bootstrap exception needs a security boundary, not an informal override
+
+Direct execution confirms fail-closed behavior today: the current parser
+refuses `executing` because the round-2 Response falls beyond its positional
+ceiling. That is safer than silently proceeding, but it makes the plan
+unexecutable. Any repair to H2 necessarily creates an exception to a governance
+gate, so its authority and expiry are security properties.
+
+**Required satisfier.** Use H2's exact one-time attestation: full plan blob,
+both distinct SHIP review commits, completed bootstrap rows, one exact expected
+violation, and no others. Require Maintainer authorization, constrain it to
+this artifact and the A/B bootstrap window, and make B remove the violation
+without a wildcard, path-prefix, date, reviewer-name, or reusable legacy
+exemption. Mutation tests must show every broadened or replayed form refuses.
+
+### [T4] HIGH -- S6 remains open in the governing verification rule
+
+The sequence correctly reopens B1, independent Code review, and when necessary
+the ceremony after a governed correction. The Verification section still says
+all post-ceremony corrections restart B2 only. A reader executing that later
+rule can bless corrected implementation or frozen bytes with neither the
+review nor trust-root ceremony covering them.
+
+**Required satisfier.** Apply H1. The reviewed manifest-only ceremony commit is
+the only direct-to-B2 case. Governed corrections reopen B1 and Code review;
+gate-inventory corrections also reopen `I`; P6d/P7 carry their own classified
+evidence. Pin the canonical rule so a duplicate summary cannot weaken it.
+
+### Closure and residuals
+
+S1 closes through the complete per-consumer loader matrix. S2 closes through
+the fail-closed assurance matrix and explicit semantic-attestation boundary.
+S3 closes through the one-shot isolated provider contract. S4 closes through
+independent, digest-bound migration admission and frozen reliance. S5's
+interpreter trust-root fence closes, but its terminal-output remedy remains T1.
+S6 remains T4.
+
+Accepted residuals remain accurately bounded: Git review, not runtime signing,
+authenticates tracked local tools and pilot records; intent claims may be stale
+or dishonest; human review identity and scientific-risk classification are
+attested rather than proven; and the Maintainer ceremony environment is not OS
+containment.
+
+**Covered**: the complete plan at `957720d`; S1--S6 inline cells and tests;
+current `tools/lifecycle.py` imports, `_safe_field`, and protected
+`_resolve_interpreter`; current package layout; Git ignore/tracked behavior for
+the proposed state path; direct current-parser gate execution; and both
+ceremony restart statements.
+
+**Not covered**: implementation bytes, hostile alternate operating systems,
+future Git-hook behavior, actual pilot data, or execution of the Maintainer
+ceremony. Return T1--T4 for one focused Security closure pass. This pass is
+blocking and does not fill the bootstrap table's `External Security Review`
+row.
