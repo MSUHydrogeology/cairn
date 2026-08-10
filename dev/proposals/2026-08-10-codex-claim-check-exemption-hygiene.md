@@ -3,7 +3,7 @@
 **Author**: Codex (Strategy)
 **Model**: GPT-5 (Codex)
 **Date opened**: 2026-08-10
-**Status**: revised
+**Status**: accepted
 **Amends**: `review-efficient-lifecycle`
 **Touches**: `scripts/claim_check.py`, its installed twin,
 `bootstrap/tests/test_claim_check_module.py`, the self-hosted and shipped
@@ -785,3 +785,12 @@ from directory alone, if a malformed status gains grandfathering, if the
 migration needs to rewrite attributed prose, if the new resolver and migration
 cannot land atomically, if duplicate active/archive identity is accepted, or
 if the plan treats the 19 out-of-scope files as though liveness governed them.
+
+## Decision -- Maintainer -- 2026-08-10
+
+> Accept Revision 1 of dev/proposals/2026-08-10-codex-claim-check-exemption-hygiene.md
+
+Accepted Revision 1. The proposal replaces header clutter with exact lifecycle archive resolution and typed path declarations while preserving hard path checks. All reviewer interaction findings ([C1]–[C4]) are resolved in Revision 1. This amendment joins the `review-efficient-lifecycle` plan.
+
+Scribed by Antigravity under Maintainer instruction.
+
