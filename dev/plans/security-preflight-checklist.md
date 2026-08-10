@@ -1883,3 +1883,32 @@ trigger is the `review-gate-enforcement` plan landing, whose revised A.1 removes
 or makes explicitly non-attesting the empty container in both plan templates.
 Live scope as of 2026-08-04: two live plans and both plan templates carry it.
 ```
+
+## Code review -- Antigravity (External) -- 2026-08-10
+
+**Tier**: required(**External**, security lens)
+
+**Findings**: SHIP
+
+### Verification & Falsification Ledger
+
+* **Boundary B/C Verification**:
+  - Interpreter: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13), `PYTHONDONTWRITEBYTECODE=1`.
+  - SHA / Range: `e376dfe` (`as_of 2026-08-10`).
+  - Command: `PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_scaffold.py -k test_installed_templates_carry_security_preflight_questions -v`
+  - Outcome: **1 passed in 0.08s** (0 failed, 0 skipped, 0 xfailed).
+
+* **Mechanical Extraction Hash Verification**:
+  - Proposal source: `dev/proposals/archive/2026-08-03-claude-security-preflight-checklist.md` (lines 116–158, 43 lines).
+  - SHA-256: `277daac432cfff21062a9ec58718138238183e79a4f988a8d90aeec62b01852b`.
+  - Confirmed byte-identical extraction hash in both `dev/proposals/_template.md` and `templates/core/dev/proposals/_template.md`.
+
+* **Hazard-Side Perturbations (P1–P7)**:
+  - **P1** (Delete S3 line from shipped proposal template): `a=RED, b=GREEN, c=RED, d=GREEN` — caught on shipped presence and proposal parity.
+  - **P2** (Delete S3 line from self-host proposal template): `a=GREEN, b=RED, c=RED, d=GREEN` — caught on self-host presence and proposal parity.
+  - **P3** (Delete `security-preflight` from shipped plan template): `a=RED, b=GREEN, c=GREEN, d=RED` — caught on shipped presence and plan parity.
+  - **P4** (Delete `security-preflight` from self-host plan template): `a=GREEN, b=RED, c=GREEN, d=RED` — caught on self-host presence and plan parity.
+  - **P5** (Delete S4 heading line from BOTH proposal templates identically): `a=RED, b=RED, c=GREEN, d=GREEN` — caught on literal-list oracle.
+  - **P6** (Reword sentence inside sub-block in self-host proposal template only): `a=GREEN, b=GREEN, c=RED, d=GREEN` — caught on proposal parity assertion.
+  - **P7** (Two-sided em-dash to hyphen code-point swap in S1 heading): `a=RED, b=RED, c=GREEN, d=GREEN` — caught on code-point-exact heading pin.
+
