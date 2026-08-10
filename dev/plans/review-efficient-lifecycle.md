@@ -663,3 +663,112 @@ The **External Security Review** obligation is untouched by this pass and
 remains owed. Per the review's own routing it should read the sharpened
 complete plan — loader and provider containment, terminal encoding, migration
 authority, and the trust-ceremony sequencing that [E2] just changed.
+
+## Plan review -- Codex -- 2026-08-10 (round 2)
+
+**Model**: GPT-5.6-Codex
+**Tier**: External
+**Obligation**: External
+**Reviewed commit**: `9e99c5a`
+**Target**: the inline sharpening and Response against E1--E4
+**Prior findings**: E1--E4
+**Assurance path**: high-assurance
+**Findings**: raised
+**Verdict: REVISE, focused.** E4 closes. E1 and E2 restore the missing labels
+but leave the pilot and promotion outside the reviewed/stable boundary. E3's
+bootstrap table incorrectly treats an author's Response to a blocking review
+as independent clearance. Keep every item in this plan and sharpen the phase
+and evidence contracts below.
+
+### [G1] HIGH -- P6/P7 sit after the only stable review boundary and are not executable chunks
+
+P1--P5 and P8 restore most of the parent machinery before B1. P6 and P7 do
+not. The sequence runs B1, Code review, re-anchor, and B2 **before** P6's pilot
+activation/reporting/deadline logic and P7's promotion or retirement changes.
+Those later commits therefore receive neither the plan's Code review nor its
+stable integration evidence.
+
+The rows are also not executable contracts. P6 names `pilot state` without a
+path, schema, writer, reader, trigger, test home, activation commit binding, or
+deadline calculation. P7 says only `doctrine + templates`; it omits the
+accepted post-promotion paths `docs/workflow-role.md`,
+`docs/getting-started.md`, and `docs/tool-usage.md`, and gives no verification
+or archive behavior for `promote`, `revise`, or `retire`.
+
+**Required satisfier.** Within this plan:
+
+* put the pilot engine, state schema, report generator, pause evaluation, and
+  tests before H/B1 so the capability is inside the reviewed range;
+* name the data path, schema version, activation SHA/date, six-plan counting
+  rule, 60-day calculation, writers, readers, malformed-state refusal, and
+  mutation tests;
+* make post-B2 activation a data-only, Maintainer-gated record that enables
+  already-reviewed machinery;
+* keep the plan open through the pilot; and
+* specify the conditional post-pilot chunk completely, including all accepted
+  docs/template paths, outcome-specific behavior, tests, and its own stable
+  evidence and independent Code review when it changes governed bytes.
+
+This is phase separation inside the same plan, not a new plan or de-scoping.
+
+### [G2] HIGH -- the restart rule exempts arbitrary post-ceremony corrections from review
+
+The new rule says, without qualification, *"A corrective byte after `I`
+restarts `B2` only."* That is true only for the expected ceremony-produced gate
+manifest commit when no implementation correction follows. If B2 exposes a
+defect and the correction changes implementation, tests, executable templates,
+fixtures, or frozen bytes, current doctrine invalidates the Code review as well
+as Boundary B; frozen corrections can also invalidate the anchor just created.
+
+**Required satisfier.** Split the cases:
+
+* the ceremony's reviewed manifest-only commit proceeds directly to B2;
+* any post-Code-review correction to governed implementation/test/template/
+  fixture bytes restarts B1 and independent Code review;
+* any correction in the gate inventory also restarts the Maintainer ceremony;
+  and
+* P6 activation and P7 outcome changes follow the phase-specific evidence from
+  G1 rather than inheriting B1/CR/I/B2 by position.
+
+### [G3] MEDIUM -- the bootstrap table self-clears the blocking External pass
+
+The table records review commit `8f37a9b` as `REVISE -> dispositioned` with no
+unresolved findings. That commit is the blocking review, not an independent
+closure pass. The author Response at `9e99c5a` can disposition findings but
+cannot clear its own corrections.
+
+I reproduced the consequence against the sharpened bytes. The current parser
+returns `('external', None)` for the declared two-obligation floor,
+`review_record_violations(...)` returns an empty list after the Response, and
+the simulated `awaiting-plan-review -> executing` gate reports the review
+precondition met. The bootstrap table therefore repeats the exact
+self-clearance it was introduced to prevent.
+
+**Required satisfier.** Keep the `External` row pending until a distinct
+clearing closure review commit exists; record that clearing commit, not the
+earlier blocking pass. Do the same for the Security obligation. Both rows must
+name `SHIP`, their exact commits, and zero unresolved findings before Chunk A.
+An author Response is evidence of correction, never the clearing review.
+
+### [G4] -- E4 closed
+
+F2 carries the accepted `str.isprintable()` plus numeric unsafe-range rule.
+F5 now expands every finite set and every range population, asserts the
+directional subset, and checks source bytes for raw invisibles. The stale fence
+is removed. This is the contract Revision 4 accepted.
+
+### Coverage and next pass
+
+**Covered by execution/inspection**: the complete `9e99c5a` diff; direct
+`normalize_required_tier`, `review_record_violations`, and execution-gate
+probes against the sharpened file; accepted parent pilot/promotion paths;
+current Boundary B invalidation rules; the revised phase diagram; and F2/F5
+against accepted Revision 4.
+
+**Not covered**: no implementation exists, so pilot state, phase transitions,
+promotion, or post-ceremony correction behavior could be executed. I did not
+re-open E4's already reviewed Unicode population or the amendment contracts
+outside the sharpened cells.
+
+Return only G1--G3 for the next External closure read. This pass remains
+blocking and does not fill the bootstrap table's `External` row.
