@@ -21,7 +21,7 @@ _STAGE_COMMIT_PATTERNS: List[Tuple[str, 're.Pattern[str]']] = [
         r'^(?:Decision\s*[:–—\-]|proposal:\s*Decision)', re.I)),
     ('revised', re.compile(
         r'^(?:proposal:\s*(?:respond to|revise)|Revised proposal)', re.I)),
-    ('reviewed', re.compile(r'^Review\b(?!.*\bsharpening\b)', re.I)),
+    ('reviewed', re.compile(r'^Review\b(?!-)(?!.*\bsharpening\b)', re.I)),
 ]
 
 

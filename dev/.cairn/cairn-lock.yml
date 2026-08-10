@@ -496,7 +496,7 @@
     {
       "base_hash": "sha256:3d057d535389c44dc870f5f6ca5d4ebd481c8307cd5abc96dbac4c66875389e8",
       "dst": "tools/_lifecycle_metrics/gitmeta.py",
-      "hash": "sha256:02c30f731e05ca69a97376dd34ecebfa0d2a269572a40b655fa4407dc9b481fa",
+      "hash": "sha256:b0513c9deba825220a6beca297e44048f282d5b871fe93a3741c7c69738ca0d2",
       "src": "modules/default-on/_lifecycle_metrics/gitmeta.py",
       "verbatim": true
     },

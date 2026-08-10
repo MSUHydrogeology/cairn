@@ -194,31 +194,36 @@ def test_t1_live_corpus_subjects_classify_as_judged(
     assert _classify(subject) == expected
 
 
-#: A real corpus subject that the **shipped, unedited** vocabulary claims
-#: before the scope gate is ever reached: ``^Review\\b`` matches
+#: A real corpus subject that the shipped vocabulary used to claim before
+#: the scope gate was ever reached: ``^Review\\b`` matched
 #: ``review-gate-enforcement:`` because ``\\b`` sits between ``w`` and
 #: ``-``.  The commit is a *Response* -- its correct stage is ``revised``
-#: -- so this is a genuine wrong-stage assignment on Cairn's own corpus.
-#: **Pre-existing, inherited, not chosen by this fix**: the shipped
-#: patterns are byte-unchanged and run first, so the subject classified
-#: ``reviewed`` before this change too.  Repairing it means editing the
-#: shipped vocabulary, which the accepted revision deliberately does not
-#: do.  Pinned here so it is a documented outcome rather than a silent one.
-_T1_SHIPPED_PATTERN_FALSE_POSITIVE = (
+#: -- so this was a genuine wrong-stage assignment on Cairn's own corpus,
+#: and it shipped.
+#:
+#: **Repaired 2026-08-10** by adding the ``(?!-)`` hyphen guard to the
+#: shipped ``reviewed`` arm -- the same ``(?<!-)`` / ``(?!-)`` idiom the
+#: scoped patterns already use, applied one level up.  ``stage-commit-patterns``
+#: deliberately left the shipped defaults byte-unchanged (Revision P1, to keep
+#: it additive) and archived recording this as an accepted residual; the
+#: Maintainer then directed the repair separately.  The subject now
+#: classifies as ``None``: no scope prefix, so the gate declines it rather
+#: than guessing -- which is the honest outcome, not a silent one.
+_T1_HYPHEN_COMPOUND_STEM_SUBJECT = (
     "review-gate-enforcement: Response to the External review "
     "(status: revised)"
 )
 
 
-def test_t1b_the_shipped_pattern_false_positive_on_the_live_corpus() -> None:
-    """T1b -- documented, accepted misclassification (not an endorsement).
+def test_t1b_a_hyphen_compound_stem_is_not_claimed_by_the_shipped_arm() -> None:
+    """T1b -- the repaired shipped arm declines a hyphen-compound stem.
 
-    A ``review-...``-prefixed subject is claimed by the shipped
-    ``^Review\\b`` arm even though the commit is a Response.  Recorded so a
-    future reader knows the "zero wrong-stage assignments on Cairn's own
-    corpus" claim is qualified by this row.
+    A ``review-...``-prefixed subject is a *plan stem*, not a review, and the
+    shipped ``^Review\\b(?!-)`` arm no longer claims it.  This is the node
+    that would have caught the original defect: strip ``(?!-)`` and it flips
+    back to ``reviewed``, which is the wrong stage for a Response.
     """
-    assert _classify(_T1_SHIPPED_PATTERN_FALSE_POSITIVE) == "reviewed"
+    assert _classify(_T1_HYPHEN_COMPOUND_STEM_SUBJECT) is None
 
 
 # ---------------------------------------------------------------------------
