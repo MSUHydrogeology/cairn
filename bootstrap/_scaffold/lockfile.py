@@ -57,10 +57,13 @@ _LOCK_SCHEMA = 1
 #: **tracked for upgrade but excluded from the ``verify_integrity`` hash
 #: check**.  Rationale: ``verify_integrity`` exists so a cold adopter can
 #: attest the *shipped Cairn apparatus* (scripts, module/core doctrine,
-#: templates) was not swapped -- a supply-chain check.  These four files are
-#: not apparatus: their content is **adopter-authored project state** (a living
-#: roadmap, the per-goodnight handoff, the fold-back ledger, the signed
-#: collaboration agreement) that merely starts from a thin Cairn template.
+#: templates) was not swapped -- a supply-chain check.  These files are not
+#: apparatus, in two classes.  Four are **adopter-authored project state** (a
+#: living roadmap, the per-goodnight handoff, the fold-back ledger, the signed
+#: collaboration agreement) that merely starts from a thin Cairn template.  The
+#: rest are **adopter-filled configuration** -- installed as an unconfigured
+#: stub and then filled in place (the model-selection mapping, and the two
+#: network-security capability policies).
 #: They are the highest-churn files in a mature adopter, so including them in
 #: the strict integrity set means every routine edit reds the verifier until a
 #: re-finalize -- friction that says nothing about whether the *scripts* are
@@ -92,6 +95,20 @@ _LIVING_STATE_DSTS: frozenset[str] = frozenset({
     # verify_integrity never flags an adopter edit as tampering, and the
     # lockfile divergence check does not prevent writing on first-fill.
     "dev/.cairn/model-selection-mapping.yml",
+    # api-web-security-modules, row F2: the two network-security capability
+    # policies are adopter-filled configuration.  Each installs as an
+    # unconfigured ``configured: false`` stub and is then filled in place with
+    # local principals and operations, so hash-pinning it would report ordinary
+    # configuration as tampering.  They stay tracked for upgrade -- substituted
+    # installs, so they keep ``base_cache`` / ``base_hash`` and ``upgrade``
+    # still 3-way-merges a Cairn stub change into the adopter's fill -- and are
+    # excluded from the tamper check only.  They are explicitly **not** the
+    # integrity anchor for the deployed leg: the capability facade and its four
+    # engine members are verbatim, stay in the strict set, and are what the
+    # dispatcher binds by digest.  The policy's own bytes are reviewed through
+    # git, which the module doctrine records as a named residual.
+    "dev/.cairn/api-access-policy.json",
+    "dev/.cairn/web-hosting-policy.json",
 })
 
 

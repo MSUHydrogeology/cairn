@@ -9,19 +9,20 @@ vocabulary** (three parts: the exact writer vocabulary; the tried
 impossibility at `verify_integrity`; and where B2 is actually satisfied --
 recorded here, not implemented here).
 
-**Scope: the landing part only** (F1, F3-F6). Every assertion here is
-reachable with an empty registry, no living-state record, and no filled
-policy -- Chunk F row **F2** (`_LIVING_STATE_DSTS`) is fenced and has not
-landed, and Chunk G (the activation registry) has not landed either. This
-file measures the tree **as it stands**; it does not assert the shape F2
-will later produce. See the per-destination key-set note below for
-exactly where that seam is.
+**Scope: the landing part (F1, F3-F6), plus row F2.** F2
+(`_LIVING_STATE_DSTS`) was fenced when the landing part was written and has
+since been authorized and landed, so the two F2 criteria that need a
+living-state record or a filled policy -- `test_f2_1_*` and `test_f2_2_*`
+-- live here too, at the end of the file. Chunk G (the activation registry)
+has NOT landed, and nothing here asserts its shape. This file measures the
+tree **as it stands**.
 
 Run from the Cairn repo root:
     python -m pytest bootstrap/tests/test_security_capability_install.py
 """
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
 import sys
@@ -42,6 +43,18 @@ from bootstrap.verify_integrity import verify  # noqa: E402
 CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
 
 _CAPABILITY_MODULES = ("api-access-security", "web-hosting-security")
+
+#: The two adopter-filled policy destinations row F2 added to
+#: `_LIVING_STATE_DSTS`. Stated literally, NOT derived from the engine's
+#: `_LIVING_STATE_DSTS` -- deriving it would make F2-2 vacuous under its own
+#: deletion mutant (drop the two entries and an engine-derived set goes
+#: empty, so every assertion over it passes trivially). The cost of stating
+#: it is a possible desync from the engine, which `test_f2_2_*` closes by
+#: asserting this set against `_LIVING_STATE_DSTS` directly.
+_POLICY_DESTINATIONS = frozenset({
+    "dev/.cairn/api-access-policy.json",
+    "dev/.cairn/web-hosting-policy.json",
+})
 
 # The four statements F-6 / Chunk F row F3 require the notice to carry, for
 # BOTH capabilities. Checked as substrings against rendered output, not
@@ -441,15 +454,15 @@ def _expected_lockfile_keys() -> dict[str, frozenset[str]]:
     destination (the two doctrine `.md` files + the two policy stubs, four
     of the fourteen) additionally carries BOTH `base_cache` and `base_hash`.
 
-    **Coupling to Chunk F row F2 (not landed by this file).** F2 adds the
-    two `dev/.cairn/*-policy.json` destinations
+    **Coupling to Chunk F row F2 -- LANDED.** F2 added the two
+    `dev/.cairn/*-policy.json` destinations
     (`dev/.cairn/api-access-policy.json`,
-    `dev/.cairn/web-hosting-policy.json`) to `_LIVING_STATE_DSTS`; once it
-    lands, `write_install_lockfile`'s `if dst_rel in _LIVING_STATE_DSTS`
-    branch (`bootstrap/_scaffold/install.py`) will add a `living_state:
-    true` key to EXACTLY those two records and no others. This map is
-    per-destination for exactly that reason: F2 extends those two entries
-    in place; the other twelve are untouched by F2.
+    `dev/.cairn/web-hosting-policy.json`) to `_LIVING_STATE_DSTS`, so
+    `write_install_lockfile`'s `if dst_rel in _LIVING_STATE_DSTS` branch
+    (`bootstrap/_scaffold/install.py`) now adds a `living_state: true` key
+    to EXACTLY those two records and no others. This map is per-destination
+    for exactly that reason: F2 extended those two entries in place and the
+    other twelve are untouched.
     """
     expected: dict[str, frozenset[str]] = {}
     for name in _CAPABILITY_MODULES:
@@ -457,6 +470,8 @@ def _expected_lockfile_keys() -> dict[str, frozenset[str]]:
             keys = {"src", "dst", "verbatim", "hash", "base_hash"}
             if not spec.verbatim:
                 keys.add("base_cache")
+            if spec.dst in _POLICY_DESTINATIONS:
+                keys.add("living_state")
             expected[spec.dst] = frozenset(keys)
     return expected
 
@@ -478,15 +493,17 @@ def test_f5a_the_lockfile_record_key_set_is_exact_per_destination(
     expected = _expected_lockfile_keys()
     for dst, expected_keys in expected.items():
         rec = by_dst[dst]
-        # F2 COUPLING (see _expected_lockfile_keys docstring): F2, once
-        # landed, adds `living_state` to exactly these two destinations.
-        # Measured here at F2's pre-landing state -- neither carries it.
-        if dst in (
-            "dev/.cairn/api-access-policy.json",
-            "dev/.cairn/web-hosting-policy.json",
-        ):
+        # F2 COUPLING (see _expected_lockfile_keys docstring): F2 HAS
+        # landed, so exactly these two destinations carry `living_state`
+        # and no other destination in either group does.
+        if dst in _POLICY_DESTINATIONS:
+            assert rec.get("living_state") is True, (
+                f"{dst} must carry living_state: true now that F2 has landed"
+            )
+        else:
             assert "living_state" not in rec, (
-                f"{dst} unexpectedly carries living_state before F2 lands"
+                f"{dst} must not carry living_state -- F2 covers only the "
+                f"two adopter-filled policy destinations"
             )
         assert set(rec) == expected_keys, (
             f"{dst}: expected key set {sorted(expected_keys)}, got "
@@ -639,3 +656,114 @@ def test_adopt_module_records_api_access_security_into_an_existing_lockfile(
         assert dst in lock_dsts, f"{dst} not recorded after --adopt-module"
         assert (target / dst).is_file(), f"{dst} not written after --adopt-module"
     assert verify(target) == 0
+
+
+# ---------------------------------------------------------------------------
+# Chunk F row F2 -- the living-state policy destinations
+#
+# These are the criteria that need a FILLED policy or a living-state record,
+# which is why they are F2's and not the landing part's. F2's authorization
+# and its owed Security Review are recorded in
+# `dev/plans/api-web-security-modules.md`.
+# ---------------------------------------------------------------------------
+
+_FILLED_POLICY = """{
+  "schema": "cairn.security.api-access-policy.v1",
+  "configured": true,
+  "local": {
+    "base_url": "http://127.0.0.1:8099",
+    "environment": "local",
+    "principals": ["principal-1", "principal-2"],
+    "operations": ["op-1", "op-2"]
+  }
+}
+"""
+
+
+def test_f2_1_a_filled_policy_stays_ok_and_only_the_policy_does(
+    tmp_path: Path,
+) -> None:
+    """F2-1. `verify_integrity` reports OK on the fresh install AND still
+    reports OK after the adopter fills a policy -- the living-state
+    property, which is F2's entire purpose.
+
+    Hazard, in the same test so the two cannot drift apart: an installed
+    ENGINE member modified by one byte must still report `modified (hash
+    mismatch)`. The runner and its engine members are verbatim and are NOT
+    living-state; F2 covers only the two adopter-filled policy files.
+
+    Deletion mutant (F2-1's own, run by hand): add an engine destination to
+    `_LIVING_STATE_DSTS` in `bootstrap/_scaffold/lockfile.py`; the hazard
+    half below goes red because the tampered member then verifies OK.
+    """
+    rc, target = _install(
+        tmp_path,
+        "modules:\n  - api-access-security\n  - web-hosting-security\n",
+    )
+    assert rc == 0
+    assert verify(target) == 0, "fresh install must verify OK"
+
+    policy = target / "dev" / ".cairn" / "api-access-policy.json"
+    assert json.loads(policy.read_text(encoding="utf-8"))["configured"] is False
+    policy.write_text(_FILLED_POLICY, encoding="utf-8")
+    assert verify(target) == 0, (
+        "a filled living-state policy must still verify OK -- this is the "
+        "property F2 exists to provide"
+    )
+
+    member = target / "scripts" / "_api_access_security" / "net.py"
+    member.write_bytes(member.read_bytes() + b"\n# tampered\n")
+    assert verify(target) == 1, (
+        "an engine member is verbatim, not living-state: a one-byte change "
+        "must fail closed"
+    )
+
+
+def test_f2_2_the_record_carries_the_flag_and_only_for_the_set(
+    tmp_path: Path,
+) -> None:
+    """F2-2. Each installed `dev/.cairn/*-policy.json` record carries
+    `living_state: true` and each is inside `_LIVING_STATE_DSTS`; no runner
+    or engine record carries the flag.
+
+    Also closes the desync this file's literal `_POLICY_DESTINATIONS`
+    accepts: the two paths are asserted against the engine's own
+    authoritative set, so a rename in `bootstrap/_scaffold/lockfile.py`
+    without a rename here is caught rather than silently passing.
+
+    Deletion mutant (run by hand): drop the `_LIVING_STATE_DSTS` membership
+    test in `bootstrap/verify_integrity.py`; the illegal-opt-out row
+    (`test_hazard_an_illegal_living_state_opt_out_still_refuses`) goes red,
+    proving F-3 and F2-2 are independently discriminating.
+    """
+    rc, target = _install(
+        tmp_path,
+        "modules:\n  - api-access-security\n  - web-hosting-security\n",
+    )
+    assert rc == 0
+    lock = s.read_lockfile(target)
+    by_dst = {rec["dst"]: rec for rec in lock["files"]}
+
+    # The two policy destinations exist, carry the flag, and are inside the
+    # engine's authoritative set.
+    for dst in sorted(_POLICY_DESTINATIONS):
+        assert dst in by_dst, f"{dst} not recorded in the lockfile"
+        assert by_dst[dst].get("living_state") is True, (
+            f"{dst} must carry living_state: true"
+        )
+        assert dst in s._LIVING_STATE_DSTS, (
+            f"{dst} is not in the engine's _LIVING_STATE_DSTS -- this file "
+            f"and bootstrap/_scaffold/lockfile.py have desynchronized"
+        )
+
+    # No other destination in either capability group carries the flag.
+    for dst in _ALL_CAPABILITY_DESTINATIONS:
+        if dst in _POLICY_DESTINATIONS:
+            continue
+        assert "living_state" not in by_dst[dst], (
+            f"{dst} must not carry living_state -- only the two "
+            f"adopter-filled policy files are living-state"
+        )
+        assert dst not in s._LIVING_STATE_DSTS, (
+            f"{dst} must not be in _LIVING_STATE_DSTS"
+        )

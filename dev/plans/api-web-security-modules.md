@@ -3963,3 +3963,155 @@ Security Review. Either answer unblocks; the contradiction is what does not.
 * **A-12's four-public-entry-point form** and the **successful deployed-request
   path** remain unexercised, unchanged from the previous pass.
 * **No human has read the two runners line by line for security content.**
+
+## Maintainer authorization of row F2 -- Anthony Kendall -- 2026-08-10
+
+**Authorization, quoted verbatim and visually isolated:**
+
+> Go ahead with the F2 implementation
+
+**What it answered, recorded so the record stands alone.** Given in direct answer
+to a message that named row F2's single action -- adding the two
+`dev/.cairn/*-policy.json` destinations to `_LIVING_STATE_DSTS` -- set out the
+three call sites that read that set, named the Security Review the change carries,
+and named the residual that F2's two entries are the first members of the set with
+no witness in Cairn's own tree. F2 names exactly one action, so unlike the
+one-word B3 ratification above this authorization identifies its own subject.
+Scribed by Claude (Implementation).
+
+### Correction to the B3 ratification block above -- its no-widening enumeration was wrong on the mechanism
+
+The prior section is append-only and stands as written. This section records that
+one of its enumerated items was **incorrect**, and why, so a later reader does not
+cite it in good faith to block what the Maintainer has now authorized.
+
+That block says both of these:
+
+> **What this unfences.** `F2` and **all of Chunk G** [...]
+
+> * It does not widen `_LIVING_STATE_DSTS`. Adding a sixth entry is a separate
+>   change to an engine constant and carries its own Security Review.
+
+Row F2 **is** the addition of a sixth and seventh entry to `_LIVING_STATE_DSTS`.
+So the block unfences F2 and forbids the only thing F2 does. The two clauses are
+not independent facts that happen to conflict: **set membership is the mechanism
+by which `living_state` is honoured at all.** Measured at `625c161`:
+
+* `bootstrap/verify_integrity.py:96-105` honours `living_state` **only** for a
+  `dst` inside the set, and reports anything else asserting it as
+  `illegal living_state opt-out ... (tamper / malformed lockfile)`.
+* `bootstrap/_scaffold/install.py:1796` is the only site that writes the
+  `living_state` key, and it writes it **only** for a `dst` inside the set.
+
+So without F2 there are exactly two branches and both fail closed: the installer
+omits `living_state: true` and the dispatcher refuses DEGRADED (20) for a record
+lacking the flag, or the installer writes it and `verify_integrity` reports the
+adopter's own policy file as a tamper attempt. `policy_binding_mode:
+living_state` for the API and web policy files is **inoperative without F2**.
+
+**What the enumeration was right about.** It was right that this carries its own
+Security Review. Widening a fail-closed integrity boundary read by three
+consumers -- `verify_integrity.py:97`, `install.py:1796`, `upgrade.py:1699` -- and
+named part of the declared trust anchor at `bootstrap/_scaffold/__init__.py:281`
+is a Security-Review-class engine change. It was wrong only that the change is
+severable from what B3 ratified.
+
+**The Security Review is therefore OWED, not satisfied.** The Maintainer's
+authorization discharges the *fence*; it does not discharge a *review tier*, and
+no agent writes its own Security Review. F2 lands with that recorded as
+outstanding.
+
+## Implementation verification -- Claude -- 2026-08-10 (Chunk F row F2)
+
+**Commits.** `625c161` (F3, F4, F5 -- the landing part's remaining rows) and this
+commit (F2). Interpreter: `/Users/kendal30/conda_envs/lhm/bin/python3.13`
+(3.13.13), `PYTHONDONTWRITEBYTECODE=1` throughout. Cairn has no CI; every figure
+below is from a run on this host.
+
+**What landed for F2.** Two entries in `_LIVING_STATE_DSTS`
+(`bootstrap/_scaffold/lockfile.py`) with the inline reasoning row F2 requires --
+adopter-filled configuration, tracked for upgrade, excluded from the tamper check,
+and explicitly **not** the integrity anchor for the deployed leg -- plus the two
+F2 criteria tests in `bootstrap/tests/test_security_capability_install.py`.
+
+**A prose defect corrected in the same edit.** The contract comment above the set
+read *"These **four** files are not apparatus"* while the set has held **five**
+members since Fold 5 added `dev/.cairn/model-selection-mapping.yml`; the prose was
+never updated. F2 takes it to seven, and the set now spans two classes rather than
+one -- adopter-*authored* project state (a roadmap, a handoff, a fold-back ledger,
+a governance agreement) and adopter-*filled* configuration installed as an
+unconfigured stub. Both are now described. The count is stated as a class
+breakdown, not a bare number, so the next widening does not re-stale it.
+
+**A plan defect found by measurement, not accepted from the plan.** Row F5(a)
+states the record key set is `{src, dst, verbatim, hash}` plus `base_cache` /
+`base_hash` "only where the branch that adds it is taken (substituted
+destinations)". Measured: `bootstrap/_scaffold/install.py:1810-1811` writes
+`base_hash` on the **verbatim** branch too, deliberately and with a comment
+explaining why. So verbatim destinations carry five keys and substituted carry
+six; after F2 the two policy destinations carry seven. The test asserts a
+**per-destination** map for exactly this reason.
+
+**Falsification ledger -- three mutants, each restored byte-exactly (verified by
+`shasum -a 256` before and after).**
+
+| # | Mutation | File mutated | Expected | Observed |
+|---|----------|--------------|----------|----------|
+| M1 | Remove F2's two entries from `_LIVING_STATE_DSTS` | `bootstrap/_scaffold/lockfile.py` | F2's tests go red -- the entries are load-bearing | 3 failed (`test_f5a_*`, `test_f2_1_*`, `test_f2_2_*`), 30 passed |
+| M2 | Add an **engine** destination (`scripts/_api_access_security/net.py`) to the set -- F2-1's own deletion mutant | `bootstrap/_scaffold/lockfile.py` | F2-1's hazard half goes red: a tampered engine member verifies OK | 2 failed (`test_f2_1_*`, `test_hazard_a_tampered_engine_member_*`) |
+| M3 | Drop the `_LIVING_STATE_DSTS` membership test -- F2-2's deletion mutant | `bootstrap/verify_integrity.py` | the illegal-opt-out row goes red, proving F-3 and F2-2 discriminate independently | 1 failed (`test_hazard_an_illegal_living_state_opt_out_*`), F2-2 passed as designed |
+
+`bootstrap/_scaffold/lockfile.py` has **no template twin** (the only other copy on
+disk is inside an untracked `.claude/worktrees/` scratch tree), so the
+twin-mutation trap does not apply here -- checked rather than assumed.
+
+**A vacuity trap avoided, and recorded because it was tempting.** The test file's
+`_POLICY_DESTINATIONS` states the two paths **literally** rather than deriving them
+from `_LIVING_STATE_DSTS`. Deriving them would have made F2-2 vacuous under its own
+M1 mutant: remove the two entries, an engine-derived set goes empty, and every
+assertion over it passes trivially. The cost of stating them is a possible desync
+from the engine, which `test_f2_2_*` closes by asserting the literal set against
+`_LIVING_STATE_DSTS` directly.
+
+**Suites run.** `test_security_capability_install.py` 33 passed (31 from F5, 2 from
+F2). `test_lockfile_module.py`, `test_upgrade.py`, `test_scaffold.py`,
+`test_default_security_stance.py`, `test_module_merge_lockfile.py` -- 190 passed
+together. The real `dev/.cairn/cairn-lock.yml` was confirmed untouched by the test
+installs (`git status --short` on that path, empty).
+
+**F2-3, the engine delta -- RECORDED, NOT RE-PINNED.** Isolated by running
+`test_ast_attest.py` against the committed `HEAD` version of `lockfile.py` and then
+against the F2 version, and diffing:
+
+```
+CHANGED   Assign:_LIVING_STATE_DSTS  in bootstrap/_scaffold/lockfile.py
+          (baseline dc478efb072ed310 != 8b7ceb939c3633d6 -- NOT pure motion)
+```
+
+That is F2's entire contribution and it is exactly the delta F2-3 requires --
+`Assign:_LIVING_STATE_DSTS` and nothing else new. `Assign:_LIVING_STATE_DSTS` is
+**not** in `_ast_attest._UPDATE_ALLOWLIST`, so re-anchoring is a **Maintainer-run,
+dry-run-verified direct correction that an implementing agent does not perform**
+(`bootstrap/AST_BASELINE_RUNBOOK.md`). The baseline additionally carries CHANGED
+entries from other concurrent streams; the Maintainer's run should derive the whole
+expected CHANGED set against the committed baseline at that time rather than carry
+the figure above forward.
+
+### Known omissions and follow-ups, named rather than left implicit
+
+* **The Security Review for F2 is owed**, per the correction section above.
+* **No Boundary-B full suite in this pass.** Still owed for Chunks H, D and now F2
+  and F3-F5. The tree has not been quiet long enough for a clean-commit run.
+* **Chunk G is now unblocked** and has not been implemented.
+* **`verify_integrity`'s success message calls every living-state file
+  "adopter-authored"**, which is inaccurate for the two policy files
+  (adopter-*filled configuration*). `bootstrap/verify_integrity.py` is outside this
+  plan's declared paths -- the same boundary F5(c) drew for the extra-key gap -- so
+  the wording was not changed here. Routed as a lasting truth.
+* **`install.py:1797-1798`'s comment** carries the same "Adopter-authored project
+  state" gloss. It delegates to `_LIVING_STATE_DSTS`'s own docstring, which this
+  commit corrected, so the pointer is now accurate even though the gloss is lossy.
+* **F2's two entries are the first members of `_LIVING_STATE_DSTS` with no witness
+  in Cairn's own tree** -- Cairn selects neither capability, so neither path exists
+  here, and F2's behaviour can only ever be exercised by a scaffold into a
+  temporary target. The same blind-path shape as `[RB5-6]`.
