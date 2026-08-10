@@ -25,7 +25,7 @@ modflow_tools' own science and must not enter the public Cairn repo.
 | `2026-05-20-claude-team-productivity-metrics.md` | same | living | The Measurement-Compact research. |
 | `2026-05-27-claude-cairn-pre-release-sweep.md` | same | living | Version-independent release-strategy sweep. |
 | `2026-05-27-codex-cairn-adopter-friction-audit.md` | → `archive/` (2026-06-12) | settled | Prospective-scientist adopter-friction lens. Superseded + archived by the v0.3 re-run `2026-06-12-claude-adopter-friction-audit.md`. |
-| `2026-06-04-claude-documentation-graphics.md` | same | settled | Docs-graphics strategy (`docs/assets/`). |
+| `2026-06-04-claude-documentation-graphics.md` | → `archive/` (2026-08-10) | settled | Docs-graphics strategy (`docs/assets/`). Superseded + archived by the Cairn-vantage re-scope `2026-08-10-claude-documentation-enhancement.md`, which carries the portable production model forward and drops the modflow_tools figure inventory. |
 | `2026-06-05-claude-cairn-complexity-debt-audit.md` | same | revised | Complexity-debt audit. |
 
 Each migrated file carries a `<!-- Migrated 2026-06-12 … -->` provenance
@@ -44,6 +44,16 @@ need one; `adopter-friction-audit` and `complexity-debt-audit` are
 already clean. As each *living* doc is actively rewritten to Cairn's own
 vantage, its directive shrinks or drops and the doc rejoins normal
 claim-path checking. Track that here.
+
+* **2026-08-10 — `documentation-graphics` left the live set.** Rather than
+  being rewritten in place, it was superseded by a Cairn-vantage note and
+  archived (row above). Its `claim-check-allow` directive travels with it
+  into `archive/`. That leaves three of the original four *vantage*-directive
+  docs live: `human-ai-team-development-framework`,
+  `team-productivity-metrics`, and `pre-release-sweep`.
+  (`complexity-debt-audit` also carries `claim-check-allow` directives, but
+  they are Cairn-repo path and count exemptions, not vantage ones — it is
+  "clean" in this section's sense, as recorded above.)
 
 ## Retroactive-review exemption
 

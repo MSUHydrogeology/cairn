@@ -6,6 +6,13 @@
      yet.  Count claims (README length, file counts) cite the command that
      computed them rather than quoting absolutes. -->
 
+<!-- Archived 2026-08-10: superseded by the Cairn-vantage re-scope
+     `2026-08-10-claude-documentation-enhancement.md`, which carries this note's
+     production model forward (Mermaid-first, existence + legibility as two
+     checks, the caption states the conclusion, asset naming/provenance) and
+     drops the modflow_tools figure inventory. Read for history; not current
+     direction. -->
+
 # Documentation graphics strategy
 
 **Author**: Claude (Strategy & Research Agent)
