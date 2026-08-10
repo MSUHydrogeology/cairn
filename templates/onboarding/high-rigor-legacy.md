@@ -120,9 +120,11 @@ goes live.
   Your fold-back ledger has its first open candidate ready to
   surface upstream. The foldback active-surfacing prompt
   (`doctrine/fold-back.md > Active surfacing`) walks through
-  filing; the high-rigor-legacy profile's content-security +
-  security-review gates apply to the drafted filing body before
-  it leaves the deployment.
+  filing; the high-rigor-legacy profile installs the
+  content-security scanner and the security-review checklist --
+  run `python scripts/content_scan.py` over the drafted filing
+  body and walk the security-review checklist before it leaves
+  the deployment.
 
 ## Active-surfacing prompt content (per-preset)
 
@@ -161,7 +163,8 @@ codebases carry.
 Your fold-back ledger carries a candidate ready for upstream
 filing. The foldback active-surfacing prompt
 (`doctrine/fold-back.md > Active surfacing`) walks through
-filing; the high-rigor-legacy profile's content-security +
-security-review gates apply to the drafted filing body before
-it leaves the deployment. Run the scrub scanner on the draft
-explicitly before submitting.
+filing; the high-rigor-legacy profile installs the
+content-security scanner and the security-review checklist --
+run `python scripts/content_scan.py` over the drafted filing
+body and walk the security-review checklist. Run the scrub
+scanner on the draft explicitly before submitting.
