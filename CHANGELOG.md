@@ -42,6 +42,30 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **Two selectable network-security capabilities — and the agent-facing leg can
+  reach only loopback.** Selecting `api-access-security` installs a runner that
+  executes a *declared* cross-principal authorization matrix (it implements no
+  authorization model and infers none), and `web-hosting-security` installs a
+  runner that reports per-check HTTP/TLS posture observations and **refuses to
+  issue a grade**. Both sit on one shared standard-library hardened client that
+  resolves once, refuses the whole DNS answer set if any member is out of class,
+  and re-verifies the **connected peer** after connect — so the SSRF and
+  DNS-rebinding controls bind the peer, not the requested name. Redirects are
+  classified and never followed, and a `Location` host outside the policy's exact
+  allowlist is refused **without a DNS lookup**. Each capability splits into two
+  legs: `local` is **loopback-only** and is the only leg an agent runs, while
+  `deployed-passive` is a separate Maintainer-owned command that sends only
+  `GET`/`HEAD` and refuses unless `--authorize-base-url` is byte-for-byte the
+  policy's normalized base URL. Findings are **content-free** — fixed check,
+  operation, case and assertion ids, ordinal principal ids, a status class and a
+  five-value magnitude bucket, never a value, exact length, member count, header,
+  cookie, body fragment, certificate subject or credential; credentials are read
+  from environment variables whose names the engine *derives* from ordinals and a
+  policy cannot supply. Both are explicit-selection only: no preset selects them
+  and neither is default-on. New `SAFETY.md` Rule 11 records the egress boundary
+  and what it does not protect. Proposal `api-web-security-modules`, plan
+  `api-web-security-modules`.
+
 - **A team-gated, opt-in cross-language security sweep — and no scanner is
   bundled.** Selecting the `portable-security-sweeps` module installs a
   standard-library orchestrator (`run_portable_security_sweeps.py`), a strict

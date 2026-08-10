@@ -1,4 +1,9 @@
-<!-- claim-check-allow: scripts/_onboarding/ -->
+<!-- claim-check-allow: scripts/_onboarding/, scripts/api_access_security.py, scripts/web_hosting_security.py -->
+<!-- The two `scripts/*_security.py` globs are ADOPTER-tree install destinations
+     of Rule 11's two team-gated modules. Cairn does not select those modules on
+     itself, so the paths deliberately do not resolve here; the reviewed sources
+     are `templates/modules/team-gated/api_access_security.py` and
+     `templates/modules/team-gated/web_hosting_security.py`. -->
 # SAFETY.md — bootstrap safety constraints (R-I)
 
 This document states the safety rules that govern every Cairn
@@ -86,6 +91,13 @@ reading external documentation (e.g., a library's API docs), the
 agent may fetch it interactively — but this is Act I *research*,
 not a bootstrap operation, and the fetched content must be
 summarized in the profile files, not embedded verbatim into Cairn.
+
+**Scope: the installer, not what it installs.**  This rule is about the
+*bootstrap* — the scaffold and the two Acts.  Cairn now also **ships**
+modules whose installed scripts do open network connections when an
+adopter runs them.  That is Rule 11, and Rule 5 says nothing about it.
+Reading Rule 5 as "nothing Cairn ships touches the network" is a
+misreading this paragraph exists to prevent.
 
 ## Rule 6 — Vendor-addendum files do not contaminate shared files
 
@@ -325,6 +337,169 @@ authority**, not a lookup.
 
 **Any future shipped script that resolves an executable from `PATH` takes the
 same treatment**, and the change takes a Security Review.
+
+---
+
+## Rule 11 — Cairn ships network egress, bounded by the connected peer
+
+Two selectable, team-gated modules — `api-access-security` and
+`web-hosting-security` — install scripts that **open outbound TCP connections
+and speak HTTP/HTTPS**.  Nothing in the scaffold does this; Rule 5 remains true
+about the installer and says nothing about what the installer installs.  This
+rule is what covers the shipped runners, and it states the controls *and* what
+they leave open.
+
+Both capabilities are **explicit-selection only** — no preset selects them and
+they are not in the default-on set — and each installs a facade
+(`scripts/api_access_security.py`, `scripts/web_hosting_security.py`) over one
+shared four-member engine package installed once per capability.  The engine is
+**standard-library-only**; see
+[`DEPENDENCY_BUDGET.md`](DEPENDENCY_BUDGET.md) > *No exception*.
+
+1. **The controlling property is the *connected peer*, not the requested
+   address.**  All addressing and all socket work live in one function —
+   `open_validated_connection` in the shipped
+   `_security_net/net.py` — and nothing else in the package opens a socket.  It
+   resolves **once**, refuses the **whole** answer set if *any* member falls
+   outside the permitted address classes, connects to a literal address from
+   that validated set, and then re-reads `getpeername()` and refuses unless the
+   peer is **both** in the validated set **and** in a permitted class — closing
+   the socket before one application byte is written.  There is no second
+   lookup between validation and connection, which is the DNS-rebinding window;
+   and the peer check is what makes the classification an SSRF control rather
+   than a hint.  A module seam between "classify" and "connect" would be an
+   invitation to a caller that skipped one, so there is no such seam.
+2. **Two legs, two disjoint address classes, and the split is the design.**
+   The agent-facing `local` leg may reach **loopback only** — the policy host
+   must be a loopback literal or the exact name `localhost`, checked as a *name
+   allowlist before DNS* so a public hostname is refused without a lookup.  The
+   Maintainer's `deployed-passive` leg may reach **public only**.  Neither leg
+   can be talked into the other's class by a policy field.
+3. **Redirects are classified, never followed, and never resolve an
+   attacker-chosen name.**  A `3xx` terminates the call with a fixed refusal
+   token.  A `Location` host outside the policy's exact allowlist is refused
+   **without a DNS lookup**, so the engine cannot be used as a resolver for a
+   name of the peer's choosing.  Because nothing follows a redirect, nothing
+   authenticating is ever carried to a second origin — there is no second
+   request.
+4. **TLS is platform-trust-store verification with no weakening path.**
+   `check_hostname` is on, `verify_mode` is `CERT_REQUIRED`, the floor is TLS
+   1.2, and there is **no policy field, CLI flag, or environment variable in
+   either module that reaches either setting**.  On a verification failure the
+   OpenSSL *code* is mapped to a fixed reason token; the human-readable
+   verification message is never read, so a peer cannot choose text that
+   reaches an output channel.
+5. **Every read is capped and every wait is bounded.**  Connect and read
+   timeouts, a request-byte cap, a response-byte cap, a header-count cap, a
+   header-line cap and a status-line cap are all fixed constants in the engine,
+   not policy inputs.
+6. **Credentials are environment-variable *names*, derived, never values.**  A
+   policy declares **ordinal** principals; the variable name is derived by the
+   engine as `CAIRN_API_P<N>_CREDENTIAL` and **a policy cannot supply, override,
+   or alias it** — a policy key that tries is refused by name.  The two policy
+   sections' ordinal sets are disjoint by schema, so the `local` leg
+   structurally cannot look up a *deployed* section's variable.  A value read
+   from the environment becomes the `Authorization` header of exactly one
+   request and is never printed, persisted, logged, or written to the report;
+   the one place a raw exception could have carried it — a non-ASCII header
+   encode error, whose message *is* the credential — is closed with a fixed
+   refusal instead.  This is Rule 9's posture applied to a runtime input:
+   **no substitution token, lockfile field, or installed file carries a
+   secret.**  The hosting capability reads **no credential at all** and its
+   deployed leg is unauthenticated in v1.
+7. **Passive versus active, drawn where it actually is.**  The hosting
+   capability is passive on **both** legs: declared `GET`/`HEAD` only, no attack
+   payload, no crawl, no link-following, no ID inference, and it **refuses to
+   issue a grade**.  The API capability's `local` leg **does** send mutation
+   methods (`POST`/`PUT`/`PATCH`/`DELETE`) — that is the point of an
+   authorization-denial matrix — and it is confined to loopback for exactly that
+   reason.  Its `deployed-passive` leg is `GET`/`HEAD` **in code**, refused at
+   schema level, so no v1 route produces a non-loopback write.
+8. **A remote target is re-authorized by hand, per exact URL.**
+   `deployed-passive` refuses unless `--authorize-base-url` is **byte-for-byte**
+   the policy's *normalized* base URL.  The argument is deliberately not
+   normalized: a trailing slash, an upper-case host, an explicit default port, a
+   punycode spelling, an added query, or `http` for `https` all refuse.  Typing
+   that argument is a **human act**; an agent that types it has defeated the
+   control (`AGENTS.md`-level rule, and the plan's Maintainer fence).
+9. **The external tools these modules evaluate are deferred, not adopted.**
+   OPA, Cedar, OpenFGA, Schemathesis, ZAP, `testssl.sh`, Trivy and the MDN HTTP
+   Observatory are named in the module doctrine as recommended companions,
+   deferred adapters, or deliberate exclusions.  **None is installed, and
+   neither runner resolves an executable from `PATH`** — so Rule 10's
+   trust-root treatment does not attach to these modules, and it would attach
+   the moment one of those adapters shipped.
+10. **Output carries no observed content.**  Findings carry fixed check,
+    operation, case and assertion identifiers, ordinal principal ids, a status
+    *class* (`2xx`, not `200`), and — only where an observed value exists at all
+    — a five-value magnitude bucket.  Never a value, an exact length, a member
+    count, a header, a cookie, a body fragment, a certificate subject, a redirect
+    URL or query, a peer-supplied reason phrase, or a credential.  **A finding
+    contains no integer at all**, which closes exact cardinality as a *class*
+    rather than field by field.
+    The bucket is the *only* size-derived thing a finding carries; the size
+    itself is discarded at the boundary, and a peer-supplied reason phrase and
+    `Location` value are reduced to fixed tokens on the way *in*, so their
+    content is never retained even in memory beyond the parse.  Where the API
+    capability needs to correlate two equal observations it emits an HMAC-SHA-256
+    fingerprint under a **per-run key from the OS CSPRNG**, truncated, never
+    printed or persisted: equal within a run, different across runs, so a pasted
+    report is not an offline dictionary oracle.  A failure to obtain randomness
+    is a refusal raised before the first request rather than a weaker key.  The
+    single report file is `report.json`, mode `0600`, in a freshly-created
+    temporary directory, and no raw-response artifact is written anywhere.
+
+**What this rule does not protect — stated because a control described past its
+reach is worse than no control.**
+
+* **Loopback is a socket property, not a fixture property.**  A loopback
+  service that proxies to staging is loopback from `getpeername()`'s point of
+  view.  The address check cannot attest a fixture's internals, so **local
+  mutation evidence is invalid if the fixture has any upstream route** — and a
+  `DELETE` you believed landed on a throwaway record can land on a real one.
+  No address check closes this; the module doctrine states it as an open failure
+  mode.
+* **`--authorize-base-url` is structural command separation, not actor
+  authentication.**  A shell process cannot prove who invoked it.  An agent
+  holding the Maintainer's terminal and credentials could perform that act.
+* **Sanitization protects output channels, not process memory.**  A debugger, a
+  core dump, or another process running as the same user is out of reach of
+  every control above.
+* **The report is sanitized and is still security evidence.**  It can reveal
+  operation names, principal relationships and failure counts.  The Maintainer
+  reviews it before sharing it and deletes it under the project's
+  evidence-retention policy.  The `0600` mode is **POSIX**; no Windows run has
+  established an equivalent.
+* **CLEAN is narrow.**  It means *the declared matrix or the reviewed
+  expectation set held at the named target and time* — no more.  A local CLEAN
+  is not a deployed CLEAN, and the runners say so in the summary, in the report,
+  and in the dispatcher child document's `evidence_mode`.
+* **The deployed request path is exercised only up to its refusal boundaries.**
+  No test drives a deployed leg to a *successful* request: none supplies a
+  deployed credential and none contacts a real host.  That is the Maintainer
+  fence working as intended, and it means the successful-deployed-request path
+  itself is **unexercised by Cairn's suite** — run by a person typing
+  `python -m pytest bootstrap/tests`; **Cairn has no CI**.
+* **Point 10 rests on a reading of the code plus partial tests, not on a
+  channel-complete sweep.**  What Cairn's suite asserts today: credential-marker
+  absence across stdout, stderr, the report file and the whole temporary
+  directory; a *structural* assertion that a finding carries no exact integer at
+  all; and per-check value-absence for each check in both runners.  What it does
+  **not** yet assert: a per-channel *liveness-then-absence* ledger — proving each
+  individual channel (peer reason phrase, redirect query, certificate subject,
+  transport and TLS exception text, timeout diagnostic) is actually reached
+  before asserting nothing leaks through it.  Until that exists, "no marker
+  found" and "that channel is never exercised" are not distinguished for the
+  channels the credential sweep does not cover.
+* **Neither capability is a standing check yet.**  As of this rule they are
+  **directly invocable only** — no activation-registry entry exists, so nothing
+  runs them as part of a standing agent-facing command and neither is
+  integrity-classified by the activation dispatcher.  A registry entry is a
+  separate change with its own Security Review and its own first-use trust
+  artifact.
+
+**Any future shipped script that opens a network connection takes this same
+treatment**, and the change takes a Security Review.
 
 ---
 

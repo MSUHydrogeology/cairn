@@ -196,6 +196,57 @@ the first `.json` under `templates/` to set an unexamined precedent:
 | `portable-security-sweeps.md` | **document template — CC BY 4.0** |
 | `portable_security_policy.json` | **code — MIT.** A data asset with no comment syntax, so it carries **no header**; it is a machine-read policy input to an MIT script, not prose. |
 
+## No exception — `api-access-security` and `web-hosting-security`
+
+**This section is not Exception 4.** It is here so the ledger records a
+capability family that *looks* like it should need an exception and does not, and
+so a later reader cannot mistake the tools named below for admitted
+dependencies.
+
+The two network-security capabilities install six Python sources — two facades
+and one four-member `_security_net` engine per capability — and **v1 of both is
+standard-library-only**. The complete import set across all six, measured rather
+than summarized: `argparse`, `hashlib`, `hmac`, `importlib.util`, `ipaddress`,
+`json`, `os`, `pathlib`, `re`, `secrets`, `shutil`, `socket`, `ssl`, `sys`,
+`tempfile`, `urllib.parse`. Nothing is installed into the adopter's
+environment, nothing is resolved from `PATH`, and no host executable is invoked
+— so unlike Exception 3 there is no external trust root to enumerate, and
+**Rule 10 of [`SAFETY.md`](SAFETY.md) does not attach to these modules.**
+
+What *is* new is network egress from an installed runner, which is a safety
+boundary rather than a dependency: see
+[`SAFETY.md`](SAFETY.md) > *Rule 11*. A dependency budget and an egress boundary
+are different ledgers, and this record deliberately keeps them apart.
+
+**The eight tools these modules name are not dependencies of any kind.** Each is
+either a recommended companion the adopter may adopt on their own, a deferred
+adapter, or a deliberate exclusion — and none is installed, imported, resolved,
+or executed by anything Cairn ships:
+
+| Tool | Named in | Status |
+|---|---|---|
+| Schemathesis | `api-access-security.md` | recommended companion for contract/authentication testing — **adopter's own choice, not installed** |
+| OPA, Cedar, OpenFGA | `api-access-security.md` | architectural choices the project owns; the module executes a *declared* matrix and implements no authorization model |
+| ZAP (API scan) | `api-access-security.md` | **excluded** — it is an active scanner; both capabilities' remote legs are passive |
+| `testssl.sh` | `web-hosting-security.md` | **deferred adapter** — a better local TLS analyser, deferred rather than shipped |
+| MDN HTTP Observatory | `web-hosting-security.md` | **deferred adapter**, kept as a documented extension |
+| Trivy | `web-hosting-security.md` | stays with `portable-security-sweeps`, which already owns the external-tool boundary (Exception 3) |
+
+Shipping any one of them as an *adapter* would make it an external-tool
+dependency of Exception 3's category — an executable the scaffold neither
+installs nor ships, whose `PATH` resolution is execution authority. That would
+be a new declared exception and a Security Review, not a flag.
+
+**Licence disposition of the ten shipped template sources** (six `.py`, two
+`.md`, two `.json` — installed to fourteen destinations, because one engine tree
+is installed once per capability), on the same footing as Exception 3's table:
+
+| File | Family |
+|---|---|
+| `api_access_security.py`, `web_hosting_security.py`, and the four `_security_net` members | **code — MIT**, SPDX header in the first four lines |
+| `api-access-security.md`, `web-hosting-security.md` | **document template — CC BY 4.0** |
+| `api_access_policy_stub.json`, `web_hosting_policy_stub.json` | **code — MIT.** Data assets with no comment syntax, so they carry **no header** — machine-read policy inputs to MIT scripts, not prose. |
+
 ## The canonical interpreter — Python 3.13.x
 
 Every gate in this record assumes one interpreter. The gate manifest pins it
