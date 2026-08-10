@@ -11,7 +11,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-10
-**Status**: revised
+**Status**: accepted
 **Touches**: `bootstrap/tests/` test infrastructure only — a new shared
 memoization helper, and its application to the six test files that
 dominate suite wall-clock. No shipped file, no adopter-facing surface,
@@ -887,3 +887,12 @@ motivation** (`as_of 2026-08-10`), not criteria.
 
 **Plan review**: required(**Internal**) -- decided per [E4], not routed
 to the Maintainer.
+
+## Decision -- Maintainer -- 2026-08-10
+
+> I accept your recommendations to accept as revised both proposals. Please scribe the draft ## Decision blocks for each and update the status.
+
+Accepted Revised Proposal. Localizing the memo to `test_transition_lint.py`, adding two-root key-completeness contract tests, fencing ceremony files, and pinning acceptance to byte-identical test output removes suite bottleneck wall-clock without compromising test evidence. The resulting plan is `required(**Internal**)`.
+
+Scribed by Antigravity under Maintainer instruction.
+
