@@ -1578,3 +1578,74 @@ state. My recommendation is that the Maintainer take the two closure passes
 these findings warrant and then decide, rather than commissioning a sixth
 round; the remaining findings are local amendments, and the exception that
 unblocks Chunk A is a Maintainer act that no additional review can supply.
+
+## Plan review -- Codex -- 2026-08-10 (round 4)
+
+**Model**: GPT-5.6-Codex
+**Tier**: External
+**Obligation**: External
+**Reviewed commit**: `d31b735f041565473d5c88c3b94b66868b21cd39`
+**Target**: the complete inline Response to H1--H3 and the corrected deadlock
+measurement
+**Prior findings**: H1--H3
+**Assurance path**: high-assurance
+**Findings**: raised
+**Verdict: REVISE, one blocker.** H1 and H3 close. H2's one-time exception is
+now bounded to the right authority, artifact, review commits, violation shape,
+count, and lifetime, but its plan-blob field is self-referential and therefore
+cannot be completed as written.
+
+### [J1] HIGH -- the bootstrap attestation asks the plan blob to contain its own hash
+
+The exception table asks the Maintainer to fill `Plan blob (git hash-object) at
+authorization` inside this plan. The completed field is part of the bytes being
+hashed, so writing the current blob id changes the blob id. This is the same
+circularity T2 correctly removed from the pilot activation record.
+
+I reproduced it on the reviewed bytes. The current plan blob was
+`0af4a1d7c35b32c8633089597cc1068411e484af`; substituting that value into the
+pending field produced blob `e84603526b704af052b616564f66a1d8eb27cb56`.
+The recorded value therefore cannot equal the completed artifact. Direct
+parser execution independently confirms the corrected stable baseline: two
+identical historical review violations, not three, and the executing gate
+remains unmet.
+
+**Required satisfier.** Make the binding non-circular and executable before
+Chunk A:
+
+* bind `pre-attestation plan blob` to the plan blob at the parent of the
+  Maintainer's attestation commit, after both clearing review commits exist;
+* make the attestation a path-scoped commit whose only plan changes fill the
+  two bootstrap rows and the exception fields, with the Maintainer's verbatim
+  authorization in the plan and commit body;
+* record a command-based preflight that verifies the parent blob, exact
+  clearing commits, exact two-item violation multiset, and an allowlisted diff
+  from the parent blob to the attested blob before permitting the status-only
+  transition and A/B window; and
+* bind the resulting attestation commit from the transition record rather than
+  trying to embed its own commit or blob id inside itself. Chunk B's later test
+  may replay this historical record and must still prove changed fields,
+  additional violations, broader diffs, and reuse on another artifact refuse.
+
+No pre-Chunk-A code can validate its own authorization, so the plan must name
+this as a Maintainer-run exact-byte bootstrap preflight, not imply that a test
+which lands in B protects the earlier transition.
+
+### Closure accounting
+
+H1 closes: Sequence is the sole normative restart rule and Verification points
+to it. H3 closes: the activation record is immutable and non-circular, and the
+source-bound append-only ledger plus expected-old, containment, schema, and
+mutation matrix removes the last-writer-wins state. The event-to-commit
+choreography remains an implementation choice for P6b and a Code-review target,
+not a reason to reopen the storage design.
+
+**Covered**: the full plan diff through `d31b735`; direct current-parser gate
+execution under Python 3.13.13; byte-level Git blob reproduction; restart-rule
+locations; proposed-path/ignore treatment; and the revised pilot and encoder
+contracts.
+
+**Not covered**: implementation bytes, execution of the future bootstrap
+preflight, pilot observations, Code review, or the re-anchor ceremony. Return
+J1 only for the next External closure read. This pass is blocking and does not
+fill the bootstrap table's `External` row.
