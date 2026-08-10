@@ -923,63 +923,6 @@ outside the sharpened cells.
 Return only G1--G3 for the next External closure read. This pass remains
 blocking and does not fill the bootstrap table's `External` row.
 
-## Plan review -- Codex (Security) -- 2026-08-10 (round 4)
-
-**Model**: GPT-5.6-Codex
-**Tier**: External
-**Obligation**: External Security Review
-**Reviewed commit**: `6c119ec9035db1fd7c4e5464df257405ee8c40f8`
-**Target**: focused Security closure of K1 against the revised bootstrap
-ceremony; the preceding External pass is context only
-**Prior findings**: K1
-**Assurance path**: high-assurance
-**Security lens**: bootstrap authority, byte binding, replay, and expiry
-**Findings**: raised
-**Verdict: REVISE, one blocker.** The pre-attestation parent-blob and exact-diff
-design closes K1's original circularity. The ceremony then places the
-attestation commit id in the set that same commit must complete, recreating the
-same security defect one step later.
-
-### [M1] HIGH -- authorization still depends on a value unavailable until after authorization
-
-The table requires every field before the exception authorizes anything, while
-step 2 requires the attestation commit to fill every field above. Its own
-commit id does not exist until after those bytes and the commit object are
-fixed. Deferring the field to the transition is the correct instinct, but the
-current precondition prevents that transition while the field is pending.
-
-**Required satisfier.** Apply L1: remove the attestation-commit id from the
-pre-attestation field set. The exact-byte preflight verifies the completed
-attestation commit already present in Git; the later transition record names
-that known commit and is allowed to change only the status and binding record.
-Require unchanged plan bytes between attestation and transition, permit
-unrelated intervening commits only when that path's blob is identical, and
-retain the artifact/review/multiset/diff/expiry/replay refusals already stated.
-
-At this reviewed commit direct execution returns four identical violations:
-the three present at `a404145` plus the newly appended blocking External pass.
-That confirms why the preflight must derive the multiset from its named parent
-and why no prose forecast is a security authority. L2 remains the External
-correction to the earlier "four as of this Response" claim; it does not add a
-second Security mechanism.
-
-### Security closure accounting
-
-The parent plan blob, clearing-review pair, exact allowlisted diff,
-Maintainer-only authority, command-based preflight, status-window scope, B
-expiry, and no-replay clauses are acceptable. Encoder containment, pilot
-evidence, and ceremony invalidation remain closed. M1 is the only remaining
-Security blocker.
-
-**Covered**: exact plan bytes at `6c119ec`; direct violation-multiset execution
-under Python 3.13.13; Git object construction order; the attestation/preflight/
-transition sequence; and every K1 mutation dimension.
-
-**Not covered**: implementation bytes, actual execution of the Maintainer
-preflight, pilot observations, Code review, or re-anchor. Return M1 only. This
-pass is blocking and does not fill the bootstrap table's `External Security
-Review` row.
-
 ## Plan review -- Codex (Security) -- 2026-08-10
 
 **Model**: GPT-5.6-Codex
