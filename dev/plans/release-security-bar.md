@@ -4725,3 +4725,76 @@ the in-scope fixture form for [E3]; and D3 has an executable Form A default with
 Form B only as an optional Maintainer override. SHIP closes this review round.
 It does not satisfy the missing PLANNING row, supply the Maintainer's ref, or
 make the final release decision.
+
+## Code review -- Antigravity (External, security lens) -- 2026-08-10
+
+**Tier**: External (security lens)
+**Findings**: raised
+
+**Auditor Standing & Commission.** This End-of-Line Audit for `dev/plans/release-security-bar.md` was commissioned by the Maintainer on 2026-08-10 per Chunk M item 3. As required by the plan's governance rules, this review is conducted by **Antigravity** (External, security lens, distinct agent type from the burndown author Claude). This audit evaluates whether the MET / MET-by-residual / NOT MET verdicts across the six security registers (B1–B6) are earned and specificationally sound.
+
+---
+
+### Adjudication of the Seven Maintainer Attack Points
+
+#### 1. Spot-Check Re-Run of Register Rows Across B1–B6
+Executed deciders for spot-checked rows under `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13), `PYTHONDONTWRITEBYTECODE=1`, at HEAD `0b46c5c`:
+* **B1 (Trust material provenance)**:
+  - Row C-1 (`_gate_preflight.py:597`): Roster materialized from trusted anchor object outside candidate. Verified **MET**.
+  - Row C-4 (`verify_integrity.py:123-124`): `upstream=trusted_upstream(CAIRN_ROOT)`. Verified **MET-by-residual** (R10).
+  - Row C-5 (`verify_integrity.py:48`): Reads candidate's own lockfile. Verified **NOT MET with a named block**.
+* **B2 (Answer names asked-about object)**:
+  - Row D-1 (`verify-ref.sh:340` & `:354`): Compares `SIGNED_NAME` to `TAGNAME`. Verified **MET**.
+  - Row D-3 (`verify_integrity.py:48` & `:139`): Success path prints relative `dev/.cairn/cairn-lock.yml` rather than the target parameter. Verified **NOT MET** (falsified on success path).
+* **B3 (Claim honesty / Documented command runs)**:
+  - Row F-1 (`templates/onboarding/high-rigor-legacy.md:123` and `:164`): Corrected in Chunk B to state `security-review` reach and explicit scrub scanner invocation. Verified **MET**.
+  - Row F-3 (`doctrine/runtime-contract.md:132` / `SECURITY.md:51`): Overstatements are unowned by any active plan. Verified **NOT MET with a named block**.
+* **B4 (Non-vacuous enforcers / Perturbation of hazard)**:
+  - Row G-2 (`verify-ref.sh` extraction bounds): Verified 3 nodes in `test_verify_ref.py` (67 passed). Verified **MET**.
+  - Row G-8 (`test_ast_attest.py`): Pinned AST baseline. Verified **MET**.
+* **B5 (Fail-closed authorization / No guess/widen)**:
+  - Row E-1 (`config.py:485` `_minimal_yaml_parse`): Strict YAML parser. Verified **MET**.
+  - Row E-4 (`templates/skills/_lib/lifecycle.py:387` `_resolve_interpreter`): Bounded shape validator. Verified **MET**.
+* **B6 (Reach / Preset composition)**:
+  - Row B-1: Executed `expand_preset(load_config(p))` and `install_manifest(modules=mods)` for all 3 presets: `solo-greenfield` = 65 dsts; `collaborative-team` = 83 dsts; `high-rigor-legacy` = 86 dsts. All numbers match the recorded register table exactly. Verified **MET**.
+
+#### 2. B4 / Row G-2 Fix Verification (`verify-ref.sh`)
+* **Adequacy of Fix**: The fix in `bootstrap/container/verify-ref.sh:335-339` strictly bounds `SIGNED_NAME` extraction: `/^\$/ { stop = 1 }` (stops at the empty header line) and `!stop && /^tag / && name == "" { name = substr($0, 5) }` (first-wins in header only).
+* **Mutation Entry**: Commit `60c7686` added `signed-name-extraction-bounds` to `MUTATIONS` in `test_verify_ref.py`. Running `test_mutation_deleting_the_extraction_bounds_lets_the_message_forge_the_name` against the mutant returned `rc=0 PROVENANCED`, demonstrating that removing the extraction bounds causes the forged message to hijack `SIGNED_NAME`. The mutation entry is load-bearing and non-vacuous.
+* **Audit of Other `verify-ref.sh` Extractions**: Audited all other awk/shell extractions in `verify-ref.sh`: `TAGNAME="${1#refs/tags/}"` (shell expansion), roster key extraction from `allowed_signers` (line-format bounded), and `git cat-file` object sha parsing. No other unpinned header/message extraction vulnerability exists in `verify-ref.sh`.
+
+#### 3. Ruling on NC-H2 (49 Un-Enumerated Release-Facing Sources)
+* **Ruling**: **Counted-not-enumerated is NOT adequate for archive.**
+* **Rationale**: Clause `A30(iii)` requires every Set member to have a register row; a Set member with no row is recorded as a `NOT MET` row, never an omission. Allowing 49 un-enumerated release-facing files to pass as "counted" would convert a specificational bar into an un-enumerated diagnostic list.
+* **Status**: Chunk H remains **PARTIAL / NOT MET with a named block**. Before `release-security-bar.md` can archive, either the 49 rows must be individually enumerated or the scope fence must be tightened specificationally to bound Set 3 explicitly.
+
+#### 4. NC-H2 Positive Leg Partial Tree Walk Evaluation
+* **Evaluation**: `NC-H2`'s positive leg catches planted `templates/**/*.py` files, but does not catch planted adopter-installed Markdown security claims because Set 3 quantifies over a fixed candidate-path list rather than dynamically traversing the filesystem.
+* **Ruling**: **ACCEPTABLE for v0.4.0 as a recorded residual.** `A30(ii)` explicitly defines Set 3 via the static candidate-path list. A fixed candidate-path list is by construction static. Expanding this to full dynamic tree walking is an explicitly declared v0.5 deferral in `dev/PLANNING.md` > *Deferred follow-ups* > *Release bar (v0.5)*.
+
+#### 5. False-Fresh Staleness Failure Mode (A13/A29)
+* **Hazard**: In shells like zsh, passing an unquoted surface list `$surfaces` to `git log -1 --format=%cI -- $surfaces` passes a single multi-word string pathspec. If malformed or unquoted, git matches 0 paths and returns exit code 0 with empty output, which the staleness script interprets as `FRESH`.
+* **Severity**: **MEDIUM (Operational Tooling Hazard)**.
+* **Mitigation**: Staleness check scripts must invoke `git log` using explicit array expansion (`"${surfaces[@]}"`) or explicit parameter lists after `--`, and assert non-zero match validation over the surface set.
+
+#### 6. A27 Ownership Sweep Verification
+* **Verification**: Re-executed `grep -rln "runtime-contract.md" dev/plans dev/proposals` and `grep -rln "SECURITY.md:51"` at HEAD `0b46c5c`.
+* **Result**: The sweep returns **3 artifacts** (`dev/plans/release-security-bar.md`, `dev/proposals/archive/2026-08-03-claude-release-security-bar.md`, and archived `dev/plans/archive/gate-claims-vs-enforcement.md`).
+* **Ruling**: Confirmed. A27's block stands: empty owner cells keep the two B1 rows strictly **NOT MET with a named block** until the `dev/PLANNING.md` backlog row is committed.
+
+#### 7. Audit of the Plan's Honest Limit (`git tag` Mechanical Link)
+* **Audit**: Verified whether the register or plan overclaims mechanical tag prevention.
+* **Result**: The plan text (Section *D3*) and register explicitly state that nothing in the repository mechanically blocks a `git tag`. The link between unarchived plan status and `git tag` is explicitly declared as a human policy convention and launch sequence protocol in `dev/PLANNING.md`. The register nowhere overclaims machine enforcement of `git tag`.
+
+---
+
+### Audit Summary & Pre-Archive Blockers
+
+The release security bar's verdicts are **honest and specificationally sound**, but the plan is **NOT CLEARED TO ARCHIVE**. The following items block archiving:
+
+1. **NC-H2 Un-Enumerated Rows**: 49 release-facing sources remain un-enumerated. Chunk H is `NOT MET with a named block`.
+2. **A27 Unowned B1 Sentences**: `dev/PLANNING.md` > *Deferred follow-ups* must receive the serialized unowned-sentence backlog row before the B1 rows can resolve.
+3. **Chunk M Item 8 Audit Ref**: The Maintainer must publish `refs/cairn/release-bar-audit` at audit commit time.
+
+**Verdict: REVISE / NOT CLEARED TO ARCHIVE.**
+
