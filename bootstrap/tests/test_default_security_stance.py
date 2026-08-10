@@ -22,6 +22,7 @@ NO_PRESET_MODULE_SENTINELS = {
     "incident-trackers": "tools/evolution_infer.py",
     "documentation-plan": "docs/DOCUMENTATION_PLAN.md",
     "content-security": "scripts/content_scan.py",
+    "security-verification": "scripts/run_security_verification.py",
     "python-security": "scripts/run_security_audit.py",
 }
 

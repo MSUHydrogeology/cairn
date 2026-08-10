@@ -416,7 +416,13 @@ class TestSoloLegacyRecipe:
 
         modules, summary = expand_preset(parsed)
         assert set(modules) == _DEFAULT_ON | {"legacy-agent", "testing-discipline"}
-        assert len(modules) == 9
+        # Derived from the live default-on tuple rather than hardcoded: the
+        # membership assertion above collapses duplicates, so this length
+        # check is what would catch `expand_preset` emitting a module twice.
+        # It was a literal `9` until security-verification-activation Chunk B
+        # made it a literal `10`; a number that has to be hand-moved every
+        # time the default-on set grows is a pin, not a check.
+        assert len(modules) == len(_DEFAULT_ON) + 2
         assert summary["staffability_warnings"] == []
 
     def test_literal_recipe_yaml_also_parses_via_pyyaml(self) -> None:

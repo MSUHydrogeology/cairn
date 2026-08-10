@@ -376,15 +376,33 @@ def test_apply_module_merges_changes_bytes_only_for_an_inserted_decision() -> No
 
 # --- Constraints 4 + 5: scope of the overlay ------------------------------
 
-def test_default_on_module_set_declares_no_merge_directives() -> None:
-    """Constraint 4 (non-merge files unaffected), at its widest: the shipped
-    default-on set declares no directives at all, so the overlay is empty and
-    every `would` is computed exactly as before the fix."""
+def test_default_on_module_set_declares_exactly_the_known_merge_directive(
+) -> None:
+    """Constraint 4 (non-merge files unaffected), at its widest: across the
+    whole shipped default-on set the overlay is exactly ONE directive, so
+    every *other* target's `would` is computed exactly as before the fix.
+
+    **This node asserted an EMPTY result** until
+    `security-verification-activation` Chunk B appended
+    `security-verification` -- the one module that ships a directive -- to
+    `_DEFAULT_ON_MODULES`.  The premise "no default-on module declares a
+    directive" is now false, so the assertion is an exact-set one rather
+    than an emptiness one.  The property that mattered is intact and is
+    what the mutation exercises: a *second* default-on module growing a
+    merge directive still reddens this node, because the overlay must never
+    grow silently.
+    """
     from bootstrap._scaffold.config import _DEFAULT_ON_MODULES  # noqa: PLC0415
 
-    assert INS.module_merge_directives(
+    found = INS.module_merge_directives(
         CAIRN_ROOT / "templates", list(_DEFAULT_ON_MODULES),
-    ) == []
+    )
+    assert [(t, s) for t, s, _c in found] == [(_MERGE_TARGET, _MERGE_SLOT)]
+    assert _MERGE_MODULE in _DEFAULT_ON_MODULES, (
+        "the one directive above comes from a DEFAULT-ON module; if "
+        f"{_MERGE_MODULE!r} ever stops being default-on this node must go "
+        "back to asserting an empty overlay"
+    )
 
 
 def test_the_shipped_merge_module_declares_its_directive() -> None:

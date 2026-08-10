@@ -547,32 +547,103 @@ class TestUpgradeModes:
         Models the scenario consistently with ``_diverge_base``: at
         install time both base AND ours were at the old version; the
         adopter then did NOT customize the file; upstream has since
-        advanced.  Per the install-time invariant, ours = ``substitute_
-        tokens(base, tokens)`` after a fresh install.
+        advanced.
+
+        **Subject changed from AGENTS.md to VENDOR.md** by
+        `security-verification-activation` Chunk B, and the reason is a
+        real behavior change, not a test convenience: the install-time
+        invariant this node relies on -- ours == ``substitute_tokens(base,
+        tokens)`` after a fresh install -- **no longer holds for
+        AGENTS.md**, because the module-merge pass now fills its
+        ``security-verification`` slot from a *default-on* module while the
+        base-template cache keeps the unmerged template.  VENDOR.md is a
+        core file no module merges into, so it is a valid subject for the
+        untouched flavor.  The AGENTS.md consequence is pinned as its own
+        characterization node below rather than left invisible here.
         """
         assert _install(tmp_path) == 0
-        base = tmp_path / "dev" / ".cairn" / "base" / "AGENTS.md"
-        ours_path = tmp_path / "AGENTS.md"
+        base = tmp_path / "dev" / ".cairn" / "base" / "VENDOR.md"
+        ours_path = tmp_path / "VENDOR.md"
+        old_header = "# Vendor wrapper"
+        assert old_header in ours_path.read_text(), (
+            "VENDOR.md no longer opens with the header this node rewrites"
+        )
         # Edit BOTH base AND ours to model "install was at the OLD
         # version, then upstream advanced."  Critically: do NOT add any
         # local-customization marker -- this is the untouched flavor.
         base.write_text(
-            base.read_text().replace("# AGENTS.md", "# OLD", 1)
+            base.read_text().replace(old_header, "# OLD", 1)
         )
         ours_path.write_text(
-            ours_path.read_text().replace("# AGENTS.md", "# OLD", 1)
+            ours_path.read_text().replace(old_header, "# OLD", 1)
         )
         # Now ours matches the token-substituted base; upstream still
-        # carries "# AGENTS.md" (the new header).  A pure upstream
-        # advance with no adopter customization.
+        # carries the new header.  A pure upstream advance with no
+        # adopter customization.
+        lock = s.read_lockfile(tmp_path)
+        plans, _structural = s._compute_upgrade(
+            tmp_path, CAIRN_ROOT, TEMPLATES_ROOT, lock, to_ref=None,
+        )
+        plan = next(p for p in plans if p.dst == "VENDOR.md")
+        assert plan.kind == "clean", (
+            f"VENDOR.md should classify as clean (ours matches "
+            f"substituted base, upstream advanced); got {plan.kind!r}"
+        )
+
+    def test_a_merged_slot_makes_AGENTS_md_locally_modified_on_upgrade(
+        self, tmp_path: Path
+    ) -> None:
+        """**Characterization, not a guard.** A green run here records an
+        open residual rather than a closed one.
+
+        `security-verification-activation` Chunk B made
+        `security-verification` default-on, and that module is the first
+        shipped one to carry a `cairn:merge-target` directive.  So on a
+        stock install the module-merge pass rewrites AGENTS.md *after*
+        `install_core` wrote it, while the base-template cache under
+        ``dev/.cairn/base/`` keeps the **unmerged** template.  ``ours !=
+        substitute_tokens(base, tokens)`` immediately, with no adopter edit
+        at all -- so **every** adopter's AGENTS.md now reports
+        ``clean-locally-modified`` on their first upgrade instead of
+        ``clean``.
+
+        Consequences, stated rather than implied:
+
+        * It is **not** a failed or blocked upgrade.  Both kinds are in
+          ``_ADVANCING_KINDS`` (asserted below), so the file stages and
+          applies identically; only the label the adopter reads changes.
+        * The label is nonetheless **inaccurate** for an adopter who
+          customized nothing: it says "locally modified" about a
+          difference Cairn's own install created.
+        * Closing it would mean teaching the base-template cache about the
+          merge overlay -- engine scope neither this plan nor its reviews
+          authorized.  Pinned here so the next author finds it.
+        """
+        assert _install(tmp_path) == 0
+        base = tmp_path / "dev" / ".cairn" / "base" / "AGENTS.md"
+        ours = tmp_path / "AGENTS.md"
+        merged_fragment = "scripts/run_security_verification.py"
+        assert merged_fragment in ours.read_text(), (
+            "the module-merge pass did not fill the security-verification "
+            "slot on a stock install -- this node's premise is gone"
+        )
+        assert merged_fragment not in base.read_text(), (
+            "the base-template cache now carries the merged text; if that "
+            "is deliberate, this residual is CLOSED and the node should be "
+            "replaced by a guard"
+        )
         lock = s.read_lockfile(tmp_path)
         plans, _structural = s._compute_upgrade(
             tmp_path, CAIRN_ROOT, TEMPLATES_ROOT, lock, to_ref=None,
         )
         ag_plan = next(p for p in plans if p.dst == "AGENTS.md")
-        assert ag_plan.kind == "clean", (
-            f"AGENTS.md should classify as clean (ours matches "
-            f"substituted base, upstream advanced); got {ag_plan.kind!r}"
+        assert ag_plan.kind == "clean-locally-modified", (
+            f"expected the recorded residual (a stock install already reads "
+            f"as locally modified); got {ag_plan.kind!r}"
+        )
+        assert ag_plan.kind in s._ADVANCING_KINDS, (
+            "the residual is a mislabel, not a blocked upgrade -- if this "
+            "fails it has become a real regression"
         )
 
     def test_renamed_vendor_wrapper_resolves_on_standard_upgrade(

@@ -90,6 +90,23 @@ _DEFAULT_ON_MODULES: tuple[str, ...] = (
     # Measured-zero install cost, with a loud modules_remove opt-out for an
     # adopter whose agents ingest only operator-attached content.
     "content-security",
+    # security-verification-activation Chunk B: the local security-evidence
+    # dispatcher becomes universal.  Its shipped registry is EMPTY at
+    # activation-v1, so no evidence is ever gathered until a capability's own
+    # proposal is accepted and its registry entry admitted; default-on is what
+    # makes the *route* standard, not the evidence.
+    #
+    # MEASURED CAVEAT (2026-08-10), because the plan predicted otherwise: a
+    # stock install's first `scripts/run_security_verification.py local` exits
+    # 5 (INCOMPLETE), NOT 0 (NOT APPLICABLE).  The dispatcher selects
+    # capabilities by the `-security` NAME SUFFIX, and `content-security` --
+    # default-on since the sibling default-security-stance scope -- matches it
+    # while having no admitted registry entry.  Removing content-security from
+    # the roster yields exit 0 and the NOT APPLICABLE line.  Characterized by
+    # test_security_verification.py's T33 node; resolving it (narrow the
+    # source-owned capability filter, or amend the accepted v1 contract) is a
+    # Maintainer decision this chunk does not take.
+    "security-verification",
 )
 
 

@@ -955,3 +955,530 @@ class TestUnrecognizedKeyRefusal:
         assert leg["aggregate"] == mod.DEGRADED
         assert "principal" in leg["detail"]
         assert calls == []
+
+
+# ===========================================================================
+# Chunk B -- universality.  T25-T33, T31b, T42, T43.
+#
+# Everything below drives the REAL scaffold into a tmp_path target through
+# `bootstrap.scaffold.main`, never a stub of it.  The subject is what an
+# adopter receives; the oracles are the shipped template sources read
+# independently and the installed tree on disk.
+# ===========================================================================
+
+from bootstrap.scaffold import (  # noqa: E402
+    expand_preset, format_profile_summary, main as scaffold_main,
+)
+from bootstrap._scaffold.config import _DEFAULT_ON_MODULES  # noqa: E402
+from bootstrap._scaffold.install import module_merge_directives  # noqa: E402
+from bootstrap._scaffold.slotmerge import check_slot_fidelity  # noqa: E402
+
+MODULE = "security-verification"
+PRESETS = ("solo-greenfield", "collaborative-team", "high-rigor-legacy")
+TEMPLATES_ROOT = CAIRN_ROOT / "templates"
+
+#: The two destinations the module's `_MODULE_MAPPINGS` group installs.
+DOCTRINE_DST = "dev/modules/security-verification.md"
+DISPATCHER_DST = "scripts/run_security_verification.py"
+
+#: The module doctrine source (A2) and Cairn's own self-hosted twin (B2).
+DOCTRINE_SRC = TEMPLATES_ROOT / "modules" / "default-on" / f"{MODULE}.md"
+DOCTRINE_TWIN = CAIRN_ROOT / DOCTRINE_DST
+
+#: The standing command the merge block contributes to AGENTS.md.
+STANDING_COMMAND = "python scripts/run_security_verification.py"
+#: The designation phrase common to all three channels, whitespace-collapsed.
+#: Singular so it matches both the doctrine's plural "...surfaces" and the
+#: dispatcher comment's singular "...surface"; the shared, load-bearing words
+#: are what the channels must agree on, not the inflection.
+DESIGNATION_FLAT = "high-risk Security-Review surface"
+
+
+def _profile(path: Path, body: str = "") -> Path:
+    path.write_text(
+        "project_name: SecVerifyTest\ntest_command: pytest\n" + body,
+        encoding="utf-8",
+    )
+    return path
+
+
+def _scaffold(tmp_path: Path, body: str = "", *,
+              target_name: str = "target") -> tuple[int, Path]:
+    """A real install into a fresh target.  Returns ``(rc, target)``."""
+    cfg = _profile(tmp_path / f"{target_name}-profile.yml", body)
+    target = tmp_path / target_name
+    target.mkdir(parents=True, exist_ok=True)
+    rc = scaffold_main([
+        "--config", str(cfg), "--target", str(target),
+        "--cairn-root", str(CAIRN_ROOT), "--allow-dev", "--non-interactive",
+    ])
+    return rc, target
+
+
+def _merge_content() -> str:
+    """The one directive the shipped module declares, read from the shipped
+    source -- the oracle for what AGENTS.md must end up carrying."""
+    found = module_merge_directives(TEMPLATES_ROOT, [MODULE])
+    assert len(found) == 1, found
+    return found[0][2]
+
+
+def _pending_side_files(target: Path) -> list[Path]:
+    return sorted(target.rglob("*.cairn-merge-pending"))
+
+
+class TestUniversality:
+    """T25-T29: the selection contract, once the module is default-on."""
+
+    @pytest.mark.parametrize("preset", PRESETS)
+    def test_every_preset_installs_the_module(
+            self, preset: str, tmp_path: Path) -> None:
+        """T25.  `expand_preset` includes it and a REAL install writes both
+        destinations of its mapping group.
+
+        Hazard perturbation: remove the `security-verification` entry from
+        `_DEFAULT_ON_MODULES` (B1).  All three rows fail.
+        """
+        modules, _summary = expand_preset({"preset": preset})
+        assert MODULE in modules, (preset, modules)
+
+        rc, target = _scaffold(
+            tmp_path, f"preset: {preset}\n", target_name=f"t-{preset}")
+        assert rc == 0
+        assert (target / DOCTRINE_DST).is_file(), DOCTRINE_DST
+        assert (target / DISPATCHER_DST).is_file(), DISPATCHER_DST
+
+    def test_modules_empty_list_opts_out_entirely(
+            self, tmp_path: Path) -> None:
+        """T26.  An explicit `modules:` list is exact and is never
+        overridden by the default-on set -- the Decision's settled rule.
+
+        Hazard perturbation: make the default-on set merge into an explicit
+        list.  Fails.
+        """
+        rc, target = _scaffold(tmp_path, "modules: []\n")
+        assert rc == 0
+        assert not (target / DOCTRINE_DST).exists()
+        assert not (target / DISPATCHER_DST).exists()
+
+    def test_literal_modules_list_without_it_does_not_install_it(
+            self, tmp_path: Path) -> None:
+        """T27.  Same hazard as T26, with a non-empty explicit list."""
+        rc, target = _scaffold(tmp_path, "modules:\n  - claim-check\n")
+        assert rc == 0
+        assert (target / "scripts" / "claim_check.py").is_file()
+        assert not (target / DOCTRINE_DST).exists()
+        assert not (target / DISPATCHER_DST).exists()
+
+    def test_modules_remove_opts_out_and_the_summary_announces_it(
+            self, tmp_path: Path) -> None:
+        """T28.  **Characterization, not a guard.**  A green run here records
+        that the pre-existing generic `modules_remove` mechanism covers the
+        new module; B1 did not make it true.  What B1 *is* load-bearing for
+        is that there is anything to opt out OF -- remove B1 and the module
+        is no longer default-on, so `removed_default_on` is empty and the
+        summary assertion below fails.
+        """
+        modules, summary = expand_preset({
+            "preset": "solo-greenfield", "modules_remove": [MODULE],
+        })
+        assert MODULE not in modules
+        assert MODULE in summary["removed_default_on"], summary
+        rendered = format_profile_summary(summary)
+        assert "Default-on opted out:" in rendered
+        assert MODULE in rendered.split("Default-on opted out:")[1]
+
+        rc, target = _scaffold(
+            tmp_path, f"preset: solo-greenfield\nmodules_remove:\n  - {MODULE}\n")
+        assert rc == 0
+        assert not (target / DISPATCHER_DST).exists()
+
+    def test_upgrade_plan_lists_it_and_adopt_module_installs_it(
+            self, tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
+        """T29.  A lockfile written before the module existed: `upgrade
+        --plan` names it under *new modules available (opt-in)*, and
+        `--adopt-module` writes both files and records both in the lockfile.
+
+        Hazard perturbation: remove the `_MODULE_MAPPINGS` entry (A3) --
+        `set(_MODULE_MAPPINGS) - lock_modules` no longer contains it, so the
+        opt-in line never mentions it.
+        """
+        rc, target = _scaffold(tmp_path, "modules:\n  - claim-check\n")
+        assert rc == 0
+        capsys.readouterr()
+
+        assert scaffold_main([
+            "upgrade", "--plan", "--target", str(target),
+            "--cairn-root", str(CAIRN_ROOT),
+        ]) == 0
+        plan_out = capsys.readouterr()
+        combined = plan_out.out + plan_out.err
+        assert "new modules available (opt-in)" in combined, combined
+        assert MODULE in combined.split("new modules available (opt-in)")[1]
+        assert not (target / DISPATCHER_DST).exists()
+
+        assert scaffold_main([
+            "upgrade", "--adopt-module", MODULE, "--target", str(target),
+            "--cairn-root", str(CAIRN_ROOT),
+        ]) == 0
+        capsys.readouterr()
+        assert (target / DOCTRINE_DST).is_file()
+        assert (target / DISPATCHER_DST).is_file()
+
+        lock_text = (target / "dev" / ".cairn" / "cairn-lock.yml").read_text(
+            encoding="utf-8")
+        lock = json.loads(lock_text[lock_text.index("{"):])
+        assert MODULE in lock["modules"], lock["modules"]
+        recorded = {rec["dst"] for rec in lock["files"]}
+        assert DOCTRINE_DST in recorded
+        assert DISPATCHER_DST in recorded
+
+
+class TestTheMergeRunsLiveFromAShippedModule:
+    """T30, T31, T31b: the merge mechanism's first live use from a real
+    shipped module.  Leaf coverage already existed
+    (`test_module_merge.py`); these promote it to end-to-end."""
+
+    def test_installed_AGENTS_md_carries_the_exact_standing_command(
+            self, tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
+        """T30.  The installed `AGENTS.md` carries the exact merge-content
+        block between the slot markers, the pass reports the outcome token
+        `inserted`, and NO `.cairn-merge-pending` file exists anywhere in
+        the target root.
+
+        Hazard perturbations, both run:
+
+        1. Delete the `cairn:merge-content` block from the module source
+           (A2) -- the slot installs empty and the assertion fails.
+        2. **Restore non-empty prose to the slot body in
+           `templates/core/AGENTS.md`** -- the outcome flips to
+           `conflict-deferred`, the rule is absent, the side file appears,
+           and the scaffold still exits 0.  That second perturbation is the
+           one that would have caught the [I1] defect, which is why it is
+           named here rather than left implicit.
+        """
+        rc, target = _scaffold(tmp_path, "preset: solo-greenfield\n")
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert f"[inserted] AGENTS.md > {MODULE}" in out, out
+
+        agents = (target / "AGENTS.md").read_text(encoding="utf-8")
+        body = agents.split(f"<!-- cairn:slot {MODULE} -->")[1].split(
+            f"<!-- cairn:end {MODULE} -->")[0]
+        expected = _merge_content()
+        assert expected.strip() in body.strip(), body
+        assert STANDING_COMMAND in body
+        assert _pending_side_files(target) == []
+
+    def test_the_merge_pass_reports_the_fill_and_the_fidelity_check_is_clean(
+            self, tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
+        """T31.  The pass names `AGENTS.md > security-verification` and
+        `check_slot_fidelity` returns no warning; then an adopter edit
+        WITHOUT the customized marker makes the check warn -- confirming it
+        is live rather than always-silent.
+        """
+        rc, target = _scaffold(tmp_path, "preset: solo-greenfield\n")
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert f"AGENTS.md > {MODULE}" in out
+        assert "[slot-content-" not in out, out
+
+        expected = [("AGENTS.md", MODULE, _merge_content())]
+        assert check_slot_fidelity(target, expected) == []
+
+        agents_path = target / "AGENTS.md"
+        text = agents_path.read_text(encoding="utf-8")
+        tampered = text.replace("aggregate verdict", "aggregate VERDICTS", 1)
+        assert tampered != text, "the phrase this node edits is gone"
+        agents_path.write_text(tampered, encoding="utf-8")
+        assert check_slot_fidelity(target, expected) == [
+            ("AGENTS.md", MODULE, "stale-or-partial")]
+
+    def test_a_prefilled_slot_defers_to_a_side_file_and_warns(
+            self, tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
+        """T31b.  Install into a target whose slot body already carries
+        adopter prose: outcome `conflict-deferred`, the
+        `.cairn-merge-pending` side file present and named for the slot, a
+        `slot-content-stale-or-partial` fidelity warning, exit 0, and the
+        standing command ABSENT from `AGENTS.md`.
+
+        This is the [I1] failure mode, pinned so it cannot come back
+        silently as the shipped default.
+
+        Hazard perturbation: make `_slot_is_empty` treat any body as empty
+        -- the side-file and warning assertions go red.
+        """
+        rc, target = _scaffold(tmp_path, "modules:\n  - claim-check\n")
+        assert rc == 0
+        capsys.readouterr()
+
+        agents_path = target / "AGENTS.md"
+        text = agents_path.read_text(encoding="utf-8")
+        opener = f"<!-- cairn:slot {MODULE} -->"
+        closer = f"<!-- cairn:end {MODULE} -->"
+        o = text.index(opener) + len(opener)
+        c = text.index(closer)
+        agents_path.write_text(
+            text[:o] + "\nAdopter prose that is not the merge content.\n"
+            + text[c:], encoding="utf-8")
+
+        # Re-run the scaffold with the module selected; AGENTS.md already
+        # exists so install_core preserves it (skipped-exists) and the merge
+        # pass sees the prefilled body.
+        cfg = _profile(tmp_path / "second.yml", f"modules:\n  - {MODULE}\n")
+        rc = scaffold_main([
+            "--config", str(cfg), "--target", str(target),
+            "--cairn-root", str(CAIRN_ROOT), "--allow-dev",
+            "--non-interactive",
+        ])
+        out = capsys.readouterr().out
+        assert rc == 0
+        assert f"[conflict-deferred] AGENTS.md > {MODULE}" in out, out
+        assert f"[slot-content-stale-or-partial] AGENTS.md > {MODULE}" in out, out
+
+        side = _pending_side_files(target)
+        assert [p.name for p in side] == [
+            f"AGENTS.md.{MODULE}.cairn-merge-pending"], side
+        assert STANDING_COMMAND not in agents_path.read_text(encoding="utf-8")
+
+
+class TestComposition:
+
+    def test_composition_no_capability_one_capability_many(
+            self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        """T32.  Three synthetic rosters over injected registry entries:
+        none, one, two.  No duplicate leg, no leg silently delegated to
+        another, and each leg's `evidence_mode` label survives aggregation
+        unchanged.
+
+        The two entries deliberately share NOTHING but their argv mode and
+        differ in `evidence_mode`, so a collapse-by-runner-path aggregation
+        would lose one label.
+
+        Hazard perturbation: make aggregation collapse legs sharing a runner
+        path -- the two-capability row fails.
+        """
+        entry_a, records_a = _setup_clean_leg(tmp_path, module_id="alpha-security")
+        entry_b, records_b = _setup_clean_leg(tmp_path, module_id="beta-security")
+        entry_b = _entry(
+            "beta-security",
+            runner_repository_path=entry_b.runner_repository_path,
+            evidence_mode="loopback")
+        # The child must agree with the entry's declared evidence mode.
+        _write_child(
+            tmp_path, entry_b.runner_repository_path,
+            _valid_child_obj("beta-security", evidence_mode="loopback"))
+        records_b[entry_b.runner_repository_path]["hash"] = _sha256_of(
+            (tmp_path / entry_b.runner_repository_path).read_bytes())
+
+        registry = {"alpha-security": entry_a, "beta-security": entry_b}
+        monkeypatch.setattr(mod, "_REGISTRY", registry)
+        monkeypatch.setattr(mod, "_REPO_ROOT", tmp_path)
+        records = {**records_a, **records_b}
+
+        for roster, expected_modes in (
+            ([], []),
+            (["alpha-security"], ["offline"]),
+            (["alpha-security", "beta-security"], ["offline", "loopback"]),
+        ):
+            legs = [
+                mod._evaluate_capability(m, tmp_path, records) for m in roster
+            ]
+            assert len(legs) == len(roster), (roster, legs)
+            assert [leg["module_id"] for leg in legs] == roster
+            assert [leg["evidence_mode"] for leg in legs] == expected_modes, legs
+            report = mod._build_report(legs) if legs else None
+            if report is not None:
+                assert report["evidence_count"] == len(roster)
+                assert [
+                    leg["evidence_mode"] for leg in report["legs"]
+                ] == expected_modes
+
+    def test_the_dispatcher_runs_from_a_real_fresh_scaffold(
+            self, tmp_path: Path) -> None:
+        """T33, **as a characterization of a measured contradiction, not as
+        the guard the plan specified.**  Read the docstring before treating
+        a green run here as the plan's T33 criterion being met -- it is not.
+
+        The plan requires: scaffold, run `python
+        scripts/run_security_verification.py local` as a subprocess, and
+        assert **exit 0** and the exact `NOT APPLICABLE` line.  Measured on
+        2026-08-10, a stock `solo-greenfield` install instead exits **5
+        (INCOMPLETE)**, because:
+
+        * `content-security` became default-on in the sibling
+          `default-security-stance` scope AFTER this plan was measured (the
+          plan's own reading was six default-on modules, none of them
+          matching);
+        * `_selected_capability_ids` selects capabilities by the **name
+          suffix** `-security`, which `content-security` matches;
+        * the shipped registry is empty at v1, so that selected capability
+          has no admitted entry and its leg is INCOMPLETE (T3's contract),
+          which the ladder aggregates to exit 5.
+
+        Removing `content-security` from the roster yields exactly the
+        plan's criterion (asserted below), which isolates the cause to that
+        one module rather than to the dispatcher.  Resolving the
+        contradiction means either narrowing the source-owned capability
+        filter or amending the accepted v1 contract -- a Maintainer
+        decision, so this node records the discrepancy rather than choosing.
+        **Whichever way it is resolved, this node goes RED and must be
+        rewritten deliberately.**
+
+        Hazard perturbations for the parts that ARE guards: break the
+        lockfile read path (point `_LOCKFILE` at a non-existent relative
+        location) and the machine object's `status` changes; emit exit 0
+        with no machine object at all and every machine assertion below
+        goes red while the exit code and the human line still match.
+        """
+        import subprocess as sp
+
+        rc, target = _scaffold(tmp_path, "preset: solo-greenfield\n")
+        assert rc == 0
+        dispatcher = target / DISPATCHER_DST
+        assert dispatcher.is_file()
+
+        proc = sp.run(
+            [sys.executable, str(dispatcher), "local"],
+            cwd=str(target), capture_output=True, text=True,
+        )
+        obj = json.loads([
+            ln for ln in proc.stdout.splitlines() if ln.startswith("{")
+        ][-1])
+
+        # --- Guards: true regardless of how the contradiction is resolved.
+        assert obj["schema"] == "cairn.security_verification.dispatcher/v1"
+        assert set(obj) >= {
+            "schema", "status", "ok", "aggregate", "evidence_count", "legs"}
+        assert isinstance(obj["evidence_count"], int)
+        assert obj["evidence_count"] == len(obj["legs"])
+        for word in ("CLEAN", "secure", "passed security", "no vulnerabilities"):
+            assert word not in proc.stdout, (word, proc.stdout)
+
+        # --- Characterization: the measured contradiction of the plan's
+        # stated T33 criterion.  RED on any resolution, by design.
+        assert proc.returncode == 5, (
+            "the recorded residual is gone -- a stock install no longer "
+            f"exits 5; got {proc.returncode}.  Re-read this node's "
+            "docstring and re-specify it against the resolved contract."
+        )
+        assert obj["aggregate"] == "INCOMPLETE"
+        assert [leg["module_id"] for leg in obj["legs"]] == ["content-security"]
+
+        # --- The cause, isolated: with that one module removed, the plan's
+        # criterion holds exactly.
+        rc2, target2 = _scaffold(
+            tmp_path,
+            "preset: solo-greenfield\nmodules_remove:\n  - content-security\n",
+            target_name="without-content-security")
+        assert rc2 == 0
+        proc2 = sp.run(
+            [sys.executable, str(target2 / DISPATCHER_DST), "local"],
+            cwd=str(target2), capture_output=True, text=True,
+        )
+        assert proc2.returncode == 0, proc2.stdout + proc2.stderr
+        assert proc2.stdout.splitlines()[0] == (
+            "NOT APPLICABLE: no selected local security capability")
+        obj2 = json.loads(proc2.stdout.splitlines()[1])
+        assert obj2["status"] == "not_applicable"
+        assert obj2["ok"] is True
+        assert obj2["aggregate"] == "NOT_APPLICABLE"
+        assert obj2["evidence_count"] == 0
+        assert obj2["legs"] == []
+
+
+class TestTheHighRiskDesignationChannels:
+    """T42, T43: the designation lands on three channels, two of them
+    tamper-evident.  T42 asserts those two; T43 pins channel 1's
+    silent-drop residual as a characterization."""
+
+    def test_the_high_risk_designation_survives_on_two_tamper_evident_channels(
+            self, tmp_path: Path) -> None:
+        """T42.  The designation is present in the shipped A2, in Cairn's
+        own B2 twin, and in the dispatcher source; after a real install,
+        `verify_integrity` is OK; deleting the designation from BOTH
+        lockfile-recorded channels makes it report `modified (hash
+        mismatch)` for both and exit 1.
+
+        Hazard perturbation: drop the designation from the dispatcher source
+        -- the source-read row fails.
+        """
+        for src in (DOCTRINE_SRC, DOCTRINE_TWIN, DISPATCHER_SRC):
+            text = src.read_text(encoding="utf-8")
+            flat = " ".join(text.split())
+            assert DESIGNATION_FLAT in flat, src
+        # B2 is Cairn's own rendering of A2 and the module carries no
+        # tokens, so the two must stay byte-identical (cmp, not eyeball).
+        assert DOCTRINE_TWIN.read_bytes() == DOCTRINE_SRC.read_bytes()
+
+        rc, target = _scaffold(tmp_path, "preset: solo-greenfield\n")
+        assert rc == 0
+
+        import importlib
+        vi = importlib.import_module("bootstrap.verify_integrity")
+        assert vi.verify(target) == 0
+
+        for rel in (DOCTRINE_DST, DISPATCHER_DST):
+            path = target / rel
+            text = path.read_text(encoding="utf-8")
+            stripped = " ".join(text.split())
+            assert DESIGNATION_FLAT in stripped, rel
+            # Delete the designation sentence's distinctive phrase.
+            path.write_text(
+                text.replace("high-risk", "ordinary"), encoding="utf-8")
+
+        assert vi.verify(target) == 1
+
+    def test_a_customized_slot_silently_drops_the_designation(
+            self, tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
+        """T43.  **Characterization, not a guard.  A green run here is a
+        recorded OPEN residual, not a closed one.**
+
+        An adopter who marks the installed slot `<!-- cairn:customized -->`
+        gets status `customized`, the designation absent from their
+        `AGENTS.md`, `check_slot_fidelity` returning an EMPTY list, and no
+        side file -- i.e. they drop a high-risk Security-Review designation
+        from their governing document and **no Cairn tool says anything**.
+        The two tamper-evident channels still carry it, which is the only
+        reason this is a residual rather than a hole.
+
+        Hazard perturbation: make `_slot_is_customized` return False -- the
+        status and no-warning assertions go red.
+        """
+        rc, target = _scaffold(tmp_path, "modules:\n  - claim-check\n")
+        assert rc == 0
+        capsys.readouterr()
+
+        agents_path = target / "AGENTS.md"
+        text = agents_path.read_text(encoding="utf-8")
+        opener = f"<!-- cairn:slot {MODULE} -->"
+        closer = f"<!-- cairn:end {MODULE} -->"
+        o = text.index(opener) + len(opener)
+        c = text.index(closer)
+        agents_path.write_text(
+            text[:o] + "\n<!-- cairn:customized -->\nOur own wording.\n"
+            + text[c:], encoding="utf-8")
+
+        cfg = _profile(tmp_path / "second.yml", f"modules:\n  - {MODULE}\n")
+        rc = scaffold_main([
+            "--config", str(cfg), "--target", str(target),
+            "--cairn-root", str(CAIRN_ROOT), "--allow-dev",
+            "--non-interactive",
+        ])
+        out = capsys.readouterr().out
+        assert rc == 0
+        assert f"[customized] AGENTS.md > {MODULE}" in out, out
+        assert "[slot-content-" not in out, out
+        assert _pending_side_files(target) == []
+
+        installed = agents_path.read_text(encoding="utf-8")
+        assert DESIGNATION_FLAT not in " ".join(installed.split())
+        assert STANDING_COMMAND not in installed
+        assert check_slot_fidelity(
+            target, [("AGENTS.md", MODULE, _merge_content())]) == []
+
+        # The two tamper-evident channels are unaffected -- the only reason
+        # this residual is bounded.
+        for rel in (DOCTRINE_DST, DISPATCHER_DST):
+            flat = " ".join((target / rel).read_text(encoding="utf-8").split())
+            assert DESIGNATION_FLAT in flat, rel
