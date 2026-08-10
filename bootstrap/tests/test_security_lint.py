@@ -56,10 +56,14 @@ from bootstrap.security_check import (  # noqa: E402
 # (release-security-orchestration, D4).
 
 #: Declared exclusions from the on-disk oracle below: repo-relative path ->
-#: MANDATORY rationale. **Empty today** -- disk, manifest-verbatim and
-#: ``git ls-files`` all agree at 45 (``as_of`` 2026-08-05; re-measure rather
-#: than carrying this figure forward) -- so it costs nothing to introduce and
-#: fires the moment they disagree. Mirrors the ``ALLOWLIST`` +
+#: MANDATORY rationale. **Empty today**, and it stays empty: disk and DISTINCT
+#: manifest-verbatim sources agree at 52 (``as_of`` 2026-08-10; re-measure
+#: rather than carrying this figure forward), so it costs nothing to introduce
+#: and fires the moment they disagree. Note the counting rule this table does
+#: **not** key on: manifest *rows* are 56, not 52, because
+#: api-web-security-modules installs one engine source tree to two destination
+#: trees. Rows and distinct files are different questions and only the second
+#: one is this oracle's. Mirrors the ``ALLOWLIST`` +
 #: ``test_allowlist_entries_have_rationale`` idiom already in this file rather
 #: than inventing a second one, and is guarded harder than that idiom: an entry
 #: must name a file that exists AND must not name a file the scan already
@@ -369,15 +373,20 @@ def test_templates_py_count_is_pinned() -> None:
     as ``assert scanned == 9`` for the always-on group in
     ``bootstrap/tests/test_upgrade_side_door_parity.py``."""
     on_disk = _templates_py_on_disk(CAIRN_ROOT)
-    assert len(on_disk) == 46, (
-        f"expected 46 .py under templates/, found {len(on_disk)} -- if this "
+    assert len(on_disk) == 52, (
+        f"expected 52 .py under templates/, found {len(on_disk)} -- if this "
         "moved intentionally, update BOTH this pin and its sibling in "
         "bootstrap/tests/test_notice_install.py "
-        "(test_manifest_has_the_expected_py_source_count) in the SAME commit; "
-        "the two must agree. Moved 44 -> 45 by portable-security-sweeps "
+        "(test_manifest_has_the_expected_py_source_count) in the SAME commit. "
+        "**The two no longer move to the same number, and must not be made to "
+        "agree**: this pin counts DISTINCT .py files on disk, that one counts "
+        "manifest ROWS, and api-web-security-modules installs one four-member "
+        "engine tree to two destinations -- so 6 new files are 6 here and 10 "
+        "there (52 vs 56). Moved 44 -> 45 by portable-security-sweeps "
         "Chunk A (run_portable_security_sweeps.py); moved 45 -> 46 by "
         "security-verification-activation Chunk A "
-        "(run_security_verification.py)."
+        "(run_security_verification.py); moved 46 -> 52 by "
+        "api-web-security-modules (two facades + four engine members)."
     )
 
 

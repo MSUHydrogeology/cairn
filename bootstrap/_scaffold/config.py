@@ -1048,6 +1048,68 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         InstallSpec("team-gated/portable_security_policy.json",
                     "scripts/portable_security_policy.json", verbatim=True),
     ],
+    # api-web-security-modules (2026-08-10): two narrow, independently
+    # selectable network-security capabilities.  Team-gated and reachable only
+    # through an explicit modules_add or an exact modules: list -- deliberately
+    # absent from _PRESETS and _DEFAULT_ON_MODULES, because applicability is
+    # not derivable from Cairn's six axes (a project either has a
+    # cross-principal API / a hosted site or it does not).
+    #
+    # **One engine source tree, installed twice.**  The four
+    # `team-gated/_security_net/*` members are listed in BOTH groups with
+    # DIFFERENT destinations -- `scripts/_api_access_security/` and
+    # `scripts/_web_hosting_security/`.  install_manifest refuses duplicate
+    # *destinations* and only destinations, so one source feeding two
+    # destinations is accepted; two sources feeding one destination is not.
+    # The cost is that an adopter selecting both carries two byte-identical
+    # copies, each independently hash-pinned; the alternative was two
+    # hand-written TLS clients, and one security surface reviewed once is worth
+    # more than a duplicated byte saved.  `scripts/<name>.py` +
+    # `scripts/_<name>/` is also the facade-engine convention
+    # `_facade_engine_dir` already recognises, so a forked facade gets the
+    # existing advisory.
+    #
+    # Each group is COMPLETE by construction -- doctrine, facade, four engine
+    # members, policy stub -- because install_modules warns and continues on a
+    # missing source, so a partial group would install silently.  That fail-open
+    # is closed from two ends that need no engine change: a Cairn-side test that
+    # every src here exists under templates/, and the shipped runner's own
+    # import self-check, which exits 20 / DEGRADED before any policy read.
+    #
+    # The policy stubs are substituted (adopter-filled configuration); the
+    # facades and engine members are verbatim executables.
+    "api-access-security": [
+        InstallSpec("team-gated/api-access-security.md",
+                    "dev/modules/api-access-security.md"),
+        InstallSpec("team-gated/api_access_security.py",
+                    "scripts/api_access_security.py", verbatim=True),
+        InstallSpec("team-gated/_security_net/__init__.py",
+                    "scripts/_api_access_security/__init__.py", verbatim=True),
+        InstallSpec("team-gated/_security_net/policy.py",
+                    "scripts/_api_access_security/policy.py", verbatim=True),
+        InstallSpec("team-gated/_security_net/net.py",
+                    "scripts/_api_access_security/net.py", verbatim=True),
+        InstallSpec("team-gated/_security_net/report.py",
+                    "scripts/_api_access_security/report.py", verbatim=True),
+        InstallSpec("team-gated/api_access_policy_stub.json",
+                    "dev/.cairn/api-access-policy.json"),
+    ],
+    "web-hosting-security": [
+        InstallSpec("team-gated/web-hosting-security.md",
+                    "dev/modules/web-hosting-security.md"),
+        InstallSpec("team-gated/web_hosting_security.py",
+                    "scripts/web_hosting_security.py", verbatim=True),
+        InstallSpec("team-gated/_security_net/__init__.py",
+                    "scripts/_web_hosting_security/__init__.py", verbatim=True),
+        InstallSpec("team-gated/_security_net/policy.py",
+                    "scripts/_web_hosting_security/policy.py", verbatim=True),
+        InstallSpec("team-gated/_security_net/net.py",
+                    "scripts/_web_hosting_security/net.py", verbatim=True),
+        InstallSpec("team-gated/_security_net/report.py",
+                    "scripts/_web_hosting_security/report.py", verbatim=True),
+        InstallSpec("team-gated/web_hosting_policy_stub.json",
+                    "dev/.cairn/web-hosting-policy.json"),
+    ],
     # Architecture-review (modflow_tools doctrine-parity fold, 2026-06-01):
     # a triggered remediation / on-ramp module for an adopter whose
     # architecture accreted rather than was deliberately designed.  Ships

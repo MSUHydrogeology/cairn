@@ -1,0 +1,11 @@
+{
+  "comment": "UNCONFIGURED STUB. Set configured=true and fill local.principals and local.operations before this capability can report evidence. See dev/modules/api-access-security.md for the worked example and the schema rules.",
+  "schema": "cairn.security.api-access-policy.v1",
+  "configured": false,
+  "local": {
+    "base_url": "http://127.0.0.1:8099",
+    "environment": "local",
+    "principals": [],
+    "operations": []
+  }
+}

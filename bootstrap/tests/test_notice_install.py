@@ -72,15 +72,22 @@ def _has_header(path: Path) -> bool:
 
 def test_manifest_has_the_expected_py_source_count():
     sources = _manifest_py_sources()
-    assert len(sources) == 46, (
-        f"expected 46 templates/**/*.py manifest sources, found "
+    assert len(sources) == 56, (
+        f"expected 56 templates/**/*.py manifest sources, found "
         f"{len(sources)} -- if this moved intentionally, update this test. "
         f"Moved 44 -> 45 by portable-security-sweeps Chunk A, which registers "
         f"templates/modules/team-gated/run_portable_security_sweeps.py; "
         f"moved 45 -> 46 by security-verification-activation Chunk A, which "
         f"registers templates/modules/default-on/run_security_verification.py; "
-        f"its sibling pin in bootstrap/tests/test_security_lint.py "
-        f"(test_templates_py_count_is_pinned) moved in the SAME commit"
+        f"moved 46 -> 56 by api-web-security-modules, which registers two "
+        f"facades plus ONE four-member _security_net/ engine tree under TWO "
+        f"destination trees (_api_access_security/ and _web_hosting_security/). "
+        f"NOTE: this returns a LIST, so a source installed to two destinations "
+        f"counts TWICE -- 6 distinct new files produce 10 new entries here. "
+        f"Its sibling pin in bootstrap/tests/test_security_lint.py "
+        f"(test_templates_py_count_is_pinned) counts DISTINCT files on disk and "
+        f"therefore no longer agrees with this one: 52 there, 56 here. The two "
+        f"still move in the same commit; they no longer move to the same number"
     )
 
 
@@ -172,9 +179,10 @@ def test_notice_is_a_core_mapping():
 
 def test_notice_appears_in_manifest_data_row_count():
     rows = install_manifest(modules=None)
-    assert len(rows) == 100, (
-        f"expected 100 manifest rows (94 + NOTICE.md + portable-security-"
-        f"sweeps' three + security-verification's two), found {len(rows)} "
+    assert len(rows) == 114, (
+        f"expected 114 manifest rows (94 + NOTICE.md + portable-security-"
+        f"sweeps' three + security-verification's two + api-web-security-"
+        f"modules' fourteen), found {len(rows)} "
         f"-- if this moved intentionally, update this test. Moved 95 -> 98 "
         f"by portable-security-sweeps Chunk A: the module registers its "
         f"doctrine, its runner and its policy as one group, and the install "

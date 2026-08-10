@@ -1,0 +1,8 @@
+{
+  "comment": "UNCONFIGURED STUB. Set configured=true and fill local.targets before this capability can report evidence. See dev/modules/web-hosting-security.md for the worked example and the schema rules.",
+  "schema": "cairn.security.web-hosting-policy.v1",
+  "configured": false,
+  "local": {
+    "targets": []
+  }
+}
