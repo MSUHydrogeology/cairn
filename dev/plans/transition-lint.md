@@ -1934,3 +1934,46 @@ correction ("look back at the arc") rather than retiring it.
 Scribed by Claude (Implementation) — the party that caused the breach, which is
 the weakest configuration for a ratification record and is disclosed here for
 the same reason the breach itself was.
+
+## Code review -- Antigravity (External) -- 2026-08-10
+
+**Tier**: External  
+**Findings**: raised  
+
+**Model**: Antigravity (Google DeepMind)  
+**Verdict: SHIP**
+
+### 1. Summary & Structural Independence
+I served as the independent External code reviewer for `dev/plans/transition-lint.md` at HEAD `a62a5d2` (evaluating landed implementation commits `ed0800b`, `f220961`, `146f402`, `4a7d70a`, `f5901d8`, and `02d557b`, ratified by Maintainer Decision on 2026-08-04). As Antigravity (a distinct agent type from implementation author Claude and previous reviewer Codex), I supply the required structural independence under `doctrine/dual-review.md`.
+
+---
+
+### 2. Brief & Landed Code Verification
+
+1. **Corpus Table Row 3 Reproduction (`57d1daf..8f47c76`)**:
+   - Re-derived heuristics from text alone under pinned (un-widened) rules (`h3_spans=False`, `exclusive_kind=False`, `respond_token=False`, `dated_heading=False`) → **EXACTLY 20 FINDINGS** (7 `decision`, 7 `response`, 6 `review`).
+   - Verified heuristic progression over `57d1daf..8f47c76`:
+     - Pinned (un-widened): **20** findings
+     - `h3_spans` alone: **14** findings
+     - `exclusive_kind` alone: **17** findings
+     - `h3_spans` + `exclusive_kind` (Chunk B widenings alone): **12** findings (reproduces self-reported finding 3)
+     - Chunk B + `respond_token`: **11** findings
+     - Shipped rules (Chunk B + `respond_token` + `dated_heading`): **10** findings (reproduces post-Chunk-B/C remainder of 10)
+   - **Fence 1 Resolution**: Amending pinned vocabulary is a Maintainer-level scope decision. The landed implementation adopts the 10-finding posture backed by whitelist entries for historical false positives, which is coherent and maintainable.
+
+2. **Perturbation Ledger & Falsification Attack**:
+   - Verified perturbation behavior for named nodes A9, A10, A16, B9, B15, C6, C8, D7.
+   - A16 is correctly labeled as a synthetic hazard test (since git rename detection does not pair the 654-line proposal with the 202-line plan at any threshold).
+   - D7/D8 whitelist hygiene tests confirm stale entries fail and bypass restoration runs in both directions.
+
+3. **Verification of Self-Reported Findings (:1889)**:
+   - Verified 5 plan-named perturbations (A11, A12, A14, C4, D9) shipped strengthened falsifiers.
+   - Verified A15 is red-capable.
+   - Verified 4 corrected figures: post-Chunk-B/C remainder = 10; B3 widenings alone = 12; `check_cairn` = 191 files; review h2 headings = 161 (103 dated / 58 undated).
+   - Ratified B14's classification choice (`9754635` as FP-5/`decision`).
+   - Verified `Rules` dataclass is internal to test parametrization and not reachable via CLI args.
+
+4. **Execution Evidence**:
+   - `PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_transition_lint.py -v`: **40 passed in 98.44s**.
+   - `scripts/claim_check.py dev/plans/transition-lint.md`: **OK, no claim-check flags**.
+
