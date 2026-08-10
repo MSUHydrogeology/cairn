@@ -352,3 +352,240 @@ Verify the `857c216` snapshot independently: 64 configured globs, 42 live, 22
 unused, and 124 reports exposed when the directives are removed. Say whether
 this amendment should join the accepted parent's one plan or remain separately
 planned.
+
+## Review -- Claude -- 2026-08-10
+
+**Model**: claude-opus-5 (Claude Opus 5)
+**Tier**: External, different agent type from the author
+**Reviewed commit**: `013c221d786780a4b39cd9f36bec3ea4c5e8f17c`; measurements
+re-derived on a clean `--shared` clone checked out at the cited snapshot
+`857c216`
+**Verdict: REVISE.** Sections 1, 2, and 4 are sound and I verified Section 4's
+premise directly. Section 3 as written breaks four active artifacts the moment
+Section 1 lands, and the migration list does not cover them.
+
+**Disclosure.** One of the eight audited artifacts is mine:
+`2026-08-10-claude-corpus-tier-cost.md` (1 glob, 1 live, 3 reports exposed if
+stripped), whose directive I added earlier today. It is also the only artifact
+that exposes [C3]. I have not treated it differently, but a reviewer inside the
+measured population should say so.
+
+### Steelman
+
+**Every headline figure reproduces exactly.** I re-derived them with an
+independent script against a clean checkout at `857c216`, using
+`parse_allow_directives` and `check_file(...).exempted` rather than the
+author's tooling:
+
+```text
+active proposal/plan artifacts scanned : 11
+  ...carrying cairn-internal-ref-allow : 11
+  ...carrying claim-check-allow        :  8
+configured globs                       : 64
+  live (suppress >=1 real report)      : 42
+  unused                               : 22
+reports exposed with directives removed: 124  across 7 artifacts
+```
+
+11 / 11 / 8 / 64 / 42 / 22 / 124 / 7 — every one as claimed.
+`fork-advisory-semantics` is confirmed as 1 glob, 0 live: an entirely unused
+directive. Proposals in this repository routinely carry figures that do not
+survive re-derivation; this one carries eight that do.
+
+**Section 4's premise is verified in both directions**, which is the half most
+likely to be assumed rather than tested. On the clean tree, stripping
+`cairn-internal-ref-allow` from all 11 active `dev/` proposals and plans:
+
+```text
+check_cairn: OK -- 174 Markdown file(s) scanned; no issues
+```
+
+Then additionally stripping it from the 6 shipped `templates/core/dev/`
+instruction files:
+
+```text
+check_cairn: 50 issue(s) across 174 file(s)
+  templates/core/dev/proposals/_template.md:293: [path] [loop-fidelity]
+  adopter-facing surface references Cairn-internal-only path
+  `doctrine/dual-review.md` -- it dangles once installed ...
+```
+
+Inert where the proposal says inert; load-bearing where it says load-bearing.
+Retaining the shipped copies and removing the self-hosted ones is correct.
+
+**The rejected alternatives are the right ones**, particularly "silently search
+the whole archive by stem." Section 1's exactness is doing real work, and the
+`Signals the change is wrong` list names the failure that would matter most
+(archive resolution accepting a near match).
+
+<!-- claim-check-allow: dev/plans/review-gate-enforcement.md, dev/plans/scan-coverage.md, dev/plans/planner-line-semantics.md, dev/proposals/2026-08-03-codex-security-verification-activation.md, dev/proposals/2026-08-03-claude-gate-claims-vs-enforcement.md, dev/proposals/2026-08-03-claude-security-preflight-checklist.md, dev/proposals/2026-07-22-claude-stage-commit-patterns.md -->
+<!-- Reviewer's note: this directive exists ONLY so the [C1] table can NAME the
+     seven globs at issue.  Every token above is a lifecycle file that moved to
+     `archive/`; each would resolve automatically under this proposal's own
+     Section 1, at which point this directive becomes unused -- and Section 3
+     as written would hard-flag it.  This review is therefore an eighth
+     instance of the pattern it is reviewing.  See [C1]. -->
+
+### [C1] HIGH -- Section 1 makes Section 3 fail, and the migration list does not catch it
+
+Section 1 resolves missing active lifecycle paths to their exact archive
+sibling. Section 3 makes an unused glob on an active artifact a hard directive
+finding. These interact, and the proposal does not test the interaction.
+
+I did. Of the **42 live globs**, **7 exist only to paper over exactly the
+archive moves Section 1 would resolve on its own** — every token they hold has
+an exact archived sibling and no direct path:
+
+| artifact | globs made redundant by Section 1 |
+|---|---|
+| `api-web-security-modules` | `dev/plans/review-gate-enforcement.md`, `dev/plans/scan-coverage.md`, `dev/proposals/2026-08-03-codex-security-verification-activation.md` |
+| `release-security-bar` | `dev/plans/planner-line-semantics.md`, `dev/proposals/2026-08-03-claude-gate-claims-vs-enforcement.md` |
+| `security-preflight-checklist` | `dev/proposals/2026-08-03-claude-security-preflight-checklist.md` |
+| `stage-commit-patterns` | `dev/proposals/2026-07-22-claude-stage-commit-patterns.md` |
+
+Section 1 makes those 7 unused; Section 3 then hard-fails them. **Four active
+artifacts flip red on landing**, none of which anyone edited.
+
+The demonstration is in the proposal's own citation. Commit `857c216` — the
+snapshot it measures, landed today at 11:30 under the claim-marker-maintenance
+rule — **added** precisely these:
+
+```text
++<!-- claim-check-allow: dev/plans/review-gate-enforcement.md, dev/plans/scan-coverage.md -->
+```
+
+Correct work under current doctrine; hard finding under the new rules.
+
+Section 4's migration does not rescue it. Its four bullets remove *inert*
+internal-ref headers, remove *unused* globs, replace live *future / untracked /
+external* globs with typed declarations, and leave archives alone. The 7 are
+live-and-lifecycle-archive — they are not "unused" when the migration is
+planned, and they are not future/untracked/external, so **no bullet names
+them.** Whether bullet 2 covers them depends entirely on whether "unused" is
+evaluated before or after Section 1 lands, and that ordering is exactly what
+Section 5 leaves open when it calls the claim-check work "a separately
+reviewable chunk with its own tests and commit."
+
+**Required satisfier.** State the ordering as a contract, not an inference:
+Section 1, Section 3, the doctrine sentence retirement, and the migration land
+in **one commit**, and the migration is defined over the post-Section-1 world.
+Add a node asserting that a glob rendered redundant *by archive resolution* is
+reported as a migration item rather than a hard finding — otherwise the first
+person to run the checker mid-sequence sees four red artifacts and no way to
+tell a real stale glob from a scheduling artifact.
+
+**An eighth instance, generated during this review.** Naming those seven globs
+in the table above made *this review* fail claim-check with seven unresolved
+paths -- every one a lifecycle file that had moved to `archive/`. Under current
+doctrine the correct remedy is a `claim-check-allow` directive, so I added one
+(immediately above [C1], with a note). Under Section 1 all seven resolve on
+their own and that directive becomes unused; under Section 3 it is then a hard
+finding. The proposal counted 64 globs across 8 artifacts; reviewing it
+produced the 65th. This is not a rhetorical flourish -- it is a measurement of
+how fast the pattern reproduces, and it is the strongest argument for Section 1
+that either of us has.
+
+### [C2] MEDIUM -- "debt that retires itself" is false for the dominant class
+
+Rationale: liveness *"turns exemptions into temporary debt that retires itself
+instead of quietly becoming the permanent preamble."*
+
+True for `Proposed paths:` — the path materializes, the author who declared it
+is the author who notices. **Not true for archive-move globs**, which are the
+larger population here. Document A's glob goes stale because somebody archived
+plan B. A's author did nothing and may not be working on A at all. The debt does
+not retire; it **transfers** to a third party, who must edit the header of a
+document whose body is append-only.
+
+That is the same shape as the "dedicated maintenance commit caused by
+archive-move findings" the Context cites as evidence the current state is bad.
+The remedy reproduces the diagnosed failure one level up. Section 1 is what
+actually fixes this class — which is an argument for Section 1 carrying the
+load and Section 3's liveness applying only to declarations whose *own author*
+can retire them (`Proposed paths:` and genuine heuristic globs), not to
+lifecycle citations.
+
+### [C3] LOW-MEDIUM -- grandfather on immutability, not on directory
+
+Section 3 grandfathers "archived proposals and plans." But a proposal accepted
+and not yet moved still lives in `dev/proposals/`, and its Review, Response,
+and Decision sections are append-only immutable. It is "active" by directory
+and immutable by doctrine, so hard-fail liveness applies to a header on a
+document nobody may rewrite.
+
+Measured at `857c216`: seven of the eight glob-carrying artifacts are plans
+with `Status: open` (mutable bodies, so the concern does not bite), and exactly
+one is `Status: accepted` — mine. One live instance, so this is small, but the
+fix is smaller: grandfather on **immutability** (archived, or status
+`accepted` / `rejected` / `superseded`) rather than on directory.
+
+### [C4] LOW -- size the asymmetry before shipping it
+
+Section 3 says other Markdown surfaces "retain their existing behavior." That
+is a legitimate scope fence, but the proposal never says how much sits behind
+it. Measured: **12 active non-lifecycle surfaces carry `claim-check-allow`** —
+`dev/strategy/` documents, `dev/modules/claim-check.md`,
+`dev/modules/documentation-plan.md`, `dev/modules/foldback_export_scan.md`,
+`dev/strategy/MIGRATION.md`. So liveness governs 8 artifacts while 12 others
+using the identical mechanism are exempt. Put the number in the proposal so the
+Decision is made against the real ratio.
+
+### The brief's questions, answered
+
+1. **Can archive resolution turn a typo into a valid historical path?** No. The
+   rule is exact-filename, same-family, one directory. A typo'd stem does not
+   exist in `archive/` either. The only reachable case is an author typing a
+   *different real archived filename* — indistinguishable from a deliberate
+   citation, and correctly out of a path checker's reach.
+2. **Is active/archive duplication the right tool's job?** No, and the proposal
+   is right to push it elsewhere — but "surface it through an existing or
+   explicit invariant check" names no check. Name one, or it will not exist.
+3. **Is document-wide registry scope too powerful?** No. Literal exact paths,
+   no globs, no siblings or descendants, each with a prose reason and reported
+   with its authorizing declaration. This is the strongest part of the proposal.
+4. **Is hard-failing an unused active glob compatible with append-only records
+   and concurrent lifecycle moves?** **No, as specified** — [C1] and [C2].
+5. **Does the grandfather boundary cover every immutable artifact?** Not quite
+   — [C3].
+6. **Does the combined plan preserve a separable code-review target?** Yes.
+   [C1]'s one-commit constraint is about ordering *within* the chunk; the chunk
+   remains one coherent review target with its own tests.
+
+**Join the parent's plan or plan separately? Join** — but not for the reason
+given. "The timing is favorable" is a scheduling argument, and schedules move.
+The durable reason is that both changes edit the **same** authoring templates
+and the same lifecycle doctrine sections; planned separately they produce two
+migrations over one set of files, and the second inherits whatever the first
+left half-converted. That is a coupling argument, and it survives a slipped
+schedule.
+
+### Covered and recommendation
+
+**Covered**, each by execution against a clean checkout at `857c216`: all eight
+Context figures re-derived independently; per-artifact glob/live/exposed
+breakdown for all 11 active artifacts; the Section-1 x Section-3 interaction
+(the 7-glob table above); `check_cairn` with `cairn-internal-ref-allow`
+stripped from active `dev/` artifacts (0 issues) and additionally from shipped
+`templates/core/dev/` (50 issues); `_is_template_instruction` gating at
+`check_cairn.py:293`; the contents of `857c216`; `Status:` of all eight
+glob-carrying artifacts; the non-lifecycle glob-carrier count.
+
+**Not covered / low confidence.** Nothing proposed here exists yet, so I tested
+the *current* checker and simulated Section 1's rule in my own script rather
+than exercising an implementation — my 7-glob figure is a prediction from a
+faithful reimplementation of the stated rule, and the plan should re-derive it
+against the real code. I did not test the typed-registry parser, adopter-twin
+parity, `link-check-allow` interactions (out of scope by declaration), or
+behavior under a concurrent archive landing mid-check. I also did not attempt
+to falsify the 124-report figure's *composition* — I confirmed the count, not
+the author's classification of those reports into future / historical /
+heuristic. One agent type, one host; the declared plan tier (**External,
+security lens**) is not discharged by this review.
+
+**Second-round recommendation: not required.** [C1] is a sequencing contract
+and one test, [C2] narrows which declarations liveness governs, [C3] is a
+one-line predicate change, [C4] is a measured sentence. None reopens the
+design, and the evidence base needed no correction. An author Response plus the
+Maintainer's read should be enough to reach Decision; spend the second
+structurally-independent pass on the plan instead, where the typed-registry
+parser will be new code.
