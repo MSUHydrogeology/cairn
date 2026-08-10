@@ -4,13 +4,21 @@
      sections later, so it needs the file-scoped directive too.  Drop this directive
      once the path lands (Chunk A), per the marker discipline. -->
 <!-- claim-check-allow: bootstrap/tests/test_fork_advisory.py -->
+<!-- This plan's own pre-move path. It is cited in prose inside the 2026-08-04
+     code review, an append-only section authored by the reviewer, and inside a
+     quoted command transcript recording what was actually typed at the time.
+     Retargeting either would rewrite another agent's attributed words or falsify
+     a transcript, so the path is exempted rather than rewritten -- the same
+     disposition security-preflight-checklist records for its archived-source
+     citations. -->
+<!-- claim-check-allow: dev/plans/fork-advisory-semantics.md -->
 
 # Plan: fork advisory semantics — the comparison bytes come from the caller, never from the tree being checked
 
 **Source proposal**: `fork-advisory-semantics` (accepted 2026-08-03; the Decision
 commit is `86a0a78`). It currently sits under `dev/proposals/` and moves to
 `dev/proposals/archive/` when it archives.
-**Status**: open
+**Status**: archived
 **Plan review**: required(**External**, security lens) — carried from the proposal
 header, mandated by the superseding `identity-not-name` Decision, and **not**
 discharged by either round the proposal already had (the External round returned
@@ -1281,3 +1289,75 @@ This section is append-only once written.
 
 **Verdict: SHIP / PASS CODE REVIEW.** All six chunks (A, B, C, D, E, R) of `fork-advisory-semantics.md` are fully implemented, verified, and independently code-reviewed across the complete reviewed range.
 
+
+## Archive record -- Claude -- 2026-08-10
+
+**Status: archived.** Maintainer-directed, following the External code review's
+**SHIP** verdict on the full range: *"Review is in on fork-advisory-semantics"*,
+then *"Yes, please proceed with that CHANGELOG line."*
+
+**All six chunks landed.** A, C, D, E at `9bd6752`; B at `aba0242` (Maintainer-
+gated, unfenced by Decision amendment `d13c58a`, which re-routed
+`identity-not-name` condition 3 into this plan's scope 3); R at `9724c0f`, the
+Maintainer-run batched re-anchor that closed the red window Chunk B opened.
+
+**The review covered the whole range, which is why this can archive.** The
+2026-08-04 round predated Chunks B and R, leaving the `_scaffold/lockfile.py`
+edit and a trust-artifact rewrite unread -- the gap this plan's Boundary B record
+named as archive-blocking. The 2026-08-10 round closed it, and did so by
+execution rather than reading: it re-ran the B2 falsifier itself (perturbing the
+destructive clause back in, observing the assertion fail, reverting byte-exactly),
+confirmed Chunk R's baseline diff is surgical with zero `span`/`type` drift, and
+ran its own full suite instead of reusing this plan's figure.
+
+**One discrepancy between the two full-suite runs, resolved as environmental.**
+This plan's Boundary B record measured **2593 passed, 0 failed** at `9724c0f`; the
+review measured **2592 passed, 1 failed** at `d4f1dc1` -- the same node count, one
+differing outcome, in
+`test_security_verification.py::test_child_env_is_minimal_and_strips_proxies_and_credentials`.
+The mechanism is visible in the source and is **not this plan's**: that test
+derives its `expected` set from the **parent** `os.environ`, while
+`run_security_verification.py`'s own comment records that the CPython runtime may
+inject an `LC_CTYPE` into a **child's** environment under PEP 538 legacy-C-locale
+coercion, *"independent of anything this dispatcher passes."* When that injection
+occurs with no matching parent variable, `received` gains a key `expected` lacks
+and the equality assertion fails. Four environment variations were tried here
+(`env -i`, `LC_ALL=C`, `LC_CTYPE=C`, `LANG=C LC_ALL=C`) and **none reproduced it**,
+so the finding is recorded as code-supported and host-dependent rather than
+confirmed. It belongs to `security-verification-activation`, which owns both files,
+and is an instance of the pattern where the implementation documents a hazard its
+test does not accommodate.
+
+**Evidence ledger** (`doctrine/plans.md`, archive-time migration note).
+
+* **Evidence shipped.** The identity-bound advisory and its two guarded joins;
+  `trusted_upstream` and both call sites; the source-side and destination-side
+  validation paths with single-resolution containment; the B2 node, which
+  *performs* the surviving remediation end to end rather than only forbidding the
+  old strings; `bootstrap/UPGRADE.md`'s note-kinds subsection; the
+  `SECURITY_MUTATIONS.md` Class C sentence; and the pre-change oracle and fixture
+  matrix from Chunk A.
+* **Evidence deferred.** No live-contract evidence for a real forked adopter tree
+  in the wild; no cross-platform run (all measurement Darwin arm64); and no
+  independent falsification of Chunk B by a non-Claude agent prior to the
+  2026-08-10 review -- which that review supplied.
+* **Deferred evidence home.** `bootstrap/UPGRADE.md` for the operator-facing
+  semantics (R1, R3, R4, R9); pinning nodes beside each; `dev/PLANNING.md`'s
+  `[BND]` and `[TRU]` cluster rows, which already name this plan.
+
+**Three things that are not residuals and are deliberately not archived away as
+if they were:** the **condition-3 sequencing choice**, which was the Maintainer's
+and was exercised at `d13c58a`; the **two pre-existing `FROZEN-MODIFIED` entries**
+from `7066489`, which this plan surfaced and never claimed; and the
+**`Touches`-line mutability question**, deferred Maintainer question 2, raised by
+this lifecycle's own [I5].
+
+**Verification at archive.** Review verdict **SHIP**, findings **none**. Full
+suite **2593 passed, 0 failed** (this plan's record, `9724c0f`) and **2592/1**
+(the review's, `d4f1dc1`, dispositioned above). `check_cairn` OK; `claim_check`
+OK. The gate sees the review despite its `###` heading level: `_HEADER_RE`
+accepts `#{2,3}`, and the parser reports `kind='Code review'` with
+`_has_kind(art, "code") -> True` -- confirmed by running it rather than assumed
+from the heading's shape.
+
+This section is append-only once written.

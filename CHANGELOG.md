@@ -153,6 +153,30 @@ and a new empty `Unreleased` is started above.
 
 ### Fixed
 
+- **The forked-facade advisory now compares against upstream bytes, and says
+  whose bytes decided it.** `verify` and `upgrade` warn when an installed
+  verbatim launcher has been forked while the maintained engine package sits
+  dormant — upstream engine fixes silently stop taking effect. The finding is now
+  bound to a **trusted upstream** source: both operands are reads (upstream
+  template bytes versus on-disk bytes), never a lockfile `hash` or `base_hash`
+  field, and the note names the root and ref it compared against so an operator
+  can see whose bytes produced the verdict. Source- and destination-side paths
+  are validated and containment-checked before any comparison; a malformed
+  templates tree degrades the finding to `unconfirmed` rather than aborting the
+  verifier. The advisory remains **advisory only** — it never blocks and never
+  mutates — and `fork_acknowledged` still silences it at `verify` time while
+  `upgrade` always re-surfaces it. Proposal and plan `fork-advisory-semantics`.
+
+- **The forked-facade remediation no longer advises an action that breaks the
+  tool.** The note previously offered two branches, and both were wrong:
+  "remove the dormant engine package" raises `RuntimeError` in `tools/intent.py`'s
+  loader and disables work-intent coordination outright, and "complete the swap
+  (adopt the thin launcher)" was a no-op, since the thin launcher is what install
+  already places. Both are **removed, not reworded**. The surviving advice —
+  restore the facade from its upstream template — is an action a test performs
+  end to end, confirming the finding clears and the engine package is left
+  untouched. Plan `fork-advisory-semantics`, Chunk B.
+
 - **The Python dependency audit now proves what it covered before reporting
   CLEAN.** It binds parsing to the active pip-audit version, validates and
   counts structured vulnerabilities, reports every blocking reason, and gates

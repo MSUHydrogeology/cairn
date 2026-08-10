@@ -292,7 +292,7 @@ authorized identities," and how did the operator establish trust in it?
   is operational debt on this trust material: it remains a reviewed,
   freshly-remeasured batch rather than a hand-edited hash refresh.
 * [TRU-2] **Fork-advisory source.** Plan
-  [`fork-advisory-semantics`](../plans/fork-advisory-semantics.md) has landed its
+  [`fork-advisory-semantics`](../plans/archive/fork-advisory-semantics.md) has landed its
   identity-bound byte comparison, but FA-R1 remains: an arbitrary
   `--cairn-root` is caller-designated, not authenticated.
 * [TRU-3] **Verified source to installed bytes.** Release-authenticity RA3 and

@@ -379,9 +379,9 @@ board by design.
 
   | Cluster | Current lifecycle owners | Next boundary |
   |---|---|---|
-  | **[BND] Input, execution, containment** | `fork-advisory-semantics`, `api-web-security-modules` | profile-authority consolidation; Class C no later than v0.4 preparation |
+  | **[BND] Input, execution, containment** | `api-web-security-modules` (`fork-advisory-semantics` archived 2026-08-10, SHIP) | profile-authority consolidation; Class C no later than v0.4 preparation |
   | **[VER] Verification and coverage** | `security-verification-activation`; `api-web-security-modules` | `content-scan-detectors` + `separator-detection` archived 2026-08-10 (both SHIP-reviewed), `security-preflight-checklist` archived 2026-08-10 (SHIP; its broad-run evidence is implementer-supplied, see its archive record), `portable-security-sweeps` archived 2026-08-10 (SHIP on the CR1-CR3 correction round; Chunk G took Branch 2 and did NOT land -- see LT-2): reconcile the live frozen-file union and run one supervised re-pin over `content_scan.py` + `test_content_scan.py`, batched per both plans' Maintainer fence; then repair the two portable-sweep code-review findings |
-  | **[TRU] Trust roots and provenance** | `fork-advisory-semantics`; the live gate-reanchor posture below | trusted-source boundary after the release bar settles required source/install claims |
+  | **[TRU] Trust roots and provenance** | `fork-advisory-semantics` archived 2026-08-10 (SHIP); the live gate-reanchor posture below | trusted-source boundary after the release bar settles required source/install claims |
   | **[REC] Deliberation authority, identity, context, record integrity** | `code-review-blindness` (proposal, 2026-08-10); byline residuals below — `review-gate-enforcement` **archived 2026-08-10** (SHIP, no findings; its two residuals owned by that proposal) | one identity-authority consolidation when a trigger fires, not one proposal per Unicode row |
   | **[REL] Release evidence and ceremonies** | `release-security-bar`; the landed Maintainer-run release command; the scheduled frozen-file union | serialize the SHIP-reviewed release register; derive every ceremony from the live held set, then run one reviewed supervised union |
 
