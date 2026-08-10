@@ -11,7 +11,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-10
-**Status**: proposed
+**Status**: revised
 **Touches**: `bootstrap/tests/` test infrastructure only — a new shared
 memoization helper, and its application to the six test files that
 dominate suite wall-clock. No shipped file, no adopter-facing surface,
@@ -652,3 +652,238 @@ removes here. With the v1 scope localized to transition-lint corpus work (and
 separately measured, non-ceremony upgrade-fixture work), `required(Internal)`
 plan review remains a reasonable tier. Ceremony elapsed time should be excluded
 from this proposal's success metric.
+
+## Response -- Claude (author) -- 2026-08-10
+
+**Model**: claude-opus-5 (Claude Opus 5)
+
+Proposal-Response grammar (no implementing commit exists). Every finding
+is accepted. [E1] and [E2] were reproduced independently rather than
+taken on the reviewer's word; [E5] is accepted in its conclusion and
+**corrected in its diagnosis**.
+
+### [E1] -- accept
+
+Reproduced, by a different route and with a stronger result. Rather than
+wrapping `tl._git`, I memoized `subprocess.run` itself and omitted `cwd`
+from the key entirely, then ran the eleven corpus nodes:
+
+```text
+11 passed, 29 deselected in 25.45s
+[rootless-memo] git calls=6520 misses=1288 hits=5232
+```
+
+A cache that cannot distinguish one repository from another captured
+essentially the whole caching benefit while every corpus assertion
+stayed green. The claim *"the assertions are the cache's own oracle, and
+mis-keying fails closed"* is false, and it is false in the way I should
+be most alert to: **an enforcer that cannot fail on the population it is
+aimed at.** The corpus tier only ever passes one root, so no assertion
+in it can witness a root collision. I asserted the invariant at the
+strength I intended rather than the strength the tests deliver, and then
+wrote *"this is the one invariant that matters and it has a real
+enforcer, not a restatement"* directly above the restatement.
+
+The required satisfier is adopted verbatim in the revision: independent
+contract tests over **two roots with deliberately different outputs**,
+every key dimension exercised, a root-omission mutant that must collide
+and go red, and a one-callable-per-instance API so callable identity
+cannot silently leave the key.
+
+### [E2] -- accept, with the grammar corrected
+
+The finding is right: `"every argument is a full 40-hex SHA or a
+SHA-pinned rev-range"` describes no real call and a literal
+implementation refuses all of them.
+
+The review's argv list is close but not exact, which matters because the
+replacement must be *executable*. Verified against
+`scripts/transition_lint.py` at `181ce450`, the five families are:
+
+```text
+rev-parse --verify --quiet <endpoint>^{commit}                        :293
+log --format=%H%x1f%s <rev-range>                                     :307
+diff-tree --no-commit-id --name-status --find-renames=100% -r -z <sha> :336
+show <sha>:<path>                                                     :384
+show --find-renames=100% --format= --unified=0 <sha> -- <path>        :451
+```
+
+Family 5 is `show`, not `diff`, and takes no `<sha>^` operand; family 3
+carries `-z` and `-r`. The revision ships this list, not the review's.
+
+The localization recommendation is also accepted: **no shared helper in
+v1.** One consumer does not justify a general mechanism, and a generic
+"skip the subprocess" utility is the wrong thing to leave lying around
+in a suite whose security tests are subprocess-shaped. The overclaim
+`"provably immutable"` is withdrawn in favour of the review's own
+honest framing.
+
+### [E3] -- accept
+
+Verified independently:
+
+```text
+git rev-list --count <ROOT_SHA>..<SELF_HOST_SHA> -- dev/proposals dev/plans
+0
+```
+
+The circularity is real -- deriving the replacement guard's material
+through `_in_scope` proves that `_in_scope` agrees with itself. Part 3
+is rebound to the path-limited historical predicate.
+
+### [E4] -- accept, and I take the tier decision
+
+Part 4 becomes **measurement and disposition only**. The session-scoped
+baseline-tree idea was a third mechanism smuggled in as a disposition;
+it is withdrawn, and if the measurement pass finds it worthwhile it
+opens its own scope with its own contract review.
+`test_gate_preflight.py` and `test_oracle.py` are **hard-fenced** from
+memo adoption in this proposal.
+
+The review is right that I routed a decision that was mine. `**Plan
+review**: required(Internal)` -- decided, not delegated. With the memo
+localized to transition-lint and both ceremony files fenced, the
+External security trigger does not fire. If review or the Maintainer
+puts either file back in memo scope, the tier moves to
+`required(External, security lens)` automatically.
+
+### [E5] -- accept the conclusion; the diagnosis does not hold here
+
+The recommendation is adopted: **invocation reduction plus
+byte-identical results is the acceptance contract**, and every
+wall-clock figure is dated motivation.
+
+But the offered explanation -- *"filesystem and Git cache warmth
+plausibly explain the timing difference"* -- does not survive checking on
+this host. Back-to-back with no concurrent load:
+
+| measurement | this host | review's host |
+|---|---|---|
+| `test_transition_lint.py`, run 1 | 107.75s | 49.79s |
+| `test_transition_lint.py`, run 2 | 112.34s | -- |
+| 11 corpus nodes, unmemoized | 96.99s | 40.98s |
+| 11 corpus nodes, memoized | 25.45s | -- |
+
+The 103.32s figure reproduces at 107.75s and 112.34s; a second
+consecutive run got *slower*, not faster, so warmth is not the mechanism.
+The divergence is **between environments, not within mine** -- which
+makes the review's recommendation stronger than its rationale: a number
+that differs 2x across two machines running the same commit cannot be an
+acceptance threshold anywhere.
+
+Paired on one host, the memo is **3.81x** on the corpus tier (96.99s ->
+25.45s). That figure is reported as an observation, not a criterion.
+
+The commit-count correction is also accepted, and demonstrates itself:
+the proposal said 341, the review measured 349, and at this Response it
+is **354**. A count that moves three times in one day does not belong in
+prose without an `as_of` -- the same error `transition_lint.py`'s own
+corpus pinning exists to prevent. The revision dates it.
+
+## Revised proposal
+
+**Status**: revised
+
+The diagnosis is unchanged: the corpus tier makes 3,829 commit-visits
+over 867 distinct commits, and removing the repetition does not touch
+the evidence. What changes is the mechanism's scope, its safety
+argument, and its acceptance contract.
+
+### R1 -- a transition-lint-local memo, not a shared helper
+
+`bootstrap/tests/_immutable_git.py` is **withdrawn**. The memo becomes a
+module-scoped fixture inside
+[`bootstrap/tests/test_transition_lint.py`](../../bootstrap/tests/test_transition_lint.py),
+wrapping exactly one callable (`tl._git`) for exactly one root.
+
+* **Closed grammar.** The fixture admits only the five verified call
+  families listed in the Response above, matched structurally --
+  command, option set, and operand shape -- with `<sha>` a full 40 hex
+  characters, `<rev-range>` two such SHAs (each optionally `~1`), and
+  `<endpoint>` one. Anything else **raises**; it is not passed through.
+* **Successful reads only.** `rc != 0` is never cached, so a degrade-quiet
+  path cannot be frozen into a session.
+* **One callable per instance**, structurally -- the fixture takes the
+  callable at construction, so callable identity cannot fall out of the
+  key.
+* **Stated ambient assumptions**, not silence: the memo is a
+  *session-local cache over an unchanged repository and git environment*.
+  Git executable identity, `replace` refs, and config are outside
+  `(root, argv)` and are assumed stable for the pytest session. This is
+  the honest contract; `"provably immutable"` is withdrawn.
+
+### R2 -- independent contract tests for the memo itself
+
+The corpus assertions prove **result parity for this consumer**. They do
+not prove key completeness, and are no longer claimed to. Key
+completeness gets its own nodes, built on **two repository roots
+constructed to return different bytes for identical argv**:
+
+| node | mutant | must |
+|---|---|---|
+| root is in the key | drop `root` | collide -> red |
+| each operand is in the key | drop the `<sha>` operand | collide -> red |
+| option sets are distinguished | conflate families 4 and 5 | collide -> red |
+| non-grammar argv is refused | pass `HEAD~1..HEAD` | raise |
+| failures are not cached | force `rc != 0`, then succeed | second call re-runs |
+
+Each carries a named perturbation, run and observed red, per the file's
+existing convention.
+
+### R3 -- apply to the three corpus classes
+
+Unchanged from the original Part 2, and still changing no assertion.
+Acceptance is **byte-identical results**: the three classes produce the
+same `(scanned, triggered)` integers and the same finding sets with the
+fixture attached and detached, recorded as a paired run.
+
+### R4 -- Part 3, rebound to an independent predicate
+
+Narrow the span-widening window to `SELF_HOST..SNAPSHOT`. The
+replacement guard is the **path-limited historical predicate** verified
+above -- `git rev-list --count <ROOT_SHA>..<SELF_HOST_SHA> --
+dev/proposals dev/plans` returns `0`, with literal pinned endpoints and
+literal trigger-root pathspecs -- not a path list fed back through
+`_in_scope`. Still severable: if review rejects the mechanism argument,
+drop R4 and keep R1-R3.
+
+### R5 -- Part 4 is measurement and disposition only
+
+For each remaining head file: measure, and record either a memo
+disposition or a written reason. **No other optimization is authorized
+by this proposal.** `test_gate_preflight.py` and `test_oracle.py` are
+fenced from memo adoption outright -- the subprocess is the assertion,
+and the Maintainer's drafting clarification (*"reduce the ordinary
+development / Boundary B suite runtime outside a ceremony; a long full
+suite during a release or trust ceremony is acceptable"*) makes fencing
+them the correct call rather than a concession.
+
+### R6 -- the acceptance contract
+
+Not seconds. A chunk is done when:
+
+1. **Invocation reduction** -- wrapped-call count drops and the
+   distinct-key count is reported alongside it.
+2. **Byte-identical results** -- the corpus classes' integers and
+   finding sets are unchanged, recorded as a paired run on one host in
+   one session.
+3. **Every R2 mutant observed red.**
+
+Wall-clock is reported for context with host and date attached, and is
+never a pass/fail threshold. The 4.66x prototype ratio, the 3.81x paired
+ratio, the six-file table, and the 56% suite share are **dated
+motivation** (`as_of 2026-08-10`), not criteria.
+
+### R7 -- corrections to the record above
+
+* Commits after `SNAPSHOT_SHA`: **354, as_of 2026-08-10, 11:04 ET** --
+  measured three times in one day at 341 / 349 / 354. The ratchet
+  argument does not depend on the exact figure.
+* `"provably immutable"` -> session-local memo over an unchanged
+  repository and git environment.
+* `bootstrap/tests/_immutable_git.py` no longer materializes; its
+  `Proposed paths:` entry and `claim-check-allow` directive drop at
+  implementation.
+
+**Plan review**: required(**Internal**) -- decided per [E4], not routed
+to the Maintainer.
