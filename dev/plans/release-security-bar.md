@@ -936,6 +936,255 @@ installs" is a new claim about a stance nobody has decided.
 * `python bootstrap/scaffold.py --manifest` → **unchanged**, 95 data rows. This
   chunk changes a file's *content*, never the set of installed files.
 
+#### Chunk B — RUN, 2026-08-10, Claude
+
+**Opening commit: `181ce450d2fea7a9762da27a5ac6b776257e0135`.** Ownership
+resweep re-run first (Amendment A25/A26's mechanical precondition, NC-B3
+below) before any edit was drafted, per that amendment's binding order.
+
+##### A finding that changes this chunk's premise, stated before the register
+
+The plan's starting text (`eacb7dd`, 2026-08-04) frames B2/B3's defect as
+*"content-security is not installed for any preset (0 of 3)"* and its own
+*"What B2/B3 must not do"* warns against presuming the then-undecided
+default-security-stance change. **Both are now stale.** A landed, archived
+proposal — `default-security-stance` (`dev/plans/archive/default-security-stance.md`)
+— changed the module baseline: **`content-security` is now selected by all
+three presets**, confirmed in Chunk A's Set 2 re-derivation and reproduced
+again below. The stance is no longer undecided; it is shipped.
+
+**This does not clear the two passages — it changes *which* B-property they
+violate.** `content_scan.py` and `dev/modules/content-security.md` genuinely
+install for `high-rigor-legacy` now (true), and so does
+`dev/modules/security-review.md` (true, unchanged). But the sentence does not
+claim installation — it claims **standing application**: *"…gates apply to
+the drafted filing body before it leaves the deployment"*. Nothing in the
+shipped tree fires either control automatically (no git hook, no CI — Chunk
+F's F2 finding, re-confirmed below). This is now a **B3** defect (a claim of
+standing application where the true shape is "run this"), not a B6
+reach-falsity defect. The correction target is therefore different from the
+plan's own drafted text, and that difference — not a citation shift — is
+recorded here as the finding B4 evidences.
+
+**A second, independent defect found by reading the passage closely, not in
+the plan's original framing at all.** The two passages also **conflate two
+different tools**. *"Run the scrub scanner on the draft explicitly before
+submitting"* (Row 4's trailing sentence, correctly imperative and retained
+per the plan's own instruction) refers to `scripts/foldback_export_scan.py`
+— the fold-back doctrine's own universal Scrub step
+(`doctrine/fold-back.md` > *Active surfacing* > Step 4, verified: *"invokes
+the export-scrub scanner: `python scripts/foldback_export_scan.py
+<draft-path>`"*), installed on **every** preset via `fold-back-ledger`, not a
+`high-rigor-legacy`-specific control. The immediately preceding
+"content-security … gates apply" clause is about a **different** tool
+(`content_scan.py`) from a **different** module (`content-security`). An
+adopter who runs only the scrub scanner (satisfying the correctly-imperative
+sentence) could reasonably believe they have also satisfied "content-security
+… applies," when they have run neither `content_scan.py` nor walked the
+security-review checklist. The correction below names both tools separately
+so this conflation cannot recur.
+
+##### B1 — the B6 reach table, re-derived at `181ce45`, with the manifest-external column
+
+**Producing command** (same as Chunk A's Set 2 script; the four-column form
+adds a fourth boolean per row for whether the destination ships via the
+manifest-external channel):
+
+```python
+controls = ["scripts/content_scan.py", "scripts/run_security_audit.py",
+    "dev/modules/content-security.md", "dev/modules/security-review.md",
+    "scripts/link_check.py", "tools/intent.py", "scripts/claim_check.py",
+    "scripts/foldback_export_scan.py", "tools/lifecycle_planner.py"]
+# per preset: cfg = load_config(profile); mods, _ = expand_preset(cfg)
+# dsts = {dst for _s, dst, _v in install_manifest(modules=mods)}
+# manifest-external column: dst in {"dev/modules/onboarding/<preset>.md",
+#   "dev/modules/onboarding/agent-team-onboarding.md",
+#   "dev/modules/onboarding/dev-tour.md"} -- always False for these 9 rows,
+# since none of the 9 controls IS a manifest-external destination; the
+# manifest-external rows are listed separately below.
+```
+
+**Output, re-run at `181ce45` — reproduces Chunk A's Set 2 numbers exactly:**
+
+| Control (installed path) | solo-greenfield | collaborative-team | high-rigor-legacy | Manifest-external? |
+| --- | --- | --- | --- | --- |
+| `scripts/content_scan.py` | yes | yes | yes | no |
+| `scripts/run_security_audit.py` | — | — | — | no |
+| `dev/modules/content-security.md` | yes | yes | yes | no |
+| `dev/modules/security-review.md` | — | — | yes | no |
+| `scripts/link_check.py` | — | yes | yes | no |
+| `tools/intent.py` | — | yes | yes | no |
+| `scripts/claim_check.py` | yes | yes | yes | no |
+| `scripts/foldback_export_scan.py` | yes | yes | yes | no |
+| `tools/lifecycle_planner.py` | yes | yes | yes | no |
+| `dev/modules/onboarding/<preset>.md` | yes | yes | yes | **yes** |
+| `dev/modules/onboarding/agent-team-onboarding.md` | yes | yes | yes | **yes** |
+| `dev/modules/onboarding/dev-tour.md` | yes | yes | yes | **yes** |
+
+**What moved since the plan's starting table (`eacb7dd`), and why:** the
+`content-security` row (`scripts/content_scan.py`,
+`dev/modules/content-security.md`) reads `—, —, —` in the plan's own body —
+now **`yes, yes, yes`**, per `default-security-stance`. Every other row is
+unchanged. `python-security` (the module that ships
+`scripts/run_security_audit.py`) remains selected by **none** of the three
+presets — a fact this table's `—, —, —` row states correctly, but for a
+reason [I3] flagged the plan's own single cross-check couldn't distinguish;
+NC-B1 below gives that row its own, separate flip test.
+
+##### B4 — the claim-vs-table check, both directions
+
+**Decider (committed):** a paragraph is flagged if it matches
+`gates?\s+apply` (or `applies?\s+to\s+the\s+drafted`) and does **not** name a
+run-this command (a backtick-fenced `….py` token or `` run ` ``) in the same
+paragraph — i.e., asserts standing application without naming what fires it.
+
+```
+$ python nc_b2_decider.py <(git show HEAD:templates/onboarding/high-rigor-legacy.md)
+2 flag(s)   -- paragraph 18 (line ~119-125), paragraph 28 (line ~159-167)
+
+$ python nc_b2_decider.py <corrected-text-below-applied-in-scratch>
+0 flag(s)
+```
+
+Both directions in one harness: **2 → 0**, matching NC-B2's requirement.
+
+##### The correction — drafted, verified, NOT YET APPLIED (see approval note)
+
+```diff
+@@ templates/onboarding/high-rigor-legacy.md:119-125 (walk-foldback-protocol) @@
+   filing; the high-rigor-legacy profile's content-security +
+   security-review gates apply to the drafted filing body before
+   it leaves the deployment.
++  filing; the high-rigor-legacy profile installs the
++  content-security scanner and the security-review checklist --
++  run `python scripts/content_scan.py` over the drafted filing
++  body and walk the security-review checklist before it leaves
++  the deployment.
+
+@@ templates/onboarding/high-rigor-legacy.md:159-167 (Row 4) @@
+ filing; the high-rigor-legacy profile's content-security +
+ security-review gates apply to the drafted filing body before
+ it leaves the deployment. Run the scrub scanner on the draft
+ explicitly before submitting.
++filing; the high-rigor-legacy profile installs the
++content-security scanner and the security-review checklist --
++run `python scripts/content_scan.py` over the drafted filing
++body and walk the security-review checklist. Run the scrub
++scanner on the draft explicitly before submitting.
+```
+
+(`-` lines are the current shipped text; `+` lines are the drafted
+replacement. Both blocks retain the trailing content unchanged where the
+plan's own instruction says to — B3's already-imperative sentence.)
+
+**Verified against the drafted replacement, in a scratch copy — not against
+the tracked file:**
+
+* NC-B2's decider: **0 flags** (above).
+* `python scripts/claim_check.py <scratch corrected copy>` → OK, exit 0.
+* Every citation the correction depends on (`scripts/content_scan.py`
+  exists and is what `dev/modules/content-security.md:28` documents;
+  `scripts/foldback_export_scan.py` is what `doctrine/fold-back.md`'s Scrub
+  step names) verified by opening both files, not assumed from the plan's
+  prior text.
+
+**Why this plan does not commit the edit itself.** Chunk B lost the
+deliberation carve-in the moment it names a change to
+`templates/onboarding/high-rigor-legacy.md` (`AGENTS.md` > *Git and commit
+workflow*; this plan's own *Commit-approval note*, Amendment A25 leg (iii)).
+This implementing session has no Maintainer present to grant that approval,
+so the diff above is drafted, decider-verified and ready, but is **not**
+applied to the tracked file by this session. B2/B3 are recorded as
+**drafted, pending Maintainer approval to land** rather than MET — the
+honest state, not a silent skip (the register does not claim more than the
+evidence supports, per the bar's own standard). Landing it is a one-commit,
+two-hunk change with the diff above as its exact content.
+
+##### Negative controls, RUN
+
+**NC-B1 — the measurement reads preset composition, both directions.** The
+plan's drafted form (`add content-security via a bare module-selection key
+in the profile`) does not exist in the current grammar ([I3]'s finding,
+re-confirmed: `bootstrap/profiles/high-rigor-legacy.yml` carries exactly
+`project_name` / `test_command` / `preset`, no module-selection key; the only
+lever is `modules_add` / `modules_remove`, block-list form). Since
+content-security is **already** `yes` at baseline (the finding above), the
+flip is run in **both** directions instead of the plan's single 0→yes leg:
+
+```
+baseline high-rigor-legacy:            content_scan.py=yes  run_security_audit.py=-   content-security.md=yes
+modules_remove: [content-security]:    content_scan.py=-    run_security_audit.py=-   content-security.md=-
+modules_add: [python-security]:        content_scan.py=yes  run_security_audit.py=yes content-security.md=yes
+```
+
+`modules_remove` flips the `content-security` row's two controls from `yes`
+to `—` and leaves `run_security_audit.py` untouched; `modules_add:
+python-security` flips `run_security_audit.py` from `—` to `yes` and leaves
+the `content-security` row's controls untouched. Two independent flips,
+each moving only its own row — closing [I3]'s finding that the plan's single
+cross-check supported two rows' `—` for the same stated reason when only one
+of them shared it (`run_security_audit.py` reads `—` because no preset
+selects `python-security`, a *different* fact from `content-security`'s
+now-`yes` status). `bootstrap/profiles/` was never edited in the working
+tree — both scratch profiles live under
+`/private/tmp/…/scratchpad/nc_b1_profiles/`.
+
+**NC-B2 — the claim check flags the live text, both directions. RUN.** See
+B4 above: 2 flags pre-correction, 0 post-correction, same decider, one run
+each.
+
+**NC-B3 — the ownership re-check (Amendment A26), both directions. RUN.**
+
+```
+$ grep -rln "onboarding/high-rigor-legacy" dev/plans dev/proposals
+dev/plans/archive/first-session-survivability.md      (unrelated: a different task list item)
+dev/plans/archive/review-record-integrity.md          (unrelated: a false-positive-rate check)
+dev/plans/archive/default-security-stance.md          (DEFERS: ":133"/":871" -> "owned by gate-claims-vs-enforcement")
+dev/plans/release-security-bar.md                      (this plan)
+dev/proposals/archive/2026-08-03-claude-content-scan-detectors.md   (unrelated mention)
+dev/proposals/archive/2026-07-11-claude-solo-legacy-adopter-path.md (unrelated mention)
+dev/proposals/archive/2026-08-03-claude-release-security-bar.md     (this plan's source proposal)
+dev/proposals/archive/2026-08-03-claude-default-security-stance.md  (DEFERS, same as its plan)
+dev/proposals/archive/2026-07-11-claude-first-session-survivability.md (unrelated mention)
+
+$ grep -n "high-rigor-legacy" dev/plans/archive/gate-claims-vs-enforcement.md \
+      dev/proposals/archive/2026-08-03-claude-gate-claims-vs-enforcement.md
+(no output)   <- the named deferral target still does not claim it
+```
+
+**Positive control** (the sweep shape can see a real claim):
+
+```
+$ grep -c "SECURITY.md:66" dev/plans/archive/scan-coverage.md
+1
+```
+
+Nine files mention the phrase; only `default-security-stance` (and its own
+proposal) is claim-bearing, and both **defer** to `gate-claims-vs-enforcement`,
+which — re-checked at this commit, now archived — never took the file.
+**No lineage claims these two lines.** Per Amendment A25/A26, Chunk B
+proceeds on this measurement rather than stopping to escalate.
+
+**Working-tree cleanliness.** `git status --short` at chunk end: unchanged
+except this plan file — `templates/onboarding/high-rigor-legacy.md` is
+**not** modified in the tracked tree (the correction lives only in
+`/private/tmp/…/scratchpad/hrl_post.md` and in the diff above). All scratch
+profiles, the decider script, and the pre/post copies are under
+`/private/tmp/…/scratchpad/`, never under the repository.
+
+**Re-measured plan-level figures, since Chunk B's acceptance criteria cite
+them and both have drifted:** `python scripts/check_cairn.py` → OK, **173**
+Markdown files (the plan's `≥180` criterion **does not hold**, consistent
+with Amendment A35's finding that the deficit moves; 173 < 180, re-derived
+here rather than carried, not fixed by this chunk). `python
+bootstrap/scaffold.py --manifest` → **98** data rows today (was 95 at
+`eacb7dd`; the full published manifest is `modules=None` — every module
+regardless of preset selection — so it is not moved by
+`default-security-stance`'s baseline-composition change; the drift's actual
+cause is unexamined here as out of this chunk's scope). Confirmed
+**unchanged** across this chunk's own start and end (no manifest-affecting
+file was touched).
+
 ---
 
 ### Chunk C — B1: trust material arrives from outside the artifact under verification
