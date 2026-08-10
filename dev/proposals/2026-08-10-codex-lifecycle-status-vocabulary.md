@@ -3,7 +3,7 @@
 **Author**: Codex (Strategy)
 **Model**: GPT-5 (Codex)
 **Date opened**: 2026-08-10
-**Status**: revised
+**Status**: accepted
 **Touches**: `AGENTS.md`, `templates/core/AGENTS.md`,
 `dev/agent_collaboration.md`, `doctrine/proposals.md`, `doctrine/plans.md`,
 `doctrine/lifecycle.md`, `doctrine/lifecycle-contract.md`,
@@ -2053,7 +2053,7 @@ not automatically weaken terminal output.
 
 ## Revised proposal -- Revision 4
 
-**Status**: revised
+**Status**: accepted
 
 Revision 4 retains all prior clauses except that it replaces Revision 3's B4
 and the corresponding Unicode bullet in B7. This is the final current contract
@@ -2109,3 +2109,16 @@ This assertion fails if the scanner gains a printable invisible that the board
 does not cover. The test also verifies that the planner and installed planner
 twin carry byte-identical range definitions, and that neither source contains
 the represented invisible characters raw.
+
+## Decision -- Anthony Kendall -- 2026-08-10
+
+**Maintainer's authorization (verbatim):**
+
+> Accept Revision 4 of dev/proposals/2026-08-10-codex-lifecycle-status-vocabulary.md
+
+**ACCEPTED as revised.** Revision 4 is accepted in full. The state model replaces flat status tokens with next-action-oriented statuses (`awaiting-review`, `revising`, `awaiting-decision`, `awaiting-plan-review`, `revising-plan`, `ready-to-implement`, `implementing`, `awaiting-code-review`, `revising-code`, `ready-to-archive`). Plans gain the orthogonal `**Blocked by**:` field. `tools/lifecycle_planner.py` remains the single runtime vocabulary source, loaded via fixed-path containment loaders by consumers. The derived orientation board (`board --compact` / `board --format json`) is accepted with standard-library `isprintable()` + mirrored display-unsafe range escaping, active intent integration (`active_intent`), and directional drift testing.
+
+This proposal joins `review-efficient-lifecycle`, `claim-check-exemption-hygiene`, and `code-review-blindness` in one shared implementation plan under `required(External + External Security Review)`.
+
+Scribed by Antigravity (Implementation).
+
