@@ -11,10 +11,24 @@ dependency, no ceremony.
 **Last update**: 2026-08-10
 **Opened**: 2026-08-10
 
+## Source proposal
+
+The proposal established **by execution** that the corpus tier of
+`bootstrap/tests/test_transition_lint.py` re-derives the same git output many
+times over — 6509 `_git` invocations against 1279 distinct `(root, argv)` keys —
+and accepted a test-local memo over that plumbing, a narrowed span-widening
+window, and a written disposition for every remaining file in the suite's
+expensive head. It also fixed *how* the work is judged: invocation counts,
+byte-identical results and observed-red mutants, never wall-clock seconds. This
+plan executes that decision; it does not re-litigate it.
+
 ## Scope
 
-Four chunks, all inside `bootstrap/tests/`. The contract is the proposal's
-R1–R7; this plan sequences it and nothing else.
+Five chunks. A, B and C touch `bootstrap/tests/test_transition_lint.py`; B2 and
+D1 are plan-record rows; C3 appends a note to an archived plan; E1 prunes two
+spent forward-reference markers from the source proposal. The contract is the
+proposal's R1–R7, and every one of them is sequenced below — R7's third bullet
+as Chunk E, which earlier drafts left unmapped under a claim of completeness.
 
 **Scope fence.** `test_gate_preflight.py` and `test_oracle.py` are fenced from
 memo adoption outright (R5) — the subprocess *is* the assertion there.
@@ -25,10 +39,17 @@ proposal names it in Alternatives and leaves it to the Maintainer.
 
 ### Documentation / doctrine surface
 
-**None.** No doctrine, no `AGENTS.md` rule, no shipped template, no adopter
-prose, no `CHANGELOG.md` entry — adopters receive none of these files. Routed
-per `docs/DOCUMENTATION_PLAN.md`: nothing here is prescription or description,
-so nothing leaves the deliberation layer.
+**No doctrine or adopter surface; one archive-record correction.** No doctrine,
+no `AGENTS.md` rule, no shipped template, no adopter prose, no `CHANGELOG.md`
+entry — adopters receive none of these files. Routed per
+`docs/DOCUMENTATION_PLAN.md`: nothing here is prescription or description, so
+nothing leaves the deliberation layer.
+
+The one exception is the one the accepted proposal already attached to Part 3:
+`dev/plans/archive/transition-lint.md` owns the corpus tier's rationale and
+pins C11's window at line 575, so if Chunk C lands, that record goes stale and
+gets an appended note (C3). An earlier draft of this plan said "None." and
+dropped that obligation.
 
 ## Sequence
 
@@ -37,19 +58,106 @@ A  the memo fixture + its own contract tests        [commit pending]
 B  attach to the three corpus classes               [commit pending]
 C  narrow the span-widening window (severable)      [commit pending]
 D  measure and disposition the remaining head       [commit pending]
+E  prune R7's spent forward-reference markers       [commit pending]
 ```
 
-A before B is the only hard ordering: B is the parity measurement and needs the
-fixture to exist. C is severable per R4 — if the mechanism argument is
-rejected, drop C and keep A/B/D. D depends on nothing and can run in parallel.
+Two hard orderings, not one:
+
+* **A before B.** B is the parity measurement and needs the fixture to exist.
+* **C after B2.** C cuts the span-widening window from 867 commits to 452,
+  which reduces invocations *independently of the memo*. Landing it before B2's
+  paired measurement would conflate two mechanisms inside criterion 1 — and a
+  plan that argues C "on the mechanism, never on cost" must not let C
+  contaminate the cost figure it reports for A/B.
+
+C is severable per R4 — if the mechanism argument is rejected, drop C (and its
+C3 note) and keep A/B/D/E. D and E depend on nothing and can run in parallel.
 
 ### Chunk A — the memo, and the tests that prove its key
 
 | # | File | Change |
 |---|------|--------|
-| A1 | `bootstrap/tests/test_transition_lint.py` | module-scoped memo fixture wrapping exactly one callable (`tl._git`) for exactly one root. **Closed grammar**: only the five verified call families, matched structurally on command, option set and operand shape, with `<sha>` 40 hex, `<rev-range>` two such (each optionally `~1`), `<endpoint>` one. Anything else **raises** — never passed through. **Successful reads only** (`rc != 0` is never cached). **One callable per instance**, taken at construction so callable identity cannot fall out of the key |
-| A2 | same | the R2 contract tests, built on **two repository roots returning different bytes for identical argv**: drop `root` → collide, red; drop the `<sha>` operand → collide, red; conflate call families 4 and 5 → collide, red; pass `HEAD~1..HEAD` → raises; force `rc != 0` then succeed → second call re-runs |
-| A3 | same | docstring stating the honest contract: a *session-local cache over an unchanged repository and git environment*. Git executable identity, `replace` refs and config are outside `(root, argv)` and assumed stable for the pytest session |
+| A1 | `bootstrap/tests/test_transition_lint.py` | the memo itself. **The key is the verbatim `(str(root), argv)` tuple** — no derivation, no normalisation, no projection. **One callable per instance**, bound at construction, so callable identity cannot fall out of the key. **Successful reads only**: `rc != 0` is never cached. **Closed grammar** on admission (below); anything outside it **raises** and is never passed through |
+| A2 | same | the seven contract nodes, in a class that is **not** `@requires_corpus` |
+| A3 | same | docstring stating the honest contract |
+
+**The key, stated once, because the last draft never stated it at all.** A1
+caches on `(str(root), argv)` exactly as received. The grammar in A1 governs
+*admission* — what the memo is willing to wrap — and is not the key. Conflating
+the two is what let a `<path>`-blind key look enforced.
+
+**Installation — storage and install are separately scoped.** The cache dict
+and the counters live in a **module-scoped** fixture. The wrapper is installed
+by a **function-scoped autouse** fixture on each of the three corpus classes,
+via `monkeypatch.setattr(tl, "_git", wrapper)`, so it is torn down after every
+test. The cross-test cache benefit is unchanged — storage outlives the install —
+and the leak becomes structurally impossible rather than an accident of
+collection order. A module-scoped *install* would remain live for every later
+test in the module, including synthetic nodes whose argv is outside the grammar
+by construction.
+
+**The closed grammar — five literal argv templates**, not three metavariables:
+
+| # | argv | reachable from |
+|---|------|----------------|
+| 1 | `("rev-parse", "--verify", "--quiet", f"{endpoint}^{{commit}}")` | `main()` only |
+| 2 | `("log", "--format=%H%x1f%s", rev_range)` | `scan` |
+| 3 | `("diff-tree", "--no-commit-id", "--name-status", "--find-renames=100%", "-r", "-z", sha)` | `scan` |
+| 4 | `("show", f"{sha}:{path}")` | `scan` |
+| 5 | `("show", "--find-renames=100%", "--format=", "--unified=0", sha, "--", path)` | `scan` |
+
+`sha` is 40 hex. `rev_range` is two such, each optionally suffixed `~1`.
+`endpoint` is one such, optionally `~1`, and the literal `^{commit}` suffix is
+part of the template — it appeared nowhere in the previous draft. **`path` is
+any non-empty repository-relative path**, and it carries *no* immutability
+claim of its own: it is **keyed, not validated**. Family 1 is reachable only
+through `main()`, which no memoized class calls; it is admitted so the grammar
+describes the callable rather than one caller, and A2's refusal node is what
+keeps that from being untested dead weight.
+
+### A2 — the seven nodes, and what each one would let through
+
+| node | mutant | must |
+|---|---|---|
+| root is in the key | drop `root` | collide → red |
+| the `<sha>` operand is in the key | drop it | collide → red |
+| **the `<path>` operand is in the key** | drop it | collide → red |
+| option sets are distinguished | conflate families 4 and 5 | collide → red |
+| non-grammar argv is refused | pass `HEAD~1..HEAD` | raise |
+| failures are not cached | force `rc != 0`, then succeed | second call re-runs |
+| **the install does not leak** | assert `tl._git` is unwrapped inside a synthetic test | red if module-scoped |
+
+**Constructing the two-root pair is not free, and the obvious construction is a
+dead test.** Git is content-addressed, so a 40-hex operand names the same object
+in every repository that has it. Measured across two clones of one source repo:
+`log` over a range present in both returns **identical bytes**, and
+`show <sha>:<path>` for a blob in both returns **identical bytes**. A fixture
+built that way leaves the drop-`root` mutant **green**. The construction that
+does discriminate is a **full clone against a `--depth=3` clone**, compared on
+a family-3 `diff-tree` at the shallow boundary: git treats the boundary commit
+as parentless, so the full clone returns `b'A\x00f3.md\x00'` and the shallow
+clone returns `b''` — both `rc == 0`, so both are cacheable and the collision is
+real. `--depth` is silently ignored for a bare local path; the clone must use a
+`file://` URL.
+
+The `<path>` node needs no such care: two distinct paths at one sha in one root
+return different bytes, and dropping `<path>` collides them.
+
+**Placement constraints — two existing source-level bans are traps here.**
+`TestSourceLevelBans::test_no_corpus_node_carries_a_head_relative_range` forbids
+any string constant containing `HEAD` inside a `@requires_corpus` class, so the
+`HEAD~1..HEAD` refusal node must live outside one. And
+`test_every_pinned_sha_constant_is_a_full_40_hex` walks module `globals()` for
+any name ending `_SHA`, so no two-root fixture constant may be named `*_SHA`
+unless it is full 40 hex.
+
+**A3 — what the docstring must concede.** A *session-local cache over an
+unchanged repository and git environment*. Git executable identity, `replace`
+refs and config sit outside `(root, argv)` and are assumed stable for the pytest
+session. Add one the two-root work turned up: **shallowness is part of what "the
+repository" means** — the same argv against the same sha returns different bytes
+in a shallow clone, so "unchanged repository" is a claim about the object graph
+and its boundary, not only about the commits.
 
 Each A2 node carries a named perturbation, run and observed red, per the file's
 existing convention. **Mutate the copy the test loads** — this file is its own
@@ -63,15 +171,36 @@ repository, so the perturbation record names the exact file it edited.
 | B1 | `bootstrap/tests/test_transition_lint.py` | attach the fixture to `TestWideningIsNotCreating`, `TestWhitelistHygiene`, `TestCorpusRegression`. **No assertion changes** |
 | B2 | plan record | the paired run: `(scanned, triggered)` integers and finding sets, fixture attached and detached, one host one session |
 
+**Naming the detached instrument, because "the count drops" has no other arm.**
+With the fixture detached nothing wraps `_git`, so there is no count to compare
+against and criterion 1 is not executable as written. The detached arm is a
+**count-only, non-caching** wrapper over the same callable — it records
+`(root, argv)` and delegates every time. Both arms report *invocations* and
+*distinct keys*, so the pair is a redundancy ratio rather than a bare number,
+and anyone can reproduce it.
+
 ### Chunk C — narrow the span-widening window *(severable)*
 
 | # | File | Change |
 |---|------|--------|
 | C1 | `bootstrap/tests/test_transition_lint.py` | span-widening window `ROOT..SNAPSHOT` → `SELF_HOST..SNAPSHOT` |
-| C2 | same | replacement guard is the **path-limited historical predicate**: `git rev-list --count <ROOT_SHA>..<SELF_HOST_SHA> -- dev/proposals dev/plans` returns `0`, literal pinned endpoints and literal trigger-root pathspecs — **not** a path list fed back through `_in_scope` |
+| C2 | same | replacement guard is the **path-limited historical predicate**: `git rev-list --count --full-history <ROOT_SHA>..<SELF_HOST_SHA> -- dev/proposals dev/plans` returns `0`, literal pinned endpoints and literal trigger-root pathspecs — **not** a path list fed back through `_in_scope`. Invoked through `subprocess.run` directly, **never `tl._git`** |
+| C3 | `dev/plans/archive/transition-lint.md` | appended note: C11's window is no longer `ROOT..SNAPSHOT`, with the mechanism and the re-derived figures. That record pins the old window at line 575 |
 
 Argued on the mechanism, never on cost: the dropped prefix cannot contain a
 counterexample because Cairn did not host `dev/` before `SELF_HOST_SHA`.
+
+Two corrections the review forced, both cheap:
+
+* **`--full-history`.** The dropped prefix carries 2 merges. Without the flag
+  the guard leans on history simplification not hiding a commit; with it, it
+  does not. All variants measure `0`, so this is hardening, not a correction of
+  the result.
+* **`subprocess.run`, not `tl._git`.** `rev-list --count` is a sixth family,
+  outside the closed grammar. C2 lands inside `TestWideningIsNotCreating`, which
+  B1 memoizes — routed through `tl._git` the guard would **raise**. The file
+  already has the pattern: `test_every_whitelist_entry_is_a_full_40_char_sha_that_resolves`
+  calls `subprocess.run` directly.
 
 ### Chunk D — measure and disposition the remaining head
 
@@ -82,23 +211,53 @@ counterexample because Cairn did not host `dev/` before `SELF_HOST_SHA`.
 **No other optimization is authorized by this plan.** A discovery worth doing
 is raised to the Maintainer as a scope question.
 
+### Chunk E — prune R7's spent forward-reference markers
+
+| # | File | Change |
+|---|------|--------|
+| E1 | `dev/proposals/2026-08-10-claude-corpus-tier-cost.md` | drop the `Proposed paths:` entry for the withdrawn `_immutable_git.py` helper and the file-scoped `claim-check-allow` directive (with its explanatory comment) that exempted it |
+
+R7's third bullet authorizes exactly this: the helper "no longer materializes;
+its `Proposed paths:` entry and `claim-check-allow` directive **drop at
+implementation**". Both are still live — the directive in the proposal's front
+matter, the entry under `## Proposed paths`. This is the pruning of spent
+scaffolding the proposal itself scheduled, not an edit to its deliberation: no
+argument, review, response or Decision text is touched. Leaving them would
+leave a `claim-check-allow` exempting a path that will never exist — a
+suppression with nothing to suppress, which is the same latch shape
+`test_no_whitelist_entry_is_stale` exists to catch.
+
 ## Acceptance criteria
 
 Per R6 — **not seconds**:
 
-1. **Invocation reduction** — the wrapped-call count drops, with the
-   distinct-key count reported alongside it.
+1. **Invocation reduction** — the wrapped-call count drops against the
+   count-only detached arm named in B2, with the distinct-key count reported
+   alongside it in **both** arms.
 2. **Byte-identical results** — the three corpus classes produce the same
    integers and the same finding sets, recorded as a paired run.
-3. **Every R2 mutant observed red**, each naming the file it mutated.
+3. **All seven A2 mutants observed red**, each naming the file it mutated.
+   Seven, not five: the `<path>` node and the install-does-not-leak node were
+   added by the Internal review, and the count is stated here so a later reader
+   can tell a dropped node from a renamed one.
+4. **Chunk D leaves nothing unaddressed** — each of the five remaining head
+   files carries a recorded measurement plus either a memo disposition or a
+   written reason. The proposal's own words for this chunk were "No file in the
+   head is left unaddressed"; without this criterion, "done" for D was
+   undefined.
 
 Wall-clock is reported for context with host and date attached and is **never**
 a pass/fail threshold. The 4.66× prototype ratio, the 3.81× paired ratio, the
 six-file table and the 56% suite share are dated motivation (`as_of
 2026-08-10`), not criteria.
 
-* **Tests**: `bootstrap/tests/test_transition_lint.py` in full.
-* **Docs**: **N/A** — see *Documentation / doctrine surface*.
+* **Tests**: `bootstrap/tests/test_transition_lint.py` in full, plus a
+  **seed sweep** on that module — the ordering hazard [I1] found is invisible at
+  seed 0, so a run that only proves seed 0 proves the wrong thing. Sweep at
+  least seeds 0–19, which is the range in which the leak was demonstrated
+  reachable (seeds 9, 11, 15, 19).
+* **Docs**: no doctrine or adopter surface; two record edits — C3's archive note
+  and E1's marker pruning. See *Documentation / doctrine surface*.
 * **Examples / smoke**: `python scripts/check_cairn.py` for this record. No
   scaffold or example-gallery surface is touched.
 
@@ -106,9 +265,22 @@ six-file table and the 56% suite share are dated motivation (`as_of
 
 * **Invariant** — the memo returns exactly what an uncached call would.
   *Enforced by* the corpus assertions (exact integers and finding sets) **plus**
-  A2's two-root key tests. The corpus assertions alone prove result parity for
+  A2's key-dimension nodes. The corpus assertions alone prove result parity for
   this consumer and **not** key completeness — the proposal's [E1] established
   that by execution, and this plan does not re-claim it.
+
+  **And the enforcement claim itself was overstated until the Internal review
+  measured it.** With the `<path>` operand stripped from the key, all eleven
+  corpus methods pass **and the distinct-key count does not move** (1279 → 1279,
+  zero keys collapse, independently re-derived). The corpus population cannot
+  produce the collision: `_shape_a` short-circuits on the first trigger with
+  sufficient evidence and `_shape_b` filters to `A` entries, so no
+  `(root, family, sha)` in the entire 6509-call set ever sees two paths — even
+  though 6 commits in `ROOT..SNAPSHOT` carry two or three in-scope trigger
+  paths. A `<path>`-blind memo therefore shipped green through *both* named
+  enforcers. That is [E1]'s failure recurring on a component the revision never
+  enumerated, and it is why A1 now pins the key verbatim and A2 has a node for
+  it.
 * **Invariant** — the memo is unreachable from a mutable input. *Enforced by*
   the grammar refusal in A1, with its own node in A2.
 * **Failure mode — mis-keyed.** *Closed*: colliding keys return wrong bytes and
@@ -380,3 +552,97 @@ decided"); this plan uses a bold header field instead, where two of three
 sibling plans carry the section. And *Scope* says "Four chunks, all inside
 `bootstrap/tests/`" while B2 and D1 are plan-record rows (and [I4] would add a
 third file).
+
+## Response to plan review -- Claude -- 2026-08-10
+
+**Obligations answered**: the Internal pass above, in full — 2 BLOCKING, 4
+SUBSTANTIVE, 5 MINOR.
+
+**Disposition: 11 accepted, 0 declined.** Both BLOCKING findings were
+re-derived independently before being accepted; neither was taken on the
+review's word.
+
+### The two BLOCKING findings, re-run
+
+**[I1] — accepted, and reproduced.** A standalone two-class module (module-scoped
+`usefixtures` fixture on class one, a plain class two after it) gives
+`1 failed, 1 passed`, with class two asserting `not STATE["patched"]` and
+failing: the fixture is still installed for a later class that never requested
+it. Pytest finalises a module-scoped fixture at *module* exit, not at last use,
+so the leak is a property of the scope, not of this file's ordering. A1 now
+splits **storage** (module-scoped) from **installation** (function-scoped
+autouse, via `monkeypatch.setattr`), and A2 gains a node that asserts `tl._git`
+is unwrapped inside a synthetic test — so the property is pinned instead of
+inherited from collection order.
+
+The review's sharpest point is the one about *blindness*, and it stands: natural
+order, seed 0, `--quality-gate-shuffle-seed=0`, and `order-independence` at its
+default seed list all pass. Every command this plan named would have gone green
+over a defect that seeds 9/11/15/19 reach. Verification now names a seed sweep,
+because a gate that cannot fail on the hazard is not evidence about it.
+
+**[I2] — accepted, and the counterintuitive number is real.** Independently
+re-derived from a fresh 6509-call census: stripping `<path>` from the key leaves
+**1279 distinct keys, unchanged**, with **zero** keys collapsing and **zero**
+reduced keys covering more than one full argv. The mechanism the review gives is
+also confirmed — 6 commits in `ROOT..SNAPSHOT` carry more than one in-scope
+trigger path, but `_shape_a`'s short-circuit and `_shape_b`'s `A`-filter mean
+the call set never reaches the second one. So a `<path>`-blind memo passes both
+enforcers the plan named.
+
+The deeper defect is the one underneath: **the plan never said what the key
+was.** A1 specified admission and left the key implicit, and R1 had dropped the
+original "keyed on the complete argument tuple plus the working root" without
+replacing it. A1 now pins the key verbatim and says plainly that the grammar
+governs admission, not keying.
+
+### One thing the review did not catch, found while prototyping A2
+
+A2's premise — "two repository roots returning different bytes for identical
+argv" — is **not constructible the obvious way**, and a fixture built the
+obvious way would be a dead test that passes with `root` dropped from the key.
+Git is content-addressed: measured across two clones of one source repo, `log`
+over a range present in both returns identical bytes, and `show <sha>:<path>`
+for a blob in both returns identical bytes. The construction that does
+discriminate is a full clone against a `--depth=3` clone compared on a
+`diff-tree` at the shallow boundary — `b'A\x00f3.md\x00'` against `b''`, both
+`rc == 0`. A1/A2/A3 now carry that construction and the caveat it implies:
+shallowness is part of what "an unchanged repository" means.
+
+Recording it here rather than quietly fixing it, because the failure mode is the
+same one [I2] describes — a key-completeness test that cannot fail.
+
+### The rest
+
+* **[I3] grammar under-specified** — accepted. A1 is now five literal argv
+  templates with `<path>` defined and marked *keyed, not validated*, and family
+  1's real `^{commit}` suffix written out. The reachability point is confirmed
+  independently: across all 6509 calls, family 1 fires **0 times** — it is
+  reachable only through `main()`, which no memoized class calls.
+* **[I4] dropped documentation obligation** — accepted; C3 added, and the
+  *Documentation / doctrine surface* section no longer says "None."
+* **[I5] R7 unsequenced** — accepted; Chunk E added. Verified both markers are
+  still live in the proposal (front-matter directive, `## Proposed paths` entry).
+* **[I6] Chunk D had no acceptance criterion** — accepted; criterion 4 added.
+* **[I7] criterion 1 not executable** — accepted; B2 names the count-only,
+  non-caching detached arm, and both arms report distinct keys.
+* **[I8] C should be fenced after B2** — accepted; *Sequence* now carries two
+  hard orderings.
+* **[I9] C2 must bypass the memo; add `--full-history`** — accepted, both.
+* **[I10] two source-level bans are traps** — accepted; written into Chunk A as
+  placement constraints so they cost no implementation round.
+* **[I11] conformance** — accepted; `## Source proposal` H2 added, *Scope*
+  reworded to name all five chunks and the three files outside
+  `bootstrap/tests/`.
+
+### What this does not change
+
+The review's *Verified sound* list is taken as read and not re-audited: the
+five-call-site claim, C11's assertions surviving the narrowing, C2's predicate
+being robust in the safe direction, `rc != 0` never occurring across the 1279
+keys, and Chunk D's exemptions. Two of those were independently reproduced here
+anyway as a side effect of other work — the `rc != 0` census (0 keys) and the
+call-family count.
+
+Acceptance stays as R6 set it: invocation counts, byte-identical results,
+observed-red mutants. Wall-clock remains context, never a threshold.
