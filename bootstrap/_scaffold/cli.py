@@ -79,6 +79,7 @@ from .install import (
     _FORGE_REFERENCE_DIRS,
     _MODEL_SELECTION_MAPPING_REL,
     _ONBOARDING_PRESETS,
+    capability_install_notice_lines,
     capture_model_selection_mapping,
     create_dev_tree,
     fan_out_skills,
@@ -231,6 +232,15 @@ def main(argv: list[str] | None = None) -> int:
         try:
             if summary_cfg.get("preset"):
                 sys.stdout.write(format_profile_summary(summary_cfg))
+                # api-web-security-modules Chunk F (F4, Δ3 call site 1 of
+                # 2): the capability install notice, on the pre-install
+                # `--summary` acceptance artifact -- both capabilities are
+                # explicit-selection only, so a Maintainer accepting a
+                # `--summary` never otherwise sees that one was chosen.
+                summary_modules, _summary_s = expand_preset(summary_cfg)
+                notice = capability_install_notice_lines(summary_modules)
+                if notice:
+                    sys.stdout.write("\n".join(notice) + "\n")
             else:
                 # No preset: the modules: list (or the default-on set) is the
                 # literal install -- summarize it plainly.
@@ -653,6 +663,13 @@ def main(argv: list[str] | None = None) -> int:
             print("  model-selection: kept the FILL ME stub -- fill "
                   f"{_MODEL_SELECTION_MAPPING_REL} and run "
                   "`python scripts/check_model_selection.py`.", file=sys.stderr)
+
+    # api-web-security-modules Chunk F (F4, Δ3 call site 2 of 2): the
+    # capability install notice, printed post-install beside the
+    # model-selection notice just above -- same "adoption must not be
+    # silent" principle Chunk C established for security-verification.
+    for line in capability_install_notice_lines(modules):
+        print(line)
 
     # Seed the lifecycle skills' machine-state .gitignore entries
     # (unconditional -- the skills always install): the untracked interpreter

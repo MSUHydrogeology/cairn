@@ -760,6 +760,89 @@ def capture_model_selection_mapping(
 
 
 # ---------------------------------------------------------------------------
+# api-web-security-modules Chunk F (F3, Δ4 + Δ5): the capability install
+# notice
+# ---------------------------------------------------------------------------
+# Both `api-access-security` and `web-hosting-security` are explicit-
+# selection only (SAFETY.md Rule 11) -- no preset selects them and they are
+# not default-on -- so a silent install would leave the adopter unaware that
+# two network-egress-capable runners just landed, one of which sends
+# mutation methods on its `local` leg. `security-verification`'s Chunk-C
+# notice above is the precedent for "adoption must not be silent"; this is
+# the same principle for the two capabilities themselves, not the
+# dispatcher that may later admit them (Chunk G, not yet landed).
+#
+# Pure rendering only -- no I/O, no policy read, no network -- so both the
+# `--summary` (pre-install) and post-install call sites in cli.py can share
+# one implementation with no risk of it doing anything but building strings.
+
+#: Module name -> the data `capability_install_notice_lines` renders.
+#: `facade` is the installed script `main()` invokes as `python <facade>
+#: <subcommand>`; `target_label` names what `--authorize-base-url` must
+#: match byte-for-byte for that capability's policy.
+_CAPABILITY_NOTICE_MODULES: dict[str, dict[str, str]] = {
+    "api-access-security": {
+        "facade": "scripts/api_access_security.py",
+        "target_label": "base url",
+    },
+    "web-hosting-security": {
+        "facade": "scripts/web_hosting_security.py",
+        "target_label": "https origin",
+    },
+}
+
+
+def capability_install_notice_lines(module_names: "list[str]") -> "list[str]":
+    """Render the install-time notice for whichever api-web-security-modules
+    capabilities are present in *module_names*.  Returns ``[]`` when neither
+    is selected.  Order follows `_CAPABILITY_NOTICE_MODULES` (api-access-
+    security, then web-hosting-security), independent of the caller's
+    ordering.
+
+    Each rendered block states the four things the revised install contract
+    requires: **the local aggregate command** (the agent-facing leg, which
+    reaches only a loopback fixture and runs the whole declared matrix in
+    one invocation); **the separate Maintainer-owned deployed command**
+    (read-only, invoked by hand -- never run on the adopter's behalf);
+    **the exact-target re-authorization requirement** (`--authorize-base-
+    url` must be byte-for-byte the policy's normalized target -- the
+    runner enforces this, this renderer only states it); and **that no
+    deployed credential is read during install or during local evidence**.
+    """
+    selected = set(module_names)
+    lines: list[str] = []
+    for name, info in _CAPABILITY_NOTICE_MODULES.items():
+        if name not in selected:
+            continue
+        facade = info["facade"]
+        target_label = info["target_label"]
+        lines.append("")
+        lines.append(
+            f"NOTE ({name}) -- two legs, two owners, one credential rule:"
+        )
+        lines.append("  Local (agent-facing, loopback-only fixture):")
+        lines.append(f"    python {facade} local")
+        lines.append(
+            "  Deployed (Maintainer-invoked, read-only, by hand -- never "
+            "run this on the adopter's behalf):"
+        )
+        lines.append(
+            f"    python {facade} deployed-passive "
+            f"--authorize-base-url <exact normalized {target_label}>"
+        )
+        lines.append(
+            "  --authorize-base-url must be byte-for-byte the policy's "
+            "normalized target: a trailing slash, an upper-case host, an "
+            "explicit port, or http for https all refuse."
+        )
+        lines.append(
+            "  No deployed credential is read during install or during "
+            "local evidence."
+        )
+    return lines
+
+
+# ---------------------------------------------------------------------------
 # Progressive onboarding -- preset-keyed slot substitution
 # ---------------------------------------------------------------------------
 
