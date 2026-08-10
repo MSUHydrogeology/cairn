@@ -2288,3 +2288,61 @@ vs `:364`), so no supervised re-pin ceremony is owed by this plan.
 
 No AST re-anchor, frozen-manifest re-pin, credential use, or push was
 performed by this archive commit.
+
+## Maintainer disposition of the deferred second Internal round -- Anthony Kendall -- 2026-08-10
+
+**Authorization, quoted verbatim and visually isolated:**
+
+> Concur (This was, after all, my decision earlier!)
+
+Scribed by Claude (Implementation). **Append-only** — no prior section is altered,
+including the archiving agent's flagged paragraph above, which invited exactly this
+disposition (*"this paragraph is where that later arrives"*). Appended to a closed
+artifact under the same authority that permits a Maintainer Decision amendment on
+an archived proposal (precedent `3e962b7`, and this session's `d13c58a`): a
+Maintainer disposition may land on a closed record; nothing else may.
+
+**What is disposed of.** This plan's header required a **second Internal
+plan-review round before implementation**. Six implementation commits landed while
+that gate was shut. The Maintainer ratified the breach on 2026-08-04 and explicitly
+**deferred** — not waived — the correction: *"we can look back at the arc and make
+sure to correct it once everything is in place."* This is that look-back, and the
+disposition is **concur**: the round is discharged, and the plan is fully closed.
+
+**The arc, closed by the same hand that opened it.** The Maintainer's parenthetical
+records the point and it belongs in the record: the deferral was their decision and
+so is its closure. This is not an agent talking a fence down — it is the Maintainer
+completing a loop they left open, five days later, with the evidence in hand that
+was missing then.
+
+**Why concurrence is defensible on substance, not just authority.** The second
+round's own brief demanded three things. The 2026-08-10 External code review
+(Antigravity) did them, at a **stronger** structural-independence tier than the
+Internal round required:
+
+* **Reproduce corpus row 3 from the proposal text alone** — done independently:
+  **20 findings**, classified 7 `decision` / 7 `response` / 6 `review`, then the
+  full progression re-derived to the shipped **10**.
+* **Attack the perturbation ledger** — A9, A10, A16, B9, B15, C6, C8, D7 verified.
+* **Verify the six self-reported findings** — all six checked rather than accepted,
+  including the five strengthened falsifiers and A15's red-capability.
+
+**What is given up, named rather than glossed.** Internal and External do different
+jobs: Internal *helps a change land* — a constructive read by someone in the same
+headspace — while External *makes it prove it should*. Antigravity did the second.
+**Nobody ever did the first for this plan.** In practice the plan had already
+shipped and then passed a harder test, so the constructive read had no remaining
+work; but the asymmetry is real and is recorded rather than argued away.
+
+**The residual, stated plainly because concurring does not erase it.** This plan's
+implementation gate was breached, and the correction was deferred twice — once by
+the 2026-08-04 ratification, once by this concurrence choosing a substantive
+discharge over a formal one. That is now the recorded arc. If the
+`incident-trackers` recurrence discipline ever asks which case to examine for
+review-gate breaches, this is it.
+
+**What this disposition does NOT do.** It does not retroactively make the six
+commits gate-compliant; it disposes of the *obligation*, not the history. It
+authorizes no push. It sets no precedent that an External read substitutes for a
+declared Internal round in general — the reasoning here rests on this review having
+answered this brief's specific questions.
