@@ -796,6 +796,22 @@ MUTATIONS = {
         r'"refs/tags/\$TAGNAME\^\{tag\}"',
         '"refs/tags/$TAGNAME"',
     ),
+    # Both bounds on the SIGNED_NAME extraction removed at once -- the header
+    # stop (`/^$/ { stop = 1 }`) and the first-wins guard (`name == ""`) --
+    # leaving the naive "last `tag ` line anywhere in the object wins".  The
+    # tag MESSAGE is attacker-controlled free text, so under this mutant the
+    # message forges the signed name.  Both must go: the header stop alone
+    # keeps the message out of scope, and first-wins alone keeps the header
+    # authoritative even when the message is read.
+    "signed-name-extraction-bounds": (
+        r"SIGNED_NAME=\"\$\(printf '%s\\n' \"\$RAW\" \| awk '\n"
+        r"  /\^\$/ \{ stop = 1 \}\n"
+        r"  !stop && /\^tag / && name == \"\" \{ name = substr\(\$0, 5\) \}\n"
+        r"  END \{ print name \}'\)\"\n",
+        "SIGNED_NAME=\"$(printf '%s\\n' \"$RAW\" | awk '\n"
+        "  /^tag / { name = substr($0, 5) }\n"
+        "  END { print name }')\"\n",
+    ),
     "roster-containment": (
         r'    "\$cand_canon"\|"\$cand_canon"/\*\)\n',
         '    "@@never-matches@@")\n',
@@ -1332,3 +1348,99 @@ def test_cairn_roster_names_one_principal():
     """
     assert CAIRN_GATE_ROSTER.is_file(), f"{CAIRN_GATE_ROSTER} is missing"
     assert _count_principals(CAIRN_GATE_ROSTER.read_text()) == 1
+
+
+# ===================================================== the SIGNED_NAME extraction
+# Added 2026-08-10 after the release-security-bar B4 burndown (row G-2) found
+# that this control had ZERO enforcers: with both extraction bounds removed the
+# substitution attack SUCCEEDS and all 64 tests in this file stayed green. The
+# suite pinned the *comparison* (`SIGNED_NAME` vs `TAGNAME`, covered by the
+# `name-binding` mutant above) and was blind to where `SIGNED_NAME` comes from.
+#
+# The distinction matters because the two halves fail differently: the
+# comparison is one line and hard to break silently, while the extraction is an
+# awk program reading an object whose MESSAGE is attacker-controlled free text.
+
+#: A tag message carrying a line that looks exactly like a tag-object header.
+#: Written as a real newline-bearing message, because the hazard is a line at
+#: column 0 in the message body -- an indented or embedded occurrence is not the
+#: hazard and would make the vector decorative.
+FORGED_NAME_MESSAGE = "release v0.6.0\n\ntag v0.7.0\n"
+
+
+@pytest.fixture()
+def message_forged_mirror(lab: Lab, tmp_path: Path) -> Path:
+    """A mirror carrying the substitution attack in its most specific form: a
+    genuinely signed ``v0.6.0`` whose MESSAGE contains the line ``tag v0.7.0``,
+    with ``refs/tags/v0.7.0`` re-pointed at it.
+
+    Every ingredient is real: the signature verifies, the signing key is
+    rostered, and the object is a proper annotated tag. The only lie is which
+    name the payload asserts -- and that lie lives in the half of the object the
+    attacker writes.
+    """
+    # ``-f``: ``lab`` is session-scoped, so this fixture runs once per test and
+    # would otherwise fail on the second with "tag already exists".
+    lab.git(lab.candidate, "tag", "-s", "-f", "v0.6.0", "-m",
+            FORGED_NAME_MESSAGE)
+    forged_obj = lab.git(
+        lab.candidate, "rev-parse", "refs/tags/v0.6.0").stdout.strip()
+    dest = tmp_path / "forged.git"
+    subprocess.run(
+        ["git", "clone", "-q", "--bare", str(lab.candidate), str(dest)],
+        check=True, capture_output=True, text=True, env=lab.env,
+    )
+    lab.git(dest, "update-ref", "refs/tags/v0.7.0", forged_obj)
+    return dest
+
+
+def test_the_forged_vector_is_built_as_intended(lab: Lab,
+                                                message_forged_mirror: Path):
+    """Precondition, asserted rather than assumed. If the message line is not
+    present at column 0 in the object, the two tests below prove nothing -- they
+    would pass against a vector that never carried the hazard.
+    """
+    raw = lab.git(message_forged_mirror, "cat-file", "-p",
+                  "refs/tags/v0.7.0^{tag}").stdout
+    header, _, body = raw.partition("\n\n")
+    assert "tag v0.6.0" in header.splitlines(), \
+        f"the HEADER must assert the genuine name: {header!r}"
+    assert "tag v0.7.0" in body.splitlines(), \
+        f"the MESSAGE must carry the forged name at column 0: {body!r}"
+
+
+def test_a_tag_line_in_the_message_cannot_forge_the_signed_name(
+        lab: Lab, message_forged_mirror: Path):
+    """The control, positively. Asked for ``v0.7.0``, the script must read the
+    signed name out of the HEADER (``v0.6.0``) and refuse -- never out of the
+    message, whatever the message says about itself.
+    """
+    r = lab.verify("--signers", lab.good_roster, message_forged_mirror, "v0.7.0")
+    assert r.returncode == REFUSED, \
+        f"a message-forged name was accepted: {r.stdout}{r.stderr}"
+    assert "v0.7.0" in r.stderr, "the refusal must name the ref that was ASKED for"
+    assert "v0.6.0" in r.stderr, \
+        ("the refusal must name the name found in the HEADER -- if it names "
+         f"v0.7.0 the message was read as the payload: {r.stderr}")
+
+
+def test_mutation_deleting_the_extraction_bounds_lets_the_message_forge_the_name(
+        lab: Lab, message_forged_mirror: Path, tmp_path: Path):
+    """The discriminating leg, and the one whose absence was the G-2 finding.
+
+    With the header stop and the first-wins guard removed, the message's
+    ``tag v0.7.0`` becomes the signed name, it equals the ref asked for, the
+    genuine signature then verifies, and the script reports **PROVENANCED** for
+    a release it has not authenticated. A test that only asserts the shipped
+    script refuses cannot distinguish "the bounds work" from "this input was
+    never dangerous"; this one can.
+    """
+    mutant = _mutant(tmp_path, "signed-name-extraction-bounds")
+    r = _run_mutant(lab, mutant, "--signers", lab.good_roster,
+                    message_forged_mirror, "v0.7.0")
+    assert r.returncode == PROVENANCED, (
+        "the mutant refused anyway -- the extraction bounds are then not the "
+        f"control under test, and this ledger line is decorative: {r.stderr}")
+    assert "PROVENANCED" in r.stdout
+    assert SCRIPT.read_text() != mutant.read_text(), \
+        "the mutant must live outside the repository"
