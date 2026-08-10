@@ -1161,3 +1161,107 @@ fix. The plan is conformant at `open` — `_conformance_violations` is clean, an
 the review-record check binds at the `executing` transition, which is already
 gated on both obligations clearing. Left visible as evidence for B and C rather
 than reshaped to please a predicate this plan is replacing.
+
+## Plan review -- Codex -- 2026-08-10 (round 3)
+
+**Model**: GPT-5.6-Codex
+**Tier**: External
+**Obligation**: External
+**Reviewed commit**: `611ce5e848e8963c513163222cb350a188988cfd`
+**Target**: the complete inline contract and Response to G1--G3
+**Prior findings**: G1--G3, with E1--E4 as closed context
+**Assurance path**: high-assurance
+**Findings**: raised
+**Verdict: REVISE, narrowly.** G1's phase placement is repaired and G3's table
+no longer self-clears. The executable contract still contradicts G2, the
+current transition gate cannot reach Chunk A even after future clearing
+reviews, and the new pilot record does not yet define how its evidence remains
+durable. These are local amendments to this plan, not reasons to split or
+remove any chunk.
+
+### [H1] HIGH -- the Verification section still carries the unsafe restart rule G2 rejected
+
+The sequence now has the correct four cases. The later, governing Verification
+section still says: *"A corrective byte after the ceremony restarts B2 only."*
+That sentence is unqualified. It again permits an implementation, test,
+executable-template, fixture, or frozen correction after `I` to bypass the
+fresh B1, independent Code review, and possible re-anchor required above.
+
+The Response accurately describes the intended repair, but intended prose is
+not the plan's executable contract.
+
+**Required satisfier.** Replace the Verification restart paragraph with the
+same four-case rule already stated in Sequence. Name the reviewed manifest-only
+commit as the sole direct-to-B2 case; governed-byte corrections restart B1 and
+Code review; gate-inventory corrections additionally restart `I`; and P6d/P7
+use their own evidence. Keep one canonical rule or add a parity check so these
+two sections cannot diverge again.
+
+### [H2] HIGH -- the bootstrap table can clear, but the executing transition still cannot
+
+I executed the current parser against the reviewed plan with the canonical
+Python 3.13.13 interpreter. `review_record_violations(...)` returns one
+permanent violation: the round-2 External pass reports findings, but its
+Response occurs after the intervening Security pass, outside the current
+positional ceiling. Simulating `awaiting-plan-review -> executing` therefore
+returns an unmet review gate.
+
+Appending later SHIP passes and filling both bootstrap rows cannot remove that
+older violation. The final Response recognizes this as the defect Chunk B will
+fix, but the plan gives no authority to pass the red transition in order to
+reach Chunk B. Saying the plan is clean while `open` only postpones the
+deadlock.
+
+**Required satisfier.** Add an exact, one-time bootstrap attestation for this
+plan. It must bind the reviewed plan blob, the two later SHIP review commits,
+the completed two-row table, and the **single expected** current-parser
+violation. It may authorize the `executing` transition and the A/B bootstrap
+window only when no other violation exists; it expires when B lands. Chunk B
+must make this artifact conform without a broad or reusable exemption, and a
+test must prove that changing the plan blob, review commits, violation text, or
+violation count refuses. Record who may make that attestation; because it
+overrides an existing governance gate, Maintainer authorization is the
+appropriate owner.
+
+### [H3] MEDIUM-HIGH -- the pilot's mutable JSON is not yet durable evidence
+
+P6a puts activation, counted plan stems, and pause records in
+`dev/.cairn/pilot-state.json`, with the CLI as sole writer. P6d makes activation
+a committed Maintainer record, but the plan does not say whether later writes
+are tracked, how concurrent sessions avoid lost updates, or how overwritten
+counts and pause records remain auditable. I checked the repository: the path
+is not ignored and does not exist in the tracked set, so creating it would make
+it tracked by default. A CLI that repeatedly rewrites it would then mutate a
+shared governance record outside any stated commit or compare-and-swap
+contract.
+
+That matters because P7's promote/revise/retire Decision depends on this
+record. A last-writer-wins state file is not stable evidence of six plans or a
+pause history.
+
+**Required satisfier.** Choose and state the storage contract. The simplest
+durable shape is an immutable tracked activation record plus an append-only
+tracked event ledger (naturally under `dev/measurement/`) from which counts,
+pauses, and the report are derived. Bind every event to the source artifact and
+commit, reject duplicate/conflicting events, use atomic writes with an
+expected-old check, and refuse malformed or raced state. If one JSON file is
+retained instead, specify equivalent history, commit, concurrency, recovery,
+and tamper-detection semantics. Add mutation tests for lost update, duplicate
+stem, altered prior event, and interrupted write.
+
+### Closure accounting
+
+G1 is closed by P6a--P6c entering the reviewed range and P7 carrying its own
+classification and evidence. G2 remains open as H1 because the old sentence
+survives. G3's anti-self-clearance table is corrected, but direct execution
+exposes H2's separate bootstrap deadlock. E4 remains closed.
+
+**Covered**: the full `611ce5e` plan diff; direct
+`review_record_violations` and transition-gate execution under the canonical
+interpreter; both restart-rule locations; the accepted pilot contract; and the
+repository's actual ignore/tracked treatment of `dev/.cairn/`.
+
+**Not covered**: implementation bytes, future pilot observations, the later
+Code review, or the Maintainer ceremony. Return H1--H3 for one focused External
+closure pass. This pass is blocking and does not fill the bootstrap table's
+`External` row.
