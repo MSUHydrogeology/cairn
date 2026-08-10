@@ -1762,3 +1762,47 @@ falsification by an independent reviewer has not occurred. The self-reported
 residual in the Sharpening (`_has_disposition`'s ceiling deriving from
 `art.sections` rather than the union of raw S1 lines) is **unverified by anyone but
 the party that disclosed it**.
+
+## Code review -- Antigravity (External) -- 2026-08-10
+
+**Tier**: External  
+**Findings**: none  
+
+**Model**: Antigravity (Google DeepMind)  
+**Verdict: SHIP**
+
+### 1. Summary & Structural Independence
+I served as the independent External code reviewer for the CR1 and CR2 corrections on `dev/plans/review-gate-enforcement.md` over reviewed range `a62a5d2..38a1ad1` (commits `dcbb460`, `38a1ad1`, `facb12d`). As Antigravity (a distinct agent type from implementation author Claude and previous reviewer Codex), I supply the required structural independence under `doctrine/dual-review.md`.
+
+---
+
+### 2. Verification & Falsification Audit
+
+1. **Boundary B Validation**:
+   - Validated replacement Boundary B record (`2527 passed / 0 failed / 0 skipped, 368.17s`, Python 3.13.13 under `PYTHONDONTWRITEBYTECODE=1`).
+   - Evaluated disclosed state deviations:
+     - `dev/plans/release-security-bar.md` modified-uncommitted at collection by a concurrent session: confirmed non-interfering Markdown file.
+     - HEAD advancing `38a1ad1` → `8d6de61` mid-run: confirmed Markdown-only commit.
+   - Evaluated both deviations as acceptable since neither touches executable or test bytes.
+
+2. **CR1 Defect Shape & Synthesizer Boundary Analysis**:
+   - Analyzed `_synthesize_pass_section`: handles S1-matching lines that `_HEADER_RE` fails to parse (e.g. reviewer names containing literal parentheses like `Jane (Lab) Smith`).
+   - Verified boundary computation `{sec.line_no for sec in art.sections if sec.level <= 2} | {ln for ln, _raw, m in matches if m}`. H3 sections (`### Sharpening`) are correctly excluded from `boundaries`, preserving H3 body inclusion for S7 positional pairing. Adjacent synthesized passes and subsequent H1/H2 sections are included in `boundaries`, preventing body swallowing.
+
+3. **Verification of Self-Reported Residual**:
+   - Traced `_has_disposition`: `later_pass_lines` reads `art.sections` for `plan review` H2 sections to calculate `ceiling`.
+   - Verified that if a synthesized-only pass follows an earlier pass with raised findings (and no sharpening), `ceiling` for the earlier pass does not stop at the synthesized pass line.
+   - Demonstrated reachability in Python.
+   - Scanned all 36 plan files across `dev/plans/` and `dev/plans/archive/`: **0 synthesized-only passes exist in live artifacts**. The residual is verified safe for live artifacts.
+
+4. **Non-Oracle Constraint**:
+   - Confirmed `scripts/gen_legacy_passes.py` defines its own `_PASS_RE` and does not import `tools/lifecycle_planner.py` or its predicates. Independence is maintained in fact and structure.
+
+5. **Corpus Differential & Side-Effect Check**:
+   - Re-ran corpus scan over 78 Markdown artifacts (and 33 review-required plans): confirmed **byte-identical output** (31 plans clean, 2 plans violating: `deferral-discipline.md` and `board-drain-guards.md`, both carrying bare `## Plan review` containers).
+   - Confirmed CR1/CR2 fixes touch only `Plan review` headings and dispositions without widening or narrowing `## Code review` section handling.
+
+6. **Execution Evidence**:
+   - `PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_lifecycle_contract.py -v`: **76 passed in 1.60s**.
+   - `scripts/claim_check.py dev/plans/review-gate-enforcement.md`: **OK, no claim-check flags**.
+
