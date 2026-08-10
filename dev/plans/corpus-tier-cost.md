@@ -255,8 +255,62 @@ Two corrections the review forced, both cheap:
 |---|------|--------|
 | D1 | plan record | for each remaining head file, measure and record **either** a memo disposition **or** a written reason. `test_gate_preflight.py` and `test_oracle.py` are fenced (R5); `test_security_stack.py`'s timeout nodes are irreducible |
 
-**No other optimization is authorized by this plan.** A discovery worth doing
-is raised to the Maintainer as a scope question.
+**D1 record — measured 2026-08-10**, this host, canonical interpreter
+(3.13.13), each file run alone on an otherwise quiet machine.
+
+The disposition question is not "is this file slow" but **"does anything
+repeat"** — a memo pays only when the same pure read happens more than once.
+So each file was instrumented at `subprocess.run` and the census taken: total
+calls against distinct `(argv, cwd)` pairs.
+
+| file | tests | seconds | subprocess calls | distinct | **ratio** | disposition |
+|---|---|---|---|---|---|---|
+| `test_gate_preflight.py` | 127 | 50.60 | 1612 | 1292 | 1.25 | **fenced (R5)** |
+| `test_upgrade_module_additions.py` | 37 | 27.88 | 2127 | 1950 | **1.09** | no memo — nothing repeats |
+| `test_security_stack.py` | 98 | 19.35 | 207 | 187 | 1.11 | no memo — irreducible by construction |
+| `test_upgrade.py` | 87 | 16.35 | 974 | 852 | **1.14** | no memo — nothing repeats |
+| `test_oracle.py` | 18 | 14.88 | 82 | 61 | 1.34 | **fenced (R5)** |
+| *(reference)* `test_transition_lint.py` | 48 | 18.29 | — | — | **5.09** | memoized, Chunks A–B |
+
+**The ratio is the whole finding.** The corpus tier was worth memoizing because
+it re-derived the same read five times over. Nothing else in the head does:
+every remaining file sits between 1.09 and 1.34, because each test builds its
+own temporary tree and runs the engine against inputs unique to that test.
+There is no constant being re-derived, so there is no memo to write — and this
+is a *measurement*, not the absence of one.
+
+**Written reasons, per file:**
+
+* **`test_gate_preflight.py`** — fenced by R5, and the census agrees with the
+  fence: its cost is 127 real ceremony runs, and the slowest single node
+  (`test_check_runs_against_the_live_repo_and_reports`, 7.76 s) runs the actual
+  public CLI against the live repository. The subprocess *is* the assertion; a
+  memo would test the cache.
+* **`test_oracle.py`** — fenced by R5, same reason. Its two slowest nodes
+  (6.14 s, 4.95 s) are differential-oracle runs whose point is that a real
+  divergent engine is executed.
+* **`test_security_stack.py`** — irreducible by construction. Its two slowest
+  nodes are `test_a_t2_timeout_is_enforced_and_bounded` (6.58 s) and
+  `test_a_t6_descendants_do_not_outlive_the_timeout` (6.14 s): **elapsed time
+  is the property**. Together they are 12.72 s of the file's 19.35 s.
+* **`test_upgrade.py`** and **`test_upgrade_module_additions.py`** — the two
+  the plan opened as *unmeasured*. Now measured, and the answer is no memo.
+  Ratios 1.14 and 1.09.
+
+**The one real repeat, priced rather than waved away.** `git -C <repo>
+rev-parse --short HEAD` fires 106 / 88 / 20 times across the three files above.
+At a measured **9.8 ms** per call that is **1.04 s of 16.35 s (6.3 %)**,
+0.86 s of 27.88 s (3.1 %), and 0.20 s of 19.35 s (1.0 %). It is a genuine
+redundancy and it is **declined**: capturing it needs a memo *shared across
+files*, which is exactly the `_immutable_git.py` helper R1 withdrew in favour
+of a test-local one. Re-introducing a shared executable helper to recover ~2 s
+would trade the plan's narrowest, best-tested surface for its widest, and this
+plan does not authorize it. Recorded here so the opportunity is on the record
+rather than rediscovered as if new.
+
+**No file in the head is left unaddressed**, which is the acceptance criterion
+the proposal cared about. **No other optimization is authorized by this plan.**
+A discovery worth doing is raised to the Maintainer as a scope question.
 
 ### Chunk E — prune R7's spent forward-reference markers
 
