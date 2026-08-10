@@ -942,6 +942,28 @@ here rather than assumed)*
   whether a release tag waits. *Fix:* explicit array expansion
   (`"${surfaces[@]}"`) plus a non-zero-match assertion over the surface set, so an
   empty match is an error rather than a pass.
+* **[RB5-6] The staleness surface list contains a path it is structurally blind
+  to, and that path is an executable trust root.**
+  `dev/.cairn/local-env.json` is in the register's own derived surface list and is
+  **untracked and gitignored**, so `git log … -- <that path>` returns empty **for
+  all time** — it can never signal staleness, however the pathspec is quoted. This
+  is **not** the same defect as [RB5-5] and quoting cannot fix it: [RB5-5] is a
+  *malformed-invocation* hazard, this is a *tracking* hazard. On this bar's own
+  **B4** standard it is a check that cannot fail, and its output is worse than
+  silence — a permanent `FRESH` reads as "this trust root has not moved" when the
+  mechanism has never been able to see it. `AGENTS.md` > *High-risk surfaces*
+  classifies that file as an *"untracked, gitignored, lockfile-uncovered
+  **executable trust root**"*, so the one member the mechanism is blind to is the
+  highest-risk member of the list. Found on the mechanism's **first real run**,
+  2026-08-10, immediately after `refs/cairn/release-bar-audit` was published — by
+  the `git ls-files --error-unmatch` assertion [RB5-5] prescribes, which is the
+  only reason it was visible at all. *Fix, either half:* exclude untracked paths
+  from the derived surface list **and say so**, so the list stops implying coverage
+  it lacks; **or** give that trust root a tracked witness (a committed digest or
+  shape record) that `git log` can actually observe. *Homed 2026-08-10 on
+  Maintainer challenge* — it had been written only into the archive record of the
+  plan that found it, which is the disposal-by-archive failure the archive
+  precondition exists to prevent.
 
 * **[VER-1] Content-scanner homoglyph classification residuals** *(deferred
   2026-08-10 from `content-scan-detectors`, archived)* — two follow-ups from

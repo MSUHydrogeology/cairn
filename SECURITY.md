@@ -47,8 +47,12 @@ downstream adopter's agents. Include a reproducer where possible.
   environment. After pulling or upgrading, confirm the installed tree still
   matches its recorded install: **from a trusted Cairn checkout / release,
   run `python <cairn>/bootstrap/verify_integrity.py --target <your-repo>`** —
-  a fail-closed SHA-256 check of every file in your tree against its
-  `dev/.cairn/cairn-lock.yml`, flagging any post-install modification. (Integrity
+  a fail-closed SHA-256 check of every file in your tree against the hashes
+  **your own `dev/.cairn/cairn-lock.yml` records**, flagging any file that has
+  changed since that lockfile was written. It detects *unilateral* modification;
+  it is **not** tamper evidence, because the lockfile lives inside the tree being
+  checked — an actor who rewrites a file and regenerates the lockfile over it
+  verifies as `OK`. (Integrity
   verification is a Cairn-bootstrap operation run against your repo, like
   `scaffold` / `upgrade` — the verifier ships with Cairn's bootstrap, not
   into your tree.)

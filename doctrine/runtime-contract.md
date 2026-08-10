@@ -129,7 +129,7 @@ reproducible across agents and sessions are absent.
 |------|--------|-------------|-------|
 | Lifecycle backend (`scaffold.py install` / `upgrade`) | core | **Required** | Installs and upgrades the `dev/` tree; no equivalent hand-operation |
 | Lockfile / upgrade engine (`scaffold.py upgrade`) | core | **Required** | Lockfile integrity + upstream sync; no equivalent hand-operation |
-| Integrity check (`verify_integrity.py`) | core | **Required** | Detects tampered apparatus before it can self-audit; fail-closed |
+| Integrity check (`verify_integrity.py`) | core | **Required** | Detects unilateral modification of the installed apparatus against the hashes the tree's own lockfile records; fail-closed. Not tamper evidence -- the lockfile is inside the tree it judges |
 
 ### Degradable discipline aids
 
