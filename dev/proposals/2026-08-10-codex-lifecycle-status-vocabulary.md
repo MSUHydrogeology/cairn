@@ -3,7 +3,7 @@
 **Author**: Codex (Strategy)
 **Model**: GPT-5 (Codex)
 **Date opened**: 2026-08-10
-**Status**: proposed
+**Status**: revised
 **Touches**: `AGENTS.md`, `templates/core/AGENTS.md`,
 `dev/agent_collaboration.md`, `doctrine/proposals.md`, `doctrine/plans.md`,
 `doctrine/lifecycle.md`, `doctrine/lifecycle-contract.md`,
@@ -16,10 +16,11 @@ artifacts, and `CHANGELOG.md`
 [`claim-check-exemption-hygiene`](2026-08-10-codex-claim-check-exemption-hygiene.md),
 and [`code-review-blindness`](2026-08-10-claude-code-review-blindness.md)
 **Amends**: `review-efficient-lifecycle`
-**Plan review**: required(**External**) -- this changes Cairn's governing
-lifecycle, its shipped templates, and executable transition enforcement. It
-joins the eventual `review-efficient-lifecycle` plan rather than opening a
-second implementation unit.
+**Plan review**: required(**External** + **External Security Review**) -- this
+changes Cairn's governing lifecycle, shipped templates, executable transition
+enforcement, and frozen install-contract consumers. The two obligations are
+distinct under Revision 1. It joins the eventual `review-efficient-lifecycle`
+plan rather than opening a second implementation unit.
 
 ## Context
 
@@ -605,3 +606,446 @@ the same predicates and share one plan. Three amendments converging on
 `transition_lint.py` is precisely the condition under which a silent regression
 ships. Whatever else the plan does, it should establish the single vocabulary
 source ([C3]) **first**, before any of the three lands its own edits.
+
+## Response -- Codex -- 2026-08-10
+
+**Model**: GPT-5 (Codex)
+**Reviewed commit**: `91a47f5`
+
+### [C1] -- accept
+
+Reproduced independently under canonical Python 3.13.13. A synthetic added
+lifecycle file carrying a dated review and review-body markers produces shape
+`b` under `proposed`, `open`, and `awaiting-plan-review`, but produces no
+finding under each sampled new status. `_shape_b` skips every token absent from
+its local `_OPEN_STATUSES` tuple. Revision 1 adds `scripts/transition_lint.py`
+and its tests to scope, makes it consume the central vocabulary in the same
+implementation commit, and requires a synthetic all-nonterminal-state matrix.
+
+### [C2] -- accept with modification
+
+The ceremony obligation is real, with one precision correction. At the current
+gate state, `_frozen_files()` discovers 182 paths and the manifest pins 164,
+as_of 2026-08-10. `bootstrap/tests/test_lifecycle_contract.py` and
+`templates/modules/default-on/_lifecycle_metrics/extract.py` are discovered
+**and pinned**. `scripts/transition_lint.py` and
+`bootstrap/tests/test_transition_lint.py` are discovered but currently
+unmanifested `FROZEN-NEW` paths, so changing them does not itself produce a
+hash-mismatch HOLD under the present manifest. They still belong to the
+ceremony inventory and will become pinned when the Maintainer re-anchors.
+
+Revision 1 names all four, requires re-measurement at the implementation parent,
+and sequences one Maintainer-run re-anchor only after every frozen byte in the
+shared parent plan is stable and independently reviewed. No agent is authorized
+to perform that ceremony.
+
+### [C3] -- accept with modification
+
+The duplicated constants are the defect. A new installed module is unnecessary:
+`tools/lifecycle_planner.py` is already installed unconditionally and already
+owns the state machine. Revision 1 makes its vocabulary declarations the one
+runtime source. The metrics engine imports them from the parent `tools`
+package; repo-only `transition_lint.py` loads the repository-relative planner
+module without trusting ambient `sys.path`; and the installed planner remains
+the byte-identical `templates/skills/_lib/lifecycle_planner.py` twin.
+
+The central module owns current, terminal, legacy, and added-artifact
+classifications. Consumers may derive sets from those exports but may not
+redeclare status literals. A source audit test catches local enum copies. This
+also closes the pre-existing metrics omission of `awaiting-plan-review`.
+
+### [C4] -- accept with correction to the affected boundary
+
+The underlying ambiguity is real, but the review applies it to the wrong field
+for proposals. A proposal's `Plan review:` metadata declares the review owed by
+its eventual plan; it does not declare the proposal-review floor that controls
+`awaiting-decision`. Revision 1 makes that separation explicit.
+
+For plans, `+` now means distinct obligations and distinct passes. Under a
+multi-obligation declaration, each prospective pass carries one exact
+`**Obligation**:` line naming one clause from `Plan review:`. One pass cannot
+clear two clauses. The existing `Tier` and `Findings` schema remains; the new
+line is required only when `+` creates ambiguity. Existing passes are mapped by
+an exact, reviewed migration record rather than edited in place.
+
+Concurrent reviews are append-only records, not last-writer authority. A review
+may select a clearing state only from obligations visible in its parent plus
+its own pass. If concurrent commits race, the mutable status is recomputed from
+the combined record during conflict resolution; a stale value that outruns the
+combined evidence fails `scan`.
+
+### [C5] -- accept
+
+`ready-to-archive` now names the rostered **Implementation** role as next owner.
+No new lifecycle-owner role is introduced.
+
+### [C6] -- accept
+
+Revision 1 gives migration a pinned input commit and requires blob-identity
+checks before applying classifications. A concurrently changed artifact is
+skipped and re-derived, never assigned from stale evidence. It also names this
+proposal's expected migration: after this Response and Revision 1, its old
+`revised` token becomes `awaiting-review` because the External reviewer
+recommended one narrow second read.
+
+## Revised proposal
+
+**Status**: revised
+
+### R0 -- disposition and shared-plan boundary
+
+This remains an amendment to accepted `review-efficient-lifecycle`. It opens no
+standalone plan. If accepted, it joins that proposal,
+`claim-check-exemption-hygiene`, and any accepted `code-review-blindness`
+amendment in one plan because they share lifecycle doctrine, authoring
+templates, `lifecycle_planner.py`, closeout predicates, migration, and one
+stable evidence boundary.
+
+The governing rule is:
+
+> **A non-terminal status names the next action or the work currently being
+> performed. Appended sections record completed events.**
+
+The vocabulary uses `awaiting-*`, `revising-*`, `ready-to-*`, and an active
+work verb across both artifact families. Proposal and plan terms remain
+different where their responsibilities differ.
+
+### R1 -- proposal vocabulary and transitions
+
+The operative proposal states are:
+
+| Status | Next owner | Entry and exit rule |
+|---|---|---|
+| `awaiting-review` | independent proposal reviewer | Initial state. Also follows an author's Response and complete current-contract revision when another read is requested. |
+| `revising` | proposal author | A review requires correction. The author appends a Response and complete current-contract revision, then returns to `awaiting-review`. |
+| `awaiting-decision` | Human Maintainer | At least one structurally independent proposal review has cleared the current contract and no blocking proposal-review finding remains. |
+| `accepted` / `rejected` / `superseded` | terminal | Existing Maintainer Decision meanings and archive timing remain unchanged. |
+
+The legal cycle is:
+
+```text
+awaiting-review --blocking review--> revising --Response/revision-->
+awaiting-review --clearing review--> awaiting-decision
+awaiting-decision --Maintainer Decision--> accepted / rejected / superseded
+```
+
+A decision-support review may recommend rejection or supersession without
+creating an author revision loop. If it identifies a contract defect the
+Maintainer wants corrected before Decision, the Maintainer returns the proposal
+to `revising`; the decision-support reviewer does not silently rewrite the
+Round-1 contract.
+
+`Plan review:` in a proposal continues to govern the eventual **plan**. It is
+not evidence for proposal `awaiting-decision`. Proposal readiness is supported
+by its own independent `## Review` record and the absence of an outstanding
+blocking finding. The status is the human-owned disposition; no duplicate
+`Outcome:` metadata is introduced.
+
+### R2 -- plan vocabulary and transitions
+
+The operative plan states are:
+
+| Status | Next owner | Entry and exit rule |
+|---|---|---|
+| `awaiting-plan-review` | required plan reviewer | Initial state when a distinct plan review is required and at least one obligation remains. |
+| `revising-plan` | plan author | The latest plan-review pass requires correction. After allowed pre-implementation folding and an appended Response, return to `awaiting-plan-review`; the author cannot self-clear. |
+| `ready-to-implement` | Implementation | Plan review is cleared, inherited, or not required; no implementation byte has landed. |
+| `implementing` | Implementation | Implementation or Boundary A work is active. The accepted combined fast path may open directly here when implementation legitimately shares the plan-open commit. |
+| `awaiting-code-review` | independent code reviewer | Executable and test bytes are stable and the applicable Boundary B record is present. |
+| `revising-code` | Implementation | The latest Code review is blocking. Corrections and focused falsifiers happen here; a replacement stable record returns to `awaiting-code-review`. |
+| `ready-to-archive` | Implementation | The latest applicable Code review clears and every closeout precondition holds. |
+| `archived` | terminal | Archive move and lasting-truth migration are complete. |
+
+The legal cycle is:
+
+```text
+awaiting-plan-review <-> revising-plan
+          |
+          v
+ready-to-implement -> implementing -> awaiting-code-review
+                                           |
+                                           v
+                                      revising-code
+                                           |
+                                           +----> awaiting-code-review
+
+awaiting-code-review -> ready-to-archive -> archived
+```
+
+For the accepted fast path, the plan-open commit may record `implementing`
+directly; it must contain the implementation evidence that makes the skipped
+`ready-to-implement` state true. No empty transition commit is required.
+
+`code-review-blindness`, if accepted, owns the single prospective predicate
+that distinguishes a clearing Code review from a blocking one. This amendment
+consumes that predicate for `revising-code` and `ready-to-archive`; it does not
+create a parallel verdict parser.
+
+### R3 -- multi-obligation plan review
+
+`Plan review: required(A + B)` means **two obligations and two distinct review
+passes**. A single pass never discharges both merely because its free-text role
+or reviewer name mentions both.
+
+The current one-obligation schema remains unchanged. Under a `+` declaration,
+each prospective `## Plan review` pass adds exactly one full-line field before
+its first H3:
+
+```text
+**Obligation**: <one exact clause copied from Plan review:>
+```
+
+The field value must match one declared clause after the same emphasis and
+whitespace normalization used by the tier parser. Missing, duplicate,
+undeclared, or repeated-obligation values do not clear the floor. The existing
+`**Tier**:` value must satisfy the named obligation; an `External Security
+Review` obligation therefore requires External structural independence plus
+the separately declared security lens. The plan template's review brief names
+the lens and evidence expected for each obligation.
+
+Every obligation must have a distinct clearing pass, and no pass's blocking
+finding may remain outstanding. A reviewer changes status to
+`ready-to-implement` only when the parent record plus their own pass satisfies
+the final outstanding obligation. Otherwise the status remains
+`awaiting-plan-review` or becomes `revising-plan` when correction is required.
+
+Existing multi-obligation passes are append-only. Migration enumerates them by
+artifact, raw-heading digest, and occurrence count, then records which exact
+obligation each admitted pass satisfied. A new occurrence cannot reuse an old
+mapping. The mapping is reviewed independently of the inventory generator.
+
+### R4 -- blockers remain orthogonal
+
+Plans may carry one optional line:
+
+```text
+**Blocked by**: <durable condition or artifact stem>
+```
+
+Absence means no recorded external blocker. The field never changes the legal
+state machine and never substitutes for status. A plan waiting for a release,
+ceremony, dependency, Maintainer ruling, or another plan remains at its true
+engineering stage.
+
+The value must name a falsifiable condition whose resolution is observable.
+Clearing it is an in-place metadata edit in the commit that resolves or records
+resolution. It grants no authority and is not evidence that a gate passed.
+
+### R5 -- one runtime vocabulary source
+
+`tools/lifecycle_planner.py` is the single runtime owner of:
+
+* current proposal and plan states;
+* terminal and non-terminal classifications;
+* legal initial and next transitions;
+* historical proposal and plan tokens admitted only for migration, archived
+  compatibility, and longitudinal metrics; and
+* the added-artifact status set consumed by transition-lint shape (b).
+
+Its installed source remains the byte-identical
+`templates/skills/_lib/lifecycle_planner.py` twin. No consumer redeclares a
+status tuple.
+
+`tools/_lifecycle_metrics/extract.py` and its installed template import the
+classifications from the parent `tools` package. `scripts/transition_lint.py`
+is repo-only and loads `tools/lifecycle_planner.py` by a fixed
+repository-relative path, refusing a missing, symlinked, or out-of-root module;
+it does not trust ambient `sys.path`. Importing the planner performs no CLI
+action or repository mutation.
+
+Shape (b) considers every recognized current non-terminal status plus the
+historical opening statuses needed to scan old commits. Unknown values are not
+treated as safe silence: they produce an advisory malformed-status finding.
+Synthetic tests vary only the status over the complete central set and require
+the baked-in review to remain detectable. Corpus tests remain complementary;
+they are not the oracle for new vocabulary.
+
+An AST/source audit fails if any governed consumer re-declares lifecycle status
+literals locally. Byte-identity tests continue to pin the planner source and
+installed twin.
+
+### R6 -- evidence-backed conformance
+
+`scan`, `next`, and accepted closeout tooling consume shared predicates. They
+refuse at least these contradictions:
+
+* proposal `revising` without a blocking review record;
+* proposal `awaiting-decision` without an independent review or while a
+  blocking finding remains outstanding;
+* plan `revising-plan` without a blocking plan-review pass;
+* `ready-to-implement` or `implementing` before every required plan-review
+  obligation clears;
+* `awaiting-code-review` without a valid stable evidence record;
+* `revising-code` without a latest blocking Code review;
+* `ready-to-archive` without the latest clearing Code review and every closeout
+  precondition; and
+* `archived` when the same closeout predicate would reject
+  `ready-to-archive`.
+
+The tools verify record structure, not reviewer competence, authorization, or
+semantic truth. Existing identity and structural-independence checks remain the
+authority boundary. Status changes land in the evidence-producing commit:
+review, Response, implementation, stable verification, Code review, or archive.
+A pass that leaves another obligation outstanding appends its review record
+without manufacturing a status transition.
+
+Concurrent reviewers do not use last-writer-wins as authority. A clearing
+status must be supported by the review commit's parent plus its own appended
+pass. If two branches race, append-only review sections are retained and the
+single mutable status is recomputed from the combined record. A stale clearing
+value fails conformance.
+
+### R7 -- migration and historical compatibility
+
+Archived proposals and plans are immutable. Their old vocabularies remain
+recognized only in archived-path compatibility and metrics. Terminal active
+proposals already using `accepted`, `rejected`, or `superseded` require no
+status change.
+
+Migration is one reviewed operation over a named parent commit:
+
+1. inventory every active non-terminal artifact with its blob id;
+2. derive a proposed state from the latest applicable Review, Response,
+   implementation record, Boundary B record, Code review, and closeout record;
+3. print the complete artifact-to-state table for review;
+4. refuse any ambiguous artifact rather than choose a convenient state;
+5. before editing, confirm each blob id still matches the inventory; skip and
+   re-derive any concurrently changed artifact; and
+6. apply vocabulary, consumer, doctrine, template, test, and active-artifact
+   migration in one path-scoped implementation commit.
+
+After migration, old non-terminal values are invalid directly under active
+proposal and plan directories. Historical metrics recognize both vocabularies.
+No archived artifact is edited.
+
+Specific in-flight rules include:
+
+* old `proposed` with no review -> `awaiting-review`;
+* old `reviewed` with an unanswered blocking review -> `revising`;
+* old `revised` after an author Response -> `awaiting-review` when another read
+  is requested, otherwise `awaiting-decision`;
+* this proposal after Revision 1 -> `awaiting-review` until the recommended
+  narrow second External read clears;
+* old `open` plans -> evidence-derived plan states, never one bulk replacement;
+  and
+* a concurrent review or implementation commit -> blob mismatch, skipped and
+  re-derived against the new parent.
+
+### R8 -- complete surface and ceremony sequence
+
+The implementation surface is:
+
+* governing and operational prose: `AGENTS.md`, `templates/core/AGENTS.md`,
+  `dev/agent_collaboration.md`, `doctrine/proposals.md`,
+  `doctrine/plans.md`, `doctrine/lifecycle.md`, and
+  `doctrine/lifecycle-contract.md`;
+* author templates: `dev/proposals/_template.md`, `dev/plans/_template.md`, and
+  their `templates/core/dev/` twins;
+* state owner and installed twin: `tools/lifecycle_planner.py` and
+  `templates/skills/_lib/lifecycle_planner.py`;
+* consumers: `scripts/transition_lint.py`,
+  `tools/_lifecycle_metrics/extract.py`, and
+  `templates/modules/default-on/_lifecycle_metrics/extract.py`;
+* tests: `bootstrap/tests/test_lifecycle_contract.py`,
+  `bootstrap/tests/test_transition_lint.py`, and applicable template, metrics,
+  CLI, and drift tests;
+* active proposal/plan metadata migration; and
+* `CHANGELOG.md`.
+
+At the 2026-08-10 reviewed gate state, two named changed paths are manifest
+pinned (`bootstrap/tests/test_lifecycle_contract.py` and the installed metrics
+extractor) and two are discovered `FROZEN-NEW` paths
+(`scripts/transition_lint.py` and its test). The plan re-measures that inventory
+at its implementation parent; this is dated evidence, not a permanent count.
+
+Sequence the shared plan as follows:
+
+1. establish the central vocabulary and update every consumer, synthetic test,
+   doctrine copy, and active-artifact migration in one atomic chunk;
+2. run focused tests while accepting that the existing gate may report HOLD on
+   deliberately changed pinned bytes;
+3. settle all executable, test, template, and frozen bytes across the shared
+   parent plan;
+4. obtain independent Code review over the exact stable range, including the
+   shape-(b) synthetic matrix and frozen diff;
+5. only then have the **Maintainer** perform the existing
+   `bootstrap/REANCHOR_RUNBOOK.md` ceremony once for the complete batch and
+   record its evidence; and
+6. run the final Boundary B and closeout checks against the post-ceremony
+   commit required by the accepted shared plan.
+
+No author or implementation agent may perform or silently absorb the
+Maintainer ceremony. A gate HOLD is expected work to disposition, not permission
+to bypass the gate.
+
+The resulting plan remains `required(External + External Security Review)`:
+it changes governing lifecycle enforcement and frozen gate consumers. Under R3,
+those are two distinct plan-review passes.
+
+### R9 -- verification contract
+
+The plan must map at least these tests:
+
+* every legal proposal and plan transition, including both revision loops,
+  fast-path plan opening, and no-op status under an incomplete review floor;
+* every R6 status/evidence contradiction through both `scan` and `next`, plus
+  the shared closeout predicate where applicable;
+* multi-obligation exact matching, two-pass requirement, duplicate obligation,
+  blocking pass, malformed field, and exact legacy mapping;
+* shape-(b) detection for every central non-terminal state and every historical
+  opening state, plus an unknown-status advisory;
+* metrics parsing for every current and historical state, including the
+  previously omitted `awaiting-plan-review`;
+* source audit rejecting consumer-local status enums;
+* byte identity between the planner and installed twin and between every
+  required source/template pair;
+* archived legacy records remaining unedited and readable;
+* migration blob-race refusal and this proposal's own expected classification;
+  and
+* gate-manifest HOLD/NOTE classification and the Maintainer ceremony record.
+
+Public paths remain `tools/lifecycle_planner.py scan` and `next`,
+`scripts/transition_lint.py`, and `tools/lifecycle_metrics.py`. Tests exercise
+those entry points rather than only helpers. The shared plan's Boundary B runs
+the canonical full engine suite and standing prose/static gates once on final
+stable bytes; release and trust ceremonies retain their own exhaustive
+commands.
+
+Documentation delivery is every doctrine, operational summary, author
+template, and `CHANGELOG.md` surface listed in R8. Scientific examples are N/A:
+the change affects lifecycle records and tooling, not example behavior.
+
+### R10 -- known limits and stop signals
+
+`Blocked by` remains operator-authored metadata and cannot prove its condition.
+Role classification and review semantics remain structural evidence, not
+authentication. Metrics preserve historical tokens but cannot retroactively
+repair stale statuses. Archived records remain immutable even when their old
+status was inaccurate.
+
+Stop and revise if:
+
+* any consumer retains a private state vocabulary;
+* shape (b) goes silent for any current non-terminal status;
+* a `+` review declaration clears from one pass or from free-text role naming;
+* `scan`, `next`, and closeout disagree on readiness;
+* migration needs to edit an archived artifact or assigns from a stale blob;
+* frozen changes are hidden from the Maintainer ceremony inventory;
+* a status introduces another unrostered owner; or
+* the change creates more Maintainer decisions than the existing Decision and
+  ceremony boundaries.
+
+### R11 -- doctrine rate-limit and security preflight
+
+The doctrine rate-limit remains satisfied by recurrence: all seven active plans
+shared stale `open` metadata at opening, and `release-security-bar` independently
+recorded the same reliability failure before this proposal. The External review
+also reproduced a silent transition-lint regression caused by vocabulary drift.
+
+Security preflight: no credential, network, untrusted-data, subprocess, or
+executable-path authority is added. The security consequence is integrity of a
+governance detector and frozen gate consumers. The high-assurance plan,
+distinct External Security Review, exact frozen-byte Code review, and
+Maintainer-only re-anchor are the controls. A malicious contributor who can
+author and get reviewed lifecycle bytes accepted still changes the doctrine;
+this mechanism does not authenticate human judgment.
