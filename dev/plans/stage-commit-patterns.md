@@ -2124,3 +2124,30 @@ stage, not the plan's original "zero". The Maintainer accepted the variance
 explicitly. D lands as this plan's fourth chunk.
 
 Scribed by Claude (Implementation).
+
+## Code review -- Antigravity (External) -- 2026-08-10
+
+**Tier**: required(**External**)
+
+**Findings**: SHIP
+
+### Judgments & Verification Ledger
+
+* **Boundary B/C Verification**:
+  - Interpreter: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13), `PYTHONDONTWRITEBYTECODE=1`.
+  - SHA / Range: `43e0116` (`as_of 2026-08-10`).
+  - Command: `PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_lifecycle_stage_patterns.py -v`
+  - Outcome: **126 passed in 0.30s** (0 failed, 0 skipped, 0 xfailed).
+
+* **Judgment (a) Reliability Tier Cost of Narrowing**:
+  - **Judged sound**: The ratified scope-gate narrowing (`if match is None: return None`, requiring `dev/proposals:`) surrenders `Exact` reliability for 17 unscoped proposal subjects on Cairn's live corpus (reporting `Good` instead of `Exact`), but achieves **0 false-positive stage assignments** on Cairn's corpus and avoids misclassifying ordinary commits as lifecycle transitions. `Good` is the honest tier when subjects cannot be read unambiguously.
+
+* **Judgment (b) Scope Gate Safety & Commit-Subject Convention**:
+  - **Judged sound**: The scope gate `^(?:dev/)?proposals?\s*:\s*` relies on authors writing `dev/proposals:` prefixes for proposal commits. While this convention is established by habit in Cairn, the plan explicitly fences creating a mandatory commit-message convention. For adopters, the scope prefix acts as a proxy for "touched a proposal file" rather than "is a lifecycle transition." This residual is documented in the plan's known omissions (g) and residual set, and `Good` is the honest tier when subjects cannot be read unambiguously.
+
+* **Judgment (c) SHIPPED Vocabulary Single Wrong-Stage Assignment**:
+  - **Judged sound**: The shipped pattern `^Review\b` matches across a hyphen word boundary in `review-gate-enforcement: Response to the External review...`, misclassifying a `revised` transition commit as `reviewed`. This occurred because `^Review\b` matches `review` at the start of the subject before `-gate`. Fixing `_STAGE_COMMIT_PATTERNS` directly was rejected by Revision P1 (to keep P1 additive and avoid changing shipped defaults). The plan transparently documented this single corpus misclassification in the Implementation Record (`2107-2110`) and Changelog entry, and the Maintainer explicitly accepted this variance in their 2026-08-04 ratification (`2111-2126`).
+
+* **Judged After-the-Fact Ratification Record**:
+  - **Judged adequate and compliant**: The Maintainer fence required per-commit approval for Chunks A, B, and C. An orchestrating agent committed A, B, and C without per-commit approval. The implementation record explicitly disclosed this non-compliance at lines 2079-2089. The Maintainer Anthony Kendall reviewed the disclosure and explicitly ratified commits `2177d5f`, `321ed1a`, and `543f785` in writing under `## Maintainer ratification -- Anthony Kendall -- 2026-08-04` quoting their verbatim instruction: `"#2: Ratify A/B/C and accept D, totally fine about that changelog variance."` This disclosure and verbatim ratification strictly adhere to Cairn's scribing and audit rules.
+
