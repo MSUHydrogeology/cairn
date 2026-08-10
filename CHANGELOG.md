@@ -42,6 +42,34 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **A default-on local security-verification dispatcher whose authority can only
+  narrow — and whose registry ships empty.** Selecting a security capability now
+  makes its local evidence runner part of the expected trusted-checkout workflow,
+  through one dispatcher (`run_security_verification.py`) that runs no check
+  itself: it reads the installed roster, looks each capability up in a registry
+  **owned by its own source file**, launches that capability's runner as a child,
+  validates what comes back, and prints one aggregate verdict on the existing
+  `0 / 5 / 10 / 20` ladder. No adopter file — profile, lockfile or policy — can
+  add, steer or substitute a child. A credentialed, deployed, active or unknown
+  evidence mode is **not representable**, not merely rejected; aggregation can
+  never strengthen a child; and CLEAN requires an admitted contract, not a zero
+  exit. Every element of the child's argv comes from the registry, its
+  environment is reduced from ambient rather than inherited, and its raw output
+  is never relayed. The registry ships **empty** at activation-v1, because an
+  entry cannot precede its capability's own accepted proposal — so the route is
+  what is standard, not the evidence. `AGENTS.md` gains a `security-verification`
+  slot carrying the standing command, filled mechanically at install by the first
+  shipped use of the module-merge mechanism, and `SAFETY.md` Rule 7 records the
+  child execution, the digest gating, the environment reduction, and — the
+  sentence that must not be softened — that **command separation is not actor
+  authentication**. Two measured caveats are recorded rather than smoothed over:
+  a stock install's first run exits `5` (INCOMPLETE) rather than `0`, because the
+  default-on `content-security` module matches the dispatcher's capability-name
+  filter while having no admitted entry; and an adopter's `AGENTS.md` now reads
+  `clean-locally-modified` on upgrade, because the merge pass rewrites it after
+  install while the base-template cache keeps the unmerged template. Proposal
+  `security-verification-activation`, plan `security-verification-activation`.
+
 - **Two selectable network-security capabilities — and the agent-facing leg can
   reach only loopback.** Selecting `api-access-security` installs a runner that
   executes a *declared* cross-principal authorization matrix (it implements no

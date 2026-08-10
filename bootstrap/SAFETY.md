@@ -1,9 +1,15 @@
-<!-- claim-check-allow: scripts/_onboarding/, scripts/api_access_security.py, scripts/web_hosting_security.py -->
+<!-- claim-check-allow: scripts/_onboarding/, scripts/api_access_security.py, scripts/web_hosting_security.py, scripts/run_security_verification.py -->
 <!-- The two `scripts/*_security.py` globs are ADOPTER-tree install destinations
      of Rule 11's two team-gated modules. Cairn does not select those modules on
      itself, so the paths deliberately do not resolve here; the reviewed sources
      are `templates/modules/team-gated/api_access_security.py` and
-     `templates/modules/team-gated/web_hosting_security.py`. -->
+     `templates/modules/team-gated/web_hosting_security.py`.
+     `scripts/run_security_verification.py` is the same class for a DEFAULT-ON
+     module: it is the adopter-tree destination of the security-verification
+     dispatcher, which Cairn deliberately does not self-host (see that plan's
+     Scope, "Cairn does not self-host the dispatcher"). Its reviewed source is
+     `templates/modules/default-on/run_security_verification.py`, which the
+     Rule 7 self-check greps directly for exactly this reason. -->
 # SAFETY.md — bootstrap safety constraints (R-I)
 
 This document states the safety rules that govern every Cairn
@@ -245,6 +251,55 @@ share the same consciously-accepted window under the same threat model); and
 (2) `check_cairn.py`'s `importlib.exec_module` of sibling tools from
 **fixed, script-relative** paths (a deliberate dogfood composition, not a
 dynamic-exec vector). See `../SECURITY.md` for the public statement.
+
+### The default-on security-verification dispatcher — a shipped file that runs a child
+
+`security-verification` is **default-on**, so this is Layer-4 code in
+*every* adoption, not an opt-in surface. It is recorded here rather than
+under Rule 10 or Rule 11 because it triggers neither: it resolves no
+executable from `PATH` (its argv head is `sys.executable`) and it opens no
+socket. Five facts, and (d) is the one that must not be softened.
+
+* **(a) The scaffold now ships a file that executes a child process in an
+  adopter tree.** `scripts/run_security_verification.py` launches a
+  capability's own local runner as `[sys.executable, "-I", <registry runner
+  path>, <registry argv mode>]`, `shell=False`, under a timeout and an
+  output byte cap, with strict UTF-8 and strict JSON on the way back. Every
+  element of that vector comes from the **source-owned registry inside the
+  dispatcher file**; no adopter file — not the profile, not the lockfile,
+  not a policy file — can add, steer, or substitute a child.
+* **(b) Dispatch is gated on lockfile integrity and parent-computed
+  digests.** The parent hashes the runner's bytes itself and compares
+  against the lockfile record; a mismatch, a missing record, an
+  unrecognized record key, or a symlinked runner or policy (leaf or parent
+  directory) is **DEGRADED (20) with no child launched**. A digest the
+  *child* reports is never read. Accepted residual, stated not closed: a
+  same-user race between the digest read and the launch, on a trusted
+  checkout, under the same threat model as the TOCTOU window above.
+* **(c) The child's environment is reduced from ambient.** The child gets
+  an explicit minimal `env`, not a copy of the parent's; proxy variables
+  (`HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`, `NO_PROXY`) and
+  credential-bearing variables are stripped rather than filtered. Raw child
+  stdout and stderr are **never relayed**, at any aggregate level, so a
+  child cannot paint the operator's terminal or forge a banner.
+* **(d) Command separation is not actor authentication.** The local /
+  deployed split is a *command* boundary. Anyone — person or agent — with
+  shell access in the tree can invoke another script directly, and **Cairn
+  does not claim to distinguish a human process from an agent process.**
+  Nothing in this apparatus authenticates who is running it.
+* **(e) The dispatcher, its source-owned registry, its child result schema,
+  its binding-mode schema, and every registry entry are high-risk
+  Security-Review surfaces.** That designation is carried on **three**
+  channels, of which **two are tamper-evident** — the lockfile-recorded
+  `dev/modules/security-verification.md`, and the hash-pinned dispatcher
+  source itself, where the designation sits as a comment block at the
+  registry definition site so a registry change and its review trigger are
+  one artifact — **and one is not**: the adopter's `AGENTS.md` slot, which
+  `<!-- cairn:customized -->` exempts from both the merge and the fidelity
+  check. **An adopter who customizes that slot removes the designation from
+  their governing document with no side file and no warning from any Cairn
+  tool.** (e) is a **recorded residual, not a claim of coverage**; it is
+  pinned as a characterization test, not closed.
 
 ## Rule 8 — The bootstrap profile is operationally-trusted input
 
@@ -524,3 +579,18 @@ grep -rn '/Users/\|/home/\|C:\\Users\\' \
 ```
 
 Both commands should return zero matches.
+
+**And, for the default-on security-verification dispatcher** (Rule 7 >
+*The default-on security-verification dispatcher*): if the change touched
+`run_security_verification.py`, its registry, its child result schema, or
+its binding-mode schema, it takes a **Security Review** — and the
+designation must still be present on both tamper-evident channels:
+
+```
+grep -c 'high-risk Security-Review surface' \
+  templates/modules/default-on/run_security_verification.py \
+  dev/modules/security-verification.md
+```
+
+Both counts should be non-zero. A zero on either is the designation
+having been dropped from a channel that is supposed to be hash-pinned.
