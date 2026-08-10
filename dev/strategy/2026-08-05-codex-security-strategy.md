@@ -398,7 +398,7 @@ ceremonies or human acts remain irreducible?
 **Current lifecycle owners**
 
 * [REL-1] **Finite v0.4.0 bar.** Plan
-  [`release-security-bar`](../plans/release-security-bar.md) owns the six-item
+  [`release-security-bar`](../plans/archive/release-security-bar.md) owns the six-item
   register, per-row deciders and negative controls, registered residuals, and
   the independent end-of-line audit. It decides readiness; this strategy does
   not. *Serialization update 2026-08-10:* the register is **populated and

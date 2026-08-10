@@ -3,6 +3,15 @@
 <!-- claim-check-allow: dev/plans/review-gate-enforcement.md, dev/plans/scan-coverage.md, dev/plans/gate-claims-vs-enforcement.md, dev/plans/default-security-stance.md, dev/plans/planner-line-semantics.md, dev/plans/agent-context-scrub.md -->
 <!-- ^ Archived 2026-08-04; the plans moved to dev/plans/archive/. These are
 <!-- claim-check-allow: dev/proposals/2026-08-03-claude-gate-claims-vs-enforcement.md -->
+<!-- claim-check-allow: dev/plans/release-security-bar.md -->
+<!-- ^ This plan's own PRE-MOVE path, archived 2026-08-10. It is cited 25 times:
+     inside Chunk-RUN evidence cells (which the H2 surface-list derivation parses
+     by regex, so rewriting them would silently change the derived surface set),
+     and inside quoted command transcripts recording what was actually typed.
+     Both are append-only evidence, so the path is exempted rather than
+     rewritten -- the same disposition security-preflight-checklist and
+     fork-advisory-semantics record for their own archive moves. -->
+<!-- cairn-internal-ref-allow: dev/plans/release-security-bar.md reason=own pre-move path, exempted above -->
 <!-- ^ Source/sibling proposals archived 2026-08-04. These citations sit in
      append-only sections, so the path is exempted rather than rewritten. -->
 
@@ -31,7 +40,7 @@
 **Source proposal**: `release-security-bar` (accepted 2026-08-03; the Decision
 commit is `3cda505`). It currently sits under `dev/proposals/` and moves to
 `dev/proposals/archive/` when it archives.
-**Status**: open
+**Status**: archived
 **Plan review**: required(**External**) — carried from the proposal header
 (*"a bar that only its own author has read is a private checklist, not a shared
 target"*) and re-stated by the Decision, which closes *"The plan carries
@@ -4798,3 +4807,88 @@ The release security bar's verdicts are **honest and specificationally sound**, 
 
 **Verdict: REVISE / NOT CLEARED TO ARCHIVE.**
 
+
+## Archive record -- Claude -- 2026-08-10
+
+**Status: archived.** Maintainer-directed. All three of the End-of-Line Audit's
+pre-archive blockers are discharged, so this archives **clean** rather than
+against a stated blocker:
+
+| Audit blocker | Discharged by |
+|---|---|
+| 1. NC-H2's un-enumerated release-facing sources | `ae0b1bd` — enumerated, by the better of the two exits the Audit offered. The Audit allowed *"either the 49 rows must be individually enumerated or the scope fence must be tightened"*; the fence was **not** tightened, because enumeration alone satisfies `A30(iii)` and narrowing the spec afterwards would only shrink what v0.4.0 was held to. The count is recorded as a **producing command**, not a number — it read 49 at `6912d52` and 69 at `32a7b8e`, moving under a growing tree. |
+| 2. A27's unowned B1 sentences | `bf95e88` — `dev/PLANNING.md` **[TRU-1b]**, the row A27's block turned on. Filed as the *claim-side* twin of the pre-existing **[TRU-1]**, which owns the tool side. |
+| 3. Chunk M item 8 — publish `refs/cairn/release-bar-audit` | Maintainer-run and **verified**: the ref exists locally and on `origin` at `7e931cc`, the exact commit that landed the `## Code review` section, as `A29` requires. Ref creation is Maintainer-only; no agent created it. |
+
+**Loop-fidelity sign-off** (`doctrine/lifecycle.md` > *Loop-fidelity
+verification*), re-derived rather than carried forward:
+
+* **D4 — reopening the `verify_integrity` verbatim-subset anchor: NOT reopened,
+  correctly.** The Decision routed it to the deferred ledger and that routing
+  stands, visible on the board. No agent reopened it from inside this plan.
+* **D6 — the audit tier held.** External, security lens, **Antigravity** — a
+  different agent type from the burndown author (Claude), which is the property
+  D6 exists to enforce: *"commissioning it from the author would leave the bar
+  codifying its author's blind spots as the definition of done."*
+* **D3 — what the audit blocks (Form A tag-only vs Form B tag + repo-public
+  flip): still UNRESOLVED**, and archiving does not resolve it. Form A remains
+  the plan's assumption absent instruction. Recorded as open rather than
+  silently defaulted.
+* **No code, no tests, by design** — the standing *build nothing new* direction.
+  The plan's only code consequence was the `verify-ref.sh` finding, fixed
+  **outside** this plan at `60c7686`.
+
+**Two findings the staleness mechanism produced at archive time, which the
+register could not have recorded about itself.** Both were found by running
+A29's command with correct array expansion — the fix `[RB5-5]` prescribes.
+
+1. **Discharging the audit made the audit stale.** `git log
+   refs/cairn/release-bar-audit..HEAD -- <65-path surface list>` returns **3
+   commits**, and **two of them are the remedies for the Audit's own blockers**
+   (`ae0b1bd`, `bf95e88` — both touch `dev/PLANNING.md`, which is in the surface
+   list); the third is `ddffcd6`, a sibling plan's. So the verdict is **STALE**,
+   and it went stale *by being satisfied*. This is structural, not
+   sloppiness: any audit whose blockers are discharged by board rows invalidates
+   itself on discharge, because the board is inside the surface it watches. A
+   successor bar needs either a surface list that excludes the remedy channel, or
+   a staleness rule that distinguishes remedy commits from drift.
+2. **One path in the surface list can never signal staleness.**
+   `dev/.cairn/local-env.json` is in the register's own derived surface list and
+   is **untracked and gitignored**, so `git log` over it returns empty for all
+   time. On this bar's own **B4** standard that is a check which cannot fail —
+   and `AGENTS.md` classifies that file as an *"untracked, gitignored,
+   lockfile-uncovered executable trust root"*, i.e. the highest-risk member of
+   the list is the one member the mechanism is blind to. The `git ls-files
+   --error-unmatch` assertion `[RB5-5]` prescribes is what surfaced it, on its
+   first real run.
+
+**What this plan actually produced**, stated plainly because 1,556 lines of
+register can obscure it: **47 adjudicated verdicts — 32 MET, 12 MET-by-residual,
+3 NOT MET** — and the three NOT MET rows all land on `verify_integrity.py`, whose
+expected hashes come from the candidate's own lockfile, so a coordinated tamper
+verifies as `OK`. That is the security strategy's **design principle 1** violated
+inside Cairn's own Required core tooling. Plus one defect outside the register:
+`verify-ref.sh`'s signed-name extraction had **zero enforcers**, found by
+perturbation and fixed at `60c7686` (+3 nodes, 64 -> 67), which the Audit
+independently re-verified as MET.
+
+**Dispositions:**
+
+* NC-H2 un-enumerated coverage -> **guard** (`dev/PLANNING.md` **[RB5-1]**, producing command, not a count)
+* Set 3 static candidate list, not a tree walk -> **defer** -> `dev/PLANNING.md` **[RB5-2]** [Audit: *"ACCEPTABLE for v0.4.0 as a recorded residual"*]
+* Five proposal-level v0.5 deferrals -> **defer** -> `dev/PLANNING.md` **[RB5-3]**
+* B6's unpinned reach table -> **defer** -> `dev/PLANNING.md` **[RB5-4]**
+* Staleness false-FRESH on an unquoted pathspec -> **defer** -> `dev/PLANNING.md` **[RB5-5]** [Audit severity: MEDIUM]
+* `verify_integrity` lockfile anchor (C-5, D-3) -> **defer** -> `dev/PLANNING.md` **[TRU-1]** (pre-existing)
+* The doctrine overstatement (F-3, A27's unowned sentences) -> **defer** -> `dev/PLANNING.md` **[TRU-1b]** (new)
+* Set 2's manifest-external installs -> **defer** -> `dev/PLANNING.md` > *Scaffold / engine* (verified present)
+* `verify-ref.sh` extraction, zero enforcers (G-2) -> **accept** (fixed at `60c7686`, outside this plan)
+* Chunk A's stated enumeration residual -> **accept** as the register itself, which archives here
+* D3's Form A/Form B choice -> **escalated, unresolved** — the Maintainer's, not migrated
+* The two staleness findings above -> **guard** (**[RB5-5]** covers the quoting fix; the circularity is recorded here and named for a successor bar)
+
+**Verification at archive.** Audit verdict **REVISE** with all three blockers
+since discharged; `check_cairn` OK; `claim_check` OK. The register is **STALE**
+against its own audit ref by construction, per finding 1 — recorded, not hidden.
+
+This section is append-only once written.
