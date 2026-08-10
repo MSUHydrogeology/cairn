@@ -2695,3 +2695,185 @@ binary, the Maintainer-gated Chunk I matrix, the full bootstrap suite, or
 unimplemented Chunks F--I. The concurrent content-scan edits were not examined.
 
 This section is append-only once written.
+
+### Sharpening -- Claude -- 2026-08-10
+
+Closed all three findings **in the runner**
+(`templates/modules/team-gated/run_portable_security_sweeps.py`, mirrored
+byte-for-byte to its Cairn-adopted twin `scripts/run_portable_security_sweeps.py`
+after every change), never in a test. Fixes and every new falsifying test
+verified under `~/conda_envs/lhm/bin/python3.13` (3.13.13),
+`PYTHONDONTWRITEBYTECODE=1`.
+
+**[CR1] closed.** `_history_discovery`'s ref-file heuristic (`has_refs`) is now
+**advisory only** -- kept in `facts` for observability, no longer gates
+classification. A new function, `probe_reachable_commit(git, target, env)`,
+asks Git's own object model instead: `git rev-parse --verify -q
+HEAD^{commit}` -- exit `0` means a commit is reachable (a detached `HEAD` with
+its branch deleted included), exit `1` means genuinely no commit (an unborn
+repository, NOT_APPLICABLE), any other exit is DEGRADED. `run_sweep`'s
+history-discovery block now branches on this authoritative answer; the
+"`git` is absent" check moved ahead of it in the `elif` chain -- absence of
+the trust root, not absence of refs, is what forces INCOMPLETE when Git
+cannot be asked at all.
+
+*Evidence.* Reproduced the reviewer's exact scenario in a scratch repository
+(`git init`, one commit, `checkout --detach`, delete the branch) and confirmed
+empty `refs/heads` and no `packed-refs`, matching the reviewer's own
+reproduction. Added `test_a_detached_head_with_its_only_branch_deleted_still_scans_history`,
+which builds the identical fixture inside the suite and asserts the history
+leg is **not** NOT_APPLICABLE, both legs ran (2 scan invocations recorded),
+and the aggregate is `0`. *Falsifier, demonstrated*: reverted the fix's
+branch back to the pre-fix `elif not discovery["has_refs"]:` chain and ran
+the full module suite -- exactly two nodes reddened
+(`test_a_detached_head_with_its_only_branch_deleted_still_scans_history`, and
+compoundly `test_the_commit_reachability_probes_git_call_is_guarded_by_revalidation`,
+which also depends on `probe_reachable_commit` existing at all), 161 passed;
+restored and `git hash-object` confirmed byte-identical to the fixed state
+(`20150f80ecaf4893de390543b8122217b085ef2d`).
+
+**[CR2] closed.** Every subprocess invocation of either trust root is now
+immediately preceded by `revalidate()` -- the two the reviewer named, plus
+the two new invocations CR1 and CR3 introduce:
+
+* `probe_version` (the adapter's `--version` probe) -- `revalidate(adapter,
+  target)` added **at its call site** in `run_sweep`, immediately before the
+  call, rather than inside `probe_version` itself. `probe_version` is also
+  called from the admission ceremony `cmd_verify_version_support` against an
+  **arbitrarily-named** candidate binary, whose `Resolved.name` is hardcoded
+  to `"gitleaks"` regardless of the candidate's actual filename (e.g. the
+  `candidate-bin` fixture `test_verify_version_support_emits_a_complete_record`
+  uses); embedding a name-based re-resolution inside `probe_version` would
+  have broken that path.
+* `screen_local_config`'s own config-listing call -- `revalidate(git,
+  target)` added immediately before it, embedded in the function itself
+  (safe for both callers: the ordinary flow's PATH-resolved `git`, and the
+  admission ceremony's shim, which *is* literally named `git`).
+* `_discover_git_common_dir` (new, CR3) -- embeds its own `revalidate(git,
+  target)` before its `rev-parse --git-common-dir` call.
+* `probe_reachable_commit` (new, CR1) -- embeds its own `revalidate(git,
+  target)` before its `rev-parse --verify` call.
+
+While closing this, found and fixed a **latent, guard-surfaced bug**, not one
+this change introduced: `cmd_verify_version_support` built its `shimmed_git`
+`Resolved` tuple with `resolved = lexical` (skipping `os.path.realpath`),
+unlike every other `Resolved` construction in the file. Under a
+`TMPDIR`-unset child environment, `tempfile.TemporaryDirectory()` returns a
+path under macOS's symlinked `/tmp`, so `shimmed_git.resolved` stayed
+`/tmp/...` while a fresh `resolve_executable()` call (which `revalidate()`
+performs) correctly realpaths to `/private/tmp/...` -- a false "path
+drifted" refusal on every admission-ceremony test that reaches the screen,
+the moment the screen started revalidating at all. Fixed at the
+construction site (`shim_resolved = os.path.realpath(shim_lexical)`),
+mirroring `resolve_executable`'s own invariant; all eight previously-passing
+`test_verify_version_support_*` / admission-record nodes this broke were
+confirmed green again after the fix.
+
+*Evidence -- three independently isolated falsifiers*, each reverted alone,
+run, confirmed to redden exactly one dedicated node (plus the twin-parity
+node, an expected artifact of the twin going temporarily out of sync during
+the revert -- not a distinct finding), then restored and hash-verified
+byte-identical to `20150f80ecaf4893de390543b8122217b085ef2d`:
+
+* Removed `revalidate(adapter, target)` before `probe_version`:
+  `test_probe_version_is_guarded_by_revalidation` reddened alone (161
+  passed, 1 failed + the twin-parity artifact).
+* Removed `revalidate(git, target)` before `screen_local_config`'s own
+  listing call: `test_the_config_screens_second_git_call_is_guarded_by_revalidation`
+  reddened alone.
+* Removed `revalidate(git, target)` from `probe_reachable_commit`:
+  `test_the_commit_reachability_probes_git_call_is_guarded_by_revalidation`
+  reddened alone.
+
+**[CR3] closed.** `screen_local_config` no longer computes its boundary as
+`(target / ".git").resolve()`. A new function,
+`_discover_git_common_dir(git, target, env)`, asks Git directly: `git -C
+<target> rev-parse --path-format=absolute --git-common-dir` (Git >= 2.31;
+an older Git refuses the flag and the screen DEGRADES rather than falling
+back to a weaker, ad hoc computation -- the doctrine now states this floor).
+This resolves correctly for both an ordinary repository and a linked
+worktree, whose `.git` is a *file* naming the main repository's
+per-worktree metadata directory rather than the directory holding local
+config.
+
+*Evidence.* Reproduced the reviewer's exact scenario in a scratch repo --
+`git worktree add` from a real repository, ran `git -C <worktree> config
+--list --local --includes --show-origin -z` and confirmed the origin is the
+**absolute path to the main repository's `.git/config`**, then confirmed
+`git -C <worktree> rev-parse --path-format=absolute --git-common-dir`
+correctly names that same directory, while the pre-fix `(target /
+".git").resolve()` computation named the worktree's own `.git` *file*
+instead -- reproducing the reviewer's refusal exactly. Added
+`test_a_linked_worktrees_ordinary_local_config_is_accepted`, which builds a
+real linked worktree with host Git and asserts the sweep does **not**
+refuse (`rc != 20`) and `core.repositoryformatversion` is in the screened
+key set; retained the existing negative fixture
+(`test_a_config_origin_outside_the_git_directory_refuses`, an ordinary
+repository with `.git/config` symlinked outside `.git/`) unchanged.
+*Falsifier, demonstrated*: reverted `_discover_git_common_dir(...)` back to
+`(target / ".git").resolve()` -- `test_a_linked_worktrees_ordinary_local_config_is_accepted`
+reddened with the reviewer's own refusal text ("outside the candidate's
+.git/ directory"), and compoundly
+`test_the_config_screens_second_git_call_is_guarded_by_revalidation` also
+reddened (it depends on the screen making two Git calls, a CR3-introduced
+structure); restored and hash-verified byte-identical.
+
+**Side effects, declared.**
+
+* `ACCOUNTED_GIT_SUBCOMMANDS` gained `"rev-parse"` (the common-dir
+  discovery, exercised through the admission ceremony's logging shim
+  whenever `screen_local_config` runs there);
+  `test_the_accounted_git_subcommand_set_is_the_declared_one` updated to
+  match, and its docstring corrected to describe two runner-owned Git calls
+  in the screen, not one.
+* The runner now makes up to **two additional Git invocations per run**
+  beyond what Chunks B/C's oracle described:
+  `_discover_git_common_dir` inside every config-screen call, and
+  `probe_reachable_commit` whenever a `.git` directory is present and Git
+  resolves. **Chunk I's live-contract matrix (Maintainer-gated, not yet
+  implemented) will need its oracle to account for both** when it lands --
+  named here per the reviewer's own instruction, not resolved, because
+  Chunk I is outside an implementing agent's authority. This plan's `## The
+  declared symbol delta` is unaffected: no `bootstrap/_scaffold/` file
+  changed.
+* Doctrine (`templates/modules/team-gated/portable-security-sweeps.md`,
+  mirrored to `dev/modules/portable-security-sweeps.md` and its
+  `dev/.cairn/base/` cache copy) updated: "The residual trust set" now
+  names the third reason Git is a trust root, and "The
+  candidate-configuration boundary" states the hardened discovery and its
+  Git >= 2.31 floor.
+* `dev/.cairn/cairn-lock.yml` hash / base_hash records for
+  `scripts/run_portable_security_sweeps.py` and
+  `dev/modules/portable-security-sweeps.md` updated to the new content
+  digests. `bootstrap/verify_integrity.py --target .` shows **no violation
+  for either path**; the 9 violations it reports `as_of 2026-08-10`
+  (`AGENTS.md`, three `dev/modules/*.md`, `dev/plans/_template.md`,
+  `dev/proposals/_template.md`, `tools/_lifecycle_metrics/subsystems.py`,
+  `tools/lifecycle_planner.py`, `scripts/content_scan.py`) are concurrent
+  uncommitted work from other sessions sharing this working tree, confirmed
+  via `git status --short` and untouched by this session.
+
+**Verification.**
+`~/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_portable_security_sweeps.py -q`
+-> **163 passed, 0 failed**, `as_of 2026-08-10` -- the reviewer's 150
+passed + 8 failed (158 nodes) plus this session's 5 new nodes is 163; the 8
+admission-canary nodes the reviewer's sandbox blocked are unblocked and
+green in this environment. `bootstrap/tests/test_notice_install.py`,
+`test_security_lint.py`, `test_lockfile_module.py`, `test_ast_attest.py`
+together: **59 passed, 0 failed** (no manifest-count or AST-declared-delta
+change; this work touches no `bootstrap/_scaffold/` file).
+`bootstrap/tests/test_verify_integrity.py`: **13 passed, 0 failed**. A
+direct Bandit scan of the runner: **9 LOW, 0 MEDIUM+, 0 errors** (HEAD
+carried 7 LOW; +2 for the two new `subprocess.run` call sites in
+`probe_reachable_commit` and `_discover_git_common_dir`; no `B607` --
+both new calls invoke the same resolved-absolute-path construction as the
+existing ones). Did **not** run a real Gitleaks binary, the Maintainer-gated
+Chunk I matrix, or the full `bootstrap/tests` suite: the working tree
+carries substantial concurrent uncommitted work from other sessions (`git
+status --short` lists it), `bootstrap/security_check.py` fails closed on a
+dirty tree by design, and a full-suite run was judged not to add signal
+beyond the scoped runs above for a change confined to this one module and
+its own test file. Chunks F--I remain unimplemented; the concurrent
+content-scan and other in-flight scopes were not examined.
+
+This section is append-only once written.
