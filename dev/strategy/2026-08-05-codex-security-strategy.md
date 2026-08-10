@@ -401,7 +401,17 @@ ceremonies or human acts remain irreducible?
   [`release-security-bar`](../plans/release-security-bar.md) owns the six-item
   register, per-row deciders and negative controls, registered residuals, and
   the independent end-of-line audit. It decides readiness; this strategy does
-  not.
+  not. *Serialization update 2026-08-10:* the register is **populated and
+  independently audited** — 47 verdicts (32 MET, 12 MET-by-residual, 3 NOT MET),
+  audit verdict **REVISE**, agent work complete at Chunk H. The lasting boundary
+  this strategy retains: **design principle 1 now has a confirmed instance inside
+  Cairn's own tooling** — the integrity check reads its expected hashes from the
+  candidate's own lockfile, so a coordinated tamper verifies as `OK`. Owning
+  artifacts: `dev/PLANNING.md` **[TRU-1]** (tool half) and **[TRU-1b]** (the
+  doctrine claim half, which no active plan owned until it was homed). The bar's
+  own coverage residuals are the **Release bar (v0.5)** group, [RB5-1]–[RB5-5].
+  Reproductions and per-row evidence stay in the plan, per this document's update
+  rule.
 * [REL-2] **One honest local command.** Proposed
   [`release-security-orchestration`](../proposals/archive/2026-08-05-codex-release-security-orchestration.md)
   consolidates clean-commit binding, Bandit and prose checks, release-only
@@ -465,7 +475,16 @@ ceremony merely because it carries a security consequence.
    reduction of several parser/upgrade rows under one validator and one
    precedence contract.
 2. **Trusted-source boundary** -- [TRU-1] through [TRU-3], after the release bar
-   settles which source/install claims must hold for v0.4.0.
+   settles which source/install claims must hold for v0.4.0. *2026-08-10: that
+   "after" has arrived* — the bar has settled them, and the answer is that the
+   claims **do not currently hold**. This moves from "open next" to the highest
+   priority in this cluster, and it gained a fourth item, **[TRU-1b]**: two
+   adopter-facing sentences
+   (`doctrine/runtime-contract.md:132`, `SECURITY.md:51`) assert a tamper-
+   detection property the mechanism cannot deliver. Cheaper than it looks —
+   `bootstrap/UPGRADE.md:366` already states the honest version, so the remedy is
+   reconciling three documents to the one that is right, or narrowing the two to
+   the subset [TRU-1]'s anchoring would make true.
 3. **Class C containment** -- [BND-2], no later than v0.4.0 preparation unless
    the Maintainer explicitly accepts it as a registered release residual.
 
