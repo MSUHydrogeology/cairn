@@ -264,15 +264,33 @@ is raised to the Maintainer as a scope question.
 |---|------|--------|
 | E1 | `dev/proposals/2026-08-10-claude-corpus-tier-cost.md` | drop the `Proposed paths:` entry for the withdrawn `_immutable_git.py` helper and the file-scoped `claim-check-allow` directive (with its explanatory comment) that exempted it |
 
-R7's third bullet authorizes exactly this: the helper "no longer materializes;
-its `Proposed paths:` entry and `claim-check-allow` directive **drop at
-implementation**". Both are still live — the directive in the proposal's front
-matter, the entry under `## Proposed paths`. This is the pruning of spent
-scaffolding the proposal itself scheduled, not an edit to its deliberation: no
-argument, review, response or Decision text is touched. Leaving them would
-leave a `claim-check-allow` exempting a path that will never exist — a
-suppression with nothing to suppress, which is the same latch shape
-`test_no_whitelist_entry_is_stale` exists to catch.
+R7's third bullet authorizes this: the helper "no longer materializes; its
+`Proposed paths:` entry and `claim-check-allow` directive **drop at
+implementation**". This is the pruning of spent scaffolding the proposal itself
+scheduled, not an edit to its deliberation: no argument, review, response or
+Decision text is touched.
+
+**Deviation, recorded rather than taken silently — E1 drops the entry but
+retains the directive.** R7 says *both* drop. Executed literally and measured,
+that produces **3 hard claim-check flags** (proposal lines 168, 786, 876): R7
+assumed the helper would land, and it did not — R1 localized the memo into
+`bootstrap/tests/test_transition_lint.py`, so the original Part 1 prose and two
+review sections still name a path that will never exist. In an append-only
+record those three citations cannot be edited away.
+
+So the two markers turn out to have different statuses, which R7 could not have
+known when it was written:
+
+* The **`Proposed paths:` entry** is genuinely spent and drops. A withdrawn
+  path must not sit in a forward-reference registry claiming it will
+  materialize.
+* The **directive** is not spent; its *justification* changed. It is retained
+  with the comment rewritten to say so plainly — it now exempts historical
+  prose in an append-only record, not a forward reference.
+
+This is a deviation from the plan as reviewed and is flagged to the Maintainer
+for ratification. The alternative — executing R7 to the letter — leaves the
+claim gate red, which no acceptance criterion here permits.
 
 ## Acceptance criteria
 

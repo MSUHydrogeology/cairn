@@ -1,9 +1,15 @@
 <!-- cairn-internal-ref-allow: doctrine/dual-review.md doctrine/plans.md doctrine/proposals.md doctrine/rationale.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- The helper below is a forward reference: it is NEW and materializes in
-     Part 1.  It is also registered under `Proposed paths:` -- that marker
-     exempts only its own contiguous bullet block, so this file-scoped
-     directive covers the Part 1 prose that names the same path.  Marked,
-     not silenced; the line drops when the file lands. -->
+<!-- The helper below was WITHDRAWN at R1: the memo is local to
+     `bootstrap/tests/test_transition_lint.py` and no shared helper file
+     materializes, so this path never exists.  R7 scheduled this directive to
+     drop "at implementation" on the assumption the file would land; it did
+     not, and the original Part 1 prose plus two review sections still name
+     the path in three places.  Dropping the directive therefore produces 3
+     hard claim-check flags (measured 2026-08-10) rather than tidying
+     anything.  The `Proposed paths:` entry DID drop -- a withdrawn path must
+     not sit in a forward-reference registry -- and this directive is retained
+     with its justification corrected: it now exempts *historical* prose in an
+     append-only record, not a forward reference. -->
 <!-- claim-check-allow: bootstrap/tests/_immutable_git.py -->
 
 # The suite's expensive head re-derives constants
@@ -166,8 +172,8 @@ appearing within twelve days of the pinned measurement.
 
 ## Proposed paths
 
-Proposed paths:
-- `bootstrap/tests/_immutable_git.py` — the shared memoization helper; lands in Part 1.
+*(Empty. The one entry -- the shared memoization helper -- was withdrawn at
+R1 and never materialized; see the file-scoped directive at the top.)*
 
 ## Proposal
 
