@@ -98,6 +98,327 @@ def _last(repo: Path) -> str:
 
 
 # ---------------------------------------------------------------------------
+# The corpus-tier memo (plan `corpus-tier-cost`, Chunk A)
+# ---------------------------------------------------------------------------
+#
+# The corpus tier re-derives the same git output many times: measured over the
+# eleven corpus methods, **6509** ``_git`` invocations against **1279** distinct
+# ``(root, argv)`` keys.  The memo below collapses that.
+#
+# **The contract is narrow, and saying so is the point.**  This is a
+# *session-local cache over an unchanged repository and git environment* -- not
+# a claim that git output is immutable.  The git executable's identity,
+# ``replace`` refs and repository config all sit outside ``(root, argv)`` and
+# are assumed stable for the pytest session.  So does one more that had to be
+# measured to be believed: **shallowness**.  The same argv against the same sha
+# returns different bytes in a shallow clone, because git treats the shallow
+# boundary commit as parentless -- so "unchanged repository" is a claim about
+# the object graph *and its boundary*, not only about which commits exist.
+# `TestMemoContract` pins that with a real full/shallow pair.
+
+#: The five verified call families, as literal argv templates.  Written out
+#: rather than compressed into metavariables: an earlier draft said "``<sha>``,
+#: ``<rev-range>``, ``<endpoint>``" and, read literally, refused 406 of the 1279
+#: real keys -- every one carrying a ``<path>`` the glossary never defined.
+_MEMO_SHA = re.compile(r"[0-9a-f]{40}")
+_MEMO_REV_RANGE = re.compile(r"[0-9a-f]{40}(?:~1)?\.\.[0-9a-f]{40}(?:~1)?")
+_MEMO_ENDPOINT = re.compile(r"[0-9a-f]{40}(?:~1)?\^\{commit\}")
+
+
+class GitGrammarError(AssertionError):
+    """An argv the memo refuses to wrap.
+
+    Refusal is deliberate and loud.  Passing an unrecognised argv through
+    would mean caching a call whose key completeness nobody has checked --
+    which is the whole failure this fixture exists to avoid.
+    """
+
+
+def _memo_admits(argv: tuple[str, ...]) -> None:
+    """Raise :class:`GitGrammarError` unless *argv* is one of the five families.
+
+    This governs **admission** -- what the memo is willing to wrap.  It is not
+    the key.  The key is the verbatim ``(str(root), argv)`` tuple, and keeping
+    those two ideas apart matters: a grammar that validates ``<sha>`` says
+    nothing about whether ``<path>`` reached the key.
+    """
+    a = list(argv)
+    # 1. `_validate_range` -- reachable only through `main()`, which no
+    #    memoized class calls.  Admitted so the grammar describes the callable
+    #    rather than one caller; measured, it fires 0 times in 6509 calls.
+    if (a[:3] == ["rev-parse", "--verify", "--quiet"] and len(a) == 4
+            and _MEMO_ENDPOINT.fullmatch(a[3])):
+        return
+    # 2. `_commits`
+    if (a[:2] == ["log", "--format=%H%x1f%s"] and len(a) == 3
+            and _MEMO_REV_RANGE.fullmatch(a[2])):
+        return
+    # 3. `_entries` -- 3831 of the 6509 calls
+    if (a[:6] == ["diff-tree", "--no-commit-id", "--name-status",
+                  "--find-renames=100%", "-r", "-z"]
+            and len(a) == 7 and _MEMO_SHA.fullmatch(a[6])):
+        return
+    # 4. `_blob_lines` -- `<sha>:<path>` as ONE operand
+    if a[:1] == ["show"] and len(a) == 2:
+        sha, sep, path = a[1].partition(":")
+        if sep and _MEMO_SHA.fullmatch(sha) and path:
+            return
+    # 5. `_added_nonblank_lines`
+    if (a[:4] == ["show", "--find-renames=100%", "--format=", "--unified=0"]
+            and len(a) == 7 and _MEMO_SHA.fullmatch(a[4])
+            and a[5] == "--" and a[6]):
+        return
+    raise GitGrammarError(f"argv outside the closed grammar: {argv!r}")
+
+
+class _GitMemo:
+    """Caches one callable's successful reads, keyed on ``(root, argv)``.
+
+    ``<path>`` carries no immutability claim of its own -- it is **keyed, not
+    validated**.  That distinction is load-bearing: dropping ``<path>`` from
+    the key leaves all eleven corpus methods green *and* the distinct-key count
+    unmoved at 1279, because no ``(root, family, sha)`` in the whole call set
+    ever sees two paths.  Neither the corpus assertions nor a grammar check can
+    witness the omission, so `TestMemoContract` witnesses it directly.
+    """
+
+    def __init__(self, fn) -> None:
+        #: One callable per instance, bound here, so callable identity can
+        #: never fall out of the key.
+        self._fn = fn
+        self.cache: dict[tuple[str, tuple[str, ...]], tuple[int, bytes]] = {}
+        self.calls = 0
+
+    def __call__(self, root: Path, *args: str) -> tuple[int, bytes]:
+        self.calls += 1
+        _memo_admits(args)
+        key = (str(root), args)
+        if key in self.cache:
+            return self.cache[key]
+        rc, out = self._fn(root, *args)
+        if rc == 0:
+            # Successful reads only.  A failure is a fact about the moment,
+            # not about the repository.  (Measured: 0 of the 1279 corpus keys
+            # ever return non-zero, so this costs this consumer nothing.)
+            self.cache[key] = (rc, out)
+        return rc, out
+
+
+class _GitCounter:
+    """The detached arm of the paired run: counts every call, caches none.
+
+    Criterion 1 compares wrapped-call counts, and with the memo simply removed
+    there is nothing wrapping the calls to count.  This is that instrument.
+    """
+
+    def __init__(self, fn) -> None:
+        self._fn = fn
+        self.keys: set[tuple[str, tuple[str, ...]]] = set()
+        self.calls = 0
+
+    def __call__(self, root: Path, *args: str) -> tuple[int, bytes]:
+        self.calls += 1
+        self.keys.add((str(root), args))
+        return self._fn(root, *args)
+
+
+@pytest.fixture(scope="module")
+def git_memo(tl: ModuleType) -> _GitMemo:
+    """A1 **storage** -- module-scoped, so the cache spans the corpus tier."""
+    return _GitMemo(tl._git)
+
+
+@pytest.fixture
+def _install_git_memo(
+    tl: ModuleType, git_memo: _GitMemo, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A1 **installation** -- function-scoped, so it cannot leak.
+
+    Storage and installation are scoped separately on purpose.  A
+    *module*-scoped install is torn down when the module changes, not when the
+    requesting class ends, so it stays live for every later test in this file
+    -- including synthetic nodes whose argv (``HEAD~1..HEAD``) is outside the
+    closed grammar by construction, which would raise.  Reproduced standalone
+    while this plan was under review; and the window is reachable, since the
+    conftest shuffle at seeds 9, 11, 15 and 19 of 0-19 orders a synthetic node
+    after a corpus node.  Natural order and seed 0 do not, which is exactly why
+    the scope must be structural rather than trusted to collection order.
+    """
+    monkeypatch.setattr(tl, "_git", git_memo)
+
+
+@pytest.fixture(scope="module")
+def two_roots(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> tuple[Path, Path, list[str]]:
+    """A full clone and a ``--depth=3`` clone of one source repository.
+
+    **Why this shape, and not two ordinary repositories.**  Git is
+    content-addressed, so a 40-hex operand names the same object in every
+    repository that has it.  Measured across two clones of one source: ``log``
+    over a range present in both returns *identical* bytes, and
+    ``show <sha>:<path>`` for a blob in both returns *identical* bytes.  A
+    two-root fixture built either of those ways is a **dead test** -- the
+    drop-``root`` mutant stays green and the node proves nothing.
+
+    A shallow clone does discriminate: git treats the boundary commit as
+    parentless, so ``diff-tree`` there enumerates the whole tree instead of one
+    commit's delta.  Both calls return ``rc == 0``, so both are cacheable and
+    the collision a root-blind key would cause is real.
+
+    ``--depth`` is silently ignored for a bare local path; the ``file://`` URL
+    is required, not decorative.
+    """
+    base = tmp_path_factory.mktemp("memo_two_roots")
+    src = base / "src"
+    src.mkdir()
+    _git(src, "init", "-q", "-b", "main")
+    shas = []
+    for i in range(1, 6):
+        _write(src, f"f{i}.md", f"content {i}\n")
+        shas.append(_commit(src, f"c{i}"))
+    full = base / "full"
+    shallow = base / "shallow"
+    _git(base, "clone", "-q", str(src), str(full))
+    _git(base, "clone", "-q", "--depth=3", "file://" + str(src), str(shallow))
+    return full, shallow, shas
+
+
+class TestMemoContract:
+    """A2 -- the memo's key, its refusals, and its install scope.
+
+    Deliberately **not** ``@requires_corpus``: these nodes own the memo, not
+    Cairn's history, and one of them must name ``HEAD~1..HEAD``, which
+    `TestSourceLevelBans` forbids inside a corpus-decorated class.
+
+    Every node below is a *key-completeness* test.  The corpus assertions
+    downstream prove result parity and cannot prove this: with ``<path>``
+    stripped from the key all eleven corpus methods still pass and the
+    distinct-key count does not even move (1279 -> 1279).
+    """
+
+    _ENTRIES = ("diff-tree", "--no-commit-id", "--name-status",
+                "--find-renames=100%", "-r", "-z")
+
+    def test_the_repository_root_is_in_the_key(
+        self, tl: ModuleType, two_roots: tuple[Path, Path, list[str]],
+    ) -> None:
+        # Perturbation: key on `args` alone, dropping `str(root)`.  Red --
+        # the shallow root returns the full clone's entries.
+        # RUN against bootstrap/tests/test_transition_lint.py (this file,
+        # which is also the file the test loads: the memo is defined here).
+        full, shallow, shas = two_roots
+        memo = _GitMemo(tl._git)
+        rc_full, out_full = memo(full, *self._ENTRIES, shas[2])
+        rc_shallow, out_shallow = memo(shallow, *self._ENTRIES, shas[2])
+        assert (rc_full, rc_shallow) == (0, 0), "both roots must succeed"
+        assert out_full == b"A\x00f3.md\x00"
+        assert out_shallow == b"", "the shallow boundary enumerates nothing"
+
+    def test_the_sha_operand_is_in_the_key(
+        self, tl: ModuleType, two_roots: tuple[Path, Path, list[str]],
+    ) -> None:
+        # Perturbation: drop the trailing operand from the key.  Red.
+        full, _shallow, shas = two_roots
+        memo = _GitMemo(tl._git)
+        assert memo(full, *self._ENTRIES, shas[2])[1] == b"A\x00f3.md\x00"
+        assert memo(full, *self._ENTRIES, shas[3])[1] == b"A\x00f4.md\x00"
+
+    def test_the_path_operand_is_in_the_key(
+        self, tl: ModuleType, two_roots: tuple[Path, Path, list[str]],
+    ) -> None:
+        # The node the Internal review added, and the one the corpus tier is
+        # structurally incapable of witnessing.  Perturbation: key family 4 on
+        # the sha alone (`<sha>:<path>` -> `<sha>`).  Red.
+        full, _shallow, shas = two_roots
+        memo = _GitMemo(tl._git)
+        tip = shas[4]
+        assert memo(full, "show", f"{tip}:f1.md")[1] == b"content 1\n"
+        assert memo(full, "show", f"{tip}:f2.md")[1] == b"content 2\n"
+
+    def test_the_option_set_distinguishes_families_four_and_five(
+        self, tl: ModuleType, two_roots: tuple[Path, Path, list[str]],
+    ) -> None:
+        # Perturbation: key on `(root, command, sha, path)`, ignoring options.
+        # Red -- the blob read returns the diff.
+        full, _shallow, shas = two_roots
+        memo = _GitMemo(tl._git)
+        blob = memo(full, "show", f"{shas[2]}:f3.md")[1]
+        diff = memo(full, "show", "--find-renames=100%", "--format=",
+                    "--unified=0", shas[2], "--", "f3.md")[1]
+        assert blob == b"content 3\n"
+        assert diff != blob and b"@@" in diff
+
+    def test_argv_outside_the_closed_grammar_is_refused(
+        self, tl: ModuleType, two_roots: tuple[Path, Path, list[str]],
+    ) -> None:
+        # Perturbation: make `_memo_admits` return instead of raising.  Red.
+        full, _shallow, shas = two_roots
+        memo = _GitMemo(tl._git)
+        with pytest.raises(GitGrammarError):
+            memo(full, "log", "--format=%H%x1f%s", "HEAD~1..HEAD")
+        # The sixth family Chunk C's guard uses -- refused, which is *why* that
+        # guard calls `subprocess.run` directly instead of routing through
+        # `tl._git` inside a memoized class.
+        with pytest.raises(GitGrammarError):
+            memo(full, "rev-list", "--count", f"{shas[0]}..{shas[2]}")
+        assert memo.cache == {}, "a refused call must not be recorded"
+
+    def test_a_failed_read_is_never_cached(
+        self, two_roots: tuple[Path, Path, list[str]],
+    ) -> None:
+        # A stub callable, not git: the point is the rc branch, and no real
+        # repository produces the same argv failing then succeeding.
+        # Perturbation: cache regardless of rc.  Red on the second call.
+        full, _shallow, shas = two_roots
+        results = iter([(1, b""), (0, b"second")])
+        memo = _GitMemo(lambda _root, *_a: next(results))
+        assert memo(full, *self._ENTRIES, shas[0]) == (1, b"")
+        assert memo(full, *self._ENTRIES, shas[0]) == (0, b"second")
+        assert (memo.calls, len(memo.cache)) == (2, 1)
+
+    def test_the_install_is_function_scoped_and_does_not_leak(
+        self, tl: ModuleType,
+    ) -> None:
+        # Two halves.  The structural one is order-independent and is the real
+        # pin; the behavioural one is a backstop that only bites when a corpus
+        # node happens to run first.  Perturbation: declare
+        # `_install_git_memo` with `scope="module"`.  Red on the first assert.
+        #
+        # Read from the source, in `TestSourceLevelBans`' idiom, rather than
+        # from the fixture object: pytest's fixture-marker attribute is private
+        # and has already been renamed once (`_pytestfixturefunction` ->
+        # `FixtureFunctionDefinition`), so a node pinning a scope through it
+        # would break on a pytest upgrade for a reason unrelated to the memo.
+        tree = ast.parse(Path(__file__).read_text(encoding="utf-8"))
+        scopes = [
+            kw.value.value
+            for node in ast.walk(tree)
+            if isinstance(node, ast.FunctionDef)
+            and node.name == "_install_git_memo"
+            for dec in node.decorator_list
+            if isinstance(dec, ast.Call)
+            for kw in dec.keywords
+            if kw.arg == "scope" and isinstance(kw.value, ast.Constant)
+        ]
+        declared = [
+            node for node in ast.walk(tree)
+            if isinstance(node, ast.FunctionDef)
+            and node.name == "_install_git_memo"
+        ]
+        assert len(declared) == 1, "the install fixture must be declared once"
+        assert scopes in ([], ["function"]), (
+            f"install fixture declares scope={scopes!r}; a module-scoped "
+            "install stays live for every later test in this module, "
+            "including synthetic nodes outside the closed grammar"
+        )
+        assert not isinstance(tl._git, _GitMemo), (
+            "this node requests no install fixture, so `tl._git` must be the "
+            "unwrapped callable"
+        )
+
+
+# ---------------------------------------------------------------------------
 # Chunk A -- plumbing: rev-range, enumeration, narrowing, exit contract
 # ---------------------------------------------------------------------------
 
