@@ -6,6 +6,12 @@
      tables and acceptance criteria that cite the same paths in prose. Marked,
      not silenced; each line drops when its file lands. -->
 <!-- claim-check-allow: scripts/transition_lint.py, scripts/transition_lint_whitelist.py, bootstrap/tests/test_transition_lint.py -->
+<!-- The Antigravity code review below (2026-08-10) self-cites its own
+     subject path from before this file's archive move; that attributed
+     review text is append-only and is not rewritten to chase the move
+     (AGENTS.md's cite-by-stem convention; the claim-marker-maintenance
+     exception in doctrine/plans.md > "The plan lifecycle"). -->
+<!-- claim-check-allow: dev/plans/transition-lint.md -->
 
 # Plan: the transition-lint — an advisory check that a commit's message matches its lifecycle diff
 
@@ -14,7 +20,7 @@ Maintainer Decision, *"Accepted, and queued"*). It sits under `dev/proposals/`
 at the time of writing and moves to `dev/proposals/archive/` in the plan-open
 commit. Referred to by **stem, not path**, throughout — the proposal's own head
 carries three claim-marker maintenance notes about exactly this breakage.
-**Status**: review
+**Status**: archived
 **Plan review**: required(**Internal**) — carried verbatim from the Decision
 (*"`Plan review: required(Internal)` stands — no shipped-template,
 install-contract, doctrine, or security surface is touched"*). See
@@ -2144,3 +2150,141 @@ worth the Maintainer's direct attention.
 before either happened and stale twice over by the time this disposition was
 written. Updated to `review` above; archiving follows as its own, distinct
 commit.
+
+## Archive -- Claude -- 2026-08-10
+
+The plan-archive precondition (`doctrine/plans.md` > "The plan-archive
+precondition") is met: the independent Antigravity code review above returned
+**SHIP** at HEAD `a62a5d2`, and its one referred-upward item (Fence 1) is
+ratified. The still-owed second Internal plan-review round is not literally
+discharged -- see the disposition above, which reads the Antigravity review as
+covering its substance at a stronger tier and flags that reading for the
+Maintainer rather than asserting it closed. That is the one open thread this
+archive carries forward rather than resolves.
+
+**Every row of the *Lasting-truth migration* table above was re-checked against
+the landed tree rather than carried forward**, using the disposition vocabulary
+(`doctrine/plans.md` > "Lasting-truth migration doctrine"). No row required a new
+`dev/PLANNING.md` deferred-board deposit -- each already-declared home either
+landed in the shipped docs, or is folded into the `[REC-3]` board entry's
+in-place update this archive commit makes, which is itself the row-move that
+serializes this lifecycle transition, not a fresh scope decision:
+
+```
+Dispositions:
+* Adopter shipping (v2, `lifecycle_metrics` subcommand) -> wontfix (for v1;
+  the Decision itself deferred this to v2, and the corpus-drift evidence
+  (row 3) is the reason it hardened rather than softened). Tracked at
+  dev/PLANNING.md > [REC-3], updated in this commit -- not a new row.
+* The rename-only coverage gap (v2 candidate) -> wontfix (no corpus felt need;
+  its own future proposal if revived, premise corrected in Chunk E).
+* The symmetric bundling check (v2 candidate) -> wontfix (declined for v1;
+  known collision documented in Scope).
+* Shape (b)'s discriminator not corpus-derived the way shape (a) is -> accept
+  (docs/tool-usage.md F1, commit 02d557b, states the asymmetry plainly: "2
+  true positives and 1 false positive," not a corpus pass).
+* False-negative measurement, still absent (245-of-332 unaudited clean
+  triggers) -> accept (docs/tool-usage.md F1's "False negatives are
+  unmeasured" bullet, commit 02d557b, discloses the qualitative gap; the
+  precise count stays in this archived plan's own known-omission (e) and
+  Internal-review record, which is this table's established home for exact
+  figures).
+* R10's class-level `info` downgrade, dropped, argument now falsified (Fence
+  2) -> accept (docs/tool-usage.md F1, commit 02d557b, states both the
+  drop and the falsification in terms -- "a third [layer] was
+  pre-registered and not shipped ... now falsified"). No new PLANNING.md
+  row; the existing [REC-3] update carries a one-line pointer.
+* Whether the corpus-regression tier belongs in pytest -> accept (answered:
+  docs/tool-usage.md F1's "Its test posture" paragraph states it lives in
+  bootstrap/tests/test_transition_lint.py and self-skips rather than living
+  in a manual command).
+* `dev/reviews/` sits outside every named boundary -> wontfix (explicitly not
+  this plan's to own; a gap in the AGENTS.md approval carve-in, surfaced
+  here so it is not lost, not claimed as this plan's deferral).
+* The `_STAGE_COMMIT_PATTERNS` reader-fix -> already homed, unchanged: its own
+  proposal (`2026-07-22-claude-stage-commit-patterns`) is accepted and
+  archived.
+* The still-owed second Internal plan-review round -> not accept/guard/
+  wontfix/defer in the strict sense -- recorded above as a reasoned,
+  flagged judgement call awaiting the Maintainer's concurrence or override,
+  not a follow-up this table can close on its own.
+```
+
+**Evidence ledger.**
+
+* **Evidence shipped** -- the corpus-regression tier
+  (`bootstrap/tests/test_transition_lint.py`, 40 nodes, Chunk E), the
+  `docs/tool-usage.md` section (F1, F2) stating the exit contract, the census
+  line, both suppression layers, the dropped third layer and its falsified
+  justification, the whitelist-entry rule, and all six *What it does not
+  cover* gaps; the per-file module docstrings and whitelist rationale
+  comments; the Antigravity code review's independent re-derivation and
+  perturbation re-runs.
+* **Evidence deferred** -- the `CHANGELOG.md > Unreleased > Added` line (F3):
+  the exact text was never returned in an implementation commit body and the
+  line was never landed. **Not discharged by this archive commit either** --
+  `CHANGELOG.md` is a serialized shared file outside this archive's
+  carved-in scope (`AGENTS.md` > "Git and commit workflow"; the file
+  qualifies for the exception only inside the goodnight-handoff commit,
+  which this is not) -- so it is reported here rather than silently
+  applied. Exact text, ready to land at the next serialization point:
+  *"An advisory `scripts/transition_lint.py` checks whether a commit's
+  message claims a review / response / decision transition the diff does
+  not support, and whether a proposal- or plan-open commit's added file
+  already carries a real review. Plans `transition-lint`
+  (proposal `2026-07-22-claude-transition-lint`)."*
+  Also deferred: the false-negative audit of the 245 (as of window 3;
+  246 by the Internal review's later count) unaudited clean triggers, and
+  the v2 adopter-shipping and rename-only / bundling-check candidates --
+  all three dispositioned `wontfix`/`accept` above with their homes named,
+  none needing further migration.
+* **Deferred evidence home** -- the `CHANGELOG.md` line: reported here,
+  pending a maintainer-approved commit or the next goodnight-handoff
+  serialization. Everything else: `docs/tool-usage.md` (landed) or this
+  archived plan's own record (landed).
+
+**Loop-fidelity sign-off.** The six ratified implementation commits --
+`ed0800b` (Chunk A), `f220961` (Chunk B), `146f402` (Chunk C), `4a7d70a`
+(Chunk D), `f5901d8` (Chunk E), `02d557b` (Chunk F) -- are checked against
+[*Revision after Internal plan review -- Claude (author) --
+2026-08-04*](#revision-after-internal-plan-review----claude-author----2026-08-04),
+which is the governing section: the chunk tables, acceptance criteria and
+gate-accounting figures the six commits actually implement are the
+*revised* ones, not the pre-revision originals the revision superseded.
+The claim-vocabulary and shape-(b)-discriminator amendments Chunk B and C
+ship are additionally checked against *Maintainer ratification of Fence 1*
+(above), which is the governing section for the 10-finding posture as
+shipped (not the plan's own pre-ratification recommendation, which favoured
+deleting `accept` from the vocabulary -- a step that was **not** taken; see
+that section's "What this ratification does NOT do"). No exception keyword,
+in-message opt-out directive, or `templates/` import was added (A18, A19);
+no `bootstrap/_scaffold/` file changed; all three code files are
+`FROZEN-NEW`, not `FROZEN-MODIFIED` (`bootstrap/tests/_gate_manifest.py:366`
+vs `:364`), so no supervised re-pin ceremony is owed by this plan.
+
+**Follow-ups migrated to:**
+
+* Adopter shipping (v2) -> `wontfix` for v1, tracked at the updated
+  `dev/PLANNING.md` > `[REC-3]` entry (this commit), not a new row.
+* False-negative measurement (245-of-332 unaudited) -> `accept`,
+  `docs/tool-usage.md` F1 (already landed, commit `02d557b`); the exact
+  count stays in this archived plan's own record.
+* R10's dropped `info` downgrade, argument falsified (Fence 2) ->
+  `accept`, `docs/tool-usage.md` F1 (already landed, commit `02d557b`).
+* The rename-only and symmetric-bundling v2 candidates -> `wontfix`, own
+  future proposals if revived, no board deposit.
+* Whether the corpus-regression tier belongs in pytest -> `accept`, answered
+  in `docs/tool-usage.md` F1's test-posture paragraph.
+* `dev/reviews/` outside every named boundary -> surfaced, not this plan's;
+  no action by this archive.
+* `_STAGE_COMMIT_PATTERNS` reader-fix -> already homed and archived
+  (`2026-07-22-claude-stage-commit-patterns`).
+* The `CHANGELOG.md > Unreleased > Added` line (F3) -> **not landed**;
+  reported above with exact text, pending a serialization point this
+  archive commit is not.
+* The still-owed second Internal plan-review round -> recorded as a flagged,
+  reasoned judgement call in the disposition above; not closed by this
+  archive, offered for the Maintainer's concurrence or override.
+
+No AST re-anchor, frozen-manifest re-pin, credential use, or push was
+performed by this archive commit.

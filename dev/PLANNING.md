@@ -169,23 +169,24 @@ with the plan's filename stem.
   trivial path); (b) extend the `verify:` count guard to **other
   adopter-facing counts** beyond the quickstart's two. Each → its own
   proposal when revived.
-* **[REC-3] Transition-lint** *(queued, accepted 2026-07-22)* — an **advisory**
-  check that a commit's message claim is supported by its diff: a subject
-  claiming a review / response / decision transition whose diff adds no such
-  section, and a proposal-*open* commit whose file already carries reviews.
-  Guards the failure that opened the tighten-up (Cairn's own showcase arc
-  carried both shapes). Accepted at proposal stem
-  `2026-07-22-claude-transition-lint`, which pinned the heuristics this entry's
-  earlier deferral was waiting on — an independent reimplementation scored **0
-  false positives across 538 commit subjects**, surfacing exactly the 3 real
-  incidents. The sibling reader-fix (stem
-  `2026-07-22-claude-stage-commit-patterns`) confirmed it is *not* made
-  redundant: that reader classifies messages and never opens a diff.
-  **Queued, not next** — maintainer-facing apparatus, and the standing priority
-  is postdoc-first; it does not displace adopter-path work. Plan conditions
-  (rename-awareness, narrowed trigger, carve-in-bounded exceptions, advisory
-  exit 0, no silent-clean) are ratified in the Decision. → plan-open when it
-  reaches the top.
+* **[REC-3] Transition-lint** *(archived 2026-08-10)* — the **advisory**
+  commit-message-vs-diff check shipped: plan `transition-lint`
+  (`dev/plans/archive/transition-lint.md`), six implementation commits,
+  External Antigravity code review (SHIP, 2026-08-10). Fence 1 (amending the
+  Decision's pinned claim vocabulary) ratified the same day to a 10-finding
+  posture over `57d1daf..8f47c76` — the corpus drifted from the proposal's
+  0-false-positives pin (120 commits, 2026-07-22) to 20 false positives in
+  332 commits nine months later, now `docs/tool-usage.md`'s own headline
+  caveat. **The plan's still-owed second Internal plan-review round was
+  never formally re-run**; the archive record's own disposition reads the
+  External code review as substantively covering its brief at a stronger
+  tier and flags that reading for the Maintainer's concurrence rather than
+  asserting it closed. Deferred, each already homed rather than a new board
+  row: adopter shipping (v2, a `lifecycle_metrics` subcommand — needs a
+  second real tree's corpus); the 245-of-332 unaudited false-negative gap
+  (stated, not measured, in `docs/tool-usage.md`); the dropped class-level
+  `info` suppression layer (Fence 2, disclosed in `docs/tool-usage.md`). Each
+  → its own proposal if picked up.
 * **[TRU-1] Self-host lockfile reconciliation** *(deferred, Jul 2026)* —
   `python bootstrap/scaffold.py upgrade --target . --cairn-root . --plan`
   currently reports **38** files as "no recoverable base (review-only
