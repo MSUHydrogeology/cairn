@@ -4,7 +4,7 @@
 **Author**: Codex (Strategy)
 **Model**: GPT-5 (Codex)
 **Date opened**: 2026-08-10
-**Status**: revised
+**Status**: accepted
 **Touches**: `doctrine/proposals.md`, `doctrine/plans.md`,
 `doctrine/dual-review.md`, `doctrine/lifecycle.md`,
 `dev/proposals/_template.md`, `dev/plans/_template.md`, their
@@ -874,3 +874,12 @@ decisions to the Maintainer, or measured review input does not materially fall.
   superseded by the mandatory, bound non-expansion attestation.
 * No other scope, assurance trigger, authority boundary, or ceremony
   commitment is withdrawn.
+
+## Decision -- Maintainer -- 2026-08-10
+
+> I accept your recommendations to accept as revised both proposals. Please scribe the draft ## Decision blocks for each and update the status.
+
+Accepted Revision 1. The proposal addresses repeated context consumption across the lifecycle while preserving review independence, Maintainer authority, and evidence rigor. All External review findings ([R1]–[R4]) are resolved in Revision 1. The resulting plan is `required(**External**)`.
+
+Scribed by Antigravity under Maintainer instruction.
+
