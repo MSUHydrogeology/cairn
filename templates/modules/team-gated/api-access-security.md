@@ -99,6 +99,7 @@ would satisfy it.
 
 Worked example:
 
+<!-- cairn-accept: suspicious-url reason="documentation example: a loopback fixture address and RFC-2606 reserved example.org, in a policy example an adopter must be able to copy. Neither is a reachable third-party host." reviewer="Claude (Implementation)" date=2026-08-10 -->
 ```json
 {
   "schema": "cairn.security.api-access-policy.v1",
@@ -123,6 +124,7 @@ Worked example:
   }
 }
 ```
+<!-- cairn-accept-end: suspicious-url -->
 
 Set `CAIRN_API_P1_CREDENTIAL` and `CAIRN_API_P2_CREDENTIAL` in your own shell.
 The runner never creates, stores, rotates, prints, or persists a credential, and

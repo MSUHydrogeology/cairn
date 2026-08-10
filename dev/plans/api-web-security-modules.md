@@ -3488,3 +3488,262 @@ gate-manifest re-anchor, nor relax the fence against *requesting* one before the
 A-12 and D-2 phase-(a) ledgers exist. It does not supply a credential, a signing
 ref, or the G-5 first-use trust hash set. It does not discharge any review tier,
 and it does not widen the plan's *content* -- only its commit granularity.
+
+## Implementation verification -- Claude -- 2026-08-10
+
+**Scope landed under the R1 authorization:** Chunks **A**, **B**, **C**, **E**,
+and Chunk F's **F1** and **F6**. **Not landed:** F2, F3, F4, F5, Chunk D,
+Chunk G, Chunk H — see *Known omissions*.
+
+**Tested commit**: `ddffcd6` (the implementation commit).
+**Reviewed range**: `3fd0c91..ddffcd6` for the implementation; the R1
+authorization is at `3fd0c91` and the blocker record it disposes of at
+`3ba31c6`/`7a71a7e`.
+**Interpreter / runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`,
+CPython **3.13.13**, `PYTHONDONTWRITEBYTECODE=1`. OpenSSL 3.6.2. macOS
+(Darwin 25.5.0). `openssl(1)` 3.6.2 on `PATH`, required by the A-7 certificate
+fixtures.
+
+**Pre-run state — stated exactly rather than asserted clean, because it was
+not.** At suite start the working tree carried, in addition to this scope's
+files: `bootstrap/_scaffold/install.py`, `bootstrap/_scaffold/slotmerge.py`,
+`bootstrap/_scaffold/__init__.py` (modified) and
+`bootstrap/tests/test_module_merge_lockfile.py` (untracked). **These are another
+session's live `write_install_lockfile` / module-merge fix**, covered by its own
+intent claim (`claude-d8d22f62-20260810T145334-010708`). They were not touched,
+not committed, and their state is **not** reported here as this scope's. Also
+untracked and not this scope's: `.claude/`, `dev/measurement/collision_log.md`,
+`dev/measurement/snapshots/`. This scope's own files were uncommitted at run
+time and are byte-identical to what the tested commit contains.
+
+**Post-run state**: unchanged. Every deletion mutant in this scope is applied to
+a **copy** of the subject in `tmp_path` — an engine copy for Chunk A, an
+installed-adopter copy for Chunks B/C/E — so no perturbation ever touches the
+tree and there is nothing to restore. That is a stronger property than a verified
+restore, and it is why no restore ledger appears below. Each perturbation anchor
+is asserted to match **exactly once**, so a mutant that silently stopped applying
+fails loudly instead of passing as a green test.
+
+**Commands, exits, outcomes, elapsed.**
+
+| Command | Exit | Outcomes | Elapsed |
+|---|---|---|---|
+| `python -m pytest bootstrap/tests -q` (**whole suite**) | 1 | **2785 passed, 2 failed**, 0 skipped, 0 xfailed | **416.24 s** |
+| `python -m pytest bootstrap/tests/test_security_net.py bootstrap/tests/test_api_access_security.py bootstrap/tests/test_web_hosting_security.py -q` | 0 | **178 passed**, 0 failed, 0 skipped, 0 xfailed | 58.00 s |
+| `python -m pytest bootstrap/tests/test_scaffold.py test_presets.py test_profile_grammar.py test_ast_attest.py test_gate_manifest.py test_security_leaf.py test_security_stack.py -q` (the install-contract-sensitive set) | 1 | **288 passed, 2 failed** | 28.61 s |
+| `python -m pytest bootstrap/tests/test_security_lint.py bootstrap/tests/test_notice_install.py -q` (the two frozen pin files) | 0 | **23 passed** | 1.47 s |
+
+**Baseline for comparison**: **2593 passed, 0 failed, 353.94 s** at `caceda5`,
+measured clean earlier in this session before any of this scope existed. Node
+count: 2785 + 2 = 2787 = 2593 + this scope's 178 new nodes + 16 from sibling
+scopes that landed in between, so no node was dropped and no skip/xfail marker
+was added.
+
+**One honest qualification on the whole-suite run, because "against a clean,
+unchanged commit" is the standard and this was not quite that.** The run was
+launched from the working tree immediately before the implementation commit, so
+it tested byte-identical *code* to `ddffcd6` but two of that commit's Markdown
+files without their `claim-check-allow` headers, and it ran while a concurrent
+session's `write_install_lockfile` fix was present in
+`bootstrap/_scaffold/install.py` / `slotmerge.py` / `__init__.py` (those three
+have since been committed by that session). No test reads either doctrine file,
+so the Markdown difference cannot move a figure; the concurrent engine changes
+are visible in the failure output and are named below. **A re-run against
+`ddffcd6` alone would be the strictly correct Boundary-B artifact and has not
+been performed.**
+
+**Non-pass disposition.** Exactly **two** failed nodes, both in
+`bootstrap/tests/test_ast_attest.py`:
+`test_committed_baseline_accounted_for_across_the_engine_package` and
+`test_ast_gate_passes_over_the_full_scaffold_module_set`. These are **AM11's two
+predicted known-red nodes**, they fail because `verify()` returns 1 on any
+CHANGED entry, and they are the ceremony's to clear — **not an implementing
+agent's**. AM11's rule that *any third red node is a stop-and-explain* held:
+there was no third. **What AM11 did not anticipate is that the two nodes were
+already red before this scope touched anything**, from the concurrent
+`write_install_lockfile` fix's three CHANGED symbols; Δ1 joins existing reds
+rather than creating them.
+
+### Plan-specific acceptance commands, with outcomes
+
+| Command | Outcome |
+|---|---|
+| `python -m pytest bootstrap/tests/test_security_net.py -q` | **84 passed** (A-1…A-12 engine level, A2 schema) |
+| `python -m pytest bootstrap/tests/test_api_access_security.py -q` | **65 passed** (B-1…B-7, A-8(b)/(c), A-10 facade half, E-1/E-2) |
+| `python -m pytest bootstrap/tests/test_web_hosting_security.py -q` | **29 passed** (C-1…C-5) |
+| `python -m bandit -r` over the six new shipped sources | **zero issues**, 1597+ lines. One **HIGH** was found and **fixed in code**, never allowlisted — see below |
+| `python scripts/check_cairn.py` | **OK**, rc 0, **175** Markdown files (the two new doctrine files are inside its scan roots). It first reported **7 `suspicious-url` issues** over the policy examples and a prose bullet naming the two URL schemes; resolved with reasoned, **scoped** `cairn-accept` markers — a block marker around each JSON example and a line-scoped one on the bullet — never a domain added to `content_scan_allowlist.txt`, which is a noise policy for cited publication hosts and not the right instrument for an example address. |
+| `python scripts/quality_gate.py --sub neutrality` | `fail=93 info=21` — **unchanged** from the pre-existing baseline |
+| `python scripts/quality_gate.py --sub redundancy` | `fail=0 info=2` — **back to baseline**; it was `fail=8` with Chunk A alone, and the facades resolved it |
+| `python scripts/claim_check.py <each new .md>` | **OK, no flags**, one file per invocation |
+| `python bootstrap/scaffold.py --manifest` | **114 data rows**, exactly **+14** over the pre-scope 100, **−0, ~0** |
+| `python bootstrap/scaffold.py --config … --target /tmp` (both selected) | installs 2 facades, 2 four-member engine copies, 2 stubs, 2 doctrine files; lockfile written |
+| `python bootstrap/verify_integrity.py --target <tmp>` | fresh install **OK, 77 recorded files** |
+| same, after a one-byte edit to an installed engine member | **`modified (hash mismatch)`** — the runner is correctly **not** living state (F-2's hazard) |
+| same, after filling an installed policy | **`modified (hash mismatch)`** — the expected state **without F2**, and precisely why F2 exists |
+| installed `api_access_security.py local` / `web_hosting_security.py local` on untouched stubs | **INCOMPLETE, exit 5**, both (E-1) |
+| `cmp` across the two installed engine copies, and against the template source | all four members **byte-identical** both ways |
+
+### The AST delta — reported, re-anchored nothing
+
+Derived with `_ast_attest`'s **own** `_merge_current` / `_classify`, never a
+reimplementation, against the committed baseline read at the implementing commit
+(**173 entries**).
+
+**This scope's delta is exactly Δ1, and nothing else:**
+
+| Symbol | File | Old digest | New digest |
+|---|---|---|---|
+| `Assign:_MODULE_MAPPINGS` | `bootstrap/_scaffold/config.py` | `df43d4d75f55a3e5` | `0f42fa9a794a77da` |
+
+**MISSING: none. DUPLICATE: none.**
+
+**Three further CHANGED symbols are present in the tree and are NOT this
+scope's** — they belong to the concurrent `write_install_lockfile` /
+module-merge fix named in *Pre-run state*, and are recorded here only so the
+Maintainer forming a ceremony union is not surprised by them:
+`FunctionDef:write_install_lockfile` and `FunctionDef:run_module_merge_pass`
+(`bootstrap/_scaffold/install.py`), and `FunctionDef:merge_module_into_slot`
+(`bootstrap/_scaffold/slotmerge.py`).
+
+**Δ2, Δ3, Δ4 and Δ5 are ABSENT, as they must be**: F2, F3 and F4 did not land.
+Δ1 alone *is* a member of `_UPDATE_ALLOWLIST`, so the surgical path would apply
+to this scope in isolation — it does not apply to the tree as it stands, because
+of the three concurrent CHANGED symbols above. Either way: **no re-anchor was
+performed and none was requested.** Both fence conditions on *requesting* one
+remain unmet — A-12's four-public-entry-point form and D-2's per-channel
+phase-(a) ledger do not exist, because Chunk D did not land.
+
+**Frozen-file accounting, reported not re-pinned.** Two frozen files were edited
+by F6: `bootstrap/tests/test_notice_install.py` (two pins) and
+`bootstrap/tests/test_security_lint.py` (one pin). Both are literal keys in the
+`frozen_files` map, so both are now `FROZEN-MODIFIED`.
+`bootstrap/tests/fixtures/scaffold_ast_known_new.json` was **not** edited and
+needed no edit — this scope adds no NEW symbol.
+`mapping_symbols._MODULE_MAPPINGS.baseline_digest` and `cascade_mutable`'s
+`pre_run_sha256` for `bootstrap/_scaffold/config.py` have moved.
+`config.py`'s cascade governance — *"one predeclared mapping-symbol delta
+only"* — is satisfied **exactly**: `_MODULE_MAPPINGS` is the only symbol in that
+file this scope moves.
+
+### The three pins moved, and they no longer agree
+
+Measured, not carried forward. The plan predicted 54 / 109 / 50; every prediction
+was wrong, because sibling scopes moved the baselines first.
+
+| Pin | Before | After |
+|---|---|---|
+| `test_notice_install.py::test_manifest_has_the_expected_py_source_count` (manifest **rows**) | 46 | **56** |
+| `test_notice_install.py::test_notice_appears_in_manifest_data_row_count` (total rows) | 100 | **114** |
+| `test_security_lint.py::test_templates_py_count_is_pinned` (**distinct** `.py` on disk) | 46 | **52** |
+
+**The first and third now diverge for the first time — 56 versus 52 — and must
+not be made to agree.** One counts manifest rows, the other counts distinct files
+on disk, and this scope installs one four-member engine tree to **two**
+destination trees: six new files are six there and ten here. The two committed
+comments asserting they agree are **retired in the same commit that falsifies
+them**; neither was executable, which is exactly why leaving them would have been
+worse than moving them. `_SCAN_EXCLUSIONS` stays **empty**.
+
+### Bandit finding, fixed in code
+
+The first run over the engine reported **B613 `trojansource`, severity HIGH**:
+`report.py`'s bidi-codepoint set was spelled with literal bidi characters, which
+made the module that *detects* Trojan Source a carrier of it — a reviewer reading
+the source would have seen reordered text. F-9 makes MEDIUM+ a stop whose fix is
+code, so the literals became `\uXXXX` escapes. Two Low `B105` false positives
+(attribute names containing "token") were removed by renaming to
+`reason_withheld` / `redirect_withheld`. Post-fix: **zero issues**.
+
+`python bootstrap/security_check.py` was **not** run to completion: it fails
+closed on an unclean worktree, and the worktree cannot be made clean while
+another session's fix is in flight. Bandit was therefore run directly over the
+six new shipped sources, which is the subset this scope adds; the release
+ceremony remains the Maintainer's.
+
+### Defects this scope's own tests caught
+
+Recorded because a test that catches nothing is the recurring defect class here,
+and these are the evidence that these do not.
+
+1. **The facades crashed with a traceback instead of reporting DEGRADED.**
+   `EngineIncomplete` is raised during the engine package's *import*, outside the
+   `verify_engine_complete()` handler, so a missing engine member produced a
+   traceback and exit **1** where criterion A-10 requires exit **20**. A traceback
+   is also an uncontrolled output channel. Fixed in both facades: the import is
+   wrapped, the failure is reduced to a fixed reason, and the first candidate
+   engine directory is now **fatal on failure** rather than falling through to the
+   other layout — so a broken install can never be masked by the fallback.
+2. **A reason token that could never be produced.**
+   `credential_name_supplied` was unreachable: the generic closed-key sweep ran
+   first, so a policy naming its own credential variable was refused as an
+   ordinary typo. Reordered, and the check widened to six spellings.
+3. **A hostile-`TMPDIR` test that could not fail.** `gettempdir()` caches and
+   **silently falls back** past an unusable `TMPDIR`, so setting the variable
+   alone exercised the platform default. Now drives `tempfile.tempdir`.
+4. **A URL length cap that refused correct policies.** All strings shared a
+   64-byte label cap, which no real base URL survives. Split into a label cap and
+   a wide cap for URLs, pointers and declared bodies.
+
+### Measured corrections to the plan's stated expectations
+
+* **A-1's deletion mutant does not do what the plan predicts.** The post-connect
+  check is **two independent guards** — peer-in-validated-set and peer-class —
+  and A-1's hazard trips both. Deleting one leaves the other refusing. Reaching
+  the peer requires deleting both. This is *stronger* than the plan expected, and
+  both mutants are landed per direction so A-1 and A-11 discriminate
+  independently.
+* **A-7's `CERT_NONE` mutant is over-broad by exactly one row.** Three of four TLS
+  rows stop refusing; the non-TLS-peer row still refuses, because `CERT_NONE` does
+  not make a peer that speaks no TLS speak TLS. The accurate version is pinned.
+* **B-3's "non-default port" row does not belong to `local`.** A disposable
+  loopback fixture binds an arbitrary high port by definition, so refusing one
+  would refuse every correct use. That row belongs to B-5's deployed near-miss
+  table. Pinned as an **accepted** shape so the discrepancy is visible rather than
+  silently resolved.
+* **C-1 is strictly one-to-one, including for `csp`.** An absent CSP header
+  reports the missing header and does **not** additionally report every reviewed
+  directive, because the directive check is guarded on the header being present.
+  The first version of the test expected the noisier behaviour; the runner was the
+  better of the two.
+
+### Known omissions
+
+* **Chunk D did not land.** The cross-runner confidentiality sweep — D-1…D-6, the
+  AW6/AW8 gate — does not exist. What *does* exist: A-8(b)'s credential-marker
+  absence across stdout, stderr, the report and the whole temporary directory;
+  D-3's cardinality-class closure asserted structurally (a finding carries no
+  integer at all); and per-check value-absence assertions in B and C. **None of
+  that is the sweep**, and the plan's own standard is that a per-channel
+  liveness-then-confidentiality ledger is what closes the gate.
+* **F2 (Δ2, `_LIVING_STATE_DSTS`) did not land**, though B3 is now ratified and it
+  is therefore unfenced. Consequence, measured above: a filled policy reports
+  `modified (hash mismatch)`. It was held because `bootstrap/_scaffold/lockfile.py`
+  sits beside another session's in-flight lockfile work and the correct move was
+  to claim narrowly and report the interaction rather than edit around it.
+* **F3, F4, F5 did not land** — the capability install notice (Δ4/Δ5), its two
+  `cli.main` call sites (Δ3), and `test_security_capability_install.py`. So F-6
+  (the notice on both surfaces), F-11 (the module catalog decision) and F5's
+  three-part B2 field-vocabulary tests are **not** satisfied.
+* **Chunk G did not land.** No registry entry, so both capabilities are directly
+  invocable but **neither integrity-classified nor standing checks**. Both
+  doctrine files say so rather than claiming otherwise. G-5's first-use trust hash
+  set is the Maintainer's and was not produced.
+* **Chunk H did not land** — no `bootstrap/SAFETY.md` rule, no
+  `bootstrap/DEPENDENCY_BUDGET.md` statement, no `CHANGELOG.md` line. **Cairn now
+  ships a network client and `SAFETY.md` does not yet say so.** That is the most
+  important single omission in this list.
+* **A-12's four-public-entry-point form** is not satisfied; only the engine-level
+  live transport proof is.
+* **The `deployed-passive` legs are exercised only up to their refusal
+  boundaries.** No test drives a deployed leg to a successful request, because
+  none supplies a deployed credential and none contacts a real host — which is the
+  Maintainer fence working, and it means the deployed request path itself is
+  **unexercised**.
+* **`openssl(1)` on `PATH` is a hard test dependency** for the A-7 and hosting-TLS
+  certificate fixtures, asserted rather than skipped (the plan requires zero
+  skips). A machine without it fails those nodes rather than silently passing.
+* **Windows is asserted nowhere.** The report's `0600` mode is POSIX; both
+  doctrine files say so.
+* **No human has read the two runners line by line for security content.** The
+  tests and Bandit are a different thing.
