@@ -192,10 +192,15 @@ already homed elsewhere:
   surface (gate manifest, signing, `verify-ref.sh`).
 * `corpus-tier-cost` — separate `required(Internal)` plan; test infrastructure
   only, unblocked now that `transition-lint` has archived.
-* The three open security plans (`api-web-security-modules`,
-  `release-security-bar`, `security-verification-activation`) — measured
-  disjoint: 92 files across their chunk tables, **zero** naming any surface
-  above.
+* The security plans open at plan-open (`api-web-security-modules`,
+  `release-security-bar`, `security-verification-activation`) — **archived
+  before this plan implements**, per the Maintainer's 2026-08-10 statement that
+  they are finishing now. This replaces an earlier disjointness figure ("92
+  files across their chunk tables, zero naming any surface above") that is
+  withdrawn: the scan behind it matched one chunk-table row format and
+  under-read `release-security-bar`, a plan with chunks A--M, to two files. A
+  sequencing condition the Maintainer controls is a better fence than a
+  measurement I could not stand behind.
 (The opened plan fenced `[F1]` as "pending Revision 4". That was stale on
 arrival: Revision 4 was accepted at `27f1927`, 48 minutes before this plan
 opened. The accepted rule is now transcribed directly into Chunk F.)
@@ -381,8 +386,9 @@ partial or racing application cannot grant authority.
 
 **H runs last and needs a quiet tree.** It rewrites the `Status:` of every
 active artifact, so concurrent lifecycle commits cause blob-mismatch
-re-derivation. Run it when the three open security plans have archived or are
-quiescent.
+re-derivation. Under the sequencing condition in Scope the security plans are
+already archived when this plan implements, so the quiet tree is a
+precondition to check at H, not a wait to schedule.
 
 ### Chunks P1--P7 — the parent contract
 
