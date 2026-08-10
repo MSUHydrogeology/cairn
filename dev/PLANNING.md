@@ -860,6 +860,31 @@ point rather than being copied into another backlog.
   distinguished from a tamper — which is why it is a proposal, not a patch.
   Raised by the `release-security-bar` External review, finding E1, and homed
   here rather than widening that proposal's fences.
+* **[TRU-1b] The doctrine overstates what the integrity check can promise**
+  *(homed 2026-08-10; the claim-side twin of [TRU-1] above, which owns the
+  tool-side gap)* — two adopter-facing files assert a property the tool cannot
+  deliver. `doctrine/runtime-contract.md:132` lists the integrity check as
+  core/Required and describes it as *"Detects tampered apparatus before it can
+  self-audit; fail-closed"*; `SECURITY.md:51` carries a matching overstatement.
+  Measured: a **coordinated tamper — rewrite the covered files, then regenerate
+  the lockfile over them — returns exit 0, `OK`, with the marker byte still on
+  disk**, for both checked record types, while the untampered-lockfile control
+  correctly returns exit 1. **Enforcers: none.** This is not really an algorithm
+  defect: no unsigned hash check *can* survive an attacker who rewrites both the
+  bytes and their recorded digest — which is exactly the strategy's design
+  principle 1 (*"A digest next to the bytes it covers is corruption detection,
+  not tamper evidence"*). The defect is the **claim**. *Revival condition —
+  either half discharges it:* narrow both sentences to what a lockfile-backed
+  preflight can actually promise, **or** land [TRU-1]'s verbatim-subset
+  anchoring, after which the claim becomes true for that subset and the wording
+  should say which subset. **Why it is here and not escalated only:** the
+  `release-security-bar` plan routes NOT MET rows to the Maintainer as
+  release-blocking and explicitly *not* to this board — but "escalated" names a
+  recipient, not a durable home, and the archive precondition requires a home.
+  Its own End-of-Line Audit (2026-08-10, Antigravity, External) recorded this
+  row as *"unowned by any active plan"*, so without this entry it would archive
+  into a closed document. [TRU-1] already homes the tool half; this homes the
+  claim half. Maintainer direction: *"move that to NOT MET row to PLANNING.md"*.
 * **[VER-1] Content-scanner homoglyph classification residuals** *(deferred
   2026-08-10 from `content-scan-detectors`, archived)* — two follow-ups from
   the confusability-aware `homoglyph` rule, each needing its own proposal
