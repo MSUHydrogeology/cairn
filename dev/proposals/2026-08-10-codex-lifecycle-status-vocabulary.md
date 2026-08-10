@@ -1241,3 +1241,284 @@ repository; [D2] is one word; [D3] is one sentence. A short closure read against
 R1's floor sentence and R5's loader paragraph is sufficient -- do not reopen the
 state model, R3's obligation grammar, or the migration design, all of which are
 now in good shape.
+
+## Response to review -- Codex -- 2026-08-10 (round 2)
+
+**Model**: GPT-5.6-Codex
+**Role**: Strategy / proposal author
+**Reviewed review commit**: `5eec62e540b5dedbe0586ef40a5e77adcb94ad9a`
+**Disposition**: Accept [D1]--[D3]. Revision 2 below makes the requested
+mechanism substitution, names the proposal-review floor, and records the
+corpus boundary. It also incorporates the Maintainer-authorized scope addition
+that follows.
+
+### [D1] Accepted -- both consumers get fixed-path containment loaders
+
+The review is right: the installed `tools/` directory is not a Python package,
+so Revision 1's proposed parent-package import cannot work without ambient
+`sys.path`. Revision 2 replaces that sentence. Both metrics extraction and
+transition-lint load the central planner from a path derived from their own
+trusted file location, using `importlib.util.spec_from_file_location` and the
+repository's existing fail-closed loader discipline. Neither consumer imports
+through `sys.path`, and this proposal does not add `tools/__init__.py` or widen
+the install manifest for that purpose.
+
+### [D2] Accepted -- the floor is Internal or above
+
+The intended proposal entry condition is now explicit: at least one clearing
+proposal review at the **Internal floor or above**, with no outstanding
+blocking proposal-review finding against the current contract. Higher review
+obligations remain additive; the sentence does not weaken one that is declared
+elsewhere.
+
+### [D3] Accepted -- current widening is corpus-neutral
+
+Revision 2 records why the shape-(b) widening cannot change the current pinned
+historical corpus: the new current-state tokens do not occur in that history.
+It also marks the boundary. A future widening to historical non-opening tokens
+such as `executing` or `review` is corpus-changing and must re-derive the pinned
+counts rather than inheriting this conclusion.
+
+## Maintainer-approved scope modification -- derived lifecycle board -- 2026-08-10
+
+The Maintainer authorized adding the mechanical lifecycle board to this
+proposal after its narrow second External read:
+
+> Okay, I think you already have that narrow second review. Please append this
+> with Maintainer-approved scope modification. Make sure to include the
+> necessary instructions in documentation/doctrine that teaches agents to use
+> this.
+
+This authorization permits the board to share this proposal's plan and central
+state machinery rather than opening a sibling proposal. It is not a claim that
+the preceding reviewer examined bytes that had not yet been proposed. The
+board contract below therefore joins the same distinct External + External
+Security Review plan floor, implementation Code review, and frozen-byte
+ceremony. The requested short proposal closure read may remain narrow: it need
+only check [D1]--[D3] and B0--B8 below, not reopen R0--R11.
+
+## Revised proposal -- Revision 2
+
+**Status**: revised
+
+Revision 2 retains R0--R11 except for the exact replacements below, and adds
+B0--B8 as a bounded workstream in the same shared plan. This delta form keeps
+the already-reviewed state model legible while making every changed contract
+explicit.
+
+### R1 replacement -- proposal decision readiness
+
+Replace the `awaiting-decision` entry rule with:
+
+| Status | Next owner | Entry and exit rule |
+|---|---|---|
+| `awaiting-decision` | Human Maintainer | At least one proposal review at the Internal floor or above has cleared the current contract, every additionally declared review obligation is satisfied, and no blocking proposal-review finding remains. |
+
+This names the minimum tier without treating it as a ceiling.
+
+### R5 replacement -- contained consumers and corpus boundary
+
+`tools/lifecycle_planner.py` remains the single runtime owner named in R5. Both
+governed consumers load it without trusting ambient import state:
+
+* `scripts/transition_lint.py` derives the repository-root
+  `tools/lifecycle_planner.py` path from its own resolved location; and
+* `tools/_lifecycle_metrics/extract.py` and its installed twin derive the
+  sibling `tools/lifecycle_planner.py` path from their own resolved locations.
+
+Each consumer uses a fixed-name `importlib.util.spec_from_file_location`
+loader. Before execution it refuses a missing planner, a symlinked planner or
+containing `tools/` directory, and any resolved planner outside or beside the
+expected `tools/` root. It registers the module only for the duration needed by
+Python's loader, caches only a fully initialized module carrying an internal
+completion sentinel, and removes the module plus any children created under
+its private import name after execution failure. A poisoned pre-existing entry
+under that name is refused or replaced only after the same identity checks; it
+is never trusted merely because it is present in `sys.modules`.
+
+No consumer adds a status tuple, imports from ambient `sys.path`, or causes the
+planner's CLI to run at import time. The implementation does not create
+`tools/__init__.py` and does not change the install set to manufacture a package.
+
+Shape (b) still covers every recognized current non-terminal state plus the
+historical opening states required for old commits. This widening is
+corpus-neutral at the reviewed 2026-08-10 history because none of the new
+current-state tokens occurs there. Any later inclusion of historical
+non-opening states is corpus-changing: its author re-runs the independent
+corpus measurement and updates pinned expectations from that evidence.
+
+### B0 -- purpose and authority boundary
+
+Add a derived board to the existing planner:
+
+```text
+python tools/lifecycle_planner.py board --compact
+```
+
+The board answers the cheap orientation question: what active proposals and
+plans exist, what stage does each recorded contract support, and who or what is
+next? It is a read-only projection over the same parser and predicates used by
+`scan`, `next`, and closeout. It is not a new roadmap, queue, priority engine,
+review attestation, or source of lifecycle truth.
+
+No generated board file is committed. Every invocation derives fresh output
+from the working tree and identifies the repository HEAD it observed. The
+artifact itself remains authoritative; `dev/PLANNING.md` remains the strategic
+roadmap and priority surface.
+
+### B1 -- compact row contract
+
+The compact form emits one bounded, terminal-safe line per active direct child
+of `dev/proposals/` and `dev/plans/`, excluding templates and archived trees.
+Rows sort by artifact kind and filename stem. A header reports the full HEAD
+object id and whether relevant lifecycle files differ from HEAD.
+
+Each row carries these fields in a documented stable order:
+
+| Field | Meaning |
+|---|---|
+| `kind` | `proposal` or `plan` |
+| `artifact` | filename stem |
+| `status` | declared current status |
+| `owner` | next owner from the central vocabulary |
+| `review` | declared obligations and mechanically supported completion |
+| `evidence` | latest applicable review / Boundary B / Code review / closeout summary |
+| `blocked_by` | exact optional blocker metadata, or `-` |
+| `validity` | `valid` or a stable conformance reason code |
+| `source` | `HEAD` or `WT*` when this artifact differs from HEAD |
+
+The board does not compress a blocking finding into a clearing verdict, infer
+priority from filename order, or turn `Blocked by` into a state transition.
+Where structure is ambiguous or contradictory, it emits the declared status,
+marks `validity` invalid, and does not guess a substitute status.
+
+### B2 -- machine output and focused inspection
+
+The same subcommand supports `--format json` with a versioned top-level schema,
+full field values, full HEAD id, and stable reason codes. `--compact` is the
+human- and token-efficient projection; JSON is the automation contract. The
+initial interface also supports exact `--status`, `--owner`, and
+`--invalid-only` filters. Unknown filter values fail closed with usage error.
+
+`board --explain <artifact>` expands one row into the exact documentary
+evidence and unmet predicates already available to `next` and `scan`. It cites
+the source artifact and headings but does not reproduce whole review bodies.
+An absent or ambiguous stem refuses rather than selecting the nearest name.
+
+### B3 -- one parser, one pass, no cache
+
+Board rendering calls the central artifact parser and shared conformance
+predicates; it contains no consumer-local status, role, tier, verdict, or
+closeout vocabulary. It scans each active artifact once. Repository state is
+obtained in a bounded batch, not through one Git subprocess per row.
+
+The command performs no writes, network access, code execution from an
+artifact, or persistent caching. Re-running it after an artifact edit must
+reflect that edit immediately. A structural error yields non-zero exit status
+after rendering every safely renderable row, so one malformed record cannot
+hide the rest of the board.
+
+### B4 -- terminal and serialization safety
+
+All human output escapes line breaks, ANSI escapes, Unicode format controls,
+surrogates, and other non-printing control characters from filenames and
+metadata before writing to a terminal. Field delimiters cannot be injected by
+artifact content. JSON uses the standard-library encoder with ASCII-safe
+escaping and never interpolates raw strings into JSON syntax.
+
+Git inspection uses machine-delimited output and fixed command arguments. The
+board treats a Git failure as an explicit unbound-source condition; it does not
+silently label working-tree content as HEAD. These are presentation-integrity
+controls, not authentication of the contributor or review.
+
+### B5 -- agent teaching and documentation delivery
+
+The implementation must teach agents when and how to use the board, not merely
+ship a discoverable CLI:
+
+* `AGENTS.md` and `templates/core/AGENTS.md` add the compact command to
+  session-start orientation and say to use it to select the load-bearing
+  artifacts that need reading;
+* `doctrine/session-routines.md` makes the board the first lifecycle overview
+  after the mechanized gather, then directs agents to `board --explain`,
+  `next`, or the source artifact for the selected work;
+* `.agents/skills/session-start/SKILL.md` and
+  `templates/skills/session-start/SKILL.md` run the compact board when the
+  lifecycle planner is installed and summarize its result without beginning
+  substantive work;
+* `doctrine/lifecycle-contract.md` defines the board as a non-authoritative
+  derived view, documents its refusal and freshness properties, and preserves
+  the artifact/PLANNING authority boundary; and
+* `dev/agent_collaboration.md` and
+  `templates/core/dev/agent_collaboration.md` explain that the board routes a
+  reviewer or implementer to records; it never substitutes for reading the
+  record being reviewed or for Maintainer priority.
+
+The operational wording includes the efficient reading rule: **run the board,
+choose the relevant row, then read that artifact and its cited evidence**. It
+must not tell an agent to ingest every active proposal and plan before ordinary
+work. Full-corpus reading remains appropriate for lifecycle migrations,
+portfolio audits, or explicit broad reviews.
+
+### B6 -- measured efficiency claim
+
+At the 2026-08-10 working-tree snapshot, the 13 active lifecycle artifacts
+occupied 1,697,091 bytes across 24,115 lines; `dev/PLANNING.md` separately
+occupied 78,995 bytes across 1,221 lines. These are dated sizing evidence, not
+live invariants and not model-token counts.
+
+The plan records, on its implementation parent and final bytes:
+
+* active artifact count, bytes, and lines;
+* compact and JSON board bytes, lines, and elapsed time;
+* the ratio of compact-board bytes to active-artifact bytes; and
+* one session-start exercise showing that a target can be selected from the
+  board before loading only its artifact and cited evidence.
+
+The expected saving comes from changing the reading workflow, not from claiming
+that bytes map identically to every model's tokens. Stop and revise if the
+compact output grows with review-body length, requires reading artifact bodies
+to interpret ordinary rows, or becomes another manually maintained summary.
+
+### B7 -- verification additions
+
+In addition to R9, the plan maps tests for:
+
+* one compact row for every active fixture artifact and deterministic ordering;
+* exact owner and legal-status parity with `next` for every current state;
+* proposal and multi-obligation plan-review summaries;
+* Boundary B, blocking and clearing Code review, closeout, and explicit
+  `Blocked by` display without authority inflation;
+* every R6 contradiction producing the same stable reason through `scan`,
+  `next`, compact board, and JSON;
+* malformed and unknown states remaining visible with non-zero exit;
+* `HEAD`, dirty, untracked, and Git-unavailable source labels;
+* exact filters, absent and ambiguous `--explain`, and versioned JSON schema;
+* terminal-control, bidi-format-control, delimiter, and newline injection;
+* no repository mutation, no persistent cache, and immediate refresh after an
+  edit;
+* bounded Git invocation count rather than one subprocess per artifact;
+* fixed-path loader containment, symlink refusal, poisoned-module refusal,
+  cleanup after failed execution, and successful retry for both consumers; and
+* byte identity and instruction parity across every source/template pair named
+  in B5.
+
+Tests invoke the public CLI as well as shared helpers. They assert semantic
+parity rather than snapshotting an ornamental table.
+
+### B8 -- scope and review consequences
+
+The implementation surface in R8 expands to include
+`doctrine/session-routines.md`, `.agents/skills/session-start/SKILL.md`,
+`templates/skills/session-start/SKILL.md`, and the relevant board CLI and
+documentation tests. `AGENTS.md`, its template twin,
+`doctrine/lifecycle-contract.md`, and both `agent_collaboration.md` copies were
+already in R8 but gain the B5 teaching contract.
+
+This addition introduces no new dependency, generated authority file, network
+surface, or Maintainer ceremony. It does increase the amount of untrusted
+lifecycle metadata rendered to terminals, so B4 and its security falsifiers are
+part of the existing distinct External Security Review obligation. The board
+lands before active-artifact migration so it can be exercised against both the
+fixture matrix and the final migrated tree; the shared plan still pays one
+stable-byte Code review, Boundary B, and re-anchor sequence.
