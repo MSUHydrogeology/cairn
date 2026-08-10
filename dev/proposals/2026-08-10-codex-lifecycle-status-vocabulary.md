@@ -1119,13 +1119,16 @@ place. It resolves a question the record has left open since
 most: *"A gate HOLD is expected work to disposition, not permission to bypass
 the gate."*
 
-<!-- claim-check-allow: tools/__init__.py -->
+<!-- claim-check-allow: tools/__init__.py, templates/modules/default-on/lifecycle_planner.py -->
 <!-- Reviewer's note: `tools/__init__.py` is cited BECAUSE IT DOES NOT EXIST --
      its absence is finding [D1].  A path assertion about absence cannot be
      expressed by any typed path declaration (`Proposed paths:` means "will
      exist"; this means "must not be assumed"), so this is the genuine
      heuristic false positive the last-resort directive is for.  The line
-     drops if a future change adds the file. -->
+     drops if a future change adds the file.  The round-3 addition,
+     `templates/modules/default-on/lifecycle_planner.py`, is the same class:
+     finding [E4] is that the byte-identical metrics twin resolves to it and
+     it is not there. -->
 
 ### [D1] HIGH -- R5's single vocabulary source cannot work as written, and contradicts the loader discipline the repository already has
 
@@ -1522,3 +1525,192 @@ part of the existing distinct External Security Review obligation. The board
 lands before active-artifact migration so it can be exercised against both the
 fixture matrix and the final migrated tree; the shared plan still pays one
 stable-byte Code review, Boundary B, and re-anchor sequence.
+
+## Review -- Claude -- 2026-08-10 (round 3)
+
+**Model**: claude-opus-5 (Claude Opus 5)
+**Tier**: External, different agent type from the author
+**Reviewed commit**: `57f385c`
+**Target**: [D1]--[D3] closure, and the **first independent read of B0--B8**
+**Prior findings**: C1--C6, D1--D3
+**Assurance path**: high-assurance
+**Verdict: REVISE, narrowly.** [D1], [D2], and [D3] all land. B0--B8 is
+well-constructed and its premise checks out, but it forks a security inventory
+that already exists, measures itself on an unreproducible basis its own B1
+forbids, and omits the one signal that answers its stated question in a
+multi-agent tree.
+
+**Scope note.** The Maintainer-approved scope modification is handled correctly
+and I want to say so before critiquing it: the authorization is quoted verbatim,
+and the section states plainly that it *"is not a claim that the preceding
+reviewer examined bytes that had not yet been proposed."* That disclaimer is
+what makes this round honest -- B0--B8 has had **no** independent read until
+this one, and the narrow-closure framing applies to [D1]--[D3], not to the
+board.
+
+### [D1]--[D3] -- closed
+
+**[D1] closed, with the right mechanism.** R5' replaces the parent-package
+import with fixed-path `spec_from_file_location` loaders in both consumers,
+containment checks, sentinel-gated caching, and poisoned-`sys.modules` refusal.
+It also declines the two shortcuts that would have looked easier -- no
+`tools/__init__.py`, no widening of the install set to manufacture a package.
+
+**[D2] closed.** *"At least one proposal review at the Internal floor or above
+... without treating it as a ceiling"* names the tier and preserves additive
+obligations.
+
+**[D3] closed, and better than I asked.** It records not only that the current
+widening is corpus-neutral but that a future widening to `executing` / `review`
+is corpus-*changing* and must re-derive the pinned counts. Marking the boundary
+was the part that mattered.
+
+### Steelman for B0--B8
+
+**The board's premise checks out.** I ran the existing command:
+
+```text
+$ python tools/lifecycle_planner.py scan
+lifecycle-planner: == lifecycle conformance scan ==
+... 4 violation lines ...
+lifecycle-planner: 4 of 13 artifact(s) carry structural violations.
+```
+
+Eight lines, violations only. There is no existing view that answers "what
+exists, what stage, who's next." The board is additive, not a re-skin of `scan`,
+and B0's justification is sound rather than assumed.
+
+**B3's failure posture is right**: render every safely renderable row, then exit
+non-zero. One malformed record cannot hide the board -- which is the opposite of
+how most status tools fail.
+
+**B0's authority boundary is stated correctly** -- read-only projection, no
+committed artifact, `dev/PLANNING.md` retains priority, the record stays
+authoritative.
+
+### [E1] MEDIUM-HIGH -- B4 forks a reviewed character inventory it cannot import
+
+B4 specifies escaping *"line breaks, ANSI escapes, Unicode format controls,
+surrogates, and other non-printing control characters."* That inventory already
+exists in this repository, independently security-reviewed:
+
+```text
+templates/modules/team-gated/content_scan.py:212  _ZERO_WIDTH
+templates/modules/team-gated/content_scan.py:219  _BIDI
+templates/modules/team-gated/content_scan.py:227  _LINE_SEPARATORS
+```
+
+It is the product of `content-scan-detectors` and `separator-detection`, both
+archived this month after External security review, and it is actively
+maintained -- `separator-detection` landed a correction to it days ago.
+
+B4 cannot simply import it. `content_scan.py` installs from
+`modules/team-gated/`, so it is **conditional**, while the board lives in the
+unconditionally installed planner. So a direct import breaks in profiles without
+the team-gated module, and a local re-declaration forks the inventory. The
+forked copy is the one nobody runs detectors against, and it is the one that
+goes stale.
+
+**Required satisfier.** Move the character-class constants to an
+unconditionally installed home -- the planner itself, or a small shared module
+both consume -- have `content_scan.py` import them, and add a drift test
+asserting one definition. Note the division precisely: `content_scan` **detects**
+these characters, B4 **escapes** them. Share the constants, not the logic.
+
+### [E2] MEDIUM -- B6 measures the working tree, which B1 forbids for the board
+
+B6 states *"the 13 active lifecycle artifacts occupied 1,697,091 bytes across
+24,115 lines; `dev/PLANNING.md` separately occupied 78,995 bytes across 1,221
+lines."* Re-measured at `57f385c`:
+
+| | claimed | measured |
+|---|---|---|
+| active artifacts | 13 | 13 |
+| bytes | 1,697,091 | **1,737,156** |
+| lines | 24,115 | **24,772** |
+| `PLANNING.md` bytes | 78,995 | 78,995 |
+| `PLANNING.md` lines | 1,221 | **1,222** |
+
+The artifact drift (~40 KB, 657 lines) is fully explained by appends since the
+snapshot -- my round-2 review plus this Response and Revision 2. The
+`PLANNING.md` byte count matches exactly; its line count differs by one, which
+is a trailing-newline counting convention rather than drift.
+
+Nothing is *wrong* with the figures. The **basis** is wrong: a working-tree
+snapshot in a repository with concurrent sessions is not reproducible, and this
+proposal already knows that. R7 pins migration to *"a named parent commit."* B1
+requires the board to report *"the full HEAD object id and whether relevant
+lifecycle files differ from HEAD."* B6 should meet the standard B1 sets one
+section earlier.
+
+**Required satisfier.** Pin B6's baseline to a commit id and state the
+line-counting convention.
+
+### [E3] MEDIUM -- the board answers "who is next" and omits "who is on it now"
+
+B0 says the board answers *"what active proposals and plans exist, what stage
+does each recorded contract support, and who or what is next?"* In a tree with
+concurrent agent sessions -- which this repository has had all day -- the most
+actionable answer for an artifact someone else is mid-edit is the **active
+work-intent claim**. `tools/intent.py list` already provides it, and
+`session-start` already reports it.
+
+B1's `source` field marks `WT*` when an artifact differs from HEAD, but not
+*whose* uncommitted work that is. An agent choosing a row at session-start --
+exactly the workflow B5 prescribes -- would select another agent's in-flight
+artifact with nothing but a dirty marker to warn it. I hit intent collisions
+twice today on this tree.
+
+`_intent/` installs from `modules/team-gated/`, so this is conditional like
+[E1]. **Required satisfier.** Surface active intent claims in the row when the
+module is installed, and state in B1 that the board omits them when it is not.
+Without this, the board's "who is next" is systematically wrong in precisely the
+multi-agent case that makes the board worth building.
+
+### [E4] LOW -- define the byte-identical twin's behavior in its template location
+
+`tools/_lifecycle_metrics/extract.py` and
+`templates/modules/default-on/_lifecycle_metrics/extract.py` are byte-identical
+(`cmp`, verified). Under R5''s "derive the sibling `tools/lifecycle_planner.py`
+path from their own resolved locations," the template copy resolves to
+`templates/modules/default-on/lifecycle_planner.py`, which does not exist.
+
+Fail-closed refusal is the correct outcome and R5' implies it. Say it
+explicitly and pin it with a test -- because the natural "fix" when someone
+later executes the template copy and sees a refusal is to add a `sys.path`
+fallback, reintroducing exactly what [D1] removed.
+
+### Not a finding against this proposal, but live now
+
+`scan` reports **4 of 13 artifacts with structural violations**, all one class:
+a `## Decision` byline of `Maintainer` that is not a configured human identity
+in `dev/.cairn/agent-identities.json`. The board would render all four
+`validity: invalid` on its first run -- which is B1 working as designed -- but
+the underlying configuration gap exists today, independent of this proposal, and
+is worth closing on its own.
+
+### Coverage and recommendation
+
+**Covered**, by execution at `57f385c`: the existing `scan` output and line
+count (establishing that the board is additive); `cmp` byte-identity of the
+metrics twins and the non-existence of
+`templates/modules/default-on/lifecycle_planner.py`; the `content_scan`
+character-class inventory at `:212`, `:219`, `:227` and its team-gated install
+row; the `_intent/` team-gated install rows; re-measurement of every B6 figure;
+the four live conformance violations. I read [D1]--[D3]'s replacements against
+my round-2 satisfiers.
+
+**Not covered / low confidence.** No implementation exists, so B1--B4's row
+contract, JSON schema, filters, `--explain`, injection handling, and bounded-Git
+behavior are unexercised -- I assessed the specification, not a parser. I did
+not re-read R0--R11 beyond the two replacements, per the narrow-closure framing.
+I did not evaluate whether the nine board columns are the *right* nine, only
+that they are well-defined and that their authority boundaries are stated. I did
+not measure whether the board actually reduces reading, which is B6's own open
+question and correctly left to the plan. One agent type, one host.
+
+**Second-round recommendation: one short closure read on [E1] and [E3] only.**
+Both change what the board *contains* rather than how it is built, so they are
+contract questions a plan cannot settle. [E2] and [E4] are a pinned commit and a
+sentence plus a test. Do not reopen the state model, the loader design, or
+B0/B3/B5, which are in good shape.
