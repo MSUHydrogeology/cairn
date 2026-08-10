@@ -3078,12 +3078,29 @@ dedicated detached worktree at the tested commit:
   engine against the current one; the fence self-cleared at `237eb7a` and
   `bootstrap/REANCHOR_RUNBOOK.md` was never opened and its signing phase never
   entered.
-* **`bootstrap/security_check.py`** (the release-only ceremony) runs the whole
-  suite inside itself and exceeded this session's single-command budget; the
-  Bandit substance it gates was measured directly instead (both rows above),
-  and `pytest bootstrap/tests/test_security_lint.py` -- the gate's own named
-  trigger -- is green inside the full-suite run. Named as an omission, not
-  claimed.
+* **`bootstrap/security_check.py`** (the release-only ceremony) **was run to
+  completion in the clean worktree and FAILS CLOSED, on the fenced pair.**
+  Recorded with its exact output because "not run" would have been the weaker
+  and less useful statement: it materializes its own checkout, runs the
+  release-mode suite there, and stops --
+
+  ```
+  AST attestation FAILED — 6 non-pure-motion symbol(s):
+  FAILED bootstrap/tests/test_ast_attest.py::test_committed_baseline_accounted_for_across_the_engine_package
+  FAILED bootstrap/tests/test_ast_attest.py::test_ast_gate_passes_over_the_full_scaffold_module_set
+  2 failed, 2847 passed, 1 skipped in 458.30s
+  security_check: the release-mode suite exited 1 -- fail closed.
+  security_check: phase release-mode suite did not pass.
+  ```
+
+  So it never reaches its Bandit phase, and **no `PASS` line exists at this
+  commit** -- correctly, since the AST baseline is un-re-anchored. It will pass
+  only after the Maintainer's Fence #2 ceremony. The Bandit substance it gates
+  was therefore measured directly instead (both rows above: 22 LOW / 0 MEDIUM+
+  over the engine package, unchanged from the `e71abd9` record, so C1 added no
+  finding; 2 LOW / 0 MEDIUM+ over the dispatcher), and
+  `pytest bootstrap/tests/test_security_lint.py` -- the gate's own named
+  trigger -- is green inside the full-suite run.
 
 **AST delta -- Fence #2.** Derived with `_ast_attest`'s own `_merge_current` /
 `_classify` over `bootstrap/_scaffold/*.py` (never a reimplementation), against
@@ -3269,8 +3286,11 @@ the installed `AGENTS.md` should contain.
 
 **Known omissions.**
 
-* **`bootstrap/security_check.py` was not run end-to-end** (above). The Bandit
-  substance was measured directly and its named trigger test is green.
+* **`bootstrap/security_check.py` cannot pass at this commit** -- it fails
+  closed on the fenced AST pair (see *Non-pass disposition*), so the release
+  ceremony is gated behind the Maintainer's Fence #2, not behind anything this
+  pass can do. Its Bandit phase is therefore **unreached**, and the Bandit
+  substance was measured directly instead.
 * **The two AST-attest failures are unresolved by design** (Fence #2), as is
   the pre-existing four-symbol part of the delta this pass does not own.
 * **Cairn's own lockfile does not record `dev/modules/security-verification.md`.**
