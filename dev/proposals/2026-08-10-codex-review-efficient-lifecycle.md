@@ -4,7 +4,7 @@
 **Author**: Codex (Strategy)
 **Model**: GPT-5 (Codex)
 **Date opened**: 2026-08-10
-**Status**: proposed
+**Status**: revised
 **Touches**: `doctrine/proposals.md`, `doctrine/plans.md`,
 `doctrine/dual-review.md`, `doctrine/lifecycle.md`,
 `dev/proposals/_template.md`, `dev/plans/_template.md`, their
@@ -592,3 +592,285 @@ The proposal's core architectural ideas are sound and preserve Cairn's core tene
 **Second-round recommendation**: **RECOMMENDED FOR REVISION / ACCEPTANCE WITH EDITS**.
 The proposal should be revised to incorporate [R1] (time-boxed pilot), [R2] (withdrawal ledger), and [R3] (code review non-expansion attestation) prior to Maintainer Decision.
 
+## Response -- Codex (Strategy) -- 2026-08-10
+
+The advisory read and declared External review converge on the same three
+material corrections. I accept all of them. I also accept [R4] and the
+dependency/grammar notes. The complete operative contract follows this
+response; earlier proposal sections remain the reasoning record.
+
+| Finding | Disposition | Contract change |
+|---|---|---|
+| F1 / R1 -- an eligible pilot population may never reach six | **Accept** | The pilot ends after six eligible plans or 60 days from its enabling commit, whichever comes first. An undersized or empty sample is a result, not permission to promote. |
+| F2 / R2 -- a current contract can silently drop an earlier commitment | **Accept** | Every complete revision carries a `Withdrawn / superseded commitments` section, including an explicit `None`. |
+| F3 / R3 -- the code-review backstop was named but not exercised | **Accept** | Code review of an inherited plan must attest, against named commits and changed paths, that no undeclared contract dimension was added. |
+| R4 -- lifecycle helpers must be deterministic and dependency-free | **Accept** | Both commands are offline, standard-library-only extractors with no LLM, API, or network path. |
+| Advisory dependency notes | **Accept** | Implementation waits for the exact review-record grammar dependency to clear code review. Code-review grammar is designed with, not independently from, that predicate. |
+
+The Maintainer also asked whether this method change should affect the shipped
+template doctrine. Yes. Cairn's `doctrine/` files are the published canonical
+method, but adopters do not receive a copied `doctrine/` directory. They receive
+its operational expression through `templates/core/` and the installed
+lifecycle tools. A promoted method change that updates only Cairn's self-hosted
+files would therefore be incomplete. Revision 1 makes cross-layer promotion a
+single acceptance condition.
+
+## Revision 1 -- complete current contract
+
+This section supersedes the operative requirements in the opening Proposal,
+Pilot, Evidence, and Signals sections. The opening Context, Rationale, and
+Alternatives remain explanatory history.
+
+### Objective and retained boundaries
+
+Cairn will reduce repeated reading and repeated verification in the proposal
+to plan to implementation to archive sequence while retaining:
+
+* independent proposal review for proposal-worthy work;
+* Maintainer Decision authority;
+* independent code review;
+* a distinct plan review for high-assurance work;
+* the Boundary A/B/C evidence model from
+  `verification-evidence-boundaries`; and
+* every release, trust-root, or other named ceremony in its accepted form.
+
+This contract does not optimize ceremony test suites, replace authored records
+with generated summaries, infer review quality from heading presence, or make
+an author's Response count as independent review.
+
+### Assurance paths
+
+A proposal-worthy change declares `standard` or `high-assurance`.
+
+`high-assurance` is mandatory when the change affects:
+
+* a security trust boundary, credential, executable path, untrusted-input
+  parser, network boundary, or protected surface named in `AGENTS.md`;
+* a scientific assumption, transformation, unit/CRS convention, numerical
+  method, or data-selection rule that can change reported results;
+* a destructive migration, data-loss risk, public compatibility break, or
+  release/trust ceremony;
+* governing doctrine or lifecycle enforcement; or
+* a concern escalated by a reviewer or the Maintainer.
+
+Uncertainty resolves to `high-assurance`. An author may escalate freely. A
+downgrade requires a recorded Maintainer Decision. High-assurance work always
+receives distinct proposal, plan, and code reviews plus any named ceremony
+review. Standard work receives proposal and code reviews; its plan review may
+be inherited only under the contract below.
+
+Review tiers remain non-cumulative. A qualifying External review can satisfy an
+External floor without an automatic preceding Internal review. A further round
+occurs when the declared contract requires it or a reviewer recommends it and
+the Maintainer accepts that recommendation.
+
+### Bounded current contracts
+
+Every proposal, plan, and code review records:
+
+```text
+Reviewed commit: <full commit id>
+Target: <complete current-contract section, operative plan sections, or code range>
+Prior findings: <ids being closed, or none>
+Assurance path: <standard | high-assurance>
+```
+
+This basis is a default navigation target, not a prohibition on examining
+history. Reviewers inspect earlier material whenever a current claim depends
+on it and remain free to raise new correctness, security, scientific-validity,
+or scope findings.
+
+After a proposal review Response, the author appends one complete current
+contract containing scope, exclusions, invariants, failure dispositions,
+public paths, evidence, omissions, deferred work, and the heading below:
+
+```text
+### Withdrawn / superseded commitments
+* <earlier commitment, replacement or withdrawal, and reason>
+```
+
+The heading is mandatory even when its value is `None`. A reviewer compares
+the complete revision to the previously reviewed contract and verifies this
+ledger. The newest reviewed complete revision is operative for Decision and
+implementation; all earlier sections remain immutable history.
+
+Before implementation, plan-review corrections are folded into the plan's
+mutable operative scope, chunk, acceptance, and verification cells. Its
+appended Response is a finding-disposition table that points to those cells and
+does not reproduce replacement cells in an amendment ledger. Once execution of
+a chunk begins, existing append-only sequence-revision rules continue to apply.
+
+### Standard-path plan-readiness inheritance
+
+A proposal reviewer may record:
+
+```text
+Plan readiness: READY | DISTINCT REVIEW REQUIRED
+Basis: <full reviewed proposal commit and complete-current-contract heading>
+```
+
+`READY` means that exact contract fixes scope and exclusions; invariants;
+failure dispositions; public paths; omissions; test homes and standing gates;
+documentation and release-note surfaces; implementation areas and sequence;
+and any Maintainer fences or ceremonies. Only standard work may receive it.
+
+The Maintainer's Decision binds the same proposal commit without changing its
+contract. A derived plan may then declare:
+
+```text
+Plan review: inherited(<review commit>; proposal=<accepted commit>)
+```
+
+The plan may translate that contract into file rows, commit chunks, and
+progress markers. A new scope item, invariant, public path, failure
+disposition, trust boundary, or ceremony invalidates inheritance. The metadata
+becomes `required(<tier>)`, and implementation stops until a distinct plan
+review lands. High-assurance plans and standard proposals marked `DISTINCT
+REVIEW REQUIRED` cannot inherit.
+
+For an inherited plan, code review must include this exercised backstop:
+
+```text
+Contract non-expansion: VERIFIED | NOT VERIFIED
+Basis: proposal=<accepted full commit>; plan=<reviewed full commit>;
+       changed-paths=<reviewed range or manifest>
+```
+
+`VERIFIED` attests that the plan and implementation introduced no undeclared
+scope item, invariant, public path, failure disposition, trust boundary, or
+ceremony. `NOT VERIFIED` is blocking. This remains a semantic human/agent
+review; the parser validates the record and bindings but does not pretend to
+prove prose equivalence.
+
+### Stable evidence and closeout
+
+Boundary A maps focused checks and standing gates during implementation.
+Boundary B runs broad integration once on the final stable executable/test
+bytes. Boundary C validates that exact record and performs independent targeted
+falsification. A correction replaces Boundary B only after executable/test
+bytes settle; broad execution repeats only under Boundary C's existing
+triggers. Release and trust ceremonies remain exhaustive under their own
+contracts.
+
+`python tools/lifecycle.py closeout <plan> --dry-run` reports plan/proposal
+state, accepted commit and assurance path, plan-review satisfaction, Boundary B
+binding, latest code-review result, unresolved findings, unhomed follow-ups,
+and the exact archive/board paths. It never edits, moves, commits, runs tests,
+or decides whether evidence is competent.
+
+The archive record contains implementing commits, stable verification record,
+code-review verdict, residual dispositions, and Decision-to-implementation
+loop fidelity. It points to existing records rather than retelling them. A
+clean closeout plus SHIP code review requires no additional review or broad
+suite run before archive.
+
+### Deterministic tool contract and dependency order
+
+`review-brief` and `closeout --dry-run` are deterministic, offline,
+standard-library-only extractors. They have no LLM, API, telemetry, or network
+dependency. Their output derives only from repository bytes, git metadata, and
+explicit command arguments. Tests pin ordering, escaping, malformed-input
+failure, read-only behavior, and identical output for identical inputs.
+
+`review-brief` reports the assurance path and tier, complete-current-contract
+span, last reviewed commit, unresolved finding ids, paths changed since that
+commit, and any Boundary B summary. It does not summarize prose, choose
+evidence, or grant authority.
+
+Implementation is sequenced behind the accepted exact review-record grammar
+work and its code review. This plan must coordinate the proposal, plan, and
+code-review section predicates so a code review carrying findings cannot pass
+merely because an existing gate filters only plan-review headings.
+
+### Pilot, deadline, and promotion
+
+The capability first runs as a Cairn-local pilot. Existing and shipped default
+templates continue to require a distinct plan review during the pilot; they do
+not teach plan-readiness inheritance as the default workflow. Cairn explicitly
+marks each eligible pilot artifact. High-assurance work remains ineligible and
+does not fill the sample.
+
+The pilot closes at the earlier of:
+
+* six eligible standard plans; or
+* 60 calendar days after the pilot-enabling commit.
+
+The report records eligible and ineligible plans, review-target bytes and
+diffs, transition/review counts, broad-suite executions and elapsed time,
+Maintainer prompts, findings by boundary, and code-review findings that a
+distinct plan review reasonably should have caught. It reports an undersized or
+empty sample explicitly as evidence about trigger breadth or Cairn's work mix.
+Absence of six plans never implies success.
+
+The report recommends `promote`, `revise`, or `retire`. A high-severity escaped
+finding attributable to inheritance pauses the pilot immediately; two
+lower-severity examples do the same. Promotion requires measurable reduction
+in review input, at least one removed transition on inherited plans, no
+unresolved pause condition, and a Maintainer Decision. At the deadline, the
+Maintainer may revise, retire, or explicitly authorize a dated extension; an
+empty or inconclusive sample cannot be promoted.
+
+### Canonical and shipped distribution contract
+
+Promotion is incomplete unless all three layers change together:
+
+| Layer | Required surfaces |
+|---|---|
+| Published canonical method | `doctrine/proposals.md`, `doctrine/plans.md`, `doctrine/dual-review.md`, `doctrine/lifecycle.md` |
+| Cairn self-hosted operation | `AGENTS.md`, `dev/agent_collaboration.md`, `dev/collaboration_agreement.md`, `dev/proposals/_template.md`, `dev/plans/_template.md` as their respective routing rules require |
+| Shipped adopter operation | `templates/core/AGENTS.md`, `templates/core/dev/agent_collaboration.md`, `templates/core/dev/collaboration_agreement.md`, `templates/core/dev/proposals/_template.md`, `templates/core/dev/plans/_template.md`, and the installed lifecycle-tool sources under `templates/skills/_lib/` |
+
+Adopters continue to resolve `doctrine/` citations to Cairn's published
+methodology; Cairn does not start copying its doctrine directory into adopter
+trees. The shipped templates must nevertheless carry every operational rule,
+field, stop condition, and command an adopter needs to follow that method.
+
+Exact self-host/template blocks use parity tests where the content is intended
+to match verbatim. Layer-specific prose uses semantic contract tests that pin
+the same assurance triggers, inheritance restrictions, invalidation dimensions,
+and code-review attestation. Tool-source byte identity follows the scaffold
+manifest: `tools/lifecycle_planner.py` mirrors
+`templates/skills/_lib/lifecycle_planner.py`; lifecycle CLI behavior is shipped
+from `templates/skills/_lib/lifecycle.py` as `tools/lifecycle.py`.
+
+After promotion, `docs/workflow-role.md`, `docs/getting-started.md`,
+`docs/tool-usage.md`, and `CHANGELOG.md` explain the adopter-visible workflow.
+The implementation plan must assign these promotion surfaces to an explicit
+post-pilot chunk rather than treating them as optional follow-up.
+
+### Verification and acceptance
+
+Tests must cover both assurance paths, exact full-commit bindings, changed
+accepted commits, forbidden high-assurance inheritance, every named expansion
+dimension, the mandatory non-expansion attestation, withdrawal-ledger parsing,
+malformed review bases, unresolved findings, stale Boundary B records,
+deterministic CLI output, output escaping, and mutation sentinels. One standard
+READY fixture and one high-assurance refusal fixture run end to end.
+
+Promotion tests additionally prove the canonical/self-host/shipped semantic
+contract and intended byte-identical blocks. The canonical full suite runs once
+at the final stable implementation boundary. Claim, link, lifecycle,
+neutrality, and documentation checks run against their changed surfaces.
+
+### Known residuals and failure signals
+
+The trusted-contributor residual remains: no parser proves semantic identity
+between proposal prose and a plan or implementation. Exact bindings, declared
+dimension checks, and the mandatory independent code-review attestation narrow
+and exercise that risk; they do not eliminate it.
+
+Pause or retire the mechanism if high-assurance work inherits, a binding can be
+rewritten without refusal, reviewers still need full-history reconstruction,
+archive tooling mutates or grants authority, standard-path savings merely move
+decisions to the Maintainer, or measured review input does not materially fall.
+
+### Withdrawn / superseded commitments
+
+* The open-ended "after six eligible plans" pilot is superseded by the earlier
+  of six eligible plans or 60 days, with no promotion from absent evidence.
+* The earlier general promise to update doctrine and template twins is
+  superseded by the explicit three-layer promotion matrix and parity contract.
+* The earlier implicit reliance on code review as the inheritance backstop is
+  superseded by the mandatory, bound non-expansion attestation.
+* No other scope, assurance trigger, authority boundary, or ceremony
+  commitment is withdrawn.
