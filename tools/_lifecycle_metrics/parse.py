@@ -13,15 +13,22 @@ _DATE_RE = re.compile(r'\d{4}-\d{2}-\d{2}')
 _FINDING_BULLET_RE = re.compile(r'^\s*\*\s+\*\*\[')
 # The bracket interior of a finding heading, for the severity scan.
 _BRACKET_INTERIOR_RE = re.compile(r'\*\*\[([^\]]*)\]')
-# A ``### ... code review`` / ``### ... plan review`` review-round
-# subsection heading.  An optional single reviewer-name token before
+# A ``## ``/``### ... code review`` / ``... plan review`` review-round
+# heading.  BOTH levels count: ``dev/plans/_template.md`` prescribes dated
+# **H2** passes (``## Plan review -- <reviewer> -- YYYY-MM-DD``, with "There is
+# no ``## Plan review`` container heading") and defines no H3 plan-review form,
+# while the ``## Code review`` container admits an optional ``### Code review --
+# <reviewer> -- DATE`` sub-heading.  An H3-only pattern therefore could not
+# count a template-conformant plan review at all.  Matches the lifecycle
+# planner's ``#{2,3}`` predicate, which is the same property measured by the
+# same repository.  An optional single reviewer-name token before
 # the phrase covers older headings (``### <reviewer> code review --
 # DATE``); two tokens before the phrase (``### Response to code
 # review``) is a response, not a round, and is correctly excluded.  A trailing ISO
 # date is still required at the call site, so chunk labels and the
 # literal ``YYYY-MM-DD`` placeholder do not count.
-_CODE_REVIEW_HEADING_RE = re.compile(r'### (?:[a-z]+ )?code review\b', re.I)
-_PLAN_REVIEW_HEADING_RE = re.compile(r'### (?:[a-z]+ )?plan review\b', re.I)
+_CODE_REVIEW_HEADING_RE = re.compile(r'#{2,3} (?:[a-z]+ )?code review\b', re.I)
+_PLAN_REVIEW_HEADING_RE = re.compile(r'#{2,3} (?:[a-z]+ )?plan review\b', re.I)
 
 
 def _header_field(text: str, name: str) -> str:
