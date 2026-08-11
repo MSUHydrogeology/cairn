@@ -471,3 +471,79 @@ be exempt from the judgement it asks of everyone else. If the Maintainer thinks
 this has become too large, the answer under Part 5 is an explicit,
 Maintainer-decided reduction with a grouped remainder record — not a quiet
 trim.
+
+## Revised proposal (Round 3) -- Claude -- 2026-08-11
+
+**Scope delta: expanded** (measured against the scope as opened; less expanded
+than Round 2).
+
+I nearly declared this `reduced`, which would have been wrong, and the
+Maintainer caught it. The correction exposes a real hole in the grammar this
+proposal introduces, so it is fixed here rather than noted.
+
+### 10. The declaration needs a stated baseline
+
+`Scope delta: unchanged | expanded | reduced` is meaningless without saying
+*against what*. Round 2 opened with parts 1–4; review proposed 5–9; declining
+one of those additions leaves parts 1–4 untouched. Measured against Round 2
+that reads as a reduction. Measured against what was opened, nothing was
+removed at all.
+
+The baseline is therefore fixed:
+
+* **Pre-Decision** — measure against the scope **as opened**.
+* **Post-Decision** — measure against the scope **as accepted**, which is the
+  floor Part 5 establishes.
+
+And the distinction that follows:
+
+> **Declining a review's proposed expansion is not a reduction.** It never
+> entered the authorized scope, so nothing was lost and no remainder record is
+> owed. It belongs in *Alternatives considered*, with the reason. A reduction
+> is the removal of work that was **in** the baseline.
+
+Without this, the doctrine would have pushed every author toward accepting
+every expansion a reviewer suggested, since declining one would have read as a
+cut needing justification and a remainder record. That is the opposite of the
+calibration intended, and it would have made review's recommendations
+effectively binding.
+
+### 7 (revised). The declaration ships as a template field, not a planner gate
+
+Part 7 keeps the `**Scope delta**` declaration and its `**Removed scope**` /
+`**Disposition/home**` requirements, in the scaffolded Response and plan-review
+shapes — where the author meets it while typing.
+
+**The planner gate is declined**, and the reason is a criterion worth stating
+generally, because the next review to recommend a gate will meet the same
+question:
+
+> **Mechanize when the failure is silent, the check is substantive rather than
+> formal, and the consequence is expensive or hard to reverse.** Otherwise
+> state the norm and accept the occasional miss.
+
+The scope-delta gate fails the middle test by construction. It can verify a
+declaration exists and is well-formed; it cannot verify it is *true*, because
+the property is semantic. So it catches forgetting and not evading — and it
+makes evading easier, by giving a quiet cut a green check to sit behind. That
+is the clean-pass trap, manufactured on the one question that needed judgment.
+
+The cost nobody counts is attention. A formal gate reallocates it: reviewers
+confirm the declaration is present and stop, and its passing becomes a proxy
+for the scope being right.
+
+A repository that gates every norm has concluded its own written instructions
+do not work — an odd position for a methodology built on written instructions.
+An agent occasionally failing to follow one is an acceptable failure mode for a
+norm of this weight.
+
+**Revival condition**, recorded because this *is* a declined expansion and the
+reason should survive: if authors omit the declaration in practice, the gate
+becomes warranted — omission is exactly the failure a formal check catches.
+
+### What Round 3 changes, in full
+
+* Parts 1–6 and 8–9: unchanged.
+* Part 7: declaration retained; planner gate, its twin, mutation tests, and the
+  associated lockfile finalization declined.
+* Part 10: new — the baseline rule and the declined-expansion distinction.
