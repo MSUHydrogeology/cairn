@@ -263,7 +263,37 @@ reproduce in isolation. Neither is this plan's. A failure inside
        **Findings**: <none|raised>
 -->
 
+## Plan review -- Antigravity (External) -- 2026-08-11
+
+**Tier**: External
+**Obligation**: External plan-review pass
+**Reviewed commit**: `797585d49af430f2cae3e767201587947b9c4ca2`
+**Reviewed plan blob**: `7e03cfbbdbaf81649c2a76380e4c7d86e9d7e7f9`
+**Assurance path**: high-assurance
+**Findings**: none
+**Verdict: SHIP.** The executable plan faithfully translates accepted Revision 1 of `2026-08-11-claude-archive-precondition-substance` into a clean six-chunk sequence (A–F) with unambiguous maintainer stops (M1–M3), exact twin sync discipline, complete gate inventory coverage, and rigorous verification boundaries. This pass clears the **External** plan-review obligation under **M1**.
+
+### Steelman & Evaluation
+
+1. **Chunk A & R1-1 Structural Grammar**:
+   - The plan directly targets the measured false-pass fixture (`**Dispositions:** \n Loop-fidelity sign-off is owed at archive.`), demonstrating why direct boolean wiring was rejected.
+   - Accurately captures the `none` attestation, valid disposition keywords, commit ID + governing section fidelity attestation, and mid-line legacy block support (`adopter-entry-doc-refresh.md:173`).
+   - M2 explicitly forbids widening a matcher (unanchored matching) to make a gate green.
+
+2. **Chunk C Gate Inventory**:
+   - Sweeps all 9 `gates.append((True` sites in both `--to` lists (`:1320`, `:1326`, `:1332`, `:1337`, `:1362`, `:1366`, `:1370`, `:1379`, `:1382`), classifying each as operator-instructional or predicate-testable, with test C2 guarding against future un-inventoried additions.
+
+3. **Chunk B, D, E & F Alignment**:
+   - Narrows predicate names and messages to marker presence.
+   - Keeps archive scanning opt-in (`--include-archive`) without default-red scan noise.
+   - Explicitly updates `dev/plans/_template.md`, `templates/core/dev/plans/_template.md` (noting they are not byte-identical), and doctrine for the superseded `deferral-discipline` rule.
+   - Mandates that code review range at Boundary B/C must include `da3e296`.
+
+### Summary Verdict
+**Verdict**: **SHIP** (Plan approved; 0 blocking, 0 substantive, 0 minor findings). Implementation may proceed.
+
 ## Code review
+
 
 *Filled in after implementation commits land.* One independent pass, reviewer
 not the implementing agent, over a range that includes `da3e296`.
