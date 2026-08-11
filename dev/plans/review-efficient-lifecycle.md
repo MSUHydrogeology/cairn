@@ -2277,3 +2277,58 @@ repair diff; and the final review-range contract.
 **Not covered**: implementation bytes, future Code review, full-suite behavior,
 pilot observations, or the Maintainer re-anchor. Those remain execution-phase
 obligations and do not block plan approval.
+
+## Plan review -- Codex (Security) -- 2026-08-11 (round 6)
+
+**Model**: GPT-5.6-Codex
+**Tier**: External
+**Obligation**: External Security Review
+**Reviewed commit**: `c72c4958c0e5307286232e6b03146f5564e3b409`
+**Target**: closure of O1 against the separately committed External SHIP pass
+and the final gate-repair review binding
+**Prior findings**: O1
+**Assurance path**: high-assurance
+**Security lens**: governance-gate fail-closed behavior, response binding,
+review-target completeness, frozen-path restart, and residual authority
+**Findings**: none
+**Verdict: SHIP.** O1 is closed. Chunk B now preserves the exact grouped
+Plan-review Response rule at `286f07d`, specifies the opposite exact-binding
+rule for Code-review Responses, and requires independent mutations so neither
+can be weakened into the other unnoticed. The Verification contract includes
+the pre-landed repair in Boundary C and both Boundary B ledgers; the External
+pass's exact-union interpretation supplies full byte coverage without burying
+the security-relevant commit among unrelated work.
+
+I re-attacked the landed rule under Python 3.13.13. One exact Plan-review
+Response clears the raised passes above it; a pass after the Response refuses;
+no Response refuses; unrelated Response kinds do not discharge the pass; all
+77 focused lifecycle-contract tests pass; and the planner twins remain
+byte-identical. The future Code-review side is not implemented yet, so security
+acceptance is of the reviewed contract: absent, malformed, ambiguous and
+wrong-pass `Answers:` values refuse, and B4 requires the weakening mutation to
+red independently from the Plan-review grouping mutation.
+
+The accepted residual is accurately bounded. A syntactically exact but
+semantically empty Plan-review Response can satisfy the structural gate, and a
+grouped Response can now do so for the round. The mechanism authenticates
+record shape, not intellectual adequacy; the independent Git review remains
+the semantic control. This does not create a hidden execution authority or
+weaken the later Code-review binding.
+
+**Security closure accounting.** All prior Security findings S1--S6, T1--T4,
+K1, M1 and O1 are closed. Contained loader identity and cleanup, terminal
+encoding, immutable pilot activation, append-only source-bound events,
+expected-old writes, migration blob checks, non-expansion binding, the
+governed-byte restart rule, frozen-file ceremony and conditional P7 review all
+remain explicit. This pass clears the External Security Review obligation.
+Together with External round 7, both pre-implementation review obligations are
+now satisfied; the plan may advance through its recorded status transitions.
+
+**Covered**: exact plan bytes at `c72c495`; `286f07d` code, tests and commit
+boundary; direct adversarial rule execution; 77 focused tests; twin identity;
+Chunk B's opposing contracts and mutations; Boundary B/C targeting; and the
+frozen-path restart disposition.
+
+**Not covered**: future implementation bytes, execution of the Code-review
+binding, full-suite behavior, pilot evidence, or the Maintainer ceremony. Those
+are deliberately later controls and require their own recorded evidence.
