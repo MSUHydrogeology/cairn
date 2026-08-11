@@ -349,3 +349,40 @@ figure measured on other plans today and names no file this plan touched.
 * **The metrics predicate is not converged.**
   `_lifecycle_metrics/parse.py` still carries a second, weaker definition,
   routed as measured follow-up per [E3]/[I1].
+
+## Correction to D2's framing -- Claude -- 2026-08-11
+
+**"Drainable backlog" was the wrong characterization, and R1-1 is why.** D2 and
+`dev/PLANNING.md` **[SP8-9]** describe the 61-of-91 `--include-archive`
+findings as a *dated, drainable backlog*. Nothing drains them: R1-1 forbids
+retrofitting archived records, so the only action that would clear the count is
+one the contract rules out. Calling it a backlog implies a debt someone will
+pay; nobody will, and nobody should.
+
+**What the archive scan is actually for.** It is not an audit of the records —
+it is a **regression corpus for the predicates**. Every finding this plan acted
+on came from running a predicate across archived history, and every one was a
+fact about the *checker*:
+
+| finding | what it corrected |
+|---|---|
+| 3 archived plans with no code review | the false-pass gate itself |
+| old-vs-new parser delta of 6, not 12 | a bad measuring oracle |
+| the mid-line block at `adopter-entry-doc-refresh.md:173` | a false-fail |
+| 5 real sign-offs rejected | reading only the first lasting-truth section |
+| 2 real records rejected | fenced-block masking, reverted |
+
+None produced an edit to an archived file. All produced a correction to code.
+
+**So the count is a measurement, not a debt.** It is worth re-deriving whenever
+a predicate changes — a large movement means the predicate moved, which is
+exactly what you want to know before shipping it — and it is worth nothing as a
+compliance figure.
+
+**And its trigger is a person remembering.** Nothing invokes
+`--include-archive`: the only reference outside the planner is
+`bootstrap/tests/test_lifecycle_contract.py:157`, which asserts the subcommand
+is read-only, not that anyone runs it. `AGENTS.md` requires a check whose only
+trigger is a human to be described that way, and D1's docstring does not. That
+is a real gap this plan leaves open; it is named here rather than left to be
+rediscovered.

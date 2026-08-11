@@ -1399,8 +1399,11 @@ rather than left pointing at a section that was never written.)*
   carried forward, having been measured 27 -> 23 -> 3 before it was right.
   Strict archive audit, `as_of` 2026-08-11 under the new predicates:
   **61 of 91** artifacts flagged by `scan --include-archive` (was 53 of 88
-  under the old ones) -- a dated, drainable backlog, deliberately **not**
-  suppressed into the default gate, which stays live-only. The identity-
+  under the old ones) -- a dated **measurement of the predicates**, not a
+  drainable backlog: R1-1 forbids retrofitting archived records, so
+  nothing clears that count and it is not a debt. Re-derive it whenever a
+  predicate changes. Deliberately **not** folded into the default gate,
+  which stays live-only, and nothing currently invokes the archive mode. The identity-
   normalizer collision that makes a valid same-agent-type Internal review read
   as author-review is routed to **[REC]** alongside `code-review-blindness`;
   this plan does not change identity policy. Proposal accepted at
