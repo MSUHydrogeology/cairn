@@ -3,7 +3,7 @@
 **Author**: Claude (Implementation)
 **Model**: Claude Opus 5 (`claude-opus-5`)
 **Date opened**: 2026-08-11
-**Status**: reviewed
+**Status**: revised
 **Touches**: `tools/lifecycle_planner.py` and its byte-identical twin
 `templates/skills/_lib/lifecycle_planner.py`; `bootstrap/tests/test_lifecycle_contract.py`;
 `dev/plans/_template.md`; potentially `doctrine/lifecycle-contract.md` and
@@ -647,3 +647,171 @@ not change identity policy to make its own record conform.
 stands, and the External round above is a *proposal* review, not that plan
 review. The eventual plan still needs its own External round, and per [E4] that
 round's range includes `da3e296`.
+
+## Revised proposal -- Revision 1 (binding delta)
+
+This section is the current contract. It replaces the three open questions in
+`## Proposal` and the corresponding terms in `## Context` and
+`## Evidence / verification plan`. Every original term not contradicted here
+remains operative. The questions are now **decisions**; a plan implements this
+section, not the questions.
+
+**One thing this revision refuses to do.** It does not make this proposal's own
+record conform. The planner still reports a structural violation on the Internal
+review at line 210, and R1-6 routes that defect elsewhere rather than deleting
+or relabelling a valid review to silence a checker. A proposal about gates that
+lie must not buy its own green.
+
+### R1-1. Supersede `deferral-discipline`'s unconditional gate, by name
+
+The two literal `True` values in the `--to archived` gate list are replaced —
+**not** by the existing `has_followups_migrated` / `has_fidelity_signoff`
+booleans, which is what the original Question 1 proposed and which would repeat
+the defect. Reproduced on one fixture at the current tree: a `Lasting-truth`
+section containing only
+
+```text
+**Dispositions:**
+
+Loop-fidelity sign-off is owed at archive.
+```
+
+sets **`has_followups_migrated=True` and `has_fidelity_signoff=True`** — an
+empty label and a sentence promising the work is owed. Wiring those flags would
+report "every deferred follow-up carries a recorded disposition" and "the
+sign-off names the implementing commit" with neither fact present.
+
+**This supersedes an accepted decision and says so.** `deferral-discipline`'s
+plan states *"Stay unconditional -- do not promote `gates.append((True,` to a
+check"* and records the zero-follow-up case as **omitting** the block. That
+choice is overturned for **future** archives: an attestation is required every
+time, with an explicit `none` form. Archived records are not retrofitted.
+
+The binding grammar:
+
+* **Dispositions gate** — satisfied by an explicit `none` attestation **or** at
+  least one disposition entry drawn from the accepted vocabulary (`accept`,
+  `guard (<path>::<node>)`, `wontfix`, `defer`). Legacy
+  `Follow-ups migrated to:` records remain accepted, **including the mid-line
+  form** — `adopter-entry-doc-refresh.md:173` carries a real block as
+  `Archived 2026-06-12. **Follow-ups migrated to:** …`, which the `^`-anchored
+  parser still rejects. That is the one live false-fail the opening commit did
+  not close, and closing it is part of this contract.
+* **Fidelity gate** — an attestation scoped to the lasting-truth section
+  carrying **at least one implementing commit id** and **an identified governing
+  section**.
+* **Both must refuse**: empty labels, the shipped template's own instruction
+  text, "owed at archive", and prose merely *discussing* either phrase.
+
+Doctrine and template surfaces that carry the prior contract are updated in the
+same change, because this alters an accepted rule rather than its enforcement.
+
+### R1-2. The archive stays out of the default scan
+
+Question 2 was framed around adding a capability that has shipped since
+`7519c5d`. `scan --include-archive` exists; the default is live-only. The
+decision:
+
+* **Preserve the live-only default.** At the opening tree it examines **7** live
+  artifacts (not 6, as `## Context` said) and exits 0.
+* **Preserve `--include-archive` as the explicit strict historical audit**, and
+  document it. Its exit semantics do not silently change.
+* **No suppression baseline.** The 53 retrospective violations it reports across
+  88 artifacts are recorded as **dated backlog evidence**, not built into the
+  routine gate. A default-red scan is the suppression pressure this proposal
+  exists to warn about.
+* New instances are prevented by the corrected **pre-transition** predicates in
+  R1-1, which is where the gate is actually load-bearing.
+* A report-only archive mode, if wanted later, is **a new output contract**
+  specified on its own. This revision does not describe archive traversal as
+  absent, because it is not.
+
+### R1-3. Name the predicate for what it tests
+
+`_has_substantive_code_review` / `has_substantive_code_review` (`:519`, `:771`,
+`:800`, `:1276`, `:1374`) are renamed around an **attributed/dated code-review
+record marker**. Every operator-facing message narrows to that shape — including
+the archive gate's *"a code review has occurred"* and the sibling *"an
+independent '## Review' has occurred"* (`:1331`).
+
+The claim the tool is allowed to make is: *a review section bearing a reviewer
+identity and a date is present*. The assurance that a review **occurred** rests
+where it already rests — `AGENTS.md`'s rule that reviews are attributed and
+self-committed, enforced by Git authorship, not by a text scanner.
+
+That marker grammar becomes **canonical in one governing contract**. A second
+definition already exists (`_lifecycle_metrics/parse.py`, `### (?:[a-z]+ )?code
+review\b`, H3-only; the planner's strictly dominates it — 25 plans where the
+planner finds a review and metrics misses, 0 the reverse). Its convergence is an
+**explicit follow-up with snapshot impact measured first**, not absorbed here. A
+second regex must not quietly become a second definition again.
+
+### R1-4. The opening commit stays inside review coverage
+
+`da3e296` changed both shipped twins and added eight tests before this proposal
+was reviewed. Proposal review is not implementation code review.
+
+The eventual plan's **Boundary B and its independent code-review range include
+`da3e296`** (or its exact changed blobs). The code review **attacks the marker
+parser and house-style compatibility** rather than treating those eight tests as
+settled authority from outside the reviewed range — the [E5] decomposition is
+the argument: the tests were written against an oracle their author got wrong.
+
+### R1-5. Corrections to the record
+
+* **12 → 6.** The old-vs-new Dispositions parser delta over the exact 36
+  archived plans is **6**. The "12" came from an unanchored presence test run
+  anywhere in the file: 6 real, 5 sentences *about* the marker, 1 real block the
+  fix does not reach. **An unanchored presence test was used to measure a
+  presence-test bug** — this proposal's own thesis, committed by its author while
+  writing it. `da3e296`'s commit body carries the wrong figure immutably and is
+  flagged rather than rewritten.
+* **6 → 7** live artifacts in the default scan.
+* **The no-review count is re-derived at implementation time**, not carried
+  forward. It was measured 27 → 23 → 3 before it was right.
+* The three no-marker archived plans stand: `api-web-security-modules`,
+  `security-verification-activation`, `gate-reanchor-preflight`.
+
+### R1-6. The identity defect is routed, not absorbed
+
+`lifecycle_planner next` reports this proposal as structurally violating because
+the Internal review at line 210 *"appears authored by the proposal author"*. The
+identity normalizer collapses two Claude sessions and treats an
+`AGENTS.md`-permitted same-agent-type fresh-session Internal record as forbidden
+author-review.
+
+Routed to the **[REC]** lineage alongside `code-review-blindness`. This proposal
+**does not** change identity policy, does not delete or relabel the Internal
+review, and does not claim structural soundness while the planner reports
+otherwise. It is another instance of R1-3's limit: a tool can inspect a declared
+record shape; it cannot tell whether two same-named sessions are the same
+authoring context.
+
+### R1 verification additions
+
+The implementation plan carries these as named behavioral obligations:
+
+* the two false-pass fixtures above, **as literal test cases** — empty
+  `**Dispositions:**` label, and a promissory "owed at archive" sentence — each
+  refusing under both gates;
+* the mid-line legacy block (`adopter-entry-doc-refresh.md:173` shape) accepted;
+* the shipped `dev/plans/_template.md` placeholder refusing under every gate,
+  because a template that satisfies its own precondition is the original defect;
+* `none` accepted for the Dispositions gate, and a fidelity attestation missing
+  either its commit id or its governing section refusing;
+* every gate in **both** `--to` lists enumerated with the predicate that
+  supplies it, per Internal [I3], so coverage is visible rather than inferred
+  from the five gates this investigation happened to examine;
+* twin byte-identity asserted in the same commit that changes either copy;
+* `--include-archive` exit semantics unchanged, asserted.
+
+### R1 signals the revision is wrong
+
+Stop if the new grammar admits an empty label or promissory text under any
+syntax; if a legacy `Follow-ups migrated to:` record that a human would call a
+real block still refuses; if the shipped template satisfies its own gate; if the
+default scan turns red on historical records; if a message still claims a review
+*occurred*; or if closing the `^`-anchored false-fail requires an unanchored
+match anywhere in the file. In each case retain the current predicate and record
+why — **do not widen a matcher to make a gate green**, which is the failure
+this proposal was opened to end.
