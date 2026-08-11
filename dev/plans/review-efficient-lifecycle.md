@@ -605,7 +605,7 @@ deliverables are confirmed individually.
 
        ## Plan review -- <reviewer> -- YYYY-MM-DD
 
-       **Tier**: <External|External Security Review>
+       **Tier**: <Internal|External>   <-- closed vocabulary, exact match
        **Obligation**: <the exact clause from `Plan review:` this pass discharges>
        **Findings**: <none|raised>
 

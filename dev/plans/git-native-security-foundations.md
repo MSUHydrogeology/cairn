@@ -106,6 +106,24 @@ v1/v2 differential corpus, every fixture, the runbook *text*, and Boundary B.
 | **External** | **CLEARED** — SHIP, findings none, closing E1–E4 | Codex (GPT-5.6-Codex), round 2, `c06275a` |
 | **External Security Review** | **CLEARED** — SHIP, findings none | Antigravity (Gemini 3.1 Pro), `ba44658` |
 
+**One field in that pass was corrected, and the cause was mine.** As landed it
+declared `**Tier**: External Security Review`, which the conformance checker
+rejects: `_TIERS` is the closed pair `("Internal", "External")` matched
+**exactly**, and the security clause belongs on `**Obligation**` — which that
+pass already carried correctly. The reviewer was following an instruction *I*
+wrote into this plan's review-block comment (`**Tier**: <External|External
+Security Review>`), copied from `review-efficient-lifecycle`. The canonical
+template was right all along (`dev/plans/_template.md`, `<Internal|External>`);
+I improvised over it and two plans inherited the error.
+
+Corrected under the Maintainer's explicit instruction (*"Please correct the
+proposal"*), and the correction is **the field vocabulary only** — `Tier:
+External Security Review` → `Tier: External`. Not one word of the review's
+method, ledger, verdict or attribution was touched, and no information was lost:
+`**Obligation**: External Security Review` already recorded the clause. The
+review-block instruction in this plan and in `review-efficient-lifecycle` is
+fixed so the next reviewer is not misled the same way.
+
 Structural independence holds on its own terms: the source proposal was authored
 by Codex, this plan's executable mapping by Claude, and the security pass by a
 third agent type that is neither. No pass reviewed its own author's work.
@@ -490,7 +508,7 @@ plan edits** is.
 
        ## Plan review -- <reviewer> -- YYYY-MM-DD
 
-       **Tier**: <External|External Security Review>
+       **Tier**: <Internal|External>   <-- closed vocabulary, exact match
        **Obligation**: <the exact clause from `Plan review:` this pass discharges>
        **Findings**: <none|raised>
 
@@ -834,7 +852,7 @@ obligations rather than reasons to hold the revised plan contract.
 ## Plan review -- Antigravity (External, security lens) -- 2026-08-11
 
 **Model**: Antigravity (Gemini 3.1 Pro)
-**Tier**: External Security Review
+**Tier**: External
 **Obligation**: External Security Review
 **Reviewed commit**: `a2973ec5f82490db22f078f0ddaac81b21e36871`
 **Reviewed plan blob**: `237051d01ba406eede1700b6dfde273ae429cd15`
