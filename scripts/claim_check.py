@@ -38,6 +38,35 @@ subset (broken repo paths, out-of-bounds line citations).
   *bounds* check only -- it does NOT verify the cited lines still
   contain the rule or API being claimed.
 
+**Lifecycle archive resolution.**  A backticked token naming a
+*missing* active lifecycle file in exactly one of these two forms:
+
+* ``dev/proposals/<file>.md``; or
+* ``dev/plans/<file>.md``,
+
+is also checked against its exact same-family sibling under
+``archive/`` (``dev/proposals/archive/<file>.md`` /
+``dev/plans/archive/<file>.md``).  If that exact archived file
+exists, it becomes the resolution target -- for the path-exists check
+and, for a ``path:N`` / ``path:N-M`` citation, for the line-bounds
+check too, which is checked against the **archived** file's actual
+line count.  Moving a file to ``archive/`` does not waive a stale
+line bound.
+
+This is an identity rule, not a fuzzy search: it never searches by
+partial stem, date, or author; it never crosses between the proposal
+and plan families; and it never applies outside these two
+directories.  The active path is always authoritative when it
+exists.  When **both** the active file and its archived sibling exist
+at once, that is a lifecycle-state violation this checker refuses to
+silently normalize: it hard-flags rather than guess which candidate
+is live.  ``tools/lifecycle_planner.py``'s ``scan`` owns the
+repository-state invariant (the same filename may not exist both
+actively and archived within one family); this is claim-check's own
+defense in depth when *consuming* a token that names one, per the
+accepted ``claim-check-exemption-hygiene`` proposal (Section 1 /
+Revision 1 R2).
+
 **Soft flags** -- advisory; printed but exit 0 unless
 ``--fail-on-soft``.  The checker has **no active soft-flag producer**:
 the category-D **count** soft-flag (a number adjacent to a tree-noun)
@@ -491,6 +520,64 @@ def _node_citation_path(token: str) -> str | None:
     return None
 
 
+# Exact lifecycle active-to-archive resolution -- see the module
+# docstring's "Lifecycle archive resolution" paragraph.  Matches only
+# ``dev/proposals/<file>.md`` or ``dev/plans/<file>.md`` with no
+# further path segments in ``<file>`` -- a token that already names an
+# ``archive/`` path (or anything nested deeper) does not match and
+# falls through to ordinary resolution unchanged.
+_LIFECYCLE_ARCHIVE_RE = re.compile(
+    r'^dev/(?P<family>proposals|plans)/(?P<name>[^/]+\.md)$'
+)
+
+
+@dataclass(frozen=True)
+class _LifecycleResolution:
+    """The outcome of resolving a ``dev/{proposals,plans}/<file>.md``
+    token under the exact active/archive lifecycle rule.
+
+    ``resolved`` is the ``Path`` to use for further existence / line-
+    count checks: the active file when it exists (always
+    authoritative), else its exact same-family archived sibling when
+    *that* exists, else ``None`` (neither candidate exists).
+    ``duplicate`` is True when both candidates exist at once -- a
+    lifecycle-state violation the caller must hard-flag rather than
+    silently resolve via the (still-authoritative) active path.
+    """
+
+    resolved: Path | None
+    duplicate: bool
+
+
+def _lifecycle_archive_resolve(
+    path: str, repo_root: Path,
+) -> _LifecycleResolution | None:
+    """Resolve *path* under the exact lifecycle archive-fallback rule.
+
+    Returns ``None`` when *path* is not in the exact
+    ``dev/{proposals,plans}/<file>.md`` shape -- the caller falls
+    through to ordinary resolution.  Never searches by partial stem,
+    date, or author; never crosses between the proposal and plan
+    families; never applies outside these two directories.
+    """
+    match = _LIFECYCLE_ARCHIVE_RE.match(path)
+    if match is None:
+        return None
+    family = match.group('family')
+    name = match.group('name')
+    direct = repo_root / 'dev' / family / name
+    archived = repo_root / 'dev' / family / 'archive' / name
+    direct_exists = direct.is_file()
+    archived_exists = archived.is_file()
+    if direct_exists and archived_exists:
+        return _LifecycleResolution(resolved=direct, duplicate=True)
+    if direct_exists:
+        return _LifecycleResolution(resolved=direct, duplicate=False)
+    if archived_exists:
+        return _LifecycleResolution(resolved=archived, duplicate=False)
+    return _LifecycleResolution(resolved=None, duplicate=False)
+
+
 def check_path_token(
     token: str, lineno: int, repo_root: Path, top_level: set[str],
 ) -> Flag | None:
@@ -508,6 +595,23 @@ def check_path_token(
         return None  # not a repo-path claim -- nothing to check
     if _is_default_exempt(target):
         return None  # gitignored / generated framework runtime path; absent by design
+
+    lifecycle = _lifecycle_archive_resolve(target, repo_root)
+    if lifecycle is not None:
+        if lifecycle.duplicate:
+            return Flag(
+                lineno, 'path', 'hard', token,
+                f'lifecycle-state violation: `{target}` exists both at '
+                f'its active path and its archived sibling -- duplicate '
+                f'identity is not silently normalized',
+            )
+        if lifecycle.resolved is not None:
+            return None
+        return Flag(
+            lineno, 'path', 'hard', token,
+            f'cited path does not resolve: `{token}`',
+        )
+
     resolved = repo_root / target
     # A node citation names a test node, which lives in a FILE -- a
     # directory path half (``bootstrap/tests::test_x``) is not a valid
@@ -539,12 +643,29 @@ def check_line_citation(
     path = match.group('path')
     if path.split('/', 1)[0] not in top_level:
         return None  # not a repo path -- not this checker's concern
-    target = repo_root / path
-    if not target.is_file():
-        return Flag(
-            lineno, 'line-bounds', 'hard', token,
-            f'line-bounds citation to a missing file: `{token}`',
-        )
+
+    lifecycle = _lifecycle_archive_resolve(path, repo_root)
+    if lifecycle is not None:
+        if lifecycle.duplicate:
+            return Flag(
+                lineno, 'line-bounds', 'hard', token,
+                f'lifecycle-state violation: `{path}` exists both at '
+                f'its active path and its archived sibling -- duplicate '
+                f'identity is not silently normalized',
+            )
+        if lifecycle.resolved is None:
+            return Flag(
+                lineno, 'line-bounds', 'hard', token,
+                f'line-bounds citation to a missing file: `{token}`',
+            )
+        target = lifecycle.resolved
+    else:
+        target = repo_root / path
+        if not target.is_file():
+            return Flag(
+                lineno, 'line-bounds', 'hard', token,
+                f'line-bounds citation to a missing file: `{token}`',
+            )
     end = int(match.group('end') or match.group('start'))
     # Count lines by streaming the file rather than reading it whole --
     # a citation may point into a large data file / log present in the

@@ -370,7 +370,7 @@
     {
       "base_hash": "sha256:87fe356efedd96cbe0335ac76bdcb65686d469aae018b23593fcc61fb07e2549",
       "dst": "scripts/claim_check.py",
-      "hash": "sha256:87fe356efedd96cbe0335ac76bdcb65686d469aae018b23593fcc61fb07e2549",
+      "hash": "sha256:c37a24853c3a789e9ea3df5d42cbb34fb4412daf0ddf3372e771acc50d6837f8",
       "src": "modules/default-on/claim_check.py",
       "verbatim": true
     },

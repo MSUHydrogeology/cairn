@@ -488,3 +488,171 @@ def test_bare_directory_path_is_still_accepted(cc, tmp_path):
     is a legitimate path claim when cited without a `::node`."""
     hard = _hard(cc, tmp_path, "See `bootstrap/tests`.\n")
     assert hard == [], [f.message for f in hard]
+
+
+# ---------------------------------------------------------------------------
+# Chunk D1 -- exact lifecycle active-to-archive resolution (accepted
+# `claim-check-exemption-hygiene` proposal, Section 1 / Revision 1 R2).
+#
+# Scope note: this covers only what D1 makes testable -- the resolution
+# mechanism itself (exact same-family fallback, direct-path priority, the
+# archived-file line-bounds check, and claim-check's own defense-in-depth
+# duplicate-identity refusal).  Typed-declaration registry exactness and
+# unused-glob / archive-redundant-glob liveness classification are D3/D4
+# (Opus tier, not implemented here) -- see the plan's Chunk D table.
+#
+# `_make_lifecycle_repo` is deliberately self-contained rather than an
+# extension of `_make_repo` above, to avoid coupling this chunk's fixture
+# needs to whatever shape the D3/D4 registry/liveness tests end up wanting
+# from the shared helper.
+# ---------------------------------------------------------------------------
+
+
+def _make_lifecycle_repo(root: Path) -> Path:
+    """Build a synthetic repo with the two lifecycle families and their
+    `archive/` siblings, plus one unrelated top-level dir with its own
+    `archive/` subdirectory -- so the "outside the two lifecycle dirs"
+    boundary is actually exercised against a real look-alike, not merely
+    an absent path.
+    """
+    (root / "AGENTS.md").write_text("root file\n")
+    (root / "dev" / "proposals" / "archive").mkdir(parents=True)
+    (root / "dev" / "plans" / "archive").mkdir(parents=True)
+    (root / "templates" / "archive").mkdir(parents=True)
+    return root
+
+
+def _write_lines(path: Path, n: int) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(f"line {i}" for i in range(1, n + 1)) + "\n")
+
+
+class TestLifecycleArchiveResolution:
+    """D1: exact `dev/{proposals,plans}/<file>.md` -> `.../archive/<file>.md`
+    resolution, direct-path priority, and archived-file line bounds."""
+
+    def test_exact_archive_sibling_resolves(self, cc, tmp_path):
+        # Happy path: the active file is missing, its exact same-family
+        # archived sibling exists -- resolves clean, no hard flag.
+        _make_lifecycle_repo(tmp_path)
+        (tmp_path / "dev" / "proposals" / "archive" / "foo.md").write_text(
+            "# archived\n"
+        )
+        hard, _soft = cc.check_text("see `dev/proposals/foo.md`", tmp_path)
+        assert hard == []
+
+    def test_direct_path_authoritative_when_it_exists(self, cc, tmp_path):
+        # The active file exists (no archived sibling at all) -- ordinary
+        # resolution, unaffected by the new rule.
+        _make_lifecycle_repo(tmp_path)
+        (tmp_path / "dev" / "plans" / "bar.md").write_text("# active\n")
+        hard, _soft = cc.check_text("see `dev/plans/bar.md`", tmp_path)
+        assert hard == []
+
+    def test_typo_in_filename_does_not_resolve(self, cc, tmp_path):
+        # Mutation: filename.  A near-match archived stem must NOT
+        # resolve a differently-spelled active citation -- this is an
+        # identity rule, not a fuzzy search.
+        _make_lifecycle_repo(tmp_path)
+        (tmp_path / "dev" / "proposals" / "archive" / "foo.md").write_text(
+            "# archived\n"
+        )
+        hard, _soft = cc.check_text("see `dev/proposals/fooo.md`", tmp_path)
+        assert [f.token for f in hard] == ["dev/proposals/fooo.md"]
+        assert "does not resolve" in hard[0].message
+
+    def test_cross_family_archive_does_not_resolve(self, cc, tmp_path):
+        # Mutation: family.  An archived plan of the same stem must not
+        # resolve a missing active *proposal* -- never crosses families.
+        _make_lifecycle_repo(tmp_path)
+        (tmp_path / "dev" / "plans" / "archive" / "foo.md").write_text(
+            "# archived plan\n"
+        )
+        hard, _soft = cc.check_text("see `dev/proposals/foo.md`", tmp_path)
+        assert [f.token for f in hard] == ["dev/proposals/foo.md"]
+
+    def test_cross_family_archive_does_not_resolve_reverse(self, cc, tmp_path):
+        # Same-name independence in the other direction: an archived
+        # proposal does not resolve a missing active plan.
+        _make_lifecycle_repo(tmp_path)
+        (tmp_path / "dev" / "proposals" / "archive" / "foo.md").write_text(
+            "# archived proposal\n"
+        )
+        hard, _soft = cc.check_text("see `dev/plans/foo.md`", tmp_path)
+        assert [f.token for f in hard] == ["dev/plans/foo.md"]
+
+    def test_archive_at_wrong_nested_location_does_not_resolve(
+        self, cc, tmp_path
+    ):
+        # Mutation: (archive) location.  The rule checks the *exact*
+        # `.../archive/<file>.md` path -- a same-named file one level
+        # deeper under `archive/` (a plausible slip, not a typo or a
+        # family mismatch) must not resolve.
+        _make_lifecycle_repo(tmp_path)
+        nested = (
+            tmp_path / "dev" / "proposals" / "archive" / "nested" / "foo.md"
+        )
+        nested.parent.mkdir(parents=True)
+        nested.write_text("# wrong location\n")
+        hard, _soft = cc.check_text("see `dev/proposals/foo.md`", tmp_path)
+        assert [f.token for f in hard] == ["dev/proposals/foo.md"]
+
+    def test_duplicate_active_and_archived_identity_hard_flags(
+        self, cc, tmp_path
+    ):
+        # R2: "Claim-check also fails closed if it encounters both
+        # candidates while resolving a lifecycle token."  Direct-path
+        # priority does not silently normalize a duplicate identity.
+        _make_lifecycle_repo(tmp_path)
+        (tmp_path / "dev" / "proposals" / "foo.md").write_text("# active\n")
+        (tmp_path / "dev" / "proposals" / "archive" / "foo.md").write_text(
+            "# archived\n"
+        )
+        hard, _soft = cc.check_text("see `dev/proposals/foo.md`", tmp_path)
+        assert len(hard) == 1
+        assert "lifecycle-state violation" in hard[0].message
+        assert "duplicate identity" in hard[0].message
+
+    def test_line_bounds_checked_against_archived_file_in_bounds(
+        self, cc, tmp_path
+    ):
+        # "A fixture cites the final valid line and then one line
+        # beyond it" (proposal Evidence/verification plan) -- in-bounds
+        # half: the final valid line of the *archived* file.
+        _make_lifecycle_repo(tmp_path)
+        _write_lines(
+            tmp_path / "dev" / "proposals" / "archive" / "foo.md", 5
+        )
+        hard, _soft = cc.check_text("see `dev/proposals/foo.md:5`", tmp_path)
+        assert hard == []
+
+    def test_line_bounds_checked_against_archived_file_out_of_bounds(
+        self, cc, tmp_path
+    ):
+        # Out-of-bounds half: one line beyond the archived file's actual
+        # count.  Moving a file to archive/ does not waive a stale bound.
+        _make_lifecycle_repo(tmp_path)
+        _write_lines(
+            tmp_path / "dev" / "proposals" / "archive" / "foo.md", 5
+        )
+        hard, _soft = cc.check_text("see `dev/proposals/foo.md:6`", tmp_path)
+        assert len(hard) == 1
+        assert hard[0].kind == "line-bounds"
+        assert "exceeds" in hard[0].message
+
+    def test_archive_resolution_limited_to_lifecycle_dirs(self, cc, tmp_path):
+        # "the path-limited historical predicate for the dropped prefix"
+        # (D5 cell): the resolution rule is limited to exactly the two
+        # `dev/proposals/` and `dev/plans/` prefixes -- a missing file
+        # under any OTHER top-level directory must not resolve against a
+        # same-shaped `<dir>/archive/<file>` sibling, even though one
+        # concretely exists here.  ("the dropped prefix" -- any prefix
+        # other than the two lifecycle ones is out of the rule's reach,
+        # dropped from consideration entirely, however plausible the
+        # look-alike.)
+        _make_lifecycle_repo(tmp_path)
+        (tmp_path / "templates" / "archive" / "foo.md").write_text(
+            "# archived-looking, but not a lifecycle dir\n"
+        )
+        hard, _soft = cc.check_text("see `templates/foo.md`", tmp_path)
+        assert [f.token for f in hard] == ["templates/foo.md"]
