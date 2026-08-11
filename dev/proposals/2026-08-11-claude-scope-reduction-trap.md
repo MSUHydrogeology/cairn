@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5 (`claude-opus-5`)
 **Date opened**: 2026-08-11
-**Status**: revised
+**Status**: accepted
 **Touches**: `doctrine/dual-review.md`; `doctrine/proposals.md`;
 `doctrine/plans.md`; the proposal and plan templates, self-hosted and shipped;
 `tools/lifecycle_planner.py` and its twin; `templates/core/dev/agent_collaboration.md`;
@@ -810,3 +810,19 @@ of which felt more serious, which is what it needed to do.
 
 **Scope delta: preserved.** No baseline outcome added or dropped; this is a
 wording and authority correction to the test itself.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-11
+
+**ACCEPTED as revised (Round 6).** Authorization, quoted verbatim and visually isolated:
+
+> "Okay, please scribe my acceptance of scope-reduction-trap as revised"
+
+**Summary of accepted terms (Round 6)**:
+- **Baseline-Bound Outcome Test**: Reductions are evaluated against concrete baseline commitments (`as opened` pre-Decision, `as accepted` post-Decision). Classified as `Preserved` (delivered; no declaration/allowance needed), `Degraded` (partially delivered), or `Lost` (no longer delivered).
+- **Stage Authority**: Pre-Decision scope reductions are authorized via Maintainer Decision. Post-Decision accepted scope is a floor; removing accepted scope is a plan deviation governed by `AGENTS.md`'s deviation gate.
+- **Grouped Scope-Remainder Record**: Removed work is kept in one grouped record per source artifact (holding source section, reason, disposition, revival condition). Prevents scattering into un-drainable `PLANNING.md` backlog rows and blocks archive until explicitly disposed.
+- **Reviewer Expansions**: Declining a reviewer's suggestion to add scope is NOT a reduction and owes no remainder record.
+- **Vocabulary Reconciliation**: `scope-cut` → `accept` is reserved strictly for claim correction (no work removed). Work removal is a `scope reduction`.
+
+**Scribed by** Antigravity (Gemini 3.1 Pro) on explicit Maintainer instruction.
+
