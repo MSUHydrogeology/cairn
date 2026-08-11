@@ -889,3 +889,46 @@ I am an independent agent type (Antigravity / Gemini 3.1 Pro) distinct from both
 **Verdict**: **SHIP** (Plan approved; 0 blocking, 0 substantive, 0 minor findings).
 **Summary**: **M1 External Security Review CLEARED.**
 
+
+## Correction to the sequencing fence -- Claude -- 2026-08-11
+
+**The fence in `## Scope` was wrong, and permissively so.** It said Chunks A–C,
+E and G "touch no manifest byte and may proceed in parallel; D, F and H may
+not." The first clause is true and irrelevant: those chunks do not edit
+`gate_manifest.json`, but they modify the **frozen paths it pins**, and
+`review-efficient-lifecycle`'s Chunk I is the Maintainer ceremony that
+re-anchors that set.
+
+Measured against `bootstrap/tests/fixtures/gate_manifest.json` (164
+`frozen_files` entries):
+
+| file | chunks | pinned |
+|---|---|---|
+| `bootstrap/tests/_gate_preflight.py` | A, B, C, F | **yes** |
+| `bootstrap/tests/test_gate_preflight.py` | B, C, F, H | **yes** |
+| `bootstrap/tests/_gate_manifest.py` | A, D | **yes** |
+| `bootstrap/tests/test_gate_manifest.py` | A, D | **yes** |
+| `bootstrap/security_check.py` | A, E | **yes** |
+| `bootstrap/tests/test_security_check.py` | A, E | **yes** |
+| `bootstrap/container/verify-ref.sh` | E | no |
+| Chunk G's five doc surfaces | G | no |
+
+**The corrected fence.** Every chunk except **G** waits on
+`review-efficient-lifecycle`'s Chunk I ceremony **and** Boundary B2 — not just
+D, F and H. The hazard is not a merge conflict; it is that a frozen-path change
+landing in that window gets **re-anchored by a ceremony whose reviewed range
+never contained it**, and that plan's own restart case 3 (*"any correction
+inside the gate inventory additionally restarts the Maintainer ceremony I"*)
+would fire on work it never reviewed.
+
+**Chunk G may proceed now**, with one caution: `dev/PLANNING.md` and
+`CHANGELOG.md` are shared serialization-point files under `AGENTS.md`, and
+another session is active. Edit them at a defined point, not opportunistically.
+
+**This is a scope question the Maintainer may want to answer differently** (M6).
+Waiting is correct but expensive: `review-efficient-lifecycle` has 16 chunks
+pending and its Chunk I sits after A–H, Boundary B1 and the code review, so the
+wait is most of that plan. The alternative — letting git-native land its frozen
+changes **first**, then having one ceremony re-anchor both plans' deltas
+together — is cheaper and is exactly the batching argument that plan's own
+touchpoint budget makes. It needs a decision, not an implementer's re-ordering.
